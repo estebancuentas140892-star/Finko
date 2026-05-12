@@ -1,0 +1,145 @@
+/* ============================================================
+   FINKO — MODALES
+   Overlay + modal con animación de entrada/salida.
+   Contrato: .modal-overlay[data-open] activa el modal.
+   ============================================================ */
+
+/* ── OVERLAY ────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--fk-z-modal-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fk-space-4);
+
+  /* Oculto por defecto */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--fk-transition-base);
+}
+
+.modal-overlay[data-open] {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── MODAL ──────────────────────────────────────────────────── */
+
+.modal {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-xl);
+  box-shadow: var(--fk-shadow-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--fk-z-modal);
+  overflow: hidden;
+
+  /* Animación de entrada */
+  transform: translateY(16px) scale(0.97);
+  transition:
+    transform var(--fk-transition-base),
+    opacity var(--fk-transition-base);
+}
+
+.modal-overlay[data-open] .modal {
+  transform: translateY(0) scale(1);
+}
+
+/* Tamaños */
+.modal--sm  { max-width: 380px; }
+.modal--lg  { max-width: 680px; }
+.modal--xl  { max-width: 880px; }
+.modal--full {
+  max-width: 100%;
+  max-height: 100dvh;
+  border-radius: 0;
+  margin: 0;
+}
+
+/* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-5) var(--fk-space-6);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  flex-shrink: 0;
+}
+.modal__title {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-tight);
+}
+.modal__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  transition:
+    background-color var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+  flex-shrink: 0;
+}
+.modal__close:hover {
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+}
+
+.modal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-4) var(--fk-space-6);
+  border-top: 1px solid var(--fk-border-subtle);
+  flex-shrink: 0;
+}
+.modal__footer--spread {
+  justify-content: space-between;
+}
+
+/* ── MODAL EN MÓVIL: BOTTOM SHEET ───────────────────────────── */
+@media (max-width: 480px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    max-width: 100%;
+    border-radius: var(--fk-radius-xl) var(--fk-radius-xl) 0 0;
+    max-height: 92dvh;
+    transform: translateY(100%);
+  }
+  .modal-overlay[data-open] .modal {
+    transform: translateY(0);
+  }
+}

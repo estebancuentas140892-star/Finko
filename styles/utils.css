@@ -1,0 +1,121 @@
+/* ============================================================
+   FINKO — UTILIDADES
+   Clases de una sola responsabilidad.
+   Tienen la prioridad más alta (última capa @layer).
+   ============================================================ */
+
+/* ── DISPLAY ─────────────────────────────────────────────────── */
+.d-flex     { display: flex; }
+.d-grid     { display: grid; }
+.d-block    { display: block; }
+.d-inline   { display: inline; }
+.d-none     { display: none; }
+
+/* ── FLEX ─────────────────────────────────────────────────────── */
+.flex-col       { flex-direction: column; }
+.flex-wrap      { flex-wrap: wrap; }
+.items-center   { align-items: center; }
+.items-start    { align-items: flex-start; }
+.items-end      { align-items: flex-end; }
+.justify-center { justify-content: center; }
+.justify-between{ justify-content: space-between; }
+.justify-end    { justify-content: flex-end; }
+.gap-1  { gap: var(--fk-space-1); }
+.gap-2  { gap: var(--fk-space-2); }
+.gap-3  { gap: var(--fk-space-3); }
+.gap-4  { gap: var(--fk-space-4); }
+.gap-6  { gap: var(--fk-space-6); }
+.gap-8  { gap: var(--fk-space-8); }
+.flex-1 { flex: 1; }
+
+/* ── TEXTO ────────────────────────────────────────────────────── */
+.text-xs      { font-size: var(--fk-text-xs); }
+.text-sm      { font-size: var(--fk-text-sm); }
+.text-base    { font-size: var(--fk-text-base); }
+.text-lg      { font-size: var(--fk-text-lg); }
+.text-xl      { font-size: var(--fk-text-xl); }
+.text-2xl     { font-size: var(--fk-text-2xl); }
+.text-3xl     { font-size: var(--fk-text-3xl); }
+.text-4xl     { font-size: var(--fk-text-4xl); }
+
+.font-light    { font-weight: var(--fk-font-light); }
+.font-regular  { font-weight: var(--fk-font-regular); }
+.font-medium   { font-weight: var(--fk-font-medium); }
+.font-semibold { font-weight: var(--fk-font-semibold); }
+.font-bold     { font-weight: var(--fk-font-bold); }
+.font-extrabold{ font-weight: var(--fk-font-extrabold); }
+
+.text-primary   { color: var(--fk-text-primary); }
+.text-secondary { color: var(--fk-text-secondary); }
+.text-muted     { color: var(--fk-text-muted); }
+.text-accent    { color: var(--fk-text-accent); }
+.text-success   { color: var(--fk-success-text); }
+.text-warning   { color: var(--fk-warning-text); }
+.text-danger    { color: var(--fk-danger-text); }
+.text-info      { color: var(--fk-info-text); }
+
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+.text-left   { text-align: left; }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono { font-family: var(--fk-font-mono); }
+
+/* ── ESPACIADO ────────────────────────────────────────────────── */
+.p-2  { padding: var(--fk-space-2); }
+.p-3  { padding: var(--fk-space-3); }
+.p-4  { padding: var(--fk-space-4); }
+.p-6  { padding: var(--fk-space-6); }
+.p-8  { padding: var(--fk-space-8); }
+
+.px-3 { padding-inline: var(--fk-space-3); }
+.px-4 { padding-inline: var(--fk-space-4); }
+.px-6 { padding-inline: var(--fk-space-6); }
+.py-2 { padding-block: var(--fk-space-2); }
+.py-3 { padding-block: var(--fk-space-3); }
+.py-4 { padding-block: var(--fk-space-4); }
+
+.mt-2  { margin-top: var(--fk-space-2); }
+.mt-4  { margin-top: var(--fk-space-4); }
+.mt-6  { margin-top: var(--fk-space-6); }
+.mb-2  { margin-bottom: var(--fk-space-2); }
+.mb-4  { margin-bottom: var(--fk-space-4); }
+.mb-6  { margin-bottom: var(--fk-space-6); }
+.ml-auto { margin-left: auto; }
+.mr-auto { margin-right: auto; }
+.mx-auto { margin-inline: auto; }
+
+/* ── BORDES Y RADII ───────────────────────────────────────────── */
+.rounded-sm   { border-radius: var(--fk-radius-sm); }
+.rounded-md   { border-radius: var(--fk-radius-md); }
+.rounded-lg   { border-radius: var(--fk-radius-lg); }
+.rounded-xl   { border-radius: var(--fk-radius-xl); }
+.rounded-full { border-radius: var(--fk-radius-full); }
+
+/* ── ANCHO Y ALTO ─────────────────────────────────────────────── */
+.w-full  { width: 100%; }
+.h-full  { height: 100%; }
+.min-w-0 { min-width: 0; }
+
+/* ── POSICIONAMIENTO ──────────────────────────────────────────── */
+.relative { position: relative; }
+.absolute { position: absolute; }
+.sticky   { position: sticky; }
+
+/* ── OVERFLOW ─────────────────────────────────────────────────── */
+.overflow-hidden { overflow: hidden; }
+.overflow-auto   { overflow: auto; }
+
+/* ── CURSOR ───────────────────────────────────────────────────── */
+.cursor-pointer  { cursor: pointer; }
+.cursor-default  { cursor: default; }
+.pointer-none    { pointer-events: none; }
+
+/* ── OPACIDAD ─────────────────────────────────────────────────── */
+.opacity-50  { opacity: 0.5; }
+.opacity-75  { opacity: 0.75; }

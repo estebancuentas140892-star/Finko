@@ -1,0 +1,275 @@
+/* ============================================================
+   FINKO — LAYOUT
+   Shell de la app (sidebar + main) y Bento Grid del dashboard.
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   APP SHELL — estructura principal
+   ════════════════════════════════════════════════════════════ */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--fk-sidebar-width) 1fr;
+  grid-template-rows: 1fr;
+  min-height: 100dvh;
+  background: var(--fk-bg-base);
+}
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+
+.sidebar {
+  grid-column: 1;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--fk-bg-surface);
+  border-right: 1px solid var(--fk-border-subtle);
+  z-index: var(--fk-z-sidebar);
+  overflow: hidden;
+}
+
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-5) var(--fk-space-5) var(--fk-space-4);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  text-decoration: none;
+}
+.sidebar__logo-text {
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-accent);
+  letter-spacing: -0.03em;
+}
+.sidebar__logo-badge {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-regular);
+}
+
+/* Nav principal */
+.sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--fk-space-3) var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  transition:
+    background-color var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+  min-height: 40px;
+}
+.nav-item:hover {
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-primary);
+}
+.nav-item.active,
+.nav-item[aria-current="page"] {
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-font-semibold);
+}
+.nav-item__icon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.nav-item__label { flex: 1; }
+.nav-item__badge {
+  font-size: var(--fk-text-xs);
+  background: var(--fk-danger);
+  color: #fff;
+  border-radius: var(--fk-radius-full);
+  padding: 1px 6px;
+  font-weight: var(--fk-font-bold);
+}
+
+/* Grupo de nav */
+.nav-group {
+  margin-top: var(--fk-space-4);
+}
+.nav-group__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0 var(--fk-space-3) var(--fk-space-2);
+}
+
+/* Footer del sidebar (saldo + toggle tema) */
+.sidebar__footer {
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.sidebar__saldo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar__saldo-label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sidebar__saldo-value {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-accent);
+}
+
+/* ── MAIN CONTENT ───────────────────────────────────────────── */
+
+.main-content {
+  grid-column: 2;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Sección genérica */
+.section {
+  display: none;
+  padding: var(--fk-content-padding);
+  max-width: var(--fk-content-max);
+}
+.section.active {
+  display: block;
+}
+
+.section__header {
+  margin-bottom: var(--fk-space-6);
+}
+.section__title {
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-tight);
+}
+.section__subtitle {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin-top: var(--fk-space-1);
+}
+
+/* ════════════════════════════════════════════════════════════
+   BENTO GRID — dashboard
+   ════════════════════════════════════════════════════════════
+   Vocabulario:
+   .bento              → grid container
+   .bento__cell        → celda base (4 cols × 1 row)
+   .bento__cell--wide  → 8 cols
+   .bento__cell--full  → 12 cols
+   .bento__cell--tall  → 2 rows
+   .bento__cell--taller→ 3 rows
+   ════════════════════════════════════════════════════════════ */
+
+.bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: minmax(160px, auto);
+  gap: var(--fk-space-4);
+  width: 100%;
+}
+
+/* Celda base */
+.bento__cell {
+  grid-column: span 4;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  overflow: hidden;
+  transition:
+    border-color var(--fk-transition-base),
+    box-shadow var(--fk-transition-base);
+}
+.bento__cell:hover {
+  border-color: var(--fk-border-default);
+}
+
+/* Variantes de tamaño */
+.bento__cell--wide   { grid-column: span 8; }
+.bento__cell--full   { grid-column: span 12; }
+.bento__cell--tall   { grid-row: span 2; }
+.bento__cell--taller { grid-row: span 3; }
+
+/* Variantes visuales */
+.bento__cell--accent {
+  border-color: var(--fk-accent-border);
+  background: linear-gradient(
+    145deg,
+    var(--fk-bg-surface) 0%,
+    rgba(0, 220, 130, 0.06) 100%
+  );
+}
+.bento__cell--accent:hover {
+  box-shadow: var(--fk-shadow-glow);
+}
+.bento__cell--glass {
+  background: var(--fk-bg-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Elementos internos de la celda */
+.bento__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.bento__value {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-4xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.bento__value--accent { color: var(--fk-text-accent); }
+.bento__value--lg {
+  font-size: clamp(var(--fk-text-2xl), 5vw, var(--fk-text-4xl));
+}
+.bento__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.bento__icon {
+  font-size: 2rem;
+  margin-bottom: var(--fk-space-2);
+}
+.bento__footer {
+  margin-top: auto;
+  padding-top: var(--fk-space-3);
+  border-top: 1px solid var(--fk-border-subtle);
+}

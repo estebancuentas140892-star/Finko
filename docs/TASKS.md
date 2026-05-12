@@ -5,9 +5,34 @@
 
 ---
 
-## Fase actual: Fase 1 — Esqueleto + documentación
+## Fase actual: Fase 3 — HTML Shell + Router hash
 
-### Completadas ✅
+### En progreso 🔄
+
+- [ ] 3.1 — Shell principal con landmarks semánticos (`header`, `nav`, `main`, `aside`)
+- [ ] 3.2 — Sidebar con 8 secciones de navegación
+- [ ] 3.3 — `main` con 8 `<section>` vacíos (contenedores listos para Fases 5–12)
+- [ ] 3.4 — Scaffolding de modales vacíos (listos para Fases 5–12)
+- [ ] 3.5 — PWA meta tags (`viewport`, `theme-color`, `manifest`, `modulepreload`)
+- [ ] 3.6 — `modules/infra/router.js` — hash routing con `hashchange`
+- [ ] 3.7 — `modules/ui/shell.js` — navegación activa + tema toggle
+
+### Criterios de salida de Fase 3
+
+- [ ] 0 `onclick=""` en index.html
+- [ ] Hash routing funciona: `#dash`, `#gast`, `#compromisos`, etc.
+- [ ] Sidebar marca el ítem activo correctamente
+- [ ] Keyboard navigation: Tab, Enter, flechas navegan el sidebar
+- [ ] W3C Validator: 0 errores
+- [ ] Bento demo reemplazado por dashboard real vacío
+
+**Modelo recomendado:** Sonnet 4.6 — Esfuerzo Medio
+
+---
+
+## Completadas ✅
+
+### Fase 1 — Esqueleto + documentación
 
 - [x] 1.0 — Inicializar git + crear estructura de carpetas
 - [x] 1.1 — `package.json` con devDeps (vitest, eslint, prettier, happy-dom)
@@ -15,53 +40,36 @@
 - [x] 1.3 — `README.md` en raíz
 - [x] 1.4 — `docs/ARCHITECTURE.md`
 - [x] 1.5 — `docs/ROADMAP.md`
-- [x] 1.6 — `docs/TASKS.md` (este archivo)
+- [x] 1.6 — `docs/TASKS.md`
+- [x] 1.7 — `docs/CHANGELOG.md`
+- [x] 1.8 — `docs/CONTRIBUTING.md`
+- [x] 1.9 — `docs/IA_CONTEXT.md`
+- [x] 1.10 — `docs/DECISIONS/001-no-build-step.md`
+- [x] 1.11 — `index.html` stub + `styles/main.css` stub
+- [x] 1.12 — `tests/setup.js` + `vitest.config.js`
+- [x] 1.13 — `npm install` funcional
+- [x] 1.14 — Primer commit git
 
-### En progreso 🔄
+### Fase 2 — Design System + CSS base
 
-- [ ] 1.7 — `docs/CHANGELOG.md`
-- [ ] 1.8 — `docs/CONTRIBUTING.md`
-- [ ] 1.9 — `docs/IA_CONTEXT.md`
-- [ ] 1.10 — `docs/DECISIONS/001-no-build-step.md`
-- [ ] 1.11 — `index.html` stub + `styles/main.css` stub (para ver en el navegador)
-- [ ] 1.12 — `tests/setup.js` + `vitest.config.js`
-- [ ] 1.13 — `npm install` funcional
-- [ ] 1.14 — Primer commit git
-
-### Criterios de salida de Fase 1
-
-- [ ] `npm install` sin errores
-- [ ] `npm test` corre sin falla (aunque no haya tests todavía)
-- [ ] `index.html` abre en el navegador en `http://localhost:8080` sin errores
-- [ ] Todos los `.md` creados y con contenido real (no placeholders vacíos)
-- [ ] Primer commit limpio con mensaje `chore: fase 1 — esqueleto y documentación inicial`
-
----
-
-## Próxima fase: Fase 2 — Design System + CSS base
-
-### Tareas (pendientes de activar)
-
-- [ ] 2.1 — `styles/tokens.css`
-- [ ] 2.2 — `styles/reset.css`
-- [ ] 2.3 — `styles/base.css`
-- [ ] 2.4 — `styles/components.css`
-- [ ] 2.5 — `styles/layout.css` (incluyendo Bento Grid)
-- [ ] 2.6 — `styles/modals.css`
-- [ ] 2.7 — `styles/themes.css`
-- [ ] 2.8 — `styles/a11y.css`
-- [ ] 2.9 — `styles/responsive.css`
-- [ ] 2.10 — `styles/utils.css`
-- [ ] 2.11 — `styles/main.css` (importa todo con `@layer`)
-- [ ] 2.12 — `docs/DESIGN_SYSTEM.md` con todos los tokens documentados
-
-**Modelo recomendado:** Sonnet 4.6 — Esfuerzo Alto
+- [x] 2.1 — `styles/tokens.css`
+- [x] 2.2 — `styles/reset.css`
+- [x] 2.3 — `styles/base.css`
+- [x] 2.4 — `styles/components.css`
+- [x] 2.5 — `styles/layout.css` (incluyendo Bento Grid)
+- [x] 2.6 — `styles/modals.css`
+- [x] 2.7 — `styles/themes.css`
+- [x] 2.8 — `styles/a11y.css`
+- [x] 2.9 — `styles/responsive.css`
+- [x] 2.10 — `styles/utils.css`
+- [x] 2.11 — `styles/main.css` (importa todo con `@layer`)
+- [x] 2.12 — `docs/DESIGN_SYSTEM.md` con todos los tokens documentados
 
 ---
 
 ## Backlog (fases futuras)
 
-Ver [ROADMAP.md](ROADMAP.md) para el detalle completo de Fases 3–14.
+Ver [ROADMAP.md](ROADMAP.md) para el detalle completo de Fases 4–14.
 
 ---
 

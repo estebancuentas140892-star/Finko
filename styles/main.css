@@ -1,102 +1,24 @@
-/*
- * Finko — Design System
- * Punto de entrada CSS. Importa todos los archivos de estilos con @layer.
- *
- * Fase 2 construye cada capa. Por ahora solo el stub mínimo
- * para poder ver algo en el navegador.
- *
- * Orden de capas (NO cambiar):
- * reset → base → tokens → layout → components → modals → themes → a11y → responsive → utils
- */
+/* ============================================================
+   FINKO — CSS ENTRY POINT
+   Importa todas las capas en el orden correcto de cascada.
+   IMPORTANTE: NO insertar reglas entre @import statements.
+   El orden de los @import determina la prioridad @layer:
+   primero declarado = menor prioridad.
+   ============================================================ */
 
-/* ── Stub mínimo para Fase 1 ─────────────────────────────────────────────── */
-/* Se reemplaza completamente en Fase 2 */
+/* ── FUENTES EXTERNAS (van primero, antes de todo) ───────────── */
+/* Fase 13: migrar a self-hosted para privacidad total */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500&display=swap');
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  /* Paleta provisional — los tokens reales se definen en Fase 2 */
-  --fk-color-bg: #0f1117;
-  --fk-color-surface: #1a1d27;
-  --fk-color-accent: #00dc82;
-  --fk-color-text: #e8eaf0;
-  --fk-color-text-muted: #8892a4;
-  --fk-font-sans: system-ui, -apple-system, sans-serif;
-  --fk-font-mono: 'Courier New', monospace;
-  --fk-radius-lg: 16px;
-  --fk-space-4: 16px;
-  --fk-space-6: 24px;
-  --fk-space-8: 32px;
-}
-
-body {
-  background-color: var(--fk-color-bg);
-  color: var(--fk-color-text);
-  font-family: var(--fk-font-sans);
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-}
-
-/* Stub de Fase 1 — se elimina en Fase 3 */
-.fase-stub {
-  padding: var(--fk-space-6);
-  max-width: 480px;
-  width: 100%;
-}
-
-.fase-stub__card {
-  background-color: var(--fk-color-surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-8);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-4);
-}
-
-.fase-stub__card h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--fk-color-accent);
-  letter-spacing: -0.02em;
-}
-
-.fase-stub__tagline {
-  font-size: 1.125rem;
-  color: var(--fk-color-text-muted);
-}
-
-.fase-stub__estado {
-  background-color: rgba(0, 220, 130, 0.08);
-  border: 1px solid rgba(0, 220, 130, 0.2);
-  border-radius: 8px;
-  padding: var(--fk-space-4);
-  font-size: 0.875rem;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.fase-stub__estado p:first-child {
-  color: var(--fk-color-accent);
-}
-
-.fase-stub__instruccion {
-  font-size: 0.8125rem;
-  color: var(--fk-color-text-muted);
-  line-height: 1.6;
-}
-
-.fase-stub__instruccion code {
-  font-family: var(--fk-font-mono);
-  background-color: rgba(255, 255, 255, 0.06);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.8125rem;
-}
+/* ── CAPAS EN ORDEN ASCENDENTE DE PRIORIDAD ──────────────────── */
+/* reset (más baja) → utils (más alta) */
+@import './reset.css'      layer(reset);
+@import './base.css'       layer(base);
+@import './tokens.css'     layer(tokens);
+@import './layout.css'     layer(layout);
+@import './components.css' layer(components);
+@import './modals.css'     layer(modals);
+@import './themes.css'     layer(themes);
+@import './a11y.css'       layer(a11y);
+@import './responsive.css' layer(responsive);
+@import './utils.css'      layer(utils);

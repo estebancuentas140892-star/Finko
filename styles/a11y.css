@@ -1,0 +1,93 @@
+/* ============================================================
+   FINKO — ACCESIBILIDAD
+   Reglas que protegen la experiencia de usuarios con
+   preferencias de movimiento, alto contraste y lectores.
+   ============================================================ */
+
+/* ── MOVIMIENTO REDUCIDO ───────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── ALTO CONTRASTE ────────────────────────────────────────── */
+@media (forced-colors: active) {
+  /* Asegurar que los bordes y outlines sean visibles */
+  :focus-visible {
+    outline: 3px solid ButtonText;
+  }
+
+  .btn {
+    border: 2px solid ButtonText;
+  }
+
+  .card {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* ── OCULTAR VISUALMENTE (para screen readers) ─────────────── */
+.sr-only,
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Mostrar cuando está enfocado (para skip links) */
+.sr-only-focusable:focus,
+.sr-only-focusable:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ── ARIA LIVE REGIONS ─────────────────────────────────────── */
+/* Zona de anuncios para screen readers — invisible pero activa */
+#fk-aria-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+/* ── FOCO EN ELEMENTOS INTERACTIVOS ────────────────────────── */
+/* Garantía de foco visible en todos los interactivos */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[role="link"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="menuitem"]:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 3px;
+  border-radius: var(--fk-radius-sm);
+}
+
+/* ── IMAGEN SIN ALT ─────────────────────────────────────────── */
+/* Alerta visual en desarrollo cuando falta alt */
+img:not([alt]) {
+  outline: 3px dashed var(--fk-danger);
+}

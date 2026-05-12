@@ -1,0 +1,97 @@
+/* ============================================================
+   FINKO — RESET CSS
+   Normalización moderna cross-browser.
+   Basado en: modern-normalize + Andy Bell's reset.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Scroll suave (respetado por prefers-reduced-motion en a11y.css) */
+  scroll-behavior: smooth;
+  /* Previene scroll horizontal accidental */
+  overflow-x: hidden;
+  /* Tipografía más consistente en iOS */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Mejor renderizado en HiDPI */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  line-height: var(--fk-leading-normal);
+}
+
+/* Imágenes y media responsivos por defecto */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Inputs heredan fuente (los navegadores no lo hacen por defecto) */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Párrafos y encabezados no desborden contenedores */
+p,
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
+
+/* Listas sin estilos cuando tienen role="list" */
+ul[role='list'],
+ol[role='list'] {
+  list-style: none;
+}
+
+/* Botones sin estilos por defecto */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Links sin subrayado por defecto (se re-agrega donde corresponde) */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Tablas más predecibles */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Campo oculto nativamente */
+[hidden] {
+  display: none !important;
+}
+
+/* Evitar texto fantasma en fieldset */
+fieldset {
+  border: none;
+}
+
+/* Baseline para SVG */
+svg {
+  flex-shrink: 0;
+}

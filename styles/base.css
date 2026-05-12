@@ -1,0 +1,119 @@
+/* ============================================================
+   FINKO — BASE
+   Estilos base: tipografía, focus global, scrollbar, body.
+   Depende de: tokens.css
+   ============================================================ */
+
+body {
+  background-color: var(--fk-bg-base);
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-regular);
+  line-height: var(--fk-leading-normal);
+}
+
+/* ── JERARQUÍA TIPOGRÁFICA ─────────────────────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--fk-font-bold);
+  line-height: var(--fk-leading-tight);
+  color: var(--fk-text-primary);
+}
+
+h1 { font-size: var(--fk-text-4xl); font-weight: var(--fk-font-extrabold); }
+h2 { font-size: var(--fk-text-3xl); }
+h3 { font-size: var(--fk-text-2xl); }
+h4 { font-size: var(--fk-text-xl); }
+h5 { font-size: var(--fk-text-lg); }
+h6 { font-size: var(--fk-text-base); }
+
+p {
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* Texto en mono para valores monetarios */
+.mono,
+[data-type="monto"],
+[data-type="valor"] {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-medium);
+  letter-spacing: -0.01em;
+}
+
+/* Links visibles en contextos de texto */
+.link {
+  color: var(--fk-text-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: opacity var(--fk-transition-fast);
+}
+.link:hover { opacity: 0.8; }
+
+/* ── FOCUS GLOBAL ──────────────────────────────────────────── */
+/* Visible por teclado, invisible con mouse (excepto inputs) */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 3px;
+  border-radius: var(--fk-radius-sm);
+}
+
+/* Inputs y textareas: focus siempre visible */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 0;
+}
+
+/* ── SKIP LINK (accesibilidad) ─────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--fk-space-4);
+  background: var(--fk-accent);
+  color: var(--fk-text-on-accent);
+  padding: var(--fk-space-2) var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-sm);
+  z-index: var(--fk-z-toast);
+  transition: top var(--fk-transition-fast);
+}
+.skip-link:focus {
+  top: var(--fk-space-4);
+}
+
+/* ── SCROLLBAR PERSONALIZADA ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fk-border-strong);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--fk-border-default) transparent;
+}
+
+/* ── SELECCIÓN DE TEXTO ─────────────────────────────────────── */
+::selection {
+  background: var(--fk-accent-subtle);
+  color: var(--fk-text-primary);
+}

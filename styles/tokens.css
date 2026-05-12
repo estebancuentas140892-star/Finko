@@ -1,0 +1,134 @@
+/* ============================================================
+   FINKO — DESIGN TOKENS
+   Todas las decisiones visuales viven aquí.
+   NUNCA hardcodear colores, espaciados o radii en otros archivos.
+   Prefijo: --fk-
+   ============================================================ */
+
+:root {
+  /* ── MARCA ──────────────────────────────────────────────────── */
+  --fk-accent:        #00dc82;
+  --fk-accent-hover:  #00ef8e;
+  --fk-accent-subtle: rgba(0, 220, 130, 0.12);
+  --fk-accent-border: rgba(0, 220, 130, 0.35);
+  --fk-accent-glow:   rgba(0, 220, 130, 0.2);
+
+  /* ── FONDOS (modo oscuro — default) ─────────────────────────── */
+  --fk-bg-base:        #0f1117;
+  --fk-bg-surface:     #161922;
+  --fk-bg-elevated:    #1d2130;
+  --fk-bg-hover:       rgba(255, 255, 255, 0.04);
+  --fk-bg-active:      rgba(255, 255, 255, 0.08);
+  --fk-bg-glass:       rgba(22, 25, 34, 0.7);
+
+  /* ── TEXTO ───────────────────────────────────────────────────── */
+  --fk-text-primary:   #e8eaf2;
+  --fk-text-secondary: #9aa0b4;
+  --fk-text-muted:     #6b7490;
+  --fk-text-disabled:  #424858;
+  --fk-text-on-accent: #0f1117;
+  --fk-text-accent:    #00dc82;
+  --fk-text-inverse:   #1a1d27;
+
+  /* ── BORDES ──────────────────────────────────────────────────── */
+  --fk-border-subtle:  rgba(255, 255, 255, 0.06);
+  --fk-border-default: rgba(255, 255, 255, 0.12);
+  --fk-border-strong:  rgba(255, 255, 255, 0.25);
+  --fk-border-accent:  rgba(0, 220, 130, 0.35);
+  --fk-border-focus:   #00dc82;
+
+  /* ── SEMÁNTICOS ──────────────────────────────────────────────── */
+  --fk-success:       #00dc82;
+  --fk-success-bg:    rgba(0, 220, 130, 0.12);
+  --fk-success-text:  #00dc82;
+
+  --fk-warning:       #ffb82e;
+  --fk-warning-bg:    rgba(255, 184, 46, 0.12);
+  --fk-warning-text:  #ffb82e;
+
+  --fk-danger:        #ff4757;
+  --fk-danger-bg:     rgba(255, 71, 87, 0.12);
+  --fk-danger-text:   #ff4757;
+
+  --fk-info:          #3d8aff;
+  --fk-info-bg:       rgba(61, 138, 255, 0.12);
+  --fk-info-text:     #3d8aff;
+
+  /* ── BOTÓN PRIMARIO ──────────────────────────────────────────── */
+  --fk-btn-primary-bg:    #00dc82;
+  --fk-btn-primary-text:  #0f1117;
+  --fk-btn-primary-hover: #00ef8e;
+
+  /* ── TIPOGRAFÍA ──────────────────────────────────────────────── */
+  --fk-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --fk-font-mono: 'DM Mono', 'Courier New', monospace;
+
+  /* Escala de texto (base 16px) */
+  --fk-text-xs:   0.75rem;    /* 12px */
+  --fk-text-sm:   0.875rem;   /* 14px */
+  --fk-text-base: 1rem;       /* 16px */
+  --fk-text-lg:   1.125rem;   /* 18px */
+  --fk-text-xl:   1.25rem;    /* 20px */
+  --fk-text-2xl:  1.5rem;     /* 24px */
+  --fk-text-3xl:  1.875rem;   /* 30px */
+  --fk-text-4xl:  2.25rem;    /* 36px */
+
+  /* Pesos */
+  --fk-font-light:     300;
+  --fk-font-regular:   400;
+  --fk-font-medium:    500;
+  --fk-font-semibold:  600;
+  --fk-font-bold:      700;
+  --fk-font-extrabold: 800;
+
+  /* Altura de línea */
+  --fk-leading-tight:   1.25;
+  --fk-leading-snug:    1.375;
+  --fk-leading-normal:  1.5;
+  --fk-leading-relaxed: 1.625;
+
+  /* ── ESPACIADO (base 4px) ────────────────────────────────────── */
+  --fk-space-1:  0.25rem;   /*  4px */
+  --fk-space-2:  0.5rem;    /*  8px */
+  --fk-space-3:  0.75rem;   /* 12px */
+  --fk-space-4:  1rem;      /* 16px */
+  --fk-space-5:  1.25rem;   /* 20px */
+  --fk-space-6:  1.5rem;    /* 24px */
+  --fk-space-8:  2rem;      /* 32px */
+  --fk-space-10: 2.5rem;    /* 40px */
+  --fk-space-12: 3rem;      /* 48px */
+  --fk-space-16: 4rem;      /* 64px */
+  --fk-space-20: 5rem;      /* 80px */
+
+  /* ── BORDER RADIUS ───────────────────────────────────────────── */
+  --fk-radius-sm:   6px;
+  --fk-radius-md:   10px;
+  --fk-radius-lg:   16px;
+  --fk-radius-xl:   24px;
+  --fk-radius-full: 9999px;
+
+  /* ── SOMBRAS ─────────────────────────────────────────────────── */
+  --fk-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.4);
+  --fk-shadow-md:   0 4px 16px rgba(0, 0, 0, 0.45);
+  --fk-shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
+  --fk-shadow-glow: 0 0 24px var(--fk-accent-glow);
+
+  /* ── Z-INDEX ─────────────────────────────────────────────────── */
+  --fk-z-dropdown:      50;
+  --fk-z-sidebar:       100;
+  --fk-z-modal-overlay: 200;
+  --fk-z-modal:         210;
+  --fk-z-toast:         300;
+
+  /* ── TRANSICIONES ────────────────────────────────────────────── */
+  --fk-transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fk-transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --fk-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── LAYOUT ──────────────────────────────────────────────────── */
+  --fk-sidebar-width:     240px;
+  --fk-sidebar-collapsed: 64px;
+  --fk-header-height:     60px;
+  --fk-content-max:       1440px;
+  --fk-content-padding:   var(--fk-space-6);
+}

@@ -1,0 +1,69 @@
+/* ============================================================
+   FINKO — THEMES
+   Modo oscuro: default (en tokens.css / :root).
+   Modo claro: body.light-theme sobrescribe los tokens.
+   ============================================================ */
+
+body.light-theme {
+  /* ── FONDOS ─────────────────────────────────────────────── */
+  --fk-bg-base:     #f4f5f9;
+  --fk-bg-surface:  #ffffff;
+  --fk-bg-elevated: #edf0f7;
+  --fk-bg-hover:    rgba(0, 0, 0, 0.04);
+  --fk-bg-active:   rgba(0, 0, 0, 0.08);
+  --fk-bg-glass:    rgba(255, 255, 255, 0.75);
+
+  /* ── TEXTO ───────────────────────────────────────────────── */
+  --fk-text-primary:   #1a1d27;
+  --fk-text-secondary: #4a5168;
+  --fk-text-muted:     #7a7f95;
+  --fk-text-disabled:  #b0b4c8;
+  --fk-text-on-accent: #ffffff;
+  --fk-text-accent:    #006b3d;
+  --fk-text-inverse:   #e8eaf2;
+
+  /* ── BORDES ──────────────────────────────────────────────── */
+  --fk-border-subtle:  rgba(0, 0, 0, 0.06);
+  --fk-border-default: rgba(0, 0, 0, 0.12);
+  --fk-border-strong:  rgba(0, 0, 0, 0.25);
+  --fk-border-accent:  rgba(0, 107, 61, 0.3);
+  --fk-border-focus:   #006b3d;
+
+  /* ── SEMÁNTICOS ──────────────────────────────────────────── */
+  --fk-success:      #006b3d;
+  --fk-success-bg:   rgba(0, 107, 61, 0.1);
+  --fk-success-text: #006b3d;
+
+  --fk-warning:      #a06800;
+  --fk-warning-bg:   rgba(160, 104, 0, 0.1);
+  --fk-warning-text: #a06800;
+
+  --fk-danger:       #c0202f;
+  --fk-danger-bg:    rgba(192, 32, 47, 0.1);
+  --fk-danger-text:  #c0202f;
+
+  --fk-info:         #1a5fd4;
+  --fk-info-bg:      rgba(26, 95, 212, 0.1);
+  --fk-info-text:    #1a5fd4;
+
+  /* ── BOTÓN PRIMARIO ──────────────────────────────────────── */
+  --fk-btn-primary-bg:    #006b3d;
+  --fk-btn-primary-text:  #ffffff;
+  --fk-btn-primary-hover: #005a33;
+
+  /* ── SOMBRAS ─────────────────────────────────────────────── */
+  --fk-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.12);
+  --fk-shadow-md:   0 4px 16px rgba(0, 0, 0, 0.1);
+  --fk-shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.12);
+  --fk-shadow-glow: 0 0 24px rgba(0, 107, 61, 0.2);
+
+  /* El acento decorativo (#00dc82) se mantiene igual en ambos temas */
+  /* Solo los tokens interactivos y de texto cambian */
+}
+
+/* ── TRANSICIÓN SUAVE ENTRE TEMAS ───────────────────────────── */
+body {
+  transition:
+    background-color var(--fk-transition-slow),
+    color var(--fk-transition-slow);
+}
