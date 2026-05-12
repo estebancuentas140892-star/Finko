@@ -1,522 +1,310 @@
 <!DOCTYPE html>
-<html lang="es-CO">
+<html lang="es" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Finko — Gestión financiera personal para Colombia. Sin servidor, sin cuenta, 100% privado." />
-  <title>Finko — Design System (Fase 2)</title>
+  <meta name="description" content="Finko — Tu gestión financiera personal, en tu idioma" />
+  <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f4f5f9" media="(prefers-color-scheme: light)" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- CSS -->
   <link rel="stylesheet" href="styles/main.css" />
+
+  <!-- Preload crítico (Fase 3) -->
+  <link rel="modulepreload" href="modules/infra/router.js" />
+  <link rel="modulepreload" href="modules/ui/shell.js" />
+  <link rel="modulepreload" href="modules/ui/events.js" />
+
+  <title>Finko — Tu plata bajo control</title>
 </head>
 <body>
 
-<!-- ── SKIP LINK ──────────────────────────────────────────────── -->
-<a href="#main" class="skip-link">Saltar al contenido principal</a>
+  <div class="app-shell" id="app">
 
-<!-- ── ARIA LIVE REGION ───────────────────────────────────────── -->
-<div id="fk-aria-live" aria-live="polite" aria-atomic="true"></div>
+    <!-- ══════════════════════════════════════════════════════════
+         SIDEBAR — navegación principal
+         ══════════════════════════════════════════════════════════ -->
+    <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
 
-<!-- ══════════════════════════════════════════════════════════════
-     SHOWCASE — Fase 2 (se reemplaza en Fase 3 con el HTML real)
-     Muestra todos los componentes del Design System para verificar
-     que el CSS funciona correctamente en ambos temas.
-     ══════════════════════════════════════════════════════════════ -->
-
-<div class="showcase">
-
-  <!-- Header fijo del showcase -->
-  <header class="showcase-header">
-    <div class="showcase-header__brand">
-      <span class="showcase-brand">Finko</span>
-      <span class="chip chip-accent">Design System · Fase 2</span>
-    </div>
-    <div class="d-flex items-center gap-4">
-      <label class="toggle" aria-label="Cambiar tema">
-        <input type="checkbox" id="theme-toggle" role="switch" aria-checked="false" />
-        <span class="toggle__track"></span>
-      </label>
-      <span class="text-sm text-muted" id="theme-label">Oscuro</span>
-    </div>
-  </header>
-
-  <main id="main" class="showcase-main">
-
-    <!-- ── 1. TIPOGRAFÍA ─────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="tipo-title">
-      <h2 id="tipo-title" class="showcase-section__title">Tipografía</h2>
-      <div class="card">
-        <p style="font-size:var(--fk-text-4xl);font-weight:var(--fk-font-extrabold);line-height:1.2">
-          Tu plata, tu control
-        </p>
-        <p style="font-size:var(--fk-text-3xl);font-weight:var(--fk-font-bold)">
-          Finanzas claras para todos
-        </p>
-        <p style="font-size:var(--fk-text-2xl);font-weight:var(--fk-font-semibold)">
-          Sin tecnicismos, sin enredos
-        </p>
-        <p style="font-size:var(--fk-text-xl)">
-          ¿Cuánto te queda libre pa' gastar?
-        </p>
-        <p style="font-size:var(--fk-text-lg)">
-          Registrá tus gastos con un toque
-        </p>
-        <p style="font-size:var(--fk-text-base)">
-          Tu fondo de emergencia cubre 3 meses de gastos
-        </p>
-        <p style="font-size:var(--fk-text-sm);color:var(--fk-text-secondary)">
-          Tasa de usura vigente: 24,36% efectivo anual · Q1 2026
-        </p>
-        <p class="text-xs text-muted">
-          Valores en COP · Solo aplica para Colombia
-        </p>
-        <div class="divider"></div>
-        <p style="font-family:var(--fk-font-mono);font-size:var(--fk-text-3xl);font-weight:800;letter-spacing:-0.02em;color:var(--fk-text-accent)">
-          $4.850.000
-        </p>
-        <p style="font-family:var(--fk-font-mono);font-size:var(--fk-text-sm);color:var(--fk-text-muted)">
-          DM Mono — para valores monetarios
-        </p>
+      <!-- Logo -->
+      <div class="sidebar__logo" aria-label="Finko">
+        <span class="sidebar__logo-icon" aria-hidden="true">💚</span>
+        <span class="sidebar__logo-text">Finko</span>
       </div>
-    </section>
 
-    <!-- ── 2. COLORES ────────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="color-title">
-      <h2 id="color-title" class="showcase-section__title">Paleta</h2>
-      <div class="showcase-colors">
-        <div class="showcase-swatch" style="background:var(--fk-accent)">
-          <span>Accent</span><span>#00dc82</span>
+      <!-- Nav items -->
+      <div class="sidebar__nav" role="list">
+
+        <div class="nav-group" role="listitem">
+          <span class="nav-group__label" id="nav-label-principal">Principal</span>
+          <div role="list" aria-labelledby="nav-label-principal">
+
+            <a class="nav-item active" href="#dash" data-section="dash"
+               role="listitem" aria-current="page" aria-label="Dashboard — resumen financiero">
+              <span class="nav-item__icon" aria-hidden="true">💰</span>
+              <span class="nav-item__label">Dashboard</span>
+            </a>
+
+            <a class="nav-item" href="#gast" data-section="gast"
+               role="listitem" aria-label="Gastos">
+              <span class="nav-item__icon" aria-hidden="true">💸</span>
+              <span class="nav-item__label">Gastos</span>
+            </a>
+
+            <a class="nav-item" href="#compromisos" data-section="compromisos"
+               role="listitem" aria-label="Compromisos y deudas">
+              <span class="nav-item__icon" aria-hidden="true">🔗</span>
+              <span class="nav-item__label">Compromisos</span>
+            </a>
+
+            <a class="nav-item" href="#tesoreria" data-section="tesoreria"
+               role="listitem" aria-label="Tesorería y cuentas">
+              <span class="nav-item__icon" aria-hidden="true">🏦</span>
+              <span class="nav-item__label">Tesorería</span>
+            </a>
+
+          </div>
         </div>
-        <div class="showcase-swatch" style="background:var(--fk-bg-surface);border:1px solid var(--fk-border-default)">
-          <span>Surface</span>
+
+        <div class="nav-group" role="listitem">
+          <span class="nav-group__label" id="nav-label-plan">Planificación</span>
+          <div role="list" aria-labelledby="nav-label-plan">
+
+            <a class="nav-item" href="#metas" data-section="metas"
+               role="listitem" aria-label="Metas de ahorro">
+              <span class="nav-item__icon" aria-hidden="true">🎯</span>
+              <span class="nav-item__label">Metas</span>
+            </a>
+
+            <a class="nav-item" href="#analisis" data-section="analisis"
+               role="listitem" aria-label="Análisis financiero">
+              <span class="nav-item__icon" aria-hidden="true">📊</span>
+              <span class="nav-item__label">Análisis</span>
+            </a>
+
+            <a class="nav-item" href="#calc" data-section="calc"
+               role="listitem" aria-label="Calculadoras financieras">
+              <span class="nav-item__icon" aria-hidden="true">🔢</span>
+              <span class="nav-item__label">Calculadoras</span>
+            </a>
+
+          </div>
         </div>
-        <div class="showcase-swatch" style="background:var(--fk-bg-elevated);border:1px solid var(--fk-border-default)">
-          <span>Elevated</span>
-        </div>
-        <div class="showcase-swatch" style="background:var(--fk-success-bg);border:1px solid rgba(0,220,130,0.2)">
-          <span style="color:var(--fk-success-text)">Éxito</span>
-        </div>
-        <div class="showcase-swatch" style="background:var(--fk-warning-bg);border:1px solid rgba(255,184,46,0.2)">
-          <span style="color:var(--fk-warning-text)">Alerta</span>
-        </div>
-        <div class="showcase-swatch" style="background:var(--fk-danger-bg);border:1px solid rgba(255,71,87,0.2)">
-          <span style="color:var(--fk-danger-text)">Peligro</span>
-        </div>
-        <div class="showcase-swatch" style="background:var(--fk-info-bg);border:1px solid rgba(61,138,255,0.2)">
-          <span style="color:var(--fk-info-text)">Info</span>
-        </div>
+
       </div>
-    </section>
 
-    <!-- ── 3. BOTONES ────────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="btn-title">
-      <h2 id="btn-title" class="showcase-section__title">Botones</h2>
-      <div class="card">
-        <div class="d-flex flex-wrap gap-3">
-          <button class="btn btn-primary">Guardar</button>
-          <button class="btn btn-secondary">Cancelar</button>
-          <button class="btn btn-accent">Ver detalle</button>
-          <button class="btn btn-ghost">Ignorar</button>
-          <button class="btn btn-danger">Eliminar</button>
-          <button class="btn btn-primary" disabled>Deshabilitado</button>
+      <!-- Footer del sidebar -->
+      <div class="sidebar__footer">
+        <button class="nav-item" data-action="theme-toggle"
+                aria-label="Cambiar tema" aria-pressed="false">
+          <span class="nav-item__icon" aria-hidden="true">🌙</span>
+          <span class="nav-item__label">Modo oscuro</span>
+        </button>
+
+        <a class="nav-item" href="#config" data-section="config"
+           aria-label="Ajustes de la aplicación">
+          <span class="nav-item__icon" aria-hidden="true">⚙️</span>
+          <span class="nav-item__label">Ajustes</span>
+        </a>
+      </div>
+
+    </nav>
+
+    <!-- ══════════════════════════════════════════════════════════
+         MAIN CONTENT — secciones de la app
+         Cada sección empieza oculta; el router activa la correcta.
+         ══════════════════════════════════════════════════════════ -->
+    <main class="main-content" id="main-content" tabindex="-1" aria-live="polite">
+
+      <!-- DASHBOARD -->
+      <section class="section" id="sec-dash" aria-labelledby="title-dash">
+        <header class="section__header">
+          <h1 class="section__title" id="title-dash">Tu resumen</h1>
+        </header>
+        <div class="bento" id="bento-dash" role="region" aria-label="Métricas principales">
+          <!-- Fase 5 (ingresos) + Fase 6 (gastos) renderizan aquí -->
+          <article class="bento__cell bento__cell--wide bento__cell--tall bento__cell--accent">
+            <p class="bento__label">Tu plata disponible hoy</p>
+            <p class="bento__value bento__value--accent" id="saldo-total">$0</p>
+            <p class="bento__desc">efectivo + cuentas bancarias</p>
+          </article>
+          <article class="bento__cell">
+            <p class="bento__label">Gastos del mes</p>
+            <p class="bento__value" id="gastos-mes">$0</p>
+          </article>
+          <article class="bento__cell">
+            <p class="bento__label">Compromisos activos</p>
+            <p class="bento__value" id="compromisos-count">0</p>
+          </article>
         </div>
-        <div class="d-flex flex-wrap gap-3 mt-4">
-          <button class="btn btn-primary btn-sm">Pequeño</button>
-          <button class="btn btn-primary">Normal</button>
-          <button class="btn btn-primary btn-lg">Grande</button>
-        </div>
-        <div class="d-flex flex-wrap gap-3 mt-4">
-          <button class="btn btn-primary" aria-busy="true">
-            <span class="spinner" style="width:14px;height:14px;border-width:2px"></span>
-            Guardando…
+      </section>
+
+      <!-- GASTOS -->
+      <section class="section" id="sec-gast" aria-labelledby="title-gast">
+        <header class="section__header">
+          <h1 class="section__title" id="title-gast">Gastos</h1>
+          <button class="btn btn-primary" data-action="modal-open" data-modal="modal-gasto"
+                  aria-label="Registrar nuevo gasto">
+            + Nuevo gasto
           </button>
-          <button class="btn btn-secondary">
-            + Agregar gasto
+        </header>
+        <div id="lista-gastos">
+          <!-- Fase 6: gastos/view.js renderiza aquí -->
+        </div>
+      </section>
+
+      <!-- COMPROMISOS -->
+      <section class="section" id="sec-compromisos" aria-labelledby="title-compromisos">
+        <header class="section__header">
+          <h1 class="section__title" id="title-compromisos">Compromisos</h1>
+          <button class="btn btn-primary" data-action="modal-open" data-modal="modal-compromiso"
+                  aria-label="Registrar nuevo compromiso">
+            + Nuevo
           </button>
+        </header>
+        <div id="lista-compromisos">
+          <!-- Fase 7: compromisos/view.js renderiza aquí -->
         </div>
+      </section>
+
+      <!-- TESORERÍA -->
+      <section class="section" id="sec-tesoreria" aria-labelledby="title-tesoreria">
+        <header class="section__header">
+          <h1 class="section__title" id="title-tesoreria">Tesorería</h1>
+          <button class="btn btn-primary" data-action="modal-open" data-modal="modal-cuenta"
+                  aria-label="Agregar cuenta o fuente de ingreso">
+            + Cuenta
+          </button>
+        </header>
+        <div id="lista-tesoreria">
+          <!-- Fase 8: tesoreria/view.js renderiza aquí -->
+        </div>
+      </section>
+
+      <!-- METAS -->
+      <section class="section" id="sec-metas" aria-labelledby="title-metas">
+        <header class="section__header">
+          <h1 class="section__title" id="title-metas">Metas</h1>
+          <button class="btn btn-primary" data-action="modal-open" data-modal="modal-meta"
+                  aria-label="Crear nueva meta de ahorro">
+            + Meta
+          </button>
+        </header>
+        <div id="lista-metas">
+          <!-- Fase 9: metas/view.js renderiza aquí -->
+        </div>
+      </section>
+
+      <!-- ANÁLISIS -->
+      <section class="section" id="sec-analisis" aria-labelledby="title-analisis">
+        <header class="section__header">
+          <h1 class="section__title" id="title-analisis">Análisis</h1>
+        </header>
+        <div id="panel-analisis">
+          <!-- Fase 10: analisis/view.js renderiza aquí -->
+        </div>
+      </section>
+
+      <!-- CALCULADORAS (lazy) -->
+      <section class="section" id="sec-calc" aria-labelledby="title-calc">
+        <header class="section__header">
+          <h1 class="section__title" id="title-calc">Calculadoras</h1>
+        </header>
+        <div id="panel-calc">
+          <!-- Fase 11: calculadoras/index.js — carga lazy en primera visita -->
+        </div>
+      </section>
+
+      <!-- AJUSTES -->
+      <section class="section" id="sec-config" aria-labelledby="title-config">
+        <header class="section__header">
+          <h1 class="section__title" id="title-config">Ajustes</h1>
+        </header>
+        <div id="panel-config">
+          <!-- Fase 12: config/view.js renderiza aquí -->
+        </div>
+      </section>
+
+    </main>
+
+  </div><!-- /.app-shell -->
+
+  <!-- ══════════════════════════════════════════════════════════
+       MODALES — scaffolding (Fases 6–12 completan el contenido)
+       Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
+       ══════════════════════════════════════════════════════════ -->
+
+  <!-- Modal: Nuevo gasto -->
+  <div class="modal-overlay" id="modal-gasto"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-gasto-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-gasto-title">Nuevo gasto</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-gasto-body">
+        <!-- Fase 6 -->
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- ── 4. INPUTS ─────────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="input-title">
-      <h2 id="input-title" class="showcase-section__title">Formularios</h2>
-      <div class="card" style="max-width:480px">
-        <div class="form-group">
-          <label class="label label-required" for="demo-desc">Descripción</label>
-          <input class="input" id="demo-desc" type="text" placeholder="Ej: Mercado del mes" />
-        </div>
-        <div class="form-group">
-          <label class="label label-required" for="demo-monto">Monto</label>
-          <div class="input-group">
-            <span class="input-prefix" aria-hidden="true">$</span>
-            <input class="input input-money input--has-prefix" id="demo-monto"
-                   type="number" min="0" placeholder="150.000" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="label" for="demo-cat">Categoría</label>
-          <select class="input select" id="demo-cat">
-            <option value="">Seleccionar…</option>
-            <option>Alimentación</option>
-            <option>Transporte</option>
-            <option>Salud</option>
-            <option>Entretenimiento</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="label" for="demo-nota">Nota (opcional)</label>
-          <textarea class="input" id="demo-nota" placeholder="¿Algún contexto?"></textarea>
-          <span class="helper-text">Máximo 200 caracteres</span>
-        </div>
-        <div class="form-group">
-          <label class="label">Estado de validación</label>
-          <input class="input input--error" type="text" value="Valor inválido" aria-invalid="true" />
-          <span class="helper-text helper-text--error">El monto no puede ser negativo</span>
-        </div>
-        <div class="d-flex justify-end gap-3 mt-4">
-          <button class="btn btn-ghost">Cancelar</button>
-          <button class="btn btn-primary">Guardar gasto</button>
-        </div>
+  <!-- Modal: Nuevo compromiso -->
+  <div class="modal-overlay" id="modal-compromiso"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-compromiso-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-compromiso-title">Nuevo compromiso</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-compromiso-body">
+        <!-- Fase 7 -->
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- ── 5. CHIPS Y BADGES ──────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="chip-title">
-      <h2 id="chip-title" class="showcase-section__title">Chips y Badges</h2>
-      <div class="card">
-        <div class="d-flex flex-wrap gap-2">
-          <span class="chip">Neutral</span>
-          <span class="chip chip-accent">Activo</span>
-          <span class="chip chip-success">Pagado</span>
-          <span class="chip chip-warning">Pendiente</span>
-          <span class="chip chip-danger">Vencido</span>
-          <span class="chip chip-info">En progreso</span>
-        </div>
-        <div class="d-flex flex-wrap gap-3 mt-4 items-center">
-          <span class="badge">3</span>
-          <span class="badge badge-accent">12</span>
-          <span class="badge badge-warning">!</span>
-          <span class="text-sm text-secondary">Badges para conteos y alertas</span>
-        </div>
+  <!-- Modal: Nueva cuenta -->
+  <div class="modal-overlay" id="modal-cuenta"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-cuenta-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-cuenta-title">Nueva cuenta</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-cuenta-body">
+        <!-- Fase 8 -->
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- ── 6. LIST ITEMS ─────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="list-title">
-      <h2 id="list-title" class="showcase-section__title">List Items</h2>
-      <ul class="showcase-list" role="list" aria-label="Gastos recientes">
-        <li>
-          <article class="list-item">
-            <div class="list-item__icon" aria-hidden="true">🛒</div>
-            <div class="list-item__content">
-              <p class="list-item__title">Mercado del mes</p>
-              <p class="list-item__subtitle">Alimentación · Hoy</p>
-            </div>
-            <span class="list-item__amount text-danger">-$285.000</span>
-          </article>
-        </li>
-        <li>
-          <article class="list-item">
-            <div class="list-item__icon" aria-hidden="true">🚌</div>
-            <div class="list-item__content">
-              <p class="list-item__title">TransMilenio quincenal</p>
-              <p class="list-item__subtitle">Transporte · Ayer</p>
-            </div>
-            <span class="list-item__amount text-danger">-$74.400</span>
-          </article>
-        </li>
-        <li>
-          <article class="list-item">
-            <div class="list-item__icon" aria-hidden="true">💰</div>
-            <div class="list-item__content">
-              <p class="list-item__title">Quincena</p>
-              <p class="list-item__subtitle">Ingreso · 1 may</p>
-            </div>
-            <span class="list-item__amount text-success">+$1.850.000</span>
-          </article>
-        </li>
-      </ul>
-    </section>
-
-    <!-- ── 7. PROGRESS BAR ───────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="prog-title">
-      <h2 id="prog-title" class="showcase-section__title">Progreso y Toggle</h2>
-      <div class="card" style="max-width:480px;gap:var(--fk-space-5)">
-        <div>
-          <div class="d-flex justify-between mb-2">
-            <span class="text-sm text-secondary">Meta: viaje a San Andrés</span>
-            <span class="text-sm text-accent font-semibold">68%</span>
-          </div>
-          <div class="progress" role="progressbar" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar" style="width:68%"></div>
-          </div>
-        </div>
-        <div>
-          <div class="d-flex justify-between mb-2">
-            <span class="text-sm text-secondary">Presupuesto gastado</span>
-            <span class="text-sm text-warning font-semibold">85%</span>
-          </div>
-          <div class="progress" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar progress__bar--warning" style="width:85%"></div>
-          </div>
-        </div>
-        <div>
-          <div class="d-flex justify-between mb-2">
-            <span class="text-sm text-secondary">Cupo tarjeta usado</span>
-            <span class="text-sm text-danger font-semibold">96%</span>
-          </div>
-          <div class="progress" role="progressbar" aria-valuenow="96" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar progress__bar--danger" style="width:96%"></div>
-          </div>
-        </div>
-        <div class="d-flex items-center justify-between">
-          <span class="text-sm text-secondary">Notificaciones de mora</span>
-          <label class="toggle" aria-label="Activar notificaciones de mora">
-            <input type="checkbox" checked role="switch" aria-checked="true" />
-            <span class="toggle__track"></span>
-          </label>
-        </div>
+  <!-- Modal: Nueva meta -->
+  <div class="modal-overlay" id="modal-meta"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-meta-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-meta-title">Nueva meta de ahorro</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-meta-body">
+        <!-- Fase 9 -->
       </div>
-    </section>
+    </div>
+  </div>
 
-    <!-- ── 8. BENTO GRID ─────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="bento-title">
-      <h2 id="bento-title" class="showcase-section__title">Bento Grid — Dashboard</h2>
-      <div class="bento" role="region" aria-label="Vista previa del dashboard">
-
-        <!-- Celda grande: saldo principal -->
-        <article class="bento__cell bento__cell--wide bento__cell--tall bento__cell--accent"
-                 aria-label="Tu plata disponible hoy">
-          <p class="bento__label">Tu plata disponible hoy</p>
-          <p class="bento__value bento__value--accent bento__value--lg">$2.485.000</p>
-          <p class="bento__desc">efectivo + cuentas bancarias</p>
-          <div class="bento__footer">
-            <div class="d-flex gap-2">
-              <span class="chip chip-success">libre pa' gastar $1.200.000</span>
-              <span class="chip">en bolsillos $1.285.000</span>
-            </div>
-          </div>
-        </article>
-
-        <!-- Celda pequeña: gastos del mes -->
-        <article class="bento__cell" aria-label="Gastos del mes">
-          <p class="bento__label">Gastos del mes</p>
-          <p class="bento__value" style="font-size:var(--fk-text-2xl)">$985.400</p>
-          <div class="progress mt-4" role="progressbar" aria-valuenow="53" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar" style="width:53%"></div>
-          </div>
-          <p class="text-xs text-muted mt-2">53% del presupuesto</p>
-        </article>
-
-        <!-- Celda pequeña: próxima deuda -->
-        <article class="bento__cell card-warning" aria-label="Próximo pago">
-          <p class="bento__label">Próximo pago</p>
-          <p class="bento__value" style="font-size:var(--fk-text-xl);color:var(--fk-warning-text)">
-            Crédito bancario
-          </p>
-          <p class="bento__desc">$380.000 · vence en 5 días</p>
-          <div class="bento__footer">
-            <button class="btn btn-sm btn-accent">Registrar pago</button>
-          </div>
-        </article>
-
-        <!-- Celda pequeña: salud financiera -->
-        <article class="bento__cell" aria-label="Salud financiera">
-          <p class="bento__label">Salud financiera</p>
-          <p class="bento__value bento__value--accent" style="font-size:var(--fk-text-3xl)">72%</p>
-          <p class="bento__desc">Bien — fondo de emergencia listo</p>
-          <div class="progress mt-4" role="progressbar" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar" style="width:72%"></div>
-          </div>
-        </article>
-
-        <!-- Celda pequeña: meta activa -->
-        <article class="bento__cell" aria-label="Meta activa">
-          <p class="bento__label">Meta activa</p>
-          <p class="bento__value" style="font-size:var(--fk-text-xl)">Viaje San Andrés</p>
-          <p class="bento__desc">$1.360.000 de $2.000.000</p>
-          <div class="progress mt-4" role="progressbar" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100">
-            <div class="progress__bar" style="width:68%"></div>
-          </div>
-        </article>
-
-        <!-- Celda wide: alerta -->
-        <article class="bento__cell bento__cell--wide card-danger" aria-label="Alerta">
-          <p class="bento__label">Alerta del mes</p>
-          <p class="bento__desc" style="font-size:var(--fk-text-base)">
-            Detectamos <strong>3 gastos hormiga</strong> que suman $87.000/mes.
-            Ese dinero en un CDT al 10% EA son $91.700 al año.
-          </p>
-          <div class="bento__footer">
-            <button class="btn btn-sm btn-danger">Ver detalle</button>
-          </div>
-        </article>
-
-      </div>
-    </section>
-
-    <!-- ── 9. EMPTY STATE ────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="empty-title">
-      <h2 id="empty-title" class="showcase-section__title">Empty State</h2>
-      <div class="card" style="max-width:400px">
-        <div class="empty-state">
-          <div class="empty-state__icon" aria-hidden="true">💸</div>
-          <h3 class="empty-state__title">Aún no hay gastos</h3>
-          <p class="empty-state__desc">
-            Registrá tu primer gasto para empezar a entender a dónde va tu plata.
-          </p>
-          <button class="btn btn-primary">+ Agregar gasto</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 10. CARDS ─────────────────────────────────────────── -->
-    <section class="showcase-section" aria-labelledby="card-title">
-      <h2 id="card-title" class="showcase-section__title">Cards</h2>
-      <div class="showcase-grid-2">
-        <div class="card card-accent">
-          <div class="card__header">
-            <span class="card__title">Saldo total</span>
-            <span class="chip chip-success">+2.3%</span>
-          </div>
-          <p class="card__value" style="color:var(--fk-text-accent)">$4.850.000</p>
-          <div class="card__footer">
-            <span class="text-sm text-muted">Actualizado hoy</span>
-            <button class="btn btn-ghost btn-sm">Ver detalle</button>
-          </div>
-        </div>
-        <div class="card card-elevated">
-          <div class="card__header">
-            <span class="card__title">Deuda activa</span>
-            <span class="chip chip-warning">2 deudas</span>
-          </div>
-          <p class="card__value">$3.200.000</p>
-          <div class="card__footer">
-            <span class="text-sm text-muted">Tasa promedio: 18% EA</span>
-            <button class="btn btn-ghost btn-sm">Estrategia</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="showcase-footer">
-    <p class="text-sm text-muted text-center">
-      Finko Claude · Design System · Fase 2 completada ·
-      <a href="docs/DESIGN_SYSTEM.md" class="link">Ver documentación</a>
-    </p>
-  </footer>
-
-</div><!-- /showcase -->
-
-<!-- ── SHOWCASE STYLES (solo para esta página de prueba) ──────── -->
-<style>
-  .showcase {
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .showcase-header {
-    position: sticky;
-    top: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--fk-space-3) var(--fk-space-6);
-    background: var(--fk-bg-glass);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--fk-border-subtle);
-    z-index: var(--fk-z-sidebar);
-  }
-  .showcase-header__brand { display: flex; align-items: center; gap: var(--fk-space-3); }
-  .showcase-brand {
-    font-size: var(--fk-text-xl);
-    font-weight: var(--fk-font-extrabold);
-    color: var(--fk-text-accent);
-    letter-spacing: -0.03em;
-  }
-
-  .showcase-main {
-    flex: 1;
-    padding: var(--fk-space-8) var(--fk-space-6);
-    max-width: 960px;
-    margin-inline: auto;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: var(--fk-space-10);
-  }
-
-  .showcase-section__title {
-    font-size: var(--fk-text-sm);
-    font-weight: var(--fk-font-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--fk-text-muted);
-    margin-bottom: var(--fk-space-4);
-  }
-
-  .showcase-colors {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: var(--fk-space-3);
-  }
-  .showcase-swatch {
-    height: 80px;
-    border-radius: var(--fk-radius-lg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    font-size: var(--fk-text-xs);
-    font-weight: var(--fk-font-medium);
-    color: var(--fk-text-primary);
-  }
-
-  .showcase-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--fk-space-2);
-  }
-
-  .showcase-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--fk-space-4);
-  }
-
-  .showcase-footer {
-    padding: var(--fk-space-6);
-    border-top: 1px solid var(--fk-border-subtle);
-  }
-
-  @media (max-width: 600px) {
-    .showcase-main { padding: var(--fk-space-4); }
-    .showcase-grid-2 { grid-template-columns: 1fr; }
-    .bento { grid-template-columns: 1fr; }
-    .bento__cell,
-    .bento__cell--wide { grid-column: span 1; grid-row: span 1; }
-  }
-</style>
-
-<!-- ── TOGGLE DE TEMA (JS mínimo para el showcase) ────────────── -->
-<script type="module">
-  const toggle = document.getElementById('theme-toggle');
-  const label  = document.getElementById('theme-label');
-
-  toggle.addEventListener('change', () => {
-    const isLight = toggle.checked;
-    document.body.classList.toggle('light-theme', isLight);
-    toggle.setAttribute('aria-checked', String(isLight));
-    label.textContent = isLight ? 'Claro' : 'Oscuro';
-  });
-</script>
+  <!-- ── SCRIPTS ─────────────────────────────────────────────────
+       type="module" garantiza defer, strict mode, scope aislado.
+  ──────────────────────────────────────────────────────────────── -->
+  <script type="module" src="modules/ui/events.js"></script>
 
 </body>
 </html>

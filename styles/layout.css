@@ -163,7 +163,12 @@
 }
 
 .section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-4);
   margin-bottom: var(--fk-space-6);
+  flex-wrap: wrap;
 }
 .section__title {
   font-size: var(--fk-text-2xl);
