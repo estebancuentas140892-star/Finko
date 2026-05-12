@@ -5,28 +5,26 @@
 
 ---
 
-## Fase actual: Fase 3 — HTML Shell + Router hash
+## Fase actual: Fase 4 — Core JS (state + storage + constants)
 
 ### En progreso 🔄
 
-- [ ] 3.1 — Shell principal con landmarks semánticos (`header`, `nav`, `main`, `aside`)
-- [ ] 3.2 — Sidebar con 8 secciones de navegación
-- [ ] 3.3 — `main` con 8 `<section>` vacíos (contenedores listos para Fases 5–12)
-- [ ] 3.4 — Scaffolding de modales vacíos (listos para Fases 5–12)
-- [ ] 3.5 — PWA meta tags (`viewport`, `theme-color`, `manifest`, `modulepreload`)
-- [ ] 3.6 — `modules/infra/router.js` — hash routing con `hashchange`
-- [ ] 3.7 — `modules/ui/shell.js` — navegación activa + tema toggle
+- [ ] 4.1 — `modules/core/constants.js` — constantes financieras CO (tasa usura, UVT, SMMLv)
+- [ ] 4.2 — `modules/core/state.js` — singleton `S` mutable con schema v1
+- [ ] 4.3 — `modules/core/storage.js` — `loadData()` con migración, `save()` debounced 200ms
+- [ ] 4.4 — `tests/unit/storage.test.js` — tests de migraciones idempotentes
+- [ ] 4.5 — `tests/unit/state.test.js` — tests de forma del estado inicial
+- [ ] 4.6 — Integrar storage con events.js: `loadData()` en bootstrap
 
-### Criterios de salida de Fase 3
+### Criterios de salida de Fase 4
 
-- [ ] 0 `onclick=""` en index.html
-- [ ] Hash routing funciona: `#dash`, `#gast`, `#compromisos`, etc.
-- [ ] Sidebar marca el ítem activo correctamente
-- [ ] Keyboard navigation: Tab, Enter, flechas navegan el sidebar
-- [ ] W3C Validator: 0 errores
-- [ ] Bento demo reemplazado por dashboard real vacío
+- [ ] `npm test` pasa ≥ 10 tests nuevos, 0 failures
+- [ ] `loadData()` devuelve estado válido en localStorage vacío
+- [ ] `save()` escribe en `localStorage` con key `fk_v1`
+- [ ] Constantes exportadas sin `window.X`
+- [ ] Schema v1 documentado en `ARCHITECTURE.md`
 
-**Modelo recomendado:** Sonnet 4.6 — Esfuerzo Medio
+**Modelo recomendado:** Opus 4.7 — Esfuerzo Alto
 
 ---
 
@@ -65,11 +63,22 @@
 - [x] 2.11 — `styles/main.css` (importa todo con `@layer`)
 - [x] 2.12 — `docs/DESIGN_SYSTEM.md` con todos los tokens documentados
 
+### Fase 3 — HTML Shell + Router hash ✅
+
+- [x] 3.1 — Shell principal con landmarks semánticos (`nav`, `main`)
+- [x] 3.2 — Sidebar con 7 secciones de navegación + footer con theme toggle y ajustes
+- [x] 3.3 — `main` con 8 `<section>` listos para Fases 5–12
+- [x] 3.4 — Scaffolding de 4 modales vacíos (gasto, compromiso, cuenta, meta)
+- [x] 3.5 — PWA meta tags (`theme-color`, `manifest`, `modulepreload`)
+- [x] 3.6 — `modules/infra/router.js` — hash routing funcional (verificado `#dash ↔ #gast`)
+- [x] 3.7 — `modules/ui/shell.js` — nav activo + tema toggle persistente
+- [x] `modules/ui/events.js` — bootstrap: delegación `data-action`, modales, Escape
+
 ---
 
 ## Backlog (fases futuras)
 
-Ver [ROADMAP.md](ROADMAP.md) para el detalle completo de Fases 4–14.
+Ver [ROADMAP.md](ROADMAP.md) para el detalle completo de Fases 5–14.
 
 ---
 
