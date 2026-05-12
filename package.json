@@ -1,0 +1,21 @@
+{
+  "name": "finko-claude",
+  "version": "0.1.0",
+  "description": "PWA offline-first de gestión financiera personal para Colombia",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "lint": "eslint modules/ tests/",
+    "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
+    "serve": "python -m http.server 8080"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "eslint": "^9.6.0",
+    "happy-dom": "^14.0.0",
+    "prettier": "^3.3.0",
+    "vitest": "^2.1.0"
+  }
+}
