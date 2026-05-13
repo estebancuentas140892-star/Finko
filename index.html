@@ -13,10 +13,14 @@
   <!-- CSS -->
   <link rel="stylesheet" href="styles/main.css" />
 
-  <!-- Preload crítico (Fase 3) -->
+  <!-- Preload crítico -->
+  <link rel="modulepreload" href="modules/core/state.js" />
+  <link rel="modulepreload" href="modules/core/storage.js" />
   <link rel="modulepreload" href="modules/infra/router.js" />
+  <link rel="modulepreload" href="modules/infra/render.js" />
   <link rel="modulepreload" href="modules/ui/shell.js" />
-  <link rel="modulepreload" href="modules/ui/events.js" />
+  <link rel="modulepreload" href="modules/ui/actions.js" />
+  <link rel="modulepreload" href="modules/ui/bootstrap.js" />
 
   <title>Finko — Tu plata bajo control</title>
 </head>
@@ -304,7 +308,7 @@
   <!-- ── SCRIPTS ─────────────────────────────────────────────────
        type="module" garantiza defer, strict mode, scope aislado.
   ──────────────────────────────────────────────────────────────── -->
-  <script type="module" src="modules/ui/events.js"></script>
+  <script type="module" src="modules/ui/bootstrap.js"></script>
 
 </body>
 </html>

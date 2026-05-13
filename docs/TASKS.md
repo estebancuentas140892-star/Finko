@@ -5,13 +5,24 @@
 
 ---
 
-## Fase actual: Fase 6 — UI Shell
+## Fase actual: Fase 7 — Dominio: Tesorería
 
 Próximo paso del [ROADMAP.md](ROADMAP.md). Tareas a detallar al iniciar la fase.
 
 ---
 
 ## Completadas ✅
+
+### Fase 6 — UI Shell ✅
+
+- [x] 6.1 — `modules/ui/bootstrap.js` — entry point: loadData → initAcciones → initShell → initRouter → initOnboarding → renderAll
+- [x] 6.2 — `modules/ui/actions.js` — `registrarAccion()` + `dispatch()` + `initAcciones()` (built-ins: theme-toggle, modal-open, modal-close)
+- [x] 6.3 — `modules/ui/modales.js` — `abrirModal()` (trapFocus), `cerrarModal()` (releaseFocus), `resetModal()`
+- [x] 6.4 — `modules/ui/onboarding.js` — stub funcional: auto-completa `S.onboarded`; Fase 12 completa el wizard
+- [x] Eliminado `events.js` (reemplazado por bootstrap.js + actions.js + modales.js)
+- [x] Actualizado `index.html`: script + preloads apuntan a bootstrap.js
+- [x] Criterio: `npm test` → 58/58 verdes, lint limpio
+- [x] Criterio: modal-open, Escape, theme-toggle verificados en navegador
 
 ### Fase 5 — Infra JS ✅
 
