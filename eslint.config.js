@@ -27,6 +27,14 @@ export default [
         location: 'readonly',
         CustomEvent: 'readonly',
         MutationObserver: 'readonly',
+        // Globals estándar disponibles también fuera del DOM (Node + browser)
+        console: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        // Web Storage API — accedida vía Storage.prototype en tests
+        Storage: 'readonly',
       },
     },
   },

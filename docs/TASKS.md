@@ -5,30 +5,25 @@
 
 ---
 
-## Fase actual: Fase 4 — Core JS (state + storage + constants)
+## Fase actual: Fase 5 — Infraestructura JS
 
-### En progreso 🔄
-
-- [ ] 4.1 — `modules/core/constants.js` — constantes financieras CO (tasa usura, UVT, SMMLv)
-- [ ] 4.2 — `modules/core/state.js` — singleton `S` mutable con schema v1
-- [ ] 4.3 — `modules/core/storage.js` — `loadData()` con migración, `save()` debounced 200ms
-- [ ] 4.4 — `tests/unit/storage.test.js` — tests de migraciones idempotentes
-- [ ] 4.5 — `tests/unit/state.test.js` — tests de forma del estado inicial
-- [ ] 4.6 — Integrar storage con events.js: `loadData()` en bootstrap
-
-### Criterios de salida de Fase 4
-
-- [ ] `npm test` pasa ≥ 10 tests nuevos, 0 failures
-- [ ] `loadData()` devuelve estado válido en localStorage vacío
-- [ ] `save()` escribe en `localStorage` con key `fk_v1`
-- [ ] Constantes exportadas sin `window.X`
-- [ ] Schema v1 documentado en `ARCHITECTURE.md`
-
-**Modelo recomendado:** Opus 4.7 — Esfuerzo Alto
+Próximo paso del [ROADMAP.md](ROADMAP.md). Tareas a detallar al iniciar la fase.
 
 ---
 
 ## Completadas ✅
+
+### Fase 4 — Core JS (state + storage + constants) ✅
+
+- [x] 4.1 — `modules/core/constants.js` — constantes financieras CO (SMMLV, UVT, tasa usura, GMF, catálogos)
+- [x] 4.2 — `modules/core/state.js` — singleton `S` mutable con schema v1 + `createInitialState()` + EventBus
+- [x] 4.3 — `modules/core/storage.js` — `loadData()` con migración, `save()` debounced 200ms
+- [x] 4.4 — `tests/unit/storage.test.js` — 13 tests (round-trip, debounce, corrupción, idempotencia)
+- [x] 4.5 — `tests/unit/state.test.js` — 11 tests (schema, factory, EventBus pub/sub)
+- [x] 4.6 — Integrar `loadData()` en `modules/ui/events.js` al arrancar
+- [x] Criterio: `npm test` → 24/24 verdes
+- [x] Criterio: `npm run lint` → limpio (sin `window.X`)
+- [x] Criterio: roundtrip `save()` + `loadData()` verificado en navegador (puerto 8082)
 
 ### Fase 1 — Esqueleto + documentación
 

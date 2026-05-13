@@ -5,6 +5,7 @@
 
 import { initRouter } from '../infra/router.js';
 import { initShell, markActiveNav, toggleTheme } from './shell.js';
+import { loadData } from '../core/storage.js';
 
 // ── MODAL HELPERS ───────────────────────────────────────────────
 
@@ -61,5 +62,6 @@ function handleKeydown(e) {
 document.addEventListener('click', handleClick);
 document.addEventListener('keydown', handleKeydown);
 
+loadData();
 initShell();
 initRouter(markActiveNav);
