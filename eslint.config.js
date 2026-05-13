@@ -4,7 +4,7 @@ export default [
     files: ['modules/**/*.js', 'tests/**/*.js', 'scripts/**/*.js'],
     rules: {
       // Errores reales
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-undef': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
@@ -38,6 +38,8 @@ export default [
         // Animación y Web Crypto
         requestAnimationFrame: 'readonly',
         crypto: 'readonly',
+        // APIs de formularios y fetch
+        FormData: 'readonly',
       },
     },
   },

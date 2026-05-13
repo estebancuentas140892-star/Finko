@@ -5,13 +5,25 @@
 
 ---
 
-## Fase actual: Fase 7 — Dominio: Tesorería
+## Fase actual: Fase 8 — Dominio: Ingresos + Gastos
 
 Próximo paso del [ROADMAP.md](ROADMAP.md). Tareas a detallar al iniciar la fase.
 
 ---
 
 ## Completadas ✅
+
+### Fase 7 — Dominio: Tesorería ✅
+
+- [x] 7.1 — `modules/dominio/tesoreria/logic.js` — `cuentasActivas()`, `calcularTotalCuentas()`, `validarCuenta()`, `normalizarCuenta()`, `_iconoPorBanco()`
+- [x] 7.2 — `modules/dominio/tesoreria/view.js` — `renderListaCuentas()` (lista + empty state), `renderFormCuenta()` (HTML del modal)
+- [x] 7.3 — `modules/dominio/tesoreria/index.js` — `initTesoreria()`: acciones `nueva-cuenta` / `eliminar-cuenta`, inyección de form, suscripción EventBus
+- [x] 7.4 — `tests/unit/tesoreria.test.js` — 24 tests de logic.js (cuentasActivas, calcularTotal, validar, normalizar)
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initTesoreria()`
+- [x] Actualizado `index.html` — botón Tesorería usa `data-action="nueva-cuenta"`
+- [x] `eslint.config.js` — agrega `FormData`, `varsIgnorePattern: '^_'`
+- [x] Criterio: `npm test` → 82/82 verdes, lint limpio
+- [x] Criterio: agregar cuenta → saldo `$850.000` en dashboard; eliminar → empty state + saldo `$0`
 
 ### Fase 6 — UI Shell ✅
 
