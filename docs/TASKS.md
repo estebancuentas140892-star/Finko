@@ -5,13 +5,24 @@
 
 ---
 
-## Fase actual: Fase 5 — Infraestructura JS
+## Fase actual: Fase 6 — UI Shell
 
 Próximo paso del [ROADMAP.md](ROADMAP.md). Tareas a detallar al iniciar la fase.
 
 ---
 
 ## Completadas ✅
+
+### Fase 5 — Infra JS ✅
+
+- [x] 5.1 — `modules/infra/utils.js` — `f()`, `hoy()`, `fechaLegible()`, `dialogo()`
+- [x] 5.2 — `modules/infra/render.js` — `renderSmart()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()`
+- [x] 5.3 — `modules/infra/a11y.js` — `announce()`, `trapFocus()`, `releaseFocus()`
+- [x] 5.4 — `modules/infra/crud.js` — `guardar()`, `editar()`, `eliminar()`
+- [x] 5.5 — `tests/unit/utils.test.js` — 15 tests | `tests/unit/crud.test.js` — 19 tests
+- [x] Criterio: `npm test` → 58/58 verdes
+- [x] Criterio: `npm run lint` → limpio
+- [x] Criterio: `updSaldo()` verificado en navegador — DOM actualiza al guardar cuenta
 
 ### Fase 4 — Core JS (state + storage + constants) ✅
 

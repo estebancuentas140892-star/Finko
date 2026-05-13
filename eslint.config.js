@@ -35,6 +35,9 @@ export default [
         clearInterval: 'readonly',
         // Web Storage API — accedida vía Storage.prototype en tests
         Storage: 'readonly',
+        // Animación y Web Crypto
+        requestAnimationFrame: 'readonly',
+        crypto: 'readonly',
       },
     },
   },
