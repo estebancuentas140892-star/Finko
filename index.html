@@ -52,6 +52,12 @@
               <span class="nav-item__label">Dashboard</span>
             </a>
 
+            <a class="nav-item" href="#ingresos" data-section="ingresos"
+               role="listitem" aria-label="Ingresos">
+              <span class="nav-item__icon" aria-hidden="true">💰</span>
+              <span class="nav-item__label">Ingresos</span>
+            </a>
+
             <a class="nav-item" href="#gast" data-section="gast"
                role="listitem" aria-label="Gastos">
               <span class="nav-item__icon" aria-hidden="true">💸</span>
@@ -136,6 +142,10 @@
             <p class="bento__desc">efectivo + cuentas bancarias</p>
           </article>
           <article class="bento__cell">
+            <p class="bento__label">Ingresos del mes</p>
+            <p class="bento__value" id="ingresos-mes">$0</p>
+          </article>
+          <article class="bento__cell">
             <p class="bento__label">Gastos del mes</p>
             <p class="bento__value" id="gastos-mes">$0</p>
           </article>
@@ -146,11 +156,25 @@
         </div>
       </section>
 
+      <!-- INGRESOS -->
+      <section class="section" id="sec-ingresos" aria-labelledby="title-ingresos">
+        <header class="section__header">
+          <h1 class="section__title" id="title-ingresos">Ingresos</h1>
+          <button class="btn btn-primary" data-action="nuevo-ingreso"
+                  aria-label="Registrar nuevo ingreso">
+            + Nuevo ingreso
+          </button>
+        </header>
+        <div id="lista-ingresos">
+          <!-- Fase 8: ingresos/view.js renderiza aquí -->
+        </div>
+      </section>
+
       <!-- GASTOS -->
       <section class="section" id="sec-gast" aria-labelledby="title-gast">
         <header class="section__header">
           <h1 class="section__title" id="title-gast">Gastos</h1>
-          <button class="btn btn-primary" data-action="modal-open" data-modal="modal-gasto"
+          <button class="btn btn-primary" data-action="nuevo-gasto"
                   aria-label="Registrar nuevo gasto">
             + Nuevo gasto
           </button>
@@ -240,6 +264,22 @@
        MODALES — scaffolding (Fases 6–12 completan el contenido)
        Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
        ══════════════════════════════════════════════════════════ -->
+
+  <!-- Modal: Nuevo ingreso -->
+  <div class="modal-overlay" id="modal-ingreso"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-ingreso-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-ingreso-title">Nuevo ingreso</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-ingreso-body">
+        <!-- Fase 8 -->
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: Nuevo gasto -->
   <div class="modal-overlay" id="modal-gasto"

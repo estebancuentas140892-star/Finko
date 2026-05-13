@@ -5,13 +5,28 @@
 
 ---
 
-## Fase actual: Fase 8 — Dominio: Ingresos + Gastos
+## Fase actual: Fase 9 — Dominio: Metas
 
-Próximo paso del [ROADMAP.md](ROADMAP.md). Tareas a detallar al iniciar la fase.
+Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 8 — Dominio: Ingresos + Gastos ✅
+
+- [x] 8.1 — `modules/dominio/ingresos/logic.js` — `ingresosActivos()`, `calcularIngresoMensual()`, `calcularTotalMensual()`, `validarIngreso()`, `normalizarIngreso()`
+- [x] 8.2 — `modules/dominio/gastos/logic.js` — `gastosMes()`, `totalGastos()`, `totalGastosMes()`, `gastosPorCategoria()`, `detectarHormigas()`, `validarGasto()`, `normalizarGasto()`
+- [x] 8.3 — `modules/dominio/ingresos/view.js` — `renderResumenIngresos()`, `renderListaIngresos()`, `renderFormIngreso()`
+- [x] 8.4 — `modules/dominio/gastos/view.js` — `renderResumenGastos()`, `renderListaGastos()`, `renderFormGasto()`
+- [x] 8.5 — `modules/dominio/ingresos/index.js` — `initIngresos()`: acciones `nuevo-ingreso` / `eliminar-ingreso`, inyección de form, suscripción EventBus, `registrarRender`
+- [x] 8.6 — `modules/dominio/gastos/index.js` — `initGastos()`: acciones `nuevo-gasto` / `eliminar-gasto`, inyección de form, suscripción EventBus, pre-rellena fecha
+- [x] 8.7 — `tests/unit/ingresos.test.js` — 31 tests (ingresosActivos, calcularIngresoMensual, calcularTotalMensual, validar, normalizar)
+- [x] 8.8 — `tests/unit/gastos.test.js` — 33 tests (gastosMes, totalGastos, gastosPorCategoria, detectarHormigas, validar, normalizar)
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initIngresos()` y `initGastos()`
+- [x] Actualizado `index.html` — bento `#ingresos-mes`, sección `#sec-ingresos`, `modal-ingreso`, botón gastos → `data-action="nuevo-gasto"`
+- [x] Criterio: `npm test` → 146/146 verdes, lint limpio
+- [x] Criterio: registrar ingreso → `#ingresos-mes` actualiza; registrar gasto → `#gastos-mes` actualiza
 
 ### Fase 7 — Dominio: Tesorería ✅
 

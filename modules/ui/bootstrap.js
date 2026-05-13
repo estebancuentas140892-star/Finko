@@ -17,12 +17,16 @@ import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
 import { renderAll } from '../infra/render.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
+import { initIngresos } from '../dominio/ingresos/index.js';
+import { initGastos } from '../dominio/gastos/index.js';
 
 loadData();
 initAcciones();
 
 // Dominios: registran sus acciones antes de que el usuario pueda interactuar.
 initTesoreria();
+initIngresos();
+initGastos();
 
 initShell();
 initRouter(markActiveNav);
