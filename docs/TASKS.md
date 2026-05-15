@@ -5,13 +5,24 @@
 
 ---
 
-## Fase actual: Fase 9 — Dominio: Metas
+## Fase actual: Fase 10 — Dominio: Compromisos
 
 Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 9 — Dominio: Metas ✅
+
+- [x] 9.1 — `modules/dominio/metas/logic.js` — `metasActivas()`, `calcularProgreso()`, `diasHastaFecha()`, `calcularAhorroDiario()`, `validarMeta()`, `validarAbono()`, `normalizarMeta()`
+- [x] 9.2 — `modules/dominio/metas/view.js` — `renderListaMetas()` (lista + progress bar + empty state), `renderFormMeta()`
+- [x] 9.3 — `modules/dominio/metas/index.js` — `initMetas()`: acciones `nueva-meta` / `eliminar-meta` / `abonar-meta` (window.prompt), inyección de form, suscripción EventBus
+- [x] 9.4 — `tests/unit/metas.test.js` — 41 tests (metasActivas, calcularProgreso, diasHastaFecha, calcularAhorroDiario, validar, validarAbono, normalizar)
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initMetas()`
+- [x] Actualizado `index.html` — botón metas → `data-action="nueva-meta"`
+- [x] Criterio: `npm test` → 187/187 verdes, lint limpio
+- [x] Criterio: crear meta → aparece en lista con barra de progreso; abonar → % actualiza
 
 ### Fase 8 — Dominio: Ingresos + Gastos ✅
 

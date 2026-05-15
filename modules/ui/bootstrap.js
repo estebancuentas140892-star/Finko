@@ -19,6 +19,7 @@ import { renderAll } from '../infra/render.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
 import { initIngresos } from '../dominio/ingresos/index.js';
 import { initGastos } from '../dominio/gastos/index.js';
+import { initMetas } from '../dominio/metas/index.js';
 
 loadData();
 initAcciones();
@@ -27,6 +28,7 @@ initAcciones();
 initTesoreria();
 initIngresos();
 initGastos();
+initMetas();
 
 initShell();
 initRouter(markActiveNav);
