@@ -5,13 +5,23 @@
 
 ---
 
-## Fase actual: Fase 12 — Calculadoras financieras
+## Fase actual: Fase 13 — Onboarding + Config
 
 Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 12 — Calculadoras financieras ✅
+
+- [x] 12.0 — Fix `modules/infra/router.js` — faltaba entrada `['ingresos', 'sec-ingresos']` en SECTIONS
+- [x] 12.1 — `modules/dominio/calculadoras/logic.js` — `calcularCDT()` (retención 7%), `calcularCredito()` (sistema francés, EA→mensual), `calcularInteresCompuesto()` (capitalización periódica), `calcularRegla72()` (aproximado + logarítmico), `calcularPrima()` (Ley 1788/2016, auxilio si ≤ 2 SMMLV), `validarCampos()`
+- [x] 12.2 — `modules/dominio/calculadoras/view.js` — `renderPanelCalculadoras()` + 5 `renderResultX()` (CDT, crédito, IC, R72, prima)
+- [x] 12.3 — `modules/dominio/calculadoras/index.js` — `initCalculadoras()`: stateless, sin data-action, lazy via hashchange
+- [x] 12.4 — `tests/unit/calculadoras.test.js` — 39 tests (CDT, crédito, IC, regla72, prima, validarCampos); fix redondeo cuota crédito con tolerancia ±plazo
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initCalculadoras()`
+- [x] Criterio: `npm test` → 294/294 verdes, lint limpio
 
 ### Fase 11 — Dominio: Análisis financiero ✅
 

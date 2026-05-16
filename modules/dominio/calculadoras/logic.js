@@ -1,0 +1,202 @@
+/**
+ * calculadoras/logic.js — fórmulas financieras puras para Colombia.
+ * Sin DOM. Sin S. Sin efectos secundarios. Testeable en Node/Vitest.
+ *
+ * Constantes legales usadas:
+ *   - SMMLV 2026: $1.423.500 — Vigente hasta 2026-12-31
+ *   - Auxilio de transporte 2026: $200.000 — Vigente hasta 2026-12-31
+ *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto
+ *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo)
+ */
+
+import { SMMLV_2026, AUXILIO_TRANSPORTE_2026 } from '../../core/constants.js';
+
+// ── CDT (Certificado de Depósito a Término) ──────────────────────
+
+/**
+ * Calcula el rendimiento de un CDT.
+ *
+ * Fórmula: `VF = P × (1 + tasa_EA)^(días/365)`
+ * La retención en la fuente es del 7 % sobre el rendimiento bruto
+ * (aplica a personas naturales no declarantes; tasa estándar SFC).
+ *
+ * @param {number} principal    — Capital invertido en COP.
+ * @param {number} tasaEA       — Tasa efectiva anual como decimal (ej. 0.12 = 12%).
+ * @param {number} plazo        — Plazo en días (mín. 1).
+ * @returns {{
+ *   valorFuturo: number,
+ *   rendimientoBruto: number,
+ *   retencion: number,
+ *   rendimientoNeto: number,
+ *   totalNeto: number,
+ * }}
+ */
+export function calcularCDT(principal, tasaEA, plazo) {
+  const valorFuturo      = principal * Math.pow(1 + tasaEA, plazo / 365);
+  const rendimientoBruto = valorFuturo - principal;
+  const retencion        = rendimientoBruto * 0.07;        // retención 7%
+  const rendimientoNeto  = rendimientoBruto - retencion;
+  const totalNeto        = principal + rendimientoNeto;
+
+  return {
+    valorFuturo:      Math.round(valorFuturo),
+    rendimientoBruto: Math.round(rendimientoBruto),
+    retencion:        Math.round(retencion),
+    rendimientoNeto:  Math.round(rendimientoNeto),
+    totalNeto:        Math.round(totalNeto),
+  };
+}
+
+// ── CRÉDITO (cuota fija — sistema francés) ────────────────────────
+
+/**
+ * Calcula la cuota mensual fija de un crédito (sistema francés / amortización constante).
+ *
+ * Conversión EA → mensual: `i_m = (1 + i_EA)^(1/12) − 1`
+ * Cuota: `C = P × i_m × (1 + i_m)^n / ((1 + i_m)^n − 1)`
+ *
+ * @param {number} principal   — Monto del crédito en COP.
+ * @param {number} tasaEA      — Tasa efectiva anual como decimal.
+ * @param {number} plazoMeses  — Número de cuotas mensuales.
+ * @returns {{
+ *   cuotaMensual: number,
+ *   totalPagado: number,
+ *   totalIntereses: number,
+ *   tasaMensual: number,
+ * }}
+ */
+export function calcularCredito(principal, tasaEA, plazoMeses) {
+  const tasaMensual = Math.pow(1 + tasaEA, 1 / 12) - 1;
+
+  let cuotaMensual;
+  if (tasaMensual === 0) {
+    cuotaMensual = principal / plazoMeses;
+  } else {
+    const factor = Math.pow(1 + tasaMensual, plazoMeses);
+    cuotaMensual = principal * (tasaMensual * factor) / (factor - 1);
+  }
+
+  const totalPagado    = cuotaMensual * plazoMeses;
+  const totalIntereses = totalPagado - principal;
+
+  return {
+    cuotaMensual:   Math.round(cuotaMensual),
+    totalPagado:    Math.round(totalPagado),
+    totalIntereses: Math.round(totalIntereses),
+    tasaMensual:    Number((tasaMensual * 100).toFixed(4)),  // % con 4 decimales
+  };
+}
+
+// ── INTERÉS COMPUESTO ─────────────────────────────────────────────
+
+/**
+ * Proyecta el crecimiento de una inversión con capitalización periódica.
+ *
+ * Fórmula: `M = P × (1 + r/n)^(n×t)`
+ *
+ * @param {number} principal          — Capital inicial en COP.
+ * @param {number} tasaAnualPct       — Tasa anual como porcentaje (ej. 12 = 12%).
+ * @param {number} periodosPorAnio    — Capitalización: 1=anual, 2=semestral, 12=mensual, 365=diaria.
+ * @param {number} anios              — Horizonte en años.
+ * @returns {{
+ *   montoFinal: number,
+ *   ganancia: number,
+ *   factorCrecimiento: number,
+ * }}
+ */
+export function calcularInteresCompuesto(principal, tasaAnualPct, periodosPorAnio, anios) {
+  const r = tasaAnualPct / 100;
+  const montoFinal = principal * Math.pow(1 + r / periodosPorAnio, periodosPorAnio * anios);
+  const ganancia   = montoFinal - principal;
+
+  return {
+    montoFinal:        Math.round(montoFinal),
+    ganancia:          Math.round(ganancia),
+    factorCrecimiento: Number((montoFinal / principal).toFixed(4)),
+  };
+}
+
+// ── REGLA DEL 72 ─────────────────────────────────────────────────
+
+/**
+ * Estima en cuántos años se duplica un capital a una tasa dada.
+ * Aproximación clásica: `años ≈ 72 / tasa_%`.
+ * Resultado exacto (logarítmico) incluido para comparación.
+ *
+ * @param {number} tasaAnualPct — Tasa anual como porcentaje (ej. 12 = 12%).
+ * @returns {{
+ *   aniosAproximados: number,
+ *   aniosExactos: number,
+ * }}
+ */
+export function calcularRegla72(tasaAnualPct) {
+  const aniosAproximados = 72 / tasaAnualPct;
+  const aniosExactos     = Math.log(2) / Math.log(1 + tasaAnualPct / 100);
+
+  return {
+    aniosAproximados: Number(aniosAproximados.toFixed(2)),
+    aniosExactos:     Number(aniosExactos.toFixed(2)),
+  };
+}
+
+// ── PRIMA DE SERVICIOS (Colombia) ─────────────────────────────────
+
+/**
+ * Calcula la prima de servicios semestral según la Ley 1788 de 2016.
+ *
+ * Fórmula: `prima = (salario_base + auxilio_transporte*) × días / 360`
+ * (*) El auxilio de transporte se suma solo si salario ≤ 2 × SMMLV_2026.
+ * Máximo de días por liquidación semestral: 180.
+ *
+ * @param {number} salario      — Salario mensual en COP.
+ * @param {number} dias         — Días trabajados en el semestre (máx. 180).
+ * @returns {{
+ *   prima: number,
+ *   incluyeAuxilio: boolean,
+ *   auxilioAplicado: number,
+ *   salarioBase: number,
+ * }}
+ */
+export function calcularPrima(salario, dias) {
+  const diasEfectivos   = Math.min(dias, 180);
+  const incluyeAuxilio  = salario <= 2 * SMMLV_2026;
+  const auxilioAplicado = incluyeAuxilio ? AUXILIO_TRANSPORTE_2026 : 0;
+  const salarioBase     = salario + auxilioAplicado;
+  const prima           = (salarioBase * diasEfectivos) / 360;
+
+  return {
+    prima:           Math.round(prima),
+    incluyeAuxilio,
+    auxilioAplicado,
+    salarioBase,
+  };
+}
+
+// ── VALIDADORES ───────────────────────────────────────────────────
+
+/**
+ * Valida los campos numéricos de cualquier calculadora.
+ * @param {Record<string, string>} campos — { nombre: valor_string }.
+ * @param {Record<string, { min?: number, max?: number, entero?: boolean }>} reglas
+ * @returns {string[]} Mensajes de error.
+ */
+export function validarCampos(campos, reglas) {
+  const errores = [];
+  for (const [nombre, regla] of Object.entries(reglas)) {
+    const val = Number(campos[nombre]);
+    if (isNaN(val)) {
+      errores.push(`"${nombre}" debe ser un número.`);
+      continue;
+    }
+    if (regla.min !== undefined && val < regla.min) {
+      errores.push(`"${nombre}" debe ser al menos ${regla.min}.`);
+    }
+    if (regla.max !== undefined && val > regla.max) {
+      errores.push(`"${nombre}" debe ser como máximo ${regla.max}.`);
+    }
+    if (regla.entero && !Number.isInteger(val)) {
+      errores.push(`"${nombre}" debe ser un número entero.`);
+    }
+  }
+  return errores;
+}
