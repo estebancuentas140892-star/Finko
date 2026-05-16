@@ -5,13 +5,23 @@
 
 ---
 
-## Fase actual: Fase 13 — Onboarding + Config
+## Fase actual: Fase 14 — PWA + Service Worker + cierre
 
 Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 13 — Onboarding + Configuración ✅
+
+- [x] 13.1 — `modules/ui/onboarding.js` — wizard real de bienvenida: inyecta form en `#onboarding-body`, guarda `S.perfil.nombre` + `S.onboarded = true`, usa sistema de modales existente
+- [x] 13.2 — `modules/dominio/config/view.js` — `renderPanelConfig()`: sección perfil (nombre+SMMLV editable), sección datos (exportar/importar/resetear), sección acerca de
+- [x] 13.3 — `modules/dominio/config/index.js` — `initConfig()`: acciones `exportar-datos` (Blob + URL.createObjectURL), `resetear-app`; importar via `<input type="file">` + FileReader + localStorage.setItem + reload
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initConfig()`
+- [x] Actualizado `index.html` — agrega `#onboarding` modal (wizard)
+- [x] Actualizado `eslint.config.js` — agrega `Blob`, `URL`, `FileReader` como globals
+- [x] Criterio: `npm test` → 294/294 verdes, lint limpio
 
 ### Fase 12 — Calculadoras financieras ✅
 

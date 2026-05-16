@@ -23,6 +23,7 @@ import { initMetas } from '../dominio/metas/index.js';
 import { initCompromisos } from '../dominio/compromisos/index.js';
 import { initAnalisis } from '../dominio/analisis/index.js';
 import { initCalculadoras } from '../dominio/calculadoras/index.js';
+import { initConfig } from '../dominio/config/index.js';
 
 loadData();
 initAcciones();
@@ -35,6 +36,7 @@ initMetas();
 initCompromisos();
 initAnalisis();
 initCalculadoras();
+initConfig();
 
 initShell();
 initRouter(markActiveNav);

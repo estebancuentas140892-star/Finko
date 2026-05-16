@@ -39,7 +39,11 @@ export default [
         requestAnimationFrame: 'readonly',
         crypto: 'readonly',
         // APIs de formularios y fetch
-        FormData: 'readonly',
+        FormData:   'readonly',
+        // Blob, URL y FileReader — usados en config (exportar/importar)
+        Blob:       'readonly',
+        URL:        'readonly',
+        FileReader: 'readonly',
       },
     },
   },
