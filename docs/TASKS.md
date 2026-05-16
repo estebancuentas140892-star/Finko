@@ -5,13 +5,23 @@
 
 ---
 
-## Fase actual: Fase 11 — Dominio: Análisis
+## Fase actual: Fase 12 — Calculadoras financieras
 
 Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 11 — Dominio: Análisis financiero ✅
+
+- [x] 11.1 — `modules/dominio/analisis/logic.js` — capa de agregación cross-domain: `calcularBalance()`, `calcularTasaAhorro()`, `nivelSalud()` (excelente/buena/ajustada/critica), `generarResumen()` (agrega ingresos, gastos, compromisos, cuentas)
+- [x] 11.2 — `modules/dominio/analisis/view.js` — `renderAnalisis()`: métricas 4-cards, salud con barra de progreso, gastos por categoría con barras proporcionales, alertas hormiga
+- [x] 11.3 — `modules/dominio/analisis/index.js` — `initAnalisis()`: sin acciones (solo lectura), `registrarRender`, EventBus observa 4 secciones
+- [x] 11.4 — `tests/unit/analisis.test.js` — 28 tests (calcularBalance, calcularTasaAhorro, nivelSalud, generarResumen)
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initAnalisis()`
+- [x] Fix: import `nivelSalud` sobrante eliminado de view.js
+- [x] Criterio: `npm test` → 255/255 verdes, lint limpio
 
 ### Fase 10 — Dominio: Compromisos ✅
 
