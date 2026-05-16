@@ -359,6 +359,19 @@
   <!-- ── SCRIPTS ─────────────────────────────────────────────────
        type="module" garantiza defer, strict mode, scope aislado.
   ──────────────────────────────────────────────────────────────── -->
+
+  <!-- Service Worker — registrar antes del módulo principal para que
+       el SW quede activo cuanto antes y pueda cachear los módulos. -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('./service-worker.js')
+        .catch(function (err) {
+          console.error('[SW] Error al registrar:', err);
+        });
+    }
+  </script>
+
   <script type="module" src="modules/ui/bootstrap.js"></script>
 
 </body>

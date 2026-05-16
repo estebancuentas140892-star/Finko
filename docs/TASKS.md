@@ -1,17 +1,26 @@
 # TASKS — Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión de trabajo.
-> Última actualización: 2026-05-12
+> Última actualización: 2026-05-16
 
 ---
 
-## Fase actual: Fase 14 — PWA + Service Worker + cierre
+## 🎉 v1.0.0 — Todas las fases completadas
 
-Próximo paso del [ROADMAP.md](ROADMAP.md).
+El proyecto está cerrado en v1.0.0. No hay fases pendientes activas.
 
 ---
 
 ## Completadas ✅
+
+### Fase 14 — PWA: Service Worker + manifest + v1.0.0 ✅
+
+- [x] 14.1 — `manifest.json` — nombre, short_name, display:standalone, theme_color, lang:es, íconos 192+512
+- [x] 14.2 — `service-worker.js` — cache-first: install (CORE_ASSETS + OPTIONAL_ASSETS tolerante), activate (purga caches viejos), fetch (cache → red → shell fallback para navegación)
+- [x] 14.3 — `index.html` — registro SW via `<script>` plain (antes del módulo principal) con `'serviceWorker' in navigator` guard
+- [x] 14.4 — `package.json` — versión bumpeada a 1.0.0
+- [x] Criterio: `npm test` → 294/294 verdes, lint limpio
+- [x] Criterio: app instalable como PWA en Chrome/Edge; funciona completamente offline tras primera visita
 
 ### Fase 13 — Onboarding + Configuración ✅
 
