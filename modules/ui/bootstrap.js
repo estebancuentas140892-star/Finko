@@ -20,6 +20,7 @@ import { initTesoreria } from '../dominio/tesoreria/index.js';
 import { initIngresos } from '../dominio/ingresos/index.js';
 import { initGastos } from '../dominio/gastos/index.js';
 import { initMetas } from '../dominio/metas/index.js';
+import { initCompromisos } from '../dominio/compromisos/index.js';
 
 loadData();
 initAcciones();
@@ -29,6 +30,7 @@ initTesoreria();
 initIngresos();
 initGastos();
 initMetas();
+initCompromisos();
 
 initShell();
 initRouter(markActiveNav);

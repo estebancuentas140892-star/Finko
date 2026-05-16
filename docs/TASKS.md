@@ -5,13 +5,23 @@
 
 ---
 
-## Fase actual: Fase 10 — Dominio: Compromisos
+## Fase actual: Fase 11 — Dominio: Análisis
 
 Próximo paso del [ROADMAP.md](ROADMAP.md).
 
 ---
 
 ## Completadas ✅
+
+### Fase 10 — Dominio: Compromisos ✅
+
+- [x] 10.1 — `modules/dominio/compromisos/logic.js` — `TIPOS_COMPROMISO`, `LABEL_TIPO`, `ICONO_TIPO`, `compromisosActivos()`, `calcularCompromisoMensual()`, `calcularTotalCompromisos()`, `proximoVencimiento()`, `urgencia()`, `validarCompromiso()`, `normalizarCompromiso()`
+- [x] 10.2 — `modules/dominio/compromisos/view.js` — `renderListaCompromisos()` (ordenada por urgencia + chip de días), `renderFormCompromiso()`
+- [x] 10.3 — `modules/dominio/compromisos/index.js` — `initCompromisos()`: acciones `nuevo-compromiso` / `eliminar-compromiso`, inyección de form, `updateBadge`, suscripción EventBus
+- [x] 10.4 — `tests/unit/compromisos.test.js` — 40 tests (catálogos, compromisosActivos, calcularCompromisoMensual, calcularTotalCompromisos, proximoVencimiento, urgencia, validar, normalizar)
+- [x] Actualizado `modules/ui/bootstrap.js` — importa y llama `initCompromisos()`
+- [x] Actualizado `index.html` — botón compromisos → `data-action="nuevo-compromiso"`
+- [x] Criterio: `npm test` → 227/227 verdes, lint limpio
 
 ### Fase 9 — Dominio: Metas ✅
 
