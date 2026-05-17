@@ -11,7 +11,8 @@
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
     "serve": "python -m http.server 8080",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "lighthouse": "node scripts/lighthouse.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
@@ -19,6 +20,7 @@
     "axe-core": "^4.11.4",
     "eslint": "^9.6.0",
     "happy-dom": "^14.0.0",
+    "lighthouse": "^13.3.0",
     "prettier": "^3.3.0",
     "vitest": "^2.1.0"
   }

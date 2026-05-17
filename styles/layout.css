@@ -249,7 +249,9 @@
 .bento__label {
   font-size: var(--fk-text-xs);
   font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-muted);
+  /* --fk-text-secondary (#9aa0b4) pasa WCAG AA (7:1) sobre --fk-bg-surface.
+     --fk-text-muted (#6b7490) solo alcanza 4.0:1 y falla para texto pequeño. */
+  color: var(--fk-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
