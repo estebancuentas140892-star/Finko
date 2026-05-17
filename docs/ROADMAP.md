@@ -1,239 +1,104 @@
 # Roadmap — Finko Claude
 
-> Documento vivo. Se actualiza al completar cada fase.
-> Última revisión: 2026-05-12
+> Documento vivo. Solo contiene lo **pendiente**.
+> Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
+> Última revisión: 2026-05-17
 
 ---
 
 ## Estado actual
 
-**Fase activa:** Fase 1 — Esqueleto y documentación
-**Próxima:** Fase 2 — Design System + CSS base
+**Versión liberada:** `v1.0.0` — todas las 14 fases originales completadas.
+**Fase activa:** ninguna. El proyecto está estable y listo para usar localmente.
 
 ---
 
-## Visión de las 14 fases
+## Post-v1.0 — Ideas activas
 
-| Fase | Nombre | Estado | Modelo | Esfuerzo |
-|---|---|---|---|---|
-| 0 | Análisis y alineación arquitectural | ✅ Completada | Opus 4.7 | Medio |
-| 1 | Esqueleto + documentación inicial | 🔄 En curso | Sonnet 4.6 | Medio |
-| 2 | Design System + CSS base | ⏳ Pendiente | Sonnet 4.6 | Alto |
-| 3 | HTML Shell + Router hash | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 4 | Core JS (state, storage, constants) | ⏳ Pendiente | Opus 4.7 | Alto |
-| 5 | Infra JS (utils, render, a11y, crud, router) | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 6 | UI Shell (bootstrap, shell, actions, modales) | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 7 | Dominio: Tesorería | ⏳ Pendiente | Sonnet 4.6 | Alto |
-| 8 | Dominio: Ingresos + Gastos | ⏳ Pendiente | Sonnet 4.6 | Alto |
-| 9 | Dominio: Compromisos (fijos + deudas + agenda) | ⏳ Pendiente | Opus 4.7 | Alto |
-| 10 | Dominio: Metas + Calculadoras (lazy) | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 11 | Dominio: Análisis (logros, salud, alertas) | ⏳ Pendiente | Opus 4.7 | Extra Alto |
-| 12 | Onboarding + Empty states + Microcopy | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 13 | PWA + Service Worker + Deploy | ⏳ Pendiente | Sonnet 4.6 | Medio |
-| 14 | Verificación final (Lighthouse, axe, smoke test) | ⏳ Pendiente | Haiku 4.5 | — |
+Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la app.
+
+### A. Deploy a producción
+
+**Objetivo:** publicar Finko en una URL pública para acceso desde cualquier dispositivo.
+
+**Tareas candidatas:**
+- A.1 — Deploy a Netlify (`netlify deploy --prod`) o Vercel (`vercel --prod`).
+- A.2 — Configurar HTTPS (gratis con cualquiera de los dos providers).
+- A.3 — Verificar que el Service Worker se registra correctamente en producción.
+- A.4 — Smoke test desde móvil real (instalación PWA + offline).
+- A.5 — Agregar dominio custom (opcional).
+
+**Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
 
 ---
 
-## Detalle por fase
+### B. Mejoras de assets
 
-### Fase 0 — Análisis y alineación ✅
+**Objetivo:** elevar la calidad visual de la PWA.
 
-**Objetivo:** entender el proyecto de referencia (Finko-Refactor) y definir la arquitectura del nuevo proyecto antes de escribir código.
+**Tareas candidatas:**
+- B.1 — Íconos PNG producción (los actuales se generaron con Pillow, son funcionales pero básicos).
+- B.2 — Screenshots para el manifest (`screenshots` field — mejora la instalación PWA).
+- B.3 — Favicon SVG + variantes Apple Touch.
+- B.4 — Splash screen iOS.
 
-**Salida:**
-- Análisis de qué rescatar y qué evitar
-- Decisiones tecnológicas justificadas
-- Estructura de carpetas propuesta y aprobada
-- Plan de 14 fases con criterios claros
-- Modelos y esfuerzo definidos por fase
-
----
-
-### Fase 1 — Esqueleto + documentación 🔄
-
-**Objetivo:** crear la base estructural del proyecto. Sin HTML/CSS/JS de producto todavía.
-
-**Tareas:** ver [TASKS.md](TASKS.md)
-
-**Criterios de salida:**
-- [ ] Estructura de carpetas completa
-- [ ] `package.json` con devDeps funcional (`npm install` sin errores)
-- [ ] `npm test` corre (aunque no haya tests todavía)
-- [ ] Todos los `.md` de documentación inicial creados
-- [ ] `index.html` y `styles/main.css` stub abiertos en el navegador sin errores
-- [ ] Primer commit limpio
+**Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
 
 ---
 
-### Fase 2 — Design System + CSS base
+### C. Tests de integración
 
-**Objetivo:** construir el sistema de diseño completo en CSS antes de escribir HTML de producto.
+**Objetivo:** llenar `tests/integration/` (carpeta existe vacía).
 
-**Tareas:**
-- 2.1: `styles/tokens.css` — paleta, tipografía, espaciado, radii, sombras
-- 2.2: `styles/reset.css` — normalización cross-browser
-- 2.3: `styles/base.css` — tipografía base, focus visible global
-- 2.4: `styles/components.css` — `.btn`, `.card`, `.input`, `.chip`, `.badge`, `.list-item`
-- 2.5: `styles/layout.css` — shell de app, sidebar, Bento Grid base
-- 2.6: `styles/modals.css` — overlay, animaciones
-- 2.7: `styles/themes.css` — modo oscuro (default) y claro
-- 2.8: `styles/a11y.css` — `prefers-reduced-motion`, alto contraste
-- 2.9: `styles/responsive.css` — breakpoints
-- 2.10: `styles/utils.css` — helpers
-- 2.11: `styles/main.css` — importa todo con `@layer`
-- 2.12: Actualizar `docs/DESIGN_SYSTEM.md` con todos los tokens
+**Tareas candidatas:**
+- C.1 — Flujo onboarding → primera cuenta → primer ingreso → primer gasto.
+- C.2 — Flujo backup: exportar JSON → resetear app → importar → verificar.
+- C.3 — Flujo migración: cargar `localStorage` con schema viejo → verificar `loadData()` lo sube.
 
-**Criterios de salida:**
-- [ ] Todos los tokens CSS documentados en `DESIGN_SYSTEM.md`
-- [ ] Modo oscuro/claro funcional con toggle
-- [ ] Bento Grid responsive (desktop → tablet → móvil)
-- [ ] Todos los componentes base visibles en el navegador
-- [ ] Contraste WCAG AA en todos los textos principales
-- [ ] `prefers-reduced-motion` respetado
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Alto
-**Por qué:** decisiones de diseño requieren criterio y coherencia; no es una tarea mecánica. Sonnet es suficiente — no necesitamos Opus para CSS.
+**Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Medio.
 
 ---
 
-### Fase 3 — HTML Shell + Router
+### D. Funcionalidad opcional
 
-**Objetivo:** construir el `index.html` completo con semántica correcta y navegación funcional.
+**Objetivo:** features que no entraron en v1.0 pero el usuario podría querer.
 
-**Tareas:**
-- 3.1: Shell principal (landmarks: `<header>`, `<nav>`, `<main>`, `<aside>`)
-- 3.2: Sidebar con las 8 secciones de navegación
-- 3.3: Contenedor principal con las 8 secciones (vacías por ahora)
-- 3.4: Estructura de modales (vacíos, solo el scaffold)
-- 3.5: Meta tags PWA (viewport, theme-color, manifest, modulepreload)
-- 3.6: Hash routing básico en `modules/infra/router.js`
-- 3.7: Shell JS en `modules/ui/shell.js` (navegación + tema)
+**Tareas candidatas:**
+- D.1 — Exportar transacciones a CSV (`modules/dominio/exports/`).
+- D.2 — Importar movimientos bancarios desde CSV.
+- D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías).
+- D.4 — Recordatorios push para compromisos próximos a vencer (Notification API).
+- D.5 — Modo "presupuesto por sobre" (envelope budgeting).
 
-**Criterios de salida:**
-- [ ] La app abre en el navegador sin errores de consola
-- [ ] La navegación entre secciones funciona (hash routing)
-- [ ] Toggle de tema claro/oscuro funciona
-- [ ] 0 `onclick=""` en todo el HTML
-- [ ] Validador W3C limpio
-- [ ] Navegación por teclado funcional (Tab, Enter, flechas en sidebar)
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Medio
+**Modelo sugerido:** Sonnet 4.6 / Opus 4.7 según complejidad — **Esfuerzo:** Medio–Alto.
 
 ---
 
-### Fase 4 — Core JS (state, storage, constants)
+### E. Mantenimiento periódico
 
-**Objetivo:** implementar el núcleo de la app: estado, persistencia y constantes legales.
+**Objetivo:** mantener vigentes las constantes legales colombianas.
 
-**Tareas:**
-- 4.1: `modules/core/state.js` — Singleton `S` + EventBus con tipado JSDoc
-- 4.2: `modules/core/storage.js` — `loadData()`, `save()` debounced, migración v1
-- 4.3: `modules/core/constants.js` — SMMLV 2026, UVT 2026, tasa usura Q1-2026, GMF, bancos CO
-- 4.4: Tests completos de `storage.js` (migraciones, snapshots)
-- 4.5: Tests de `constants.js` (valores vigentes y fallbacks)
+**Tareas candidatas:**
+- E.1 — Cada trimestre: actualizar tasa de usura en `modules/core/constants.js` (fuente: SFC).
+- E.2 — Cada enero: actualizar SMMLV (Mintrabajo) y UVT (DIAN).
+- E.3 — Verificar GMF y otras tasas si hay reforma tributaria.
 
-**Criterios de salida:**
-- [ ] `npm test` verde con cobertura > 90% en `core/`
-- [ ] `save()` debounce verificado (no escribe > 1x cada 200ms)
-- [ ] Migración v1 idempotente (correr 2 veces no cambia el resultado)
-- [ ] Constantes legales actualizadas con fuente y fecha de vencimiento
-
-**Modelo:** Opus 4.7 — Esfuerzo Alto
-**Por qué:** el core es el cimiento de toda la app. Un error aquí se propaga a todo. Opus garantiza la máxima precisión en el diseño del schema y las migraciones.
+**Modelo sugerido:** Haiku 4.5 — **Esfuerzo:** Bajo.
 
 ---
 
-### Fase 5 — Infra JS
+## Métricas alcanzadas en v1.0
 
-**Objetivo:** utilidades transversales que usan todos los módulos superiores.
-
-**Tareas:**
-- 5.1: `modules/infra/utils.js` — `f()` (formato moneda COP), `hoy()`, `dialogo()`
-- 5.2: `modules/infra/render.js` — `renderSmart()`, `updSaldo()`, `updateBadge()`, `renderAll()`
-- 5.3: `modules/infra/a11y.js` — `announce()`, `trapFocus()`, `releaseFocus()`
-- 5.4: `modules/infra/crud.js` — `guardar()`, `editar()`, `eliminar()` genéricos sobre `S`
-- 5.5: Tests de `utils.js`, `crud.js`
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Medio
-
----
-
-### Fase 6 — UI Shell
-
-**Objetivo:** orquestación completa de la interfaz.
-
-**Tareas:**
-- 6.1: `modules/ui/bootstrap.js` — entry point, inicialización, carga de dominios
-- 6.2: `modules/ui/actions.js` — delegador `data-action` con `dispatch()`
-- 6.3: `modules/ui/modales.js` — factory: `abrirModal()`, `cerrarModal()`, `resetModal()`
-- 6.4: `modules/ui/onboarding.js` — wizard 3 pasos para `!S.onboarded`
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Medio
-
----
-
-### Fases 7–11 — Dominios
-
-Cada dominio se implementa en una fase propia:
-- Primero `logic.js` con sus tests (TDD)
-- Luego `view.js` para el render
-- Verificar en navegador antes de continuar
-
----
-
-### Fase 12 — Onboarding + Empty states + Microcopy
-
-**Objetivo:** UX humana. La app acompaña y orienta al usuario.
-
-**Tareas:**
-- Empty states con CTA en todas las secciones vacías
-- Microcopy revisado: lenguaje claro, sin tecnicismos
-- Tooltips de ayuda en campos complejos
-- Mensajes de éxito y error claros
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Medio
-
----
-
-### Fase 13 — PWA + Service Worker
-
-**Objetivo:** la app funciona 100% offline tras la primera carga.
-
-**Tareas:**
-- `manifest.json` completo (íconos 192/512, name, short_name, theme_color)
-- `service-worker.js` cache-first con lista completa de assets
-- Test offline en DevTools (Network → Offline)
-- Deploy a Vercel o Netlify
-
-**Modelo:** Sonnet 4.6 — Esfuerzo Medio
-
----
-
-### Fase 14 — Verificación final
-
-**Objetivo:** confirmar que todo funciona y cumple los criterios de calidad.
-
-**Criterios:**
-- [ ] Lighthouse Accessibility ≥ 95
-- [ ] Lighthouse Performance ≥ 90
-- [ ] axe-core sin issues críticos
-- [ ] Smoke test manual completo (todos los flujos)
-- [ ] `npm test` verde con cobertura ≥ 90%
-- [ ] Navegación completa por teclado
-
-**Modelo:** Haiku 4.5 (o manual)
-
----
-
-## Métricas objetivo (v1.0)
-
-| Métrica | Objetivo |
-|---|---|
-| LOC por archivo de dominio | < 400 |
-| `style=""` inline en HTML | 0 |
-| `window.X` en módulos | 0 |
-| `onclick=""` en HTML | 0 |
-| Lighthouse Accessibility | ≥ 95 |
-| Lighthouse Performance | ≥ 90 |
-| Cobertura de tests | ≥ 90% |
-| Tiempo de carga offline | < 2s |
+| Métrica | Objetivo v1 | Real |
+|---|---|---|
+| LOC por archivo de dominio | < 400 | 230 (máx) |
+| `style=""` inline en HTML | 0 | 0 ✅ |
+| `window.X` en módulos | 0 | 0 ✅ |
+| `onclick=""` en HTML | 0 | 0 ✅ |
+| Lighthouse Performance | ≥ 90 | 99 ✅ |
+| Lighthouse Accessibility | ≥ 95 | 100 ✅ |
+| Lighthouse Best Practices | ≥ 90 | 100 ✅ |
+| Lighthouse SEO | ≥ 80 | 100 ✅ |
+| Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
+| Tests unitarios | — | 300/300 ✅ |
+| Tests E2E | — | 18/18 ✅ |

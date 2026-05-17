@@ -1,56 +1,31 @@
 # IA_CONTEXT — Finko Claude
 
-> Este documento es el punto de entrada para cualquier asistente IA (Claude, Cursor, Copilot, etc.)
-> que trabaje en este proyecto. Leerlo toma 5 minutos y da suficiente contexto para no romper nada.
->
-> Última revisión: 2026-05-12 (Fase 1)
+> Punto de referencia compacto para asistentes IA (Claude Code, Cursor, Copilot).
+> Si recién abrís la carpeta, leé primero [`/CLAUDE.md`](../CLAUDE.md) — contiene el workflow obligatorio.
+> Última revisión: 2026-05-17
 
 ---
 
 ## Qué es este proyecto
 
 **Finko** es una PWA offline-first de gestión financiera personal para Colombia.
-- Sin servidor. Sin cuenta. Sin sincronización. Todo vive en `localStorage` del usuario.
-- Vanilla JS + ES6 modules. Sin framework. Sin build step. Sin TypeScript.
+
+- Vanilla JS + ES6 modules. **Sin framework, sin build step, sin TypeScript.**
+- Sin servidor. Sin cuenta. Sin sync. Todo vive en `localStorage` (clave `fk_v1`).
 - Pensada para personas con poco o ningún conocimiento financiero (lenguaje claro, no técnico).
 - Basada en normativa colombiana: SMMLV, UVT, tasa de usura, GMF, prima de servicios.
+
+**Estado:** v1.0.0 estable. Todas las 14 fases originales cerradas.
 
 ---
 
 ## Antes de tocar código, leer en este orden
 
-1. **Este archivo** (estás aquí) — 5 min
-2. [TASKS.md](TASKS.md) — cuál es la tarea activa ahora mismo
-3. [ARCHITECTURE.md](ARCHITECTURE.md) — reglas innegociables de la arquitectura
-4. El documento específico de la fase activa (ver TASKS.md → link a ROADMAP.md)
-
----
-
-## Estado actual del proyecto
-
-| Ítem | Estado |
-|---|---|
-| Fase activa | Fase 1 — Esqueleto y documentación |
-| Siguiente fase | Fase 2 — Design System + CSS |
-| Tests | Sin tests todavía (se agregan en Fase 4+) |
-| App en navegador | Stub mínimo (solo `index.html` + CSS vacío) |
-
-Ver [ROADMAP.md](ROADMAP.md) para el mapa completo de 14 fases.
-
----
-
-## Reglas que NUNCA se rompen
-
-1. **Sin build step** — no agregar Vite como bundler, no TypeScript, no Babel.
-2. **Sin `window.X`** — ninguna función o variable global. Todo: `export` + `import`.
-3. **Sin `onclick=""`** — toda interacción vía `data-action` delegado en `actions.js`.
-4. **Sin `style=""` inline** — solo clases CSS del design system.
-5. **`logic.js` sin DOM** — los cálculos de dominio son funciones puras, sin `document`.
-6. **`save()` siempre tras mutar `S`** — nunca escribir a localStorage directamente.
-7. **Ningún dominio importa a otro dominio** — comunicación solo por EventBus.
-8. **`npm test` verde antes de cada commit** — sin excepciones.
-
-Romper cualquiera de estas reglas requiere una discusión explícita con el humano y un ADR en `docs/DECISIONS/`.
+1. [`/CLAUDE.md`](../CLAUDE.md) — workflow + reglas innegociables + estado actual.
+2. [`TASKS.md`](TASKS.md) — tarea activa hoy (si la hay).
+3. [`ARCHITECTURE.md`](ARCHITECTURE.md) — capas, flujo de datos, dependencias.
+4. [`CHANGELOG.md`](CHANGELOG.md) — qué se hizo en cada fase ya cerrada.
+5. [`ROADMAP.md`](ROADMAP.md) — qué queda para post-v1.0.
 
 ---
 
@@ -66,32 +41,50 @@ Usuario → data-action → actions.js → handler dominio
                                       render.js → view.js → innerHTML
 ```
 
-**`S`** = singleton mutable con todos los datos del usuario (gastos, deudas, cuentas, metas…).
-**EventBus** = en `state.js`. Desacopla dominios. Ningún dominio sabe del otro.
-**`save()`** = en `storage.js`. Debounced 200ms. Escribe `S` a `localStorage`.
+- **`S`** = singleton mutable con todos los datos (ingresos, gastos, cuentas, compromisos, metas…).
+- **EventBus** = en `state.js`. Desacopla dominios. Ningún dominio sabe del otro.
+- **`save()`** = en `storage.js`. Debounced 200ms. Escribe `S` a `localStorage`.
 
 ---
 
 ## Estructura de un dominio (patrón obligatorio)
 
 ```
-modules/dominio/nombre/
-  ├─ logic.js   → Funciones puras. Sin DOM. Sin S directo. Recibe datos, devuelve datos.
-  ├─ view.js    → Genera strings HTML. Puede leer S. No puede mutarlo.
-  └─ index.js   → Exporta la API pública. Conecta logic + view + EventBus.
+modules/dominio/<nombre>/
+  ├─ logic.js   → Funciones puras. Sin DOM. Sin `S` directo. Recibe datos, devuelve datos.
+  ├─ view.js    → Genera HTML (string). Puede leer S. No puede mutarlo.
+  └─ index.js   → API pública. Conecta logic + view + EventBus + acciones.
 ```
 
+Ejemplo correcto:
+
 ```js
-// logic.js — correcto
+// logic.js — sin DOM
 export function calcularTotalGastos(gastos) {
   return gastos.reduce((acc, g) => acc + g.monto, 0);
 }
 
-// view.js — correcto
+// view.js — solo render
 import { calcularTotalGastos } from './logic.js';
+import { S } from '../../core/state.js';
+import { f } from '../../infra/utils.js';
+
 export function renderResumen() {
-  const total = calcularTotalGastos(S.gastos);
-  return `<p>Total: ${f(total)}</p>`;
+  return `<p>Total: ${f(calcularTotalGastos(S.gastos))}</p>`;
+}
+
+// index.js — wiring
+import { registrarAccion } from '../../ui/actions.js';
+import { renderResumen } from './view.js';
+import { registrarRender } from '../../infra/render.js';
+import { EventBus } from '../../core/state.js';
+
+export function initGastos() {
+  registrarAccion('nuevo-gasto', () => { /* abrir modal */ });
+  registrarRender('gastos', renderResumen);
+  EventBus.on('state:change', ({ section }) => {
+    if (section === 'gastos') /* re-render */
+  });
 }
 ```
 
@@ -100,10 +93,10 @@ export function renderResumen() {
 ## Capas de módulos (de más bajo a más alto)
 
 ```
-core/       → state, storage, constants     (sin dependencias externas)
-infra/      → utils, render, a11y, crud     (depende de core)
-ui/         → bootstrap, shell, actions     (depende de core + infra + dominio)
-dominio/    → lógica por área               (depende de core + infra, nunca de otro dominio)
+core/       → state, storage, constants     (sin dependencias)
+infra/      → utils, render, a11y, crud, router  (depende solo de core)
+ui/         → bootstrap, shell, actions, modales (depende de core + infra)
+dominio/    → un dominio cada uno           (depende de core + infra, nunca de otro dominio)
 ```
 
 ---
@@ -127,45 +120,46 @@ dominio/    → lógica por área               (depende de core + infra, nunca 
 <button onclick="guardarGasto()">Guardar</button>
 ```
 
-El delegador en `actions.js` convierte automáticamente los `data-arg-*` en parámetros del handler.
+El delegador en `actions.js` resuelve la acción y convierte `data-arg-*` en argumentos del handler.
+
+---
+
+## Modales — contrato
+
+- Abrir: `abrirModal('#modal-gasto')` — quita `aria-hidden`, agrega `data-open=""`, trapFocus.
+- Cerrar: `cerrarModal('#modal-gasto')` — pone `aria-hidden="true"`, quita `data-open`, releaseFocus.
+- HTML del modal vive en `index.html` (estático). El form interno se inyecta dinámicamente.
+- Escape cierra el modal activo (manejado en `actions.js`).
 
 ---
 
 ## Constantes legales — protocolo de actualización
 
-El archivo `modules/core/constants.js` tiene constantes con vencimiento trimestral.
-Cada Q, verificar y actualizar:
-- **Tasa de usura** — publicada por la SFC (Superintendencia Financiera)
-- **SMMLV** — Salario Mínimo Mensual Legal Vigente (Mintrabajo, enero cada año)
-- **UVT** — Unidad de Valor Tributario (DIAN, enero cada año)
-- **GMF** — 4×1000 (estable por ley, verificar si cambia)
+`modules/core/constants.js` tiene constantes con vencimiento trimestral o anual:
+- **Tasa de usura** — SFC (Superintendencia Financiera), trimestral.
+- **SMMLV** — Mintrabajo, enero cada año.
+- **UVT** — DIAN, enero cada año.
+- **GMF** — 4×1000, estable por ley.
 
-Cada constante tiene un comentario `// Vigente hasta: YYYY-QN` en el código.
+Cada constante tiene un comentario `// Vigente hasta: YYYY-QN`.
 
 ---
 
-## Patrones a seguir (tomados del proyecto de referencia)
+## Patrones a seguir
 
 ### CRUD genérico
-
-Usar `crud.js` en lugar de repetir guardar/editar/eliminar en cada dominio:
 
 ```js
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 
-// Guardar un gasto nuevo
 guardar('gastos', { descripcion, monto, categoria, fecha });
-
-// Editar por ID
 editar('gastos', id, { monto: 150000 });
-
-// Eliminar por ID
 eliminar('gastos', id);
 ```
 
 ### Render inteligente
 
-`renderSmart` evita re-renderizar secciones que el usuario no está viendo:
+`renderSmart` evita re-renderizar secciones que el usuario no está viendo.
 
 ```js
 import { renderSmart } from '../../infra/render.js';
@@ -177,13 +171,11 @@ EventBus.on('state:change', ({ section }) => {
 
 ### Announce para accesibilidad
 
-Notificar a screen readers tras acciones importantes:
-
 ```js
 import { announce } from '../../infra/a11y.js';
 
-announce('Gasto guardado correctamente'); // Polite
-announce('Error: monto inválido', 'assertive'); // Urgente
+announce('Gasto guardado correctamente');       // polite
+announce('Error: monto inválido', 'assertive'); // urgente
 ```
 
 ---
@@ -191,44 +183,29 @@ announce('Error: monto inválido', 'assertive'); // Urgente
 ## Qué NO hacer
 
 - No crear archivos fuera de la estructura propuesta sin discutirlo.
-- No agregar dependencias de runtime (el `package.json` solo tiene devDeps).
-- No escribir tests de UI con mocks pesados — los tests son de `logic.js` puro.
+- No agregar dependencias de runtime (`package.json` solo tiene devDeps).
+- No escribir tests de UI con mocks pesados — los tests son de `logic.js` puro + happy-dom para axe.
 - No usar `alert()` / `confirm()` nativos — usar `dialogo()` de `infra/utils.js`.
 - No hardcodear colores, tamaños o espaciados en CSS — usar tokens.
-- No hacer cambios destructivos (eliminar archivos, reset --hard) sin aprobación.
+- No hacer cambios destructivos (eliminar archivos, `reset --hard`) sin aprobación explícita.
+- No actualizar fases en ROADMAP/TASKS mezclando "hecho" y "pendiente" — usar CHANGELOG para lo hecho.
 
 ---
 
-## Contexto del proyecto de referencia
-
-Este proyecto nace de **Finko-Refactor** (v4.x, 1.311 tests), que tenía:
-- 4 archivos de dominio > 1.500 LOC (analisis.js: 2.849 LOC)
-- 210 asignaciones `window.X`
-- 341 `style=""` inline
-- CRUD duplicado 6-8 veces
-- Sin separación logic/view
-
-Finko Claude resuelve todos esos problemas desde el día 1, sin heredar la deuda.
-La **lógica financiera** del proyecto anterior es valiosa y se portará aquí fase por fase,
-pero reescrita con la separación `logic.js` / `view.js` correcta.
-
----
-
-## Prompt recomendado para iniciar una nueva sesión de trabajo
+## Prompt recomendado para iniciar una nueva sesión
 
 ```
-Estoy trabajando en Finko Claude, una PWA offline-first de gestión financiera para Colombia.
+Estoy trabajando en Finko Claude (PWA offline-first de gestión financiera para Colombia).
 
-Leer primero:
-1. docs/IA_CONTEXT.md (ya leído — es este archivo)
-2. docs/TASKS.md — tarea activa
-3. docs/ARCHITECTURE.md — reglas innegociables
+Acabás de leer:
+- CLAUDE.md (workflow + reglas)
+- docs/TASKS.md (tarea activa)
 
 Tarea de esta sesión: [DESCRIBIR UNA SOLA TAREA]
 
-Reglas:
-- Sin build step, sin window.X, sin onclick=""
-- npm test verde antes de cada commit
-- No tocar nada fuera del scope de esta tarea
-- Si algo falla, parar y mostrar el error — no improvisar
+Recordá:
+- Tarea por tarea — no anticipar la siguiente.
+- Al cerrar, decir archivos cambiados + cómo verificar en la app + tests.
+- Bloque de cierre con modelo+esfuerzo sugerido para la próxima.
+- npm test verde antes de commitear.
 ```

@@ -3,6 +3,8 @@
 PWA offline-first para gestión financiera personal en Colombia.
 Sin servidor. Sin cuenta. Sin rastreo. Tu información nunca sale de tu dispositivo.
 
+**Versión actual:** `v1.0.0` ✅
+
 ---
 
 ## Qué hace
@@ -12,7 +14,7 @@ Sin servidor. Sin cuenta. Sin rastreo. Tu información nunca sale de tu disposit
 - Administra cuentas bancarias, bolsillos y fondo de emergencia
 - Hace seguimiento de metas de ahorro e inversiones
 - Provee análisis de salud financiera, logros y alertas
-- Calcula CDT, crédito de consumo, interés compuesto, prima de servicios
+- Calcula CDT, crédito de consumo, interés compuesto, regla 72, prima de servicios
 - Opera 100% offline: funciona sin internet después de la primera carga
 - Basada en normativa financiera colombiana (SMMLV, UVT, tasa de usura, GMF)
 
@@ -29,7 +31,6 @@ python -m http.server 8080
 npx serve .
 ```
 
-Abre `http://localhost:8080` en el navegador.
 **No abrir `index.html` directamente** — los ES6 modules requieren un servidor HTTP.
 
 ---
@@ -40,19 +41,21 @@ Abre `http://localhost:8080` en el navegador.
 # Instalar dependencias de desarrollo
 npm install
 
-# Correr tests
+# Tests unitarios (Vitest + happy-dom) — 300 tests
 npm test
+npm run test:watch          # modo TDD
+npm run coverage            # umbral 90% sobre capa lógica
 
-# Tests en modo watch (para TDD)
-npm run test:watch
+# Tests E2E (Playwright + Chromium) — 18 smoke tests
+npm run test:e2e
+npm run test:e2e:ui         # con inspector
 
-# Ver cobertura
-npm run coverage
+# Auditoría Lighthouse (requiere servidor en :8080 corriendo)
+npm run lighthouse
+# → coverage/lighthouse-report.html
 
-# Lint
+# Lint y formato
 npm run lint
-
-# Formatear código
 npm run format
 ```
 
@@ -62,23 +65,26 @@ npm run format
 
 ```
 Finko_Claude/
-├─ index.html              ← Shell principal de la app
+├─ CLAUDE.md               ← workflow + reglas para asistentes IA
+├─ index.html              ← shell principal de la app
 ├─ manifest.json           ← PWA manifest
-├─ service-worker.js       ← Cache-first offline
-├─ styles/                 ← CSS modular por capa
-│  ├─ tokens.css           ← Variables de diseño
-│  └─ main.css             ← Punto de entrada CSS
+├─ service-worker.js       ← cache-first offline
+├─ styles/                 ← CSS modular por capa (@layer)
+│  ├─ tokens.css           ← variables de diseño (--fk-*)
+│  └─ main.css             ← punto de entrada CSS
 ├─ modules/
-│  ├─ core/                ← Estado, persistencia, constantes
-│  ├─ infra/               ← Utilidades, render, a11y, CRUD, router
-│  ├─ ui/                  ← Bootstrap, shell, navegación, modales
-│  └─ dominio/             ← Lógica de negocio por dominio
-├─ tests/                  ← Tests unitarios e integración
-├─ scripts/                ← Utilidades de mantenimiento
-└─ docs/                   ← Documentación del proyecto
+│  ├─ core/                ← estado, persistencia, constantes
+│  ├─ infra/               ← utilidades, render, a11y, CRUD, router
+│  ├─ ui/                  ← bootstrap, shell, actions, modales, onboarding
+│  └─ dominio/             ← lógica por área (ingresos, gastos, compromisos, …)
+├─ tests/
+│  ├─ unit/                ← 300 tests sobre logic.js puro
+│  └─ e2e/                 ← 18 smoke tests Playwright
+├─ scripts/                ← gen-icons.py, lighthouse.js
+└─ docs/                   ← documentación viva
 ```
 
-Para entender la arquitectura en profundidad: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ---
 
@@ -86,15 +92,15 @@ Para entender la arquitectura en profundidad: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 | Documento | Propósito |
 |---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Capas, flujo de datos, reglas innegociables |
-| [ROADMAP.md](docs/ROADMAP.md) | Fases y estado de avance |
-| [TASKS.md](docs/TASKS.md) | Tareas activas y siguiente paso |
-| [DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) | Tokens, componentes, Bento Grid |
-| [FINANCIAL_LOGIC_CO.md](docs/FINANCIAL_LOGIC_CO.md) | Constantes y lógica financiera colombiana |
-| [ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | WCAG, teclado, ARIA, lectores de pantalla |
-| [IA_CONTEXT.md](docs/IA_CONTEXT.md) | Contexto compacto para asistentes IA |
-| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | Convenciones, commits, naming |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Histórico de cambios |
+| [`CLAUDE.md`](CLAUDE.md) | **Punto de entrada para Claude Code/Cursor.** Workflow + reglas + estado actual. |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Capas, flujo de datos, reglas innegociables. |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Solo lo pendiente (post-v1.0). |
+| [`docs/TASKS.md`](docs/TASKS.md) | Tarea activa hoy. |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Memoria del proyecto — qué se hizo en cada fase. |
+| [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) | Patrones de uso para asistentes IA. |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Convenciones, commits, naming. |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Tokens, componentes, Bento Grid. |
+| [`docs/DECISIONS/`](docs/DECISIONS/) | ADRs (Architecture Decision Records). |
 
 ---
 
@@ -102,7 +108,7 @@ Para entender la arquitectura en profundidad: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 1. **Vanilla JS sin build step** — el navegador entiende ES6 modules directamente.
 2. **Offline-first** — el Service Worker garantiza operación sin red.
-3. **Sin servidor** — privacidad absoluta; localStorage es la única persistencia.
+3. **Sin servidor** — privacidad absoluta; `localStorage` es la única persistencia.
 4. **Lógica separada del DOM** — cada dominio tiene `logic.js` (puro, testeable) y `view.js` (render).
 5. **Cero `onclick=""` en HTML estático** — todo vía `data-action` delegado.
 6. **Cero `window.X`** — todo vía EventBus e imports explícitos.
@@ -110,8 +116,25 @@ Para entender la arquitectura en profundidad: [docs/ARCHITECTURE.md](docs/ARCHIT
 
 ---
 
-## Estado actual
+## Métricas v1.0
 
-Ver [docs/TASKS.md](docs/TASKS.md) para el estado en tiempo real.
+| Métrica | Resultado |
+|---|---|
+| Lighthouse Performance | **99** |
+| Lighthouse Accessibility | **100** |
+| Lighthouse Best Practices | **100** |
+| Lighthouse SEO | **100** |
+| Tests unitarios | **300/300** |
+| Tests E2E | **18/18** |
+| Cobertura lógica (líneas / funciones) | **99.6% / 100%** |
+| `onclick=""` en HTML | **0** |
+| `window.X` en módulos | **0** |
+| `style=""` inline en HTML | **0** |
+| LOC máximo por archivo de dominio | **230** (objetivo < 400) |
 
-Fase actual: **Fase 1 — Esqueleto y documentación inicial**
+---
+
+## Próximos pasos
+
+Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) — sección "Post-v1.0".
+Áreas activas: deploy a producción, mejora de íconos, tests de integración, mantenimiento de constantes legales.
