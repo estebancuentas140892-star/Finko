@@ -74,9 +74,6 @@ const CORE_ASSETS = [
   './modules/dominio/calculadoras/index.js',
   './modules/dominio/config/view.js',
   './modules/dominio/config/index.js',
-  './modules/dominio/exports/logic.js',
-  './modules/dominio/exports/view.js',
-  './modules/dominio/exports/index.js',
 ];
 
 // ── Assets opcionales — se intentan cachear pero no bloquean el install ───

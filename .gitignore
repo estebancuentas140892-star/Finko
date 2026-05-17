@@ -27,3 +27,7 @@ npm-debug.log*
 # Variables de entorno locales (si en el futuro se agregan)
 .env
 .env.local
+
+# Playwright
+test-results/
+playwright-report/

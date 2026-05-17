@@ -9,9 +9,12 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint modules/ tests/",
     "format": "prettier --write \"**/*.{js,css,html,md,json}\"",
-    "serve": "python -m http.server 8080"
+    "serve": "python -m http.server 8080",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@vitest/coverage-v8": "^2.1.0",
     "axe-core": "^4.11.4",
     "eslint": "^9.6.0",
