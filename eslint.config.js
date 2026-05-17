@@ -33,6 +33,8 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        // Node.js — disponible en tests (Vitest corre en Node)
+        process: 'readonly',
         // Web Storage API — accedida vía Storage.prototype en tests
         Storage: 'readonly',
         // Animación y Web Crypto
