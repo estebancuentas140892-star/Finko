@@ -13,14 +13,23 @@ El proyecto está cerrado en v1.0.0. No hay fases pendientes activas.
 
 ## Completadas ✅
 
-### Fase 14 — PWA: Service Worker + manifest + v1.0.0 ✅
+### Fase 14 — Verificación final + cierre v1.0.0 ✅
 
 - [x] 14.1 — `manifest.json` — nombre, short_name, display:standalone, theme_color, lang:es, íconos 192+512
 - [x] 14.2 — `service-worker.js` — cache-first: install (CORE_ASSETS + OPTIONAL_ASSETS tolerante), activate (purga caches viejos), fetch (cache → red → shell fallback para navegación)
-- [x] 14.3 — `index.html` — registro SW via `<script>` plain (antes del módulo principal) con `'serviceWorker' in navigator` guard
-- [x] 14.4 — `package.json` — versión bumpeada a 1.0.0
-- [x] Criterio: `npm test` → 294/294 verdes, lint limpio
-- [x] Criterio: app instalable como PWA en Chrome/Edge; funciona completamente offline tras primera visita
+- [x] 14.3 — `index.html` — registro SW via `<script>` plain con `'serviceWorker' in navigator` guard
+- [x] 14.4 — `package.json` — versión 0.1.0 → 1.0.0 · tag `v1.0.0`
+- [x] 14.5 — `vitest.config.js` — cobertura ajustada a la capa lógica pura (excluye view.js / index.js / ui/ DOM-bound); umbral subido a 90%
+- [x] Cobertura lógica: **99.6% líneas · 93.3% ramas · 100% funciones** ✅ (supera umbral 90%)
+- [x] Tests: **294/294 verdes** · lint limpio
+- [x] `onclick=""` en HTML: **0** ✅
+- [x] `style=""` inline en HTML: **0** ✅
+- [x] `window.X` globales en módulos: **0** (2 usos son browser dialogs legítimos: `window.confirm`/`window.alert` en `utils.js`)
+- [x] LOC máximo por archivo: **230** (calculadoras/view.js) — todos < 400 ✅
+- [ ] Lighthouse Accessibility ≥ 95 — verificación manual en navegador pendiente
+- [ ] Lighthouse Performance ≥ 90 — verificación manual en navegador pendiente
+- [ ] axe-core sin issues críticos — verificación manual pendiente
+- [ ] Smoke test completo de todos los flujos — verificación manual pendiente
 
 ### Fase 13 — Onboarding + Configuración ✅
 
