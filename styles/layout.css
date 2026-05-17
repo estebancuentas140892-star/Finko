@@ -261,7 +261,8 @@
   line-height: 1;
   letter-spacing: -0.02em;
 }
-.bento__value--accent { color: var(--fk-text-accent); }
+.bento__value--accent  { color: var(--fk-text-accent); }
+.bento__value--danger  { color: var(--fk-danger); }
 .bento__value--lg {
   font-size: clamp(var(--fk-text-2xl), 5vw, var(--fk-text-4xl));
 }
