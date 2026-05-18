@@ -1,0 +1,36 @@
+# Finko — configuración de deploy para Netlify.
+# Sitio estático puro: sin build step, sin backend.
+# Docs: https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  publish = "."
+  command = ""
+
+# service-worker.js: sin caché en CDN.
+# El navegador gestiona su propio ciclo de vida (install/activate/fetch).
+# Si se cachea en CDN, los usuarios no reciben actualizaciones.
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# JS y CSS: caché máxima en CDN.
+# Las actualizaciones las gestiona el Service Worker (CACHE_NAME bump).
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cabeceras de seguridad para todas las rutas.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "notifications=(self)"
