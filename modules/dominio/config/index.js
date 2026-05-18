@@ -15,6 +15,7 @@ import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
+import { gastosACSV } from '../export/logic.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -85,6 +86,29 @@ function _toggleNotificaciones(el) {
   announce(el.checked ? 'Recordatorios activados.' : 'Recordatorios desactivados.');
 }
 
+function _exportarGastosCSV() {
+  const csv = gastosACSV(S.gastos ?? [], S.cuentas ?? []);
+  if (!csv) {
+    announce('No hay gastos para exportar.', 'assertive');
+    return;
+  }
+  try {
+    const blob  = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url   = URL.createObjectURL(blob);
+    const fecha = new Date().toISOString().slice(0, 10);
+    const a     = document.createElement('a');
+    a.href     = url;
+    a.download = `finko-gastos-${fecha}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    const n = S.gastos?.length ?? 0;
+    announce(`${n} gasto${n === 1 ? '' : 's'} exportado${n === 1 ? '' : 's'} a CSV.`);
+  } catch (err) {
+    console.error('[config] exportarGastosCSV falló:', err);
+    announce('No se pudo exportar. Intentá de nuevo.', 'assertive');
+  }
+}
+
 function _resetearApp() {
   if (!dialogo('¿Resetear TODA la app? Perderás ingresos, gastos, cuentas, metas y compromisos. Esta acción es irreversible.')) return;
   localStorage.clear();
@@ -122,6 +146,7 @@ function _inyectarPanel() {
 
 export function initConfig() {
   registrarAccion('exportar-datos',         _exportarDatos);
+  registrarAccion('exportar-gastos-csv',    _exportarGastosCSV);
   registrarAccion('resetear-app',           _resetearApp);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);

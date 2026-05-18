@@ -144,6 +144,10 @@ function _renderDatos() {
                 aria-label="Importar gastos desde archivo CSV">
           📥 Importar gastos (CSV)
         </button>
+        <button class="btn btn-secondary" data-action="exportar-gastos-csv"
+                aria-label="Exportar todos los gastos a archivo CSV">
+          📤 Exportar gastos (CSV)
+        </button>
       </div>
       <div class="config-danger">
         <h3 class="config-danger__title">⚠️ Zona de peligro</h3>

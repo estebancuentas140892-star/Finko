@@ -1,7 +1,7 @@
 # CLAUDE.md — Finko Claude
 
 > **Este archivo es el punto de entrada para Claude Code (y cualquier asistente IA) al abrir esta carpeta.**
-> Última revisión: 2026-05-17
+> Última revisión: 2026-05-18
 
 ---
 
@@ -66,33 +66,41 @@ Al cerrar una tarea **siempre** decir, en este orden:
 
 ### 2.3 Cierre obligatorio de cada conversación
 
-Al final de cada respuesta que cierre una tarea o fase (o cuando el usuario diga "seguimos", "siguiente", etc.), incluir un bloque así:
+**Obligatorio:** al final de **toda** respuesta (tarea cerrada, exploración, pregunta, ajuste pequeño — lo que sea) incluir el bloque `Próximo paso`. No omitirlo nunca, ni siquiera si la respuesta es corta. Si no hay tarea siguiente clara, proponer la más razonable del [`docs/ROADMAP.md`](docs/ROADMAP.md) y, si hay duda real, pedir input al usuario dentro del mismo bloque.
+
+**Formato exacto (copiar tal cual, solo cambian los valores):**
 
 ```
 ─── Próximo paso ──────────────────────────────────
 Tarea siguiente : <título corto>
-Modelo sugerido : <Haiku 4.5 | Sonnet 4.6 | Opus 4.7>
-Nivel de esfuerzo: <Bajo | Medio | Alto | Extra Alto>
-Por qué         : <una línea justificando modelo+esfuerzo>
+Modelo sugerido : <Haiku 4.5 | Sonnet 4.6 — <nivel> | Opus 4.7 — <nivel>>
+Por qué         : <una línea justificando modelo+nivel>
 ───────────────────────────────────────────────────
 ```
 
-Criterios para elegir modelo:
+**Combinaciones válidas modelo + nivel** (no inventar otras, no mezclar):
 
-| Modelo      | Cuándo usarlo                                                                 |
-|---          |---                                                                            |
-| Haiku 4.5   | Verificación, lint, cierre, scripts simples, ajustes mecánicos.               |
-| Sonnet 4.6  | Default. CSS, HTML, dominios, refactors normales, tests, docs.                |
-| Opus 4.7    | Decisiones arquitecturales, lógica financiera crítica, debugging complejo.    |
+| Modelo      | Niveles permitidos                                |
+|---          |---                                                |
+| Haiku 4.5   | (sin nivel — siempre se escribe `Haiku 4.5`)      |
+| Sonnet 4.6  | Bajo · Medio · Alto                                |
+| Opus 4.7    | Bajo · Medio · Alto · Extra Alto · Max             |
 
-Niveles de esfuerzo:
+**Cuándo usar cada combinación.** Objetivo: **ahorrar tokens sin sacrificar calidad de código**. Ante la duda, subir un escalón antes que bajarlo: la calidad nunca se sacrifica.
 
-| Nivel       | Significado                                                                   |
-|---          |---                                                                            |
-| Bajo        | < 30 min, cambios mecánicos, baja probabilidad de errores.                    |
-| Medio       | 30–90 min, requiere pensar pero el camino es claro.                           |
-| Alto        | 90 min – media jornada, varios archivos, posibles trade-offs.                 |
-| Extra Alto  | Más de media jornada, decisiones de diseño, riesgo de regresiones.            |
+| Combinación                | Cuándo usarla                                                                                              |
+|---                         |---                                                                                                          |
+| **Haiku 4.5**              | Verificación de tests verdes, lint, scripts triviales, renombres mecánicos, bumps de constantes (E.1/E.2), leer-y-reportar sin decisiones. |
+| **Sonnet 4.6 — Bajo**      | CSS aislado, ajuste de copy, fix puntual con causa ya identificada, doc update; < 30 min, 1–2 archivos.    |
+| **Sonnet 4.6 — Medio**     | Feature nueva en un solo dominio siguiendo patrón ya existente; 30–90 min, 3–6 archivos, tests nuevos.     |
+| **Sonnet 4.6 — Alto**      | Feature que toca varios dominios o introduce patrones de UI/datos nuevos; 90 min – media jornada.          |
+| **Opus 4.7 — Bajo**        | Bug sutil en lógica financiera (regla 72, sistema francés, EA↔mensual, retenciones) con repro clara.       |
+| **Opus 4.7 — Medio**       | Nueva lógica financiera CO no trivial (amortización de deudas, escenarios fiscales, proyecciones).         |
+| **Opus 4.7 — Alto**        | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio.        |
+| **Opus 4.7 — Extra Alto**  | Refactor mayor o feature multidominio con trade-offs no obvios y riesgo real de regresión.                  |
+| **Opus 4.7 — Max**         | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).      |
+
+**Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después de verificar y commitear lo actual**, no qué se hace **ahora**. Si el usuario pide encadenar tareas, recordar esta regla y proponer hacer la primera, verificar en la app, y recién después la segunda.
 
 ### 2.4 Mantenimiento de los docs
 
