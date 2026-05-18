@@ -21,10 +21,10 @@ export const AUXILIO_TRANSPORTE_2026 = 200_000;
  *  Fuente: DIAN. Vigente hasta: 2026-12-31. */
 export const UVT_2026 = 49_799;
 
-/** Tasa de usura Q1 2026 — 26.77 % EA.
- *  Fuente: Superintendencia Financiera de Colombia (SFC).
- *  Vigente hasta: 2026-03-31. Revisar al cierre de cada trimestre. */
-export const TASA_USURA_Q1_2026 = 0.2677;
+/** Tasa de usura Q2 2026 — 28.17 % EA.
+ *  Fuente: Superintendencia Financiera de Colombia (SFC), Resolución trimestral.
+ *  Vigente hasta: 2026-06-30. Revisar al cierre de cada trimestre. */
+export const TASA_USURA_Q2_2026 = 0.2817;
 
 /** Gravamen a los Movimientos Financieros (4×1000).
  *  Fuente: Ley 1111/2006. Estable. */

@@ -175,7 +175,7 @@ export function renderFormCompromiso() {
                  min="0" max="200" step="0.01" placeholder="Ej. 26.5"
                  aria-describedby="comp-tasa-hint" autocomplete="off" />
           <p id="comp-tasa-hint" class="form-hint">
-            Tasa efectiva anual. La usura vigente es ~26.77% EA (SFC, Q1 2026).
+            Tasa efectiva anual. La usura vigente es ~28.17% EA (SFC, Q2 2026).
           </p>
         </div>
       </div>
