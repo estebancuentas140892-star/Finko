@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v8';
+const CACHE_NAME = 'finko-v9';
 
 // ── Assets críticos — si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -94,6 +94,11 @@ const OPTIONAL_ASSETS = [
   './assets/icons/apple-touch-icon.png',
   './assets/screenshots/screenshot-1-dashboard.png',
   './assets/screenshots/screenshot-2-gastos.png',
+  './assets/splash/splash-750x1334.png',
+  './assets/splash/splash-1170x2532.png',
+  './assets/splash/splash-1179x2556.png',
+  './assets/splash/splash-1284x2778.png',
+  './assets/splash/splash-1290x2796.png',
 ];
 
 // ── INSTALL ────────────────────────────────────────────────────────────────
