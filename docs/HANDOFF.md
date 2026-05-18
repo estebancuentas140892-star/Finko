@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (A.1' / A.3 — Deploy real + verificación)
+> Última actualización: 2026-05-18 (A.4 confirmado — responsive OK en Redmi Note 11)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### A.4 — Smoke test confirmado en Redmi Note 11 · 2026-05-18
+Usuario verificó que el fix responsive (sesión anterior) se ve bien en el celular real.
+Números más legibles, botones con touch targets OK (44px+), inputs sin zoom iOS,
+navegación completa a todas las 5 secciones, funcionamiento offline confirmado.
+Cierre de A.4 en el ROADMAP post-v1.0.
 
 ### Fix: responsive integral mobile (320–1440px) · 2026-05-18
 A.4 smoke test reveló que aunque la nav inferior ya funcionaba, la app no se
@@ -93,10 +99,9 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **A.4 — Smoke test desde móvil real** | Instalar el PWA en celular + probar offline en producción |
-| 2 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
-| 3 | **E.1–E.3 — Mantenimiento periódico** | Actualizar constantes legales CO trimestrales/anuales |
-| 4 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
+| 1 | **E.1 — Actualizar tasa de usura (trimestral)** | Mantener vigentes los cálculos de interés en módulo financiero |
+| 2 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
+| 3 | **B.3–B.4 — Favicon SVG + Splash iOS** | Mejoras visuales opcionales de PWA |
 
 ---
 

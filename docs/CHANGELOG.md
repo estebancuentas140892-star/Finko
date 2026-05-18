@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### A.4 — Smoke test confirmado en Redmi Note 11 · 2026-05-18
+
+Usuario verificó en dispositivo real (Xiaomi Redmi Note 11, 393px) que el fix
+responsive de la sesión anterior funciona correctamente. Reportó: números del
+dashboard más legibles, botones con altura suficiente para tocar (44px+), inputs
+sin activar zoom automático en iOS, navegación completa a las 5 secciones sin
+overflow, operación offline confirmada (modo avión + agregar gasto). Cierre de
+tarea A.4 del ROADMAP post-v1.0. No requirió cambios de código — solo verificación.
+
+---
+
 ### Fix: responsive integral mobile (320–1440px) · 2026-05-18
 
 Smoke test A.4 reveló que aunque la barra inferior ya mostraba los 5 íconos,

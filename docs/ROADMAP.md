@@ -2,7 +2,7 @@
 
 > Documento vivo. Solo contiene lo **pendiente**.
 > Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
-> Última revisión: 2026-05-17
+> Última revisión: 2026-05-18
 
 ---
 
@@ -33,9 +33,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ Fix responsive integral mobile (320–1440px): fluid typography (clamp),
   touch targets 44px+, inputs 16px iOS-safe, breakpoint legacy < 480px movido
   a < 360px, grids 3-col → 1-col en < 768px, `viewport-fit=cover`. SW v6→v7 — 2026-05-18.
+- ✅ A.4 — Smoke test confirmado en Redmi Note 11 (PWA instalada, offline OK, responsive verificado) — 2026-05-18.
 
 **Tareas candidatas:**
-- A.4 — Smoke test desde móvil real (instalación PWA + offline).
 - A.5 — Agregar dominio custom (opcional).
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
