@@ -65,11 +65,11 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Completadas:**
 - ✅ D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías) — 2026-05-18.
+- ✅ D.4 — Recordatorios push para compromisos próximos a vencer (Notification API) — 2026-05-18.
 
 **Tareas candidatas pendientes:**
 - D.1 — Exportar transacciones a CSV (`modules/dominio/exports/`).
 - D.2 — Importar movimientos bancarios desde CSV.
-- D.4 — Recordatorios push para compromisos próximos a vencer (Notification API).
 - D.5 — Modo "presupuesto por sobre" (envelope budgeting).
 
 **Modelo sugerido:** Sonnet 4.6 / Opus 4.7 según complejidad — **Esfuerzo:** Medio–Alto.
