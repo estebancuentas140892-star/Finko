@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (B.3 — favicon SVG)
+> Última actualización: 2026-05-18 (B.4 — splash screens iOS)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,15 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### B.4 — Splash screens iOS · 2026-05-18
+5 PNGs para `apple-touch-startup-image` (iPhone SE/8, 12/13/14, 14 Pro/15,
+14 Plus/15 Plus, 14 Pro Max/15 Pro Max). Diseño: fondo `#0f1117`, logo 3 barras
+centrado, "Finko" + tagline. Script reutilizable `scripts/gen-splash.py` (Pillow).
+Meta tags `apple-mobile-web-app-capable` + `apple-mobile-web-app-status-bar-style`
+en `<head>`. 5 links `apple-touch-startup-image` con media queries por dispositivo.
+Splashes en OPTIONAL_ASSETS del SW. SW v8→v9.
+- `assets/splash/` (5 PNGs nuevos), `scripts/gen-splash.py` (nuevo), `index.html`, `service-worker.js`
 
 ### B.3 — Favicon SVG · 2026-05-18
 Favicon vectorial `assets/icons/favicon.svg` — 3 barras ascendentes `#00dc82`
@@ -113,9 +122,9 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **B.4 — Splash screen iOS** (opcional) | Mejora la experiencia de carga en iOS |
-| 2 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
-| 3 | **E.2–E.3 — Mantenimiento anual + reforma** | Actualizar SMMLV/UVT en enero; verificar GMF si hay cambios |
+| 1 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
+| 2 | **E.2 — SMMLV + UVT** (enero 2027) | Actualizar constantes legales anuales cuando salgan |
+| 3 | **E.3 — GMF + reforma** (si aplica) | Verificar si hay cambio por reforma tributaria |
 
 ---
 

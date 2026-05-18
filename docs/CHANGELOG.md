@@ -7,6 +7,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### B.4 — Splash screens iOS · 2026-05-18
+
+5 imágenes PNG para la pantalla de arranque al abrir la PWA instalada en iOS.
+
+Dispositivos cubiertos y archivos generados en `assets/splash/`:
+- `splash-750x1334.png` — iPhone SE (2nd/3rd gen) / iPhone 8
+- `splash-1170x2532.png` — iPhone 12 / 13 / 14
+- `splash-1179x2556.png` — iPhone 14 Pro / 15
+- `splash-1284x2778.png` — iPhone 14 Plus / 15 Plus
+- `splash-1290x2796.png` — iPhone 14 Pro Max / 15 Pro Max
+
+Diseño: fondo `#0f1117`, logo 3 barras ascendentes `#00dc82` centrado (~44% alto),
+"Finko" bold en verde, "Tu plata bajo control" en `#475569`. Generados con
+`scripts/gen-splash.py` (Pillow, escalado por `scale = w / 750`).
+
+`index.html`: `<meta name="apple-mobile-web-app-capable" content="yes">`,
+`<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">`,
+y 5 tags `<link rel="apple-touch-startup-image" media="...">` con media queries
+exactos por `device-width`, `device-height` y `-webkit-device-pixel-ratio`.
+
+`service-worker.js`: 5 PNGs en `OPTIONAL_ASSETS`; `CACHE_NAME` `finko-v8` → `finko-v9`.
+
+Tests: 596/596 verdes.
+
+---
+
 ### B.3 — Favicon SVG · 2026-05-18
 
 Favicon vectorial para Finko. Sin favicon previo en el proyecto (solo `apple-touch-icon.png`).

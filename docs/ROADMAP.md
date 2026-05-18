@@ -51,8 +51,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ B.2 — Screenshots para el manifest (2× 540×720, tema oscuro, form_factor narrow) — 2026-05-18.
 - ✅ B.3 — Favicon SVG: 3 barras `#00dc82` sobre `#0f1117`, `<link rel="icon" type="image/svg+xml">`, SW v8 — 2026-05-18.
 
-**Tareas candidatas:**
-- B.4 — Splash screen iOS.
+- ✅ B.4 — Splash screens iOS: 5 PNGs (750×1334…1290×2796), gen-splash.py, meta tags, SW v9 — 2026-05-18.
+
+_(todas las tareas de mejoras de assets completadas)_
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
 
