@@ -5,7 +5,9 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy } from '../../infra/utils.js';
-import { generarResumen } from './logic.js';
+import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
+import { gastosMes } from '../gastos/logic.js';
+import { generarResumen, serieGastosMensual, seriePorCategoria } from './logic.js';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
 
@@ -25,11 +27,17 @@ export function renderAnalisis() {
     S.ingresos, S.gastos, S.compromisos, S.cuentas, anio, mes, S.metas
   );
 
+  // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
+  const serieGastos    = serieGastosMensual(S.gastos, anio, mes, 12);
+  const gastosDelMes   = gastosMes(S.gastos, anio, mes);
+  const segmentosCat   = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
+
   el.innerHTML = `
     ${_renderMetricas(resumen)}
     ${_renderSalud(resumen.tasaAhorro, resumen.salud)}
     ${_renderPatrimonio(resumen)}
-    ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes)}
+    ${_renderTendencia(serieGastos)}
+    ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
     ${_renderHormigas(resumen.hormigas)}
   `;
 }
@@ -177,7 +185,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto, proyeccion, balan
     </section>`;
 }
 
-function _renderPorCategoria(porCategoria, gastoMes) {
+function _renderPorCategoria(porCategoria, gastoMes, segmentosColoreados = []) {
   const entradas = Object.entries(porCategoria)
     .sort(([, a], [, b]) => b - a);
 
@@ -202,10 +210,102 @@ function _renderPorCategoria(porCategoria, gastoMes) {
       </li>`;
   }).join('');
 
+  // Donut + leyenda, solo si recibimos segmentos coloreados.
+  const donutSvg = segmentosColoreados.length > 0
+    ? donut(segmentosColoreados, { size: 160, strokeWidth: 22, ariaLabel: 'Distribución de gastos por categoría' })
+    : '';
+  const leyenda = segmentosColoreados.map(s => `
+    <li class="chart-legend__item">
+      <span class="chart-legend__swatch" style="background:${s.color}" aria-hidden="true"></span>
+      <span class="chart-legend__label">${_esc(s.label)}</span>
+      <span class="chart-legend__pct">${s.pct}%</span>
+    </li>`).join('');
+
+  const bloqueDonut = donutSvg
+    ? `<div class="chart-donut-wrap">
+        <div class="chart-donut__svg">${donutSvg}</div>
+        <ul class="chart-legend" aria-label="Leyenda de categorías">${leyenda}</ul>
+      </div>`
+    : '';
+
   return `
     <section class="analisis__section" aria-labelledby="analisis-cat-title">
       <h2 class="analisis__section-title" id="analisis-cat-title">Gastos por categoría</h2>
-      <ul class="cat-list" aria-label="Desglose de gastos por categoría">${filas}</ul>
+      <div class="analisis__cat-layout">
+        ${bloqueDonut}
+        <ul class="cat-list" aria-label="Desglose de gastos por categoría">${filas}</ul>
+      </div>
+    </section>`;
+}
+
+function _renderTendencia(serie) {
+  if (!serie || serie.length === 0) return '';
+
+  const valores = serie.map(p => p.total);
+  const hayDatos = valores.some(v => v > 0);
+
+  if (!hayDatos) {
+    return `
+      <section class="analisis__section" aria-labelledby="analisis-tendencia-title">
+        <h2 class="analisis__section-title" id="analisis-tendencia-title">Tendencia de gastos</h2>
+        <p class="analisis__empty">Sin historial de gastos todavía. Vuelve cuando registres movimientos.</p>
+      </section>`;
+  }
+
+  const max     = Math.max(...valores);
+  const min     = Math.min(...valores);
+  const actual  = valores[valores.length - 1];
+  const anterior = valores.length >= 2 ? valores[valores.length - 2] : actual;
+  const delta   = actual - anterior;
+  const deltaPct = anterior > 0 ? Math.round((delta / anterior) * 100) : 0;
+
+  // Tendencia: ⬆ = más gasto (malo), ⬇ = menos gasto (bueno).
+  const tendenciaClase = delta > 0 ? 'chart-stat--negativo' : delta < 0 ? 'chart-stat--positivo' : '';
+  const tendenciaIcono = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+  const tendenciaTexto = delta === 0
+    ? 'Igual que el mes pasado'
+    : `${tendenciaIcono} ${Math.abs(deltaPct)}% vs mes anterior`;
+
+  const svg = sparkline(valores, {
+    width: 600, height: 80, color: 'var(--fk-accent, #00dc82)',
+    padding: 6, area: true,
+    ariaLabel: `Gastos mensuales últimos ${serie.length} meses, máximo ${f(max)}, actual ${f(actual)}`,
+  });
+
+  const ejeX = serie.map((p, i) => {
+    // Mostrar solo cada 2 meses para no saturar en mobile.
+    const visible = i === 0 || i === serie.length - 1 || i % 2 === 0;
+    return `<span class="chart-axis__label${visible ? '' : ' chart-axis__label--hidden'}">${p.label}</span>`;
+  }).join('');
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-tendencia-title">
+      <h2 class="analisis__section-title" id="analisis-tendencia-title">Tendencia de gastos</h2>
+      <p class="analisis__desc">Últimos ${serie.length} meses.</p>
+
+      <div class="chart-sparkline-wrap">
+        <div class="chart-sparkline__svg" aria-hidden="false">${svg}</div>
+        <div class="chart-axis" aria-hidden="true">${ejeX}</div>
+      </div>
+
+      <div class="chart-stats">
+        <div class="chart-stat">
+          <p class="chart-stat__label">Este mes</p>
+          <p class="chart-stat__valor">${f(actual)}</p>
+        </div>
+        <div class="chart-stat ${tendenciaClase}">
+          <p class="chart-stat__label">Variación</p>
+          <p class="chart-stat__valor">${tendenciaTexto}</p>
+        </div>
+        <div class="chart-stat">
+          <p class="chart-stat__label">Máximo</p>
+          <p class="chart-stat__valor">${f(max)}</p>
+        </div>
+        <div class="chart-stat">
+          <p class="chart-stat__label">Mínimo</p>
+          <p class="chart-stat__valor">${f(min)}</p>
+        </div>
+      </div>
     </section>`;
 }
 

@@ -19,6 +19,21 @@ Primera versión estable y completa de Finko Claude. PWA offline-first lista par
 - Lint: limpio
 - `onclick`/`style`/`window.X` en HTML/módulos: **0 / 0 / 0**
 
+### Feature: Patrimonio Neto + Proyección (2026-05-17)
+
+Feature completa en 3 tareas: lógica financiera → extensión de formulario → renderizado UI.
+
+**Resumen:**
+- Tarea 1: Cálculo de patrimonio neto (activos − pasivos) y proyecciones lineales a 6/12/24 meses.
+- Tarea 2: Captura de `saldoPendiente` y `tasaEA` para deudas en compromiso (campos opcionales).
+- Tarea 3: Panel Patrimonio con hero card, grid de activos/pasivos, CTA si faltan saldos, proyecciones.
+
+**Commits:**
+
+- **feat(analisis)** — `6b014dd` · `modules/dominio/analisis/logic.js`, `modules/core/state.js`, `tests/unit/analisis.test.js` — lógica pura: `calcularActivos()`, `calcularPasivos()`, `calcularPatrimonioNeto()`, `proyectarPatrimonio()`, `proyeccionMultiHorizonte()`; extensión de `generarResumen()` con parámetro opcional metas; 33 tests nuevos cubriendo activos, pasivos, patrimonio, proyecciones; back-compat garantizada.
+- **feat(compromisos)** — `8b9adbc` · `modules/dominio/compromisos/{logic,view,index}.js`, `tests/unit/compromisos.test.js`, `styles/components.css` — captura `saldoPendiente` (monto adeudado) y `tasaEA` (tasa efectiva anual) para compromisos de tipo deuda; campos opcionales en formulario (hidden hasta seleccionar tipo=deuda); validación condicional; normalización; 14 tests; estilos `.form-optional`, `.form-hint`; visibilidad toggle en `_inyectarForm()`.
+- **feat(analisis)** — `c0025c4` · `modules/dominio/analisis/{view,index.js}`, `styles/components.css` — renderizado de patrimonio: hero card (patrimonio neto ±signo), grid activos/pasivos con detalles, CTA si faltan saldos, subsección proyecciones (6m/12m/24m con dinámica de ahorro/déficit); ~180 líneas CSS nuevas (.patrimonio-hero, .proyeccion-grid, plus fix de .metric-card/.salud-card/.progress-bar que estaban sin estilo); observa cambios de metas.
+
 ### Extras post-fase 14 (2026-05-16/17)
 
 - **fix(bento)** — `15e487b` · `index.html`, `styles/layout.css`, `modules/infra/render.js` — celda huérfana de la Bento Grid en desktop: se agregaron las cards `#metas-count` y `#balance-mes` y la lógica de cálculo en `updSaldo()` con `_FACTOR_MENSUAL`.

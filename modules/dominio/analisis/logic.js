@@ -237,3 +237,78 @@ export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes
     proyeccion,
   };
 }
+
+// ── SERIES TEMPORALES (D.3 — gráficos) ───────────────────────────
+
+const _MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+/**
+ * Construye una serie temporal de gastos para los últimos N meses, terminando
+ * en (anio, mes) inclusive. Devuelve los meses ordenados del más antiguo al
+ * más reciente — listo para alimentar una sparkline.
+ *
+ * Un mes sin gastos aparece como `total: 0` (no se omite). Esto es lo correcto
+ * para una serie temporal: el "cero" tiene significado.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio       — Año del último mes de la serie.
+ * @param {number} mes        — Mes (1–12) del último mes de la serie.
+ * @param {number} [mesesAtras=12] — Cantidad de meses a incluir (≥ 1).
+ * @returns {Array<{anio:number, mes:number, total:number, label:string}>}
+ */
+export function serieGastosMensual(gastos, anio, mes, mesesAtras = 12) {
+  const n = Math.max(1, Math.floor(mesesAtras));
+  const serie = [];
+  for (let i = n - 1; i >= 0; i--) {
+    let y = anio;
+    let m = mes - i;
+    while (m <= 0) { m += 12; y -= 1; }
+    serie.push({
+      anio:  y,
+      mes:   m,
+      total: totalGastosMes(gastos, y, m),
+      label: _MESES_CORTO[m - 1] ?? '',
+    });
+  }
+  return serie;
+}
+
+/**
+ * Distribución de gastos por categoría, ordenada de mayor a menor y con
+ * porcentaje sobre el total. Agrupa la cola larga en "Otros" cuando el
+ * número de categorías supera `maxSegmentos`.
+ *
+ * Devuelve [] si no hay gastos. Pensado para alimentar un donut chart.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastosDelMes — ya filtrados.
+ * @param {number} [maxSegmentos=6] — Máximo de segmentos antes de agrupar.
+ * @returns {Array<{categoria:string, total:number, pct:number}>}
+ */
+export function seriePorCategoria(gastosDelMes, maxSegmentos = 6) {
+  const porCat = gastosPorCategoria(gastosDelMes);
+  const total  = Object.values(porCat).reduce((acc, v) => acc + v, 0);
+  if (total <= 0) return [];
+
+  const ordenadas = Object.entries(porCat)
+    .map(([categoria, t]) => ({ categoria, total: t }))
+    .sort((a, b) => b.total - a.total);
+
+  const conPct = (s) => ({ ...s, pct: Math.round((s.total / total) * 100) });
+
+  if (ordenadas.length <= maxSegmentos) {
+    return ordenadas.map(conPct);
+  }
+
+  const top         = ordenadas.slice(0, maxSegmentos - 1).map(conPct);
+  const resto       = ordenadas.slice(maxSegmentos - 1);
+  const restoTotal  = resto.reduce((acc, s) => acc + s.total, 0);
+
+  return [
+    ...top,
+    {
+      categoria: 'Otros',
+      total:     restoTotal,
+      pct:       Math.round((restoTotal / total) * 100),
+    },
+  ];
+}

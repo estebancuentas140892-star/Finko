@@ -799,3 +799,151 @@ textarea.input {
 }
 .proyeccion-card__valor--positivo { color: var(--fk-text-accent); }
 .proyeccion-card__valor--negativo { color: var(--fk-danger); }
+
+/* ─────────────────────────────────────────────────────────────────
+   GRÁFICOS — Sparkline + Donut (D.3)
+   ───────────────────────────────────────────────────────────────── */
+
+/* Sparkline — tendencia de gastos */
+.chart-sparkline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  background: var(--fk-surface-subtle, var(--fk-surface));
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3);
+}
+.chart-sparkline__svg {
+  width: 100%;
+  color: var(--fk-text-accent);
+}
+.sparkline {
+  display: block;
+  width: 100%;
+  height: 80px;
+  color: var(--fk-text-accent);
+}
+.chart-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-1);
+  padding: 0 var(--fk-space-1);
+}
+.chart-axis__label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-family: var(--fk-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chart-axis__label--hidden {
+  visibility: hidden;
+}
+
+/* Stats acompañantes del sparkline */
+.chart-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+.chart-stat {
+  background: var(--fk-surface);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.chart-stat__label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--fk-font-semibold);
+}
+.chart-stat__valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.chart-stat--positivo .chart-stat__valor { color: var(--fk-text-accent); }
+.chart-stat--negativo .chart-stat__valor { color: var(--fk-danger); }
+
+/* Donut — distribución por categoría */
+.analisis__cat-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--fk-space-4);
+  align-items: start;
+}
+@media (min-width: 768px) {
+  .analisis__cat-layout {
+    grid-template-columns: auto 1fr;
+  }
+}
+.chart-donut-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3);
+  background: var(--fk-surface-subtle, var(--fk-surface));
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  min-width: 200px;
+}
+.chart-donut__svg {
+  width: 160px;
+  height: 160px;
+}
+.donut {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  width: 100%;
+}
+.chart-legend__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+}
+.chart-legend__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.chart-legend__label {
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chart-legend__pct {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-semibold);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .donut circle,
+  .sparkline path {
+    transition: opacity 200ms ease;
+  }
+}

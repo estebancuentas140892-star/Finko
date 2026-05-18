@@ -9,6 +9,8 @@ import {
   calcularPatrimonioNeto,
   proyectarPatrimonio,
   proyeccionMultiHorizonte,
+  serieGastosMensual,
+  seriePorCategoria,
 } from '../../modules/dominio/analisis/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -457,5 +459,138 @@ describe('proyeccionMultiHorizonte()', () => {
     expect(p).toHaveProperty('seisMeses');
     expect(p).toHaveProperty('doceMeses');
     expect(p).toHaveProperty('veinticuatroMeses');
+  });
+});
+
+// ── serieGastosMensual() ──────────────────────────────────────────
+
+describe('serieGastosMensual()', () => {
+  it('devuelve la cantidad de meses pedida', () => {
+    const serie = serieGastosMensual([], 2026, 5, 6);
+    expect(serie).toHaveLength(6);
+  });
+
+  it('último elemento corresponde al mes pedido', () => {
+    const serie = serieGastosMensual([], 2026, 5, 3);
+    expect(serie[serie.length - 1]).toMatchObject({ anio: 2026, mes: 5 });
+  });
+
+  it('retrocede a años anteriores cuando los meses pedidos lo requieren', () => {
+    const serie = serieGastosMensual([], 2026, 2, 4);
+    // Meses esperados, en orden: nov-2025, dic-2025, ene-2026, feb-2026
+    expect(serie[0]).toMatchObject({ anio: 2025, mes: 11 });
+    expect(serie[1]).toMatchObject({ anio: 2025, mes: 12 });
+    expect(serie[2]).toMatchObject({ anio: 2026, mes: 1 });
+    expect(serie[3]).toMatchObject({ anio: 2026, mes: 2 });
+  });
+
+  it('suma totales reales por mes', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 100_000, fecha: '2026-05-10' }),
+      gasto({ id: 'g2', monto: 50_000,  fecha: '2026-05-15' }),
+      gasto({ id: 'g3', monto: 200_000, fecha: '2026-04-20' }),
+    ];
+    const serie = serieGastosMensual(gastos, 2026, 5, 3);
+    // [mar=0, abr=200k, may=150k]
+    expect(serie[1].total).toBe(200_000);
+    expect(serie[2].total).toBe(150_000);
+  });
+
+  it('meses sin gastos aparecen con total=0 (no se omiten)', () => {
+    const serie = serieGastosMensual([], 2026, 5, 3);
+    expect(serie.every(p => p.total === 0)).toBe(true);
+  });
+
+  it('cada punto tiene label de mes corto', () => {
+    const serie = serieGastosMensual([], 2026, 5, 3);
+    expect(serie.map(p => p.label)).toEqual(['mar', 'abr', 'may']);
+  });
+
+  it('mesesAtras=1 devuelve solo el mes actual', () => {
+    const serie = serieGastosMensual([], 2026, 5, 1);
+    expect(serie).toHaveLength(1);
+    expect(serie[0]).toMatchObject({ anio: 2026, mes: 5 });
+  });
+
+  it('default es 12 meses', () => {
+    const serie = serieGastosMensual([], 2026, 5);
+    expect(serie).toHaveLength(12);
+  });
+
+  it('clamp inferior: mesesAtras < 1 → 1', () => {
+    const serie = serieGastosMensual([], 2026, 5, 0);
+    expect(serie).toHaveLength(1);
+  });
+});
+
+// ── seriePorCategoria() ──────────────────────────────────────────
+
+describe('seriePorCategoria()', () => {
+  it('devuelve array vacío sin gastos', () => {
+    expect(seriePorCategoria([])).toEqual([]);
+  });
+
+  it('ordena categorías de mayor a menor', () => {
+    const gastos = [
+      gasto({ categoria: 'Alimentación', monto: 100_000 }),
+      gasto({ categoria: 'Transporte',   monto: 300_000 }),
+      gasto({ categoria: 'Entretenimiento', monto: 50_000 }),
+    ];
+    const serie = seriePorCategoria(gastos);
+    expect(serie[0].categoria).toBe('Transporte');
+    expect(serie[1].categoria).toBe('Alimentación');
+    expect(serie[2].categoria).toBe('Entretenimiento');
+  });
+
+  it('calcula porcentaje sobre el total', () => {
+    const gastos = [
+      gasto({ categoria: 'A', monto: 750_000 }),
+      gasto({ categoria: 'B', monto: 250_000 }),
+    ];
+    const serie = seriePorCategoria(gastos);
+    expect(serie[0].pct).toBe(75);
+    expect(serie[1].pct).toBe(25);
+  });
+
+  it('cada elemento tiene categoria, total y pct', () => {
+    const gastos = [gasto({ categoria: 'X', monto: 100_000 })];
+    const serie = seriePorCategoria(gastos);
+    expect(serie[0]).toHaveProperty('categoria');
+    expect(serie[0]).toHaveProperty('total');
+    expect(serie[0]).toHaveProperty('pct');
+  });
+
+  it('agrupa cola larga en "Otros" cuando supera maxSegmentos', () => {
+    // 8 categorías distintas, max 6 → 5 top + "Otros"
+    const gastos = Array.from({ length: 8 }, (_, i) =>
+      gasto({ id: `g${i}`, categoria: `Cat${i}`, monto: (8 - i) * 100_000 })
+    );
+    const serie = seriePorCategoria(gastos, 6);
+    expect(serie).toHaveLength(6);
+    expect(serie[serie.length - 1].categoria).toBe('Otros');
+  });
+
+  it('"Otros" suma el total de las categorías agrupadas', () => {
+    const gastos = [
+      gasto({ id: 'g1', categoria: 'A', monto: 1_000_000 }),
+      gasto({ id: 'g2', categoria: 'B', monto: 500_000 }),
+      gasto({ id: 'g3', categoria: 'C', monto: 100_000 }),
+      gasto({ id: 'g4', categoria: 'D', monto: 100_000 }),
+    ];
+    const serie = seriePorCategoria(gastos, 2);
+    // 1 top + "Otros" = 2 segmentos
+    expect(serie).toHaveLength(2);
+    expect(serie[1].categoria).toBe('Otros');
+    expect(serie[1].total).toBe(700_000); // B + C + D
+  });
+
+  it('no agrupa si el total de categorías es ≤ maxSegmentos', () => {
+    const gastos = [
+      gasto({ id: 'g1', categoria: 'A', monto: 100_000 }),
+      gasto({ id: 'g2', categoria: 'B', monto: 50_000 }),
+    ];
+    const serie = seriePorCategoria(gastos, 6);
+    expect(serie).toHaveLength(2);
+    expect(serie.map(s => s.categoria)).not.toContain('Otros');
   });
 });
