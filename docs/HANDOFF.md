@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (C.2)
+> Última actualización: 2026-05-18 (C.3)
 
 ---
 
@@ -35,6 +35,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### C.3 — Tests de migración schema v1→v2 · 2026-05-18
+9 tests en Suite 6 de `flujos.test.js` que blindan la migración introducida por D.5.
+Cubre: subida de `_version` 1→2 con `presupuestos:[]`, datos sin campo `_version` (legacy),
+idempotencia (v2 con presupuestos no los pierde), preservación de todos los campos v1,
+tipos inválidos (`"1"` string, `null`), roundtrip v1→flush→reload→v2, y descarte de
+campos desconocidos por `_applyToS`. 596/596 verdes.
+- `tests/integration/flujos.test.js` (ampliado con Suite 6 — C.3)
 
 ### C.2 — Tests de integración: backup/restore · 2026-05-18
 8 tests para validar el ciclo export CSV → reset app → import. Cubre exportación

@@ -1,5 +1,5 @@
 /**
- * tests/integration/flujos.test.js — C.1
+ * tests/integration/flujos.test.js — C.1 / C.2 / C.3
  *
  * Prueba los flujos principales de usuario cruzando múltiples dominios.
  * A diferencia de los tests unitarios (que aíslan una función), aquí se
@@ -10,11 +10,13 @@
  *   2. Análisis cross-domain sobre el estado construido
  *   3. Persistencia: roundtrip localStorage (flush + reload)
  *   4. Resiliencia: localStorage corrupto no rompe la app
+ *   5. Backup/Restore: export CSV → reset → import (C.2)
+ *   6. Migración schema v1 → v2 (C.3)
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { S, createInitialState, EventBus } from '../../modules/core/state.js';
-import { loadData, _flushNow, STORAGE_KEY } from '../../modules/core/storage.js';
+import { loadData, _flushNow, STORAGE_KEY, SCHEMA_VERSION } from '../../modules/core/storage.js';
 import { guardar } from '../../modules/infra/crud.js';
 import { cuentasActivas, calcularTotalCuentas } from '../../modules/dominio/tesoreria/logic.js';
 import { ingresosActivos, calcularTotalMensual, calcularIngresoMensual } from '../../modules/dominio/ingresos/logic.js';
@@ -526,5 +528,149 @@ describe('C.2 — Flujo backup/restore (export → reset → import)', () => {
 
     expect(resultado.validos).toHaveLength(1);
     expect(resultado.validos[0].datos.descripcion).toBe('Comida');
+  });
+});
+
+// ── Suite 6 — Migración schema v1 → v2 ──────────────────────────────────────
+
+describe('C.3 — Migración schema v1 → v2 (envelope budgeting)', () => {
+  beforeEach(resetS);
+
+  /** Serializa un fixture en localStorage y dispara loadData(). */
+  function loadFixture(fixture) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fixture));
+    loadData();
+  }
+
+  /** Estado realista de un usuario que usaba Finko antes de D.5 (schema v1). */
+  const BASE_V1 = {
+    _version: 1,
+    onboarded: true,
+    perfil: { nombre: 'María', smmlv: 1_423_500 },
+    config: { notificaciones: false },
+    cuentas: [
+      { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 3_000_000, activa: true, fechaCreacion: '2026-01-01' },
+    ],
+    ingresos: [
+      { id: 'i1', descripcion: 'Salario', monto: 2_500_000, frecuencia: 'Mensual', activo: true, fechaCreacion: '2026-01-01' },
+    ],
+    gastos: [
+      { id: 'g1', descripcion: 'Mercado', monto: 400_000, categoria: 'Alimentación', fecha: '2026-04-10', cuentaId: 'c1', nota: '' },
+    ],
+    compromisos: [],
+    metas: [],
+    // sin presupuestos — característica de v1
+  };
+
+  it('v1 con _version:1 agrega presupuestos:[] y sube _version al actual', () => {
+    loadFixture(BASE_V1);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+  });
+
+  it('v1 sin campo _version se trata como v1 y migra correctamente', () => {
+    const { _version, ...sinVersion } = BASE_V1;
+    loadFixture(sinVersion);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+  });
+
+  it('migración es idempotente: v2 ya migrado con presupuestos no pierde datos', () => {
+    const fixtureV2 = {
+      ...BASE_V1,
+      _version: 2,
+      presupuestos: [
+        { id: 'p1', categoria: 'Alimentación', montoMensual: 500_000, activo: true, fechaCreacion: '2026-05-01' },
+      ],
+    };
+    loadFixture(fixtureV2);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toHaveLength(1);
+    expect(S.presupuestos[0].id).toBe('p1');
+  });
+
+  it('todos los datos de v1 sobreviven la migración sin alteraciones', () => {
+    loadFixture(BASE_V1);
+
+    expect(S.onboarded).toBe(true);
+    expect(S.perfil.nombre).toBe('María');
+    expect(S.perfil.smmlv).toBe(1_423_500);
+    expect(S.cuentas).toHaveLength(1);
+    expect(S.cuentas[0].id).toBe('c1');
+    expect(S.cuentas[0].saldo).toBe(3_000_000);
+    expect(S.ingresos).toHaveLength(1);
+    expect(S.ingresos[0].descripcion).toBe('Salario');
+    expect(S.gastos).toHaveLength(1);
+    expect(S.gastos[0].descripcion).toBe('Mercado');
+    expect(S.gastos[0].cuentaId).toBe('c1');
+    expect(S.compromisos).toEqual([]);
+    expect(S.metas).toEqual([]);
+  });
+
+  it('presupuestos preexistentes en v1 no se sobrescriben durante la migración', () => {
+    // _migrate() solo agrega presupuestos si !Array.isArray(data.presupuestos)
+    const fixtureConPresupuestos = {
+      ...BASE_V1,
+      presupuestos: [
+        { id: 'p1', categoria: 'Transporte', montoMensual: 200_000, activo: true, fechaCreacion: '2026-01-01' },
+      ],
+    };
+    loadFixture(fixtureConPresupuestos);
+
+    expect(S.presupuestos).toHaveLength(1);
+    expect(S.presupuestos[0].id).toBe('p1');
+  });
+
+  it('_version string ("1") se trata como v1 y migra correctamente', () => {
+    // typeof "1" !== 'number' → fallback a 1 → 1 < 2 → migra
+    loadFixture({ ...BASE_V1, _version: '1' });
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+  });
+
+  it('_version null se trata como v1 y migra correctamente', () => {
+    // typeof null !== 'number' → fallback a 1 → migra
+    loadFixture({ ...BASE_V1, _version: null });
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+  });
+
+  it('roundtrip post-migración: v1 → loadData → flush → loadData → estado v2 intacto', () => {
+    loadFixture(BASE_V1);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    const gastosAntes = S.gastos.length;
+
+    _flushNow();
+
+    // Simula reapertura: resetear memoria y recargar desde localStorage ya migrado
+    Object.assign(S, createInitialState());
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+    expect(S.gastos).toHaveLength(gastosAntes);
+    expect(S.perfil.nombre).toBe('María');
+    expect(S.onboarded).toBe(true);
+  });
+
+  it('campos desconocidos en v1 son descartados por _applyToS', () => {
+    // _applyToS itera sobre Object.keys(createInitialState()) y descarta el resto
+    loadFixture({
+      ...BASE_V1,
+      transferencias: [{ id: 't1', monto: 100_000 }],
+      campoBasura:    'valor_legacy',
+    });
+
+    expect(S).not.toHaveProperty('transferencias');
+    expect(S).not.toHaveProperty('campoBasura');
+    expect(S._version).toBe(SCHEMA_VERSION);
+    // Datos válidos siguen intactos
+    expect(S.gastos).toHaveLength(1);
   });
 });

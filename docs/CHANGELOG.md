@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Tests de integración — Migración schema v1→v2 (C.3) · 2026-05-18
+
+9 tests en Suite 6 de `tests/integration/flujos.test.js` que blindan la lógica de `_migrate()` y `_applyToS()` introducidas en el schema bump de D.5.
+
+**Casos cubiertos:**
+- **Migración base** (1 test): fixture `_version:1` sin `presupuestos` → `loadData()` agrega `presupuestos:[]` y sube `_version` a `SCHEMA_VERSION` (2).
+- **Legacy sin `_version`** (1 test): dato muy viejo sin el campo → se trata como v1 y migra correctamente.
+- **Idempotencia** (1 test): fixture `_version:2` con presupuestos existentes → no los borra ni duplica.
+- **Preservación de datos** (1 test): cuentas, ingresos, gastos, compromisos, metas, perfil y `onboarded` de v1 sobreviven sin alteraciones.
+- **`presupuestos` preexistente en v1** (1 test): `_migrate()` solo agrega si `!Array.isArray(data.presupuestos)`, los existentes se respetan.
+- **`_version` string `"1"`** (1 test): `typeof "1" !== 'number'` → fallback a 1 → migra.
+- **`_version` null** (1 test): `typeof null !== 'number'` → fallback a 1 → migra.
+- **Roundtrip post-migración** (1 test): `loadData(v1)` → `_flushNow()` → `loadData()` → estado v2 idéntico.
+- **Campos desconocidos descartados** (1 test): `_applyToS()` itera `Object.keys(createInitialState())`, campos legacy como `transferencias` no aparecen en `S`.
+
+**Commits:**
+- **test(integration)** — `tests/integration/flujos.test.js` (ampliado con Suite 6) — 9 tests nuevos; 596/596 tests verdes.
+
+---
+
 ### Tests de integración — Flujo C.2 (Backup/Restore) · 2026-05-18
 
 8 tests en `tests/integration/flujos.test.js` cubriendo el ciclo completo export → reset → import.
