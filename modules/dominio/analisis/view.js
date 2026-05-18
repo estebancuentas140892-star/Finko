@@ -22,12 +22,13 @@ export function renderAnalisis() {
   const mes  = Number(fechaHoy.slice(5, 7));
 
   const resumen = generarResumen(
-    S.ingresos, S.gastos, S.compromisos, S.cuentas, anio, mes
+    S.ingresos, S.gastos, S.compromisos, S.cuentas, anio, mes, S.metas
   );
 
   el.innerHTML = `
     ${_renderMetricas(resumen)}
     ${_renderSalud(resumen.tasaAhorro, resumen.salud)}
+    ${_renderPatrimonio(resumen)}
     ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes)}
     ${_renderHormigas(resumen.hormigas)}
   `;
@@ -86,6 +87,92 @@ function _renderSalud(tasaAhorro, salud) {
                style="width:${porcentajeDisplay}%"></div>
         </div>
         <p class="salud-card__tasa">Tasa de ahorro: <strong>${tasaAhorro}%</strong></p>
+      </div>
+    </section>`;
+}
+
+function _renderPatrimonio({ activos, pasivos, patrimonioNeto, proyeccion, balance }) {
+  const esPositivo  = patrimonioNeto >= 0;
+  const heroClase   = esPositivo ? 'patrimonio-hero--positivo' : 'patrimonio-hero--negativo';
+  const valorClase  = esPositivo ? 'patrimonio-hero__valor--positivo' : 'patrimonio-hero__valor--negativo';
+  const signo       = esPositivo ? '' : '−';
+  const valorAbs    = Math.abs(patrimonioNeto);
+
+  // Proyección: color basado en el valor proyectado.
+  const _claseProyeccion = (val) => val >= 0 ? 'proyeccion-card__valor--positivo' : 'proyeccion-card__valor--negativo';
+  const _fProyeccion = (val) => `${val < 0 ? '−' : ''}${f(Math.abs(val))}`;
+
+  // CTA si hay deudas sin saldo registrado.
+  const ctaDeudas = pasivos.deudasSinSaldo > 0
+    ? `<p class="analisis__hint">
+        Tenés <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
+        sin saldo registrado. Completalas en
+        <a href="#compromisos" class="link">Compromisos</a>
+        para calcular tu patrimonio real.
+      </p>`
+    : '';
+
+  // Texto de ahorro para proyección.
+  const ahorroLabel = balance >= 0
+    ? `Si mantenés tu ahorro actual de <strong>${f(balance)}/mes</strong>…`
+    : `Con tu déficit actual de <strong>−${f(Math.abs(balance))}/mes</strong>…`;
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-patrimonio-title">
+      <h2 class="analisis__section-title" id="analisis-patrimonio-title">Patrimonio neto</h2>
+
+      <div class="patrimonio-hero ${heroClase}">
+        <p class="patrimonio-hero__label">Tu patrimonio neto hoy</p>
+        <p class="patrimonio-hero__valor ${valorClase}" aria-label="Patrimonio neto: ${signo}${f(valorAbs)}">
+          ${signo}${f(valorAbs)}
+        </p>
+        <p class="patrimonio-hero__hint">activos − pasivos</p>
+      </div>
+
+      <div class="metric-grid">
+        <article class="metric-card">
+          <p class="metric-card__label">Activos totales</p>
+          <p class="metric-card__value">${f(activos.total)}</p>
+          <p class="metric-card__desc">
+            Cuentas ${f(activos.totalCuentas)}
+            ${activos.totalMetas > 0 ? ` · Metas ${f(activos.totalMetas)}` : ''}
+          </p>
+        </article>
+        <article class="metric-card">
+          <p class="metric-card__label">Pasivos (deudas)</p>
+          <p class="metric-card__value ${pasivos.total > 0 ? 'metric-card--negative' : ''}">${f(pasivos.total)}</p>
+          <p class="metric-card__desc">
+            ${pasivos.cantidadDeudas === 0
+              ? 'Sin deudas registradas'
+              : `${pasivos.cantidadDeudas} deuda${pasivos.cantidadDeudas > 1 ? 's' : ''} · ${pasivos.deudasSinSaldo > 0 ? `${pasivos.deudasSinSaldo} sin saldo` : 'todas con saldo'}`
+            }
+          </p>
+        </article>
+      </div>
+
+      ${ctaDeudas}
+
+      <h3 class="analisis__subsection-title">Proyección de patrimonio</h3>
+      <p class="analisis__desc">${ahorroLabel}</p>
+      <div class="proyeccion-grid">
+        <article class="proyeccion-card">
+          <p class="proyeccion-card__periodo">En 6 meses</p>
+          <p class="proyeccion-card__valor ${_claseProyeccion(proyeccion.seisMeses)}">
+            ${_fProyeccion(proyeccion.seisMeses)}
+          </p>
+        </article>
+        <article class="proyeccion-card">
+          <p class="proyeccion-card__periodo">En 1 año</p>
+          <p class="proyeccion-card__valor ${_claseProyeccion(proyeccion.doceMeses)}">
+            ${_fProyeccion(proyeccion.doceMeses)}
+          </p>
+        </article>
+        <article class="proyeccion-card">
+          <p class="proyeccion-card__periodo">En 2 años</p>
+          <p class="proyeccion-card__valor ${_claseProyeccion(proyeccion.veinticuatroMeses)}">
+            ${_fProyeccion(proyeccion.veinticuatroMeses)}
+          </p>
+        </article>
       </div>
     </section>`;
 }

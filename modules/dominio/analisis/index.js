@@ -11,7 +11,7 @@ import { renderAnalisis } from './view.js';
 
 // Secciones cuyos cambios requieren re-análisis.
 const SECCIONES_OBSERVADAS = new Set([
-  'ingresos', 'gastos', 'compromisos', 'cuentas',
+  'ingresos', 'gastos', 'compromisos', 'cuentas', 'metas',
 ]);
 
 export function initAnalisis() {
