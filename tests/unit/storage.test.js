@@ -163,7 +163,8 @@ describe('save() — debounce', () => {
 
   it('llamadas sucesivas colapsan en una sola escritura', () => {
     vi.useFakeTimers();
-    const setSpy = vi.spyOn(Storage.prototype, 'setItem');
+    // happy-dom 15+ implementa setItem como propiedad propia del objeto, no del prototype.
+    const setSpy = vi.spyOn(localStorage, 'setItem');
 
     save();
     save();
