@@ -4,6 +4,11 @@ import {
   calcularTasaAhorro,
   nivelSalud,
   generarResumen,
+  calcularActivos,
+  calcularPasivos,
+  calcularPatrimonioNeto,
+  proyectarPatrimonio,
+  proyeccionMultiHorizonte,
 } from '../../modules/dominio/analisis/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -26,6 +31,17 @@ const compromiso = (overrides = {}) => ({
 const cuenta = (overrides = {}) => ({
   id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros',
   saldo: 500_000, activa: true, ...overrides,
+});
+
+const meta = (overrides = {}) => ({
+  id: 'm1', nombre: 'Vacaciones', montoObjetivo: 5_000_000,
+  montoActual: 1_000_000, completada: false, ...overrides,
+});
+
+const deuda = (overrides = {}) => ({
+  id: 'd1', descripcion: 'Crédito vehículo', monto: 800_000,
+  frecuencia: 'Mensual', diaPago: 15, tipo: 'deuda', activo: true,
+  saldoPendiente: 12_000_000, ...overrides,
 });
 
 // ── calcularBalance() ─────────────────────────────────────────────
@@ -206,5 +222,240 @@ describe('generarResumen()', () => {
     expect(resumen.balance).toBe(0);
     expect(resumen.saldoCuentas).toBe(0);
     expect(resumen.hormigas).toEqual([]);
+  });
+
+  it('incluye activos, pasivos, patrimonioNeto y proyeccion (extension v1.1)', () => {
+    const resumen = generarResumen([], [], [], [], ANIO, MES);
+    expect(resumen).toHaveProperty('activos');
+    expect(resumen).toHaveProperty('pasivos');
+    expect(resumen).toHaveProperty('patrimonioNeto');
+    expect(resumen).toHaveProperty('proyeccion');
+  });
+
+  it('agrega activos de cuentas + metas en resumen', () => {
+    const resumen = generarResumen([], [], [], [cuenta()], ANIO, MES, [meta()]);
+    // 500_000 (cuenta) + 1_000_000 (meta) = 1_500_000
+    expect(resumen.activos.total).toBe(1_500_000);
+  });
+
+  it('agrega pasivos de deudas en resumen', () => {
+    const resumen = generarResumen([], [], [deuda()], [], ANIO, MES);
+    expect(resumen.pasivos.total).toBe(12_000_000);
+  });
+
+  it('calcula patrimonioNeto como activos - pasivos', () => {
+    const resumen = generarResumen(
+      [], [], [deuda()], [cuenta({ saldo: 2_000_000 })], ANIO, MES, [meta()]
+    );
+    // activos = 2_000_000 + 1_000_000 = 3_000_000
+    // pasivos = 12_000_000
+    // patrimonio = -9_000_000
+    expect(resumen.patrimonioNeto).toBe(-9_000_000);
+  });
+
+  it('proyección usa balance del mes como ahorro mensual', () => {
+    // ingreso 3M, sin egresos → balance = 3M → ahorroMensual = 3M
+    const resumen = generarResumen([ingreso()], [], [], [], ANIO, MES);
+    // patrimonio inicial 0, ahorro 3M/mes, 12 meses → 36M
+    expect(resumen.proyeccion.doceMeses).toBe(36_000_000);
+  });
+
+  it('mantiene compatibilidad con llamadas sin metas (6 argumentos)', () => {
+    // Llamadas previas a la extensión no pasaban metas
+    const resumen = generarResumen([], [], [], [], ANIO, MES);
+    expect(resumen.activos.totalMetas).toBe(0);
+    expect(resumen.activos.total).toBe(0);
+  });
+});
+
+// ── calcularActivos() ─────────────────────────────────────────────
+
+describe('calcularActivos()', () => {
+  it('suma saldo de cuentas activas + monto de metas no completadas', () => {
+    const r = calcularActivos([cuenta()], [meta()]);
+    expect(r.totalCuentas).toBe(500_000);
+    expect(r.totalMetas).toBe(1_000_000);
+    expect(r.total).toBe(1_500_000);
+  });
+
+  it('ignora cuentas inactivas', () => {
+    const cuentas = [cuenta(), cuenta({ id: 'cu2', saldo: 999_999, activa: false })];
+    const r = calcularActivos(cuentas, []);
+    expect(r.totalCuentas).toBe(500_000);
+  });
+
+  it('ignora metas completadas', () => {
+    const metas = [meta(), meta({ id: 'm2', montoActual: 999_999, completada: true })];
+    const r = calcularActivos([], metas);
+    expect(r.totalMetas).toBe(1_000_000);
+  });
+
+  it('devuelve ceros con arrays vacíos', () => {
+    const r = calcularActivos([], []);
+    expect(r).toEqual({ totalCuentas: 0, totalMetas: 0, total: 0 });
+  });
+
+  it('maneja metas sin montoActual definido', () => {
+    const r = calcularActivos([], [meta({ montoActual: undefined })]);
+    expect(r.totalMetas).toBe(0);
+  });
+
+  it('suma múltiples cuentas y múltiples metas', () => {
+    const cuentas = [
+      cuenta({ saldo: 1_000_000 }),
+      cuenta({ id: 'cu2', saldo: 500_000 }),
+    ];
+    const metas = [
+      meta({ montoActual: 2_000_000 }),
+      meta({ id: 'm2', montoActual: 300_000 }),
+    ];
+    const r = calcularActivos(cuentas, metas);
+    expect(r.total).toBe(3_800_000);
+  });
+});
+
+// ── calcularPasivos() ─────────────────────────────────────────────
+
+describe('calcularPasivos()', () => {
+  it('suma saldoPendiente de deudas activas', () => {
+    const r = calcularPasivos([deuda()]);
+    expect(r.total).toBe(12_000_000);
+    expect(r.cantidadDeudas).toBe(1);
+    expect(r.deudasSinSaldo).toBe(0);
+  });
+
+  it('cuenta deudas sin saldoPendiente como "sin saldo registrado"', () => {
+    const deudas = [
+      deuda(),
+      deuda({ id: 'd2', saldoPendiente: undefined }),
+    ];
+    const r = calcularPasivos(deudas);
+    expect(r.total).toBe(12_000_000);
+    expect(r.cantidadDeudas).toBe(2);
+    expect(r.deudasSinSaldo).toBe(1);
+  });
+
+  it('ignora compromisos que no son tipo "deuda"', () => {
+    const comps = [
+      deuda(),
+      compromiso(), // tipo='fijo'
+      compromiso({ id: 'c2', tipo: 'agenda', saldoPendiente: 999_999 }),
+    ];
+    const r = calcularPasivos(comps);
+    expect(r.total).toBe(12_000_000);
+    expect(r.cantidadDeudas).toBe(1);
+  });
+
+  it('ignora deudas inactivas', () => {
+    const deudas = [
+      deuda(),
+      deuda({ id: 'd2', saldoPendiente: 999_999, activo: false }),
+    ];
+    const r = calcularPasivos(deudas);
+    expect(r.total).toBe(12_000_000);
+    expect(r.cantidadDeudas).toBe(1);
+  });
+
+  it('rechaza saldoPendiente no numérico o negativo', () => {
+    const deudas = [
+      deuda({ id: 'd1', saldoPendiente: 'abc' }),
+      deuda({ id: 'd2', saldoPendiente: -1_000_000 }),
+      deuda({ id: 'd3', saldoPendiente: 0 }),
+    ];
+    const r = calcularPasivos(deudas);
+    expect(r.total).toBe(0);
+    expect(r.deudasSinSaldo).toBe(3);
+  });
+
+  it('devuelve ceros con array vacío', () => {
+    const r = calcularPasivos([]);
+    expect(r).toEqual({ total: 0, cantidadDeudas: 0, deudasSinSaldo: 0 });
+  });
+});
+
+// ── calcularPatrimonioNeto() ──────────────────────────────────────
+
+describe('calcularPatrimonioNeto()', () => {
+  it('patrimonio positivo: activos > pasivos', () => {
+    expect(calcularPatrimonioNeto(5_000_000, 2_000_000)).toBe(3_000_000);
+  });
+
+  it('patrimonio negativo: pasivos > activos', () => {
+    expect(calcularPatrimonioNeto(1_000_000, 5_000_000)).toBe(-4_000_000);
+  });
+
+  it('patrimonio cero: activos == pasivos', () => {
+    expect(calcularPatrimonioNeto(3_000_000, 3_000_000)).toBe(0);
+  });
+
+  it('sin pasivos: patrimonio = activos', () => {
+    expect(calcularPatrimonioNeto(2_500_000, 0)).toBe(2_500_000);
+  });
+
+  it('sin activos: patrimonio = -pasivos', () => {
+    expect(calcularPatrimonioNeto(0, 4_000_000)).toBe(-4_000_000);
+  });
+});
+
+// ── proyectarPatrimonio() ─────────────────────────────────────────
+
+describe('proyectarPatrimonio()', () => {
+  it('aplica ahorro mensual lineal en N meses', () => {
+    // patrimonio 1M, ahorro 500k/mes, 6 meses → 1M + 3M = 4M
+    expect(proyectarPatrimonio(1_000_000, 500_000, 6)).toBe(4_000_000);
+  });
+
+  it('proyecta hacia abajo con ahorro negativo (déficit)', () => {
+    expect(proyectarPatrimonio(5_000_000, -200_000, 12)).toBe(2_600_000);
+  });
+
+  it('devuelve patrimonio actual si meses=0', () => {
+    expect(proyectarPatrimonio(1_000_000, 500_000, 0)).toBe(1_000_000);
+  });
+
+  it('protege contra meses negativos devolviendo el patrimonio actual', () => {
+    expect(proyectarPatrimonio(1_000_000, 500_000, -3)).toBe(1_000_000);
+  });
+
+  it('protege contra meses no finitos devolviendo el patrimonio actual', () => {
+    expect(proyectarPatrimonio(1_000_000, 500_000, NaN)).toBe(1_000_000);
+    expect(proyectarPatrimonio(1_000_000, 500_000, Infinity)).toBe(1_000_000);
+  });
+
+  it('acepta patrimonio inicial negativo', () => {
+    // Deuda neta -2M, ahorro 500k/mes, 6 meses → -2M + 3M = 1M
+    expect(proyectarPatrimonio(-2_000_000, 500_000, 6)).toBe(1_000_000);
+  });
+});
+
+// ── proyeccionMultiHorizonte() ────────────────────────────────────
+
+describe('proyeccionMultiHorizonte()', () => {
+  it('proyecta a 6, 12 y 24 meses con ahorro positivo', () => {
+    const p = proyeccionMultiHorizonte(0, 1_000_000);
+    expect(p.seisMeses).toBe(6_000_000);
+    expect(p.doceMeses).toBe(12_000_000);
+    expect(p.veinticuatroMeses).toBe(24_000_000);
+  });
+
+  it('proyecta hacia abajo con déficit mensual', () => {
+    const p = proyeccionMultiHorizonte(10_000_000, -500_000);
+    expect(p.seisMeses).toBe(7_000_000);
+    expect(p.doceMeses).toBe(4_000_000);
+    expect(p.veinticuatroMeses).toBe(-2_000_000);
+  });
+
+  it('mantiene el patrimonio constante si ahorro=0', () => {
+    const p = proyeccionMultiHorizonte(3_500_000, 0);
+    expect(p.seisMeses).toBe(3_500_000);
+    expect(p.doceMeses).toBe(3_500_000);
+    expect(p.veinticuatroMeses).toBe(3_500_000);
+  });
+
+  it('devuelve las 3 claves esperadas', () => {
+    const p = proyeccionMultiHorizonte(0, 0);
+    expect(p).toHaveProperty('seisMeses');
+    expect(p).toHaveProperty('doceMeses');
+    expect(p).toHaveProperty('veinticuatroMeses');
   });
 });
