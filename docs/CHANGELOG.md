@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### B.2 — Screenshots PWA para manifest · 2026-05-18
+
+2 screenshots de 540×720 (tema oscuro) para enriquecer la ficha de instalación
+PWA en Android Chrome. Generados con Pillow desde script Python reproducible.
+
+- `assets/screenshots/screenshot-1-dashboard.png` — Dashboard con balance, presupuesto y compromisos próximos.
+- `assets/screenshots/screenshot-2-gastos.png` — Listado de gastos del mes con categorías color-coded.
+- `manifest.json` — array `"screenshots"` con `form_factor: "narrow"` y labels descriptivos.
+- `service-worker.js` — screenshots en `OPTIONAL_ASSETS`; bump `CACHE_NAME` v5→v6.
+- `scripts/gen-screenshots.py` — script reutilizable para regenerar screenshots.
+
+---
+
 ### Fix: sidebar móvil colapsada (A.4 smoke test reveló bug) · 2026-05-18
 
 Smoke test desde móvil real (Xiaomi/Android) reveló que la barra de navegación

@@ -7,6 +7,22 @@
   "background_color": "#0f1117",
   "theme_color": "#0f1117",
   "lang": "es",
+  "screenshots": [
+    {
+      "src": "assets/screenshots/screenshot-1-dashboard.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard con balance mensual y compromisos"
+    },
+    {
+      "src": "assets/screenshots/screenshot-2-gastos.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Listado de gastos del mes"
+    }
+  ],
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

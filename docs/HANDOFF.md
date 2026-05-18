@@ -39,6 +39,13 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### B.2 — Screenshots PWA para manifest · 2026-05-18
+2 screenshots 540×720 (tema oscuro) para mejorar la ficha de instalación PWA en Android.
+Generados con Pillow (`scripts/gen-screenshots.py`). Array `"screenshots"` en `manifest.json`
+con `form_factor: "narrow"`. SW bump v5→v6, screenshots en `OPTIONAL_ASSETS`.
+- `assets/screenshots/screenshot-1-dashboard.png`, `screenshot-2-gastos.png` (nuevos)
+- `manifest.json`, `service-worker.js`, `scripts/gen-screenshots.py` (nuevo)
+
 ### A.1' / A.2 / A.3 — Deploy real a Vercel + verificación headers · 2026-05-18
 Finko en producción: https://finko-brown.vercel.app. Repo conectado para
 auto-redeploy en push a `main`. HTTPS automático (HSTS preload). Todos los
@@ -81,20 +88,6 @@ cross-domain (balance/tasa/salud/generarResumen), roundtrip localStorage (flush+
 y resiliencia (JSON corrupto, estado vacío, cuenta inactiva). 541/541 verdes.
 - `tests/integration/flujos.test.js` (nuevo)
 
-### B.1 — Íconos PNG producción + Apple Touch Icon · 2026-05-18
-Diseño nuevo: gráfico de barras creciente (3 barras redondeadas, verde sobre oscuro).
-Supersampling 4× + LANCZOS. Safe zone 80% cumplido (maskable OK).
-Agrega `apple-touch-icon.png` (180×180) + `<link rel=apple-touch-icon>` en HTML.
-- `scripts/gen-icons.py` (reescrito), `assets/icons/icon-192.png`, `assets/icons/icon-512.png`, `assets/icons/apple-touch-icon.png` (nuevo), `index.html`, `service-worker.js`
-
-### A.1 — Deploy a producción (Netlify/Vercel) · 2026-05-18
-`netlify.toml` y `vercel.json` listos para deploy estático sin build step.
-Cache máxima para JS/CSS; `no-cache` para `service-worker.js`; cabeceras de seguridad.
-Fix del SW: 7 módulos faltantes agregados a `CORE_ASSETS`; `CACHE_NAME` → `finko-v2`.
-- `netlify.toml` (nuevo), `vercel.json` (nuevo), `service-worker.js`
-
-**Para publicar con Netlify:** instalar CLI (`npm i -g netlify-cli`), luego `netlify deploy --prod --dir .`
-**Para publicar con Vercel:** instalar CLI (`npm i -g vercel`), luego `vercel --prod`
 
 ### D.1 — Exportar gastos a CSV · 2026-05-18
 Botón `📤 Exportar gastos (CSV)` en Configuración → Tus datos.

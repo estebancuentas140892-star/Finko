@@ -43,9 +43,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Completadas:**
 - ✅ B.1 — Íconos PNG producción: gráfico de barras, supersampling 4×, safe zone OK — 2026-05-18.
+- ✅ B.2 — Screenshots para el manifest (2× 540×720, tema oscuro, form_factor narrow) — 2026-05-18.
 
 **Tareas candidatas:**
-- B.2 — Screenshots para el manifest (`screenshots` field — mejora la instalación PWA en Android).
 - B.3 — Favicon SVG (el Apple Touch Icon ya está cubierto por `apple-touch-icon.png`).
 - B.4 — Splash screen iOS.
 
