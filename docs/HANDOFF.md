@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (A.4 confirmado — responsive OK en Redmi Note 11)
+> Última actualización: 2026-05-18 (E.1 — actualizar tasa usura Q2 2026)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### E.1 — Actualizar tasa de usura Q2 2026 · 2026-05-18
+Tasa de usura SFC (Superintendencia Financiera de Colombia) actualizada de
+Q1 (26.77% EA) a Q2 (28.17% EA). Cambios en `constants.js`: renombrado
+`TASA_USURA_Q1_2026` → `TASA_USURA_Q2_2026`, valor 0.2677 → 0.2817,
+vigencia extendida a 2026-06-30. Hint en modal de Compromisos actualizado
+para reflejar tasa vigente. 596/596 tests verdes.
+- `modules/core/constants.js`, `modules/dominio/compromisos/view.js`
 
 ### A.4 — Smoke test confirmado en Redmi Note 11 · 2026-05-18
 Usuario verificó que el fix responsive (sesión anterior) se ve bien en el celular real.
@@ -99,9 +107,9 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **E.1 — Actualizar tasa de usura (trimestral)** | Mantener vigentes los cálculos de interés en módulo financiero |
-| 2 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
-| 3 | **B.3–B.4 — Favicon SVG + Splash iOS** | Mejoras visuales opcionales de PWA |
+| 1 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
+| 2 | **B.3–B.4 — Favicon SVG + Splash iOS** | Mejoras visuales opcionales de PWA |
+| 3 | **E.2–E.3 — Mantenimiento anual + reforma** | Actualizar SMMLV/UVT en enero; verificar GMF si hay cambios |
 
 ---
 

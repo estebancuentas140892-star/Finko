@@ -94,8 +94,10 @@ _(no quedan tareas funcionales pendientes en D — todas las features de v1 + po
 
 **Objetivo:** mantener vigentes las constantes legales colombianas.
 
+**Completadas:**
+- ✅ E.1 — Actualizar tasa de usura: Q1 26.77% EA → Q2 28.17% EA (SFC 2026-05-18).
+
 **Tareas candidatas:**
-- E.1 — Cada trimestre: actualizar tasa de usura en `modules/core/constants.js` (fuente: SFC).
 - E.2 — Cada enero: actualizar SMMLV (Mintrabajo) y UVT (DIAN).
 - E.3 — Verificar GMF y otras tasas si hay reforma tributaria.
 

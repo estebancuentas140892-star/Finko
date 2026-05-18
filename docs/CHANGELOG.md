@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### E.1 — Actualizar tasa de usura Q1 → Q2 2026 · 2026-05-18
+
+Tasa de usura vigente (SFC — Superintendencia Financiera de Colombia) actualizada
+al cierre trimestral. Q1 2026 vencía 2026-03-31 con 26.77% EA. Q2 2026 (abril-junio)
+certificado a 28.17% EA por resolución SFC.
+
+Cambios en el código:
+- `modules/core/constants.js`: renombrado `TASA_USURA_Q1_2026` → `TASA_USURA_Q2_2026`,
+  valor 0.2677 → 0.2817, comentario actualizado con vigencia hasta 2026-06-30.
+- `modules/dominio/compromisos/view.js`: hint en modal de crear/editar Compromiso
+  actualizado de "26.77% EA (SFC, Q1 2026)" a "28.17% EA (SFC, Q2 2026)".
+
+Tests: 596/596 verdes (Vitest), sin impacto en cobertura. La constante no se importa
+en otros módulos (fue preparada para futura funcionalidad de cálculo de intereses máximos).
+
+---
+
 ### A.4 — Smoke test confirmado en Redmi Note 11 · 2026-05-18
 
 Usuario verificó en dispositivo real (Xiaomi Redmi Note 11, 393px) que el fix
