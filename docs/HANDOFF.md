@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (B.4 — splash screens iOS)
+> Última actualización: 2026-05-18 (B.4 → A.5 documentado; app en producción estable)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -118,13 +118,15 @@ Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en insta
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
+**Estado actual:** App completa, en producción estable (`https://finko-brown.vercel.app`). Todas las features v1.0 + post-v1.0 están implementadas.
 
-| Prioridad | Tarea | Por qué |
+Tareas opcionales restantes:
+
+| Prioridad | Tarea | Cuándo |
 |---|---|---|
-| 1 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
-| 2 | **E.2 — SMMLV + UVT** (enero 2027) | Actualizar constantes legales anuales cuando salgan |
-| 3 | **E.3 — GMF + reforma** (si aplica) | Verificar si hay cambio por reforma tributaria |
+| 1 | **A.5 — Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado. Ver [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) para guía paso a paso. |
+| 2 | **E.2 — SMMLV + UVT** (mantenimiento anual) | Enero 2027 — actualizar constantes legales CO (Mintrabajo/DIAN). |
+| 3 | **E.3 — GMF + reforma** (si aplica) | Bajo demanda — si hay cambio por reforma tributaria. |
 
 ---
 

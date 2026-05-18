@@ -36,7 +36,7 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ A.4 — Smoke test confirmado en Redmi Note 11 (PWA instalada, offline OK, responsive verificado) — 2026-05-18.
 
 **Tareas candidatas:**
-- A.5 — Agregar dominio custom (opcional).
+- A.5 — Agregar dominio custom (opcional). Guía completa en [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) — cuando el usuario tenga dominio registrado.
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
 

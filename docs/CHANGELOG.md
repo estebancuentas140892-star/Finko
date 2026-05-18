@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### A.5 — Guía: configurar dominio custom · 2026-05-18
+
+Documentación para A.5 (opcional). Cuando el usuario tenga un dominio registrado y quiera
+cambiar de `finko-brown.vercel.app` a uno propio (ej: `finko.app`).
+
+- `docs/SETUP_DOMINIO.md` (nuevo): 3 opciones (comprar en Vercel, dominio externo +
+  nameservers, o DNS records manuales), pasos detallados, troubleshooting, costos estimados.
+
+No requiere cambios de código en Finko — solo config en Vercel + DNS del registrador.
+
+---
+
 ### B.4 — Splash screens iOS · 2026-05-18
 
 5 imágenes PNG para la pantalla de arranque al abrir la PWA instalada en iOS.
