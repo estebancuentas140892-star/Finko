@@ -118,15 +118,32 @@ Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en insta
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Estado actual:** App completa, en producción estable (`https://finko-brown.vercel.app`). Todas las features v1.0 + post-v1.0 están implementadas.
+**Estado actual:** App completa, en producción estable (`https://finko-brown.vercel.app`). Todas las features v1.0 + post-v1.0 están implementadas. **Modo mantenimiento.**
 
 Tareas opcionales restantes:
 
-| Prioridad | Tarea | Cuándo |
-|---|---|---|
-| 1 | **A.5 — Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado. Ver [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) para guía paso a paso. |
-| 2 | **E.2 — SMMLV + UVT** (mantenimiento anual) | Enero 2027 — actualizar constantes legales CO (Mintrabajo/DIAN). |
-| 3 | **E.3 — GMF + reforma** (si aplica) | Bajo demanda — si hay cambio por reforma tributaria. |
+| Prioridad | Tarea | Cuándo | Nivel |
+|---|---|---|---|
+| 1 | **A.5 — Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado | Guía lista en [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) |
+| 2 | **E.2 — SMMLV + UVT** (anual) | **Enero 2027** — buscar nuevos valores Mintrabajo (SMMLV) + DIAN (UVT), actualizar `modules/core/constants.js` | ~15 min, Haiku |
+| 3 | **E.3 — GMF + reforma** (demanda) | Si hay reforma tributaria — verificar cambios en GMF | Ad-hoc |
+
+### ⏰ Recordatorio enero 2027 — E.2
+
+**Qué hacer:**
+1. 👉 Visita [DIAN UVT](https://www.dian.gov.co/) y [Mintrabajo SMMLV](https://www.mintrabajo.gov.co/)
+2. Obtén los valores vigentes para 2027
+3. Actualiza en `modules/core/constants.js`:
+   ```javascript
+   export const SMMLV_2027 = <nuevo_valor>;
+   export const UVT_2027 = <nuevo_valor>;
+   ```
+4. Cambia las referencias de `_2026` a `_2027` en `constants.js`
+5. Tests (`npm test` → 596/596 verdes)
+6. Commit: `feat(E.2): actualizar SMMLV 2027 + UVT 2027`
+7. Push a main → auto-deploy a producción
+
+**Archivo:** Escribe tu `Próximo paso` con modelo **Haiku 4.5** (búsqueda + cambio mecánico).
 
 ---
 
