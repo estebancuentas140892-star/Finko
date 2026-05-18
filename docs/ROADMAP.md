@@ -64,12 +64,12 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 **Objetivo:** features que no entraron en v1.0 pero el usuario podría querer.
 
 **Completadas:**
+- ✅ D.1 — Exportar gastos a CSV con BOM UTF-8 (roundtrip con D.2) — 2026-05-18.
 - ✅ D.2 — Importar gastos desde CSV con preview + detección de duplicados — 2026-05-18.
 - ✅ D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías) — 2026-05-18.
 - ✅ D.4 — Recordatorios push para compromisos próximos a vencer (Notification API) — 2026-05-18.
 
 **Tareas candidatas pendientes:**
-- D.1 — Exportar transacciones a CSV (`modules/dominio/exports/`).
 - D.5 — Modo "presupuesto por sobre" (envelope budgeting).
 
 **Modelo sugerido:** Sonnet 4.6 / Opus 4.7 según complejidad — **Esfuerzo:** Medio–Alto.

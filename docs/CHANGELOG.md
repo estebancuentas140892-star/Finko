@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Feature: Exportar gastos a CSV (D.1) — 2026-05-18
+
+Exportación de gastos al mismo formato que acepta el importador (D.2), garantizando roundtrip completo.
+
+**Resumen:**
+- Botón "📤 Exportar gastos (CSV)" en Configuración → Tus datos, junto a los botones de importar.
+- Función pura `gastosACSV(gastos, cuentas)` en `modules/dominio/export/logic.js`: serializa con BOM UTF-8 (compatibilidad Excel en Windows), ordena por fecha más reciente primero, resuelve `cuentaId` → nombre legible.
+- Formato de salida: `fecha,monto,descripcion,categoria,cuenta,nota` — idéntico al que acepta D.2.
+- Estado vacío: anuncia "No hay gastos para exportar" sin generar archivo.
+- Archivo descargado: `finko-gastos-YYYY-MM-DD.csv`.
+
+**Commits:**
+
+- **feat(export)** — `f091091` · `modules/dominio/export/logic.js` (nuevo), `modules/dominio/config/view.js`, `modules/dominio/config/index.js`, `tests/unit/export.test.js` (nuevo) — `gastosACSV()`; botón y acción `exportar-gastos-csv` wired desde `config`; 13 tests nuevos (521/521 verdes).
+
+---
+
 ## [1.0.0] — 2026-05-16
 
 Primera versión estable y completa de Finko Claude. PWA offline-first lista para uso local.
