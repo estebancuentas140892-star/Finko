@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### B.3 — Favicon SVG · 2026-05-18
+
+Favicon vectorial para Finko. Sin favicon previo en el proyecto (solo `apple-touch-icon.png`).
+
+- `assets/icons/favicon.svg` (nuevo): viewBox 32×32, fondo `#0f1117` con rx=5,
+  3 barras ascendentes `#00dc82` (rx=2). Proporciones idénticas al ícono PNG existente.
+- `index.html`: `<link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />`
+  antes del apple-touch-icon.
+- `service-worker.js`: `favicon.svg` agregado a CORE_ASSETS; `CACHE_NAME` bumpeado
+  `finko-v7` → `finko-v8`.
+
+Tests: 596/596 verdes. El SVG se verifica en el HTML fuente vía fetch al servidor.
+
+---
+
 ### E.1 — Actualizar tasa de usura Q1 → Q2 2026 · 2026-05-18
 
 Tasa de usura vigente (SFC — Superintendencia Financiera de Colombia) actualizada

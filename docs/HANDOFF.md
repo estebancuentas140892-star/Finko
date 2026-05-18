@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (E.1 — actualizar tasa usura Q2 2026)
+> Última actualización: 2026-05-18 (B.3 — favicon SVG)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### B.3 — Favicon SVG · 2026-05-18
+Favicon vectorial `assets/icons/favicon.svg` — 3 barras ascendentes `#00dc82`
+sobre fondo `#0f1117`, esquinas rx=2, idéntico al ícono PNG. `<link rel="icon"
+type="image/svg+xml">` en `<head>`. Agregado a CORE_ASSETS del SW. SW v7→v8.
+- `assets/icons/favicon.svg` (nuevo), `index.html`, `service-worker.js`
 
 ### E.1 — Actualizar tasa de usura Q2 2026 · 2026-05-18
 Tasa de usura SFC (Superintendencia Financiera de Colombia) actualizada de
@@ -107,8 +113,8 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
-| 2 | **B.3–B.4 — Favicon SVG + Splash iOS** | Mejoras visuales opcionales de PWA |
+| 1 | **B.4 — Splash screen iOS** (opcional) | Mejora la experiencia de carga en iOS |
+| 2 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
 | 3 | **E.2–E.3 — Mantenimiento anual + reforma** | Actualizar SMMLV/UVT en enero; verificar GMF si hay cambios |
 
 ---

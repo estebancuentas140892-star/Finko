@@ -49,9 +49,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 **Completadas:**
 - ✅ B.1 — Íconos PNG producción: gráfico de barras, supersampling 4×, safe zone OK — 2026-05-18.
 - ✅ B.2 — Screenshots para el manifest (2× 540×720, tema oscuro, form_factor narrow) — 2026-05-18.
+- ✅ B.3 — Favicon SVG: 3 barras `#00dc82` sobre `#0f1117`, `<link rel="icon" type="image/svg+xml">`, SW v8 — 2026-05-18.
 
 **Tareas candidatas:**
-- B.3 — Favicon SVG (el Apple Touch Icon ya está cubierto por `apple-touch-icon.png`).
 - B.4 — Splash screen iOS.
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.
