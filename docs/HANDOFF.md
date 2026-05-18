@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (D.5)
+> Última actualización: 2026-05-18 (C.2)
 
 ---
 
@@ -35,6 +35,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### C.2 — Tests de integración: backup/restore · 2026-05-18
+8 tests para validar el ciclo export CSV → reset app → import. Cubre exportación
+correcta a CSV (preserva fecha, monto, descripción, categoría, cuenta, nota), 
+importación con detección de duplicados, y roundtrip completo con datos idénticos.
+Incluye casos de error (CSV con filas malas, cuenta no encontrada → cuentaId null) 
+y robustez (BOM UTF-8). 587/587 verdes.
+- `tests/integration/flujos.test.js` (ampliado con C.2)
 
 ### D.5 — Envelope budgeting (presupuesto por sobre) · 2026-05-18
 Nuevo dominio `modules/dominio/presupuesto/`. Un envelope por categoría con monto
@@ -104,10 +112,10 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 | Prioridad | Tarea | Por qué |
 |---|---|---|
 | 1 | **A.1' — Hacer el deploy real a Netlify/Vercel** | App completa y pulida — momento de publicar |
-| 2 | **C.2 — Tests backup (export JSON → reset → import)** | Segundo flujo de integración pendiente |
-| 3 | **C.3 — Tests migración schema v1→v2** | Verificar que el bump de D.5 sube datos viejos sin perderlos |
-| 4 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
-| 5 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
+| 2 | **C.3 — Tests migración schema v1→v2** | Verificar que el bump de D.5 sube datos viejos sin perderlos |
+| 3 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
+| 4 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
+| 5 | **E.1–E.3 — Mantenimiento periódico** | Actualizar constantes legales CO trimestrales/anuales |
 
 ---
 

@@ -56,9 +56,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Completadas:**
 - ✅ C.1 — Flujo onboarding → cuenta → ingreso → gasto + roundtrip + resiliencia (20 tests) — 2026-05-18.
+- ✅ C.2 — Flujo backup: exportar CSV → resetear app → importar → verificar (8 tests) — 2026-05-18.
 
 **Tareas candidatas:**
-- C.2 — Flujo backup: exportar JSON → resetear app → importar → verificar.
 - C.3 — Flujo migración: cargar `localStorage` con schema viejo → verificar `loadData()` lo sube.
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Medio.

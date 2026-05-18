@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Tests de integración — Flujo C.2 (Backup/Restore) · 2026-05-18
+
+8 tests en `tests/integration/flujos.test.js` cubriendo el ciclo completo export → reset → import.
+
+**Suites:**
+- **Export a CSV** (2 tests): `gastosACSV()` preserva toda la información (fecha, monto, descripción, categoría, cuenta, nota); CSV vacío cuando no hay gastos.
+- **Import desde CSV** (3 tests): `procesarCSV()` detecta correctamente gastos válidos, duplicados e errores; detección de duplicados cuando se reimporta lo mismo; cuentaId se resuelve correctamente o es null si no existe.
+- **Roundtrip completo** (1 test): exportar → limpiar → importar → verificar que datos son idénticos (fecha, monto, descripción, categoría, cuentaId, nota).
+- **Validación y robustez** (2 tests): CSV con errores múltiples rechaza solo las filas malas; BOM UTF-8 se procesa correctamente.
+
+**Commits:**
+- **test(integration)** — `tests/integration/flujos.test.js` (ampliado) — 8 tests nuevos; 587/587 tests verdes.
+
+---
+
 ### Envelope budgeting — Presupuesto por sobre (D.5) · 2026-05-18
 
 Nueva sección "Presupuesto" cierra la funcionalidad core de Finko. Un envelope por

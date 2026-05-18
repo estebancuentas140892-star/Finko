@@ -25,6 +25,8 @@ import {
   nivelSalud,
   generarResumen,
 } from '../../modules/dominio/analisis/logic.js';
+import { gastosACSV } from '../../modules/dominio/export/logic.js';
+import { procesarCSV } from '../../modules/dominio/import/logic.js';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -285,5 +287,244 @@ describe('C.1 — Resiliencia de la capa de datos', () => {
     guardar('cuentas', { nombre: 'Activa',  banco: 'Banco', tipo: 'Ahorros', saldo: 300_000, activa: true  });
     expect(cuentasActivas(S.cuentas)).toHaveLength(1);
     expect(calcularTotalCuentas(S.cuentas)).toBe(300_000);
+  });
+});
+
+// ── Suite 5 — Backup/Restore: export → reset → import ──────────────────────
+
+describe('C.2 — Flujo backup/restore (export → reset → import)', () => {
+  beforeEach(resetS);
+
+  it('exportar gastos a CSV preserva toda la información', () => {
+    const cuenta = guardar('cuentas', {
+      nombre: 'Nequi',
+      banco:  'Nequi',
+      tipo:   'Ahorros',
+      saldo:  2_000_000,
+      activa: true,
+    });
+
+    guardar('gastos', {
+      descripcion: 'Arriendo',
+      monto:       800_000,
+      categoria:   'Vivienda',
+      fecha:       '2026-05-01',
+      cuentaId:    cuenta.id,
+      nota:        'Pago mensual',
+    });
+
+    guardar('gastos', {
+      descripcion: 'Café',
+      monto:       5_000,
+      categoria:   'Alimentación',
+      fecha:       '2026-05-15',
+      cuentaId:    null,
+      nota:        '',
+    });
+
+    const csv = gastosACSV(S.gastos, S.cuentas);
+
+    expect(csv).toBeTruthy();
+    expect(csv).toContain('2026-05-01');
+    expect(csv).toContain('800000');
+    expect(csv).toContain('Arriendo');
+    expect(csv).toContain('Nequi');
+    expect(csv).toContain('2026-05-15');
+    expect(csv).toContain('5000');
+    expect(csv).toContain('Café');
+  });
+
+  it('CSV vacío cuando no hay gastos', () => {
+    const csv = gastosACSV(S.gastos, S.cuentas);
+    expect(csv).toBe('');
+  });
+
+  it('importar CSV detecta correctamente todos los gastos válidos', () => {
+    const cuenta = guardar('cuentas', {
+      nombre: 'Nequi',
+      banco:  'Nequi',
+      tipo:   'Ahorros',
+      saldo:  2_000_000,
+      activa: true,
+    });
+
+    // Exportar gastos originales
+    guardar('gastos', {
+      descripcion: 'Arriendo',
+      monto:       800_000,
+      categoria:   'Vivienda',
+      fecha:       '2026-05-01',
+      cuentaId:    cuenta.id,
+      nota:        'Pago mensual',
+    });
+
+    guardar('gastos', {
+      descripcion: 'Café',
+      monto:       5_000,
+      categoria:   'Alimentación',
+      fecha:       '2026-05-15',
+      cuentaId:    null,
+      nota:        '',
+    });
+
+    const csv = gastosACSV(S.gastos, S.cuentas);
+
+    // Simular reset: limpiar gastos pero mantener cuentas
+    S.gastos = [];
+
+    // Importar el CSV
+    const resultado = procesarCSV(csv, S.gastos, S.cuentas);
+
+    expect(resultado.total).toBe(2);
+    expect(resultado.validos).toHaveLength(2);
+    expect(resultado.duplicados).toHaveLength(0);
+    expect(resultado.errores).toHaveLength(0);
+
+    // Verificar datos importados
+    expect(resultado.validos[0].datos.descripcion).toBe('Café');
+    expect(resultado.validos[0].datos.monto).toBe(5_000);
+    expect(resultado.validos[1].datos.descripcion).toBe('Arriendo');
+    expect(resultado.validos[1].datos.monto).toBe(800_000);
+  });
+
+  it('roundtrip completo: crear → exportar → reset → importar → datos idénticos', () => {
+    const cuenta = guardar('cuentas', {
+      nombre: 'Nequi',
+      banco:  'Nequi',
+      tipo:   'Ahorros',
+      saldo:  2_000_000,
+      activa: true,
+    });
+
+    guardar('gastos', {
+      descripcion: 'Arriendo',
+      monto:       800_000,
+      categoria:   'Vivienda',
+      fecha:       '2026-05-01',
+      cuentaId:    cuenta.id,
+      nota:        'Pago mensual',
+    });
+
+    guardar('gastos', {
+      descripcion: 'Supermercado',
+      monto:       150_000,
+      categoria:   'Alimentación',
+      fecha:       '2026-05-10',
+      cuentaId:    null,
+      nota:        '',
+    });
+
+    const gastosOriginales = [...S.gastos];
+    const csv = gastosACSV(S.gastos, S.cuentas);
+
+    // Reset: limpiar todo menos cuentas
+    S.gastos = [];
+
+    // Importar
+    const resultado = procesarCSV(csv, S.gastos, S.cuentas);
+    expect(resultado.validos).toHaveLength(2);
+
+    // Guardar los gastos importados
+    resultado.validos.forEach(({ datos }) => {
+      guardar('gastos', datos);
+    });
+
+    // Comparar datos
+    expect(S.gastos).toHaveLength(gastosOriginales.length);
+    const gastosActuales = S.gastos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const originalesOrdenados = gastosOriginales.sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+    gastosActuales.forEach((actual, i) => {
+      const original = originalesOrdenados[i];
+      expect(actual.fecha).toBe(original.fecha);
+      expect(actual.monto).toBe(original.monto);
+      expect(actual.descripcion).toBe(original.descripcion);
+      expect(actual.categoria).toBe(original.categoria);
+      expect(actual.cuentaId).toBe(original.cuentaId);
+      expect(actual.nota).toBe(original.nota);
+    });
+  });
+
+  it('detecta duplicados cuando se intenta importar lo mismo dos veces', () => {
+    const cuenta = guardar('cuentas', {
+      nombre: 'Nequi',
+      banco:  'Nequi',
+      tipo:   'Ahorros',
+      saldo:  2_000_000,
+      activa: true,
+    });
+
+    guardar('gastos', {
+      descripcion: 'Arriendo',
+      monto:       800_000,
+      categoria:   'Vivienda',
+      fecha:       '2026-05-01',
+      cuentaId:    cuenta.id,
+      nota:        '',
+    });
+
+    const csv = gastosACSV(S.gastos, S.cuentas);
+
+    // Primera importación
+    const resultado1 = procesarCSV(csv, S.gastos, S.cuentas);
+    expect(resultado1.validos).toHaveLength(0);
+    expect(resultado1.duplicados).toHaveLength(1);
+
+    // Segunda importación sin cambios
+    const resultado2 = procesarCSV(csv, S.gastos, S.cuentas);
+    expect(resultado2.validos).toHaveLength(0);
+    expect(resultado2.duplicados).toHaveLength(1);
+  });
+
+  it('importar CSV con gasto sin referencia a cuenta válida → cuentaId = null', () => {
+    const csv = `fecha,monto,descripcion,categoria,cuenta,nota
+2026-05-01,5000,Café,Alimentación,BancoFantasma,`;
+
+    const resultado = procesarCSV(csv, S.gastos, S.cuentas);
+
+    expect(resultado.validos).toHaveLength(1);
+    expect(resultado.validos[0].datos.cuentaId).toBeNull();
+  });
+
+  it('importar CSV con múltiples errores → se rechazan todas las filas malas', () => {
+    const csv = `fecha,monto,descripcion,categoria,cuenta,nota
+2026-05-01,5000,Café,Alimentación,,,
+2026-13-01,5000,Arriendo,Vivienda,,
+2026-05-03,,Gasto sin monto,Otros,,
+2026-05-04,5000,,Otros,,`;
+
+    const resultado = procesarCSV(csv, S.gastos, S.cuentas);
+
+    expect(resultado.validos).toHaveLength(1); // Solo la primera (primer gasto está OK)
+    expect(resultado.errores).toHaveLength(3);
+  });
+
+  it('importar CSV con BOM UTF-8 funciona correctamente', () => {
+    const cuenta = guardar('cuentas', {
+      nombre: 'Mi Cuenta',
+      banco:  'Banco',
+      tipo:   'Ahorros',
+      saldo:  1_000_000,
+      activa: true,
+    });
+
+    guardar('gastos', {
+      descripcion: 'Comida',
+      monto:       50_000,
+      categoria:   'Alimentación',
+      fecha:       '2026-05-05',
+      cuentaId:    cuenta.id,
+      nota:        '',
+    });
+
+    const csv = gastosACSV(S.gastos, S.cuentas);
+    expect(csv.charCodeAt(0)).toBe(0xFEFF); // Verificar BOM
+
+    // Limpiar y reimportar
+    S.gastos = [];
+    const resultado = procesarCSV(csv, S.gastos, S.cuentas);
+
+    expect(resultado.validos).toHaveLength(1);
+    expect(resultado.validos[0].datos.descripcion).toBe('Comida');
   });
 });
