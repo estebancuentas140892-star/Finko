@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18
+> Última actualización: 2026-05-18 (A.1)
 
 ---
 
@@ -35,6 +35,15 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### A.1 — Deploy a producción (Netlify/Vercel) · 2026-05-18
+`netlify.toml` y `vercel.json` listos para deploy estático sin build step.
+Cache máxima para JS/CSS; `no-cache` para `service-worker.js`; cabeceras de seguridad.
+Fix del SW: 7 módulos faltantes agregados a `CORE_ASSETS`; `CACHE_NAME` → `finko-v2`.
+- `netlify.toml` (nuevo), `vercel.json` (nuevo), `service-worker.js`
+
+**Para publicar con Netlify:** instalar CLI (`npm i -g netlify-cli`), luego `netlify deploy --prod --dir .`
+**Para publicar con Vercel:** instalar CLI (`npm i -g vercel`), luego `vercel --prod`
 
 ### D.1 — Exportar gastos a CSV · 2026-05-18
 Botón `📤 Exportar gastos (CSV)` en Configuración → Tus datos.
@@ -72,11 +81,11 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **A.1 — Deploy a Netlify/Vercel** | Publicar la PWA en URL pública; usar desde celular real |
-| 2 | **A.3 — Verificar SW en producción** | Confirmar que el Service Worker funciona fuera de localhost |
-| 3 | **C.1 — Tests integración: onboarding → ingreso → gasto** | `tests/integration/` existe vacía |
-| 4 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
-| 5 | **B.1 — Íconos PNG producción** | Los actuales son funcionales pero básicos (Pillow) |
+| 1 | **A.3/A.4 — Verificar SW + smoke test móvil real** | Confirmar instalación PWA y offline tras deploy |
+| 2 | **C.1 — Tests integración: onboarding → ingreso → gasto** | `tests/integration/` existe vacía |
+| 3 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
+| 4 | **B.1 — Íconos PNG producción** | Los actuales son funcionales pero básicos (Pillow) |
+| 5 | **A.5 — Dominio custom** | Opcional; solo si el usuario quiere URL propia |
 
 ---
 

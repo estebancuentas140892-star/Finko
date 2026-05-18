@@ -21,10 +21,12 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Objetivo:** publicar Finko en una URL pública para acceso desde cualquier dispositivo.
 
+**Completadas:**
+- ✅ A.1 — `netlify.toml` + `vercel.json` listos; SW CORE_ASSETS completo (finko-v2) — 2026-05-18.
+
 **Tareas candidatas:**
-- A.1 — Deploy a Netlify (`netlify deploy --prod`) o Vercel (`vercel --prod`).
-- A.2 — Configurar HTTPS (gratis con cualquiera de los dos providers).
-- A.3 — Verificar que el Service Worker se registra correctamente en producción.
+- A.2 — HTTPS: automático en Netlify/Vercel al hacer el primer deploy (no requiere acción).
+- A.3 — Verificar que el Service Worker se registra correctamente en producción (hacer el deploy primero).
 - A.4 — Smoke test desde móvil real (instalación PWA + offline).
 - A.5 — Agregar dominio custom (opcional).
 

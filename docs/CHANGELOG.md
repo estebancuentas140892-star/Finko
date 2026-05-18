@@ -7,6 +7,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Deploy a producción — Netlify/Vercel (A.1) · 2026-05-18
+
+Config de deploy estático lista para Netlify y Vercel. Sin build step.
+
+**Resumen:**
+- `netlify.toml`: `publish = "."`, sin comando de build, cache 1 año para JS/CSS, `no-cache` para `service-worker.js`, cabeceras de seguridad (`X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy: notifications=(self)`).
+- `vercel.json`: configuración equivalente para Vercel.
+- `service-worker.js`: 7 módulos post-v1.0 faltantes agregados a `CORE_ASSETS` (csv, svg, notificaciones, import/*, export/logic); `CACHE_NAME` bumpeado de `finko-v1` → `finko-v2`.
+
+**Para publicar:**
+```bash
+# Netlify
+npm i -g netlify-cli
+netlify deploy --prod --dir .
+
+# Vercel
+npm i -g vercel
+vercel --prod
+```
+
+**Commits:**
+- **feat(deploy)** — `518a297` · `netlify.toml` (nuevo), `vercel.json` (nuevo), `service-worker.js` — config de headers, caché y seguridad; SW CORE_ASSETS completo; CACHE_NAME v2.
+
+---
+
 ### Feature: Exportar gastos a CSV (D.1) — 2026-05-18
 
 Exportación de gastos al mismo formato que acepta el importador (D.2), garantizando roundtrip completo.
