@@ -68,6 +68,17 @@ function _renderCompromisoItem(compromiso) {
     subtitleParts.push(`${f(mensual)}/mes`);
   }
 
+  // Mostrar saldo pendiente de la deuda cuando está disponible.
+  let saldoHtml = '';
+  if (tipo === 'deuda') {
+    const saldo = Number(compromiso.saldoPendiente);
+    if (Number.isFinite(saldo) && saldo > 0) {
+      subtitleParts.push(`Saldo: ${f(saldo)}`);
+    } else {
+      saldoHtml = `<p class="list-item__hint">Registrá el saldo para calcular tu patrimonio neto</p>`;
+    }
+  }
+
   return `
     <article class="list-item" data-id="${_esc(compromiso.id)}">
       <div class="list-item__icon" aria-hidden="true">${icono}</div>
@@ -76,6 +87,7 @@ function _renderCompromisoItem(compromiso) {
           <span class="${chipClase}" aria-label="Vence en ${diasLabel}">${diasLabel}</span>
         </p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
+        ${saldoHtml}
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount">${f(compromiso.monto)}</p>
@@ -145,6 +157,29 @@ export function renderFormCompromiso() {
           ${tipoOpts}
         </select>
       </div>
+
+      <!-- Campos opcionales — visibles solo cuando tipo = 'deuda' -->
+      <div id="comp-deuda-campos" class="d-none">
+        <p class="form-hint">
+          Completá estos datos para ver tu patrimonio neto real.
+          Si los dejás en blanco, la deuda igual se registra.
+        </p>
+        <div class="form-group">
+          <label for="comp-saldo" class="label">Saldo pendiente (COP) <span class="form-optional">opcional</span></label>
+          <input id="comp-saldo" name="saldoPendiente" class="input" type="number"
+                 min="0" step="10000" placeholder="0" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="comp-tasa" class="label">Tasa EA (%) <span class="form-optional">opcional</span></label>
+          <input id="comp-tasa" name="tasaEA" class="input" type="number"
+                 min="0" max="200" step="0.01" placeholder="Ej. 26.5"
+                 aria-describedby="comp-tasa-hint" autocomplete="off" />
+          <p id="comp-tasa-hint" class="form-hint">
+            Tasa efectiva anual. La usura vigente es ~26.77% EA (SFC, Q1 2026).
+          </p>
+        </div>
+      </div>
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar compromiso</button>

@@ -77,6 +77,15 @@ function _inyectarForm() {
     e.preventDefault();
     _guardarCompromiso();
   });
+
+  // Mostrar/ocultar campos extra cuando el usuario elige tipo='deuda'.
+  const selectTipo   = body.querySelector('#comp-tipo');
+  const campasDeuda  = body.querySelector('#comp-deuda-campos');
+  if (selectTipo && campasDeuda) {
+    selectTipo.addEventListener('change', () => {
+      campasDeuda.classList.toggle('d-none', selectTipo.value !== 'deuda');
+    });
+  }
 }
 
 export function initCompromisos() {

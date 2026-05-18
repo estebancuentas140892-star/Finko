@@ -274,4 +274,84 @@ describe('normalizarCompromiso()', () => {
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarCompromiso(datosFormValidos)).not.toHaveProperty('id');
   });
+
+  it('incluye saldoPendiente cuando tipo=deuda y el campo está lleno', () => {
+    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '12000000', tasaEA: '' };
+    const result = normalizarCompromiso(datos);
+    expect(result.saldoPendiente).toBe(12_000_000);
+  });
+
+  it('incluye tasaEA como decimal cuando tipo=deuda y el campo está lleno', () => {
+    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '', tasaEA: '26.5' };
+    const result = normalizarCompromiso(datos);
+    expect(result.tasaEA).toBeCloseTo(0.265);
+  });
+
+  it('incluye ambos campos extras cuando tipo=deuda y ambos están completos', () => {
+    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '5000000', tasaEA: '24' };
+    const result = normalizarCompromiso(datos);
+    expect(result.saldoPendiente).toBe(5_000_000);
+    expect(result.tasaEA).toBeCloseTo(0.24);
+  });
+
+  it('omite saldoPendiente cuando tipo=deuda pero el campo está vacío', () => {
+    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '', tasaEA: '' };
+    const result = normalizarCompromiso(datos);
+    expect(result).not.toHaveProperty('saldoPendiente');
+  });
+
+  it('omite campos extra cuando tipo=fijo aunque el campo tenga valor', () => {
+    const datos = { ...datosFormValidos, tipo: 'fijo', saldoPendiente: '999999', tasaEA: '10' };
+    const result = normalizarCompromiso(datos);
+    expect(result).not.toHaveProperty('saldoPendiente');
+    expect(result).not.toHaveProperty('tasaEA');
+  });
+});
+
+// ── validarCompromiso() — campos de deuda ─────────────────────────
+
+describe('validarCompromiso() — campos opcionales de deuda', () => {
+  const datosDeuda = { ...datosFormValidos, tipo: 'deuda' };
+
+  it('acepta deuda sin saldoPendiente ni tasaEA (ambos vacíos)', () => {
+    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '' })).toEqual([]);
+  });
+
+  it('acepta deuda con saldoPendiente válido', () => {
+    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '12000000', tasaEA: '' })).toEqual([]);
+  });
+
+  it('acepta deuda con tasaEA válida', () => {
+    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '26.5' })).toEqual([]);
+  });
+
+  it('acepta saldoPendiente de 0 (deuda saldada)', () => {
+    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '0', tasaEA: '' })).toEqual([]);
+  });
+
+  it('reporta error si saldoPendiente es negativo', () => {
+    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '-1000', tasaEA: '' });
+    expect(errores.some(e => /saldo/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si saldoPendiente no es número', () => {
+    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: 'mucho', tasaEA: '' });
+    expect(errores.some(e => /saldo/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si tasaEA supera 200%', () => {
+    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '201' });
+    expect(errores.some(e => /tasa/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si tasaEA es negativa', () => {
+    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '-1' });
+    expect(errores.some(e => /tasa/i.test(e))).toBe(true);
+  });
+
+  it('NO valida saldoPendiente para tipo=fijo aunque tenga valor', () => {
+    // fijo con saldo negativo no da error porque el campo no aplica
+    const datos = { ...datosFormValidos, tipo: 'fijo', saldoPendiente: '-9999', tasaEA: '-1' };
+    expect(validarCompromiso(datos)).toEqual([]);
+  });
 });

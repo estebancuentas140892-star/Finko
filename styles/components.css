@@ -203,6 +203,21 @@
   content: ' *';
   color: var(--fk-danger);
 }
+.form-optional {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-muted);
+}
+.form-hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: var(--fk-leading-relaxed);
+}
+.list-item__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-top: var(--fk-space-1);
+}
 
 .input {
   width: 100%;

@@ -109,6 +109,10 @@ export function urgencia(compromiso) {
 
 /**
  * Valida los datos del formulario de compromiso.
+ *
+ * Los campos `saldoPendiente` y `tasaEA` son opcionales incluso para tipo='deuda'.
+ * Si el usuario los deja vacíos se aceptan; si los llena deben ser válidos.
+ *
  * @param {Record<string, string>} datos
  * @returns {string[]} Mensajes de error (vacío = válido).
  */
@@ -133,6 +137,22 @@ export function validarCompromiso(datos) {
     errores.push('Debés elegir el tipo de compromiso.');
   }
 
+  // Validaciones opcionales para deudas (solo si el usuario completó los campos).
+  if (datos.tipo === 'deuda') {
+    if (datos.saldoPendiente !== '' && datos.saldoPendiente !== undefined) {
+      const saldo = Number(datos.saldoPendiente);
+      if (isNaN(saldo) || saldo < 0) {
+        errores.push('El saldo pendiente debe ser un número igual o mayor a 0.');
+      }
+    }
+    if (datos.tasaEA !== '' && datos.tasaEA !== undefined) {
+      const tasa = Number(datos.tasaEA);
+      if (isNaN(tasa) || tasa < 0 || tasa > 200) {
+        errores.push('La tasa EA debe ser un porcentaje entre 0 y 200.');
+      }
+    }
+  }
+
   return errores;
 }
 
@@ -141,10 +161,15 @@ export function validarCompromiso(datos) {
 /**
  * Convierte datos crudos del formulario al shape de S.compromisos.
  * Asume que los datos ya pasaron `validarCompromiso()`.
+ *
+ * Para tipo='deuda', incluye campos opcionales solo si tienen valor válido:
+ * - `saldoPendiente` — COP (número ≥ 0).
+ * - `tasaEA`         — tasa efectiva anual como decimal 0–1 (se convierte desde %).
+ *
  * @param {Record<string, string>} datos
  */
 export function normalizarCompromiso(datos) {
-  return {
+  const base = {
     descripcion: datos.descripcion.trim(),
     monto:       Number(datos.monto),
     frecuencia:  datos.frecuencia,
@@ -152,4 +177,17 @@ export function normalizarCompromiso(datos) {
     tipo:        datos.tipo,
     activo:      true,
   };
+
+  if (datos.tipo === 'deuda') {
+    const saldo = Number(datos.saldoPendiente);
+    if (datos.saldoPendiente !== '' && datos.saldoPendiente !== undefined && !isNaN(saldo) && saldo >= 0) {
+      base.saldoPendiente = saldo;
+    }
+    const tasaPct = Number(datos.tasaEA);
+    if (datos.tasaEA !== '' && datos.tasaEA !== undefined && !isNaN(tasaPct) && tasaPct >= 0) {
+      base.tasaEA = tasaPct / 100;
+    }
+  }
+
+  return base;
 }
