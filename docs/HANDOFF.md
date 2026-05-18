@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (B.4 → A.5 documentado; app en producción estable)
+> Última actualización: 2026-05-18 (migración npm → pnpm completada; app en producción estable)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 579/579 verdes |
+| Tests unitarios + integración | 596/596 verdes |
 | Tests E2E | 18/18 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,13 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### Migración npm → pnpm · 2026-05-18
+Supply chain defense: `package-lock.json` reemplazado por `pnpm-lock.yaml` (pnpm v11.1.3).
+`.npmrc` con `minimum-release-age=7` (bloquea paquetes <7 días) y `frozen-lockfile=true`.
+`pnpm-workspace.yaml` con esbuild aprobado explícitamente (whitelist de scripts de install).
+Scripts sin cambios: `pnpm test`, `pnpm run lint`, etc. funcionan igual. 596/596 verdes.
+- `.npmrc` (nuevo), `pnpm-lock.yaml` (nuevo), `pnpm-workspace.yaml` (nuevo), `package-lock.json` (eliminado)
 
 ### B.4 — Splash screens iOS · 2026-05-18
 5 PNGs para `apple-touch-startup-image` (iPhone SE/8, 12/13/14, 14 Pro/15,
@@ -184,8 +191,8 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-npm test                      # 521 tests unitarios
-npm run test:e2e              # 18 smoke tests Playwright
-npm run coverage              # umbral 90% capa lógica
-npm run lighthouse            # requiere servidor en :8080
+pnpm test                     # 596 tests unitarios + integración
+pnpm run test:e2e             # 18 smoke tests Playwright
+pnpm run coverage             # umbral 90% capa lógica
+pnpm run lighthouse           # requiere servidor en :8080
 ```

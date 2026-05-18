@@ -64,8 +64,8 @@ evita duplicar gigabytes de `node_modules` entre proyectos.
 
 ## 3. Guía de migración: npm → pnpm
 
-> **No se ejecuta automáticamente.** Cuando decidas migrar (en una sesión dedicada),
-> seguir estos pasos en orden. Implica regenerar lockfile y cambiar comandos de CI.
+> **✅ Migración ejecutada el 2026-05-18** — pnpm v11.1.3, 596/596 tests verdes.
+> Los pasos a continuación son referencia histórica y para replicar en otros entornos.
 
 ### Paso 1 — Instalar pnpm globalmente
 

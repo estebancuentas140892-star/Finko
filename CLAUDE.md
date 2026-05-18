@@ -146,20 +146,20 @@ Tocar cualquiera de estas reglas requiere un ADR en `docs/DECISIONS/` y discusi�
 python -m http.server 8080
 
 # Tests unitarios (happy-dom)
-npm test                # 300 tests
-npm run test:watch
-npm run coverage        # umbral 90% sobre capa lógica
+pnpm test               # 596 tests
+pnpm run test:watch
+pnpm run coverage       # umbral 90% sobre capa lógica
 
 # E2E (Playwright + Chromium)
-npm run test:e2e        # 18 smoke tests
-npm run test:e2e:ui
+pnpm run test:e2e       # 18 smoke tests
+pnpm run test:e2e:ui
 
 # Lighthouse (requiere servidor en :8080 corriendo)
-npm run lighthouse      # → coverage/lighthouse-report.html
+pnpm run lighthouse     # → coverage/lighthouse-report.html
 
 # Lint
-npm run lint
-npm run format
+pnpm run lint
+pnpm run format
 ```
 
 ---
