@@ -87,6 +87,7 @@ const CORE_ASSETS = [
 const OPTIONAL_ASSETS = [
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
+  './assets/icons/apple-touch-icon.png',
 ];
 
 // ── INSTALL ────────────────────────────────────────────────────────────────
