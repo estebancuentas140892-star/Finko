@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v2';
+const CACHE_NAME = 'finko-v4';
 
 // ── Assets críticos — si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -81,6 +81,9 @@ const CORE_ASSETS = [
   './modules/dominio/import/view.js',
   './modules/dominio/import/index.js',
   './modules/dominio/export/logic.js',
+  './modules/dominio/presupuesto/logic.js',
+  './modules/dominio/presupuesto/view.js',
+  './modules/dominio/presupuesto/index.js',
 ];
 
 // ── Assets opcionales — se intentan cachear pero no bloquean el install ───
@@ -95,12 +98,16 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async (cache) => {
       // Core: fallo aquí = install falla = SW no se activa (comportamiento correcto).
-      await cache.addAll(CORE_ASSETS);
+      // `cache: 'reload'` evita servir versiones obsoletas del HTTP cache del browser
+      // o CDN intermedio — fuerza un fetch fresco contra origen al instalar.
+      await cache.addAll(
+        CORE_ASSETS.map((url) => new Request(url, { cache: 'reload' })),
+      );
 
       // Opcionales: ignorar individualmente para no bloquear el install.
       await Promise.allSettled(
         OPTIONAL_ASSETS.map((url) =>
-          cache.add(url).catch(() => {
+          cache.add(new Request(url, { cache: 'reload' })).catch(() => {
             // Íconos pueden no existir aún; no es crítico para funcionar offline.
           })
         )

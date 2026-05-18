@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 /** Timer interno del debounce. Variable de módulo — nunca en window. */
 let _saveTimer = null;
@@ -52,8 +52,13 @@ function _migrate(raw) {
 
   const data = /** @type {Record<string, unknown>} */ (raw);
 
-  // v1 → v1: placeholder. Las migraciones futuras se encadenan acá.
-  // Ejemplo: if (data._version < 2) Object.assign(data, _migrate_v1_to_v2(data));
+  // v1 → v2: nueva colección de presupuestos (envelope budgeting D.5).
+  // El usuario existente arranca sin presupuestos; el resto del estado no cambia.
+  if ((typeof data._version === 'number' ? data._version : 1) < 2) {
+    if (!Array.isArray(data.presupuestos)) {
+      data.presupuestos = [];
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

@@ -666,6 +666,138 @@ textarea.input {
 .progress-bar--salud-buena     { background: var(--fk-success); }
 .progress-bar--salud-ajustada  { background: var(--fk-warning); }
 .progress-bar--salud-critica   { background: var(--fk-danger); }
+.progress-bar--warn            { background: var(--fk-warning); }
+.progress-bar--danger          { background: var(--fk-danger); }
+
+/* ── D.5: Envelope budgeting (presupuesto por categoría) ── */
+.presupuesto-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+}
+
+.presupuesto-hero__totales {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-md);
+  margin-bottom: var(--fk-space-md);
+}
+
+.presupuesto-hero__metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+}
+
+.presupuesto-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.presupuesto-hero__value {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+}
+
+.presupuesto-hero__value.is-negative { color: var(--fk-danger); }
+
+.envelope-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.envelope {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-sm);
+}
+
+.envelope[data-estado="alerta"]   { border-color: rgba(255, 184, 46, 0.4); }
+.envelope[data-estado="excedido"] { border-color: rgba(255, 71, 87, 0.5);  background: var(--fk-danger-bg); }
+
+.envelope__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+}
+
+.envelope__title {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.envelope__subtitle {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.envelope__meta {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+
+.envelope__porcentaje { font-weight: var(--fk-fw-bold); color: var(--fk-text-primary); }
+
+.envelope__actions {
+  display: flex;
+  gap: var(--fk-space-sm);
+  justify-content: flex-end;
+  margin-top: var(--fk-space-xs);
+}
+
+.envelope-huerfanas {
+  margin-top: var(--fk-space-xl);
+  padding: var(--fk-space-md);
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-base);
+}
+
+.envelope-huerfanas__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-sm);
+}
+
+.envelope-huerfanas__list {
+  list-style: none;
+  margin: 0 0 var(--fk-space-sm);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+}
+
+.envelope-huerfanas__list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-primary);
+}
+
+.envelope-huerfanas__cat { color: var(--fk-text-secondary); }
+
+.envelope-huerfanas__hint {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
 
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {

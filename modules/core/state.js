@@ -63,6 +63,15 @@ import { SMMLV_2026 } from './constants.js';
  */
 
 /**
+ * @typedef {Object} Presupuesto
+ * @property {string} id
+ * @property {string} categoria          Una de CATEGORIAS_GASTO.
+ * @property {number} montoMensual       COP asignados al mes para esta categoría.
+ * @property {boolean} activo
+ * @property {string} fechaCreacion      ISO 8601.
+ */
+
+/**
  * @typedef {Object} Meta
  * @property {string} id
  * @property {string} nombre
@@ -80,7 +89,7 @@ import { SMMLV_2026 } from './constants.js';
  */
 
 /**
- * Factory del estado inicial (schema v1). storage.js lo reutiliza para resetear S
+ * Factory del estado inicial (schema v2). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
  * Cada llamada devuelve un objeto nuevo, así nunca se filtran referencias entre
@@ -96,12 +105,13 @@ import { SMMLV_2026 } from './constants.js';
  *   gastos: Gasto[],
  *   compromisos: Compromiso[],
  *   metas: Meta[],
+ *   presupuestos: Presupuesto[],
  * }}
  */
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 1,
+    _version: 2,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -131,6 +141,9 @@ export function createInitialState() {
 
     /** Metas de ahorro. */
     metas: [],
+
+    /** Presupuestos por categoría (envelope budgeting). v2. */
+    presupuestos: [],
   };
 }
 

@@ -84,6 +84,11 @@
           <span class="nav-group__label" id="nav-label-plan">Planificación</span>
           <div role="list" aria-labelledby="nav-label-plan">
 
+            <a class="nav-item" href="#presupuesto" data-section="presupuesto"
+               role="listitem" aria-label="Presupuesto por categoría">
+              <span class="nav-item__icon" aria-hidden="true">📩</span>
+              <span class="nav-item__label">Presupuesto</span>
+            </a>
             <a class="nav-item" href="#metas" data-section="metas"
                role="listitem" aria-label="Metas de ahorro">
               <span class="nav-item__icon" aria-hidden="true">🎯</span>
@@ -222,6 +227,20 @@
         </div>
       </section>
 
+      <!-- PRESUPUESTO -->
+      <section class="section" id="sec-presupuesto" aria-labelledby="title-presupuesto">
+        <header class="section__header">
+          <h1 class="section__title" id="title-presupuesto">Presupuesto</h1>
+          <button class="btn btn-primary" data-action="nuevo-presupuesto"
+                  aria-label="Crear nuevo presupuesto por categoría">
+            + Presupuesto
+          </button>
+        </header>
+        <div id="panel-presupuesto">
+          <!-- D.5: presupuesto/view.js renderiza aquí -->
+        </div>
+      </section>
+
       <!-- METAS -->
       <section class="section" id="sec-metas" aria-labelledby="title-metas">
         <header class="section__header">
@@ -335,6 +354,22 @@
       </header>
       <div class="modal__body" id="modal-cuenta-body">
         <!-- Fase 8 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo presupuesto -->
+  <div class="modal-overlay" id="modal-presupuesto"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-presupuesto-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-presupuesto-title">Presupuesto por categoría</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-presupuesto-body">
+        <!-- D.5: presupuesto/index.js inyecta el form aquí al abrir -->
       </div>
     </div>
   </div>
