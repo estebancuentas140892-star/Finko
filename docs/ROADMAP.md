@@ -54,8 +54,10 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Objetivo:** llenar `tests/integration/` (carpeta existe vacía).
 
+**Completadas:**
+- ✅ C.1 — Flujo onboarding → cuenta → ingreso → gasto + roundtrip + resiliencia (20 tests) — 2026-05-18.
+
 **Tareas candidatas:**
-- C.1 — Flujo onboarding → primera cuenta → primer ingreso → primer gasto.
 - C.2 — Flujo backup: exportar JSON → resetear app → importar → verificar.
 - C.3 — Flujo migración: cargar `localStorage` con schema viejo → verificar `loadData()` lo sube.
 

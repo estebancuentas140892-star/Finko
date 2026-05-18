@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Tests de integración — Flujo C.1 · 2026-05-18
+
+20 tests en `tests/integration/flujos.test.js` cubriendo el flujo principal de usuario.
+
+**Suites:**
+- **Estado del flujo** (6 tests): onboarding → cuenta → ingreso → gasto; verifica que cada dominio registra correctamente y los ítems tienen IDs únicos.
+- **Análisis cross-domain** (6 tests): `calcularBalance`, `calcularTasaAhorro`, `nivelSalud`, `generarResumen` calculan correctamente sobre el estado real; incluye caso "salud crítica" con egresos > ingresos.
+- **Roundtrip localStorage** (4 tests): `_flushNow()` + `loadData()` reproduce el estado exacto; análisis idéntico antes y después; `loadData()` idempotente; múltiples ítems sin duplicados.
+- **Resiliencia** (4 tests): JSON corrupto, estado vacío, `generarResumen` sobre estado vacío, cuenta inactiva excluida del total.
+
+**Commits:**
+- **test(integration)** — `534d7d0` · `tests/integration/flujos.test.js` (nuevo) — 541/541 tests verdes (18 archivos).
+
+---
+
 ### Íconos PNG producción + Apple Touch Icon (B.1) · 2026-05-18
 
 Rediseño completo de los íconos PWA con técnica de supersampling.

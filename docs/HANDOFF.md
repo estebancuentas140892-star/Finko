@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (B.1)
+> Última actualización: 2026-05-18 (C.1)
 
 ---
 
@@ -35,6 +35,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### C.1 — Tests de integración: flujo completo · 2026-05-18
+20 tests en 4 suites: estado del flujo onboarding→cuenta→ingreso→gasto, análisis
+cross-domain (balance/tasa/salud/generarResumen), roundtrip localStorage (flush+reload),
+y resiliencia (JSON corrupto, estado vacío, cuenta inactiva). 541/541 verdes.
+- `tests/integration/flujos.test.js` (nuevo)
 
 ### B.1 — Íconos PNG producción + Apple Touch Icon · 2026-05-18
 Diseño nuevo: gráfico de barras creciente (3 barras redondeadas, verde sobre oscuro).
@@ -87,8 +93,8 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **C.1 — Tests integración** | `tests/integration/` existe vacía; flujo onboarding→cuenta→ingreso→gasto |
-| 2 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
+| 1 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
+| 2 | **C.2 — Tests backup (export JSON → reset → import)** | Segundo flujo de integración pendiente |
 | 3 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
 | 4 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
 | 5 | **A.5 — Dominio custom** | Opcional |
