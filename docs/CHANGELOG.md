@@ -34,6 +34,20 @@ Feature completa en 3 tareas: lógica financiera → extensión de formulario �
 - **feat(compromisos)** — `8b9adbc` · `modules/dominio/compromisos/{logic,view,index}.js`, `tests/unit/compromisos.test.js`, `styles/components.css` — captura `saldoPendiente` (monto adeudado) y `tasaEA` (tasa efectiva anual) para compromisos de tipo deuda; campos opcionales en formulario (hidden hasta seleccionar tipo=deuda); validación condicional; normalización; 14 tests; estilos `.form-optional`, `.form-hint`; visibilidad toggle en `_inyectarForm()`.
 - **feat(analisis)** — `c0025c4` · `modules/dominio/analisis/{view,index.js}`, `styles/components.css` — renderizado de patrimonio: hero card (patrimonio neto ±signo), grid activos/pasivos con detalles, CTA si faltan saldos, subsección proyecciones (6m/12m/24m con dinámica de ahorro/déficit); ~180 líneas CSS nuevas (.patrimonio-hero, .proyeccion-grid, plus fix de .metric-card/.salud-card/.progress-bar que estaban sin estilo); observa cambios de metas.
 
+### Feature: Gráficos (D.3) — Sparkline + Donut (2026-05-18)
+
+Visualización de datos financieros con SVG inline vanilla, sin librerías.
+
+**Resumen:**
+- Sección "Tendencia de gastos": sparkline 12 meses con área suave, eje X, 4 stats (este mes, variación, máximo, mínimo).
+- Donut integrado en "Gastos por categoría": distribución circular con leyenda y tooltips nativos.
+- Paleta de 7 colores accesibles; "Otros" agrupa categorías pequeñas de forma semántica.
+- Layout responsive: donut y barras en columna (mobile), lado a lado (desktop 768px+).
+
+**Commits:**
+
+- **feat(analisis)** — `e63a9f0` · `modules/infra/svg.js` (nuevo), `modules/dominio/analisis/logic.js`, `modules/dominio/analisis/view.js`, `styles/components.css`, `tests/unit/{svg,analisis}.test.js` — helpers puros `sparkline()`, `donut()`, `colorearSegmentos()` en `svg.js` (180 líneas); lógica `serieGastosMensual()`, `seriePorCategoria()` para computar series temporales (75 líneas); renderizado `_renderTendencia()` + donut integrado (90 líneas); CSS responsivo (.sparkline, .donut, .chart-*, layout grid) 145 líneas; 47 tests nuevos (31 svg.test.js, 16 analisis.test.js; 394/394 verdes).
+
 ### Extras post-fase 14 (2026-05-16/17)
 
 - **fix(bento)** — `15e487b` · `index.html`, `styles/layout.css`, `modules/infra/render.js` — celda huérfana de la Bento Grid en desktop: se agregaron las cards `#metas-count` y `#balance-mes` y la lógica de cálculo en `updSaldo()` con `_FACTOR_MENSUAL`.
