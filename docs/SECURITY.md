@@ -187,13 +187,11 @@ Ver `vercel.json` y `netlify.toml`. Headers actuales en producción:
 - `X-Frame-Options: DENY` — bloquea iframes externos
 - `X-Content-Type-Options: nosniff` — desactiva MIME sniffing
 - `Referrer-Policy: strict-origin-when-cross-origin` — limita info en referer
-- `Permissions-Policy: notifications=(self)` — bloquea APIs no usadas
+- `Permissions-Policy: notifications=(self), camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=()` — bloquea APIs no usadas
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — HSTS explícito
+- `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'` — XSS hardening
 
-**Pendientes** (ver audit 2026-05-18, próxima sesión de hardening):
-
-- `Content-Security-Policy` (CSP) — defensa-en-profundidad contra XSS
-- `Strict-Transport-Security` explícito (Vercel lo agrega auto, pero conviene explícito)
-- `Permissions-Policy` extendido (bloquear camera, microphone, geolocation, payment, USB, serial)
+_(todos los hallazgos críticos del audit 2026-05-18 resueltos — H1, H2, H3 ✅)_
 
 ---
 
@@ -214,5 +212,6 @@ Si encontrás un problema de seguridad en el código del proyecto:
 | Fecha | Versión | Hallazgos | Documento |
 |---|---|---|---|
 | 2026-05-18 | v1.0.0 | 3 críticos (CSP, happy-dom, Permissions-Policy), 4 medios, 3 bajos | (en conversación) |
+| 2026-05-18 | v1.0.0 | H1-H3 resueltos: CSP estricto, happy-dom 15.11.7, Permissions-Policy extendida + HSTS | d454f1d |
 
 > **TODO:** crear `docs/AUDITS/2026-05-18.md` con el reporte completo cuando se decida implementar los hallazgos críticos.

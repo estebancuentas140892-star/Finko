@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (migración npm → pnpm completada; app en producción estable)
+> Última actualización: 2026-05-18 (H1-H3 hardening completado; CSP estricto en producción)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### H1–H3 — Hardening de seguridad · 2026-05-18
+**H1 — CSP:** `modules/infra/sw-register.js` extrae el registro SW del `<script>` inline.
+`vercel.json` + `netlify.toml`: CSP `default-src 'self'` sin `unsafe-inline` — XSS hardening completo.
+**H2 — happy-dom:** bumped 14.12.3 → 15.11.7 (CVE parcheado, solo dev); fix de spy en storage.test.js.
+**H3 — Permissions-Policy:** camera/microphone/geolocation/payment/usb/serial bloqueados.
+HSTS explícito agregado (`max-age=63072000; includeSubDomains; preload`). 596/596 verdes.
+- `modules/infra/sw-register.js` (nuevo), `index.html`, `vercel.json`, `netlify.toml`, `package.json`, `tests/unit/storage.test.js`
 
 ### Migración npm → pnpm · 2026-05-18
 Supply chain defense: `package-lock.json` reemplazado por `pnpm-lock.yaml` (pnpm v11.1.3).
