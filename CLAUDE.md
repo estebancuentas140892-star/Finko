@@ -171,7 +171,8 @@ npm run format
 3. [`docs/TASKS.md`](docs/TASKS.md) — tarea activa hoy.
 4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — capas, flujo de datos, reglas — 10 min.
 5. [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) — patrones detallados de uso.
-6. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
+6. [`docs/SECURITY.md`](docs/SECURITY.md) — **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
+7. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
 
 ---
 

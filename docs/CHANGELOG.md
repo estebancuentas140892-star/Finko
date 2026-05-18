@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Política de seguridad + guía pnpm · 2026-05-18
+
+Nuevo documento de política de seguridad para el proyecto. Motivado por las oleadas
+recientes de ataques supply-chain a npm (eventos "shai-hulud" 2024–2025: paquetes
+con `postinstall` inyectando cripto-stealers al instalar).
+
+- `docs/SECURITY.md` (nuevo): modelo de amenaza de Finko (offline-first, sin backend),
+  historial de ataques a npm, defensas de pnpm (`minimum-release-age=7`,
+  `only-built-dependencies` por whitelist), guía completa de migración npm→pnpm en 7 pasos,
+  workflow de seguridad continuo, log de audits realizados.
+- `CLAUDE.md`: agregada referencia a `docs/SECURITY.md` en sección "Antes de tocar código,
+  leer" — obligatorio antes de modificar dependencias.
+- `docs/HANDOFF.md`: nota de aviso para futuros developers sobre la política.
+
+No se ejecuta migración ahora — está documentado para cuando el usuario decida hacerla
+en sesión dedicada (cambia lockfile, afecta CI).
+
+---
+
 ### A.5 — Guía: configurar dominio custom · 2026-05-18
 
 Documentación para A.5 (opcional). Cuando el usuario tenga un dominio registrado y quiera

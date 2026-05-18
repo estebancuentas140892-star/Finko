@@ -120,6 +120,11 @@ Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en insta
 
 **Estado actual:** App completa, en producción estable (`https://finko-brown.vercel.app`). Todas las features v1.0 + post-v1.0 están implementadas. **Modo mantenimiento.**
 
+> **Importante para futuros desarrolladores:** Antes de instalar dependencias o configurar
+> un nuevo entorno, leer [`docs/SECURITY.md`](SECURITY.md). Incluye política anti-malware npm,
+> guía de migración a **pnpm** con defensas (`minimum-release-age`, `only-built-dependencies`),
+> y el audit de seguridad realizado el 2026-05-18.
+
 Tareas opcionales restantes:
 
 | Prioridad | Tarea | Cuándo | Nivel |
