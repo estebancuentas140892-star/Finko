@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Íconos PNG producción + Apple Touch Icon (B.1) · 2026-05-18
+
+Rediseño completo de los íconos PWA con técnica de supersampling.
+
+**Resumen:**
+- Diseño nuevo: 3 barras crecientes redondeadas (`#00dc82` sobre `#0f1117`). Gráfico financiero inmediatamente reconocible, funciona a 192px y 512px.
+- Técnica: renderizado 4× (`2048px`, `768px`) + downscale `LANCZOS` → anti-aliasing de producción.
+- Safe zone 80% cumplido: contenido dentro del área segura para `maskable`.
+- Nuevo `apple-touch-icon.png` (180×180) para instalación en iOS Safari.
+- `<link rel="apple-touch-icon">` agregado en `index.html`.
+- `apple-touch-icon.png` en `OPTIONAL_ASSETS` del SW.
+
+**Commits:**
+- **feat(assets)** — `43dc878` · `scripts/gen-icons.py` (reescrito), `assets/icons/icon-192.png`, `assets/icons/icon-512.png`, `assets/icons/apple-touch-icon.png` (nuevo), `index.html`, `service-worker.js`.
+
+---
+
 ### Deploy a producción — Netlify/Vercel (A.1) · 2026-05-18
 
 Config de deploy estático lista para Netlify y Vercel. Sin build step.

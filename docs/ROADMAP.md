@@ -38,10 +38,12 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Objetivo:** elevar la calidad visual de la PWA.
 
+**Completadas:**
+- ✅ B.1 — Íconos PNG producción: gráfico de barras, supersampling 4×, safe zone OK — 2026-05-18.
+
 **Tareas candidatas:**
-- B.1 — Íconos PNG producción (los actuales se generaron con Pillow, son funcionales pero básicos).
-- B.2 — Screenshots para el manifest (`screenshots` field — mejora la instalación PWA).
-- B.3 — Favicon SVG + variantes Apple Touch.
+- B.2 — Screenshots para el manifest (`screenshots` field — mejora la instalación PWA en Android).
+- B.3 — Favicon SVG (el Apple Touch Icon ya está cubierto por `apple-touch-icon.png`).
 - B.4 — Splash screen iOS.
 
 **Modelo sugerido:** Sonnet 4.6 — **Esfuerzo:** Bajo.

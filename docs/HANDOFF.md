@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (A.1)
+> Última actualización: 2026-05-18 (B.1)
 
 ---
 
@@ -35,6 +35,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### B.1 — Íconos PNG producción + Apple Touch Icon · 2026-05-18
+Diseño nuevo: gráfico de barras creciente (3 barras redondeadas, verde sobre oscuro).
+Supersampling 4× + LANCZOS. Safe zone 80% cumplido (maskable OK).
+Agrega `apple-touch-icon.png` (180×180) + `<link rel=apple-touch-icon>` en HTML.
+- `scripts/gen-icons.py` (reescrito), `assets/icons/icon-192.png`, `assets/icons/icon-512.png`, `assets/icons/apple-touch-icon.png` (nuevo), `index.html`, `service-worker.js`
 
 ### A.1 — Deploy a producción (Netlify/Vercel) · 2026-05-18
 `netlify.toml` y `vercel.json` listos para deploy estático sin build step.
@@ -81,11 +87,11 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **A.3/A.4 — Verificar SW + smoke test móvil real** | Confirmar instalación PWA y offline tras deploy |
-| 2 | **C.1 — Tests integración: onboarding → ingreso → gasto** | `tests/integration/` existe vacía |
-| 3 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
-| 4 | **B.1 — Íconos PNG producción** | Los actuales son funcionales pero básicos (Pillow) |
-| 5 | **A.5 — Dominio custom** | Opcional; solo si el usuario quiere URL propia |
+| 1 | **C.1 — Tests integración** | `tests/integration/` existe vacía; flujo onboarding→cuenta→ingreso→gasto |
+| 2 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
+| 3 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
+| 4 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
+| 5 | **A.5 — Dominio custom** | Opcional |
 
 ---
 
