@@ -3,7 +3,10 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (C.3)
+> Última actualización: 2026-05-18 (A.1' / A.3 — Deploy real + verificación)
+
+**Producción:** https://finko-brown.vercel.app
+**Repositorio:** https://github.com/estebancuentas140892-star/Finko
 
 ---
 
@@ -35,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### A.1' / A.2 / A.3 — Deploy real a Vercel + verificación headers · 2026-05-18
+Finko en producción: https://finko-brown.vercel.app. Repo conectado para
+auto-redeploy en push a `main`. HTTPS automático (HSTS preload). Todos los
+headers de seguridad verificados en producción (X-Frame-Options, nosniff,
+Referrer-Policy, Permissions-Policy). Fix detectado y corregido en
+`vercel.json`: regla genérica `/(.*)\.js` estaba sobrescribiendo el
+`Cache-Control` del SW por `immutable` (1 año). Reordenadas las reglas para
+que `/service-worker.js` sea la última (Vercel: "última regla gana").
+- `vercel.json` (reordenado)
 
 ### C.3 — Tests de migración schema v1→v2 · 2026-05-18
 9 tests en Suite 6 de `flujos.test.js` que blindan la migración introducida por D.5.
@@ -119,11 +132,10 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **A.1' — Hacer el deploy real a Netlify/Vercel** | App completa y pulida — momento de publicar |
-| 2 | **C.3 — Tests migración schema v1→v2** | Verificar que el bump de D.5 sube datos viejos sin perderlos |
-| 3 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
-| 4 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
-| 5 | **E.1–E.3 — Mantenimiento periódico** | Actualizar constantes legales CO trimestrales/anuales |
+| 1 | **A.4 — Smoke test desde móvil real** | Instalar el PWA en celular + probar offline en producción |
+| 2 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
+| 3 | **E.1–E.3 — Mantenimiento periódico** | Actualizar constantes legales CO trimestrales/anuales |
+| 4 | **A.5 — Dominio custom** (opcional) | Si se quiere `finko.app` o similar en lugar del `.vercel.app` |
 
 ---
 

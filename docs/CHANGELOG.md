@@ -7,6 +7,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Deploy real + verificación headers (A.1' / A.2 / A.3) · 2026-05-18
+
+Finko publicada en producción en `https://finko-brown.vercel.app`. Repo en
+`https://github.com/estebancuentas140892-star/Finko` con integración Vercel→GitHub
+para auto-redeploy en cada push a `main`.
+
+**Verificación de headers (A.3):**
+- **HTML** `/`: `max-age=0, must-revalidate` ✓
+- **`/service-worker.js`**: `no-cache, no-store, must-revalidate` ✓ (tras fix)
+- **`/styles/*.css`**: `max-age=31536000, immutable` ✓
+- **`/modules/**/*.js`**: `max-age=31536000, immutable` ✓
+- **Security headers** en todas las rutas: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: notifications=(self)` ✓
+- **HTTPS** (A.2): automático en Vercel con `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` ✓
+
+**Fix detectado en producción:**
+Vercel aplica TODAS las reglas que matchean una ruta y, cuando dos setean el
+mismo header, **gana la última en orden**. La regla genérica `/(.*)\.js`
+matcheaba `service-worker.js` y, al venir después de la regla específica,
+sobrescribía `Cache-Control` con `immutable` (max-age 1 año), bloqueando
+actualizaciones del PWA. Solución: reordenar `vercel.json` para que la regla
+de `/service-worker.js` sea la última. `netlify.toml` NO cambia porque Netlify
+usa "primera regla gana" (comportamiento inverso) y ahí el orden ya era correcto.
+
+**Commits:**
+- **fix(deploy)** — `0960322` · `vercel.json` — reordenar reglas para que SW reciba `no-cache`.
+
+---
+
 ### Tests de integración — Migración schema v1→v2 (C.3) · 2026-05-18
 
 9 tests en Suite 6 de `tests/integration/flujos.test.js` que blindan la lógica de `_migrate()` y `_applyToS()` introducidas en el schema bump de D.5.

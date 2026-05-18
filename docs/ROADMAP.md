@@ -21,12 +21,15 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Objetivo:** publicar Finko en una URL pública para acceso desde cualquier dispositivo.
 
+**Producción:** https://finko-brown.vercel.app
+
 **Completadas:**
-- ✅ A.1 — `netlify.toml` + `vercel.json` listos; SW CORE_ASSETS completo (finko-v2) — 2026-05-18.
+- ✅ A.1 — `netlify.toml` + `vercel.json` listos; SW CORE_ASSETS completo — 2026-05-18.
+- ✅ A.1' — Deploy real a Vercel con auto-redeploy desde GitHub — 2026-05-18.
+- ✅ A.2 — HTTPS automático con HSTS preload — 2026-05-18.
+- ✅ A.3 — SW + headers de seguridad verificados en producción (incluye fix de orden de reglas en `vercel.json`) — 2026-05-18.
 
 **Tareas candidatas:**
-- A.2 — HTTPS: automático en Netlify/Vercel al hacer el primer deploy (no requiere acción).
-- A.3 — Verificar que el Service Worker se registra correctamente en producción (hacer el deploy primero).
 - A.4 — Smoke test desde móvil real (instalación PWA + offline).
 - A.5 — Agregar dominio custom (opcional).
 
