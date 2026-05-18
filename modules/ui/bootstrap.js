@@ -26,6 +26,7 @@ import { initCompromisos } from '../dominio/compromisos/index.js';
 import { initAnalisis } from '../dominio/analisis/index.js';
 import { initCalculadoras } from '../dominio/calculadoras/index.js';
 import { initConfig } from '../dominio/config/index.js';
+import { initImport } from '../dominio/import/index.js';
 
 loadData();
 initAcciones();
@@ -39,6 +40,7 @@ initCompromisos();
 initAnalisis();
 initCalculadoras();
 initConfig();
+initImport();
 
 initShell();
 initRouter(markActiveNav);

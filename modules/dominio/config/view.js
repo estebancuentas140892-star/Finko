@@ -140,6 +140,10 @@ function _renderDatos() {
           <input type="file" accept=".json" data-action="importar-datos"
                  class="sr-only" aria-hidden="true" />
         </label>
+        <button class="btn btn-secondary" data-action="abrir-import"
+                aria-label="Importar gastos desde archivo CSV">
+          📥 Importar gastos (CSV)
+        </button>
       </div>
       <div class="config-danger">
         <h3 class="config-danger__title">⚠️ Zona de peligro</h3>
