@@ -63,10 +63,12 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Objetivo:** features que no entraron en v1.0 pero el usuario podría querer.
 
-**Tareas candidatas:**
+**Completadas:**
+- ✅ D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías) — 2026-05-18.
+
+**Tareas candidatas pendientes:**
 - D.1 — Exportar transacciones a CSV (`modules/dominio/exports/`).
 - D.2 — Importar movimientos bancarios desde CSV.
-- D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías).
 - D.4 — Recordatorios push para compromisos próximos a vencer (Notification API).
 - D.5 — Modo "presupuesto por sobre" (envelope budgeting).
 
