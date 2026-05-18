@@ -104,13 +104,15 @@ Por qué         : <una línea justificando modelo+nivel>
 
 ### 2.4 Mantenimiento de los docs
 
-Cuando una tarea/fase se completa:
+Cuando una tarea/fase se completa, actualizar **en este orden**:
 
-- **Eliminar** la entrada del `ROADMAP.md` y de `TASKS.md`.
-- **Agregar** la entrada al `CHANGELOG.md` bajo la versión correspondiente, con la fecha y los archivos tocados.
-- Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
+1. **`docs/HANDOFF.md`** — sección "Qué se hizo recientemente": agregar la tarea cerrada al tope de la lista (mantener solo las últimas 5); actualizar "Qué sigue" si cambió el orden de prioridades. Este archivo es el punto de entrada para cualquier asistente o colaborador nuevo.
+2. **`docs/CHANGELOG.md`** — agregar la entrada bajo la versión correspondiente con fecha y archivos tocados.
+3. **`docs/ROADMAP.md`** — eliminar la tarea completada (moverla a "Completadas" si la sección existe, o quitarla directamente).
+4. **`docs/TASKS.md`** — eliminar la tarea si estaba en "En curso".
+5. Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
 
-Esto garantiza que ROADMAP/TASKS siempre muestran solo lo **pendiente** y CHANGELOG es el archivo de memoria del proyecto.
+**Regla:** ROADMAP/TASKS siempre muestran solo lo **pendiente**. CHANGELOG es la memoria histórica. HANDOFF.md es el contexto vivo para retomar trabajo rápido.
 
 ### 2.5 Confirmar antes de cambios destructivos
 
@@ -165,10 +167,11 @@ npm run format
 ## 5. Antes de tocar código, leer
 
 1. **Este archivo** (estás aquí) — 3 min.
-2. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — capas, flujo de datos, reglas — 10 min.
+2. [`docs/HANDOFF.md`](docs/HANDOFF.md) — qué se hizo recientemente, qué sigue, cómo trabajamos — 2 min.
 3. [`docs/TASKS.md`](docs/TASKS.md) — tarea activa hoy.
-4. [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) — patrones detallados de uso.
-5. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
+4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — capas, flujo de datos, reglas — 10 min.
+5. [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) — patrones detallados de uso.
+6. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
 
 ---
 
