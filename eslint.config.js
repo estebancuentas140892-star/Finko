@@ -43,9 +43,11 @@ export default [
         // APIs de formularios y fetch
         FormData:   'readonly',
         // Blob, URL y FileReader — usados en config (exportar/importar)
-        Blob:       'readonly',
-        URL:        'readonly',
-        FileReader: 'readonly',
+        Blob:         'readonly',
+        URL:          'readonly',
+        FileReader:   'readonly',
+        // Web Notifications API — usada en infra/notificaciones.js
+        Notification: 'readonly',
       },
     },
   },

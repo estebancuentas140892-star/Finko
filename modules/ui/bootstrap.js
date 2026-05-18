@@ -11,11 +11,13 @@
  */
 
 import { loadData } from '../core/storage.js';
+import { S } from '../core/state.js';
 import { initShell, markActiveNav } from './shell.js';
 import { initRouter } from '../infra/router.js';
 import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
 import { renderAll } from '../infra/render.js';
+import { verificarYNotificar } from '../infra/notificaciones.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
 import { initIngresos } from '../dominio/ingresos/index.js';
 import { initGastos } from '../dominio/gastos/index.js';
@@ -42,3 +44,7 @@ initShell();
 initRouter(markActiveNav);
 initOnboarding();
 renderAll();
+
+// Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
+// Se ejecuta después del primer render para no bloquear el arranque.
+verificarYNotificar(S.compromisos);

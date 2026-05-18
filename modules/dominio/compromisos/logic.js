@@ -105,6 +105,21 @@ export function urgencia(compromiso) {
   return 'normal';
 }
 
+/**
+ * Filtra los compromisos activos cuyo próximo vencimiento es en ≤ `diasLimite` días.
+ * Pensado para alimentar el sistema de notificaciones push.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {number} [diasLimite=3]
+ * @returns {Array<import('../../core/state.js').Compromiso & { diasRestantes: number }>}
+ */
+export function compromisosProximos(compromisos, diasLimite = 3) {
+  return compromisosActivos(compromisos)
+    .map(c => ({ ...c, diasRestantes: proximoVencimiento(c) }))
+    .filter(c => c.diasRestantes <= diasLimite)
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

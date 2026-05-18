@@ -13,6 +13,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
+import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -60,6 +61,30 @@ function _importarDatos(el) {
   reader.readAsText(file);
 }
 
+async function _activarNotificaciones() {
+  const resultado = await pedirPermiso();
+  if (resultado === 'granted') {
+    if (!S.config) S.config = {};
+    S.config.notificaciones = true;
+    save();
+    renderPanelConfig();
+    announce('Recordatorios activados. Recibirás una alerta al abrir Finko si tenés compromisos próximos.');
+  } else if (resultado === 'denied') {
+    announce('El navegador bloqueó las notificaciones. Habilitá el permiso desde la configuración del navegador.', 'assertive');
+  } else {
+    announce('No se pudo activar los recordatorios en este momento.', 'assertive');
+  }
+}
+
+/** @param {HTMLElement} el — el <input type="checkbox"> */
+function _toggleNotificaciones(el) {
+  if (!S.config) S.config = {};
+  S.config.notificaciones = el.checked;
+  save();
+  renderPanelConfig();
+  announce(el.checked ? 'Recordatorios activados.' : 'Recordatorios desactivados.');
+}
+
 function _resetearApp() {
   if (!dialogo('¿Resetear TODA la app? Perderás ingresos, gastos, cuentas, metas y compromisos. Esta acción es irreversible.')) return;
   localStorage.clear();
@@ -96,8 +121,10 @@ function _inyectarPanel() {
 }
 
 export function initConfig() {
-  registrarAccion('exportar-datos', _exportarDatos);
-  registrarAccion('resetear-app',   _resetearApp);
+  registrarAccion('exportar-datos',         _exportarDatos);
+  registrarAccion('resetear-app',           _resetearApp);
+  registrarAccion('activar-notificaciones', _activarNotificaciones);
+  registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
 
   // El panel se inyecta la primera vez que la sección está activa.
   renderSmart(_inyectarPanel, 'config');

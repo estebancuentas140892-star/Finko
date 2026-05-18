@@ -74,6 +74,12 @@ import { SMMLV_2026 } from './constants.js';
  */
 
 /**
+ * @typedef {Object} Config
+ * @property {boolean} notificaciones — true si el usuario habilitó recordatorios push.
+ *                                      Require también que Notification.permission === 'granted'.
+ */
+
+/**
  * Factory del estado inicial (schema v1). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
@@ -84,6 +90,7 @@ import { SMMLV_2026 } from './constants.js';
  *   _version: number,
  *   onboarded: boolean,
  *   perfil: { nombre: string, smmlv: number },
+ *   config: Config,
  *   cuentas: Cuenta[],
  *   ingresos: Ingreso[],
  *   gastos: Gasto[],
@@ -103,6 +110,11 @@ export function createInitialState() {
     perfil: {
       nombre: '',
       smmlv: SMMLV_2026,
+    },
+
+    /** Configuración del usuario (notificaciones, preferencias futuras). */
+    config: {
+      notificaciones: false,
     },
 
     /** Cuentas / tesorería. */

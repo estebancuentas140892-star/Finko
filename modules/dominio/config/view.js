@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
+import { estadoPermiso } from '../../infra/notificaciones.js';
 
 /**
  * Renderiza el panel de configuración completo en `#panel-config`.
@@ -16,6 +17,7 @@ export function renderPanelConfig() {
 
   el.innerHTML = `
     ${_renderPerfil()}
+    ${_renderNotificaciones()}
     ${_renderDatos()}
     ${_renderAcercaDe()}
   `;
@@ -50,6 +52,74 @@ function _renderPerfil() {
         </div>
         <button type="submit" class="btn btn-primary">Guardar perfil</button>
       </form>
+    </section>`;
+}
+
+function _renderNotificaciones() {
+  const permiso = estadoPermiso();
+  const habilitado = S.config?.notificaciones === true;
+
+  if (permiso === 'unsupported') {
+    return `
+      <section class="config-section" aria-labelledby="config-notif-title">
+        <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
+        <p class="config-section__desc">
+          Tu navegador no soporta notificaciones push. Podés ver los compromisos
+          próximos directamente en la sección <a href="#compromisos" class="link">Compromisos</a>.
+        </p>
+      </section>`;
+  }
+
+  if (permiso === 'denied') {
+    return `
+      <section class="config-section" aria-labelledby="config-notif-title">
+        <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
+        <p class="config-section__desc config-section__desc--warn">
+          Las notificaciones están bloqueadas en tu navegador. Para activarlas,
+          hacé click en el candado de la barra de direcciones → Notificaciones → Permitir.
+        </p>
+      </section>`;
+  }
+
+  if (permiso === 'default') {
+    return `
+      <section class="config-section" aria-labelledby="config-notif-title">
+        <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
+        <p class="config-section__desc">
+          Recibí una notificación cada vez que abrís Finko si tenés compromisos
+          que vencen en los próximos 3 días.
+        </p>
+        <button class="btn btn-primary" data-action="activar-notificaciones"
+                aria-label="Activar recordatorios de compromisos">
+          🔔 Activar recordatorios
+        </button>
+      </section>`;
+  }
+
+  // permiso === 'granted'
+  return `
+    <section class="config-section" aria-labelledby="config-notif-title">
+      <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
+      <p class="config-section__desc">
+        El navegador tiene permiso para enviar notificaciones.
+        Activá o desactivá el recordatorio de compromisos próximos.
+      </p>
+      <label class="config-toggle" for="toggle-notif">
+        <input
+          id="toggle-notif"
+          type="checkbox"
+          data-action="toggle-notificaciones"
+          ${habilitado ? 'checked' : ''}
+          aria-label="Recordatorios de compromisos"
+        />
+        <span class="config-toggle__label">
+          ${habilitado ? 'Recordatorios activos ✅' : 'Recordatorios desactivados'}
+        </span>
+      </label>
+      <p class="form-hint">
+        Recibís una notificación al abrir la app si hay compromisos que vencen
+        en los próximos 3 días.
+      </p>
     </section>`;
 }
 

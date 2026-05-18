@@ -5,6 +5,7 @@ import {
   calcularTotalCompromisos,
   proximoVencimiento,
   urgencia,
+  compromisosProximos,
   validarCompromiso,
   normalizarCompromiso,
   TIPOS_COMPROMISO,
@@ -353,5 +354,62 @@ describe('validarCompromiso() — campos opcionales de deuda', () => {
     // fijo con saldo negativo no da error porque el campo no aplica
     const datos = { ...datosFormValidos, tipo: 'fijo', saldoPendiente: '-9999', tasaEA: '-1' };
     expect(validarCompromiso(datos)).toEqual([]);
+  });
+});
+
+// ── compromisosProximos() ─────────────────────────────────────────
+
+describe('compromisosProximos()', () => {
+  it('devuelve array vacío si no hay compromisos', () => {
+    expect(compromisosProximos([])).toEqual([]);
+  });
+
+  it('incluye compromisos cuyo diaPago es hoy (0 días restantes)', () => {
+    const comp = compromisoBase({ diaPago: DIA_HOY });
+    const resultado = compromisosProximos([comp], 3);
+    expect(resultado).toHaveLength(1);
+    expect(resultado[0].diasRestantes).toBe(0);
+  });
+
+  it('excluye compromisos con más días que el límite', () => {
+    const comp = compromisoBase({ diaPago: DIA_FUTURO }); // 10 días en el futuro
+    // DIA_FUTURO está a 10 días → queda fuera del límite de 3
+    const resultado = compromisosProximos([comp], 3);
+    expect(resultado).toHaveLength(0);
+  });
+
+  it('excluye compromisos inactivos', () => {
+    const comp = compromisoBase({ diaPago: DIA_HOY, activo: false });
+    expect(compromisosProximos([comp], 3)).toHaveLength(0);
+  });
+
+  it('usa diasLimite=3 por defecto', () => {
+    const comp = compromisoBase({ diaPago: DIA_HOY });
+    const resultado = compromisosProximos([comp]);
+    expect(resultado).toHaveLength(1);
+  });
+
+  it('cada elemento tiene diasRestantes', () => {
+    const comp = compromisoBase({ diaPago: DIA_HOY });
+    const resultado = compromisosProximos([comp], 3);
+    expect(resultado[0]).toHaveProperty('diasRestantes');
+    expect(typeof resultado[0].diasRestantes).toBe('number');
+  });
+
+  it('ordena de más urgente a menos urgente (menor diasRestantes primero)', () => {
+    const hoy     = compromisoBase({ id: 'c1', diaPago: DIA_HOY });
+    const futuro  = compromisoBase({ id: 'c2', diaPago: DIA_FUTURO });
+    // Solo hoy pasa el límite de 3 días; para probar orden necesitamos 2 con distinto días
+    // Usamos diasLimite=100 para incluir ambos y verificar el orden
+    const resultado = compromisosProximos([futuro, hoy], 100);
+    expect(resultado[0].id).toBe('c1'); // hoy (0 días) primero
+    expect(resultado[1].id).toBe('c2'); // futuro después
+  });
+
+  it('respeta diasLimite=0 (solo los de hoy)', () => {
+    const hoy   = compromisoBase({ id: 'c1', diaPago: DIA_HOY });
+    const todos = compromisosProximos([hoy], 0);
+    expect(todos).toHaveLength(1);
+    expect(todos[0].diasRestantes).toBe(0);
   });
 });
