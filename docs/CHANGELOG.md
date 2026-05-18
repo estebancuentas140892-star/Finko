@@ -7,6 +7,41 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Fix: sidebar móvil colapsada (A.4 smoke test reveló bug) · 2026-05-18
+
+Smoke test desde móvil real (Xiaomi/Android) reveló que la barra de navegación
+inferior solo mostraba el item activo (Dashboard), atrapando al usuario en el
+dashboard sin forma de navegar a Ingresos, Gastos, etc. Dos bugs estructurales
+acumulados desde Fase 6 que Lighthouse + E2E (que solo probaron 1280×800) no
+detectaron.
+
+**Bug 1 — wrapper interno rompe el flex chain:**
+La nav real es `sidebar__nav > nav-group > div[role="list"] > nav-item`. En
+mobile, `sidebar__nav` es `flex-direction:row` pero el `<div role="list">`
+intermedio era `display:block` (default), apilando los 5 items verticales
+dentro de una caja de 60px con `overflow:hidden` → solo se veía el primero.
+
+**Bug 2 — `top: 0` desktop colateral en mobile:**
+`.sidebar` desktop tiene `position:sticky; top:0`. En mobile cambia a
+`position:fixed; bottom:0` pero el `top:0` heredado seguía activo. Con
+`height:60px` fijo, `top:0` ganaba a `bottom:0` → la barra quedaba ARRIBA en
+vez de abajo.
+
+**Fix:**
+- Aplanar la cadena en mobile: `.sidebar__nav > .nav-group, .sidebar__nav > .nav-group > [role="list"] { display: flex; flex-direction: row; flex: 1; }`.
+- `top: auto` explícito en `.sidebar` del media query mobile.
+- Bump `CACHE_NAME` `finko-v4 → finko-v5` para que los PWA instalados refresquen el `responsive.css` cacheado (sin esto, el fix no llega al usuario).
+
+**Verificado en preview a 375×812:** sidebar en y:752 (al fondo), 5 items en
+fila distribuidos correctamente, segundo grupo ocultado por la regla
+`.nav-group:not(:first-child)` ya existente.
+
+**Commits:**
+- **fix(responsive)** — `ee727ec` · `styles/responsive.css` — fix de los 2 bugs estructurales.
+- **chore(sw)** — `1bf3b00` · `service-worker.js` — bump `CACHE_NAME` v4→v5.
+
+---
+
 ### Deploy real + verificación headers (A.1' / A.2 / A.3) · 2026-05-18
 
 Finko publicada en producción en `https://finko-brown.vercel.app`. Repo en
