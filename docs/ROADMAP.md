@@ -74,9 +74,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ D.2 — Importar gastos desde CSV con preview + detección de duplicados — 2026-05-18.
 - ✅ D.3 — Gráficos en `analisis/` (sparkline mensual, donut de categorías) — 2026-05-18.
 - ✅ D.4 — Recordatorios push para compromisos próximos a vencer (Notification API) — 2026-05-18.
+- ✅ D.5 — Envelope budgeting (presupuesto por categoría) + schema v2 — 2026-05-18.
 
-**Tareas candidatas pendientes:**
-- D.5 — Modo "presupuesto por sobre" (envelope budgeting).
+_(no quedan tareas funcionales pendientes en D — todas las features de v1 + post-v1 completadas)_
 
 **Modelo sugerido:** Sonnet 4.6 / Opus 4.7 según complejidad — **Esfuerzo:** Medio–Alto.
 

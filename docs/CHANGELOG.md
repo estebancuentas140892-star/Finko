@@ -7,6 +7,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Envelope budgeting — Presupuesto por sobre (D.5) · 2026-05-18
+
+Nueva sección "Presupuesto" cierra la funcionalidad core de Finko. Un envelope por
+categoría con monto mensual recurrente; el progreso se compara contra los gastos del
+mes actual.
+
+**Resumen:**
+- Estados de progreso: `ok` (<75%), `alerta` (75–100%), `excedido` (>100%). Cada estado
+  con su color en la barra de progreso y un icono (⏰/⚠️) en el título del envelope.
+- Panel completo con hero (Asignado · Gastado · Restante), lista de envelope cards
+  color-coded, y sección de "Categorías con gastos sin presupuesto" (huérfanas).
+- Modal de creación/edición. Al editar, la categoría queda deshabilitada para evitar
+  conflictos con el resto del schema (delete + create new si el usuario quiere cambiar).
+- Schema bump `v1 → v2`: agrega `S.presupuestos = []`. Migración idempotente garantiza
+  que usuarios existentes arrancan sin envelopes sin perder datos.
+- SW mejora: `cache: 'reload'` en `install` evita servir versiones obsoletas del HTTP
+  cache del browser o CDN intermedio (relevante también para producción).
+
+**Commits:**
+- **feat(presupuesto)** — `f3f4141` · `modules/dominio/presupuesto/{logic,view,index}.js` (nuevos),
+  `modules/core/{state,storage}.js`, `modules/infra/router.js`, `modules/ui/bootstrap.js`,
+  `index.html`, `styles/components.css`, `service-worker.js`, `tests/unit/{presupuesto,state}.test.js` —
+  38 tests nuevos del logic; CACHE_NAME `finko-v3` → `finko-v4`; 579/579 verdes.
+
+---
+
 ### Tests de integración — Flujo C.1 · 2026-05-18
 
 20 tests en `tests/integration/flujos.test.js` cubriendo el flujo principal de usuario.

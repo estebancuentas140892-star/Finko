@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (C.1)
+> Última actualización: 2026-05-18 (D.5)
 
 ---
 
@@ -23,7 +23,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios | 521/521 verdes |
+| Tests unitarios + integración | 579/579 verdes |
 | Tests E2E | 18/18 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -35,6 +35,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### D.5 — Envelope budgeting (presupuesto por sobre) · 2026-05-18
+Nuevo dominio `modules/dominio/presupuesto/`. Un envelope por categoría con monto
+mensual recurrente; progreso = gastos del mes / asignado. 3 estados (ok/alerta/excedido).
+Hero con totales, envelope cards color-coded, listado de categorías huérfanas.
+Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en install.
+38 unit tests del logic; 579/579 verdes.
+- `modules/dominio/presupuesto/{logic,view,index}.js` (nuevos), `modules/core/{state,storage}.js`,
+  `modules/infra/router.js`, `modules/ui/bootstrap.js`, `index.html`, `styles/components.css`,
+  `service-worker.js`, `tests/unit/{presupuesto,state}.test.js`
 
 ### C.1 — Tests de integración: flujo completo · 2026-05-18
 20 tests en 4 suites: estado del flujo onboarding→cuenta→ingreso→gasto, análisis
@@ -93,11 +103,11 @@ Ver [`ROADMAP.md`](ROADMAP.md) para la lista completa. Orden sugerido:
 
 | Prioridad | Tarea | Por qué |
 |---|---|---|
-| 1 | **D.5 — Envelope budgeting** | Única feature funcional grande pendiente |
+| 1 | **A.1' — Hacer el deploy real a Netlify/Vercel** | App completa y pulida — momento de publicar |
 | 2 | **C.2 — Tests backup (export JSON → reset → import)** | Segundo flujo de integración pendiente |
-| 3 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
-| 4 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
-| 5 | **A.5 — Dominio custom** | Opcional |
+| 3 | **C.3 — Tests migración schema v1→v2** | Verificar que el bump de D.5 sube datos viejos sin perderlos |
+| 4 | **B.2 — Screenshots en manifest** | Mejora la ficha de instalación PWA en Android |
+| 5 | **A.3/A.4 — Verificar SW + smoke test móvil** | Pendiente tras hacer el deploy real |
 
 ---
 
