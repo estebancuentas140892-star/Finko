@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### Fix: responsive integral mobile (320–1440px) · 2026-05-18
+A.4 smoke test reveló que aunque la nav inferior ya funcionaba, la app no se
+sentía adaptada a móviles modernos. Refactor de `responsive.css` con
+fluid typography (clamp en `.bento__value`, `.card__value`,
+`.patrimonio-hero__valor`), touch targets ≥44px en btn/input/select,
+inputs 16px font-size para evitar zoom iOS, breakpoint legacy < 480px
+movido a < 360px (móviles 393/414 ya no se ven comprimidos), grids
+3-col → 1-col en < 768px. `viewport-fit=cover` + `maximum-scale=5` en HTML.
+SW bump v6→v7. Verificado a 320/360/393/414/768/1280px sin overflow.
+- `styles/responsive.css` (reescrito), `index.html`, `service-worker.js`
+
 ### B.2 — Screenshots PWA para manifest · 2026-05-18
 2 screenshots 540×720 (tema oscuro) para mejorar la ficha de instalación PWA en Android.
 Generados con Pillow (`scripts/gen-screenshots.py`). Array `"screenshots"` en `manifest.json`
@@ -64,14 +75,6 @@ tipos inválidos (`"1"` string, `null`), roundtrip v1→flush→reload→v2, y d
 campos desconocidos por `_applyToS`. 596/596 verdes.
 - `tests/integration/flujos.test.js` (ampliado con Suite 6 — C.3)
 
-### C.2 — Tests de integración: backup/restore · 2026-05-18
-8 tests para validar el ciclo export CSV → reset app → import. Cubre exportación
-correcta a CSV (preserva fecha, monto, descripción, categoría, cuenta, nota), 
-importación con detección de duplicados, y roundtrip completo con datos idénticos.
-Incluye casos de error (CSV con filas malas, cuenta no encontrada → cuentaId null) 
-y robustez (BOM UTF-8). 587/587 verdes.
-- `tests/integration/flujos.test.js` (ampliado con C.2)
-
 ### D.5 — Envelope budgeting (presupuesto por sobre) · 2026-05-18
 Nuevo dominio `modules/dominio/presupuesto/`. Un envelope por categoría con monto
 mensual recurrente; progreso = gastos del mes / asignado. 3 estados (ok/alerta/excedido).
@@ -81,41 +84,6 @@ Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en insta
 - `modules/dominio/presupuesto/{logic,view,index}.js` (nuevos), `modules/core/{state,storage}.js`,
   `modules/infra/router.js`, `modules/ui/bootstrap.js`, `index.html`, `styles/components.css`,
   `service-worker.js`, `tests/unit/{presupuesto,state}.test.js`
-
-### C.1 — Tests de integración: flujo completo · 2026-05-18
-20 tests en 4 suites: estado del flujo onboarding→cuenta→ingreso→gasto, análisis
-cross-domain (balance/tasa/salud/generarResumen), roundtrip localStorage (flush+reload),
-y resiliencia (JSON corrupto, estado vacío, cuenta inactiva). 541/541 verdes.
-- `tests/integration/flujos.test.js` (nuevo)
-
-
-### D.1 — Exportar gastos a CSV · 2026-05-18
-Botón `📤 Exportar gastos (CSV)` en Configuración → Tus datos.
-Genera `finko-gastos-YYYY-MM-DD.csv` con BOM UTF-8 (compatibilidad Excel).
-Formato idéntico al del importador D.2 (roundtrip garantizado).
-- `modules/dominio/export/logic.js` (nuevo) — `gastosACSV(gastos, cuentas)`
-- `modules/dominio/config/view.js` — botón nuevo
-- `modules/dominio/config/index.js` — handler + acción
-- `tests/unit/export.test.js` (nuevo) — 13 tests
-
-### D.2 — Importar gastos desde CSV · 2026-05-18
-Parser RFC 4180 simplificado con autodetección de separador, preview con tabla
-scrollable, detección de duplicados por hash (fecha|monto|descripcionLower).
-- `modules/infra/csv.js` (nuevo), `modules/dominio/import/{logic,view,index}.js` (nuevos)
-
-### D.4 — Notificaciones push · 2026-05-18
-Recordatorios locales (Web Notifications API) para compromisos ≤ 3 días.
-Opt-in desde Configuración. 4 estados de permiso (default/granted/denied/unsupported).
-- `modules/infra/notificaciones.js` (nuevo), wiring en `config/`, `compromisos/`, `bootstrap.js`
-
-### D.3 — Gráficos SVG inline · 2026-05-18
-Sparkline de 12 meses + donut de categorías en Análisis. Sin librerías.
-- `modules/infra/svg.js` (nuevo) — helpers puros `sparkline()`, `donut()`
-
-### Patrimonio neto + proyecciones · 2026-05-17
-Panel con activos/pasivos, proyecciones a 6/12/24 meses.
-Campos `saldoPendiente` y `tasaEA` en compromisos de tipo deuda.
-- `modules/dominio/analisis/{logic,view,index}.js`, `compromisos/{logic,view,index}.js`
 
 ---
 

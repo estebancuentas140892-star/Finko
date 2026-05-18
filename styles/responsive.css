@@ -1,17 +1,24 @@
 /* ============================================================
    FINKO — RESPONSIVE
    Breakpoints:
-   xl:  > 1440px  (pantallas grandes)
-   lg:  1024–1440px (desktop estándar)
+   xl:  ≥ 1440px (pantallas grandes)
+   lg:  1024–1439px (desktop estándar)
    md:  768–1023px  (tablet)
-   sm:  480–767px   (móvil grande)
-   xs:  < 480px     (móvil estándar)
+   sm:  360–767px   (móvil moderno: Redmi Note 11, Pixel, iPhone)
+   xs:  < 360px     (móvil pequeño legacy: iPhone SE 1ª gen)
+
+   Principios:
+   1. Fluid typography con clamp() en hero metrics — no salta entre BPs.
+   2. Touch targets ≥ 44px en móvil/tablet (Apple HIG + Material).
+   3. Inputs/selects ≥ 16px font-size en móvil → evita zoom autom. iOS.
+   4. Grids fijos (3 cols, etc.) colapsan a 1 col en < 768px.
+   5. Sidebar → barra inferior bajo 1024px (única topología en mobile).
    ============================================================ */
 
-/* ── TABLET (< 1024px) ──────────────────────────────────────── */
+/* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
 
-  /* Sidebar se convierte en barra inferior */
+  /* Shell: sidebar pasa a fila inferior */
   .app-shell {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr var(--fk-header-height);
@@ -45,8 +52,7 @@
     overflow: hidden;
   }
 
-  /* En desktop la nav es: sidebar__nav > nav-group > div[role=list] > nav-item.
-     En mobile aplanamos esa cadena para que los 5 items queden en una fila. */
+  /* Aplanar cadena nav: sidebar__nav > nav-group > div[role=list] → fila única */
   .sidebar__nav > .nav-group,
   .sidebar__nav > .nav-group > [role="list"] {
     display: flex;
@@ -73,7 +79,16 @@
   .nav-item__icon { font-size: 1.25rem; width: auto; }
   .nav-item__badge { display: none; }
 
-  /* Nav group: solo mostrar el primero (5 secciones core). El resto vive en Ajustes. */
+  /* Label se trunca con ellipsis si el viewport es muy chico (< 360px) */
+  .nav-item__label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  /* Solo el primer nav-group (5 secciones core). El resto vive en Ajustes. */
   .nav-group:not(:first-child) { display: none; }
 
   .main-content {
@@ -82,21 +97,36 @@
     padding-bottom: var(--fk-header-height);
   }
 
-  /* Bento: 6 columnas en tablet */
+  /* Bento: 6 cols en tablet (768–1023) */
   .bento {
     grid-template-columns: repeat(6, 1fr);
     grid-auto-rows: minmax(140px, auto);
   }
-
   .bento__cell         { grid-column: span 3; }
   .bento__cell--wide   { grid-column: span 6; }
   .bento__cell--full   { grid-column: span 6; }
+
+  /* ── TOUCH TARGETS — Apple HIG 44pt mínimo ─────────────────── */
+  .btn         { min-height: 44px; }
+  .btn-sm      { min-height: 36px; }  /* botones pequeños siguen siendo pequeños */
+  .btn-lg      { min-height: 52px; }
+  .btn-icon    { min-width: 44px; }
+
+  /* ── INPUTS — 16px font-size evita zoom autom. en iOS ──────── */
+  .input,
+  textarea.input,
+  .select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+
+  /* ── NAV-ITEM en sidebar móvil: min touch height ya cubierto por height:60px del sidebar */
 }
 
-/* ── MÓVIL (< 768px) ────────────────────────────────────────── */
+/* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */
 @media (max-width: 767px) {
 
-  /* Bento: 1 columna en móvil — scroll natural */
+  /* Bento: 1 columna — scroll natural */
   .bento {
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
@@ -109,35 +139,90 @@
   .bento__cell--tall,
   .bento__cell--taller { grid-row: span 1; }
 
-  .bento__value { font-size: var(--fk-text-3xl); }
+  /* Hero metric del dashboard — fluid scaling:
+     320px → 24px (mín legible)
+     393px (Redmi Note 11/Pixel/iPhone moderno) → ~32px
+     600px → max ~36px */
+  .bento__value,
+  .card__value,
+  .patrimonio-hero__valor {
+    font-size: clamp(1.5rem, 0.25rem + 7vw, 2.25rem);
+  }
 
-  /* Secciones sin padding lateral excesivo */
-  .section { padding: var(--fk-space-4); }
+  /* Títulos de sección — fluid */
+  .section__title,
+  .section h1 {
+    font-size: clamp(1.375rem, 0.5rem + 3vw, 1.625rem);
+  }
 
-  /* Botones full width en contextos de formulario */
-  .modal__footer .btn { flex: 1; }
+  /* Padding lateral de sección — cómodo en móvil */
+  .section {
+    padding: var(--fk-space-4);
+  }
 
   /* Cards menos padding */
   .card { padding: var(--fk-space-4); }
+  .bento__cell { padding: var(--fk-space-5); }
+
+  /* Footer modal: botones full width */
+  .modal__footer .btn { flex: 1; }
+
+  /* ── Grids que en desktop son multi-col, a 1 col en móvil ──── */
+  .proyeccion-grid {
+    grid-template-columns: 1fr;
+  }
+  .presupuesto-hero__totales {
+    grid-template-columns: 1fr;
+    gap: var(--fk-space-3);
+  }
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+  .import-resumen {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .chart-stats {
+    grid-template-columns: 1fr;
+  }
+
+  /* Cat-row: columnas adaptadas a móvil */
+  .cat-row {
+    grid-template-columns: 1fr 40px auto;
+    gap: var(--fk-space-2);
+  }
+  .cat-row__bar {
+    grid-column: 1 / -1;
+    margin-top: -4px;
+  }
+
+  /* Patrimonio hero más compacto */
+  .patrimonio-hero {
+    padding: var(--fk-space-5);
+  }
+
+  /* Modal header padding más compacto */
+  .modal__header {
+    padding: var(--fk-space-4) var(--fk-space-5);
+  }
 }
 
-/* ── MÓVIL PEQUEÑO (< 480px) ────────────────────────────────── */
-@media (max-width: 479px) {
-  h1, .bento__value { font-size: var(--fk-text-2xl); }
-
+/* ── MÓVIL PEQUEÑO (< 360px) — iPhone SE 1ª gen, dispositivos legacy ─ */
+@media (max-width: 359px) {
   .section { padding: var(--fk-space-3); }
-
   .card { padding: var(--fk-space-3); }
-  .bento { gap: var(--fk-space-2); }
   .bento__cell { padding: var(--fk-space-4); }
+  .bento { gap: var(--fk-space-2); }
+
+  /* Nav-item: labels más chicos si no caben */
+  .nav-item { font-size: 10px; }
+  .nav-item__icon { font-size: 1.125rem; }
 }
 
-/* ── PANTALLA GRANDE (> 1440px) ─────────────────────────────── */
+/* ── PANTALLA GRANDE (≥ 1440px) ────────────────────────────── */
 @media (min-width: 1440px) {
   .section {
     padding: var(--fk-space-8);
   }
-
   .bento {
     grid-auto-rows: minmax(180px, auto);
     gap: var(--fk-space-6);

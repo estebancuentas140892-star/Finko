@@ -7,6 +7,58 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Fix: responsive integral mobile (320–1440px) · 2026-05-18
+
+Smoke test A.4 reveló que aunque la barra inferior ya mostraba los 5 íconos,
+la app en general no se sentía adaptada a móviles modernos (Redmi Note 11
+393px y similares). Refactor integral de `responsive.css` con principios:
+
+1. **Fluid typography con `clamp()`** — el valor hero del dashboard
+   (`.bento__value`, `.card__value`, `.patrimonio-hero__valor`) escala
+   fluidamente entre 24px (320px viewport) y 36px (≥600px) en vez de
+   saltar bruscamente entre breakpoints. Antes se mostraba 24px en
+   cualquier móvil < 480px (Redmi/Pixel/iPhone moderno incluidos);
+   ahora a 393px se renderiza a 31.5px, suficiente para destacar como
+   métrica principal.
+
+2. **Touch targets ≥ 44px** — `.btn`, `.input`, `.select` y `textarea.input`
+   ahora tienen `min-height: 44px` en `< 1024px` (cumple Apple HIG y
+   se acerca a Material 48px). Antes 40px era demasiado chico.
+
+3. **Inputs 16px font-size en móvil** — fix para el bug clásico de iOS
+   Safari que hace zoom automático al enfocar un input con `font-size < 16px`.
+   Antes los inputs eran 14px → al tocarlos la página entera saltaba
+   en iPhone.
+
+4. **Breakpoint `< 480px` → `< 360px`** — la regla previa reducía h1 y
+   bento__value en todo móvil moderno (393/414px también afectados). El
+   nuevo breakpoint solo aplica a dispositivos legacy reales como iPhone
+   SE 1ª gen (320px). Móviles modernos (360/393/414) ya no se ven
+   "comprimidos".
+
+5. **Grids fijos colapsan a 1-col en < 768px** — `.proyeccion-grid` (era
+   3 cols), `.presupuesto-hero__totales` (era 3 cols), `.metric-grid` y
+   `.chart-stats` ahora son 1-col en móvil, evitando contenido apretado.
+   `.import-resumen` baja a 2-col (estaba auto-fit pero quedaba muy chico).
+
+6. **Nav-item label con ellipsis** — en viewports muy chicos (320px) el
+   label "Tesorería" se trunca con `…` en lugar de desbordar.
+
+7. **`viewport-fit=cover` + `maximum-scale=5`** en `index.html` — cubre
+   notch/area segura en dispositivos modernos y permite zoom del usuario
+   (accesibilidad: no bloqueamos zoom).
+
+8. **Bump `CACHE_NAME` v6→v7** — los PWA instalados refrescarán CSS, HTML
+   y SW cacheados al reabrir la app.
+
+Verificado en preview a 6 viewports: 320, 360, 393, 414, 768, 1280px.
+Cero overflow horizontal en todos.
+
+- `styles/responsive.css` (reescrito), `index.html` (meta viewport),
+  `service-worker.js` (CACHE_NAME)
+
+---
+
 ### B.2 — Screenshots PWA para manifest · 2026-05-18
 
 2 screenshots de 540×720 (tema oscuro) para enriquecer la ficha de instalación

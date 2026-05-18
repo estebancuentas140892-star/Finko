@@ -29,6 +29,11 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ A.2 — HTTPS automático con HSTS preload — 2026-05-18.
 - ✅ A.3 — SW + headers de seguridad verificados en producción (incluye fix de orden de reglas en `vercel.json`) — 2026-05-18.
 
+**Completadas adicionales:**
+- ✅ Fix responsive integral mobile (320–1440px): fluid typography (clamp),
+  touch targets 44px+, inputs 16px iOS-safe, breakpoint legacy < 480px movido
+  a < 360px, grids 3-col → 1-col en < 768px, `viewport-fit=cover`. SW v6→v7 — 2026-05-18.
+
 **Tareas candidatas:**
 - A.4 — Smoke test desde móvil real (instalación PWA + offline).
 - A.5 — Agregar dominio custom (opcional).
