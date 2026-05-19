@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (E.2 + refactor single-source-of-truth en constants + tokens)
+> Última actualización: 2026-05-19 (G.3.F4 - Bloque de usura en calculadora Credito)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 702/702 verdes |
+| Tests unitarios + integración | 709/709 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,35 +39,64 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### Refactor: single-source-of-truth en constantes legales y tokens · 2026-05-19
-Reemplazado el patrón `SMMLV_2026 / UVT_2026 / TASA_USURA_Q2_2026` (que
-requería cambiar imports y UI cada año/trimestre) por tablas históricas
-indexadas por período + selectores dinámicos:
-- `LEGAL_POR_ANIO[anio]`         → smmlv, auxilio, uvt, vigencia, fuentes.
-- `USURA_POR_PERIODO['anio-Qn']` → tasa, desde/hasta, fuente.
-- `legalVigente(fecha?)` y `tasaUsuraVigente(fecha?)` → selectores.
-- Exports estables sin sufijo: `SMMLV`, `UVT`, `AUXILIO_TRANSPORTE`,
-  `TASA_USURA`, `VIGENCIA`, `ANIO_VIGENTE`, `PERIODO_USURA`.
+### G.3.F4 - Bloque de usura en calculadora Credito · 2026-05-19
+Cuando el usuario ingresa una tasa que supera el tope legal de usura (SFC), la calculadora
+Credito ahora muestra un bloque de alerta critica `.nudge.nudge-critical` ANTES del resultado.
+- `modules/dominio/calculadoras/view.js`: nueva funcion exportada `renderAlertaUsura(tasaEAPct, usuraInfo)`.
+  Genera el nudge con la tasa ingresada, el tope legal, el periodo vigente y un enlace a sfc.gov.co.
+- `modules/dominio/calculadoras/index.js`: `_onSubmitCredito` importa `tasaUsuraVigente()` y
+  `renderAlertaUsura`. Cuando `clasificarTasaCredito()` retorna `'usura'`, inyecta la alerta
+  antes del resultado; el announce de accesibilidad tambien cambia al mensaje de advertencia.
+- `tests/unit/calculadoras.test.js`: 7 tests nuevos para `renderAlertaUsura` (clase CSS, rol a11y,
+  tasa mostrada, tope mostrado, periodo, calculo del exceso, exceso en tope exacto).
+- `service-worker.js`: v21 a v22.
 
-Para actualizar al 2027 ahora basta con agregar UNA entrada al objeto
-`LEGAL_POR_ANIO`. Toda la app (UI, cálculos, tests) se actualiza solo.
+### G.2.D - CSS para Calculadoras y Configuracion · 2026-05-19
+Las dos secciones tenian clases HTML huerfanas sin reglas CSS. Se agregaron estilos completos
+en `styles/components.css` sin tocar ninguno de los archivos JS ni HTML.
+- `.calc-panel/.calc-card/.calc-card__title`: cada calculadora queda como surface-card
+  (fondo `--fk-bg-surface`, borde sutil, radius xl, padding 24px, grid de campos 2 col).
+- `.calc-result/.calc-result__grid`: area de resultado con borde izquierdo accent, grid dl/dd.
+- `.calc-result__highlight/.deduct/.total`: colores accent/danger para valores clave.
+- `.calc-result__badge/.calc-result__errors`: badge de clasificacion de tasa + lista de errores.
+- `.config-section/.config-section__title/.config-section__desc`: misma surface-card que calc.
+- `.config-info`: dl key-value en grid de 2 columnas con dt muted y dd primary.
+- `.config-toggle`: pill switch iOS-style con `appearance: none` + `::after` animado en verde.
+- `.config-actions`: flex-wrap para botones de importar/exportar.
+- `.config-danger`: zona roja sutil (`--fk-danger-bg`, borde rgba danger 25%).
+- SW v20 a v21.
+- Archivos: `styles/components.css`, `service-worker.js`.
 
-Cambios colaterales:
-- UI dinámica en `config/view.js`, `calculadoras/view.js`,
-  `compromisos/view.js` (hint de usura) — sin valores hardcoded.
-- Tests `state.test.js`, `calculadoras.test.js` migrados a constantes
-  resilient (3× SMMLV en vez de $4M literal, etc).
-- Aliases deprecated `SMMLV_2026 / UVT_2026 / TASA_USURA_Q2_2026` se
-  mantienen como aliases del valor vigente para compat.
-- Tokens CSS: agregados `--fk-amber`, `--fk-amber-bg`, `--fk-text-on-bold`.
-  Eliminados 8 colores hardcodeados (#fff×4, #0f1117×1, #f59e0b×3) de
-  `components.css` y `layout.css`.
-- Centralizado `APP_NAME` y `APP_VERSION` en `constants.js`.
-- SW v15→v16. 702/702 unit + 32/32 E2E verdes.
-- Archivos: `modules/core/constants.js` (reescrito), `modules/core/state.js`,
-  `modules/dominio/{calculadoras,config,compromisos}/{logic,view}.js`,
-  `styles/{tokens,components,layout}.css`,
-  `tests/unit/{state,calculadoras}.test.js`, `service-worker.js`.
+### G.2.C - Onboarding wizard de 3 pasos · 2026-05-19
+Amplió el wizard de bienvenida de 1 paso (solo nombre) a 3 pasos reales con datos útiles.
+- Paso 1: Nombre. Igual que antes pero con indicador de progreso (dots animados).
+- Paso 2: Ingreso principal (monto + frecuencia, opcional) + primera cuenta o billetera (nombre + saldo, opcional). Si el usuario llena algo, se guarda con `guardar()` al pasar al siguiente paso.
+- Paso 3: Meta de ahorro. Chips preset (🛡️ Fondo de emergencia, ✈️ Viaje, 💻 Tecnología, 🏠 Vivienda, 🎓 Educación) que pre-llenan el campo de nombre. El usuario puede escribir su propia meta + monto objetivo.
+- "Omitir" en paso 2 y "Omitir y empezar" en paso 3 permiten saltar sin registrar datos.
+- Nuevas imports en onboarding.js: `guardar` de crud.js, `FRECUENCIAS` de constants.js.
+- CSS nuevo en modals.css: `.onboarding__steps`, `.onboarding__step`, `.onboarding__hero`, `.onboarding__title`, `.onboarding__desc`, `.onboarding__footer`, `.onboarding__skip`, `.onboarding__divider`, `.onboarding__chips`, `.onboarding__chip` con variante `.selected`.
+- SW v19 a v20.
+- Archivos: `modules/ui/onboarding.js` (reescrito), `styles/modals.css`, `service-worker.js`.
+
+### G.2.B - Empty states modernos en 7 secciones · 2026-05-19
+Mejora visual completa de los 7 empty states de dominio + 2 mensajes inline en Análisis.
+Antes: texto seco, sin personalidad. Ahora: titulo cálido, descripción con beneficio concreto,
+CTA claro y tip educativo (`.empty-state__tip`) en cada sección.
+- Secciones actualizadas: Ingresos, Gastos, Compromisos, Personales, Tesorería, Metas, Presupuesto.
+- Mensajes inline mejorados en `analisis/view.js` (por categoría y tendencia).
+- La clase `.empty-state__tip` ya estaba en CSS (G.1) - solo se activó con contenido.
+- SW v18 a v19.
+- Archivos: `modules/dominio/{ingresos,gastos,compromisos,personales,tesoreria,metas,presupuesto,analisis}/view.js`, `service-worker.js`.
+
+### G.2.A - Bento Grid asimétrico en dashboard · 2026-05-19
+Rediseño visual del dashboard: de 6 celdas iguales a 7 celdas asimétricas.
+- Hero 8×2 (HERO + accent) para saldo total con `.bento__value--xl` y `.bento__cell--hero`.
+- Balance 4×2 con `data-dominio="analisis"` muestra ingresos estimados vs gastos.
+- 3 celdas 4×1 para Ingresos, Gastos, Metas con color de dominio.
+- 2 celdas 6×1 (`.bento__cell--half`) para Compromisos y Préstamos personales.
+- Nueva lógica en `render.js` (updateBadge) para llenar `#personales-count` sin importar dominio.
+- SW v17 a v18. CSS: `.bento__cell--half`, `.bento__cell--hero`, `[data-dominio]::before`, `bento__value--xl`, cascade animation, hover lift.
+
 
 ### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
 Hallazgo importante: los valores en `constants.js` estaban desactualizados

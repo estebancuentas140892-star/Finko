@@ -7,6 +7,172 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### G.3.F4 - Bloque de usura en calculadora Credito · 2026-05-19
+
+Cuando la tasa ingresada en la calculadora Credito supera el tope legal de usura vigente (SFC),
+se muestra un bloque de alerta critica `.nudge.nudge-critical` ANTES del resultado calculado.
+El resultado sigue visible para que el usuario entienda las cifras, pero la advertencia es lo
+primero que ve. El announce de accesibilidad tambien cambia al texto de la advertencia.
+
+- `modules/dominio/calculadoras/view.js`: nueva funcion exportada `renderAlertaUsura(tasaEAPct, usuraInfo)`.
+  Muestra la tasa ingresada, el tope legal, el periodo vigente, el exceso en puntos, la
+  referencia legal (Art. 68 Ley 45/1990) y un link a sfc.gov.co.
+- `modules/dominio/calculadoras/index.js`: `_onSubmitCredito` importa `tasaUsuraVigente()`
+  (de `core/constants.js`) y `renderAlertaUsura` (de `view.js`). Inyecta la alerta solo
+  cuando `clasificarTasaCredito()` retorna `'usura'`; en caso contrario, comportamiento igual.
+- `tests/unit/calculadoras.test.js`: 7 tests nuevos para `renderAlertaUsura` (clase CSS,
+  rol ARIA, tasa mostrada, tope en pct, periodo, calculo del exceso, exceso en tope exacto).
+  Total: 702 + 7 = 709/709 tests verdes.
+- `service-worker.js`: v21 a v22.
+
+### G.2.D - CSS para Calculadoras y Configuracion · 2026-05-19
+
+Las dos secciones tenian clases HTML huerfanas sin definicion CSS. Se escribieron las reglas
+completas en `styles/components.css` como bloques independientes al final del archivo.
+
+**Calculadoras:**
+- `.calc-panel`: flex column con gap-4 para apilar las 7 calculadoras.
+- `.calc-card`: surface-card (bg-surface, borde sutil, radius-xl, padding-6, flex column).
+- `.calc-card__title`: text-base semibold, igual al patron de titulos de otras secciones.
+- `.calc-form` + `.calc-form__fields`: form flex column; grid auto-fill minmax 200px para campos.
+- `.calc-result`: area de resultado con borde izquierdo accent, se oculta cuando vacia (`:empty`).
+- `.calc-result__grid`: dl en grid 2 col (dt texto, dd mono tabular-nums alineado a la derecha).
+- `.calc-result__highlight` (accent), `.calc-result__deduct` (danger), `.calc-result__total` (bold lg).
+- `.calc-result__badge`: chip para clasificacion de tasa (usura/alta/estandar/razonable).
+- `.calc-result__errors`: lista de errores de validacion en color danger.
+
+**Configuracion:**
+- `.config-section`: misma surface-card que calc-card, con margin-bottom-4 entre secciones.
+- `.config-section__title`: text-lg semibold.
+- `.config-section__desc`: text-sm secondary; variante `--warn` con bg warning-bg y borde.
+- `.config-info`: dl key-value en grid 2 col (dt muted, dd primary).
+- `.config-form`: flex column gap-4.
+- `.config-toggle`: pill switch iOS-style con `appearance: none` + pseudoelemento `::after` que
+  se desliza 20px al activarse. Verde (`--fk-accent`) cuando checked.
+- `.config-toggle__label`: text-sm medium.
+- `.config-actions`: flex-wrap gap-2 para los 4 botones de importar/exportar.
+- `.config-danger`: zona roja sutil (bg danger-bg, borde rgba 25%), flex column gap-3.
+- `.config-danger__title`: text-sm semibold danger-text.
+
+Archivos: `styles/components.css` (2 bloques nuevos al final), `service-worker.js` (v20 a v21).
+
+---
+
+### G.2.C - Onboarding wizard de 3 pasos · 2026-05-19
+
+Amplió el wizard de bienvenida (antes: 1 paso con solo nombre) a 3 pasos reales
+que dejan la app configurada con datos iniciales sin abrumar al usuario.
+
+**Paso 1 - Bienvenida:**
+- Mismo campo de nombre que antes.
+- Nuevo: indicador de pasos (3 dots animados, pill activo en verde).
+- Texto: "¡Bienvenido a Finko! Tu plata, tu idioma, sin complicaciones."
+
+**Paso 2 - Tu plata (datos opcionales):**
+- Ingreso principal: monto + frecuencia (select con FRECUENCIAS, por defecto "mensual").
+- Cuenta o billetera: nombre + saldo inicial (Nequi, Efectivo, Bancolombia, etc.).
+- Todo opcional. Si el usuario llena algo, `guardar()` lo persiste al pasar al paso 3.
+- Botón "Omitir" salta directamente al paso 3 sin guardar nada.
+- Se reutiliza `guardar()` de crud.js. Validación inline (no importa lógica de dominio).
+
+**Paso 3 - Primera meta (datos opcionales):**
+- 5 chips preset: 🛡️ Fondo de emergencia, ✈️ Viaje, 💻 Tecnología, 🏠 Vivienda, 🎓 Educación.
+- Click en chip: pre-llena el campo nombre + emoji (solo si el campo está vacío).
+- El usuario puede escribir su propia meta y monto objetivo.
+- "Omitir y empezar" completa el onboarding sin guardar meta.
+- "Empezar 🎉" guarda la meta (si hay nombre) y completa el wizard.
+
+**CSS nuevo en modals.css:**
+- `.modal--onboarding` (max-width 460px, text-center).
+- `.onboarding__steps` + `.onboarding__step` + `.onboarding__step.active` (pill animado width 8px → 28px).
+- `.onboarding__hero/title/desc/footer/note/skip/divider`.
+- `.onboarding__chips` + `.onboarding__chip` + `.onboarding__chip.selected`.
+
+Archivos: `modules/ui/onboarding.js` (reescrito), `styles/modals.css`, `service-worker.js` (v19 a v20).
+
+---
+
+### G.2.B - Empty states modernos (tono Duolingo) en 8 secciones · 2026-05-19
+
+Mejora de UX/copy en todos los estados vacíos de la app. Objetivo: pasar de mensajes secos y
+clínicos a textos cálidos con personalidad, que inviten a la acción y enseñen algo útil.
+
+**Patrón aplicado en cada sección:**
+- Título cálido (pregunta o frase con voz de la app: "¿En qué se fue la plata?").
+- Descripción con beneficio concreto (no descripción de feature, sino lo que el usuario gana).
+- Botón CTA con acción clara.
+- `.empty-state__tip` con tip financiero educativo breve (clase ya estaba en CSS desde G.1).
+
+**Secciones actualizadas:**
+- Ingresos: "Tu plata empieza aquí" + tip sobre ingresos variables.
+- Gastos: "¿En qué se fue la plata?" + tip sobre Análisis instantáneo.
+- Compromisos: "Nada que pagar... por ahora" + tip sobre patrimonio neto.
+- Personales: "Nadie te debe... o no lo recordaste" + tip sobre pagos parciales.
+- Tesorería: "¿Dónde guardás tu plata?" + tip sobre billeteras digitales.
+- Metas: "¿Qué estás ahorrando para lograr?" + tip sobre fondo de emergencia.
+- Presupuesto: "Controlá sin enredarte" + tip sobre regla 50/30/20.
+- Análisis (2 mensajes inline): tendencia y por categoría mejorados.
+
+Archivos: `modules/dominio/{ingresos,gastos,compromisos,personales,tesoreria,metas,presupuesto,analisis}/view.js`, `service-worker.js` (v18 a v19).
+
+---
+
+### G.2.A - Bento Grid asimétrico en dashboard · 2026-05-19
+
+Rediseño del dashboard: de 6 celdas planas e iguales a 7 celdas con jerarquía visual clara.
+
+**Layout nuevo:**
+- Hero saldo (8col×2row): `.bento__cell--wide.bento__cell--tall.bento__cell--accent.bento__cell--hero`. Valor con `.bento__value--xl` (`clamp(2.25rem, 5vw, 3.75rem)`).
+- Balance del mes (4col×2row): `data-dominio="analisis"`. Muestra ingresos estimados vs gastos mes, con color verde/rojo dinámico.
+- Ingresos / Gastos / Metas (4col×1row c/u): con `data-dominio` correspondiente.
+- Compromisos / Préstamos (6col×1row c/u, `.bento__cell--half`): nueva celda `#personales-count`.
+
+**CSS agregado en layout.css:**
+- `.bento__cell--half` (span 6 desktop, span 3 tablet, span 1 mobile).
+- `.bento__cell--hero` (border-radius 28px, padding generoso).
+- `.bento__value--xl` (clamp 2.25rem → 3.75rem).
+- `[data-dominio]::before` pseudo-element (borde top 3px del color del dominio).
+- Glow de icono por dominio via `filter: drop-shadow()`.
+- Animación cascade (nth-child 1-8, 40ms entre cada celda).
+- Hover lift en desktop: `translateY(-2px)`.
+
+**render.js:** `updateBadge()` ahora también llena `#personales-count` (lógica inline para no romper regla 10 de no-domain-imports en infra).
+
+Archivos: `index.html`, `styles/layout.css`, `styles/responsive.css`, `modules/infra/render.js`, `service-worker.js` (v17 a v18).
+
+---
+
+### G.1 - Foundation UI: tokens de dominio, animaciones, sistema nudge · 2026-05-19
+
+Infraestructura visual base del rediseño moderno (inspiración Duolingo pero con sobriedad financiera).
+
+**tokens.css:**
+- 8 tokens `--fk-dom-*` (verde ingresos, naranja gastos, rojo compromisos, azul tesorería,
+  violeta metas, teal análisis, amarillo presupuesto, rosa personales).
+- 15 tokens `--fk-nudge-*` para 5 niveles de urgencia (critical/high/medium/info/success),
+  cada uno con bg/border/accent usando `color-mix(in srgb, ...)`.
+
+**base.css:**
+- `font-variant-numeric: tabular-nums` en `.mono`.
+- 4 keyframes: `sectionIn` (entrada de sección), `cardIn` (tarjeta desde abajo), `toastIn/Out` (slide), `confettiFall` (lluvia de confetti).
+- Animación `sectionIn` en `.sec.active > *:first-child` (respeta `prefers-reduced-motion`).
+- Feedback táctil en móvil: `.btn:active { transform: scale(0.97) }`.
+
+**components.css:**
+- `.nudge` base (grid 3 cols: icon/body/cta) + 5 variantes (.nudge-critical → .nudge-success).
+- `.logro-toast` (fixed bottom, slide animation, glow verde).
+- `.confetti-piece` con animación `confettiFall`.
+- `.dom-badge` con 8 variantes de dominio.
+- `.empty-state__tip` (tip educativo: borde izquierdo, bg elevada, texto xs).
+- `.input-money`: `font-variant-numeric: tabular-nums`.
+- `.empty-state__icon`: 3.5rem, sin opacity, `filter: drop-shadow(...)`.
+
+**CLAUDE.md:** Sección 7 - prohibición de em-dash (U+2014 ─) y en-dash (U+2013 -) en textos del proyecto. Tabla de alternativas (dos puntos, punto, paréntesis, guión, coma). Grep para verificar. Excepción: datos del usuario.
+
+Archivos: `styles/tokens.css`, `styles/base.css`, `styles/components.css`, `styles/layout.css`, `styles/responsive.css`, `CLAUDE.md`, `service-worker.js` (v16 a v17).
+
+---
+
 ### Refactor: single-source-of-truth en constantes legales y tokens · 2026-05-19
 
 Refactor arquitectural para eliminar la necesidad de tocar múltiples archivos

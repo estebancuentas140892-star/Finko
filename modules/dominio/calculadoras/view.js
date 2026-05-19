@@ -337,6 +337,43 @@ export function renderBadgeTasa(banda) {
   return `<p class="calc-result__badge ${c.cls}">${c.icon} ${c.txt}</p>`;
 }
 
+// ── ALERTA DE USURA (G.3.F4) ─────────────────────────────────────
+
+/**
+ * Renderiza un bloque de alerta critica cuando la tasa del credito
+ * supera el tope legal de usura vigente (SFC).
+ *
+ * Debe mostrarse ANTES del resultado del calculo para que el usuario
+ * lo vea antes de interpretar las cifras.
+ *
+ * @param {number} tasaEAPct - Tasa ingresada en porcentaje (ej. 35.5 para 35.5% EA).
+ * @param {{ tasa: number, periodo: string, fuente: string }} usuraInfo
+ * @returns {string}
+ */
+export function renderAlertaUsura(tasaEAPct, usuraInfo) {
+  const usuraPct  = (usuraInfo.tasa * 100).toFixed(2);
+  const excedePct = (tasaEAPct - usuraInfo.tasa * 100).toFixed(2);
+  return `
+    <div class="nudge nudge-critical" role="alert" aria-live="assertive">
+      <span class="nudge__icon" aria-hidden="true">🚫</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Tasa por encima del limite legal de usura</p>
+        <p class="nudge__desc">
+          Ingresaste <strong>${tasaEAPct.toFixed(2)}% EA</strong>,
+          pero el tope legal es <strong>${usuraPct}% EA</strong>
+          (${usuraInfo.periodo} - ${usuraInfo.fuente}).
+          Esta tasa supera en <strong>${excedePct} puntos</strong> el maximo permitido:
+          cobrarla es ilegal en Colombia (Art. 68 Ley 45/1990).
+        </p>
+      </div>
+      <a class="nudge__cta btn btn-sm btn-danger"
+         href="https://www.sfc.gov.co" target="_blank" rel="noopener noreferrer"
+         aria-label="Consultar tasas vigentes en la SFC (abre en nueva pestana)">
+        Ver SFC
+      </a>
+    </div>`;
+}
+
 // ── MENSAJE DE ERROR GENÉRICO ─────────────────────────────────────
 
 export function renderError(errores) {

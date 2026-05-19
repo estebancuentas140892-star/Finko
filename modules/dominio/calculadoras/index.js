@@ -8,6 +8,7 @@
 import { f } from '../../infra/utils.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
+import { tasaUsuraVigente } from '../../core/constants.js';
 import {
   calcularCDT,
   calcularCredito,
@@ -29,6 +30,7 @@ import {
   renderResultPILA,
   renderResultRentabilidadReal,
   renderBadgeTasa,
+  renderAlertaUsura,
   renderError,
 } from './view.js';
 
@@ -69,11 +71,20 @@ function _onSubmitCredito(e) {
     announce(errores[0], 'assertive');
     return;
   }
-  const tasaEA = Number(datos.tasaEA) / 100;
-  const r      = calcularCredito(Number(datos.principal), tasaEA, Number(datos.plazoMeses));
-  const banda  = clasificarTasaCredito(tasaEA);
-  el.innerHTML = renderResultCredito(r, f) + renderBadgeTasa(banda);
-  announce('Resultado crédito actualizado.');
+  const tasaEA    = Number(datos.tasaEA) / 100;
+  const r         = calcularCredito(Number(datos.principal), tasaEA, Number(datos.plazoMeses));
+  const banda     = clasificarTasaCredito(tasaEA);
+  const esUsura   = banda === 'usura';
+
+  // G.3.F4: si la tasa supera la usura legal, mostrar alerta critica ANTES del resultado.
+  const alertaHtml = esUsura
+    ? renderAlertaUsura(Number(datos.tasaEA), tasaUsuraVigente())
+    : '';
+
+  el.innerHTML = alertaHtml + renderResultCredito(r, f) + renderBadgeTasa(banda);
+  announce(esUsura
+    ? 'Advertencia: la tasa ingresada supera el limite legal de usura.'
+    : 'Resultado credito actualizado.');
 }
 
 function _onSubmitIC(e) {
