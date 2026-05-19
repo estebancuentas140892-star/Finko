@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (F.2 completada — dominio personales/préstamos otorgados, schema v3)
+> Última actualización: 2026-05-18 (F.3 completada + fix critical de routing)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 655/655 verdes |
+| Tests unitarios + integración | 685/685 verdes |
 | Tests E2E | 18/18 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,34 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### F.3 — Score de Salud Financiera con 4 factores ponderados · 2026-05-18
+Agregado cross-dominio en dashboard + panel `analisis/`. Score 0–100 con 4 factores
+ponderados: tasa de ahorro (40%), deuda-a-activos (25%), liquidez en meses (20%),
+control de gastos / volatilidad (15%). Clasificación en 4 bandas visuales: excelente
+(80+), buena (60–79), ajustada (40–59), crítica (<40). Card con hero number, gauge
+0–100, y 4 sub-factor cards mostrando drivers. Volatilidad calculada como std dev
+de 12 meses de gastos. 18 tests nuevos: 685/685 verdes. SW v11→v12.
+- `modules/dominio/analisis/{logic,view}.js` (nuevas funciones + integración)
+- `styles/components.css` (+60 líneas para `.score-card` y variantes)
+- `tests/unit/analisis.test.js` (+18 tests)
+- `service-worker.js` (v11→v12)
+
+### Fix crítico: Routing race condition en `renderSmart()` · 2026-05-18
+**Síntoma:** Secciones presupuesto, analisis, calculadoras, config mostraban contenido
+inconsistentemente (a veces sí, a veces no). **Causa:** Race condition en hashchange
+listeners. El dominio registra su listener ANTES que el router. Cuando se navega:
+1. Listener del dominio dispara → `renderSmart()` chequea `.active` clase
+2. `.active` aún es FALSE (el router no la ha actualizado)
+3. `renderSmart()` retorna sin renderizar (no-op)
+4. Router dispara más tarde y actualiza `.active`, pero demasiado tarde
+
+**Solución:** Cambiar `renderSmart()` de chequear `.active` (asincrónico, actualizado
+por router) a chequear `location.hash` (sincrónico, actualizado antes de los listeners).
+Además, agregar listener de `hashchange` a dominio `analisis/` que faltaba.
+- `modules/infra/render.js`: `renderSmart()` ahora usa `location.hash.slice(1)` en vez de `.active`
+- `modules/dominio/analisis/index.js`: agregado listener de `hashchange` faltante
+- Tests: 685/685 verdes. Verificado en browser: todas 4 secciones renderean consistentemente.
 
 ### F.2 — Dominio `personales/` (préstamos otorgados / "me deben") · 2026-05-18
 Espejo de `compromisos.deuda`: plata que **TÚ** prestaste a familia/amigos.
