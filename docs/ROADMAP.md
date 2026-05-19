@@ -9,7 +9,9 @@
 ## Estado actual
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
-**Fase activa:** ninguna. El proyecto está estable y listo para usar localmente.
+**Post-v1.0:** todas las secciones A-G completadas (39 tareas opcionales + features portadas).
+**Estado:** proyecto estable en producción. 805/805 unit tests verdes, 38/38 E2E verdes, Lighthouse 99-100.
+**Fase activa:** ninguna. El roadmap post-v1.0 está 100% cerrado.
 
 ---
 
@@ -136,10 +138,10 @@ que no fueron incluidas en la fase F.
 **Completadas:**
 - ✅ G.1 - Detectores de alerta en compromisos: `detectarFijosSinPagarEsteMes()` y
   `detectarDeudasDurmiendo()` en `compromisos/logic.js`; nudges en la sección; 22 tests nuevos - 2026-05-19.
-
-**Pendientes:**
 - ✅ G.2 - Insights de gasto en analisis: `calcularComparacionCategorias()` + `detectarPatronGastoSemanal()`; 20 tests nuevos - 2026-05-19.
 - ✅ G.3 - Sistema de Logros y Rachas (gamificacion): 12 logros, toast + confetti, schema v4 - 2026-05-19.
+
+_(todas las tareas de G completadas)_
 
 **Modelo sugerido:** Sonnet 4.6 Medio (G.2) / Opus 4.7 Medio (G.3).
 
