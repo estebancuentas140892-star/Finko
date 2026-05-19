@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix E2E: 5 regresiones preexistentes corregidas, 38/38 verdes)
+> Última actualización: 2026-05-19 (fix UX: toast del logro cortado en mobile)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(ux) - Toast de logro cortado en mobile (UX#1) · 2026-05-19
+El toast del logro desbloqueado se veia parcialmente cortado en celular y a veces tapado
+por el bottom nav. Tres ajustes en `.logro-toast`:
+- Quitado `white-space: nowrap` y `min-width: 220px` que forzaban overflow con nombres
+  largos (Diversificador, Mes en verde, Planificador).
+- `width: max-content` + `max-width: min(420px, calc(100vw - ...))` con margenes
+  laterales seguros (incluye `env(safe-area-inset-*)`).
+- `.logro-toast__nombre` permite wrap con `overflow-wrap: anywhere`.
+- En mobile (< 1024px) el `bottom` ahora respeta la altura del bottom nav
+  (`var(--fk-header-height) + var(--fk-space-4)`) para no quedar tapado.
+- SW v32 a v33. 805/805 unit + 18/18 E2E smoke verdes.
 
 ### fix(e2e) - 5 regresiones E2E corregidas · 2026-05-19
 Textos de empty state cambiados y selector de theme-toggle duplicado por el bottom nav mobile.

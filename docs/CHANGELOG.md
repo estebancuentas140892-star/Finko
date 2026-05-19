@@ -7,6 +7,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(ux) - Toast de logro cortado en mobile · 2026-05-19
+
+Bug reportado por el usuario: el toast de "Logro desbloqueado" en celular aparecia
+parcialmente fuera de pantalla a la derecha y a veces tapado por el bottom nav.
+
+**Causas:**
+1. `white-space: nowrap` + `min-width: 220px` + nombres largos
+   ("Diversificador", "Mes en verde", "Planificador") forzaban un ancho mayor que
+   el contenedor, generando overflow horizontal del contenido.
+2. El `bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px))` (≈24px)
+   quedaba debajo de los 60px del bottom nav mobile, ocultando parte del toast.
+
+**Fixes en `styles/components.css`:**
+- Quitado `white-space: nowrap` y `min-width: 220px`.
+- `.logro-toast`: `width: max-content` + `max-width: min(420px, calc(100vw - space-6*2 -
+  safe-area-left - safe-area-right))` garantiza margenes laterales seguros.
+- `.logro-toast__nombre`: `overflow-wrap: anywhere` y `margin: 0` para que el
+  nombre largo haga wrap natural.
+- Consolidado `.logro-toast__label` duplicado en un solo bloque.
+- Nuevo media query `@media (max-width: 1023.98px)`: el toast sube a
+  `bottom: calc(var(--fk-header-height) + var(--fk-space-4) + safe-area-bottom)`,
+  asi queda arriba del bottom nav.
+
+**Archivos:**
+- `styles/components.css` (CSS del toast)
+- `service-worker.js` (v32 → v33 para invalidar cache)
+
+**Métricas:** 805/805 unit verdes, 18/18 E2E smoke verdes (no hay E2E del toast porque
+es un componente de animacion temporal de 4s).
+
+---
+
 ### fix(e2e) - 5 regresiones E2E corregidas · 2026-05-19
 
 Dos causas independientes. Ambas introducidas por commits anteriores al bottom nav mobile.

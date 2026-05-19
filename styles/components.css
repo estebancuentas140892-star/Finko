@@ -1758,10 +1758,19 @@ textarea.input {
   border-radius: var(--fk-radius-xl);
   padding: var(--fk-space-3) var(--fk-space-5);
   box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
-  white-space: nowrap;
   pointer-events: none;
-  min-width: 220px;
-  max-width: 90vw;
+  /* Ancho intrinseco pero con margen lateral garantizado para que nunca
+     se salga por los costados en pantallas pequeñas. Era el bug del toast
+     "cortado a la derecha" en mobile con nombres largos (Diversificador,
+     Mes en verde, etc): antes tenia white-space: nowrap + min-width: 220px
+     que forzaba overflow del contenido. Ahora deja wrap natural si hace falta. */
+  width: max-content;
+  max-width: min(
+    420px,
+    calc(100vw - var(--fk-space-6) * 2
+                - env(safe-area-inset-left, 0px)
+                - env(safe-area-inset-right, 0px))
+  );
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1791,6 +1800,7 @@ textarea.input {
   font-weight: var(--fk-font-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  margin: 0;
 }
 
 .logro-toast__nombre {
@@ -1798,6 +1808,22 @@ textarea.input {
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
   line-height: var(--fk-leading-snug);
+  margin: 0;
+  /* Permitir wrap en pantallas chicas con nombres largos.
+     overflow-wrap: anywhere por si el nombre fuera una palabra sin espacios. */
+  overflow-wrap: anywhere;
+}
+
+/* En mobile el bottom nav (60px) tapaba el toast en su posicion original
+   (bottom: space-6 ≈ 24px). Lo elevamos arriba del nav. */
+@media (max-width: 1023.98px) {
+  .logro-toast {
+    bottom: calc(
+      var(--fk-header-height)
+      + var(--fk-space-4)
+      + env(safe-area-inset-bottom, 0px)
+    );
+  }
 }
 
 /* ── Confetti CSS (30 spans generados por JS) */
