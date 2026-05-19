@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (F.3 completada + fix critical de routing)
+> Última actualización: 2026-05-18 (Test E2E F.4 completado)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 685/685 verdes |
-| Tests E2E | 18/18 verdes |
+| Tests E2E | 26/26 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### Test E2E F.4 — Smoke de Estrategia de pago · 2026-05-18
+8 tests Playwright en `tests/e2e/estrategia-pago.test.js`: card visible con ≥ 2
+deudas, orden Avalancha (mayor tasa primero), orden Bola de Nieve (menor saldo
+primero), toggle ida/vuelta, extra mensual redibuja totales, intereses formateados,
+hint con 1 deuda, contenedor vacío sin deudas. 26/26 E2E verdes.
 
 ### F.4 — Estrategias Avalancha / Bola de Nieve · 2026-05-18
 3 funciones puras en `compromisos/logic.js`: `filtrarDeudasPagables`,

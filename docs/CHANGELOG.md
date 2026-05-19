@@ -7,6 +7,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Test E2E F.4 — Smoke de Estrategia de pago · 2026-05-18
+
+8 tests Playwright end-to-end en `tests/e2e/estrategia-pago.test.js`:
+
+1. Card visible con ≥ 2 deudas válidas.
+2. Avalancha: deuda de mayor tasa EA en posición 1.
+3. Bola de Nieve: deuda de menor saldo en posición 1.
+4. Toggle Avalancha→Bola de Nieve→Avalancha restaura orden original.
+5. Input "extra mensual" redibuja card con totales distintos.
+6. Intereses totales renderizados con formato pesos (`$`).
+7. 1 deuda → hint (no card completa, no `.estrategia-card__orden`).
+8. 0 deudas válidas → `#estrategia-pago` vacío.
+
+- `tests/e2e/estrategia-pago.test.js` (nuevo, 262 líneas, 8 tests)
+- E2E: 26/26 verdes.
+
+---
+
 ### F.4 — Estrategias Avalancha / Bola de Nieve para pago de deudas · 2026-05-18
 
 Nueva sección en `compromisos/` que aparece automáticamente cuando el usuario
