@@ -25,6 +25,12 @@ export function initAnalisis() {
     }
   });
 
+  // Re-render al navegar a #analisis (sin esto la sección aparece vacía
+  // hasta que cambien datos relevantes).
+  window.addEventListener('hashchange', () => {
+    renderSmart(renderAnalisis, 'analisis');
+  });
+
   // Render inicial si arrancamos directamente en #analisis.
   renderSmart(renderAnalisis, 'analisis');
 }

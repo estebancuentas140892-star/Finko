@@ -31,15 +31,22 @@ export function registrarRender(fn) {
 // ── RENDER CONDICIONAL ───────────────────────────────────────────
 
 /**
- * Ejecuta `fn` solo si la sección `key` está actualmente visible.
- * Evita re-renders costosos de secciones que el usuario no ve.
+ * Ejecuta `fn` solo si la sección `key` corresponde al hash actual de la URL.
+ *
+ * Por qué chequea hash y no `.active`:
+ *   Los listeners de `hashchange` corren en orden de registro. Los dominios
+ *   registran su listener ANTES que el router, así que cuando el listener del
+ *   dominio se ejecuta, el router aún no ha actualizado la clase `.active`.
+ *   En cambio, `location.hash` se actualiza sincrónicamente ANTES de que
+ *   se disparen los listeners de hashchange, así que es el único valor
+ *   confiable en ese momento.
  *
  * @param {() => void} fn — función de render del dominio.
  * @param {string} key — hash de la sección (ej. `'gast'`, `'metas'`).
  */
 export function renderSmart(fn, key) {
-  const el = document.getElementById(`sec-${key}`);
-  if (el?.classList.contains('active')) fn();
+  const hashActual = location.hash.slice(1) || 'dash';
+  if (hashActual === key) fn();
 }
 
 // ── ACTUALIZACIONES DE ESTADO GLOBAL ────────────────────────────
