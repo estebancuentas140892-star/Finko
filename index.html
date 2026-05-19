@@ -79,6 +79,12 @@
               <span class="nav-item__label">Compromisos</span>
             </a>
 
+            <a class="nav-item" href="#personales" data-section="personales"
+               role="listitem" aria-label="Préstamos personales — me deben">
+              <span class="nav-item__icon" aria-hidden="true">🤝</span>
+              <span class="nav-item__label">Me deben</span>
+            </a>
+
             <a class="nav-item" href="#tesoreria" data-section="tesoreria"
                role="listitem" aria-label="Tesorería y cuentas">
               <span class="nav-item__icon" aria-hidden="true">🏦</span>
@@ -221,6 +227,20 @@
         </div>
       </section>
 
+      <!-- PERSONALES (préstamos otorgados) -->
+      <section class="section" id="sec-personales" aria-labelledby="title-personales">
+        <header class="section__header">
+          <h1 class="section__title" id="title-personales">Me deben</h1>
+          <button class="btn btn-primary" data-action="nuevo-personal"
+                  aria-label="Registrar nuevo préstamo personal">
+            + Préstamo
+          </button>
+        </header>
+        <div id="lista-personales">
+          <!-- F.2: personales/view.js renderiza aquí -->
+        </div>
+      </section>
+
       <!-- TESORERÍA -->
       <section class="section" id="sec-tesoreria" aria-labelledby="title-tesoreria">
         <header class="section__header">
@@ -346,6 +366,38 @@
       </header>
       <div class="modal__body" id="modal-compromiso-body">
         <!-- Fase 7 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo préstamo personal (F.2) -->
+  <div class="modal-overlay" id="modal-personal"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-personal-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-personal-title">Nuevo préstamo</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-personal-body">
+        <!-- F.2: personales/index.js inyecta el form -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar pago de un préstamo (F.2) -->
+  <div class="modal-overlay" id="modal-pago-personal"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-pago-personal-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-pago-personal-title">Registrar pago</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-pago-personal-body">
+        <!-- F.2: personales/index.js inyecta el form al abrir -->
       </div>
     </div>
   </div>

@@ -72,6 +72,19 @@ import { SMMLV_2026 } from './constants.js';
  */
 
 /**
+ * @typedef {Object} Personal
+ * @property {string} id
+ * @property {string} persona            Nombre de a quién le prestaste.
+ * @property {number} monto              Monto total prestado en COP.
+ * @property {number} pagado             Cuánto te ha devuelto hasta ahora (≤ monto).
+ * @property {string} fecha              ISO 8601 (YYYY-MM-DD) del préstamo.
+ * @property {string} [motivo]           Descripción opcional ("mercado", "favor").
+ * @property {string} [fechaLimite]      ISO 8601 opcional, fecha pactada de devolución.
+ * @property {boolean} liquidado         true cuando pagado ≥ monto.
+ * @property {string} fechaCreacion      ISO 8601 timestamp.
+ */
+
+/**
  * @typedef {Object} Meta
  * @property {string} id
  * @property {string} nombre
@@ -89,7 +102,7 @@ import { SMMLV_2026 } from './constants.js';
  */
 
 /**
- * Factory del estado inicial (schema v2). storage.js lo reutiliza para resetear S
+ * Factory del estado inicial (schema v3). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
  * Cada llamada devuelve un objeto nuevo, así nunca se filtran referencias entre
@@ -106,12 +119,13 @@ import { SMMLV_2026 } from './constants.js';
  *   compromisos: Compromiso[],
  *   metas: Meta[],
  *   presupuestos: Presupuesto[],
+ *   personales: Personal[],
  * }}
  */
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 2,
+    _version: 3,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -144,6 +158,9 @@ export function createInitialState() {
 
     /** Presupuestos por categoría (envelope budgeting). v2. */
     presupuestos: [],
+
+    /** Préstamos personales: plata que TÚ prestaste a otros (F.2, v3). */
+    personales: [],
   };
 }
 

@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 /** Timer interno del debounce. Variable de módulo — nunca en window. */
 let _saveTimer = null;
@@ -57,6 +57,14 @@ function _migrate(raw) {
   if ((typeof data._version === 'number' ? data._version : 1) < 2) {
     if (!Array.isArray(data.presupuestos)) {
       data.presupuestos = [];
+    }
+  }
+
+  // v2 → v3: nueva colección de préstamos personales (F.2).
+  // El usuario existente arranca sin préstamos; el resto del estado no cambia.
+  if ((typeof data._version === 'number' ? data._version : 1) < 3) {
+    if (!Array.isArray(data.personales)) {
+      data.personales = [];
     }
   }
 

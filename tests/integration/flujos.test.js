@@ -674,3 +674,116 @@ describe('C.3 — Migración schema v1 → v2 (envelope budgeting)', () => {
     expect(S.gastos).toHaveLength(1);
   });
 });
+
+// ── Suite 7 — Migración schema v2 → v3 (F.2 préstamos personales) ───────────
+
+describe('F.2 — Migración schema v2 → v3 (préstamos personales)', () => {
+  beforeEach(resetS);
+
+  function loadFixture(fixture) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(fixture));
+    loadData();
+  }
+
+  /** Usuario que estaba en v2 (envelope budgeting ya implementado, sin personales). */
+  const BASE_V2 = {
+    _version: 2,
+    onboarded: true,
+    perfil: { nombre: 'Carlos', smmlv: 1_423_500 },
+    config: { notificaciones: false },
+    cuentas: [
+      { id: 'c1', nombre: 'Davivienda', banco: 'Davivienda', tipo: 'Ahorros', saldo: 5_000_000, activa: true, fechaCreacion: '2026-02-01' },
+    ],
+    ingresos: [],
+    gastos: [],
+    compromisos: [],
+    metas: [],
+    presupuestos: [
+      { id: 'p1', categoria: 'Alimentación', montoMensual: 600_000, activo: true, fechaCreacion: '2026-03-01' },
+    ],
+    // sin personales — característica de v2
+  };
+
+  it('v2 con _version:2 agrega personales:[] y sube _version al actual', () => {
+    loadFixture(BASE_V2);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.personales).toEqual([]);
+  });
+
+  it('migración v2→v3 preserva presupuestos del schema anterior', () => {
+    loadFixture(BASE_V2);
+
+    expect(S.presupuestos).toHaveLength(1);
+    expect(S.presupuestos[0].categoria).toBe('Alimentación');
+  });
+
+  it('migración es idempotente: v3 con personales no los pierde', () => {
+    const fixtureV3 = {
+      ...BASE_V2,
+      _version: 3,
+      personales: [
+        { id: 'per1', persona: 'Tía Marta', monto: 200_000, pagado: 50_000, fecha: '2026-05-01', liquidado: false },
+      ],
+    };
+    loadFixture(fixtureV3);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.personales).toHaveLength(1);
+    expect(S.personales[0].persona).toBe('Tía Marta');
+    expect(S.personales[0].pagado).toBe(50_000);
+  });
+
+  it('migración salta de v1 directo a v3 (cubre ambos saltos en una sola pasada)', () => {
+    const fixtureV1 = {
+      _version: 1,
+      onboarded: true,
+      perfil: { nombre: 'Ana', smmlv: 1_423_500 },
+      config: { notificaciones: false },
+      cuentas: [],
+      ingresos: [],
+      gastos: [],
+      compromisos: [],
+      metas: [],
+      // sin presupuestos ni personales
+    };
+    loadFixture(fixtureV1);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.presupuestos).toEqual([]);
+    expect(S.personales).toEqual([]);
+  });
+
+  it('roundtrip post-migración v2→v3: datos persisten correctamente', () => {
+    loadFixture(BASE_V2);
+    expect(S._version).toBe(SCHEMA_VERSION);
+
+    // Agregar un préstamo personal post-migración
+    S.personales.push({
+      id: 'per-x', persona: 'Hermano', monto: 100_000,
+      pagado: 0, fecha: '2026-05-18', liquidado: false,
+      fechaCreacion: '2026-05-18T00:00:00.000Z',
+    });
+    _flushNow();
+
+    // Simula reapertura
+    Object.assign(S, createInitialState());
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.personales).toHaveLength(1);
+    expect(S.personales[0].persona).toBe('Hermano');
+    expect(S.presupuestos).toHaveLength(1);
+  });
+
+  it('personales preexistentes inválidos (no array) son reseteados a []', () => {
+    // _migrate() solo agrega personales si !Array.isArray(data.personales)
+    const fixtureMalformado = {
+      ...BASE_V2,
+      personales: 'esto no es array',
+    };
+    loadFixture(fixtureMalformado);
+
+    expect(S.personales).toEqual([]);
+  });
+});

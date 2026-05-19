@@ -8,8 +8,8 @@ beforeEach(() => {
   EventBus._listeners = Object.create(null);
 });
 
-describe('S — schema v2 inicial', () => {
-  it('expone todos los campos del schema v2', () => {
+describe('S — schema v3 inicial', () => {
+  it('expone todos los campos del schema v3', () => {
     expect(S).toHaveProperty('_version');
     expect(S).toHaveProperty('onboarded');
     expect(S).toHaveProperty('perfil');
@@ -19,23 +19,25 @@ describe('S — schema v2 inicial', () => {
     expect(S).toHaveProperty('compromisos');
     expect(S).toHaveProperty('metas');
     expect(S).toHaveProperty('presupuestos');
+    expect(S).toHaveProperty('personales');
   });
 
-  it('arranca con _version = 2', () => {
-    expect(S._version).toBe(2);
+  it('arranca con _version = 3', () => {
+    expect(S._version).toBe(3);
   });
 
   it('arranca con onboarded en false', () => {
     expect(S.onboarded).toBe(false);
   });
 
-  it('arranca con cuentas, ingresos, gastos, compromisos, metas y presupuestos como arrays vacíos', () => {
+  it('arranca con cuentas, ingresos, gastos, compromisos, metas, presupuestos y personales como arrays vacíos', () => {
     expect(S.cuentas).toEqual([]);
     expect(S.ingresos).toEqual([]);
     expect(S.gastos).toEqual([]);
     expect(S.compromisos).toEqual([]);
     expect(S.metas).toEqual([]);
     expect(S.presupuestos).toEqual([]);
+    expect(S.personales).toEqual([]);
   });
 
   it('arranca con perfil semilla (nombre vacío + SMMLV vigente)', () => {
