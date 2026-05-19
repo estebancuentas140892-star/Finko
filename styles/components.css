@@ -1834,3 +1834,376 @@ textarea.input {
 .dom-badge--analisis    { background: color-mix(in srgb, var(--fk-dom-analisis)    12%, transparent); color: var(--fk-dom-analisis); }
 .dom-badge--presupuesto { background: color-mix(in srgb, var(--fk-dom-presupuesto) 12%, transparent); color: var(--fk-dom-presupuesto); }
 .dom-badge--personales  { background: color-mix(in srgb, var(--fk-dom-personales)  12%, transparent); color: var(--fk-dom-personales); }
+
+/* ════════════════════════════════════════════════════════════
+   CALCULADORAS - panel con 7 calculadoras financieras CO.
+   Cada .calc-card replica el lenguaje visual de .bento__cell:
+   surface card + radius-xl + padding generoso + header destacado.
+   ════════════════════════════════════════════════════════════ */
+
+.calc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.calc-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+  transition:
+    border-color var(--fk-transition-base),
+    box-shadow var(--fk-transition-base);
+}
+
+.calc-card:focus-within {
+  border-color: var(--fk-border-default);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+.calc-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+}
+
+/* Form */
+.calc-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.calc-form__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--fk-space-3);
+}
+
+.calc-form > .btn {
+  align-self: flex-start;
+  min-width: 140px;
+}
+
+/* Result area: aparece tras calcular */
+.calc-result {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-left: 3px solid var(--fk-accent);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4) var(--fk-space-5);
+  animation: fadeInUp 0.25s ease-out;
+}
+
+.calc-result:empty {
+  display: none;
+}
+
+/* Grid de resultados dl/dt/dd */
+.calc-result__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--fk-space-2) var(--fk-space-4);
+  margin: 0;
+  align-items: baseline;
+}
+
+.calc-result__grid dt {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-regular);
+  line-height: var(--fk-leading-snug);
+}
+
+.calc-result__grid dd {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  text-align: right;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Variantes de valor */
+.calc-result__grid dd.calc-result__highlight {
+  color: var(--fk-text-accent);
+}
+.calc-result__grid dd.calc-result__deduct {
+  color: var(--fk-danger-text);
+}
+.calc-result__grid dd.calc-result__total {
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+  grid-column: 2;
+}
+
+.calc-result__grid dt:has(+ dd.calc-result__total) {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* Badge de clasificación de tasa */
+.calc-result__badge {
+  margin: var(--fk-space-3) 0 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+
+.calc-result__badge.calc-result__highlight {
+  background: var(--fk-success-bg);
+  border-color: rgba(0, 220, 130, 0.3);
+  color: var(--fk-success-text);
+}
+
+.calc-result__badge.calc-result__deduct {
+  background: var(--fk-danger-bg);
+  border-color: rgba(255, 71, 87, 0.3);
+  color: var(--fk-danger-text);
+}
+
+/* Lista de errores de validacion */
+.calc-result__errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  color: var(--fk-danger-text);
+  font-size: var(--fk-text-sm);
+}
+
+.calc-result__errors li {
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-danger-bg);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-sm);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   CONFIGURACION - perfil, notificaciones, datos, acerca de.
+   Cada .config-section es una surface card consistente con calc.
+   ════════════════════════════════════════════════════════════ */
+
+#panel-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-section {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+}
+
+.config-section__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0;
+}
+
+.config-section__desc--warn {
+  background: var(--fk-warning-bg);
+  border: 1px solid rgba(255, 184, 46, 0.3);
+  border-left: 3px solid var(--fk-warning);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  color: var(--fk-warning-text);
+}
+
+.config-section__desc .link {
+  color: var(--fk-text-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Info key-value (dl/dt/dd) en grid 2 col */
+.config-info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--fk-space-2) var(--fk-space-5);
+  margin: 0;
+  align-items: baseline;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+
+.config-info dt {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-medium);
+  white-space: nowrap;
+}
+
+.config-info dd {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-weight: var(--fk-font-semibold);
+}
+
+/* Form de perfil */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-form > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+/* Toggle pill iOS-style envuelto en label */
+.config-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  cursor: pointer;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+  width: fit-content;
+  transition: background-color var(--fk-transition-fast);
+}
+
+.config-toggle:hover {
+  background: var(--fk-bg-hover);
+}
+
+.config-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 44px;
+  height: 24px;
+  background: var(--fk-bg-base);
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+
+.config-toggle input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--fk-text-muted);
+  top: 2px;
+  left: 2px;
+  transition:
+    transform var(--fk-transition-fast),
+    background-color var(--fk-transition-fast);
+}
+
+.config-toggle input[type="checkbox"]:checked {
+  background: var(--fk-accent);
+  border-color: var(--fk-accent);
+}
+
+.config-toggle input[type="checkbox"]:checked::after {
+  background: var(--fk-text-on-accent);
+  transform: translateX(20px);
+}
+
+.config-toggle input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+.config-toggle__label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+}
+
+/* Botones de exportar/importar */
+.config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+
+/* Zona de peligro: reset app */
+.config-danger {
+  background: var(--fk-danger-bg);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+
+.config-danger__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-danger-text);
+  margin: 0;
+}
+
+.config-danger__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-2);
+}
+
+.config-danger > .btn {
+  align-self: flex-start;
+}
