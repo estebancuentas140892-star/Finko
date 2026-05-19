@@ -18,6 +18,8 @@ export function renderPanelCalculadoras() {
       ${_renderInteresCompuesto()}
       ${_renderRegla72()}
       ${_renderPrima()}
+      ${_renderPILA()}
+      ${_renderRentabilidadReal()}
     </div>`;
 }
 
@@ -220,6 +222,116 @@ export function renderResultPrima(r, fmt) {
       <dt>Incluye auxilio transporte</dt> <dd>${auxilioLabel}</dd>
       <dt>Prima a pagar</dt>              <dd class="calc-result__total">${fmt(r.prima)}</dd>
     </dl>`;
+}
+
+// ── CALCULADORA PILA (independientes) ─────────────────────────────
+
+function _renderPILA() {
+  return `
+    <section class="calc-card" aria-labelledby="calc-pila-title">
+      <h2 class="calc-card__title" id="calc-pila-title">🧾 PILA — Aportes de independiente</h2>
+      <form id="form-pila" class="calc-form" novalidate>
+        <div class="calc-form__fields">
+          <div class="form-group">
+            <label for="pila-ingreso" class="label">Ingreso mensual bruto (COP)</label>
+            <input id="pila-ingreso" name="ingreso" class="input" type="number"
+                   min="1" step="100000" placeholder="3.000.000" required />
+          </div>
+          <div class="form-group">
+            <label for="pila-arl" class="label">Clase de riesgo ARL</label>
+            <select id="pila-arl" name="arl" class="input">
+              <option value="0.00522" selected>Clase I — riesgo mínimo (oficina) 0.522%</option>
+              <option value="0.01044">Clase II — riesgo bajo 1.044%</option>
+              <option value="0.02436">Clase III — riesgo medio 2.436%</option>
+              <option value="0.04350">Clase IV — riesgo alto 4.350%</option>
+              <option value="0.06960">Clase V — riesgo máximo 6.960%</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Calcular</button>
+      </form>
+      <div id="result-pila" class="calc-result" aria-live="polite"></div>
+    </section>`;
+}
+
+/**
+ * @param {{ibc:number,salud:number,pension:number,arlMonto:number,total:number}} r
+ * @param {Function} fmt
+ */
+export function renderResultPILA(r, fmt) {
+  return `
+    <dl class="calc-result__grid">
+      <dt>IBC (base de cotización)</dt>     <dd>${fmt(r.ibc)}</dd>
+      <dt>Salud (12.5 %)</dt>               <dd>${fmt(r.salud)}</dd>
+      <dt>Pensión (16 %)</dt>               <dd>${fmt(r.pension)}</dd>
+      <dt>ARL</dt>                          <dd>${fmt(r.arlMonto)}</dd>
+      <dt>Total a pagar</dt>                <dd class="calc-result__total">${fmt(r.total)}</dd>
+    </dl>`;
+}
+
+// ── CALCULADORA RENTABILIDAD REAL (Fisher) ────────────────────────
+
+function _renderRentabilidadReal() {
+  return `
+    <section class="calc-card" aria-labelledby="calc-real-title">
+      <h2 class="calc-card__title" id="calc-real-title">📉 Rentabilidad real — ajuste por inflación</h2>
+      <form id="form-real" class="calc-form" novalidate>
+        <div class="calc-form__fields">
+          <div class="form-group">
+            <label for="real-capital" class="label">Capital invertido (COP)</label>
+            <input id="real-capital" name="capital" class="input" type="number"
+                   min="1" step="100000" placeholder="10.000.000" required />
+          </div>
+          <div class="form-group">
+            <label for="real-tasa" class="label">Tasa nominal anual (%)</label>
+            <input id="real-tasa" name="tasaPct" class="input" type="number"
+                   min="0" max="200" step="0.1" placeholder="12" required />
+          </div>
+          <div class="form-group">
+            <label for="real-inflacion" class="label">Inflación anual (%)</label>
+            <input id="real-inflacion" name="inflacionPct" class="input" type="number"
+                   min="0" max="100" step="0.1" placeholder="5.2" required />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">Calcular</button>
+      </form>
+      <div id="result-real" class="calc-result" aria-live="polite"></div>
+    </section>`;
+}
+
+/**
+ * @param {{tasaRealPct:number,gananciaNominal:number,gananciaReal:number,perdidaInflacion:number}} r
+ * @param {Function} fmt
+ */
+export function renderResultRentabilidadReal(r, fmt) {
+  const positiva = r.tasaRealPct >= 0;
+  const claseTasa = positiva ? 'calc-result__highlight' : 'calc-result__deduct';
+  return `
+    <dl class="calc-result__grid">
+      <dt>Tasa real anual</dt>              <dd class="${claseTasa}">${r.tasaRealPct.toFixed(2)} %</dd>
+      <dt>Ganancia nominal</dt>             <dd>${fmt(r.gananciaNominal)}</dd>
+      <dt>Ganancia real (poder adquisitivo)</dt><dd class="calc-result__total">${fmt(r.gananciaReal)}</dd>
+      <dt>Pérdida por inflación</dt>        <dd class="calc-result__deduct">− ${fmt(r.perdidaInflacion)}</dd>
+    </dl>`;
+}
+
+// ── BADGE DE CLASIFICACIÓN DE TASA (helper para Crédito) ──────────
+
+/**
+ * Devuelve un badge HTML con la clasificación de la tasa contra la usura SFC.
+ * Usado como complemento del resultado del crédito.
+ * @param {'usura'|'alta'|'estandar'|'razonable'} banda
+ * @returns {string}
+ */
+export function renderBadgeTasa(banda) {
+  const config = {
+    usura:     { icon: '🚫', txt: 'Excede la usura legal (SFC)', cls: 'calc-result__deduct' },
+    alta:      { icon: '⚠️', txt: 'Tasa alta — cercana al tope de usura', cls: 'calc-result__deduct' },
+    estandar:  { icon: '✓',  txt: 'Tasa estándar de mercado', cls: '' },
+    razonable: { icon: '✓',  txt: 'Tasa razonable', cls: 'calc-result__highlight' },
+  };
+  const c = config[banda] || config.estandar;
+  return `<p class="calc-result__badge ${c.cls}">${c.icon} ${c.txt}</p>`;
 }
 
 // ── MENSAJE DE ERROR GENÉRICO ─────────────────────────────────────

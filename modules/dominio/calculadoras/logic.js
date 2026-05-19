@@ -9,7 +9,14 @@
  *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo)
  */
 
-import { SMMLV_2026, AUXILIO_TRANSPORTE_2026 } from '../../core/constants.js';
+import {
+  SMMLV_2026,
+  AUXILIO_TRANSPORTE_2026,
+  SALUD_INDEPEND,
+  PENSION_INDEPEND,
+  ARL_CLASE_I,
+  TASA_USURA_Q2_2026,
+} from '../../core/constants.js';
 
 // ── CDT (Certificado de Depósito a Término) ──────────────────────
 
@@ -170,6 +177,97 @@ export function calcularPrima(salario, dias) {
     auxilioAplicado,
     salarioBase,
   };
+}
+
+// ── PILA (aportes de independientes) ──────────────────────────────
+
+/**
+ * Calcula el aporte mensual a la PILA (Planilla Integrada de Liquidación
+ * de Aportes) para trabajadores independientes — Decreto 1273/2018.
+ *
+ * IBC = max(ingreso × 40 %, 1 SMMLV).
+ * Salud:   12.5 % del IBC.
+ * Pensión: 16 % del IBC.
+ * ARL:     según clase de riesgo (clase I = 0.522 %).
+ *
+ * @param {number} ingreso  — Ingreso mensual bruto en COP.
+ * @param {number} [arl]    — Tasa ARL como decimal (default: clase I).
+ * @returns {{
+ *   ibc: number,
+ *   salud: number,
+ *   pension: number,
+ *   arlMonto: number,
+ *   total: number,
+ * } | null} `null` si ingreso ≤ 0.
+ */
+export function calcularPILA(ingreso, arl = ARL_CLASE_I) {
+  if (ingreso <= 0) return null;
+  const ibc      = Math.max(ingreso * 0.40, SMMLV_2026);
+  const salud    = ibc * SALUD_INDEPEND;
+  const pension  = ibc * PENSION_INDEPEND;
+  const arlMonto = ibc * arl;
+  const total    = salud + pension + arlMonto;
+  return {
+    ibc:      Math.round(ibc),
+    salud:    Math.round(salud),
+    pension:  Math.round(pension),
+    arlMonto: Math.round(arlMonto),
+    total:    Math.round(total),
+  };
+}
+
+// ── RENTABILIDAD REAL (fórmula de Fisher) ─────────────────────────
+
+/**
+ * Calcula la rentabilidad real ajustada por inflación.
+ *
+ * Fórmula de Fisher: `r_real = (1 + r_nominal) / (1 + inflación) − 1`
+ *
+ * @param {number} capital       — Capital invertido en COP.
+ * @param {number} tasaPct       — Tasa nominal anual en porcentaje.
+ * @param {number} inflacionPct  — Inflación anual en porcentaje.
+ * @returns {{
+ *   tasaRealPct: number,
+ *   gananciaNominal: number,
+ *   gananciaReal: number,
+ *   perdidaInflacion: number,
+ * }}
+ */
+export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
+  const tasaRealPct      = (((1 + tasaPct / 100) / (1 + inflacionPct / 100)) - 1) * 100;
+  const gananciaNominal  = capital * (tasaPct / 100);
+  const gananciaReal     = capital * (tasaRealPct / 100);
+  const perdidaInflacion = gananciaNominal - gananciaReal;
+  return {
+    tasaRealPct:      Number(tasaRealPct.toFixed(4)),
+    gananciaNominal:  Math.round(gananciaNominal),
+    gananciaReal:     Math.round(gananciaReal),
+    perdidaInflacion: Math.round(perdidaInflacion),
+  };
+}
+
+// ── CLASIFICADOR DE TASA DE CRÉDITO ───────────────────────────────
+
+/**
+ * Clasifica una tasa EA contra la tasa de usura vigente (SFC).
+ *
+ * Bandas (ratio = tasaEA / usura):
+ *   - `usura`     → tasa > usura legal (ilegal).
+ *   - `alta`      → 85 % ≤ ratio ≤ 100 % (cercana al tope).
+ *   - `estandar`  → 65 % ≤ ratio < 85 % (típica de mercado).
+ *   - `razonable` → ratio < 65 % o tasa ≤ 0.
+ *
+ * @param {number} taEA   — Tasa efectiva anual como decimal (ej. 0.20 = 20 %).
+ * @param {number} [usura] — Usura vigente como decimal (default: TASA_USURA_Q2_2026).
+ * @returns {'usura' | 'alta' | 'estandar' | 'razonable'}
+ */
+export function clasificarTasaCredito(taEA, usura = TASA_USURA_Q2_2026) {
+  if (taEA > usura) return 'usura';
+  if (taEA <= 0)    return 'razonable';
+  const ratio = taEA / usura;
+  if (ratio < 0.65) return 'razonable';
+  if (ratio < 0.85) return 'estandar';
+  return 'alta';
 }
 
 // ── VALIDADORES ───────────────────────────────────────────────────

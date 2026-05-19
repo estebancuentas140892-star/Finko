@@ -34,6 +34,19 @@ export const GMF = 0.004;
  *  Fuente: Ley 52/1975. Estable. */
 export const DIAS_PRIMA = 360;
 
+/** Aporte salud para independientes — 12.5 % del IBC.
+ *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
+export const SALUD_INDEPEND = 0.125;
+
+/** Aporte pensión para independientes — 16 % del IBC.
+ *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
+export const PENSION_INDEPEND = 0.16;
+
+/** ARL clase I (riesgo mínimo, oficinas) — 0.522 % del IBC.
+ *  Fuente: Decreto 1295/1994, tabla de cotización. Estable.
+ *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */
+export const ARL_CLASE_I = 0.00522;
+
 // ── CATÁLOGOS PARA SELECTS ──────────────────────────────────────
 
 /** Bancos y billeteras digitales principales en Colombia. */

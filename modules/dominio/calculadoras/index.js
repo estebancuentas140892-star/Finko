@@ -14,6 +14,9 @@ import {
   calcularInteresCompuesto,
   calcularRegla72,
   calcularPrima,
+  calcularPILA,
+  calcularRentabilidadReal,
+  clasificarTasaCredito,
   validarCampos,
 } from './logic.js';
 import {
@@ -23,6 +26,9 @@ import {
   renderResultIC,
   renderResultR72,
   renderResultPrima,
+  renderResultPILA,
+  renderResultRentabilidadReal,
+  renderBadgeTasa,
   renderError,
 } from './view.js';
 
@@ -63,8 +69,10 @@ function _onSubmitCredito(e) {
     announce(errores[0], 'assertive');
     return;
   }
-  const r = calcularCredito(Number(datos.principal), Number(datos.tasaEA) / 100, Number(datos.plazoMeses));
-  el.innerHTML = renderResultCredito(r, f);
+  const tasaEA = Number(datos.tasaEA) / 100;
+  const r      = calcularCredito(Number(datos.principal), tasaEA, Number(datos.plazoMeses));
+  const banda  = clasificarTasaCredito(tasaEA);
+  el.innerHTML = renderResultCredito(r, f) + renderBadgeTasa(banda);
   announce('Resultado crédito actualizado.');
 }
 
@@ -131,6 +139,49 @@ function _onSubmitPrima(e) {
   announce('Resultado prima actualizado.');
 }
 
+function _onSubmitPILA(e) {
+  e.preventDefault();
+  const datos = Object.fromEntries(new FormData(e.target));
+  const errores = validarCampos(datos, {
+    ingreso: { min: 1 },
+    arl:     { min: 0.0001, max: 0.1 },
+  });
+  const el = document.getElementById('result-pila');
+  if (!el) return;
+  if (errores.length > 0) {
+    el.innerHTML = renderError(errores);
+    announce(errores[0], 'assertive');
+    return;
+  }
+  const r = calcularPILA(Number(datos.ingreso), Number(datos.arl));
+  el.innerHTML = renderResultPILA(r, f);
+  announce('Resultado PILA actualizado.');
+}
+
+function _onSubmitRentabilidadReal(e) {
+  e.preventDefault();
+  const datos = Object.fromEntries(new FormData(e.target));
+  const errores = validarCampos(datos, {
+    capital:      { min: 1 },
+    tasaPct:      { min: 0 },
+    inflacionPct: { min: 0 },
+  });
+  const el = document.getElementById('result-real');
+  if (!el) return;
+  if (errores.length > 0) {
+    el.innerHTML = renderError(errores);
+    announce(errores[0], 'assertive');
+    return;
+  }
+  const r = calcularRentabilidadReal(
+    Number(datos.capital),
+    Number(datos.tasaPct),
+    Number(datos.inflacionPct)
+  );
+  el.innerHTML = renderResultRentabilidadReal(r, f);
+  announce('Resultado rentabilidad real actualizado.');
+}
+
 // ── INYECCIÓN ────────────────────────────────────────────────────
 
 function _inyectarPanel() {
@@ -145,6 +196,8 @@ function _inyectarPanel() {
   panel.querySelector('#form-ic')?.addEventListener('submit',      _onSubmitIC);
   panel.querySelector('#form-r72')?.addEventListener('submit',     _onSubmitR72);
   panel.querySelector('#form-prima')?.addEventListener('submit',   _onSubmitPrima);
+  panel.querySelector('#form-pila')?.addEventListener('submit',    _onSubmitPILA);
+  panel.querySelector('#form-real')?.addEventListener('submit',    _onSubmitRentabilidadReal);
 }
 
 // ── INIT ─────────────────────────────────────────────────────────

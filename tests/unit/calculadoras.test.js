@@ -5,6 +5,9 @@ import {
   calcularInteresCompuesto,
   calcularRegla72,
   calcularPrima,
+  calcularPILA,
+  calcularRentabilidadReal,
+  clasificarTasaCredito,
   validarCampos,
 } from '../../modules/dominio/calculadoras/logic.js';
 
@@ -263,5 +266,112 @@ describe('validarCampos()', () => {
       { a: { min: 1 }, b: { min: 1 } }
     );
     expect(errores.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// ── calcularPILA() ────────────────────────────────────────────────
+
+describe('calcularPILA()', () => {
+  it('retorna null si ingreso <= 0', () => {
+    expect(calcularPILA(0)).toBeNull();
+    expect(calcularPILA(-1000)).toBeNull();
+  });
+
+  it('IBC = max(ingreso × 40 %, 1 SMMLV)', () => {
+    // Ingreso bajo → IBC se ancla en 1 SMMLV
+    const r1 = calcularPILA(1_000_000);
+    expect(r1.ibc).toBe(SMMLV_2026);
+
+    // Ingreso alto → IBC = 40 % del ingreso
+    const r2 = calcularPILA(10_000_000);
+    expect(r2.ibc).toBe(4_000_000);
+  });
+
+  it('salud = 12.5 % del IBC, pensión = 16 % del IBC', () => {
+    const r = calcularPILA(10_000_000);
+    expect(r.salud).toBe(Math.round(4_000_000 * 0.125));
+    expect(r.pension).toBe(Math.round(4_000_000 * 0.16));
+  });
+
+  it('ARL default = clase I (0.522 %)', () => {
+    const r = calcularPILA(10_000_000);
+    expect(r.arlMonto).toBe(Math.round(4_000_000 * 0.00522));
+  });
+
+  it('ARL personalizable por clase de riesgo', () => {
+    const r = calcularPILA(10_000_000, 0.04350);  // clase IV
+    expect(r.arlMonto).toBe(Math.round(4_000_000 * 0.04350));
+  });
+
+  it('total = salud + pensión + ARL', () => {
+    const r = calcularPILA(5_000_000);
+    expect(r.total).toBe(r.salud + r.pension + r.arlMonto);
+  });
+});
+
+// ── calcularRentabilidadReal() ────────────────────────────────────
+
+describe('calcularRentabilidadReal()', () => {
+  it('Fisher: 12 % nominal con 5 % inflación → ~6.67 % real', () => {
+    // (1.12 / 1.05) − 1 ≈ 0.0667 → 6.67 %
+    const r = calcularRentabilidadReal(10_000_000, 12, 5);
+    expect(r.tasaRealPct).toBeGreaterThan(6.5);
+    expect(r.tasaRealPct).toBeLessThan(6.8);
+  });
+
+  it('tasa nominal = inflación → tasa real ≈ 0', () => {
+    const r = calcularRentabilidadReal(10_000_000, 8, 8);
+    expect(r.tasaRealPct).toBeCloseTo(0, 4);
+  });
+
+  it('tasa nominal < inflación → tasa real negativa', () => {
+    const r = calcularRentabilidadReal(10_000_000, 3, 8);
+    expect(r.tasaRealPct).toBeLessThan(0);
+    expect(r.perdidaInflacion).toBeGreaterThan(0);
+  });
+
+  it('ganancia nominal = capital × tasa / 100', () => {
+    const r = calcularRentabilidadReal(10_000_000, 10, 4);
+    expect(r.gananciaNominal).toBe(1_000_000);
+  });
+
+  it('perdidaInflacion = nominal − real', () => {
+    const r = calcularRentabilidadReal(10_000_000, 12, 5);
+    expect(r.perdidaInflacion).toBe(r.gananciaNominal - r.gananciaReal);
+  });
+});
+
+// ── clasificarTasaCredito() ───────────────────────────────────────
+
+describe('clasificarTasaCredito()', () => {
+  const USURA = 0.2817;  // Q2 2026
+
+  it('tasa > usura → "usura"', () => {
+    expect(clasificarTasaCredito(0.30, USURA)).toBe('usura');
+    expect(clasificarTasaCredito(0.50, USURA)).toBe('usura');
+  });
+
+  it('tasa entre 85 % y 100 % de usura → "alta"', () => {
+    expect(clasificarTasaCredito(0.25, USURA)).toBe('alta');   // ~88.7 %
+  });
+
+  it('tasa entre 65 % y 85 % de usura → "estandar"', () => {
+    expect(clasificarTasaCredito(0.20, USURA)).toBe('estandar'); // ~71 %
+  });
+
+  it('tasa < 65 % de usura → "razonable"', () => {
+    expect(clasificarTasaCredito(0.15, USURA)).toBe('razonable'); // ~53 %
+    expect(clasificarTasaCredito(0.05, USURA)).toBe('razonable');
+  });
+
+  it('tasa ≤ 0 → "razonable"', () => {
+    expect(clasificarTasaCredito(0, USURA)).toBe('razonable');
+    expect(clasificarTasaCredito(-0.01, USURA)).toBe('razonable');
+  });
+
+  it('usa TASA_USURA_Q2_2026 por defecto si no se pasa', () => {
+    // No usura param → debe clasificar contra 0.2817 (Q2 2026)
+    expect(clasificarTasaCredito(0.50)).toBe('usura');
+    expect(clasificarTasaCredito(0.10)).toBe('razonable');
   });
 });
