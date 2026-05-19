@@ -15,6 +15,9 @@ import { calcularTotalCompromisos, compromisosActivos } from '../compromisos/log
 import { calcularTotalCuentas }                         from '../tesoreria/logic.js';
 import { metasActivas }                                 from '../metas/logic.js';
 
+// Regex reutilizada en funciones de deteccion.
+const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
+
 // ── MÉTRICAS DERIVADAS ───────────────────────────────────────────
 
 /**
@@ -425,4 +428,197 @@ export function seriePorCategoria(gastosDelMes, maxSegmentos = 6) {
       pct:       Math.round((restoTotal / total) * 100),
     },
   ];
+}
+
+// ── COMPARACIÓN DE CATEGORÍAS MES ACTUAL vs MES ANTERIOR (G.2) ───
+
+/**
+ * Compara los gastos por categoría del mes indicado contra el mes anterior.
+ * Util para mostrar al usuario qué categorias subieron o bajaron.
+ *
+ * La comparación es interna: calcula ambos catMaps desde el array de gastos,
+ * sin depender de un historial externo.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio   Año del mes actual.
+ * @param {number} mes    Mes del mes actual (1-12).
+ * @param {object} [config]
+ * @param {number} [config.topN=5] Máximo de categorías en el resultado.
+ * @returns {{
+ *   categorias: Array<{cat:string, actual:number, anterior:number, delta:number, deltaPct:number, direccion:string}>,
+ *   highlights: Array<{tipo:'mejora'|'alerta', cat:string, mensaje:string}>,
+ *   totalActual: number,
+ *   totalAnterior: number,
+ * } | null}
+ */
+export function calcularComparacionCategorias(gastos, anio, mes, config = {}) {
+  if (!Array.isArray(gastos)) return null;
+
+  const cfg  = typeof config === 'object' && config ? config : {};
+  const topN = Number.isFinite(+cfg.topN) && +cfg.topN > 0 ? Math.floor(+cfg.topN) : 5;
+
+  // Mes anterior: si estamos en enero, el anterior es diciembre del año pasado.
+  const anioAnt = mes === 1 ? anio - 1 : anio;
+  const mesAnt  = mes === 1 ? 12 : mes - 1;
+
+  const cmActual   = gastosPorCategoria(gastosMes(gastos, anio,    mes));
+  const cmAnterior = gastosPorCategoria(gastosMes(gastos, anioAnt, mesAnt));
+
+  // Union de todas las categorias presentes en cualquiera de los dos períodos.
+  const cats = new Set([...Object.keys(cmActual), ...Object.keys(cmAnterior)]);
+  if (cats.size === 0) return null;
+
+  const out = [];
+  let totalActual = 0;
+  let totalAnterior = 0;
+
+  for (const cat of cats) {
+    const actual   = Number(cmActual[cat])   || 0;
+    const anterior = Number(cmAnterior[cat]) || 0;
+    if (actual <= 0 && anterior <= 0) continue;
+
+    totalActual   += actual;
+    totalAnterior += anterior;
+
+    const delta = actual - anterior;
+    let deltaPct;
+    if (anterior <= 0)  deltaPct = actual > 0 ? 100 : 0;
+    else                deltaPct = +(delta / anterior * 100).toFixed(1);
+
+    let direccion;
+    if      (anterior <= 0 && actual > 0)  direccion = 'nueva';
+    else if (anterior > 0  && actual <= 0) direccion = 'desaparecio';
+    else if (Math.abs(deltaPct) < 5)       direccion = 'igual';
+    else if (delta > 0)                    direccion = 'subio';
+    else                                   direccion = 'bajo';
+
+    out.push({ cat, actual, anterior, delta, deltaPct, direccion });
+  }
+
+  // Mayor delta absoluto (en pesos) primero. Empate: orden alfabetico.
+  out.sort((a, b) => {
+    const d = Math.abs(b.delta) - Math.abs(a.delta);
+    return d !== 0 ? d : a.cat.localeCompare(b.cat);
+  });
+
+  // Highlights: top 3 cambios significativos con etiqueta 'mejora' o 'alerta'.
+  const cambios    = out.filter(c => c.direccion !== 'igual');
+  const highlights = cambios.slice(0, 3).map(c => {
+    const esMejora = c.direccion === 'bajo' || c.direccion === 'desaparecio';
+    let mensaje;
+    if      (c.direccion === 'nueva')       mensaje = `Empezaste a gastar en ${c.cat}`;
+    else if (c.direccion === 'desaparecio') mensaje = `Dejaste de gastar en ${c.cat}`;
+    else if (c.direccion === 'subio')       mensaje = `Subió ${c.deltaPct}% en ${c.cat}`;
+    else                                    mensaje = `Bajó ${Math.abs(c.deltaPct)}% en ${c.cat}`;
+    return { tipo: esMejora ? 'mejora' : 'alerta', cat: c.cat, mensaje };
+  });
+
+  return {
+    categorias:    out.slice(0, topN),
+    highlights,
+    totalActual,
+    totalAnterior,
+  };
+}
+
+// ── PATRÓN DE GASTO SEMANAL (G.2) ────────────────────────────────
+
+const _DIAS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+/**
+ * Detecta si hay un día de la semana donde consistentemente se gasta más.
+ * Analiza los gastos de los últimos `ventanaDias` días y señala los días
+ * cuyo total es >= `factorUmbral` veces el promedio global.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO   YYYY-MM-DD.
+ * @param {object} [config]
+ * @param {number} [config.ventanaDias=90]      Ventana de análisis en días.
+ * @param {number} [config.factorUmbral=2.0]    Factor sobre promedio para marcar día.
+ * @param {number} [config.minGastos=7]         Mínimo de transacciones para activar.
+ * @param {number} [config.minOcurrencias=2]    Mínimo de veces que el día debe aparecer.
+ * @returns {{
+ *   porDia: Array<{dia:number, nombre:string, total:number, ocurrencias:number, promedioPorOcurrencia:number}>,
+ *   diasDestacados: Array<{dia:number, nombre:string, factor:number, severidad:'alta'|'media', etiqueta:string}>,
+ *   promedioGlobalDia: number,
+ *   totalAnalizado: number,
+ *   gastosAnalizados: number,
+ * } | null}
+ */
+export function detectarPatronGastoSemanal(gastos, hoyISO, config = {}) {
+  if (!Array.isArray(gastos))     return null;
+  if (typeof hoyISO !== 'string') return null;
+
+  const mHoy = _RX_FECHA_ANA.exec(hoyISO);
+  if (!mHoy) return null;
+
+  const cfg           = typeof config === 'object' && config ? config : {};
+  const ventana       = Number.isFinite(+cfg.ventanaDias)    && +cfg.ventanaDias    > 0 ? Math.floor(+cfg.ventanaDias)    : 90;
+  const factorUmbral  = Number.isFinite(+cfg.factorUmbral)   && +cfg.factorUmbral   > 0 ? +cfg.factorUmbral               : 2.0;
+  const minGastos     = Number.isFinite(+cfg.minGastos)      && +cfg.minGastos      > 0 ? Math.floor(+cfg.minGastos)      : 7;
+  const minOcurr      = Number.isFinite(+cfg.minOcurrencias) && +cfg.minOcurrencias > 0 ? Math.floor(+cfg.minOcurrencias) : 2;
+
+  const tHoy   = Date.UTC(+mHoy[1], +mHoy[2] - 1, +mHoy[3]);
+  const tLimite = tHoy - ventana * 86_400_000;
+
+  const totales     = new Array(7).fill(0);
+  const ocurrencias = new Array(7).fill(0);
+  let gastosContados = 0;
+  let totalAnalizado = 0;
+
+  for (const g of gastos) {
+    if (!g || typeof g !== 'object')     continue;
+    if (typeof g.fecha !== 'string')     continue;
+    const mg = _RX_FECHA_ANA.exec(g.fecha);
+    if (!mg) continue;
+    const tG = Date.UTC(+mg[1], +mg[2] - 1, +mg[3]);
+    if (tG < tLimite || tG > tHoy) continue;
+
+    const monto = Number(g.monto) || 0;
+    if (monto <= 0) continue;
+
+    const diaSemana = new Date(tG).getUTCDay(); // 0=Dom … 6=Sáb
+    totales[diaSemana]     += monto;
+    ocurrencias[diaSemana] += 1;
+    gastosContados++;
+    totalAnalizado += monto;
+  }
+
+  if (gastosContados < minGastos) return null;
+
+  const diasConDatos = totales.filter((t, i) => ocurrencias[i] > 0).length;
+  if (diasConDatos === 0) return null;
+
+  const promedioGlobalDia = totalAnalizado / diasConDatos;
+
+  const porDia = _DIAS_ES.map((nombre, dia) => ({
+    dia,
+    nombre,
+    total:                  totales[dia],
+    ocurrencias:            ocurrencias[dia],
+    promedioPorOcurrencia:  ocurrencias[dia] > 0 ? Math.round(totales[dia] / ocurrencias[dia]) : 0,
+  }));
+
+  const diasDestacados = porDia
+    .filter(d => d.ocurrencias >= minOcurr && d.total >= promedioGlobalDia * factorUmbral)
+    .map(d => {
+      const factor    = +(d.total / promedioGlobalDia).toFixed(1);
+      const severidad = factor >= 3.0 ? 'alta' : 'media';
+      return {
+        dia:      d.dia,
+        nombre:   d.nombre,
+        factor,
+        severidad,
+        etiqueta: `Los ${d.nombre.toLowerCase()} gastás ${factor}× el promedio`,
+      };
+    })
+    .sort((a, b) => b.factor - a.factor);
+
+  return {
+    porDia,
+    diasDestacados,
+    promedioGlobalDia: Math.round(promedioGlobalDia),
+    totalAnalizado,
+    gastosAnalizados:  gastosContados,
+  };
 }

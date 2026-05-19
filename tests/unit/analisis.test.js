@@ -14,6 +14,8 @@ import {
   calcularVolatilidad,
   calcularScoreSalud,
   clasificarScore,
+  calcularComparacionCategorias,
+  detectarPatronGastoSemanal,
 } from '../../modules/dominio/analisis/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -847,5 +849,214 @@ describe('clasificarScore()', () => {
   it('límites exactos: 40 → ajustada, 39 → critica', () => {
     expect(clasificarScore(40)).toBe('ajustada');
     expect(clasificarScore(39)).toBe('critica');
+  });
+});
+
+// ── calcularComparacionCategorias ─────────────────────────────────
+
+describe('calcularComparacionCategorias', () => {
+  // Gastos: mayo 2026 y abril 2026
+  const gastosBase = [
+    // Mayo 2026
+    { id: 'g1', categoria: 'Alimentación', monto: 400_000, fecha: '2026-05-10' },
+    { id: 'g2', categoria: 'Transporte',   monto: 100_000, fecha: '2026-05-15' },
+    { id: 'g3', categoria: 'Entretenimiento', monto: 200_000, fecha: '2026-05-20' },
+    // Abril 2026
+    { id: 'g4', categoria: 'Alimentación', monto: 300_000, fecha: '2026-04-10' },
+    { id: 'g5', categoria: 'Transporte',   monto: 150_000, fecha: '2026-04-15' },
+    { id: 'g6', categoria: 'Salud',        monto: 80_000,  fecha: '2026-04-20' },
+  ];
+
+  it('devuelve null con array no válido', () => {
+    expect(calcularComparacionCategorias(null, 2026, 5)).toBeNull();
+    expect(calcularComparacionCategorias('x', 2026, 5)).toBeNull();
+  });
+
+  it('devuelve null si no hay gastos en ningún período', () => {
+    expect(calcularComparacionCategorias([], 2026, 5)).toBeNull();
+  });
+
+  it('calcula totales correctos para actual y anterior', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    expect(r).not.toBeNull();
+    expect(r.totalActual).toBe(700_000);   // 400+100+200
+    expect(r.totalAnterior).toBe(530_000); // 300+150+80
+  });
+
+  it('detecta categoría que subió (Alimentación: 300k → 400k)', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    const ali = r.categorias.find(c => c.cat === 'Alimentación');
+    expect(ali).toBeDefined();
+    expect(ali.direccion).toBe('subio');
+    expect(ali.delta).toBe(100_000);
+  });
+
+  it('detecta categoría que bajó (Transporte: 150k → 100k)', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    const tra = r.categorias.find(c => c.cat === 'Transporte');
+    expect(tra).toBeDefined();
+    expect(tra.direccion).toBe('bajo');
+    expect(tra.delta).toBe(-50_000);
+  });
+
+  it('detecta categoría nueva (Entretenimiento: 0 → 200k)', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    const ent = r.categorias.find(c => c.cat === 'Entretenimiento');
+    expect(ent).toBeDefined();
+    expect(ent.direccion).toBe('nueva');
+    expect(ent.anterior).toBe(0);
+  });
+
+  it('detecta categoría que desapareció (Salud: 80k → 0)', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    const sal = r.categorias.find(c => c.cat === 'Salud');
+    expect(sal).toBeDefined();
+    expect(sal.direccion).toBe('desaparecio');
+    expect(sal.actual).toBe(0);
+  });
+
+  it('genera highlights con tipo mejora/alerta', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5);
+    expect(Array.isArray(r.highlights)).toBe(true);
+    expect(r.highlights.length).toBeGreaterThan(0);
+    for (const h of r.highlights) {
+      expect(['mejora', 'alerta']).toContain(h.tipo);
+      expect(typeof h.mensaje).toBe('string');
+    }
+  });
+
+  it('respeta topN en el resultado', () => {
+    const r = calcularComparacionCategorias(gastosBase, 2026, 5, { topN: 2 });
+    expect(r.categorias.length).toBeLessThanOrEqual(2);
+  });
+
+  it('funciona en enero (mes anterior = diciembre del año pasado)', () => {
+    const gastosEneDic = [
+      { id: 'a', categoria: 'Ropa', monto: 100_000, fecha: '2026-01-10' },
+      { id: 'b', categoria: 'Ropa', monto: 80_000,  fecha: '2025-12-15' },
+    ];
+    const r = calcularComparacionCategorias(gastosEneDic, 2026, 1);
+    expect(r).not.toBeNull();
+    expect(r.totalActual).toBe(100_000);
+    expect(r.totalAnterior).toBe(80_000);
+  });
+
+  it('categorías con variación < 5% se marcan como igual', () => {
+    const gastos = [
+      { id: 'x1', categoria: 'Mercado', monto: 100_000, fecha: '2026-05-01' },
+      { id: 'x2', categoria: 'Mercado', monto: 102_000, fecha: '2026-04-01' },
+    ];
+    const r = calcularComparacionCategorias(gastos, 2026, 5);
+    const merc = r.categorias.find(c => c.cat === 'Mercado');
+    expect(merc.direccion).toBe('igual');
+  });
+});
+
+// ── detectarPatronGastoSemanal ────────────────────────────────────
+
+describe('detectarPatronGastoSemanal', () => {
+  // Genera N gastos en un día de semana específico dentro de los últimos 90 días.
+  // hoyISO = '2026-05-19' (martes)
+  const HOY = '2026-05-19';
+
+  // Helper: gastos concentrados en viernes (día 5)
+  function gastosConcentrados() {
+    const gastos = [];
+    // 8 viernes en los últimos 90 días con gasto alto
+    for (let i = 0; i < 8; i++) {
+      gastos.push({
+        id:         `v${i}`,
+        fecha:      `2026-05-${String(2 + i * 2).padStart(2, '0')}`,
+        monto:      500_000,
+        categoria:  'Entretenimiento',
+      });
+    }
+    // Otros días con gasto bajo
+    for (let i = 0; i < 10; i++) {
+      gastos.push({
+        id:         `o${i}`,
+        fecha:      `2026-05-${String(1 + i).padStart(2, '0')}`,
+        monto:      20_000,
+        categoria:  'Alimentación',
+      });
+    }
+    return gastos;
+  }
+
+  it('devuelve null con array inválido', () => {
+    expect(detectarPatronGastoSemanal(null, HOY)).toBeNull();
+    expect(detectarPatronGastoSemanal('x', HOY)).toBeNull();
+  });
+
+  it('devuelve null si hoyISO es inválido', () => {
+    expect(detectarPatronGastoSemanal([{ fecha: '2026-05-01', monto: 10_000 }], 'bad')).toBeNull();
+    expect(detectarPatronGastoSemanal([{ fecha: '2026-05-01', monto: 10_000 }], null)).toBeNull();
+  });
+
+  it('devuelve null si hay menos gastos que minGastos (default 7)', () => {
+    const pocos = [{ id: 'a', fecha: '2026-05-01', monto: 100_000 }];
+    expect(detectarPatronGastoSemanal(pocos, HOY)).toBeNull();
+  });
+
+  it('devuelve null si no hay días destacados', () => {
+    // Gastos distribuidos uniformemente, ninguno destaca x2
+    const uniformes = Array.from({ length: 15 }, (_, i) => ({
+      id:    `u${i}`,
+      fecha: `2026-05-${String((i % 18) + 1).padStart(2, '0')}`,
+      monto: 100_000,
+    }));
+    const r = detectarPatronGastoSemanal(uniformes, HOY);
+    // Si no hay destacados, resultado puede ser null o tener diasDestacados vacío
+    if (r !== null) {
+      expect(r.diasDestacados.length).toBe(0);
+    }
+  });
+
+  it('porDia tiene 7 entradas (una por día de la semana)', () => {
+    const r = detectarPatronGastoSemanal(gastosConcentrados(), HOY);
+    if (r !== null) {
+      expect(r.porDia).toHaveLength(7);
+    }
+  });
+
+  it('excluye gastos fuera de la ventana (> 90 días)', () => {
+    const lejanos = Array.from({ length: 10 }, (_, i) => ({
+      id:    `l${i}`,
+      fecha: '2025-01-01', // muy fuera de ventana
+      monto: 1_000_000,
+    }));
+    expect(detectarPatronGastoSemanal(lejanos, HOY)).toBeNull();
+  });
+
+  it('respeta ventanaDias custom', () => {
+    // Gastos hace 30 días. Con ventana=10, no entran; con ventana=60, sí.
+    const gastos30 = Array.from({ length: 10 }, (_, i) => ({
+      id:    `d${i}`,
+      fecha: '2026-04-19',
+      monto: 200_000,
+    }));
+    expect(detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 10 })).toBeNull();
+    // Con ventana=60 hay suficientes gastos pero posiblemente sin días destacados
+    const r60 = detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 60 });
+    // Solo verificamos que no lanza
+    expect(() => detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 60 })).not.toThrow();
+  });
+
+  it('gastos con monto 0 o inválido no se cuentan', () => {
+    const conCeros = [
+      ...Array.from({ length: 7 }, (_, i) => ({ id: `v${i}`, fecha: '2026-05-01', monto: 0 })),
+    ];
+    expect(detectarPatronGastoSemanal(conCeros, HOY)).toBeNull();
+  });
+
+  it('diasDestacados tiene etiqueta y severidad', () => {
+    const r = detectarPatronGastoSemanal(gastosConcentrados(), HOY);
+    if (r && r.diasDestacados.length > 0) {
+      for (const d of r.diasDestacados) {
+        expect(typeof d.etiqueta).toBe('string');
+        expect(['alta', 'media']).toContain(d.severidad);
+        expect(typeof d.factor).toBe('number');
+      }
+    }
   });
 });

@@ -7,7 +7,11 @@ import { S } from '../../core/state.js';
 import { f, hoy } from '../../infra/utils.js';
 import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
 import { gastosMes } from '../gastos/logic.js';
-import { generarResumen, serieGastosMensual, seriePorCategoria, calcularScoreSalud, clasificarScore } from './logic.js';
+import {
+  generarResumen, serieGastosMensual, seriePorCategoria,
+  calcularScoreSalud, clasificarScore,
+  calcularComparacionCategorias, detectarPatronGastoSemanal,
+} from './logic.js';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
 
@@ -32,6 +36,10 @@ export function renderAnalisis() {
   const gastosDelMes   = gastosMes(S.gastos, anio, mes);
   const segmentosCat   = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
 
+  // G.2: comparación vs mes anterior y patrón semanal.
+  const comparacion   = calcularComparacionCategorias(S.gastos, anio, mes);
+  const patronSemanal = detectarPatronGastoSemanal(S.gastos, fechaHoy);
+
   el.innerHTML = `
     ${_renderMetricas(resumen)}
     ${_renderSalud(resumen.tasaAhorro, resumen.salud)}
@@ -39,6 +47,8 @@ export function renderAnalisis() {
     ${_renderPatrimonio(resumen)}
     ${_renderTendencia(serieGastos)}
     ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
+    ${_renderComparacionCategorias(comparacion)}
+    ${_renderPatronSemanal(patronSemanal)}
     ${_renderHormigas(resumen.hormigas)}
   `;
 }
@@ -390,6 +400,104 @@ function _renderHormigas(hormigas) {
       <h2 class="analisis__section-title" id="analisis-hormiga-title">⚠️ Alertas de gasto hormiga</h2>
       <p class="analisis__desc">Categorías con muchas compras pequeñas que suman montos significativos este mes.</p>
       <ul class="hormiga-list" aria-label="Alertas de gasto hormiga">${items}</ul>
+    </section>`;
+}
+
+// ── COMPARACIÓN DE CATEGORÍAS (G.2) ──────────────────────────────
+
+/**
+ * Renderiza la card de comparación de gastos vs el mes anterior.
+ * Devuelve '' si no hay datos suficientes para comparar.
+ *
+ * @param {ReturnType<import('./logic.js').calcularComparacionCategorias>} comparacion
+ */
+function _renderComparacionCategorias(comparacion) {
+  if (!comparacion || comparacion.categorias.length === 0) return '';
+
+  const { highlights, categorias, totalActual, totalAnterior } = comparacion;
+
+  const deltaTotal = totalActual - totalAnterior;
+  const deltaLabel = deltaTotal >= 0
+    ? `+${f(deltaTotal)} vs mes anterior`
+    : `${f(deltaTotal)} vs mes anterior`;
+  const deltaClase = deltaTotal >= 0 ? 'comparacion__delta--sube' : 'comparacion__delta--baja';
+
+  const hilightHtml = highlights.map(h => {
+    const icono = h.tipo === 'mejora' ? '✅' : '⚠️';
+    return `<li class="comparacion__highlight comparacion__highlight--${h.tipo}">
+      ${icono} ${_esc(h.mensaje)}
+    </li>`;
+  }).join('');
+
+  const filasHtml = categorias.map(c => {
+    const icono = c.direccion === 'bajo' || c.direccion === 'desaparecio' ? '↓'
+      : c.direccion === 'subio' || c.direccion === 'nueva'                ? '↑'
+      :                                                                      '→';
+    const clase = c.direccion === 'bajo' || c.direccion === 'desaparecio'
+      ? 'comparacion__row--baja'
+      : c.direccion === 'subio' || c.direccion === 'nueva'
+      ? 'comparacion__row--sube'
+      : 'comparacion__row--igual';
+    return `
+      <tr class="comparacion__row ${clase}">
+        <td class="comparacion__cat">${_esc(c.cat)}</td>
+        <td class="comparacion__monto comparacion__monto--actual">${f(c.actual)}</td>
+        <td class="comparacion__monto">${f(c.anterior)}</td>
+        <td class="comparacion__dir">${icono} ${c.deltaPct > 0 ? '+' : ''}${c.deltaPct}%</td>
+      </tr>`;
+  }).join('');
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-comparacion-title">
+      <h2 class="analisis__section-title" id="analisis-comparacion-title">📊 Vs mes anterior</h2>
+      <p class="analisis__desc">Comparación de gastos por categoría respecto al mes pasado.</p>
+      <p class="comparacion__delta ${deltaClase}">${deltaLabel}</p>
+      ${highlights.length > 0 ? `<ul class="comparacion__highlights" aria-label="Cambios destacados">${hilightHtml}</ul>` : ''}
+      <div class="comparacion__tabla-wrap">
+        <table class="comparacion__tabla" aria-label="Gastos por categoría">
+          <thead>
+            <tr>
+              <th class="comparacion__th">Categoría</th>
+              <th class="comparacion__th">Este mes</th>
+              <th class="comparacion__th">Mes ant.</th>
+              <th class="comparacion__th">Cambio</th>
+            </tr>
+          </thead>
+          <tbody>${filasHtml}</tbody>
+        </table>
+      </div>
+    </section>`;
+}
+
+// ── PATRÓN DE GASTO SEMANAL (G.2) ────────────────────────────────
+
+/**
+ * Renderiza la card de patrón de gasto semanal.
+ * Devuelve '' si no hay datos suficientes o no hay días destacados.
+ *
+ * @param {ReturnType<import('./logic.js').detectarPatronGastoSemanal>} patron
+ */
+function _renderPatronSemanal(patron) {
+  if (!patron || patron.diasDestacados.length === 0) return '';
+
+  const { diasDestacados, promedioGlobalDia, gastosAnalizados } = patron;
+
+  const itemsHtml = diasDestacados.map(d => {
+    const nivel = d.severidad === 'alta' ? 'patron__item--alta' : 'patron__item--media';
+    return `
+      <li class="patron__item ${nivel}">
+        <span class="patron__dia">${_esc(d.nombre)}</span>
+        <span class="patron__factor">${d.factor}× el promedio</span>
+        <span class="patron__etiqueta">${_esc(d.etiqueta)}</span>
+      </li>`;
+  }).join('');
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-patron-title">
+      <h2 class="analisis__section-title" id="analisis-patron-title">📅 Patrón de gasto semanal</h2>
+      <p class="analisis__desc">Días donde gastás consistentemente más que el promedio (análisis de los últimos 90 días, ${gastosAnalizados} transacciones).</p>
+      <ul class="patron__lista" aria-label="Días con mayor gasto">${itemsHtml}</ul>
+      <p class="analisis__hint">Promedio por día activo: <strong>${f(promedioGlobalDia)}</strong></p>
     </section>`;
 }
 
