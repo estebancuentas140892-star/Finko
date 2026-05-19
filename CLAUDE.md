@@ -82,9 +82,9 @@ Por qué         : <una línea justificando modelo+nivel>
 
 | Modelo      | Niveles permitidos                                |
 |---          |---                                                |
-| Haiku 4.5   | (sin nivel - siempre se escribe `Haiku 4.5`)      |
-| Sonnet 4.6  | Bajo · Medio · Alto                                |
-| Opus 4.7    | Bajo · Medio · Alto · Extra Alto · Max             |
+| Haiku 4.5   | (sin nivel - siempre se escribe `Haiku 4.5`)                |
+| Sonnet 4.6  | Bajo · Medio · Alto · Max                                   |
+| Opus 4.7    | Bajo · Medio · Alto · Extra Alto · Max                      |
 
 **Cuándo usar cada combinación.** Objetivo: **ahorrar tokens sin sacrificar calidad de código**. Ante la duda, subir un escalón antes que bajarlo: la calidad nunca se sacrifica.
 
@@ -94,6 +94,7 @@ Por qué         : <una línea justificando modelo+nivel>
 | **Sonnet 4.6 - Bajo**      | CSS aislado, ajuste de copy, fix puntual con causa ya identificada, doc update; < 30 min, 1-2 archivos.    |
 | **Sonnet 4.6 - Medio**     | Feature nueva en un solo dominio siguiendo patrón ya existente; 30-90 min, 3-6 archivos, tests nuevos.     |
 | **Sonnet 4.6 - Alto**      | Feature que toca varios dominios o introduce patrones de UI/datos nuevos; 90 min - media jornada.          |
+| **Sonnet 4.6 - Max**       | Equivalente a Opus Medio/Alto pero con el costo de Sonnet: lógica compleja, refactor cross-domain acotado, debugging sin pista clara. Preferir sobre Opus cuando el dominio es UI o tests (no finanzas CO puras). |
 | **Opus 4.7 - Bajo**        | Bug sutil en lógica financiera (regla 72, sistema francés, EA↔mensual, retenciones) con repro clara.       |
 | **Opus 4.7 - Medio**       | Nueva lógica financiera CO no trivial (amortización de deudas, escenarios fiscales, proyecciones).         |
 | **Opus 4.7 - Alto**        | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio.        |
