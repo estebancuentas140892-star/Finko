@@ -298,7 +298,9 @@ export function calcularScoreSalud(resumen) {
   const activos = resumen.activos?.total ?? 0;
   const pasivos = resumen.pasivos?.total ?? 0;
   const saldoCuentas = resumen.saldoCuentas ?? 0;
-  const gasteMes = resumen.gastosMes ?? 1;
+  // generarResumen() expone "gastoMes" (sin s); tests legacy lo llaman "gastosMes".
+  // Aceptamos ambos para no romper fixtures ni el flujo real.
+  const gasteMes = resumen.gastoMes ?? resumen.gastosMes ?? 1;
   const volatilidad = resumen.volatilidad ?? 0;
 
   // Factor 1: Tasa de ahorro (40 %)

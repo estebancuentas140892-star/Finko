@@ -786,6 +786,25 @@ describe('calcularScoreSalud()', () => {
     const result = calcularScoreSalud(resumen);
     expect(result.score).toBe(100);
   });
+
+  it('acepta el field name real de generarResumen (gastoMes sin s)', () => {
+    // Regresión: generarResumen() devuelve "gastoMes" (sin s); calcularScoreSalud()
+    // antes leía solo "gastosMes" (con s) y caía al fallback de 1, lo cual
+    // distorsionaba scoreLiquidez y scoreControl en producción.
+    const resumen = {
+      tasaAhorro: 0,
+      activos: { total: 1_000_000 },
+      pasivos: { total: 1_000_000 },
+      saldoCuentas: 1_500_000,
+      gastoMes: 1_000_000, // ← field name real (sin s)
+      volatilidad: 100_000,
+    };
+    const result = calcularScoreSalud(resumen);
+    // Con saldoCuentas=1.5M y gastoMes=1M → 1.5 meses de runway → score liquidez ~25
+    // Si el bug existiera, leería gasteMes=1 y daría liquidez=100 (clamp).
+    expect(result.factors.liquidez).toBeLessThan(50);
+    expect(result.factors.liquidez).toBeGreaterThan(0);
+  });
 });
 
 // ── clasificarScore() ─────────────────────────────────────────────
