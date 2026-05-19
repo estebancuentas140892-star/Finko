@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (F.1 completada — 3 calculadoras nuevas portadas desde Finko-Refactor)
+> Última actualización: 2026-05-18 (F.2 completada — dominio personales/préstamos otorgados, schema v3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 613/613 verdes |
+| Tests unitarios + integración | 655/655 verdes |
 | Tests E2E | 18/18 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### F.2 — Dominio `personales/` (préstamos otorgados / "me deben") · 2026-05-18
+Espejo de `compromisos.deuda`: plata que **TÚ** prestaste a familia/amigos.
+Sin tasa de interés, sin amortización — solo registro de monto, pagos parciales
+y antigüedad cultural (reciente ≤14d, mediano ≤60d, viejo >60d). Schema bump
+v2→v3 con migración idempotente. Nueva nav item "🤝 Me deben" junto a Compromisos,
+sección con resumen agregado (prestado/cobrado/pendiente/activos) + barra de
+progreso global. Items con chip color-coded por antigüedad + barra de progreso
+individual. Modales para nuevo préstamo y pago parcial. 42 tests nuevos
+(35 lógica pura + 7 migración): 655/655 verdes. SW v10→v11.
+- `modules/dominio/personales/{logic,view,index}.js` (nuevos)
+- `modules/core/state.js` (+ Personal typedef, `personales: []`, `_version: 3`)
+- `modules/core/storage.js` (migración v2→v3, SCHEMA_VERSION=3)
+- `modules/infra/router.js`, `modules/ui/bootstrap.js`
+- `index.html` (nav item + section + 2 modales)
+- `tests/unit/personales.test.js` (nuevo), `tests/integration/flujos.test.js` (+Suite 7)
 
 ### F.1 — 3 calculadoras nuevas portadas desde Finko-Refactor · 2026-05-18
 **PILA** (`calcularPILA`): aportes mensuales de independientes según Decreto 1273/2018.

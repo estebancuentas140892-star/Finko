@@ -112,9 +112,9 @@ _(no quedan tareas funcionales pendientes en D — todas las features de v1 + po
 
 **Completadas:**
 - ✅ F.1 — Calculadoras nuevas (PILA, Rentabilidad Real, clasificarTasaCredito) — 2026-05-18.
+- ✅ F.2 — Dominio `personales/`: préstamos otorgados (schema v2→v3, 42 tests nuevos) — 2026-05-18.
 
 **Tareas candidatas (no urgentes):**
-- F.2 — Dominio `personales/`: préstamos otorgados (espejo de `compromisos/`). Lógica pura ya existe en Refactor.
 - F.3 — Score de Salud Financiera en dashboard: agregado cross-dominio con bandas visuales.
 - F.4 — Estrategias Avalancha/Bola de Nieve para pago de deudas (se monta sobre `compromisos/`).
 
