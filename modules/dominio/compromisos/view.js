@@ -11,6 +11,8 @@ import {
   calcularCompromisoMensual,
   proximoVencimiento,
   urgencia,
+  compromisosProximos,
+  nivelAlertaMora,
   filtrarDeudasPagables,
   compararEstrategias,
   TIPOS_COMPROMISO,
@@ -23,6 +25,55 @@ const _uiEstrategia = {
   extraMensual: 0,
   estrategia:   'avalancha',
 };
+
+// ── NUDGE MORA INMINENTE (G.3.F5) ────────────────────────────────
+
+/**
+ * Renderiza (o limpia) el nudge de mora inminente en `#nudge-compromisos`.
+ * Aparece cuando hay ≥ 1 compromiso activo con vencimiento en ≤ 5 dias.
+ * - Nivel `nudge-high`   → alguno vence en ≤ 3 dias.
+ * - Nivel `nudge-medium` → todos entre 4 y 5 dias.
+ * No-op si el contenedor no existe.
+ */
+export function renderNudgeMoraInminente() {
+  const el = document.getElementById('nudge-compromisos');
+  if (!el) return;
+
+  const proximos = compromisosProximos(S.compromisos, 5);
+  const nivel    = nivelAlertaMora(proximos);
+
+  if (!nivel) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const icono  = nivel === 'high' ? '⚠️' : '🕐';
+  const n      = proximos.length;
+  const cuantos = n === 1 ? '1 pago vence' : `${n} pagos vencen`;
+  const titulo  = nivel === 'high'
+    ? `${cuantos} muy pronto`
+    : `${cuantos} en los proximos 5 dias`;
+
+  const items = proximos.map(c => {
+    const desc     = _esc(c.descripcion);
+    const diasLabel = c.diasRestantes === 0
+      ? 'vence hoy'
+      : c.diasRestantes === 1
+      ? 'vence manana'
+      : `vence en ${c.diasRestantes} dias`;
+    return `<p class="nudge__desc"><strong>${desc}</strong>: ${diasLabel} (${f(c.monto)})</p>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="nudge ${nivel === 'high' ? 'nudge-high' : 'nudge-medium'}"
+         role="alert" aria-live="polite">
+      <span class="nudge__icon" aria-hidden="true">${icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${titulo}</p>
+        ${items}
+      </div>
+    </div>`;
+}
 
 // ── LISTA DE COMPROMISOS ─────────────────────────────────────────
 
@@ -113,9 +164,10 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🔗</p>
-      <p class="empty-state__title">Sin compromisos registrados</p>
-      <p class="empty-state__desc">Agregá tus gastos fijos, deudas y pagos recurrentes para no olvidar ningún vencimiento.</p>
+      <p class="empty-state__title">Nada que pagar... por ahora</p>
+      <p class="empty-state__desc">Agregá tu arriendo, servicios, créditos y cuotas. Finko los ordena por fecha para que nunca llegues tarde a un vencimiento.</p>
       <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar compromiso</button>
+      <p class="empty-state__tip">💡 Tip: los compromisos tipo "deuda" se descuentan de tu patrimonio neto en Análisis.</p>
     </div>`;
 }
 

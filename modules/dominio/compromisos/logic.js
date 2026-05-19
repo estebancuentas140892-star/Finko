@@ -120,6 +120,22 @@ export function compromisosProximos(compromisos, diasLimite = 3) {
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
 
+/**
+ * Nivel de urgencia para el nudge de mora inminente (G.3.F5).
+ * Recibe la lista ya filtrada de `compromisosProximos()`.
+ *
+ * - `'high'`   → al menos un compromiso vence en ≤ 3 días.
+ * - `'medium'` → todos vencen entre 4 y 5 días.
+ * - `null`     → no hay compromisos proximos (no mostrar nudge).
+ *
+ * @param {Array<{ diasRestantes: number }>} proximos
+ * @returns {'high' | 'medium' | null}
+ */
+export function nivelAlertaMora(proximos) {
+  if (proximos.length === 0) return null;
+  return proximos.some(c => c.diasRestantes <= 3) ? 'high' : 'medium';
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

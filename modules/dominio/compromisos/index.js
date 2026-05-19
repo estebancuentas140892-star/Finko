@@ -17,6 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
 import { validarCompromiso, normalizarCompromiso } from './logic.js';
 import {
+  renderNudgeMoraInminente,
   renderListaCompromisos,
   renderFormCompromiso,
   renderEstrategiaPago,
@@ -28,6 +29,7 @@ import {
  * el estado UI de la estrategia (extra mensual, toggle).
  */
 function _renderTodo() {
+  renderNudgeMoraInminente();
   renderListaCompromisos();
   renderEstrategiaPago();
 }

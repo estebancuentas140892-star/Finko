@@ -7,6 +7,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### G.3.F5 - Nudge mora inminente en Compromisos · 2026-05-19
+
+Cuando hay compromisos activos con vencimiento en ≤ 5 dias, se muestra un nudge de
+advertencia encima de la lista. El nivel escala: `nudge-high` si alguno vence en ≤ 3 dias,
+`nudge-medium` si todos estan entre 4 y 5 dias. El nudge desaparece automaticamente cuando
+no hay mora inminente (el div se limpia en cada re-render).
+
+- `modules/dominio/compromisos/logic.js`: nueva funcion exportada `nivelAlertaMora(proximos)`.
+- `modules/dominio/compromisos/view.js`: nueva funcion exportada `renderNudgeMoraInminente()`.
+  Importa `compromisosProximos` y `nivelAlertaMora` de logic.js. Lee `S.compromisos`,
+  genera el nudge o limpia el contenedor segun corresponda.
+- `modules/dominio/compromisos/index.js`: `_renderTodo()` llama `renderNudgeMoraInminente()`
+  antes de `renderListaCompromisos()`. Import de `renderNudgeMoraInminente` agregado.
+- `index.html`: nuevo `<div id="nudge-compromisos">` antes de `#lista-compromisos`.
+- `tests/unit/compromisos.test.js`: 5 tests nuevos para `nivelAlertaMora` (null, high, high
+  con mezcla, medium, umbral 3/4). Total: 709 + 5 = 714/714 verdes.
+- `service-worker.js`: v22 a v23.
+
 ### G.3.F4 - Bloque de usura en calculadora Credito · 2026-05-19
 
 Cuando la tasa ingresada en la calculadora Credito supera el tope legal de usura vigente (SFC),

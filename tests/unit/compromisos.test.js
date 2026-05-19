@@ -6,6 +6,7 @@ import {
   proximoVencimiento,
   urgencia,
   compromisosProximos,
+  nivelAlertaMora,
   validarCompromiso,
   normalizarCompromiso,
   filtrarDeudasPagables,
@@ -563,5 +564,35 @@ describe('compararEstrategias', () => {
     const r = compararEstrategias(deudas, 0);
     expect(r.avalancha.meses).toBe(r.bolaNieve.meses);
     expect(r.avalancha.interesesTotales).toBeCloseTo(r.bolaNieve.interesesTotales, 2);
+  });
+});
+
+// ── nivelAlertaMora() (G.3.F5) ─────────────────────────────────────
+
+describe('nivelAlertaMora()', () => {
+  it('retorna null cuando el array esta vacio', () => {
+    expect(nivelAlertaMora([])).toBeNull();
+  });
+
+  it('retorna "high" cuando al menos uno tiene diasRestantes <= 3', () => {
+    expect(nivelAlertaMora([{ diasRestantes: 0 }])).toBe('high');
+    expect(nivelAlertaMora([{ diasRestantes: 1 }])).toBe('high');
+    expect(nivelAlertaMora([{ diasRestantes: 3 }])).toBe('high');
+  });
+
+  it('retorna "high" aunque haya mezcla de urgente y no urgente', () => {
+    const proximos = [{ diasRestantes: 2 }, { diasRestantes: 5 }];
+    expect(nivelAlertaMora(proximos)).toBe('high');
+  });
+
+  it('retorna "medium" cuando todos tienen diasRestantes entre 4 y 5', () => {
+    expect(nivelAlertaMora([{ diasRestantes: 4 }])).toBe('medium');
+    expect(nivelAlertaMora([{ diasRestantes: 5 }])).toBe('medium');
+    expect(nivelAlertaMora([{ diasRestantes: 4 }, { diasRestantes: 5 }])).toBe('medium');
+  });
+
+  it('el umbral 3 es high y 4 es medium', () => {
+    expect(nivelAlertaMora([{ diasRestantes: 3 }])).toBe('high');
+    expect(nivelAlertaMora([{ diasRestantes: 4 }])).toBe('medium');
   });
 });

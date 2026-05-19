@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.3.F4 - Bloque de usura en calculadora Credito)
+> Última actualización: 2026-05-19 (G.3.F5 - Nudge mora inminente en Compromisos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 709/709 verdes |
+| Tests unitarios + integración | 714/714 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### G.3.F5 - Nudge mora inminente en Compromisos · 2026-05-19
+Cuando hay compromisos activos con vencimiento en 5 dias o menos, aparece un nudge de
+advertencia encima de la lista en `#nudge-compromisos` (nuevo div en index.html).
+- `modules/dominio/compromisos/logic.js`: nueva funcion exportada `nivelAlertaMora(proximos)`.
+  Recibe la lista de `compromisosProximos()` y retorna `'high'` (alguno vence en ≤ 3 dias),
+  `'medium'` (todos entre 4 y 5 dias) o `null` (sin mora inminente).
+- `modules/dominio/compromisos/view.js`: nueva funcion exportada `renderNudgeMoraInminente()`.
+  Lee `S.compromisos`, filtra con `compromisosProximos(S.compromisos, 5)`, determina nivel con
+  `nivelAlertaMora()` y renderiza el nudge (o limpia el div si no hay mora inminente).
+  Cada compromiso aparece con descripcion, label de dias y monto formateado.
+- `modules/dominio/compromisos/index.js`: `_renderTodo()` llama `renderNudgeMoraInminente()`
+  antes de `renderListaCompromisos()`.
+- `index.html`: nuevo `<div id="nudge-compromisos">` antes de `#lista-compromisos`.
+- `tests/unit/compromisos.test.js`: 5 tests nuevos para `nivelAlertaMora`.
+  Total: 709 + 5 = 714/714 verdes.
+- `service-worker.js`: v22 a v23.
 
 ### G.3.F4 - Bloque de usura en calculadora Credito · 2026-05-19
 Cuando el usuario ingresa una tasa que supera el tope legal de usura (SFC), la calculadora
@@ -88,14 +105,6 @@ CTA claro y tip educativo (`.empty-state__tip`) en cada sección.
 - SW v18 a v19.
 - Archivos: `modules/dominio/{ingresos,gastos,compromisos,personales,tesoreria,metas,presupuesto,analisis}/view.js`, `service-worker.js`.
 
-### G.2.A - Bento Grid asimétrico en dashboard · 2026-05-19
-Rediseño visual del dashboard: de 6 celdas iguales a 7 celdas asimétricas.
-- Hero 8×2 (HERO + accent) para saldo total con `.bento__value--xl` y `.bento__cell--hero`.
-- Balance 4×2 con `data-dominio="analisis"` muestra ingresos estimados vs gastos.
-- 3 celdas 4×1 para Ingresos, Gastos, Metas con color de dominio.
-- 2 celdas 6×1 (`.bento__cell--half`) para Compromisos y Préstamos personales.
-- Nueva lógica en `render.js` (updateBadge) para llenar `#personales-count` sin importar dominio.
-- SW v17 a v18. CSS: `.bento__cell--half`, `.bento__cell--hero`, `[data-dominio]::before`, `bento__value--xl`, cascade animation, hover lift.
 
 
 ### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
