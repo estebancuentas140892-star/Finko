@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
+import { legalVigente, SMMLV, APP_VERSION } from '../../core/constants.js';
 
 /**
  * Renderiza el panel de configuración completo en `#panel-config`.
@@ -47,8 +48,8 @@ function _renderPerfil() {
           <label for="config-smmlv" class="label">SMMLV (COP)</label>
           <input id="config-smmlv" name="smmlv" class="input" type="number"
                  min="1" step="1000" value="${S.perfil.smmlv ?? ''}"
-                 placeholder="1750905" />
-          <p class="form-hint">Usar SMMLV 2026: $1.750.905. Se actualiza cada año.</p>
+                 placeholder="${SMMLV}" />
+          <p class="form-hint">Usar SMMLV ${legalVigente().anio}: ${f(SMMLV)}. Se actualiza cada año.</p>
         </div>
         <button type="submit" class="btn btn-primary">Guardar perfil</button>
       </form>
@@ -160,14 +161,16 @@ function _renderDatos() {
 }
 
 function _renderAcercaDe() {
+  const vigente = legalVigente();
+  const fuenteSmmlv = _esc(vigente.fuentes.smmlv);
   return `
     <section class="config-section" aria-labelledby="config-about-title">
       <h2 class="config-section__title" id="config-about-title">ℹ️ Acerca de Finko</h2>
       <dl class="config-info">
-        <dt>Versión</dt>        <dd>0.1.0</dd>
+        <dt>Versión</dt>        <dd>${APP_VERSION}</dd>
         <dt>Tecnología</dt>    <dd>Vanilla JS · Sin framework · Offline-first</dd>
         <dt>Almacenamiento</dt><dd>localStorage (solo en tu dispositivo)</dd>
-        <dt>SMMLV vigente</dt> <dd>$1.750.905 (Mintrabajo, Decreto 1469/2025, vigente hasta 2026-12-31)</dd>
+        <dt>SMMLV vigente</dt> <dd>${f(vigente.smmlv)} (${fuenteSmmlv})</dd>
       </dl>
     </section>`;
 }

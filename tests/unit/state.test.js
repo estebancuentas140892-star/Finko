@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { S, EventBus, createInitialState } from '../../modules/core/state.js';
-import { SMMLV_2026 } from '../../modules/core/constants.js';
+import { SMMLV } from '../../modules/core/constants.js';
 
 // Reset del singleton antes de cada test: S y EventBus son compartidos.
 beforeEach(() => {
@@ -41,7 +41,7 @@ describe('S — schema v3 inicial', () => {
   });
 
   it('arranca con perfil semilla (nombre vacío + SMMLV vigente)', () => {
-    expect(S.perfil).toEqual({ nombre: '', smmlv: SMMLV_2026 });
+    expect(S.perfil).toEqual({ nombre: '', smmlv: SMMLV });
   });
 });
 

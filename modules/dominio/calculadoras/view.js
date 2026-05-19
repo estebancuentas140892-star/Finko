@@ -3,6 +3,8 @@
  * Sin efectos secundarios. Los resultados se inyectan desde index.js.
  */
 
+import { SMMLV } from '../../core/constants.js';
+
 // ── PANEL COMPLETO ───────────────────────────────────────────────
 
 /**
@@ -198,7 +200,8 @@ function _renderPrima() {
           <div class="form-group">
             <label for="prima-salario" class="label">Salario mensual (COP)</label>
             <input id="prima-salario" name="salario" class="input" type="number"
-                   min="1750905" step="100000" placeholder="1.750.905" required />
+                   min="${SMMLV}" step="100000"
+                   placeholder="${SMMLV.toLocaleString('es-CO')}" required />
           </div>
           <div class="form-group">
             <label for="prima-dias" class="label">Días trabajados en el semestre (máx. 180)</label>

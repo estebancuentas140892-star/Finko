@@ -1,66 +1,224 @@
 /**
  * constants.js — constantes legales y de catálogo para Colombia.
  *
+ * ── Filosofía: Single Source of Truth ─────────────────────────────
+ *
+ * Los valores legales (SMMLV, UVT, auxilio de transporte, tasa de usura)
+ * se almacenan en **dos tablas históricas indexadas por período**:
+ *   - `LEGAL_POR_ANIO[anio]`       → valores anuales (smmlv, uvt, auxilio).
+ *   - `USURA_POR_PERIODO['anio-Qn']` → tasa de usura trimestral.
+ *
+ * El resto del proyecto importa los exports estables (`SMMLV`, `UVT`,
+ * `AUXILIO_TRANSPORTE`, `TASA_USURA`, `VIGENCIA`, `ANIO_VIGENTE`), que
+ * apuntan automáticamente al período vigente según la fecha actual.
+ *
+ * ── Cómo actualizar valores legales ──────────────────────────────
+ *
+ * Año nuevo (cada diciembre/enero):
+ *   1. Agregar UNA entrada en `LEGAL_POR_ANIO` con los valores oficiales:
+ *      2027: { smmlv: ..., auxilioTransporte: ..., uvt: ...,
+ *               vigenciaDesde: '2027-01-01', fuentes: { ... } }
+ *   2. Listo. Toda la app (UI, cálculos, tests) usa los valores nuevos
+ *      automáticamente cuando la fecha del sistema entra en 2027.
+ *
+ * Tasa de usura (cada trimestre, SFC):
+ *   1. Agregar UNA entrada en `USURA_POR_PERIODO`:
+ *      '2026-Q3': { tasa: 0.NN, desde: '2026-07-01', hasta: '2026-09-30',
+ *                    fuente: 'Resolución SFC N° XXXX' }
+ *   2. Listo. Hints, validaciones y clasificadores se actualizan solos.
+ *
  * Reglas:
- * - Toda constante se exporta con nombre. Sin window.X.
- * - Las constantes con vencimiento llevan comentario `Vigente hasta: YYYY-MM-DD`
- *   y deben revisarse cada Q (ver docs/IA_CONTEXT.md → "Constantes legales").
+ *   - Toda constante se exporta con nombre. Sin window.X.
+ *   - Las constantes con vencimiento se manejan en este archivo.
  */
 
-// ── VALORES MONETARIOS / NORMATIVOS ─────────────────────────────
-
-/** Salario Mínimo Mensual Legal Vigente (COP) — año 2026.
- *  Valor: $1.750.905 (incremento del 23 % vs 2025).
- *  Fuente oficial: Decreto 1469 del 29 de diciembre de 2025 (Mintrabajo).
- *    Suspendido provisionalmente por el Consejo de Estado en feb-2026; el
- *    Decreto 0159 del 19 de febrero de 2026 mantiene transitoriamente el
- *    mismo valor mientras se decide la legalidad del decreto original.
- *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
-export const SMMLV_2026 = 1_750_905;
-
-/** Auxilio de transporte mensual (COP) — año 2026.
- *  Valor: $249.095.
- *  Fuente oficial: Decreto 1470 del 29 de diciembre de 2025 (Mintrabajo).
- *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
-export const AUXILIO_TRANSPORTE_2026 = 249_095;
-
-/** Unidad de Valor Tributario (COP) — año gravable 2026.
- *  Valor: $52.374 (incremento del 5,17 % vs 2025, basado en IPC DANE).
- *  Fuente oficial: Resolución DIAN 000238 del 15 de diciembre de 2025.
- *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
-export const UVT_2026 = 52_374;
-
-/** Fecha en que entran en vigencia los valores 2026 (formato ISO YYYY-MM-DD). */
-export const VIGENCIA_2026 = '2026-01-01';
-
-// ── VALORES 2027 (pendientes de publicación oficial) ─────────────
+// ── TABLA HISTÓRICA: VALORES ANUALES ─────────────────────────────
 //
-// Calendario habitual:
-//   • SMMLV: decreto presidencial expedido en la última semana de diciembre
-//     del año anterior (Mintrabajo), tras el cierre de la Comisión de
-//     Concertación de Políticas Salariales y Laborales.
-//   • UVT:   resolución DIAN publicada antes del 1 de enero del año gravable,
-//     basada en la variación del IPC DANE entre el 1 de octubre del año
-//     anterior y el 1 de octubre del año en curso.
+// Cada entrada anual contiene los valores oficiales publicados por el
+// Ministerio de Trabajo (SMMLV, auxilio) y la DIAN (UVT).
+
+/** @typedef {{
+ *    smmlv: number,
+ *    auxilioTransporte: number,
+ *    uvt: number,
+ *    vigenciaDesde: string,
+ *    fuentes: { smmlv: string, auxilio: string, uvt: string }
+ *  }} ValoresLegalesAnio */
+
+/** @type {Record<number, ValoresLegalesAnio | null>} */
+const LEGAL_POR_ANIO = {
+  2025: {
+    smmlv:             1_300_000, // Decreto 2292/2024 — incluido para histórico/migraciones
+    auxilioTransporte:   162_000,
+    uvt:                  47_065,
+    vigenciaDesde: '2025-01-01',
+    fuentes: {
+      smmlv:   'Decreto 2292/2024 (Mintrabajo)',
+      auxilio: 'Decreto 2293/2024 (Mintrabajo)',
+      uvt:     'Resolución DIAN 000193/2024',
+    },
+  },
+  2026: {
+    smmlv:             1_750_905,
+    auxilioTransporte:   249_095,
+    uvt:                  52_374,
+    vigenciaDesde: '2026-01-01',
+    fuentes: {
+      smmlv:   'Decreto 1469 del 29-12-2025 (Mintrabajo), ratificado por Decreto 0159 del 19-02-2026',
+      auxilio: 'Decreto 1470 del 29-12-2025 (Mintrabajo)',
+      uvt:     'Resolución DIAN 000238 del 15-12-2025',
+    },
+  },
+  // 2027: agregar aquí cuando se publiquen los decretos/resoluciones
+  //       (esperado: última semana de diciembre 2026).
+  2027: null,
+};
+
+// ── TABLA HISTÓRICA: TASA DE USURA (TRIMESTRAL) ──────────────────
 //
-// Publicación esperada: diciembre de 2026.
+// La SFC certifica la tasa máxima permitida (TEUM convertida a EA) al
+// inicio de cada trimestre.
 
-/** SMMLV 2027 — null mientras no haya decreto oficial. */
-export const SMMLV_2027 = null;
+/** @typedef {{
+ *    tasa: number,
+ *    desde: string,
+ *    hasta: string,
+ *    fuente: string
+ *  }} UsuraPeriodo */
 
-/** Auxilio de transporte 2027 — null mientras no haya decreto oficial. */
-export const AUXILIO_TRANSPORTE_2027 = null;
+/** @type {Record<string, UsuraPeriodo>} */
+const USURA_POR_PERIODO = {
+  '2026-Q1': {
+    tasa:  0.2677,
+    desde: '2026-01-01',
+    hasta: '2026-03-31',
+    fuente: 'Resolución SFC Q1 2026',
+  },
+  '2026-Q2': {
+    tasa:  0.2817,
+    desde: '2026-04-01',
+    hasta: '2026-06-30',
+    fuente: 'Resolución SFC Q2 2026',
+  },
+  // Agregar trimestres futuros aquí.
+};
 
-/** UVT 2027 — null mientras no haya resolución DIAN. */
-export const UVT_2027 = null;
+// ── SELECTORES (vigencia dinámica por fecha) ─────────────────────
 
-/** Vigencia 2027 — null hasta confirmar fecha en los decretos/resoluciones. */
-export const VIGENCIA_2027 = null;
+/**
+ * Devuelve los valores legales vigentes en una fecha dada.
+ * Si la fecha cae en un año sin entrada (ej. enero 2027 antes de que se
+ * publiquen los valores), retorna el último año publicado disponible.
+ *
+ * @param {Date} [fecha] — Por defecto: ahora.
+ * @returns {ValoresLegalesAnio & { anio: number }}
+ */
+export function legalVigente(fecha = new Date()) {
+  const anioActual = fecha.getFullYear();
 
-/** Tasa de usura Q2 2026 — 28.17 % EA.
- *  Fuente: Superintendencia Financiera de Colombia (SFC), Resolución trimestral.
- *  Vigente hasta: 2026-06-30. Revisar al cierre de cada trimestre. */
-export const TASA_USURA_Q2_2026 = 0.2817;
+  // 1) Si hay entrada para el año actual, usarla.
+  if (LEGAL_POR_ANIO[anioActual]) {
+    return { anio: anioActual, ...LEGAL_POR_ANIO[anioActual] };
+  }
+
+  // 2) Fallback: último año publicado anterior o igual al actual.
+  const publicados = Object.keys(LEGAL_POR_ANIO)
+    .map(Number)
+    .filter(a => LEGAL_POR_ANIO[a] != null && a <= anioActual)
+    .sort((a, b) => b - a);
+
+  if (publicados.length > 0) {
+    const anio = publicados[0];
+    return { anio, ...LEGAL_POR_ANIO[anio] };
+  }
+
+  // 3) Caso extremo: ningún año publicado ≤ actual (no debería pasar).
+  //    Devolver el primer año disponible para no romper la app.
+  const anyAnio = Object.keys(LEGAL_POR_ANIO)
+    .map(Number)
+    .filter(a => LEGAL_POR_ANIO[a] != null)
+    .sort()[0];
+  return { anio: anyAnio, ...LEGAL_POR_ANIO[anyAnio] };
+}
+
+/**
+ * Devuelve la tasa de usura vigente en una fecha dada.
+ * Si la fecha cae fuera de cualquier período registrado, retorna el
+ * último período conocido.
+ *
+ * @param {Date} [fecha] — Por defecto: ahora.
+ * @returns {UsuraPeriodo & { periodo: string }}
+ */
+export function tasaUsuraVigente(fecha = new Date()) {
+  const iso = fecha.toISOString().slice(0, 10);
+
+  // 1) Buscar período que incluye la fecha.
+  for (const [periodo, p] of Object.entries(USURA_POR_PERIODO)) {
+    if (iso >= p.desde && iso <= p.hasta) {
+      return { periodo, ...p };
+    }
+  }
+
+  // 2) Fallback: último período registrado (más reciente).
+  const periodos = Object.keys(USURA_POR_PERIODO).sort();
+  const ultima = periodos[periodos.length - 1];
+  return { periodo: ultima, ...USURA_POR_PERIODO[ultima] };
+}
+
+/**
+ * Devuelve los valores legales de un año específico (lectura histórica).
+ * Útil para reportes o análisis sobre datos antiguos.
+ *
+ * @param {number} anio
+ * @returns {ValoresLegalesAnio | null}
+ */
+export function legalDelAnio(anio) {
+  return LEGAL_POR_ANIO[anio] ?? null;
+}
+
+/**
+ * Devuelve la lista de años con valores legales publicados.
+ * @returns {number[]}
+ */
+export function aniosPublicados() {
+  return Object.keys(LEGAL_POR_ANIO)
+    .map(Number)
+    .filter(a => LEGAL_POR_ANIO[a] != null)
+    .sort((a, b) => a - b);
+}
+
+// ── EXPORTS ESTABLES (los que importa el resto del proyecto) ─────
+//
+// Estos valores se resuelven una vez al cargar el módulo. Para la mayoría
+// de cálculos eso es suficiente (la app se recarga al menos una vez al
+// día). Si necesitás el valor para una fecha específica, llamá a
+// `legalVigente(fecha)` o `tasaUsuraVigente(fecha)` directamente.
+
+const _vigente = legalVigente();
+const _usura   = tasaUsuraVigente();
+
+/** Salario Mínimo Mensual Legal Vigente (COP). */
+export const SMMLV = _vigente.smmlv;
+
+/** Auxilio de transporte mensual (COP). */
+export const AUXILIO_TRANSPORTE = _vigente.auxilioTransporte;
+
+/** Unidad de Valor Tributario (COP). */
+export const UVT = _vigente.uvt;
+
+/** Fecha ISO desde la cual rigen los valores vigentes. */
+export const VIGENCIA = _vigente.vigenciaDesde;
+
+/** Año al que corresponden los valores vigentes. */
+export const ANIO_VIGENTE = _vigente.anio;
+
+/** Tasa de usura vigente como decimal (ej. 0.2817 para 28.17 % EA). */
+export const TASA_USURA = _usura.tasa;
+
+/** Período de la tasa de usura vigente (ej. '2026-Q2'). */
+export const PERIODO_USURA = _usura.periodo;
+
+// ── OTRAS CONSTANTES NORMATIVAS (sin vencimiento o estables) ─────
 
 /** Gravamen a los Movimientos Financieros (4×1000).
  *  Fuente: Ley 1111/2006. Estable. */
@@ -82,6 +240,31 @@ export const PENSION_INDEPEND = 0.16;
  *  Fuente: Decreto 1295/1994, tabla de cotización. Estable.
  *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */
 export const ARL_CLASE_I = 0.00522;
+
+// ── METADATOS DE LA APP ──────────────────────────────────────────
+
+/** Nombre comercial. Usado en títulos, headers, "Acerca de". */
+export const APP_NAME = 'Finko';
+
+/** Versión semántica. Debe mantenerse en sync con `package.json`. */
+export const APP_VERSION = '0.1.0';
+
+// ── ALIASES DE COMPATIBILIDAD (DEPRECATED) ───────────────────────
+//
+// Estos exports mantienen el código viejo funcional mientras se migra.
+// Nuevos usos: importar `SMMLV`, `UVT`, etc. sin sufijo de año.
+// TODO: eliminar en una próxima fase cuando no queden consumidores.
+
+/** @deprecated Usar `SMMLV` (sin sufijo). */
+export const SMMLV_2026 = SMMLV;
+/** @deprecated Usar `AUXILIO_TRANSPORTE` (sin sufijo). */
+export const AUXILIO_TRANSPORTE_2026 = AUXILIO_TRANSPORTE;
+/** @deprecated Usar `UVT` (sin sufijo). */
+export const UVT_2026 = UVT;
+/** @deprecated Usar `VIGENCIA` (sin sufijo). */
+export const VIGENCIA_2026 = VIGENCIA;
+/** @deprecated Usar `TASA_USURA` (sin sufijo). */
+export const TASA_USURA_Q2_2026 = TASA_USURA;
 
 // ── CATÁLOGOS PARA SELECTS ──────────────────────────────────────
 

@@ -54,6 +54,12 @@
   --fk-info-bg:       rgba(61, 138, 255, 0.12);
   --fk-info-text:     #3d8aff;
 
+  --fk-amber:         #f59e0b;  /* warning más cálido, p.ej. duplicados en import */
+  --fk-amber-bg:      rgba(245, 158, 11, 0.08);
+
+  /* ── TEXTO SOBRE FONDOS FUERTES ──────────────────────────────── */
+  --fk-text-on-bold: #fff;       /* sobre danger/accent/info saturados */
+
   /* ── BOTÓN PRIMARIO ──────────────────────────────────────────── */
   --fk-btn-primary-bg:    #00dc82;
   --fk-btn-primary-text:  #0f1117;

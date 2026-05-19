@@ -2,20 +2,23 @@
  * calculadoras/logic.js — fórmulas financieras puras para Colombia.
  * Sin DOM. Sin S. Sin efectos secundarios. Testeable en Node/Vitest.
  *
- * Constantes legales usadas:
- *   - SMMLV 2026: $1.750.905 — Vigente hasta 2026-12-31 (Decreto 1469/2025)
- *   - Auxilio de transporte 2026: $249.095 — Vigente hasta 2026-12-31 (Decreto 1470/2025)
- *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto
- *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo)
+ * Constantes legales usadas (resueltas dinámicamente vía `constants.js`):
+ *   - SMMLV vigente y auxilio de transporte (Mintrabajo, anual).
+ *   - Tasa de usura vigente (SFC, trimestral).
+ *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto.
+ *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo).
+ *
+ * Los valores numéricos viven en `modules/core/constants.js` — para actualizarlos
+ * basta con agregar una entrada al año/trimestre nuevo allí.
  */
 
 import {
-  SMMLV_2026,
-  AUXILIO_TRANSPORTE_2026,
+  SMMLV,
+  AUXILIO_TRANSPORTE,
   SALUD_INDEPEND,
   PENSION_INDEPEND,
   ARL_CLASE_I,
-  TASA_USURA_Q2_2026,
+  TASA_USURA,
 } from '../../core/constants.js';
 
 // ── CDT (Certificado de Depósito a Término) ──────────────────────
@@ -152,7 +155,7 @@ export function calcularRegla72(tasaAnualPct) {
  * Calcula la prima de servicios semestral según la Ley 1788 de 2016.
  *
  * Fórmula: `prima = (salario_base + auxilio_transporte*) × días / 360`
- * (*) El auxilio de transporte se suma solo si salario ≤ 2 × SMMLV_2026.
+ * (*) El auxilio de transporte se suma solo si salario ≤ 2 × SMMLV vigente.
  * Máximo de días por liquidación semestral: 180.
  *
  * @param {number} salario      — Salario mensual en COP.
@@ -166,8 +169,8 @@ export function calcularRegla72(tasaAnualPct) {
  */
 export function calcularPrima(salario, dias) {
   const diasEfectivos   = Math.min(dias, 180);
-  const incluyeAuxilio  = salario <= 2 * SMMLV_2026;
-  const auxilioAplicado = incluyeAuxilio ? AUXILIO_TRANSPORTE_2026 : 0;
+  const incluyeAuxilio  = salario <= 2 * SMMLV;
+  const auxilioAplicado = incluyeAuxilio ? AUXILIO_TRANSPORTE : 0;
   const salarioBase     = salario + auxilioAplicado;
   const prima           = (salarioBase * diasEfectivos) / 360;
 
@@ -202,7 +205,7 @@ export function calcularPrima(salario, dias) {
  */
 export function calcularPILA(ingreso, arl = ARL_CLASE_I) {
   if (ingreso <= 0) return null;
-  const ibc      = Math.max(ingreso * 0.40, SMMLV_2026);
+  const ibc      = Math.max(ingreso * 0.40, SMMLV);
   const salud    = ibc * SALUD_INDEPEND;
   const pension  = ibc * PENSION_INDEPEND;
   const arlMonto = ibc * arl;
@@ -258,10 +261,10 @@ export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
  *   - `razonable` → ratio < 65 % o tasa ≤ 0.
  *
  * @param {number} taEA   — Tasa efectiva anual como decimal (ej. 0.20 = 20 %).
- * @param {number} [usura] — Usura vigente como decimal (default: TASA_USURA_Q2_2026).
+ * @param {number} [usura] — Usura vigente como decimal (default: `TASA_USURA` del trimestre actual).
  * @returns {'usura' | 'alta' | 'estandar' | 'razonable'}
  */
-export function clasificarTasaCredito(taEA, usura = TASA_USURA_Q2_2026) {
+export function clasificarTasaCredito(taEA, usura = TASA_USURA) {
   if (taEA > usura) return 'usura';
   if (taEA <= 0)    return 'razonable';
   const ratio = taEA / usura;

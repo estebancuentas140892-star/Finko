@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027)
+> Última actualización: 2026-05-19 (E.2 + refactor single-source-of-truth en constants + tokens)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,36 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### Refactor: single-source-of-truth en constantes legales y tokens · 2026-05-19
+Reemplazado el patrón `SMMLV_2026 / UVT_2026 / TASA_USURA_Q2_2026` (que
+requería cambiar imports y UI cada año/trimestre) por tablas históricas
+indexadas por período + selectores dinámicos:
+- `LEGAL_POR_ANIO[anio]`         → smmlv, auxilio, uvt, vigencia, fuentes.
+- `USURA_POR_PERIODO['anio-Qn']` → tasa, desde/hasta, fuente.
+- `legalVigente(fecha?)` y `tasaUsuraVigente(fecha?)` → selectores.
+- Exports estables sin sufijo: `SMMLV`, `UVT`, `AUXILIO_TRANSPORTE`,
+  `TASA_USURA`, `VIGENCIA`, `ANIO_VIGENTE`, `PERIODO_USURA`.
+
+Para actualizar al 2027 ahora basta con agregar UNA entrada al objeto
+`LEGAL_POR_ANIO`. Toda la app (UI, cálculos, tests) se actualiza solo.
+
+Cambios colaterales:
+- UI dinámica en `config/view.js`, `calculadoras/view.js`,
+  `compromisos/view.js` (hint de usura) — sin valores hardcoded.
+- Tests `state.test.js`, `calculadoras.test.js` migrados a constantes
+  resilient (3× SMMLV en vez de $4M literal, etc).
+- Aliases deprecated `SMMLV_2026 / UVT_2026 / TASA_USURA_Q2_2026` se
+  mantienen como aliases del valor vigente para compat.
+- Tokens CSS: agregados `--fk-amber`, `--fk-amber-bg`, `--fk-text-on-bold`.
+  Eliminados 8 colores hardcodeados (#fff×4, #0f1117×1, #f59e0b×3) de
+  `components.css` y `layout.css`.
+- Centralizado `APP_NAME` y `APP_VERSION` en `constants.js`.
+- SW v15→v16. 702/702 unit + 32/32 E2E verdes.
+- Archivos: `modules/core/constants.js` (reescrito), `modules/core/state.js`,
+  `modules/dominio/{calculadoras,config,compromisos}/{logic,view}.js`,
+  `styles/{tokens,components,layout}.css`,
+  `tests/unit/{state,calculadoras}.test.js`, `service-worker.js`.
 
 ### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
 Hallazgo importante: los valores en `constants.js` estaban desactualizados

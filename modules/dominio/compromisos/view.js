@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
-import { FRECUENCIAS } from '../../core/constants.js';
+import { FRECUENCIAS, tasaUsuraVigente } from '../../core/constants.js';
 import {
   compromisosActivos,
   calcularCompromisoMensual,
@@ -183,7 +183,7 @@ export function renderFormCompromiso() {
                  min="0" max="200" step="0.01" placeholder="Ej. 26.5"
                  aria-describedby="comp-tasa-hint" autocomplete="off" />
           <p id="comp-tasa-hint" class="form-hint">
-            Tasa efectiva anual. La usura vigente es ~28.17% EA (SFC, Q2 2026).
+            Tasa efectiva anual. La usura vigente es ~${(tasaUsuraVigente().tasa * 100).toFixed(2)}% EA (SFC, ${tasaUsuraVigente().periodo}).
           </p>
         </div>
       </div>

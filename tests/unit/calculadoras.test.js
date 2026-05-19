@@ -11,10 +11,9 @@ import {
   validarCampos,
 } from '../../modules/dominio/calculadoras/logic.js';
 
-// Constantes del proyecto (para tests de prima).
-// Sincronizadas con modules/core/constants.js — actualizar ambos a la vez.
-const SMMLV_2026 = 1_750_905;
-const AUXILIO_2026 = 249_095;
+// Constantes legales vigentes (importadas desde el single source of truth).
+// Si cambian los valores oficiales solo se toca `modules/core/constants.js`.
+import { SMMLV, AUXILIO_TRANSPORTE, TASA_USURA } from '../../modules/core/constants.js';
 
 // ── calcularCDT() ─────────────────────────────────────────────────
 
@@ -181,18 +180,18 @@ describe('calcularRegla72()', () => {
 
 describe('calcularPrima()', () => {
   it('prima completa (180 días) con salario mínimo incluye auxilio', () => {
-    const r = calcularPrima(SMMLV_2026, 180);
+    const r = calcularPrima(SMMLV, 180);
     expect(r.incluyeAuxilio).toBe(true);
-    expect(r.auxilioAplicado).toBe(AUXILIO_2026);
+    expect(r.auxilioAplicado).toBe(AUXILIO_TRANSPORTE);
     // (SMMLV + AUXILIO) * 180 / 360 = base/2
-    const esperado = Math.round((SMMLV_2026 + AUXILIO_2026) * 180 / 360);
+    const esperado = Math.round((SMMLV + AUXILIO_TRANSPORTE) * 180 / 360);
     expect(r.prima).toBe(esperado);
   });
 
   it('salario > 2 SMMLV no incluye auxilio de transporte', () => {
-    // Con SMMLV 2026 = $1.750.905, el umbral 2×SMMLV = $3.501.810.
-    // Usamos $4M para quedar holgadamente por encima.
-    const salarioAlto = 4_000_000;
+    // Resilient a cambios del SMMLV: usamos 3× SMMLV vigente para quedar
+    // holgadamente por encima del umbral.
+    const salarioAlto = 3 * SMMLV;
     const r = calcularPrima(salarioAlto, 180);
     expect(r.incluyeAuxilio).toBe(false);
     expect(r.auxilioAplicado).toBe(0);
@@ -217,12 +216,12 @@ describe('calcularPrima()', () => {
   });
 
   it('salario exactamente en 2 SMMLV incluye auxilio', () => {
-    const r = calcularPrima(2 * SMMLV_2026, 180);
+    const r = calcularPrima(2 * SMMLV, 180);
     expect(r.incluyeAuxilio).toBe(true);
   });
 
   it('salario justo encima de 2 SMMLV no incluye auxilio', () => {
-    const r = calcularPrima(2 * SMMLV_2026 + 1, 180);
+    const r = calcularPrima(2 * SMMLV + 1, 180);
     expect(r.incluyeAuxilio).toBe(false);
   });
 });
@@ -283,7 +282,7 @@ describe('calcularPILA()', () => {
   it('IBC = max(ingreso × 40 %, 1 SMMLV)', () => {
     // Ingreso bajo → IBC se ancla en 1 SMMLV
     const r1 = calcularPILA(1_000_000);
-    expect(r1.ibc).toBe(SMMLV_2026);
+    expect(r1.ibc).toBe(SMMLV);
 
     // Ingreso alto → IBC = 40 % del ingreso
     const r2 = calcularPILA(10_000_000);
@@ -372,9 +371,10 @@ describe('clasificarTasaCredito()', () => {
     expect(clasificarTasaCredito(-0.01, USURA)).toBe('razonable');
   });
 
-  it('usa TASA_USURA_Q2_2026 por defecto si no se pasa', () => {
-    // No usura param → debe clasificar contra 0.2817 (Q2 2026)
-    expect(clasificarTasaCredito(0.50)).toBe('usura');
-    expect(clasificarTasaCredito(0.10)).toBe('razonable');
+  it('usa TASA_USURA vigente por defecto si no se pasa el parámetro', () => {
+    // No usura param → debe clasificar contra la usura vigente actual.
+    // Resilient a cambios trimestrales: comparamos contra la constante importada.
+    expect(clasificarTasaCredito(TASA_USURA + 0.01)).toBe('usura');
+    expect(clasificarTasaCredito(TASA_USURA * 0.30)).toBe('razonable');
   });
 });

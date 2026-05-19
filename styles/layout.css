@@ -99,7 +99,7 @@
 .nav-item__badge {
   font-size: var(--fk-text-xs);
   background: var(--fk-danger);
-  color: #fff;
+  color: var(--fk-text-on-bold);
   border-radius: var(--fk-radius-full);
   padding: 1px 6px;
   font-weight: var(--fk-font-bold);

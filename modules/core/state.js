@@ -8,7 +8,7 @@
  * - Schema versión: 1 (definida en _version). Migraciones en storage.js.
  */
 
-import { SMMLV_2026 } from './constants.js';
+import { SMMLV } from './constants.js';
 
 /**
  * @typedef {Object} Cuenta
@@ -133,7 +133,7 @@ export function createInitialState() {
     /** Perfil del usuario. */
     perfil: {
       nombre: '',
-      smmlv: SMMLV_2026,
+      smmlv: SMMLV,
     },
 
     /** Configuración del usuario (notificaciones, preferencias futuras). */

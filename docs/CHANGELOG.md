@@ -7,6 +7,113 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Refactor: single-source-of-truth en constantes legales y tokens · 2026-05-19
+
+Refactor arquitectural para eliminar la necesidad de tocar múltiples archivos
+cuando cambian valores oficiales. Antes (patrón antiguo): cambiar el SMMLV
+requería actualizar imports, UI strings, tests, docstrings — 6 archivos.
+Ahora: una sola entrada en una tabla.
+
+**Nueva estructura en `modules/core/constants.js`:**
+
+```js
+// Tabla histórica indexada por año
+const LEGAL_POR_ANIO = {
+  2025: { smmlv, auxilioTransporte, uvt, vigenciaDesde, fuentes },
+  2026: { ... valores 2026 ... },
+  2027: null,  // agregar acá cuando se publique
+};
+
+// Tabla histórica indexada por trimestre (para tasa de usura)
+const USURA_POR_PERIODO = {
+  '2026-Q1': { tasa: 0.2677, desde, hasta, fuente },
+  '2026-Q2': { tasa: 0.2817, desde, hasta, fuente },
+};
+
+// Selectores dinámicos
+export function legalVigente(fecha = new Date())   { ... }
+export function tasaUsuraVigente(fecha = new Date()){ ... }
+export function legalDelAnio(anio)                 { ... }  // lectura histórica
+export function aniosPublicados()                  { ... }
+
+// Exports estables — lo que importa el resto del proyecto
+export const SMMLV               = ...;  // vigente
+export const AUXILIO_TRANSPORTE  = ...;
+export const UVT                 = ...;
+export const TASA_USURA          = ...;
+export const VIGENCIA            = ...;
+export const ANIO_VIGENTE        = ...;
+export const PERIODO_USURA       = ...;
+```
+
+**Cómo actualizar al año 2027:**
+
+```js
+const LEGAL_POR_ANIO = {
+  ...,
+  2027: {
+    smmlv: <valor>, auxilioTransporte: <valor>, uvt: <valor>,
+    vigenciaDesde: '2027-01-01',
+    fuentes: { smmlv: '...', auxilio: '...', uvt: '...' },
+  },
+};
+```
+
+Eso es todo. Toda la app usa los nuevos valores automáticamente cuando
+la fecha del sistema entra en 2027:
+- `S.perfil.smmlv` se inicializa al SMMLV 2027 para usuarios nuevos.
+- Calculadora de PILA usa el nuevo SMMLV como piso del IBC.
+- Calculadora de Prima usa el nuevo SMMLV para el umbral de auxilio.
+- "Acerca de Finko" muestra el SMMLV y fuentes nuevas dinámicamente.
+- Form de compromisos muestra el hint con la usura vigente del trimestre.
+- Tests siguen pasando (usan las constantes importadas, no literales).
+
+**Migración de consumidores:**
+
+| Antes | Ahora |
+|---|---|
+| `import { SMMLV_2026 }` | `import { SMMLV }` |
+| `import { UVT_2026 }` | `import { UVT }` |
+| `import { AUXILIO_TRANSPORTE_2026 }` | `import { AUXILIO_TRANSPORTE }` |
+| `import { TASA_USURA_Q2_2026 }` | `import { TASA_USURA }` |
+
+Los aliases viejos (`SMMLV_2026`, etc.) se mantienen como `@deprecated`
+apuntando al valor vigente, para no romper código externo si lo hubiera.
+
+**Tokens CSS (`styles/tokens.css`):**
+
+Agregados para eliminar hex codes duplicados en componentes:
+- `--fk-amber: #f59e0b` (warning más cálido — duplicados en import).
+- `--fk-amber-bg: rgba(245, 158, 11, 0.08)`.
+- `--fk-text-on-bold: #fff` (texto sobre fondos saturados accent/danger).
+
+Eliminados 8 colores hardcodeados:
+- `color: #fff` (×4) en `.btn-danger:hover`, `.badge` base, `.nav-item__badge`.
+- `color: #0f1117` (×1) en `.badge-warning` → reemplazado por `var(--fk-text-on-accent)`.
+- `#f59e0b` (×3) en `.import-warn`, `.import-stat--dup` → `var(--fk-amber)`.
+
+**Metadatos de la app:**
+
+Centralizados `APP_NAME` y `APP_VERSION` en `constants.js`. `config/view.js`
+ahora lee `APP_VERSION` en vez de tener `0.1.0` hardcoded. Versión sigue
+sincronizada manualmente con `package.json` (documentado en docstring).
+
+**Otros:**
+
+- `modules/dominio/calculadoras/logic.js`: docstring genérica (sin valores
+  específicos de año).
+- `modules/dominio/calculadoras/view.js`: `min="${SMMLV}"` dinámico.
+- `modules/dominio/compromisos/view.js`: hint de tasa de usura dinámico
+  (`tasaUsuraVigente().tasa` + `.periodo`).
+- `tests/unit/calculadoras.test.js`: test "salario > 2×SMMLV" usa `3 * SMMLV`
+  (resilient a cambios futuros); test "usa TASA_USURA por defecto" usa
+  `TASA_USURA + 0.01` y `TASA_USURA * 0.30` en vez de literales 0.50/0.10.
+- `service-worker.js`: CACHE_NAME v15→v16.
+
+**Tests:** 702/702 unit + 32/32 E2E verdes.
+
+---
+
 ### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
 
 **Hallazgo:** los valores etiquetados como "2026" en `constants.js` correspondían
