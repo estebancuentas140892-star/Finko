@@ -116,11 +116,11 @@ _(no quedan tareas funcionales pendientes en D — todas las features de v1 + po
 
 **Completadas:**
 - ✅ F.3 — Score de Salud Financiera en dashboard: agregado cross-dominio con 4 factores ponderados (ahorro 40%, deuda 25%, liquidez 20%, control 15%), bandas visuales, sub-factor cards — 2026-05-18.
+- ✅ F.4 — Estrategias Avalancha/Bola de Nieve para pago de deudas: 3 funciones puras (filtrar, simular mes a mes, comparar), card en compromisos con input de extra mensual + toggle + tabla + ahorro vs alternativa; 17 tests nuevos — 2026-05-18.
 
-**Tareas candidatas (no urgentes):**
-- F.4 — Estrategias Avalancha/Bola de Nieve para pago de deudas (se monta sobre `compromisos/`).
+_(no quedan tareas pendientes en F — features portadas completas)_
 
-**Modelo sugerido:** Opus 4.7 — **Esfuerzo:** Medio (F.2) / Alto (F.3).
+**Modelo sugerido:** Opus 4.7 — **Esfuerzo:** Medio (F.2/F.4) / Alto (F.3).
 
 ---
 

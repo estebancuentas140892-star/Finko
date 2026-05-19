@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### F.4 — Estrategias Avalancha / Bola de Nieve · 2026-05-18
+3 funciones puras en `compromisos/logic.js`: `filtrarDeudasPagables`,
+`simularEstrategiaPago` (mes a mes con interés `(1+EA)^(1/12)-1`, cuotas
+liberadas que ruedan, tope MAX_MESES=600), `compararEstrategias`. Card
+en `compromisos/view.js` aparece solo con ≥ 2 deudas válidas (con 1 muestra
+hint). Input "extra mensual" + toggle Avalancha 🏔️/Bola de Nieve ⚪ + tabla
+con orden + ahorro vs alternativa (plural-aware: "1 mes" vs "N meses"). 17
+tests nuevos (702/702 verdes). SW v12→v13.
+- `modules/dominio/compromisos/{logic,view,index}.js`, `index.html`,
+  `styles/components.css`, `tests/unit/compromisos.test.js`, `service-worker.js`
+
 ### F.3 — Score de Salud Financiera con 4 factores ponderados · 2026-05-18
 Agregado cross-dominio en dashboard + panel `analisis/`. Score 0–100 con 4 factores
 ponderados: tasa de ahorro (40%), deuda-a-activos (25%), liquidez en meses (20%),
@@ -95,20 +106,6 @@ integrado como badge visual en la calculadora de Crédito existente. SW v9→v10
 - `modules/dominio/calculadoras/{logic,view,index}.js`
 - `tests/unit/calculadoras.test.js`, `service-worker.js`
 
-### H1–H3 — Hardening de seguridad · 2026-05-18
-**H1 — CSP:** `modules/infra/sw-register.js` extrae el registro SW del `<script>` inline.
-`vercel.json` + `netlify.toml`: CSP `default-src 'self'` sin `unsafe-inline` — XSS hardening completo.
-**H2 — happy-dom:** bumped 14.12.3 → 15.11.7 (CVE parcheado, solo dev); fix de spy en storage.test.js.
-**H3 — Permissions-Policy:** camera/microphone/geolocation/payment/usb/serial bloqueados.
-HSTS explícito agregado (`max-age=63072000; includeSubDomains; preload`). 596/596 verdes.
-- `modules/infra/sw-register.js` (nuevo), `index.html`, `vercel.json`, `netlify.toml`, `package.json`, `tests/unit/storage.test.js`
-
-### Migración npm → pnpm · 2026-05-18
-Supply chain defense: `package-lock.json` reemplazado por `pnpm-lock.yaml` (pnpm v11.1.3).
-`.npmrc` con `minimum-release-age=7` (bloquea paquetes <7 días) y `frozen-lockfile=true`.
-`pnpm-workspace.yaml` con esbuild aprobado explícitamente (whitelist de scripts de install).
-Scripts sin cambios: `pnpm test`, `pnpm run lint`, etc. funcionan igual. 596/596 verdes.
-- `.npmrc` (nuevo), `pnpm-lock.yaml` (nuevo), `pnpm-workspace.yaml` (nuevo), `package-lock.json` (eliminado)
 
 ### B.4 — Splash screens iOS · 2026-05-18
 5 PNGs para `apple-touch-startup-image` (iPhone SE/8, 12/13/14, 14 Pro/15,

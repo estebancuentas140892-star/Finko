@@ -7,6 +7,72 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### F.4 — Estrategias Avalancha / Bola de Nieve para pago de deudas · 2026-05-18
+
+Nueva sección en `compromisos/` que aparece automáticamente cuando el usuario
+tiene ≥ 2 deudas activas con `saldoPendiente`, `tasaEA` y `monto` válidos.
+Permite simular y comparar dos estrategias clásicas de amortización:
+
+- **Avalancha:** prioriza la deuda de **mayor tasa EA** → matemáticamente
+  óptima, minimiza intereses pagados.
+- **Bola de Nieve:** prioriza la deuda de **menor saldo** → motivacional,
+  victorias rápidas (estilo Dave Ramsey).
+
+**Algoritmo de simulación (`simularEstrategiaPago`):**
+
+1. Ordenar deudas según la estrategia elegida.
+2. Cada mes:
+   - Aplicar interés mensual: `saldo × ((1 + tasaEA)^(1/12) - 1)`.
+   - Pagar cuota mínima en todas las deudas no prioritarias.
+   - Volcar el "presupuesto restante" (cuota mínima + extra mensual + cuotas
+     liberadas de deudas ya saldadas) en la deuda prioritaria.
+3. Cuando una deuda llega a 0, su cuota se libera y "rueda" a la siguiente.
+4. Tope MAX_MESES = 600 (50 años) como safety contra loops cuando el aporte
+   no alcanza ni para cubrir el interés mensual.
+
+**3 funciones puras nuevas en `compromisos/logic.js`:**
+- `filtrarDeudasPagables(compromisos)` — filtra y normaliza shape.
+- `simularEstrategiaPago(deudas, extraMensual, estrategia)` — simulación mes a mes.
+- `compararEstrategias(deudas, extraMensual)` — corre ambas + delta de ahorro.
+
+**UI (`compromisos/view.js`):**
+- Card que aparece SOLO con ≥ 2 deudas válidas (no estorba a usuarios sin
+  deudas múltiples). Con 1 deuda muestra hint educativo.
+- Input "extra mensual" (COP) con persistencia local en la pestaña.
+- Toggle Avalancha 🏔️ / Bola de Nieve ⚪ con hint contextual.
+- Tabla ordenada con mes-pagado por deuda.
+- Comparación: "💰 Con [estrategia] ahorrás $X y N mes/meses respecto a [otra]"
+  con plural correcto (1 mes vs N meses).
+- Si ambas estrategias dan idéntico resultado (caso típico: tasa más alta
+  coincide con saldo más bajo), muestra mensaje neutral.
+
+**17 tests nuevos en `compromisos.test.js`** (702/702 verdes), cubriendo:
+- `filtrarDeudasPagables`: rechazo de no-deudas, saldos/tasas/montos inválidos.
+- `simularEstrategiaPago`: 0/1/N deudas, extra=0 vs extra>0, orden por tasa
+  vs saldo, tope MAX_MESES, redondeo de centavos al pagar.
+- `compararEstrategias`: empate, Avalancha gana (caso normal), datos vacíos.
+
+**Verificado manualmente en preview** con 3 sets:
+- 3 deudas (Visa 32% $2.5M, Banco 24% $8.5M, Hipo 12% $80M) → empate orgánico
+  porque Visa es la de mayor tasa Y menor saldo.
+- 2 deudas divergentes (Crédito caro 30% $15M, Préstamo barato 12% $1.5M):
+  Avalancha ahorra $27.895 sin extra; con $500K extra ahorra $282.575 y 1 mes.
+- 1 deuda: aparece hint educativo en lugar de la card principal.
+
+**Archivos:**
+- `modules/dominio/compromisos/logic.js` — 3 funciones nuevas (+182 LOC).
+- `modules/dominio/compromisos/view.js` — `renderEstrategiaPago` + 2 helpers
+  + estado UI local (+150 LOC).
+- `modules/dominio/compromisos/index.js` — 2 nuevos handlers
+  (`elegir-estrategia`, `cambiar-extra-estrategia` con event delegation),
+  `_renderTodo()` que re-renderiza ambas vistas tras cambios.
+- `index.html` — contenedor `#estrategia-pago` en sección compromisos.
+- `styles/components.css` — estilos `.estrategia-card` (+118 LOC).
+- `tests/unit/compromisos.test.js` — 17 tests nuevos.
+- `service-worker.js` — bump `finko-v12` → `finko-v13`.
+
+---
+
 ### Política de seguridad + guía pnpm · 2026-05-18
 
 Nuevo documento de política de seguridad para el proyecto. Motivado por las oleadas
