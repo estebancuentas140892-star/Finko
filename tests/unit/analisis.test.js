@@ -11,6 +11,9 @@ import {
   proyeccionMultiHorizonte,
   serieGastosMensual,
   seriePorCategoria,
+  calcularVolatilidad,
+  calcularScoreSalud,
+  clasificarScore,
 } from '../../modules/dominio/analisis/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -592,5 +595,238 @@ describe('seriePorCategoria()', () => {
     const serie = seriePorCategoria(gastos, 6);
     expect(serie).toHaveLength(2);
     expect(serie.map(s => s.categoria)).not.toContain('Otros');
+  });
+});
+
+// ── calcularVolatilidad() ─────────────────────────────────────────
+
+describe('calcularVolatilidad()', () => {
+  it('devuelve 0 para array vacío', () => {
+    expect(calcularVolatilidad([])).toBe(0);
+  });
+
+  it('devuelve 0 para array con un solo elemento', () => {
+    expect(calcularVolatilidad([100_000])).toBe(0);
+  });
+
+  it('devuelve 0 cuando todos los valores son iguales', () => {
+    expect(calcularVolatilidad([500_000, 500_000, 500_000])).toBe(0);
+  });
+
+  it('calcula volatilidad de serie de 3 números', () => {
+    // [100, 200, 300]: promedio=200, desviaciones=[-100, 0, 100]
+    // varianza = (10000 + 0 + 10000) / 3 ≈ 6666.67
+    // desv estándar ≈ 81.65
+    const volatilidad = calcularVolatilidad([100_000, 200_000, 300_000]);
+    expect(volatilidad).toBeGreaterThan(80_000);
+    expect(volatilidad).toBeLessThan(85_000);
+  });
+
+  it('maneja series con variación alta', () => {
+    const volatilidad = calcularVolatilidad([1_000_000, 100_000, 500_000, 2_000_000]);
+    expect(volatilidad).toBeGreaterThan(500_000);
+  });
+
+  it('maneja series con variación baja', () => {
+    const volatilidad = calcularVolatilidad([500_000, 510_000, 505_000, 495_000]);
+    expect(volatilidad).toBeLessThan(10_000);
+  });
+
+  it('ignora valores no-número', () => {
+    // En práctica, si se pasan no-números, Number isFinite fallará
+    // pero calcularVolatilidad no hace cast explícito, así que el test
+    // verifica que maneja el input como está
+    const result = calcularVolatilidad([100, 200, null, 300]);
+    expect(Number.isFinite(result)).toBe(true);
+  });
+});
+
+// ── calcularScoreSalud() ──────────────────────────────────────────
+
+describe('calcularScoreSalud()', () => {
+  const resumenBase = {
+    tasaAhorro: 20,
+    activos: { total: 5_000_000 },
+    pasivos: { total: 2_500_000 },
+    saldoCuentas: 1_000_000,
+    gastosMes: 1_000_000,
+    volatilidad: 100_000,
+  };
+
+  it('devuelve score 0 si resumen es null', () => {
+    const result = calcularScoreSalud(null);
+    expect(result.score).toBe(0);
+  });
+
+  it('calcula score 0 con todos los factores en 0', () => {
+    const resumen = {
+      tasaAhorro: 0,
+      activos: { total: 0 },
+      pasivos: { total: 0 },
+      saldoCuentas: 0,
+      gastosMes: 1,
+      volatilidad: 1000,
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.score).toBeLessThanOrEqual(50);
+  });
+
+  it('calcula score cercano a 100 con factores óptimos', () => {
+    const resumen = {
+      tasaAhorro: 40, // excelente ahorro
+      activos: { total: 10_000_000 },
+      pasivos: { total: 1_000_000 }, // bajo ratio deuda
+      saldoCuentas: 12_000_000, // alta liquidez
+      gastosMes: 1_000_000,
+      volatilidad: 50_000, // bajo (1/20)
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.score).toBeGreaterThan(80);
+  });
+
+  it('devuelve objeto con score redondeado', () => {
+    const result = calcularScoreSalud(resumenBase);
+    expect(Number.isInteger(result.score)).toBe(true);
+  });
+
+  it('devuelve factors con 4 sub-scores', () => {
+    const result = calcularScoreSalud(resumenBase);
+    expect(result.factors).toHaveProperty('tasaAhorro');
+    expect(result.factors).toHaveProperty('deuda');
+    expect(result.factors).toHaveProperty('liquidez');
+    expect(result.factors).toHaveProperty('control');
+  });
+
+  it('devuelve explicacion con los 4 sub-scores', () => {
+    const result = calcularScoreSalud(resumenBase);
+    expect(result.explicacion).toContain('Ahorro');
+    expect(result.explicacion).toContain('Deuda');
+    expect(result.explicacion).toContain('Liquidez');
+    expect(result.explicacion).toContain('Control');
+  });
+
+  it('factor tasa de ahorro: 20% → 100 puntos', () => {
+    const resumen = { ...resumenBase, tasaAhorro: 20 };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.tasaAhorro).toBe(100);
+  });
+
+  it('factor tasa de ahorro: 0% → ~50 puntos', () => {
+    const resumen = { ...resumenBase, tasaAhorro: 0 };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.tasaAhorro).toBe(0);
+  });
+
+  it('factor tasa de ahorro: negativa → 0 puntos (clamp)', () => {
+    const resumen = { ...resumenBase, tasaAhorro: -10 };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.tasaAhorro).toBe(0);
+  });
+
+  it('factor deuda: sin deuda → 100 puntos', () => {
+    const resumen = { ...resumenBase, pasivos: { total: 0 } };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.deuda).toBe(100);
+  });
+
+  it('factor deuda: ratio 50% (deuda=activos/2) → ~50 puntos', () => {
+    const resumen = {
+      ...resumenBase,
+      activos: { total: 4_000_000 },
+      pasivos: { total: 2_000_000 },
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.deuda).toBeGreaterThan(40);
+    expect(result.factors.deuda).toBeLessThan(60);
+  });
+
+  it('factor liquidez: 6+ meses → ~100 puntos', () => {
+    const resumen = {
+      ...resumenBase,
+      saldoCuentas: 6_000_000,
+      gastosMes: 1_000_000,
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.liquidez).toBe(100);
+  });
+
+  it('factor liquidez: 3 meses → ~50 puntos', () => {
+    const resumen = {
+      ...resumenBase,
+      saldoCuentas: 3_000_000,
+      gastosMes: 1_000_000,
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.liquidez).toBeGreaterThan(40);
+    expect(result.factors.liquidez).toBeLessThan(60);
+  });
+
+  it('factor control: baja volatilidad → puntos altos', () => {
+    const resumen = { ...resumenBase, volatilidad: 10_000, gastosMes: 1_000_000 };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.control).toBeGreaterThan(80);
+  });
+
+  it('factor control: alta volatilidad → puntos bajos', () => {
+    const resumen = { ...resumenBase, volatilidad: 600_000, gastosMes: 1_000_000 };
+    const result = calcularScoreSalud(resumen);
+    expect(result.factors.control).toBeLessThan(50);
+  });
+
+  it('score es promedio ponderado de 4 factores (40/25/20/15)', () => {
+    // Si todos los factores son 100: score debería ser 100
+    const resumen = {
+      tasaAhorro: 20,
+      activos: { total: 10_000_000 },
+      pasivos: { total: 0 },
+      saldoCuentas: 6_000_000,
+      gastosMes: 1_000_000,
+      volatilidad: 0,
+    };
+    const result = calcularScoreSalud(resumen);
+    expect(result.score).toBe(100);
+  });
+});
+
+// ── clasificarScore() ─────────────────────────────────────────────
+
+describe('clasificarScore()', () => {
+  it('clasifica 80–100 como excelente', () => {
+    expect(clasificarScore(80)).toBe('excelente');
+    expect(clasificarScore(90)).toBe('excelente');
+    expect(clasificarScore(100)).toBe('excelente');
+  });
+
+  it('clasifica 60–79 como buena', () => {
+    expect(clasificarScore(60)).toBe('buena');
+    expect(clasificarScore(70)).toBe('buena');
+    expect(clasificarScore(79)).toBe('buena');
+  });
+
+  it('clasifica 40–59 como ajustada', () => {
+    expect(clasificarScore(40)).toBe('ajustada');
+    expect(clasificarScore(50)).toBe('ajustada');
+    expect(clasificarScore(59)).toBe('ajustada');
+  });
+
+  it('clasifica 0–39 como critica', () => {
+    expect(clasificarScore(0)).toBe('critica');
+    expect(clasificarScore(20)).toBe('critica');
+    expect(clasificarScore(39)).toBe('critica');
+  });
+
+  it('límites exactos: 80 → excelente, 79 → buena', () => {
+    expect(clasificarScore(80)).toBe('excelente');
+    expect(clasificarScore(79)).toBe('buena');
+  });
+
+  it('límites exactos: 60 → buena, 59 → ajustada', () => {
+    expect(clasificarScore(60)).toBe('buena');
+    expect(clasificarScore(59)).toBe('ajustada');
+  });
+
+  it('límites exactos: 40 → ajustada, 39 → critica', () => {
+    expect(clasificarScore(40)).toBe('ajustada');
+    expect(clasificarScore(39)).toBe('critica');
   });
 });

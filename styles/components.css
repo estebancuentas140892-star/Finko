@@ -669,6 +669,100 @@ textarea.input {
 .progress-bar--warn            { background: var(--fk-warning); }
 .progress-bar--danger          { background: var(--fk-danger); }
 
+/* ── F.3: Score de Salud Financiera ────────────────────── */
+.score-card {
+  background: var(--fk-bg-surface);
+  border: 2px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+.score-card--excelente { border-color: var(--fk-accent-border); }
+.score-card--buena     { border-color: var(--fk-success); }
+.score-card--ajustada  { border-color: var(--fk-warning); }
+.score-card--critica   { border-color: var(--fk-danger); }
+
+.score-card__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+.score-card__numero {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: var(--fk-font-bold);
+  line-height: 1;
+  color: var(--fk-text-primary);
+}
+.score-card__sobre {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.score-card__label {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.score-card__bar {
+  height: 12px;
+  border-radius: var(--fk-radius-full);
+}
+.progress-bar--score-excelente { background: var(--fk-accent); }
+.progress-bar--score-buena     { background: var(--fk-success); }
+.progress-bar--score-ajustada  { background: var(--fk-warning); }
+.progress-bar--score-critica   { background: var(--fk-danger); }
+
+.score-card__factors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--fk-space-3);
+}
+@media (max-width: 640px) {
+  .score-card__factors {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.score-factor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+.score-factor__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.score-factor__valor {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+}
+.score-factor__bar {
+  height: 6px;
+}
+
+.score-card__explicacion {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  text-align: center;
+  padding: var(--fk-space-2);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+
 /* ── D.5: Envelope budgeting (presupuesto por categoría) ── */
 .presupuesto-hero {
   background: var(--fk-bg-elevated);

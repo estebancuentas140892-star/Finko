@@ -7,7 +7,7 @@ import { S } from '../../core/state.js';
 import { f, hoy } from '../../infra/utils.js';
 import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
 import { gastosMes } from '../gastos/logic.js';
-import { generarResumen, serieGastosMensual, seriePorCategoria } from './logic.js';
+import { generarResumen, serieGastosMensual, seriePorCategoria, calcularScoreSalud, clasificarScore } from './logic.js';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
 
@@ -35,6 +35,7 @@ export function renderAnalisis() {
   el.innerHTML = `
     ${_renderMetricas(resumen)}
     ${_renderSalud(resumen.tasaAhorro, resumen.salud)}
+    ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen)}
     ${_renderTendencia(serieGastos)}
     ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
@@ -95,6 +96,70 @@ function _renderSalud(tasaAhorro, salud) {
                style="width:${porcentajeDisplay}%"></div>
         </div>
         <p class="salud-card__tasa">Tasa de ahorro: <strong>${tasaAhorro}%</strong></p>
+      </div>
+    </section>`;
+}
+
+function _renderScoreSalud(resumen) {
+  const score = calcularScoreSalud(resumen);
+  const banda = clasificarScore(score.score);
+  const ETIQUETAS = {
+    excelente: { emoji: '🌟', label: 'Excelente' },
+    buena:     { emoji: '👍', label: 'Buena' },
+    ajustada:  { emoji: '⚠️', label: 'Ajustada' },
+    critica:   { emoji: '🔴', label: 'Crítica' },
+  };
+  const { emoji, label } = ETIQUETAS[banda];
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-score-title">
+      <h2 class="analisis__section-title" id="analisis-score-title">📊 Score de salud</h2>
+      <div class="score-card score-card--${banda}">
+        <div class="score-card__hero">
+          <p class="score-card__numero">${score.score}</p>
+          <p class="score-card__sobre">/ 100</p>
+          <p class="score-card__label">${emoji} ${label}</p>
+        </div>
+
+        <div class="progress score-card__bar" role="progressbar"
+             aria-valuenow="${score.score}" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Score de salud: ${score.score} de 100">
+          <div class="progress-bar progress-bar--score-${banda}"
+               style="width:${score.score}%"></div>
+        </div>
+
+        <div class="score-card__factors">
+          <div class="score-factor">
+            <p class="score-factor__label">📈 Ahorro</p>
+            <p class="score-factor__valor">${score.factors.tasaAhorro}</p>
+            <div class="progress score-factor__bar">
+              <div class="progress-bar" style="width:${score.factors.tasaAhorro}%"></div>
+            </div>
+          </div>
+          <div class="score-factor">
+            <p class="score-factor__label">💳 Deuda</p>
+            <p class="score-factor__valor">${score.factors.deuda}</p>
+            <div class="progress score-factor__bar">
+              <div class="progress-bar" style="width:${score.factors.deuda}%"></div>
+            </div>
+          </div>
+          <div class="score-factor">
+            <p class="score-factor__label">💰 Liquidez</p>
+            <p class="score-factor__valor">${score.factors.liquidez}</p>
+            <div class="progress score-factor__bar">
+              <div class="progress-bar" style="width:${score.factors.liquidez}%"></div>
+            </div>
+          </div>
+          <div class="score-factor">
+            <p class="score-factor__label">📊 Control</p>
+            <p class="score-factor__valor">${score.factors.control}</p>
+            <div class="progress score-factor__bar">
+              <div class="progress-bar" style="width:${score.factors.control}%"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="score-card__explicacion">${_esc(score.explicacion)}</p>
       </div>
     </section>`;
 }

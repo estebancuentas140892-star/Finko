@@ -200,6 +200,7 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   pasivos: { total: number, cantidadDeudas: number, deudasSinSaldo: number },
  *   patrimonioNeto: number,
  *   proyeccion: { seisMeses: number, doceMeses: number, veinticuatroMeses: number },
+ *   volatilidad: number,
  * }}
  */
 export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes, metas = []) {
@@ -220,6 +221,11 @@ export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes
   const patrimonioNeto = calcularPatrimonioNeto(activos.total, pasivos.total);
   const proyeccion     = proyeccionMultiHorizonte(patrimonioNeto, balance);
 
+  // Volatilidad: std dev de gastos últimos 12 meses (para score de salud)
+  const serieMeses = serieGastosMensual(gastos, anio, mes, 12);
+  const gastosMontos = serieMeses.map(s => s.total);
+  const volatilidad = calcularVolatilidad(gastosMontos);
+
   return {
     ingresoMensual,
     gastoMes,
@@ -235,7 +241,113 @@ export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes
     pasivos,
     patrimonioNeto,
     proyeccion,
+    volatilidad,
   };
+}
+
+// ── SCORE DE SALUD FINANCIERA (F.3) ──────────────────────────────
+
+/**
+ * Calcula la desviación estándar (volatilidad) de una serie de números.
+ * Devuelve 0 si hay 0 o 1 elementos.
+ *
+ * @param {number[]} valores
+ * @returns {number}
+ */
+export function calcularVolatilidad(valores) {
+  if (!Array.isArray(valores) || valores.length < 2) return 0;
+  const n = valores.length;
+  const promedio = valores.reduce((acc, v) => acc + v, 0) / n;
+  const sumSquares = valores.reduce((acc, v) => acc + Math.pow(v - promedio, 2), 0);
+  return Math.sqrt(sumSquares / n);
+}
+
+/**
+ * Calcula el score de salud financiera (0–100) como promedio ponderado de 4 factores:
+ *   - Tasa de ahorro (40 %): ≥ 20 % → 100, 0 % → 50, < 0 % → 0
+ *   - Ratio deuda-activos (25 %): 0 → 100, 1 → 50, 2+ → 0
+ *   - Ratio de liquidez (20 %): 6+ meses → 100, 3 meses → 50, < 1 mes → 0
+ *   - Control de gastos (15 %): Volatilidad baja → 100, alta → 0
+ *
+ * Devuelve un objeto con el score total (redondeado) y los sub-scores por factor.
+ *
+ * @param {{
+ *   tasaAhorro: number,
+ *   activos: {total: number},
+ *   pasivos: {total: number},
+ *   saldoCuentas: number,
+ *   gastosMes: number,
+ *   volatilidad: number,
+ * }} resumen — Objeto generado por generarResumen().
+ * @returns {{
+ *   score: number,
+ *   factors: {tasaAhorro: number, deuda: number, liquidez: number, control: number},
+ *   explicacion: string,
+ * }}
+ */
+export function calcularScoreSalud(resumen) {
+  if (!resumen) {
+    return {
+      score: 0,
+      factors: { tasaAhorro: 0, deuda: 0, liquidez: 0, control: 0 },
+      explicacion: 'Sin datos para calcular.',
+    };
+  }
+
+  const tasaAhorro = resumen.tasaAhorro ?? 0;
+  const activos = resumen.activos?.total ?? 0;
+  const pasivos = resumen.pasivos?.total ?? 0;
+  const saldoCuentas = resumen.saldoCuentas ?? 0;
+  const gasteMes = resumen.gastosMes ?? 1;
+  const volatilidad = resumen.volatilidad ?? 0;
+
+  // Factor 1: Tasa de ahorro (40 %)
+  const scoreTasa = Math.min(100, Math.max(0, (tasaAhorro / 20) * 100));
+
+  // Factor 2: Ratio deuda-activos (25 %)
+  const ratioDeuda = activos > 0 ? pasivos / activos : 1;
+  const scoreDeuda = Math.max(0, 100 - ratioDeuda * 100);
+
+  // Factor 3: Ratio liquidez (20 %)
+  const mesesRunway = gasteMes > 0 ? saldoCuentas / gasteMes : 0;
+  const scoreLiquidez = Math.min(100, Math.max(0, (mesesRunway / 6) * 100));
+
+  // Factor 4: Control de gastos (15 %)
+  const coeficienteVariacion = gasteMes > 0 ? volatilidad / gasteMes : 0;
+  const scoreControl = Math.max(0, Math.min(100, 100 - coeficienteVariacion * 100));
+
+  // Promedio ponderado
+  const score =
+    scoreTasa * 0.4 +
+    scoreDeuda * 0.25 +
+    scoreLiquidez * 0.2 +
+    scoreControl * 0.15;
+
+  return {
+    score: Math.round(score),
+    factors: {
+      tasaAhorro: Math.round(scoreTasa),
+      deuda: Math.round(scoreDeuda),
+      liquidez: Math.round(scoreLiquidez),
+      control: Math.round(scoreControl),
+    },
+    explicacion:
+      `Ahorro ${Math.round(scoreTasa)}/100 • Deuda ${Math.round(scoreDeuda)}/100 • ` +
+      `Liquidez ${Math.round(scoreLiquidez)}/100 • Control ${Math.round(scoreControl)}/100`,
+  };
+}
+
+/**
+ * Clasifica un score (0–100) en una banda visual (excelente/buena/ajustada/crítica).
+ *
+ * @param {number} score
+ * @returns {string}
+ */
+export function clasificarScore(score) {
+  if (score >= 80) return 'excelente';
+  if (score >= 60) return 'buena';
+  if (score >= 40) return 'ajustada';
+  return 'critica';
 }
 
 // ── SERIES TEMPORALES (D.3 — gráficos) ───────────────────────────
