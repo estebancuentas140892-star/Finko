@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (Fix routing race condition en 5 dominios)
+> Última actualización: 2026-05-19 (E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,25 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
+Hallazgo importante: los valores en `constants.js` estaban desactualizados
+(eran los de 2025 etiquetados como 2026). Actualizados a los valores
+oficiales 2026:
+- **SMMLV 2026:** $1.423.500 → **$1.750.905** (Decreto 1469 del 29-12-2025,
+  ratificado por Decreto 0159 del 19-02-2026 tras suspensión provisional).
+- **Auxilio transporte 2026:** $200.000 → **$249.095** (Decreto 1470/2025).
+- **UVT 2026:** $49.799 → **$52.374** (Resolución DIAN 000238 del 15-12-2025).
+- Añadido `VIGENCIA_2026 = '2026-01-01'`.
+- Placeholders `SMMLV_2027/UVT_2027/AUXILIO_TRANSPORTE_2027/VIGENCIA_2027 = null`
+  (publicación esperada: diciembre 2026).
+
+Actualizadas también las UI strings (config "Acerca de", form de prima)
+y test de prima (umbral 2×SMMLV cambió de $2.847.000 a $3.501.810).
+702/702 unit + 32/32 E2E verdes. SW v14→v15.
+- `modules/core/constants.js`, `modules/dominio/config/view.js`,
+  `modules/dominio/calculadoras/{view,logic}.js`,
+  `tests/unit/calculadoras.test.js`, `service-worker.js`
 
 ### Fix routing race condition en 5 dominios · 2026-05-18
 **Síntoma reportado por el usuario:** al navegar desde Dashboard hacia

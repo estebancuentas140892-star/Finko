@@ -97,9 +97,13 @@ _(no quedan tareas funcionales pendientes en D — todas las features de v1 + po
 
 **Completadas:**
 - ✅ E.1 — Actualizar tasa de usura: Q1 26.77% EA → Q2 28.17% EA (SFC 2026-05-18).
+- ✅ E.2 — SMMLV 2026 ($1.750.905, Decreto 1469/2025) y UVT 2026 ($52.374,
+  Resolución DIAN 000238/2025). Placeholders 2027 = null — publicación
+  esperada dic-2026 (2026-05-19).
 
 **Tareas candidatas:**
-- E.2 — Cada enero: actualizar SMMLV (Mintrabajo) y UVT (DIAN).
+- E.2-2027 — Diciembre 2026 / enero 2027: actualizar SMMLV y UVT a valores
+  2027 cuando se publiquen oficialmente.
 - E.3 — Verificar GMF y otras tasas si hay reforma tributaria.
 
 **Modelo sugerido:** Haiku 4.5 — **Esfuerzo:** Bajo.

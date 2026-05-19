@@ -9,17 +9,53 @@
 
 // ── VALORES MONETARIOS / NORMATIVOS ─────────────────────────────
 
-/** Salario Mínimo Mensual Legal Vigente (COP).
- *  Fuente: Mintrabajo. Vigente hasta: 2026-12-31. */
-export const SMMLV_2026 = 1_423_500;
+/** Salario Mínimo Mensual Legal Vigente (COP) — año 2026.
+ *  Valor: $1.750.905 (incremento del 23 % vs 2025).
+ *  Fuente oficial: Decreto 1469 del 29 de diciembre de 2025 (Mintrabajo).
+ *    Suspendido provisionalmente por el Consejo de Estado en feb-2026; el
+ *    Decreto 0159 del 19 de febrero de 2026 mantiene transitoriamente el
+ *    mismo valor mientras se decide la legalidad del decreto original.
+ *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
+export const SMMLV_2026 = 1_750_905;
 
-/** Auxilio de transporte mensual (COP).
- *  Fuente: Mintrabajo. Vigente hasta: 2026-12-31. */
-export const AUXILIO_TRANSPORTE_2026 = 200_000;
+/** Auxilio de transporte mensual (COP) — año 2026.
+ *  Valor: $249.095.
+ *  Fuente oficial: Decreto 1470 del 29 de diciembre de 2025 (Mintrabajo).
+ *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
+export const AUXILIO_TRANSPORTE_2026 = 249_095;
 
-/** Unidad de Valor Tributario (COP).
- *  Fuente: DIAN. Vigente hasta: 2026-12-31. */
-export const UVT_2026 = 49_799;
+/** Unidad de Valor Tributario (COP) — año gravable 2026.
+ *  Valor: $52.374 (incremento del 5,17 % vs 2025, basado en IPC DANE).
+ *  Fuente oficial: Resolución DIAN 000238 del 15 de diciembre de 2025.
+ *  Vigencia desde: 2026-01-01. Vigente hasta: 2026-12-31. */
+export const UVT_2026 = 52_374;
+
+/** Fecha en que entran en vigencia los valores 2026 (formato ISO YYYY-MM-DD). */
+export const VIGENCIA_2026 = '2026-01-01';
+
+// ── VALORES 2027 (pendientes de publicación oficial) ─────────────
+//
+// Calendario habitual:
+//   • SMMLV: decreto presidencial expedido en la última semana de diciembre
+//     del año anterior (Mintrabajo), tras el cierre de la Comisión de
+//     Concertación de Políticas Salariales y Laborales.
+//   • UVT:   resolución DIAN publicada antes del 1 de enero del año gravable,
+//     basada en la variación del IPC DANE entre el 1 de octubre del año
+//     anterior y el 1 de octubre del año en curso.
+//
+// Publicación esperada: diciembre de 2026.
+
+/** SMMLV 2027 — null mientras no haya decreto oficial. */
+export const SMMLV_2027 = null;
+
+/** Auxilio de transporte 2027 — null mientras no haya decreto oficial. */
+export const AUXILIO_TRANSPORTE_2027 = null;
+
+/** UVT 2027 — null mientras no haya resolución DIAN. */
+export const UVT_2027 = null;
+
+/** Vigencia 2027 — null hasta confirmar fecha en los decretos/resoluciones. */
+export const VIGENCIA_2027 = null;
 
 /** Tasa de usura Q2 2026 — 28.17 % EA.
  *  Fuente: Superintendencia Financiera de Colombia (SFC), Resolución trimestral.

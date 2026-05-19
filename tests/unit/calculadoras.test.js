@@ -11,9 +11,10 @@ import {
   validarCampos,
 } from '../../modules/dominio/calculadoras/logic.js';
 
-// Constantes del proyecto (para tests de prima)
-const SMMLV_2026 = 1_423_500;
-const AUXILIO_2026 = 200_000;
+// Constantes del proyecto (para tests de prima).
+// Sincronizadas con modules/core/constants.js — actualizar ambos a la vez.
+const SMMLV_2026 = 1_750_905;
+const AUXILIO_2026 = 249_095;
 
 // ── calcularCDT() ─────────────────────────────────────────────────
 
@@ -189,7 +190,9 @@ describe('calcularPrima()', () => {
   });
 
   it('salario > 2 SMMLV no incluye auxilio de transporte', () => {
-    const salarioAlto = 3_000_000;
+    // Con SMMLV 2026 = $1.750.905, el umbral 2×SMMLV = $3.501.810.
+    // Usamos $4M para quedar holgadamente por encima.
+    const salarioAlto = 4_000_000;
     const r = calcularPrima(salarioAlto, 180);
     expect(r.incluyeAuxilio).toBe(false);
     expect(r.auxilioAplicado).toBe(0);

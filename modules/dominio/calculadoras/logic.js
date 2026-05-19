@@ -3,8 +3,8 @@
  * Sin DOM. Sin S. Sin efectos secundarios. Testeable en Node/Vitest.
  *
  * Constantes legales usadas:
- *   - SMMLV 2026: $1.423.500 — Vigente hasta 2026-12-31
- *   - Auxilio de transporte 2026: $200.000 — Vigente hasta 2026-12-31
+ *   - SMMLV 2026: $1.750.905 — Vigente hasta 2026-12-31 (Decreto 1469/2025)
+ *   - Auxilio de transporte 2026: $249.095 — Vigente hasta 2026-12-31 (Decreto 1470/2025)
  *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto
  *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo)
  */

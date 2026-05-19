@@ -7,6 +7,61 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
+
+**Hallazgo:** los valores etiquetados como "2026" en `constants.js` correspondían
+en realidad al año 2025 (1.423.500 / 49.799 / 200.000 son los valores 2025).
+Los valores oficiales 2026 entraron en vigencia el 1 de enero de 2026.
+
+**Cambios en `modules/core/constants.js`:**
+
+| Constante | Antes (2025 mal etiquetado) | Ahora (2026 oficial) |
+|---|---:|---:|
+| `SMMLV_2026` | 1_423_500 | **1_750_905** |
+| `AUXILIO_TRANSPORTE_2026` | 200_000 | **249_095** |
+| `UVT_2026` | 49_799 | **52_374** |
+
+**Nuevas constantes añadidas:**
+- `VIGENCIA_2026 = '2026-01-01'` — fecha ISO de vigencia.
+- `SMMLV_2027 = null` — pendiente de publicación oficial.
+- `AUXILIO_TRANSPORTE_2027 = null` — pendiente.
+- `UVT_2027 = null` — pendiente.
+- `VIGENCIA_2027 = null` — pendiente.
+
+**Fuentes oficiales utilizadas:**
+
+- **SMMLV 2026 ($1.750.905):** Decreto 1469 del 29 de diciembre de 2025
+  (Mintrabajo). Suspendido provisionalmente por el Consejo de Estado en
+  feb-2026; ratificado por el Decreto 0159 del 19 de febrero de 2026, que
+  mantiene transitoriamente el mismo valor mientras se resuelve la legalidad
+  del decreto original.
+  Doc: https://dapre.presidencia.gov.co/normativa/normativa/DECRETO%20No.%200159%20DEL%2019%20DE%20FEBRERO%20DE%202026.pdf
+  Comunicado oficial: https://www.presidencia.gov.co/prensa/Paginas/Salario-vital-2-000-000-a-partir-de-enero-de-2026-251230.aspx
+- **Auxilio transporte 2026 ($249.095):** Decreto 1470 del 29 de diciembre
+  de 2025 (Mintrabajo).
+- **UVT 2026 ($52.374):** Resolución DIAN 000238 del 15 de diciembre de 2025.
+  Doc: https://www.dian.gov.co/normatividad/Normatividad/Resoluci%C3%B3n%20000238%20de%2015-12-2025.Pdf
+  Comunicado INCP: https://incp.org.co/publicaciones/infoincp-publicaciones/impuestos/2025/12/dian-fijo-en-52-374-en-valor-de-la-uvt-para-el-ano-gravable-2026/
+
+**Valores 2027:** NO publicados oficialmente. Calendario habitual:
+- SMMLV: decreto presidencial en la última semana de diciembre del año anterior.
+- UVT: resolución DIAN antes del 1 de enero del año gravable.
+- **Publicación esperada: diciembre 2026.**
+
+**Cambios colaterales (referencias UI y test):**
+
+- `modules/dominio/config/view.js`: placeholder y "Acerca de" actualizados.
+- `modules/dominio/calculadoras/view.js`: `min="1750905"` en input de prima.
+- `modules/dominio/calculadoras/logic.js`: docstring actualizada.
+- `tests/unit/calculadoras.test.js`:
+  - Constantes locales `SMMLV_2026/AUXILIO_2026` sincronizadas.
+  - Test "salario > 2 SMMLV no incluye auxilio": cambiado salario de
+    prueba de $3.000.000 → $4.000.000 (nuevo umbral 2×SMMLV = $3.501.810).
+- `service-worker.js`: CACHE_NAME v14→v15.
+- 702/702 unit + 32/32 E2E verdes.
+
+---
+
 ### Fix routing race condition (segunda iteración, 5 dominios) · 2026-05-18
 
 **Bug reportado por el usuario:** al navegar desde Dashboard hacia Tesorería

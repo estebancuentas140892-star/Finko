@@ -198,7 +198,7 @@ function _renderPrima() {
           <div class="form-group">
             <label for="prima-salario" class="label">Salario mensual (COP)</label>
             <input id="prima-salario" name="salario" class="input" type="number"
-                   min="1423500" step="100000" placeholder="1.500.000" required />
+                   min="1750905" step="100000" placeholder="1.750.905" required />
           </div>
           <div class="form-group">
             <label for="prima-dias" class="label">Días trabajados en el semestre (máx. 180)</label>

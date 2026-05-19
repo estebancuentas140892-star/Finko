@@ -47,8 +47,8 @@ function _renderPerfil() {
           <label for="config-smmlv" class="label">SMMLV (COP)</label>
           <input id="config-smmlv" name="smmlv" class="input" type="number"
                  min="1" step="1000" value="${S.perfil.smmlv ?? ''}"
-                 placeholder="1423500" />
-          <p class="form-hint">Usar SMMLV 2026: $1.423.500. Se actualiza cada año.</p>
+                 placeholder="1750905" />
+          <p class="form-hint">Usar SMMLV 2026: $1.750.905. Se actualiza cada año.</p>
         </div>
         <button type="submit" class="btn btn-primary">Guardar perfil</button>
       </form>
@@ -167,7 +167,7 @@ function _renderAcercaDe() {
         <dt>Versión</dt>        <dd>0.1.0</dd>
         <dt>Tecnología</dt>    <dd>Vanilla JS · Sin framework · Offline-first</dd>
         <dt>Almacenamiento</dt><dd>localStorage (solo en tu dispositivo)</dd>
-        <dt>SMMLV vigente</dt> <dd>$1.423.500 (Mintrabajo, vigente hasta 2026-12-31)</dd>
+        <dt>SMMLV vigente</dt> <dd>$1.750.905 (Mintrabajo, Decreto 1469/2025, vigente hasta 2026-12-31)</dd>
       </dl>
     </section>`;
 }
