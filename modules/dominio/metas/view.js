@@ -1,5 +1,5 @@
 /**
- * metas/view.js — generación de HTML para el dominio de metas de ahorro.
+ * metas/view.js - generación de HTML para el dominio de metas de ahorro.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
@@ -77,7 +77,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🎯</p>
       <p class="empty-state__title">Sin metas de ahorro</p>
-      <p class="empty-state__desc">Definí una meta — un viaje, un fondo de emergencia, lo que quieras — y llevá el control de tu progreso.</p>
+      <p class="empty-state__desc">Definí una meta - un viaje, un fondo de emergencia, lo que quieras - y llevá el control de tu progreso.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>
     </div>`;
 }

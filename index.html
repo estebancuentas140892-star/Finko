@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
-  <meta name="description" content="Finko — Tu gestión financiera personal, en tu idioma" />
+  <meta name="description" content="Finko - Tu gestión financiera personal, en tu idioma" />
   <meta name="theme-color" content="#0f1117" media="(prefers-color-scheme: dark)" />
   <meta name="theme-color" content="#f4f5f9" media="(prefers-color-scheme: light)" />
 
@@ -31,14 +31,14 @@
   <link rel="modulepreload" href="modules/ui/actions.js" />
   <link rel="modulepreload" href="modules/ui/bootstrap.js" />
 
-  <title>Finko — Tu plata bajo control</title>
+  <title>Finko - Tu plata bajo control</title>
 </head>
 <body>
 
   <div class="app-shell" id="app">
 
     <!-- ══════════════════════════════════════════════════════════
-         SIDEBAR — navegación principal
+         SIDEBAR - navegación principal
          ══════════════════════════════════════════════════════════ -->
     <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
 
@@ -56,7 +56,7 @@
           <div role="list" aria-labelledby="nav-label-principal">
 
             <a class="nav-item active" href="#dash" data-section="dash"
-               role="listitem" aria-current="page" aria-label="Dashboard — resumen financiero">
+               role="listitem" aria-current="page" aria-label="Dashboard - resumen financiero">
               <span class="nav-item__icon" aria-hidden="true">💰</span>
               <span class="nav-item__label">Dashboard</span>
             </a>
@@ -80,7 +80,7 @@
             </a>
 
             <a class="nav-item" href="#personales" data-section="personales"
-               role="listitem" aria-label="Préstamos personales — me deben">
+               role="listitem" aria-label="Préstamos personales - me deben">
               <span class="nav-item__icon" aria-hidden="true">🤝</span>
               <span class="nav-item__label">Me deben</span>
             </a>
@@ -144,7 +144,7 @@
     </nav>
 
     <!-- ══════════════════════════════════════════════════════════
-         MAIN CONTENT — secciones de la app
+         MAIN CONTENT - secciones de la app
          Cada sección empieza oculta; el router activa la correcta.
          ══════════════════════════════════════════════════════════ -->
     <main class="main-content" id="main-content" tabindex="-1" aria-live="polite">
@@ -342,7 +342,7 @@
           <h1 class="section__title" id="title-calc">Calculadoras</h1>
         </header>
         <div id="panel-calc">
-          <!-- Fase 11: calculadoras/index.js — carga lazy en primera visita -->
+          <!-- Fase 11: calculadoras/index.js - carga lazy en primera visita -->
         </div>
       </section>
 
@@ -361,7 +361,7 @@
   </div><!-- /.app-shell -->
 
   <!-- ══════════════════════════════════════════════════════════
-       MODALES — scaffolding (Fases 6–12 completan el contenido)
+       MODALES - scaffolding (Fases 6-12 completan el contenido)
        Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
        ══════════════════════════════════════════════════════════ -->
 
@@ -524,7 +524,7 @@
        type="module" garantiza defer, strict mode, scope aislado.
   ──────────────────────────────────────────────────────────────── -->
 
-  <!-- Service Worker — registrar antes del módulo principal para que
+  <!-- Service Worker - registrar antes del módulo principal para que
        el SW quede activo cuanto antes y pueda cachear los módulos. -->
   <script src="modules/infra/sw-register.js"></script>
 

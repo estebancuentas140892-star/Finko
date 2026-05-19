@@ -1,15 +1,15 @@
 /**
- * smoke.test.js — Tests E2E de los flujos críticos de Finko.
+ * smoke.test.js - Tests E2E de los flujos críticos de Finko.
  *
  * Cubre:
- * 1. Dashboard — carga correcta, 6 métricas visibles.
- * 2. Onboarding — wizard aparece, se completa, no vuelve a aparecer.
- * 3. Navegación — secciones se activan con el router hash.
- * 4. Ingresos — registrar ingreso, verifica en lista.
- * 5. Gastos — registrar gasto, verifica en lista.
- * 6. Tesorería — agregar cuenta, saldo en dashboard se actualiza.
- * 7. Modales — Escape cierra el modal.
- * 8. Tema — toggle claro/oscuro actualiza aria-pressed.
+ * 1. Dashboard - carga correcta, 6 métricas visibles.
+ * 2. Onboarding - wizard aparece, se completa, no vuelve a aparecer.
+ * 3. Navegación - secciones se activan con el router hash.
+ * 4. Ingresos - registrar ingreso, verifica en lista.
+ * 5. Gastos - registrar gasto, verifica en lista.
+ * 6. Tesorería - agregar cuenta, saldo en dashboard se actualiza.
+ * 7. Modales - Escape cierra el modal.
+ * 8. Tema - toggle claro/oscuro actualiza aria-pressed.
  */
 
 import { test, expect } from '@playwright/test';
@@ -96,7 +96,7 @@ test.describe('Onboarding', () => {
     // Esperar que el debounce de save() (200ms) complete antes de recargar.
     await page.waitForTimeout(400);
 
-    // Recargar — el wizard no debe volver a aparecer
+    // Recargar - el wizard no debe volver a aparecer
     await page.reload();
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
     await expect(page.locator('#onboarding[data-open]')).toHaveCount(0);
@@ -133,7 +133,7 @@ test.describe('Navegación hash', () => {
 
 // ── SUITE 4: Ingresos ───────────────────────────────────────────────────────
 
-test.describe('Ingresos — CRUD', () => {
+test.describe('Ingresos - CRUD', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/#ingresos');
@@ -173,7 +173,7 @@ test.describe('Ingresos — CRUD', () => {
 
 // ── SUITE 5: Gastos ─────────────────────────────────────────────────────────
 
-test.describe('Gastos — CRUD', () => {
+test.describe('Gastos - CRUD', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/#gast');
@@ -206,7 +206,7 @@ test.describe('Gastos — CRUD', () => {
 
 // ── SUITE 6: Tesorería ──────────────────────────────────────────────────────
 
-test.describe('Tesorería — cuenta y saldo', () => {
+test.describe('Tesorería - cuenta y saldo', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/#tesoreria');
@@ -231,7 +231,7 @@ test.describe('Tesorería — cuenta y saldo', () => {
       { timeout: 3_000 }
     );
 
-    // Ir al dashboard — saldo debe actualizar
+    // Ir al dashboard - saldo debe actualizar
     await page.click('a[href="#dash"]');
     await expect(page.locator('#saldo-total')).toHaveText('$850.000', {
       timeout: 3_000,

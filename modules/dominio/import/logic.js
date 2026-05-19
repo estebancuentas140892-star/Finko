@@ -1,18 +1,18 @@
 /**
- * import/logic.js — validación, normalización y detección de duplicados para
+ * import/logic.js - validación, normalización y detección de duplicados para
  * importar gastos desde CSV.
  *
  * Decisión arquitectónica:
  *   Importamos SOLO gastos. Los ingresos en S son recurrentes (con frecuencia),
- *   no transacciones individuales — no encajan con el modelo de extracto bancario.
+ *   no transacciones individuales - no encajan con el modelo de extracto bancario.
  *
  * Formato CSV soportado (case-insensitive en headers):
- *   - fecha       (requerido) — YYYY-MM-DD o DD/MM/YYYY
- *   - monto       (requerido) — número positivo en COP (acepta separadores miles)
- *   - descripcion (requerido) — texto no vacío
- *   - categoria   (opcional)  — default 'Otros'
- *   - cuenta      (opcional)  — nombre de cuenta existente; null si no matchea
- *   - nota        (opcional)  — texto libre
+ *   - fecha       (requerido) - YYYY-MM-DD o DD/MM/YYYY
+ *   - monto       (requerido) - número positivo en COP (acepta separadores miles)
+ *   - descripcion (requerido) - texto no vacío
+ *   - categoria   (opcional)  - default 'Otros'
+ *   - cuenta      (opcional)  - nombre de cuenta existente; null si no matchea
+ *   - nota        (opcional)  - texto libre
  *
  * Sin DOM. Sin S directo. Pure functions testeables en Node.
  */
@@ -162,7 +162,7 @@ export function validarFila(fila) {
  * asigna crud.guardar al hacer push).
  *
  * @param {Record<string,string>} fila
- * @param {Map<string,string>} nombresCuentas — Map<nombreLower, cuentaId>.
+ * @param {Map<string,string>} nombresCuentas - Map<nombreLower, cuentaId>.
  * @returns {Omit<import('../../core/state.js').Gasto, 'id'>}
  */
 export function normalizarFila(fila, nombresCuentas = new Map()) {

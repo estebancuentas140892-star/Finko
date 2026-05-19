@@ -1,5 +1,5 @@
 /**
- * calculadoras/index.js — API pública del dominio de calculadoras.
+ * calculadoras/index.js - API pública del dominio de calculadoras.
  *
  * Las calculadoras son stateless: no mutan S, no usan EventBus, no registran
  * acciones data-action. Solo inyectan HTML y manejan sus propios form-submit.

@@ -1,5 +1,5 @@
 /**
- * personales/view.js — HTML del dominio de préstamos personales.
+ * personales/view.js - HTML del dominio de préstamos personales.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
@@ -96,7 +96,7 @@ function _renderPersonalItem(prestamo, hoy) {
   const chipLabel = liquidado
     ? 'Liquidado'
     : antig === 'viejo'
-    ? `${dias} días — ya toca cobrar`
+    ? `${dias} días - ya toca cobrar`
     : antig === 'mediano'
     ? `${dias} días`
     : `${dias} ${dias === 1 ? 'día' : 'días'}`;

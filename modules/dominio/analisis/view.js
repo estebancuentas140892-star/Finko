@@ -1,5 +1,5 @@
 /**
- * analisis/view.js — generación de HTML del panel de análisis financiero.
+ * analisis/view.js - generación de HTML del panel de análisis financiero.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 

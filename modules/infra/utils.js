@@ -1,5 +1,5 @@
 /**
- * utils.js — utilidades transversales sin dependencias de dominio.
+ * utils.js - utilidades transversales sin dependencias de dominio.
  *
  * Reglas:
  * - Sin DOM (excepto dialogo, que es UI de último recurso).
@@ -13,8 +13,8 @@
  * Formatea un número como pesos colombianos.
  * Sin dependencia de Intl locales para garantizar consistencia cross-env.
  *
- * @param {number} monto — valor en COP (puede ser negativo).
- * @returns {string} — ej. `$1.423.500` o `-$500`
+ * @param {number} monto - valor en COP (puede ser negativo).
+ * @returns {string} - ej. `$1.423.500` o `-$500`
  */
 export function f(monto) {
   const redondeado = Math.round(monto);
@@ -43,7 +43,7 @@ export function hoy() {
  * Dado un string `YYYY-MM-DD`, devuelve la representación legible en español.
  * Ej. `2026-05-12` → `12 de mayo de 2026`
  *
- * @param {string} iso — fecha en formato `YYYY-MM-DD`.
+ * @param {string} iso - fecha en formato `YYYY-MM-DD`.
  * @returns {string}
  */
 export function fechaLegible(iso) {
@@ -62,12 +62,12 @@ export function fechaLegible(iso) {
 /**
  * Diálogo de confirmación o alerta.
  *
- * **v1 — wrapper temporal.** Fase 12 reemplaza la implementación por modales
+ * **v1 - wrapper temporal.** Fase 12 reemplaza la implementación por modales
  * propios del design system; la firma pública no cambia.
  *
- * @param {string} msg — texto a mostrar al usuario.
+ * @param {string} msg - texto a mostrar al usuario.
  * @param {'confirm' | 'alert'} [tipo='confirm']
- * @returns {boolean} — `true` si el usuario confirmó (o si es tipo `alert`).
+ * @returns {boolean} - `true` si el usuario confirmó (o si es tipo `alert`).
  */
 export function dialogo(msg, tipo = 'confirm') {
   if (tipo === 'confirm') return window.confirm(msg);

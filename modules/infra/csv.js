@@ -1,5 +1,5 @@
 /**
- * infra/csv.js — parser y serializador CSV puro (RFC 4180 simplificado).
+ * infra/csv.js - parser y serializador CSV puro (RFC 4180 simplificado).
  *
  * Sin DOM, sin librerías. Tolerante a variantes comunes:
  * - Separador configurable (`,` por defecto, autodetecta `;` si el primero falla)
@@ -16,7 +16,7 @@ const QUOTE = '"';
 
 /**
  * Detecta el separador más probable mirando la primera línea no-vacía.
- * Compara cuántos `,` vs `;` aparecen FUERA de quotes — gana el de mayor cuenta.
+ * Compara cuántos `,` vs `;` aparecen FUERA de quotes - gana el de mayor cuenta.
  *
  * @param {string} text
  * @returns {','|';'} Separador detectado. Default `,`.

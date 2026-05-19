@@ -1,5 +1,5 @@
 /**
- * playwright.config.js — E2E / smoke tests de Finko.
+ * playwright.config.js - E2E / smoke tests de Finko.
  *
  * Corre sobre Chromium headless. Inicia un servidor Python en el puerto
  * 8081 para no interferir con el servidor de desarrollo (8080).

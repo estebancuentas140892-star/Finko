@@ -1,5 +1,5 @@
 /**
- * router.js — hash routing
+ * router.js - hash routing
  * Maps URL hash → section visibility.
  * Contract: sections have id="sec-{hash}" and use .active class.
  */

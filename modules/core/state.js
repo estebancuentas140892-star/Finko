@@ -1,5 +1,5 @@
 /**
- * state.js — singleton mutable S + EventBus.
+ * state.js - singleton mutable S + EventBus.
  *
  * Reglas:
  * - S es la ÚNICA fuente de verdad. Toda la app comparte la misma referencia.
@@ -49,14 +49,14 @@ import { SMMLV } from './constants.js';
  * @property {string} descripcion
  * @property {number} monto              COP. Cuota mensual (no el saldo total).
  * @property {string} frecuencia         Ver FRECUENCIAS.
- * @property {number} diaPago            1–31.
+ * @property {number} diaPago            1-31.
  * @property {string} tipo               'fijo' | 'deuda' | 'agenda'.
  * @property {boolean} activo
  * @property {string} fechaCreacion      ISO 8601.
  * @property {number} [saldoPendiente]   COP. Solo para tipo='deuda'. Saldo total
  *                                       que aún falta pagar. Si no está, la deuda
  *                                       no se cuenta en el patrimonio neto.
- * @property {number} [tasaEA]           Tasa efectiva anual (0–1). Solo para
+ * @property {number} [tasaEA]           Tasa efectiva anual (0-1). Solo para
  *                                       tipo='deuda'. Opcional, reservada para
  *                                       cálculos avanzados futuros (alertas de
  *                                       usura, plan de amortización).
@@ -97,7 +97,7 @@ import { SMMLV } from './constants.js';
 
 /**
  * @typedef {Object} Config
- * @property {boolean} notificaciones — true si el usuario habilitó recordatorios push.
+ * @property {boolean} notificaciones - true si el usuario habilitó recordatorios push.
  *                                      Require también que Notification.permission === 'granted'.
  */
 

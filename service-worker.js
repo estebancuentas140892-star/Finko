@@ -1,5 +1,5 @@
 /**
- * service-worker.js — PWA offline-first para Finko.
+ * service-worker.js - PWA offline-first para Finko.
  *
  * Estrategia: Cache First.
  *   install  → precachea CORE_ASSETS; OPTIONAL_ASSETS se cachean sin bloquear.
@@ -12,7 +12,7 @@
 
 const CACHE_NAME = 'finko-v29';
 
-// ── Assets críticos — si falla uno, el install falla (correcto) ───────────
+// ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
   // Raíz
   './',
@@ -92,7 +92,7 @@ const CORE_ASSETS = [
   './modules/dominio/logros/index.js',
 ];
 
-// ── Assets opcionales — se intentan cachear pero no bloquean el install ───
+// ── Assets opcionales - se intentan cachear pero no bloquean el install ───
 const OPTIONAL_ASSETS = [
   './assets/icons/favicon.svg',
   './assets/icons/icon-192.png',
@@ -113,7 +113,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then(async (cache) => {
       // Core: fallo aquí = install falla = SW no se activa (comportamiento correcto).
       // `cache: 'reload'` evita servir versiones obsoletas del HTTP cache del browser
-      // o CDN intermedio — fuerza un fetch fresco contra origen al instalar.
+      // o CDN intermedio - fuerza un fetch fresco contra origen al instalar.
       await cache.addAll(
         CORE_ASSETS.map((url) => new Request(url, { cache: 'reload' })),
       );

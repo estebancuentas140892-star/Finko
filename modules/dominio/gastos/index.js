@@ -1,5 +1,5 @@
 /**
- * gastos/index.js — API pública del dominio de gastos.
+ * gastos/index.js - API pública del dominio de gastos.
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
@@ -100,7 +100,7 @@ export function initGastos() {
     }
   });
 
-  // Re-render al navegar a #gast — sin esto la sección puede aparecer vacía
+  // Re-render al navegar a #gast - sin esto la sección puede aparecer vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(renderListaGastos, 'gast');

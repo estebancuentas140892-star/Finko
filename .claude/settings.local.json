@@ -48,7 +48,8 @@
       "Bash(curl -s http://localhost:8080/index.html)",
       "Bash(pnpm run *)",
       "Bash(grep -n \"import.*calcularScoreSalud\\\\|import.*clasificarScore\" C:\\\\\\\\Users\\\\\\\\USUARIO\\\\\\\\Desktop\\\\\\\\Finko_Claude\\\\\\\\modules\\\\\\\\dominio\\\\\\\\analisis\\\\\\\\view.js)",
-      "Bash(cd /mnt/c/Users/USUARIO/Desktop/Finko_Claude && pnpm test 2>&1 | grep -E \"Test Files|Tests|FAIL|passed\")"
+      "Bash(cd /mnt/c/Users/USUARIO/Desktop/Finko_Claude && pnpm test 2>&1 | grep -E \"Test Files|Tests|FAIL|passed\")",
+      "mcp__scheduled-tasks__create_scheduled_task"
     ]
   }
 }

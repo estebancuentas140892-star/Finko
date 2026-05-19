@@ -1,5 +1,5 @@
 /**
- * compromisos/view.js — generación de HTML para el dominio de compromisos.
+ * compromisos/view.js - generación de HTML para el dominio de compromisos.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 
@@ -308,7 +308,7 @@ export function renderFormCompromiso() {
         </select>
       </div>
       <div class="form-group">
-        <label for="comp-dia" class="label">Día de pago (1–31)</label>
+        <label for="comp-dia" class="label">Día de pago (1-31)</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
                min="1" max="31" step="1" placeholder="1" required aria-required="true" />
       </div>
@@ -320,7 +320,7 @@ export function renderFormCompromiso() {
         </select>
       </div>
 
-      <!-- Campos opcionales — visibles solo cuando tipo = 'deuda' -->
+      <!-- Campos opcionales - visibles solo cuando tipo = 'deuda' -->
       <div id="comp-deuda-campos" class="d-none">
         <p class="form-hint">
           Completá estos datos para ver tu patrimonio neto real.

@@ -126,14 +126,14 @@ describe('calcularProgreso()', () => {
     expect(r.estado).toBe('excedido');
   });
 
-  it('exactamente 100% no es excedido — todavía es alerta', () => {
+  it('exactamente 100% no es excedido - todavía es alerta', () => {
     const gastos = [gasto({ monto: 500_000 })];
     const r = calcularProgreso(presupuesto(), gastos, 2026, 5);
     expect(r.porcentaje).toBe(100);
     expect(r.estado).toBe('alerta');
   });
 
-  it('asignado en 0 no divide por cero — porcentaje 0, estado ok', () => {
+  it('asignado en 0 no divide por cero - porcentaje 0, estado ok', () => {
     const r = calcularProgreso(presupuesto({ montoMensual: 0 }), [gasto({ monto: 100 })], 2026, 5);
     expect(r.porcentaje).toBe(0);
     expect(r.estado).toBe('ok');

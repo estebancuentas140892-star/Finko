@@ -1,5 +1,5 @@
 """
-gen-screenshots.py — Genera 2 screenshots PWA para manifest.json
+gen-screenshots.py - Genera 2 screenshots PWA para manifest.json
   screenshot-1-dashboard.png  → Vista principal (dashboard con tarjetas)
   screenshot-2-gastos.png     → Vista de gastos con listado
 

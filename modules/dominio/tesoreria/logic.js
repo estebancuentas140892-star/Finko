@@ -1,5 +1,5 @@
 /**
- * tesoreria/logic.js — funciones puras de la capa de tesorería.
+ * tesoreria/logic.js - funciones puras de la capa de tesorería.
  *
  * Reglas:
  * - Sin DOM. Sin S directo. Reciben datos, devuelven datos.
@@ -28,7 +28,7 @@ export function calcularTotalCuentas(cuentas) {
   return cuentasActivas(cuentas).reduce((acc, c) => acc + (c.saldo ?? 0), 0);
 }
 
-// ── PRIMA DE SERVICIOS — recordatorio (G.3.F9) ──────────────────
+// ── PRIMA DE SERVICIOS - recordatorio (G.3.F9) ──────────────────
 
 /**
  * Calcula los días que faltan para la próxima prima de servicios.
@@ -64,7 +64,7 @@ export function diasParaPrimaSemestral(hoy = new Date()) {
   return { dias, fecha, semestre: proximo.semestre };
 }
 
-// ── PRIMA DE SERVICIOS — distribución (G.3.F8) ──────────────────
+// ── PRIMA DE SERVICIOS - distribución (G.3.F8) ──────────────────
 
 /**
  * Estima el salario mensual como suma de todos los ingresos activos
@@ -90,8 +90,8 @@ export function estimarSalarioMensual(ingresos) {
  *   30% → pago de deudas activas (solo si tieneDeudas = true)
  *   20% → metas de ahorro (sube a 50% cuando no hay deudas)
  *
- * @param {number} salario       — Ingreso mensual en COP.
- * @param {boolean} tieneDeudas  — true si hay compromisos tipo 'deuda' activos.
+ * @param {number} salario       - Ingreso mensual en COP.
+ * @param {boolean} tieneDeudas  - true si hay compromisos tipo 'deuda' activos.
  * @returns {{
  *   prima:     number,
  *   fondo:     number,
@@ -125,7 +125,7 @@ export function sugerirDistribucionPrima(salario, tieneDeudas) {
  * Valida los datos del formulario antes de guardar.
  * Devuelve un array de mensajes de error (vacío = válido).
  *
- * @param {Record<string, string>} datos — entradas del formulario (valores como string).
+ * @param {Record<string, string>} datos - entradas del formulario (valores como string).
  * @returns {string[]}
  */
 export function validarCuenta(datos) {

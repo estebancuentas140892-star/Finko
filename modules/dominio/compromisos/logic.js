@@ -1,5 +1,5 @@
 /**
- * compromisos/logic.js — funciones puras del dominio de compromisos.
+ * compromisos/logic.js - funciones puras del dominio de compromisos.
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  *
  * Compromiso: gasto recurrente con un día de pago fijo en el mes.
@@ -194,8 +194,8 @@ export function validarCompromiso(datos) {
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
  * Para tipo='deuda', incluye campos opcionales solo si tienen valor válido:
- * - `saldoPendiente` — COP (número ≥ 0).
- * - `tasaEA`         — tasa efectiva anual como decimal 0–1 (se convierte desde %).
+ * - `saldoPendiente` - COP (número ≥ 0).
+ * - `tasaEA`         - tasa efectiva anual como decimal 0-1 (se convierte desde %).
  *
  * @param {Record<string, string>} datos
  */
@@ -232,7 +232,7 @@ const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
  * Sirve como recordatorio para registrar el gasto correspondiente.
  *
  * Nota: Finko no persiste un historial de pagos en compromisos.
- * Esta función no verifica si el pago fue registrado — avisa que el plazo ya
+ * Esta función no verifica si el pago fue registrado - avisa que el plazo ya
  * pasó para que el usuario confirme que lo pagó y lo registró en gastos.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
@@ -466,7 +466,7 @@ export function simularEstrategiaPago(deudas, extraMensual, estrategia) {
     }
 
     // 2. Calcular "presupuesto" disponible este mes: cuotas de TODAS las deudas
-    //    (activas y pagadas — las pagadas liberan su cuota) + extra mensual.
+    //    (activas y pagadas - las pagadas liberan su cuota) + extra mensual.
     let presupuesto = extra + deudasSim.reduce((acc, d) => acc + d.cuota, 0);
 
     // 3. Pagar cuota mínima en deudas no prioritarias (de la 2da en adelante).

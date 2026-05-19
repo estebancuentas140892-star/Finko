@@ -1,5 +1,5 @@
 /**
- * config/view.js — HTML del panel de configuración.
+ * config/view.js - HTML del panel de configuración.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 

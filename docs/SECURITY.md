@@ -1,4 +1,4 @@
-# SECURITY — Finko Claude
+# SECURITY - Finko Claude
 
 > Política de seguridad, modelo de amenaza y prácticas recomendadas para el proyecto.
 > Última revisión: 2026-05-18
@@ -17,7 +17,7 @@ sobre la **app en producción** es mínimo:
 | Cookies / sesión | No existen |
 | Datos de terceros | No se procesan |
 | Datos del usuario | Solo en `localStorage` del propio navegador |
-| Recursos externos | Cero — sin CDNs, sin fonts remotas, sin analytics |
+| Recursos externos | Cero - sin CDNs, sin fonts remotas, sin analytics |
 
 **Vector real:** el **supply chain de dependencias de desarrollo** (Vitest, Playwright,
 ESLint, Pillow para scripts, etc.). Estas corren en la máquina del developer y en CI,
@@ -37,7 +37,7 @@ npm ha sufrido ataques de supply chain repetidos a lo largo de los años:
 | 2021 | `ua-parser-js` | Versión maliciosa publicada, minero CPU |
 | 2022 | `node-ipc` | Sabotaje del autor (data wipe en máquinas rusas/bielorrusas) |
 | 2023 | Tipo-squatting masivo | Cientos de paquetes con nombres similares a populares |
-| 2024–2025 | Oleadas "shai-hulud" | `postinstall` scripts inyectando cripto-stealers |
+| 2024-2025 | Oleadas "shai-hulud" | `postinstall` scripts inyectando cripto-stealers |
 
 **El vector común:** los scripts `preinstall`, `install` y `postinstall` se ejecutan
 **automáticamente** al hacer `npm install`, con **permisos completos del usuario**.
@@ -53,7 +53,7 @@ pnpm (a partir de v10) trae mitigaciones que npm aún no tiene por defecto:
 | `minimum-release-age` (v10.16+) | No instala paquetes publicados hace menos de N días. Atrapa la mayoría de reports de malware reciente |
 | `verify-store-integrity` | Chequeo de integridad del store local antes de instalar |
 | `frozen-lockfile` | Por defecto en CI, evita resolución dinámica |
-| Store global con symlinks | Bonus: ahorro ~70% disco, velocidad de instalación 2–3× |
+| Store global con symlinks | Bonus: ahorro ~70% disco, velocidad de instalación 2-3× |
 
 ### Ventaja adicional
 
@@ -64,10 +64,10 @@ evita duplicar gigabytes de `node_modules` entre proyectos.
 
 ## 3. Guía de migración: npm → pnpm
 
-> **✅ Migración ejecutada el 2026-05-18** — pnpm v11.1.3, 596/596 tests verdes.
+> **✅ Migración ejecutada el 2026-05-18** - pnpm v11.1.3, 596/596 tests verdes.
 > Los pasos a continuación son referencia histórica y para replicar en otros entornos.
 
-### Paso 1 — Instalar pnpm globalmente
+### Paso 1 - Instalar pnpm globalmente
 
 ```bash
 # Opción 1: vía npm (una sola vez)
@@ -81,7 +81,7 @@ iwr https://get.pnpm.io/install.ps1 -useb | iex
 pnpm --version    # debería ser >= 10.16.0
 ```
 
-### Paso 2 — Limpiar y reinstalar en el proyecto
+### Paso 2 - Limpiar y reinstalar en el proyecto
 
 ```bash
 cd C:/Users/USUARIO/Desktop/Finko_Claude
@@ -94,7 +94,7 @@ rm package-lock.json
 pnpm install
 ```
 
-### Paso 3 — Crear `.npmrc` con defensas
+### Paso 3 - Crear `.npmrc` con defensas
 
 Archivo en la raíz del proyecto (`/.npmrc`):
 
@@ -117,7 +117,7 @@ strict-peer-dependencies=false
 auto-install-peers=true
 ```
 
-### Paso 4 — Actualizar `package.json` scripts (opcional)
+### Paso 4 - Actualizar `package.json` scripts (opcional)
 
 Los scripts actuales (`npm test`, `npm run lint`, etc.) **seguirán funcionando con pnpm**
 automáticamente (`pnpm test`, `pnpm run lint`). No es necesario cambiarlos.
@@ -125,7 +125,7 @@ automáticamente (`pnpm test`, `pnpm run lint`). No es necesario cambiarlos.
 Si en algún script hay `npm` literal hardcoded (ej. `npm run X && npm run Y`), reemplazarlo
 por `pnpm` para coherencia.
 
-### Paso 5 — Adaptar CI (Vercel)
+### Paso 5 - Adaptar CI (Vercel)
 
 Vercel detecta `pnpm-lock.yaml` automáticamente y usa `pnpm install`. No requiere config.
 
@@ -134,7 +134,7 @@ Si en algún punto el `vercel.json` define `installCommand`, actualizar:
 "installCommand": "pnpm install --frozen-lockfile"
 ```
 
-### Paso 6 — Commitear el cambio
+### Paso 6 - Commitear el cambio
 
 ```bash
 git add pnpm-lock.yaml .npmrc
@@ -142,7 +142,7 @@ git rm package-lock.json
 git commit -m "chore: migrar de npm a pnpm + defensas anti-malware"
 ```
 
-### Paso 7 — Verificar
+### Paso 7 - Verificar
 
 - `pnpm test` → 596/596 tests verdes
 - `pnpm run lighthouse` → métricas equivalentes (servir con `pnpm run serve` primero)
@@ -155,7 +155,7 @@ git commit -m "chore: migrar de npm a pnpm + defensas anti-malware"
 
 ### Antes de agregar una dependencia nueva
 
-1. **¿La necesitamos realmente?** Finko evita dependencies — todo lo posible vanilla.
+1. **¿La necesitamos realmente?** Finko evita dependencies - todo lo posible vanilla.
 2. **¿Quién la mantiene?** Preferir libs con autor conocido, > 1 año en npm, weekly downloads sólidas.
 3. **¿Tiene `postinstall` / `preinstall`?**
    ```bash
@@ -184,20 +184,20 @@ pnpm update --interactive # actualizar selectivamente
 
 Ver `vercel.json` y `netlify.toml`. Headers actuales en producción:
 
-- `X-Frame-Options: DENY` — bloquea iframes externos
-- `X-Content-Type-Options: nosniff` — desactiva MIME sniffing
-- `Referrer-Policy: strict-origin-when-cross-origin` — limita info en referer
-- `Permissions-Policy: notifications=(self), camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=()` — bloquea APIs no usadas
-- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — HSTS explícito
-- `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'` — XSS hardening
+- `X-Frame-Options: DENY` - bloquea iframes externos
+- `X-Content-Type-Options: nosniff` - desactiva MIME sniffing
+- `Referrer-Policy: strict-origin-when-cross-origin` - limita info en referer
+- `Permissions-Policy: notifications=(self), camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=()` - bloquea APIs no usadas
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` - HSTS explícito
+- `Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'` - XSS hardening
 
-_(todos los hallazgos críticos del audit 2026-05-18 resueltos — H1, H2, H3 ✅)_
+_(todos los hallazgos críticos del audit 2026-05-18 resueltos - H1, H2, H3 ✅)_
 
 ---
 
 ## 6. Reporte de vulnerabilidades
 
-Finko no es un servicio público — no hay programa formal de bug bounty.
+Finko no es un servicio público - no hay programa formal de bug bounty.
 
 Si encontrás un problema de seguridad en el código del proyecto:
 

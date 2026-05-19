@@ -10,4 +10,4 @@ beforeEach(() => {
 });
 
 // Helpers de test reutilizables (disponibles globalmente en los tests)
-// Los tests los importan explícitamente si los necesitan — no se globalizan
+// Los tests los importan explícitamente si los necesitan - no se globalizan

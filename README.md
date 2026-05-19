@@ -1,4 +1,4 @@
-# Finko — Tu plata, tu control
+# Finko - Tu plata, tu control
 
 PWA offline-first para gestión financiera personal en Colombia.
 Sin servidor. Sin cuenta. Sin rastreo. Tu información nunca sale de tu dispositivo.
@@ -31,7 +31,7 @@ python -m http.server 8080
 npx serve .
 ```
 
-**No abrir `index.html` directamente** — los ES6 modules requieren un servidor HTTP.
+**No abrir `index.html` directamente** - los ES6 modules requieren un servidor HTTP.
 
 ---
 
@@ -41,12 +41,12 @@ npx serve .
 # Instalar dependencias de desarrollo
 npm install
 
-# Tests unitarios (Vitest + happy-dom) — 300 tests
+# Tests unitarios (Vitest + happy-dom) - 300 tests
 npm test
 npm run test:watch          # modo TDD
 npm run coverage            # umbral 90% sobre capa lógica
 
-# Tests E2E (Playwright + Chromium) — 18 smoke tests
+# Tests E2E (Playwright + Chromium) - 18 smoke tests
 npm run test:e2e
 npm run test:e2e:ui         # con inspector
 
@@ -96,7 +96,7 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Capas, flujo de datos, reglas innegociables. |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Solo lo pendiente (post-v1.0). |
 | [`docs/TASKS.md`](docs/TASKS.md) | Tarea activa hoy. |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Memoria del proyecto — qué se hizo en cada fase. |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Memoria del proyecto - qué se hizo en cada fase. |
 | [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) | Patrones de uso para asistentes IA. |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Convenciones, commits, naming. |
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Tokens, componentes, Bento Grid. |
@@ -106,13 +106,13 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Principios del proyecto
 
-1. **Vanilla JS sin build step** — el navegador entiende ES6 modules directamente.
-2. **Offline-first** — el Service Worker garantiza operación sin red.
-3. **Sin servidor** — privacidad absoluta; `localStorage` es la única persistencia.
-4. **Lógica separada del DOM** — cada dominio tiene `logic.js` (puro, testeable) y `view.js` (render).
-5. **Cero `onclick=""` en HTML estático** — todo vía `data-action` delegado.
-6. **Cero `window.X`** — todo vía EventBus e imports explícitos.
-7. **Lenguaje humano** — "Tu plata" antes que "Saldo disponible".
+1. **Vanilla JS sin build step** - el navegador entiende ES6 modules directamente.
+2. **Offline-first** - el Service Worker garantiza operación sin red.
+3. **Sin servidor** - privacidad absoluta; `localStorage` es la única persistencia.
+4. **Lógica separada del DOM** - cada dominio tiene `logic.js` (puro, testeable) y `view.js` (render).
+5. **Cero `onclick=""` en HTML estático** - todo vía `data-action` delegado.
+6. **Cero `window.X`** - todo vía EventBus e imports explícitos.
+7. **Lenguaje humano** - "Tu plata" antes que "Saldo disponible".
 
 ---
 
@@ -136,5 +136,5 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Próximos pasos
 
-Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) — sección "Post-v1.0".
+Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) - sección "Post-v1.0".
 Áreas activas: deploy a producción, mejora de íconos, tests de integración, mantenimiento de constantes legales.

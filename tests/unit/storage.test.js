@@ -13,7 +13,7 @@ beforeEach(() => {
   Object.assign(S, createInitialState());
 });
 
-describe('loadData() — localStorage vacío', () => {
+describe('loadData() - localStorage vacío', () => {
   it('deja S en estado inicial válido', () => {
     loadData();
     expect(S).toEqual(createInitialState());
@@ -99,7 +99,7 @@ describe('round-trip save() + loadData()', () => {
   });
 });
 
-describe('loadData() — corrupción', () => {
+describe('loadData() - corrupción', () => {
   it('resetea a estado inicial si el JSON está corrupto', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     localStorage.setItem(STORAGE_KEY, '{esto no es json válido');
@@ -148,7 +148,7 @@ describe('Migración idempotente', () => {
   });
 });
 
-describe('save() — debounce', () => {
+describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();
 

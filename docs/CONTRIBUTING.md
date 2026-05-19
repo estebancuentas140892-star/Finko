@@ -1,4 +1,4 @@
-# Guía de contribución — Finko Claude
+# Guía de contribución - Finko Claude
 
 ---
 
@@ -11,9 +11,9 @@
 ## Antes de empezar
 
 1. Lee [ARCHITECTURE.md](ARCHITECTURE.md) (10 min)
-2. Lee [TASKS.md](TASKS.md) — cuál es la tarea activa
+2. Lee [TASKS.md](TASKS.md) - cuál es la tarea activa
 3. Lee el `REORG_*.md` o `DESIGN_SYSTEM.md` de la fase activa
-4. Corre `npm test` — debe pasar en verde antes de tocar nada
+4. Corre `npm test` - debe pasar en verde antes de tocar nada
 
 ---
 
@@ -22,7 +22,7 @@
 ```
 1. Arrancar desde la fase activa en TASKS.md
 2. Hacer UNA sola tarea a la vez
-3. npm test — verde obligatorio antes de commitear
+3. npm test - verde obligatorio antes de commitear
 4. Commitear con el formato correcto
 5. Actualizar TASKS.md (mover tarea a completada)
 6. Reportar próxima tarea recomendada
@@ -35,10 +35,10 @@
 ### JavaScript
 
 - **Sin build step.** Vanilla JS ES6 modules. El navegador los entiende directamente.
-- **Sin `window.X`** — toda función o variable debe exportarse con `export`. Comunicación cross-módulo: EventBus.
-- **Sin `onclick=""` en HTML** — todo vía `data-action` delegado en `actions.js`.
-- **`logic.js` sin DOM** — los cálculos no pueden usar `document`, `window` ni `localStorage`. Solo reciben datos, devuelven datos.
-- **`save()` siempre** — toda mutación de `S` va seguida de `save()` de `storage.js`. Nunca escribir a `localStorage` directamente.
+- **Sin `window.X`** - toda función o variable debe exportarse con `export`. Comunicación cross-módulo: EventBus.
+- **Sin `onclick=""` en HTML** - todo vía `data-action` delegado en `actions.js`.
+- **`logic.js` sin DOM** - los cálculos no pueden usar `document`, `window` ni `localStorage`. Solo reciben datos, devuelven datos.
+- **`save()` siempre** - toda mutación de `S` va seguida de `save()` de `storage.js`. Nunca escribir a `localStorage` directamente.
 - **JSDoc en funciones públicas** (opcional pero bienvenido):
   ```js
   /**
@@ -51,16 +51,16 @@
 
 ### CSS
 
-- **Sin `style=""` inline** — siempre clases del design system.
-- **Usar tokens CSS** — `var(--fk-color-primary)` nunca colores hardcoded.
-- **Respetar `@layer`** — no agregar reglas en capas incorrectas.
-- **Modo oscuro incluido** — toda nueva clase debe funcionar en ambos temas.
+- **Sin `style=""` inline** - siempre clases del design system.
+- **Usar tokens CSS** - `var(--fk-color-primary)` nunca colores hardcoded.
+- **Respetar `@layer`** - no agregar reglas en capas incorrectas.
+- **Modo oscuro incluido** - toda nueva clase debe funcionar en ambos temas.
 
 ### HTML
 
-- **Semántica correcta** — `<button>` para acciones, `<a>` para navegación, `<input type="...">` correcto.
-- **ARIA cuando el HTML semántico no alcanza** — no usar ARIA para redundar lo que ya dice el HTML.
-- **Atributos `data-action`** — siempre `kebab-case verbo-sustantivo`: `guardar-gasto`, `editar-meta`.
+- **Semántica correcta** - `<button>` para acciones, `<a>` para navegación, `<input type="...">` correcto.
+- **ARIA cuando el HTML semántico no alcanza** - no usar ARIA para redundar lo que ya dice el HTML.
+- **Atributos `data-action`** - siempre `kebab-case verbo-sustantivo`: `guardar-gasto`, `editar-meta`.
 
 ---
 
@@ -120,7 +120,7 @@ a11y(modales): implementar focus trap en todos los modales
 
 - Cada `logic.js` nuevo tiene su `nombre.test.js` en `tests/unit/`.
 - Los tests corren con `npm test` (Vitest + happy-dom).
-- Los tests de lógica financiera nunca usan mocks de `localStorage` — usan `happy-dom` o datos puros.
+- Los tests de lógica financiera nunca usan mocks de `localStorage` - usan `happy-dom` o datos puros.
 - Cobertura objetivo: ≥ 90% en archivos de `core/` y `dominio/*/logic.js`.
 
 ```bash
@@ -149,9 +149,9 @@ Protocolo cuando cambian (cada Q):
 
 Antes de tocar código, leer en este orden:
 
-1. [IA_CONTEXT.md](IA_CONTEXT.md) — resumen completo del proyecto
-2. [TASKS.md](TASKS.md) — tarea activa y siguiente paso
-3. [ARCHITECTURE.md](ARCHITECTURE.md) — reglas innegociables
+1. [IA_CONTEXT.md](IA_CONTEXT.md) - resumen completo del proyecto
+2. [TASKS.md](TASKS.md) - tarea activa y siguiente paso
+3. [ARCHITECTURE.md](ARCHITECTURE.md) - reglas innegociables
 4. El archivo específico de la fase activa
 
 Nunca hacer cambios destructivos (eliminar archivos, force push) sin confirmación explícita del humano.

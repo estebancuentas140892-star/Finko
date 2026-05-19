@@ -82,7 +82,7 @@ describe('calcularTasaAhorro()', () => {
     expect(calcularTasaAhorro(2_000_000, 1_000_000)).toBe(50);
   });
 
-  it('ahorra el 20% — regla 50/30/20', () => {
+  it('ahorra el 20% - regla 50/30/20', () => {
     expect(calcularTasaAhorro(2_000_000, 1_600_000)).toBe(20);
   });
 
@@ -112,12 +112,12 @@ describe('nivelSalud()', () => {
     expect(nivelSalud(50)).toBe('excelente');
   });
 
-  it('buena cuando tasa 10–19%', () => {
+  it('buena cuando tasa 10-19%', () => {
     expect(nivelSalud(10)).toBe('buena');
     expect(nivelSalud(19)).toBe('buena');
   });
 
-  it('ajustada cuando tasa 0–9%', () => {
+  it('ajustada cuando tasa 0-9%', () => {
     expect(nivelSalud(0)).toBe('ajustada');
     expect(nivelSalud(9)).toBe('ajustada');
   });
@@ -812,25 +812,25 @@ describe('calcularScoreSalud()', () => {
 // ── clasificarScore() ─────────────────────────────────────────────
 
 describe('clasificarScore()', () => {
-  it('clasifica 80–100 como excelente', () => {
+  it('clasifica 80-100 como excelente', () => {
     expect(clasificarScore(80)).toBe('excelente');
     expect(clasificarScore(90)).toBe('excelente');
     expect(clasificarScore(100)).toBe('excelente');
   });
 
-  it('clasifica 60–79 como buena', () => {
+  it('clasifica 60-79 como buena', () => {
     expect(clasificarScore(60)).toBe('buena');
     expect(clasificarScore(70)).toBe('buena');
     expect(clasificarScore(79)).toBe('buena');
   });
 
-  it('clasifica 40–59 como ajustada', () => {
+  it('clasifica 40-59 como ajustada', () => {
     expect(clasificarScore(40)).toBe('ajustada');
     expect(clasificarScore(50)).toBe('ajustada');
     expect(clasificarScore(59)).toBe('ajustada');
   });
 
-  it('clasifica 0–39 como critica', () => {
+  it('clasifica 0-39 como critica', () => {
     expect(clasificarScore(0)).toBe('critica');
     expect(clasificarScore(20)).toBe('critica');
     expect(clasificarScore(39)).toBe('critica');

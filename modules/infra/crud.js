@@ -1,5 +1,5 @@
 /**
- * crud.js — operaciones genéricas sobre el singleton S.
+ * crud.js - operaciones genéricas sobre el singleton S.
  *
  * Contrato:
  * - `guardar`, `editar`, `eliminar` mutan S, llaman save() y emiten `state:change`.
@@ -29,8 +29,8 @@ function genId() {
  * Agrega un ítem nuevo a `S[coleccion]`.
  * Asigna `id` (si no viene) y `fechaCreacion` (si no viene) automáticamente.
  *
- * @param {string} coleccion — clave de S que apunta a un array.
- * @param {Record<string, unknown>} item — datos del nuevo ítem.
+ * @param {string} coleccion - clave de S que apunta a un array.
+ * @param {Record<string, unknown>} item - datos del nuevo ítem.
  * @returns {Record<string, unknown>} el ítem con id y fechaCreacion asignados.
  */
 export function guardar(coleccion, item) {
@@ -50,7 +50,7 @@ export function guardar(coleccion, item) {
  *
  * @param {string} coleccion
  * @param {string} id
- * @param {Record<string, unknown>} cambios — campos a sobreescribir (merge shallow).
+ * @param {Record<string, unknown>} cambios - campos a sobreescribir (merge shallow).
  * @returns {Record<string, unknown> | false} el ítem actualizado, o `false` si no existe.
  */
 export function editar(coleccion, id, cambios) {

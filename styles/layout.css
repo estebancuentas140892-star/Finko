@@ -1,10 +1,10 @@
 /* ============================================================
-   FINKO — LAYOUT
+   FINKO - LAYOUT
    Shell de la app (sidebar + main) y Bento Grid del dashboard.
    ============================================================ */
 
 /* ════════════════════════════════════════════════════════════
-   APP SHELL — estructura principal
+   APP SHELL - estructura principal
    ════════════════════════════════════════════════════════════ */
 
 .app-shell {
@@ -183,7 +183,7 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   BENTO GRID — dashboard
+   BENTO GRID - dashboard
    ════════════════════════════════════════════════════════════
    Vocabulario:
    .bento              → grid container

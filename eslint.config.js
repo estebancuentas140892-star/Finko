@@ -1,4 +1,4 @@
-// ESLint 9 flat config — solo JS, sin TypeScript, sin build step
+// ESLint 9 flat config - solo JS, sin TypeScript, sin build step
 export default [
   {
     files: ['modules/**/*.js', 'tests/**/*.js', 'scripts/**/*.js'],
@@ -8,7 +8,7 @@ export default [
       'no-undef': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
-      // Estilo — complementa Prettier
+      // Estilo - complementa Prettier
       'prefer-const': 'error',
       'no-var': 'error',
 
@@ -33,20 +33,20 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
-        // Node.js — disponible en tests (Vitest corre en Node)
+        // Node.js - disponible en tests (Vitest corre en Node)
         process: 'readonly',
-        // Web Storage API — accedida vía Storage.prototype en tests
+        // Web Storage API - accedida vía Storage.prototype en tests
         Storage: 'readonly',
         // Animación y Web Crypto
         requestAnimationFrame: 'readonly',
         crypto: 'readonly',
         // APIs de formularios y fetch
         FormData:   'readonly',
-        // Blob, URL y FileReader — usados en config (exportar/importar)
+        // Blob, URL y FileReader - usados en config (exportar/importar)
         Blob:         'readonly',
         URL:          'readonly',
         FileReader:   'readonly',
-        // Web Notifications API — usada en infra/notificaciones.js
+        // Web Notifications API - usada en infra/notificaciones.js
         Notification: 'readonly',
       },
     },

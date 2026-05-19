@@ -1,5 +1,5 @@
 /**
- * metas/logic.js — funciones puras del dominio de metas de ahorro.
+ * metas/logic.js - funciones puras del dominio de metas de ahorro.
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
@@ -37,7 +37,7 @@ export function calcularProgreso(meta) {
  * Devuelve `null` si no hay fecha límite.
  * Un valor ≤ 0 significa que el plazo ya venció.
  *
- * @param {string|null|undefined} fechaLimite — YYYY-MM-DD.
+ * @param {string|null|undefined} fechaLimite - YYYY-MM-DD.
  * @returns {number|null}
  */
 export function diasHastaFecha(fechaLimite) {

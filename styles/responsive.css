@@ -1,14 +1,14 @@
 /* ============================================================
-   FINKO — RESPONSIVE
+   FINKO - RESPONSIVE
    Breakpoints:
    xl:  ≥ 1440px (pantallas grandes)
-   lg:  1024–1439px (desktop estándar)
-   md:  768–1023px  (tablet)
-   sm:  360–767px   (móvil moderno: Redmi Note 11, Pixel, iPhone)
+   lg:  1024-1439px (desktop estándar)
+   md:  768-1023px  (tablet)
+   sm:  360-767px   (móvil moderno: Redmi Note 11, Pixel, iPhone)
    xs:  < 360px     (móvil pequeño legacy: iPhone SE 1ª gen)
 
    Principios:
-   1. Fluid typography con clamp() en hero metrics — no salta entre BPs.
+   1. Fluid typography con clamp() en hero metrics - no salta entre BPs.
    2. Touch targets ≥ 44px en móvil/tablet (Apple HIG + Material).
    3. Inputs/selects ≥ 16px font-size en móvil → evita zoom autom. iOS.
    4. Grids fijos (3 cols, etc.) colapsan a 1 col en < 768px.
@@ -107,13 +107,13 @@
   .bento__cell--full   { grid-column: span 6; }
   .bento__cell--half   { grid-column: span 3; }
 
-  /* ── TOUCH TARGETS — Apple HIG 44pt mínimo ─────────────────── */
+  /* ── TOUCH TARGETS - Apple HIG 44pt mínimo ─────────────────── */
   .btn         { min-height: 44px; }
   .btn-sm      { min-height: 36px; }  /* botones pequeños siguen siendo pequeños */
   .btn-lg      { min-height: 52px; }
   .btn-icon    { min-width: 44px; }
 
-  /* ── INPUTS — 16px font-size evita zoom autom. en iOS ──────── */
+  /* ── INPUTS - 16px font-size evita zoom autom. en iOS ──────── */
   .input,
   textarea.input,
   .select {
@@ -127,7 +127,7 @@
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */
 @media (max-width: 767px) {
 
-  /* Bento: 1 columna — scroll natural */
+  /* Bento: 1 columna - scroll natural */
   .bento {
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
@@ -141,7 +141,7 @@
   .bento__cell--tall,
   .bento__cell--taller { grid-row: span 1; }
 
-  /* Hero metric del dashboard — fluid scaling:
+  /* Hero metric del dashboard - fluid scaling:
      320px → 24px (mín legible)
      393px (Redmi Note 11/Pixel/iPhone moderno) → ~32px
      600px → max ~36px */
@@ -151,13 +151,13 @@
     font-size: clamp(1.5rem, 0.25rem + 7vw, 2.25rem);
   }
 
-  /* Títulos de sección — fluid */
+  /* Títulos de sección - fluid */
   .section__title,
   .section h1 {
     font-size: clamp(1.375rem, 0.5rem + 3vw, 1.625rem);
   }
 
-  /* Padding lateral de sección — cómodo en móvil */
+  /* Padding lateral de sección - cómodo en móvil */
   .section {
     padding: var(--fk-space-4);
   }
@@ -208,7 +208,7 @@
   }
 }
 
-/* ── MÓVIL PEQUEÑO (< 360px) — iPhone SE 1ª gen, dispositivos legacy ─ */
+/* ── MÓVIL PEQUEÑO (< 360px) - iPhone SE 1ª gen, dispositivos legacy ─ */
 @media (max-width: 359px) {
   .section { padding: var(--fk-space-3); }
   .card { padding: var(--fk-space-3); }

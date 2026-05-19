@@ -1,5 +1,5 @@
 /**
- * export/logic.js — serialización de gastos a CSV.
+ * export/logic.js - serialización de gastos a CSV.
  *
  * Formato de salida compatible con el importador (D.2): roundtrip garantizado.
  * Headers: fecha, monto, descripcion, categoria, cuenta, nota

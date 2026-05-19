@@ -1,5 +1,5 @@
 /**
- * presupuesto/index.js — API pública del dominio de presupuesto.
+ * presupuesto/index.js - API pública del dominio de presupuesto.
  *
  * Responsabilidades:
  * - Registrar acciones data-action: nuevo-presupuesto, editar-presupuesto, eliminar-presupuesto.

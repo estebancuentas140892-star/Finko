@@ -1,11 +1,11 @@
 /**
- * notificaciones.test.js — tests para las funciones PURAS de notificaciones.
+ * notificaciones.test.js - tests para las funciones PURAS de notificaciones.
  *
  * Las funciones que tocan el DOM o la Notification API (pedirPermiso,
  * mostrarNotificacion, verificarYNotificar, estadoPermiso) no se testean
  * aquí porque requieren un entorno real de navegador.
  *
- * Lo que sí se testea: formatearMensajeNotificacion() — pura y sin side effects.
+ * Lo que sí se testea: formatearMensajeNotificacion() - pura y sin side effects.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -38,18 +38,18 @@ describe('formatearMensajeNotificacion()', () => {
     expect(cuerpo).toBe('');
   });
 
-  it('un compromiso que vence hoy — título dice "vence hoy"', () => {
+  it('un compromiso que vence hoy - título dice "vence hoy"', () => {
     const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 0 })]);
     expect(titulo).toMatch(/hoy/i);
     expect(titulo).toContain('Arriendo');
   });
 
-  it('un compromiso que vence mañana — título dice "mañana"', () => {
+  it('un compromiso que vence mañana - título dice "mañana"', () => {
     const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 1 })]);
     expect(titulo).toMatch(/ma[ñn]ana/i);
   });
 
-  it('un compromiso que vence en N días — título contiene el número', () => {
+  it('un compromiso que vence en N días - título contiene el número', () => {
     const { titulo } = formatearMensajeNotificacion([compromiso({ diasRestantes: 3 })]);
     expect(titulo).toContain('3');
     expect(titulo).toMatch(/días?/i);
@@ -65,7 +65,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(cuerpo).toMatch(/recordatorio/i);
   });
 
-  it('múltiples compromisos — título dice cuántos y usa ⏰', () => {
+  it('múltiples compromisos - título dice cuántos y usa ⏰', () => {
     const proximos = [
       compromiso({ id: 'c1', descripcion: 'Arriendo',  diasRestantes: 0 }),
       compromiso({ id: 'c2', descripcion: 'Netflix',   diasRestantes: 1 }),
@@ -76,7 +76,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(titulo).toContain('3');
   });
 
-  it('múltiples compromisos — cuerpo contiene nombres de los compromisos', () => {
+  it('múltiples compromisos - cuerpo contiene nombres de los compromisos', () => {
     const proximos = [
       compromiso({ id: 'c1', descripcion: 'Arriendo', diasRestantes: 0 }),
       compromiso({ id: 'c2', descripcion: 'Netflix',  diasRestantes: 1 }),
@@ -86,7 +86,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(cuerpo).toContain('Netflix');
   });
 
-  it('cuando hay varios compromisos hoy — resumen dice "hoy"', () => {
+  it('cuando hay varios compromisos hoy - resumen dice "hoy"', () => {
     const proximos = [
       compromiso({ id: 'c1', descripcion: 'A', diasRestantes: 0 }),
       compromiso({ id: 'c2', descripcion: 'B', diasRestantes: 0 }),
@@ -95,7 +95,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(titulo).toMatch(/hoy/i);
   });
 
-  it('cuando hay varios compromisos mañana — resumen dice "mañana"', () => {
+  it('cuando hay varios compromisos mañana - resumen dice "mañana"', () => {
     const proximos = [
       compromiso({ id: 'c1', descripcion: 'A', diasRestantes: 1 }),
       compromiso({ id: 'c2', descripcion: 'B', diasRestantes: 1 }),
@@ -104,7 +104,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(titulo).toMatch(/ma[ñn]ana/i);
   });
 
-  it('más de 3 compromisos — cuerpo trunca y añade "y N más"', () => {
+  it('más de 3 compromisos - cuerpo trunca y añade "y N más"', () => {
     const proximos = Array.from({ length: 5 }, (_, i) =>
       compromiso({ id: `c${i}`, descripcion: `Pago ${i}`, diasRestantes: 0 })
     );
@@ -112,7 +112,7 @@ describe('formatearMensajeNotificacion()', () => {
     expect(cuerpo).toMatch(/y \d+ más/);
   });
 
-  it('exactamente 3 compromisos — cuerpo NO agrega "y N más"', () => {
+  it('exactamente 3 compromisos - cuerpo NO agrega "y N más"', () => {
     const proximos = Array.from({ length: 3 }, (_, i) =>
       compromiso({ id: `c${i}`, descripcion: `Pago ${i}`, diasRestantes: 0 })
     );

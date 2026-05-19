@@ -1,5 +1,5 @@
 /**
- * onboarding.js — wizard inicial para usuarios nuevos.
+ * onboarding.js - wizard inicial para usuarios nuevos.
  *
  * Fase 6: stub funcional que auto-completaba el onboarding.
  * Fase 13: wizard real de 2 pasos (nombre + bienvenida) usando el sistema de modales.
@@ -37,7 +37,7 @@ function _mostrarWizard() {
 
   abrirModal(overlay);
 
-  // Listener del formulario — delegado dentro del overlay.
+  // Listener del formulario - delegado dentro del overlay.
   overlay.addEventListener('submit', _onSubmitWizard);
 }
 

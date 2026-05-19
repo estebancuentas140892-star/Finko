@@ -1,5 +1,5 @@
 /**
- * calculadoras/logic.js — fórmulas financieras puras para Colombia.
+ * calculadoras/logic.js - fórmulas financieras puras para Colombia.
  * Sin DOM. Sin S. Sin efectos secundarios. Testeable en Node/Vitest.
  *
  * Constantes legales usadas (resueltas dinámicamente vía `constants.js`):
@@ -8,7 +8,7 @@
  *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto.
  *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo).
  *
- * Los valores numéricos viven en `modules/core/constants.js` — para actualizarlos
+ * Los valores numéricos viven en `modules/core/constants.js` - para actualizarlos
  * basta con agregar una entrada al año/trimestre nuevo allí.
  */
 
@@ -30,9 +30,9 @@ import {
  * La retención en la fuente es del 7 % sobre el rendimiento bruto
  * (aplica a personas naturales no declarantes; tasa estándar SFC).
  *
- * @param {number} principal    — Capital invertido en COP.
- * @param {number} tasaEA       — Tasa efectiva anual como decimal (ej. 0.12 = 12%).
- * @param {number} plazo        — Plazo en días (mín. 1).
+ * @param {number} principal    - Capital invertido en COP.
+ * @param {number} tasaEA       - Tasa efectiva anual como decimal (ej. 0.12 = 12%).
+ * @param {number} plazo        - Plazo en días (mín. 1).
  * @returns {{
  *   valorFuturo: number,
  *   rendimientoBruto: number,
@@ -57,7 +57,7 @@ export function calcularCDT(principal, tasaEA, plazo) {
   };
 }
 
-// ── CRÉDITO (cuota fija — sistema francés) ────────────────────────
+// ── CRÉDITO (cuota fija - sistema francés) ────────────────────────
 
 /**
  * Calcula la cuota mensual fija de un crédito (sistema francés / amortización constante).
@@ -65,9 +65,9 @@ export function calcularCDT(principal, tasaEA, plazo) {
  * Conversión EA → mensual: `i_m = (1 + i_EA)^(1/12) − 1`
  * Cuota: `C = P × i_m × (1 + i_m)^n / ((1 + i_m)^n − 1)`
  *
- * @param {number} principal   — Monto del crédito en COP.
- * @param {number} tasaEA      — Tasa efectiva anual como decimal.
- * @param {number} plazoMeses  — Número de cuotas mensuales.
+ * @param {number} principal   - Monto del crédito en COP.
+ * @param {number} tasaEA      - Tasa efectiva anual como decimal.
+ * @param {number} plazoMeses  - Número de cuotas mensuales.
  * @returns {{
  *   cuotaMensual: number,
  *   totalPagado: number,
@@ -104,10 +104,10 @@ export function calcularCredito(principal, tasaEA, plazoMeses) {
  *
  * Fórmula: `M = P × (1 + r/n)^(n×t)`
  *
- * @param {number} principal          — Capital inicial en COP.
- * @param {number} tasaAnualPct       — Tasa anual como porcentaje (ej. 12 = 12%).
- * @param {number} periodosPorAnio    — Capitalización: 1=anual, 2=semestral, 12=mensual, 365=diaria.
- * @param {number} anios              — Horizonte en años.
+ * @param {number} principal          - Capital inicial en COP.
+ * @param {number} tasaAnualPct       - Tasa anual como porcentaje (ej. 12 = 12%).
+ * @param {number} periodosPorAnio    - Capitalización: 1=anual, 2=semestral, 12=mensual, 365=diaria.
+ * @param {number} anios              - Horizonte en años.
  * @returns {{
  *   montoFinal: number,
  *   ganancia: number,
@@ -133,7 +133,7 @@ export function calcularInteresCompuesto(principal, tasaAnualPct, periodosPorAni
  * Aproximación clásica: `años ≈ 72 / tasa_%`.
  * Resultado exacto (logarítmico) incluido para comparación.
  *
- * @param {number} tasaAnualPct — Tasa anual como porcentaje (ej. 12 = 12%).
+ * @param {number} tasaAnualPct - Tasa anual como porcentaje (ej. 12 = 12%).
  * @returns {{
  *   aniosAproximados: number,
  *   aniosExactos: number,
@@ -158,8 +158,8 @@ export function calcularRegla72(tasaAnualPct) {
  * (*) El auxilio de transporte se suma solo si salario ≤ 2 × SMMLV vigente.
  * Máximo de días por liquidación semestral: 180.
  *
- * @param {number} salario      — Salario mensual en COP.
- * @param {number} dias         — Días trabajados en el semestre (máx. 180).
+ * @param {number} salario      - Salario mensual en COP.
+ * @param {number} dias         - Días trabajados en el semestre (máx. 180).
  * @returns {{
  *   prima: number,
  *   incluyeAuxilio: boolean,
@@ -186,15 +186,15 @@ export function calcularPrima(salario, dias) {
 
 /**
  * Calcula el aporte mensual a la PILA (Planilla Integrada de Liquidación
- * de Aportes) para trabajadores independientes — Decreto 1273/2018.
+ * de Aportes) para trabajadores independientes - Decreto 1273/2018.
  *
  * IBC = max(ingreso × 40 %, 1 SMMLV).
  * Salud:   12.5 % del IBC.
  * Pensión: 16 % del IBC.
  * ARL:     según clase de riesgo (clase I = 0.522 %).
  *
- * @param {number} ingreso  — Ingreso mensual bruto en COP.
- * @param {number} [arl]    — Tasa ARL como decimal (default: clase I).
+ * @param {number} ingreso  - Ingreso mensual bruto en COP.
+ * @param {number} [arl]    - Tasa ARL como decimal (default: clase I).
  * @returns {{
  *   ibc: number,
  *   salud: number,
@@ -226,9 +226,9 @@ export function calcularPILA(ingreso, arl = ARL_CLASE_I) {
  *
  * Fórmula de Fisher: `r_real = (1 + r_nominal) / (1 + inflación) − 1`
  *
- * @param {number} capital       — Capital invertido en COP.
- * @param {number} tasaPct       — Tasa nominal anual en porcentaje.
- * @param {number} inflacionPct  — Inflación anual en porcentaje.
+ * @param {number} capital       - Capital invertido en COP.
+ * @param {number} tasaPct       - Tasa nominal anual en porcentaje.
+ * @param {number} inflacionPct  - Inflación anual en porcentaje.
  * @returns {{
  *   tasaRealPct: number,
  *   gananciaNominal: number,
@@ -260,8 +260,8 @@ export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
  *   - `estandar`  → 65 % ≤ ratio < 85 % (típica de mercado).
  *   - `razonable` → ratio < 65 % o tasa ≤ 0.
  *
- * @param {number} taEA   — Tasa efectiva anual como decimal (ej. 0.20 = 20 %).
- * @param {number} [usura] — Usura vigente como decimal (default: `TASA_USURA` del trimestre actual).
+ * @param {number} taEA   - Tasa efectiva anual como decimal (ej. 0.20 = 20 %).
+ * @param {number} [usura] - Usura vigente como decimal (default: `TASA_USURA` del trimestre actual).
  * @returns {'usura' | 'alta' | 'estandar' | 'razonable'}
  */
 export function clasificarTasaCredito(taEA, usura = TASA_USURA) {
@@ -277,7 +277,7 @@ export function clasificarTasaCredito(taEA, usura = TASA_USURA) {
 
 /**
  * Valida los campos numéricos de cualquier calculadora.
- * @param {Record<string, string>} campos — { nombre: valor_string }.
+ * @param {Record<string, string>} campos - { nombre: valor_string }.
  * @param {Record<string, { min?: number, max?: number, entero?: boolean }>} reglas
  * @returns {string[]} Mensajes de error.
  */

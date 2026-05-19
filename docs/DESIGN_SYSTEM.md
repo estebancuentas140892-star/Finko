@@ -1,4 +1,4 @@
-# Design System — Finko Claude
+# Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
 > Última revisión: Fase 2 (2026-05-12)
@@ -7,12 +7,12 @@
 
 ## Principios de diseño
 
-1. **Claridad sobre estética** — Si hay duda entre lo bonito y lo claro, gana lo claro.
-2. **Lenguaje humano** — "Tu plata" antes que "Saldo disponible".
-3. **Modo oscuro por defecto** — Reduce fatiga visual en uso prolongado.
-4. **WCAG AA mínimo** — Todo texto principal cumple relación de contraste ≥ 4.5:1.
-5. **Responsive real** — Cada componente funciona en 320px y en 1440px.
-6. **Tokens siempre** — Nunca hardcodear colores, espaciados ni tamaños.
+1. **Claridad sobre estética** - Si hay duda entre lo bonito y lo claro, gana lo claro.
+2. **Lenguaje humano** - "Tu plata" antes que "Saldo disponible".
+3. **Modo oscuro por defecto** - Reduce fatiga visual en uso prolongado.
+4. **WCAG AA mínimo** - Todo texto principal cumple relación de contraste ≥ 4.5:1.
+5. **Responsive real** - Cada componente funciona en 320px y en 1440px.
+6. **Tokens siempre** - Nunca hardcodear colores, espaciados ni tamaños.
 
 ---
 
@@ -50,7 +50,7 @@ font-family: var(--fk-font-mono);  /* DM Mono */
 | `--fk-bg-elevated` | `#1d2130` | Cards dentro de cards, inputs |
 | `--fk-bg-hover` | `rgba(255,255,255,0.04)` | Estado hover de filas y botones ghost |
 
-### Fondos (modo claro — `body.light-theme`)
+### Fondos (modo claro - `body.light-theme`)
 
 | Token | Valor |
 |---|---|
@@ -288,15 +288,15 @@ El Bento Grid es el layout del dashboard (`#sec-dash`). Funciona con CSS Grid de
 | `.bento__cell` (base) | 4 | 1 |
 | `.bento__cell--wide` | 8 | 1 |
 | `.bento__cell--full` | 12 | 1 |
-| `+ .bento__cell--tall` | — | 2 |
-| `+ .bento__cell--taller` | — | 3 |
+| `+ .bento__cell--tall` | - | 2 |
+| `+ .bento__cell--taller` | - | 3 |
 
 ### Responsive
 
 | Viewport | Columnas del grid | Comportamiento |
 |---|---|---|
 | `> 1024px` | 12 | Bento completo |
-| `768–1023px` | 6 | Celda base = 3 cols |
+| `768-1023px` | 6 | Celda base = 3 cols |
 | `< 768px` | 1 | Columna única, scroll natural |
 
 ---
@@ -330,7 +330,7 @@ los tokens de texto e interactivos para garantizar contraste WCAG.
 
 ---
 
-## Tipografía — nota de privacidad
+## Tipografía - nota de privacidad
 
 Las fuentes actualmente se cargan desde Google Fonts (plan de privacidad: Fase 13).
 En Fase 13 (PWA), se migrará a self-hosted en `assets/fonts/` para eliminar

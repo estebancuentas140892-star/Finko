@@ -1,4 +1,4 @@
-# HANDOFF — Finko Claude
+# HANDOFF - Finko Claude
 
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
@@ -17,7 +17,7 @@ Vanilla JS puro + ES6 modules. Sin framework, sin build step, sin servidor, sin 
 Todo vive en `localStorage` (clave `fk_v1`). Pensada para personas con poco conocimiento
 financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GMF).
 
-**Versión actual:** `v1.0.0` — todas las 14 fases originales completadas y cerradas.
+**Versión actual:** `v1.0.0` - todas las 14 fases originales completadas y cerradas.
 **Rama principal:** `main`.
 
 ---
@@ -151,7 +151,7 @@ en `styles/components.css` sin tocar ninguno de los archivos JS ni HTML.
 - SW v20 a v21.
 - Archivos: `styles/components.css`, `service-worker.js`.
 
-### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
+### E.2 - Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
 Hallazgo importante: los valores en `constants.js` estaban desactualizados
 (eran los de 2025 etiquetados como 2026). Actualizados a los valores
 oficiales 2026:
@@ -188,13 +188,13 @@ y verificar empty state visible.
 - `service-worker.js` (v13→v14)
 - Tests: 702/702 unit, 32/32 E2E verdes.
 
-### Test E2E F.4 — Smoke de Estrategia de pago · 2026-05-18
+### Test E2E F.4 - Smoke de Estrategia de pago · 2026-05-18
 8 tests Playwright en `tests/e2e/estrategia-pago.test.js`: card visible con ≥ 2
 deudas, orden Avalancha (mayor tasa primero), orden Bola de Nieve (menor saldo
 primero), toggle ida/vuelta, extra mensual redibuja totales, intereses formateados,
 hint con 1 deuda, contenedor vacío sin deudas. 26/26 E2E verdes.
 
-### F.4 — Estrategias Avalancha / Bola de Nieve · 2026-05-18
+### F.4 - Estrategias Avalancha / Bola de Nieve · 2026-05-18
 3 funciones puras en `compromisos/logic.js`: `filtrarDeudasPagables`,
 `simularEstrategiaPago` (mes a mes con interés `(1+EA)^(1/12)-1`, cuotas
 liberadas que ruedan, tope MAX_MESES=600), `compararEstrategias`. Card
@@ -205,12 +205,12 @@ tests nuevos (702/702 verdes). SW v12→v13.
 - `modules/dominio/compromisos/{logic,view,index}.js`, `index.html`,
   `styles/components.css`, `tests/unit/compromisos.test.js`, `service-worker.js`
 
-### F.3 — Score de Salud Financiera con 4 factores ponderados · 2026-05-18
-Agregado cross-dominio en dashboard + panel `analisis/`. Score 0–100 con 4 factores
+### F.3 - Score de Salud Financiera con 4 factores ponderados · 2026-05-18
+Agregado cross-dominio en dashboard + panel `analisis/`. Score 0-100 con 4 factores
 ponderados: tasa de ahorro (40%), deuda-a-activos (25%), liquidez en meses (20%),
 control de gastos / volatilidad (15%). Clasificación en 4 bandas visuales: excelente
-(80+), buena (60–79), ajustada (40–59), crítica (<40). Card con hero number, gauge
-0–100, y 4 sub-factor cards mostrando drivers. Volatilidad calculada como std dev
+(80+), buena (60-79), ajustada (40-59), crítica (<40). Card con hero number, gauge
+0-100, y 4 sub-factor cards mostrando drivers. Volatilidad calculada como std dev
 de 12 meses de gastos. 18 tests nuevos: 685/685 verdes. SW v11→v12.
 - `modules/dominio/analisis/{logic,view}.js` (nuevas funciones + integración)
 - `styles/components.css` (+60 líneas para `.score-card` y variantes)
@@ -250,11 +250,11 @@ Tareas opcionales restantes:
 
 | Prioridad | Tarea | Cuándo | Nivel |
 |---|---|---|---|
-| 1 | **A.5 — Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado | Guía lista en [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) |
-| 2 | **E.2 — SMMLV + UVT** (anual) | **Enero 2027** — buscar nuevos valores Mintrabajo (SMMLV) + DIAN (UVT), actualizar `modules/core/constants.js` | ~15 min, Haiku |
-| 3 | **E.3 — GMF + reforma** (demanda) | Si hay reforma tributaria — verificar cambios en GMF | Ad-hoc |
+| 1 | **A.5 - Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado | Guía lista en [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) |
+| 2 | **E.2 - SMMLV + UVT** (anual) | **Enero 2027** - buscar nuevos valores Mintrabajo (SMMLV) + DIAN (UVT), actualizar `modules/core/constants.js` | ~15 min, Haiku |
+| 3 | **E.3 - GMF + reforma** (demanda) | Si hay reforma tributaria - verificar cambios en GMF | Ad-hoc |
 
-### ⏰ Recordatorio enero 2027 — E.2
+### ⏰ Recordatorio enero 2027 - E.2
 
 **Qué hacer:**
 1. 👉 Visita [DIAN UVT](https://www.dian.gov.co/) y [Mintrabajo SMMLV](https://www.mintrabajo.gov.co/)
@@ -278,7 +278,7 @@ Tareas opcionales restantes:
 - **Una tarea a la vez.** No se empieza la siguiente sin verificar en la app y commitear.
 - **Al cerrar cada tarea:** actualizar este archivo (HANDOFF.md) + CHANGELOG.md; eliminar de ROADMAP.md y TASKS.md.
 - **Al final de cada respuesta:** bloque `─── Próximo paso ───` con modelo sugerido + nivel.
-- **Modelos permitidos:** `Haiku 4.5` (sin nivel) · `Sonnet 4.6 — Bajo/Medio/Alto` · `Opus 4.7 — Bajo/Medio/Alto/Extra Alto/Max`.
+- **Modelos permitidos:** `Haiku 4.5` (sin nivel) · `Sonnet 4.6 - Bajo/Medio/Alto` · `Opus 4.7 - Bajo/Medio/Alto/Extra Alto/Max`.
 - **Regla de oro:** calidad del código primero, ahorro de tokens segundo.
 - Workflow completo en [`/CLAUDE.md`](../CLAUDE.md) sección 2.
 
@@ -292,11 +292,11 @@ infra/       → utils, render, a11y, crud, router, csv, svg, notificaciones
 ui/          → bootstrap (entry point), shell, actions (delegación data-action), modales, onboarding
 dominio/     → ingresos, gastos, compromisos, tesoreria, metas, analisis,
                calculadoras, config, import, export
-tests/unit/  → lógica pura (Vitest + happy-dom) — 521 tests
-tests/e2e/   → smoke tests (Playwright) — 18 tests
+tests/unit/  → lógica pura (Vitest + happy-dom) - 521 tests
+tests/e2e/   → smoke tests (Playwright) - 18 tests
 ```
 
-Regla clave: **ningún dominio importa a otro** — comunicación exclusiva por `EventBus`.
+Regla clave: **ningún dominio importa a otro** - comunicación exclusiva por `EventBus`.
 Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no lo muta.
 
 ---

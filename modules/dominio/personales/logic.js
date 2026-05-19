@@ -1,11 +1,11 @@
 /**
- * personales/logic.js — funciones puras del dominio de préstamos personales.
+ * personales/logic.js - funciones puras del dominio de préstamos personales.
  *
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  *
  * Préstamo personal = plata que TÚ prestaste a familia/amigos (espejo de
  * `compromisos.deuda`, donde tú le debes a alguien). Es informal, sin tasa
- * de interés ni amortización — solo registro de monto, pagos parciales,
+ * de interés ni amortización - solo registro de monto, pagos parciales,
  * antigüedad y opcionalmente una fecha pactada de devolución.
  *
  * @typedef {Object} Personal
@@ -60,11 +60,11 @@ export function calcularDias(prestamo, fechaRef = new Date()) {
 /**
  * Clasifica la antigüedad de un préstamo pendiente para el tono UX.
  *
- * - `reciente` : 0–14 días — no hace falta presionar.
- * - `mediano`  : 15–60 días — recordatorio sugerido.
- * - `viejo`    : 61+ días — incomodidad real, hay que hablar.
+ * - `reciente` : 0-14 días - no hace falta presionar.
+ * - `mediano`  : 15-60 días - recordatorio sugerido.
+ * - `viejo`    : 61+ días - incomodidad real, hay que hablar.
  *
- * Cortes culturales, no legales — entre amigos/familia colombianos
+ * Cortes culturales, no legales - entre amigos/familia colombianos
  * la deuda > 2 meses genera tensión.
  *
  * @param {number} dias
@@ -77,10 +77,10 @@ export function clasificarAntiguedad(dias) {
 }
 
 /**
- * Porcentaje pagado (0–100). Util para barras de progreso.
+ * Porcentaje pagado (0-100). Util para barras de progreso.
  *
  * @param {Personal} prestamo
- * @returns {number} 0–100, redondeado.
+ * @returns {number} 0-100, redondeado.
  */
 export function porcentajePagado(prestamo) {
   const monto  = prestamo?.monto  || 0;
@@ -101,7 +101,7 @@ export function porcentajePagado(prestamo) {
  *   totalPendiente: number,   // sumatoria de saldos pendientes
  *   activos: number,          // # préstamos no liquidados
  *   liquidados: number,       // # préstamos completos
- *   pctCobrado: number,       // 0–100
+ *   pctCobrado: number,       // 0-100
  * }}
  */
 export function calcularResumen(personales) {
@@ -132,7 +132,7 @@ export function calcularResumen(personales) {
 /**
  * Ordena préstamos según el modo elegido. No muta el input.
  *
- * - `antiguo`  : más viejos primero — urge cobrar (default).
+ * - `antiguo`  : más viejos primero - urge cobrar (default).
  * - `reciente` : más recientes primero.
  * - `monto`    : mayor pendiente primero.
  *
@@ -156,7 +156,7 @@ export function ordenarPersonales(personales, modo = 'antiguo') {
 
 /**
  * Valida los datos crudos del formulario.
- * @param {Record<string, string>} datos — FormData crudos.
+ * @param {Record<string, string>} datos - FormData crudos.
  * @returns {string[]} Lista de errores. Vacía si todo OK.
  */
 export function validarPersonal(datos) {
@@ -181,7 +181,7 @@ export function validarPersonal(datos) {
 
 /**
  * Normaliza los datos del formulario a un objeto Personal limpio.
- * No asigna id ni fechaCreacion — eso lo hace `crud.guardar`.
+ * No asigna id ni fechaCreacion - eso lo hace `crud.guardar`.
  *
  * @param {Record<string, string>} datos
  * @returns {Omit<Personal, 'id' | 'fechaCreacion'>}

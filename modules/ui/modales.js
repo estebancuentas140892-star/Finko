@@ -1,5 +1,5 @@
 /**
- * modales.js — factory de modales con contrato uniforme.
+ * modales.js - factory de modales con contrato uniforme.
  *
  * Contrato:
  * - abrirModal: activa overlay, quita aria-hidden, atrapa foco.
@@ -12,7 +12,7 @@ import { trapFocus, releaseFocus } from '../infra/a11y.js';
 /**
  * Abre un modal overlay.
  *
- * @param {HTMLElement} overlay — elemento `.modal-overlay` a abrir.
+ * @param {HTMLElement} overlay - elemento `.modal-overlay` a abrir.
  */
 export function abrirModal(overlay) {
   overlay.dataset.open = '';
@@ -37,7 +37,7 @@ export function cerrarModal(overlay) {
  * Resetea todos los campos de formulario dentro de un modal.
  * Llamar antes de abrir un modal en modo "nuevo" para evitar datos residuales.
  *
- * @param {HTMLElement} modal — puede ser el overlay o el panel `.modal`.
+ * @param {HTMLElement} modal - puede ser el overlay o el panel `.modal`.
  */
 export function resetModal(modal) {
   modal.querySelectorAll('input, select, textarea').forEach(el => {

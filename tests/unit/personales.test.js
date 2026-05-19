@@ -64,13 +64,13 @@ describe('calcularDias()', () => {
 // ── clasificarAntiguedad() ────────────────────────────────────────
 
 describe('clasificarAntiguedad()', () => {
-  it('0–14 días → reciente', () => {
+  it('0-14 días → reciente', () => {
     expect(clasificarAntiguedad(0)).toBe('reciente');
     expect(clasificarAntiguedad(7)).toBe('reciente');
     expect(clasificarAntiguedad(14)).toBe('reciente');
   });
 
-  it('15–60 días → mediano', () => {
+  it('15-60 días → mediano', () => {
     expect(clasificarAntiguedad(15)).toBe('mediano');
     expect(clasificarAntiguedad(30)).toBe('mediano');
     expect(clasificarAntiguedad(60)).toBe('mediano');
@@ -162,7 +162,7 @@ describe('ordenarPersonales()', () => {
     { id: 'c', fecha: '2026-05-01', monto: 200, pagado: 100 },
   ];
 
-  it('antiguo (default): fecha ASC — más viejos primero', () => {
+  it('antiguo (default): fecha ASC - más viejos primero', () => {
     const r = ordenarPersonales(lista);
     expect(r.map(p => p.id)).toEqual(['b', 'a', 'c']);
   });

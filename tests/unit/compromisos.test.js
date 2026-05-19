@@ -25,8 +25,8 @@ const hoy = new Date();
 const DIA_HOY = hoy.getDate();
 
 // diaPago en 10 días desde hoy (siempre futuro, nunca igual a hoy en el cómputo).
-const DIA_FUTURO = ((DIA_HOY + 10 - 1) % 28) + 1; // 1–28, nunca pisa hoy
-const DIA_PASADO = ((DIA_HOY - 2 + 28 - 1) % 28) + 1; // 2 días antes, 1–28
+const DIA_FUTURO = ((DIA_HOY + 10 - 1) % 28) + 1; // 1-28, nunca pisa hoy
+const DIA_PASADO = ((DIA_HOY - 2 + 28 - 1) % 28) + 1; // 2 días antes, 1-28
 
 const compromisoBase = (overrides = {}) => ({
   id:          'c1',
@@ -315,9 +315,9 @@ describe('normalizarCompromiso()', () => {
   });
 });
 
-// ── validarCompromiso() — campos de deuda ─────────────────────────
+// ── validarCompromiso() - campos de deuda ─────────────────────────
 
-describe('validarCompromiso() — campos opcionales de deuda', () => {
+describe('validarCompromiso() - campos opcionales de deuda', () => {
   const datosDeuda = { ...datosFormValidos, tipo: 'deuda' };
 
   it('acepta deuda sin saldoPendiente ni tasaEA (ambos vacíos)', () => {

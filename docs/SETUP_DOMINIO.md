@@ -1,4 +1,4 @@
-# A.5 — Configurar dominio custom en Vercel
+# A.5 - Configurar dominio custom en Vercel
 
 > Guía para cambiar de `finko-brown.vercel.app` a un dominio propio (ej: `finko.app`, `finko.co`).
 
@@ -52,7 +52,7 @@
 3. Reemplaza los nameservers existentes con los 4 de Vercel (arriba)
 4. Guarda cambios
 
-**Nota:** Los cambios de DNS pueden tardar 24–48h en propagarse globalmente.
+**Nota:** Los cambios de DNS pueden tardar 24-48h en propagarse globalmente.
 
 ### Paso 3: Verificar en Vercel
 
@@ -83,7 +83,7 @@ Vercel activa HTTPS automáticamente con Let's Encrypt. En ~5 min tendrás certi
 https://finko.app
 ```
 
-Debería funcionar igual que `finko-brown.vercel.app`. Todos los datos del usuario siguen en `localStorage` — no afecta nada.
+Debería funcionar igual que `finko-brown.vercel.app`. Todos los datos del usuario siguen en `localStorage` - no afecta nada.
 
 ### Opción: redirigir el dominio viejo
 
@@ -95,7 +95,7 @@ En Vercel → Project → Deployments → Settings, puedes configurar que `finko
 
 | Escenario | Costo |
 |---|---|
-| Dominio new registrado en Vercel | USD 12–15/año (típico `.app`) |
+| Dominio new registrado en Vercel | USD 12-15/año (típico `.app`) |
 | Dominio ya comprado en Namecheap/GoDaddy | $0 en Vercel (solo DNS, free) |
 
 ---
@@ -113,7 +113,7 @@ En Vercel → Project → Deployments → Settings, puedes configurar que `finko
 ## Notas
 
 - **Finko en producción** vive en `localStorage`. El cambio de dominio NO afecta datos de usuarios.
-- **PWA instalada** en celulares no se afecta por cambio de dominio — seguirá funcionando offline.
+- **PWA instalada** en celulares no se afecta por cambio de dominio - seguirá funcionando offline.
 - **Analytics, logs, certificados** se heredan automáticamente en Vercel.
 
 Para preguntas adicionales, ver [docs de Vercel](https://vercel.com/docs/concepts/projects/domains).

@@ -1,5 +1,5 @@
 /**
- * estrategia-pago.test.js — E2E smoke para F.4 (Avalancha / Bola de nieve).
+ * estrategia-pago.test.js - E2E smoke para F.4 (Avalancha / Bola de nieve).
  *
  * Escenario: 2 deudas con tasas y saldos distintos.
  *   - Deuda A: 30% EA, $15 M saldo, cuota $500 000  → prioritaria en Avalancha
@@ -176,7 +176,7 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
     const pasos = page.locator('#estrategia-pago .estrategia-card__paso');
     await expect(pasos).toHaveCount(2, { timeout: 5_000 });
 
-    // Posición 1 debe ser "Préstamo barato E2E" ($1.5 M — menor saldo)
+    // Posición 1 debe ser "Préstamo barato E2E" ($1.5 M - menor saldo)
     await expect(pasos.nth(0)).toContainText('Préstamo barato E2E');
     // Posición 2 debe ser "Crédito caro E2E" ($15 M)
     await expect(pasos.nth(1)).toContainText('Crédito caro E2E');
@@ -210,7 +210,7 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
     await inputExtra.fill('500000');
     await inputExtra.blur();
 
-    // La card se redibuja — el valor de meses debe cambiar
+    // La card se redibuja - el valor de meses debe cambiar
     const mesesConExtra = await totalLabel.textContent();
     expect(mesesConExtra).not.toBe(mesesSinExtra);
   });

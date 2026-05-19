@@ -1,10 +1,10 @@
 """
-gen-icons.py — Genera los íconos PNG de producción para Finko PWA.
+gen-icons.py - Genera los íconos PNG de producción para Finko PWA.
 
 Íconos generados:
-  assets/icons/icon-192.png          (192×192) — manifest any + maskable
-  assets/icons/icon-512.png          (512×512) — manifest any + maskable
-  assets/icons/apple-touch-icon.png  (180×180) — iOS Safari / homescreen
+  assets/icons/icon-192.png          (192×192) - manifest any + maskable
+  assets/icons/icon-512.png          (512×512) - manifest any + maskable
+  assets/icons/apple-touch-icon.png  (180×180) - iOS Safari / homescreen
 
 Diseño: 3 barras crecientes (gráfico financiero) en #00dc82 sobre fondo #0f1117.
   - Contenido dentro del safe zone 80% (cumple spec maskable).
@@ -57,9 +57,9 @@ def make_icon(final_size: int, path: str) -> None:
 
     # Alturas relativas al alto de la safe zone (barras crecientes)
     heights = [
-        int(sz * 0.36),   # barra izquierda  — corta
-        int(sz * 0.57),   # barra central    — media
-        int(sz * 0.80),   # barra derecha    — alta
+        int(sz * 0.36),   # barra izquierda  - corta
+        int(sz * 0.57),   # barra central    - media
+        int(sz * 0.80),   # barra derecha    - alta
     ]
 
     radius = int(bar_w * 0.28)  # radio de esquinas redondeadas

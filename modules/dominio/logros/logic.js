@@ -1,5 +1,5 @@
 /**
- * logros/logic.js — definicion y evaluacion de logros de usuario.
+ * logros/logic.js - definicion y evaluacion de logros de usuario.
  *
  * Lógica pura, sin DOM, sin efectos secundarios.
  * Cada logro tiene un `id` unico, metadata visual (emoji, nombre, desc) y
@@ -114,7 +114,7 @@ export const LOGROS = [
 
 /**
  * Evalua todos los logros contra el estado actual y retorna los IDs de los
- * que se cumplen. No persiste nada — esa responsabilidad es del caller.
+ * que se cumplen. No persiste nada - esa responsabilidad es del caller.
  *
  * @param {object} s   Estado actual (tipicamente el singleton S).
  * @returns {string[]} IDs de logros que se cumplen en este momento.

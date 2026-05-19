@@ -1,5 +1,5 @@
 /**
- * import/index.js — API pública del dominio de importación CSV.
+ * import/index.js - API pública del dominio de importación CSV.
  *
  * Responsabilidades:
  * - Registrar acciones del flujo: abrir-import, seleccionar-csv,
@@ -54,7 +54,7 @@ function _abrirImport() {
   abrirModal(overlay);
 }
 
-/** @param {HTMLElement} el — el <input type="file"> */
+/** @param {HTMLElement} el - el <input type="file"> */
 function _seleccionarCSV(el) {
   const file = el.files?.[0];
   if (!file) return;

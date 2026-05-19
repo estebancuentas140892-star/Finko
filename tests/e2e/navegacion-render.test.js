@@ -1,5 +1,5 @@
 /**
- * navegacion-render.test.js — Regresión de race condition de hashchange.
+ * navegacion-render.test.js - Regresión de race condition de hashchange.
  *
  * Bug reportado (2026-05-18): tras navegar desde el dashboard a tesoreria,
  * metas, ingresos, gastos o compromisos, la sección a veces aparecía
@@ -10,7 +10,7 @@
  * inicial era `#dash` y el usuario navegaba a otra sección sin haber mutado
  * el estado, nunca se rendereaba el contenido.
  *
- * Estos tests siempre arrancan en `#dash` y navegan después — sin el fix,
+ * Estos tests siempre arrancan en `#dash` y navegan después - sin el fix,
  * el empty state no aparece y los asserts fallan.
  */
 
@@ -110,7 +110,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
       page.locator('#lista-metas .empty-state__title')
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
 
-    // Volver a Tesorería — el render debe seguir presente
+    // Volver a Tesorería - el render debe seguir presente
     await page.click('a[href="#tesoreria"]');
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')

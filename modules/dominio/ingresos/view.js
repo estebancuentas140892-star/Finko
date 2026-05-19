@@ -1,5 +1,5 @@
 /**
- * ingresos/view.js — generación de HTML para el dominio de ingresos.
+ * ingresos/view.js - generación de HTML para el dominio de ingresos.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 

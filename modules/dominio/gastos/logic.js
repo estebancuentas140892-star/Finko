@@ -1,5 +1,5 @@
 /**
- * gastos/logic.js — funciones puras del dominio de gastos.
+ * gastos/logic.js - funciones puras del dominio de gastos.
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
@@ -8,8 +8,8 @@
 /**
  * Filtra gastos que pertenecen al año y mes indicados.
  * @param {import('../../core/state.js').Gasto[]} gastos
- * @param {number} anio — ej. 2026
- * @param {number} mes  — 1–12
+ * @param {number} anio - ej. 2026
+ * @param {number} mes  - 1-12
  */
 export function gastosMes(gastos, anio, mes) {
   const prefijo = `${anio}-${String(mes).padStart(2, '0')}`;
@@ -55,9 +55,9 @@ export function gastosPorCategoria(gastos) {
  * "Gasto hormiga": transacciones individuales ≤ umbralMonto que en conjunto
  * superan umbralTotal en el período dado.
  *
- * @param {import('../../core/state.js').Gasto[]} gastos — ya filtrados por período.
- * @param {number} [umbralMonto=20_000]  — monto máximo por transacción para ser "hormiga".
- * @param {number} [umbralTotal=100_000] — suma mínima para que la categoría sea alerta.
+ * @param {import('../../core/state.js').Gasto[]} gastos - ya filtrados por período.
+ * @param {number} [umbralMonto=20_000]  - monto máximo por transacción para ser "hormiga".
+ * @param {number} [umbralTotal=100_000] - suma mínima para que la categoría sea alerta.
  * @returns {Array<{categoria:string, total:number, cantidad:number, promedio:number}>}
  */
 export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100_000) {

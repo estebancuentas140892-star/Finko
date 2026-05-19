@@ -1,5 +1,5 @@
 /**
- * tests/unit/logros.test.js — cobertura de evaluarLogros().
+ * tests/unit/logros.test.js - cobertura de evaluarLogros().
  *
  * Solo prueba lógica pura (logic.js). El toast y confetti (index.js)
  * requieren DOM completo y se verifican manualmente en la app.
@@ -20,7 +20,7 @@ const MES_ACTUAL = `${HOY.getFullYear()}-${String(HOY.getMonth() + 1).padStart(2
 
 // ── Suite principal ───────────────────────────────────────────────
 
-describe('evaluarLogros — guardia de inputs', () => {
+describe('evaluarLogros - guardia de inputs', () => {
   test('retorna [] si s es null', () => {
     expect(evaluarLogros(null)).toEqual([]);
   });
@@ -39,7 +39,7 @@ describe('evaluarLogros — guardia de inputs', () => {
   });
 });
 
-describe('evaluarLogros — estado inicial vacio', () => {
+describe('evaluarLogros - estado inicial vacio', () => {
   let s;
   beforeEach(() => { s = createInitialState(); });
 
@@ -55,7 +55,7 @@ describe('evaluarLogros — estado inicial vacio', () => {
   });
 });
 
-describe('evaluarLogros — logros de primer registro', () => {
+describe('evaluarLogros - logros de primer registro', () => {
   test('primer-ingreso: se cumple al agregar 1 ingreso', () => {
     const s = estado({ onboarded: true, ingresos: [{ id: '1' }] });
     expect(evaluarLogros(s)).toContain('primer-ingreso');
@@ -92,7 +92,7 @@ describe('evaluarLogros — logros de primer registro', () => {
   });
 });
 
-describe('evaluarLogros — meta-lograda', () => {
+describe('evaluarLogros - meta-lograda', () => {
   test('no se cumple si no hay metas completadas', () => {
     const s = estado({ metas: [{ id: '1', completada: false }] });
     expect(evaluarLogros(s)).not.toContain('meta-lograda');
@@ -110,7 +110,7 @@ describe('evaluarLogros — meta-lograda', () => {
   });
 });
 
-describe('evaluarLogros — diversificador (3+ cuentas activas)', () => {
+describe('evaluarLogros - diversificador (3+ cuentas activas)', () => {
   test('no se cumple con 2 cuentas', () => {
     const s = estado({
       cuentas: [
@@ -153,7 +153,7 @@ describe('evaluarLogros — diversificador (3+ cuentas activas)', () => {
   });
 });
 
-describe('evaluarLogros — diez-gastos', () => {
+describe('evaluarLogros - diez-gastos', () => {
   test('no se cumple con 9 gastos', () => {
     const s = estado({
       gastos: Array.from({ length: 9 }, (_, i) => ({ id: String(i) })),
@@ -178,7 +178,7 @@ describe('evaluarLogros — diez-gastos', () => {
   });
 });
 
-describe('evaluarLogros — mes-en-verde', () => {
+describe('evaluarLogros - mes-en-verde', () => {
   test('no se cumple sin gastos este mes', () => {
     const s = estado({
       ingresos: [{ id: '1', monto: 2000000, frecuencia: 'mensual', activo: true }],
@@ -226,7 +226,7 @@ describe('evaluarLogros — mes-en-verde', () => {
   });
 });
 
-describe('evaluarLogros — multiples logros simultaneos', () => {
+describe('evaluarLogros - multiples logros simultaneos', () => {
   test('usuario con datos completos desbloquea varios logros a la vez', () => {
     const s = estado({
       onboarded:    true,
@@ -253,7 +253,7 @@ describe('evaluarLogros — multiples logros simultaneos', () => {
   });
 });
 
-describe('LOGROS — integridad de la tabla', () => {
+describe('LOGROS - integridad de la tabla', () => {
   test('todos los logros tienen id, nombre, emoji, desc, eval', () => {
     for (const l of LOGROS) {
       expect(typeof l.id,     `id de ${l.id}`).toBe('string');

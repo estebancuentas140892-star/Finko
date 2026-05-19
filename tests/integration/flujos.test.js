@@ -1,5 +1,5 @@
 /**
- * tests/integration/flujos.test.js — C.1 / C.2 / C.3
+ * tests/integration/flujos.test.js - C.1 / C.2 / C.3
  *
  * Prueba los flujos principales de usuario cruzando múltiples dominios.
  * A diferencia de los tests unitarios (que aíslan una función), aquí se
@@ -75,9 +75,9 @@ function buildEstadoBase() {
   return { cuenta, ingreso, gasto };
 }
 
-// ── Suite 1 — Estado resultante del flujo ─────────────────────────────────────
+// ── Suite 1 - Estado resultante del flujo ─────────────────────────────────────
 
-describe('C.1 — Flujo onboarding → cuenta → ingreso → gasto', () => {
+describe('C.1 - Flujo onboarding → cuenta → ingreso → gasto', () => {
   let refs;
 
   beforeEach(() => {
@@ -128,9 +128,9 @@ describe('C.1 — Flujo onboarding → cuenta → ingreso → gasto', () => {
   });
 });
 
-// ── Suite 2 — Análisis cross-domain ──────────────────────────────────────────
+// ── Suite 2 - Análisis cross-domain ──────────────────────────────────────────
 
-describe('C.1 — Análisis cross-domain sobre el estado construido', () => {
+describe('C.1 - Análisis cross-domain sobre el estado construido', () => {
   beforeEach(() => {
     resetS();
     buildEstadoBase();
@@ -187,9 +187,9 @@ describe('C.1 — Análisis cross-domain sobre el estado construido', () => {
   });
 });
 
-// ── Suite 3 — Persistencia: roundtrip localStorage ───────────────────────────
+// ── Suite 3 - Persistencia: roundtrip localStorage ───────────────────────────
 
-describe('C.1 — Persistencia roundtrip (flush + reload)', () => {
+describe('C.1 - Persistencia roundtrip (flush + reload)', () => {
   it('todo el estado del flujo sobrevive a flush + loadData()', () => {
     resetS();
     const { cuenta } = buildEstadoBase();
@@ -227,7 +227,7 @@ describe('C.1 — Persistencia roundtrip (flush + reload)', () => {
     expect(resumenDespues.salud).toBe(resumenAntes.salud);
   });
 
-  it('loadData() es idempotente — múltiples recargas dan el mismo resultado', () => {
+  it('loadData() es idempotente - múltiples recargas dan el mismo resultado', () => {
     resetS();
     guardar('gastos', { descripcion: 'Café', monto: 5_000, categoria: 'Alimentación', fecha: '2026-05-01' });
     _flushNow();
@@ -256,9 +256,9 @@ describe('C.1 — Persistencia roundtrip (flush + reload)', () => {
   });
 });
 
-// ── Suite 4 — Resiliencia ─────────────────────────────────────────────────────
+// ── Suite 4 - Resiliencia ─────────────────────────────────────────────────────
 
-describe('C.1 — Resiliencia de la capa de datos', () => {
+describe('C.1 - Resiliencia de la capa de datos', () => {
   beforeEach(resetS);
 
   it('localStorage corrupto: loadData() no lanza y deja S en estado inicial', () => {
@@ -292,9 +292,9 @@ describe('C.1 — Resiliencia de la capa de datos', () => {
   });
 });
 
-// ── Suite 5 — Backup/Restore: export → reset → import ──────────────────────
+// ── Suite 5 - Backup/Restore: export → reset → import ──────────────────────
 
-describe('C.2 — Flujo backup/restore (export → reset → import)', () => {
+describe('C.2 - Flujo backup/restore (export → reset → import)', () => {
   beforeEach(resetS);
 
   it('exportar gastos a CSV preserva toda la información', () => {
@@ -531,9 +531,9 @@ describe('C.2 — Flujo backup/restore (export → reset → import)', () => {
   });
 });
 
-// ── Suite 6 — Migración schema v1 → v2 ──────────────────────────────────────
+// ── Suite 6 - Migración schema v1 → v2 ──────────────────────────────────────
 
-describe('C.3 — Migración schema v1 → v2 (envelope budgeting)', () => {
+describe('C.3 - Migración schema v1 → v2 (envelope budgeting)', () => {
   beforeEach(resetS);
 
   /** Serializa un fixture en localStorage y dispara loadData(). */
@@ -559,7 +559,7 @@ describe('C.3 — Migración schema v1 → v2 (envelope budgeting)', () => {
     ],
     compromisos: [],
     metas: [],
-    // sin presupuestos — característica de v1
+    // sin presupuestos - característica de v1
   };
 
   it('v1 con _version:1 agrega presupuestos:[] y sube _version al actual', () => {
@@ -675,9 +675,9 @@ describe('C.3 — Migración schema v1 → v2 (envelope budgeting)', () => {
   });
 });
 
-// ── Suite 7 — Migración schema v2 → v3 (F.2 préstamos personales) ───────────
+// ── Suite 7 - Migración schema v2 → v3 (F.2 préstamos personales) ───────────
 
-describe('F.2 — Migración schema v2 → v3 (préstamos personales)', () => {
+describe('F.2 - Migración schema v2 → v3 (préstamos personales)', () => {
   beforeEach(resetS);
 
   function loadFixture(fixture) {
@@ -701,7 +701,7 @@ describe('F.2 — Migración schema v2 → v3 (préstamos personales)', () => {
     presupuestos: [
       { id: 'p1', categoria: 'Alimentación', montoMensual: 600_000, activo: true, fechaCreacion: '2026-03-01' },
     ],
-    // sin personales — característica de v2
+    // sin personales - característica de v2
   };
 
   it('v2 con _version:2 agrega personales:[] y sube _version al actual', () => {

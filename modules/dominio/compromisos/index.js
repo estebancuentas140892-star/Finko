@@ -1,5 +1,5 @@
 /**
- * compromisos/index.js — API pública del dominio de compromisos.
+ * compromisos/index.js - API pública del dominio de compromisos.
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
@@ -144,7 +144,7 @@ export function initCompromisos() {
     }
   });
 
-  // Re-render al navegar a #compromisos — sin esto la sección puede aparecer vacía
+  // Re-render al navegar a #compromisos - sin esto la sección puede aparecer vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(_renderTodo, 'compromisos');

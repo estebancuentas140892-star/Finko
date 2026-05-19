@@ -1,13 +1,13 @@
 /**
- * bootstrap.js — entry point de la aplicación.
+ * bootstrap.js - entry point de la aplicación.
  *
  * Orden de inicialización (no cambiar sin revisar dependencias):
- * 1. loadData()      — hidrata S desde localStorage antes de cualquier render.
- * 2. initAcciones()  — registra delegación data-action en document.
- * 3. initShell()     — aplica tema guardado.
- * 4. initRouter()    — activa la sección del hash actual y escucha hashchange.
- * 5. initOnboarding()— wizard si es primera vez, no-op si ya completó.
- * 6. renderAll()     — pinta el estado inicial en el DOM.
+ * 1. loadData()      - hidrata S desde localStorage antes de cualquier render.
+ * 2. initAcciones()  - registra delegación data-action en document.
+ * 3. initShell()     - aplica tema guardado.
+ * 4. initRouter()    - activa la sección del hash actual y escucha hashchange.
+ * 5. initOnboarding()- wizard si es primera vez, no-op si ya completó.
+ * 6. renderAll()     - pinta el estado inicial en el DOM.
  */
 
 import { loadData } from '../core/storage.js';

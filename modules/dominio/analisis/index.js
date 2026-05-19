@@ -1,5 +1,5 @@
 /**
- * analisis/index.js — API pública del dominio de análisis.
+ * analisis/index.js - API pública del dominio de análisis.
  *
  * Análisis es un dominio de sólo lectura: no registra acciones de mutación,
  * no tiene formulario. Se limita a re-renderizar cuando cualquier dato cambia.

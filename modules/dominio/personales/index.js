@@ -1,5 +1,5 @@
 /**
- * personales/index.js — API pública del dominio de préstamos personales.
+ * personales/index.js - API pública del dominio de préstamos personales.
  *
  * Responsabilidades:
  * - Registrar acciones data-action (nuevo, pagar, eliminar).

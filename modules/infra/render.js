@@ -1,11 +1,11 @@
 /**
- * render.js — orquestador de renders y actualizaciones del DOM.
+ * render.js - orquestador de renders y actualizaciones del DOM.
  *
  * Principios:
  * - `renderSmart` evita trabajo si la sección no está visible.
  * - `updSaldo` y `updateBadge` leen S directamente y actualizan el DOM.
  * - `renderAll` es el punto de entrada único para re-renderizar todo.
- * - Los renders de dominio (Fases 7–11) se registran vía `registrarRender`.
+ * - Los renders de dominio (Fases 7-11) se registran vía `registrarRender`.
  */
 
 import { S } from '../core/state.js';
@@ -41,8 +41,8 @@ export function registrarRender(fn) {
  *   se disparen los listeners de hashchange, así que es el único valor
  *   confiable en ese momento.
  *
- * @param {() => void} fn — función de render del dominio.
- * @param {string} key — hash de la sección (ej. `'gast'`, `'metas'`).
+ * @param {() => void} fn - función de render del dominio.
+ * @param {string} key - hash de la sección (ej. `'gast'`, `'metas'`).
  */
 export function renderSmart(fn, key) {
   const hashActual = location.hash.slice(1) || 'dash';

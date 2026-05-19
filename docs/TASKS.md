@@ -1,4 +1,4 @@
-# TASKS — Finko Claude
+# TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
 > Última actualización: 2026-05-17
@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**Versión vigente:** `v1.0.0` — proyecto completo, sin tareas activas.
+**Versión vigente:** `v1.0.0` - proyecto completo, sin tareas activas.
 
 No hay ninguna tarea en curso. El próximo trabajo se elige del [ROADMAP.md](ROADMAP.md) → sección "Post-v1.0".
 
@@ -37,4 +37,4 @@ _(vacío)_
 
 ## Próxima tarea sugerida
 
-Ver [`ROADMAP.md`](ROADMAP.md) — la sección **A. Deploy a producción** es el siguiente paso natural.
+Ver [`ROADMAP.md`](ROADMAP.md) - la sección **A. Deploy a producción** es el siguiente paso natural.

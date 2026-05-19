@@ -1,5 +1,5 @@
 /**
- * ingresos/logic.js — funciones puras del dominio de ingresos.
+ * ingresos/logic.js - funciones puras del dominio de ingresos.
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 

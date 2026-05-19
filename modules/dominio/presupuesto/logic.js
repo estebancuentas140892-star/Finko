@@ -1,5 +1,5 @@
 /**
- * presupuesto/logic.js — funciones puras del dominio de presupuesto por sobre.
+ * presupuesto/logic.js - funciones puras del dominio de presupuesto por sobre.
  *
  * Modelo "envelope budgeting" simplificado:
  *   - Un envelope por categoría (no por mes).
@@ -37,7 +37,7 @@ export function presupuestosActivos(presupuestos) {
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {string} categoria
  * @param {number} anio
- * @param {number} mes — 1–12
+ * @param {number} mes - 1-12
  * @returns {number} Total en COP.
  */
 export function calcularGastadoCategoria(gastos, categoria, anio, mes) {
@@ -57,7 +57,7 @@ export function calcularGastadoCategoria(gastos, categoria, anio, mes) {
  * @param {import('../../core/state.js').Presupuesto} presupuesto
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {number} anio
- * @param {number} mes — 1–12
+ * @param {number} mes - 1-12
  * @returns {{
  *   gastado: number,
  *   asignado: number,

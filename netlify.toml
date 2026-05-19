@@ -1,4 +1,4 @@
-# Finko — configuración de deploy para Netlify.
+# Finko - configuración de deploy para Netlify.
 # Sitio estático puro: sin build step, sin backend.
 # Docs: https://docs.netlify.com/configure-builds/file-based-configuration/
 

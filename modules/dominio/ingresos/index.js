@@ -1,5 +1,5 @@
 /**
- * ingresos/index.js — API pública del dominio de ingresos.
+ * ingresos/index.js - API pública del dominio de ingresos.
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
@@ -96,7 +96,7 @@ export function initIngresos() {
     }
   });
 
-  // Re-render al navegar a #ingresos — sin esto la sección puede aparecer vacía
+  // Re-render al navegar a #ingresos - sin esto la sección puede aparecer vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(renderListaIngresos, 'ingresos');

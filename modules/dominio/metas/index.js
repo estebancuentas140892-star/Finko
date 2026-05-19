@@ -1,5 +1,5 @@
 /**
- * metas/index.js — API pública del dominio de metas de ahorro.
+ * metas/index.js - API pública del dominio de metas de ahorro.
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
@@ -120,7 +120,7 @@ export function initMetas() {
     }
   });
 
-  // Re-render al navegar a #metas — sin esto la sección aparece vacía
+  // Re-render al navegar a #metas - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(renderListaMetas, 'metas');

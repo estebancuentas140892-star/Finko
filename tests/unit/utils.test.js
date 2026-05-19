@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { f, hoy, fechaLegible, dialogo } from '../../modules/infra/utils.js';
 
-describe('f() — formato moneda COP', () => {
+describe('f() - formato moneda COP', () => {
   it('formatea cero', () => {
     expect(f(0)).toBe('$0');
   });
@@ -36,7 +36,7 @@ describe('f() — formato moneda COP', () => {
   });
 });
 
-describe('hoy() — fecha de hoy', () => {
+describe('hoy() - fecha de hoy', () => {
   it('devuelve string en formato YYYY-MM-DD', () => {
     const result = hoy();
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -54,7 +54,7 @@ describe('hoy() — fecha de hoy', () => {
   });
 });
 
-describe('fechaLegible() — formato largo en español', () => {
+describe('fechaLegible() - formato largo en español', () => {
   it('formatea una fecha ISO a texto legible', () => {
     const result = fechaLegible('2026-05-12');
     // Verificamos que contiene el año y que tiene formato verbal.
@@ -69,7 +69,7 @@ describe('fechaLegible() — formato largo en español', () => {
   });
 });
 
-describe('dialogo() — wrapper de diálogo', () => {
+describe('dialogo() - wrapper de diálogo', () => {
   beforeEach(() => {
     vi.stubGlobal('confirm', vi.fn(() => true));
     vi.stubGlobal('alert', vi.fn());

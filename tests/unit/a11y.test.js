@@ -1,5 +1,5 @@
 /**
- * a11y.test.js — Tests de accesibilidad WCAG sobre index.html.
+ * a11y.test.js - Tests de accesibilidad WCAG sobre index.html.
  *
  * Usa axe-core con happy-dom para verificar que el HTML estático no tiene
  * violaciones WCAG 2.1 AA en las reglas analizables sin rendering real.
@@ -39,7 +39,7 @@ beforeAll(() => {
 
 // ── TESTS ───────────────────────────────────────────────────────────────────
 
-describe('Accesibilidad — index.html (axe-core WCAG 2.1 AA)', () => {
+describe('Accesibilidad - index.html (axe-core WCAG 2.1 AA)', () => {
   it('no tiene violaciones críticas ni graves en el HTML estático', async () => {
     const results = await axe.run(document, {
       runOnly: {
@@ -101,7 +101,7 @@ describe('Accesibilidad — index.html (axe-core WCAG 2.1 AA)', () => {
       console.warn(`Violaciones WCAG moderadas (no bloquean):\n${detalle}`);
     }
 
-    // Moderadas no bloquean el build — solo se reportan.
+    // Moderadas no bloquean el build - solo se reportan.
     expect(moderadas.length).toBeGreaterThanOrEqual(0);
   });
 

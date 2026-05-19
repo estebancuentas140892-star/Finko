@@ -1,5 +1,5 @@
 /**
- * config/index.js — API pública del panel de configuración.
+ * config/index.js - API pública del panel de configuración.
  *
  * Responsabilidades:
  * - Renderizar el panel en #panel-config.
@@ -37,7 +37,7 @@ function _exportarDatos() {
   }
 }
 
-/** @param {HTMLElement} el — el <input type="file"> */
+/** @param {HTMLElement} el - el <input type="file"> */
 function _importarDatos(el) {
   const file = el.files?.[0];
   if (!file) return;
@@ -77,7 +77,7 @@ async function _activarNotificaciones() {
   }
 }
 
-/** @param {HTMLElement} el — el <input type="checkbox"> */
+/** @param {HTMLElement} el - el <input type="checkbox"> */
 function _toggleNotificaciones(el) {
   if (!S.config) S.config = {};
   S.config.notificaciones = el.checked;
@@ -139,7 +139,7 @@ function _inyectarPanel() {
     announce('Perfil actualizado.');
   });
 
-  // Importar: el input file no dispara data-action click — usamos change.
+  // Importar: el input file no dispara data-action click - usamos change.
   panel.querySelector('[data-action="importar-datos"]')
     ?.addEventListener('change', (e) => _importarDatos(e.target));
 }

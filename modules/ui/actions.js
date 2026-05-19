@@ -1,5 +1,5 @@
 /**
- * actions.js — delegador central de data-action.
+ * actions.js - delegador central de data-action.
  *
  * Contrato:
  * - Es el ÚNICO lugar que registra addEventListener en document.
@@ -17,7 +17,7 @@ const _acciones = new Map();
  * Registra una acción. Los dominios la llaman durante su inicialización.
  * Si el nombre ya existe, sobreescribe silenciosamente.
  *
- * @param {string} nombre — valor de `data-action` en el HTML.
+ * @param {string} nombre - valor de `data-action` en el HTML.
  * @param {(el: HTMLElement, e: Event) => void} fn
  */
 export function registrarAccion(nombre, fn) {
@@ -28,7 +28,7 @@ export function registrarAccion(nombre, fn) {
  * Despacha un click al handler registrado.
  * Separada de _handleClick para facilitar tests.
  *
- * @param {HTMLElement} el — elemento con data-action.
+ * @param {HTMLElement} el - elemento con data-action.
  * @param {Event} e
  */
 export function dispatch(el, e) {

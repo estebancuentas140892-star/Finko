@@ -1,5 +1,5 @@
 /**
- * logros/index.js — inicialización, detección y presentación de logros.
+ * logros/index.js - inicialización, detección y presentación de logros.
  *
  * Responsabilidades:
  * - Al arrancar: evaluar logros y mostrar los que se cumplan por primera vez.
@@ -108,7 +108,7 @@ function _lanzarConfetti() {
 
     const color = _CONFETTI_COLORS[i % _CONFETTI_COLORS.length];
     // Dispersar horizontalmente alrededor del centro.
-    const left  = 30 + Math.random() * 40; // 30%–70% del ancho
+    const left  = 30 + Math.random() * 40; // 30%-70% del ancho
     const delay = (Math.random() * 0.4).toFixed(2);
     const rot   = Math.floor(Math.random() * 360);
 

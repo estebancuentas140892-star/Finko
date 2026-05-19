@@ -1,4 +1,4 @@
-# Arquitectura — Finko Claude
+# Arquitectura - Finko Claude
 
 > Documento vivo. Se actualiza al inicio de cada fase.
 > Última revisión: Fase 1 (2026-05-12)
@@ -56,7 +56,7 @@ Bootstrap y orquestación de la interfaz.
 |---|---|
 | `bootstrap.js` | Entry point: importa dominios, registra `data-action`, inicializa app |
 | `shell.js` | Sidebar, toggle de tema, navegación entre secciones |
-| `actions.js` | Delegador central de `data-action` — único lugar con `addEventListener` en document |
+| `actions.js` | Delegador central de `data-action` - único lugar con `addEventListener` en document |
 | `modales.js` | Factory de modales con contrato uniforme (abrir, cerrar, reset) |
 | `onboarding.js` | Wizard de 3 pasos para usuario nuevo (`!S.onboarded`) |
 
@@ -113,7 +113,7 @@ Nunca mutar `S` sin `save()`. Nunca renderizar sin que `S` esté actualizado.
 
 ---
 
-## 4. Estado — Singleton `S`
+## 4. Estado - Singleton `S`
 
 `state.js` exporta un único objeto `S` mutable. Toda la app comparte la misma referencia.
 
@@ -137,9 +137,9 @@ export const EventBus = {
 
 ---
 
-## 5. Persistencia — `storage.js`
+## 5. Persistencia - `storage.js`
 
-- Clave en localStorage: `fco_v1` (schema v1 para Finko Claude — versión fresca).
+- Clave en localStorage: `fco_v1` (schema v1 para Finko Claude - versión fresca).
 - `loadData()` aplica todas las migraciones en orden al cargar.
 - `save()` está debounced 200ms para no saturar escrituras.
 - Cada bump de schema crea una nueva función de migración idempotente.
@@ -156,7 +156,7 @@ function migrate_v1_to_v2(data) {
 
 ---
 
-## 6. Sistema de eventos — EventBus
+## 6. Sistema de eventos - EventBus
 
 El EventBus en `state.js` desacopla dominios entre sí. Ningún dominio importa a otro dominio directamente.
 
@@ -180,7 +180,7 @@ Eventos estándar del sistema:
 
 ---
 
-## 7. HTML — contrato de eventos
+## 7. HTML - contrato de eventos
 
 **0 `onclick=""` en HTML estático.** Toda interacción usa atributos `data-action`:
 
@@ -188,7 +188,7 @@ Eventos estándar del sistema:
 <!-- Correcto -->
 <button data-action="guardar-gasto" data-arg-id="123">Guardar</button>
 
-<!-- Incorrecto — NO hacer -->
+<!-- Incorrecto - NO hacer -->
 <button onclick="guardarGasto(123)">Guardar</button>
 ```
 
@@ -202,7 +202,7 @@ document.addEventListener('click', e => {
 
 ---
 
-## 8. CSS — capas `@layer`
+## 8. CSS - capas `@layer`
 
 ```css
 @layer reset, base, tokens, layout, components, modals, themes, a11y, responsive, utils;
@@ -241,7 +241,7 @@ document.addEventListener('click', e => {
 5. **`save()` debounced.** No escribir a localStorage directamente ni fuera de `storage.js`.
 6. **Migraciones idempotentes.** Cada bump de schema aplica sin romper datos existentes.
 7. **`data-action` delegado.** 0 `onclick` en HTML estático.
-8. **Cero `window.X`** — todo vía EventBus e imports. Ninguna función global.
+8. **Cero `window.X`** - todo vía EventBus e imports. Ninguna función global.
 9. **`logic.js` sin DOM.** Los cálculos no pueden tocar `document` ni `window`.
 10. **Lenguaje humano.** Términos claros para personas sin educación financiera.
 11. **Constantes legales vivas.** Tasa de usura, SMMLV y UVT con revisión trimestral obligatoria.

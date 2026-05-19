@@ -1,5 +1,5 @@
 /**
- * infra/svg.js — helpers puros para generar SVG inline.
+ * infra/svg.js - helpers puros para generar SVG inline.
  *
  * Sin DOM, sin librerías. Cada función devuelve un string `<svg>…</svg>`
  * listo para inyectar vía innerHTML. Probada en Node/Vitest sin happy-dom.
@@ -16,11 +16,11 @@
  *
  * @param {number[]} valores
  * @param {Object} [opts]
- * @param {number} [opts.width=200]    — Ancho del viewBox.
- * @param {number} [opts.height=60]    — Alto del viewBox.
- * @param {string} [opts.color='currentColor'] — Color del trazo.
- * @param {number} [opts.padding=4]    — Margen interno.
- * @param {boolean}[opts.area=true]    — Renderizar relleno bajo la línea.
+ * @param {number} [opts.width=200]    - Ancho del viewBox.
+ * @param {number} [opts.height=60]    - Alto del viewBox.
+ * @param {string} [opts.color='currentColor'] - Color del trazo.
+ * @param {number} [opts.padding=4]    - Margen interno.
+ * @param {boolean}[opts.area=true]    - Renderizar relleno bajo la línea.
  * @param {string} [opts.ariaLabel='Tendencia']
  * @returns {string} SVG completo, o cadena vacía si no hay datos.
  */
@@ -130,13 +130,13 @@ export function donut(segmentos, opts = {}) {
  * El último (slate) se reserva semánticamente para "Otros".
  */
 export const PALETA_CATEGORIAS = [
-  '#00dc82', // verde accent — finko brand
+  '#00dc82', // verde accent - finko brand
   '#3b82f6', // azul
   '#f59e0b', // ámbar
   '#ef4444', // rojo
   '#a855f7', // violeta
   '#06b6d4', // cyan
-  '#94a3b8', // slate — "Otros" / fallback
+  '#94a3b8', // slate - "Otros" / fallback
 ];
 
 /**

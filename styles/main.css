@@ -1,5 +1,5 @@
 /* ============================================================
-   FINKO — CSS ENTRY POINT
+   FINKO - CSS ENTRY POINT
    Importa todas las capas en el orden correcto de cascada.
    IMPORTANTE: NO insertar reglas entre @import statements.
    El orden de los @import determina la prioridad @layer:

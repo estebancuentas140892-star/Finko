@@ -1,9 +1,9 @@
 /**
- * import/view.js — HTML del modal de importación CSV.
+ * import/view.js - HTML del modal de importación CSV.
  *
  * Dos vistas dentro del mismo modal:
- *   - renderImportPicker() — paso 1: seleccionar archivo + formato esperado.
- *   - renderImportPreview(resultado) — paso 2: resumen + tabla + acciones.
+ *   - renderImportPicker() - paso 1: seleccionar archivo + formato esperado.
+ *   - renderImportPreview(resultado) - paso 2: resumen + tabla + acciones.
  *
  * Puede leer datos. NO usa S directo. No muta nada. Sin lógica de negocio.
  */

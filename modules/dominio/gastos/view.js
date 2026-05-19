@@ -1,5 +1,5 @@
 /**
- * gastos/view.js — generación de HTML para el dominio de gastos.
+ * gastos/view.js - generación de HTML para el dominio de gastos.
  * Puede leer S. No puede mutarlo. Sin lógica de negocio.
  */
 

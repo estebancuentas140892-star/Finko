@@ -1,7 +1,7 @@
 """
-gen-splash.py — Genera splash screens PWA para iOS (apple-touch-startup-image)
+gen-splash.py - Genera splash screens PWA para iOS (apple-touch-startup-image)
 
-Tamaños: 5 variantes para iPhones modernos (2020–2025)
+Tamaños: 5 variantes para iPhones modernos (2020-2025)
 Diseño:  fondo #0f1117, logo 3 barras #00dc82 centrado, nombre + tagline
 
 Uso:
@@ -91,4 +91,4 @@ def make_splash(w, h, label):
 for w, h, label in SIZES:
     make_splash(w, h, label)
 
-print('Done — splash screens en assets/splash/')
+print('Done - splash screens en assets/splash/')

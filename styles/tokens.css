@@ -1,5 +1,5 @@
 /* ============================================================
-   FINKO — DESIGN TOKENS
+   FINKO - DESIGN TOKENS
    Todas las decisiones visuales viven aquí.
    NUNCA hardcodear colores, espaciados o radii en otros archivos.
    Prefijo: --fk-
@@ -13,7 +13,7 @@
   --fk-accent-border: rgba(0, 220, 130, 0.35);
   --fk-accent-glow:   rgba(0, 220, 130, 0.2);
 
-  /* ── FONDOS (modo oscuro — default) ─────────────────────────── */
+  /* ── FONDOS (modo oscuro - default) ─────────────────────────── */
   --fk-bg-base:        #0f1117;
   --fk-bg-surface:     #161922;
   --fk-bg-elevated:    #1d2130;
@@ -60,18 +60,18 @@
   /* ── TEXTO SOBRE FONDOS FUERTES ──────────────────────────────── */
   --fk-text-on-bold: #fff;       /* sobre danger/accent/info saturados */
 
-  /* ── DOMINIO — color por sección de la app ───────────────────── */
+  /* ── DOMINIO - color por sección de la app ───────────────────── */
   /* Permite reconocimiento visual inmediato de cada área */
-  --fk-dom-ingresos:     #00dc82;   /* verde   — ingresos */
-  --fk-dom-gastos:       #ff8a5c;   /* naranja — gastos (suavizado: no es emergencia) */
-  --fk-dom-compromisos:  #ff4757;   /* rojo    — deudas/compromisos */
-  --fk-dom-tesoreria:    #3d8aff;   /* azul    — cuentas bancarias */
-  --fk-dom-metas:        #9d73eb;   /* púrpura — objetivos de ahorro */
-  --fk-dom-analisis:     #00e5cc;   /* turquesa — análisis/KPIs */
-  --fk-dom-presupuesto:  #ffb82e;   /* amarillo — presupuesto/sobres */
-  --fk-dom-personales:   #ff4eb8;   /* rosa    — préstamos personales */
+  --fk-dom-ingresos:     #00dc82;   /* verde   - ingresos */
+  --fk-dom-gastos:       #ff8a5c;   /* naranja - gastos (suavizado: no es emergencia) */
+  --fk-dom-compromisos:  #ff4757;   /* rojo    - deudas/compromisos */
+  --fk-dom-tesoreria:    #3d8aff;   /* azul    - cuentas bancarias */
+  --fk-dom-metas:        #9d73eb;   /* púrpura - objetivos de ahorro */
+  --fk-dom-analisis:     #00e5cc;   /* turquesa - análisis/KPIs */
+  --fk-dom-presupuesto:  #ffb82e;   /* amarillo - presupuesto/sobres */
+  --fk-dom-personales:   #ff4eb8;   /* rosa    - préstamos personales */
 
-  /* ── NUDGES — tokens por nivel de urgencia ───────────────────── */
+  /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */
   --fk-nudge-critical-bg:     color-mix(in srgb, var(--fk-danger) 8%, transparent);
   --fk-nudge-critical-border: color-mix(in srgb, var(--fk-danger) 35%, transparent);

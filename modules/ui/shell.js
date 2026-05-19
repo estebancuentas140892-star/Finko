@@ -1,5 +1,5 @@
 /**
- * shell.js — navigation state + theme toggle
+ * shell.js - navigation state + theme toggle
  */
 
 const THEME_KEY   = 'fk_theme';

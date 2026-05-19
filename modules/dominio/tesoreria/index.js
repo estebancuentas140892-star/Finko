@@ -1,5 +1,5 @@
 /**
- * tesoreria/index.js — API pública del dominio de tesorería.
+ * tesoreria/index.js - API pública del dominio de tesorería.
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
@@ -61,7 +61,7 @@ function _guardarCuenta() {
 
 /**
  * Pide confirmación y elimina la cuenta por id.
- * @param {HTMLElement} el — el botón con data-id.
+ * @param {HTMLElement} el - el botón con data-id.
  */
 function _eliminarCuenta(el) {
   const id = el.dataset.id;
@@ -114,7 +114,7 @@ export function initTesoreria() {
     }
   });
 
-  // Re-render al navegar a #tesoreria — sin esto la sección aparece vacía
+  // Re-render al navegar a #tesoreria - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(_renderTodo, 'tesoreria');

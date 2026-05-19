@@ -1,5 +1,5 @@
 /**
- * constants.js — constantes legales y de catálogo para Colombia.
+ * constants.js - constantes legales y de catálogo para Colombia.
  *
  * ── Filosofía: Single Source of Truth ─────────────────────────────
  *
@@ -48,7 +48,7 @@
 /** @type {Record<number, ValoresLegalesAnio | null>} */
 const LEGAL_POR_ANIO = {
   2025: {
-    smmlv:             1_300_000, // Decreto 2292/2024 — incluido para histórico/migraciones
+    smmlv:             1_300_000, // Decreto 2292/2024 - incluido para histórico/migraciones
     auxilioTransporte:   162_000,
     uvt:                  47_065,
     vigenciaDesde: '2025-01-01',
@@ -110,7 +110,7 @@ const USURA_POR_PERIODO = {
  * Si la fecha cae en un año sin entrada (ej. enero 2027 antes de que se
  * publiquen los valores), retorna el último año publicado disponible.
  *
- * @param {Date} [fecha] — Por defecto: ahora.
+ * @param {Date} [fecha] - Por defecto: ahora.
  * @returns {ValoresLegalesAnio & { anio: number }}
  */
 export function legalVigente(fecha = new Date()) {
@@ -146,7 +146,7 @@ export function legalVigente(fecha = new Date()) {
  * Si la fecha cae fuera de cualquier período registrado, retorna el
  * último período conocido.
  *
- * @param {Date} [fecha] — Por defecto: ahora.
+ * @param {Date} [fecha] - Por defecto: ahora.
  * @returns {UsuraPeriodo & { periodo: string }}
  */
 export function tasaUsuraVigente(fecha = new Date()) {
@@ -228,15 +228,15 @@ export const GMF = 0.004;
  *  Fuente: Ley 52/1975. Estable. */
 export const DIAS_PRIMA = 360;
 
-/** Aporte salud para independientes — 12.5 % del IBC.
+/** Aporte salud para independientes - 12.5 % del IBC.
  *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
 export const SALUD_INDEPEND = 0.125;
 
-/** Aporte pensión para independientes — 16 % del IBC.
+/** Aporte pensión para independientes - 16 % del IBC.
  *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
 export const PENSION_INDEPEND = 0.16;
 
-/** ARL clase I (riesgo mínimo, oficinas) — 0.522 % del IBC.
+/** ARL clase I (riesgo mínimo, oficinas) - 0.522 % del IBC.
  *  Fuente: Decreto 1295/1994, tabla de cotización. Estable.
  *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */
 export const ARL_CLASE_I = 0.00522;

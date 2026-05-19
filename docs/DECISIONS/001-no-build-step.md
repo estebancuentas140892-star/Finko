@@ -1,4 +1,4 @@
-# ADR 001 — Sin build step en runtime
+# ADR 001 - Sin build step en runtime
 
 **Estado:** Aceptada
 **Fecha:** 2026-05-12
@@ -12,10 +12,10 @@ Al iniciar Finko Claude, se evaluó si usar un bundler (Vite, Webpack, esbuild) 
 
 Las alternativas consideradas:
 
-1. **Vanilla JS + ES6 modules (sin build)** — opción elegida.
-2. **Vite como bundler** — proceso de build, output en `/dist`, código diferente al fuente.
-3. **TypeScript** — requiere compilación; el archivo fuente `.ts` ≠ el archivo que corre.
-4. **TypeScript + Vite** — máxima complejidad de toolchain.
+1. **Vanilla JS + ES6 modules (sin build)** - opción elegida.
+2. **Vite como bundler** - proceso de build, output en `/dist`, código diferente al fuente.
+3. **TypeScript** - requiere compilación; el archivo fuente `.ts` ≠ el archivo que corre.
+4. **TypeScript + Vite** - máxima complejidad de toolchain.
 
 ---
 
@@ -62,11 +62,11 @@ La app es offline-first y privada. No necesita optimizaciones de bundle para un 
 
 ### Negativas / Restricciones
 
-- Sin tree-shaking automático — todo el código importado se descarga.
+- Sin tree-shaking automático - todo el código importado se descarga.
   - *Mitigación:* lazy-loading manual de módulos pesados (ej: `calculadoras/`).
 - Sin minificación del código JS en producción.
   - *Mitigación:* el Service Worker cachea todo en el primer load; el tamaño importa menos en visitas subsecuentes.
-- Sin TypeScript — no hay chequeo estático de tipos en tiempo de compilación.
+- Sin TypeScript - no hay chequeo estático de tipos en tiempo de compilación.
   - *Mitigación:* JSDoc con `// @ts-check` para tipado opcional sin compilar. Tests cubre la lógica crítica.
 
 ---

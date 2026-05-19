@@ -1,5 +1,5 @@
 /**
- * a11y.js — utilidades de accesibilidad.
+ * a11y.js - utilidades de accesibilidad.
  *
  * - `announce`: notifica a screen readers sin interrumpir la UI.
  * - `trapFocus` / `releaseFocus`: ciclo de foco para modales (WCAG 2.4.3).
@@ -67,7 +67,7 @@ function _getOrCreateLiveRegion(politeness) {
  * Guarda el elemento activo para restaurarlo en `releaseFocus`.
  * Mueve el foco al primer elemento interactivo del contenedor.
  *
- * @param {HTMLElement} el — contenedor del modal o panel.
+ * @param {HTMLElement} el - contenedor del modal o panel.
  */
 export function trapFocus(el) {
   _prevFocus = document.activeElement;

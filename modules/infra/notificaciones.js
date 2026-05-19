@@ -1,5 +1,5 @@
 /**
- * infra/notificaciones.js — abstracción de la Web Notifications API.
+ * infra/notificaciones.js - abstracción de la Web Notifications API.
  *
  * Diseño para PWA offline-first sin servidor:
  * - Las notificaciones se disparan al abrir la app (on-load), no en background.
@@ -17,8 +17,8 @@
  * - DIAS_UMBRAL = 3  → días restantes para que un compromiso sea "próximo".
  *
  * Funciones testables en Node (sin DOM):
- * - `estadoPermiso()` — guardada como string, no lee API directamente.
- * - `formatearMensajeNotificacion(proximos)` — pura, sin side effects.
+ * - `estadoPermiso()` - guardada como string, no lee API directamente.
+ * - `formatearMensajeNotificacion(proximos)` - pura, sin side effects.
  */
 
 import { S } from '../core/state.js';
@@ -128,7 +128,7 @@ export async function verificarYNotificar(compromisos) {
 
 /**
  * Formatea el título y cuerpo de la notificación según cuántos compromisos
- * están próximos a vencer. Función pura — sin side effects, testeable en Node.
+ * están próximos a vencer. Función pura - sin side effects, testeable en Node.
  *
  * @param {Array<{ descripcion: string, diasRestantes: number, monto: number }>} proximos
  * @returns {{ titulo: string, cuerpo: string }}

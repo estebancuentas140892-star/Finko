@@ -1,5 +1,5 @@
 /**
- * lighthouse.js — Corre una auditoría Lighthouse sobre la app en local.
+ * lighthouse.js - Corre una auditoría Lighthouse sobre la app en local.
  *
  * Uso:
  *   node scripts/lighthouse.js [port]
@@ -8,8 +8,8 @@
  *   python -m http.server 8080   (en otra terminal)
  *
  * Genera:
- *   coverage/lighthouse-report.html  — reporte completo interactivo
- *   coverage/lighthouse-scores.json  — scores en JSON (para CI)
+ *   coverage/lighthouse-report.html  - reporte completo interactivo
+ *   coverage/lighthouse-scores.json  - scores en JSON (para CI)
  */
 
 import { writeFileSync, mkdirSync } from 'fs';
@@ -112,7 +112,7 @@ async function run() {
       `\n  Resultado: ${pasaron}/${pasaron + fallaron} objetivos cumplidos.\n`
     );
 
-    // No fallar el proceso — Lighthouse es orientativo, no bloquea CI.
+    // No fallar el proceso - Lighthouse es orientativo, no bloquea CI.
     // Si queres bloquear en CI: process.exitCode = fallaron > 0 ? 1 : 0;
 
   } finally {

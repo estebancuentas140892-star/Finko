@@ -1,8 +1,8 @@
 /**
- * storage.js — persistencia en localStorage + migraciones idempotentes.
+ * storage.js - persistencia en localStorage + migraciones idempotentes.
  *
  * Contrato:
- * - Clave: `fk_v1` (schema v1 — versión fresca del proyecto Finko Claude).
+ * - Clave: `fk_v1` (schema v1 - versión fresca del proyecto Finko Claude).
  * - `loadData()` hidrata S desde localStorage o lo deja en estado inicial.
  * - `save()` está debounced 200 ms y persiste S completo.
  * - Toda migración nueva se agrega a `_migrate()` y bumpea `SCHEMA_VERSION`.
@@ -19,7 +19,7 @@ const DEBOUNCE_MS = 200;
 /** Versión esperada del schema en memoria. */
 const SCHEMA_VERSION = 4;
 
-/** Timer interno del debounce. Variable de módulo — nunca en window. */
+/** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
 
 /**
@@ -113,7 +113,7 @@ export function loadData() {
 
 /**
  * Persiste S a localStorage tras `DEBOUNCE_MS` de inactividad.
- * Llamadas sucesivas reinician el temporizador — sólo el último estado se escribe.
+ * Llamadas sucesivas reinician el temporizador - sólo el último estado se escribe.
  */
 export function save() {
   if (_saveTimer != null) clearTimeout(_saveTimer);
@@ -133,7 +133,7 @@ function _flush() {
 
 /**
  * Sólo para tests: fuerza un flush inmediato sin esperar al debounce.
- * No usar en código de producción — siempre llamar a save().
+ * No usar en código de producción - siempre llamar a save().
  */
 export function _flushNow() {
   if (_saveTimer != null) clearTimeout(_saveTimer);

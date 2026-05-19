@@ -1,5 +1,5 @@
 /**
- * analisis/logic.js — funciones puras de agregación financiera.
+ * analisis/logic.js - funciones puras de agregación financiera.
  *
  * Decisión arquitectónica:
  *   Este módulo es la ÚNICA capa que importa de múltiples dominios.
@@ -38,7 +38,7 @@ export function calcularBalance(ingresoMensual, gastoMes, compromisoMensual) {
  * Devuelve 0 si no hay ingreso. Puede ser negativa (déficit).
  *
  * @param {number} ingresoMensual
- * @param {number} egresos — gastos + compromisos del mes.
+ * @param {number} egresos - gastos + compromisos del mes.
  * @returns {number} Porcentaje (puede ser negativo).
  */
 export function calcularTasaAhorro(ingresoMensual, egresos) {
@@ -52,8 +52,8 @@ export function calcularTasaAhorro(ingresoMensual, egresos) {
  * | Nivel      | Tasa de ahorro | Regla de referencia     |
  * |------------|----------------|-------------------------|
  * | excelente  | ≥ 20 %         | Regla 50/30/20          |
- * | buena      | 10–19 %        | Ahorro moderado         |
- * | ajustada   | 0–9 %          | Margen mínimo           |
+ * | buena      | 10-19 %        | Ahorro moderado         |
+ * | ajustada   | 0-9 %          | Margen mínimo           |
  * | critica    | < 0 %          | Gasta más de lo que gana|
  *
  * @param {number} tasaAhorro
@@ -147,9 +147,9 @@ export function calcularPatrimonioNeto(activos, pasivos) {
  *
  * Fórmula: `patrimonio_futuro = patrimonio_actual + ahorro_mensual × meses`
  *
- * @param {number} patrimonioActual — Patrimonio neto hoy (puede ser negativo).
- * @param {number} ahorroMensual    — Ahorro promedio por mes (puede ser negativo).
- * @param {number} meses            — Horizonte de proyección (≥ 0).
+ * @param {number} patrimonioActual - Patrimonio neto hoy (puede ser negativo).
+ * @param {number} ahorroMensual    - Ahorro promedio por mes (puede ser negativo).
+ * @param {number} meses            - Horizonte de proyección (≥ 0).
  * @returns {number} Patrimonio proyectado.
  */
 export function proyectarPatrimonio(patrimonioActual, ahorroMensual, meses) {
@@ -184,8 +184,8 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  * @param {import('../../core/state.js').Compromiso[]}  compromisos
  * @param {import('../../core/state.js').Cuenta[]}      cuentas
  * @param {number} anio
- * @param {number} mes  1–12
- * @param {import('../../core/state.js').Meta[]} [metas=[]]  — opcional para
+ * @param {number} mes  1-12
+ * @param {import('../../core/state.js').Meta[]} [metas=[]]  - opcional para
  *                                                            mantener compatibilidad
  *                                                            con llamadas existentes.
  * @returns {{
@@ -266,7 +266,7 @@ export function calcularVolatilidad(valores) {
 }
 
 /**
- * Calcula el score de salud financiera (0–100) como promedio ponderado de 4 factores:
+ * Calcula el score de salud financiera (0-100) como promedio ponderado de 4 factores:
  *   - Tasa de ahorro (40 %): ≥ 20 % → 100, 0 % → 50, < 0 % → 0
  *   - Ratio deuda-activos (25 %): 0 → 100, 1 → 50, 2+ → 0
  *   - Ratio de liquidez (20 %): 6+ meses → 100, 3 meses → 50, < 1 mes → 0
@@ -281,7 +281,7 @@ export function calcularVolatilidad(valores) {
  *   saldoCuentas: number,
  *   gastosMes: number,
  *   volatilidad: number,
- * }} resumen — Objeto generado por generarResumen().
+ * }} resumen - Objeto generado por generarResumen().
  * @returns {{
  *   score: number,
  *   factors: {tasaAhorro: number, deuda: number, liquidez: number, control: number},
@@ -343,7 +343,7 @@ export function calcularScoreSalud(resumen) {
 }
 
 /**
- * Clasifica un score (0–100) en una banda visual (excelente/buena/ajustada/crítica).
+ * Clasifica un score (0-100) en una banda visual (excelente/buena/ajustada/crítica).
  *
  * @param {number} score
  * @returns {string}
@@ -355,22 +355,22 @@ export function clasificarScore(score) {
   return 'critica';
 }
 
-// ── SERIES TEMPORALES (D.3 — gráficos) ───────────────────────────
+// ── SERIES TEMPORALES (D.3 - gráficos) ───────────────────────────
 
 const _MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
 /**
  * Construye una serie temporal de gastos para los últimos N meses, terminando
  * en (anio, mes) inclusive. Devuelve los meses ordenados del más antiguo al
- * más reciente — listo para alimentar una sparkline.
+ * más reciente - listo para alimentar una sparkline.
  *
  * Un mes sin gastos aparece como `total: 0` (no se omite). Esto es lo correcto
  * para una serie temporal: el "cero" tiene significado.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
- * @param {number} anio       — Año del último mes de la serie.
- * @param {number} mes        — Mes (1–12) del último mes de la serie.
- * @param {number} [mesesAtras=12] — Cantidad de meses a incluir (≥ 1).
+ * @param {number} anio       - Año del último mes de la serie.
+ * @param {number} mes        - Mes (1-12) del último mes de la serie.
+ * @param {number} [mesesAtras=12] - Cantidad de meses a incluir (≥ 1).
  * @returns {Array<{anio:number, mes:number, total:number, label:string}>}
  */
 export function serieGastosMensual(gastos, anio, mes, mesesAtras = 12) {
@@ -397,8 +397,8 @@ export function serieGastosMensual(gastos, anio, mes, mesesAtras = 12) {
  *
  * Devuelve [] si no hay gastos. Pensado para alimentar un donut chart.
  *
- * @param {import('../../core/state.js').Gasto[]} gastosDelMes — ya filtrados.
- * @param {number} [maxSegmentos=6] — Máximo de segmentos antes de agrupar.
+ * @param {import('../../core/state.js').Gasto[]} gastosDelMes - ya filtrados.
+ * @param {number} [maxSegmentos=6] - Máximo de segmentos antes de agrupar.
  * @returns {Array<{categoria:string, total:number, pct:number}>}
  */
 export function seriePorCategoria(gastosDelMes, maxSegmentos = 6) {

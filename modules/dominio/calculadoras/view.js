@@ -1,5 +1,5 @@
 /**
- * calculadoras/view.js — HTML del panel de calculadoras financieras.
+ * calculadoras/view.js - HTML del panel de calculadoras financieras.
  * Sin efectos secundarios. Los resultados se inyectan desde index.js.
  */
 
@@ -30,7 +30,7 @@ export function renderPanelCalculadoras() {
 function _renderCDT() {
   return `
     <section class="calc-card" aria-labelledby="calc-cdt-title">
-      <h2 class="calc-card__title" id="calc-cdt-title">🏦 CDT — Certificado de Depósito a Término</h2>
+      <h2 class="calc-card__title" id="calc-cdt-title">🏦 CDT - Certificado de Depósito a Término</h2>
       <form id="form-cdt" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -59,7 +59,7 @@ function _renderCDT() {
  * Renderiza el resultado del CDT.
  * @param {{ valorFuturo:number, rendimientoBruto:number, retencion:number,
  *            rendimientoNeto:number, totalNeto:number }} r
- * @param {Function} fmt — función de formateo COP.
+ * @param {Function} fmt - función de formateo COP.
  */
 export function renderResultCDT(r, fmt) {
   return `
@@ -77,7 +77,7 @@ export function renderResultCDT(r, fmt) {
 function _renderCredito() {
   return `
     <section class="calc-card" aria-labelledby="calc-credito-title">
-      <h2 class="calc-card__title" id="calc-credito-title">💳 Crédito — Cuota fija (sistema francés)</h2>
+      <h2 class="calc-card__title" id="calc-credito-title">💳 Crédito - Cuota fija (sistema francés)</h2>
       <form id="form-credito" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -166,7 +166,7 @@ export function renderResultIC(r, fmt) {
 function _renderRegla72() {
   return `
     <section class="calc-card" aria-labelledby="calc-r72-title">
-      <h2 class="calc-card__title" id="calc-r72-title">⚡ Regla del 72 — ¿En cuánto doblo mi plata?</h2>
+      <h2 class="calc-card__title" id="calc-r72-title">⚡ Regla del 72 - ¿En cuánto doblo mi plata?</h2>
       <form id="form-r72" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -194,7 +194,7 @@ export function renderResultR72(r) {
 function _renderPrima() {
   return `
     <section class="calc-card" aria-labelledby="calc-prima-title">
-      <h2 class="calc-card__title" id="calc-prima-title">🎁 Prima de servicios — Colombia</h2>
+      <h2 class="calc-card__title" id="calc-prima-title">🎁 Prima de servicios - Colombia</h2>
       <form id="form-prima" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -232,7 +232,7 @@ export function renderResultPrima(r, fmt) {
 function _renderPILA() {
   return `
     <section class="calc-card" aria-labelledby="calc-pila-title">
-      <h2 class="calc-card__title" id="calc-pila-title">🧾 PILA — Aportes de independiente</h2>
+      <h2 class="calc-card__title" id="calc-pila-title">🧾 PILA - Aportes de independiente</h2>
       <form id="form-pila" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -243,11 +243,11 @@ function _renderPILA() {
           <div class="form-group">
             <label for="pila-arl" class="label">Clase de riesgo ARL</label>
             <select id="pila-arl" name="arl" class="input">
-              <option value="0.00522" selected>Clase I — riesgo mínimo (oficina) 0.522%</option>
-              <option value="0.01044">Clase II — riesgo bajo 1.044%</option>
-              <option value="0.02436">Clase III — riesgo medio 2.436%</option>
-              <option value="0.04350">Clase IV — riesgo alto 4.350%</option>
-              <option value="0.06960">Clase V — riesgo máximo 6.960%</option>
+              <option value="0.00522" selected>Clase I - riesgo mínimo (oficina) 0.522%</option>
+              <option value="0.01044">Clase II - riesgo bajo 1.044%</option>
+              <option value="0.02436">Clase III - riesgo medio 2.436%</option>
+              <option value="0.04350">Clase IV - riesgo alto 4.350%</option>
+              <option value="0.06960">Clase V - riesgo máximo 6.960%</option>
             </select>
           </div>
         </div>
@@ -277,7 +277,7 @@ export function renderResultPILA(r, fmt) {
 function _renderRentabilidadReal() {
   return `
     <section class="calc-card" aria-labelledby="calc-real-title">
-      <h2 class="calc-card__title" id="calc-real-title">📉 Rentabilidad real — ajuste por inflación</h2>
+      <h2 class="calc-card__title" id="calc-real-title">📉 Rentabilidad real - ajuste por inflación</h2>
       <form id="form-real" class="calc-form" novalidate>
         <div class="calc-form__fields">
           <div class="form-group">
@@ -329,7 +329,7 @@ export function renderResultRentabilidadReal(r, fmt) {
 export function renderBadgeTasa(banda) {
   const config = {
     usura:     { icon: '🚫', txt: 'Excede la usura legal (SFC)', cls: 'calc-result__deduct' },
-    alta:      { icon: '⚠️', txt: 'Tasa alta — cercana al tope de usura', cls: 'calc-result__deduct' },
+    alta:      { icon: '⚠️', txt: 'Tasa alta - cercana al tope de usura', cls: 'calc-result__deduct' },
     estandar:  { icon: '✓',  txt: 'Tasa estándar de mercado', cls: '' },
     razonable: { icon: '✓',  txt: 'Tasa razonable', cls: 'calc-result__highlight' },
   };

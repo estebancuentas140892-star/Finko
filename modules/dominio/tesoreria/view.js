@@ -1,5 +1,5 @@
 /**
- * tesoreria/view.js — generación de HTML para el módulo de tesorería.
+ * tesoreria/view.js - generación de HTML para el módulo de tesorería.
  *
  * Reglas:
  * - Puede leer S. No puede mutarlo.

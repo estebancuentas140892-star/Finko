@@ -1,5 +1,5 @@
 /* ============================================================
-   FINKO — ACCESIBILIDAD
+   FINKO - ACCESIBILIDAD
    Reglas que protegen la experiencia de usuarios con
    preferencias de movimiento, alto contraste y lectores.
    ============================================================ */
@@ -60,7 +60,7 @@
 }
 
 /* ── ARIA LIVE REGIONS ─────────────────────────────────────── */
-/* Zona de anuncios para screen readers — invisible pero activa */
+/* Zona de anuncios para screen readers - invisible pero activa */
 #fk-aria-live {
   position: absolute;
   width: 1px;

@@ -8,7 +8,7 @@ beforeEach(() => {
   EventBus._listeners = Object.create(null);
 });
 
-describe('S — schema v3 inicial', () => {
+describe('S - schema v3 inicial', () => {
   it('expone todos los campos del schema v3', () => {
     expect(S).toHaveProperty('_version');
     expect(S).toHaveProperty('onboarded');
