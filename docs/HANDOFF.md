@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.3: sistema de logros con toast y confetti)
+> Última actualización: 2026-05-19 (E2E del banner de instalacion PWA + alerta de 5 regresiones preexistentes)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 805/805 verdes |
-| Tests E2E | 32/32 verdes |
+| Tests E2E | 33/38 verdes (5 regresiones preexistentes detectadas, ver tarea siguiente) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### test(e2e) - Smoke del banner de instalacion PWA · 2026-05-19
+6 tests Playwright para `modules/ui/install-prompt.js`. UA iOS forzada via `test.use({ userAgent })`
+porque Chromium headless no dispara `beforeinstallprompt` automaticamente; la rama iOS del modulo
+no depende de ese evento.
+- `tests/e2e/install-prompt.test.js` (nuevo, 6 tests): banner oculto sin onboarding, banner visible
+  con onboarding, click en Instalar abre `#modal-install-ios`, modal lista 3 pasos correctos,
+  descartar oculta y persiste `fk_install.estado='dismissed'`, no aparece si estado='installed'.
+- Suite E2E pasa de 32 a 38 totales. Mis 6 tests verdes.
+- **Alerta:** al correr la suite completa se detectaron 5 regresiones preexistentes
+  (no introducidas por esta tarea, verificado corriendo los archivos viejos sin mi test):
+  - `navegacion-render.test.js`: Tesoreria, Compromisos, T->Metas->T
+  - `smoke.test.js`: toggle tema aria-pressed, persistencia del tema tras reload
+  - Probable causa: el commit `92b2868` (bottom nav mobile con selector de tema) movio los selectores.
 
 ### G.3 - Sistema de logros con toast y confetti · 2026-05-19
 12 logros evaluables sobre el estado actual de S. Sin historial de acciones: cada logro

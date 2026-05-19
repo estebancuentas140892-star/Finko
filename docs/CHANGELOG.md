@@ -7,6 +7,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(e2e) - Smoke del banner de instalacion PWA · 2026-05-19
+
+6 tests Playwright que cubren el flujo del banner persuasivo de instalacion. Cierra el
+`Próximo paso` que habia quedado abierto tras la tarea del banner.
+
+**Cobertura:**
+- Banner oculto antes del onboarding (sin `S.onboarded`).
+- Banner visible tras el onboarding (carga inicial con `S.onboarded=true`).
+- Click en Instalar abre `#modal-install-ios` (atributo `data-open`).
+- Modal lista los 3 pasos correctos (Compartir / Agregar a pantalla de inicio / Agregar).
+- Click en X descarta el banner y persiste `fk_install.estado='dismissed'`.
+- No reaparece si `fk_install.estado='installed'`.
+
+**Decisiones de diseno:**
+- UA iOS forzada via `test.use({ userAgent })` para evitar la dependencia de
+  `beforeinstallprompt` que Chromium headless no dispara fuera de un sitio "installable".
+- Se inyecta `localStorage.fk_v1` con `_version: 4` y opcionalmente `fk_install` por test,
+  patron consistente con `navegacion-render.test.js` y `estrategia-pago.test.js`.
+
+**Hallazgo paralelo:** al correr la suite E2E completa aparecen 5 regresiones preexistentes
+(verificadas corriendo los archivos viejos sin mi test):
+- `navegacion-render.test.js`: Tesoreria, Compromisos, navegar T->M->T (3 fallos).
+- `smoke.test.js`: toggle aria-pressed del tema, persistencia tras reload (2 fallos).
+
+Probable causa: el commit `92b2868 feat(nav): bottom nav mobile con boton "Mas" y selector
+de tema accesible` movio el selector del toggle de tema y cambio el orden de listeners de
+hashchange. No es bloqueante para el nuevo test, pero queda como tarea siguiente.
+
+**Archivos:**
+- `tests/e2e/install-prompt.test.js` (nuevo)
+
+**Métricas tras la tarea:** 805/805 unit verdes, 38 tests E2E totales (33 verdes + 5 fallos
+preexistentes).
+
+---
+
 ### G.3 - Sistema de logros con toast y confetti · 2026-05-19
 
 Sistema de gamificacion liviano: detecta hitos del usuario, los persiste en S.logros y
