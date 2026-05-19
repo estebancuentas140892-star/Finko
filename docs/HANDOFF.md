@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.3.F8 - Sugerencia de distribución de prima en Tesorería)
+> Última actualización: 2026-05-19 (G.3.F9 - Recordatorio de prima 30 días antes del semestre)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 725/725 verdes |
+| Tests unitarios + integración | 732/732 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### G.3.F9 - Recordatorio de prima 30 días antes del semestre · 2026-05-19
+El nudge de prima en Tesorería ahora escala de nivel según la proximidad del vencimiento.
+Funciona como extensión de F8: el mismo `#nudge-prima` pero el contenido y color cambian.
+- `modules/dominio/tesoreria/logic.js`: nueva funcion `diasParaPrimaSemestral(hoy?)`.
+  Calcula días hasta el próximo vencimiento (30-jun o 20-dic). Normaliza a medianoche
+  para comparación limpia. Retorna `{ dias, fecha, semestre }`.
+- `modules/dominio/tesoreria/view.js`: `renderNudgePrima()` actualizado para incluir timing.
+  dias > 30: nudge-info con distribucion (igual a F8). dias ≤ 30: nudge-medium + countdown.
+  dias ≤ 7: nudge-high + countdown urgente. El role cambia a 'alert' cuando es cercana.
+- `tests/unit/tesoreria.test.js`: 7 tests nuevos para `diasParaPrimaSemestral` (shape,
+  29 dias, dia exacto semestre 1, dia exacto semestre 2, transición jul, transición dic,
+  dias >= 0 siempre). Total: 725 + 7 = 732/732 verdes.
+- `service-worker.js`: v24 a v25.
 
 ### G.3.F8 - Sugerencia de distribución de prima en Tesorería · 2026-05-19
 Tarjeta informativa en la sección Tesorería que estima la prima semestral del usuario
@@ -73,18 +87,6 @@ advertencia encima de la lista en `#nudge-compromisos` (nuevo div en index.html)
 - `tests/unit/compromisos.test.js`: 5 tests nuevos para `nivelAlertaMora`.
   Total: 709 + 5 = 714/714 verdes.
 - `service-worker.js`: v22 a v23.
-
-### G.3.F4 - Bloque de usura en calculadora Credito · 2026-05-19
-Cuando el usuario ingresa una tasa que supera el tope legal de usura (SFC), la calculadora
-Credito ahora muestra un bloque de alerta critica `.nudge.nudge-critical` ANTES del resultado.
-- `modules/dominio/calculadoras/view.js`: nueva funcion exportada `renderAlertaUsura(tasaEAPct, usuraInfo)`.
-  Genera el nudge con la tasa ingresada, el tope legal, el periodo vigente y un enlace a sfc.gov.co.
-- `modules/dominio/calculadoras/index.js`: `_onSubmitCredito` importa `tasaUsuraVigente()` y
-  `renderAlertaUsura`. Cuando `clasificarTasaCredito()` retorna `'usura'`, inyecta la alerta
-  antes del resultado; el announce de accesibilidad tambien cambia al mensaje de advertencia.
-- `tests/unit/calculadoras.test.js`: 7 tests nuevos para `renderAlertaUsura` (clase CSS, rol a11y,
-  tasa mostrada, tope mostrado, periodo, calculo del exceso, exceso en tope exacto).
-- `service-worker.js`: v21 a v22.
 
 ### G.2.D - CSS para Calculadoras y Configuracion · 2026-05-19
 Las dos secciones tenian clases HTML huerfanas sin reglas CSS. Se agregaron estilos completos

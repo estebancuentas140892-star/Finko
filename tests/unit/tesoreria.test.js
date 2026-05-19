@@ -4,6 +4,7 @@ import {
   calcularTotalCuentas,
   validarCuenta,
   normalizarCuenta,
+  diasParaPrimaSemestral,
   estimarSalarioMensual,
   sugerirDistribucionPrima,
 } from '../../modules/dominio/tesoreria/logic.js';
@@ -260,5 +261,60 @@ describe('sugerirDistribucionPrima()', () => {
     const r = sugerirDistribucionPrima(0, false);
     expect(r.prima).toBe(0);
     expect(r.fondo).toBe(0);
+  });
+});
+
+// ── diasParaPrimaSemestral() (G.3.F9) ─────────────────────────────
+
+describe('diasParaPrimaSemestral()', () => {
+  it('retorna shape con dias, fecha y semestre', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 0, 1));
+    expect(typeof r.dias).toBe('number');
+    expect(typeof r.fecha).toBe('string');
+    expect(r.semestre === 1 || r.semestre === 2).toBe(true);
+  });
+
+  it('desde 1-jun-2026 apunta al 30-jun-2026 (29 días, semestre 1)', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 5, 1));
+    expect(r.dias).toBe(29);
+    expect(r.semestre).toBe(1);
+    expect(r.fecha).toBe('2026-06-30');
+  });
+
+  it('en el día exacto de prima primer semestre: dias = 0', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 5, 30));
+    expect(r.dias).toBe(0);
+    expect(r.semestre).toBe(1);
+  });
+
+  it('en el día exacto de prima segundo semestre: dias = 0', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 11, 20));
+    expect(r.dias).toBe(0);
+    expect(r.semestre).toBe(2);
+  });
+
+  it('después del 30-jun apunta al 20-dic del mismo año (semestre 2)', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 6, 1));
+    expect(r.semestre).toBe(2);
+    expect(r.fecha).toBe('2026-12-20');
+    expect(r.dias).toBeGreaterThan(0);
+  });
+
+  it('después del 20-dic apunta al 30-jun del año siguiente (semestre 1)', () => {
+    const r = diasParaPrimaSemestral(new Date(2026, 11, 21));
+    expect(r.semestre).toBe(1);
+    expect(r.fecha).toBe('2027-06-30');
+    expect(r.dias).toBeGreaterThan(0);
+  });
+
+  it('dias siempre es >= 0 para cualquier fecha conocida', () => {
+    [
+      new Date(2026, 0, 15),
+      new Date(2026, 5, 30),
+      new Date(2026, 6, 15),
+      new Date(2026, 11, 20),
+    ].forEach(fecha => {
+      expect(diasParaPrimaSemestral(fecha).dias).toBeGreaterThanOrEqual(0);
+    });
   });
 });

@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### G.3.F9 - Recordatorio de prima 30 días antes del semestre · 2026-05-19
+
+Extensión de G.3.F8: el nudge de prima en `#nudge-prima` ahora escala de urgencia
+según los dias que faltan para la próxima prima semestral.
+
+- `modules/dominio/tesoreria/logic.js`: nueva funcion `diasParaPrimaSemestral(hoy?)`.
+  Candidatos: 30-jun y 20-dic del año actual + 30-jun del siguiente. Filtra por
+  fecha >= hoy (normalizada a medianoche), toma el más próximo. Retorna `{ dias, fecha, semestre }`.
+- `modules/dominio/tesoreria/view.js`: `renderNudgePrima()` reescrito con tres estados:
+  dias > 30 → nudge-info (distribucion, mismo comportamiento F8).
+  dias 8-30 → nudge-medium + "Tu prima llega en X dias" + distribucion.
+  dias ≤ 7  → nudge-high + countdown urgente + distribucion.
+  El atributo `role` cambia a 'alert' cuando es cercana para accesibilidad.
+- `tests/unit/tesoreria.test.js`: 7 tests nuevos para `diasParaPrimaSemestral`.
+  Total: 725 + 7 = 732/732 verdes.
+- `service-worker.js`: v24 a v25.
+
 ### G.3.F8 - Sugerencia de distribución de prima en Tesorería · 2026-05-19
 
 Tarjeta de coaching en la sección Tesorería que estima la prima semestral y sugiere cómo

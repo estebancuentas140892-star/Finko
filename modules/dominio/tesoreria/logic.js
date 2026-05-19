@@ -28,6 +28,42 @@ export function calcularTotalCuentas(cuentas) {
   return cuentasActivas(cuentas).reduce((acc, c) => acc + (c.saldo ?? 0), 0);
 }
 
+// ── PRIMA DE SERVICIOS — recordatorio (G.3.F9) ──────────────────
+
+/**
+ * Calcula los días que faltan para la próxima prima de servicios.
+ *
+ * Fechas de pago en Colombia:
+ *   Primer semestre:  30 de junio.
+ *   Segundo semestre: 20 de diciembre.
+ *
+ * @param {Date} [hoy] - Fecha de referencia (default: ahora).
+ * @returns {{ dias: number, fecha: string, semestre: 1 | 2 }}
+ */
+export function diasParaPrimaSemestral(hoy = new Date()) {
+  // Normalizar a medianoche local para comparación limpia de fechas.
+  const hoyNorm = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const anio    = hoyNorm.getFullYear();
+
+  const candidatos = [
+    { fecha: new Date(anio,      5, 30), semestre: 1 },  // 30 jun este año
+    { fecha: new Date(anio,     11, 20), semestre: 2 },  // 20 dic este año
+    { fecha: new Date(anio + 1,  5, 30), semestre: 1 },  // 30 jun próximo año
+  ];
+
+  // Tomar el candidato más próximo que no haya pasado aún (>= hoy).
+  const proximo = candidatos
+    .filter(c => c.fecha >= hoyNorm)
+    .sort((a, b) => a.fecha - b.fecha)[0];
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const dias     = Math.round((proximo.fecha.getTime() - hoyNorm.getTime()) / msPerDay);
+  const d        = proximo.fecha;
+  const fecha    = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  return { dias, fecha, semestre: proximo.semestre };
+}
+
 // ── PRIMA DE SERVICIOS — distribución (G.3.F8) ──────────────────
 
 /**

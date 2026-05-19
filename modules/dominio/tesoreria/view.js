@@ -10,7 +10,12 @@
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { BANCOS_CO, TIPOS_CUENTA } from '../../core/constants.js';
-import { cuentasActivas, estimarSalarioMensual, sugerirDistribucionPrima } from './logic.js';
+import {
+  cuentasActivas,
+  diasParaPrimaSemestral,
+  estimarSalarioMensual,
+  sugerirDistribucionPrima,
+} from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 
@@ -123,9 +128,14 @@ export function renderFormCuenta() {
 // ── NUDGE PRIMA DE SERVICIOS (G.3.F8) ───────────────────────────
 
 /**
- * Renderiza (o limpia) la sugerencia de distribucion de prima en `#nudge-prima`.
- * - Si no hay ingresos mensuales registrados: nudge informativo pidiendo registrarlos.
- * - Si hay salario estimado: muestra prima calculada y distribución sugerida.
+ * Renderiza la sugerencia de prima en `#nudge-prima` (G.3.F8 + G.3.F9).
+ *
+ * Estados posibles:
+ * - Sin ingresos mensuales: nudge-info pidiendo registrar salario.
+ * - Con salario, prima > 30 dias: nudge-info con distribucion sugerida.
+ * - Con salario, prima ≤ 30 dias: nudge-medium con countdown + distribucion (G.3.F9).
+ * - Con salario, prima ≤ 7 dias:  nudge-high con countdown urgente.
+ *
  * No-op si el contenedor no existe.
  */
 export function renderNudgePrima() {
@@ -151,17 +161,41 @@ export function renderNudgePrima() {
 
   const tieneDeudas = S.compromisos.some(c => c.activo !== false && c.tipo === 'deuda');
   const dist        = sugerirDistribucionPrima(salario, tieneDeudas);
+  const timing      = diasParaPrimaSemestral();
+  const esCercana   = timing.dias <= 30;
+
+  // Nivel y icono escalan con la proximidad de la prima.
+  const nivel = timing.dias <= 7 ? 'nudge-high'
+    : esCercana                  ? 'nudge-medium'
+    : 'nudge-info';
+  const icono = timing.dias <= 7 ? '⚠️' : '🎁';
 
   const filaDeudasHtml = dist.deudas > 0
     ? `<p class="nudge__desc">💳 Pago de deudas: <strong>${f(dist.deudas)}</strong> (${dist.deudasPct}%)</p>`
     : '';
 
+  // Titulo e intro cambian según si la prima es inminente o no.
+  const tituloHtml = esCercana
+    ? `<p class="nudge__title">
+        ${timing.dias === 0
+          ? 'Tu prima llega hoy'
+          : timing.dias === 1
+          ? 'Tu prima llega mañana'
+          : `Tu prima llega en ${timing.dias} días`}
+        (semestre ${timing.semestre})
+       </p>`
+    : `<p class="nudge__title">Prima estimada este semestre: ${f(dist.prima)}</p>`;
+
+  const introHtml = esCercana
+    ? `<p class="nudge__desc">Te corresponden aproximadamente <strong>${f(dist.prima)}</strong> basado en ${f(salario)}/mes. Sugerencia:</p>`
+    : `<p class="nudge__desc">Basado en tu ingreso mensual de ${f(salario)}. Sugerencia:</p>`;
+
   el.innerHTML = `
-    <div class="nudge nudge-info" role="note">
-      <span class="nudge__icon" aria-hidden="true">🎁</span>
+    <div class="nudge ${nivel}" role="${esCercana ? 'alert' : 'note'}">
+      <span class="nudge__icon" aria-hidden="true">${icono}</span>
       <div class="nudge__body">
-        <p class="nudge__title">Prima estimada este semestre: ${f(dist.prima)}</p>
-        <p class="nudge__desc">Basado en tu ingreso mensual de ${f(salario)}. Sugerencia:</p>
+        ${tituloHtml}
+        ${introHtml}
         <p class="nudge__desc">🛡️ Fondo de emergencia: <strong>${f(dist.fondo)}</strong> (${dist.fondoPct}%)</p>
         ${filaDeudasHtml}
         <p class="nudge__desc">🎯 Metas y ahorro: <strong>${f(dist.ahorro)}</strong> (${dist.ahorroPct}%)</p>
