@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.3.F5 - Nudge mora inminente en Compromisos)
+> Última actualización: 2026-05-19 (G.3.F8 - Sugerencia de distribución de prima en Tesorería)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 714/714 verdes |
+| Tests unitarios + integración | 725/725 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### G.3.F8 - Sugerencia de distribución de prima en Tesorería · 2026-05-19
+Tarjeta informativa en la sección Tesorería que estima la prima semestral del usuario
+y sugiere cómo distribuirla (50% fondo de emergencia, 30% deudas si las hay, 20% metas).
+- `modules/dominio/tesoreria/logic.js`: dos funciones nuevas:
+  `estimarSalarioMensual(ingresos)` suma ingresos activos con frecuencia Mensual;
+  `sugerirDistribucionPrima(salario, tieneDeudas)` calcula prima (salario*180/360) y
+  los tres tramos porcentuales.
+- `modules/dominio/tesoreria/view.js`: `renderNudgePrima()` escribe en `#nudge-prima`.
+  Si salario=0: hint para registrar ingresos. Si salario>0: prima estimada y distribución.
+  Lee `S.ingresos` y `S.compromisos` para personalizar (si hay deudas cambia pcts).
+- `modules/dominio/tesoreria/index.js`: nueva funcion `_renderTodo()` llama
+  `renderNudgePrima()` + `renderListaCuentas()`. EventBus también escucha cambios
+  en `ingresos` y `compromisos` para re-renderizar la sugerencia cuando cambian esos dominios.
+- `index.html`: nuevo `<div id="nudge-prima">` antes de `#lista-tesoreria`.
+- `tests/unit/tesoreria.test.js`: 11 tests nuevos (5 para estimarSalarioMensual,
+  6 para sugerirDistribucionPrima). Total: 714 + 11 = 725/725 verdes.
+- `service-worker.js`: v23 a v24.
 
 ### G.3.F5 - Nudge mora inminente en Compromisos · 2026-05-19
 Cuando hay compromisos activos con vencimiento en 5 dias o menos, aparece un nudge de
@@ -95,15 +113,6 @@ Amplió el wizard de bienvenida de 1 paso (solo nombre) a 3 pasos reales con dat
 - SW v19 a v20.
 - Archivos: `modules/ui/onboarding.js` (reescrito), `styles/modals.css`, `service-worker.js`.
 
-### G.2.B - Empty states modernos en 7 secciones · 2026-05-19
-Mejora visual completa de los 7 empty states de dominio + 2 mensajes inline en Análisis.
-Antes: texto seco, sin personalidad. Ahora: titulo cálido, descripción con beneficio concreto,
-CTA claro y tip educativo (`.empty-state__tip`) en cada sección.
-- Secciones actualizadas: Ingresos, Gastos, Compromisos, Personales, Tesorería, Metas, Presupuesto.
-- Mensajes inline mejorados en `analisis/view.js` (por categoría y tendencia).
-- La clase `.empty-state__tip` ya estaba en CSS (G.1) - solo se activó con contenido.
-- SW v18 a v19.
-- Archivos: `modules/dominio/{ingresos,gastos,compromisos,personales,tesoreria,metas,presupuesto,analisis}/view.js`, `service-worker.js`.
 
 
 

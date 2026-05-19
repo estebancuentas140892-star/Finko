@@ -4,6 +4,8 @@ import {
   calcularTotalCuentas,
   validarCuenta,
   normalizarCuenta,
+  estimarSalarioMensual,
+  sugerirDistribucionPrima,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -168,5 +170,95 @@ describe('normalizarCuenta()', () => {
     const result = normalizarCuenta(datosFormValidos);
     expect(result).not.toHaveProperty('id');
     expect(result).not.toHaveProperty('fechaCreacion');
+  });
+});
+
+// ── estimarSalarioMensual() (G.3.F8) ──────────────────────────────
+
+const ingresoBase = (overrides = {}) => ({
+  id: 'i1',
+  descripcion: 'Salario',
+  monto: 2_000_000,
+  frecuencia: 'Mensual',
+  activo: true,
+  ...overrides,
+});
+
+describe('estimarSalarioMensual()', () => {
+  it('retorna 0 con array vacio', () => {
+    expect(estimarSalarioMensual([])).toBe(0);
+  });
+
+  it('suma solo los ingresos con frecuencia Mensual', () => {
+    const ingresos = [
+      ingresoBase({ monto: 2_000_000, frecuencia: 'Mensual' }),
+      ingresoBase({ id: 'i2', monto: 500_000, frecuencia: 'Quincenal' }),
+    ];
+    expect(estimarSalarioMensual(ingresos)).toBe(2_000_000);
+  });
+
+  it('suma multiples ingresos mensuales', () => {
+    const ingresos = [
+      ingresoBase({ id: 'i1', monto: 2_000_000 }),
+      ingresoBase({ id: 'i2', monto: 800_000 }),
+    ];
+    expect(estimarSalarioMensual(ingresos)).toBe(2_800_000);
+  });
+
+  it('excluye ingresos inactivos', () => {
+    const ingresos = [
+      ingresoBase({ monto: 2_000_000, activo: false }),
+    ];
+    expect(estimarSalarioMensual(ingresos)).toBe(0);
+  });
+
+  it('trata activo undefined como activo', () => {
+    const ingreso = { id: 'i1', descripcion: 'S', monto: 1_500_000, frecuencia: 'Mensual' };
+    expect(estimarSalarioMensual([ingreso])).toBe(1_500_000);
+  });
+});
+
+// ── sugerirDistribucionPrima() (G.3.F8) ───────────────────────────
+
+describe('sugerirDistribucionPrima()', () => {
+  it('prima = salario / 2 (180/360 dias)', () => {
+    const r = sugerirDistribucionPrima(2_000_000, false);
+    expect(r.prima).toBe(1_000_000);
+  });
+
+  it('sin deudas: 50% fondo, 0% deudas, 50% ahorro', () => {
+    const r = sugerirDistribucionPrima(2_000_000, false);
+    expect(r.fondoPct).toBe(50);
+    expect(r.deudasPct).toBe(0);
+    expect(r.ahorroPct).toBe(50);
+    expect(r.deudas).toBe(0);
+    expect(r.fondo).toBe(500_000);
+    expect(r.ahorro).toBe(500_000);
+  });
+
+  it('con deudas: 50% fondo, 30% deudas, 20% ahorro', () => {
+    const r = sugerirDistribucionPrima(2_000_000, true);
+    expect(r.fondoPct).toBe(50);
+    expect(r.deudasPct).toBe(30);
+    expect(r.ahorroPct).toBe(20);
+    expect(r.fondo).toBe(500_000);
+    expect(r.deudas).toBe(300_000);
+    expect(r.ahorro).toBe(200_000);
+  });
+
+  it('los montos suman la prima total', () => {
+    const r = sugerirDistribucionPrima(2_000_000, true);
+    expect(r.fondo + r.deudas + r.ahorro).toBe(r.prima);
+  });
+
+  it('los montos suman la prima cuando no hay deudas', () => {
+    const r = sugerirDistribucionPrima(2_000_000, false);
+    expect(r.fondo + r.ahorro).toBe(r.prima);
+  });
+
+  it('prima 0 cuando salario 0', () => {
+    const r = sugerirDistribucionPrima(0, false);
+    expect(r.prima).toBe(0);
+    expect(r.fondo).toBe(0);
   });
 });

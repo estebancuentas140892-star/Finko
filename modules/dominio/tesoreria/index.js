@@ -16,7 +16,15 @@ import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
 import { validarCuenta, normalizarCuenta } from './logic.js';
-import { renderListaCuentas, renderFormCuenta } from './view.js';
+import { renderNudgePrima, renderListaCuentas, renderFormCuenta } from './view.js';
+
+// ── RENDER COMPLETO ──────────────────────────────────────────────
+
+/** Re-renderiza ambas vistas del dominio. */
+function _renderTodo() {
+  renderNudgePrima();
+  renderListaCuentas();
+}
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -47,7 +55,7 @@ function _guardarCuenta() {
   if (overlay) cerrarModal(overlay);
 
   updSaldo();
-  renderListaCuentas();
+  _renderTodo();
   announce('Cuenta guardada correctamente.');
 }
 
@@ -66,7 +74,7 @@ function _eliminarCuenta(el) {
 
   eliminar('cuentas', id);
   updSaldo();
-  renderListaCuentas();
+  _renderTodo();
   announce(`Cuenta "${cuenta.nombre}" eliminada.`);
 }
 
@@ -100,8 +108,8 @@ export function initTesoreria() {
   _inyectarForm();
 
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'cuentas' || section === 'tesoreria') {
-      renderSmart(renderListaCuentas, 'tesoreria');
+    if (section === 'cuentas' || section === 'tesoreria' || section === 'ingresos' || section === 'compromisos') {
+      renderSmart(_renderTodo, 'tesoreria');
       updSaldo();
     }
   });
@@ -109,9 +117,9 @@ export function initTesoreria() {
   // Re-render al navegar a #tesoreria — sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
-    renderSmart(renderListaCuentas, 'tesoreria');
+    renderSmart(_renderTodo, 'tesoreria');
   });
 
   // Render inicial si ya estamos en #tesoreria al cargar.
-  renderSmart(renderListaCuentas, 'tesoreria');
+  renderSmart(_renderTodo, 'tesoreria');
 }

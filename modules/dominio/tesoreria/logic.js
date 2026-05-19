@@ -28,6 +28,61 @@ export function calcularTotalCuentas(cuentas) {
   return cuentasActivas(cuentas).reduce((acc, c) => acc + (c.saldo ?? 0), 0);
 }
 
+// ── PRIMA DE SERVICIOS — distribución (G.3.F8) ──────────────────
+
+/**
+ * Estima el salario mensual como suma de todos los ingresos activos
+ * con frecuencia 'Mensual'. Proxy para calcular la prima semestral.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @returns {number} COP/mes (0 si no hay ingresos mensuales registrados).
+ */
+export function estimarSalarioMensual(ingresos) {
+  return ingresos
+    .filter(i => i.activo !== false && i.frecuencia === 'Mensual')
+    .reduce((acc, i) => acc + (i.monto ?? 0), 0);
+}
+
+/**
+ * Calcula la prima semestral estimada y sugiere su distribución.
+ *
+ * Fórmula simplificada (semestre completo = 180 dias trabajados):
+ *   prima = salario * 180 / 360
+ *
+ * Distribución sugerida:
+ *   50% → fondo de emergencia
+ *   30% → pago de deudas activas (solo si tieneDeudas = true)
+ *   20% → metas de ahorro (sube a 50% cuando no hay deudas)
+ *
+ * @param {number} salario       — Ingreso mensual en COP.
+ * @param {boolean} tieneDeudas  — true si hay compromisos tipo 'deuda' activos.
+ * @returns {{
+ *   prima:     number,
+ *   fondo:     number,
+ *   deudas:    number,
+ *   ahorro:    number,
+ *   fondoPct:  number,
+ *   deudasPct: number,
+ *   ahorroPct: number,
+ * }}
+ */
+export function sugerirDistribucionPrima(salario, tieneDeudas) {
+  const prima     = Math.round(salario * 180 / 360);
+  const fondoPct  = 50;
+  const deudasPct = tieneDeudas ? 30 : 0;
+  const ahorroPct = 100 - fondoPct - deudasPct;      // 20 con deudas, 50 sin
+
+  return {
+    prima,
+    fondo:     Math.round(prima * fondoPct  / 100),
+    deudas:    Math.round(prima * deudasPct / 100),
+    ahorro:    Math.round(prima * ahorroPct / 100),
+    fondoPct,
+    deudasPct,
+    ahorroPct,
+  };
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

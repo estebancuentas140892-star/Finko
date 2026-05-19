@@ -10,7 +10,7 @@
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { BANCOS_CO, TIPOS_CUENTA } from '../../core/constants.js';
-import { cuentasActivas } from './logic.js';
+import { cuentasActivas, estimarSalarioMensual, sugerirDistribucionPrima } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 
@@ -59,11 +59,10 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🏦</p>
-      <p class="empty-state__title">Sin cuentas todavía</p>
-      <p class="empty-state__desc">Agregá tu primera cuenta para ver tu saldo total.</p>
-      <button class="btn btn-primary" data-action="nueva-cuenta">
-        + Agregar cuenta
-      </button>
+      <p class="empty-state__title">¿Dónde guardás tu plata?</p>
+      <p class="empty-state__desc">Agregá tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en el dashboard.</p>
+      <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
+      <p class="empty-state__tip">💡 Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tenés, en un solo lugar.</p>
     </div>`;
 }
 
@@ -119,6 +118,55 @@ export function renderFormCuenta() {
         </button>
       </div>
     </form>`;
+}
+
+// ── NUDGE PRIMA DE SERVICIOS (G.3.F8) ───────────────────────────
+
+/**
+ * Renderiza (o limpia) la sugerencia de distribucion de prima en `#nudge-prima`.
+ * - Si no hay ingresos mensuales registrados: nudge informativo pidiendo registrarlos.
+ * - Si hay salario estimado: muestra prima calculada y distribución sugerida.
+ * No-op si el contenedor no existe.
+ */
+export function renderNudgePrima() {
+  const el = document.getElementById('nudge-prima');
+  if (!el) return;
+
+  const salario = estimarSalarioMensual(S.ingresos);
+
+  if (salario === 0) {
+    el.innerHTML = `
+      <div class="nudge nudge-info" role="note">
+        <span class="nudge__icon" aria-hidden="true">🎁</span>
+        <div class="nudge__body">
+          <p class="nudge__title">Calculá tu prima de servicios</p>
+          <p class="nudge__desc">
+            Registrá al menos un ingreso mensual en la sección Ingresos
+            para ver cuánto te corresponde de prima y cómo distribuirla.
+          </p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const tieneDeudas = S.compromisos.some(c => c.activo !== false && c.tipo === 'deuda');
+  const dist        = sugerirDistribucionPrima(salario, tieneDeudas);
+
+  const filaDeudasHtml = dist.deudas > 0
+    ? `<p class="nudge__desc">💳 Pago de deudas: <strong>${f(dist.deudas)}</strong> (${dist.deudasPct}%)</p>`
+    : '';
+
+  el.innerHTML = `
+    <div class="nudge nudge-info" role="note">
+      <span class="nudge__icon" aria-hidden="true">🎁</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Prima estimada este semestre: ${f(dist.prima)}</p>
+        <p class="nudge__desc">Basado en tu ingreso mensual de ${f(salario)}. Sugerencia:</p>
+        <p class="nudge__desc">🛡️ Fondo de emergencia: <strong>${f(dist.fondo)}</strong> (${dist.fondoPct}%)</p>
+        ${filaDeudasHtml}
+        <p class="nudge__desc">🎯 Metas y ahorro: <strong>${f(dist.ahorro)}</strong> (${dist.ahorroPct}%)</p>
+      </div>
+    </div>`;
 }
 
 // ── HELPER ───────────────────────────────────────────────────────

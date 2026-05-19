@@ -7,6 +7,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### G.3.F8 - Sugerencia de distribución de prima en Tesorería · 2026-05-19
+
+Tarjeta de coaching en la sección Tesorería que estima la prima semestral y sugiere cómo
+distribuirla de forma inteligente. Aparece siempre (persistente), pero su contenido cambia:
+- Con ingresos mensuales: muestra prima estimada + 3 tramos (fondo, deudas, ahorro).
+- Sin ingresos mensuales: pide al usuario registrar su salario en Ingresos.
+- Con compromisos tipo 'deuda': incluye tramo "Pago de deudas" (30%); sin deudas, ese
+  porcentaje pasa a ahorro (quedando 50% fondo, 50% ahorro).
+
+- `modules/dominio/tesoreria/logic.js`:
+  `estimarSalarioMensual(ingresos)`: suma ingresos activos con frecuencia Mensual.
+  `sugerirDistribucionPrima(salario, tieneDeudas)`: prima = salario*180/360 y pcts.
+- `modules/dominio/tesoreria/view.js`: `renderNudgePrima()` escribe en `#nudge-prima`.
+  Lee `S.ingresos` y `S.compromisos` para personalizar la distribución.
+- `modules/dominio/tesoreria/index.js`: `_renderTodo()` llama ambas vistas.
+  EventBus ahora escucha tambien 'ingresos' y 'compromisos' para re-render.
+- `index.html`: `<div id="nudge-prima">` antes de `#lista-tesoreria`.
+- `tests/unit/tesoreria.test.js`: +11 tests (estimarSalarioMensual x5, sugerirDistribucion x6).
+  Total: 714 + 11 = 725/725 verdes.
+- `service-worker.js`: v23 a v24.
+
 ### G.3.F5 - Nudge mora inminente en Compromisos · 2026-05-19
 
 Cuando hay compromisos activos con vencimiento en ≤ 5 dias, se muestra un nudge de
