@@ -96,6 +96,12 @@ export function initIngresos() {
     }
   });
 
+  // Re-render al navegar a #ingresos — sin esto la sección puede aparecer vacía
+  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  window.addEventListener('hashchange', () => {
+    renderSmart(renderListaIngresos, 'ingresos');
+  });
+
   renderSmart(renderListaIngresos, 'ingresos');
   renderResumenIngresos();
 }

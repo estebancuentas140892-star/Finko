@@ -7,6 +7,49 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### Fix routing race condition (segunda iteración, 5 dominios) · 2026-05-18
+
+**Bug reportado por el usuario:** al navegar desde Dashboard hacia Tesorería
+o Metas, la sección a veces aparecía completamente vacía (solo el título,
+sin lista, sin empty state). Síntoma intermitente: si abría la app
+directamente en `#tesoreria` lo veía bien, pero si llegaba navegando
+desde el dashboard, vacío.
+
+**Causa raíz:** el fix anterior (2026-05-18) corrigió `renderSmart()` para
+usar `location.hash` en vez de `.active`, y agregó `hashchange` listener
+solo a `analisis/`. Pero **5 dominios seguían sin listener**: tesoreria,
+metas, gastos, ingresos, compromisos. Esos dominios sólo rendereaban en:
+1. El init (si `location.hash` coincidía en ese momento).
+2. `EventBus.on('state:change', ...)` cuando se mutaba su sección.
+
+Si el usuario llegaba navegando sin haber mutado el estado, el HTML
+de la lista nunca se renderaba. Aparecía como sección vacía.
+
+**Fix:** agregar `window.addEventListener('hashchange', ...)` a los 5
+dominios siguiendo el patrón ya validado en analisis/config/presupuesto/
+calculadoras/personales:
+
+```js
+window.addEventListener('hashchange', () => {
+  renderSmart(renderListaX, 'X');
+});
+```
+
+**Test de regresión:** nuevo archivo `tests/e2e/navegacion-render.test.js`
+con 6 tests que arrancan siempre en `#dash` y navegan a cada sección,
+asegurando que el empty state aparece. Sin el fix, los asserts fallaban.
+
+- `modules/dominio/tesoreria/index.js` (+listener hashchange)
+- `modules/dominio/metas/index.js` (+listener hashchange)
+- `modules/dominio/gastos/index.js` (+listener hashchange)
+- `modules/dominio/ingresos/index.js` (+listener hashchange)
+- `modules/dominio/compromisos/index.js` (+listener hashchange)
+- `tests/e2e/navegacion-render.test.js` (nuevo, 6 tests)
+- `service-worker.js` (v13→v14)
+- Tests: 702/702 unit, 32/32 E2E verdes.
+
+---
+
 ### Test E2E F.4 — Smoke de Estrategia de pago · 2026-05-18
 
 8 tests Playwright end-to-end en `tests/e2e/estrategia-pago.test.js`:

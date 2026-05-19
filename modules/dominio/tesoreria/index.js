@@ -106,6 +106,12 @@ export function initTesoreria() {
     }
   });
 
+  // Re-render al navegar a #tesoreria — sin esto la sección aparece vacía
+  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  window.addEventListener('hashchange', () => {
+    renderSmart(renderListaCuentas, 'tesoreria');
+  });
+
   // Render inicial si ya estamos en #tesoreria al cargar.
   renderSmart(renderListaCuentas, 'tesoreria');
 }

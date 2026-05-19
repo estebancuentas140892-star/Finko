@@ -120,5 +120,11 @@ export function initMetas() {
     }
   });
 
+  // Re-render al navegar a #metas — sin esto la sección aparece vacía
+  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  window.addEventListener('hashchange', () => {
+    renderSmart(renderListaMetas, 'metas');
+  });
+
   renderSmart(renderListaMetas, 'metas');
 }

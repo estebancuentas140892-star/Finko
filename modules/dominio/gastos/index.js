@@ -100,6 +100,12 @@ export function initGastos() {
     }
   });
 
+  // Re-render al navegar a #gast — sin esto la sección puede aparecer vacía
+  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  window.addEventListener('hashchange', () => {
+    renderSmart(renderListaGastos, 'gast');
+  });
+
   renderSmart(renderListaGastos, 'gast');
   renderResumenGastos();
 }

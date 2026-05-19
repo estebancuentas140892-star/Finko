@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (Test E2E F.4 completado)
+> Última actualización: 2026-05-18 (Fix routing race condition en 5 dominios)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 685/685 verdes |
-| Tests E2E | 26/26 verdes |
+| Tests unitarios + integración | 702/702 verdes |
+| Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### Fix routing race condition en 5 dominios · 2026-05-18
+**Síntoma reportado por el usuario:** al navegar desde Dashboard hacia
+Tesorería o Metas, la sección a veces aparecía completamente vacía (solo
+título, sin lista, sin empty state). Intermitente y frustrante.
+**Causa:** tesoreria, metas, gastos, ingresos y compromisos hacían
+`renderSmart(..., key)` en su `init()` pero **no** registraban listener
+de `hashchange`. Si el hash inicial era `#dash` y se navegaba a otra
+sección sin haber mutado el estado, nunca se rendereaba el contenido.
+**Solución:** agregar `window.addEventListener('hashchange', ...)` a los
+5 dominios siguiendo el patrón ya validado en analisis/config/presupuesto/
+calculadoras/personales. SW v13→v14. Nuevo test E2E de regresión
+`navegacion-render.test.js` (6 tests) que prueba navegar Dashboard→sección
+y verificar empty state visible.
+- `modules/dominio/{tesoreria,metas,gastos,ingresos,compromisos}/index.js`
+- `tests/e2e/navegacion-render.test.js` (nuevo, 6 tests)
+- `service-worker.js` (v13→v14)
+- Tests: 702/702 unit, 32/32 E2E verdes.
 
 ### Test E2E F.4 — Smoke de Estrategia de pago · 2026-05-18
 8 tests Playwright en `tests/e2e/estrategia-pago.test.js`: card visible con ≥ 2
@@ -84,109 +102,7 @@ Además, agregar listener de `hashchange` a dominio `analisis/` que faltaba.
 - `modules/dominio/analisis/index.js`: agregado listener de `hashchange` faltante
 - Tests: 685/685 verdes. Verificado en browser: todas 4 secciones renderean consistentemente.
 
-### F.2 — Dominio `personales/` (préstamos otorgados / "me deben") · 2026-05-18
-Espejo de `compromisos.deuda`: plata que **TÚ** prestaste a familia/amigos.
-Sin tasa de interés, sin amortización — solo registro de monto, pagos parciales
-y antigüedad cultural (reciente ≤14d, mediano ≤60d, viejo >60d). Schema bump
-v2→v3 con migración idempotente. Nueva nav item "🤝 Me deben" junto a Compromisos,
-sección con resumen agregado (prestado/cobrado/pendiente/activos) + barra de
-progreso global. Items con chip color-coded por antigüedad + barra de progreso
-individual. Modales para nuevo préstamo y pago parcial. 42 tests nuevos
-(35 lógica pura + 7 migración): 655/655 verdes. SW v10→v11.
-- `modules/dominio/personales/{logic,view,index}.js` (nuevos)
-- `modules/core/state.js` (+ Personal typedef, `personales: []`, `_version: 3`)
-- `modules/core/storage.js` (migración v2→v3, SCHEMA_VERSION=3)
-- `modules/infra/router.js`, `modules/ui/bootstrap.js`
-- `index.html` (nav item + section + 2 modales)
-- `tests/unit/personales.test.js` (nuevo), `tests/integration/flujos.test.js` (+Suite 7)
-
-### F.1 — 3 calculadoras nuevas portadas desde Finko-Refactor · 2026-05-18
-**PILA** (`calcularPILA`): aportes mensuales de independientes según Decreto 1273/2018.
-IBC = max(ingreso × 40 %, 1 SMMLV); salud 12.5 %; pensión 16 %; ARL configurable
-(5 clases de riesgo en UI). **Rentabilidad real** (`calcularRentabilidadReal`):
-fórmula de Fisher — descuenta inflación del retorno nominal. **clasificarTasaCredito**:
-clasifica tasa EA contra usura SFC en 4 bandas (razonable/estándar/alta/usura);
-integrado como badge visual en la calculadora de Crédito existente. SW v9→v10.
-17 tests nuevos: 613/613 verdes. Verificado en browser.
-- `modules/core/constants.js` (SALUD_INDEPEND, PENSION_INDEPEND, ARL_CLASE_I)
-- `modules/dominio/calculadoras/{logic,view,index}.js`
-- `tests/unit/calculadoras.test.js`, `service-worker.js`
-
-
-### B.4 — Splash screens iOS · 2026-05-18
-5 PNGs para `apple-touch-startup-image` (iPhone SE/8, 12/13/14, 14 Pro/15,
-14 Plus/15 Plus, 14 Pro Max/15 Pro Max). Diseño: fondo `#0f1117`, logo 3 barras
-centrado, "Finko" + tagline. Script reutilizable `scripts/gen-splash.py` (Pillow).
-Meta tags `apple-mobile-web-app-capable` + `apple-mobile-web-app-status-bar-style`
-en `<head>`. 5 links `apple-touch-startup-image` con media queries por dispositivo.
-Splashes en OPTIONAL_ASSETS del SW. SW v8→v9.
-- `assets/splash/` (5 PNGs nuevos), `scripts/gen-splash.py` (nuevo), `index.html`, `service-worker.js`
-
-### B.3 — Favicon SVG · 2026-05-18
-Favicon vectorial `assets/icons/favicon.svg` — 3 barras ascendentes `#00dc82`
-sobre fondo `#0f1117`, esquinas rx=2, idéntico al ícono PNG. `<link rel="icon"
-type="image/svg+xml">` en `<head>`. Agregado a CORE_ASSETS del SW. SW v7→v8.
-- `assets/icons/favicon.svg` (nuevo), `index.html`, `service-worker.js`
-
-### E.1 — Actualizar tasa de usura Q2 2026 · 2026-05-18
-Tasa de usura SFC (Superintendencia Financiera de Colombia) actualizada de
-Q1 (26.77% EA) a Q2 (28.17% EA). Cambios en `constants.js`: renombrado
-`TASA_USURA_Q1_2026` → `TASA_USURA_Q2_2026`, valor 0.2677 → 0.2817,
-vigencia extendida a 2026-06-30. Hint en modal de Compromisos actualizado
-para reflejar tasa vigente. 596/596 tests verdes.
-- `modules/core/constants.js`, `modules/dominio/compromisos/view.js`
-
-### A.4 — Smoke test confirmado en Redmi Note 11 · 2026-05-18
-Usuario verificó que el fix responsive (sesión anterior) se ve bien en el celular real.
-Números más legibles, botones con touch targets OK (44px+), inputs sin zoom iOS,
-navegación completa a todas las 5 secciones, funcionamiento offline confirmado.
-Cierre de A.4 en el ROADMAP post-v1.0.
-
-### Fix: responsive integral mobile (320–1440px) · 2026-05-18
-A.4 smoke test reveló que aunque la nav inferior ya funcionaba, la app no se
-sentía adaptada a móviles modernos. Refactor de `responsive.css` con
-fluid typography (clamp en `.bento__value`, `.card__value`,
-`.patrimonio-hero__valor`), touch targets ≥44px en btn/input/select,
-inputs 16px font-size para evitar zoom iOS, breakpoint legacy < 480px
-movido a < 360px (móviles 393/414 ya no se ven comprimidos), grids
-3-col → 1-col en < 768px. `viewport-fit=cover` + `maximum-scale=5` en HTML.
-SW bump v6→v7. Verificado a 320/360/393/414/768/1280px sin overflow.
-- `styles/responsive.css` (reescrito), `index.html`, `service-worker.js`
-
-### B.2 — Screenshots PWA para manifest · 2026-05-18
-2 screenshots 540×720 (tema oscuro) para mejorar la ficha de instalación PWA en Android.
-Generados con Pillow (`scripts/gen-screenshots.py`). Array `"screenshots"` en `manifest.json`
-con `form_factor: "narrow"`. SW bump v5→v6, screenshots en `OPTIONAL_ASSETS`.
-- `assets/screenshots/screenshot-1-dashboard.png`, `screenshot-2-gastos.png` (nuevos)
-- `manifest.json`, `service-worker.js`, `scripts/gen-screenshots.py` (nuevo)
-
-### A.1' / A.2 / A.3 — Deploy real a Vercel + verificación headers · 2026-05-18
-Finko en producción: https://finko-brown.vercel.app. Repo conectado para
-auto-redeploy en push a `main`. HTTPS automático (HSTS preload). Todos los
-headers de seguridad verificados en producción (X-Frame-Options, nosniff,
-Referrer-Policy, Permissions-Policy). Fix detectado y corregido en
-`vercel.json`: regla genérica `/(.*)\.js` estaba sobrescribiendo el
-`Cache-Control` del SW por `immutable` (1 año). Reordenadas las reglas para
-que `/service-worker.js` sea la última (Vercel: "última regla gana").
-- `vercel.json` (reordenado)
-
-### C.3 — Tests de migración schema v1→v2 · 2026-05-18
-9 tests en Suite 6 de `flujos.test.js` que blindan la migración introducida por D.5.
-Cubre: subida de `_version` 1→2 con `presupuestos:[]`, datos sin campo `_version` (legacy),
-idempotencia (v2 con presupuestos no los pierde), preservación de todos los campos v1,
-tipos inválidos (`"1"` string, `null`), roundtrip v1→flush→reload→v2, y descarte de
-campos desconocidos por `_applyToS`. 596/596 verdes.
-- `tests/integration/flujos.test.js` (ampliado con Suite 6 — C.3)
-
-### D.5 — Envelope budgeting (presupuesto por sobre) · 2026-05-18
-Nuevo dominio `modules/dominio/presupuesto/`. Un envelope por categoría con monto
-mensual recurrente; progreso = gastos del mes / asignado. 3 estados (ok/alerta/excedido).
-Hero con totales, envelope cards color-coded, listado de categorías huérfanas.
-Schema bump v1→v2 con migración idempotente. SW con `cache:'reload'` en install.
-38 unit tests del logic; 579/579 verdes.
-- `modules/dominio/presupuesto/{logic,view,index}.js` (nuevos), `modules/core/{state,storage}.js`,
-  `modules/infra/router.js`, `modules/ui/bootstrap.js`, `index.html`, `styles/components.css`,
-  `service-worker.js`, `tests/unit/{presupuesto,state}.test.js`
+> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
