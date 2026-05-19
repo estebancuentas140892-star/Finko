@@ -183,3 +183,45 @@ pnpm run format
 - **Naming:** dominios en español (`ingresos`, `compromisos`); infra/ui en inglés (`state`, `actions`).
 - **Tests verdes obligatorios** antes de cada commit.
 - **CSS:** solo `var(--fk-*)`, nunca hardcodear colores ni tamaños.
+
+---
+
+## 7. Estilo de escritura (obligatorio)
+
+> Estas reglas aplican a **todo texto** generado en el proyecto: respuestas en chat, commits, comentarios de código, documentación (`.md`), microcopy de UI, mensajes de error, alertas, nudges, tests, scripts.
+
+### 7.1 Prohibido el guion largo `—` (em dash, U+2014)
+
+**Nunca** usar el carácter `—` en ningún texto del proyecto. Tampoco usar `–` (en dash, U+2013) ni variantes Unicode similares.
+
+**Por qué:** confunde lectores, no se escribe con teclado estándar en español/inglés, no copia/pega bien entre editores y terminales, y rompe el tono natural del proyecto.
+
+**Qué usar en su lugar** (en orden de preferencia):
+
+| En vez de `—` | Usar | Ejemplo |
+|---|---|---|
+| Pausa o aclaración | `:` (dos puntos) | "Resumen: 702 tests verdes." |
+| Apertura de explicación | `.` (punto y aparte) | "App estable. Modo mantenimiento." |
+| Inciso corto | `(...)` (paréntesis) | "El SMMLV (vigente 2026) es $1.750.905." |
+| Conector de continuación | `-` (guion simple) | "Sonnet 4.6 - Alto." |
+| Rango numérico | `-` (guion simple) o "a" | "30-90 min" / "30 a 90 min" |
+| Separador visual | `,` (coma) | "Calidad primero, ahorro segundo." |
+
+### 7.2 Cómo verificarlo
+
+Antes de commitear cualquier texto nuevo, buscar `—` en los archivos modificados:
+
+```bash
+grep -rn "—" archivo.md       # debe devolver 0 líneas
+grep -rn $'—' archivo.md # alternativa explícita
+```
+
+En VS Code: `Ctrl+F` con el carácter `—` pegado al campo de búsqueda.
+
+### 7.3 Excepción única
+
+Los `—` que aparezcan en datos de usuario provenientes de copy/paste externo (por ejemplo, un import CSV con notas que contienen guiones largos) **se preservan tal cual**. La regla aplica a texto que escribimos nosotros, no a contenido del usuario.
+
+### 7.4 Limpieza progresiva
+
+Los archivos existentes (`HANDOFF.md`, `CHANGELOG.md`, `CLAUDE.md`, etc.) tienen `—` heredados. **No es obligatorio limpiarlos de golpe**: cuando se toque un archivo `.md` por otra razón, aprovechar para reemplazar los `—` por la alternativa correcta. En texto nuevo, la regla es estricta: cero `—`.
