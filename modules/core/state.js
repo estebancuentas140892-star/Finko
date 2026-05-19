@@ -120,12 +120,13 @@ import { SMMLV } from './constants.js';
  *   metas: Meta[],
  *   presupuestos: Presupuesto[],
  *   personales: Personal[],
+ *   logros: string[],
  * }}
  */
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 3,
+    _version: 4,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -161,6 +162,9 @@ export function createInitialState() {
 
     /** Préstamos personales: plata que TÚ prestaste a otros (F.2, v3). */
     personales: [],
+
+    /** IDs de logros ya desbloqueados por el usuario (G.3, v4). */
+    logros: [],
   };
 }
 

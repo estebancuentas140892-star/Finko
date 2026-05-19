@@ -29,6 +29,7 @@ import { initAnalisis } from '../dominio/analisis/index.js';
 import { initCalculadoras } from '../dominio/calculadoras/index.js';
 import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
+import { initLogros } from '../dominio/logros/index.js';
 
 loadData();
 initAcciones();
@@ -50,6 +51,7 @@ initShell();
 initRouter(markActiveNav);
 initOnboarding();
 renderAll();
+initLogros();
 
 // Verificar compromisos próximos y mostrar notificación si el usuario optó-in.
 // Se ejecuta después del primer render para no bloquear el arranque.

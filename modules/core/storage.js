@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 /** Timer interno del debounce. Variable de módulo — nunca en window. */
 let _saveTimer = null;
@@ -65,6 +65,14 @@ function _migrate(raw) {
   if ((typeof data._version === 'number' ? data._version : 1) < 3) {
     if (!Array.isArray(data.personales)) {
       data.personales = [];
+    }
+  }
+
+  // v3 → v4: lista de logros desbloqueados (G.3).
+  // El usuario existente arranca sin logros; se recalculan en initLogros().
+  if ((typeof data._version === 'number' ? data._version : 1) < 4) {
+    if (!Array.isArray(data.logros)) {
+      data.logros = [];
     }
   }
 
