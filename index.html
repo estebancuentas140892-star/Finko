@@ -581,6 +581,77 @@
     </div>
   </div>
 
+  <!-- ── INSTALL PROMPT (banner persuasivo para PWA) ─────────────── -->
+  <div id="install-banner" class="install-banner" role="region"
+       aria-label="Instalar Finko como aplicacion" hidden>
+    <span class="install-banner__icon" aria-hidden="true">📲</span>
+    <div class="install-banner__body">
+      <p class="install-banner__title">Instalá Finko en tu celular</p>
+      <p class="install-banner__desc">Acceso rápido, funciona sin internet.</p>
+    </div>
+    <div class="install-banner__actions">
+      <button type="button" class="btn btn-primary btn-sm"
+              data-action="install-pwa">Instalar</button>
+      <button type="button" class="install-banner__close"
+              data-action="dismiss-install"
+              aria-label="Descartar invitacion">×</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-install-ios"
+       role="dialog" aria-modal="true"
+       aria-labelledby="install-ios-title" aria-hidden="true">
+    <div class="modal modal--lg">
+      <header class="modal__header">
+        <h2 class="modal__title" id="install-ios-title">Instalar Finko en tu iPhone</h2>
+        <button class="modal__close" type="button"
+                data-action="modal-close" aria-label="Cerrar">×</button>
+      </header>
+      <div class="modal__body">
+        <p class="install-ios__intro">
+          Finko se instala en 3 pasos. No descarga nada, no usa tu plan de datos.
+        </p>
+        <ol class="install-ios__steps">
+          <li class="install-ios__step">
+            <span class="install-ios__num" aria-hidden="true">1</span>
+            <div class="install-ios__step-body">
+              <p>Tocá el botón <strong>Compartir</strong> en la barra inferior de Safari.</p>
+              <p class="install-ios__hint" aria-hidden="true">
+                <span class="install-ios__pictogram">⬆️</span> Es el cuadrado con flecha hacia arriba.
+              </p>
+            </div>
+          </li>
+          <li class="install-ios__step">
+            <span class="install-ios__num" aria-hidden="true">2</span>
+            <div class="install-ios__step-body">
+              <p>Deslizá hacia abajo y tocá <strong>Agregar a pantalla de inicio</strong>.</p>
+              <p class="install-ios__hint" aria-hidden="true">
+                <span class="install-ios__pictogram">➕</span> Tiene un icono con un signo más.
+              </p>
+            </div>
+          </li>
+          <li class="install-ios__step">
+            <span class="install-ios__num" aria-hidden="true">3</span>
+            <div class="install-ios__step-body">
+              <p>Tocá <strong>Agregar</strong> arriba a la derecha. Listo, Finko queda como una app más en tu pantalla.</p>
+              <p class="install-ios__hint" aria-hidden="true">
+                <span class="install-ios__pictogram">✅</span> No necesita Wi-Fi para abrirse después.
+              </p>
+            </div>
+          </li>
+        </ol>
+        <p class="install-ios__nota">
+          ¿Estás en Android o computador? El botón <strong>Instalar</strong> directamente
+          dispara la instalación nativa del navegador (Chrome, Edge).
+        </p>
+      </div>
+      <footer class="modal__footer">
+        <button type="button" class="btn btn-primary"
+                data-action="modal-close">Entendido</button>
+      </footer>
+    </div>
+  </div>
+
   <!-- ── SCRIPTS ─────────────────────────────────────────────────
        type="module" garantiza defer, strict mode, scope aislado.
   ──────────────────────────────────────────────────────────────── -->

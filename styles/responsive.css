@@ -27,6 +27,9 @@
   /* Boton "Mas" del bottom nav: visible en mobile */
   .nav-item--mobile-only { display: flex; }
 
+  /* Secciones disponibles via modal Mas (tema): no duplicar en Config */
+  .config-section--desktop-only { display: none !important; }
+
   /* Shell: sidebar pasa a fila inferior */
   .app-shell {
     grid-template-columns: 1fr;

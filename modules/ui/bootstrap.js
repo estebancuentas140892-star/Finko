@@ -31,6 +31,7 @@ import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
 import { initMenuMas } from './menu-mas.js';
+import { initInstallPrompt } from './install-prompt.js';
 
 loadData();
 initAcciones();
@@ -52,6 +53,7 @@ initShell();
 initRouter(markActiveNav);
 initOnboarding();
 initMenuMas();
+initInstallPrompt();
 renderAll();
 initLogros();
 
