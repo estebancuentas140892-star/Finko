@@ -206,3 +206,185 @@ export function normalizarCompromiso(datos) {
 
   return base;
 }
+
+// ── ESTRATEGIAS DE PAGO (F.4) ────────────────────────────────────
+
+/**
+ * Tope duro de meses en la simulación para evitar loops infinitos cuando
+ * el aporte mensual no alcanza ni para cubrir los intereses. 600 meses = 50 años.
+ */
+const MAX_MESES_SIMULACION = 600;
+
+/**
+ * Filtra compromisos que pueden entrar en una estrategia de pago.
+ * Requiere: tipo='deuda', activo, saldoPendiente>0, tasaEA>=0, monto>0.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Array<{ id: string, descripcion: string, saldo: number, tasaEA: number, cuota: number }>}
+ */
+export function filtrarDeudasPagables(compromisos) {
+  return compromisosActivos(compromisos)
+    .filter(c => c.tipo === 'deuda')
+    .filter(c => Number.isFinite(c.saldoPendiente) && c.saldoPendiente > 0)
+    .filter(c => Number.isFinite(c.tasaEA) && c.tasaEA >= 0)
+    .filter(c => Number.isFinite(c.monto) && c.monto > 0)
+    .map(c => ({
+      id:          c.id,
+      descripcion: c.descripcion,
+      saldo:       c.saldoPendiente,
+      tasaEA:      c.tasaEA,
+      cuota:       c.monto,
+    }));
+}
+
+/**
+ * Convierte una tasa efectiva anual a su equivalente mensual exacto.
+ * tasaMensual = (1 + tasaEA)^(1/12) - 1
+ * @param {number} tasaEA decimal (0.28 = 28% EA)
+ */
+function _tasaMensualDesdeEA(tasaEA) {
+  return Math.pow(1 + tasaEA, 1 / 12) - 1;
+}
+
+/**
+ * Simula el pago mes a mes de un conjunto de deudas siguiendo una estrategia.
+ *
+ * Algoritmo:
+ * 1. Ordenar deudas según estrategia (avalancha = tasa↓, bolaNieve = saldo↑).
+ * 2. Cada mes: aplicar interés, pagar cuota mínima en todas, volcar
+ *    (extraMensual + cuotas liberadas) en la deuda prioritaria.
+ * 3. Cuando una deuda llega a saldo ≤ 0, su cuota se libera para la siguiente.
+ * 4. Repetir hasta saldo total = 0 o tope de meses alcanzado.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {number} extraMensual COP adicionales por mes (≥ 0).
+ * @param {'avalancha' | 'bolaNieve'} estrategia
+ * @returns {{
+ *   orden: Array<{ id: string, descripcion: string, mesPagado: number | null }>,
+ *   meses: number,
+ *   interesesTotales: number,
+ *   pagadoTotal: number,
+ *   completo: boolean,
+ * }}
+ */
+export function simularEstrategiaPago(deudas, extraMensual, estrategia) {
+  if (!Array.isArray(deudas) || deudas.length === 0) {
+    return { orden: [], meses: 0, interesesTotales: 0, pagadoTotal: 0, completo: true };
+  }
+
+  const extra = Number.isFinite(extraMensual) && extraMensual > 0 ? extraMensual : 0;
+
+  // Copia mutable, ordenada según estrategia.
+  const sortFn = estrategia === 'bolaNieve'
+    ? (a, b) => a.saldo - b.saldo
+    : (a, b) => b.tasaEA - a.tasaEA;
+
+  const deudasSim = deudas.map(d => ({
+    id:          d.id,
+    descripcion: d.descripcion,
+    saldo:       d.saldo,
+    tasaEA:      d.tasaEA,
+    tasaMensual: _tasaMensualDesdeEA(d.tasaEA),
+    cuota:       d.cuota,
+    pagada:      false,
+    mesPagado:   null,
+  })).sort(sortFn);
+
+  let meses = 0;
+  let interesesTotales = 0;
+  let pagadoTotal = 0;
+
+  while (deudasSim.some(d => !d.pagada) && meses < MAX_MESES_SIMULACION) {
+    meses++;
+
+    // 1. Aplicar interés mensual a deudas activas.
+    for (const d of deudasSim) {
+      if (d.pagada) continue;
+      const interes = d.saldo * d.tasaMensual;
+      d.saldo += interes;
+      interesesTotales += interes;
+    }
+
+    // 2. Calcular "presupuesto" disponible este mes: cuotas de TODAS las deudas
+    //    (activas y pagadas — las pagadas liberan su cuota) + extra mensual.
+    let presupuesto = extra + deudasSim.reduce((acc, d) => acc + d.cuota, 0);
+
+    // 3. Pagar cuota mínima en deudas no prioritarias (de la 2da en adelante).
+    for (let i = 1; i < deudasSim.length; i++) {
+      const d = deudasSim[i];
+      if (d.pagada) continue;
+      const pago = Math.min(d.cuota, d.saldo, presupuesto);
+      d.saldo -= pago;
+      presupuesto -= pago;
+      pagadoTotal += pago;
+      if (d.saldo <= 0.01) {
+        d.saldo = 0;
+        d.pagada = true;
+        d.mesPagado = meses;
+      }
+    }
+
+    // 4. Volcar TODO lo restante en la deuda prioritaria (índice 0 activo).
+    const prioritaria = deudasSim.find(d => !d.pagada);
+    if (prioritaria && presupuesto > 0) {
+      const pago = Math.min(prioritaria.saldo, presupuesto);
+      prioritaria.saldo -= pago;
+      presupuesto -= pago;
+      pagadoTotal += pago;
+      if (prioritaria.saldo <= 0.01) {
+        prioritaria.saldo = 0;
+        prioritaria.pagada = true;
+        prioritaria.mesPagado = meses;
+      }
+    }
+
+    // 5. Safety: si presupuesto < interés mensual mínimo total → no avanzamos.
+    //    Detectamos esto si todas las deudas siguen vivas y ninguna bajó saldo.
+    //    En la práctica, el tope MAX_MESES_SIMULACION lo agarra.
+  }
+
+  const completo = deudasSim.every(d => d.pagada);
+
+  return {
+    orden: deudasSim.map(d => ({
+      id:          d.id,
+      descripcion: d.descripcion,
+      mesPagado:   d.mesPagado,
+    })),
+    meses:            completo ? meses : MAX_MESES_SIMULACION,
+    interesesTotales,
+    pagadoTotal,
+    completo,
+  };
+}
+
+/**
+ * Compara las dos estrategias para un mismo conjunto de deudas.
+ * Devuelve los resultados de ambas + el ahorro (meses + intereses) de la
+ * mejor sobre la peor.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {number} extraMensual
+ * @returns {{
+ *   avalancha: ReturnType<typeof simularEstrategiaPago>,
+ *   bolaNieve: ReturnType<typeof simularEstrategiaPago>,
+ *   ahorroIntereses: number,
+ *   ahorroMeses: number,
+ *   mejor: 'avalancha' | 'bolaNieve' | 'empate',
+ * }}
+ */
+export function compararEstrategias(deudas, extraMensual) {
+  const avalancha = simularEstrategiaPago(deudas, extraMensual, 'avalancha');
+  const bolaNieve = simularEstrategiaPago(deudas, extraMensual, 'bolaNieve');
+
+  // Avalancha es matemáticamente óptima (≤ intereses). Cuando empata,
+  // suele ser porque las tasas son idénticas o sólo hay una deuda.
+  const ahorroIntereses = Math.max(0, bolaNieve.interesesTotales - avalancha.interesesTotales);
+  const ahorroMeses     = Math.max(0, bolaNieve.meses - avalancha.meses);
+
+  let mejor = 'empate';
+  if (avalancha.interesesTotales < bolaNieve.interesesTotales - 0.5) mejor = 'avalancha';
+  else if (bolaNieve.interesesTotales < avalancha.interesesTotales - 0.5) mejor = 'bolaNieve';
+
+  return { avalancha, bolaNieve, ahorroIntereses, ahorroMeses, mejor };
+}

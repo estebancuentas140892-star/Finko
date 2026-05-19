@@ -16,7 +16,21 @@ import { renderSmart, updateBadge } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
 import { validarCompromiso, normalizarCompromiso } from './logic.js';
-import { renderListaCompromisos, renderFormCompromiso } from './view.js';
+import {
+  renderListaCompromisos,
+  renderFormCompromiso,
+  renderEstrategiaPago,
+  setEstrategiaUI,
+} from './view.js';
+
+/**
+ * Re-renderiza ambas vistas del dominio. Se usa cuando cambian datos o
+ * el estado UI de la estrategia (extra mensual, toggle).
+ */
+function _renderTodo() {
+  renderListaCompromisos();
+  renderEstrategiaPago();
+}
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -44,7 +58,7 @@ function _guardarCompromiso() {
   const overlay = document.getElementById('modal-compromiso');
   if (overlay) cerrarModal(overlay);
 
-  renderListaCompromisos();
+  _renderTodo();
   updateBadge();
   announce('Compromiso guardado correctamente.');
 }
@@ -60,9 +74,22 @@ function _eliminarCompromiso(el) {
   if (!dialogo(`¿Eliminar "${compromiso.descripcion}"? Esta acción no se puede deshacer.`)) return;
 
   eliminar('compromisos', id);
-  renderListaCompromisos();
+  _renderTodo();
   updateBadge();
   announce(`Compromiso "${compromiso.descripcion}" eliminado.`);
+}
+
+// Handlers de la card de estrategia (F.4).
+function _elegirEstrategia(el) {
+  const estrategia = el.dataset.estrategia;
+  if (estrategia !== 'avalancha' && estrategia !== 'bolaNieve') return;
+  setEstrategiaUI({ estrategia });
+  renderEstrategiaPago();
+}
+
+function _cambiarExtraEstrategia(el) {
+  setEstrategiaUI({ extraMensual: el.value });
+  renderEstrategiaPago();
 }
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
@@ -91,16 +118,26 @@ function _inyectarForm() {
 export function initCompromisos() {
   registrarAccion('nuevo-compromiso',    _nuevoCompromiso);
   registrarAccion('eliminar-compromiso', _eliminarCompromiso);
+  registrarAccion('elegir-estrategia',   _elegirEstrategia);
 
   _inyectarForm();
 
+  // El input de "extra mensual" usa `change` (al blur) en vez de click,
+  // así no perdemos focus durante el tipeo. Delegado a nivel documento.
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {
+      _cambiarExtraEstrategia(t);
+    }
+  });
+
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
-      renderSmart(renderListaCompromisos, 'compromisos');
+      renderSmart(_renderTodo, 'compromisos');
       updateBadge();
     }
   });
 
-  renderSmart(renderListaCompromisos, 'compromisos');
+  renderSmart(_renderTodo, 'compromisos');
   updateBadge();
 }

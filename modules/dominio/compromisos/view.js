@@ -11,10 +11,18 @@ import {
   calcularCompromisoMensual,
   proximoVencimiento,
   urgencia,
+  filtrarDeudasPagables,
+  compararEstrategias,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
 } from './logic.js';
+
+// Estado UI local: extra mensual y estrategia activa. Persiste mientras la pestaña está abierta.
+const _uiEstrategia = {
+  extraMensual: 0,
+  estrategia:   'avalancha',
+};
 
 // ── LISTA DE COMPROMISOS ─────────────────────────────────────────
 
@@ -185,6 +193,148 @@ export function renderFormCompromiso() {
         <button type="submit" class="btn btn-primary">Guardar compromiso</button>
       </div>
     </form>`;
+}
+
+// ── ESTRATEGIA DE PAGO (F.4) ─────────────────────────────────────
+
+/**
+ * Estado UI exportado para que index.js pueda actualizarlo desde handlers.
+ */
+export function setEstrategiaUI(patch) {
+  if (patch.extraMensual !== undefined) {
+    const n = Number(patch.extraMensual);
+    _uiEstrategia.extraMensual = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  if (patch.estrategia === 'avalancha' || patch.estrategia === 'bolaNieve') {
+    _uiEstrategia.estrategia = patch.estrategia;
+  }
+}
+
+export function getEstrategiaUI() {
+  return { ..._uiEstrategia };
+}
+
+/**
+ * Renderiza la card de estrategia de pago en `#estrategia-pago`.
+ * Aparece solo si hay ≥ 2 deudas con saldoPendiente + tasaEA + monto válidos.
+ */
+export function renderEstrategiaPago() {
+  const el = document.getElementById('estrategia-pago');
+  if (!el) return;
+
+  const deudas = filtrarDeudasPagables(S.compromisos);
+  if (deudas.length < 2) {
+    el.innerHTML = deudas.length === 1
+      ? _renderEstrategiaHint()
+      : '';
+    return;
+  }
+
+  const { extraMensual, estrategia } = _uiEstrategia;
+  const resultado = compararEstrategias(deudas, extraMensual);
+  const activa    = resultado[estrategia];
+
+  // Mapeo id → descripción para mostrar nombres en la tabla.
+  const descById = Object.fromEntries(deudas.map(d => [d.id, d]));
+
+  el.innerHTML = `
+    <article class="estrategia-card">
+      <header class="estrategia-card__header">
+        <h2 class="estrategia-card__title">💡 Estrategia de pago de deudas</h2>
+        <p class="estrategia-card__subtitle">
+          Compará dos formas de pagar tus ${deudas.length} deudas activas.
+        </p>
+      </header>
+
+      <div class="estrategia-card__controls">
+        <div class="form-group">
+          <label for="estrategia-extra" class="label">¿Cuánto extra podés pagar al mes? (COP)</label>
+          <input id="estrategia-extra" class="input" type="number"
+                 min="0" step="10000" value="${extraMensual}"
+                 placeholder="0" autocomplete="off"
+                 data-action="cambiar-extra-estrategia" />
+        </div>
+        <div class="estrategia-card__toggle" role="tablist" aria-label="Estrategia de pago">
+          <button class="btn ${estrategia === 'avalancha' ? 'btn-primary' : 'btn-ghost'}"
+                  data-action="elegir-estrategia" data-estrategia="avalancha"
+                  role="tab" aria-selected="${estrategia === 'avalancha'}">
+            🏔️ Avalancha
+          </button>
+          <button class="btn ${estrategia === 'bolaNieve' ? 'btn-primary' : 'btn-ghost'}"
+                  data-action="elegir-estrategia" data-estrategia="bolaNieve"
+                  role="tab" aria-selected="${estrategia === 'bolaNieve'}">
+            ⚪ Bola de nieve
+          </button>
+        </div>
+        <p class="estrategia-card__hint">
+          ${estrategia === 'avalancha'
+            ? 'Pagás primero la deuda de mayor tasa. Te ahorra intereses.'
+            : 'Pagás primero la deuda más pequeña. Te motiva con victorias rápidas.'}
+        </p>
+      </div>
+
+      <ol class="estrategia-card__orden">
+        ${activa.orden.map((o, i) => {
+          const d = descById[o.id];
+          const tasa = (d.tasaEA * 100).toFixed(1);
+          const mes  = o.mesPagado != null ? `pagada en mes ${o.mesPagado}` : 'sin pagar';
+          return `
+            <li class="estrategia-card__paso">
+              <span class="estrategia-card__num">${i + 1}</span>
+              <div class="estrategia-card__paso-body">
+                <p class="estrategia-card__paso-desc">${_esc(d.descripcion)}</p>
+                <p class="estrategia-card__paso-meta">${tasa}% EA · ${f(d.saldo)} · ${mes}</p>
+              </div>
+            </li>`;
+        }).join('')}
+      </ol>
+
+      <div class="estrategia-card__totales">
+        <div class="estrategia-card__total">
+          <span class="estrategia-card__total-label">Libre de deudas en</span>
+          <span class="estrategia-card__total-valor">
+            ${activa.completo ? `${activa.meses} meses` : '> 50 años'}
+          </span>
+        </div>
+        <div class="estrategia-card__total">
+          <span class="estrategia-card__total-label">Intereses totales</span>
+          <span class="estrategia-card__total-valor">${f(activa.interesesTotales)}</span>
+        </div>
+      </div>
+
+      ${_renderComparacionAhorro(resultado, estrategia)}
+    </article>`;
+}
+
+function _renderEstrategiaHint() {
+  return `
+    <div class="estrategia-card estrategia-card--hint">
+      <p class="estrategia-card__title">💡 Estrategia de pago</p>
+      <p class="estrategia-card__subtitle">
+        Agregá al menos 2 deudas con saldo pendiente y tasa EA para ver las estrategias Avalancha y Bola de Nieve.
+      </p>
+    </div>`;
+}
+
+function _renderComparacionAhorro(resultado, activa) {
+  const { mejor, ahorroIntereses, ahorroMeses } = resultado;
+  if (mejor === 'empate' || (ahorroIntereses === 0 && ahorroMeses === 0)) {
+    return `
+      <p class="estrategia-card__ahorro estrategia-card__ahorro--neutral">
+        Ambas estrategias dan el mismo resultado con estas deudas.
+      </p>`;
+  }
+  const nombreMejor = mejor === 'avalancha' ? 'Avalancha' : 'Bola de nieve';
+  const eligioMejor = activa === mejor;
+  const verbo = eligioMejor ? 'Ahorrás' : 'Ahorrarías cambiando a Avalancha';
+  // En la práctica Avalancha siempre es la "mejor" por intereses; mostramos el delta.
+  return `
+    <p class="estrategia-card__ahorro">
+      💰 Con ${nombreMejor} ${eligioMejor ? 'ahorrás' : 'ahorrarías'}
+      <strong>${f(ahorroIntereses)}</strong>
+      ${ahorroMeses > 0 ? `y <strong>${ahorroMeses} ${ahorroMeses === 1 ? 'mes' : 'meses'}</strong>` : ''}
+      respecto a ${mejor === 'avalancha' ? 'Bola de nieve' : 'Avalancha'}.
+    </p>`;
 }
 
 // ── HELPER ───────────────────────────────────────────────────────

@@ -8,6 +8,9 @@ import {
   compromisosProximos,
   validarCompromiso,
   normalizarCompromiso,
+  filtrarDeudasPagables,
+  simularEstrategiaPago,
+  compararEstrategias,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -411,5 +414,154 @@ describe('compromisosProximos()', () => {
     const todos = compromisosProximos([hoy], 0);
     expect(todos).toHaveLength(1);
     expect(todos[0].diasRestantes).toBe(0);
+  });
+});
+
+// ─── F.4: Estrategias de pago (Avalancha / Bola de Nieve) ────────
+
+const deudaBase = (overrides = {}) => ({
+  id:             'd1',
+  descripcion:    'Tarjeta Visa',
+  monto:          200_000,
+  frecuencia:     'Mensual',
+  diaPago:        15,
+  tipo:           'deuda',
+  activo:         true,
+  saldoPendiente: 1_000_000,
+  tasaEA:         0.30,
+  ...overrides,
+});
+
+describe('filtrarDeudasPagables', () => {
+  it('retorna array vacío si no hay compromisos', () => {
+    expect(filtrarDeudasPagables([])).toEqual([]);
+  });
+
+  it('excluye compromisos no-deuda', () => {
+    const fijo = deudaBase({ id: 'f1', tipo: 'fijo' });
+    expect(filtrarDeudasPagables([fijo])).toHaveLength(0);
+  });
+
+  it('excluye deudas inactivas', () => {
+    const inactiva = deudaBase({ activo: false });
+    expect(filtrarDeudasPagables([inactiva])).toHaveLength(0);
+  });
+
+  it('excluye deudas sin saldoPendiente o saldo<=0', () => {
+    const sinSaldo = deudaBase({ id: 'd1', saldoPendiente: undefined });
+    const cero     = deudaBase({ id: 'd2', saldoPendiente: 0 });
+    expect(filtrarDeudasPagables([sinSaldo, cero])).toHaveLength(0);
+  });
+
+  it('excluye deudas sin tasaEA', () => {
+    const sinTasa = deudaBase({ tasaEA: undefined });
+    expect(filtrarDeudasPagables([sinTasa])).toHaveLength(0);
+  });
+
+  it('mapea al shape esperado', () => {
+    const deuda = deudaBase();
+    const [d] = filtrarDeudasPagables([deuda]);
+    expect(d).toEqual({
+      id:          'd1',
+      descripcion: 'Tarjeta Visa',
+      saldo:       1_000_000,
+      tasaEA:      0.30,
+      cuota:       200_000,
+    });
+  });
+
+  it('tasaEA=0 (sin interés) es válida', () => {
+    const sinInteres = deudaBase({ tasaEA: 0 });
+    expect(filtrarDeudasPagables([sinInteres])).toHaveLength(1);
+  });
+});
+
+describe('simularEstrategiaPago', () => {
+  it('retorna ceros si no hay deudas', () => {
+    const r = simularEstrategiaPago([], 100_000, 'avalancha');
+    expect(r.meses).toBe(0);
+    expect(r.completo).toBe(true);
+    expect(r.orden).toEqual([]);
+  });
+
+  it('paga una sola deuda sin interés en saldo/cuota meses', () => {
+    const deudas = [{ id: 'd1', descripcion: 'X', saldo: 1_000_000, tasaEA: 0, cuota: 100_000 }];
+    const r = simularEstrategiaPago(deudas, 0, 'avalancha');
+    expect(r.meses).toBe(10);
+    expect(r.interesesTotales).toBe(0);
+    expect(r.completo).toBe(true);
+    expect(r.orden[0].mesPagado).toBe(10);
+  });
+
+  it('extra mensual acelera el pago', () => {
+    const deudas = [{ id: 'd1', descripcion: 'X', saldo: 1_000_000, tasaEA: 0, cuota: 100_000 }];
+    const sinExtra = simularEstrategiaPago(deudas, 0, 'avalancha');
+    const conExtra = simularEstrategiaPago(deudas, 100_000, 'avalancha');
+    expect(conExtra.meses).toBeLessThan(sinExtra.meses);
+  });
+
+  it('avalancha prioriza deuda con tasa más alta', () => {
+    const deudas = [
+      { id: 'baja',  descripcion: 'Baja',  saldo: 1_000_000, tasaEA: 0.10, cuota: 100_000 },
+      { id: 'alta',  descripcion: 'Alta',  saldo: 1_000_000, tasaEA: 0.30, cuota: 100_000 },
+    ];
+    const r = simularEstrategiaPago(deudas, 100_000, 'avalancha');
+    expect(r.orden[0].id).toBe('alta');
+    expect(r.orden[1].id).toBe('baja');
+    // La de tasa más alta se paga primero (mes menor).
+    expect(r.orden[0].mesPagado).toBeLessThan(r.orden[1].mesPagado);
+  });
+
+  it('bolaNieve prioriza deuda con saldo más pequeño', () => {
+    const deudas = [
+      { id: 'grande', descripcion: 'Grande', saldo: 5_000_000, tasaEA: 0.30, cuota: 200_000 },
+      { id: 'chica',  descripcion: 'Chica',  saldo: 500_000,   tasaEA: 0.10, cuota: 100_000 },
+    ];
+    const r = simularEstrategiaPago(deudas, 100_000, 'bolaNieve');
+    expect(r.orden[0].id).toBe('chica');
+    expect(r.orden[0].mesPagado).toBeLessThan(r.orden[1].mesPagado);
+  });
+
+  it('genera intereses positivos cuando tasaEA>0', () => {
+    const deudas = [{ id: 'd1', descripcion: 'X', saldo: 1_000_000, tasaEA: 0.30, cuota: 100_000 }];
+    const r = simularEstrategiaPago(deudas, 0, 'avalancha');
+    expect(r.interesesTotales).toBeGreaterThan(0);
+  });
+
+  it('no excede MAX_MESES cuando aporte no cubre intereses (no loop infinito)', () => {
+    const deudas = [{ id: 'd1', descripcion: 'X', saldo: 10_000_000, tasaEA: 0.50, cuota: 1, }];
+    const r = simularEstrategiaPago(deudas, 0, 'avalancha');
+    expect(r.completo).toBe(false);
+    expect(r.meses).toBe(600);
+  });
+});
+
+describe('compararEstrategias', () => {
+  it('avalancha ≤ intereses que bolaNieve en escenario clásico', () => {
+    const deudas = [
+      { id: 'grande_alta',  descripcion: 'Grande Alta',  saldo: 5_000_000, tasaEA: 0.40, cuota: 200_000 },
+      { id: 'chica_baja',   descripcion: 'Chica Baja',   saldo: 500_000,   tasaEA: 0.10, cuota: 50_000 },
+    ];
+    const r = compararEstrategias(deudas, 100_000);
+    expect(r.avalancha.interesesTotales).toBeLessThanOrEqual(r.bolaNieve.interesesTotales);
+    expect(r.mejor).toBe('avalancha');
+    expect(r.ahorroIntereses).toBeGreaterThan(0);
+  });
+
+  it('empata cuando todas las deudas tienen misma tasa y saldo', () => {
+    const deudas = [
+      { id: 'a', descripcion: 'A', saldo: 1_000_000, tasaEA: 0.20, cuota: 100_000 },
+      { id: 'b', descripcion: 'B', saldo: 1_000_000, tasaEA: 0.20, cuota: 100_000 },
+    ];
+    const r = compararEstrategias(deudas, 50_000);
+    expect(r.mejor).toBe('empate');
+    expect(r.ahorroIntereses).toBe(0);
+  });
+
+  it('una sola deuda: ambas estrategias dan idéntico resultado', () => {
+    const deudas = [{ id: 'd1', descripcion: 'X', saldo: 1_000_000, tasaEA: 0.25, cuota: 100_000 }];
+    const r = compararEstrategias(deudas, 0);
+    expect(r.avalancha.meses).toBe(r.bolaNieve.meses);
+    expect(r.avalancha.interesesTotales).toBeCloseTo(r.bolaNieve.interesesTotales, 2);
   });
 });

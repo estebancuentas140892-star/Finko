@@ -1367,3 +1367,121 @@ textarea.input {
   }
   .import-actions .btn { width: 100%; }
 }
+
+/* ── F.4: Estrategia de pago de deudas ─────────────────────────── */
+.estrategia-card {
+  margin-top: var(--fk-space-4);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+}
+.estrategia-card--hint {
+  background: transparent;
+  border-style: dashed;
+}
+.estrategia-card__header { margin-bottom: var(--fk-space-3); }
+.estrategia-card__title {
+  margin: 0 0 var(--fk-space-1) 0;
+  font-size: var(--fk-text-lg);
+  font-weight: 600;
+}
+.estrategia-card__subtitle {
+  margin: 0;
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+}
+.estrategia-card__controls {
+  display: grid;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-3);
+}
+.estrategia-card__toggle {
+  display: flex;
+  gap: var(--fk-space-2);
+}
+.estrategia-card__toggle .btn { flex: 1; }
+.estrategia-card__hint {
+  margin: 0;
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+  font-style: italic;
+}
+.estrategia-card__orden {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--fk-space-3) 0;
+  display: grid;
+  gap: var(--fk-space-2);
+}
+.estrategia-card__paso {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg);
+  border-radius: var(--fk-radius-md);
+}
+.estrategia-card__num {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--fk-accent);
+  color: var(--fk-bg);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: var(--fk-text-sm);
+  flex-shrink: 0;
+}
+.estrategia-card__paso-body { flex: 1; min-width: 0; }
+.estrategia-card__paso-desc {
+  margin: 0;
+  font-weight: 500;
+}
+.estrategia-card__paso-meta {
+  margin: 0;
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+}
+.estrategia-card__totales {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg);
+  border-radius: var(--fk-radius-md);
+  margin-bottom: var(--fk-space-3);
+}
+.estrategia-card__total {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.estrategia-card__total-label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.estrategia-card__total-valor {
+  font-size: var(--fk-text-lg);
+  font-weight: 700;
+  color: var(--fk-text);
+}
+.estrategia-card__ahorro {
+  margin: 0;
+  padding: var(--fk-space-3);
+  background: color-mix(in srgb, var(--fk-success) 12%, transparent);
+  border-left: 3px solid var(--fk-success);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+}
+.estrategia-card__ahorro--neutral {
+  background: color-mix(in srgb, var(--fk-text-muted) 8%, transparent);
+  border-left-color: var(--fk-text-muted);
+  color: var(--fk-text-muted);
+}
+@media (max-width: 480px) {
+  .estrategia-card__totales { grid-template-columns: 1fr; }
+}
