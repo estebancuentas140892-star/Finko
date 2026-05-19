@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.3.F9 - Recordatorio de prima 30 días antes del semestre)
+> Última actualización: 2026-05-19 (fix: score liquidez/control leía field name equivocado)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 732/732 verdes |
+| Tests unitarios + integración | 733/733 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(analisis) - Score liquidez/control leía field name equivocado · 2026-05-19
+`calcularScoreSalud()` leía `resumen.gastosMes` (con s) pero `generarResumen()` devuelve
+`gastoMes` (sin s). El operador `?? 1` ocultaba el bug en runtime: `gasteMes` caía
+siempre a `1`, lo cual inflaba `mesesRunway` (saldoCuentas/1 ≈ infinito, liquidez 100)
+y deflactaba el coeficiente de variación (volatilidad/1, control 0) en producción.
+Los tests pasaban porque su fixture usaba la variante con s.
+- `modules/dominio/analisis/logic.js`: ahora acepta ambos field names
+  (`resumen.gastoMes ?? resumen.gastosMes ?? 1`).
+- `tests/unit/analisis.test.js`: test de regresión con el field name real (gastoMes)
+  que devuelve `generarResumen()`. Total: 732 + 1 = 733/733 verdes.
+- `service-worker.js`: v25 a v26.
 
 ### G.3.F9 - Recordatorio de prima 30 días antes del semestre · 2026-05-19
 El nudge de prima en Tesorería ahora escala de nivel según la proximidad del vencimiento.
@@ -103,20 +115,6 @@ en `styles/components.css` sin tocar ninguno de los archivos JS ni HTML.
 - `.config-danger`: zona roja sutil (`--fk-danger-bg`, borde rgba danger 25%).
 - SW v20 a v21.
 - Archivos: `styles/components.css`, `service-worker.js`.
-
-### G.2.C - Onboarding wizard de 3 pasos · 2026-05-19
-Amplió el wizard de bienvenida de 1 paso (solo nombre) a 3 pasos reales con datos útiles.
-- Paso 1: Nombre. Igual que antes pero con indicador de progreso (dots animados).
-- Paso 2: Ingreso principal (monto + frecuencia, opcional) + primera cuenta o billetera (nombre + saldo, opcional). Si el usuario llena algo, se guarda con `guardar()` al pasar al siguiente paso.
-- Paso 3: Meta de ahorro. Chips preset (🛡️ Fondo de emergencia, ✈️ Viaje, 💻 Tecnología, 🏠 Vivienda, 🎓 Educación) que pre-llenan el campo de nombre. El usuario puede escribir su propia meta + monto objetivo.
-- "Omitir" en paso 2 y "Omitir y empezar" en paso 3 permiten saltar sin registrar datos.
-- Nuevas imports en onboarding.js: `guardar` de crud.js, `FRECUENCIAS` de constants.js.
-- CSS nuevo en modals.css: `.onboarding__steps`, `.onboarding__step`, `.onboarding__hero`, `.onboarding__title`, `.onboarding__desc`, `.onboarding__footer`, `.onboarding__skip`, `.onboarding__divider`, `.onboarding__chips`, `.onboarding__chip` con variante `.selected`.
-- SW v19 a v20.
-- Archivos: `modules/ui/onboarding.js` (reescrito), `styles/modals.css`, `service-worker.js`.
-
-
-
 
 ### E.2 — Actualizar SMMLV/UVT 2026 + preparar 2027 · 2026-05-19
 Hallazgo importante: los valores en `constants.js` estaban desactualizados

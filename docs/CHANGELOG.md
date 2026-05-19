@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(analisis) - Score liquidez/control leía field name equivocado · 2026-05-19
+
+Bug en `calcularScoreSalud()` (F.3): leía `resumen.gastosMes` (con s) pero
+`generarResumen()` devuelve `gastoMes` (sin s). El operador `?? 1` ocultaba
+el bug en runtime: `gasteMes` caía siempre a `1`, lo cual inflaba
+`mesesRunway` (saldoCuentas/1 ≈ infinito → score liquidez 100) y deflactaba
+el coeficiente de variación (volatilidad/1 ≈ enorme → score control 0) en
+producción. Los tests existentes pasaban porque su fixture usaba la variante
+con s.
+
+- `modules/dominio/analisis/logic.js`: ahora acepta ambos field names
+  (`resumen.gastoMes ?? resumen.gastosMes ?? 1`).
+- `tests/unit/analisis.test.js`: test de regresión con el field name real
+  (`gastoMes`) que devuelve `generarResumen()`. Total: 732 + 1 = 733/733 verdes.
+- `service-worker.js`: v25 a v26.
+
 ### G.3.F9 - Recordatorio de prima 30 días antes del semestre · 2026-05-19
 
 Extensión de G.3.F8: el nudge de prima en `#nudge-prima` ahora escala de urgencia
