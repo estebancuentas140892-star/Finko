@@ -30,6 +30,7 @@ import { initCalculadoras } from '../dominio/calculadoras/index.js';
 import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
+import { initMenuMas } from './menu-mas.js';
 
 loadData();
 initAcciones();
@@ -50,6 +51,7 @@ initImport();
 initShell();
 initRouter(markActiveNav);
 initOnboarding();
+initMenuMas();
 renderAll();
 initLogros();
 

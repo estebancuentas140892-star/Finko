@@ -59,11 +59,72 @@
 .modal--sm  { max-width: 380px; }
 .modal--lg  { max-width: 680px; }
 .modal--xl  { max-width: 880px; }
+.modal--mas { max-width: 560px; }
 .modal--full {
   max-width: 100%;
   max-height: 100dvh;
   border-radius: 0;
   margin: 0;
+}
+
+/* ── MENU MAS (bottom-sheet con items secundarios en mobile) ─── */
+
+.menu-mas__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fk-space-3);
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .menu-mas__grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 360px) {
+  .menu-mas__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.menu-mas__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-4) var(--fk-space-2);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  color: var(--fk-text-primary);
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  min-height: 96px;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
+}
+
+.menu-mas__item:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+  transform: translateY(-2px);
+}
+
+.menu-mas__item:active {
+  transform: translateY(0);
+}
+
+.menu-mas__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.menu-mas__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  line-height: 1.2;
 }
 
 /* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */

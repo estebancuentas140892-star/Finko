@@ -2,6 +2,8 @@
  * shell.js - navigation state + theme toggle
  */
 
+import { EventBus } from '../core/state.js';
+
 const THEME_KEY   = 'fk_theme';
 const LIGHT_CLASS = 'light-theme';
 
@@ -11,6 +13,7 @@ function applyTheme(light) {
   document.body.classList.toggle(LIGHT_CLASS, light);
   localStorage.setItem(THEME_KEY, light ? 'light' : 'dark');
   _syncThemeButton(light);
+  EventBus.emit('theme:change', { light });
 }
 
 function _syncThemeButton(light) {

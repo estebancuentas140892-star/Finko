@@ -57,7 +57,7 @@
 
             <a class="nav-item active" href="#dash" data-section="dash"
                role="listitem" aria-current="page" aria-label="Dashboard - resumen financiero">
-              <span class="nav-item__icon" aria-hidden="true">💰</span>
+              <span class="nav-item__icon" aria-hidden="true">🏠</span>
               <span class="nav-item__label">Dashboard</span>
             </a>
 
@@ -73,13 +73,13 @@
               <span class="nav-item__label">Gastos</span>
             </a>
 
-            <a class="nav-item" href="#compromisos" data-section="compromisos"
+            <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
                role="listitem" aria-label="Compromisos y deudas">
               <span class="nav-item__icon" aria-hidden="true">🔗</span>
               <span class="nav-item__label">Compromisos</span>
             </a>
 
-            <a class="nav-item" href="#personales" data-section="personales"
+            <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
                role="listitem" aria-label="Préstamos personales - me deben">
               <span class="nav-item__icon" aria-hidden="true">🤝</span>
               <span class="nav-item__label">Me deben</span>
@@ -90,6 +90,15 @@
               <span class="nav-item__icon" aria-hidden="true">🏦</span>
               <span class="nav-item__label">Tesorería</span>
             </a>
+
+            <!-- Boton "Mas" solo visible en mobile (< 1024px). Abre el modal #modal-mas. -->
+            <button class="nav-item nav-item--mobile-only" type="button"
+                    role="listitem"
+                    data-action="modal-open" data-modal="modal-mas"
+                    aria-label="Mas opciones" aria-haspopup="dialog">
+              <span class="nav-item__icon" aria-hidden="true">⋯</span>
+              <span class="nav-item__label">Más</span>
+            </button>
 
           </div>
         </div>
@@ -516,6 +525,58 @@
     <div class="modal modal--onboarding">
       <div class="modal__body" id="onboarding-body">
         <!-- onboarding.js inyecta el contenido del wizard aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MENU MAS (mobile bottom-sheet con opciones secundarias) ──── -->
+  <div class="modal-overlay" id="modal-mas"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-mas-title" aria-hidden="true">
+    <div class="modal modal--mas">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-mas-title">Más opciones</h2>
+        <button class="modal__close" type="button"
+                data-action="modal-close" aria-label="Cerrar">
+          ×
+        </button>
+      </header>
+      <div class="modal__body">
+        <div class="menu-mas__grid">
+          <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
+            <span class="menu-mas__icon" aria-hidden="true">🔗</span>
+            <span class="menu-mas__label">Compromisos</span>
+          </a>
+          <a class="menu-mas__item" href="#personales" data-section="personales">
+            <span class="menu-mas__icon" aria-hidden="true">🤝</span>
+            <span class="menu-mas__label">Me deben</span>
+          </a>
+          <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
+            <span class="menu-mas__icon" aria-hidden="true">📩</span>
+            <span class="menu-mas__label">Presupuesto</span>
+          </a>
+          <a class="menu-mas__item" href="#metas" data-section="metas">
+            <span class="menu-mas__icon" aria-hidden="true">🎯</span>
+            <span class="menu-mas__label">Metas</span>
+          </a>
+          <a class="menu-mas__item" href="#analisis" data-section="analisis">
+            <span class="menu-mas__icon" aria-hidden="true">📊</span>
+            <span class="menu-mas__label">Análisis</span>
+          </a>
+          <a class="menu-mas__item" href="#calc" data-section="calc">
+            <span class="menu-mas__icon" aria-hidden="true">🔢</span>
+            <span class="menu-mas__label">Calculadoras</span>
+          </a>
+          <a class="menu-mas__item" href="#config" data-section="config">
+            <span class="menu-mas__icon" aria-hidden="true">⚙️</span>
+            <span class="menu-mas__label">Ajustes</span>
+          </a>
+          <button class="menu-mas__item" type="button" data-action="theme-toggle"
+                  aria-pressed="false" id="menu-mas-tema">
+            <span class="menu-mas__icon" aria-hidden="true">🌙</span>
+            <span class="menu-mas__label">Cambiar tema</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -18,10 +18,35 @@ export function renderPanelConfig() {
 
   el.innerHTML = `
     ${_renderPerfil()}
+    ${_renderTema()}
     ${_renderNotificaciones()}
     ${_renderDatos()}
     ${_renderAcercaDe()}
   `;
+}
+
+function _renderTema() {
+  const light = document.body.classList.contains('light-theme');
+  const icono = light ? '☀️' : '🌙';
+  const label = light ? 'Tema claro activo' : 'Tema oscuro activo';
+  return `
+    <section class="config-section" aria-labelledby="config-tema-title">
+      <h2 class="config-section__title" id="config-tema-title">🎨 Apariencia</h2>
+      <p class="config-section__desc">
+        Cambiá entre tema oscuro (defecto) y tema claro. La preferencia se guarda
+        en este dispositivo.
+      </p>
+      <label class="config-toggle" for="toggle-tema">
+        <input
+          id="toggle-tema"
+          type="checkbox"
+          data-action="theme-toggle"
+          ${light ? 'checked' : ''}
+          aria-label="Cambiar entre tema oscuro y claro"
+        />
+        <span class="config-toggle__label">${icono} ${label}</span>
+      </label>
+    </section>`;
 }
 
 // ── SECCIONES ────────────────────────────────────────────────────

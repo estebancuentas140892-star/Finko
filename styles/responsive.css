@@ -15,8 +15,17 @@
    5. Sidebar → barra inferior bajo 1024px (única topología en mobile).
    ============================================================ */
 
+/* Boton "Mas" del bottom nav: oculto en desktop por defecto */
+.nav-item--mobile-only { display: none; }
+
 /* ── TABLET + MÓVIL: SIDEBAR INFERIOR + TOUCH TARGETS (< 1024px) ─ */
 @media (max-width: 1023px) {
+
+  /* Items secundarios del bottom nav: ocultos en mobile (van al menu Mas) */
+  .nav-item--no-mobile { display: none !important; }
+
+  /* Boton "Mas" del bottom nav: visible en mobile */
+  .nav-item--mobile-only { display: flex; }
 
   /* Shell: sidebar pasa a fila inferior */
   .app-shell {

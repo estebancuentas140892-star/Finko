@@ -7,7 +7,7 @@
  * - No usa EventBus (las mutaciones se manejan directamente aquí).
  */
 
-import { S } from '../../core/state.js';
+import { S, EventBus } from '../../core/state.js';
 import { save, STORAGE_KEY } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
@@ -156,5 +156,19 @@ export function initConfig() {
 
   window.addEventListener('hashchange', () => {
     renderSmart(_inyectarPanel, 'config');
+  });
+
+  // Resyncar el toggle de tema cuando el usuario lo cambia (desde aqui,
+  // desde el sidebar o desde el modal Mas). El handler global `theme-toggle`
+  // ya hace el trabajo de aplicar el tema; aqui solo refrescamos el checkbox
+  // y el texto del label dentro del panel de config.
+  EventBus.on('theme:change', ({ light }) => {
+    const toggle = document.getElementById('toggle-tema');
+    if (!toggle) return; // panel no inyectado todavia
+    toggle.checked = light;
+    const labelEl = toggle.parentElement?.querySelector('.config-toggle__label');
+    if (labelEl) {
+      labelEl.textContent = light ? '☀️ Tema claro activo' : '🌙 Tema oscuro activo';
+    }
   });
 }

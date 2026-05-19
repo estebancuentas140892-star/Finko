@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v30';
+const CACHE_NAME = 'finko-v31';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -53,6 +53,7 @@ const CORE_ASSETS = [
   './modules/ui/modales.js',
   './modules/ui/onboarding.js',
   './modules/ui/shell.js',
+  './modules/ui/menu-mas.js',
 
   // Dominios
   './modules/dominio/ingresos/logic.js',
