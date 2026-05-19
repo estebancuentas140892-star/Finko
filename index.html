@@ -154,34 +154,62 @@
         <header class="section__header">
           <h1 class="section__title" id="title-dash">Tu resumen</h1>
         </header>
-        <div class="bento" id="bento-dash" role="region" aria-label="Métricas principales">
-          <!-- Fase 5 (ingresos) + Fase 6 (gastos) renderizan aquí -->
-          <article class="bento__cell bento__cell--wide bento__cell--tall bento__cell--accent">
+        <div class="bento bento--dash" id="bento-dash" role="region" aria-label="Métricas principales">
+
+          <!-- HERO: tu plata disponible (8 × 2) -->
+          <article class="bento__cell bento__cell--wide bento__cell--tall bento__cell--accent bento__cell--hero">
+            <span class="bento__icon" aria-hidden="true">💵</span>
             <p class="bento__label">Tu plata disponible hoy</p>
-            <p class="bento__value bento__value--accent" id="saldo-total">$0</p>
+            <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
             <p class="bento__desc">efectivo + cuentas bancarias</p>
           </article>
-          <article class="bento__cell">
+
+          <!-- BALANCE DEL MES (4 × 2) -->
+          <article class="bento__cell bento__cell--tall" data-dominio="analisis">
+            <span class="bento__icon" aria-hidden="true">📊</span>
+            <p class="bento__label">Balance del mes</p>
+            <p class="bento__value" id="balance-mes">$0</p>
+            <p class="bento__desc">ingresos menos gastos</p>
+          </article>
+
+          <!-- INGRESOS (4 × 1) -->
+          <article class="bento__cell" data-dominio="ingresos">
+            <span class="bento__icon" aria-hidden="true">📈</span>
             <p class="bento__label">Ingresos del mes</p>
             <p class="bento__value" id="ingresos-mes">$0</p>
           </article>
-          <article class="bento__cell">
+
+          <!-- GASTOS (4 × 1) -->
+          <article class="bento__cell" data-dominio="gastos">
+            <span class="bento__icon" aria-hidden="true">💸</span>
             <p class="bento__label">Gastos del mes</p>
             <p class="bento__value" id="gastos-mes">$0</p>
           </article>
-          <article class="bento__cell">
-            <p class="bento__label">Compromisos activos</p>
-            <p class="bento__value" id="compromisos-count">0</p>
-          </article>
-          <article class="bento__cell">
+
+          <!-- METAS (4 × 1) -->
+          <article class="bento__cell" data-dominio="metas">
+            <span class="bento__icon" aria-hidden="true">🎯</span>
             <p class="bento__label">Metas activas</p>
             <p class="bento__value" id="metas-count">0</p>
+            <p class="bento__desc">objetivos en curso</p>
           </article>
-          <article class="bento__cell">
-            <p class="bento__label">Balance del mes</p>
-            <p class="bento__value" id="balance-mes">$0</p>
-            <p class="bento__desc">ingresos − gastos</p>
+
+          <!-- COMPROMISOS (6 × 1) -->
+          <article class="bento__cell bento__cell--half" data-dominio="compromisos">
+            <span class="bento__icon" aria-hidden="true">💳</span>
+            <p class="bento__label">Compromisos activos</p>
+            <p class="bento__value" id="compromisos-count">0</p>
+            <p class="bento__desc">deudas y pagos recurrentes</p>
           </article>
+
+          <!-- PERSONALES (6 × 1) -->
+          <article class="bento__cell bento__cell--half" data-dominio="personales">
+            <span class="bento__icon" aria-hidden="true">🤝</span>
+            <p class="bento__label">Me deben</p>
+            <p class="bento__value" id="personales-count">0</p>
+            <p class="bento__desc">préstamos a familia o amigos</p>
+          </article>
+
         </div>
       </section>
 

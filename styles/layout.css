@@ -224,8 +224,19 @@
 /* Variantes de tamaño */
 .bento__cell--wide   { grid-column: span 8; }
 .bento__cell--full   { grid-column: span 12; }
+.bento__cell--half   { grid-column: span 6; }
 .bento__cell--tall   { grid-row: span 2; }
 .bento__cell--taller { grid-row: span 3; }
+
+/* Cell hero: padding generoso, radius más grande, presencia visual */
+.bento__cell--hero {
+  border-radius: 28px;
+  padding: var(--fk-space-8) var(--fk-space-6);
+  gap: var(--fk-space-4);
+}
+.bento__cell--hero .bento__value {
+  font-size: clamp(2rem, 1rem + 4vw, 3.5rem);
+}
 
 /* Variantes visuales */
 .bento__cell--accent {
@@ -268,6 +279,10 @@
 .bento__value--lg {
   font-size: clamp(var(--fk-text-2xl), 5vw, var(--fk-text-4xl));
 }
+.bento__value--xl {
+  font-size: clamp(2.25rem, 1rem + 5vw, 3.75rem);
+  letter-spacing: -0.03em;
+}
 .bento__desc {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
@@ -280,4 +295,73 @@
   margin-top: auto;
   padding-top: var(--fk-space-3);
   border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* ── ACENTO POR DOMINIO ────────────────────────────────────
+   Cada cell con [data-dominio="X"] recibe un acento visual sutil:
+   un borde superior del color del dominio + icono coloreado.
+   Reconocimiento visual instantáneo de la sección. */
+.bento__cell[data-dominio] {
+  position: relative;
+  overflow: hidden;
+}
+.bento__cell[data-dominio]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--fk-radius-xl) var(--fk-radius-xl) 0 0;
+  opacity: 0.7;
+}
+.bento__cell[data-dominio="ingresos"]::before    { background: var(--fk-dom-ingresos); }
+.bento__cell[data-dominio="gastos"]::before      { background: var(--fk-dom-gastos); }
+.bento__cell[data-dominio="compromisos"]::before { background: var(--fk-dom-compromisos); }
+.bento__cell[data-dominio="tesoreria"]::before   { background: var(--fk-dom-tesoreria); }
+.bento__cell[data-dominio="metas"]::before       { background: var(--fk-dom-metas); }
+.bento__cell[data-dominio="analisis"]::before    { background: var(--fk-dom-analisis); }
+.bento__cell[data-dominio="presupuesto"]::before { background: var(--fk-dom-presupuesto); }
+.bento__cell[data-dominio="personales"]::before  { background: var(--fk-dom-personales); }
+
+/* Icono tiñe levemente al color del dominio */
+.bento__cell[data-dominio="ingresos"]    .bento__icon { filter: drop-shadow(0 0 8px rgba(0, 220, 130, 0.4)); }
+.bento__cell[data-dominio="gastos"]      .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 138, 92, 0.4)); }
+.bento__cell[data-dominio="compromisos"] .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 71, 87, 0.4)); }
+.bento__cell[data-dominio="tesoreria"]   .bento__icon { filter: drop-shadow(0 0 8px rgba(61, 138, 255, 0.4)); }
+.bento__cell[data-dominio="metas"]       .bento__icon { filter: drop-shadow(0 0 8px rgba(157, 115, 235, 0.4)); }
+.bento__cell[data-dominio="analisis"]    .bento__icon { filter: drop-shadow(0 0 8px rgba(0, 229, 204, 0.4)); }
+.bento__cell[data-dominio="presupuesto"] .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 184, 46, 0.4)); }
+.bento__cell[data-dominio="personales"]  .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 78, 184, 0.4)); }
+
+/* ── CASCADA DE ENTRADA del dashboard ──────────────────────
+   Cada cell aparece con un delay escalonado (40ms × index).
+   Total máximo: 7 cells × 40ms = 280ms.
+   Respeta prefers-reduced-motion (no animación). */
+@media (prefers-reduced-motion: no-preference) {
+  .sec.active .bento--dash .bento__cell {
+    animation: cardIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  }
+  .sec.active .bento--dash .bento__cell:nth-child(1) { animation-delay:   0ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(2) { animation-delay:  40ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(3) { animation-delay:  80ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(4) { animation-delay: 120ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(5) { animation-delay: 160ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(6) { animation-delay: 200ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(7) { animation-delay: 240ms; }
+  .sec.active .bento--dash .bento__cell:nth-child(8) { animation-delay: 280ms; }
+}
+
+/* Hover en desktop: lift sutil */
+@media (hover: hover) {
+  .bento__cell {
+    cursor: default;
+  }
+  .bento__cell:hover {
+    transform: translateY(-2px);
+    transition:
+      border-color var(--fk-transition-base),
+      box-shadow var(--fk-transition-base),
+      transform var(--fk-transition-fast);
+  }
 }

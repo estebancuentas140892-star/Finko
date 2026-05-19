@@ -96,14 +96,28 @@ export function updSaldo() {
 }
 
 /**
- * Actualiza el contador de compromisos activos en el dashboard.
- * También se usa para un futuro badge en la sidebar (Fase 12).
+ * Actualiza los contadores del dashboard:
+ *  - `#compromisos-count`: compromisos activos.
+ *  - `#personales-count`: préstamos personales pendientes (no totalmente cobrados).
+ *
+ * También se usa para futuros badges en la sidebar (Fase 12).
  */
 export function updateBadge() {
   const activos = S.compromisos.filter(c => c.activo !== false).length;
 
   const elCount = document.getElementById('compromisos-count');
   if (elCount) elCount.textContent = String(activos);
+
+  // Personales: préstamos otorgados que aún no se han pagado por completo.
+  // Mismo criterio que `personales/logic.js`: pendiente si `pagado < monto` y
+  // no marcado como `liquidado`. Lógica inline para no romper "ningún infra
+  // importa de dominio" (regla 10 del CLAUDE.md).
+  const personalesPendientes = (S.personales || []).filter(p => {
+    if (p?.liquidado === true) return false;
+    return (p?.pagado ?? 0) < (p?.monto ?? 0);
+  }).length;
+  const elPersonales = document.getElementById('personales-count');
+  if (elPersonales) elPersonales.textContent = String(personalesPendientes);
 }
 
 // ── ORQUESTADOR ──────────────────────────────────────────────────
