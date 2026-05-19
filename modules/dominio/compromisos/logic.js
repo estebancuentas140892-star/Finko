@@ -223,6 +223,150 @@ export function normalizarCompromiso(datos) {
   return base;
 }
 
+// ── DETECTORES DE ALERTA (G.1) ───────────────────────────────────
+
+const _RX_FECHA_COMP = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/**
+ * Detecta compromisos fijos activos cuyo día de pago ya pasó en el mes actual.
+ * Sirve como recordatorio para registrar el gasto correspondiente.
+ *
+ * Nota: Finko no persiste un historial de pagos en compromisos.
+ * Esta función no verifica si el pago fue registrado — avisa que el plazo ya
+ * pasó para que el usuario confirme que lo pagó y lo registró en gastos.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {string} hoyISO   YYYY-MM-DD
+ * @param {object} [config]
+ * @param {number} [config.umbralDiasAtraso=0] Mínimo de días de atraso para incluir.
+ * @returns {Array<{
+ *   id: string, descripcion: string, monto: number,
+ *   diaPago: number, diasAtraso: number, severidad: 'leve'|'moderada'|'urgente'
+ * }>}
+ */
+export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
+  if (!Array.isArray(compromisos) || compromisos.length === 0) return [];
+  if (typeof hoyISO !== 'string') return [];
+
+  const mh = _RX_FECHA_COMP.exec(hoyISO);
+  if (!mh) return [];
+
+  const diaHoy = +mh[3];
+  const cfg = typeof config === 'object' && config ? config : {};
+  const umbral = Number.isFinite(+cfg.umbralDiasAtraso) && +cfg.umbralDiasAtraso >= 0
+    ? Math.floor(+cfg.umbralDiasAtraso) : 0;
+
+  const out = [];
+
+  for (const c of compromisos) {
+    if (!c || typeof c !== 'object') continue;
+    if (c.activo === false) continue;
+    if (c.tipo !== 'fijo') continue;
+
+    const diaPago = Number(c.diaPago) || 1;
+    if (diaPago < 1 || diaPago > 31) continue;
+
+    const diasAtraso = diaHoy - diaPago;
+    if (diasAtraso < umbral) continue;
+
+    const severidad = diasAtraso <= 3 ? 'leve'
+      : diasAtraso <= 10             ? 'moderada'
+      :                                'urgente';
+
+    out.push({
+      id:          c.id,
+      descripcion: c.descripcion || 'Sin nombre',
+      monto:       Number(c.monto) || 0,
+      diaPago,
+      diasAtraso,
+      severidad,
+    });
+  }
+
+  // Mas urgentes (mayor atraso) primero.
+  out.sort((a, b) => b.diasAtraso - a.diasAtraso);
+  return out;
+}
+
+/**
+ * Detecta deudas activas con saldo pendiente que llevan demasiado tiempo sin
+ * actividad desde su creación. Util para recordar revisarlas o liquidarlas.
+ *
+ * Nota: Finko no persiste historial de pagos en compromisos.
+ * "Durmiendo" se define como: tipo='deuda', activo, saldoPendiente > 0,
+ * y fecha de creación >= umbral meses atrás sin actualización de saldo.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {string} hoyISO   YYYY-MM-DD
+ * @param {object} [config]
+ * @param {number} [config.mesesUmbral=2] Meses mínimos de antigüedad para marcar como durmiendo.
+ * @returns {Array<{
+ *   id: string, descripcion: string, tipo: string,
+ *   saldoPendiente: number, cuota: number,
+ *   mesesDesdeCreacion: number, severidad: 'baja'|'media'|'alta',
+ *   sugerencia: 'liquidar'|'retomar'
+ * }>}
+ */
+export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
+  if (!Array.isArray(compromisos) || compromisos.length === 0) return [];
+  if (typeof hoyISO !== 'string') return [];
+
+  const mHoy = _RX_FECHA_COMP.exec(hoyISO);
+  if (!mHoy) return [];
+
+  const cfg = typeof config === 'object' && config ? config : {};
+  const umbral = Number.isFinite(+cfg.mesesUmbral) && +cfg.mesesUmbral > 0
+    ? Math.floor(+cfg.mesesUmbral) : 2;
+
+  const tHoy = Date.UTC(+mHoy[1], +mHoy[2] - 1, +mHoy[3]);
+  const out = [];
+
+  for (const c of compromisos) {
+    if (!c || typeof c !== 'object') continue;
+    if (c.activo === false) continue;
+    if (c.tipo !== 'deuda') continue;
+
+    const saldo = Number(c.saldoPendiente);
+    if (!Number.isFinite(saldo) || saldo <= 0) continue;
+
+    if (typeof c.fechaCreacion !== 'string') continue;
+    const mC = _RX_FECHA_COMP.exec(c.fechaCreacion);
+    if (!mC) continue;
+
+    const tCreacion = Date.UTC(+mC[1], +mC[2] - 1, +mC[3]);
+    if (tCreacion > tHoy) continue;
+
+    const dias = Math.floor((tHoy - tCreacion) / 86_400_000);
+    const meses = Math.floor(dias / 30);
+    if (meses < umbral) continue;
+
+    const severidad = meses >= 6 ? 'alta'
+      : meses >= 3               ? 'media'
+      :                            'baja';
+
+    const cuota = Number(c.monto) || 0;
+
+    out.push({
+      id:                 c.id,
+      descripcion:        c.descripcion || 'Sin nombre',
+      tipo:               c.tipo,
+      saldoPendiente:     saldo,
+      cuota,
+      mesesDesdeCreacion: meses,
+      severidad,
+      sugerencia: (cuota > 0 && saldo <= cuota) ? 'liquidar' : 'retomar',
+    });
+  }
+
+  const rank = { alta: 0, media: 1, baja: 2 };
+  out.sort((a, b) => {
+    const r = rank[a.severidad] - rank[b.severidad];
+    if (r !== 0) return r;
+    return b.saldoPendiente - a.saldoPendiente;
+  });
+  return out;
+}
+
 // ── ESTRATEGIAS DE PAGO (F.4) ────────────────────────────────────
 
 /**

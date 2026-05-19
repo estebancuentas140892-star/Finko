@@ -22,6 +22,8 @@ import {
   renderFormCompromiso,
   renderEstrategiaPago,
   setEstrategiaUI,
+  renderAlertaFijosSinPagar,
+  renderAlertaDeudasDurmiendo,
 } from './view.js';
 
 /**
@@ -30,6 +32,8 @@ import {
  */
 function _renderTodo() {
   renderNudgeMoraInminente();
+  renderAlertaFijosSinPagar();
+  renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
   renderEstrategiaPago();
 }

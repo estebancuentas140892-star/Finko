@@ -12,6 +12,8 @@ import {
   filtrarDeudasPagables,
   simularEstrategiaPago,
   compararEstrategias,
+  detectarFijosSinPagarEsteMes,
+  detectarDeudasDurmiendo,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -594,5 +596,199 @@ describe('nivelAlertaMora()', () => {
   it('el umbral 3 es high y 4 es medium', () => {
     expect(nivelAlertaMora([{ diasRestantes: 3 }])).toBe('high');
     expect(nivelAlertaMora([{ diasRestantes: 4 }])).toBe('medium');
+  });
+});
+
+// ── detectarFijosSinPagarEsteMes ──────────────────────────────────
+
+describe('detectarFijosSinPagarEsteMes', () => {
+  const fijo = (overrides = {}) => ({
+    id: 'c1', descripcion: 'Arriendo', monto: 1_500_000,
+    tipo: 'fijo', activo: true, diaPago: 1, frecuencia: 'Mensual',
+    ...overrides,
+  });
+
+  it('devuelve [] con lista vacia', () => {
+    expect(detectarFijosSinPagarEsteMes([], '2026-05-15')).toEqual([]);
+  });
+
+  it('devuelve [] si hoyISO es invalido', () => {
+    expect(detectarFijosSinPagarEsteMes([fijo()], 'no-date')).toEqual([]);
+    expect(detectarFijosSinPagarEsteMes([fijo()], null)).toEqual([]);
+  });
+
+  it('detecta fijo cuyo dia de pago ya paso', () => {
+    // diaPago=5, hoy=15 → diasAtraso=10
+    const result = detectarFijosSinPagarEsteMes([fijo({ diaPago: 5 })], '2026-05-15');
+    expect(result).toHaveLength(1);
+    expect(result[0].diasAtraso).toBe(10);
+    expect(result[0].severidad).toBe('moderada');
+  });
+
+  it('no incluye fijo cuyo dia de pago aun no llego', () => {
+    // diaPago=20, hoy=15 → diasAtraso=-5, no incluye
+    const result = detectarFijosSinPagarEsteMes([fijo({ diaPago: 20 })], '2026-05-15');
+    expect(result).toHaveLength(0);
+  });
+
+  it('detecta fijo con diaPago igual a hoy (diasAtraso=0)', () => {
+    const result = detectarFijosSinPagarEsteMes([fijo({ diaPago: 15 })], '2026-05-15');
+    expect(result).toHaveLength(1);
+    expect(result[0].diasAtraso).toBe(0);
+    expect(result[0].severidad).toBe('leve');
+  });
+
+  it('asigna severidad correctamente', () => {
+    const hoy = '2026-05-20';
+    // diasAtraso=1 → leve, 8 → moderada, 15 → urgente
+    const r1 = detectarFijosSinPagarEsteMes([fijo({ diaPago: 19 })], hoy);
+    const r2 = detectarFijosSinPagarEsteMes([fijo({ diaPago: 12 })], hoy);
+    const r3 = detectarFijosSinPagarEsteMes([fijo({ diaPago: 5  })], hoy);
+    expect(r1[0].severidad).toBe('leve');
+    expect(r2[0].severidad).toBe('moderada');
+    expect(r3[0].severidad).toBe('urgente');
+  });
+
+  it('ignora compromisos inactivos', () => {
+    const result = detectarFijosSinPagarEsteMes(
+      [fijo({ activo: false, diaPago: 1 })], '2026-05-15'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('ignora compromisos que no son fijo', () => {
+    const result = detectarFijosSinPagarEsteMes(
+      [fijo({ tipo: 'deuda', diaPago: 1 }), fijo({ tipo: 'agenda', diaPago: 1 })],
+      '2026-05-15'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('ordena por mayor atraso primero', () => {
+    const compromisos = [
+      fijo({ id: 'c1', descripcion: 'A', diaPago: 10 }),  // diasAtraso=5
+      fijo({ id: 'c2', descripcion: 'B', diaPago: 1  }),  // diasAtraso=14
+      fijo({ id: 'c3', descripcion: 'C', diaPago: 14 }),  // diasAtraso=1
+    ];
+    const result = detectarFijosSinPagarEsteMes(compromisos, '2026-05-15');
+    expect(result[0].id).toBe('c2'); // mayor atraso primero
+    expect(result[2].id).toBe('c3'); // menor atraso ultimo
+  });
+
+  it('respeta umbralDiasAtraso', () => {
+    // diaPago=13, hoy=15 → diasAtraso=2. Con umbral=3, no incluye.
+    const result = detectarFijosSinPagarEsteMes(
+      [fijo({ diaPago: 13 })], '2026-05-15', { umbralDiasAtraso: 3 }
+    );
+    expect(result).toHaveLength(0);
+  });
+});
+
+// ── detectarDeudasDurmiendo ───────────────────────────────────────
+
+describe('detectarDeudasDurmiendo', () => {
+  const deuda = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Credito banco', monto: 500_000,
+    tipo: 'deuda', activo: true, diaPago: 5, frecuencia: 'Mensual',
+    saldoPendiente: 2_000_000,
+    fechaCreacion: '2024-01-01T00:00:00.000Z', // hace mucho
+    ...overrides,
+  });
+
+  it('devuelve [] con lista vacia', () => {
+    expect(detectarDeudasDurmiendo([], '2026-05-19')).toEqual([]);
+  });
+
+  it('devuelve [] si hoyISO es invalido', () => {
+    expect(detectarDeudasDurmiendo([deuda()], 'no-date')).toEqual([]);
+    expect(detectarDeudasDurmiendo([deuda()], null)).toEqual([]);
+  });
+
+  it('detecta deuda antigua con saldo pendiente', () => {
+    // fechaCreacion hace 28 meses → durmiendo
+    const result = detectarDeudasDurmiendo([deuda()], '2026-05-19');
+    expect(result).toHaveLength(1);
+    expect(result[0].severidad).toBe('alta'); // >6 meses
+    expect(result[0].saldoPendiente).toBe(2_000_000);
+  });
+
+  it('no incluye deuda reciente (< umbral meses)', () => {
+    // fechaCreacion hace 1 mes → no durmiendo (umbral=2)
+    const result = detectarDeudasDurmiendo(
+      [deuda({ fechaCreacion: '2026-04-20T00:00:00.000Z' })], '2026-05-19'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('no incluye deuda sin saldoPendiente', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ saldoPendiente: 0 })], '2026-05-19'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('no incluye deuda inactiva', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ activo: false })], '2026-05-19'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('ignora compromisos que no son deuda', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ tipo: 'fijo' }), deuda({ tipo: 'agenda' })], '2026-05-19'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('asigna severidad correctamente segun meses', () => {
+    const hoy = '2026-05-19';
+    // 2 meses → baja, 4 meses → media, 8 meses → alta
+    const d1 = deuda({ id: 'd1', fechaCreacion: '2026-03-01T00:00:00.000Z' });
+    const d2 = deuda({ id: 'd2', fechaCreacion: '2026-01-01T00:00:00.000Z' });
+    const d3 = deuda({ id: 'd3', fechaCreacion: '2025-09-01T00:00:00.000Z' });
+    const r1 = detectarDeudasDurmiendo([d1], hoy);
+    const r2 = detectarDeudasDurmiendo([d2], hoy);
+    const r3 = detectarDeudasDurmiendo([d3], hoy);
+    expect(r1[0].severidad).toBe('baja');
+    expect(r2[0].severidad).toBe('media');
+    expect(r3[0].severidad).toBe('alta');
+  });
+
+  it('sugerencia "liquidar" cuando saldo <= cuota', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ saldoPendiente: 400_000, monto: 500_000 })], '2026-05-19'
+    );
+    expect(result[0].sugerencia).toBe('liquidar');
+  });
+
+  it('sugerencia "retomar" cuando saldo > cuota', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ saldoPendiente: 2_000_000, monto: 500_000 })], '2026-05-19'
+    );
+    expect(result[0].sugerencia).toBe('retomar');
+  });
+
+  it('ordena alta → media → baja, y por mayor saldo dentro del nivel', () => {
+    const hoy = '2026-05-19';
+    const compromisos = [
+      deuda({ id: 'd1', saldoPendiente: 1_000_000, fechaCreacion: '2026-03-01T00:00:00.000Z' }), // baja
+      deuda({ id: 'd2', saldoPendiente: 3_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
+      deuda({ id: 'd3', saldoPendiente: 2_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
+    ];
+    const result = detectarDeudasDurmiendo(compromisos, hoy);
+    expect(result[0].id).toBe('d2'); // alta + mayor saldo
+    expect(result[1].id).toBe('d3'); // alta + menor saldo
+    expect(result[2].id).toBe('d1'); // baja
+  });
+
+  it('respeta mesesUmbral custom', () => {
+    // fechaCreacion hace 3 meses. Con umbral=4, no incluye.
+    const result = detectarDeudasDurmiendo(
+      [deuda({ fechaCreacion: '2026-02-01T00:00:00.000Z' })],
+      '2026-05-19',
+      { mesesUmbral: 4 }
+    );
+    expect(result).toHaveLength(0);
   });
 });
