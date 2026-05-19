@@ -48,7 +48,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     // Sin el fix, #lista-tesoreria queda vacío.
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')
-    ).toHaveText('Sin cuentas todavía', { timeout: 3_000 });
+    ).toHaveText('¿Dónde guardás tu plata?', { timeout: 3_000 });
   });
 
   test('Metas muestra empty state al navegar desde Dashboard', async ({ page }) => {
@@ -92,7 +92,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
 
     await expect(
       page.locator('#lista-compromisos .empty-state__title')
-    ).toHaveText('Sin compromisos registrados', { timeout: 3_000 });
+    ).toHaveText('Nada que pagar... por ahora', { timeout: 3_000 });
   });
 
   test('Navegar Tesorería → Metas → Tesorería conserva el render', async ({ page }) => {
@@ -102,7 +102,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     await page.click('a[href="#tesoreria"]');
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')
-    ).toHaveText('Sin cuentas todavía', { timeout: 3_000 });
+    ).toHaveText('¿Dónde guardás tu plata?', { timeout: 3_000 });
 
     // Metas después
     await page.click('a[href="#metas"]');
@@ -114,7 +114,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     await page.click('a[href="#tesoreria"]');
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')
-    ).toHaveText('Sin cuentas todavía', { timeout: 3_000 });
+    ).toHaveText('¿Dónde guardás tu plata?', { timeout: 3_000 });
   });
 
 });

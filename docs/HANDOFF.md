@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (E2E del banner de instalacion PWA + alerta de 5 regresiones preexistentes)
+> Última actualización: 2026-05-19 (fix E2E: 5 regresiones preexistentes corregidas, 38/38 verdes)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 805/805 verdes |
-| Tests E2E | 33/38 verdes (5 regresiones preexistentes detectadas, ver tarea siguiente) |
+| Tests E2E | 38/38 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(e2e) - 5 regresiones E2E corregidas · 2026-05-19
+Textos de empty state cambiados y selector de theme-toggle duplicado por el bottom nav mobile.
+- `navegacion-render.test.js`: "Sin cuentas todavía" → "¿Dónde guardás tu plata?" (2 ocurrencias);
+  "Sin compromisos registrados" → "Nada que pagar... por ahora".
+- `smoke.test.js`: `[data-action="theme-toggle"]` → `button.nav-item[data-action="theme-toggle"]`
+  (descarta el botón del modal Más, evita violacion de strict mode en Playwright).
+- Suite E2E: 38/38 verdes.
 
 ### test(e2e) - Smoke del banner de instalacion PWA · 2026-05-19
 6 tests Playwright para `modules/ui/install-prompt.js`. UA iOS forzada via `test.use({ userAgent })`

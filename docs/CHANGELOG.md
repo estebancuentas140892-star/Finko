@@ -7,6 +7,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(e2e) - 5 regresiones E2E corregidas · 2026-05-19
+
+Dos causas independientes. Ambas introducidas por commits anteriores al bottom nav mobile.
+
+**Causa 1: textos de empty state renombrados (navegacion-render.test.js)**
+Los empty state de Tesorería y Compromisos recibieron copy más humano en algún commit de UX.
+Los tests tenían los textos viejos.
+- Tesorería: "Sin cuentas todavía" → "¿Dónde guardás tu plata?"
+- Compromisos: "Sin compromisos registrados" → "Nada que pagar... por ahora"
+
+**Causa 2: selector `[data-action="theme-toggle"]` resuelve a 2 elementos (smoke.test.js)**
+El bottom nav mobile agregó un segundo botón de tema en el modal "Más" (`#menu-mas-tema`).
+Playwright strict mode rechaza locators ambiguos.
+- Fix: `[data-action="theme-toggle"]` → `button.nav-item[data-action="theme-toggle"]`
+  Apunta solo al boton de la nav desktop, que es el visible en los tests con Chromium Desktop.
+
+**Archivos:**
+- `tests/e2e/navegacion-render.test.js`: 3 textos actualizados.
+- `tests/e2e/smoke.test.js`: 3 ocurrencias del selector corregidas (replace_all).
+
+**Métricas:** 805/805 unit verdes, 38/38 E2E verdes.
+
+---
+
 ### test(e2e) - Smoke del banner de instalacion PWA · 2026-05-19
 
 6 tests Playwright que cubren el flujo del banner persuasivo de instalacion. Cierra el

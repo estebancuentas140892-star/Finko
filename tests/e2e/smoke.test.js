@@ -250,7 +250,7 @@ test.describe('Tema claro/oscuro', () => {
 
   test('toggle cambia aria-pressed del botón', async ({ page }) => {
     // shell.js usa aria-pressed en el botón de toggle, no data-theme en <html>
-    const btn = page.locator('[data-action="theme-toggle"]');
+    const btn = page.locator('button.nav-item[data-action="theme-toggle"]');
 
     // Estado inicial: dark (aria-pressed="false")
     await expect(btn).toHaveAttribute('aria-pressed', 'false');
@@ -265,7 +265,7 @@ test.describe('Tema claro/oscuro', () => {
   });
 
   test('el tema persiste tras recarga', async ({ page }) => {
-    const btn = page.locator('[data-action="theme-toggle"]');
+    const btn = page.locator('button.nav-item[data-action="theme-toggle"]');
 
     await btn.click();
     await expect(btn).toHaveAttribute('aria-pressed', 'true');
@@ -275,7 +275,7 @@ test.describe('Tema claro/oscuro', () => {
 
     // Después de recarga con localStorage guardado, debe seguir en light
     await expect(
-      page.locator('[data-action="theme-toggle"]')
+      page.locator('button.nav-item[data-action="theme-toggle"]')
     ).toHaveAttribute('aria-pressed', 'true');
   });
 });
