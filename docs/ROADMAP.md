@@ -128,6 +128,23 @@ _(no quedan tareas pendientes en F — features portadas completas)_
 
 ---
 
+### G. Insights desde Finko-Refactor (segunda oleada)
+
+**Objetivo:** portar las features de analisis avanzado y alertas inteligentes de Finko-Refactor
+que no fueron incluidas en la fase F.
+
+**Completadas:**
+- ✅ G.1 — Detectores de alerta en compromisos: `detectarFijosSinPagarEsteMes()` y
+  `detectarDeudasDurmiendo()` en `compromisos/logic.js`; nudges en la sección; 22 tests nuevos — 2026-05-19.
+
+**Pendientes:**
+- ✅ G.2 — Insights de gasto en analisis: `calcularComparacionCategorias()` + `detectarPatronGastoSemanal()`; 20 tests nuevos — 2026-05-19.
+- G.3 — Sistema de Logros y Rachas (gamificacion) — Opus 4.7 Medio.
+
+**Modelo sugerido:** Sonnet 4.6 Medio (G.2) / Opus 4.7 Medio (G.3).
+
+---
+
 ## Métricas alcanzadas en v1.0
 
 | Métrica | Objetivo v1 | Real |

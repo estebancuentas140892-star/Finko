@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix: score liquidez/control leía field name equivocado)
+> Última actualización: 2026-05-19 (G.2: comparación de categorías + patrón semanal en analisis)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 733/733 verdes |
+| Tests unitarios + integración | 775/775 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,30 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(analisis) - G.2: Comparación de categorías + patrón semanal · 2026-05-19
+Dos nuevas funciones puras portadas desde Finko-Refactor, integradas en el panel de análisis.
+`detectarMesesSinCerrar` se descartó (requería `S.historial` que no existe en Claude).
+- `modules/dominio/analisis/logic.js`: +`calcularComparacionCategorias(gastos, anio, mes, config)` (compara catMaps actual vs mes anterior, sin historial externo) y +`detectarPatronGastoSemanal(gastos, hoyISO, config)` (detecta día de semana con gasto consistentemente alto).
+- `modules/dominio/analisis/view.js`: +`_renderComparacionCategorias()` y +`_renderPatronSemanal()` integradas en `renderAnalisis()`. Importa las dos nuevas funciones.
+- `styles/components.css`: +15 clases CSS para `.comparacion__*` y `.patron__*`.
+- `tests/unit/analisis.test.js`: +20 tests (128 total). Suite total: 775/775 verdes.
+- `service-worker.js`: v27 a v28.
+
+### feat(compromisos) - G.1: Detectores de alerta · 2026-05-19
+Dos nuevas funciones puras en `compromisos/logic.js` portadas y adaptadas desde Finko-Refactor.
+Adaptacion clave: Claude usa `S.compromisos[]` unificado con `tipo` en lugar de arrays
+separados. Sin `pagadoEn` ni `deudaId`, las detecciones son heuristicas.
+- `modules/dominio/compromisos/logic.js`: +`detectarFijosSinPagarEsteMes()` (fijos cuyo
+  `diaPago <= diaHoy` del mes actual) y +`detectarDeudasDurmiendo()` (deudas activas con
+  `saldoPendiente > 0` y `fechaCreacion >= umbral meses`). Ambas con severidad `leve/moderada/urgente` y `baja/media/alta`.
+- `modules/dominio/compromisos/view.js`: +`renderAlertaFijosSinPagar()` y
+  +`renderAlertaDeudasDurmiendo()` con HTML nudge.
+- `modules/dominio/compromisos/index.js`: ambas funciones integradas en `_renderTodo()`.
+- `index.html`: +`#nudge-fijos-sin-pagar` y +`#nudge-deudas-durmiendo` en `#sec-compromisos`.
+- `styles/components.css`: +`.nudge__desc--muted`.
+- `tests/unit/compromisos.test.js`: 22 tests nuevos (106 total). Total suite: 755/755 verdes.
+- `service-worker.js`: v26 a v27.
 
 ### fix(analisis) - Score liquidez/control leía field name equivocado · 2026-05-19
 `calcularScoreSalud()` leía `resumen.gastosMes` (con s) pero `generarResumen()` devuelve

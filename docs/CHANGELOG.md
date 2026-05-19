@@ -7,6 +7,44 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(analisis) - G.2: Comparación de categorías + patrón semanal · 2026-05-19
+
+Dos funciones puras portadas desde Finko-Refactor e integradas en el panel de análisis.
+`detectarMesesSinCerrar` se descartó porque requería `S.historial`, concepto que no
+existe en Claude. La comparación de categorías se adapta leyendo dos meses directamente
+desde `S.gastos`, sin historial externo.
+
+- `modules/dominio/analisis/logic.js`: +`calcularComparacionCategorias(gastos, anio, mes, config)`:
+  computa catMaps de mes actual y mes anterior desde `gastosMes()` + `gastosPorCategoria()`,
+  detecta subidas/bajadas/nuevas/desaparecidas, genera highlights.
+  +`detectarPatronGastoSemanal(gastos, hoyISO, config)`: acumula totales por día de semana
+  en ventana de 90 días, señala días >= 2× el promedio como destacados.
+- `modules/dominio/analisis/view.js`: +`_renderComparacionCategorias()` (tabla + highlights)
+  y +`_renderPatronSemanal()` (lista de días) integradas en `renderAnalisis()`.
+- `styles/components.css`: +15 clases CSS para `.comparacion__*` y `.patron__*`.
+- `tests/unit/analisis.test.js`: +20 tests (128 total en el archivo). Suite total: 775/775.
+- `service-worker.js`: v27 a v28.
+
+### feat(compromisos) - G.1: Detectores de alerta · 2026-05-19
+
+Dos funciones puras portadas y adaptadas desde Finko-Refactor:
+`detectarFijosSinPagarEsteMes()` y `detectarDeudasDurmiendo()`.
+Adaptacion: Claude usa `S.compromisos[]` unificado con `tipo` en lugar de arrays separados.
+Sin historial de pagos (`pagadoEn`, `deudaId`), la deteccion es heuristica:
+fijos = `diaPago <= diaHoy`; deudas = `fechaCreacion >= umbral meses` + `saldoPendiente > 0`.
+
+- `modules/dominio/compromisos/logic.js`: +`detectarFijosSinPagarEsteMes(compromisos, hoyISO, config)`
+  y +`detectarDeudasDurmiendo(compromisos, hoyISO, config)`. Ambas con niveles de severidad
+  y sugerencias de accion.
+- `modules/dominio/compromisos/view.js`: +`renderAlertaFijosSinPagar()` y
+  +`renderAlertaDeudasDurmiendo()` con nudges tipo `nudge-high` / `nudge-medium`.
+  Importa las dos nuevas funciones de `logic.js`.
+- `modules/dominio/compromisos/index.js`: ambas funciones llamadas dentro de `_renderTodo()`.
+- `index.html`: +`#nudge-fijos-sin-pagar` y +`#nudge-deudas-durmiendo` en `#sec-compromisos`.
+- `styles/components.css`: +`.nudge__desc--muted` para el "ver mas..." de lista truncada.
+- `tests/unit/compromisos.test.js`: +22 tests (106 total en el archivo). Suite total: 755/755.
+- `service-worker.js`: v26 a v27.
+
 ### fix(analisis) - Score liquidez/control leía field name equivocado · 2026-05-19
 
 Bug en `calcularScoreSalud()` (F.3): leía `resumen.gastosMes` (con s) pero
