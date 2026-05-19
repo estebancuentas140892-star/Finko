@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-18 (H1-H3 hardening completado; CSP estricto en producción)
+> Última actualización: 2026-05-18 (F.1 completada — 3 calculadoras nuevas portadas desde Finko-Refactor)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 596/596 verdes |
+| Tests unitarios + integración | 613/613 verdes |
 | Tests E2E | 18/18 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### F.1 — 3 calculadoras nuevas portadas desde Finko-Refactor · 2026-05-18
+**PILA** (`calcularPILA`): aportes mensuales de independientes según Decreto 1273/2018.
+IBC = max(ingreso × 40 %, 1 SMMLV); salud 12.5 %; pensión 16 %; ARL configurable
+(5 clases de riesgo en UI). **Rentabilidad real** (`calcularRentabilidadReal`):
+fórmula de Fisher — descuenta inflación del retorno nominal. **clasificarTasaCredito**:
+clasifica tasa EA contra usura SFC en 4 bandas (razonable/estándar/alta/usura);
+integrado como badge visual en la calculadora de Crédito existente. SW v9→v10.
+17 tests nuevos: 613/613 verdes. Verificado en browser.
+- `modules/core/constants.js` (SALUD_INDEPEND, PENSION_INDEPEND, ARL_CLASE_I)
+- `modules/dominio/calculadoras/{logic,view,index}.js`
+- `tests/unit/calculadoras.test.js`, `service-worker.js`
 
 ### H1–H3 — Hardening de seguridad · 2026-05-18
 **H1 — CSP:** `modules/infra/sw-register.js` extrae el registro SW del `<script>` inline.
