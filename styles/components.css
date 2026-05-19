@@ -972,6 +972,116 @@ textarea.input {
   color: var(--fk-text-secondary);
 }
 
+/* ── Comparación de categorías (G.2) ────────────────────── */
+.comparacion__delta {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  margin: 0 0 var(--fk-space-3);
+}
+.comparacion__delta--sube { color: var(--fk-danger-text); }
+.comparacion__delta--baja { color: var(--fk-success); }
+
+.comparacion__highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.comparacion__highlight {
+  font-size: var(--fk-text-xs);
+  padding: var(--fk-space-1) var(--fk-space-2);
+  border-radius: var(--fk-radius-sm);
+}
+.comparacion__highlight--mejora { background: var(--fk-success-bg); color: var(--fk-success-text); }
+.comparacion__highlight--alerta { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
+
+.comparacion__tabla-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.comparacion__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fk-text-xs);
+}
+.comparacion__th {
+  text-align: left;
+  padding: var(--fk-space-2) var(--fk-space-2);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-normal);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  white-space: nowrap;
+}
+.comparacion__row { border-bottom: 1px solid var(--fk-border-subtle); }
+.comparacion__row--sube { background: color-mix(in srgb, var(--fk-danger) 5%, transparent); }
+.comparacion__row--baja { background: color-mix(in srgb, var(--fk-success) 5%, transparent); }
+.comparacion__cat {
+  padding: var(--fk-space-2);
+  color: var(--fk-text-primary);
+}
+.comparacion__monto {
+  padding: var(--fk-space-2);
+  text-align: right;
+  font-family: var(--fk-font-mono);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.comparacion__monto--actual {
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.comparacion__dir {
+  padding: var(--fk-space-2);
+  text-align: right;
+  white-space: nowrap;
+  font-weight: var(--fk-font-semibold);
+}
+.comparacion__row--sube .comparacion__dir { color: var(--fk-danger-text); }
+.comparacion__row--baja .comparacion__dir { color: var(--fk-success-text); }
+
+/* ── Patrón semanal (G.2) ────────────────────────────────── */
+.patron__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.patron__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+}
+.patron__item--alta   { background: var(--fk-nudge-high-bg);   border-left: 3px solid var(--fk-nudge-high-accent);   }
+.patron__item--media  { background: var(--fk-nudge-medium-bg); border-left: 3px solid var(--fk-nudge-medium-accent); }
+.patron__dia {
+  font-weight: var(--fk-font-bold);
+  min-width: 6rem;
+  color: var(--fk-text-primary);
+}
+.patron__factor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.patron__etiqueta {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  flex: 1;
+}
+.analisis__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
 /* ── Patrimonio neto ─────────────────────────────────────── */
 .patrimonio-hero {
   background: var(--fk-bg-surface);
@@ -1560,6 +1670,11 @@ textarea.input {
   color: var(--fk-text-secondary);
   margin: 0;
   line-height: var(--fk-leading-relaxed);
+}
+
+.nudge__desc--muted {
+  color: var(--fk-text-muted);
+  font-style: italic;
 }
 
 .nudge__cta {
