@@ -139,7 +139,7 @@ que no fueron incluidas en la fase F.
 
 **Pendientes:**
 - ✅ G.2 — Insights de gasto en analisis: `calcularComparacionCategorias()` + `detectarPatronGastoSemanal()`; 20 tests nuevos — 2026-05-19.
-- G.3 — Sistema de Logros y Rachas (gamificacion) — Opus 4.7 Medio.
+- ✅ G.3 — Sistema de Logros y Rachas (gamificacion): 12 logros, toast + confetti, schema v4 — 2026-05-19.
 
 **Modelo sugerido:** Sonnet 4.6 Medio (G.2) / Opus 4.7 Medio (G.3).
 

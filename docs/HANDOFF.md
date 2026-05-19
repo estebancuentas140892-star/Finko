@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (G.2: comparación de categorías + patrón semanal en analisis)
+> Última actualización: 2026-05-19 (G.3: sistema de logros con toast y confetti)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 775/775 verdes |
+| Tests unitarios + integración | 805/805 verdes |
 | Tests E2E | 32/32 verdes |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### G.3 - Sistema de logros con toast y confetti · 2026-05-19
+12 logros evaluables sobre el estado actual de S. Sin historial de acciones: cada logro
+es una funcion pura que lee S (ingresos, gastos, metas, cuentas, etc.) y retorna boolean.
+- `modules/dominio/logros/logic.js`: LOGROS[] + `evaluarLogros(S)` pura, sin DOM.
+- `modules/dominio/logros/index.js`: `initLogros()` suscrito a state:change. Toast animado
+  con emoji + nombre (CSS ya existia), confetti de 24 piezas con colores del sistema.
+- `modules/core/state.js` + `storage.js`: schema v3 a v4, campo `logros: []`, migracion idempotente.
+- `modules/ui/bootstrap.js`: `initLogros()` despues de renderAll().
+- `tests/unit/logros.test.js`: 30 tests nuevos. Total: 805/805 verdes.
+- `service-worker.js`: v28 a v29, nuevos módulos en CORE_ASSETS.
 
 ### feat(analisis) - G.2: Comparación de categorías + patrón semanal · 2026-05-19
 Dos nuevas funciones puras portadas desde Finko-Refactor, integradas en el panel de análisis.

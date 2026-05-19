@@ -7,6 +7,46 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### G.3 - Sistema de logros con toast y confetti · 2026-05-19
+
+Sistema de gamificacion liviano: detecta hitos del usuario, los persiste en S.logros y
+muestra un toast animado con confetti la primera vez que cada uno se cumple.
+
+**Logros definidos (12):**
+- `primer-paso`: completó el onboarding.
+- `primer-ingreso/gasto/compromiso`: primer registro en cada coleccion.
+- `tesorero`: primera cuenta o billetera registrada.
+- `soñador`: primera meta de ahorro creada.
+- `meta-lograda`: primera meta completada.
+- `planificador`: primer presupuesto por categoria.
+- `diversificador`: 3 o mas cuentas activas.
+- `prestamista`: primer prestamo personal registrado.
+- `mes-en-verde`: ingresos activos (normalizados a mensual) > gastos del mes actual.
+- `diez-gastos`: 10 o mas gastos registrados.
+
+**Arquitectura:**
+- `logros/logic.js`: lógica pura. LOGROS[] con `eval(S)` funciones; `evaluarLogros(S)` retorna
+  ids cumplidos. Sin DOM, sin imports de otros dominios.
+- `logros/index.js`: `initLogros()` + suscripcion a `state:change`. Detecta logros nuevos,
+  persiste en S.logros, muestra toast con delay 1.4s entre logros.
+- Toast: usa CSS existente (.logro-toast, @keyframes toastIn/toastOut de base.css).
+- Confetti: 24 spans .confetti-piece con colores del sistema, posicion fixed, lanzados
+  desde zona inferior-central con delay random.
+
+**Schema v3 a v4:**
+- `state.js`: `_version: 4`, campo `logros: []` en createInitialState().
+- `storage.js`: SCHEMA_VERSION = 4, migracion v3 a v4 agrega `logros: []` idempotente.
+- `bootstrap.js`: `initLogros()` despues de renderAll().
+- `tests/unit/logros.test.js`: 30 tests nuevos (guardia de inputs, todos los logros, casos
+  borde de diversificador, diez-gastos, mes-en-verde, multiples simultaneos, integridad tabla).
+- `tests/unit/state.test.js`: version esperada actualizada a 4.
+
+Archivos: `modules/dominio/logros/logic.js` (nuevo), `modules/dominio/logros/index.js` (nuevo),
+`modules/core/state.js`, `modules/core/storage.js`, `modules/ui/bootstrap.js`,
+`tests/unit/logros.test.js` (nuevo), `tests/unit/state.test.js`, `service-worker.js` (v28 a v29).
+
+---
+
 ### feat(analisis) - G.2: Comparación de categorías + patrón semanal · 2026-05-19
 
 Dos funciones puras portadas desde Finko-Refactor e integradas en el panel de análisis.
