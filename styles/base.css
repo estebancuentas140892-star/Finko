@@ -40,6 +40,9 @@ p {
   font-family: var(--fk-font-mono);
   font-weight: var(--fk-font-medium);
   letter-spacing: -0.01em;
+  /* Números tabulares: evita que los montos "bailen" en transiciones */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
 }
 
 /* Links visibles en contextos de texto */
@@ -116,4 +119,74 @@ select:focus {
 ::selection {
   background: var(--fk-accent-subtle);
   color: var(--fk-text-primary);
+}
+
+/* ── ANIMACIONES DE ENTRADA ────────────────────────────────── */
+/* Sección activa: aparece con slide suave hacia arriba */
+
+@keyframes sectionIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Cards en cascada (Bento preparado) */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Toast slide desde abajo */
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+}
+
+/* Confetti individual */
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(80px) rotate(720deg); opacity: 0; }
+}
+
+/* Aplicar entrada a paneles de sección al activarse */
+@media (prefers-reduced-motion: no-preference) {
+  .sec.active > *:first-child {
+    animation: sectionIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+/* Feedback táctil en botones (mobile) */
+@media (hover: none) {
+  .btn:active {
+    transform: scale(0.97);
+    transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
