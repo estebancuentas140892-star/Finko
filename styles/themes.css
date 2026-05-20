@@ -61,9 +61,29 @@ body.light-theme {
   /* Solo los tokens interactivos y de texto cambian */
 }
 
-/* ── TRANSICIÓN SUAVE ENTRE TEMAS ───────────────────────────── */
-body {
-  transition:
-    background-color var(--fk-transition-slow),
-    color var(--fk-transition-slow);
+/* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────
+   Tecnica "class transitioning": shell.js agrega .theme-transitioning
+   al body ANTES de cambiar la clase de tema. Esto activa transiciones
+   en TODOS los descendientes mientras dura el cambio (280ms), y la clase
+   se quita automaticamente a los 350ms via JS.
+
+   Se usa !important en transition para garantizar que la interpolacion se
+   aplique aunque el elemento tenga una transicion mas especifica declarada.
+   No afecta @keyframes animations (transition e animation son independientes).
+
+   prefers-reduced-motion: los usuarios que piden menos movimiento ven el
+   cambio instantaneo (el comportamiento anterior), sin lag ni mareo.
+   ─────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .theme-transitioning,
+  .theme-transitioning *,
+  .theme-transitioning *::before,
+  .theme-transitioning *::after {
+    transition:
+      background-color 280ms ease,
+      border-color     280ms ease,
+      color            180ms ease,
+      fill             180ms ease,
+      box-shadow       280ms ease !important;
+  }
 }

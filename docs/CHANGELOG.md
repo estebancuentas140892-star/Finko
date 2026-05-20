@@ -7,6 +7,45 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(ux) - Transicion de tema suave en mobile (UX#2) · 2026-05-19
+
+Bug reportado: el cambio entre tema claro y oscuro se veia como un "salto" brusco en mobile.
+
+**Causa:** el body tenia `transition: background-color X, color X` pero los descendientes
+(sidebar, cards, inputs, bordes) cambiaban instantaneamente porque las CSS custom properties
+no son animables por si solas: cuando `.light-theme` se agrega/quita del body, los tokens
+cambian en un solo frame.
+
+**Solucion: tecnica "class transitioning"**
+
+En JS (`shell.js`): `applyTheme()` agrega `.theme-transitioning` al body ANTES del swap,
+activa un timer de 350ms para quitarla (con clearTimeout por si el usuario hace toggle
+rapido repetido).
+
+En CSS (`themes.css`): nueva regla con `@media (prefers-reduced-motion: no-preference)`:
+```
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition: background-color 280ms ease, border-color 280ms ease,
+              color 180ms ease, fill 180ms ease, box-shadow 280ms ease !important;
+}
+```
+El `!important` garantiza la interpolacion incluso en elementos con transiciones mas
+especificas. No afecta `@keyframes` (transition e animation son propiedades independientes).
+Los usuarios con `prefers-reduced-motion: reduce` ven el cambio instantaneo (sin lag ni mareo).
+
+**Archivos:**
+- `modules/ui/shell.js` (applyTheme + timer de limpieza)
+- `styles/themes.css` (media query + selector global transitioning)
+- `service-worker.js` (v33 a v34)
+
+**Metricas:** 805/805 unit verdes, 2/2 E2E de tema verdes. El `aria-pressed` se actualiza
+sincronamente (antes del timer), por eso los tests E2E siguen funcionando.
+
+---
+
 ### fix(ux) - Toast de logro cortado en mobile · 2026-05-19
 
 Bug reportado por el usuario: el toast de "Logro desbloqueado" en celular aparecia

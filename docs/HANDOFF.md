@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix UX: toast del logro cortado en mobile)
+> Última actualización: 2026-05-19 (fix UX: transicion de tema suave en mobile)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(ux) - Transicion de tema suave en mobile (UX#2) · 2026-05-19
+Tecnica "class transitioning": `applyTheme()` en `shell.js` agrega `.theme-transitioning`
+al body ANTES del swap de clase de tema, luego la quita a los 350ms. El CSS en `themes.css`
+usa ese selector para activar transiciones de 280ms en todos los descendientes durante el
+cambio. Solo activo cuando `prefers-reduced-motion: no-preference`.
+- `modules/ui/shell.js`: `applyTheme()` agrega `.theme-transitioning` antes del toggle.
+  Timer de 350ms lo quita (con clearTimeout si el usuario hace doble toggle rapido).
+- `styles/themes.css`: media query `prefers-reduced-motion: no-preference` con selector
+  `.theme-transitioning, * {...}` y transition 280ms ease en background-color, border-color,
+  box-shadow + 180ms en color y fill.
+- SW v33 a v34. 805/805 unit + 2/2 E2E de tema verdes.
 
 ### fix(ux) - Toast de logro cortado en mobile (UX#1) · 2026-05-19
 El toast del logro desbloqueado se veia parcialmente cortado en celular y a veces tapado
