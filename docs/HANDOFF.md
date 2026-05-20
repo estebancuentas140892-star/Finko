@@ -39,12 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada con compromiso fijo · 2026-05-20
+### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada + E2E smoke tests · 2026-05-20
 Nueva feature opcional: al crear/editar una cuenta, la persona puede activar "cuota de manejo"
 (tarifa mensual que el banco cobra). Finko auto-genera un Compromiso tipo Fijo con frecuencia Mensual,
 campo `esCuotaManejo=true` y `cuentaId` del banco. Sincronización idempotente: si la cuota cambia
 de monto o día, el compromiso se edita; si se desactiva, se elimina; si se activa, se crea.
 Visible en Compromisos y Agenda con ícono diferenciado.
+
+Incluye 4 nuevos smoke tests E2E que cubre el flujo gastos-cuenta completo (crear gasto con selector,
+editar monto, cambiar cuenta, eliminar gasto) y verifica saldos se actualizan en tesorería/dashboard.
+Total: 47 tests E2E verdes.
 
 **Schema:** Bump v4→v5. Campo opcional `cuotaManejo: {monto, diaCobro}` en Cuenta. Campo opcional
 `cuentaId` + bandera `esCuotaManejo` en Compromiso. Migración idempotente sin pérdida de datos.

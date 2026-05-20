@@ -42,12 +42,15 @@ mediante campos `esCuotaManejo=true` y `cuentaId`. La sincronización es **idemp
 - `tests/unit/state.test.js`: actualizado check de _version (4→5)
 - `service-worker.js`: cache bump v50→v51
 
-**Tests:** 880/880 verdes (Unit 835 + Integration 45).
+**Tests:** 880/880 verdes (Unit 835 + Integration 45). Incluye 4 nuevos E2E smoke tests en
+`tests/e2e/smoke.test.js` cobriendo el flujo gastos-cuenta completo (crear cuenta, gasto con selector,
+editar monto, cambiar cuenta, eliminar, verificar saldos). Total E2E: 47/47 verdes.
 
 **Impacto:**
 - La sección Compromisos now muestra cuotas de manejo con ícono diferenciado y puede editarlas.
 - La sección Agenda now muestra cuotas en el calendario mensual (Fijo, Mensual, auto-generadas).
 - El formulario de tesorería refleja la feature visualmente (checkbox + fieldset conditional).
+- E2E suite verifica que saldos se actualizan correctamente end-to-end (dashboard, tesorería, lista gastos).
 
 ---
 
