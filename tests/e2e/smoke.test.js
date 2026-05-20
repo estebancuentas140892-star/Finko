@@ -219,8 +219,10 @@ test.describe('Tesorería - cuenta y saldo', () => {
 
     const form = page.locator('#modal-cuenta-body form');
     await form.locator('[name="nombre"]').fill('Ahorros prueba E2E');
-    // banco y tipo son requeridos por validarCuenta()
-    await form.locator('select[name="banco"]').selectOption({ index: 1 });
+    // banco: abrir el custom picker y elegir el primer banco de la lista.
+    // La lista usa position:fixed, por eso se busca desde page y no desde form.
+    await form.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__item').first().click();
     await form.locator('select[name="tipo"]').selectOption({ index: 1 });
     await form.locator('[name="saldo"]').fill('850000');
     await form.locator('button[type="submit"]').click();

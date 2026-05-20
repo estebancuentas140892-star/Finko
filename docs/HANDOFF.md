@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix UX: transicion de tema suave en mobile)
+> Última actualización: 2026-05-19 (UX#4: logos/avatares de bancos en selector de cuenta)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ux) - Logos/avatares de bancos en selector de cuenta (UX#4) · 2026-05-19
+Custom bank picker que reemplaza el select nativo de bancos con un combobox accesible
+que muestra avatares circulares con el color corporativo e iniciales de cada entidad.
+- `constants.js`: BANCOS_CO pasa de string[] a objetos {id, iniciales, color, texto}.
+  El id es el mismo string que antes (retrocompatibilidad total con localStorage).
+- `tesoreria/view.js`: renderFormCuenta() genera el custom picker HTML; nuevo helper
+  _bankAvatarHtml() para la lista de cuentas y los items del picker.
+- `tesoreria/index.js`: _initBankPicker() con toggle, seleccion, teclado (flechas,
+  Enter, Escape) y cierre al click externo. Dropdown con position:fixed para evitar
+  que el overflow:hidden del modal lo corte.
+- `components.css`: estilos de .bank-picker, .bank-picker__trigger, .bank-picker__list,
+  .bank-picker__item y .bank-avatar. Lista con max-height:260px + overflow-y:auto.
+- `smoke.test.js`: actualizado para usar el nuevo picker (click trigger + click item).
+- SW v34 a v35. 805/805 unit + 38/38 E2E verdes.
 
 ### fix(ux) - Transicion de tema suave en mobile (UX#2) · 2026-05-19
 Tecnica "class transitioning": `applyTheme()` en `shell.js` agrega `.theme-transitioning`

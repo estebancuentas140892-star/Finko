@@ -268,21 +268,31 @@ export const TASA_USURA_Q2_2026 = TASA_USURA;
 
 // ── CATÁLOGOS PARA SELECTS ──────────────────────────────────────
 
-/** Bancos y billeteras digitales principales en Colombia. */
+/**
+ * Bancos y billeteras digitales principales en Colombia.
+ *
+ * Cada entrada tiene:
+ *   id        - string que se guarda en localStorage (compatible con datos previos).
+ *   iniciales - letras para el avatar visual (max 2 chars).
+ *   color     - fondo del avatar (color corporativo aproximado).
+ *   texto     - color del texto dentro del avatar (#ffffff o #1a1a1a).
+ *
+ * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
+ */
 export const BANCOS_CO = [
-  'Bancolombia',
-  'Davivienda',
-  'Banco de Bogotá',
-  'BBVA Colombia',
-  'Banco Popular',
-  'Scotiabank Colpatria',
-  'Banco de Occidente',
-  'Banco AV Villas',
-  'Nequi',
-  'Daviplata',
-  'Nubank',
-  'Lulo Bank',
-  'Otro',
+  { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a' },
+  { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff' },
+  { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff' },
+  { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff' },
+  { id: 'Banco Popular',        iniciales: 'BP', color: '#0B5394', texto: '#ffffff' },
+  { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff' },
+  { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff' },
+  { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff' },
+  { id: 'Nequi',                iniciales: 'Nq', color: '#9C00FF', texto: '#ffffff' },
+  { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff' },
+  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff' },
+  { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff' },
+  { id: 'Otro',                 iniciales: '?',  color: '#6B7280', texto: '#ffffff' },
 ];
 
 /** Tipos de cuenta soportados en el módulo de tesorería. */

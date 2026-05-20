@@ -95,6 +95,121 @@ function _inyectarForm() {
     e.preventDefault();
     _guardarCuenta();
   });
+
+  // Inicializar el custom bank picker.
+  const picker = body.querySelector('.bank-picker');
+  if (picker) _initBankPicker(picker);
+}
+
+/**
+ * Inicializa el comportamiento del custom bank picker:
+ * toggle, seleccion de banco, navegacion por teclado y cierre al click externo.
+ *
+ * Usa position: fixed para el dropdown para que no quede cortado
+ * por el overflow: hidden del modal.
+ *
+ * @param {HTMLElement} picker - el elemento .bank-picker raiz.
+ */
+function _initBankPicker(picker) {
+  const trigger = picker.querySelector('.bank-picker__trigger');
+  const list    = picker.querySelector('.bank-picker__list');
+  const hidden  = picker.querySelector('input[name="banco"]');
+  if (!trigger || !list || !hidden) return;
+
+  // Posicionar el dropdown con position:fixed debajo del trigger.
+  function _posicionar() {
+    const r = trigger.getBoundingClientRect();
+    list.style.top   = `${r.bottom + 4}px`;
+    list.style.left  = `${r.left}px`;
+    list.style.width = `${r.width}px`;
+  }
+
+  function _open() {
+    _posicionar();
+    list.hidden = false;
+    trigger.setAttribute('aria-expanded', 'true');
+    picker.setAttribute('aria-expanded', 'true');
+    // Foco al item seleccionado o al primero.
+    const sel = list.querySelector('[aria-selected="true"]')
+             ?? list.querySelector('[role="option"]');
+    sel?.focus();
+  }
+
+  function _close() {
+    list.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    picker.setAttribute('aria-expanded', 'false');
+  }
+
+  function _selectItem(item) {
+    const val = item.dataset.value;
+    if (!val) return;
+
+    hidden.value = val;
+
+    // Actualizar display del trigger con el avatar + nombre del banco.
+    const display = trigger.querySelector('.bank-picker__display');
+    if (display) display.innerHTML = item.innerHTML;
+
+    // Actualizar aria-selected.
+    list.querySelectorAll('[role="option"]').forEach(i => {
+      i.setAttribute('aria-selected', i === item ? 'true' : 'false');
+    });
+  }
+
+  // Toggle al click en el trigger.
+  trigger.addEventListener('click', () => {
+    if (list.hidden) _open(); else _close();
+  });
+
+  // Seleccion al click en un item.
+  list.addEventListener('click', (e) => {
+    const item = e.target.closest('[role="option"]');
+    if (!item) return;
+    _selectItem(item);
+    _close();
+    trigger.focus();
+  });
+
+  // Teclado dentro de la lista.
+  list.addEventListener('keydown', (e) => {
+    const items = [...list.querySelectorAll('[role="option"]')];
+    const idx   = items.indexOf(document.activeElement);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      items[Math.min(idx + 1, items.length - 1)]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      items[Math.max(idx - 1, 0)]?.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const focused = document.activeElement;
+      if (focused.getAttribute('role') === 'option') {
+        _selectItem(focused);
+        _close();
+        trigger.focus();
+      }
+    } else if (e.key === 'Escape') {
+      _close();
+      trigger.focus();
+    }
+  });
+
+  // Abrir con flecha abajo desde el trigger.
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      _open();
+    }
+  });
+
+  // Cerrar al click fuera del picker Y de la lista (que esta en position:fixed).
+  document.addEventListener('pointerdown', (e) => {
+    if (!picker.contains(e.target) && !list.contains(e.target)) {
+      _close();
+    }
+  }, { capture: true });
 }
 
 /**

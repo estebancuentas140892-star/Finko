@@ -41,11 +41,10 @@ function _renderCuentaItem(cuenta) {
   const nombre = _esc(cuenta.nombre);
   const banco  = _esc(cuenta.banco);
   const tipo   = _esc(cuenta.tipo);
-  const icono  = _esc(cuenta.icono ?? '🏦');
 
   return `
     <article class="list-item" data-id="${_esc(cuenta.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icono}</div>
+      <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
       <div class="list-item__body">
         <p class="list-item__title">${nombre}</p>
         <p class="list-item__subtitle">${banco} · ${tipo}</p>
@@ -80,9 +79,16 @@ function _renderEmptyState() {
  * @returns {string}
  */
 export function renderFormCuenta() {
-  const bancoOpts = BANCOS_CO
-    .map(b => `<option value="${_esc(b)}">${_esc(b)}</option>`)
-    .join('');
+  const bancoItems = BANCOS_CO.map(b => `
+    <li role="option"
+        class="bank-picker__item"
+        data-value="${_esc(b.id)}"
+        aria-selected="false"
+        tabindex="-1">
+      ${_bankAvatarHtml(b.id)}
+      <span>${_esc(b.id)}</span>
+    </li>`).join('');
+
   const tipoOpts = TIPOS_CUENTA
     .map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`)
     .join('');
@@ -95,13 +101,40 @@ export function renderFormCuenta() {
                placeholder="Ej. Ahorros Davivienda"
                required aria-required="true" autocomplete="off" />
       </div>
+
       <div class="form-group">
-        <label for="cuenta-banco" class="label">Banco o billetera</label>
-        <select id="cuenta-banco" name="banco" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
-          ${bancoOpts}
-        </select>
+        <label id="label-banco" class="label">Banco o billetera</label>
+        <div class="bank-picker"
+             role="combobox"
+             aria-expanded="false"
+             aria-haspopup="listbox"
+             aria-labelledby="label-banco">
+          <button type="button"
+                  class="bank-picker__trigger"
+                  aria-controls="banco-list"
+                  aria-expanded="false">
+            <span class="bank-picker__display">
+              <span class="bank-picker__placeholder">Seleccionar…</span>
+            </span>
+            <span class="bank-picker__chevron" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </button>
+          <input type="hidden" name="banco" value="" />
+          <ul class="bank-picker__list"
+              id="banco-list"
+              role="listbox"
+              aria-label="Banco o billetera"
+              tabindex="-1"
+              hidden>
+            ${bancoItems}
+          </ul>
+        </div>
       </div>
+
       <div class="form-group">
         <label for="cuenta-tipo" class="label">Tipo de cuenta</label>
         <select id="cuenta-tipo" name="tipo" class="input" required aria-required="true">
@@ -203,7 +236,25 @@ export function renderNudgePrima() {
     </div>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────
+
+/**
+ * Devuelve el HTML de un avatar circular con las iniciales y el color
+ * corporativo del banco. Si el banco no se encuentra en BANCOS_CO,
+ * devuelve un avatar generico con "?" y color gris.
+ *
+ * @param {string} bancoId - valor guardado en cuenta.banco.
+ * @returns {string} HTML span del avatar.
+ */
+function _bankAvatarHtml(bancoId) {
+  const banco = BANCOS_CO.find(b => b.id === bancoId);
+  const iniciales = banco ? banco.iniciales : '?';
+  const color     = banco ? banco.color     : '#6B7280';
+  const texto     = banco ? banco.texto     : '#ffffff';
+  return `<span class="bank-avatar"
+               style="background:${color};color:${texto}"
+               aria-hidden="true">${iniciales}</span>`;
+}
 
 /** Escapa caracteres HTML para evitar XSS en valores dinámicos. */
 function _esc(str) {

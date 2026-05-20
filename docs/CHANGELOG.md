@@ -7,6 +7,37 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ux) - Logos/avatares de bancos en selector de cuenta (UX#4) · 2026-05-19
+
+Custom bank picker visual que reemplaza el `<select>` nativo de bancos por un combobox
+accesible con avatares de color corporativo e iniciales de cada entidad.
+
+**Cambios:**
+- `constants.js`: BANCOS_CO pasa de `string[]` a `{ id, iniciales, color, texto }[]`.
+  El `id` es el mismo string que antes → retrocompatibilidad total con localStorage.
+  Colores corporativos reales: Bancolombia #FFC727, Davivienda #E31837, Nequi #9C00FF,
+  Daviplata #FF8000, Nubank #820AD1, Lulo Bank #FF5A1F, etc.
+- `tesoreria/view.js`: `renderFormCuenta()` genera el HTML del custom picker con
+  `role="combobox"`, trigger button, `input[type="hidden" name="banco"]` y `ul[role="listbox"]`.
+  Helper `_bankAvatarHtml(bancoId)` busca en BANCOS_CO y genera el span del avatar.
+  `_renderCuentaItem()` ahora muestra el avatar del banco en lugar del emoji guardado.
+- `tesoreria/index.js`: `_initBankPicker()` (nueva función) con:
+  - Toggle al click en el trigger.
+  - `position: fixed` calculado con `getBoundingClientRect()` (para no quedar cortado
+    por el `overflow: hidden` del modal).
+  - Teclado: flechas arriba/abajo, Enter/Space para seleccionar, Escape para cerrar.
+  - `pointerdown` capture para cerrar al tocar fuera.
+- `components.css`: estilos de `.bank-picker`, `.bank-picker__trigger`,
+  `.bank-picker__list` (max-height: 260px + scroll), `.bank-picker__item`,
+  `.bank-avatar`. Animación `fadeInDown` de 0.15s al abrir la lista.
+- `tests/e2e/smoke.test.js`: actualizado el test de Tesorería para usar el nuevo picker
+  (click en trigger + click en primer item).
+- `service-worker.js`: v34 a v35.
+
+**Metricas:** 805/805 unit verdes, 38/38 E2E verdes.
+
+---
+
 ### fix(ux) - Transicion de tema suave en mobile (UX#2) · 2026-05-19
 
 Bug reportado: el cambio entre tema claro y oscuro se veia como un "salto" brusco en mobile.

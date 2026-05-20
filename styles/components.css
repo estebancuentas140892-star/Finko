@@ -1837,6 +1837,148 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   BANK AVATAR - círculo con iniciales y color corporativo
+   Generado por tesoreria/view.js con estilos inline de color.
+   ════════════════════════════════════════════════════════════ */
+
+.bank-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fk-radius-md);
+  font-size: 11px;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  /* color y background vienen como style inline */
+}
+
+/* Avatar más pequeño dentro del trigger del picker */
+.bank-picker__trigger .bank-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BANK PICKER - custom combobox para seleccionar banco.
+   El dropdown usa position:fixed para no quedar cortado por
+   el overflow:hidden del modal.
+   ════════════════════════════════════════════════════════════ */
+
+.bank-picker {
+  position: relative;
+}
+
+/* Trigger: aspecto de campo de formulario */
+.bank-picker__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  width: 100%;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  min-height: 44px;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--fk-transition-fast),
+    box-shadow var(--fk-transition-fast);
+}
+
+.bank-picker__trigger:hover {
+  border-color: var(--fk-border-strong);
+}
+
+.bank-picker__trigger:focus-visible {
+  outline: none;
+  border-color: var(--fk-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-accent) 20%, transparent);
+}
+
+/* Área donde se muestra el banco seleccionado o el placeholder */
+.bank-picker__display {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-picker__placeholder {
+  color: var(--fk-text-muted);
+}
+
+/* Chevron - rota cuando el picker está abierto */
+.bank-picker__chevron {
+  flex-shrink: 0;
+  color: var(--fk-text-muted);
+  transition: transform var(--fk-transition-fast);
+}
+
+.bank-picker[aria-expanded="true"] .bank-picker__chevron {
+  transform: rotate(180deg);
+}
+
+/* Lista desplegable - position:fixed calculado por JS */
+.bank-picker__list {
+  position: fixed;
+  z-index: calc(var(--fk-z-modal) + 10);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
+  box-shadow: var(--fk-shadow-lg);
+  padding: var(--fk-space-1) 0;
+  margin: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Animacion de apertura */
+  animation: fadeInDown 0.15s ease-out both;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Item individual del banco */
+.bank-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  transition: background-color var(--fk-transition-fast);
+  outline: none;
+}
+
+.bank-picker__item:hover,
+.bank-picker__item:focus {
+  background: var(--fk-bg-hover);
+}
+
+.bank-picker__item[aria-selected="true"] {
+  background: color-mix(in srgb, var(--fk-accent) 10%, transparent);
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-font-semibold);
+}
+
+/* ════════════════════════════════════════════════════════════
    DOMINIO BADGES - chip de color por sección
    Uso: <span class="dom-badge dom-badge--gastos">Gastos</span>
    ════════════════════════════════════════════════════════════ */
