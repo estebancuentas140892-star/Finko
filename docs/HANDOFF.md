@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (feat: Agenda calendar + detail panel)
+> Última actualización: 2026-05-19 (fix: tesoreria list-item layout mobile + bank avatar fix)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria) - Layout mobile de list-item y avatares de banco (P1) · 2026-05-19
+El CSS solo tenía `.list-item__content` (alias obsoleto). Todos los dominios usaban en
+HTML `__body`, `__meta`, `__action`, `__value` que no tenían ningún selector CSS. Sin
+estos, en tesorería el saldo y el botón × apilaban verticalmente, y el título no se
+truncaba con ellipsis porque el body no crecía (`flex: 1` faltaba).
+
+Cambios en `styles/components.css`:
+- `.list-item__body` + alias `__content`: `flex: 1; min-width: 0` (crecimiento + truncado).
+- `.list-item__meta`: `display: flex; flex-direction: column; align-items: flex-end`
+  (columna de monto en compromisos, gastos, personales).
+- `.list-item__action`: `display: flex; align-items: center; gap` (saldo + botón × en
+  tesorería, o solo botón en ingresos/metas).
+- `.list-item__value`: `font-mono, semibold, nowrap` (monto en action de tesorería).
+- `.list-item__icon:has(.bank-avatar)`: `background: transparent` (quita el bg redundante
+  del wrapper cuando contiene un avatar con color propio).
+
+Tests: 835/835 verdes. Commit: `1b060e0`.
 
 ### feat(dominio) - Agenda: calendario mensual de compromisos + detalle del día · 2026-05-19
 Nuevo dominio Agenda con vista calendario mensual. Muestra los compromisos del mes con

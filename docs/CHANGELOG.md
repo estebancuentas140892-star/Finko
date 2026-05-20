@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(tesoreria) - Layout mobile de list-item y avatares de banco (P1) · 2026-05-19
+
+CSS faltante para variantes del `.list-item` que todos los dominios usaban en HTML pero
+ningun selector cubria: `__body` (flex:1), `__meta` (columna de monto, flex-col
+right-align), `__action` (fila flex: saldo + boton X en tesoreria), `__value`
+(mono/semibold como `__amount`).
+
+Sin estos, en tesoreria el saldo y boton X apilaban verticalmente (display:block default)
+y el titulo no truncaba. Mismo efecto potencial en compromisos/gastos pero menos visible
+porque `__action` solo tenia botones.
+
+Agrega `.list-item__icon:has(.bank-avatar) { background: transparent }` para remover el
+bg redundante del wrapper cuando el avatar tiene color propio.
+
+**Archivos:** `styles/components.css` (+34 lineas).
+
+**Tests:** 835/835 verdes (solo CSS, sin lógica nueva).
+
+**Commit:** `1b060e0`
+
+---
+
 ### feat(agenda) - Sub 4/5 - Panel de detalle del día al click · 2026-05-19
 
 Panel expandible inline que aparece al clickear un día con compromisos. Muestra la lista
