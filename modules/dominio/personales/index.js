@@ -15,7 +15,7 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { dialogo } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { validarPersonal, normalizarPersonal, aplicarPago, calcularPendiente } from './logic.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
 
@@ -109,14 +109,20 @@ function _confirmarPagoPersonal() {
 // ── HANDLER ELIMINAR ─────────────────────────────────────────────
 
 /** @param {HTMLElement} el */
-function _eliminarPersonal(el) {
+async function _eliminarPersonal(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const prestamo = S.personales.find(p => p.id === id);
   if (!prestamo) return;
 
-  if (!dialogo(`¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve la plata, solo limpia el registro.`)) return;
+  const ok = await confirmar({
+    titulo:         'Borrar préstamo',
+    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve la plata, solo limpia el registro.`,
+    confirmarTexto: 'Borrar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('personales', id);
   renderListaPersonales();

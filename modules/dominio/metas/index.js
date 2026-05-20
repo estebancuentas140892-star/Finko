@@ -15,7 +15,7 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { dialogo } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
 import { renderListaMetas, renderFormMeta } from './view.js';
 
@@ -50,14 +50,20 @@ function _guardarMeta() {
 }
 
 /** @param {HTMLElement} el */
-function _eliminarMeta(el) {
+async function _eliminarMeta(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const meta = S.metas.find(m => m.id === id);
   if (!meta) return;
 
-  if (!dialogo(`¿Eliminar la meta "${meta.nombre}"? Esta acción no se puede deshacer.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar meta',
+    mensaje:        `¿Querés eliminar la meta "${meta.nombre}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('metas', id);
   renderListaMetas();
@@ -77,7 +83,7 @@ function _abonarMeta(el) {
 
   const errores = validarAbono(rawAbono);
   if (errores.length > 0) {
-    dialogo(errores[0], 'alert');
+    announce(errores[0], 'assertive');
     return;
   }
 

@@ -12,7 +12,7 @@ import { save, STORAGE_KEY } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
-import { dialogo } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
 import { gastosACSV } from '../export/logic.js';
@@ -38,11 +38,17 @@ function _exportarDatos() {
 }
 
 /** @param {HTMLElement} el - el <input type="file"> */
-function _importarDatos(el) {
+async function _importarDatos(el) {
   const file = el.files?.[0];
   if (!file) return;
 
-  if (!dialogo(`¿Importar datos desde "${file.name}"? Esto reemplazará TODA tu información actual.`)) {
+  const ok = await confirmar({
+    titulo:         'Importar datos',
+    mensaje:        `¿Importar datos desde "${file.name}"? Esto reemplazará TODA tu información actual.`,
+    confirmarTexto: 'Importar',
+    peligroso:      true,
+  });
+  if (!ok) {
     el.value = '';
     return;
   }
@@ -109,8 +115,14 @@ function _exportarGastosCSV() {
   }
 }
 
-function _resetearApp() {
-  if (!dialogo('¿Resetear TODA la app? Perderás ingresos, gastos, cuentas, metas y compromisos. Esta acción es irreversible.')) return;
+async function _resetearApp() {
+  const ok = await confirmar({
+    titulo:         'Resetear app',
+    mensaje:        '¿Resetear TODA la app? Perderás ingresos, gastos, cuentas, metas y compromisos. Esta acción es irreversible.',
+    confirmarTexto: 'Resetear todo',
+    peligroso:      true,
+  });
+  if (!ok) return;
   localStorage.clear();
   announce('App reseteada. Recargando…');
   setTimeout(() => location.reload(), 800);

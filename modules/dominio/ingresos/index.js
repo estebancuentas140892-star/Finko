@@ -15,7 +15,7 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { dialogo } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { validarIngreso, normalizarIngreso } from './logic.js';
 import { renderListaIngresos, renderResumenIngresos, renderFormIngreso } from './view.js';
 
@@ -52,14 +52,20 @@ function _guardarIngreso() {
 }
 
 /** @param {HTMLElement} el */
-function _eliminarIngreso(el) {
+async function _eliminarIngreso(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const ingreso = S.ingresos.find(i => i.id === id);
   if (!ingreso) return;
 
-  if (!dialogo(`¿Eliminar "${ingreso.descripcion}"? Esta acción no se puede deshacer.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar ingreso',
+    mensaje:        `¿Querés eliminar "${ingreso.descripcion}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('ingresos', id);
   renderResumenIngresos();

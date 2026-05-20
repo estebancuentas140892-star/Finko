@@ -52,6 +52,10 @@ function _renderCuentaItem(cuenta) {
       <div class="list-item__action">
         <p class="list-item__value">${f(cuenta.saldo)}</p>
         <button class="btn btn-ghost btn-icon"
+                data-action="editar-cuenta"
+                data-id="${_esc(cuenta.id)}"
+                aria-label="Editar cuenta ${nombre}">✎</button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-cuenta"
                 data-id="${_esc(cuenta.id)}"
                 aria-label="Eliminar cuenta ${nombre}">✕</button>

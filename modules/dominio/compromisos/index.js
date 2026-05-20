@@ -15,7 +15,7 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updateBadge } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { dialogo } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { validarCompromiso, normalizarCompromiso } from './logic.js';
 import {
   renderNudgeMoraInminente,
@@ -71,14 +71,20 @@ function _guardarCompromiso() {
 }
 
 /** @param {HTMLElement} el */
-function _eliminarCompromiso(el) {
+async function _eliminarCompromiso(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const compromiso = S.compromisos.find(c => c.id === id);
   if (!compromiso) return;
 
-  if (!dialogo(`¿Eliminar "${compromiso.descripcion}"? Esta acción no se puede deshacer.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar compromiso',
+    mensaje:        `¿Querés eliminar "${compromiso.descripcion}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('compromisos', id);
   _renderTodo();

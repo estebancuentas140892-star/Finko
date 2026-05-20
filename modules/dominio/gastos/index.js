@@ -15,7 +15,8 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { dialogo, hoy } from '../../infra/utils.js';
+import { hoy } from '../../infra/utils.js';
+import { confirmar } from '../../ui/confirm.js';
 import { validarGasto, normalizarGasto } from './logic.js';
 import { renderListaGastos, renderResumenGastos, renderFormGasto } from './view.js';
 
@@ -57,14 +58,20 @@ function _guardarGasto() {
 }
 
 /** @param {HTMLElement} el */
-function _eliminarGasto(el) {
+async function _eliminarGasto(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const gasto = S.gastos.find(g => g.id === id);
   if (!gasto) return;
 
-  if (!dialogo(`¿Eliminar "${gasto.descripcion}"? Esta acción no se puede deshacer.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar gasto',
+    mensaje:        `¿Querés eliminar "${gasto.descripcion}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('gastos', id);
   renderResumenGastos();

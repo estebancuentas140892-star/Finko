@@ -9,12 +9,12 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { guardar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
+import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
-import { dialogo } from '../../infra/utils.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { validarCuenta, normalizarCuenta } from './logic.js';
 import { renderNudgePrima, renderListaCuentas, renderFormCuenta } from './view.js';
@@ -29,7 +29,7 @@ function _renderTodo() {
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
-/** Abre el modal y resetea el formulario. */
+/** Abre el modal y resetea el formulario (modo creacion). */
 function _nuevaCuenta() {
   const overlay = document.getElementById('modal-cuenta');
   if (!overlay) return;
@@ -38,6 +38,13 @@ function _nuevaCuenta() {
   // (que vive fuera del overlay tras moverlo a body). Hay que resetearlo aparte
   // para no mostrar el banco anterior con el hidden value ya vacio.
   _resetBankPicker();
+
+  // Limpiar marcador de edicion si quedo de una sesion anterior.
+  const form = document.getElementById('form-cuenta');
+  if (form) delete form.dataset.id;
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nueva cuenta';
+
   abrirModal(overlay);
 }
 
@@ -59,7 +66,7 @@ function _resetBankPicker() {
   });
 }
 
-/** Lee el formulario, valida, guarda y actualiza el DOM. */
+/** Lee el formulario, valida, guarda (o edita) y actualiza el DOM. */
 function _guardarCuenta() {
   const form = document.getElementById('form-cuenta');
   if (!form) return;
@@ -72,28 +79,96 @@ function _guardarCuenta() {
     return;
   }
 
-  guardar('cuentas', normalizarCuenta(datos));
+  const idEdit  = form.dataset.id || null;
+  const cuenta  = normalizarCuenta(datos);
+
+  if (idEdit) {
+    // Modo edicion: preservar campos no editables (fechaCreacion, activa).
+    editar('cuentas', idEdit, cuenta);
+  } else {
+    guardar('cuentas', cuenta);
+  }
 
   const overlay = document.getElementById('modal-cuenta');
   if (overlay) cerrarModal(overlay);
 
   updSaldo();
   _renderTodo();
-  announce('Cuenta guardada correctamente.');
+  announce(idEdit ? 'Cuenta actualizada.' : 'Cuenta guardada correctamente.');
+}
+
+/**
+ * Abre el modal en modo edicion con los datos pre-rellenados.
+ * @param {HTMLElement} el - el boton con data-id.
+ */
+function _editarCuenta(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const cuenta = S.cuentas.find(c => c.id === id);
+  if (!cuenta) return;
+
+  const overlay = document.getElementById('modal-cuenta');
+  if (!overlay) return;
+
+  // Resetear primero por si quedo estado de un edit/create anterior.
+  resetModal(overlay);
+  _resetBankPicker();
+
+  const form = document.getElementById('form-cuenta');
+  if (!form) return;
+  form.dataset.id = id; // marcador para que _guardarCuenta haga editar() en vez de guardar()
+
+  // Pre-rellenar campos.
+  form.querySelector('[name="nombre"]').value = cuenta.nombre ?? '';
+  form.querySelector('[name="saldo"]').value  = cuenta.saldo  ?? 0;
+  form.querySelector('[name="tipo"]').value   = cuenta.tipo   ?? '';
+
+  // El banco usa el custom picker: setear el hidden + actualizar el display visual.
+  const hiddenBanco = form.querySelector('[name="banco"]');
+  if (hiddenBanco) hiddenBanco.value = cuenta.banco ?? '';
+  _setBankPickerDisplay(cuenta.banco);
+
+  // Cambiar titulo del modal para que la persona sepa que esta editando.
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar cuenta';
+
+  abrirModal(overlay);
+}
+
+/** Actualiza el display visual del bank-picker mostrando el avatar + nombre del banco. */
+function _setBankPickerDisplay(bancoId) {
+  if (!bancoId) return;
+  const display = document.querySelector('#modal-cuenta .bank-picker__display');
+  if (!display) return;
+  // Buscar el item correspondiente y replicar su contenido en el display.
+  const item = document.querySelector(`#banco-list [data-value="${CSS.escape(bancoId)}"]`);
+  if (item) {
+    display.innerHTML = item.innerHTML;
+    // Marcar el item como seleccionado.
+    document.querySelectorAll('#banco-list [role="option"]').forEach(it => {
+      it.setAttribute('aria-selected', it === item ? 'true' : 'false');
+    });
+  }
 }
 
 /**
  * Pide confirmación y elimina la cuenta por id.
  * @param {HTMLElement} el - el botón con data-id.
  */
-function _eliminarCuenta(el) {
+async function _eliminarCuenta(el) {
   const id = el.dataset.id;
   if (!id) return;
 
   const cuenta = S.cuentas.find(c => c.id === id);
   if (!cuenta) return;
 
-  if (!dialogo(`¿Eliminar "${cuenta.nombre}"? Esta acción no se puede deshacer.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar cuenta',
+    mensaje:        `¿Querés eliminar "${cuenta.nombre}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('cuentas', id);
   updSaldo();
@@ -262,6 +337,7 @@ function _initBankPicker(picker) {
  */
 export function initTesoreria() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
+  registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 
   _inyectarForm();

@@ -16,7 +16,7 @@ import { abrirModal, cerrarModal }   from '../../ui/modales.js';
 import { renderSmart }               from '../../infra/render.js';
 import { announce }                  from '../../infra/a11y.js';
 import { mostrarErroresForm }        from '../../infra/form-errors.js';
-import { dialogo }                   from '../../infra/utils.js';
+import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto } from './logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto } from './view.js';
 
@@ -89,13 +89,19 @@ function _guardarPresupuesto(form) {
 }
 
 /** @param {HTMLElement} el */
-function _eliminarPresupuesto(el) {
+async function _eliminarPresupuesto(el) {
   const id = el.dataset.id;
   if (!id) return;
   const p = S.presupuestos.find(x => x.id === id);
   if (!p) return;
 
-  if (!dialogo(`¿Eliminar el presupuesto de "${p.categoria}"? Los gastos no se ven afectados.`)) return;
+  const ok = await confirmar({
+    titulo:         'Eliminar presupuesto',
+    mensaje:        `¿Eliminar el presupuesto de "${p.categoria}"? Los gastos no se ven afectados.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
 
   eliminar('presupuestos', id);
   renderPanelPresupuesto();

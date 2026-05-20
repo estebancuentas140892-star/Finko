@@ -60,6 +60,20 @@
 .modal--lg  { max-width: 680px; }
 .modal--xl  { max-width: 880px; }
 .modal--mas { max-width: 560px; }
+
+/* Modal de confirmacion (reemplaza window.confirm). Mas chico, sin scroll. */
+.modal--confirm {
+  max-width: 420px;
+}
+.modal--confirm .modal__body {
+  padding-top: var(--fk-space-2);
+}
+.confirm__mensaje {
+  margin: 0;
+  font-size: var(--fk-text-base);
+  line-height: var(--fk-leading-relaxed);
+  color: var(--fk-text-primary);
+}
 .modal--full {
   max-width: 100%;
   max-height: 100dvh;
