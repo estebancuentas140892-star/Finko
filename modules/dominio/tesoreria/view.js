@@ -96,13 +96,10 @@ export function renderFormCuenta() {
   return `
     <form id="form-cuenta" novalidate>
       <div class="form-group">
-        <label for="cuenta-nombre" class="label">
-          Nombre de la cuenta <span class="label__optional">(opcional)</span>
-        </label>
+        <label for="cuenta-nombre" class="label">Nombre de la cuenta</label>
         <input id="cuenta-nombre" name="nombre" class="input" type="text"
                placeholder="Ej. Ahorros Davivienda"
                autocomplete="off" />
-        <p class="field-hint">Si lo dejás vacío, usaremos el banco y tipo (ej. "Davivienda Ahorros").</p>
       </div>
 
       <div class="form-group">

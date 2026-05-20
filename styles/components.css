@@ -280,14 +280,24 @@
   animation: form-errors-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .form-errors__icon {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1.2;
   flex-shrink: 0;
 }
+.form-errors__content {
+  flex: 1;
+  min-width: 0;
+}
+.form-errors__title {
+  margin: 0 0 var(--fk-space-1) 0;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
 .form-errors__list {
   margin: 0;
-  padding: 0 0 0 var(--fk-space-3);
+  padding: 0 0 0 var(--fk-space-4);
   list-style: disc;
+  color: var(--fk-text-secondary);
 }
 .form-errors__list li {
   margin: 0;

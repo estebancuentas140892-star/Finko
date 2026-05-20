@@ -55,11 +55,17 @@ export function mostrarErroresForm(form, errores) {
   const box = document.createElement('div');
   box.className = 'form-errors';
   box.setAttribute('role', 'alert');
+  const titulo = errores.length === 1
+    ? 'Falta información para guardar:'
+    : `Faltan ${errores.length} campos por completar:`;
   box.innerHTML = `
     <span class="form-errors__icon" aria-hidden="true">⚠️</span>
-    <ul class="form-errors__list">
-      ${errores.map(e => `<li>${_esc(e)}</li>`).join('')}
-    </ul>`;
+    <div class="form-errors__content">
+      <p class="form-errors__title">${titulo}</p>
+      <ul class="form-errors__list">
+        ${errores.map(e => `<li>${_esc(e)}</li>`).join('')}
+      </ul>
+    </div>`;
 
   // Insertar al principio del form, antes del primer hijo.
   form.insertBefore(box, form.firstChild);
