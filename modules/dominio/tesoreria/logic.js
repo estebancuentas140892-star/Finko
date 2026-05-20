@@ -143,7 +143,47 @@ export function validarCuenta(datos) {
     errores.push('El saldo debe ser un número igual o mayor a 0.');
   }
 
+  // Validar cuota de manejo solo si el toggle está activo.
+  if (_cuotaActiva(datos)) {
+    const monto = Number(datos.cuotaManejoMonto);
+    if (isNaN(monto) || monto <= 0) {
+      errores.push('El monto de la cuota de manejo debe ser mayor a 0.');
+    }
+    const dia = Number(datos.cuotaManejoDia);
+    if (isNaN(dia) || !Number.isInteger(dia) || dia < 1 || dia > 31) {
+      errores.push('El día de cobro debe ser un número entre 1 y 31.');
+    }
+  }
+
   return errores;
+}
+
+/**
+ * Indica si el form pidió activar la cuota de manejo.
+ * Un checkbox HTML5 manda 'on' (o cualquier truthy) cuando está checked
+ * y no aparece en FormData cuando está unchecked.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {boolean}
+ */
+function _cuotaActiva(datos) {
+  const v = datos?.cuotaManejoActiva;
+  return v === 'on' || v === 'true' || v === '1';
+}
+
+/**
+ * Extrae el objeto CuotaManejo del formulario, o devuelve `null` si no se activó.
+ * Asume que los datos ya pasaron `validarCuenta()`.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {{monto: number, diaCobro: number} | null}
+ */
+export function parseCuotaManejo(datos) {
+  if (!_cuotaActiva(datos)) return null;
+  return {
+    monto:    Number(datos.cuotaManejoMonto) || 0,
+    diaCobro: Number(datos.cuotaManejoDia)   || 1,
+  };
 }
 
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
@@ -170,7 +210,49 @@ export function normalizarCuenta(datos) {
     saldo: Number(datos.saldo) || 0,
     icono: datos.icono?.trim() || _iconoPorBanco(banco),
     activa: true,
+    cuotaManejo: parseCuotaManejo(datos),
   };
+}
+
+// ── CUOTA DE MANEJO → COMPROMISO ─────────────────────────────────
+
+/**
+ * Genera el shape de Compromiso fijo mensual que representa la cuota de
+ * manejo de una cuenta. Devuelve `null` si la cuenta no tiene cuota.
+ *
+ * Se usa en tesoreria/index.js para sincronizar: tras guardar la cuenta,
+ * o se crea/actualiza el compromiso vinculado, o se elimina.
+ *
+ * NO incluye `id` ni `fechaCreacion`: los asigna crud.js cuando se persiste.
+ *
+ * @param {import('../../core/state.js').Cuenta} cuenta
+ * @returns {Omit<import('../../core/state.js').Compromiso, 'id' | 'fechaCreacion'> | null}
+ */
+export function compromisoDesdeCuotaManejo(cuenta) {
+  if (!cuenta?.cuotaManejo) return null;
+  const { monto, diaCobro } = cuenta.cuotaManejo;
+  return {
+    descripcion:    `Cuota de manejo ${cuenta.nombre}`,
+    monto,
+    frecuencia:     'mensual',
+    diaPago:        diaCobro,
+    tipo:           'fijo',
+    activo:         cuenta.activa !== false,
+    cuentaId:       cuenta.id,
+    esCuotaManejo:  true,
+  };
+}
+
+/**
+ * Busca en una lista de compromisos el que representa la cuota de manejo
+ * de una cuenta dada. Devuelve `undefined` si no hay match.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {string} cuentaId
+ */
+export function compromisoCuotaManejoDeCuenta(compromisos, cuentaId) {
+  if (!Array.isArray(compromisos)) return undefined;
+  return compromisos.find(c => c?.esCuotaManejo === true && c?.cuentaId === cuentaId);
 }
 
 /** Genera un nombre legible cuando el usuario lo deja en blanco. */

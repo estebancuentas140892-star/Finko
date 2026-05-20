@@ -11,6 +11,12 @@
 import { SMMLV } from './constants.js';
 
 /**
+ * @typedef {Object} CuotaManejo
+ * @property {number} monto      COP/mes que cobra el banco por la cuenta.
+ * @property {number} diaCobro   1-31. Día del mes en que se cobra.
+ */
+
+/**
  * @typedef {Object} Cuenta
  * @property {string} id
  * @property {string} nombre
@@ -20,6 +26,10 @@ import { SMMLV } from './constants.js';
  * @property {string} [icono]
  * @property {boolean} activa
  * @property {string} fechaCreacion   ISO 8601.
+ * @property {CuotaManejo|null} [cuotaManejo]  Opcional (v5). Si está, el
+ *                                             dominio tesoreria crea
+ *                                             automáticamente un Compromiso
+ *                                             fijo mensual vinculado.
  */
 
 /**
@@ -60,6 +70,13 @@ import { SMMLV } from './constants.js';
  *                                       tipo='deuda'. Opcional, reservada para
  *                                       cálculos avanzados futuros (alertas de
  *                                       usura, plan de amortización).
+ * @property {string}  [cuentaId]        FK a Cuenta.id. Solo se setea cuando
+ *                                       el compromiso fue creado automáticamente
+ *                                       por tesoreria como cuota de manejo (v5).
+ * @property {boolean} [esCuotaManejo]   true para compromisos auto-generados
+ *                                       desde la cuota de manejo de una cuenta (v5).
+ *                                       Permite identificarlos sin ambigüedad
+ *                                       para sincronizarlos cuando cambia la cuenta.
  */
 
 /**
@@ -126,7 +143,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 4,
+    _version: 5,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,

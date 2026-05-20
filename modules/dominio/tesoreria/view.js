@@ -42,12 +42,19 @@ function _renderCuentaItem(cuenta) {
   const banco  = _esc(cuenta.banco);
   const tipo   = _esc(cuenta.tipo);
 
+  // Si la cuenta tiene cuota de manejo, mostramos un hint adicional para que
+  // el usuario sepa que hay un compromiso vinculado descontandose mes a mes.
+  const cuotaHint = cuenta.cuotaManejo
+    ? `<p class="list-item__hint">📅 Cuota de manejo: ${f(cuenta.cuotaManejo.monto)} el día ${cuenta.cuotaManejo.diaCobro}</p>`
+    : '';
+
   return `
     <article class="list-item" data-id="${_esc(cuenta.id)}">
       <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
       <div class="list-item__body">
         <p class="list-item__title">${nombre}</p>
         <p class="list-item__subtitle">${banco} · ${tipo}</p>
+        ${cuotaHint}
       </div>
       <div class="list-item__action">
         <p class="list-item__value">${f(cuenta.saldo)}</p>
@@ -151,6 +158,47 @@ export function renderFormCuenta() {
         <input id="cuenta-saldo" name="saldo" class="input" type="number"
                min="0" step="1000" placeholder="0" value="0" />
       </div>
+
+      <div class="form-group form-group--checkbox">
+        <label class="checkbox-row">
+          <input type="checkbox"
+                 id="cuenta-cuota-toggle"
+                 name="cuotaManejoActiva"
+                 data-cuota-toggle />
+          <span>Esta cuenta cobra cuota de manejo mensual</span>
+        </label>
+        <p class="form-hint form-hint--muted">
+          Opcional. Si no sabés el monto, dejalo desactivado.
+        </p>
+      </div>
+
+      <fieldset id="cuenta-cuota-fieldset" class="cuota-fieldset" hidden>
+        <div class="form-group">
+          <label for="cuenta-cuota-monto" class="label">
+            Monto de la cuota (COP)
+          </label>
+          <input id="cuenta-cuota-monto"
+                 name="cuotaManejoMonto"
+                 class="input"
+                 type="number"
+                 min="1"
+                 step="100"
+                 placeholder="Ej. 15000" />
+        </div>
+        <div class="form-group">
+          <label for="cuenta-cuota-dia" class="label">Día de cobro (1-31)</label>
+          <input id="cuenta-cuota-dia"
+                 name="cuotaManejoDia"
+                 class="input"
+                 type="number"
+                 min="1" max="31" step="1"
+                 placeholder="Ej. 15" />
+        </div>
+        <p class="form-hint form-hint--muted">
+          Se crea automáticamente un compromiso fijo mensual con este monto y día. Aparecerá en Agenda y en Compromisos.
+        </p>
+      </fieldset>
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">
           Cancelar

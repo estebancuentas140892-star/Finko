@@ -243,6 +243,38 @@
   max-width: 36ch;
   margin: 0 0 var(--fk-space-3);
 }
+
+/* Fila de checkbox + texto, usada en el toggle de cuota de manejo. */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fk-accent);
+  cursor: pointer;
+}
+
+/* Fieldset condicional para los campos extra de cuota de manejo. */
+.cuota-fieldset {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin: var(--fk-space-2) 0;
+  background: var(--fk-bg-hover);
+}
+.cuota-fieldset[hidden] {
+  display: none;
+}
+.cuota-fieldset .form-group:last-of-type {
+  margin-bottom: 0;
+}
 .list-item__hint {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);

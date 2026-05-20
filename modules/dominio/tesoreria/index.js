@@ -16,7 +16,12 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { validarCuenta, normalizarCuenta } from './logic.js';
+import {
+  validarCuenta,
+  normalizarCuenta,
+  compromisoDesdeCuotaManejo,
+  compromisoCuotaManejoDeCuenta,
+} from './logic.js';
 import { renderNudgePrima, renderListaCuentas, renderFormCuenta } from './view.js';
 
 // ── RENDER COMPLETO ──────────────────────────────────────────────
@@ -42,6 +47,9 @@ function _nuevaCuenta() {
   // Limpiar marcador de edicion si quedo de una sesion anterior.
   const form = document.getElementById('form-cuenta');
   if (form) delete form.dataset.id;
+  // resetModal desmarca checkboxes pero no dispara `change`, así que
+  // ocultamos manualmente el fieldset de cuota por si quedó visible.
+  _toggleCuotaFieldset();
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva cuenta';
 
@@ -82,11 +90,16 @@ function _guardarCuenta() {
   const idEdit  = form.dataset.id || null;
   const cuenta  = normalizarCuenta(datos);
 
+  let persistida;
   if (idEdit) {
     // Modo edicion: preservar campos no editables (fechaCreacion, activa).
-    editar('cuentas', idEdit, cuenta);
+    persistida = editar('cuentas', idEdit, cuenta);
+    // editar() devuelve el item actualizado de S, asi tenemos el id real
+    // para sincronizar el compromiso vinculado.
+    if (persistida) _sincronizarCuotaManejo(persistida);
   } else {
-    guardar('cuentas', cuenta);
+    persistida = guardar('cuentas', cuenta);
+    if (persistida) _sincronizarCuotaManejo(persistida);
   }
 
   const overlay = document.getElementById('modal-cuenta');
@@ -95,6 +108,39 @@ function _guardarCuenta() {
   updSaldo();
   _renderTodo();
   announce(idEdit ? 'Cuenta actualizada.' : 'Cuenta guardada correctamente.');
+}
+
+/**
+ * Sincroniza el compromiso de cuota de manejo vinculado a la cuenta.
+ *
+ * Tres casos:
+ *   - Cuenta tiene cuotaManejo y NO existe compromiso → crear.
+ *   - Cuenta tiene cuotaManejo y SÍ existe compromiso → actualizar campos.
+ *   - Cuenta NO tiene cuotaManejo y SÍ existe compromiso → eliminar.
+ *
+ * Idempotente: si llamada con el mismo estado dos veces, la segunda es no-op.
+ *
+ * @param {import('../../core/state.js').Cuenta} cuenta
+ */
+function _sincronizarCuotaManejo(cuenta) {
+  if (!cuenta?.id) return;
+  const existente = compromisoCuotaManejoDeCuenta(S.compromisos, cuenta.id);
+  const shape     = compromisoDesdeCuotaManejo(cuenta);
+
+  if (shape && existente) {
+    // Actualizar: solo si algun campo cambió evitamos un editar() innecesario.
+    const cambios = {};
+    for (const k of ['descripcion', 'monto', 'frecuencia', 'diaPago', 'tipo', 'activo']) {
+      if (existente[k] !== shape[k]) cambios[k] = shape[k];
+    }
+    if (Object.keys(cambios).length > 0) {
+      editar('compromisos', existente.id, cambios);
+    }
+  } else if (shape && !existente) {
+    guardar('compromisos', shape);
+  } else if (!shape && existente) {
+    eliminar('compromisos', existente.id);
+  }
 }
 
 /**
@@ -127,6 +173,16 @@ function _editarCuenta(el) {
   const hiddenBanco = form.querySelector('[name="banco"]');
   if (hiddenBanco) hiddenBanco.value = cuenta.banco ?? '';
   _setBankPickerDisplay(cuenta.banco);
+
+  // Pre-rellenar la cuota de manejo si la cuenta la tiene.
+  const cuotaToggle = form.querySelector('[data-cuota-toggle]');
+  const cuotaMonto  = form.querySelector('[name="cuotaManejoMonto"]');
+  const cuotaDia    = form.querySelector('[name="cuotaManejoDia"]');
+  const tieneCuota  = !!cuenta.cuotaManejo;
+  if (cuotaToggle) cuotaToggle.checked = tieneCuota;
+  if (cuotaMonto)  cuotaMonto.value    = tieneCuota ? cuenta.cuotaManejo.monto    : '';
+  if (cuotaDia)    cuotaDia.value      = tieneCuota ? cuenta.cuotaManejo.diaCobro : '';
+  _toggleCuotaFieldset();
 
   // Cambiar titulo del modal para que la persona sepa que esta editando.
   const titulo = overlay.querySelector('.modal__title');
@@ -170,6 +226,10 @@ async function _eliminarCuenta(el) {
   });
   if (!ok) return;
 
+  // Si la cuenta tenía cuota de manejo, eliminar también el compromiso vinculado.
+  const compromisoVinc = compromisoCuotaManejoDeCuenta(S.compromisos, id);
+  if (compromisoVinc) eliminar('compromisos', compromisoVinc.id);
+
   eliminar('cuentas', id);
   updSaldo();
   _renderTodo();
@@ -194,9 +254,20 @@ function _inyectarForm() {
     _guardarCuenta();
   });
 
+  // Toggle para mostrar/ocultar el fieldset de cuota de manejo.
+  body.querySelector('[data-cuota-toggle]')?.addEventListener('change', _toggleCuotaFieldset);
+
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
   if (picker) _initBankPicker(picker);
+}
+
+/** Muestra u oculta el bloque de campos de cuota según el checkbox. */
+function _toggleCuotaFieldset() {
+  const cb  = document.getElementById('cuenta-cuota-toggle');
+  const set = document.getElementById('cuenta-cuota-fieldset');
+  if (!cb || !set) return;
+  set.hidden = !cb.checked;
 }
 
 /**

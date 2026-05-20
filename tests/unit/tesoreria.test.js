@@ -7,6 +7,9 @@ import {
   diasParaPrimaSemestral,
   estimarSalarioMensual,
   sugerirDistribucionPrima,
+  parseCuotaManejo,
+  compromisoDesdeCuotaManejo,
+  compromisoCuotaManejoDeCuenta,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -336,5 +339,137 @@ describe('diasParaPrimaSemestral()', () => {
     ].forEach(fecha => {
       expect(diasParaPrimaSemestral(fecha).dias).toBeGreaterThanOrEqual(0);
     });
+  });
+});
+
+// ── parseCuotaManejo() ───────────────────────────────────────────
+
+describe('parseCuotaManejo()', () => {
+  it('devuelve null si el toggle no está activo', () => {
+    expect(parseCuotaManejo({})).toBeNull();
+    expect(parseCuotaManejo({ cuotaManejoActiva: '' })).toBeNull();
+    expect(parseCuotaManejo({ cuotaManejoActiva: 'false' })).toBeNull();
+  });
+
+  it('devuelve el objeto cuota cuando el toggle está activo (checkbox HTML manda "on")', () => {
+    const c = parseCuotaManejo({
+      cuotaManejoActiva: 'on',
+      cuotaManejoMonto: '15000',
+      cuotaManejoDia:   '20',
+    });
+    expect(c).toEqual({ monto: 15_000, diaCobro: 20 });
+  });
+
+  it('también acepta "true" o "1" como activo', () => {
+    expect(parseCuotaManejo({ cuotaManejoActiva: 'true', cuotaManejoMonto: '1', cuotaManejoDia: '1' }))
+      .toEqual({ monto: 1, diaCobro: 1 });
+    expect(parseCuotaManejo({ cuotaManejoActiva: '1',    cuotaManejoMonto: '1', cuotaManejoDia: '1' }))
+      .toEqual({ monto: 1, diaCobro: 1 });
+  });
+});
+
+// ── validarCuenta() con cuota ────────────────────────────────────
+
+describe('validarCuenta() con cuota de manejo', () => {
+  const validBase = { ...datosFormValidos };
+
+  it('toggle apagado: no exige monto ni día', () => {
+    expect(validarCuenta(validBase)).toEqual([]);
+  });
+
+  it('toggle encendido sin monto: error', () => {
+    const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '0', cuotaManejoDia: '15' });
+    expect(errs.some(e => /monto.*cuota/i.test(e))).toBe(true);
+  });
+
+  it('toggle encendido con día inválido: error', () => {
+    const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '15000', cuotaManejoDia: '32' });
+    expect(errs.some(e => /día.*cobro/i.test(e))).toBe(true);
+  });
+
+  it('toggle encendido válido: sin errores', () => {
+    const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '15000', cuotaManejoDia: '20' });
+    expect(errs).toEqual([]);
+  });
+});
+
+// ── normalizarCuenta() con cuota ─────────────────────────────────
+
+describe('normalizarCuenta() con cuota de manejo', () => {
+  it('cuotaManejo es null si el toggle no se marcó', () => {
+    const c = normalizarCuenta(datosFormValidos);
+    expect(c.cuotaManejo).toBeNull();
+  });
+
+  it('cuotaManejo se setea con monto y día si el toggle está activo', () => {
+    const c = normalizarCuenta({
+      ...datosFormValidos,
+      cuotaManejoActiva: 'on',
+      cuotaManejoMonto: '15000',
+      cuotaManejoDia:   '20',
+    });
+    expect(c.cuotaManejo).toEqual({ monto: 15_000, diaCobro: 20 });
+  });
+});
+
+// ── compromisoDesdeCuotaManejo() ─────────────────────────────────
+
+describe('compromisoDesdeCuotaManejo()', () => {
+  it('devuelve null si la cuenta no tiene cuota', () => {
+    expect(compromisoDesdeCuotaManejo(cuentaBase())).toBeNull();
+    expect(compromisoDesdeCuotaManejo(cuentaBase({ cuotaManejo: null }))).toBeNull();
+  });
+
+  it('genera el shape de un compromiso fijo mensual ligado a la cuenta', () => {
+    const cuenta = cuentaBase({
+      id: 'c-nequi',
+      nombre: 'Nequi',
+      cuotaManejo: { monto: 12_000, diaCobro: 5 },
+    });
+    expect(compromisoDesdeCuotaManejo(cuenta)).toEqual({
+      descripcion:    'Cuota de manejo Nequi',
+      monto:          12_000,
+      frecuencia:     'mensual',
+      diaPago:        5,
+      tipo:           'fijo',
+      activo:         true,
+      cuentaId:       'c-nequi',
+      esCuotaManejo:  true,
+    });
+  });
+
+  it('propaga el estado activo de la cuenta al compromiso', () => {
+    const inactiva = cuentaBase({
+      activa: false,
+      cuotaManejo: { monto: 10_000, diaCobro: 1 },
+    });
+    expect(compromisoDesdeCuotaManejo(inactiva).activo).toBe(false);
+  });
+});
+
+// ── compromisoCuotaManejoDeCuenta() ──────────────────────────────
+
+describe('compromisoCuotaManejoDeCuenta()', () => {
+  const cuotaC1 = { id: 'k1', cuentaId: 'c1', esCuotaManejo: true };
+  const fijoNormal = { id: 'k2', cuentaId: undefined, esCuotaManejo: false, tipo: 'fijo' };
+  const cuotaOtra  = { id: 'k3', cuentaId: 'c2', esCuotaManejo: true };
+
+  it('encuentra el compromiso vinculado a la cuenta', () => {
+    const r = compromisoCuotaManejoDeCuenta([cuotaC1, fijoNormal, cuotaOtra], 'c1');
+    expect(r?.id).toBe('k1');
+  });
+
+  it('ignora compromisos sin esCuotaManejo aunque tengan cuentaId', () => {
+    const compromisos = [{ id: 'x', cuentaId: 'c1', esCuotaManejo: false }];
+    expect(compromisoCuotaManejoDeCuenta(compromisos, 'c1')).toBeUndefined();
+  });
+
+  it('devuelve undefined si no hay compromisos', () => {
+    expect(compromisoCuotaManejoDeCuenta([], 'c1')).toBeUndefined();
+  });
+
+  it('robusto a input no-array', () => {
+    expect(compromisoCuotaManejoDeCuenta(null,      'c1')).toBeUndefined();
+    expect(compromisoCuotaManejoDeCuenta(undefined, 'c1')).toBeUndefined();
   });
 });

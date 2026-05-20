@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -75,6 +75,14 @@ function _migrate(raw) {
       data.logros = [];
     }
   }
+
+  // v4 → v5: cuota de manejo opcional por cuenta + flag esCuotaManejo en
+  // compromisos. No requiere mutar datos existentes: las cuentas viejas no
+  // tienen cuotaManejo (undefined → tratado como "sin cuota"), y los
+  // compromisos existentes no son cuotas auto-generadas (esCuotaManejo
+  // undefined → tratado como false). El sync se aplica solo cuando el
+  // usuario activa la cuota desde el form de cuenta.
+  // Migración intencionalmente no-op: solo bump de versión.
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;
