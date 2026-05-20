@@ -7,6 +7,8 @@ import {
   detectarHormigas,
   validarGasto,
   normalizarGasto,
+  validarGastoRapido,
+  normalizarGastoRapido,
 } from '../../modules/dominio/gastos/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -261,5 +263,55 @@ describe('normalizarGasto()', () => {
 
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarGasto(datosFormValidos)).not.toHaveProperty('id');
+  });
+
+  it('pendienteCompletar es false por defecto en gasto normal', () => {
+    expect(normalizarGasto(datosFormValidos).pendienteCompletar).toBe(false);
+  });
+});
+
+// ── validarGastoRapido() ──────────────────────────────────────────
+
+describe('validarGastoRapido()', () => {
+  it('acepta un monto positivo', () => {
+    expect(validarGastoRapido(50000)).toEqual([]);
+    expect(validarGastoRapido('50000')).toEqual([]);
+  });
+  it('rechaza monto 0', () => {
+    expect(validarGastoRapido(0).length).toBeGreaterThan(0);
+  });
+  it('rechaza monto negativo', () => {
+    expect(validarGastoRapido(-100).length).toBeGreaterThan(0);
+  });
+  it('rechaza monto no numerico', () => {
+    expect(validarGastoRapido('abc').length).toBeGreaterThan(0);
+  });
+  it('rechaza string vacio', () => {
+    expect(validarGastoRapido('').length).toBeGreaterThan(0);
+  });
+});
+
+// ── normalizarGastoRapido() ───────────────────────────────────────
+
+describe('normalizarGastoRapido()', () => {
+  it('crea un gasto con descripcion vacia y categoria Otros', () => {
+    const g = normalizarGastoRapido(50000, '2026-05-20');
+    expect(g.descripcion).toBe('');
+    expect(g.categoria).toBe('Otros');
+    expect(g.fecha).toBe('2026-05-20');
+    expect(g.monto).toBe(50000);
+    expect(g.pendienteCompletar).toBe(true);
+  });
+
+  it('convierte monto string a numero', () => {
+    const g = normalizarGastoRapido('75000', '2026-05-20');
+    expect(typeof g.monto).toBe('number');
+    expect(g.monto).toBe(75000);
+  });
+
+  it('cuentaId queda en null y nota vacia', () => {
+    const g = normalizarGastoRapido(10000, '2026-05-20');
+    expect(g.cuentaId).toBeNull();
+    expect(g.nota).toBe('');
   });
 });

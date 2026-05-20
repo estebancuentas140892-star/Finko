@@ -318,6 +318,205 @@
   font-feature-settings: 'tnum' 1;
 }
 
+/* Input gigante para captura rápida de monto (modal gasto rapido). */
+.input.input--big-amount {
+  font-family: var(--fk-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.5rem;
+  font-weight: var(--fk-font-bold);
+  text-align: center;
+  padding: var(--fk-space-4);
+  letter-spacing: 0.02em;
+}
+.input.input--big-amount::placeholder {
+  font-size: 2.5rem;
+  opacity: 0.3;
+}
+
+/* ════════════════════════════════════════════════════════════
+   QUICK ADD - card prominente "+ Gasto rápido" en el dashboard.
+   El proposito es reducir friccion para registrar un gasto cuando
+   estas en una situacion social (restaurante, viaje, etc).
+   ════════════════════════════════════════════════════════════ */
+.quick-add {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-4) var(--fk-space-5);
+  margin-bottom: var(--fk-space-4);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--fk-accent) 18%, var(--fk-bg-elevated)),
+    var(--fk-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--fk-accent) 30%, transparent);
+  border-radius: var(--fk-radius-xl);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    background var(--fk-transition-fast),
+    border-color var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
+}
+.quick-add:hover,
+.quick-add:focus {
+  border-color: var(--fk-accent);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--fk-accent) 25%, var(--fk-bg-elevated)),
+    var(--fk-bg-elevated));
+  outline: none;
+}
+.quick-add:active {
+  transform: scale(0.98);
+}
+.quick-add__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.quick-add__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.quick-add__title {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+}
+.quick-add__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.quick-add__chevron {
+  font-size: 1.2rem;
+  color: var(--fk-text-secondary);
+  flex-shrink: 0;
+}
+.quick-add__hint {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+
+/* ════════════════════════════════════════════════════════════
+   QUICK TOAST - confirmacion con accion "Completar" tras gasto rapido.
+   Aparece bottom-center, con check verde + monto + boton para abrir
+   el modal de editar del gasto recien creado. Centrado robusto via
+   left/right + margin:auto para no depender de transform (que la
+   animacion de entrada modifica).
+   ════════════════════════════════════════════════════════════ */
+.quick-toast {
+  position: fixed;
+  bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 35%, transparent);
+  border-left: 3px solid var(--fk-success);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  box-shadow: var(--fk-shadow-lg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .quick-toast {
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .quick-toast.fade {
+    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+.quick-toast__check {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fk-success);
+  color: var(--fk-bg-base);
+  border-radius: var(--fk-radius-full);
+  font-weight: var(--fk-font-bold);
+  flex-shrink: 0;
+}
+.quick-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.quick-toast__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.quick-toast__amount {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.quick-toast__action {
+  background: transparent;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.quick-toast__action:hover,
+.quick-toast__action:focus {
+  background: color-mix(in srgb, var(--fk-accent) 10%, transparent);
+  outline: none;
+}
+.quick-toast__close {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  padding: 0 var(--fk-space-1);
+  flex-shrink: 0;
+}
+
+/* Badge generico - chip pequeño de status. Usado para "Pendiente" en gastos
+   sin completar, etc. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-2xs, 0.7rem);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.02em;
+  vertical-align: 0.1em;
+  margin-right: var(--fk-space-2);
+}
+.badge--warn {
+  background: color-mix(in srgb, var(--fk-warning, #fbbf24) 18%, transparent);
+  color: var(--fk-warning, #fbbf24);
+  border: 1px solid color-mix(in srgb, var(--fk-warning, #fbbf24) 35%, transparent);
+}
+
+/* Placeholder de texto dentro de list-item (gasto sin completar). */
+.list-item__placeholder {
+  font-style: italic;
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-normal);
+}
+
 /* Input group (prefijo/sufijo) */
 .input-group {
   position: relative;

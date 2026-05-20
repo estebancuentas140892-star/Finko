@@ -120,5 +120,42 @@ export function normalizarGasto(datos) {
     fecha: datos.fecha,
     cuentaId: datos.cuentaId || null,
     nota: datos.nota?.trim() || '',
+    pendienteCompletar: false,
   };
+}
+
+/**
+ * Normaliza un gasto rapido: solo el monto, defaults para todo lo demas.
+ * - descripcion: '' (vacia, se completa despues)
+ * - categoria: 'Otros'
+ * - fecha: hoy
+ * - pendienteCompletar: true (marca para badge "Sin completar")
+ *
+ * @param {string|number} monto
+ * @param {string} fechaHoy - YYYY-MM-DD (inyectada para testeabilidad).
+ */
+export function normalizarGastoRapido(monto, fechaHoy) {
+  return {
+    descripcion: '',
+    monto: Number(monto),
+    categoria: 'Otros',
+    fecha: fechaHoy,
+    cuentaId: null,
+    nota: '',
+    pendienteCompletar: true,
+  };
+}
+
+/**
+ * Valida un gasto rapido: solo necesita un monto > 0.
+ * @param {string|number} monto
+ * @returns {string[]}
+ */
+export function validarGastoRapido(monto) {
+  const errores = [];
+  const m = Number(monto);
+  if (isNaN(m) || m <= 0) {
+    errores.push('El monto debe ser un número mayor a 0.');
+  }
+  return errores;
 }

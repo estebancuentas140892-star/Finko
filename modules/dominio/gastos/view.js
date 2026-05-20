@@ -45,15 +45,24 @@ export function renderListaGastos() {
 
 /** @param {import('../../core/state.js').Gasto} gasto */
 function _renderGastoItem(gasto) {
-  const desc = _esc(gasto.descripcion);
+  // Un gasto sin descripcion (o con flag pendienteCompletar) es uno que se
+  // registro con "Gasto rapido" y todavia no se completo. Muestra un placeholder
+  // y un badge para que el usuario sepa que esta pendiente de describir.
+  const sinCompletar = gasto.pendienteCompletar === true || !gasto.descripcion?.trim();
+  const desc = sinCompletar
+    ? '<span class="list-item__placeholder">Sin completar</span>'
+    : _esc(gasto.descripcion);
   const cat  = _esc(gasto.categoria ?? 'Otros');
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
+  const badge = sinCompletar
+    ? '<span class="badge badge--warn" title="Tocá editar para completar este gasto">📝 Pendiente</span> '
+    : '';
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
       <div class="list-item__icon" aria-hidden="true">💸</div>
       <div class="list-item__body">
-        <p class="list-item__title">${desc}</p>
+        <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${_esc(gasto.fecha)}${nota}</p>
       </div>
       <div class="list-item__meta">
@@ -61,9 +70,13 @@ function _renderGastoItem(gasto) {
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
+                data-action="editar-gasto"
+                data-id="${_esc(gasto.id)}"
+                aria-label="Editar gasto">✎</button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-gasto"
                 data-id="${_esc(gasto.id)}"
-                aria-label="Eliminar gasto ${desc}">✕</button>
+                aria-label="Eliminar gasto">✕</button>
       </div>
     </article>`;
 }

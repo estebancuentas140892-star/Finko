@@ -178,6 +178,20 @@
         <header class="section__header">
           <h1 class="section__title" id="title-dash">Tu resumen</h1>
         </header>
+
+        <!-- Gasto rapido: card prominente para registrar un gasto en 3 toques.
+             Pensado para el momento en que estas con amigos/familia y necesitas
+             apuntar algo YA sin abrir el modal completo con todos los campos. -->
+        <button class="quick-add" type="button" data-action="gasto-rapido"
+                aria-label="Registrar un gasto rápido sin describir">
+          <span class="quick-add__icon" aria-hidden="true">⚡</span>
+          <span class="quick-add__body">
+            <span class="quick-add__title">Gasto rápido</span>
+            <span class="quick-add__desc">Solo el monto. Lo describís después.</span>
+          </span>
+          <span class="quick-add__chevron" aria-hidden="true">→</span>
+        </button>
+
         <div class="bento bento--dash" id="bento-dash" role="region" aria-label="Métricas principales">
 
           <!-- HERO: tu plata disponible (8 × 2) -->
@@ -427,6 +441,36 @@
       </header>
       <div class="modal__body" id="modal-gasto-body">
         <!-- Fase 6 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Gasto rapido (solo monto, defaults inteligentes) -->
+  <div class="modal-overlay" id="modal-gasto-rapido"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-gasto-rapido-title" aria-hidden="true">
+    <div class="modal modal--sm">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-gasto-rapido-title">⚡ Gasto rápido</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body">
+        <p class="quick-add__hint">Apuntalo ahora. Lo completás después con calma.</p>
+        <form id="form-gasto-rapido" novalidate>
+          <div class="form-group">
+            <label for="gasto-rapido-monto" class="label">¿Cuánto gastaste?</label>
+            <input id="gasto-rapido-monto" name="monto"
+                   class="input input--big-amount"
+                   type="number" inputmode="numeric" pattern="[0-9]*"
+                   min="0" step="1000" placeholder="0"
+                   autocomplete="off" />
+          </div>
+          <div class="modal__footer">
+            <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
