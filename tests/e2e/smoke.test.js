@@ -25,7 +25,7 @@ async function saltearOnboarding(page) {
   await page.addInitScript(() => {
     const estado = {
       version: 1,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded: true,
       cuentas: [],
       ingresos: [],

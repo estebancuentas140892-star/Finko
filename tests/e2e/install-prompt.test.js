@@ -35,7 +35,7 @@ async function inyectarEstado(page, { onboarded = true, install } = {}) {
   await page.addInitScript(({ onboarded, install }) => {
     const estado = {
       _version: 4,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded,
       cuentas: [],
       ingresos: [],

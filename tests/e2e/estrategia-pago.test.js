@@ -30,7 +30,7 @@ async function inyectarDosDeudas(page) {
   await page.addInitScript(({ idA, idB }) => {
     const estado = {
       _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded: true,
       cuentas: [],
       ingresos: [],
@@ -72,7 +72,7 @@ async function inyectarUnaDeuda(page) {
   await page.addInitScript(({ idA }) => {
     const estado = {
       _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded: true,
       cuentas: [],
       ingresos: [],
@@ -103,7 +103,7 @@ async function inyectarSinDeudas(page) {
   await page.addInitScript(() => {
     const estado = {
       _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded: true,
       cuentas: [],
       ingresos: [],

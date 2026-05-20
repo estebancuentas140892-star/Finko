@@ -20,7 +20,7 @@ async function saltearOnboardingYIrADash(page) {
   await page.addInitScript(() => {
     const estado = {
       _version: 3,
-      perfil: { nombre: 'TestUser', smmlv: 1423500 },
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
       onboarded: true,
       cuentas: [],
       ingresos: [],
