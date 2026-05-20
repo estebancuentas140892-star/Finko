@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (perf: transición de tema sin lag en mobile)
+> Última actualización: 2026-05-20 (fix: toast de logro 2.5s + sw-register auto-update)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
+Dos ajustes para resolver reportes del usuario en mobile:
+
+1. Toast de logro tardaba 4s en desaparecer (`DURACION_MS = 4000` en
+   `modules/dominio/logros/index.js`). Reducido a 2500ms - se siente snappy
+   sin sentirse interrumpido. Total visible incluyendo fade: ~2.9s (antes ~4.4s).
+
+2. SW viejo cacheado en el celular del usuario hacía que no llegaran los fixes
+   de UX#1 (toast cortado), UX#4 (bank avatars con color) y P3 (toggle centralizado),
+   aunque ya estaban en producción desde v33/v35/v40. El navegador mobile demora
+   hasta 24h en re-fetchear el `service-worker.js`. `modules/infra/sw-register.js`
+   ahora llama `reg.update()` al arrancar la app, forzando el chequeo de versión.
+   Combinado con `skipWaiting()` + `clients.claim()` (ya presentes), futuras
+   actualizaciones toman control en cuanto el usuario abre la app.
+
+`service-worker.js`: v41 → v42. Tests: 835/835 verdes.
 
 ### perf(ux) - Transición de tema sin lag en mobile (P2) · 2026-05-19
 La transición entre tema claro/oscuro tenía lag visible en mobile (frame drops
@@ -119,21 +136,6 @@ Celdas sin compromisos son read-only (sin data-action). Layout responsive (mobil
 - `service-worker.js`: v38.
 - Tests: 835/835 unit verdes (sin nuevos: render validado en app). E2E 1 smoke test.
 - Commits: `11271f2`, `ef54842`, `4f17c94`, `e3852e4`.
-
-### fix(ux) - Selector de banco: dropdown fuera del modal en mobile · 2026-05-19
-Bug reportado: al crear una cuenta en tesoreria, la lista de bancos del custom bank picker
-aparecia fuera del modal (especialmente en mobile cerca del borde inferior). Diagnosticado:
-CSS containing block. El `.modal` padre tenia `transform: translateY/scale` (animacion de
-entrada), lo que creaba un containing block capturando descendientes con `position: fixed`.
-El dropdown calculaba su posicion con `getBoundingClientRect()` (relativo al viewport),
-pero se posicionaba relativo al modal transformado: desalineamiento.
-- `tesoreria/index.js`: documentacion ampliada en `_initBankPicker()` explicando el
-  containing block issue. `_resetBankPicker()` nueva funcion para limpiar el display
-  visual al reabrir el modal (no solo los inputs del formulario).
-  `_posicionar()` reescrita: calcula espacio disponible arriba/abajo del trigger, abre
-  el dropdown hacia arriba si no cabe abajo (usando `bottom` en lugar de `top`).
-- `service-worker.js`: v36 a v37 (invalidar cache del modal animado).
-- Tests: 805/805 unit + 41/41 E2E verdes (sin regresiones).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

@@ -7,6 +7,47 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
+
+El usuario reportó dos problemas en mobile que resultaron tener distintas causas:
+
+**Reportes:**
+1. Toast de logro tarda demasiado en desaparecer (parece bug).
+2. Toast de logro aparece cortado a la derecha (fuera de pantalla).
+3. Avatares de banco sin color en lista de cuentas (mobile).
+4. Avatares de banco sin color en dropdown del picker (mobile).
+
+**Diagnóstico:** los 4 problemas se verificaron en preview mobile y resultaron:
+- Solo el #1 era un bug real en el código actual.
+- Los #2, #3, #4 eran consecuencia de un service worker viejo cacheado en el
+  celular del usuario. En preview con SW v41 (limpio), el toast se ve centrado
+  y los avatares muestran sus colores corporativos. El navegador móvil tarda
+  hasta 24h en revisar si hay versión nueva del `service-worker.js`, dejando
+  al usuario con CSS/JS de varias versiones atrás.
+
+**Soluciones:**
+
+1. `modules/dominio/logros/index.js`: `DURACION_MS` reducido de 4000 a 2500ms.
+   El toast se cierra en ~2.9s total (incluyendo el fade de 0.4s). Antes ~4.4s.
+   Sentido: 2.5s es estándar para toasts informativos; 4s sentía "stuck".
+
+2. `modules/infra/sw-register.js`: tras `register()` exitoso, se llama
+   `reg.update()` para forzar al navegador a chequear si hay una versión nueva
+   del SW. Combinado con `skipWaiting()` + `clients.claim()` ya presentes,
+   futuras actualizaciones toman control inmediatamente.
+
+3. `service-worker.js`: v41 → v42 (invalidar cache).
+
+**Tests:** 835/835 verdes.
+
+**Nota para el usuario:** los problemas #2, #3, #4 desaparecen cuando el SW
+v42 se descargue en su celular. Esto pasa la próxima vez que abra la app
+(con `reg.update()` siempre se verifica). Si quiere ver los cambios ya
+mismo, puede ir a Chrome Móvil > Ajustes > Privacidad > Borrar datos de
+navegación > Solo para finko-brown.vercel.app.
+
+---
+
 ### perf(ux) - Transición de tema sin lag en mobile (P2) · 2026-05-19
 
 El usuario reportó lag perceptible al cambiar tema claro/oscuro en mobile,

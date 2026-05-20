@@ -54,7 +54,7 @@ function _checkYMostrar() {
 
 // ── TOAST ────────────────────────────────────────────────────────
 
-const DURACION_MS = 4000;
+const DURACION_MS = 2500;
 
 /**
  * Crea y muestra el toast de logro desbloqueado con confetti.
