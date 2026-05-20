@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix: toggle de tema duplicado, centralizado en Ajustes)
+> Última actualización: 2026-05-19 (perf: transición de tema sin lag en mobile)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### perf(ux) - Transición de tema sin lag en mobile (P2) · 2026-05-19
+La transición entre tema claro/oscuro tenía lag visible en mobile (frame drops
+durante el cambio). En desktop con GPU dedicada se sentía fluido, pero el `*`
+selector animaba 563 elementos × 5 propiedades simultáneamente, ahogando al
+compositor mobile.
+
+Cambio en `styles/themes.css`:
+- Reemplazado `.theme-transitioning *` por una lista acotada de ~30 selectores
+  que cubren solo las superficies que cambian de color (body, sidebar, topbar,
+  bottom-nav, cards, modals, inputs, buttons, calendario, etc.).
+- Resultado: 563 -> 185 elementos animados (67% menos). El texto hereda `color`
+  del contenedor animado, asi que el ojo percibe el crossfade igual.
+- Duración 280ms preservada (paridad visual con desktop).
+- `service-worker.js`: v41.
+
+Tests: 835/835 verdes (cambio solo CSS).
 
 ### fix(ux) - Toggle de tema duplicado: centralizado en Ajustes (P3) · 2026-05-19
 El toggle de tema aparecía en tres lugares: botón en el footer del sidebar (desktop),
@@ -117,49 +134,6 @@ pero se posicionaba relativo al modal transformado: desalineamiento.
   el dropdown hacia arriba si no cabe abajo (usando `bottom` en lugar de `top`).
 - `service-worker.js`: v36 a v37 (invalidar cache del modal animado).
 - Tests: 805/805 unit + 41/41 E2E verdes (sin regresiones).
-
-### feat(ux) - Sidebar colapsable en desktop (UX#3) · 2026-05-19
-Boton de colapsar/expandir el sidebar lateral en desktop (>= 1024px). Al colapsar,
-el sidebar se reduce a 64px mostrando solo los iconos; los labels se ocultan y aparece
-un tooltip nativo (title) en cada item al hover.
-- `index.html`: boton `.sidebar__collapse-btn` al final de `.sidebar__footer`, SVG chevron.
-- `layout.css`: estado `body.sidebar-collapsed` con override de `--fk-sidebar-width` a
-  64px (el token `--fk-sidebar-collapsed` ya existia). Clase `body.sidebar-animating`
-  activa la transicion de `grid-template-columns` solo durante el toggle del usuario,
-  no en carga inicial ni resize.
-- `shell.js`: `toggleSidebarCollapse()`, `initSidebarCollapse()`, `_syncCollapseButton()`,
-  `_syncNavTitles()`. Persiste en `localStorage` clave `fk_sidebar_collapsed`.
-- `actions.js`: registra accion `sidebar-toggle`.
-- `bootstrap.js`: llama `initSidebarCollapse()` despues de `initShell()`.
-- `smoke.test.js`: 3 tests nuevos en suite "Sidebar colapsable (desktop)".
-- SW v35 a v36. 805/805 unit + 41/41 E2E verdes.
-
-### feat(ux) - Logos/avatares de bancos en selector de cuenta (UX#4) · 2026-05-19
-Custom bank picker que reemplaza el select nativo de bancos con un combobox accesible
-que muestra avatares circulares con el color corporativo e iniciales de cada entidad.
-- `constants.js`: BANCOS_CO pasa de string[] a objetos {id, iniciales, color, texto}.
-  El id es el mismo string que antes (retrocompatibilidad total con localStorage).
-- `tesoreria/view.js`: renderFormCuenta() genera el custom picker HTML; nuevo helper
-  _bankAvatarHtml() para la lista de cuentas y los items del picker.
-- `tesoreria/index.js`: _initBankPicker() con toggle, seleccion, teclado (flechas,
-  Enter, Escape) y cierre al click externo. Dropdown con position:fixed para evitar
-  que el overflow:hidden del modal lo corte.
-- `components.css`: estilos de .bank-picker, .bank-picker__trigger, .bank-picker__list,
-  .bank-picker__item y .bank-avatar. Lista con max-height:260px + overflow-y:auto.
-- `smoke.test.js`: actualizado para usar el nuevo picker (click trigger + click item).
-- SW v34 a v35. 805/805 unit + 38/38 E2E verdes.
-
-### fix(ux) - Transición de tema suave en mobile (UX#2) · 2026-05-19
-Tecnica "class transitioning": `applyTheme()` en `shell.js` agrega `.theme-transitioning`
-al body ANTES del swap de clase de tema, luego la quita a los 350ms. El CSS en `themes.css`
-usa ese selector para activar transiciones de 280ms en todos los descendientes durante el
-cambio. Solo activo cuando `prefers-reduced-motion: no-preference`.
-- `modules/ui/shell.js`: `applyTheme()` agrega `.theme-transitioning` antes del toggle.
-  Timer de 350ms lo quita (con clearTimeout si el usuario hace doble toggle rapido).
-- `styles/themes.css`: media query `prefers-reduced-motion: no-preference` con selector
-  `.theme-transitioning, * {...}` y transition 280ms ease en background-color, border-color,
-  box-shadow + 180ms en color y fill.
-- SW v33 a v34. 805/805 unit + 2/2 E2E de tema verdes.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

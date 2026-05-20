@@ -7,6 +7,43 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### perf(ux) - Transición de tema sin lag en mobile (P2) · 2026-05-19
+
+El usuario reportó lag perceptible al cambiar tema claro/oscuro en mobile,
+mientras que en desktop la transición se sentía fluida y natural. El objetivo
+era paridad visual entre ambas plataformas.
+
+**Causa raíz:** el CSS `.theme-transitioning *` aplicaba `transition` a TODOS
+los descendientes del body (563 elementos en mobile × 5 propiedades = ~2800
+transiciones evaluadas por frame). En desktop con GPU dedicada el compositor
+absorbía el costo. En mobile (CPU/GPU compartido), forzaba frame drops durante
+los 280ms de la animación, produciendo la sensación de lag.
+
+**Solución:** restringir el selector a una lista acotada de ~30 contenedores
+que realmente cambian de color al cambiar tema:
+
+- `body`, `.sidebar`, `.topbar`, `.bottom-nav`, `.menu-mas`, `.menu-mas__item`
+- `.card`, `.bento-card`, `.list-item`, `.list-item__icon`
+- `.modal-overlay`, `.modal`, `.modal__header`, `.modal__body`, `.config-section`
+- `.cal-card`, `.cal-day`, `.cal-detail`, `.cal-detail__item`, `.nav-item`, `.field`
+- `input`, `select`, `textarea`, `button`, `.btn`, `.chip`, `.tag`
+- `.install-banner`, `.toast`, `.logro-toast`
+
+**Resultado:** 563 elementos animados → 185 (reducción del 67%). El texto y los
+elementos inline heredan `color` del contenedor animado, por lo que el ojo
+percibe el crossfade igual de fluido. Duración 280ms preservada (paridad con
+desktop). Medición: el click + frame de aplicación toma ~22ms estable a lo
+largo de 5 toggles consecutivos (antes había drift por el costo del style recalc).
+
+**Archivos:**
+- `styles/themes.css`: lista explícita de selectores, comentario actualizado
+  explicando el por qué.
+- `service-worker.js`: v40 → v41.
+
+**Tests:** 835/835 verdes (cambio solo CSS).
+
+---
+
 ### fix(ux) - Toggle de tema duplicado: centralizado en Ajustes (P3) · 2026-05-19
 
 El toggle de tema existia en tres lugares simultáneos:

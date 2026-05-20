@@ -64,26 +64,57 @@ body.light-theme {
 /* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────
    Tecnica "class transitioning": shell.js agrega .theme-transitioning
    al body ANTES de cambiar la clase de tema. Esto activa transiciones
-   en TODOS los descendientes mientras dura el cambio (280ms), y la clase
+   en las superficies del UI mientras dura el cambio (280ms), y la clase
    se quita automaticamente a los 350ms via JS.
 
-   Se usa !important en transition para garantizar que la interpolacion se
-   aplique aunque el elemento tenga una transicion mas especifica declarada.
-   No afecta @keyframes animations (transition e animation son independientes).
+   IMPORTANTE: se restringe a un set acotado de selectores (~30 contenedores)
+   en lugar de `*`. En desktop con GPU dedicada el `*` funcionaba, pero en
+   mobile causaba lag perceptible al forzar paint/composite en cada div, span,
+   button e icono visible (cientos de elementos × 5 propiedades animadas).
+   Animar solo las superficies que cambian de color da paridad visual con
+   desktop sin el costo de paint masivo. El texto cambia "instantaneo" pero
+   como hereda `color` del contenedor, el ojo lo percibe como parte del crossfade.
 
    prefers-reduced-motion: los usuarios que piden menos movimiento ven el
    cambio instantaneo (el comportamiento anterior), sin lag ni mareo.
    ─────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .theme-transitioning,
-  .theme-transitioning *,
-  .theme-transitioning *::before,
-  .theme-transitioning *::after {
+  .theme-transitioning body,
+  .theme-transitioning .sidebar,
+  .theme-transitioning .topbar,
+  .theme-transitioning .bottom-nav,
+  .theme-transitioning .menu-mas,
+  .theme-transitioning .menu-mas__item,
+  .theme-transitioning .card,
+  .theme-transitioning .bento-card,
+  .theme-transitioning .list-item,
+  .theme-transitioning .list-item__icon,
+  .theme-transitioning .modal-overlay,
+  .theme-transitioning .modal,
+  .theme-transitioning .modal__header,
+  .theme-transitioning .modal__body,
+  .theme-transitioning .config-section,
+  .theme-transitioning .cal-card,
+  .theme-transitioning .cal-day,
+  .theme-transitioning .cal-detail,
+  .theme-transitioning .cal-detail__item,
+  .theme-transitioning .nav-item,
+  .theme-transitioning .field,
+  .theme-transitioning input,
+  .theme-transitioning select,
+  .theme-transitioning textarea,
+  .theme-transitioning button,
+  .theme-transitioning .btn,
+  .theme-transitioning .chip,
+  .theme-transitioning .tag,
+  .theme-transitioning .install-banner,
+  .theme-transitioning .toast,
+  .theme-transitioning .logro-toast {
     transition:
       background-color 280ms ease,
       border-color     280ms ease,
       color            180ms ease,
-      fill             180ms ease,
       box-shadow       280ms ease !important;
   }
 }
