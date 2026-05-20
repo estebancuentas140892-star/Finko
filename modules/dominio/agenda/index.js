@@ -2,16 +2,34 @@
  * agenda/index.js - API pública del dominio Agenda.
  *
  * Responsabilidades:
- * - Suscribirse a EventBus para re-renderizar cuando cambian compromisos.
- * - Re-render al navegar a #agenda.
- * - Coordinar logic.js + view.js (sub-tareas 2-4).
+ * - Registrar acciones data-action (navegación mes anterior/siguiente).
+ * - Re-renderizar cuando cambia S.compromisos o el usuario llega al hash.
+ * - Coordinar logic.js + view.js sin generar HTML ni hacer cálculos aquí.
  */
 
 import { EventBus } from '../../core/state.js';
 import { renderSmart } from '../../infra/render.js';
-import { renderAgenda } from './view.js';
+import { registrarAccion } from '../../ui/actions.js';
+import { renderAgenda, navegarMes } from './view.js';
+
+// ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
+
+function _prevMes() {
+  navegarMes(-1);
+  renderAgenda();
+}
+
+function _nextMes() {
+  navegarMes(+1);
+  renderAgenda();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
 
 export function initAgenda() {
+  registrarAccion('agenda-prev-mes', _prevMes);
+  registrarAccion('agenda-next-mes', _nextMes);
+
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
       renderSmart(renderAgenda, 'agenda');
