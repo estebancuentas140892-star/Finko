@@ -25,6 +25,10 @@ import { evaluarLogros, LOGROS } from './logic.js';
 export function initLogros() {
   _checkYMostrar();
   EventBus.on('state:change', _checkYMostrar);
+  // Tambien escuchar el evento de onboarding, ya que setea s.onboarded=true
+  // pero no emite state:change. Sin esto, el logro "primer-paso" no aparecia
+  // al registrar el nombre - solo se mostraba en el siguiente reload.
+  EventBus.on('onboarding:completado', _checkYMostrar);
 }
 
 // ── LOGICA INTERNA ───────────────────────────────────────────────

@@ -1780,8 +1780,16 @@ textarea.input {
 .logro-toast {
   position: fixed;
   bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
-  left: 50%;
-  transform: translateX(-50%);
+  /* Centrado robusto: en lugar de left:50% + transform:translateX(-50%) + width:max-content
+     (que fallaba en mobile real con la animacion toastIn que aplica su propio transform,
+     pisando translateX(-50%) y dejando el toast pegado a la derecha), usamos left/right
+     con margenes seguros y margin:auto. Esto garantiza centrado sin depender de transform,
+     asi la animacion puede usarlo libremente sin romper el posicionamiento. */
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
   z-index: var(--fk-z-toast);
   display: flex;
   align-items: center;
@@ -1793,18 +1801,6 @@ textarea.input {
   padding: var(--fk-space-3) var(--fk-space-5);
   box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
   pointer-events: none;
-  /* Ancho intrinseco pero con margen lateral garantizado para que nunca
-     se salga por los costados en pantallas pequeñas. Era el bug del toast
-     "cortado a la derecha" en mobile con nombres largos (Diversificador,
-     Mes en verde, etc): antes tenia white-space: nowrap + min-width: 220px
-     que forzaba overflow del contenido. Ahora deja wrap natural si hace falta. */
-  width: max-content;
-  max-width: min(
-    420px,
-    calc(100vw - var(--fk-space-6) * 2
-                - env(safe-area-inset-left, 0px)
-                - env(safe-area-inset-right, 0px))
-  );
 }
 
 @media (prefers-reduced-motion: no-preference) {
