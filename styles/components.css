@@ -379,7 +379,27 @@ textarea.input {
   flex-shrink: 0;
   font-size: 1.125rem;
 }
+/* body: bloque central que crece y permite truncado de texto */
+.list-item__body,
 .list-item__content { flex: 1; min-width: 0; }
+
+/* meta: columna derecha solo con texto (monto), sin botones */
+.list-item__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: var(--fk-space-1);
+}
+
+/* action: columna derecha con botones (o monto + botón en tesorería) */
+.list-item__action {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
+}
+
 .list-item__title {
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-medium);
@@ -393,12 +413,26 @@ textarea.input {
   color: var(--fk-text-muted);
   margin-top: 2px;
 }
+/* amount: monto en columna __meta (compromisos, gastos, personales) */
 .list-item__amount {
   font-family: var(--fk-font-mono);
   font-weight: var(--fk-font-semibold);
   font-size: var(--fk-text-sm);
   color: var(--fk-text-primary);
   white-space: nowrap;
+}
+/* value: monto en columna __action (tesorería) */
+.list-item__value {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+}
+
+/* Cuando el icono contiene un bank-avatar, el wrapper no aporta bg propio */
+.list-item__icon:has(.bank-avatar) {
+  background: transparent;
 }
 
 /* ════════════════════════════════════════════════════════════
