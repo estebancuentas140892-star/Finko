@@ -162,13 +162,17 @@ export function initConfig() {
   // desde el sidebar o desde el modal Mas). El handler global `theme-toggle`
   // ya hace el trabajo de aplicar el tema; aqui solo refrescamos el checkbox
   // y el texto del label dentro del panel de config.
+  // setTimeout(0): el browser revierte `checked` asíncronamente después de
+  // e.preventDefault() en el click del checkbox; hay que esperar ese tick.
   EventBus.on('theme:change', ({ light }) => {
-    const toggle = document.getElementById('toggle-tema');
-    if (!toggle) return; // panel no inyectado todavia
-    toggle.checked = light;
-    const labelEl = toggle.parentElement?.querySelector('.config-toggle__label');
-    if (labelEl) {
-      labelEl.textContent = light ? '☀️ Tema claro activo' : '🌙 Tema oscuro activo';
-    }
+    setTimeout(() => {
+      const toggle = document.getElementById('toggle-tema');
+      if (!toggle) return;
+      toggle.checked = light;
+      const labelEl = toggle.parentElement?.querySelector('.config-toggle__label');
+      if (labelEl) {
+        labelEl.textContent = light ? '☀️ Tema claro activo' : '🌙 Tema oscuro activo';
+      }
+    }, 0);
   });
 }

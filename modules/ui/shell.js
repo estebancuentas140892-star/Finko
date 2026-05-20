@@ -43,13 +43,17 @@ function applyTheme(light) {
 }
 
 function _syncThemeButton(light) {
-  const btn = document.querySelector('[data-action="theme-toggle"]');
-  if (!btn) return;
-  const icon  = btn.querySelector('.nav-item__icon');
-  const label = btn.querySelector('.nav-item__label');
+  const el = document.querySelector('[data-action="theme-toggle"]');
+  if (!el) return;
+  if (el.type === 'checkbox') {
+    setTimeout(() => { el.checked = light; }, 0);
+    return;
+  }
+  const icon  = el.querySelector('.nav-item__icon');
+  const label = el.querySelector('.nav-item__label');
   if (icon)  icon.textContent  = light ? '☀️' : '🌙';
   if (label) label.textContent = light ? 'Modo claro' : 'Modo oscuro';
-  btn.setAttribute('aria-pressed', String(light));
+  el.setAttribute('aria-pressed', String(light));
 }
 
 export function toggleTheme() {

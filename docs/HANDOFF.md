@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (fix: tesoreria list-item layout mobile + bank avatar fix)
+> Última actualización: 2026-05-19 (fix: toggle de tema duplicado, centralizado en Ajustes)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,28 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(ux) - Toggle de tema duplicado: centralizado en Ajustes (P3) · 2026-05-19
+El toggle de tema aparecía en tres lugares: botón en el footer del sidebar (desktop),
+botón en el menú "Más" (mobile) y checkbox en la sección Ajustes (solo desktop).
+Se eliminaron los dos botones redundantes y la sección Ajustes se hizo visible en
+todos los tamaños de pantalla.
+
+Cambios:
+- `index.html`: eliminado `<button data-action="theme-toggle">` del `.sidebar__footer` y
+  del `.menu-mas`. El toggle vive ahora exclusivamente en `#sec-config`.
+- `modules/dominio/config/view.js`: quitado `config-section--desktop-only` de `_renderTema()`.
+  La sección Apariencia es visible en mobile y desktop.
+- `modules/ui/shell.js`: `_syncThemeButton()` actualizado para manejar
+  `input[type=checkbox]` con `setTimeout(0)` (el browser revierte `checked` de forma
+  asincrona tras `e.preventDefault()`).
+- `modules/dominio/config/index.js`: listener `EventBus.on('theme:change')` envuelto en
+  `setTimeout(0)` por la misma razon.
+- `tests/e2e/smoke.test.js`: Suite 7 "Tema" reescrita: navega a `#config` y verifica
+  `body.classList` en lugar de `aria-pressed` del boton eliminado.
+- `service-worker.js`: v40.
+
+Tests: 835/835 verdes.
 
 ### fix(tesoreria) - Layout mobile de list-item y avatares de banco (P1) · 2026-05-19
 El CSS solo tenía `.list-item__content` (alias obsoleto). Todos los dominios usaban en
@@ -138,18 +160,6 @@ cambio. Solo activo cuando `prefers-reduced-motion: no-preference`.
   `.theme-transitioning, * {...}` y transition 280ms ease en background-color, border-color,
   box-shadow + 180ms en color y fill.
 - SW v33 a v34. 805/805 unit + 2/2 E2E de tema verdes.
-
-### fix(ux) - Toast de logro cortado en mobile (UX#1) · 2026-05-19
-El toast del logro desbloqueado se veia parcialmente cortado en celular y a veces tapado
-por el bottom nav. Tres ajustes en `.logro-toast`:
-- Quitado `white-space: nowrap` y `min-width: 220px` que forzaban overflow con nombres
-  largos (Diversificador, Mes en verde, Planificador).
-- `width: max-content` + `max-width: min(420px, calc(100vw - ...))` con margenes
-  laterales seguros (incluye `env(safe-area-inset-*)`).
-- `.logro-toast__nombre` permite wrap con `overflow-wrap: anywhere`.
-- En mobile (< 1024px) el `bottom` ahora respeta la altura del bottom nav
-  (`var(--fk-header-height) + var(--fk-space-4)`) para no quedar tapado.
-- SW v32 a v33. 805/805 unit + 18/18 E2E smoke verdes.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

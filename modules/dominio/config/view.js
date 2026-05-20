@@ -30,7 +30,7 @@ function _renderTema() {
   const icono = light ? '☀️' : '🌙';
   const label = light ? 'Tema claro activo' : 'Tema oscuro activo';
   return `
-    <section class="config-section config-section--desktop-only" aria-labelledby="config-tema-title">
+    <section class="config-section" aria-labelledby="config-tema-title">
       <h2 class="config-section__title" id="config-tema-title">🎨 Apariencia</h2>
       <p class="config-section__desc">
         Cambiá entre tema oscuro (defecto) y tema claro. La preferencia se guarda

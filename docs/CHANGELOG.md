@@ -7,6 +7,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(ux) - Toggle de tema duplicado: centralizado en Ajustes (P3) · 2026-05-19
+
+El toggle de tema existia en tres lugares simultáneos:
+1. Botón `<button data-action="theme-toggle">` en `.sidebar__footer` (visible solo en desktop).
+2. Botón `<button id="menu-mas-tema">` en el menú "Más" del bottom nav (mobile).
+3. Checkbox `<input data-action="theme-toggle">` dentro de `_renderTema()` en config,
+   oculto en mobile por `config-section--desktop-only`.
+
+Causa raíz: la sección Ajustes se marcó `desktop-only` cuando aún no era suficientemente
+accesible en mobile; los botones extra compensaban. Al resolver el acceso mobile de config,
+los tres controles coexistian sin necesidad.
+
+Solución: eliminar botones 1 y 2; quitar `config-section--desktop-only` del `_renderTema()`.
+El checkbox en Ajustes es ahora el único punto de control, visible en todos los tamaños.
+
+Descubrimiento durante la tarea: el browser revierte `checked` del checkbox de forma
+asincrona (macrotask posterior) despues de que el handler llama `e.preventDefault()`.
+Esto hacia que las asignaciones sincronas a `el.checked` se pisaran. Solucion: envolver
+en `setTimeout(0)` tanto `_syncThemeButton()` como el listener `EventBus.on('theme:change')`.
+
+**Archivos:**
+- `index.html`: -6 lineas (dos botones `data-action="theme-toggle"` eliminados).
+- `modules/dominio/config/view.js`: clase `config-section--desktop-only` removida de `_renderTema()`.
+- `modules/ui/shell.js`: `_syncThemeButton()` maneja `input[type=checkbox]` con `setTimeout(0)`.
+- `modules/dominio/config/index.js`: listener `theme:change` envuelto en `setTimeout(0)`.
+- `tests/e2e/smoke.test.js`: Suite 7 reescrita (navega a config, verifica body class).
+- `service-worker.js`: v40.
+
+**Tests:** 835/835 verdes.
+
+---
+
 ### fix(tesoreria) - Layout mobile de list-item y avatares de banco (P1) · 2026-05-19
 
 CSS faltante para variantes del `.list-item` que todos los dominios usaban en HTML pero

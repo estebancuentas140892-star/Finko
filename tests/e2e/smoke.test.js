@@ -244,43 +244,40 @@ test.describe('Tesorería - cuenta y saldo', () => {
 });
 
 // ── SUITE 7: Tema ────────────────────────────────────────────────────────────
+// El toggle de tema vive solo en la sección Ajustes (#config), visible en
+// todos los tamaños de pantalla. Es un <input type="checkbox">.
 
 test.describe('Tema claro/oscuro', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/');
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
   });
 
-  test('toggle cambia aria-pressed del botón', async ({ page }) => {
-    // shell.js usa aria-pressed en el botón de toggle, no data-theme en <html>
-    const btn = page.locator('button.nav-item[data-action="theme-toggle"]');
+  test('toggle cambia la clase light-theme en el body', async ({ page }) => {
+    const checkbox = page.locator('#toggle-tema');
 
-    // Estado inicial: dark (aria-pressed="false")
-    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    // Estado inicial: oscuro (body sin light-theme)
+    await expect(page.locator('body')).not.toHaveClass(/light-theme/);
 
-    // Toggle → light
-    await btn.click();
-    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    // Toggle → claro
+    await checkbox.click();
+    await expect(page.locator('body')).toHaveClass(/light-theme/);
 
-    // Doble toggle → dark de nuevo
-    await btn.click();
-    await expect(btn).toHaveAttribute('aria-pressed', 'false');
+    // Doble toggle → oscuro de nuevo
+    await checkbox.click();
+    await expect(page.locator('body')).not.toHaveClass(/light-theme/);
   });
 
   test('el tema persiste tras recarga', async ({ page }) => {
-    const btn = page.locator('button.nav-item[data-action="theme-toggle"]');
-
-    await btn.click();
-    await expect(btn).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#toggle-tema').click();
+    await expect(page.locator('body')).toHaveClass(/light-theme/);
 
     await page.reload();
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
 
-    // Después de recarga con localStorage guardado, debe seguir en light
-    await expect(
-      page.locator('button.nav-item[data-action="theme-toggle"]')
-    ).toHaveAttribute('aria-pressed', 'true');
+    // Body debe seguir en light tras recarga
+    await expect(page.locator('body')).toHaveClass(/light-theme/);
   });
 });
 
