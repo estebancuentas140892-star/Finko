@@ -79,6 +79,12 @@
               <span class="nav-item__label">Compromisos</span>
             </a>
 
+            <a class="nav-item nav-item--no-mobile" href="#agenda" data-section="agenda"
+               role="listitem" aria-label="Agenda y calendario del mes">
+              <span class="nav-item__icon" aria-hidden="true">📅</span>
+              <span class="nav-item__label">Agenda</span>
+            </a>
+
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
                role="listitem" aria-label="Préstamos personales - me deben">
               <span class="nav-item__icon" aria-hidden="true">🤝</span>
@@ -288,6 +294,16 @@
         </div>
         <div id="estrategia-pago">
           <!-- F.4: estrategias Avalancha/Bola de Nieve. Aparece solo con ≥2 deudas válidas. -->
+        </div>
+      </section>
+
+      <!-- AGENDA (vista calendario sobre compromisos) -->
+      <section class="section" id="sec-agenda" aria-labelledby="title-agenda">
+        <header class="section__header">
+          <h1 class="section__title" id="title-agenda">Mi Agenda</h1>
+        </header>
+        <div id="panel-agenda">
+          <!-- agenda/view.js renderiza aquí. Sub-tarea 1: placeholder. -->
         </div>
       </section>
 
@@ -561,6 +577,10 @@
           <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
             <span class="menu-mas__icon" aria-hidden="true">🔗</span>
             <span class="menu-mas__label">Compromisos</span>
+          </a>
+          <a class="menu-mas__item" href="#agenda" data-section="agenda">
+            <span class="menu-mas__icon" aria-hidden="true">📅</span>
+            <span class="menu-mas__label">Agenda</span>
           </a>
           <a class="menu-mas__item" href="#personales" data-section="personales">
             <span class="menu-mas__icon" aria-hidden="true">🤝</span>
