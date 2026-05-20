@@ -9,6 +9,9 @@ import {
   normalizarGasto,
   validarGastoRapido,
   normalizarGastoRapido,
+  aplicarGastoASaldo,
+  revertirGastoDeSaldo,
+  deltasPorEdicionDeGasto,
 } from '../../modules/dominio/gastos/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -29,6 +32,7 @@ const datosFormValidos = {
   monto: '80000',
   categoria: 'Transporte',
   fecha: '2026-05-12',
+  cuentaId: 'c1',
   nota: '',
 };
 
@@ -218,9 +222,15 @@ describe('validarGasto()', () => {
     expect(errores[0]).toMatch(/fecha/i);
   });
 
+  it('reporta error si no se eligió cuenta', () => {
+    const errores = validarGasto({ ...datosFormValidos, cuentaId: '' });
+    expect(errores).toHaveLength(1);
+    expect(errores[0]).toMatch(/cuenta/i);
+  });
+
   it('puede tener múltiples errores a la vez', () => {
-    const errores = validarGasto({ descripcion: '', monto: '0', categoria: '', fecha: '' });
-    expect(errores.length).toBeGreaterThanOrEqual(3);
+    const errores = validarGasto({ descripcion: '', monto: '0', categoria: '', fecha: '', cuentaId: '' });
+    expect(errores.length).toBeGreaterThanOrEqual(4);
   });
 });
 
@@ -256,8 +266,14 @@ describe('normalizarGasto()', () => {
     expect(result.nota).toBe('con descuento');
   });
 
-  it('cuentaId null si no viene', () => {
+  it('preserva cuentaId si viene', () => {
     const result = normalizarGasto(datosFormValidos);
+    expect(result.cuentaId).toBe('c1');
+  });
+
+  it('cuentaId null si no viene', () => {
+    const { cuentaId: _omitido, ...sinCuenta } = datosFormValidos;
+    const result = normalizarGasto(sinCuenta);
     expect(result.cuentaId).toBeNull();
   });
 
@@ -313,5 +329,88 @@ describe('normalizarGastoRapido()', () => {
     const g = normalizarGastoRapido(10000, '2026-05-20');
     expect(g.cuentaId).toBeNull();
     expect(g.nota).toBe('');
+  });
+});
+
+// ── aplicarGastoASaldo() ─────────────────────────────────────────
+
+describe('aplicarGastoASaldo()', () => {
+  it('descuenta el monto del saldo', () => {
+    expect(aplicarGastoASaldo(100_000, 30_000)).toBe(70_000);
+  });
+  it('permite saldo negativo (no impide sobregirar)', () => {
+    expect(aplicarGastoASaldo(10_000, 50_000)).toBe(-40_000);
+  });
+  it('trata saldo undefined como 0', () => {
+    expect(aplicarGastoASaldo(undefined, 25_000)).toBe(-25_000);
+  });
+  it('trata monto undefined como 0', () => {
+    expect(aplicarGastoASaldo(100_000, undefined)).toBe(100_000);
+  });
+});
+
+// ── revertirGastoDeSaldo() ───────────────────────────────────────
+
+describe('revertirGastoDeSaldo()', () => {
+  it('devuelve el monto al saldo', () => {
+    expect(revertirGastoDeSaldo(70_000, 30_000)).toBe(100_000);
+  });
+  it('aplicar + revertir es idempotente', () => {
+    const inicial = 250_000;
+    const monto   = 80_000;
+    const tras = revertirGastoDeSaldo(aplicarGastoASaldo(inicial, monto), monto);
+    expect(tras).toBe(inicial);
+  });
+});
+
+// ── deltasPorEdicionDeGasto() ────────────────────────────────────
+
+describe('deltasPorEdicionDeGasto()', () => {
+  it('misma cuenta, mismo monto: no genera deltas', () => {
+    const antes   = { cuentaId: 'c1', monto: 50_000 };
+    const despues = { cuentaId: 'c1', monto: 50_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({});
+  });
+
+  it('misma cuenta, monto sube: delta negativo (descontar la diferencia)', () => {
+    const antes   = { cuentaId: 'c1', monto: 50_000 };
+    const despues = { cuentaId: 'c1', monto: 80_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c1: -30_000 });
+  });
+
+  it('misma cuenta, monto baja: delta positivo (devolver la diferencia)', () => {
+    const antes   = { cuentaId: 'c1', monto: 80_000 };
+    const despues = { cuentaId: 'c1', monto: 50_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c1: 30_000 });
+  });
+
+  it('cambia de cuenta: revierte en la vieja, descuenta en la nueva', () => {
+    const antes   = { cuentaId: 'c1', monto: 40_000 };
+    const despues = { cuentaId: 'c2', monto: 40_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c1: 40_000, c2: -40_000 });
+  });
+
+  it('cambia cuenta y monto', () => {
+    const antes   = { cuentaId: 'c1', monto: 40_000 };
+    const despues = { cuentaId: 'c2', monto: 60_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c1: 40_000, c2: -60_000 });
+  });
+
+  it('el gasto antes no tenía cuenta (migración de gasto viejo)', () => {
+    const antes   = { cuentaId: null, monto: 40_000 };
+    const despues = { cuentaId: 'c2', monto: 40_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c2: -40_000 });
+  });
+
+  it('el gasto pierde la cuenta (caso defensivo)', () => {
+    const antes   = { cuentaId: 'c1', monto: 40_000 };
+    const despues = { cuentaId: null, monto: 40_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({ c1: 40_000 });
+  });
+
+  it('ambos sin cuenta: no genera deltas', () => {
+    const antes   = { cuentaId: null, monto: 40_000 };
+    const despues = { cuentaId: null, monto: 60_000 };
+    expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({});
   });
 });

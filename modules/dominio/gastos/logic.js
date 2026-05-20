@@ -102,8 +102,78 @@ export function validarGasto(datos) {
   if (!datos.fecha?.trim()) {
     errores.push('La fecha es obligatoria.');
   }
+  if (!datos.cuentaId?.trim()) {
+    errores.push('Debés elegir de qué cuenta sale la plata.');
+  }
 
   return errores;
+}
+
+// ── EFECTO SOBRE CUENTAS ─────────────────────────────────────────
+
+/**
+ * Calcula el nuevo saldo de una cuenta tras aplicarle un gasto.
+ * El saldo puede quedar negativo: la app no impide sobregirar (es
+ * decisión del usuario y permite registrar movimientos sin importar
+ * el orden de carga).
+ *
+ * @param {number} saldoActual
+ * @param {number} monto
+ * @returns {number} nuevo saldo
+ */
+export function aplicarGastoASaldo(saldoActual, monto) {
+  return (saldoActual ?? 0) - (monto ?? 0);
+}
+
+/**
+ * Calcula el nuevo saldo de una cuenta tras revertir un gasto previamente
+ * descontado (al editar o eliminar).
+ *
+ * @param {number} saldoActual
+ * @param {number} monto
+ * @returns {number} nuevo saldo
+ */
+export function revertirGastoDeSaldo(saldoActual, monto) {
+  return (saldoActual ?? 0) + (monto ?? 0);
+}
+
+/**
+ * Calcula el delta que hay que aplicar al saldo de una cuenta cuando un
+ * gasto se edita. Maneja tres casos:
+ *   1. Cambia solo el monto: delta sobre la misma cuenta.
+ *   2. Cambia solo la cuenta: revierte en la vieja, descuenta en la nueva.
+ *   3. Cambian ambos.
+ *
+ * Devuelve un mapa { cuentaId → deltaASumar }.
+ * Un delta positivo significa "el saldo debe subir" (revertir un descuento);
+ * un delta negativo significa "el saldo debe bajar" (aplicar un descuento).
+ *
+ * @param {{ cuentaId: string|null, monto: number }} antes
+ * @param {{ cuentaId: string|null, monto: number }} despues
+ * @returns {Record<string, number>}
+ */
+export function deltasPorEdicionDeGasto(antes, despues) {
+  const deltas = {};
+  const cuentaAntes  = antes?.cuentaId  ?? null;
+  const cuentaDesp   = despues?.cuentaId ?? null;
+  const montoAntes   = Number(antes?.monto  ?? 0);
+  const montoDespues = Number(despues?.monto ?? 0);
+
+  if (cuentaAntes === cuentaDesp) {
+    if (cuentaAntes !== null) {
+      // Misma cuenta: solo aplico la diferencia de monto.
+      // Si el nuevo monto es mayor, el saldo baja más → delta negativo.
+      const delta = montoAntes - montoDespues;
+      if (delta !== 0) deltas[cuentaAntes] = delta;
+    }
+    return deltas;
+  }
+
+  // Cuentas distintas: revierto en la vieja, descuento en la nueva.
+  if (cuentaAntes !== null)   deltas[cuentaAntes] = (deltas[cuentaAntes]  ?? 0) + montoAntes;
+  if (cuentaDesp  !== null)   deltas[cuentaDesp]  = (deltas[cuentaDesp]   ?? 0) - montoDespues;
+
+  return deltas;
 }
 
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────

@@ -212,6 +212,36 @@
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
   line-height: var(--fk-leading-relaxed);
+  margin-top: var(--fk-space-2);
+}
+.form-hint--muted   { color: var(--fk-text-muted); }
+.form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
+
+/* Empty-state que reemplaza al form cuando faltan prerrequisitos
+   (ej: intentar crear un gasto sin tener cuentas creadas). */
+.form-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-6) var(--fk-space-4);
+}
+.form-empty__icon {
+  font-size: var(--fk-text-4xl);
+  margin: 0;
+}
+.form-empty__title {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.form-empty__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  max-width: 36ch;
+  margin: 0 0 var(--fk-space-3);
 }
 .list-item__hint {
   font-size: var(--fk-text-xs);

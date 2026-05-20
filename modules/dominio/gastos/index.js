@@ -15,9 +15,13 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { hoy } from '../../infra/utils.js';
+import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarGasto, normalizarGasto, validarGastoRapido, normalizarGastoRapido } from './logic.js';
+import {
+  validarGasto, normalizarGasto,
+  validarGastoRapido, normalizarGastoRapido,
+  aplicarGastoASaldo, revertirGastoDeSaldo, deltasPorEdicionDeGasto,
+} from './logic.js';
 import { renderListaGastos, renderResumenGastos, renderFormGasto } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -27,13 +31,14 @@ function _nuevoGasto() {
   if (!overlay) return;
   resetModal(overlay);
 
+  // Re-inyectar el form cada vez: las opciones del selector de cuenta
+  // dependen de S.cuentas, que puede haber cambiado desde la última apertura.
+  _montarFormGasto();
+
   // Pre-rellenar la fecha con hoy para mejor UX.
   const fechaInput = overlay.querySelector('#gasto-fecha');
   if (fechaInput) fechaInput.value = hoy();
 
-  // Limpiar marcador de edicion para que el form se comporte como "nuevo".
-  const form = document.getElementById('form-gasto');
-  if (form) delete form.dataset.id;
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nuevo gasto';
 
@@ -56,8 +61,20 @@ function _guardarGasto() {
   const gasto  = normalizarGasto(datos);
 
   if (idEdit) {
+    // En edición calculamos los deltas a aplicar a los saldos comparando
+    // contra el gasto anterior. Maneja cambios de monto y/o de cuenta.
+    const anterior = S.gastos.find(g => g.id === idEdit);
+    if (anterior) {
+      const deltas = deltasPorEdicionDeGasto(
+        { cuentaId: anterior.cuentaId, monto: anterior.monto },
+        { cuentaId: gasto.cuentaId,    monto: gasto.monto    },
+      );
+      _aplicarDeltasASaldos(deltas);
+    }
     editar('gastos', idEdit, gasto);
   } else {
+    // En creación descontamos el monto del saldo de la cuenta elegida.
+    _ajustarSaldoCuenta(gasto.cuentaId, -gasto.monto);
     guardar('gastos', gasto);
   }
 
@@ -81,6 +98,8 @@ function _editarGasto(el) {
   if (!overlay) return;
 
   resetModal(overlay);
+  _montarFormGasto();
+
   const form = document.getElementById('form-gasto');
   if (!form) return;
 
@@ -91,6 +110,14 @@ function _editarGasto(el) {
   form.querySelector('[name="fecha"]').value       = gasto.fecha       ?? hoy();
   const notaEl = form.querySelector('[name="nota"]');
   if (notaEl) notaEl.value = gasto.nota ?? '';
+
+  // Precargar cuenta si el gasto la tenía (los gastos de versiones previas
+  // pueden venir con cuentaId null - el usuario tendrá que elegir una).
+  const cuentaSel = form.querySelector('[name="cuentaId"]');
+  if (cuentaSel) {
+    cuentaSel.value = gasto.cuentaId ?? '';
+    _actualizarSaldoDisponible();
+  }
 
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) {
@@ -218,6 +245,9 @@ async function _eliminarGasto(el) {
   });
   if (!ok) return;
 
+  // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta).
+  _ajustarSaldoCuenta(gasto.cuentaId, +gasto.monto);
+
   eliminar('gastos', id);
   renderResumenGastos();
   renderListaGastos();
@@ -225,21 +255,94 @@ async function _eliminarGasto(el) {
   announce(`Gasto "${gasto.descripcion}" eliminado.`);
 }
 
+// ── HELPERS DE SALDO ─────────────────────────────────────────────
+
+/**
+ * Ajusta el saldo de la cuenta indicada en `delta` (positivo o negativo).
+ * No-op si `cuentaId` es null/undefined o la cuenta no existe.
+ * Usa `editar()` para que dispare save() + state:change.
+ *
+ * @param {string|null|undefined} cuentaId
+ * @param {number} delta - positivo suma, negativo descuenta.
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = S.cuentas.find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  const nuevoSaldo = (cuenta.saldo ?? 0) + delta;
+  editar('cuentas', cuentaId, { saldo: nuevoSaldo });
+}
+
+/**
+ * Aplica un mapa de deltas { cuentaId → delta } a los saldos.
+ * Útil al editar un gasto que puede mover plata entre cuentas.
+ * @param {Record<string, number>} deltas
+ */
+function _aplicarDeltasASaldos(deltas) {
+  for (const [cuentaId, delta] of Object.entries(deltas)) {
+    _ajustarSaldoCuenta(cuentaId, delta);
+  }
+}
+
+/**
+ * Refresca el texto del display `#gasto-saldo-disponible` según la cuenta
+ * seleccionada en el `<select name="cuentaId">`. Si no hay cuenta elegida,
+ * muestra el placeholder original. Si la cuenta tiene saldo negativo,
+ * usa una clase de advertencia.
+ */
+function _actualizarSaldoDisponible() {
+  const sel = document.getElementById('gasto-cuenta');
+  const tip = document.getElementById('gasto-saldo-disponible');
+  if (!sel || !tip) return;
+
+  const cuentaId = sel.value;
+  if (!cuentaId) {
+    tip.textContent = 'Elegí una cuenta para ver el saldo disponible.';
+    tip.classList.remove('form-hint--danger');
+    tip.classList.add('form-hint--muted');
+    return;
+  }
+
+  const cuenta = S.cuentas.find(c => c.id === cuentaId);
+  if (!cuenta) {
+    tip.textContent = 'Cuenta no encontrada.';
+    return;
+  }
+
+  const saldo = cuenta.saldo ?? 0;
+  tip.textContent = `Saldo disponible en ${cuenta.nombre}: ${f(saldo)}`;
+  tip.classList.toggle('form-hint--danger', saldo <= 0);
+  tip.classList.toggle('form-hint--muted',  saldo >  0);
+}
+
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
-function _inyectarForm() {
+/**
+ * (Re)Inyecta el HTML del formulario de gasto en el modal y attacha los
+ * listeners. Se llama desde `_nuevoGasto()` y `_editarGasto()` cada vez
+ * que el modal se abre, porque las opciones del selector de cuenta
+ * dependen de `S.cuentas`, que puede cambiar entre aperturas.
+ */
+function _montarFormGasto() {
   const body = document.getElementById('modal-gasto-body');
   if (!body) return;
 
   body.innerHTML = renderFormGasto();
 
-  body.querySelector('#form-gasto')?.addEventListener('submit', (e) => {
+  const form = body.querySelector('#form-gasto');
+  if (!form) return;  // empty state (sin cuentas): no hay form, no hay listeners.
+
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarGasto();
   });
 
-  // El form de gasto rapido vive directamente en index.html (no necesita inyectar
-  // HTML porque es muy simple). Atachar el submit aqui.
+  // Cada cambio del select actualiza el display de saldo disponible.
+  body.querySelector('#gasto-cuenta')?.addEventListener('change', _actualizarSaldoDisponible);
+}
+
+/** Attacha submit del form de gasto rápido que vive estático en index.html. */
+function _attacharGastoRapido() {
   document.getElementById('form-gasto-rapido')?.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarGastoRapido();
@@ -252,7 +355,9 @@ export function initGastos() {
   registrarAccion('eliminar-gasto', _eliminarGasto);
   registrarAccion('gasto-rapido', _abrirGastoRapido);
 
-  _inyectarForm();
+  // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
+  // Solo dejamos attachado el listener del form rápido (HTML estático).
+  _attacharGastoRapido();
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'gastos') {

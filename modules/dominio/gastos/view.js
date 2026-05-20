@@ -95,6 +95,11 @@ function _renderEmptyState() {
 
 /**
  * Devuelve el HTML del formulario de nuevo gasto.
+ *
+ * Incluye un selector de cuenta obligatorio y un display reactivo
+ * `#gasto-saldo-disponible` que muestra el saldo de la cuenta elegida
+ * (lo actualiza el listener `change` en `gastos/index.js`).
+ *
  * @returns {string}
  */
 export function renderFormGasto() {
@@ -102,12 +107,39 @@ export function renderFormGasto() {
     .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
+  const cuentas = S.cuentas.filter(c => c.activa !== false);
+  const cuentaOpts = cuentas
+    .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`)
+    .join('');
+
+  // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
+  // El gasto no puede existir sin cuenta de origen.
+  if (cuentas.length === 0) {
+    return `
+      <div class="form-empty">
+        <p class="form-empty__icon" aria-hidden="true">🏦</p>
+        <p class="form-empty__title">Primero necesitás una cuenta</p>
+        <p class="form-empty__desc">Para registrar un gasto, agregá al menos una cuenta o billetera en la sección Tesorería. Así sabés de dónde sale la plata.</p>
+        <a class="btn btn-primary" href="#tesor" data-action="modal-close">Ir a Tesorería</a>
+      </div>`;
+  }
+
   return `
     <form id="form-gasto" novalidate>
       <div class="form-group">
         <label for="gasto-descripcion" class="label">Descripción</label>
         <input id="gasto-descripcion" name="descripcion" class="input" type="text"
                placeholder="Ej. Almuerzo en restaurante" required aria-required="true" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="gasto-cuenta" class="label">De qué cuenta sale</label>
+        <select id="gasto-cuenta" name="cuentaId" class="input" required aria-required="true">
+          <option value="">Seleccionar…</option>
+          ${cuentaOpts}
+        </select>
+        <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
+          Elegí una cuenta para ver el saldo disponible.
+        </p>
       </div>
       <div class="form-group">
         <label for="gasto-monto" class="label">Monto (COP)</label>
