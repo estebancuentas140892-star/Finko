@@ -365,3 +365,86 @@
       transform var(--fk-transition-fast);
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR COLAPSABLE (solo desktop >= 1024px)
+   Mecanismo:
+   - body.sidebar-collapsed  : estado colapsado persistido en localStorage
+   - body.sidebar-animating  : activa la transicion CSS solo durante el toggle
+                               (evita animar en carga inicial y en resize)
+   - CSS override de --fk-sidebar-width hace que .app-shell ajuste su grid.
+   ════════════════════════════════════════════════════════════ */
+
+/* Icono chevron del boton colapsar: transition propia */
+.sidebar__collapse-icon {
+  display: block;
+  transition: transform var(--fk-transition-base);
+  flex-shrink: 0;
+}
+
+/* Separador visual del boton colapsar respecto a los demas footer items */
+.sidebar__collapse-btn {
+  margin-top: var(--fk-space-1);
+  border-top: 1px solid var(--fk-border-subtle);
+  padding-top: var(--fk-space-3);
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+}
+.sidebar__collapse-btn:hover {
+  color: var(--fk-text-primary);
+}
+
+/* Estado colapsado: solo desktop */
+@media (min-width: 1024px) {
+
+  /* Override del token de ancho: el grid de .app-shell se ajusta automaticamente */
+  body.sidebar-collapsed {
+    --fk-sidebar-width: var(--fk-sidebar-collapsed);
+  }
+
+  /* Textos que se ocultan al colapsar */
+  body.sidebar-collapsed .sidebar__logo-text,
+  body.sidebar-collapsed .nav-group__label,
+  body.sidebar-collapsed .nav-item__label {
+    display: none;
+  }
+
+  /* Nav items: centrar el icono */
+  body.sidebar-collapsed .nav-item {
+    justify-content: center;
+    padding-inline: 0;
+    gap: 0;
+  }
+
+  /* Logo: centrar el emoji */
+  body.sidebar-collapsed .sidebar__logo {
+    justify-content: center;
+    padding-inline: var(--fk-space-3);
+    gap: 0;
+  }
+
+  /* Footer: centrar items */
+  body.sidebar-collapsed .sidebar__footer {
+    padding-inline: var(--fk-space-2);
+    align-items: center;
+  }
+
+  /* Boton colapsar: sin separador cuando colapsado (no hay texto que separar) */
+  body.sidebar-collapsed .sidebar__collapse-btn {
+    margin-top: 0;
+    border-top: none;
+    padding-top: var(--fk-space-2);
+  }
+
+  /* Chevron: apunta a la derecha (expandir) cuando colapsado */
+  body.sidebar-collapsed .sidebar__collapse-icon {
+    transform: scaleX(-1);
+  }
+}
+
+/* Transicion del grid solo durante el toggle (no en carga ni resize) */
+@media (prefers-reduced-motion: no-preference) and (min-width: 1024px) {
+  body.sidebar-animating .app-shell {
+    transition: grid-template-columns 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

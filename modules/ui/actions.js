@@ -7,7 +7,7 @@
  * - Las acciones built-in del shell (theme-toggle, modal-*) se registran en initAcciones().
  */
 
-import { toggleTheme } from './shell.js';
+import { toggleTheme, toggleSidebarCollapse } from './shell.js';
 import { abrirModal, cerrarModal } from './modales.js';
 
 /** Mapa de acciones registradas: nombre → función handler. */
@@ -58,6 +58,7 @@ function _handleKeydown(e) {
  */
 export function initAcciones() {
   registrarAccion('theme-toggle', () => toggleTheme());
+  registrarAccion('sidebar-toggle', () => toggleSidebarCollapse());
 
   registrarAccion('modal-open', (el) => {
     const overlay = document.getElementById(el.dataset.modal);

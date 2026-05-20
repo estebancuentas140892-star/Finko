@@ -7,6 +7,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ux) - Sidebar colapsable en desktop (UX#3) · 2026-05-19
+
+Boton para colapsar el sidebar lateral en desktop (>= 1024px) a solo iconos (64px de ancho).
+
+**Cambios:**
+- `index.html`: boton `sidebar__collapse-btn` al final de `.sidebar__footer`, con SVG
+  chevron inline (izquierda cuando expandido, derecha cuando colapsado via `scaleX(-1)`).
+- `styles/layout.css`: nueva seccion "SIDEBAR COLAPSABLE". Estado `body.sidebar-collapsed`
+  overridea `--fk-sidebar-width` a `var(--fk-sidebar-collapsed)` (64px, token ya existia).
+  `.sidebar__collapse-btn` con borde superior separador y color muted. Clase temporal
+  `body.sidebar-animating` activa `transition: grid-template-columns 250ms` en `.app-shell`
+  solo durante el toggle del usuario (no en carga inicial ni resize).
+  Guard `@media (min-width: 1024px)` en todos los selectores de estado colapsado.
+- `modules/ui/shell.js`: `toggleSidebarCollapse()` alterna la clase + timer 300ms para
+  limpiar `.sidebar-animating`. `initSidebarCollapse()` restaura el estado desde
+  `localStorage` clave `fk_sidebar_collapsed`. `_syncCollapseButton()` actualiza
+  `aria-expanded` y label del boton. `_syncNavTitles()` agrega/quita `title` en items
+  para tooltip nativo al hover cuando los labels estan ocultos.
+- `modules/ui/actions.js`: registra accion `sidebar-toggle` que llama `toggleSidebarCollapse()`.
+- `modules/ui/bootstrap.js`: llama `initSidebarCollapse()` despues de `initShell()`.
+- `tests/e2e/smoke.test.js`: suite "Sidebar colapsable (desktop)" con 3 tests.
+- `service-worker.js`: v35 a v36.
+
+**Metricas:** 805/805 unit verdes, 41/41 E2E verdes.
+
+---
+
 ### feat(ux) - Logos/avatares de bancos en selector de cuenta (UX#4) · 2026-05-19
 
 Custom bank picker visual que reemplaza el `<select>` nativo de bancos por un combobox

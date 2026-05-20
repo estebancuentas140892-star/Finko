@@ -281,3 +281,56 @@ test.describe('Tema claro/oscuro', () => {
     ).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+// ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
+// Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
+// Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.
+
+test.describe('Sidebar colapsable (desktop)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/');
+    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+  });
+
+  test('colapsa el sidebar y oculta los labels', async ({ page }) => {
+    const btn = page.locator('[data-action="sidebar-toggle"]');
+
+    // Estado inicial: expandido
+    await expect(btn).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.sidebar__logo-text')).toBeVisible();
+
+    // Colapsar
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.sidebar__logo-text')).not.toBeVisible();
+  });
+
+  test('expande el sidebar nuevamente', async ({ page }) => {
+    const btn = page.locator('[data-action="sidebar-toggle"]');
+
+    // Colapsar y volver a expandir
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-expanded', 'false');
+
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.sidebar__logo-text')).toBeVisible();
+  });
+
+  test('el estado colapsado persiste tras recarga', async ({ page }) => {
+    const btn = page.locator('[data-action="sidebar-toggle"]');
+
+    await btn.click();
+    await expect(btn).toHaveAttribute('aria-expanded', 'false');
+
+    await page.reload();
+    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+
+    // Debe seguir colapsado
+    await expect(
+      page.locator('[data-action="sidebar-toggle"]')
+    ).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.sidebar__logo-text')).not.toBeVisible();
+  });
+});

@@ -12,7 +12,7 @@
 
 import { loadData } from '../core/storage.js';
 import { S } from '../core/state.js';
-import { initShell, markActiveNav } from './shell.js';
+import { initShell, markActiveNav, initSidebarCollapse } from './shell.js';
 import { initRouter } from '../infra/router.js';
 import { initAcciones } from './actions.js';
 import { initOnboarding } from './onboarding.js';
@@ -50,6 +50,7 @@ initConfig();
 initImport();
 
 initShell();
+initSidebarCollapse();
 initRouter(markActiveNav);
 initOnboarding();
 initMenuMas();

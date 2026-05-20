@@ -148,6 +148,21 @@
           <span class="nav-item__icon" aria-hidden="true">⚙️</span>
           <span class="nav-item__label">Ajustes</span>
         </a>
+
+        <!-- Boton colapsar sidebar - solo visible en desktop (>= 1024px) -->
+        <button class="nav-item sidebar__collapse-btn" type="button"
+                data-action="sidebar-toggle"
+                aria-label="Colapsar navegación"
+                aria-expanded="true">
+          <span class="nav-item__icon" aria-hidden="true">
+            <svg class="sidebar__collapse-icon" width="16" height="16"
+                 viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.75"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="nav-item__label">Colapsar</span>
+        </button>
       </div>
 
     </nav>
