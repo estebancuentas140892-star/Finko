@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-20 (fix: toast de logro 2.5s + sw-register auto-update)
+> Última actualización: 2026-05-20 (fix: gastos sin saldo + cuota manejo auto-sync)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,61 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada con compromiso fijo · 2026-05-20
+Nueva feature opcional: al crear/editar una cuenta, la persona puede activar "cuota de manejo"
+(tarifa mensual que el banco cobra). Finko auto-genera un Compromiso tipo Fijo con frecuencia Mensual,
+campo `esCuotaManejo=true` y `cuentaId` del banco. Sincronización idempotente: si la cuota cambia
+de monto o día, el compromiso se edita; si se desactiva, se elimina; si se activa, se crea.
+Visible en Compromisos y Agenda con ícono diferenciado.
+
+**Schema:** Bump v4→v5. Campo opcional `cuotaManejo: {monto, diaCobro}` en Cuenta. Campo opcional
+`cuentaId` + bandera `esCuotaManejo` en Compromiso. Migración idempotente sin pérdida de datos.
+
+**Archivos:**
+- `modules/core/state.js`: typedef CuotaManejo, schema v5
+- `modules/core/storage.js`: SCHEMA_VERSION=5, migración v4→v5 (no-op)
+- `modules/dominio/tesoreria/logic.js`: parseCuotaManejo(), validarCuenta extended, normalizarCuenta,
+  compromisoDesdeCuotaManejo(), compromisoCuotaManejoDeCuenta()
+- `modules/dominio/tesoreria/view.js`: renderFormCuenta() con checkbox + fieldset, hint en lista
+- `modules/dominio/tesoreria/index.js`: _sincronizarCuotaManejo() orchestrator (create/update/delete),
+  _toggleCuotaFieldset(), listeners en form
+- `styles/components.css`: .checkbox-row, .cuota-fieldset
+- `tests/unit/tesoreria.test.js`: +16 tests (parseCuotaManejo, validarCuenta con cuota, etc.)
+- `tests/unit/state.test.js`: versión bump check
+- `service-worker.js`: v50→v51
+
+**Tests:** 880/880 verdes (835 unit + 45 integration + nuevo banco picker).
+
+### fix(gastos, tesoreria) - "Tu plata disponible hoy" no actualizaba con gastos · 2026-05-20
+Bug crítico: crear un gasto no decrementaba "Tu plata disponible" (saldo de cuentas).
+Raíz: el formulario de gastos no tenía selector de cuenta, todo se guardaba con `cuentaId=null`.
+`updSaldo()` solo suma `S.cuentas.saldo`, así que los gastos sin cuenta nunca tocaban nada.
+
+**Solución:** selector de cuenta **obligatorio** en form de gasto. Nuevo concepto: "gasto rápido"
+(cuentaId=null, solo permite completar con cuenta en modal de edición). Al crear/editar/eliminar,
+se ajusta el saldo de la cuenta con precisión:
+- Crear: descuenta monto de la cuenta
+- Editar: revierte monto de cuenta vieja, descuenta de nueva (maneja cambios simultáneos cuenta+monto)
+- Eliminar: devuelve monto a cuenta
+- Gasto rápido incompleto: no afecta saldo (será un "gasto pendiente" UI future)
+
+**Archivos:**
+- `modules/dominio/gastos/logic.js`: validarGasto requiere cuentaId; aplicarGastoASaldo(),
+  revertirGastoDeSaldo(), deltasPorEdicionDeGasto() (funciones puras para saldo math)
+- `modules/dominio/gastos/view.js`: renderFormGasto() con <select cuentaId> obligatorio, empty state
+  si no hay cuentas, hint reactivo "#gasto-saldo-disponible" mostrando saldo de la cuenta seleccionada
+- `modules/dominio/gastos/index.js`: _guardarGasto() con _ajustarSaldoCuenta() en create/edit/delete,
+  _editarGasto() pre-rellena selector + actualiza hint, _montarFormGasto() inyecta form on-demand
+  para ver cuentas actualizadas entre aperturas
+- `styles/components.css`: .form-hint--muted, .form-hint--danger, .form-empty con ícono
+- `tests/unit/gastos.test.js`: +29 tests (validar cuentaId, aplicarGastoASaldo, deltas, etc.)
+- `service-worker.js`: v49→v50
+
+**Tests:** 835/835 verdes.
+
+**Impacto visual:** "Tu plata disponible hoy" dashboard ahora baja correctamente al crear gasto;
+saldo de cuenta en tesorería se updatea en vivo. Gasto rápido no toca saldo (feature future).
 
 ### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
 Dos ajustes para resolver reportes del usuario en mobile:

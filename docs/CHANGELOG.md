@@ -7,6 +7,96 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada con compromiso fijo · 2026-05-20
+
+Nueva feature opcional en el dominio de tesorería: al crear o editar una cuenta, la persona puede
+activar "cuota de manejo" (tarifa mensual que el banco cobra en días específicos). Cuando está
+activa, Finko auto-genera un Compromiso de tipo Fijo con frecuencia Mensual, vinculado a la cuenta
+mediante campos `esCuotaManejo=true` y `cuentaId`. La sincronización es **idempotente**:
+
+- Cuota **nueva** (antes no existía) → crear Compromiso
+- Cuota **editada** (monto o día cambiaron) → editar Compromiso (solo si campos reales cambiaron)
+- Cuota **eliminada** (checkbox desactivado) → eliminar Compromiso vinculado
+- Cuenta **eliminada** → cascada a Compromiso
+
+**Schema:** Bump v4→v5. Cambios:
+- Cuenta: campo opcional `cuotaManejo: {monto, diaCobro}`
+- Compromiso: campo opcional `cuentaId`, bandera `esCuotaManejo`
+- Migración v4→v5 es idempotente (cuentas viejas quedan con `cuotaManejo=null`, compromisos viejos
+  quedan con `esCuotaManejo=false`). Cero pérdida de datos.
+
+**Archivos modificados:**
+- `modules/core/state.js`: new typedef `CuotaManejo`, schema type definitions, bump _version 4→5
+- `modules/core/storage.js`: SCHEMA_VERSION=5, migration v4→v5 (no-op data transform)
+- `modules/dominio/tesoreria/logic.js`: parseCuotaManejo(datos), validarCuenta() extended para
+  validar cuota si toggle activo, normalizarCuenta() preserva cuotaManejo, compromisoDesdeCuotaManejo()
+  genera shape, compromisoCuotaManejoDeCuenta() busca linked compromise
+- `modules/dominio/tesoreria/view.js`: renderFormCuenta() agrega checkbox "cuota de manejo mensual"
+  + fieldset hidden con inputs monto/dia, renderCuentaItem() muestra hint visual cuando cuota activa
+- `modules/dominio/tesoreria/index.js`: _sincronizarCuotaManejo() orchestrator idempotente (3 vías:
+  create, update, delete), _toggleCuotaFieldset() muestra/oculta según checkbox, _inyectarForm()
+  adjunta listener en el form
+- `styles/components.css`: .checkbox-row (flex + gap), .cuota-fieldset (border, padding, [hidden])
+- `tests/unit/tesoreria.test.js`: +16 tests cubriendo parseCuotaManejo, validarCuenta con/sin cuota,
+  normalizarCuenta, compromisoDesdeCuotaManejo, compromisoCuotaManejoDeCuenta
+- `tests/unit/state.test.js`: actualizado check de _version (4→5)
+- `service-worker.js`: cache bump v50→v51
+
+**Tests:** 880/880 verdes (Unit 835 + Integration 45).
+
+**Impacto:**
+- La sección Compromisos now muestra cuotas de manejo con ícono diferenciado y puede editarlas.
+- La sección Agenda now muestra cuotas en el calendario mensual (Fijo, Mensual, auto-generadas).
+- El formulario de tesorería refleja la feature visualmente (checkbox + fieldset conditional).
+
+---
+
+### fix(gastos, tesoreria) - "Tu plata disponible hoy" no actualizaba con gastos · 2026-05-20
+
+**Reporte:** Al crear un gasto desde la sección Gastos, el dashboard ("Tu plata disponible hoy")
+no se actualizaba. El saldo seguía mostrando el valor anterior, aunque el gasto estaba guardado.
+
+**Raíz:** El formulario de gastos no tenía selector de cuenta. Todos los gastos se guardaban con
+`cuentaId=null`. La función `updSaldo()` solo suma `S.cuentas.saldo` (saldos de cuentas), así que
+gastos sin cuenta nunca afectaban el cálculo de disponible.
+
+**Solución:** Hacer **obligatorio** el selector de cuenta en la creación de gasto. Introducir
+concepto de "gasto rápido" (cuentaId=null) como estado intermedio que se completa editando el
+gasto en modal (seleccionando la cuenta real). Nuevo sistema de descuento de saldo:
+
+- **Crear gasto:** descuenta monto de cuenta seleccionada
+- **Editar gasto:** revierte monto de cuenta vieja, descuenta de nueva (soporta cambios
+  simultáneos cuenta + monto)
+- **Eliminar gasto:** devuelve monto a cuenta
+- **Gasto rápido incompleto (cuentaId=null):** no toca saldo hasta que se edite con cuenta
+
+**Archivos modificados:**
+- `modules/dominio/gastos/logic.js`: validarGasto() requiere cuentaId, nuevas funciones puras
+  (sin DOM): aplicarGastoASaldo(cuenta, monto), revertirGastoDeSaldo(cuenta, monto),
+  deltasPorEdicionDeGasto() calcula cambios precisos en dos cuentas
+- `modules/dominio/gastos/view.js`: renderFormGasto() agrega <select name="cuentaId" required>,
+  empty state "No hay cuentas" si no existen, input hint "#gasto-saldo-disponible" reactivo
+  mostrando "Saldo disponible en [Cuenta]: $X"
+- `modules/dominio/gastos/index.js`: _guardarGasto() llama _ajustarSaldoCuenta(cuentaId, -monto)
+  en create/edit, _editarGasto() pre-rellena selector + _actualizarSaldoDisponible(),
+  _eliminarGasto() revierte, _montarFormGasto() inyecta form on-demand (ver cuentas actualizadas
+  entre aperturas)
+- `styles/components.css`: .form-hint--muted, .form-hint--danger, .form-empty (ícono + title + desc)
+- `tests/unit/gastos.test.js`: +29 tests (validarGasto require cuentaId, aplicarGastoASaldo 4 casos,
+  revertirGastoDeSaldo 2 casos, deltasPorEdicionDeGasto 8 casos cubriendo misma cuenta, cambios
+  cuentas, cambios ambos, migraciones)
+- `service-worker.js`: cache bump v49→v50
+
+**Tests:** 835/835 unit verdes.
+
+**Impacto visual:**
+- Dashboard "Tu plata disponible hoy" now decreases correctly on gasto create.
+- Tesorería sección muestra saldo decremented immediately.
+- Form hint below monto input shows "Saldo disponible: $X" cuando cuenta seleccionada.
+- Empty state guía usuario a crear cuenta first (CTA a Tesorería).
+
+---
+
 ### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
 
 El usuario reportó dos problemas en mobile que resultaron tener distintas causas:
