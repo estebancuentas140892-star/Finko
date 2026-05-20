@@ -14,6 +14,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
+import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { dialogo } from '../../infra/utils.js';
 import { validarPersonal, normalizarPersonal, aplicarPago, calcularPendiente } from './logic.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
@@ -35,7 +36,7 @@ function _guardarPersonal() {
   const errores = validarPersonal(datos);
 
   if (errores.length > 0) {
-    announce(errores[0], 'assertive');
+    mostrarErroresForm(form, errores);
     return;
   }
 

@@ -14,6 +14,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
+import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { dialogo } from '../../infra/utils.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
 import { renderListaMetas, renderFormMeta } from './view.js';
@@ -35,7 +36,7 @@ function _guardarMeta() {
   const errores = validarMeta(datos);
 
   if (errores.length > 0) {
-    announce(errores[0], 'assertive');
+    mostrarErroresForm(form, errores);
     return;
   }
 

@@ -95,15 +95,15 @@ describe('validarCuenta()', () => {
     expect(validarCuenta(datosFormValidos)).toEqual([]);
   });
 
-  it('reporta error si nombre está vacío', () => {
+  it('nombre vacío NO genera error (es opcional)', () => {
+    // El nombre se autogenera en normalizarCuenta() a partir de banco + tipo.
     const errores = validarCuenta({ ...datosFormValidos, nombre: '' });
-    expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/nombre/i);
+    expect(errores).toEqual([]);
   });
 
-  it('reporta error si nombre es solo espacios', () => {
+  it('nombre con solo espacios NO genera error (se autogenera)', () => {
     const errores = validarCuenta({ ...datosFormValidos, nombre: '   ' });
-    expect(errores.length).toBeGreaterThan(0);
+    expect(errores).toEqual([]);
   });
 
   it('reporta error si banco no se seleccionó', () => {
@@ -171,6 +171,26 @@ describe('normalizarCuenta()', () => {
     const result = normalizarCuenta(datosFormValidos);
     expect(result).not.toHaveProperty('id');
     expect(result).not.toHaveProperty('fechaCreacion');
+  });
+
+  it('autogenera nombre "{banco} {tipo}" si el usuario lo deja vacío', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, nombre: '', banco: 'Davivienda', tipo: 'Ahorros' });
+    expect(result.nombre).toBe('Davivienda Ahorros');
+  });
+
+  it('autogenera nombre con espacios en blanco también', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, nombre: '   ', banco: 'Nequi', tipo: 'Otro' });
+    expect(result.nombre).toBe('Nequi Otro');
+  });
+
+  it('evita duplicar "Efectivo Efectivo" cuando banco y tipo coinciden', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, nombre: '', banco: 'Efectivo', tipo: 'Efectivo' });
+    expect(result.nombre).toBe('Efectivo');
+  });
+
+  it('respeta el nombre del usuario si lo provee', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, nombre: 'Mi cuenta favorita', banco: 'Davivienda', tipo: 'Ahorros' });
+    expect(result.nombre).toBe('Mi cuenta favorita');
   });
 });
 

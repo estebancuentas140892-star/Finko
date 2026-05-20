@@ -15,6 +15,7 @@ import { registrarAccion }           from '../../ui/actions.js';
 import { abrirModal, cerrarModal }   from '../../ui/modales.js';
 import { renderSmart }               from '../../infra/render.js';
 import { announce }                  from '../../infra/a11y.js';
+import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { dialogo }                   from '../../infra/utils.js';
 import { validarPresupuesto, normalizarPresupuesto } from './logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto } from './view.js';
@@ -70,7 +71,7 @@ function _guardarPresupuesto(form) {
   const errores  = validarPresupuesto(datos, S.presupuestos, idActual);
 
   if (errores.length > 0) {
-    announce(errores[0], 'assertive');
+    mostrarErroresForm(form, errores);
     return;
   }
 

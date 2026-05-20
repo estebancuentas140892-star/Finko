@@ -15,6 +15,7 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { dialogo } from '../../infra/utils.js';
+import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { validarCuenta, normalizarCuenta } from './logic.js';
 import { renderNudgePrima, renderListaCuentas, renderFormCuenta } from './view.js';
 
@@ -67,7 +68,7 @@ function _guardarCuenta() {
   const errores = validarCuenta(datos);
 
   if (errores.length > 0) {
-    announce(errores[0], 'assertive');
+    mostrarErroresForm(form, errores);
     return;
   }
 

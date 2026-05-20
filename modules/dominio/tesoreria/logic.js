@@ -131,9 +131,7 @@ export function sugerirDistribucionPrima(salario, tieneDeudas) {
 export function validarCuenta(datos) {
   const errores = [];
 
-  if (!datos.nombre?.trim()) {
-    errores.push('El nombre de la cuenta es obligatorio.');
-  }
+  // Nombre es opcional: si esta vacio, normalizarCuenta() lo autogenera.
   if (!datos.banco?.trim() || datos.banco === '') {
     errores.push('Debés elegir un banco o billetera.');
   }
@@ -158,14 +156,30 @@ export function validarCuenta(datos) {
  * @returns {Omit<import('../../core/state.js').Cuenta, 'id' | 'fechaCreacion'>}
  */
 export function normalizarCuenta(datos) {
+  const banco  = datos.banco.trim();
+  const tipo   = datos.tipo;
+  // Si el usuario no escribio nombre, autogenerar uno legible:
+  //   "Davivienda Ahorros" / "Nequi Otro" / "Efectivo".
+  // Para el banco "Efectivo" + tipo "Efectivo" evitamos duplicar.
+  const nombreUsuario = datos.nombre?.trim();
+  const nombre = nombreUsuario || _autoNombre(banco, tipo);
   return {
-    nombre: datos.nombre.trim(),
-    banco: datos.banco.trim(),
-    tipo: datos.tipo,
+    nombre,
+    banco,
+    tipo,
     saldo: Number(datos.saldo) || 0,
-    icono: datos.icono?.trim() || _iconoPorBanco(datos.banco),
+    icono: datos.icono?.trim() || _iconoPorBanco(banco),
     activa: true,
   };
+}
+
+/** Genera un nombre legible cuando el usuario lo deja en blanco. */
+function _autoNombre(banco, tipo) {
+  if (!banco) return tipo || 'Cuenta';
+  if (!tipo)  return banco;
+  // Evitar redundancia "Efectivo Efectivo".
+  if (banco.toLowerCase() === tipo.toLowerCase()) return banco;
+  return `${banco} ${tipo}`;
 }
 
 /**

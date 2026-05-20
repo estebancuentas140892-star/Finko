@@ -250,6 +250,56 @@
   cursor: not-allowed;
 }
 
+/* Campo con error de validacion: borde rojo + tinte sutil. Aplicado por
+   form-errors.js al input cuyo nombre matchea el primer mensaje de error. */
+.field-invalid,
+.input.field-invalid {
+  border-color: var(--fk-danger, #ef4444) !important;
+  background: color-mix(in srgb, var(--fk-danger, #ef4444) 6%, var(--fk-bg-elevated));
+}
+.field-invalid:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-danger, #ef4444) 25%, transparent) !important;
+}
+
+/* Bloque de errores de formulario: lista visible al intentar guardar
+   un form invalido. form-errors.js lo inserta antes del primer hijo del
+   <form>. Se auto-borra al editar (input event). */
+.form-errors {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin-bottom: var(--fk-space-4);
+  background: color-mix(in srgb, var(--fk-danger, #ef4444) 8%, var(--fk-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--fk-danger, #ef4444) 30%, transparent);
+  border-left: 3px solid var(--fk-danger, #ef4444);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  animation: form-errors-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.form-errors__icon {
+  font-size: 1.1rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.form-errors__list {
+  margin: 0;
+  padding: 0 0 0 var(--fk-space-3);
+  list-style: disc;
+}
+.form-errors__list li {
+  margin: 0;
+}
+.form-errors__list li + li {
+  margin-top: var(--fk-space-1);
+}
+@keyframes form-errors-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Input con prefijo de moneda */
 .input-money {
   font-family: var(--fk-font-mono);
