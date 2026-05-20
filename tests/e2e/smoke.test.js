@@ -8,9 +8,11 @@
  * 4. Ingresos - registrar ingreso, verifica en lista.
  * 5. Gastos - registrar gasto, verifica en lista.
  * 6. Tesorería - agregar cuenta, saldo en dashboard se actualiza.
- * 7. Modales - Escape cierra el modal.
+ * 7. Gastos-Cuenta integrado - crear gasto con selector cuenta obligatorio,
+ *    verificar saldo decrementado, editar (cambiar monto), eliminar y restaurar.
  * 8. Tema - toggle claro/oscuro actualiza aria-pressed.
- * 9. Agenda - calendario mensual, navegación prev/next.
+ * 9. Sidebar - colapsable en desktop, estado persiste.
+ * 10. Agenda - calendario mensual, navegación prev/next.
  */
 
 import { test, expect } from '@playwright/test';
@@ -183,12 +185,33 @@ test.describe('Gastos - CRUD', () => {
   });
 
   test('registrar gasto y verifica en lista', async ({ page }) => {
+    // Precondición: crear una cuenta (cuentaId es obligatorio en gastos)
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    const formCuenta = page.locator('#modal-cuenta-body form');
+    await formCuenta.locator('[name="nombre"]').fill('Cta E2E Gastos');
+    await formCuenta.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__item').first().click();
+    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
+    await formCuenta.locator('[name="saldo"]').fill('500000');
+    await formCuenta.locator('button[type="submit"]').click();
+    await expect(page.locator('#lista-tesoreria')).toContainText('Cta E2E Gastos', { timeout: 3_000 });
+
+    // Ir a Gastos
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const form = page.locator('#modal-gasto-body form');
     await form.locator('[name="descripcion"]').fill('Mercado prueba E2E');
     await form.locator('[name="monto"]').fill('150000');
+    // Selector de cuenta (obligatorio)
+    await form.locator('select[name="cuentaId"]').selectOption('Cta E2E Gastos');
     // Seleccionar la primera opción real del select de categoría
     await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
@@ -243,7 +266,227 @@ test.describe('Tesorería - cuenta y saldo', () => {
   });
 });
 
-// ── SUITE 7: Tema ────────────────────────────────────────────────────────────
+// ── SUITE 7: Gastos-Cuenta (flujo integrado) ────────────────────────────────
+// Smoke test del flujo crítico: crear cuenta → crear gasto (selector cuenta
+// obligatorio) → verificar saldo decrementado → editar gasto (cambiar monto/cuenta)
+// → verificar saldo recalculado → eliminar gasto → verificar saldo restaurado.
+
+test.describe('Gastos-Cuenta (integrado)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    // Estado inicial: sin cuentas, sin gastos (localStorage vacío excepto onboarded)
+    await page.goto('/');
+    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+  });
+
+  test('crear cuenta, gasto con selector, verificar saldo decrementado', async ({ page }) => {
+    // 1. Crear una cuenta
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+
+    const formCuenta = page.locator('#modal-cuenta-body form');
+    await formCuenta.locator('[name="nombre"]').fill('Cuenta Prueba Gastos');
+    await formCuenta.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__item').first().click();
+    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
+    await formCuenta.locator('[name="saldo"]').fill('1000000');
+    await formCuenta.locator('button[type="submit"]').click();
+
+    // Esperar cierre y que la cuenta aparezca en la lista
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      'Cuenta Prueba Gastos',
+      { timeout: 3_000 }
+    );
+
+    // 2. Ir a Gastos y crear un gasto con selector de cuenta
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+
+    const formGasto = page.locator('#modal-gasto-body form');
+    await formGasto.locator('[name="descripcion"]').fill('Mercado gastos-cuenta');
+    await formGasto.locator('[name="monto"]').fill('100000');
+    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+
+    // Selector de cuenta OBLIGATORIO - debe estar visible
+    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Prueba Gastos');
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    await formGasto.locator('[name="fecha"]').fill(hoy);
+    await formGasto.locator('button[type="submit"]').click();
+
+    // Esperar cierre y que el gasto aparezca
+    await expect(page.locator('#lista-gastos')).toContainText(
+      'Mercado gastos-cuenta',
+      { timeout: 3_000 }
+    );
+
+    // 3. Ir a Tesorería y verificar que el saldo decrementó de 1000000 a 900000
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    // Buscar la cuenta en la lista - debe contener el nuevo saldo $900.000
+    await expect(page.locator('#lista-tesoreria')).toContainText('$900.000', {
+      timeout: 3_000,
+    });
+
+    // 4. Ir a Dashboard y verificar "Tu plata disponible hoy" muestra $900.000
+    await page.goto('/#dash');
+    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await expect(page.locator('#saldo-total')).toHaveText('$900.000', {
+      timeout: 3_000,
+    });
+  });
+
+  test('editar gasto: cambiar monto, verificar saldo recalculado', async ({ page }) => {
+    // Precondición: crear cuenta y gasto (similar a test anterior)
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    // Crear cuenta
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    const formCuenta = page.locator('#modal-cuenta-body form');
+    await formCuenta.locator('[name="nombre"]').fill('Cuenta Edit Prueba');
+    await formCuenta.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__item').first().click();
+    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
+    await formCuenta.locator('[name="saldo"]').fill('500000');
+    await formCuenta.locator('button[type="submit"]').click();
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      'Cuenta Edit Prueba',
+      { timeout: 3_000 }
+    );
+
+    // Crear gasto
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const formGasto = page.locator('#modal-gasto-body form');
+    await formGasto.locator('[name="descripcion"]').fill('Gasto a editar');
+    await formGasto.locator('[name="monto"]').fill('100000');
+    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Edit Prueba');
+    const hoy = new Date().toISOString().slice(0, 10);
+    await formGasto.locator('[name="fecha"]').fill(hoy);
+    await formGasto.locator('button[type="submit"]').click();
+    await expect(page.locator('#lista-gastos')).toContainText(
+      'Gasto a editar',
+      { timeout: 3_000 }
+    );
+
+    // Saldo debe estar en 400000 (500000 - 100000)
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      '$400.000',
+      { timeout: 3_000 }
+    );
+
+    // EDITAR: cambiar monto de 100000 a 150000 (total descuento 150000, saldo debe ser 350000)
+    await page.goto('/#gast');
+
+    // Buscar el list-item que contiene "Gasto a editar" y clickear su botón de editar
+    const gastoList = page.locator('#lista-gastos');
+    const gastoItem = gastoList.locator('article').filter({ hasText: 'Gasto a editar' }).first();
+    const editBtn = gastoItem.locator('[data-action="editar-gasto"]');
+    await editBtn.click();
+
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const formGastoEdit = page.locator('#modal-gasto-body form');
+    await formGastoEdit.locator('[name="monto"]').fill('150000');
+    await formGastoEdit.locator('button[type="submit"]').click();
+
+    // Verificar que se cerró el modal
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({
+      timeout: 3_000,
+    });
+
+    // Ir a Tesorería y verificar que el saldo ahora es $350.000 (500000 - 150000)
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      '$350.000',
+      { timeout: 3_000 }
+    );
+  });
+
+  test('eliminar gasto, verificar saldo restaurado', async ({ page }) => {
+    // Precondición: crear cuenta y gasto
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    // Crear cuenta con saldo 800000
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    const formCuenta = page.locator('#modal-cuenta-body form');
+    await formCuenta.locator('[name="nombre"]').fill('Cuenta Delete Prueba');
+    await formCuenta.locator('.bank-picker__trigger').click();
+    await page.locator('.bank-picker__item').first().click();
+    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
+    await formCuenta.locator('[name="saldo"]').fill('800000');
+    await formCuenta.locator('button[type="submit"]').click();
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      'Cuenta Delete Prueba',
+      { timeout: 3_000 }
+    );
+
+    // Crear gasto de 200000
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const formGasto = page.locator('#modal-gasto-body form');
+    await formGasto.locator('[name="descripcion"]').fill('Gasto a eliminar');
+    await formGasto.locator('[name="monto"]').fill('200000');
+    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Delete Prueba');
+    const hoy = new Date().toISOString().slice(0, 10);
+    await formGasto.locator('[name="fecha"]').fill(hoy);
+    await formGasto.locator('button[type="submit"]').click();
+    await expect(page.locator('#lista-gastos')).toContainText(
+      'Gasto a eliminar',
+      { timeout: 3_000 }
+    );
+
+    // Saldo debe estar en 600000 (800000 - 200000)
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      '$600.000',
+      { timeout: 3_000 }
+    );
+
+    // ELIMINAR gasto
+    await page.goto('/#gast');
+    const gastoList = page.locator('#lista-gastos');
+    const gastoItem = gastoList.locator('article').filter({ hasText: 'Gasto a eliminar' }).first();
+    const deleteBtn = gastoItem.locator('[data-action="eliminar-gasto"]');
+    await deleteBtn.click();
+
+    // Confirmar eliminación (modal de confirmación con data-role)
+    const confirmBtn = page.locator('[data-role="confirmar"]');
+    await confirmBtn.click();
+
+    // El gasto debe desaparecer de la lista
+    await expect(page.locator('#lista-gastos')).not.toContainText(
+      'Gasto a eliminar',
+      { timeout: 3_000 }
+    );
+
+    // Ir a Tesorería y verificar que el saldo volvió a 800000
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText(
+      '$800.000',
+      { timeout: 3_000 }
+    );
+  });
+});
+
+// ── SUITE 8: Tema ────────────────────────────────────────────────────────────
 // El toggle de tema vive solo en la sección Ajustes (#config), visible en
 // todos los tamaños de pantalla. Es un <input type="checkbox">.
 
@@ -358,9 +601,9 @@ test.describe('Agenda', () => {
 
     // Leyenda de tipos (Fijo, Deuda, Agenda)
     await expect(page.locator('.cal-legend')).toBeVisible();
-    await expect(page.locator('text=Fijo')).toBeVisible();
-    await expect(page.locator('text=Deuda')).toBeVisible();
-    await expect(page.locator('text=Agenda')).toBeVisible();
+    await expect(page.locator('.cal-legend').locator('text=Fijo')).toBeVisible();
+    await expect(page.locator('.cal-legend').locator('text=Deuda')).toBeVisible();
+    await expect(page.locator('.cal-legend').locator('text=Agenda')).toBeVisible();
   });
 
   test('navega mes anterior con botón <', async ({ page }) => {
