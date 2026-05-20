@@ -4,21 +4,30 @@
  *
  * Estado local de la vista:
  *   _viewYear / _viewMonth identifican el mes actualmente visualizado.
- *   Mutado solo por navegarMes() y resetearVistaAlMesActual().
+ *   _diaSeleccionado     identifica el día con detalle expandido (o null).
+ *   Mutado solo por navegarMes(), resetearVistaAlMesActual() y mostrarDia().
  */
 
 import { S } from '../../core/state.js';
+import { f } from '../../infra/utils.js';
+import { LABEL_TIPO, ICONO_TIPO } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
-let _viewYear  = null;
-let _viewMonth = null;
+let _viewYear         = null;
+let _viewMonth        = null;
+let _diaSeleccionado  = null;
 
 const MONTHS = [
   'Enero',     'Febrero', 'Marzo',   'Abril',
   'Mayo',      'Junio',   'Julio',   'Agosto',
   'Septiembre','Octubre', 'Noviembre','Diciembre',
+];
+
+const DOW_LARGO = [
+  'Domingo', 'Lunes', 'Martes', 'Miércoles',
+  'Jueves', 'Viernes', 'Sábado',
 ];
 
 function _ensureFecha() {
@@ -40,15 +49,28 @@ export function navegarMes(delta) {
   let y = _viewYear;
   while (m < 0)  { m += 12; y -= 1; }
   while (m > 11) { m -= 12; y += 1; }
-  _viewYear  = y;
-  _viewMonth = m;
+  _viewYear         = y;
+  _viewMonth        = m;
+  _diaSeleccionado  = null;
 }
 
 /** Lleva la vista al mes actual real (botón "hoy" futuro o test setup). */
 export function resetearVistaAlMesActual() {
   const hoy = new Date();
-  _viewYear  = hoy.getFullYear();
-  _viewMonth = hoy.getMonth();
+  _viewYear         = hoy.getFullYear();
+  _viewMonth        = hoy.getMonth();
+  _diaSeleccionado  = null;
+}
+
+/**
+ * Selecciona el día `dia` para mostrar su detalle, o lo cierra si ya está
+ * seleccionado (toggle). No-op si `dia` no es un entero válido.
+ * El caller debe llamar `renderAgenda()` después.
+ * @param {number} dia
+ */
+export function mostrarDia(dia) {
+  if (!Number.isInteger(dia)) return;
+  _diaSeleccionado = (_diaSeleccionado === dia) ? null : dia;
 }
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
@@ -66,12 +88,24 @@ export function renderAgenda() {
   const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
   const eventos     = eventosDelMes(compromisos, _viewYear, _viewMonth);
 
+  // Si el día seleccionado se quedó sin eventos (ej. usuario eliminó el
+  // compromiso desde otra sección), cerramos el detalle para no mostrar
+  // un panel vacío.
+  if (_diaSeleccionado !== null && !(eventos[_diaSeleccionado]?.length > 0)) {
+    _diaSeleccionado = null;
+  }
+
+  const detalleHtml = _diaSeleccionado !== null
+    ? _renderDetalleDia(eventos[_diaSeleccionado], _viewYear, _viewMonth, _diaSeleccionado)
+    : '';
+
   el.innerHTML = `
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventos)}
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos)}
     </article>
+    ${detalleHtml}
     ${_renderLeyenda()}`;
 }
 
@@ -125,28 +159,36 @@ function _renderGrid(year, month, eventos) {
   }
 
   for (let d = 1; d <= diasEnMes; d++) {
-    const evs    = eventos[d] || [];
-    const hayEvs = evs.length > 0;
-    const esHoy  = esMesActual && d === diaHoy;
-    const esPasado = esMesActual && d < diaHoy;
+    const evs       = eventos[d] || [];
+    const hayEvs    = evs.length > 0;
+    const esHoy     = esMesActual && d === diaHoy;
+    const esPasado  = esMesActual && d < diaHoy;
+    const esSelecc  = d === _diaSeleccionado;
 
     const cls = [
       'cal-day',
-      esHoy   && 'cal-day--today',
-      hayEvs  && 'cal-day--has-events',
+      esHoy    && 'cal-day--today',
+      hayEvs   && 'cal-day--has-events',
+      esSelecc && 'cal-day--selected',
       esPasado && !esHoy && 'cal-day--past',
+      !hayEvs  && 'cal-day--inactive',
     ].filter(Boolean).join(' ');
 
     const aria = hayEvs
       ? `Día ${d}, ${evs.length} ${evs.length === 1 ? 'compromiso' : 'compromisos'}`
       : `Día ${d}, sin compromisos`;
 
+    // Solo días con eventos son interactivos: tener data-action sólo en
+    // ellos evita "clicks muertos" cuando el día está vacío.
+    const actionAttrs = hayEvs
+      ? `data-action="agenda-mostrar-dia" data-day="${d}"`
+      : 'aria-disabled="true" tabindex="-1"';
+
     html += `
       <button type="button" class="${cls}"
               role="gridcell"
               aria-label="${aria}"
-              data-action="agenda-mostrar-dia"
-              data-day="${d}">
+              ${actionAttrs}>
         <span class="cal-day__num">${d}</span>
         ${hayEvs ? _renderDots(evs) : ''}
       </button>`;
@@ -187,4 +229,60 @@ function _renderLeyenda() {
         <span class="cal-dot cal-dot--agenda" aria-hidden="true"></span> Agenda
       </span>
     </div>`;
+}
+
+// ── DETALLE DEL DÍA ──────────────────────────────────────────────
+
+function _renderDetalleDia(evs, year, month, dia) {
+  const fecha   = new Date(year, month, dia);
+  const dow     = DOW_LARGO[fecha.getDay()];
+  const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
+  const total   = evs.length;
+  const resumen = total === 1 ? '1 compromiso' : `${total} compromisos`;
+
+  const items = evs.map(_renderDetalleItem).join('');
+
+  return `
+    <section class="cal-detail" aria-label="Compromisos del ${titulo}">
+      <header class="cal-detail__header">
+        <div class="cal-detail__title-wrap">
+          <h3 class="cal-detail__title">${titulo}</h3>
+          <p class="cal-detail__subtitle">${resumen}</p>
+        </div>
+        <button type="button" class="cal-detail__close"
+                data-action="agenda-mostrar-dia"
+                data-day="${dia}"
+                aria-label="Cerrar detalle del día">×</button>
+      </header>
+      <ul class="cal-detail__list">
+        ${items}
+      </ul>
+    </section>`;
+}
+
+function _renderDetalleItem(c) {
+  const tipo  = c.tipo ?? 'fijo';
+  const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
+  const label = _esc(LABEL_TIPO[tipo] ?? tipo);
+  const desc  = _esc(c.descripcion ?? '(sin descripción)');
+  const frec  = _esc(c.frecuencia ?? '');
+  const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
+
+  return `
+    <li class="cal-detail__item">
+      <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
+      <div class="cal-detail__body">
+        <p class="cal-detail__name">${desc}</p>
+        <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}</p>
+      </div>
+      ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
+    </li>`;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+
+function _esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

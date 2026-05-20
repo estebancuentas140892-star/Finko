@@ -10,7 +10,7 @@
 import { EventBus } from '../../core/state.js';
 import { renderSmart } from '../../infra/render.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { renderAgenda, navegarMes } from './view.js';
+import { renderAgenda, navegarMes, mostrarDia } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -24,11 +24,19 @@ function _nextMes() {
   renderAgenda();
 }
 
+function _mostrarDia(el) {
+  const dia = parseInt(el?.dataset?.day, 10);
+  if (!Number.isInteger(dia)) return;
+  mostrarDia(dia);
+  renderAgenda();
+}
+
 // ── INIT ─────────────────────────────────────────────────────────
 
 export function initAgenda() {
-  registrarAccion('agenda-prev-mes', _prevMes);
-  registrarAccion('agenda-next-mes', _nextMes);
+  registrarAccion('agenda-prev-mes',  _prevMes);
+  registrarAccion('agenda-next-mes',  _nextMes);
+  registrarAccion('agenda-mostrar-dia', _mostrarDia);
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
