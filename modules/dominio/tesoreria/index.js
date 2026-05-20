@@ -33,7 +33,29 @@ function _nuevaCuenta() {
   const overlay = document.getElementById('modal-cuenta');
   if (!overlay) return;
   resetModal(overlay);
+  // resetModal limpia inputs/selects pero NO el display visual del bank-picker
+  // (que vive fuera del overlay tras moverlo a body). Hay que resetearlo aparte
+  // para no mostrar el banco anterior con el hidden value ya vacio.
+  _resetBankPicker();
   abrirModal(overlay);
+}
+
+/**
+ * Restaura el bank-picker a su estado inicial:
+ * - El display visual vuelve al placeholder.
+ * - Se quita aria-selected de todos los items.
+ *
+ * El input hidden name="banco" ya lo limpia resetModal() (vive dentro del overlay).
+ */
+function _resetBankPicker() {
+  const display = document.querySelector('#modal-cuenta .bank-picker__display');
+  if (display) {
+    display.innerHTML = '<span class="bank-picker__placeholder">Seleccionar…</span>';
+  }
+  // Items estan fuera del overlay (en body), por eso hay que buscarlos por id.
+  document.querySelectorAll('#banco-list [role="option"]').forEach(item => {
+    item.setAttribute('aria-selected', 'false');
+  });
 }
 
 /** Lee el formulario, valida, guarda y actualiza el DOM. */
@@ -105,8 +127,12 @@ function _inyectarForm() {
  * Inicializa el comportamiento del custom bank picker:
  * toggle, seleccion de banco, navegacion por teclado y cierre al click externo.
  *
- * Usa position: fixed para el dropdown para que no quede cortado
- * por el overflow: hidden del modal.
+ * El dropdown (.bank-picker__list) se MUEVE a <body> al inicializar. Razon:
+ * el .modal padre tiene `transform: translateY/scale` (animacion de entrada),
+ * y cualquier elemento con `transform != none` crea un containing block para
+ * los descendientes con `position: fixed`, lo que desplaza el dropdown
+ * respecto al viewport. Como hijo directo de <body> queda anclado al viewport
+ * real y los coords de getBoundingClientRect funcionan correctamente.
  *
  * @param {HTMLElement} picker - el elemento .bank-picker raiz.
  */
@@ -116,12 +142,29 @@ function _initBankPicker(picker) {
   const hidden  = picker.querySelector('input[name="banco"]');
   if (!trigger || !list || !hidden) return;
 
+  // Mover el dropdown a <body> (ver explicacion arriba).
+  document.body.appendChild(list);
+
   // Posicionar el dropdown con position:fixed debajo del trigger.
+  // Si el dropdown se saldria del viewport por abajo, se abre hacia arriba.
   function _posicionar() {
     const r = trigger.getBoundingClientRect();
-    list.style.top   = `${r.bottom + 4}px`;
+    const vh = window.innerHeight;
+    const altoMax = 260; // coincide con max-height del CSS
+    const espacioAbajo = vh - r.bottom;
+    const espacioArriba = r.top;
+
     list.style.left  = `${r.left}px`;
     list.style.width = `${r.width}px`;
+
+    if (espacioAbajo < altoMax && espacioArriba > espacioAbajo) {
+      // Abrir hacia arriba: usar bottom en lugar de top.
+      list.style.top    = 'auto';
+      list.style.bottom = `${vh - r.top + 4}px`;
+    } else {
+      list.style.bottom = 'auto';
+      list.style.top    = `${r.bottom + 4}px`;
+    }
   }
 
   function _open() {
