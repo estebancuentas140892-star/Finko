@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-19 (UX#3: sidebar colapsable en desktop)
+> Última actualización: 2026-05-19 (feat: Agenda calendar + detail panel)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 805/805 verdes |
-| Tests E2E | 41/41 verdes |
+| Tests unitarios + integración | 835/835 verdes |
+| Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,45 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(dominio) - Agenda: calendario mensual de compromisos + detalle del día · 2026-05-19
+Nuevo dominio Agenda con vista calendario mensual. Muestra los compromisos del mes con
+dots coloreados por tipo (fijo/deuda/agenda). Click en un día con compromisos abre panel
+inline con la lista. Segundo click o boton X cierran. Navegar mes limpia seleccion.
+Celdas sin compromisos son read-only (sin data-action). Layout responsive (mobile 2-col).
+- `modules/dominio/agenda/logic.js`: función pura `eventosDelMes()` mapea compromisos a
+  días respetando 9 frecuencias + 1 ciclos periódicos (bimestral, trimestral, semestral,
+  anual). 30 tests unitarios.
+- `modules/dominio/agenda/view.js`: componente visual del calendario (grilla 7 col,
+  cabecera navegación, dots, leyenda) + panel de detalle del día (nombre, tipo, freq,
+  monto). Estado local `_diaSeleccionado`, funciones `navegarMes()`, `mostrarDia()`,
+  `renderAgenda()`, `_renderDetalleDia()`. Reutiliza `LABEL_TIPO`, `ICONO_TIPO`,
+  `f()` de infra compartida.
+- `modules/dominio/agenda/index.js`: registra acciones `agenda-prev-mes`, `agenda-next-mes`,
+  `agenda-mostrar-dia`. Escucha `state:change` (sección compromisos) y `hashchange`.
+- `styles/components.css`: bloque AGENDA con `.cal-card`, `.cal-grid`, `.cal-day` + variantes
+  (today, selected, past, inactive, has-events), `.cal-dot` por tipo, `.cal-detail` panel
+  expandible con lista de items (icon, body, amount), responsive mobile.
+- `index.html`: nueva sección `#sec-agenda` con `<div id="panel-agenda">` + link en sidebar
+  desktop + entrada en menú móvil.
+- `service-worker.js`: v38.
+- Tests: 835/835 unit verdes (sin nuevos: render validado en app). E2E 1 smoke test.
+- Commits: `11271f2`, `ef54842`, `4f17c94`, `e3852e4`.
+
+### fix(ux) - Selector de banco: dropdown fuera del modal en mobile · 2026-05-19
+Bug reportado: al crear una cuenta en tesoreria, la lista de bancos del custom bank picker
+aparecia fuera del modal (especialmente en mobile cerca del borde inferior). Diagnosticado:
+CSS containing block. El `.modal` padre tenia `transform: translateY/scale` (animacion de
+entrada), lo que creaba un containing block capturando descendientes con `position: fixed`.
+El dropdown calculaba su posicion con `getBoundingClientRect()` (relativo al viewport),
+pero se posicionaba relativo al modal transformado: desalineamiento.
+- `tesoreria/index.js`: documentacion ampliada en `_initBankPicker()` explicando el
+  containing block issue. `_resetBankPicker()` nueva funcion para limpiar el display
+  visual al reabrir el modal (no solo los inputs del formulario).
+  `_posicionar()` reescrita: calcula espacio disponible arriba/abajo del trigger, abre
+  el dropdown hacia arriba si no cabe abajo (usando `bottom` en lugar de `top`).
+- `service-worker.js`: v36 a v37 (invalidar cache del modal animado).
+- Tests: 805/805 unit + 41/41 E2E verdes (sin regresiones).
 
 ### feat(ux) - Sidebar colapsable en desktop (UX#3) · 2026-05-19
 Boton de colapsar/expandir el sidebar lateral en desktop (>= 1024px). Al colapsar,
@@ -93,15 +132,6 @@ por el bottom nav. Tres ajustes en `.logro-toast`:
 - En mobile (< 1024px) el `bottom` ahora respeta la altura del bottom nav
   (`var(--fk-header-height) + var(--fk-space-4)`) para no quedar tapado.
 - SW v32 a v33. 805/805 unit + 18/18 E2E smoke verdes.
-
-### fix(e2e) - 5 regresiones E2E corregidas · 2026-05-19
-Textos de empty state cambiados y selector de theme-toggle duplicado por el bottom nav mobile.
-- `navegacion-render.test.js`: "Sin cuentas todavía" a "¿Dónde guardás tu plata?" (2 ocurrencias);
-  "Sin compromisos registrados" a "Nada que pagar... por ahora".
-- `smoke.test.js`: `[data-action="theme-toggle"]` a `button.nav-item[data-action="theme-toggle"]`
-  (descarta el botón del modal Más, evita violacion de strict mode en Playwright).
-- Suite E2E: 38/38 verdes.
-
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

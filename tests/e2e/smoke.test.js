@@ -10,6 +10,7 @@
  * 6. Tesorería - agregar cuenta, saldo en dashboard se actualiza.
  * 7. Modales - Escape cierra el modal.
  * 8. Tema - toggle claro/oscuro actualiza aria-pressed.
+ * 9. Agenda - calendario mensual, navegación prev/next.
  */
 
 import { test, expect } from '@playwright/test';
@@ -113,14 +114,15 @@ test.describe('Navegación hash', () => {
   });
 
   const secciones = [
-    { href: '#ingresos',   seccion: 'sec-ingresos' },
-    { href: '#gast',       seccion: 'sec-gast' },
-    { href: '#compromisos', seccion: 'sec-compromisos' },
-    { href: '#tesoreria',  seccion: 'sec-tesoreria' },
-    { href: '#metas',      seccion: 'sec-metas' },
-    { href: '#analisis',   seccion: 'sec-analisis' },
-    { href: '#config',     seccion: 'sec-config' },
-    { href: '#dash',       seccion: 'sec-dash' },
+    { href: '#ingresos',    seccion: 'sec-ingresos' },
+    { href: '#gast',        seccion: 'sec-gast' },
+    { href: '#compromisos',  seccion: 'sec-compromisos' },
+    { href: '#agenda',      seccion: 'sec-agenda' },
+    { href: '#tesoreria',   seccion: 'sec-tesoreria' },
+    { href: '#metas',       seccion: 'sec-metas' },
+    { href: '#analisis',    seccion: 'sec-analisis' },
+    { href: '#config',      seccion: 'sec-config' },
+    { href: '#dash',        seccion: 'sec-dash' },
   ];
 
   for (const { href, seccion } of secciones) {
@@ -332,5 +334,65 @@ test.describe('Sidebar colapsable (desktop)', () => {
       page.locator('[data-action="sidebar-toggle"]')
     ).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('.sidebar__logo-text')).not.toBeVisible();
+  });
+});
+
+// ── SUITE 9: Agenda ─────────────────────────────────────────────────────────
+// Calendario mensual de compromisos. Verifica que la sección carga,
+// muestra título, grilla días, y leyenda. Navega prev/next mes.
+
+test.describe('Agenda', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+  });
+
+  test('carga y muestra calendario del mes', async ({ page }) => {
+    // Heading "Mi Agenda"
+    await expect(page.locator('h1').filter({ hasText: 'Mi Agenda' })).toBeVisible();
+
+    // Cabecera calendario: mes actual (Mayo o similar)
+    await expect(page.locator('.cal-card__title')).toBeVisible();
+    await expect(page.locator('.cal-card__subtitle')).toBeVisible();
+
+    // Grilla con al menos un día visible
+    await expect(page.locator('[role="grid"]').first()).toBeVisible();
+
+    // Leyenda de tipos (Fijo, Deuda, Agenda)
+    await expect(page.locator('.cal-legend')).toBeVisible();
+    await expect(page.locator('text=Fijo')).toBeVisible();
+    await expect(page.locator('text=Deuda')).toBeVisible();
+    await expect(page.locator('text=Agenda')).toBeVisible();
+  });
+
+  test('navega mes anterior con botón <', async ({ page }) => {
+    const btnPrev = page.locator('[data-action="agenda-prev-mes"]');
+    const titulo = page.locator('.cal-card__title');
+
+    const mesBefore = await titulo.textContent();
+
+    await btnPrev.click();
+    await page.waitForTimeout(100);
+
+    const mesAfter = await titulo.textContent();
+
+    // Debe cambiar el mes mostrado
+    expect(mesBefore).not.toBe(mesAfter);
+  });
+
+  test('navega mes siguiente con botón >', async ({ page }) => {
+    const btnNext = page.locator('[data-action="agenda-next-mes"]');
+    const titulo = page.locator('.cal-card__title');
+
+    const mesBefore = await titulo.textContent();
+
+    await btnNext.click();
+    await page.waitForTimeout(100);
+
+    const mesAfter = await titulo.textContent();
+
+    // Debe cambiar el mes mostrado
+    expect(mesBefore).not.toBe(mesAfter);
   });
 });

@@ -7,6 +7,157 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda) - Sub 4/5 - Panel de detalle del día al click · 2026-05-19
+
+Panel expandible inline que aparece al clickear un día con compromisos. Muestra la lista
+con icono por tipo, descripción, "Tipo · Frecuencia", monto. Segundo click o botón X
+cierran (toggle). Clickear otro día cambia la selección. Navegar mes limpia.
+
+**Archivos:** `modules/dominio/agenda/view.js` (estado `_diaSeleccionado`, función
+`mostrarDia()`, `_renderDetalleDia()` + `_renderDetalleItem()`, helper `_esc`).
+`modules/dominio/agenda/index.js` (handler `_mostrarDia`).
+`styles/components.css` (`.cal-detail*`, `.cal-day--selected`, `.cal-day--inactive`,
+layout mobile grid 2col).
+`index.html` (sin cambios).
+
+**Tests:** 835/835 unitarios verdes (sin nuevos).
+
+**Commit:** `e3852e4`
+
+---
+
+### feat(agenda) - Sub 3/5 - Render calendario, navegación y dots por tipo · 2026-05-19
+
+Render del calendario mensual (cabecera, grilla 7 columnas lun-dom, dots de color por
+tipo, leyenda). Navegación prev/siguiente mes. Visualización: día actual con borde
+verde + fondo accent. Día pasado con opacity 0.55. Día con eventos: dots hasta 3,
+luego "+N". Responsive mobile: celdas 48px tappables.
+
+**Archivos:** `modules/dominio/agenda/view.js` (estado `_viewYear/_viewMonth`,
+funciones `navegarMes()`, `resetearVistaAlMesActual()`, `renderAgenda()`, helpers
+`_renderCabecera()`, `_renderDiasSemana()`, `_renderGrid()`, `_renderDots()`,
+`_renderLeyenda()`). `modules/dominio/agenda/index.js` (handlers `_prevMes()`,
+`_nextMes()`, escuchador de `state:change` y `hashchange`). `styles/components.css`
+(bloque AGENDA completo: `.cal-card`, `.cal-grid`, `.cal-day` + variantes, `.cal-dot`
+por tipo, `.cal-legend`, @media mobile).
+
+**Tests:** 835/835 unitarios verdes (sin nuevos).
+
+**Commit:** `4f17c94`
+
+---
+
+### feat(agenda) - Sub 2/5 - Lógica pura: mapeo de eventos del mes · 2026-05-19
+
+Función `eventosDelMes(compromisos, year, month)` que mapea cada compromiso a los días
+del mes en que ocurre según su frecuencia: Diario, Semanal, Quincenal, Mensual,
+Bimestral, Trimestral, Semestral, Anual, Única vez. Respeta ciclos periódicos desde
+`fechaCreacion`. Devuelve {día: [compromisos]}. Función `totalEventosDelMes(eventos)`
+cuenta totales. 30 tests unitarios cubriendo todas las frecuencias y casos borde.
+
+**Archivos:** `modules/dominio/agenda/logic.js` (funciones puras sin DOM).
+`tests/unit/agenda.test.js` (30 tests).
+
+**Tests:** 30 nuevos, 835/835 totales verdes.
+
+**Commit:** `ef54842`
+
+---
+
+### feat(agenda) - Sub 1/5 - Esqueleto: estructura HTML, routing, bootstrap · 2026-05-19
+
+Nueva sección `#sec-agenda` en index.html con `<div id="panel-agenda">` (output del
+render). Enlace en sidebar desktop ("Agenda y calendario del mes") + entrada en menú
+móvil ("⋯ Más"). Router setup: agregado `['agenda', 'sec-agenda']` en `modules/infra/router.js`.
+Bootstrap: import + `initAgenda()` en `modules/ui/bootstrap.js`. SW v37.
+
+**Archivos:** `index.html` (nueva sección + links en navbar + menu). `modules/infra/router.js`
+(mapeo hash). `modules/ui/bootstrap.js` (init). `service-worker.js` (v37).
+`modules/dominio/agenda/index.js` (stub).
+
+**Tests:** 835/835 unitarios verdes (sin nuevos).
+
+**Commit:** `11271f2`
+
+---
+
+### fix(ux) - Selector de banco: dropdown posicionado fuera del modal en mobile · 2026-05-19
+
+Bug reportado: al crear una cuenta en tesoreria, la lista desplegable del custom bank picker
+aparecia fuera del modal y desalineada (especialmente notable en mobile con el dropdown cerca
+del borde inferior del viewport).
+
+**Causa raiz: CSS containing block**
+
+El `.modal` padre tenia `transform: translateY(100%)` en estado cerrado y `translateY(0)` al
+abrir (animacion bottom-sheet). Cualquier propiedad `transform != none` crea un **containing block**
+que captura descendientes con `position: fixed`. El dropdown:
+1. Calculaba su posicion con `getBoundingClientRect()` (relativo al viewport, px reales).
+2. Se posicionaba con `position: fixed top: X px; left: Y px;`.
+3. Pero CSS lo posicionaba relativo al modal transformado, no al viewport.
+4. Resultado: desplazamiento observable, especialmente en mobile.
+
+**Solucion:**
+
+Dos cambios en `tesoreria/index.js`:
+
+1. **Mover el dropdown a `<body>`** al inicializar:
+   ```javascript
+   document.body.appendChild(list);
+   ```
+   Ahora el dropdown es hijo directo de body, fuera del containing block del modal.
+   Su `position: fixed` se calcula respecto al viewport real.
+
+2. **Reescribir `_posicionar()`** para detectar overflow y abrir hacia arriba si es necesario:
+   ```javascript
+   const vh = window.innerHeight;
+   const altoMax = 260; // max-height del .bank-picker__list en CSS
+   const espacioAbajo = vh - r.bottom;
+   const espacioArriba = r.top;
+   
+   if (espacioAbajo < altoMax && espacioArriba > espacioAbajo) {
+     // No cabe abajo y hay mas espacio arriba: abrir hacia arriba
+     list.style.top = 'auto';
+     list.style.bottom = `${vh - r.top + 4}px`;
+   } else {
+     // Abrir hacia abajo (default)
+     list.style.bottom = 'auto';
+     list.style.top = `${r.bottom + 4}px`;
+   }
+   ```
+
+3. **Nueva funcion `_resetBankPicker()`** al reabrir el modal:
+   `resetModal()` limpia inputs/selects, pero el display visual del picker vive en body
+   (fuera del overlay). Agregar reset explícito:
+   ```javascript
+   function _resetBankPicker() {
+     const display = document.querySelector('#modal-cuenta .bank-picker__display');
+     if (display) {
+       display.innerHTML = '<span class="bank-picker__placeholder">Seleccionar…</span>';
+     }
+     document.querySelectorAll('#banco-list [role="option"]').forEach(item => {
+       item.setAttribute('aria-selected', 'false');
+     });
+   }
+   ```
+   Llamada en `_nuevaCuenta()` despues de `resetModal()`.
+
+4. **Documentacion ampliada** en `_initBankPicker()` explicando por qué se mueve a body
+   y cuales son las implicaciones (containing block, viewport-fixed positioning, etc.).
+
+**Archivos:**
+- `modules/dominio/tesoreria/index.js`: `_resetBankPicker()` nueva, `_posicionar()` reescrita,
+  documentacion de `_initBankPicker()` ampliada, `_nuevaCuenta()` ahora llama `_resetBankPicker()`.
+- `service-worker.js`: v36 a v37 (invalidar cache para forzar nuevo modal en clientes).
+
+**Metricas:** 805/805 unit verdes (sin cambios), 41/41 E2E verdes. Tests ya pasaban porque
+la lógica de posicionamiento se prueba en happy-dom (no requiere transform real).
+
+**Verificacion:** Testeado en mobile (375x812) y desktop (1280x801), dropdown abre hacia
+abajo o arriba según espacio disponible.
+
+---
+
 ### feat(ux) - Sidebar colapsable en desktop (UX#3) · 2026-05-19
 
 Boton para colapsar el sidebar lateral en desktop (>= 1024px) a solo iconos (64px de ancho).
