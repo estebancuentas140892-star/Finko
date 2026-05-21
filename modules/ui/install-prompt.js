@@ -54,6 +54,19 @@ export function initInstallPrompt() {
   if (S.onboarded) _mostrarSiCorresponde();
 }
 
+// ── HELPERS EXPORTADOS ───────────────────────────────────────────
+
+/**
+ * Indica si Finko está instalada como PWA en este dispositivo.
+ * Útil para que otras secciones (ej. Ajustes) muestren u oculten el botón.
+ * @returns {boolean}
+ */
+export function estaInstalada() {
+  if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
+  if (navigator.standalone === true) return true;
+  return false;
+}
+
 // ── DECISION DE MOSTRAR ──────────────────────────────────────────
 
 function _mostrarSiCorresponde() {
@@ -69,10 +82,7 @@ function _mostrarSiCorresponde() {
 }
 
 function _yaInstalada() {
-  if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
-  // iOS Safari standalone (legacy property).
-  if (navigator.standalone === true) return true;
-  return false;
+  return estaInstalada();
 }
 
 function _puedeMostrar() {

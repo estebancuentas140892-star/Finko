@@ -170,6 +170,12 @@ export function initConfig() {
     renderSmart(_inyectarPanel, 'config');
   });
 
+  // Cuando la app se instala como PWA, re-renderizar config para
+  // cambiar el botón "Instalar" por el mensaje "Ya instalada".
+  window.addEventListener('appinstalled', () => {
+    renderSmart(_inyectarPanel, 'config');
+  });
+
   // Resyncar el toggle de tema cuando el usuario lo cambia (desde aqui,
   // desde el sidebar o desde el modal Mas). El handler global `theme-toggle`
   // ya hace el trabajo de aplicar el tema; aqui solo refrescamos el checkbox

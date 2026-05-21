@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { legalVigente, SMMLV, APP_VERSION } from '../../core/constants.js';
+import { estaInstalada } from '../../ui/install-prompt.js';
 
 /**
  * Renderiza el panel de configuración completo en `#panel-config`.
@@ -19,6 +20,7 @@ export function renderPanelConfig() {
   el.innerHTML = `
     ${_renderPerfil()}
     ${_renderTema()}
+    ${_renderInstalarApp()}
     ${_renderNotificaciones()}
     ${_renderDatos()}
     ${_renderAcercaDe()}
@@ -50,6 +52,31 @@ function _renderTema() {
 }
 
 // ── SECCIONES ────────────────────────────────────────────────────
+
+function _renderInstalarApp() {
+  if (estaInstalada()) {
+    return `
+      <section class="config-section" aria-labelledby="config-install-title">
+        <h2 class="config-section__title" id="config-install-title">📲 Instalar app</h2>
+        <p class="config-section__desc">
+          Finko ya está instalada en este dispositivo. Podés abrirla desde tu pantalla de inicio.
+        </p>
+      </section>`;
+  }
+
+  return `
+    <section class="config-section" aria-labelledby="config-install-title">
+      <h2 class="config-section__title" id="config-install-title">📲 Instalar app</h2>
+      <p class="config-section__desc">
+        Instalá Finko en tu pantalla de inicio para acceder más rápido, sin abrir el navegador,
+        y para que funcione sin conexión a internet.
+      </p>
+      <button class="btn btn-primary" data-action="install-pwa"
+              aria-label="Instalar Finko en este dispositivo">
+        📲 Instalar Finko
+      </button>
+    </section>`;
+}
 
 function _renderPerfil() {
   const nombre = _esc(S.perfil.nombre || 'Sin nombre');
