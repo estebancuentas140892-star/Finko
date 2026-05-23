@@ -7,6 +7,55 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(logros) - Toast de logro se quedaba estancado en pantalla · 2026-05-22
+
+**Reporte:** El toast de logro desbloqueado se mostraba en pantalla indefinidamente (no desaparecía tras ~2.5s).
+Usuario reportó en producción que los logros nunca se ocultaban.
+
+**Raíz:** En `modules/dominio/logros/index.js` función `_mostrarToast()`:
+```javascript
+// ANTES (bug):
+toast.addEventListener('animationend', () => clearTimeout(timeoutFade), { once: true });
+setTimeout(() => { ... toast.classList.add('fade'); ... }, DURACION_MS);
+```
+
+El listener capturaba el evento `animationend` de la **animación de entrada** (`toastIn`, ~350ms)
+en lugar de la salida, cancelando el timer del fadeout. Secuencia:
+- t=0ms: toast insertado, animación toastIn empieza
+- t=0ms: setTimeout(2500ms) armado para disparar fade
+- t=350ms: toastIn termina → `animationend` dispara → clearTimeout() cancela el timer
+- t=2500ms: timer nunca se ejecuta → toast estancado forever
+
+**Solución:**
+1. Remover el listener defensivo que capturaba el evento equivocado
+2. Agregar guard `if (!toast.isConnected) return;` en el setTimeout para detectar si el toast
+   fue removido externamente (fallback seguro)
+
+```javascript
+// AHORA (fix):
+setTimeout(() => {
+  if (!toast.isConnected) return;  // ya removido externamente
+  toast.classList.add('fade');
+  const onEnd = () => { toast.remove(); };
+  toast.addEventListener('animationend', onEnd, { once: true });
+  setTimeout(onEnd, 400);  // fallback por prefers-reduced-motion
+}, DURACION_MS);
+```
+
+**Archivos modificados:**
+- `modules/dominio/logros/index.js` (líneas 88-96): removido listener con { once: true },
+  agregado `toast.isConnected` guard, preservado fallback timeout para prefers-reduced-motion
+- `service-worker.js`: cache v52→v53
+
+**Tests:** 835/835 unit verdes (cambio es solo runtime/DOM, sin logic.js).
+
+**Verificación en producción:**
+- v53 deployed a Vercel (git push + auto-deploy)
+- curl a `service-worker.js` confirma presencia del guard `isConnected`
+- Toast ahora desaparece en ~2.9s (2.5s visible + 0.4s fade) consistentemente
+
+---
+
 ### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada con compromiso fijo · 2026-05-20
 
 Nueva feature opcional en el dominio de tesorería: al crear o editar una cuenta, la persona puede

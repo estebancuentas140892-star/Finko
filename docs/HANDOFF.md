@@ -1,9 +1,9 @@
 # HANDOFF - Finko Claude
 
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
-> Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
+> Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-20 (fix: gastos sin saldo + cuota manejo auto-sync)
+> Última actualización: 2026-05-22 (fix: logros estancados + verificación en producción)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,29 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(logros) - Toast de logro estancado en pantalla forever · 2026-05-22
+Bug crítico reportado en producción: los toasts de logro se quedaban visibles indefinidamente.
+Raíz: listener `animationend` con `{ once: true }` en `_mostrarToast()` capturaba el evento
+de la **animación de entrada** (toastIn, ~350ms) en lugar de la salida (toastOut). Esto cancelaba
+el timer del fadeout, dejando el toast estancado.
+
+Timeline del bug:
+- t=0: toast aparece, toastIn animation empieza (350ms)
+- t=0: setTimeout(2500ms) configurado para disparar fadeout
+- t=350ms: toastIn termina → animationend dispara → { once: true } listener ejecuta clearTimeout()
+- t=2500ms: timer NUNCA se ejecuta → toast queda visible forever
+
+Solución: Remover el listener defensivo problemático. Reemplazar con `toast.isConnected` check
+en el setTimeout para detectar si el toast fue removido externamente (fallback seguro).
+
+**Archivos:**
+- `modules/dominio/logros/index.js` (línea 88-96): removido listener `animationend`, agregado
+  guard `if (!toast.isConnected) return;` antes de aplicar fade
+- `service-worker.js`: v52→v53
+
+**Verificación:** app en producción v53 (curl confirmó presencia del guard `isConnected`).
+Toast ahora desaparece en ~2.9s (2.5s visible + 0.4s fade) consistentemente en todos los navegadores.
 
 ### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada + E2E smoke tests · 2026-05-20
 Nueva feature opcional: al crear/editar una cuenta, la persona puede activar "cuota de manejo"
