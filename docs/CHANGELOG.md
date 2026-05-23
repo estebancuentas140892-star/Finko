@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos) - Filtro por categoría con chips fijos sobre la lista · 2026-05-23
+
+Chips de categoría encima de la lista de gastos del mes. "Todos" activo por defecto.
+Un chip por categoría presente en el mes; al hacer clic filtra la lista en tiempo real.
+El filtro persiste en la sesión y se auto-resetea si la categoría activa desaparece.
+Si la categoría activa no tiene gastos, muestra "Sin gastos en esta categoría" + "Ver todos".
+
+**Archivos:**
+- `modules/dominio/gastos/logic.js`: `filtrarGastos(gastos, categoria)` (función pura)
+- `modules/dominio/gastos/view.js`: estado local `_filtroCategoria`; `renderFiltrosGastos()`; `setFiltroCategoria()`; `renderListaGastos()` aplica filtro; `_renderEmptyFiltro()`
+- `modules/dominio/gastos/index.js`: acción `gastos-filtrar-cat`; `renderFiltrosGastos` en EventBus y hashchange
+- `index.html`: `<div id="panel-filtros-gastos">` antes de `#lista-gastos`
+- `styles/components.css`: `.filtros-bar` + `.chip` + `.chip--active`
+- `service-worker.js`: v56→v57
+- `tests/unit/gastos.test.js`: +8 tests para `filtrarGastos`
+
+**Tests:** 901/901 verdes.
+
+---
+
 ### feat(dash) - Card "Hoy" con mini-agenda del día en el Dashboard · 2026-05-23
 
 **Motivación:** El Dashboard es la pantalla más vista. Tener que ir a Agenda para saber

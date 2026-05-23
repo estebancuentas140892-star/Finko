@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-23 (feat: Card "Hoy" con mini-agenda del día en el Dashboard)
+> Última actualización: 2026-05-23 (feat: filtro por categoría con chips en Gastos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 893/893 verdes |
+| Tests unitarios + integración | 901/901 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos) - Filtro por categoría con chips fijos sobre la lista · 2026-05-23
+Chips de categoría encima de la lista de gastos del mes. "Todos" activo por defecto.
+Un chip por cada categoría presente en el mes actual; al hacer clic filtra la lista.
+El filtro persiste en la sesión y se auto-resetea si la categoría activa desaparece.
+Si la categoría seleccionada no tiene gastos muestra "Sin gastos en esta categoría" + botón "Ver todos".
+
+**Archivos:**
+- `modules/dominio/gastos/logic.js`: nueva función pura `filtrarGastos(gastos, categoria)`
+- `modules/dominio/gastos/view.js`: estado local `_filtroCategoria`; `renderFiltrosGastos()`;
+  `renderListaGastos()` aplica filtro; `_renderEmptyFiltro()`; `setFiltroCategoria()` exportada
+- `modules/dominio/gastos/index.js`: acción `gastos-filtrar-cat`; `renderFiltrosGastos` en EventBus y hashchange
+- `index.html`: `<div id="panel-filtros-gastos">` antes de `#lista-gastos`
+- `styles/components.css`: `.filtros-bar` + `.chip` + `.chip--active`
+- `service-worker.js`: v56→v57
+- `tests/unit/gastos.test.js`: +8 tests para `filtrarGastos`
+
+**Tests:** 901/901 verdes.
 
 ### feat(dash) - Card "Hoy" con mini-agenda del día en el Dashboard · 2026-05-23
 Nueva card visible entre "Gasto rápido" y el bento de métricas. Muestra los compromisos que
@@ -120,133 +138,6 @@ en el setTimeout para detectar si el toast fue removido externamente (fallback s
 **Verificación:** app en producción v53 (curl confirmó presencia del guard `isConnected`).
 Toast ahora desaparece en ~2.9s (2.5s visible + 0.4s fade) consistentemente en todos los navegadores.
 
-### feat(tesoreria, compromisos) - Cuota de manejo auto-sincronizada + E2E smoke tests · 2026-05-20
-Nueva feature opcional: al crear/editar una cuenta, la persona puede activar "cuota de manejo"
-(tarifa mensual que el banco cobra). Finko auto-genera un Compromiso tipo Fijo con frecuencia Mensual,
-campo `esCuotaManejo=true` y `cuentaId` del banco. Sincronización idempotente: si la cuota cambia
-de monto o día, el compromiso se edita; si se desactiva, se elimina; si se activa, se crea.
-Visible en Compromisos y Agenda con ícono diferenciado.
-
-Incluye 4 nuevos smoke tests E2E que cubre el flujo gastos-cuenta completo (crear gasto con selector,
-editar monto, cambiar cuenta, eliminar gasto) y verifica saldos se actualizan en tesorería/dashboard.
-Total: 47 tests E2E verdes.
-
-**Schema:** Bump v4→v5. Campo opcional `cuotaManejo: {monto, diaCobro}` en Cuenta. Campo opcional
-`cuentaId` + bandera `esCuotaManejo` en Compromiso. Migración idempotente sin pérdida de datos.
-
-**Archivos:**
-- `modules/core/state.js`: typedef CuotaManejo, schema v5
-- `modules/core/storage.js`: SCHEMA_VERSION=5, migración v4→v5 (no-op)
-- `modules/dominio/tesoreria/logic.js`: parseCuotaManejo(), validarCuenta extended, normalizarCuenta,
-  compromisoDesdeCuotaManejo(), compromisoCuotaManejoDeCuenta()
-- `modules/dominio/tesoreria/view.js`: renderFormCuenta() con checkbox + fieldset, hint en lista
-- `modules/dominio/tesoreria/index.js`: _sincronizarCuotaManejo() orchestrator (create/update/delete),
-  _toggleCuotaFieldset(), listeners en form
-- `styles/components.css`: .checkbox-row, .cuota-fieldset
-- `tests/unit/tesoreria.test.js`: +16 tests (parseCuotaManejo, validarCuenta con cuota, etc.)
-- `tests/unit/state.test.js`: versión bump check
-- `service-worker.js`: v50→v51
-
-**Tests:** 880/880 verdes (835 unit + 45 integration + nuevo banco picker).
-
-
-### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
-Dos ajustes para resolver reportes del usuario en mobile:
-
-1. Toast de logro tardaba 4s en desaparecer (`DURACION_MS = 4000` en
-   `modules/dominio/logros/index.js`). Reducido a 2500ms - se siente snappy
-   sin sentirse interrumpido. Total visible incluyendo fade: ~2.9s (antes ~4.4s).
-
-2. SW viejo cacheado en el celular del usuario hacía que no llegaran los fixes
-   de UX#1 (toast cortado), UX#4 (bank avatars con color) y P3 (toggle centralizado),
-   aunque ya estaban en producción desde v33/v35/v40. El navegador mobile demora
-   hasta 24h en re-fetchear el `service-worker.js`. `modules/infra/sw-register.js`
-   ahora llama `reg.update()` al arrancar la app, forzando el chequeo de versión.
-   Combinado con `skipWaiting()` + `clients.claim()` (ya presentes), futuras
-   actualizaciones toman control en cuanto el usuario abre la app.
-
-`service-worker.js`: v41 → v42. Tests: 835/835 verdes.
-
-### perf(ux) - Transición de tema sin lag en mobile (P2) · 2026-05-19
-La transición entre tema claro/oscuro tenía lag visible en mobile (frame drops
-durante el cambio). En desktop con GPU dedicada se sentía fluido, pero el `*`
-selector animaba 563 elementos × 5 propiedades simultáneamente, ahogando al
-compositor mobile.
-
-Cambio en `styles/themes.css`:
-- Reemplazado `.theme-transitioning *` por una lista acotada de ~30 selectores
-  que cubren solo las superficies que cambian de color (body, sidebar, topbar,
-  bottom-nav, cards, modals, inputs, buttons, calendario, etc.).
-- Resultado: 563 -> 185 elementos animados (67% menos). El texto hereda `color`
-  del contenedor animado, asi que el ojo percibe el crossfade igual.
-- Duración 280ms preservada (paridad visual con desktop).
-- `service-worker.js`: v41.
-
-Tests: 835/835 verdes (cambio solo CSS).
-
-### fix(ux) - Toggle de tema duplicado: centralizado en Ajustes (P3) · 2026-05-19
-El toggle de tema aparecía en tres lugares: botón en el footer del sidebar (desktop),
-botón en el menú "Más" (mobile) y checkbox en la sección Ajustes (solo desktop).
-Se eliminaron los dos botones redundantes y la sección Ajustes se hizo visible en
-todos los tamaños de pantalla.
-
-Cambios:
-- `index.html`: eliminado `<button data-action="theme-toggle">` del `.sidebar__footer` y
-  del `.menu-mas`. El toggle vive ahora exclusivamente en `#sec-config`.
-- `modules/dominio/config/view.js`: quitado `config-section--desktop-only` de `_renderTema()`.
-  La sección Apariencia es visible en mobile y desktop.
-- `modules/ui/shell.js`: `_syncThemeButton()` actualizado para manejar
-  `input[type=checkbox]` con `setTimeout(0)` (el browser revierte `checked` de forma
-  asincrona tras `e.preventDefault()`).
-- `modules/dominio/config/index.js`: listener `EventBus.on('theme:change')` envuelto en
-  `setTimeout(0)` por la misma razon.
-- `tests/e2e/smoke.test.js`: Suite 7 "Tema" reescrita: navega a `#config` y verifica
-  `body.classList` en lugar de `aria-pressed` del boton eliminado.
-- `service-worker.js`: v40.
-
-Tests: 835/835 verdes.
-
-### fix(tesoreria) - Layout mobile de list-item y avatares de banco (P1) · 2026-05-19
-El CSS solo tenía `.list-item__content` (alias obsoleto). Todos los dominios usaban en
-HTML `__body`, `__meta`, `__action`, `__value` que no tenían ningún selector CSS. Sin
-estos, en tesorería el saldo y el botón × apilaban verticalmente, y el título no se
-truncaba con ellipsis porque el body no crecía (`flex: 1` faltaba).
-
-Cambios en `styles/components.css`:
-- `.list-item__body` + alias `__content`: `flex: 1; min-width: 0` (crecimiento + truncado).
-- `.list-item__meta`: `display: flex; flex-direction: column; align-items: flex-end`
-  (columna de monto en compromisos, gastos, personales).
-- `.list-item__action`: `display: flex; align-items: center; gap` (saldo + botón × en
-  tesorería, o solo botón en ingresos/metas).
-- `.list-item__value`: `font-mono, semibold, nowrap` (monto en action de tesorería).
-- `.list-item__icon:has(.bank-avatar)`: `background: transparent` (quita el bg redundante
-  del wrapper cuando contiene un avatar con color propio).
-
-Tests: 835/835 verdes. Commit: `1b060e0`.
-
-### feat(dominio) - Agenda: calendario mensual de compromisos + detalle del día · 2026-05-19
-Nuevo dominio Agenda con vista calendario mensual. Muestra los compromisos del mes con
-dots coloreados por tipo (fijo/deuda/agenda). Click en un día con compromisos abre panel
-inline con la lista. Segundo click o boton X cierran. Navegar mes limpia seleccion.
-Celdas sin compromisos son read-only (sin data-action). Layout responsive (mobile 2-col).
-- `modules/dominio/agenda/logic.js`: función pura `eventosDelMes()` mapea compromisos a
-  días respetando 9 frecuencias + 1 ciclos periódicos (bimestral, trimestral, semestral,
-  anual). 30 tests unitarios.
-- `modules/dominio/agenda/view.js`: componente visual del calendario (grilla 7 col,
-  cabecera navegación, dots, leyenda) + panel de detalle del día (nombre, tipo, freq,
-  monto). Estado local `_diaSeleccionado`, funciones `navegarMes()`, `mostrarDia()`,
-  `renderAgenda()`, `_renderDetalleDia()`. Reutiliza `LABEL_TIPO`, `ICONO_TIPO`,
-  `f()` de infra compartida.
-- `modules/dominio/agenda/index.js`: registra acciones `agenda-prev-mes`, `agenda-next-mes`,
-  `agenda-mostrar-dia`. Escucha `state:change` (sección compromisos) y `hashchange`.
-- `styles/components.css`: bloque AGENDA con `.cal-card`, `.cal-grid`, `.cal-day` + variantes
-  (today, selected, past, inactive, has-events), `.cal-dot` por tipo, `.cal-detail` panel
-  expandible con lista de items (icon, body, amount), responsive mobile.
-- `index.html`: nueva sección `#sec-agenda` con `<div id="panel-agenda">` + link en sidebar
-  desktop + entrada en menú móvil.
-- `service-worker.js`: v38.
-- Tests: 835/835 unit verdes (sin nuevos: render validado en app). E2E 1 smoke test.
-- Commits: `11271f2`, `ef54842`, `4f17c94`, `e3852e4`.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
