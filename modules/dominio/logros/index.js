@@ -81,17 +81,19 @@ function _mostrarToast(logro) {
   document.body.appendChild(toast);
   _lanzarConfetti();
 
-  // Fade out y limpieza.
-  const timeoutFade = setTimeout(() => {
+  // Fade out y limpieza tras DURACION_MS.
+  // Nota: NO armar un `animationend` defensivo aquí. La animación de entrada
+  // (`toastIn`) dispara `animationend` ~350ms despues, y un listener con
+  // { once: true } cancelaria el timer del fade => el toast quedaría estancado.
+  // Si hace falta limpieza externa, chequear `toast.isConnected` al disparar.
+  setTimeout(() => {
+    if (!toast.isConnected) return;  // ya removido externamente
     toast.classList.add('fade');
     const onEnd = () => { toast.remove(); };
     toast.addEventListener('animationend', onEnd, { once: true });
     // Fallback por si animationend no dispara (prefers-reduced-motion).
     setTimeout(onEnd, 400);
   }, DURACION_MS);
-
-  // Limpiar timer si el elemento se borra externamente.
-  toast.addEventListener('animationend', () => clearTimeout(timeoutFade), { once: true });
 }
 
 // ── CONFETTI ─────────────────────────────────────────────────────
