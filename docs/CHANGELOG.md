@@ -7,6 +7,40 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(ux) - Ingresos integrado como card compacta dentro de Tesorería · 2026-05-22
+
+**Motivación:** El 80% de usuarios colombianos tiene 1 ingreso (SMMLV o similar).
+Dedicarle una sección entera de primer nivel al menú era desproporcionado. Una card
+compacta dentro de Tesorería es proporcional al uso real y mantiene toda la funcionalidad.
+
+**Cambios:**
+- Sección `#sec-ingresos` eliminada (HTML + nav-item + router)
+- Card `.ingresos-card` integrada en `#sec-tesoreria` sobre la lista de cuentas
+- Muestra: título "Mis ingresos", total mensual, lista de items, botón "+ Agregar"
+- Empty state: "Todavía no registraste ingresos"
+- Sin pérdida de funcionalidad: modal, entity, lógica, dashboard, Score,
+  Calculadoras y Envelope Budgeting siguen leyendo `S.ingresos` sin cambios
+
+**Archivos modificados:**
+- `index.html`: eliminado nav-item "Ingresos", `<section id="sec-ingresos">`
+  y ruta en router; agregado `<div id="panel-ingresos-card">` en sec-tesoreria
+- `modules/infra/router.js`: eliminado `['ingresos', 'sec-ingresos']` del SECTIONS map
+- `modules/dominio/ingresos/view.js`: nueva función exportada `renderCardIngresos()`;
+  elimina `renderListaIngresos()` y `_renderEmptyState()` (absorbidas por renderCardIngresos)
+- `modules/dominio/ingresos/index.js`: listeners state:change y hashchange cambian a
+  `'tesoreria'`; llamadas a `renderListaIngresos()` reemplazadas por `renderCardIngresos()`
+- `styles/components.css`: bloque `.ingresos-card` (70 líneas): `__header`, `__title`,
+  `__meta`, `__total`, `__list`, `__empty`
+- `service-worker.js`: cache bump v53→v54
+- `tests/e2e/smoke.test.js`: suite 4 reescrita ("card en Tesorería", 3 tests);
+  fix flake onboarding (localStorage.clear antes de goto inicial)
+- `tests/e2e/navegacion-render.test.js`: test "Ingresos muestra empty state" actualizado
+  para verificar `.ingresos-card__empty` en lugar del elemento eliminado `#lista-ingresos`
+
+**Tests:** 880/880 unit verdes, 48/48 E2E verdes. SW: v54.
+
+---
+
 ### fix(logros) - Toast de logro se quedaba estancado en pantalla · 2026-05-22
 
 **Reporte:** El toast de logro desbloqueado se mostraba en pantalla indefinidamente (no desaparecía tras ~2.5s).

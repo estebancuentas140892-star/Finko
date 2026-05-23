@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-22 (fix: logros estancados + verificación en producción)
+> Última actualización: 2026-05-22 (refactor: Ingresos como card en Tesorería + fix logros)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,36 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(ux) - Ingresos integrado como card dentro de Tesorería · 2026-05-22
+Sección dedicada "Ingresos" eliminada del menú. Los ingresos ahora viven como
+una card compacta dentro de Tesorería, sobre la lista de cuentas.
+
+Motivación: para el 80% de usuarios colombianos con 1 ingreso (SMMLV o similar),
+tener una sección entera para 1-2 items era desproporcionado. La card ocupa el
+espacio justo: título, total mensual, lista de items, botón "+ Agregar".
+
+Datos y lógica sin cambios: el modal, la entity Ingreso, render del dashboard
+(#ingresos-mes), Score de Salud Financiera y Calculadoras siguen funcionando igual.
+Solo cambia el contenedor visual.
+
+**Archivos:**
+- `index.html`: eliminado nav-item "Ingresos" y `<section id="sec-ingresos">`;
+  agregado `<div id="panel-ingresos-card">` en `#sec-tesoreria`
+- `modules/infra/router.js`: eliminada ruta `['ingresos', 'sec-ingresos']`
+- `modules/dominio/ingresos/view.js`: nueva función `renderCardIngresos()`;
+  elimina `renderListaIngresos()` (reemplazada)
+- `modules/dominio/ingresos/index.js`: listeners cambian de `'ingresos'` a
+  `'tesoreria'`; `_guardarIngreso` y `_eliminarIngreso` actualizados
+- `styles/components.css`: nuevo bloque `.ingresos-card` (header, title, meta,
+  total, list, empty state)
+- `service-worker.js`: v53→v54
+- `tests/e2e/smoke.test.js`: suite 4 reescrita como "card en Tesorería";
+  fix flake onboarding (localStorage.clear en contexto correcto)
+- `tests/e2e/navegacion-render.test.js`: test "Ingresos empty state" actualizado
+  para verificar `.ingresos-card__empty` en Tesorería
+
+**Tests:** 880/880 unit + 48/48 E2E verdes.
 
 ### fix(logros) - Toast de logro estancado en pantalla forever · 2026-05-22
 Bug crítico reportado en producción: los toasts de logro se quedaban visibles indefinidamente.
