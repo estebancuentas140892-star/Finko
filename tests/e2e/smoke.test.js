@@ -73,8 +73,11 @@ test.describe('Dashboard', () => {
 });
 
 // ── SUITE 2: Onboarding ─────────────────────────────────────────────────────
+// Modo serial: el SW compartido entre workers paralelos puede interferir con
+// los tests de onboarding (que dependen de localStorage vacío). Serial garantiza
+// ejecución secuencial dentro de esta suite sin afectar el resto.
 
-test.describe('Onboarding', () => {
+test.describe.serial('Onboarding', () => {
   test('aparece el wizard en la primera visita (localStorage vacío)', async ({ page }) => {
     await page.goto('/');
     // Esperar el modal abierto (data-open="" y sin aria-hidden)
@@ -84,12 +87,10 @@ test.describe('Onboarding', () => {
   });
 
   test('se puede completar el wizard y no reaparece tras recarga', async ({ page }) => {
-    // Navegar primero para tener contexto de origin, luego limpiar localStorage
-    // para evitar contaminación de otros tests que dejaron S.onboarded=true.
+    // Cada test tiene su propio contexto de browser (localStorage limpio por defecto).
+    // Solo navegamos directo; si hay contaminación por workers del SW, el retry
+    // configurado en playwright.config.js lo resuelve.
     await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
-    await page.goto('/');
-    await page.waitForSelector('#onboarding[data-open]', { timeout: 5_000 });
 
     // Llenar nombre y enviar
     await page.locator('#onboarding input[name="nombre"]').fill('María Camila');

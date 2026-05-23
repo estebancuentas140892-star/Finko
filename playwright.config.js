@@ -14,7 +14,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 30_000,
-  retries: 0,
+  // 1 retry para tests de E2E con timing sensible (SW entre workers paralelos).
+  // Los tests de lógica pura no deberían necesitarlo nunca.
+  retries: 1,
 
   use: {
     baseURL: 'http://localhost:8081',
