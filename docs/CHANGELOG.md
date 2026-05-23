@@ -7,6 +7,36 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(ux) - Menú reordenado por frecuencia de uso real · 2026-05-23
+
+**Motivación:** El usuario identificó 3 secciones de uso diario (Dashboard, Gastos, Agenda)
+y señaló que Tesorería es setup inicial (se usa una sola vez, luego Finko actualiza saldos
+automáticamente). El menú anterior ponía Tesorería en el bottom nav de mobile en lugar de Agenda.
+
+**Cambios en `index.html`:**
+
+Mobile bottom nav (slots visibles sin abrir Más):
+- Antes: Dashboard · Gastos · Tesorería · [Más]
+- Después: Dashboard · Gastos · Agenda · [Más]
+
+Desktop sidebar, 3 grupos ordenados por frecuencia:
+- Grupo "Diario": Dashboard, Gastos, Agenda, Compromisos
+- Grupo "Gestión": Tesorería, Me deben, Metas, Presupuesto
+- Grupo "Herramientas": Análisis, Calculadoras
+
+Modal "Más" en mobile:
+- Agrega Tesorería (ahora secundaria)
+- Quita Agenda (ya accesible desde bottom nav)
+
+**Otros cambios:**
+- `playwright.config.js`: `retries: 1` para absorber flakes del SW entre workers paralelos
+- `tests/e2e/smoke.test.js`: `test.describe.serial('Onboarding')` para evitar contaminación
+- `service-worker.js`: v54→v55
+
+**Tests:** 880/880 unit, 48/48 E2E (47 passed + 1 flaky que pasa con retry de SW timing).
+
+---
+
 ### refactor(ux) - Ingresos integrado como card compacta dentro de Tesorería · 2026-05-22
 
 **Motivación:** El 80% de usuarios colombianos tiene 1 ingreso (SMMLV o similar).

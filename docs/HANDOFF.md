@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-22 (refactor: Ingresos como card en Tesorería + fix logros)
+> Última actualización: 2026-05-23 (refactor: menú reordenado por frecuencia de uso real)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,11 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(ux) - Menú reordenado por frecuencia de uso real · 2026-05-23
+Mobile bottom nav: `Dashboard · Gastos · Agenda · [Más]` (Agenda sube, Tesorería pasa a Más).
+Desktop: 3 grupos (Diario / Gestión / Herramientas). Modal Más: agrega Tesorería, quita Agenda.
+E2E: `retries: 1` en playwright.config.js + `test.describe.serial` en Onboarding. SW: v55.
 
 ### refactor(ux) - Ingresos integrado como card dentro de Tesorería · 2026-05-22
 Sección dedicada "Ingresos" eliminada del menú. Los ingresos ahora viven como
