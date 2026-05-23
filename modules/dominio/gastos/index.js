@@ -22,7 +22,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   aplicarGastoASaldo, revertirGastoDeSaldo, deltasPorEdicionDeGasto,
 } from './logic.js';
-import { renderListaGastos, renderResumenGastos, renderFormGasto } from './view.js';
+import { renderListaGastos, renderResumenGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -229,6 +229,16 @@ function _fmtMonto(n) {
   return '$' + abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+// ── FILTRO DE CATEGORÍA ──────────────────────────────────────────
+
+/** Cambia el chip activo y re-renderiza filtros + lista. */
+function _filtrarCategoria(el) {
+  const cat = el?.dataset?.cat || null;
+  setFiltroCategoria(cat);
+  renderFiltrosGastos();
+  renderListaGastos();
+}
+
 /** @param {HTMLElement} el */
 async function _eliminarGasto(el) {
   const id = el.dataset.id;
@@ -354,6 +364,7 @@ export function initGastos() {
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);
   registrarAccion('gasto-rapido', _abrirGastoRapido);
+  registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
 
   // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
   // Solo dejamos attachado el listener del form rápido (HTML estático).
@@ -361,18 +372,20 @@ export function initGastos() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'gastos') {
+      renderSmart(renderFiltrosGastos, 'gast');
       renderSmart(renderListaGastos, 'gast');
       renderResumenGastos();
       updSaldo();
     }
   });
 
-  // Re-render al navegar a #gast - sin esto la sección puede aparecer vacía
-  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  // Re-render al navegar a #gast: filtros + lista.
   window.addEventListener('hashchange', () => {
+    renderSmart(renderFiltrosGastos, 'gast');
     renderSmart(renderListaGastos, 'gast');
   });
 
+  renderSmart(renderFiltrosGastos, 'gast');
   renderSmart(renderListaGastos, 'gast');
   renderResumenGastos();
 }

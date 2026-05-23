@@ -12,6 +12,7 @@ import {
   aplicarGastoASaldo,
   revertirGastoDeSaldo,
   deltasPorEdicionDeGasto,
+  filtrarGastos,
 } from '../../modules/dominio/gastos/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -412,5 +413,54 @@ describe('deltasPorEdicionDeGasto()', () => {
     const antes   = { cuentaId: null, monto: 40_000 };
     const despues = { cuentaId: null, monto: 60_000 };
     expect(deltasPorEdicionDeGasto(antes, despues)).toEqual({});
+  });
+});
+
+// ── FILTRAR GASTOS ───────────────────────────────────────────────
+
+describe('filtrarGastos()', () => {
+  const gastos = [
+    gastoBase({ id: 'g1', categoria: 'Alimentación' }),
+    gastoBase({ id: 'g2', categoria: 'Transporte'   }),
+    gastoBase({ id: 'g3', categoria: 'Alimentación' }),
+    gastoBase({ id: 'g4', categoria: 'Salud'        }),
+  ];
+
+  it('devuelve todos cuando categoria es null', () => {
+    expect(filtrarGastos(gastos, null)).toHaveLength(4);
+  });
+
+  it('devuelve todos cuando categoria es cadena vacía', () => {
+    expect(filtrarGastos(gastos, '')).toHaveLength(4);
+  });
+
+  it('devuelve todos cuando categoria es undefined', () => {
+    expect(filtrarGastos(gastos, undefined)).toHaveLength(4);
+  });
+
+  it('filtra por categoría exacta', () => {
+    const r = filtrarGastos(gastos, 'Alimentación');
+    expect(r).toHaveLength(2);
+    expect(r.map(g => g.id).sort()).toEqual(['g1', 'g3']);
+  });
+
+  it('devuelve array vacío si ningún gasto coincide', () => {
+    expect(filtrarGastos(gastos, 'Vivienda')).toEqual([]);
+  });
+
+  it('trata gasto sin categoría como "Otros"', () => {
+    const sinCat = [gastoBase({ id: 'x', categoria: undefined })];
+    expect(filtrarGastos(sinCat, 'Otros')).toHaveLength(1);
+    expect(filtrarGastos(sinCat, 'Alimentación')).toHaveLength(0);
+  });
+
+  it('no muta el array original', () => {
+    const copia = [...gastos];
+    filtrarGastos(gastos, 'Salud');
+    expect(gastos).toEqual(copia);
+  });
+
+  it('devuelve array vacío con input vacío', () => {
+    expect(filtrarGastos([], 'Alimentación')).toEqual([]);
   });
 });

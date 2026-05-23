@@ -6,6 +6,19 @@
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
 /**
+ * Filtra un array de gastos por categoría exacta.
+ * Si `categoria` es null, vacío o indefinido devuelve todos (sin filtrar).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string|null|undefined} categoria
+ * @returns {import('../../core/state.js').Gasto[]}
+ */
+export function filtrarGastos(gastos, categoria) {
+  if (!categoria) return gastos;
+  return gastos.filter(g => (g.categoria ?? 'Otros') === categoria);
+}
+
+/**
  * Filtra gastos que pertenecen al año y mes indicados.
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {number} anio - ej. 2026

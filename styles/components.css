@@ -2583,6 +2583,56 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   FILTROS-BAR + CHIP - barra de chips de filtro por categoría.
+   Usada en la sección Gastos (encima de la lista).
+   ════════════════════════════════════════════════════════════ */
+
+.filtros-bar {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.5rem 0 0.75rem;
+  scrollbar-width: none;
+}
+
+.filtros-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: var(--fk-text-xs);
+  font-weight: 500;
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.chip:hover {
+  color: var(--fk-text-primary);
+  border-color: var(--fk-border);
+}
+
+.chip--active {
+  background: var(--fk-accent);
+  border-color: var(--fk-accent);
+  color: #fff;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════
    HOY-CARD - mini-agenda del día, visible en el Dashboard.
    Aparece entre "Gasto rápido" y el bento de métricas.
    ════════════════════════════════════════════════════════════ */

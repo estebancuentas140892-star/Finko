@@ -6,7 +6,17 @@
 import { S } from '../../core/state.js';
 import { f, hoy } from '../../infra/utils.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
-import { gastosMes, totalGastosMes } from './logic.js';
+import { gastosMes, totalGastosMes, filtrarGastos } from './logic.js';
+
+// ── ESTADO LOCAL DE FILTRO ───────────────────────────────────────
+
+/** Categoría activa en el filtro de chips. `null` = "Todos". */
+let _filtroCategoria = null;
+
+/** Actualiza el filtro activo. Llamado desde index.js al hacer clic en un chip. */
+export function setFiltroCategoria(cat) {
+  _filtroCategoria = cat || null;
+}
 
 // ── BENTO CELL (dashboard) ───────────────────────────────────────
 
@@ -23,10 +33,70 @@ export function renderResumenGastos() {
   el.textContent = f(totalGastosMes(S.gastos, anio, mes));
 }
 
+// ── BARRA DE FILTROS ─────────────────────────────────────────────
+
+/**
+ * Renderiza los chips de categoría en `#panel-filtros-gastos`.
+ * Muestra "Todos" + uno por cada categoría presente en el mes actual.
+ * Si no hay gastos en el mes, limpia el panel (sin barra vacía).
+ * Auto-resetea `_filtroCategoria` si la categoría activa ya no existe.
+ */
+export function renderFiltrosGastos() {
+  const el = document.getElementById('panel-filtros-gastos');
+  if (!el) return;
+
+  const fechaHoy = hoy();
+  const anio = Number(fechaHoy.slice(0, 4));
+  const mes  = Number(fechaHoy.slice(5, 7));
+  const delMes = gastosMes(S.gastos, anio, mes);
+
+  if (delMes.length === 0) {
+    el.innerHTML = '';
+    _filtroCategoria = null;
+    return;
+  }
+
+  const cats = [...new Set(delMes.map(g => g.categoria ?? 'Otros'))].sort();
+
+  // Si la categoría activa desapareció del mes (ej. se eliminó el último
+  // gasto de esa categoría), resetear al filtro "Todos".
+  if (_filtroCategoria !== null && !cats.includes(_filtroCategoria)) {
+    _filtroCategoria = null;
+  }
+
+  const todosActivo = _filtroCategoria === null;
+  const chips = cats.map(cat => {
+    const activo = _filtroCategoria === cat;
+    return `
+      <button type="button"
+              class="chip${activo ? ' chip--active' : ''}"
+              data-action="gastos-filtrar-cat"
+              data-cat="${_esc(cat)}"
+              aria-pressed="${activo}"
+              aria-label="Filtrar por ${_esc(cat)}">
+        ${_esc(cat)}
+      </button>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
+      <button type="button"
+              class="chip${todosActivo ? ' chip--active' : ''}"
+              data-action="gastos-filtrar-cat"
+              data-cat=""
+              aria-pressed="${todosActivo}"
+              aria-label="Ver todos los gastos">
+        Todos
+      </button>
+      ${chips}
+    </div>`;
+}
+
 // ── LISTA DE GASTOS ──────────────────────────────────────────────
 
 /**
- * Renderiza la lista de gastos en `#lista-gastos`.
+ * Renderiza la lista de gastos en `#lista-gastos`, aplicando el filtro
+ * de categoría activo (`_filtroCategoria`).
  * No-op si el contenedor no existe.
  */
 export function renderListaGastos() {
@@ -38,9 +108,16 @@ export function renderListaGastos() {
   const mes  = Number(fechaHoy.slice(5, 7));
   const delMes = gastosMes(S.gastos, anio, mes);
 
-  el.innerHTML = delMes.length === 0
-    ? _renderEmptyState()
-    : delMes.map(_renderGastoItem).join('');
+  if (delMes.length === 0) {
+    el.innerHTML = _renderEmptyState();
+    return;
+  }
+
+  const filtrados = filtrarGastos(delMes, _filtroCategoria);
+
+  el.innerHTML = filtrados.length === 0
+    ? _renderEmptyFiltro()
+    : filtrados.map(_renderGastoItem).join('');
 }
 
 /** @param {import('../../core/state.js').Gasto} gasto */
@@ -88,6 +165,16 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin gastos este mes</p>
       <p class="empty-state__desc">Registrá tus gastos para llevar el control de tu plata.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
+    </div>`;
+}
+
+function _renderEmptyFiltro() {
+  return `
+    <div class="empty-state">
+      <p class="empty-state__icon" aria-hidden="true">🔍</p>
+      <p class="empty-state__title">Sin gastos en esta categoría</p>
+      <p class="empty-state__desc">No hay gastos de este tipo en el mes actual.</p>
+      <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
     </div>`;
 }
 
