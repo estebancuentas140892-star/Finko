@@ -8,9 +8,9 @@
  */
 
 import { EventBus } from '../../core/state.js';
-import { renderSmart } from '../../infra/render.js';
+import { renderSmart, registrarRender } from '../../infra/render.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { renderAgenda, navegarMes, mostrarDia } from './view.js';
+import { renderAgenda, navegarMes, mostrarDia, renderCardHoy } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -38,19 +38,22 @@ export function initAgenda() {
   registrarAccion('agenda-next-mes',  _nextMes);
   registrarAccion('agenda-mostrar-dia', _mostrarDia);
 
+  // Card "Hoy" en Dashboard: se mantiene sincronizada en cada render global.
+  registrarRender(() => renderSmart(renderCardHoy, 'dash'));
+
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
       renderSmart(renderAgenda, 'agenda');
     }
   });
 
-  // Re-render al navegar a #agenda. Sin esto la sección puede aparecer vacía
-  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  // Re-render al navegar: agenda y también el dashboard (card Hoy).
   window.addEventListener('hashchange', () => {
-    if (location.hash.slice(1) === 'agenda') {
-      renderSmart(renderAgenda, 'agenda');
-    }
+    const hash = location.hash.slice(1) || 'dash';
+    if (hash === 'agenda') renderSmart(renderAgenda, 'agenda');
+    if (hash === 'dash')   renderSmart(renderCardHoy, 'dash');
   });
 
   renderSmart(renderAgenda, 'agenda');
+  renderSmart(renderCardHoy, 'dash');
 }

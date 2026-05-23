@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-23 (refactor: menú reordenado por frecuencia de uso real)
+> Última actualización: 2026-05-23 (feat: Card "Hoy" con mini-agenda del día en el Dashboard)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 835/835 verdes |
+| Tests unitarios + integración | 893/893 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,29 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(dash) - Card "Hoy" con mini-agenda del día en el Dashboard · 2026-05-23
+Nueva card visible entre "Gasto rápido" y el bento de métricas. Muestra los compromisos que
+vencen hoy (hasta 3, con ícono de tipo y monto, "+N más" si hay más). Si no hay eventos hoy,
+muestra el próximo en los siguientes 14 días con la distancia en días. Si no hay nada próximo,
+muestra mensaje de tranquilidad. Link "Ver agenda" directo al calendario.
+
+La card desaparece automáticamente si el usuario no tiene compromisos activos (sin ruido para usuarios nuevos).
+Se actualiza con cada cambio de estado (via `registrarRender`) y al navegar al Dashboard (hashchange).
+
+**Archivos:**
+- `modules/dominio/agenda/logic.js`: ya tenía `eventosDeHoy()` y `eventosEnProximos()` (lógica pura)
+- `modules/dominio/agenda/view.js`: nueva función exportada `renderCardHoy()`; import actualizado
+- `modules/dominio/agenda/index.js`: importa `registrarRender` y `renderCardHoy`; hashchange maneja
+  'agenda' y 'dash'; `registrarRender(() => renderSmart(renderCardHoy, 'dash'))` sincroniza con estado global
+- `index.html`: `<div id="panel-hoy">` entre `.quick-add` y `#bento-dash`
+- `styles/components.css`: bloque `.hoy-card` (header, title, link, list, item, dot, name, amount,
+  more, empty, prox)
+- `service-worker.js`: v55→v56
+- `tests/unit/agenda.test.js`: +13 tests (eventosDeHoy: 5 casos; eventosEnProximos: 7 casos con
+  vi.useFakeTimers); import extendido a las 4 funciones exportadas
+
+**Tests:** 893/893 verdes.
 
 ### refactor(ux) - Menú reordenado por frecuencia de uso real · 2026-05-23
 Mobile bottom nav: `Dashboard · Gastos · Agenda · [Más]` (Agenda sube, Tesorería pasa a Más).
@@ -126,35 +149,6 @@ Total: 47 tests E2E verdes.
 
 **Tests:** 880/880 verdes (835 unit + 45 integration + nuevo banco picker).
 
-### fix(gastos, tesoreria) - "Tu plata disponible hoy" no actualizaba con gastos · 2026-05-20
-Bug crítico: crear un gasto no decrementaba "Tu plata disponible" (saldo de cuentas).
-Raíz: el formulario de gastos no tenía selector de cuenta, todo se guardaba con `cuentaId=null`.
-`updSaldo()` solo suma `S.cuentas.saldo`, así que los gastos sin cuenta nunca tocaban nada.
-
-**Solución:** selector de cuenta **obligatorio** en form de gasto. Nuevo concepto: "gasto rápido"
-(cuentaId=null, solo permite completar con cuenta en modal de edición). Al crear/editar/eliminar,
-se ajusta el saldo de la cuenta con precisión:
-- Crear: descuenta monto de la cuenta
-- Editar: revierte monto de cuenta vieja, descuenta de nueva (maneja cambios simultáneos cuenta+monto)
-- Eliminar: devuelve monto a cuenta
-- Gasto rápido incompleto: no afecta saldo (será un "gasto pendiente" UI future)
-
-**Archivos:**
-- `modules/dominio/gastos/logic.js`: validarGasto requiere cuentaId; aplicarGastoASaldo(),
-  revertirGastoDeSaldo(), deltasPorEdicionDeGasto() (funciones puras para saldo math)
-- `modules/dominio/gastos/view.js`: renderFormGasto() con <select cuentaId> obligatorio, empty state
-  si no hay cuentas, hint reactivo "#gasto-saldo-disponible" mostrando saldo de la cuenta seleccionada
-- `modules/dominio/gastos/index.js`: _guardarGasto() con _ajustarSaldoCuenta() en create/edit/delete,
-  _editarGasto() pre-rellena selector + actualiza hint, _montarFormGasto() inyecta form on-demand
-  para ver cuentas actualizadas entre aperturas
-- `styles/components.css`: .form-hint--muted, .form-hint--danger, .form-empty con ícono
-- `tests/unit/gastos.test.js`: +29 tests (validar cuentaId, aplicarGastoASaldo, deltas, etc.)
-- `service-worker.js`: v49→v50
-
-**Tests:** 835/835 verdes.
-
-**Impacto visual:** "Tu plata disponible hoy" dashboard ahora baja correctamente al crear gasto;
-saldo de cuenta en tesorería se updatea en vivo. Gasto rápido no toca saldo (feature future).
 
 ### fix(ux) - Toast de logro: duración 2.5s + auto-update del SW · 2026-05-20
 Dos ajustes para resolver reportes del usuario en mobile:

@@ -2583,6 +2583,109 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   HOY-CARD - mini-agenda del día, visible en el Dashboard.
+   Aparece entre "Gasto rápido" y el bento de métricas.
+   ════════════════════════════════════════════════════════════ */
+
+.hoy-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.hoy-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.hoy-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.hoy-card__link {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.hoy-card__link:hover,
+.hoy-card__link:focus-visible {
+  text-decoration: underline;
+}
+
+.hoy-card__body {
+  padding: 0.25rem 0;
+}
+
+.hoy-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hoy-card__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.hoy-card__dot {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.hoy-card__name {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hoy-card__amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  flex-shrink: 0;
+}
+
+.hoy-card__more {
+  padding: 0.25rem 1rem 0.5rem;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  list-style: none;
+}
+
+.hoy-card__empty {
+  padding: 0.75rem 1rem;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.hoy-card__prox {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--fk-text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════
    CONFIGURACION - perfil, notificaciones, datos, acerca de.
    Cada .config-section es una surface card consistente con calc.
    ════════════════════════════════════════════════════════════ */

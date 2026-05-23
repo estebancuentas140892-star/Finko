@@ -138,3 +138,42 @@ export function totalEventosDelMes(eventos) {
   if (!eventos || typeof eventos !== 'object') return 0;
   return Object.values(eventos).reduce((acc, arr) => acc + (arr?.length ?? 0), 0);
 }
+
+/**
+ * Devuelve los compromisos que caen hoy según la lógica de frecuencia.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Array<import('../../core/state.js').Compromiso & {dia:number}>}
+ */
+export function eventosDeHoy(compromisos) {
+  const hoy = new Date();
+  const eventos = eventosDelMes(compromisos, hoy.getFullYear(), hoy.getMonth());
+  return eventos[hoy.getDate()] ?? [];
+}
+
+/**
+ * Busca el primer día con compromisos dentro de los próximos `diasMax` días
+ * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
+ * no tiene eventos.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {number} [diasMax=14] Ventana de búsqueda en días.
+ * @returns {{ diasRestantes: number, fecha: Date,
+ *             eventos: Array<import('../../core/state.js').Compromiso & {dia:number}> } | null}
+ */
+export function eventosEnProximos(compromisos, diasMax = 14) {
+  const hoy = new Date();
+
+  for (let i = 1; i <= diasMax; i++) {
+    const proxima = new Date(hoy);
+    proxima.setDate(hoy.getDate() + i);
+
+    const mapa = eventosDelMes(compromisos, proxima.getFullYear(), proxima.getMonth());
+    const diaEventos = mapa[proxima.getDate()] ?? [];
+
+    if (diaEventos.length > 0) {
+      return { diasRestantes: i, fecha: proxima, eventos: diaEventos };
+    }
+  }
+  return null;
+}

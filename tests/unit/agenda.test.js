@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { eventosDelMes, totalEventosDelMes } from '../../modules/dominio/agenda/logic.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { eventosDelMes, totalEventosDelMes, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -267,5 +267,118 @@ describe('totalEventosDelMes', () => {
     const c2 = compromisoBase({ id: 'c2', frecuencia: 'Mensual',   diaPago: 15 });
     const r = eventosDelMes([c1, c2], 2026, 4);
     expect(totalEventosDelMes(r)).toBe(3); // 2 quincenal + 1 mensual
+  });
+});
+
+// ── EVENTOS DE HOY ───────────────────────────────────────────────
+
+describe('eventosDeHoy', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(()  => { vi.useRealTimers(); });
+
+  it('devuelve los compromisos que caen en el día actual', () => {
+    vi.setSystemTime(new Date(2026, 4, 5)); // 5 mayo 2026
+    const c = compromisoBase({ diaPago: 5, frecuencia: 'Mensual' });
+    const r = eventosDeHoy([c]);
+    expect(r).toHaveLength(1);
+    expect(r[0].id).toBe('c1');
+  });
+
+  it('devuelve [] si no hay compromisos en el día de hoy', () => {
+    vi.setSystemTime(new Date(2026, 4, 10)); // 10 mayo, compromiso cae el 5
+    const c = compromisoBase({ diaPago: 5, frecuencia: 'Mensual' });
+    expect(eventosDeHoy([c])).toEqual([]);
+  });
+
+  it('devuelve [] con lista vacía', () => {
+    vi.setSystemTime(new Date(2026, 4, 5));
+    expect(eventosDeHoy([])).toEqual([]);
+  });
+
+  it('devuelve [] con input no-array', () => {
+    vi.setSystemTime(new Date(2026, 4, 5));
+    expect(eventosDeHoy(null)).toEqual([]);
+    expect(eventosDeHoy(undefined)).toEqual([]);
+  });
+
+  it('incluye todos los compromisos que caen hoy (varios)', () => {
+    vi.setSystemTime(new Date(2026, 4, 15)); // 15 mayo
+    const c1 = compromisoBase({ id: 'c1', diaPago: 15, frecuencia: 'Mensual' });
+    const c2 = compromisoBase({ id: 'c2', diaPago: 1,  frecuencia: 'Quincenal' }); // 1 y 16
+    const c3 = compromisoBase({ id: 'c3', diaPago: 15, frecuencia: 'Mensual' });
+    const r = eventosDeHoy([c1, c2, c3]);
+    // c2 cae en 1 y 16, no en 15
+    expect(r.map(c => c.id).sort()).toEqual(['c1', 'c3']);
+  });
+
+  it('omite compromisos inactivos', () => {
+    vi.setSystemTime(new Date(2026, 4, 5));
+    const activo   = compromisoBase({ id: 'activo',   diaPago: 5, activo: true });
+    const inactivo = compromisoBase({ id: 'inactivo', diaPago: 5, activo: false });
+    const r = eventosDeHoy([activo, inactivo]);
+    expect(r).toHaveLength(1);
+    expect(r[0].id).toBe('activo');
+  });
+});
+
+// ── EVENTOS EN PRÓXIMOS ──────────────────────────────────────────
+
+describe('eventosEnProximos', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(()  => { vi.useRealTimers(); });
+
+  it('devuelve el primer día con compromisos dentro de la ventana', () => {
+    vi.setSystemTime(new Date(2026, 4, 1)); // 1 mayo, compromiso el día 5
+    const c = compromisoBase({ diaPago: 5, frecuencia: 'Mensual' });
+    const r = eventosEnProximos([c], 14);
+    expect(r).not.toBeNull();
+    expect(r.diasRestantes).toBe(4);
+    expect(r.eventos).toHaveLength(1);
+    expect(r.fecha.getDate()).toBe(5);
+  });
+
+  it('devuelve null si no hay compromisos en la ventana', () => {
+    vi.setSystemTime(new Date(2026, 4, 6)); // 6 mayo, compromiso era el 5
+    const c = compromisoBase({ diaPago: 5, frecuencia: 'Mensual' });
+    expect(eventosEnProximos([c], 14)).toBeNull();
+  });
+
+  it('no incluye el día de hoy (busca desde +1 día)', () => {
+    vi.setSystemTime(new Date(2026, 4, 5)); // hoy ES el día del compromiso
+    const c = compromisoBase({ diaPago: 5, frecuencia: 'Mensual' });
+    // Próximo sería el mes siguiente (5 junio = 31 días fuera, ventana 14)
+    expect(eventosEnProximos([c], 14)).toBeNull();
+  });
+
+  it('respeta la ventana de búsqueda (diasMax)', () => {
+    vi.setSystemTime(new Date(2026, 4, 1)); // 1 mayo, compromiso el 20 mayo
+    const c = compromisoBase({ diaPago: 20, frecuencia: 'Mensual' });
+    expect(eventosEnProximos([c], 14)).toBeNull();  // 20 queda fuera de 14 días
+    expect(eventosEnProximos([c], 20)).not.toBeNull(); // 20 entra con ventana=20
+  });
+
+  it('calcula diasRestantes y fecha correctamente', () => {
+    vi.setSystemTime(new Date(2026, 4, 10)); // 10 mayo, compromiso el 15 mayo
+    const c = compromisoBase({ diaPago: 15, frecuencia: 'Mensual' });
+    const r = eventosEnProximos([c], 14);
+    expect(r).not.toBeNull();
+    expect(r.diasRestantes).toBe(5);
+    expect(r.fecha.getDate()).toBe(15);
+    expect(r.fecha.getMonth()).toBe(4); // mayo (0-indexed)
+  });
+
+  it('devuelve null con lista vacía', () => {
+    vi.setSystemTime(new Date(2026, 4, 1));
+    expect(eventosEnProximos([], 14)).toBeNull();
+  });
+
+  it('atraviesa el cambio de mes correctamente', () => {
+    vi.setSystemTime(new Date(2026, 4, 28)); // 28 mayo, compromiso el 3 de junio
+    const c = compromisoBase({ diaPago: 3, frecuencia: 'Mensual' });
+    const r = eventosEnProximos([c], 10);
+    expect(r).not.toBeNull();
+    expect(r.diasRestantes).toBe(6); // 28 + 6 = 3 junio
+    expect(r.fecha.getMonth()).toBe(5); // junio
+    expect(r.fecha.getDate()).toBe(3);
   });
 });

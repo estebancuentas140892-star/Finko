@@ -7,6 +7,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(dash) - Card "Hoy" con mini-agenda del día en el Dashboard · 2026-05-23
+
+**Motivación:** El Dashboard es la pantalla más vista. Tener que ir a Agenda para saber
+qué compromisos vencen hoy genera un viaje extra innecesario. La card "Hoy" trae ese
+contexto directo al Dashboard, donde el usuario ya está mirando.
+
+**Comportamiento:**
+- Con compromisos hoy: lista hasta 3 items (ícono de tipo, nombre, monto) + "+N más"
+- Sin compromisos hoy pero hay próximos (ventana 14 días): "Sin compromisos hoy. Próximo: [nombre] mañana / en N días."
+- Sin nada próximo: "Sin compromisos próximos. 🎉"
+- Sin compromisos activos registrados: card no se renderiza (sin ruido para usuarios nuevos)
+- Link "Ver agenda" en el header lleva directamente al calendario
+
+**Archivos:**
+- `modules/dominio/agenda/logic.js`: ya tenía `eventosDeHoy()` y `eventosEnProximos()` (añadidos en tarea anterior)
+- `modules/dominio/agenda/view.js`: nueva función exportada `renderCardHoy()`; import extendido con las dos funciones de logic
+- `modules/dominio/agenda/index.js`: importa `registrarRender` (nuevo) y `renderCardHoy`; `registrarRender(() => renderSmart(renderCardHoy, 'dash'))` sincroniza con estado global; hashchange cubre 'agenda' y 'dash'
+- `index.html`: `<div id="panel-hoy">` insertado entre `.quick-add` y `#bento-dash`
+- `styles/components.css`: bloque `.hoy-card` completo (header, title, link, body, list, item, dot, name, amount, more, empty, prox)
+- `service-worker.js`: v55→v56
+- `tests/unit/agenda.test.js`: +13 tests para `eventosDeHoy` (5 casos) y `eventosEnProximos` (7 casos) con `vi.useFakeTimers()`; import extendido a las 4 funciones exportadas
+
+**Tests:** 893/893 verdes.
+
+---
+
 ### refactor(ux) - Menú reordenado por frecuencia de uso real · 2026-05-23
 
 **Motivación:** El usuario identificó 3 secciones de uso diario (Dashboard, Gastos, Agenda)
