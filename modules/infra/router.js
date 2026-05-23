@@ -6,7 +6,6 @@
 
 const SECTIONS = new Map([
   ['dash',        'sec-dash'],
-  ['ingresos',    'sec-ingresos'],
   ['gast',        'sec-gast'],
   ['compromisos', 'sec-compromisos'],
   ['agenda',      'sec-agenda'],

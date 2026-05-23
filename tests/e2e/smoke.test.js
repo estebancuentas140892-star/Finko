@@ -84,6 +84,10 @@ test.describe('Onboarding', () => {
   });
 
   test('se puede completar el wizard y no reaparece tras recarga', async ({ page }) => {
+    // Navegar primero para tener contexto de origin, luego limpiar localStorage
+    // para evitar contaminación de otros tests que dejaron S.onboarded=true.
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
     await page.goto('/');
     await page.waitForSelector('#onboarding[data-open]', { timeout: 5_000 });
 
@@ -116,7 +120,6 @@ test.describe('Navegación hash', () => {
   });
 
   const secciones = [
-    { href: '#ingresos',    seccion: 'sec-ingresos' },
     { href: '#gast',        seccion: 'sec-gast' },
     { href: '#compromisos',  seccion: 'sec-compromisos' },
     { href: '#agenda',      seccion: 'sec-agenda' },
@@ -135,30 +138,37 @@ test.describe('Navegación hash', () => {
   }
 });
 
-// ── SUITE 4: Ingresos ───────────────────────────────────────────────────────
+// ── SUITE 4: Ingresos (card dentro de Tesorería) ────────────────────────────
+// Ingresos ya no tiene sección propia. Vive como card compacta dentro de Tesorería.
 
-test.describe('Ingresos - CRUD', () => {
+test.describe('Ingresos - card en Tesorería', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
-    await page.goto('/#ingresos');
-    await page.waitForSelector('#sec-ingresos.active', { timeout: 10_000 });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
   });
 
-  test('abrir y cerrar modal con Escape', async ({ page }) => {
-    await page.click('[data-action="nuevo-ingreso"]');
+  test('muestra card de ingresos dentro de Tesorería', async ({ page }) => {
+    await expect(page.locator('.ingresos-card')).toBeVisible();
+    await expect(page.locator('.ingresos-card__title')).toBeVisible();
+    // Botón agregar debe existir dentro de la card
+    await expect(page.locator('.ingresos-card [data-action="nuevo-ingreso"]')).toBeVisible();
+  });
+
+  test('abrir modal ingreso y cerrar con Escape', async ({ page }) => {
+    await page.click('.ingresos-card [data-action="nuevo-ingreso"]');
     await expect(page.locator('#modal-ingreso[data-open]')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator(modalCerrado('modal-ingreso'))).toBeAttached();
   });
 
-  test('registrar ingreso mensual y verifica en lista', async ({ page }) => {
-    await page.click('[data-action="nuevo-ingreso"]');
+  test('registrar ingreso mensual y verifica en card', async ({ page }) => {
+    await page.click('.ingresos-card [data-action="nuevo-ingreso"]');
     await page.waitForSelector('#modal-ingreso[data-open]');
 
     const form = page.locator('#modal-ingreso-body form');
     await form.locator('[name="descripcion"]').fill('Salario prueba E2E');
     await form.locator('[name="monto"]').fill('3000000');
-    // Seleccionar la primera opción real del select de frecuencia
     await form.locator('select[name="frecuencia"]').selectOption({ index: 1 });
     await form.locator('button[type="submit"]').click();
 
@@ -167,8 +177,8 @@ test.describe('Ingresos - CRUD', () => {
       timeout: 3_000,
     });
 
-    // El ingreso aparece en la lista
-    await expect(page.locator('#lista-ingresos')).toContainText(
+    // El ingreso aparece en la card dentro de Tesorería
+    await expect(page.locator('.ingresos-card__list')).toContainText(
       'Salario prueba E2E',
       { timeout: 3_000 }
     );

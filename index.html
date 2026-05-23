@@ -61,12 +61,6 @@
               <span class="nav-item__label">Dashboard</span>
             </a>
 
-            <a class="nav-item" href="#ingresos" data-section="ingresos"
-               role="listitem" aria-label="Ingresos">
-              <span class="nav-item__icon" aria-hidden="true">💰</span>
-              <span class="nav-item__label">Ingresos</span>
-            </a>
-
             <a class="nav-item" href="#gast" data-section="gast"
                role="listitem" aria-label="Gastos">
               <span class="nav-item__icon" aria-hidden="true">💸</span>
@@ -251,20 +245,6 @@
         </div>
       </section>
 
-      <!-- INGRESOS -->
-      <section class="section" id="sec-ingresos" aria-labelledby="title-ingresos">
-        <header class="section__header">
-          <h1 class="section__title" id="title-ingresos">Ingresos</h1>
-          <button class="btn btn-primary" data-action="nuevo-ingreso"
-                  aria-label="Registrar nuevo ingreso">
-            + Nuevo ingreso
-          </button>
-        </header>
-        <div id="lista-ingresos">
-          <!-- Fase 8: ingresos/view.js renderiza aquí -->
-        </div>
-      </section>
-
       <!-- GASTOS -->
       <section class="section" id="sec-gast" aria-labelledby="title-gast">
         <header class="section__header">
@@ -334,12 +314,15 @@
         <header class="section__header">
           <h1 class="section__title" id="title-tesoreria">Tesorería</h1>
           <button class="btn btn-primary" data-action="nueva-cuenta"
-                  aria-label="Agregar cuenta o fuente de ingreso">
+                  aria-label="Agregar nueva cuenta">
             + Cuenta
           </button>
         </header>
         <div id="nudge-prima">
           <!-- G.3.F8: sugerencia de distribución de prima. Aparece cuando hay ingresos mensuales. -->
+        </div>
+        <div id="panel-ingresos-card">
+          <!-- ingresos/index.js renderiza la card compacta de ingresos aquí -->
         </div>
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->

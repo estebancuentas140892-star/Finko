@@ -2527,6 +2527,62 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   INGRESOS-CARD - card compacta de ingresos dentro de Tesorería.
+   Aparece sobre #lista-tesoreria, proporcional al uso real del
+   usuario (1-2 ingresos para la mayoría).
+   ════════════════════════════════════════════════════════════ */
+
+.ingresos-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.ingresos-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.ingresos-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.ingresos-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ingresos-card__total {
+  font-size: var(--fk-text-sm);
+  font-weight: 700;
+  color: var(--fk-text-accent);
+}
+
+.ingresos-card__list {
+  padding: 0.25rem 0;
+}
+
+.ingresos-card__empty {
+  padding: 0.75rem 1rem;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════
    CONFIGURACION - perfil, notificaciones, datos, acerca de.
    Cada .config-section es una surface card consistente con calc.
    ════════════════════════════════════════════════════════════ */

@@ -17,7 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { validarIngreso, normalizarIngreso } from './logic.js';
-import { renderListaIngresos, renderResumenIngresos, renderFormIngreso } from './view.js';
+import { renderCardIngresos, renderResumenIngresos, renderFormIngreso } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -46,7 +46,7 @@ function _guardarIngreso() {
   if (overlay) cerrarModal(overlay);
 
   renderResumenIngresos();
-  renderListaIngresos();
+  renderCardIngresos();
   updSaldo();
   announce('Ingreso guardado correctamente.');
 }
@@ -69,7 +69,7 @@ async function _eliminarIngreso(el) {
 
   eliminar('ingresos', id);
   renderResumenIngresos();
-  renderListaIngresos();
+  renderCardIngresos();
   updSaldo();
   announce(`Ingreso "${ingreso.descripcion}" eliminado.`);
 }
@@ -95,20 +95,21 @@ export function initIngresos() {
   _inyectarForm();
   registrarRender(renderResumenIngresos);
 
+  // Re-render la card cuando hay cambios de estado mientras tesorería está visible.
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'ingresos') {
-      renderSmart(renderListaIngresos, 'ingresos');
+    if (section === 'tesoreria') {
+      renderSmart(renderCardIngresos, 'tesoreria');
       renderResumenIngresos();
       updSaldo();
     }
   });
 
-  // Re-render al navegar a #ingresos - sin esto la sección puede aparecer vacía
-  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  // Re-render al navegar a #tesoreria (la card puede estar vacía si el usuario
+  // llega navegando directamente sin state:change previo).
   window.addEventListener('hashchange', () => {
-    renderSmart(renderListaIngresos, 'ingresos');
+    renderSmart(renderCardIngresos, 'tesoreria');
   });
 
-  renderSmart(renderListaIngresos, 'ingresos');
+  renderSmart(renderCardIngresos, 'tesoreria');
   renderResumenIngresos();
 }
