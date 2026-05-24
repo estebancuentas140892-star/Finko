@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos) - Selector de mes anterior/siguiente sobre la lista · 2026-05-23
+
+Encabezado `‹ Mayo 2026 ›` encima de los chips de categoría. Permite revisar gastos
+de cualquier mes sin exportar CSV. El filtro de categoría se resetea al navegar de mes.
+El mes seleccionado persiste durante la sesión.
+
+**Archivos:**
+- `modules/dominio/gastos/view.js`: constante `MONTHS`; estado local `_viewYear`/`_viewMonth`; `_ensureMes()`; `navegarMesGastos(delta)` exportada; `renderFiltrosGastos()` incluye `.mes-nav` + chips; `renderListaGastos()` usa el mes de la vista en lugar de `hoy()`
+- `modules/dominio/gastos/index.js`: `_prevMes()` / `_nextMes()`; acciones `gastos-prev-mes` y `gastos-next-mes` registradas; import de `navegarMesGastos`
+- `styles/components.css`: bloque `.mes-nav` (btn, label, hover, focus-visible)
+- `service-worker.js`: v57→v58
+
+**Tests:** 901/901 verdes (sin tests nuevos: la navegación es análoga a `navegarMes` en Agenda; `gastosMes` ya estaba cubierta).
+
+---
+
 ### feat(gastos) - Filtro por categoría con chips fijos sobre la lista · 2026-05-23
 
 Chips de categoría encima de la lista de gastos del mes. "Todos" activo por defecto.

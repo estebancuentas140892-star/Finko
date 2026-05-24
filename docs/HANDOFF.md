@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-23 (feat: filtro por categoría con chips en Gastos)
+> Última actualización: 2026-05-23 (feat: selector de mes anterior/siguiente en Gastos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos) - Selector de mes anterior/siguiente sobre la lista · 2026-05-23
+Encabezado `‹ Mayo 2026 ›` encima de los chips de categoría. Permite revisar gastos
+de cualquier mes sin exportar CSV. El filtro de categoría se resetea al navegar de mes.
+El mes seleccionado persiste durante la sesión.
+
+**Archivos:**
+- `modules/dominio/gastos/view.js`: `_viewYear`/`_viewMonth` (estado local); `_ensureMes()`;
+  `navegarMesGastos(delta)` exportada; `renderFiltrosGastos()` incluye `.mes-nav` + chips;
+  `renderListaGastos()` usa el mes de la vista en lugar de `hoy()`
+- `modules/dominio/gastos/index.js`: `_prevMes()` / `_nextMes()`; acciones `gastos-prev-mes`
+  y `gastos-next-mes` registradas
+- `styles/components.css`: bloque `.mes-nav` (btn, label, hover, focus)
+- `service-worker.js`: v57→v58
+
+**Tests:** 901/901 verdes (sin tests nuevos: la lógica de navegación es análoga a `navegarMes`
+en Agenda que tampoco tiene tests unitarios; `gastosMes` ya estaba cubierta).
 
 ### feat(gastos) - Filtro por categoría con chips fijos sobre la lista · 2026-05-23
 Chips de categoría encima de la lista de gastos del mes. "Todos" activo por defecto.
@@ -114,29 +131,6 @@ Solo cambia el contenedor visual.
   para verificar `.ingresos-card__empty` en Tesorería
 
 **Tests:** 880/880 unit + 48/48 E2E verdes.
-
-### fix(logros) - Toast de logro estancado en pantalla forever · 2026-05-22
-Bug crítico reportado en producción: los toasts de logro se quedaban visibles indefinidamente.
-Raíz: listener `animationend` con `{ once: true }` en `_mostrarToast()` capturaba el evento
-de la **animación de entrada** (toastIn, ~350ms) en lugar de la salida (toastOut). Esto cancelaba
-el timer del fadeout, dejando el toast estancado.
-
-Timeline del bug:
-- t=0: toast aparece, toastIn animation empieza (350ms)
-- t=0: setTimeout(2500ms) configurado para disparar fadeout
-- t=350ms: toastIn termina → animationend dispara → { once: true } listener ejecuta clearTimeout()
-- t=2500ms: timer NUNCA se ejecuta → toast queda visible forever
-
-Solución: Remover el listener defensivo problemático. Reemplazar con `toast.isConnected` check
-en el setTimeout para detectar si el toast fue removido externamente (fallback seguro).
-
-**Archivos:**
-- `modules/dominio/logros/index.js` (línea 88-96): removido listener `animationend`, agregado
-  guard `if (!toast.isConnected) return;` antes de aplicar fade
-- `service-worker.js`: v52→v53
-
-**Verificación:** app en producción v53 (curl confirmó presencia del guard `isConnected`).
-Toast ahora desaparece en ~2.9s (2.5s visible + 0.4s fade) consistentemente en todos los navegadores.
 
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
