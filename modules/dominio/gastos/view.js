@@ -8,10 +8,47 @@ import { f, hoy } from '../../infra/utils.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
 import { gastosMes, totalGastosMes, filtrarGastos } from './logic.js';
 
-// ── ESTADO LOCAL DE FILTRO ───────────────────────────────────────
+// ── CONSTANTES ───────────────────────────────────────────────────
+
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+// ── ESTADO LOCAL DE VISTA ────────────────────────────────────────
+
+/** Mes visualizado (0-indexed, igual que Date.getMonth()). `null` = mes actual. */
+let _viewYear  = null;
+let _viewMonth = null;
 
 /** Categoría activa en el filtro de chips. `null` = "Todos". */
 let _filtroCategoria = null;
+
+/** Inicializa el mes al mes actual si aún no se ha establecido. */
+function _ensureMes() {
+  if (_viewYear === null || _viewMonth === null) {
+    const hoyDate  = new Date();
+    _viewYear  = hoyDate.getFullYear();
+    _viewMonth = hoyDate.getMonth();
+  }
+}
+
+/**
+ * Mueve el mes visualizado en `delta` pasos (positivo = adelante, negativo = atrás).
+ * Resetea el filtro de categoría al cambiar de mes (las categorías del nuevo mes
+ * pueden ser distintas). El caller debe llamar renderFiltrosGastos + renderListaGastos.
+ * @param {number} delta
+ */
+export function navegarMesGastos(delta) {
+  _ensureMes();
+  let m = _viewMonth + delta;
+  let y = _viewYear;
+  while (m < 0)  { m += 12; y -= 1; }
+  while (m > 11) { m -= 12; y += 1; }
+  _viewMonth        = m;
+  _viewYear         = y;
+  _filtroCategoria  = null; // reset al cambiar mes
+}
 
 /** Actualiza el filtro activo. Llamado desde index.js al hacer clic en un chip. */
 export function setFiltroCategoria(cat) {
@@ -36,77 +73,87 @@ export function renderResumenGastos() {
 // ── BARRA DE FILTROS ─────────────────────────────────────────────
 
 /**
- * Renderiza los chips de categoría en `#panel-filtros-gastos`.
- * Muestra "Todos" + uno por cada categoría presente en el mes actual.
- * Si no hay gastos en el mes, limpia el panel (sin barra vacía).
- * Auto-resetea `_filtroCategoria` si la categoría activa ya no existe.
+ * Renderiza el selector de mes + chips de categoría en `#panel-filtros-gastos`.
+ * El encabezado muestra "« Mes Año »" con botones de navegación.
+ * Los chips filtran por categoría dentro del mes seleccionado.
+ * Auto-resetea `_filtroCategoria` si la categoría activa ya no existe en el mes.
  */
 export function renderFiltrosGastos() {
   const el = document.getElementById('panel-filtros-gastos');
   if (!el) return;
 
-  const fechaHoy = hoy();
-  const anio = Number(fechaHoy.slice(0, 4));
-  const mes  = Number(fechaHoy.slice(5, 7));
-  const delMes = gastosMes(S.gastos, anio, mes);
+  _ensureMes();
 
-  if (delMes.length === 0) {
-    el.innerHTML = '';
+  const delMes = gastosMes(S.gastos, _viewYear, _viewMonth + 1); // gastosMes usa mes 1-indexed
+  const label  = `${MONTHS[_viewMonth]} ${_viewYear}`;
+
+  // Chips: solo si hay gastos en el mes.
+  let chipsHtml = '';
+  if (delMes.length > 0) {
+    const cats = [...new Set(delMes.map(g => g.categoria ?? 'Otros'))].sort();
+
+    // Si la categoría activa desapareció, resetear a "Todos".
+    if (_filtroCategoria !== null && !cats.includes(_filtroCategoria)) {
+      _filtroCategoria = null;
+    }
+
+    const todosActivo = _filtroCategoria === null;
+    const chips = cats.map(cat => {
+      const activo = _filtroCategoria === cat;
+      return `
+        <button type="button"
+                class="chip${activo ? ' chip--active' : ''}"
+                data-action="gastos-filtrar-cat"
+                data-cat="${_esc(cat)}"
+                aria-pressed="${activo}"
+                aria-label="Filtrar por ${_esc(cat)}">
+          ${_esc(cat)}
+        </button>`;
+    }).join('');
+
+    chipsHtml = `
+      <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
+        <button type="button"
+                class="chip${todosActivo ? ' chip--active' : ''}"
+                data-action="gastos-filtrar-cat"
+                data-cat=""
+                aria-pressed="${todosActivo}"
+                aria-label="Ver todos los gastos">
+          Todos
+        </button>
+        ${chips}
+      </div>`;
+  } else {
     _filtroCategoria = null;
-    return;
   }
-
-  const cats = [...new Set(delMes.map(g => g.categoria ?? 'Otros'))].sort();
-
-  // Si la categoría activa desapareció del mes (ej. se eliminó el último
-  // gasto de esa categoría), resetear al filtro "Todos".
-  if (_filtroCategoria !== null && !cats.includes(_filtroCategoria)) {
-    _filtroCategoria = null;
-  }
-
-  const todosActivo = _filtroCategoria === null;
-  const chips = cats.map(cat => {
-    const activo = _filtroCategoria === cat;
-    return `
-      <button type="button"
-              class="chip${activo ? ' chip--active' : ''}"
-              data-action="gastos-filtrar-cat"
-              data-cat="${_esc(cat)}"
-              aria-pressed="${activo}"
-              aria-label="Filtrar por ${_esc(cat)}">
-        ${_esc(cat)}
-      </button>`;
-  }).join('');
 
   el.innerHTML = `
-    <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
-      <button type="button"
-              class="chip${todosActivo ? ' chip--active' : ''}"
-              data-action="gastos-filtrar-cat"
-              data-cat=""
-              aria-pressed="${todosActivo}"
-              aria-label="Ver todos los gastos">
-        Todos
-      </button>
-      ${chips}
-    </div>`;
+    <div class="mes-nav" role="group" aria-label="Seleccionar mes">
+      <button type="button" class="mes-nav__btn"
+              data-action="gastos-prev-mes"
+              aria-label="Mes anterior">‹</button>
+      <span class="mes-nav__label">${_esc(label)}</span>
+      <button type="button" class="mes-nav__btn"
+              data-action="gastos-next-mes"
+              aria-label="Mes siguiente">›</button>
+    </div>
+    ${chipsHtml}`;
 }
 
 // ── LISTA DE GASTOS ──────────────────────────────────────────────
 
 /**
- * Renderiza la lista de gastos en `#lista-gastos`, aplicando el filtro
- * de categoría activo (`_filtroCategoria`).
+ * Renderiza la lista de gastos en `#lista-gastos`, aplicando el mes
+ * seleccionado (`_viewYear`/`_viewMonth`) y el filtro de categoría activo.
  * No-op si el contenedor no existe.
  */
 export function renderListaGastos() {
   const el = document.getElementById('lista-gastos');
   if (!el) return;
 
-  const fechaHoy = hoy();
-  const anio = Number(fechaHoy.slice(0, 4));
-  const mes  = Number(fechaHoy.slice(5, 7));
-  const delMes = gastosMes(S.gastos, anio, mes);
+  _ensureMes();
+
+  const delMes = gastosMes(S.gastos, _viewYear, _viewMonth + 1); // 1-indexed
 
   if (delMes.length === 0) {
     el.innerHTML = _renderEmptyState();

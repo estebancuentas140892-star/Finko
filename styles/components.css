@@ -2583,6 +2583,47 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   MES-NAV - selector de mes anterior/siguiente.
+   Usado en la sección Gastos encima de los chips de categoría.
+   ════════════════════════════════════════════════════════════ */
+
+.mes-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.mes-nav__btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--fk-radius);
+  transition: color 0.15s, background 0.15s;
+}
+
+.mes-nav__btn:hover {
+  color: var(--fk-text-primary);
+  background: var(--fk-bg-surface);
+}
+
+.mes-nav__btn:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+}
+
+.mes-nav__label {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  letter-spacing: 0.01em;
+}
+
+/* ════════════════════════════════════════════════════════════
    FILTROS-BAR + CHIP - barra de chips de filtro por categoría.
    Usada en la sección Gastos (encima de la lista).
    ════════════════════════════════════════════════════════════ */

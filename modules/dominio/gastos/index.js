@@ -22,7 +22,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   aplicarGastoASaldo, revertirGastoDeSaldo, deltasPorEdicionDeGasto,
 } from './logic.js';
-import { renderListaGastos, renderResumenGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria } from './view.js';
+import { renderListaGastos, renderResumenGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -229,6 +229,20 @@ function _fmtMonto(n) {
   return '$' + abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
+// ── NAVEGACIÓN DE MES ────────────────────────────────────────────
+
+function _prevMes() {
+  navegarMesGastos(-1);
+  renderFiltrosGastos();
+  renderListaGastos();
+}
+
+function _nextMes() {
+  navegarMesGastos(+1);
+  renderFiltrosGastos();
+  renderListaGastos();
+}
+
 // ── FILTRO DE CATEGORÍA ──────────────────────────────────────────
 
 /** Cambia el chip activo y re-renderiza filtros + lista. */
@@ -364,6 +378,8 @@ export function initGastos() {
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);
   registrarAccion('gasto-rapido', _abrirGastoRapido);
+  registrarAccion('gastos-prev-mes',    _prevMes);
+  registrarAccion('gastos-next-mes',    _nextMes);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
 
   // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
