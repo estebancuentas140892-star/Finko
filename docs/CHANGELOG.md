@@ -7,6 +7,46 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(compromisos) - v7.4: detalle compacto, mensaje "no aplica" y métricas consistentes · 2026-05-27
+
+Iteración tras feedback del usuario sobre v7.3. Tres problemas: el detalle (3 bloques: Por qué te recomendamos / Qué te ofrece / Ideal si) saturaba la pantalla en mobile; al tocar una estrategia desactivada (Avalancha sin deudas con interés) no pasaba nada; y el orden de métricas en "Tu impacto" difería entre Avalancha y Bola de nieve, confundiendo la comparación.
+
+**Cambios (`modules/dominio/compromisos/view.js`, `styles/components.css`):**
+
+1. **Detalle compacto: 3 bloques → 2 bloques.** El primero ahora unifica razón + mecanismo + ideal en 1 párrafo:
+   - Si es la recomendada: título "✨ Por qué te conviene" + razón (de `recomendarEstrategia`) + mecanismo + ideal.
+   - Si NO es la recomendada: título "ℹ️ Cómo funciona" + mecanismo + ideal (sin razón).
+   - Removidos `meta.beneficio` y `meta.ideal` de `_META_ESTRATEGIA`. Los textos viven ahora en `_RESUMEN_ESTRATEGIA` y se concatenan en `_renderResumenEstrategia`.
+   - **Ahorro vertical:** ~180px en mobile.
+2. **Cards "no aplica" siguen clicables.** Antes Avalancha sin tasas > 0 quedaba `disabled` (no clicable, tooltip que no funciona en mobile). Ahora:
+   - La card lleva clase `.estrategia-card-pick--inactiva` (opacidad 0.6, nombre en `--fk-text-muted`).
+   - Al hacer click se muestra `_renderNoAplica('avalancha')`: un bloque `.estrategia-card__no-aplica` (fondo `--fk-warning-bg`, borde 40% warning) con título "🔒 No aplica con tus deudas actuales", explicación ("Avalancha solo tiene sentido si hay al menos una deuda con tasa de interés mayor a 0...") y sugerencia ("usá Bola de nieve para cerrar primero la más chica").
+   - El bloque "Tu impacto" no se renderiza en este caso (las métricas no tendrían sentido).
+   - Removida la lógica que forzaba `_uiEstrategia.estrategia = 'bolaNieve'` cuando Avalancha no aplicaba (era cambio silencioso).
+3. **Métricas en orden consistente entre estrategias.** Ambas muestran ahora, en el mismo orden:
+   1. **Libre de deudas en** → `.estrategia-card__metrica-valor--info` (azul `var(--fk-info-text)` #3d8aff, informativo neutro).
+   2. **Total que pagás en intereses** → `.estrategia-card__metrica-valor--danger` (rojo `var(--fk-danger-text)` #ff4757, lo que perdés).
+   3. **Métrica única de cada estrategia** → `--success` (verde, el "premio" de elegir esa estrategia):
+      - Avalancha: "Te ahorrás respecto a Bola de nieve $X" (solo si extra > 0).
+      - Bola de nieve: "Cerrás tu primera deuda en X meses (nombre)".
+   - **Bola de nieve ahora SÍ muestra intereses** (revertimos la decisión de v7.1). Razón: el usuario merece ver el costo real para comparar honestamente. Removida la métrica "Después de X meses solo te queda N deuda" porque rompía la lista fija de 3.
+4. **CSS nuevo en `styles/components.css`:**
+   - `.estrategia-card-pick--inactiva` (opacidad 0.6, color del nombre `--fk-text-muted`). Reemplaza `[disabled]`.
+   - `.estrategia-card__metrica-valor--info` y `--danger` (junto al `--success` existente).
+   - `.estrategia-card__no-aplica` (fondo warning, padding, gap, borde 40%).
+
+**Verificación visual:** screenshot en mobile (375×812 dark) confirmó:
+- Avalancha seleccionada con detalle compacto: bloque "✨ Por qué te conviene" + bloque "📊 Tu impacto" con "Libre de deudas en 1 año 7 meses" en azul y "Total que pagás en intereses $1.640.559" en rojo.
+- Test del flow "no aplica" via `preview_eval` simulando `tasa=0` en todas las deudas: Avalancha aparece con clase `--inactiva` y al hacer click se reemplaza el detalle por el mensaje warning con sugerencia.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**`service-worker.js`:** v70 → v71.
+
+**Tests:** 932/932 verdes (sin cambios de lógica; solo presentación e UX).
+
+---
+
 ### docs(compromisos) - v7.3: copy de estrategias explica el mecanismo · 2026-05-27
 
 El copy previo de las estrategias daba el beneficio pero no el mecanismo. "Pagás menos intereses" (sin explicar por qué) y "Cerrás deudas rápido y mantenés la motivación" (que reducía Bola de nieve a algo puramente psicológico, ocultando su mecanismo real: la cuota liberada se reinyecta en la siguiente deuda). El usuario no podía elegir con información.

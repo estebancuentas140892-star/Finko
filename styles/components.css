@@ -2001,9 +2001,14 @@ textarea.input {
   background: color-mix(in srgb, var(--fk-accent) 12%, var(--fk-bg-surface));
   box-shadow: 0 0 0 1px var(--fk-accent) inset;
 }
-.estrategia-card-pick[disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
+/* v7.4: card "inactiva" (estrategia que no aplica con las deudas actuales).
+   Sigue siendo clicable: al activarla se muestra un mensaje educativo en el
+   detalle. La opacidad reducida señala que algo es distinto, sin bloquear. */
+.estrategia-card-pick--inactiva {
+  opacity: 0.6;
+}
+.estrategia-card-pick--inactiva .estrategia-card-pick__nombre {
+  color: var(--fk-text-muted);
 }
 .estrategia-card-pick__icono {
   font-size: 1.75rem;
@@ -2098,6 +2103,33 @@ textarea.input {
 }
 .estrategia-card__metrica-valor--success {
   color: var(--fk-success-text);
+}
+/* v7.4: orden y color consistentes entre estrategias.
+   --info (azul): tiempo "Libre de deudas en" (informativo neutro).
+   --danger (rojo): "Total en intereses" (es lo que perdés).
+   --success ya existente: métrica única en verde (el premio de la estrategia). */
+.estrategia-card__metrica-valor--info {
+  color: var(--fk-info-text);
+}
+.estrategia-card__metrica-valor--danger {
+  color: var(--fk-danger-text);
+}
+
+/* v7.4: mensaje "no aplica" cuando se elige una estrategia que no tiene
+   sentido con las deudas actuales (ej. Avalancha sin tasas > 0).
+   Reemplaza completamente el bloque de detalle. */
+.estrategia-card__no-aplica {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-warning-text) 40%, transparent);
+  border-radius: var(--fk-radius-md);
+  margin-bottom: var(--fk-space-3);
+}
+.estrategia-card__no-aplica .estrategia-card__bloque-titulo {
+  color: var(--fk-warning-text);
 }
 .estrategia-card__metrica-tip {
   font-size: var(--fk-text-xs);

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.3: copy de estrategias explica el mecanismo, no solo el beneficio)
+> Última actualización: 2026-05-27 (v7.4: detalle compacto + mensaje "no aplica" + métricas consistentes con colores)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(compromisos) - v7.4: detalle compacto + "no aplica" + métricas consistentes · 2026-05-27
+Feedback del usuario sobre v7.3 (3 puntos): el detalle saturaba mobile (3 bloques), tocar una estrategia desactivada no daba feedback, y las métricas estaban en distinto orden entre Avalancha y Bola de nieve.
+
+**Cambios clave (solo `compromisos/view.js` + `components.css`):**
+- **3 bloques → 2:** el primero ("✨ Por qué te conviene" si recomendada, "ℹ️ Cómo funciona" si no) integra razón + mecanismo + ideal en 1 párrafo. `_RESUMEN_ESTRATEGIA` reemplaza a `beneficio`/`ideal` del meta. ~180px menos de scroll en mobile.
+- **Cards inactivas siguen clicables:** clase `.estrategia-card-pick--inactiva` (opacidad 0.6) en lugar de `[disabled]`. Al click, el detalle se reemplaza por `_renderNoAplica('avalancha')` con bloque warning explicando "Avalancha solo tiene sentido si hay al menos una deuda con tasa > 0" + sugerencia. Removido el cambio silencioso a Bola de nieve.
+- **Métricas consistentes:** ambas estrategias muestran ahora el mismo orden: 1) "Libre de deudas en" en azul (`--info`), 2) "Total en intereses" en rojo (`--danger`, **Bola de nieve también** revertiendo v7.1 por consistencia), 3) métrica única en verde (`--success`): "Te ahorrás $X" para Avalancha o "Cerrás tu primera deuda en X" para Bola de nieve.
+- **CSS nuevo:** `--inactiva`, `--info`, `--danger`, `__no-aplica` (con fondo `--fk-warning-bg` y borde sutil).
+- **`service-worker.js`:** v70 → v71.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (UI pura).
 
 ### docs(compromisos) - v7.3: copy de estrategias explica el mecanismo · 2026-05-27
 El usuario reportó que el copy actual no explicaba bien las dos estrategias: "Pagás menos intereses" no decía *por qué*, y "Cerrás deudas rápido y mantenés la motivación" reducía Bola de nieve a algo psicológico sin mencionar su mecanismo real (la cuota liberada se reinyecta en la siguiente deuda, efecto acumulativo).
@@ -94,25 +108,6 @@ El SW estaba cacheando assets viejos en localhost; mientras iterábamos CSS/JS e
 **Archivos:** `modules/infra/sw-register.js`, `service-worker.js`.
 
 **Tests:** 932/932 verdes (sin cambios de lógica).
-
-### refactor(compromisos) - Estrategia de pago como cards + recomendación + acordeón · 2026-05-27
-Rediseño UX completo de la card "Estrategia de pago" para móvil, en dos pasadas. Cierra el feedback del usuario: la sección saturaba con métricas que no informaban, y el input del extra era funcionalidad oculta que pocos descubrían.
-
-**Cambios clave:**
-- **Header simple:** "💡 Estrategia de pago" + "Finko te ayuda a tomar mejores decisiones con tus deudas."
-- **Dos cards seleccionables** (Avalancha / Bola de nieve) con badge "✨ Recomendada para vos" en la que corresponde según heurística.
-- **Detalle dinámico** debajo de las cards al elegir una: descripción + uso ideal + razón de la recomendación (solo si es la recomendada) + métrica hero "Libre de deudas en X" + intereses totales.
-- **Nuevo `recomendarEstrategia(deudas)` puro en `logic.js`:** 0/1 deuda → `null`. Todas con tasa 0 → Bola de nieve. Diferencia tasaMax-tasaMin ≥ 5 pts EA → Avalancha. Resto → Bola de nieve. Tolerante a punto flotante (redondea a 2 decimales antes de comparar).
-- **Acordeón opcional "💪 ¿Podés pagar algo extra cada mes?"** colapsado por defecto. Al expandirse muestra input + descripción + cierre con `✕`. Auto-focus al input al abrir. Persiste extra durante la sesión.
-- **Helper `_formatearDuracion`:** ≥12 meses se muestra como "X años Y meses" respetando singulares.
-- **Comparación de ahorro vacía si empate:** se eliminó el mensaje confuso "ambas estrategias dan el mismo resultado".
-- **`service-worker.js`:** v64 → v66.
-
-**Educación financiera:** la lógica Avalancha sigue priorizando por **tasa**, no por interés absoluto en pesos. Es matemáticamente óptima por el efecto cascada (cuando la deuda chica de alta tasa se cierra rápido, todo el flujo libera hacia las demás). Esto se explicó al usuario con su propio ejemplo numérico y se mantiene como práctica estándar.
-
-**Archivos:** `compromisos/view.js`, `compromisos/logic.js` (`recomendarEstrategia`), `compromisos/index.js` (handler + acción `toggle-extra-estrategia`), `styles/components.css`, `service-worker.js`, `tests/unit/compromisos.test.js` (+6 tests).
-
-**Tests:** 932/932 verdes (+6).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
