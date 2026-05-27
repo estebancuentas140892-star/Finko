@@ -367,6 +367,109 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
   return out;
 }
 
+// ── DASHBOARD: PRIORIDADES + VENCIDOS ────────────────────────────
+
+/**
+ * Detecta compromisos activos cuyo día de pago ya pasó este mes,
+ * cubriendo los tres tipos (fijo, deuda, agenda).
+ *
+ * Generalización de `detectarFijosSinPagarEsteMes` para alimentar el panel
+ * "Pendientes/Vencidos" del dashboard. La función vieja queda intacta para
+ * el nudge de la sección compromisos (retrocompatibilidad).
+ *
+ * Limitación conocida: para tipo='agenda' con frecuencia='Única vez' creada
+ * en meses anteriores, `diasAtraso` se calcula contra el mes en curso, no
+ * contra la fecha original. Si el usuario olvidó desactivar el item, el
+ * atraso reportado será menor al real. Aceptable para v1: se resuelve con
+ * disciplina del usuario (toggle "activo=false" al pagar).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {string} hoyISO   YYYY-MM-DD
+ * @param {object} [config]
+ * @param {number} [config.umbralDiasAtraso=0] Mínimo de días de atraso para incluir.
+ * @returns {Array<{
+ *   id: string, descripcion: string, tipo: 'fijo'|'deuda'|'agenda',
+ *   monto: number, diaPago: number, diasAtraso: number,
+ *   severidad: 'leve'|'moderada'|'urgente'
+ * }>}
+ */
+export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
+  if (!Array.isArray(compromisos) || compromisos.length === 0) return [];
+  if (typeof hoyISO !== 'string') return [];
+
+  const mh = _RX_FECHA_COMP.exec(hoyISO);
+  if (!mh) return [];
+
+  const diaHoy = +mh[3];
+  const cfg = typeof config === 'object' && config ? config : {};
+  const umbral = Number.isFinite(+cfg.umbralDiasAtraso) && +cfg.umbralDiasAtraso >= 0
+    ? Math.floor(+cfg.umbralDiasAtraso) : 0;
+
+  const out = [];
+
+  for (const c of compromisos) {
+    if (!c || typeof c !== 'object') continue;
+    if (c.activo === false) continue;
+    if (!TIPOS_COMPROMISO.includes(c.tipo)) continue;
+
+    const diaPago = Number(c.diaPago) || 1;
+    if (diaPago < 1 || diaPago > 31) continue;
+
+    const diasAtraso = diaHoy - diaPago;
+    if (diasAtraso < umbral) continue;
+
+    const severidad = diasAtraso <= 3 ? 'leve'
+      : diasAtraso <= 10             ? 'moderada'
+      :                                'urgente';
+
+    out.push({
+      id:          c.id,
+      descripcion: c.descripcion || 'Sin nombre',
+      tipo:        c.tipo,
+      monto:       Number(c.monto) || 0,
+      diaPago,
+      diasAtraso,
+      severidad,
+    });
+  }
+
+  // Más urgentes primero (mayor atraso).
+  out.sort((a, b) => b.diasAtraso - a.diasAtraso);
+  return out;
+}
+
+/**
+ * Agrupa el resultado de `compromisosProximos()` por días restantes,
+ * con labels listos para mostrar en el panel de Prioridades del dashboard.
+ *
+ * Buckets: HOY (0), Mañana (1), En N días (2-7).
+ * El caller decide cuántos días pedir a `compromisosProximos()`.
+ *
+ * @param {Array<{ diasRestantes: number }>} proximos
+ * @returns {Array<{ label: string, dias: number, items: Array<object> }>}
+ *   Ordenado por días ascendente. Grupos vacíos se omiten.
+ */
+export function agruparPorDiasRestantes(proximos) {
+  if (!Array.isArray(proximos) || proximos.length === 0) return [];
+
+  const map = new Map();
+  for (const p of proximos) {
+    const d = Number(p.diasRestantes);
+    if (!Number.isInteger(d) || d < 0) continue;
+    if (!map.has(d)) map.set(d, []);
+    map.get(d).push(p);
+  }
+
+  const dias = [...map.keys()].sort((a, b) => a - b);
+  return dias.map(d => ({
+    label: d === 0 ? 'Hoy'
+         : d === 1 ? 'Mañana'
+         :           `En ${d} días`,
+    dias:  d,
+    items: map.get(d),
+  }));
+}
+
 // ── ESTRATEGIAS DE PAGO (F.4) ────────────────────────────────────
 
 /**

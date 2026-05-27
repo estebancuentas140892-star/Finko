@@ -11,7 +11,7 @@
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { LABEL_TIPO, ICONO_TIPO } from '../compromisos/logic.js';
-import { eventosDelMes, totalEventosDelMes, eventosDeHoy, eventosEnProximos } from './logic.js';
+import { eventosDelMes, totalEventosDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -277,80 +277,6 @@ function _renderDetalleItem(c) {
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
     </li>`;
-}
-
-// ── CARD HOY (Dashboard) ─────────────────────────────────────────
-
-/**
- * Renderiza la mini-agenda del día en el Dashboard (#panel-hoy).
- * Muestra los compromisos de hoy o el próximo en los siguientes 14 días.
- * No-op si el contenedor no existe o no hay compromisos activos registrados.
- */
-export function renderCardHoy() {
-  const el = document.getElementById('panel-hoy');
-  if (!el) return;
-
-  const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
-
-  // Sin compromisos activos: limpiar el panel para no generar ruido en
-  // usuarios nuevos que aún no configuraron nada.
-  if (compromisos.filter(c => c.activo !== false).length === 0) {
-    el.innerHTML = '';
-    return;
-  }
-
-  const hoy = new Date();
-  const dow = DOW_LARGO[hoy.getDay()];
-  const dia = hoy.getDate();
-  const mes = MONTHS[hoy.getMonth()];
-
-  const eventosHoy = eventosDeHoy(compromisos);
-  let bodyHtml;
-
-  if (eventosHoy.length > 0) {
-    const visibles = eventosHoy.slice(0, 3);
-    const items = visibles.map(c => {
-      const tipo  = c.tipo ?? 'fijo';
-      const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
-      const desc  = _esc(c.descripcion ?? '(sin descripción)');
-      const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
-      return `
-          <li class="hoy-card__item">
-            <span class="hoy-card__dot cal-dot--${tipo}" aria-hidden="true">${icono}</span>
-            <span class="hoy-card__name">${desc}</span>
-            ${monto ? `<span class="hoy-card__amount">${monto}</span>` : ''}
-          </li>`;
-    }).join('');
-
-    const mas = eventosHoy.length > 3
-      ? `<li class="hoy-card__more">+${eventosHoy.length - 3} más</li>`
-      : '';
-
-    bodyHtml = `<ul class="hoy-card__list" role="list">${items}${mas}</ul>`;
-  } else {
-    const prox = eventosEnProximos(compromisos, 14);
-    if (prox) {
-      const nombre  = _esc(prox.eventos[0]?.descripcion ?? 'compromiso');
-      const cuantos = prox.diasRestantes === 1 ? 'mañana' : `en ${prox.diasRestantes} días`;
-      bodyHtml = `
-        <p class="hoy-card__empty">Sin compromisos hoy.
-          <span class="hoy-card__prox">Próximo: <strong>${nombre}</strong> ${cuantos}.</span>
-        </p>`;
-    } else {
-      bodyHtml = `<p class="hoy-card__empty">Sin compromisos próximos. 🎉</p>`;
-    }
-  }
-
-  el.innerHTML = `
-    <div class="hoy-card">
-      <div class="hoy-card__header">
-        <h2 class="hoy-card__title">📅 Hoy, ${dow} ${dia} de ${mes}</h2>
-        <a href="#agenda" class="hoy-card__link" aria-label="Ir a la agenda completa">Ver agenda</a>
-      </div>
-      <div class="hoy-card__body">
-        ${bodyHtml}
-      </div>
-    </div>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

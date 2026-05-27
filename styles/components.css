@@ -2674,19 +2674,30 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
-   HOY-CARD - mini-agenda del día, visible en el Dashboard.
-   Aparece entre "Gasto rápido" y el bento de métricas.
+   HERO SOLO - card de saldo visible fuera de un bento grid.
    ════════════════════════════════════════════════════════════ */
 
-.hoy-card {
+.bento__cell--solo {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
+   Se renderiza solo si hay items. Scroll vertical si >5 items
+   para no inflar el dashboard.
+   ════════════════════════════════════════════════════════════ */
+
+.vencidos-card {
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
+  border-left: 3px solid var(--fk-color-danger, #e74c3c);
   border-radius: var(--fk-radius-lg);
   margin-bottom: 1rem;
   overflow: hidden;
 }
 
-.hoy-card__header {
+.vencidos-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2695,7 +2706,102 @@ textarea.input {
   gap: 0.5rem;
 }
 
-.hoy-card__title {
+.vencidos-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.vencidos-card__link {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.vencidos-card__link:hover,
+.vencidos-card__link:focus-visible {
+  text-decoration: underline;
+}
+
+.vencidos-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  max-height: calc(3.25rem * 3 + 0.5rem); /* ~3 items visibles */
+  overflow-y: auto;
+}
+
+.vencidos-card__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-left: 2px solid transparent;
+}
+
+.vencidos-card__item--leve     { border-left-color: var(--fk-color-warning, #f1c40f); }
+.vencidos-card__item--moderada { border-left-color: var(--fk-color-warning-strong, #e67e22); }
+.vencidos-card__item--urgente  { border-left-color: var(--fk-color-danger, #e74c3c); }
+
+.vencidos-card__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.vencidos-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.vencidos-card__name {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vencidos-card__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0.1rem 0 0;
+}
+
+.vencidos-card__amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PRIORIDADES-CARD - compromisos próximos 7 días agrupados por día.
+   Reemplaza Card Hoy: fusiona HOY + próximos en una sola vista.
+   ════════════════════════════════════════════════════════════ */
+
+.prioridades-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.prioridades-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.prioridades-card__title {
   font-size: var(--fk-text-sm);
   font-weight: 600;
   color: var(--fk-text-secondary);
@@ -2704,7 +2810,7 @@ textarea.input {
   margin: 0;
 }
 
-.hoy-card__link {
+.prioridades-card__link {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-accent);
   text-decoration: none;
@@ -2712,35 +2818,54 @@ textarea.input {
   white-space: nowrap;
 }
 
-.hoy-card__link:hover,
-.hoy-card__link:focus-visible {
+.prioridades-card__link:hover,
+.prioridades-card__link:focus-visible {
   text-decoration: underline;
 }
 
-.hoy-card__body {
-  padding: 0.25rem 0;
+.prioridades-card__body {
+  padding: 0.25rem 0 0.5rem;
 }
 
-.hoy-card__list {
+.prioridades-card__group {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.prioridades-card__group--hoy .prioridades-card__group-label {
+  color: var(--fk-text-accent);
+  font-weight: 700;
+}
+
+.prioridades-card__group-label {
+  font-size: var(--fk-text-xs);
+  font-weight: 600;
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 1rem 0.25rem;
+  margin: 0;
+}
+
+.prioridades-card__list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.hoy-card__item {
+.prioridades-card__item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 1rem;
 }
 
-.hoy-card__dot {
+.prioridades-card__dot {
   font-size: 1rem;
   flex-shrink: 0;
   line-height: 1;
 }
 
-.hoy-card__name {
+.prioridades-card__name {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-primary);
   flex: 1;
@@ -2749,32 +2874,55 @@ textarea.input {
   white-space: nowrap;
 }
 
-.hoy-card__amount {
+.prioridades-card__amount {
   font-size: var(--fk-text-sm);
   font-weight: 600;
   color: var(--fk-text-primary);
   flex-shrink: 0;
 }
 
-.hoy-card__more {
-  padding: 0.25rem 1rem 0.5rem;
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  list-style: none;
-}
-
-.hoy-card__empty {
+.prioridades-card__empty {
   padding: 0.75rem 1rem;
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);
   margin: 0;
 }
 
-.hoy-card__prox {
-  display: block;
-  margin-top: 0.25rem;
+/* ════════════════════════════════════════════════════════════
+   BALANCE-TIRA - resumen ingresos vs gastos del mes.
+   Tira simple (no card), color por signo.
+   ════════════════════════════════════════════════════════════ */
+
+.balance-tira {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md, 0.5rem);
+  margin-bottom: 1rem;
+  font-size: var(--fk-text-sm);
+}
+
+.balance-tira__icon {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.balance-tira__label {
+  color: var(--fk-text-secondary);
+  flex: 1;
+}
+
+.balance-tira__value {
+  font-weight: 700;
   color: var(--fk-text-primary);
 }
+
+/* Reusa las clases que updSaldo() ya aplica al elemento #balance-mes. */
+.balance-tira__value.bento__value--accent { color: var(--fk-color-accent, var(--fk-text-accent)); }
+.balance-tira__value.bento__value--danger { color: var(--fk-color-danger, #e74c3c); }
 
 /* ════════════════════════════════════════════════════════════
    CONFIGURACION - perfil, notificaciones, datos, acerca de.

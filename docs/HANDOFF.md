@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-23 (feat: selector de mes anterior/siguiente en Gastos)
+> Última actualización: 2026-05-26 (refactor: Dashboard acción-orientado - Vencidos + Próximas Prioridades)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 901/901 verdes |
+| Tests unitarios + integración | 915/915 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,41 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(dash) - Dashboard acción-orientado: Vencidos + Próximas Prioridades · 2026-05-26
+Rediseño del dashboard para mostrar **solo** información de acción inmediata.
+
+**Eliminado:** bento de Ingresos del mes, Gastos del mes, Metas activas, Compromisos
+activos, Me deben (contadores genéricos sin contexto). Card Hoy (fusionada con
+Próximas Prioridades para eliminar redundancia).
+
+**Agregado:**
+- `#panel-vencidos`: compromisos cuyo día de pago ya pasó (fijos + deudas + agenda).
+  Hasta 3 visibles, resto con scroll vertical interno (max-height). Severidad por
+  color de borde izquierdo (leve/moderada/urgente).
+- `#panel-prioridades`: próximos 7 días agrupados por día (HOY destacado en
+  accent, Mañana, En N días). Reemplaza Card Hoy.
+- `.balance-tira`: tira simple con Balance del mes (único indicador combinado
+  que queda en dashboard). Color por signo.
+
+**Archivos:**
+- `modules/dominio/compromisos/logic.js`: + `detectarVencidosCompletos(comp, hoyISO)`
+  (los 3 tipos) + `agruparPorDiasRestantes(proximos)`
+- `modules/dominio/compromisos/view.js`: + `renderPanelVencidos()` + `renderPanelPrioridades()`
+  + `_hoyISOLocal()` (fix de timezone para que "venció hoy" cuente día local, no UTC)
+- `modules/dominio/compromisos/index.js`: import de `registrarRender` y los nuevos renders;
+  `registrarRender(() => renderSmart(_renderDashboardPanels, 'dash'))`; hashchange a 'dash'
+- `modules/dominio/agenda/view.js`: eliminada `renderCardHoy()` y sus imports
+- `modules/dominio/agenda/index.js`: removido import de `registrarRender` y `renderCardHoy`
+- `index.html`: `#sec-dash` reestructurado (hero solo, panel-vencidos, panel-prioridades,
+  balance-tira); eliminados `#panel-hoy` y bento completo (`#bento-dash`)
+- `styles/components.css`: + `.vencidos-card`, `.prioridades-card`, `.balance-tira`,
+  `.bento__cell--solo`; eliminado `.hoy-card`
+- `service-worker.js`: v58→v59
+- `tests/unit/compromisos.test.js`: +14 tests (9 para `detectarVencidosCompletos`,
+  5 para `agruparPorDiasRestantes`)
+
+**Tests:** 915/915 verdes (+14).
 
 ### feat(gastos) - Selector de mes anterior/siguiente sobre la lista · 2026-05-23
 Encabezado `‹ Mayo 2026 ›` encima de los chips de categoría. Permite revisar gastos
@@ -101,37 +136,6 @@ Se actualiza con cada cambio de estado (via `registrarRender`) y al navegar al D
 Mobile bottom nav: `Dashboard · Gastos · Agenda · [Más]` (Agenda sube, Tesorería pasa a Más).
 Desktop: 3 grupos (Diario / Gestión / Herramientas). Modal Más: agrega Tesorería, quita Agenda.
 E2E: `retries: 1` en playwright.config.js + `test.describe.serial` en Onboarding. SW: v55.
-
-### refactor(ux) - Ingresos integrado como card dentro de Tesorería · 2026-05-22
-Sección dedicada "Ingresos" eliminada del menú. Los ingresos ahora viven como
-una card compacta dentro de Tesorería, sobre la lista de cuentas.
-
-Motivación: para el 80% de usuarios colombianos con 1 ingreso (SMMLV o similar),
-tener una sección entera para 1-2 items era desproporcionado. La card ocupa el
-espacio justo: título, total mensual, lista de items, botón "+ Agregar".
-
-Datos y lógica sin cambios: el modal, la entity Ingreso, render del dashboard
-(#ingresos-mes), Score de Salud Financiera y Calculadoras siguen funcionando igual.
-Solo cambia el contenedor visual.
-
-**Archivos:**
-- `index.html`: eliminado nav-item "Ingresos" y `<section id="sec-ingresos">`;
-  agregado `<div id="panel-ingresos-card">` en `#sec-tesoreria`
-- `modules/infra/router.js`: eliminada ruta `['ingresos', 'sec-ingresos']`
-- `modules/dominio/ingresos/view.js`: nueva función `renderCardIngresos()`;
-  elimina `renderListaIngresos()` (reemplazada)
-- `modules/dominio/ingresos/index.js`: listeners cambian de `'ingresos'` a
-  `'tesoreria'`; `_guardarIngreso` y `_eliminarIngreso` actualizados
-- `styles/components.css`: nuevo bloque `.ingresos-card` (header, title, meta,
-  total, list, empty state)
-- `service-worker.js`: v53→v54
-- `tests/e2e/smoke.test.js`: suite 4 reescrita como "card en Tesorería";
-  fix flake onboarding (localStorage.clear en contexto correcto)
-- `tests/e2e/navegacion-render.test.js`: test "Ingresos empty state" actualizado
-  para verificar `.ingresos-card__empty` en Tesorería
-
-**Tests:** 880/880 unit + 48/48 E2E verdes.
-
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

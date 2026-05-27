@@ -7,6 +7,80 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(dash) - Dashboard acción-orientado: Vencidos + Próximas Prioridades · 2026-05-26
+
+Rediseño del dashboard para mostrar **solo** información de acción inmediata
+("qué tengo que hacer hoy" y "qué se viene pronto"), eliminando contadores
+genéricos que no aportaban contexto.
+
+**Motivación del usuario:**
+- "Compromisos activos: 3" y "Me deben: 1" eran números sin contexto.
+- No había forma rápida de saber qué cuotas/arriendos vencían pronto sin entrar
+  a Compromisos.
+- No había sección de "Vencidos" para gastos/cuotas que ya pasaron el día de pago.
+- Balance del mes y análisis de ingresos/gastos/metas estaban mal ubicados:
+  el dashboard debería ser acción inmediata, no análisis histórico.
+
+**Cambios:**
+- **Eliminado del dashboard:** bento de Ingresos del mes, Gastos del mes, Metas
+  activas, Compromisos activos, Me deben. Card "Hoy" (fusionada con Próximas
+  Prioridades).
+- **Nuevo `#panel-vencidos`:** compromisos cuyo día de pago ya pasó (los 3 tipos:
+  fijo, deuda, agenda). Hasta ~3 items visibles, resto con scroll vertical
+  interno (max-height) para no inflar el dashboard. Color de borde izquierdo
+  por severidad: amarillo (leve, ≤3 días), naranja (moderada, 4-10), rojo (urgente, >10).
+- **Nuevo `#panel-prioridades`:** próximos 7 días agrupados por día. Etiquetas
+  "Hoy" (destacado en accent), "Mañana", "En N días". Cada grupo lista
+  ícono + descripción + monto del compromiso.
+- **Nueva `.balance-tira`:** Balance del mes como tira simple (no card grande),
+  ya que es el único indicador combinado de acción inmediata que justifica
+  quedarse en dashboard. Color por signo (verde positivo, rojo negativo).
+- **Score de Salud Financiera:** sigue en Análisis (donde estaba). Ingresos/gastos
+  del mes individuales: ya existían en Análisis (`generarResumen`), no había que
+  moverlos.
+
+**Decisiones de diseño:**
+- Card "Hoy" se fusionó con Próximas Prioridades para eliminar redundancia
+  (ambos mostraban eventos del día actual).
+- Vencidos cubre los 3 tipos de compromiso (fijo + deuda + agenda) usando la
+  misma fórmula `diasAtraso = diaHoy - diaPago` para simplicidad.
+- Limitación aceptada: agenda con frecuencia='Única vez' de meses anteriores
+  calcula atraso contra el mes en curso, no contra la fecha original. Se resuelve
+  con disciplina del usuario (toggle activo=false al pagar).
+- Fix de timezone para "venció hoy": se reemplazó `toISOString().slice(0,10)`
+  por `_hoyISOLocal()` (usa getFullYear/getMonth/getDate). En GMT-5, después
+  de 19:00 local, `toISOString` devolvía el día siguiente, generando un día de
+  atraso fantasma.
+
+**Arquitectura:**
+- Ambos paneles viven en `compromisos/view.js` (no se creó dominio `dashboard/`):
+  son vistas de los compromisos, no de un dominio nuevo.
+- Render orquestado via `registrarRender(() => renderSmart(fn, 'dash'))` para
+  que reaccionen a cualquier `state:change`. hashchange agrega rerender al
+  navegar a `#dash`.
+
+**Archivos:**
+- `modules/dominio/compromisos/logic.js`: + `detectarVencidosCompletos(comp, hoyISO)`
+  (extensión de `detectarFijosSinPagarEsteMes` a los 3 tipos); + `agruparPorDiasRestantes(proximos)`
+- `modules/dominio/compromisos/view.js`: + `renderPanelVencidos()` + `renderPanelPrioridades()`
+  + helper `_hoyISOLocal()`
+- `modules/dominio/compromisos/index.js`: importa `registrarRender` y los nuevos
+  renders; `_renderDashboardPanels()` agrupa ambos; suscripción a `renderSmart(fn, 'dash')`
+- `modules/dominio/agenda/view.js`: eliminada `renderCardHoy()` (obsoleta)
+- `modules/dominio/agenda/index.js`: quitado import de `registrarRender` y `renderCardHoy`
+- `index.html`: `#sec-dash` reestructurado completo (hero solo, panel-vencidos,
+  panel-prioridades, balance-tira); eliminados `#panel-hoy` y `#bento-dash`
+- `styles/components.css`: + `.bento__cell--solo`, `.vencidos-card`, `.prioridades-card`,
+  `.balance-tira` (con reuse de `bento__value--accent/danger` para color por signo);
+  eliminado `.hoy-card`
+- `service-worker.js`: v58→v59
+- `tests/unit/compromisos.test.js`: +14 tests (9 para `detectarVencidosCompletos`,
+  5 para `agruparPorDiasRestantes`)
+
+**Tests:** 915/915 verdes (+14 sobre 901).
+
+---
+
 ### feat(gastos) - Selector de mes anterior/siguiente sobre la lista · 2026-05-23
 
 Encabezado `‹ Mayo 2026 ›` encima de los chips de categoría. Permite revisar gastos

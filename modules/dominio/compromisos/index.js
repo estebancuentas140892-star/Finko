@@ -12,7 +12,7 @@ import { S, EventBus } from '../../core/state.js';
 import { guardar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updateBadge } from '../../infra/render.js';
+import { renderSmart, updateBadge, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
@@ -25,7 +25,19 @@ import {
   setEstrategiaUI,
   renderAlertaFijosSinPagar,
   renderAlertaDeudasDurmiendo,
+  renderPanelVencidos,
+  renderPanelPrioridades,
 } from './view.js';
+
+/**
+ * Re-renderiza los paneles del dashboard que dependen de compromisos.
+ * Se invoca en cada renderAll() (via registrarRender) para que el dashboard
+ * refleje cambios cross-domain (ej. al pagar un gasto que cierra un compromiso).
+ */
+function _renderDashboardPanels() {
+  renderPanelVencidos();
+  renderPanelPrioridades();
+}
 
 /**
  * Re-renderiza ambas vistas del dominio. Se usa cuando cambian datos o
@@ -144,6 +156,11 @@ export function initCompromisos() {
     }
   });
 
+  // Los paneles de Dashboard (Vencidos + Prioridades) se actualizan en cada
+  // renderAll() para reflejar cambios cross-domain (ej. al cerrar un compromiso
+  // desde otra sección). renderSmart corta si el dashboard no está activo.
+  registrarRender(() => renderSmart(_renderDashboardPanels, 'dash'));
+
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
       renderSmart(_renderTodo, 'compromisos');
@@ -151,12 +168,14 @@ export function initCompromisos() {
     }
   });
 
-  // Re-render al navegar a #compromisos - sin esto la sección puede aparecer vacía
-  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  // Re-render al navegar a #compromisos o #dash.
   window.addEventListener('hashchange', () => {
-    renderSmart(_renderTodo, 'compromisos');
+    const hash = location.hash.slice(1) || 'dash';
+    if (hash === 'compromisos') renderSmart(_renderTodo, 'compromisos');
+    if (hash === 'dash')        renderSmart(_renderDashboardPanels, 'dash');
   });
 
   renderSmart(_renderTodo, 'compromisos');
+  renderSmart(_renderDashboardPanels, 'dash');
   updateBadge();
 }

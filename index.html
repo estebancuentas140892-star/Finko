@@ -202,65 +202,28 @@
           <span class="quick-add__chevron" aria-hidden="true">→</span>
         </button>
 
-        <!-- Mini-agenda: compromisos de hoy o los próximos (renderCardHoy). -->
-        <div id="panel-hoy" role="region" aria-label="Compromisos de hoy"></div>
+        <!-- HERO: tu plata disponible (siempre visible, fuera del bento) -->
+        <article class="bento__cell bento__cell--accent bento__cell--hero bento__cell--solo">
+          <span class="bento__icon" aria-hidden="true">💵</span>
+          <p class="bento__label">Tu plata disponible hoy</p>
+          <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
+          <p class="bento__desc">efectivo + cuentas bancarias</p>
+        </article>
 
-        <div class="bento bento--dash" id="bento-dash" role="region" aria-label="Métricas principales">
+        <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
+             Solo se renderiza si hay items; sin ellos, queda vacío. -->
+        <div id="panel-vencidos" role="region" aria-label="Compromisos vencidos"></div>
 
-          <!-- HERO: tu plata disponible (8 × 2) -->
-          <article class="bento__cell bento__cell--wide bento__cell--tall bento__cell--accent bento__cell--hero">
-            <span class="bento__icon" aria-hidden="true">💵</span>
-            <p class="bento__label">Tu plata disponible hoy</p>
-            <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
-            <p class="bento__desc">efectivo + cuentas bancarias</p>
-          </article>
+        <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
+             Reemplaza Card Hoy (hoy + próximos en una sola vista). -->
+        <div id="panel-prioridades" role="region" aria-label="Próximas prioridades"></div>
 
-          <!-- BALANCE DEL MES (4 × 2) -->
-          <article class="bento__cell bento__cell--tall" data-dominio="analisis">
-            <span class="bento__icon" aria-hidden="true">📊</span>
-            <p class="bento__label">Balance del mes</p>
-            <p class="bento__value" id="balance-mes">$0</p>
-            <p class="bento__desc">ingresos menos gastos</p>
-          </article>
-
-          <!-- INGRESOS (4 × 1) -->
-          <article class="bento__cell" data-dominio="ingresos">
-            <span class="bento__icon" aria-hidden="true">📈</span>
-            <p class="bento__label">Ingresos del mes</p>
-            <p class="bento__value" id="ingresos-mes">$0</p>
-          </article>
-
-          <!-- GASTOS (4 × 1) -->
-          <article class="bento__cell" data-dominio="gastos">
-            <span class="bento__icon" aria-hidden="true">💸</span>
-            <p class="bento__label">Gastos del mes</p>
-            <p class="bento__value" id="gastos-mes">$0</p>
-          </article>
-
-          <!-- METAS (4 × 1) -->
-          <article class="bento__cell" data-dominio="metas">
-            <span class="bento__icon" aria-hidden="true">🎯</span>
-            <p class="bento__label">Metas activas</p>
-            <p class="bento__value" id="metas-count">0</p>
-            <p class="bento__desc">objetivos en curso</p>
-          </article>
-
-          <!-- COMPROMISOS (6 × 1) -->
-          <article class="bento__cell bento__cell--half" data-dominio="compromisos">
-            <span class="bento__icon" aria-hidden="true">💳</span>
-            <p class="bento__label">Compromisos activos</p>
-            <p class="bento__value" id="compromisos-count">0</p>
-            <p class="bento__desc">deudas y pagos recurrentes</p>
-          </article>
-
-          <!-- PERSONALES (6 × 1) -->
-          <article class="bento__cell bento__cell--half" data-dominio="personales">
-            <span class="bento__icon" aria-hidden="true">🤝</span>
-            <p class="bento__label">Me deben</p>
-            <p class="bento__value" id="personales-count">0</p>
-            <p class="bento__desc">préstamos a familia o amigos</p>
-          </article>
-
+        <!-- BALANCE DEL MES: tira simple (ingresos - gastos), no card grande.
+             Es el único indicador combinado de acción inmediata. -->
+        <div class="balance-tira" role="status" aria-live="polite">
+          <span class="balance-tira__icon" aria-hidden="true">📊</span>
+          <span class="balance-tira__label">Balance del mes:</span>
+          <span class="balance-tira__value bento__value" id="balance-mes">$0</span>
         </div>
       </section>
 

@@ -14,6 +14,8 @@ import {
   compararEstrategias,
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
+  detectarVencidosCompletos,
+  agruparPorDiasRestantes,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -790,5 +792,131 @@ describe('detectarDeudasDurmiendo', () => {
       { mesesUmbral: 4 }
     );
     expect(result).toHaveLength(0);
+  });
+});
+
+// ── detectarVencidosCompletos ─────────────────────────────────────
+
+describe('detectarVencidosCompletos', () => {
+  const comp = (overrides = {}) => ({
+    id: 'c1', descripcion: 'Arriendo', monto: 1_500_000,
+    tipo: 'fijo', activo: true, diaPago: 5, frecuencia: 'Mensual',
+    ...overrides,
+  });
+
+  it('devuelve [] con lista vacia', () => {
+    expect(detectarVencidosCompletos([], '2026-05-15')).toEqual([]);
+  });
+
+  it('devuelve [] si hoyISO es invalido', () => {
+    expect(detectarVencidosCompletos([comp()], 'no-date')).toEqual([]);
+    expect(detectarVencidosCompletos([comp()], null)).toEqual([]);
+  });
+
+  it('detecta los tres tipos vencidos: fijo, deuda y agenda', () => {
+    const result = detectarVencidosCompletos([
+      comp({ id: 'a', tipo: 'fijo',   diaPago: 1 }),
+      comp({ id: 'b', tipo: 'deuda',  diaPago: 1 }),
+      comp({ id: 'c', tipo: 'agenda', diaPago: 1 }),
+    ], '2026-05-15');
+    expect(result).toHaveLength(3);
+    expect(result.map(r => r.tipo).sort()).toEqual(['agenda', 'deuda', 'fijo']);
+  });
+
+  it('expone el tipo en cada item para el render', () => {
+    const result = detectarVencidosCompletos(
+      [comp({ tipo: 'deuda', diaPago: 2 })], '2026-05-15'
+    );
+    expect(result[0].tipo).toBe('deuda');
+  });
+
+  it('no incluye compromisos cuyo dia de pago aun no llego', () => {
+    // diaPago=20, hoy=15 → diasAtraso=-5
+    expect(detectarVencidosCompletos(
+      [comp({ diaPago: 20 })], '2026-05-15'
+    )).toHaveLength(0);
+  });
+
+  it('ignora compromisos inactivos sin importar el tipo', () => {
+    const result = detectarVencidosCompletos([
+      comp({ activo: false, tipo: 'fijo',  diaPago: 1 }),
+      comp({ activo: false, tipo: 'deuda', diaPago: 1 }),
+    ], '2026-05-15');
+    expect(result).toHaveLength(0);
+  });
+
+  it('asigna severidad: leve (<=3), moderada (4-10), urgente (>10)', () => {
+    const hoy = '2026-05-20';
+    const r1 = detectarVencidosCompletos([comp({ diaPago: 18 })], hoy); // 2 → leve
+    const r2 = detectarVencidosCompletos([comp({ diaPago: 12 })], hoy); // 8 → moderada
+    const r3 = detectarVencidosCompletos([comp({ diaPago: 3  })], hoy); // 17 → urgente
+    expect(r1[0].severidad).toBe('leve');
+    expect(r2[0].severidad).toBe('moderada');
+    expect(r3[0].severidad).toBe('urgente');
+  });
+
+  it('ordena por mayor atraso primero', () => {
+    const result = detectarVencidosCompletos([
+      comp({ id: 'a', diaPago: 10 }), // 5 días
+      comp({ id: 'b', diaPago: 1  }), // 14 días
+      comp({ id: 'c', diaPago: 14 }), // 1 día
+    ], '2026-05-15');
+    expect(result.map(r => r.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('respeta umbralDiasAtraso', () => {
+    // diaPago=13, hoy=15 → 2 días. Con umbral=3, no incluye.
+    expect(detectarVencidosCompletos(
+      [comp({ diaPago: 13 })], '2026-05-15', { umbralDiasAtraso: 3 }
+    )).toHaveLength(0);
+  });
+});
+
+// ── agruparPorDiasRestantes ───────────────────────────────────────
+
+describe('agruparPorDiasRestantes', () => {
+  it('devuelve [] con lista vacia', () => {
+    expect(agruparPorDiasRestantes([])).toEqual([]);
+    expect(agruparPorDiasRestantes(null)).toEqual([]);
+  });
+
+  it('agrupa por dia y etiqueta: Hoy / Mañana / En N días', () => {
+    const result = agruparPorDiasRestantes([
+      { id: 'a', diasRestantes: 0 },
+      { id: 'b', diasRestantes: 1 },
+      { id: 'c', diasRestantes: 3 },
+    ]);
+    expect(result.map(g => g.label)).toEqual(['Hoy', 'Mañana', 'En 3 días']);
+  });
+
+  it('fusiona items del mismo dia en un solo grupo', () => {
+    const result = agruparPorDiasRestantes([
+      { id: 'a', diasRestantes: 0 },
+      { id: 'b', diasRestantes: 0 },
+      { id: 'c', diasRestantes: 2 },
+    ]);
+    expect(result).toHaveLength(2);
+    expect(result[0].items).toHaveLength(2);
+    expect(result[1].items).toHaveLength(1);
+  });
+
+  it('ordena los grupos por dias ascendente', () => {
+    const result = agruparPorDiasRestantes([
+      { diasRestantes: 5 },
+      { diasRestantes: 1 },
+      { diasRestantes: 0 },
+    ]);
+    expect(result.map(g => g.dias)).toEqual([0, 1, 5]);
+  });
+
+  it('descarta items con diasRestantes no entero o negativo', () => {
+    const result = agruparPorDiasRestantes([
+      { diasRestantes: 0 },
+      { diasRestantes: -1 },
+      { diasRestantes: 1.5 },
+      { diasRestantes: 'foo' },
+    ]);
+    expect(result).toHaveLength(1);
+    expect(result[0].items).toHaveLength(1);
   });
 });
