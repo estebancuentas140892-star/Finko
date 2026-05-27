@@ -12,6 +12,7 @@ import {
   filtrarDeudasPagables,
   simularEstrategiaPago,
   compararEstrategias,
+  recomendarEstrategia,
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
@@ -625,6 +626,57 @@ describe('compararEstrategias', () => {
     const r = compararEstrategias(deudas, 0);
     expect(r.avalancha.meses).toBe(r.bolaNieve.meses);
     expect(r.avalancha.interesesTotales).toBeCloseTo(r.bolaNieve.interesesTotales, 2);
+  });
+});
+
+// ── recomendarEstrategia() (v7) ────────────────────────────────────
+
+describe('recomendarEstrategia', () => {
+  it('una sola deuda no genera recomendación', () => {
+    const r = recomendarEstrategia([{ id: 'a', tasaEA: 0.20, saldo: 1_000_000 }]);
+    expect(r.estrategia).toBeNull();
+    expect(r.razon).toBe('');
+  });
+
+  it('lista vacia o input invalido devuelve null', () => {
+    expect(recomendarEstrategia([]).estrategia).toBeNull();
+    expect(recomendarEstrategia(null).estrategia).toBeNull();
+    expect(recomendarEstrategia(undefined).estrategia).toBeNull();
+  });
+
+  it('todas las deudas con tasa 0 sugiere Bola de nieve', () => {
+    const r = recomendarEstrategia([
+      { id: 'a', tasaEA: 0, saldo: 1_000_000 },
+      { id: 'b', tasaEA: 0, saldo: 500_000 },
+    ]);
+    expect(r.estrategia).toBe('bolaNieve');
+    expect(r.razon).toMatch(/no cobran interés/i);
+  });
+
+  it('diferencia de tasas >= 5 puntos EA sugiere Avalancha', () => {
+    const r = recomendarEstrategia([
+      { id: 'a', tasaEA: 0.28, saldo: 5_000_000 },
+      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
+    ]);
+    expect(r.estrategia).toBe('avalancha');
+    expect(r.razon).toMatch(/diferencia/i);
+  });
+
+  it('tasas similares (<5 pts) sugiere Bola de nieve', () => {
+    const r = recomendarEstrategia([
+      { id: 'a', tasaEA: 0.12, saldo: 5_000_000 },
+      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
+    ]);
+    expect(r.estrategia).toBe('bolaNieve');
+    expect(r.razon).toMatch(/parecidas/i);
+  });
+
+  it('limite exacto de 5 puntos califica como Avalancha', () => {
+    const r = recomendarEstrategia([
+      { id: 'a', tasaEA: 0.15, saldo: 1_000_000 },
+      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
+    ]);
+    expect(r.estrategia).toBe('avalancha');
   });
 });
 

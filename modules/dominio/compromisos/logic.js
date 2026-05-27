@@ -759,3 +759,55 @@ export function compararEstrategias(deudas, extraMensual) {
 
   return { avalancha, bolaNieve, ahorroIntereses, ahorroMeses, mejor };
 }
+
+/**
+ * Recomienda una estrategia de pago basada en el perfil de deudas del usuario.
+ * Heurística pedagógica (no busca óptimo matemático, busca claridad):
+ *
+ *  - 0 o 1 deuda: no recomienda nada (`null`). Una sola deuda no necesita estrategia.
+ *  - Todas con tasa 0: Bola de nieve (Avalancha no aporta nada).
+ *  - Diferencia entre tasa máxima y mínima ≥ 5 puntos EA: Avalancha (el ahorro de
+ *    intereses justifica el esfuerzo psicológico de no ver cierres rápidos).
+ *  - Tasas similares (< 5 pts de diferencia): Bola de nieve (la motivación de
+ *    cerrar deudas pesa más que el ahorro marginal).
+ *
+ * El umbral de 5 puntos es un balance: por debajo de eso, el ahorro real suele
+ * ser menor que el costo emocional de no ver progreso rápido.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @returns {{
+ *   estrategia: 'avalancha' | 'bolaNieve' | null,
+ *   razon: string,
+ * }}
+ */
+export function recomendarEstrategia(deudas) {
+  if (!Array.isArray(deudas) || deudas.length < 2) {
+    return { estrategia: null, razon: '' };
+  }
+
+  const tasas = deudas.map(d => d.tasaEA ?? 0);
+  const tasaMax = Math.max(...tasas);
+  const tasaMin = Math.min(...tasas);
+  // Redondeamos a 2 decimales para tolerar errores de punto flotante (0.15 - 0.10
+  // arroja 0.04999... en JS y no superaría el umbral exacto de 5 pts).
+  const diff = Math.round((tasaMax - tasaMin) * 10000) / 100;
+
+  if (tasaMax === 0) {
+    return {
+      estrategia: 'bolaNieve',
+      razon: `Tus ${deudas.length} deudas no cobran interés. Bola de nieve te ayuda a cerrar la más pequeña primero y mantener la motivación.`,
+    };
+  }
+
+  if (diff >= 5) {
+    return {
+      estrategia: 'avalancha',
+      razon: `Hay una diferencia importante entre tus tasas (${(tasaMin * 100).toFixed(1)}% y ${(tasaMax * 100).toFixed(1)}% EA). Atacar la más cara primero te ahorra más dinero en total.`,
+    };
+  }
+
+  return {
+    estrategia: 'bolaNieve',
+    razon: `Tus tasas son parecidas (${(tasaMin * 100).toFixed(1)}% a ${(tasaMax * 100).toFixed(1)}% EA). Cerrar la deuda más pequeña primero te da impulso para seguir.`,
+  };
+}

@@ -14,6 +14,7 @@ import {
   compromisosProximos,
   filtrarDeudasPagables,
   compararEstrategias,
+  recomendarEstrategia,
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
@@ -24,10 +25,13 @@ import {
   ICONO_TIPO,
 } from './logic.js';
 
-// Estado UI local: extra mensual y estrategia activa. Persiste mientras la pestaña está abierta.
+// Estado UI local: extra mensual, estrategia activa, acordeón abierto.
+// Persiste mientras la pestaña está abierta; al recargar vuelve a defaults.
+// estrategia=null indica "no elegida aún" (mostramos solo las cards).
 const _uiEstrategia = {
-  extraMensual: 0,
-  estrategia:   'avalancha',
+  extraMensual:   0,
+  estrategia:     null,
+  expandidoExtra: false,
 };
 
 // ── ALERTA: FIJOS SIN PAGAR ESTE MES (G.1) ───────────────────────
@@ -411,6 +415,9 @@ export function setEstrategiaUI(patch) {
   if (patch.estrategia === 'avalancha' || patch.estrategia === 'bolaNieve') {
     _uiEstrategia.estrategia = patch.estrategia;
   }
+  if (patch.expandidoExtra !== undefined) {
+    _uiEstrategia.expandidoExtra = Boolean(patch.expandidoExtra);
+  }
 }
 
 export function getEstrategiaUI() {
@@ -437,77 +444,267 @@ export function renderEstrategiaPago() {
   }
 
   const hayTasaPositiva = deudas.some(d => d.tasaEA > 0);
-  // Si no hay tasa positiva, forzar bolaNieve (avalancha no aporta info).
-  if (!hayTasaPositiva && _uiEstrategia.estrategia !== 'bolaNieve') {
+  // Si no hay tasa positiva y el usuario eligió avalancha, lo reseteamos.
+  if (!hayTasaPositiva && _uiEstrategia.estrategia === 'avalancha') {
     _uiEstrategia.estrategia = 'bolaNieve';
   }
 
-  const { extraMensual, estrategia } = _uiEstrategia;
-  const resultado = compararEstrategias(deudas, extraMensual);
-  const activa    = resultado[estrategia];
+  const { extraMensual, estrategia, expandidoExtra } = _uiEstrategia;
+  const recomendacion = recomendarEstrategia(deudas);
 
   el.innerHTML = `
     <article class="estrategia-card">
       <header class="estrategia-card__header">
         <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
         <p class="estrategia-card__subtitle">
-          Elegí cómo querés atacar tus ${deudas.length} deuda${deudas.length === 1 ? '' : 's'}.
-          La lista de abajo se reordena según la estrategia activa.
+          Finko te ayuda a tomar mejores decisiones con tus deudas.
         </p>
       </header>
 
-      <div class="estrategia-card__controls">
-        <div class="form-group">
-          <label for="estrategia-extra" class="label">¿Cuánto extra podés pagar al mes? (COP)</label>
-          <input id="estrategia-extra" class="input" type="number"
-                 min="0" step="10000" value="${extraMensual}"
-                 placeholder="0" autocomplete="off"
-                 data-action="cambiar-extra-estrategia" />
-        </div>
-        <div class="estrategia-card__toggle" role="tablist" aria-label="Estrategia de pago">
-          <button class="btn ${estrategia === 'avalancha' ? 'btn-primary' : 'btn-ghost'}"
-                  data-action="elegir-estrategia" data-estrategia="avalancha"
-                  role="tab" aria-selected="${estrategia === 'avalancha'}"
-                  ${hayTasaPositiva ? '' : 'disabled aria-disabled="true" title="Avalancha requiere al menos una deuda con tasa > 0"'}>
-            🏔️ Avalancha
-          </button>
-          <button class="btn ${estrategia === 'bolaNieve' ? 'btn-primary' : 'btn-ghost'}"
-                  data-action="elegir-estrategia" data-estrategia="bolaNieve"
-                  role="tab" aria-selected="${estrategia === 'bolaNieve'}">
-            ⚪ Bola de nieve
-          </button>
-        </div>
-        <p class="estrategia-card__hint">
-          ${estrategia === 'avalancha'
-            ? '🏔️ <strong>Avalancha:</strong> primero la de mayor tasa. Pagás menos intereses en total.'
-            : '⚪ <strong>Bola de nieve:</strong> primero la más pequeña. Cerrás deudas rápido y te motivás.'}
-        </p>
+      <div class="estrategia-cards" role="group" aria-label="Elegí una estrategia">
+        ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
+        ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
       </div>
 
-      <div class="estrategia-card__totales">
-        <div class="estrategia-card__total">
-          <span class="estrategia-card__total-label">Libre de deudas en</span>
-          <span class="estrategia-card__total-valor">
-            ${activa.completo ? `${activa.meses} meses` : '> 50 años'}
-          </span>
-        </div>
-        <div class="estrategia-card__total">
-          <span class="estrategia-card__total-label">Intereses totales</span>
-          <span class="estrategia-card__total-valor">${f(activa.interesesTotales)}</span>
-        </div>
-      </div>
+      ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual)}
 
-      ${_renderComparacionAhorro(resultado, estrategia)}
+      ${_renderAcordeonExtra(expandidoExtra, extraMensual, estrategia, deudas)}
     </article>`;
+}
+
+const _META_ESTRATEGIA = {
+  avalancha: {
+    icono:     '🏔️',
+    nombre:    'Avalancha',
+    beneficio: 'Pagás menos intereses en total.',
+    ideal:     'Te importa pagar menos plata y podés mantener disciplina.',
+  },
+  bolaNieve: {
+    icono:     '⚪',
+    nombre:    'Bola de nieve',
+    beneficio: 'Cerrás deudas rápido y mantenés la motivación.',
+    ideal:     'Te cuesta arrancar o necesitás ver progreso visible.',
+  },
+};
+
+/**
+ * Renderiza una card seleccionable de estrategia. Si `recomendacion.estrategia`
+ * coincide, muestra "✨ Recomendada para vos" como subtítulo interno (no como
+ * sticker flotante). Ambas cards mantienen igual altura por grid stretch.
+ */
+function _renderCardEstrategia(tipo, activa, recomendacion, habilitada) {
+  const meta = _META_ESTRATEGIA[tipo];
+  const seleccionada = activa === tipo;
+  const recomendada  = recomendacion.estrategia === tipo;
+  const aria = seleccionada ? 'true' : 'false';
+  const dis  = habilitada ? '' : 'disabled aria-disabled="true"';
+  const titleAttr = habilitada ? '' : 'title="Avalancha requiere al menos una deuda con tasa > 0"';
+  const claseExtra = seleccionada ? ' estrategia-card-pick--activa' : '';
+  // Slot reservado para el subtítulo: si esta card no es la recomendada, va vacío
+  // pero ocupa la misma altura (visibility: hidden) para que ambas cards alineen.
+  const subtituloHtml = recomendada
+    ? '<span class="estrategia-card-pick__sub">✨ Recomendada para vos</span>'
+    : '<span class="estrategia-card-pick__sub estrategia-card-pick__sub--ghost" aria-hidden="true">&nbsp;</span>';
+  return `
+    <button type="button"
+            class="estrategia-card-pick${claseExtra}"
+            data-action="elegir-estrategia"
+            data-estrategia="${tipo}"
+            aria-pressed="${aria}"
+            ${dis} ${titleAttr}>
+      <span class="estrategia-card-pick__icono" aria-hidden="true">${meta.icono}</span>
+      <strong class="estrategia-card-pick__nombre">${meta.nombre}</strong>
+      ${subtituloHtml}
+    </button>`;
+}
+
+/**
+ * Muestra los 3 bloques de la estrategia seleccionada:
+ *   🎯 Qué te ofrece (beneficio principal)
+ *   📊 Tu impacto (métricas específicas a la estrategia elegida)
+ *   👤 Ideal si... (perfil de usuario)
+ *
+ * Cada estrategia muestra métricas distintas: Avalancha enfoca ahorro de intereses
+ * y tiempo total. Bola de nieve enfoca la primera deuda cerrada y la reducción
+ * progresiva (no muestra intereses porque no es lo que esta estrategia optimiza).
+ *
+ * Si no hay ninguna seleccionada, muestra un placeholder.
+ */
+function _renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual) {
+  if (!estrategia) {
+    return `
+      <p class="estrategia-card__placeholder">
+        Tocá una estrategia para ver el detalle y cómo te ayuda.
+      </p>`;
+  }
+  const meta = _META_ESTRATEGIA[estrategia];
+  const esRecomendada = recomendacion.estrategia === estrategia;
+  const razonHtml = esRecomendada && recomendacion.razon
+    ? `<p class="estrategia-card__razon">✨ <strong>¿Por qué te la recomendamos?</strong> ${_esc(recomendacion.razon)}</p>`
+    : '';
+
+  const resultado = compararEstrategias(deudas, extraMensual);
+  const impactoHtml = estrategia === 'avalancha'
+    ? _renderImpactoAvalancha(resultado, extraMensual)
+    : _renderImpactoBolaNieve(resultado, deudas, extraMensual);
+
+  return `
+    <div class="estrategia-card__detalle">
+      ${razonHtml}
+      <div class="estrategia-card__bloque">
+        <p class="estrategia-card__bloque-titulo">🎯 Qué te ofrece</p>
+        <p class="estrategia-card__bloque-body">${_esc(meta.beneficio)}</p>
+      </div>
+      <div class="estrategia-card__bloque">
+        <p class="estrategia-card__bloque-titulo">📊 Tu impacto</p>
+        ${impactoHtml}
+      </div>
+      <div class="estrategia-card__bloque">
+        <p class="estrategia-card__bloque-titulo">👤 Ideal si...</p>
+        <p class="estrategia-card__bloque-body">${_esc(meta.ideal)}</p>
+      </div>
+    </div>`;
+}
+
+/**
+ * Métricas que importan para Avalancha: tiempo total + intereses + ahorro vs
+ * Bola de nieve (solo si extra > 0). Intereses son métrica central porque
+ * Avalancha es la estrategia que los minimiza.
+ */
+function _renderImpactoAvalancha(resultado, extraMensual) {
+  const activa = resultado.avalancha;
+  const tiempoTxt = activa.completo ? _formatearDuracion(activa.meses) : 'más de 50 años';
+  const ahorroIntereses = Math.max(0, resultado.bolaNieve.interesesTotales - activa.interesesTotales);
+  const ahorroMeses     = Math.max(0, resultado.bolaNieve.meses - activa.meses);
+  const hayAhorro = extraMensual > 0 && (ahorroIntereses > 0.5 || ahorroMeses > 0);
+
+  const filaAhorro = hayAhorro
+    ? `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Te ahorrás respecto a Bola de nieve</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
+           ${f(ahorroIntereses)}${ahorroMeses > 0 ? ` y ${_formatearDuracion(ahorroMeses)}` : ''}
+         </strong>
+       </li>`
+    : '';
+
+  return `
+    <ul class="estrategia-card__metricas">
+      <li class="estrategia-card__metrica">
+        <span class="estrategia-card__metrica-label">Libre de deudas en</span>
+        <strong class="estrategia-card__metrica-valor">${tiempoTxt}</strong>
+      </li>
+      <li class="estrategia-card__metrica">
+        <span class="estrategia-card__metrica-label">Total que pagás en intereses</span>
+        <strong class="estrategia-card__metrica-valor">${f(activa.interesesTotales)}</strong>
+      </li>
+      ${filaAhorro}
+    </ul>`;
+}
+
+/**
+ * Métricas que importan para Bola de nieve: cuándo cerrás la primera deuda
+ * y cuántas vas cerrando. Nunca mostramos "intereses" porque no es lo que
+ * esta estrategia optimiza (el usuario lo señaló explícitamente como ruido).
+ *
+ * El `orden` que devuelve simularEstrategiaPago tiene los mesPagado por deuda;
+ * lo usamos para extraer la primera que se cierra.
+ */
+function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
+  const activa = resultado.bolaNieve;
+  const tiempoTxt = activa.completo ? _formatearDuracion(activa.meses) : 'más de 50 años';
+
+  // Primera deuda cerrada: la de menor mesPagado (entre las que se pagaron).
+  const cerradas = activa.orden
+    .filter(o => Number.isFinite(o.mesPagado))
+    .sort((a, b) => a.mesPagado - b.mesPagado);
+  const primera = cerradas[0];
+
+  const totalDeudas = deudas.length;
+  // Métrica "a los X meses solo te queda N deuda": se calcula como el mes en que
+  // se cierra la deuda del medio (round up). Útil solo si hay >=3 deudas.
+  let filaProgreso = '';
+  if (totalDeudas >= 3 && cerradas.length >= Math.ceil(totalDeudas / 2)) {
+    const corte = cerradas[Math.ceil(totalDeudas / 2) - 1];
+    if (corte && Number.isFinite(corte.mesPagado)) {
+      const restantes = totalDeudas - Math.ceil(totalDeudas / 2);
+      filaProgreso = `
+        <li class="estrategia-card__metrica">
+          <span class="estrategia-card__metrica-label">Después de ${_formatearDuracion(corte.mesPagado)} solo te queda${restantes === 1 ? '' : 'n'}</span>
+          <strong class="estrategia-card__metrica-valor">${restantes} deuda${restantes === 1 ? '' : 's'}</strong>
+        </li>`;
+    }
+  }
+
+  const filaPrimera = primera
+    ? `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Cerrás tu primera deuda en</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
+           ${_formatearDuracion(primera.mesPagado)}
+         </strong>
+         <span class="estrategia-card__metrica-tip">${_esc(primera.descripcion)}</span>
+       </li>`
+    : '';
+
+  void extraMensual; // no influye en qué métricas se muestran, solo en los valores.
+
+  return `
+    <ul class="estrategia-card__metricas">
+      ${filaPrimera}
+      ${filaProgreso}
+      <li class="estrategia-card__metrica">
+        <span class="estrategia-card__metrica-label">Libre de deudas en</span>
+        <strong class="estrategia-card__metrica-valor">${tiempoTxt}</strong>
+      </li>
+    </ul>`;
+}
+
+/**
+ * Acordeón opcional para pagar extra cada mes. Colapsado por defecto.
+ * Cuando se expande, muestra el input y recalcula el detalle.
+ */
+function _renderAcordeonExtra(abierto, extraMensual, estrategia, deudas) {
+  void estrategia; void deudas;
+  if (!abierto) {
+    return `
+      <button type="button"
+              class="estrategia-card__link"
+              data-action="toggle-extra-estrategia"
+              aria-expanded="false">
+        💪 ¿Podés pagar algo extra cada mes? Calculá el impacto
+      </button>`;
+  }
+  return `
+    <div class="estrategia-card__acordeon">
+      <div class="estrategia-card__acordeon-header">
+        <p class="estrategia-card__acordeon-titulo">
+          💪 Pagá un extra cada mes
+        </p>
+        <button type="button"
+                class="btn btn-ghost btn-icon estrategia-card__acordeon-cerrar"
+                data-action="toggle-extra-estrategia"
+                aria-expanded="true"
+                aria-label="Cerrar">✕</button>
+      </div>
+      <p class="estrategia-card__acordeon-desc">
+        Cualquier monto adicional acelera el cierre y ahorra intereses.
+        Probá con $50.000 y mirá la diferencia arriba.
+      </p>
+      <div class="form-group">
+        <label for="estrategia-extra" class="label">Pago extra mensual (COP)</label>
+        <input id="estrategia-extra" class="input" type="number"
+               min="0" step="10000" value="${extraMensual}"
+               placeholder="0" autocomplete="off" inputmode="numeric"
+               data-action="cambiar-extra-estrategia" />
+      </div>
+    </div>`;
 }
 
 function _renderComparacionAhorro(resultado, activa) {
   const { mejor, ahorroIntereses, ahorroMeses } = resultado;
+  // Sin ahorro real: no mostrar nada. El estado "ambas iguales" ya queda
+  // implícito y evita ruido visual en móvil.
   if (mejor === 'empate' || (ahorroIntereses === 0 && ahorroMeses === 0)) {
-    return `
-      <p class="estrategia-card__ahorro estrategia-card__ahorro--neutral">
-        Ambas estrategias dan el mismo resultado con estas deudas.
-      </p>`;
+    return '';
   }
   const nombreMejor = mejor === 'avalancha' ? 'Avalancha' : 'Bola de nieve';
   const eligioMejor = activa === mejor;
@@ -515,9 +712,27 @@ function _renderComparacionAhorro(resultado, activa) {
     <p class="estrategia-card__ahorro">
       💰 Con ${nombreMejor} ${eligioMejor ? 'ahorrás' : 'ahorrarías'}
       <strong>${f(ahorroIntereses)}</strong>
-      ${ahorroMeses > 0 ? `y <strong>${ahorroMeses} ${ahorroMeses === 1 ? 'mes' : 'meses'}</strong>` : ''}
+      ${ahorroMeses > 0 ? `y <strong>${_formatearDuracion(ahorroMeses)}</strong>` : ''}
       respecto a ${mejor === 'avalancha' ? 'Bola de nieve' : 'Avalancha'}.
     </p>`;
+}
+
+/**
+ * Convierte una cantidad de meses a una etiqueta legible en español.
+ * Hasta 11 meses: "X meses" (o "1 mes"). Desde 12: "X años Y meses" omitiendo
+ * la parte que sea 0 y respetando singulares.
+ * @param {number} meses
+ * @returns {string}
+ */
+function _formatearDuracion(meses) {
+  const m = Math.max(0, Math.round(Number(meses) || 0));
+  if (m < 12) return `${m} ${m === 1 ? 'mes' : 'meses'}`;
+  const anios = Math.floor(m / 12);
+  const resto = m % 12;
+  const aTxt  = `${anios} ${anios === 1 ? 'año' : 'años'}`;
+  if (resto === 0) return aTxt;
+  const mTxt = `${resto} ${resto === 1 ? 'mes' : 'meses'}`;
+  return `${aTxt} ${mTxt}`;
 }
 
 // ── DASHBOARD: PANEL VENCIDOS ────────────────────────────────────

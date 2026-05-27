@@ -23,6 +23,7 @@ import {
   renderFormDeuda,
   renderEstrategiaPago,
   setEstrategiaUI,
+  getEstrategiaUI,
   renderAlertaFijosSinPagar,
   renderAlertaDeudasDurmiendo,
   renderPanelVencidos,
@@ -175,6 +176,16 @@ function _cambiarExtraEstrategia(el) {
   renderEstrategiaPago();
 }
 
+function _toggleExtraEstrategia() {
+  const actual = getEstrategiaUI().expandidoExtra;
+  setEstrategiaUI({ expandidoExtra: !actual });
+  renderEstrategiaPago();
+  // Si abrimos, hacemos focus al input para que el usuario pueda escribir directo.
+  if (!actual) {
+    queueMicrotask(() => document.getElementById('estrategia-extra')?.focus());
+  }
+}
+
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 function _inyectarForm() {
@@ -188,6 +199,7 @@ export function initCompromisos() {
   registrarAccion('nuevo-compromiso',     _nuevoCompromiso);
   registrarAccion('eliminar-compromiso',  _eliminarCompromiso);
   registrarAccion('elegir-estrategia',    _elegirEstrategia);
+  registrarAccion('toggle-extra-estrategia', _toggleExtraEstrategia);
   registrarAccion('comp-elegir-tipo',     _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',  _volverChooser);
 
