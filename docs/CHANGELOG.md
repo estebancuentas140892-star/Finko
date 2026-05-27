@@ -7,6 +7,40 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - v7.7: "Apuntás primero a" en Avalancha + copy de Avalancha más claro · 2026-05-27
+
+Iteración tras feedback del usuario sobre v7.6. Tres temas: el usuario sospechó un bug en el cálculo porque "Libre de deudas en" coincidía entre ambas estrategias y no veía diferencia visible; la frase "aguantás que la primera deuda cerrada tarde un poco más" en el resumen de Avalancha no era clara; y le pareció que el tip de "Cerrás tu primera deuda en" en Bola de nieve no coincidía con la primera deuda de la lista debajo (en realidad sí coincide; era una confusión visual).
+
+**Revisión del cálculo (no hay bug):**
+
+`simularEstrategiaPago` (`modules/dominio/compromisos/logic.js:641-730`) sí implementa el efecto cascada correctamente: línea 681 suma TODAS las cuotas al presupuesto del mes (incluso las de deudas ya pagadas, así se "liberan"); línea 700 vuelca todo el presupuesto restante en la deuda prioritaria. Lo que ocurre con las deudas del usuario es matemáticamente coherente: Préstamo Mamá (tasa 0% EA, saldo $1.2M, cuota $200k) cierra a los 6 meses en AMBAS estrategias (porque sin interés se paga al mismo ritmo independientemente del orden estratégico). Después de mes 6, ambas estrategias coinciden porque la siguiente más chica (Visa, $4.5M) ES también la siguiente con mayor tasa. Por eso "Libre de deudas en" coincide en 1 año 7 meses.
+
+**Cambios:**
+
+1. **Nueva métrica "Apuntás primero a" en Avalancha (`view.js::_renderImpactoAvalancha`):**
+   - Antes: Avalancha mostraba solo "Libre de deudas en" y "Total en intereses". El usuario no veía diferencia conceptual con Bola de nieve.
+   - Ahora: 2da métrica = "Apuntás primero a: <nombre de la deuda>" (color info azul) + tip "la deuda con tasa más alta".
+   - La deuda mostrada es `resultado.avalancha.orden[0]` — la primera del array ordenado por la estrategia (mayor tasaEA), que es la deuda que esta estrategia prioriza con todo el extra disponible.
+   - **No usamos "Cerrás tu primera deuda en"** en Avalancha (probada inicialmente) porque con deudas con tasa 0% mezcladas, la primera en cerrarse puede ser la chica sin interés, que es la misma que aparece en BN → no comunicaría la diferencia entre estrategias.
+   - Resultado: ahora el usuario ve "Apuntás primero a: **Tarjeta Visa**" (Avalancha) vs "Cerrás tu primera deuda en 6 meses (**Préstamo mama**)" (BN). Diferencia conceptual visible incluso cuando el tiempo total coincide.
+2. **Copy de Avalancha más claro (`_RESUMEN_ESTRATEGIA.avalancha`):**
+   - Antes: "...Ideal si querés ahorrar en plata y aguantás que la primera deuda cerrada tarde un poco más."
+   - Ahora: "...Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorrás más dinero."
+   - Más directo, sin el imperativo "aguantás" que sonaba a sacrificio.
+3. **Tip "Cerrás tu primera deuda en" en BN (sin cambios):** verificado por DOM que el tip "Préstamo mama" coincide con la primera deuda de la lista debajo cuando BN está activa (la lista se reordena por saldo ascendente en `renderListaCompromisos`). No había bug; era una confusión visual.
+
+**Verificación visual:** screenshot mobile dark con Avalancha seleccionada confirmó:
+- "📊 TU IMPACTO" con 3 métricas: "LIBRE DE DEUDAS EN: 1 año 7 meses" (azul) + "APUNTÁS PRIMERO A: Tarjeta Visa" con tip "la deuda con tasa más alta" (azul) + "TOTAL QUE PAGÁS EN INTERESES: $1.640.559" (rojo).
+- Snapshot DOM de BN: "LIBRE DE DEUDAS EN: 1 año 7 meses" (azul) + "CERRÁS TU PRIMERA DEUDA EN: 6 meses (Prestamo mama)" (verde).
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**`service-worker.js`:** v73 → v74.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
+
+---
+
 ### fix(compromisos) - v7.6: orden consistente de métricas + estado "1 sola deuda" · 2026-05-27
 
 Iteración tras feedback del usuario sobre v7.5. Dos problemas: cuando el usuario tiene solo 1 deuda activa, la sección "Estrategia de pago" mostraba las 2 cards sin "✨ Recomendada para vos" (porque la recomendación requiere ≥2 deudas para comparar), lo que dejaba la UI confusa y sin guía; y al reordenar BN en v7.5 para poner "Cerrás tu primera deuda en" como primera métrica, rompimos la consistencia visual con Avalancha que mantiene "Libre de deudas en" primero.

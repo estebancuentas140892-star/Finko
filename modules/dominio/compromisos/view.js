@@ -496,7 +496,7 @@ const _META_ESTRATEGIA = {
 // Resúmenes integrados (mecanismo + ideal en 1 párrafo). La razón de
 // recomendación se prepende solo cuando la estrategia es la recomendada.
 const _RESUMEN_ESTRATEGIA = {
-  avalancha: 'Atacás primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Ideal si querés ahorrar en plata y aguantás que la primera deuda cerrada tarde un poco más.',
+  avalancha: 'Atacás primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorrás más dinero.',
   bolaNieve: 'Atacás primero la deuda más chica; cuando la terminás, esa cuota se suma a la siguiente, generando un efecto acumulativo (la "bola" que crece). Ideal si necesitás ver progreso rápido para mantener el impulso.',
 };
 
@@ -612,13 +612,15 @@ function _renderNoAplica(estrategia) {
 
 /**
  * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
- *   1. Libre de deudas en      → info (azul)
- *   2. Total en intereses      → danger (rojo, el costo real que esta estrategia minimiza)
- *   3. Te ahorrás $X vs BN     → success (verde, solo si extra > 0)
+ *   1. Libre de deudas en           → info (azul)
+ *   2. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   3. Total en intereses           → danger (rojo, el costo real que esta estrategia minimiza)
+ *   4. Te ahorrás $X vs BN          → success (verde, solo si extra > 0)
  *
- * Bola de nieve usa otras métricas (ver `_renderImpactoBolaNieve`) porque su
- * enfoque es psicológico, no financiero. v7.5 separó intencionalmente las
- * métricas de ambas estrategias.
+ * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
+ * mayor tasa), no la que se cierra primero (que podría ser otra si tiene
+ * cuota grande o saldo chico). Es lo que el usuario debe atacar con su
+ * presupuesto extra para que esta estrategia funcione.
  */
 function _renderImpactoAvalancha(resultado, extraMensual) {
   const activa = resultado.avalancha;
@@ -627,7 +629,22 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
   const ahorroMeses     = Math.max(0, resultado.bolaNieve.meses - activa.meses);
   const hayAhorro = extraMensual > 0 && (ahorroIntereses > 0.5 || ahorroMeses > 0);
 
-  const filaUnica = hayAhorro
+  // El array `orden` viene ya ordenado según la estrategia (mayor tasa primero
+  // para Avalancha). orden[0] = la deuda PRIORITARIA. No es necesariamente
+  // la que se cierra primero (eso depende de saldos/cuotas/intereses); es la
+  // que el usuario debe atacar con todo el extra para que la estrategia opere.
+  const target = activa.orden?.[0];
+  const filaTarget = target
+    ? `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Apuntás primero a</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">
+           ${_esc(target.descripcion)}
+         </strong>
+         <span class="estrategia-card__metrica-tip">la deuda con tasa más alta</span>
+       </li>`
+    : '';
+
+  const filaAhorro = hayAhorro
     ? `<li class="estrategia-card__metrica">
          <span class="estrategia-card__metrica-label">Te ahorrás respecto a Bola de nieve</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
@@ -642,11 +659,12 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
         <span class="estrategia-card__metrica-label">Libre de deudas en</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
       </li>
+      ${filaTarget}
       <li class="estrategia-card__metrica">
         <span class="estrategia-card__metrica-label">Total que pagás en intereses</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
       </li>
-      ${filaUnica}
+      ${filaAhorro}
     </ul>`;
 }
 

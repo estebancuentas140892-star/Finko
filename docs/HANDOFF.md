@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.6: orden consistente de métricas + estado "1 sola deuda")
+> Última actualización: 2026-05-27 (v7.7: "Apuntás primero a" en Avalancha + copy más claro)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - v7.7: "Apuntás primero a" en Avalancha + copy más claro · 2026-05-27
+Feedback v7.6: el usuario no veía diferencia entre estrategias porque "Libre de deudas en" coincidía (1 año 7 meses en ambas). Revisé `simularEstrategiaPago`: el cálculo no tiene bug, el efecto cascada está implementado (línea 681 suma TODAS las cuotas incluyendo las pagadas; línea 700 vuelca el restante en la prioritaria). Con las deudas específicas del usuario, Préstamo Mamá (tasa 0%) cierra a los 6 meses en AMBAS estrategias y luego coinciden.
+
+**Cambios clave:**
+- **Nueva métrica en Avalancha**: "Apuntás primero a: <nombre>" con tip "la deuda con tasa más alta" (azul info). Usa `resultado.avalancha.orden[0]` que es la deuda prioritaria de la estrategia (mayor tasaEA). NO usamos "Cerrás tu primera deuda en" en Avalancha porque con deudas tasa 0 mezcladas, la primera en cerrarse puede ser la misma que en BN (no comunicaría diferencia).
+- **Diferencia visual ahora clara**: Avalancha → "Apuntás primero a: Tarjeta Visa" (la cara) | BN → "Cerrás tu primera deuda en 6 meses (Préstamo mama)" (la chica). Cada estrategia muestra una deuda distinta como foco.
+- **Copy Avalancha más directo**: "Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorrás más dinero." (antes: "...aguantás que la primera deuda cerrada tarde un poco más").
+- **`service-worker.js`:** v73 → v74.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes.
 
 ### fix(compromisos) - v7.6: orden consistente de métricas + estado "1 sola deuda" · 2026-05-27
 Dos correcciones tras feedback v7.5: la sección "Estrategia de pago" mostraba cards sin recomendación cuando había 1 sola deuda (recomendación necesita ≥2); y al poner "Cerrás tu primera deuda en" como primera métrica en BN rompimos la consistencia visual con Avalancha.
@@ -95,19 +108,6 @@ El usuario reportó que el copy actual no explicaba bien las dos estrategias: "P
 **Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
 
 **Tests:** 932/932 verdes (sin cambios de lógica).
-
-### style(compromisos) - v7.2: recomendación como subtítulo interno · 2026-05-27
-Feedback visual del usuario: el badge "✨ Recomendada para vos" parecía un sticker pegado encima del borde superior de la card, no formaba parte del diseño.
-
-**Cambios clave:**
-- Eliminado `.estrategia-card-pick__badge` con posicionamiento `absolute` flotando fuera del borde.
-- Nuevo `.estrategia-card-pick__sub`: texto verde semibold como subtítulo interno bajo el nombre, sin fondo ni borde. La indicación queda integrada al flujo natural de la card.
-- Las cards no recomendadas usan `.estrategia-card-pick__sub--ghost` con `visibility: hidden` para reservar la misma altura, así ambas cards alinean perfectamente en el grid (verificado: 112.77px = 112.77px).
-- **`service-worker.js`:** v68 → v69.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (UI pura).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
