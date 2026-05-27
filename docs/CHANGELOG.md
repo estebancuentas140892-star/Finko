@@ -7,6 +7,40 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(dash) - Vencidos no marca compromisos recién creados + re-render desde compromisos · 2026-05-26
+
+Dos bugs reportados sobre el dashboard nuevo:
+
+**Bug #1: compromiso nuevo aparecía como vencido.**
+Al agregar un compromiso cuyo día de pago ya pasó este mes (ej. hoy 26, diaPago=15),
+el panel "Vencidos" lo marcaba como mora aunque acabara de crearse. El ciclo del
+día 15 nunca le aplicó: el compromiso aún no existía.
+
+**Fix:** `detectarVencidosCompletos()` y `detectarFijosSinPagarEsteMes()` ahora
+miran `fechaCreacion` (que ya se setea automáticamente en `crud.js`). Si el
+compromiso se creó este mismo año/mes después de su día de pago, se excluye
+del panel. Su próximo vencimiento real es el mes siguiente.
+
+**Bug #2: dashboard no se actualizaba al crear/editar compromisos desde la sección
+Compromisos.** El handler de `state:change` para `compromisos` solo llamaba a
+`_renderTodo()`, no a `_renderDashboardPanels()`. Si el usuario volvía a `#dash`
+sin disparar hashchange, el panel quedaba con datos viejos.
+
+**Fix:** Agregado `renderSmart(_renderDashboardPanels, 'dash')` al listener de
+`state:change`. `renderSmart` corta si la sección activa no es 'dash', así que
+es barato llamarlo siempre.
+
+**Archivos:**
+- `modules/dominio/compromisos/logic.js`: regla anti-falso-positivo con
+  `fechaCreacion` en `detectarVencidosCompletos` y `detectarFijosSinPagarEsteMes`.
+- `modules/dominio/compromisos/index.js`: re-render del dashboard en `state:change`.
+- `tests/unit/compromisos.test.js`: +5 tests (4 para vencidos completos, 1 para fijos).
+- `service-worker.js`: v59→v60.
+
+**Tests:** 920/920 verdes (+5).
+
+---
+
 ### refactor(dash) - Dashboard acción-orientado: Vencidos + Próximas Prioridades · 2026-05-26
 
 Rediseño del dashboard para mostrar **solo** información de acción inmediata

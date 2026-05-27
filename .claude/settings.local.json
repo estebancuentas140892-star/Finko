@@ -49,7 +49,28 @@
       "Bash(pnpm run *)",
       "Bash(grep -n \"import.*calcularScoreSalud\\\\|import.*clasificarScore\" C:\\\\\\\\Users\\\\\\\\USUARIO\\\\\\\\Desktop\\\\\\\\Finko_Claude\\\\\\\\modules\\\\\\\\dominio\\\\\\\\analisis\\\\\\\\view.js)",
       "Bash(cd /mnt/c/Users/USUARIO/Desktop/Finko_Claude && pnpm test 2>&1 | grep -E \"Test Files|Tests|FAIL|passed\")",
-      "mcp__scheduled-tasks__create_scheduled_task"
+      "mcp__scheduled-tasks__create_scheduled_task",
+      "Bash(pnpm exec *)",
+      "Bash(git -C \"C:\\\\Users\\\\USUARIO\\\\Desktop\\\\Finko_Claude\" status --short)",
+      "Bash(git -C \"C:\\\\Users\\\\USUARIO\\\\Desktop\\\\Finko_Claude\" log --oneline -10)",
+      "Bash(curl -s \"http://localhost:8081/modules/dominio/tesoreria/index.js\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://finko-brown.vercel.app/styles/components.css)",
+      "Bash(curl -s \"https://finko-brown.vercel.app/styles/components.css?ts=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/service-worker.js?ts=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/service-worker.js\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/logros/index.js\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/styles/components.css\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/tesoreria/view.js\")",
+      "Bash(curl -sI \"https://finko-brown.vercel.app/service-worker.js\")",
+      "Bash(curl -sI \"https://finko-brown.vercel.app/styles/components.css\")",
+      "Bash(curl -sI \"https://finko-brown.vercel.app/\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/infra/sw-register.js\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/service-worker.js?t=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/config/view.js?t=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/tesoreria/logic.js?t=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/core/state.js?t=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/gastos/view.js?t=$\\(date +%s\\)\")",
+      "Bash(python -c ' *)"
     ]
   }
 }

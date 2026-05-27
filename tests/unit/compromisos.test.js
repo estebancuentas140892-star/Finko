@@ -684,6 +684,15 @@ describe('detectarFijosSinPagarEsteMes', () => {
     );
     expect(result).toHaveLength(0);
   });
+
+  it('no marca como vencido un fijo recién creado este mes después de su día de pago', () => {
+    // Creado el 26 mayo con diaPago=15. Hoy 26. NO debe contar.
+    const result = detectarFijosSinPagarEsteMes(
+      [fijo({ diaPago: 15, fechaCreacion: '2026-05-26T10:00:00.000Z' })],
+      '2026-05-26'
+    );
+    expect(result).toHaveLength(0);
+  });
 });
 
 // ── detectarDeudasDurmiendo ───────────────────────────────────────
@@ -869,6 +878,47 @@ describe('detectarVencidosCompletos', () => {
     expect(detectarVencidosCompletos(
       [comp({ diaPago: 13 })], '2026-05-15', { umbralDiasAtraso: 3 }
     )).toHaveLength(0);
+  });
+
+  it('no marca como vencido un compromiso recién creado este mes después del día de pago', () => {
+    // Creado el 26 de mayo con diaPago=15. Hoy es 26. NO debe contar como mora:
+    // el ciclo del 15 de mayo no le aplicaba (el compromiso aún no existía).
+    const result = detectarVencidosCompletos(
+      [comp({ diaPago: 15, fechaCreacion: '2026-05-26T10:00:00.000Z' })],
+      '2026-05-26'
+    );
+    expect(result).toHaveLength(0);
+  });
+
+  it('sí marca como vencido si fechaCreacion es de un mes anterior', () => {
+    // Creado en abril, hoy 26 mayo, diaPago=15 → debe contar como vencido.
+    const result = detectarVencidosCompletos(
+      [comp({ diaPago: 15, fechaCreacion: '2026-04-10T10:00:00.000Z' })],
+      '2026-05-26'
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].diasAtraso).toBe(11);
+  });
+
+  it('sí marca como vencido si fechaCreacion es del mismo mes pero anterior al día de pago', () => {
+    // Creado el 5 de mayo con diaPago=15. Hoy 26 → vencido (lleva 11 días).
+    const result = detectarVencidosCompletos(
+      [comp({ diaPago: 15, fechaCreacion: '2026-05-05T10:00:00.000Z' })],
+      '2026-05-26'
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].diasAtraso).toBe(11);
+  });
+
+  it('mantiene el comportamiento legacy cuando el compromiso no tiene fechaCreacion', () => {
+    // Compromisos creados antes de que el campo existiera (o importados) siguen
+    // funcionando: si diaPago ya pasó, se marca vencido.
+    const result = detectarVencidosCompletos(
+      [{ id: 'x', descripcion: 'Legacy', monto: 100, tipo: 'fijo',
+         activo: true, diaPago: 5, frecuencia: 'Mensual' }],
+      '2026-05-26'
+    );
+    expect(result).toHaveLength(1);
   });
 });
 

@@ -164,6 +164,10 @@ export function initCompromisos() {
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
       renderSmart(_renderTodo, 'compromisos');
+      // El dashboard también depende de compromisos: si el usuario crea/edita/
+      // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
+      // corta si la sección activa no es 'dash', así que es barato llamarlo siempre.
+      renderSmart(_renderDashboardPanels, 'dash');
       updateBadge();
     }
   });

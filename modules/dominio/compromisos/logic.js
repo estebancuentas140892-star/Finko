@@ -251,7 +251,9 @@ export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
   const mh = _RX_FECHA_COMP.exec(hoyISO);
   if (!mh) return [];
 
-  const diaHoy = +mh[3];
+  const anioHoy = +mh[1];
+  const mesHoy  = +mh[2];
+  const diaHoy  = +mh[3];
   const cfg = typeof config === 'object' && config ? config : {};
   const umbral = Number.isFinite(+cfg.umbralDiasAtraso) && +cfg.umbralDiasAtraso >= 0
     ? Math.floor(+cfg.umbralDiasAtraso) : 0;
@@ -268,6 +270,18 @@ export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
 
     const diasAtraso = diaHoy - diaPago;
     if (diasAtraso < umbral) continue;
+
+    // Si el fijo se creó este mes después de su día de pago, el ciclo de
+    // este mes no le aplica: el próximo vencimiento real es el mes siguiente.
+    if (typeof c.fechaCreacion === 'string') {
+      const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
+      if (mc) {
+        const anioC = +mc[1];
+        const mesC  = +mc[2];
+        const diaC  = +mc[3];
+        if (anioC === anioHoy && mesC === mesHoy && diaC > diaPago) continue;
+      }
+    }
 
     const severidad = diasAtraso <= 3 ? 'leve'
       : diasAtraso <= 10             ? 'moderada'
@@ -377,6 +391,11 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
  * "Pendientes/Vencidos" del dashboard. La función vieja queda intacta para
  * el nudge de la sección compromisos (retrocompatibilidad).
  *
+ * Regla anti-falso-positivo: si el compromiso se creó este mismo mes/año
+ * y su `fechaCreacion` es posterior al día de pago, no se marca como vencido.
+ * Recién agregar un fijo cuyo día ya pasó no implica mora (ese ciclo no
+ * existía). El próximo vencimiento real es el mes siguiente.
+ *
  * Limitación conocida: para tipo='agenda' con frecuencia='Única vez' creada
  * en meses anteriores, `diasAtraso` se calcula contra el mes en curso, no
  * contra la fecha original. Si el usuario olvidó desactivar el item, el
@@ -400,7 +419,9 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
   const mh = _RX_FECHA_COMP.exec(hoyISO);
   if (!mh) return [];
 
-  const diaHoy = +mh[3];
+  const anioHoy = +mh[1];
+  const mesHoy  = +mh[2];
+  const diaHoy  = +mh[3];
   const cfg = typeof config === 'object' && config ? config : {};
   const umbral = Number.isFinite(+cfg.umbralDiasAtraso) && +cfg.umbralDiasAtraso >= 0
     ? Math.floor(+cfg.umbralDiasAtraso) : 0;
@@ -417,6 +438,18 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
 
     const diasAtraso = diaHoy - diaPago;
     if (diasAtraso < umbral) continue;
+
+    // Si el compromiso se creó este mes después de su día de pago, el ciclo
+    // de este mes no le aplica: el próximo vencimiento real es el mes siguiente.
+    if (typeof c.fechaCreacion === 'string') {
+      const mc = _RX_FECHA_COMP.exec(c.fechaCreacion);
+      if (mc) {
+        const anioC = +mc[1];
+        const mesC  = +mc[2];
+        const diaC  = +mc[3];
+        if (anioC === anioHoy && mesC === mesHoy && diaC > diaPago) continue;
+      }
+    }
 
     const severidad = diasAtraso <= 3 ? 'leve'
       : diasAtraso <= 10             ? 'moderada'

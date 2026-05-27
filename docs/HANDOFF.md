@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-26 (refactor: Dashboard acción-orientado - Vencidos + Próximas Prioridades)
+> Última actualización: 2026-05-26 (fix: Vencidos no marca recién creados + re-render dashboard)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 915/915 verdes |
+| Tests unitarios + integración | 920/920 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,27 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(dash) - Vencidos no marca recién creados + re-render desde compromisos · 2026-05-26
+Dos bugs sobre el dashboard nuevo:
+
+**#1** Compromiso recién creado con día de pago anterior a hoy aparecía como vencido
+(ej. hoy 26, diaPago=15 → "venció hace 11 días"). Solución: `detectarVencidosCompletos`
+y `detectarFijosSinPagarEsteMes` ahora miran `fechaCreacion` y excluyen los items
+creados este mes después de su día de pago. Su próximo ciclo real es el mes siguiente.
+
+**#2** Al crear/editar/eliminar un compromiso desde la sección Compromisos, el dashboard
+no se actualizaba (solo se llamaba `_renderTodo`). Solución: `state:change` también
+dispara `renderSmart(_renderDashboardPanels, 'dash')`.
+
+**Archivos:**
+- `modules/dominio/compromisos/logic.js`: regla anti-falso-positivo con `fechaCreacion`
+  en `detectarVencidosCompletos` y `detectarFijosSinPagarEsteMes`.
+- `modules/dominio/compromisos/index.js`: re-render de paneles dashboard en `state:change`.
+- `tests/unit/compromisos.test.js`: +5 tests.
+- `service-worker.js`: v59→v60.
+
+**Tests:** 920/920 verdes (+5).
 
 ### refactor(dash) - Dashboard acción-orientado: Vencidos + Próximas Prioridades · 2026-05-26
 Rediseño del dashboard para mostrar **solo** información de acción inmediata.
@@ -131,11 +152,6 @@ Se actualiza con cada cambio de estado (via `registrarRender`) y al navegar al D
   vi.useFakeTimers); import extendido a las 4 funciones exportadas
 
 **Tests:** 893/893 verdes.
-
-### refactor(ux) - Menú reordenado por frecuencia de uso real · 2026-05-23
-Mobile bottom nav: `Dashboard · Gastos · Agenda · [Más]` (Agenda sube, Tesorería pasa a Más).
-Desktop: 3 grupos (Diario / Gestión / Herramientas). Modal Más: agrega Tesorería, quita Agenda.
-E2E: `retries: 1` en playwright.config.js + `test.describe.serial` en Onboarding. SW: v55.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
