@@ -7,6 +7,73 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(compromisos) - Chooser entidad/personal + lista única reordenable · 2026-05-27
+
+Rediseño del modal "Nueva deuda" y de la card de estrategia de pago. Responde a feedback del usuario (4 puntos reportados).
+
+**Motivación:**
+- El form unificado (selector de tipo + todos los campos juntos) era confuso para usuarios que no distinguen deuda con entidad de deuda personal.
+- La card de estrategia Avalancha/Bola de nieve mostraba la lista de deudas internamente (`<ol>`), y debajo existía una segunda lista (`#lista-compromisos`). La misma información aparecía dos veces, haciendo invisible el reordenamiento al cambiar estrategia.
+- El "bug" de avalancha reportado no era un bug de lógica: el reordenamiento funcionaba, pero la duplicación lo ocultaba.
+
+**Cambios:**
+
+1. **Modal en 2 pasos (`compromisos/view.js`, `compromisos/index.js`):**
+   - Paso 1: chooser con 2 tarjetas grandes ("🏦 Entidad" / "🤝 Personal") + descripción de cada tipo.
+   - Paso 2: form tailored por tipo. Entidad: tasa EA obligatoria + referencia a la usura vigente. Personal: tasa mensual opcional + hint de gota a gota.
+   - Botón "← Volver" regresa al chooser. Título del modal se actualiza ("Nueva deuda" → "Deuda con entidad" / "Deuda personal").
+   - `tipo` va en `<input type="hidden">` (el usuario ya eligió en el chooser, no necesita un selector).
+
+2. **Lista única reordenable (`compromisos/view.js`):**
+   - Eliminado `<ol class="estrategia-card__orden">` de `renderEstrategiaPago()`.
+   - La card ahora muestra: controles (extra mensual + toggle) + resumen (meses libre, intereses) + comparación de ahorro.
+   - Solo `#lista-compromisos` con badges 1°, 2°, 3° que se reordenan al clickear estrategia.
+   - Subtítulo de la card: "La lista de abajo se reordena según la estrategia activa."
+
+3. **CSS (`styles/components.css`):**
+   - Nuevas clases: `.comp-chooser`, `.comp-chooser__btn`, `.comp-chooser__icon`, `.comp-chooser__label`, `.comp-chooser__desc`, `.comp-chooser__pregunta`.
+
+4. **`service-worker.js`:** v62 → v63.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 926/926 verdes (sin tests nuevos: cambios son UI pura, sin lógica de negocio nueva).
+
+---
+
+### feat(agenda) - Botón "+ Agregar gasto fijo" en Agenda · 2026-05-27
+
+Cierre de Tarea 2 (post v6). Después del rediseño de Compromisos a solo deudas, la sección Agenda recibe el punto de entrada para crear gastos fijos.
+
+**Motivación:**
+- Tras el rediseño v6 los `tipo='fijo'` ya conviven en `S.compromisos`, pero no había forma de crearlos desde la UI (el modal de Compromisos pasó a ser solo deudas).
+- Conceptualmente los gastos fijos (arriendo, servicios, suscripciones) son recordatorios calendario, no obligaciones financieras con saldo. Encajan en Agenda.
+
+**Cambios:**
+
+1. **`index.html`:**
+   - Botón "+ Agregar gasto fijo" en el header de `#sec-agenda` (`data-action="nuevo-gasto-fijo"`).
+   - Nuevo modal `#modal-gasto-fijo` con body vacío para inyección.
+   - Título del modal de Compromisos cambia de "Nuevo compromiso" a "Nueva deuda" (alineado con v6).
+
+2. **`modules/dominio/agenda/view.js`:**
+   - Nueva función exportada `renderFormGastoFijo()`: form simplificado con 4 campos visibles (descripcion, monto, frecuencia, día de pago) + `<input type="hidden" name="tipo" value="fijo">`.
+
+3. **`modules/dominio/agenda/index.js`:**
+   - Handlers `_nuevoGastoFijo` y `_guardarGastoFijo`.
+   - Reusa `validarCompromiso` + `normalizarCompromiso` de `compromisos/logic.js` (puras, ya cubren shape `fijo`).
+   - `_inyectarFormGastoFijo()` reinyecta el form en cada apertura: `resetModal` borraría el hidden `tipo` y el `selected` de Mensual.
+
+4. **`service-worker.js`:** v61 → v62.
+
+**Bug encontrado y arreglado durante el desarrollo:** `resetModal` (en `modules/ui/modales.js`) hace `el.value = ''` para todos los inputs incluidos `type="hidden"` y `<select>` con `selected`. Esto vacía el hidden `tipo='fijo'` y desselecciona Mensual del default. Workaround local: reinyectar el form al abrir el modal en vez de llamar `resetModal`. (Sin tocar `modales.js` para no introducir regresiones en otros modales.)
+
+**Tests:** 926/926 verdes (sin tests nuevos: la lógica reusada ya estaba cubierta en `compromisos.test.js`).
+
+**Verificación manual:** Agenda → "+ Agregar gasto fijo" → llenar (Netflix, 25.000, Mensual, día 10) → Guardar. El día 10 muestra dot naranja y el compromiso aparece al hacer click en el día.
+
+---
+
 ### refactor(compromisos) - Rediseño v6: solo deudas (entidad / personal) + estrategia arriba · 2026-05-27
 
 Rediseño de la sección Compromisos a partir del feedback del usuario.

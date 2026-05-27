@@ -19,7 +19,8 @@ import { confirmar } from '../../ui/confirm.js';
 import { validarCompromiso, normalizarCompromiso } from './logic.js';
 import {
   renderListaCompromisos,
-  renderFormCompromiso,
+  renderChooserCompromiso,
+  renderFormDeuda,
   renderEstrategiaPago,
   setEstrategiaUI,
   renderAlertaFijosSinPagar,
@@ -55,7 +56,9 @@ function _renderTodo() {
 function _nuevoCompromiso() {
   const overlay = document.getElementById('modal-compromiso');
   if (!overlay) return;
-  resetModal(overlay);
+  // Volvemos al chooser (paso 1) y reseteamos el título. Así si el usuario
+  // cerró habiendo llegado al form (paso 2) y vuelve a abrir, ve el chooser.
+  _mostrarChooser(overlay);
   abrirModal(overlay);
 }
 
@@ -103,6 +106,60 @@ async function _eliminarCompromiso(el) {
   announce(`Compromiso "${compromiso.descripcion}" eliminado.`);
 }
 
+// ── HANDLERS DEL MODAL: FLUJO DE 2 PASOS ────────────────────────
+
+/**
+ * Pone el modal en el paso 1 (chooser). Reinyecta el HTML limpio y resetea el título.
+ * @param {HTMLElement} overlay - el modal-overlay
+ */
+function _mostrarChooser(overlay) {
+  const body = overlay.querySelector('.modal__body');
+  const titulo = overlay.querySelector('.modal__title');
+  if (body)   body.innerHTML = renderChooserCompromiso();
+  if (titulo) titulo.textContent = 'Nueva deuda';
+}
+
+/**
+ * Cuando el usuario elige el tipo (entidad | personal), pasamos al paso 2.
+ * @param {HTMLElement} el - botón con data-tipo
+ */
+function _elegirTipoDeuda(el) {
+  const tipo = el.dataset.tipo;
+  if (tipo !== 'deuda-entidad' && tipo !== 'deuda-personal') return;
+
+  const overlay = document.getElementById('modal-compromiso');
+  if (!overlay) return;
+
+  const body   = overlay.querySelector('.modal__body');
+  const titulo = overlay.querySelector('.modal__title');
+  if (!body) return;
+
+  body.innerHTML = renderFormDeuda(tipo);
+
+  const tituloTexto = tipo === 'deuda-entidad' ? 'Deuda con entidad' : 'Deuda personal';
+  if (titulo) titulo.textContent = tituloTexto;
+
+  // Adjuntar submit handler al nuevo form.
+  body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarCompromiso();
+  });
+
+  // Foco en el primer campo visible para accesibilidad.
+  body.querySelector('input:not([type=hidden])')?.focus();
+}
+
+/**
+ * Vuelve al chooser (paso 1) desde el form (paso 2).
+ */
+function _volverChooser() {
+  const overlay = document.getElementById('modal-compromiso');
+  if (!overlay) return;
+  _mostrarChooser(overlay);
+}
+
+// ── HANDLERS ESTRATEGIA ──────────────────────────────────────────
+
 // Handlers de la card de estrategia (F.4). En v6 la estrategia también
 // define el orden de la lista de deudas, así que re-renderizamos ambas.
 function _elegirEstrategia(el) {
@@ -121,30 +178,18 @@ function _cambiarExtraEstrategia(el) {
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 function _inyectarForm() {
-  const body = document.getElementById('modal-compromiso-body');
-  if (!body) return;
-
-  body.innerHTML = renderFormCompromiso();
-
-  body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    _guardarCompromiso();
-  });
-
-  // Mostrar/ocultar campos extra cuando el usuario elige tipo='deuda'.
-  const selectTipo   = body.querySelector('#comp-tipo');
-  const campasDeuda  = body.querySelector('#comp-deuda-campos');
-  if (selectTipo && campasDeuda) {
-    selectTipo.addEventListener('change', () => {
-      campasDeuda.classList.toggle('d-none', selectTipo.value !== 'deuda');
-    });
-  }
+  // Paso 1: al arrancar inyectamos el chooser en el modal.
+  // El form (paso 2) se inyecta dinámicamente cuando el usuario elige tipo.
+  const overlay = document.getElementById('modal-compromiso');
+  if (overlay) _mostrarChooser(overlay);
 }
 
 export function initCompromisos() {
-  registrarAccion('nuevo-compromiso',    _nuevoCompromiso);
-  registrarAccion('eliminar-compromiso', _eliminarCompromiso);
-  registrarAccion('elegir-estrategia',   _elegirEstrategia);
+  registrarAccion('nuevo-compromiso',     _nuevoCompromiso);
+  registrarAccion('eliminar-compromiso',  _eliminarCompromiso);
+  registrarAccion('elegir-estrategia',    _elegirEstrategia);
+  registrarAccion('comp-elegir-tipo',     _elegirTipoDeuda);
+  registrarAccion('comp-volver-chooser',  _volverChooser);
 
   _inyectarForm();
 

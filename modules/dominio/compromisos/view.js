@@ -20,7 +20,6 @@ import {
   agruparPorDiasRestantes,
   esDeuda,
   tasaEADe,
-  TIPOS_DEUDA,
   LABEL_TIPO,
   ICONO_TIPO,
 } from './logic.js';
@@ -263,75 +262,119 @@ function _renderEmptyState() {
     </div>`;
 }
 
-// ── FORMULARIO DEL MODAL ─────────────────────────────────────────
+// ── FORMULARIO DEL MODAL: PASO 1 - CHOOSER ───────────────────────
 
 /**
- * Devuelve el HTML del formulario de nueva deuda (v6).
- *
- * La sección Compromisos solo crea deudas. Los gastos fijos van por Agenda.
+ * Devuelve el HTML del paso 1 del modal: dos botones grandes para elegir
+ * si la deuda es con entidad o personal. Al hacer click en uno, index.js
+ * oculta este paso y muestra el formulario tailored (paso 2).
  *
  * @returns {string}
  */
-export function renderFormCompromiso() {
-  const frecOpts = FRECUENCIAS
+export function renderChooserCompromiso() {
+  return `
+    <p class="comp-chooser__pregunta">¿Con quién es la deuda?</p>
+    <div class="comp-chooser" role="group" aria-label="Elegir tipo de deuda">
+      <button type="button" class="comp-chooser__btn"
+              data-action="comp-elegir-tipo" data-tipo="deuda-entidad"
+              aria-label="Deuda con entidad: banco, fintech, tarjeta de crédito">
+        <span class="comp-chooser__icon" aria-hidden="true">🏦</span>
+        <strong class="comp-chooser__label">Entidad</strong>
+        <span class="comp-chooser__desc">
+          Banco, fintech, tarjeta de crédito, ICETEX.
+          La tasa va en % EA (anual efectivo).
+        </span>
+      </button>
+      <button type="button" class="comp-chooser__btn"
+              data-action="comp-elegir-tipo" data-tipo="deuda-personal"
+              aria-label="Deuda personal: familiar, amigo, gota a gota">
+        <span class="comp-chooser__icon" aria-hidden="true">🤝</span>
+        <strong class="comp-chooser__label">Personal</strong>
+        <span class="comp-chooser__desc">
+          Familiar, amigo, gota a gota.
+          La tasa en % mensual es opcional.
+        </span>
+      </button>
+    </div>
+    <div class="modal__footer">
+      <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+    </div>`;
+}
+
+// ── FORMULARIO DEL MODAL: PASO 2 - FORM TAILORED ─────────────────
+
+/**
+ * Devuelve el HTML del formulario tailored para el tipo de deuda elegido.
+ *
+ * Entidad: tasa EA obligatoria (usura como referencia).
+ * Personal: tasa mensual opcional (gota a gota suele cobrar 5-20% mensual).
+ *
+ * El tipo va en un hidden para que `normalizarCompromiso` lo recoja sin que
+ * el usuario tenga que seleccionarlo (ya eligió en el chooser del paso 1).
+ *
+ * @param {'deuda-entidad'|'deuda-personal'} tipo
+ * @returns {string}
+ */
+export function renderFormDeuda(tipo) {
+  const esEntidad = tipo === 'deuda-entidad';
+  const frecOpts  = FRECUENCIAS
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
-
-  const tipoOpts = TIPOS_DEUDA
-    .map(t => `<option value="${_esc(t)}">${_esc(LABEL_TIPO[t])}</option>`)
-    .join('');
-
   const usura = tasaUsuraVigente();
+
+  const tasaLabel = esEntidad
+    ? 'Tasa de interés EA (%)'
+    : 'Tasa de interés mensual (%) - opcional';
+
+  const tasaPlaceholder = esEntidad ? '28.5' : '10';
+
+  const tasaHint = esEntidad
+    ? `La usura vigente es ~${(usura.tasa * 100).toFixed(2)}% EA (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, podés reportarlo.`
+    : 'Si no cobra interés, dejá en blanco. El gota a gota suele cobrar entre 5% y 20% mensual.';
+
+  const descPlaceholder = esEntidad
+    ? 'Ej. Tarjeta Visa Bancolombia'
+    : 'Ej. Préstamo de mamá, Gota a gota';
 
   return `
     <form id="form-compromiso" novalidate>
-      <div class="form-group">
-        <label for="comp-tipo" class="label">Tipo de deuda</label>
-        <select id="comp-tipo" name="tipo" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
-          ${tipoOpts}
-        </select>
-        <p class="form-hint">
-          🏦 <strong>Entidad</strong>: banco, fintech, tarjeta de crédito.
-          🤝 <strong>Personal</strong>: familiar, amigo, gota a gota.
-        </p>
-      </div>
+      <input type="hidden" name="tipo" value="${_esc(tipo)}" />
 
       <div class="form-group">
-        <label for="comp-descripcion" class="label">Descripción</label>
+        <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Tarjeta Visa Bancolombia" required aria-required="true" autocomplete="off" />
+               placeholder="${_esc(descPlaceholder)}" required aria-required="true"
+               autocomplete="off" />
       </div>
 
       <div class="form-group">
-        <label for="comp-saldo" class="label">Saldo total que aún debés (COP)</label>
+        <label for="comp-saldo" class="label">¿Cuánto debés en total? (COP)</label>
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true" autocomplete="off" />
+               min="1" step="10000" placeholder="0" required aria-required="true"
+               autocomplete="off" />
         <p class="form-hint">Lo que falta por pagar hoy. Se descuenta de tu patrimonio neto.</p>
       </div>
 
       <div class="form-group">
-        <label for="comp-cuota" class="label">Cuota mensual (COP)</label>
+        <label for="comp-cuota" class="label">¿Cuánto pagás cada mes? (COP)</label>
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true" autocomplete="off" />
-        <p class="form-hint">Lo que pagás cada mes. Es el gasto que se proyecta al Balance del mes.</p>
+               min="1" step="10000" placeholder="0" required aria-required="true"
+               autocomplete="off" />
+        <p class="form-hint">La cuota mensual se proyecta al Balance del mes.</p>
       </div>
 
       <div class="form-group">
-        <label for="comp-tasa" class="label" id="comp-tasa-label">Tasa de interés (%)</label>
+        <label for="comp-tasa" class="label">${_esc(tasaLabel)}</label>
         <div class="tasa-input-group">
           <input id="comp-tasa" name="tasa" class="input" type="number"
-                 min="0" max="200" step="0.01" placeholder="0"
-                 aria-describedby="comp-tasa-hint" autocomplete="off" />
-          <select id="comp-tasa-unidad" name="tasaUnidad" class="input" aria-label="Unidad de la tasa">
-            <option value="EA">% EA (anual)</option>
-            <option value="mensual">% mensual</option>
-          </select>
+                 min="0" max="${esEntidad ? '200' : '100'}" step="0.01"
+                 placeholder="${_esc(tasaPlaceholder)}"
+                 aria-describedby="comp-tasa-hint"
+                 ${esEntidad ? 'required aria-required="true"' : ''}
+                 autocomplete="off" />
+          <input type="hidden" name="tasaUnidad" value="${esEntidad ? 'EA' : 'mensual'}" />
         </div>
-        <p id="comp-tasa-hint" class="form-hint">
-          Entidad: usá <strong>% EA</strong>. La usura vigente es ~${(usura.tasa * 100).toFixed(2)}% EA (SFC, ${usura.periodo}).<br>
-          Personal (gota a gota): solé venir en <strong>% mensual</strong> (5-20% es lo usual).
-        </p>
+        <p id="comp-tasa-hint" class="form-hint">${_esc(tasaHint)}</p>
       </div>
 
       <div class="form-group">
@@ -342,13 +385,14 @@ export function renderFormCompromiso() {
       </div>
 
       <div class="form-group">
-        <label for="comp-dia" class="label">Día de pago (1-31)</label>
+        <label for="comp-dia" class="label">Día de pago del mes (1-31)</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
                min="1" max="31" step="1" placeholder="1" required aria-required="true" />
       </div>
 
       <div class="modal__footer">
-        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="button" class="btn btn-ghost"
+                data-action="comp-volver-chooser">← Volver</button>
         <button type="submit" class="btn btn-primary">Guardar deuda</button>
       </div>
     </form>`;
@@ -402,15 +446,13 @@ export function renderEstrategiaPago() {
   const resultado = compararEstrategias(deudas, extraMensual);
   const activa    = resultado[estrategia];
 
-  // Mapeo id → descripción para mostrar nombres en la tabla.
-  const descById = Object.fromEntries(deudas.map(d => [d.id, d]));
-
   el.innerHTML = `
     <article class="estrategia-card">
       <header class="estrategia-card__header">
-        <h2 class="estrategia-card__title">💡 Estrategia de pago de deudas</h2>
+        <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
         <p class="estrategia-card__subtitle">
-          Compará dos formas de pagar tus ${deudas.length} deudas activas.
+          Elegí cómo querés atacar tus ${deudas.length} deuda${deudas.length === 1 ? '' : 's'}.
+          La lista de abajo se reordena según la estrategia activa.
         </p>
       </header>
 
@@ -437,26 +479,10 @@ export function renderEstrategiaPago() {
         </div>
         <p class="estrategia-card__hint">
           ${estrategia === 'avalancha'
-            ? 'Pagás primero la deuda de mayor tasa. Te ahorra intereses.'
-            : 'Pagás primero la deuda más pequeña. Te motiva con victorias rápidas.'}
+            ? '🏔️ <strong>Avalancha:</strong> primero la de mayor tasa. Pagás menos intereses en total.'
+            : '⚪ <strong>Bola de nieve:</strong> primero la más pequeña. Cerrás deudas rápido y te motivás.'}
         </p>
       </div>
-
-      <ol class="estrategia-card__orden">
-        ${activa.orden.map((o, i) => {
-          const d = descById[o.id];
-          const tasa = (d.tasaEA * 100).toFixed(1);
-          const mes  = o.mesPagado != null ? `pagada en mes ${o.mesPagado}` : 'sin pagar';
-          return `
-            <li class="estrategia-card__paso">
-              <span class="estrategia-card__num">${i + 1}</span>
-              <div class="estrategia-card__paso-body">
-                <p class="estrategia-card__paso-desc">${_esc(d.descripcion)}</p>
-                <p class="estrategia-card__paso-meta">${tasa}% EA · ${f(d.saldo)} · ${mes}</p>
-              </div>
-            </li>`;
-        }).join('')}
-      </ol>
 
       <div class="estrategia-card__totales">
         <div class="estrategia-card__total">

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (refactor: Compromisos v6 - solo deudas + estrategia arriba)
+> Última actualización: 2026-05-27 (refactor: Compromisos - chooser entidad/personal, lista única reordenable - Tarea 3 cerrada)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,39 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(compromisos) - Chooser entidad/personal + lista única reordenable · 2026-05-27
+Rediseño del flujo "Nueva deuda" y eliminación de la lista duplicada en la card de estrategia. Responde a 4 puntos de feedback del usuario.
+
+**Cambios clave:**
+- **Modal 2 pasos:** click "+ Nueva deuda" → chooser (🏦 Entidad / 🤝 Personal con descripción de cada tipo). Click en uno → form tailored con campos y labels específicos. Botón "← Volver" regresa al chooser. Título del modal se actualiza dinámicamente.
+- **Forms tailored:** Entidad muestra tasa EA obligatoria con referencia a la usura vigente. Personal muestra tasa mensual opcional con hint de gota a gota. Ambos tienen `tipo` en hidden field (sin select visible al usuario).
+- **Lista única:** eliminado el `<ol class="estrategia-card__orden">` de dentro de la card de estrategia. Solo existe `#lista-compromisos` con badges 1°, 2°, 3°. Clickear Avalancha/Bola de nieve reordena esa lista de forma visible.
+- **El "bug" de estrategia era percepción:** la lógica de reordenamiento siempre funcionó. Con la lista duplicada el cambio era confuso; ahora con lista única el efecto es obvio.
+- **`service-worker.js`:** v62 → v63.
+
+**Archivos:** `compromisos/view.js` (nuevo `renderChooserCompromiso`, `renderFormDeuda(tipo)`, `renderEstrategiaPago` sin ol), `compromisos/index.js` (handlers chooser: `_mostrarChooser`, `_elegirTipoDeuda`, `_volverChooser`; acciones `comp-elegir-tipo`, `comp-volver-chooser`), `styles/components.css` (`.comp-chooser`, `.comp-chooser__btn`, `.comp-chooser__label`, `.comp-chooser__desc`).
+
+**Tests:** 926/926 verdes (sin tests nuevos: UI pura, sin lógica de negocio nueva).
+
+### feat(agenda) - Botón "+ Agregar gasto fijo" en Agenda · 2026-05-27
+Cierre de Tarea 2 después del rediseño v6 de Compromisos. La sección Agenda recibe el punto de entrada para crear `tipo='fijo'`.
+
+**Cambios clave:**
+- **`index.html`:** botón "+ Agregar gasto fijo" en header de `#sec-agenda` + nuevo `#modal-gasto-fijo`. Modal de Compromisos renombrado a "Nueva deuda" (alineado con v6).
+- **`modules/dominio/agenda/view.js`:** nueva función `renderFormGastoFijo()` con 4 campos visibles (descripcion, monto, frecuencia, día) + hidden `tipo=fijo`.
+- **`modules/dominio/agenda/index.js`:** handlers `_nuevoGastoFijo` / `_guardarGastoFijo`. Reusa `validarCompromiso` y `normalizarCompromiso` de `compromisos/logic.js` (puras). Reinyecta el form en cada apertura para evitar bug de `resetModal` con hidden + `<select selected>`.
+- **`service-worker.js`:** v61 → v62.
+
+**Bug encontrado:** `resetModal` vacía el hidden `tipo` y el `selected` de Mensual. Workaround local: reinyectar el form al abrir, sin tocar `modales.js`.
+
+**Tests:** 926/926 verdes (lógica reusada ya cubierta).
+
+**Próxima sesión:** rediseño de **Compromisos** según feedback del usuario (4 puntos):
+1. Modal "+ Nueva deuda" → primero chooser (🏦 Entidad / 🤝 Personal), luego form específico por tipo.
+2. Forms separados con campos y ayuda tailored.
+3. Eliminar lista duplicada (`<ol>` interno de estrategia + `#lista-compromisos`): que quede una sola que se reordene al clickear avalancha/bola de nieve.
+4. Verificar bug reportado de avalancha/bola de nieve con caso "1 deuda con interés + 1 sin interés".
 
 ### refactor(compromisos) - Rediseño v6: solo deudas (entidad / personal) + estrategia arriba · 2026-05-27
 Rediseño completo del dominio Compromisos a partir del feedback del usuario.
@@ -112,41 +145,6 @@ Próximas Prioridades para eliminar redundancia).
   5 para `agruparPorDiasRestantes`)
 
 **Tests:** 915/915 verdes (+14).
-
-### feat(gastos) - Selector de mes anterior/siguiente sobre la lista · 2026-05-23
-Encabezado `‹ Mayo 2026 ›` encima de los chips de categoría. Permite revisar gastos
-de cualquier mes sin exportar CSV. El filtro de categoría se resetea al navegar de mes.
-El mes seleccionado persiste durante la sesión.
-
-**Archivos:**
-- `modules/dominio/gastos/view.js`: `_viewYear`/`_viewMonth` (estado local); `_ensureMes()`;
-  `navegarMesGastos(delta)` exportada; `renderFiltrosGastos()` incluye `.mes-nav` + chips;
-  `renderListaGastos()` usa el mes de la vista en lugar de `hoy()`
-- `modules/dominio/gastos/index.js`: `_prevMes()` / `_nextMes()`; acciones `gastos-prev-mes`
-  y `gastos-next-mes` registradas
-- `styles/components.css`: bloque `.mes-nav` (btn, label, hover, focus)
-- `service-worker.js`: v57→v58
-
-**Tests:** 901/901 verdes (sin tests nuevos: la lógica de navegación es análoga a `navegarMes`
-en Agenda que tampoco tiene tests unitarios; `gastosMes` ya estaba cubierta).
-
-### feat(gastos) - Filtro por categoría con chips fijos sobre la lista · 2026-05-23
-Chips de categoría encima de la lista de gastos del mes. "Todos" activo por defecto.
-Un chip por cada categoría presente en el mes actual; al hacer clic filtra la lista.
-El filtro persiste en la sesión y se auto-resetea si la categoría activa desaparece.
-Si la categoría seleccionada no tiene gastos muestra "Sin gastos en esta categoría" + botón "Ver todos".
-
-**Archivos:**
-- `modules/dominio/gastos/logic.js`: nueva función pura `filtrarGastos(gastos, categoria)`
-- `modules/dominio/gastos/view.js`: estado local `_filtroCategoria`; `renderFiltrosGastos()`;
-  `renderListaGastos()` aplica filtro; `_renderEmptyFiltro()`; `setFiltroCategoria()` exportada
-- `modules/dominio/gastos/index.js`: acción `gastos-filtrar-cat`; `renderFiltrosGastos` en EventBus y hashchange
-- `index.html`: `<div id="panel-filtros-gastos">` antes de `#lista-gastos`
-- `styles/components.css`: `.filtros-bar` + `.chip` + `.chip--active`
-- `service-worker.js`: v56→v57
-- `tests/unit/gastos.test.js`: +8 tests para `filtrarGastos`
-
-**Tests:** 901/901 verdes.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

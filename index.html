@@ -268,10 +268,14 @@
         </div>
       </section>
 
-      <!-- AGENDA (vista calendario sobre compromisos) -->
+      <!-- AGENDA (vista calendario sobre compromisos + alta de gastos fijos) -->
       <section class="section" id="sec-agenda" aria-labelledby="title-agenda">
         <header class="section__header">
           <h1 class="section__title" id="title-agenda">Mi Agenda</h1>
+          <button class="btn btn-primary" data-action="nuevo-gasto-fijo"
+                  aria-label="Registrar nuevo gasto fijo">
+            + Agregar gasto fijo
+          </button>
         </header>
         <div id="panel-agenda">
           <!-- agenda/view.js renderiza aquí. Sub-tarea 1: placeholder. -->
@@ -441,18 +445,34 @@
     </div>
   </div>
 
-  <!-- Modal: Nuevo compromiso -->
+  <!-- Modal: Nuevo compromiso (v6: solo deudas) -->
   <div class="modal-overlay" id="modal-compromiso"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-compromiso-title" aria-hidden="true">
     <div class="modal">
       <header class="modal__header">
-        <h2 class="modal__title" id="modal-compromiso-title">Nuevo compromiso</h2>
+        <h2 class="modal__title" id="modal-compromiso-title">Nueva deuda</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar">✕</button>
       </header>
       <div class="modal__body" id="modal-compromiso-body">
-        <!-- Fase 7 -->
+        <!-- compromisos/view.js inyecta el form de deuda aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo gasto fijo (sec Agenda) -->
+  <div class="modal-overlay" id="modal-gasto-fijo"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-gasto-fijo-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-gasto-fijo-title">Nuevo gasto fijo</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-gasto-fijo-body">
+        <!-- agenda/index.js inyecta el form aquí -->
       </div>
     </div>
   </div>

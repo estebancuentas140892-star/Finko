@@ -10,6 +10,7 @@
 
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
+import { FRECUENCIAS } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
 
@@ -277,6 +278,61 @@ function _renderDetalleItem(c) {
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
     </li>`;
+}
+
+// ── FORMULARIO: NUEVO GASTO FIJO ─────────────────────────────────
+
+/**
+ * Devuelve el HTML del formulario simplificado de gasto fijo.
+ *
+ * Solo 4 campos visibles: descripcion, monto, frecuencia, diaPago.
+ * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
+ * lo guarde como un compromiso de tipo fijo en S.compromisos.
+ *
+ * @returns {string}
+ */
+export function renderFormGastoFijo() {
+  const frecOpts = FRECUENCIAS
+    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .join('');
+
+  return `
+    <form id="form-gasto-fijo" novalidate>
+      <input type="hidden" name="tipo" value="fijo" />
+
+      <div class="form-group">
+        <label for="gfijo-descripcion" class="label">Descripción</label>
+        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
+               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
+               autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-monto" class="label">Monto (COP)</label>
+        <input id="gfijo-monto" name="monto" class="input" type="number"
+               min="1" step="1000" placeholder="0" required aria-required="true"
+               autocomplete="off" />
+        <p class="form-hint">Lo que pagás cada vez que toca. Se proyecta al Balance del mes.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-frecuencia" class="label">Frecuencia</label>
+        <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
+          ${frecOpts}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
+        <input id="gfijo-dia" name="diaPago" class="input" type="number"
+               min="1" max="31" step="1" placeholder="1" required aria-required="true" />
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar gasto fijo</button>
+      </div>
+    </form>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

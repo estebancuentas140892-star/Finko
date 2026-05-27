@@ -1854,6 +1854,59 @@ textarea.input {
   .import-actions .btn { width: 100%; }
 }
 
+/* ── Chooser "entidad | personal" (paso 1 del modal de nueva deuda) ── */
+.comp-chooser__pregunta {
+  font-size: var(--fk-font-size-sm);
+  color: var(--fk-text-secondary);
+  margin-bottom: var(--fk-space-3);
+  text-align: center;
+}
+
+.comp-chooser {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-4);
+}
+
+.comp-chooser__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-4) var(--fk-space-3);
+  background: var(--fk-surface-2);
+  border: 2px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.comp-chooser__btn:hover,
+.comp-chooser__btn:focus-visible {
+  border-color: var(--fk-accent);
+  background: var(--fk-surface-3);
+  outline: none;
+}
+
+.comp-chooser__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.comp-chooser__label {
+  font-size: var(--fk-font-size-base);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+}
+
+.comp-chooser__desc {
+  font-size: var(--fk-font-size-xs);
+  color: var(--fk-text-secondary);
+  line-height: 1.4;
+}
+
 /* ── F.4: Estrategia de pago de deudas ─────────────────────────── */
 .estrategia-card {
   margin-top: var(--fk-space-4);
