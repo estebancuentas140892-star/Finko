@@ -105,7 +105,6 @@ function _renderCredito() {
 export function renderResultCredito(r, fmt) {
   return `
     <dl class="calc-result__grid">
-      <dt>Tasa mensual efectiva</dt>    <dd>${r.tasaMensual}%</dd>
       <dt>Cuota mensual fija</dt>       <dd class="calc-result__highlight">${fmt(r.cuotaMensual)}</dd>
       <dt>Total pagado</dt>             <dd>${fmt(r.totalPagado)}</dd>
       <dt>Total intereses</dt>          <dd class="calc-result__deduct">${fmt(r.totalIntereses)}</dd>

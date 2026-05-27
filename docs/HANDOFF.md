@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en")
+> Última actualización: 2026-05-27 (v7.11: remover tasa EA + usura de calculadora de crédito)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(calculadoras) - v7.11: remover tasa EA + usura de calculadora de crédito · 2026-05-27
+Feedback del usuario: la calculadora de crédito mostraba tres elementos derivados (fila "Tasa mensual efectiva", alerta de usura cuando la tasa supera el tope SFC, y badge clasificador "razonable/estándar/alta/usura") que agregaban ruido y desviaban el foco de las métricas centrales (cuota, total pagado, intereses). Pidió ocultar los tres.
+
+**Cambios clave:**
+- **`renderResultCredito`** (view.js) ya no incluye "Tasa mensual efectiva". Quedan tres filas: Cuota mensual fija, Total pagado, Total intereses.
+- **`_onSubmitCredito`** (index.js) simplificado: removida la clasificación de tasa, la inyección del nudge de usura y el badge. Imports muertos limpiados (`tasaUsuraVigente`, `clasificarTasaCredito`, `renderBadgeTasa`, `renderAlertaUsura`).
+- **Funciones puras intactas:** `clasificarTasaCredito`, `renderBadgeTasa`, `renderAlertaUsura` siguen exportadas (sus tests siguen pasando); basta re-importarlas si se decide reactivar la advertencia más adelante.
+- **`service-worker.js`:** v78 → v79.
+
+**Archivos:** `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
 
 ### fix(compromisos) - v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en" · 2026-05-27
 Feedback del usuario: faltaba mostrar el impacto financiero comparativo entre estrategias en la card de Avalancha. Lo que hoy había (fila "Te ahorrás respecto a Bola de nieve") solo aparecía cuando `extraMensual > 0 && ahorro > 0`, así que en el caso del usuario (deudas con tasa 0 mezcladas, sin extra) nunca se mostraba ningún mensaje. Además pidió eliminar "Libre de deudas en" porque "el cambio no es que sea muy notorio" (suele coincidir entre estrategias).
@@ -97,19 +110,7 @@ Feedback v7.6: el usuario no veía diferencia entre estrategias porque "Libre de
 
 **Tests:** 932/932 verdes.
 
-### fix(compromisos) - v7.6: orden consistente de métricas + estado "1 sola deuda" · 2026-05-27
-Dos correcciones tras feedback v7.5: la sección "Estrategia de pago" mostraba cards sin recomendación cuando había 1 sola deuda (recomendación necesita ≥2); y al poner "Cerrás tu primera deuda en" como primera métrica en BN rompimos la consistencia visual con Avalancha.
-
-**Cambios clave:**
-- **Orden consistente:** "Libre de deudas en" (azul info) ahora es la **primera métrica en ambas** estrategias. La métrica única de cada una va al final con color distintivo: Avalancha → "Total en intereses" (rojo) + (si extra > 0) "Te ahorrás" (verde); BN → "Cerrás tu primera deuda en" (verde). Razón: la consistencia visual prima cuando el usuario compara; la diferenciación de enfoque queda en el copy + el color de la métrica única.
-- **Caso "1 deuda":** si `deudas.length === 1`, ahora se reemplaza el comparador por un mensaje útil ("Tenés una sola deuda activa (<nombre>). Cuando tengas dos o más, Finko te recomendará la mejor estrategia..."). Evita mostrar cards sin guía cuando matemáticamente no hay nada que comparar.
-- **`service-worker.js`:** v72 → v73.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes.
-
-> Para tareas anteriores (v7.5 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.6 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

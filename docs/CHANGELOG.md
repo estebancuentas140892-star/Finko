@@ -7,6 +7,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(calculadoras) - v7.11: remover tasa EA + usura de calculadora de crédito · 2026-05-27
+
+Feedback del usuario: la calculadora de crédito mostraba tres elementos derivados que no eran centrales al cálculo y agregaban ruido: la fila "Tasa mensual efectiva", la alerta de usura (cuando la tasa supera el tope SFC) y el badge clasificador ("Tasa razonable / estándar / alta / excede usura"). Pidió ocultar los tres para que el resultado se enfoque en lo importante (cuota, total pagado, intereses).
+
+**Cambios:**
+
+1. **`modules/dominio/calculadoras/view.js`:** `renderResultCredito` ya no incluye la fila "Tasa mensual efectiva". Quedan tres filas: Cuota mensual fija (highlight verde), Total pagado, Total intereses (deduct rojo).
+
+2. **`modules/dominio/calculadoras/index.js`:** `_onSubmitCredito` simplificado. Ya no clasifica la tasa contra usura, ya no inyecta `renderAlertaUsura` arriba del resultado, ya no inyecta `renderBadgeTasa` debajo. Solo: validar campos, calcular, renderizar resultado, anunciar. Removidos imports muertos: `tasaUsuraVigente` (de `core/constants.js`), `clasificarTasaCredito` (de `logic.js`), `renderBadgeTasa` y `renderAlertaUsura` (de `view.js`).
+
+3. **Las funciones puras quedan intactas:** `clasificarTasaCredito` (en `logic.js`), `renderBadgeTasa` y `renderAlertaUsura` (en `view.js`) siguen exportadas. Sus tests siguen pasando. Si en el futuro se quiere reactivar la alerta o el badge, basta con re-importarlos y llamarlos en el handler.
+
+4. **`service-worker.js`:** v78 → v79.
+
+**Verificación visual:** screenshot del calc de crédito con monto $10M / tasa 35% (usura) / plazo 36 meses confirma:
+- No aparece "Tasa mensual efectiva".
+- No aparece el nudge rojo "Tasa por encima del limite legal de usura".
+- No aparece el badge "🚫 Excede la usura legal (SFC)".
+- Solo las tres métricas centrales: Cuota mensual fija $426.648, Total pagado $15.359.345, Total intereses $5.359.345.
+
+**Archivos tocados:** `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional; los tests de `clasificarTasaCredito` y `renderAlertaUsura` siguen pasando porque siguen siendo funciones públicas).
+
+---
+
 ### fix(compromisos) - v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en" · 2026-05-27
 
 Feedback del usuario: en la card de Avalancha faltaba mostrar el impacto financiero comparativo entre estrategias ("cuánto me ahorro eligiendo Avalancha vs Bola de nieve"). La fila que existía ("Te ahorrás respecto a Bola de nieve") solo aparecía cuando `extraMensual > 0 && ahorro > 0`, así que en el caso del usuario (deudas con tasa 0 mezcladas, sin extra) nunca se mostraba ningún mensaje. Además pidió eliminar "Libre de deudas en" porque "el cambio no es que sea muy notorio" (suele coincidir entre estrategias).
