@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.14: abono a deudas, sub-tarea 2: modal + botón en card + glue code)
+> Última actualización: 2026-05-27 (v7.15: abono a deudas, sub-tarea 3: badge agenda + tip proyección + E2E)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
+
+Cierra la feature completa "Abonar deuda" (ADR 002). Tercera y última sub-tarea: feedback visual en Agenda y en el modal de abono, más el smoke E2E.
+
+**Cambios clave:**
+- **Badge "Ya abonaste este mes"** (`agenda/view.js`): `_renderDetalleItem` recibe ahora `viewYear` y `viewMonth`. Detecta si hay un gasto con `compromisoId === c.id` y `fecha` en el mes visualizado. Si existe, muestra `<p class="cal-detail__badge-abono">✓ Ya abonaste este mes</p>` en el panel de detalle del día.
+- **Tip de proyección** (`compromisos/index.js`, `view.js`): al tipear monto en el modal de abono, calcula cuántos meses antes termina la deuda con ese abono y actualiza el párrafo `#abono-tip-proyeccion`. Muestra solo cuando el ahorro es >= 1 mes.
+- **CSS** (`styles/components.css`): `.cal-detail__badge-abono` (texto xs, color success).
+- **Smoke E2E** (`tests/e2e/smoke.test.js`): Suite 11 "Agenda - badge abono". Inyecta una deuda y un gasto-abono del mes actual via `addInitScript`, navega a Agenda, clica el día 15, verifica el badge visible. Corrige también el selector de la leyenda (era `text=Deuda` que fallaba por ambigüedad).
+- **`service-worker.js`:** v82 → v83.
+
+**Sigue:** No hay más sub-tareas de "abono a deudas". Proyecto en modo mantenimiento.
+
+**Archivos:** `modules/dominio/agenda/view.js`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `styles/components.css`, `tests/e2e/smoke.test.js`, `service-worker.js`, `docs/`.
+
+**Tests:** 974/974 verdes. E2E: 39 pasan (badge + leyenda Agenda).
+
 ### feat(compromisos) - v7.14: abono a deudas, sub-tarea 2 (modal + botón + glue code) · 2026-05-27
 Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible y el glue code de sincronización.
 
@@ -52,7 +69,7 @@ Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible 
 - **3 tests de integración** en `compromisos.test.js`: flujo completo abono parcial, abono que salda, y revertir abono.
 - **`service-worker.js`:** v81 → v82.
 
-**Sigue:** Sub-tarea 3 (badge "Ya abonaste este mes" en agenda + tip proyección + smoke E2E).
+**Sigue:** completado en v7.15.
 
 **Archivos:** `index.html`, `styles/components.css`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `service-worker.js`, `tests/unit/compromisos.test.js`.
 
@@ -104,24 +121,7 @@ Feedback del usuario: la calculadora de crédito mostraba tres elementos derivad
 
 **Tests:** 932/932 verdes (cambio puramente presentacional).
 
-### fix(compromisos) - v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en" · 2026-05-27
-Feedback del usuario: faltaba mostrar el impacto financiero comparativo entre estrategias en la card de Avalancha. Lo que hoy había (fila "Te ahorrás respecto a Bola de nieve") solo aparecía cuando `extraMensual > 0 && ahorro > 0`, así que en el caso del usuario (deudas con tasa 0 mezcladas, sin extra) nunca se mostraba ningún mensaje. Además pidió eliminar "Libre de deudas en" porque "el cambio no es que sea muy notorio" (suele coincidir entre estrategias).
-
-**Cambios clave:**
-- **Nueva métrica comparativa siempre visible en Avalancha**, cubriendo 3 escenarios:
-  - **Hay ahorro real** (≥ $1 o ≥ 1 mes): banner verde success "💰 Con Avalancha te ahorrarías **$X** en intereses [y **Y** de tiempo] frente a Bola de nieve".
-  - **Empate sin extra** (extra = 0): banner azul info "ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Probá agregar un pago extra mensual abajo..." (CTA al acordeón).
-  - **Empate con extra** (extra > 0): banner azul info "ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero o impulso psicológico".
-- **"Libre de deudas en" removida** de Avalancha y de Bola de nieve. La info de tiempo total se mueve al banner comparativo cuando es relevante (cuando difiere entre estrategias).
-- **Nuevo helper** `_renderComparativa(resultado, extraMensual)` en `compromisos/view.js`. Reemplaza al muerto `_renderComparacionAhorro`.
-- **CSS:** nueva variante `.estrategia-card__ahorro--info` para el banner azul (empate), reusando `--fk-info`.
-- **`service-worker.js`:** v77 → v78.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (cambio puramente presentacional).
-
-> Para tareas anteriores (v7.9 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.10 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

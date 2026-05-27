@@ -297,13 +297,16 @@ export function renderFormAbono(deuda) {
   }
 
   const saldo = Number(deuda.saldoTotal) || 0;
+  const cuota = Number(deuda.cuotaMensual) || 0;
   const cuentaOpts = cuentas.map(c =>
     `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`
   ).join('');
   const fechaHoy = new Date().toISOString().slice(0, 10);
 
   return `
-    <form id="form-abono" novalidate>
+    <form id="form-abono" novalidate
+          data-saldo="${saldo}"
+          data-cuota="${cuota}">
       <input type="hidden" name="compromisoId" value="${_esc(deuda.id)}" />
 
       <p class="form-hint form-hint--muted">
@@ -318,6 +321,7 @@ export function renderFormAbono(deuda) {
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
         <p class="form-hint form-hint--muted">Máximo ${f(saldo)}. Si abonás más, se ajusta al saldo pendiente.</p>
+        <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
 
       <div class="form-group">

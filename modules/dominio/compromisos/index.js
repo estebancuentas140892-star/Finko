@@ -187,6 +187,7 @@ function _abrirAbono(el) {
     });
 
     body.querySelector('#abono-cuenta')?.addEventListener('change', _actualizarSaldoDisponibleAbono);
+    body.querySelector('#abono-monto')?.addEventListener('input', _actualizarTipProyeccion);
   }
 
   abrirModal(overlay);
@@ -268,6 +269,35 @@ async function _archivarCompromiso(el) {
   _renderTodo();
   updateBadge();
   announce(`Deuda "${compromiso.descripcion}" archivada.`);
+}
+
+function _actualizarTipProyeccion() {
+  const montoInput = document.getElementById('abono-monto');
+  const tipEl      = document.getElementById('abono-tip-proyeccion');
+  const form       = document.getElementById('form-abono');
+  if (!montoInput || !tipEl || !form) return;
+
+  const monto = Number(montoInput.value);
+  const cuota = Number(form.dataset.cuota);
+  const saldo = Number(form.dataset.saldo);
+
+  if (!cuota || cuota <= 0 || saldo <= 0 || !Number.isFinite(monto) || monto <= 0) {
+    tipEl.textContent = '';
+    return;
+  }
+
+  const montoEfectivo = Math.min(monto, saldo);
+  const mesesAntes    = Math.ceil(saldo / cuota);
+  const mesesDespues  = Math.ceil((saldo - montoEfectivo) / cuota);
+  const mesesMenos    = mesesAntes - mesesDespues;
+
+  if (mesesMenos <= 0) {
+    tipEl.textContent = '';
+    return;
+  }
+
+  const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
+  tipEl.textContent = `Con este abono terminás ${etiqueta}.`;
 }
 
 function _actualizarSaldoDisponibleAbono() {

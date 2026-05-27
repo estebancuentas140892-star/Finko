@@ -7,6 +7,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
+
+Cierra la feature completa "Abonar deuda" (ADR 002). Sub-tarea 3 de 3: feedback visual al usuario dentro de la Agenda y en el modal de abono, más cobertura E2E del flujo.
+
+**Cambios:**
+
+1. **`modules/dominio/agenda/view.js`:** `_renderDetalleItem` ahora recibe `viewYear` y `viewMonth`. Detecta si existe un gasto-abono del mes visualizado vinculado al compromiso via `compromisoId`. Si existe, muestra el badge `<p class="cal-detail__badge-abono">✓ Ya abonaste este mes</p>`.
+
+2. **`modules/dominio/compromisos/view.js`:** `renderFormAbono` agrega `data-saldo` y `data-cuota` al `<form>` (necesarios para el tip de proyección) y un `<p id="abono-tip-proyeccion">` vacio con `aria-live="polite"`.
+
+3. **`modules/dominio/compromisos/index.js`:** función `_actualizarTipProyeccion` (listener en `input` del campo monto). Calcula meses antes y después del abono (`Math.ceil(saldo/cuota)`) y actualiza el tip: "Con este abono terminás X mes/meses antes." Solo aparece cuando el ahorro de tiempo es >= 1 mes.
+
+4. **`styles/components.css`:** clase `.cal-detail__badge-abono` (texto xs, color success, margen superior). Actualiza comentario de sección "ABONO A DEUDAS".
+
+5. **`tests/e2e/smoke.test.js`:** Suite 11 "Agenda - badge abono": inyecta estado con una deuda y un gasto-abono del mes actual via `addInitScript`, navega a `/#agenda`, clica el día 15, verifica `.cal-detail__badge-abono` visible con texto "Ya abonaste este mes". Corrige también el test previo de la leyenda del calendario (selector `text=Deuda` fallaba por ambigüedad entre "Deuda entidad" y "Deuda personal": reemplazado por `toContainText`).
+
+6. **`service-worker.js`:** v82 → v83.
+
+**Archivos:** `modules/dominio/agenda/view.js`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `styles/components.css`, `tests/e2e/smoke.test.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes. E2E: 39 pasan (badge test verde + fix de leyenda Agenda).
+
+---
+
+### feat(compromisos) - v7.14: abono a deudas, sub-tarea 2 (modal + botón + glue code) · 2026-05-27
+
+Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible y el glue code de sincronización.
+
+**Cambios:** botón "Abonar" en cada card de deuda (`compromisos/view.js`); modal `#modal-abono` con form completo (`index.html`); `renderFormAbono(deuda)` en `view.js`; handlers `_abrirAbono`, `_guardarAbono`, `_archivarCompromiso`, `_actualizarSaldoDisponibleAbono` en `compromisos/index.js`; `normalizarGasto` incluye `compromisoId` en `gastos/logic.js`; `_ajustarSaldoDeuda` en `gastos/index.js` sincroniza `saldoTotal` al editar/eliminar un gasto-abono; 3 tests de integración nuevos.
+
+**Archivos:** `index.html`, `styles/components.css`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `service-worker.js`, `tests/unit/compromisos.test.js`.
+
+**Tests:** 974/974 verdes (3 nuevos de integración).
+
+---
+
 ### feat(compromisos) - v7.13: abono a deudas, sub-tarea 1 (modelo + lógica + tests) · 2026-05-27
 
 Decisión arquitectónica documentada previamente en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-abono-deudas.md). Esta versión cierra la **Sub-tarea 1 de 3** de la feature "Abonar deuda": introduce el modelo de datos y la lógica pura, sin tocar UI (nada visible para el usuario aún). El plan completo es:

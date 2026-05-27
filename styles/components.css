@@ -2975,8 +2975,8 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
-   ABONO A DEUDAS (ADR 002) - botón Abonar y badge Saldada
-   en cards de deuda de la sección Compromisos.
+   ABONO A DEUDAS (ADR 002) - botón Abonar, badge Saldada
+   (compromisos) y badge "Ya abonaste" (agenda).
    ════════════════════════════════════════════════════════════ */
 
 .abono-btn {
@@ -2988,6 +2988,12 @@ textarea.input {
   display: block;
   margin-top: var(--fk-space-2);
   text-align: center;
+}
+
+.cal-detail__badge-abono {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-success-text);
+  margin-top: var(--fk-space-1);
 }
 
 /* ════════════════════════════════════════════════════════════

@@ -241,7 +241,7 @@ function _renderDetalleDia(evs, year, month, dia) {
   const total   = evs.length;
   const resumen = total === 1 ? '1 compromiso' : `${total} compromisos`;
 
-  const items = evs.map(_renderDetalleItem).join('');
+  const items = evs.map(c => _renderDetalleItem(c, year, month)).join('');
 
   return `
     <section class="cal-detail" aria-label="Compromisos del ${titulo}">
@@ -261,7 +261,7 @@ function _renderDetalleDia(evs, year, month, dia) {
     </section>`;
 }
 
-function _renderDetalleItem(c) {
+function _renderDetalleItem(c, viewYear, viewMonth) {
   const tipo  = c.tipo ?? 'fijo';
   const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
@@ -269,12 +269,22 @@ function _renderDetalleItem(c) {
   const frec  = _esc(c.frecuencia ?? '');
   const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
 
+  // Badge "Ya abonaste este mes" (D5 - ADR 002): aparece si hay un gasto-abono
+  // del mes visualizado vinculado a este compromiso vía compromisoId.
+  const prefijo  = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
+  const abonado  = Array.isArray(S.gastos) &&
+    S.gastos.some(g => g.compromisoId === c.id && g.fecha?.startsWith(prefijo));
+  const badgeHtml = abonado
+    ? `<p class="cal-detail__badge-abono" role="status">✓ Ya abonaste este mes</p>`
+    : '';
+
   return `
     <li class="cal-detail__item">
       <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}</p>
+        ${badgeHtml}
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
     </li>`;

@@ -13,6 +13,7 @@
  * 8. Tema - toggle claro/oscuro actualiza aria-pressed.
  * 9. Sidebar - colapsable en desktop, estado persiste.
  * 10. Agenda - calendario mensual, navegación prev/next.
+ * 11. Agenda - badge "Ya abonaste este mes" (ADR 002).
  */
 
 import { test, expect } from '@playwright/test';
@@ -610,11 +611,11 @@ test.describe('Agenda', () => {
     // Grilla con al menos un día visible
     await expect(page.locator('[role="grid"]').first()).toBeVisible();
 
-    // Leyenda de tipos (Fijo, Deuda, Agenda)
+    // Leyenda de tipos (Gasto fijo, Deuda entidad, Deuda personal)
     await expect(page.locator('.cal-legend')).toBeVisible();
-    await expect(page.locator('.cal-legend').locator('text=Fijo')).toBeVisible();
-    await expect(page.locator('.cal-legend').locator('text=Deuda')).toBeVisible();
-    await expect(page.locator('.cal-legend').locator('text=Agenda')).toBeVisible();
+    await expect(page.locator('.cal-legend')).toContainText('Gasto fijo');
+    await expect(page.locator('.cal-legend')).toContainText('Deuda entidad');
+    await expect(page.locator('.cal-legend')).toContainText('Deuda personal');
   });
 
   test('navega mes anterior con botón <', async ({ page }) => {
@@ -645,5 +646,62 @@ test.describe('Agenda', () => {
 
     // Debe cambiar el mes mostrado
     expect(mesBefore).not.toBe(mesAfter);
+  });
+});
+
+// ── SUITE 11: Agenda - badge abono (ADR 002) ────────────────────────────────
+// Verifica que el badge "Ya abonaste este mes" aparece en el panel de detalle
+// del día cuando hay un gasto-abono del mes actual vinculado al compromiso.
+
+test.describe('Agenda - badge abono', () => {
+  test('muestra badge "Ya abonaste este mes" en el detalle del día', async ({ page }) => {
+    const compromisoId = 'comp-badge-e2e';
+    const hoy     = new Date();
+    const anio    = hoy.getFullYear();
+    const mes     = String(hoy.getMonth() + 1).padStart(2, '0');
+    const diaPago = 15;
+
+    await page.addInitScript(({ compromisoId, anio, mes, diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos: [{
+          id:          'gasto-abono-badge',
+          compromisoId,
+          descripcion: 'Abono cuota E2E',
+          monto:       100000,
+          categoria:   'Compromisos',
+          cuentaId:    null,
+          fecha:       `${anio}-${mes}-10`,
+        }],
+        compromisos: [{
+          id:           compromisoId,
+          tipo:         'deuda-entidad',
+          descripcion:  'Deuda Badge E2E',
+          saldoTotal:   400000,
+          cuotaMensual: 100000,
+          tasa:         24,
+          tasaUnidad:   'EA',
+          frecuencia:   'Mensual',
+          diaPago,
+        }],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { compromisoId, anio, mes, diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    // El día 15 tiene el compromiso: debe ser un botón con data-action
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    // El panel de detalle debe mostrar el badge de abono
+    const badge = page.locator('.cal-detail__badge-abono');
+    await expect(badge).toBeVisible({ timeout: 3_000 });
+    await expect(badge).toContainText('Ya abonaste este mes');
   });
 });
