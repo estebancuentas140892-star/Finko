@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.7: "Apuntás primero a" en Avalancha + copy más claro)
+> Última actualización: 2026-05-27 (v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano · 2026-05-27
+Dos iteraciones consecutivas tras v7.7:
+1. El usuario pidió la misma métrica "Apuntás primero a" en Bola de nieve (en v7.7 quedó solo en Avalancha), con misma lógica visual y estructural para que ambas estrategias se sientan consistentes y comparables.
+2. Luego pidió ajustar el tip de Avalancha: el original "la deuda con tasa más alta" era técnico y no comunicaba el *por qué* (impacto en finanzas).
+
+**Cambios clave:**
+- **Nueva métrica en Bola de nieve** (`_renderImpactoBolaNieve`): "Apuntás primero a: <nombre>" con tip "la deuda más chica" (azul info), ubicada justo después de "Libre de deudas en" para espejar exactamente la posición que tiene en Avalancha. Usa `resultado.bolaNieve.orden[0]` (saldo ascendente).
+- **Tip de "Cerrás tu primera deuda en"** (BN): ahora se omite cuando la primera deuda en cerrarse coincide con la priorizada (caso habitual en BN), para no repetir el nombre en filas contiguas. Solo se muestra cuando difieren (edge case con saldos/cuotas raras).
+- **Tip de "Apuntás primero a" en Avalancha** más humano: "la deuda con tasa más alta" → "la deuda que más intereses te genera". Comunica el impacto (intereses sobre las finanzas) y no solo el dato técnico (la tasa).
+- **`service-worker.js`:** v74 → v76.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** sin cambios de lógica (cambio puramente presentacional); suite previa 932/932 verdes.
 
 ### fix(compromisos) - v7.7: "Apuntás primero a" en Avalancha + copy más claro · 2026-05-27
 Feedback v7.6: el usuario no veía diferencia entre estrategias porque "Libre de deudas en" coincidía (1 año 7 meses en ambas). Revisé `simularEstrategiaPago`: el cálculo no tiene bug, el efecto cascada está implementado (línea 681 suma TODAS las cuotas incluyendo las pagadas; línea 700 vuelca el restante en la prioritaria). Con las deudas específicas del usuario, Préstamo Mamá (tasa 0%) cierra a los 6 meses en AMBAS estrategias y luego coinciden.
@@ -95,21 +110,7 @@ Feedback del usuario sobre v7.3 (3 puntos): el detalle saturaba mobile (3 bloque
 
 **Tests:** 932/932 verdes (UI pura).
 
-### docs(compromisos) - v7.3: copy de estrategias explica el mecanismo · 2026-05-27
-El usuario reportó que el copy actual no explicaba bien las dos estrategias: "Pagás menos intereses" no decía *por qué*, y "Cerrás deudas rápido y mantenés la motivación" reducía Bola de nieve a algo psicológico sin mencionar su mecanismo real (la cuota liberada se reinyecta en la siguiente deuda, efecto acumulativo).
-
-**Cambios clave (solo `_META_ESTRATEGIA` en `view.js`):**
-- **Avalancha · beneficio**: ahora explica el mecanismo. "Atacás primero la deuda con la tasa más alta: como es la que más te cuesta, eliminarla rápido hace que cada peso siguiente vaya más al capital y menos a intereses."
-- **Bola de nieve · beneficio**: ahora explica el efecto acumulativo. "Cada deuda cerrada acelera la siguiente. Atacás primero la más chica; cuando la terminás, la cuota que pagabas ahí se suma a la siguiente deuda. Así cada deuda libera más plata para la próxima, generando un efecto acumulativo (la 'bola' que crece)."
-- **Bloque "Ideal si..." con trade-off honesto**: Avalancha cuesta tiempo psicológico hasta cerrar la primera; Bola de nieve cuesta un poco más de intereses. El usuario ahora puede elegir con información real.
-- **Sin CSS nuevo**: solo cambio textual. Las clases existentes manejan bien 2-3 frases en mobile.
-- **`service-worker.js`:** v69 → v70.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
-
-**Tests:** 932/932 verdes (sin cambios de lógica).
-
-> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.3 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

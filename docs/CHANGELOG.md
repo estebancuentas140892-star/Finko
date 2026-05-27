@@ -7,6 +7,39 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano · 2026-05-27
+
+Iteración doble tras v7.7. Primero el usuario pidió la métrica "Apuntás primero a" también en Bola de nieve (en v7.7 había quedado solo en Avalancha) para que ambas estrategias se sientan consistentes y sean fáciles de comparar lado a lado. Luego pidió ajustar el tip de Avalancha: el original "la deuda con tasa más alta" era técnico y no comunicaba el *por qué* (impacto sobre las finanzas, no solo el valor de la tasa).
+
+**Cambios:**
+
+1. **Nueva métrica "Apuntás primero a" en Bola de nieve (`view.js::_renderImpactoBolaNieve`):**
+   - Antes: BN mostraba solo "Libre de deudas en" y "Cerrás tu primera deuda en" (con el nombre de la deuda como tip).
+   - Ahora: 2da métrica = "Apuntás primero a: <nombre de la deuda>" (color info azul) + tip "la deuda más chica". Misma posición que en Avalancha → estructura visual idéntica entre ambas estrategias.
+   - La deuda mostrada es `resultado.bolaNieve.orden[0]` — la primera del array ordenado por la estrategia (saldo ascendente), la deuda prioritaria que el usuario debe atacar con el extra para que el efecto bola funcione.
+
+2. **Tip de "Cerrás tu primera deuda en" ahora condicional (BN):**
+   - Antes: siempre mostraba el nombre de la primera deuda en cerrarse como tip.
+   - Ahora: solo lo muestra cuando la primera en cerrarse difiere de la priorizada (edge case con saldos o cuotas raras donde otra deuda se apaga antes que la target). En el caso habitual (target === primera) se omite para no repetir el nombre en filas contiguas con "Apuntás primero a".
+
+3. **Tip de "Apuntás primero a" en Avalancha más humano (`view.js::_renderImpactoAvalancha`):**
+   - Antes: "la deuda con tasa más alta" — técnico, describe el dato pero no el impacto.
+   - Ahora: "la deuda que más intereses te genera" — comunica el *por qué* (el efecto sobre las finanzas) en lugar del *qué* (el valor de la tasa). Lenguaje más cercano al usuario no financiero.
+
+**Estructura final de métricas (3 filas en cada una, espejo visual en las dos primeras):**
+- Avalancha: LIBRE DE DEUDAS EN (azul) · APUNTÁS PRIMERO A "la deuda que más intereses te genera" (azul) · TOTAL QUE PAGÁS EN INTERESES (rojo).
+- Bola de nieve: LIBRE DE DEUDAS EN (azul) · APUNTÁS PRIMERO A "la deuda más chica" (azul) · CERRÁS TU PRIMERA DEUDA EN (verde, victoria temprana propia de BN).
+
+**Verificación visual:** screenshots mobile dark con cada estrategia seleccionada confirmaron las 3 métricas en orden esperado y el tip nuevo de Avalancha visible bajo el nombre de la deuda priorizada. Sin errores en consola.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**`service-worker.js`:** v74 → v76.
+
+**Tests:** sin cambios de lógica (cambio puramente presentacional); suite previa 932/932 verdes.
+
+---
+
 ### fix(compromisos) - v7.7: "Apuntás primero a" en Avalancha + copy de Avalancha más claro · 2026-05-27
 
 Iteración tras feedback del usuario sobre v7.6. Tres temas: el usuario sospechó un bug en el cálculo porque "Libre de deudas en" coincidía entre ambas estrategias y no veía diferencia visible; la frase "aguantás que la primera deuda cerrada tarde un poco más" en el resumen de Avalancha no era clara; y le pareció que el tip de "Cerrás tu primera deuda en" en Bola de nieve no coincidía con la primera deuda de la lista debajo (en realidad sí coincide; era una confusión visual).

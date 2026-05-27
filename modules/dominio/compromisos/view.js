@@ -640,7 +640,7 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">
            ${_esc(target.descripcion)}
          </strong>
-         <span class="estrategia-card__metrica-tip">la deuda con tasa más alta</span>
+         <span class="estrategia-card__metrica-tip">la deuda que más intereses te genera</span>
        </li>`
     : '';
 
@@ -669,31 +669,56 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
 }
 
 /**
- * Bola de nieve enfoca el progreso psicológico. Mantenemos el MISMO orden de
- * métricas que Avalancha para las que son comunes ("Libre de deudas en"
- * siempre primero), y agregamos al final la métrica específica de esta
- * estrategia ("Cerrás tu primera deuda en X" en verde, su victoria temprana).
+ * Bola de nieve enfoca el progreso psicológico. Sus métricas (en orden):
+ *   1. Libre de deudas en           → info (azul)
+ *   2. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   3. Cerrás tu primera deuda en   → success (verde, su victoria temprana)
  *
- * Decisión v7.6: orden consistente para no confundir al usuario con elementos
- * iguales en posiciones distintas. Bola de nieve sigue sin "Total en intereses"
- * (decisión de v7.5: confundía sugiriendo que cobraba algo extra).
+ * Mantenemos el MISMO orden visual que Avalancha en las filas comunes
+ * ("Libre de deudas en" y "Apuntás primero a") para que ambas estrategias
+ * sean fáciles de comparar. Bola de nieve agrega "Cerrás tu primera deuda en"
+ * (su victoria temprana) y sigue sin "Total en intereses" (decisión de v7.5:
+ * confundía sugiriendo que cobraba algo extra).
+ *
+ * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
+ * menor saldo). Suele coincidir con la primera que se cierra, así que evitamos
+ * repetir su nombre como tip en la fila siguiente para no duplicar la info.
  */
 function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const activa = resultado.bolaNieve;
   const tiempoTxt = activa.completo ? _formatearDuracion(activa.meses) : 'más de 50 años';
+
+  // orden[0] = la deuda PRIORITARIA de la estrategia (menor saldo en Bola de
+  // nieve). Es la que el usuario debe atacar con el extra para que esta
+  // estrategia opere y genere el efecto bola.
+  const target = activa.orden?.[0];
+  const filaTarget = target
+    ? `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Apuntás primero a</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">
+           ${_esc(target.descripcion)}
+         </strong>
+         <span class="estrategia-card__metrica-tip">la deuda más chica</span>
+       </li>`
+    : '';
 
   const cerradas = activa.orden
     .filter(o => Number.isFinite(o.mesPagado))
     .sort((a, b) => a.mesPagado - b.mesPagado);
   const primera = cerradas[0];
 
+  // En Bola de nieve la primera que se cierra suele ser la priorizada: si
+  // coinciden, omitimos el nombre como tip para no repetirlo en filas
+  // contiguas. Solo lo mostramos cuando difieren (edge case con saldos o
+  // cuotas raras donde otra deuda se apaga antes que la target).
+  const mostrarTipPrimera = primera && primera.id !== target?.id;
   const filaPrimera = primera
     ? `<li class="estrategia-card__metrica">
          <span class="estrategia-card__metrica-label">Cerrás tu primera deuda en</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
            ${_formatearDuracion(primera.mesPagado)}
          </strong>
-         <span class="estrategia-card__metrica-tip">${_esc(primera.descripcion)}</span>
+         ${mostrarTipPrimera ? `<span class="estrategia-card__metrica-tip">${_esc(primera.descripcion)}</span>` : ''}
        </li>`
     : '';
 
@@ -705,6 +730,7 @@ function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
         <span class="estrategia-card__metrica-label">Libre de deudas en</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
       </li>
+      ${filaTarget}
       ${filaPrimera}
     </ul>`;
 }
