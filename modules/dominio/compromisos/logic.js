@@ -795,19 +795,19 @@ export function recomendarEstrategia(deudas) {
   if (tasaMax === 0) {
     return {
       estrategia: 'bolaNieve',
-      razon: `Tus ${deudas.length} deudas no cobran interés. Bola de nieve te ayuda a cerrar la más pequeña primero y mantener la motivación.`,
+      razon: 'Tus deudas no cobran intereses, así que cerrar la más pequeña primero te da progreso visible sin perder plata por elegir un orden u otro.',
     };
   }
 
   if (diff >= 5) {
     return {
       estrategia: 'avalancha',
-      razon: `Hay una diferencia importante entre tus tasas (${(tasaMin * 100).toFixed(1)}% y ${(tasaMax * 100).toFixed(1)}% EA). Atacar la más cara primero te ahorra más dinero en total.`,
+      razon: 'Tenés una deuda con tasa de interés mucho más alta que las otras. Atacarla primero reduce el peso de los intereses en tus finanzas y te hace ahorrar más a largo plazo.',
     };
   }
 
   return {
     estrategia: 'bolaNieve',
-    razon: `Tus tasas son parecidas (${(tasaMin * 100).toFixed(1)}% a ${(tasaMax * 100).toFixed(1)}% EA). Cerrar la deuda más pequeña primero te da impulso para seguir.`,
+    razon: 'Tus deudas cobran tasas parecidas, así que el ahorro por elegir la más cara primero es pequeño. Cerrar la más chica te da impulso visible para seguir.',
   };
 }

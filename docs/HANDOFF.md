@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.4: detalle compacto + mensaje "no aplica" + métricas consistentes con colores)
+> Última actualización: 2026-05-27 (v7.5: métricas diferenciadas por enfoque + copy humano sin números técnicos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(compromisos) - v7.5: métricas diferenciadas por enfoque + copy humano · 2026-05-27
+Tres mejoras tras feedback v7.4: el "Total en intereses" en Bola de nieve sugería que esa estrategia cobraba algo extra; "Libre de deudas en" daba el mismo tiempo en ambas (correcto matemáticamente sin extra mensual, pero confuso); y el copy de "Por qué te conviene" mostraba números técnicos como "tasas (0.0% y 213.8% EA)".
+
+**Cambios clave:**
+- **Métricas por enfoque** (cada estrategia muestra solo lo que optimiza):
+  - **Avalancha (financiero):** Libre de deudas en + Total en intereses + (si extra > 0) Te ahorrás.
+  - **Bola de nieve (psicológico):** **Cerrás tu primera deuda en X meses** (verde, métrica principal) + Libre de deudas en (azul, secundaria). Removido el "Total en intereses" agregado en v7.4.
+- **Copy de `recomendarEstrategia` sin números técnicos:** las 3 razones (sin intereses / diferencia grande / tasas parecidas) reescritas con lenguaje humano, sin porcentajes ni "EA". Ejemplo: "Tenés una deuda con tasa de interés mucho más alta que las otras. Atacarla primero reduce el peso de los intereses en tus finanzas y te hace ahorrar más a largo plazo."
+- **Test regex actualizado** en `tests/unit/compromisos.test.js` para tolerar la nueva redacción (`/m[aá]s alta|intereses/i`, `/no cobran inter[eé]s(es)?/i`).
+- **`service-worker.js`:** v71 → v72.
+
+**Por qué "Libre de deudas en" da igual sin extra:** matemáticamente, sin extra cada deuda se paga al ritmo de su cuota mínima y la deuda más larga (ej. ICETEX $8M/$300k ≈ 27 meses) domina el tiempo total. Solo cambia el ORDEN de cierre. Con extra, Avalancha lo manda a la tasa más alta y termina antes. Ahora la métrica principal de cada estrategia es DISTINTA para que se perciban como diferentes incluso cuando el tiempo total coincide.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes.
 
 ### refactor(compromisos) - v7.4: detalle compacto + "no aplica" + métricas consistentes · 2026-05-27
 Feedback del usuario sobre v7.3 (3 puntos): el detalle saturaba mobile (3 bloques), tocar una estrategia desactivada no daba feedback, y las métricas estaban en distinto orden entre Avalancha y Bola de nieve.
@@ -95,19 +112,6 @@ Tres bugs reportados por el usuario sobre el rediseño de "Estrategia de pago":
 **Archivos:** `modules/dominio/compromisos/view.js` (nuevos `_renderImpactoAvalancha`, `_renderImpactoBolaNieve`, `_META_ESTRATEGIA` reformulado), `styles/components.css` (fix de tokens + nuevos `.estrategia-card__bloque*` y `.estrategia-card__metrica*`, removidos `.estrategia-card__desc/ideal/hero*`), `service-worker.js`.
 
 **Tests:** 932/932 verdes (UI pura, sin lógica nueva).
-
-### chore(infra) - Service worker deshabilitado en desarrollo · 2026-05-27
-El SW estaba cacheando assets viejos en localhost; mientras iterábamos CSS/JS el usuario veía la página "rota" (CSS viejo + HTML nuevo) y debía hacer Ctrl+Shift+R cada vez. Solución estándar: no registrar el SW en hostnames de desarrollo.
-
-**Cambios clave:**
-- **`modules/infra/sw-register.js`:** detecta `localhost`, `127.0.0.1`, `0.0.0.0`, `*.local`, `192.168.*`, `10.*`. Si estamos en dev: desregistra cualquier SW existente, borra todos los `caches`, y NO registra uno nuevo. En producción el comportamiento queda igual (offline-first con auto-recarga en `controllerchange`).
-- **`service-worker.js`:** v66 → v67 por consistencia (no afecta dev; necesario para que los clientes de producción se actualicen al próximo deploy).
-
-**Migración para el usuario (una sola vez):** después de este cambio se necesita un último Ctrl+Shift+R para que el browser cargue el `sw-register.js` nuevo. De ahí en adelante, los reloads normales (F5) sirven todo de red y los cambios se ven al instante.
-
-**Archivos:** `modules/infra/sw-register.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (sin cambios de lógica).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

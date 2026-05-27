@@ -594,12 +594,14 @@ function _renderNoAplica(estrategia) {
 }
 
 /**
- * Métricas en orden consistente entre ambas estrategias:
- *   1. Libre de deudas en      → info (azul, neutro)
- *   2. Total en intereses      → danger (rojo, lo que perdés)
- *   3. Métrica única           → success (verde, el premio de esta estrategia)
+ * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
+ *   1. Libre de deudas en      → info (azul)
+ *   2. Total en intereses      → danger (rojo, el costo real que esta estrategia minimiza)
+ *   3. Te ahorrás $X vs BN     → success (verde, solo si extra > 0)
  *
- * Avalancha · métrica única: "Te ahorrás $X vs Bola de nieve" (solo si extra>0).
+ * Bola de nieve usa otras métricas (ver `_renderImpactoBolaNieve`) porque su
+ * enfoque es psicológico, no financiero. v7.5 separó intencionalmente las
+ * métricas de ambas estrategias.
  */
 function _renderImpactoAvalancha(resultado, extraMensual) {
   const activa = resultado.avalancha;
@@ -632,12 +634,14 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
 }
 
 /**
- * Bola de nieve usa el MISMO orden de métricas que Avalancha (consistencia
- * visual). La métrica única en verde es "Cerrás tu primera deuda en X" porque
- * es la victoria psicológica que esta estrategia optimiza.
+ * Bola de nieve enfoca el progreso psicológico, no el ahorro financiero.
+ * Por eso su métrica principal es "Cerrás tu primera deuda en X" (la victoria
+ * temprana que esta estrategia optimiza) y luego el tiempo total como secundario.
  *
- * Decisión v7.4: ahora SÍ mostramos "Total en intereses" (revertimos v7.1).
- * Razón: el usuario necesita ver el costo real para comparar honestamente.
+ * Decisión v7.5: removida la métrica "Total en intereses" que en v7.4 habíamos
+ * agregado por consistencia. Razón: confundía al usuario sugiriendo que esta
+ * estrategia cobraba algo extra. Cada estrategia ahora muestra solo las
+ * métricas alineadas con su enfoque (financiero vs psicológico).
  */
 function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const activa = resultado.bolaNieve;
@@ -648,7 +652,7 @@ function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
     .sort((a, b) => a.mesPagado - b.mesPagado);
   const primera = cerradas[0];
 
-  const filaUnica = primera
+  const filaPrimera = primera
     ? `<li class="estrategia-card__metrica">
          <span class="estrategia-card__metrica-label">Cerrás tu primera deuda en</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
@@ -662,15 +666,11 @@ function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
 
   return `
     <ul class="estrategia-card__metricas">
+      ${filaPrimera}
       <li class="estrategia-card__metrica">
         <span class="estrategia-card__metrica-label">Libre de deudas en</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
       </li>
-      <li class="estrategia-card__metrica">
-        <span class="estrategia-card__metrica-label">Total que pagás en intereses</span>
-        <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
-      </li>
-      ${filaUnica}
     </ul>`;
 }
 

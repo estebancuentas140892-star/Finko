@@ -7,6 +7,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(compromisos) - v7.5: métricas diferenciadas por enfoque + copy humano · 2026-05-27
+
+Iteración tras feedback del usuario sobre v7.4. Tres problemas: mostrar "Total que pagás en intereses" en Bola de nieve daba la sensación errónea de que esa estrategia cobraba algo extra; la métrica "Libre de deudas en" daba el mismo valor en ambas estrategias sin extra mensual (matemáticamente correcto: ambas tardan lo mismo cuando la deuda más larga domina), lo que sugería falsamente que las estrategias eran iguales; y el copy de "Por qué te conviene" exponía números técnicos crudos ("tasas (0.0% y 213.8% EA)") difíciles de interpretar.
+
+**Cambios:**
+
+1. **Métricas diferenciadas por enfoque de la estrategia (`modules/dominio/compromisos/view.js`):**
+   - **Avalancha (enfoque financiero):** 2-3 métricas → Libre de deudas en (info azul) + Total en intereses (danger rojo) + (si extra > 0) Te ahorrás $X (success verde).
+   - **Bola de nieve (enfoque psicológico):** 2 métricas → **Cerrás tu primera deuda en X meses** (success verde, métrica principal porque es la victoria que esta estrategia optimiza) + Libre de deudas en (info azul, secundaria).
+   - **Removida** la métrica "Total en intereses" de Bola de nieve (revertimos v7.4): aunque era el mismo dato financiero, ubicada en BN se interpretaba como costo agregado por elegir esa estrategia.
+   - **Cada estrategia comunica ahora qué optimiza**: la primera métrica visible (lo más prominente) ya no es "Libre de deudas en" en ambas, sino la métrica que define el foco de la estrategia.
+2. **Copy de recomendación sin números técnicos (`modules/dominio/compromisos/logic.js::recomendarEstrategia`):**
+   - Antes (caso "diferencia >= 5 pts"): `"Hay una diferencia importante entre tus tasas (0.0% y 28.5% EA). Atacar la más cara primero te ahorra más dinero en total."`
+   - Ahora: `"Tenés una deuda con tasa de interés mucho más alta que las otras. Atacarla primero reduce el peso de los intereses en tus finanzas y te hace ahorrar más a largo plazo."`
+   - Antes (caso "todas con tasa 0"): `"Tus N deudas no cobran interés. Bola de nieve te ayuda a cerrar la más pequeña primero y mantener la motivación."`
+   - Ahora: `"Tus deudas no cobran intereses, así que cerrar la más pequeña primero te da progreso visible sin perder plata por elegir un orden u otro."`
+   - Antes (caso "tasas parecidas"): `"Tus tasas son parecidas (X% a Y% EA). Cerrar la deuda más pequeña primero te da impulso para seguir."`
+   - Ahora: `"Tus deudas cobran tasas parecidas, así que el ahorro por elegir la más cara primero es pequeño. Cerrar la más chica te da impulso visible para seguir."`
+   - Cero porcentajes mostrados al usuario. Cero términos como "EA" o "puntos" que requieren contexto financiero.
+3. **Test de razón actualizado (`tests/unit/compromisos.test.js`):** ajustado regex tolerante a la nueva redacción (`/m[aá]s alta|intereses/i` en lugar del literal "diferencia"; `/no cobran inter[eé]s(es)?/i` para tolerar singular/plural y acento).
+
+**Por qué la métrica "Libre de deudas en" daba igual sin extra:** matemáticamente, sin pagos extra cada deuda se paga al ritmo de su cuota mínima. La deuda más larga (ICETEX en el caso del usuario: $8M / $300k mes ≈ 27 meses) marca el "punto final" para ambas estrategias. Lo único que cambia entre Avalancha y BN sin extra es el ORDEN de cierre, no cuándo termina todo. Con extra mensual sí cambia: Avalancha lo manda a la tasa más alta y termina antes; BN lo manda a la más chica. Esto se mantiene como dato real (no se oculta), pero ahora la primera métrica de cada estrategia es distinta para que el usuario perciba enfoques diferentes incluso cuando "Libre de deudas en" coincide.
+
+**Verificación visual:** screenshot en mobile dark theme con Bola de nieve seleccionada confirmó:
+- "📊 TU IMPACTO" con "CERRÁS TU PRIMERA DEUDA EN: 6 meses" en verde + "Préstamo mama" como tip + "LIBRE DE DEUDAS EN: 1 año 7 meses" en azul.
+- Sin métrica "Total en intereses".
+- Copy de "ℹ️ CÓMO FUNCIONA" sin números técnicos.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`.
+
+**`service-worker.js`:** v71 → v72.
+
+**Tests:** 932/932 verdes.
+
+---
+
 ### refactor(compromisos) - v7.4: detalle compacto, mensaje "no aplica" y métricas consistentes · 2026-05-27
 
 Iteración tras feedback del usuario sobre v7.3. Tres problemas: el detalle (3 bloques: Por qué te recomendamos / Qué te ofrece / Ideal si) saturaba la pantalla en mobile; al tocar una estrategia desactivada (Avalancha sin deudas con interés) no pasaba nada; y el orden de métricas en "Tu impacto" difería entre Avalancha y Bola de nieve, confundiendo la comparación.

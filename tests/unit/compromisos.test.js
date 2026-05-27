@@ -650,7 +650,7 @@ describe('recomendarEstrategia', () => {
       { id: 'b', tasaEA: 0, saldo: 500_000 },
     ]);
     expect(r.estrategia).toBe('bolaNieve');
-    expect(r.razon).toMatch(/no cobran interés/i);
+    expect(r.razon).toMatch(/no cobran inter[eé]s(es)?/i);
   });
 
   it('diferencia de tasas >= 5 puntos EA sugiere Avalancha', () => {
@@ -659,7 +659,7 @@ describe('recomendarEstrategia', () => {
       { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
     ]);
     expect(r.estrategia).toBe('avalancha');
-    expect(r.razon).toMatch(/diferencia/i);
+    expect(r.razon).toMatch(/m[aá]s alta|intereses/i);
   });
 
   it('tasas similares (<5 pts) sugiere Bola de nieve', () => {
