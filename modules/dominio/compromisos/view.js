@@ -612,10 +612,15 @@ function _renderNoAplica(estrategia) {
 
 /**
  * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
- *   1. Libre de deudas en           → info (azul)
- *   2. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
- *   3. Total en intereses           → danger (rojo, el costo real que esta estrategia minimiza)
- *   4. Te ahorrás $X vs BN          → success (verde, solo si extra > 0)
+ *   1. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   2. Total en intereses           → danger (rojo, el costo real que esta estrategia minimiza)
+ *   + Comparativa vs Bola de nieve  → banner siempre visible (3 escenarios)
+ *
+ * Decisión v7.10: removida "Libre de deudas en" porque en la práctica suele
+ * coincidir entre estrategias (el tiempo total depende más del saldo y cuotas
+ * que de la estrategia), así que no aportaba valor comparativo. Reemplazada
+ * por un mensaje comparativo siempre visible que comunica el ahorro real
+ * (o explica por qué no hay ahorro y cómo conseguirlo).
  *
  * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
  * mayor tasa), no la que se cierra primero (que podría ser otra si tiene
@@ -624,10 +629,6 @@ function _renderNoAplica(estrategia) {
  */
 function _renderImpactoAvalancha(resultado, extraMensual) {
   const activa = resultado.avalancha;
-  const tiempoTxt = activa.completo ? _formatearDuracion(activa.meses) : 'más de 50 años';
-  const ahorroIntereses = Math.max(0, resultado.bolaNieve.interesesTotales - activa.interesesTotales);
-  const ahorroMeses     = Math.max(0, resultado.bolaNieve.meses - activa.meses);
-  const hayAhorro = extraMensual > 0 && (ahorroIntereses > 0.5 || ahorroMeses > 0);
 
   // El array `orden` viene ya ordenado según la estrategia (mayor tasa primero
   // para Avalancha). orden[0] = la deuda PRIORITARIA. No es necesariamente
@@ -644,41 +645,27 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
        </li>`
     : '';
 
-  const filaAhorro = hayAhorro
-    ? `<li class="estrategia-card__metrica">
-         <span class="estrategia-card__metrica-label">Te ahorrás respecto a Bola de nieve</span>
-         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
-           ${f(ahorroIntereses)}${ahorroMeses > 0 ? ` y ${_formatearDuracion(ahorroMeses)}` : ''}
-         </strong>
-       </li>`
-    : '';
-
   return `
     <ul class="estrategia-card__metricas">
-      <li class="estrategia-card__metrica">
-        <span class="estrategia-card__metrica-label">Libre de deudas en</span>
-        <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
-      </li>
       ${filaTarget}
       <li class="estrategia-card__metrica">
         <span class="estrategia-card__metrica-label">Total que pagás en intereses</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
       </li>
-      ${filaAhorro}
-    </ul>`;
+    </ul>
+    ${_renderComparativa(resultado, extraMensual)}`;
 }
 
 /**
  * Bola de nieve enfoca el progreso psicológico. Sus métricas (en orden):
- *   1. Libre de deudas en           → info (azul)
- *   2. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
- *   3. Cerrás tu primera deuda en   → success (verde, su victoria temprana)
+ *   1. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   2. Cerrás tu primera deuda en   → success (verde, su victoria temprana)
  *
- * Mantenemos el MISMO orden visual que Avalancha en las filas comunes
- * ("Libre de deudas en" y "Apuntás primero a") para que ambas estrategias
- * sean fáciles de comparar. Bola de nieve agrega "Cerrás tu primera deuda en"
- * (su victoria temprana) y sigue sin "Total en intereses" (decisión de v7.5:
- * confundía sugiriendo que cobraba algo extra).
+ * Decisión v7.10: removida "Libre de deudas en" igual que en Avalancha
+ * (suele coincidir entre estrategias y no aportaba valor comparativo).
+ * Bola de nieve no incluye comparativa Avalancha-vs-BN: el ahorro financiero
+ * es la métrica de Avalancha; aquí la victoria propia es "Cerrás tu primera
+ * deuda en" (impulso psicológico, motivación temprana).
  *
  * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
  * menor saldo). Suele coincidir con la primera que se cierra, así que evitamos
@@ -686,7 +673,6 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
  */
 function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const activa = resultado.bolaNieve;
-  const tiempoTxt = activa.completo ? _formatearDuracion(activa.meses) : 'más de 50 años';
 
   // orden[0] = la deuda PRIORITARIA de la estrategia (menor saldo en Bola de
   // nieve). Es la que el usuario debe atacar con el extra para que esta
@@ -726,10 +712,6 @@ function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
 
   return `
     <ul class="estrategia-card__metricas">
-      <li class="estrategia-card__metrica">
-        <span class="estrategia-card__metrica-label">Libre de deudas en</span>
-        <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
-      </li>
       ${filaTarget}
       ${filaPrimera}
     </ul>`;
@@ -776,21 +758,50 @@ function _renderAcordeonExtra(abierto, extraMensual, estrategia, deudas) {
     </div>`;
 }
 
-function _renderComparacionAhorro(resultado, activa) {
-  const { mejor, ahorroIntereses, ahorroMeses } = resultado;
-  // Sin ahorro real: no mostrar nada. El estado "ambas iguales" ya queda
-  // implícito y evita ruido visual en móvil.
-  if (mejor === 'empate' || (ahorroIntereses === 0 && ahorroMeses === 0)) {
-    return '';
+/**
+ * Renderiza el mensaje comparativo Avalancha vs Bola de nieve. Siempre devuelve
+ * algo (los 3 escenarios están cubiertos), para que el usuario entienda el
+ * impacto real de elegir Avalancha en su situación actual.
+ *
+ * Escenarios:
+ *   1. Hay ahorro real (intereses o tiempo): banner verde con el monto y el
+ *      tiempo ganado, si difiere.
+ *   2. Empate con extra = 0: banner azul invitando a probar un pago extra
+ *      mensual para que aparezca el ahorro (caso típico: deudas con tasa 0
+ *      mezcladas que igualan ambas estrategias sin acelerador).
+ *   3. Empate con extra > 0: banner azul explicando que ambas dan lo mismo
+ *      en este caso y el usuario puede elegir por preferencia.
+ *
+ * Solo se invoca desde Avalancha (es la estrategia óptima en términos
+ * financieros; Bola de nieve no tiene "ahorro" que mostrar respecto a sí misma).
+ */
+function _renderComparativa(resultado, extraMensual) {
+  const { ahorroIntereses, ahorroMeses } = resultado;
+  const hayAhorroIntereses = ahorroIntereses > 0.5;
+  const hayAhorroTiempo    = ahorroMeses > 0;
+  const hayAhorro          = hayAhorroIntereses || hayAhorroTiempo;
+
+  if (hayAhorro) {
+    const partes = [];
+    if (hayAhorroIntereses) partes.push(`<strong>${f(ahorroIntereses)}</strong> en intereses`);
+    if (hayAhorroTiempo)    partes.push(`<strong>${_formatearDuracion(ahorroMeses)}</strong>`);
+    const detalle = partes.join(' y ');
+    return `
+      <p class="estrategia-card__ahorro">
+        💰 Con Avalancha te ahorrarías ${detalle} frente a Bola de nieve.
+      </p>`;
   }
-  const nombreMejor = mejor === 'avalancha' ? 'Avalancha' : 'Bola de nieve';
-  const eligioMejor = activa === mejor;
+
+  if (extraMensual > 0) {
+    return `
+      <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
+        ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve).
+      </p>`;
+  }
+
   return `
-    <p class="estrategia-card__ahorro">
-      💰 Con ${nombreMejor} ${eligioMejor ? 'ahorrás' : 'ahorrarías'}
-      <strong>${f(ahorroIntereses)}</strong>
-      ${ahorroMeses > 0 ? `y <strong>${_formatearDuracion(ahorroMeses)}</strong>` : ''}
-      respecto a ${mejor === 'avalancha' ? 'Bola de nieve' : 'Avalancha'}.
+    <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
+      ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Probá agregar un pago extra mensual abajo para ver dónde empieza a aparecer el ahorro con Avalancha.
     </p>`;
 }
 

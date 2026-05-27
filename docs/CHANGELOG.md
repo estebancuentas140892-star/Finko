@@ -7,6 +7,43 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en" · 2026-05-27
+
+Feedback del usuario: en la card de Avalancha faltaba mostrar el impacto financiero comparativo entre estrategias ("cuánto me ahorro eligiendo Avalancha vs Bola de nieve"). La fila que existía ("Te ahorrás respecto a Bola de nieve") solo aparecía cuando `extraMensual > 0 && ahorro > 0`, así que en el caso del usuario (deudas con tasa 0 mezcladas, sin extra) nunca se mostraba ningún mensaje. Además pidió eliminar "Libre de deudas en" porque "el cambio no es que sea muy notorio" (suele coincidir entre estrategias).
+
+**Cambios:**
+
+1. **Nuevo helper `_renderComparativa(resultado, extraMensual)` en `view.js`** — siempre devuelve un banner cubriendo los 3 escenarios posibles:
+   - **Hay ahorro real** (`ahorroIntereses > 0.5` o `ahorroMeses > 0`): banner verde success "💰 Con Avalancha te ahorrarías **$X** en intereses [y **Y** de tiempo] frente a Bola de nieve". Junta intereses y tiempo en la misma frase con "y" si ambos difieren.
+   - **Empate sin extra** (`extraMensual === 0`, sin diff): banner azul info "ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Probá agregar un pago extra mensual abajo para ver dónde empieza a aparecer el ahorro con Avalancha." Apunta al acordeón de extra como CTA implícito.
+   - **Empate con extra** (`extraMensual > 0`, sin diff): banner azul info "ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve)."
+   - Solo se invoca desde Avalancha (Bola de nieve no tiene "ahorro" que mostrar respecto a sí misma; su victoria propia es "Cerrás tu primera deuda en").
+
+2. **Removida la fila "Libre de deudas en" de ambas estrategias** (`_renderImpactoAvalancha` y `_renderImpactoBolaNieve`):
+   - Razón del usuario: el tiempo total suele coincidir entre estrategias (depende más del saldo + cuota mínima que de la estrategia, salvo casos con extra mensual relevante), así que la métrica no aportaba valor comparativo.
+   - El tiempo total relevante (cuando difiere) ahora vive dentro del banner comparativo en Avalancha. En Bola de nieve queda "Cerrás tu primera deuda en" como métrica de tiempo (la victoria temprana, su propio enfoque).
+
+3. **Estructura final de métricas:**
+   - **Avalancha:** Apuntás primero a (azul info) · Total que pagás en intereses (rojo danger) · **Banner comparativo** (verde success o azul info según escenario).
+   - **Bola de nieve:** Apuntás primero a (azul info) · Cerrás tu primera deuda en (verde success).
+
+4. **CSS nuevo:** `.estrategia-card__ahorro--info` para el banner azul de empate, reusando `--fk-info` (#3d8aff). El banner verde success existente queda intacto para el escenario con ahorro real.
+
+5. **Limpieza:** eliminado el helper muerto `_renderComparacionAhorro` (definido pero nunca invocado tras v7.4); su lógica condicional se generaliza en el nuevo `_renderComparativa`.
+
+**Verificación visual:** state inspection del DOM confirmó los 3 escenarios:
+- Extra = $0: banner azul info, mensaje de empate con CTA al acordeón.
+- Extra = $200.000: banner verde success "Con Avalancha te ahorrarías $11.379 en intereses frente a Bola de nieve".
+- (Empate con extra > 0: caso edge no reproducible con las deudas del usuario, pero rama implementada y testeable por unit si surge un caso así.)
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**`service-worker.js`:** v77 → v78.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional; sin lógica de cálculo nueva).
+
+---
+
 ### fix(agenda) - v7.9: leyenda alineada al modelo + dots de deuda con color real · 2026-05-27
 
 Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda / Agenda" pero el modelo real de compromisos solo tiene 3 tipos (`fijo`, `deuda-entidad`, `deuda-personal`) y el tipo `agenda` ya no se usa. Pidió reorganizar las categorías a "Gasto fijo / Deuda entidad / Deuda personal" para que los nombres reflejen lo que realmente se puede agregar.

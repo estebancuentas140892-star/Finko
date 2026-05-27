@@ -2263,6 +2263,10 @@ textarea.input {
   border-radius: var(--fk-radius-md);
   font-size: var(--fk-text-sm);
 }
+.estrategia-card__ahorro--info {
+  background: color-mix(in srgb, var(--fk-info) 12%, transparent);
+  border-left-color: var(--fk-info);
+}
 @media (max-width: 480px) {
   .estrategia-card-pick { padding: var(--fk-space-3); min-height: 84px; }
   .estrategia-card-pick__icono { font-size: 1.5rem; }

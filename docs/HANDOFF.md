@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.9: leyenda de Agenda alineada al modelo + dots de deuda con color real)
+> Última actualización: 2026-05-27 (v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - v7.10: comparativa Avalancha vs BN siempre visible + remover "Libre de deudas en" · 2026-05-27
+Feedback del usuario: faltaba mostrar el impacto financiero comparativo entre estrategias en la card de Avalancha. Lo que hoy había (fila "Te ahorrás respecto a Bola de nieve") solo aparecía cuando `extraMensual > 0 && ahorro > 0`, así que en el caso del usuario (deudas con tasa 0 mezcladas, sin extra) nunca se mostraba ningún mensaje. Además pidió eliminar "Libre de deudas en" porque "el cambio no es que sea muy notorio" (suele coincidir entre estrategias).
+
+**Cambios clave:**
+- **Nueva métrica comparativa siempre visible en Avalancha**, cubriendo 3 escenarios:
+  - **Hay ahorro real** (≥ $1 o ≥ 1 mes): banner verde success "💰 Con Avalancha te ahorrarías **$X** en intereses [y **Y** de tiempo] frente a Bola de nieve".
+  - **Empate sin extra** (extra = 0): banner azul info "ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Probá agregar un pago extra mensual abajo..." (CTA al acordeón).
+  - **Empate con extra** (extra > 0): banner azul info "ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero o impulso psicológico".
+- **"Libre de deudas en" removida** de Avalancha y de Bola de nieve. La info de tiempo total se mueve al banner comparativo cuando es relevante (cuando difiere entre estrategias).
+- **Nuevo helper** `_renderComparativa(resultado, extraMensual)` en `compromisos/view.js`. Reemplaza al muerto `_renderComparacionAhorro`.
+- **CSS:** nueva variante `.estrategia-card__ahorro--info` para el banner azul (empate), reusando `--fk-info`.
+- **`service-worker.js`:** v77 → v78.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
 
 ### fix(agenda) - v7.9: leyenda alineada al modelo + dots de deuda con color real · 2026-05-27
 Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda / Agenda" pero el modelo de datos solo tiene 3 tipos (`fijo`, `deuda-entidad`, `deuda-personal`) y el tipo `agenda` ya no se usa. Además, al investigar apareció un bug preexistente: los dots de deudas no tenían color porque las clases CSS huérfanas (`cal-dot--deuda`, `cal-dot--agenda`) no coincidían con las clases que generaba el renderer (`cal-dot--deuda-entidad`, `cal-dot--deuda-personal`).
@@ -92,24 +109,7 @@ Dos correcciones tras feedback v7.5: la sección "Estrategia de pago" mostraba c
 
 **Tests:** 932/932 verdes.
 
-### refactor(compromisos) - v7.5: métricas diferenciadas por enfoque + copy humano · 2026-05-27
-Tres mejoras tras feedback v7.4: el "Total en intereses" en Bola de nieve sugería que esa estrategia cobraba algo extra; "Libre de deudas en" daba el mismo tiempo en ambas (correcto matemáticamente sin extra mensual, pero confuso); y el copy de "Por qué te conviene" mostraba números técnicos como "tasas (0.0% y 213.8% EA)".
-
-**Cambios clave:**
-- **Métricas por enfoque** (cada estrategia muestra solo lo que optimiza):
-  - **Avalancha (financiero):** Libre de deudas en + Total en intereses + (si extra > 0) Te ahorrás.
-  - **Bola de nieve (psicológico):** **Cerrás tu primera deuda en X meses** (verde, métrica principal) + Libre de deudas en (azul, secundaria). Removido el "Total en intereses" agregado en v7.4.
-- **Copy de `recomendarEstrategia` sin números técnicos:** las 3 razones (sin intereses / diferencia grande / tasas parecidas) reescritas con lenguaje humano, sin porcentajes ni "EA". Ejemplo: "Tenés una deuda con tasa de interés mucho más alta que las otras. Atacarla primero reduce el peso de los intereses en tus finanzas y te hace ahorrar más a largo plazo."
-- **Test regex actualizado** en `tests/unit/compromisos.test.js` para tolerar la nueva redacción (`/m[aá]s alta|intereses/i`, `/no cobran inter[eé]s(es)?/i`).
-- **`service-worker.js`:** v71 → v72.
-
-**Por qué "Libre de deudas en" da igual sin extra:** matemáticamente, sin extra cada deuda se paga al ritmo de su cuota mínima y la deuda más larga (ej. ICETEX $8M/$300k ≈ 27 meses) domina el tiempo total. Solo cambia el ORDEN de cierre. Con extra, Avalancha lo manda a la tasa más alta y termina antes. Ahora la métrica principal de cada estrategia es DISTINTA para que se perciban como diferentes incluso cuando el tiempo total coincide.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes.
-
-> Para tareas anteriores (v7.4 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.5 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
