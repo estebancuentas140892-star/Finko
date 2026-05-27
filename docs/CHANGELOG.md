@@ -7,6 +7,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - Wording neutro + estética del chooser · 2026-05-27
+
+Hotfix sobre el chooser de Tarea 3 con dos puntos del usuario.
+
+**Cambios:**
+
+1. **Wording neutro en chooser y form personal (`compromisos/view.js`):**
+   - Chooser desc: "Familiar, amigo, gota a gota." → "Familiar, amigo, natillera o prestamista particular."
+   - Placeholder personal: "Ej. Préstamo de mamá, Gota a gota" → "Ej. Préstamo de mamá, Crédito particular".
+   - Hint tasa personal: "El gota a gota suele cobrar..." → "Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual."
+   - Motivo: "gota a gota" tiene connotación de actividad ilegal; la práctica de tasas 5-20% mensual aplica a varios tipos de prestamistas informales (natilleras, particulares).
+
+2. **CSS del chooser arreglado (`styles/components.css`):**
+   - Bug original: usé tokens inexistentes (`--fk-surface-2`, `--fk-font-size-sm`, `--fk-border`). Las propiedades se ignoraban silenciosamente y las cards se veían "sueltas" sin fondo ni borde definido.
+   - Tokens correctos: `--fk-bg-elevated`, `--fk-text-sm/lg/xs`, `--fk-border-default`, `--fk-radius-lg`, `--fk-shadow-sm/md/glow`, `--fk-accent-subtle`.
+   - Mejoras visuales: cards con `box-shadow` y `border-radius lg` (16px), icono dentro de círculo verde-acento de 56px, hover con `translateY(-2px) + shadow-glow`, padding mayor (24px). Layout responsive: en pantallas <480px las cards se apilan horizontalmente con icono a la izquierda.
+
+3. **`service-worker.js`:** v63 → v64.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 926/926 verdes.
+
+---
+
 ### refactor(compromisos) - Chooser entidad/personal + lista única reordenable · 2026-05-27
 
 Rediseño del modal "Nueva deuda" y de la card de estrategia de pago. Responde a feedback del usuario (4 puntos reportados).

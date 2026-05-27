@@ -287,11 +287,11 @@ export function renderChooserCompromiso() {
       </button>
       <button type="button" class="comp-chooser__btn"
               data-action="comp-elegir-tipo" data-tipo="deuda-personal"
-              aria-label="Deuda personal: familiar, amigo, gota a gota">
+              aria-label="Deuda personal: familiar, amigo o prestamista particular">
         <span class="comp-chooser__icon" aria-hidden="true">🤝</span>
         <strong class="comp-chooser__label">Personal</strong>
         <span class="comp-chooser__desc">
-          Familiar, amigo, gota a gota.
+          Familiar, amigo, natillera o prestamista particular.
           La tasa en % mensual es opcional.
         </span>
       </button>
@@ -330,11 +330,11 @@ export function renderFormDeuda(tipo) {
 
   const tasaHint = esEntidad
     ? `La usura vigente es ~${(usura.tasa * 100).toFixed(2)}% EA (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, podés reportarlo.`
-    : 'Si no cobra interés, dejá en blanco. El gota a gota suele cobrar entre 5% y 20% mensual.';
+    : 'Si no cobra interés, dejá en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
   const descPlaceholder = esEntidad
     ? 'Ej. Tarjeta Visa Bancolombia'
-    : 'Ej. Préstamo de mamá, Gota a gota';
+    : 'Ej. Préstamo de mamá, Crédito particular';
 
   return `
     <form id="form-compromiso" novalidate>

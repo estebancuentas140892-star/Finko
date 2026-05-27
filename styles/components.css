@@ -1856,55 +1856,92 @@ textarea.input {
 
 /* ── Chooser "entidad | personal" (paso 1 del modal de nueva deuda) ── */
 .comp-chooser__pregunta {
-  font-size: var(--fk-font-size-sm);
+  font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
-  margin-bottom: var(--fk-space-3);
+  margin: 0 0 var(--fk-space-5);
   text-align: center;
 }
 
 .comp-chooser {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--fk-space-3);
-  margin-bottom: var(--fk-space-4);
+  gap: var(--fk-space-4);
+  margin-bottom: var(--fk-space-6);
 }
 
 .comp-chooser__btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--fk-space-2);
-  padding: var(--fk-space-4) var(--fk-space-3);
-  background: var(--fk-surface-2);
-  border: 2px solid var(--fk-border);
-  border-radius: var(--fk-radius-md);
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-6) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border: 2px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
   cursor: pointer;
   text-align: center;
-  transition: border-color 0.15s, background 0.15s;
+  box-shadow: var(--fk-shadow-sm);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .comp-chooser__btn:hover,
 .comp-chooser__btn:focus-visible {
   border-color: var(--fk-accent);
-  background: var(--fk-surface-3);
   outline: none;
+  transform: translateY(-2px);
+  box-shadow: var(--fk-shadow-md), var(--fk-shadow-glow);
+}
+
+.comp-chooser__btn:active {
+  transform: translateY(0);
+  box-shadow: var(--fk-shadow-sm);
 }
 
 .comp-chooser__icon {
-  font-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.75rem;
   line-height: 1;
+  background: var(--fk-accent-subtle);
+  border-radius: var(--fk-radius-full);
 }
 
 .comp-chooser__label {
-  font-size: var(--fk-font-size-base);
+  font-size: var(--fk-text-lg);
   font-weight: 600;
   color: var(--fk-text-primary);
 }
 
 .comp-chooser__desc {
-  font-size: var(--fk-font-size-xs);
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .comp-chooser {
+    grid-template-columns: 1fr;
+    gap: var(--fk-space-3);
+  }
+  .comp-chooser__btn {
+    flex-direction: row;
+    text-align: left;
+    padding: var(--fk-space-4);
+    gap: var(--fk-space-4);
+  }
+  .comp-chooser__icon {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .comp-chooser__btn > div,
+  .comp-chooser__btn {
+    align-items: flex-start;
+  }
 }
 
 /* ── F.4: Estrategia de pago de deudas ─────────────────────────── */

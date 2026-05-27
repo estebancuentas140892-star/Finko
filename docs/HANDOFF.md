@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (refactor: Compromisos - chooser entidad/personal, lista única reordenable - Tarea 3 cerrada)
+> Última actualización: 2026-05-27 (fix: wording neutro + estética chooser de Compromisos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - Wording neutro + estética del chooser · 2026-05-27
+Hotfix sobre el chooser de Tarea 3.
+
+**Cambios clave:**
+- **Wording:** "gota a gota" → "natillera o prestamista particular" en chooser, placeholder y hint del form personal. Motivo: "gota a gota" tiene connotación ilegal; las tasas 5-20% mensual aplican a varios tipos de prestamistas informales.
+- **CSS arreglado:** el CSS anterior usaba tokens inexistentes (`--fk-surface-2`, `--fk-font-size-*`, `--fk-border` sin sufijo). Los estilos se ignoraban silenciosamente y las cards se veían "sueltas". Reescrito con tokens reales (`--fk-bg-elevated`, `--fk-text-*`, `--fk-border-default`, `--fk-radius-lg`, `--fk-shadow-*`, `--fk-accent-subtle`) + ícono dentro de círculo verde, hover con translateY/shadow-glow, layout responsive (apilado <480px).
+- **`service-worker.js`:** v63 → v64.
+
+**Archivos:** `compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 926/926 verdes.
 
 ### refactor(compromisos) - Chooser entidad/personal + lista única reordenable · 2026-05-27
 Rediseño del flujo "Nueva deuda" y eliminación de la lista duplicada en la card de estrategia. Responde a 4 puntos de feedback del usuario.
@@ -110,41 +122,6 @@ dispara `renderSmart(_renderDashboardPanels, 'dash')`.
 - `service-worker.js`: v59→v60.
 
 **Tests:** 920/920 verdes (+5).
-
-### refactor(dash) - Dashboard acción-orientado: Vencidos + Próximas Prioridades · 2026-05-26
-Rediseño del dashboard para mostrar **solo** información de acción inmediata.
-
-**Eliminado:** bento de Ingresos del mes, Gastos del mes, Metas activas, Compromisos
-activos, Me deben (contadores genéricos sin contexto). Card Hoy (fusionada con
-Próximas Prioridades para eliminar redundancia).
-
-**Agregado:**
-- `#panel-vencidos`: compromisos cuyo día de pago ya pasó (fijos + deudas + agenda).
-  Hasta 3 visibles, resto con scroll vertical interno (max-height). Severidad por
-  color de borde izquierdo (leve/moderada/urgente).
-- `#panel-prioridades`: próximos 7 días agrupados por día (HOY destacado en
-  accent, Mañana, En N días). Reemplaza Card Hoy.
-- `.balance-tira`: tira simple con Balance del mes (único indicador combinado
-  que queda en dashboard). Color por signo.
-
-**Archivos:**
-- `modules/dominio/compromisos/logic.js`: + `detectarVencidosCompletos(comp, hoyISO)`
-  (los 3 tipos) + `agruparPorDiasRestantes(proximos)`
-- `modules/dominio/compromisos/view.js`: + `renderPanelVencidos()` + `renderPanelPrioridades()`
-  + `_hoyISOLocal()` (fix de timezone para que "venció hoy" cuente día local, no UTC)
-- `modules/dominio/compromisos/index.js`: import de `registrarRender` y los nuevos renders;
-  `registrarRender(() => renderSmart(_renderDashboardPanels, 'dash'))`; hashchange a 'dash'
-- `modules/dominio/agenda/view.js`: eliminada `renderCardHoy()` y sus imports
-- `modules/dominio/agenda/index.js`: removido import de `registrarRender` y `renderCardHoy`
-- `index.html`: `#sec-dash` reestructurado (hero solo, panel-vencidos, panel-prioridades,
-  balance-tira); eliminados `#panel-hoy` y bento completo (`#bento-dash`)
-- `styles/components.css`: + `.vencidos-card`, `.prioridades-card`, `.balance-tira`,
-  `.bento__cell--solo`; eliminado `.hoy-card`
-- `service-worker.js`: v58→v59
-- `tests/unit/compromisos.test.js`: +14 tests (9 para `detectarVencidosCompletos`,
-  5 para `agruparPorDiasRestantes`)
-
-**Tests:** 915/915 verdes (+14).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
