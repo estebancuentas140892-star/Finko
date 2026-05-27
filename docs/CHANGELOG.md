@@ -7,6 +7,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - v7.6: orden consistente de métricas + estado "1 sola deuda" · 2026-05-27
+
+Iteración tras feedback del usuario sobre v7.5. Dos problemas: cuando el usuario tiene solo 1 deuda activa, la sección "Estrategia de pago" mostraba las 2 cards sin "✨ Recomendada para vos" (porque la recomendación requiere ≥2 deudas para comparar), lo que dejaba la UI confusa y sin guía; y al reordenar BN en v7.5 para poner "Cerrás tu primera deuda en" como primera métrica, rompimos la consistencia visual con Avalancha que mantiene "Libre de deudas en" primero.
+
+**Cambios:**
+
+1. **Orden consistente en "📊 Tu impacto" entre ambas estrategias (`modules/dominio/compromisos/view.js::_renderImpactoBolaNieve`):**
+   - **Avalancha:** 1) Libre de deudas en (azul info), 2) Total en intereses (rojo danger), [3) Te ahorrás (verde success) si extra > 0].
+   - **Bola de nieve:** 1) Libre de deudas en (azul info), 2) Cerrás tu primera deuda en (verde success).
+   - "Libre de deudas en" ahora está SIEMPRE en la primera posición con el mismo color azul. Las métricas únicas de cada estrategia van al final con su color distintivo (rojo para intereses, verde para victorias).
+   - Justificación: la consistencia visual prima cuando el usuario compara opciones lado a lado; saber dónde mirar para cada métrica común reduce carga cognitiva. La diferenciación de enfoque (financiero vs psicológico) queda comunicada por el copy del bloque "Por qué te conviene" / "Cómo funciona" + por el color de la métrica única al final.
+2. **Caso especial "1 sola deuda" (`renderEstrategiaPago`):**
+   - Antes: con 1 deuda se mostraban ambas cards (Avalancha y Bola de nieve) sin "✨ Recomendada para vos" (porque `recomendarEstrategia` devuelve `null` para `deudas.length < 2`). Resultado: cards sin guía, comparador sin sentido.
+   - Ahora: si `deudas.length === 1`, reemplazamos el cuerpo entero por un mensaje útil: `"Tenés una sola deuda activa (<nombre>). Cuando tengas dos o más, Finko te recomendará la mejor estrategia para pagarlas (Avalancha vs Bola de nieve)."`
+   - Esto evita mostrar un comparador irrelevante y educa al usuario sobre cuándo verá la recomendación.
+
+**Verificación visual:** screenshot mobile dark con Avalancha seleccionada confirmó:
+- Badge "✨ Recomendada para vos" en verde debajo del nombre de Avalancha.
+- "📊 TU IMPACTO" empieza con "LIBRE DE DEUDAS EN: 1 año 7 meses" en azul, seguido de "TOTAL QUE PAGÁS EN INTERESES: $1.640.559" en rojo.
+- Snapshot DOM de Bola de nieve confirmó mismo orden: "Libre de deudas en" primero (azul), "Cerrás tu primera deuda en" segundo (verde).
+
+**`service-worker.js`:** v72 → v73.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
+
+---
+
 ### refactor(compromisos) - v7.5: métricas diferenciadas por enfoque + copy humano · 2026-05-27
 
 Iteración tras feedback del usuario sobre v7.4. Tres problemas: mostrar "Total que pagás en intereses" en Bola de nieve daba la sensación errónea de que esa estrategia cobraba algo extra; la métrica "Libre de deudas en" daba el mismo valor en ambas estrategias sin extra mensual (matemáticamente correcto: ambas tardan lo mismo cuando la deuda más larga domina), lo que sugería falsamente que las estrategias eran iguales; y el copy de "Por qué te conviene" exponía números técnicos crudos ("tasas (0.0% y 213.8% EA)") difíciles de interpretar.

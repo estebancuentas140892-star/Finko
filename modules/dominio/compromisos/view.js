@@ -442,6 +442,23 @@ export function renderEstrategiaPago() {
     el.innerHTML = '';
     return;
   }
+  // v7.6: con 1 sola deuda no hay nada que comparar entre estrategias.
+  // Mostramos un mensaje útil en vez de cards sin recomendación posible.
+  if (deudas.length === 1) {
+    const d = deudas[0];
+    el.innerHTML = `
+      <article class="estrategia-card">
+        <header class="estrategia-card__header">
+          <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
+        </header>
+        <p class="estrategia-card__placeholder">
+          Tenés una sola deuda activa (<strong>${_esc(d.descripcion)}</strong>).
+          Cuando tengas dos o más, Finko te recomendará la mejor estrategia
+          para pagarlas (Avalancha vs Bola de nieve).
+        </p>
+      </article>`;
+    return;
+  }
 
   const hayTasaPositiva = deudas.some(d => d.tasaEA > 0);
   // No forzamos cambio si avalancha no aplica: respetamos la elección del usuario
@@ -634,14 +651,14 @@ function _renderImpactoAvalancha(resultado, extraMensual) {
 }
 
 /**
- * Bola de nieve enfoca el progreso psicológico, no el ahorro financiero.
- * Por eso su métrica principal es "Cerrás tu primera deuda en X" (la victoria
- * temprana que esta estrategia optimiza) y luego el tiempo total como secundario.
+ * Bola de nieve enfoca el progreso psicológico. Mantenemos el MISMO orden de
+ * métricas que Avalancha para las que son comunes ("Libre de deudas en"
+ * siempre primero), y agregamos al final la métrica específica de esta
+ * estrategia ("Cerrás tu primera deuda en X" en verde, su victoria temprana).
  *
- * Decisión v7.5: removida la métrica "Total en intereses" que en v7.4 habíamos
- * agregado por consistencia. Razón: confundía al usuario sugiriendo que esta
- * estrategia cobraba algo extra. Cada estrategia ahora muestra solo las
- * métricas alineadas con su enfoque (financiero vs psicológico).
+ * Decisión v7.6: orden consistente para no confundir al usuario con elementos
+ * iguales en posiciones distintas. Bola de nieve sigue sin "Total en intereses"
+ * (decisión de v7.5: confundía sugiriendo que cobraba algo extra).
  */
 function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const activa = resultado.bolaNieve;
@@ -666,11 +683,11 @@ function _renderImpactoBolaNieve(resultado, deudas, extraMensual) {
 
   return `
     <ul class="estrategia-card__metricas">
-      ${filaPrimera}
       <li class="estrategia-card__metrica">
         <span class="estrategia-card__metrica-label">Libre de deudas en</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">${tiempoTxt}</strong>
       </li>
+      ${filaPrimera}
     </ul>`;
 }
 

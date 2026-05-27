@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.5: métricas diferenciadas por enfoque + copy humano sin números técnicos)
+> Última actualización: 2026-05-27 (v7.6: orden consistente de métricas + estado "1 sola deuda")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - v7.6: orden consistente de métricas + estado "1 sola deuda" · 2026-05-27
+Dos correcciones tras feedback v7.5: la sección "Estrategia de pago" mostraba cards sin recomendación cuando había 1 sola deuda (recomendación necesita ≥2); y al poner "Cerrás tu primera deuda en" como primera métrica en BN rompimos la consistencia visual con Avalancha.
+
+**Cambios clave:**
+- **Orden consistente:** "Libre de deudas en" (azul info) ahora es la **primera métrica en ambas** estrategias. La métrica única de cada una va al final con color distintivo: Avalancha → "Total en intereses" (rojo) + (si extra > 0) "Te ahorrás" (verde); BN → "Cerrás tu primera deuda en" (verde). Razón: la consistencia visual prima cuando el usuario compara; la diferenciación de enfoque queda en el copy + el color de la métrica única.
+- **Caso "1 deuda":** si `deudas.length === 1`, ahora se reemplaza el comparador por un mensaje útil ("Tenés una sola deuda activa (<nombre>). Cuando tengas dos o más, Finko te recomendará la mejor estrategia..."). Evita mostrar cards sin guía cuando matemáticamente no hay nada que comparar.
+- **`service-worker.js`:** v72 → v73.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes.
 
 ### refactor(compromisos) - v7.5: métricas diferenciadas por enfoque + copy humano · 2026-05-27
 Tres mejoras tras feedback v7.4: el "Total en intereses" en Bola de nieve sugería que esa estrategia cobraba algo extra; "Libre de deudas en" daba el mismo tiempo en ambas (correcto matemáticamente sin extra mensual, pero confuso); y el copy de "Por qué te conviene" mostraba números técnicos como "tasas (0.0% y 213.8% EA)".
@@ -96,22 +108,6 @@ Feedback visual del usuario: el badge "✨ Recomendada para vos" parecía un sti
 **Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
 
 **Tests:** 932/932 verdes (UI pura).
-
-### refactor(compromisos) - v7.1: contraste de badge + métricas específicas por estrategia · 2026-05-27
-Tres bugs reportados por el usuario sobre el rediseño de "Estrategia de pago":
-
-**Cambios clave:**
-- **Badge "Recomendada para vos" ilegible:** causa raíz, `var(--fk-bg)` no existe en los tokens del proyecto (se cae al heredado, por eso en dark salía blanco y en light salía negro). Reemplazado por el patrón estándar de chips de éxito: `background: var(--fk-success-bg)` + `color: var(--fk-success-text)` + borde sutil `color-mix(--fk-success 40%, transparent)`. Ahora es un chip outline-style legible en ambos temas, sin saturación neón.
-- **Mismo bug en mi código nuevo:** corregí 7 más usos de `var(--fk-bg)` / `var(--fk-text)` / `var(--fk-border)` (que tampoco existen) por sus equivalentes correctos: `--fk-bg-surface`, `--fk-text-primary`, `--fk-border-default`. Tokens pre-existentes con el mismo bug latente quedan fuera de scope (bugs separados).
-- **Métricas mezcladas entre estrategias:** ahora cada una muestra solo lo que le corresponde:
-  - **Avalancha:** "Libre de deudas en X" + "Total que pagás en intereses $Y" + (si extra > 0) "Te ahorrás respecto a Bola de nieve $Z" en verde.
-  - **Bola de nieve:** "Cerrás tu primera deuda en X meses" (con nombre de la deuda como tip) + (si ≥3 deudas) "Después de Y solo te queda N deuda" + "Libre de deudas en T". **Nunca muestra intereses** porque no es lo que esta estrategia optimiza (lo señaló el usuario explícitamente como ruido).
-- **Estructura unificada en 3 bloques:** cada estrategia se presenta con `🎯 Qué te ofrece` (beneficio principal) + `📊 Tu impacto` (métricas) + `👤 Ideal si...` (perfil de usuario). Render uniforme entre ambas, contenido distinto.
-- **`service-worker.js`:** v67 → v68.
-
-**Archivos:** `modules/dominio/compromisos/view.js` (nuevos `_renderImpactoAvalancha`, `_renderImpactoBolaNieve`, `_META_ESTRATEGIA` reformulado), `styles/components.css` (fix de tokens + nuevos `.estrategia-card__bloque*` y `.estrategia-card__metrica*`, removidos `.estrategia-card__desc/ideal/hero*`), `service-worker.js`.
-
-**Tests:** 932/932 verdes (UI pura, sin lógica nueva).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
