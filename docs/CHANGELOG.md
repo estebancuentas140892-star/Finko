@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos) - v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas · 2026-05-27
+
+Feedback del usuario: las cards de deuda en Compromisos mostraban la tasa con decimales y con el sufijo técnico "% EA". Pidió mostrar enteros limpios sin etiqueta.
+
+**Cambios:**
+
+1. **`tasaMostrada` en `view.js:220`:** para deuda-entidad, `${tasaEA.toFixed(1)}% EA` → `${Math.round(tasaEA)}%`. Para deuda-personal (tasa mensual), `${(tasa * 100).toFixed(2)}% mensual (~X.X% EA)` → `${Math.round(tasa * 100)}% mensual` (el equivalente EA desaparece). `sin interés` sin cambios.
+
+2. **Label del formulario:** `'Tasa de interés EA (%)'` → `'Tasa de interés (%)'`. Elimina el tecnicismo "EA" del campo.
+
+3. **Hint de usura en el formulario:** `~28.17% EA (SFC, ...)` → `~28% anual (SFC, ...)`. Reemplaza "EA" por "anual" (más legible) y redondea a entero.
+
+4. **`service-worker.js`:** v79 → v80.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
+
+---
+
 ### fix(calculadoras) - v7.11: remover tasa EA + usura de calculadora de crédito · 2026-05-27
 
 Feedback del usuario: la calculadora de crédito mostraba tres elementos derivados que no eran centrales al cálculo y agregaban ruido: la fila "Tasa mensual efectiva", la alerta de usura (cuando la tasa supera el tope SFC) y el badge clasificador ("Tasa razonable / estándar / alta / excede usura"). Pidió ocultar los tres para que el resultado se enfoque en lo importante (cuota, total pagado, intereses).

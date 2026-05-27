@@ -219,8 +219,8 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   // Tasa mostrada en la unidad original para que coincida con la entrada.
   const tasaMostrada = compromiso.tasa > 0
     ? (compromiso.tasaUnidad === 'mensual'
-        ? `${(compromiso.tasa * 100).toFixed(2)}% mensual (~${tasaEA.toFixed(1)}% EA)`
-        : `${tasaEA.toFixed(1)}% EA`)
+        ? `${Math.round(compromiso.tasa * 100)}% mensual`
+        : `${Math.round(tasaEA)}%`)
     : 'sin interés';
 
   const subtitleParts = [
@@ -327,13 +327,13 @@ export function renderFormDeuda(tipo) {
   const usura = tasaUsuraVigente();
 
   const tasaLabel = esEntidad
-    ? 'Tasa de interés EA (%)'
+    ? 'Tasa de interés (%)'
     : 'Tasa de interés mensual (%) - opcional';
 
   const tasaPlaceholder = esEntidad ? '28.5' : '10';
 
   const tasaHint = esEntidad
-    ? `La usura vigente es ~${(usura.tasa * 100).toFixed(2)}% EA (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, podés reportarlo.`
+    ? `La usura vigente es ~${Math.round(usura.tasa * 100)}% anual (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, podés reportarlo.`
     : 'Si no cobra interés, dejá en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
   const descPlaceholder = esEntidad

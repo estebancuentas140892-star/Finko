@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.11: remover tasa EA + usura de calculadora de crédito)
+> Última actualización: 2026-05-27 (v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos) - v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas · 2026-05-27
+Feedback del usuario: las cards de deuda mostraban la tasa con decimales y con el sufijo "% EA", lo que se veía técnico. Pidió enteros sin etiqueta.
+
+**Cambios clave:**
+- **`tasaMostrada`** en `view.js:220`: `${tasaEA.toFixed(1)}% EA` → `${Math.round(tasaEA)}%`; para tasa mensual `${(tasa * 100).toFixed(2)}% mensual (~X% EA)` → `${Math.round(tasa * 100)}% mensual` (elimina el equivalente EA). `sin interés` sin cambios.
+- **Label del form** `tasaLabel`: `'Tasa de interés EA (%)'` → `'Tasa de interés (%)'`.
+- **Hint de usura** en el form: `~28.17% EA` → `~28% anual`.
+- **`service-worker.js`:** v79 → v80.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
 
 ### fix(calculadoras) - v7.11: remover tasa EA + usura de calculadora de crédito · 2026-05-27
 Feedback del usuario: la calculadora de crédito mostraba tres elementos derivados (fila "Tasa mensual efectiva", alerta de usura cuando la tasa supera el tope SFC, y badge clasificador "razonable/estándar/alta/usura") que agregaban ruido y desviaban el foco de las métricas centrales (cuota, total pagado, intereses). Pidió ocultar los tres.
@@ -97,20 +110,7 @@ Dos iteraciones consecutivas tras v7.7:
 
 **Tests:** sin cambios de lógica (cambio puramente presentacional); suite previa 932/932 verdes.
 
-### fix(compromisos) - v7.7: "Apuntás primero a" en Avalancha + copy más claro · 2026-05-27
-Feedback v7.6: el usuario no veía diferencia entre estrategias porque "Libre de deudas en" coincidía (1 año 7 meses en ambas). Revisé `simularEstrategiaPago`: el cálculo no tiene bug, el efecto cascada está implementado (línea 681 suma TODAS las cuotas incluyendo las pagadas; línea 700 vuelca el restante en la prioritaria). Con las deudas específicas del usuario, Préstamo Mamá (tasa 0%) cierra a los 6 meses en AMBAS estrategias y luego coinciden.
-
-**Cambios clave:**
-- **Nueva métrica en Avalancha**: "Apuntás primero a: <nombre>" con tip "la deuda con tasa más alta" (azul info). Usa `resultado.avalancha.orden[0]` que es la deuda prioritaria de la estrategia (mayor tasaEA). NO usamos "Cerrás tu primera deuda en" en Avalancha porque con deudas tasa 0 mezcladas, la primera en cerrarse puede ser la misma que en BN (no comunicaría diferencia).
-- **Diferencia visual ahora clara**: Avalancha → "Apuntás primero a: Tarjeta Visa" (la cara) | BN → "Cerrás tu primera deuda en 6 meses (Préstamo mama)" (la chica). Cada estrategia muestra una deuda distinta como foco.
-- **Copy Avalancha más directo**: "Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorrás más dinero." (antes: "...aguantás que la primera deuda cerrada tarde un poco más").
-- **`service-worker.js`:** v73 → v74.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes.
-
-> Para tareas anteriores (v7.6 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.7 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
