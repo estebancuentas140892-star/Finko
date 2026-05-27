@@ -70,6 +70,14 @@ function _guardarGasto() {
         { cuentaId: gasto.cuentaId,    monto: gasto.monto    },
       );
       _aplicarDeltasASaldos(deltas);
+
+      // Preservar compromisoId del gasto original (el form no lo expone).
+      if (anterior.compromisoId) gasto.compromisoId = anterior.compromisoId;
+
+      // Sincronizar saldoTotal si el gasto era un gasto-abono.
+      if (anterior.compromisoId) {
+        _ajustarSaldoDeuda(anterior.compromisoId, anterior.monto - gasto.monto);
+      }
     }
     editar('gastos', idEdit, gasto);
   } else {
@@ -272,6 +280,9 @@ async function _eliminarGasto(el) {
   // Devolver el monto al saldo de la cuenta (si el gasto tenía cuenta).
   _ajustarSaldoCuenta(gasto.cuentaId, +gasto.monto);
 
+  // Revertir el abono en la deuda si era un gasto-abono.
+  if (gasto.compromisoId) _ajustarSaldoDeuda(gasto.compromisoId, +gasto.monto);
+
   eliminar('gastos', id);
   renderResumenGastos();
   renderListaGastos();
@@ -306,6 +317,20 @@ function _aplicarDeltasASaldos(deltas) {
   for (const [cuentaId, delta] of Object.entries(deltas)) {
     _ajustarSaldoCuenta(cuentaId, delta);
   }
+}
+
+/**
+ * Ajusta el saldoTotal de una deuda cuando se edita o elimina un gasto-abono.
+ * delta positivo: revierte un abono (saldo sube). delta negativo: suma un abono (saldo baja).
+ * @param {string} compromisoId
+ * @param {number} delta
+ */
+function _ajustarSaldoDeuda(compromisoId, delta) {
+  if (!compromisoId || !Number.isFinite(delta) || delta === 0) return;
+  const comp = S.compromisos.find(c => c.id === compromisoId);
+  if (!comp) return;
+  const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) + delta);
+  editar('compromisos', compromisoId, { saldoTotal: nuevoSaldo });
 }
 
 /**

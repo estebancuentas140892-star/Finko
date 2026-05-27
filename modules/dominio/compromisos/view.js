@@ -233,6 +233,30 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`
     : '';
 
+  const esTipoDeuda = esDeuda(tipo);
+  const saldada     = esTipoDeuda && saldo <= 0;
+
+  const metaHtml = saldada
+    ? `<span class="chip chip-success abono-saldada" role="status">Saldada</span>`
+    : `<p class="list-item__amount">${f(saldo)}</p>
+       ${esTipoDeuda
+         ? `<button class="btn btn-primary btn-sm abono-btn"
+                    data-action="abrir-abono"
+                    data-id="${_esc(compromiso.id)}"
+                    aria-label="Abonar a ${desc}">Abonar</button>`
+         : ''}`;
+
+  const accionHtml = saldada
+    ? `<button class="btn btn-ghost btn-icon"
+               data-action="archivar-compromiso"
+               data-id="${_esc(compromiso.id)}"
+               title="Archivar"
+               aria-label="Archivar deuda saldada ${desc}">✓</button>`
+    : `<button class="btn btn-ghost btn-icon"
+               data-action="eliminar-compromiso"
+               data-id="${_esc(compromiso.id)}"
+               aria-label="Eliminar deuda ${desc}">✕</button>`;
+
   return `
     <article class="list-item" data-id="${_esc(compromiso.id)}">
       <div class="list-item__icon" aria-hidden="true">${ordenBadge || icono}</div>
@@ -244,15 +268,87 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
         <p class="list-item__hint">Saldo: ${f(saldo)} · Cuota: ${f(cuota)}/mes</p>
       </div>
       <div class="list-item__meta">
-        <p class="list-item__amount">${f(saldo)}</p>
+        ${metaHtml}
       </div>
       <div class="list-item__action">
-        <button class="btn btn-ghost btn-icon"
-                data-action="eliminar-compromiso"
-                data-id="${_esc(compromiso.id)}"
-                aria-label="Eliminar deuda ${desc}">✕</button>
+        ${accionHtml}
       </div>
     </article>`;
+}
+
+// ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
+
+/**
+ * Devuelve el HTML del formulario para registrar un abono a una deuda.
+ * Si no hay cuentas activas, devuelve un estado vacío con instrucción.
+ * @param {import('../../core/state.js').Compromiso} deuda
+ * @returns {string}
+ */
+export function renderFormAbono(deuda) {
+  const cuentas = S.cuentas.filter(c => c.activa !== false);
+  if (cuentas.length === 0) {
+    return `
+      <div class="empty-state">
+        <p class="empty-state__desc">Necesitás tener al menos una cuenta activa para registrar un abono.</p>
+        <div class="modal__footer">
+          <button type="button" class="btn btn-ghost" data-action="modal-close">Cerrar</button>
+        </div>
+      </div>`;
+  }
+
+  const saldo = Number(deuda.saldoTotal) || 0;
+  const cuentaOpts = cuentas.map(c =>
+    `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`
+  ).join('');
+  const fechaHoy = new Date().toISOString().slice(0, 10);
+
+  return `
+    <form id="form-abono" novalidate>
+      <input type="hidden" name="compromisoId" value="${_esc(deuda.id)}" />
+
+      <p class="form-hint form-hint--muted">
+        Saldo pendiente de <strong>${_esc(deuda.descripcion)}</strong>:
+        <strong>${f(saldo)}</strong>
+      </p>
+
+      <div class="form-group">
+        <label for="abono-monto" class="label">Monto del abono (COP)</label>
+        <input id="abono-monto" name="monto" class="input" type="number"
+               min="1" step="10000" placeholder="0"
+               required aria-required="true"
+               autocomplete="off" inputmode="numeric" />
+        <p class="form-hint form-hint--muted">Máximo ${f(saldo)}. Si abonás más, se ajusta al saldo pendiente.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="abono-cuenta" class="label">¿De qué cuenta sale la plata?</label>
+        <select id="abono-cuenta" name="cuentaId" class="input"
+                required aria-required="true">
+          <option value="">Elegí una cuenta</option>
+          ${cuentaOpts}
+        </select>
+        <p id="abono-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
+          Elegí una cuenta para ver el saldo disponible.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="abono-fecha" class="label">Fecha del abono</label>
+        <input id="abono-fecha" name="fecha" class="input" type="date"
+               value="${_esc(fechaHoy)}" required aria-required="true" />
+      </div>
+
+      <div class="form-group">
+        <label for="abono-nota" class="label">Nota (opcional)</label>
+        <input id="abono-nota" name="nota" class="input" type="text"
+               placeholder="Ej. Cuota extra de mayo" autocomplete="off" />
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar abono</button>
+      </div>
+    </form>`;
 }
 
 function _renderEmptyState() {

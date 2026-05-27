@@ -203,6 +203,7 @@ export function normalizarGasto(datos) {
     fecha: datos.fecha,
     cuentaId: datos.cuentaId || null,
     nota: datos.nota?.trim() || '',
+    compromisoId: datos.compromisoId || null,
     pendienteCompletar: false,
   };
 }

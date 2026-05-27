@@ -9,18 +9,20 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { guardar, eliminar } from '../../infra/crud.js';
+import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updateBadge, registrarRender } from '../../infra/render.js';
+import { renderSmart, updateBadge, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
+import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarCompromiso, normalizarCompromiso } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
   renderFormDeuda,
+  renderFormAbono,
   renderEstrategiaPago,
   setEstrategiaUI,
   getEstrategiaUI,
@@ -159,6 +161,140 @@ function _volverChooser() {
   _mostrarChooser(overlay);
 }
 
+// ── HANDLERS ABONO A DEUDAS (ADR 002) ───────────────────────────
+
+/** @param {HTMLElement} el */
+function _abrirAbono(el) {
+  const compromisoId = el.dataset.id;
+  if (!compromisoId) return;
+
+  const deuda = S.compromisos.find(c => c.id === compromisoId);
+  if (!deuda) return;
+
+  const overlay = document.getElementById('modal-abono');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = `Abonar: ${deuda.descripcion}`;
+
+  const body = overlay.querySelector('.modal__body');
+  if (body) {
+    body.innerHTML = renderFormAbono(deuda);
+
+    body.querySelector('#form-abono')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarAbono();
+    });
+
+    body.querySelector('#abono-cuenta')?.addEventListener('change', _actualizarSaldoDisponibleAbono);
+  }
+
+  abrirModal(overlay);
+}
+
+function _guardarAbono() {
+  const form = document.getElementById('form-abono');
+  if (!form) return;
+
+  const datos = Object.fromEntries(new FormData(form));
+  const deudaId = datos.compromisoId;
+  const deuda   = S.compromisos.find(c => c.id === deudaId);
+
+  const errores = validarAbono(datos, deuda);
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const { montoAjustado, saldaDeuda } = ajustarMontoAbono(
+    Number(datos.monto),
+    Number(deuda.saldoTotal),
+  );
+
+  // Crear el gasto-abono en el dominio de gastos.
+  guardar('gastos', {
+    descripcion:       `Abono: ${deuda.descripcion}`,
+    monto:             montoAjustado,
+    categoria:         'Deudas',
+    fecha:             datos.fecha,
+    cuentaId:          datos.cuentaId || null,
+    nota:              datos.nota?.trim() || '',
+    compromisoId:      deudaId,
+    pendienteCompletar: false,
+  });
+
+  // Descontar de la cuenta elegida.
+  if (datos.cuentaId) {
+    const cuenta = S.cuentas.find(c => c.id === datos.cuentaId);
+    if (cuenta) {
+      editar('cuentas', datos.cuentaId, { saldo: (cuenta.saldo ?? 0) - montoAjustado });
+    }
+  }
+
+  // Reducir el saldo de la deuda.
+  const nuevoSaldo = saldaDeuda ? 0 : Math.max(0, (Number(deuda.saldoTotal) || 0) - montoAjustado);
+  editar('compromisos', deudaId, { saldoTotal: nuevoSaldo });
+
+  const overlay = document.getElementById('modal-abono');
+  if (overlay) cerrarModal(overlay);
+
+  _renderTodo();
+  updateBadge();
+  updSaldo();
+
+  const msg = saldaDeuda
+    ? `Deuda "${deuda.descripcion}" saldada.`
+    : `Abono de ${f(montoAjustado)} registrado en "${deuda.descripcion}".`;
+  announce(msg);
+}
+
+/** @param {HTMLElement} el */
+async function _archivarCompromiso(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const compromiso = S.compromisos.find(c => c.id === id);
+  if (!compromiso) return;
+
+  const ok = await confirmar({
+    titulo:         'Archivar deuda saldada',
+    mensaje:        `"${compromiso.descripcion}" tiene saldo $0. ¿Querés archivarla para que no aparezca más en la lista?`,
+    confirmarTexto: 'Archivar',
+    peligroso:      false,
+  });
+  if (!ok) return;
+
+  editar('compromisos', id, { activo: false });
+  _renderTodo();
+  updateBadge();
+  announce(`Deuda "${compromiso.descripcion}" archivada.`);
+}
+
+function _actualizarSaldoDisponibleAbono() {
+  const sel = document.getElementById('abono-cuenta');
+  const tip = document.getElementById('abono-saldo-disponible');
+  if (!sel || !tip) return;
+
+  const cuentaId = sel.value;
+  if (!cuentaId) {
+    tip.textContent = 'Elegí una cuenta para ver el saldo disponible.';
+    tip.classList.remove('form-hint--danger');
+    tip.classList.add('form-hint--muted');
+    return;
+  }
+
+  const cuenta = S.cuentas.find(c => c.id === cuentaId);
+  if (!cuenta) {
+    tip.textContent = 'Cuenta no encontrada.';
+    return;
+  }
+
+  const saldo = cuenta.saldo ?? 0;
+  tip.textContent = `Saldo disponible en ${cuenta.nombre}: ${f(saldo)}`;
+  tip.classList.toggle('form-hint--danger', saldo <= 0);
+  tip.classList.toggle('form-hint--muted',  saldo >  0);
+}
+
 // ── HANDLERS ESTRATEGIA ──────────────────────────────────────────
 
 // Handlers de la card de estrategia (F.4). En v6 la estrategia también
@@ -196,12 +332,14 @@ function _inyectarForm() {
 }
 
 export function initCompromisos() {
-  registrarAccion('nuevo-compromiso',     _nuevoCompromiso);
-  registrarAccion('eliminar-compromiso',  _eliminarCompromiso);
-  registrarAccion('elegir-estrategia',    _elegirEstrategia);
+  registrarAccion('nuevo-compromiso',        _nuevoCompromiso);
+  registrarAccion('eliminar-compromiso',     _eliminarCompromiso);
+  registrarAccion('abrir-abono',             _abrirAbono);
+  registrarAccion('archivar-compromiso',     _archivarCompromiso);
+  registrarAccion('elegir-estrategia',       _elegirEstrategia);
   registrarAccion('toggle-extra-estrategia', _toggleExtraEstrategia);
-  registrarAccion('comp-elegir-tipo',     _elegirTipoDeuda);
-  registrarAccion('comp-volver-chooser',  _volverChooser);
+  registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
+  registrarAccion('comp-volver-chooser',     _volverChooser);
 
   _inyectarForm();
 

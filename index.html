@@ -461,6 +461,22 @@
     </div>
   </div>
 
+  <!-- Modal: Abonar a una deuda (ADR 002) -->
+  <div class="modal-overlay" id="modal-abono"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-abono-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-abono-title">Abonar a deuda</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="modal__body" id="modal-abono-body">
+        <!-- compromisos/index.js inyecta el form de abono aquí -->
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Nuevo gasto fijo (sec Agenda) -->
   <div class="modal-overlay" id="modal-gasto-fijo"
        role="dialog" aria-modal="true"

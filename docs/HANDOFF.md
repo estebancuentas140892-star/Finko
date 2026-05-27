@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.13: abono a deudas, sub-tarea 1: modelo + lógica + tests · ADR 002)
+> Última actualización: 2026-05-27 (v7.14: abono a deudas, sub-tarea 2: modal + botón en card + glue code)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,25 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(compromisos) - v7.14: abono a deudas, sub-tarea 2 (modal + botón + glue code) · 2026-05-27
+Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible y el glue code de sincronización.
+
+**Cambios clave:**
+- **Botón "Abonar" en cada card de deuda** (`compromisos/view.js`): aparece cuando `saldoTotal > 0`. Cuando `saldoTotal = 0`, se reemplaza por un chip "Saldada" (verde) y un botón "✓ Archivar".
+- **Modal `#modal-abono`** (`index.html`): nuevo modal con form de abono. Campos: monto, cuenta (selector con saldo disponible en tiempo real), fecha (pre-rellena hoy), nota. Hint "Máximo $X. Si abonás más, se ajusta al saldo pendiente."
+- **`renderFormAbono(deuda)`** (`compromisos/view.js`): genera el form; muestra estado vacío si no hay cuentas activas.
+- **Handlers en `compromisos/index.js`**: `_abrirAbono`, `_guardarAbono`, `_archivarCompromiso`, `_actualizarSaldoDisponibleAbono`. El guardar: crea Gasto con `compromisoId`, descuenta de la cuenta, reduce `saldoTotal` de la deuda.
+- **`gastos/logic.js`**: `normalizarGasto` ahora incluye `compromisoId: datos.compromisoId || null`.
+- **`gastos/index.js`**: glue code de sincronización: cuando se edita o elimina un gasto-abono, `_ajustarSaldoDeuda` revierte/ajusta el `saldoTotal` de la deuda. El compromisoId se preserva al editar (no se expone en el form).
+- **3 tests de integración** en `compromisos.test.js`: flujo completo abono parcial, abono que salda, y revertir abono.
+- **`service-worker.js`:** v81 → v82.
+
+**Sigue:** Sub-tarea 3 (badge "Ya abonaste este mes" en agenda + tip proyección + smoke E2E).
+
+**Archivos:** `index.html`, `styles/components.css`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `service-worker.js`, `tests/unit/compromisos.test.js`.
+
+**Tests:** 974/974 verdes (3 nuevos de integración).
+
 ### feat(compromisos) - v7.13: abono a deudas, sub-tarea 1 (modelo + lógica + tests) · 2026-05-27
 Decisión documentada en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-abono-deudas.md). Esta es la primera de 3 sub-tareas de la feature "Abonar deuda" (botón en card que abre un modal con selector de cuenta y reduce el saldo de la deuda). Sub-tarea 1 introduce el modelo y la lógica pura sin tocar UI: nada visible aún.
 
@@ -53,7 +72,7 @@ Decisión documentada en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-ab
 - **Tests:** 39 tests nuevos (6 + 4 + 7 + 12 + 10) cubriendo cada función con caso normal, edge (NaN, monto > saldo, vacíos) y multi-error.
 - **`service-worker.js`:** v80 → v81.
 
-**Sigue:** Sub-tarea 2 (UI del modal + botón Abonar + glue code en gastos/index.js).
+**Sigue:** Sub-tarea 3 (badge "Ya abonaste este mes" en Agenda + tip proyección + smoke E2E).
 
 **Archivos:** `modules/core/state.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`, `docs/DECISIONS/002-abono-deudas.md` (creado en commit previo del ADR).
 
@@ -102,20 +121,7 @@ Feedback del usuario: faltaba mostrar el impacto financiero comparativo entre es
 
 **Tests:** 932/932 verdes (cambio puramente presentacional).
 
-### fix(agenda) - v7.9: leyenda alineada al modelo + dots de deuda con color real · 2026-05-27
-Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda / Agenda" pero el modelo de datos solo tiene 3 tipos (`fijo`, `deuda-entidad`, `deuda-personal`) y el tipo `agenda` ya no se usa. Además, al investigar apareció un bug preexistente: los dots de deudas no tenían color porque las clases CSS huérfanas (`cal-dot--deuda`, `cal-dot--agenda`) no coincidían con las clases que generaba el renderer (`cal-dot--deuda-entidad`, `cal-dot--deuda-personal`).
-
-**Cambios clave:**
-- **Leyenda nueva** en `agenda/view.js::_renderLeyenda`: "Gasto fijo · Deuda entidad · Deuda personal", tres categorías que matchean el modelo real.
-- **CSS de dots actualizado** en `styles/components.css`: nuevas clases `.cal-dot--deuda-entidad` (rojo, `--fk-dom-compromisos`) y `.cal-dot--deuda-personal` (rosa, `--fk-dom-personales`). Eliminadas las clases huérfanas `.cal-dot--deuda` y `.cal-dot--agenda`.
-- **Resultado visual**: los dots del calendario ahora tienen color real (antes eran gris muted por falta de match CSS); las dos categorías de deuda se distinguen visualmente con tonos del mismo dominio (rojo y rosa).
-- **`service-worker.js`:** v76 → v77.
-
-**Archivos:** `modules/dominio/agenda/view.js`, `styles/components.css`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (cambio puramente presentacional).
-
-> Para tareas anteriores (v7.8 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.9 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

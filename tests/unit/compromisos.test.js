@@ -1347,3 +1347,62 @@ describe('deltasSaldoCompromisoPorEdicionGasto()', () => {
     expect(deltas).toEqual({});
   });
 });
+
+// ── INTEGRACIÓN: FLUJO COMPLETO DE ABONO ─────────────────────────
+
+describe('integración: flujo completo de abono a deuda', () => {
+  const deudaBase = {
+    id: 'deuda-1',
+    descripcion: 'Tarjeta Visa',
+    tipo: 'deuda-entidad',
+    activo: true,
+    tasa: 0.28,
+    tasaUnidad: 'EA',
+    saldoTotal: 500_000,
+    cuotaMensual: 100_000,
+    diaPago: 15,
+    frecuencia: 'Mensual',
+  };
+  const datosBase = { cuentaId: 'c1', fecha: '2026-05-27', nota: '' };
+
+  it('abono parcial: valida, ajusta monto y aplica correctamente', () => {
+    const deuda = { ...deudaBase, saldoTotal: 500_000 };
+    const datos = { ...datosBase, monto: '200000', compromisoId: deuda.id };
+
+    const errores = validarAbono(datos, deuda);
+    expect(errores).toHaveLength(0);
+
+    const { montoAjustado, saldaDeuda } = ajustarMontoAbono(200_000, 500_000);
+    expect(montoAjustado).toBe(200_000);
+    expect(saldaDeuda).toBe(false);
+
+    const nuevoSaldo = aplicarAbonoASaldo(500_000, montoAjustado);
+    expect(nuevoSaldo).toBe(300_000);
+  });
+
+  it('abono que salda: monto mayor al saldo se ajusta y deja saldo en 0', () => {
+    const deuda = { ...deudaBase, saldoTotal: 100_000 };
+    const datos = { ...datosBase, monto: '150000', compromisoId: deuda.id };
+
+    const errores = validarAbono(datos, deuda);
+    expect(errores).toHaveLength(0);
+
+    const { montoAjustado, saldaDeuda } = ajustarMontoAbono(150_000, 100_000);
+    expect(montoAjustado).toBe(100_000);
+    expect(saldaDeuda).toBe(true);
+
+    const nuevoSaldo = aplicarAbonoASaldo(100_000, montoAjustado);
+    expect(nuevoSaldo).toBe(0);
+  });
+
+  it('revertir abono al eliminar gasto-abono restaura el saldo original', () => {
+    const saldoOriginal  = 500_000;
+    const montoAbono     = 200_000;
+
+    const saldoTrasAbono = aplicarAbonoASaldo(saldoOriginal, montoAbono);
+    expect(saldoTrasAbono).toBe(300_000);
+
+    const saldoRestaurado = revertirAbonoDeSaldo(saldoTrasAbono, montoAbono);
+    expect(saldoRestaurado).toBe(500_000);
+  });
+});

@@ -2975,6 +2975,22 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   ABONO A DEUDAS (ADR 002) - botón Abonar y badge Saldada
+   en cards de deuda de la sección Compromisos.
+   ════════════════════════════════════════════════════════════ */
+
+.abono-btn {
+  margin-top: var(--fk-space-2);
+  width: 100%;
+}
+
+.abono-saldada {
+  display: block;
+  margin-top: var(--fk-space-2);
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════
    HERO SOLO - card de saldo visible fuera de un bento grid.
    ════════════════════════════════════════════════════════════ */
 
