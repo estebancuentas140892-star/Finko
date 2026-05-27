@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas)
+> Última actualización: 2026-05-27 (v7.13: abono a deudas, sub-tarea 1: modelo + lógica + tests · ADR 002)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,26 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(compromisos) - v7.13: abono a deudas, sub-tarea 1 (modelo + lógica + tests) · 2026-05-27
+Decisión documentada en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-abono-deudas.md). Esta es la primera de 3 sub-tareas de la feature "Abonar deuda" (botón en card que abre un modal con selector de cuenta y reduce el saldo de la deuda). Sub-tarea 1 introduce el modelo y la lógica pura sin tocar UI: nada visible aún.
+
+**Cambios clave:**
+- **Schema:** `Gasto.compromisoId?: string` (campo opcional en typedef). Backwards-compatible, sin migración. Vincula un Gasto a una Deuda como abono.
+- **5 funciones puras nuevas en `compromisos/logic.js`** (al final del archivo, bajo el comentario "ABONOS A DEUDAS (ADR 002)"):
+  - `aplicarAbonoASaldo(saldoActual, monto)`: resta sin permitir negativos.
+  - `revertirAbonoDeSaldo(saldoActual, monto)`: suma de vuelta al revertir un gasto-abono.
+  - `ajustarMontoAbono(monto, saldoActual)`: caps el abono al saldo; devuelve `{ montoAjustado, saldaDeuda }`.
+  - `validarAbono(datos, deuda)`: 11 reglas (monto > 0, cuentaId, fecha YYYY-MM-DD, deuda activa con saldo > 0, tipo de deuda válido).
+  - `deltasSaldoCompromisoPorEdicionGasto(antes, despues)`: cuando un gasto con compromisoId se crea, edita o elimina, devuelve mapa `{ compromisoId → delta }` para sincronizar `saldoTotal`. Maneja cambios de monto, cambios de compromiso, vincular/desvincular.
+- **Tests:** 39 tests nuevos (6 + 4 + 7 + 12 + 10) cubriendo cada función con caso normal, edge (NaN, monto > saldo, vacíos) y multi-error.
+- **`service-worker.js`:** v80 → v81.
+
+**Sigue:** Sub-tarea 2 (UI del modal + botón Abonar + glue code en gastos/index.js).
+
+**Archivos:** `modules/core/state.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`, `docs/DECISIONS/002-abono-deudas.md` (creado en commit previo del ADR).
+
+**Tests:** 971/971 verdes (39 nuevos).
 
 ### fix(compromisos) - v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas · 2026-05-27
 Feedback del usuario: las cards de deuda mostraban la tasa con decimales y con el sufijo "% EA", lo que se veía técnico. Pidió enteros sin etiqueta.
@@ -95,22 +115,7 @@ Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda
 
 **Tests:** 932/932 verdes (cambio puramente presentacional).
 
-### fix(compromisos) - v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano · 2026-05-27
-Dos iteraciones consecutivas tras v7.7:
-1. El usuario pidió la misma métrica "Apuntás primero a" en Bola de nieve (en v7.7 quedó solo en Avalancha), con misma lógica visual y estructural para que ambas estrategias se sientan consistentes y comparables.
-2. Luego pidió ajustar el tip de Avalancha: el original "la deuda con tasa más alta" era técnico y no comunicaba el *por qué* (impacto en finanzas).
-
-**Cambios clave:**
-- **Nueva métrica en Bola de nieve** (`_renderImpactoBolaNieve`): "Apuntás primero a: <nombre>" con tip "la deuda más chica" (azul info), ubicada justo después de "Libre de deudas en" para espejar exactamente la posición que tiene en Avalancha. Usa `resultado.bolaNieve.orden[0]` (saldo ascendente).
-- **Tip de "Cerrás tu primera deuda en"** (BN): ahora se omite cuando la primera deuda en cerrarse coincide con la priorizada (caso habitual en BN), para no repetir el nombre en filas contiguas. Solo se muestra cuando difieren (edge case con saldos/cuotas raras).
-- **Tip de "Apuntás primero a" en Avalancha** más humano: "la deuda con tasa más alta" → "la deuda que más intereses te genera". Comunica el impacto (intereses sobre las finanzas) y no solo el dato técnico (la tasa).
-- **`service-worker.js`:** v74 → v76.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
-
-**Tests:** sin cambios de lógica (cambio puramente presentacional); suite previa 932/932 verdes.
-
-> Para tareas anteriores (v7.7 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.8 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

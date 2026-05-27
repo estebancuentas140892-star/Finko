@@ -17,6 +17,11 @@ import {
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
   agruparPorDiasRestantes,
+  aplicarAbonoASaldo,
+  revertirAbonoDeSaldo,
+  ajustarMontoAbono,
+  validarAbono,
+  deltasSaldoCompromisoPorEdicionGasto,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -1082,5 +1087,263 @@ describe('agruparPorDiasRestantes', () => {
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].items).toHaveLength(1);
+  });
+});
+
+// ── aplicarAbonoASaldo() (ADR 002) ───────────────────────────────
+
+describe('aplicarAbonoASaldo()', () => {
+  it('resta el monto del saldo', () => {
+    expect(aplicarAbonoASaldo(1_000_000, 200_000)).toBe(800_000);
+  });
+
+  it('monto > saldo: devuelve 0 (no negativo)', () => {
+    expect(aplicarAbonoASaldo(100_000, 500_000)).toBe(0);
+  });
+
+  it('monto = saldo: devuelve 0 exacto', () => {
+    expect(aplicarAbonoASaldo(500_000, 500_000)).toBe(0);
+  });
+
+  it('monto = 0: devuelve saldo intacto', () => {
+    expect(aplicarAbonoASaldo(800_000, 0)).toBe(800_000);
+  });
+
+  it('saldo NaN: devuelve 0', () => {
+    expect(aplicarAbonoASaldo(NaN, 100_000)).toBe(0);
+    expect(aplicarAbonoASaldo(undefined, 100_000)).toBe(0);
+  });
+
+  it('monto NaN: devuelve 0 (resultado seguro, no propaga NaN)', () => {
+    expect(aplicarAbonoASaldo(500_000, NaN)).toBe(0);
+    expect(aplicarAbonoASaldo(500_000, undefined)).toBe(0);
+  });
+});
+
+// ── revertirAbonoDeSaldo() ───────────────────────────────────────
+
+describe('revertirAbonoDeSaldo()', () => {
+  it('suma monto al saldo', () => {
+    expect(revertirAbonoDeSaldo(300_000, 200_000)).toBe(500_000);
+  });
+
+  it('saldo 0: devuelve el monto restaurado', () => {
+    expect(revertirAbonoDeSaldo(0, 500_000)).toBe(500_000);
+  });
+
+  it('saldo NaN: devuelve el monto', () => {
+    expect(revertirAbonoDeSaldo(NaN, 200_000)).toBe(200_000);
+    expect(revertirAbonoDeSaldo(undefined, 200_000)).toBe(200_000);
+  });
+
+  it('monto NaN: devuelve el saldo intacto', () => {
+    expect(revertirAbonoDeSaldo(500_000, NaN)).toBe(500_000);
+  });
+});
+
+// ── ajustarMontoAbono() ──────────────────────────────────────────
+
+describe('ajustarMontoAbono()', () => {
+  it('monto < saldo: monto pasa intacto, no salda', () => {
+    expect(ajustarMontoAbono(200_000, 1_000_000))
+      .toEqual({ montoAjustado: 200_000, saldaDeuda: false });
+  });
+
+  it('monto = saldo: monto pasa intacto, salda', () => {
+    expect(ajustarMontoAbono(500_000, 500_000))
+      .toEqual({ montoAjustado: 500_000, saldaDeuda: true });
+  });
+
+  it('monto > saldo: monto se capa al saldo, salda', () => {
+    expect(ajustarMontoAbono(1_500_000, 500_000))
+      .toEqual({ montoAjustado: 500_000, saldaDeuda: true });
+  });
+
+  it('monto = 0: monto ajustado 0, no salda', () => {
+    expect(ajustarMontoAbono(0, 500_000))
+      .toEqual({ montoAjustado: 0, saldaDeuda: false });
+  });
+
+  it('monto negativo: monto ajustado 0, no salda', () => {
+    expect(ajustarMontoAbono(-1000, 500_000))
+      .toEqual({ montoAjustado: 0, saldaDeuda: false });
+  });
+
+  it('saldo 0: monto ajustado 0, considera deuda saldada', () => {
+    expect(ajustarMontoAbono(100_000, 0))
+      .toEqual({ montoAjustado: 0, saldaDeuda: true });
+  });
+
+  it('monto NaN: monto ajustado 0, no salda', () => {
+    expect(ajustarMontoAbono(NaN, 500_000))
+      .toEqual({ montoAjustado: 0, saldaDeuda: false });
+  });
+});
+
+// ── validarAbono() ───────────────────────────────────────────────
+
+const deudaValida = (overrides = {}) => ({
+  id:           'd1',
+  descripcion:  'Tarjeta Visa',
+  tipo:         'deuda-entidad',
+  saldoTotal:   1_500_000,
+  cuotaMensual: 200_000,
+  tasa:         0.28,
+  tasaUnidad:   'EA',
+  frecuencia:   'Mensual',
+  diaPago:      15,
+  activo:       true,
+  ...overrides,
+});
+
+const abonoValido = (overrides = {}) => ({
+  monto:     '200000',
+  cuentaId:  'cta1',
+  fecha:     '2026-05-27',
+  ...overrides,
+});
+
+describe('validarAbono()', () => {
+  it('todos los campos OK: devuelve []', () => {
+    expect(validarAbono(abonoValido(), deudaValida())).toEqual([]);
+  });
+
+  it('monto faltante: error', () => {
+    const errs = validarAbono(abonoValido({ monto: '' }), deudaValida());
+    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+  });
+
+  it('monto 0: error', () => {
+    const errs = validarAbono(abonoValido({ monto: '0' }), deudaValida());
+    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+  });
+
+  it('monto negativo: error', () => {
+    const errs = validarAbono(abonoValido({ monto: '-100' }), deudaValida());
+    expect(errs.some(e => /monto/i.test(e))).toBe(true);
+  });
+
+  it('cuentaId vacío: error', () => {
+    const errs = validarAbono(abonoValido({ cuentaId: '' }), deudaValida());
+    expect(errs.some(e => /cuenta/i.test(e))).toBe(true);
+  });
+
+  it('fecha vacía: error', () => {
+    const errs = validarAbono(abonoValido({ fecha: '' }), deudaValida());
+    expect(errs.some(e => /fecha.*obligatoria/i.test(e))).toBe(true);
+  });
+
+  it('fecha mal formateada: error de formato', () => {
+    const errs = validarAbono(abonoValido({ fecha: '27/05/2026' }), deudaValida());
+    expect(errs.some(e => /formato/i.test(e))).toBe(true);
+  });
+
+  it('deuda null: error', () => {
+    const errs = validarAbono(abonoValido(), null);
+    expect(errs.some(e => /no se encontró la deuda/i.test(e))).toBe(true);
+  });
+
+  it('compromiso tipo "fijo" no es deuda: error', () => {
+    const fijo = deudaValida({ tipo: 'fijo' });
+    const errs = validarAbono(abonoValido(), fijo);
+    expect(errs.some(e => /deudas/i.test(e))).toBe(true);
+  });
+
+  it('deuda inactiva (archivada): error', () => {
+    const archivada = deudaValida({ activo: false });
+    const errs = validarAbono(abonoValido(), archivada);
+    expect(errs.some(e => /archivada/i.test(e))).toBe(true);
+  });
+
+  it('deuda con saldo 0: error de ya saldada', () => {
+    const saldada = deudaValida({ saldoTotal: 0 });
+    const errs = validarAbono(abonoValido(), saldada);
+    expect(errs.some(e => /saldada/i.test(e))).toBe(true);
+  });
+
+  it('acumula múltiples errores en una sola pasada', () => {
+    const errs = validarAbono({ monto: '0', cuentaId: '', fecha: '' }, null);
+    expect(errs.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+// ── deltasSaldoCompromisoPorEdicionGasto() ───────────────────────
+
+describe('deltasSaldoCompromisoPorEdicionGasto()', () => {
+  it('crear gasto con compromisoId: delta negativo (saldo deuda baja)', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      null,
+      { compromisoId: 'd1', monto: 200_000 }
+    );
+    expect(deltas).toEqual({ d1: -200_000 });
+  });
+
+  it('eliminar gasto con compromisoId: delta positivo (saldo deuda sube)', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 200_000 },
+      null
+    );
+    expect(deltas).toEqual({ d1: 200_000 });
+  });
+
+  it('editar solo el monto, mismo compromiso: delta = monto_antes - monto_después', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 200_000 },
+      { compromisoId: 'd1', monto: 300_000 }
+    );
+    expect(deltas).toEqual({ d1: -100_000 });
+  });
+
+  it('editar bajando el monto: delta positivo (revertir parte del abono)', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 300_000 },
+      { compromisoId: 'd1', monto: 100_000 }
+    );
+    expect(deltas).toEqual({ d1: 200_000 });
+  });
+
+  it('cambiar de un compromiso a otro: revierte el viejo, aplica el nuevo', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 200_000 },
+      { compromisoId: 'd2', monto: 300_000 }
+    );
+    expect(deltas).toEqual({ d1: 200_000, d2: -300_000 });
+  });
+
+  it('desvincular (compromisoId pasa a null): revierte el viejo', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 200_000 },
+      { compromisoId: null, monto: 200_000 }
+    );
+    expect(deltas).toEqual({ d1: 200_000 });
+  });
+
+  it('vincular (gasto previo sin compromisoId): aplica al nuevo', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: null, monto: 200_000 },
+      { compromisoId: 'd1', monto: 200_000 }
+    );
+    expect(deltas).toEqual({ d1: -200_000 });
+  });
+
+  it('mismo compromiso, mismo monto: delta vacío (no hay nada que hacer)', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: 'd1', monto: 200_000 },
+      { compromisoId: 'd1', monto: 200_000 }
+    );
+    expect(deltas).toEqual({});
+  });
+
+  it('ambos null: delta vacío', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(null, null);
+    expect(deltas).toEqual({});
+  });
+
+  it('ambos sin compromisoId: delta vacío', () => {
+    const deltas = deltasSaldoCompromisoPorEdicionGasto(
+      { compromisoId: null, monto: 100_000 },
+      { compromisoId: null, monto: 200_000 }
+    );
+    expect(deltas).toEqual({});
   });
 });

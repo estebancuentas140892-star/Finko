@@ -7,6 +7,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(compromisos) - v7.13: abono a deudas, sub-tarea 1 (modelo + lógica + tests) · 2026-05-27
+
+Decisión arquitectónica documentada previamente en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-abono-deudas.md). Esta versión cierra la **Sub-tarea 1 de 3** de la feature "Abonar deuda": introduce el modelo de datos y la lógica pura, sin tocar UI (nada visible para el usuario aún). El plan completo es:
+
+1. **Sub-tarea 1 (esta versión):** schema + funciones puras + tests unitarios.
+2. **Sub-tarea 2 (próxima):** modal de abono, botón en card, glue code en `gastos/index.js` para sincronizar `saldoTotal` cuando un gasto-abono se edita o elimina.
+3. **Sub-tarea 3:** badge "ya abonaste este mes" en agenda, tip "si abonás $Y, terminás Z meses antes", E2E smoke.
+
+**Cambios:**
+
+1. **`modules/core/state.js`:** typedef `Gasto` agrega campo opcional `compromisoId?: string`. Cuando está presente, marca el gasto como abono a la deuda referenciada. Backwards-compatible (campo opcional, sin migración).
+
+2. **`modules/dominio/compromisos/logic.js`:** 5 funciones puras nuevas al final del archivo bajo el comentario `// ── ABONOS A DEUDAS (ADR 002) ─`:
+   - `aplicarAbonoASaldo(saldoActual, monto)`: resta el monto del saldo. Devuelve siempre ≥ 0 (cap implícito). Maneja NaN/undefined sin propagar.
+   - `revertirAbonoDeSaldo(saldoActual, monto)`: suma el monto al saldo (revierte un abono previo al editar o eliminar el gasto vinculado).
+   - `ajustarMontoAbono(monto, saldoActual)`: caps el monto al saldo si excede. Devuelve `{ montoAjustado, saldaDeuda }` para que el handler sepa si la deuda quedó en 0.
+   - `validarAbono(datos, deuda)`: 11 reglas de validación (monto > 0, cuentaId requerido, fecha YYYY-MM-DD, deuda existe, es tipo deuda-entidad/personal, está activa, tiene saldo > 0). Acumula errores en una sola pasada.
+   - `deltasSaldoCompromisoPorEdicionGasto(antes, despues)`: dado el estado antes y después de un gasto, devuelve mapa `{ compromisoId → delta }` sobre `saldoTotal`. Maneja crear/editar/eliminar, cambio de monto, cambio de compromiso, vincular/desvincular. Delta negativo = saldo baja (aplicar abono), positivo = saldo sube (revertir).
+
+3. **`tests/unit/compromisos.test.js`:** 39 tests nuevos en 5 bloques `describe`:
+   - `aplicarAbonoASaldo`: 6 tests (resta normal, monto > saldo, monto = saldo, monto = 0, saldo NaN, monto NaN).
+   - `revertirAbonoDeSaldo`: 4 tests (suma normal, saldo 0, saldo NaN, monto NaN).
+   - `ajustarMontoAbono`: 7 tests (monto < saldo, monto = saldo, monto > saldo, monto = 0, monto negativo, saldo 0, monto NaN).
+   - `validarAbono`: 12 tests (OK, monto faltante/0/negativo, cuentaId vacío, fecha vacía/mal formato, deuda null/fijo/inactiva/saldada, multi-error).
+   - `deltasSaldoCompromisoPorEdicionGasto`: 10 tests (crear, eliminar, editar monto subiendo/bajando, cambiar compromiso, desvincular, vincular, sin cambios, ambos null, ambos sin compromisoId).
+
+4. **`service-worker.js`:** v80 → v81.
+
+**Arquitectura.** Las funciones nuevas viven en `compromisos/logic.js` porque operan sobre el saldo de compromisos, aunque las invoquen desde `gastos/index.js` en Sub-tarea 2. Cumple la regla ADN "ningún dominio importa a otro": el handler de gastos lee `S.compromisos` directamente vía el singleton compartido (no por import), y llama a la función pura desde el dominio compromisos. No hay acoplamiento de módulos, solo de datos vía S.
+
+**Archivos tocados:** `modules/core/state.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`.
+
+**Tests:** 971/971 verdes (39 nuevos sobre el baseline de 932).
+
+---
+
 ### fix(compromisos) - v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas · 2026-05-27
 
 Feedback del usuario: las cards de deuda en Compromisos mostraban la tasa con decimales y con el sufijo técnico "% EA". Pidió mostrar enteros limpios sin etiqueta.

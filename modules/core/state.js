@@ -51,6 +51,10 @@ import { SMMLV } from './constants.js';
  * @property {string} fecha           ISO 8601 (YYYY-MM-DD).
  * @property {string} [cuentaId]      FK a Cuenta.id.
  * @property {string} [nota]
+ * @property {string} [compromisoId]  FK opcional a Compromiso.id (deuda). Marca este
+ *                                    gasto como abono a la deuda y permite que al
+ *                                    editar/eliminar el gasto se sincronice el
+ *                                    saldoTotal del compromiso. Definido en ADR 002.
  */
 
 /**
