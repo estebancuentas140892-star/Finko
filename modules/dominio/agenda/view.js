@@ -221,13 +221,13 @@ function _renderLeyenda() {
   return `
     <div class="cal-legend" aria-label="Leyenda de tipos">
       <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--fijo" aria-hidden="true"></span> Fijo
+        <span class="cal-dot cal-dot--fijo" aria-hidden="true"></span> Gasto fijo
       </span>
       <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--deuda" aria-hidden="true"></span> Deuda
+        <span class="cal-dot cal-dot--deuda-entidad" aria-hidden="true"></span> Deuda entidad
       </span>
       <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--agenda" aria-hidden="true"></span> Agenda
+        <span class="cal-dot cal-dot--deuda-personal" aria-hidden="true"></span> Deuda personal
       </span>
     </div>`;
 }

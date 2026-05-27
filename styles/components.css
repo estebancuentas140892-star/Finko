@@ -3772,9 +3772,9 @@ textarea.input {
   background: var(--fk-text-muted);
 }
 
-.cal-dot--fijo   { background: var(--fk-dom-presupuesto); }
-.cal-dot--deuda  { background: var(--fk-dom-compromisos); }
-.cal-dot--agenda { background: var(--fk-dom-tesoreria); }
+.cal-dot--fijo           { background: var(--fk-dom-presupuesto); }
+.cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos); }
+.cal-dot--deuda-personal { background: var(--fk-dom-personales); }
 
 .cal-day__more {
   font-size: 10px;

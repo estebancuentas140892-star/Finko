@@ -7,6 +7,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(agenda) - v7.9: leyenda alineada al modelo + dots de deuda con color real · 2026-05-27
+
+Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda / Agenda" pero el modelo real de compromisos solo tiene 3 tipos (`fijo`, `deuda-entidad`, `deuda-personal`) y el tipo `agenda` ya no se usa. Pidió reorganizar las categorías a "Gasto fijo / Deuda entidad / Deuda personal" para que los nombres reflejen lo que realmente se puede agregar.
+
+**Bug preexistente descubierto en el camino:** los dots del calendario para deudas no tenían color real. El renderer (`_renderDots` en `agenda/view.js`) generaba clases `cal-dot--deuda-entidad` y `cal-dot--deuda-personal`, pero en `styles/components.css` solo existían `.cal-dot--fijo`, `.cal-dot--deuda` (huérfana, sin uso) y `.cal-dot--agenda` (huérfana). Los dots de deudas caían al estilo base gris muted.
+
+**Cambios:**
+
+1. **Leyenda nueva (`agenda/view.js::_renderLeyenda`):**
+   - Antes: 3 items "Fijo / Deuda / Agenda".
+   - Ahora: 3 items "Gasto fijo / Deuda entidad / Deuda personal" alineados con los `tipo` reales del modelo. La categoría "Agenda" (que no correspondía a ningún tipo activo) se reemplaza por la subdivisión real de deudas que ya existía en los datos pero no se reflejaba en la leyenda.
+
+2. **CSS de dots actualizado (`styles/components.css`):**
+   - Antes: `.cal-dot--fijo`, `.cal-dot--deuda` (huérfana), `.cal-dot--agenda` (huérfana).
+   - Ahora: `.cal-dot--fijo` (sin cambios, naranja `--fk-dom-presupuesto`), `.cal-dot--deuda-entidad` (rojo `--fk-dom-compromisos`, #ff4757), `.cal-dot--deuda-personal` (rosa `--fk-dom-personales`, #ff4eb8). Eliminadas las dos clases huérfanas.
+
+**Decisiones de diseño:**
+
+- **Dos tonos distintos para las dos categorías de deuda** (no un solo color compartido) porque el usuario quiso diferenciar visualmente entidad vs personal en el calendario. Se aprovecharon dos tokens ya definidos en la paleta (`--fk-dom-compromisos` y `--fk-dom-personales`), sin necesidad de paleta nueva.
+
+**Verificación visual:** screenshot mobile dark del calendario de Mayo 2026 confirmó:
+- Leyenda al pie: 🟡 Gasto fijo · 🔴 Deuda entidad · 🌸 Deuda personal.
+- Dots en celdas: día 5 (Crédito ICETEX) rojo, día 15 (Tarjeta Visa) rojo, día 20 (Préstamo mamá) rosa. Antes todos eran gris muted; ahora cada deuda tiene su color real.
+
+**Archivos tocados:** `modules/dominio/agenda/view.js`, `styles/components.css`, `service-worker.js`.
+
+**`service-worker.js`:** v76 → v77.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
+
+---
+
 ### fix(compromisos) - v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano · 2026-05-27
 
 Iteración doble tras v7.7. Primero el usuario pidió la métrica "Apuntás primero a" también en Bola de nieve (en v7.7 había quedado solo en Avalancha) para que ambas estrategias se sientan consistentes y sean fáciles de comparar lado a lado. Luego pidió ajustar el tip de Avalancha: el original "la deuda con tasa más alta" era técnico y no comunicaba el *por qué* (impacto sobre las finanzas, no solo el valor de la tasa).

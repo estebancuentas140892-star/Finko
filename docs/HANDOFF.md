@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano)
+> Última actualización: 2026-05-27 (v7.9: leyenda de Agenda alineada al modelo + dots de deuda con color real)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(agenda) - v7.9: leyenda alineada al modelo + dots de deuda con color real · 2026-05-27
+Feedback del usuario: la leyenda del calendario en Agenda mostraba "Fijo / Deuda / Agenda" pero el modelo de datos solo tiene 3 tipos (`fijo`, `deuda-entidad`, `deuda-personal`) y el tipo `agenda` ya no se usa. Además, al investigar apareció un bug preexistente: los dots de deudas no tenían color porque las clases CSS huérfanas (`cal-dot--deuda`, `cal-dot--agenda`) no coincidían con las clases que generaba el renderer (`cal-dot--deuda-entidad`, `cal-dot--deuda-personal`).
+
+**Cambios clave:**
+- **Leyenda nueva** en `agenda/view.js::_renderLeyenda`: "Gasto fijo · Deuda entidad · Deuda personal", tres categorías que matchean el modelo real.
+- **CSS de dots actualizado** en `styles/components.css`: nuevas clases `.cal-dot--deuda-entidad` (rojo, `--fk-dom-compromisos`) y `.cal-dot--deuda-personal` (rosa, `--fk-dom-personales`). Eliminadas las clases huérfanas `.cal-dot--deuda` y `.cal-dot--agenda`.
+- **Resultado visual**: los dots del calendario ahora tienen color real (antes eran gris muted por falta de match CSS); las dos categorías de deuda se distinguen visualmente con tonos del mismo dominio (rojo y rosa).
+- **`service-worker.js`:** v76 → v77.
+
+**Archivos:** `modules/dominio/agenda/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (cambio puramente presentacional).
 
 ### fix(compromisos) - v7.8: "Apuntás primero a" en BN + tip de Avalancha más humano · 2026-05-27
 Dos iteraciones consecutivas tras v7.7:
@@ -96,21 +109,7 @@ Tres mejoras tras feedback v7.4: el "Total en intereses" en Bola de nieve suger�
 
 **Tests:** 932/932 verdes.
 
-### refactor(compromisos) - v7.4: detalle compacto + "no aplica" + métricas consistentes · 2026-05-27
-Feedback del usuario sobre v7.3 (3 puntos): el detalle saturaba mobile (3 bloques), tocar una estrategia desactivada no daba feedback, y las métricas estaban en distinto orden entre Avalancha y Bola de nieve.
-
-**Cambios clave (solo `compromisos/view.js` + `components.css`):**
-- **3 bloques → 2:** el primero ("✨ Por qué te conviene" si recomendada, "ℹ️ Cómo funciona" si no) integra razón + mecanismo + ideal en 1 párrafo. `_RESUMEN_ESTRATEGIA` reemplaza a `beneficio`/`ideal` del meta. ~180px menos de scroll en mobile.
-- **Cards inactivas siguen clicables:** clase `.estrategia-card-pick--inactiva` (opacidad 0.6) en lugar de `[disabled]`. Al click, el detalle se reemplaza por `_renderNoAplica('avalancha')` con bloque warning explicando "Avalancha solo tiene sentido si hay al menos una deuda con tasa > 0" + sugerencia. Removido el cambio silencioso a Bola de nieve.
-- **Métricas consistentes:** ambas estrategias muestran ahora el mismo orden: 1) "Libre de deudas en" en azul (`--info`), 2) "Total en intereses" en rojo (`--danger`, **Bola de nieve también** revertiendo v7.1 por consistencia), 3) métrica única en verde (`--success`): "Te ahorrás $X" para Avalancha o "Cerrás tu primera deuda en X" para Bola de nieve.
-- **CSS nuevo:** `--inactiva`, `--info`, `--danger`, `__no-aplica` (con fondo `--fk-warning-bg` y borde sutil).
-- **`service-worker.js`:** v70 → v71.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (UI pura).
-
-> Para tareas anteriores (v7.3 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.4 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
