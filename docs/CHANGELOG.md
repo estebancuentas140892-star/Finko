@@ -7,6 +7,131 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(compromisos) - v7.2: recomendación como subtítulo interno · 2026-05-27
+
+Iteración corta sobre v7.1. El usuario reportó visualmente que el badge "✨ Recomendada para vos" se veía como un sticker pegado encima del borde superior de la card, no como parte natural del diseño.
+
+**Cambios:**
+
+1. **Eliminado el badge flotante (`.estrategia-card-pick__badge`):** tenía `position: absolute` con `top: calc(-1 * --fk-space-2)` y `transform: translateX(-50%)`, lo que lo hacía sobresalir fuera del borde. Visualmente parecía una etiqueta autoadhesiva.
+2. **Nuevo subtítulo interno (`.estrategia-card-pick__sub`):** texto verde semibold (`var(--fk-success-text)`, `font-weight: 600`, `font-size: xs`) ubicado dentro de la card, debajo del nombre de la estrategia. Sin fondo, sin borde, sin sombra: integrado al flow vertical natural (ícono → nombre → recomendación).
+3. **Slot reservado en cards no recomendadas (`.estrategia-card-pick__sub--ghost`):** un span con `visibility: hidden` y `&nbsp;` mantiene la misma altura en la card no recomendada. Resultado: ambas cards alinean perfectamente en el grid (verificado en preview: 112.77px = 112.77px).
+4. **`service-worker.js`:** v68 → v69.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (UI pura).
+
+---
+
+### refactor(compromisos) - v7.1: contraste de badge + métricas específicas por estrategia · 2026-05-27
+
+Iteración sobre el rediseño v7 de "Estrategia de pago". El usuario reportó tres problemas concretos: el badge "Recomendada para vos" ilegible en ambos temas, "Pagás $X en intereses" mostrándose en Bola de nieve aunque no corresponde a esa estrategia, y la sensación general de que ambas estrategias mostraban la misma información en vez de la que realmente importa para cada decisión.
+
+**Motivación:**
+
+- En light theme el badge salía con texto negro sobre verde oscuro (ilegible). En dark theme salía como verde neón saturado con texto blanco (molesto).
+- Bola de nieve es una estrategia psicológica (cerrar deudas rápido para mantener motivación). Mostrar "intereses totales" en ella es como mostrar "ahorro" en una dieta de placebo: no es la métrica que esa estrategia optimiza.
+- El usuario pidió explícitamente que cada estrategia tenga 3 secciones: qué beneficio ofrece, qué impacto tiene en su situación, y para qué tipo de persona aplica.
+
+**Cambios:**
+
+1. **Fix del badge "Recomendada para vos" (`styles/components.css::.estrategia-card-pick__badge`):**
+   - **Causa raíz:** `var(--fk-bg)` **no existe** en `styles/tokens.css` (los tokens reales son `--fk-bg-base`, `--fk-bg-surface`, `--fk-bg-elevated`). Cuando el navegador no resuelve una custom property, la propiedad cae al valor heredado: por eso en light theme el `color` heredaba el `--fk-text-primary` (casi negro #1a1d27) y en dark heredaba blanco.
+   - **Solución:** patrón estándar del proyecto para chips de éxito (ver `.chip-success` línea 648): `background: var(--fk-success-bg)` (10-12% alpha) + `color: var(--fk-success-text)` (verde sólido legible en cada tema) + `border: 1px solid color-mix(in srgb, var(--fk-success) 40%, transparent)`.
+   - **Resultado:** chip outline-style con contraste WCAG AAA en ambos temas (~7:1 en light, ~6:1 en dark) y sin saturación neón molesta.
+2. **Fix de otros tokens inexistentes en mi código nuevo:** reemplazados 7 usos de `var(--fk-bg)` / `var(--fk-text)` / `var(--fk-border)` (que no existen) por `--fk-bg-surface` / `--fk-text-primary` / `--fk-border-default`. Solo en clases que escribí en v7 (estrategia-card-pick, placeholder, link, acordeón, metricas). Los bugs latentes en componentes pre-existentes (`.orden-badge`, `.estrategia-card__paso`, etc.) quedan fuera de scope.
+3. **Métricas específicas por estrategia (`compromisos/view.js`):**
+   - Nuevo `_renderImpactoAvalancha`: "Libre de deudas en X" + "Total que pagás en intereses $Y" + (si extra > 0 y hay ahorro real) "Te ahorrás respecto a Bola de nieve $Z y T meses" en color verde success.
+   - Nuevo `_renderImpactoBolaNieve`: "Cerrás tu primera deuda en X meses" (con nombre de la deuda como tip italic) en verde success + (si ≥3 deudas) "Después de Y solo te queda N deuda" + "Libre de deudas en T". **Sin métrica de intereses** por decisión deliberada.
+   - Wording: "A los X meses" → "Después de X" (mejor con singulares como "1 año").
+4. **Estructura unificada en 3 bloques (`_renderDetalleEstrategia`):** cada estrategia se renderiza con el mismo esqueleto: `🎯 Qué te ofrece` (1 frase del beneficio principal) + `📊 Tu impacto` (la lista de métricas específicas) + `👤 Ideal si...` (perfil del usuario al que le sirve). La razón de la recomendación ("¿Por qué te la recomendamos?") se ubica arriba del primer bloque, solo si la estrategia activa es la recomendada.
+5. **`_META_ESTRATEGIA` reformulado:** los campos `descripcion` (HTML largo) e `ideal` quedaron reemplazados por `beneficio` (1 frase corta para el bloque 🎯) e `ideal` (texto plano para 👤).
+6. **CSS (`styles/components.css`):**
+   - Nuevos `.estrategia-card__bloque`, `.estrategia-card__bloque-titulo` (mayúscula tracking 0.04em, font-size xs), `.estrategia-card__bloque-body`.
+   - Nuevos `.estrategia-card__metricas` (lista en superficie), `.estrategia-card__metrica`, `.estrategia-card__metrica-label/valor/tip` y modificador `.estrategia-card__metrica-valor--success` (verde para "te ahorrás" y "primera deuda cerrada").
+   - Removidos `.estrategia-card__desc`, `.estrategia-card__ideal` y todo el bloque `.estrategia-card__hero*` (la métrica única hero se reemplazó por la lista de métricas variables).
+   - Media query `<480px` ajusta la lista de métricas a font-size base.
+7. **`service-worker.js`:** v67 → v68.
+
+**Verificación visual:** screenshots tomados en mobile (375×812) en light y dark theme. Validado:
+- Light: badge verde oscuro sobre fondo verde sutil, legible. Métricas de Avalancha con "Te ahorrás $71.300" en verde destacado.
+- Dark: badge verde apagado sobre fondo de mismo tono, sin neón. Métricas de Bola de nieve con "Cerrás tu primera deuda en 6 meses (Prestamo mama)" en verde.
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (sin cambios de lógica; solo presentación).
+
+---
+
+### chore(infra) - Service worker deshabilitado en desarrollo · 2026-05-27
+
+Mientras se iteraba CSS/JS en la sesión actual, el usuario reportó que la página se veía "mezclada" (CSS viejo + HTML nuevo) y debía hacer Ctrl+Shift+R cada vez. Causa: el service worker estaba cacheando assets viejos y el bump de `CACHE_NAME` no se propagaba sin recarga forzada.
+
+**Motivación:**
+
+- El SW está pensado para garantizar offline-first en **producción**, no para soportar el ciclo de desarrollo iterativo.
+- En localhost el desarrollador necesita ver cambios al instante; un SW cache-first va en contra de eso.
+- Práctica estándar (CRA, Vite PWA, Workbox docs): registrar el SW solo en hostnames de producción.
+
+**Cambios:**
+
+1. **`modules/infra/sw-register.js`:** detección de entorno de desarrollo con una variable `_esDesarrollo` que cubre `localhost`, `127.0.0.1`, `0.0.0.0`, hostname vacío, `*.local`, `192.168.*` y `10.*` (LAN dev). Si estamos en dev:
+   - Llama a `navigator.serviceWorker.getRegistrations()` y desregistra todo lo que haya.
+   - Llama a `caches.keys()` y borra todos los caches.
+   - No registra ningún SW nuevo.
+2. **En producción:** comportamiento sin cambios. Sigue el flujo de `controllerchange` con auto-reload + `reg.update()` al arrancar.
+3. **`service-worker.js`:** v66 → v67 por consistencia (necesario para que los clientes de producción con SW activo se actualicen al próximo deploy).
+
+**Migración para el usuario (una sola vez):** después de pullear este cambio se necesita un último Ctrl+Shift+R para que el browser cargue el `sw-register.js` nuevo. De ahí en adelante, F5 normal sirve todo de red y los cambios se ven al instante.
+
+**Verificación:** en preview a `http://localhost:8081` se confirmó por consola que tras un reload `navigator.serviceWorker.getRegistrations()` devuelve `[]` y `caches.keys()` devuelve `[]`. Sin errores en console.
+
+**Archivos tocados:** `modules/infra/sw-register.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
+
+---
+
+### refactor(compromisos) - Estrategia de pago como cards + recomendación + acordeón · 2026-05-27
+
+Rediseño UX completo de la card "Estrategia de pago" en Compromisos, en dos pasadas. La pasada inicial (progressive disclosure por extra=0/extra>0) se descartó porque el usuario detectó que el input del extra mensual seguía siendo funcionalidad oculta. Esta entrada describe la versión final.
+
+**Motivación final:**
+
+- "Ambas estrategias dan el mismo resultado" (cuando extra=0) era confuso para el usuario, aunque técnicamente correcto.
+- El input "¿Cuánto extra podés pagar al mes?" estaba siempre arriba sin contexto: una persona que no entiende qué significa "extra" lo dejaba vacío sin descubrir la funcionalidad.
+- Faltaba una guía pedagógica que sugiriera **qué estrategia conviene** a cada persona según el perfil de sus deudas.
+
+**Cambios:**
+
+1. **Header sin pregunta intrusiva (`compromisos/view.js::renderEstrategiaPago`):** "💡 Estrategia de pago" + "Finko te ayuda a tomar mejores decisiones con tus deudas." Cero inputs visibles al arrancar.
+2. **Dos cards seleccionables grandes (Avalancha / Bola de nieve):** layout grid 1fr 1fr, ícono grande, nombre debajo, borde verde sólido + fondo accent cuando está activa, badge "✨ Recomendada para vos" flotante en la que corresponde según la heurística. Tap target ≥96px (mobile-friendly).
+3. **`recomendarEstrategia(deudas)` puro en `logic.js`:**
+   - 0/1 deuda → `{ estrategia: null, razon: '' }` (no se recomienda).
+   - Todas con tasa 0 → Bola de nieve (Avalancha no aplica).
+   - Diferencia `tasaMax - tasaMin` ≥ 5 puntos EA → Avalancha (el ahorro justifica el esfuerzo).
+   - Tasas similares (<5 pts) → Bola de nieve (la motivación pesa más que el ahorro marginal).
+   - **Tolerante a punto flotante:** redondea la diferencia a 2 decimales antes de comparar (evita `0.15 - 0.10 = 0.04999...` que rompía el umbral exacto de 5 pts).
+4. **Detalle dinámico bajo la card seleccionada (`_renderDetalleEstrategia`):**
+   - Descripción ("Pagás primero la deuda con la **tasa más alta**. Ahorrás más intereses a largo plazo.").
+   - Uso ideal ("Ideal si tu objetivo es pagar menos plata en total.").
+   - Razón de la recomendación con cifras reales del usuario (solo si es la recomendada): "Hay una diferencia importante entre tus tasas (0.0% y 28.5% EA). Atacar la más cara primero te ahorra más dinero en total."
+   - Métrica hero "Libre de deudas en **X**" (`--fk-text-2xl`) con intereses totales como meta secundaria y tip "(lo que vas a pagar de más por encima del saldo)".
+   - Comparación de ahorro solo si extra > 0 y hay diferencia real.
+5. **Placeholder cuando nada está seleccionado:** "Tocá una estrategia para ver el detalle y cómo te ayuda."
+6. **Acordeón opcional "💪 ¿Podés pagar algo extra cada mes?"** colapsado por defecto. Al expandir muestra el input numérico, descripción educativa y botón `✕` para cerrar. Auto-focus al input al abrir (UX teclado).
+7. **`_formatearDuracion(meses)`:** ≥12 meses → "X años Y meses" respetando singulares. "28 meses" → "2 años 4 meses".
+8. **Decisión de dominio:** la lógica de Avalancha sigue priorizando por **tasa** (no por interés absoluto en pesos como sugirió el usuario). Razón: el efecto cascada hace que Avalancha por tasa sea matemáticamente óptima incluso con deudas chicas de alta tasa, porque al cerrar la chica se liberan flujos hacia las grandes. Se explicó al usuario con su propio ejemplo numérico.
+9. **CSS (`styles/components.css`):** nuevos `.estrategia-cards`, `.estrategia-card-pick`, `.estrategia-card-pick--activa`, `.estrategia-card-pick__badge/icono/nombre`, `.estrategia-card__detalle/desc/ideal/razon/placeholder/link/acordeon*`. Removidos `.estrategia-card__controls/toggle/cta/inicial` (de la versión anterior).
+10. **`service-worker.js`:** v64 → v66 (acumulado tras dos iteraciones del rediseño).
+
+**Archivos tocados:** `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/logic.js`, `modules/dominio/compromisos/index.js`, `styles/components.css`, `service-worker.js`, `tests/unit/compromisos.test.js`.
+
+**Tests:** 932/932 verdes (+6 nuevos casos para `recomendarEstrategia`: una deuda, lista vacía/inválida, todas con tasa 0, diferencia ≥5pts, tasas similares, límite exacto de 5pts).
+
+---
+
 ### fix(compromisos) - Wording neutro + estética del chooser · 2026-05-27
 
 Hotfix sobre el chooser de Tarea 3 con dos puntos del usuario.

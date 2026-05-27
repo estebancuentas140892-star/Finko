@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (fix: wording neutro + estética chooser de Compromisos)
+> Última actualización: 2026-05-27 (v7.2: recomendación como subtítulo interno, no sticker flotante)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 926/926 verdes |
+| Tests unitarios + integración | 932/932 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,67 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(compromisos) - v7.2: recomendación como subtítulo interno · 2026-05-27
+Feedback visual del usuario: el badge "✨ Recomendada para vos" parecía un sticker pegado encima del borde superior de la card, no formaba parte del diseño.
+
+**Cambios clave:**
+- Eliminado `.estrategia-card-pick__badge` con posicionamiento `absolute` flotando fuera del borde.
+- Nuevo `.estrategia-card-pick__sub`: texto verde semibold como subtítulo interno bajo el nombre, sin fondo ni borde. La indicación queda integrada al flujo natural de la card.
+- Las cards no recomendadas usan `.estrategia-card-pick__sub--ghost` con `visibility: hidden` para reservar la misma altura, así ambas cards alinean perfectamente en el grid (verificado: 112.77px = 112.77px).
+- **`service-worker.js`:** v68 → v69.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `styles/components.css`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (UI pura).
+
+### refactor(compromisos) - v7.1: contraste de badge + métricas específicas por estrategia · 2026-05-27
+Tres bugs reportados por el usuario sobre el rediseño de "Estrategia de pago":
+
+**Cambios clave:**
+- **Badge "Recomendada para vos" ilegible:** causa raíz, `var(--fk-bg)` no existe en los tokens del proyecto (se cae al heredado, por eso en dark salía blanco y en light salía negro). Reemplazado por el patrón estándar de chips de éxito: `background: var(--fk-success-bg)` + `color: var(--fk-success-text)` + borde sutil `color-mix(--fk-success 40%, transparent)`. Ahora es un chip outline-style legible en ambos temas, sin saturación neón.
+- **Mismo bug en mi código nuevo:** corregí 7 más usos de `var(--fk-bg)` / `var(--fk-text)` / `var(--fk-border)` (que tampoco existen) por sus equivalentes correctos: `--fk-bg-surface`, `--fk-text-primary`, `--fk-border-default`. Tokens pre-existentes con el mismo bug latente quedan fuera de scope (bugs separados).
+- **Métricas mezcladas entre estrategias:** ahora cada una muestra solo lo que le corresponde:
+  - **Avalancha:** "Libre de deudas en X" + "Total que pagás en intereses $Y" + (si extra > 0) "Te ahorrás respecto a Bola de nieve $Z" en verde.
+  - **Bola de nieve:** "Cerrás tu primera deuda en X meses" (con nombre de la deuda como tip) + (si ≥3 deudas) "Después de Y solo te queda N deuda" + "Libre de deudas en T". **Nunca muestra intereses** porque no es lo que esta estrategia optimiza (lo señaló el usuario explícitamente como ruido).
+- **Estructura unificada en 3 bloques:** cada estrategia se presenta con `🎯 Qué te ofrece` (beneficio principal) + `📊 Tu impacto` (métricas) + `👤 Ideal si...` (perfil de usuario). Render uniforme entre ambas, contenido distinto.
+- **`service-worker.js`:** v67 → v68.
+
+**Archivos:** `modules/dominio/compromisos/view.js` (nuevos `_renderImpactoAvalancha`, `_renderImpactoBolaNieve`, `_META_ESTRATEGIA` reformulado), `styles/components.css` (fix de tokens + nuevos `.estrategia-card__bloque*` y `.estrategia-card__metrica*`, removidos `.estrategia-card__desc/ideal/hero*`), `service-worker.js`.
+
+**Tests:** 932/932 verdes (UI pura, sin lógica nueva).
+
+### chore(infra) - Service worker deshabilitado en desarrollo · 2026-05-27
+El SW estaba cacheando assets viejos en localhost; mientras iterábamos CSS/JS el usuario veía la página "rota" (CSS viejo + HTML nuevo) y debía hacer Ctrl+Shift+R cada vez. Solución estándar: no registrar el SW en hostnames de desarrollo.
+
+**Cambios clave:**
+- **`modules/infra/sw-register.js`:** detecta `localhost`, `127.0.0.1`, `0.0.0.0`, `*.local`, `192.168.*`, `10.*`. Si estamos en dev: desregistra cualquier SW existente, borra todos los `caches`, y NO registra uno nuevo. En producción el comportamiento queda igual (offline-first con auto-recarga en `controllerchange`).
+- **`service-worker.js`:** v66 → v67 por consistencia (no afecta dev; necesario para que los clientes de producción se actualicen al próximo deploy).
+
+**Migración para el usuario (una sola vez):** después de este cambio se necesita un último Ctrl+Shift+R para que el browser cargue el `sw-register.js` nuevo. De ahí en adelante, los reloads normales (F5) sirven todo de red y los cambios se ven al instante.
+
+**Archivos:** `modules/infra/sw-register.js`, `service-worker.js`.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
+
+### refactor(compromisos) - Estrategia de pago como cards + recomendación + acordeón · 2026-05-27
+Rediseño UX completo de la card "Estrategia de pago" para móvil, en dos pasadas. Cierra el feedback del usuario: la sección saturaba con métricas que no informaban, y el input del extra era funcionalidad oculta que pocos descubrían.
+
+**Cambios clave:**
+- **Header simple:** "💡 Estrategia de pago" + "Finko te ayuda a tomar mejores decisiones con tus deudas."
+- **Dos cards seleccionables** (Avalancha / Bola de nieve) con badge "✨ Recomendada para vos" en la que corresponde según heurística.
+- **Detalle dinámico** debajo de las cards al elegir una: descripción + uso ideal + razón de la recomendación (solo si es la recomendada) + métrica hero "Libre de deudas en X" + intereses totales.
+- **Nuevo `recomendarEstrategia(deudas)` puro en `logic.js`:** 0/1 deuda → `null`. Todas con tasa 0 → Bola de nieve. Diferencia tasaMax-tasaMin ≥ 5 pts EA → Avalancha. Resto → Bola de nieve. Tolerante a punto flotante (redondea a 2 decimales antes de comparar).
+- **Acordeón opcional "💪 ¿Podés pagar algo extra cada mes?"** colapsado por defecto. Al expandirse muestra input + descripción + cierre con `✕`. Auto-focus al input al abrir. Persiste extra durante la sesión.
+- **Helper `_formatearDuracion`:** ≥12 meses se muestra como "X años Y meses" respetando singulares.
+- **Comparación de ahorro vacía si empate:** se eliminó el mensaje confuso "ambas estrategias dan el mismo resultado".
+- **`service-worker.js`:** v64 → v66.
+
+**Educación financiera:** la lógica Avalancha sigue priorizando por **tasa**, no por interés absoluto en pesos. Es matemáticamente óptima por el efecto cascada (cuando la deuda chica de alta tasa se cierra rápido, todo el flujo libera hacia las demás). Esto se explicó al usuario con su propio ejemplo numérico y se mantiene como práctica estándar.
+
+**Archivos:** `compromisos/view.js`, `compromisos/logic.js` (`recomendarEstrategia`), `compromisos/index.js` (handler + acción `toggle-extra-estrategia`), `styles/components.css`, `service-worker.js`, `tests/unit/compromisos.test.js` (+6 tests).
+
+**Tests:** 932/932 verdes (+6).
+
 ### fix(compromisos) - Wording neutro + estética del chooser · 2026-05-27
 Hotfix sobre el chooser de Tarea 3.
 
@@ -50,78 +111,6 @@ Hotfix sobre el chooser de Tarea 3.
 **Archivos:** `compromisos/view.js`, `styles/components.css`, `service-worker.js`.
 
 **Tests:** 926/926 verdes.
-
-### refactor(compromisos) - Chooser entidad/personal + lista única reordenable · 2026-05-27
-Rediseño del flujo "Nueva deuda" y eliminación de la lista duplicada en la card de estrategia. Responde a 4 puntos de feedback del usuario.
-
-**Cambios clave:**
-- **Modal 2 pasos:** click "+ Nueva deuda" → chooser (🏦 Entidad / 🤝 Personal con descripción de cada tipo). Click en uno → form tailored con campos y labels específicos. Botón "← Volver" regresa al chooser. Título del modal se actualiza dinámicamente.
-- **Forms tailored:** Entidad muestra tasa EA obligatoria con referencia a la usura vigente. Personal muestra tasa mensual opcional con hint de gota a gota. Ambos tienen `tipo` en hidden field (sin select visible al usuario).
-- **Lista única:** eliminado el `<ol class="estrategia-card__orden">` de dentro de la card de estrategia. Solo existe `#lista-compromisos` con badges 1°, 2°, 3°. Clickear Avalancha/Bola de nieve reordena esa lista de forma visible.
-- **El "bug" de estrategia era percepción:** la lógica de reordenamiento siempre funcionó. Con la lista duplicada el cambio era confuso; ahora con lista única el efecto es obvio.
-- **`service-worker.js`:** v62 → v63.
-
-**Archivos:** `compromisos/view.js` (nuevo `renderChooserCompromiso`, `renderFormDeuda(tipo)`, `renderEstrategiaPago` sin ol), `compromisos/index.js` (handlers chooser: `_mostrarChooser`, `_elegirTipoDeuda`, `_volverChooser`; acciones `comp-elegir-tipo`, `comp-volver-chooser`), `styles/components.css` (`.comp-chooser`, `.comp-chooser__btn`, `.comp-chooser__label`, `.comp-chooser__desc`).
-
-**Tests:** 926/926 verdes (sin tests nuevos: UI pura, sin lógica de negocio nueva).
-
-### feat(agenda) - Botón "+ Agregar gasto fijo" en Agenda · 2026-05-27
-Cierre de Tarea 2 después del rediseño v6 de Compromisos. La sección Agenda recibe el punto de entrada para crear `tipo='fijo'`.
-
-**Cambios clave:**
-- **`index.html`:** botón "+ Agregar gasto fijo" en header de `#sec-agenda` + nuevo `#modal-gasto-fijo`. Modal de Compromisos renombrado a "Nueva deuda" (alineado con v6).
-- **`modules/dominio/agenda/view.js`:** nueva función `renderFormGastoFijo()` con 4 campos visibles (descripcion, monto, frecuencia, día) + hidden `tipo=fijo`.
-- **`modules/dominio/agenda/index.js`:** handlers `_nuevoGastoFijo` / `_guardarGastoFijo`. Reusa `validarCompromiso` y `normalizarCompromiso` de `compromisos/logic.js` (puras). Reinyecta el form en cada apertura para evitar bug de `resetModal` con hidden + `<select selected>`.
-- **`service-worker.js`:** v61 → v62.
-
-**Bug encontrado:** `resetModal` vacía el hidden `tipo` y el `selected` de Mensual. Workaround local: reinyectar el form al abrir, sin tocar `modales.js`.
-
-**Tests:** 926/926 verdes (lógica reusada ya cubierta).
-
-**Próxima sesión:** rediseño de **Compromisos** según feedback del usuario (4 puntos):
-1. Modal "+ Nueva deuda" → primero chooser (🏦 Entidad / 🤝 Personal), luego form específico por tipo.
-2. Forms separados con campos y ayuda tailored.
-3. Eliminar lista duplicada (`<ol>` interno de estrategia + `#lista-compromisos`): que quede una sola que se reordene al clickear avalancha/bola de nieve.
-4. Verificar bug reportado de avalancha/bola de nieve con caso "1 deuda con interés + 1 sin interés".
-
-### refactor(compromisos) - Rediseño v6: solo deudas (entidad / personal) + estrategia arriba · 2026-05-27
-Rediseño completo del dominio Compromisos a partir del feedback del usuario.
-
-**Cambios clave:**
-- **Schema v5 → v6 con migración:** `deuda` → `deuda-entidad` (preserva tasa EA); `agenda` → `fijo` Única vez. Nuevos campos para deudas: `saldoTotal`, `cuotaMensual`, `tasa`, `tasaUnidad` ('EA' o 'mensual').
-- **Sección Compromisos = solo deudas.** El form crea Deuda con entidad (banco/tarjeta, tasa EA obligatoria) o Deuda personal (familiar/gota a gota, tasa opcional en % mensual).
-- **Estrategia arriba:** Avalancha / Bola de Nieve define el orden de pago. La lista debajo muestra cada deuda con badge 1°, 2°, 3°… según la estrategia activa.
-- **Avalancha se deshabilita** si no hay ninguna deuda con tasa > 0 (no aporta info).
-- **Eliminado el nudge superior** "1 pago vence en X días" porque ya vive en el Dashboard (Próximas prioridades + Vencidos).
-- **Cross-domain:** `analisis::calcularPasivos`, `tesoreria::distribución prima`, `detectarDeudasDurmiendo` adaptados al nuevo modelo.
-
-**Pendiente próxima sesión (Tarea 2):** mover el botón "+ Agregar gasto fijo" a la sección Agenda con form simplificado. Los `tipo='fijo'` ya conviven en `S.compromisos`; solo falta el punto de entrada en Agenda.
-
-**Archivos principales:** `state.js`, `storage.js`, `compromisos/{logic,view,index}.js`, `analisis/logic.js`, `tesoreria/view.js`, `form-errors.js`, `index.html`, `styles/components.css`, tests de storage/state/compromisos/analisis.
-
-**Tests:** 926/926 verdes (+4 por la migración).
-**Service Worker:** v60 → v61.
-
-### fix(dash) - Vencidos no marca recién creados + re-render desde compromisos · 2026-05-26
-Dos bugs sobre el dashboard nuevo:
-
-**#1** Compromiso recién creado con día de pago anterior a hoy aparecía como vencido
-(ej. hoy 26, diaPago=15 → "venció hace 11 días"). Solución: `detectarVencidosCompletos`
-y `detectarFijosSinPagarEsteMes` ahora miran `fechaCreacion` y excluyen los items
-creados este mes después de su día de pago. Su próximo ciclo real es el mes siguiente.
-
-**#2** Al crear/editar/eliminar un compromiso desde la sección Compromisos, el dashboard
-no se actualizaba (solo se llamaba `_renderTodo`). Solución: `state:change` también
-dispara `renderSmart(_renderDashboardPanels, 'dash')`.
-
-**Archivos:**
-- `modules/dominio/compromisos/logic.js`: regla anti-falso-positivo con `fechaCreacion`
-  en `detectarVencidosCompletos` y `detectarFijosSinPagarEsteMes`.
-- `modules/dominio/compromisos/index.js`: re-render de paneles dashboard en `state:change`.
-- `tests/unit/compromisos.test.js`: +5 tests.
-- `service-worker.js`: v59→v60.
-
-**Tests:** 920/920 verdes (+5).
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
