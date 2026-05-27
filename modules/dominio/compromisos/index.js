@@ -18,7 +18,6 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { validarCompromiso, normalizarCompromiso } from './logic.js';
 import {
-  renderNudgeMoraInminente,
   renderListaCompromisos,
   renderFormCompromiso,
   renderEstrategiaPago,
@@ -44,11 +43,11 @@ function _renderDashboardPanels() {
  * el estado UI de la estrategia (extra mensual, toggle).
  */
 function _renderTodo() {
-  renderNudgeMoraInminente();
+  // En v6 la card de estrategia va ARRIBA (define el orden de pago).
+  renderEstrategiaPago();
   renderAlertaFijosSinPagar();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
-  renderEstrategiaPago();
 }
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -104,12 +103,14 @@ async function _eliminarCompromiso(el) {
   announce(`Compromiso "${compromiso.descripcion}" eliminado.`);
 }
 
-// Handlers de la card de estrategia (F.4).
+// Handlers de la card de estrategia (F.4). En v6 la estrategia también
+// define el orden de la lista de deudas, así que re-renderizamos ambas.
 function _elegirEstrategia(el) {
   const estrategia = el.dataset.estrategia;
   if (estrategia !== 'avalancha' && estrategia !== 'bolaNieve') return;
   setEstrategiaUI({ estrategia });
   renderEstrategiaPago();
+  renderListaCompromisos();
 }
 
 function _cambiarExtraEstrategia(el) {

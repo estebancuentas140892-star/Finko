@@ -11,7 +11,7 @@
 import { calcularTotalMensual }    from '../ingresos/logic.js';
 import { totalGastosMes, gastosMes, gastosPorCategoria, detectarHormigas }
   from '../gastos/logic.js';
-import { calcularTotalCompromisos, compromisosActivos } from '../compromisos/logic.js';
+import { calcularTotalCompromisos, compromisosActivos, esDeuda } from '../compromisos/logic.js';
 import { calcularTotalCuentas }                         from '../tesoreria/logic.js';
 import { metasActivas }                                 from '../metas/logic.js';
 
@@ -91,13 +91,11 @@ export function calcularActivos(cuentas, metas) {
 }
 
 /**
- * Suma los pasivos del usuario: saldoPendiente de compromisos tipo 'deuda'
- * que estén activos.
+ * Suma los pasivos del usuario: saldoTotal de compromisos de tipo deuda
+ * (entidad o personal) que estén activos.
  *
- * El campo `saldoPendiente` es OPCIONAL en el shape de Compromiso. Si un
- * compromiso 'deuda' no lo tiene, su pasivo se considera 0 (desconocido).
- * En la UI se mostrará un CTA para que el usuario complete sus deudas y
- * obtenga una foto real de su patrimonio.
+ * `saldoTotal` es obligatorio al crear una deuda en v6, pero por seguridad
+ * tratamos como "deuda sin saldo" cualquier item que llegue sin él.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
  * @returns {{
@@ -107,11 +105,11 @@ export function calcularActivos(cuentas, metas) {
  * }}
  */
 export function calcularPasivos(compromisos) {
-  const deudasActivas = compromisosActivos(compromisos).filter(c => c.tipo === 'deuda');
+  const deudasActivas = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo));
   let total = 0;
   let deudasSinSaldo = 0;
   for (const d of deudasActivas) {
-    const saldo = Number(d.saldoPendiente);
+    const saldo = Number(d.saldoTotal);
     if (Number.isFinite(saldo) && saldo > 0) {
       total += saldo;
     } else {

@@ -52,8 +52,10 @@ const datosFormValidos = {
 // ── CATÁLOGOS ─────────────────────────────────────────────────────
 
 describe('catálogos exportados', () => {
-  it('TIPOS_COMPROMISO tiene los tres tipos', () => {
-    expect(TIPOS_COMPROMISO).toEqual(expect.arrayContaining(['fijo', 'deuda', 'agenda']));
+  it('TIPOS_COMPROMISO tiene fijo + dos tipos de deuda (v6)', () => {
+    expect(TIPOS_COMPROMISO).toEqual(
+      expect.arrayContaining(['fijo', 'deuda-entidad', 'deuda-personal']),
+    );
     expect(TIPOS_COMPROMISO).toHaveLength(3);
   });
 
@@ -236,10 +238,19 @@ describe('validarCompromiso()', () => {
     expect(errores[0]).toMatch(/tipo/i);
   });
 
-  it('acepta los tres tipos válidos', () => {
-    for (const tipo of ['fijo', 'deuda', 'agenda']) {
-      expect(validarCompromiso({ ...datosFormValidos, tipo })).toEqual([]);
-    }
+  it('acepta los tres tipos válidos (v6)', () => {
+    // fijo: solo monto requerido
+    expect(validarCompromiso({ ...datosFormValidos, tipo: 'fijo' })).toEqual([]);
+    // deuda-entidad: requiere saldoTotal + cuotaMensual + tasa
+    expect(validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '5000000', cuotaMensual: '300000', tasa: '28', tasaUnidad: 'EA',
+    })).toEqual([]);
+    // deuda-personal: tasa opcional
+    expect(validarCompromiso({
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '1000000', cuotaMensual: '100000',
+    })).toEqual([]);
   });
 
   it('puede tener múltiples errores a la vez', () => {
@@ -284,83 +295,116 @@ describe('normalizarCompromiso()', () => {
     expect(normalizarCompromiso(datosFormValidos)).not.toHaveProperty('id');
   });
 
-  it('incluye saldoPendiente cuando tipo=deuda y el campo está lleno', () => {
-    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '12000000', tasaEA: '' };
+  it('para tipo=deuda-entidad incluye saldoTotal, cuotaMensual, tasa EA decimal y tasaUnidad=EA', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '5000000', cuotaMensual: '300000', tasa: '28', tasaUnidad: 'EA',
+    };
     const result = normalizarCompromiso(datos);
-    expect(result.saldoPendiente).toBe(12_000_000);
-  });
-
-  it('incluye tasaEA como decimal cuando tipo=deuda y el campo está lleno', () => {
-    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '', tasaEA: '26.5' };
-    const result = normalizarCompromiso(datos);
-    expect(result.tasaEA).toBeCloseTo(0.265);
-  });
-
-  it('incluye ambos campos extras cuando tipo=deuda y ambos están completos', () => {
-    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '5000000', tasaEA: '24' };
-    const result = normalizarCompromiso(datos);
-    expect(result.saldoPendiente).toBe(5_000_000);
-    expect(result.tasaEA).toBeCloseTo(0.24);
-  });
-
-  it('omite saldoPendiente cuando tipo=deuda pero el campo está vacío', () => {
-    const datos = { ...datosFormValidos, tipo: 'deuda', saldoPendiente: '', tasaEA: '' };
-    const result = normalizarCompromiso(datos);
-    expect(result).not.toHaveProperty('saldoPendiente');
-  });
-
-  it('omite campos extra cuando tipo=fijo aunque el campo tenga valor', () => {
-    const datos = { ...datosFormValidos, tipo: 'fijo', saldoPendiente: '999999', tasaEA: '10' };
-    const result = normalizarCompromiso(datos);
+    expect(result.tipo).toBe('deuda-entidad');
+    expect(result.saldoTotal).toBe(5_000_000);
+    expect(result.cuotaMensual).toBe(300_000);
+    expect(result.tasa).toBeCloseTo(0.28);
+    expect(result.tasaUnidad).toBe('EA');
+    expect(result).not.toHaveProperty('monto');
     expect(result).not.toHaveProperty('saldoPendiente');
     expect(result).not.toHaveProperty('tasaEA');
   });
+
+  it('para tipo=deuda-personal con tasa mensual incluye tasaUnidad=mensual', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '1000000', cuotaMensual: '120000', tasa: '10', tasaUnidad: 'mensual',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.tipo).toBe('deuda-personal');
+    expect(result.saldoTotal).toBe(1_000_000);
+    expect(result.cuotaMensual).toBe(120_000);
+    expect(result.tasa).toBeCloseTo(0.10);
+    expect(result.tasaUnidad).toBe('mensual');
+  });
+
+  it('para tipo=deuda-personal sin tasa, queda tasa=0 y tasaUnidad="mensual"', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.tasa).toBe(0);
+    expect(result.tasaUnidad).toBe('mensual');
+  });
+
+  it('para tipo=fijo no agrega campos de deuda aunque vengan en el form', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'fijo',
+      saldoTotal: '999999', cuotaMensual: '99999', tasa: '10', tasaUnidad: 'EA',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.monto).toBe(89_000);
+    expect(result).not.toHaveProperty('saldoTotal');
+    expect(result).not.toHaveProperty('cuotaMensual');
+    expect(result).not.toHaveProperty('tasa');
+    expect(result).not.toHaveProperty('tasaUnidad');
+  });
 });
 
-// ── validarCompromiso() - campos de deuda ─────────────────────────
+// ── validarCompromiso() - reglas de deuda ─────────────────────────
 
-describe('validarCompromiso() - campos opcionales de deuda', () => {
-  const datosDeuda = { ...datosFormValidos, tipo: 'deuda' };
+describe('validarCompromiso() - reglas de deuda (v6)', () => {
+  const datosEntidad = {
+    ...datosFormValidos, tipo: 'deuda-entidad',
+    saldoTotal: '5000000', cuotaMensual: '300000', tasa: '28', tasaUnidad: 'EA',
+  };
+  const datosPersonal = {
+    ...datosFormValidos, tipo: 'deuda-personal',
+    saldoTotal: '1000000', cuotaMensual: '100000',
+  };
 
-  it('acepta deuda sin saldoPendiente ni tasaEA (ambos vacíos)', () => {
-    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '' })).toEqual([]);
+  it('deuda-entidad válida no produce errores', () => {
+    expect(validarCompromiso(datosEntidad)).toEqual([]);
   });
 
-  it('acepta deuda con saldoPendiente válido', () => {
-    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '12000000', tasaEA: '' })).toEqual([]);
+  it('deuda-personal sin tasa es válida (tasa opcional)', () => {
+    expect(validarCompromiso(datosPersonal)).toEqual([]);
   });
 
-  it('acepta deuda con tasaEA válida', () => {
-    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '26.5' })).toEqual([]);
+  it('deuda-personal con tasa mensual válida no produce errores', () => {
+    const datos = { ...datosPersonal, tasa: '10', tasaUnidad: 'mensual' };
+    expect(validarCompromiso(datos)).toEqual([]);
   });
 
-  it('acepta saldoPendiente de 0 (deuda saldada)', () => {
-    expect(validarCompromiso({ ...datosDeuda, saldoPendiente: '0', tasaEA: '' })).toEqual([]);
+  it('reporta error si deuda-entidad no tiene tasa', () => {
+    const datos = { ...datosEntidad, tasa: '' };
+    const errores = validarCompromiso(datos);
+    expect(errores.some(e => /tasa.*obligatoria/i.test(e))).toBe(true);
   });
 
-  it('reporta error si saldoPendiente es negativo', () => {
-    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '-1000', tasaEA: '' });
+  it('reporta error si saldoTotal es 0 o menor', () => {
+    const errores = validarCompromiso({ ...datosEntidad, saldoTotal: '0' });
     expect(errores.some(e => /saldo/i.test(e))).toBe(true);
   });
 
-  it('reporta error si saldoPendiente no es número', () => {
-    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: 'mucho', tasaEA: '' });
-    expect(errores.some(e => /saldo/i.test(e))).toBe(true);
+  it('reporta error si cuotaMensual es 0 o menor', () => {
+    const errores = validarCompromiso({ ...datosEntidad, cuotaMensual: '0' });
+    expect(errores.some(e => /cuota/i.test(e))).toBe(true);
   });
 
-  it('reporta error si tasaEA supera 200%', () => {
-    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '201' });
+  it('reporta error si tasa EA supera 200%', () => {
+    const errores = validarCompromiso({ ...datosEntidad, tasa: '250' });
     expect(errores.some(e => /tasa/i.test(e))).toBe(true);
   });
 
-  it('reporta error si tasaEA es negativa', () => {
-    const errores = validarCompromiso({ ...datosDeuda, saldoPendiente: '', tasaEA: '-1' });
+  it('reporta error si tasa mensual supera 100%', () => {
+    const datos = { ...datosPersonal, tasa: '150', tasaUnidad: 'mensual' };
+    const errores = validarCompromiso(datos);
     expect(errores.some(e => /tasa/i.test(e))).toBe(true);
   });
 
-  it('NO valida saldoPendiente para tipo=fijo aunque tenga valor', () => {
-    // fijo con saldo negativo no da error porque el campo no aplica
-    const datos = { ...datosFormValidos, tipo: 'fijo', saldoPendiente: '-9999', tasaEA: '-1' };
+  it('NO valida campos de deuda para tipo=fijo aunque vengan negativos', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'fijo',
+      saldoTotal: '-9999', cuotaMensual: '-100', tasa: '-1',
+    };
     expect(validarCompromiso(datos)).toEqual([]);
   });
 });
@@ -425,15 +469,16 @@ describe('compromisosProximos()', () => {
 // ─── F.4: Estrategias de pago (Avalancha / Bola de Nieve) ────────
 
 const deudaBase = (overrides = {}) => ({
-  id:             'd1',
-  descripcion:    'Tarjeta Visa',
-  monto:          200_000,
-  frecuencia:     'Mensual',
-  diaPago:        15,
-  tipo:           'deuda',
-  activo:         true,
-  saldoPendiente: 1_000_000,
-  tasaEA:         0.30,
+  id:           'd1',
+  descripcion:  'Tarjeta Visa',
+  frecuencia:   'Mensual',
+  diaPago:      15,
+  tipo:         'deuda-entidad',
+  activo:       true,
+  saldoTotal:   1_000_000,
+  cuotaMensual: 200_000,
+  tasa:         0.30,
+  tasaUnidad:   'EA',
   ...overrides,
 });
 
@@ -452,15 +497,17 @@ describe('filtrarDeudasPagables', () => {
     expect(filtrarDeudasPagables([inactiva])).toHaveLength(0);
   });
 
-  it('excluye deudas sin saldoPendiente o saldo<=0', () => {
-    const sinSaldo = deudaBase({ id: 'd1', saldoPendiente: undefined });
-    const cero     = deudaBase({ id: 'd2', saldoPendiente: 0 });
+  it('excluye deudas sin saldoTotal o saldo<=0', () => {
+    const sinSaldo = deudaBase({ id: 'd1', saldoTotal: undefined });
+    const cero     = deudaBase({ id: 'd2', saldoTotal: 0 });
     expect(filtrarDeudasPagables([sinSaldo, cero])).toHaveLength(0);
   });
 
-  it('excluye deudas sin tasaEA', () => {
-    const sinTasa = deudaBase({ tasaEA: undefined });
-    expect(filtrarDeudasPagables([sinTasa])).toHaveLength(0);
+  it('incluye deudas sin tasa (tasa=0 = sin interés)', () => {
+    const sinTasa = deudaBase({ tasa: undefined });
+    // tasaEADe() devuelve 0 para tasa undefined → sigue siendo una deuda pagable.
+    expect(filtrarDeudasPagables([sinTasa])).toHaveLength(1);
+    expect(filtrarDeudasPagables([sinTasa])[0].tasaEA).toBe(0);
   });
 
   it('mapea al shape esperado', () => {
@@ -469,14 +516,24 @@ describe('filtrarDeudasPagables', () => {
     expect(d).toEqual({
       id:          'd1',
       descripcion: 'Tarjeta Visa',
+      tipo:        'deuda-entidad',
       saldo:       1_000_000,
       tasaEA:      0.30,
       cuota:       200_000,
     });
   });
 
-  it('tasaEA=0 (sin interés) es válida', () => {
-    const sinInteres = deudaBase({ tasaEA: 0 });
+  it('convierte tasa mensual a EA para deuda-personal', () => {
+    const gota = deudaBase({
+      id: 'g1', tipo: 'deuda-personal', tasa: 0.10, tasaUnidad: 'mensual',
+    });
+    const [d] = filtrarDeudasPagables([gota]);
+    // 10% mensual → EA ≈ 213.84%
+    expect(d.tasaEA).toBeCloseTo(Math.pow(1.10, 12) - 1, 6);
+  });
+
+  it('tasa=0 (sin interés) es válida', () => {
+    const sinInteres = deudaBase({ tasa: 0 });
     expect(filtrarDeudasPagables([sinInteres])).toHaveLength(1);
   });
 });
@@ -660,7 +717,7 @@ describe('detectarFijosSinPagarEsteMes', () => {
 
   it('ignora compromisos que no son fijo', () => {
     const result = detectarFijosSinPagarEsteMes(
-      [fijo({ tipo: 'deuda', diaPago: 1 }), fijo({ tipo: 'agenda', diaPago: 1 })],
+      [fijo({ tipo: 'deuda-entidad', diaPago: 1 }), fijo({ tipo: 'deuda-personal', diaPago: 1 })],
       '2026-05-15'
     );
     expect(result).toHaveLength(0);
@@ -699,9 +756,9 @@ describe('detectarFijosSinPagarEsteMes', () => {
 
 describe('detectarDeudasDurmiendo', () => {
   const deuda = (overrides = {}) => ({
-    id: 'd1', descripcion: 'Credito banco', monto: 500_000,
-    tipo: 'deuda', activo: true, diaPago: 5, frecuencia: 'Mensual',
-    saldoPendiente: 2_000_000,
+    id: 'd1', descripcion: 'Credito banco',
+    tipo: 'deuda-entidad', activo: true, diaPago: 5, frecuencia: 'Mensual',
+    saldoTotal: 2_000_000, cuotaMensual: 500_000, tasa: 0.28, tasaUnidad: 'EA',
     fechaCreacion: '2024-01-01T00:00:00.000Z', // hace mucho
     ...overrides,
   });
@@ -720,20 +777,19 @@ describe('detectarDeudasDurmiendo', () => {
     const result = detectarDeudasDurmiendo([deuda()], '2026-05-19');
     expect(result).toHaveLength(1);
     expect(result[0].severidad).toBe('alta'); // >6 meses
-    expect(result[0].saldoPendiente).toBe(2_000_000);
+    expect(result[0].saldoTotal).toBe(2_000_000);
   });
 
   it('no incluye deuda reciente (< umbral meses)', () => {
-    // fechaCreacion hace 1 mes → no durmiendo (umbral=2)
     const result = detectarDeudasDurmiendo(
       [deuda({ fechaCreacion: '2026-04-20T00:00:00.000Z' })], '2026-05-19'
     );
     expect(result).toHaveLength(0);
   });
 
-  it('no incluye deuda sin saldoPendiente', () => {
+  it('no incluye deuda sin saldoTotal', () => {
     const result = detectarDeudasDurmiendo(
-      [deuda({ saldoPendiente: 0 })], '2026-05-19'
+      [deuda({ saldoTotal: 0 })], '2026-05-19'
     );
     expect(result).toHaveLength(0);
   });
@@ -747,14 +803,20 @@ describe('detectarDeudasDurmiendo', () => {
 
   it('ignora compromisos que no son deuda', () => {
     const result = detectarDeudasDurmiendo(
-      [deuda({ tipo: 'fijo' }), deuda({ tipo: 'agenda' })], '2026-05-19'
+      [deuda({ tipo: 'fijo' })], '2026-05-19'
     );
     expect(result).toHaveLength(0);
   });
 
+  it('incluye deuda-personal (no solo entidad)', () => {
+    const result = detectarDeudasDurmiendo(
+      [deuda({ tipo: 'deuda-personal' })], '2026-05-19'
+    );
+    expect(result).toHaveLength(1);
+  });
+
   it('asigna severidad correctamente segun meses', () => {
     const hoy = '2026-05-19';
-    // 2 meses → baja, 4 meses → media, 8 meses → alta
     const d1 = deuda({ id: 'd1', fechaCreacion: '2026-03-01T00:00:00.000Z' });
     const d2 = deuda({ id: 'd2', fechaCreacion: '2026-01-01T00:00:00.000Z' });
     const d3 = deuda({ id: 'd3', fechaCreacion: '2025-09-01T00:00:00.000Z' });
@@ -768,14 +830,14 @@ describe('detectarDeudasDurmiendo', () => {
 
   it('sugerencia "liquidar" cuando saldo <= cuota', () => {
     const result = detectarDeudasDurmiendo(
-      [deuda({ saldoPendiente: 400_000, monto: 500_000 })], '2026-05-19'
+      [deuda({ saldoTotal: 400_000, cuotaMensual: 500_000 })], '2026-05-19'
     );
     expect(result[0].sugerencia).toBe('liquidar');
   });
 
   it('sugerencia "retomar" cuando saldo > cuota', () => {
     const result = detectarDeudasDurmiendo(
-      [deuda({ saldoPendiente: 2_000_000, monto: 500_000 })], '2026-05-19'
+      [deuda({ saldoTotal: 2_000_000, cuotaMensual: 500_000 })], '2026-05-19'
     );
     expect(result[0].sugerencia).toBe('retomar');
   });
@@ -783,9 +845,9 @@ describe('detectarDeudasDurmiendo', () => {
   it('ordena alta → media → baja, y por mayor saldo dentro del nivel', () => {
     const hoy = '2026-05-19';
     const compromisos = [
-      deuda({ id: 'd1', saldoPendiente: 1_000_000, fechaCreacion: '2026-03-01T00:00:00.000Z' }), // baja
-      deuda({ id: 'd2', saldoPendiente: 3_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
-      deuda({ id: 'd3', saldoPendiente: 2_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
+      deuda({ id: 'd1', saldoTotal: 1_000_000, fechaCreacion: '2026-03-01T00:00:00.000Z' }), // baja
+      deuda({ id: 'd2', saldoTotal: 3_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
+      deuda({ id: 'd3', saldoTotal: 2_000_000, fechaCreacion: '2025-09-01T00:00:00.000Z' }), // alta
     ];
     const result = detectarDeudasDurmiendo(compromisos, hoy);
     expect(result[0].id).toBe('d2'); // alta + mayor saldo
@@ -822,21 +884,21 @@ describe('detectarVencidosCompletos', () => {
     expect(detectarVencidosCompletos([comp()], null)).toEqual([]);
   });
 
-  it('detecta los tres tipos vencidos: fijo, deuda y agenda', () => {
+  it('detecta los tres tipos vencidos: fijo, deuda-entidad y deuda-personal', () => {
     const result = detectarVencidosCompletos([
-      comp({ id: 'a', tipo: 'fijo',   diaPago: 1 }),
-      comp({ id: 'b', tipo: 'deuda',  diaPago: 1 }),
-      comp({ id: 'c', tipo: 'agenda', diaPago: 1 }),
+      comp({ id: 'a', tipo: 'fijo',           diaPago: 1 }),
+      comp({ id: 'b', tipo: 'deuda-entidad',  diaPago: 1 }),
+      comp({ id: 'c', tipo: 'deuda-personal', diaPago: 1 }),
     ], '2026-05-15');
     expect(result).toHaveLength(3);
-    expect(result.map(r => r.tipo).sort()).toEqual(['agenda', 'deuda', 'fijo']);
+    expect(result.map(r => r.tipo).sort()).toEqual(['deuda-entidad', 'deuda-personal', 'fijo']);
   });
 
   it('expone el tipo en cada item para el render', () => {
     const result = detectarVencidosCompletos(
-      [comp({ tipo: 'deuda', diaPago: 2 })], '2026-05-15'
+      [comp({ tipo: 'deuda-entidad', diaPago: 2 })], '2026-05-15'
     );
-    expect(result[0].tipo).toBe('deuda');
+    expect(result[0].tipo).toBe('deuda-entidad');
   });
 
   it('no incluye compromisos cuyo dia de pago aun no llego', () => {

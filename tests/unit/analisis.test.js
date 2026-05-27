@@ -46,9 +46,10 @@ const meta = (overrides = {}) => ({
 });
 
 const deuda = (overrides = {}) => ({
-  id: 'd1', descripcion: 'Crédito vehículo', monto: 800_000,
-  frecuencia: 'Mensual', diaPago: 15, tipo: 'deuda', activo: true,
-  saldoPendiente: 12_000_000, ...overrides,
+  id: 'd1', descripcion: 'Crédito vehículo',
+  frecuencia: 'Mensual', diaPago: 15, tipo: 'deuda-entidad', activo: true,
+  saldoTotal: 12_000_000, cuotaMensual: 800_000, tasa: 0.20, tasaUnidad: 'EA',
+  ...overrides,
 });
 
 // ── calcularBalance() ─────────────────────────────────────────────
@@ -324,17 +325,17 @@ describe('calcularActivos()', () => {
 // ── calcularPasivos() ─────────────────────────────────────────────
 
 describe('calcularPasivos()', () => {
-  it('suma saldoPendiente de deudas activas', () => {
+  it('suma saldoTotal de deudas activas', () => {
     const r = calcularPasivos([deuda()]);
     expect(r.total).toBe(12_000_000);
     expect(r.cantidadDeudas).toBe(1);
     expect(r.deudasSinSaldo).toBe(0);
   });
 
-  it('cuenta deudas sin saldoPendiente como "sin saldo registrado"', () => {
+  it('cuenta deudas sin saldoTotal como "sin saldo registrado"', () => {
     const deudas = [
       deuda(),
-      deuda({ id: 'd2', saldoPendiente: undefined }),
+      deuda({ id: 'd2', saldoTotal: undefined }),
     ];
     const r = calcularPasivos(deudas);
     expect(r.total).toBe(12_000_000);
@@ -342,32 +343,41 @@ describe('calcularPasivos()', () => {
     expect(r.deudasSinSaldo).toBe(1);
   });
 
-  it('ignora compromisos que no son tipo "deuda"', () => {
+  it('ignora compromisos que no son deuda (entidad o personal)', () => {
     const comps = [
       deuda(),
       compromiso(), // tipo='fijo'
-      compromiso({ id: 'c2', tipo: 'agenda', saldoPendiente: 999_999 }),
     ];
     const r = calcularPasivos(comps);
     expect(r.total).toBe(12_000_000);
     expect(r.cantidadDeudas).toBe(1);
   });
 
+  it('incluye deuda-personal (no solo entidad)', () => {
+    const comps = [
+      deuda({ id: 'd1', tipo: 'deuda-entidad', saldoTotal: 5_000_000 }),
+      deuda({ id: 'd2', tipo: 'deuda-personal', saldoTotal: 2_000_000 }),
+    ];
+    const r = calcularPasivos(comps);
+    expect(r.total).toBe(7_000_000);
+    expect(r.cantidadDeudas).toBe(2);
+  });
+
   it('ignora deudas inactivas', () => {
     const deudas = [
       deuda(),
-      deuda({ id: 'd2', saldoPendiente: 999_999, activo: false }),
+      deuda({ id: 'd2', saldoTotal: 999_999, activo: false }),
     ];
     const r = calcularPasivos(deudas);
     expect(r.total).toBe(12_000_000);
     expect(r.cantidadDeudas).toBe(1);
   });
 
-  it('rechaza saldoPendiente no numérico o negativo', () => {
+  it('rechaza saldoTotal no numérico o negativo', () => {
     const deudas = [
-      deuda({ id: 'd1', saldoPendiente: 'abc' }),
-      deuda({ id: 'd2', saldoPendiente: -1_000_000 }),
-      deuda({ id: 'd3', saldoPendiente: 0 }),
+      deuda({ id: 'd1', saldoTotal: 'abc' }),
+      deuda({ id: 'd2', saldoTotal: -1_000_000 }),
+      deuda({ id: 'd3', saldoTotal: 0 }),
     ];
     const r = calcularPasivos(deudas);
     expect(r.total).toBe(0);

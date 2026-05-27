@@ -10,21 +10,59 @@ import { FRECUENCIAS } from '../../core/constants.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
-export const TIPOS_COMPROMISO = ['fijo', 'deuda', 'agenda'];
+/**
+ * Tipos vigentes (v6).
+ * - 'fijo'           → gasto recurrente con cuota fija (arriendo, servicios, suscripciones).
+ *                      Se crea desde la sección Agenda; la sección Compromisos no lo expone.
+ * - 'deuda-entidad'  → deuda con banco/fintech/tarjeta (tasa EA por ley).
+ * - 'deuda-personal' → préstamo de un particular o gota a gota (tasa mensual usual).
+ *
+ * Los tipos antiguos 'deuda' y 'agenda' se migran automáticamente en storage.js
+ * (v5 → v6) y nunca aparecen en datos vigentes.
+ */
+export const TIPOS_COMPROMISO = ['fijo', 'deuda-entidad', 'deuda-personal'];
+
+/** Tipos que la sección Compromisos crea/lista (solo deudas a partir de v6). */
+export const TIPOS_DEUDA = ['deuda-entidad', 'deuda-personal'];
 
 /** Etiqueta legible por tipo. */
 export const LABEL_TIPO = {
-  fijo:   'Gasto fijo',
-  deuda:  'Deuda',
-  agenda: 'Agenda',
+  'fijo':           'Gasto fijo',
+  'deuda-entidad':  'Deuda con entidad',
+  'deuda-personal': 'Deuda personal',
 };
 
 /** Emoji por tipo de compromiso. */
 export const ICONO_TIPO = {
-  fijo:   '🔁',
-  deuda:  '💳',
-  agenda: '📅',
+  'fijo':           '🔁',
+  'deuda-entidad':  '🏦',
+  'deuda-personal': '🤝',
 };
+
+/** Devuelve true si el tipo corresponde a una deuda (entidad o personal). */
+export function esDeuda(tipo) {
+  return tipo === 'deuda-entidad' || tipo === 'deuda-personal';
+}
+
+/**
+ * Convierte una tasa mensual a su equivalente efectivo anual exacto.
+ * tasaEA = (1 + tasaMensual)^12 - 1
+ * @param {number} tasaMensual decimal (0.10 = 10% mensual)
+ */
+export function tasaMensualToEA(tasaMensual) {
+  return Math.pow(1 + tasaMensual, 12) - 1;
+}
+
+/**
+ * Devuelve la tasa EA (decimal) de un compromiso de deuda según su `tasaUnidad`.
+ * Para fijos o sin `tasa` devuelve 0.
+ * @param {{ tasa?: number, tasaUnidad?: string }} c
+ */
+export function tasaEADe(c) {
+  const t = Number(c?.tasa);
+  if (!Number.isFinite(t) || t < 0) return 0;
+  return c.tasaUnidad === 'mensual' ? tasaMensualToEA(t) : t;
+}
 
 /**
  * Cuántas veces ocurre cada frecuencia en un mes calendario promedio.
@@ -54,10 +92,16 @@ export function compromisosActivos(compromisos) {
 
 /**
  * Proyecta el monto mensual equivalente de un compromiso.
+ * - Para fijo: aplica el factor de frecuencia sobre `monto` (cuota recurrente).
+ * - Para deudas (entidad/personal): `cuotaMensual` ya es lo que se paga al mes.
+ *
  * @param {import('../../core/state.js').Compromiso} compromiso
  * @returns {number} COP / mes equivalente.
  */
 export function calcularCompromisoMensual(compromiso) {
+  if (esDeuda(compromiso.tipo)) {
+    return Number(compromiso.cuotaMensual) || 0;
+  }
   const factor = FACTOR_MENSUAL[compromiso.frecuencia] ?? 0;
   return (compromiso.monto ?? 0) * factor;
 }
@@ -141,8 +185,10 @@ export function nivelAlertaMora(proximos) {
 /**
  * Valida los datos del formulario de compromiso.
  *
- * Los campos `saldoPendiente` y `tasaEA` son opcionales incluso para tipo='deuda'.
- * Si el usuario los deja vacíos se aceptan; si los llena deben ser válidos.
+ * Reglas v6:
+ * - tipo='fijo'           → requiere monto y frecuencia (Cuotas recurrentes).
+ * - tipo='deuda-entidad'  → requiere saldoTotal, cuotaMensual y tasa (% EA > 0).
+ * - tipo='deuda-personal' → requiere saldoTotal, cuotaMensual; tasa opcional (% mensual).
  *
  * @param {Record<string, string>} datos
  * @returns {string[]} Mensajes de error (vacío = válido).
@@ -153,12 +199,8 @@ export function validarCompromiso(datos) {
   if (!datos.descripcion?.trim()) {
     errores.push('La descripción del compromiso es obligatoria.');
   }
-  const monto = Number(datos.monto);
-  if (isNaN(monto) || monto <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
-  }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
-    errores.push('Debés elegir la frecuencia del compromiso.');
+    errores.push('Debés elegir la frecuencia.');
   }
   const diaPago = Number(datos.diaPago);
   if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31) {
@@ -168,18 +210,40 @@ export function validarCompromiso(datos) {
     errores.push('Debés elegir el tipo de compromiso.');
   }
 
-  // Validaciones opcionales para deudas (solo si el usuario completó los campos).
-  if (datos.tipo === 'deuda') {
-    if (datos.saldoPendiente !== '' && datos.saldoPendiente !== undefined) {
-      const saldo = Number(datos.saldoPendiente);
-      if (isNaN(saldo) || saldo < 0) {
-        errores.push('El saldo pendiente debe ser un número igual o mayor a 0.');
+  if (datos.tipo === 'fijo') {
+    const monto = Number(datos.monto);
+    if (isNaN(monto) || monto <= 0) {
+      errores.push('El monto debe ser un número mayor a 0.');
+    }
+  } else if (esDeuda(datos.tipo)) {
+    const saldo = Number(datos.saldoTotal);
+    if (isNaN(saldo) || saldo <= 0) {
+      errores.push('El saldo total que aún debés debe ser mayor a 0.');
+    }
+    const cuota = Number(datos.cuotaMensual);
+    if (isNaN(cuota) || cuota <= 0) {
+      errores.push('La cuota mensual debe ser un número mayor a 0.');
+    }
+    const tasa = Number(datos.tasa);
+    const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null;
+    if (datos.tipo === 'deuda-entidad') {
+      if (!tieneTasa || isNaN(tasa) || tasa < 0) {
+        errores.push('La tasa EA es obligatoria para deudas con entidad.');
+      } else if (tasa > 200) {
+        errores.push('La tasa EA parece demasiado alta (más de 200%). Verificá el valor.');
+      }
+    } else if (tieneTasa) {
+      // Personal: opcional pero si la ponen, validar rango razonable (mensual).
+      if (isNaN(tasa) || tasa < 0) {
+        errores.push('La tasa mensual debe ser un número mayor o igual a 0.');
+      } else if (tasa > 100) {
+        errores.push('La tasa mensual parece demasiado alta (más de 100% mensual). Verificá el valor.');
       }
     }
-    if (datos.tasaEA !== '' && datos.tasaEA !== undefined) {
-      const tasa = Number(datos.tasaEA);
-      if (isNaN(tasa) || tasa < 0 || tasa > 200) {
-        errores.push('La tasa EA debe ser un porcentaje entre 0 y 200.');
+    if (tieneTasa) {
+      const unidad = datos.tasaUnidad;
+      if (unidad !== 'EA' && unidad !== 'mensual') {
+        errores.push('La unidad de tasa debe ser EA o mensual.');
       }
     }
   }
@@ -193,30 +257,39 @@ export function validarCompromiso(datos) {
  * Convierte datos crudos del formulario al shape de S.compromisos.
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
- * Para tipo='deuda', incluye campos opcionales solo si tienen valor válido:
- * - `saldoPendiente` - COP (número ≥ 0).
- * - `tasaEA`         - tasa efectiva anual como decimal 0-1 (se convierte desde %).
+ * v6:
+ * - 'fijo'           → { monto, frecuencia, diaPago }
+ * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, tasa, tasaUnidad='EA' }
+ * - 'deuda-personal' → { saldoTotal, cuotaMensual, tasa?, tasaUnidad? }
  *
  * @param {Record<string, string>} datos
  */
 export function normalizarCompromiso(datos) {
   const base = {
     descripcion: datos.descripcion.trim(),
-    monto:       Number(datos.monto),
     frecuencia:  datos.frecuencia,
     diaPago:     Number(datos.diaPago),
     tipo:        datos.tipo,
     activo:      true,
   };
 
-  if (datos.tipo === 'deuda') {
-    const saldo = Number(datos.saldoPendiente);
-    if (datos.saldoPendiente !== '' && datos.saldoPendiente !== undefined && !isNaN(saldo) && saldo >= 0) {
-      base.saldoPendiente = saldo;
-    }
-    const tasaPct = Number(datos.tasaEA);
-    if (datos.tasaEA !== '' && datos.tasaEA !== undefined && !isNaN(tasaPct) && tasaPct >= 0) {
-      base.tasaEA = tasaPct / 100;
+  if (datos.tipo === 'fijo') {
+    base.monto = Number(datos.monto);
+    return base;
+  }
+
+  if (esDeuda(datos.tipo)) {
+    base.saldoTotal   = Number(datos.saldoTotal);
+    base.cuotaMensual = Number(datos.cuotaMensual);
+    const tasaPct = Number(datos.tasa);
+    const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null
+      && !isNaN(tasaPct) && tasaPct >= 0;
+    if (datos.tipo === 'deuda-entidad') {
+      base.tasa       = tieneTasa ? tasaPct / 100 : 0;
+      base.tasaUnidad = 'EA';
+    } else {
+      base.tasa       = tieneTasa ? tasaPct / 100 : 0;
+      base.tasaUnidad = tieneTasa ? (datos.tasaUnidad || 'mensual') : 'mensual';
     }
   }
 
@@ -307,7 +380,7 @@ export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
  * actividad desde su creación. Util para recordar revisarlas o liquidarlas.
  *
  * Nota: Finko no persiste historial de pagos en compromisos.
- * "Durmiendo" se define como: tipo='deuda', activo, saldoPendiente > 0,
+ * "Durmiendo" se define como: deuda (entidad o personal), activa, saldoTotal > 0,
  * y fecha de creación >= umbral meses atrás sin actualización de saldo.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
@@ -316,7 +389,7 @@ export function detectarFijosSinPagarEsteMes(compromisos, hoyISO, config = {}) {
  * @param {number} [config.mesesUmbral=2] Meses mínimos de antigüedad para marcar como durmiendo.
  * @returns {Array<{
  *   id: string, descripcion: string, tipo: string,
- *   saldoPendiente: number, cuota: number,
+ *   saldoTotal: number, cuota: number,
  *   mesesDesdeCreacion: number, severidad: 'baja'|'media'|'alta',
  *   sugerencia: 'liquidar'|'retomar'
  * }>}
@@ -338,9 +411,9 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
   for (const c of compromisos) {
     if (!c || typeof c !== 'object') continue;
     if (c.activo === false) continue;
-    if (c.tipo !== 'deuda') continue;
+    if (!esDeuda(c.tipo)) continue;
 
-    const saldo = Number(c.saldoPendiente);
+    const saldo = Number(c.saldoTotal);
     if (!Number.isFinite(saldo) || saldo <= 0) continue;
 
     if (typeof c.fechaCreacion !== 'string') continue;
@@ -358,13 +431,13 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
       : meses >= 3               ? 'media'
       :                            'baja';
 
-    const cuota = Number(c.monto) || 0;
+    const cuota = Number(c.cuotaMensual) || 0;
 
     out.push({
       id:                 c.id,
       descripcion:        c.descripcion || 'Sin nombre',
       tipo:               c.tipo,
-      saldoPendiente:     saldo,
+      saldoTotal:         saldo,
       cuota,
       mesesDesdeCreacion: meses,
       severidad,
@@ -376,7 +449,7 @@ export function detectarDeudasDurmiendo(compromisos, hoyISO, config = {}) {
   out.sort((a, b) => {
     const r = rank[a.severidad] - rank[b.severidad];
     if (r !== 0) return r;
-    return b.saldoPendiente - a.saldoPendiente;
+    return b.saldoTotal - a.saldoTotal;
   });
   return out;
 }
@@ -513,23 +586,25 @@ const MAX_MESES_SIMULACION = 600;
 
 /**
  * Filtra compromisos que pueden entrar en una estrategia de pago.
- * Requiere: tipo='deuda', activo, saldoPendiente>0, tasaEA>=0, monto>0.
+ * Requiere: deuda (entidad o personal), activo, saldoTotal>0, cuotaMensual>0.
+ * La tasa se convierte a EA si está en mensual; si no hay tasa válida, queda 0.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
- * @returns {Array<{ id: string, descripcion: string, saldo: number, tasaEA: number, cuota: number }>}
+ * @returns {Array<{ id: string, descripcion: string, tipo: string,
+ *                   saldo: number, tasaEA: number, cuota: number }>}
  */
 export function filtrarDeudasPagables(compromisos) {
   return compromisosActivos(compromisos)
-    .filter(c => c.tipo === 'deuda')
-    .filter(c => Number.isFinite(c.saldoPendiente) && c.saldoPendiente > 0)
-    .filter(c => Number.isFinite(c.tasaEA) && c.tasaEA >= 0)
-    .filter(c => Number.isFinite(c.monto) && c.monto > 0)
+    .filter(c => esDeuda(c.tipo))
+    .filter(c => Number.isFinite(c.saldoTotal) && c.saldoTotal > 0)
+    .filter(c => Number.isFinite(c.cuotaMensual) && c.cuotaMensual > 0)
     .map(c => ({
       id:          c.id,
       descripcion: c.descripcion,
-      saldo:       c.saldoPendiente,
-      tasaEA:      c.tasaEA,
-      cuota:       c.monto,
+      tipo:        c.tipo,
+      saldo:       c.saldoTotal,
+      tasaEA:      tasaEADe(c),
+      cuota:       c.cuotaMensual,
     }));
 }
 

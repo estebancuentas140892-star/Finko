@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-26 (fix: Vencidos no marca recién creados + re-render dashboard)
+> Última actualización: 2026-05-27 (refactor: Compromisos v6 - solo deudas + estrategia arriba)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 920/920 verdes |
+| Tests unitarios + integración | 926/926 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(compromisos) - Rediseño v6: solo deudas (entidad / personal) + estrategia arriba · 2026-05-27
+Rediseño completo del dominio Compromisos a partir del feedback del usuario.
+
+**Cambios clave:**
+- **Schema v5 → v6 con migración:** `deuda` → `deuda-entidad` (preserva tasa EA); `agenda` → `fijo` Única vez. Nuevos campos para deudas: `saldoTotal`, `cuotaMensual`, `tasa`, `tasaUnidad` ('EA' o 'mensual').
+- **Sección Compromisos = solo deudas.** El form crea Deuda con entidad (banco/tarjeta, tasa EA obligatoria) o Deuda personal (familiar/gota a gota, tasa opcional en % mensual).
+- **Estrategia arriba:** Avalancha / Bola de Nieve define el orden de pago. La lista debajo muestra cada deuda con badge 1°, 2°, 3°… según la estrategia activa.
+- **Avalancha se deshabilita** si no hay ninguna deuda con tasa > 0 (no aporta info).
+- **Eliminado el nudge superior** "1 pago vence en X días" porque ya vive en el Dashboard (Próximas prioridades + Vencidos).
+- **Cross-domain:** `analisis::calcularPasivos`, `tesoreria::distribución prima`, `detectarDeudasDurmiendo` adaptados al nuevo modelo.
+
+**Pendiente próxima sesión (Tarea 2):** mover el botón "+ Agregar gasto fijo" a la sección Agenda con form simplificado. Los `tipo='fijo'` ya conviven en `S.compromisos`; solo falta el punto de entrada en Agenda.
+
+**Archivos principales:** `state.js`, `storage.js`, `compromisos/{logic,view,index}.js`, `analisis/logic.js`, `tesoreria/view.js`, `form-errors.js`, `index.html`, `styles/components.css`, tests de storage/state/compromisos/analisis.
+
+**Tests:** 926/926 verdes (+4 por la migración).
+**Service Worker:** v60 → v61.
 
 ### fix(dash) - Vencidos no marca recién creados + re-render desde compromisos · 2026-05-26
 Dos bugs sobre el dashboard nuevo:
@@ -129,29 +147,6 @@ Si la categoría seleccionada no tiene gastos muestra "Sin gastos en esta catego
 - `tests/unit/gastos.test.js`: +8 tests para `filtrarGastos`
 
 **Tests:** 901/901 verdes.
-
-### feat(dash) - Card "Hoy" con mini-agenda del día en el Dashboard · 2026-05-23
-Nueva card visible entre "Gasto rápido" y el bento de métricas. Muestra los compromisos que
-vencen hoy (hasta 3, con ícono de tipo y monto, "+N más" si hay más). Si no hay eventos hoy,
-muestra el próximo en los siguientes 14 días con la distancia en días. Si no hay nada próximo,
-muestra mensaje de tranquilidad. Link "Ver agenda" directo al calendario.
-
-La card desaparece automáticamente si el usuario no tiene compromisos activos (sin ruido para usuarios nuevos).
-Se actualiza con cada cambio de estado (via `registrarRender`) y al navegar al Dashboard (hashchange).
-
-**Archivos:**
-- `modules/dominio/agenda/logic.js`: ya tenía `eventosDeHoy()` y `eventosEnProximos()` (lógica pura)
-- `modules/dominio/agenda/view.js`: nueva función exportada `renderCardHoy()`; import actualizado
-- `modules/dominio/agenda/index.js`: importa `registrarRender` y `renderCardHoy`; hashchange maneja
-  'agenda' y 'dash'; `registrarRender(() => renderSmart(renderCardHoy, 'dash'))` sincroniza con estado global
-- `index.html`: `<div id="panel-hoy">` entre `.quick-add` y `#bento-dash`
-- `styles/components.css`: bloque `.hoy-card` (header, title, link, list, item, dot, name, amount,
-  more, empty, prox)
-- `service-worker.js`: v55→v56
-- `tests/unit/agenda.test.js`: +13 tests (eventosDeHoy: 5 casos; eventosEnProximos: 7 casos con
-  vi.useFakeTimers); import extendido a las 4 funciones exportadas
-
-**Tests:** 893/893 verdes.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

@@ -7,6 +7,61 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(compromisos) - Rediseño v6: solo deudas (entidad / personal) + estrategia arriba · 2026-05-27
+
+Rediseño de la sección Compromisos a partir del feedback del usuario.
+
+**Motivación:**
+- La sección "Compromisos" mezclaba gastos fijos (arriendo) con deudas (tarjeta, gota a gota), confundiendo dos conceptos distintos.
+- Los campos saldoPendiente y tasaEA eran opcionales y se entendían mal: la gente interpretaba `monto` como "lo que debo" cuando en realidad era la cuota mensual.
+- En Colombia los préstamos personales (gota a gota) cobran tasa **mensual** (5-20%), no anual. El form solo permitía EA.
+- La card de estrategia Avalancha/Bola de Nieve vivía abajo y solo aparecía con ≥2 deudas. No definía el orden de la lista.
+
+**Cambios:**
+
+1. **Schema v5 → v6 con migración automática:**
+   - `tipo: 'deuda'` → `'deuda-entidad'` (banco/fintech/tarjeta).
+   - `tipo: 'agenda'` → `'fijo'` con `frecuencia='Única vez'`.
+   - `tipo: 'fijo'` sin cambios.
+   - Nuevos campos para deudas: `saldoTotal` (lo que aún se debe), `cuotaMensual` (lo que se paga al mes), `tasa` + `tasaUnidad` ('EA' o 'mensual').
+   - Migración mapea: `saldoTotal = saldoPendiente ?? monto * 12`, `cuotaMensual = monto`, `tasa = tasaEA ?? 0`, `tasaUnidad = 'EA'`.
+
+2. **Sección Compromisos (solo deudas):**
+   - Formulario nuevo: tipo (entidad/personal) + descripción + saldoTotal + cuotaMensual + tasa (con selector EA/mensual) + frecuencia + diaPago.
+   - Validación: deuda-entidad exige tasa EA obligatoria; deuda-personal puede tener tasa opcional (mensual usual para gota a gota).
+   - Card de estrategia subida al tope: define el orden de pago aplicado a la lista (badge 1°, 2°, 3°…).
+   - Avalancha se deshabilita si no hay ninguna deuda con tasa > 0 (no aporta info).
+   - Eliminado el nudge superior "1 pago vence en X días" (ya vive en el Dashboard).
+
+3. **Cross-domain:**
+   - `analisis/logic.js::calcularPasivos`: usa `saldoTotal` y acepta deuda-entidad + deuda-personal.
+   - `tesoreria/view.js`: distribución de prima detecta ambos tipos de deuda.
+   - `compromisos/logic.js::detectarDeudasDurmiendo`: nuevo modelo.
+   - `infra/form-errors.js`: mapea errores de los nuevos campos.
+
+**Archivos:**
+- `modules/core/state.js`: typedef Compromiso actualizado; `_version: 6`.
+- `modules/core/storage.js`: migración v5→v6 + bump SCHEMA_VERSION.
+- `modules/dominio/compromisos/logic.js`: nuevos catálogos (TIPOS_DEUDA, esDeuda, tasaMensualToEA, tasaEADe); validar/normalizar reescritos; calcularCompromisoMensual y filtrarDeudasPagables adaptados; detectarDeudasDurmiendo usa saldoTotal/cuotaMensual.
+- `modules/dominio/compromisos/view.js`: renderFormCompromiso reescrito (solo deudas); renderListaCompromisos ordena según estrategia; _renderCompromisoItem muestra saldo+cuota+tasa+badge orden; renderEstrategiaPago vive arriba y aparece desde 1 deuda; renderNudgeMoraInminente eliminado.
+- `modules/dominio/compromisos/index.js`: removido import del nudge; lista se re-renderiza al cambiar estrategia.
+- `modules/dominio/analisis/logic.js`: calcularPasivos usa saldoTotal y filtra ambos tipos de deuda.
+- `modules/dominio/tesoreria/view.js`: detección de deudas para distribución de prima.
+- `modules/infra/form-errors.js`: mapeo de campos saldoTotal/cuotaMensual/tasa/tasaUnidad.
+- `index.html`: estrategia arriba, lista abajo, nudge superior removido, botón "+ Nueva deuda".
+- `styles/components.css`: `.tasa-input-group`, `.orden-badge`, estado disabled de Avalancha.
+- `tests/unit/storage.test.js`: +4 tests para migración v5→v6.
+- `tests/unit/state.test.js`: `_version` actualizado a 6.
+- `tests/unit/compromisos.test.js`: fixtures + tests adaptados al nuevo modelo (validar, normalizar, filtrarDeudasPagables, detectarDeudasDurmiendo, detectarVencidosCompletos, detectarFijosSinPagarEsteMes).
+- `tests/unit/analisis.test.js`: deuda fixture + calcularPasivos adaptados.
+- `service-worker.js`: v60 → v61.
+
+**Tests:** 926/926 verdes (+4 nuevos por la migración).
+
+**Pendiente para próxima sesión (Tarea 2):** mover el botón "+ Agregar gasto fijo" a la sección Agenda con un formulario simplificado. Los tipos `fijo` ya existen en S.compromisos; solo falta el punto de entrada.
+
+---
+
 ### fix(dash) - Vencidos no marca compromisos recién creados + re-render desde compromisos · 2026-05-26
 
 Dos bugs reportados sobre el dashboard nuevo:

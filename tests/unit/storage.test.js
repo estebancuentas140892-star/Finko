@@ -146,6 +146,86 @@ describe('Migración idempotente', () => {
 
     expect(S._version).toBe(SCHEMA_VERSION);
   });
+
+  it('v5 → v6: tipo=deuda se migra a deuda-entidad con saldoTotal+cuotaMensual+tasa+tasaUnidad', () => {
+    const v5 = {
+      ...createInitialState(),
+      _version: 5,
+      compromisos: [{
+        id: 'd1', descripcion: 'Tarjeta visa', tipo: 'deuda',
+        monto: 300_000, frecuencia: 'Mensual', diaPago: 5, activo: true,
+        fechaCreacion: '2025-12-01T00:00:00.000Z',
+        saldoPendiente: 5_000_000, tasaEA: 0.28,
+      }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v5));
+
+    loadData();
+
+    expect(S._version).toBe(6);
+    expect(S.compromisos[0].tipo).toBe('deuda-entidad');
+    expect(S.compromisos[0].saldoTotal).toBe(5_000_000);
+    expect(S.compromisos[0].cuotaMensual).toBe(300_000);
+    expect(S.compromisos[0].tasa).toBe(0.28);
+    expect(S.compromisos[0].tasaUnidad).toBe('EA');
+    expect(S.compromisos[0].monto).toBeUndefined();
+    expect(S.compromisos[0].saldoPendiente).toBeUndefined();
+    expect(S.compromisos[0].tasaEA).toBeUndefined();
+  });
+
+  it('v5 → v6: deuda sin saldoPendiente estima saldoTotal como monto*12', () => {
+    const v5 = {
+      ...createInitialState(),
+      _version: 5,
+      compromisos: [{
+        id: 'd2', descripcion: 'Crédito viejo', tipo: 'deuda',
+        monto: 200_000, frecuencia: 'Mensual', diaPago: 10, activo: true,
+        fechaCreacion: '2025-12-01T00:00:00.000Z',
+      }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v5));
+    loadData();
+
+    expect(S.compromisos[0].saldoTotal).toBe(2_400_000);
+    expect(S.compromisos[0].cuotaMensual).toBe(200_000);
+    expect(S.compromisos[0].tasa).toBe(0);
+    expect(S.compromisos[0].tasaUnidad).toBe('EA');
+  });
+
+  it('v5 → v6: tipo=agenda se convierte a fijo con frecuencia=Única vez', () => {
+    const v5 = {
+      ...createInitialState(),
+      _version: 5,
+      compromisos: [{
+        id: 'a1', descripcion: 'Cumple papá', tipo: 'agenda',
+        monto: 50_000, frecuencia: 'Mensual', diaPago: 20, activo: true,
+        fechaCreacion: '2026-01-01T00:00:00.000Z',
+      }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v5));
+    loadData();
+
+    expect(S.compromisos[0].tipo).toBe('fijo');
+    expect(S.compromisos[0].frecuencia).toBe('Única vez');
+    expect(S.compromisos[0].monto).toBe(50_000);
+  });
+
+  it('v5 → v6: tipo=fijo no se toca', () => {
+    const fijo = {
+      id: 'f1', descripcion: 'Arriendo', tipo: 'fijo',
+      monto: 1_500_000, frecuencia: 'Mensual', diaPago: 1, activo: true,
+      fechaCreacion: '2025-01-01T00:00:00.000Z',
+    };
+    const v5 = {
+      ...createInitialState(),
+      _version: 5,
+      compromisos: [{ ...fijo }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v5));
+    loadData();
+
+    expect(S.compromisos[0]).toEqual(fijo);
+  });
 });
 
 describe('save() - debounce', () => {

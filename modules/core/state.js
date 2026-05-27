@@ -57,19 +57,23 @@ import { SMMLV } from './constants.js';
  * @typedef {Object} Compromiso
  * @property {string} id
  * @property {string} descripcion
- * @property {number} monto              COP. Cuota mensual (no el saldo total).
  * @property {string} frecuencia         Ver FRECUENCIAS.
  * @property {number} diaPago            1-31.
- * @property {string} tipo               'fijo' | 'deuda' | 'agenda'.
+ * @property {string} tipo               'fijo' | 'deuda-entidad' | 'deuda-personal'.
+ *                                       Los antiguos 'deuda' y 'agenda' se migran en v6.
  * @property {boolean} activo
  * @property {string} fechaCreacion      ISO 8601.
- * @property {number} [saldoPendiente]   COP. Solo para tipo='deuda'. Saldo total
- *                                       que aún falta pagar. Si no está, la deuda
- *                                       no se cuenta en el patrimonio neto.
- * @property {number} [tasaEA]           Tasa efectiva anual (0-1). Solo para
- *                                       tipo='deuda'. Opcional, reservada para
- *                                       cálculos avanzados futuros (alertas de
- *                                       usura, plan de amortización).
+ *
+ * @property {number} [monto]            COP. Cuota fija mensual. Solo para tipo='fijo'.
+ *
+ * @property {number} [saldoTotal]       COP. Lo que aún se debe en total. Solo para
+ *                                       deudas. Se descuenta al pagar (manual).
+ * @property {number} [cuotaMensual]     COP. Lo que se paga al mes. Solo para deudas.
+ *                                       Es lo que se proyecta como gasto del mes.
+ * @property {number} [tasa]             Decimal 0-1 según `tasaUnidad`. Solo deudas.
+ * @property {string} [tasaUnidad]       'EA' (anual, banco/tarjeta) o 'mensual'
+ *                                       (gota a gota, préstamo personal). Solo deudas.
+ *
  * @property {string}  [cuentaId]        FK a Cuenta.id. Solo se setea cuando
  *                                       el compromiso fue creado automáticamente
  *                                       por tesoreria como cuota de manejo (v5).
@@ -143,7 +147,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 5,
+    _version: 6,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,

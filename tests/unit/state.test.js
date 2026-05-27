@@ -22,8 +22,8 @@ describe('S - schema v3 inicial', () => {
     expect(S).toHaveProperty('personales');
   });
 
-  it('arranca con _version = 5', () => {
-    expect(S._version).toBe(5);
+  it('arranca con _version = 6', () => {
+    expect(S._version).toBe(6);
   });
 
   it('arranca con onboarded en false', () => {

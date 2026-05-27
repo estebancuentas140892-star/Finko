@@ -1887,6 +1887,33 @@ textarea.input {
   gap: var(--fk-space-2);
 }
 .estrategia-card__toggle .btn { flex: 1; }
+.estrategia-card__toggle .btn[disabled],
+.estrategia-card__toggle .btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* v6: input + select para tasa con unidad (% EA vs % mensual). */
+.tasa-input-group {
+  display: flex;
+  gap: var(--fk-space-2);
+}
+.tasa-input-group .input:first-child { flex: 2; }
+.tasa-input-group .input:last-child  { flex: 1; min-width: 0; }
+
+/* v6: badge con la posición de la deuda dentro de la estrategia activa. */
+.orden-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--fk-accent);
+  color: var(--fk-bg);
+  font-weight: 700;
+  font-size: var(--fk-text-sm);
+}
 .estrategia-card__hint {
   margin: 0;
   color: var(--fk-text-muted);

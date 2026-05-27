@@ -12,14 +12,15 @@ import {
   proximoVencimiento,
   urgencia,
   compromisosProximos,
-  nivelAlertaMora,
   filtrarDeudasPagables,
   compararEstrategias,
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
   agruparPorDiasRestantes,
-  TIPOS_COMPROMISO,
+  esDeuda,
+  tasaEADe,
+  TIPOS_DEUDA,
   LABEL_TIPO,
   ICONO_TIPO,
 } from './logic.js';
@@ -29,55 +30,6 @@ const _uiEstrategia = {
   extraMensual: 0,
   estrategia:   'avalancha',
 };
-
-// ── NUDGE MORA INMINENTE (G.3.F5) ────────────────────────────────
-
-/**
- * Renderiza (o limpia) el nudge de mora inminente en `#nudge-compromisos`.
- * Aparece cuando hay ≥ 1 compromiso activo con vencimiento en ≤ 5 dias.
- * - Nivel `nudge-high`   → alguno vence en ≤ 3 dias.
- * - Nivel `nudge-medium` → todos entre 4 y 5 dias.
- * No-op si el contenedor no existe.
- */
-export function renderNudgeMoraInminente() {
-  const el = document.getElementById('nudge-compromisos');
-  if (!el) return;
-
-  const proximos = compromisosProximos(S.compromisos, 5);
-  const nivel    = nivelAlertaMora(proximos);
-
-  if (!nivel) {
-    el.innerHTML = '';
-    return;
-  }
-
-  const icono  = nivel === 'high' ? '⚠️' : '🕐';
-  const n      = proximos.length;
-  const cuantos = n === 1 ? '1 pago vence' : `${n} pagos vencen`;
-  const titulo  = nivel === 'high'
-    ? `${cuantos} muy pronto`
-    : `${cuantos} en los proximos 5 dias`;
-
-  const items = proximos.map(c => {
-    const desc     = _esc(c.descripcion);
-    const diasLabel = c.diasRestantes === 0
-      ? 'vence hoy'
-      : c.diasRestantes === 1
-      ? 'vence manana'
-      : `vence en ${c.diasRestantes} dias`;
-    return `<p class="nudge__desc"><strong>${desc}</strong>: ${diasLabel} (${f(c.monto)})</p>`;
-  }).join('');
-
-  el.innerHTML = `
-    <div class="nudge ${nivel === 'high' ? 'nudge-high' : 'nudge-medium'}"
-         role="alert" aria-live="polite">
-      <span class="nudge__icon" aria-hidden="true">${icono}</span>
-      <div class="nudge__body">
-        <p class="nudge__title">${titulo}</p>
-        ${items}
-      </div>
-    </div>`;
-}
 
 // ── ALERTA: FIJOS SIN PAGAR ESTE MES (G.1) ───────────────────────
 
@@ -179,37 +131,75 @@ export function renderAlertaDeudasDurmiendo() {
     </div>`;
 }
 
-// ── LISTA DE COMPROMISOS ─────────────────────────────────────────
+// ── LISTA DE DEUDAS ──────────────────────────────────────────────
 
 /**
- * Renderiza la lista de compromisos en `#lista-compromisos`.
+ * Renderiza la lista de deudas en `#lista-compromisos`.
+ *
+ * v6: la sección Compromisos solo muestra deudas (entidad + personal).
+ * Los gastos fijos se gestionan desde Agenda.
+ *
+ * Orden:
+ *  - Si hay ≥ 2 deudas pagables con la estrategia activa, se respeta el orden
+ *    de pago de la estrategia (avalancha = tasa↓, bola = saldo↑).
+ *  - Si no, se ordena por urgencia de vencimiento (días al próximo pago).
+ *
  * No-op si el contenedor no existe.
  */
 export function renderListaCompromisos() {
   const el = document.getElementById('lista-compromisos');
   if (!el) return;
 
-  const activos = compromisosActivos(S.compromisos);
-  // Ordenar: más urgentes primero.
-  const ordenados = [...activos].sort(
-    (a, b) => proximoVencimiento(a) - proximoVencimiento(b)
-  );
+  const activos = compromisosActivos(S.compromisos).filter(c => esDeuda(c.tipo));
 
-  el.innerHTML = ordenados.length === 0
-    ? _renderEmptyState()
-    : ordenados.map(_renderCompromisoItem).join('');
+  if (activos.length === 0) {
+    el.innerHTML = _renderEmptyState();
+    return;
+  }
+
+  // Orden estratégico: si la estrategia tiene un orden definido para las deudas
+  // pagables, las priorizamos según ese orden (1°, 2°, 3°…). El resto va al final
+  // por urgencia.
+  const pagables = filtrarDeudasPagables(S.compromisos);
+  let ordenEstrategia = null;
+  if (pagables.length >= 1) {
+    const { extraMensual, estrategia } = _uiEstrategia;
+    const sortFn = estrategia === 'bolaNieve'
+      ? (a, b) => a.saldo - b.saldo
+      : (a, b) => b.tasaEA - a.tasaEA;
+    const ordenadas = [...pagables].sort(sortFn);
+    ordenEstrategia = new Map(ordenadas.map((d, i) => [d.id, i + 1]));
+    void extraMensual; // referenciado para que ESLint no se queje si quedara unused
+  }
+
+  const ordenados = [...activos].sort((a, b) => {
+    const posA = ordenEstrategia?.get(a.id) ?? Infinity;
+    const posB = ordenEstrategia?.get(b.id) ?? Infinity;
+    if (posA !== posB) return posA - posB;
+    return proximoVencimiento(a) - proximoVencimiento(b);
+  });
+
+  el.innerHTML = ordenados.map((c) => {
+    const orden = ordenEstrategia?.get(c.id) ?? null;
+    return _renderCompromisoItem(c, orden);
+  }).join('');
 }
 
-/** @param {import('../../core/state.js').Compromiso} compromiso */
-function _renderCompromisoItem(compromiso) {
+/**
+ * @param {import('../../core/state.js').Compromiso} compromiso
+ * @param {number | null} ordenEstrategia 1-based: posición en la estrategia activa.
+ */
+function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const desc     = _esc(compromiso.descripcion);
-  const tipo     = compromiso.tipo ?? 'fijo';
-  const icono    = _esc(ICONO_TIPO[tipo] ?? '🔁');
+  const tipo     = compromiso.tipo;
+  const icono    = _esc(ICONO_TIPO[tipo] ?? '💳');
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
   const dias     = proximoVencimiento(compromiso);
   const nivel    = urgencia(compromiso);
-  const mensual  = calcularCompromisoMensual(compromiso);
+  const cuota    = Number(compromiso.cuotaMensual) || 0;
+  const saldo    = Number(compromiso.saldoTotal) || 0;
+  const tasaEA   = tasaEADe(compromiso) * 100;
 
   const chipClase = nivel === 'urgente'
     ? 'chip chip--danger'
@@ -223,43 +213,41 @@ function _renderCompromisoItem(compromiso) {
     ? 'Mañana'
     : `${dias} días`;
 
+  // Tasa mostrada en la unidad original para que coincida con la entrada.
+  const tasaMostrada = compromiso.tasa > 0
+    ? (compromiso.tasaUnidad === 'mensual'
+        ? `${(compromiso.tasa * 100).toFixed(2)}% mensual (~${tasaEA.toFixed(1)}% EA)`
+        : `${tasaEA.toFixed(1)}% EA`)
+    : 'sin interés';
+
   const subtitleParts = [
     `Día ${compromiso.diaPago} · ${frec}`,
     label,
+    tasaMostrada,
   ];
-  if (mensual !== compromiso.monto) {
-    subtitleParts.push(`${f(mensual)}/mes`);
-  }
 
-  // Mostrar saldo pendiente de la deuda cuando está disponible.
-  let saldoHtml = '';
-  if (tipo === 'deuda') {
-    const saldo = Number(compromiso.saldoPendiente);
-    if (Number.isFinite(saldo) && saldo > 0) {
-      subtitleParts.push(`Saldo: ${f(saldo)}`);
-    } else {
-      saldoHtml = `<p class="list-item__hint">Registrá el saldo para calcular tu patrimonio neto</p>`;
-    }
-  }
+  const ordenBadge = ordenEstrategia
+    ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`
+    : '';
 
   return `
     <article class="list-item" data-id="${_esc(compromiso.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icono}</div>
+      <div class="list-item__icon" aria-hidden="true">${ordenBadge || icono}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}
           <span class="${chipClase}" aria-label="Vence en ${diasLabel}">${diasLabel}</span>
         </p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        ${saldoHtml}
+        <p class="list-item__hint">Saldo: ${f(saldo)} · Cuota: ${f(cuota)}/mes</p>
       </div>
       <div class="list-item__meta">
-        <p class="list-item__amount">${f(compromiso.monto)}</p>
+        <p class="list-item__amount">${f(saldo)}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-compromiso"
                 data-id="${_esc(compromiso.id)}"
-                aria-label="Eliminar compromiso ${desc}">✕</button>
+                aria-label="Eliminar deuda ${desc}">✕</button>
       </div>
     </article>`;
 }
@@ -267,86 +255,101 @@ function _renderCompromisoItem(compromiso) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">🔗</p>
-      <p class="empty-state__title">Nada que pagar... por ahora</p>
-      <p class="empty-state__desc">Agregá tu arriendo, servicios, créditos y cuotas. Finko los ordena por fecha para que nunca llegues tarde a un vencimiento.</p>
-      <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar compromiso</button>
-      <p class="empty-state__tip">💡 Tip: los compromisos tipo "deuda" se descuentan de tu patrimonio neto en Análisis.</p>
+      <p class="empty-state__icon" aria-hidden="true">💳</p>
+      <p class="empty-state__title">Sin deudas registradas</p>
+      <p class="empty-state__desc">Agregá tus créditos con entidad (banco, tarjeta) o personales (familiar, gota a gota). Finko te muestra el orden óptimo de pago según la estrategia que elijas.</p>
+      <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar deuda</button>
+      <p class="empty-state__tip">💡 Tip: los gastos fijos recurrentes (arriendo, servicios) se agregan desde la sección Agenda.</p>
     </div>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
- * Devuelve el HTML del formulario de nuevo compromiso.
+ * Devuelve el HTML del formulario de nueva deuda (v6).
+ *
+ * La sección Compromisos solo crea deudas. Los gastos fijos van por Agenda.
+ *
  * @returns {string}
  */
 export function renderFormCompromiso() {
   const frecOpts = FRECUENCIAS
-    .map(fr => `<option value="${_esc(fr)}">${_esc(fr)}</option>`)
+    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
-  const tipoOpts = TIPOS_COMPROMISO
+  const tipoOpts = TIPOS_DEUDA
     .map(t => `<option value="${_esc(t)}">${_esc(LABEL_TIPO[t])}</option>`)
     .join('');
+
+  const usura = tasaUsuraVigente();
 
   return `
     <form id="form-compromiso" novalidate>
       <div class="form-group">
+        <label for="comp-tipo" class="label">Tipo de deuda</label>
+        <select id="comp-tipo" name="tipo" class="input" required aria-required="true">
+          <option value="">Seleccionar…</option>
+          ${tipoOpts}
+        </select>
+        <p class="form-hint">
+          🏦 <strong>Entidad</strong>: banco, fintech, tarjeta de crédito.
+          🤝 <strong>Personal</strong>: familiar, amigo, gota a gota.
+        </p>
+      </div>
+
+      <div class="form-group">
         <label for="comp-descripcion" class="label">Descripción</label>
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Arriendo apartamento" required aria-required="true" autocomplete="off" />
+               placeholder="Ej. Tarjeta Visa Bancolombia" required aria-required="true" autocomplete="off" />
       </div>
+
       <div class="form-group">
-        <label for="comp-monto" class="label">Monto (COP)</label>
-        <input id="comp-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true" />
+        <label for="comp-saldo" class="label">Saldo total que aún debés (COP)</label>
+        <input id="comp-saldo" name="saldoTotal" class="input" type="number"
+               min="1" step="10000" placeholder="0" required aria-required="true" autocomplete="off" />
+        <p class="form-hint">Lo que falta por pagar hoy. Se descuenta de tu patrimonio neto.</p>
       </div>
+
       <div class="form-group">
-        <label for="comp-frecuencia" class="label">Frecuencia</label>
+        <label for="comp-cuota" class="label">Cuota mensual (COP)</label>
+        <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
+               min="1" step="10000" placeholder="0" required aria-required="true" autocomplete="off" />
+        <p class="form-hint">Lo que pagás cada mes. Es el gasto que se proyecta al Balance del mes.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="comp-tasa" class="label" id="comp-tasa-label">Tasa de interés (%)</label>
+        <div class="tasa-input-group">
+          <input id="comp-tasa" name="tasa" class="input" type="number"
+                 min="0" max="200" step="0.01" placeholder="0"
+                 aria-describedby="comp-tasa-hint" autocomplete="off" />
+          <select id="comp-tasa-unidad" name="tasaUnidad" class="input" aria-label="Unidad de la tasa">
+            <option value="EA">% EA (anual)</option>
+            <option value="mensual">% mensual</option>
+          </select>
+        </div>
+        <p id="comp-tasa-hint" class="form-hint">
+          Entidad: usá <strong>% EA</strong>. La usura vigente es ~${(usura.tasa * 100).toFixed(2)}% EA (SFC, ${usura.periodo}).<br>
+          Personal (gota a gota): solé venir en <strong>% mensual</strong> (5-20% es lo usual).
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="comp-frecuencia" class="label">Frecuencia de pago</label>
         <select id="comp-frecuencia" name="frecuencia" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
           ${frecOpts}
         </select>
       </div>
+
       <div class="form-group">
         <label for="comp-dia" class="label">Día de pago (1-31)</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
                min="1" max="31" step="1" placeholder="1" required aria-required="true" />
       </div>
-      <div class="form-group">
-        <label for="comp-tipo" class="label">Tipo</label>
-        <select id="comp-tipo" name="tipo" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
-          ${tipoOpts}
-        </select>
-      </div>
-
-      <!-- Campos opcionales - visibles solo cuando tipo = 'deuda' -->
-      <div id="comp-deuda-campos" class="d-none">
-        <p class="form-hint">
-          Completá estos datos para ver tu patrimonio neto real.
-          Si los dejás en blanco, la deuda igual se registra.
-        </p>
-        <div class="form-group">
-          <label for="comp-saldo" class="label">Saldo pendiente (COP) <span class="form-optional">opcional</span></label>
-          <input id="comp-saldo" name="saldoPendiente" class="input" type="number"
-                 min="0" step="10000" placeholder="0" autocomplete="off" />
-        </div>
-        <div class="form-group">
-          <label for="comp-tasa" class="label">Tasa EA (%) <span class="form-optional">opcional</span></label>
-          <input id="comp-tasa" name="tasaEA" class="input" type="number"
-                 min="0" max="200" step="0.01" placeholder="Ej. 26.5"
-                 aria-describedby="comp-tasa-hint" autocomplete="off" />
-          <p id="comp-tasa-hint" class="form-hint">
-            Tasa efectiva anual. La usura vigente es ~${(tasaUsuraVigente().tasa * 100).toFixed(2)}% EA (SFC, ${tasaUsuraVigente().periodo}).
-          </p>
-        </div>
-      </div>
 
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar compromiso</button>
+        <button type="submit" class="btn btn-primary">Guardar deuda</button>
       </div>
     </form>`;
 }
@@ -372,18 +375,27 @@ export function getEstrategiaUI() {
 
 /**
  * Renderiza la card de estrategia de pago en `#estrategia-pago`.
- * Aparece solo si hay ≥ 2 deudas con saldoPendiente + tasaEA + monto válidos.
+ *
+ * v6: ahora vive arriba de la lista de deudas y aparece con cualquier cantidad
+ * de deudas pagables (≥ 1). El selector Avalancha solo es relevante si hay
+ * tasa > 0 en al menos una deuda; si no, se sugiere directamente Bola de Nieve.
+ *
+ * El orden definido por la estrategia se aplica también a `renderListaCompromisos`.
  */
 export function renderEstrategiaPago() {
   const el = document.getElementById('estrategia-pago');
   if (!el) return;
 
   const deudas = filtrarDeudasPagables(S.compromisos);
-  if (deudas.length < 2) {
-    el.innerHTML = deudas.length === 1
-      ? _renderEstrategiaHint()
-      : '';
+  if (deudas.length === 0) {
+    el.innerHTML = '';
     return;
+  }
+
+  const hayTasaPositiva = deudas.some(d => d.tasaEA > 0);
+  // Si no hay tasa positiva, forzar bolaNieve (avalancha no aporta info).
+  if (!hayTasaPositiva && _uiEstrategia.estrategia !== 'bolaNieve') {
+    _uiEstrategia.estrategia = 'bolaNieve';
   }
 
   const { extraMensual, estrategia } = _uiEstrategia;
@@ -413,7 +425,8 @@ export function renderEstrategiaPago() {
         <div class="estrategia-card__toggle" role="tablist" aria-label="Estrategia de pago">
           <button class="btn ${estrategia === 'avalancha' ? 'btn-primary' : 'btn-ghost'}"
                   data-action="elegir-estrategia" data-estrategia="avalancha"
-                  role="tab" aria-selected="${estrategia === 'avalancha'}">
+                  role="tab" aria-selected="${estrategia === 'avalancha'}"
+                  ${hayTasaPositiva ? '' : 'disabled aria-disabled="true" title="Avalancha requiere al menos una deuda con tasa > 0"'}>
             🏔️ Avalancha
           </button>
           <button class="btn ${estrategia === 'bolaNieve' ? 'btn-primary' : 'btn-ghost'}"
@@ -462,16 +475,6 @@ export function renderEstrategiaPago() {
     </article>`;
 }
 
-function _renderEstrategiaHint() {
-  return `
-    <div class="estrategia-card estrategia-card--hint">
-      <p class="estrategia-card__title">💡 Estrategia de pago</p>
-      <p class="estrategia-card__subtitle">
-        Agregá al menos 2 deudas con saldo pendiente y tasa EA para ver las estrategias Avalancha y Bola de Nieve.
-      </p>
-    </div>`;
-}
-
 function _renderComparacionAhorro(resultado, activa) {
   const { mejor, ahorroIntereses, ahorroMeses } = resultado;
   if (mejor === 'empate' || (ahorroIntereses === 0 && ahorroMeses === 0)) {
@@ -482,8 +485,6 @@ function _renderComparacionAhorro(resultado, activa) {
   }
   const nombreMejor = mejor === 'avalancha' ? 'Avalancha' : 'Bola de nieve';
   const eligioMejor = activa === mejor;
-  const verbo = eligioMejor ? 'Ahorrás' : 'Ahorrarías cambiando a Avalancha';
-  // En la práctica Avalancha siempre es la "mejor" por intereses; mostramos el delta.
   return `
     <p class="estrategia-card__ahorro">
       💰 Con ${nombreMejor} ${eligioMejor ? 'ahorrás' : 'ahorrarías'}

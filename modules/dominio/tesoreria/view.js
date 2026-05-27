@@ -244,7 +244,9 @@ export function renderNudgePrima() {
     return;
   }
 
-  const tieneDeudas = S.compromisos.some(c => c.activo !== false && c.tipo === 'deuda');
+  const tieneDeudas = S.compromisos.some(
+    c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'),
+  );
   const dist        = sugerirDistribucionPrima(salario, tieneDeudas);
   const timing      = diasParaPrimaSemestral();
   const esCercana   = timing.dias <= 30;

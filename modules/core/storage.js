@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -83,6 +83,39 @@ function _migrate(raw) {
   // undefined → tratado como false). El sync se aplica solo cuando el
   // usuario activa la cuota desde el form de cuenta.
   // Migración intencionalmente no-op: solo bump de versión.
+
+  // v5 → v6: rediseño del dominio Compromisos.
+  // - 'deuda' → 'deuda-entidad' (preserva tasaEA si existía).
+  //   `cuotaMensual = monto`, `saldoTotal = saldoPendiente ?? monto * 12`,
+  //   `tasa = tasaEA ?? 0`, `tasaUnidad = 'EA'`. El campo `monto` se elimina
+  //   en deudas porque su rol pasa a `cuotaMensual`.
+  // - 'agenda' → 'fijo' con frecuencia='Única vez'. La sección Compromisos
+  //   solo creará deudas a partir de v6; los gastos fijos se manejan desde
+  //   la sección Agenda. Los items existentes mantienen su semántica.
+  // - 'fijo' queda intacto (monto sigue siendo la cuota fija).
+  if ((typeof data._version === 'number' ? data._version : 1) < 6) {
+    if (Array.isArray(data.compromisos)) {
+      for (const c of data.compromisos) {
+        if (!c || typeof c !== 'object') continue;
+        if (c.tipo === 'deuda') {
+          const cuotaPrev = Number(c.monto) || 0;
+          const saldoPrev = Number(c.saldoPendiente);
+          c.tipo         = 'deuda-entidad';
+          c.cuotaMensual = cuotaPrev;
+          c.saldoTotal   = Number.isFinite(saldoPrev) && saldoPrev > 0
+            ? saldoPrev : cuotaPrev * 12;
+          c.tasa         = Number.isFinite(Number(c.tasaEA)) ? Number(c.tasaEA) : 0;
+          c.tasaUnidad   = 'EA';
+          delete c.monto;
+          delete c.saldoPendiente;
+          delete c.tasaEA;
+        } else if (c.tipo === 'agenda') {
+          c.tipo       = 'fijo';
+          c.frecuencia = 'Única vez';
+        }
+      }
+    }
+  }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

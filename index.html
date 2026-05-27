@@ -244,17 +244,18 @@
         </div>
       </section>
 
-      <!-- COMPROMISOS -->
+      <!-- COMPROMISOS (v6: solo deudas - los gastos fijos van en Agenda) -->
       <section class="section" id="sec-compromisos" aria-labelledby="title-compromisos">
         <header class="section__header">
           <h1 class="section__title" id="title-compromisos">Compromisos</h1>
           <button class="btn btn-primary" data-action="nuevo-compromiso"
-                  aria-label="Registrar nuevo compromiso">
-            + Nuevo
+                  aria-label="Registrar nueva deuda">
+            + Nueva deuda
           </button>
         </header>
-        <div id="nudge-compromisos">
-          <!-- G.3.F5: nudge de mora inminente. Aparece cuando hay pagos en <=5 dias. -->
+        <!-- Estrategia arriba: define el orden de pago aplicado en la lista. -->
+        <div id="estrategia-pago">
+          <!-- F.4 / v6: card Avalancha vs Bola de Nieve. -->
         </div>
         <div id="nudge-fijos-sin-pagar">
           <!-- G.1: fijos cuyo dia de pago ya paso este mes. -->
@@ -263,10 +264,7 @@
           <!-- G.1: deudas activas sin actividad reciente. -->
         </div>
         <div id="lista-compromisos">
-          <!-- Fase 7: compromisos/view.js renderiza aquí -->
-        </div>
-        <div id="estrategia-pago">
-          <!-- F.4: estrategias Avalancha/Bola de Nieve. Aparece solo con ≥2 deudas válidas. -->
+          <!-- v6: solo deudas, ordenadas según la estrategia activa. -->
         </div>
       </section>
 

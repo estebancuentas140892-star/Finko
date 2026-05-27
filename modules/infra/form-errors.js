@@ -30,9 +30,11 @@ function _campoDeError(mensaje) {
   if (m.includes('frecuencia'))     return 'frecuencia';
   if (m.includes('tipo'))           return 'tipo';
   if (m.includes('banco') || m.includes('billetera')) return 'banco';
-  if (m.includes('saldo pendiente')) return 'saldoPendiente';
+  if (m.includes('saldo total'))    return 'saldoTotal';
+  if (m.includes('cuota mensual'))  return 'cuotaMensual';
   if (m.includes('saldo'))          return 'saldo';
-  if (m.includes('tasa'))           return 'tasaEA';
+  if (m.includes('unidad'))         return 'tasaUnidad';
+  if (m.includes('tasa'))           return 'tasa';
   if (m.includes('día de pago') || m.includes('dia de pago')) return 'diaPago';
   return null;
 }
