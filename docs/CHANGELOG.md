@@ -7,6 +7,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(compromisos) - v7.3: copy de estrategias explica el mecanismo · 2026-05-27
+
+El copy previo de las estrategias daba el beneficio pero no el mecanismo. "Pagás menos intereses" (sin explicar por qué) y "Cerrás deudas rápido y mantenés la motivación" (que reducía Bola de nieve a algo puramente psicológico, ocultando su mecanismo real: la cuota liberada se reinyecta en la siguiente deuda). El usuario no podía elegir con información.
+
+**Cambios (`modules/dominio/compromisos/view.js`, objeto `_META_ESTRATEGIA`):**
+
+1. **Avalancha · `beneficio`:** "Pagás menos intereses en total. Atacás primero la deuda con la tasa más alta: como es la que más te cuesta, eliminarla rápido hace que cada peso siguiente vaya más al capital y menos a intereses."
+2. **Avalancha · `ideal`:** "Te importa el ahorro en plata y aguantás que la primera deuda cerrada tarde un poco más." (antes: "Te importa pagar menos plata y podés mantener disciplina.")
+3. **Bola de nieve · `beneficio`:** "Cada deuda cerrada acelera la siguiente. Atacás primero la más chica; cuando la terminás, la cuota que pagabas ahí se suma a la siguiente deuda. Así cada deuda libera más plata para la próxima, generando un efecto acumulativo (la \"bola\" que crece)."
+4. **Bola de nieve · `ideal`:** "Necesitás ver progreso rápido para no abandonar, aunque pagues un poco más de intereses en total." (antes: "Te cuesta arrancar o necesitás ver progreso visible.")
+
+**Principios aplicados:**
+
+- **Mecanismo explícito** en el bloque 🎯 (no solo "qué"): cada estrategia explica *cómo* logra su beneficio.
+- **Trade-off honesto** en el bloque 👤: Avalancha cuesta tiempo psicológico hasta cerrar la primera, Bola de nieve cuesta un poco más de intereses. Mostrar el costo permite elección informada.
+- **Sin CSS nuevo**: solo cambia el texto. Las clases existentes manejan bien 2-3 frases en mobile.
+
+**Verificación:** snapshot DOM en mobile (375×812) confirmó que ambos copys renderizan correctamente con Avalancha y Bola de nieve seleccionadas.
+
+**`service-worker.js`:** v69 → v70.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
+
+---
+
 ### style(compromisos) - v7.2: recomendación como subtítulo interno · 2026-05-27
 
 Iteración corta sobre v7.1. El usuario reportó visualmente que el badge "✨ Recomendada para vos" se veía como un sticker pegado encima del borde superior de la card, no como parte natural del diseño.

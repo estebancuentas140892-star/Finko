@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.2: recomendación como subtítulo interno, no sticker flotante)
+> Última actualización: 2026-05-27 (v7.3: copy de estrategias explica el mecanismo, no solo el beneficio)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(compromisos) - v7.3: copy de estrategias explica el mecanismo · 2026-05-27
+El usuario reportó que el copy actual no explicaba bien las dos estrategias: "Pagás menos intereses" no decía *por qué*, y "Cerrás deudas rápido y mantenés la motivación" reducía Bola de nieve a algo psicológico sin mencionar su mecanismo real (la cuota liberada se reinyecta en la siguiente deuda, efecto acumulativo).
+
+**Cambios clave (solo `_META_ESTRATEGIA` en `view.js`):**
+- **Avalancha · beneficio**: ahora explica el mecanismo. "Atacás primero la deuda con la tasa más alta: como es la que más te cuesta, eliminarla rápido hace que cada peso siguiente vaya más al capital y menos a intereses."
+- **Bola de nieve · beneficio**: ahora explica el efecto acumulativo. "Cada deuda cerrada acelera la siguiente. Atacás primero la más chica; cuando la terminás, la cuota que pagabas ahí se suma a la siguiente deuda. Así cada deuda libera más plata para la próxima, generando un efecto acumulativo (la 'bola' que crece)."
+- **Bloque "Ideal si..." con trade-off honesto**: Avalancha cuesta tiempo psicológico hasta cerrar la primera; Bola de nieve cuesta un poco más de intereses. El usuario ahora puede elegir con información real.
+- **Sin CSS nuevo**: solo cambio textual. Las clases existentes manejan bien 2-3 frases en mobile.
+- **`service-worker.js`:** v69 → v70.
+
+**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`, `docs/CHANGELOG.md`, `docs/HANDOFF.md`.
+
+**Tests:** 932/932 verdes (sin cambios de lógica).
 
 ### style(compromisos) - v7.2: recomendación como subtítulo interno · 2026-05-27
 Feedback visual del usuario: el badge "✨ Recomendada para vos" parecía un sticker pegado encima del borde superior de la card, no formaba parte del diseño.
@@ -99,18 +113,6 @@ Rediseño UX completo de la card "Estrategia de pago" para móvil, en dos pasada
 **Archivos:** `compromisos/view.js`, `compromisos/logic.js` (`recomendarEstrategia`), `compromisos/index.js` (handler + acción `toggle-extra-estrategia`), `styles/components.css`, `service-worker.js`, `tests/unit/compromisos.test.js` (+6 tests).
 
 **Tests:** 932/932 verdes (+6).
-
-### fix(compromisos) - Wording neutro + estética del chooser · 2026-05-27
-Hotfix sobre el chooser de Tarea 3.
-
-**Cambios clave:**
-- **Wording:** "gota a gota" → "natillera o prestamista particular" en chooser, placeholder y hint del form personal. Motivo: "gota a gota" tiene connotación ilegal; las tasas 5-20% mensual aplican a varios tipos de prestamistas informales.
-- **CSS arreglado:** el CSS anterior usaba tokens inexistentes (`--fk-surface-2`, `--fk-font-size-*`, `--fk-border` sin sufijo). Los estilos se ignoraban silenciosamente y las cards se veían "sueltas". Reescrito con tokens reales (`--fk-bg-elevated`, `--fk-text-*`, `--fk-border-default`, `--fk-radius-lg`, `--fk-shadow-*`, `--fk-accent-subtle`) + ícono dentro de círculo verde, hover con translateY/shadow-glow, layout responsive (apilado <480px).
-- **`service-worker.js`:** v63 → v64.
-
-**Archivos:** `compromisos/view.js`, `styles/components.css`, `service-worker.js`.
-
-**Tests:** 926/926 verdes.
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

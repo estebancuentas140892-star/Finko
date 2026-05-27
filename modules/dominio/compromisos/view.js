@@ -476,14 +476,14 @@ const _META_ESTRATEGIA = {
   avalancha: {
     icono:     '🏔️',
     nombre:    'Avalancha',
-    beneficio: 'Pagás menos intereses en total.',
-    ideal:     'Te importa pagar menos plata y podés mantener disciplina.',
+    beneficio: 'Pagás menos intereses en total. Atacás primero la deuda con la tasa más alta: como es la que más te cuesta, eliminarla rápido hace que cada peso siguiente vaya más al capital y menos a intereses.',
+    ideal:     'Te importa el ahorro en plata y aguantás que la primera deuda cerrada tarde un poco más.',
   },
   bolaNieve: {
     icono:     '⚪',
     nombre:    'Bola de nieve',
-    beneficio: 'Cerrás deudas rápido y mantenés la motivación.',
-    ideal:     'Te cuesta arrancar o necesitás ver progreso visible.',
+    beneficio: 'Cada deuda cerrada acelera la siguiente. Atacás primero la más chica; cuando la terminás, la cuota que pagabas ahí se suma a la siguiente deuda. Así cada deuda libera más plata para la próxima, generando un efecto acumulativo (la "bola" que crece).',
+    ideal:     'Necesitás ver progreso rápido para no abandonar, aunque pagues un poco más de intereses en total.',
   },
 };
 
