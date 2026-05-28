@@ -9,7 +9,7 @@ import {
   calcularRentabilidadReal,
   clasificarTasaCredito,
   validarCampos,
-} from '../../modules/dominio/calculadoras/logic.js';
+} from '../../modules/infra/financiero.js';
 import { renderAlertaUsura } from '../../modules/dominio/calculadoras/view.js';
 
 // Constantes legales vigentes (importadas desde el single source of truth).

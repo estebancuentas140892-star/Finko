@@ -17,7 +17,7 @@ import {
   calcularPILA,
   calcularRentabilidadReal,
   validarCampos,
-} from './logic.js';
+} from '../../infra/financiero.js';
 import {
   renderPanelCalculadoras,
   renderResultCDT,

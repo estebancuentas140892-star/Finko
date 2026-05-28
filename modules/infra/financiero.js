@@ -1,12 +1,15 @@
 /**
- * calculadoras/logic.js - fórmulas financieras puras para Colombia.
+ * infra/financiero.js - fórmulas financieras puras para Colombia.
  * Sin DOM. Sin S. Sin efectos secundarios. Testeable en Node/Vitest.
+ *
+ * Movido desde dominio/calculadoras/logic.js (v8.1) para que cualquier
+ * dominio pueda importarlo sin violar la regla "ningún dominio importa a otro".
  *
  * Constantes legales usadas (resueltas dinámicamente vía `constants.js`):
  *   - SMMLV vigente y auxilio de transporte (Mintrabajo, anual).
  *   - Tasa de usura vigente (SFC, trimestral).
  *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto.
- *   - GMF (4×1000): 0.4 % sobre movimientos financieros (informativo).
+ *   - GMF (4x1000): 0.4 % sobre movimientos financieros (informativo).
  *
  * Los valores numéricos viven en `modules/core/constants.js` - para actualizarlos
  * basta con agregar una entrada al año/trimestre nuevo allí.
@@ -19,7 +22,7 @@ import {
   PENSION_INDEPEND,
   ARL_CLASE_I,
   TASA_USURA,
-} from '../../core/constants.js';
+} from '../core/constants.js';
 
 // ── CDT (Certificado de Depósito a Término) ──────────────────────
 
@@ -62,8 +65,8 @@ export function calcularCDT(principal, tasaEA, plazo) {
 /**
  * Calcula la cuota mensual fija de un crédito (sistema francés / amortización constante).
  *
- * Conversión EA → mensual: `i_m = (1 + i_EA)^(1/12) − 1`
- * Cuota: `C = P × i_m × (1 + i_m)^n / ((1 + i_m)^n − 1)`
+ * Conversión EA → mensual: `i_m = (1 + i_EA)^(1/12) - 1`
+ * Cuota: `C = P × i_m × (1 + i_m)^n / ((1 + i_m)^n - 1)`
  *
  * @param {number} principal   - Monto del crédito en COP.
  * @param {number} tasaEA      - Tasa efectiva anual como decimal.
@@ -224,7 +227,7 @@ export function calcularPILA(ingreso, arl = ARL_CLASE_I) {
 /**
  * Calcula la rentabilidad real ajustada por inflación.
  *
- * Fórmula de Fisher: `r_real = (1 + r_nominal) / (1 + inflación) − 1`
+ * Fórmula de Fisher: `r_real = (1 + r_nominal) / (1 + inflación) - 1`
  *
  * @param {number} capital       - Capital invertido en COP.
  * @param {number} tasaPct       - Tasa nominal anual en porcentaje.

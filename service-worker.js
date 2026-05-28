@@ -80,7 +80,7 @@ const CORE_ASSETS = [
   './modules/dominio/analisis/logic.js',
   './modules/dominio/analisis/view.js',
   './modules/dominio/analisis/index.js',
-  './modules/dominio/calculadoras/logic.js',
+  './modules/infra/financiero.js',
   './modules/dominio/calculadoras/view.js',
   './modules/dominio/calculadoras/index.js',
   './modules/dominio/config/view.js',
