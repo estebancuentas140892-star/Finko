@@ -340,6 +340,61 @@
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
+
+        <!-- Herramientas de nómina (v8.3) -->
+        <details class="herramienta-inline" id="herramienta-prima">
+          <summary class="herramienta-inline__titulo">🎁 Calcular tu prima de servicios</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Cuánto te toca por el semestre trabajado.</p>
+            <form id="form-herramienta-prima" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hprima-salario" class="label">Salario mensual (COP)</label>
+                  <input id="hprima-salario" name="salario" class="input" type="number"
+                         inputmode="numeric" min="1" step="100000"
+                         placeholder="1.750.905" required />
+                </div>
+                <div class="form-group">
+                  <label for="hprima-dias" class="label">Días trabajados en el semestre</label>
+                  <input id="hprima-dias" name="dias" class="input" type="number"
+                         inputmode="numeric" min="1" max="180" step="1"
+                         placeholder="180" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Calcular prima</button>
+            </form>
+            <div id="result-herramienta-prima" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="herramienta-inline" id="herramienta-pila">
+          <summary class="herramienta-inline__titulo">🧾 Calcular tus aportes PILA</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Independientes: cuánto pagás de salud, pensión y ARL.</p>
+            <form id="form-herramienta-pila" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hpila-ingreso" class="label">Ingreso mensual bruto (COP)</label>
+                  <input id="hpila-ingreso" name="ingreso" class="input" type="number"
+                         inputmode="numeric" min="1" step="100000"
+                         placeholder="3.000.000" required />
+                </div>
+                <div class="form-group">
+                  <label for="hpila-arl" class="label">Clase de riesgo ARL</label>
+                  <select id="hpila-arl" name="arl" class="input">
+                    <option value="0.00522" selected>Clase I - oficina (0.522%)</option>
+                    <option value="0.01044">Clase II - riesgo bajo (1.044%)</option>
+                    <option value="0.02436">Clase III - riesgo medio (2.436%)</option>
+                    <option value="0.04350">Clase IV - riesgo alto (4.350%)</option>
+                    <option value="0.06960">Clase V - riesgo máximo (6.960%)</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Calcular aportes</button>
+            </form>
+            <div id="result-herramienta-pila" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
       </section>
 
       <!-- PRESUPUESTO -->

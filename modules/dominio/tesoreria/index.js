@@ -16,6 +16,8 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
+import { f } from '../../infra/utils.js';
+import { calcularPrima, calcularPILA, validarCampos } from '../../infra/financiero.js';
 import {
   validarCuenta,
   normalizarCuenta,
@@ -402,6 +404,60 @@ function _initBankPicker(picker) {
   }, { capture: true });
 }
 
+// ── HERRAMIENTAS DE NÓMINA ────────────────────────────────────────
+
+function _onSubmitHerramientaPrima(e) {
+  e.preventDefault();
+  const datos   = Object.fromEntries(new FormData(e.target));
+  const errores = validarCampos(datos, {
+    salario: { min: 1 },
+    dias:    { min: 1, max: 180, entero: true },
+  });
+  const el = document.getElementById('result-herramienta-prima');
+  if (!el) return;
+  if (errores.length > 0) {
+    el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
+    announce(errores[0], 'assertive');
+    return;
+  }
+  const r        = calcularPrima(Number(datos.salario), Number(datos.dias));
+  const auxLabel = r.incluyeAuxilio ? `Sí (${f(r.auxilioAplicado)})` : 'No (salario > 2 SMMLV)';
+  el.innerHTML = `
+    <dl class="calc-result__grid">
+      <dt>Salario base liquidación</dt>   <dd>${f(r.salarioBase)}</dd>
+      <dt>Incluye auxilio transporte</dt> <dd>${auxLabel}</dd>
+      <dt>Prima a pagar</dt>              <dd class="calc-result__total">${f(r.prima)}</dd>
+    </dl>`;
+  announce('Resultado de prima actualizado.');
+}
+
+function _onSubmitHerramientaPILA(e) {
+  e.preventDefault();
+  const datos   = Object.fromEntries(new FormData(e.target));
+  const errores = validarCampos(datos, {
+    ingreso: { min: 1 },
+    arl:     { min: 0.0001, max: 0.1 },
+  });
+  const el = document.getElementById('result-herramienta-pila');
+  if (!el) return;
+  if (errores.length > 0) {
+    el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
+    announce(errores[0], 'assertive');
+    return;
+  }
+  const r = calcularPILA(Number(datos.ingreso), Number(datos.arl));
+  if (!r) return;
+  el.innerHTML = `
+    <dl class="calc-result__grid">
+      <dt>IBC (base de cotización)</dt> <dd>${f(r.ibc)}</dd>
+      <dt>Salud (12.5 %)</dt>           <dd>${f(r.salud)}</dd>
+      <dt>Pensión (16 %)</dt>           <dd>${f(r.pension)}</dd>
+      <dt>ARL</dt>                      <dd>${f(r.arlMonto)}</dd>
+      <dt>Total a pagar</dt>            <dd class="calc-result__total">${f(r.total)}</dd>
+    </dl>`;
+  announce('Resultado de PILA actualizado.');
+}
+
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -412,6 +468,11 @@ export function initTesoreria() {
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 
   _inyectarForm();
+
+  document.getElementById('form-herramienta-prima')
+    ?.addEventListener('submit', _onSubmitHerramientaPrima);
+  document.getElementById('form-herramienta-pila')
+    ?.addEventListener('submit', _onSubmitHerramientaPILA);
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'cuentas' || section === 'tesoreria' || section === 'ingresos' || section === 'compromisos') {
