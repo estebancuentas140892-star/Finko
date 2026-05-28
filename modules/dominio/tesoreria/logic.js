@@ -135,7 +135,7 @@ export function validarCuenta(datos) {
   if (!datos.banco?.trim() || datos.banco === '') {
     errores.push('Debés elegir un banco o billetera.');
   }
-  if (!datos.tipo?.trim() || datos.tipo === '') {
+  if (datos.banco !== 'Efectivo' && (!datos.tipo?.trim() || datos.tipo === '')) {
     errores.push('Debés elegir el tipo de cuenta.');
   }
   const saldo = Number(datos.saldo);
@@ -197,7 +197,9 @@ export function parseCuotaManejo(datos) {
  */
 export function normalizarCuenta(datos) {
   const banco  = datos.banco.trim();
-  const tipo   = datos.tipo;
+  // Cuando el banco es Efectivo el campo tipo está oculto: normalizar a 'Efectivo'
+  // para que _autoNombre devuelva 'Efectivo' (sin duplicar "Efectivo Efectivo").
+  const tipo   = banco === 'Efectivo' ? 'Efectivo' : (datos.tipo ?? '');
   // Si el usuario no escribio nombre, autogenerar uno legible:
   //   "Davivienda Ahorros" / "Nequi Otro" / "Efectivo".
   // Para el banco "Efectivo" + tipo "Efectivo" evitamos duplicar.

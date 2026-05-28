@@ -2728,6 +2728,20 @@ textarea.input {
   display: none;
 }
 
+/* Subtítulo de bloque cuando un resultado agrupa varias secciones */
+.calc-result__subtitle {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0 0 var(--fk-space-3);
+}
+
+.calc-result__grid + .calc-result__subtitle {
+  margin-top: var(--fk-space-5);
+  padding-top: var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
 /* Grid de resultados dl/dt/dd */
 .calc-result__grid {
   display: grid;

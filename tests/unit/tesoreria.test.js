@@ -115,10 +115,20 @@ describe('validarCuenta()', () => {
     expect(errores[0]).toMatch(/banco/i);
   });
 
-  it('reporta error si tipo no se seleccionó', () => {
+  it('reporta error si tipo no se seleccionó (banco no es Efectivo)', () => {
     const errores = validarCuenta({ ...datosFormValidos, tipo: '' });
     expect(errores).toHaveLength(1);
     expect(errores[0]).toMatch(/tipo/i);
+  });
+
+  it('banco Efectivo: tipo vacío NO genera error (campo oculto, no aplica)', () => {
+    const errores = validarCuenta({ banco: 'Efectivo', tipo: '', saldo: '0' });
+    expect(errores).toEqual([]);
+  });
+
+  it('banco Efectivo: tipo con valor también es válido', () => {
+    const errores = validarCuenta({ banco: 'Efectivo', tipo: 'Efectivo', saldo: '0' });
+    expect(errores).toEqual([]);
   });
 
   it('reporta error si saldo no es número', () => {
@@ -188,6 +198,12 @@ describe('normalizarCuenta()', () => {
 
   it('evita duplicar "Efectivo Efectivo" cuando banco y tipo coinciden', () => {
     const result = normalizarCuenta({ ...datosFormValidos, nombre: '', banco: 'Efectivo', tipo: 'Efectivo' });
+    expect(result.nombre).toBe('Efectivo');
+  });
+
+  it('banco Efectivo sin tipo: normaliza tipo a "Efectivo" y nombre a "Efectivo"', () => {
+    const result = normalizarCuenta({ banco: 'Efectivo', tipo: '', saldo: '0', nombre: '' });
+    expect(result.tipo).toBe('Efectivo');
     expect(result.nombre).toBe('Efectivo');
   });
 

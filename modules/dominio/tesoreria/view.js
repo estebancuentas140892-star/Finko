@@ -10,12 +10,7 @@
 import { S } from '../../core/state.js';
 import { f } from '../../infra/utils.js';
 import { BANCOS_CO, TIPOS_CUENTA } from '../../core/constants.js';
-import {
-  cuentasActivas,
-  diasParaPrimaSemestral,
-  estimarSalarioMensual,
-  sugerirDistribucionPrima,
-} from './logic.js';
+import { cuentasActivas } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 
@@ -38,9 +33,10 @@ export function renderListaCuentas() {
  * @returns {string}
  */
 function _renderCuentaItem(cuenta) {
-  const nombre = _esc(cuenta.nombre);
-  const banco  = _esc(cuenta.banco);
-  const tipo   = _esc(cuenta.tipo);
+  const nombre   = _esc(cuenta.nombre);
+  const banco    = _esc(cuenta.banco);
+  const tipo     = _esc(cuenta.tipo);
+  const subtitulo = banco === tipo ? banco : `${banco} · ${tipo}`;
 
   // Si la cuenta tiene cuota de manejo, mostramos un hint adicional para que
   // el usuario sepa que hay un compromiso vinculado descontandose mes a mes.
@@ -53,7 +49,7 @@ function _renderCuentaItem(cuenta) {
       <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
       <div class="list-item__body">
         <p class="list-item__title">${nombre}</p>
-        <p class="list-item__subtitle">${banco} · ${tipo}</p>
+        <p class="list-item__subtitle">${subtitulo}</p>
         ${cuotaHint}
       </div>
       <div class="list-item__action">
@@ -107,13 +103,6 @@ export function renderFormCuenta() {
   return `
     <form id="form-cuenta" novalidate>
       <div class="form-group">
-        <label for="cuenta-nombre" class="label">Nombre de la cuenta</label>
-        <input id="cuenta-nombre" name="nombre" class="input" type="text"
-               placeholder="Ej. Ahorros Davivienda"
-               autocomplete="off" />
-      </div>
-
-      <div class="form-group">
         <label id="label-banco" class="label">Banco o billetera</label>
         <div class="bank-picker"
              role="combobox"
@@ -146,7 +135,7 @@ export function renderFormCuenta() {
         </div>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="form-group-tipo">
         <label for="cuenta-tipo" class="label">Tipo de cuenta</label>
         <select id="cuenta-tipo" name="tipo" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
@@ -208,86 +197,6 @@ export function renderFormCuenta() {
         </button>
       </div>
     </form>`;
-}
-
-// ── NUDGE PRIMA DE SERVICIOS (G.3.F8) ───────────────────────────
-
-/**
- * Renderiza la sugerencia de prima en `#nudge-prima` (G.3.F8 + G.3.F9).
- *
- * Estados posibles:
- * - Sin ingresos mensuales: nudge-info pidiendo registrar salario.
- * - Con salario, prima > 30 dias: nudge-info con distribucion sugerida.
- * - Con salario, prima ≤ 30 dias: nudge-medium con countdown + distribucion (G.3.F9).
- * - Con salario, prima ≤ 7 dias:  nudge-high con countdown urgente.
- *
- * No-op si el contenedor no existe.
- */
-export function renderNudgePrima() {
-  const el = document.getElementById('nudge-prima');
-  if (!el) return;
-
-  const salario = estimarSalarioMensual(S.ingresos);
-
-  if (salario === 0) {
-    el.innerHTML = `
-      <div class="nudge nudge-info" role="note">
-        <span class="nudge__icon" aria-hidden="true">🎁</span>
-        <div class="nudge__body">
-          <p class="nudge__title">Calculá tu prima de servicios</p>
-          <p class="nudge__desc">
-            Registrá al menos un ingreso mensual en la sección Ingresos
-            para ver cuánto te corresponde de prima y cómo distribuirla.
-          </p>
-        </div>
-      </div>`;
-    return;
-  }
-
-  const tieneDeudas = S.compromisos.some(
-    c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'),
-  );
-  const dist        = sugerirDistribucionPrima(salario, tieneDeudas);
-  const timing      = diasParaPrimaSemestral();
-  const esCercana   = timing.dias <= 30;
-
-  // Nivel y icono escalan con la proximidad de la prima.
-  const nivel = timing.dias <= 7 ? 'nudge-high'
-    : esCercana                  ? 'nudge-medium'
-    : 'nudge-info';
-  const icono = timing.dias <= 7 ? '⚠️' : '🎁';
-
-  const filaDeudasHtml = dist.deudas > 0
-    ? `<p class="nudge__desc">💳 Pago de deudas: <strong>${f(dist.deudas)}</strong> (${dist.deudasPct}%)</p>`
-    : '';
-
-  // Titulo e intro cambian según si la prima es inminente o no.
-  const tituloHtml = esCercana
-    ? `<p class="nudge__title">
-        ${timing.dias === 0
-          ? 'Tu prima llega hoy'
-          : timing.dias === 1
-          ? 'Tu prima llega mañana'
-          : `Tu prima llega en ${timing.dias} días`}
-        (semestre ${timing.semestre})
-       </p>`
-    : `<p class="nudge__title">Prima estimada este semestre: ${f(dist.prima)}</p>`;
-
-  const introHtml = esCercana
-    ? `<p class="nudge__desc">Te corresponden aproximadamente <strong>${f(dist.prima)}</strong> basado en ${f(salario)}/mes. Sugerencia:</p>`
-    : `<p class="nudge__desc">Basado en tu ingreso mensual de ${f(salario)}. Sugerencia:</p>`;
-
-  el.innerHTML = `
-    <div class="nudge ${nivel}" role="${esCercana ? 'alert' : 'note'}">
-      <span class="nudge__icon" aria-hidden="true">${icono}</span>
-      <div class="nudge__body">
-        ${tituloHtml}
-        ${introHtml}
-        <p class="nudge__desc">🛡️ Fondo de emergencia: <strong>${f(dist.fondo)}</strong> (${dist.fondoPct}%)</p>
-        ${filaDeudasHtml}
-        <p class="nudge__desc">🎯 Metas y ahorro: <strong>${f(dist.ahorro)}</strong> (${dist.ahorroPct}%)</p>
-      </div>
-    </div>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

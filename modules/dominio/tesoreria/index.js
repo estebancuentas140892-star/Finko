@@ -24,13 +24,12 @@ import {
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
 } from './logic.js';
-import { renderNudgePrima, renderListaCuentas, renderFormCuenta } from './view.js';
+import { renderListaCuentas, renderFormCuenta } from './view.js';
 
 // ── RENDER COMPLETO ──────────────────────────────────────────────
 
-/** Re-renderiza ambas vistas del dominio. */
+/** Re-renderiza la vista del dominio. */
 function _renderTodo() {
-  renderNudgePrima();
   renderListaCuentas();
 }
 
@@ -52,6 +51,8 @@ function _nuevaCuenta() {
   // resetModal desmarca checkboxes pero no dispara `change`, así que
   // ocultamos manualmente el fieldset de cuota por si quedó visible.
   _toggleCuotaFieldset();
+  // Asegurar que el campo tipo sea visible si el banco anterior era Efectivo.
+  _toggleTipoField();
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva cuenta';
 
@@ -167,14 +168,14 @@ function _editarCuenta(el) {
   form.dataset.id = id; // marcador para que _guardarCuenta haga editar() en vez de guardar()
 
   // Pre-rellenar campos.
-  form.querySelector('[name="nombre"]').value = cuenta.nombre ?? '';
-  form.querySelector('[name="saldo"]').value  = cuenta.saldo  ?? 0;
-  form.querySelector('[name="tipo"]').value   = cuenta.tipo   ?? '';
+  form.querySelector('[name="saldo"]').value  = cuenta.saldo ?? 0;
+  form.querySelector('[name="tipo"]').value   = cuenta.tipo  ?? '';
 
   // El banco usa el custom picker: setear el hidden + actualizar el display visual.
   const hiddenBanco = form.querySelector('[name="banco"]');
   if (hiddenBanco) hiddenBanco.value = cuenta.banco ?? '';
   _setBankPickerDisplay(cuenta.banco);
+  _toggleTipoField();
 
   // Pre-rellenar la cuota de manejo si la cuenta la tiene.
   const cuotaToggle = form.querySelector('[data-cuota-toggle]');
@@ -259,6 +260,9 @@ function _inyectarForm() {
   // Toggle para mostrar/ocultar el fieldset de cuota de manejo.
   body.querySelector('[data-cuota-toggle]')?.addEventListener('change', _toggleCuotaFieldset);
 
+  // Ocultar "Tipo de cuenta" cuando el banco seleccionado es Efectivo.
+  body.querySelector('[name="banco"]')?.addEventListener('change', _toggleTipoField);
+
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
   if (picker) _initBankPicker(picker);
@@ -270,6 +274,19 @@ function _toggleCuotaFieldset() {
   const set = document.getElementById('cuenta-cuota-fieldset');
   if (!cb || !set) return;
   set.hidden = !cb.checked;
+}
+
+/** Oculta el campo "Tipo de cuenta" cuando el banco es Efectivo (no aplica). */
+function _toggleTipoField() {
+  const banco = document.querySelector('#form-cuenta [name="banco"]')?.value ?? '';
+  const grupo = document.getElementById('form-group-tipo');
+  if (!grupo) return;
+  const esEfectivo = banco === 'Efectivo';
+  grupo.hidden = esEfectivo;
+  if (esEfectivo) {
+    const sel = document.getElementById('cuenta-tipo');
+    if (sel) sel.value = '';
+  }
 }
 
 /**
@@ -338,6 +355,7 @@ function _initBankPicker(picker) {
     if (!val) return;
 
     hidden.value = val;
+    hidden.dispatchEvent(new Event('change', { bubbles: true }));
 
     // Actualizar display del trigger con el avatar + nombre del banco.
     const display = trigger.querySelector('.bank-picker__display');
@@ -404,64 +422,61 @@ function _initBankPicker(picker) {
   }, { capture: true });
 }
 
-// ── HERRAMIENTAS DE NÓMINA ────────────────────────────────────────
+// ── SIMULADOR LABORAL (prima + PILA unificados) ───────────────────
 
-function _onSubmitHerramientaPrima(e) {
+/**
+ * Calcula prima de servicios y aportes PILA a partir de un único set de
+ * datos laborales. El salario básico alimenta ambos cálculos; el auxilio
+ * de transporte lo aplica calcularPrima() automáticamente según la ley.
+ */
+function _onSubmitSimuladorLaboral(e) {
   e.preventDefault();
   const datos   = Object.fromEntries(new FormData(e.target));
   const errores = validarCampos(datos, {
     salario: { min: 1 },
     dias:    { min: 1, max: 180, entero: true },
-  });
-  const el = document.getElementById('result-herramienta-prima');
-  if (!el) return;
-  if (errores.length > 0) {
-    el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
-    announce(errores[0], 'assertive');
-    return;
-  }
-  const variablesPromedio = (Number(datos.extras) || 0) + (Number(datos.bonos) || 0);
-  const r        = calcularPrima(Number(datos.salario), Number(datos.dias), variablesPromedio);
-  const auxLabel = r.incluyeAuxilio ? `Sí (${f(r.auxilioAplicado)})` : 'No (salario > 2 SMMLV)';
-  const variablesRow = r.variablesAplicadas > 0
-    ? `<dt>Variables incluidas (extras + bonos)</dt> <dd>${f(r.variablesAplicadas)}</dd>`
-    : '';
-  el.innerHTML = `
-    <dl class="calc-result__grid">
-      <dt>Salario base liquidación</dt>   <dd>${f(r.salarioBase)}</dd>
-      ${variablesRow}
-      <dt>Auxilio de transporte</dt>      <dd>${auxLabel}</dd>
-      <dt>Prima estimada</dt>             <dd class="calc-result__total">${f(r.prima)}</dd>
-    </dl>
-    <p class="herramienta-inline__desc">Estimación simplificada. El valor real depende de tu nómina exacta del semestre.</p>`;
-  announce('Estimación de prima actualizada.');
-}
-
-function _onSubmitHerramientaPILA(e) {
-  e.preventDefault();
-  const datos   = Object.fromEntries(new FormData(e.target));
-  const errores = validarCampos(datos, {
-    ingreso: { min: 1 },
     arl:     { min: 0.0001, max: 0.1 },
   });
-  const el = document.getElementById('result-herramienta-pila');
+  const el = document.getElementById('result-simulador-laboral');
   if (!el) return;
   if (errores.length > 0) {
     el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
     announce(errores[0], 'assertive');
     return;
   }
-  const r = calcularPILA(Number(datos.ingreso), Number(datos.arl));
-  if (!r) return;
-  el.innerHTML = `
+
+  const salario   = Number(datos.salario);
+  const variables = (Number(datos.extras) || 0) + (Number(datos.bonos) || 0);
+  const prima     = calcularPrima(salario, Number(datos.dias), variables);
+  const pila      = calcularPILA(salario, Number(datos.arl));
+
+  const auxLabel = prima.incluyeAuxilio ? `Sí (${f(prima.auxilioAplicado)})` : 'No (salario > 2 SMMLV)';
+  const variablesRow = prima.variablesAplicadas > 0
+    ? `<dt>Variables incluidas (extras + bonos)</dt> <dd>${f(prima.variablesAplicadas)}</dd>`
+    : '';
+  const pilaBloque = pila
+    ? `
+    <h4 class="calc-result__subtitle">🧾 Aportes PILA (independientes)</h4>
     <dl class="calc-result__grid">
-      <dt>IBC (base de cotización)</dt> <dd>${f(r.ibc)}</dd>
-      <dt>Salud (12.5 %)</dt>           <dd>${f(r.salud)}</dd>
-      <dt>Pensión (16 %)</dt>           <dd>${f(r.pension)}</dd>
-      <dt>ARL</dt>                      <dd>${f(r.arlMonto)}</dd>
-      <dt>Total a pagar</dt>            <dd class="calc-result__total">${f(r.total)}</dd>
-    </dl>`;
-  announce('Resultado de PILA actualizado.');
+      <dt>IBC (base de cotización)</dt> <dd>${f(pila.ibc)}</dd>
+      <dt>Salud (12.5 %)</dt>           <dd>${f(pila.salud)}</dd>
+      <dt>Pensión (16 %)</dt>           <dd>${f(pila.pension)}</dd>
+      <dt>ARL</dt>                      <dd>${f(pila.arlMonto)}</dd>
+      <dt>Total a pagar</dt>            <dd class="calc-result__total">${f(pila.total)}</dd>
+    </dl>`
+    : '';
+
+  el.innerHTML = `
+    <h4 class="calc-result__subtitle">🎁 Prima de servicios (empleados)</h4>
+    <dl class="calc-result__grid">
+      <dt>Salario base liquidación</dt> <dd>${f(prima.salarioBase)}</dd>
+      ${variablesRow}
+      <dt>Auxilio de transporte</dt>    <dd>${auxLabel}</dd>
+      <dt>Prima estimada</dt>           <dd class="calc-result__total">${f(prima.prima)}</dd>
+    </dl>
+    ${pilaBloque}
+    <p class="herramienta-inline__desc">Estimación simplificada. La prima aplica a empleados; los aportes PILA, a independientes. El valor real depende de tu nómina exacta del semestre.</p>`;
+  announce('Simulación laboral actualizada.');
 }
 
 /**
@@ -475,10 +490,8 @@ export function initTesoreria() {
 
   _inyectarForm();
 
-  document.getElementById('form-herramienta-prima')
-    ?.addEventListener('submit', _onSubmitHerramientaPrima);
-  document.getElementById('form-herramienta-pila')
-    ?.addEventListener('submit', _onSubmitHerramientaPILA);
+  document.getElementById('form-simulador-laboral')
+    ?.addEventListener('submit', _onSubmitSimuladorLaboral);
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'cuentas' || section === 'tesoreria' || section === 'ingresos' || section === 'compromisos') {

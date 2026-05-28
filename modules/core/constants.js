@@ -280,6 +280,7 @@ export const TASA_USURA_Q2_2026 = TASA_USURA;
  * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
  */
 export const BANCOS_CO = [
+  { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff' },
   { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a' },
   { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff' },
   { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff' },
