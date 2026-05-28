@@ -2828,6 +2828,65 @@ textarea.input {
 }
 
 /* ════════════════════════════════════════════════════════════
+   HERRAMIENTA-INLINE - bloque colapsable (<details>) embebido en
+   cualquier sección de dominio. Reutiliza .calc-form y .calc-result.
+   ════════════════════════════════════════════════════════════ */
+
+.herramienta-inline {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  overflow: hidden;
+  margin-top: var(--fk-space-4);
+}
+
+.herramienta-inline__titulo {
+  padding: var(--fk-space-4) var(--fk-space-6);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  user-select: none;
+  transition: background var(--fk-transition-base);
+}
+
+.herramienta-inline__titulo::-webkit-details-marker { display: none; }
+
+.herramienta-inline__titulo::after {
+  content: '▸';
+  margin-left: auto;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  transition: transform 0.2s ease;
+}
+
+details[open] > .herramienta-inline__titulo::after {
+  transform: rotate(90deg);
+}
+
+.herramienta-inline__titulo:hover {
+  background: var(--fk-bg-hover);
+}
+
+.herramienta-inline__cuerpo {
+  padding: var(--fk-space-4) var(--fk-space-6) var(--fk-space-6);
+  border-top: 1px solid var(--fk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.herramienta-inline__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
    INGRESOS-CARD - card compacta de ingresos dentro de Tesorería.
    Aparece sobre #lista-tesoreria, proporcional al uso real del
    usuario (1-2 ingresos para la mayoría).

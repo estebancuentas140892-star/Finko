@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono } from './logic.js';
+import { calcularCredito, validarCampos } from '../../infra/financiero.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -325,6 +326,37 @@ function _actualizarSaldoDisponibleAbono() {
   tip.classList.toggle('form-hint--muted',  saldo >  0);
 }
 
+// ── HERRAMIENTA: SIMULAR CRÉDITO ─────────────────────────────────
+
+function _onSubmitHerramientaCredito(e) {
+  e.preventDefault();
+  const datos   = Object.fromEntries(new FormData(e.target));
+  const errores = validarCampos(datos, {
+    principal:  { min: 1 },
+    tasaEA:     { min: 0.001, max: 100 },
+    plazoMeses: { min: 1, entero: true },
+  });
+  const el = document.getElementById('result-herramienta-credito');
+  if (!el) return;
+  if (errores.length > 0) {
+    el.innerHTML = `<ul class="calc-result__errors">${errores.map(e => `<li>${e}</li>`).join('')}</ul>`;
+    announce(errores[0], 'assertive');
+    return;
+  }
+  const r = calcularCredito(
+    Number(datos.principal),
+    Number(datos.tasaEA) / 100,
+    Number(datos.plazoMeses),
+  );
+  el.innerHTML = `
+    <dl class="calc-result__grid">
+      <dt>Cuota mensual fija</dt><dd class="calc-result__highlight">${f(r.cuotaMensual)}</dd>
+      <dt>Total pagado</dt>      <dd>${f(r.totalPagado)}</dd>
+      <dt>Total intereses</dt>   <dd>${f(r.totalIntereses)}</dd>
+    </dl>`;
+  announce('Resultado del crédito actualizado.');
+}
+
 // ── HANDLERS ESTRATEGIA ──────────────────────────────────────────
 
 // Handlers de la card de estrategia (F.4). En v6 la estrategia también
@@ -372,6 +404,9 @@ export function initCompromisos() {
   registrarAccion('comp-volver-chooser',     _volverChooser);
 
   _inyectarForm();
+
+  document.getElementById('form-herramienta-credito')
+    ?.addEventListener('submit', _onSubmitHerramientaCredito);
 
   // El input de "extra mensual" usa `change` (al blur) en vez de click,
   // así no perdemos focus durante el tipeo. Delegado a nivel documento.

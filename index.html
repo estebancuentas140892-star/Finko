@@ -260,6 +260,38 @@
         <div id="lista-compromisos">
           <!-- v6: solo deudas, ordenadas según la estrategia activa. -->
         </div>
+
+        <!-- Herramienta: Simular un crédito (v8.2) -->
+        <details class="herramienta-inline" id="herramienta-credito">
+          <summary class="herramienta-inline__titulo">💳 Simular un crédito</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Calculá la cuota antes de comprometerte.</p>
+            <form id="form-herramienta-credito" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hcred-principal" class="label">Monto del crédito (COP)</label>
+                  <input id="hcred-principal" name="principal" class="input" type="number"
+                         inputmode="numeric" min="100000" step="100000"
+                         placeholder="5.000.000" required />
+                </div>
+                <div class="form-group">
+                  <label for="hcred-tasa" class="label">Tasa de interés anual (%)</label>
+                  <input id="hcred-tasa" name="tasaEA" class="input" type="number"
+                         inputmode="decimal" min="0.1" max="100" step="0.1"
+                         placeholder="24" required />
+                </div>
+                <div class="form-group">
+                  <label for="hcred-plazo" class="label">Plazo (meses)</label>
+                  <input id="hcred-plazo" name="plazoMeses" class="input" type="number"
+                         inputmode="numeric" min="1" max="360" step="1"
+                         placeholder="36" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Ver cuota mensual</button>
+            </form>
+            <div id="result-herramienta-credito" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
       </section>
 
       <!-- AGENDA (vista calendario sobre compromisos + alta de gastos fijos) -->
