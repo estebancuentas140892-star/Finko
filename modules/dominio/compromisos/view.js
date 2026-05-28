@@ -428,7 +428,7 @@ export function renderFormDeuda(tipo) {
 
   const tasaLabel = esEntidad
     ? 'Tasa de interés (%)'
-    : 'Tasa de interés mensual (%) - opcional';
+    : 'Tasa de interés mensual % (opcional)';
 
   const tasaPlaceholder = esEntidad ? '28.5' : '10';
 

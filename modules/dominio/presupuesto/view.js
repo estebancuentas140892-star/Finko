@@ -148,7 +148,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">📩</p>
       <p class="empty-state__title">Sin presupuestos</p>
-      <p class="empty-state__desc">Asigná un monto mensual por categoría - por ejemplo, $500.000 para Alimentación - y Finko te va a avisar cuando te acerques al límite.</p>
+      <p class="empty-state__desc">Asigná un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te va a avisar cuando te acerques al límite.</p>
       <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear presupuesto</button>
     </div>`;
 }

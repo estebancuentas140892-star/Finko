@@ -7,6 +7,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(copy): v8.5 - eliminar guion simple "-" en strings de UI visibles · 2026-05-27
+
+Limpieza de copy: feedback del usuario para evitar el guion simple `-` como separador de inciso en texto visible. El em-dash `-` ya estaba prohibido por CLAUDE.md; ahora extendemos la regla al `-` cuando funciona como pausa entre cláusulas, reemplazándolo por comas, dos puntos o paréntesis según el caso.
+
+**Cambios (13 strings de UI):**
+
+1. **`modules/dominio/metas/view.js:80`** (empty-state): "Definí una meta - un viaje, un fondo de emergencia, lo que quieras - y llevá el control de tu progreso." → "Definí una meta, como un viaje, un fondo de emergencia o lo que quieras, y llevá el control de tu progreso."
+2. **`modules/dominio/presupuesto/view.js:151`** (empty-state): "Asigná un monto mensual por categoría - por ejemplo, $500.000 para Alimentación - y Finko te va a avisar cuando te acerques al límite." → reemplazo de los dos `-` por comas.
+3. **`modules/dominio/personales/view.js:99`** (chip): "X días - ya toca cobrar" → "X días, ya toca cobrar".
+4. **`modules/dominio/compromisos/view.js:431`** (label form): "Tasa de interés mensual (%) - opcional" → "Tasa de interés mensual % (opcional)".
+5. **`index.html:6`** (meta description): "Finko - Tu gestión..." → "Finko: tu gestión...".
+6. **`index.html:34`** (title): "Finko - Tu plata bajo control" → "Finko: tu plata bajo control".
+7. **`index.html:62`** (aria-label nav Dashboard): "Dashboard - resumen financiero" → "Dashboard: resumen financiero".
+8. **`index.html:112`** (aria-label nav Préstamos): "Préstamos personales - me deben" → "Préstamos personales: me deben".
+9-13. **`index.html:385-389`** (5 options ARL del PILA): "Clase I - oficina" → "Clase I: oficina" y análogo para las clases II a V.
+14. **`service-worker.js`**: v87 → v88 (CORE_ASSETS modificados).
+
+**Comentarios HTML y JSDoc no cambiaron** (no son visibles al usuario y no aplica la regla extendida).
+
+**Archivos:** `index.html`, `modules/dominio/metas/view.js`, `modules/dominio/presupuesto/view.js`, `modules/dominio/personales/view.js`, `modules/dominio/compromisos/view.js`, `service-worker.js`.
+
+**Tests:** 967/967 verdes (cambio puramente de copy).
+
+---
+
 ### refactor(calculadoras): v8.4 - redistribuir calculadoras a dominios + limpiar módulo (sub-tarea 5/5) · 2026-05-27
 
 Cierra la reorganización "Calculadoras → dominios naturales". Las 7 calculadoras ahora viven en sus secciones naturales. El módulo `calculadoras/` fue eliminado por completo.

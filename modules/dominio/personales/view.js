@@ -96,7 +96,7 @@ function _renderPersonalItem(prestamo, hoy) {
   const chipLabel = liquidado
     ? 'Liquidado'
     : antig === 'viejo'
-    ? `${dias} días - ya toca cobrar`
+    ? `${dias} días, ya toca cobrar`
     : antig === 'mediano'
     ? `${dias} días`
     : `${dias} ${dias === 1 ? 'día' : 'días'}`;

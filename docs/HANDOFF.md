@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v8.4: refactor Calculadoras completo - 7 tools redistribuidas a sus dominios naturales)
+> Última actualización: 2026-05-27 (v8.5: limpieza de guion simple "-" en strings de UI visibles al usuario)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### style(copy): v8.5 - eliminar guion simple "-" en strings de UI visibles · 2026-05-27
+
+Limpieza de copy: feedback del usuario para evitar el guion simple `-` como separador de inciso en texto visible. El em-dash `-` ya estaba prohibido por CLAUDE.md; ahora extendemos la regla al `-` cuando funciona como pausa entre clausulas.
+
+**Cambios clave (13 strings de UI):**
+- **`modules/dominio/metas/view.js:80`**: empty-state reescrito con comas y "como ... o ..." en lugar de "- ... -".
+- **`modules/dominio/presupuesto/view.js:151`**: empty-state idem.
+- **`modules/dominio/personales/view.js:99`**: chip "X días - ya toca cobrar" → "X días, ya toca cobrar".
+- **`modules/dominio/compromisos/view.js:431`**: label "Tasa de interés mensual (%) - opcional" → "Tasa de interés mensual % (opcional)".
+- **`index.html`**: title, meta description, dos aria-label de nav, y las 5 options del select ARL del form PILA usan `:` o `,` en lugar de `-`.
+- **`service-worker.js`**: v87 → v88 (CORE_ASSETS modificados invalidan cache).
+
+**Sigue:** Pivot honesto de la calculadora de Prima de servicios (opción A: estimador con disclaimer + campos opcionales de horas extras/bonos). Aprobada por el usuario, queda como v8.6.
+
+**Archivos:** `index.html`, `modules/dominio/metas/view.js`, `modules/dominio/presupuesto/view.js`, `modules/dominio/personales/view.js`, `modules/dominio/compromisos/view.js`, `service-worker.js`, `docs/`.
+
+**Tests:** 967/967 verdes (cambio puramente de copy).
 
 ### refactor(calculadoras): v8.4 - redistribuir calculadoras a dominios + limpiar módulo (sub-tarea 5/5) · 2026-05-27
 
@@ -105,27 +123,7 @@ Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible 
 
 **Tests:** 974/974 verdes (3 nuevos de integración).
 
-### feat(compromisos) - v7.13: abono a deudas, sub-tarea 1 (modelo + lógica + tests) · 2026-05-27
-Decisión documentada en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-abono-deudas.md). Esta es la primera de 3 sub-tareas de la feature "Abonar deuda" (botón en card que abre un modal con selector de cuenta y reduce el saldo de la deuda). Sub-tarea 1 introduce el modelo y la lógica pura sin tocar UI: nada visible aún.
-
-**Cambios clave:**
-- **Schema:** `Gasto.compromisoId?: string` (campo opcional en typedef). Backwards-compatible, sin migración. Vincula un Gasto a una Deuda como abono.
-- **5 funciones puras nuevas en `compromisos/logic.js`** (al final del archivo, bajo el comentario "ABONOS A DEUDAS (ADR 002)"):
-  - `aplicarAbonoASaldo(saldoActual, monto)`: resta sin permitir negativos.
-  - `revertirAbonoDeSaldo(saldoActual, monto)`: suma de vuelta al revertir un gasto-abono.
-  - `ajustarMontoAbono(monto, saldoActual)`: caps el abono al saldo; devuelve `{ montoAjustado, saldaDeuda }`.
-  - `validarAbono(datos, deuda)`: 11 reglas (monto > 0, cuentaId, fecha YYYY-MM-DD, deuda activa con saldo > 0, tipo de deuda válido).
-  - `deltasSaldoCompromisoPorEdicionGasto(antes, despues)`: cuando un gasto con compromisoId se crea, edita o elimina, devuelve mapa `{ compromisoId → delta }` para sincronizar `saldoTotal`. Maneja cambios de monto, cambios de compromiso, vincular/desvincular.
-- **Tests:** 39 tests nuevos (6 + 4 + 7 + 12 + 10) cubriendo cada función con caso normal, edge (NaN, monto > saldo, vacíos) y multi-error.
-- **`service-worker.js`:** v80 → v81.
-
-**Sigue:** Sub-tarea 3 (badge "Ya abonaste este mes" en Agenda + tip proyección + smoke E2E).
-
-**Archivos:** `modules/core/state.js`, `modules/dominio/compromisos/logic.js`, `tests/unit/compromisos.test.js`, `service-worker.js`, `docs/DECISIONS/002-abono-deudas.md` (creado en commit previo del ADR).
-
-**Tests:** 971/971 verdes (39 nuevos).
-
-> Para tareas anteriores (v7.12 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.13 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
