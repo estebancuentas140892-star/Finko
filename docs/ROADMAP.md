@@ -2,7 +2,7 @@
 
 > Documento vivo. Solo contiene lo **pendiente**.
 > Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
-> Última revisión: 2026-05-18
+> Última revisión: 2026-05-27
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
 **Post-v1.0:** todas las secciones A-G completadas (39 tareas opcionales + features portadas).
-**Estado:** proyecto estable en producción. 805/805 unit tests verdes, 38/38 E2E verdes, Lighthouse 99-100.
+**Estado:** proyecto estable en producción. 973/973 unit tests verdes, 18/18 E2E verdes, Lighthouse 99-100.
 **Fase activa:** ninguna. El roadmap post-v1.0 está 100% cerrado.
 
 ---
@@ -160,5 +160,5 @@ _(todas las tareas de G completadas)_
 | Lighthouse Best Practices | ≥ 90 | 100 ✅ |
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
-| Tests unitarios | - | 300/300 ✅ |
+| Tests unitarios | - | 973/973 ✅ |
 | Tests E2E | - | 18/18 ✅ |

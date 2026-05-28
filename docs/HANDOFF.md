@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v8.6: prima de servicios = estimador honesto con variables opcionales y disclaimer)
+> Última actualización: 2026-05-27 (v8.7: simulador laboral unificado + limpieza form cuentas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 967/967 verdes |
+| Tests unitarios + integración | 973/973 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,27 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): v8.7 - simulador laboral unificado + limpieza form cuentas · 2026-05-27
+
+**Fase 1. Simulador laboral:**
+- Quitar nudge "Calculá tu prima..." de la sección Tesorería.
+- Fusionar herramientas Prima + PILA en único "Simulador laboral" stateless (reutiliza `financiero.js`).
+- **Conflicto pendiente:** mantener o eliminar card "Mis ingresos" (fuente única de `S.ingresos` para dashboard/análisis/logros).
+
+**Fase 2. Limpieza form de cuentas:**
+- Agregar "Efectivo" como **primera opción** en el bank picker (BANCOS_CO).
+- Ocultar campo "Tipo de cuenta" cuando banco=Efectivo (no aplica).
+- Quitar campo "Nombre de la cuenta" (se autogenera de `banco+tipo`).
+- Actualizar validación: tipo no requerido cuando banco=Efectivo.
+- Normalizar tipo='Efectivo' cuando banco=Efectivo para evitar duplicación "Efectivo Efectivo".
+- Tests: 3 nuevos para Efectivo, verificando validación y normalización.
+
+**Archivos:** `index.html`, `modules/core/constants.js`, `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js`, `modules/dominio/tesoreria/logic.js`, `styles/components.css`, `tests/unit/tesoreria.test.js`.
+
+**Tests:** 973/973 verdes (3 nuevos).
+
+---
 
 ### feat(tesoreria): v8.6 - prima de servicios = estimador honesto con variables opcionales · 2026-05-27
 

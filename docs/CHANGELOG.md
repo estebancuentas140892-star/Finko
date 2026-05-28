@@ -7,6 +7,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): v8.7 - simulador laboral unificado + limpieza form cuentas · 2026-05-27
+
+Combina dos fases de rediseño de Tesorería post-v8.6: unificar prima+PILA y limpiar UX del form de cuentas.
+
+**Fase 1: Simulador laboral unificado.**
+
+1. **`index.html`:** Quitar nudge "Calculá tu prima de servicios. Registrá al menos un ingreso..." (`#nudge-prima`). Reemplazar dos `<details>` (prima y PILA separados) por único `<details id="simulador-laboral">` con título "🧮 Simulador laboral: prima y aportes PILA" y descripción "...el sistema puede hacer un cálculo completo e integrado...". Form con 5 campos: salario básico, días trabajados, clase ARL, horas extras/recargos, bonos/comisiones (últimos 2 opcionales). Submit "Calcular".
+2. **`modules/dominio/tesoreria/index.js`:** Reemplazar handlers `_onSubmitHerramientaPrima` y `_onSubmitHerramientaPILA` por único `_onSubmitSimuladorLaboral`. Output muestra prima (empleados) + aportes PILA (independientes) en bloques separados con advertencia: "Estimación simplificada. La prima aplica a empleados; los aportes PILA, a independientes."
+3. **`modules/dominio/tesoreria/view.js`:** Removidos `renderNudgePrima()` y funciones helper. Solo quedan `renderListaCuentas()` y `renderFormCuenta()`.
+4. **`styles/components.css`:** Nuevas clases `.calc-result__subtitle` para títulos dentro de resultados, y `.calc-result__grid + .calc-result__subtitle` para agregar margen/border entre bloques.
+5. **Decisión pendiente:** ¿Eliminar o mantener card "💰 Mis ingresos"? El usuario quiere borrarla ("mis ingresos son los que agrego en las cuentas"), pero es la única fuente de `S.ingresos` que alimenta dashboard/"ingresos del mes", Análisis e Ingresos/Logros. Account balances ≠ monthly income. Requiere arquitectura de reemplazo.
+
+**Fase 2: Limpieza form de cuentas.**
+
+1. **`modules/core/constants.js`:** Efectivo agregado como **primer entrada** en `BANCOS_CO`: `{ id: 'Efectivo', iniciales: '💵', color: '#16a34a', texto: '#ffffff' }`. Total de bancos: 13 → 14. Efectivo sigue en `TIPOS_CUENTA` para backwards-compat (cuentas antiguas).
+2. **`modules/dominio/tesoreria/view.js` (`renderFormCuenta()`):** Quitar `<div class="form-group">` con `cuenta-nombre`. Agregar `id="form-group-tipo"` al div del `<select>` para ocultarlo dinámicamente. `_renderCuentaItem()` deduplica: si `banco === tipo`, muestra solo banco (evita "Efectivo · Efectivo").
+3. **`modules/dominio/tesoreria/logic.js` (`validarCuenta()`):** Tipo no es requerido cuando `banco === 'Efectivo'`. Cambio: `if (datos.banco !== 'Efectivo' && (!datos.tipo?.trim() || datos.tipo === '')) { errores.push(...) }`.
+4. **`modules/dominio/tesoreria/logic.js` (`normalizarCuenta()`):** `const tipo = (banco === 'Efectivo') ? 'Efectivo' : (datos.tipo ?? '');`. Normaliza tipo a 'Efectivo' cuando banco es Efectivo, evitando inconsistencia con _autoNombre().
+5. **`modules/dominio/tesoreria/index.js`:** `_selectItem()` en `_initBankPicker` dispara `new Event('change')` en hidden input para notificar cambio de banco. Nueva función `_toggleTipoField()` lee `banco` y oculta/muestra `#form-group-tipo` (limpiar tipo value si Efectivo). `_inyectarForm()` registra listener `change` en `[name="banco"]`. `_editarCuenta()` remueve línea de prefill nombre (campo eliminado) y llama `_toggleTipoField()` después de setear banco. `_nuevaCuenta()` llama `_toggleTipoField()` para mostrar tipo si fue previamente oculto.
+6. **`tests/unit/tesoreria.test.js`:** 3 tests nuevos: (a) `validarCuenta({ banco: 'Efectivo', tipo: '', saldo: '0' })` → sin errores; (b) `validarCuenta({ banco: 'Efectivo', tipo: 'Efectivo', saldo: '0' })` → sin errores; (c) `normalizarCuenta({ banco: 'Efectivo', tipo: '', ... })` → tipo y nombre = 'Efectivo'.
+
+**Archivos:** `index.html`, `modules/core/constants.js`, `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js`, `modules/dominio/tesoreria/logic.js`, `styles/components.css`, `tests/unit/tesoreria.test.js`.
+
+**Tests:** 973/973 verdes (3 nuevos en tesoreria.test.js).
+
+---
+
 ### feat(tesoreria): v8.6 - prima de servicios = estimador honesto con variables opcionales · 2026-05-27
 
 Convierte la calculadora de prima en un estimador honesto que reconoce la complejidad real (horas extras, recargos, bonos habituales). Mantiene backward compatibility: `calcularPrima(salario, dias)` sin el 3er parámetro sigue funcionando igual.
