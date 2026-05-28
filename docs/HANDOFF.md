@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v8.5: limpieza de guion simple "-" en strings de UI visibles al usuario)
+> Última actualización: 2026-05-27 (v8.6: prima de servicios = estimador honesto con variables opcionales y disclaimer)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): v8.6 - prima de servicios = estimador honesto con variables opcionales · 2026-05-27
+
+Convierte la calculadora de prima en un estimador honesto (opción A aprobada). Reconoce que la prima real depende de horas extras, recargos y bonos habituales, que varían por trabajador y empresa.
+
+**Cambios clave:**
+- **`modules/infra/financiero.js`:** `calcularPrima(salario, dias, variablesPromedio = 0)`. Nuevo 3er parámetro opcional. El IBC para liquidación incluye `salarioBase + variablesAplicadas`. Retorna `variablesAplicadas` en el resultado. Backwards-compatible: los 7 tests existentes siguen verdes.
+- **`index.html`:** Form renombrado ("🎁 Estimá tu prima de servicios"). Descripción honesta: "Aproximación para salario fijo. Si tenés horas extras o bonos habituales, ingrésalos para mayor precisión." Dos campos opcionales nuevos: "Horas extras y recargos promedio/mes" + "Bonos y comisiones habituales promedio/mes". Botón: "Estimar prima".
+- **`modules/dominio/tesoreria/index.js`:** Handler suma `extras + bonos` como `variablesPromedio`. Muestra fila "Variables incluidas" en el grid solo si hay > 0. Disclaimer al pie del resultado: "Estimación simplificada. El valor real depende de tu nómina exacta del semestre."
+- **`tests/unit/calculadoras.test.js`:** 3 tests nuevos de `variablesPromedio`: default=0 equivale a omitir, positivo incrementa la prima correctamente, negativo se trata como 0.
+- **`service-worker.js`:** v88 → v89.
+
+**Archivos:** `modules/infra/financiero.js`, `index.html`, `modules/dominio/tesoreria/index.js`, `tests/unit/calculadoras.test.js`, `service-worker.js`, `docs/`.
+
+**Tests:** 970/970 verdes (3 nuevos).
 
 ### style(copy): v8.5 - eliminar guion simple "-" en strings de UI visibles · 2026-05-27
 
@@ -104,26 +119,7 @@ Cierra la feature completa "Abonar deuda" (ADR 002). Tercera y última sub-tarea
 
 **Tests:** 974/974 verdes. E2E: 39 pasan (badge + leyenda Agenda).
 
-### feat(compromisos) - v7.14: abono a deudas, sub-tarea 2 (modal + botón + glue code) · 2026-05-27
-Feature "Abonar deuda" completa en UI. Segunda de 3 sub-tareas: todo lo visible y el glue code de sincronización.
-
-**Cambios clave:**
-- **Botón "Abonar" en cada card de deuda** (`compromisos/view.js`): aparece cuando `saldoTotal > 0`. Cuando `saldoTotal = 0`, se reemplaza por un chip "Saldada" (verde) y un botón "✓ Archivar".
-- **Modal `#modal-abono`** (`index.html`): nuevo modal con form de abono. Campos: monto, cuenta (selector con saldo disponible en tiempo real), fecha (pre-rellena hoy), nota. Hint "Máximo $X. Si abonás más, se ajusta al saldo pendiente."
-- **`renderFormAbono(deuda)`** (`compromisos/view.js`): genera el form; muestra estado vacío si no hay cuentas activas.
-- **Handlers en `compromisos/index.js`**: `_abrirAbono`, `_guardarAbono`, `_archivarCompromiso`, `_actualizarSaldoDisponibleAbono`. El guardar: crea Gasto con `compromisoId`, descuenta de la cuenta, reduce `saldoTotal` de la deuda.
-- **`gastos/logic.js`**: `normalizarGasto` ahora incluye `compromisoId: datos.compromisoId || null`.
-- **`gastos/index.js`**: glue code de sincronización: cuando se edita o elimina un gasto-abono, `_ajustarSaldoDeuda` revierte/ajusta el `saldoTotal` de la deuda. El compromisoId se preserva al editar (no se expone en el form).
-- **3 tests de integración** en `compromisos.test.js`: flujo completo abono parcial, abono que salda, y revertir abono.
-- **`service-worker.js`:** v81 → v82.
-
-**Sigue:** completado en v7.15.
-
-**Archivos:** `index.html`, `styles/components.css`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/index.js`, `service-worker.js`, `tests/unit/compromisos.test.js`.
-
-**Tests:** 974/974 verdes (3 nuevos de integración).
-
-> Para tareas anteriores (v7.13 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.14 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

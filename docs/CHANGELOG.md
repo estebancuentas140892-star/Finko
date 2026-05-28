@@ -7,6 +7,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): v8.6 - prima de servicios = estimador honesto con variables opcionales · 2026-05-27
+
+Convierte la calculadora de prima en un estimador honesto que reconoce la complejidad real (horas extras, recargos, bonos habituales). Mantiene backward compatibility: `calcularPrima(salario, dias)` sin el 3er parámetro sigue funcionando igual.
+
+**Cambios:**
+
+1. **`modules/infra/financiero.js`:** `calcularPrima(salario, dias, variablesPromedio = 0)`. El IBC liquidable es ahora `salarioBase + variablesAplicadas`. Retorna `variablesAplicadas` (Math.max(0, Math.round(variablesPromedio))). Backwards-compatible.
+2. **`index.html`:** Summary "🎁 Estimá tu prima de servicios". Descripción honesta. 2 campos opcionales (sin `required`): `hprima-extras` (horas extras y recargos promedio/mes) y `hprima-bonos` (bonos y comisiones habituales promedio/mes). Botón "Estimar prima".
+3. **`modules/dominio/tesoreria/index.js`:** Handler suma `extras + bonos` → `variablesPromedio`. Grid muestra fila "Variables incluidas" solo si > 0. Disclaimer al pie: "Estimación simplificada. El valor real depende de tu nómina exacta del semestre."
+4. **`tests/unit/calculadoras.test.js`:** 3 tests nuevos: `variablesPromedio=0` equivale a omitir, valor positivo incrementa prima correctamente (delta exacto = `variablesPromedio × dias/360`), valor negativo se trata como 0.
+5. **`service-worker.js`:** v88 → v89.
+
+**Archivos:** `modules/infra/financiero.js`, `index.html`, `modules/dominio/tesoreria/index.js`, `tests/unit/calculadoras.test.js`, `service-worker.js`.
+
+**Tests:** 970/970 verdes (3 nuevos).
+
+---
+
 ### style(copy): v8.5 - eliminar guion simple "-" en strings de UI visibles · 2026-05-27
 
 Limpieza de copy: feedback del usuario para evitar el guion simple `-` como separador de inciso en texto visible. El em-dash `-` ya estaba prohibido por CLAUDE.md; ahora extendemos la regla al `-` cuando funciona como pausa entre cláusulas, reemplazándolo por comas, dos puntos o paréntesis según el caso.

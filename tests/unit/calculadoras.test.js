@@ -223,6 +223,27 @@ describe('calcularPrima()', () => {
     const r = calcularPrima(2 * SMMLV + 1, 180);
     expect(r.incluyeAuxilio).toBe(false);
   });
+
+  it('variablesPromedio 0 o ausente produce el mismo resultado', () => {
+    const sinParam  = calcularPrima(2_000_000, 180);
+    const conCero   = calcularPrima(2_000_000, 180, 0);
+    expect(sinParam.prima).toBe(conCero.prima);
+    expect(sinParam.variablesAplicadas).toBe(0);
+  });
+
+  it('variablesPromedio positivo incrementa la prima', () => {
+    const sinVar = calcularPrima(2_000_000, 180);
+    const conVar = calcularPrima(2_000_000, 180, 500_000);
+    expect(conVar.prima).toBeGreaterThan(sinVar.prima);
+    expect(conVar.variablesAplicadas).toBe(500_000);
+    // Prima extra = 500.000 * 180/360 = 250.000
+    expect(conVar.prima - sinVar.prima).toBe(250_000);
+  });
+
+  it('variablesPromedio negativo se trata como 0 (Math.max)', () => {
+    const r = calcularPrima(2_000_000, 180, -100_000);
+    expect(r.variablesAplicadas).toBe(0);
+  });
 });
 
 // ── validarCampos() ───────────────────────────────────────────────

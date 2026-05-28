@@ -420,15 +420,21 @@ function _onSubmitHerramientaPrima(e) {
     announce(errores[0], 'assertive');
     return;
   }
-  const r        = calcularPrima(Number(datos.salario), Number(datos.dias));
+  const variablesPromedio = (Number(datos.extras) || 0) + (Number(datos.bonos) || 0);
+  const r        = calcularPrima(Number(datos.salario), Number(datos.dias), variablesPromedio);
   const auxLabel = r.incluyeAuxilio ? `Sí (${f(r.auxilioAplicado)})` : 'No (salario > 2 SMMLV)';
+  const variablesRow = r.variablesAplicadas > 0
+    ? `<dt>Variables incluidas (extras + bonos)</dt> <dd>${f(r.variablesAplicadas)}</dd>`
+    : '';
   el.innerHTML = `
     <dl class="calc-result__grid">
       <dt>Salario base liquidación</dt>   <dd>${f(r.salarioBase)}</dd>
-      <dt>Incluye auxilio transporte</dt> <dd>${auxLabel}</dd>
-      <dt>Prima a pagar</dt>              <dd class="calc-result__total">${f(r.prima)}</dd>
-    </dl>`;
-  announce('Resultado de prima actualizado.');
+      ${variablesRow}
+      <dt>Auxilio de transporte</dt>      <dd>${auxLabel}</dd>
+      <dt>Prima estimada</dt>             <dd class="calc-result__total">${f(r.prima)}</dd>
+    </dl>
+    <p class="herramienta-inline__desc">Estimación simplificada. El valor real depende de tu nómina exacta del semestre.</p>`;
+  announce('Estimación de prima actualizada.');
 }
 
 function _onSubmitHerramientaPILA(e) {

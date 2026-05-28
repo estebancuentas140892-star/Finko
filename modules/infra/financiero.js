@@ -155,33 +155,42 @@ export function calcularRegla72(tasaAnualPct) {
 // ── PRIMA DE SERVICIOS (Colombia) ─────────────────────────────────
 
 /**
- * Calcula la prima de servicios semestral según la Ley 1788 de 2016.
+ * Estima la prima de servicios semestral según la Ley 1788 de 2016.
  *
- * Fórmula: `prima = (salario_base + auxilio_transporte*) × días / 360`
+ * Fórmula: `prima = (salario_base + auxilio* + variables) × días / 360`
  * (*) El auxilio de transporte se suma solo si salario ≤ 2 × SMMLV vigente.
  * Máximo de días por liquidación semestral: 180.
  *
- * @param {number} salario      - Salario mensual en COP.
- * @param {number} dias         - Días trabajados en el semestre (máx. 180).
+ * `variablesPromedio` permite incluir el promedio mensual de horas extras,
+ * recargos y bonos habituales (no esporádicos) para mayor precisión.
+ * Si se omite o es 0, el resultado equivale al caso de salario fijo puro.
+ *
+ * @param {number} salario            - Salario mensual base en COP.
+ * @param {number} dias               - Días trabajados en el semestre (máx. 180).
+ * @param {number} [variablesPromedio=0] - Promedio mensual de horas extras, recargos y bonos habituales (COP).
  * @returns {{
  *   prima: number,
  *   incluyeAuxilio: boolean,
  *   auxilioAplicado: number,
  *   salarioBase: number,
+ *   variablesAplicadas: number,
  * }}
  */
-export function calcularPrima(salario, dias) {
-  const diasEfectivos   = Math.min(dias, 180);
-  const incluyeAuxilio  = salario <= 2 * SMMLV;
-  const auxilioAplicado = incluyeAuxilio ? AUXILIO_TRANSPORTE : 0;
-  const salarioBase     = salario + auxilioAplicado;
-  const prima           = (salarioBase * diasEfectivos) / 360;
+export function calcularPrima(salario, dias, variablesPromedio = 0) {
+  const diasEfectivos      = Math.min(dias, 180);
+  const incluyeAuxilio     = salario <= 2 * SMMLV;
+  const auxilioAplicado    = incluyeAuxilio ? AUXILIO_TRANSPORTE : 0;
+  const salarioBase        = salario + auxilioAplicado;
+  const variablesAplicadas = Math.max(0, Math.round(variablesPromedio));
+  const baseTotal          = salarioBase + variablesAplicadas;
+  const prima              = (baseTotal * diasEfectivos) / 360;
 
   return {
-    prima:           Math.round(prima),
+    prima:              Math.round(prima),
     incluyeAuxilio,
     auxilioAplicado,
     salarioBase,
+    variablesAplicadas,
   };
 }
 
