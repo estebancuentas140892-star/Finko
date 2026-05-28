@@ -39,6 +39,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### refactor(nav): v8.0 - eliminar sección Calculadoras del nav (sub-tarea 1/5) · 2026-05-27
+
+Primera sub-tarea de la reorganización "Calculadoras → dominios naturales". Solo cambios de navegación, sin tocar lógica.
+
+**Cambios clave:**
+- **`index.html`:** Quitado el link `#calc` del sidebar desktop (grupo Herramientas) y del menú Más mobile.
+- **`modules/infra/router.js`:** Eliminado `['calc', 'sec-calc']` de SECTIONS. Agregado `REDIRECTS = new Map([['calc', 'dash']])`: cualquier hash `#calc` (bookmark, URL directa) redirige al Dashboard con `history.replaceState`.
+- **`service-worker.js`:** v83 → v84.
+
+**Sigue:** Sub-tarea 2: mover `calculadoras/logic.js` a `infra/financiero.js` (prerequisito ADN para que los dominios puedan importar la lógica sin violar la regla "ningún dominio importa a otro").
+
+**Archivos:** `index.html`, `modules/infra/router.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes (cambio puramente de navegación).
+
 ### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
 
 Cierra la feature completa "Abonar deuda" (ADR 002). Tercera y última sub-tarea: feedback visual en Agenda y en el modal de abono, más el smoke E2E.

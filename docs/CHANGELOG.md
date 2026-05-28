@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(nav): v8.0 - eliminar sección Calculadoras del nav (sub-tarea 1/5) · 2026-05-27
+
+Primera sub-tarea de "Calculadoras → dominios naturales". Solo navegación.
+
+**Cambios:**
+
+1. **`index.html`:** Quitado link `#calc` del sidebar desktop y del menú Más mobile.
+2. **`modules/infra/router.js`:** Eliminado `['calc', 'sec-calc']` de SECTIONS. Agregado `REDIRECTS map` con `calc → dash`: redirige `#calc` al Dashboard vía `history.replaceState` sin disparar hashchange adicional.
+3. **`service-worker.js`:** v83 → v84.
+
+**Archivos:** `index.html`, `modules/infra/router.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes.
+
+---
+
 ### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
 
 Cierra la feature completa "Abonar deuda" (ADR 002). Sub-tarea 3 de 3: feedback visual al usuario dentro de la Agenda y en el modal de abono, más cobertura E2E del flujo.
