@@ -14,8 +14,12 @@ const SECTIONS = new Map([
   ['metas',       'sec-metas'],
   ['presupuesto', 'sec-presupuesto'],
   ['analisis',    'sec-analisis'],
-  ['calc',        'sec-calc'],
   ['config',      'sec-config'],
+]);
+
+// Hashes retirados: redirigen al destino indicado (bookmarks viejos, etc.).
+const REDIRECTS = new Map([
+  ['calc', 'dash'],
 ]);
 
 const DEFAULT_HASH = 'dash';
@@ -25,6 +29,11 @@ function currentHash() {
 }
 
 function showSection(hash) {
+  const resolved = REDIRECTS.get(hash) ?? hash;
+  if (resolved !== hash) {
+    history.replaceState(null, '', `#${resolved}`);
+    hash = resolved;
+  }
   const targetId = SECTIONS.get(hash) ?? SECTIONS.get(DEFAULT_HASH);
 
   for (const [, sectionId] of SECTIONS) {
@@ -50,4 +59,4 @@ export function navigate(hash) {
   location.hash = hash;
 }
 
-export { SECTIONS, DEFAULT_HASH };
+export { SECTIONS, REDIRECTS, DEFAULT_HASH };
