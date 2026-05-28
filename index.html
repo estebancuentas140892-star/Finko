@@ -423,6 +423,79 @@
         <div id="lista-metas">
           <!-- Fase 9: metas/view.js renderiza aquí -->
         </div>
+
+        <!-- Herramientas de proyección (v8.4) -->
+        <details class="herramienta-inline" id="herramienta-cdt">
+          <summary class="herramienta-inline__titulo">🏦 Proyectar un CDT</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Cuánto recibirías al vencimiento, ya con retención del 7%.</p>
+            <form id="form-herramienta-cdt" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hcdt-capital" class="label">Capital invertido (COP)</label>
+                  <input id="hcdt-capital" name="principal" class="input" type="number"
+                         inputmode="numeric" min="100000" step="100000"
+                         placeholder="5.000.000" required />
+                </div>
+                <div class="form-group">
+                  <label for="hcdt-tasa" class="label">Tasa EA (%)</label>
+                  <input id="hcdt-tasa" name="tasaEA" class="input" type="number"
+                         inputmode="decimal" min="0.1" max="100" step="0.1"
+                         placeholder="12.5" required />
+                </div>
+                <div class="form-group">
+                  <label for="hcdt-plazo" class="label">Plazo (días)</label>
+                  <input id="hcdt-plazo" name="plazo" class="input" type="number"
+                         inputmode="numeric" min="30" max="1825" step="30"
+                         placeholder="360" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Proyectar</button>
+            </form>
+            <div id="result-herramienta-cdt" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="herramienta-inline" id="herramienta-ic">
+          <summary class="herramienta-inline__titulo">📈 Proyectar el crecimiento de tus ahorros</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Cómo crece tu plata con interés compuesto.</p>
+            <form id="form-herramienta-ic" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hic-principal" class="label">Capital inicial (COP)</label>
+                  <input id="hic-principal" name="principal" class="input" type="number"
+                         inputmode="numeric" min="1" step="100000"
+                         placeholder="10.000.000" required />
+                </div>
+                <div class="form-group">
+                  <label for="hic-tasa" class="label">Tasa anual (%)</label>
+                  <input id="hic-tasa" name="tasaAnualPct" class="input" type="number"
+                         inputmode="decimal" min="0.001" max="200" step="0.1"
+                         placeholder="12" required />
+                </div>
+                <div class="form-group">
+                  <label for="hic-periodos" class="label">Capitalización</label>
+                  <select id="hic-periodos" name="periodosPorAnio" class="input">
+                    <option value="12" selected>Mensual</option>
+                    <option value="4">Trimestral</option>
+                    <option value="2">Semestral</option>
+                    <option value="1">Anual</option>
+                    <option value="365">Diaria</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="hic-anios" class="label">Horizonte (años)</label>
+                  <input id="hic-anios" name="anios" class="input" type="number"
+                         inputmode="numeric" min="1" max="50" step="1"
+                         placeholder="5" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Proyectar</button>
+            </form>
+            <div id="result-herramienta-ic" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
       </section>
 
       <!-- ANÁLISIS -->
@@ -433,16 +506,57 @@
         <div id="panel-analisis">
           <!-- Fase 10: analisis/view.js renderiza aquí -->
         </div>
-      </section>
 
-      <!-- CALCULADORAS (lazy) -->
-      <section class="section" id="sec-calc" aria-labelledby="title-calc">
-        <header class="section__header">
-          <h1 class="section__title" id="title-calc">Calculadoras</h1>
-        </header>
-        <div id="panel-calc">
-          <!-- Fase 11: calculadoras/index.js - carga lazy en primera visita -->
-        </div>
+        <!-- Herramientas de contexto financiero (v8.4) -->
+        <details class="herramienta-inline" id="herramienta-r72">
+          <summary class="herramienta-inline__titulo">⚡ ¿En cuántos años duplico mi plata?</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Regla del 72: una aproximación rápida para cualquier tasa.</p>
+            <form id="form-herramienta-r72" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hr72-tasa" class="label">Tasa anual (%)</label>
+                  <input id="hr72-tasa" name="tasaAnualPct" class="input" type="number"
+                         inputmode="decimal" min="0.001" max="200" step="0.1"
+                         placeholder="12" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Calcular</button>
+            </form>
+            <div id="result-herramienta-r72" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="herramienta-inline" id="herramienta-rentabilidad">
+          <summary class="herramienta-inline__titulo">📉 Rentabilidad real (ajuste por inflación)</summary>
+          <div class="herramienta-inline__cuerpo">
+            <p class="herramienta-inline__desc">Cuánto rinde de verdad tu inversión después de la inflación.</p>
+            <form id="form-herramienta-rentabilidad" class="calc-form" novalidate>
+              <div class="calc-form__fields">
+                <div class="form-group">
+                  <label for="hreal-capital" class="label">Capital invertido (COP)</label>
+                  <input id="hreal-capital" name="capital" class="input" type="number"
+                         inputmode="numeric" min="1" step="100000"
+                         placeholder="10.000.000" required />
+                </div>
+                <div class="form-group">
+                  <label for="hreal-tasa" class="label">Tasa nominal anual (%)</label>
+                  <input id="hreal-tasa" name="tasaPct" class="input" type="number"
+                         inputmode="decimal" min="0" max="200" step="0.1"
+                         placeholder="12" required />
+                </div>
+                <div class="form-group">
+                  <label for="hreal-inflacion" class="label">Inflación anual (%)</label>
+                  <input id="hreal-inflacion" name="inflacionPct" class="input" type="number"
+                         inputmode="decimal" min="0" max="100" step="0.1"
+                         placeholder="5.2" required />
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary">Calcular</button>
+            </form>
+            <div id="result-herramienta-rentabilidad" class="calc-result" aria-live="polite"></div>
+          </div>
+        </details>
       </section>
 
       <!-- AJUSTES -->

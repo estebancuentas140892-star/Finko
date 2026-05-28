@@ -7,6 +7,77 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(calculadoras): v8.4 - redistribuir calculadoras a dominios + limpiar módulo (sub-tarea 5/5) · 2026-05-27
+
+Cierra la reorganización "Calculadoras → dominios naturales". Las 7 calculadoras ahora viven en sus secciones naturales. El módulo `calculadoras/` fue eliminado por completo.
+
+**Cambios:**
+
+1. **`index.html`:** 4 nuevos `<details class="herramienta-inline">` en `sec-metas` (CDT, Interés Compuesto) y `sec-analisis` (Regla del 72, Rentabilidad real). Eliminada la sección `sec-calc` completa con su panel y formularios.
+2. **`modules/dominio/metas/index.js`:** Nuevas imports (`f` de utils, `calcularCDT`, `calcularInteresCompuesto`, `validarCampos` de financiero). Handlers `_onSubmitHerramientaCDT` y `_onSubmitHerramientaIC`. Wire-up en `initMetas()`.
+3. **`modules/dominio/analisis/index.js`:** Nuevas imports (`f` de utils, `calcularRegla72`, `calcularRentabilidadReal`, `validarCampos` de financiero). Handlers `_onSubmitHerramientaR72` y `_onSubmitHerramientaRentabilidad`. Wire-up en `initAnalisis()`.
+4. **`modules/ui/bootstrap.js`:** Removidos `import { initCalculadoras }` e `initCalculadoras()`.
+5. **`modules/dominio/calculadoras/view.js`** y **`index.js`:** Borrados. El directorio `calculadoras/` queda vacío y ya no forma parte del bundle.
+6. **`tests/unit/calculadoras.test.js`:** Removidos import `renderAlertaUsura` y el `describe('renderAlertaUsura()')` con 7 tests. La función fue deprecada junto al módulo.
+7. **`service-worker.js`:** v86 → v87; removidas entradas `calculadoras/view.js` y `calculadoras/index.js` de `CORE_ASSETS`.
+
+**Archivos:** `index.html`, `modules/dominio/metas/index.js`, `modules/dominio/analisis/index.js`, `modules/ui/bootstrap.js`, `service-worker.js`, `tests/unit/calculadoras.test.js`. Borrados: `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`.
+
+**Tests:** 967/967 verdes.
+
+---
+
+### refactor(tesoreria): v8.3 - integrar Prima + PILA en Tesorería (sub-tarea 4/5) · 2026-05-27
+
+Herramientas de nómina de independientes movidas a su sección natural.
+
+**Cambios:**
+
+1. **`index.html`:** Dos `<details class="herramienta-inline">` tras `lista-tesoreria` en `sec-tesoreria`: Prima de servicios (`#herramienta-prima`, campos salario + días) y PILA (`#herramienta-pila`, campo ingreso + select clase ARL con las 5 opciones).
+2. **`modules/dominio/tesoreria/index.js`:** Imports `f`, `calcularPrima`, `calcularPILA`, `validarCampos`. Handlers `_onSubmitHerramientaPrima` y `_onSubmitHerramientaPILA` con salida `calc-result__grid`. Wire-up en `initTesoreria()`.
+3. **`service-worker.js`:** v85 → v86.
+
+**Archivos:** `index.html`, `modules/dominio/tesoreria/index.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes.
+
+---
+
+### refactor(compromisos): v8.2 - integrar calculadora de Crédito en Compromisos (sub-tarea 3/5) · 2026-05-27
+
+Primera herramienta inline integrada: el simulador de crédito vive ahora dentro de la sección donde el usuario toma la decisión de endeudarse.
+
+**Cambios:**
+
+1. **`index.html`:** `<details class="herramienta-inline" id="herramienta-credito">` tras `lista-compromisos` en `sec-compromisos`. Form con campos `hcred-principal`, `hcred-tasa`, `hcred-plazo`.
+2. **`styles/components.css`:** Nuevo bloque `.herramienta-inline` (reusable para todas las herramientas inline del proyecto): `border-radius`, arrow toggle `▸` rotado con CSS, hover, cuerpo con `border-top`.
+3. **`modules/dominio/compromisos/index.js`:** Imports `calcularCredito`, `validarCampos`. Handler `_onSubmitHerramientaCredito`. Wire-up en `initCompromisos()`.
+4. **`service-worker.js`:** v84 → v85.
+
+**Archivos:** `index.html`, `styles/components.css`, `modules/dominio/compromisos/index.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes.
+
+---
+
+### refactor(infra): v8.1 - mover calculadoras/logic.js a infra/financiero.js (sub-tarea 2/5) · 2026-05-27
+
+Prerequisito ADN para redistribuir calculadoras: mover la lógica a `infra/` permite que cualquier dominio la importe sin violar la regla "ningún dominio importa a otro".
+
+**Cambios:**
+
+1. **`modules/infra/financiero.js`** (nuevo): todas las funciones puras financieras de `calculadoras/logic.js` con import corregido (`../core/constants.js`). Exports: `calcularCDT`, `calcularCredito`, `calcularInteresCompuesto`, `calcularRegla72`, `calcularPrima`, `calcularPILA`, `calcularRentabilidadReal`, `clasificarTasaCredito`, `validarCampos`.
+2. **`modules/dominio/calculadoras/logic.js`:** Borrado (95% rename a `infra/financiero.js` según git).
+3. **`modules/dominio/calculadoras/index.js`:** Actualizado import a `../../infra/financiero.js`.
+4. **`tests/unit/calculadoras.test.js`:** Actualizado import de funciones lógicas a `../../modules/infra/financiero.js`.
+5. **`service-worker.js`:** v84 → v85 (agrega `financiero.js`, mantiene `calculadoras/view.js` e `index.js` que se borrarán en v8.4).
+
+**Archivos:** `modules/infra/financiero.js` (creado), `modules/dominio/calculadoras/logic.js` (borrado), `modules/dominio/calculadoras/index.js`, `tests/unit/calculadoras.test.js`, `service-worker.js`.
+
+**Tests:** 974/974 verdes.
+
+---
+
 ### refactor(nav): v8.0 - eliminar sección Calculadoras del nav (sub-tarea 1/5) · 2026-05-27
 
 Primera sub-tarea de "Calculadoras → dominios naturales". Solo navegación.

@@ -10,8 +10,6 @@ import {
   clasificarTasaCredito,
   validarCampos,
 } from '../../modules/infra/financiero.js';
-import { renderAlertaUsura } from '../../modules/dominio/calculadoras/view.js';
-
 // Constantes legales vigentes (importadas desde el single source of truth).
 // Si cambian los valores oficiales solo se toca `modules/core/constants.js`.
 import { SMMLV, AUXILIO_TRANSPORTE, TASA_USURA } from '../../modules/core/constants.js';
@@ -377,52 +375,5 @@ describe('clasificarTasaCredito()', () => {
     // Resilient a cambios trimestrales: comparamos contra la constante importada.
     expect(clasificarTasaCredito(TASA_USURA + 0.01)).toBe('usura');
     expect(clasificarTasaCredito(TASA_USURA * 0.30)).toBe('razonable');
-  });
-});
-
-// ── renderAlertaUsura() ───────────────────────────────────────────
-
-/** Fixture reutilizable para los tests de la alerta de usura. */
-const _usuraFixture = {
-  tasa: 0.2817,
-  periodo: '2026-Q2',
-  fuente: 'Resolucion SFC Q2 2026',
-};
-
-describe('renderAlertaUsura()', () => {
-  it('contiene la clase nudge-critical', () => {
-    const html = renderAlertaUsura(35, _usuraFixture);
-    expect(html).toContain('nudge-critical');
-  });
-
-  it('incluye role="alert" para accesibilidad', () => {
-    const html = renderAlertaUsura(35, _usuraFixture);
-    expect(html).toContain('role="alert"');
-  });
-
-  it('muestra la tasa ingresada con 2 decimales', () => {
-    const html = renderAlertaUsura(35.5, _usuraFixture);
-    expect(html).toContain('35.50%');
-  });
-
-  it('muestra el tope legal de usura convertido a porcentaje', () => {
-    const html = renderAlertaUsura(35, _usuraFixture);
-    expect(html).toContain('28.17%');
-  });
-
-  it('muestra el periodo de vigencia de la usura', () => {
-    const html = renderAlertaUsura(35, _usuraFixture);
-    expect(html).toContain('2026-Q2');
-  });
-
-  it('calcula correctamente el exceso sobre el tope', () => {
-    // 35 - 28.17 = 6.83 puntos
-    const html = renderAlertaUsura(35, _usuraFixture);
-    expect(html).toContain('6.83');
-  });
-
-  it('el exceso es 0.00 cuando la tasa iguala exactamente el tope', () => {
-    const html = renderAlertaUsura(28.17, _usuraFixture);
-    expect(html).toContain('0.00');
   });
 });

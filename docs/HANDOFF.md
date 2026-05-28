@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v7.15: abono a deudas, sub-tarea 3: badge agenda + tip proyección + E2E)
+> Última actualización: 2026-05-27 (v8.4: refactor Calculadoras completo - 7 tools redistribuidas a sus dominios naturales)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 932/932 verdes |
+| Tests unitarios + integración | 967/967 verdes |
 | Tests E2E | 18/18 humo + suite completa |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,20 +39,35 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### refactor(calculadoras): v8.4 - redistribuir calculadoras a dominios + limpiar módulo (sub-tarea 5/5) · 2026-05-27
+
+Cierra la reorganización "Calculadoras → dominios naturales". Las 7 calculadoras ahora viven dentro de sus secciones naturales como herramientas inline colapsables. El módulo `calculadoras/` fue eliminado por completo.
+
+**Cambios clave:**
+- **`index.html`:** 4 nuevos `<details class="herramienta-inline">` en las secciones Metas (CDT + Interés Compuesto) y Análisis (Regla del 72 + Rentabilidad real). Eliminada la sección `sec-calc` completa.
+- **`modules/dominio/metas/index.js`:** Handlers `_onSubmitHerramientaCDT` y `_onSubmitHerramientaIC` (importan de `infra/financiero.js`). Wire-up en `initMetas()`.
+- **`modules/dominio/analisis/index.js`:** Handlers `_onSubmitHerramientaR72` y `_onSubmitHerramientaRentabilidad`. Wire-up en `initAnalisis()`.
+- **`modules/ui/bootstrap.js`:** Removidos `import { initCalculadoras }` y la llamada `initCalculadoras()`.
+- **`modules/dominio/calculadoras/view.js`** y **`index.js`:** Borrados.
+- **`tests/unit/calculadoras.test.js`:** Removidos import `renderAlertaUsura` y 7 tests asociados (la función fue deprecada con el módulo).
+- **`service-worker.js`:** v86 → v87; removidas entradas `calculadoras/view.js` y `calculadoras/index.js` de `CORE_ASSETS`.
+
+**Archivos:** `index.html`, `modules/dominio/metas/index.js`, `modules/dominio/analisis/index.js`, `modules/ui/bootstrap.js`, `service-worker.js`, `tests/unit/calculadoras.test.js`. Eliminados: `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`.
+
+**Tests:** 967/967 verdes (7 menos por eliminar tests de `renderAlertaUsura`, correctamente deprecada).
+
 ### refactor(nav): v8.0 - eliminar sección Calculadoras del nav (sub-tarea 1/5) · 2026-05-27
 
 Primera sub-tarea de la reorganización "Calculadoras → dominios naturales". Solo cambios de navegación, sin tocar lógica.
 
 **Cambios clave:**
 - **`index.html`:** Quitado el link `#calc` del sidebar desktop (grupo Herramientas) y del menú Más mobile.
-- **`modules/infra/router.js`:** Eliminado `['calc', 'sec-calc']` de SECTIONS. Agregado `REDIRECTS = new Map([['calc', 'dash']])`: cualquier hash `#calc` (bookmark, URL directa) redirige al Dashboard con `history.replaceState`.
+- **`modules/infra/router.js`:** Eliminado `['calc', 'sec-calc']` de SECTIONS. Agregado `REDIRECTS = new Map([['calc', 'dash']])`: cualquier hash `#calc` redirige al Dashboard con `history.replaceState`.
 - **`service-worker.js`:** v83 → v84.
-
-**Sigue:** Sub-tarea 2: mover `calculadoras/logic.js` a `infra/financiero.js` (prerequisito ADN para que los dominios puedan importar la lógica sin violar la regla "ningún dominio importa a otro").
 
 **Archivos:** `index.html`, `modules/infra/router.js`, `service-worker.js`.
 
-**Tests:** 974/974 verdes (cambio puramente de navegación).
+**Tests:** 974/974 verdes.
 
 ### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
 
@@ -110,33 +125,7 @@ Decisión documentada en [`docs/DECISIONS/002-abono-deudas.md`](DECISIONS/002-ab
 
 **Tests:** 971/971 verdes (39 nuevos).
 
-### fix(compromisos) - v7.12: tasa de interés sin decimales + sin "% EA" en cards de deudas · 2026-05-27
-Feedback del usuario: las cards de deuda mostraban la tasa con decimales y con el sufijo "% EA", lo que se veía técnico. Pidió enteros sin etiqueta.
-
-**Cambios clave:**
-- **`tasaMostrada`** en `view.js:220`: `${tasaEA.toFixed(1)}% EA` → `${Math.round(tasaEA)}%`; para tasa mensual `${(tasa * 100).toFixed(2)}% mensual (~X% EA)` → `${Math.round(tasa * 100)}% mensual` (elimina el equivalente EA). `sin interés` sin cambios.
-- **Label del form** `tasaLabel`: `'Tasa de interés EA (%)'` → `'Tasa de interés (%)'`.
-- **Hint de usura** en el form: `~28.17% EA` → `~28% anual`.
-- **`service-worker.js`:** v79 → v80.
-
-**Archivos:** `modules/dominio/compromisos/view.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (cambio puramente presentacional).
-
-### fix(calculadoras) - v7.11: remover tasa EA + usura de calculadora de crédito · 2026-05-27
-Feedback del usuario: la calculadora de crédito mostraba tres elementos derivados (fila "Tasa mensual efectiva", alerta de usura cuando la tasa supera el tope SFC, y badge clasificador "razonable/estándar/alta/usura") que agregaban ruido y desviaban el foco de las métricas centrales (cuota, total pagado, intereses). Pidió ocultar los tres.
-
-**Cambios clave:**
-- **`renderResultCredito`** (view.js) ya no incluye "Tasa mensual efectiva". Quedan tres filas: Cuota mensual fija, Total pagado, Total intereses.
-- **`_onSubmitCredito`** (index.js) simplificado: removida la clasificación de tasa, la inyección del nudge de usura y el badge. Imports muertos limpiados (`tasaUsuraVigente`, `clasificarTasaCredito`, `renderBadgeTasa`, `renderAlertaUsura`).
-- **Funciones puras intactas:** `clasificarTasaCredito`, `renderBadgeTasa`, `renderAlertaUsura` siguen exportadas (sus tests siguen pasando); basta re-importarlas si se decide reactivar la advertencia más adelante.
-- **`service-worker.js`:** v78 → v79.
-
-**Archivos:** `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`, `service-worker.js`.
-
-**Tests:** 932/932 verdes (cambio puramente presentacional).
-
-> Para tareas anteriores (v7.10 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v7.12 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

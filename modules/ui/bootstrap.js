@@ -27,7 +27,6 @@ import { initAgenda } from '../dominio/agenda/index.js';
 import { initPersonales } from '../dominio/personales/index.js';
 import { initPresupuesto } from '../dominio/presupuesto/index.js';
 import { initAnalisis } from '../dominio/analisis/index.js';
-import { initCalculadoras } from '../dominio/calculadoras/index.js';
 import { initConfig } from '../dominio/config/index.js';
 import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
@@ -47,7 +46,6 @@ initAgenda();
 initPersonales();
 initPresupuesto();
 initAnalisis();
-initCalculadoras();
 initConfig();
 initImport();
 
