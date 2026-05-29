@@ -30,6 +30,9 @@ import { SMMLV } from './constants.js';
  *                                             dominio tesoreria crea
  *                                             automáticamente un Compromiso
  *                                             fijo mensual vinculado.
+ * @property {boolean} [aplica4x1000]  Opcional. true si la cuenta está sujeta
+ *                                     al GMF (4x1000). Siempre false para
+ *                                     Efectivo. Ausente = no aplica.
  */
 
 /**

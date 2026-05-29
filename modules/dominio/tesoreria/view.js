@@ -44,6 +44,11 @@ function _renderCuentaItem(cuenta) {
     ? `<p class="list-item__hint">📅 Cuota de manejo: ${f(cuenta.cuotaManejo.monto)} el día ${cuenta.cuotaManejo.diaCobro}</p>`
     : '';
 
+  // Hint informativo si la cuenta está sujeta al GMF (4x1000).
+  const gmfHint = cuenta.aplica4x1000
+    ? `<p class="list-item__hint">💸 Aplica 4x1000 (GMF)</p>`
+    : '';
+
   return `
     <article class="list-item" data-id="${_esc(cuenta.id)}">
       <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
@@ -51,6 +56,7 @@ function _renderCuentaItem(cuenta) {
         <p class="list-item__title">${nombre}</p>
         <p class="list-item__subtitle">${subtitulo}</p>
         ${cuotaHint}
+        ${gmfHint}
       </div>
       <div class="list-item__action">
         <p class="list-item__value">${f(cuenta.saldo)}</p>
@@ -146,6 +152,18 @@ export function renderFormCuenta() {
         <label for="cuenta-saldo" class="label">Saldo actual (COP)</label>
         <input id="cuenta-saldo" name="saldo" class="input" type="number"
                min="0" step="1000" placeholder="0" value="0" />
+      </div>
+
+      <div class="form-group form-group--checkbox" id="form-group-4x1000">
+        <label class="checkbox-row">
+          <input type="checkbox"
+                 id="cuenta-4x1000"
+                 name="aplica4x1000" />
+          <span>A esta cuenta le aplica el 4x1000 (GMF)</span>
+        </label>
+        <p class="form-hint form-hint--muted">
+          El 4x1000 es un impuesto de $4 por cada $1.000 que retirás o transferís. El efectivo no lo paga.
+        </p>
       </div>
 
       <div class="form-group form-group--checkbox">

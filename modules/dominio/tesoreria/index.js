@@ -51,8 +51,8 @@ function _nuevaCuenta() {
   // resetModal desmarca checkboxes pero no dispara `change`, así que
   // ocultamos manualmente el fieldset de cuota por si quedó visible.
   _toggleCuotaFieldset();
-  // Asegurar que el campo tipo sea visible si el banco anterior era Efectivo.
-  _toggleTipoField();
+  // Asegurar que tipo y 4x1000 sean visibles si el banco anterior era Efectivo.
+  _toggleCamposEfectivo();
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva cuenta';
 
@@ -175,7 +175,12 @@ function _editarCuenta(el) {
   const hiddenBanco = form.querySelector('[name="banco"]');
   if (hiddenBanco) hiddenBanco.value = cuenta.banco ?? '';
   _setBankPickerDisplay(cuenta.banco);
-  _toggleTipoField();
+
+  // Pre-rellenar el flag 4x1000 (GMF).
+  const cb4x1000 = form.querySelector('[name="aplica4x1000"]');
+  if (cb4x1000) cb4x1000.checked = !!cuenta.aplica4x1000;
+
+  _toggleCamposEfectivo();
 
   // Pre-rellenar la cuota de manejo si la cuenta la tiene.
   const cuotaToggle = form.querySelector('[data-cuota-toggle]');
@@ -260,8 +265,8 @@ function _inyectarForm() {
   // Toggle para mostrar/ocultar el fieldset de cuota de manejo.
   body.querySelector('[data-cuota-toggle]')?.addEventListener('change', _toggleCuotaFieldset);
 
-  // Ocultar "Tipo de cuenta" cuando el banco seleccionado es Efectivo.
-  body.querySelector('[name="banco"]')?.addEventListener('change', _toggleTipoField);
+  // Ocultar "Tipo de cuenta" y "4x1000" cuando el banco seleccionado es Efectivo.
+  body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposEfectivo);
 
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
@@ -276,16 +281,31 @@ function _toggleCuotaFieldset() {
   set.hidden = !cb.checked;
 }
 
-/** Oculta el campo "Tipo de cuenta" cuando el banco es Efectivo (no aplica). */
-function _toggleTipoField() {
+/**
+ * Oculta los campos que no aplican cuando el banco es Efectivo:
+ * "Tipo de cuenta" (el efectivo no tiene tipo) y "4x1000" (el efectivo
+ * no paga GMF). Limpia sus valores al ocultarlos.
+ */
+function _toggleCamposEfectivo() {
   const banco = document.querySelector('#form-cuenta [name="banco"]')?.value ?? '';
-  const grupo = document.getElementById('form-group-tipo');
-  if (!grupo) return;
   const esEfectivo = banco === 'Efectivo';
-  grupo.hidden = esEfectivo;
-  if (esEfectivo) {
-    const sel = document.getElementById('cuenta-tipo');
-    if (sel) sel.value = '';
+
+  const grupoTipo = document.getElementById('form-group-tipo');
+  if (grupoTipo) {
+    grupoTipo.hidden = esEfectivo;
+    if (esEfectivo) {
+      const sel = document.getElementById('cuenta-tipo');
+      if (sel) sel.value = '';
+    }
+  }
+
+  const grupo4x1000 = document.getElementById('form-group-4x1000');
+  if (grupo4x1000) {
+    grupo4x1000.hidden = esEfectivo;
+    if (esEfectivo) {
+      const cb = document.getElementById('cuenta-4x1000');
+      if (cb) cb.checked = false;
+    }
   }
 }
 

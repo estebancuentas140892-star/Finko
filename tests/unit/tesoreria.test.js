@@ -207,6 +207,20 @@ describe('normalizarCuenta()', () => {
     expect(result.nombre).toBe('Efectivo');
   });
 
+  it('aplica4x1000 es false si el checkbox no se marcó', () => {
+    expect(normalizarCuenta(datosFormValidos).aplica4x1000).toBe(false);
+  });
+
+  it('aplica4x1000 es true cuando el checkbox manda "on"', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, aplica4x1000: 'on' });
+    expect(result.aplica4x1000).toBe(true);
+  });
+
+  it('aplica4x1000 se fuerza a false para Efectivo aunque venga marcado', () => {
+    const result = normalizarCuenta({ banco: 'Efectivo', tipo: '', saldo: '0', aplica4x1000: 'on' });
+    expect(result.aplica4x1000).toBe(false);
+  });
+
   it('respeta el nombre del usuario si lo provee', () => {
     const result = normalizarCuenta({ ...datosFormValidos, nombre: 'Mi cuenta favorita', banco: 'Davivienda', tipo: 'Ahorros' });
     expect(result.nombre).toBe('Mi cuenta favorita');

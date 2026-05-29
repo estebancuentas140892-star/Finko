@@ -159,16 +159,25 @@ export function validarCuenta(datos) {
 }
 
 /**
- * Indica si el form pidió activar la cuota de manejo.
- * Un checkbox HTML5 manda 'on' (o cualquier truthy) cuando está checked
+ * Indica si un valor de checkbox HTML5 está marcado.
+ * Un checkbox manda 'on' (o cualquier truthy) cuando está checked
  * y no aparece en FormData cuando está unchecked.
+ *
+ * @param {string|undefined} v
+ * @returns {boolean}
+ */
+function _checkOn(v) {
+  return v === 'on' || v === 'true' || v === '1';
+}
+
+/**
+ * Indica si el form pidió activar la cuota de manejo.
  *
  * @param {Record<string, string>} datos
  * @returns {boolean}
  */
 function _cuotaActiva(datos) {
-  const v = datos?.cuotaManejoActiva;
-  return v === 'on' || v === 'true' || v === '1';
+  return _checkOn(datos?.cuotaManejoActiva);
 }
 
 /**
@@ -213,6 +222,8 @@ export function normalizarCuenta(datos) {
     icono: datos.icono?.trim() || _iconoPorBanco(banco),
     activa: true,
     cuotaManejo: parseCuotaManejo(datos),
+    // El efectivo nunca está sujeto al GMF (no hay movimiento financiero).
+    aplica4x1000: banco !== 'Efectivo' && _checkOn(datos.aplica4x1000),
   };
 }
 
