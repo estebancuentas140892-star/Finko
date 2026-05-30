@@ -11,10 +11,6 @@
 import { S } from '../core/state.js';
 import { f } from './utils.js';
 
-// Copia local para evitar importar desde un dominio (regla: solo analisis/logic.js
-// puede hacer imports cruzados). Mismo mapa que ingresos/logic.js.
-const _FACTOR_MENSUAL = { mensual: 1, quincenal: 2, semanal: 4, diario: 30 };
-
 /** @type {Array<() => void>} Funciones de render registradas por los dominios. */
 const _renders = [];
 
@@ -74,20 +70,6 @@ export function updSaldo() {
 
   const elGastos = document.getElementById('gastos-mes');
   if (elGastos) elGastos.textContent = f(gastosMes);
-
-  // Ingresos mensuales estimados (activos × factor frecuencia).
-  const ingresosMes = S.ingresos
-    .filter(i => i.activo !== false)
-    .reduce((acc, i) => acc + (i.monto ?? 0) * (_FACTOR_MENSUAL[i.frecuencia] ?? 1), 0);
-
-  // Balance = ingresos − gastos del mes.
-  const balance = ingresosMes - gastosMes;
-  const elBalance = document.getElementById('balance-mes');
-  if (elBalance) {
-    elBalance.textContent = f(balance);
-    elBalance.classList.toggle('bento__value--danger', balance < 0);
-    elBalance.classList.toggle('bento__value--accent', balance >= 0);
-  }
 
   // Metas activas (no completadas).
   const metasActivas = S.metas.filter(m => m.completada !== true).length;

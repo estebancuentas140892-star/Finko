@@ -211,14 +211,6 @@
         <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
              Reemplaza Card Hoy (hoy + próximos en una sola vista). -->
         <div id="panel-prioridades" role="region" aria-label="Próximas prioridades"></div>
-
-        <!-- BALANCE DEL MES: tira simple (ingresos - gastos), no card grande.
-             Es el único indicador combinado de acción inmediata. -->
-        <div class="balance-tira" role="status" aria-live="polite">
-          <span class="balance-tira__icon" aria-hidden="true">📊</span>
-          <span class="balance-tira__label">Balance del mes:</span>
-          <span class="balance-tira__value bento__value" id="balance-mes">$0</span>
-        </div>
       </section>
 
       <!-- GASTOS -->
@@ -331,41 +323,54 @@
             + Cuenta
           </button>
         </header>
-        <div id="panel-ingresos-card">
-          <!-- ingresos/index.js renderiza la card compacta de ingresos aquí -->
-        </div>
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
 
-        <!-- Simulador laboral unificado: prima + PILA en un solo flujo (v8.7) -->
+        <!-- Simulador laboral gateado: empleado vs independiente (v8.9) -->
         <details class="herramienta-inline" id="simulador-laboral">
-          <summary class="herramienta-inline__titulo">🧮 Simulador laboral: prima y aportes PILA</summary>
+          <summary class="herramienta-inline__titulo">🧮 Simulador laboral</summary>
           <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Ingresá tus datos una sola vez y calculá tu prima de servicios (empleados) y tus aportes PILA (independientes) juntos. El auxilio de transporte se aplica automáticamente según la ley.</p>
+            <p class="herramienta-inline__desc">Calculá tu prima, cesantías y aportes según tu situación laboral. Seleccioná tu perfil primero: los campos y resultados son distintos para cada caso.</p>
+
             <form id="form-simulador-laboral" class="calc-form" novalidate>
-              <div class="calc-form__fields">
+
+              <!-- Paso 1: elegir perfil -->
+              <div class="form-group">
+                <p class="label" id="sim-perfil-label">¿Cuál es tu situación laboral?</p>
+                <div class="sim-gate" role="group" aria-labelledby="sim-perfil-label">
+                  <label class="sim-gate__option">
+                    <input type="radio" name="perfil" value="empleado"
+                           class="sim-gate__radio" />
+                    <span class="sim-gate__body">
+                      <span class="sim-gate__titulo">💼 Empleado</span>
+                      <span class="sim-gate__desc">Trabajás para una empresa o persona natural</span>
+                    </span>
+                  </label>
+                  <label class="sim-gate__option">
+                    <input type="radio" name="perfil" value="independiente"
+                           class="sim-gate__radio" />
+                    <span class="sim-gate__body">
+                      <span class="sim-gate__titulo">🧑‍💻 Independiente</span>
+                      <span class="sim-gate__desc">Prestás servicios por cuenta propia</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Paso 2A: campos empleado (visible solo cuando perfil=empleado) -->
+              <fieldset id="sim-fields-empleado" class="sim-profile-fields calc-form__fields" hidden>
                 <div class="form-group">
                   <label for="sim-salario" class="label">Salario básico mensual (COP)</label>
                   <input id="sim-salario" name="salario" class="input" type="number"
                          inputmode="numeric" min="1" step="100000"
-                         placeholder="1.750.905" required />
+                         placeholder="1.750.905" />
                 </div>
                 <div class="form-group">
                   <label for="sim-dias" class="label">Días trabajados en el semestre</label>
                   <input id="sim-dias" name="dias" class="input" type="number"
                          inputmode="numeric" min="1" max="180" step="1"
-                         placeholder="180" required />
-                </div>
-                <div class="form-group">
-                  <label for="sim-arl" class="label">Clase de riesgo ARL</label>
-                  <select id="sim-arl" name="arl" class="input">
-                    <option value="0.00522" selected>Clase I: oficina (0.522%)</option>
-                    <option value="0.01044">Clase II: riesgo bajo (1.044%)</option>
-                    <option value="0.02436">Clase III: riesgo medio (2.436%)</option>
-                    <option value="0.04350">Clase IV: riesgo alto (4.350%)</option>
-                    <option value="0.06960">Clase V: riesgo máximo (6.960%)</option>
-                  </select>
+                         placeholder="180" />
                 </div>
                 <div class="form-group">
                   <label for="sim-extras" class="label">Horas extras y recargos promedio/mes (COP, opcional)</label>
@@ -379,9 +384,34 @@
                          inputmode="numeric" min="0" step="50000"
                          placeholder="0" />
                 </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Calcular</button>
+              </fieldset>
+
+              <!-- Paso 2B: campos independiente (visible solo cuando perfil=independiente) -->
+              <fieldset id="sim-fields-independiente" class="sim-profile-fields calc-form__fields" hidden>
+                <div class="form-group">
+                  <label for="sim-ingreso" class="label">Ingreso mensual bruto (COP)</label>
+                  <input id="sim-ingreso" name="ingreso" class="input" type="number"
+                         inputmode="numeric" min="1" step="100000"
+                         placeholder="Ej: 3.000.000" />
+                </div>
+                <div class="form-group">
+                  <label for="sim-arl" class="label">Clase de riesgo ARL</label>
+                  <select id="sim-arl" name="arl" class="input">
+                    <option value="0.00522" selected>Clase I: oficina (0.522 %)</option>
+                    <option value="0.01044">Clase II: riesgo bajo (1.044 %)</option>
+                    <option value="0.02436">Clase III: riesgo medio (2.436 %)</option>
+                    <option value="0.04350">Clase IV: riesgo alto (4.350 %)</option>
+                    <option value="0.06960">Clase V: riesgo máximo (6.960 %)</option>
+                  </select>
+                </div>
+              </fieldset>
+
+              <!-- Botón: oculto hasta que se elija un perfil -->
+              <button type="submit" class="btn btn-primary" id="sim-btn-calcular" hidden>
+                Calcular
+              </button>
             </form>
+
             <div id="result-simulador-laboral" class="calc-result" aria-live="polite"></div>
           </div>
         </details>
@@ -567,22 +597,6 @@
        MODALES - scaffolding (Fases 6-12 completan el contenido)
        Contrato: [data-open] activa; Escape cierra; data-action="modal-close" cierra
        ══════════════════════════════════════════════════════════ -->
-
-  <!-- Modal: Nuevo ingreso -->
-  <div class="modal-overlay" id="modal-ingreso"
-       role="dialog" aria-modal="true"
-       aria-labelledby="modal-ingreso-title" aria-hidden="true">
-    <div class="modal">
-      <header class="modal__header">
-        <h2 class="modal__title" id="modal-ingreso-title">Nuevo ingreso</h2>
-        <button class="modal__close btn btn-icon btn-ghost"
-                data-action="modal-close" aria-label="Cerrar">✕</button>
-      </header>
-      <div class="modal__body" id="modal-ingreso-body">
-        <!-- Fase 8 -->
-      </div>
-    </div>
-  </div>
 
   <!-- Modal: Nuevo gasto -->
   <div class="modal-overlay" id="modal-gasto"

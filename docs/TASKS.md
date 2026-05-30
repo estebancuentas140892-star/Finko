@@ -1,15 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-05-17
+> Última actualización: 2026-05-29
 
 ---
 
 ## Estado actual
 
-**Versión vigente:** `v1.0.0` - proyecto completo, sin tareas activas.
-
-No hay ninguna tarea en curso. El próximo trabajo se elige del [ROADMAP.md](ROADMAP.md) → sección "Post-v1.0".
+**Fase H (Rediseño de Tesorería) cerrada en v8.9.** No hay tarea de código activa. App estable en producción.
 
 ---
 
@@ -31,10 +29,12 @@ Ver [`/CLAUDE.md`](../CLAUDE.md) → sección 2 para el workflow completo (cierr
 
 ## En curso
 
-_(vacío)_
+_(sin tarea activa)_
 
 ---
 
 ## Próxima tarea sugerida
 
-Ver [`ROADMAP.md`](ROADMAP.md) - la sección **A. Deploy a producción** es el siguiente paso natural.
+**Cerrar deuda técnica de `updateBadge` y `renderResumenGastos`** (refactor cross-domain acotado). Ambas funciones son no-ops sobre IDs que no existen tras el rediseño previo del dashboard. Quedan cableadas desde 4 dominios (`compromisos`, `agenda`, `import`, `gastos`). Eliminarlas: quitar el export en `render.js` / `gastos/view.js`, quitar los imports y las 7+ llamadas, ajustar docstrings de `updSaldo` y comentarios stale. Sin riesgo funcional (ya no hacen nada).
+
+**Modelo sugerido:** Sonnet 4.6 - Medio. **Esfuerzo:** Bajo a Medio.

@@ -56,11 +56,6 @@ describe('evaluarLogros - estado inicial vacio', () => {
 });
 
 describe('evaluarLogros - logros de primer registro', () => {
-  test('primer-ingreso: se cumple al agregar 1 ingreso', () => {
-    const s = estado({ onboarded: true, ingresos: [{ id: '1' }] });
-    expect(evaluarLogros(s)).toContain('primer-ingreso');
-  });
-
   test('primer-gasto: se cumple al agregar 1 gasto', () => {
     const s = estado({ onboarded: true, gastos: [{ id: '1' }] });
     expect(evaluarLogros(s)).toContain('primer-gasto');
@@ -178,59 +173,10 @@ describe('evaluarLogros - diez-gastos', () => {
   });
 });
 
-describe('evaluarLogros - mes-en-verde', () => {
-  test('no se cumple sin gastos este mes', () => {
-    const s = estado({
-      ingresos: [{ id: '1', monto: 2000000, frecuencia: 'mensual', activo: true }],
-      gastos:   [],
-    });
-    expect(evaluarLogros(s)).not.toContain('mes-en-verde');
-  });
-
-  test('no se cumple si gastos > ingresos', () => {
-    const s = estado({
-      ingresos: [{ id: '1', monto: 500000,  frecuencia: 'mensual', activo: true }],
-      gastos:   [{ id: 'g1', fecha: `${MES_ACTUAL}-10`, monto: 800000 }],
-    });
-    expect(evaluarLogros(s)).not.toContain('mes-en-verde');
-  });
-
-  test('se cumple si ingresos > gastos del mes actual', () => {
-    const s = estado({
-      onboarded: true,
-      ingresos:  [{ id: '1', monto: 3000000, frecuencia: 'mensual', activo: true }],
-      gastos:    [{ id: 'g1', fecha: `${MES_ACTUAL}-05`, monto: 800000 }],
-    });
-    expect(evaluarLogros(s)).toContain('mes-en-verde');
-  });
-
-  test('gastos de meses anteriores no cuentan', () => {
-    const s = estado({
-      ingresos: [{ id: '1', monto: 500000, frecuencia: 'mensual', activo: true }],
-      gastos:   [{ id: 'g1', fecha: '2025-01-10', monto: 1000000 }],
-    });
-    // Sin gastos en el mes actual: logro no aplica
-    expect(evaluarLogros(s)).not.toContain('mes-en-verde');
-  });
-
-  test('ingresos inactivos no cuentan hacia el umbral', () => {
-    const s = estado({
-      ingresos: [
-        { id: '1', monto: 3000000, frecuencia: 'mensual', activo: false },
-        { id: '2', monto: 100000,  frecuencia: 'mensual', activo: true  },
-      ],
-      gastos: [{ id: 'g1', fecha: `${MES_ACTUAL}-05`, monto: 500000 }],
-    });
-    // 100k < 500k: no en verde
-    expect(evaluarLogros(s)).not.toContain('mes-en-verde');
-  });
-});
-
 describe('evaluarLogros - multiples logros simultaneos', () => {
   test('usuario con datos completos desbloquea varios logros a la vez', () => {
     const s = estado({
       onboarded:    true,
-      ingresos:     [{ id: '1', monto: 5000000, frecuencia: 'mensual', activo: true }],
       gastos:       [{ id: 'g1', fecha: `${MES_ACTUAL}-10`, monto: 200000 }],
       compromisos:  [{ id: 'c1' }],
       cuentas:      [{ id: 'a1', activa: true }, { id: 'a2', activa: true }, { id: 'a3', activa: true }],
@@ -240,7 +186,6 @@ describe('evaluarLogros - multiples logros simultaneos', () => {
     });
     const res = evaluarLogros(s);
     expect(res).toContain('primer-paso');
-    expect(res).toContain('primer-ingreso');
     expect(res).toContain('primer-gasto');
     expect(res).toContain('primer-compromiso');
     expect(res).toContain('tesorero');
@@ -249,7 +194,6 @@ describe('evaluarLogros - multiples logros simultaneos', () => {
     expect(res).toContain('meta-lograda');
     expect(res).toContain('planificador');
     expect(res).toContain('prestamista');
-    expect(res).toContain('mes-en-verde');
   });
 });
 

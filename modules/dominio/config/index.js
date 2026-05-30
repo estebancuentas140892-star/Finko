@@ -118,7 +118,7 @@ function _exportarGastosCSV() {
 async function _resetearApp() {
   const ok = await confirmar({
     titulo:         'Resetear app',
-    mensaje:        '¿Resetear TODA la app? Perderás ingresos, gastos, cuentas, metas y compromisos. Esta acción es irreversible.',
+    mensaje:        '¿Resetear TODA la app? Perderás gastos, cuentas, metas y compromisos. Esta acción es irreversible.',
     confirmarTexto: 'Resetear todo',
     peligroso:      true,
   });

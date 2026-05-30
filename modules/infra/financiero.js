@@ -20,6 +20,10 @@ import {
   AUXILIO_TRANSPORTE,
   SALUD_INDEPEND,
   PENSION_INDEPEND,
+  SALUD_EMPLEADO,
+  PENSION_EMPLEADO,
+  FSP_TRAMOS,
+  INTERESES_CESANTIAS,
   ARL_CLASE_I,
   TASA_USURA,
 } from '../core/constants.js';
@@ -228,6 +232,118 @@ export function calcularPILA(ingreso, arl = ARL_CLASE_I) {
     pension:  Math.round(pension),
     arlMonto: Math.round(arlMonto),
     total:    Math.round(total),
+  };
+}
+
+// ── APORTES DEL TRABAJADOR DEPENDIENTE (empleado) ─────────────────
+
+/**
+ * Devuelve la tasa del Fondo de Solidaridad Pensional (FSP) según el IBC,
+ * medido en múltiplos de SMMLV. El FSP solo aplica desde 4 SMMLV y crece
+ * por tramos hasta 2 % de 20 SMMLV en adelante (Ley 100/1993 art. 27).
+ *
+ * @param {number} ibc - Ingreso Base de Cotización en COP.
+ * @returns {number} Tasa FSP como decimal (0 si IBC < 4 SMMLV).
+ */
+function _tasaFSP(ibc) {
+  const mult = ibc / SMMLV;
+  if (mult < FSP_TRAMOS[0].desdeSMMLV) return 0;
+  const tramo = FSP_TRAMOS.find(
+    (t) => mult >= t.desdeSMMLV && mult < t.hastaSMMLV,
+  );
+  return tramo ? tramo.tasa : 0;
+}
+
+/**
+ * Calcula lo que un trabajador DEPENDIENTE (empleado) descuenta de su
+ * salario por seguridad social. A diferencia del independiente, el empleado
+ * solo paga su mitad: el empleador cubre el resto y la ARL completa.
+ *
+ * IBC = max(salario, 1 SMMLV). El auxilio de transporte NO hace parte del
+ * IBC de seguridad social (sí de prima y cesantías, ver esas funciones).
+ *
+ * Salud:   4 % del IBC (el empleador aporta 8.5 %).
+ * Pensión: 4 % del IBC (el empleador aporta 12 %).
+ * FSP:     tasa por tramos sobre el IBC (solo desde 4 SMMLV).
+ * ARL:     $0 para el trabajador (100 % a cargo del empleador).
+ *
+ * @param {number} salario - Salario mensual base en COP.
+ * @returns {{
+ *   ibc: number,
+ *   salud: number,
+ *   pension: number,
+ *   fsp: number,
+ *   fspTasa: number,
+ *   totalDescuento: number,
+ * } | null} `null` si salario ≤ 0.
+ */
+export function calcularAportesEmpleado(salario) {
+  if (salario <= 0) return null;
+  const ibc     = Math.max(salario, SMMLV);
+  const fspTasa = _tasaFSP(ibc);
+  // Redondeamos cada componente y sumamos los redondeos, para que
+  // `totalDescuento` siempre reconcilie con salud + pensión + FSP.
+  const salud   = Math.round(ibc * SALUD_EMPLEADO);
+  const pension = Math.round(ibc * PENSION_EMPLEADO);
+  const fsp     = Math.round(ibc * fspTasa);
+  return {
+    ibc:            Math.round(ibc),
+    salud,
+    pension,
+    fsp,
+    fspTasa,
+    totalDescuento: salud + pension + fsp,
+  };
+}
+
+// ── CESANTÍAS (Colombia, solo empleados) ──────────────────────────
+
+/**
+ * Estima las cesantías y sus intereses para un trabajador dependiente
+ * (Ley 50/1990). Aplica SOLO a empleados, nunca a independientes.
+ *
+ * Cesantías:  `base × días / 360` (un salario mensual por año trabajado).
+ * Intereses:  `cesantías × días × 12 % / 360` (12 % anual sobre el saldo).
+ *
+ * La base incluye el auxilio de transporte si salario ≤ 2 × SMMLV y el
+ * promedio de variables habituales (extras, recargos, bonos), igual que
+ * la prima. Máximo de días por liquidación anual: 360.
+ *
+ * @param {number} salario              - Salario mensual base en COP.
+ * @param {number} dias                 - Días trabajados en el año (máx. 360).
+ * @param {number} [variablesPromedio=0] - Promedio mensual de variables habituales (COP).
+ * @returns {{
+ *   cesantias: number,
+ *   intereses: number,
+ *   total: number,
+ *   incluyeAuxilio: boolean,
+ *   auxilioAplicado: number,
+ *   salarioBase: number,
+ *   variablesAplicadas: number,
+ * }}
+ */
+export function calcularCesantias(salario, dias, variablesPromedio = 0) {
+  const diasEfectivos      = Math.min(dias, 360);
+  const incluyeAuxilio     = salario <= 2 * SMMLV;
+  const auxilioAplicado    = incluyeAuxilio ? AUXILIO_TRANSPORTE : 0;
+  const salarioBase        = salario + auxilioAplicado;
+  const variablesAplicadas = Math.max(0, Math.round(variablesPromedio));
+  const baseTotal          = salarioBase + variablesAplicadas;
+  const cesantiasRaw       = (baseTotal * diasEfectivos) / 360;
+  const interesesRaw       = (cesantiasRaw * diasEfectivos * INTERESES_CESANTIAS) / 360;
+  // Redondeamos cada componente y sumamos los redondeos, para que `total`
+  // siempre reconcilie con cesantías + intereses.
+  const cesantias          = Math.round(cesantiasRaw);
+  const intereses          = Math.round(interesesRaw);
+
+  return {
+    cesantias,
+    intereses,
+    total:              cesantias + intereses,
+    incluyeAuxilio,
+    auxilioAplicado,
+    salarioBase,
+    variablesAplicadas,
   };
 }
 

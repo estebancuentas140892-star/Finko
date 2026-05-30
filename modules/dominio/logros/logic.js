@@ -31,13 +31,6 @@ export const LOGROS = [
     eval:   s => s.onboarded === true,
   },
   {
-    id:     'primer-ingreso',
-    nombre: 'Primera plata',
-    emoji:  '💰',
-    desc:   'Registraste tu primer ingreso.',
-    eval:   s => Array.isArray(s.ingresos) && s.ingresos.length > 0,
-  },
-  {
     id:     'primer-gasto',
     nombre: 'Primer gasto',
     emoji:  '💸',
@@ -95,13 +88,6 @@ export const LOGROS = [
     eval:   s => Array.isArray(s.personales) && s.personales.length > 0,
   },
   {
-    id:     'mes-en-verde',
-    nombre: 'Mes en verde',
-    emoji:  '🌿',
-    desc:   'Tus ingresos superan tus gastos este mes.',
-    eval:   s => _mesEnVerde(s),
-  },
-  {
     id:     'diez-gastos',
     nombre: 'Hábito registrado',
     emoji:  '🔥',
@@ -130,42 +116,4 @@ export function evaluarLogros(s) {
     }
   }
   return cumplidos;
-}
-
-// ── HELPERS INTERNOS ─────────────────────────────────────────────
-
-/**
- * Retorna true si los ingresos activos (normalizados a mensual) superan
- * los gastos del mes en curso, y hay al menos un gasto registrado.
- *
- * @param {object} s
- * @returns {boolean}
- */
-function _mesEnVerde(s) {
-  if (!Array.isArray(s.gastos) || !Array.isArray(s.ingresos)) return false;
-
-  const hoy    = new Date();
-  const prefijo = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
-
-  const totalGastos = s.gastos
-    .filter(g => typeof g.fecha === 'string' && g.fecha.startsWith(prefijo))
-    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
-
-  // Sin gastos este mes: logro no aplicable.
-  if (totalGastos <= 0) return false;
-
-  const totalIngresos = s.ingresos
-    .filter(i => i.activo !== false)
-    .reduce((acc, i) => {
-      const m = Number(i.monto) || 0;
-      switch (i.frecuencia) {
-        case 'semanal':   return acc + m * 4.33;
-        case 'quincenal': return acc + m * 2;
-        case 'anual':     return acc + m / 12;
-        case 'diario':    return acc + m * 30;
-        default:          return acc + m; // mensual y 'una vez'
-      }
-    }, 0);
-
-  return totalIngresos > 0 && totalIngresos > totalGastos;
 }

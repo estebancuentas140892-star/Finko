@@ -13,7 +13,7 @@ import { calcularRegla72, calcularRentabilidadReal, validarCampos } from '../../
 
 // Secciones cuyos cambios requieren re-análisis.
 const SECCIONES_OBSERVADAS = new Set([
-  'ingresos', 'gastos', 'compromisos', 'cuentas', 'metas',
+  'gastos', 'compromisos', 'cuentas', 'metas',
 ]);
 
 // ── HERRAMIENTAS INLINE ──────────────────────────────────────────

@@ -7,6 +7,62 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): v8.9 - simulador laboral gateado empleado vs independiente + limpieza ingresos · 2026-05-29
+
+Parte B del rediseño de Tesorería (cierra la fase): el simulador laboral pregunta primero la situación laboral y nunca mezcla los cálculos de empleado e independiente. Cierra también la limpieza opcional H.C: borrado del dominio `ingresos/` muerto y refresco de asserts e2e obsoletos. La fase H. (Rediseño de Tesorería) queda cerrada.
+
+**Cambios B-1 (lógica financiera CO nueva):**
+
+1. **`modules/core/constants.js`:** Agregadas 4 constantes legales con fuente: `SALUD_EMPLEADO` (4 %), `PENSION_EMPLEADO` (4 %), `FSP_TRAMOS` (tabla progresiva del Fondo de Solidaridad Pensional por múltiplos de SMMLV) e `INTERESES_CESANTIAS` (12 % anual sobre el saldo).
+2. **`modules/infra/financiero.js`:** Dos funciones nuevas. `calcularAportesEmpleado(salario)` devuelve el descuento mensual del trabajador: IBC = max(salario, SMMLV), salud 4 % + pensión 4 % + FSP progresivo (0 % bajo 4 SMMLV; 1 %, 1.2 %, 1.4 %, 1.6 %, 1.8 %, 2 % por tramos). ARL: $0 (la paga el empleador). `calcularCesantias(salario, dias, variablesPromedio)` calcula cesantías (base × días / 360) más intereses (12 % anual proporcional). Helper interno `_tasaFSP(ibc)`. Detalle técnico: ambos `totalDescuento` y `total` se computan sumando componentes ya redondeados, no redondeando la suma cruda, para que siempre reconcilien.
+3. **`tests/unit/calculadoras.test.js`:** 18 tests nuevos (10 de aportes empleado + 8 de cesantías): piso IBC, ausencia de ARL, FSP por tramos, reconciliación de totales, auxilio con/sin, proporcionalidad a días, tope 360.
+
+**Cambios B-2 (UI gateada):**
+
+4. **`index.html`:** Reemplazado el bloque `#simulador-laboral` v8.7 (un solo form mezclado) por gate v8.9: radio de perfil ("💼 Empleado" / "🧑‍💻 Independiente"), `fieldset` empleado (salario, días, extras, bonos) y `fieldset` independiente (ingreso, ARL clase). Botón "Calcular" oculto hasta elegir perfil.
+5. **`styles/components.css`:** Nuevas clases `.sim-gate`, `.sim-gate__option`, `.sim-gate__radio`, `.sim-gate__body`, `.sim-gate__titulo`, `.sim-gate__desc`, `.sim-profile-fields`. Grid `auto-fit minmax(160px, 1fr)` responsivo. La opción seleccionada resalta vía `:has(:checked)` con `border-color: var(--fk-accent)`.
+6. **`modules/dominio/tesoreria/index.js`:** Imports ampliados con `calcularAportesEmpleado` + `calcularCesantias`. `_calcularEmpleado(datos, el)` valida salario+días y renderiza 4 secciones (descuento mensual, beneficio mensual, prima semestral, cesantías como proyección anual). `_calcularIndependiente(datos, el)` valida ingreso y renderiza PILA completo. `_onSubmitSimuladorLaboral(e)` despacha por perfil. `_initSimuladorLaboral()` cablea radio change (muestra el `fieldset` correcto y el botón) y submit. Regla crítica: ningún output mezcla prima/cesantías con PILA. Cesantías para empleado: extrapolación `días * 2` cap 360 desde el semestre.
+
+**Cambios H.C (limpieza opcional cerrada):**
+
+7. **Borrados:** `modules/dominio/ingresos/{logic,view,index}.js` y `tests/unit/ingresos.test.js`. El directorio `ingresos/` ya no existe. `S.ingresos` se preserva en schema por retrocompatibilidad de datos (decisión de Parte A).
+8. **`service-worker.js`:** Removidas las 3 rutas de `ingresos/` del CORE_ASSETS. `finko-v91` → `finko-v92`.
+9. **`tests/integration/flujos.test.js`:** Quitado el import de `ingresosActivos`, `calcularTotalMensual`, `calcularIngresoMensual` y el test `'primer ingreso: activo y su cuota mensual es el monto declarado'`. La Suite 3 (roundtrip) sigue probando que `S.ingresos` persiste a localStorage (la capa de datos sigue válida).
+10. **`tests/e2e/smoke.test.js`:** Reescritos los 2 tests del dashboard para solo testar `#saldo-total`. Quitados los asserts a `#gastos-mes`, `#compromisos-count`, `#metas-count` que eran obsoletos desde un rediseño previo del dashboard.
+
+**Deuda técnica restante (NO de esta tarea):** Las funciones `updateBadge` (en `render.js`) y `renderResumenGastos` (en `gastos/view.js`) siguen siendo no-ops sobre IDs que ya no existen. Quedan cableadas desde `compromisos/`, `agenda/`, `import/` y `gastos/`. Eliminarlas requiere refactor cross-domain que excede el scope de H.C. Queda documentado para una tarea futura si se decide cerrarlas.
+
+**Archivos:** `modules/core/constants.js`, `modules/infra/financiero.js`, `modules/dominio/tesoreria/index.js`, `styles/components.css`, `index.html`, `service-worker.js`, `tests/unit/calculadoras.test.js`, `tests/integration/flujos.test.js`, `tests/e2e/smoke.test.js`, `docs/`. Eliminados: `modules/dominio/ingresos/{logic,view,index}.js`, `tests/unit/ingresos.test.js`.
+
+**Tests:** 931/931 unitarios + integración verdes (`-32` por borrar `ingresos.test.js` y `+18` por aportes/cesantías). E2E pendiente verificación manual (suite de dashboard reescrita).
+
+---
+
+### refactor(app): v8.8 - eliminación del concepto de ingreso mensual (Tesorería redesign, Parte A) · 2026-05-28
+
+Parte A del rediseño de Tesorería. Decisión del usuario: "Simplificar todo". El ingreso mensual deja de ser un concepto vivo: el dashboard, Análisis y Logros ya no dependen de ingresos. La app queda centrada en saldos (cuentas) + gastos. Los archivos del dominio `ingresos/` NO se borran: se desconectan (código muerto) para evitar una migración de schema riesgosa (regla 2.5). `S.ingresos` permanece en el schema por retrocompatibilidad de datos.
+
+**Cambios:**
+
+1. **`modules/dominio/analisis/logic.js`:** Removido el import cross-domain de `ingresos/logic.js`. Borradas `calcularBalance`, `calcularTasaAhorro` y `nivelSalud`. `generarResumen` cambia de firma a `(gastos, compromisos, cuentas, anio, mes, metas = [])` y deja de exponer `ingresoMensual`, `balance`, `tasaAhorro`, `salud`, `proyeccion`. Agrega `egresos` (gastos + compromisos). `calcularScoreSalud` se reponderá a 3 factores: Deuda 0.40, Liquidez 0.35, Control 0.25 (antes incluía tasa de ahorro). `proyectarPatrimonio` y `proyeccionMultiHorizonte` se conservan como funciones puras exportadas con sus tests.
+2. **`modules/dominio/analisis/view.js`:** Corregida la llamada a `generarResumen` (ya no pasa `S.ingresos`). En "Resumen del mes" se quitan las cards "Ingresos proyectados" y "Balance neto"; quedan Gastos, Compromisos y Total egresos. Eliminada la sección "Salud financiera" (tasa de ahorro). Quitado el factor "📈 Ahorro" del Score de salud. Removido el bloque "Proyección de patrimonio".
+3. **`modules/infra/render.js`:** Quitado del dashboard el cálculo de ingresos mensuales y balance, y la constante muerta `_FACTOR_MENSUAL`.
+4. **`modules/dominio/logros/logic.js`:** Borrados los logros `primer-ingreso` ("Primera plata") y `mes-en-verde` ("Mes en verde") y el helper `_mesEnVerde`.
+5. **`modules/ui/bootstrap.js`:** Desconectado `initIngresos` (import + llamada). El dominio `ingresos/` queda como código muerto, no se borra.
+6. **`index.html`:** Removidos la tira "Balance del mes" (`#balance-mes`) del dashboard, la `#panel-ingresos-card` de Tesorería y el modal `#modal-ingreso`. El bloque `#simulador-laboral` se conserva para Parte B.
+7. **`modules/dominio/analisis/index.js` y `modules/dominio/tesoreria/index.js`:** Removida `'ingresos'` de las secciones observadas del EventBus (rama muerta).
+8. **`modules/dominio/config/index.js`:** El mensaje de reset ya no menciona "ingresos".
+9. **`CLAUDE.md`:** Agregado Opus 4.8 (niveles Bajo, Medio, Alto, Extra, Max) a las tablas de combinaciones válidas y de cuándo usar cada combinación.
+10. **Tests:** `tests/unit/analisis.test.js` adaptado a la nueva firma y al score de 3 factores. `tests/unit/logros.test.js`: removidos los tests de `primer-ingreso` y `mes-en-verde`, ajustado el de "logros múltiples". `tests/integration/flujos.test.js`: reescritas las 3 suites de análisis al modelo sin ingresos. E2E: removidos `smoke.test.js` Suite 4 ("Ingresos - card en Tesorería", 3 tests) y el test "card de ingresos vacía" de `navegacion-render.test.js`; limpiadas las líneas `#ingresos-mes` / `#balance-mes` del test de métricas del dashboard.
+
+**Deuda técnica anotada (no de esta tarea):** la suite e2e del dashboard tiene asserts pre-existentes obsoletos (`#gastos-mes`, `#compromisos-count`, `#metas-count` no existen tras un rediseño previo del dashboard). Queda como tarea aparte refrescar el e2e del dashboard.
+
+**Archivos:** `modules/dominio/analisis/{logic,view,index}.js`, `modules/infra/render.js`, `modules/dominio/logros/logic.js`, `modules/ui/bootstrap.js`, `index.html`, `modules/dominio/tesoreria/index.js`, `modules/dominio/config/index.js`, `tests/unit/analisis.test.js`, `tests/unit/logros.test.js`, `tests/integration/flujos.test.js`, `tests/e2e/smoke.test.js`, `tests/e2e/navegacion-render.test.js`, `CLAUDE.md`, `service-worker.js`, `docs/`.
+
+**Tests:** 945/945 unitarios + integración verdes. E2E no ejecutado (requiere servidor + Chromium).
+
+---
+
 ### feat(tesoreria): v8.7 - simulador laboral unificado + limpieza form cuentas · 2026-05-27
 
 Combina dos fases de rediseño de Tesorería post-v8.6: unificar prima+PILA y limpiar UX del form de cuentas.

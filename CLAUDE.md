@@ -85,6 +85,7 @@ Por qué         : <una línea justificando modelo+nivel>
 | Haiku 4.5   | (sin nivel - siempre se escribe `Haiku 4.5`)                |
 | Sonnet 4.6  | Bajo · Medio · Alto · Max                                   |
 | Opus 4.7    | Bajo · Medio · Alto · Extra Alto · Max                      |
+| Opus 4.8    | Bajo · Medio · Alto · Extra · Max                           |
 
 **Cuándo usar cada combinación.** Objetivo: **ahorrar tokens sin sacrificar calidad de código**. Ante la duda, subir un escalón antes que bajarlo: la calidad nunca se sacrifica.
 
@@ -100,6 +101,11 @@ Por qué         : <una línea justificando modelo+nivel>
 | **Opus 4.7 - Alto**        | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio.        |
 | **Opus 4.7 - Extra Alto**  | Refactor mayor o feature multidominio con trade-offs no obvios y riesgo real de regresión.                  |
 | **Opus 4.7 - Max**         | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).      |
+| **Opus 4.8 - Bajo**        | Mismo uso que Opus 4.7 - Bajo: bug sutil en lógica financiera con repro clara.                             |
+| **Opus 4.8 - Medio**       | Mismo uso que Opus 4.7 - Medio: nueva lógica financiera CO no trivial.                                     |
+| **Opus 4.8 - Alto**        | Mismo uso que Opus 4.7 - Alto: decisión arquitectural acotada, refactor cross-domain, nuevo dominio.       |
+| **Opus 4.8 - Extra**       | Mismo uso que Opus 4.7 - Extra Alto: refactor mayor o feature multidominio con trade-offs.                 |
+| **Opus 4.8 - Max**         | Mismo uso que Opus 4.7 - Max: reescritura crítica, debugging extremo, cambio en el ADN.                    |
 
 **Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después de verificar y commitear lo actual**, no qué se hace **ahora**. Si el usuario pide encadenar tareas, recordar esta regla y proponer hacer la primera, verificar en la app, y recién después la segunda.
 

@@ -8,7 +8,6 @@
  *   evita que los dominios se importen entre sí.
  */
 
-import { calcularTotalMensual }    from '../ingresos/logic.js';
 import { totalGastosMes, gastosMes, gastosPorCategoria, detectarHormigas }
   from '../gastos/logic.js';
 import { calcularTotalCompromisos, compromisosActivos, esDeuda } from '../compromisos/logic.js';
@@ -17,54 +16,6 @@ import { metasActivas }                                 from '../metas/logic.js'
 
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
-
-// ── MÉTRICAS DERIVADAS ───────────────────────────────────────────
-
-/**
- * Balance neto del mes: ingresos − gastos del mes − compromisos mensuales.
- * Positivo = superávit. Negativo = déficit.
- *
- * @param {number} ingresoMensual
- * @param {number} gastoMes
- * @param {number} compromisoMensual
- * @returns {number}
- */
-export function calcularBalance(ingresoMensual, gastoMes, compromisoMensual) {
-  return ingresoMensual - gastoMes - compromisoMensual;
-}
-
-/**
- * Tasa de ahorro como porcentaje del ingreso mensual.
- * Devuelve 0 si no hay ingreso. Puede ser negativa (déficit).
- *
- * @param {number} ingresoMensual
- * @param {number} egresos - gastos + compromisos del mes.
- * @returns {number} Porcentaje (puede ser negativo).
- */
-export function calcularTasaAhorro(ingresoMensual, egresos) {
-  if (ingresoMensual <= 0) return 0;
-  return Math.round(((ingresoMensual - egresos) / ingresoMensual) * 100);
-}
-
-/**
- * Nivel de salud financiera basado en la tasa de ahorro.
- *
- * | Nivel      | Tasa de ahorro | Regla de referencia     |
- * |------------|----------------|-------------------------|
- * | excelente  | ≥ 20 %         | Regla 50/30/20          |
- * | buena      | 10-19 %        | Ahorro moderado         |
- * | ajustada   | 0-9 %          | Margen mínimo           |
- * | critica    | < 0 %          | Gasta más de lo que gana|
- *
- * @param {number} tasaAhorro
- * @returns {'excelente' | 'buena' | 'ajustada' | 'critica'}
- */
-export function nivelSalud(tasaAhorro) {
-  if (tasaAhorro >= 20) return 'excelente';
-  if (tasaAhorro >= 10) return 'buena';
-  if (tasaAhorro >= 0)  return 'ajustada';
-  return 'critica';
-}
 
 // ── PATRIMONIO NETO Y PROYECCIÓN ─────────────────────────────────
 
@@ -177,42 +128,34 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  * Genera el resumen financiero completo del mes/año indicados.
  * Agrega datos de todos los dominios.
  *
- * @param {import('../../core/state.js').Ingreso[]}     ingresos
+ * Desde v8.8 la app no rastrea ingresos: el resumen se centra en gastos,
+ * compromisos y patrimonio (saldos − deudas). No expone ingreso, balance,
+ * tasa de ahorro ni proyección de flujo de caja.
+ *
  * @param {import('../../core/state.js').Gasto[]}       gastos
  * @param {import('../../core/state.js').Compromiso[]}  compromisos
  * @param {import('../../core/state.js').Cuenta[]}      cuentas
  * @param {number} anio
  * @param {number} mes  1-12
- * @param {import('../../core/state.js').Meta[]} [metas=[]]  - opcional para
- *                                                            mantener compatibilidad
- *                                                            con llamadas existentes.
+ * @param {import('../../core/state.js').Meta[]} [metas=[]]  - opcional.
  * @returns {{
- *   ingresoMensual: number,
  *   gastoMes: number,
  *   compromisoMensual: number,
  *   saldoCuentas: number,
- *   balance: number,
  *   egresos: number,
- *   tasaAhorro: number,
- *   salud: string,
  *   porCategoria: Record<string, number>,
  *   hormigas: Array<{categoria:string, total:number, cantidad:number, promedio:number}>,
  *   activos: { totalCuentas: number, totalMetas: number, total: number },
  *   pasivos: { total: number, cantidadDeudas: number, deudasSinSaldo: number },
  *   patrimonioNeto: number,
- *   proyeccion: { seisMeses: number, doceMeses: number, veinticuatroMeses: number },
  *   volatilidad: number,
  * }}
  */
-export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes, metas = []) {
-  const ingresoMensual    = calcularTotalMensual(ingresos);
+export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = []) {
   const gastoMes          = totalGastosMes(gastos, anio, mes);
   const compromisoMensual = calcularTotalCompromisos(compromisos);
   const saldoCuentas      = calcularTotalCuentas(cuentas);
   const egresos           = gastoMes + compromisoMensual;
-  const balance           = calcularBalance(ingresoMensual, gastoMes, compromisoMensual);
-  const tasaAhorro        = calcularTasaAhorro(ingresoMensual, egresos);
-  const salud             = nivelSalud(tasaAhorro);
   const gastosMesActual   = gastosMes(gastos, anio, mes);
   const porCategoria      = gastosPorCategoria(gastosMesActual);
   const hormigas          = detectarHormigas(gastosMesActual);
@@ -220,7 +163,6 @@ export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes
   const activos        = calcularActivos(cuentas, metas);
   const pasivos        = calcularPasivos(compromisos);
   const patrimonioNeto = calcularPatrimonioNeto(activos.total, pasivos.total);
-  const proyeccion     = proyeccionMultiHorizonte(patrimonioNeto, balance);
 
   // Volatilidad: std dev de gastos últimos 12 meses (para score de salud)
   const serieMeses = serieGastosMensual(gastos, anio, mes, 12);
@@ -228,20 +170,15 @@ export function generarResumen(ingresos, gastos, compromisos, cuentas, anio, mes
   const volatilidad = calcularVolatilidad(gastosMontos);
 
   return {
-    ingresoMensual,
     gastoMes,
     compromisoMensual,
     saldoCuentas,
     egresos,
-    balance,
-    tasaAhorro,
-    salud,
     porCategoria,
     hormigas,
     activos,
     pasivos,
     patrimonioNeto,
-    proyeccion,
     volatilidad,
   };
 }
@@ -264,16 +201,17 @@ export function calcularVolatilidad(valores) {
 }
 
 /**
- * Calcula el score de salud financiera (0-100) como promedio ponderado de 4 factores:
- *   - Tasa de ahorro (40 %): ≥ 20 % → 100, 0 % → 50, < 0 % → 0
- *   - Ratio deuda-activos (25 %): 0 → 100, 1 → 50, 2+ → 0
- *   - Ratio de liquidez (20 %): 6+ meses → 100, 3 meses → 50, < 1 mes → 0
- *   - Control de gastos (15 %): Volatilidad baja → 100, alta → 0
+ * Calcula el score de salud financiera (0-100) como promedio ponderado de 3 factores.
+ *
+ * Desde v8.8 la app no rastrea ingresos, así que el score se basa solo en datos
+ * que sí tenemos (saldos, deudas y gastos):
+ *   - Ratio deuda-activos (40 %): 0 → 100, 1 → 50, 2+ → 0
+ *   - Ratio de liquidez (35 %): 6+ meses de gasto cubiertos → 100, 3 → 50, < 1 → 0
+ *   - Control de gastos (25 %): Volatilidad baja → 100, alta → 0
  *
  * Devuelve un objeto con el score total (redondeado) y los sub-scores por factor.
  *
  * @param {{
- *   tasaAhorro: number,
  *   activos: {total: number},
  *   pasivos: {total: number},
  *   saldoCuentas: number,
@@ -282,7 +220,7 @@ export function calcularVolatilidad(valores) {
  * }} resumen - Objeto generado por generarResumen().
  * @returns {{
  *   score: number,
- *   factors: {tasaAhorro: number, deuda: number, liquidez: number, control: number},
+ *   factors: {deuda: number, liquidez: number, control: number},
  *   explicacion: string,
  * }}
  */
@@ -290,12 +228,11 @@ export function calcularScoreSalud(resumen) {
   if (!resumen) {
     return {
       score: 0,
-      factors: { tasaAhorro: 0, deuda: 0, liquidez: 0, control: 0 },
+      factors: { deuda: 0, liquidez: 0, control: 0 },
       explicacion: 'Sin datos para calcular.',
     };
   }
 
-  const tasaAhorro = resumen.tasaAhorro ?? 0;
   const activos = resumen.activos?.total ?? 0;
   const pasivos = resumen.pasivos?.total ?? 0;
   const saldoCuentas = resumen.saldoCuentas ?? 0;
@@ -304,38 +241,33 @@ export function calcularScoreSalud(resumen) {
   const gasteMes = resumen.gastoMes ?? resumen.gastosMes ?? 1;
   const volatilidad = resumen.volatilidad ?? 0;
 
-  // Factor 1: Tasa de ahorro (40 %)
-  const scoreTasa = Math.min(100, Math.max(0, (tasaAhorro / 20) * 100));
-
-  // Factor 2: Ratio deuda-activos (25 %)
+  // Factor 1: Ratio deuda-activos (40 %)
   const ratioDeuda = activos > 0 ? pasivos / activos : 1;
   const scoreDeuda = Math.max(0, 100 - ratioDeuda * 100);
 
-  // Factor 3: Ratio liquidez (20 %)
+  // Factor 2: Ratio liquidez (35 %)
   const mesesRunway = gasteMes > 0 ? saldoCuentas / gasteMes : 0;
   const scoreLiquidez = Math.min(100, Math.max(0, (mesesRunway / 6) * 100));
 
-  // Factor 4: Control de gastos (15 %)
+  // Factor 3: Control de gastos (25 %)
   const coeficienteVariacion = gasteMes > 0 ? volatilidad / gasteMes : 0;
   const scoreControl = Math.max(0, Math.min(100, 100 - coeficienteVariacion * 100));
 
   // Promedio ponderado
   const score =
-    scoreTasa * 0.4 +
-    scoreDeuda * 0.25 +
-    scoreLiquidez * 0.2 +
-    scoreControl * 0.15;
+    scoreDeuda * 0.40 +
+    scoreLiquidez * 0.35 +
+    scoreControl * 0.25;
 
   return {
     score: Math.round(score),
     factors: {
-      tasaAhorro: Math.round(scoreTasa),
       deuda: Math.round(scoreDeuda),
       liquidez: Math.round(scoreLiquidez),
       control: Math.round(scoreControl),
     },
     explicacion:
-      `Ahorro ${Math.round(scoreTasa)}/100 • Deuda ${Math.round(scoreDeuda)}/100 • ` +
+      `Deuda ${Math.round(scoreDeuda)}/100 • ` +
       `Liquidez ${Math.round(scoreLiquidez)}/100 • Control ${Math.round(scoreControl)}/100`,
   };
 }

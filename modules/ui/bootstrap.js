@@ -19,7 +19,6 @@ import { initOnboarding } from './onboarding.js';
 import { renderAll } from '../infra/render.js';
 import { verificarYNotificar } from '../infra/notificaciones.js';
 import { initTesoreria } from '../dominio/tesoreria/index.js';
-import { initIngresos } from '../dominio/ingresos/index.js';
 import { initGastos } from '../dominio/gastos/index.js';
 import { initMetas } from '../dominio/metas/index.js';
 import { initCompromisos } from '../dominio/compromisos/index.js';
@@ -38,7 +37,6 @@ initAcciones();
 
 // Dominios: registran sus acciones antes de que el usuario pueda interactuar.
 initTesoreria();
-initIngresos();
 initGastos();
 initMetas();
 initCompromisos();

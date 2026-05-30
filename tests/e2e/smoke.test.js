@@ -2,12 +2,11 @@
  * smoke.test.js - Tests E2E de los flujos críticos de Finko.
  *
  * Cubre:
- * 1. Dashboard - carga correcta, 6 métricas visibles.
+ * 1. Dashboard - carga correcta, métricas visibles.
  * 2. Onboarding - wizard aparece, se completa, no vuelve a aparecer.
  * 3. Navegación - secciones se activan con el router hash.
- * 4. Ingresos - registrar ingreso, verifica en lista.
- * 5. Gastos - registrar gasto, verifica en lista.
- * 6. Tesorería - agregar cuenta, saldo en dashboard se actualiza.
+ * 4. Gastos - registrar gasto, verifica en lista.
+ * 5. Tesorería - agregar cuenta, saldo en dashboard se actualiza.
  * 7. Gastos-Cuenta integrado - crear gasto con selector cuenta obligatorio,
  *    verificar saldo decrementado, editar (cambiar monto), eliminar y restaurar.
  * 8. Tema - toggle claro/oscuro actualiza aria-pressed.
@@ -57,19 +56,12 @@ test.describe('Dashboard', () => {
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
   });
 
-  test('carga y muestra las 6 métricas del bento grid', async ({ page }) => {
+  test('carga y muestra el saldo total del dashboard', async ({ page }) => {
     await expect(page.locator('#saldo-total')).toBeVisible();
-    await expect(page.locator('#ingresos-mes')).toBeVisible();
-    await expect(page.locator('#gastos-mes')).toBeVisible();
-    await expect(page.locator('#compromisos-count')).toBeVisible();
-    await expect(page.locator('#metas-count')).toBeVisible();
-    await expect(page.locator('#balance-mes')).toBeVisible();
   });
 
-  test('valores iniciales en $0 o 0 con localStorage vacío', async ({ page }) => {
+  test('saldo inicial en $0 con localStorage vacío', async ({ page }) => {
     await expect(page.locator('#saldo-total')).toHaveText('$0');
-    await expect(page.locator('#compromisos-count')).toHaveText('0');
-    await expect(page.locator('#metas-count')).toHaveText('0');
   });
 });
 
@@ -138,53 +130,6 @@ test.describe('Navegación hash', () => {
       await expect(page.locator(`#${seccion}`)).toHaveClass(/active/);
     });
   }
-});
-
-// ── SUITE 4: Ingresos (card dentro de Tesorería) ────────────────────────────
-// Ingresos ya no tiene sección propia. Vive como card compacta dentro de Tesorería.
-
-test.describe('Ingresos - card en Tesorería', () => {
-  test.beforeEach(async ({ page }) => {
-    await saltearOnboarding(page);
-    await page.goto('/#tesoreria');
-    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
-  });
-
-  test('muestra card de ingresos dentro de Tesorería', async ({ page }) => {
-    await expect(page.locator('.ingresos-card')).toBeVisible();
-    await expect(page.locator('.ingresos-card__title')).toBeVisible();
-    // Botón agregar debe existir dentro de la card
-    await expect(page.locator('.ingresos-card [data-action="nuevo-ingreso"]')).toBeVisible();
-  });
-
-  test('abrir modal ingreso y cerrar con Escape', async ({ page }) => {
-    await page.click('.ingresos-card [data-action="nuevo-ingreso"]');
-    await expect(page.locator('#modal-ingreso[data-open]')).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.locator(modalCerrado('modal-ingreso'))).toBeAttached();
-  });
-
-  test('registrar ingreso mensual y verifica en card', async ({ page }) => {
-    await page.click('.ingresos-card [data-action="nuevo-ingreso"]');
-    await page.waitForSelector('#modal-ingreso[data-open]');
-
-    const form = page.locator('#modal-ingreso-body form');
-    await form.locator('[name="descripcion"]').fill('Salario prueba E2E');
-    await form.locator('[name="monto"]').fill('3000000');
-    await form.locator('select[name="frecuencia"]').selectOption({ index: 1 });
-    await form.locator('button[type="submit"]').click();
-
-    // Modal se cierra
-    await expect(page.locator(modalCerrado('modal-ingreso'))).toBeAttached({
-      timeout: 3_000,
-    });
-
-    // El ingreso aparece en la card dentro de Tesorería
-    await expect(page.locator('.ingresos-card__list')).toContainText(
-      'Salario prueba E2E',
-      { timeout: 3_000 }
-    );
-  });
 });
 
 // ── SUITE 5: Gastos ─────────────────────────────────────────────────────────

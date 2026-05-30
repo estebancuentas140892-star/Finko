@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-27 (v8.7: simulador laboral unificado + limpieza form cuentas)
+> Última actualización: 2026-05-29 (v8.9: simulador laboral gateado empleado vs independiente + limpieza ingresos; fase H. Tesorería cerrada)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 973/973 verdes |
-| Tests E2E | 18/18 humo + suite completa |
+| Tests unitarios + integración | 931/931 verdes (`-32` por borrar `ingresos.test.js` y +18 por aportes empleado + cesantías) |
+| Tests E2E | suite completa (no ejecutada en v8.9: dashboard reescrito a solo `#saldo-total`, requiere verificación manual con servidor + Chromium) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,53 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): v8.9 - simulador laboral gateado empleado vs independiente + limpieza ingresos · 2026-05-29
+
+Cierre de la fase H (Rediseño de Tesorería). Parte B reemplaza el área de la card de ingresos por un simulador con gate de perfil (empleado / independiente) que nunca mezcla cálculos. Se agregan funciones nuevas de lógica financiera CO (aportes del trabajador 4 % + 4 % + FSP y cesantías + intereses) y se cierra también la limpieza opcional H.C (borrado del dominio `ingresos/` muerto + refresco de asserts e2e obsoletos).
+
+**Cambios clave:**
+- **`modules/core/constants.js`:** 4 constantes legales nuevas con fuente: `SALUD_EMPLEADO` (4 %), `PENSION_EMPLEADO` (4 %), `FSP_TRAMOS` (tabla progresiva por múltiplos de SMMLV) e `INTERESES_CESANTIAS` (12 %).
+- **`modules/infra/financiero.js`:** Dos funciones nuevas. `calcularAportesEmpleado(salario)`: IBC = max(salario, SMMLV); salud 4 % + pensión 4 % + FSP por tramos (0 % bajo 4 SMMLV, hasta 2 % desde 20 SMMLV); ARL $0. `calcularCesantias(salario, dias, variablesPromedio)`: cesantías y sus intereses 12 % anual. Helper interno `_tasaFSP(ibc)`. Totales sumados desde componentes redondeados para que reconcilien siempre.
+- **`tests/unit/calculadoras.test.js`:** 18 tests nuevos (10 aportes + 8 cesantías).
+- **`index.html`:** Reemplazado `#simulador-laboral` v8.7 por gate v8.9 con radio de perfil y `fieldset` separados (empleado: salario+días+extras+bonos; independiente: ingreso+ARL). Botón oculto hasta elegir perfil.
+- **`styles/components.css`:** Nuevas clases `.sim-gate*` y `.sim-profile-fields`. Grid responsivo, opción seleccionada vía `:has(:checked)`.
+- **`modules/dominio/tesoreria/index.js`:** Imports ampliados. `_calcularEmpleado` y `_calcularIndependiente` separados; `_onSubmitSimuladorLaboral` despacha por perfil; `_initSimuladorLaboral` cablea el gate. Cesantías para empleado: extrapolación `días * 2` (máx 360) desde el semestre.
+- **Borrados (H.C):** `modules/dominio/ingresos/{logic,view,index}.js`, `tests/unit/ingresos.test.js`. El directorio `ingresos/` ya no existe.
+- **`service-worker.js`:** v91 → v92; removidas las 3 rutas de `ingresos/` del `CORE_ASSETS`.
+- **`tests/integration/flujos.test.js`:** Quitado el import de `ingresos/logic.js` y el test que lo usaba; Suite 3 (roundtrip) sigue probando que `S.ingresos` persiste a localStorage.
+- **`tests/e2e/smoke.test.js`:** Tests del dashboard reescritos para solo testar `#saldo-total` (los IDs `#gastos-mes`, `#compromisos-count`, `#metas-count` eran obsoletos desde un rediseño previo).
+
+**Deuda técnica anotada (NO de esta tarea):** `updateBadge` (en `render.js`) y `renderResumenGastos` (en `gastos/view.js`) siguen como no-ops sobre IDs inexistentes, cableadas desde `compromisos/`, `agenda/`, `import/` y `gastos/`. Cerrarlas requiere refactor cross-domain. Queda documentada para una tarea futura.
+
+**Archivos:** `modules/core/constants.js`, `modules/infra/financiero.js`, `modules/dominio/tesoreria/index.js`, `styles/components.css`, `index.html`, `service-worker.js`, `tests/unit/calculadoras.test.js`, `tests/integration/flujos.test.js`, `tests/e2e/smoke.test.js`, `docs/`. Eliminados: `modules/dominio/ingresos/{logic,view,index}.js`, `tests/unit/ingresos.test.js`.
+
+**Tests:** 931/931 unitarios + integración verdes. E2E pendiente verificación manual.
+
+**Sigue:** la fase H. queda cerrada. Próximas tareas opcionales en ROADMAP: A.5 (dominio custom), E.2 (SMMLV + UVT 2027 en enero), o cerrar la deuda técnica de `updateBadge`/`renderResumenGastos`.
+
+### refactor(app): v8.8 - eliminación del concepto de ingreso mensual (Tesorería redesign, Parte A) · 2026-05-28
+
+Primera parte del rediseño de Tesorería. Decisión del usuario: "Simplificar todo". Se elimina el ingreso mensual como concepto vivo de la app. El dashboard, Análisis y Logros dejan de depender de ingresos. La app queda centrada en saldos (cuentas) + gastos. Los archivos del dominio `ingresos/` NO se borran: quedan desconectados (código muerto) para no arriesgar una migración de schema (regla 2.5). `S.ingresos` se mantiene en el schema por retrocompatibilidad de datos.
+
+**Cambios clave:**
+- **`modules/dominio/analisis/logic.js`:** quitado el import cross-domain de ingresos; borradas `calcularBalance`, `calcularTasaAhorro`, `nivelSalud`; `generarResumen(gastos, compromisos, cuentas, anio, mes, metas)` sin ingresos ni balance; `calcularScoreSalud` reponderado a 3 factores (Deuda 40, Liquidez 35, Control 25). `proyectarPatrimonio` y `proyeccionMultiHorizonte` se conservan como funciones puras con sus tests.
+- **`modules/dominio/analisis/view.js`:** corregida la llamada a `generarResumen`; quitadas las cards "Ingresos proyectados" y "Balance neto" (ahora Gastos, Compromisos, Total egresos); eliminada la sección "Salud financiera" (tasa de ahorro); quitado el factor "Ahorro" del Score; removido el bloque "Proyección de patrimonio".
+- **`modules/infra/render.js`:** quitado el cálculo de ingresos/balance del dashboard y la constante muerta `_FACTOR_MENSUAL`.
+- **`modules/dominio/logros/logic.js`:** borrados los logros `primer-ingreso` y `mes-en-verde` y el helper `_mesEnVerde`.
+- **`modules/ui/bootstrap.js`:** desconectado `initIngresos` (import + llamada).
+- **`index.html`:** removidos la tira "Balance del mes" (dashboard), la `#panel-ingresos-card` (Tesorería) y el `#modal-ingreso`. El bloque `#simulador-laboral` queda intacto para Parte B.
+- **`modules/dominio/analisis/index.js`, `modules/dominio/tesoreria/index.js`:** removida la sección observada `'ingresos'` (rama muerta del EventBus).
+- **`modules/dominio/config/index.js`:** el mensaje de reset ya no menciona "ingresos".
+- **Tests:** `analisis.test.js` y `logros.test.js` adaptados; `flujos.test.js` reescribe las 3 suites de análisis al modelo sin ingresos; removidos los e2e de la card de ingresos (`smoke.test.js` Suite 4 y nav income-card en `navegacion-render.test.js`).
+
+**Pendiente (deuda técnica anotada):** el e2e del dashboard tiene asserts pre-existentes obsoletos (`#gastos-mes`, `#compromisos-count`, `#metas-count` ya no existen tras un rediseño previo del dashboard). No es de esta tarea: refrescar la suite e2e del dashboard queda como tarea aparte.
+
+**Archivos:** `modules/dominio/analisis/{logic,view,index}.js`, `modules/infra/render.js`, `modules/dominio/logros/logic.js`, `modules/ui/bootstrap.js`, `index.html`, `modules/dominio/tesoreria/index.js`, `modules/dominio/config/index.js`, `tests/unit/analisis.test.js`, `tests/unit/logros.test.js`, `tests/integration/flujos.test.js`, `tests/e2e/smoke.test.js`, `tests/e2e/navegacion-render.test.js`, `CLAUDE.md`, `docs/`.
+
+**Tests:** 945/945 unitarios + integración verdes. E2E no ejecutado (requiere servidor + Chromium).
+
+**Sigue:** Parte B - reemplazar el área de la card de ingresos por un "Simulador laboral" con gate empleado vs independiente (prima, PILA/IBC, auxilio de transporte, horas extras y recargos, bonos). NUNCA mezclar empleado e independiente en la salida.
 
 ### feat(tesoreria): v8.7 - simulador laboral unificado + limpieza form cuentas · 2026-05-27
 
@@ -93,60 +140,21 @@ Limpieza de copy: feedback del usuario para evitar el guion simple `-` como sepa
 
 **Tests:** 967/967 verdes (cambio puramente de copy).
 
-### refactor(calculadoras): v8.4 - redistribuir calculadoras a dominios + limpiar módulo (sub-tarea 5/5) · 2026-05-27
-
-Cierra la reorganización "Calculadoras → dominios naturales". Las 7 calculadoras ahora viven dentro de sus secciones naturales como herramientas inline colapsables. El módulo `calculadoras/` fue eliminado por completo.
-
-**Cambios clave:**
-- **`index.html`:** 4 nuevos `<details class="herramienta-inline">` en las secciones Metas (CDT + Interés Compuesto) y Análisis (Regla del 72 + Rentabilidad real). Eliminada la sección `sec-calc` completa.
-- **`modules/dominio/metas/index.js`:** Handlers `_onSubmitHerramientaCDT` y `_onSubmitHerramientaIC` (importan de `infra/financiero.js`). Wire-up en `initMetas()`.
-- **`modules/dominio/analisis/index.js`:** Handlers `_onSubmitHerramientaR72` y `_onSubmitHerramientaRentabilidad`. Wire-up en `initAnalisis()`.
-- **`modules/ui/bootstrap.js`:** Removidos `import { initCalculadoras }` y la llamada `initCalculadoras()`.
-- **`modules/dominio/calculadoras/view.js`** y **`index.js`:** Borrados.
-- **`tests/unit/calculadoras.test.js`:** Removidos import `renderAlertaUsura` y 7 tests asociados (la función fue deprecada con el módulo).
-- **`service-worker.js`:** v86 → v87; removidas entradas `calculadoras/view.js` y `calculadoras/index.js` de `CORE_ASSETS`.
-
-**Archivos:** `index.html`, `modules/dominio/metas/index.js`, `modules/dominio/analisis/index.js`, `modules/ui/bootstrap.js`, `service-worker.js`, `tests/unit/calculadoras.test.js`. Eliminados: `modules/dominio/calculadoras/view.js`, `modules/dominio/calculadoras/index.js`.
-
-**Tests:** 967/967 verdes (7 menos por eliminar tests de `renderAlertaUsura`, correctamente deprecada).
-
-### refactor(nav): v8.0 - eliminar sección Calculadoras del nav (sub-tarea 1/5) · 2026-05-27
-
-Primera sub-tarea de la reorganización "Calculadoras → dominios naturales". Solo cambios de navegación, sin tocar lógica.
-
-**Cambios clave:**
-- **`index.html`:** Quitado el link `#calc` del sidebar desktop (grupo Herramientas) y del menú Más mobile.
-- **`modules/infra/router.js`:** Eliminado `['calc', 'sec-calc']` de SECTIONS. Agregado `REDIRECTS = new Map([['calc', 'dash']])`: cualquier hash `#calc` redirige al Dashboard con `history.replaceState`.
-- **`service-worker.js`:** v83 → v84.
-
-**Archivos:** `index.html`, `modules/infra/router.js`, `service-worker.js`.
-
-**Tests:** 974/974 verdes.
-
-### feat(compromisos) - v7.15: abono a deudas, sub-tarea 3 (badge agenda + tip proyección + E2E) · 2026-05-27
-
-Cierra la feature completa "Abonar deuda" (ADR 002). Tercera y última sub-tarea: feedback visual en Agenda y en el modal de abono, más el smoke E2E.
-
-**Cambios clave:**
-- **Badge "Ya abonaste este mes"** (`agenda/view.js`): `_renderDetalleItem` recibe ahora `viewYear` y `viewMonth`. Detecta si hay un gasto con `compromisoId === c.id` y `fecha` en el mes visualizado. Si existe, muestra `<p class="cal-detail__badge-abono">✓ Ya abonaste este mes</p>` en el panel de detalle del día.
-- **Tip de proyección** (`compromisos/index.js`, `view.js`): al tipear monto en el modal de abono, calcula cuántos meses antes termina la deuda con ese abono y actualiza el párrafo `#abono-tip-proyeccion`. Muestra solo cuando el ahorro es >= 1 mes.
-- **CSS** (`styles/components.css`): `.cal-detail__badge-abono` (texto xs, color success).
-- **Smoke E2E** (`tests/e2e/smoke.test.js`): Suite 11 "Agenda - badge abono". Inyecta una deuda y un gasto-abono del mes actual via `addInitScript`, navega a Agenda, clica el día 15, verifica el badge visible. Corrige también el selector de la leyenda (era `text=Deuda` que fallaba por ambigüedad).
-- **`service-worker.js`:** v82 → v83.
-
-**Sigue:** No hay más sub-tareas de "abono a deudas". Proyecto en modo mantenimiento.
-
-**Archivos:** `modules/dominio/agenda/view.js`, `modules/dominio/compromisos/view.js`, `modules/dominio/compromisos/index.js`, `styles/components.css`, `tests/e2e/smoke.test.js`, `service-worker.js`, `docs/`.
-
-**Tests:** 974/974 verdes. E2E: 39 pasan (badge + leyenda Agenda).
-
-> Para tareas anteriores (v7.14 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v8.4 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Estado actual:** App completa, en producción estable (`https://finko-brown.vercel.app`). Todas las features v1.0 + post-v1.0 están implementadas. **Modo mantenimiento.**
+**Fase activa:** ninguna. La fase H (Rediseño de Tesorería) cerró en v8.9 con la Parte B (simulador gateado) y la limpieza opcional H.C (borrado de `ingresos/` muerto + refresco e2e). La app sigue estable en producción.
+
+**Opciones para la próxima sesión:**
+- **Cerrar deuda técnica:** eliminar `updateBadge` y `renderResumenGastos` no-ops que quedaron cableadas desde 4 dominios (refactor cross-domain acotado).
+- **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
+- **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
+- Pequeñas mejoras de UX o copy a demanda.
+
+**Estado base:** App en producción estable (`https://finko-brown.vercel.app`).
 
 > **Importante para futuros desarrolladores:** Antes de instalar dependencias o configurar
 > un nuevo entorno, leer [`docs/SECURITY.md`](SECURITY.md). Incluye política anti-malware npm,

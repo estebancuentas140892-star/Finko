@@ -236,6 +236,33 @@ export const SALUD_INDEPEND = 0.125;
  *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
 export const PENSION_INDEPEND = 0.16;
 
+/** Aporte salud que descuenta el TRABAJADOR dependiente - 4 % del IBC.
+ *  El otro 8.5 % lo paga el empleador (total 12.5 %).
+ *  Fuente: Ley 100/1993 art. 204, Ley 1122/2007. Estable. */
+export const SALUD_EMPLEADO = 0.04;
+
+/** Aporte pensión que descuenta el TRABAJADOR dependiente - 4 % del IBC.
+ *  El otro 12 % lo paga el empleador (total 16 %).
+ *  Fuente: Ley 100/1993 art. 20, Ley 797/2003. Estable. */
+export const PENSION_EMPLEADO = 0.04;
+
+/** Tramos del Fondo de Solidaridad Pensional (FSP), aporte adicional del
+ *  trabajador según su IBC medido en múltiplos de SMMLV. Solo aplica desde
+ *  4 SMMLV. `hasta` es exclusivo (el último tramo es 20 SMMLV en adelante).
+ *  Fuente: Ley 100/1993 art. 27, Decreto 1833/2016. Estable. */
+export const FSP_TRAMOS = [
+  { desdeSMMLV: 4,  hastaSMMLV: 16, tasa: 0.010 },
+  { desdeSMMLV: 16, hastaSMMLV: 17, tasa: 0.012 },
+  { desdeSMMLV: 17, hastaSMMLV: 18, tasa: 0.014 },
+  { desdeSMMLV: 18, hastaSMMLV: 19, tasa: 0.016 },
+  { desdeSMMLV: 19, hastaSMMLV: 20, tasa: 0.018 },
+  { desdeSMMLV: 20, hastaSMMLV: Infinity, tasa: 0.020 },
+];
+
+/** Tasa anual de los intereses sobre cesantías - 12 % del saldo acumulado.
+ *  Fuente: Ley 50/1990 art. 99. Estable. */
+export const INTERESES_CESANTIAS = 0.12;
+
 /** ARL clase I (riesgo mínimo, oficinas) - 0.522 % del IBC.
  *  Fuente: Decreto 1295/1994, tabla de cotización. Estable.
  *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */

@@ -19,14 +19,8 @@ import { S, createInitialState, EventBus } from '../../modules/core/state.js';
 import { loadData, _flushNow, STORAGE_KEY, SCHEMA_VERSION } from '../../modules/core/storage.js';
 import { guardar } from '../../modules/infra/crud.js';
 import { cuentasActivas, calcularTotalCuentas } from '../../modules/dominio/tesoreria/logic.js';
-import { ingresosActivos, calcularTotalMensual, calcularIngresoMensual } from '../../modules/dominio/ingresos/logic.js';
 import { gastosMes, totalGastosMes } from '../../modules/dominio/gastos/logic.js';
-import {
-  calcularBalance,
-  calcularTasaAhorro,
-  nivelSalud,
-  generarResumen,
-} from '../../modules/dominio/analisis/logic.js';
+import { generarResumen } from '../../modules/dominio/analisis/logic.js';
 import { gastosACSV } from '../../modules/dominio/export/logic.js';
 import { procesarCSV } from '../../modules/dominio/import/logic.js';
 
@@ -99,13 +93,6 @@ describe('C.1 - Flujo onboarding → cuenta → ingreso → gasto', () => {
     expect(calcularTotalCuentas(S.cuentas)).toBe(2_000_000);
   });
 
-  it('primer ingreso: activo y su cuota mensual es el monto declarado', () => {
-    const activos = ingresosActivos(S.ingresos);
-    expect(activos).toHaveLength(1);
-    expect(calcularIngresoMensual(activos[0])).toBe(3_000_000);
-    expect(calcularTotalMensual(S.ingresos)).toBe(3_000_000);
-  });
-
   it('primer gasto: aparece en el mes correcto y vinculado a la cuenta', () => {
     const del_mes = gastosMes(S.gastos, 2026, 5);
     expect(del_mes).toHaveLength(1);
@@ -136,54 +123,28 @@ describe('C.1 - Análisis cross-domain sobre el estado construido', () => {
     buildEstadoBase();
   });
 
-  it('balance mensual: ingreso − gasto − compromisos = $2.200.000', () => {
-    const ingresoMensual    = calcularTotalMensual(S.ingresos);
-    const gastoMes          = totalGastosMes(S.gastos, 2026, 5);
-    const compromisoMensual = 0;
-    expect(calcularBalance(ingresoMensual, gastoMes, compromisoMensual)).toBe(2_200_000);
-  });
-
-  it('tasa de ahorro: 73% (redondeado) con $3M ingreso y $800K gasto', () => {
-    const ingresoMensual = calcularTotalMensual(S.ingresos);
-    const egresos        = totalGastosMes(S.gastos, 2026, 5);
-    expect(calcularTasaAhorro(ingresoMensual, egresos)).toBe(73);
-  });
-
-  it('salud financiera: "excelente" (tasa ≥ 20%)', () => {
-    expect(nivelSalud(73)).toBe('excelente');
-  });
-
-  it('generarResumen() agrega correctamente los 4 dominios', () => {
-    const r = generarResumen(S.ingresos, S.gastos, S.compromisos, S.cuentas, 2026, 5);
-    expect(r.ingresoMensual).toBe(3_000_000);
+  it('generarResumen() agrega gastos, compromisos y saldos (sin ingresos, v8.8)', () => {
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
     expect(r.gastoMes).toBe(800_000);
     expect(r.compromisoMensual).toBe(0);
-    expect(r.balance).toBe(2_200_000);
-    expect(r.tasaAhorro).toBe(73);
-    expect(r.salud).toBe('excelente');
+    expect(r.egresos).toBe(800_000);
     expect(r.saldoCuentas).toBe(2_000_000);
+    expect(r.patrimonioNeto).toBe(2_000_000); // activos 2M − pasivos 0
   });
 
-  it('generarResumen() con mes sin gastos: balance = ingreso completo', () => {
-    const r = generarResumen(S.ingresos, S.gastos, S.compromisos, S.cuentas, 2026, 4);
+  it('generarResumen() ya no expone métricas de ingreso ni balance', () => {
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
+    expect(r).not.toHaveProperty('ingresoMensual');
+    expect(r).not.toHaveProperty('balance');
+    expect(r).not.toHaveProperty('tasaAhorro');
+    expect(r).not.toHaveProperty('salud');
+  });
+
+  it('generarResumen() con mes sin gastos: egresos en cero', () => {
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 4, S.metas);
     expect(r.gastoMes).toBe(0);
-    expect(r.balance).toBe(3_000_000);
-    expect(r.tasaAhorro).toBe(100);
-    expect(r.salud).toBe('excelente');
-  });
-
-  it('salud "critica" cuando egresos superan ingresos', () => {
-    guardar('gastos', {
-      descripcion: 'Gasto enorme',
-      monto:       5_000_000,
-      categoria:   'Otros',
-      fecha:       '2026-05-15',
-    });
-    const ingresoMensual = calcularTotalMensual(S.ingresos);
-    const egresos        = totalGastosMes(S.gastos, 2026, 5);
-    const tasa           = calcularTasaAhorro(ingresoMensual, egresos);
-    expect(tasa).toBeLessThan(0);
-    expect(nivelSalud(tasa)).toBe('critica');
+    expect(r.egresos).toBe(0);
+    expect(r.saldoCuentas).toBe(2_000_000);
   });
 });
 
@@ -213,18 +174,18 @@ describe('C.1 - Persistencia roundtrip (flush + reload)', () => {
     resetS();
     buildEstadoBase();
 
-    const resumenAntes = generarResumen(S.ingresos, S.gastos, S.compromisos, S.cuentas, 2026, 5);
+    const resumenAntes = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
 
     _flushNow();
     Object.assign(S, createInitialState());
     loadData();
 
-    const resumenDespues = generarResumen(S.ingresos, S.gastos, S.compromisos, S.cuentas, 2026, 5);
+    const resumenDespues = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
 
-    expect(resumenDespues.ingresoMensual).toBe(resumenAntes.ingresoMensual);
     expect(resumenDespues.gastoMes).toBe(resumenAntes.gastoMes);
-    expect(resumenDespues.balance).toBe(resumenAntes.balance);
-    expect(resumenDespues.salud).toBe(resumenAntes.salud);
+    expect(resumenDespues.egresos).toBe(resumenAntes.egresos);
+    expect(resumenDespues.saldoCuentas).toBe(resumenAntes.saldoCuentas);
+    expect(resumenDespues.patrimonioNeto).toBe(resumenAntes.patrimonioNeto);
   });
 
   it('loadData() es idempotente - múltiples recargas dan el mismo resultado', () => {
@@ -277,11 +238,11 @@ describe('C.1 - Resiliencia de la capa de datos', () => {
   });
 
   it('análisis sobre estado vacío no lanza y devuelve ceros', () => {
-    const r = generarResumen([], [], [], [], 2026, 5);
-    expect(r.ingresoMensual).toBe(0);
+    const r = generarResumen([], [], [], 2026, 5, []);
     expect(r.gastoMes).toBe(0);
-    expect(r.balance).toBe(0);
-    expect(r.salud).toBe('ajustada');
+    expect(r.egresos).toBe(0);
+    expect(r.saldoCuentas).toBe(0);
+    expect(r.patrimonioNeto).toBe(0);
   });
 
   it('cuenta inactiva no aparece en cuentasActivas() ni en el total', () => {

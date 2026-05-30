@@ -62,20 +62,6 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
   });
 
-  test('Tesorería muestra card de ingresos vacía al navegar desde Dashboard', async ({ page }) => {
-    await saltearOnboardingYIrADash(page);
-
-    await page.click('a[href="#tesoreria"]');
-    await expect(page.locator('#sec-tesoreria.active')).toBeVisible();
-
-    // La card de ingresos existe dentro de Tesorería (ingresos ya no tiene sección propia)
-    await expect(page.locator('.ingresos-card')).toBeVisible({ timeout: 3_000 });
-    await expect(page.locator('.ingresos-card__empty')).toContainText(
-      'Todavía no registraste ingresos',
-      { timeout: 3_000 }
-    );
-  });
-
   test('Gastos muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 

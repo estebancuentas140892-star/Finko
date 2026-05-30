@@ -6,13 +6,22 @@ import {
   calcularRegla72,
   calcularPrima,
   calcularPILA,
+  calcularAportesEmpleado,
+  calcularCesantias,
   calcularRentabilidadReal,
   clasificarTasaCredito,
   validarCampos,
 } from '../../modules/infra/financiero.js';
 // Constantes legales vigentes (importadas desde el single source of truth).
 // Si cambian los valores oficiales solo se toca `modules/core/constants.js`.
-import { SMMLV, AUXILIO_TRANSPORTE, TASA_USURA } from '../../modules/core/constants.js';
+import {
+  SMMLV,
+  AUXILIO_TRANSPORTE,
+  TASA_USURA,
+  SALUD_EMPLEADO,
+  PENSION_EMPLEADO,
+  INTERESES_CESANTIAS,
+} from '../../modules/core/constants.js';
 
 // ── calcularCDT() ─────────────────────────────────────────────────
 
@@ -328,6 +337,144 @@ describe('calcularPILA()', () => {
   it('total = salud + pensión + ARL', () => {
     const r = calcularPILA(5_000_000);
     expect(r.total).toBe(r.salud + r.pension + r.arlMonto);
+  });
+});
+
+// ── calcularAportesEmpleado() ─────────────────────────────────────
+
+describe('calcularAportesEmpleado()', () => {
+  it('retorna null si salario <= 0', () => {
+    expect(calcularAportesEmpleado(0)).toBeNull();
+    expect(calcularAportesEmpleado(-1000)).toBeNull();
+  });
+
+  it('IBC = salario (sin auxilio de transporte) con piso de 1 SMMLV', () => {
+    // Salario por encima del mínimo: IBC = salario.
+    const r = calcularAportesEmpleado(3_000_000);
+    expect(r.ibc).toBe(3_000_000);
+
+    // Salario igual al mínimo: IBC = SMMLV (el piso no lo eleva).
+    const rMin = calcularAportesEmpleado(SMMLV);
+    expect(rMin.ibc).toBe(SMMLV);
+  });
+
+  it('salud = 4 % del IBC, pensión = 4 % del IBC', () => {
+    const r = calcularAportesEmpleado(3_000_000);
+    expect(r.salud).toBe(Math.round(3_000_000 * SALUD_EMPLEADO));
+    expect(r.pension).toBe(Math.round(3_000_000 * PENSION_EMPLEADO));
+    expect(r.salud).toBe(120_000);   // 4 % de 3M
+    expect(r.pension).toBe(120_000);
+  });
+
+  it('sin ARL: el trabajador no aporta ARL (la paga el empleador)', () => {
+    const r = calcularAportesEmpleado(3_000_000);
+    expect(r).not.toHaveProperty('arlMonto');
+  });
+
+  it('FSP = 0 si el IBC es menor a 4 SMMLV', () => {
+    const r = calcularAportesEmpleado(3 * SMMLV);  // < 4 SMMLV
+    expect(r.fspTasa).toBe(0);
+    expect(r.fsp).toBe(0);
+  });
+
+  it('FSP = 1 % si el IBC está entre 4 y 16 SMMLV', () => {
+    const r = calcularAportesEmpleado(5 * SMMLV);
+    expect(r.fspTasa).toBe(0.010);
+    expect(r.fsp).toBe(Math.round(5 * SMMLV * 0.010));
+  });
+
+  it('FSP sube por tramos: 16 SMMLV → 1.2 %, 20 SMMLV → 2 %', () => {
+    const r16 = calcularAportesEmpleado(16 * SMMLV);
+    expect(r16.fspTasa).toBe(0.012);
+
+    const r20 = calcularAportesEmpleado(20 * SMMLV);
+    expect(r20.fspTasa).toBe(0.020);
+
+    const r25 = calcularAportesEmpleado(25 * SMMLV);  // 20+ SMMLV → tope 2 %
+    expect(r25.fspTasa).toBe(0.020);
+  });
+
+  it('totalDescuento = salud + pensión + FSP', () => {
+    const r = calcularAportesEmpleado(6 * SMMLV);
+    expect(r.totalDescuento).toBe(r.salud + r.pension + r.fsp);
+  });
+
+  it('sin FSP, el descuento es ~8 % del salario (4 % + 4 %)', () => {
+    const salario = 3_000_000;
+    const r = calcularAportesEmpleado(salario);  // < 4 SMMLV → sin FSP
+    expect(r.totalDescuento).toBe(Math.round(salario * 0.08));
+  });
+
+  it('todos los montos son enteros redondeados', () => {
+    const r = calcularAportesEmpleado(4_321_000);
+    expect(Number.isInteger(r.ibc)).toBe(true);
+    expect(Number.isInteger(r.salud)).toBe(true);
+    expect(Number.isInteger(r.pension)).toBe(true);
+    expect(Number.isInteger(r.fsp)).toBe(true);
+    expect(Number.isInteger(r.totalDescuento)).toBe(true);
+  });
+});
+
+// ── calcularCesantias() ───────────────────────────────────────────
+
+describe('calcularCesantias()', () => {
+  it('año completo (360 días) con salario mínimo incluye auxilio', () => {
+    const r = calcularCesantias(SMMLV, 360);
+    expect(r.incluyeAuxilio).toBe(true);
+    expect(r.auxilioAplicado).toBe(AUXILIO_TRANSPORTE);
+    // Año completo → cesantías = un salario base (salario + auxilio).
+    expect(r.cesantias).toBe(SMMLV + AUXILIO_TRANSPORTE);
+  });
+
+  it('salario > 2 SMMLV no incluye auxilio de transporte', () => {
+    const salarioAlto = 3 * SMMLV;
+    const r = calcularCesantias(salarioAlto, 360);
+    expect(r.incluyeAuxilio).toBe(false);
+    expect(r.auxilioAplicado).toBe(0);
+    expect(r.cesantias).toBe(salarioAlto);
+  });
+
+  it('intereses = 12 % de las cesantías en un año completo', () => {
+    // 4 SMMLV queda por encima del umbral de auxilio (2 SMMLV), así el
+    // test no depende de que se sume o no el auxilio de transporte.
+    const salario = 4 * SMMLV;
+    const r = calcularCesantias(salario, 360);
+    expect(r.cesantias).toBe(salario);  // año completo, sin auxilio
+    expect(r.intereses).toBe(Math.round(salario * INTERESES_CESANTIAS));
+  });
+
+  it('cesantías proporcionales a los días trabajados', () => {
+    const completa = calcularCesantias(3_000_000, 360);
+    const mitad    = calcularCesantias(3_000_000, 180);
+    expect(mitad.cesantias).toBeCloseTo(completa.cesantias / 2, -2);
+  });
+
+  it('máximo de días efectivos es 360', () => {
+    const r360 = calcularCesantias(3_000_000, 360);
+    const r400 = calcularCesantias(3_000_000, 400);
+    expect(r400.cesantias).toBe(r360.cesantias);
+  });
+
+  it('variablesPromedio positivo incrementa cesantías e intereses', () => {
+    const sinVar = calcularCesantias(3_000_000, 360);
+    const conVar = calcularCesantias(3_000_000, 360, 400_000);
+    expect(conVar.cesantias).toBeGreaterThan(sinVar.cesantias);
+    expect(conVar.variablesAplicadas).toBe(400_000);
+    // Año completo: cesantías sube en exactamente el promedio de variables.
+    expect(conVar.cesantias - sinVar.cesantias).toBe(400_000);
+  });
+
+  it('variablesPromedio negativo se trata como 0 (Math.max)', () => {
+    const r = calcularCesantias(3_000_000, 360, -100_000);
+    expect(r.variablesAplicadas).toBe(0);
+  });
+
+  it('total = cesantías + intereses, y todo es entero', () => {
+    const r = calcularCesantias(2_750_000, 200);
+    expect(r.total).toBe(r.cesantias + r.intereses);
+    expect(Number.isInteger(r.cesantias)).toBe(true);
+    expect(Number.isInteger(r.intereses)).toBe(true);
+    expect(Number.isInteger(r.total)).toBe(true);
   });
 });
 
