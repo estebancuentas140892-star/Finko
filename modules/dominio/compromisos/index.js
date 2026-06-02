@@ -12,7 +12,7 @@ import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updateBadge, updSaldo, registrarRender } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
@@ -84,7 +84,6 @@ function _guardarCompromiso() {
   if (overlay) cerrarModal(overlay);
 
   _renderTodo();
-  updateBadge();
   announce('Compromiso guardado correctamente.');
 }
 
@@ -106,7 +105,6 @@ async function _eliminarCompromiso(el) {
 
   eliminar('compromisos', id);
   _renderTodo();
-  updateBadge();
   announce(`Compromiso "${compromiso.descripcion}" eliminado.`);
 }
 
@@ -241,7 +239,6 @@ function _guardarAbono() {
   if (overlay) cerrarModal(overlay);
 
   _renderTodo();
-  updateBadge();
   updSaldo();
 
   const msg = saldaDeuda
@@ -268,7 +265,6 @@ async function _archivarCompromiso(el) {
 
   editar('compromisos', id, { activo: false });
   _renderTodo();
-  updateBadge();
   announce(`Deuda "${compromiso.descripcion}" archivada.`);
 }
 
@@ -429,7 +425,6 @@ export function initCompromisos() {
       // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
       // corta si la sección activa no es 'dash', así que es barato llamarlo siempre.
       renderSmart(_renderDashboardPanels, 'dash');
-      updateBadge();
     }
   });
 
@@ -442,5 +437,4 @@ export function initCompromisos() {
 
   renderSmart(_renderTodo, 'compromisos');
   renderSmart(_renderDashboardPanels, 'dash');
-  updateBadge();
 }

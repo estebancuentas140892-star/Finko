@@ -55,21 +55,6 @@ export function setFiltroCategoria(cat) {
   _filtroCategoria = cat || null;
 }
 
-// ── BENTO CELL (dashboard) ───────────────────────────────────────
-
-/**
- * Actualiza el display `#gastos-mes` en el dashboard.
- * No-op si el elemento no existe.
- */
-export function renderResumenGastos() {
-  const el = document.getElementById('gastos-mes');
-  if (!el) return;
-  const fechaHoy = hoy();
-  const anio = Number(fechaHoy.slice(0, 4));
-  const mes  = Number(fechaHoy.slice(5, 7));
-  el.textContent = f(totalGastosMes(S.gastos, anio, mes));
-}
-
 // ── BARRA DE FILTROS ─────────────────────────────────────────────
 
 /**

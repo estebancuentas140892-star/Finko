@@ -14,7 +14,7 @@
 
 import { EventBus } from '../../core/state.js';
 import { guardar } from '../../infra/crud.js';
-import { renderSmart, updateBadge } from '../../infra/render.js';
+import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
@@ -70,7 +70,6 @@ function _guardarGastoFijo() {
   if (overlay) cerrarModal(overlay);
 
   renderAgenda();
-  updateBadge();
   announce('Gasto fijo guardado correctamente.');
 }
 

@@ -3,7 +3,7 @@
  *
  * Principios:
  * - `renderSmart` evita trabajo si la sección no está visible.
- * - `updSaldo` y `updateBadge` leen S directamente y actualizan el DOM.
+ * - `updSaldo` lee S directamente y actualiza el saldo total del dashboard.
  * - `renderAll` es el punto de entrada único para re-renderizar todo.
  * - Los renders de dominio (Fases 7-11) se registran vía `registrarRender`.
  */
@@ -52,7 +52,6 @@ export function renderSmart(fn, key) {
  *
  * - Suma `saldo` de todas las `S.cuentas` activas.
  * - Actualiza `#saldo-total` con el valor formateado.
- * - Calcula gastos del mes calendario actual y actualiza `#gastos-mes`.
  */
 export function updSaldo() {
   const totalCuentas = S.cuentas
@@ -61,45 +60,6 @@ export function updSaldo() {
 
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) elSaldo.textContent = f(totalCuentas);
-
-  const ahora = new Date();
-  const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
-  const gastosMes = S.gastos
-    .filter(g => g.fecha?.startsWith(mesActual))
-    .reduce((acc, g) => acc + (g.monto ?? 0), 0);
-
-  const elGastos = document.getElementById('gastos-mes');
-  if (elGastos) elGastos.textContent = f(gastosMes);
-
-  // Metas activas (no completadas).
-  const metasActivas = S.metas.filter(m => m.completada !== true).length;
-  const elMetas = document.getElementById('metas-count');
-  if (elMetas) elMetas.textContent = String(metasActivas);
-}
-
-/**
- * Actualiza los contadores del dashboard:
- *  - `#compromisos-count`: compromisos activos.
- *  - `#personales-count`: préstamos personales pendientes (no totalmente cobrados).
- *
- * También se usa para futuros badges en la sidebar (Fase 12).
- */
-export function updateBadge() {
-  const activos = S.compromisos.filter(c => c.activo !== false).length;
-
-  const elCount = document.getElementById('compromisos-count');
-  if (elCount) elCount.textContent = String(activos);
-
-  // Personales: préstamos otorgados que aún no se han pagado por completo.
-  // Mismo criterio que `personales/logic.js`: pendiente si `pagado < monto` y
-  // no marcado como `liquidado`. Lógica inline para no romper "ningún infra
-  // importa de dominio" (regla 10 del CLAUDE.md).
-  const personalesPendientes = (S.personales || []).filter(p => {
-    if (p?.liquidado === true) return false;
-    return (p?.pagado ?? 0) < (p?.monto ?? 0);
-  }).length;
-  const elPersonales = document.getElementById('personales-count');
-  if (elPersonales) elPersonales.textContent = String(personalesPendientes);
 }
 
 // ── ORQUESTADOR ──────────────────────────────────────────────────
@@ -110,7 +70,6 @@ export function updateBadge() {
  */
 export function renderAll() {
   updSaldo();
-  updateBadge();
   for (const fn of _renders) {
     try {
       fn();

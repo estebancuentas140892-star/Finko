@@ -20,7 +20,6 @@ import { guardar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { announce } from '../../infra/a11y.js';
-import { updateBadge } from '../../infra/render.js';
 import { procesarCSV } from './logic.js';
 import { renderImportPicker, renderImportPreview } from './view.js';
 
@@ -98,7 +97,6 @@ function _confirmarImport() {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  updateBadge();
   announce(`${guardados} gasto${guardados === 1 ? '' : 's'} importado${guardados === 1 ? '' : 's'} correctamente.`);
   _ultimoResultado = null;
 }

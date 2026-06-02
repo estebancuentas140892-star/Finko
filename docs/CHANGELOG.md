@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(infra): eliminar updateBadge y renderResumenGastos (no-ops cross-domain) · 2026-06-01
+
+Cierre de deuda técnica anotada en v8.9. Ambas funciones eran no-ops sobre IDs que ya no existen en el HTML tras el rediseño del dashboard. Se eliminan exports, imports y todas las llamadas distribuidas en 4 dominios.
+
+1. **`modules/infra/render.js`:** removida `updateBadge()` completa; `updSaldo()` recortada a solo `#saldo-total` (eliminadas secciones de `#gastos-mes` y `#metas-count`); `renderAll()` sin llamada a `updateBadge`; docstrings actualizados.
+2. **`modules/dominio/gastos/view.js`:** removida `renderResumenGastos()` (era un no-op sobre `#gastos-mes` inexistente).
+3. **`modules/dominio/gastos/index.js`:** removido `renderResumenGastos` del import + 5 llamadas.
+4. **`modules/dominio/agenda/index.js`:** removido `updateBadge` del import + 1 llamada.
+5. **`modules/dominio/import/index.js`:** removido import completo de `render.js` + 1 llamada.
+6. **`modules/dominio/compromisos/index.js`:** removido `updateBadge` del import + 6 llamadas.
+
+**IDs ya inexistentes (confirmado grep sobre index.html):** `#gastos-mes`, `#compromisos-count`, `#metas-count`, `#personales-count`.
+
+**Tests:** 931/931 verdes. Sin cambio en test count (código sin lógica, sin tests).
+
+**Archivos:** `modules/infra/render.js`, `modules/dominio/gastos/{index,view}.js`, `modules/dominio/agenda/index.js`, `modules/dominio/import/index.js`, `modules/dominio/compromisos/index.js`, `docs/`.
+
+---
+
 ### feat(tesoreria): v8.9 - simulador laboral gateado empleado vs independiente + limpieza ingresos · 2026-05-29
 
 Parte B del rediseño de Tesorería (cierra la fase): el simulador laboral pregunta primero la situación laboral y nunca mezcla los cálculos de empleado e independiente. Cierra también la limpieza opcional H.C: borrado del dominio `ingresos/` muerto y refresco de asserts e2e obsoletos. La fase H. (Rediseño de Tesorería) queda cerrada.

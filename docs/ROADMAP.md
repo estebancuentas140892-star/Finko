@@ -2,14 +2,14 @@
 
 > Documento vivo. Solo contiene lo **pendiente**.
 > Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
-> Última revisión: 2026-05-29
+> Última revisión: 2026-06-01
 
 ---
 
 ## Estado actual
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
-**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas) y **fase H (Rediseño de Tesorería) cerrada en v8.9**.
+**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, y deuda técnica `updateBadge`/`renderResumenGastos` cerrada en refactor 2026-06-01.
 **Estado:** proyecto estable en producción. 931/931 unit + integración verdes, Lighthouse 99-100.
 **Fase activa:** ninguna. Quedan tareas opcionales sueltas (ver más abajo).
 
@@ -18,10 +18,6 @@
 ## Post-v1.0 - Ideas activas
 
 Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la app.
-
-### Deuda técnica documentada
-
-- **Refactor `updateBadge` + `renderResumenGastos`:** ambas funciones siguen siendo no-ops sobre IDs que ya no existen (`#gastos-mes`, `#compromisos-count`, `#metas-count`, `#personales-count`) tras el rediseño del dashboard. Quedan cableadas desde 4 dominios (`compromisos`, `agenda`, `import`, `gastos`). Eliminarlas es un refactor cross-domain acotado: quitar el export en `render.js` / `gastos/view.js`, quitar los imports y las 7+ llamadas, ajustar docstrings. Sin riesgo funcional (ya no hacen nada). Sonnet 4.6 - Medio.
 
 ---
 

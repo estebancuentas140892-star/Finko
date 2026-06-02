@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-05-29 (v8.9: simulador laboral gateado empleado vs independiente + limpieza ingresos; fase H. Tesorería cerrada)
+> Última actualización: 2026-06-01 (refactor: eliminadas updateBadge y renderResumenGastos, no-ops cross-domain; app estable sin fase activa)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### refactor(infra): eliminar updateBadge y renderResumenGastos (no-ops cross-domain) · 2026-06-01
+
+Cierre de la deuda técnica anotada en v8.9. Ambas funciones eran no-ops porque los IDs que actualizaban (`#gastos-mes`, `#compromisos-count`, `#metas-count`, `#personales-count`) desaparecieron del HTML en el rediseño del dashboard. Se eliminan los exports, los imports y las 8 llamadas distribuidas en 4 dominios. Sin riesgo funcional: la app no observaba ningún cambio de estas llamadas. Tests: 931/931, sin variación.
+
+**Cambios clave:**
+- **`modules/infra/render.js`:** removida `updateBadge()` completa. `updSaldo()` recortada a solo `#saldo-total`. Docstring y `renderAll()` actualizados.
+- **`modules/dominio/gastos/view.js`:** removida `renderResumenGastos()` completa.
+- **`modules/dominio/gastos/index.js`:** removido import + 5 llamadas a `renderResumenGastos`.
+- **`modules/dominio/agenda/index.js`:** removido import + 1 llamada a `updateBadge`.
+- **`modules/dominio/import/index.js`:** removido import + 1 llamada a `updateBadge`.
+- **`modules/dominio/compromisos/index.js`:** removido import + 6 llamadas a `updateBadge`.
+
+**Archivos:** `modules/infra/render.js`, `modules/dominio/gastos/{index,view}.js`, `modules/dominio/agenda/index.js`, `modules/dominio/import/index.js`, `modules/dominio/compromisos/index.js`, `docs/`.
+
+**Tests:** 931/931 verdes. Sin tests nuevos (el código eliminado no tenía lógica, solo IDs inexistentes).
+
+**Sigue:** ninguna fase activa. Próximas opciones: A.5 (dominio custom), E.2 (SMMLV+UVT 2027 en enero).
+
 ### feat(tesoreria): v8.9 - simulador laboral gateado empleado vs independiente + limpieza ingresos · 2026-05-29
 
 Cierre de la fase H (Rediseño de Tesorería). Parte B reemplaza el área de la card de ingresos por un simulador con gate de perfil (empleado / independiente) que nunca mezcla cálculos. Se agregan funciones nuevas de lógica financiera CO (aportes del trabajador 4 % + 4 % + FSP y cesantías + intereses) y se cierra también la limpieza opcional H.C (borrado del dominio `ingresos/` muerto + refresco de asserts e2e obsoletos).
@@ -55,13 +73,11 @@ Cierre de la fase H (Rediseño de Tesorería). Parte B reemplaza el área de la 
 - **`tests/integration/flujos.test.js`:** Quitado el import de `ingresos/logic.js` y el test que lo usaba; Suite 3 (roundtrip) sigue probando que `S.ingresos` persiste a localStorage.
 - **`tests/e2e/smoke.test.js`:** Tests del dashboard reescritos para solo testar `#saldo-total` (los IDs `#gastos-mes`, `#compromisos-count`, `#metas-count` eran obsoletos desde un rediseño previo).
 
-**Deuda técnica anotada (NO de esta tarea):** `updateBadge` (en `render.js`) y `renderResumenGastos` (en `gastos/view.js`) siguen como no-ops sobre IDs inexistentes, cableadas desde `compromisos/`, `agenda/`, `import/` y `gastos/`. Cerrarlas requiere refactor cross-domain. Queda documentada para una tarea futura.
-
 **Archivos:** `modules/core/constants.js`, `modules/infra/financiero.js`, `modules/dominio/tesoreria/index.js`, `styles/components.css`, `index.html`, `service-worker.js`, `tests/unit/calculadoras.test.js`, `tests/integration/flujos.test.js`, `tests/e2e/smoke.test.js`, `docs/`. Eliminados: `modules/dominio/ingresos/{logic,view,index}.js`, `tests/unit/ingresos.test.js`.
 
 **Tests:** 931/931 unitarios + integración verdes. E2E pendiente verificación manual.
 
-**Sigue:** la fase H. queda cerrada. Próximas tareas opcionales en ROADMAP: A.5 (dominio custom), E.2 (SMMLV + UVT 2027 en enero), o cerrar la deuda técnica de `updateBadge`/`renderResumenGastos`.
+**Sigue:** deuda técnica `updateBadge`/`renderResumenGastos` cerrada en el commit siguiente.
 
 ### refactor(app): v8.8 - eliminación del concepto de ingreso mensual (Tesorería redesign, Parte A) · 2026-05-28
 
@@ -122,25 +138,7 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 
 **Tests:** 970/970 verdes (3 nuevos).
 
-### style(copy): v8.5 - eliminar guion simple "-" en strings de UI visibles · 2026-05-27
-
-Limpieza de copy: feedback del usuario para evitar el guion simple `-` como separador de inciso en texto visible. El em-dash `-` ya estaba prohibido por CLAUDE.md; ahora extendemos la regla al `-` cuando funciona como pausa entre clausulas.
-
-**Cambios clave (13 strings de UI):**
-- **`modules/dominio/metas/view.js:80`**: empty-state reescrito con comas y "como ... o ..." en lugar de "- ... -".
-- **`modules/dominio/presupuesto/view.js:151`**: empty-state idem.
-- **`modules/dominio/personales/view.js:99`**: chip "X días - ya toca cobrar" → "X días, ya toca cobrar".
-- **`modules/dominio/compromisos/view.js:431`**: label "Tasa de interés mensual (%) - opcional" → "Tasa de interés mensual % (opcional)".
-- **`index.html`**: title, meta description, dos aria-label de nav, y las 5 options del select ARL del form PILA usan `:` o `,` en lugar de `-`.
-- **`service-worker.js`**: v87 → v88 (CORE_ASSETS modificados invalidan cache).
-
-**Sigue:** Pivot honesto de la calculadora de Prima de servicios (opción A: estimador con disclaimer + campos opcionales de horas extras/bonos). Aprobada por el usuario, queda como v8.6.
-
-**Archivos:** `index.html`, `modules/dominio/metas/view.js`, `modules/dominio/presupuesto/view.js`, `modules/dominio/personales/view.js`, `modules/dominio/compromisos/view.js`, `service-worker.js`, `docs/`.
-
-**Tests:** 967/967 verdes (cambio puramente de copy).
-
-> Para tareas anteriores (v8.4 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (v8.5 y previas), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

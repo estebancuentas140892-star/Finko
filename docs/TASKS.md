@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-05-29
+> Última actualización: 2026-06-01
 
 ---
 
 ## Estado actual
 
-**Fase H (Rediseño de Tesorería) cerrada en v8.9.** No hay tarea de código activa. App estable en producción.
+**Sin fase activa.** Fase H cerrada en v8.9. Deuda técnica `updateBadge`/`renderResumenGastos` cerrada en 2026-06-01. App estable en producción.
 
 ---
 
@@ -35,6 +35,10 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**Cerrar deuda técnica de `updateBadge` y `renderResumenGastos`** (refactor cross-domain acotado). Ambas funciones son no-ops sobre IDs que no existen tras el rediseño previo del dashboard. Quedan cableadas desde 4 dominios (`compromisos`, `agenda`, `import`, `gastos`). Eliminarlas: quitar el export en `render.js` / `gastos/view.js`, quitar los imports y las 7+ llamadas, ajustar docstrings de `updSaldo` y comentarios stale. Sin riesgo funcional (ya no hacen nada).
+Sin deuda técnica pendiente. Opciones del ROADMAP:
 
-**Modelo sugerido:** Sonnet 4.6 - Medio. **Esfuerzo:** Bajo a Medio.
+- **A.5** - Agregar dominio custom (cuando el usuario tenga dominio registrado).
+- **E.2-2027** - Actualizar SMMLV y UVT a valores 2027 (diciembre 2026 / enero 2027, cuando se publiquen).
+- **E.3** - Verificar GMF y otras tasas si hay reforma tributaria.
+
+**Modelo sugerido (cualquiera):** Haiku 4.5 para E.2/E.3 (bumps de constantes). Sonnet 4.6 - Bajo para A.5.

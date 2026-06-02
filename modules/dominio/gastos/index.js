@@ -22,7 +22,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   aplicarGastoASaldo, revertirGastoDeSaldo, deltasPorEdicionDeGasto,
 } from './logic.js';
-import { renderListaGastos, renderResumenGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -89,7 +89,6 @@ function _guardarGasto() {
   const overlay = document.getElementById('modal-gasto');
   if (overlay) cerrarModal(overlay);
 
-  renderResumenGastos();
   renderListaGastos();
   updSaldo();
   announce(idEdit ? 'Gasto actualizado.' : 'Gasto guardado correctamente.');
@@ -178,7 +177,6 @@ function _guardarGastoRapido() {
   const overlay = document.getElementById('modal-gasto-rapido');
   if (overlay) cerrarModal(overlay);
 
-  renderResumenGastos();
   renderListaGastos();
   updSaldo();
 
@@ -284,7 +282,6 @@ async function _eliminarGasto(el) {
   if (gasto.compromisoId) _ajustarSaldoDeuda(gasto.compromisoId, +gasto.monto);
 
   eliminar('gastos', id);
-  renderResumenGastos();
   renderListaGastos();
   updSaldo();
   announce(`Gasto "${gasto.descripcion}" eliminado.`);
@@ -415,7 +412,6 @@ export function initGastos() {
     if (section === 'gastos') {
       renderSmart(renderFiltrosGastos, 'gast');
       renderSmart(renderListaGastos, 'gast');
-      renderResumenGastos();
       updSaldo();
     }
   });
@@ -428,5 +424,4 @@ export function initGastos() {
 
   renderSmart(renderFiltrosGastos, 'gast');
   renderSmart(renderListaGastos, 'gast');
-  renderResumenGastos();
 }
