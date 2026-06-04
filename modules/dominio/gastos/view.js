@@ -195,8 +195,9 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">💸</p>
       <p class="empty-state__title">Sin gastos este mes</p>
-      <p class="empty-state__desc">Registrá tus gastos para llevar el control de tu plata.</p>
+      <p class="empty-state__desc">Anotá cada compra o pago que hacés: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu plata.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
+      <p class="empty-state__tip">💡 Tip: desde el dashboard, el botón "Anotar un gasto" te deja apuntar el monto en segundos. La descripción la ponés después.</p>
     </div>`;
 }
 

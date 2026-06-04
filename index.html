@@ -187,21 +187,31 @@
              Pensado para el momento en que estas con amigos/familia y necesitas
              apuntar algo YA sin abrir el modal completo con todos los campos. -->
         <button class="quick-add" type="button" data-action="gasto-rapido"
-                aria-label="Registrar un gasto rápido sin describir">
+                aria-label="Anotar un gasto: solo el monto, lo describís después">
           <span class="quick-add__icon" aria-hidden="true">⚡</span>
           <span class="quick-add__body">
-            <span class="quick-add__title">Gasto rápido</span>
-            <span class="quick-add__desc">Solo el monto. Lo describís después.</span>
+            <span class="quick-add__title">Anotar un gasto</span>
+            <span class="quick-add__desc">¿Compraste o pagaste algo? Solo el monto. Lo describís después.</span>
           </span>
           <span class="quick-add__chevron" aria-hidden="true">→</span>
         </button>
 
-        <!-- HERO: tu plata disponible (siempre visible, fuera del bento) -->
+        <!-- HERO: tu plata disponible (siempre visible, fuera del bento).
+             Si el usuario aún no registró cuentas, render.js (updSaldo) oculta
+             #saldo-desc y muestra #hero-guia-saldo: una guía de primeros pasos
+             que le dice qué hacer y lo lleva a Tesorería a registrar su plata. -->
         <article class="bento__cell bento__cell--accent bento__cell--hero bento__cell--solo">
           <span class="bento__icon" aria-hidden="true">💵</span>
           <p class="bento__label">Tu plata disponible hoy</p>
           <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
-          <p class="bento__desc">efectivo + cuentas bancarias</p>
+          <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
+          <div class="hero-guia" id="hero-guia-saldo" hidden>
+            <p class="hero-guia__texto">
+              Para ver tu plata disponible, primero registrá tus cuentas y tu
+              efectivo en Tesorería.
+            </p>
+            <a class="btn btn-primary btn-lg" href="#tesoreria">Ir a Tesorería →</a>
+          </div>
         </article>
 
         <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.

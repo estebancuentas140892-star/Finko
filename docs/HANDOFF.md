@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-01 (refactor: eliminadas updateBadge y renderResumenGastos, no-ops cross-domain; app estable sin fase activa)
+> Última actualización: 2026-06-03 (test: e2e suite 100% verde - realineado con form de cuenta rediseñado + copy de compromisos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 931/931 verdes (`-32` por borrar `ingresos.test.js` y +18 por aportes empleado + cesantías) |
-| Tests E2E | suite completa (no ejecutada en v8.9: dashboard reescrito a solo `#saldo-total`, requiere verificación manual con servidor + Chromium) |
+| Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,48 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### test(e2e): realinear suite con form de cuenta rediseñado (v8.7-v8.9) · 2026-06-03
+
+6 tests pre-existentes que fallaban desde el rediseño de Tesorería. El form de cuenta eliminó el campo `nombre` (ahora se autogenera como banco + tipo) y usa un bank-picker cuya lista flotante se mueve a `<body>`. Los tests seguían buscando `[name="nombre"]` y un selector de cuenta por nombre custom.
+
+**Cambios:**
+- **`tests/e2e/smoke.test.js`:** nuevo helper `crearCuentaEfectivo(page, saldo)` que encapsula el flujo correcto (bank-picker → seleccionar "Efectivo" → saldo → submit → esperar cierre). 5 tests actualizados: usan el helper y cambian las aserciones de nombre a "Efectivo" (autogenerado) y los `selectOption` de `cuentaId` a `{ label: 'Efectivo' }`.
+- **`tests/e2e/navegacion-render.test.js`:** assertion de compromisos actualizada de "Nada que pagar... por ahora" a "Sin deudas registradas" (copy actual en `compromisos/view.js:362`).
+
+**Resultado:** 33/33 e2e + 931/931 unit verdes. Suite completa sin fallos.
+
+### feat(ux): I.3 - empty states enriquecidos para nuevos usuarios · 2026-06-03
+
+Tips y descripciones más ricas en las 3 secciones con empty state más flaco. Sin cambios de lógica ni schema.
+
+**Cambios:**
+- **`modules/dominio/gastos/view.js`:** desc cambia de "Registrá tus gastos para llevar el control de tu plata" a una versión con ejemplos concretos (supermercado, transporte...) y mención de la agrupación por categoría. Tip nuevo: referencia al botón "Anotar un gasto" del dashboard.
+- **`modules/dominio/metas/view.js`:** tip nuevo sobre el fondo de emergencia (3 meses de gastos fijos) como primera meta recomendada.
+- **`modules/dominio/presupuesto/view.js`:** tip nuevo: empezar con 2-3 categorías de mayor gasto y que el avance se actualiza en tiempo real.
+
+**Tests:** 931/931 unit verdes. Sin tests nuevos (puro copy en templates de view.js).
+
+**Sigue:** la sección I (Onboarding UX) está completa. Considerar: commit conjunto de I.1+I.2+I.3 o iniciar otra área del ROADMAP.
+
+### feat(dashboard): onboarding UX - guía de primeros pasos + copy "Anotar un gasto" · 2026-06-03
+
+Dos mejoras de UX para nuevos usuarios del dashboard:
+
+**1. Guía de primeros pasos en "Tu plata disponible hoy":** cuando el usuario no tiene cuentas registradas, el hero oculta la descripción técnica y muestra un bloque con el mensaje "Para ver tu plata disponible, primero registrá tus cuentas y tu efectivo en Tesorería" + botón verde "Ir a Tesorería →". Al registrar la primera cuenta, la guía desaparece sola (toggle en vivo desde `updSaldo`).
+
+**2. Renombrar "Gasto rápido":** el título de la card pasó a "Anotar un gasto" (orientado a la acción) y la descripción a "¿Compraste o pagaste algo? Solo el monto. Lo describís después." (ancla el caso de uso).
+
+**Cambios clave:**
+- **`index.html`:** bloque `#hero-guia-saldo` (mensaje + botón, `hidden` por defecto); `id="saldo-desc"` a la descripción; card `quick-add` con nuevo título y desc.
+- **`styles/layout.css`:** clases `.hero-guia` y `.hero-guia__texto` (el botón reusa `.btn.btn-primary.btn-lg`).
+- **`modules/infra/render.js` (`updSaldo`):** toggle `hidden` de guía/desc según `S.cuentas.length`.
+- **`tests/e2e/smoke.test.js`:** 2 tests nuevos (estado vacío muestra guía; con cuenta la oculta); selectores de nav acotados a `.nav-item`.
+- **`tests/e2e/navegacion-render.test.js`:** selectores de Tesorería acotados a `.nav-item` (hay 2 `a[href="#tesoreria"]`).
+
+**Tests:** 931/931 unit + integración verdes. E2E Dashboard 4/4 verdes (guía estado vacío ✓, toggle con cuenta ✓, navegación #tesoreria ✓). Deuda pre-existente: 5 e2e del form de cuenta y 1 de copy de compromisos siguen rotos desde v8.9 (anotados como chip de tarea).
+
+**Sigue:** Tarea 3 de UX (ayudas contextuales / descripción en las secciones vacías para nuevos usuarios).
 
 ### refactor(infra): eliminar updateBadge y renderResumenGastos (no-ops cross-domain) · 2026-06-01
 

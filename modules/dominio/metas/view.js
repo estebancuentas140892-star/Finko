@@ -79,6 +79,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin metas de ahorro</p>
       <p class="empty-state__desc">Definí una meta, como un viaje, un fondo de emergencia o lo que quieras, y llevá el control de tu progreso.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>
+      <p class="empty-state__tip">💡 Tip: una buena primera meta es el fondo de emergencia: al menos 3 meses de tus gastos fijos. Te da tranquilidad antes de cualquier otra meta.</p>
     </div>`;
 }
 

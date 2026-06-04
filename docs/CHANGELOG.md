@@ -7,6 +7,45 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(e2e): realinear suite con form de cuenta rediseñado (v8.7-v8.9) · 2026-06-03
+
+Cierre de deuda de e2e acumulada desde el rediseño de Tesorería. 6 tests fallaban por cambios de form que no se reflejaron en los tests.
+
+1. **`tests/e2e/smoke.test.js`:** nuevo helper `crearCuentaEfectivo(page, saldo)` que encapsula el flujo actual del bank-picker: click trigger, esperar `#banco-list:not([hidden])`, click `[data-value="Efectivo"]`, fill saldo, submit, esperar `modalCerrado('modal-cuenta')`. 5 tests de cuenta migrados al helper; assertions de nombre actualizadas a "Efectivo"; `selectOption('custom name')` a `{ label: 'Efectivo' }` en los selectores de `cuentaId` del form de gastos.
+2. **`tests/e2e/navegacion-render.test.js`:** assertion de compromisos corregida: "Nada que pagar... por ahora" → "Sin deudas registradas".
+
+**Resultado final:** 33/33 e2e + 931/931 unit verdes. Sin cambios en código de producción.
+
+---
+
+### feat(ux): I.3 - empty states enriquecidos para nuevos usuarios · 2026-06-03
+
+Tres archivos de view.js, puro copy. Sin lógica nueva, sin CSS nuevo, sin tests nuevos.
+
+1. **`modules/dominio/gastos/view.js`:** desc enriquecida con ejemplos de gastos cotidianos (supermercado, transporte, comida, servicios) y mención de la agrupación por categoría. Tip nuevo que conecta con el botón "Anotar un gasto" del dashboard.
+2. **`modules/dominio/metas/view.js`:** tip nuevo sobre el fondo de emergencia (3 meses de gastos fijos) como primera meta recomendada para un usuario nuevo.
+3. **`modules/dominio/presupuesto/view.js`:** tip nuevo: empezar por 2-3 categorías de mayor gasto; el avance se actualiza en tiempo real al registrar gastos.
+
+Secciones ya buenas que no se tocaron: Tesorería (tip ✓), Compromisos (tip ✓), Personales (copy conversacional ✓).
+
+**Tests:** 931/931 verdes. Sin cambio en count.
+
+---
+
+### feat(dashboard): onboarding UX - guía de primeros pasos + copy "Anotar un gasto" · 2026-06-03
+
+Mejoras de UX orientadas al nuevo usuario del dashboard. Sin cambios en lógica de dominio ni schema.
+
+1. **`index.html`:** bloque `#hero-guia-saldo` dentro del hero del saldo (mensaje contextual + botón `.btn-primary.btn-lg` "Ir a Tesorería →", `hidden` por defecto). `id="saldo-desc"` a la descripción existente. Card `.quick-add`: título cambia de "Gasto rápido" a "Anotar un gasto"; desc pasa a "¿Compraste o pagaste algo? Solo el monto. Lo describís después."; `aria-label` actualizado.
+2. **`styles/layout.css`:** nuevas clases `.hero-guia` (flexbox columna, gap, margen top) y `.hero-guia__texto` (max-width 46ch, color secundario, line-height 1.5). Removida `.bento__cta` (intermedia, descartada en el reencuadre).
+3. **`modules/infra/render.js` (`updSaldo`):** si `S.cuentas` activas es vacío, `guia.hidden = false` + `desc.hidden = true`; si hay cuentas, al revés. Corre en carga, tras onboarding y en cada alta/borrado de cuenta: el toggle es en vivo.
+4. **`tests/e2e/smoke.test.js`:** 2 tests nuevos en la suite Dashboard ("sin cuentas muestra la guía hacia Tesorería" y "con cuenta oculta la guía"); selectores del loop de navegación acotados a `.nav-item[href]` para evitar ambigüedad con el nuevo enlace de la guía.
+5. **`tests/e2e/navegacion-render.test.js`:** los 3 clicks a `a[href="#tesoreria"]` acotados a `.nav-item[href="#tesoreria"]` por el mismo motivo.
+
+**Tests:** 931/931 unit + integración verdes. E2E Dashboard: 4/4 verdes. Deuda pre-existente: 5 e2e del flujo de alta de cuenta y 1 de copy de compromisos siguen rotos desde v8.9 (sin relación con este cambio).
+
+---
+
 ### refactor(infra): eliminar updateBadge y renderResumenGastos (no-ops cross-domain) · 2026-06-01
 
 Cierre de deuda técnica anotada en v8.9. Ambas funciones eran no-ops sobre IDs que ya no existen en el HTML tras el rediseño del dashboard. Se eliminan exports, imports y todas las llamadas distribuidas en 4 dominios.

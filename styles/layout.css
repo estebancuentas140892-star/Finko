@@ -296,6 +296,23 @@
   padding-top: var(--fk-space-3);
   border-top: 1px solid var(--fk-border-subtle);
 }
+/* Guía de primeros pasos del hero del saldo: visible solo cuando el usuario
+   aún no registró cuentas (render.js togglea el atributo hidden). Mensaje
+   claro + botón grande que lo lleva a Tesorería. */
+.hero-guia {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-4);
+  margin-top: var(--fk-space-2);
+}
+.hero-guia__texto {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--fk-text-base);
+  line-height: 1.5;
+  color: var(--fk-text-secondary);
+}
 
 /* ── ACENTO POR DOMINIO ────────────────────────────────────
    Cada cell con [data-dominio="X"] recibe un acento visual sutil:

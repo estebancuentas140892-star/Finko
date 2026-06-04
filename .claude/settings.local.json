@@ -70,7 +70,14 @@
       "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/tesoreria/logic.js?t=$\\(date +%s\\)\")",
       "Bash(curl -s \"https://finko-brown.vercel.app/modules/core/state.js?t=$\\(date +%s\\)\")",
       "Bash(curl -s \"https://finko-brown.vercel.app/modules/dominio/gastos/view.js?t=$\\(date +%s\\)\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(Remove-Item \"C:/Users/USUARIO/Desktop/Finko_Claude/modules/dominio/calculadoras/logic.js\")",
+      "Bash(git rm *)",
+      "Bash(git -C \"C:\\\\Users\\\\USUARIO\\\\Desktop\\\\Finko_Claude\" log --oneline -5)",
+      "Bash(git -C \"C:\\\\Users\\\\USUARIO\\\\Desktop\\\\Finko_Claude\" log --oneline -3)",
+      "WebFetch(domain:finko-brown.vercel.app)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\" https://finko-brown.vercel.app)",
+      "PowerShell(npx playwright test tests/e2e/navegacion-render.test.js --project=chromium --reporter=list)"
     ]
   }
 }

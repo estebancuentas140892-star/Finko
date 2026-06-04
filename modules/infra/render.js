@@ -52,14 +52,22 @@ export function renderSmart(fn, key) {
  *
  * - Suma `saldo` de todas las `S.cuentas` activas.
  * - Actualiza `#saldo-total` con el valor formateado.
+ * - Si el usuario aún no registró cuentas, muestra la guía de primeros pasos
+ *   (`#hero-guia-saldo`) y oculta la descripción (`#saldo-desc`); con cuentas,
+ *   al revés. Así un usuario nuevo sabe qué hacer ante el saldo en $0.
  */
 export function updSaldo() {
-  const totalCuentas = S.cuentas
-    .filter(c => c.activa !== false)
-    .reduce((acc, c) => acc + (c.saldo ?? 0), 0);
+  const cuentasActivas = S.cuentas.filter(c => c.activa !== false);
+  const totalCuentas = cuentasActivas.reduce((acc, c) => acc + (c.saldo ?? 0), 0);
 
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) elSaldo.textContent = f(totalCuentas);
+
+  const sinCuentas = cuentasActivas.length === 0;
+  const guia = document.getElementById('hero-guia-saldo');
+  const desc = document.getElementById('saldo-desc');
+  if (guia) guia.hidden = !sinCuentas;
+  if (desc) desc.hidden = sinCuentas;
 }
 
 // ── ORQUESTADOR ──────────────────────────────────────────────────

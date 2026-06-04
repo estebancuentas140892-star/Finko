@@ -150,6 +150,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin presupuestos</p>
       <p class="empty-state__desc">Asigná un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te va a avisar cuando te acerques al límite.</p>
       <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear presupuesto</button>
+      <p class="empty-state__tip">💡 Tip: empezá con 2 o 3 categorías donde más gastás. Finko muestra el avance en tiempo real cada vez que registrás un gasto.</p>
     </div>`;
 }
 

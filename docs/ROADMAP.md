@@ -2,22 +2,39 @@
 
 > Documento vivo. Solo contiene lo **pendiente**.
 > Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
-> Última revisión: 2026-06-01
+> Última revisión: 2026-06-03
 
 ---
 
 ## Estado actual
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
-**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, y deuda técnica `updateBadge`/`renderResumenGastos` cerrada en refactor 2026-06-01.
+**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, **onboarding UX del dashboard iniciado en 2026-06-03**.
 **Estado:** proyecto estable en producción. 931/931 unit + integración verdes, Lighthouse 99-100.
-**Fase activa:** ninguna. Quedan tareas opcionales sueltas (ver más abajo).
+**Fase activa:** UX para nuevos usuarios (ver sección I más abajo).
 
 ---
 
 ## Post-v1.0 - Ideas activas
 
 Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la app.
+
+---
+
+### I. Onboarding UX para nuevos usuarios
+
+**Objetivo:** que un usuario que abre la app por primera vez entienda en segundos qué hace cada sección y qué pasos debe dar.
+
+**Completadas:**
+- ✅ I.1 - Guía de primeros pasos en el hero "Tu plata disponible hoy": mensaje contextual + botón "Ir a Tesorería →" cuando no hay cuentas; desaparece al registrar la primera (toggle en vivo) - 2026-06-03.
+- ✅ I.2 - Copy "Anotar un gasto": card renombrada de "Gasto rápido" a "Anotar un gasto" con descripción orientada al caso de uso - 2026-06-03.
+
+**Completadas:**
+- ✅ I.3 - Empty states enriquecidos: desc + tip en Gastos, Metas y Presupuesto. Tesorería, Compromisos y Personales ya tenían copy sólido - 2026-06-03.
+
+_(sección I completa. Todas las tareas de onboarding UX cerradas.)_
+
+**Modelo sugerido:** Sonnet 4.6 - Medio.
 
 ---
 
