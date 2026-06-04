@@ -47,6 +47,38 @@ async function saltearOnboarding(page) {
 const modalCerrado = (id) =>
   `#${id}:not([data-open])`;
 
+/**
+ * Crea una cuenta de tipo Efectivo con el saldo indicado.
+ *
+ * El form de cuenta fue rediseñado en v8.7-v8.9:
+ * - Ya no tiene campo `nombre`; el nombre se autogenera como banco + tipo.
+ * - El banco se elige con un custom bank-picker cuya lista flotante (_initBankPicker)
+ *   se mueve a <body> con position:fixed, por eso los items se buscan desde `page`.
+ * - Para "Efectivo" el campo tipo se oculta automáticamente (no requiere selección).
+ * - Nombre autogenerado resultante: "Efectivo".
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {number} saldo - saldo inicial de la cuenta (entero, COP)
+ */
+async function crearCuentaEfectivo(page, saldo) {
+  await page.click('[data-action="nueva-cuenta"]');
+  await page.waitForSelector('#modal-cuenta[data-open]');
+
+  // Abrir el bank-picker y seleccionar Efectivo (primer banco en la lista).
+  // La lista flotante se mueve a <body> por JS; hay que buscarla desde page.
+  const form = page.locator('#modal-cuenta-body form');
+  await form.locator('.bank-picker__trigger').click();
+  await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+  await page.locator('#banco-list .bank-picker__item[data-value="Efectivo"]').click();
+
+  // Tipo se oculta para Efectivo; solo rellenar saldo.
+  await form.locator('[name="saldo"]').fill(String(saldo));
+  await form.locator('button[type="submit"]').click();
+
+  // Esperar cierre del modal antes de continuar.
+  await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+}
+
 // ── SUITE 1: Dashboard ──────────────────────────────────────────────────────
 
 test.describe('Dashboard', () => {
@@ -62,6 +94,33 @@ test.describe('Dashboard', () => {
 
   test('saldo inicial en $0 con localStorage vacío', async ({ page }) => {
     await expect(page.locator('#saldo-total')).toHaveText('$0');
+  });
+
+  test('sin cuentas registradas muestra la guía de primeros pasos hacia Tesorería', async ({ page }) => {
+    // Estado vacío: la guía es visible y la descripción técnica se oculta.
+    await expect(page.locator('#hero-guia-saldo')).toBeVisible();
+    await expect(page.locator('#saldo-desc')).toBeHidden();
+
+    // El botón de la guía lleva directo a Tesorería.
+    await page.click('#hero-guia-saldo a[href="#tesoreria"]');
+    await expect(page.locator('#sec-tesoreria.active')).toBeVisible();
+  });
+
+  test('con una cuenta registrada oculta la guía y muestra el saldo', async ({ page }) => {
+    // El beforeEach siembra estado vacío vía addInitScript. Como addInitScript
+    // se acumula y corre en CADA navegación, agregamos otro que inyecta una
+    // cuenta (corre después del seed base) y recién ahí navegamos.
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+
+    await expect(page.locator('#hero-guia-saldo')).toBeHidden();
+    await expect(page.locator('#saldo-desc')).toBeVisible();
+    await expect(page.locator('#saldo-total')).toHaveText('$500.000');
   });
 });
 
@@ -126,7 +185,7 @@ test.describe('Navegación hash', () => {
 
   for (const { href, seccion } of secciones) {
     test(`navega a ${href} y activa #${seccion}`, async ({ page }) => {
-      await page.click(`a[href="${href}"]`);
+      await page.click(`.nav-item[href="${href}"]`);
       await expect(page.locator(`#${seccion}`)).toHaveClass(/active/);
     });
   }
@@ -146,16 +205,8 @@ test.describe('Gastos - CRUD', () => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
-    await page.click('[data-action="nueva-cuenta"]');
-    await page.waitForSelector('#modal-cuenta[data-open]');
-    const formCuenta = page.locator('#modal-cuenta-body form');
-    await formCuenta.locator('[name="nombre"]').fill('Cta E2E Gastos');
-    await formCuenta.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__item').first().click();
-    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
-    await formCuenta.locator('[name="saldo"]').fill('500000');
-    await formCuenta.locator('button[type="submit"]').click();
-    await expect(page.locator('#lista-tesoreria')).toContainText('Cta E2E Gastos', { timeout: 3_000 });
+    await crearCuentaEfectivo(page, 500000);
+    await expect(page.locator('#lista-tesoreria')).toContainText('Efectivo', { timeout: 3_000 });
 
     // Ir a Gastos
     await page.goto('/#gast');
@@ -167,8 +218,8 @@ test.describe('Gastos - CRUD', () => {
     const form = page.locator('#modal-gasto-body form');
     await form.locator('[name="descripcion"]').fill('Mercado prueba E2E');
     await form.locator('[name="monto"]').fill('150000');
-    // Selector de cuenta (obligatorio)
-    await form.locator('select[name="cuentaId"]').selectOption('Cta E2E Gastos');
+    // Selector de cuenta (obligatorio): la cuenta creada tiene nombre auto "Efectivo"
+    await form.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
     // Seleccionar la primera opción real del select de categoría
     await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
@@ -196,22 +247,11 @@ test.describe('Tesorería - cuenta y saldo', () => {
   });
 
   test('agregar cuenta actualiza saldo en dashboard', async ({ page }) => {
-    await page.click('[data-action="nueva-cuenta"]');
-    await page.waitForSelector('#modal-cuenta[data-open]');
+    await crearCuentaEfectivo(page, 850000);
 
-    const form = page.locator('#modal-cuenta-body form');
-    await form.locator('[name="nombre"]').fill('Ahorros prueba E2E');
-    // banco: abrir el custom picker y elegir el primer banco de la lista.
-    // La lista usa position:fixed, por eso se busca desde page y no desde form.
-    await form.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__item').first().click();
-    await form.locator('select[name="tipo"]').selectOption({ index: 1 });
-    await form.locator('[name="saldo"]').fill('850000');
-    await form.locator('button[type="submit"]').click();
-
-    // Cuenta aparece en la lista
+    // Cuenta aparece en la lista con nombre auto-generado "Efectivo"
     await expect(page.locator('#lista-tesoreria')).toContainText(
-      'Ahorros prueba E2E',
+      'Efectivo',
       { timeout: 3_000 }
     );
 
@@ -241,20 +281,11 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
-    await page.click('[data-action="nueva-cuenta"]');
-    await page.waitForSelector('#modal-cuenta[data-open]');
+    await crearCuentaEfectivo(page, 1000000);
 
-    const formCuenta = page.locator('#modal-cuenta-body form');
-    await formCuenta.locator('[name="nombre"]').fill('Cuenta Prueba Gastos');
-    await formCuenta.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__item').first().click();
-    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
-    await formCuenta.locator('[name="saldo"]').fill('1000000');
-    await formCuenta.locator('button[type="submit"]').click();
-
-    // Esperar cierre y que la cuenta aparezca en la lista
+    // Cuenta aparece en la lista con nombre auto-generado "Efectivo"
     await expect(page.locator('#lista-tesoreria')).toContainText(
-      'Cuenta Prueba Gastos',
+      'Efectivo',
       { timeout: 3_000 }
     );
 
@@ -270,8 +301,8 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
 
-    // Selector de cuenta OBLIGATORIO - debe estar visible
-    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Prueba Gastos');
+    // Selector de cuenta OBLIGATORIO - seleccionar por texto (nombre auto "Efectivo")
+    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
 
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
@@ -306,17 +337,9 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
     // Crear cuenta
-    await page.click('[data-action="nueva-cuenta"]');
-    await page.waitForSelector('#modal-cuenta[data-open]');
-    const formCuenta = page.locator('#modal-cuenta-body form');
-    await formCuenta.locator('[name="nombre"]').fill('Cuenta Edit Prueba');
-    await formCuenta.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__item').first().click();
-    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
-    await formCuenta.locator('[name="saldo"]').fill('500000');
-    await formCuenta.locator('button[type="submit"]').click();
+    await crearCuentaEfectivo(page, 500000);
     await expect(page.locator('#lista-tesoreria')).toContainText(
-      'Cuenta Edit Prueba',
+      'Efectivo',
       { timeout: 3_000 }
     );
 
@@ -329,7 +352,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="descripcion"]').fill('Gasto a editar');
     await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
-    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Edit Prueba');
+    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
@@ -378,17 +401,9 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
     // Crear cuenta con saldo 800000
-    await page.click('[data-action="nueva-cuenta"]');
-    await page.waitForSelector('#modal-cuenta[data-open]');
-    const formCuenta = page.locator('#modal-cuenta-body form');
-    await formCuenta.locator('[name="nombre"]').fill('Cuenta Delete Prueba');
-    await formCuenta.locator('.bank-picker__trigger').click();
-    await page.locator('.bank-picker__item').first().click();
-    await formCuenta.locator('select[name="tipo"]').selectOption({ index: 1 });
-    await formCuenta.locator('[name="saldo"]').fill('800000');
-    await formCuenta.locator('button[type="submit"]').click();
+    await crearCuentaEfectivo(page, 800000);
     await expect(page.locator('#lista-tesoreria')).toContainText(
-      'Cuenta Delete Prueba',
+      'Efectivo',
       { timeout: 3_000 }
     );
 
@@ -401,7 +416,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="descripcion"]').fill('Gasto a eliminar');
     await formGasto.locator('[name="monto"]').fill('200000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
-    await formGasto.locator('select[name="cuentaId"]').selectOption('Cuenta Delete Prueba');
+    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();

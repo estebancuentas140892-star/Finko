@@ -42,7 +42,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
   test('Tesorería muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
-    await page.click('a[href="#tesoreria"]');
+    await page.click('.nav-item[href="#tesoreria"]');
     await expect(page.locator('#sec-tesoreria.active')).toBeVisible();
 
     // Sin el fix, #lista-tesoreria queda vacío.
@@ -81,14 +81,14 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
 
     await expect(
       page.locator('#lista-compromisos .empty-state__title')
-    ).toHaveText('Nada que pagar... por ahora', { timeout: 3_000 });
+    ).toHaveText('Sin deudas registradas', { timeout: 3_000 });
   });
 
   test('Navegar Tesorería → Metas → Tesorería conserva el render', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 
     // Tesorería primero
-    await page.click('a[href="#tesoreria"]');
+    await page.click('.nav-item[href="#tesoreria"]');
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')
     ).toHaveText('¿Dónde guardás tu plata?', { timeout: 3_000 });
@@ -100,7 +100,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
 
     // Volver a Tesorería - el render debe seguir presente
-    await page.click('a[href="#tesoreria"]');
+    await page.click('.nav-item[href="#tesoreria"]');
     await expect(
       page.locator('#lista-tesoreria .empty-state__title')
     ).toHaveText('¿Dónde guardás tu plata?', { timeout: 3_000 });
