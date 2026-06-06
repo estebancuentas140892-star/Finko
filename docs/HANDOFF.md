@@ -39,6 +39,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(icons): Parte 3C.2 - íconos de acción (editar/borrar/cerrar/chevron) → SVG · 2026-06-06
+
+Segundo slice de 3C. Migrados los íconos de acción a SVG (mismo sprite). Mejora semántica: borrar pasa de una X ambigua a una **papelera** clara.
+
+**4 símbolos nuevos** en el sprite: `i-edit` (lápiz), `i-trash` (papelera), `i-x` (cerrar), `i-chevron-right`.
+
+**Cambios:**
+- `index.html`: 4 símbolos + 14 botones cerrar de modales/banners (✕/× → `i-x`) + chevron del quick-add (→ `i-chevron-right`).
+- 7 views de dominio: `gastos`, `tesoreria` (editar `i-edit` + borrar `i-trash`); `compromisos`, `metas`, `personales`, `presupuesto` (borrar); `agenda`, `gastos/index.js` (cerrar `i-x`).
+- `components.css`: regla de tamaño 18px para íconos dentro de `.btn-icon`, `.modal__close` y el chevron (un paso más chicos que el nav, para jerarquía).
+- `service-worker.js`: `CACHE_NAME` v96 → v97.
+
+**No se tocó:** el `×` de "4×1000" (texto, no botón). Las flechas `→` inline en copy ("Ver agenda →") quedan como texto a propósito.
+
+**Verificación:** preview confirma cards con lápiz+papelera, modal con X SVG, quick-add con chevron, todos heredando `currentColor`. 931/931 unit verdes.
+
+**Sigue (3C, opcional):** íconos de acento de dominio (💵 hero, íconos grandes de bento). Último slice de iconografía.
+
 ### feat(icons): Parte 3C - migración híbrida de iconografía (nav emoji → SVG) · 2026-06-06
 
 **Decisión:** migración **híbrida** (confirmada con el usuario). SVG para la UI chrome de navegación; los emojis expresivos (tips 💡, marca 💚, celebraciones 🎉, estados vacíos) se conservan a propósito, porque el tono cálido es parte del ADN de Finko (regla 11).

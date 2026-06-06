@@ -253,7 +253,7 @@ function _renderDetalleDia(evs, year, month, dia) {
         <button type="button" class="cal-detail__close"
                 data-action="agenda-mostrar-dia"
                 data-day="${dia}"
-                aria-label="Cerrar detalle del día">×</button>
+                aria-label="Cerrar detalle del día"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
       <ul class="cal-detail__list">
         ${items}

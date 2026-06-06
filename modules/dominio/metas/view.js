@@ -67,7 +67,7 @@ function _renderMetaItem(meta) {
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-meta"
                 data-id="${_esc(meta.id)}"
-                aria-label="Eliminar meta ${nombre}">✕</button>
+                aria-label="Eliminar meta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

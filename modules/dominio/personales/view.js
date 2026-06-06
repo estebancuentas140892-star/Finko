@@ -140,7 +140,7 @@ function _renderPersonalItem(prestamo, hoy) {
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-personal"
                 data-id="${_esc(prestamo.id)}"
-                aria-label="Eliminar préstamo a ${persona}">✕</button>
+                aria-label="Eliminar préstamo a ${persona}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

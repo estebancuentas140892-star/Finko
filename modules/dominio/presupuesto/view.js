@@ -114,7 +114,7 @@ function _renderEnvelope(presupuesto, gastos, anio, mes) {
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
-                aria-label="Eliminar presupuesto de ${categoria}">✕</button>
+                aria-label="Eliminar presupuesto de ${categoria}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

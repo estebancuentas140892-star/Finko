@@ -65,11 +65,11 @@ function _renderCuentaItem(cuenta) {
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-cuenta"
                 data-id="${_esc(cuenta.id)}"
-                aria-label="Editar cuenta ${nombre}">✎</button>
+                aria-label="Editar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-cuenta"
                 data-id="${_esc(cuenta.id)}"
-                aria-label="Eliminar cuenta ${nombre}">✕</button>
+                aria-label="Eliminar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

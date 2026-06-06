@@ -181,11 +181,11 @@ function _renderGastoItem(gasto) {
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-gasto"
                 data-id="${_esc(gasto.id)}"
-                aria-label="Editar gasto">✎</button>
+                aria-label="Editar gasto"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-gasto"
                 data-id="${_esc(gasto.id)}"
-                aria-label="Eliminar gasto">✕</button>
+                aria-label="Eliminar gasto"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }

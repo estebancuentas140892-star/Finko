@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(icons): Parte 3C.2 - íconos de acción (editar/borrar/cerrar/chevron) → SVG · 2026-06-06
+
+Segundo slice de 3C. Íconos de acción a SVG (mismo sprite). Borrar pasa de X ambigua a papelera clara.
+
+- `index.html`: 4 símbolos nuevos (`i-edit`, `i-trash`, `i-x`, `i-chevron-right`) + 14 botones cerrar + chevron quick-add.
+- 7 views de dominio: editar (`i-edit`) en gastos/tesorería; borrar (`i-trash`) en 6 dominios; cerrar (`i-x`) en agenda y toast.
+- `components.css`: íconos de acción a 18px. `service-worker.js`: v96 → v97.
+
+No se tocó el `×` de "4×1000" ni las flechas inline en copy. 931/931 unit verdes.
+
+---
+
 ### feat(icons): Parte 3C - migración híbrida de iconografía (nav emoji → SVG) · 2026-06-06
 
 Migración híbrida: SVG para la navegación, emojis expresivos conservados (tono cálido del ADN). Sistema nuevo: sprite SVG inline (`<symbol>` + `<use>`, estilo Lucide MIT), vanilla sin build, color vía `.icon { stroke: currentColor }`.

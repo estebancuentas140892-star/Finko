@@ -205,7 +205,7 @@ function _toastGastoRapido(gasto) {
             data-action="editar-gasto" data-id="${gasto.id}">
       Completar
     </button>
-    <button type="button" class="quick-toast__close" aria-label="Cerrar">×</button>`;
+    <button type="button" class="quick-toast__close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>`;
 
   document.body.appendChild(toast);
 

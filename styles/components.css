@@ -203,6 +203,16 @@
   vertical-align: middle;
 }
 
+/* Íconos de acción dentro de botones (editar, borrar, cerrar) y el chevron
+   del quick-add: un paso más chicos que los de navegación, para jerarquía.
+   .modal__close vive en modals.css; el selector funciona igual (CSS global). */
+.btn-icon .icon,
+.modal__close .icon,
+.quick-add__chevron .icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
 /* ════════════════════════════════════════════════════════════
    INPUTS / FORMULARIOS
    ════════════════════════════════════════════════════════════ */

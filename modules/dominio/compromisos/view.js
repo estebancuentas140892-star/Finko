@@ -257,7 +257,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     : `<button class="btn btn-ghost btn-icon"
                data-action="eliminar-compromiso"
                data-id="${_esc(compromiso.id)}"
-               aria-label="Eliminar deuda ${desc}">✕</button>`;
+               aria-label="Eliminar deuda ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`;
 
   return `
     <article class="list-item" data-id="${_esc(compromiso.id)}">
@@ -844,7 +844,7 @@ function _renderAcordeonExtra(abierto, extraMensual, estrategia, deudas) {
                 class="btn btn-ghost btn-icon estrategia-card__acordeon-cerrar"
                 data-action="toggle-extra-estrategia"
                 aria-expanded="true"
-                aria-label="Cerrar">✕</button>
+                aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </div>
       <p class="estrategia-card__acordeon-desc">
         Cualquier monto adicional acelera el cierre y ahorra intereses.
