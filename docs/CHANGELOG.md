@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(copy): rediseño Parte 3A.2 - renombres a lenguaje humano · 2026-06-06
+
+- "Compromisos" -> "Deudas" (nav sidebar, menú Más, h1 de sección, aria-labels).
+- "Tesorería" -> "Mis cuentas" (ídem). Identifiers internos intactos.
+- `gastos/view.js`: corregido bug `href="#tesor"` -> `href="#tesoreria"` y copy de botón.
+
+931/931 unit verdes. Solo labels visibles al usuario; cero riesgo de regresión.
+
+---
+
 ### feat(nav): rediseño Parte 3A.1 - IA, wayfinding y hub "Crecer" · 2026-06-05
 
 Reorganización de navegación sin tocar el router. Prepara la IA para las secciones Ahorro e Inversión.

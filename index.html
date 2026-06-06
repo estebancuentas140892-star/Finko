@@ -77,11 +77,11 @@
               <span class="nav-item__label">Agenda</span>
             </a>
 
-            <!-- Compromisos: solo desktop (demasiados slots para mobile) -->
+            <!-- Deudas: solo desktop (demasiados slots para mobile) -->
             <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
-               role="listitem" aria-label="Compromisos y deudas">
+               role="listitem" aria-label="Mis deudas y compromisos">
               <span class="nav-item__icon" aria-hidden="true">🔗</span>
-              <span class="nav-item__label">Compromisos</span>
+              <span class="nav-item__label">Deudas</span>
             </a>
 
             <!-- Boton "Mas" solo visible en mobile (< 1024px). Abre el modal #modal-mas. -->
@@ -101,11 +101,11 @@
           <span class="nav-group__label" id="nav-label-gestion">Gestión</span>
           <div role="list" aria-labelledby="nav-label-gestion">
 
-            <!-- Tesorería: setup inicial, luego automático. Solo desktop. -->
+            <!-- Mis cuentas: setup inicial, luego automático. Solo desktop. -->
             <a class="nav-item nav-item--no-mobile" href="#tesoreria" data-section="tesoreria"
-               role="listitem" aria-label="Tesorería y cuentas">
+               role="listitem" aria-label="Mis cuentas y saldos">
               <span class="nav-item__icon" aria-hidden="true">🏦</span>
-              <span class="nav-item__label">Tesorería</span>
+              <span class="nav-item__label">Mis cuentas</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
@@ -217,15 +217,15 @@
           <div class="hero-guia" id="hero-guia-saldo" hidden>
             <p class="hero-guia__texto">
               Para ver tu plata disponible, primero registrá tus cuentas y tu
-              efectivo en Tesorería.
+              efectivo en Mis cuentas.
             </p>
-            <a class="btn btn-primary btn-lg" href="#tesoreria">Ir a Tesorería →</a>
+            <a class="btn btn-primary btn-lg" href="#tesoreria">Ir a Mis cuentas →</a>
           </div>
         </article>
 
         <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
              Solo se renderiza si hay items; sin ellos, queda vacío. -->
-        <div id="panel-vencidos" role="region" aria-label="Compromisos vencidos"></div>
+        <div id="panel-vencidos" role="region" aria-label="Deudas y pagos vencidos"></div>
 
         <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
              Reemplaza Card Hoy (hoy + próximos en una sola vista). -->
@@ -252,7 +252,7 @@
       <!-- COMPROMISOS (v6: solo deudas - los gastos fijos van en Agenda) -->
       <section class="section" id="sec-compromisos" aria-labelledby="title-compromisos">
         <header class="section__header">
-          <h1 class="section__title" id="title-compromisos">Compromisos</h1>
+          <h1 class="section__title" id="title-compromisos">Deudas</h1>
           <button class="btn btn-primary" data-action="nuevo-compromiso"
                   aria-label="Registrar nueva deuda">
             + Nueva deuda
@@ -336,7 +336,7 @@
       <!-- TESORERÍA -->
       <section class="section" id="sec-tesoreria" aria-labelledby="title-tesoreria">
         <header class="section__header">
-          <h1 class="section__title" id="title-tesoreria">Tesorería</h1>
+          <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
           <button class="btn btn-primary" data-action="nueva-cuenta"
                   aria-label="Agregar nueva cuenta">
             + Cuenta
@@ -840,11 +840,11 @@
           <div class="menu-mas__grid">
             <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
               <span class="menu-mas__icon" aria-hidden="true">🔗</span>
-              <span class="menu-mas__label">Compromisos</span>
+              <span class="menu-mas__label">Deudas</span>
             </a>
             <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
               <span class="menu-mas__icon" aria-hidden="true">🏦</span>
-              <span class="menu-mas__label">Tesorería</span>
+              <span class="menu-mas__label">Mis cuentas</span>
             </a>
             <a class="menu-mas__item" href="#personales" data-section="personales">
               <span class="menu-mas__icon" aria-hidden="true">🤝</span>

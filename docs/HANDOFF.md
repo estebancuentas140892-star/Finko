@@ -39,6 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(copy): rediseño Parte 3A.2 - renombres a lenguaje humano · 2026-06-06
+
+Dos labels del nav violaban la regla ADN #11 ("lenguaje humano"): el nombre en el nav no coincidía con el copy interno de la sección.
+
+**Cambios:**
+- **`index.html`:** nav sidebar y menú "Más" móvil: "Compromisos" -> "Deudas", "Tesorería" -> "Mis cuentas". Títulos h1 de sección actualizados. Guía del dashboard y aria-labels actualizados.
+- **`modules/dominio/gastos/view.js`:** label del botón "Ir a Tesorería" -> "Ir a Mis cuentas". Corregido también el bug de href truncado (`href="#tesor"` -> `href="#tesoreria"`).
+
+Los identificadores internos (hash `#compromisos`, `#tesoreria`, funciones JS, clases CSS) no cambiaron: cero riesgo de regresión. 931/931 unit verdes.
+
 ### feat(nav): rediseño Parte 3A.1 - IA, wayfinding y hub "Crecer" · 2026-06-05
 
 Reorganización de navegación (sin tocar el router). Enfoque elegido con el usuario: arreglos + hub "Crecer".

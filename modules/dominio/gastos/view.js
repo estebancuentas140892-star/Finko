@@ -239,8 +239,8 @@ export function renderFormGasto() {
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">🏦</p>
         <p class="form-empty__title">Primero necesitás una cuenta</p>
-        <p class="form-empty__desc">Para registrar un gasto, agregá al menos una cuenta o billetera en la sección Tesorería. Así sabés de dónde sale la plata.</p>
-        <a class="btn btn-primary" href="#tesor" data-action="modal-close">Ir a Tesorería</a>
+        <p class="form-empty__desc">Para registrar un gasto, agregá al menos una cuenta o billetera en Mis cuentas. Así sabés de dónde sale la plata.</p>
+        <a class="btn btn-primary" href="#tesoreria" data-action="modal-close">Ir a Mis cuentas</a>
       </div>`;
   }
 
