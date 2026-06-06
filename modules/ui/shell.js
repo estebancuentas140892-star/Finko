@@ -8,6 +8,17 @@ const THEME_KEY    = 'fk_theme';
 const LIGHT_CLASS  = 'light-theme';
 const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
 
+/**
+ * Secciones que en móvil NO están en la barra inferior y viven dentro del
+ * menú "Más". Cuando el usuario está en una de ellas, el botón "Más" se
+ * resalta como activo (antes ninguna pestaña se resaltaba: cero "estás aquí").
+ * Al sumar secciones nuevas al menú "Más" (ej. Ahorro, Inversión), agregarlas aquí.
+ */
+const MAS_SECTIONS = new Set([
+  'compromisos', 'tesoreria', 'personales',
+  'metas', 'presupuesto', 'analisis', 'config',
+]);
+
 // ── THEME ───────────────────────────────────────────────────────
 
 // Timer para quitar .theme-transitioning. Se guarda para resetear si el
@@ -68,6 +79,16 @@ export function markActiveNav(hash) {
     item.classList.toggle('active', active);
     item.setAttribute('aria-current', active ? 'page' : 'false');
   });
+
+  // El botón "Más" (barra inferior móvil) no tiene data-section. Se resalta
+  // cuando el hash actual pertenece a una sección que vive dentro del menú "Más",
+  // para que el usuario nunca pierda el "estás aquí" al navegar en móvil.
+  const masBtn = document.querySelector('.nav-item[data-modal="modal-mas"]');
+  if (masBtn) {
+    const enMas = MAS_SECTIONS.has(hash);
+    masBtn.classList.toggle('active', enMas);
+    masBtn.setAttribute('aria-current', enMas ? 'page' : 'false');
+  }
 }
 
 // ── SIDEBAR COLLAPSE ────────────────────────────────────────────

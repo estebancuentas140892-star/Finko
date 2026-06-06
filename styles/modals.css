@@ -83,6 +83,22 @@
 
 /* ── MENU MAS (bottom-sheet con items secundarios en mobile) ─── */
 
+/* Grupos por intención: cada uno con su rótulo y su grilla de items. */
+.menu-mas__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.menu-mas__group-label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
 .menu-mas__grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(nav): rediseño Parte 3A.1 - IA, wayfinding y hub "Crecer" · 2026-06-05
+
+Reorganización de navegación (sin tocar el router). Enfoque elegido con el usuario: arreglos + hub "Crecer".
+
+**Cambios:**
+- **`modules/ui/shell.js`:** `markActiveNav` ahora resalta el botón "Más" (barra inferior móvil) cuando el hash pertenece a una sección que vive dentro del menú "Más" (`MAS_SECTIONS`). Antes: al entrar a Metas/Tesorería/etc. en móvil, ninguna pestaña se resaltaba (cero "estás aquí").
+- **`index.html`:** sidebar desktop con grupo nuevo "Crecer" (Metas migrada desde "Gestión", listo para Ahorro+Inversión). Menú "Más" móvil reestructurado de grilla plana a 3 grupos con jerarquía: Gestión, Crecer, Herramientas.
+- **`styles/modals.css`:** estilos `.menu-mas__group` y `.menu-mas__group-label` (rótulo xs, mayúsculas, muted).
+
+**Verificación:** wayfinding confirmado (botón "Más" activo + `aria-current=page` en Metas móvil); menú agrupado y sidebar con Crecer verificados en preview. 931/931 unit verdes.
+
+**Sigue:** 3A.2 (renombres a lenguaje humano: "Tesorería", "Compromisos" vs "Deudas"; pendiente definir las palabras con el usuario). Luego 3B (jerarquía visual/layout) y 3C (iconografía emoji -> SVG).
+
 ### feat(ui): rediseño Parte 2 - tipografía self-hosted (Inter Variable + DM Mono) · 2026-06-05
 
 Inter y DM Mono no cargaban en producción: el `@import` de Google Fonts era bloqueado por la CSP `font-src 'self'`. Ahora las fuentes se sirven desde `assets/fonts/` sin peticiones externas.

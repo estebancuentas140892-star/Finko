@@ -114,12 +114,6 @@
               <span class="nav-item__label">Me deben</span>
             </a>
 
-            <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
-               role="listitem" aria-label="Metas de ahorro">
-              <span class="nav-item__icon" aria-hidden="true">🎯</span>
-              <span class="nav-item__label">Metas</span>
-            </a>
-
             <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
                role="listitem" aria-label="Presupuesto por categoría">
               <span class="nav-item__icon" aria-hidden="true">📩</span>
@@ -129,7 +123,22 @@
           </div>
         </div>
 
-        <!-- GRUPO 3: Herramientas (esporádico). Solo desktop. -->
+        <!-- GRUPO 3: Crecer (construir patrimonio a largo plazo). Solo desktop.
+             Hogar natural de Metas y, próximamente, Ahorro e Inversión. -->
+        <div class="nav-group" role="listitem">
+          <span class="nav-group__label" id="nav-label-crecer">Crecer</span>
+          <div role="list" aria-labelledby="nav-label-crecer">
+
+            <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
+               role="listitem" aria-label="Metas de ahorro">
+              <span class="nav-item__icon" aria-hidden="true">🎯</span>
+              <span class="nav-item__label">Metas</span>
+            </a>
+
+          </div>
+        </div>
+
+        <!-- GRUPO 4: Herramientas (esporádico). Solo desktop. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-herramientas">Herramientas</span>
           <div role="list" aria-labelledby="nav-label-herramientas">
@@ -822,38 +831,55 @@
         </button>
       </header>
       <div class="modal__body">
-        <!-- Orden: primero gestión (frecuente), luego herramientas, al final ajustes.
-             Agenda ya está en el bottom nav de mobile, no se repite aquí. -->
-        <div class="menu-mas__grid">
-          <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
-            <span class="menu-mas__icon" aria-hidden="true">🔗</span>
-            <span class="menu-mas__label">Compromisos</span>
-          </a>
-          <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
-            <span class="menu-mas__icon" aria-hidden="true">🏦</span>
-            <span class="menu-mas__label">Tesorería</span>
-          </a>
-          <a class="menu-mas__item" href="#personales" data-section="personales">
-            <span class="menu-mas__icon" aria-hidden="true">🤝</span>
-            <span class="menu-mas__label">Me deben</span>
-          </a>
-          <a class="menu-mas__item" href="#metas" data-section="metas">
-            <span class="menu-mas__icon" aria-hidden="true">🎯</span>
-            <span class="menu-mas__label">Metas</span>
-          </a>
-          <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
-            <span class="menu-mas__icon" aria-hidden="true">📩</span>
-            <span class="menu-mas__label">Presupuesto</span>
-          </a>
-          <a class="menu-mas__item" href="#analisis" data-section="analisis">
-            <span class="menu-mas__icon" aria-hidden="true">📊</span>
-            <span class="menu-mas__label">Análisis</span>
-          </a>
-          <a class="menu-mas__item" href="#config" data-section="config">
-            <span class="menu-mas__icon" aria-hidden="true">⚙️</span>
-            <span class="menu-mas__label">Ajustes</span>
-          </a>
-        </div>
+        <!-- Agrupado por intención (espejo del sidebar desktop): Gestión,
+             Crecer, Herramientas. Agenda, Gastos y Dashboard ya están en la
+             barra inferior de móvil, no se repiten aquí. -->
+
+        <section class="menu-mas__group" aria-labelledby="menu-mas-gestion">
+          <h3 class="menu-mas__group-label" id="menu-mas-gestion">Gestión</h3>
+          <div class="menu-mas__grid">
+            <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
+              <span class="menu-mas__icon" aria-hidden="true">🔗</span>
+              <span class="menu-mas__label">Compromisos</span>
+            </a>
+            <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
+              <span class="menu-mas__icon" aria-hidden="true">🏦</span>
+              <span class="menu-mas__label">Tesorería</span>
+            </a>
+            <a class="menu-mas__item" href="#personales" data-section="personales">
+              <span class="menu-mas__icon" aria-hidden="true">🤝</span>
+              <span class="menu-mas__label">Me deben</span>
+            </a>
+            <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
+              <span class="menu-mas__icon" aria-hidden="true">📩</span>
+              <span class="menu-mas__label">Presupuesto</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="menu-mas__group" aria-labelledby="menu-mas-crecer">
+          <h3 class="menu-mas__group-label" id="menu-mas-crecer">Crecer</h3>
+          <div class="menu-mas__grid">
+            <a class="menu-mas__item" href="#metas" data-section="metas">
+              <span class="menu-mas__icon" aria-hidden="true">🎯</span>
+              <span class="menu-mas__label">Metas</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="menu-mas__group" aria-labelledby="menu-mas-herramientas">
+          <h3 class="menu-mas__group-label" id="menu-mas-herramientas">Herramientas</h3>
+          <div class="menu-mas__grid">
+            <a class="menu-mas__item" href="#analisis" data-section="analisis">
+              <span class="menu-mas__icon" aria-hidden="true">📊</span>
+              <span class="menu-mas__label">Análisis</span>
+            </a>
+            <a class="menu-mas__item" href="#config" data-section="config">
+              <span class="menu-mas__icon" aria-hidden="true">⚙️</span>
+              <span class="menu-mas__label">Ajustes</span>
+            </a>
+          </div>
+        </section>
       </div>
     </div>
   </div>

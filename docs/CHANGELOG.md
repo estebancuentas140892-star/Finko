@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(nav): rediseño Parte 3A.1 - IA, wayfinding y hub "Crecer" · 2026-06-05
+
+Reorganización de navegación sin tocar el router. Prepara la IA para las secciones Ahorro e Inversión.
+
+- **`modules/ui/shell.js`:** `markActiveNav` resalta el botón "Más" móvil cuando el hash está en `MAS_SECTIONS`. Corrige el bug de wayfinding (antes ninguna pestaña se resaltaba en secciones del menú "Más").
+- **`index.html`:** grupo "Crecer" nuevo en el sidebar (Metas migrada desde "Gestión"). Menú "Más" móvil reestructurado de grilla plana a 3 grupos con jerarquía (Gestión, Crecer, Herramientas).
+- **`styles/modals.css`:** estilos de grupo `.menu-mas__group` + `.menu-mas__group-label`.
+
+931/931 unit verdes. Renombres a lenguaje humano quedan para 3A.2.
+
+---
+
 ### feat(ui): rediseño Parte 2 - tipografía self-hosted (Inter Variable + DM Mono) · 2026-06-05
 
 Inter y DM Mono eran bloqueadas por CSP `font-src 'self'` en producción. Ahora se sirven sin peticiones externas.
