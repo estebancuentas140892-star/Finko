@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas + E2E)
+> Última actualización: 2026-06-06 (copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding - tono completo en toda la app)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding · 2026-06-06
+
+23 textos convertidos en los 6 dominios restantes. **Tono neutral-profesional completo en toda la app.**
+
+**Archivos:**
+- `metas/view.js`: 2 (`Definí/llevá` → tuteo).
+- `presupuesto/view.js`: 5 (`Asigná/gastás/registrás` → tuteo; `Elegí` → `Elige`; `necesitás/eliminá/creá` → tuteo).
+- `personales/view.js`: 3 (`Registrá/hacés` → tuteo; `para vos` → `para ti`; `podés` → `puedes`).
+- `analisis/view.js`: 2 (`Tenés/Completalas` → `Tienes/Complétalas`; `gastás` → `gastas`).
+- `config/view.js`: 9 (`Cambiá/Instalá/Activá/desactivá/Exportalos` → tuteo; `Podés` ×3 → `Puedes`; `hacé click` → `haz clic`; `Recibí/abrís/tenés/Recibís` → tuteo).
+- `onboarding.js`: 2 (`llamás` → `llamas`; `escribí` → `escribe`).
+- `service-worker.js`: v100 → v101.
+
+**Verificado:** 931/931 unit verdes.
+
+**Sigue:** Parte 4 - J.1a (Ahorro: schema v6 → v7 + logic.js + sección nueva con hero fondo de emergencia + nav item).
 
 ### copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas · 2026-06-06
 

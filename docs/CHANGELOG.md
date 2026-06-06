@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding · 2026-06-06
+
+23 textos convertidos. Tono neutral-profesional completo en toda la app (Batch 3 de 3).
+
+- `metas/view.js`: 2 cambios. `presupuesto/view.js`: 5. `personales/view.js`: 3.
+- `analisis/view.js`: 2. `config/view.js`: 9. `onboarding.js`: 2.
+- `service-worker.js`: v100 → v101.
+
+931/931 unit verdes. Refinamiento de tono cerrado en sus 3 batches.
+
+---
+
 ### copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas + E2E · 2026-06-06
 
 29 textos convertidos (voseo → tú, "plata" → "dinero") en los 3 dominios de uso diario.
