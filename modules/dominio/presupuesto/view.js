@@ -148,9 +148,9 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">📩</p>
       <p class="empty-state__title">Sin presupuestos</p>
-      <p class="empty-state__desc">Asigná un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te va a avisar cuando te acerques al límite.</p>
+      <p class="empty-state__desc">Asigna un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te avisa cuando te acerques al límite.</p>
       <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear presupuesto</button>
-      <p class="empty-state__tip">💡 Tip: empezá con 2 o 3 categorías donde más gastás. Finko muestra el avance en tiempo real cada vez que registrás un gasto.</p>
+      <p class="empty-state__tip">💡 Tip: empieza con 2 o 3 categorías donde más gastas. Finko muestra el avance en tiempo real cada vez que registras un gasto.</p>
     </div>`;
 }
 
@@ -179,11 +179,11 @@ export function renderFormPresupuesto(actual = null) {
         <label for="presupuesto-categoria" class="label">Categoría</label>
         <select id="presupuesto-categoria" name="categoria" class="input" required aria-required="true"
                 ${editando ? 'disabled' : ''}>
-          <option value="">Elegí una categoría…</option>
+          <option value="">Elige una categoría…</option>
           ${opciones}
         </select>
         ${editando
-          ? '<p class="form-hint">La categoría no se puede cambiar. Si necesitás otra, eliminá este presupuesto y creá uno nuevo.</p>'
+          ? '<p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este presupuesto y crea uno nuevo.</p>'
           : ''}
       </div>
       <div class="form-group">

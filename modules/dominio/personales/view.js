@@ -150,7 +150,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🤝</p>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
-      <p class="empty-state__desc">Registrá los préstamos que hacés a familia y amigos para no olvidarte. Sin presión: solo es para vos.</p>
+      <p class="empty-state__desc">Registra los préstamos que haces a familia y amigos para no olvidarte. Sin presión: solo es para ti.</p>
       <button class="btn btn-primary" data-action="nuevo-personal">+ Agregar préstamo</button>
     </div>`;
 }
@@ -221,7 +221,7 @@ export function renderFormPagoPersonal(prestamo) {
         <input id="pago-monto" name="monto" class="input" type="number"
                min="1" max="${pendiente}" step="1000"
                value="${pendiente}" required aria-required="true" />
-        <p class="form-hint">Por defecto se carga el total pendiente; podés ajustarlo si es un pago parcial.</p>
+        <p class="form-hint">Por defecto se carga el total pendiente; puedes ajustarlo si es un pago parcial.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

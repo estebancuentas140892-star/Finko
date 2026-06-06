@@ -35,7 +35,7 @@ function _renderTema() {
     <section class="config-section" aria-labelledby="config-tema-title">
       <h2 class="config-section__title" id="config-tema-title">🎨 Apariencia</h2>
       <p class="config-section__desc">
-        Cambiá entre tema oscuro (defecto) y tema claro. La preferencia se guarda
+        Cambia entre tema oscuro (defecto) y tema claro. La preferencia se guarda
         en este dispositivo.
       </p>
       <label class="config-toggle" for="toggle-tema">
@@ -59,7 +59,7 @@ function _renderInstalarApp() {
       <section class="config-section" aria-labelledby="config-install-title">
         <h2 class="config-section__title" id="config-install-title">📲 Instalar app</h2>
         <p class="config-section__desc">
-          Finko ya está instalada en este dispositivo. Podés abrirla desde tu pantalla de inicio.
+          Finko ya está instalada en este dispositivo. Puedes abrirla desde tu pantalla de inicio.
         </p>
       </section>`;
   }
@@ -68,7 +68,7 @@ function _renderInstalarApp() {
     <section class="config-section" aria-labelledby="config-install-title">
       <h2 class="config-section__title" id="config-install-title">📲 Instalar app</h2>
       <p class="config-section__desc">
-        Instalá Finko en tu pantalla de inicio para acceder más rápido, sin abrir el navegador,
+        Instala Finko en tu pantalla de inicio para acceder más rápido, sin abrir el navegador,
         y para que funcione sin conexión a internet.
       </p>
       <button class="btn btn-primary" data-action="install-pwa"
@@ -117,7 +117,7 @@ function _renderNotificaciones() {
       <section class="config-section" aria-labelledby="config-notif-title">
         <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
         <p class="config-section__desc">
-          Tu navegador no soporta notificaciones push. Podés ver los compromisos
+          Tu navegador no soporta notificaciones push. Puedes ver los compromisos
           próximos directamente en la sección <a href="#compromisos" class="link">Compromisos</a>.
         </p>
       </section>`;
@@ -129,7 +129,7 @@ function _renderNotificaciones() {
         <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
         <p class="config-section__desc config-section__desc--warn">
           Las notificaciones están bloqueadas en tu navegador. Para activarlas,
-          hacé click en el candado de la barra de direcciones → Notificaciones → Permitir.
+          haz clic en el candado de la barra de direcciones → Notificaciones → Permitir.
         </p>
       </section>`;
   }
@@ -139,7 +139,7 @@ function _renderNotificaciones() {
       <section class="config-section" aria-labelledby="config-notif-title">
         <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
         <p class="config-section__desc">
-          Recibí una notificación cada vez que abrís Finko si tenés compromisos
+          Recibes una notificación cada vez que abres Finko si tienes compromisos
           que vencen en los próximos 3 días.
         </p>
         <button class="btn btn-primary" data-action="activar-notificaciones"
@@ -155,7 +155,7 @@ function _renderNotificaciones() {
       <h2 class="config-section__title" id="config-notif-title">🔔 Recordatorios</h2>
       <p class="config-section__desc">
         El navegador tiene permiso para enviar notificaciones.
-        Activá o desactivá el recordatorio de compromisos próximos.
+        Activa o desactiva el recordatorio de compromisos próximos.
       </p>
       <label class="config-toggle" for="toggle-notif">
         <input
@@ -170,7 +170,7 @@ function _renderNotificaciones() {
         </span>
       </label>
       <p class="form-hint">
-        Recibís una notificación al abrir la app si hay compromisos que vencen
+        Recibes una notificación al abrir la app si hay compromisos que vencen
         en los próximos 3 días.
       </p>
     </section>`;
@@ -182,7 +182,7 @@ function _renderDatos() {
       <h2 class="config-section__title" id="config-datos-title">💾 Tus datos</h2>
       <p class="config-section__desc">
         Todos tus datos se almacenan solo en este dispositivo.
-        Exportalos para hacer un respaldo o para moverlos a otro dispositivo.
+        Expórtalos para hacer un respaldo o para moverlos a otro dispositivo.
       </p>
       <div class="config-actions">
         <button class="btn btn-secondary" data-action="exportar-datos">

@@ -142,8 +142,8 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
   // CTA si hay deudas sin saldo registrado.
   const ctaDeudas = pasivos.deudasSinSaldo > 0
     ? `<p class="analisis__hint">
-        Tenés <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
-        sin saldo registrado. Completalas en
+        Tienes <strong>${pasivos.deudasSinSaldo} deuda${pasivos.deudasSinSaldo > 1 ? 's' : ''}</strong>
+        sin saldo registrado. Complétalas en
         <a href="#compromisos" class="link">Compromisos</a>
         para calcular tu patrimonio real.
       </p>`
@@ -421,7 +421,7 @@ function _renderPatronSemanal(patron) {
   return `
     <section class="analisis__section" aria-labelledby="analisis-patron-title">
       <h2 class="analisis__section-title" id="analisis-patron-title">📅 Patrón de gasto semanal</h2>
-      <p class="analisis__desc">Días donde gastás consistentemente más que el promedio (análisis de los últimos 90 días, ${gastosAnalizados} transacciones).</p>
+      <p class="analisis__desc">Días donde gastas consistentemente más que el promedio (análisis de los últimos 90 días, ${gastosAnalizados} transacciones).</p>
       <ul class="patron__lista" aria-label="Días con mayor gasto">${itemsHtml}</ul>
       <p class="analisis__hint">Promedio por día activo: <strong>${f(promedioGlobalDia)}</strong></p>
     </section>`;

@@ -49,7 +49,7 @@ function _onSubmitWizard(e) {
   const nombre = form.querySelector('[name="nombre"]')?.value?.trim() ?? '';
 
   if (!nombre) {
-    announce('Por favor escribí tu nombre para continuar.', 'assertive');
+    announce('Por favor escribe tu nombre para continuar.', 'assertive');
     return;
   }
 
@@ -76,7 +76,7 @@ function _renderPaso1() {
       <h2 class="onboarding__title">¡Bienvenido a Finko!</h2>
       <p class="onboarding__desc">
         Tu gestión financiera personal, en tu idioma y sin complicaciones.
-        Primero, ¿cómo te llamás?
+        Primero, ¿cómo te llamas?
       </p>
       <div class="form-group">
         <label for="onboarding-nombre" class="label">Tu nombre</label>
