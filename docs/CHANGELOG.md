@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(icons): Parte 3C - migración híbrida de iconografía (nav emoji → SVG) · 2026-06-06
+
+Migración híbrida: SVG para la navegación, emojis expresivos conservados (tono cálido del ADN). Sistema nuevo: sprite SVG inline (`<symbol>` + `<use>`, estilo Lucide MIT), vanilla sin build, color vía `.icon { stroke: currentColor }`.
+
+- `index.html`: sprite de 11 símbolos + 18 reemplazos (nav-item + menu-mas).
+- `components.css`: clase base `.icon`. `layout.css`: nav 22px. `modals.css`: menú "Más" 28px con tinte por dominio (`--fk-dom-*`).
+- `service-worker.js`: `CACHE_NAME` v95 → v96.
+
+Convención documentada en ARCHITECTURE.md. 931/931 unit verdes.
+
+---
+
 ### feat(ux): empty state "Tu plata disponible hoy" + CTA moderno · 2026-06-06
 
 UX #3 de 4. Hero del dashboard sin cuentas: ya no muestra un `$0` confuso. Empty state centrado con ícono, título, descripción y botón CTA pill verde "Agregar mis cuentas" (href: #tesoreria).

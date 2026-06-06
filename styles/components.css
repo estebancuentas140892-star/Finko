@@ -185,6 +185,25 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   ICONOS SVG - sistema de íconos de línea para la UI chrome.
+   La geometría vive en el sprite (#i-*, definido en index.html);
+   la presentación se aplica aquí. stroke: currentColor hace que
+   hereden el color del contexto (ej: nav activa = acento). Parte 3C.
+   ════════════════════════════════════════════════════════════ */
+.icon {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* ════════════════════════════════════════════════════════════
    INPUTS / FORMULARIOS
    ════════════════════════════════════════════════════════════ */
 

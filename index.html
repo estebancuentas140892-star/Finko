@@ -35,6 +35,33 @@
 </head>
 <body>
 
+  <!-- ══════════════════════════════════════════════════════════
+       SPRITE DE ICONOS SVG (Parte 3C: migración híbrida emoji -> SVG).
+       Íconos de línea (estilo Lucide, licencia MIT) para la UI chrome de
+       navegación. Uso: <svg class="icon"><use href="#i-home"/></svg>.
+       Vanilla, sin build step: cada <symbol> define la geometría una sola
+       vez y <use> la reutiliza desde HTML estático o desde JS. El color
+       (currentColor) y el grosor de línea se aplican vía CSS (.icon), por
+       eso heredan el color del contexto (nav activa = acento, etc.).
+       El contenedor está oculto y no ocupa layout.
+       Solo migramos navegación: los emojis expresivos (tips, marca,
+       celebraciones, estados vacíos) se conservan a propósito.
+       ══════════════════════════════════════════════════════════ -->
+  <svg width="0" height="0" aria-hidden="true" focusable="false"
+       style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+    <symbol id="i-gastos" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
+    <symbol id="i-agenda" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-deudas" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+    <symbol id="i-cuentas" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
+    <symbol id="i-personales" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-presupuesto" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+    <symbol id="i-metas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-analisis" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
+    <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+  </svg>
+
   <div class="app-shell" id="app">
 
     <!-- ══════════════════════════════════════════════════════════
@@ -60,27 +87,27 @@
 
             <a class="nav-item active" href="#dash" data-section="dash"
                role="listitem" aria-current="page" aria-label="Dashboard: resumen financiero">
-              <span class="nav-item__icon" aria-hidden="true">🏠</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-home"/></svg>
               <span class="nav-item__label">Dashboard</span>
             </a>
 
             <a class="nav-item" href="#gast" data-section="gast"
                role="listitem" aria-label="Gastos">
-              <span class="nav-item__icon" aria-hidden="true">💸</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
               <span class="nav-item__label">Gastos</span>
             </a>
 
             <!-- Agenda: visible en mobile (tercer slot del bottom nav) -->
             <a class="nav-item" href="#agenda" data-section="agenda"
                role="listitem" aria-label="Agenda y calendario del mes">
-              <span class="nav-item__icon" aria-hidden="true">📅</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-agenda"/></svg>
               <span class="nav-item__label">Agenda</span>
             </a>
 
             <!-- Deudas: solo desktop (demasiados slots para mobile) -->
             <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
                role="listitem" aria-label="Mis deudas y compromisos">
-              <span class="nav-item__icon" aria-hidden="true">🔗</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
               <span class="nav-item__label">Deudas</span>
             </a>
 
@@ -89,7 +116,7 @@
                     role="listitem"
                     data-action="modal-open" data-modal="modal-mas"
                     aria-label="Mas opciones" aria-haspopup="dialog">
-              <span class="nav-item__icon" aria-hidden="true">⋯</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-mas"/></svg>
               <span class="nav-item__label">Más</span>
             </button>
 
@@ -104,19 +131,19 @@
             <!-- Mis cuentas: setup inicial, luego automático. Solo desktop. -->
             <a class="nav-item nav-item--no-mobile" href="#tesoreria" data-section="tesoreria"
                role="listitem" aria-label="Mis cuentas y saldos">
-              <span class="nav-item__icon" aria-hidden="true">🏦</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
               <span class="nav-item__label">Mis cuentas</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
                role="listitem" aria-label="Préstamos personales: me deben">
-              <span class="nav-item__icon" aria-hidden="true">🤝</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>
               <span class="nav-item__label">Me deben</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
                role="listitem" aria-label="Presupuesto por categoría">
-              <span class="nav-item__icon" aria-hidden="true">📩</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
               <span class="nav-item__label">Presupuesto</span>
             </a>
 
@@ -131,7 +158,7 @@
 
             <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
                role="listitem" aria-label="Metas de ahorro">
-              <span class="nav-item__icon" aria-hidden="true">🎯</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="nav-item__label">Metas</span>
             </a>
 
@@ -145,7 +172,7 @@
 
             <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
                role="listitem" aria-label="Análisis financiero">
-              <span class="nav-item__icon" aria-hidden="true">📊</span>
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
               <span class="nav-item__label">Análisis</span>
             </a>
 
@@ -158,7 +185,7 @@
       <div class="sidebar__footer">
         <a class="nav-item" href="#config" data-section="config"
            aria-label="Ajustes de la aplicación">
-          <span class="nav-item__icon" aria-hidden="true">⚙️</span>
+          <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
           <span class="nav-item__label">Ajustes</span>
         </a>
 
@@ -847,19 +874,19 @@
           <h3 class="menu-mas__group-label" id="menu-mas-gestion">Gestión</h3>
           <div class="menu-mas__grid">
             <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
-              <span class="menu-mas__icon" aria-hidden="true">🔗</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
               <span class="menu-mas__label">Deudas</span>
             </a>
             <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
-              <span class="menu-mas__icon" aria-hidden="true">🏦</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
               <span class="menu-mas__label">Mis cuentas</span>
             </a>
             <a class="menu-mas__item" href="#personales" data-section="personales">
-              <span class="menu-mas__icon" aria-hidden="true">🤝</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>
               <span class="menu-mas__label">Me deben</span>
             </a>
             <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
-              <span class="menu-mas__icon" aria-hidden="true">📩</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
               <span class="menu-mas__label">Presupuesto</span>
             </a>
           </div>
@@ -869,7 +896,7 @@
           <h3 class="menu-mas__group-label" id="menu-mas-crecer">Crecer</h3>
           <div class="menu-mas__grid">
             <a class="menu-mas__item" href="#metas" data-section="metas">
-              <span class="menu-mas__icon" aria-hidden="true">🎯</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="menu-mas__label">Metas</span>
             </a>
           </div>
@@ -879,11 +906,11 @@
           <h3 class="menu-mas__group-label" id="menu-mas-herramientas">Herramientas</h3>
           <div class="menu-mas__grid">
             <a class="menu-mas__item" href="#analisis" data-section="analisis">
-              <span class="menu-mas__icon" aria-hidden="true">📊</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
               <span class="menu-mas__label">Análisis</span>
             </a>
             <a class="menu-mas__item" href="#config" data-section="config">
-              <span class="menu-mas__icon" aria-hidden="true">⚙️</span>
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
               <span class="menu-mas__label">Ajustes</span>
             </a>
           </div>

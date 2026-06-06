@@ -39,6 +39,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(icons): Parte 3C - migración híbrida de iconografía (nav emoji → SVG) · 2026-06-06
+
+**Decisión:** migración **híbrida** (confirmada con el usuario). SVG para la UI chrome de navegación; los emojis expresivos (tips 💡, marca 💚, celebraciones 🎉, estados vacíos) se conservan a propósito, porque el tono cálido es parte del ADN de Finko (regla 11).
+
+**Sistema de íconos (convención nueva):** sprite SVG inline en `index.html` (íconos de línea estilo Lucide, MIT). Cada `<symbol id="i-*">` define la geometría una vez; se referencia con `<svg class="icon"><use href="#i-*"/></svg>`. Vanilla, sin build, reutilizable desde HTML y JS. Color y grosor vía CSS (`.icon`, `stroke: currentColor`), así heredan el contexto. Documentado en `ARCHITECTURE.md`.
+
+**Cambios:**
+- `index.html`: sprite de 11 símbolos + 18 reemplazos (11 nav-item + 7 menu-mas). Emojis 🏠💸📅🔗⋯🏦🤝📩🎯📊⚙️ → SVG.
+- `styles/components.css`: clase base `.icon`.
+- `styles/layout.css`: `.nav-item__icon.icon` 22px (doble clase para ganar a responsive).
+- `styles/modals.css`: `.menu-mas__icon.icon` 28px + tinte por dominio (Deudas rojo, Mis cuentas azul, etc.) usando `--fk-dom-*`. El nav vertical queda monocromo (activo = acento).
+- `service-worker.js`: `CACHE_NAME` v95 → v96.
+
+**Verificación:** preview muestra los 18 íconos resueltos a sus símbolos, nav 22px con `currentColor` (activo verde), menú "Más" con colores de dominio. 931/931 unit verdes.
+
+**Sigue (3C, opcional):** los íconos de acción de las cards (✎ editar, ✕ borrar, → chevron) y los íconos de acento de dominio (💵 hero, etc.) podrían migrarse en slices futuros si el usuario quiere.
+
 ### feat(ux): empty state "Tu plata disponible hoy" + CTA moderno · 2026-06-06
 
 **UX #3 de 4.** Cuando el usuario abre la app por primera vez (sin cuentas registradas), el hero del dashboard ya no muestra un confuso `$0`. En su lugar aparece un empty state centrado con jerarquía clara y un CTA llamativo.

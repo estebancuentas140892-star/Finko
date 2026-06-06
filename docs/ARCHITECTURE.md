@@ -221,6 +221,15 @@ document.addEventListener('click', e => {
 | `responsive` | Breakpoints: 1440px / 1024px / 768px / 480px / 360px |
 | `utils` | `.sr-only`, `.visually-hidden`, helpers de display |
 
+### 8.1 Sistema de íconos SVG (Parte 3C)
+
+Iconografía **híbrida**: SVG para la UI chrome (navegación), emojis para lo expresivo (tips, marca, celebraciones, estados vacíos). El tono cálido es ADN (regla 11), no se elimina.
+
+- **Sprite inline:** un `<svg>` oculto al inicio de `<body>` en `index.html` define cada ícono como `<symbol id="i-*" viewBox="0 0 24 24">` (geometría estilo Lucide, licencia MIT). Se define una sola vez.
+- **Uso:** `<svg class="icon"><use href="#i-home"/></svg>`. Funciona desde HTML estático y desde HTML generado en JS. Sin build step.
+- **Presentación:** la clase `.icon` (en `components.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2`. Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; menú "Más" tintado por dominio con `--fk-dom-*`).
+- **Regla:** los íconos nuevos de UI chrome se agregan como `<symbol>` al sprite; nunca se hardcodea `<path>` suelto ni se reintroduce emoji en navegación.
+
 ---
 
 ## 9. PWA y Service Worker

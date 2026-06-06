@@ -149,6 +149,21 @@
   font-size: 1.75rem;
   line-height: 1;
 }
+/* Ícono SVG del menú "Más" (Parte 3C). Más grande que el del nav (es una
+   grilla tipo launcher). Aquí sí tintamos por dominio: el color ayuda al
+   reconocimiento en una grilla de tarjetas, a diferencia del nav vertical
+   monocromo donde el estado activo ya marca la posición. */
+.menu-mas__icon.icon {
+  width: 28px;
+  height: 28px;
+}
+.menu-mas__item[data-section="compromisos"] .icon { color: var(--fk-dom-compromisos); }
+.menu-mas__item[data-section="tesoreria"]   .icon { color: var(--fk-dom-tesoreria); }
+.menu-mas__item[data-section="personales"]  .icon { color: var(--fk-dom-personales); }
+.menu-mas__item[data-section="presupuesto"] .icon { color: var(--fk-dom-presupuesto); }
+.menu-mas__item[data-section="metas"]       .icon { color: var(--fk-dom-metas); }
+.menu-mas__item[data-section="analisis"]    .icon { color: var(--fk-dom-analisis); }
+/* Ajustes (config) no es un dominio financiero: queda monocromo. */
 
 .menu-mas__label {
   font-size: var(--fk-text-xs);
