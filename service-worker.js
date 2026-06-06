@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v93';
+const CACHE_NAME = 'finko-v94';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -96,6 +96,13 @@ const CORE_ASSETS = [
 
 // ── Assets opcionales - se intentan cachear pero no bloquean el install ───
 const OPTIONAL_ASSETS = [
+  // Fuentes self-hosted (WOFF2). No bloquean el install pero se pre-cachean
+  // para disponibilidad offline inmediata. Ya están en CORE via main.css;
+  // aquí se garantiza que el archivo esté en cache aunque main.css ya esté.
+  './assets/fonts/inter-variable.woff2',
+  './assets/fonts/dm-mono-400.woff2',
+  './assets/fonts/dm-mono-500.woff2',
+
   './assets/icons/favicon.svg',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',

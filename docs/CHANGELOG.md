@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ui): rediseño Parte 2 - tipografía self-hosted (Inter Variable + DM Mono) · 2026-06-05
+
+Inter y DM Mono eran bloqueadas por CSP `font-src 'self'` en producción. Ahora se sirven sin peticiones externas.
+
+- **`assets/fonts/inter-variable.woff2`** (48 KB): Inter Variable pesos 100-900 en 1 archivo (antes 6 estáticos = ~143 KB).
+- **`assets/fonts/dm-mono-400.woff2`** + **`dm-mono-500.woff2`** (~30 KB): solo los 2 pesos realmente usados. Italic eliminado por no usarse en ningún elemento mono.
+- **`styles/main.css`**: `@import` Google Fonts reemplazado por 3 `@font-face` con `font-display: swap` y `unicode-range` Latin.
+- **`service-worker.js`**: bump `finko-v93` -> `finko-v94`. WOFF2 pre-cacheados en `OPTIONAL_ASSETS`.
+
+Total descarga de fuentes: **78 KB** (antes: ~188 KB + petición externa bloqueada). 931/931 unit verdes.
+
+---
+
 ### feat(ui): rediseño Parte 1 - paleta "calma confiable" · 2026-06-05
 
 Primera fase de modernización UX/UI por partes. Dirección "calma confiable": menos neón, mejor accesibilidad, sin perder identidad verde. Solo tokens, ambos temas, cero hardcode.

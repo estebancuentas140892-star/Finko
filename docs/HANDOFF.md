@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ui): rediseño Parte 2 - tipografía self-hosted (Inter Variable + DM Mono) · 2026-06-05
+
+Inter y DM Mono no cargaban en producción: el `@import` de Google Fonts era bloqueado por la CSP `font-src 'self'`. Ahora las fuentes se sirven desde `assets/fonts/` sin peticiones externas.
+
+**Cambios:**
+- **`assets/fonts/inter-variable.woff2`** (48 KB): Inter Variable que cubre pesos 100-900 en 1 archivo. Sustituye los 6 archivos estáticos que se pedían antes (~143 KB -> 48 KB).
+- **`assets/fonts/dm-mono-400.woff2`** (15 KB) y **`dm-mono-500.woff2`** (15 KB): solo los 2 pesos usados. Italic omitido: ningún elemento mono usa `font-style: italic`.
+- **`styles/main.css`**: `@import` de Google Fonts reemplazado por 3 declaraciones `@font-face` con `font-display: swap` y `unicode-range` Latin.
+- **`service-worker.js`**: bump `finko-v93` -> `finko-v94`. Los 3 WOFF2 agregados a `OPTIONAL_ASSETS` para pre-cacheo offline.
+
+**Verificación:** Inter Variable activa (pesos 400-800 cargados), DM Mono 400/500 activos. Montos con figuras tabulares correctas. Sin errores de consola. 931/931 unit verdes.
+
 ### feat(ui): rediseño Parte 1 - paleta "calma confiable" (color, claro + oscuro) · 2026-06-05
 
 Primera parte de una modernización UX/UI por fases. Dirección elegida con el usuario: "calma confiable". Solo tokens, cero hardcode, ambos temas.
