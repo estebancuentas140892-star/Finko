@@ -194,6 +194,17 @@
   gap: var(--fk-space-2);
 }
 
+/* Separación vertical entre campos de un mismo formulario.
+   El gap interno de cada grupo (label ↔ input) es space-2 (8px); la
+   separación ENTRE grupos es mayor (space-5 / 20px) para que cada etiqueta
+   se asocie a SU campo por proximidad y los grupos se distingan con
+   claridad. Antes los grupos quedaban pegados (0px entre input y la
+   siguiente etiqueta), lo que rompía la jerarquía y se sentía apretado.
+   Se excluye .config-form, que gestiona su propio gap (mismo valor). */
+form:not(.config-form) .form-group:not(:first-child) {
+  margin-top: var(--fk-space-5);
+}
+
 .label {
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-medium);
@@ -266,7 +277,7 @@
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
   padding: var(--fk-space-3) var(--fk-space-4);
-  margin: var(--fk-space-2) 0;
+  margin: var(--fk-space-5) 0; /* mismo ritmo vertical que la separación entre grupos */
   background: var(--fk-bg-hover);
 }
 .cuota-fieldset[hidden] {
@@ -3478,7 +3489,7 @@ details[open] > .herramienta-inline__titulo::after {
 .config-form {
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-4);
+  gap: var(--fk-space-5); /* mismo valor que la separación entre grupos en modales */
 }
 
 .config-form > .btn {

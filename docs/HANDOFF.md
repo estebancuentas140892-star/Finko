@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(forms): espaciado vertical entre campos de formularios · 2026-06-06
+
+**UX #1 de 4** (pedido del usuario: formularios apretados, descripciones, empty state del dashboard, CTA). Los `.form-group` quedaban pegados (0px entre el input de un grupo y la etiqueta del siguiente), rompiendo la jerarquía. Ejemplo reportado: form de "Nuevo gasto fijo", campo Monto pegado al de Descripción.
+
+**Cambios (`styles/components.css`):**
+- Nueva regla `form:not(.config-form) .form-group:not(:first-child) { margin-top: space-5 }` (20px entre grupos). El gap interno label↔input sigue en 8px: jerarquía clara por proximidad.
+- `.config-form` (Ajustes): `gap` de space-4 → space-5 para un único valor en toda la app. La regla lo excluye para no duplicar.
+- `.cuota-fieldset` (form de cuenta): margen vertical de space-2 → space-5, mismo ritmo.
+
+**Verificación:** medido en preview (375px) sobre form-gasto-fijo (Descripción/Monto/Frecuencia/Día con 20px), config-form (gap 20px, sin doble margen) y form-cuenta + fieldset de cuota. 931/931 unit verdes.
+
+**Sigue (UX #2-4):** descripciones más claras (microcopy), empty state de "Tu plata disponible hoy" + CTA moderno a Tesorería.
+
 ### fix(css): app sin estilos en producción - @import descartados por orden · 2026-06-06
 
 **Bug crítico de producción.** En `finko-brown.vercel.app` la app cargaba solo el HTML, sin CSS. Causa: en la Parte 2 (fuentes self-hosted) los bloques `@font-face` quedaron ANTES de los `@import` de las capas en `main.css`. La spec CSS exige que los `@import` precedan a cualquier otra regla (salvo `@charset`/`@layer`); al haber `@font-face` antes, el navegador invalidó y descartó los 10 `@import` → 0 capas cargadas (medido en preview: `mainCssTotalRules: 3`, solo los font-face).

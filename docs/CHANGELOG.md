@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(forms): espaciado vertical entre campos de formularios · 2026-06-06
+
+UX #1 de 4. Los `.form-group` quedaban pegados (0px entre grupos), rompiendo la jerarquía.
+
+- `components.css`: `form:not(.config-form) .form-group:not(:first-child) { margin-top: space-5 }` (20px). `.config-form` gap space-4 → space-5. `.cuota-fieldset` margen space-2 → space-5.
+
+Verificado en gasto-fijo, config y cuenta. 931/931 unit verdes.
+
+---
+
 ### fix(css): app sin estilos en producción - @import descartados por orden · 2026-06-06
 
 Bug crítico: la app cargaba sin CSS en móvil. En la Parte 2 los `@font-face` quedaron antes de los `@import` en `main.css`; la spec CSS descarta los `@import` que no preceden a toda otra regla, dejando 0 capas cargadas.
