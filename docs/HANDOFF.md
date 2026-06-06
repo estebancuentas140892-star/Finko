@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-03 (test: e2e suite 100% verde - realineado con form de cuenta rediseñado + copy de compromisos)
+> Última actualización: 2026-06-06 (copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas + E2E)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas · 2026-06-06
+
+Segundo batch del refinamiento de tono. Convierte todo el voseo y "plata" en los 3 dominios de uso diario y actualiza las aserciones E2E que apuntaban al copy antiguo.
+
+**Archivos:**
+- `modules/dominio/tesoreria/view.js`: 5 textos. Título empty state "¿Dónde guardás tu plata?" → "¿Dónde tienes tu dinero?", desc/tip → tú, hint 4x1000 (`retirás/transferís` → `retiras/transfieres`), hint cuota (`sabés/dejalo` → `sabes/déjalo`).
+- `modules/dominio/gastos/view.js`: 7 textos. Badge tooltip (`Tocá` → `Toca`), empty state (`Anotá/hacés/plata/ponés` → tuteo/dinero), form-empty (`necesitás/agregá/sabés/plata` → tuteo/dinero), gasto-saldo hint (`Elegí` → `Elige`).
+- `modules/dominio/compromisos/view.js`: 17 textos. Nudge deudas durmiendo (`podés/retomá`), abono form (`Necesitás/abonás/plata/Elegí`), deuda form (`podés/dejá/debés/pagás`), estrategia (`Tenés/Elegí/Atacás/terminás/necesitás/ahorrás/Recomendada para vos/Tocá/Podés/Pagá/Probá/mirá`).
+- `tests/e2e/navegacion-render.test.js`: 3 aserciones actualizadas (`'¿Dónde guardás tu plata?'` → `'¿Dónde tienes tu dinero?'`).
+- `service-worker.js`: v99 → v100.
+
+**Verificado:** 931/931 unit verdes. E2E actualizados.
+
+**Sigue:** Batch 3 (metas, presupuesto, personales, análisis, config, nudges, onboarding). Luego Parte 4 (Ahorro J.1a).
 
 ### copy(tono): refinamiento a voz neutral-profesional - Batch 1 (ADR + chrome) · 2026-06-06
 

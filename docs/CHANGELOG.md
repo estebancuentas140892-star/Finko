@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas + E2E · 2026-06-06
+
+29 textos convertidos (voseo → tú, "plata" → "dinero") en los 3 dominios de uso diario.
+
+- `tesoreria/view.js`: 5 textos (empty state, hints de 4x1000 y cuota de manejo).
+- `gastos/view.js`: 7 textos (badge, empty states, form-empty, hint selector cuenta).
+- `compromisos/view.js`: 17 textos (nudge, abono form, deuda form, estrategia de pago).
+- `tests/e2e/navegacion-render.test.js`: 3 aserciones de `¿Dónde guardás tu plata?` actualizadas.
+- `service-worker.js`: v99 → v100.
+
+931/931 unit verdes. Batch 2 de 3 (chrome: done; dominios diarios: done; resto: Batch 3).
+
+---
+
 ### copy(tono): refinamiento a voz neutral-profesional - Batch 1 · 2026-06-06
 
 Tono pasa de informal-colombiano a neutral-profesional: voz "tú" (no voseo), "dinero" (no "plata"). Refina la regla 11 del ADN (espíritu intacto: lenguaje humano sin jerga).
