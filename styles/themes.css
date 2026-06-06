@@ -5,18 +5,24 @@
    ============================================================ */
 
 body.light-theme {
+  /* ── MARCA (sobre fondos claros el acento decorativo se oscurece
+        para ganar presencia y contraste sobre blanco) ────────── */
+  --fk-accent:        #13b377;
+  --fk-accent-subtle: rgba(19, 179, 119, 0.10);
+  --fk-accent-border: rgba(19, 179, 119, 0.28);
+
   /* ── FONDOS ─────────────────────────────────────────────── */
-  --fk-bg-base:     #f4f5f9;
+  --fk-bg-base:     #f6f7fa;
   --fk-bg-surface:  #ffffff;
-  --fk-bg-elevated: #edf0f7;
+  --fk-bg-elevated: #eef1f8;
   --fk-bg-hover:    rgba(0, 0, 0, 0.04);
   --fk-bg-active:   rgba(0, 0, 0, 0.08);
   --fk-bg-glass:    rgba(255, 255, 255, 0.75);
 
   /* ── TEXTO ───────────────────────────────────────────────── */
   --fk-text-primary:   #1a1d27;
-  --fk-text-secondary: #4a5168;
-  --fk-text-muted:     #7a7f95;
+  --fk-text-secondary: #454c63;
+  --fk-text-muted:     #5d6276;   /* sube a contraste AA sobre blanco */
   --fk-text-disabled:  #b0b4c8;
   --fk-text-on-accent: #ffffff;
   --fk-text-accent:    #006b3d;
@@ -51,14 +57,11 @@ body.light-theme {
   --fk-btn-primary-text:  #ffffff;
   --fk-btn-primary-hover: #005a33;
 
-  /* ── SOMBRAS ─────────────────────────────────────────────── */
-  --fk-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.12);
-  --fk-shadow-md:   0 4px 16px rgba(0, 0, 0, 0.1);
-  --fk-shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.12);
-  --fk-shadow-glow: 0 0 24px rgba(0, 107, 61, 0.2);
-
-  /* El acento decorativo (#00dc82) se mantiene igual en ambos temas */
-  /* Solo los tokens interactivos y de texto cambian */
+  /* ── SOMBRAS (tintadas hacia el azul-tinta, menos "gris sucio") ── */
+  --fk-shadow-sm:   0 1px 3px rgba(26, 32, 60, 0.10);
+  --fk-shadow-md:   0 4px 16px rgba(26, 32, 60, 0.09);
+  --fk-shadow-lg:   0 8px 32px rgba(26, 32, 60, 0.11);
+  --fk-shadow-glow: 0 0 24px rgba(0, 107, 61, 0.18);
 }
 
 /* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────

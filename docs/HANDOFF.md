@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ui): rediseño Parte 1 - paleta "calma confiable" (color, claro + oscuro) · 2026-06-05
+
+Primera parte de una modernización UX/UI por fases. Dirección elegida con el usuario: "calma confiable". Solo tokens, cero hardcode, ambos temas.
+
+**Cambios:**
+- **`styles/tokens.css`:** acento de marca de neón `#00dc82` a esmeralda calmada `#1fd194`; `success` desacoplado de la marca (`#25cf86`); `--fk-text-muted` sube a contraste AA en oscuro (`#888fa6`); colores de dominio armonizados en croma (turquesa, azul, amarillo, rosa); sombras tintadas al azul-tinta; bases ligeramente templadas.
+- **`styles/themes.css`:** `--fk-text-muted` claro a `#5d6276` (AA sobre blanco); acento decorativo claro a `#13b377`; sombras tintadas; bases `#f6f7fa`/`#eef1f8`.
+- **`index.html` + `manifest.json`:** `theme-color`/`background_color` alineados con la base nueva (`#101218`).
+
+**Verificación:** capturas antes/después en preview (Dashboard claro y oscuro, móvil 375px); foco visible confirmado; 931/931 unit verdes, sin errores de consola. Nota: el lint tiene 17 errores preexistentes en archivos `.js` ajenos a esta tarea.
+
+**Sigue:** Parte 2 (tipografía: self-hostear la fuente, hoy bloqueada por CSP en prod). Partes 3-5 pendientes: diseño/navegación, secciones Ahorro+Inversión, otras mejoras.
+
 ### fix(sw): agregar módulo Agenda a CORE_ASSETS + bump CACHE_NAME a finko-v93 · 2026-06-05
 
 Bug latente: los 3 archivos de `modules/dominio/agenda/` nunca estuvieron en `CORE_ASSETS` del service worker desde que se creó el módulo (v38 a v92). Con cache frío sin red, el import estático en `bootstrap.js` falla y cae toda la app. El bump de CACHE_NAME fuerza el refresco en dispositivos con cache rezagado (celulares con versión vieja instalada como PWA).

@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ui): rediseño Parte 1 - paleta "calma confiable" · 2026-06-05
+
+Primera fase de modernización UX/UI por partes. Dirección "calma confiable": menos neón, mejor accesibilidad, sin perder identidad verde. Solo tokens, ambos temas, cero hardcode.
+
+- **`styles/tokens.css`:** acento `#00dc82` -> `#1fd194` (esmeralda menos saturada, menos fatiga); `--fk-success` desacoplado de la marca (`#25cf86`); `--fk-text-muted` `#6b7490` -> `#888fa6` (AA); colores de dominio armonizados (`analisis` `#00e5cc` -> `#2fd2bf`, `tesoreria`, `presupuesto`, `personales`); sombras tintadas; bases templadas.
+- **`styles/themes.css`:** `--fk-text-muted` `#7a7f95` -> `#5d6276` (AA sobre blanco); acento decorativo claro `#13b377`; sombras tintadas azul-tinta; bases `#f6f7fa`/`#eef1f8`.
+- **`index.html` + `manifest.json`:** `theme-color`/`background_color` -> `#101218`.
+
+Verificado en preview (claro + oscuro, móvil). 931/931 unit verdes.
+
+---
+
 ### fix(sw): Agenda en CORE_ASSETS + finko-v93 · 2026-06-05
 
 Archivos `modules/dominio/agenda/{logic,view,index}.js` nunca estuvieron en `CORE_ASSETS` del SW (desde v38). Con cache frío y sin red, el import estático desde `bootstrap.js` fallaba y caía toda la app. El bump de CACHE_NAME fuerza el refresco en dispositivos con cache rezagado.

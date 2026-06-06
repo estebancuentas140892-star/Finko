@@ -7,40 +7,44 @@
 
 :root {
   /* ── MARCA ──────────────────────────────────────────────────── */
-  --fk-accent:        #00dc82;
-  --fk-accent-hover:  #00ef8e;
-  --fk-accent-subtle: rgba(0, 220, 130, 0.12);
-  --fk-accent-border: rgba(0, 220, 130, 0.35);
-  --fk-accent-glow:   rgba(0, 220, 130, 0.2);
+  /* "Calma confiable": esmeralda menos saturada que el neón previo
+     (#00dc82). Menos vibración en superficies grandes y modo oscuro. */
+  --fk-accent:        #1fd194;
+  --fk-accent-hover:  #38dca6;
+  --fk-accent-subtle: rgba(31, 209, 148, 0.12);
+  --fk-accent-border: rgba(31, 209, 148, 0.32);
+  --fk-accent-glow:   rgba(31, 209, 148, 0.16);
 
   /* ── FONDOS (modo oscuro - default) ─────────────────────────── */
-  --fk-bg-base:        #0f1117;
-  --fk-bg-surface:     #161922;
-  --fk-bg-elevated:    #1d2130;
+  --fk-bg-base:        #101218;
+  --fk-bg-surface:     #181b23;
+  --fk-bg-elevated:    #20242f;
   --fk-bg-hover:       rgba(255, 255, 255, 0.04);
   --fk-bg-active:      rgba(255, 255, 255, 0.08);
   --fk-bg-glass:       rgba(22, 25, 34, 0.7);
 
   /* ── TEXTO ───────────────────────────────────────────────────── */
-  --fk-text-primary:   #e8eaf2;
-  --fk-text-secondary: #9aa0b4;
-  --fk-text-muted:     #6b7490;
+  --fk-text-primary:   #e9ebf3;
+  --fk-text-secondary: #a3a9bd;
+  --fk-text-muted:     #888fa6;   /* sube a contraste AA (>=4.5:1) sobre bg-base */
   --fk-text-disabled:  #424858;
-  --fk-text-on-accent: #0f1117;
-  --fk-text-accent:    #00dc82;
+  --fk-text-on-accent: #08120d;
+  --fk-text-accent:    #4bd99b;
   --fk-text-inverse:   #1a1d27;
 
   /* ── BORDES ──────────────────────────────────────────────────── */
   --fk-border-subtle:  rgba(255, 255, 255, 0.06);
   --fk-border-default: rgba(255, 255, 255, 0.12);
   --fk-border-strong:  rgba(255, 255, 255, 0.25);
-  --fk-border-accent:  rgba(0, 220, 130, 0.35);
-  --fk-border-focus:   #00dc82;
+  --fk-border-accent:  rgba(31, 209, 148, 0.32);
+  --fk-border-focus:   #1fd194;
 
   /* ── SEMÁNTICOS ──────────────────────────────────────────────── */
-  --fk-success:       #00dc82;
-  --fk-success-bg:    rgba(0, 220, 130, 0.12);
-  --fk-success-text:  #00dc82;
+  /* success desacoplado de la marca: tono propio para que "salió bien"
+     no sea idéntico al acento de marca. */
+  --fk-success:       #25cf86;
+  --fk-success-bg:    rgba(37, 207, 134, 0.12);
+  --fk-success-text:  #4bd99b;
 
   --fk-warning:       #ffb82e;
   --fk-warning-bg:    rgba(255, 184, 46, 0.12);
@@ -62,14 +66,15 @@
 
   /* ── DOMINIO - color por sección de la app ───────────────────── */
   /* Permite reconocimiento visual inmediato de cada área */
-  --fk-dom-ingresos:     #00dc82;   /* verde   - ingresos */
+  /* Croma armonizado: ningún hue grita más que el resto sin razón. */
+  --fk-dom-ingresos:     #1fd194;   /* verde   - ingresos (= acento de marca) */
   --fk-dom-gastos:       #ff8a5c;   /* naranja - gastos (suavizado: no es emergencia) */
   --fk-dom-compromisos:  #ff4757;   /* rojo    - deudas/compromisos */
-  --fk-dom-tesoreria:    #3d8aff;   /* azul    - cuentas bancarias */
+  --fk-dom-tesoreria:    #5b95f0;   /* azul    - cuentas bancarias */
   --fk-dom-metas:        #9d73eb;   /* púrpura - objetivos de ahorro */
-  --fk-dom-analisis:     #00e5cc;   /* turquesa - análisis/KPIs */
-  --fk-dom-presupuesto:  #ffb82e;   /* amarillo - presupuesto/sobres */
-  --fk-dom-personales:   #ff4eb8;   /* rosa    - préstamos personales */
+  --fk-dom-analisis:     #2fd2bf;   /* turquesa - análisis/KPIs (calmado) */
+  --fk-dom-presupuesto:  #f3b740;   /* amarillo - presupuesto/sobres */
+  --fk-dom-personales:   #f06fc2;   /* rosa    - préstamos personales (calmado) */
 
   /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */
@@ -94,9 +99,9 @@
   --fk-nudge-success-accent:  var(--fk-success);
 
   /* ── BOTÓN PRIMARIO ──────────────────────────────────────────── */
-  --fk-btn-primary-bg:    #00dc82;
-  --fk-btn-primary-text:  #0f1117;
-  --fk-btn-primary-hover: #00ef8e;
+  --fk-btn-primary-bg:    #1fd194;
+  --fk-btn-primary-text:  #08120d;
+  --fk-btn-primary-hover: #38dca6;
 
   /* ── TIPOGRAFÍA ──────────────────────────────────────────────── */
   --fk-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -147,9 +152,9 @@
   --fk-radius-full: 9999px;
 
   /* ── SOMBRAS ─────────────────────────────────────────────────── */
-  --fk-shadow-sm:   0 1px 3px rgba(0, 0, 0, 0.4);
-  --fk-shadow-md:   0 4px 16px rgba(0, 0, 0, 0.45);
-  --fk-shadow-lg:   0 8px 32px rgba(0, 0, 0, 0.5);
+  --fk-shadow-sm:   0 1px 3px rgba(4, 6, 12, 0.45);
+  --fk-shadow-md:   0 4px 16px rgba(4, 6, 12, 0.5);
+  --fk-shadow-lg:   0 8px 32px rgba(4, 6, 12, 0.55);
   --fk-shadow-glow: 0 0 24px var(--fk-accent-glow);
 
   /* ── Z-INDEX ─────────────────────────────────────────────────── */
