@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ui): rediseño Parte 3B - escaneabilidad de cards de lista · 2026-06-06
+
+Mejora de jerarquía visual en las cards `.list-item` (compartidas por varios dominios). Nota de auditoría: la escala tipográfica móvil que se iba a tocar ya estaba resuelta (`responsive.css:167` reduce el h1 de sección con clamp en móvil), así que no se hizo trabajo redundante.
+
+**Cambios:**
+- **`styles/components.css`:** `.list-item__title` ya no se trunca con "…" (wrap natural, sin line-clamp para no recortar el chip de urgencia inline). `.list-item__amount` y `.list-item__value` suben de `text-sm` a `text-base`: el monto pasa a ser el ancla visual.
+- **`modules/dominio/compromisos/view.js`:** jerarquía interna de la card de deuda reestructurada. Subtítulo accionable "Cuota $X/mes · día N" + contexto "Tipo · tasa". Se elimina la línea "Saldo: …" redundante con el monto de la columna derecha.
+
+**Verificación:** Deudas (nombre completo, monto 16px, sin redundancia) y Mis cuentas (saldos 16px) verificados en móvil. 931/931 unit verdes.
+
+**Sigue:** la card en móvil aún se aprieta porque monto+botón compiten con el cuerpo. Pendiente proponer layout de 2 filas (cambio estructural del componente compartido). Resto de 3B: orden datos/estrategia en Deudas, densidad. Luego 3C (iconografía) y Parte 4 (Ahorro+Inversión).
+
 ### feat(copy): rediseño Parte 3A.2 - renombres a lenguaje humano · 2026-06-06
 
 Dos labels del nav violaban la regla ADN #11 ("lenguaje humano"): el nombre en el nav no coincidía con el copy interno de la sección.

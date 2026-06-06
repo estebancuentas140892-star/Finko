@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ui): rediseño Parte 3B - escaneabilidad de cards de lista · 2026-06-06
+
+Jerarquía visual en las cards `.list-item`. La escala tipográfica móvil ya estaba resuelta en `responsive.css` (no se tocó).
+
+- **`styles/components.css`:** `.list-item__title` sin truncar (wrap natural). `.list-item__amount`/`.list-item__value` de `text-sm` a `text-base` (monto = ancla visual).
+- **`modules/dominio/compromisos/view.js`:** card de deuda reestructurada: subtítulo "Cuota $X/mes · día N" + contexto "Tipo · tasa"; eliminada la línea "Saldo:" redundante.
+
+931/931 unit verdes. Pendiente: layout de 2 filas para móvil (compactación total).
+
+---
+
 ### feat(copy): rediseño Parte 3A.2 - renombres a lenguaje humano · 2026-06-06
 
 - "Compromisos" -> "Deudas" (nav sidebar, menú Más, h1 de sección, aria-labels).

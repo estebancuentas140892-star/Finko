@@ -223,11 +223,13 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
         : `${Math.round(tasaEA)}%`)
     : 'sin interés';
 
-  const subtitleParts = [
-    `Día ${compromiso.diaPago} · ${frec}`,
-    label,
-    tasaMostrada,
-  ];
+  // Jerarquía de la card: nombre (título) > saldo (monto, ancla a la derecha)
+  // > cuota + día de pago (subtítulo accionable) > tipo + tasa (contexto).
+  // Se elimina la línea "Saldo: …" redundante con el monto de la columna meta.
+  const subtitle = cuota > 0
+    ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
+    : `${frec} · día ${compromiso.diaPago}`;
+  const contexto = `${label} · ${tasaMostrada}`;
 
   const ordenBadge = ordenEstrategia
     ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`
@@ -264,8 +266,8 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
         <p class="list-item__title">${desc}
           <span class="${chipClase}" aria-label="Vence en ${diasLabel}">${diasLabel}</span>
         </p>
-        <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        <p class="list-item__hint">Saldo: ${f(saldo)} · Cuota: ${f(cuota)}/mes</p>
+        <p class="list-item__subtitle">${subtitle}</p>
+        <p class="list-item__hint">${contexto}</p>
       </div>
       <div class="list-item__meta">
         ${metaHtml}

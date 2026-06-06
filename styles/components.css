@@ -723,22 +723,26 @@ textarea.input {
 
 .list-item__title {
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-medium);
+  font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* El nombre se muestra completo (con wrap) en lugar de truncarse con "…".
+     Sin line-clamp: la card de deuda lleva el chip de urgencia inline dentro
+     del título y un clamp podría recortarlo. Los nombres en Finko son cortos,
+     así que el wrap no crece sin control. Mejora la escaneabilidad en móvil. */
+  overflow-wrap: anywhere;
 }
 .list-item__subtitle {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
   margin-top: 2px;
 }
-/* amount: monto en columna __meta (compromisos, gastos, personales) */
+/* amount: monto en columna __meta (compromisos, gastos, personales).
+   Ancla visual de la card: un paso más grande que el título para que el
+   ojo encuentre "cuánto" de un vistazo. */
 .list-item__amount {
   font-family: var(--fk-font-mono);
   font-weight: var(--fk-font-semibold);
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-base);
   color: var(--fk-text-primary);
   white-space: nowrap;
 }
@@ -746,7 +750,7 @@ textarea.input {
 .list-item__value {
   font-family: var(--fk-font-mono);
   font-weight: var(--fk-font-semibold);
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-base);
   color: var(--fk-text-primary);
   white-space: nowrap;
 }
