@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ui): rediseño Parte 3B cont. - layout de card en 2 filas (mobile) · 2026-06-06
+
+- `responsive.css`: grid 3 col + 2 filas en `< 540px` con `:has(.list-item__meta)`. Nombre completo en fila 1, monto en fila 2, botones top-right.
+- `tesoreria/view.js`: saldo de `__action` a `__meta` para alinear con el patrón compartido. Grid aplica también a Mis cuentas.
+
+Deudas, Mis cuentas y Gastos verificados en móvil 375px. 931/931 unit verdes.
+
+---
+
 ### feat(ui): rediseño Parte 3B - escaneabilidad de cards de lista · 2026-06-06
 
 Jerarquía visual en las cards `.list-item`. La escala tipográfica móvil ya estaba resuelta en `responsive.css` (no se tocó).

@@ -39,6 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ui): rediseño Parte 3B cont. - layout de card en 2 filas en móvil · 2026-06-06
+
+Grid de 2 filas en `< 540px` para todas las listas: nombre completo en fila 1, monto + acciones en fila 2.
+
+**Cambios:**
+- **`styles/responsive.css`:** grid 3 col + 2 filas en `< 540px` usando `:has(.list-item__meta)` para no afectar cards sin columna separada de monto. Ahora `__action` (botones ✕/✎) queda top-right y `__meta` (monto) pasa a la fila 2.
+- **`modules/dominio/tesoreria/view.js`:** saldo de cuenta movido de `__action` a `__meta`, alineando la estructura con el patrón de los otros 4 dominios. Así el grid también aplica a Mis cuentas.
+
+**Verificación:** Deudas (nombre completo, monto fila 2, Abonar full-ancho), Mis cuentas (nombre no partido, saldo fila 2, botones top-right) y Gastos verificados en preview móvil (375px). 931/931 unit verdes.
+
 ### feat(ui): rediseño Parte 3B - escaneabilidad de cards de lista · 2026-06-06
 
 Mejora de jerarquía visual en las cards `.list-item` (compartidas por varios dominios). Nota de auditoría: la escala tipográfica móvil que se iba a tocar ya estaba resuelta (`responsive.css:167` reduce el h1 de sección con clamp en móvil), así que no se hizo trabajo redundante.

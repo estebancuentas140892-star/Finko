@@ -58,8 +58,10 @@ function _renderCuentaItem(cuenta) {
         ${cuotaHint}
         ${gmfHint}
       </div>
-      <div class="list-item__action">
+      <div class="list-item__meta">
         <p class="list-item__value">${f(cuenta.saldo)}</p>
+      </div>
+      <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
                 data-action="editar-cuenta"
                 data-id="${_esc(cuenta.id)}"

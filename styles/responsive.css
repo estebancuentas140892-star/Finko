@@ -136,6 +136,32 @@
   /* ── NAV-ITEM en sidebar móvil: min touch height ya cubierto por height:60px del sidebar */
 }
 
+/* ── MÓVIL < 540px: list-item en 2 filas para aprovechar el ancho ── */
+/* En pantallas estrechas (< 540px), la fila única de 4 columnas aprieta
+   el cuerpo y el nombre se parte en muchas líneas. Grid de 3 col donde
+   __meta (monto + btn Abonar) pasa a la fila 2. __action (X/✓) queda
+   anclado top-right.
+   :has(.list-item__meta) restringe el grid a las cards que tienen
+   columna separada de monto (gastos, deudas, personales, metas).
+   Tesorería pone el saldo en __action, no en __meta: no aplica. */
+@media (max-width: 539px) {
+  .list-item:has(.list-item__meta) {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "icon body   action"
+      ".    meta   .     ";
+    align-items: start;
+    row-gap: var(--fk-space-2);
+  }
+
+  .list-item:has(.list-item__meta) .list-item__icon   { grid-area: icon; align-self: start; margin-top: 2px; }
+  .list-item:has(.list-item__meta) .list-item__body   { grid-area: body; }
+  .list-item:has(.list-item__meta) .list-item__meta   { grid-area: meta; align-items: flex-start; }
+  .list-item:has(.list-item__meta) .list-item__action { grid-area: action; align-self: start; margin-top: -2px; }
+}
+
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */
 @media (max-width: 767px) {
 
