@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(inversion): J.2c - nudges educativos de inversión (cierra Parte 4) · 2026-06-06
+
+Tercer y último slice de J.2. **Cierra la Parte 4 (Crecer: Ahorro + Inversión).** Nudges educativos sobre el portafolio. Sin cambio de schema.
+
+- **`inversiones/logic.js`** (`detectarNudgesInversion`, 14 tests): función pura que recibe inversiones + `contexto` con el estado del fondo (el caller lee `S.ahorro`; no se importa el dominio Ahorro, ADN #10). Prioridad: (1) "fondo primero" (high sin fondo / medium incompleto), (2) concentración (un tipo ≥ 70% con 2+ holdings), (3) retorno variable (≥ 50% sin tasa/plazo), (4) refuerzo positivo (fondo completo + diversificado). Umbrales exportados.
+- **`inversiones/view.js`**: `_renderNudges` (el de fondo enlaza a `#ahorro`) + `_renderTipHorizonte` (tip evergreen de largo plazo).
+- **`styles/components.css`**: `.inversion-nudges` + `.inversion-tip`. Reutiliza `.nudge*`. **`service-worker.js`**: v106 → v107.
+
+1078/1078 unit + integración verdes. Verificado en navegador (3 nudges en orden + tip). **Parte 4 completa: Ahorro (J.1a-c) + Inversión (J.2a-c).**
+
+---
+
 ### feat(inversion): J.2b - proyección al vencimiento + rentabilidad real del portafolio · 2026-06-06
 
 Segunda entrega de J.2 (Inversión). Proyección de valor al vencimiento por holding y rentabilidad real del portafolio. Sin cambio de schema: todo se calcula a partir de los datos ya capturados en J.2a.

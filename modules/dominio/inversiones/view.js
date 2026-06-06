@@ -13,6 +13,7 @@ import {
   proyectarInversion,
   proyectarPortafolio,
   calcularRentabilidadRealPortafolio,
+  detectarNudgesInversion,
   TIPOS_INVERSION,
 } from './logic.js';
 
@@ -39,7 +40,9 @@ export function renderInversion() {
   el.innerHTML = `
     ${_renderHero(inversiones)}
     ${_renderProyeccion(inversiones)}
-    ${_renderLista(inversiones)}`;
+    ${_renderNudges(inversiones)}
+    ${_renderLista(inversiones)}
+    ${_renderTipHorizonte()}`;
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
@@ -139,6 +142,50 @@ function _renderProyeccion(inversiones) {
       ${realHtml}
       ${notaNoProy}
     </section>`;
+}
+
+// ── NUDGES EDUCATIVOS (J.2c) ─────────────────────────────────────
+
+function _renderNudges(inversiones) {
+  // La vista puede leer S (no muta). Lee el estado del fondo sin importar el
+  // dominio Ahorro (regla ADN #10): solo consulta el slice de estado.
+  const fondo = S.ahorro?.fondoEmergencia;
+  const contexto = {
+    fondoActivo:     fondo?.activo === true,
+    fondoCompletado: fondo?.completado === true,
+  };
+
+  const nudges = detectarNudgesInversion(inversiones, contexto);
+  if (nudges.length === 0) return '';
+
+  return `
+    <section class="inversion-nudges" aria-label="Recomendaciones">
+      ${nudges.map(_renderNudge).join('')}
+    </section>`;
+}
+
+/** @param {{nivel:string, icono:string, titulo:string, desc:string}} n */
+function _renderNudge(n) {
+  // El nudge de fondo enlaza a la sección Ahorro como llamada a la acción.
+  const cta = (n.id === 'fondo-primero' || n.id === 'fondo-incompleto')
+    ? ` <a href="#ahorro" class="link">Ir a Ahorro</a>`
+    : '';
+  return `
+    <div class="nudge ${_esc(n.nivel)}" role="status">
+      <span class="nudge__icon" aria-hidden="true">${n.icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${_esc(n.titulo)}</p>
+        <p class="nudge__desc">${_esc(n.desc)}${cta}</p>
+      </div>
+    </div>`;
+}
+
+/** Tip educativo evergreen sobre el horizonte de la inversión. */
+function _renderTipHorizonte() {
+  return `
+    <p class="inversion-tip">
+      💡 Invertir da frutos a largo plazo: el interés compuesto necesita tiempo. Define un horizonte y evita retirar antes del plazo salvo una emergencia.
+    </p>`;
 }
 
 // ── LISTA DE HOLDINGS ────────────────────────────────────────────

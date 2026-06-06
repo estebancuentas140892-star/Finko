@@ -403,3 +403,97 @@ export function calcularRentabilidadRealPortafolio(inversiones, inflacionPct) {
     perdidaInflacion: r.perdidaInflacion,
   };
 }
+
+// ── EDUCACIÓN / NUDGES (J.2c) ────────────────────────────────────
+
+/** Un solo tipo concentra demasiado el portafolio a partir de este %. */
+export const UMBRAL_CONCENTRACION_PCT = 70;
+
+/** El portafolio tiene demasiado peso en retorno variable a partir de este %. */
+export const UMBRAL_VARIABLE_PCT = 50;
+
+/**
+ * Detecta nudges educativos sobre el portafolio. No tiene DOM ni efectos: el
+ * caller (index/view) lee el estado del fondo de emergencia (`contexto`) sin
+ * que este dominio importe a otro (regla ADN #10), y la vista pinta el HTML.
+ *
+ * Orden de prioridad (mayor severidad primero):
+ *   1. Fondo de emergencia primero (high si no hay fondo, medium si incompleto).
+ *   2. Concentración: un tipo supera UMBRAL_CONCENTRACION_PCT (con 2+ holdings).
+ *   3. Retorno variable: el peso variable supera UMBRAL_VARIABLE_PCT.
+ *   4. Refuerzo positivo: base sana (fondo completo + diversificado).
+ *
+ * @param {Array} inversiones
+ * @param {{ fondoActivo?: boolean, fondoCompletado?: boolean }} [contexto]
+ * @returns {Array<{id:string, nivel:string, icono:string, titulo:string, desc:string}>}
+ */
+export function detectarNudgesInversion(inversiones, contexto = {}) {
+  const lista = Array.isArray(inversiones)
+    ? inversiones.filter(i => Number(i?.monto) > 0)
+    : [];
+  if (lista.length === 0) return [];
+
+  const { fondoActivo = false, fondoCompletado = false } = contexto;
+  const total   = calcularTotalInvertido(lista);
+  const porTipo = calcularPorTipo(lista);
+  const nudges  = [];
+
+  // 1. Fondo de emergencia primero.
+  if (!fondoActivo) {
+    nudges.push({
+      id:     'fondo-primero',
+      nivel:  'nudge-high',
+      icono:  '🛡️',
+      titulo: 'Asegura tu fondo de emergencia antes de invertir',
+      desc:   'Si surge un imprevisto sin un colchón, podrías tener que vender una inversión en mal momento o endeudarte. Actívalo en la sección Ahorro.',
+    });
+  } else if (!fondoCompletado) {
+    nudges.push({
+      id:     'fondo-incompleto',
+      nivel:  'nudge-medium',
+      icono:  '🛡️',
+      titulo: 'Tu fondo de emergencia aún no está completo',
+      desc:   'Vas bien invirtiendo, pero prioriza terminar tu colchón: es tu red de seguridad antes que la rentabilidad.',
+    });
+  }
+
+  // 2. Concentración por tipo (solo tiene sentido con 2 o más holdings).
+  if (lista.length >= 2 && porTipo.length > 0 && porTipo[0].pct >= UMBRAL_CONCENTRACION_PCT) {
+    nudges.push({
+      id:     'concentracion',
+      nivel:  'nudge-medium',
+      icono:  '⚖️',
+      titulo: `El ${porTipo[0].pct}% de tu portafolio está en ${porTipo[0].tipo}`,
+      desc:   'Concentrar todo en un solo tipo aumenta el riesgo. Repartir entre varios (renta fija, fondos, acciones) suaviza los altibajos.',
+    });
+  }
+
+  // 3. Peso en retorno variable (acciones/cripto sin tasa o plazo fijo).
+  const montoVariable = lista
+    .filter(i => !esProyectable(i))
+    .reduce((s, i) => s + (Number(i.monto) || 0), 0);
+  const pctVariable = total > 0 ? Math.round((montoVariable / total) * 100) : 0;
+  if (pctVariable >= UMBRAL_VARIABLE_PCT) {
+    nudges.push({
+      id:     'riesgo-variable',
+      nivel:  'nudge-info',
+      icono:  '🎢',
+      titulo: `El ${pctVariable}% de tu portafolio es de retorno variable`,
+      desc:   'Acciones y cripto pueden subir mucho, pero también caer. Invierte aquí solo lo que no necesitarás a corto plazo y te haga sentir cómodo.',
+    });
+  }
+
+  // 4. Refuerzo positivo: fondo completo y portafolio diversificado.
+  const diversificado = porTipo.length >= 2 && (porTipo[0]?.pct ?? 100) < UMBRAL_CONCENTRACION_PCT;
+  if (fondoCompletado && diversificado) {
+    nudges.push({
+      id:     'base-sana',
+      nivel:  'nudge-success',
+      icono:  '🌟',
+      titulo: 'Vas por buen camino',
+      desc:   'Tu fondo de emergencia está completo y tu portafolio está diversificado. Esa es una base financiera sólida.',
+    });
+  }
+
+  return nudges;
+}

@@ -15,6 +15,7 @@ import {
   normalizarInversion,
   esProyectable, proyectarInversion, proyectarPortafolio,
   tasaPromedioPonderada, calcularRentabilidadRealPortafolio,
+  detectarNudgesInversion, UMBRAL_CONCENTRACION_PCT, UMBRAL_VARIABLE_PCT,
 } from '../../modules/dominio/inversiones/logic.js';
 
 // ── Constantes ─────────────────────────────────────────────────────
@@ -394,5 +395,110 @@ describe('calcularRentabilidadRealPortafolio()', () => {
   it('null si no hay holdings proyectables', () => {
     expect(calcularRentabilidadRealPortafolio([], 3)).toBeNull();
     expect(calcularRentabilidadRealPortafolio([{ tipo: 'Cripto', monto: 1_000_000, tasaEA: 0, plazoMeses: 0 }], 3)).toBeNull();
+  });
+});
+
+// ── J.2c: nudges educativos ────────────────────────────────────────
+
+describe('detectarNudgesInversion()', () => {
+  const cdt  = { tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 };
+  const fic  = { tipo: 'Fondo', monto: 5_000_000, tasaEA: 8, plazoMeses: 24 };
+  const btc  = { tipo: 'Cripto', monto: 5_000_000, tasaEA: 0, plazoMeses: 0 };
+
+  const ids = (nudges) => nudges.map(n => n.id);
+
+  it('devuelve [] sin inversiones', () => {
+    expect(detectarNudgesInversion([], { fondoActivo: true, fondoCompletado: true })).toEqual([]);
+    expect(detectarNudgesInversion(null)).toEqual([]);
+  });
+
+  it('ignora montos no positivos al evaluar', () => {
+    expect(detectarNudgesInversion([{ tipo: 'CDT', monto: 0 }], { fondoActivo: true, fondoCompletado: true })).toEqual([]);
+  });
+
+  it('fondo no activo: nudge high "fondo-primero"', () => {
+    const n = detectarNudgesInversion([cdt], { fondoActivo: false });
+    const fondo = n.find(x => x.id === 'fondo-primero');
+    expect(fondo).toBeDefined();
+    expect(fondo.nivel).toBe('nudge-high');
+  });
+
+  it('fondo activo pero incompleto: nudge medium "fondo-incompleto"', () => {
+    const n = detectarNudgesInversion([cdt], { fondoActivo: true, fondoCompletado: false });
+    const fondo = n.find(x => x.id === 'fondo-incompleto');
+    expect(fondo).toBeDefined();
+    expect(fondo.nivel).toBe('nudge-medium');
+  });
+
+  it('fondo completo: no aparece ningún nudge de fondo', () => {
+    const n = detectarNudgesInversion([cdt, fic], { fondoActivo: true, fondoCompletado: true });
+    expect(ids(n)).not.toContain('fondo-primero');
+    expect(ids(n)).not.toContain('fondo-incompleto');
+  });
+
+  it('concentración: un tipo >= umbral con 2+ holdings dispara el nudge', () => {
+    // 9M CDT + 1M Fondo → CDT 90% (>= 70).
+    const n = detectarNudgesInversion(
+      [{ ...cdt, monto: 9_000_000 }, { ...fic, monto: 1_000_000 }],
+      { fondoActivo: true, fondoCompletado: true },
+    );
+    const conc = n.find(x => x.id === 'concentracion');
+    expect(conc).toBeDefined();
+    expect(conc.titulo).toContain('90%');
+    expect(conc.titulo).toContain('CDT');
+  });
+
+  it('no marca concentración con un solo holding (trivialmente 100%)', () => {
+    const n = detectarNudgesInversion([cdt], { fondoActivo: true, fondoCompletado: true });
+    expect(ids(n)).not.toContain('concentracion');
+  });
+
+  it('no marca concentración si está repartido bajo el umbral', () => {
+    // 5M + 5M → 50% cada uno (< 70).
+    const n = detectarNudgesInversion([cdt, fic], { fondoActivo: true, fondoCompletado: true });
+    expect(ids(n)).not.toContain('concentracion');
+  });
+
+  it('retorno variable >= umbral dispara el nudge info', () => {
+    // 5M CDT (fijo) + 6M cripto (variable) → variable 54% (>= 50).
+    const n = detectarNudgesInversion(
+      [cdt, { ...btc, monto: 6_000_000 }],
+      { fondoActivo: true, fondoCompletado: true },
+    );
+    const riesgo = n.find(x => x.id === 'riesgo-variable');
+    expect(riesgo).toBeDefined();
+    expect(riesgo.nivel).toBe('nudge-info');
+  });
+
+  it('no marca riesgo variable si el peso variable es bajo', () => {
+    // 9M CDT (fijo) + 1M cripto → variable 10%.
+    const n = detectarNudgesInversion(
+      [{ ...cdt, monto: 9_000_000 }, { ...btc, monto: 1_000_000 }],
+      { fondoActivo: true, fondoCompletado: true },
+    );
+    expect(ids(n)).not.toContain('riesgo-variable');
+  });
+
+  it('refuerzo positivo: fondo completo + diversificado', () => {
+    const n = detectarNudgesInversion([cdt, fic], { fondoActivo: true, fondoCompletado: true });
+    expect(ids(n)).toContain('base-sana');
+  });
+
+  it('sin refuerzo positivo si el fondo no está completo', () => {
+    const n = detectarNudgesInversion([cdt, fic], { fondoActivo: true, fondoCompletado: false });
+    expect(ids(n)).not.toContain('base-sana');
+  });
+
+  it('prioriza el nudge de fondo de primero en el orden', () => {
+    const n = detectarNudgesInversion(
+      [{ ...cdt, monto: 9_000_000 }, { ...fic, monto: 1_000_000 }],
+      { fondoActivo: false },
+    );
+    expect(n[0].id).toBe('fondo-primero');
+  });
+
+  it('los umbrales se exportan como números', () => {
+    expect(typeof UMBRAL_CONCENTRACION_PCT).toBe('number');
+    expect(typeof UMBRAL_VARIABLE_PCT).toBe('number');
   });
 });

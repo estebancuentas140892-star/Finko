@@ -1724,6 +1724,24 @@ textarea.input {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── J.2c: nudges educativos + tip de horizonte ────────────── */
+
+.inversion-nudges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-lg);
+}
+
+.inversion-tip {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: var(--fk-space-md) 0 0;
+  padding: var(--fk-space-3);
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+}
+
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {
   list-style: none;

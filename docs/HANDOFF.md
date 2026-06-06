@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (feat(inversion): J.2b - proyección al vencimiento por holding + rentabilidad real del portafolio)
+> Última actualización: 2026-06-06 (feat(inversion): J.2c - nudges educativos de inversión; cierra la Parte 4 (Crecer))
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1064/1064 verdes (+15 proyección J.2b, +43 inversiones J.2a, +3 migración v7→v8) |
+| Tests unitarios + integración | 1078/1078 verdes (+14 nudges J.2c, +15 proyección J.2b, +43 inversiones J.2a) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(inversion): J.2c - nudges educativos de inversión (cierra Parte 4) · 2026-06-06
+
+Tercer y último slice de J.2 (Inversión). Cierra la **Parte 4 (Crecer: Ahorro + Inversión)**. Agrega nudges educativos sobre el portafolio. Sin cambio de schema: todo se deriva del estado.
+
+**`inversiones/logic.js` (`detectarNudgesInversion`, 14 tests):** función pura que recibe las inversiones + un `contexto` con el estado del fondo de emergencia (el caller lee `S.ahorro`, no se importa el dominio Ahorro: ADN #10). Detecta, por prioridad: (1) "fondo primero" (high si no hay fondo activo, medium si está incompleto), (2) concentración (un tipo ≥ 70% con 2+ holdings), (3) retorno variable (≥ 50% en activos sin tasa/plazo), (4) refuerzo positivo (fondo completo + diversificado). Umbrales exportados (`UMBRAL_CONCENTRACION_PCT`, `UMBRAL_VARIABLE_PCT`).
+
+**`inversiones/view.js`:** `_renderNudges` lee `S.ahorro.fondoEmergencia` y pinta los nudges (el de fondo enlaza a `#ahorro`). `_renderTipHorizonte`: tip educativo evergreen sobre invertir a largo plazo, al pie de la sección.
+
+**`styles/components.css`:** `.inversion-nudges` (contenedor) + `.inversion-tip` (tip con borde punteado). Reutiliza las clases `.nudge*` existentes. **`service-worker.js`:** v106 → v107.
+
+**Verificado en navegador:** con fondo inactivo + Cripto 75% + 88% variable se muestran los 3 nudges en orden (high/medium/info) con el CTA a Ahorro, el desglose por tipo y el tip de horizonte. 1078/1078 tests verdes.
+
+**Cierra la Parte 4.** Inversión completa (J.2a + J.2b + J.2c) y Ahorro completo (J.1a-c).
 
 ### feat(inversion): J.2b - proyección al vencimiento + rentabilidad real del portafolio · 2026-06-06
 
@@ -120,41 +134,6 @@ Segunda entrega del dominio Ahorro. Añade el ciclo de registro de aportes, el c
 **Verificado:** 990/990 tests verdes.
 
 **Sigue:** J.1c (nudges + integración con Score de Salud). _(Sonnet 4.6 - Medio.)_
-
-### feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro · 2026-06-06
-
-Primera entrega de la Parte 4 (Crecer: Ahorro + Inversión). Funda un nuevo dominio con migración de schema, lógica pura, sección con hero del fondo de emergencia y nav. Pendiente: J.1b (aportes + historial) y J.1c (nudges).
-
-**Schema (state.js + storage.js):**
-- `_version: 6 → 7`. Nuevo slice `ahorro: { fondoEmergencia: {activo, metaMeses, montoActual}, aportes: [], compromisoMensual }`.
-- Migración v6→v7 idempotente y defensiva (rellena sub-claves faltantes sin pisar valores preexistentes).
-- 4 tests nuevos de migración en `tests/integration/flujos.test.js`.
-
-**Logic pura (`modules/dominio/ahorro/logic.js`, 30 tests):**
-- `calcularObjetivoFondo(gastosFijosMensuales, metaMeses)`: objetivo en COP.
-- `calcularProgresoFondo`, `mesesDeColchon`, `calcularTasaAhorro`.
-- Validación/normalización de `metaMeses` (1-12, default 3) y `montoActual`.
-- Respeta la regla ADN #10: recibe primitivos, no importa de otro dominio.
-
-**Vista (`view.js`):**
-- Empty state con CTA + preview dinámico del objetivo si ya hay gastos fijos.
-- `fondo-hero`: ícono accent + monto grande + sub-meses + barra de progreso + faltante + banner de completado.
-- `renderFormFondo` reutilizado para activar y editar; en modo edición incluye botón "Desactivar fondo".
-
-**Index/cableado:**
-- `_gastosFijosMensuales()` calcula al borde desde S.compromisos (FACTOR_MENSUAL local, sin importar de compromisos: respeta ADN #10).
-- 3 acciones nuevas: `ahorro-activar-fondo`, `ahorro-editar`, `ahorro-desactivar`.
-- Re-render en `state:change` (ahorro o compromisos) + hashchange.
-
-**HTML/CSS:**
-- Sprite SVG `i-ahorro` (alcancía estilo Lucide).
-- Sidebar grupo "Crecer": Ahorro antes de Metas. Menú "Más" móvil con tinte de dominio (`--fk-dom-ahorro: #38c98c`).
-- Sección `sec-ahorro` + modal `modal-ahorro`. Router y MAS_SECTIONS actualizados.
-- Estilos `.fondo-hero*` en `components.css`. SW v101 → v102.
-
-**Verificado en preview:** migración OK, modal abre/cierra, submit persiste, reload mantiene estado, validación rechaza fuera de rango (1-12 meses). 1 smoke E2E nuevo + 4 tests integración + 30 unit = 965/965 verdes.
-
-**Sigue:** J.1b (modal de aporte + historial + tasa de ahorro + "págate primero"). _(Sonnet 4.6 - Medio.)_
 
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
@@ -477,10 +456,11 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada**; **J.2a y J.2b (Inversión) cerradas**. Lo siguiente es **J.2c**: educación/nudges de inversión, último slice de la Parte 4.
+**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). La app sigue estable en producción.
 
 **Opciones para la próxima sesión:**
-- **J.2c - Educación/nudges de inversión:** nudges de diversificación (concentración por tipo), horizonte vs plazo, recordatorio "fondo de emergencia primero", riesgo de retorno variable. Cierra la Parte 4. _(Opus 4.8 - Medio.)_
+- **Tests E2E para Ahorro e Inversión:** la Parte 4 sumó 2 dominios con cobertura unit + verificación manual, pero sin smoke E2E propio (navegación + empty state + alta). Buen siguiente paso para blindar regresiones. _(Sonnet 4.6 - Medio.)_
+- **Lighthouse + Lighthouse PWA** sobre las secciones nuevas, por si el peso de JS subió.
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
 - Pequeñas mejoras de UX o copy a demanda.
