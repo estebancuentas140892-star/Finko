@@ -7,6 +7,12 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### copy(ux): microcopy de formularios y empty states más claro · 2026-06-06
+
+UX #2 de 4. Reemplazados términos técnicos (patrimonio neto, Balance del mes) y textos fríos por copy amigable y sin jerga. 5 archivos: agenda, compromisos, gastos, analisis, tesoreria. 931/931 unit verdes.
+
+---
+
 ### style(forms): espaciado vertical entre campos de formularios · 2026-06-06
 
 UX #1 de 4. Los `.form-group` quedaban pegados (0px entre grupos), rompiendo la jerarquía.

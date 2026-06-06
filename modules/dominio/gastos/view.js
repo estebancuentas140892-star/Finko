@@ -205,8 +205,8 @@ function _renderEmptyFiltro() {
   return `
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🔍</p>
-      <p class="empty-state__title">Sin gastos en esta categoría</p>
-      <p class="empty-state__desc">No hay gastos de este tipo en el mes actual.</p>
+      <p class="empty-state__title">Nada acá este mes</p>
+      <p class="empty-state__desc">No registraste gastos en esta categoría todavía.</p>
       <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
     </div>`;
 }

@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### copy(ux): microcopy de formularios y empty states más claro y amigable · 2026-06-06
+
+**UX #2 de 4.** Reemplazados los textos técnicos/fríos por copy breve, amigable y sin jerga.
+
+**Cambios:**
+- `agenda/view.js`: hint de Monto: "Se proyecta al Balance del mes." → "Finko lo incluye en tu resumen mensual de gastos."
+- `compromisos/view.js`: hint de saldo de deuda: "Se descuenta de tu patrimonio neto." → "El total que todavía debés. Finko lo muestra en tu resumen general." Hint de cuota: "se proyecta al Balance del mes." → "para que veas cuánto te queda libre."
+- `gastos/view.js`: empty state filtro por categoría: "No hay gastos de este tipo en el mes actual." → "No registraste gastos en esta categoría todavía."
+- `analisis/view.js`: sin historial: "Vuelve cuando registres movimientos." → "¡Todo empieza con el primer apunte!"
+- `tesoreria/view.js`: hint fieldset cuota de manejo actualizado al renombre "Deudas" (fix de consistencia).
+
+931/931 unit verdes.
+
 ### style(forms): espaciado vertical entre campos de formularios · 2026-06-06
 
 **UX #1 de 4** (pedido del usuario: formularios apretados, descripciones, empty state del dashboard, CTA). Los `.form-group` quedaban pegados (0px entre el input de un grupo y la etiqueta del siguiente), rompiendo la jerarquía. Ejemplo reportado: form de "Nuevo gasto fijo", campo Monto pegado al de Descripción.

@@ -204,7 +204,7 @@ export function renderFormCuenta() {
                  placeholder="Ej. 15" />
         </div>
         <p class="form-hint form-hint--muted">
-          Se crea automáticamente un compromiso fijo mensual con este monto y día. Aparecerá en Agenda y en Compromisos.
+          Finko crea un gasto fijo mensual con este monto y día. Lo vas a ver en Agenda y en Deudas.
         </p>
       </fieldset>
 

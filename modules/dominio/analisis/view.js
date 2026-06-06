@@ -249,7 +249,7 @@ function _renderTendencia(serie) {
     return `
       <section class="analisis__section" aria-labelledby="analisis-tendencia-title">
         <h2 class="analisis__section-title" id="analisis-tendencia-title">Tendencia de gastos</h2>
-        <p class="analisis__empty">Sin historial de gastos todavía. Vuelve cuando registres movimientos.</p>
+        <p class="analisis__empty">El análisis aparece cuando tengas gastos registrados. ¡Todo empieza con el primer apunte!</p>
       </section>`;
   }
 

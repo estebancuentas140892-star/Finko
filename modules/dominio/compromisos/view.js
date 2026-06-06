@@ -458,7 +458,7 @@ export function renderFormDeuda(tipo) {
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" />
-        <p class="form-hint">Lo que falta por pagar hoy. Se descuenta de tu patrimonio neto.</p>
+        <p class="form-hint">El total que todavía debés. Finko lo muestra en tu resumen general.</p>
       </div>
 
       <div class="form-group">
@@ -466,7 +466,7 @@ export function renderFormDeuda(tipo) {
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" />
-        <p class="form-hint">La cuota mensual se proyecta al Balance del mes.</p>
+        <p class="form-hint">Finko la incluye en tu resumen mensual para que veas cuánto te queda libre.</p>
       </div>
 
       <div class="form-group">
