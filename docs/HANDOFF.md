@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ux): empty state "Tu plata disponible hoy" + CTA moderno · 2026-06-06
+
+**UX #3 de 4.** Cuando el usuario abre la app por primera vez (sin cuentas registradas), el hero del dashboard ya no muestra un confuso `$0`. En su lugar aparece un empty state centrado con jerarquía clara y un CTA llamativo.
+
+**Cambios:**
+- `index.html`: hero card reestructurada. Se agregaron `id="hero-saldo-icon"` y `id="hero-saldo-label"` para que render.js los pueda ocultar. Bloque `#hero-guia-saldo` rediseñado: ícono `🏦` grande, título "¿Dónde tenés tu plata?", descripción breve, botón CTA pill verde con ícono "Agregar mis cuentas".
+- `modules/infra/render.js`: `updSaldo` ampliado para ocultar/mostrar el ícono 💵, el label "Tu plata disponible hoy" y el `$0` cuando `sinCuentas`. Antes solo ocultaba `#saldo-desc`.
+- `styles/layout.css`: nuevas clases `.hero-guia__icon`, `.hero-guia__title`, `.hero-guia__desc`, `.hero-guia__cta`. Layout centrado con glow en el ícono. CTA pill con max-width 280px y padding generoso.
+
+**Verificado programáticamente:** con `sinCuentas=true`: guía visible, ícono/label/valor ocultos, texto y href correctos. 931/931 unit verdes.
+
 ### copy(ux): microcopy de formularios y empty states más claro y amigable · 2026-06-06
 
 **UX #2 de 4.** Reemplazados los textos técnicos/fríos por copy breve, amigable y sin jerga.

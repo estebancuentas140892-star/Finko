@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ux): empty state "Tu plata disponible hoy" + CTA moderno · 2026-06-06
+
+UX #3 de 4. Hero del dashboard sin cuentas: ya no muestra un `$0` confuso. Empty state centrado con ícono, título, descripción y botón CTA pill verde "Agregar mis cuentas" (href: #tesoreria).
+
+- `index.html`: IDs `hero-saldo-icon` y `hero-saldo-label`; `hero-guia-saldo` rediseñado.
+- `render.js`: `updSaldo` oculta/muestra ícono, label y valor cuando `sinCuentas`.
+- `layout.css`: clases `hero-guia__icon/title/desc/cta`, layout centrado, glow, pill CTA.
+
+931/931 unit verdes.
+
+---
+
 ### copy(ux): microcopy de formularios y empty states más claro · 2026-06-06
 
 UX #2 de 4. Reemplazados términos técnicos (patrimonio neto, Balance del mes) y textos fríos por copy amigable y sin jerga. 5 archivos: agenda, compromisos, gastos, analisis, tesoreria. 931/931 unit verdes.

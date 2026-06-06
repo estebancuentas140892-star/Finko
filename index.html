@@ -210,16 +210,24 @@
              #saldo-desc y muestra #hero-guia-saldo: una guía de primeros pasos
              que le dice qué hacer y lo lleva a Tesorería a registrar su plata. -->
         <article class="bento__cell bento__cell--accent bento__cell--hero bento__cell--solo">
-          <span class="bento__icon" aria-hidden="true">💵</span>
-          <p class="bento__label">Tu plata disponible hoy</p>
+          <!-- Estado normal: visible cuando hay cuentas registradas -->
+          <span class="bento__icon" id="hero-saldo-icon" aria-hidden="true">💵</span>
+          <p class="bento__label" id="hero-saldo-label">Tu plata disponible hoy</p>
           <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
           <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
+
+          <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
           <div class="hero-guia" id="hero-guia-saldo" hidden>
-            <p class="hero-guia__texto">
-              Para ver tu plata disponible, primero registrá tus cuentas y tu
-              efectivo en Mis cuentas.
+            <span class="hero-guia__icon" aria-hidden="true">🏦</span>
+            <p class="hero-guia__title">¿Dónde tenés tu plata?</p>
+            <p class="hero-guia__desc">
+              Agregá tus cuentas o billeteras y Finko calcula
+              automáticamente cuánto tenés disponible hoy.
             </p>
-            <a class="btn btn-primary btn-lg" href="#tesoreria">Ir a Mis cuentas →</a>
+            <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
+              <span aria-hidden="true">🏦</span>
+              Agregar mis cuentas
+            </a>
           </div>
         </article>
 
