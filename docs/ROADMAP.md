@@ -182,8 +182,8 @@ Tracker de la plata real que aparta el usuario, distinto de Metas (objetivos con
 - **UI:** sección `sec-ahorro` + nav item en "Crecer" (sidebar + menú Más) con ícono SVG `i-ahorro` (alcancía). Hero del fondo de emergencia (progreso, meses cubiertos, faltante), empty state con CTA, y config de meta de meses.
 
   **Slices (smallest-first, cada uno verificable en la app):**
-  - **J.1a** - Fundación + fondo de emergencia: schema+migración+tests, `logic.js`+tests, sección con hero del fondo (objetivo auto desde gastos fijos + monto actual manual), nav + ícono, empty state. _(Opus 4.8 - Medio: lógica financiera nueva + migración + dominio nuevo.)_
-  - **J.1b** - Hábito "apartar plata": modal de aporte + historial + tasa de ahorro ("ahorrás X%") + "págate primero" mensual. _(Sonnet 4.6 - Medio.)_
+  - ✅ **J.1a** - Fundación + fondo de emergencia (2026-06-06): schema+migración v6→v7, `logic.js` (30 tests) + 4 tests de migración, sección con hero del fondo + nav + ícono SVG `i-ahorro` + token `--fk-dom-ahorro`, empty state con preview dinámico, modal activar/editar/desactivar. Ver [CHANGELOG](CHANGELOG.md).
+  - **J.1b** - Hábito de apartar dinero: modal de aporte + historial + tasa de ahorro ("ahorras X%") + "págate primero" mensual. _(Sonnet 4.6 - Medio.)_
   - **J.1c** - Nudges + integración: alerta si no hay fondo / tasa baja, enganche con Score de Salud (ya pondera ahorro 40%), logro por completar el fondo. _(Sonnet 4.6 - Medio.)_
 
 #### J.2 - Inversión (DESPUÉS): portafolio real

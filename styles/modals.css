@@ -162,6 +162,7 @@
 .menu-mas__item[data-section="personales"]  .icon { color: var(--fk-dom-personales); }
 .menu-mas__item[data-section="presupuesto"] .icon { color: var(--fk-dom-presupuesto); }
 .menu-mas__item[data-section="metas"]       .icon { color: var(--fk-dom-metas); }
+.menu-mas__item[data-section="ahorro"]      .icon { color: var(--fk-dom-ahorro); }
 .menu-mas__item[data-section="analisis"]    .icon { color: var(--fk-dom-analisis); }
 /* Ajustes (config) no es un dominio financiero: queda monocromo. */
 

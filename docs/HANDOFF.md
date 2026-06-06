@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding - tono completo en toda la app)
+> Última actualización: 2026-06-06 (feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro + fondo de emergencia + migración schema v6→v7)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 931/931 verdes (`-32` por borrar `ingresos.test.js` y +18 por aportes empleado + cesantías) |
+| Tests unitarios + integración | 965/965 verdes (+30 ahorro logic, +4 migración v6→v7) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,41 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro · 2026-06-06
+
+Primera entrega de la Parte 4 (Crecer: Ahorro + Inversión). Funda un nuevo dominio con migración de schema, lógica pura, sección con hero del fondo de emergencia y nav. Pendiente: J.1b (aportes + historial) y J.1c (nudges).
+
+**Schema (state.js + storage.js):**
+- `_version: 6 → 7`. Nuevo slice `ahorro: { fondoEmergencia: {activo, metaMeses, montoActual}, aportes: [], compromisoMensual }`.
+- Migración v6→v7 idempotente y defensiva (rellena sub-claves faltantes sin pisar valores preexistentes).
+- 4 tests nuevos de migración en `tests/integration/flujos.test.js`.
+
+**Logic pura (`modules/dominio/ahorro/logic.js`, 30 tests):**
+- `calcularObjetivoFondo(gastosFijosMensuales, metaMeses)`: objetivo en COP.
+- `calcularProgresoFondo`, `mesesDeColchon`, `calcularTasaAhorro`.
+- Validación/normalización de `metaMeses` (1-12, default 3) y `montoActual`.
+- Respeta la regla ADN #10: recibe primitivos, no importa de otro dominio.
+
+**Vista (`view.js`):**
+- Empty state con CTA + preview dinámico del objetivo si ya hay gastos fijos.
+- `fondo-hero`: ícono accent + monto grande + sub-meses + barra de progreso + faltante + banner de completado.
+- `renderFormFondo` reutilizado para activar y editar; en modo edición incluye botón "Desactivar fondo".
+
+**Index/cableado:**
+- `_gastosFijosMensuales()` calcula al borde desde S.compromisos (FACTOR_MENSUAL local, sin importar de compromisos: respeta ADN #10).
+- 3 acciones nuevas: `ahorro-activar-fondo`, `ahorro-editar`, `ahorro-desactivar`.
+- Re-render en `state:change` (ahorro o compromisos) + hashchange.
+
+**HTML/CSS:**
+- Sprite SVG `i-ahorro` (alcancía estilo Lucide).
+- Sidebar grupo "Crecer": Ahorro antes de Metas. Menú "Más" móvil con tinte de dominio (`--fk-dom-ahorro: #38c98c`).
+- Sección `sec-ahorro` + modal `modal-ahorro`. Router y MAS_SECTIONS actualizados.
+- Estilos `.fondo-hero*` en `components.css`. SW v101 → v102.
+
+**Verificado en preview:** migración OK, modal abre/cierra, submit persiste, reload mantiene estado, validación rechaza fuera de rango (1-12 meses). 1 smoke E2E nuevo + 4 tests integración + 30 unit = 965/965 verdes.
+
+**Sigue:** J.1b (modal de aporte + historial + tasa de ahorro + "págate primero"). _(Sonnet 4.6 - Medio.)_
 
 ### copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding · 2026-06-06
 

@@ -162,7 +162,8 @@ describe('Migración idempotente', () => {
 
     loadData();
 
-    expect(S._version).toBe(6);
+    // El cascade de migraciones lleva al SCHEMA_VERSION actual.
+    expect(S._version).toBe(SCHEMA_VERSION);
     expect(S.compromisos[0].tipo).toBe('deuda-entidad');
     expect(S.compromisos[0].saldoTotal).toBe(5_000_000);
     expect(S.compromisos[0].cuotaMensual).toBe(300_000);

@@ -62,6 +62,17 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin metas de ahorro', { timeout: 3_000 });
   });
 
+  test('Ahorro muestra empty state al navegar desde Dashboard', async ({ page }) => {
+    await saltearOnboardingYIrADash(page);
+
+    await page.click('a[href="#ahorro"]');
+    await expect(page.locator('#sec-ahorro.active')).toBeVisible();
+
+    await expect(
+      page.locator('#panel-ahorro .empty-state__title')
+    ).toHaveText('Empieza tu fondo de emergencia', { timeout: 3_000 });
+  });
+
   test('Gastos muestra empty state al navegar desde Dashboard', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 

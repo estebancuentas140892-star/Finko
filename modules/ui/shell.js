@@ -16,7 +16,7 @@ const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
  */
 const MAS_SECTIONS = new Set([
   'compromisos', 'tesoreria', 'personales',
-  'metas', 'presupuesto', 'analisis', 'config',
+  'ahorro', 'metas', 'presupuesto', 'analisis', 'config',
 ]);
 
 // ── THEME ───────────────────────────────────────────────────────

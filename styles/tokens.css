@@ -75,6 +75,7 @@
   --fk-dom-analisis:     #2fd2bf;   /* turquesa - análisis/KPIs (calmado) */
   --fk-dom-presupuesto:  #f3b740;   /* amarillo - presupuesto/sobres */
   --fk-dom-personales:   #f06fc2;   /* rosa    - préstamos personales (calmado) */
+  --fk-dom-ahorro:       #38c98c;   /* verde menta - colchón, fondo de emergencia */
 
   /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */

@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v101';
+const CACHE_NAME = 'finko-v102';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -92,6 +92,9 @@ const CORE_ASSETS = [
   './modules/dominio/presupuesto/index.js',
   './modules/dominio/logros/logic.js',
   './modules/dominio/logros/index.js',
+  './modules/dominio/ahorro/logic.js',
+  './modules/dominio/ahorro/view.js',
+  './modules/dominio/ahorro/index.js',
 ];
 
 // ── Assets opcionales - se intentan cachear pero no bloquean el install ───

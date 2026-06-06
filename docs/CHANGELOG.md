@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro + fondo de emergencia · 2026-06-06
+
+Primera entrega de J.1 (Ahorro). Funda el dominio con migración v6→v7, lógica pura testeada, sección con hero del fondo de emergencia, nav en "Crecer" e ícono SVG.
+
+- **Schema v6→v7:** nuevo slice `S.ahorro` (`fondoEmergencia`, `aportes`, `compromisoMensual`). Migración idempotente y defensiva. 4 tests integración nuevos.
+- **`ahorro/logic.js`** (puro): `calcularObjetivoFondo`, `calcularProgresoFondo`, `mesesDeColchon`, `calcularTasaAhorro`, validación/normalización. 30 tests unitarios.
+- **`ahorro/view.js`**: empty state con preview, `fondo-hero` (monto + barra + meses cubiertos + faltante + banner). `renderFormFondo` para activar/editar.
+- **`ahorro/index.js`**: calcula `gastosFijosMensuales` localmente desde S.compromisos sin importar de otro dominio (FACTOR_MENSUAL replicado, regla ADN #10). 3 acciones.
+- **HTML/CSS**: sprite `i-ahorro`, sidebar grupo Crecer, menú Más con `--fk-dom-ahorro: #38c98c`, sección + modal, router + MAS_SECTIONS. SW v101→v102.
+- **E2E**: 1 smoke nuevo (`Ahorro muestra empty state al navegar desde Dashboard`).
+
+965/965 unit + integración verdes. Pendiente: J.1b (aportes + tasa de ahorro) y J.1c (nudges + Score).
+
+---
+
 ### copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding · 2026-06-06
 
 23 textos convertidos. Tono neutral-profesional completo en toda la app (Batch 3 de 3).

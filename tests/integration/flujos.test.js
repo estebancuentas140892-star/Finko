@@ -747,4 +747,82 @@ describe('F.2 - Migración schema v2 → v3 (préstamos personales)', () => {
 
     expect(S.personales).toEqual([]);
   });
+
+  // ── Migración v6 → v7 (J.1: ahorro / fondo de emergencia) ──────────
+
+  it('migración v6→v7: usuario v6 sin slice ahorro recibe defaults', () => {
+    const fixtureV6 = {
+      ...BASE_V2,
+      _version: 6,
+      logros: [],
+      // sin slice `ahorro` - simula usuario pre-J.1
+    };
+    loadFixture(fixtureV6);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.ahorro).toBeDefined();
+    expect(S.ahorro.fondoEmergencia).toEqual({
+      activo: false, metaMeses: 3, montoActual: 0,
+    });
+    expect(S.ahorro.aportes).toEqual([]);
+    expect(S.ahorro.compromisoMensual).toBe(0);
+  });
+
+  it('migración v6→v7: ahorro parcial preexistente se rellena defensivamente', () => {
+    // Caso edge: usuario tocó S.ahorro manualmente o un snapshot intermedio
+    // (devtools, import semi-completo) entró sin alguna sub-clave.
+    const fixtureV6 = {
+      ...BASE_V2,
+      _version: 6,
+      ahorro: {
+        fondoEmergencia: { activo: true, metaMeses: 6 }, // sin montoActual
+        // sin aportes ni compromisoMensual
+      },
+    };
+    loadFixture(fixtureV6);
+
+    expect(S.ahorro.fondoEmergencia.activo).toBe(true);
+    expect(S.ahorro.fondoEmergencia.metaMeses).toBe(6);
+    expect(S.ahorro.fondoEmergencia.montoActual).toBe(0); // default
+    expect(S.ahorro.aportes).toEqual([]);
+    expect(S.ahorro.compromisoMensual).toBe(0);
+  });
+
+  it('migración es idempotente: v7 con ahorro existente no lo pisa', () => {
+    const fixtureV7 = {
+      ...BASE_V2,
+      _version: 7,
+      ahorro: {
+        fondoEmergencia: { activo: true, metaMeses: 4, montoActual: 1_500_000 },
+        aportes: [{ id: 'a1', monto: 200_000, fecha: '2026-05-01', nota: 'test' }],
+        compromisoMensual: 300_000,
+      },
+    };
+    loadFixture(fixtureV7);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.ahorro.fondoEmergencia).toEqual({
+      activo: true, metaMeses: 4, montoActual: 1_500_000,
+    });
+    expect(S.ahorro.aportes).toHaveLength(1);
+    expect(S.ahorro.compromisoMensual).toBe(300_000);
+  });
+
+  it('roundtrip post-migración v6→v7: cambios al fondo persisten', () => {
+    const fixtureV6 = { ...BASE_V2, _version: 6, logros: [] };
+    loadFixture(fixtureV6);
+
+    // Activar el fondo y guardar
+    S.ahorro.fondoEmergencia = { activo: true, metaMeses: 6, montoActual: 800_000 };
+    _flushNow();
+
+    // Simular reapertura
+    Object.assign(S, createInitialState());
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.ahorro.fondoEmergencia.activo).toBe(true);
+    expect(S.ahorro.fondoEmergencia.metaMeses).toBe(6);
+    expect(S.ahorro.fondoEmergencia.montoActual).toBe(800_000);
+  });
 });

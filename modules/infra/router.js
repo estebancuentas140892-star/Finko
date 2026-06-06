@@ -11,6 +11,7 @@ const SECTIONS = new Map([
   ['agenda',      'sec-agenda'],
   ['personales',  'sec-personales'],
   ['tesoreria',   'sec-tesoreria'],
+  ['ahorro',      'sec-ahorro'],
   ['metas',       'sec-metas'],
   ['presupuesto', 'sec-presupuesto'],
   ['analisis',    'sec-analisis'],

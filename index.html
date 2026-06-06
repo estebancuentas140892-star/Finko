@@ -65,6 +65,7 @@
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
     <symbol id="i-saldo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></symbol>
+    <symbol id="i-ahorro" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></symbol>
   </svg>
 
   <div class="app-shell" id="app">
@@ -160,6 +161,12 @@
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-crecer">Crecer</span>
           <div role="list" aria-labelledby="nav-label-crecer">
+
+            <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
+               role="listitem" aria-label="Ahorro y fondo de emergencia">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+              <span class="nav-item__label">Ahorro</span>
+            </a>
 
             <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
                role="listitem" aria-label="Metas de ahorro">
@@ -490,6 +497,16 @@
         </div>
       </section>
 
+      <!-- AHORRO (J.1) - Fondo de emergencia + hábito de apartar -->
+      <section class="section" id="sec-ahorro" aria-labelledby="title-ahorro">
+        <header class="section__header">
+          <h1 class="section__title" id="title-ahorro">Ahorro</h1>
+        </header>
+        <div id="panel-ahorro">
+          <!-- J.1: ahorro/view.js renderiza aquí -->
+        </div>
+      </section>
+
       <!-- METAS -->
       <section class="section" id="sec-metas" aria-labelledby="title-metas">
         <header class="section__header">
@@ -815,6 +832,22 @@
     </div>
   </div>
 
+  <!-- Modal: Fondo de emergencia (J.1) - activar / editar -->
+  <div class="modal-overlay" id="modal-ahorro"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-ahorro-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-ahorro-title">Fondo de emergencia</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-ahorro-body">
+        <!-- J.1: ahorro/view.js renderFormFondo inyecta aquí -->
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Nueva meta -->
   <div class="modal-overlay" id="modal-meta"
        role="dialog" aria-modal="true"
@@ -900,6 +933,10 @@
         <section class="menu-mas__group" aria-labelledby="menu-mas-crecer">
           <h3 class="menu-mas__group-label" id="menu-mas-crecer">Crecer</h3>
           <div class="menu-mas__grid">
+            <a class="menu-mas__item" href="#ahorro" data-section="ahorro">
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+              <span class="menu-mas__label">Ahorro</span>
+            </a>
             <a class="menu-mas__item" href="#metas" data-section="metas">
               <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="menu-mas__label">Metas</span>

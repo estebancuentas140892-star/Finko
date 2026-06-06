@@ -130,6 +130,33 @@ import { SMMLV } from './constants.js';
  */
 
 /**
+ * @typedef {Object} FondoEmergencia
+ * @property {boolean} activo         true cuando el usuario ya activó el fondo.
+ *                                    Mientras false, la sección muestra el empty state.
+ * @property {number}  metaMeses      Cuántos meses de gastos fijos quiere cubrir
+ *                                    (rango razonable 3-6, validado a 1-12).
+ * @property {number}  montoActual    COP que ya tiene apartado para el fondo. Se
+ *                                    edita manualmente; en J.1b se sumarán los
+ *                                    aportes registrados desde un historial.
+ */
+
+/**
+ * @typedef {Object} Aporte
+ * @property {string} id
+ * @property {number} monto              COP del aporte.
+ * @property {string} fecha              ISO 8601 (YYYY-MM-DD).
+ * @property {string} [nota]
+ */
+
+/**
+ * @typedef {Object} Ahorro
+ * @property {FondoEmergencia} fondoEmergencia
+ * @property {Aporte[]} aportes               Historial de aportes (J.1b lo usa).
+ * @property {number}   compromisoMensual     Cuánto se compromete a apartar por mes
+ *                                            ("págate primero", J.1b).
+ */
+
+/**
  * Factory del estado inicial (schema v3). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
@@ -149,12 +176,13 @@ import { SMMLV } from './constants.js';
  *   presupuestos: Presupuesto[],
  *   personales: Personal[],
  *   logros: string[],
+ *   ahorro: Ahorro,
  * }}
  */
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 6,
+    _version: 7,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -193,6 +221,17 @@ export function createInitialState() {
 
     /** IDs de logros ya desbloqueados por el usuario (G.3, v4). */
     logros: [],
+
+    /** Ahorro: fondo de emergencia + hábito (J.1, v7). */
+    ahorro: {
+      fondoEmergencia: {
+        activo:      false,
+        metaMeses:   3,
+        montoActual: 0,
+      },
+      aportes:           [],
+      compromisoMensual: 0,
+    },
   };
 }
 

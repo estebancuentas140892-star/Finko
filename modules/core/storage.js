@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -115,6 +115,26 @@ function _migrate(raw) {
         }
       }
     }
+  }
+
+  // v6 → v7: nuevo slice `ahorro` para el fondo de emergencia + hábito (J.1).
+  // El usuario existente arranca con el fondo inactivo y cero aportes; al
+  // activarlo desde la nueva sección se persisten las preferencias. La forma
+  // se rellena defensivamente por si la migración corre sobre un snapshot
+  // intermedio en el que ya existe `ahorro` parcial.
+  if ((typeof data._version === 'number' ? data._version : 1) < 7) {
+    const prev = (typeof data.ahorro === 'object' && data.ahorro !== null) ? data.ahorro : {};
+    const prevFE = (typeof prev.fondoEmergencia === 'object' && prev.fondoEmergencia !== null)
+      ? prev.fondoEmergencia : {};
+    data.ahorro = {
+      fondoEmergencia: {
+        activo:      prevFE.activo === true,
+        metaMeses:   Number.isFinite(Number(prevFE.metaMeses))   ? Number(prevFE.metaMeses)   : 3,
+        montoActual: Number.isFinite(Number(prevFE.montoActual)) ? Number(prevFE.montoActual) : 0,
+      },
+      aportes:           Array.isArray(prev.aportes) ? prev.aportes : [],
+      compromisoMensual: Number.isFinite(Number(prev.compromisoMensual)) ? Number(prev.compromisoMensual) : 0,
+    };
   }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {

@@ -1313,6 +1313,111 @@ textarea.input {
   margin: 0;
 }
 
+/* ── J.1: Fondo de emergencia (Ahorro) ───────────────────── */
+.fondo-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.fondo-hero__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--fk-space-md);
+}
+
+.fondo-hero__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 14%, transparent);
+  color: var(--fk-dom-ahorro);
+}
+.fondo-hero__icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.fondo-hero__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fondo-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.fondo-hero__title {
+  font-size: var(--fk-fs-xl);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fondo-hero__sub {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+}
+.fondo-hero__sub--ok {
+  color: var(--fk-dom-ahorro);
+  font-weight: var(--fk-fw-semibold);
+}
+
+.fondo-hero__progress {
+  margin: 0;
+}
+
+.fondo-hero__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+  margin: 0;
+  font-size: var(--fk-fs-sm);
+}
+.fondo-hero__pct {
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.fondo-hero__meta-label {
+  color: var(--fk-text-muted);
+}
+
+.fondo-hero__faltante {
+  margin: 0;
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+}
+.fondo-hero__faltante strong {
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fondo-hero__banner {
+  margin: 0;
+  padding: var(--fk-space-sm) var(--fk-space-md);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 10%, transparent);
+  color: var(--fk-dom-ahorro);
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+}
+
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {
   list-style: none;
