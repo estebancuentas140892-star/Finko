@@ -39,6 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(css): app sin estilos en producción - @import descartados por orden · 2026-06-06
+
+**Bug crítico de producción.** En `finko-brown.vercel.app` la app cargaba solo el HTML, sin CSS. Causa: en la Parte 2 (fuentes self-hosted) los bloques `@font-face` quedaron ANTES de los `@import` de las capas en `main.css`. La spec CSS exige que los `@import` precedan a cualquier otra regla (salvo `@charset`/`@layer`); al haber `@font-face` antes, el navegador invalidó y descartó los 10 `@import` → 0 capas cargadas (medido en preview: `mainCssTotalRules: 3`, solo los font-face).
+
+**Cambios:**
+- **`styles/main.css`:** reordenado: los 10 `@import layer(...)` van primero, los 3 `@font-face` después. Comentario de cabecera actualizado explicando la regla de la spec.
+- **`service-worker.js`:** `CACHE_NAME` v94 → v95 para que usuarios con la versión rota cacheada reciban el `main.css` corregido.
+
+**Verificación:** preview fresco mide `importedSheetsLoaded: 10`, `totalImportedRules: 868`, `bodyBackground: rgb(16,18,24)` (tokens dark), `bodyFontFamily: Inter`. App renderiza completa. 931/931 unit verdes.
+
 ### feat(ui): rediseño Parte 3B cont. - layout de card en 2 filas en móvil · 2026-06-06
 
 Grid de 2 filas en `< 540px` para todas las listas: nombre completo en fila 1, monto + acciones en fila 2.

@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(css): app sin estilos en producción - @import descartados por orden · 2026-06-06
+
+Bug crítico: la app cargaba sin CSS en móvil. En la Parte 2 los `@font-face` quedaron antes de los `@import` en `main.css`; la spec CSS descarta los `@import` que no preceden a toda otra regla, dejando 0 capas cargadas.
+
+- `main.css`: `@import layer(...)` primero, `@font-face` después.
+- `service-worker.js`: `CACHE_NAME` v94 → v95.
+
+Preview: `importedSheetsLoaded: 10`, `totalImportedRules: 868`, body con tokens dark + Inter. 931/931 unit verdes.
+
+---
+
 ### feat(ui): rediseño Parte 3B cont. - layout de card en 2 filas (mobile) · 2026-06-06
 
 - `responsive.css`: grid 3 col + 2 filas en `< 540px` con `:has(.list-item__meta)`. Nombre completo en fila 1, monto en fila 2, botones top-right.

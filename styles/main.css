@@ -1,15 +1,37 @@
 /* ============================================================
    FINKO - CSS ENTRY POINT
    Importa todas las capas en el orden correcto de cascada.
-   IMPORTANTE: NO insertar reglas entre @import statements.
+
+   ⚠️  REGLA DE LA SPEC CSS: los @import deben ir ANTES que
+   cualquier otra regla (salvo @charset y @layer statements).
+   Si un @font-face (u otra regla) precede a un @import, el
+   navegador invalida y descarta TODOS los @import siguientes,
+   dejando la app sin estilos. Por eso los @font-face van AL FINAL.
+
    El orden de los @import determina la prioridad @layer:
    primero declarado = menor prioridad.
    ============================================================ */
 
+/* ── CAPAS EN ORDEN ASCENDENTE DE PRIORIDAD ──────────────────── */
+/* reset (más baja) → utils (más alta) */
+@import './reset.css'      layer(reset);
+@import './base.css'       layer(base);
+@import './tokens.css'     layer(tokens);
+@import './layout.css'     layer(layout);
+@import './components.css' layer(components);
+@import './modals.css'     layer(modals);
+@import './themes.css'     layer(themes);
+@import './a11y.css'       layer(a11y);
+@import './responsive.css' layer(responsive);
+@import './utils.css'      layer(utils);
+
 /* ── FUENTES SELF-HOSTED ─────────────────────────────────────── */
 /* WOFF2 descargados en assets/fonts/. Sin peticiones externas:
    compatible con CSP font-src 'self' y con el modo offline del SW.
-   Ruta relativa desde styles/ hacia assets/fonts/. */
+   Ruta relativa desde styles/ hacia assets/fonts/.
+   Van DESPUÉS de los @import (ver regla de la spec arriba).
+   Las reglas @font-face son globales: su posición no afecta la
+   resolución de fuentes, solo debe respetarse el orden vs @import. */
 
 /* Inter Variable: 1 archivo cubre pesos 100-900.
    Sustituye los 6 archivos estáticos previos (~143 KB -> ~48 KB). */
@@ -50,16 +72,3 @@
     U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC,
     U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
-
-/* ── CAPAS EN ORDEN ASCENDENTE DE PRIORIDAD ──────────────────── */
-/* reset (más baja) → utils (más alta) */
-@import './reset.css'      layer(reset);
-@import './base.css'       layer(base);
-@import './tokens.css'     layer(tokens);
-@import './layout.css'     layer(layout);
-@import './components.css' layer(components);
-@import './modals.css'     layer(modals);
-@import './themes.css'     layer(themes);
-@import './a11y.css'       layer(a11y);
-@import './responsive.css' layer(responsive);
-@import './utils.css'      layer(utils);
