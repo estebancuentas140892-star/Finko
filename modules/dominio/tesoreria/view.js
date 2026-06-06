@@ -78,10 +78,10 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🏦</p>
-      <p class="empty-state__title">¿Dónde guardás tu plata?</p>
-      <p class="empty-state__desc">Agregá tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en el dashboard.</p>
+      <p class="empty-state__title">¿Dónde tienes tu dinero?</p>
+      <p class="empty-state__desc">Agrega tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en el dashboard.</p>
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
-      <p class="empty-state__tip">💡 Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tenés, en un solo lugar.</p>
+      <p class="empty-state__tip">💡 Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
     </div>`;
 }
 
@@ -164,7 +164,7 @@ export function renderFormCuenta() {
           <span>A esta cuenta le aplica el 4x1000 (GMF)</span>
         </label>
         <p class="form-hint form-hint--muted">
-          El 4x1000 es un impuesto de $4 por cada $1.000 que retirás o transferís. El efectivo no lo paga.
+          El 4x1000 es un impuesto de $4 por cada $1.000 que retiras o transfieres. El efectivo no lo paga.
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export function renderFormCuenta() {
           <span>Esta cuenta cobra cuota de manejo mensual</span>
         </label>
         <p class="form-hint form-hint--muted">
-          Opcional. Si no sabés el monto, dejalo desactivado.
+          Opcional. Si no sabes el monto, déjalo desactivado.
         </p>
       </div>
 

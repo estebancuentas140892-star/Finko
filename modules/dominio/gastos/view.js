@@ -164,7 +164,7 @@ function _renderGastoItem(gasto) {
   const cat  = _esc(gasto.categoria ?? 'Otros');
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
   const badge = sinCompletar
-    ? '<span class="badge badge--warn" title="Tocá editar para completar este gasto">📝 Pendiente</span> '
+    ? '<span class="badge badge--warn" title="Toca editar para completar este gasto">📝 Pendiente</span> '
     : '';
 
   return `
@@ -195,9 +195,9 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">💸</p>
       <p class="empty-state__title">Sin gastos este mes</p>
-      <p class="empty-state__desc">Anotá cada compra o pago que hacés: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu plata.</p>
+      <p class="empty-state__desc">Anota cada compra o pago que haces: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu dinero.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
-      <p class="empty-state__tip">💡 Tip: desde el dashboard, el botón "Anotar un gasto" te deja apuntar el monto en segundos. La descripción la ponés después.</p>
+      <p class="empty-state__tip">💡 Tip: desde el dashboard, el botón "Anotar un gasto" te permite apuntar el monto en segundos. La descripción la agregas después.</p>
     </div>`;
 }
 
@@ -238,8 +238,8 @@ export function renderFormGasto() {
     return `
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">🏦</p>
-        <p class="form-empty__title">Primero necesitás una cuenta</p>
-        <p class="form-empty__desc">Para registrar un gasto, agregá al menos una cuenta o billetera en Mis cuentas. Así sabés de dónde sale la plata.</p>
+        <p class="form-empty__title">Primero necesitas una cuenta</p>
+        <p class="form-empty__desc">Para registrar un gasto, agrega al menos una cuenta o billetera en Mis cuentas. Así sabes de dónde sale el dinero.</p>
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="modal-close">🏦 Ir a Mis cuentas</a>
       </div>`;
   }
@@ -258,7 +258,7 @@ export function renderFormGasto() {
           ${cuentaOpts}
         </select>
         <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-          Elegí una cuenta para ver el saldo disponible.
+          Elige una cuenta para ver el saldo disponible.
         </p>
       </div>
       <div class="form-group">

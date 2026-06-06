@@ -115,8 +115,8 @@ export function renderAlertaDeudasDurmiendo() {
     const meses   = d.mesesDesdeCreacion;
     const saldo   = f(d.saldoPendiente);
     const consejo = d.sugerencia === 'liquidar'
-      ? 'podés liquidarla con la proxima cuota'
-      : 'retomá los pagos para evitar intereses';
+      ? 'puedes liquidarla con la próxima cuota'
+      : 'retoma los pagos para evitar intereses';
     return `<p class="nudge__desc"><strong>${desc}</strong>: ${meses} meses · ${saldo} pendiente · ${consejo}</p>`;
   }).join('');
 
@@ -291,7 +291,7 @@ export function renderFormAbono(deuda) {
   if (cuentas.length === 0) {
     return `
       <div class="empty-state">
-        <p class="empty-state__desc">Necesitás tener al menos una cuenta activa para registrar un abono.</p>
+        <p class="empty-state__desc">Necesitas tener al menos una cuenta activa para registrar un abono.</p>
         <div class="modal__footer">
           <button type="button" class="btn btn-ghost" data-action="modal-close">Cerrar</button>
         </div>
@@ -322,19 +322,19 @@ export function renderFormAbono(deuda) {
                min="1" step="10000" placeholder="0"
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
-        <p class="form-hint form-hint--muted">Máximo ${f(saldo)}. Si abonás más, se ajusta al saldo pendiente.</p>
+        <p class="form-hint form-hint--muted">Máximo ${f(saldo)}. Si abonas más, se ajusta al saldo pendiente.</p>
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
 
       <div class="form-group">
-        <label for="abono-cuenta" class="label">¿De qué cuenta sale la plata?</label>
+        <label for="abono-cuenta" class="label">¿De qué cuenta sale el dinero?</label>
         <select id="abono-cuenta" name="cuentaId" class="input"
                 required aria-required="true">
-          <option value="">Elegí una cuenta</option>
+          <option value="">Elige una cuenta</option>
           ${cuentaOpts}
         </select>
         <p id="abono-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-          Elegí una cuenta para ver el saldo disponible.
+          Elige una cuenta para ver el saldo disponible.
         </p>
       </div>
 
@@ -435,8 +435,8 @@ export function renderFormDeuda(tipo) {
   const tasaPlaceholder = esEntidad ? '28.5' : '10';
 
   const tasaHint = esEntidad
-    ? `La usura vigente es ~${Math.round(usura.tasa * 100)}% anual (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, podés reportarlo.`
-    : 'Si no cobra interés, dejá en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
+    ? `La usura vigente es ~${Math.round(usura.tasa * 100)}% anual (SFC, ${usura.periodo}). Si tu tarjeta o banco supera ese límite, puedes reportarlo.`
+    : 'Si no cobra interés, deja el campo en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
   const descPlaceholder = esEntidad
     ? 'Ej. Tarjeta Visa Bancolombia'
@@ -454,7 +454,7 @@ export function renderFormDeuda(tipo) {
       </div>
 
       <div class="form-group">
-        <label for="comp-saldo" class="label">¿Cuánto debés en total? (COP)</label>
+        <label for="comp-saldo" class="label">¿Cuánto debes en total? (COP)</label>
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" />
@@ -462,7 +462,7 @@ export function renderFormDeuda(tipo) {
       </div>
 
       <div class="form-group">
-        <label for="comp-cuota" class="label">¿Cuánto pagás cada mes? (COP)</label>
+        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes? (COP)</label>
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" />
@@ -554,7 +554,7 @@ export function renderEstrategiaPago() {
           <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
         </header>
         <p class="estrategia-card__placeholder">
-          Tenés una sola deuda activa (<strong>${_esc(d.descripcion)}</strong>).
+          Tienes una sola deuda activa (<strong>${_esc(d.descripcion)}</strong>).
           Cuando tengas dos o más, Finko te recomendará la mejor estrategia
           para pagarlas (Avalancha vs Bola de nieve).
         </p>
@@ -579,7 +579,7 @@ export function renderEstrategiaPago() {
         </p>
       </header>
 
-      <div class="estrategia-cards" role="group" aria-label="Elegí una estrategia">
+      <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
         ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
       </div>
@@ -598,8 +598,8 @@ const _META_ESTRATEGIA = {
 // Resúmenes integrados (mecanismo + ideal en 1 párrafo). La razón de
 // recomendación se prepende solo cuando la estrategia es la recomendada.
 const _RESUMEN_ESTRATEGIA = {
-  avalancha: 'Atacás primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorrás más dinero.',
-  bolaNieve: 'Atacás primero la deuda más chica; cuando la terminás, esa cuota se suma a la siguiente, generando un efecto acumulativo (la "bola" que crece). Ideal si necesitás ver progreso rápido para mantener el impulso.',
+  avalancha: 'Atacas primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorras más dinero.',
+  bolaNieve: 'Atacas primero la deuda más chica; cuando la terminas, esa cuota se suma a la siguiente, generando un efecto acumulativo (la "bola" que crece). Ideal si necesitas ver progreso rápido para mantener el impulso.',
 };
 
 /**
@@ -619,7 +619,7 @@ function _renderCardEstrategia(tipo, activa, recomendacion, habilitada) {
   const claseActiva   = seleccionada ? ' estrategia-card-pick--activa' : '';
   const claseInactiva = habilitada   ? '' : ' estrategia-card-pick--inactiva';
   const subtituloHtml = recomendada
-    ? '<span class="estrategia-card-pick__sub">✨ Recomendada para vos</span>'
+    ? '<span class="estrategia-card-pick__sub">✨ Recomendada para ti</span>'
     : '<span class="estrategia-card-pick__sub estrategia-card-pick__sub--ghost" aria-hidden="true">&nbsp;</span>';
   return `
     <button type="button"
@@ -648,7 +648,7 @@ function _renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensua
   if (!estrategia) {
     return `
       <p class="estrategia-card__placeholder">
-        Tocá una estrategia para ver el detalle y cómo te ayuda.
+        Toca una estrategia para ver el detalle y cómo te ayuda.
       </p>`;
   }
   // Caso: Avalancha sin sentido → solo el mensaje "no aplica".
@@ -831,14 +831,14 @@ function _renderAcordeonExtra(abierto, extraMensual, estrategia, deudas) {
               class="estrategia-card__link"
               data-action="toggle-extra-estrategia"
               aria-expanded="false">
-        💪 ¿Podés pagar algo extra cada mes? Calculá el impacto
+        💪 ¿Puedes pagar algo extra cada mes? Calcula el impacto
       </button>`;
   }
   return `
     <div class="estrategia-card__acordeon">
       <div class="estrategia-card__acordeon-header">
         <p class="estrategia-card__acordeon-titulo">
-          💪 Pagá un extra cada mes
+          💪 Paga un extra cada mes
         </p>
         <button type="button"
                 class="btn btn-ghost btn-icon estrategia-card__acordeon-cerrar"
@@ -848,7 +848,7 @@ function _renderAcordeonExtra(abierto, extraMensual, estrategia, deudas) {
       </div>
       <p class="estrategia-card__acordeon-desc">
         Cualquier monto adicional acelera el cierre y ahorra intereses.
-        Probá con $50.000 y mirá la diferencia arriba.
+        Prueba con $50.000 y mira la diferencia arriba.
       </p>
       <div class="form-group">
         <label for="estrategia-extra" class="label">Pago extra mensual (COP)</label>
