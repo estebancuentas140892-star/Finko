@@ -7,6 +7,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(sw): Agenda en CORE_ASSETS + finko-v93 · 2026-06-05
+
+Archivos `modules/dominio/agenda/{logic,view,index}.js` nunca estuvieron en `CORE_ASSETS` del SW (desde v38). Con cache frío y sin red, el import estático desde `bootstrap.js` fallaba y caía toda la app. El bump de CACHE_NAME fuerza el refresco en dispositivos con cache rezagado.
+
+- **`service-worker.js`:** `finko-v92` -> `finko-v93`. Agregados los 3 archivos del dominio Agenda a `CORE_ASSETS`. Ahora 65/65 módulos y estilos cubiertos.
+
+---
+
 ### test(e2e): realinear suite con form de cuenta rediseñado (v8.7-v8.9) · 2026-06-03
 
 Cierre de deuda de e2e acumulada desde el rediseño de Tesorería. 6 tests fallaban por cambios de form que no se reflejaron en los tests.

@@ -39,6 +39,15 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(sw): agregar módulo Agenda a CORE_ASSETS + bump CACHE_NAME a finko-v93 · 2026-06-05
+
+Bug latente: los 3 archivos de `modules/dominio/agenda/` nunca estuvieron en `CORE_ASSETS` del service worker desde que se creó el módulo (v38 a v92). Con cache frío sin red, el import estático en `bootstrap.js` falla y cae toda la app. El bump de CACHE_NAME fuerza el refresco en dispositivos con cache rezagado (celulares con versión vieja instalada como PWA).
+
+**Cambios:**
+- **`service-worker.js`:** `CACHE_NAME` bumpeado a `finko-v93`. Agregados `agenda/logic.js`, `agenda/view.js`, `agenda/index.js` a `CORE_ASSETS`. Total módulos/styles cubiertos: 65/65 (0 faltantes).
+
+**Tests:** 931/931 unit verdes. Sin cambios de lógica ni UI.
+
 ### test(e2e): realinear suite con form de cuenta rediseñado (v8.7-v8.9) · 2026-06-03
 
 6 tests pre-existentes que fallaban desde el rediseño de Tesorería. El form de cuenta eliminó el campo `nombre` (ahora se autogenera como banco + tipo) y usa un bank-picker cuya lista flotante se mueve a `<body>`. Los tests seguían buscando `[name="nombre"]` y un selector de cuenta por nombre custom.
