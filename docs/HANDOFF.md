@@ -39,6 +39,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### copy(tono): refinamiento a voz neutral-profesional - Batch 1 (ADR + chrome) · 2026-06-06
+
+**Decisión de producto:** el tono pasa de "muy colombiano/informal" a "neutral, claro, profesional" (accesible para cualquier edad). Voz **"tú"** (tuteo, no voseo), **"dinero"** (no "plata"). Refina la regla 11 del ADN sin cambiar su espíritu (lenguaje humano, sin jerga).
+
+**Proceso ADN seguido:**
+- `docs/DECISIONS/003-tono-neutral-profesional.md`: ADR nuevo con contexto, decisión, guía de aplicación.
+- `CLAUDE.md`: regla 11 actualizada (voz tú + dinero, link al ADR).
+
+**Batch 1 (chrome estático, lo más visible):**
+- `index.html`: 13 textos. "Tu plata disponible hoy" → "Tu dinero disponible hoy", "¿Dónde tenés tu plata?" → "¿Dónde tienes tu dinero?", title, quick-add, hero-guia, herramientas, simulador laboral (voseo → tú).
+- `service-worker.js`: `CACHE_NAME` v98 → v99.
+- `tests/e2e/smoke.test.js`: comentario actualizado (la aserción real chequea `#saldo-total`, no se rompe).
+
+**Verificado:** preview muestra el nuevo copy. 931/931 unit verdes. E2E no afectado (ninguna aserción referencia la copy cambiada).
+
+**Sigue:** Batch 2 (dominios de uso diario: gastos, tesorería, agenda, deudas + sus aserciones E2E como "¿Dónde guardás tu plata?"). Batch 3 (metas, presupuesto, personales, análisis, config, nudges). Luego retomar Parte 4 (Ahorro J.1a).
+
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
 Último slice de 3C. **La auditoría confirmó que el único ícono de acento "grande" tipo bento es el del hero** ("Tu plata disponible hoy"); el resto de los emojis visibles son datos del usuario (el ícono que el usuario elige para su meta), avatares de banco, o expresivos/cálidos (empty states, tips, prefijos inline en headings de Análisis), que el híbrido conserva a propósito.

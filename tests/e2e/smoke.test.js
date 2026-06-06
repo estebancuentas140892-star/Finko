@@ -323,7 +323,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
       timeout: 3_000,
     });
 
-    // 4. Ir a Dashboard y verificar "Tu plata disponible hoy" muestra $900.000
+    // 4. Ir a Dashboard y verificar "Tu dinero disponible hoy" muestra $900.000
     await page.goto('/#dash');
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
     await expect(page.locator('#saldo-total')).toHaveText('$900.000', {

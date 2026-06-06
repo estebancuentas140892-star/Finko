@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### copy(tono): refinamiento a voz neutral-profesional - Batch 1 · 2026-06-06
+
+Tono pasa de informal-colombiano a neutral-profesional: voz "tú" (no voseo), "dinero" (no "plata"). Refina la regla 11 del ADN (espíritu intacto: lenguaje humano sin jerga).
+
+- `docs/DECISIONS/003-tono-neutral-profesional.md`: ADR nuevo. `CLAUDE.md`: regla 11 actualizada.
+- `index.html`: 13 textos del chrome ("Tu dinero disponible hoy", "¿Dónde tienes tu dinero?", etc.).
+- `service-worker.js`: v98 → v99.
+
+Batch 1 de N (chrome estático). Siguen los dominios. 931/931 unit verdes.
+
+---
+
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
 Último slice de 3C. El hero "Tu plata disponible hoy" (💵) → SVG (`i-saldo`, $ en círculo, verde acento). Auditoría: era el único ícono de acento grande; el resto son datos de usuario o emojis cálidos que se conservan.

@@ -31,7 +31,7 @@
   <link rel="modulepreload" href="modules/ui/actions.js" />
   <link rel="modulepreload" href="modules/ui/bootstrap.js" />
 
-  <title>Finko: tu plata bajo control</title>
+  <title>Finko: tu dinero bajo control</title>
 </head>
 <body>
 
@@ -228,33 +228,33 @@
              Pensado para el momento en que estas con amigos/familia y necesitas
              apuntar algo YA sin abrir el modal completo con todos los campos. -->
         <button class="quick-add" type="button" data-action="gasto-rapido"
-                aria-label="Anotar un gasto: solo el monto, lo describís después">
+                aria-label="Anotar un gasto: solo el monto, lo describes después">
           <span class="quick-add__icon" aria-hidden="true">⚡</span>
           <span class="quick-add__body">
             <span class="quick-add__title">Anotar un gasto</span>
-            <span class="quick-add__desc">¿Compraste o pagaste algo? Solo el monto. Lo describís después.</span>
+            <span class="quick-add__desc">¿Compraste o pagaste algo? Solo el monto. Lo describes después.</span>
           </span>
           <span class="quick-add__chevron" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
         </button>
 
-        <!-- HERO: tu plata disponible (siempre visible, fuera del bento).
+        <!-- HERO: tu dinero disponible (siempre visible, fuera del bento).
              Si el usuario aún no registró cuentas, render.js (updSaldo) oculta
              #saldo-desc y muestra #hero-guia-saldo: una guía de primeros pasos
-             que le dice qué hacer y lo lleva a Tesorería a registrar su plata. -->
+             que le dice qué hacer y lo lleva a Tesorería a registrar su dinero. -->
         <article class="bento__cell bento__cell--accent bento__cell--hero bento__cell--solo">
           <!-- Estado normal: visible cuando hay cuentas registradas -->
           <svg class="bento__icon icon" id="hero-saldo-icon" aria-hidden="true"><use href="#i-saldo"/></svg>
-          <p class="bento__label" id="hero-saldo-label">Tu plata disponible hoy</p>
+          <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
           <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
           <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
           <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
           <div class="hero-guia" id="hero-guia-saldo" hidden>
             <span class="hero-guia__icon" aria-hidden="true">🏦</span>
-            <p class="hero-guia__title">¿Dónde tenés tu plata?</p>
+            <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
             <p class="hero-guia__desc">
-              Agregá tus cuentas o billeteras y Finko calcula
-              automáticamente cuánto tenés disponible hoy.
+              Agrega tus cuentas o billeteras y Finko calcula
+              automáticamente cuánto tienes disponible hoy.
             </p>
             <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
               <span aria-hidden="true">🏦</span>
@@ -403,7 +403,7 @@
                            class="sim-gate__radio" />
                     <span class="sim-gate__body">
                       <span class="sim-gate__titulo">💼 Empleado</span>
-                      <span class="sim-gate__desc">Trabajás para una empresa o persona natural</span>
+                      <span class="sim-gate__desc">Trabajas para una empresa o persona natural</span>
                     </span>
                   </label>
                   <label class="sim-gate__option">
@@ -411,7 +411,7 @@
                            class="sim-gate__radio" />
                     <span class="sim-gate__body">
                       <span class="sim-gate__titulo">🧑‍💻 Independiente</span>
-                      <span class="sim-gate__desc">Prestás servicios por cuenta propia</span>
+                      <span class="sim-gate__desc">Prestas servicios por cuenta propia</span>
                     </span>
                   </label>
                 </div>
@@ -538,7 +538,7 @@
         <details class="herramienta-inline" id="herramienta-ic">
           <summary class="herramienta-inline__titulo">📈 Proyectar el crecimiento de tus ahorros</summary>
           <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Cómo crece tu plata con interés compuesto.</p>
+            <p class="herramienta-inline__desc">Cómo crece tu dinero con interés compuesto.</p>
             <form id="form-herramienta-ic" class="calc-form" novalidate>
               <div class="calc-form__fields">
                 <div class="form-group">
@@ -588,7 +588,7 @@
 
         <!-- Herramientas de contexto financiero (v8.4) -->
         <details class="herramienta-inline" id="herramienta-r72">
-          <summary class="herramienta-inline__titulo">⚡ ¿En cuántos años duplico mi plata?</summary>
+          <summary class="herramienta-inline__titulo">⚡ ¿En cuántos años duplico mi dinero?</summary>
           <div class="herramienta-inline__cuerpo">
             <p class="herramienta-inline__desc">Regla del 72: una aproximación rápida para cualquier tasa.</p>
             <form id="form-herramienta-r72" class="calc-form" novalidate>
