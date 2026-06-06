@@ -1418,6 +1418,77 @@ textarea.input {
   font-weight: var(--fk-fw-semibold);
 }
 
+/* ── J.1b: Sección hábito de ahorro (aportes + compromiso) ─── */
+
+.ahorro-habito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-4);
+}
+
+.ahorro-habito__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.ahorro-habito__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.ahorro-habito__compromiso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-ahorro) 25%, transparent);
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+}
+.ahorro-habito__compromiso strong {
+  color: var(--fk-dom-ahorro);
+  font-variant-numeric: tabular-nums;
+}
+
+.ahorro-habito__sin-compromiso {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-wrap: wrap;
+}
+
+.ahorro-habito__empty {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  padding: var(--fk-space-3);
+  text-align: center;
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+}
+
+.ahorro-habito__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {
   list-style: none;

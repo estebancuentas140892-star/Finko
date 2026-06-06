@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ahorro): J.1b - hábito de ahorro: aportes + historial + tasa de ahorro + "págate primero" · 2026-06-06
+
+Segunda entrega de J.1 (Ahorro). Añade el ciclo de registro de aportes sobre el fondo de emergencia, el compromiso mensual y el nudge de tasa de ahorro.
+
+- **`ahorro/logic.js`**: 8 funciones nuevas (J.1b): `calcularTotalAportes`, `calcularMontoTotalFondo`, `ordenarAportesPorFecha`, `validarMontoAporte`, `validarFechaAporte`, `normalizarMontoAporte`, `validarCompromisoMensual`, `normalizarCompromisoMensual`. 25 tests nuevos.
+- **`ahorro/view.js`**: hero usa `calcularMontoTotalFondo` (base + aportes). Nueva sección `ahorro-habito`: chip de compromiso mensual, lista de aportes ordenada desc, nudge de tasa de ahorro con 5 niveles (success/info/medium/high según porcentaje). Dos forms nuevos: `renderFormAporte` y `renderFormCompromisoMensual`.
+- **`ahorro/index.js`**: `_calcularIngresosMensuales()`, `_calcularGastosEsteMes()`, `_calcularTasaAhorro()` (sin importar de otro dominio, ADN #10). 3 acciones nuevas: `ahorro-nuevo-aporte`, `ahorro-eliminar-aporte`, `ahorro-editar-compromiso`. EventBus re-render extendido a `ingresos` y `gastos` (para que el nudge de tasa actualice en vivo). `_genId()` local para aportes.
+- **`styles/components.css`**: estilos `.ahorro-habito*` (~50 líneas).
+- **`service-worker.js`**: v102 → v103.
+
+990/990 unit + integración verdes. Pendiente: J.1c (nudges + integración con Score de Salud).
+
+---
+
 ### feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro + fondo de emergencia · 2026-06-06
 
 Primera entrega de J.1 (Ahorro). Funda el dominio con migración v6→v7, lógica pura testeada, sección con hero del fondo de emergencia, nav en "Crecer" e ícono SVG.

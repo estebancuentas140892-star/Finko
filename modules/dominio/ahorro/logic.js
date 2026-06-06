@@ -163,3 +163,115 @@ export function normalizarMontoActual(raw) {
   if (!Number.isFinite(n) || n < 0) return 0;
   return Math.round(n);
 }
+
+// ── APORTES (J.1b) ───────────────────────────────────────────────
+
+/**
+ * Suma los montos de todos los aportes registrados en el historial.
+ *
+ * @param {Array<{monto: number}>} aportes
+ * @returns {number} Total en COP. 0 si el array está vacío o no es válido.
+ */
+export function calcularTotalAportes(aportes) {
+  if (!Array.isArray(aportes)) return 0;
+  return aportes.reduce((sum, a) => sum + (Number(a.monto) || 0), 0);
+}
+
+/**
+ * Monto total visible del fondo: el balance de apertura declarado al activarlo
+ * más la suma de todos los aportes registrados en el historial.
+ *
+ * @param {number} montoBase  `fondoEmergencia.montoActual` (valor al activar/editar).
+ * @param {Array}  aportes    `S.ahorro.aportes`.
+ * @returns {number}
+ */
+export function calcularMontoTotalFondo(montoBase, aportes) {
+  return Math.max(0, Number(montoBase) || 0) + calcularTotalAportes(aportes);
+}
+
+/**
+ * Devuelve los aportes ordenados por fecha descendente (más reciente primero).
+ * No muta el array original.
+ *
+ * @param {Array<{fecha: string}>} aportes
+ * @returns {Array}
+ */
+export function ordenarAportesPorFecha(aportes) {
+  if (!Array.isArray(aportes)) return [];
+  return [...aportes].sort((a, b) => {
+    if (b.fecha > a.fecha) return 1;
+    if (b.fecha < a.fecha) return -1;
+    return 0;
+  });
+}
+
+/**
+ * Valida el monto de un aporte. Debe ser mayor que cero (a diferencia de
+ * `validarMontoActual`, que acepta 0 como saldo inicial).
+ *
+ * @param {string|number} raw
+ * @returns {string[]} Mensajes de error (vacío = válido).
+ */
+export function validarMontoAporte(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return ['El monto debe ser un número.'];
+  if (n <= 0)              return ['El monto del aporte debe ser mayor que cero.'];
+  return [];
+}
+
+/**
+ * Valida una fecha de aporte (formato YYYY-MM-DD, no vacía).
+ *
+ * @param {string} raw
+ * @returns {string[]}
+ */
+export function validarFechaAporte(raw) {
+  if (!raw || typeof raw !== 'string' || raw.trim() === '') {
+    return ['La fecha es requerida.'];
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    return ['El formato de fecha no es válido (se esperaba YYYY-MM-DD).'];
+  }
+  return [];
+}
+
+/**
+ * Normaliza el monto de un aporte a entero positivo.
+ * Si el valor no es válido o no es positivo devuelve 0.
+ *
+ * @param {string|number} raw
+ * @returns {number}
+ */
+export function normalizarMontoAporte(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.round(n);
+}
+
+// ── COMPROMISO MENSUAL ("págate primero", J.1b) ──────────────────
+
+/**
+ * Valida el monto del compromiso mensual de ahorro.
+ * Acepta 0 (= sin compromiso). No acepta negativos.
+ *
+ * @param {string|number} raw
+ * @returns {string[]}
+ */
+export function validarCompromisoMensual(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return ['El monto debe ser un número.'];
+  if (n < 0)               return ['El monto no puede ser negativo.'];
+  return [];
+}
+
+/**
+ * Normaliza el compromiso mensual a entero no-negativo.
+ *
+ * @param {string|number} raw
+ * @returns {number}
+ */
+export function normalizarCompromisoMensual(raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round(n);
+}

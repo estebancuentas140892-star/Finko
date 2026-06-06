@@ -19,11 +19,18 @@ import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce }                 from '../../infra/a11y.js';
 import { mostrarErroresForm }       from '../../infra/form-errors.js';
 import { confirmar }                from '../../ui/confirm.js';
+import { hoy }                      from '../../infra/utils.js';
 import {
   validarMetaMeses, validarMontoActual,
   normalizarMetaMeses, normalizarMontoActual,
+  validarMontoAporte, validarFechaAporte, normalizarMontoAporte,
+  validarCompromisoMensual, normalizarCompromisoMensual,
+  calcularTasaAhorro,
 } from './logic.js';
-import { renderAhorro, renderFormFondo } from './view.js';
+import {
+  renderAhorro, renderFormFondo,
+  renderFormAporte, renderFormCompromisoMensual,
+} from './view.js';
 
 // ── FACTOR DE FRECUENCIA ─────────────────────────────────────────
 
@@ -43,6 +50,19 @@ const FACTOR_MENSUAL = {
   'Anual':      1 / 12,
   'Única vez':  0,
 };
+
+// ── ID GENERATOR ─────────────────────────────────────────────────
+
+/**
+ * Genera un ID único para aportes. Mismo patrón que infra/crud.js (privado allá).
+ * @returns {string}
+ */
+function _genId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 /**
  * Suma los gastos fijos mensuales del usuario a partir de S.compromisos.
@@ -64,6 +84,51 @@ function _gastosFijosMensuales() {
     total += (Number(c.monto) || 0) * factor;
   }
   return total;
+}
+
+// ── CÁLCULO TASA DE AHORRO (J.1b) ────────────────────────────────
+
+/**
+ * Suma los ingresos recurrentes activos proyectados a unidad mensual.
+ * Replica FACTOR_MENSUAL localmente (igual que _gastosFijosMensuales):
+ * ahorro no puede importar lógica de otro dominio (regla ADN #10).
+ *
+ * @returns {number} COP/mes
+ */
+function _calcularIngresosMensuales() {
+  const ingresos = Array.isArray(S.ingresos) ? S.ingresos : [];
+  let total = 0;
+  for (const ing of ingresos) {
+    if (!ing || ing.activo === false) continue;
+    const factor = FACTOR_MENSUAL[ing.frecuencia] ?? 0;
+    total += (Number(ing.monto) || 0) * factor;
+  }
+  return total;
+}
+
+/**
+ * Suma los gastos registrados en el mes calendario actual.
+ * @returns {number} COP
+ */
+function _calcularGastosEsteMes() {
+  const ahora = new Date();
+  const mesStr = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  const gastos = Array.isArray(S.gastos) ? S.gastos : [];
+  return gastos
+    .filter(g => g && typeof g.fecha === 'string' && g.fecha.startsWith(mesStr))
+    .reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+}
+
+/**
+ * Tasa de ahorro mensual: (ingresos - gastos) / ingresos.
+ * Devuelve null si no hay ingresos activos registrados.
+ *
+ * @returns {number|null}
+ */
+function _calcularTasaAhorro() {
+  const ingresos = _calcularIngresosMensuales();
+  const gastos   = _calcularGastosEsteMes();
+  return calcularTasaAhorro(ingresos, gastos);
 }
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
@@ -135,7 +200,7 @@ function _guardarFondo(form) {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales());
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
   announce(yaActivo
     ? 'Fondo de emergencia actualizado.'
     : '¡Fondo de emergencia activado!'
@@ -160,8 +225,132 @@ async function _desactivarFondo() {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales());
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
   announce('Fondo de emergencia desactivado.');
+}
+
+// ── ACCIONES: APORTES (J.1b) ─────────────────────────────────────
+
+function _nuevoAporte() {
+  const overlay = _getOverlay();
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Registrar aporte';
+
+  _setBody(renderFormAporte({ fecha: hoy() }));
+
+  const form = document.getElementById('form-aporte');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarAporte(form);
+    });
+  }
+  abrirModal(overlay);
+}
+
+/** @param {HTMLFormElement} form */
+function _guardarAporte(form) {
+  const datos   = Object.fromEntries(new FormData(form));
+  const errores = [
+    ...validarMontoAporte(datos.monto),
+    ...validarFechaAporte(datos.fecha),
+  ];
+
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const aporte = {
+    id:    _genId(),
+    monto: normalizarMontoAporte(datos.monto),
+    fecha: datos.fecha.trim(),
+    nota:  datos.nota?.trim() || undefined,
+  };
+
+  if (!Array.isArray(S.ahorro.aportes)) S.ahorro.aportes = [];
+  S.ahorro.aportes.push(aporte);
+  save();
+  EventBus.emit('state:change', { section: 'ahorro' });
+
+  const overlay = _getOverlay();
+  if (overlay) cerrarModal(overlay);
+
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  announce(`Aporte de ${aporte.monto.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} registrado.`);
+}
+
+/** @param {HTMLElement} el */
+async function _eliminarAporte(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const aportes = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const aporte  = aportes.find(a => a.id === id);
+  if (!aporte) return;
+
+  const ok = await confirmar({
+    titulo:         'Eliminar aporte',
+    mensaje:        `¿Quieres eliminar el aporte de ${aporte.monto.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} del ${aporte.fecha}? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
+
+  S.ahorro.aportes = S.ahorro.aportes.filter(a => a.id !== id);
+  save();
+  EventBus.emit('state:change', { section: 'ahorro' });
+
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  announce('Aporte eliminado.');
+}
+
+// ── ACCIONES: COMPROMISO MENSUAL (J.1b) ──────────────────────────
+
+function _editarCompromisoMensual() {
+  const overlay = _getOverlay();
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Compromiso mensual de ahorro';
+
+  const compromisoActual = Number(S.ahorro?.compromisoMensual) || 0;
+  _setBody(renderFormCompromisoMensual(compromisoActual));
+
+  const form = document.getElementById('form-compromiso');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarCompromisoMensual(form);
+    });
+  }
+  abrirModal(overlay);
+}
+
+/** @param {HTMLFormElement} form */
+function _guardarCompromisoMensual(form) {
+  const datos   = Object.fromEntries(new FormData(form));
+  const errores = validarCompromisoMensual(datos.compromisoMensual);
+
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  S.ahorro.compromisoMensual = normalizarCompromisoMensual(datos.compromisoMensual);
+  save();
+  EventBus.emit('state:change', { section: 'ahorro' });
+
+  const overlay = _getOverlay();
+  if (overlay) cerrarModal(overlay);
+
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  announce(S.ahorro.compromisoMensual > 0
+    ? `Compromiso mensual de ${S.ahorro.compromisoMensual.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} guardado.`
+    : 'Compromiso mensual eliminado.'
+  );
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
@@ -171,18 +360,26 @@ async function _desactivarFondo() {
  * Calcula gastosFijosMensuales al vuelo desde S.compromisos.
  */
 function _renderAhorroBound() {
-  renderAhorro(_gastosFijosMensuales());
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
 }
 
 export function initAhorro() {
-  registrarAccion('ahorro-activar-fondo', _activarFondo);
-  registrarAccion('ahorro-editar',        _editarFondo);
-  registrarAccion('ahorro-desactivar',    _desactivarFondo);
+  registrarAccion('ahorro-activar-fondo',     _activarFondo);
+  registrarAccion('ahorro-editar',            _editarFondo);
+  registrarAccion('ahorro-desactivar',        _desactivarFondo);
+  registrarAccion('ahorro-nuevo-aporte',      _nuevoAporte);
+  registrarAccion('ahorro-eliminar-aporte',   _eliminarAporte);
+  registrarAccion('ahorro-editar-compromiso', _editarCompromisoMensual);
 
-  // El objetivo del fondo depende de los gastos fijos: re-render ante
-  // cambios en ahorro O en compromisos.
+  // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
+  // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'ahorro' || section === 'compromisos') {
+    if (
+      section === 'ahorro'     ||
+      section === 'compromisos' ||
+      section === 'ingresos'   ||
+      section === 'gastos'
+    ) {
       renderSmart(_renderAhorroBound, 'ahorro');
     }
   });

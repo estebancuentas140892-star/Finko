@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 965/965 verdes (+30 ahorro logic, +4 migración v6→v7) |
+| Tests unitarios + integración | 990/990 verdes (+25 ahorro J.1b, +30 ahorro J.1a, +4 migración v6→v7) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,34 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ahorro): J.1b - hábito de ahorro: aportes + historial + tasa de ahorro + "págate primero" · 2026-06-06
+
+Segunda entrega del dominio Ahorro. Añade el ciclo de registro de aportes, el compromiso mensual ("págate primero") y el nudge de tasa de ahorro mensual.
+
+**`ahorro/logic.js` (8 funciones nuevas, 25 tests):**
+- `calcularTotalAportes`, `calcularMontoTotalFondo`: el hero ahora muestra base + suma de aportes.
+- `ordenarAportesPorFecha`: historial descendente.
+- `validarMontoAporte`, `validarFechaAporte`, `normalizarMontoAporte`.
+- `validarCompromisoMensual`, `normalizarCompromisoMensual`.
+
+**`ahorro/view.js` (sección habito + 2 forms nuevos):**
+- `_renderHero` usa `calcularMontoTotalFondo(montoBase, aportes)` como total visible.
+- `_renderHabitoSection`: chip de compromiso mensual verde, lista de aportes con fecha legible + botón eliminar, nudge de tasa (5 niveles: success/info/medium/high según %).
+- `renderFormAporte({fecha})`: monto + fecha (default hoy) + nota.
+- `renderFormCompromisoMensual(compromisoMensual)`: campo único, acepta 0 para quitar.
+
+**`ahorro/index.js` (3 acciones nuevas, sin importar otros dominios):**
+- `_calcularIngresosMensuales()` + `_calcularGastosEsteMes()` + `_calcularTasaAhorro()`.
+- Acciones: `ahorro-nuevo-aporte`, `ahorro-eliminar-aporte`, `ahorro-editar-compromiso`.
+- EventBus re-render extendido a `ingresos` y `gastos` (nudge de tasa actualiza en vivo).
+- `_genId()` local para aportes (misma lógica que crud.js sin importar).
+
+**CSS:** `components.css`: `.ahorro-habito*` (~50 líneas). SW v102 → v103.
+
+**Verificado:** 990/990 tests verdes.
+
+**Sigue:** J.1c (nudges + integración con Score de Salud). _(Sonnet 4.6 - Medio.)_
 
 ### feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro · 2026-06-06
 

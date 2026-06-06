@@ -11,6 +11,15 @@ import {
   META_MESES_MIN,
   META_MESES_MAX,
   META_MESES_DEFAULT,
+  // J.1b
+  calcularTotalAportes,
+  calcularMontoTotalFondo,
+  ordenarAportesPorFecha,
+  validarMontoAporte,
+  validarFechaAporte,
+  normalizarMontoAporte,
+  validarCompromisoMensual,
+  normalizarCompromisoMensual,
 } from '../../modules/dominio/ahorro/logic.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
@@ -202,5 +211,189 @@ describe('normalizarMontoActual', () => {
     expect(normalizarMontoActual(-500)).toBe(0);
     expect(normalizarMontoActual('abc')).toBe(0);
     expect(normalizarMontoActual(NaN)).toBe(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// J.1b - Aportes + Compromiso mensual
+// ═══════════════════════════════════════════════════════════════
+
+// ── calcularTotalAportes ─────────────────────────────────────────
+
+describe('calcularTotalAportes', () => {
+  it('suma los montos de todos los aportes', () => {
+    const aportes = [
+      { id: '1', monto: 200_000, fecha: '2026-05-01' },
+      { id: '2', monto: 300_000, fecha: '2026-05-15' },
+    ];
+    expect(calcularTotalAportes(aportes)).toBe(500_000);
+  });
+
+  it('devuelve 0 para array vacío', () => {
+    expect(calcularTotalAportes([])).toBe(0);
+  });
+
+  it('devuelve 0 si el argumento no es un array', () => {
+    expect(calcularTotalAportes(null)).toBe(0);
+    expect(calcularTotalAportes(undefined)).toBe(0);
+    expect(calcularTotalAportes(500_000)).toBe(0);
+  });
+
+  it('ignora montos no-numéricos en los aportes', () => {
+    const aportes = [
+      { id: '1', monto: 100_000, fecha: '2026-05-01' },
+      { id: '2', monto: 'abc',   fecha: '2026-05-10' },
+      { id: '3', monto: NaN,     fecha: '2026-05-20' },
+    ];
+    expect(calcularTotalAportes(aportes)).toBe(100_000);
+  });
+});
+
+// ── calcularMontoTotalFondo ──────────────────────────────────────
+
+describe('calcularMontoTotalFondo', () => {
+  it('suma el monto base con el total de aportes', () => {
+    const aportes = [
+      { id: '1', monto: 200_000, fecha: '2026-05-01' },
+    ];
+    expect(calcularMontoTotalFondo(500_000, aportes)).toBe(700_000);
+  });
+
+  it('funciona con array de aportes vacío', () => {
+    expect(calcularMontoTotalFondo(1_000_000, [])).toBe(1_000_000);
+  });
+
+  it('trata monto base no-numérico como 0', () => {
+    const aportes = [{ id: '1', monto: 300_000, fecha: '2026-05-01' }];
+    expect(calcularMontoTotalFondo(NaN, aportes)).toBe(300_000);
+    expect(calcularMontoTotalFondo(undefined, aportes)).toBe(300_000);
+  });
+
+  it('nunca devuelve negativo', () => {
+    expect(calcularMontoTotalFondo(-500_000, [])).toBe(0);
+  });
+});
+
+// ── ordenarAportesPorFecha ───────────────────────────────────────
+
+describe('ordenarAportesPorFecha', () => {
+  it('ordena de más reciente a más antiguo', () => {
+    const aportes = [
+      { id: '1', monto: 100_000, fecha: '2026-01-10' },
+      { id: '2', monto: 200_000, fecha: '2026-03-15' },
+      { id: '3', monto: 150_000, fecha: '2026-02-01' },
+    ];
+    const resultado = ordenarAportesPorFecha(aportes);
+    expect(resultado[0].fecha).toBe('2026-03-15');
+    expect(resultado[1].fecha).toBe('2026-02-01');
+    expect(resultado[2].fecha).toBe('2026-01-10');
+  });
+
+  it('no muta el array original', () => {
+    const aportes = [
+      { id: '1', monto: 100_000, fecha: '2026-01-10' },
+      { id: '2', monto: 200_000, fecha: '2026-03-15' },
+    ];
+    const copia = [...aportes];
+    ordenarAportesPorFecha(aportes);
+    expect(aportes[0].fecha).toBe(copia[0].fecha);
+  });
+
+  it('devuelve array vacío para entradas inválidas', () => {
+    expect(ordenarAportesPorFecha(null)).toEqual([]);
+    expect(ordenarAportesPorFecha(undefined)).toEqual([]);
+  });
+});
+
+// ── validarMontoAporte ───────────────────────────────────────────
+
+describe('validarMontoAporte', () => {
+  it('acepta montos positivos', () => {
+    expect(validarMontoAporte(100_000)).toEqual([]);
+    expect(validarMontoAporte('250000')).toEqual([]);
+  });
+
+  it('rechaza 0 (a diferencia de validarMontoActual)', () => {
+    expect(validarMontoAporte(0).length).toBe(1);
+  });
+
+  it('rechaza negativos y no-numéricos', () => {
+    expect(validarMontoAporte(-1_000).length).toBe(1);
+    expect(validarMontoAporte('abc').length).toBe(1);
+    expect(validarMontoAporte(NaN).length).toBe(1);
+  });
+});
+
+// ── validarFechaAporte ───────────────────────────────────────────
+
+describe('validarFechaAporte', () => {
+  it('acepta fechas en formato YYYY-MM-DD', () => {
+    expect(validarFechaAporte('2026-05-01')).toEqual([]);
+    expect(validarFechaAporte('2025-12-31')).toEqual([]);
+  });
+
+  it('rechaza cadena vacía y null/undefined', () => {
+    expect(validarFechaAporte('').length).toBe(1);
+    expect(validarFechaAporte(null).length).toBe(1);
+    expect(validarFechaAporte(undefined).length).toBe(1);
+  });
+
+  it('rechaza formatos incorrectos', () => {
+    expect(validarFechaAporte('01-05-2026').length).toBe(1);
+    expect(validarFechaAporte('2026/05/01').length).toBe(1);
+    expect(validarFechaAporte('abc').length).toBe(1);
+  });
+});
+
+// ── normalizarMontoAporte ────────────────────────────────────────
+
+describe('normalizarMontoAporte', () => {
+  it('redondea a entero positivo', () => {
+    expect(normalizarMontoAporte('150000')).toBe(150_000);
+    expect(normalizarMontoAporte(99_999.6)).toBe(100_000);
+  });
+
+  it('convierte 0 y negativos a 0', () => {
+    expect(normalizarMontoAporte(0)).toBe(0);
+    expect(normalizarMontoAporte(-500)).toBe(0);
+  });
+
+  it('convierte no-numéricos a 0', () => {
+    expect(normalizarMontoAporte('abc')).toBe(0);
+    expect(normalizarMontoAporte(NaN)).toBe(0);
+  });
+});
+
+// ── validarCompromisoMensual ─────────────────────────────────────
+
+describe('validarCompromisoMensual', () => {
+  it('acepta 0 (sin compromiso) y positivos', () => {
+    expect(validarCompromisoMensual(0)).toEqual([]);
+    expect(validarCompromisoMensual('500000')).toEqual([]);
+  });
+
+  it('rechaza negativos', () => {
+    expect(validarCompromisoMensual(-1_000).length).toBe(1);
+  });
+
+  it('rechaza no-numéricos', () => {
+    expect(validarCompromisoMensual('abc').length).toBe(1);
+    expect(validarCompromisoMensual(NaN).length).toBe(1);
+  });
+});
+
+// ── normalizarCompromisoMensual ──────────────────────────────────
+
+describe('normalizarCompromisoMensual', () => {
+  it('redondea a entero no-negativo', () => {
+    expect(normalizarCompromisoMensual('200000')).toBe(200_000);
+    expect(normalizarCompromisoMensual(0)).toBe(0);
+    expect(normalizarCompromisoMensual(149_999.9)).toBe(150_000);
+  });
+
+  it('convierte negativos y no-numéricos a 0', () => {
+    expect(normalizarCompromisoMensual(-100)).toBe(0);
+    expect(normalizarCompromisoMensual('abc')).toBe(0);
+    expect(normalizarCompromisoMensual(NaN)).toBe(0);
   });
 });

@@ -4,11 +4,13 @@
  */
 
 import { S } from '../../core/state.js';
-import { f } from '../../infra/utils.js';
+import { f, fechaLegible } from '../../infra/utils.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
   mesesDeColchon,
+  calcularMontoTotalFondo,
+  ordenarAportesPorFecha,
   META_MESES_MIN,
   META_MESES_MAX,
 } from './logic.js';
@@ -18,12 +20,14 @@ import {
 /**
  * Renderiza el panel de Ahorro en `#panel-ahorro`.
  *
- * @param {number} gastosFijosMensuales COP/mes que el caller (index.js) ya
- *                                      calculó a partir de S.compromisos.
- *                                      No leemos compromisos aquí para
- *                                      respetar la regla ADN #10.
+ * @param {number}      gastosFijosMensuales COP/mes calculado por index.js desde
+ *                                           S.compromisos (regla ADN #10: view no
+ *                                           lee otros dominios).
+ * @param {number|null} tasaAhorro           Tasa de ahorro mensual (%) calculada
+ *                                           por index.js desde S.ingresos + S.gastos.
+ *                                           null si no hay ingresos registrados.
  */
-export function renderAhorro(gastosFijosMensuales) {
+export function renderAhorro(gastosFijosMensuales, tasaAhorro = null) {
   const el = document.getElementById('panel-ahorro');
   if (!el) return;
 
@@ -34,14 +38,12 @@ export function renderAhorro(gastosFijosMensuales) {
     return;
   }
 
-  el.innerHTML = _renderHero(fondo, gastosFijosMensuales);
+  el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro);
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
 
 function _renderEmptyState(gastosFijosMensuales) {
-  // Si ya hay gastos fijos registrados, mostramos una preview del objetivo
-  // (3 meses) para que el usuario vea desde el inicio cuánto vale el colchón.
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, 3);
   const preview = objetivoPreview > 0
     ? `<p class="empty-state__tip">📊 Con tus gastos fijos actuales, 3 meses de colchón equivalen a <strong>${f(objetivoPreview)}</strong>.</p>`
@@ -59,26 +61,26 @@ function _renderEmptyState(gastosFijosMensuales) {
 
 // ── HERO DEL FONDO (estado activo) ───────────────────────────────
 
-function _renderHero(fondo, gastosFijosMensuales) {
-  const { metaMeses, montoActual } = fondo;
-  const objetivo  = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
-  const progreso  = calcularProgresoFondo(montoActual, objetivo);
-  const colchon   = mesesDeColchon(montoActual, gastosFijosMensuales);
+function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
+  const { metaMeses, montoActual: montoBase } = fondo;
+  const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const montoTotal = calcularMontoTotalFondo(montoBase, aportes);
+  const objetivo   = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
+  const progreso   = calcularProgresoFondo(montoTotal, objetivo);
+  const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
   const { porcentaje, faltante, completado } = progreso;
 
   const claseProgreso = completado
     ? 'progress-bar--complete'
     : porcentaje >= 80 ? 'progress-bar--near' : '';
 
-  // Subtítulo de meses cubiertos. Si no hay gastos fijos registrados aún,
-  // mostramos solo el monto sin proyección (sin esto el dato no tiene sentido).
+  // Subtítulo de meses cubiertos.
   const subColchon = colchon === null
     ? `<span class="fondo-hero__sub">Registra tus gastos fijos para ver cuántos meses cubre.</span>`
     : completado
       ? `<span class="fondo-hero__sub fondo-hero__sub--ok">✓ Cubre ${_fmtMeses(colchon)} de tus gastos fijos.</span>`
       : `<span class="fondo-hero__sub">Cubre ${_fmtMeses(colchon)} de los ${metaMeses} que apuntas.</span>`;
 
-  // Si no hay objetivo (porque no hay gastos fijos), avisamos al usuario.
   const labelObjetivo = objetivo > 0
     ? `Objetivo: ${f(objetivo)} (${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} de gastos fijos)`
     : `Aún no hay un objetivo: registra tus gastos fijos para calcularlo.`;
@@ -91,6 +93,8 @@ function _renderHero(fondo, gastosFijosMensuales) {
     ? `<p class="fondo-hero__banner" role="status">🎉 ¡Fondo de emergencia completo! Cualquier aporte extra suma colchón.</p>`
     : '';
 
+  const compromisoMensual = Number(S.ahorro?.compromisoMensual) || 0;
+
   return `
     <article class="fondo-hero" aria-label="Fondo de emergencia">
       <header class="fondo-hero__header">
@@ -99,7 +103,7 @@ function _renderHero(fondo, gastosFijosMensuales) {
         </div>
         <div class="fondo-hero__title-wrap">
           <p class="fondo-hero__label">Fondo de emergencia</p>
-          <p class="fondo-hero__title">${f(montoActual)}</p>
+          <p class="fondo-hero__title">${f(montoTotal)}</p>
           ${subColchon}
         </div>
         <button class="btn btn-ghost btn-icon"
@@ -121,20 +125,114 @@ function _renderHero(fondo, gastosFijosMensuales) {
 
       ${faltanteHtml}
       ${banner}
-    </article>`;
+    </article>
+
+    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro)}`;
 }
 
-// ── FORMULARIO MODAL (activar / editar) ──────────────────────────
+// ── SECCIÓN DE HÁBITO (aportes + compromiso + tasa) ──────────────
+
+function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro) {
+  const ordenados = ordenarAportesPorFecha(aportes);
+
+  const compromisoHtml = compromisoMensual > 0
+    ? `<div class="ahorro-habito__compromiso">
+        <span>💳 Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
+        <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
+                aria-label="Editar compromiso mensual">Editar</button>
+      </div>`
+    : `<p class="ahorro-habito__sin-compromiso">
+        ¿Cuánto quieres apartar cada mes?
+        <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso">Definir →</button>
+      </p>`;
+
+  const listaHtml = ordenados.length === 0
+    ? `<p class="ahorro-habito__empty">Aún no has registrado aportes. Cada vez que apartes dinero para el fondo, regístralo aquí.</p>`
+    : `<ul class="ahorro-habito__lista" role="list">
+        ${ordenados.map(_renderAporteItem).join('')}
+      </ul>`;
+
+  const tasaHtml = tasaAhorro !== null
+    ? _renderNudgeTasa(tasaAhorro)
+    : '';
+
+  return `
+    <section class="ahorro-habito" aria-label="Historial de aportes">
+      <div class="ahorro-habito__header">
+        <h2 class="ahorro-habito__title">Aportes al fondo</h2>
+        <button class="btn btn-sm btn-primary" data-action="ahorro-nuevo-aporte">+ Registrar</button>
+      </div>
+      ${compromisoHtml}
+      ${listaHtml}
+      ${tasaHtml}
+    </section>`;
+}
+
+/** @param {{id:string, monto:number, fecha:string, nota?:string}} aporte */
+function _renderAporteItem(aporte) {
+  const nota = aporte.nota ? ` · ${_esc(aporte.nota)}` : '';
+  return `
+    <li class="list-item" data-id="${_esc(aporte.id)}">
+      <div class="list-item__body">
+        <p class="list-item__title">${f(aporte.monto)}</p>
+        <p class="list-item__subtitle">${fechaLegible(aporte.fecha)}${nota}</p>
+      </div>
+      <div class="list-item__action">
+        <button class="btn btn-ghost btn-icon"
+                data-action="ahorro-eliminar-aporte"
+                data-id="${_esc(aporte.id)}"
+                aria-label="Eliminar aporte de ${f(aporte.monto)}">
+          <svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg>
+        </button>
+      </div>
+    </li>`;
+}
+
+function _renderNudgeTasa(tasaAhorro) {
+  let icono, titulo, desc, nivel;
+
+  if (tasaAhorro >= 20) {
+    icono = '🏆'; nivel = 'nudge-success';
+    titulo = `Excelente: ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
+    desc   = 'Superas el umbral recomendado del 20%. ¡Sigue así!';
+  } else if (tasaAhorro >= 10) {
+    icono = '📈'; nivel = 'nudge-info';
+    titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
+    desc   = 'Vas bien. La meta recomendada es el 20%. Un poco más y llegas.';
+  } else if (tasaAhorro > 0) {
+    icono = '💡'; nivel = 'nudge-medium';
+    titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
+    desc   = 'La meta recomendada es el 20%. Revisa tus gastos variables para mejorar.';
+  } else if (tasaAhorro === 0) {
+    icono = '⚠️'; nivel = 'nudge-medium';
+    titulo = 'Este mes tus gastos igualan tus ingresos.';
+    desc   = 'No queda margen para ahorrar. Revisa tus gastos para liberar espacio.';
+  } else {
+    icono = '🚨'; nivel = 'nudge-high';
+    titulo = `Este mes tus gastos superan tus ingresos en ${Math.abs(tasaAhorro)}%.`;
+    desc   = 'Estás gastando más de lo que ganas. Revisarlo es urgente.';
+  }
+
+  return `
+    <div class="nudge ${nivel}" role="status">
+      <span class="nudge__icon" aria-hidden="true">${icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${titulo}</p>
+        <p class="nudge__desc">${desc}</p>
+      </div>
+    </div>`;
+}
+
+// ── FORMULARIO MODAL - FONDO (activar / editar) ──────────────────
 
 /**
- * HTML del formulario para activar el fondo o editarlo (monto + meta de meses).
- * Se inyecta en `#modal-ahorro-body`.
+ * HTML del formulario para activar el fondo o editarlo (monto base + meta de meses).
  *
  * @param {Object} opts
- * @param {boolean} opts.editando            true si el fondo ya existe.
- * @param {number}  opts.metaMeses           Valor inicial del input meses.
- * @param {number}  opts.montoActual         Valor inicial del input monto.
- * @param {number}  opts.gastosFijosMensuales COP/mes para preview del objetivo.
+ * @param {boolean} opts.editando
+ * @param {number}  opts.metaMeses
+ * @param {number}  opts.montoActual
+ * @param {number}  opts.gastosFijosMensuales
  * @returns {string}
  */
 export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosMensuales }) {
@@ -174,6 +272,72 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
     </form>`;
 }
 
+// ── FORMULARIO MODAL - APORTE (J.1b) ─────────────────────────────
+
+/**
+ * HTML del formulario para registrar un nuevo aporte al fondo.
+ *
+ * @param {{ fecha: string }} opts  fecha en YYYY-MM-DD (default: hoy).
+ * @returns {string}
+ */
+export function renderFormAporte({ fecha }) {
+  return `
+    <form id="form-aporte" novalidate>
+      <div class="form-group">
+        <label for="aporte-monto" class="label">Monto del aporte (COP)</label>
+        <input id="aporte-monto" name="monto" class="input" type="number"
+               min="1" step="10000" placeholder="100000"
+               required aria-required="true" inputmode="numeric" autofocus />
+        <p class="form-hint">¿Cuánto apartaste para el fondo?</p>
+      </div>
+
+      <div class="form-group">
+        <label for="aporte-fecha" class="label">Fecha</label>
+        <input id="aporte-fecha" name="fecha" class="input" type="date"
+               value="${_esc(fecha)}" required aria-required="true" />
+      </div>
+
+      <div class="form-group">
+        <label for="aporte-nota" class="label">Nota (opcional)</label>
+        <input id="aporte-nota" name="nota" class="input" type="text"
+               maxlength="80" placeholder="Ej. Parte de la quincena de mayo"
+               autocomplete="off" />
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar aporte</button>
+      </div>
+    </form>`;
+}
+
+// ── FORMULARIO MODAL - COMPROMISO MENSUAL (J.1b) ─────────────────
+
+/**
+ * HTML del formulario para definir o editar el compromiso mensual de ahorro
+ * ("págate primero": cuánto se compromete el usuario a apartar cada mes).
+ *
+ * @param {number} compromisoMensual Valor actual. 0 = sin compromiso.
+ * @returns {string}
+ */
+export function renderFormCompromisoMensual(compromisoMensual) {
+  return `
+    <form id="form-compromiso" novalidate>
+      <div class="form-group">
+        <label for="compromiso-monto" class="label">¿Cuánto quieres apartar por mes? (COP)</label>
+        <input id="compromiso-monto" name="compromisoMensual" class="input" type="number"
+               min="0" step="10000" value="${Number(compromisoMensual) || 0}"
+               placeholder="0" inputmode="numeric" autofocus />
+        <p class="form-hint">Pon 0 para quitar el compromiso. Es un recordatorio personal: no afecta tu saldo hasta que registres el aporte.</p>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>`;
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
@@ -185,4 +349,10 @@ function _fmtMeses(n) {
   const entero = Math.abs(n - Math.round(n)) < 0.05;
   const valor  = entero ? Math.round(n) : n.toString().replace('.', ',');
   return `${valor} ${Math.abs(n - 1) < 0.05 ? 'mes' : 'meses'}`;
+}
+
+function _esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
