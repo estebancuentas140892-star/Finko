@@ -26,6 +26,7 @@ import {
   validarMontoAporte, validarFechaAporte, normalizarMontoAporte,
   validarCompromisoMensual, normalizarCompromisoMensual,
   calcularTasaAhorro,
+  calcularObjetivoFondo, calcularProgresoFondo, calcularMontoTotalFondo,
 } from './logic.js';
 import {
   renderAhorro, renderFormFondo,
@@ -131,6 +132,27 @@ function _calcularTasaAhorro() {
   return calcularTasaAhorro(ingresos, gastos);
 }
 
+// ── COMPLETADO FLAG (J.1c) ────────────────────────────────────────
+
+/**
+ * Recalcula y persiste el flag `completado` en S.ahorro.fondoEmergencia.
+ * Llamar ANTES de save() en cualquier mutacion que afecte el progreso del fondo.
+ * El flag es leido por el logro `fondo-emergencia` y por el Score de Salud.
+ */
+function _actualizarCompletado() {
+  const fondo = S.ahorro?.fondoEmergencia;
+  if (!fondo) return;
+  if (!fondo.activo) {
+    fondo.completado = false;
+    return;
+  }
+  const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const montoTotal = calcularMontoTotalFondo(fondo.montoActual, aportes);
+  const objetivo   = calcularObjetivoFondo(_gastosFijosMensuales(), fondo.metaMeses);
+  const { completado } = calcularProgresoFondo(montoTotal, objetivo);
+  fondo.completado = completado;
+}
+
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
 
 function _getOverlay() {
@@ -194,6 +216,7 @@ function _guardarFondo(form) {
 
   const yaActivo = S.ahorro?.fondoEmergencia?.activo === true;
   S.ahorro.fondoEmergencia = { activo: true, metaMeses, montoActual };
+  _actualizarCompletado();
   save();
   EventBus.emit('state:change', { section: 'ahorro' });
 
@@ -219,6 +242,7 @@ async function _desactivarFondo() {
   if (S.ahorro?.fondoEmergencia) {
     S.ahorro.fondoEmergencia.activo = false;
   }
+  _actualizarCompletado();
   save();
   EventBus.emit('state:change', { section: 'ahorro' });
 
@@ -272,6 +296,7 @@ function _guardarAporte(form) {
 
   if (!Array.isArray(S.ahorro.aportes)) S.ahorro.aportes = [];
   S.ahorro.aportes.push(aporte);
+  _actualizarCompletado();
   save();
   EventBus.emit('state:change', { section: 'ahorro' });
 
@@ -300,6 +325,7 @@ async function _eliminarAporte(el) {
   if (!ok) return;
 
   S.ahorro.aportes = S.ahorro.aportes.filter(a => a.id !== id);
+  _actualizarCompletado();
   save();
   EventBus.emit('state:change', { section: 'ahorro' });
 

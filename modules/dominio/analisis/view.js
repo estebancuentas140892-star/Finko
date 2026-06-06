@@ -76,7 +76,14 @@ function _renderMetricas({ gastoMes, compromisoMensual, egresos }) {
 }
 
 function _renderScoreSalud(resumen) {
-  const score = calcularScoreSalud(resumen);
+  // Lee el estado del fondo para el 4to factor (J.1c).
+  const fondo      = S.ahorro?.fondoEmergencia;
+  const ahorroData = {
+    activo:     fondo?.activo     === true,
+    completado: fondo?.completado === true,
+  };
+
+  const score = calcularScoreSalud(resumen, ahorroData);
   const banda = clasificarScore(score.score);
   const ETIQUETAS = {
     excelente: { emoji: '🌟', label: 'Excelente' },
@@ -85,6 +92,14 @@ function _renderScoreSalud(resumen) {
     critica:   { emoji: '🔴', label: 'Crítica' },
   };
   const { emoji, label } = ETIQUETAS[banda];
+
+  // Nudge si no hay fondo activo: invita a activarlo indicando el impacto en el score.
+  const nudgeFondo = !ahorroData.activo
+    ? `<p class="analisis__hint">
+        Sin fondo de emergencia: tu base financiera esta expuesta.
+        <a href="#ahorro" class="link">Activarlo suma hasta 25 pts al score.</a>
+      </p>`
+    : '';
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-score-title">
@@ -125,10 +140,18 @@ function _renderScoreSalud(resumen) {
               <div class="progress-bar" style="width:${score.factors.control}%"></div>
             </div>
           </div>
+          <div class="score-factor">
+            <p class="score-factor__label">🛡️ Ahorro</p>
+            <p class="score-factor__valor">${score.factors.ahorro}</p>
+            <div class="progress score-factor__bar">
+              <div class="progress-bar" style="width:${score.factors.ahorro}%"></div>
+            </div>
+          </div>
         </div>
 
         <p class="score-card__explicacion">${_esc(score.explicacion)}</p>
       </div>
+      ${nudgeFondo}
     </section>`;
 }
 

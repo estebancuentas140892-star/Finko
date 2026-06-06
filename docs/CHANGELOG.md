@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo-emergencia + nudge analisis · 2026-06-06
+
+Tercera y última entrega de J.1 (Ahorro). Integra el fondo de emergencia con el Score de Salud y el sistema de logros. **J.1 completa.**
+
+- **`logros/logic.js`**: nuevo logro `fondo-emergencia` ("Red de seguridad", 🛡️). Eval lee `s.ahorro?.fondoEmergencia?.completado === true`. 5 tests nuevos.
+- **`ahorro/index.js`**: nueva `_actualizarCompletado()` recalcula y persiste el flag `completado` en `S.ahorro.fondoEmergencia` (vía `calcularMontoTotalFondo` + `calcularObjetivoFondo` + `calcularProgresoFondo`). Se invoca antes de cada `save()` en las 4 mutaciones del fondo (guardar, desactivar, agregar y eliminar aporte). Import ampliado a las 3 funciones de cálculo.
+- **`analisis/logic.js`**: `calcularScoreSalud(resumen, ahorroData = null)` con 2do parámetro opcional. Con `ahorroData`: 4 factores (Deuda 30%, Liquidez 25%, Control 20%, Ahorro 25%; ahorro = 100 completado / 50 activo / 0 sin fondo). Sin `ahorroData`: comportamiento legacy 3 factores (40/35/25). Backward-compat total. 8 tests nuevos.
+- **`analisis/view.js`**: `_renderScoreSalud` lee `S.ahorro.fondoEmergencia`, pasa `ahorroData`, muestra 4ta card (🛡️ Ahorro). Nudge con CTA a `#ahorro` si no hay fondo activo.
+- **`analisis/index.js`**: `'ahorro'` agregado a `SECCIONES_OBSERVADAS` (score se actualiza en vivo).
+- **`service-worker.js`**: v103 → v104.
+
+1003/1003 unit + integración verdes. **Cierra la fase J.1 (Ahorro). Sigue: J.2 (Inversión).**
+
+---
+
 ### feat(ahorro): J.1b - hábito de ahorro: aportes + historial + tasa de ahorro + "págate primero" · 2026-06-06
 
 Segunda entrega de J.1 (Ahorro). Añade el ciclo de registro de aportes sobre el fondo de emergencia, el compromiso mensual y el nudge de tasa de ahorro.

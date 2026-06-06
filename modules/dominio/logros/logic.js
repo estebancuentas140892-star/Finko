@@ -94,6 +94,13 @@ export const LOGROS = [
     desc:   'Llevas 10 o mas gastos registrados.',
     eval:   s => Array.isArray(s.gastos) && s.gastos.length >= 10,
   },
+  {
+    id:     'fondo-emergencia',
+    nombre: 'Red de seguridad',
+    emoji:  '🛡️',
+    desc:   'Completaste tu fondo de emergencia. Tu base financiera esta lista.',
+    eval:   s => s.ahorro?.fondoEmergencia?.completado === true,
+  },
 ];
 
 // ── EVALUACION ───────────────────────────────────────────────────

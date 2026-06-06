@@ -680,6 +680,70 @@ describe('calcularScoreSalud()', () => {
   });
 });
 
+// ── calcularScoreSalud() - 4 factores (J.1c) ─────────────────────
+
+describe('calcularScoreSalud() con ahorroData - 4 factores', () => {
+  const resumenOpt = {
+    activos:     { total: 10_000_000 },
+    pasivos:     { total: 1_000_000 },
+    saldoCuentas: 12_000_000,
+    gastosMes:   1_000_000,
+    volatilidad: 50_000,
+  };
+
+  it('fondo completado: factor ahorro = 100', () => {
+    const r = calcularScoreSalud(resumenOpt, { activo: true, completado: true });
+    expect(r.factors.ahorro).toBe(100);
+  });
+
+  it('fondo activo pero no completado: factor ahorro = 50', () => {
+    const r = calcularScoreSalud(resumenOpt, { activo: true, completado: false });
+    expect(r.factors.ahorro).toBe(50);
+  });
+
+  it('sin fondo (activo = false): factor ahorro = 0', () => {
+    const r = calcularScoreSalud(resumenOpt, { activo: false, completado: false });
+    expect(r.factors.ahorro).toBe(0);
+  });
+
+  it('con todos los factores en 100: score = 100', () => {
+    const resumenPerfecto = {
+      activos:     { total: 10_000_000 },
+      pasivos:     { total: 0 },
+      saldoCuentas: 6_000_000,
+      gastosMes:   1_000_000,
+      volatilidad: 0,
+    };
+    const r = calcularScoreSalud(resumenPerfecto, { activo: true, completado: true });
+    expect(r.score).toBe(100);
+  });
+
+  it('score 4-factor menor que 3-factor cuando no hay ahorro', () => {
+    const r3 = calcularScoreSalud(resumenOpt);
+    const r4 = calcularScoreSalud(resumenOpt, { activo: false, completado: false });
+    expect(r4.score).toBeLessThan(r3.score);
+  });
+
+  it('explicacion incluye Ahorro cuando ahorroData esta presente', () => {
+    const r = calcularScoreSalud(resumenOpt, { activo: true, completado: false });
+    expect(r.explicacion).toContain('Ahorro');
+  });
+
+  it('incluye el factor ahorro en factors', () => {
+    const r = calcularScoreSalud(resumenOpt, { activo: true, completado: true });
+    expect(r.factors).toHaveProperty('ahorro');
+    expect(r.factors).toHaveProperty('deuda');
+    expect(r.factors).toHaveProperty('liquidez');
+    expect(r.factors).toHaveProperty('control');
+  });
+
+  it('con resumen null y ahorroData presente: score 0 con factor ahorro', () => {
+    const r = calcularScoreSalud(null, { activo: true, completado: true });
+    expect(r.score).toBe(0);
+    expect(r.factors.ahorro).toBe(0);
+  });
+});
+
 // ── clasificarScore() ─────────────────────────────────────────────
 
 describe('clasificarScore()', () => {
@@ -907,9 +971,8 @@ describe('detectarPatronGastoSemanal', () => {
       monto: 200_000,
     }));
     expect(detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 10 })).toBeNull();
-    // Con ventana=60 hay suficientes gastos pero posiblemente sin días destacados
-    const r60 = detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 60 });
-    // Solo verificamos que no lanza
+    // Con ventana=60 hay suficientes gastos pero posiblemente sin días destacados.
+    // Solo verificamos que no lanza.
     expect(() => detectarPatronGastoSemanal(gastos30, HOY, { ventanaDias: 60 })).not.toThrow();
   });
 

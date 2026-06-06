@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (feat(ahorro): Parte 4 - J.1a fundación del dominio Ahorro + fondo de emergencia + migración schema v6→v7)
+> Última actualización: 2026-06-06 (feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo de emergencia + nudge analisis)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 990/990 verdes (+25 ahorro J.1b, +30 ahorro J.1a, +4 migración v6→v7) |
+| Tests unitarios + integración | 1003/1003 verdes (+5 logros J.1c, +8 analisis J.1c, +25 ahorro J.1b, +30 ahorro J.1a) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,26 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo-emergencia + nudge analisis · 2026-06-06
+
+Tercera y ultima entrega de J.1 (Ahorro). Integra el fondo de emergencia con el Score de Salud y el sistema de logros.
+
+**`logros/logic.js`:** nuevo logro `fondo-emergencia` ("Red de seguridad", emoji 🛡️). Eval: `s.ahorro?.fondoEmergencia?.completado === true`. 5 tests nuevos.
+
+**`ahorro/index.js`:** nueva funcion `_actualizarCompletado()` que recalcula y persiste el flag `completado` en `S.ahorro.fondoEmergencia` usando `calcularProgresoFondo` + `calcularMontoTotalFondo`. Se llama antes de cada `save()` en las 4 mutaciones del fondo (guardar, desactivar, agregar aporte, eliminar aporte).
+
+**`analisis/logic.js`:** `calcularScoreSalud(resumen, ahorroData = null)` ahora acepta un 2do parametro opcional. Con `ahorroData`: 4 factores (Deuda 30%, Liquidez 25%, Control 20%, Ahorro 25%). Sin `ahorroData`: comportamiento legacy 3 factores (40/35/25). Backward-compat total: tests existentes no cambian. 8 tests nuevos.
+
+**`analisis/view.js`:** `_renderScoreSalud` lee `S.ahorro.fondoEmergencia` y pasa `ahorroData` a `calcularScoreSalud`. Muestra 4to factor card (🛡️ Ahorro). Si no hay fondo activo: nudge con CTA a `#ahorro` ("Activarlo suma hasta 25 pts al score").
+
+**`analisis/index.js`:** 'ahorro' agregado a `SECCIONES_OBSERVADAS`. El score se actualiza en vivo al cambiar datos de ahorro.
+
+**`service-worker.js`:** v103 → v104.
+
+**Verificado:** 1003/1003 tests verdes. **J.1 completa.**
+
+**Sigue:** J.2a (dominio Inversión: schema v7→v8 + lista de holdings + modal de alta). _(Opus 4.8 - Medio.)_
 
 ### feat(ahorro): J.1b - hábito de ahorro: aportes + historial + tasa de ahorro + "págate primero" · 2026-06-06
 
@@ -133,23 +153,6 @@ Segundo batch del refinamiento de tono. Convierte todo el voseo y "plata" en los
 **Verificado:** 931/931 unit verdes. E2E actualizados.
 
 **Sigue:** Batch 3 (metas, presupuesto, personales, análisis, config, nudges, onboarding). Luego Parte 4 (Ahorro J.1a).
-
-### copy(tono): refinamiento a voz neutral-profesional - Batch 1 (ADR + chrome) · 2026-06-06
-
-**Decisión de producto:** el tono pasa de "muy colombiano/informal" a "neutral, claro, profesional" (accesible para cualquier edad). Voz **"tú"** (tuteo, no voseo), **"dinero"** (no "plata"). Refina la regla 11 del ADN sin cambiar su espíritu (lenguaje humano, sin jerga).
-
-**Proceso ADN seguido:**
-- `docs/DECISIONS/003-tono-neutral-profesional.md`: ADR nuevo con contexto, decisión, guía de aplicación.
-- `CLAUDE.md`: regla 11 actualizada (voz tú + dinero, link al ADR).
-
-**Batch 1 (chrome estático, lo más visible):**
-- `index.html`: 13 textos. "Tu plata disponible hoy" → "Tu dinero disponible hoy", "¿Dónde tenés tu plata?" → "¿Dónde tienes tu dinero?", title, quick-add, hero-guia, herramientas, simulador laboral (voseo → tú).
-- `service-worker.js`: `CACHE_NAME` v98 → v99.
-- `tests/e2e/smoke.test.js`: comentario actualizado (la aserción real chequea `#saldo-total`, no se rompe).
-
-**Verificado:** preview muestra el nuevo copy. 931/931 unit verdes. E2E no afectado (ninguna aserción referencia la copy cambiada).
-
-**Sigue:** Batch 2 (dominios de uso diario: gastos, tesorería, agenda, deudas + sus aserciones E2E como "¿Dónde guardás tu plata?"). Batch 3 (metas, presupuesto, personales, análisis, config, nudges). Luego retomar Parte 4 (Ahorro J.1a).
 
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
@@ -472,10 +475,10 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** ninguna. La fase H (Rediseño de Tesorería) cerró en v8.9 con la Parte B (simulador gateado) y la limpieza opcional H.C (borrado de `ingresos/` muerto + refresco e2e). La app sigue estable en producción.
+**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada** (J.1a + J.1b + J.1c). Lo siguiente es **J.2 (Inversión)**: dominio nuevo con schema v7→v8, lista de holdings y proyección de rentabilidad.
 
 **Opciones para la próxima sesión:**
-- **Cerrar deuda técnica:** eliminar `updateBadge` y `renderResumenGastos` no-ops que quedaron cableadas desde 4 dominios (refactor cross-domain acotado).
+- **J.2a - Fundación del dominio Inversión:** schema v7→v8 + migración, `inversiones/logic.js` (total invertido), sección con lista de holdings + modal de alta. _(Opus 4.8 - Medio.)_
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
 - Pequeñas mejoras de UX o copy a demanda.

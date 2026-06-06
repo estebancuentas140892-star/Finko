@@ -197,6 +197,61 @@ describe('evaluarLogros - multiples logros simultaneos', () => {
   });
 });
 
+describe('evaluarLogros - fondo-emergencia', () => {
+  test('no se cumple sin datos de ahorro', () => {
+    const s = estado({ onboarded: true });
+    expect(evaluarLogros(s)).not.toContain('fondo-emergencia');
+  });
+
+  test('no se cumple si el fondo no esta activo', () => {
+    const s = estado({
+      onboarded: true,
+      ahorro: {
+        fondoEmergencia: { activo: false, completado: false },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+    });
+    expect(evaluarLogros(s)).not.toContain('fondo-emergencia');
+  });
+
+  test('no se cumple si el fondo esta activo pero no completado', () => {
+    const s = estado({
+      onboarded: true,
+      ahorro: {
+        fondoEmergencia: { activo: true, completado: false },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+    });
+    expect(evaluarLogros(s)).not.toContain('fondo-emergencia');
+  });
+
+  test('no se cumple si completado es undefined', () => {
+    const s = estado({
+      onboarded: true,
+      ahorro: {
+        fondoEmergencia: { activo: true },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+    });
+    expect(evaluarLogros(s)).not.toContain('fondo-emergencia');
+  });
+
+  test('se cumple cuando completado = true', () => {
+    const s = estado({
+      onboarded: true,
+      ahorro: {
+        fondoEmergencia: { activo: true, completado: true },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+    });
+    expect(evaluarLogros(s)).toContain('fondo-emergencia');
+  });
+});
+
 describe('LOGROS - integridad de la tabla', () => {
   test('todos los logros tienen id, nombre, emoji, desc, eval', () => {
     for (const l of LOGROS) {

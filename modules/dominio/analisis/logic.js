@@ -201,15 +201,19 @@ export function calcularVolatilidad(valores) {
 }
 
 /**
- * Calcula el score de salud financiera (0-100) como promedio ponderado de 3 factores.
+ * Calcula el score de salud financiera (0-100) como promedio ponderado de factores.
  *
- * Desde v8.8 la app no rastrea ingresos, así que el score se basa solo en datos
- * que sí tenemos (saldos, deudas y gastos):
+ * Modo 3 factores (ahorroData = null, comportamiento legacy):
  *   - Ratio deuda-activos (40 %): 0 → 100, 1 → 50, 2+ → 0
- *   - Ratio de liquidez (35 %): 6+ meses de gasto cubiertos → 100, 3 → 50, < 1 → 0
- *   - Control de gastos (25 %): Volatilidad baja → 100, alta → 0
+ *   - Ratio de liquidez (35 %): 6+ meses cubiertos → 100, 3 → 50, < 1 → 0
+ *   - Control de gastos (25 %): volatilidad baja → 100, alta → 0
  *
- * Devuelve un objeto con el score total (redondeado) y los sub-scores por factor.
+ * Modo 4 factores (ahorroData provisto, J.1c):
+ *   - Deuda (30 %), Liquidez (25 %), Control (20 %), Ahorro (25 %)
+ *   - Ahorro: fondo completado → 100, fondo activo → 50, sin fondo → 0
+ *
+ * La separación backward-compat permite que los tests legacy existentes
+ * sigan pasando sin cambios (llaman sin ahorroData).
  *
  * @param {{
  *   activos: {total: number},
@@ -218,19 +222,21 @@ export function calcularVolatilidad(valores) {
  *   gastosMes: number,
  *   volatilidad: number,
  * }} resumen - Objeto generado por generarResumen().
+ * @param {{ activo: boolean, completado: boolean } | null} [ahorroData=null]
+ *   Estado del fondo de emergencia. null = modo 3 factores.
  * @returns {{
  *   score: number,
- *   factors: {deuda: number, liquidez: number, control: number},
+ *   factors: {deuda: number, liquidez: number, control: number, ahorro?: number},
  *   explicacion: string,
  * }}
  */
-export function calcularScoreSalud(resumen) {
+export function calcularScoreSalud(resumen, ahorroData = null) {
+  const con4 = ahorroData !== null;
+
   if (!resumen) {
-    return {
-      score: 0,
-      factors: { deuda: 0, liquidez: 0, control: 0 },
-      explicacion: 'Sin datos para calcular.',
-    };
+    return con4
+      ? { score: 0, factors: { deuda: 0, liquidez: 0, control: 0, ahorro: 0 }, explicacion: 'Sin datos para calcular.' }
+      : { score: 0, factors: { deuda: 0, liquidez: 0, control: 0 },            explicacion: 'Sin datos para calcular.' };
   }
 
   const activos = resumen.activos?.total ?? 0;
@@ -241,30 +247,54 @@ export function calcularScoreSalud(resumen) {
   const gasteMes = resumen.gastoMes ?? resumen.gastosMes ?? 1;
   const volatilidad = resumen.volatilidad ?? 0;
 
-  // Factor 1: Ratio deuda-activos (40 %)
+  // Factor 1: Ratio deuda-activos
   const ratioDeuda = activos > 0 ? pasivos / activos : 1;
   const scoreDeuda = Math.max(0, 100 - ratioDeuda * 100);
 
-  // Factor 2: Ratio liquidez (35 %)
+  // Factor 2: Ratio liquidez
   const mesesRunway = gasteMes > 0 ? saldoCuentas / gasteMes : 0;
   const scoreLiquidez = Math.min(100, Math.max(0, (mesesRunway / 6) * 100));
 
-  // Factor 3: Control de gastos (25 %)
+  // Factor 3: Control de gastos
   const coeficienteVariacion = gasteMes > 0 ? volatilidad / gasteMes : 0;
   const scoreControl = Math.max(0, Math.min(100, 100 - coeficienteVariacion * 100));
 
-  // Promedio ponderado
+  if (con4) {
+    // Modo 4 factores: Deuda 30 %, Liquidez 25 %, Control 20 %, Ahorro 25 %
+    const scoreAhorro = ahorroData.completado ? 100 : ahorroData.activo ? 50 : 0;
+    const score =
+      scoreDeuda   * 0.30 +
+      scoreLiquidez * 0.25 +
+      scoreControl  * 0.20 +
+      scoreAhorro   * 0.25;
+    return {
+      score: Math.round(score),
+      factors: {
+        deuda:    Math.round(scoreDeuda),
+        liquidez: Math.round(scoreLiquidez),
+        control:  Math.round(scoreControl),
+        ahorro:   Math.round(scoreAhorro),
+      },
+      explicacion:
+        `Deuda ${Math.round(scoreDeuda)}/100 • ` +
+        `Liquidez ${Math.round(scoreLiquidez)}/100 • ` +
+        `Control ${Math.round(scoreControl)}/100 • ` +
+        `Ahorro ${Math.round(scoreAhorro)}/100`,
+    };
+  }
+
+  // Modo 3 factores (legacy): Deuda 40 %, Liquidez 35 %, Control 25 %
   const score =
-    scoreDeuda * 0.40 +
+    scoreDeuda   * 0.40 +
     scoreLiquidez * 0.35 +
-    scoreControl * 0.25;
+    scoreControl  * 0.25;
 
   return {
     score: Math.round(score),
     factors: {
-      deuda: Math.round(scoreDeuda),
+      deuda:    Math.round(scoreDeuda),
       liquidez: Math.round(scoreLiquidez),
-      control: Math.round(scoreControl),
+      control:  Math.round(scoreControl),
     },
     explicacion:
       `Deuda ${Math.round(scoreDeuda)}/100 • ` +

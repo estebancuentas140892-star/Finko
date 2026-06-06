@@ -10,7 +10,7 @@
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
 **Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, onboarding UX cerrado en 2026-06-03, **modernización UI/UX (Parte 3: paleta, tipografía, navegación, cards, iconografía SVG) cerrada en 2026-06-06**.
-**Estado:** proyecto estable en producción. 931/931 unit + integración verdes, Lighthouse 99-100.
+**Estado:** proyecto estable en producción. 1003/1003 unit + integración verdes, Lighthouse 99-100.
 **Fase activa:** Parte 4 - Crecer: Ahorro + Inversión (ver sección J más abajo).
 
 ---
@@ -184,7 +184,9 @@ Tracker de la plata real que aparta el usuario, distinto de Metas (objetivos con
   **Slices (smallest-first, cada uno verificable en la app):**
   - ✅ **J.1a** - Fundación + fondo de emergencia (2026-06-06): schema+migración v6→v7, `logic.js` (30 tests) + 4 tests de migración, sección con hero del fondo + nav + ícono SVG `i-ahorro` + token `--fk-dom-ahorro`, empty state con preview dinámico, modal activar/editar/desactivar. Ver [CHANGELOG](CHANGELOG.md).
   - ✅ **J.1b** - Hábito de apartar dinero (2026-06-06): modal de aporte + historial ordenado desc + nudge de tasa de ahorro (5 niveles) + "págate primero" mensual (compromisoMensual). Hero usa total = base + suma de aportes. EventBus extendido a ingresos/gastos. 25 tests nuevos. Ver [CHANGELOG](CHANGELOG.md).
-  - **J.1c** - Nudges + integración: alerta si no hay fondo / tasa baja, enganche con Score de Salud (ya pondera ahorro 40%), logro por completar el fondo. _(Sonnet 4.6 - Medio.)_
+  - ✅ **J.1c** - Nudges + integración (2026-06-06): logro `fondo-emergencia` ("Red de seguridad" 🛡️) + flag `completado` persistido por `ahorro/index.js`; Score de Salud con 4to factor Ahorro (`calcularScoreSalud(resumen, ahorroData)`, backward-compat 3↔4 factores, Deuda 30 / Liquidez 25 / Control 20 / Ahorro 25) + card 🛡️ + nudge CTA si no hay fondo; `'ahorro'` en SECCIONES_OBSERVADAS. 13 tests nuevos. Ver [CHANGELOG](CHANGELOG.md).
+
+  _(J.1 Ahorro completa: J.1a + J.1b + J.1c cerradas. Sigue J.2 Inversión.)_
 
 #### J.2 - Inversión (DESPUÉS): portafolio real
 
@@ -213,5 +215,5 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 | Lighthouse Best Practices | ≥ 90 | 100 ✅ |
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
-| Tests unitarios | - | 973/973 ✅ |
+| Tests unitarios | - | 1003/1003 ✅ |
 | Tests E2E | - | 18/18 ✅ |

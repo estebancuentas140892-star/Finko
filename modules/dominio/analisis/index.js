@@ -11,9 +11,9 @@ import { renderAnalisis } from './view.js';
 import { f } from '../../infra/utils.js';
 import { calcularRegla72, calcularRentabilidadReal, validarCampos } from '../../infra/financiero.js';
 
-// Secciones cuyos cambios requieren re-análisis.
+// Secciones cuyos cambios requieren re-analisis.
 const SECCIONES_OBSERVADAS = new Set([
-  'gastos', 'compromisos', 'cuentas', 'metas',
+  'gastos', 'compromisos', 'cuentas', 'metas', 'ahorro',
 ]);
 
 // ── HERRAMIENTAS INLINE ──────────────────────────────────────────
