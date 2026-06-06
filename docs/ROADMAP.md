@@ -9,9 +9,9 @@
 ## Estado actual
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
-**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, **onboarding UX del dashboard iniciado en 2026-06-03**.
+**Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, onboarding UX cerrado en 2026-06-03, **modernización UI/UX (Parte 3: paleta, tipografía, navegación, cards, iconografía SVG) cerrada en 2026-06-06**.
 **Estado:** proyecto estable en producción. 931/931 unit + integración verdes, Lighthouse 99-100.
-**Fase activa:** UX para nuevos usuarios (ver sección I más abajo).
+**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión (ver sección J más abajo).
 
 ---
 
@@ -163,6 +163,40 @@ que no fueron incluidas en la fase F.
 _(todas las tareas de G completadas)_
 
 **Modelo sugerido:** Sonnet 4.6 Medio (G.2) / Opus 4.7 Medio (G.3).
+
+---
+
+### J. Crecer: Ahorro + Inversión (hábitos financieros a largo plazo)
+
+**Objetivo:** dos secciones nuevas en el hub "Crecer" que incentiven buenos hábitos: ahorrar con propósito e invertir para el largo plazo. Decisiones de producto confirmadas con el usuario (2026-06-06).
+
+**Reutiliza lo existente (no duplicar):** `modules/infra/financiero.js` ya tiene `calcularCDT`, `calcularInteresCompuesto`, `calcularRentabilidadReal`, `calcularRegla72`. Metas (objetivos puntuales) y los simuladores inline (CDT, crecimiento de ahorros) se quedan como están.
+
+#### J.1 - Ahorro (PRIMERO): fondo de emergencia + hábito
+
+Tracker de la plata real que aparta el usuario, distinto de Metas (objetivos con fecha).
+
+- **Schema v6 → v7** con migración idempotente. Nuevo slice `ahorro`:
+  `{ fondoEmergencia: { activo, metaMeses (3-6), montoActual }, aportes: [{id, monto, fecha, nota}], compromisoMensual }`.
+- **`ahorro/logic.js` (puro, con tests):** `calcularObjetivoFondo(gastosFijosMensuales, metaMeses)`, `calcularProgresoFondo`, `mesesDeColchon`, `calcularTasaAhorro(ingresos, gastos)`. Reutiliza el cálculo de gastos fijos mensuales que ya alimenta el Balance del mes.
+- **UI:** sección `sec-ahorro` + nav item en "Crecer" (sidebar + menú Más) con ícono SVG `i-ahorro` (alcancía). Hero del fondo de emergencia (progreso, meses cubiertos, faltante), empty state con CTA, y config de meta de meses.
+
+  **Slices (smallest-first, cada uno verificable en la app):**
+  - **J.1a** - Fundación + fondo de emergencia: schema+migración+tests, `logic.js`+tests, sección con hero del fondo (objetivo auto desde gastos fijos + monto actual manual), nav + ícono, empty state. _(Opus 4.8 - Medio: lógica financiera nueva + migración + dominio nuevo.)_
+  - **J.1b** - Hábito "apartar plata": modal de aporte + historial + tasa de ahorro ("ahorrás X%") + "págate primero" mensual. _(Sonnet 4.6 - Medio.)_
+  - **J.1c** - Nudges + integración: alerta si no hay fondo / tasa baja, enganche con Score de Salud (ya pondera ahorro 40%), logro por completar el fondo. _(Sonnet 4.6 - Medio.)_
+
+#### J.2 - Inversión (DESPUÉS): portafolio real
+
+Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y plazo.
+
+- **Schema v7 → v8** con migración. Slice `inversiones: [{id, tipo, nombre, monto, tasaEA, plazoMeses, fechaInicio}]`.
+- **`inversiones/logic.js`:** total invertido, valor proyectado al vencimiento (usa `calcularCDT`/`calcularInteresCompuesto`), rentabilidad real del portafolio (usa `calcularRentabilidadReal`).
+- **UI:** sección `sec-inversion` + nav en "Crecer" + ícono SVG. Hero con total invertido + valor proyectado, lista de holdings, modal de alta.
+
+  **Slices:** J.2a fundación + lista + alta; J.2b proyección + rentabilidad real; J.2c educación/nudges. _(Opus 4.8 - Medio/Alto por la lógica financiera CO.)_
+
+**Orden global:** J.1a → J.1b → J.1c → J.2a → J.2b → J.2c. Una sección a la vez, verificada y commiteada.
 
 ---
 
