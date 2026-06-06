@@ -8,7 +8,15 @@
  * J.2b proyecte el valor al vencimiento sin pedir datos de nuevo.
  *
  * Respeta la regla ADN #10: recibe primitivos/arrays, no importa de otro dominio.
+ * Sí importa de `infra/financiero.js` (capa infra, no dominio): ahí viven las
+ * fórmulas financieras CO reutilizables (CDT, interés compuesto, Fisher).
  */
+
+import {
+  calcularCDT,
+  calcularInteresCompuesto,
+  calcularRentabilidadReal,
+} from '../../infra/financiero.js';
 
 // ── TIPOS DE INVERSIÓN ───────────────────────────────────────────
 
@@ -224,5 +232,174 @@ export function normalizarInversion(datos) {
     tasaEA:      normalizarTasaEAInversion(d.tasaEA),
     plazoMeses:  normalizarPlazoMeses(d.plazoMeses),
     fechaInicio: String(d.fechaInicio ?? '').trim(),
+  };
+}
+
+// ── PROYECCIÓN AL VENCIMIENTO (J.2b) ─────────────────────────────
+
+/** Días promedio por mes, para convertir `plazoMeses` a días en el CDT. */
+const DIAS_POR_MES = 365 / 12;
+
+/**
+ * Una inversión es "proyectable" solo si tiene tasa EA y plazo definidos.
+ * Sin tasa (acciones/cripto de retorno variable) o sin plazo (posición
+ * abierta) no se puede proyectar un valor al vencimiento de forma honesta.
+ *
+ * @param {{tasaEA:number, plazoMeses:number, monto:number}} inv
+ * @returns {boolean}
+ */
+export function esProyectable(inv) {
+  const tasa  = Number(inv?.tasaEA);
+  const plazo = Number(inv?.plazoMeses);
+  const monto = Number(inv?.monto);
+  return (
+    Number.isFinite(monto) && monto > 0 &&
+    Number.isFinite(tasa)  && tasa  > 0 &&
+    Number.isFinite(plazo) && plazo > 0
+  );
+}
+
+/**
+ * Proyecta el valor de una inversión a su vencimiento.
+ *
+ * - CDT: usa `calcularCDT` y aplica la retención en la fuente del 7 % sobre el
+ *   rendimiento (igual que la herramienta CDT de la app). `valorFuturo` es neto.
+ * - Resto (Fondo/Acciones/Cripto/Otro): crecimiento compuesto al EA sin retención
+ *   (la retención de fondos varía y no se modela aquí). `valorFuturo` es bruto.
+ *
+ * @param {{tipo:string, monto:number, tasaEA:number, plazoMeses:number}} inv
+ * @returns {{
+ *   aplicaRetencion: boolean,
+ *   valorFuturo: number,        // valor final (neto en CDT, bruto en el resto)
+ *   valorFuturoBruto: number,   // antes de retención
+ *   retencion: number,          // 0 si no aplica
+ *   rendimiento: number,        // valorFuturo - monto
+ * } | null} null si la inversión no es proyectable.
+ */
+export function proyectarInversion(inv) {
+  if (!esProyectable(inv)) return null;
+
+  const monto      = Number(inv.monto);
+  const tasaEA     = Number(inv.tasaEA);
+  const plazoMeses = Number(inv.plazoMeses);
+
+  if (inv.tipo === 'CDT') {
+    const dias = Math.max(1, Math.round(plazoMeses * DIAS_POR_MES));
+    const r = calcularCDT(monto, tasaEA / 100, dias);
+    return {
+      aplicaRetencion:  true,
+      valorFuturo:      r.totalNeto,
+      valorFuturoBruto: r.valorFuturo,
+      retencion:        r.retencion,
+      rendimiento:      r.rendimientoNeto,
+    };
+  }
+
+  // Capitalización anual (periodosPorAnio = 1) reproduce exactamente la tasa
+  // efectiva anual: VF = monto × (1 + EA)^(plazoMeses/12).
+  const anios = plazoMeses / 12;
+  const r = calcularInteresCompuesto(monto, tasaEA, 1, anios);
+  return {
+    aplicaRetencion:  false,
+    valorFuturo:      r.montoFinal,
+    valorFuturoBruto: r.montoFinal,
+    retencion:        0,
+    rendimiento:      r.ganancia,
+  };
+}
+
+/**
+ * Agrega la proyección de todo el portafolio.
+ * Los holdings no proyectables se cuentan a su valor invertido (no se asume
+ * ninguna ganancia).
+ *
+ * @param {Array} inversiones
+ * @returns {{
+ *   totalInvertido: number,
+ *   totalProyectado: number,
+ *   rendimientoEsperado: number,
+ *   proyectables: number,
+ *   noProyectables: number,
+ * }}
+ */
+export function proyectarPortafolio(inversiones) {
+  const base = {
+    totalInvertido: 0, totalProyectado: 0, rendimientoEsperado: 0,
+    proyectables: 0, noProyectables: 0,
+  };
+  if (!Array.isArray(inversiones)) return base;
+
+  for (const inv of inversiones) {
+    const monto = Number(inv?.monto);
+    if (!Number.isFinite(monto) || monto <= 0) continue;
+    base.totalInvertido += monto;
+
+    const p = proyectarInversion(inv);
+    if (p) {
+      base.totalProyectado += p.valorFuturo;
+      base.proyectables    += 1;
+    } else {
+      base.totalProyectado += monto; // sin proyección: vale lo invertido
+      base.noProyectables  += 1;
+    }
+  }
+
+  base.rendimientoEsperado = base.totalProyectado - base.totalInvertido;
+  return base;
+}
+
+/**
+ * Tasa EA nominal promedio del portafolio, ponderada por monto, considerando
+ * solo los holdings proyectables.
+ *
+ * @param {Array} inversiones
+ * @returns {number|null} % EA (2 decimales), o null si no hay proyectables.
+ */
+export function tasaPromedioPonderada(inversiones) {
+  if (!Array.isArray(inversiones)) return null;
+  let sumaPonderada = 0;
+  let sumaMontos    = 0;
+  for (const inv of inversiones) {
+    if (!esProyectable(inv)) continue;
+    const monto = Number(inv.monto);
+    sumaPonderada += monto * Number(inv.tasaEA);
+    sumaMontos    += monto;
+  }
+  if (sumaMontos <= 0) return null;
+  return Math.round((sumaPonderada / sumaMontos) * 100) / 100;
+}
+
+/**
+ * Rentabilidad real del portafolio ajustada por inflación (fórmula de Fisher).
+ * Usa la tasa nominal promedio ponderada y el capital de los holdings
+ * proyectables.
+ *
+ * @param {Array} inversiones
+ * @param {number} inflacionPct  inflación anual esperada en porcentaje (ej. 3).
+ * @returns {{
+ *   tasaNominalPct: number,
+ *   tasaRealPct: number,
+ *   capital: number,
+ *   gananciaReal: number,
+ *   perdidaInflacion: number,
+ * } | null} null si no hay holdings proyectables.
+ */
+export function calcularRentabilidadRealPortafolio(inversiones, inflacionPct) {
+  const tasaNominal = tasaPromedioPonderada(inversiones);
+  if (tasaNominal === null) return null;
+
+  let capital = 0;
+  for (const inv of inversiones) {
+    if (esProyectable(inv)) capital += Number(inv.monto) || 0;
+  }
+
+  const infl = Number.isFinite(Number(inflacionPct)) ? Number(inflacionPct) : 0;
+  const r = calcularRentabilidadReal(capital, tasaNominal, infl);
+  return {
+    tasaNominalPct:   tasaNominal,
+    tasaRealPct:      r.tasaRealPct,
+    capital,
+    gananciaReal:     r.gananciaReal,
+    perdidaInflacion: r.perdidaInflacion,
   };
 }

@@ -268,6 +268,14 @@ export const INTERESES_CESANTIAS = 0.12;
  *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */
 export const ARL_CLASE_I = 0.00522;
 
+/** Meta de inflación de largo plazo del Banco de la República (3 % EA).
+ *  Supuesto por defecto para proyectar la rentabilidad REAL de inversiones
+ *  (descuenta la pérdida de poder adquisitivo). Es una meta puntual, no el
+ *  dato del mes: la inflación observada puede diferir.
+ *  Fuente: Banco de la República, meta puntual de inflación de largo plazo.
+ *  Revisar: anual (la meta puntual es estable en 3 % desde 2010). */
+export const INFLACION_OBJETIVO = 0.03;
+
 // ── METADATOS DE LA APP ──────────────────────────────────────────
 
 /** Nombre comercial. Usado en títulos, headers, "Acerca de". */

@@ -5,12 +5,19 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible } from '../../infra/utils.js';
+import { INFLACION_OBJETIVO } from '../../core/constants.js';
 import {
   calcularTotalInvertido,
   calcularPorTipo,
   ordenarInversionesPorMonto,
+  proyectarInversion,
+  proyectarPortafolio,
+  calcularRentabilidadRealPortafolio,
   TIPOS_INVERSION,
 } from './logic.js';
+
+/** Inflación esperada (%) usada en la rentabilidad real del portafolio. */
+const INFLACION_PCT = INFLACION_OBJETIVO * 100;
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -31,6 +38,7 @@ export function renderInversion() {
 
   el.innerHTML = `
     ${_renderHero(inversiones)}
+    ${_renderProyeccion(inversiones)}
     ${_renderLista(inversiones)}`;
 }
 
@@ -80,6 +88,59 @@ function _renderHero(inversiones) {
     </article>`;
 }
 
+// ── PROYECCIÓN DEL PORTAFOLIO (J.2b) ─────────────────────────────
+
+function _renderProyeccion(inversiones) {
+  const proy = proyectarPortafolio(inversiones);
+
+  // Sin holdings proyectables (todos sin tasa o sin plazo): no mostramos la card,
+  // pero sí una nota suave invitando a completar tasa/plazo para proyectar.
+  if (proy.proyectables === 0) {
+    return `
+      <section class="inversion-proy inversion-proy--vacia" aria-label="Proyección">
+        <p class="inversion-proy__nota">
+          📅 Agrega la <strong>tasa EA</strong> y el <strong>plazo</strong> de tus inversiones de renta fija (CDT, fondos) para ver cuánto valdrían al vencimiento.
+        </p>
+      </section>`;
+  }
+
+  const real = calcularRentabilidadRealPortafolio(inversiones, INFLACION_PCT);
+
+  const gananciaPositiva = proy.rendimientoEsperado >= 0;
+  const notaNoProy = proy.noProyectables > 0
+    ? `<p class="inversion-proy__hint">${proy.noProyectables} ${proy.noProyectables === 1 ? 'inversión de retorno variable no se proyecta' : 'inversiones de retorno variable no se proyectan'} (sin tasa o plazo fijo).</p>`
+    : '';
+
+  const realHtml = real
+    ? `<div class="inversion-proy__real">
+        <p class="inversion-proy__real-line">
+          Rentabilidad nominal <strong>${_fmtTasa(real.tasaNominalPct)}%</strong> EA →
+          real <strong class="${real.tasaRealPct >= 0 ? 'is-pos' : 'is-neg'}">${_fmtTasa(real.tasaRealPct)}%</strong>
+        </p>
+        <p class="inversion-proy__real-nota">Ya descontada una inflación estimada del ${_fmtTasa(INFLACION_PCT)}% (meta del Banco de la República). La inflación real puede variar.</p>
+      </div>`
+    : '';
+
+  return `
+    <section class="inversion-proy" aria-label="Proyección al vencimiento">
+      <h2 class="inversion-proy__title">Proyección al vencimiento</h2>
+      <div class="inversion-proy__grid">
+        <div class="inversion-proy__metric">
+          <p class="inversion-proy__metric-label">Valor proyectado</p>
+          <p class="inversion-proy__metric-value">${f(proy.totalProyectado)}</p>
+        </div>
+        <div class="inversion-proy__metric">
+          <p class="inversion-proy__metric-label">Ganancia esperada</p>
+          <p class="inversion-proy__metric-value ${gananciaPositiva ? 'is-pos' : 'is-neg'}">
+            ${gananciaPositiva ? '+' : ''}${f(proy.rendimientoEsperado)}
+          </p>
+        </div>
+      </div>
+      ${realHtml}
+      ${notaNoProy}
+    </section>`;
+}
+
 // ── LISTA DE HOLDINGS ────────────────────────────────────────────
 
 function _renderLista(inversiones) {
@@ -112,6 +173,15 @@ function _renderItem(inv) {
     ? `<span class="inversion-item__fecha">Desde ${fechaLegible(inv.fechaInicio)}</span>`
     : '';
 
+  // Proyección al vencimiento (solo holdings con tasa + plazo).
+  const proy = proyectarInversion(inv);
+  const proyHtml = proy
+    ? `<p class="inversion-item__proy">
+        Al vencimiento: <strong>${f(proy.valorFuturo)}</strong>
+        <span class="inversion-item__proy-gain">(+${f(proy.rendimiento)})</span>
+      </p>`
+    : '';
+
   return `
     <li class="list-item" data-id="${_esc(inv.id)}">
       <div class="list-item__body">
@@ -120,6 +190,7 @@ function _renderItem(inv) {
           <span class="inversion-item__tipo">${_esc(inv.tipo)}</span>
           ${tasaHtml}${plazoHtml}${fechaHtml}
         </p>
+        ${proyHtml}
       </div>
       <div class="list-item__action">
         <span class="list-item__value">${f(inv.monto)}</span>
@@ -199,9 +270,12 @@ export function renderFormInversion({ fechaInicio }) {
 
 // ── HELPERS ──────────────────────────────────────────────────────
 
-/** Formatea una tasa suprimiendo el ".0" cuando es entera. 12 → "12", 12.5 → "12,5". */
+/**
+ * Formatea una tasa a máximo 2 decimales, suprimiendo el ".0" cuando es entera
+ * y usando coma decimal. 12 → "12", 12.5 → "12,5", 7.2816 → "7,28".
+ */
 function _fmtTasa(n) {
-  const num = Number(n) || 0;
+  const num = Math.round((Number(n) || 0) * 100) / 100;
   const entero = Math.abs(num - Math.round(num)) < 0.005;
   return entero ? String(Math.round(num)) : num.toString().replace('.', ',');
 }

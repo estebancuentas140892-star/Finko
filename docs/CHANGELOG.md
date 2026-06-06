@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(inversion): J.2b - proyección al vencimiento + rentabilidad real del portafolio · 2026-06-06
+
+Segunda entrega de J.2 (Inversión). Proyección de valor al vencimiento por holding y rentabilidad real del portafolio. Sin cambio de schema: todo se calcula a partir de los datos ya capturados en J.2a.
+
+- **`inversiones/logic.js`** (5 funciones nuevas, 15 tests): importa de `infra/financiero.js` (capa infra, no dominio). `esProyectable` (tasa + plazo + monto > 0), `proyectarInversion` (CDT vía `calcularCDT` con retención 7%; Fondo/Acciones/Cripto/Otro vía `calcularInteresCompuesto`, crecimiento compuesto EA sin retención), `proyectarPortafolio` (no proyectables cuentan a su monto), `tasaPromedioPonderada` (EA ponderada por monto), `calcularRentabilidadRealPortafolio` (Fisher vía `calcularRentabilidadReal`).
+- **`constants.js`**: `INFLACION_OBJETIVO = 0.03` (meta puntual Banco de la República, con fuente + nota de revisión, ADN #12).
+- **`inversiones/view.js`**: card "Proyección al vencimiento" (valor proyectado, ganancia esperada con color, nominal → real con inflación visible, nota de retorno variable). Proyección inline por holding. `_fmtTasa` redondea a 2 decimales.
+- **`styles/components.css`**: `.inversion-proy*`, `.inversion-item__proy*`, signos `.is-pos`/`.is-neg` locales. **`service-worker.js`**: v105 → v106.
+
+1064/1064 unit + integración verdes. Verificado en navegador (CDT + FIC + Bitcoin: proyección $8.867.550, nominal 10,5% → real 7,28%). Sigue: J.2c (educación/nudges).
+
+---
+
 ### feat(inversion): J.2a - fundación del dominio Inversión + portafolio real · 2026-06-06
 
 Primera entrega de J.2 (Inversión). Funda un nuevo dominio con migración v7→v8, lógica pura testeada, sección con hero de total invertido, lista de holdings, modal de alta y nav. La proyección de valor y rentabilidad real llegan en J.2b.

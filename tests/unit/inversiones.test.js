@@ -1,5 +1,5 @@
 /**
- * tests/unit/inversiones.test.js - cobertura de inversiones/logic.js (J.2a).
+ * tests/unit/inversiones.test.js - cobertura de inversiones/logic.js (J.2a + J.2b).
  *
  * Solo lógica pura (logic.js). La vista y el cableado (index.js) se verifican
  * manualmente en la app y vía E2E.
@@ -13,6 +13,8 @@ import {
   validarTasaEAInversion, validarPlazoMeses, validarFechaInicio, validarInversion,
   normalizarMontoInversion, normalizarTasaEAInversion, normalizarPlazoMeses,
   normalizarInversion,
+  esProyectable, proyectarInversion, proyectarPortafolio,
+  tasaPromedioPonderada, calcularRentabilidadRealPortafolio,
 } from '../../modules/dominio/inversiones/logic.js';
 
 // ── Constantes ─────────────────────────────────────────────────────
@@ -280,5 +282,117 @@ describe('normalizarInversion()', () => {
     const r = normalizarInversion(null);
     expect(r.tipo).toBe('Otro');
     expect(r.monto).toBe(0);
+  });
+});
+
+// ── J.2b: proyección al vencimiento ────────────────────────────────
+
+describe('esProyectable()', () => {
+  it('true con tasa, plazo y monto positivos', () => {
+    expect(esProyectable({ monto: 1_000_000, tasaEA: 10, plazoMeses: 12 })).toBe(true);
+  });
+  it('false sin tasa (retorno variable)', () => {
+    expect(esProyectable({ monto: 1_000_000, tasaEA: 0, plazoMeses: 12 })).toBe(false);
+  });
+  it('false sin plazo (posición abierta)', () => {
+    expect(esProyectable({ monto: 1_000_000, tasaEA: 10, plazoMeses: 0 })).toBe(false);
+  });
+  it('false sin monto válido', () => {
+    expect(esProyectable({ monto: 0, tasaEA: 10, plazoMeses: 12 })).toBe(false);
+    expect(esProyectable(null)).toBe(false);
+  });
+});
+
+describe('proyectarInversion()', () => {
+  it('CDT a 12 meses aplica retención 7 % sobre el rendimiento', () => {
+    // 5.000.000 al 11,5 % EA por 12 meses (≈365 días).
+    const r = proyectarInversion({ tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 });
+    expect(r.aplicaRetencion).toBe(true);
+    expect(r.valorFuturoBruto).toBe(5_575_000);
+    expect(r.retencion).toBe(40_250);          // 575.000 × 7 %
+    expect(r.valorFuturo).toBe(5_534_750);      // neto tras retención
+    expect(r.rendimiento).toBe(534_750);
+  });
+
+  it('Fondo crece compuesto al EA sin retención', () => {
+    // 2.000.000 al 8 % EA por 24 meses → ×(1,08)^2 = 2.332.800.
+    const r = proyectarInversion({ tipo: 'Fondo', monto: 2_000_000, tasaEA: 8, plazoMeses: 24 });
+    expect(r.aplicaRetencion).toBe(false);
+    expect(r.retencion).toBe(0);
+    expect(r.valorFuturo).toBe(2_332_800);
+    expect(r.rendimiento).toBe(332_800);
+  });
+
+  it('Acciones con tasa y plazo se proyectan como crecimiento compuesto', () => {
+    const r = proyectarInversion({ tipo: 'Acciones', monto: 1_000_000, tasaEA: 10, plazoMeses: 12 });
+    expect(r.aplicaRetencion).toBe(false);
+    expect(r.valorFuturo).toBe(1_100_000);
+  });
+
+  it('devuelve null si no es proyectable', () => {
+    expect(proyectarInversion({ tipo: 'Cripto', monto: 1_000_000, tasaEA: 0, plazoMeses: 0 })).toBeNull();
+    expect(proyectarInversion(null)).toBeNull();
+  });
+});
+
+describe('proyectarPortafolio()', () => {
+  it('devuelve base en cero con input no válido', () => {
+    const r = proyectarPortafolio(null);
+    expect(r.totalInvertido).toBe(0);
+    expect(r.proyectables).toBe(0);
+  });
+
+  it('agrega proyectables y cuenta los no proyectables a su valor invertido', () => {
+    const r = proyectarPortafolio([
+      { tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 }, // → 5.534.750
+      { tipo: 'Cripto', monto: 1_000_000, tasaEA: 0, plazoMeses: 0 },  // no proyectable
+    ]);
+    expect(r.totalInvertido).toBe(6_000_000);
+    expect(r.totalProyectado).toBe(6_534_750); // 5.534.750 + 1.000.000
+    expect(r.rendimientoEsperado).toBe(534_750);
+    expect(r.proyectables).toBe(1);
+    expect(r.noProyectables).toBe(1);
+  });
+
+  it('ignora montos no positivos', () => {
+    const r = proyectarPortafolio([{ tipo: 'CDT', monto: 0, tasaEA: 10, plazoMeses: 12 }]);
+    expect(r.totalInvertido).toBe(0);
+  });
+});
+
+describe('tasaPromedioPonderada()', () => {
+  it('pondera por monto solo los proyectables', () => {
+    // (5M×11,5 + 2M×8) / 7M = 10,5.
+    const r = tasaPromedioPonderada([
+      { tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 },
+      { tipo: 'Fondo', monto: 2_000_000, tasaEA: 8, plazoMeses: 24 },
+      { tipo: 'Cripto', monto: 9_000_000, tasaEA: 0, plazoMeses: 0 }, // excluido
+    ]);
+    expect(r).toBe(10.5);
+  });
+
+  it('null si no hay proyectables', () => {
+    expect(tasaPromedioPonderada([{ tipo: 'Cripto', monto: 1_000_000, tasaEA: 0, plazoMeses: 0 }])).toBeNull();
+    expect(tasaPromedioPonderada(null)).toBeNull();
+  });
+});
+
+describe('calcularRentabilidadRealPortafolio()', () => {
+  it('ajusta la tasa nominal ponderada por inflación (Fisher)', () => {
+    const r = calcularRentabilidadRealPortafolio([
+      { tipo: 'CDT', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12 },
+      { tipo: 'Fondo', monto: 2_000_000, tasaEA: 8, plazoMeses: 24 },
+    ], 3);
+    expect(r.tasaNominalPct).toBe(10.5);
+    expect(r.capital).toBe(7_000_000);
+    // real = (1,105/1,03 - 1) ≈ 7,28 %.
+    expect(r.tasaRealPct).toBeGreaterThan(7);
+    expect(r.tasaRealPct).toBeLessThan(7.5);
+    expect(r.tasaRealPct).toBeLessThan(r.tasaNominalPct);
+  });
+
+  it('null si no hay holdings proyectables', () => {
+    expect(calcularRentabilidadRealPortafolio([], 3)).toBeNull();
+    expect(calcularRentabilidadRealPortafolio([{ tipo: 'Cripto', monto: 1_000_000, tasaEA: 0, plazoMeses: 0 }], 3)).toBeNull();
   });
 });

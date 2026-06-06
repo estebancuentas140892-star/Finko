@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (feat(inversion): J.2a - fundación del dominio Inversión + schema v7→v8 + lista de holdings + alta)
+> Última actualización: 2026-06-06 (feat(inversion): J.2b - proyección al vencimiento por holding + rentabilidad real del portafolio)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1049/1049 verdes (+43 inversiones J.2a, +3 migración v7→v8, +13 J.1c) |
+| Tests unitarios + integración | 1064/1064 verdes (+15 proyección J.2b, +43 inversiones J.2a, +3 migración v7→v8) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(inversion): J.2b - proyección al vencimiento + rentabilidad real del portafolio · 2026-06-06
+
+Segunda entrega de J.2 (Inversión). Agrega proyección de valor al vencimiento por holding y rentabilidad real del portafolio. Sin cambio de schema (todo se calcula).
+
+**`inversiones/logic.js` (5 funciones nuevas, 15 tests):** importa de `infra/financiero.js` (capa infra, permitido). `esProyectable` (requiere tasa + plazo + monto), `proyectarInversion` (CDT usa `calcularCDT` con retención 7%; resto crecimiento compuesto EA con `calcularInteresCompuesto`, sin retención), `proyectarPortafolio` (total proyectado: proyectables a su VF, no proyectables a su monto), `tasaPromedioPonderada` (EA ponderada por monto), `calcularRentabilidadRealPortafolio` (Fisher con `calcularRentabilidadReal`).
+
+**`constants.js`:** nueva `INFLACION_OBJETIVO = 0.03` (meta Banco de la República, con fuente + nota de revisión, ADN #12).
+
+**`inversiones/view.js`:** card "Proyección al vencimiento" tras el hero (valor proyectado, ganancia esperada con color de signo, rentabilidad nominal → real con supuesto de inflación visible, nota de holdings de retorno variable). Proyección inline por holding en la lista ("Al vencimiento: $X (+$Y)"). `_fmtTasa` redondea a 2 decimales.
+
+**`styles/components.css`:** estilos `.inversion-proy*` + `.inversion-item__proy*` + signos `.is-pos`/`.is-neg` locales. **`service-worker.js`:** v105 → v106.
+
+**Verificado en navegador:** con CDT (11,5% EA, 12m) + FIC (8% EA, 24m) + Bitcoin (variable): hero $8.000.000, proyección $8.867.550 (+$867.550), nominal 10,5% → real 7,28% (inflación 3%), Bitcoin sin proyección. 1064/1064 tests verdes.
+
+**Sigue:** J.2c (educación/nudges de inversión: diversificación, horizonte, riesgo). _(Opus 4.8 - Medio.)_
 
 ### feat(inversion): J.2a - fundación del dominio Inversión + portafolio real · 2026-06-06
 
@@ -139,23 +155,6 @@ Primera entrega de la Parte 4 (Crecer: Ahorro + Inversión). Funda un nuevo domi
 **Verificado en preview:** migración OK, modal abre/cierra, submit persiste, reload mantiene estado, validación rechaza fuera de rango (1-12 meses). 1 smoke E2E nuevo + 4 tests integración + 30 unit = 965/965 verdes.
 
 **Sigue:** J.1b (modal de aporte + historial + tasa de ahorro + "págate primero"). _(Sonnet 4.6 - Medio.)_
-
-### copy(tono): Batch 3 - tuteo completo en Metas, Presupuesto, Personales, Análisis, Config, Onboarding · 2026-06-06
-
-23 textos convertidos en los 6 dominios restantes. **Tono neutral-profesional completo en toda la app.**
-
-**Archivos:**
-- `metas/view.js`: 2 (`Definí/llevá` → tuteo).
-- `presupuesto/view.js`: 5 (`Asigná/gastás/registrás` → tuteo; `Elegí` → `Elige`; `necesitás/eliminá/creá` → tuteo).
-- `personales/view.js`: 3 (`Registrá/hacés` → tuteo; `para vos` → `para ti`; `podés` → `puedes`).
-- `analisis/view.js`: 2 (`Tenés/Completalas` → `Tienes/Complétalas`; `gastás` → `gastas`).
-- `config/view.js`: 9 (`Cambiá/Instalá/Activá/desactivá/Exportalos` → tuteo; `Podés` ×3 → `Puedes`; `hacé click` → `haz clic`; `Recibí/abrís/tenés/Recibís` → tuteo).
-- `onboarding.js`: 2 (`llamás` → `llamas`; `escribí` → `escribe`).
-- `service-worker.js`: v100 → v101.
-
-**Verificado:** 931/931 unit verdes.
-
-**Sigue:** Parte 4 - J.1a (Ahorro: schema v6 → v7 + logic.js + sección nueva con hero fondo de emergencia + nav item).
 
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
@@ -478,10 +477,10 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada** y **J.2a (fundación Inversión) cerrada**. Lo siguiente es **J.2b**: proyección de valor al vencimiento + rentabilidad real del portafolio.
+**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada**; **J.2a y J.2b (Inversión) cerradas**. Lo siguiente es **J.2c**: educación/nudges de inversión, último slice de la Parte 4.
 
 **Opciones para la próxima sesión:**
-- **J.2b - Proyección + rentabilidad:** valor proyectado al vencimiento por holding (usa `calcularCDT`/`calcularInteresCompuesto` de `infra/financiero.js`), rentabilidad real del portafolio (usa `calcularRentabilidadReal`). _(Opus 4.8 - Medio/Alto por la lógica financiera CO.)_
+- **J.2c - Educación/nudges de inversión:** nudges de diversificación (concentración por tipo), horizonte vs plazo, recordatorio "fondo de emergencia primero", riesgo de retorno variable. Cierra la Parte 4. _(Opus 4.8 - Medio.)_
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
 - Pequeñas mejoras de UX o copy a demanda.

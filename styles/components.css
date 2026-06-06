@@ -1631,6 +1631,99 @@ textarea.input {
   font-size: var(--fk-fs-xs);
 }
 
+/* ── J.2b: Proyección al vencimiento (card + por holding) ──── */
+
+.inversion-proy {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-md) var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.inversion-proy--vacia {
+  padding: var(--fk-space-3) var(--fk-space-md);
+}
+
+.inversion-proy__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-proy__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-md);
+}
+
+.inversion-proy__metric-label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0 0 2px;
+}
+.inversion-proy__metric-value {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-proy__real {
+  border-top: 1px solid var(--fk-border);
+  padding-top: var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inversion-proy__real-line {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+.inversion-proy__real-line strong {
+  font-variant-numeric: tabular-nums;
+}
+.inversion-proy__real-nota,
+.inversion-proy__hint {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.inversion-proy__nota {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* Colores de signo, locales a inversión (no globales). */
+.inversion-proy .is-pos { color: var(--fk-success); }
+.inversion-proy .is-neg { color: var(--fk-danger); }
+
+/* Proyección por holding dentro de cada item de la lista. */
+.inversion-item__proy {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 4px 0 0;
+}
+.inversion-item__proy strong {
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.inversion-item__proy-gain {
+  color: var(--fk-success);
+  margin-left: var(--fk-space-1);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {
   list-style: none;
