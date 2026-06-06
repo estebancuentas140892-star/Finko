@@ -1489,6 +1489,148 @@ textarea.input {
   gap: var(--fk-space-1);
 }
 
+/* ── J.2a: Inversión (hero total invertido + lista de holdings) ─── */
+
+.inversion-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.inversion-hero__header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--fk-space-md);
+}
+
+.inversion-hero__icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-dom-inversion) 14%, transparent);
+  color: var(--fk-dom-inversion);
+}
+.inversion-hero__icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.inversion-hero__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inversion-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-hero__title {
+  font-size: var(--fk-fs-xl);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-hero__sub {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+}
+
+.inversion-hero__tipos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+.inversion-hero__tipo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-pill, 999px);
+  background: color-mix(in srgb, var(--fk-dom-inversion) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-inversion) 22%, transparent);
+  font-size: var(--fk-fs-sm);
+}
+.inversion-hero__tipo-label {
+  color: var(--fk-text-secondary);
+}
+.inversion-hero__tipo-pct {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-inversion);
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.inversion-lista__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.inversion-lista__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-lista__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.inversion-item__tipo {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-inversion);
+}
+.inversion-item__chip {
+  margin-left: var(--fk-space-2);
+  color: var(--fk-text-muted);
+}
+.inversion-item__fecha {
+  margin-left: var(--fk-space-2);
+  color: var(--fk-text-muted);
+}
+
+/* Etiqueta "opcional" junto al label de un campo de formulario. */
+.label__opt {
+  font-weight: var(--fk-fw-regular, 400);
+  color: var(--fk-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fk-fs-xs);
+}
+
 /* ── Gastos por categoría ────────────────────────────────── */
 .cat-list {
   list-style: none;

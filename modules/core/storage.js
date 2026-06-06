@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -135,6 +135,14 @@ function _migrate(raw) {
       aportes:           Array.isArray(prev.aportes) ? prev.aportes : [],
       compromisoMensual: Number.isFinite(Number(prev.compromisoMensual)) ? Number(prev.compromisoMensual) : 0,
     };
+  }
+
+  // v7 → v8: nueva colección `inversiones` para el portafolio real (J.2).
+  // El usuario existente arranca sin inversiones; el resto del estado no cambia.
+  if ((typeof data._version === 'number' ? data._version : 1) < 8) {
+    if (!Array.isArray(data.inversiones)) {
+      data.inversiones = [];
+    }
   }
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {

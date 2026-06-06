@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo de emergencia + nudge analisis)
+> Última actualización: 2026-06-06 (feat(inversion): J.2a - fundación del dominio Inversión + schema v7→v8 + lista de holdings + alta)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1003/1003 verdes (+5 logros J.1c, +8 analisis J.1c, +25 ahorro J.1b, +30 ahorro J.1a) |
+| Tests unitarios + integración | 1049/1049 verdes (+43 inversiones J.2a, +3 migración v7→v8, +13 J.1c) |
 | Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(inversion): J.2a - fundación del dominio Inversión + portafolio real · 2026-06-06
+
+Primera entrega de J.2 (Inversión). Funda un nuevo dominio: registro del portafolio real (CDT, fondos, acciones, cripto) con schema v7→v8, lógica pura, sección con hero de total invertido, lista de holdings y alta. La proyección de valor y rentabilidad real llega en J.2b.
+
+**Schema (state.js + storage.js):** `_version: 7 → 8`. Nueva colección top-level `inversiones: [{id, tipo, nombre, monto, tasaEA, plazoMeses, fechaInicio, fechaCreacion}]`. Migración v7→v8 idempotente (agrega `inversiones: []` si falta). 3 tests de migración.
+
+**`inversiones/logic.js` (puro, 43 tests):** `TIPOS_INVERSION` (CDT, Fondo, Acciones, Cripto, Otro), `calcularTotalInvertido`, `calcularPorTipo` (desglose con %), `ordenarInversionesPorMonto`, validación + normalización de los 6 campos (tasa y plazo opcionales: 0 válido para rentabilidad variable). Respeta ADN #10 (recibe primitivos, no importa de otro dominio).
+
+**`inversiones/view.js`:** empty state con CTA + tip (fondo de emergencia primero), `inversion-hero` (total invertido + conteo + desglose por tipo), lista de holdings con tipo/tasa/plazo/fecha + botón eliminar, `renderFormInversion` (selector de tipo + nombre + monto + tasa/plazo opcionales + fecha).
+
+**`inversiones/index.js`:** usa `crud.js` (`guardar`/`eliminar`) porque inversiones es colección top-level. 2 acciones: `inversion-nueva`, `inversion-eliminar`. Re-render en `state:change` (inversiones) + hashchange.
+
+**HTML/CSS:** sprite SVG `i-inversion` (trending-up Lucide), nav item en grupo "Crecer" (sidebar + menú Más), sección `sec-inversion` + modal `modal-inversion`, router + token `--fk-dom-inversion: #4db8d8` (cian) + estilos `.inversion-hero*` / `.inversion-lista*` / `.label__opt`. Bootstrap importa `initInversiones`. SW v104 → v105.
+
+**Verificado en navegador:** la sección renderiza el empty state; alta vía modal funciona (CDT $5.000.000 → hero "$5.000.000", chip "CDT 100%", item con tasa/plazo/fecha); modal abre/cierra; sin errores de consola. 1049/1049 tests verdes.
+
+**Sigue:** J.2b (proyección de valor al vencimiento con `calcularCDT`/`calcularInteresCompuesto` + rentabilidad real del portafolio). _(Opus 4.8 - Medio/Alto.)_
 
 ### feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo-emergencia + nudge analisis · 2026-06-06
 
@@ -138,21 +156,6 @@ Primera entrega de la Parte 4 (Crecer: Ahorro + Inversión). Funda un nuevo domi
 **Verificado:** 931/931 unit verdes.
 
 **Sigue:** Parte 4 - J.1a (Ahorro: schema v6 → v7 + logic.js + sección nueva con hero fondo de emergencia + nav item).
-
-### copy(tono): Batch 2 - tuteo completo en Mis cuentas, Gastos, Deudas · 2026-06-06
-
-Segundo batch del refinamiento de tono. Convierte todo el voseo y "plata" en los 3 dominios de uso diario y actualiza las aserciones E2E que apuntaban al copy antiguo.
-
-**Archivos:**
-- `modules/dominio/tesoreria/view.js`: 5 textos. Título empty state "¿Dónde guardás tu plata?" → "¿Dónde tienes tu dinero?", desc/tip → tú, hint 4x1000 (`retirás/transferís` → `retiras/transfieres`), hint cuota (`sabés/dejalo` → `sabes/déjalo`).
-- `modules/dominio/gastos/view.js`: 7 textos. Badge tooltip (`Tocá` → `Toca`), empty state (`Anotá/hacés/plata/ponés` → tuteo/dinero), form-empty (`necesitás/agregá/sabés/plata` → tuteo/dinero), gasto-saldo hint (`Elegí` → `Elige`).
-- `modules/dominio/compromisos/view.js`: 17 textos. Nudge deudas durmiendo (`podés/retomá`), abono form (`Necesitás/abonás/plata/Elegí`), deuda form (`podés/dejá/debés/pagás`), estrategia (`Tenés/Elegí/Atacás/terminás/necesitás/ahorrás/Recomendada para vos/Tocá/Podés/Pagá/Probá/mirá`).
-- `tests/e2e/navegacion-render.test.js`: 3 aserciones actualizadas (`'¿Dónde guardás tu plata?'` → `'¿Dónde tienes tu dinero?'`).
-- `service-worker.js`: v99 → v100.
-
-**Verificado:** 931/931 unit verdes. E2E actualizados.
-
-**Sigue:** Batch 3 (metas, presupuesto, personales, análisis, config, nudges, onboarding). Luego Parte 4 (Ahorro J.1a).
 
 ### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
 
@@ -475,10 +478,10 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada** (J.1a + J.1b + J.1c). Lo siguiente es **J.2 (Inversión)**: dominio nuevo con schema v7→v8, lista de holdings y proyección de rentabilidad.
+**Fase activa:** Parte 4 - Crecer: Ahorro + Inversión. **J.1 (Ahorro) cerrada** y **J.2a (fundación Inversión) cerrada**. Lo siguiente es **J.2b**: proyección de valor al vencimiento + rentabilidad real del portafolio.
 
 **Opciones para la próxima sesión:**
-- **J.2a - Fundación del dominio Inversión:** schema v7→v8 + migración, `inversiones/logic.js` (total invertido), sección con lista de holdings + modal de alta. _(Opus 4.8 - Medio.)_
+- **J.2b - Proyección + rentabilidad:** valor proyectado al vencimiento por holding (usa `calcularCDT`/`calcularInteresCompuesto` de `infra/financiero.js`), rentabilidad real del portafolio (usa `calcularRentabilidadReal`). _(Opus 4.8 - Medio/Alto por la lógica financiera CO.)_
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
 - Pequeñas mejoras de UX o copy a demanda.

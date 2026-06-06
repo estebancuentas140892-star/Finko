@@ -10,7 +10,7 @@
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
 **Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, onboarding UX cerrado en 2026-06-03, **modernización UI/UX (Parte 3: paleta, tipografía, navegación, cards, iconografía SVG) cerrada en 2026-06-06**.
-**Estado:** proyecto estable en producción. 1003/1003 unit + integración verdes, Lighthouse 99-100.
+**Estado:** proyecto estable en producción. 1049/1049 unit + integración verdes, Lighthouse 99-100.
 **Fase activa:** Parte 4 - Crecer: Ahorro + Inversión (ver sección J más abajo).
 
 ---
@@ -196,7 +196,10 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 - **`inversiones/logic.js`:** total invertido, valor proyectado al vencimiento (usa `calcularCDT`/`calcularInteresCompuesto`), rentabilidad real del portafolio (usa `calcularRentabilidadReal`).
 - **UI:** sección `sec-inversion` + nav en "Crecer" + ícono SVG. Hero con total invertido + valor proyectado, lista de holdings, modal de alta.
 
-  **Slices:** J.2a fundación + lista + alta; J.2b proyección + rentabilidad real; J.2c educación/nudges. _(Opus 4.8 - Medio/Alto por la lógica financiera CO.)_
+  **Slices:**
+  - ✅ **J.2a** - Fundación + lista + alta (2026-06-06): schema+migración v7→v8, `logic.js` (43 tests) + 3 tests de migración, sección con hero de total invertido + desglose por tipo + lista de holdings + modal de alta, nav en "Crecer" (sidebar + menú Más), ícono SVG `i-inversion`, token `--fk-dom-inversion`. Verificado en navegador. Ver [CHANGELOG](CHANGELOG.md).
+  - **J.2b** - Proyección + rentabilidad real: valor proyectado al vencimiento por holding (usa `calcularCDT`/`calcularInteresCompuesto`), rentabilidad real del portafolio (usa `calcularRentabilidadReal`). _(Opus 4.8 - Medio/Alto.)_
+  - **J.2c** - Educación/nudges. _(Opus 4.8 - Medio.)_
 
 **Orden global:** J.1a → J.1b → J.1c → J.2a → J.2b → J.2c. Una sección a la vez, verificada y commiteada.
 
@@ -215,5 +218,5 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 | Lighthouse Best Practices | ≥ 90 | 100 ✅ |
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
-| Tests unitarios | - | 1003/1003 ✅ |
+| Tests unitarios | - | 1049/1049 ✅ |
 | Tests E2E | - | 18/18 ✅ |

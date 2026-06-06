@@ -13,6 +13,7 @@ const SECTIONS = new Map([
   ['tesoreria',   'sec-tesoreria'],
   ['ahorro',      'sec-ahorro'],
   ['metas',       'sec-metas'],
+  ['inversion',   'sec-inversion'],
   ['presupuesto', 'sec-presupuesto'],
   ['analisis',    'sec-analisis'],
   ['config',      'sec-config'],

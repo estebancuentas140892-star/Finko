@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(inversion): J.2a - fundación del dominio Inversión + portafolio real · 2026-06-06
+
+Primera entrega de J.2 (Inversión). Funda un nuevo dominio con migración v7→v8, lógica pura testeada, sección con hero de total invertido, lista de holdings, modal de alta y nav. La proyección de valor y rentabilidad real llegan en J.2b.
+
+- **Schema v7→v8:** nueva colección top-level `inversiones: [{id, tipo, nombre, monto, tasaEA, plazoMeses, fechaInicio, fechaCreacion}]`. Migración idempotente (agrega `inversiones: []` si falta). 3 tests de migración.
+- **`inversiones/logic.js`** (puro, 43 tests): `TIPOS_INVERSION` (CDT, Fondo, Acciones, Cripto, Otro), `calcularTotalInvertido`, `calcularPorTipo` (desglose con %), `ordenarInversionesPorMonto`, validación + normalización de los 6 campos (tasa EA y plazo opcionales: 0 válido para rentabilidad variable). Respeta ADN #10.
+- **`inversiones/view.js`**: empty state con CTA + tip (fondo de emergencia primero), `inversion-hero` (total + conteo + desglose por tipo), lista de holdings (tipo/tasa/plazo/fecha + eliminar), `renderFormInversion`.
+- **`inversiones/index.js`**: usa `crud.js` (`guardar`/`eliminar`, colección top-level). Acciones `inversion-nueva`, `inversion-eliminar`. Re-render en `state:change` + hashchange.
+- **HTML/CSS**: sprite `i-inversion` (trending-up), nav en grupo "Crecer" (sidebar + menú Más), sección `sec-inversion` + modal, router, token `--fk-dom-inversion: #4db8d8`, estilos `.inversion-hero*`/`.inversion-lista*`/`.label__opt`. Bootstrap `initInversiones`. SW v104→v105.
+
+1049/1049 unit + integración verdes. Verificado en navegador (empty state, alta, hero, lista). Sigue: J.2b (proyección + rentabilidad real).
+
+---
+
 ### feat(ahorro): J.1c - Score de Salud 4 factores + logro fondo-emergencia + nudge analisis · 2026-06-06
 
 Tercera y última entrega de J.1 (Ahorro). Integra el fondo de emergencia con el Score de Salud y el sistema de logros. **J.1 completa.**

@@ -157,6 +157,18 @@ import { SMMLV } from './constants.js';
  */
 
 /**
+ * @typedef {Object} Inversion
+ * @property {string} id
+ * @property {string} tipo            Uno de TIPOS_INVERSION (CDT, Fondo, etc.).
+ * @property {string} nombre          Nombre legible ("CDT Bancolombia", "ETF S&P 500").
+ * @property {number} monto           COP invertidos.
+ * @property {number} tasaEA          Tasa efectiva anual estimada (%). 0 = variable.
+ * @property {number} plazoMeses      Plazo en meses. 0 = sin plazo fijo.
+ * @property {string} fechaInicio     ISO 8601 (YYYY-MM-DD).
+ * @property {string} fechaCreacion   ISO 8601 timestamp.
+ */
+
+/**
  * Factory del estado inicial (schema v3). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
@@ -177,12 +189,13 @@ import { SMMLV } from './constants.js';
  *   personales: Personal[],
  *   logros: string[],
  *   ahorro: Ahorro,
+ *   inversiones: Inversion[],
  * }}
  */
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 7,
+    _version: 8,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -232,6 +245,9 @@ export function createInitialState() {
       aportes:           [],
       compromisoMensual: 0,
     },
+
+    /** Inversiones reales: portafolio del usuario (J.2, v8). */
+    inversiones: [],
   };
 }
 

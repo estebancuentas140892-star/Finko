@@ -825,4 +825,68 @@ describe('F.2 - Migración schema v2 → v3 (préstamos personales)', () => {
     expect(S.ahorro.fondoEmergencia.metaMeses).toBe(6);
     expect(S.ahorro.fondoEmergencia.montoActual).toBe(800_000);
   });
+
+  // ── Migración v7 → v8 (J.2: inversiones / portafolio) ──────────────
+
+  it('migración v7→v8: usuario v7 sin inversiones recibe [] y sube _version', () => {
+    const fixtureV7 = {
+      ...BASE_V2,
+      _version: 7,
+      ahorro: {
+        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+      // sin colección `inversiones` - simula usuario pre-J.2
+    };
+    loadFixture(fixtureV7);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.inversiones).toEqual([]);
+    // El slice ahorro de v7 sobrevive intacto.
+    expect(S.ahorro.fondoEmergencia.metaMeses).toBe(3);
+  });
+
+  it('migración es idempotente: v8 con inversiones existentes no las pisa', () => {
+    const fixtureV8 = {
+      ...BASE_V2,
+      _version: 8,
+      ahorro: {
+        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
+        aportes: [],
+        compromisoMensual: 0,
+      },
+      inversiones: [
+        { id: 'i1', tipo: 'CDT', nombre: 'CDT Bancolombia', monto: 5_000_000, tasaEA: 11.5, plazoMeses: 12, fechaInicio: '2026-01-15', fechaCreacion: '2026-01-15T00:00:00.000Z' },
+      ],
+    };
+    loadFixture(fixtureV8);
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.inversiones).toHaveLength(1);
+    expect(S.inversiones[0].nombre).toBe('CDT Bancolombia');
+    expect(S.inversiones[0].monto).toBe(5_000_000);
+  });
+
+  it('roundtrip post-migración v7→v8: inversiones registradas persisten', () => {
+    const fixtureV7 = { ...BASE_V2, _version: 7, logros: [] };
+    loadFixture(fixtureV7);
+
+    // Registrar una inversión y guardar.
+    S.inversiones.push({
+      id: 'i1', tipo: 'Acciones', nombre: 'ETF S&P 500', monto: 2_000_000,
+      tasaEA: 0, plazoMeses: 0, fechaInicio: '2026-06-01',
+      fechaCreacion: '2026-06-01T00:00:00.000Z',
+    });
+    _flushNow();
+
+    // Simular reapertura.
+    Object.assign(S, createInitialState());
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.inversiones).toHaveLength(1);
+    expect(S.inversiones[0].nombre).toBe('ETF S&P 500');
+    expect(S.inversiones[0].monto).toBe(2_000_000);
+  });
 });

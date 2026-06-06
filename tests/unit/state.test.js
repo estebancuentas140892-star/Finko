@@ -20,10 +20,12 @@ describe('S - schema v3 inicial', () => {
     expect(S).toHaveProperty('metas');
     expect(S).toHaveProperty('presupuestos');
     expect(S).toHaveProperty('personales');
+    expect(S).toHaveProperty('ahorro');
+    expect(S).toHaveProperty('inversiones');
   });
 
-  it('arranca con _version = 7', () => {
-    expect(S._version).toBe(7);
+  it('arranca con _version = 8', () => {
+    expect(S._version).toBe(8);
   });
 
   it('arranca con onboarded en false', () => {
@@ -38,6 +40,7 @@ describe('S - schema v3 inicial', () => {
     expect(S.metas).toEqual([]);
     expect(S.presupuestos).toEqual([]);
     expect(S.personales).toEqual([]);
+    expect(S.inversiones).toEqual([]);
   });
 
   it('arranca con perfil semilla (nombre vacío + SMMLV vigente)', () => {
