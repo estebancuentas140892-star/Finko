@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
+
+Último slice de 3C. El hero "Tu plata disponible hoy" (💵) → SVG (`i-saldo`, $ en círculo, verde acento). Auditoría: era el único ícono de acento grande; el resto son datos de usuario o emojis cálidos que se conservan.
+
+- `index.html`: símbolo `i-saldo` + hero → svg (preserva id y aria para render.js).
+- `layout.css`: `.bento__icon.icon` 32px + tinte acento. `service-worker.js`: v97 → v98.
+
+3C completa: UI chrome 100% SVG, emojis expresivos conservados. 931/931 unit verdes.
+
+---
+
 ### feat(icons): Parte 3C.2 - íconos de acción (editar/borrar/cerrar/chevron) → SVG · 2026-06-06
 
 Segundo slice de 3C. Íconos de acción a SVG (mismo sprite). Borrar pasa de X ambigua a papelera clara.

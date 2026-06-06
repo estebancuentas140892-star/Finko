@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(icons): Parte 3C.3 - ícono de acento del hero → SVG (3C completa) · 2026-06-06
+
+Último slice de 3C. **La auditoría confirmó que el único ícono de acento "grande" tipo bento es el del hero** ("Tu plata disponible hoy"); el resto de los emojis visibles son datos del usuario (el ícono que el usuario elige para su meta), avatares de banco, o expresivos/cálidos (empty states, tips, prefijos inline en headings de Análisis), que el híbrido conserva a propósito.
+
+**Cambios:**
+- `index.html`: símbolo nuevo `i-saldo` ($ en círculo, distinto del billete de Gastos y la tarjeta de Deudas) + hero 💵 → `<svg class="bento__icon icon">`. Se preservan `id="hero-saldo-icon"` y `aria-hidden` (render.js togglea `.hidden` igual, funciona en svg).
+- `styles/layout.css`: `.bento__icon.icon` 32px + tinte acento (`--fk-text-accent`), cohesivo con el valor verde.
+- `service-worker.js`: `CACHE_NAME` v97 → v98.
+
+**Verificación:** preview muestra el "$" en círculo verde acento sobre el saldo. 931/931 unit verdes.
+
+**3C COMPLETA:** la UI chrome (navegación + íconos de acción + acento del hero) está 100% en SVG. Los emojis cálidos/expresivos se mantienen por diseño (regla 11 del ADN).
+
 ### feat(icons): Parte 3C.2 - íconos de acción (editar/borrar/cerrar/chevron) → SVG · 2026-06-06
 
 Segundo slice de 3C. Migrados los íconos de acción a SVG (mismo sprite). Mejora semántica: borrar pasa de una X ambigua a una **papelera** clara.

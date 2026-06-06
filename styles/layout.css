@@ -299,6 +299,14 @@
   font-size: 2rem;
   margin-bottom: var(--fk-space-2);
 }
+/* Ícono SVG del hero de saldo (Parte 3C, acento). Grande (32px) y tintado
+   con el acento para acompañar al valor en verde. La doble clase gana
+   specificity sobre cualquier override single-class. */
+.bento__icon.icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--fk-text-accent);
+}
 .bento__footer {
   margin-top: auto;
   padding-top: var(--fk-space-3);
