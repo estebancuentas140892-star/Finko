@@ -101,10 +101,10 @@ _(no quedan tareas pendientes en C - tests de integración completos)_
 
 **Completadas:**
 - ✅ C2.1 - Smoke de Ahorro e Inversión: `tests/e2e/ahorro-inversion.test.js`, 9 tests (empty state + alta + persistencia + proyección + eliminar) para los 2 dominios de la Parte 4 - 2026-06-06.
+- ✅ C2.2 - Realinear `smoke.test.js` (19 fallos resueltos): `waitForSelector('#saldo-total')` → `waitForSelector('#sec-dash.active')` en 6 puntos; Dashboard test 2 siembra cuenta saldo 0 - 2026-06-06.
+- ✅ C2.3 - Realinear `estrategia-pago.test.js` (7 fallos resueltos): selectores actualizados al rediseño pick cards (`.estrategia-card__metrica-valor--info/--danger`, acordeón) - 2026-06-06.
 
-**Tareas candidatas (deuda pre-existente, ALTA prioridad):**
-- **C2.2 - Realinear `smoke.test.js` (19 fallos):** su `beforeEach` espera `#saldo-total` visible, pero la guía de primeros pasos I.1 lo oculta cuando no hay cuentas. Sembrar una cuenta en el seed o esperar `#sec-dash.active` en vez de `#saldo-total`.
-- **C2.3 - Realinear `estrategia-pago.test.js` (7 fallos):** apunta a la card de estrategia vieja; el rediseño la convirtió en pestañas Avalancha / Bola de nieve. Actualizar selectores y aserciones al markup actual.
+_(C2 completa: 57/57 verde en la suite completa.)_
 
 **Modelo sugerido:** Sonnet 4.6 - **Esfuerzo:** Medio.
 
@@ -234,4 +234,4 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
 | Tests unitarios | - | 1078/1078 ✅ |
-| Tests E2E | - | Suite `ahorro-inversion` 9/9 ✅; 26 pre-existentes en rojo (`smoke` + `estrategia-pago`) por rediseños previos, pendientes de realinear |
+| Tests E2E | - | 57/57 ✅ (`smoke` 28 + `estrategia-pago` 8 + `ahorro-inversion` 9 + `navegacion-render` 12) |

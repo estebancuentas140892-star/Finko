@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(e2e): C2.2+C2.3 - realinear suites E2E rotas (smoke + estrategia-pago) · 2026-06-06
+
+Saldada la deuda técnica de 26 tests pre-existentes en rojo. Cero cambios en código de app.
+
+- **`tests/e2e/smoke.test.js` (C2.2, 19 tests):** 6 `waitForSelector('#saldo-total')` cambiados a `waitForSelector('#sec-dash.active')` en los 4 `beforeEach` afectados + 2 puntos internos de test. Dashboard test 1: aserción actualizada a `#sec-dash.active` + `#hero-guia-saldo`. Dashboard test 2: nueva lógica con `addInitScript` para sembrar una cuenta de saldo 0 antes de re-navegar. Causa raíz: la guía I.1 agrega atributo `hidden` a `#saldo-total` cuando no hay cuentas, y `waitForSelector` (estado visible por defecto) esperaba indefinidamente.
+- **`tests/e2e/estrategia-pago.test.js` (C2.3, 7 tests):** tests 1-7 actualizados al rediseño de la card de estrategia (v7+). Eliminados: `.estrategia-card__paso` (lista de pasos), `.estrategia-card__total-valor`, `.estrategia-card--hint`, `.estrategia-card__orden`, texto "Estrategia de pago de deudas". Reemplazados por: click en pick card (`[data-action="elegir-estrategia"]`), `.estrategia-card__metrica-valor--info` (deuda prioritaria), `.estrategia-card__metrica-valor--danger` (intereses totales), abrir acordeón antes de rellenar `#estrategia-extra`, `.estrategia-card__placeholder` (1 deuda), `.estrategia-card-pick` (ausencia = sin pick cards). Test 8 (0 deudas) ya pasaba y no requirió cambio.
+
+57/57 verde en la suite completa (1 worker y 5 workers en paralelo).
+
+---
+
 ### test(e2e): smoke de Ahorro e Inversión (cobertura E2E de la Parte 4) · 2026-06-06
 
 Nueva suite `tests/e2e/ahorro-inversion.test.js` (9 tests) que cubre los 2 dominios de la Parte 4, antes con cobertura unit + verificación manual pero sin smoke E2E. Solo se agregó el archivo de test: cero cambios en código de app.

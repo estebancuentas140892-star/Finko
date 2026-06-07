@@ -85,14 +85,25 @@ test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+  });
+
+  test('carga el dashboard y activa la sección principal', async ({ page }) => {
+    await expect(page.locator('#sec-dash.active')).toBeVisible();
+    // Con cuentas vacías, I.1 muestra la guía de primeros pasos
+    await expect(page.locator('#hero-guia-saldo')).toBeVisible();
+  });
+
+  test('con una cuenta nueva, el saldo total es $0', async ({ page }) => {
+    // El beforeEach siembra estado vacío. Aquí agregamos una cuenta con saldo 0
+    // (segundo addInitScript: lee el estado ya sembrado y agrega la cuenta).
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 0, activa: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/');
     await page.waitForSelector('#saldo-total', { timeout: 10_000 });
-  });
-
-  test('carga y muestra el saldo total del dashboard', async ({ page }) => {
-    await expect(page.locator('#saldo-total')).toBeVisible();
-  });
-
-  test('saldo inicial en $0 con localStorage vacío', async ({ page }) => {
     await expect(page.locator('#saldo-total')).toHaveText('$0');
   });
 
@@ -158,7 +169,7 @@ test.describe.serial('Onboarding', () => {
 
     // Recargar - el wizard no debe volver a aparecer
     await page.reload();
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
     await expect(page.locator('#onboarding[data-open]')).toHaveCount(0);
   });
 });
@@ -169,7 +180,7 @@ test.describe('Navegación hash', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/');
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
   });
 
   const secciones = [
@@ -273,7 +284,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await saltearOnboarding(page);
     // Estado inicial: sin cuentas, sin gastos (localStorage vacío excepto onboarded)
     await page.goto('/');
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
   });
 
   test('crear cuenta, gasto con selector, verificar saldo decrementado', async ({ page }) => {
@@ -504,7 +515,7 @@ test.describe('Sidebar colapsable (desktop)', () => {
   test.beforeEach(async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/');
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
   });
 
   test('colapsa el sidebar y oculta los labels', async ({ page }) => {
@@ -539,7 +550,7 @@ test.describe('Sidebar colapsable (desktop)', () => {
     await expect(btn).toHaveAttribute('aria-expanded', 'false');
 
     await page.reload();
-    await page.waitForSelector('#saldo-total', { timeout: 10_000 });
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
     // Debe seguir colapsado
     await expect(

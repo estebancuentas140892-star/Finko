@@ -145,74 +145,77 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
 
     const card = page.locator('#estrategia-pago .estrategia-card');
     await expect(card).toBeVisible({ timeout: 5_000 });
-    await expect(card).toContainText('Estrategia de pago de deudas');
+    // Titulo actual (v7+): "Estrategia de pago" (sin "de deudas")
+    await expect(card).toContainText('Estrategia de pago');
   });
 
   // ── Test 2: orden Avalancha (mayor tasa primero) ─────────────────────────
 
-  test('Avalancha muestra la deuda de mayor tasa en posición 1', async ({ page }) => {
+  test('Avalancha prioriza la deuda de mayor tasa', async ({ page }) => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
-    // Avalancha es la estrategia por defecto
-    const pasos = page.locator('#estrategia-pago .estrategia-card__paso');
-    await expect(pasos).toHaveCount(2, { timeout: 5_000 });
+    // Seleccionar Avalancha (no hay estrategia elegida por defecto)
+    await page.locator('[data-action="elegir-estrategia"][data-estrategia="avalancha"]').click();
 
-    // Posición 1 debe ser "Crédito caro E2E" (30% EA)
-    await expect(pasos.nth(0)).toContainText('Crédito caro E2E');
-    // Posición 2 debe ser "Préstamo barato E2E" (12% EA)
-    await expect(pasos.nth(1)).toContainText('Préstamo barato E2E');
+    // "Apuntás primero a" debe ser la de mayor tasa: 30% EA
+    const target = page.locator('.estrategia-card__metrica-valor--info');
+    await expect(target).toContainText('Crédito caro E2E', { timeout: 3_000 });
   });
 
   // ── Test 3: toggle → Bola de Nieve invierte el orden ────────────────────
 
-  test('Bola de Nieve muestra la deuda de menor saldo en posición 1', async ({ page }) => {
+  test('Bola de Nieve prioriza la deuda de menor saldo', async ({ page }) => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
-    // Click en el botón Bola de Nieve
     await page.locator('[data-action="elegir-estrategia"][data-estrategia="bolaNieve"]').click();
 
-    const pasos = page.locator('#estrategia-pago .estrategia-card__paso');
-    await expect(pasos).toHaveCount(2, { timeout: 5_000 });
-
-    // Posición 1 debe ser "Préstamo barato E2E" ($1.5 M - menor saldo)
-    await expect(pasos.nth(0)).toContainText('Préstamo barato E2E');
-    // Posición 2 debe ser "Crédito caro E2E" ($15 M)
-    await expect(pasos.nth(1)).toContainText('Crédito caro E2E');
+    // "Apuntás primero a" debe ser la de menor saldo: $1.5 M
+    const target = page.locator('.estrategia-card__metrica-valor--info');
+    await expect(target).toContainText('Préstamo barato E2E', { timeout: 3_000 });
   });
 
   // ── Test 4: el toggle de vuelta a Avalancha restaura el orden ────────────
 
-  test('volver a Avalancha tras Bola de Nieve restaura el orden original', async ({ page }) => {
+  test('volver a Avalancha tras Bola de Nieve restaura la prioridad', async ({ page }) => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
     await page.locator('[data-action="elegir-estrategia"][data-estrategia="bolaNieve"]').click();
     await page.locator('[data-action="elegir-estrategia"][data-estrategia="avalancha"]').click();
 
-    const pasos = page.locator('#estrategia-pago .estrategia-card__paso');
-    await expect(pasos.nth(0)).toContainText('Crédito caro E2E');
+    // De vuelta a Avalancha: debe priorizar la de mayor tasa
+    const target = page.locator('.estrategia-card__metrica-valor--info');
+    await expect(target).toContainText('Crédito caro E2E', { timeout: 3_000 });
   });
 
   // ── Test 5: extra mensual redibuja la card ───────────────────────────────
 
-  test('ingresar extra mensual actualiza los totales de la card', async ({ page }) => {
+  test('ingresar extra mensual actualiza el total de intereses', async ({ page }) => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
-    // Capturar meses sin extra
-    const totalLabel = page.locator('#estrategia-pago .estrategia-card__total-valor').first();
-    const mesesSinExtra = await totalLabel.textContent();
+    // Seleccionar Avalancha para ver las métricas (--danger = total intereses)
+    await page.locator('[data-action="elegir-estrategia"][data-estrategia="avalancha"]').click();
+    await page.waitForSelector('.estrategia-card__metrica-valor--danger', { timeout: 3_000 });
 
-    // Escribir $500 000 de extra y salir del campo (blur → change)
+    // Capturar total de intereses sin extra
+    const interesesLabel = page.locator('.estrategia-card__metrica-valor--danger').first();
+    const sinExtra = await interesesLabel.textContent();
+
+    // Abrir el acordeon (cerrado por defecto) para acceder al input
+    await page.locator('[data-action="toggle-extra-estrategia"]').click();
+    await page.waitForSelector('#estrategia-extra', { timeout: 3_000 });
+
+    // Ingresar $500 000 de extra: el input dispara cambiar-extra-estrategia
     const inputExtra = page.locator('#estrategia-extra');
     await inputExtra.fill('500000');
     await inputExtra.blur();
 
-    // La card se redibuja - el valor de meses debe cambiar
-    const mesesConExtra = await totalLabel.textContent();
-    expect(mesesConExtra).not.toBe(mesesSinExtra);
+    // La card se redibuja: con extra, los intereses totales deben bajar
+    const conExtra = await interesesLabel.textContent();
+    expect(conExtra).not.toBe(sinExtra);
   });
 
   // ── Test 6: intereses totales se muestran ───────────────────────────────
@@ -221,27 +224,30 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
-    // El segundo total es "Intereses totales"
-    const interesesLabel = page.locator('#estrategia-pago .estrategia-card__total-valor').nth(1);
-    const texto = await interesesLabel.textContent();
+    // Seleccionar Avalancha para que aparezca .estrategia-card__metrica-valor--danger
+    await page.locator('[data-action="elegir-estrategia"][data-estrategia="avalancha"]').click();
+
+    const interesesEl = page.locator('.estrategia-card__metrica-valor--danger').first();
+    await expect(interesesEl).toBeVisible({ timeout: 3_000 });
+    const texto = await interesesEl.textContent();
 
     // Debe ser un monto formateado con $ (ej. "$3.500.000")
-    expect(texto).toMatch(/^\$/);
+    expect(texto?.trim()).toMatch(/^\$/);
   });
 
   // ── Test 7: 1 deuda → hint (no card completa) ────────────────────────────
 
-  test('con 1 deuda válida muestra hint en lugar de la card completa', async ({ page }) => {
+  test('con 1 deuda válida muestra el mensaje de una sola deuda (sin selector de estrategia)', async ({ page }) => {
     await inyectarUnaDeuda(page);
     await irACompromisos(page);
 
-    // El hint debe aparecer
-    const hint = page.locator('#estrategia-pago .estrategia-card--hint');
-    await expect(hint).toBeVisible({ timeout: 5_000 });
+    // Con 1 deuda: se renderiza .estrategia-card__placeholder en lugar del par de pick cards
+    const placeholder = page.locator('#estrategia-pago .estrategia-card__placeholder');
+    await expect(placeholder).toBeVisible({ timeout: 5_000 });
+    await expect(placeholder).toContainText('una sola deuda');
 
-    // La card completa no debe estar
-    const card = page.locator('#estrategia-pago .estrategia-card__orden');
-    await expect(card).toHaveCount(0);
+    // No hay pick cards (se necesitan >= 2 deudas para compararlas)
+    await expect(page.locator('#estrategia-pago .estrategia-card-pick')).toHaveCount(0);
   });
 
   // ── Test 8: 0 deudas → contenedor vacío ─────────────────────────────────
