@@ -17,7 +17,7 @@ import { save } from '../core/storage.js';
  *
  * @returns {string}
  */
-function genId() {
+export function genId() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }

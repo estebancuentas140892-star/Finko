@@ -5,6 +5,8 @@
  * listo para inyectar vía innerHTML. Probada en Node/Vitest sin happy-dom.
  */
 
+import { esc as _esc } from './utils.js';
+
 // ── SPARKLINE ────────────────────────────────────────────────────
 
 /**
@@ -163,8 +165,3 @@ export function colorearSegmentos(segmentos) {
 
 // ── HELPER ───────────────────────────────────────────────────────
 
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

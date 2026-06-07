@@ -4,13 +4,14 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, hoy } from '../../infra/utils.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
 import { gastosMes } from '../gastos/logic.js';
 import {
   generarResumen, serieGastosMensual, seriePorCategoria,
   calcularScoreSalud, clasificarScore,
   calcularComparacionCategorias, detectarPatronGastoSemanal,
+  calcularEstadoRenta, detectarNudgesRenta,
 } from './logic.js';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
@@ -43,6 +44,8 @@ export function renderAnalisis() {
   el.innerHTML = `
     ${_renderMetricas(resumen)}
     ${_renderScoreSalud(resumen)}
+    ${_renderRecomendacionFiscal()}
+    ${_renderEstadoRenta(anio)}
     ${_renderPatrimonio(resumen)}
     ${_renderTendencia(serieGastos)}
     ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
@@ -53,6 +56,116 @@ export function renderAnalisis() {
 }
 
 // ── SECCIONES INTERNAS ───────────────────────────────────────────
+
+/**
+ * Recomendación fiscal permanente (K.2). Visible cuando al menos un flag de
+ * perfilFiscal está en true. Orienta al usuario a consultar con un contador.
+ */
+function _renderRecomendacionFiscal() {
+  const pf = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
+    ? S.config.perfilFiscal : null;
+  if (!pf) return '';
+
+  const motivos = [];
+  if (pf.ivaResponsable)       motivos.push('responsable del IVA');
+  if (pf.obligadoContabilidad) motivos.push('obligado a llevar contabilidad');
+  if (pf.declaranteObligado)   motivos.push('declarante notificado por la DIAN');
+
+  if (motivos.length === 0) return '';
+
+  const lista = motivos.length === 1
+    ? motivos[0]
+    : `${motivos.slice(0, -1).join(', ')} y ${motivos[motivos.length - 1]}`;
+
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">📋</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Tu perfil fiscal puede requerir atención</p>
+        <p class="nudge__desc">Indicaste que eres ${_esc(lista)}. Estas situaciones
+        pueden generar obligaciones de declaración o pago aunque no superes los topes
+        de ingresos. Consulta con un contador. <a href="#config" class="link">Editar perfil fiscal</a>.</p>
+      </div>
+    </div>`;
+}
+
+/**
+ * Card "Estado de tu renta" (K.3). Muestra los 5 criterios de obligación de
+ * declarar con su tope (calculado en vivo desde la UVT del año vigente) y el
+ * valor actual cuando Finko puede medirlo. Insertada después del Score.
+ *
+ * Decisión: criterios sin datos en Finko se muestran igualmente (tope visible,
+ * barra gris) para que el usuario conozca el límite y sepa dónde consultar el
+ * dato real.
+ */
+function _renderEstadoRenta(anio) {
+  const estado = calcularEstadoRenta(S, anio);
+  const pf     = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
+    ? S.config.perfilFiscal : null;
+  const nudges = detectarNudgesRenta(estado, pf);
+
+  const filas    = estado.criterios.map(_renderCriterioRenta).join('');
+  const tieneAlerta = nudges.some(n => n.nivel === 'nudge-high' || n.nivel === 'nudge-medium');
+  const bannerNudges = tieneAlerta
+    ? nudges.filter(n => n.nivel !== 'nudge-info').map(_renderNudgeRenta).join('')
+    : '';
+
+  return `
+    <section class="analisis__section" aria-labelledby="analisis-renta-title">
+      <h2 class="analisis__section-title" id="analisis-renta-title">📋 Estado de tu renta (${anio})</h2>
+      <p class="analisis__hint">
+        UVT vigente: ${f(estado.uvt)}. Topes calculados a partir de tus datos en Finko.
+        Confirma con un contador antes de declarar.
+      </p>
+      ${bannerNudges}
+      <div class="renta-criterios">
+        ${filas}
+      </div>
+    </section>`;
+}
+
+function _renderCriterioRenta(c) {
+  const ESTADOS = {
+    'sin-datos': { banda: '',          badge: 'Sin datos en Finko', valorTxt: 'N/D' },
+    'ok':        { banda: 'excelente', badge: 'Dentro del límite',   valorTxt: f(c.valor) },
+    'cerca':     { banda: 'ajustada',  badge: 'Cerca del tope',      valorTxt: f(c.valor) },
+    'supera':    { banda: 'critica',   badge: 'Supera el tope',      valorTxt: f(c.valor) },
+  };
+  const { banda, badge, valorTxt } = ESTADOS[c.estado] ?? ESTADOS['sin-datos'];
+  const pctClamp = Math.min(100, Math.max(0, c.porcentaje));
+  const barra = c.estado === 'sin-datos'
+    ? `<div class="progress score-factor__bar"><div class="progress-bar" style="width:0%"></div></div>`
+    : `<div class="progress score-factor__bar"
+            role="progressbar"
+            aria-valuenow="${Math.round(c.porcentaje)}"
+            aria-valuemin="0" aria-valuemax="100"
+            aria-label="${_esc(c.etiqueta)}: ${Math.round(c.porcentaje)} por ciento del tope">
+        <div class="progress-bar progress-bar--score-${banda}"
+             style="width:${pctClamp}%"></div>
+      </div>`;
+
+  return `
+    <article class="renta-criterio renta-criterio--${c.estado}">
+      <div class="renta-criterio__head">
+        <p class="renta-criterio__label">${_esc(c.etiqueta)}</p>
+        <span class="renta-criterio__badge renta-criterio__badge--${c.estado}">${_esc(badge)}</span>
+      </div>
+      <p class="renta-criterio__valor">${valorTxt}<span class="renta-criterio__tope"> / ${f(c.tope)}</span></p>
+      ${barra}
+      <p class="renta-criterio__tip">${_esc(c.tip)}</p>
+    </article>`;
+}
+
+function _renderNudgeRenta(n) {
+  return `
+    <div class="nudge ${n.nivel}" role="status">
+      <span class="nudge__icon" aria-hidden="true">${n.icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${_esc(n.etiqueta)}</p>
+        <p class="nudge__desc">${_esc(n.mensaje)}</p>
+      </div>
+    </div>`;
+}
 
 function _renderMetricas({ gastoMes, compromisoMensual, egresos }) {
   return `
@@ -450,10 +563,3 @@ function _renderPatronSemanal(patron) {
     </section>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

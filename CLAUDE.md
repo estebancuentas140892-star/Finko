@@ -140,7 +140,7 @@ Eliminar archivos, force push, reescribir historial, borrar tests existentes →
 9. **`logic.js` sin DOM** - funciones puras, testeables en happy-dom/Node.
 10. **Ningún dominio importa a otro** - comunicación por EventBus.
 11. **Lenguaje humano, neutral y profesional** - claro y sin jerga, pero serio y accesible para cualquier edad. Voz "tú" (tuteo, no voseo ni usted), "dinero" (no "plata"). Ej: "Tu dinero disponible hoy" antes que "Saldo disponible". Ver [`docs/DECISIONS/003-tono-neutral-profesional.md`](docs/DECISIONS/003-tono-neutral-profesional.md).
-12. **Constantes legales con fecha de revisión** - tasa de usura trimestral, SMMLV/UVT anual.
+12. **Constantes legales con fecha de revisión** - SMMLV, UVT y auxilio de transporte (anuales). Los indicadores de alta frecuencia (ej. usura trimestral) quedan fuera del alcance por costo de mantenimiento (ver [`docs/DECISIONS/004-eliminar-tasa-usura.md`](docs/DECISIONS/004-eliminar-tasa-usura.md)).
 
 Tocar cualquiera de estas reglas requiere un ADR en `docs/DECISIONS/` y discusión explícita.
 

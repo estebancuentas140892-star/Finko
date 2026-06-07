@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f } from '../../infra/utils.js';
+import { f, esc as _esc } from '../../infra/utils.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { legalVigente, SMMLV, APP_VERSION } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
@@ -19,6 +19,7 @@ export function renderPanelConfig() {
 
   el.innerHTML = `
     ${_renderPerfil()}
+    ${_renderPerfilFiscal()}
     ${_renderTema()}
     ${_renderInstalarApp()}
     ${_renderNotificaciones()}
@@ -176,6 +177,44 @@ function _renderNotificaciones() {
     </section>`;
 }
 
+function _renderPerfilFiscal() {
+  const pf   = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
+    ? S.config.perfilFiscal : {};
+  const iva  = pf.ivaResponsable       === true;
+  const cont = pf.obligadoContabilidad === true;
+  const decl = pf.declaranteObligado   === true;
+
+  return `
+    <section class="config-section" aria-labelledby="config-fiscal-title">
+      <h2 class="config-section__title" id="config-fiscal-title">📋 Perfil fiscal</h2>
+      <p class="config-section__desc">
+        Opcional. Si alguna de estas situaciones aplica a tu caso, Finko agrega una
+        recomendación en tu panel de Análisis para que consultes con un contador.
+      </p>
+      <form id="form-perfil-fiscal" class="config-form" novalidate>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-row">
+            <input type="checkbox" name="ivaResponsable" ${iva ? 'checked' : ''} />
+            <span>Soy responsable del IVA (régimen común o simplificado)</span>
+          </label>
+        </div>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-row">
+            <input type="checkbox" name="obligadoContabilidad" ${cont ? 'checked' : ''} />
+            <span>Estoy obligado a llevar contabilidad</span>
+          </label>
+        </div>
+        <div class="form-group form-group--checkbox">
+          <label class="checkbox-row">
+            <input type="checkbox" name="declaranteObligado" ${decl ? 'checked' : ''} />
+            <span>La DIAN me notificó como declarante obligado de renta</span>
+          </label>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar perfil fiscal</button>
+      </form>
+    </section>`;
+}
+
 function _renderDatos() {
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
@@ -227,10 +266,3 @@ function _renderAcercaDe() {
     </section>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

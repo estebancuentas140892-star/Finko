@@ -13,6 +13,8 @@ import { totalGastosMes, gastosMes, gastosPorCategoria, detectarHormigas }
 import { calcularTotalCompromisos, compromisosActivos, esDeuda } from '../compromisos/logic.js';
 import { calcularTotalCuentas }                         from '../tesoreria/logic.js';
 import { metasActivas }                                 from '../metas/logic.js';
+import { calcularTotalInvertido }                       from '../inversiones/logic.js';
+import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 
 // Regex reutilizada en funciones de deteccion.
 const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
@@ -581,4 +583,200 @@ export function detectarPatronGastoSemanal(gastos, hoyISO, config = {}) {
     totalAnalizado,
     gastosAnalizados:  gastosContados,
   };
+}
+
+// ── K.3 · MONITOR DE TOPES DE RENTA ──────────────────────────────
+//
+// 5 criterios de obligación de declarar renta para persona natural en Colombia.
+// Cada tope se calcula como `N × UVT_VIGENTE`, así que actualizar la UVT del año
+// recalcula los topes solos. Solo se "miden" los criterios para los que Finko
+// tiene datos suficientes; el resto se reporta como `estado: 'sin-datos'` con
+// una sugerencia de dónde consultar el valor real.
+//
+// Honestidad explícita: en vez de inventar datos cuando no hay (ingresos sin
+// dominio, tarjeta de crédito sin tipo en TIPOS_CUENTA, consignaciones sin
+// stream propio), el monitor muestra el tope para referencia y deja claro que
+// la verificación debe hacerse fuera de Finko.
+
+/**
+ * Patrimonio bruto = saldos de cuentas activas + monto invertido.
+ * No descuenta deudas (eso sería patrimonio neto, no bruto, que es lo que
+ * mide la DIAN para el criterio del 31 de diciembre).
+ *
+ * @param {import('../../core/state.js').Cuenta[]}    cuentas
+ * @param {import('../../core/state.js').Inversion[]} inversiones
+ * @returns {number} COP.
+ */
+export function patrimonioBruto(cuentas, inversiones) {
+  const c = Array.isArray(cuentas)     ? calcularTotalCuentas(cuentas)     : 0;
+  const i = Array.isArray(inversiones) ? calcularTotalInvertido(inversiones) : 0;
+  return c + i;
+}
+
+/**
+ * Suma de gastos del año indicado. Equivalente anualizado de `totalGastosMes`.
+ * Aproxima el criterio de "compras y consumos totales" de la DIAN.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @returns {number} COP.
+ */
+export function totalGastosAnio(gastos, anio) {
+  if (!Array.isArray(gastos))         return 0;
+  if (!Number.isFinite(anio))         return 0;
+  const pref = `${anio}-`;
+  let total = 0;
+  for (const g of gastos) {
+    if (!g || typeof g.fecha !== 'string') continue;
+    if (!g.fecha.startsWith(pref))         continue;
+    const m = Number(g.monto);
+    if (Number.isFinite(m) && m > 0) total += m;
+  }
+  return total;
+}
+
+/**
+ * Construye el estado de renta del año indicado a partir de los datos del
+ * usuario y la UVT del año vigente. Devuelve los 5 criterios con su tope
+ * en pesos, el valor actual (si es medible), el porcentaje sobre el tope y
+ * el estado clasificatorio.
+ *
+ * Estados de cada criterio:
+ *   - `'sin-datos'`: Finko no puede medirlo (criterio informativo).
+ *   - `'ok'`:     porcentaje < UMBRAL_ALERTA_RENTA (80 % por defecto).
+ *   - `'cerca'`:  80 % ≤ porcentaje < 100 %.
+ *   - `'supera'`: porcentaje ≥ 100 %.
+ *
+ * @param {{
+ *   cuentas:     import('../../core/state.js').Cuenta[],
+ *   inversiones: import('../../core/state.js').Inversion[],
+ *   gastos:      import('../../core/state.js').Gasto[],
+ * }} state - usualmente `S` completo, o un subset para tests.
+ * @param {number} anio
+ * @returns {{
+ *   anio: number,
+ *   uvt: number,
+ *   umbralAlerta: number,
+ *   criterios: Array<{
+ *     id: string,
+ *     etiqueta: string,
+ *     topeUVT: number,
+ *     tope: number,
+ *     valor: number,
+ *     porcentaje: number,
+ *     estado: 'sin-datos'|'ok'|'cerca'|'supera',
+ *     medible: boolean,
+ *     tip: string,
+ *   }>,
+ * }}
+ */
+export function calcularEstadoRenta(state, anio) {
+  const s   = (state && typeof state === 'object') ? state : {};
+  const uvt = Number.isFinite(UVT) && UVT > 0 ? UVT : 0;
+  const t   = TOPES_RENTA_UVT;
+
+  const valorPB = patrimonioBruto(s.cuentas, s.inversiones);
+  const valorCG = totalGastosAnio(s.gastos, anio);
+
+  const construir = (id, etiqueta, topeUVT, valor, medible, tip) => {
+    const tope = topeUVT * uvt;
+    let porcentaje = 0;
+    let estado;
+    if (!medible) {
+      estado = 'sin-datos';
+    } else if (tope <= 0) {
+      estado = 'sin-datos';
+    } else {
+      porcentaje = Math.min(999, (valor / tope) * 100);
+      if      (porcentaje >= 100)                       estado = 'supera';
+      else if (porcentaje >= UMBRAL_ALERTA_RENTA * 100) estado = 'cerca';
+      else                                              estado = 'ok';
+    }
+    return {
+      id, etiqueta, topeUVT, tope,
+      valor:      medible ? valor : 0,
+      porcentaje: medible ? +porcentaje.toFixed(1) : 0,
+      estado, medible, tip,
+    };
+  };
+
+  return {
+    anio,
+    uvt,
+    umbralAlerta: UMBRAL_ALERTA_RENTA,
+    criterios: [
+      construir('ingresosBrutos',  'Ingresos brutos',                t.ingresosBrutos,  0, false,
+        'Finko no rastrea ingresos. Compara con tu certificado de ingresos del año.'),
+      construir('patrimonioBruto', 'Patrimonio bruto a 31 dic',      t.patrimonioBruto, valorPB, true,
+        'Saldos de cuentas activas más monto invertido.'),
+      construir('consumosTotales', 'Compras y consumos totales',     t.consumosTotales, valorCG, true,
+        'Suma de tus gastos registrados durante el año.'),
+      construir('consumosTC',      'Consumos con tarjeta de crédito', t.consumosTC,     0, false,
+        'Finko no distingue tarjeta de crédito. Revisa los extractos de tus tarjetas.'),
+      construir('consignaciones',  'Consignaciones y depósitos',     t.consignaciones,  0, false,
+        'Finko no separa consignaciones de otros ingresos. Revisa los extractos bancarios.'),
+    ],
+  };
+}
+
+/**
+ * Genera nudges preventivos a partir del estado de renta.
+ *
+ * Reglas:
+ *   - Por cada criterio en `'supera'`: nudge nivel `high`.
+ *   - Por cada criterio en `'cerca'` (≥ 80 %): nudge nivel `medium`.
+ *   - Criterios en `'ok'` o `'sin-datos'`: no generan nudge propio.
+ *   - Si `perfilFiscal.declaranteObligado === true` y no hay nudges críticos:
+ *     se añade un nudge informativo recordando preparar la declaración.
+ *
+ * @param {ReturnType<calcularEstadoRenta>} estadoRenta
+ * @param {{ declaranteObligado?: boolean } | null} [perfilFiscal=null]
+ * @returns {Array<{
+ *   id: string,
+ *   nivel: 'nudge-high'|'nudge-medium'|'nudge-info',
+ *   icono: string,
+ *   criterio: string,
+ *   etiqueta: string,
+ *   mensaje: string,
+ * }>}
+ */
+export function detectarNudgesRenta(estadoRenta, perfilFiscal = null) {
+  const nudges = [];
+  if (!estadoRenta || !Array.isArray(estadoRenta.criterios)) return nudges;
+
+  for (const c of estadoRenta.criterios) {
+    if (c.estado === 'supera') {
+      nudges.push({
+        id:       `renta-supera-${c.id}`,
+        nivel:    'nudge-high',
+        icono:    '🚨',
+        criterio: c.id,
+        etiqueta: c.etiqueta,
+        mensaje:  `Superas el tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite). Confirma con un contador.`,
+      });
+    } else if (c.estado === 'cerca') {
+      nudges.push({
+        id:       `renta-cerca-${c.id}`,
+        nivel:    'nudge-medium',
+        icono:    '⚠️',
+        criterio: c.id,
+        etiqueta: c.etiqueta,
+        mensaje:  `Estás cerca del tope de "${c.etiqueta}" (${Math.round(c.porcentaje)} % del límite).`,
+      });
+    }
+  }
+
+  // Refuerzo para declarantes obligados aunque no haya criterios disparados.
+  if (perfilFiscal?.declaranteObligado === true && nudges.length === 0) {
+    nudges.push({
+      id:       'renta-declarante',
+      nivel:    'nudge-info',
+      icono:    '📋',
+      criterio: 'declaranteObligado',
+      etiqueta: 'Declarante notificado por la DIAN',
+      mensaje:  'La DIAN te tiene registrado como declarante. Prepara la declaración aunque no superes los topes.',
+    });
+  }
+
+  return nudges;
 }

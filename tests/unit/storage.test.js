@@ -229,6 +229,72 @@ describe('Migración idempotente', () => {
   });
 });
 
+describe('Migración v8 → v9 (perfil fiscal)', () => {
+  it('agrega config.perfilFiscal con todos los flags en false cuando es v8', () => {
+    const v8 = {
+      ...createInitialState(),
+      _version: 8,
+      config: { notificaciones: false },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v8));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.config.perfilFiscal).toEqual({
+      ivaResponsable:       false,
+      obligadoContabilidad: false,
+      declaranteObligado:   false,
+    });
+  });
+
+  it('preserva config.notificaciones existente al migrar de v8', () => {
+    const v8 = {
+      ...createInitialState(),
+      _version: 8,
+      config: { notificaciones: true },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v8));
+
+    loadData();
+
+    expect(S.config.notificaciones).toBe(true);
+    expect(S.config.perfilFiscal).toBeDefined();
+  });
+
+  it('si config falta en v8, lo crea con perfilFiscal por defecto', () => {
+    const v8 = { ...createInitialState(), _version: 8 };
+    delete v8.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v8));
+
+    loadData();
+
+    expect(S.config.perfilFiscal).toEqual({
+      ivaResponsable:       false,
+      obligadoContabilidad: false,
+      declaranteObligado:   false,
+    });
+  });
+
+  it('v9 con perfilFiscal existente no se sobreescribe (idempotente)', () => {
+    const v9 = {
+      ...createInitialState(),
+      _version: 9,
+      config: {
+        notificaciones: false,
+        perfilFiscal: { ivaResponsable: true, obligadoContabilidad: false, declaranteObligado: true },
+      },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v9));
+
+    loadData();
+
+    expect(S.config.perfilFiscal.ivaResponsable).toBe(true);
+    expect(S.config.perfilFiscal.declaranteObligado).toBe(true);
+    expect(S.config.perfilFiscal.obligadoContabilidad).toBe(false);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

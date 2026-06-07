@@ -9,7 +9,6 @@ import {
   calcularAportesEmpleado,
   calcularCesantias,
   calcularRentabilidadReal,
-  clasificarTasaCredito,
   validarCampos,
 } from '../../modules/infra/financiero.js';
 // Constantes legales vigentes (importadas desde el single source of truth).
@@ -17,7 +16,6 @@ import {
 import {
   SMMLV,
   AUXILIO_TRANSPORTE,
-  TASA_USURA,
   SALUD_EMPLEADO,
   PENSION_EMPLEADO,
   INTERESES_CESANTIAS,
@@ -510,38 +508,3 @@ describe('calcularRentabilidadReal()', () => {
   });
 });
 
-// ── clasificarTasaCredito() ───────────────────────────────────────
-
-describe('clasificarTasaCredito()', () => {
-  const USURA = 0.2817;  // Q2 2026
-
-  it('tasa > usura → "usura"', () => {
-    expect(clasificarTasaCredito(0.30, USURA)).toBe('usura');
-    expect(clasificarTasaCredito(0.50, USURA)).toBe('usura');
-  });
-
-  it('tasa entre 85 % y 100 % de usura → "alta"', () => {
-    expect(clasificarTasaCredito(0.25, USURA)).toBe('alta');   // ~88.7 %
-  });
-
-  it('tasa entre 65 % y 85 % de usura → "estandar"', () => {
-    expect(clasificarTasaCredito(0.20, USURA)).toBe('estandar'); // ~71 %
-  });
-
-  it('tasa < 65 % de usura → "razonable"', () => {
-    expect(clasificarTasaCredito(0.15, USURA)).toBe('razonable'); // ~53 %
-    expect(clasificarTasaCredito(0.05, USURA)).toBe('razonable');
-  });
-
-  it('tasa ≤ 0 → "razonable"', () => {
-    expect(clasificarTasaCredito(0, USURA)).toBe('razonable');
-    expect(clasificarTasaCredito(-0.01, USURA)).toBe('razonable');
-  });
-
-  it('usa TASA_USURA vigente por defecto si no se pasa el parámetro', () => {
-    // No usura param → debe clasificar contra la usura vigente actual.
-    // Resilient a cambios trimestrales: comparamos contra la constante importada.
-    expect(clasificarTasaCredito(TASA_USURA + 0.01)).toBe('usura');
-    expect(clasificarTasaCredito(TASA_USURA * 0.30)).toBe('razonable');
-  });
-});

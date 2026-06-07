@@ -20,6 +20,7 @@ import { announce }                 from '../../infra/a11y.js';
 import { mostrarErroresForm }       from '../../infra/form-errors.js';
 import { confirmar }                from '../../ui/confirm.js';
 import { hoy }                      from '../../infra/utils.js';
+import { genId }                    from '../../infra/crud.js';
 import {
   validarMetaMeses, validarMontoActual,
   normalizarMetaMeses, normalizarMontoActual,
@@ -51,19 +52,6 @@ const FACTOR_MENSUAL = {
   'Anual':      1 / 12,
   'Única vez':  0,
 };
-
-// ── ID GENERATOR ─────────────────────────────────────────────────
-
-/**
- * Genera un ID único para aportes. Mismo patrón que infra/crud.js (privado allá).
- * @returns {string}
- */
-function _genId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `t-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
-}
 
 /**
  * Suma los gastos fijos mensuales del usuario a partir de S.compromisos.
@@ -288,7 +276,7 @@ function _guardarAporte(form) {
   }
 
   const aporte = {
-    id:    _genId(),
+    id:    genId(),
     monto: normalizarMontoAporte(datos.monto),
     fecha: datos.fecha.trim(),
     nota:  datos.nota?.trim() || undefined,

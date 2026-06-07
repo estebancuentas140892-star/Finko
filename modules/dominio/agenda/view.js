@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f } from '../../infra/utils.js';
+import { f, esc as _esc } from '../../infra/utils.js';
 import { FRECUENCIAS } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
@@ -345,10 +345,3 @@ export function renderFormGastoFijo() {
     </form>`;
 }
 
-// ── HELPERS ──────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

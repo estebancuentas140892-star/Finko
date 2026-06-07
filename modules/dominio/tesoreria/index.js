@@ -30,13 +30,14 @@ import {
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
 } from './logic.js';
-import { renderListaCuentas, renderFormCuenta } from './view.js';
+import { renderListaCuentas, renderFormCuenta, renderGMFIndicador } from './view.js';
 
 // ── RENDER COMPLETO ──────────────────────────────────────────────
 
 /** Re-renderiza la vista del dominio. */
 function _renderTodo() {
   renderListaCuentas();
+  renderGMFIndicador();
 }
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────

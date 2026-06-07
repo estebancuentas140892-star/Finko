@@ -151,6 +151,22 @@ function _inyectarPanel() {
     announce('Perfil actualizado.');
   });
 
+  // Guardar perfil fiscal (K.2).
+  panel.querySelector('#form-perfil-fiscal')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const datos = Object.fromEntries(new FormData(e.target));
+    if (!S.config) S.config = {};
+    if (typeof S.config.perfilFiscal !== 'object' || S.config.perfilFiscal === null) {
+      S.config.perfilFiscal = {};
+    }
+    S.config.perfilFiscal.ivaResponsable       = datos.ivaResponsable      === 'on';
+    S.config.perfilFiscal.obligadoContabilidad = datos.obligadoContabilidad === 'on';
+    S.config.perfilFiscal.declaranteObligado   = datos.declaranteObligado   === 'on';
+    save();
+    renderPanelConfig();
+    announce('Perfil fiscal guardado.');
+  });
+
   // Importar: el input file no dispara data-action click - usamos change.
   panel.querySelector('[data-action="importar-datos"]')
     ?.addEventListener('change', (e) => _importarDatos(e.target));

@@ -8,9 +8,9 @@
  */
 
 import { S } from '../../core/state.js';
-import { f } from '../../infra/utils.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { BANCOS_CO, TIPOS_CUENTA } from '../../core/constants.js';
-import { cuentasActivas } from './logic.js';
+import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 
@@ -164,7 +164,7 @@ export function renderFormCuenta() {
           <span>A esta cuenta le aplica el 4x1000 (GMF)</span>
         </label>
         <p class="form-hint form-hint--muted">
-          El 4x1000 es un impuesto de $4 por cada $1.000 que retiras o transfieres. El efectivo no lo paga.
+          El 4x1000 es un impuesto de $4 por cada $1.000 que retiras o transfieres. Las cuentas de nómina y AFC están exentas por ley: si la tuya lo es, deja esta opción desmarcada.
         </p>
       </div>
 
@@ -219,6 +219,45 @@ export function renderFormCuenta() {
     </form>`;
 }
 
+// ── INDICADOR GMF (K.1) ──────────────────────────────────────────
+
+/**
+ * Renderiza el nudge de costo del GMF en `#tesoreria-gmf`.
+ * Muestra el costo estimado del 4x1000 para el mes actual basado en
+ * los gastos registrados desde cuentas con GMF. No-op si el contenedor
+ * no existe o si no hay costo que reportar este mes.
+ */
+export function renderGMFIndicador() {
+  const el = document.getElementById('tesoreria-gmf');
+  if (!el) return;
+
+  const fechaHoy = hoy();
+  const anio = Number(fechaHoy.slice(0, 4));
+  const mes  = Number(fechaHoy.slice(5, 7));
+
+  const gmfData = calcularCostoGMF(S.gastos, S.cuentas, anio, mes);
+  const nudge   = detectarNudgeGMF(gmfData);
+
+  el.innerHTML = nudge ? _renderNudgeGMF(nudge) : '';
+}
+
+/**
+ * @param {{ icono: string, nivel: string, cantidadCuentasGMF: number,
+ *           gastosGravados: number, costoGMF: number }} nudge
+ * @returns {string}
+ */
+function _renderNudgeGMF(nudge) {
+  const n = nudge.cantidadCuentasGMF === 1 ? '1 cuenta' : `${nudge.cantidadCuentasGMF} cuentas`;
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${nudge.icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">4x1000 estimado este mes: ${f(nudge.costoGMF)}</p>
+        <p class="nudge__desc">Calculado desde ${f(nudge.gastosGravados)} en gastos registrados desde ${_esc(n)} con GMF. Las cuentas de nómina y AFC están exentas: consulta con tu banco si aplica.</p>
+      </div>
+    </div>`;
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
@@ -239,12 +278,3 @@ function _bankAvatarHtml(bancoId) {
                aria-hidden="true">${iniciales}</span>`;
 }
 
-/** Escapa caracteres HTML para evitar XSS en valores dinámicos. */
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}

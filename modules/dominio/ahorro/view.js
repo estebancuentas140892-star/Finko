@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -349,10 +349,4 @@ function _fmtMeses(n) {
   const entero = Math.abs(n - Math.round(n)) < 0.05;
   const valor  = entero ? Math.round(n) : n.toString().replace('.', ',');
   return `${valor} ${Math.abs(n - 1) < 0.05 ? 'mes' : 'meses'}`;
-}
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

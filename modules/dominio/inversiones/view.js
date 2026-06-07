@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { INFLACION_OBJETIVO } from '../../core/constants.js';
 import {
   calcularTotalInvertido,
@@ -325,10 +325,4 @@ function _fmtTasa(n) {
   const num = Math.round((Number(n) || 0) * 100) / 100;
   const entero = Math.abs(num - Math.round(num)) < 0.005;
   return entero ? String(Math.round(num)) : num.toString().replace('.', ',');
-}
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

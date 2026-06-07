@@ -4,7 +4,7 @@
  */
 
 import { S }                  from '../../core/state.js';
-import { f }                  from '../../infra/utils.js';
+import { f, esc as _esc }     from '../../infra/utils.js';
 import { CATEGORIAS_GASTO }   from '../../core/constants.js';
 import {
   presupuestosActivos,
@@ -206,10 +206,4 @@ function _claseProgreso(porcentaje) {
   if (porcentaje > 100) return 'progress-bar--danger';
   if (porcentaje >= 75) return 'progress-bar--warn';
   return '';
-}
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

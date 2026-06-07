@@ -1,0 +1,740 @@
+/* ============================================================
+   FINKO - CALCULADORAS + HERRAMIENTA-INLINE + SIM-GATE + TESORERIA + GASTOS + COMPROMISOS UI
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   CALCULADORAS - panel con 7 calculadoras financieras CO.
+   Cada .calc-card replica el lenguaje visual de .bento__cell:
+   surface card + radius-xl + padding generoso + header destacado.
+   ════════════════════════════════════════════════════════════ */
+
+.calc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.calc-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+  transition:
+    border-color var(--fk-transition-base),
+    box-shadow var(--fk-transition-base);
+}
+
+.calc-card:focus-within {
+  border-color: var(--fk-border-default);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+.calc-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+}
+
+/* Form */
+.calc-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.calc-form__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--fk-space-3);
+}
+
+.calc-form > .btn {
+  align-self: flex-start;
+  min-width: 140px;
+}
+
+/* Result area: aparece tras calcular */
+.calc-result {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-left: 3px solid var(--fk-accent);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4) var(--fk-space-5);
+  animation: fadeInUp 0.25s ease-out;
+}
+
+.calc-result:empty {
+  display: none;
+}
+
+/* Subtítulo de bloque cuando un resultado agrupa varias secciones */
+.calc-result__subtitle {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0 0 var(--fk-space-3);
+}
+
+.calc-result__grid + .calc-result__subtitle {
+  margin-top: var(--fk-space-5);
+  padding-top: var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* Grid de resultados dl/dt/dd */
+.calc-result__grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--fk-space-2) var(--fk-space-4);
+  margin: 0;
+  align-items: baseline;
+}
+
+.calc-result__grid dt {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-regular);
+  line-height: var(--fk-leading-snug);
+}
+
+.calc-result__grid dd {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  text-align: right;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Variantes de valor */
+.calc-result__grid dd.calc-result__highlight {
+  color: var(--fk-text-accent);
+}
+.calc-result__grid dd.calc-result__deduct {
+  color: var(--fk-danger-text);
+}
+.calc-result__grid dd.calc-result__total {
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+  grid-column: 2;
+}
+
+.calc-result__grid dt:has(+ dd.calc-result__total) {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* Badge de clasificación de tasa */
+.calc-result__badge {
+  margin: var(--fk-space-3) 0 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+
+.calc-result__badge.calc-result__highlight {
+  background: var(--fk-success-bg);
+  border-color: color-mix(in srgb, var(--fk-success) 30%, transparent);
+  color: var(--fk-success-text);
+}
+
+.calc-result__badge.calc-result__deduct {
+  background: var(--fk-danger-bg);
+  border-color: color-mix(in srgb, var(--fk-danger) 30%, transparent);
+  color: var(--fk-danger-text);
+}
+
+/* Lista de errores de validacion */
+.calc-result__errors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  color: var(--fk-danger-text);
+  font-size: var(--fk-text-sm);
+}
+
+.calc-result__errors li {
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-danger-bg);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-sm);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   HERRAMIENTA-INLINE - bloque colapsable (<details>) embebido en
+   cualquier sección de dominio. Reutiliza .calc-form y .calc-result.
+   ════════════════════════════════════════════════════════════ */
+
+.herramienta-inline {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  overflow: hidden;
+  margin-top: var(--fk-space-4);
+}
+
+.herramienta-inline__titulo {
+  padding: var(--fk-space-4) var(--fk-space-6);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  user-select: none;
+  transition: background var(--fk-transition-base);
+}
+
+.herramienta-inline__titulo::-webkit-details-marker { display: none; }
+
+.herramienta-inline__titulo::after {
+  content: '▸';
+  margin-left: auto;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  transition: transform 0.2s ease;
+}
+
+details[open] > .herramienta-inline__titulo::after {
+  transform: rotate(90deg);
+}
+
+.herramienta-inline__titulo:hover {
+  background: var(--fk-bg-hover);
+}
+
+.herramienta-inline__cuerpo {
+  padding: var(--fk-space-4) var(--fk-space-6) var(--fk-space-6);
+  border-top: 1px solid var(--fk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.herramienta-inline__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* ────────────────────────────────────────────────────────────
+   SIM-GATE - selector de perfil laboral del simulador.
+   Dos cards clicables (empleado / independiente) que gatan
+   los campos específicos de cada situación.
+   ──────────────────────────────────────────────────────────── */
+
+.sim-gate {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-2);
+}
+
+.sim-gate__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border: 2px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  cursor: pointer;
+  background: var(--fk-bg-surface);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  min-height: 60px;
+}
+
+.sim-gate__option:hover {
+  border-color: var(--fk-border-strong);
+}
+
+.sim-gate__option:has(.sim-gate__radio:checked) {
+  border-color: var(--fk-accent);
+  background: var(--fk-bg-elevated);
+}
+
+.sim-gate__radio {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: var(--fk-accent);
+  width: var(--fk-space-4);
+  height: var(--fk-space-4);
+  cursor: pointer;
+}
+
+.sim-gate__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.sim-gate__titulo {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-tight);
+}
+
+.sim-gate__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+
+/* Quita el borde y padding por defecto de fieldset. */
+.sim-profile-fields {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   INGRESOS-CARD - card compacta de ingresos dentro de Tesorería.
+   Aparece sobre #lista-tesoreria, proporcional al uso real del
+   usuario (1-2 ingresos para la mayoría).
+   ════════════════════════════════════════════════════════════ */
+
+.ingresos-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.ingresos-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.ingresos-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.ingresos-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.ingresos-card__total {
+  font-size: var(--fk-text-sm);
+  font-weight: 700;
+  color: var(--fk-text-accent);
+}
+
+.ingresos-card__list {
+  padding: 0.25rem 0;
+}
+
+.ingresos-card__empty {
+  padding: 0.75rem 1rem;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  text-align: center;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MES-NAV - selector de mes anterior/siguiente.
+   Usado en la sección Gastos encima de los chips de categoría.
+   ════════════════════════════════════════════════════════════ */
+
+.mes-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.mes-nav__btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--fk-radius);
+  transition: color 0.15s, background 0.15s;
+}
+
+.mes-nav__btn:hover {
+  color: var(--fk-text-primary);
+  background: var(--fk-bg-surface);
+}
+
+.mes-nav__btn:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+}
+
+.mes-nav__label {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  letter-spacing: 0.01em;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FILTROS-BAR + CHIP - barra de chips de filtro por categoría.
+   Usada en la sección Gastos (encima de la lista).
+   ════════════════════════════════════════════════════════════ */
+
+.filtros-bar {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.5rem 0 0.75rem;
+  scrollbar-width: none;
+}
+
+.filtros-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  font-weight: 500;
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.chip:hover {
+  color: var(--fk-text-primary);
+  border-color: var(--fk-border);
+}
+
+.chip--active {
+  background: var(--fk-accent);
+  border-color: var(--fk-accent);
+  color: var(--fk-text-on-bold);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ABONO A DEUDAS (ADR 002) - botón Abonar, badge Saldada
+   (compromisos) y badge "Ya abonaste" (agenda).
+   ════════════════════════════════════════════════════════════ */
+
+.abono-btn {
+  margin-top: var(--fk-space-2);
+  width: 100%;
+}
+
+.abono-saldada {
+  display: block;
+  margin-top: var(--fk-space-2);
+  text-align: center;
+}
+
+.cal-detail__badge-abono {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-success-text);
+  margin-top: var(--fk-space-1);
+}
+
+/* ════════════════════════════════════════════════════════════
+   HERO SOLO - card de saldo visible fuera de un bento grid.
+   ════════════════════════════════════════════════════════════ */
+
+.bento__cell--solo {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
+   Se renderiza solo si hay items. Scroll vertical si >5 items
+   para no inflar el dashboard.
+   ════════════════════════════════════════════════════════════ */
+
+.vencidos-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.vencidos-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.vencidos-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.vencidos-card__link {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.vencidos-card__link:hover,
+.vencidos-card__link:focus-visible {
+  text-decoration: underline;
+}
+
+.vencidos-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+  max-height: calc(3.25rem * 3 + 0.5rem); /* ~3 items visibles */
+  overflow-y: auto;
+}
+
+.vencidos-card__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-left: 2px solid transparent;
+}
+
+.vencidos-card__item--leve     { border-left-color: var(--fk-warning); }
+.vencidos-card__item--moderada { border-left-color: var(--fk-amber); }
+.vencidos-card__item--urgente  { border-left-color: var(--fk-danger); }
+
+.vencidos-card__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.vencidos-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.vencidos-card__name {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vencidos-card__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0.1rem 0 0;
+}
+
+.vencidos-card__amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PRIORIDADES-CARD - compromisos próximos 7 días agrupados por día.
+   Reemplaza Card Hoy: fusiona HOY + próximos en una sola vista.
+   ════════════════════════════════════════════════════════════ */
+
+.prioridades-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.prioridades-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+  gap: 0.5rem;
+}
+
+.prioridades-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.prioridades-card__link {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.prioridades-card__link:hover,
+.prioridades-card__link:focus-visible {
+  text-decoration: underline;
+}
+
+.prioridades-card__body {
+  padding: 0.25rem 0 0.5rem;
+}
+
+.prioridades-card__group {
+  padding: 0.5rem 0 0.25rem;
+}
+
+.prioridades-card__group--hoy .prioridades-card__group-label {
+  color: var(--fk-text-accent);
+  font-weight: 700;
+}
+
+.prioridades-card__group-label {
+  font-size: var(--fk-text-xs);
+  font-weight: 600;
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 1rem 0.25rem;
+  margin: 0;
+}
+
+.prioridades-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.prioridades-card__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+}
+
+.prioridades-card__dot {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.prioridades-card__name {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prioridades-card__amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  flex-shrink: 0;
+}
+
+.prioridades-card__empty {
+  padding: 0.75rem 1rem;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BALANCE-TIRA - resumen ingresos vs gastos del mes.
+   Tira simple (no card), color por signo.
+   ════════════════════════════════════════════════════════════ */
+
+.balance-tira {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md, 0.5rem);
+  margin-bottom: 1rem;
+  font-size: var(--fk-text-sm);
+}
+
+.balance-tira__icon {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.balance-tira__label {
+  color: var(--fk-text-secondary);
+  flex: 1;
+}
+
+.balance-tira__value {
+  font-weight: 700;
+  color: var(--fk-text-primary);
+}
+
+/* Reusa las clases que updSaldo() ya aplica al elemento #balance-mes. */
+.balance-tira__value.bento__value--accent { color: var(--fk-text-accent); }
+.balance-tira__value.bento__value--danger { color: var(--fk-danger); }
+

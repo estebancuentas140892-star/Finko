@@ -1,0 +1,307 @@
+/* ============================================================
+   FINKO - CHIPS Y BADGES + LIST ITEMS + EMPTY STATE + SPINNER + DIVISOR + PROGRESS BAR + TOGGLE
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   CHIPS Y BADGES
+   ════════════════════════════════════════════════════════════ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-medium);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.chip-success { background: var(--fk-success-bg); color: var(--fk-success-text); border-color: color-mix(in srgb, var(--fk-success) 20%, transparent); }
+.chip-warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); border-color: color-mix(in srgb, var(--fk-warning) 20%, transparent); }
+.chip-danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text);  border-color: color-mix(in srgb, var(--fk-danger)  20%, transparent); }
+.chip-info    { background: var(--fk-info-bg);    color: var(--fk-info-text);    border-color: color-mix(in srgb, var(--fk-info)    20%, transparent); }
+.chip-accent  { background: var(--fk-accent-subtle); color: var(--fk-text-accent); border-color: var(--fk-accent-border); }
+
+/* Badge (número) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--fk-space-5);
+  height: var(--fk-space-5);
+  padding: 0 var(--fk-space-1);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  background: var(--fk-danger);
+  color: var(--fk-text-on-bold);
+  line-height: 1;
+}
+.badge-accent { background: var(--fk-accent); color: var(--fk-text-on-accent); }
+.badge-warning { background: var(--fk-warning); color: var(--fk-text-on-accent); }
+
+/* ════════════════════════════════════════════════════════════
+   LIST ITEMS
+   ════════════════════════════════════════════════════════════ */
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.list-item:hover {
+  background: var(--fk-bg-elevated);
+  border-color: var(--fk-border-default);
+}
+.list-item__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.125rem;
+}
+/* body: bloque central que crece y permite truncado de texto */
+.list-item__body,
+.list-item__content { flex: 1; min-width: 0; }
+
+/* meta: columna derecha solo con texto (monto), sin botones */
+.list-item__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: var(--fk-space-1);
+}
+
+/* action: columna derecha con botones (o monto + botón en tesorería) */
+.list-item__action {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
+}
+
+.list-item__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  /* El nombre se muestra completo (con wrap) en lugar de truncarse con "…".
+     Sin line-clamp: la card de deuda lleva el chip de urgencia inline dentro
+     del título y un clamp podría recortarlo. Los nombres en Finko son cortos,
+     así que el wrap no crece sin control. Mejora la escaneabilidad en móvil. */
+  overflow-wrap: anywhere;
+}
+.list-item__subtitle {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-top: 2px;
+}
+/* amount: monto en columna __meta (compromisos, gastos, personales).
+   Ancla visual de la card: un paso más grande que el título para que el
+   ojo encuentre "cuánto" de un vistazo. */
+.list-item__amount {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-base);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+}
+/* value: monto en columna __action (tesorería) */
+.list-item__value {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-semibold);
+  font-size: var(--fk-text-base);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+}
+
+/* Cuando el icono contiene un bank-avatar, el wrapper no aporta bg propio */
+.list-item__icon:has(.bank-avatar) {
+  background: transparent;
+}
+
+/* ════════════════════════════════════════════════════════════
+   EMPTY STATE
+   ════════════════════════════════════════════════════════════ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-4);
+  padding: var(--fk-space-12) var(--fk-space-6);
+  text-align: center;
+}
+
+/* Icono prominente - no opaco, es el punto de atención */
+.empty-state__icon {
+  font-size: 3.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--fk-accent) 20%, transparent));
+}
+
+.empty-state__title {
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+}
+
+.empty-state__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  max-width: 300px;
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* Tip educativo opcional - aparece bajo el CTA */
+.empty-state__tip {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  max-width: 280px;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+  border-left: 2px solid var(--fk-accent-border);
+  text-align: left;
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SPINNER / SKELETON
+   ════════════════════════════════════════════════════════════ */
+
+.spinner {
+  width: var(--fk-space-5);
+  height: var(--fk-space-5);
+  border: 2px solid var(--fk-border-default);
+  border-top-color: var(--fk-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.spinner-lg { width: var(--fk-space-8); height: var(--fk-space-8); border-width: 3px; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--fk-bg-elevated) 25%,
+    var(--fk-bg-hover) 50%,
+    var(--fk-bg-elevated) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--fk-radius-sm);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DIVISOR
+   ════════════════════════════════════════════════════════════ */
+
+.divider {
+  height: 1px;
+  background: var(--fk-border-subtle);
+  border: none;
+  margin-block: var(--fk-space-4);
+}
+.divider--accent {
+  background: var(--fk-accent-border);
+}
+
+/* ════════════════════════════════════════════════════════════
+   PROGRESS BAR
+   ════════════════════════════════════════════════════════════ */
+
+.progress {
+  width: 100%;
+  height: var(--fk-space-2);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-full);
+  overflow: hidden;
+}
+.progress__bar {
+  height: 100%;
+  background: var(--fk-accent);
+  border-radius: var(--fk-radius-full);
+  transition: width var(--fk-transition-slow);
+}
+.progress__bar--warning { background: var(--fk-warning); }
+.progress__bar--danger  { background: var(--fk-danger); }
+
+/* ════════════════════════════════════════════════════════════
+   TOGGLE (switch)
+   ════════════════════════════════════════════════════════════ */
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.toggle__track {
+  position: absolute;
+  inset: 0;
+  background: var(--fk-bg-elevated);
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  cursor: pointer;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.toggle__track::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--fk-text-muted);
+  top: 2px;
+  left: 2px;
+  transition: transform var(--fk-transition-fast), background-color var(--fk-transition-fast);
+}
+.toggle input:checked + .toggle__track {
+  background: var(--fk-accent);
+  border-color: var(--fk-accent);
+}
+.toggle input:checked + .toggle__track::after {
+  background: var(--fk-text-on-accent);
+  transform: translateX(20px);
+}
+.toggle input:focus-visible + .toggle__track {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+

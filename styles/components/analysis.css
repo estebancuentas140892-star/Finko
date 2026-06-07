@@ -1,0 +1,1092 @@
+/* ============================================================
+   FINKO - PANEL DE ANALISIS (bento, metricas, salud, presupuesto, ahorro, inversion, gastos, patrimonio)
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   PANEL DE ANÁLISIS
+   Secciones, métricas, salud financiera, categorías,
+   hormigas y patrimonio neto.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Sección genérica ────────────────────────────────────── */
+.analisis__section {
+  margin-bottom: var(--fk-space-8);
+}
+.analisis__section-title {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin-bottom: var(--fk-space-4);
+}
+.analisis__subsection-title {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  margin-bottom: var(--fk-space-3);
+  margin-top: var(--fk-space-5);
+}
+.analisis__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin-bottom: var(--fk-space-3);
+}
+.analisis__hint {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-left: 3px solid var(--fk-warning);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin-bottom: var(--fk-space-4);
+}
+.analisis__empty {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  padding: var(--fk-space-4) 0;
+}
+
+/* ── Métricas del mes ────────────────────────────────────── */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--fk-space-3);
+}
+.metric-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.metric-card__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.metric-card__value {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1.1;
+}
+.metric-card__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-top: var(--fk-space-1);
+}
+.metric-card--positive .metric-card__value { color: var(--fk-text-accent); }
+.metric-card--negative .metric-card__value { color: var(--fk-danger); }
+
+/* ── Salud financiera ────────────────────────────────────── */
+.salud-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.salud-card--excelente { border-color: var(--fk-accent-border); }
+.salud-card--buena     { border-color: var(--fk-success); }
+.salud-card--ajustada  { border-color: var(--fk-warning); }
+.salud-card--critica   { border-color: var(--fk-danger); }
+
+.salud-card__nivel {
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.salud-card__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.salud-card__tasa {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+}
+
+.progress     { width: 100%; height: 8px; background: var(--fk-bg-elevated); border-radius: var(--fk-radius-full); overflow: hidden; }
+.progress-bar { height: 100%; background: var(--fk-accent); border-radius: var(--fk-radius-full); transition: width var(--fk-transition-slow); }
+.progress-bar--salud-excelente { background: var(--fk-accent); }
+.progress-bar--salud-buena     { background: var(--fk-success); }
+.progress-bar--salud-ajustada  { background: var(--fk-warning); }
+.progress-bar--salud-critica   { background: var(--fk-danger); }
+.progress-bar--warn            { background: var(--fk-warning); }
+.progress-bar--danger          { background: var(--fk-danger); }
+
+/* ── F.3: Score de Salud Financiera ────────────────────── */
+.score-card {
+  background: var(--fk-bg-surface);
+  border: 2px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+.score-card--excelente { border-color: var(--fk-accent-border); }
+.score-card--buena     { border-color: var(--fk-success); }
+.score-card--ajustada  { border-color: var(--fk-warning); }
+.score-card--critica   { border-color: var(--fk-danger); }
+
+.score-card__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+.score-card__numero {
+  font-size: clamp(2.5rem, 8vw, 3.5rem);
+  font-weight: var(--fk-font-bold);
+  line-height: 1;
+  color: var(--fk-text-primary);
+}
+.score-card__sobre {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.score-card__label {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.score-card__bar {
+  height: var(--fk-space-3);
+  border-radius: var(--fk-radius-full);
+}
+.progress-bar--score-excelente { background: var(--fk-accent); }
+.progress-bar--score-buena     { background: var(--fk-success); }
+.progress-bar--score-ajustada  { background: var(--fk-warning); }
+.progress-bar--score-critica   { background: var(--fk-danger); }
+
+.score-card__factors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--fk-space-3);
+}
+@media (max-width: 640px) {
+  .score-card__factors {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.score-factor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+.score-factor__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.score-factor__valor {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+}
+.score-factor__bar {
+  height: 6px;
+}
+
+.score-card__explicacion {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  text-align: center;
+  padding: var(--fk-space-2);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+
+/* ── D.5: Envelope budgeting (presupuesto por categoría) ── */
+.presupuesto-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+}
+
+.presupuesto-hero__totales {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-md);
+  margin-bottom: var(--fk-space-md);
+}
+
+.presupuesto-hero__metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+}
+
+.presupuesto-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.presupuesto-hero__value {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+}
+
+.presupuesto-hero__value.is-negative { color: var(--fk-danger); }
+
+.envelope-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.envelope {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-sm);
+}
+
+.envelope[data-estado="alerta"]   { border-color: color-mix(in srgb, var(--fk-warning) 40%, transparent); }
+.envelope[data-estado="excedido"] { border-color: color-mix(in srgb, var(--fk-danger)  50%, transparent); background: var(--fk-danger-bg); }
+
+.envelope__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+}
+
+.envelope__title {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.envelope__subtitle {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.envelope__meta {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+
+.envelope__porcentaje { font-weight: var(--fk-fw-bold); color: var(--fk-text-primary); }
+
+.envelope__actions {
+  display: flex;
+  gap: var(--fk-space-sm);
+  justify-content: flex-end;
+  margin-top: var(--fk-space-xs);
+}
+
+.envelope-huerfanas {
+  margin-top: var(--fk-space-xl);
+  padding: var(--fk-space-md);
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-base);
+}
+
+.envelope-huerfanas__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-sm);
+}
+
+.envelope-huerfanas__list {
+  list-style: none;
+  margin: 0 0 var(--fk-space-sm);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+}
+
+.envelope-huerfanas__list li {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-primary);
+}
+
+.envelope-huerfanas__cat { color: var(--fk-text-secondary); }
+
+.envelope-huerfanas__hint {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* ── J.1: Fondo de emergencia (Ahorro) ───────────────────── */
+.fondo-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.fondo-hero__header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--fk-space-md);
+}
+
+.fondo-hero__icon {
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 14%, transparent);
+  color: var(--fk-dom-ahorro);
+}
+.fondo-hero__icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.fondo-hero__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fondo-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.fondo-hero__title {
+  font-size: var(--fk-fs-xl);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fondo-hero__sub {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+}
+.fondo-hero__sub--ok {
+  color: var(--fk-dom-ahorro);
+  font-weight: var(--fk-fw-semibold);
+}
+
+.fondo-hero__progress {
+  margin: 0;
+}
+
+.fondo-hero__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+  margin: 0;
+  font-size: var(--fk-fs-sm);
+}
+.fondo-hero__pct {
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.fondo-hero__meta-label {
+  color: var(--fk-text-muted);
+}
+
+.fondo-hero__faltante {
+  margin: 0;
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+}
+.fondo-hero__faltante strong {
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.fondo-hero__banner {
+  margin: 0;
+  padding: var(--fk-space-sm) var(--fk-space-md);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 10%, transparent);
+  color: var(--fk-dom-ahorro);
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+}
+
+/* ── J.1b: Sección hábito de ahorro (aportes + compromiso) ─── */
+
+.ahorro-habito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-4);
+}
+
+.ahorro-habito__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.ahorro-habito__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.ahorro-habito__compromiso {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-ahorro) 25%, transparent);
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+}
+.ahorro-habito__compromiso strong {
+  color: var(--fk-dom-ahorro);
+  font-variant-numeric: tabular-nums;
+}
+
+.ahorro-habito__sin-compromiso {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-wrap: wrap;
+}
+
+.ahorro-habito__empty {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+  padding: var(--fk-space-3);
+  text-align: center;
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+}
+
+.ahorro-habito__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+/* ── J.2a: Inversión (hero total invertido + lista de holdings) ─── */
+
+.inversion-hero {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+}
+
+.inversion-hero__header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--fk-space-md);
+}
+
+.inversion-hero__icon {
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fk-dom-inversion) 14%, transparent);
+  color: var(--fk-dom-inversion);
+}
+.inversion-hero__icon .icon {
+  width: 26px;
+  height: 26px;
+}
+
+.inversion-hero__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inversion-hero__label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-hero__title {
+  font-size: var(--fk-fs-xl);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-hero__sub {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+}
+
+.inversion-hero__tipos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+.inversion-hero__tipo {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-pill, 999px);
+  background: color-mix(in srgb, var(--fk-dom-inversion) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-inversion) 22%, transparent);
+  font-size: var(--fk-fs-sm);
+}
+.inversion-hero__tipo-label {
+  color: var(--fk-text-secondary);
+}
+.inversion-hero__tipo-pct {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-inversion);
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.inversion-lista__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.inversion-lista__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-lista__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.inversion-item__tipo {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-inversion);
+}
+.inversion-item__chip {
+  margin-left: var(--fk-space-2);
+  color: var(--fk-text-muted);
+}
+.inversion-item__fecha {
+  margin-left: var(--fk-space-2);
+  color: var(--fk-text-muted);
+}
+
+/* Etiqueta "opcional" junto al label de un campo de formulario. */
+.label__opt {
+  font-weight: var(--fk-fw-regular, 400);
+  color: var(--fk-text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fk-fs-xs);
+}
+
+/* ── J.2b: Proyección al vencimiento (card + por holding) ──── */
+
+.inversion-proy {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-md) var(--fk-space-lg);
+  margin-bottom: var(--fk-space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.inversion-proy--vacia {
+  padding: var(--fk-space-3) var(--fk-space-md);
+}
+
+.inversion-proy__title {
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.inversion-proy__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-md);
+}
+
+.inversion-proy__metric-label {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0 0 2px;
+}
+.inversion-proy__metric-value {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.inversion-proy__real {
+  border-top: 1px solid var(--fk-border);
+  padding-top: var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.inversion-proy__real-line {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+.inversion-proy__real-line strong {
+  font-variant-numeric: tabular-nums;
+}
+.inversion-proy__real-nota,
+.inversion-proy__hint {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.inversion-proy__nota {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* Colores de signo, locales a inversión (no globales). */
+.inversion-proy .is-pos { color: var(--fk-success); }
+.inversion-proy .is-neg { color: var(--fk-danger); }
+
+/* Proyección por holding dentro de cada item de la lista. */
+.inversion-item__proy {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: var(--fk-space-1) 0 0;
+}
+.inversion-item__proy strong {
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.inversion-item__proy-gain {
+  color: var(--fk-success);
+  margin-left: var(--fk-space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── J.2c: nudges educativos + tip de horizonte ────────────── */
+
+.inversion-nudges {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-lg);
+}
+
+.inversion-tip {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: var(--fk-space-md) 0 0;
+  padding: var(--fk-space-3);
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-md);
+}
+
+/* ── Gastos por categoría ────────────────────────────────── */
+.cat-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.cat-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 40px 100px;
+  align-items: center;
+  gap: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+}
+.cat-row__nombre {
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-row__bar { flex: 1; }
+.cat-row__pct {
+  color: var(--fk-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cat-row__monto {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+  text-align: right;
+}
+
+/* ── Hormigas ────────────────────────────────────────────── */
+.hormiga-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+.hormiga-item {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-warning);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+}
+.hormiga-item__cat {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin-bottom: var(--fk-space-1);
+}
+.hormiga-item__detalle {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+/* ── Comparación de categorías (G.2) ────────────────────── */
+.comparacion__delta {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  margin: 0 0 var(--fk-space-3);
+}
+.comparacion__delta--sube { color: var(--fk-danger-text); }
+.comparacion__delta--baja { color: var(--fk-success); }
+
+.comparacion__highlights {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.comparacion__highlight {
+  font-size: var(--fk-text-xs);
+  padding: var(--fk-space-1) var(--fk-space-2);
+  border-radius: var(--fk-radius-sm);
+}
+.comparacion__highlight--mejora { background: var(--fk-success-bg); color: var(--fk-success-text); }
+.comparacion__highlight--alerta { background: var(--fk-warning-bg); color: var(--fk-warning-text); }
+
+.comparacion__tabla-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.comparacion__tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fk-text-xs);
+}
+.comparacion__th {
+  text-align: left;
+  padding: var(--fk-space-2) var(--fk-space-2);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-normal);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  white-space: nowrap;
+}
+.comparacion__row { border-bottom: 1px solid var(--fk-border-subtle); }
+.comparacion__row--sube { background: color-mix(in srgb, var(--fk-danger) 5%, transparent); }
+.comparacion__row--baja { background: color-mix(in srgb, var(--fk-success) 5%, transparent); }
+.comparacion__cat {
+  padding: var(--fk-space-2);
+  color: var(--fk-text-primary);
+}
+.comparacion__monto {
+  padding: var(--fk-space-2);
+  text-align: right;
+  font-family: var(--fk-font-mono);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.comparacion__monto--actual {
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.comparacion__dir {
+  padding: var(--fk-space-2);
+  text-align: right;
+  white-space: nowrap;
+  font-weight: var(--fk-font-semibold);
+}
+.comparacion__row--sube .comparacion__dir { color: var(--fk-danger-text); }
+.comparacion__row--baja .comparacion__dir { color: var(--fk-success-text); }
+
+/* ── Patrón semanal (G.2) ────────────────────────────────── */
+.patron__lista {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--fk-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.patron__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+}
+.patron__item--alta   { background: var(--fk-nudge-high-bg);   border-left: 3px solid var(--fk-nudge-high-accent);   }
+.patron__item--media  { background: var(--fk-nudge-medium-bg); border-left: 3px solid var(--fk-nudge-medium-accent); }
+.patron__dia {
+  font-weight: var(--fk-font-bold);
+  min-width: 6rem;
+  color: var(--fk-text-primary);
+}
+.patron__factor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.patron__etiqueta {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  flex: 1;
+}
+.analisis__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* ── Patrimonio neto ─────────────────────────────────────── */
+.patrimonio-hero {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-4);
+  text-align: center;
+  align-items: center;
+}
+.patrimonio-hero--positivo {
+  border-color: var(--fk-accent-border);
+  background: linear-gradient(145deg, var(--fk-bg-surface) 0%, color-mix(in srgb, var(--fk-accent) 5%, transparent) 100%);
+}
+.patrimonio-hero--negativo {
+  border-color: var(--fk-danger);
+  background: linear-gradient(145deg, var(--fk-bg-surface) 0%, color-mix(in srgb, var(--fk-danger) 5%, transparent) 100%);
+}
+.patrimonio-hero__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.patrimonio-hero__valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-4xl);
+  font-weight: var(--fk-font-extrabold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.patrimonio-hero__valor--positivo { color: var(--fk-text-accent); }
+.patrimonio-hero__valor--negativo { color: var(--fk-danger); }
+.patrimonio-hero__hint {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+}
+
+/* ── Proyección ──────────────────────────────────────────── */
+.proyeccion-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-3);
+}
+.proyeccion-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  text-align: center;
+}
+.proyeccion-card__periodo {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.proyeccion-card__valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.proyeccion-card__valor--positivo { color: var(--fk-text-accent); }
+.proyeccion-card__valor--negativo { color: var(--fk-danger); }
+
+/* ── K.3 · Estado de tu renta ─────────────────────────────────── */
+
+.renta-criterios {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-3);
+}
+@media (min-width: 768px) {
+  .renta-criterios {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.renta-criterio {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.renta-criterio--sin-datos { opacity: 0.85; }
+.renta-criterio--cerca  { border-color: var(--fk-warning); }
+.renta-criterio--supera { border-color: var(--fk-danger); }
+
+.renta-criterio__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+.renta-criterio__label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.renta-criterio__badge {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  padding: var(--fk-space-1) var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.renta-criterio__badge--ok     { background: var(--fk-accent-subtle); color: var(--fk-text-accent); }
+.renta-criterio__badge--cerca  { background: var(--fk-warning-bg);    color: var(--fk-warning); }
+.renta-criterio__badge--supera { background: var(--fk-danger-bg);     color: var(--fk-danger); }
+
+.renta-criterio__valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.renta-criterio__tope {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+
+.renta-criterio__tip {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 0;
+  line-height: 1.4;
+}
+

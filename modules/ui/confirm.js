@@ -19,6 +19,7 @@
  */
 
 import { trapFocus, releaseFocus } from '../infra/a11y.js';
+import { esc as _esc } from '../infra/utils.js';
 
 /**
  * @typedef {{
@@ -104,8 +105,3 @@ export function confirmar(opciones) {
   });
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

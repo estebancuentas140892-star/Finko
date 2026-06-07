@@ -8,7 +8,7 @@
  * Puede leer datos. NO usa S directo. No muta nada. Sin lógica de negocio.
  */
 
-import { f } from '../../infra/utils.js';
+import { f, esc as _esc } from '../../infra/utils.js';
 
 // ── PICKER (paso 1) ───────────────────────────────────────────────
 
@@ -174,10 +174,4 @@ function _renderTabla(validos, duplicados, errores) {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
-}
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

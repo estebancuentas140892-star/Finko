@@ -13,7 +13,12 @@ import {
   clasificarScore,
   calcularComparacionCategorias,
   detectarPatronGastoSemanal,
+  patrimonioBruto,
+  totalGastosAnio,
+  calcularEstadoRenta,
+  detectarNudgesRenta,
 } from '../../modules/dominio/analisis/logic.js';
+import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -992,5 +997,263 @@ describe('detectarPatronGastoSemanal', () => {
         expect(typeof d.factor).toBe('number');
       }
     }
+  });
+});
+
+// ── K.3 - MONITOR DE TOPES DE RENTA ──────────────────────────────
+
+describe('patrimonioBruto()', () => {
+  const _cuenta = (saldo, activa = true) => ({
+    id: `c-${saldo}`, nombre: 'X', banco: 'Nequi', tipo: 'Ahorros',
+    saldo, activa, fechaCreacion: '2026-01-01T00:00:00Z',
+  });
+  const _inv = (monto) => ({
+    id: `i-${monto}`, tipo: 'CDT', nombre: 'CDT', monto, tasaEA: 0.1, plazoMeses: 12,
+    fechaInicio: '2026-01-01', fechaCreacion: '2026-01-01T00:00:00Z',
+  });
+
+  it('suma saldos de cuentas activas + monto invertido', () => {
+    const cuentas     = [_cuenta(2_000_000), _cuenta(500_000)];
+    const inversiones = [_inv(5_000_000)];
+    expect(patrimonioBruto(cuentas, inversiones)).toBe(7_500_000);
+  });
+
+  it('ignora cuentas inactivas', () => {
+    const cuentas = [_cuenta(2_000_000, true), _cuenta(1_000_000, false)];
+    expect(patrimonioBruto(cuentas, [])).toBe(2_000_000);
+  });
+
+  it('devuelve 0 con arrays vacíos o nulos', () => {
+    expect(patrimonioBruto([], [])).toBe(0);
+    expect(patrimonioBruto(null, null)).toBe(0);
+    expect(patrimonioBruto(undefined, undefined)).toBe(0);
+  });
+});
+
+describe('totalGastosAnio()', () => {
+  const _g = (monto, fecha) => ({
+    id: `g-${monto}-${fecha}`, descripcion: 'Gasto', monto,
+    categoria: 'Alimentación', fecha,
+  });
+
+  it('suma todos los gastos del año indicado', () => {
+    const gastos = [
+      _g(100_000, '2026-01-15'),
+      _g(200_000, '2026-06-20'),
+      _g(300_000, '2026-12-31'),
+    ];
+    expect(totalGastosAnio(gastos, 2026)).toBe(600_000);
+  });
+
+  it('ignora gastos de otros años', () => {
+    const gastos = [
+      _g(100_000, '2025-12-31'),
+      _g(200_000, '2026-01-01'),
+      _g(300_000, '2027-01-01'),
+    ];
+    expect(totalGastosAnio(gastos, 2026)).toBe(200_000);
+  });
+
+  it('descarta gastos sin fecha o con monto inválido', () => {
+    const gastos = [
+      _g(100_000, '2026-05-10'),
+      { id: 'g-bad', descripcion: 'X', monto: 500, categoria: 'Otros' }, // sin fecha
+      { id: 'g-bad2', descripcion: 'X', monto: -200, categoria: 'Otros', fecha: '2026-07-01' },
+    ];
+    expect(totalGastosAnio(gastos, 2026)).toBe(100_000);
+  });
+
+  it('devuelve 0 con input vacío o inválido', () => {
+    expect(totalGastosAnio([], 2026)).toBe(0);
+    expect(totalGastosAnio(null, 2026)).toBe(0);
+    expect(totalGastosAnio([_g(100_000, '2026-01-01')], NaN)).toBe(0);
+  });
+});
+
+describe('calcularEstadoRenta()', () => {
+  const estado = (state = {}, anio = 2026) =>
+    calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [], ...state }, anio);
+
+  it('devuelve 5 criterios en orden: ingresos, patrimonio, consumos, TC, consignaciones', () => {
+    const r = estado();
+    expect(r.criterios).toHaveLength(5);
+    expect(r.criterios.map(c => c.id)).toEqual([
+      'ingresosBrutos', 'patrimonioBruto', 'consumosTotales',
+      'consumosTC',     'consignaciones',
+    ]);
+  });
+
+  it('expone uvt y umbralAlerta', () => {
+    const r = estado();
+    expect(r.uvt).toBe(UVT);
+    expect(r.umbralAlerta).toBe(0.80);
+    expect(r.anio).toBe(2026);
+  });
+
+  it('los topes se derivan de N × UVT', () => {
+    const r = estado();
+    const m = Object.fromEntries(r.criterios.map(c => [c.id, c]));
+    expect(m.ingresosBrutos.tope).toBe(TOPES_RENTA_UVT.ingresosBrutos * UVT);
+    expect(m.patrimonioBruto.tope).toBe(TOPES_RENTA_UVT.patrimonioBruto * UVT);
+    expect(m.consumosTotales.tope).toBe(TOPES_RENTA_UVT.consumosTotales * UVT);
+    expect(m.consumosTC.tope).toBe(TOPES_RENTA_UVT.consumosTC * UVT);
+    expect(m.consignaciones.tope).toBe(TOPES_RENTA_UVT.consignaciones * UVT);
+  });
+
+  it('ingresosBrutos, consumosTC y consignaciones siempre son "sin-datos"', () => {
+    const r = estado({
+      cuentas:     [{ id: 'c', saldo: 999_999_999, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+      inversiones: [{ id: 'i', tipo: 'CDT', monto: 999_999_999, nombre: 'X', tasaEA: 0, plazoMeses: 12, fechaInicio: '2026-01-01', fechaCreacion: '2026-01-01T00:00:00Z' }],
+    });
+    const m = Object.fromEntries(r.criterios.map(c => [c.id, c]));
+    expect(m.ingresosBrutos.estado).toBe('sin-datos');
+    expect(m.ingresosBrutos.medible).toBe(false);
+    expect(m.consumosTC.estado).toBe('sin-datos');
+    expect(m.consignaciones.estado).toBe('sin-datos');
+  });
+
+  it('patrimonioBruto en "ok" cuando es < 80% del tope', () => {
+    const r = estado({
+      cuentas: [{ id: 'c', saldo: 100_000_000, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+    });
+    const c = r.criterios.find(x => x.id === 'patrimonioBruto');
+    expect(c.estado).toBe('ok');
+    expect(c.medible).toBe(true);
+    expect(c.valor).toBe(100_000_000);
+  });
+
+  it('patrimonioBruto en "cerca" al alcanzar el 80% del tope', () => {
+    const tope = TOPES_RENTA_UVT.patrimonioBruto * UVT; // 4500 × UVT
+    const valor = Math.round(tope * 0.85);
+    const r = estado({
+      cuentas: [{ id: 'c', saldo: valor, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+    });
+    const c = r.criterios.find(x => x.id === 'patrimonioBruto');
+    expect(c.estado).toBe('cerca');
+    expect(c.porcentaje).toBeGreaterThanOrEqual(80);
+    expect(c.porcentaje).toBeLessThan(100);
+  });
+
+  it('patrimonioBruto en "supera" al pasar el 100% del tope', () => {
+    const tope = TOPES_RENTA_UVT.patrimonioBruto * UVT;
+    const valor = Math.round(tope * 1.20);
+    const r = estado({
+      cuentas: [{ id: 'c', saldo: valor, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+    });
+    const c = r.criterios.find(x => x.id === 'patrimonioBruto');
+    expect(c.estado).toBe('supera');
+    expect(c.porcentaje).toBeGreaterThanOrEqual(100);
+  });
+
+  it('consumosTotales mide los gastos del año', () => {
+    const tope = TOPES_RENTA_UVT.consumosTotales * UVT;
+    const valor = Math.round(tope * 0.90);
+    const r = estado({
+      gastos: [{ id: 'g', descripcion: 'X', monto: valor, categoria: 'Otros', fecha: '2026-06-15' }],
+    });
+    const c = r.criterios.find(x => x.id === 'consumosTotales');
+    expect(c.medible).toBe(true);
+    expect(c.valor).toBe(valor);
+    expect(c.estado).toBe('cerca');
+  });
+
+  it('todos los criterios incluyen tip y etiqueta legibles', () => {
+    const r = estado();
+    for (const c of r.criterios) {
+      expect(typeof c.etiqueta).toBe('string');
+      expect(c.etiqueta.length).toBeGreaterThan(3);
+      expect(typeof c.tip).toBe('string');
+      expect(c.tip.length).toBeGreaterThan(10);
+    }
+  });
+
+  it('cada criterio expone topeUVT, tope, valor, porcentaje y medible', () => {
+    const r = estado();
+    for (const c of r.criterios) {
+      expect(c).toHaveProperty('topeUVT');
+      expect(c).toHaveProperty('tope');
+      expect(c).toHaveProperty('valor');
+      expect(c).toHaveProperty('porcentaje');
+      expect(c).toHaveProperty('medible');
+    }
+  });
+});
+
+describe('detectarNudgesRenta()', () => {
+  it('devuelve array vacío si no hay criterios disparados ni perfil declarante', () => {
+    const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [] }, 2026);
+    expect(detectarNudgesRenta(r)).toEqual([]);
+  });
+
+  it('genera nudge "medium" para cada criterio en "cerca"', () => {
+    const tope = TOPES_RENTA_UVT.patrimonioBruto * UVT;
+    const r = calcularEstadoRenta({
+      cuentas: [{ id: 'c', saldo: Math.round(tope * 0.85), activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+      inversiones: [], gastos: [],
+    }, 2026);
+    const nudges = detectarNudgesRenta(r);
+    expect(nudges).toHaveLength(1);
+    expect(nudges[0].nivel).toBe('nudge-medium');
+    expect(nudges[0].criterio).toBe('patrimonioBruto');
+    expect(nudges[0].mensaje).toContain('cerca');
+  });
+
+  it('genera nudge "high" para cada criterio en "supera"', () => {
+    const tope = TOPES_RENTA_UVT.consumosTotales * UVT;
+    const r = calcularEstadoRenta({
+      cuentas: [], inversiones: [],
+      gastos: [{ id: 'g', descripcion: 'X', monto: Math.round(tope * 1.10), categoria: 'Otros', fecha: '2026-06-15' }],
+    }, 2026);
+    const nudges = detectarNudgesRenta(r);
+    expect(nudges).toHaveLength(1);
+    expect(nudges[0].nivel).toBe('nudge-high');
+    expect(nudges[0].criterio).toBe('consumosTotales');
+    expect(nudges[0].mensaje).toContain('Superas');
+  });
+
+  it('no genera nudges para criterios "sin-datos"', () => {
+    const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [] }, 2026);
+    expect(detectarNudgesRenta(r).filter(n => ['ingresosBrutos','consumosTC','consignaciones'].includes(n.criterio))).toHaveLength(0);
+  });
+
+  it('declaranteObligado=true añade nudge informativo cuando no hay otros', () => {
+    const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [] }, 2026);
+    const nudges = detectarNudgesRenta(r, { declaranteObligado: true });
+    expect(nudges).toHaveLength(1);
+    expect(nudges[0].nivel).toBe('nudge-info');
+    expect(nudges[0].criterio).toBe('declaranteObligado');
+  });
+
+  it('declaranteObligado=true NO añade nudge si ya hay críticos', () => {
+    const tope = TOPES_RENTA_UVT.consumosTotales * UVT;
+    const r = calcularEstadoRenta({
+      cuentas: [], inversiones: [],
+      gastos: [{ id: 'g', descripcion: 'X', monto: Math.round(tope * 1.10), categoria: 'Otros', fecha: '2026-06-15' }],
+    }, 2026);
+    const nudges = detectarNudgesRenta(r, { declaranteObligado: true });
+    expect(nudges.some(n => n.criterio === 'declaranteObligado')).toBe(false);
+  });
+
+  it('input inválido devuelve array vacío sin lanzar', () => {
+    expect(detectarNudgesRenta(null)).toEqual([]);
+    expect(detectarNudgesRenta({})).toEqual([]);
+    expect(detectarNudgesRenta({ criterios: 'no-array' })).toEqual([]);
+  });
+
+  it('cada nudge expone id, nivel, icono, criterio, etiqueta y mensaje', () => {
+    const tope = TOPES_RENTA_UVT.patrimonioBruto * UVT;
+    const r = calcularEstadoRenta({
+      cuentas: [{ id: 'c', saldo: Math.round(tope * 1.10), activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+      inversiones: [], gastos: [],
+    }, 2026);
+    const nudges = detectarNudgesRenta(r);
+    expect(nudges).toHaveLength(1);
+    const n = nudges[0];
+    expect(typeof n.id).toBe('string');
+    expect(['nudge-high','nudge-medium','nudge-info']).toContain(n.nivel);
+    expect(typeof n.icono).toBe('string');
+    expect(typeof n.criterio).toBe('string');
+    expect(typeof n.etiqueta).toBe('string');
+    expect(typeof n.mensaje).toBe('string');
   });
 });

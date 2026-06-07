@@ -24,8 +24,8 @@ describe('S - schema v3 inicial', () => {
     expect(S).toHaveProperty('inversiones');
   });
 
-  it('arranca con _version = 8', () => {
-    expect(S._version).toBe(8);
+  it('arranca con _version = 9', () => {
+    expect(S._version).toBe(9);
   });
 
   it('arranca con onboarded en false', () => {

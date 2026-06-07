@@ -7,12 +7,11 @@
  *
  * Constantes legales usadas (resueltas dinámicamente vía `constants.js`):
  *   - SMMLV vigente y auxilio de transporte (Mintrabajo, anual).
- *   - Tasa de usura vigente (SFC, trimestral).
  *   - Retención en la fuente sobre rendimientos CDT: 7 % sobre rendimiento bruto.
  *   - GMF (4x1000): 0.4 % sobre movimientos financieros (informativo).
  *
  * Los valores numéricos viven en `modules/core/constants.js` - para actualizarlos
- * basta con agregar una entrada al año/trimestre nuevo allí.
+ * basta con agregar una entrada al año nuevo allí.
  */
 
 import {
@@ -25,7 +24,6 @@ import {
   FSP_TRAMOS,
   INTERESES_CESANTIAS,
   ARL_CLASE_I,
-  TASA_USURA,
 } from '../core/constants.js';
 
 // ── CDT (Certificado de Depósito a Término) ──────────────────────
@@ -375,30 +373,6 @@ export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
     gananciaReal:     Math.round(gananciaReal),
     perdidaInflacion: Math.round(perdidaInflacion),
   };
-}
-
-// ── CLASIFICADOR DE TASA DE CRÉDITO ───────────────────────────────
-
-/**
- * Clasifica una tasa EA contra la tasa de usura vigente (SFC).
- *
- * Bandas (ratio = tasaEA / usura):
- *   - `usura`     → tasa > usura legal (ilegal).
- *   - `alta`      → 85 % ≤ ratio ≤ 100 % (cercana al tope).
- *   - `estandar`  → 65 % ≤ ratio < 85 % (típica de mercado).
- *   - `razonable` → ratio < 65 % o tasa ≤ 0.
- *
- * @param {number} taEA   - Tasa efectiva anual como decimal (ej. 0.20 = 20 %).
- * @param {number} [usura] - Usura vigente como decimal (default: `TASA_USURA` del trimestre actual).
- * @returns {'usura' | 'alta' | 'estandar' | 'razonable'}
- */
-export function clasificarTasaCredito(taEA, usura = TASA_USURA) {
-  if (taEA > usura) return 'usura';
-  if (taEA <= 0)    return 'razonable';
-  const ratio = taEA / usura;
-  if (ratio < 0.65) return 'razonable';
-  if (ratio < 0.85) return 'estandar';
-  return 'alta';
 }
 
 // ── VALIDADORES ───────────────────────────────────────────────────

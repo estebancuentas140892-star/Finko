@@ -12,6 +12,7 @@
  */
 
 import { announce } from './a11y.js';
+import { esc as _esc } from './utils.js';
 
 /**
  * Mapea un mensaje de error a la clave del campo del formulario.
@@ -103,10 +104,4 @@ export function limpiarErroresForm(form) {
   if (!form) return;
   form.querySelector('.form-errors')?.remove();
   form.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
-}
-
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }

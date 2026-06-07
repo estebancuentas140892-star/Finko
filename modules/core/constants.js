@@ -3,14 +3,16 @@
  *
  * ── Filosofía: Single Source of Truth ─────────────────────────────
  *
- * Los valores legales (SMMLV, UVT, auxilio de transporte, tasa de usura)
- * se almacenan en **dos tablas históricas indexadas por período**:
- *   - `LEGAL_POR_ANIO[anio]`       → valores anuales (smmlv, uvt, auxilio).
- *   - `USURA_POR_PERIODO['anio-Qn']` → tasa de usura trimestral.
+ * Los valores legales anuales (SMMLV, UVT, auxilio de transporte) se
+ * almacenan en una tabla histórica indexada por año:
+ *   - `LEGAL_POR_ANIO[anio]` → valores anuales (smmlv, uvt, auxilio).
  *
  * El resto del proyecto importa los exports estables (`SMMLV`, `UVT`,
- * `AUXILIO_TRANSPORTE`, `TASA_USURA`, `VIGENCIA`, `ANIO_VIGENTE`), que
- * apuntan automáticamente al período vigente según la fecha actual.
+ * `AUXILIO_TRANSPORTE`, `VIGENCIA`, `ANIO_VIGENTE`), que apuntan
+ * automáticamente al año vigente según la fecha actual.
+ *
+ * Nota: la tasa de usura (certificación trimestral de la SFC) se eliminó
+ * en 2026-06 por su alto costo de mantenimiento. Ver ADR 004.
  *
  * ── Cómo actualizar valores legales ──────────────────────────────
  *
@@ -20,12 +22,6 @@
  *               vigenciaDesde: '2027-01-01', fuentes: { ... } }
  *   2. Listo. Toda la app (UI, cálculos, tests) usa los valores nuevos
  *      automáticamente cuando la fecha del sistema entra en 2027.
- *
- * Tasa de usura (cada trimestre, SFC):
- *   1. Agregar UNA entrada en `USURA_POR_PERIODO`:
- *      '2026-Q3': { tasa: 0.NN, desde: '2026-07-01', hasta: '2026-09-30',
- *                    fuente: 'Resolución SFC N° XXXX' }
- *   2. Listo. Hints, validaciones y clasificadores se actualizan solos.
  *
  * Reglas:
  *   - Toda constante se exporta con nombre. Sin window.X.
@@ -74,35 +70,6 @@ const LEGAL_POR_ANIO = {
   2027: null,
 };
 
-// ── TABLA HISTÓRICA: TASA DE USURA (TRIMESTRAL) ──────────────────
-//
-// La SFC certifica la tasa máxima permitida (TEUM convertida a EA) al
-// inicio de cada trimestre.
-
-/** @typedef {{
- *    tasa: number,
- *    desde: string,
- *    hasta: string,
- *    fuente: string
- *  }} UsuraPeriodo */
-
-/** @type {Record<string, UsuraPeriodo>} */
-const USURA_POR_PERIODO = {
-  '2026-Q1': {
-    tasa:  0.2677,
-    desde: '2026-01-01',
-    hasta: '2026-03-31',
-    fuente: 'Resolución SFC Q1 2026',
-  },
-  '2026-Q2': {
-    tasa:  0.2817,
-    desde: '2026-04-01',
-    hasta: '2026-06-30',
-    fuente: 'Resolución SFC Q2 2026',
-  },
-  // Agregar trimestres futuros aquí.
-};
-
 // ── SELECTORES (vigencia dinámica por fecha) ─────────────────────
 
 /**
@@ -142,30 +109,6 @@ export function legalVigente(fecha = new Date()) {
 }
 
 /**
- * Devuelve la tasa de usura vigente en una fecha dada.
- * Si la fecha cae fuera de cualquier período registrado, retorna el
- * último período conocido.
- *
- * @param {Date} [fecha] - Por defecto: ahora.
- * @returns {UsuraPeriodo & { periodo: string }}
- */
-export function tasaUsuraVigente(fecha = new Date()) {
-  const iso = fecha.toISOString().slice(0, 10);
-
-  // 1) Buscar período que incluye la fecha.
-  for (const [periodo, p] of Object.entries(USURA_POR_PERIODO)) {
-    if (iso >= p.desde && iso <= p.hasta) {
-      return { periodo, ...p };
-    }
-  }
-
-  // 2) Fallback: último período registrado (más reciente).
-  const periodos = Object.keys(USURA_POR_PERIODO).sort();
-  const ultima = periodos[periodos.length - 1];
-  return { periodo: ultima, ...USURA_POR_PERIODO[ultima] };
-}
-
-/**
  * Devuelve los valores legales de un año específico (lectura histórica).
  * Útil para reportes o análisis sobre datos antiguos.
  *
@@ -191,11 +134,10 @@ export function aniosPublicados() {
 //
 // Estos valores se resuelven una vez al cargar el módulo. Para la mayoría
 // de cálculos eso es suficiente (la app se recarga al menos una vez al
-// día). Si necesitás el valor para una fecha específica, llamá a
-// `legalVigente(fecha)` o `tasaUsuraVigente(fecha)` directamente.
+// día). Si necesitas el valor para una fecha específica, llama a
+// `legalVigente(fecha)` directamente.
 
 const _vigente = legalVigente();
-const _usura   = tasaUsuraVigente();
 
 /** Salario Mínimo Mensual Legal Vigente (COP). */
 export const SMMLV = _vigente.smmlv;
@@ -212,17 +154,32 @@ export const VIGENCIA = _vigente.vigenciaDesde;
 /** Año al que corresponden los valores vigentes. */
 export const ANIO_VIGENTE = _vigente.anio;
 
-/** Tasa de usura vigente como decimal (ej. 0.2817 para 28.17 % EA). */
-export const TASA_USURA = _usura.tasa;
-
-/** Período de la tasa de usura vigente (ej. '2026-Q2'). */
-export const PERIODO_USURA = _usura.periodo;
-
 // ── OTRAS CONSTANTES NORMATIVAS (sin vencimiento o estables) ─────
 
 /** Gravamen a los Movimientos Financieros (4×1000).
  *  Fuente: Ley 1111/2006. Estable. */
 export const GMF = 0.004;
+
+/** Topes de obligación de declarar renta para personas naturales, expresados
+ *  en múltiplos de UVT. Los valores en pesos se derivan en vivo de `UVT`
+ *  para que actualizar el UVT del año recalcule todos los topes solos.
+ *
+ *  Fuente: Estatuto Tributario art. 594-3 y Decreto reglamentario anual.
+ *  Estable en el número de UVT desde hace varios años; lo que cambia es la UVT.
+ *
+ *  Sin tope superado: no obliga declarar por ese criterio (basta con uno
+ *  para quedar obligado). El umbral de alerta preventiva es del 80 %. */
+export const TOPES_RENTA_UVT = {
+  ingresosBrutos:   1400,
+  patrimonioBruto:  4500,
+  consumosTotales:  1400,
+  consumosTC:       1400,
+  consignaciones:   1400,
+};
+
+/** Porcentaje del tope sobre el cual Finko emite alerta preventiva
+ *  ("estás cerca del límite"). Antes era 80; subir es menos sensible. */
+export const UMBRAL_ALERTA_RENTA = 0.80;
 
 /** Días base para cálculo de prima de servicios.
  *  Fuente: Ley 52/1975. Estable. */
@@ -298,8 +255,6 @@ export const AUXILIO_TRANSPORTE_2026 = AUXILIO_TRANSPORTE;
 export const UVT_2026 = UVT;
 /** @deprecated Usar `VIGENCIA` (sin sufijo). */
 export const VIGENCIA_2026 = VIGENCIA;
-/** @deprecated Usar `TASA_USURA` (sin sufijo). */
-export const TASA_USURA_Q2_2026 = TASA_USURA;
 
 // ── CATÁLOGOS PARA SELECTS ──────────────────────────────────────
 

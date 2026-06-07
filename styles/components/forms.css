@@ -1,0 +1,489 @@
+/* ============================================================
+   FINKO - ICONOS SVG + INPUTS / FORMULARIOS + QUICK ADD + QUICK TOAST
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   ICONOS SVG - sistema de íconos de línea para la UI chrome.
+   La geometría vive en el sprite (#i-*, definido en index.html);
+   la presentación se aplica aquí. stroke: currentColor hace que
+   hereden el color del contexto (ej: nav activa = acento). Parte 3C.
+   ════════════════════════════════════════════════════════════ */
+.icon {
+  display: inline-block;
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* Íconos de acción dentro de botones (editar, borrar, cerrar) y el chevron
+   del quick-add: un paso más chicos que los de navegación, para jerarquía.
+   .modal__close vive en modals.css; el selector funciona igual (CSS global). */
+.btn-icon .icon,
+.modal__close .icon,
+.quick-add__chevron .icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   INPUTS / FORMULARIOS
+   ════════════════════════════════════════════════════════════ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+/* Separación vertical entre campos de un mismo formulario.
+   El gap interno de cada grupo (label ↔ input) es space-2 (8px); la
+   separación ENTRE grupos es mayor (space-5 / 20px) para que cada etiqueta
+   se asocie a SU campo por proximidad y los grupos se distingan con
+   claridad. Antes los grupos quedaban pegados (0px entre input y la
+   siguiente etiqueta), lo que rompía la jerarquía y se sentía apretado.
+   Se excluye .config-form, que gestiona su propio gap (mismo valor). */
+form:not(.config-form) .form-group:not(:first-child) {
+  margin-top: var(--fk-space-5);
+}
+
+.label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+}
+.label-required::after {
+  content: ' *';
+  color: var(--fk-danger);
+}
+.form-optional {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-muted);
+}
+.form-hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: var(--fk-leading-relaxed);
+  margin-top: var(--fk-space-2);
+}
+.form-hint--muted   { color: var(--fk-text-muted); }
+.form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
+
+/* Empty-state que reemplaza al form cuando faltan prerrequisitos
+   (ej: intentar crear un gasto sin tener cuentas creadas). */
+.form-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-6) var(--fk-space-4);
+}
+.form-empty__icon {
+  font-size: var(--fk-text-4xl);
+  margin: 0;
+}
+.form-empty__title {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.form-empty__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  max-width: 36ch;
+  margin: 0 0 var(--fk-space-3);
+}
+
+/* Fila de checkbox + texto, usada en el toggle de cuota de manejo. */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fk-accent);
+  cursor: pointer;
+}
+
+/* Fieldset condicional para los campos extra de cuota de manejo. */
+.cuota-fieldset {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin: var(--fk-space-5) 0; /* mismo ritmo vertical que la separación entre grupos */
+  background: var(--fk-bg-hover);
+}
+.cuota-fieldset[hidden] {
+  display: none;
+}
+.cuota-fieldset .form-group:last-of-type {
+  margin-bottom: 0;
+}
+.list-item__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-top: var(--fk-space-1);
+}
+
+.input {
+  width: 100%;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+  font-family: var(--fk-font-sans);
+  min-height: var(--fk-space-10);
+  transition:
+    border-color var(--fk-transition-fast),
+    background-color var(--fk-transition-fast);
+}
+.input::placeholder {
+  color: var(--fk-text-muted);
+}
+.input:hover {
+  border-color: var(--fk-border-strong);
+}
+.input:focus {
+  border-color: var(--fk-border-focus);
+  background: var(--fk-bg-surface);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--fk-accent-subtle);
+}
+.input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Campo con error de validacion: borde rojo + tinte sutil. Aplicado por
+   form-errors.js al input cuyo nombre matchea el primer mensaje de error. */
+.field-invalid,
+.input.field-invalid {
+  border-color: var(--fk-danger) !important;
+  background: color-mix(in srgb, var(--fk-danger) 6%, var(--fk-bg-elevated));
+}
+.field-invalid:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-danger) 25%, transparent) !important;
+}
+
+/* Bloque de errores de formulario: lista visible al intentar guardar
+   un form invalido. form-errors.js lo inserta antes del primer hijo del
+   <form>. Se auto-borra al editar (input event). */
+.form-errors {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin-bottom: var(--fk-space-4);
+  background: color-mix(in srgb, var(--fk-danger) 8%, var(--fk-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 30%, transparent);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-snug);
+  animation: form-errors-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.form-errors__icon {
+  font-size: 1.2rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.form-errors__content {
+  flex: 1;
+  min-width: 0;
+}
+.form-errors__title {
+  margin: 0 0 var(--fk-space-1) 0;
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.form-errors__list {
+  margin: 0;
+  padding: 0 0 0 var(--fk-space-4);
+  list-style: disc;
+  color: var(--fk-text-secondary);
+}
+.form-errors__list li {
+  margin: 0;
+}
+.form-errors__list li + li {
+  margin-top: var(--fk-space-1);
+}
+@keyframes form-errors-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Input con prefijo de moneda */
+.input-money {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-medium);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Input gigante para captura rápida de monto (modal gasto rapido). */
+.input.input--big-amount {
+  font-family: var(--fk-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.5rem;
+  font-weight: var(--fk-font-bold);
+  text-align: center;
+  padding: var(--fk-space-4);
+  letter-spacing: 0.02em;
+}
+.input.input--big-amount::placeholder {
+  font-size: 2.5rem;
+  opacity: 0.3;
+}
+
+/* ════════════════════════════════════════════════════════════
+   QUICK ADD - card prominente "+ Gasto rápido" en el dashboard.
+   El proposito es reducir friccion para registrar un gasto cuando
+   estas en una situacion social (restaurante, viaje, etc).
+   ════════════════════════════════════════════════════════════ */
+.quick-add {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-4) var(--fk-space-5);
+  margin-bottom: var(--fk-space-4);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--fk-accent) 18%, var(--fk-bg-elevated)),
+    var(--fk-bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--fk-accent) 30%, transparent);
+  border-radius: var(--fk-radius-xl);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    background var(--fk-transition-fast),
+    border-color var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
+}
+.quick-add:hover,
+.quick-add:focus {
+  border-color: var(--fk-accent);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--fk-accent) 25%, var(--fk-bg-elevated)),
+    var(--fk-bg-elevated));
+  outline: none;
+}
+.quick-add:active {
+  transform: scale(0.98);
+}
+.quick-add__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.quick-add__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.quick-add__title {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+}
+.quick-add__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.quick-add__chevron {
+  font-size: 1.2rem;
+  color: var(--fk-text-secondary);
+  flex-shrink: 0;
+}
+.quick-add__hint {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+
+/* ════════════════════════════════════════════════════════════
+   QUICK TOAST - confirmacion con accion "Completar" tras gasto rapido.
+   Aparece bottom-center, con check verde + monto + boton para abrir
+   el modal de editar del gasto recien creado. Centrado robusto via
+   left/right + margin:auto para no depender de transform (que la
+   animacion de entrada modifica).
+   ════════════════════════════════════════════════════════════ */
+.quick-toast {
+  position: fixed;
+  bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 35%, transparent);
+  border-left: 3px solid var(--fk-success);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  box-shadow: var(--fk-shadow-lg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .quick-toast {
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .quick-toast.fade {
+    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+.quick-toast__check {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fk-success);
+  color: var(--fk-bg-base);
+  border-radius: var(--fk-radius-full);
+  font-weight: var(--fk-font-bold);
+  flex-shrink: 0;
+}
+.quick-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.quick-toast__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.quick-toast__amount {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.quick-toast__action {
+  background: transparent;
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.quick-toast__action:hover,
+.quick-toast__action:focus {
+  background: color-mix(in srgb, var(--fk-accent) 10%, transparent);
+  outline: none;
+}
+.quick-toast__close {
+  background: transparent;
+  border: none;
+  font-size: 1.3rem;
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  padding: 0 var(--fk-space-1);
+  flex-shrink: 0;
+}
+
+/* Badge generico - chip pequeño de status. Usado para "Pendiente" en gastos
+   sin completar, etc. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-2xs, 0.7rem);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.02em;
+  vertical-align: 0.1em;
+  margin-right: var(--fk-space-2);
+}
+.badge--warn {
+  background: color-mix(in srgb, var(--fk-warning) 18%, transparent);
+  color: var(--fk-warning);
+  border: 1px solid color-mix(in srgb, var(--fk-warning) 35%, transparent);
+}
+
+/* Placeholder de texto dentro de list-item (gasto sin completar). */
+.list-item__placeholder {
+  font-style: italic;
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-normal);
+}
+
+/* Input group (prefijo/sufijo) */
+.input-group {
+  position: relative;
+  display: flex;
+}
+.input-group .input {
+  flex: 1;
+}
+.input-group .input-prefix {
+  position: absolute;
+  left: var(--fk-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+  pointer-events: none;
+}
+.input-group .input--has-prefix {
+  padding-left: var(--fk-space-8);
+}
+
+/* Select */
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888fa6' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--fk-space-3) center;
+  padding-right: var(--fk-space-8);
+}
+
+/* Textarea */
+textarea.input {
+  min-height: 96px;
+  resize: vertical;
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* Helper text */
+.helper-text {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+.helper-text--error { color: var(--fk-danger-text); }
+.helper-text--success { color: var(--fk-success-text); }
+
+/* Input states */
+.input--error   { border-color: var(--fk-danger); }
+.input--success { border-color: var(--fk-success); }
+

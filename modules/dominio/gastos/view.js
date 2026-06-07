@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, hoy } from '../../infra/utils.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
 import { gastosMes, totalGastosMes, filtrarGastos } from './logic.js';
 
@@ -290,10 +290,3 @@ export function renderFormGasto() {
     </form>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

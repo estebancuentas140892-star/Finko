@@ -252,7 +252,7 @@
   background: linear-gradient(
     145deg,
     var(--fk-bg-surface) 0%,
-    rgba(0, 220, 130, 0.06) 100%
+    color-mix(in srgb, var(--fk-accent) 6%, transparent) 100%
   );
 }
 .bento__cell--accent:hover {
@@ -268,8 +268,8 @@
 .bento__label {
   font-size: var(--fk-text-xs);
   font-weight: var(--fk-font-semibold);
-  /* --fk-text-secondary (#9aa0b4) pasa WCAG AA (7:1) sobre --fk-bg-surface.
-     --fk-text-muted (#6b7490) solo alcanza 4.0:1 y falla para texto pequeño. */
+  /* --fk-text-secondary (#a3a9bd) pasa WCAG AA (7:1) sobre --fk-bg-surface.
+     --fk-text-muted (#888fa6) solo alcanza 4.0:1 y falla para texto pequeño. */
   color: var(--fk-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -327,7 +327,7 @@
 .hero-guia__icon {
   font-size: 3rem;
   line-height: 1;
-  filter: drop-shadow(0 0 16px rgba(31, 209, 148, 0.35));
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--fk-accent) 35%, transparent));
 }
 .hero-guia__title {
   font-size: var(--fk-text-xl);
@@ -384,14 +384,14 @@
 .bento__cell[data-dominio="personales"]::before  { background: var(--fk-dom-personales); }
 
 /* Icono tiñe levemente al color del dominio */
-.bento__cell[data-dominio="ingresos"]    .bento__icon { filter: drop-shadow(0 0 8px rgba(0, 220, 130, 0.4)); }
-.bento__cell[data-dominio="gastos"]      .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 138, 92, 0.4)); }
-.bento__cell[data-dominio="compromisos"] .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 71, 87, 0.4)); }
-.bento__cell[data-dominio="tesoreria"]   .bento__icon { filter: drop-shadow(0 0 8px rgba(61, 138, 255, 0.4)); }
-.bento__cell[data-dominio="metas"]       .bento__icon { filter: drop-shadow(0 0 8px rgba(157, 115, 235, 0.4)); }
-.bento__cell[data-dominio="analisis"]    .bento__icon { filter: drop-shadow(0 0 8px rgba(0, 229, 204, 0.4)); }
-.bento__cell[data-dominio="presupuesto"] .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 184, 46, 0.4)); }
-.bento__cell[data-dominio="personales"]  .bento__icon { filter: drop-shadow(0 0 8px rgba(255, 78, 184, 0.4)); }
+.bento__cell[data-dominio="ingresos"]    .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-ingresos)   40%, transparent)); }
+.bento__cell[data-dominio="gastos"]      .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-gastos)     40%, transparent)); }
+.bento__cell[data-dominio="compromisos"] .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-compromisos) 40%, transparent)); }
+.bento__cell[data-dominio="tesoreria"]   .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-tesoreria)   40%, transparent)); }
+.bento__cell[data-dominio="metas"]       .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-metas)       40%, transparent)); }
+.bento__cell[data-dominio="analisis"]    .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-analisis)    40%, transparent)); }
+.bento__cell[data-dominio="presupuesto"] .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-presupuesto) 40%, transparent)); }
+.bento__cell[data-dominio="personales"]  .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-personales)  40%, transparent)); }
 
 /* ── CASCADA DE ENTRADA del dashboard ──────────────────────
    Cada cell aparece con un delay escalonado (40ms × index).

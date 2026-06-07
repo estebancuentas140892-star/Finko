@@ -7,6 +7,21 @@
  * - dialogo() es un wrapper temporal hasta que Fase 12 entregue modales propios.
  */
 
+// ── ESCAPE HTML ──────────────────────────────────────────────────
+
+/**
+ * Escapa caracteres especiales HTML para evitar XSS en templates de string.
+ * Única fuente de verdad: todos los view.js importan esta función.
+ *
+ * @param {string | null | undefined} str - texto a escapar.
+ * @returns {string}
+ */
+export function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 // ── FORMATO MONEDA ───────────────────────────────────────────────
 
 /**

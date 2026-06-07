@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (test(e2e): realinear suites E2E C2.2+C2.3; 57/57 verde)
+> Última actualización: 2026-06-07 (feat(K.3): monitor de topes de renta en Análisis; calcularEstadoRenta + detectarNudgesRenta; 1113/1113 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1078/1078 verdes (+14 nudges J.2c, +15 proyección J.2b, +43 inversiones J.2a) |
+| Tests unitarios + integración | 1113/1113 verdes (25 nuevos en K.3: monitor de topes de renta) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,71 +39,85 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### test(e2e): C2.2+C2.3 - realinear suites E2E rotas (smoke + estrategia-pago) · 2026-06-06
+### feat(K.3): monitor de topes de renta en Análisis · 2026-06-07
 
-Saldada la deuda técnica de 26 tests pre-existentes en rojo. Causa raíz: dos rediseños de UI que nunca se reflejaron en los tests. Cero cambios en código de app.
+Card "Estado de tu renta" en Análisis: los 5 criterios de obligación de declarar renta con su tope calculado en vivo (`N × UVT`) y el valor actual cuando Finko puede medirlo. Nudges al 80% (cerca) y 100% (supera). Decisión del gap de datos: Opción A (honestidad explícita): solo 2 de 5 criterios son medibles (patrimonio bruto, consumos totales); los otros 3 (ingresos, tarjeta de crédito, consignaciones) muestran tope + badge "Sin datos en Finko". Sin schema changes. 1113/1113 tests verdes (25 nuevos). Sección K completa.
 
-**`smoke.test.js` (C2.2, 19 tests rotos):** el `beforeEach` de 4 suites esperaba `#saldo-total` visible, pero la guía I.1 lo oculta cuando `cuentas: []`. Fix: `waitForSelector('#saldo-total')` cambiado a `waitForSelector('#sec-dash.active')` en 6 puntos. Dashboard test 1: aserción actualizada a `#sec-dash.active` + `#hero-guia-saldo`. Dashboard test 2: agrega `addInitScript` con una cuenta de saldo 0 antes de re-navegar.
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `TOPES_RENTA_UVT` (5 criterios en múltiplos de UVT) + `UMBRAL_ALERTA_RENTA` (0,80). Topes en pesos derivados en vivo de `UVT`. |
+| `modules/dominio/analisis/logic.js` | 4 funciones puras: `patrimonioBruto`, `totalGastosAnio`, `calcularEstadoRenta`, `detectarNudgesRenta`. Imports de `calcularTotalInvertido` + constantes. |
+| `modules/dominio/analisis/view.js` | `_renderEstadoRenta` + `_renderCriterioRenta` + `_renderNudgeRenta`. Card entre recomendación fiscal y patrimonio. Reusa `.nudge`/`.progress`. |
+| `styles/components/analysis.css` | Bloque `.renta-criterios` + `.renta-criterio*` (grid responsive, badges por estado). Solo tokens `--fk-*`. |
+| `service-worker.js` | v112 → v113. |
+| `tests/unit/analisis.test.js` | 25 tests nuevos (3 patrimonioBruto + 4 totalGastosAnio + 11 calcularEstadoRenta + 7 detectarNudgesRenta). |
 
-**`estrategia-pago.test.js` (C2.3, 7 tests rotos):** la card de estrategia se rediseñó de "pasos numerados" a "pick cards" con ninguna elegida por defecto. Selectores eliminados: `.estrategia-card__paso`, `.estrategia-card__total-valor`, `.estrategia-card--hint`, `.estrategia-card__orden`, texto "Estrategia de pago de deudas". Reemplazados por: click en pick card, `.estrategia-card__metrica-valor--info` (prioridad), `.estrategia-card__metrica-valor--danger` (intereses totales), `.estrategia-card__placeholder` (1 deuda), `.estrategia-card-pick` (ausencia = 0).
+---
 
-**Resultado:** 57/57 verde (1 worker y 5 workers en paralelo).
+### feat(K.2): perfil fiscal en Configuración + recomendación en Análisis · 2026-06-07
 
-### test(e2e): smoke de Ahorro e Inversión (cobertura E2E de la Parte 4) · 2026-06-06
+Schema v8 → v9. Sección "Perfil fiscal" en Configuración con 3 checkboxes opcionales (IVA, contabilidad obligatoria, declarante DIAN). Si alguno está activo: nudge-info permanente en Análisis con enlace a `#config`. Migración idempotente añade `config.perfilFiscal` con todos los flags en false. 1088/1088 tests verdes (4 nuevos).
 
-Nueva suite `tests/e2e/ahorro-inversion.test.js` (9 tests) que cubre los 2 dominios de la Parte 4, que tenían cobertura unit + verificación manual pero ningún smoke E2E propio. Solo se agregó el archivo de test: cero cambios en código de app.
+| Archivo | Cambio |
+|---|---|
+| `modules/core/state.js` | Typedef `PerfilFiscal` + `Config.perfilFiscal` + defaults en `createInitialState()`. `_version` 8 → 9. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 8 → 9. Migración v8 → v9: añade `config.perfilFiscal` preservando datos existentes. |
+| `modules/dominio/config/view.js` | `_renderPerfilFiscal()` nueva: sección con 3 checkboxes + botón guardar. Se inserta entre "Tu perfil" y "Apariencia". |
+| `modules/dominio/config/index.js` | Handler `submit` para `#form-perfil-fiscal`: actualiza `S.config.perfilFiscal.*` + `save()` + `renderPanelConfig()`. |
+| `modules/dominio/analisis/view.js` | `_renderRecomendacionFiscal()` nueva: nudge-info con motivos fiscales + link a Config. Insertada entre Score y Patrimonio. |
+| `service-worker.js` | v111 → v112. |
+| `tests/unit/storage.test.js` | 4 tests nuevos: migración v8 → v9. |
+| `tests/unit/state.test.js` | Test de `_version` actualizado de 8 a 9. |
 
-**Ahorro (4 tests):** empty state al navegar desde el dashboard, activar el fondo (modal → form → hero con el monto base), registrar un aporte (aparece en el historial y el hero suma base + aporte) y persistencia tras `reload`.
+---
 
-**Inversión (5 tests):** empty state, alta (lista + hero con total invertido), proyección al vencimiento de un CDT en el item (retención 7%: $10.000.000 al 10% EA por 12m → $10.930.000), eliminar (vuelve al empty state al ser la única) y persistencia tras `reload`.
+### feat(K.1): asistencia 4x1000 (GMF) · 2026-06-07
 
-**Detalle técnico clave:** el helper de seed `estadoBaseV8` siembra `fk_v1` solo si aún no existe, porque `addInitScript` corre en CADA carga (incluido `reload`) y, sin esa guarda, re-escribía el estado vacío y borraba lo que el test acababa de crear. Tras `reload` se espera la sección activa (`#sec-ahorro.active`), no `#saldo-total` (que vive en el dashboard, inactivo con ese hash).
+Indicador de costo GMF del mes en Tesorería + nudge preventivo con sugerencia de exención. Sin schema changes. El formulario ya tenía el checkbox; se mejoró el hint con contexto de exenciones (nómina, AFC). 1084/1084 tests verdes (12 nuevos).
 
-**Resultado:** 9/9 verde en aislado y en la corrida completa en paralelo (5 workers).
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `calcularCostoGMF(gastos, cuentas, anio, mes)` y `detectarNudgeGMF(gmfData)` exportadas. Import de `GMF` desde `constants.js`. |
+| `modules/dominio/tesoreria/view.js` | `renderGMFIndicador()` exportada + `_renderNudgeGMF()` privada. Import de `hoy` y las 2 funciones nuevas de logic.js. Hint del formulario actualizado con mención de cuentas exentas (nómina, AFC). |
+| `modules/dominio/tesoreria/index.js` | Import de `renderGMFIndicador`. `_renderTodo()` llama `renderGMFIndicador()` tras `renderListaCuentas()`. |
+| `index.html` | `<div id="tesoreria-gmf">` entre `#lista-tesoreria` y el simulador laboral. |
+| `service-worker.js` | v110 → v111. |
+| `tests/unit/tesoreria.test.js` | 12 tests nuevos: 8 para `calcularCostoGMF` + 4 para `detectarNudgeGMF`. |
 
-### feat(inversion): J.2c - nudges educativos de inversión (cierra Parte 4) · 2026-06-06
+---
 
-Tercer y último slice de J.2 (Inversión). Cierra la **Parte 4 (Crecer: Ahorro + Inversión)**. Agrega nudges educativos sobre el portafolio. Sin cambio de schema: todo se deriva del estado.
+### docs(roadmap): plan de Asistencias Inteligentes (K.1-K.3) · 2026-06-07
 
-**`inversiones/logic.js` (`detectarNudgesInversion`, 14 tests):** función pura que recibe las inversiones + un `contexto` con el estado del fondo de emergencia (el caller lee `S.ahorro`, no se importa el dominio Ahorro: ADN #10). Detecta, por prioridad: (1) "fondo primero" (high si no hay fondo activo, medium si está incompleto), (2) concentración (un tipo >= 70% con 2+ holdings), (3) retorno variable (>= 50% en activos sin tasa/plazo), (4) refuerzo positivo (fondo completo + diversificado). Umbrales exportados (`UMBRAL_CONCENTRACION_PCT`, `UMBRAL_VARIABLE_PCT`).
+Análisis de los indicadores financieros colombianos disponibles (UVT, SMMLV, GMF, topes de renta) y documentación del plan por fases en `ROADMAP.md`. Sección K con 3 etapas: K.1 (4x1000 con datos ya existentes, sin schema changes), K.2 (perfil fiscal: 3 preguntas opcionales + schema v8→v9), K.3 (monitor de los 5 topes de renta: aggregator YTD + detector + card, requiere K.2 y decisión sobre el gap de tarjetas de crédito). Detecta discrepancia en el CSV de referencia: patrimonio bruto calculado con UVT 2025 ($49.799), no 2026 ($52.374); confirma que derivar de `N × UVT_VIGENTE` en código es más robusto que hardcodear pesos. Test count corregido en ROADMAP y HANDOFF: 1078 → 1072.
 
-**`inversiones/view.js`:** `_renderNudges` lee `S.ahorro.fondoEmergencia` y pinta los nudges (el de fondo enlaza a `#ahorro`). `_renderTipHorizonte`: tip educativo evergreen sobre invertir a largo plazo, al pie de la sección.
+**Archivos:** `docs/ROADMAP.md` (sección K nueva + Estado actual + test count + Métricas), `docs/HANDOFF.md`, `docs/CHANGELOG.md`, `docs/TASKS.md`.
 
-**`styles/components.css`:** `.inversion-nudges` (contenedor) + `.inversion-tip` (tip con borde punteado). Reutiliza las clases `.nudge*` existentes. **`service-worker.js`:** v106 → v107.
+---
 
-**Verificado en navegador:** con fondo inactivo + Cripto 75% + 88% variable se muestran los 3 nudges en orden (high/medium/info) con el CTA a Ahorro, el desglose por tipo y el tip de horizonte. 1078/1078 tests verdes.
+### refactor(legal): eliminar la tasa de usura (ADR 004) · 2026-06-07
 
-**Cierra la Parte 4.** Inversión completa (J.2a + J.2b + J.2c) y Ahorro completo (J.1a-c).
+Decisión de producto: dejar de rastrear la tasa de usura (certificación trimestral de la SFC, exigía 4 actualizaciones al año para alimentar un solo hint). Se enfoca el mantenimiento en indicadores anuales (SMMLV, UVT, auxilio) y estables (GMF). Refina el ADN regla #12. 1072/1072 tests verdes (se eliminaron los 6 tests de `clasificarTasaCredito`).
 
-### feat(inversion): J.2b - proyección al vencimiento + rentabilidad real del portafolio · 2026-06-06
+**Archivos:** `docs/DECISIONS/004-eliminar-tasa-usura.md` (ADR nuevo), `modules/core/constants.js` (tabla `USURA_POR_PERIODO`, `tasaUsuraVigente()`, exports `TASA_USURA`/`PERIODO_USURA`/`TASA_USURA_Q2_2026` eliminados), `modules/infra/financiero.js` (`clasificarTasaCredito()` + import eliminados), `modules/dominio/compromisos/views/formularios.js` (hint de entidad reescrito: ya no menciona la usura, orienta dónde encontrar la tasa EA), `tests/unit/calculadoras.test.js` (bloque de 6 tests eliminado), `CLAUDE.md` (regla #12), `service-worker.js` (v109 → v110).
 
-Segunda entrega de J.2 (Inversión). Agrega proyección de valor al vencimiento por holding y rentabilidad real del portafolio. Sin cambio de schema (todo se calcula).
+---
 
-**`inversiones/logic.js` (5 funciones nuevas, 15 tests):** importa de `infra/financiero.js` (capa infra, permitido). `esProyectable` (requiere tasa + plazo + monto), `proyectarInversion` (CDT usa `calcularCDT` con retención 7%; resto crecimiento compuesto EA con `calcularInteresCompuesto`, sin retención), `proyectarPortafolio` (total proyectado: proyectables a su VF, no proyectables a su monto), `tasaPromedioPonderada` (EA ponderada por monto), `calcularRentabilidadRealPortafolio` (Fisher con `calcularRentabilidadReal`).
+### refactor(js): R5 - partir compromisos/view.js en 6 sub-modulos · 2026-06-07
 
-**`constants.js`:** nueva `INFLACION_OBJETIVO = 0.03` (meta Banco de la República, con fuente + nota de revisión, ADN #12).
+`modules/dominio/compromisos/view.js` (1075 líneas) partido en 6 archivos bajo `views/`, todos menores a 300 líneas. `view.js` convertido en barrel de re-exports (23 líneas) preservando la API pública (12 funciones). Cero cambios en `index.js`. SW v108 → v109. Cero cambios funcionales. 1078/1078 tests verdes.
 
-**`inversiones/view.js`:** card "Proyección al vencimiento" tras el hero (valor proyectado, ganancia esperada con color de signo, rentabilidad nominal → real con supuesto de inflación visible, nota de holdings de retorno variable). Proyección inline por holding en la lista ("Al vencimiento: $X (+$Y)"). `_fmtTasa` redondea a 2 decimales.
+| Sub-módulo | Líneas | Responsabilidad |
+|---|---|---|
+| `views/alertas.js` | 116 | Nudges del dashboard (fijos sin pagar, deudas durmiendo) |
+| `views/lista.js` | 176 | Lista de deudas con orden estratégico + empty state |
+| `views/formularios.js` | 229 | Chooser de tipo + form entidad/personal + form de abono |
+| `views/estrategia.js` | 281 | Card de estrategia: UI singleton + cards seleccionables + acordeón |
+| `views/estrategia-impacto.js` | 183 | Renderers de "Tu impacto" (Avalancha + Bola de nieve + comparativa) |
+| `views/dashboard.js` | 162 | Paneles del dashboard (vencidos + próximas prioridades) |
 
-**`styles/components.css`:** estilos `.inversion-proy*` + `.inversion-item__proy*` + signos `.is-pos`/`.is-neg` locales. **`service-worker.js`:** v105 → v106.
+El estado UI local (`_uiEstrategia`) vive en `estrategia.js` y se expone via `setEstrategiaUI` / `getEstrategiaUI`; `lista.js` lo lee para aplicar el orden de pago a la lista de deudas.
 
-**Verificado en navegador:** con CDT (11,5% EA, 12m) + FIC (8% EA, 24m) + Bitcoin (variable): hero $8.000.000, proyección $8.867.550 (+$867.550), nominal 10,5% → real 7,28% (inflación 3%), Bitcoin sin proyección. 1064/1064 tests verdes.
-
-### feat(inversion): J.2a - fundación del dominio Inversión + portafolio real · 2026-06-06
-
-Primera entrega de J.2 (Inversión). Funda un nuevo dominio: registro del portafolio real (CDT, fondos, acciones, cripto) con schema v7→v8, lógica pura, sección con hero de total invertido, lista de holdings y alta. La proyección de valor y rentabilidad real llega en J.2b.
-
-**Schema (state.js + storage.js):** `_version: 7 → 8`. Nueva colección top-level `inversiones: [{id, tipo, nombre, monto, tasaEA, plazoMeses, fechaInicio, fechaCreacion}]`. Migración v7→v8 idempotente (agrega `inversiones: []` si falta). 3 tests de migración.
-
-**`inversiones/logic.js` (puro, 43 tests):** `TIPOS_INVERSION` (CDT, Fondo, Acciones, Cripto, Otro), `calcularTotalInvertido`, `calcularPorTipo` (desglose con %), `ordenarInversionesPorMonto`, validación + normalización de los 6 campos (tasa y plazo opcionales: 0 válido para rentabilidad variable). Respeta ADN #10 (recibe primitivos, no importa de otro dominio).
-
-**`inversiones/view.js`:** empty state con CTA + tip (fondo de emergencia primero), `inversion-hero` (total invertido + conteo + desglose por tipo), lista de holdings con tipo/tasa/plazo/fecha + botón eliminar, `renderFormInversion` (selector de tipo + nombre + monto + tasa/plazo opcionales + fecha).
-
-**`inversiones/index.js`:** usa `crud.js` (`guardar`/`eliminar`) porque inversiones es colección top-level. 2 acciones: `inversion-nueva`, `inversion-eliminar`. Re-render en `state:change` (inversiones) + hashchange.
-
-**HTML/CSS:** sprite SVG `i-inversion` (trending-up Lucide), nav item en grupo "Crecer" (sidebar + menú Más), sección `sec-inversion` + modal `modal-inversion`, router + token `--fk-dom-inversion: #4db8d8` (cian) + estilos `.inversion-hero*` / `.inversion-lista*` / `.label__opt`. Bootstrap importa `initInversiones`. SW v104 → v105.
-
-**Verificado en navegador:** la sección renderiza el empty state; alta vía modal funciona (CDT $5.000.000 → hero "$5.000.000", chip "CDT 100%", item con tasa/plazo/fecha); modal abre/cierra; sin errores de consola. 1049/1049 tests verdes.
+---
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
@@ -111,13 +125,13 @@ Primera entrega de J.2 (Inversión). Funda un nuevo dominio: registro del portaf
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). La app sigue estable en producción.
+**Fase activa:** ninguna. Sección K (Asistencias Inteligentes) cerrada completa (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta).
 
-**Opciones para la próxima sesión:**
-- **Lighthouse + Lighthouse PWA** sobre las secciones nuevas, por si el peso de JS subió.
+**Próxima tarea natural:** sin fase activa. Candidatas opcionales abajo (A.5 dominio custom, E.2 SMMLV/UVT 2027 en enero). Posible K.4 si surge demanda: registro manual de consumos con tarjeta de crédito / consignaciones para hacer medibles los 3 criterios de renta que hoy quedan como "Sin datos en Finko".
+
+**Otras opciones:**
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
-- Pequeñas mejoras de UX o copy a demanda.
 
 **Estado base:** App en producción estable (`https://finko-brown.vercel.app`).
 
@@ -185,7 +199,7 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 596 tests unitarios + integración
+pnpm test                     # 1113 tests unitarios + integración
 pnpm run test:e2e             # 57 smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080

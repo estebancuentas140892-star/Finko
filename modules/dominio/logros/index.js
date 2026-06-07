@@ -14,6 +14,7 @@
 
 import { S, EventBus } from '../../core/state.js';
 import { save }        from '../../core/storage.js';
+import { esc as _esc } from '../../infra/utils.js';
 import { evaluarLogros, LOGROS } from './logic.js';
 
 // ── PUNTO DE ENTRADA ─────────────────────────────────────────────
@@ -135,10 +136,3 @@ function _lanzarConfetti() {
   }
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

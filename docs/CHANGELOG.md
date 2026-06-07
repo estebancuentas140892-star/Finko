@@ -7,6 +7,137 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(K.3): monitor de topes de renta en Análisis · 2026-06-07
+
+Card "Estado de tu renta" en el panel de Análisis: los 5 criterios de obligación de declarar renta de persona natural, con su tope calculado en vivo (`N × UVT`) y el valor actual cuando Finko puede medirlo. Nudges preventivos al 80% (cerca) y al 100% (supera). Sin schema changes. SW v112 → v113. 1113/1113 tests verdes (25 nuevos).
+
+**Decisión del gap de datos (Opción A, honestidad explícita):** de los 5 criterios, solo 2 son medibles con datos reales de Finko (patrimonio bruto = saldos de cuentas activas + inversiones; consumos totales = gastos del año). Los otros 3 se muestran con su tope para referencia pero con badge "Sin datos en Finko": ingresos brutos (el dominio `ingresos` ya no existe desde v8.8), consumos con tarjeta de crédito (`TIPOS_CUENTA` no la distingue) y consignaciones (sin stream de depósitos). Inventar esos valores violaría el principio de encuadre orientativo de la sección K. El registro manual queda como K.4 si surge demanda.
+
+- **`modules/core/constants.js`:** `TOPES_RENTA_UVT` (mapa de los 5 criterios en múltiplos de UVT: ingresos 1.400, patrimonio 4.500, consumos 1.400, tarjeta 1.400, consignaciones 1.400) y `UMBRAL_ALERTA_RENTA` (0,80). Los topes en pesos se derivan en vivo de `UVT` para que actualizar la UVT del año recalcule todo solo.
+- **`modules/dominio/analisis/logic.js`:** 4 funciones puras nuevas exportadas. `patrimonioBruto(cuentas, inversiones)` (saldos activos + invertido, defensiva ante null). `totalGastosAnio(gastos, anio)` (suma de gastos del año, ignora montos inválidos). `calcularEstadoRenta(state, anio)` (orquestador: devuelve los 5 criterios con tope, valor, porcentaje, estado y tip; estados `sin-datos`/`ok`/`cerca`/`supera`). `detectarNudgesRenta(estadoRenta, perfilFiscal)` (nudges `high`/`medium` por criterio disparado; nudge `info` extra si `declaranteObligado` y no hay otros). Imports nuevos de `calcularTotalInvertido` y de las constantes.
+- **`modules/dominio/analisis/view.js`:** `_renderEstadoRenta(anio)`, `_renderCriterioRenta(c)` y `_renderNudgeRenta(n)` privadas. Card insertada entre `_renderRecomendacionFiscal()` y `_renderPatrimonio()`. Reusa clases `.nudge`, `.progress`, `.progress-bar--score-*` y `.analisis__section` existentes.
+- **`styles/components/analysis.css`:** bloque `.renta-criterios` (grid responsive 1→2 col) + `.renta-criterio*` (card, head, label, badge por estado, valor, tope, tip). Solo tokens `var(--fk-*)`.
+- **`service-worker.js`:** v112 → v113.
+- **`tests/unit/analisis.test.js`:** 25 tests nuevos. 3 de `patrimonioBruto` + 4 de `totalGastosAnio` + 11 de `calcularEstadoRenta` (orden de criterios, topes derivados de UVT, sin-datos para los 3 no medibles, ok/cerca/supera para patrimonio, medición de consumos, forma del objeto) + 7 de `detectarNudgesRenta` (vacío, medium, high, sin-datos sin nudge, declarante info, declarante sin override, input inválido, forma del nudge).
+
+---
+
+### feat(K.2): perfil fiscal en Configuración + recomendación en Análisis · 2026-06-07
+
+Schema v8 → v9. Sección "Perfil fiscal" en Configuración con 3 preguntas opcionales (IVA, contabilidad, declarante DIAN). Recomendación contextual permanente en Análisis cuando algún flag es afirmativo. SW v111 → v112. 1088/1088 tests verdes (4 nuevos: migración v8 → v9).
+
+- **`modules/core/state.js`:** typedef `PerfilFiscal` (ivaResponsable, obligadoContabilidad, declaranteObligado). `Config` ampliada con campo `perfilFiscal` opcional. `createInitialState()` incluye `config.perfilFiscal` con los tres flags en false. `_version` inicial 8 → 9. JSDoc actualizado a schema v9.
+- **`modules/core/storage.js`:** `SCHEMA_VERSION` 8 → 9. Migración v8 → v9: añade `config.perfilFiscal` con defaults si no existe; preserva `notificaciones` y cualquier campo previo; crea `config` si faltaba.
+- **`modules/dominio/config/view.js`:** función `_renderPerfilFiscal()` nueva: sección `config-section` con 3 checkboxes + botón "Guardar perfil fiscal". Se inserta entre "Tu perfil" y "Apariencia" en `renderPanelConfig()`.
+- **`modules/dominio/config/index.js`:** handler `submit` para `#form-perfil-fiscal` en `_inyectarPanel()`. Lee FormData, actualiza `S.config.perfilFiscal.*`, llama `save()` + `renderPanelConfig()` + `announce()`.
+- **`modules/dominio/analisis/view.js`:** función `_renderRecomendacionFiscal()` nueva: lee `S.config?.perfilFiscal`, si algún flag es true muestra nudge-info con lista de motivos y enlace "Editar perfil fiscal" → `#config`. Se inserta entre `_renderScoreSalud` y `_renderPatrimonio` en `renderAnalisis()`.
+- **`service-worker.js`:** v111 → v112.
+- **`tests/unit/storage.test.js`:** describe "Migración v8 → v9" con 4 tests: agrega perfilFiscal en false, preserva notificaciones, crea config si falta, idempotente en v9.
+- **`tests/unit/state.test.js`:** test `_version = 8` corregido a `_version = 9`.
+
+---
+
+### feat(K.1): asistencia 4x1000 (GMF) · 2026-06-07
+
+Indicador de costo estimado del 4x1000 en Tesorería + nudge preventivo con sugerencia de exención. Sin schema changes: `Cuenta.aplica4x1000` ya existía. Hint del formulario mejorado con contexto de cuentas exentas (nómina, AFC). SW v110 → v111. 1084/1084 tests verdes (12 nuevos).
+
+- **`modules/dominio/tesoreria/logic.js`:** import de `GMF` desde `constants.js`. Dos funciones nuevas exportadas: `calcularCostoGMF(gastos, cuentas, anio, mes)` (suma gastos del mes desde cuentas con `aplica4x1000 = true`, calcula el 0,4% como proxy del gravamen) y `detectarNudgeGMF(gmfData)` (devuelve objeto de nudge o null cuando `costoGMF > 0`).
+- **`modules/dominio/tesoreria/view.js`:** import de `hoy` y las 2 funciones de logic.js. `renderGMFIndicador()` exportada: lee `S.gastos` + `S.cuentas`, llama `calcularCostoGMF` y `detectarNudgeGMF`, renderiza en `#tesoreria-gmf`. `_renderNudgeGMF()` privada: compone el HTML del nudge con título "4x1000 estimado este mes: $X" y descripción con sugerencia de exención. Hint del checkbox de 4x1000 actualizado: "Las cuentas de nómina y AFC están exentas por ley: si la tuya lo es, deja esta opción desmarcada."
+- **`modules/dominio/tesoreria/index.js`:** import de `renderGMFIndicador`. `_renderTodo()` llama `renderGMFIndicador()` tras `renderListaCuentas()`.
+- **`index.html`:** `<div id="tesoreria-gmf">` añadido entre `#lista-tesoreria` y el simulador laboral.
+- **`service-worker.js`:** v110 → v111 (archivos de tesorería + index.html modificados).
+- **`tests/unit/tesoreria.test.js`:** 12 tests nuevos. Fixtures `cuentaConGMF`, `cuentaSinGMF`, `gastoDesde`. 8 tests de `calcularCostoGMF` (sin GMF, sin gastos, cálculo exacto, otro mes, otra cuenta, sin cuentaId, múltiples, vacíos) + 4 tests de `detectarNudgeGMF` (null cuando 0, null con input nulo, forma del nudge, valores expuestos).
+
+---
+
+### docs(roadmap): plan de Asistencias Inteligentes (K.1-K.3) · 2026-06-07
+
+Análisis de los indicadores financieros colombianos y documentación del plan estratégico por fases para convertir calculadoras en automatizaciones contextuales. Detecta discrepancia en el CSV de referencia (patrimonio bruto calculado con UVT 2025, no 2026) y la resuele con el principio `N × UVT_VIGENTE`. Test count actualizado de 1078 a 1072 en ROADMAP y HANDOFF (6 tests de usura eliminados en la tarea anterior).
+
+- **`docs/ROADMAP.md`:** sección K nueva (K.1 Asistencia 4x1000, K.2 Perfil fiscal, K.3 Monitor de topes de renta), actualización de Estado actual (R series + K candidata), corrección de test count 1078 → 1072 en Estado actual y tabla de Métricas.
+- **`docs/HANDOFF.md`:** nueva entrada en "Qué se hizo recientemente", sección "Qué sigue" actualizada con K.1 como próxima tarea, corrección de test count 596 → 1072 en comandos rápidos, R2 rotado fuera de las últimas 5 entradas.
+- **`docs/CHANGELOG.md`:** esta entrada.
+- **`docs/TASKS.md`:** "Próxima tarea sugerida" actualizada con K.1.
+
+---
+
+### refactor(legal): eliminar la tasa de usura (ADR 004) · 2026-06-07
+
+Decisión de producto: se elimina por completo el concepto de tasa de usura. Certificada cada trimestre por la SFC, exigía 4 actualizaciones al año para alimentar un único hint informativo. El mantenimiento se enfoca en indicadores anuales (SMMLV, UVT, auxilio) y estables (GMF). Refina el ADN regla #12. 1072/1072 tests verdes (se eliminaron los 6 tests de `clasificarTasaCredito`).
+
+- **`docs/DECISIONS/004-eliminar-tasa-usura.md`:** ADR nuevo que documenta la decisión, las 3 alternativas consideradas (referencia aproximada / eliminar / congelar) y por qué se eligió eliminar.
+- **`modules/core/constants.js`:** eliminados la tabla `USURA_POR_PERIODO`, la función `tasaUsuraVigente()`, los exports `TASA_USURA` y `PERIODO_USURA`, y el alias deprecado `TASA_USURA_Q2_2026`. Header del archivo actualizado (una sola tabla histórica anual).
+- **`modules/infra/financiero.js`:** eliminada `clasificarTasaCredito()` (clasificaba una tasa en bandas contra la usura; no se consumía en la UI, solo en tests) y su import de `TASA_USURA`. Header del archivo actualizado.
+- **`modules/dominio/compromisos/views/formularios.js`:** el hint del formulario de deuda con entidad ya no menciona la usura; ahora orienta: "Ingresa la tasa anual efectiva (% EA) que te cobran. La encuentras en tu extracto, contrato o la app del banco."
+- **`tests/unit/calculadoras.test.js`:** eliminado el bloque `describe('clasificarTasaCredito()')` (6 tests) y los imports `clasificarTasaCredito` / `TASA_USURA`.
+- **`CLAUDE.md`:** regla #12 refinada (SMMLV/UVT/auxilio anuales; indicadores de alta frecuencia fuera del alcance).
+- **`service-worker.js`:** v109 → v110.
+
+---
+
+### refactor(js): R5 - partir compromisos/view.js en 6 sub-modulos · 2026-06-07
+
+`modules/dominio/compromisos/view.js` (1075 líneas) dividido en 6 archivos bajo `views/`, todos menores a 300 líneas. `view.js` convertido en barrel de re-exports preservando los 12 exports públicos sin cambios en `index.js`. SW v108 → v109. Cero cambios funcionales. 1078/1078 tests verdes.
+
+- **`modules/dominio/compromisos/view.js`** (23 líneas): barrel con `export ... from './views/*.js'` para los 12 exports públicos.
+- **`modules/dominio/compromisos/views/alertas.js`** (116 líneas): `renderAlertaFijosSinPagar` + `renderAlertaDeudasDurmiendo` (nudges G.1 del dashboard).
+- **`modules/dominio/compromisos/views/lista.js`** (176 líneas): `renderListaCompromisos` + helpers privados de item y empty state. Lee `getEstrategiaUI()` para aplicar el orden estratégico.
+- **`modules/dominio/compromisos/views/formularios.js`** (229 líneas): `renderFormAbono` + `renderChooserCompromiso` + `renderFormDeuda` (3 modales del dominio).
+- **`modules/dominio/compromisos/views/estrategia.js`** (281 líneas): aloja el singleton `_uiEstrategia` + `setEstrategiaUI` / `getEstrategiaUI` + `renderEstrategiaPago` + helpers de cards seleccionables, detalle, no-aplica y acordeón extra.
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`** (183 líneas): `renderImpactoAvalancha` + `renderImpactoBolaNieve` + `formatearDuracion` + comparativa Avalancha vs BN (funciones puras).
+- **`modules/dominio/compromisos/views/dashboard.js`** (162 líneas): `renderPanelVencidos` + `renderPanelPrioridades` + `_hoyISOLocal` helper.
+- **`service-worker.js`:** v108 → v109; 6 nuevos assets añadidos a CORE_ASSETS.
+
+---
+
+### refactor(css): R4 - partir components.css en 8 sub-modulos · 2026-06-07
+
+`styles/components.css` (4612 líneas) dividido en 8 sub-módulos bajo `styles/components/`. Cero cambios visuales. 1078/1078 tests verdes.
+
+- **`styles/components.css`:** convertido en barrel file con 8 `@import` al directorio `styles/components/`.
+- **`styles/components/buttons.css`** (185 líneas): BOTONES + CARDS.
+- **`styles/components/forms.css`** (489 líneas): ICONOS SVG + INPUTS / FORMULARIOS + QUICK ADD + QUICK TOAST.
+- **`styles/components/atoms.css`** (307 líneas): CHIPS Y BADGES + LIST ITEMS + EMPTY STATE + SPINNER + DIVISOR + PROGRESS BAR + TOGGLE.
+- **`styles/components/analysis.css`** (1020 líneas): PANEL DE ANÁLISIS completo (bento, métricas del mes, salud financiera, presupuesto por sobre, fondo de emergencia J.1, inversión J.2, gastos por categoría, patrimonio neto).
+- **`styles/components/charts.css`** (766 líneas): GRÁFICOS sparkline + donut + IMPORT CSV + COMPROMISOS chooser + ESTRATEGIA DE PAGO.
+- **`styles/components/nudges.css`** (387 líneas): SISTEMA DE NUDGES (5 niveles) + LOGRO TOAST + confetti + BANK AVATAR/PICKER + DOMINIO BADGES.
+- **`styles/components/domain.css`** (740 líneas): CALCULADORAS + HERRAMIENTA-INLINE + SIM-GATE + INGRESOS-CARD + MES-NAV + FILTROS-BAR + ABONO + HERO SOLO + VENCIDOS + PRIORIDADES + BALANCE-TIRA.
+- **`styles/components/config.css`** (752 líneas): CONFIGURACION + INSTALL BANNER + INSTALL IOS + AGENDA/CALENDARIO.
+- **`service-worker.js`:** v107 → v108; 8 nuevos assets añadidos a CORE_ASSETS.
+
+---
+
+### refactor(css): R3 - tokenizar px en components.css (34 valores) · 2026-06-07
+
+34 valores hardcodeados de `px` en `styles/components.css` reemplazados por tokens `--fk-space-*` y `--fk-radius-*`. Cero cambios en JS/HTML. 1078/1078 tests verdes.
+
+- **`styles/components.css`:** propiedad `min-height`: 40px × 2 → `space-10` (btn base + input), 32px × 1 → `space-8` (btn-sm), 48px × 2 → `space-12` (btn-lg + cal-day mobile). Propiedad `min-width`: 40px → `space-10` (btn-icon), 32px → `space-8` (btn-icon.btn-sm inline). Propiedad `width/height`: 20px × 4 → `space-5` (badge + spinner), 32px × 6 → `space-8` (spinner-lg inline + bank-avatar + cal-detail__close + cal-detail__icon mobile), 40px × 2 → `space-10` (install-ios__num), 48px × 4 → `space-12` (fondo-hero__icon + inversion-hero__icon), 12px × 3 → `space-3` (score-card__bar height + chart-legend__swatch w/h), 16px × 2 → `space-4` (sim-gate__radio w/h), 8px × 1 → `space-2` (.progress bar height). `gap: 4px` → `space-1` (cal-grid mobile). `margin: 4px 0 0` → `space-1 0 0` (inversion-item__proy). `border-radius: 999px` → `radius-full` (chip pill).
+- **Preservados intencionalmente como px:** toggle switch 44px×24px outer + 16px×16px thumb (proporciones fijas, no hay token de 44px), touch targets 44px, valores sin token exacto (26px, 28px, 36px, 56px, 60px, 80px, 96px), micro-separadores visuales (2px, 3px), transforms de animación, dots de calendario (5px, 6px), `letter-spacing: 0.5px`.
+
+---
+
+### refactor(js): R2 - centralizar esc() y genId, eliminar 18 duplicados · 2026-06-07
+
+Dos helpers duplicados eliminados. 1 función exportada en `infra/utils.js`, 1 función exportada en `infra/crud.js`. 1078/1078 tests verdes.
+
+- **`modules/infra/utils.js`:** nueva exportación `esc(str)`: escape HTML, única fuente de verdad.
+- **`modules/infra/crud.js`:** `genId()` promovida de privada a `export function genId()`.
+- **16 archivos** (`dominio/*/view.js`, `logros/index.js`, `infra/form-errors.js`, `infra/svg.js`, `ui/confirm.js`): importan `{ esc as _esc }` desde `infra/utils.js` (alias preserva todos los call-sites internos sin tocar); se elimina la función `_esc` local en cada uno. Cero cambios en templates HTML generados.
+- **`modules/dominio/ahorro/index.js`:** importa `{ genId }` desde `infra/crud.js`; se elimina la función `_genId` local (copia exacta de la de `crud.js`); se reemplaza el único call-site `_genId()` → `genId()`.
+
+---
+
+### refactor(css): R1 - cerrar fugas de color, unificar paleta a tokens · 2026-06-07
+
+40 valores de color hardcodeados reemplazados por tokens `--fk-*` en 4 archivos CSS. Cero cambios en JS ni HTML. 1078/1078 tests verdes.
+
+- **`styles/tokens.css`:** nuevo token `--fk-bg-overlay: rgba(0, 0, 0, 0.65)` en la sección de fondos.
+- **`styles/modals.css`:** overlay background → `var(--fk-bg-overlay)` (1 cambio).
+- **`styles/layout.css`:** 10 colores reemplazados. Gradiente bento-accent (verde viejo `#00dc82` → `var(--fk-accent)`), filtro hero-guia, 8 glows de iconos por dominio (`var(--fk-dom-*)`). Corrección de drift: analisis usaba `#00e5cc` (token actual `#2fd2bf`), personales usaba `#ff4eb8` (token actual `#f06fc2`). Comentario de contraste WCAG actualizado a valores reales del token.
+- **`styles/components.css`:** 28 colores reemplazados. btn-danger, card-*, chip-* (4 variantes), field-invalid y form-errors (6 fallbacks `#ef4444` eliminados: valor incorrecto, token `--fk-danger` siempre existe), badge--warn (3 fallbacks `#fbbf24` eliminados: valor incorrecto, token `--fk-warning` siempre existe), select SVG arrow (color muted antiguo `#6b7490` → `#888fa6`), empty-state icon, envelope alerta/excedido, patrimonio-hero gradientes, import-error (fallback `rgba(239,68,68,0.1)` incorrecto eliminado), import-row--error, calc-result highlight/deduct, chip--active (`#fff` → `var(--fk-text-on-bold)`), config-section warn, config-danger, vencidos-card (nombres de tokens corregidos: `--fk-color-danger` / `--fk-color-warning` → `--fk-danger` / `--fk-warning` / `--fk-amber`), balance-tira.
+
+---
+
 ### test(e2e): C2.2+C2.3 - realinear suites E2E rotas (smoke + estrategia-pago) · 2026-06-06
 
 Saldada la deuda técnica de 26 tests pre-existentes en rojo. Cero cambios en código de app.

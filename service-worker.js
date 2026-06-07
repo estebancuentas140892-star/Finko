@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v107';
+const CACHE_NAME = 'finko-v113';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -25,6 +25,14 @@ const CORE_ASSETS = [
   './styles/base.css',
   './styles/layout.css',
   './styles/components.css',
+  './styles/components/buttons.css',
+  './styles/components/forms.css',
+  './styles/components/atoms.css',
+  './styles/components/analysis.css',
+  './styles/components/charts.css',
+  './styles/components/nudges.css',
+  './styles/components/domain.css',
+  './styles/components/config.css',
   './styles/modals.css',
   './styles/themes.css',
   './styles/a11y.css',
@@ -64,6 +72,12 @@ const CORE_ASSETS = [
   './modules/dominio/gastos/index.js',
   './modules/dominio/compromisos/logic.js',
   './modules/dominio/compromisos/view.js',
+  './modules/dominio/compromisos/views/alertas.js',
+  './modules/dominio/compromisos/views/lista.js',
+  './modules/dominio/compromisos/views/formularios.js',
+  './modules/dominio/compromisos/views/estrategia.js',
+  './modules/dominio/compromisos/views/estrategia-impacto.js',
+  './modules/dominio/compromisos/views/dashboard.js',
   './modules/dominio/compromisos/index.js',
   './modules/dominio/agenda/logic.js',
   './modules/dominio/agenda/view.js',

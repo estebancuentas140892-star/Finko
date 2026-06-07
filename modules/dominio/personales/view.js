@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f } from '../../infra/utils.js';
+import { f, esc as _esc } from '../../infra/utils.js';
 import {
   calcularPendiente,
   calcularDias,
@@ -231,12 +231,6 @@ export function renderFormPagoPersonal(prestamo) {
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
 
 function _hoyISO() {
   const d = new Date();

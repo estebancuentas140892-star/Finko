@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -118,10 +118,3 @@ export function renderFormMeta() {
     </form>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}

@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -142,6 +142,22 @@ function _migrate(raw) {
   if ((typeof data._version === 'number' ? data._version : 1) < 8) {
     if (!Array.isArray(data.inversiones)) {
       data.inversiones = [];
+    }
+  }
+
+  // v8 → v9: perfil fiscal opcional en config (K.2).
+  // El usuario existente arranca con todos los flags en false.
+  // Se preserva config.notificaciones y cualquier otro campo ya presente.
+  if ((typeof data._version === 'number' ? data._version : 1) < 9) {
+    if (typeof data.config !== 'object' || data.config === null) {
+      data.config = {};
+    }
+    if (typeof data.config.perfilFiscal !== 'object' || data.config.perfilFiscal === null) {
+      data.config.perfilFiscal = {
+        ivaResponsable:       false,
+        obligadoContabilidad: false,
+        declaranteObligado:   false,
+      };
     }
   }
 

@@ -2,7 +2,7 @@
 
 > Documento vivo. Solo contiene lo **pendiente**.
 > Lo que ya se hizo está en [`CHANGELOG.md`](CHANGELOG.md).
-> Última revisión: 2026-06-03
+> Última revisión: 2026-06-07
 
 ---
 
@@ -10,8 +10,8 @@
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
 **Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, onboarding UX cerrado en 2026-06-03, **modernización UI/UX (Parte 3: paleta, tipografía, navegación, cards, iconografía SVG) cerrada en 2026-06-06**.
-**Estado:** proyecto estable en producción. 1078/1078 unit + integración verdes, Lighthouse 99-100.
-**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). Ver candidatas opcionales más abajo.
+**Estado:** proyecto estable en producción. 1113/1113 unit + integración verdes, Lighthouse 99-100.
+**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). **Serie R (calidad de código) cerrada** (R1-R5). **Sección K (Asistencias Inteligentes) cerrada** (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta).
 
 ---
 
@@ -131,16 +131,28 @@ _(no quedan tareas funcionales pendientes en D - todas las features de v1 + post
 
 **Objetivo:** mantener vigentes las constantes legales colombianas.
 
+**Objetivo (refinado 2026-06-07):** mantener vigentes solo las constantes
+legales de baja frecuencia: anuales (SMMLV, UVT, auxilio de transporte) y
+estables sin vencimiento (GMF/4x1000, aportes de seguridad social). Los
+indicadores de alta frecuencia (usura trimestral) quedan fuera del alcance.
+
 **Completadas:**
 - ✅ E.1 - Actualizar tasa de usura: Q1 26.77% EA → Q2 28.17% EA (SFC 2026-05-18).
+  _(Histórico: la usura se eliminó del producto el 2026-06-07, ver ADR 004.)_
 - ✅ E.2 - SMMLV 2026 ($1.750.905, Decreto 1469/2025) y UVT 2026 ($52.374,
   Resolución DIAN 000238/2025). Placeholders 2027 = null - publicación
   esperada dic-2026 (2026-05-19).
+- ✅ E.4 - Eliminar la tasa de usura del producto (tabla, función, exports,
+  hint del formulario y `clasificarTasaCredito`). Refina ADN regla #12.
+  ADR 004. SW v109 → v110 - 2026-06-07.
 
 **Tareas candidatas:**
 - E.2-2027 - Diciembre 2026 / enero 2027: actualizar SMMLV y UVT a valores
   2027 cuando se publiquen oficialmente.
 - E.3 - Verificar GMF y otras tasas si hay reforma tributaria.
+- E.5 (opcional) - Agregar IPC como constante anual si se quiere mostrar
+  inflación observada (mencionado por el usuario; hoy solo existe
+  `INFLACION_OBJETIVO`, la meta de BanRep para rentabilidad real).
 
 **Modelo sugerido:** Haiku 4.5 - **Esfuerzo:** Bajo.
 
@@ -220,6 +232,63 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 
 ---
 
+### R. Refactor de calidad de código (sin tocar funcionalidad)
+
+**Objetivo:** mejorar mantenibilidad, legibilidad y escalabilidad sin romper nada. El sistema de tokens ya es bueno: el trabajo es cerrar fugas y eliminar duplicación.
+
+**Completadas:**
+- ✅ R1 - Cerrar 40 fugas de color: `tokens.css` (1 token nuevo `--fk-bg-overlay`), `modals.css`, `layout.css` (10 valores) y `components.css` (28 valores). Corregidos drift de paleta vieja y nombres de tokens equivocados (`--fk-color-danger` → `--fk-danger`) - 2026-06-07.
+- ✅ R2 - Centralizar `esc()` y `genId`: exportadas desde `infra/utils.js` y `infra/crud.js`; 16 copias locales de `_esc` eliminadas; `_genId` en `ahorro/index.js` reemplazada por `genId` de `crud.js` - 2026-06-07.
+- ✅ R3 - Cerrar 34 fugas de `px` en `components.css`: 9 valores de pixel reemplazados por tokens `--fk-space-*` (space-1 a space-12) y `--fk-radius-full`. Preservados intencionales: toggle 44px×24px, touch targets 44px, valores sin token exacto (26px, 28px, 36px, etc.) - 2026-06-07.
+- ✅ R4 - Partir `components.css` (4612 líneas) en 8 sub-módulos bajo `styles/components/`. Barrel file con 8 `@import`. SW v107 → v108; 8 nuevos assets en CORE_ASSETS - 2026-06-07.
+- ✅ R5 - Partir `compromisos/view.js` (1075 líneas) en 6 sub-módulos bajo `views/` (todos < 300 líneas). Barrel preserva 12 exports públicos; cero cambios en `index.js`. SW v108 → v109 - 2026-06-07.
+
+_(Serie R cerrada: R1-R5 completas. La calidad de código alcanzó el objetivo: tokens cumplidos, helpers centralizados, archivos por debajo del umbral ADN.)_
+
+**Modelo sugerido para R2:** Sonnet 4.6 - Bajo.
+
+---
+
+### K. Asistencias Inteligentes
+
+**Objetivo:** convertir los indicadores financieros colombianos (UVT, SMMLV, GMF, topes de renta) en automatizaciones de fondo, alertas preventivas y recomendaciones contextuales. El resultado: menos calculadoras que el usuario debe consultar a mano, más inteligencia que aparece sola cuando es relevante.
+
+**Principios de diseño:**
+- **UVT como motor.** Todos los topes se calculan como `N × UVT_VIGENTE`. Al actualizar la constante `UVT` en enero, los topes se recalculan solos sin tocar otra línea.
+- **Alerta al 80%, no al 100%.** El valor está en prevenir: avisar cuando el usuario se acerca al tope, no cuando ya lo cruzó.
+- **Encuadre orientativo obligatorio.** Toda alerta incluye: "según lo que registras en Finko; confirma con un contador". Nunca afirmar "debes declarar"; siempre "podrías estar cerca del umbral".
+- **Datos ya registrados, primero.** Solo pedir información nueva cuando no haya forma de inferirla del estado existente (`S`).
+
+**Gaps de modelo conocidos (no bloquean K.1 ni K.2):**
+- Tarjetas de crédito: `TIPOS_CUENTA` no incluye "Tarjeta de crédito". Los consumos con tarjeta (uno de los 5 criterios de renta) no son directamente computables. Bloquea K.3; se decide el enfoque antes de comenzarlo.
+- Consignaciones: no hay stream de depósitos explícitos. Aproximable con suma de ingresos registrados + disclaimer claro.
+
+---
+
+#### K.1 - Asistencia 4x1000 (GMF)
+
+✅ **Cerrada** · 2026-06-07. Ver [CHANGELOG](CHANGELOG.md).
+
+---
+
+#### K.2 - Perfil fiscal (preguntas opcionales)
+
+✅ **Cerrada** · 2026-06-07. Ver [CHANGELOG](CHANGELOG.md).
+
+---
+
+#### K.3 - Monitor de topes de renta
+
+✅ **Cerrada** · 2026-06-07. Ver [CHANGELOG](CHANGELOG.md).
+
+Decisión del gap de tarjetas de crédito (y otros): **Opción A, honestidad explícita.** Finko muestra los 5 topes calculados en vivo (`N × UVT`), pero solo "mide" los 2 criterios para los que tiene datos reales (patrimonio bruto y consumos totales). Los otros 3 (ingresos brutos, consumos con tarjeta de crédito, consignaciones) se muestran con su tope para referencia y badge "Sin datos en Finko" + tip de dónde consultarlo. Razón: el dominio `ingresos` ya no existe (post-v8.8), `TIPOS_CUENTA` no distingue tarjeta de crédito, y no hay stream de consignaciones; inventar esos valores violaría el principio de encuadre orientativo. Si surge demanda, el registro manual queda como K.4 sin bloquear nada.
+
+---
+
+_(Sección K cerrada: K.1, K.2 y K.3 completas. Asistencias Inteligentes entregadas: 4x1000, perfil fiscal y monitor de topes de renta.)_
+
+---
+
 ## Métricas alcanzadas en v1.0
 
 | Métrica | Objetivo v1 | Real |
@@ -233,5 +302,5 @@ Registro de inversiones reales (CDT, fondo, cripto, acciones) con monto, tasa y 
 | Lighthouse Best Practices | ≥ 90 | 100 ✅ |
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
-| Tests unitarios | - | 1078/1078 ✅ |
+| Tests unitarios | - | 1113/1113 ✅ |
 | Tests E2E | - | 57/57 ✅ (`smoke` 28 + `estrategia-pago` 8 + `ahorro-inversion` 9 + `navegacion-render` 12) |

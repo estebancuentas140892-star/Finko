@@ -1,0 +1,387 @@
+/* ============================================================
+   FINKO - SISTEMA DE NUDGES + LOGRO TOAST + BANK AVATAR/PICKER + DOMINIO BADGES
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   SISTEMA DE NUDGES - 5 niveles de urgencia
+   Jerarquía: crítico > alto > medio > info > logro
+   Patrón HTML:
+   <div class="nudge nudge-critical" role="alert">
+     <span class="nudge__icon" aria-hidden="true">🚨</span>
+     <div class="nudge__body">
+       <p class="nudge__title">Título</p>
+       <p class="nudge__desc">Descripción accionable</p>
+     </div>
+     <button class="nudge__cta btn btn-sm btn-danger">Acción</button>
+   </div>
+   ════════════════════════════════════════════════════════════ */
+
+.nudge {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--fk-space-3);
+  align-items: start;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid;
+  margin-bottom: var(--fk-space-3);
+  transition:
+    transform var(--fk-transition-fast),
+    box-shadow var(--fk-transition-fast);
+}
+
+.nudge:last-child { margin-bottom: 0; }
+
+.nudge__icon {
+  font-size: 1.375rem;
+  line-height: 1;
+  padding-top: 2px;
+}
+
+.nudge__body {
+  min-width: 0;
+}
+
+.nudge__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0 0 2px;
+  line-height: var(--fk-leading-snug);
+}
+
+.nudge__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 0;
+  line-height: var(--fk-leading-relaxed);
+}
+
+.nudge__desc--muted {
+  color: var(--fk-text-muted);
+  font-style: italic;
+}
+
+.nudge__cta {
+  align-self: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Nivel 1: Crítico (datos inválidos, errores que rompen indicadores) */
+.nudge-critical {
+  background: var(--fk-nudge-critical-bg);
+  border-color: var(--fk-nudge-critical-border);
+  border-left: 3px solid var(--fk-nudge-critical-accent);
+}
+.nudge-critical .nudge__title { color: var(--fk-danger-text); }
+
+/* ── Nivel 2: Alto (atrasos, recargos inminentes, mora, vencimientos) */
+.nudge-high {
+  background: var(--fk-nudge-high-bg);
+  border-color: var(--fk-nudge-high-border);
+  border-left: 3px solid var(--fk-nudge-high-accent);
+}
+.nudge-high .nudge__title { color: var(--fk-dom-gastos); }
+
+/* ── Nivel 3: Medio (hormigas, predicciones, bolsillos olvidados) */
+.nudge-medium {
+  background: var(--fk-nudge-medium-bg);
+  border-color: var(--fk-nudge-medium-border);
+  border-left: 3px solid var(--fk-nudge-medium-accent);
+}
+.nudge-medium .nudge__title { color: var(--fk-warning-text); }
+
+/* ── Nivel 4: Info (comparativas, tendencias, retroalimentación) */
+.nudge-info {
+  background: var(--fk-nudge-info-bg);
+  border-color: var(--fk-nudge-info-border);
+  border-left: 3px solid var(--fk-nudge-info-accent);
+}
+.nudge-info .nudge__title { color: var(--fk-info-text); }
+
+/* ── Nivel 5: Logro (salud financiera, rachas, metas cumplidas) */
+.nudge-success {
+  background: var(--fk-nudge-success-bg);
+  border-color: var(--fk-nudge-success-border);
+  border-left: 3px solid var(--fk-nudge-success-accent);
+}
+.nudge-success .nudge__title { color: var(--fk-success-text); }
+
+/* Hover sutil - solo desktop */
+@media (hover: hover) {
+  .nudge:hover {
+    transform: translateX(2px);
+    box-shadow: var(--fk-shadow-sm);
+  }
+}
+
+/* Nudge sin icono ni CTA (solo texto) */
+.nudge--compact {
+  grid-template-columns: auto 1fr;
+  padding: var(--fk-space-2) var(--fk-space-3);
+}
+
+/* ════════════════════════════════════════════════════════════
+   LOGRO TOAST - gamificación tipo Duolingo para finanzas
+   Aparece cuando el usuario desbloquea un logro.
+   JS lo crea, lo agrega al body y lo elimina tras 4s.
+   ════════════════════════════════════════════════════════════ */
+
+.logro-toast {
+  position: fixed;
+  bottom: calc(var(--fk-space-6) + env(safe-area-inset-bottom, 0px));
+  /* Centrado robusto: en lugar de left:50% + transform:translateX(-50%) + width:max-content
+     (que fallaba en mobile real con la animacion toastIn que aplica su propio transform,
+     pisando translateX(-50%) y dejando el toast pegado a la derecha), usamos left/right
+     con margenes seguros y margin:auto. Esto garantiza centrado sin depender de transform,
+     asi la animacion puede usarlo libremente sin romper el posicionamiento. */
+  left:  calc(var(--fk-space-4) + env(safe-area-inset-left,  0px));
+  right: calc(var(--fk-space-4) + env(safe-area-inset-right, 0px));
+  margin: 0 auto;
+  max-width: 420px;
+  width: fit-content;
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-nudge-success-border);
+  border-left: 3px solid var(--fk-success);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-3) var(--fk-space-5);
+  box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logro-toast {
+    animation: toastIn 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .logro-toast.fade {
+    animation: toastOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+}
+
+.logro-toast__emoji {
+  font-size: 1.75rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.logro-toast__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logro-toast__label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-success-text);
+  font-weight: var(--fk-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.logro-toast__nombre {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+  /* Permitir wrap en pantallas chicas con nombres largos.
+     overflow-wrap: anywhere por si el nombre fuera una palabra sin espacios. */
+  overflow-wrap: anywhere;
+}
+
+/* En mobile el bottom nav (60px) tapaba el toast en su posicion original
+   (bottom: space-6 ≈ 24px). Lo elevamos arriba del nav. */
+@media (max-width: 1023.98px) {
+  .logro-toast {
+    bottom: calc(
+      var(--fk-header-height)
+      + var(--fk-space-4)
+      + env(safe-area-inset-bottom, 0px)
+    );
+  }
+}
+
+/* ── Confetti CSS (30 spans generados por JS) */
+.confetti-piece {
+  position: absolute;
+  width: 7px;
+  height: 10px;
+  border-radius: 2px;
+  pointer-events: none;
+  animation: confettiFall 1.1s ease-out both;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BANK AVATAR - círculo con iniciales y color corporativo
+   Generado por tesoreria/view.js con estilos inline de color.
+   ════════════════════════════════════════════════════════════ */
+
+.bank-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-8);
+  height: var(--fk-space-8);
+  border-radius: var(--fk-radius-md);
+  font-size: 11px;
+  font-weight: var(--fk-font-bold);
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  /* color y background vienen como style inline */
+}
+
+/* Avatar más pequeño dentro del trigger del picker */
+.bank-picker__trigger .bank-avatar {
+  width: 26px;
+  height: 26px;
+  font-size: 10px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BANK PICKER - custom combobox para seleccionar banco.
+   El dropdown usa position:fixed para no quedar cortado por
+   el overflow:hidden del modal.
+   ════════════════════════════════════════════════════════════ */
+
+.bank-picker {
+  position: relative;
+}
+
+/* Trigger: aspecto de campo de formulario */
+.bank-picker__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  width: 100%;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  min-height: 44px;
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--fk-transition-fast),
+    box-shadow var(--fk-transition-fast);
+}
+
+.bank-picker__trigger:hover {
+  border-color: var(--fk-border-strong);
+}
+
+.bank-picker__trigger:focus-visible {
+  outline: none;
+  border-color: var(--fk-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fk-accent) 20%, transparent);
+}
+
+/* Área donde se muestra el banco seleccionado o el placeholder */
+.bank-picker__display {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bank-picker__placeholder {
+  color: var(--fk-text-muted);
+}
+
+/* Chevron - rota cuando el picker está abierto */
+.bank-picker__chevron {
+  flex-shrink: 0;
+  color: var(--fk-text-muted);
+  transition: transform var(--fk-transition-fast);
+}
+
+.bank-picker[aria-expanded="true"] .bank-picker__chevron {
+  transform: rotate(180deg);
+}
+
+/* Lista desplegable - position:fixed calculado por JS */
+.bank-picker__list {
+  position: fixed;
+  z-index: calc(var(--fk-z-modal) + 10);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-lg);
+  box-shadow: var(--fk-shadow-lg);
+  padding: var(--fk-space-1) 0;
+  margin: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Animacion de apertura */
+  animation: fadeInDown 0.15s ease-out both;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Item individual del banco */
+.bank-picker__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-sm);
+  transition: background-color var(--fk-transition-fast);
+  outline: none;
+}
+
+.bank-picker__item:hover,
+.bank-picker__item:focus {
+  background: var(--fk-bg-hover);
+}
+
+.bank-picker__item[aria-selected="true"] {
+  background: color-mix(in srgb, var(--fk-accent) 10%, transparent);
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-font-semibold);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DOMINIO BADGES - chip de color por sección
+   Uso: <span class="dom-badge dom-badge--gastos">Gastos</span>
+   ════════════════════════════════════════════════════════════ */
+
+.dom-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: 2px var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.03em;
+}
+
+.dom-badge--ingresos    { background: color-mix(in srgb, var(--fk-dom-ingresos)    12%, transparent); color: var(--fk-dom-ingresos); }
+.dom-badge--gastos      { background: color-mix(in srgb, var(--fk-dom-gastos)      12%, transparent); color: var(--fk-dom-gastos); }
+.dom-badge--compromisos { background: color-mix(in srgb, var(--fk-dom-compromisos) 12%, transparent); color: var(--fk-dom-compromisos); }
+.dom-badge--tesoreria   { background: color-mix(in srgb, var(--fk-dom-tesoreria)   12%, transparent); color: var(--fk-dom-tesoreria); }
+.dom-badge--metas       { background: color-mix(in srgb, var(--fk-dom-metas)       12%, transparent); color: var(--fk-dom-metas); }
+.dom-badge--analisis    { background: color-mix(in srgb, var(--fk-dom-analisis)    12%, transparent); color: var(--fk-dom-analisis); }
+.dom-badge--presupuesto { background: color-mix(in srgb, var(--fk-dom-presupuesto) 12%, transparent); color: var(--fk-dom-presupuesto); }
+.dom-badge--personales  { background: color-mix(in srgb, var(--fk-dom-personales)  12%, transparent); color: var(--fk-dom-personales); }
+

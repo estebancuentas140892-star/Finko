@@ -10,6 +10,8 @@ import {
   parseCuotaManejo,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
+  calcularCostoGMF,
+  detectarNudgeGMF,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -501,5 +503,139 @@ describe('compromisoCuotaManejoDeCuenta()', () => {
   it('robusto a input no-array', () => {
     expect(compromisoCuotaManejoDeCuenta(null,      'c1')).toBeUndefined();
     expect(compromisoCuotaManejoDeCuenta(undefined, 'c1')).toBeUndefined();
+  });
+});
+
+// ── calcularCostoGMF() (K.1) ─────────────────────────────────────
+
+const cuentaConGMF = (id = 'c1') => ({
+  id,
+  nombre: 'Bancolombia Corriente',
+  banco:  'Bancolombia',
+  tipo:   'Corriente',
+  saldo:  2_000_000,
+  activa: true,
+  aplica4x1000: true,
+  fechaCreacion: '2026-01-01T00:00:00Z',
+});
+
+const cuentaSinGMF = (id = 'c2') => ({
+  ...cuentaConGMF(id),
+  nombre: 'Nequi',
+  banco:  'Nequi',
+  aplica4x1000: false,
+});
+
+const gastoDesde = (cuentaId, monto, fecha = '2026-06-15') => ({
+  id:          `g-${cuentaId}-${monto}`,
+  descripcion: 'Compra',
+  monto,
+  categoria:   'Alimentación',
+  fecha,
+  cuentaId,
+});
+
+describe('calcularCostoGMF()', () => {
+  it('devuelve ceros cuando ninguna cuenta tiene GMF', () => {
+    const r = calcularCostoGMF([gastoDesde('c1', 100_000)], [cuentaSinGMF('c1')], 2026, 6);
+    expect(r).toEqual({ cantidadCuentasGMF: 0, gastosGravados: 0, costoGMF: 0 });
+  });
+
+  it('devuelve ceros cuando hay cuentas GMF pero sin gastos del mes', () => {
+    const r = calcularCostoGMF([], [cuentaConGMF('c1')], 2026, 6);
+    expect(r).toEqual({ cantidadCuentasGMF: 1, gastosGravados: 0, costoGMF: 0 });
+  });
+
+  it('calcula correctamente: gasto 1.000.000 genera GMF 4.000', () => {
+    const r = calcularCostoGMF(
+      [gastoDesde('c1', 1_000_000)],
+      [cuentaConGMF('c1')],
+      2026, 6,
+    );
+    expect(r.gastosGravados).toBe(1_000_000);
+    expect(r.costoGMF).toBe(4_000);
+    expect(r.cantidadCuentasGMF).toBe(1);
+  });
+
+  it('ignora gastos de otros meses', () => {
+    const r = calcularCostoGMF(
+      [
+        gastoDesde('c1', 500_000, '2026-05-10'),
+        gastoDesde('c1', 200_000, '2026-06-15'),
+      ],
+      [cuentaConGMF('c1')],
+      2026, 6,
+    );
+    expect(r.gastosGravados).toBe(200_000);
+    expect(r.costoGMF).toBe(800);
+  });
+
+  it('ignora gastos de cuentas sin GMF', () => {
+    const r = calcularCostoGMF(
+      [
+        gastoDesde('c1', 300_000, '2026-06-10'),
+        gastoDesde('c2', 700_000, '2026-06-10'),
+      ],
+      [cuentaConGMF('c1'), cuentaSinGMF('c2')],
+      2026, 6,
+    );
+    expect(r.gastosGravados).toBe(300_000);
+    expect(r.costoGMF).toBe(1_200);
+  });
+
+  it('ignora gastos sin cuentaId', () => {
+    const r = calcularCostoGMF(
+      [{ id: 'g1', monto: 500_000, fecha: '2026-06-10', categoria: 'Otro' }],
+      [cuentaConGMF('c1')],
+      2026, 6,
+    );
+    expect(r.gastosGravados).toBe(0);
+  });
+
+  it('suma gastos de varias cuentas con GMF', () => {
+    const r = calcularCostoGMF(
+      [
+        gastoDesde('c1', 200_000, '2026-06-01'),
+        gastoDesde('c2', 300_000, '2026-06-15'),
+      ],
+      [cuentaConGMF('c1'), cuentaConGMF('c2')],
+      2026, 6,
+    );
+    expect(r.gastosGravados).toBe(500_000);
+    expect(r.costoGMF).toBe(2_000);
+    expect(r.cantidadCuentasGMF).toBe(2);
+  });
+
+  it('arrays vacíos devuelven ceros', () => {
+    const r = calcularCostoGMF([], [], 2026, 6);
+    expect(r).toEqual({ cantidadCuentasGMF: 0, gastosGravados: 0, costoGMF: 0 });
+  });
+});
+
+// ── detectarNudgeGMF() (K.1) ─────────────────────────────────────
+
+describe('detectarNudgeGMF()', () => {
+  it('retorna null cuando costoGMF es 0', () => {
+    expect(detectarNudgeGMF({ cantidadCuentasGMF: 1, gastosGravados: 0, costoGMF: 0 })).toBeNull();
+  });
+
+  it('retorna null cuando gmfData es null o undefined', () => {
+    expect(detectarNudgeGMF(null)).toBeNull();
+    expect(detectarNudgeGMF(undefined)).toBeNull();
+  });
+
+  it('devuelve nudge-info con id gmf-costo cuando hay costo > 0', () => {
+    const n = detectarNudgeGMF({ cantidadCuentasGMF: 1, gastosGravados: 500_000, costoGMF: 2_000 });
+    expect(n).not.toBeNull();
+    expect(n.nivel).toBe('nudge-info');
+    expect(n.id).toBe('gmf-costo');
+    expect(n.icono).toBe('💸');
+  });
+
+  it('nudge expone los valores numéricos del mes para que la vista los formatee', () => {
+    const n = detectarNudgeGMF({ cantidadCuentasGMF: 2, gastosGravados: 1_000_000, costoGMF: 4_000 });
+    expect(n.costoGMF).toBe(4_000);
+    expect(n.gastosGravados).toBe(1_000_000);
+    expect(n.cantidadCuentasGMF).toBe(2);
   });
 });

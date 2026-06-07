@@ -1,0 +1,752 @@
+/* ============================================================
+   FINKO - CONFIGURACION + INSTALL PWA (banner + iOS) + AGENDA / CALENDARIO
+   Sub-modulo de styles/components.css
+   ============================================================ */
+
+/* ════════════════════════════════════════════════════════════
+   CONFIGURACION - perfil, notificaciones, datos, acerca de.
+   Cada .config-section es una surface card consistente con calc.
+   ════════════════════════════════════════════════════════════ */
+
+#panel-config {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-section {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-section__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-snug);
+  margin: 0;
+}
+
+.config-section__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0;
+}
+
+.config-section__desc--warn {
+  background: var(--fk-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-warning) 30%, transparent);
+  border-left: 3px solid var(--fk-warning);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  color: var(--fk-warning-text);
+}
+
+.config-section__desc .link {
+  color: var(--fk-text-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Info key-value (dl/dt/dd) en grid 2 col */
+.config-info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--fk-space-2) var(--fk-space-5);
+  margin: 0;
+  align-items: baseline;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+
+.config-info dt {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-medium);
+  white-space: nowrap;
+}
+
+.config-info dd {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  margin: 0;
+  font-weight: var(--fk-font-semibold);
+}
+
+/* Form de perfil */
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-5); /* mismo valor que la separación entre grupos en modales */
+}
+
+.config-form > .btn {
+  align-self: flex-start;
+  min-width: 160px;
+}
+
+/* Toggle pill iOS-style envuelto en label */
+.config-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  cursor: pointer;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+  width: fit-content;
+  transition: background-color var(--fk-transition-fast);
+}
+
+.config-toggle:hover {
+  background: var(--fk-bg-hover);
+}
+
+.config-toggle input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 44px;
+  height: 24px;
+  background: var(--fk-bg-base);
+  border: 1.5px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-full);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+
+.config-toggle input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--fk-text-muted);
+  top: 2px;
+  left: 2px;
+  transition:
+    transform var(--fk-transition-fast),
+    background-color var(--fk-transition-fast);
+}
+
+.config-toggle input[type="checkbox"]:checked {
+  background: var(--fk-accent);
+  border-color: var(--fk-accent);
+}
+
+.config-toggle input[type="checkbox"]:checked::after {
+  background: var(--fk-text-on-accent);
+  transform: translateX(20px);
+}
+
+.config-toggle input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+.config-toggle__label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+}
+
+/* Botones de exportar/importar */
+.config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+}
+
+/* Zona de peligro: reset app */
+.config-danger {
+  background: var(--fk-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 30%, transparent);
+  border-left: 3px solid var(--fk-danger);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+
+.config-danger__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-danger-text);
+  margin: 0;
+}
+
+.config-danger__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-2);
+}
+
+.config-danger > .btn {
+  align-self: flex-start;
+}
+
+/* ════════════════════════════════════════════════════════════
+   INSTALL BANNER (PWA prompt persuasivo)
+   Aparece tras el onboarding. Se posiciona arriba del bottom nav
+   en mobile, en la esquina inferior derecha en desktop.
+   ════════════════════════════════════════════════════════════ */
+
+.install-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--fk-header-height) + var(--fk-space-3) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: calc(100% - var(--fk-space-4) * 2);
+  max-width: 480px;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-xl);
+  box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
+  animation: fadeInUp 0.35s ease-out;
+}
+
+.install-banner[hidden] {
+  display: none;
+}
+
+.install-banner__icon {
+  font-size: 1.875rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.install-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.install-banner__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  line-height: var(--fk-leading-snug);
+}
+
+.install-banner__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 2px 0 0;
+  line-height: var(--fk-leading-snug);
+}
+
+.install-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  flex-shrink: 0;
+}
+
+.install-banner__close {
+  background: none;
+  border: none;
+  color: var(--fk-text-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: var(--fk-space-1) var(--fk-space-2);
+  cursor: pointer;
+  border-radius: var(--fk-radius-sm);
+  transition: color var(--fk-transition-fast), background-color var(--fk-transition-fast);
+}
+
+.install-banner__close:hover {
+  color: var(--fk-text-primary);
+  background: var(--fk-bg-hover);
+}
+
+/* En desktop (>=1024px): banner mas pequeño, esquina inferior derecha */
+@media (min-width: 1024px) {
+  .install-banner {
+    left: auto;
+    right: var(--fk-space-5);
+    bottom: var(--fk-space-5);
+    transform: none;
+    max-width: 380px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   INSTALL IOS (modal con pasos ilustrados)
+   ════════════════════════════════════════════════════════════ */
+
+.install-ios__intro {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0 0 var(--fk-space-2);
+}
+
+.install-ios__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.install-ios__step {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+}
+
+.install-ios__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  background: var(--fk-accent);
+  color: var(--fk-text-on-accent);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.install-ios__step-body p {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-relaxed);
+}
+
+.install-ios__step-body p + p {
+  margin-top: var(--fk-space-1);
+}
+
+.install-ios__hint {
+  font-size: var(--fk-text-xs) !important;
+  color: var(--fk-text-muted) !important;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+}
+
+.install-ios__pictogram {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.install-ios__nota {
+  margin: var(--fk-space-4) 0 0;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border-left: 3px solid var(--fk-info);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* ──────────────────────────────────────────────────────────────
+   AGENDA - calendario mensual de compromisos.
+   Estado y lógica en modules/dominio/agenda/.
+   ────────────────────────────────────────────────────────────── */
+
+.cal-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+}
+
+.cal-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-4);
+}
+
+.cal-card__title-wrap {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.cal-card__title {
+  margin: 0;
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  text-transform: capitalize;
+}
+
+.cal-card__subtitle {
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.cal-card__nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fk-radius-full);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-size: var(--fk-text-xl);
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+
+.cal-card__nav:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-strong);
+}
+
+.cal-card__nav:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--fk-space-1);
+}
+
+.cal-grid--header {
+  margin-bottom: var(--fk-space-2);
+}
+
+.cal-grid__dow {
+  text-align: center;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: var(--fk-space-1) 0;
+}
+
+.cal-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 56px;
+  padding: var(--fk-space-2) 0;
+  background: var(--fk-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  cursor: pointer;
+  transition: background var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+
+.cal-day:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+}
+
+.cal-day:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+.cal-day--empty {
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.cal-day--today {
+  border-color: var(--fk-accent);
+  background: var(--fk-accent-subtle);
+}
+
+.cal-day--today .cal-day__num {
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-font-bold);
+}
+
+.cal-day--past:not(.cal-day--today) {
+  opacity: 0.55;
+}
+
+.cal-day--has-events {
+  font-weight: var(--fk-font-semibold);
+}
+
+.cal-day--inactive {
+  cursor: default;
+}
+
+.cal-day--inactive:hover {
+  background: var(--fk-bg-elevated);
+  border-color: transparent;
+}
+
+.cal-day--selected {
+  border-color: var(--fk-text-primary);
+  background: var(--fk-bg-hover);
+  font-weight: var(--fk-font-bold);
+  box-shadow: 0 0 0 1px var(--fk-text-primary);
+}
+
+.cal-day--selected.cal-day--today {
+  border-color: var(--fk-accent);
+  box-shadow: 0 0 0 2px var(--fk-accent);
+}
+
+.cal-day__num {
+  display: inline-block;
+  line-height: 1;
+  margin-bottom: var(--fk-space-1);
+}
+
+.cal-day__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.cal-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fk-text-muted);
+}
+
+.cal-dot--fijo           { background: var(--fk-dom-presupuesto); }
+.cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos); }
+.cal-dot--deuda-personal { background: var(--fk-dom-personales); }
+
+.cal-day__more {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-semibold);
+}
+
+.cal-legend {
+  display: flex;
+  gap: var(--fk-space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--fk-space-4);
+  padding-top: var(--fk-space-3);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.cal-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+/* Detalle del día seleccionado: panel expandible entre la grilla y la leyenda. */
+.cal-detail {
+  margin-top: var(--fk-space-3);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  animation: cal-detail-fadein var(--fk-transition-fast) ease-out;
+}
+
+@keyframes cal-detail-fadein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cal-detail__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-3);
+}
+
+.cal-detail__title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-detail__title {
+  margin: 0;
+  font-size: var(--fk-text-md);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.cal-detail__subtitle {
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.cal-detail__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-8);
+  height: var(--fk-space-8);
+  border-radius: var(--fk-radius-full);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-xl);
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--fk-transition-fast), color var(--fk-transition-fast);
+}
+
+.cal-detail__close:hover {
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-primary);
+}
+
+.cal-detail__close:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+.cal-detail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.cal-detail__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-md);
+}
+
+.cal-detail__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-bg-surface);
+  font-size: var(--fk-text-md);
+  line-height: 1;
+}
+
+.cal-detail__body {
+  min-width: 0;
+}
+
+.cal-detail__name {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cal-detail__sub {
+  margin: 2px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.cal-detail__amount {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+}
+
+/* En mobile, celdas mas compactas pero todavia tappables (>= 44px). */
+@media (max-width: 640px) {
+  .cal-card {
+    padding: var(--fk-space-3);
+  }
+  .cal-grid {
+    gap: var(--fk-space-1);
+  }
+  .cal-day {
+    min-height: var(--fk-space-12);
+    padding: var(--fk-space-1) 0;
+    font-size: var(--fk-text-xs);
+  }
+  .cal-dot {
+    width: 5px;
+    height: 5px;
+  }
+  .cal-legend {
+    gap: var(--fk-space-3);
+  }
+  .cal-detail {
+    padding: var(--fk-space-3);
+  }
+  .cal-detail__item {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    padding: var(--fk-space-2);
+    gap: var(--fk-space-2);
+  }
+  .cal-detail__icon {
+    grid-row: 1 / span 2;
+    width: var(--fk-space-8);
+    height: var(--fk-space-8);
+  }
+  .cal-detail__amount {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    font-size: var(--fk-text-xs);
+    color: var(--fk-text-secondary);
+  }
+}

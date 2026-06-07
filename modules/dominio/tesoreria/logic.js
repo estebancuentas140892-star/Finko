@@ -6,6 +6,8 @@
  * - Testeable en Node/Vitest sin ningún mock de navegador.
  */
 
+import { GMF } from '../../core/constants.js';
+
 // ── CONSULTAS ────────────────────────────────────────────────────
 
 /**
@@ -293,4 +295,77 @@ function _iconoPorBanco(banco) {
     Efectivo: '💵',
   };
   return mapa[banco] ?? '🏦';
+}
+
+// ── GMF / 4x1000 ─────────────────────────────────────────────────
+
+/**
+ * Calcula el costo estimado del GMF (4x1000) para el mes indicado,
+ * sumando los gastos registrados desde cuentas sujetas al gravamen.
+ *
+ * Nota: el GMF real se aplica sobre retiros y transferencias bancarias.
+ * Esta función usa los gastos del mes como proxy razonable para orientar
+ * al usuario sobre su exposición al gravamen.
+ *
+ * @param {import('../../core/state.js').Gasto[]}  gastos
+ * @param {import('../../core/state.js').Cuenta[]} cuentas
+ * @param {number} anio
+ * @param {number} mes  1-12.
+ * @returns {{ cantidadCuentasGMF: number, gastosGravados: number, costoGMF: number }}
+ */
+export function calcularCostoGMF(gastos, cuentas, anio, mes) {
+  const cuentasArr = Array.isArray(cuentas) ? cuentas : [];
+  const gastosArr  = Array.isArray(gastos)  ? gastos  : [];
+
+  const idsConGMF = new Set(
+    cuentasArr.filter(c => c?.aplica4x1000 === true).map(c => c.id),
+  );
+
+  if (idsConGMF.size === 0) {
+    return { cantidadCuentasGMF: 0, gastosGravados: 0, costoGMF: 0 };
+  }
+
+  const mesPad  = String(mes).padStart(2, '0');
+  const prefijo = `${anio}-${mesPad}`;
+
+  const gastosGravados = gastosArr
+    .filter(g => g?.fecha?.startsWith(prefijo) && idsConGMF.has(g.cuentaId))
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+
+  return {
+    cantidadCuentasGMF: idsConGMF.size,
+    gastosGravados:     Math.round(gastosGravados),
+    costoGMF:           Math.round(gastosGravados * GMF),
+  };
+}
+
+/**
+ * Detecta si aplica mostrar el nudge de costo del GMF.
+ * Devuelve un objeto de nudge cuando el costo estimado del mes es mayor a 0,
+ * o null cuando no hay nada que reportar.
+ *
+ * El objeto devuelto incluye los valores numéricos en crudo para que la
+ * vista los formatee con la función de moneda correspondiente.
+ *
+ * @param {{ cantidadCuentasGMF: number, gastosGravados: number, costoGMF: number }} gmfData
+ * @returns {{ id: string, nivel: string, icono: string, cantidadCuentasGMF: number,
+ *             gastosGravados: number, costoGMF: number } | null}
+ */
+export function detectarNudgeGMF(gmfData) {
+  const {
+    cantidadCuentasGMF = 0,
+    gastosGravados     = 0,
+    costoGMF           = 0,
+  } = gmfData ?? {};
+
+  if (costoGMF <= 0) return null;
+
+  return {
+    id:                'gmf-costo',
+    nivel:             'nudge-info',
+    icono:             '💸',
+    cantidadCuentasGMF,
+    gastosGravados,
+    costoGMF,
+  };
 }

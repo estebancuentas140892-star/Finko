@@ -22,6 +22,7 @@
   --fk-bg-hover:       rgba(255, 255, 255, 0.04);
   --fk-bg-active:      rgba(255, 255, 255, 0.08);
   --fk-bg-glass:       rgba(22, 25, 34, 0.7);
+  --fk-bg-overlay:     rgba(0, 0, 0, 0.65);   /* fondo oscuro del modal overlay */
 
   /* ── TEXTO ───────────────────────────────────────────────────── */
   --fk-text-primary:   #e9ebf3;

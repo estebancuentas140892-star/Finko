@@ -214,7 +214,7 @@ document.addEventListener('click', e => {
 | `base` | Tipografía base, box-sizing, focus visible global |
 | `tokens` | Variables CSS (paleta, espaciado, radii, sombras) |
 | `layout` | Shell de app, sidebar, main content, Bento Grid |
-| `components` | `.btn`, `.card`, `.input`, `.chip`, `.modal`, `.list-item` |
+| `components` | `.btn`, `.card`, `.input`, `.chip`, `.modal`, `.list-item` (barrel: `styles/components.css` → 8 sub-módulos en `styles/components/`) |
 | `modals` | Overlay, animaciones de apertura/cierre |
 | `themes` | Modo oscuro (default) y claro (`body.light-theme`) |
 | `a11y` | `prefers-reduced-motion`, alto contraste |
@@ -227,7 +227,7 @@ Iconografía **híbrida**: SVG para la UI chrome (navegación), emojis para lo e
 
 - **Sprite inline:** un `<svg>` oculto al inicio de `<body>` en `index.html` define cada ícono como `<symbol id="i-*" viewBox="0 0 24 24">` (geometría estilo Lucide, licencia MIT). Se define una sola vez.
 - **Uso:** `<svg class="icon"><use href="#i-home"/></svg>`. Funciona desde HTML estático y desde HTML generado en JS. Sin build step.
-- **Presentación:** la clase `.icon` (en `components.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2`. Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; menú "Más" tintado por dominio con `--fk-dom-*`).
+- **Presentación:** la clase `.icon` (en `styles/components/forms.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2`. Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; menú "Más" tintado por dominio con `--fk-dom-*`).
 - **Regla:** los íconos nuevos de UI chrome se agregan como `<symbol>` al sprite; nunca se hardcodea `<path>` suelto ni se reintroduce emoji en navegación.
 
 ---
