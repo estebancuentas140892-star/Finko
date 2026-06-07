@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-06 (feat(inversion): J.2c - nudges educativos de inversión; cierra la Parte 4 (Crecer))
+> Última actualización: 2026-06-06 (test(e2e): smoke de Ahorro e Inversión, 9 tests; cierra la cobertura E2E de la Parte 4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1078/1078 verdes (+14 nudges J.2c, +15 proyección J.2b, +43 inversiones J.2a) |
-| Tests E2E | 33/33 verdes (smoke + navegacion-render, realineados con el form de cuenta rediseñado en v8.9) |
+| Tests E2E | Suite nueva `ahorro-inversion` 9/9 verde (J.1 + J.2). 26 pre-existentes en rojo (19 `smoke` + 7 `estrategia-pago`) por rediseños previos (dashboard I.1 oculta `#saldo-total` sin cuentas; card de estrategia rediseñada): deuda anotada, pendiente realinear. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### test(e2e): smoke de Ahorro e Inversión (cobertura E2E de la Parte 4) · 2026-06-06
+
+Nueva suite `tests/e2e/ahorro-inversion.test.js` (9 tests) que cubre los 2 dominios de la Parte 4, que tenían cobertura unit + verificación manual pero ningún smoke E2E propio. Solo se agregó el archivo de test: cero cambios en código de app.
+
+**Ahorro (4 tests):** empty state al navegar desde el dashboard, activar el fondo (modal → form → hero con el monto base), registrar un aporte (aparece en el historial y el hero suma base + aporte) y persistencia tras `reload`.
+
+**Inversión (5 tests):** empty state, alta (lista + hero con total invertido), proyección al vencimiento de un CDT en el item (retención 7%: $10.000.000 al 10% EA por 12m → $10.930.000), eliminar (vuelve al empty state al ser la única) y persistencia tras `reload`.
+
+**Detalle técnico clave:** el helper de seed `estadoBaseV8` siembra `fk_v1` solo si aún no existe, porque `addInitScript` corre en CADA carga (incluido `reload`) y, sin esa guarda, re-escribía el estado vacío y borraba lo que el test acababa de crear. Tras `reload` se espera la sección activa (`#sec-ahorro.active`), no `#saldo-total` (que vive en el dashboard, inactivo con ese hash).
+
+**Resultado:** 9/9 verde en aislado y en la corrida completa en paralelo (5 workers).
+
+**Deuda pre-existente detectada (NO de esta tarea):** la corrida completa muestra 26 fallos previos ajenos a este cambio: 19 en `smoke.test.js` (esperan `#saldo-total` visible, pero la guía de primeros pasos I.1 lo oculta cuando no hay cuentas) y 7 en `estrategia-pago.test.js` (la card de estrategia se rediseñó con pestañas Avalancha/Bola de nieve). Candidata #1 del roadmap: realinear esas 2 suites.
 
 ### feat(inversion): J.2c - nudges educativos de inversión (cierra Parte 4) · 2026-06-06
 
@@ -459,7 +473,7 @@ Convierte la calculadora de prima en un estimador honesto (opción A aprobada). 
 **Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). La app sigue estable en producción.
 
 **Opciones para la próxima sesión:**
-- **Tests E2E para Ahorro e Inversión:** la Parte 4 sumó 2 dominios con cobertura unit + verificación manual, pero sin smoke E2E propio (navegación + empty state + alta). Buen siguiente paso para blindar regresiones. _(Sonnet 4.6 - Medio.)_
+- **Realinear las suites E2E rotas (deuda pre-existente):** `smoke.test.js` (19 fallos) espera `#saldo-total` visible, pero la guía I.1 lo oculta cuando no hay cuentas, así que su `beforeEach` debe sembrar una cuenta o esperar `#sec-dash.active`; `estrategia-pago.test.js` (7 fallos) apunta a la card vieja, hay que actualizar los selectores a las pestañas Avalancha/Bola de nieve. Candidata #1. _(Sonnet 4.6 - Medio.)_
 - **Lighthouse + Lighthouse PWA** sobre las secciones nuevas, por si el peso de JS subió.
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
 - **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).

@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(e2e): smoke de Ahorro e Inversión (cobertura E2E de la Parte 4) · 2026-06-06
+
+Nueva suite `tests/e2e/ahorro-inversion.test.js` (9 tests) que cubre los 2 dominios de la Parte 4, antes con cobertura unit + verificación manual pero sin smoke E2E. Solo se agregó el archivo de test: cero cambios en código de app.
+
+- **Ahorro (4 tests):** empty state desde el dashboard, activar fondo (modal → form → hero con monto base), registrar aporte (historial + hero suma base + aporte), persistencia tras `reload`.
+- **Inversión (5 tests):** empty state, alta (lista + hero con total), proyección al vencimiento de un CDT en el item (retención 7%: $10.000.000 al 10% EA 12m → $10.930.000), eliminar (vuelve al empty state), persistencia tras `reload`.
+- **Detalle técnico:** el seed `estadoBaseV8` escribe `fk_v1` solo si no existe, porque `addInitScript` corre en cada carga (incluido `reload`) y, sin la guarda, re-escribía el estado vacío y borraba lo creado por el test. Tras `reload` se espera la sección activa, no `#saldo-total` (vive en el dashboard inactivo).
+
+9/9 verde en aislado y en la corrida completa en paralelo (5 workers). **Deuda pre-existente detectada (NO de esta tarea):** la corrida completa muestra 26 fallos previos: 19 en `smoke.test.js` (esperan `#saldo-total` visible, oculto por la guía I.1 sin cuentas) y 7 en `estrategia-pago.test.js` (card de estrategia rediseñada con pestañas). Anotados como deuda; candidata #1 del roadmap.
+
+---
+
 ### feat(inversion): J.2c - nudges educativos de inversión (cierra Parte 4) · 2026-06-06
 
 Tercer y último slice de J.2. **Cierra la Parte 4 (Crecer: Ahorro + Inversión).** Nudges educativos sobre el portafolio. Sin cambio de schema.
