@@ -7,6 +7,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(K.4): datos de renta manuales (3 criterios medibles) · 2026-06-07
+
+Registro manual opcional en Configuración para los 3 criterios de renta que el monitor de K.3 no puede derivar de los datos de Finko: ingresos brutos, consumos con tarjeta de crédito y consignaciones. Al registrarlos, el monitor de Análisis los incluye (valor + barra + estado) y deja de mostrar "Sin datos en Finko". Schema v9 → v10. SW v113 → v114. 1129/1129 tests verdes (16 nuevos).
+
+**Decisiones de diseño:** (1) los 3 criterios se hacen registrables, no solo los 2 del título original: dejar ingresos brutos como único "Sin datos" sería inconsistente y ese es el disparador de renta más común. (2) Los valores se kean por año (`config.datosFiscales[anio]`): nunca quedan obsoletos al cambiar de año y el monitor siempre refleja el año correcto. (3) Campo vacío = no provisto = sigue "Sin datos"; un 0 escrito = cero medido real (se distingue por presencia de la clave).
+
+- **`modules/core/state.js`:** typedef `DatosFiscalesAnio` + `Config.datosFiscales` (Record keado por año). `createInitialState()` incluye `config.datosFiscales: {}`. `_version` 9 → 10.
+- **`modules/core/storage.js`:** `SCHEMA_VERSION` 9 → 10. Migración v9 → v10: añade `config.datosFiscales = {}` si falta; normaliza valores corruptos (array) a objeto; preserva config previo.
+- **`modules/dominio/analisis/logic.js`:** `calcularEstadoRenta` lee `s.config.datosFiscales[anio]`. Helpers `provisto`/`valorManual`/`tipManual`: un criterio pasa a medible solo si su clave está presente y es número finito >= 0. Tips actualizados para apuntar a Configuración cuando faltan, o indicar "registraste manualmente" cuando hay valor.
+- **`modules/dominio/config/view.js`:** `_renderDatosRenta()` nueva: sección "🧮 Datos de renta (año)" con 3 inputs numéricos opcionales prellenados con los valores del año. Import de `hoy`. Insertada tras "Perfil fiscal".
+- **`modules/dominio/config/index.js`:** handler `submit` de `#form-datos-fiscales`: guarda solo los campos no vacíos en `S.config.datosFiscales[anio]`; si todos quedan vacíos, elimina la entrada del año. Import de `hoy`.
+- **`service-worker.js`:** v113 → v114.
+- **`tests/unit/storage.test.js`:** 5 tests de migración v9 → v10 (agrega vacío, preserva perfilFiscal/notificaciones, crea config si falta, idempotente en v10, normaliza array corrupto).
+- **`tests/unit/analisis.test.js`:** 11 tests de datos manuales (cada criterio se vuelve medible, sin datos sigue sin-datos, 0 explícito medido, 85% cerca, supera + nudge high, otro año no afecta, negativo ignorado, tip cambia, derivados intactos).
+- **`tests/unit/state.test.js`:** test de `_version` actualizado de 9 a 10.
+
+---
+
 ### feat(K.3): monitor de topes de renta en Análisis · 2026-06-07
 
 Card "Estado de tu renta" en el panel de Análisis: los 5 criterios de obligación de declarar renta de persona natural, con su tope calculado en vivo (`N × UVT`) y el valor actual cuando Finko puede medirlo. Nudges preventivos al 80% (cerca) y al 100% (supera). Sin schema changes. SW v112 → v113. 1113/1113 tests verdes (25 nuevos).

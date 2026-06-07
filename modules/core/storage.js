@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -158,6 +158,18 @@ function _migrate(raw) {
         obligadoContabilidad: false,
         declaranteObligado:   false,
       };
+    }
+  }
+
+  // v9 → v10: datos fiscales manuales del monitor de renta, keados por año (K.4).
+  // El usuario existente arranca sin valores (objeto vacío); el resto no cambia.
+  if ((typeof data._version === 'number' ? data._version : 1) < 10) {
+    if (typeof data.config !== 'object' || data.config === null) {
+      data.config = {};
+    }
+    if (typeof data.config.datosFiscales !== 'object' || data.config.datosFiscales === null
+        || Array.isArray(data.config.datosFiscales)) {
+      data.config.datosFiscales = {};
     }
   }
 

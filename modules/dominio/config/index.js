@@ -12,6 +12,7 @@ import { save, STORAGE_KEY } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
+import { hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
@@ -165,6 +166,34 @@ function _inyectarPanel() {
     save();
     renderPanelConfig();
     announce('Perfil fiscal guardado.');
+  });
+
+  // Guardar datos de renta manuales del año (K.4).
+  panel.querySelector('#form-datos-fiscales')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const anio  = Number(hoy().slice(0, 4));
+    const datos = Object.fromEntries(new FormData(e.target));
+    if (!S.config) S.config = {};
+    if (typeof S.config.datosFiscales !== 'object' || S.config.datosFiscales === null
+        || Array.isArray(S.config.datosFiscales)) {
+      S.config.datosFiscales = {};
+    }
+    // Solo guardamos los campos efectivamente registrados (vacío = no provisto).
+    const entrada = {};
+    for (const campo of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
+      const raw = String(datos[campo] ?? '').trim();
+      if (raw === '') continue;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 0) entrada[campo] = n;
+    }
+    if (Object.keys(entrada).length > 0) {
+      S.config.datosFiscales[anio] = entrada;
+    } else {
+      delete S.config.datosFiscales[anio];
+    }
+    save();
+    renderPanelConfig();
+    announce('Datos de renta guardados.');
   });
 
   // Importar: el input file no dispara data-action click - usamos change.

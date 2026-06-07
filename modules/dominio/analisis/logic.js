@@ -647,10 +647,17 @@ export function totalGastosAnio(gastos, anio) {
  *   - `'cerca'`:  80 % ≤ porcentaje < 100 %.
  *   - `'supera'`: porcentaje ≥ 100 %.
  *
+ * Tres criterios no se pueden derivar de los datos de Finko (ingresos brutos,
+ * consumos con tarjeta de crédito, consignaciones). Para ellos se leen los
+ * valores que el usuario haya registrado manualmente en
+ * `config.datosFiscales[anio]` (K.4). Si no hay valor registrado, el criterio
+ * queda en `sin-datos`; si lo hay (incluido un 0 explícito), pasa a medible.
+ *
  * @param {{
  *   cuentas:     import('../../core/state.js').Cuenta[],
  *   inversiones: import('../../core/state.js').Inversion[],
  *   gastos:      import('../../core/state.js').Gasto[],
+ *   config?:     { datosFiscales?: Record<string, { ingresosBrutos?: number, consumosTC?: number, consignaciones?: number }> },
  * }} state - usualmente `S` completo, o un subset para tests.
  * @param {number} anio
  * @returns {{
@@ -677,6 +684,17 @@ export function calcularEstadoRenta(state, anio) {
 
   const valorPB = patrimonioBruto(s.cuentas, s.inversiones);
   const valorCG = totalGastosAnio(s.gastos, anio);
+
+  // Valores manuales del año (K.4). Solo cuentan los campos efectivamente
+  // registrados como número finito; un 0 explícito es "medido en cero".
+  const df = (s.config && typeof s.config.datosFiscales === 'object' && s.config.datosFiscales !== null)
+    ? s.config.datosFiscales[anio] : null;
+  const man = (df && typeof df === 'object') ? df : {};
+  const provisto = (k) =>
+    Object.prototype.hasOwnProperty.call(man, k) && Number.isFinite(Number(man[k])) && Number(man[k]) >= 0;
+  const valorManual = (k) => (provisto(k) ? Number(man[k]) : 0);
+  const tipManual = (k, base) =>
+    provisto(k) ? 'Valor que registraste manualmente en Configuración.' : base;
 
   const construir = (id, etiqueta, topeUVT, valor, medible, tip) => {
     const tope = topeUVT * uvt;
@@ -705,16 +723,19 @@ export function calcularEstadoRenta(state, anio) {
     uvt,
     umbralAlerta: UMBRAL_ALERTA_RENTA,
     criterios: [
-      construir('ingresosBrutos',  'Ingresos brutos',                t.ingresosBrutos,  0, false,
-        'Finko no rastrea ingresos. Compara con tu certificado de ingresos del año.'),
+      construir('ingresosBrutos',  'Ingresos brutos',                t.ingresosBrutos,
+        valorManual('ingresosBrutos'), provisto('ingresosBrutos'),
+        tipManual('ingresosBrutos', 'Finko no rastrea ingresos. Regístralos en Configuración para incluirlos.')),
       construir('patrimonioBruto', 'Patrimonio bruto a 31 dic',      t.patrimonioBruto, valorPB, true,
         'Saldos de cuentas activas más monto invertido.'),
       construir('consumosTotales', 'Compras y consumos totales',     t.consumosTotales, valorCG, true,
         'Suma de tus gastos registrados durante el año.'),
-      construir('consumosTC',      'Consumos con tarjeta de crédito', t.consumosTC,     0, false,
-        'Finko no distingue tarjeta de crédito. Revisa los extractos de tus tarjetas.'),
-      construir('consignaciones',  'Consignaciones y depósitos',     t.consignaciones,  0, false,
-        'Finko no separa consignaciones de otros ingresos. Revisa los extractos bancarios.'),
+      construir('consumosTC',      'Consumos con tarjeta de crédito', t.consumosTC,
+        valorManual('consumosTC'), provisto('consumosTC'),
+        tipManual('consumosTC', 'Finko no distingue tarjeta de crédito. Regístralos en Configuración para incluirlos.')),
+      construir('consignaciones',  'Consignaciones y depósitos',     t.consignaciones,
+        valorManual('consignaciones'), provisto('consignaciones'),
+        tipManual('consignaciones', 'Finko no separa consignaciones de otros ingresos. Regístralas en Configuración para incluirlas.')),
     ],
   };
 }

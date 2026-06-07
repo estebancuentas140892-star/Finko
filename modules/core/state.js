@@ -131,11 +131,22 @@ import { SMMLV } from './constants.js';
  */
 
 /**
+ * @typedef {Object} DatosFiscalesAnio
+ * @property {number} [ingresosBrutos]  COP. Ingresos brutos del año (Finko no los rastrea).
+ * @property {number} [consumosTC]      COP. Consumos con tarjeta de crédito del año.
+ * @property {number} [consignaciones]  COP. Consignaciones y depósitos del año.
+ */
+
+/**
  * @typedef {Object} Config
  * @property {boolean}     notificaciones - true si el usuario habilitó recordatorios push.
  *                                          Require también que Notification.permission === 'granted'.
  * @property {PerfilFiscal} [perfilFiscal] - Flags fiscales opcionales del usuario (K.2).
  *                                           Se añaden en v9. Ausentes = todos false.
+ * @property {Record<string, DatosFiscalesAnio>} [datosFiscales] - Valores manuales
+ *                                           del monitor de renta, keados por año (K.4).
+ *                                           Se añaden en v10. Solo contienen los campos
+ *                                           que el usuario registró explícitamente.
  */
 
 /**
@@ -178,7 +189,7 @@ import { SMMLV } from './constants.js';
  */
 
 /**
- * Factory del estado inicial (schema v9). storage.js lo reutiliza para resetear S
+ * Factory del estado inicial (schema v10). storage.js lo reutiliza para resetear S
  * cuando localStorage está vacío o corrupto, sin duplicar la forma del schema.
  *
  * Cada llamada devuelve un objeto nuevo, así nunca se filtran referencias entre
@@ -204,7 +215,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 9,
+    _version: 10,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -223,6 +234,7 @@ export function createInitialState() {
         obligadoContabilidad: false,
         declaranteObligado:   false,
       },
+      datosFiscales: {},
     },
 
     /** Cuentas / tesorería. */

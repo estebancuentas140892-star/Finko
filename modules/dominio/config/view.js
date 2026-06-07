@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc } from '../../infra/utils.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { legalVigente, SMMLV, APP_VERSION } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
@@ -20,6 +20,7 @@ export function renderPanelConfig() {
   el.innerHTML = `
     ${_renderPerfil()}
     ${_renderPerfilFiscal()}
+    ${_renderDatosRenta()}
     ${_renderTema()}
     ${_renderInstalarApp()}
     ${_renderNotificaciones()}
@@ -211,6 +212,46 @@ function _renderPerfilFiscal() {
           </label>
         </div>
         <button type="submit" class="btn btn-primary">Guardar perfil fiscal</button>
+      </form>
+    </section>`;
+}
+
+function _renderDatosRenta() {
+  const anio = Number(hoy().slice(0, 4));
+  const df   = (typeof S.config?.datosFiscales === 'object' && S.config.datosFiscales !== null)
+    ? (S.config.datosFiscales[anio] ?? {}) : {};
+  const val = (k) =>
+    (df[k] !== undefined && df[k] !== null && Number.isFinite(Number(df[k]))) ? df[k] : '';
+
+  return `
+    <section class="config-section" aria-labelledby="config-datosrenta-title">
+      <h2 class="config-section__title" id="config-datosrenta-title">🧮 Datos de renta (${anio})</h2>
+      <p class="config-section__desc">
+        Opcional. Finko no puede calcular estos tres valores por su cuenta. Si los
+        registras, el monitor de renta en Análisis los incluye y deja de mostrar
+        "Sin datos". Déjalos en blanco si no aplican.
+      </p>
+      <form id="form-datos-fiscales" class="config-form" novalidate>
+        <div class="form-group">
+          <label for="df-ingresos" class="label">Ingresos brutos del año (COP)</label>
+          <input id="df-ingresos" name="ingresosBrutos" class="input" type="number"
+                 min="0" step="1000" inputmode="numeric" value="${val('ingresosBrutos')}"
+                 placeholder="Ej: 50000000" />
+        </div>
+        <div class="form-group">
+          <label for="df-tc" class="label">Consumos con tarjeta de crédito del año (COP)</label>
+          <input id="df-tc" name="consumosTC" class="input" type="number"
+                 min="0" step="1000" inputmode="numeric" value="${val('consumosTC')}"
+                 placeholder="Ej: 20000000" />
+        </div>
+        <div class="form-group">
+          <label for="df-consig" class="label">Consignaciones y depósitos del año (COP)</label>
+          <input id="df-consig" name="consignaciones" class="input" type="number"
+                 min="0" step="1000" inputmode="numeric" value="${val('consignaciones')}"
+                 placeholder="Ej: 60000000" />
+          <p class="form-hint">Estos valores alimentan el monitor de renta de Análisis.</p>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar datos de renta</button>
       </form>
     </section>`;
 }

@@ -144,7 +144,9 @@
       "Bash(grep -n \"^/\\\\* ════\\\\|^/\\\\* ────\\\\|^   [A-Z]\" styles/components.css)",
       "Bash(echo \"Servidor levantado en background, PID: $!\")",
       "Read(//tmp/**)",
-      "Bash(curl -s http://localhost:8080/modules/dominio/analisis/view.js)"
+      "Bash(curl -s http://localhost:8080/modules/dominio/analisis/view.js)",
+      "Bash(pkill -f \"python -m http.server 8080\")",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

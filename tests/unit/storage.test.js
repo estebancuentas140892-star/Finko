@@ -295,6 +295,86 @@ describe('Migración v8 → v9 (perfil fiscal)', () => {
   });
 });
 
+describe('Migración v9 → v10 (datos fiscales)', () => {
+  it('agrega config.datosFiscales como objeto vacío cuando es v9', () => {
+    const v9 = {
+      ...createInitialState(),
+      _version: 9,
+      config: {
+        notificaciones: false,
+        perfilFiscal: { ivaResponsable: false, obligadoContabilidad: false, declaranteObligado: false },
+      },
+    };
+    delete v9.config.datosFiscales;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v9));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.config.datosFiscales).toEqual({});
+  });
+
+  it('preserva perfilFiscal y notificaciones al migrar de v9', () => {
+    const v9 = {
+      ...createInitialState(),
+      _version: 9,
+      config: {
+        notificaciones: true,
+        perfilFiscal: { ivaResponsable: true, obligadoContabilidad: false, declaranteObligado: true },
+      },
+    };
+    delete v9.config.datosFiscales;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v9));
+
+    loadData();
+
+    expect(S.config.notificaciones).toBe(true);
+    expect(S.config.perfilFiscal.ivaResponsable).toBe(true);
+    expect(S.config.perfilFiscal.declaranteObligado).toBe(true);
+    expect(S.config.datosFiscales).toEqual({});
+  });
+
+  it('si config falta en v9, lo crea con datosFiscales vacío', () => {
+    const v9 = { ...createInitialState(), _version: 9 };
+    delete v9.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v9));
+
+    loadData();
+
+    expect(S.config.datosFiscales).toEqual({});
+  });
+
+  it('v10 con datosFiscales existente no se sobreescribe (idempotente)', () => {
+    const v10 = {
+      ...createInitialState(),
+      _version: 10,
+      config: {
+        notificaciones: false,
+        perfilFiscal: { ivaResponsable: false, obligadoContabilidad: false, declaranteObligado: false },
+        datosFiscales: { 2026: { ingresosBrutos: 50_000_000, consumosTC: 10_000_000 } },
+      },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v10));
+
+    loadData();
+
+    expect(S.config.datosFiscales['2026']).toEqual({ ingresosBrutos: 50_000_000, consumosTC: 10_000_000 });
+  });
+
+  it('normaliza datosFiscales corrupto (array) a objeto vacío', () => {
+    const v9 = {
+      ...createInitialState(),
+      _version: 9,
+      config: { notificaciones: false, datosFiscales: [1, 2, 3] },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v9));
+
+    loadData();
+
+    expect(S.config.datosFiscales).toEqual({});
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

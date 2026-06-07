@@ -1257,3 +1257,98 @@ describe('detectarNudgesRenta()', () => {
     expect(typeof n.mensaje).toBe('string');
   });
 });
+
+// ── K.4 - DATOS FISCALES MANUALES EN EL MONITOR DE RENTA ─────────
+
+describe('calcularEstadoRenta() con datos fiscales manuales', () => {
+  const conDatos = (datosAnio, anio = 2026) => calcularEstadoRenta({
+    cuentas: [], inversiones: [], gastos: [],
+    config: { datosFiscales: { [anio]: datosAnio } },
+  }, anio);
+
+  const crit = (r, id) => r.criterios.find(c => c.id === id);
+
+  it('ingresosBrutos manual pasa de sin-datos a medible con su valor', () => {
+    const r = conDatos({ ingresosBrutos: 30_000_000 });
+    const c = crit(r, 'ingresosBrutos');
+    expect(c.medible).toBe(true);
+    expect(c.estado).not.toBe('sin-datos');
+    expect(c.valor).toBe(30_000_000);
+  });
+
+  it('consumosTC manual se vuelve medible', () => {
+    const r = conDatos({ consumosTC: 15_000_000 });
+    const c = crit(r, 'consumosTC');
+    expect(c.medible).toBe(true);
+    expect(c.valor).toBe(15_000_000);
+  });
+
+  it('consignaciones manual se vuelve medible', () => {
+    const r = conDatos({ consignaciones: 40_000_000 });
+    const c = crit(r, 'consignaciones');
+    expect(c.medible).toBe(true);
+    expect(c.valor).toBe(40_000_000);
+  });
+
+  it('sin datosFiscales, los 3 criterios siguen en sin-datos', () => {
+    const r = calcularEstadoRenta({ cuentas: [], inversiones: [], gastos: [], config: { datosFiscales: {} } }, 2026);
+    for (const id of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
+      expect(crit(r, id).estado).toBe('sin-datos');
+      expect(crit(r, id).medible).toBe(false);
+    }
+  });
+
+  it('un 0 explícito cuenta como medido (no sin-datos)', () => {
+    const r = conDatos({ ingresosBrutos: 0 });
+    const c = crit(r, 'ingresosBrutos');
+    expect(c.medible).toBe(true);
+    expect(c.estado).toBe('ok');
+    expect(c.valor).toBe(0);
+  });
+
+  it('valor manual al 85% del tope queda en "cerca"', () => {
+    const tope = TOPES_RENTA_UVT.ingresosBrutos * UVT;
+    const r = conDatos({ ingresosBrutos: Math.round(tope * 0.85) });
+    const c = crit(r, 'ingresosBrutos');
+    expect(c.estado).toBe('cerca');
+    expect(c.porcentaje).toBeGreaterThanOrEqual(80);
+    expect(c.porcentaje).toBeLessThan(100);
+  });
+
+  it('valor manual sobre el tope queda en "supera" y dispara nudge high', () => {
+    const tope = TOPES_RENTA_UVT.consumosTC * UVT;
+    const r = conDatos({ consumosTC: Math.round(tope * 1.20) });
+    const c = crit(r, 'consumosTC');
+    expect(c.estado).toBe('supera');
+    const nudges = detectarNudgesRenta(r);
+    expect(nudges.some(n => n.criterio === 'consumosTC' && n.nivel === 'nudge-high')).toBe(true);
+  });
+
+  it('los datos de otro año no afectan al año consultado', () => {
+    const r = calcularEstadoRenta({
+      cuentas: [], inversiones: [], gastos: [],
+      config: { datosFiscales: { 2025: { ingresosBrutos: 99_000_000 } } },
+    }, 2026);
+    expect(crit(r, 'ingresosBrutos').estado).toBe('sin-datos');
+  });
+
+  it('valor manual negativo se ignora (sigue sin-datos)', () => {
+    const r = conDatos({ ingresosBrutos: -100 });
+    expect(crit(r, 'ingresosBrutos').estado).toBe('sin-datos');
+  });
+
+  it('el tip cambia a "registraste manualmente" cuando hay valor provisto', () => {
+    const r = conDatos({ ingresosBrutos: 10_000_000 });
+    expect(crit(r, 'ingresosBrutos').tip).toMatch(/manualmente/i);
+  });
+
+  it('patrimonio y consumos derivados no se ven afectados por datosFiscales', () => {
+    const r = calcularEstadoRenta({
+      cuentas: [{ id: 'c', saldo: 5_000_000, activa: true, nombre: 'X', banco: 'Y', tipo: 'Ahorros', fechaCreacion: '2026-01-01T00:00:00Z' }],
+      inversiones: [], gastos: [{ id: 'g', descripcion: 'X', monto: 1_000_000, categoria: 'Otros', fecha: '2026-03-01' }],
+      config: { datosFiscales: { 2026: { ingresosBrutos: 999_000_000 } } },
+    }, 2026);
+    expect(crit(r, 'patrimonioBruto').valor).toBe(5_000_000);
+    expect(crit(r, 'consumosTotales').valor).toBe(1_000_000);
+  });
+});

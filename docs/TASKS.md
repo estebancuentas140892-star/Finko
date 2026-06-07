@@ -35,10 +35,9 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-Sección K cerrada completa (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta). Sin fase activa. Próximas opciones:
+Sección K cerrada completa (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta, K.4 datos de renta manuales). Sin fase activa. Próximas opciones:
 
 - **A.5** - Agregar dominio custom (cuando el usuario tenga dominio registrado).
 - **E.2-2027** - Actualizar SMMLV y UVT a valores 2027 (diciembre 2026 / enero 2027).
-- **K.4** (opcional, si surge demanda) - Registro manual de consumos con tarjeta de crédito y consignaciones, para hacer medibles los 3 criterios de renta que hoy quedan como "Sin datos en Finko".
 
-**Modelo sugerido:** Haiku 4.5 para E.2. Sonnet 4.6 - Bajo para A.5. Sonnet 4.6 - Medio para K.4.
+**Modelo sugerido:** Haiku 4.5 para E.2. Sonnet 4.6 - Bajo para A.5.

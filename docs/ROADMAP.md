@@ -10,8 +10,8 @@
 
 **Versión liberada:** `v1.0.0` - todas las 14 fases originales completadas.
 **Post-v1.0:** secciones A-G completadas (39 tareas opcionales + features portadas), **fase H (Rediseño de Tesorería) cerrada en v8.9**, deuda técnica cerrada en 2026-06-01, onboarding UX cerrado en 2026-06-03, **modernización UI/UX (Parte 3: paleta, tipografía, navegación, cards, iconografía SVG) cerrada en 2026-06-06**.
-**Estado:** proyecto estable en producción. 1113/1113 unit + integración verdes, Lighthouse 99-100.
-**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). **Serie R (calidad de código) cerrada** (R1-R5). **Sección K (Asistencias Inteligentes) cerrada** (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta).
+**Estado:** proyecto estable en producción. 1129/1129 unit + integración verdes, Lighthouse 99-100.
+**Fase activa:** ninguna. **Parte 4 (Crecer: Ahorro + Inversión) cerrada** (J.1a-c + J.2a-c). **Serie R (calidad de código) cerrada** (R1-R5). **Sección K (Asistencias Inteligentes) cerrada** (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta, K.4 datos de renta manuales).
 
 ---
 
@@ -285,7 +285,17 @@ Decisión del gap de tarjetas de crédito (y otros): **Opción A, honestidad exp
 
 ---
 
-_(Sección K cerrada: K.1, K.2 y K.3 completas. Asistencias Inteligentes entregadas: 4x1000, perfil fiscal y monitor de topes de renta.)_
+---
+
+#### K.4 - Datos de renta manuales
+
+✅ **Cerrada** · 2026-06-07. Ver [CHANGELOG](CHANGELOG.md).
+
+Registro manual opcional en Configuración (sección "Datos de renta") para los 3 criterios que el monitor no deriva: ingresos brutos, consumos con tarjeta de crédito y consignaciones. Valores keados por año en `config.datosFiscales[anio]` (schema v9 → v10). Al registrarlos, el monitor de K.3 los mide y deja de mostrar "Sin datos en Finko". Cierra el gap de datos que K.3 dejó documentado como honestidad explícita.
+
+---
+
+_(Sección K cerrada: K.1, K.2, K.3 y K.4 completas. Asistencias Inteligentes entregadas: 4x1000, perfil fiscal, monitor de topes de renta y registro manual de los criterios no derivables.)_
 
 ---
 
@@ -302,5 +312,5 @@ _(Sección K cerrada: K.1, K.2 y K.3 completas. Asistencias Inteligentes entrega
 | Lighthouse Best Practices | ≥ 90 | 100 ✅ |
 | Lighthouse SEO | ≥ 80 | 100 ✅ |
 | Cobertura lógica (líneas) | ≥ 90% | 99.6% ✅ |
-| Tests unitarios | - | 1113/1113 ✅ |
+| Tests unitarios | - | 1129/1129 ✅ |
 | Tests E2E | - | 57/57 ✅ (`smoke` 28 + `estrategia-pago` 8 + `ahorro-inversion` 9 + `navegacion-render` 12) |

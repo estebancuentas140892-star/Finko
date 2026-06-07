@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-07 (feat(K.3): monitor de topes de renta en Análisis; calcularEstadoRenta + detectarNudgesRenta; 1113/1113 verde)
+> Última actualización: 2026-06-07 (feat(K.4): datos de renta manuales; config.datosFiscales por año; schema v9 → v10; 1129/1129 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1113/1113 verdes (25 nuevos en K.3: monitor de topes de renta) |
+| Tests unitarios + integración | 1129/1129 verdes (16 nuevos en K.4: datos de renta manuales) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(K.4): datos de renta manuales (3 criterios medibles) · 2026-06-07
+
+Registro manual opcional en Configuración para los 3 criterios de renta que el monitor de K.3 no puede derivar (ingresos brutos, consumos con tarjeta de crédito, consignaciones). Al registrarlos, el monitor de Análisis los mide y deja de mostrar "Sin datos". Valores keados por año (`config.datosFiscales[anio]`): no quedan obsoletos al cambiar de año. Campo vacío = no provisto; un 0 escrito = cero medido. Schema v9 → v10. 1129/1129 tests verdes (16 nuevos).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/state.js` | Typedef `DatosFiscalesAnio` + `Config.datosFiscales` (Record por año) + default `{}`. `_version` 9 → 10. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 9 → 10. Migración v9 → v10: añade `config.datosFiscales = {}`, normaliza array corrupto, preserva config previo. |
+| `modules/dominio/analisis/logic.js` | `calcularEstadoRenta` lee `config.datosFiscales[anio]`; helpers `provisto`/`valorManual`/`tipManual`; los 3 criterios pasan a medible si hay valor registrado. |
+| `modules/dominio/config/view.js` | `_renderDatosRenta()` nueva: sección con 3 inputs numéricos del año. Import de `hoy`. Insertada tras Perfil fiscal. |
+| `modules/dominio/config/index.js` | Handler `submit` de `#form-datos-fiscales`: guarda campos no vacíos en `datosFiscales[anio]`, borra la entrada si todos vacíos. Import de `hoy`. |
+| `service-worker.js` | v113 → v114. |
+| `tests/unit/storage.test.js` | 5 tests de migración v9 → v10. |
+| `tests/unit/analisis.test.js` | 11 tests de datos manuales. |
+| `tests/unit/state.test.js` | Test de `_version` actualizado de 9 a 10. |
+
+---
 
 ### feat(K.3): monitor de topes de renta en Análisis · 2026-06-07
 
@@ -102,32 +120,15 @@ Decisión de producto: dejar de rastrear la tasa de usura (certificación trimes
 
 ---
 
-### refactor(js): R5 - partir compromisos/view.js en 6 sub-modulos · 2026-06-07
-
-`modules/dominio/compromisos/view.js` (1075 líneas) partido en 6 archivos bajo `views/`, todos menores a 300 líneas. `view.js` convertido en barrel de re-exports (23 líneas) preservando la API pública (12 funciones). Cero cambios en `index.js`. SW v108 → v109. Cero cambios funcionales. 1078/1078 tests verdes.
-
-| Sub-módulo | Líneas | Responsabilidad |
-|---|---|---|
-| `views/alertas.js` | 116 | Nudges del dashboard (fijos sin pagar, deudas durmiendo) |
-| `views/lista.js` | 176 | Lista de deudas con orden estratégico + empty state |
-| `views/formularios.js` | 229 | Chooser de tipo + form entidad/personal + form de abono |
-| `views/estrategia.js` | 281 | Card de estrategia: UI singleton + cards seleccionables + acordeón |
-| `views/estrategia-impacto.js` | 183 | Renderers de "Tu impacto" (Avalancha + Bola de nieve + comparativa) |
-| `views/dashboard.js` | 162 | Paneles del dashboard (vencidos + próximas prioridades) |
-
-El estado UI local (`_uiEstrategia`) vive en `estrategia.js` y se expone via `setEstrategiaUI` / `getEstrategiaUI`; `lista.js` lo lee para aplicar el orden de pago a la lista de deudas.
-
----
-
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** ninguna. Sección K (Asistencias Inteligentes) cerrada completa (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta).
+**Fase activa:** ninguna. Sección K (Asistencias Inteligentes) cerrada completa: K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta, K.4 datos de renta manuales.
 
-**Próxima tarea natural:** sin fase activa. Candidatas opcionales abajo (A.5 dominio custom, E.2 SMMLV/UVT 2027 en enero). Posible K.4 si surge demanda: registro manual de consumos con tarjeta de crédito / consignaciones para hacer medibles los 3 criterios de renta que hoy quedan como "Sin datos en Finko".
+**Próxima tarea natural:** sin fase activa. Candidatas opcionales abajo (A.5 dominio custom cuando haya dominio registrado, E.2 SMMLV/UVT 2027 en enero). El monitor de renta ya permite registrar los 3 criterios no derivables; no hay deuda pendiente conocida en la sección K.
 
 **Otras opciones:**
 - **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
@@ -199,7 +200,7 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 1113 tests unitarios + integración
+pnpm test                     # 1129 tests unitarios + integración
 pnpm run test:e2e             # 57 smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080
