@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**Auditoría integral completada** (P1 a P4) + **fix de recarga del onboarding en móvil**. App 100% lint verde, 1123/1123 tests verdes. Último cambio: el service worker ya no recarga la página en caliente (eliminado `skipWaiting` + reload-on-controllerchange); las actualizaciones se aplican en la próxima apertura, sin interrumpir formularios ni el onboarding.
+**App estable, 1132/1132 tests verdes, lint limpio.** Último cambio: **Fase 1 de la mejora de captura de datos** (sección M del ROADMAP): el dashboard muestra una card "Tienes N gastos por organizar" que cuenta los gastos rápidos sin describir y lleva a Gastos. Antes: fix de recarga del onboarding en móvil (SW ya no recarga en caliente) + auditoría integral P1-P4.
 
 ---
 
@@ -35,6 +35,6 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código (la app usa rutas relativas en todos lados). Seguir guía en `docs/SETUP_DOMINIO.md`: comprar dominio vía Vercel, o apuntar nameservers de dominio externo a Vercel, o configurar DNS CNAME manualmente. ~5-15 min según la opción.
+**M.2 (Fase 2)** - Cuenta de origen en el gasto rápido (sección M del ROADMAP). Selector de cuenta en el modal de gasto rápido: autoselección si hay 1 cuenta, picker compacto si hay varias, bloqueo guiado si no hay cuentas, y que el rápido descuente saldo. Toca el flujo estrella + cambia el comportamiento de saldos. Modelo: Sonnet 4.6 - Alto.
 
-**O bien E.2** - SMMLV + UVT 2027 (enero 2027). Búsqueda de valores oficiales (Mintrabajo y DIAN) e inserción en `LEGAL_POR_ANIO` en `constants.js`. Trabajo mecánico, ~15 min. Modelo: Haiku 4.5.
+**O bien A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.

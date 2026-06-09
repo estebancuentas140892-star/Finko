@@ -284,6 +284,12 @@
         <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
              Reemplaza Card Hoy (hoy + próximos en una sola vista). -->
         <div id="panel-prioridades" role="region" aria-label="Próximas prioridades"></div>
+
+        <!-- GASTOS POR ORGANIZAR: recordatorio agregado de los gastos
+             registrados con "Gasto rápido" que aún no tienen descripción ni
+             categoría. gastos/view.js (renderPendientesOrganizar) lo llena;
+             si no hay pendientes queda vacío. -->
+        <div id="panel-gastos-pendientes" role="region" aria-label="Gastos por organizar"></div>
       </section>
 
       <!-- GASTOS -->

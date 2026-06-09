@@ -7,6 +7,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
+
+Bug de navegación reportado por el usuario: en Gastos, al abrir "Nuevo gasto" (o "Registrar gasto") sin cuentas registradas, el botón "Ir a Mis cuentas" solo cerraba el modal pero no llevaba a Tesorería. Causa: `actions.js` → `dispatch()` hace `e.preventDefault()` para toda `data-action`, lo que cancelaba la navegación nativa del enlace `<a href="#tesoreria" data-action="modal-close">`. Solución: acción nueva reutilizable `ir-a-seccion` que cierra el modal abierto y navega al destino (de `data-target` o del hash del `href`), pensada para todos los CTA "ir a Mis cuentas / a otra sección" que vendrán en los próximos flujos. Verificado en el preview: clic → modal cerrado + `sec-tesoreria` activa. SW v122 → v123. 1132/1132 tests verdes.
+
+- **`modules/ui/actions.js`:** nueva acción built-in `ir-a-seccion` (cierra modal + `navigate(destino)`); import de `navigate` desde `router.js`.
+- **`modules/dominio/gastos/view.js`:** el botón del empty state usa `data-action="ir-a-seccion"` en lugar de `modal-close`.
+- **`service-worker.js`:** `CACHE_NAME` v122 → v123.
+
+---
+
+### feat(gastos): card de "gastos por organizar" en el dashboard (Fase 1) · 2026-06-08
+
+Primera de 3 fases de una mejora de UX pedida por el usuario para mantener los datos organizados y pedir la información en el momento adecuado. Los gastos creados con "Gasto rápido" quedan con `pendienteCompletar: true` (solo monto, sin descripción ni categoría). Hasta ahora solo se marcaban con un badge "📝 Pendiente" por ítem en la lista de Gastos. Esta fase agrega un recordatorio agregado y discreto en el dashboard: una tarjeta tipo nudge "Tienes N gastos por organizar" con un botón "Organizar" que lleva a la sección Gastos. Cuenta los pendientes de todos los meses para que ninguno se pierda al navegar, y si no hay pendientes no muestra nada (cero ruido visual). Reutiliza el componente `.nudge nudge-info` existente, sin CSS nuevo. Verificado en la app con el preview: con 5 pendientes la card aparece y el CTA navega a `#gast`; el saldo y la sección activa se renderizan bien. SW v121 → v122. 1132/1132 tests verdes (+9).
+
+Próximas fases acordadas con el usuario: **Fase 2** (cuenta de origen en el gasto rápido: autoselección si hay 1 cuenta, picker compacto si hay varias, bloqueo guiado si no hay cuentas, y que el rápido descuente saldo) y **Fase 3** (revisión transversal de todos los flujos de captura de datos).
+
+- **`modules/dominio/gastos/logic.js`:** `esGastoPendiente(gasto)` y `gastosPendientes(gastos)` nuevas (puras, sin DOM). Misma regla que el badge de la lista (`pendienteCompletar === true || !descripcion.trim()`) para que conteo y marca por ítem coincidan siempre.
+- **`modules/dominio/gastos/view.js`:** `renderPendientesOrganizar()` nueva: escribe en `#panel-gastos-pendientes` un nudge con el conteo; deja el contenedor vacío si no hay pendientes. Import de `gastosPendientes`.
+- **`index.html`:** nuevo `<div id="panel-gastos-pendientes">` en el dashboard, tras `#panel-prioridades`.
+- **`modules/dominio/gastos/index.js`:** import `registrarRender` + `renderPendientesOrganizar`. Registro en `renderAll` (boot + mutaciones globales) y llamada en el handler `state:change` de gastos para refresco reactivo.
+- **`tests/unit/gastos.test.js`:** 9 tests nuevos (`esGastoPendiente` 5, `gastosPendientes` 4).
+- **`service-worker.js`:** `CACHE_NAME` v121 → v122.
+
+---
+
 ### fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil · 2026-06-08
 
 Bug reportado en la web móvil: al ingresar por primera vez y escribir el nombre en el onboarding, a los pocos segundos la página se recargaba sola y se perdía lo escrito; a veces ocurría de nuevo. Causa raíz identificada: el service worker usaba `self.skipWaiting()` (install) + `self.clients.claim()` (activate), y `sw-register.js` escuchaba `controllerchange` para hacer `window.location.reload()`. En la PRIMERA visita no hay SW controlando la página; cuando el SW recién instalado hacía `clients.claim()`, el controlador pasaba de null a SW y `controllerchange` se disparaba, recargando la página justo durante el onboarding. El retraso de "unos segundos" es el tiempo que tarda el SW en cachear todos los `CORE_ASSETS` (más notorio en móvil). Es el footgun clásico de `clients.claim()` + reload-on-controllerchange: se dispara también en la primera instalación, no solo en updates.

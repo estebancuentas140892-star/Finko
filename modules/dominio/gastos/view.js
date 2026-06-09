@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
-import { gastosMes, filtrarGastos } from './logic.js';
+import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -211,6 +211,41 @@ function _renderEmptyFiltro() {
     </div>`;
 }
 
+// ── CARD DE PENDIENTES POR ORGANIZAR (dashboard) ─────────────────
+
+/**
+ * Renderiza en `#panel-gastos-pendientes` un recordatorio agregado de los
+ * gastos registrados con "Gasto rápido" que aún no tienen descripción ni
+ * categoría. Cuenta los pendientes de todos los meses (un gasto sin organizar
+ * no debería perderse al cambiar de mes). Si no hay pendientes, deja el
+ * contenedor vacío para no generar ruido visual. No-op si el contenedor no
+ * existe (sección no montada).
+ */
+export function renderPendientesOrganizar() {
+  const el = document.getElementById('panel-gastos-pendientes');
+  if (!el) return;
+
+  const n = gastosPendientes(S.gastos).length;
+  if (n === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const titulo = n === 1
+    ? 'Tienes 1 gasto por organizar'
+    : `Tienes ${n} gastos por organizar`;
+
+  el.innerHTML = `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">📝</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${_esc(titulo)}</p>
+        <p class="nudge__desc">Los anotaste rápido, sin describirlos. Agrégales descripción y categoría para ver bien en qué se va tu dinero.</p>
+      </div>
+      <a class="nudge__cta btn btn-sm btn-primary" href="#gast">Organizar</a>
+    </div>`;
+}
+
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
@@ -240,7 +275,7 @@ export function renderFormGasto() {
         <p class="form-empty__icon" aria-hidden="true">🏦</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Para registrar un gasto, agrega al menos una cuenta o billetera en Mis cuentas. Así sabes de dónde sale el dinero.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="modal-close">🏦 Ir a Mis cuentas</a>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">🏦 Ir a Mis cuentas</a>
       </div>`;
   }
 

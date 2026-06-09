@@ -12,7 +12,7 @@ import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updSaldo } from '../../infra/render.js';
+import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
@@ -22,7 +22,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   deltasPorEdicionDeGasto,
 } from './logic.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -408,10 +408,17 @@ export function initGastos() {
   // Solo dejamos attachado el listener del form rápido (HTML estático).
   _attacharGastoRapido();
 
+  // La card de pendientes vive en el dashboard, no en #gast, así que se
+  // registra en renderAll (boot + mutaciones globales) en lugar de gatearse
+  // por hash. Es idempotente y barata: escribe en un contenedor siempre
+  // presente, aunque la sección esté oculta.
+  registrarRender(renderPendientesOrganizar);
+
   EventBus.on('state:change', ({ section }) => {
     if (section === 'gastos') {
       renderSmart(renderFiltrosGastos, 'gast');
       renderSmart(renderListaGastos, 'gast');
+      renderPendientesOrganizar();
       updSaldo();
     }
   });

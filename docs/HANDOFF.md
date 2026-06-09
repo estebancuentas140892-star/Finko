@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-08 (fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil; 1123/1123 verde)
+> Última actualización: 2026-06-08 (fix(nav): "Ir a Mis cuentas" ahora navega + card de "gastos por organizar"; 1132/1132 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1126/1126 verdes (+9 tests renderFormAbonoMeta en P2) |
+| Tests unitarios + integración | 1132/1132 verdes (+9 tests de pendientes por organizar) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,33 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
+
+Primera corrección de un paquete de mejoras de navegación + gestión de gastos fijos pedido por el usuario. En Gastos, al abrir el modal de gasto sin cuentas, el botón "Ir a Mis cuentas" solo cerraba el modal sin navegar. Causa: `dispatch()` en `actions.js` hace `e.preventDefault()` para toda `data-action`, cancelando la navegación del `<a href="#tesoreria" data-action="modal-close">`. Fix: acción reutilizable `ir-a-seccion` (cierra modal + navega), que servirá para los CTA "redirigir a Mis cuentas" de los próximos flujos. SW v122 → v123. 1132/1132 verdes. **Pendiente del paquete:** gestión de gastos fijos (Editar/Eliminar/"Marcar pagado este mes") + helper de selección inteligente de cuenta (0→Mis cuentas, 1→automática, varias→selector), a aplicar en todos los flujos que descuentan dinero.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/actions.js` | Nueva acción `ir-a-seccion`: cierra el modal abierto y `navigate(destino)` (de `data-target` o del hash del `href`). Import de `navigate`. |
+| `modules/dominio/gastos/view.js` | El botón "Ir a Mis cuentas" del empty state usa `data-action="ir-a-seccion"`. |
+| `service-worker.js` | v122 → v123. |
+
+---
+
+### feat(gastos): card de "gastos por organizar" en el dashboard (Fase 1) · 2026-06-08
+
+Primera fase de una mejora de UX en 3 fases pedida por el usuario. Los gastos creados con "Gasto rápido" quedan con `pendienteCompletar: true` (sin descripción ni categoría). Antes solo se veían como badges por ítem en la lista de Gastos; ahora el dashboard muestra un recordatorio agregado tipo nudge: "Tienes N gastos por organizar", con botón "Organizar" que lleva a Gastos. Cuenta los pendientes de todos los meses (uno sin organizar no debe perderse al cambiar de mes) y, si no hay, no muestra nada (cero ruido). Reutiliza el componente `.nudge nudge-info` existente: sin CSS nuevo. Verificado en la app con el preview (5 pendientes → card visible, CTA navega a #gast). SW v121 → v122. 1132/1132 tests verdes (+9). **Pendientes: Fase 2** (cuenta de origen en el gasto rápido, con autoselección si hay 1 cuenta y picker si hay varias, + bloqueo guiado sin cuentas) **y Fase 3** (revisión transversal de todos los flujos de captura).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/logic.js` | `esGastoPendiente(gasto)` y `gastosPendientes(gastos)` nuevas (puras): misma regla que el badge "📝 Pendiente" para que conteo y marca coincidan. |
+| `modules/dominio/gastos/view.js` | `renderPendientesOrganizar()` nueva: escribe en `#panel-gastos-pendientes` un nudge con el conteo; vacío si no hay pendientes. Import de `gastosPendientes`. |
+| `index.html` | Nuevo `<div id="panel-gastos-pendientes">` en el dashboard, tras `#panel-prioridades`. |
+| `modules/dominio/gastos/index.js` | Import `registrarRender` + `renderPendientesOrganizar`. Registro en `renderAll` (boot) y llamada en el handler `state:change` de gastos. |
+| `tests/unit/gastos.test.js` | 9 tests nuevos: `esGastoPendiente` (5) y `gastosPendientes` (4). |
+| `service-worker.js` | v121 → v122. |
+
+---
 
 ### fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil · 2026-06-08
 
@@ -74,34 +101,6 @@ Tercera tarea de la auditoría. ESLint mostraba 16 errores: 6 globals faltantes 
 | `modules/dominio/gastos/view.js` | Eliminar `hoy` del import de `utils.js`; eliminar `totalGastosMes` del import de `logic.js`. |
 | `modules/dominio/tesoreria/index.js` | Eliminar `f` del import de `utils.js`. |
 | `modules/infra/sw-register.js` | Cambiar `var _hostname` → `const`, `var _esDesarrollo` → `const`, `var _ya_recargado` → `let`. |
-
----
-
-### feat(P2): abono a metas con modal propio (reemplaza window.prompt) · 2026-06-08
-
-Hallazgo de la auditoría integral. El abono a metas de ahorro usaba `window.prompt()` nativo: diálogo gris del navegador, sin validación visible, con `toLocaleString('es-CO')` sin `$` en el announce. Era la única inconsistencia de UX que quedaba. Ahora: nuevo modal `#modal-abono-meta` en HTML, `renderFormAbonoMeta(meta)` exportada desde `view.js` (genera el form con hint de progreso actual y faltante), `_abrirAbonoMeta` + `_guardarAbonoMeta` en `index.js` (inyectan form, validan con `validarAbono`, actualizan meta, usan `f()` para el announce). SW v119 → v120. 1126/1126 tests verdes (+9 tests de `renderFormAbonoMeta`).
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Nuevo modal `#modal-abono-meta` (entre `#modal-meta` e `#modal-import`). |
-| `modules/dominio/metas/view.js` | `renderFormAbonoMeta(meta)` exportada: form con hidden metaId, hint de progreso, input de monto, Cancelar y Registrar. |
-| `modules/dominio/metas/index.js` | Import `f` y `renderFormAbonoMeta`. `_abonarMeta` reemplazada por `_abrirAbonoMeta` (abre modal, inyecta form, conecta submit) y `_guardarAbonoMeta` (valida, edita meta, cierra modal, anuncia con `f()`). |
-| `tests/unit/metas.test.js` | Import `renderFormAbonoMeta` desde `view.js`. 9 tests nuevos: id del form, hidden metaId, input monto, porcentaje, faltante, completada sin faltante, botón Registrar, Cancelar, XSS escape. |
-| `service-worker.js` | v119 → v120. |
-
----
-
-### feat(P1): aviso de valores legales desactualizados al cambiar de año · 2026-06-08
-
-Hallazgo de la auditoría integral. Cuando empieza un año nuevo y todavía no se cargaron en `LEGAL_POR_ANIO` los valores oficiales (SMMLV, UVT, auxilio), `legalVigente()` cae al último año publicado como referencia provisional, pero antes no había ningún aviso al usuario: los topes de renta se mostraban con la UVT del año anterior como si fueran del año en curso. Nueva función pura `estadoVigenciaLegal(fecha)` en `constants.js` que detecta el desfase. Si está desactualizado, aparece un nudge medium en Configuración (banner superior) y en la card "Estado de tu renta" de Análisis. Mientras los valores estén al día, no se muestra nada. SW v118 → v119. 1117/1117 tests verdes (12 nuevos, primer archivo de tests de `constants.js`).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `estadoVigenciaLegal(fecha)` nueva: devuelve `{ desactualizado, anioActual, anioVigente }` comparando el año en curso contra el año que resuelve `legalVigente()`. |
-| `modules/dominio/analisis/view.js` | Import `estadoVigenciaLegal`. En `_renderEstadoRenta`, nudge medium "Topes calculados con la UVT de {anioVigente}" cuando hay desfase. |
-| `modules/dominio/config/view.js` | Import `estadoVigenciaLegal`. `_renderAvisoVigencia()` nueva: banner superior del panel cuando hay desfase; devuelve '' si está al día. |
-| `tests/unit/constants.test.js` | Archivo nuevo: 12 tests (`legalVigente`, `legalDelAnio`, `aniosPublicados`, `estadoVigenciaLegal`). |
-| `service-worker.js` | v118 → v119. |
 
 ---
 

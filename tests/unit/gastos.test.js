@@ -13,6 +13,8 @@ import {
   revertirGastoDeSaldo,
   deltasPorEdicionDeGasto,
   filtrarGastos,
+  esGastoPendiente,
+  gastosPendientes,
 } from '../../modules/dominio/gastos/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -462,5 +464,65 @@ describe('filtrarGastos()', () => {
 
   it('devuelve array vacío con input vacío', () => {
     expect(filtrarGastos([], 'Alimentación')).toEqual([]);
+  });
+});
+
+// ── PENDIENTES POR ORGANIZAR ─────────────────────────────────────
+
+describe('esGastoPendiente()', () => {
+  it('marca pendiente un gasto rápido (flag pendienteCompletar)', () => {
+    const g = gastoBase({ descripcion: '', pendienteCompletar: true });
+    expect(esGastoPendiente(g)).toBe(true);
+  });
+
+  it('marca pendiente un gasto sin descripción aunque no tenga el flag', () => {
+    const g = gastoBase({ descripcion: '   ', pendienteCompletar: false });
+    expect(esGastoPendiente(g)).toBe(true);
+  });
+
+  it('no marca pendiente un gasto completo', () => {
+    const g = gastoBase({ descripcion: 'Almuerzo', pendienteCompletar: false });
+    expect(esGastoPendiente(g)).toBe(false);
+  });
+
+  it('no marca pendiente un gasto viejo sin el flag pero con descripción', () => {
+    const g = gastoBase({ descripcion: 'Mercado' });
+    delete g.pendienteCompletar;
+    expect(esGastoPendiente(g)).toBe(false);
+  });
+
+  it('es defensivo ante null/undefined', () => {
+    expect(esGastoPendiente(null)).toBe(true);
+    expect(esGastoPendiente(undefined)).toBe(true);
+  });
+});
+
+describe('gastosPendientes()', () => {
+  it('filtra solo los gastos sin organizar, de cualquier mes', () => {
+    const gastos = [
+      gastoBase({ id: 'g1', fecha: '2026-05-10', descripcion: '', pendienteCompletar: true }),
+      gastoBase({ id: 'g2', fecha: '2026-03-02', descripcion: 'Arriendo' }),
+      gastoBase({ id: 'g3', fecha: '2026-01-20', descripcion: '', pendienteCompletar: true }),
+    ];
+    const r = gastosPendientes(gastos);
+    expect(r).toHaveLength(2);
+    expect(r.map(g => g.id)).toEqual(['g1', 'g3']);
+  });
+
+  it('devuelve vacío cuando no hay pendientes', () => {
+    const gastos = [gastoBase({ descripcion: 'Café' })];
+    expect(gastosPendientes(gastos)).toEqual([]);
+  });
+
+  it('es defensivo ante array vacío o nulo', () => {
+    expect(gastosPendientes([])).toEqual([]);
+    expect(gastosPendientes(undefined)).toEqual([]);
+  });
+
+  it('no muta el array original', () => {
+    const gastos = [gastoBase({ descripcion: '', pendienteCompletar: true })];
+    const copia = [...gastos];
+    gastosPendientes(gastos);
+    expect(gastos).toEqual(copia);
   });
 });

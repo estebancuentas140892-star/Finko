@@ -21,6 +21,19 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 ---
 
+### M. Captura de datos más precisa (gasto rápido + flujos)
+
+**Objetivo:** que cada dato se pida en el momento adecuado y los registros queden organizados y consistentes. Mejora de UX en 3 fases pedida por el usuario.
+
+**Completadas:**
+- ✅ M.1 (Fase 1) - Card "Tienes N gastos por organizar" en el dashboard, que cuenta los gastos rápidos sin descripción/categoría y lleva a Gastos - 2026-06-08.
+
+**Pendientes:**
+- **M.2 (Fase 2) - Cuenta de origen en el gasto rápido.** Agregar al modal de gasto rápido un selector de cuenta: si hay **una sola** cuenta se autoselecciona (cero fricción), si hay **varias** se muestra un picker compacto. Que el gasto rápido **descuente saldo** (hoy guarda `cuentaId: null` y no afecta el saldo, lo que infla el "dinero disponible"). Si **no hay cuentas**, bloquear con estado guiado ("Antes de registrar gastos, necesitas agregar al menos una cuenta") + botón a Mis cuentas (el form completo ya tiene este empty state; portarlo al rápido). Tras el cambio, "pendiente por organizar" = falta descripción/categoría. Modelo sugerido: Sonnet 4.6 - Alto (toca el flujo estrella + cambio de comportamiento en saldos + tests).
+- **M.3 (Fase 3) - Revisión transversal de flujos de captura.** Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato necesario se pida en el momento correcto y documentar/cerrar los huecos. Modelo sugerido: Sonnet 4.6 - Alto.
+
+---
+
 ### I. Onboarding UX para nuevos usuarios
 
 **Objetivo:** que un usuario que abre la app por primera vez entienda en segundos qué hace cada sección y qué pasos debe dar.

@@ -92,6 +92,32 @@ export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100
     .sort((a, b) => b.total - a.total);
 }
 
+// ── PENDIENTES POR ORGANIZAR ─────────────────────────────────────
+
+/**
+ * Indica si un gasto quedó sin organizar: se registró con "Gasto rápido"
+ * (flag `pendienteCompletar`) o no tiene descripción. Misma regla que el
+ * badge "📝 Pendiente" de la lista, para que el conteo del dashboard y la
+ * marca por ítem siempre coincidan.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @returns {boolean}
+ */
+export function esGastoPendiente(gasto) {
+  return gasto?.pendienteCompletar === true || !gasto?.descripcion?.trim();
+}
+
+/**
+ * Filtra los gastos que aún están sin organizar (de cualquier mes).
+ * El dashboard usa la cantidad para mostrar un recordatorio agregado.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @returns {import('../../core/state.js').Gasto[]}
+ */
+export function gastosPendientes(gastos) {
+  return (gastos ?? []).filter(esGastoPendiente);
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
