@@ -7,6 +7,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(cuentas): formulario dinámico por clase de entidad + schema v11 + ADR IVA · 2026-06-09
+
+Dos mejoras de UX en Mis Cuentas más una decisión de producto documentada.
+
+**1. Formulario dinámico por clase de entidad.** `BANCOS_CO` tiene ahora `clase` ('banco'/'billetera'/'efectivo'/'otro'). El select "Tipo de cuenta" arranca oculto y vacío; al elegir el banco, JS lo puebla con los tipos válidos para esa clase via `TIPOS_POR_CLASE`. Comportamiento por clase: banco → Corriente/Ahorros; billetera → tipo oculto (saldo único, sin "tipo bancario"); efectivo → tipo, 4x1000 y cuota ocultos; otro → Ahorros/Otro. `_toggleCamposEfectivo` generalizada a `_toggleCamposPorClase`. `normalizarCuenta` normaliza tipo por clase (billetera → banco id, efectivo → 'Efectivo').
+
+**2. Quitar "Inversión" como tipo de cuenta.** Las inversiones reales viven en la sección Inversión (J.2, portafolio con monto/tasa/plazo). Tener "Inversión" como tipo de una cuenta de tesorería creaba confusión. Las cuentas viejas con `tipo='Inversión'` migran a `'Otro'` (schema v10 → v11, migración idempotente). `TIPOS_CUENTA` ahora = `['Corriente', 'Ahorros', 'Efectivo', 'Otro']`.
+
+**3. ADR 005.** Decisión de no desglozar IVA (19%) ni propina (10%) en el registro de gastos: para finanzas personales el total pagado es suficiente; el desglose no cambia ninguna decisión y añade fricción en cada registro. Documentado en `docs/DECISIONS/005-no-desglose-iva-servicio.md`.
+
+SW v126 → v127. 1182/1182 tests verdes (+18).
+
+- **`modules/core/constants.js`:** `clase` en cada entrada de `BANCOS_CO`. Quitar `'Inversión'` de `TIPOS_CUENTA`. Nuevo `TIPOS_POR_CLASE` (mapa clase → tipos válidos).
+- **`modules/core/storage.js`:** `SCHEMA_VERSION` 10 → 11. Migración v10 → v11: `tipo='Inversión'` → `'Otro'`, idempotente.
+- **`modules/core/state.js`:** `_version` inicial 10 → 11.
+- **`modules/dominio/tesoreria/logic.js`:** Importa `BANCOS_CO`. Helper privado `_claseBanco`. `validarCuenta`: no exige tipo para billeteras. `normalizarCuenta`: tipo por clase.
+- **`modules/dominio/tesoreria/view.js`:** Tipo select inicia oculto y vacío. Quitar `TIPOS_CUENTA` del import.
+- **`modules/dominio/tesoreria/index.js`:** Importa `BANCOS_CO`, `TIPOS_POR_CLASE`, `esc`. `_toggleCamposPorClase` (reemplaza `_toggleCamposEfectivo`). `_editarCuenta` reordenado (banco → toggle → tipo).
+- **`tests/unit/tesoreria.test.js`:** +4 tests: validar/normalizar billetera, nombre explícito.
+- **`tests/unit/storage.test.js`:** +5 tests: migración v11 (reasigna, no toca otros, preserva campos, no-op, idempotente).
+- **`tests/unit/constants.test.js`:** +10 tests: clase por entidad + TIPOS_CUENTA sin Inversión + consistencia TIPOS_POR_CLASE.
+- **`tests/unit/state.test.js`:** Assert `_version` 10 → 11.
+- **`docs/DECISIONS/005-no-desglose-iva-servicio.md`:** Nuevo ADR.
+- **`service-worker.js`:** `CACHE_NAME` v126 → v127.
+
+---
+
 ### feat(M.3): revisión transversal de flujos de captura (ingresos recurrentes + cuenta en abono a meta) · 2026-06-09
 
 Tercera y última fase del plan de captura de datos. Se mapearon los seis flujos de captura (gasto completo, gasto rápido, ingreso, cuenta, deuda, meta) y se cerraron las dos brechas que quedaban:

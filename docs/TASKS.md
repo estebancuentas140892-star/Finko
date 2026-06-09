@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1164/1164 tests verdes, lint limpio.** Último cambio: **M.3** (revisión transversal de captura: UI de ingresos recurrentes + cuenta de origen en abono a metas con descuento de saldo). Antes: M.2 (gasto rápido con cuenta de origen). Con M.3 la sección M queda cerrada.
+**App estable, 1182/1182 tests verdes, lint limpio.** Último cambio: **formulario de cuentas dinámico** (schema v11: clase de entidad, tipos filtrados, quitar Inversión, migración). Antes: M.3 (ingresos recurrentes + cuenta en abono a metas). ADR 005 cerrado (no desglozar IVA/propina).
 
 ---
 
@@ -35,6 +35,8 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.
+Verificar el formulario de cuentas en la app (`python -m http.server 8080`): crear un banco (tipos: Corriente/Ahorros), crear una billetera (Nequi: tipo oculto), crear Efectivo (4x1000 y cuota ocultos), editar cada una. Si todo funciona, commitear docs y decidir qué sigue:
 
-**O bien E.2-2027** - Actualizar SMMLV, auxilio de transporte y UVT a valores 2027 cuando se publiquen (dic 2026 / enero 2027). Cambio mecánico de una entrada en `LEGAL_POR_ANIO`. Modelo: Haiku 4.5.
+**A.5** - Deploy en dominio custom. No requiere cambios de código. Guía en `docs/SETUP_DOMINIO.md`.
+
+**O bien E.2-2027** - Actualizar SMMLV + UVT en enero 2027. Cambio mecánico en `constants.js`. Modelo: Haiku 4.5.

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (M.3 revisión transversal de captura: UI de ingresos recurrentes + cuenta de origen en abonos a metas; 1164/1164 verde)
+> Última actualización: 2026-06-09 (formulario de cuentas dinámico por clase de entidad + schema v11 + ADR 005 IVA; 1182/1182 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1164/1164 verdes (+17 tests M.3: 13 ingresos tesorería, 4 selector de cuenta en abono a meta) |
+| Tests unitarios + integración | 1182/1182 verdes (+18 tests: catálogo clase/TIPOS_POR_CLASE, migración v11, billetera en validar/normalizar) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,33 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(cuentas): formulario dinámico por clase de entidad + schema v11 + ADR IVA · 2026-06-09
+
+Dos mejoras de UX en Mis Cuentas decididas con el usuario, más una decisión de producto documentada:
+
+1. **Formulario dinámico por clase de entidad.** `BANCOS_CO` ahora tiene `clase` ('banco'/'billetera'/'efectivo'/'otro'). El select "Tipo de cuenta" empieza oculto y vacío; al elegir el banco, JS lo puebla con los tipos válidos para esa clase (banco: Corriente/Ahorros; billetera: oculto, saldo único; efectivo: oculto; otro: Ahorros/Otro). La cuota de manejo también se oculta para Efectivo. `_toggleCamposEfectivo` se generaliza a `_toggleCamposPorClase`.
+2. **Quitar "Inversión" de los tipos de cuenta.** Las inversiones reales viven en la sección Inversión (J.2). Las cuentas viejas con `tipo='Inversión'` migran a `'Otro'` (schema v10 → v11, migración idempotente). `normalizarCuenta` ahora asigna el tipo correcto por clase: billetera → banco id ('Nequi'); efectivo → 'Efectivo'; banco/otro → lo que eligió el usuario.
+3. **ADR 005:** documentada la decisión de no desglozar IVA/servicio en gastos. El total pagado es suficiente para finanzas personales; desglosar no cambia ninguna decisión y añade fricción.
+
+SW v126 → v127. 1182/1182 tests verdes (+18).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `clase` en cada entrada de `BANCOS_CO`. Quitar `'Inversión'` de `TIPOS_CUENTA`. Nuevo `TIPOS_POR_CLASE`. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 10 → 11. Migración v10 → v11: `tipo='Inversión'` → `'Otro'`. |
+| `modules/core/state.js` | `_version` inicial 10 → 11. |
+| `modules/dominio/tesoreria/logic.js` | Importa `BANCOS_CO`. Helper `_claseBanco`. `validarCuenta`: no exige tipo para billeteras. `normalizarCuenta`: tipo por clase. |
+| `modules/dominio/tesoreria/view.js` | Tipo select inicia oculto y vacío (JS lo puebla). Quitar `TIPOS_CUENTA` del import. |
+| `modules/dominio/tesoreria/index.js` | Importa `BANCOS_CO`, `TIPOS_POR_CLASE`, `esc`. `_toggleCamposPorClase` (4 clases). `_editarCuenta` reordenado. |
+| `tests/unit/tesoreria.test.js` | +4 tests: billetera sin tipo válido, normalizar billetera, nombre explícito. |
+| `tests/unit/storage.test.js` | +5 tests: migración v11 (reasigna, no toca otros, preserva campos, no-op, idempotente). |
+| `tests/unit/constants.test.js` | +10 tests: clase por entidad + TIPOS_CUENTA sin Inversión + consistencia TIPOS_POR_CLASE. |
+| `tests/unit/state.test.js` | Assert `_version` 10 → 11. |
+| `docs/DECISIONS/005-no-desglose-iva-servicio.md` | Nuevo ADR: por qué no se desgloza IVA/propina en el registro de gastos. |
+| `service-worker.js` | v126 → v127. |
+
+---
 
 ### feat(M.3): revisión transversal de flujos de captura (ingresos recurrentes + cuenta en abono a meta) · 2026-06-09
 
@@ -79,23 +106,6 @@ El modal "Gasto rápido" ahora solicita la cuenta de origen desde el inicio (M.2
 
 ---
 
-### feat(agenda): Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de cuenta inteligente · 2026-06-09
-
-Tres acciones nuevas en el detalle del día de la Agenda para gastos fijos (`tipo='fijo'`): **Editar** (abre `modal-gasto-fijo` pre-rellenado, botón "Actualizar"), **Eliminar** (confirmación + elimina el compromiso), y **Marcar pagado este mes** (flujo inteligente de cuenta: 0 cuentas → diálogo guiado + "Ir a Mis Cuentas"; 1 cuenta → autoselección; varias cuentas → picker). Al marcar pagado crea un gasto con `compromisoId` para que el badge "Ya pagaste este mes" aparezca automáticamente. El botón "Marcar pagado" se oculta si ya hay un gasto vinculado este mes (defensa anti-doble clic). El helper `cuenta-helper.js` es reutilizable: se usará en M.2 (gasto rápido) y M.3 (todos los flujos de captura). SW v123 → v124. 1142/1142 tests verdes (+10).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/cuenta-helper.js` | Nuevo: `resolverCuenta(cuentas, contexto)`: 0→diálogo guiado+navigate, 1→id automático, varias→picker Promise. |
-| `modules/dominio/agenda/view.js` | `_renderDetalleItem`: botones Editar/Eliminar/"Marcar pagado" para `tipo='fijo'`; badge "Ya pagaste este mes" (antes decía "abonaste"). |
-| `modules/dominio/agenda/index.js` | Handlers: `_editarGastoFijo`, `_eliminarGastoFijo`, `_marcarPagadoGastoFijo`. `_inyectarFormGastoFijo` acepta `compromiso` opcional (modo edición). `_guardarGastoFijo` con rama `editar`/`guardar`. Imports: `editar`, `eliminar`, `hoy`, `f`, `confirmar`, `resolverCuenta`, `updSaldo`. |
-| `styles/components/domain.css` | `.cal-detail__actions` (fila de botones en grid-full-width) + `.cuenta-picker__*` (lista de cuentas del picker). |
-| `tests/unit/cuenta-helper.test.js` | Nuevo: 10 tests de `resolverCuenta` (0/1/varias cuentas, auto-retorno, picker DOM, Escape). |
-| `vitest.config.js` | `cuenta-helper.js` excluido de coverage (DOM-bound, como `a11y.js`). |
-| `eslint.config.js` | `KeyboardEvent` agregado a globals (nuevo constructor en tests). |
-| `service-worker.js` | v123 → v124. |
-
----
-
 ### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
 
 Primera corrección de un paquete de mejoras de navegación + gestión de gastos fijos pedido por el usuario. En Gastos, al abrir el modal de gasto sin cuentas, el botón "Ir a Mis cuentas" solo cerraba el modal sin navegar. Causa: `dispatch()` en `actions.js` hace `e.preventDefault()` para toda `data-action`, cancelando la navegación del `<a href="#tesoreria" data-action="modal-close">`. Fix: acción reutilizable `ir-a-seccion` (cierra modal + navega), que servirá para los CTA "redirigir a Mis cuentas" de los próximos flujos. SW v122 → v123. 1132/1132 verdes. **Pendiente del paquete:** gestión de gastos fijos (Editar/Eliminar/"Marcar pagado este mes") + helper de selección inteligente de cuenta (0→Mis cuentas, 1→automática, varias→selector), a aplicar en todos los flujos que descuentan dinero.
@@ -129,9 +139,9 @@ Primera fase de una mejora de UX en 3 fases pedida por el usuario. Los gastos cr
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Sección M (Captura de datos precisa). M.1, M.1b, M.2 y M.3 completadas. App 1164/1164 tests verdes, lint limpio.
+**Fase activa:** Post-v1.0 mejoras de UX. Sección M cerrada. Último cambio: formulario de cuentas dinámico por clase (schema v11) + ADR 005 IVA. App 1182/1182 tests verdes, lint limpio.
 
-**Próxima tarea natural:** verificar M.3 en la app y, si todo está bien, evaluar la siguiente prioridad del roadmap. Opciones abiertas abajo (A.5 dominio custom, E.2 SMMLV 2027). Si surge una mejora de UX concreta del uso real de ingresos/abonos, priorizarla.
+**Próxima tarea natural:** verificar el formulario de cuentas en la app (crear banco, billetera, efectivo; editar; probar que los campos correctos aparecen). Si todo está bien, decidir entre las opciones del roadmap: A.5 (dominio custom) o cualquier mejora puntual que surja del uso real.
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
@@ -210,7 +220,7 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 1164 tests unitarios + integración
+pnpm test                     # 1182 tests unitarios + integración
 pnpm run test:e2e             # 57 smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080
