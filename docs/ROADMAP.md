@@ -30,7 +30,7 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ M.1b - Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de selección inteligente de cuenta (`cuenta-helper.js`: 0/1/varias) - 2026-06-09.
 
 **Pendientes:**
-- **M.2 (Fase 2) - Cuenta de origen en el gasto rápido.** Usar `resolverCuenta` (ya construido) en el modal de gasto rápido: si hay **una sola** cuenta se autoselecciona (cero fricción), si hay **varias** se muestra el picker. Que el gasto rápido **descuente saldo** (hoy guarda `cuentaId: null` y no afecta el saldo, lo que infla el "dinero disponible"). Si **no hay cuentas**, bloquear con estado guiado. Tras el cambio, "pendiente por organizar" = falta descripción/categoría. Modelo sugerido: Sonnet 4.6 - Medio (el helper ya existe, solo hay que integrarlo al modal de gasto rápido).
+- ✅ M.2 (Fase 2) - Cuenta de origen en el gasto rápido: autoselección (1 cuenta), selector compacto (varias), empty state guiado (0 cuentas). El gasto rápido descuenta saldo de la cuenta elegida. Form dinámico inyectado en cada apertura - 2026-06-09.
 - **M.3 (Fase 3) - Revisión transversal de flujos de captura.** Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato necesario se pida en el momento correcto y documentar/cerrar los huecos. Modelo sugerido: Sonnet 4.6 - Alto.
 
 ---

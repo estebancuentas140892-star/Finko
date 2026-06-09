@@ -323,6 +323,16 @@ form:not(.config-form) .form-group:not(:first-child) {
   line-height: var(--fk-leading-snug);
 }
 
+/* Hint de cuenta auto-seleccionada (1 cuenta: sin selector visible). */
+.quick-add__cuenta-hint {
+  margin: var(--fk-space-2) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-sm);
+  padding: var(--fk-space-2) var(--fk-space-3);
+}
+
 /* ════════════════════════════════════════════════════════════
    QUICK TOAST - confirmacion con accion "Completar" tras gasto rapido.
    Aparece bottom-center, con check verde + monto + boton para abrir

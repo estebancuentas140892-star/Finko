@@ -308,6 +308,17 @@ describe('validarGastoRapido()', () => {
   it('rechaza string vacio', () => {
     expect(validarGastoRapido('').length).toBeGreaterThan(0);
   });
+  it('sin requiereCuenta (default), acepta cuentaId nulo o vacio', () => {
+    expect(validarGastoRapido(50000, null)).toEqual([]);
+    expect(validarGastoRapido(50000, '')).toEqual([]);
+  });
+  it('con requiereCuenta=true, rechaza cuentaId vacio o nulo', () => {
+    expect(validarGastoRapido(50000, null, true).length).toBeGreaterThan(0);
+    expect(validarGastoRapido(50000, '', true).length).toBeGreaterThan(0);
+  });
+  it('con requiereCuenta=true, acepta cuentaId valido', () => {
+    expect(validarGastoRapido(50000, 'cuenta-123', true)).toEqual([]);
+  });
 });
 
 // ── normalizarGastoRapido() ───────────────────────────────────────
@@ -328,10 +339,20 @@ describe('normalizarGastoRapido()', () => {
     expect(g.monto).toBe(75000);
   });
 
-  it('cuentaId queda en null y nota vacia', () => {
+  it('sin cuentaId: queda en null y nota vacia', () => {
     const g = normalizarGastoRapido(10000, '2026-05-20');
     expect(g.cuentaId).toBeNull();
     expect(g.nota).toBe('');
+  });
+
+  it('con cuentaId: lo guarda en el gasto', () => {
+    const g = normalizarGastoRapido(30000, '2026-06-01', 'cuenta-abc');
+    expect(g.cuentaId).toBe('cuenta-abc');
+  });
+
+  it('cuentaId vacio o nulo queda en null', () => {
+    expect(normalizarGastoRapido(10000, '2026-06-01', '').cuentaId).toBeNull();
+    expect(normalizarGastoRapido(10000, '2026-06-01', null).cuentaId).toBeNull();
   });
 });
 

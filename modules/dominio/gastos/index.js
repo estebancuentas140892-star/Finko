@@ -22,7 +22,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   deltasPorEdicionDeGasto,
 } from './logic.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -138,17 +138,34 @@ function _editarGasto(el) {
 
 // ── GASTO RAPIDO ─────────────────────────────────────────────────
 
+/**
+ * (Re)Inyecta el HTML del gasto rápido en el modal y adjunta el listener de submit.
+ * Se llama en cada apertura para reflejar cambios en S.cuentas (puede haber
+ * agregado o eliminado cuentas desde la última vez que se abrió el modal).
+ */
+function _inyectarFormGastoRapido() {
+  const body = document.getElementById('modal-gasto-rapido-body');
+  if (!body) return;
+
+  body.innerHTML = renderFormGastoRapido();
+
+  const form = body.querySelector('#form-gasto-rapido');
+  if (!form) return; // empty state (0 cuentas): no hay form, no hay listener.
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarGastoRapido();
+  });
+}
+
 /** Abre el modal de gasto rapido con focus en el input de monto. */
 function _abrirGastoRapido() {
   const overlay = document.getElementById('modal-gasto-rapido');
   if (!overlay) return;
-  const form = overlay.querySelector('#form-gasto-rapido');
-  if (form) {
-    // Quitar bloque de errores si quedo de un intento anterior.
-    form.querySelector('.form-errors')?.remove();
-    form.querySelectorAll('.field-invalid').forEach(el => el.classList.remove('field-invalid'));
-    form.querySelector('[name="monto"]').value = '';
-  }
+
+  // Re-inyectar en cada apertura: S.cuentas puede haber cambiado desde la última vez.
+  _inyectarFormGastoRapido();
+
   abrirModal(overlay);
   // Focus en el input despues de la animacion de entrada.
   setTimeout(() => {
@@ -160,16 +177,27 @@ function _guardarGastoRapido() {
   const form = document.getElementById('form-gasto-rapido');
   if (!form) return;
 
-  const monto = form.querySelector('[name="monto"]').value;
-  const errores = validarGastoRapido(monto);
+  const monto    = form.querySelector('[name="monto"]')?.value ?? '';
+  const cuentaId = form.querySelector('[name="cuentaId"]')?.value || null;
+
+  // La elección de cuenta es obligatoria solo cuando hay varias (el select está visible).
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const requiereCuenta = cuentasActivas.length > 1;
+
+  const errores = validarGastoRapido(monto, cuentaId, requiereCuenta);
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
   }
 
-  const nuevo = normalizarGastoRapido(monto, hoy());
+  const nuevo = normalizarGastoRapido(monto, hoy(), cuentaId);
   guardar('gastos', nuevo);
+
+  // Descontar del saldo de la cuenta de origen.
+  if (cuentaId) {
+    _ajustarSaldoCuenta(cuentaId, -Number(monto));
+  }
 
   // Tomar el id del ultimo gasto (crud.js lo asigno).
   const ultimo = S.gastos[S.gastos.length - 1];
@@ -387,14 +415,6 @@ function _montarFormGasto() {
   body.querySelector('#gasto-cuenta')?.addEventListener('change', _actualizarSaldoDisponible);
 }
 
-/** Attacha submit del form de gasto rápido que vive estático en index.html. */
-function _attacharGastoRapido() {
-  document.getElementById('form-gasto-rapido')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    _guardarGastoRapido();
-  });
-}
-
 export function initGastos() {
   registrarAccion('nuevo-gasto', _nuevoGasto);
   registrarAccion('editar-gasto', _editarGasto);
@@ -405,8 +425,7 @@ export function initGastos() {
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
 
   // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
-  // Solo dejamos attachado el listener del form rápido (HTML estático).
-  _attacharGastoRapido();
+  // El form rápido también se monta on-demand desde _abrirGastoRapido.
 
   // La card de pendientes vive en el dashboard, no en #gast, así que se
   // registra en renderAll (boot + mutaciones globales) en lugar de gatearse

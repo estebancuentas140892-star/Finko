@@ -235,37 +235,45 @@ export function normalizarGasto(datos) {
 }
 
 /**
- * Normaliza un gasto rapido: solo el monto, defaults para todo lo demas.
+ * Normaliza un gasto rapido: solo el monto + cuenta de origen, defaults para lo demas.
  * - descripcion: '' (vacia, se completa despues)
  * - categoria: 'Otros'
  * - fecha: hoy
- * - pendienteCompletar: true (marca para badge "Sin completar")
+ * - pendienteCompletar: true (marca para completar descripcion/categoria despues)
+ * - cuentaId: el id de la cuenta de origen (o null si no se proporcionó).
  *
  * @param {string|number} monto
  * @param {string} fechaHoy - YYYY-MM-DD (inyectada para testeabilidad).
+ * @param {string|null} [cuentaId] - cuenta desde la que sale el dinero.
  */
-export function normalizarGastoRapido(monto, fechaHoy) {
+export function normalizarGastoRapido(monto, fechaHoy, cuentaId = null) {
   return {
     descripcion: '',
     monto: Number(monto),
     categoria: 'Otros',
     fecha: fechaHoy,
-    cuentaId: null,
+    cuentaId: cuentaId || null,
     nota: '',
     pendienteCompletar: true,
   };
 }
 
 /**
- * Valida un gasto rapido: solo necesita un monto > 0.
+ * Valida un gasto rapido.
+ *
  * @param {string|number} monto
+ * @param {string|null}   [cuentaId]       - cuenta elegida (null si no hay o no se seleccionó).
+ * @param {boolean}       [requiereCuenta] - true cuando hay varias cuentas y el usuario debe elegir.
  * @returns {string[]}
  */
-export function validarGastoRapido(monto) {
+export function validarGastoRapido(monto, cuentaId = null, requiereCuenta = false) {
   const errores = [];
   const m = Number(monto);
   if (isNaN(m) || m <= 0) {
     errores.push('El monto debe ser un número mayor a 0.');
+  }
+  if (requiereCuenta && !cuentaId?.trim?.()) {
+    errores.push('Elegí desde qué cuenta sale el dinero.');
   }
   return errores;
 }

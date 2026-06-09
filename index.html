@@ -474,7 +474,7 @@
     </div>
   </div>
 
-  <!-- Modal: Gasto rapido (solo monto, defaults inteligentes) -->
+  <!-- Modal: Gasto rapido (monto + cuenta, defaults inteligentes) -->
   <div class="modal-overlay" id="modal-gasto-rapido"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-gasto-rapido-title" aria-hidden="true">
@@ -484,22 +484,8 @@
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
-      <div class="modal__body">
-        <p class="quick-add__hint">Apuntalo ahora. Lo completás después con calma.</p>
-        <form id="form-gasto-rapido" novalidate>
-          <div class="form-group">
-            <label for="gasto-rapido-monto" class="label">¿Cuánto gastaste?</label>
-            <input id="gasto-rapido-monto" name="monto"
-                   class="input input--big-amount"
-                   type="number" inputmode="numeric" pattern="[0-9]*"
-                   min="0" step="1000" placeholder="0"
-                   autocomplete="off" />
-          </div>
-          <div class="modal__footer">
-            <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar</button>
-          </div>
-        </form>
+      <div class="modal__body" id="modal-gasto-rapido-body">
+        <!-- gastos/index.js inyecta el form aquí en cada apertura -->
       </div>
     </div>
   </div>

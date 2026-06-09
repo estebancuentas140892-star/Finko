@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): M.2 - Gasto rápido con cuenta de origen y descuento de saldo · 2026-06-09
+
+El modal "Gasto rápido" ahora solicita la cuenta de origen desde el inicio (M.2, segunda fase del plan de captura de datos). Tres comportamientos: **0 cuentas activas** → muestra empty state guiado "Primero necesitás una cuenta" con botón "Ir a Mis Cuentas" (igual que el form completo); **1 cuenta activa** → autoselecciona silenciosamente (hint "Sale de: {nombre}. Disponible: {saldo}"); **varias cuentas** → selector visible. Al confirmar, el monto se descuenta del saldo de la cuenta elegida. El form se inyecta en `#modal-gasto-rapido-body` en cada apertura (como los demás modales) para reflejar cambios en S.cuentas. SW v124 → v125. 1147/1147 tests verdes (+5).
+
+- **`modules/dominio/gastos/logic.js`:** `normalizarGastoRapido(monto, fecha, cuentaId?)`: tercer parámetro opcional. `validarGastoRapido(monto, cuentaId?, requiereCuenta?)`: valida la cuenta cuando hay varias.
+- **`modules/dominio/gastos/view.js`:** `renderFormGastoRapido()` nueva: 0 cuentas → empty state; 1 cuenta → hidden input + hint; varias → select visible.
+- **`modules/dominio/gastos/index.js`:** `_inyectarFormGastoRapido()` nueva (on-demand en cada apertura). `_abrirGastoRapido` llama `_inyectarFormGastoRapido`. `_guardarGastoRapido` toma `cuentaId` del form, valida y descuenta saldo via `_ajustarSaldoCuenta`. Eliminado `_attacharGastoRapido` (form ya no es estático).
+- **`index.html`:** Body del modal gasto rápido: de estático a `<div id="modal-gasto-rapido-body">` vacío (inyectado por JS).
+- **`styles/components/forms.css`:** `.quick-add__cuenta-hint`: hint de cuenta auto-seleccionada (fondo elevated, texto xs).
+- **`tests/unit/gastos.test.js`:** 5 tests nuevos: `validarGastoRapido` con `requiereCuenta` (3), `normalizarGastoRapido` con `cuentaId` (2).
+- **`service-worker.js`:** `CACHE_NAME` v124 → v125.
+
+---
+
 ### feat(agenda): Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de cuenta inteligente · 2026-06-09
 
 Tres acciones nuevas en el detalle del día del calendario (Agenda) para compromisos de `tipo='fijo'`: **Editar** (abre el modal de gasto fijo en modo edición, pre-rellenado y con botón "Actualizar"), **Eliminar** (confirmación con `confirmar()` + `eliminar('compromisos', id)`), y **Marcar pagado este mes** (flujo inteligente de selección de cuenta: 0 cuentas → diálogo guiado con "Ir a Mis Cuentas" + `navigate('tesoreria')`; 1 cuenta activa → autoselección silenciosa; varias cuentas activas → picker tipo-modal con Promise). Al confirmar el pago, crea un `gasto` con `compromisoId` vinculado para que el badge "Ya pagaste este mes" aparezca automáticamente en el calendario. El botón "Marcar pagado" se oculta si el pago ya existe este mes (defensa ante doble clic). El helper `cuenta-helper.js` es reutilizable para los flujos de captura de M.2 y M.3. SW v123 → v124. 1142/1142 tests verdes (+10).

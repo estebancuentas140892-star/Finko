@@ -246,6 +246,74 @@ export function renderPendientesOrganizar() {
     </div>`;
 }
 
+// ── FORMULARIO DE GASTO RÁPIDO ───────────────────────────────────
+
+/**
+ * Devuelve el HTML que se inyecta en `#modal-gasto-rapido-body` en cada apertura.
+ *
+ * Tres estados según la cantidad de cuentas activas en S:
+ *   - 0 cuentas: empty state guiado con CTA "Ir a Mis Cuentas".
+ *   - 1 cuenta:  form con `<input type="hidden" name="cuentaId">` + hint de cuenta/saldo.
+ *   - Varias:    form con `<select name="cuentaId">` para que el usuario elija.
+ *
+ * Se re-inyecta en cada apertura del modal para reflejar cambios en S.cuentas.
+ *
+ * @returns {string}
+ */
+export function renderFormGastoRapido() {
+  const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
+
+  if (cuentas.length === 0) {
+    return `
+      <div class="form-empty">
+        <p class="form-empty__icon" aria-hidden="true">🏦</p>
+        <p class="form-empty__title">Primero necesitás una cuenta</p>
+        <p class="form-empty__desc">Para registrar gastos, agregá al menos una cuenta o billetera en Mis Cuentas.</p>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">🏦 Ir a Mis Cuentas</a>
+      </div>`;
+  }
+
+  let cuentaHtml;
+  if (cuentas.length === 1) {
+    const c = cuentas[0];
+    cuentaHtml = `
+      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+      <p class="quick-add__cuenta-hint" role="status">
+        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(c.saldo ?? 0)}
+      </p>`;
+  } else {
+    const opciones = cuentas
+      .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)} · ${f(c.saldo ?? 0)}</option>`)
+      .join('');
+    cuentaHtml = `
+      <div class="form-group">
+        <label for="gasto-rapido-cuenta" class="label">¿Desde qué cuenta?</label>
+        <select id="gasto-rapido-cuenta" name="cuentaId" class="input" required aria-required="true">
+          <option value="">Elegí una cuenta</option>
+          ${opciones}
+        </select>
+      </div>`;
+  }
+
+  return `
+    <p class="quick-add__hint">Apuntalo ahora. Lo completás después con calma.</p>
+    <form id="form-gasto-rapido" novalidate>
+      <div class="form-group">
+        <label for="gasto-rapido-monto" class="label">¿Cuánto gastaste?</label>
+        <input id="gasto-rapido-monto" name="monto"
+               class="input input--big-amount"
+               type="number" inputmode="numeric" pattern="[0-9]*"
+               min="0" step="1000" placeholder="0"
+               autocomplete="off" />
+      </div>
+      ${cuentaHtml}
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>`;
+}
+
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**

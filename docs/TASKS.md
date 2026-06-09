@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1142/1142 tests verdes, lint limpio.** Último cambio: **M.1b** (Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper `cuenta-helper.js` de selección inteligente de cuenta; 0/1/varias cuentas). Antes: M.1 (card "gastos por organizar") + fix de navegación "Ir a Mis cuentas" + fix SW onboarding.
+**App estable, 1147/1147 tests verdes, lint limpio.** Último cambio: **M.2** (gasto rápido con cuenta de origen: autoselección/selector/empty state guiado, descuenta saldo). Antes: M.1b (Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper `cuenta-helper.js`).
 
 ---
 
@@ -35,6 +35,6 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**M.2 (Fase 2)** - Cuenta de origen en el gasto rápido. Integrar `resolverCuenta` (ya construido en `cuenta-helper.js`) al modal de gasto rápido para que descuente saldo. Autoselección si hay 1 cuenta, picker si hay varias, bloqueo guiado si hay 0. Modelo: Sonnet 4.6 - Medio (el helper ya existe).
+**M.3 (Fase 3)** - Revisión transversal de flujos de captura. Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato se pida en el momento correcto y documentar/cerrar los huecos. Modelo: Sonnet 4.6 - Alto.
 
 **O bien A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.
