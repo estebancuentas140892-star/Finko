@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de cuenta inteligente · 2026-06-09
+
+Tres acciones nuevas en el detalle del día del calendario (Agenda) para compromisos de `tipo='fijo'`: **Editar** (abre el modal de gasto fijo en modo edición, pre-rellenado y con botón "Actualizar"), **Eliminar** (confirmación con `confirmar()` + `eliminar('compromisos', id)`), y **Marcar pagado este mes** (flujo inteligente de selección de cuenta: 0 cuentas → diálogo guiado con "Ir a Mis Cuentas" + `navigate('tesoreria')`; 1 cuenta activa → autoselección silenciosa; varias cuentas activas → picker tipo-modal con Promise). Al confirmar el pago, crea un `gasto` con `compromisoId` vinculado para que el badge "Ya pagaste este mes" aparezca automáticamente en el calendario. El botón "Marcar pagado" se oculta si el pago ya existe este mes (defensa ante doble clic). El helper `cuenta-helper.js` es reutilizable para los flujos de captura de M.2 y M.3. SW v123 → v124. 1142/1142 tests verdes (+10).
+
+- **`modules/infra/cuenta-helper.js`:** Nuevo. `resolverCuenta(cuentas, contexto)`: 0 cuentas → diálogo guiado + navigate a tesorería, devuelve null; 1 cuenta → devuelve id automáticamente; varias cuentas → picker Promise-based con `trapFocus`/`releaseFocus`.
+- **`modules/dominio/agenda/view.js`:** `_renderDetalleItem`: agrega `.cal-detail__actions` con botones Editar/Eliminar/"Marcar pagado" para `tipo='fijo'`. Badge actualizado a "Ya pagaste este mes".
+- **`modules/dominio/agenda/index.js`:** `_inyectarFormGastoFijo(compromiso?)` acepta compromiso para pre-rellenar (modo edición). `_guardarGastoFijo` con rama editar/guardar según `form.dataset.id`. Nuevos handlers `_editarGastoFijo`, `_eliminarGastoFijo`, `_marcarPagadoGastoFijo`. Imports: `editar`, `eliminar`, `hoy`, `f`, `confirmar`, `resolverCuenta`, `updSaldo`.
+- **`styles/components/domain.css`:** `.cal-detail__actions` (fila full-width en el grid del item) + `.cuenta-picker__*` (botones del picker de cuenta).
+- **`tests/unit/cuenta-helper.test.js`:** Nuevo. 10 tests: rama 1 cuenta (retorno puro), rama 0 cuentas (null + DOM), rama varias cuentas (picker, selección, Escape).
+- **`vitest.config.js`:** `cuenta-helper.js` excluido de coverage (DOM-bound).
+- **`eslint.config.js`:** `KeyboardEvent` agregado a globals.
+- **`service-worker.js`:** `CACHE_NAME` v123 → v124.
+
+---
+
 ### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
 
 Bug de navegación reportado por el usuario: en Gastos, al abrir "Nuevo gasto" (o "Registrar gasto") sin cuentas registradas, el botón "Ir a Mis cuentas" solo cerraba el modal pero no llevaba a Tesorería. Causa: `actions.js` → `dispatch()` hace `e.preventDefault()` para toda `data-action`, lo que cancelaba la navegación nativa del enlace `<a href="#tesoreria" data-action="modal-close">`. Solución: acción nueva reutilizable `ir-a-seccion` que cierra el modal abierto y navega al destino (de `data-target` o del hash del `href`), pensada para todos los CTA "ir a Mis cuentas / a otra sección" que vendrán en los próximos flujos. Verificado en el preview: clic → modal cerrado + `sec-tesoreria` activa. SW v122 → v123. 1132/1132 tests verdes.

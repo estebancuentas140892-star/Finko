@@ -268,15 +268,39 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');
   const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
+  const idEsc = _esc(c.id ?? '');
 
-  // Badge "Ya abonaste este mes" (D5 - ADR 002): aparece si hay un gasto-abono
-  // del mes visualizado vinculado a este compromiso vía compromisoId.
+  // Badge "Ya pagaste este mes": aparece si hay un gasto vinculado a este
+  // compromiso vía compromisoId en el mes visualizado.
   const prefijo  = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
-  const abonado  = Array.isArray(S.gastos) &&
+  const pagado   = Array.isArray(S.gastos) &&
     S.gastos.some(g => g.compromisoId === c.id && g.fecha?.startsWith(prefijo));
-  const badgeHtml = abonado
-    ? `<p class="cal-detail__badge-abono" role="status">✓ Ya abonaste este mes</p>`
+  const badgeHtml = pagado
+    ? `<p class="cal-detail__badge-abono" role="status">✓ Ya pagaste este mes</p>`
     : '';
+
+  // Acciones solo para gastos fijos.
+  let accionesHtml = '';
+  if (tipo === 'fijo') {
+    const btnPagar = !pagado ? `
+      <button type="button" class="btn btn-sm btn-primary"
+              data-action="agenda-marcar-pagado-fijo" data-id="${idEsc}"
+              aria-label="Marcar como pagado este mes: ${desc}">
+        Marcar pagado
+      </button>` : '';
+
+    accionesHtml = `
+      <div class="cal-detail__actions">
+        <button type="button" class="btn btn-sm btn-ghost"
+                data-action="agenda-editar-fijo" data-id="${idEsc}"
+                aria-label="Editar ${desc}">Editar</button>
+        <button type="button" class="btn btn-sm btn-ghost"
+                data-action="agenda-eliminar-fijo" data-id="${idEsc}"
+                aria-label="Eliminar ${desc}"
+                style="color: var(--fk-danger-text);">Eliminar</button>
+        ${btnPagar}
+      </div>`;
+  }
 
   return `
     <li class="cal-detail__item">
@@ -287,6 +311,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
         ${badgeHtml}
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
+      ${accionesHtml}
     </li>`;
 }
 

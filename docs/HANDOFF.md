@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-08 (fix(nav): "Ir a Mis cuentas" ahora navega + card de "gastos por organizar"; 1132/1132 verde)
+> Última actualización: 2026-06-09 (feat(agenda): Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de cuenta inteligente; 1142/1142 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1132/1132 verdes (+9 tests de pendientes por organizar) |
+| Tests unitarios + integración | 1142/1142 verdes (+10 tests de cuenta-helper) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de cuenta inteligente · 2026-06-09
+
+Tres acciones nuevas en el detalle del día de la Agenda para gastos fijos (`tipo='fijo'`): **Editar** (abre `modal-gasto-fijo` pre-rellenado, botón "Actualizar"), **Eliminar** (confirmación + elimina el compromiso), y **Marcar pagado este mes** (flujo inteligente de cuenta: 0 cuentas → diálogo guiado + "Ir a Mis Cuentas"; 1 cuenta → autoselección; varias cuentas → picker). Al marcar pagado crea un gasto con `compromisoId` para que el badge "Ya pagaste este mes" aparezca automáticamente. El botón "Marcar pagado" se oculta si ya hay un gasto vinculado este mes (defensa anti-doble clic). El helper `cuenta-helper.js` es reutilizable: se usará en M.2 (gasto rápido) y M.3 (todos los flujos de captura). SW v123 → v124. 1142/1142 tests verdes (+10).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/cuenta-helper.js` | Nuevo: `resolverCuenta(cuentas, contexto)`: 0→diálogo guiado+navigate, 1→id automático, varias→picker Promise. |
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem`: botones Editar/Eliminar/"Marcar pagado" para `tipo='fijo'`; badge "Ya pagaste este mes" (antes decía "abonaste"). |
+| `modules/dominio/agenda/index.js` | Handlers: `_editarGastoFijo`, `_eliminarGastoFijo`, `_marcarPagadoGastoFijo`. `_inyectarFormGastoFijo` acepta `compromiso` opcional (modo edición). `_guardarGastoFijo` con rama `editar`/`guardar`. Imports: `editar`, `eliminar`, `hoy`, `f`, `confirmar`, `resolverCuenta`, `updSaldo`. |
+| `styles/components/domain.css` | `.cal-detail__actions` (fila de botones en grid-full-width) + `.cuenta-picker__*` (lista de cuentas del picker). |
+| `tests/unit/cuenta-helper.test.js` | Nuevo: 10 tests de `resolverCuenta` (0/1/varias cuentas, auto-retorno, picker DOM, Escape). |
+| `vitest.config.js` | `cuenta-helper.js` excluido de coverage (DOM-bound, como `a11y.js`). |
+| `eslint.config.js` | `KeyboardEvent` agregado a globals (nuevo constructor en tests). |
+| `service-worker.js` | v123 → v124. |
+
+---
 
 ### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
 
@@ -86,21 +103,6 @@ Cuarto y último hallazgo de auditoría. Función `dialogo()` en `modules/infra/
 | `modules/infra/utils.js` | Eliminar bloque de comentario + función `dialogo()` (~15 líneas). Actualizar docstring: quitar menciones a `dialogo` y "sin DOM". |
 | `tests/unit/utils.test.js` | Eliminar import `dialogo`. Eliminar bloque `describe('dialogo()...')` (3 tests, 26 líneas). Eliminar imports `vi`, `beforeEach`, `afterEach` (ahora sin uso). |
 | `service-worker.js` | v120 (sin cambio, SW cacheado). |
-
----
-
-### fix(P3): lint 100% verde (globals, imports sin usar, var→let) · 2026-06-08
-
-Tercera tarea de la auditoría. ESLint mostraba 16 errores: 6 globals faltantes en config, 4 imports sin usar, 3 `var` innecesarios. Todos mecánicos, sin lógica. Agregar a `eslint.config.js`: `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches`. Eliminar imports: `resetModal` en `compromisos/index.js`, `aplicarGastoASaldo`/`revertirGastoDeSaldo` en `gastos/index.js`, `hoy`/`totalGastosMes` en `gastos/view.js`, `f` en `tesoreria/index.js`. Cambiar `var` a `let`/`const` en `sw-register.js` (3 líneas). 1126/1126 tests verdes (sin cambios).
-
-| Archivo | Cambio |
-|---|---|
-| `eslint.config.js` | Agregar 6 globals: `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches`. |
-| `modules/dominio/compromisos/index.js` | Eliminar `resetModal` del import de `modales.js`. |
-| `modules/dominio/gastos/index.js` | Eliminar `aplicarGastoASaldo`, `revertirGastoDeSaldo` del import de `logic.js`. |
-| `modules/dominio/gastos/view.js` | Eliminar `hoy` del import de `utils.js`; eliminar `totalGastosMes` del import de `logic.js`. |
-| `modules/dominio/tesoreria/index.js` | Eliminar `f` del import de `utils.js`. |
-| `modules/infra/sw-register.js` | Cambiar `var _hostname` → `const`, `var _esDesarrollo` → `const`, `var _ya_recargado` → `let`. |
 
 ---
 

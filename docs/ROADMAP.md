@@ -27,9 +27,10 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 **Completadas:**
 - ✅ M.1 (Fase 1) - Card "Tienes N gastos por organizar" en el dashboard, que cuenta los gastos rápidos sin descripción/categoría y lleva a Gastos - 2026-06-08.
+- ✅ M.1b - Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de selección inteligente de cuenta (`cuenta-helper.js`: 0/1/varias) - 2026-06-09.
 
 **Pendientes:**
-- **M.2 (Fase 2) - Cuenta de origen en el gasto rápido.** Agregar al modal de gasto rápido un selector de cuenta: si hay **una sola** cuenta se autoselecciona (cero fricción), si hay **varias** se muestra un picker compacto. Que el gasto rápido **descuente saldo** (hoy guarda `cuentaId: null` y no afecta el saldo, lo que infla el "dinero disponible"). Si **no hay cuentas**, bloquear con estado guiado ("Antes de registrar gastos, necesitas agregar al menos una cuenta") + botón a Mis cuentas (el form completo ya tiene este empty state; portarlo al rápido). Tras el cambio, "pendiente por organizar" = falta descripción/categoría. Modelo sugerido: Sonnet 4.6 - Alto (toca el flujo estrella + cambio de comportamiento en saldos + tests).
+- **M.2 (Fase 2) - Cuenta de origen en el gasto rápido.** Usar `resolverCuenta` (ya construido) en el modal de gasto rápido: si hay **una sola** cuenta se autoselecciona (cero fricción), si hay **varias** se muestra el picker. Que el gasto rápido **descuente saldo** (hoy guarda `cuentaId: null` y no afecta el saldo, lo que infla el "dinero disponible"). Si **no hay cuentas**, bloquear con estado guiado. Tras el cambio, "pendiente por organizar" = falta descripción/categoría. Modelo sugerido: Sonnet 4.6 - Medio (el helper ya existe, solo hay que integrarlo al modal de gasto rápido).
 - **M.3 (Fase 3) - Revisión transversal de flujos de captura.** Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato necesario se pida en el momento correcto y documentar/cerrar los huecos. Modelo sugerido: Sonnet 4.6 - Alto.
 
 ---

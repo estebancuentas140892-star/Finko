@@ -22,6 +22,7 @@ export default defineConfig({
         'modules/infra/render.js',
         'modules/infra/router.js',
         'modules/infra/a11y.js',
+        'modules/infra/cuenta-helper.js',
         // Artefactos
         'modules/vitest.config.js',
       ],

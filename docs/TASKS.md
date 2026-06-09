@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-08
+> Última actualización: 2026-06-09
 
 ---
 
 ## Estado actual
 
-**App estable, 1132/1132 tests verdes, lint limpio.** Último cambio: **Fase 1 de la mejora de captura de datos** (sección M del ROADMAP): el dashboard muestra una card "Tienes N gastos por organizar" que cuenta los gastos rápidos sin describir y lleva a Gastos. Antes: fix de recarga del onboarding en móvil (SW ya no recarga en caliente) + auditoría integral P1-P4.
+**App estable, 1142/1142 tests verdes, lint limpio.** Último cambio: **M.1b** (Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper `cuenta-helper.js` de selección inteligente de cuenta; 0/1/varias cuentas). Antes: M.1 (card "gastos por organizar") + fix de navegación "Ir a Mis cuentas" + fix SW onboarding.
 
 ---
 
@@ -35,6 +35,6 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**M.2 (Fase 2)** - Cuenta de origen en el gasto rápido (sección M del ROADMAP). Selector de cuenta en el modal de gasto rápido: autoselección si hay 1 cuenta, picker compacto si hay varias, bloqueo guiado si no hay cuentas, y que el rápido descuente saldo. Toca el flujo estrella + cambia el comportamiento de saldos. Modelo: Sonnet 4.6 - Alto.
+**M.2 (Fase 2)** - Cuenta de origen en el gasto rápido. Integrar `resolverCuenta` (ya construido en `cuenta-helper.js`) al modal de gasto rápido para que descuente saldo. Autoselección si hay 1 cuenta, picker si hay varias, bloqueo guiado si hay 0. Modelo: Sonnet 4.6 - Medio (el helper ya existe).
 
 **O bien A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.
