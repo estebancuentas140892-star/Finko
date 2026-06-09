@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -170,6 +170,21 @@ function _migrate(raw) {
     if (typeof data.config.datosFiscales !== 'object' || data.config.datosFiscales === null
         || Array.isArray(data.config.datosFiscales)) {
       data.config.datosFiscales = {};
+    }
+  }
+
+  // v10 → v11: se elimina 'Inversión' del catálogo de tipos de cuenta. Las
+  // inversiones reales viven en el dominio Inversión (J.2), no como un tipo de
+  // cuenta de tesorería. Las cuentas existentes con tipo 'Inversión' se
+  // reasignan a 'Otro' para no quedar con un tipo fuera del catálogo.
+  // Idempotente: si no hay cuentas con ese tipo (o ya corrió), no cambia nada.
+  if ((typeof data._version === 'number' ? data._version : 1) < 11) {
+    if (Array.isArray(data.cuentas)) {
+      for (const c of data.cuentas) {
+        if (c && typeof c === 'object' && c.tipo === 'Inversión') {
+          c.tipo = 'Otro';
+        }
+      }
     }
   }
 

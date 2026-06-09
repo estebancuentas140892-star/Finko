@@ -4,6 +4,9 @@ import {
   legalDelAnio,
   aniosPublicados,
   estadoVigenciaLegal,
+  BANCOS_CO,
+  TIPOS_CUENTA,
+  TIPOS_POR_CLASE,
 } from '../../modules/core/constants.js';
 
 // Fechas en hora local (mes 0-indexado) para evitar corrimientos de zona.
@@ -89,5 +92,64 @@ describe('estadoVigenciaLegal', () => {
     expect(Number.isInteger(e.anioActual)).toBe(true);
     expect(Number.isInteger(e.anioVigente)).toBe(true);
     expect(e.anioVigente).toBeLessThanOrEqual(e.anioActual);
+  });
+});
+
+// ── Catálogo de cuentas (clase de entidad + tipos) ────────────────
+
+describe('BANCOS_CO - clase de entidad', () => {
+  it('toda entrada tiene una clase válida', () => {
+    const clasesValidas = ['efectivo', 'banco', 'billetera', 'otro'];
+    for (const b of BANCOS_CO) {
+      expect(clasesValidas).toContain(b.clase);
+    }
+  });
+
+  it('Efectivo es clase efectivo', () => {
+    expect(BANCOS_CO.find(b => b.id === 'Efectivo').clase).toBe('efectivo');
+  });
+
+  it('las billeteras digitales conocidas son clase billetera', () => {
+    for (const id of ['Nequi', 'Daviplata', 'Nubank', 'Lulo Bank']) {
+      expect(BANCOS_CO.find(b => b.id === id).clase).toBe('billetera');
+    }
+  });
+
+  it('los bancos tradicionales son clase banco', () => {
+    for (const id of ['Bancolombia', 'Davivienda', 'BBVA Colombia']) {
+      expect(BANCOS_CO.find(b => b.id === id).clase).toBe('banco');
+    }
+  });
+});
+
+describe('TIPOS_CUENTA y TIPOS_POR_CLASE', () => {
+  it('ya no incluye "Inversión" (vive en el dominio Inversión)', () => {
+    expect(TIPOS_CUENTA).not.toContain('Inversión');
+  });
+
+  it('conserva los tipos vigentes', () => {
+    expect(TIPOS_CUENTA).toEqual(['Corriente', 'Ahorros', 'Efectivo', 'Otro']);
+  });
+
+  it('TIPOS_POR_CLASE cubre las cuatro clases', () => {
+    expect(Object.keys(TIPOS_POR_CLASE).sort())
+      .toEqual(['banco', 'billetera', 'efectivo', 'otro']);
+  });
+
+  it('banco ofrece Corriente y Ahorros', () => {
+    expect(TIPOS_POR_CLASE.banco).toEqual(['Corriente', 'Ahorros']);
+  });
+
+  it('billetera y efectivo no muestran selector de tipo (lista vacía)', () => {
+    expect(TIPOS_POR_CLASE.billetera).toEqual([]);
+    expect(TIPOS_POR_CLASE.efectivo).toEqual([]);
+  });
+
+  it('todo tipo listado en TIPOS_POR_CLASE existe en TIPOS_CUENTA', () => {
+    for (const tipos of Object.values(TIPOS_POR_CLASE)) {
+      for (const t of tipos) {
+        expect(TIPOS_CUENTA).toContain(t);
+      }
+    }
   });
 });

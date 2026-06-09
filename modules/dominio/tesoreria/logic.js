@@ -6,7 +6,18 @@
  * - Testeable en Node/Vitest sin ningún mock de navegador.
  */
 
-import { GMF, FRECUENCIAS } from '../../core/constants.js';
+import { GMF, FRECUENCIAS, BANCOS_CO } from '../../core/constants.js';
+
+/**
+ * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
+ * Si el id no se encuentra en BANCOS_CO, devuelve 'otro' como fallback seguro.
+ *
+ * @param {string} bancoId
+ * @returns {'banco'|'billetera'|'efectivo'|'otro'}
+ */
+function _claseBanco(bancoId) {
+  return BANCOS_CO.find(b => b.id === bancoId)?.clase ?? 'otro';
+}
 
 // ── CONSULTAS ────────────────────────────────────────────────────
 
@@ -177,7 +188,11 @@ export function validarCuenta(datos) {
   if (!datos.banco?.trim() || datos.banco === '') {
     errores.push('Debés elegir un banco o billetera.');
   }
-  if (datos.banco !== 'Efectivo' && (!datos.tipo?.trim() || datos.tipo === '')) {
+  // Las billeteras y el efectivo no tienen un "tipo de cuenta" bancario:
+  // el selector se oculta en el form y el tipo se normaliza automáticamente.
+  const clase = _claseBanco(datos.banco ?? '');
+  if (clase !== 'efectivo' && clase !== 'billetera'
+      && (!datos.tipo?.trim() || datos.tipo === '')) {
     errores.push('Debés elegir el tipo de cuenta.');
   }
   const saldo = Number(datos.saldo);
@@ -248,9 +263,14 @@ export function parseCuotaManejo(datos) {
  */
 export function normalizarCuenta(datos) {
   const banco  = datos.banco.trim();
-  // Cuando el banco es Efectivo el campo tipo está oculto: normalizar a 'Efectivo'
-  // para que _autoNombre devuelva 'Efectivo' (sin duplicar "Efectivo Efectivo").
-  const tipo   = banco === 'Efectivo' ? 'Efectivo' : (datos.tipo ?? '');
+  // Normalizar tipo según la clase de la entidad:
+  //   efectivo  → 'Efectivo' (tipo oculto en el form, autogenerado)
+  //   billetera → id del banco (ej. 'Nequi'): _autoNombre evita duplicar "Nequi Nequi"
+  //   banco/otro → valor del select (lo eligió el usuario)
+  const claseN = _claseBanco(banco);
+  const tipo   = claseN === 'efectivo'  ? 'Efectivo'
+               : claseN === 'billetera' ? banco
+               : (datos.tipo ?? '');
   // Si el usuario no escribio nombre, autogenerar uno legible:
   //   "Davivienda Ahorros" / "Nequi Otro" / "Efectivo".
   // Para el banco "Efectivo" + tipo "Efectivo" evitamos duplicar.

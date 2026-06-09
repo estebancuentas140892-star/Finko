@@ -16,6 +16,8 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
+import { esc as _esc } from '../../infra/utils.js';
+import { BANCOS_CO, TIPOS_POR_CLASE } from '../../core/constants.js';
 import {
   validarCuenta,
   normalizarCuenta,
@@ -57,10 +59,9 @@ function _nuevaCuenta() {
   const form = document.getElementById('form-cuenta');
   if (form) delete form.dataset.id;
   // resetModal desmarca checkboxes pero no dispara `change`, así que
-  // ocultamos manualmente el fieldset de cuota por si quedó visible.
-  _toggleCuotaFieldset();
-  // Asegurar que tipo y 4x1000 sean visibles si el banco anterior era Efectivo.
-  _toggleCamposEfectivo();
+  // sincronizamos manualmente el estado de los campos según la clase del banco
+  // (ninguno seleccionado tras resetModal → tipo oculto, resto visible).
+  _toggleCamposPorClase();
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Nueva cuenta';
 
@@ -175,22 +176,24 @@ function _editarCuenta(el) {
   if (!form) return;
   form.dataset.id = id; // marcador para que _guardarCuenta haga editar() en vez de guardar()
 
-  // Pre-rellenar campos.
-  form.querySelector('[name="saldo"]').value  = cuenta.saldo ?? 0;
-  form.querySelector('[name="tipo"]').value   = cuenta.tipo  ?? '';
-
-  // El banco usa el custom picker: setear el hidden + actualizar el display visual.
+  // 1. Setear banco PRIMERO: _toggleCamposPorClase necesita el valor del banco
+  //    para saber qué tipos de cuenta y qué campos mostrar.
   const hiddenBanco = form.querySelector('[name="banco"]');
   if (hiddenBanco) hiddenBanco.value = cuenta.banco ?? '';
   _setBankPickerDisplay(cuenta.banco);
 
-  // Pre-rellenar el flag 4x1000 (GMF).
+  // 2. Adaptar campos según la clase de la entidad (y poblar el select de tipos).
+  _toggleCamposPorClase();
+
+  // 3. Pre-rellenar saldo y tipo DESPUÉS del toggle (el select ya tiene las opciones).
+  form.querySelector('[name="saldo"]').value = cuenta.saldo ?? 0;
+  form.querySelector('[name="tipo"]').value  = cuenta.tipo  ?? '';
+
+  // 4. Pre-rellenar el flag 4x1000 (GMF).
   const cb4x1000 = form.querySelector('[name="aplica4x1000"]');
   if (cb4x1000) cb4x1000.checked = !!cuenta.aplica4x1000;
 
-  _toggleCamposEfectivo();
-
-  // Pre-rellenar la cuota de manejo si la cuenta la tiene.
+  // 5. Pre-rellenar la cuota de manejo y actualizar la visibilidad del fieldset.
   const cuotaToggle = form.querySelector('[data-cuota-toggle]');
   const cuotaMonto  = form.querySelector('[name="cuotaManejoMonto"]');
   const cuotaDia    = form.querySelector('[name="cuotaManejoDia"]');
@@ -273,8 +276,8 @@ function _inyectarForm() {
   // Toggle para mostrar/ocultar el fieldset de cuota de manejo.
   body.querySelector('[data-cuota-toggle]')?.addEventListener('change', _toggleCuotaFieldset);
 
-  // Ocultar "Tipo de cuenta" y "4x1000" cuando el banco seleccionado es Efectivo.
-  body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposEfectivo);
+  // Adaptar campos (tipo, 4x1000, cuota) según la clase de la entidad elegida.
+  body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposPorClase);
 
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
@@ -290,30 +293,62 @@ function _toggleCuotaFieldset() {
 }
 
 /**
- * Oculta los campos que no aplican cuando el banco es Efectivo:
- * "Tipo de cuenta" (el efectivo no tiene tipo) y "4x1000" (el efectivo
- * no paga GMF). Limpia sus valores al ocultarlos.
+ * Adapta el formulario según la clase de la entidad elegida en el bank-picker.
+ *
+ * - banco:     muestra tipo (Corriente / Ahorros), 4x1000 y cuota.
+ * - billetera: oculta tipo (saldo único, no hay "tipo bancario"), muestra 4x1000 y cuota.
+ * - efectivo:  oculta tipo, 4x1000 y cuota (no aplican).
+ * - otro / sin selección: muestra tipo (Ahorros / Otro), 4x1000 y cuota.
+ *
+ * Reemplaza la antigua `_toggleCamposEfectivo` que solo manejaba el caso Efectivo.
  */
-function _toggleCamposEfectivo() {
-  const banco = document.querySelector('#form-cuenta [name="banco"]')?.value ?? '';
-  const esEfectivo = banco === 'Efectivo';
+function _toggleCamposPorClase() {
+  const bancoId = document.querySelector('#form-cuenta [name="banco"]')?.value ?? '';
+  const entrada = BANCOS_CO.find(b => b.id === bancoId);
+  // null = sin banco elegido → ocultamos tipo, mostramos el resto (comportamiento seguro).
+  const clase   = entrada?.clase ?? null;
 
+  // ── Tipo de cuenta ───────────────────────────────────────────────
+  const tiposDisponibles = clase ? (TIPOS_POR_CLASE[clase] ?? []) : [];
   const grupoTipo = document.getElementById('form-group-tipo');
   if (grupoTipo) {
-    grupoTipo.hidden = esEfectivo;
-    if (esEfectivo) {
+    grupoTipo.hidden = tiposDisponibles.length === 0;
+    if (!grupoTipo.hidden) {
       const sel = document.getElementById('cuenta-tipo');
-      if (sel) sel.value = '';
+      if (sel) {
+        const valorActual = sel.value;
+        sel.innerHTML = '<option value="">Seleccionar…</option>' +
+          tiposDisponibles
+            .map(t => `<option value="${_esc(t)}"${valorActual === t ? ' selected' : ''}>${_esc(t)}</option>`)
+            .join('');
+        // Si el tipo actual no existe en la nueva lista (clase cambió), limpiar.
+        if (!tiposDisponibles.includes(valorActual)) sel.value = '';
+      }
     }
   }
 
+  // ── 4x1000 ───────────────────────────────────────────────────────
   const grupo4x1000 = document.getElementById('form-group-4x1000');
   if (grupo4x1000) {
-    grupo4x1000.hidden = esEfectivo;
-    if (esEfectivo) {
+    const ocultarGMF = clase === 'efectivo';
+    grupo4x1000.hidden = ocultarGMF;
+    if (ocultarGMF) {
       const cb = document.getElementById('cuenta-4x1000');
       if (cb) cb.checked = false;
     }
+  }
+
+  // ── Cuota de manejo ──────────────────────────────────────────────
+  const toggleCuota  = document.getElementById('cuenta-cuota-toggle');
+  const grupoCuota   = toggleCuota?.closest('.form-group--checkbox');
+  const fieldsetCuota = document.getElementById('cuenta-cuota-fieldset');
+  if (clase === 'efectivo') {
+    if (grupoCuota)     grupoCuota.hidden = true;
+    if (fieldsetCuota)  fieldsetCuota.hidden = true;
+    if (toggleCuota)    toggleCuota.checked = false;
+  } else {
+    if (grupoCuota)     grupoCuota.hidden = false;
+    _toggleCuotaFieldset(); // el fieldset lo controla el toggle, no la clase
   }
 }
 

@@ -9,7 +9,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
-import { BANCOS_CO, TIPOS_CUENTA, FRECUENCIAS } from '../../core/constants.js';
+import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
 import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -199,10 +199,6 @@ export function renderFormCuenta() {
       <span>${_esc(b.id)}</span>
     </li>`).join('');
 
-  const tipoOpts = TIPOS_CUENTA
-    .map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`)
-    .join('');
-
   return `
     <form id="form-cuenta" novalidate>
       <div class="form-group">
@@ -238,11 +234,10 @@ export function renderFormCuenta() {
         </div>
       </div>
 
-      <div class="form-group" id="form-group-tipo">
+      <div class="form-group" id="form-group-tipo" hidden>
         <label for="cuenta-tipo" class="label">Tipo de cuenta</label>
         <select id="cuenta-tipo" name="tipo" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
-          ${tipoOpts}
         </select>
       </div>
       <div class="form-group">

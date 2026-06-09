@@ -245,34 +245,59 @@ export const VIGENCIA_2026 = VIGENCIA;
  *   iniciales - letras para el avatar visual (max 2 chars).
  *   color     - fondo del avatar (color corporativo aproximado).
  *   texto     - color del texto dentro del avatar (#ffffff o #1a1a1a).
+ *   clase     - familia de la entidad: 'efectivo' | 'banco' | 'billetera' | 'otro'.
+ *               Maneja qué campos muestra el formulario de cuenta (tipos de
+ *               cuenta compatibles, 4x1000, cuota de manejo). Ver TIPOS_POR_CLASE.
  *
  * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
  */
 export const BANCOS_CO = [
-  { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff' },
-  { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a' },
-  { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff' },
-  { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff' },
-  { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff' },
-  { id: 'Banco Popular',        iniciales: 'BP', color: '#0B5394', texto: '#ffffff' },
-  { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff' },
-  { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff' },
-  { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff' },
-  { id: 'Nequi',                iniciales: 'Nq', color: '#9C00FF', texto: '#ffffff' },
-  { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff' },
-  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff' },
-  { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff' },
-  { id: 'Otro',                 iniciales: '?',  color: '#6B7280', texto: '#ffffff' },
+  { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff', clase: 'efectivo'  },
+  { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a', clase: 'banco'     },
+  { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff', clase: 'banco'     },
+  { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco Popular',        iniciales: 'BP', color: '#0B5394', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Nequi',                iniciales: 'Nq', color: '#9C00FF', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Otro',                 iniciales: '?',  color: '#6B7280', texto: '#ffffff', clase: 'otro'      },
 ];
 
-/** Tipos de cuenta soportados en el módulo de tesorería. */
+/**
+ * Tipos de cuenta soportados en el módulo de tesorería.
+ *
+ * "Inversión" se eliminó en v11: las inversiones reales (CDT, fondos, acciones,
+ * cripto) viven en el dominio Inversión (sección "Crecer"), con monto, tasa y
+ * plazo. Una cuenta de tesorería es un saldo disponible, no un instrumento de
+ * inversión. Las cuentas viejas con tipo 'Inversión' se migran a 'Otro'.
+ */
 export const TIPOS_CUENTA = [
   'Corriente',
   'Ahorros',
   'Efectivo',
-  'Inversión',
   'Otro',
 ];
+
+/**
+ * Tipos de cuenta válidos según la clase de entidad (BANCOS_CO[i].clase).
+ * El formulario de cuenta filtra el selector "Tipo de cuenta" con esta tabla:
+ *   - banco:     Corriente o Ahorros.
+ *   - billetera: saldo único, no aplica tipo bancario (selector oculto).
+ *   - efectivo:  no aplica (selector oculto; tipo se normaliza a 'Efectivo').
+ *   - otro:      genérico (Ahorros u Otro).
+ * Una lista vacía significa "no mostrar el selector de tipo".
+ */
+export const TIPOS_POR_CLASE = {
+  banco:     ['Corriente', 'Ahorros'],
+  billetera: [],
+  efectivo:  [],
+  otro:      ['Ahorros', 'Otro'],
+};
 
 /** Categorías de gasto variable. */
 export const CATEGORIAS_GASTO = [

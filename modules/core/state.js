@@ -215,7 +215,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 10,
+    _version: 11,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,

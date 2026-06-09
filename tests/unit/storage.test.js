@@ -375,6 +375,85 @@ describe('Migración v9 → v10 (datos fiscales)', () => {
   });
 });
 
+describe('Migración v10 → v11 (quitar tipo de cuenta Inversión)', () => {
+  it('reasigna cuentas con tipo "Inversión" a "Otro"', () => {
+    const v10 = {
+      ...createInitialState(),
+      _version: 10,
+      cuentas: [
+        { id: 'c1', nombre: 'CDT', banco: 'Bancolombia', tipo: 'Inversión', saldo: 5_000_000 },
+        { id: 'c2', nombre: 'Ahorros', banco: 'Davivienda', tipo: 'Ahorros', saldo: 1_000_000 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v10));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.cuentas.find(c => c.id === 'c1').tipo).toBe('Otro');
+  });
+
+  it('no toca cuentas con otros tipos', () => {
+    const v10 = {
+      ...createInitialState(),
+      _version: 10,
+      cuentas: [
+        { id: 'c2', nombre: 'Ahorros', banco: 'Davivienda', tipo: 'Ahorros', saldo: 1_000_000 },
+        { id: 'c3', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 200_000 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v10));
+
+    loadData();
+
+    expect(S.cuentas.find(c => c.id === 'c2').tipo).toBe('Ahorros');
+    expect(S.cuentas.find(c => c.id === 'c3').tipo).toBe('Efectivo');
+  });
+
+  it('preserva el resto de campos de la cuenta migrada', () => {
+    const v10 = {
+      ...createInitialState(),
+      _version: 10,
+      cuentas: [
+        { id: 'c1', nombre: 'CDT', banco: 'Bancolombia', tipo: 'Inversión', saldo: 5_000_000, aplica4x1000: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v10));
+
+    loadData();
+
+    const c = S.cuentas.find(c => c.id === 'c1');
+    expect(c.nombre).toBe('CDT');
+    expect(c.saldo).toBe(5_000_000);
+    expect(c.aplica4x1000).toBe(true);
+  });
+
+  it('sin cuentas, la migración no falla (no-op)', () => {
+    const v10 = { ...createInitialState(), _version: 10, cuentas: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v10));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.cuentas).toEqual([]);
+  });
+
+  it('idempotente: ya en v11 con tipos válidos no cambia nada', () => {
+    const v11 = {
+      ...createInitialState(),
+      _version: 11,
+      cuentas: [
+        { id: 'c1', nombre: 'Ahorros', banco: 'Davivienda', tipo: 'Ahorros', saldo: 1_000_000 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v11));
+
+    loadData();
+
+    expect(S.cuentas.find(c => c.id === 'c1').tipo).toBe('Ahorros');
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

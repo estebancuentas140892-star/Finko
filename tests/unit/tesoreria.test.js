@@ -119,7 +119,7 @@ describe('validarCuenta()', () => {
     expect(errores[0]).toMatch(/banco/i);
   });
 
-  it('reporta error si tipo no se seleccionó (banco no es Efectivo)', () => {
+  it('reporta error si tipo no se seleccionó (banco es banco tradicional)', () => {
     const errores = validarCuenta({ ...datosFormValidos, tipo: '' });
     expect(errores).toHaveLength(1);
     expect(errores[0]).toMatch(/tipo/i);
@@ -132,6 +132,16 @@ describe('validarCuenta()', () => {
 
   it('banco Efectivo: tipo con valor también es válido', () => {
     const errores = validarCuenta({ banco: 'Efectivo', tipo: 'Efectivo', saldo: '0' });
+    expect(errores).toEqual([]);
+  });
+
+  it('billetera (Nequi): tipo vacío NO genera error (selector oculto, no aplica)', () => {
+    const errores = validarCuenta({ banco: 'Nequi', tipo: '', saldo: '0' });
+    expect(errores).toEqual([]);
+  });
+
+  it('billetera (Daviplata): tipo vacío también es válido', () => {
+    const errores = validarCuenta({ banco: 'Daviplata', tipo: '', saldo: '0' });
     expect(errores).toEqual([]);
   });
 
@@ -195,9 +205,11 @@ describe('normalizarCuenta()', () => {
     expect(result.nombre).toBe('Davivienda Ahorros');
   });
 
-  it('autogenera nombre con espacios en blanco también', () => {
+  it('billetera (Nequi): tipo se normaliza al id del banco, autogenera nombre sin duplicar', () => {
     const result = normalizarCuenta({ ...datosFormValidos, nombre: '   ', banco: 'Nequi', tipo: 'Otro' });
-    expect(result.nombre).toBe('Nequi Otro');
+    // Para billeteras el tipo es el banco id ('Nequi'). _autoNombre evita "Nequi Nequi".
+    expect(result.tipo).toBe('Nequi');
+    expect(result.nombre).toBe('Nequi');
   });
 
   it('evita duplicar "Efectivo Efectivo" cuando banco y tipo coinciden', () => {
@@ -228,6 +240,12 @@ describe('normalizarCuenta()', () => {
   it('respeta el nombre del usuario si lo provee', () => {
     const result = normalizarCuenta({ ...datosFormValidos, nombre: 'Mi cuenta favorita', banco: 'Davivienda', tipo: 'Ahorros' });
     expect(result.nombre).toBe('Mi cuenta favorita');
+  });
+
+  it('billetera con nombre explícito conserva el nombre del usuario', () => {
+    const result = normalizarCuenta({ banco: 'Nequi', tipo: '', saldo: '0', nombre: 'Nequi del trabajo' });
+    expect(result.nombre).toBe('Nequi del trabajo');
+    expect(result.tipo).toBe('Nequi');
   });
 });
 
