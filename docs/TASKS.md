@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1182/1182 tests verdes, lint limpio.** Último cambio: **formulario de cuentas dinámico** (schema v11: clase de entidad, tipos filtrados, quitar Inversión, migración). Antes: M.3 (ingresos recurrentes + cuenta en abono a metas). ADR 005 cerrado (no desglozar IVA/propina).
+**App estable, 1183/1183 tests verdes, lint limpio.** Último cambio: **skip link WCAG 2.4.1** (`index.html` + test). Antes: formulario de cuentas dinámico (schema v11). ADR 005 cerrado (no desglozar IVA/propina).
 
 ---
 

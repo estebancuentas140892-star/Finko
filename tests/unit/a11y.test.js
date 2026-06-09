@@ -144,11 +144,23 @@ describe('Accesibilidad - index.html (axe-core WCAG 2.1 AA)', () => {
 
     if (results.violations.length > 0) {
       results.violations[0].nodes.forEach((n) => {
-         
+
         console.error(`  ID duplicado: ${n.html}`);
       });
     }
 
     expect(results.violations).toHaveLength(0);
+  });
+
+  it('tiene skip link apuntando a #main-content (WCAG 2.4.1)', () => {
+    // El skip link debe ser el primer enlace del body para que sea util.
+    const skipLink = document.querySelector('a.skip-link');
+    expect(skipLink, 'Falta <a class="skip-link"> en el HTML').not.toBeNull();
+    expect(skipLink.getAttribute('href')).toBe('#main-content');
+
+    // El destino debe existir con tabindex para recibir foco programatico.
+    const destino = document.getElementById('main-content');
+    expect(destino, 'Falta id="main-content" en el HTML').not.toBeNull();
+    expect(destino.getAttribute('tabindex')).toBe('-1');
   });
 });

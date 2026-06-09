@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (formulario de cuentas dinámico por clase de entidad + schema v11 + ADR 005 IVA; 1182/1182 verde)
+> Última actualización: 2026-06-09 (skip link accesibilidad WCAG 2.4.1; 1183/1183 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1182/1182 verdes (+18 tests: catálogo clase/TIPOS_POR_CLASE, migración v11, billetera en validar/normalizar) |
+| Tests unitarios + integración | 1183/1183 verdes (+1 test: skip link WCAG 2.4.1 en a11y.test.js) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(a11y): agregar skip link "Saltar al contenido principal" (WCAG 2.4.1) · 2026-06-09
+
+El CSS `.skip-link` existía desde la fase inicial pero el elemento `<a>` nunca se había agregado al HTML. Un usuario que navega solo con teclado no podía saltarse los 20+ enlaces de la barra lateral para ir directo al contenido: debía recorrerlos todos en cada carga. Ahora `index.html` tiene `<a class="skip-link" href="#main-content">Saltar al contenido principal</a>` como primer elemento del `<body>`. El destino `#main-content` ya tenía `tabindex="-1"` (correcto). Se agrega test `'tiene skip link apuntando a #main-content (WCAG 2.4.1)'` en `tests/unit/a11y.test.js`. SW v127 → v128.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Primer elemento del `<body>`: `<a class="skip-link" href="#main-content">Saltar al contenido principal</a>` |
+| `tests/unit/a11y.test.js` | +1 test: verifica que el skip link existe, apunta a `#main-content` y que el destino tiene `tabindex="-1"` |
+| `service-worker.js` | `CACHE_NAME` v127 → v128 |
+
+---
 
 ### refactor(cuentas): formulario dinámico por clase de entidad + schema v11 + ADR IVA · 2026-06-09
 
@@ -139,9 +151,9 @@ Primera fase de una mejora de UX en 3 fases pedida por el usuario. Los gastos cr
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Post-v1.0 mejoras de UX. Sección M cerrada. Último cambio: formulario de cuentas dinámico por clase (schema v11) + ADR 005 IVA. App 1182/1182 tests verdes, lint limpio.
+**Fase activa:** Post-v1.0 mejoras de UX y accesibilidad. Última tarea: skip link WCAG 2.4.1 + formulario de cuentas dinámico (schema v11) + ADR 005 IVA. App 1183/1183 tests verdes, lint limpio.
 
-**Próxima tarea natural:** verificar el formulario de cuentas en la app (crear banco, billetera, efectivo; editar; probar que los campos correctos aparecen). Si todo está bien, decidir entre las opciones del roadmap: A.5 (dominio custom) o cualquier mejora puntual que surja del uso real.
+**Próxima tarea natural:** verificar el formulario de cuentas en la app (crear banco, billetera, efectivo; editar; probar que los campos correctos aparecen) y verificar el skip link con Tab. Si todo funciona, decidir entre las opciones del roadmap: A.5 (dominio custom) o mejoras puntuales que surjan del uso real.
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.

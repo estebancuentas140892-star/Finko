@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(a11y): skip link "Saltar al contenido principal" (WCAG 2.4.1) · 2026-06-09
+
+El CSS `.skip-link` existía en `styles/base.css` desde el inicio pero el elemento `<a>` nunca se había incluido en `index.html`. Brecha real para usuarios que navegan solo con teclado: sin el enlace debían recorrer los 20+ enlaces de la barra lateral en cada carga de página para llegar al contenido. El destino `#main-content` ya tenía `tabindex="-1"`. SW v127 → v128. 1183/1183 tests verdes (+1).
+
+- **`index.html`:** `<a class="skip-link" href="#main-content">Saltar al contenido principal</a>` como primer elemento del `<body>`.
+- **`tests/unit/a11y.test.js`:** +1 test: confirma que el skip link existe, apunta a `#main-content` y que el destino tiene `tabindex="-1"`.
+- **`service-worker.js`:** `CACHE_NAME` v127 → v128.
+
+---
+
 ### refactor(cuentas): formulario dinámico por clase de entidad + schema v11 + ADR IVA · 2026-06-09
 
 Dos mejoras de UX en Mis Cuentas más una decisión de producto documentada.
