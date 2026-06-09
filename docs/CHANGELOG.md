@@ -7,6 +7,62 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ingresos): motor de distribución adaptativa del ingreso (Fase 3) · 2026-06-09
+
+Fase 3 y cierre de la serie "coaching de ingresos". Tarjeta "¿Cómo distribuir $X?" debajo del nudge de próximo cobro, con split adaptativo basado en la regla 50/30/20 ajustada al peso real de los gastos fijos del usuario. Sin cambio de schema. SW v130 → v131. 1235/1235 tests verdes (+14).
+
+`sugerirDistribucionIngreso(ingresoMensual, contexto)` adapta el split en tres escenarios: fijos <= 50% (50/30/20 estándar), fijos entre 51-70% (ajustado para que ahorro no quede en cero), fijos > 70% (agresivo con alerta). Agrega CTAs según contexto: activar fondo de emergencia, ver progreso del fondo, explorar inversiones, o estrategia de deudas.
+
+`renderDistribucionIngreso()` lee `S` directamente (sin importar de otros dominios, ADN #10): suma fijos mensuales de `S.compromisos`, verifica fondo en `S.ahorro`, cuenta deudas y inversiones. La tarjeta solo aparece si `estimarSalarioMensual(S.ingresos) > 0`.
+
+El EventBus listener de tesorería/index.js ahora reacciona también a cambios en `section === 'ahorro'` y `section === 'inversiones'`, para que la tarjeta se actualice cuando el usuario activa el fondo o agrega una inversión.
+
+- **`modules/dominio/tesoreria/logic.js`:** `sugerirDistribucionIngreso` (pura, exportada). Split siempre suma 100, montos suman al ingreso mensual (tolerancia de redondeo).
+- **`modules/dominio/tesoreria/view.js`:** `renderDistribucionIngreso()` y `_renderDistribucion()`. Reutiliza clases `.nudge nudge-info` / `.nudge__body` / `.nudge__desc` sin CSS nuevo. Importa `estimarSalarioMensual` y `sugerirDistribucionIngreso` de logic.js.
+- **`modules/dominio/tesoreria/index.js`:** `renderDistribucionIngreso` importado y llamado en `_renderTodo`. EventBus extendido con `ahorro` e `inversiones`.
+- **`index.html`:** `<div id="ingresos-distribucion">` entre nudge y lista de ingresos.
+- **`tests/unit/tesoreria.test.js`:** +14 tests: null cuando sin ingreso, split 50/30/20 estándar, ajustado, agresivo, suma siempre 100 (8 valores de pctFijos), alertas y CTAs por contexto, label "Ahorro e inversión", coherencia de montos.
+- **`service-worker.js`:** `CACHE_NAME` v130 → v131.
+
+---
+
+### feat(ingresos): alerta proactiva de próximo cobro en Mis ingresos (Fase 2) · 2026-06-09
+
+Fase 2 de la mejora de "Mis ingresos": alerta "Recibes X en N días" encima de la lista de ingresos. Dos funciones puras nuevas en `logic.js` + render del nudge en `view.js`. Sin cambios de schema ni de HTML estático (fuera del nuevo container). SW v129 → v130. 1221/1221 tests verdes (+20).
+
+`diasParaProximoPago(frecuencia, diaPago, hoy)` calcula los días hasta el próximo cobro para Mensual (diaPago en el mes) y Quincenal (diaPago y diaPago + 15). Maneja fin de mes (diaPago 31 en febrero → día 28) y el rollover de diciembre a enero. Para otras frecuencias devuelve null (sin referencia de mes de inicio, el cálculo no es fiable).
+
+`detectarNudgeProximoIngreso(ingresos, hoy)` elige el más próximo de los ingresos activos con diaPago calculable y cuenta cuántos más llegan dentro de los próximos 7 días.
+
+El nudge muestra: "hoy" / "mañana" / "en X días (DD mmm)" y, si hay otros ingresos próximos esa semana, agrega "y N más próximos esta semana".
+
+- **`modules/dominio/tesoreria/logic.js`:** `diasParaProximoPago` y `detectarNudgeProximoIngreso` (puras, exportadas).
+- **`modules/dominio/tesoreria/view.js`:** `renderNudgeProximoIngreso()` (escribe en `#ingresos-nudge-proximo`). Helpers privados `_renderNudgeProximo`, `_fechaCorta`.
+- **`modules/dominio/tesoreria/index.js`:** `renderNudgeProximoIngreso` importado y llamado en `_renderTodo`.
+- **`index.html`:** `<div id="ingresos-nudge-proximo">` antes de `#lista-ingresos`.
+- **`tests/unit/tesoreria.test.js`:** +11 tests `diasParaProximoPago` (Mensual, Quincenal, edge cases, nulls) + +9 tests `detectarNudgeProximoIngreso`.
+- **`service-worker.js`:** `CACHE_NAME` v129 → v130.
+
+---
+
+### feat(ingresos): diaPago en fuentes de ingreso recurrentes (schema v12) · 2026-06-09
+
+Fase 1 de la mejora de "Mis ingresos": agrega el campo opcional `diaPago` (día del mes 1-31) a cada fuente de ingreso recurrente. Este primitivo desbloquea la Fase 2 (alerta "Recibes tu pago en N días") y la Fase 3 (motor de distribución adaptativo). SW v128 → v129. 1201/1201 tests verdes (+18).
+
+El campo se muestra en el form solo para las frecuencias con ciclo mensual (Quincenal, Mensual, Bimestral, Trimestral, Semestral, Anual). Para Quincenal el máximo es 15 (primer día de quincena; el segundo es diaPago + 15). El campo se oculta para Diario, Semanal, Variable y Única vez. Los ingresos existentes migran con `diaPago: null` (schema v11 → v12, idempotente).
+
+- **`modules/core/state.js`:** `diaPago?: number|null` en `@typedef Ingreso`. `_version` 11 → 12.
+- **`modules/core/storage.js`:** `SCHEMA_VERSION` 11 → 12. Migración v11 → v12: agrega `diaPago: null` a ingresos sin el campo.
+- **`modules/dominio/tesoreria/logic.js`:** Exporta `FRECUENCIAS_CON_DIA`. `validarIngreso`: valida `diaPago` si se proporcionó y la frecuencia lo soporta (rango 1-31, o 1-15 para Quincenal). `normalizarIngreso`: incluye `diaPago` en el shape de salida.
+- **`modules/dominio/tesoreria/view.js`:** `renderFormIngreso`: campo `#form-group-dia-pago` con visibilidad inicial según la frecuencia del ingreso editado. `_renderIngresoItem`: hint "📅 día X de cada período" / "📅 días X y Y de cada mes" cuando diaPago está seteado.
+- **`modules/dominio/tesoreria/index.js`:** `_attachDiaPagoToggle(form)`: conecta el select de frecuencia al campo diaPago, actualiza max/placeholder/label según la frecuencia. Llamada en `_nuevoIngreso` y `_editarIngreso`.
+- **`tests/unit/tesoreria.test.js`:** +14 tests: `validarIngreso` diaPago (9) y `normalizarIngreso` diaPago (5).
+- **`tests/unit/storage.test.js`:** +4 tests: migración v11 → v12 (null, idempotente, sin ingresos, varios).
+- **`tests/unit/state.test.js`:** assert `_version` 11 → 12.
+- **`service-worker.js`:** `CACHE_NAME` v128 → v129.
+
+---
+
 ### fix(a11y): skip link "Saltar al contenido principal" (WCAG 2.4.1) · 2026-06-09
 
 El CSS `.skip-link` existía en `styles/base.css` desde el inicio pero el elemento `<a>` nunca se había incluido en `index.html`. Brecha real para usuarios que navegan solo con teclado: sin el enlace debían recorrer los 20+ enlaces de la barra lateral en cada carga de página para llegar al contenido. El destino `#main-content` ya tenía `tabindex="-1"`. SW v127 → v128. 1183/1183 tests verdes (+1).

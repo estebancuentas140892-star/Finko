@@ -14,6 +14,9 @@ import {
   detectarNudgeGMF,
   validarIngreso,
   normalizarIngreso,
+  diasParaProximoPago,
+  detectarNudgeProximoIngreso,
+  sugerirDistribucionIngreso,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -710,6 +713,52 @@ describe('validarIngreso()', () => {
   });
 });
 
+// ── validarIngreso() - diaPago ────────────────────────────────────
+
+describe('validarIngreso() - diaPago', () => {
+  const base = { descripcion: 'Salario', monto: '3500000', frecuencia: 'Mensual' };
+
+  it('sin diaPago en frecuencia soportada → válido', () => {
+    expect(validarIngreso(base)).toEqual([]);
+  });
+
+  it('diaPago vacío → se ignora, sin error', () => {
+    expect(validarIngreso({ ...base, diaPago: '' })).toEqual([]);
+  });
+
+  it('diaPago 30 en Mensual → válido', () => {
+    expect(validarIngreso({ ...base, diaPago: '30' })).toEqual([]);
+  });
+
+  it('diaPago 1 en Mensual → válido', () => {
+    expect(validarIngreso({ ...base, diaPago: '1' })).toEqual([]);
+  });
+
+  it('diaPago 0 en Mensual → error de rango', () => {
+    const errs = validarIngreso({ ...base, diaPago: '0' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/día de pago/i);
+  });
+
+  it('diaPago 32 en Mensual → error de rango', () => {
+    expect(validarIngreso({ ...base, diaPago: '32' })).toHaveLength(1);
+  });
+
+  it('diaPago 15 en Quincenal → válido', () => {
+    expect(validarIngreso({ ...base, frecuencia: 'Quincenal', diaPago: '15' })).toEqual([]);
+  });
+
+  it('diaPago 16 en Quincenal → error (máximo 15)', () => {
+    const errs = validarIngreso({ ...base, frecuencia: 'Quincenal', diaPago: '16' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/quincena/i);
+  });
+
+  it('diaPago en frecuencia no soportada (Diario) → se ignora, sin error', () => {
+    expect(validarIngreso({ ...base, frecuencia: 'Diario', diaPago: '99' })).toEqual([]);
+  });
+});
+
 // ── normalizarIngreso() ───────────────────────────────────────────
 
 describe('normalizarIngreso()', () => {
@@ -731,5 +780,265 @@ describe('normalizarIngreso()', () => {
   it('preserva la frecuencia tal cual', () => {
     const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Quincenal' });
     expect(r.frecuencia).toBe('Quincenal');
+  });
+
+  it('con diaPago en Mensual → guarda número', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', diaPago: '30' });
+    expect(r.diaPago).toBe(30);
+  });
+
+  it('con diaPago en Quincenal → guarda número', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Quincenal', diaPago: '15' });
+    expect(r.diaPago).toBe(15);
+  });
+
+  it('sin diaPago → diaPago es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual' });
+    expect(r.diaPago).toBeNull();
+  });
+
+  it('diaPago vacío → diaPago es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', diaPago: '' });
+    expect(r.diaPago).toBeNull();
+  });
+
+  it('diaPago en frecuencia no soportada (Diario) → diaPago es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Diario', diaPago: '3' });
+    expect(r.diaPago).toBeNull();
+  });
+});
+
+// ── diasParaProximoPago() ─────────────────────────────────────────
+
+describe('diasParaProximoPago()', () => {
+  it('Mensual: diaPago en el mismo mes, días positivos', () => {
+    const hoy = new Date(2026, 5, 25); // 25 jun 2026
+    const r = diasParaProximoPago('Mensual', 30, hoy);
+    expect(r).not.toBeNull();
+    expect(r.dias).toBe(5);
+    expect(r.fechaISO).toBe('2026-06-30');
+  });
+
+  it('Mensual: diaPago es hoy → 0 días', () => {
+    const hoy = new Date(2026, 5, 30); // 30 jun 2026
+    const r = diasParaProximoPago('Mensual', 30, hoy);
+    expect(r.dias).toBe(0);
+    expect(r.fechaISO).toBe('2026-06-30');
+  });
+
+  it('Mensual: diaPago ya pasó este mes → pasa al mes siguiente', () => {
+    const hoy = new Date(2026, 6, 1); // 1 jul 2026
+    const r = diasParaProximoPago('Mensual', 30, hoy);
+    expect(r.dias).toBe(29);
+    expect(r.fechaISO).toBe('2026-07-30');
+  });
+
+  it('Mensual: diaPago 31 en mes de 30 días → se ajusta al último día', () => {
+    const hoy = new Date(2026, 5, 1); // 1 jun 2026 (junio tiene 30 días)
+    const r = diasParaProximoPago('Mensual', 31, hoy);
+    expect(r.fechaISO).toBe('2026-06-30');
+    expect(r.dias).toBe(29);
+  });
+
+  it('Mensual: diaPago 31 en febrero → se ajusta al 28', () => {
+    const hoy = new Date(2026, 1, 1); // 1 feb 2026
+    const r = diasParaProximoPago('Mensual', 31, hoy);
+    expect(r.fechaISO).toBe('2026-02-28');
+  });
+
+  it('Quincenal: próximo es el primer día de quincena', () => {
+    const hoy = new Date(2026, 5, 10); // 10 jun 2026
+    const r = diasParaProximoPago('Quincenal', 15, hoy);
+    expect(r.dias).toBe(5);
+    expect(r.fechaISO).toBe('2026-06-15');
+  });
+
+  it('Quincenal: primer día ya pasó → próximo es diaPago+15', () => {
+    const hoy = new Date(2026, 5, 20); // 20 jun 2026
+    const r = diasParaProximoPago('Quincenal', 15, hoy);
+    expect(r.dias).toBe(10);
+    expect(r.fechaISO).toBe('2026-06-30');
+  });
+
+  it('Quincenal: ambos días del mes pasaron → pasa al mes siguiente', () => {
+    const hoy = new Date(2026, 6, 1); // 1 jul 2026
+    const r = diasParaProximoPago('Quincenal', 15, hoy);
+    expect(r.fechaISO).toBe('2026-07-15');
+  });
+
+  it('devuelve null si diaPago es null', () => {
+    expect(diasParaProximoPago('Mensual', null)).toBeNull();
+  });
+
+  it('devuelve null para frecuencia no soportada (Bimestral)', () => {
+    expect(diasParaProximoPago('Bimestral', 15)).toBeNull();
+  });
+
+  it('devuelve null para frecuencia no soportada (Semanal)', () => {
+    expect(diasParaProximoPago('Semanal', 3)).toBeNull();
+  });
+});
+
+// ── detectarNudgeProximoIngreso() ─────────────────────────────────
+
+describe('detectarNudgeProximoIngreso()', () => {
+  const hoy = new Date(2026, 5, 25); // 25 jun 2026
+
+  it('lista vacía → null', () => {
+    expect(detectarNudgeProximoIngreso([], hoy)).toBeNull();
+  });
+
+  it('argumento no-array → null', () => {
+    expect(detectarNudgeProximoIngreso(null, hoy)).toBeNull();
+  });
+
+  it('ingreso con diaPago null → null', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: null }];
+    expect(detectarNudgeProximoIngreso(ingresos, hoy)).toBeNull();
+  });
+
+  it('ingreso con frecuencia no soportada (Semanal) → null', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Jornada', monto: 50_000, frecuencia: 'Semanal', activo: true, diaPago: 3 }];
+    expect(detectarNudgeProximoIngreso(ingresos, hoy)).toBeNull();
+  });
+
+  it('ingreso inactivo → excluido → null', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: false, diaPago: 30 }];
+    expect(detectarNudgeProximoIngreso(ingresos, hoy)).toBeNull();
+  });
+
+  it('ingreso activo con diaPago → devuelve principal', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 30 }];
+    const r = detectarNudgeProximoIngreso(ingresos, hoy);
+    expect(r).not.toBeNull();
+    expect(r.principal.descripcion).toBe('Salario');
+    expect(r.principal.dias).toBe(5);
+    expect(r.otrosProximos).toBe(0);
+  });
+
+  it('múltiples ingresos → principal es el más próximo', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Arriendo', monto: 800_000, frecuencia: 'Mensual', activo: true, diaPago: 30 },
+      { id: 'i2', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Quincenal', activo: true, diaPago: 25 },
+    ];
+    const r = detectarNudgeProximoIngreso(ingresos, hoy);
+    // hoy=25jun: Salario-quincenal→día 25 (hoy, 0 días), Arriendo-mensual→día 30 (5 días)
+    expect(r.principal.descripcion).toBe('Salario');
+    expect(r.principal.dias).toBe(0);
+  });
+
+  it('otro ingreso dentro de 7 días → otrosProximos > 0', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Quincenal', activo: true, diaPago: 25 },
+      { id: 'i2', descripcion: 'Arriendo', monto: 800_000, frecuencia: 'Mensual', activo: true, diaPago: 30 },
+    ];
+    const r = detectarNudgeProximoIngreso(ingresos, hoy);
+    // Salario→0 días, Arriendo→5 días (ambos dentro de 7)
+    expect(r.otrosProximos).toBe(1);
+  });
+
+  it('otro ingreso más allá de 7 días → otrosProximos = 0', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 26 },
+      { id: 'i2', descripcion: 'Arriendo', monto: 800_000, frecuencia: 'Mensual', activo: true, diaPago: 10 },
+    ];
+    // hoy=25jun: Salario→26jun(1 día), Arriendo→siguiente mes (10 jul = 15 días)
+    const r = detectarNudgeProximoIngreso(ingresos, hoy);
+    expect(r.principal.descripcion).toBe('Salario');
+    expect(r.otrosProximos).toBe(0);
+  });
+});
+
+// ── sugerirDistribucionIngreso() (Fase 3) ─────────────────────────
+describe('sugerirDistribucionIngreso()', () => {
+  it('devuelve null cuando ingresoMensual es 0', () => {
+    expect(sugerirDistribucionIngreso(0)).toBeNull();
+  });
+
+  it('devuelve null cuando ingresoMensual es negativo', () => {
+    expect(sugerirDistribucionIngreso(-1_000)).toBeNull();
+  });
+
+  it('usa 50/30/20 cuando no hay gastos fijos registrados', () => {
+    const r = sugerirDistribucionIngreso(3_000_000);
+    expect(r.metodo).toBe('50/30/20');
+    expect(r.split.necesidades.pct).toBe(50);
+    expect(r.split.estiloVida.pct).toBe(30);
+    expect(r.split.ahorro.pct).toBe(20);
+  });
+
+  it('usa 50/30/20 cuando pctFijos <= 50 (fijos sanos)', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 }); // 40%
+    expect(r.metodo).toBe('50/30/20');
+    expect(r.pctFijos).toBe(40);
+  });
+
+  it('ajusta el split cuando pctFijos esta entre 50 y 70', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_800_000 }); // 60%
+    expect(r.metodo).toBe('ajustado');
+    expect(r.split.necesidades.pct).toBe(60);
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(10);
+  });
+
+  it('aplica ajuste agresivo cuando pctFijos es mayor que 70', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 2_400_000 }); // 80%
+    expect(r.metodo).toBe('ajustado-fijos-altos');
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(5);
+    expect(r.alertas.length).toBeGreaterThan(0);
+  });
+
+  it('el split siempre suma 100 para distintos niveles de pctFijos', () => {
+    [0, 30, 50, 60, 70, 75, 85, 95].forEach(pct => {
+      const fijos = pct === 0 ? 0 : Math.round(3_000_000 * pct / 100);
+      const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: fijos });
+      const suma = r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct;
+      expect(suma, `pctFijos=${pct}`).toBe(100);
+    });
+  });
+
+  it('agrega alerta y CTA a ahorro cuando no hay fondo activo', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { tieneFondoActivo: false });
+    expect(r.alertas.some(a => a.includes('fondo'))).toBe(true);
+    expect(r.ctas.some(c => c.seccion === 'ahorro')).toBe(true);
+  });
+
+  it('agrega CTA a ahorro cuando el fondo esta activo pero incompleto', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { tieneFondoActivo: true, fondoCompleto: false });
+    expect(r.ctas.some(c => c.seccion === 'ahorro')).toBe(true);
+  });
+
+  it('agrega CTA a inversion cuando el fondo esta completo y no hay inversiones', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: false,
+    });
+    expect(r.ctas.some(c => c.seccion === 'inversion')).toBe(true);
+  });
+
+  it('no agrega CTA a inversion cuando el usuario ya invierte', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: true,
+    });
+    expect(r.ctas.some(c => c.seccion === 'inversion')).toBe(false);
+  });
+
+  it('agrega alerta y CTA a compromisos cuando hay deudas activas', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { tieneDeudas: true });
+    expect(r.alertas.some(a => a.includes('deuda'))).toBe(true);
+    expect(r.ctas.some(c => c.seccion === 'compromisos')).toBe(true);
+  });
+
+  it('usa label "Ahorro e inversión" cuando el usuario ya invierte', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: true,
+    });
+    expect(r.split.ahorro.label).toBe('Ahorro e inversión');
+  });
+
+  it('los montos del split son coherentes con ingresoMensual (tolerancia redondeo)', () => {
+    const r = sugerirDistribucionIngreso(2_500_000);
+    const sumaMontos = r.split.necesidades.monto + r.split.estiloVida.monto + r.split.ahorro.monto;
+    expect(Math.abs(sumaMontos - 2_500_000)).toBeLessThanOrEqual(3);
   });
 });

@@ -132,7 +132,91 @@ export function sugerirDistribucionPrima(salario, tieneDeudas) {
   };
 }
 
+// ── PRÓXIMO PAGO ─────────────────────────────────────────────────
+
+/**
+ * Calcula cuántos días faltan para el próximo cobro de un ingreso recurrente.
+ * Solo soporta Mensual y Quincenal: son los únicos con diaPago basado en día del mes.
+ * Para Quincenal, los dos días de cobro son `diaPago` y `diaPago + 15`.
+ *
+ * @param {string}      frecuencia
+ * @param {number|null} diaPago    Día del mes (1-31). Para Quincenal: primer día (1-15).
+ * @param {Date}        [hoy]      Fecha de referencia (default: hoy).
+ * @returns {{ dias: number, fechaISO: string } | null}
+ */
+export function diasParaProximoPago(frecuencia, diaPago, hoy = new Date()) {
+  if (!diaPago || (frecuencia !== 'Mensual' && frecuencia !== 'Quincenal')) return null;
+
+  const hoyNorm = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const msDay   = 1000 * 60 * 60 * 24;
+
+  function _fechaEnMes(anio, mes, dia) {
+    const ultimo = new Date(anio, mes + 1, 0).getDate();
+    return new Date(anio, mes, Math.min(dia, ultimo));
+  }
+
+  function _candidatosMes(anio, mes) {
+    if (frecuencia === 'Mensual') return [_fechaEnMes(anio, mes, diaPago)];
+    return [_fechaEnMes(anio, mes, diaPago), _fechaEnMes(anio, mes, diaPago + 15)];
+  }
+
+  const anio    = hoyNorm.getFullYear();
+  const mes     = hoyNorm.getMonth();
+  const nextMes  = mes === 11 ? 0 : mes + 1;
+  const nextAnio = mes === 11 ? anio + 1 : anio;
+
+  const proxima = [
+    ..._candidatosMes(anio, mes),
+    ..._candidatosMes(nextAnio, nextMes),
+  ]
+    .filter(f => f >= hoyNorm)
+    .sort((a, b) => a - b)[0];
+
+  if (!proxima) return null;
+
+  const dias     = Math.round((proxima.getTime() - hoyNorm.getTime()) / msDay);
+  const fechaISO = `${proxima.getFullYear()}-${String(proxima.getMonth() + 1).padStart(2, '0')}-${String(proxima.getDate()).padStart(2, '0')}`;
+  return { dias, fechaISO };
+}
+
+/**
+ * Detecta el nudge de próximo ingreso a cobrar.
+ * Devuelve el ingreso más próximo con su urgencia y cuántos más llegan esa semana.
+ * Devuelve null si no hay ingresos con próximo pago calculable.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @param {Date} [hoy]
+ * @returns {{ principal: {descripcion: string, dias: number, fechaISO: string},
+ *             otrosProximos: number } | null}
+ */
+export function detectarNudgeProximoIngreso(ingresos, hoy = new Date()) {
+  if (!Array.isArray(ingresos)) return null;
+
+  const proximos = ingresos
+    .filter(i => i.activo !== false && i.diaPago)
+    .map(i => {
+      const prox = diasParaProximoPago(i.frecuencia, i.diaPago, hoy);
+      if (!prox) return null;
+      return { descripcion: i.descripcion, ...prox };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.dias - b.dias);
+
+  if (proximos.length === 0) return null;
+
+  const otrosProximos = proximos.slice(1).filter(p => p.dias <= 7).length;
+  return { principal: proximos[0], otrosProximos };
+}
+
 // ── VALIDACIÓN INGRESOS ──────────────────────────────────────────
+
+/**
+ * Frecuencias en las que aplica capturar el día del mes en que llega el pago.
+ * Excluye Diario, Semanal (día de semana), Variable y Única vez.
+ */
+export const FRECUENCIAS_CON_DIA = [
+  'Quincenal', 'Mensual', 'Bimestral', 'Trimestral', 'Semestral', 'Anual',
+];
 
 /**
  * Valida los datos del formulario de ingreso recurrente.
@@ -153,6 +237,16 @@ export function validarIngreso(datos) {
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
     errores.push('Debés elegir una frecuencia válida.');
   }
+  // diaPago es opcional; si se proporcionó y la frecuencia lo soporta, validar rango.
+  if (datos.diaPago !== undefined && datos.diaPago !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia)) {
+    const dia    = Number(datos.diaPago);
+    const maxDia = datos.frecuencia === 'Quincenal' ? 15 : 31;
+    if (!Number.isInteger(dia) || dia < 1 || dia > maxDia) {
+      errores.push(datos.frecuencia === 'Quincenal'
+        ? 'El día de la primera quincena debe estar entre 1 y 15.'
+        : 'El día de pago debe estar entre 1 y 31.');
+    }
+  }
   return errores;
 }
 
@@ -164,11 +258,16 @@ export function validarIngreso(datos) {
  * @returns {Omit<import('../../core/state.js').Ingreso, 'id' | 'fechaCreacion'>}
  */
 export function normalizarIngreso(datos) {
+  const diaRaw  = datos.diaPago;
+  const diaPago = (diaRaw !== undefined && diaRaw !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia))
+    ? Number(diaRaw)
+    : null;
   return {
     descripcion: datos.descripcion.trim(),
     monto:       Number(datos.monto),
     frecuencia:  datos.frecuencia,
     activo:      true,
+    diaPago,
   };
 }
 
@@ -427,5 +526,114 @@ export function detectarNudgeGMF(gmfData) {
     cantidadCuentasGMF,
     gastosGravados,
     costoGMF,
+  };
+}
+
+// ── DISTRIBUCIÓN ADAPTATIVA DEL INGRESO (Fase 3) ─────────────────
+
+/**
+ * Sugiere cómo distribuir el ingreso mensual adaptando la regla 50/30/20
+ * al peso real de los gastos fijos del usuario.
+ * Orientativo: nunca prescriptivo. Usa solo datos registrados en Finko.
+ *
+ * @param {number} ingresoMensual
+ * @param {{
+ *   gastosFijosMensuales?: number,
+ *   tieneDeudas?:          boolean,
+ *   tieneFondoActivo?:     boolean,
+ *   fondoCompleto?:        boolean,
+ *   tieneInversiones?:     boolean,
+ * }} [contexto]
+ * @returns {{
+ *   ingresoMensual: number,
+ *   pctFijos:       number,
+ *   metodo:         string,
+ *   razon:          string,
+ *   alertas:        string[],
+ *   ctas:           {label:string, seccion:string}[],
+ *   split: {
+ *     necesidades: {pct:number, monto:number, label:string},
+ *     estiloVida:  {pct:number, monto:number, label:string},
+ *     ahorro:      {pct:number, monto:number, label:string},
+ *   },
+ * } | null}
+ */
+export function sugerirDistribucionIngreso(ingresoMensual, {
+  gastosFijosMensuales = 0,
+  tieneDeudas          = false,
+  tieneFondoActivo     = false,
+  fondoCompleto        = false,
+  tieneInversiones     = false,
+} = {}) {
+  if (!ingresoMensual || ingresoMensual <= 0) return null;
+
+  const pctFijos = gastosFijosMensuales > 0
+    ? Math.round((gastosFijosMensuales / ingresoMensual) * 100)
+    : 0;
+
+  let necesidadesPct;
+  let estiloVidaPct;
+  let ahorroInvPct;
+  let metodo;
+  let razon;
+  const alertas = [];
+  const ctas    = [];
+
+  if (pctFijos > 70) {
+    necesidadesPct = Math.min(pctFijos, 85);
+    const restante = 100 - necesidadesPct;
+    ahorroInvPct   = Math.max(5, Math.round(restante * 0.3));
+    estiloVidaPct  = restante - ahorroInvPct;
+    metodo = 'ajustado-fijos-altos';
+    razon  = `Tus gastos fijos representan el ${pctFijos}% de tus ingresos (según lo que registras en Finko). Hay poco margen: cubre lo necesario primero.`;
+    alertas.push(`Tus gastos fijos consumen más del 70% de tus ingresos. Revisa compromisos y suscripciones recurrentes.`);
+  } else if (pctFijos > 50) {
+    necesidadesPct = pctFijos;
+    const restante = 100 - necesidadesPct;
+    ahorroInvPct   = Math.max(10, Math.round(restante * 0.4));
+    estiloVidaPct  = restante - ahorroInvPct;
+    metodo = 'ajustado';
+    razon  = `Tus gastos fijos son el ${pctFijos}% de tus ingresos (según lo que registras en Finko). Ajustamos para que el ahorro no quede en cero.`;
+  } else {
+    necesidadesPct = 50;
+    estiloVidaPct  = 30;
+    ahorroInvPct   = 20;
+    metodo = '50/30/20';
+    razon  = pctFijos > 0
+      ? `Tus gastos fijos son el ${pctFijos}% de tus ingresos: dentro del rango saludable. La distribución 50/30/20 aplica bien.`
+      : 'Registra tus gastos fijos en Compromisos para una recomendación más precisa.';
+  }
+
+  if (!tieneFondoActivo) {
+    alertas.push('Sin fondo de emergencia activo: destina el porcentaje de ahorro aquí primero.');
+    ctas.push({ label: 'Activar fondo de emergencia', seccion: 'ahorro' });
+  } else if (!fondoCompleto) {
+    alertas.push('Tu fondo de emergencia aún no está completo: dale prioridad al ahorro.');
+    ctas.push({ label: 'Ver progreso del fondo', seccion: 'ahorro' });
+  } else if (!tieneInversiones) {
+    ctas.push({ label: 'Explorar inversiones', seccion: 'inversion' });
+  }
+
+  if (tieneDeudas) {
+    alertas.push('Tienes deudas activas: considera destinar parte del ahorro al pago de deudas.');
+    ctas.push({ label: 'Ver estrategia de deudas', seccion: 'compromisos' });
+  }
+
+  const nMonto = Math.round(ingresoMensual * necesidadesPct / 100);
+  const eMonto = Math.round(ingresoMensual * estiloVidaPct  / 100);
+  const aMonto = Math.round(ingresoMensual * ahorroInvPct   / 100);
+
+  return {
+    ingresoMensual,
+    pctFijos,
+    metodo,
+    razon,
+    alertas,
+    ctas,
+    split: {
+      necesidades: { pct: necesidadesPct, monto: nMonto, label: 'Necesidades' },
+      estiloVida:  { pct: estiloVidaPct,  monto: eMonto, label: 'Estilo de vida' },
+      ahorro:      { pct: ahorroInvPct,   monto: aMonto, label: tieneInversiones ? 'Ahorro e inversión' : 'Ahorro' },
+    },
   };
 }

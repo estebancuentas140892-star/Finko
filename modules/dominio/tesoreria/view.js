@@ -10,7 +10,15 @@
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
-import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from './logic.js';
+import {
+  cuentasActivas,
+  calcularCostoGMF,
+  detectarNudgeGMF,
+  FRECUENCIAS_CON_DIA,
+  detectarNudgeProximoIngreso,
+  estimarSalarioMensual,
+  sugerirDistribucionIngreso,
+} from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 
@@ -118,11 +126,21 @@ function _renderEmptyStateIngresos() {
 function _renderIngresoItem(ing) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
+
+  let diaHint = '';
+  if (ing.diaPago) {
+    const diaStr = ing.frecuencia === 'Quincenal'
+      ? `días ${ing.diaPago} y ${ing.diaPago + 15} de cada mes`
+      : `día ${ing.diaPago} de cada período`;
+    diaHint = `<p class="list-item__hint">📅 ${_esc(diaStr)}</p>`;
+  }
+
   return `
     <article class="list-item" data-id="${_esc(ing.id)}">
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
         <p class="list-item__subtitle">${frec}</p>
+        ${diaHint}
       </div>
       <div class="list-item__meta">
         <p class="list-item__value">${f(ing.monto)}</p>
@@ -173,11 +191,136 @@ export function renderFormIngreso(ingreso = null) {
           ${frecOpts}
         </select>
       </div>
+      <div class="form-group" id="form-group-dia-pago"${ingreso && FRECUENCIAS_CON_DIA.includes(ingreso.frecuencia) ? '' : ' hidden'}>
+        <label for="ingreso-dia-pago" class="label" id="label-dia-pago">${ingreso?.frecuencia === 'Quincenal' ? 'Día de la primera quincena (1-15)' : 'Día de pago (1-31)'}</label>
+        <input id="ingreso-dia-pago" name="diaPago" class="input" type="number"
+               min="1" max="${ingreso?.frecuencia === 'Quincenal' ? '15' : '31'}" step="1"
+               placeholder="${ingreso?.frecuencia === 'Quincenal' ? 'Ej. 15' : 'Ej. 30'}"
+               value="${ingreso?.diaPago ?? ''}"
+               inputmode="numeric" />
+        <p class="form-hint form-hint--muted">Opcional. ¿Qué día sueles recibir este pago?</p>
+      </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>
       </div>
     </form>`;
+}
+
+// ── NUDGE PRÓXIMO INGRESO ────────────────────────────────────────
+
+/**
+ * Renderiza la alerta de próximo pago en `#ingresos-nudge-proximo`.
+ * No-op si el contenedor no existe o no hay ingresos con próximo pago calculable.
+ */
+export function renderNudgeProximoIngreso() {
+  const el = document.getElementById('ingresos-nudge-proximo');
+  if (!el) return;
+  const ingresos = Array.isArray(S.ingresos) ? S.ingresos : [];
+  const nudge    = detectarNudgeProximoIngreso(ingresos);
+  el.innerHTML   = nudge ? _renderNudgeProximo(nudge) : '';
+}
+
+/** Formatea una fecha ISO como texto corto en español: "30 jun", "1 jul". */
+function _fechaCorta(iso) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}
+
+/**
+ * @param {{ principal: {descripcion: string, dias: number, fechaISO: string},
+ *            otrosProximos: number }} nudge
+ * @returns {string}
+ */
+function _renderNudgeProximo({ principal, otrosProximos }) {
+  const { descripcion, dias, fechaISO } = principal;
+  const urgencia  = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
+  const cuandoStr = dias <= 1 ? urgencia : `${urgencia} (${_fechaCorta(fechaISO)})`;
+  const otrosHtml = otrosProximos > 0
+    ? `<p class="nudge__desc">y ${otrosProximos} ${otrosProximos === 1 ? 'ingreso más próximo' : 'ingresos más próximos'} esta semana</p>`
+    : '';
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">💰</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Recibes "${_esc(descripcion)}" ${cuandoStr}</p>
+        ${otrosHtml}
+      </div>
+    </div>`;
+}
+
+// ── DISTRIBUCIÓN ADAPTATIVA ──────────────────────────────────────
+
+/**
+ * Renderiza la tarjeta de distribución sugerida en `#ingresos-distribucion`.
+ * No-op si no hay ingresos mensuales registrados o el contenedor no existe.
+ */
+export function renderDistribucionIngreso() {
+  const el = document.getElementById('ingresos-distribucion');
+  if (!el) return;
+
+  const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
+  if (!ingresoMensual) { el.innerHTML = ''; return; }
+
+  const gastosFijosMensuales = (S.compromisos ?? [])
+    .filter(c => c.activo !== false && c.tipo === 'fijo' && c.frecuencia === 'mensual')
+    .reduce((acc, c) => acc + (c.monto ?? 0), 0);
+
+  const tieneDeudas = (S.compromisos ?? [])
+    .some(c => c.activo !== false && c.tipo === 'deuda');
+
+  const tieneFondoActivo = S.ahorro?.fondoEmergencia?.activo === true;
+  const montoFondo = (S.ahorro?.fondoEmergencia?.montoActual ?? 0)
+    + (S.ahorro?.aportes ?? []).reduce((acc, a) => acc + (a.monto ?? 0), 0);
+  const objetivoFondo = tieneFondoActivo && gastosFijosMensuales > 0
+    ? gastosFijosMensuales * (S.ahorro?.fondoEmergencia?.metaMeses ?? 3)
+    : 0;
+  const fondoCompleto = tieneFondoActivo && objetivoFondo > 0 && montoFondo >= objetivoFondo;
+
+  const tieneInversiones = (S.inversiones ?? []).length > 0;
+
+  const dist = sugerirDistribucionIngreso(ingresoMensual, {
+    gastosFijosMensuales,
+    tieneDeudas,
+    tieneFondoActivo,
+    fondoCompleto,
+    tieneInversiones,
+  });
+
+  el.innerHTML = dist ? _renderDistribucion(dist) : '';
+}
+
+/** @param {ReturnType<typeof sugerirDistribucionIngreso>} dist */
+function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }) {
+  const { necesidades, estiloVida, ahorro } = split;
+
+  const rowsHtml = [
+    { icon: '📦', ...necesidades },
+    { icon: '🎯', ...estiloVida },
+    { icon: '💰', ...ahorro },
+  ].map(({ icon, label, pct, monto }) =>
+    `<p class="nudge__desc"><strong>${icon} ${_esc(label)}</strong> ${pct}% · ${f(monto)}</p>`
+  ).join('');
+
+  const alertasHtml = alertas.map(a =>
+    `<p class="nudge__desc">⚠ ${_esc(a)}</p>`
+  ).join('');
+
+  const ctasHtml = ctas.map(c =>
+    `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
+  ).join('');
+
+  return `
+    <div class="nudge nudge-info" role="region" aria-label="Distribución sugerida del ingreso">
+      <span class="nudge__icon" aria-hidden="true">💡</span>
+      <div class="nudge__body">
+        <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
+        <p class="nudge__desc">${_esc(razon)}</p>
+        ${rowsHtml}
+        ${alertasHtml}
+        ${ctasHtml}
+      </div>
+    </div>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────

@@ -25,11 +25,14 @@ import {
   compromisoCuotaManejoDeCuenta,
   validarIngreso,
   normalizarIngreso,
+  FRECUENCIAS_CON_DIA,
 } from './logic.js';
 import {
   renderListaCuentas,
   renderFormCuenta,
   renderGMFIndicador,
+  renderNudgeProximoIngreso,
+  renderDistribucionIngreso,
   renderListaIngresos,
   renderFormIngreso,
 } from './view.js';
@@ -40,6 +43,8 @@ import {
 function _renderTodo() {
   renderListaCuentas();
   renderGMFIndicador();
+  renderNudgeProximoIngreso();
+  renderDistribucionIngreso();
   renderListaIngresos();
 }
 
@@ -487,6 +492,40 @@ function _initBankPicker(picker) {
 
 // ── INGRESOS RECURRENTES ─────────────────────────────────────────
 
+/**
+ * Conecta el toggle de visibilidad del campo diaPago al select de frecuencia.
+ * Debe llamarse después de inyectar el HTML del form de ingreso.
+ * Actualiza max/placeholder/label según la frecuencia seleccionada.
+ *
+ * @param {HTMLFormElement} form
+ */
+function _attachDiaPagoToggle(form) {
+  const selFrec  = form.querySelector('[name="frecuencia"]');
+  const grupoDia = form.querySelector('#form-group-dia-pago');
+  const inputDia = form.querySelector('[name="diaPago"]');
+  const labelDia = form.querySelector('#label-dia-pago');
+  if (!selFrec || !grupoDia || !inputDia) return;
+
+  function _sync() {
+    const frec    = selFrec.value;
+    const mostrar = FRECUENCIAS_CON_DIA.includes(frec);
+    grupoDia.hidden = !mostrar;
+    if (!mostrar) inputDia.value = '';
+    if (frec === 'Quincenal') {
+      inputDia.max         = '15';
+      inputDia.placeholder = 'Ej. 15';
+      if (labelDia) labelDia.textContent = 'Día de la primera quincena (1-15)';
+    } else {
+      inputDia.max         = '31';
+      inputDia.placeholder = 'Ej. 30';
+      if (labelDia) labelDia.textContent = 'Día de pago (1-31)';
+    }
+  }
+
+  selFrec.addEventListener('change', _sync);
+  _sync();
+}
+
 /** Abre el modal de ingreso en modo creación. */
 function _nuevoIngreso() {
   const overlay = document.getElementById('modal-ingreso');
@@ -496,10 +535,12 @@ function _nuevoIngreso() {
   const body = document.getElementById('modal-ingreso-body');
   if (body) {
     body.innerHTML = renderFormIngreso();
-    body.querySelector('#form-ingreso')?.addEventListener('submit', (e) => {
+    const form = body.querySelector('#form-ingreso');
+    form?.addEventListener('submit', (e) => {
       e.preventDefault();
       _guardarIngreso();
     });
+    if (form) _attachDiaPagoToggle(form);
   }
   abrirModal(overlay);
 }
@@ -552,6 +593,7 @@ function _editarIngreso(el) {
         e.preventDefault();
         _guardarIngreso();
       });
+      _attachDiaPagoToggle(form);
     }
   }
   abrirModal(overlay);
@@ -594,10 +636,12 @@ export function initTesoreria() {
 
   EventBus.on('state:change', ({ section }) => {
     if (
-      section === 'cuentas'   ||
-      section === 'tesoreria' ||
+      section === 'cuentas'    ||
+      section === 'tesoreria'  ||
       section === 'compromisos' ||
-      section === 'ingresos'
+      section === 'ingresos'   ||
+      section === 'ahorro'     ||
+      section === 'inversiones'
     ) {
       renderSmart(_renderTodo, 'tesoreria');
       updSaldo();

@@ -1,9 +1,9 @@
 ﻿# HANDOFF - Finko Claude
 
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
-> Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
+> Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (skip link accesibilidad WCAG 2.4.1; 1183/1183 verde)
+> Última actualización: 2026-06-09 (motor distribución adaptativa Fase 3; 1235/1235 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1183/1183 verdes (+1 test: skip link WCAG 2.4.1 en a11y.test.js) |
+| Tests unitarios + integración | 1235/1235 verdes (+14: sugerirDistribucionIngreso) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,54 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ingresos): motor de distribución adaptativa del ingreso (Fase 3) · 2026-06-09
+
+Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo cobro. Split 50/30/20 adaptado al peso real de gastos fijos. Alertas y CTAs según contexto: fondo de emergencia, deudas, inversiones. Sin nuevo schema ni CSS. SW v130 → v131. 1235/1235 tests verdes (+14).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `sugerirDistribucionIngreso(ingresoMensual, contexto)`: pura, 3 escenarios (<=50%, 51-70%, >70% fijos), CTAs dinámicos. |
+| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso()` + `_renderDistribucion()`. Lee S directamente sin importar otros dominios. |
+| `modules/dominio/tesoreria/index.js` | Importa y llama en `_renderTodo`. EventBus extendido: ahora reacciona a `ahorro` e `inversiones`. |
+| `index.html` | `<div id="ingresos-distribucion">` entre nudge y lista de ingresos. |
+| `tests/unit/tesoreria.test.js` | +14 tests: split suma 100 para 8 valores de pctFijos, alertas/CTAs por contexto, coherencia de montos. |
+| `service-worker.js` | `CACHE_NAME` v130 → v131. |
+
+---
+
+### feat(ingresos): alerta proactiva de próximo cobro en Mis ingresos (Fase 2) · 2026-06-09
+
+Nudge "Recibes X en N días" encima de la lista de ingresos. Dos funciones puras nuevas (`diasParaProximoPago`, `detectarNudgeProximoIngreso`) + render del nudge. Solo soporta Mensual y Quincenal (ciclo exactamente derivable del diaPago). SW v129 → v130. 1221/1221 tests verdes (+20).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `diasParaProximoPago` (Mensual/Quincenal, maneja fin de mes y rollover) + `detectarNudgeProximoIngreso` (más próximo + otros en 7 días). |
+| `modules/dominio/tesoreria/view.js` | `renderNudgeProximoIngreso()`: escribe nudge en `#ingresos-nudge-proximo`. Formato: "hoy / mañana / en X días (DD mmm)". |
+| `modules/dominio/tesoreria/index.js` | `renderNudgeProximoIngreso` importado y llamado en `_renderTodo`. |
+| `index.html` | `<div id="ingresos-nudge-proximo">` antes de `#lista-ingresos`. |
+| `tests/unit/tesoreria.test.js` | +11 tests `diasParaProximoPago` + +9 tests `detectarNudgeProximoIngreso`. |
+| `service-worker.js` | `CACHE_NAME` v129 → v130. |
+
+---
+
+### feat(ingresos): diaPago en fuentes de ingreso recurrentes (schema v12) · 2026-06-09
+
+Fase 1 de la mejora de "Mis ingresos". Agrega el campo opcional `diaPago` (número 1-31) al shape de `Ingreso`. Desbloquea la Fase 2 (alerta proactiva de pago) y la Fase 3 (motor de distribución adaptativo). Schema v11 → v12. SW v128 → v129. 1201/1201 tests verdes (+18).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/state.js` | `diaPago?: number\|null` en `@typedef Ingreso`. `_version` 11 → 12. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 11 → 12. Migración v11 → v12: agrega `diaPago: null` a ingresos existentes. |
+| `modules/dominio/tesoreria/logic.js` | Exporta `FRECUENCIAS_CON_DIA`. `validarIngreso` y `normalizarIngreso` con soporte de `diaPago`. |
+| `modules/dominio/tesoreria/view.js` | Campo `diaPago` en el form (oculto/visible según frecuencia). Hint en item de lista cuando diaPago está seteado. |
+| `modules/dominio/tesoreria/index.js` | `_attachDiaPagoToggle(form)`: toggle de visibilidad + max/label dinámicos por frecuencia. |
+| `tests/unit/tesoreria.test.js` | +14 tests: `validarIngreso` (9) y `normalizarIngreso` (5) con diaPago. |
+| `tests/unit/storage.test.js` | +4 tests: migración v11 → v12. |
+| `tests/unit/state.test.js` | Assert `_version` 11 → 12. |
+| `service-worker.js` | `CACHE_NAME` v128 → v129. |
+
+---
 
 ### fix(a11y): agregar skip link "Saltar al contenido principal" (WCAG 2.4.1) · 2026-06-09
 
@@ -78,82 +126,15 @@ SW v126 → v127. 1182/1182 tests verdes (+18).
 
 ---
 
-### feat(M.3): revisión transversal de flujos de captura (ingresos recurrentes + cuenta en abono a meta) · 2026-06-09
-
-Tercera fase del plan de captura de datos. Se mapearon los seis flujos de captura (gasto completo, gasto rápido, ingreso, cuenta, deuda, meta) y se cerraron las dos brechas detectadas:
-
-1. **No existía UI para fuentes de ingreso recurrentes.** `S.ingresos[]` nunca se poblaba: el array siempre estaba vacío, `estimarSalarioMensual()` devolvía 0 y el nudge de tasa de ahorro en Ahorro nunca aparecía. Ahora la sección "Mis cuentas" tiene una subsección **"Mis ingresos"** con su propio botón "+ Ingreso", lista de fuentes activas (descripción, frecuencia, monto) y modal de alta/edición (descripción, monto, frecuencia). CRUD completo sobre `S.ingresos` con validación.
-2. **El abono a una meta no pedía cuenta de origen.** El dinero "aparecía" en la meta sin salir de ninguna cuenta. Ahora el modal de abono incluye selector de cuenta con el mismo patrón de M.2 (0 cuentas → sin selector, el abono sigue válido como seguimiento; 1 cuenta → autoselección con hint; varias → selector obligatorio). Al confirmar, el monto se descuenta del saldo de la cuenta elegida.
-
-SW v125 → v126. 1164/1164 tests verdes (+17).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `validarIngreso(datos)` y `normalizarIngreso(datos)` nuevas (puras). Import de `FRECUENCIAS`. |
-| `modules/dominio/tesoreria/view.js` | `renderListaIngresos()`, `renderFormIngreso(ingreso?)` y helpers de item/empty-state nuevos. Import de `FRECUENCIAS`. |
-| `modules/dominio/tesoreria/index.js` | Handlers `_nuevoIngreso`/`_guardarIngreso`/`_editarIngreso`/`_eliminarIngreso`. 3 acciones registradas. `_renderTodo` llama `renderListaIngresos`. EventBus escucha `section === 'ingresos'`. |
-| `modules/dominio/metas/view.js` | `renderFormAbonoMeta` inyecta selector de cuenta (`_renderCuentaSelectorAbono`: 0/1/varias). Import de `S`. |
-| `modules/dominio/metas/index.js` | `_guardarAbonoMeta` valida cuenta (obligatoria si hay varias) y descuenta saldo via `_ajustarSaldoCuenta` local. |
-| `index.html` | Subsección "Mis ingresos" (`#lista-ingresos` + botón) en `#sec-tesoreria`. Nuevo `#modal-ingreso`. |
-| `styles/layout.css` | `.section__sub-header`: separador con border-top para subsecciones dentro de una sección. |
-| `tests/unit/tesoreria.test.js` | 13 tests: `validarIngreso` (9), `normalizarIngreso` (4). |
-| `tests/unit/metas.test.js` | 4 tests: selector de cuenta en `renderFormAbonoMeta` (0/1/inactiva/varias). |
-| `service-worker.js` | v125 → v126. |
-
----
-
-### feat(gastos): M.2 - Gasto rápido con cuenta de origen y descuento de saldo · 2026-06-09
-
-El modal "Gasto rápido" ahora solicita la cuenta de origen desde el inicio (M.2, segunda fase del plan de captura de datos). Tres comportamientos: **0 cuentas activas** → muestra empty state guiado "Primero necesitás una cuenta" con botón "Ir a Mis Cuentas" (igual que el form completo); **1 cuenta activa** → autoselecciona silenciosamente (hint "💳 Sale de: {nombre} · Disponible: {saldo}"); **varias cuentas** → selector visible "¿Desde qué cuenta?". Al confirmar, el monto se descuenta del saldo de la cuenta elegida. El form se inyecta en `#modal-gasto-rapido-body` en cada apertura del modal (como los demás modales del proyecto) para reflejar cambios en S.cuentas. SW v124 → v125. 1147/1147 tests verdes (+5).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/logic.js` | `normalizarGastoRapido(monto, fecha, cuentaId?)`: tercer parámetro opcional. `validarGastoRapido(monto, cuentaId?, requiereCuenta?)`: valida la cuenta cuando hay varias. |
-| `modules/dominio/gastos/view.js` | `renderFormGastoRapido()` nueva: 0 cuentas → empty state; 1 cuenta → hidden input + hint; varias → select visible. |
-| `modules/dominio/gastos/index.js` | `_inyectarFormGastoRapido()` nueva (on-demand en cada apertura). `_abrirGastoRapido` llama `_inyectarFormGastoRapido`. `_guardarGastoRapido` toma `cuentaId` del form, valida y descuenta saldo via `_ajustarSaldoCuenta`. Eliminado `_attacharGastoRapido` (form ya no es estático). |
-| `index.html` | Body del modal gasto rápido: de estático a `<div id="modal-gasto-rapido-body">` vacío (inyectado por JS). |
-| `styles/components/forms.css` | `.quick-add__cuenta-hint`: hint de cuenta auto-seleccionada (fondo elevated, texto xs). |
-| `tests/unit/gastos.test.js` | 5 tests nuevos: `validarGastoRapido` con `requiereCuenta` (3), `normalizarGastoRapido` con `cuentaId` (2). |
-| `service-worker.js` | v124 → v125. |
-
----
-
-### fix(nav): el botón "Ir a Mis cuentas" del modal de gasto ahora navega · 2026-06-08
-
-Primera corrección de un paquete de mejoras de navegación + gestión de gastos fijos pedido por el usuario. En Gastos, al abrir el modal de gasto sin cuentas, el botón "Ir a Mis cuentas" solo cerraba el modal sin navegar. Causa: `dispatch()` en `actions.js` hace `e.preventDefault()` para toda `data-action`, cancelando la navegación del `<a href="#tesoreria" data-action="modal-close">`. Fix: acción reutilizable `ir-a-seccion` (cierra modal + navega), que servirá para los CTA "redirigir a Mis cuentas" de los próximos flujos. SW v122 → v123. 1132/1132 verdes. **Pendiente del paquete:** gestión de gastos fijos (Editar/Eliminar/"Marcar pagado este mes") + helper de selección inteligente de cuenta (0→Mis cuentas, 1→automática, varias→selector), a aplicar en todos los flujos que descuentan dinero.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/ui/actions.js` | Nueva acción `ir-a-seccion`: cierra el modal abierto y `navigate(destino)` (de `data-target` o del hash del `href`). Import de `navigate`. |
-| `modules/dominio/gastos/view.js` | El botón "Ir a Mis cuentas" del empty state usa `data-action="ir-a-seccion"`. |
-| `service-worker.js` | v122 → v123. |
-
----
-
-### feat(gastos): card de "gastos por organizar" en el dashboard (Fase 1) · 2026-06-08
-
-Primera fase de una mejora de UX en 3 fases pedida por el usuario. Los gastos creados con "Gasto rápido" quedan con `pendienteCompletar: true` (sin descripción ni categoría). Antes solo se veían como badges por ítem en la lista de Gastos; ahora el dashboard muestra un recordatorio agregado tipo nudge: "Tienes N gastos por organizar", con botón "Organizar" que lleva a Gastos. Cuenta los pendientes de todos los meses (uno sin organizar no debe perderse al cambiar de mes) y, si no hay, no muestra nada (cero ruido). Reutiliza el componente `.nudge nudge-info` existente: sin CSS nuevo. Verificado en la app con el preview (5 pendientes → card visible, CTA navega a #gast). SW v121 → v122. 1132/1132 tests verdes (+9). **Pendientes: Fase 2** (cuenta de origen en el gasto rápido, con autoselección si hay 1 cuenta y picker si hay varias, + bloqueo guiado sin cuentas) **y Fase 3** (revisión transversal de todos los flujos de captura).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/logic.js` | `esGastoPendiente(gasto)` y `gastosPendientes(gastos)` nuevas (puras): misma regla que el badge "📝 Pendiente" para que conteo y marca coincidan. |
-| `modules/dominio/gastos/view.js` | `renderPendientesOrganizar()` nueva: escribe en `#panel-gastos-pendientes` un nudge con el conteo; vacío si no hay pendientes. Import de `gastosPendientes`. |
-| `index.html` | Nuevo `<div id="panel-gastos-pendientes">` en el dashboard, tras `#panel-prioridades`. |
-| `modules/dominio/gastos/index.js` | Import `registrarRender` + `renderPendientesOrganizar`. Registro en `renderAll` (boot) y llamada en el handler `state:change` de gastos. |
-| `tests/unit/gastos.test.js` | 9 tests nuevos: `esGastoPendiente` (5) y `gastosPendientes` (4). |
-| `service-worker.js` | v121 → v122. |
-
----
-
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Post-v1.0 mejoras de UX y accesibilidad. Última tarea: skip link WCAG 2.4.1 + formulario de cuentas dinámico (schema v11) + ADR 005 IVA. App 1183/1183 tests verdes, lint limpio.
+**Serie cerrada:** "Coaching de ingresos" (Fases 1, 2 y 3) completada el 2026-06-09. `diaPago` en ingresos + nudge de próximo cobro + tarjeta de distribución adaptativa. SW v128 → v131. 1235/1235 tests verdes.
 
-**Próxima tarea natural:** verificar el formulario de cuentas en la app (crear banco, billetera, efectivo; editar; probar que los campos correctos aparecen) y verificar el skip link con Tab. Si todo funciona, decidir entre las opciones del roadmap: A.5 (dominio custom) o mejoras puntuales que surjan del uso real.
+**Próxima tarea natural:** ninguna urgente. Opciones disponibles abajo.
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
