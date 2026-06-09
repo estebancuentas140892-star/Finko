@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
-import { legalVigente, SMMLV, APP_VERSION } from '../../core/constants.js';
+import { legalVigente, estadoVigenciaLegal, SMMLV, APP_VERSION } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 
 /**
@@ -18,6 +18,7 @@ export function renderPanelConfig() {
   if (!el) return;
 
   el.innerHTML = `
+    ${_renderAvisoVigencia()}
     ${_renderPerfil()}
     ${_renderPerfilFiscal()}
     ${_renderDatosRenta()}
@@ -27,6 +28,26 @@ export function renderPanelConfig() {
     ${_renderDatos()}
     ${_renderAcercaDe()}
   `;
+}
+
+/**
+ * Aviso de vigencia (P1). Visible solo cuando empezó un año nuevo y todavía no
+ * se cargaron los valores legales oficiales de ese año: la app usa los del año
+ * anterior como referencia provisional. Devuelve '' mientras los valores estén
+ * al día.
+ */
+function _renderAvisoVigencia() {
+  const vig = estadoVigenciaLegal();
+  if (!vig.desactualizado) return '';
+
+  return `
+    <div class="nudge nudge-medium" role="status">
+      <span class="nudge__icon" aria-hidden="true">📅</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Valores legales de ${vig.anioActual} pendientes</p>
+        <p class="nudge__desc">Finko todavía usa los valores oficiales de ${vig.anioVigente} (SMMLV, UVT y topes de renta) porque los de ${vig.anioActual} aún no se han cargado. Se muestran como referencia provisional hasta que se actualicen.</p>
+      </div>
+    </div>`;
 }
 
 function _renderTema() {

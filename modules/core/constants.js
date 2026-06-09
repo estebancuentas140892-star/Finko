@@ -130,6 +130,29 @@ export function aniosPublicados() {
     .sort((a, b) => a - b);
 }
 
+/**
+ * Indica si los valores legales que está usando la app corresponden a un año
+ * anterior al actual. Ocurre cuando empieza un año nuevo pero todavía no se
+ * cargaron en `LEGAL_POR_ANIO` los valores oficiales de ese año: la app cae al
+ * último año publicado como referencia provisional (ver `legalVigente`).
+ *
+ * Las vistas usan este estado para avisar al usuario que las cifras (SMMLV,
+ * UVT, topes de renta) pueden estar desactualizadas, en vez de mostrarlas como
+ * si fueran del año en curso sin más.
+ *
+ * @param {Date} [fecha] - Por defecto: ahora.
+ * @returns {{ desactualizado: boolean, anioActual: number, anioVigente: number }}
+ */
+export function estadoVigenciaLegal(fecha = new Date()) {
+  const anioActual  = fecha.getFullYear();
+  const anioVigente = legalVigente(fecha).anio;
+  return {
+    desactualizado: anioVigente < anioActual,
+    anioActual,
+    anioVigente,
+  };
+}
+
 // ── EXPORTS ESTABLES (los que importa el resto del proyecto) ─────
 //
 // Estos valores se resuelven una vez al cargar el módulo. Para la mayoría
@@ -180,50 +203,6 @@ export const TOPES_RENTA_UVT = {
 /** Porcentaje del tope sobre el cual Finko emite alerta preventiva
  *  ("estás cerca del límite"). Antes era 80; subir es menos sensible. */
 export const UMBRAL_ALERTA_RENTA = 0.80;
-
-/** Días base para cálculo de prima de servicios.
- *  Fuente: Ley 52/1975. Estable. */
-export const DIAS_PRIMA = 360;
-
-/** Aporte salud para independientes - 12.5 % del IBC.
- *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
-export const SALUD_INDEPEND = 0.125;
-
-/** Aporte pensión para independientes - 16 % del IBC.
- *  Fuente: Ley 100/1993, Decreto 1273/2018. Estable. */
-export const PENSION_INDEPEND = 0.16;
-
-/** Aporte salud que descuenta el TRABAJADOR dependiente - 4 % del IBC.
- *  El otro 8.5 % lo paga el empleador (total 12.5 %).
- *  Fuente: Ley 100/1993 art. 204, Ley 1122/2007. Estable. */
-export const SALUD_EMPLEADO = 0.04;
-
-/** Aporte pensión que descuenta el TRABAJADOR dependiente - 4 % del IBC.
- *  El otro 12 % lo paga el empleador (total 16 %).
- *  Fuente: Ley 100/1993 art. 20, Ley 797/2003. Estable. */
-export const PENSION_EMPLEADO = 0.04;
-
-/** Tramos del Fondo de Solidaridad Pensional (FSP), aporte adicional del
- *  trabajador según su IBC medido en múltiplos de SMMLV. Solo aplica desde
- *  4 SMMLV. `hasta` es exclusivo (el último tramo es 20 SMMLV en adelante).
- *  Fuente: Ley 100/1993 art. 27, Decreto 1833/2016. Estable. */
-export const FSP_TRAMOS = [
-  { desdeSMMLV: 4,  hastaSMMLV: 16, tasa: 0.010 },
-  { desdeSMMLV: 16, hastaSMMLV: 17, tasa: 0.012 },
-  { desdeSMMLV: 17, hastaSMMLV: 18, tasa: 0.014 },
-  { desdeSMMLV: 18, hastaSMMLV: 19, tasa: 0.016 },
-  { desdeSMMLV: 19, hastaSMMLV: 20, tasa: 0.018 },
-  { desdeSMMLV: 20, hastaSMMLV: Infinity, tasa: 0.020 },
-];
-
-/** Tasa anual de los intereses sobre cesantías - 12 % del saldo acumulado.
- *  Fuente: Ley 50/1990 art. 99. Estable. */
-export const INTERESES_CESANTIAS = 0.12;
-
-/** ARL clase I (riesgo mínimo, oficinas) - 0.522 % del IBC.
- *  Fuente: Decreto 1295/1994, tabla de cotización. Estable.
- *  Otras clases: II=1.044%, III=2.436%, IV=4.350%, V=6.960%. */
-export const ARL_CLASE_I = 0.00522;
 
 /** Meta de inflación de largo plazo del Banco de la República (3 % EA).
  *  Supuesto por defecto para proyectar la rentabilidad REAL de inversiones

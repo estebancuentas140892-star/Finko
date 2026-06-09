@@ -1,8 +1,8 @@
 // En desarrollo (localhost / IP local) NO registramos el SW: el cache viejo
 // hace que veas CSS/JS mezclado de distintas versiones mientras iterás. En
 // produccion el SW sigue habilitado y la app es offline-first.
-var _hostname = location.hostname;
-var _esDesarrollo =
+const _hostname = location.hostname;
+const _esDesarrollo =
   _hostname === 'localhost' ||
   _hostname === '127.0.0.1' ||
   _hostname === '0.0.0.0' ||
@@ -28,7 +28,7 @@ if ('serviceWorker' in navigator) {
     // en memoria son los viejos. Recargar la pagina automaticamente para que el
     // usuario vea el CSS/JS nuevo sin tener que cerrar y abrir la app manualmente.
     // Flag para no entrar en bucle infinito en la primera instalacion.
-    var _ya_recargado = false;
+    let _ya_recargado = false;
     navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (_ya_recargado) return;
       _ya_recargado = true;

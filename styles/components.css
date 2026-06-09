@@ -17,7 +17,7 @@
                     gastos, patrimonio neto)
      charts.css   - Sparkline + donut + import CSV + estrategia de pago
      nudges.css   - Sistema de nudges + logros + bank-avatar/picker
-     domain.css   - Calculadoras + sim-gate + tesoreria + gastos UI
+     domain.css   - Calculadoras + herramienta-inline + tesoreria + gastos UI
      config.css   - Configuracion + install PWA + agenda/calendario
 
    Regla de la spec CSS: los @import deben ir ANTES que cualquier

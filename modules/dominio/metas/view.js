@@ -86,6 +86,39 @@ function _renderEmptyState() {
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
+ * Devuelve el HTML del formulario de abono a una meta existente.
+ * Formulario simple: solo monto (las metas no están asociadas a una cuenta).
+ * @param {import('../../core/state.js').Meta} meta
+ * @returns {string}
+ */
+export function renderFormAbonoMeta(meta) {
+  const { porcentaje, faltante } = calcularProgreso(meta);
+  const faltanteHtml = faltante > 0
+    ? ` · Faltante: <strong>${f(faltante)}</strong>`
+    : '';
+
+  return `
+    <form id="form-abono-meta" novalidate>
+      <input type="hidden" name="metaId" value="${_esc(meta.id)}" />
+      <p class="form-hint form-hint--muted">
+        Progreso de <strong>${_esc(meta.nombre)}</strong>:
+        <strong>${f(meta.montoActual ?? 0)} de ${f(meta.montoObjetivo ?? 0)}</strong> (${porcentaje}%)${faltanteHtml}
+      </p>
+      <div class="form-group">
+        <label for="abono-meta-monto" class="label">Monto del abono (COP)</label>
+        <input id="abono-meta-monto" name="monto" class="input" type="number"
+               min="1" step="10000" placeholder="0"
+               required aria-required="true"
+               autocomplete="off" inputmode="numeric" />
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Registrar abono</button>
+      </div>
+    </form>`;
+}
+
+/**
  * Devuelve el HTML del formulario de nueva meta.
  * @returns {string}
  */

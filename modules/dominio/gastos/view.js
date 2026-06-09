@@ -4,9 +4,9 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { f, esc as _esc } from '../../infra/utils.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
-import { gastosMes, totalGastosMes, filtrarGastos } from './logic.js';
+import { gastosMes, filtrarGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 

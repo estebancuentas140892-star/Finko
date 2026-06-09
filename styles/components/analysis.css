@@ -737,6 +737,16 @@
   margin: 0;
 }
 
+/* Insight pasivo Regla del 72: "A esta tasa, tu dinero se duplica en ~N años." */
+.inversion-proy__r72 {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: var(--fk-space-2) 0 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border-radius: var(--fk-radius-sm);
+}
+
 /* Colores de signo, locales a inversión (no globales). */
 .inversion-proy .is-pos { color: var(--fk-success); }
 .inversion-proy .is-neg { color: var(--fk-danger); }

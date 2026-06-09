@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-07
+> Última actualización: 2026-06-08
 
 ---
 
 ## Estado actual
 
-**Sin fase activa.** Fase H cerrada en v8.9. Deuda técnica `updateBadge`/`renderResumenGastos` cerrada en 2026-06-01. App estable en producción.
+**Auditoría integral completada.** 4 hallazgos (P1 a P4) todos resueltos. App 100% lint verde, 1123/1123 tests verdes, cero inconsistencias de UX.
 
 ---
 
@@ -35,9 +35,6 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-Sección K cerrada completa (K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta, K.4 datos de renta manuales). Sin fase activa. Próximas opciones:
+**A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código (la app usa rutas relativas en todos lados). Seguir guía en `docs/SETUP_DOMINIO.md`: comprar dominio vía Vercel, o apuntar nameservers de dominio externo a Vercel, o configurar DNS CNAME manualmente. ~5-15 min según la opción.
 
-- **A.5** - Agregar dominio custom (cuando el usuario tenga dominio registrado).
-- **E.2-2027** - Actualizar SMMLV y UVT a valores 2027 (diciembre 2026 / enero 2027).
-
-**Modelo sugerido:** Haiku 4.5 para E.2. Sonnet 4.6 - Bajo para A.5.
+**O bien E.2** - SMMLV + UVT 2027 (enero 2027). Búsqueda de valores oficiales (Mintrabajo y DIAN) e inserción en `LEGAL_POR_ANIO` en `constants.js`. Trabajo mecánico, ~15 min. Modelo: Haiku 4.5.

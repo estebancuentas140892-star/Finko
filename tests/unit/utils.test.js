@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { f, hoy, fechaLegible, dialogo } from '../../modules/infra/utils.js';
+import { describe, it, expect } from 'vitest';
+import { f, hoy, fechaLegible } from '../../modules/infra/utils.js';
 
 describe('f() - formato moneda COP', () => {
   it('formatea cero', () => {
@@ -66,32 +66,5 @@ describe('fechaLegible() - formato largo en español', () => {
     // Verifica que el día 12 aparezca en la salida.
     const result = fechaLegible('2026-05-12');
     expect(result).toContain('12');
-  });
-});
-
-describe('dialogo() - wrapper de diálogo', () => {
-  beforeEach(() => {
-    vi.stubGlobal('confirm', vi.fn(() => true));
-    vi.stubGlobal('alert', vi.fn());
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('tipo confirm: delega en window.confirm y retorna su valor', () => {
-    window.confirm.mockReturnValue(false);
-    expect(dialogo('¿Eliminar?', 'confirm')).toBe(false);
-    expect(window.confirm).toHaveBeenCalledWith('¿Eliminar?');
-  });
-
-  it('tipo confirm: valor por defecto', () => {
-    window.confirm.mockReturnValue(true);
-    expect(dialogo('¿Continuar?')).toBe(true);
-  });
-
-  it('tipo alert: llama window.alert y retorna true', () => {
-    expect(dialogo('Guardado', 'alert')).toBe(true);
-    expect(window.alert).toHaveBeenCalledWith('Guardado');
   });
 });

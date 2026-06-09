@@ -7,6 +7,102 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(P4): eliminar dialogo() muerta · 2026-06-08
+
+Último hallazgo de la auditoría integral. Función `dialogo()` en `modules/infra/utils.js` era un wrapper temporal alrededor de `window.confirm()` / `window.alert()`. Completamente reemplazada por `confirmar()` modal en `ui/confirm.js`. Nadie la importaba ni la usaba. Eliminada la función, su docstring, sus 3 tests y los imports Vitest que solo esos tests requerían. **Auditoría integral completada**: app 100% lint verde, cero inconsistencias UX, código limpio. SW v120. 1123/1123 tests verdes (-3 tests eliminados).
+
+- **`modules/infra/utils.js`:** Eliminar bloque de comentario (docstring de `dialogo`) + función `dialogo()` (~15 líneas). Actualizar docstring del archivo: quitar "excepto dialogo, que es UI de último recurso" y referencias a Fase 12.
+- **`tests/unit/utils.test.js`:** Eliminar import de `dialogo`. Eliminar describe `'dialogo() - wrapper de diálogo'` completo (26 líneas, 3 tests). Eliminar imports `vi`, `beforeEach`, `afterEach` (ahora sin uso).
+
+---
+
+### fix(P3): lint 100% verde (globals, imports sin usar, var→let) · 2026-06-08
+
+Tercera tarea de auditoría. ESLint mostraba 16 errores: config incompleto (6 globals faltantes), imports sin usar (4 ocurrencias), `var` innecesarios (3 líneas). Todos mecánicos: agregar `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches` a `eslint.config.js`. Eliminar imports: `resetModal` en compromisos, `aplicarGastoASaldo`/`revertirGastoDeSaldo` en gastos/index, `hoy`/`totalGastosMes` en gastos/view, `f` en tesoreria. Cambiar 3 `var` a `let`/`const` en sw-register. Sin cambios en tests (1126/1126 sigue).
+
+- **`eslint.config.js`:** Agregar 6 globals al objeto `languages.options.globals`: `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches`.
+- **`modules/dominio/compromisos/index.js`:** Eliminar `resetModal` del import de `modales.js` (nunca se usó).
+- **`modules/dominio/gastos/index.js`:** Eliminar `aplicarGastoASaldo`, `revertirGastoDeSaldo` del import de `logic.js` (nunca se usaron).
+- **`modules/dominio/gastos/view.js`:** Eliminar `hoy` del import de `utils.js` y `totalGastosMes` del import de `logic.js` (nunca se usaron).
+- **`modules/dominio/tesoreria/index.js`:** Eliminar `f` del import de `utils.js` (nunca se usó).
+- **`modules/infra/sw-register.js`:** Cambiar `var _hostname` → `const` (línea 4), `var _esDesarrollo` → `const` (línea 5), `var _ya_recargado` → `let` (línea 31).
+
+---
+
+### feat(P2): abono a metas con modal propio (reemplaza window.prompt) · 2026-06-08
+
+Segundo hallazgo de la auditoría integral resuelto. El abono a metas de ahorro usaba `window.prompt()` nativo: única inconsistencia de UX que quedaba en la app. También tenía `toLocaleString('es-CO')` sin `$` en el mensaje de confirmación (inconsistente con el helper `f()` del proyecto). Ahora el abono sigue el mismo patrón que el abono a deudas: modal propio con form, validación visible y `f()` en el announce. SW v119 → v120. 1126/1126 tests verdes (+9 en `renderFormAbonoMeta`).
+
+- **`index.html`:** Nuevo modal `#modal-abono-meta` con su `#modal-abono-meta-body` entre `#modal-meta` e `#modal-import`.
+- **`modules/dominio/metas/view.js`:** `renderFormAbonoMeta(meta)` exportada: form con hidden `metaId`, hint de progreso actual + faltante, input de monto numérico, botones Cancelar y Registrar. Escapa el nombre de la meta contra XSS.
+- **`modules/dominio/metas/index.js`:** Import `f` desde `utils.js` e import `renderFormAbonoMeta` desde `view.js`. `_abonarMeta` reemplazada por `_abrirAbonoMeta` (abre modal, inyecta form, conecta submit, foco al input) y `_guardarAbonoMeta` (valida con `validarAbono`, edita meta en S, cierra modal, anuncia con `f(abono)`). `registrarAccion('abonar-meta', ...)` apunta al nuevo handler.
+- **`tests/unit/metas.test.js`:** Import `renderFormAbonoMeta` desde `view.js`. 9 tests nuevos: id del form, hidden metaId, input monto, porcentaje, faltante presente, faltante ausente al 100%, botón Registrar, botón Cancelar, XSS escape del nombre.
+- **`service-worker.js`:** v119 → v120.
+
+---
+
+### feat(P1): aviso de valores legales desactualizados al cambiar de año · 2026-06-08
+
+Primer hallazgo de la auditoría integral resuelto. Antes, cuando empezaba un año nuevo sin valores oficiales cargados (ej. enero 2027 con `LEGAL_POR_ANIO[2027] = null`), `legalVigente()` caía silenciosamente al último año publicado y la app mostraba topes de renta calculados con la UVT del año anterior sin avisar al usuario. Ahora una función pura detecta el desfase y dos vistas muestran un aviso sobrio (nudge medium) mientras los valores estén pendientes. Sin desfase, no se muestra nada. SW v118 → v119. 1117/1117 tests verdes (+12, primer archivo de tests de `constants.js`).
+
+- **`modules/core/constants.js`:** `estadoVigenciaLegal(fecha = new Date())` exportada. Compara `fecha.getFullYear()` contra el año que resuelve `legalVigente(fecha)`. Devuelve `{ desactualizado, anioActual, anioVigente }`.
+- **`modules/dominio/analisis/view.js`:** Import `estadoVigenciaLegal`. En `_renderEstadoRenta`, nudge `nudge-medium` "Topes calculados con la UVT de {anioVigente}" insertado entre el hint y los nudges de la card, solo cuando hay desfase.
+- **`modules/dominio/config/view.js`:** Import `estadoVigenciaLegal`. `_renderAvisoVigencia()` nueva: banner `nudge-medium` al tope del panel cuando hay desfase; devuelve '' si los valores están al día.
+- **`tests/unit/constants.test.js`:** archivo nuevo. 12 tests: `legalVigente` (año actual, histórico, fallback), `legalDelAnio`, `aniosPublicados`, `estadoVigenciaLegal` (al día, histórico, desfase a 1 y a 5 años, default).
+- **`service-worker.js`:** v118 → v119.
+
+---
+
+### refactor(L.4): eliminar "Simular crédito"; alerta automática de cuota insuficiente · 2026-06-07
+
+Fase L.4: cierre de la auditoría de calculadoras. La herramienta manual "Simular un crédito" (formulario en `#sec-compromisos` con 3 campos: monto, tasa, plazo) se elimina. En su lugar, `_guardarCompromiso` (ahora async) invoca `detectarDeudaCreciente(datos)` tras la validación normal: si la cuota declarada no cubre el interés mensual calculado (`saldo * tasaMensual`), se muestra un `confirmar()` informativo antes de guardar. El usuario puede confirmar y registrar la deuda de todas formas (registrar la realidad es válido). `calcularCredito` y `validarCampos` ya no se importan en `index.js`. SW v117 → v118. 1105/1105 tests verdes (+10 en `detectarDeudaCreciente`).
+
+- **`modules/dominio/compromisos/logic.js`:** `detectarDeudaCreciente(datos)` exportada. Calcula `tasaMensual` según `tasaUnidad` (EA o mensual), compara cuota vs `saldo * tasaMensual`. Devuelve `{ interesMensual, cuotaMensual, deficit }` o null.
+- **`modules/dominio/compromisos/index.js`:** Import `calcularCredito, validarCampos` de `financiero.js` eliminado. `detectarDeudaCreciente` agregado al import de `./logic.js`. `_guardarCompromiso` refactorizada a async con alerta condicional. `_onSubmitHerramientaCredito` y su binding `form-herramienta-credito` eliminados.
+- **`index.html`:** bloque `<!-- Herramienta: Simular un crédito (v8.2) -->` + `<details id="herramienta-credito">` eliminados de `#sec-compromisos` (31 líneas).
+- **`tests/unit/compromisos.test.js`:** `detectarDeudaCreciente` agregado al import. 10 tests nuevos: null para fijo/tasa0/saldo0/cuota0, detección con tasaEA y tasaMensual, cuota exacta igual al interés.
+- **`service-worker.js`:** v117 → v118.
+
+---
+
+### refactor(L.3): Regla del 72 convertida en insight pasivo en Inversión · 2026-06-07
+
+Fase L.3 de la auditoría. La calculadora "¿En cuántos años duplico mi dinero?" se elimina como herramienta manual. Su cálculo pasa a ser automático en la card "Proyección al vencimiento" del dominio Inversión: la línea "⚡ A esta tasa, tu dinero se duplica en ~N años." usa `calcularRegla72(tasaPromedioPonderada(inversiones))`. Solo aparece cuando hay holdings proyectables. `analisis/index.js` queda sin imports de `financiero.js`: solo coordina renders reactivos. SW v116 → v117. 1095/1095 tests verdes (el test de `calcularRegla72` se conserva porque la función sigue en uso en Inversión).
+
+- **`modules/dominio/inversiones/view.js`:** Import `calcularRegla72`. Función privada `_renderInsightR72(tasaNominalPct)`. Variable `r72Html` en `_renderProyeccion` insertada entre `realHtml` y `notaNoProy`.
+- **`styles/components/analysis.css`:** `.inversion-proy__r72` nuevo.
+- **`index.html`:** Bloque `<details id="herramienta-r72">` y su comentario eliminados de `#sec-analisis`.
+- **`modules/dominio/analisis/index.js`:** Import de `financiero.js` eliminado. Función `_onSubmitHerramientaR72` y su binding eliminados. Bloque `HERRAMIENTAS INLINE` eliminado.
+- **`service-worker.js`:** v116 → v117.
+
+---
+
+### refactor(L.2): eliminar calculadoras redundantes (CDT, interés compuesto, rentabilidad real) · 2026-06-07
+
+Fase L.2 de la auditoría de calculadoras. Las 3 herramientas manuales eliminadas son las que el dominio Inversión ya realiza de forma automática al registrar activos reales: `herramienta-cdt` (proyectar un CDT), `herramienta-ic` (crecimiento por interés compuesto) y `herramienta-rentabilidad` (rentabilidad real ajustada por inflación). Las funciones en `financiero.js` se conservan porque las usa `inversiones/logic.js`. Sin cambios en tests (el count se mantiene en 1095 porque los tests de las fórmulas se quedan). SW v115 → v116.
+
+- **`index.html`:** 3 bloques `<details class="herramienta-inline">` eliminados de `#sec-metas` (CDT, IC) y `#sec-analisis` (rentabilidad). El comentario de la sección Metas eliminado. La Regla del 72 se conserva para L.3.
+- **`modules/dominio/metas/index.js`:** Imports `calcularCDT`, `calcularInteresCompuesto`, `validarCampos` y `f` eliminados. Sección `// HERRAMIENTAS INLINE` con `_onSubmitHerramientaCDT` y `_onSubmitHerramientaIC` eliminada. Bindings en `initMetas()` eliminados.
+- **`modules/dominio/analisis/index.js`:** Import `calcularRentabilidadReal` y `f` eliminados. Función `_onSubmitHerramientaRentabilidad` y su binding eliminados. `_onSubmitHerramientaR72` y su binding se conservan para L.3.
+- **`service-worker.js`:** v115 → v116.
+
+---
+
+### refactor(L.1): eliminar simulador laboral · 2026-06-07
+
+Fase L.1 de la auditoría de calculadoras. El simulador laboral (prima, cesantías, PILA, aportes empleado) se elimina de la sección Mis cuentas: está fuera del alcance de finanzas personales y generaba conflicto visual con la card de ingresos. Se eliminan también las 4 funciones laborales de `financiero.js`, el helper privado `_tasaFSP`, las 8 constantes laborales de `constants.js` y el CSS `sim-gate`. Los 34 tests del simulador laboral se eliminan. El resto de calculadoras (`calcularCDT`, `calcularCredito`, `calcularInteresCompuesto`, `calcularRegla72`, `calcularRentabilidadReal`) y las funciones que usa el dominio Inversión quedan intactas. SW v114 → v115. 1095/1095 tests verdes.
+
+- **`index.html`:** bloque `<details id="simulador-laboral">` eliminado (88 líneas de HTML).
+- **`modules/dominio/tesoreria/index.js`:** 5 imports de `financiero.js` eliminados; funciones `_calcularEmpleado`, `_calcularIndependiente`, `_onSubmitSimuladorLaboral`, `_initSimuladorLaboral` y su llamada en `initTesoreria()` eliminadas.
+- **`modules/infra/financiero.js`:** todo el bloque de imports de `constants.js` eliminado; funciones `calcularPrima`, `calcularPILA`, `calcularAportesEmpleado`, `calcularCesantias` y `_tasaFSP` eliminadas; docstring actualizado.
+- **`modules/core/constants.js`:** 8 constantes laborales eliminadas: `DIAS_PRIMA`, `SALUD_INDEPEND`, `PENSION_INDEPEND`, `SALUD_EMPLEADO`, `PENSION_EMPLEADO`, `FSP_TRAMOS`, `INTERESES_CESANTIAS`, `ARL_CLASE_I`.
+- **`tests/unit/calculadoras.test.js`:** 4 bloques de tests laborales eliminados (34 tests); imports de constantes laborales eliminados.
+- **`styles/components/domain.css`:** bloque CSS `sim-gate` + `sim-profile-fields` eliminado.
+- **`styles/components.css`:** comentario del barrel actualizado.
+- **`service-worker.js`:** v114 → v115.
+
+---
+
 ### feat(K.4): datos de renta manuales (3 criterios medibles) · 2026-06-07
 
 Registro manual opcional en Configuración para los 3 criterios de renta que el monitor de K.3 no puede derivar de los datos de Finko: ingresos brutos, consumos con tarjeta de crédito y consignaciones. Al registrarlos, el monitor de Análisis los incluye (valor + barra + estado) y deja de mostrar "Sin datos en Finko". Schema v9 → v10. SW v113 → v114. 1129/1129 tests verdes (16 nuevos).

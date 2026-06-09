@@ -251,6 +251,43 @@ export function validarCompromiso(datos) {
   return errores;
 }
 
+/**
+ * Detecta si la cuota declarada no cubre el interés mensual del crédito.
+ * Si cuotaMensual <= interés mensual, la deuda crece (nunca baja) o se mantiene.
+ *
+ * Solo aplica a deudas con tasa > 0. Para deudas personales sin tasa la función
+ * devuelve null (no hay intereses que comparar).
+ *
+ * @param {Record<string, string>} datos - datos crudos del formulario de compromiso.
+ *   Espera: saldoTotal, cuotaMensual, tasa (en %), tasaUnidad ('EA' | 'mensual'), tipo.
+ * @returns {{ interesMensual: number, cuotaMensual: number, deficit: number } | null}
+ *   null si no hay alerta. Objeto con los montos si la cuota no cubre el interés mensual.
+ */
+export function detectarDeudaCreciente(datos) {
+  if (datos.tipo !== 'deuda-entidad' && datos.tipo !== 'deuda-personal') return null;
+
+  const cuota   = Number(datos.cuotaMensual);
+  const saldo   = Number(datos.saldoTotal);
+  const tasaPct = Number(datos.tasa);
+
+  if (!(cuota > 0) || !(saldo > 0) || !(tasaPct > 0)) return null;
+
+  const tasaDecimal  = tasaPct / 100;
+  const tasaMensual  = datos.tasaUnidad === 'mensual'
+    ? tasaDecimal
+    : Math.pow(1 + tasaDecimal, 1 / 12) - 1;
+
+  const interesMensual = saldo * tasaMensual;
+  if (cuota <= interesMensual) {
+    return {
+      interesMensual,
+      cuotaMensual: cuota,
+      deficit:      interesMensual - cuota,
+    };
+  }
+  return null;
+}
+
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
 
 /**

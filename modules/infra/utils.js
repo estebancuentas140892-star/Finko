@@ -2,9 +2,8 @@
  * utils.js - utilidades transversales sin dependencias de dominio.
  *
  * Reglas:
- * - Sin DOM (excepto dialogo, que es UI de último recurso).
+ * - Sin DOM.
  * - Todas las funciones son puras o tienen efectos acotados y documentados.
- * - dialogo() es un wrapper temporal hasta que Fase 12 entregue modales propios.
  */
 
 // ── ESCAPE HTML ──────────────────────────────────────────────────
@@ -70,22 +69,4 @@ export function fechaLegible(iso) {
     year: 'numeric',
     timeZone: 'UTC',
   });
-}
-
-// ── DIÁLOGO ──────────────────────────────────────────────────────
-
-/**
- * Diálogo de confirmación o alerta.
- *
- * **v1 - wrapper temporal.** Fase 12 reemplaza la implementación por modales
- * propios del design system; la firma pública no cambia.
- *
- * @param {string} msg - texto a mostrar al usuario.
- * @param {'confirm' | 'alert'} [tipo='confirm']
- * @returns {boolean} - `true` si el usuario confirmó (o si es tipo `alert`).
- */
-export function dialogo(msg, tipo = 'confirm') {
-  if (tipo === 'confirm') return window.confirm(msg);
-  window.alert(msg);
-  return true;
 }

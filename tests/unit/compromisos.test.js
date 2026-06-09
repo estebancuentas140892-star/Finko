@@ -22,6 +22,7 @@ import {
   ajustarMontoAbono,
   validarAbono,
   deltasSaldoCompromisoPorEdicionGasto,
+  detectarDeudaCreciente,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -1345,6 +1346,93 @@ describe('deltasSaldoCompromisoPorEdicionGasto()', () => {
       { compromisoId: null, monto: 200_000 }
     );
     expect(deltas).toEqual({});
+  });
+});
+
+// ── detectarDeudaCreciente() ─────────────────────────────────────
+
+describe('detectarDeudaCreciente()', () => {
+  const datos = (overrides = {}) => ({
+    tipo:         'deuda-entidad',
+    saldoTotal:   '10000000',
+    cuotaMensual: '300000',
+    tasa:         '24',
+    tasaUnidad:   'EA',
+    ...overrides,
+  });
+
+  it('devuelve null para tipo fijo (no aplica a gastos fijos)', () => {
+    expect(detectarDeudaCreciente(datos({ tipo: 'fijo' }))).toBeNull();
+  });
+
+  it('devuelve null cuando la tasa es 0', () => {
+    expect(detectarDeudaCreciente(datos({ tasa: '0' }))).toBeNull();
+  });
+
+  it('devuelve null cuando la tasa está vacía (deuda-personal sin interés)', () => {
+    expect(detectarDeudaCreciente(datos({ tipo: 'deuda-personal', tasa: '' }))).toBeNull();
+  });
+
+  it('devuelve null cuando el saldo es 0', () => {
+    expect(detectarDeudaCreciente(datos({ saldoTotal: '0' }))).toBeNull();
+  });
+
+  it('devuelve null cuando la cuota es 0', () => {
+    expect(detectarDeudaCreciente(datos({ cuotaMensual: '0' }))).toBeNull();
+  });
+
+  it('devuelve null cuando la cuota cubre el interés mensual EA (caso normal)', () => {
+    // saldo=10M, EA=24% → interesMensual ~180.900 < cuota=300.000 → sin alerta.
+    expect(detectarDeudaCreciente(datos())).toBeNull();
+  });
+
+  it('detecta alerta cuando la cuota no cubre el interés mensual EA', () => {
+    // saldo=10M, EA=24% → interesMensual ~180.900 > cuota=100.000 → alerta.
+    const r = detectarDeudaCreciente(datos({ cuotaMensual: '100000' }));
+    expect(r).not.toBeNull();
+    expect(r.cuotaMensual).toBe(100_000);
+    expect(r.interesMensual).toBeGreaterThan(100_000);
+    expect(r.deficit).toBeGreaterThan(0);
+    expect(r.deficit).toBeCloseTo(r.interesMensual - r.cuotaMensual, 5);
+  });
+
+  it('detecta alerta cuando la cuota no cubre el interés mensual (tasaUnidad mensual)', () => {
+    // saldo=1M, tasa=10% mensual → interesMensual=100.000 > cuota=90.000 → alerta.
+    const r = detectarDeudaCreciente(datos({
+      tipo:         'deuda-personal',
+      saldoTotal:   '1000000',
+      cuotaMensual: '90000',
+      tasa:         '10',
+      tasaUnidad:   'mensual',
+    }));
+    expect(r).not.toBeNull();
+    expect(r.interesMensual).toBeCloseTo(100_000, 0);
+    expect(r.cuotaMensual).toBe(90_000);
+    expect(r.deficit).toBeCloseTo(10_000, 0);
+  });
+
+  it('devuelve null cuando la cuota supera el interés mensual (tasaUnidad mensual)', () => {
+    // saldo=1M, tasa=10% mensual → interesMensual=100.000 < cuota=110.000 → sin alerta.
+    expect(detectarDeudaCreciente(datos({
+      tipo:         'deuda-personal',
+      saldoTotal:   '1000000',
+      cuotaMensual: '110000',
+      tasa:         '10',
+      tasaUnidad:   'mensual',
+    }))).toBeNull();
+  });
+
+  it('detecta alerta cuando cuota = interés exacto (la deuda no baja ni sube)', () => {
+    // cuota=interés → cuota <= interés → alerta (deficit ≈ 0).
+    const r = detectarDeudaCreciente(datos({
+      tipo:         'deuda-personal',
+      saldoTotal:   '1000000',
+      cuotaMensual: '100000',
+      tasa:         '10',
+      tasaUnidad:   'mensual',
+    }));
+    expect(r).not.toBeNull();
+    expect(r.deficit).toBeCloseTo(0, 5);
   });
 });
 

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-07 (feat(K.4): datos de renta manuales; config.datosFiscales por año; schema v9 → v10; 1129/1129 verde)
+> Última actualización: 2026-06-08 (refactor(P4): eliminar dialogo() muerta; auditoría integral cerrada; 1123/1123 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1129/1129 verdes (16 nuevos en K.4: datos de renta manuales) |
+| Tests unitarios + integración | 1126/1126 verdes (+9 tests renderFormAbonoMeta en P2) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,68 +39,117 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### feat(K.4): datos de renta manuales (3 criterios medibles) · 2026-06-07
+### refactor(P4): eliminar dialogo() muerta · 2026-06-08
 
-Registro manual opcional en Configuración para los 3 criterios de renta que el monitor de K.3 no puede derivar (ingresos brutos, consumos con tarjeta de crédito, consignaciones). Al registrarlos, el monitor de Análisis los mide y deja de mostrar "Sin datos". Valores keados por año (`config.datosFiscales[anio]`): no quedan obsoletos al cambiar de año. Campo vacío = no provisto; un 0 escrito = cero medido. Schema v9 → v10. 1129/1129 tests verdes (16 nuevos).
+Cuarto y último hallazgo de auditoría. Función `dialogo()` en `modules/infra/utils.js` era un wrapper temporal alrededor de `window.confirm()` / `window.alert()`. Fue completamente reemplazada por `confirmar()` modal en `ui/confirm.js`. Nadie la importaba. Eliminada la función (~15 líneas), su docstring, y sus 3 tests en `utils.test.js`. También removidos los imports `vi`, `beforeEach`, `afterEach` que solo se usaban para esos tests. **Auditoría integral completada**: app 100% lint verde, cero inconsistencias de UX, código limpio. SW v120. 1123/1123 tests verdes (-3 tests eliminados, sin cambios en funcionalidad).
 
 | Archivo | Cambio |
 |---|---|
-| `modules/core/state.js` | Typedef `DatosFiscalesAnio` + `Config.datosFiscales` (Record por año) + default `{}`. `_version` 9 → 10. |
-| `modules/core/storage.js` | `SCHEMA_VERSION` 9 → 10. Migración v9 → v10: añade `config.datosFiscales = {}`, normaliza array corrupto, preserva config previo. |
-| `modules/dominio/analisis/logic.js` | `calcularEstadoRenta` lee `config.datosFiscales[anio]`; helpers `provisto`/`valorManual`/`tipManual`; los 3 criterios pasan a medible si hay valor registrado. |
-| `modules/dominio/config/view.js` | `_renderDatosRenta()` nueva: sección con 3 inputs numéricos del año. Import de `hoy`. Insertada tras Perfil fiscal. |
-| `modules/dominio/config/index.js` | Handler `submit` de `#form-datos-fiscales`: guarda campos no vacíos en `datosFiscales[anio]`, borra la entrada si todos vacíos. Import de `hoy`. |
-| `service-worker.js` | v113 → v114. |
-| `tests/unit/storage.test.js` | 5 tests de migración v9 → v10. |
-| `tests/unit/analisis.test.js` | 11 tests de datos manuales. |
-| `tests/unit/state.test.js` | Test de `_version` actualizado de 9 a 10. |
+| `modules/infra/utils.js` | Eliminar bloque de comentario + función `dialogo()` (~15 líneas). Actualizar docstring: quitar menciones a `dialogo` y "sin DOM". |
+| `tests/unit/utils.test.js` | Eliminar import `dialogo`. Eliminar bloque `describe('dialogo()...')` (3 tests, 26 líneas). Eliminar imports `vi`, `beforeEach`, `afterEach` (ahora sin uso). |
+| `service-worker.js` | v120 (sin cambio, SW cacheado). |
 
 ---
 
-### feat(K.3): monitor de topes de renta en Análisis · 2026-06-07
+### fix(P3): lint 100% verde (globals, imports sin usar, var→let) · 2026-06-08
 
-Card "Estado de tu renta" en Análisis: los 5 criterios de obligación de declarar renta con su tope calculado en vivo (`N × UVT`) y el valor actual cuando Finko puede medirlo. Nudges al 80% (cerca) y 100% (supera). Decisión del gap de datos: Opción A (honestidad explícita): solo 2 de 5 criterios son medibles (patrimonio bruto, consumos totales); los otros 3 (ingresos, tarjeta de crédito, consignaciones) muestran tope + badge "Sin datos en Finko". Sin schema changes. 1113/1113 tests verdes (25 nuevos). Sección K completa.
+Tercera tarea de la auditoría. ESLint mostraba 16 errores: 6 globals faltantes en config, 4 imports sin usar, 3 `var` innecesarios. Todos mecánicos, sin lógica. Agregar a `eslint.config.js`: `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches`. Eliminar imports: `resetModal` en `compromisos/index.js`, `aplicarGastoASaldo`/`revertirGastoDeSaldo` en `gastos/index.js`, `hoy`/`totalGastosMes` en `gastos/view.js`, `f` en `tesoreria/index.js`. Cambiar `var` a `let`/`const` en `sw-register.js` (3 líneas). 1126/1126 tests verdes (sin cambios).
 
 | Archivo | Cambio |
 |---|---|
-| `modules/core/constants.js` | `TOPES_RENTA_UVT` (5 criterios en múltiplos de UVT) + `UMBRAL_ALERTA_RENTA` (0,80). Topes en pesos derivados en vivo de `UVT`. |
-| `modules/dominio/analisis/logic.js` | 4 funciones puras: `patrimonioBruto`, `totalGastosAnio`, `calcularEstadoRenta`, `detectarNudgesRenta`. Imports de `calcularTotalInvertido` + constantes. |
-| `modules/dominio/analisis/view.js` | `_renderEstadoRenta` + `_renderCriterioRenta` + `_renderNudgeRenta`. Card entre recomendación fiscal y patrimonio. Reusa `.nudge`/`.progress`. |
-| `styles/components/analysis.css` | Bloque `.renta-criterios` + `.renta-criterio*` (grid responsive, badges por estado). Solo tokens `--fk-*`. |
-| `service-worker.js` | v112 → v113. |
-| `tests/unit/analisis.test.js` | 25 tests nuevos (3 patrimonioBruto + 4 totalGastosAnio + 11 calcularEstadoRenta + 7 detectarNudgesRenta). |
+| `eslint.config.js` | Agregar 6 globals: `queueMicrotask`, `HTMLInputElement`, `CSS`, `Event`, `history`, `caches`. |
+| `modules/dominio/compromisos/index.js` | Eliminar `resetModal` del import de `modales.js`. |
+| `modules/dominio/gastos/index.js` | Eliminar `aplicarGastoASaldo`, `revertirGastoDeSaldo` del import de `logic.js`. |
+| `modules/dominio/gastos/view.js` | Eliminar `hoy` del import de `utils.js`; eliminar `totalGastosMes` del import de `logic.js`. |
+| `modules/dominio/tesoreria/index.js` | Eliminar `f` del import de `utils.js`. |
+| `modules/infra/sw-register.js` | Cambiar `var _hostname` → `const`, `var _esDesarrollo` → `const`, `var _ya_recargado` → `let`. |
 
 ---
 
-### feat(K.2): perfil fiscal en Configuración + recomendación en Análisis · 2026-06-07
+### feat(P2): abono a metas con modal propio (reemplaza window.prompt) · 2026-06-08
 
-Schema v8 → v9. Sección "Perfil fiscal" en Configuración con 3 checkboxes opcionales (IVA, contabilidad obligatoria, declarante DIAN). Si alguno está activo: nudge-info permanente en Análisis con enlace a `#config`. Migración idempotente añade `config.perfilFiscal` con todos los flags en false. 1088/1088 tests verdes (4 nuevos).
+Hallazgo de la auditoría integral. El abono a metas de ahorro usaba `window.prompt()` nativo: diálogo gris del navegador, sin validación visible, con `toLocaleString('es-CO')` sin `$` en el announce. Era la única inconsistencia de UX que quedaba. Ahora: nuevo modal `#modal-abono-meta` en HTML, `renderFormAbonoMeta(meta)` exportada desde `view.js` (genera el form con hint de progreso actual y faltante), `_abrirAbonoMeta` + `_guardarAbonoMeta` en `index.js` (inyectan form, validan con `validarAbono`, actualizan meta, usan `f()` para el announce). SW v119 → v120. 1126/1126 tests verdes (+9 tests de `renderFormAbonoMeta`).
 
 | Archivo | Cambio |
 |---|---|
-| `modules/core/state.js` | Typedef `PerfilFiscal` + `Config.perfilFiscal` + defaults en `createInitialState()`. `_version` 8 → 9. |
-| `modules/core/storage.js` | `SCHEMA_VERSION` 8 → 9. Migración v8 → v9: añade `config.perfilFiscal` preservando datos existentes. |
-| `modules/dominio/config/view.js` | `_renderPerfilFiscal()` nueva: sección con 3 checkboxes + botón guardar. Se inserta entre "Tu perfil" y "Apariencia". |
-| `modules/dominio/config/index.js` | Handler `submit` para `#form-perfil-fiscal`: actualiza `S.config.perfilFiscal.*` + `save()` + `renderPanelConfig()`. |
-| `modules/dominio/analisis/view.js` | `_renderRecomendacionFiscal()` nueva: nudge-info con motivos fiscales + link a Config. Insertada entre Score y Patrimonio. |
-| `service-worker.js` | v111 → v112. |
-| `tests/unit/storage.test.js` | 4 tests nuevos: migración v8 → v9. |
-| `tests/unit/state.test.js` | Test de `_version` actualizado de 8 a 9. |
+| `index.html` | Nuevo modal `#modal-abono-meta` (entre `#modal-meta` e `#modal-import`). |
+| `modules/dominio/metas/view.js` | `renderFormAbonoMeta(meta)` exportada: form con hidden metaId, hint de progreso, input de monto, Cancelar y Registrar. |
+| `modules/dominio/metas/index.js` | Import `f` y `renderFormAbonoMeta`. `_abonarMeta` reemplazada por `_abrirAbonoMeta` (abre modal, inyecta form, conecta submit) y `_guardarAbonoMeta` (valida, edita meta, cierra modal, anuncia con `f()`). |
+| `tests/unit/metas.test.js` | Import `renderFormAbonoMeta` desde `view.js`. 9 tests nuevos: id del form, hidden metaId, input monto, porcentaje, faltante, completada sin faltante, botón Registrar, Cancelar, XSS escape. |
+| `service-worker.js` | v119 → v120. |
 
 ---
 
-### feat(K.1): asistencia 4x1000 (GMF) · 2026-06-07
+### feat(P1): aviso de valores legales desactualizados al cambiar de año · 2026-06-08
 
-Indicador de costo GMF del mes en Tesorería + nudge preventivo con sugerencia de exención. Sin schema changes. El formulario ya tenía el checkbox; se mejoró el hint con contexto de exenciones (nómina, AFC). 1084/1084 tests verdes (12 nuevos).
+Hallazgo de la auditoría integral. Cuando empieza un año nuevo y todavía no se cargaron en `LEGAL_POR_ANIO` los valores oficiales (SMMLV, UVT, auxilio), `legalVigente()` cae al último año publicado como referencia provisional, pero antes no había ningún aviso al usuario: los topes de renta se mostraban con la UVT del año anterior como si fueran del año en curso. Nueva función pura `estadoVigenciaLegal(fecha)` en `constants.js` que detecta el desfase. Si está desactualizado, aparece un nudge medium en Configuración (banner superior) y en la card "Estado de tu renta" de Análisis. Mientras los valores estén al día, no se muestra nada. SW v118 → v119. 1117/1117 tests verdes (12 nuevos, primer archivo de tests de `constants.js`).
 
 | Archivo | Cambio |
 |---|---|
-| `modules/dominio/tesoreria/logic.js` | `calcularCostoGMF(gastos, cuentas, anio, mes)` y `detectarNudgeGMF(gmfData)` exportadas. Import de `GMF` desde `constants.js`. |
-| `modules/dominio/tesoreria/view.js` | `renderGMFIndicador()` exportada + `_renderNudgeGMF()` privada. Import de `hoy` y las 2 funciones nuevas de logic.js. Hint del formulario actualizado con mención de cuentas exentas (nómina, AFC). |
-| `modules/dominio/tesoreria/index.js` | Import de `renderGMFIndicador`. `_renderTodo()` llama `renderGMFIndicador()` tras `renderListaCuentas()`. |
-| `index.html` | `<div id="tesoreria-gmf">` entre `#lista-tesoreria` y el simulador laboral. |
-| `service-worker.js` | v110 → v111. |
-| `tests/unit/tesoreria.test.js` | 12 tests nuevos: 8 para `calcularCostoGMF` + 4 para `detectarNudgeGMF`. |
+| `modules/core/constants.js` | `estadoVigenciaLegal(fecha)` nueva: devuelve `{ desactualizado, anioActual, anioVigente }` comparando el año en curso contra el año que resuelve `legalVigente()`. |
+| `modules/dominio/analisis/view.js` | Import `estadoVigenciaLegal`. En `_renderEstadoRenta`, nudge medium "Topes calculados con la UVT de {anioVigente}" cuando hay desfase. |
+| `modules/dominio/config/view.js` | Import `estadoVigenciaLegal`. `_renderAvisoVigencia()` nueva: banner superior del panel cuando hay desfase; devuelve '' si está al día. |
+| `tests/unit/constants.test.js` | Archivo nuevo: 12 tests (`legalVigente`, `legalDelAnio`, `aniosPublicados`, `estadoVigenciaLegal`). |
+| `service-worker.js` | v118 → v119. |
+
+---
+
+### refactor(L.4): eliminar "Simular crédito"; alerta automática de cuota insuficiente · 2026-06-07
+
+Fase L.4 de la auditoría. La herramienta manual "Simular un crédito" (formulario en `#sec-compromisos`) se elimina. En su lugar, al guardar una deuda con tasa y cuota, Finko calcula el interés mensual (`saldo * tasaMensual`) y muestra un `confirmar()` si la cuota no cubre ni los intereses (la deuda crecer en vez de bajar). El usuario puede confirmar y registrarla igual (el registro de la realidad es válido). Nueva función pura `detectarDeudaCreciente(datos)` en `logic.js`, 10 tests nuevos. SW v117 → v118. 1105/1105 tests verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `detectarDeudaCreciente(datos)` nueva: compara cuota vs interés mensual (EA o mensual). Devuelve `{ interesMensual, cuotaMensual, deficit }` o null. |
+| `modules/dominio/compromisos/index.js` | Import `calcularCredito, validarCampos` de `financiero.js` eliminado. `detectarDeudaCreciente` agregado al import de `logic.js`. `_guardarCompromiso` hecha async: llama `detectarDeudaCreciente` y `confirmar()` si hay alerta. `_onSubmitHerramientaCredito` + su binding eliminados. |
+| `index.html` | Bloque `<details id="herramienta-credito">` y su comentario eliminados (31 líneas). |
+| `tests/unit/compromisos.test.js` | `detectarDeudaCreciente` agregado al import. 10 tests nuevos en bloque `describe`. |
+| `service-worker.js` | v117 → v118. |
+
+---
+
+### refactor(L.3): Regla del 72 convertida en insight pasivo en Inversión · 2026-06-07
+
+Fase L.3 de la auditoría. La calculadora "¿En cuántos años duplico mi dinero?" se elimina como herramienta de botón. Su insight se convierte en texto pasivo dentro de la card "Proyección al vencimiento" del dominio Inversión: "⚡ A esta tasa, tu dinero se duplica en ~N años." El valor de N se calcula automáticamente con `calcularRegla72(tasaPromedioPonderada)`. Solo aparece cuando hay holdings proyectables (con tasa EA y plazo definidos). SW v116 → v117. 1095/1095 tests verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/inversiones/view.js` | Import `calcularRegla72` agregado. Función privada `_renderInsightR72(tasaNominalPct)` nueva. Llamada desde `_renderProyeccion` cuando `real` no es null. |
+| `styles/components/analysis.css` | `.inversion-proy__r72` nuevo: texto sm, color secondary, fondo elevated, radius sm. |
+| `index.html` | Bloque `<details id="herramienta-r72">` y su comentario eliminados de `#sec-analisis`. |
+| `modules/dominio/analisis/index.js` | Import completo de `financiero.js` eliminado. Función `_onSubmitHerramientaR72`, su binding y el bloque `HERRAMIENTAS INLINE` eliminados. Archivo queda limpio: solo re-render reactivo. |
+| `service-worker.js` | v116 → v117. |
+
+---
+
+### refactor(L.2): eliminar calculadoras redundantes (CDT, interés compuesto, rentabilidad real) · 2026-06-07
+
+Fase L.2 de la auditoría. Las 3 calculadoras manuales cuyos cálculos ya realiza el dominio Inversión en automático (al registrar un CDT, una inversión o ver el portafolio) se eliminan como herramientas-inline. Las funciones `calcularCDT`, `calcularInteresCompuesto` y `calcularRentabilidadReal` se conservan en `financiero.js`: las usa `inversiones/logic.js`. SW v115 → v116. 1095/1095 tests verdes (sin cambio de count: los tests de las funciones se quedan porque las funciones se quedan).
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 3 bloques `<details>` eliminados: `herramienta-cdt`, `herramienta-ic`, `herramienta-rentabilidad` (~80 líneas). |
+| `modules/dominio/metas/index.js` | Imports `calcularCDT`, `calcularInteresCompuesto`, `validarCampos`, `f` eliminados. Funciones `_onSubmitHerramientaCDT`, `_onSubmitHerramientaIC` y sus bindings eliminados. |
+| `modules/dominio/analisis/index.js` | Import `calcularRentabilidadReal` y `f` eliminados. Función `_onSubmitHerramientaRentabilidad` y su binding eliminados. Regla 72 intacta (L.3). |
+| `service-worker.js` | v115 → v116. |
+
+---
+
+### refactor(L.1): eliminar simulador laboral · 2026-06-07
+
+Fase L.1 de la auditoría de calculadoras: eliminación completa del simulador laboral de la sección Mis cuentas. Razón: fuera del alcance de finanzas personales (es una herramienta de RRHH). También se eliminaron las 4 funciones laborales de `financiero.js` (prima, PILA, aportes empleado, cesantías), las 8 constantes laborales de `constants.js` (FSP_TRAMOS, SALUD_INDEPEND/EMPLEADO, PENSION_INDEPEND/EMPLEADO, INTERESES_CESANTIAS, ARL_CLASE_I, DIAS_PRIMA) y el CSS `sim-gate`. La lógica de otras calculadoras (CDT, interés compuesto, regla 72, rentabilidad real) y las funciones que usa Inversión quedan intactas. SW v114 → v115. 1095/1095 tests verdes (34 removidos).
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Bloque `<details id="simulador-laboral">` eliminado (88 líneas HTML). |
+| `modules/dominio/tesoreria/index.js` | 5 imports de `financiero.js` eliminados. 4 funciones laborales + llamada `_initSimuladorLaboral()` eliminadas (~170 líneas). |
+| `modules/infra/financiero.js` | Todo el bloque de imports de `constants.js` eliminado. 4 funciones exportadas + helper `_tasaFSP` eliminados (~190 líneas). Docstring actualizado. |
+| `modules/core/constants.js` | 8 constantes laborales eliminadas: `DIAS_PRIMA`, `SALUD_INDEPEND`, `PENSION_INDEPEND`, `SALUD_EMPLEADO`, `PENSION_EMPLEADO`, `FSP_TRAMOS`, `INTERESES_CESANTIAS`, `ARL_CLASE_I`. |
+| `tests/unit/calculadoras.test.js` | 4 bloques de tests laborales eliminados (34 tests: prima, PILA, aportes empleado, cesantías). Imports de constantes laborales eliminados. |
+| `styles/components/domain.css` | Bloque CSS `sim-gate` + `sim-profile-fields` eliminado (~70 líneas). |
+| `styles/components.css` | Comentario del barrel actualizado (sim-gate → herramienta-inline). |
+| `service-worker.js` | v114 → v115. |
+
 
 ---
 
@@ -126,13 +175,13 @@ Decisión de producto: dejar de rastrear la tasa de usura (certificación trimes
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** ninguna. Sección K (Asistencias Inteligentes) cerrada completa: K.1 4x1000, K.2 perfil fiscal, K.3 monitor de renta, K.4 datos de renta manuales.
+**Fase activa:** Auditoría integral completada. 4 hallazgos (P1 a P4) todos cerrados. App 100% lint verde, 1123/1123 tests verdes, cero inconsistencias de UX.
 
-**Próxima tarea natural:** sin fase activa. Candidatas opcionales abajo (A.5 dominio custom cuando haya dominio registrado, E.2 SMMLV/UVT 2027 en enero). El monitor de renta ya permite registrar los 3 criterios no derivables; no hay deuda pendiente conocida en la sección K.
+**Próxima tarea natural:** A.5 (dominio custom) o E.2 (SMMLV + UVT 2027, enero 2027). Usuario ya tiene dominio registrado para A.5.
 
 **Otras opciones:**
-- **A.5 - Dominio custom** cuando el usuario tenga un dominio registrado.
-- **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku).
+- **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
+- **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku): búsqueda de valores oficiales y actualización de `LEGAL_POR_ANIO` en `constants.js`.
 
 **Estado base:** App en producción estable (`https://finko-brown.vercel.app`).
 
@@ -151,20 +200,27 @@ Tareas opcionales restantes:
 
 ### Recordatorio enero 2027 - E.2
 
+> Desde la refactorización a tabla histórica, **no se crean exports `_2027`**: basta con agregar UNA entrada en `LEGAL_POR_ANIO`. Toda la app (UI, cálculos, tests) y el aviso de vigencia de P1 dejan de marcar "desactualizado" en cuanto la entrada existe.
+
 **Qué hacer:**
 1. Visita [DIAN UVT](https://www.dian.gov.co/) y [Mintrabajo SMMLV](https://www.mintrabajo.gov.co/)
-2. Obtén los valores vigentes para 2027
-3. Actualiza en `modules/core/constants.js`:
+2. Obtén los valores oficiales 2027 (SMMLV, auxilio de transporte, UVT) con sus decretos/resoluciones.
+3. En `modules/core/constants.js`, reemplaza `2027: null` por una entrada completa:
    ```javascript
-   export const SMMLV_2027 = <nuevo_valor>;
-   export const UVT_2027 = <nuevo_valor>;
+   2027: {
+     smmlv:             <nuevo_valor>,
+     auxilioTransporte: <nuevo_valor>,
+     uvt:               <nuevo_valor>,
+     vigenciaDesde: '2027-01-01',
+     fuentes: { smmlv: '...', auxilio: '...', uvt: '...' },
+   },
    ```
-4. Cambia las referencias de `_2026` a `_2027` en `constants.js`
-5. Tests (`npm test` → 596/596 verdes)
-6. Commit: `feat(E.2): actualizar SMMLV 2027 + UVT 2027`
-7. Push a main → auto-deploy a producción
+4. Tests (`pnpm test` → todo verde; incluye `tests/unit/constants.test.js`).
+5. Bumpear `CACHE_NAME` en `service-worker.js`.
+6. Commit: `feat(E.2): cargar SMMLV + auxilio + UVT 2027`
+7. Push a main → auto-deploy a producción.
 
-**Archivo:** Escribe tu `Próximo paso` con modelo **Haiku 4.5** (búsqueda + cambio mecánico).
+**Modelo:** Escribe tu `Próximo paso` con **Haiku 4.5** (búsqueda + cambio mecánico de una entrada).
 
 ---
 
@@ -200,7 +256,7 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 1129 tests unitarios + integración
+pnpm test                     # 1105 tests unitarios + integración
 pnpm run test:e2e             # 57 smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080

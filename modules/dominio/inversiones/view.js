@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { INFLACION_OBJETIVO } from '../../core/constants.js';
+import { calcularRegla72 } from '../../infra/financiero.js';
 import {
   calcularTotalInvertido,
   calcularPorTipo,
@@ -114,6 +115,8 @@ function _renderProyeccion(inversiones) {
     ? `<p class="inversion-proy__hint">${proy.noProyectables} ${proy.noProyectables === 1 ? 'inversión de retorno variable no se proyecta' : 'inversiones de retorno variable no se proyectan'} (sin tasa o plazo fijo).</p>`
     : '';
 
+  const r72Html  = real ? _renderInsightR72(real.tasaNominalPct) : '';
+
   const realHtml = real
     ? `<div class="inversion-proy__real">
         <p class="inversion-proy__real-line">
@@ -140,8 +143,31 @@ function _renderProyeccion(inversiones) {
         </div>
       </div>
       ${realHtml}
+      ${r72Html}
       ${notaNoProy}
     </section>`;
+}
+
+// ── INSIGHT REGLA DEL 72 ─────────────────────────────────────────
+
+/**
+ * Insight pasivo: cuántos años tarda el portafolio en duplicarse a su tasa
+ * promedio ponderada. Solo se muestra cuando hay holdings proyectables.
+ *
+ * @param {number} tasaNominalPct - Tasa EA en % (ej. 12).
+ * @returns {string} HTML del insight, o '' si la tasa no es válida.
+ */
+function _renderInsightR72(tasaNominalPct) {
+  if (!(tasaNominalPct > 0)) return '';
+  const r = calcularRegla72(tasaNominalPct);
+  if (!Number.isFinite(r.aniosExactos)) return '';
+  const anios = r.aniosExactos < 100
+    ? `~${_fmtTasa(r.aniosExactos)} años`
+    : 'más de 100 años';
+  return `
+    <p class="inversion-proy__r72">
+      ⚡ A esta tasa, tu dinero se duplica en ${anios}.
+    </p>`;
 }
 
 // ── NUDGES EDUCATIVOS (J.2c) ─────────────────────────────────────

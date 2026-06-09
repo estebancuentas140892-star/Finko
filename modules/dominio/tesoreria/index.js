@@ -16,14 +16,6 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { f } from '../../infra/utils.js';
-import {
-  calcularPrima,
-  calcularPILA,
-  calcularAportesEmpleado,
-  calcularCesantias,
-  validarCampos,
-} from '../../infra/financiero.js';
 import {
   validarCuenta,
   normalizarCuenta,
@@ -449,179 +441,6 @@ function _initBankPicker(picker) {
   }, { capture: true });
 }
 
-// ── SIMULADOR LABORAL GATEADO (empleado vs independiente) ─────────
-//
-// Regla innegociable: NUNCA mezclar empleado e independiente en la misma
-// salida. El gate pregunta el perfil primero y cada rama usa su propia
-// lógica y funciones. Ver feedback_simulador_laboral.md.
-
-/**
- * Renderiza el resultado para un empleado dependiente.
- * Muestra: descuentos mensuales (salud + pensión + FSP), auxilio de
- * transporte, prima semestral y cesantías (proyección anual).
- * No muestra PILA de independiente ni referencia a ese perfil.
- *
- * @param {Record<string, string>} datos - campos del formulario.
- * @param {HTMLElement} el - contenedor #result-simulador-laboral.
- */
-function _calcularEmpleado(datos, el) {
-  const errores = validarCampos(
-    { salario: datos.salario ?? '', dias: datos.dias ?? '' },
-    { salario: { min: 1 }, dias: { min: 1, max: 180, entero: true } },
-  );
-  if (errores.length > 0) {
-    el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
-    announce(errores[0], 'assertive');
-    return;
-  }
-
-  const salario   = Number(datos.salario);
-  const dias      = Number(datos.dias);
-  const variables = (Number(datos.extras) || 0) + (Number(datos.bonos) || 0);
-
-  const prima     = calcularPrima(salario, dias, variables);
-  const aportes   = calcularAportesEmpleado(salario);
-  // Cesantías: extrapolar el semestre a año completo (multiplicamos por 2, máx. 360 días).
-  const cesantias = calcularCesantias(salario, Math.min(dias * 2, 360), variables);
-
-  const variablesRow = prima.variablesAplicadas > 0
-    ? `<dt>Variables (extras + bonos)</dt><dd>${f(prima.variablesAplicadas)}/mes</dd>`
-    : '';
-
-  const fspRow = aportes.fsp > 0
-    ? `<dt>FSP (solidaridad pensional, ${(aportes.fspTasa * 100).toFixed(1)} %)</dt>
-       <dd class="calc-result__deduct">${f(aportes.fsp)}</dd>`
-    : `<dt>FSP (solidaridad pensional)</dt>
-       <dd>No aplica (salario menor a 4 SMMLV)</dd>`;
-
-  const auxilioFila = prima.incluyeAuxilio
-    ? `<dt>Auxilio de transporte mensual</dt>
-       <dd class="calc-result__highlight">${f(prima.auxilioAplicado)}</dd>`
-    : `<dt>Auxilio de transporte</dt>
-       <dd>No aplica (salario mayor a 2 SMMLV)</dd>`;
-
-  el.innerHTML = `
-    <h4 class="calc-result__subtitle">💸 Descuento mensual (vos pagás)</h4>
-    <dl class="calc-result__grid">
-      <dt>IBC base de cotización</dt><dd>${f(aportes.ibc)}</dd>
-      <dt>Salud (4 %, aportás vos)</dt><dd class="calc-result__deduct">${f(aportes.salud)}</dd>
-      <dt>Pensión (4 %, aportás vos)</dt><dd class="calc-result__deduct">${f(aportes.pension)}</dd>
-      ${fspRow}
-      <dt>Total descuento mensual</dt><dd class="calc-result__total">${f(aportes.totalDescuento)}</dd>
-    </dl>
-
-    <h4 class="calc-result__subtitle">🚌 Beneficio mensual</h4>
-    <dl class="calc-result__grid">
-      ${auxilioFila}
-    </dl>
-
-    <h4 class="calc-result__subtitle">🎁 Prima de servicios (${dias} días)</h4>
-    <dl class="calc-result__grid">
-      <dt>Salario base liquidación</dt><dd>${f(prima.salarioBase)}</dd>
-      ${variablesRow}
-      <dt>Prima estimada</dt><dd class="calc-result__total">${f(prima.prima)}</dd>
-    </dl>
-
-    <h4 class="calc-result__subtitle">📋 Cesantías (proyección año completo)</h4>
-    <dl class="calc-result__grid">
-      <dt>Cesantías estimadas</dt><dd>${f(cesantias.cesantias)}</dd>
-      <dt>Intereses (12 % anual)</dt><dd class="calc-result__highlight">${f(cesantias.intereses)}</dd>
-      <dt>Total cesantías</dt><dd class="calc-result__total">${f(cesantias.total)}</dd>
-    </dl>
-
-    <p class="herramienta-inline__desc">
-      ARL, parafiscales y caja de compensación los paga tu empleador en su totalidad.
-      Las cesantías son una proyección anual basada en los días del semestre ingresados.
-      Las cifras son estimaciones: el valor exacto depende de tu nómina real.
-    </p>`;
-}
-
-/**
- * Renderiza el resultado para un trabajador independiente.
- * Muestra: IBC (40 % del ingreso, piso 1 SMMLV), y aportes PILA completos
- * (salud 12.5 % + pensión 16 % + ARL). No muestra prima ni cesantías.
- *
- * @param {Record<string, string>} datos - campos del formulario.
- * @param {HTMLElement} el - contenedor #result-simulador-laboral.
- */
-function _calcularIndependiente(datos, el) {
-  const errores = validarCampos(
-    { ingreso: datos.ingreso ?? '' },
-    { ingreso: { min: 1 } },
-  );
-  if (errores.length > 0) {
-    el.innerHTML = `<ul class="calc-result__errors">${errores.map(m => `<li>${m}</li>`).join('')}</ul>`;
-    announce(errores[0], 'assertive');
-    return;
-  }
-
-  const pila = calcularPILA(Number(datos.ingreso), Number(datos.arl));
-  if (!pila) {
-    el.innerHTML = '<p class="herramienta-inline__desc">Ingresá un ingreso válido para calcular.</p>';
-    return;
-  }
-
-  el.innerHTML = `
-    <h4 class="calc-result__subtitle">🧾 Aportes PILA mensuales (a tu cargo)</h4>
-    <dl class="calc-result__grid">
-      <dt>IBC (40 % del ingreso, mínimo 1 SMMLV)</dt><dd>${f(pila.ibc)}</dd>
-      <dt>Salud (12.5 %)</dt><dd class="calc-result__deduct">${f(pila.salud)}</dd>
-      <dt>Pensión (16 %)</dt><dd class="calc-result__deduct">${f(pila.pension)}</dd>
-      <dt>ARL</dt><dd class="calc-result__deduct">${f(pila.arlMonto)}</dd>
-      <dt>Total a pagar mensual</dt><dd class="calc-result__total">${f(pila.total)}</dd>
-    </dl>
-    <p class="herramienta-inline__desc">
-      Como independiente pagás el 100 % de tus aportes de seguridad social.
-      Prima, cesantías y auxilio de transporte aplican solo a empleados dependientes.
-    </p>`;
-}
-
-/**
- * Despacha al calculador correcto según el perfil seleccionado.
- * Nunca mezcla empleado e independiente.
- */
-function _onSubmitSimuladorLaboral(e) {
-  e.preventDefault();
-  const datos  = Object.fromEntries(new FormData(e.target));
-  const perfil = datos.perfil;
-  const el     = document.getElementById('result-simulador-laboral');
-  if (!el) return;
-
-  if (perfil === 'empleado') {
-    _calcularEmpleado(datos, el);
-  } else if (perfil === 'independiente') {
-    _calcularIndependiente(datos, el);
-  }
-  announce('Simulación actualizada.');
-}
-
-/**
- * Inicializa el simulador laboral gateado:
- * - Al cambiar el perfil (radio), muestra los campos del perfil elegido,
- *   oculta los del otro y habilita el botón Calcular.
- * - Al enviar, delega a la rama correcta.
- */
-function _initSimuladorLaboral() {
-  const form = document.getElementById('form-simulador-laboral');
-  if (!form) return;
-
-  form.addEventListener('change', (e) => {
-    if (e.target.name !== 'perfil') return;
-    const perfil  = e.target.value;
-    const elEmp   = document.getElementById('sim-fields-empleado');
-    const elInd   = document.getElementById('sim-fields-independiente');
-    const elBtn   = document.getElementById('sim-btn-calcular');
-    const elRes   = document.getElementById('result-simulador-laboral');
-    if (elEmp) elEmp.hidden = perfil !== 'empleado';
-    if (elInd) elInd.hidden = perfil !== 'independiente';
-    if (elBtn) elBtn.hidden = false;
-    // Limpiar resultado anterior al cambiar de perfil para no confundir.
-    if (elRes) elRes.innerHTML = '';
-  });
-
-  form.addEventListener('submit', _onSubmitSimuladorLaboral);
-}
-
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -632,8 +451,6 @@ export function initTesoreria() {
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
 
   _inyectarForm();
-
-  _initSimuladorLaboral();
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'cuentas' || section === 'tesoreria' || section === 'compromisos') {

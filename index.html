@@ -325,38 +325,6 @@
         <div id="lista-compromisos">
           <!-- v6: solo deudas, ordenadas según la estrategia activa. -->
         </div>
-
-        <!-- Herramienta: Simular un crédito (v8.2) -->
-        <details class="herramienta-inline" id="herramienta-credito">
-          <summary class="herramienta-inline__titulo">💳 Simular un crédito</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Calculá la cuota antes de comprometerte.</p>
-            <form id="form-herramienta-credito" class="calc-form" novalidate>
-              <div class="calc-form__fields">
-                <div class="form-group">
-                  <label for="hcred-principal" class="label">Monto del crédito (COP)</label>
-                  <input id="hcred-principal" name="principal" class="input" type="number"
-                         inputmode="numeric" min="100000" step="100000"
-                         placeholder="5.000.000" required />
-                </div>
-                <div class="form-group">
-                  <label for="hcred-tasa" class="label">Tasa de interés anual (%)</label>
-                  <input id="hcred-tasa" name="tasaEA" class="input" type="number"
-                         inputmode="decimal" min="0.1" max="100" step="0.1"
-                         placeholder="24" required />
-                </div>
-                <div class="form-group">
-                  <label for="hcred-plazo" class="label">Plazo (meses)</label>
-                  <input id="hcred-plazo" name="plazoMeses" class="input" type="number"
-                         inputmode="numeric" min="1" max="360" step="1"
-                         placeholder="36" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Ver cuota mensual</button>
-            </form>
-            <div id="result-herramienta-credito" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
       </section>
 
       <!-- AGENDA (vista calendario sobre compromisos + alta de gastos fijos) -->
@@ -403,94 +371,6 @@
           <!-- K.1: renderGMFIndicador() muestra el costo estimado del 4x1000 del mes -->
         </div>
 
-        <!-- Simulador laboral gateado: empleado vs independiente (v8.9) -->
-        <details class="herramienta-inline" id="simulador-laboral">
-          <summary class="herramienta-inline__titulo">🧮 Simulador laboral</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Calculá tu prima, cesantías y aportes según tu situación laboral. Seleccioná tu perfil primero: los campos y resultados son distintos para cada caso.</p>
-
-            <form id="form-simulador-laboral" class="calc-form" novalidate>
-
-              <!-- Paso 1: elegir perfil -->
-              <div class="form-group">
-                <p class="label" id="sim-perfil-label">¿Cuál es tu situación laboral?</p>
-                <div class="sim-gate" role="group" aria-labelledby="sim-perfil-label">
-                  <label class="sim-gate__option">
-                    <input type="radio" name="perfil" value="empleado"
-                           class="sim-gate__radio" />
-                    <span class="sim-gate__body">
-                      <span class="sim-gate__titulo">💼 Empleado</span>
-                      <span class="sim-gate__desc">Trabajas para una empresa o persona natural</span>
-                    </span>
-                  </label>
-                  <label class="sim-gate__option">
-                    <input type="radio" name="perfil" value="independiente"
-                           class="sim-gate__radio" />
-                    <span class="sim-gate__body">
-                      <span class="sim-gate__titulo">🧑‍💻 Independiente</span>
-                      <span class="sim-gate__desc">Prestas servicios por cuenta propia</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Paso 2A: campos empleado (visible solo cuando perfil=empleado) -->
-              <fieldset id="sim-fields-empleado" class="sim-profile-fields calc-form__fields" hidden>
-                <div class="form-group">
-                  <label for="sim-salario" class="label">Salario básico mensual (COP)</label>
-                  <input id="sim-salario" name="salario" class="input" type="number"
-                         inputmode="numeric" min="1" step="100000"
-                         placeholder="1.750.905" />
-                </div>
-                <div class="form-group">
-                  <label for="sim-dias" class="label">Días trabajados en el semestre</label>
-                  <input id="sim-dias" name="dias" class="input" type="number"
-                         inputmode="numeric" min="1" max="180" step="1"
-                         placeholder="180" />
-                </div>
-                <div class="form-group">
-                  <label for="sim-extras" class="label">Horas extras y recargos promedio/mes (COP, opcional)</label>
-                  <input id="sim-extras" name="extras" class="input" type="number"
-                         inputmode="numeric" min="0" step="50000"
-                         placeholder="0" />
-                </div>
-                <div class="form-group">
-                  <label for="sim-bonos" class="label">Bonos y comisiones habituales promedio/mes (COP, opcional)</label>
-                  <input id="sim-bonos" name="bonos" class="input" type="number"
-                         inputmode="numeric" min="0" step="50000"
-                         placeholder="0" />
-                </div>
-              </fieldset>
-
-              <!-- Paso 2B: campos independiente (visible solo cuando perfil=independiente) -->
-              <fieldset id="sim-fields-independiente" class="sim-profile-fields calc-form__fields" hidden>
-                <div class="form-group">
-                  <label for="sim-ingreso" class="label">Ingreso mensual bruto (COP)</label>
-                  <input id="sim-ingreso" name="ingreso" class="input" type="number"
-                         inputmode="numeric" min="1" step="100000"
-                         placeholder="Ej: 3.000.000" />
-                </div>
-                <div class="form-group">
-                  <label for="sim-arl" class="label">Clase de riesgo ARL</label>
-                  <select id="sim-arl" name="arl" class="input">
-                    <option value="0.00522" selected>Clase I: oficina (0.522 %)</option>
-                    <option value="0.01044">Clase II: riesgo bajo (1.044 %)</option>
-                    <option value="0.02436">Clase III: riesgo medio (2.436 %)</option>
-                    <option value="0.04350">Clase IV: riesgo alto (4.350 %)</option>
-                    <option value="0.06960">Clase V: riesgo máximo (6.960 %)</option>
-                  </select>
-                </div>
-              </fieldset>
-
-              <!-- Botón: oculto hasta que se elija un perfil -->
-              <button type="submit" class="btn btn-primary" id="sim-btn-calcular" hidden>
-                Calcular
-              </button>
-            </form>
-
-            <div id="result-simulador-laboral" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
       </section>
 
       <!-- PRESUPUESTO -->
@@ -540,78 +420,6 @@
           <!-- Fase 9: metas/view.js renderiza aquí -->
         </div>
 
-        <!-- Herramientas de proyección (v8.4) -->
-        <details class="herramienta-inline" id="herramienta-cdt">
-          <summary class="herramienta-inline__titulo">🏦 Proyectar un CDT</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Cuánto recibirías al vencimiento, ya con retención del 7%.</p>
-            <form id="form-herramienta-cdt" class="calc-form" novalidate>
-              <div class="calc-form__fields">
-                <div class="form-group">
-                  <label for="hcdt-capital" class="label">Capital invertido (COP)</label>
-                  <input id="hcdt-capital" name="principal" class="input" type="number"
-                         inputmode="numeric" min="100000" step="100000"
-                         placeholder="5.000.000" required />
-                </div>
-                <div class="form-group">
-                  <label for="hcdt-tasa" class="label">Tasa EA (%)</label>
-                  <input id="hcdt-tasa" name="tasaEA" class="input" type="number"
-                         inputmode="decimal" min="0.1" max="100" step="0.1"
-                         placeholder="12.5" required />
-                </div>
-                <div class="form-group">
-                  <label for="hcdt-plazo" class="label">Plazo (días)</label>
-                  <input id="hcdt-plazo" name="plazo" class="input" type="number"
-                         inputmode="numeric" min="30" max="1825" step="30"
-                         placeholder="360" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Proyectar</button>
-            </form>
-            <div id="result-herramienta-cdt" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
-
-        <details class="herramienta-inline" id="herramienta-ic">
-          <summary class="herramienta-inline__titulo">📈 Proyectar el crecimiento de tus ahorros</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Cómo crece tu dinero con interés compuesto.</p>
-            <form id="form-herramienta-ic" class="calc-form" novalidate>
-              <div class="calc-form__fields">
-                <div class="form-group">
-                  <label for="hic-principal" class="label">Capital inicial (COP)</label>
-                  <input id="hic-principal" name="principal" class="input" type="number"
-                         inputmode="numeric" min="1" step="100000"
-                         placeholder="10.000.000" required />
-                </div>
-                <div class="form-group">
-                  <label for="hic-tasa" class="label">Tasa anual (%)</label>
-                  <input id="hic-tasa" name="tasaAnualPct" class="input" type="number"
-                         inputmode="decimal" min="0.001" max="200" step="0.1"
-                         placeholder="12" required />
-                </div>
-                <div class="form-group">
-                  <label for="hic-periodos" class="label">Capitalización</label>
-                  <select id="hic-periodos" name="periodosPorAnio" class="input">
-                    <option value="12" selected>Mensual</option>
-                    <option value="4">Trimestral</option>
-                    <option value="2">Semestral</option>
-                    <option value="1">Anual</option>
-                    <option value="365">Diaria</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="hic-anios" class="label">Horizonte (años)</label>
-                  <input id="hic-anios" name="anios" class="input" type="number"
-                         inputmode="numeric" min="1" max="50" step="1"
-                         placeholder="5" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Proyectar</button>
-            </form>
-            <div id="result-herramienta-ic" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
       </section>
 
       <!-- ANÁLISIS -->
@@ -623,56 +431,6 @@
           <!-- Fase 10: analisis/view.js renderiza aquí -->
         </div>
 
-        <!-- Herramientas de contexto financiero (v8.4) -->
-        <details class="herramienta-inline" id="herramienta-r72">
-          <summary class="herramienta-inline__titulo">⚡ ¿En cuántos años duplico mi dinero?</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Regla del 72: una aproximación rápida para cualquier tasa.</p>
-            <form id="form-herramienta-r72" class="calc-form" novalidate>
-              <div class="calc-form__fields">
-                <div class="form-group">
-                  <label for="hr72-tasa" class="label">Tasa anual (%)</label>
-                  <input id="hr72-tasa" name="tasaAnualPct" class="input" type="number"
-                         inputmode="decimal" min="0.001" max="200" step="0.1"
-                         placeholder="12" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Calcular</button>
-            </form>
-            <div id="result-herramienta-r72" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
-
-        <details class="herramienta-inline" id="herramienta-rentabilidad">
-          <summary class="herramienta-inline__titulo">📉 Rentabilidad real (ajuste por inflación)</summary>
-          <div class="herramienta-inline__cuerpo">
-            <p class="herramienta-inline__desc">Cuánto rinde de verdad tu inversión después de la inflación.</p>
-            <form id="form-herramienta-rentabilidad" class="calc-form" novalidate>
-              <div class="calc-form__fields">
-                <div class="form-group">
-                  <label for="hreal-capital" class="label">Capital invertido (COP)</label>
-                  <input id="hreal-capital" name="capital" class="input" type="number"
-                         inputmode="numeric" min="1" step="100000"
-                         placeholder="10.000.000" required />
-                </div>
-                <div class="form-group">
-                  <label for="hreal-tasa" class="label">Tasa nominal anual (%)</label>
-                  <input id="hreal-tasa" name="tasaPct" class="input" type="number"
-                         inputmode="decimal" min="0" max="200" step="0.1"
-                         placeholder="12" required />
-                </div>
-                <div class="form-group">
-                  <label for="hreal-inflacion" class="label">Inflación anual (%)</label>
-                  <input id="hreal-inflacion" name="inflacionPct" class="input" type="number"
-                         inputmode="decimal" min="0" max="100" step="0.1"
-                         placeholder="5.2" required />
-                </div>
-              </div>
-              <button type="submit" class="btn btn-primary">Calcular</button>
-            </form>
-            <div id="result-herramienta-rentabilidad" class="calc-result" aria-live="polite"></div>
-          </div>
-        </details>
       </section>
 
       <!-- AJUSTES -->
@@ -896,6 +654,22 @@
       </header>
       <div class="modal__body" id="modal-meta-body">
         <!-- Fase 9 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Abonar a una meta de ahorro -->
+  <div class="modal-overlay" id="modal-abono-meta"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-abono-meta-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-abono-meta-title">Abonar a meta</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-abono-meta-body">
+        <!-- metas/index.js inyecta el form de abono aquí -->
       </div>
     </div>
   </div>

@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { estadoVigenciaLegal } from '../../core/constants.js';
 import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
 import { gastosMes } from '../gastos/logic.js';
 import {
@@ -103,11 +104,25 @@ function _renderEstadoRenta(anio) {
   const pf     = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
     ? S.config.perfilFiscal : null;
   const nudges = detectarNudgesRenta(estado, pf);
+  const vig    = estadoVigenciaLegal();
 
   const filas    = estado.criterios.map(_renderCriterioRenta).join('');
   const tieneAlerta = nudges.some(n => n.nivel === 'nudge-high' || n.nivel === 'nudge-medium');
   const bannerNudges = tieneAlerta
     ? nudges.filter(n => n.nivel !== 'nudge-info').map(_renderNudgeRenta).join('')
+    : '';
+
+  // Aviso de vigencia (P1): si empezó un año nuevo y aún no se cargaron los
+  // valores oficiales, los topes salen de la UVT del año anterior. Se avisa.
+  const avisoVigencia = vig.desactualizado
+    ? `
+      <div class="nudge nudge-medium" role="status">
+        <span class="nudge__icon" aria-hidden="true">📅</span>
+        <div class="nudge__body">
+          <p class="nudge__title">Topes calculados con la UVT de ${vig.anioVigente}</p>
+          <p class="nudge__desc">El año en curso es ${vig.anioActual}, pero Finko todavía usa la UVT de ${vig.anioVigente}: los valores oficiales de ${vig.anioActual} aún no se han cargado. Toma estos topes como referencia provisional y confírmalos con un contador.</p>
+        </div>
+      </div>`
     : '';
 
   return `
@@ -117,6 +132,7 @@ function _renderEstadoRenta(anio) {
         UVT vigente: ${f(estado.uvt)}. Topes calculados a partir de tus datos en Finko.
         Confirma con un contador antes de declarar.
       </p>
+      ${avisoVigencia}
       ${bannerNudges}
       <div class="renta-criterios">
         ${filas}

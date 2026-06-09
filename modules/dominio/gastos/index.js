@@ -20,7 +20,7 @@ import { confirmar } from '../../ui/confirm.js';
 import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
-  aplicarGastoASaldo, revertirGastoDeSaldo, deltasPorEdicionDeGasto,
+  deltasPorEdicionDeGasto,
 } from './logic.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos } from './view.js';
 

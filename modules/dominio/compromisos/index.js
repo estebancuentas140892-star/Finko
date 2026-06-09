@@ -11,14 +11,13 @@
 import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono } from './logic.js';
-import { calcularCredito, validarCampos } from '../../infra/financiero.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -66,7 +65,7 @@ function _nuevoCompromiso() {
   abrirModal(overlay);
 }
 
-function _guardarCompromiso() {
+async function _guardarCompromiso() {
   const form = document.getElementById('form-compromiso');
   if (!form) return;
 
@@ -76,6 +75,18 @@ function _guardarCompromiso() {
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
+  }
+
+  // Alerta: la cuota no cubre el interés mensual, la deuda crece mes a mes.
+  const alerta = detectarDeudaCreciente(datos);
+  if (alerta) {
+    const ok = await confirmar({
+      titulo:         'La cuota no cubre los intereses',
+      mensaje:        `La cuota mensual (${f(alerta.cuotaMensual)}) es menor al interés mensual de esta deuda (${f(alerta.interesMensual)}). Con esta cuota, la deuda crece ${f(alerta.deficit)} cada mes en vez de bajar. ¿Querés registrarla de todas formas?`,
+      confirmarTexto: 'Registrar igual',
+      peligroso:      false,
+    });
+    if (!ok) return;
   }
 
   guardar('compromisos', normalizarCompromiso(datos));
@@ -322,37 +333,6 @@ function _actualizarSaldoDisponibleAbono() {
   tip.classList.toggle('form-hint--muted',  saldo >  0);
 }
 
-// ── HERRAMIENTA: SIMULAR CRÉDITO ─────────────────────────────────
-
-function _onSubmitHerramientaCredito(e) {
-  e.preventDefault();
-  const datos   = Object.fromEntries(new FormData(e.target));
-  const errores = validarCampos(datos, {
-    principal:  { min: 1 },
-    tasaEA:     { min: 0.001, max: 100 },
-    plazoMeses: { min: 1, entero: true },
-  });
-  const el = document.getElementById('result-herramienta-credito');
-  if (!el) return;
-  if (errores.length > 0) {
-    el.innerHTML = `<ul class="calc-result__errors">${errores.map(e => `<li>${e}</li>`).join('')}</ul>`;
-    announce(errores[0], 'assertive');
-    return;
-  }
-  const r = calcularCredito(
-    Number(datos.principal),
-    Number(datos.tasaEA) / 100,
-    Number(datos.plazoMeses),
-  );
-  el.innerHTML = `
-    <dl class="calc-result__grid">
-      <dt>Cuota mensual fija</dt><dd class="calc-result__highlight">${f(r.cuotaMensual)}</dd>
-      <dt>Total pagado</dt>      <dd>${f(r.totalPagado)}</dd>
-      <dt>Total intereses</dt>   <dd>${f(r.totalIntereses)}</dd>
-    </dl>`;
-  announce('Resultado del crédito actualizado.');
-}
-
 // ── HANDLERS ESTRATEGIA ──────────────────────────────────────────
 
 // Handlers de la card de estrategia (F.4). En v6 la estrategia también
@@ -400,9 +380,6 @@ export function initCompromisos() {
   registrarAccion('comp-volver-chooser',     _volverChooser);
 
   _inyectarForm();
-
-  document.getElementById('form-herramienta-credito')
-    ?.addEventListener('submit', _onSubmitHerramientaCredito);
 
   // El input de "extra mensual" usa `change` (al blur) en vez de click,
   // así no perdemos focus durante el tipeo. Delegado a nivel documento.

@@ -8,6 +8,7 @@ import {
   validarAbono,
   normalizarMeta,
 } from '../../modules/dominio/metas/logic.js';
+import { renderFormAbonoMeta } from '../../modules/dominio/metas/view.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -268,5 +269,63 @@ describe('normalizarMeta()', () => {
 
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarMeta(datosFormValidos)).not.toHaveProperty('id');
+  });
+});
+
+// ── renderFormAbonoMeta() ─────────────────────────────────────────
+
+describe('renderFormAbonoMeta()', () => {
+  it('genera un form con id "form-abono-meta"', () => {
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('id="form-abono-meta"');
+  });
+
+  it('incluye el id de la meta en un campo oculto', () => {
+    const meta = metaBase({ id: 'meta-abc' });
+    const html = renderFormAbonoMeta(meta);
+    expect(html).toContain('name="metaId"');
+    expect(html).toContain('value="meta-abc"');
+  });
+
+  it('incluye el input de monto con name="monto"', () => {
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('name="monto"');
+    expect(html).toContain('id="abono-meta-monto"');
+  });
+
+  it('muestra el porcentaje de progreso actual', () => {
+    const meta = metaBase({ montoActual: 1_000_000, montoObjetivo: 5_000_000 });
+    const html = renderFormAbonoMeta(meta);
+    expect(html).toContain('20%');
+  });
+
+  it('muestra "Faltante" cuando la meta no está completada', () => {
+    const meta = metaBase({ montoActual: 1_000_000, montoObjetivo: 5_000_000 });
+    const html = renderFormAbonoMeta(meta);
+    expect(html).toContain('Faltante');
+  });
+
+  it('no muestra "Faltante" cuando la meta está al 100%', () => {
+    const meta = metaBase({ montoActual: 5_000_000, montoObjetivo: 5_000_000 });
+    const html = renderFormAbonoMeta(meta);
+    expect(html).not.toContain('Faltante');
+  });
+
+  it('incluye botón "Registrar abono"', () => {
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('Registrar abono');
+  });
+
+  it('incluye botón Cancelar con data-action="modal-close"', () => {
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('data-action="modal-close"');
+    expect(html).toContain('Cancelar');
+  });
+
+  it('escapa el nombre de la meta para prevenir XSS', () => {
+    const meta = metaBase({ nombre: '<script>alert(1)</script>' });
+    const html = renderFormAbonoMeta(meta);
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&lt;script&gt;');
   });
 });
