@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (feat(gastos): M.2 gasto rápido con cuenta de origen + descuento de saldo; 1147/1147 verde)
+> Última actualización: 2026-06-09 (M.3 revisión transversal de captura: UI de ingresos recurrentes + cuenta de origen en abonos a metas; 1164/1164 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1147/1147 verdes (+5 tests de gasto rápido M.2) |
+| Tests unitarios + integración | 1164/1164 verdes (+17 tests M.3: 13 ingresos tesorería, 4 selector de cuenta en abono a meta) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,30 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(M.3): revisión transversal de flujos de captura (ingresos recurrentes + cuenta en abono a meta) · 2026-06-09
+
+Tercera fase del plan de captura de datos. Se mapearon los seis flujos de captura (gasto completo, gasto rápido, ingreso, cuenta, deuda, meta) y se cerraron las dos brechas detectadas:
+
+1. **No existía UI para fuentes de ingreso recurrentes.** `S.ingresos[]` nunca se poblaba: el array siempre estaba vacío, `estimarSalarioMensual()` devolvía 0 y el nudge de tasa de ahorro en Ahorro nunca aparecía. Ahora la sección "Mis cuentas" tiene una subsección **"Mis ingresos"** con su propio botón "+ Ingreso", lista de fuentes activas (descripción, frecuencia, monto) y modal de alta/edición (descripción, monto, frecuencia). CRUD completo sobre `S.ingresos` con validación.
+2. **El abono a una meta no pedía cuenta de origen.** El dinero "aparecía" en la meta sin salir de ninguna cuenta. Ahora el modal de abono incluye selector de cuenta con el mismo patrón de M.2 (0 cuentas → sin selector, el abono sigue válido como seguimiento; 1 cuenta → autoselección con hint; varias → selector obligatorio). Al confirmar, el monto se descuenta del saldo de la cuenta elegida.
+
+SW v125 → v126. 1164/1164 tests verdes (+17).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `validarIngreso(datos)` y `normalizarIngreso(datos)` nuevas (puras). Import de `FRECUENCIAS`. |
+| `modules/dominio/tesoreria/view.js` | `renderListaIngresos()`, `renderFormIngreso(ingreso?)` y helpers de item/empty-state nuevos. Import de `FRECUENCIAS`. |
+| `modules/dominio/tesoreria/index.js` | Handlers `_nuevoIngreso`/`_guardarIngreso`/`_editarIngreso`/`_eliminarIngreso`. 3 acciones registradas. `_renderTodo` llama `renderListaIngresos`. EventBus escucha `section === 'ingresos'`. |
+| `modules/dominio/metas/view.js` | `renderFormAbonoMeta` inyecta selector de cuenta (`_renderCuentaSelectorAbono`: 0/1/varias). Import de `S`. |
+| `modules/dominio/metas/index.js` | `_guardarAbonoMeta` valida cuenta (obligatoria si hay varias) y descuenta saldo via `_ajustarSaldoCuenta` local. |
+| `index.html` | Subsección "Mis ingresos" (`#lista-ingresos` + botón) en `#sec-tesoreria`. Nuevo `#modal-ingreso`. |
+| `styles/layout.css` | `.section__sub-header`: separador con border-top para subsecciones dentro de una sección. |
+| `tests/unit/tesoreria.test.js` | 13 tests: `validarIngreso` (9), `normalizarIngreso` (4). |
+| `tests/unit/metas.test.js` | 4 tests: selector de cuenta en `renderFormAbonoMeta` (0/1/inactiva/varias). |
+| `service-worker.js` | v125 → v126. |
+
+---
 
 ### feat(gastos): M.2 - Gasto rápido con cuenta de origen y descuento de saldo · 2026-06-09
 
@@ -99,26 +123,15 @@ Primera fase de una mejora de UX en 3 fases pedida por el usuario. Los gastos cr
 
 ---
 
-### fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil · 2026-06-08
-
-Bug reportado en móvil: al ingresar por primera vez y escribir el nombre, la página se recargaba sola a los pocos segundos y se perdía lo escrito. Causa raíz: `sw-register.js` recargaba la página en `controllerchange`, y el SW usaba `skipWaiting()` + `clients.claim()`. En la PRIMERA visita (sin SW previo), cuando el SW recién instalado hacía `clients.claim()`, el controlador pasaba de null a SW y `controllerchange` se disparaba, recargando justo durante el onboarding (los "pocos segundos" = tiempo de cachear `CORE_ASSETS`). Footgun clásico de claim + reload-on-controllerchange. Descartados otros sospechosos: no hay listeners de focus/blur/visibilitychange, `loadData()` solo corre una vez, los re-render son scoped por sección (`renderSmart`) y nunca tocan modales. Fix: quitar `skipWaiting()` del SW (una versión nueva queda en "waiting" y se aplica en la próxima apertura, sin recargar en caliente) y eliminar el listener de `controllerchange → reload()`. Offline-first intacto. SW v120 → v121. 1123/1123 tests verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `service-worker.js` | Eliminar `self.skipWaiting()` del handler `install` (con comentario explicando por qué). Refinar comentario de `clients.claim()` en `activate`. CACHE_NAME v120 → v121. |
-| `modules/infra/sw-register.js` | Eliminar el listener `controllerchange` + `window.location.reload()` + flag `_ya_recargado`. La versión nueva se aplica sola en la próxima apertura limpia. Comentario explicando el bug evitado. |
-
----
-
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
-**Fase activa:** Sección M (Captura de datos precisa). M.1, M.1b y M.2 completadas. App 1147/1147 tests verdes, lint limpio.
+**Fase activa:** Sección M (Captura de datos precisa). M.1, M.1b, M.2 y M.3 completadas. App 1164/1164 tests verdes, lint limpio.
 
-**Próxima tarea natural:** M.3 (Revisión transversal de flujos de captura): mapear todos los flujos (gasto, ingreso, cuenta, deuda, meta), verificar que cada dato se pida en el momento correcto. Modelo: Sonnet 4.6 - Alto.
+**Próxima tarea natural:** verificar M.3 en la app y, si todo está bien, evaluar la siguiente prioridad del roadmap. Opciones abiertas abajo (A.5 dominio custom, E.2 SMMLV 2027). Si surge una mejora de UX concreta del uso real de ingresos/abonos, priorizarla.
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
@@ -197,7 +210,7 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 1147 tests unitarios + integración
+pnpm test                     # 1164 tests unitarios + integración
 pnpm run test:e2e             # 57 smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080

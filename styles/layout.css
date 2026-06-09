@@ -189,6 +189,22 @@
   color: var(--fk-text-muted);
   margin-top: var(--fk-space-1);
 }
+.section__sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-8);
+  margin-bottom: var(--fk-space-4);
+  padding-top: var(--fk-space-6);
+  border-top: 1px solid var(--fk-border);
+}
+.section__sub-header .section__subtitle {
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin-top: 0;
+}
 
 /* ════════════════════════════════════════════════════════════
    BENTO GRID - dashboard

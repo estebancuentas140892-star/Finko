@@ -28,10 +28,10 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 **Completadas:**
 - ✅ M.1 (Fase 1) - Card "Tienes N gastos por organizar" en el dashboard, que cuenta los gastos rápidos sin descripción/categoría y lleva a Gastos - 2026-06-08.
 - ✅ M.1b - Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper de selección inteligente de cuenta (`cuenta-helper.js`: 0/1/varias) - 2026-06-09.
-
-**Pendientes:**
 - ✅ M.2 (Fase 2) - Cuenta de origen en el gasto rápido: autoselección (1 cuenta), selector compacto (varias), empty state guiado (0 cuentas). El gasto rápido descuenta saldo de la cuenta elegida. Form dinámico inyectado en cada apertura - 2026-06-09.
-- **M.3 (Fase 3) - Revisión transversal de flujos de captura.** Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato necesario se pida en el momento correcto y documentar/cerrar los huecos. Modelo sugerido: Sonnet 4.6 - Alto.
+- ✅ M.3 (Fase 3) - Revisión transversal de flujos de captura. Mapeo de los seis flujos (gasto, gasto rápido, ingreso, cuenta, deuda, meta) y cierre de las dos brechas: UI de ingresos recurrentes (subsección "Mis ingresos" + CRUD sobre `S.ingresos`, ahora alimenta el nudge de tasa de ahorro) y cuenta de origen en el abono a metas (descuenta saldo, patrón 0/1/varias) - 2026-06-09.
+
+_(Sección M cerrada: M.1, M.1b, M.2 y M.3 completas. Captura de datos precisa entregada: card de pendientes, gestión de gastos fijos, cuenta de origen en gasto rápido y abono a meta, y fuentes de ingreso recurrentes.)_
 
 ---
 

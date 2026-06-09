@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(M.3): revisión transversal de flujos de captura (ingresos recurrentes + cuenta en abono a meta) · 2026-06-09
+
+Tercera y última fase del plan de captura de datos. Se mapearon los seis flujos de captura (gasto completo, gasto rápido, ingreso, cuenta, deuda, meta) y se cerraron las dos brechas que quedaban:
+
+1. **No había UI para fuentes de ingreso recurrentes.** `S.ingresos[]` nunca se poblaba desde ningún formulario: estaba siempre vacío, `estimarSalarioMensual()` devolvía 0 y el nudge de tasa de ahorro en Ahorro nunca se mostraba. Ahora "Mis cuentas" tiene una subsección **"Mis ingresos"** con botón "+ Ingreso", lista de fuentes activas (descripción, frecuencia, monto) y modal de alta/edición. CRUD completo sobre `S.ingresos` con validación de descripción, monto y frecuencia.
+2. **El abono a una meta no pedía cuenta de origen.** El dinero se sumaba a la meta sin descontarse de ninguna cuenta. Ahora el modal de abono incluye selector de cuenta con el patrón de M.2: **0 cuentas** → sin selector (el abono sigue siendo válido como puro seguimiento); **1 cuenta** → autoselección con hint "Sale de: {nombre}"; **varias** → selector obligatorio. Al confirmar, el monto se descuenta del saldo de la cuenta elegida.
+
+SW v125 → v126. 1164/1164 tests verdes (+17).
+
+- **`modules/dominio/tesoreria/logic.js`:** `validarIngreso(datos)` (descripción no vacía, monto > 0, frecuencia válida) y `normalizarIngreso(datos)` (trim, monto a número, `activo: true`) nuevas. Import de `FRECUENCIAS`.
+- **`modules/dominio/tesoreria/view.js`:** `renderListaIngresos()` (lista activas o empty-state), `renderFormIngreso(ingreso?)` (alta/edición con select de frecuencia) y helpers de item/empty-state. Import de `FRECUENCIAS`.
+- **`modules/dominio/tesoreria/index.js`:** handlers `_nuevoIngreso`/`_guardarIngreso`/`_editarIngreso`/`_eliminarIngreso`; acciones `nuevo-ingreso`/`editar-ingreso`/`eliminar-ingreso`. `_renderTodo` llama `renderListaIngresos`. EventBus reacciona a `section === 'ingresos'`.
+- **`modules/dominio/metas/view.js`:** `renderFormAbonoMeta` inyecta `_renderCuentaSelectorAbono(cuentasActivas)` (0/1/varias). Import de `S`.
+- **`modules/dominio/metas/index.js`:** `_guardarAbonoMeta` valida la cuenta (obligatoria solo si hay varias) y descuenta saldo via `_ajustarSaldoCuenta` local (mismo patrón que compromisos, sin importar otro dominio).
+- **`index.html`:** subsección "Mis ingresos" (`.section__sub-header` + `#lista-ingresos`) dentro de `#sec-tesoreria`. Nuevo `#modal-ingreso` con body inyectado por JS.
+- **`styles/layout.css`:** `.section__sub-header` (flex con h2 + botón, separador `border-top`) para subsecciones dentro de una sección.
+- **`tests/unit/tesoreria.test.js`:** 13 tests nuevos: `validarIngreso` (9), `normalizarIngreso` (4).
+- **`tests/unit/metas.test.js`:** 4 tests nuevos: selector de cuenta en `renderFormAbonoMeta` (0 / 1 / 1 inactiva / varias).
+- **`service-worker.js`:** `CACHE_NAME` v125 → v126.
+
+---
+
 ### feat(gastos): M.2 - Gasto rápido con cuenta de origen y descuento de saldo · 2026-06-09
 
 El modal "Gasto rápido" ahora solicita la cuenta de origen desde el inicio (M.2, segunda fase del plan de captura de datos). Tres comportamientos: **0 cuentas activas** → muestra empty state guiado "Primero necesitás una cuenta" con botón "Ir a Mis Cuentas" (igual que el form completo); **1 cuenta activa** → autoselecciona silenciosamente (hint "Sale de: {nombre}. Disponible: {saldo}"); **varias cuentas** → selector visible. Al confirmar, el monto se descuenta del saldo de la cuenta elegida. El form se inyecta en `#modal-gasto-rapido-body` en cada apertura (como los demás modales) para reflejar cambios en S.cuentas. SW v124 → v125. 1147/1147 tests verdes (+5).

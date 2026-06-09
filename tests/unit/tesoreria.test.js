@@ -12,6 +12,8 @@ import {
   compromisoCuotaManejoDeCuenta,
   calcularCostoGMF,
   detectarNudgeGMF,
+  validarIngreso,
+  normalizarIngreso,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -637,5 +639,79 @@ describe('detectarNudgeGMF()', () => {
     expect(n.costoGMF).toBe(4_000);
     expect(n.gastosGravados).toBe(1_000_000);
     expect(n.cantidadCuentasGMF).toBe(2);
+  });
+});
+
+// ── validarIngreso() ──────────────────────────────────────────────
+
+describe('validarIngreso()', () => {
+  const valid = { descripcion: 'Salario empresa', monto: '3500000', frecuencia: 'Mensual' };
+
+  it('devuelve [] para datos válidos', () => {
+    expect(validarIngreso(valid)).toEqual([]);
+  });
+
+  it('error si descripcion está vacía', () => {
+    const errs = validarIngreso({ ...valid, descripcion: '' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/descripción/i);
+  });
+
+  it('error si descripcion es solo espacios', () => {
+    expect(validarIngreso({ ...valid, descripcion: '   ' })).toHaveLength(1);
+  });
+
+  it('error si monto es 0', () => {
+    const errs = validarIngreso({ ...valid, monto: '0' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/monto/i);
+  });
+
+  it('error si monto es negativo', () => {
+    expect(validarIngreso({ ...valid, monto: '-100' })).toHaveLength(1);
+  });
+
+  it('error si monto no es número', () => {
+    expect(validarIngreso({ ...valid, monto: 'abc' })).toHaveLength(1);
+  });
+
+  it('error si frecuencia no está en la lista de FRECUENCIAS', () => {
+    const errs = validarIngreso({ ...valid, frecuencia: 'Cada-dos-meses' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/frecuencia/i);
+  });
+
+  it('error si frecuencia está vacía', () => {
+    expect(validarIngreso({ ...valid, frecuencia: '' })).toHaveLength(1);
+  });
+
+  it('acepta todas las frecuencias válidas de FRECUENCIAS', () => {
+    for (const frec of ['Diario', 'Semanal', 'Quincenal', 'Mensual', 'Anual', 'Única vez']) {
+      expect(validarIngreso({ ...valid, frecuencia: frec })).toEqual([]);
+    }
+  });
+});
+
+// ── normalizarIngreso() ───────────────────────────────────────────
+
+describe('normalizarIngreso()', () => {
+  it('convierte monto a número', () => {
+    const r = normalizarIngreso({ descripcion: 'Salario', monto: '3500000', frecuencia: 'Mensual' });
+    expect(r.monto).toBe(3_500_000);
+  });
+
+  it('recorta espacios de la descripción', () => {
+    const r = normalizarIngreso({ descripcion: '  Arriendo  ', monto: '500000', frecuencia: 'Mensual' });
+    expect(r.descripcion).toBe('Arriendo');
+  });
+
+  it('activo es true por defecto', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Anual' });
+    expect(r.activo).toBe(true);
+  });
+
+  it('preserva la frecuencia tal cual', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Quincenal' });
+    expect(r.frecuencia).toBe('Quincenal');
   });
 });

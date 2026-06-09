@@ -377,6 +377,18 @@
           <!-- K.1: renderGMFIndicador() muestra el costo estimado del 4x1000 del mes -->
         </div>
 
+        <!-- M.3: Fuentes de ingreso recurrentes -->
+        <div class="section__sub-header">
+          <h2 class="section__subtitle">Mis ingresos</h2>
+          <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso"
+                  aria-label="Agregar fuente de ingreso">
+            + Ingreso
+          </button>
+        </div>
+        <div id="lista-ingresos">
+          <!-- M.3: tesoreria/view.js renderiza aquí -->
+        </div>
+
       </section>
 
       <!-- PRESUPUESTO -->
@@ -582,6 +594,22 @@
       </header>
       <div class="modal__body" id="modal-cuenta-body">
         <!-- Fase 8 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo/editar ingreso recurrente (M.3) -->
+  <div class="modal-overlay" id="modal-ingreso"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-ingreso-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-ingreso-title">Nuevo ingreso</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-ingreso-body">
+        <!-- M.3: tesoreria/index.js inyecta el form aquí al abrir -->
       </div>
     </div>
   </div>

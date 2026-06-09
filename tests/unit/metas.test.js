@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   metasActivas,
   calcularProgreso,
@@ -9,6 +9,7 @@ import {
   normalizarMeta,
 } from '../../modules/dominio/metas/logic.js';
 import { renderFormAbonoMeta } from '../../modules/dominio/metas/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -327,5 +328,52 @@ describe('renderFormAbonoMeta()', () => {
     const html = renderFormAbonoMeta(meta);
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;');
+  });
+});
+
+// ── renderFormAbonoMeta() - selector de cuenta (M.3) ─────────────
+
+describe('renderFormAbonoMeta() - selector de cuenta', () => {
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+
+  beforeEach(() => {
+    S.cuentas = [];
+  });
+
+  it('sin cuentas: no renderiza selector de cuenta', () => {
+    S.cuentas = [];
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).not.toContain('cuentaId');
+    expect(html).not.toContain('Desde qué cuenta');
+  });
+
+  it('1 cuenta activa: hidden input + hint con nombre y saldo', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('type="hidden"');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('Sale de: Nequi principal');
+  });
+
+  it('1 cuenta inactiva: no renderiza selector', () => {
+    S.cuentas = [{ ...cuenta('c1', 'Inactiva'), activa: false }];
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).not.toContain('cuentaId');
+  });
+
+  it('varias cuentas: select visible con todas las activas', () => {
+    S.cuentas = [
+      cuenta('c1', 'Bancolombia'),
+      cuenta('c2', 'Nequi'),
+    ];
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).toContain('<select');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('c1');
+    expect(html).toContain('c2');
+    expect(html).toContain('Desde qué cuenta');
   });
 });

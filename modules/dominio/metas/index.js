@@ -103,7 +103,14 @@ function _guardarAbonoMeta() {
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
-  const errores = validarAbono(datos.monto);
+
+  // Si hay varias cuentas activas el select es obligatorio.
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const requiereCuenta = cuentasActivas.length > 1;
+  const erroresCuenta  = requiereCuenta && !datos.cuentaId
+    ? ['Debés elegir desde qué cuenta sale el dinero.']
+    : [];
+  const errores = [...validarAbono(datos.monto), ...erroresCuenta];
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
@@ -119,6 +126,11 @@ function _guardarAbonoMeta() {
 
   editar('metas', datos.metaId, { montoActual: nuevoMonto, completada });
 
+  // Descontar del saldo de la cuenta de origen (si se eligió una).
+  if (datos.cuentaId) {
+    _ajustarSaldoCuenta(datos.cuentaId, -abono);
+  }
+
   const overlay = document.getElementById('modal-abono-meta');
   if (overlay) cerrarModal(overlay);
 
@@ -127,6 +139,20 @@ function _guardarAbonoMeta() {
     ? `¡Meta "${meta.nombre}" completada! 🎉`
     : `Abono de ${f(abono)} registrado.`
   );
+}
+
+/**
+ * Ajusta el saldo de la cuenta indicada en `delta` (positivo o negativo).
+ * No-op si `cuentaId` es null/undefined o la cuenta no existe.
+ *
+ * @param {string|null|undefined} cuentaId
+ * @param {number} delta
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
 }
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────

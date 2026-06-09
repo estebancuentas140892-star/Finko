@@ -21,8 +21,16 @@ import {
   normalizarCuenta,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
+  validarIngreso,
+  normalizarIngreso,
 } from './logic.js';
-import { renderListaCuentas, renderFormCuenta, renderGMFIndicador } from './view.js';
+import {
+  renderListaCuentas,
+  renderFormCuenta,
+  renderGMFIndicador,
+  renderListaIngresos,
+  renderFormIngreso,
+} from './view.js';
 
 // ── RENDER COMPLETO ──────────────────────────────────────────────
 
@@ -30,6 +38,7 @@ import { renderListaCuentas, renderFormCuenta, renderGMFIndicador } from './view
 function _renderTodo() {
   renderListaCuentas();
   renderGMFIndicador();
+  renderListaIngresos();
 }
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -441,6 +450,99 @@ function _initBankPicker(picker) {
   }, { capture: true });
 }
 
+// ── INGRESOS RECURRENTES ─────────────────────────────────────────
+
+/** Abre el modal de ingreso en modo creación. */
+function _nuevoIngreso() {
+  const overlay = document.getElementById('modal-ingreso');
+  if (!overlay) return;
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nuevo ingreso';
+  const body = document.getElementById('modal-ingreso-body');
+  if (body) {
+    body.innerHTML = renderFormIngreso();
+    body.querySelector('#form-ingreso')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarIngreso();
+    });
+  }
+  abrirModal(overlay);
+}
+
+/** Lee el formulario, valida y guarda (o edita) el ingreso. */
+function _guardarIngreso() {
+  const form = document.getElementById('form-ingreso');
+  if (!form) return;
+
+  const datos = Object.fromEntries(new FormData(form));
+  const errores = validarIngreso(datos);
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const idEdit = form.dataset.id || null;
+  if (idEdit) {
+    editar('ingresos', idEdit, normalizarIngreso(datos));
+  } else {
+    guardar('ingresos', normalizarIngreso(datos));
+  }
+
+  const overlay = document.getElementById('modal-ingreso');
+  if (overlay) cerrarModal(overlay);
+
+  renderListaIngresos();
+  EventBus.emit('state:change', { section: 'ingresos' });
+  announce(idEdit ? 'Ingreso actualizado.' : 'Ingreso guardado.');
+}
+
+/** @param {HTMLElement} el */
+function _editarIngreso(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const ing = (S.ingresos ?? []).find(i => i.id === id);
+  if (!ing) return;
+
+  const overlay = document.getElementById('modal-ingreso');
+  if (!overlay) return;
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar ingreso';
+  const body = document.getElementById('modal-ingreso-body');
+  if (body) {
+    body.innerHTML = renderFormIngreso(ing);
+    const form = body.querySelector('#form-ingreso');
+    if (form) {
+      form.dataset.id = id;
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        _guardarIngreso();
+      });
+    }
+  }
+  abrirModal(overlay);
+}
+
+/** @param {HTMLElement} el */
+async function _eliminarIngreso(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const ing = (S.ingresos ?? []).find(i => i.id === id);
+  if (!ing) return;
+
+  const ok = await confirmar({
+    titulo:         'Eliminar ingreso',
+    mensaje:        `¿Querés eliminar el ingreso "${ing.descripcion}"? Esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
+
+  eliminar('ingresos', id);
+  renderListaIngresos();
+  EventBus.emit('state:change', { section: 'ingresos' });
+  announce(`Ingreso "${ing.descripcion}" eliminado.`);
+}
+
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -449,11 +551,19 @@ export function initTesoreria() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
+  registrarAccion('nuevo-ingreso',   _nuevoIngreso);
+  registrarAccion('editar-ingreso',  _editarIngreso);
+  registrarAccion('eliminar-ingreso', _eliminarIngreso);
 
   _inyectarForm();
 
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'cuentas' || section === 'tesoreria' || section === 'compromisos') {
+    if (
+      section === 'cuentas'   ||
+      section === 'tesoreria' ||
+      section === 'compromisos' ||
+      section === 'ingresos'
+    ) {
       renderSmart(_renderTodo, 'tesoreria');
       updSaldo();
     }

@@ -9,7 +9,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
-import { BANCOS_CO, TIPOS_CUENTA } from '../../core/constants.js';
+import { BANCOS_CO, TIPOS_CUENTA, FRECUENCIAS } from '../../core/constants.js';
 import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -83,6 +83,101 @@ function _renderEmptyState() {
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
       <p class="empty-state__tip">💡 Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
     </div>`;
+}
+
+// ── INGRESOS RECURRENTES ─────────────────────────────────────────
+
+/**
+ * Renderiza la lista de ingresos activos en `#lista-ingresos`.
+ * No-op si el contenedor no existe.
+ */
+export function renderListaIngresos() {
+  const el = document.getElementById('lista-ingresos');
+  if (!el) return;
+
+  const ingresos = Array.isArray(S.ingresos)
+    ? S.ingresos.filter(i => i.activo !== false)
+    : [];
+
+  el.innerHTML = ingresos.length === 0
+    ? _renderEmptyStateIngresos()
+    : ingresos.map(_renderIngresoItem).join('');
+}
+
+function _renderEmptyStateIngresos() {
+  return `
+    <div class="empty-state empty-state--small">
+      <p class="empty-state__desc">Sin fuentes de ingreso registradas. Agrega tu salario u otras fuentes para ver tu tasa de ahorro.</p>
+    </div>`;
+}
+
+/**
+ * @param {import('../../core/state.js').Ingreso} ing
+ * @returns {string}
+ */
+function _renderIngresoItem(ing) {
+  const desc = _esc(ing.descripcion);
+  const frec = _esc(ing.frecuencia);
+  return `
+    <article class="list-item" data-id="${_esc(ing.id)}">
+      <div class="list-item__body">
+        <p class="list-item__title">${desc}</p>
+        <p class="list-item__subtitle">${frec}</p>
+      </div>
+      <div class="list-item__meta">
+        <p class="list-item__value">${f(ing.monto)}</p>
+      </div>
+      <div class="list-item__action">
+        <button class="btn btn-ghost btn-icon"
+                data-action="editar-ingreso"
+                data-id="${_esc(ing.id)}"
+                aria-label="Editar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="btn btn-ghost btn-icon"
+                data-action="eliminar-ingreso"
+                data-id="${_esc(ing.id)}"
+                aria-label="Eliminar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+    </article>`;
+}
+
+/**
+ * Devuelve el HTML del formulario de nuevo/editar ingreso.
+ * @param {import('../../core/state.js').Ingreso|null} [ingreso]
+ * @returns {string}
+ */
+export function renderFormIngreso(ingreso = null) {
+  const frecOpts = FRECUENCIAS
+    .map(fr => `<option value="${_esc(fr)}"${ingreso?.frecuencia === fr ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .join('');
+
+  return `
+    <form id="form-ingreso" novalidate>
+      <div class="form-group">
+        <label for="ingreso-desc" class="label">Descripción</label>
+        <input id="ingreso-desc" name="descripcion" class="input" type="text"
+               value="${ingreso ? _esc(ingreso.descripcion) : ''}"
+               placeholder="Ej. Salario empresa, Arriendo apartamento"
+               required aria-required="true" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="ingreso-monto" class="label">Monto (COP)</label>
+        <input id="ingreso-monto" name="monto" class="input" type="number"
+               min="1" step="10000" placeholder="0"
+               value="${ingreso ? ingreso.monto : ''}"
+               required aria-required="true" inputmode="numeric" />
+      </div>
+      <div class="form-group">
+        <label for="ingreso-frec" class="label">Frecuencia</label>
+        <select id="ingreso-frec" name="frecuencia" class="input" required aria-required="true">
+          <option value="">Seleccionar…</option>
+          ${frecOpts}
+        </select>
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>
+      </div>
+    </form>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────

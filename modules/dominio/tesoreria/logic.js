@@ -6,7 +6,7 @@
  * - Testeable en Node/Vitest sin ningún mock de navegador.
  */
 
-import { GMF } from '../../core/constants.js';
+import { GMF, FRECUENCIAS } from '../../core/constants.js';
 
 // ── CONSULTAS ────────────────────────────────────────────────────
 
@@ -121,7 +121,47 @@ export function sugerirDistribucionPrima(salario, tieneDeudas) {
   };
 }
 
-// ── VALIDACIÓN ───────────────────────────────────────────────────
+// ── VALIDACIÓN INGRESOS ──────────────────────────────────────────
+
+/**
+ * Valida los datos del formulario de ingreso recurrente.
+ * Devuelve un array de mensajes de error (vacío = válido).
+ *
+ * @param {Record<string, string>} datos
+ * @returns {string[]}
+ */
+export function validarIngreso(datos) {
+  const errores = [];
+  if (!datos.descripcion?.trim()) {
+    errores.push('La descripción es obligatoria.');
+  }
+  const monto = Number(datos.monto);
+  if (isNaN(monto) || monto <= 0) {
+    errores.push('El monto debe ser un número mayor a 0.');
+  }
+  if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
+    errores.push('Debés elegir una frecuencia válida.');
+  }
+  return errores;
+}
+
+/**
+ * Convierte los datos crudos del formulario al shape de S.ingresos[].
+ * Asume que los datos ya pasaron `validarIngreso()`.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {Omit<import('../../core/state.js').Ingreso, 'id' | 'fechaCreacion'>}
+ */
+export function normalizarIngreso(datos) {
+  return {
+    descripcion: datos.descripcion.trim(),
+    monto:       Number(datos.monto),
+    frecuencia:  datos.frecuencia,
+    activo:      true,
+  };
+}
+
+// ── VALIDACIÓN CUENTAS ───────────────────────────────────────────
 
 /**
  * Valida los datos del formulario antes de guardar.

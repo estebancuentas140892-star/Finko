@@ -87,7 +87,7 @@ function _renderEmptyState() {
 
 /**
  * Devuelve el HTML del formulario de abono a una meta existente.
- * Formulario simple: solo monto (las metas no están asociadas a una cuenta).
+ * Si hay cuentas activas, incluye selector para descontar del saldo.
  * @param {import('../../core/state.js').Meta} meta
  * @returns {string}
  */
@@ -96,6 +96,9 @@ export function renderFormAbonoMeta(meta) {
   const faltanteHtml = faltante > 0
     ? ` · Faltante: <strong>${f(faltante)}</strong>`
     : '';
+
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const cuentaHtml     = _renderCuentaSelectorAbono(cuentasActivas);
 
   return `
     <form id="form-abono-meta" novalidate>
@@ -111,6 +114,7 @@ export function renderFormAbonoMeta(meta) {
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
       </div>
+      ${cuentaHtml}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar abono</button>
@@ -149,5 +153,41 @@ export function renderFormMeta() {
         <button type="submit" class="btn btn-primary">Guardar meta</button>
       </div>
     </form>`;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────
+
+/**
+ * Devuelve el HTML del selector de cuenta para el abono.
+ * - 0 cuentas: sin selector (el abono sigue siendo válido como seguimiento).
+ * - 1 cuenta:  hidden input + hint con nombre y saldo disponible.
+ * - Varias:    select visible con todas las cuentas activas.
+ *
+ * @param {import('../../core/state.js').Cuenta[]} cuentas - solo las activas.
+ * @returns {string}
+ */
+function _renderCuentaSelectorAbono(cuentas) {
+  if (cuentas.length === 0) return '';
+
+  if (cuentas.length === 1) {
+    const c = cuentas[0];
+    return `
+      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+      <p class="form-hint quick-add__cuenta-hint">
+        Sale de: ${_esc(c.nombre)} · Disponible: ${f(c.saldo ?? 0)}
+      </p>`;
+  }
+
+  const opts = cuentas
+    .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)} (${f(c.saldo ?? 0)})</option>`)
+    .join('');
+  return `
+    <div class="form-group">
+      <label for="abono-meta-cuenta" class="label">¿Desde qué cuenta?</label>
+      <select id="abono-meta-cuenta" name="cuentaId" class="input" required aria-required="true">
+        <option value="">Elegir cuenta…</option>
+        ${opts}
+      </select>
+    </div>`;
 }
 

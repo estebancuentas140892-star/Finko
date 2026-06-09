@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1147/1147 tests verdes, lint limpio.** Último cambio: **M.2** (gasto rápido con cuenta de origen: autoselección/selector/empty state guiado, descuenta saldo). Antes: M.1b (Editar/Eliminar/"Marcar pagado este mes" en gastos fijos + helper `cuenta-helper.js`).
+**App estable, 1164/1164 tests verdes, lint limpio.** Último cambio: **M.3** (revisión transversal de captura: UI de ingresos recurrentes + cuenta de origen en abono a metas con descuento de saldo). Antes: M.2 (gasto rápido con cuenta de origen). Con M.3 la sección M queda cerrada.
 
 ---
 
@@ -35,6 +35,6 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**M.3 (Fase 3)** - Revisión transversal de flujos de captura. Mapear gasto, gasto rápido, ingreso, cuenta, deuda y meta; verificar que cada dato se pida en el momento correcto y documentar/cerrar los huecos. Modelo: Sonnet 4.6 - Alto.
+**A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.
 
-**O bien A.5** - Deploy en dominio custom. Usuario ya tiene dominio registrado. No requiere cambios de código. Seguir guía en `docs/SETUP_DOMINIO.md`. ~5-15 min.
+**O bien E.2-2027** - Actualizar SMMLV, auxilio de transporte y UVT a valores 2027 cuando se publiquen (dic 2026 / enero 2027). Cambio mecánico de una entrada en `LEGAL_POR_ANIO`. Modelo: Haiku 4.5.
