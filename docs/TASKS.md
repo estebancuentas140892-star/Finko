@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**Auditoría integral completada.** 4 hallazgos (P1 a P4) todos resueltos. App 100% lint verde, 1123/1123 tests verdes, cero inconsistencias de UX.
+**Auditoría integral completada** (P1 a P4) + **fix de recarga del onboarding en móvil**. App 100% lint verde, 1123/1123 tests verdes. Último cambio: el service worker ya no recarga la página en caliente (eliminado `skipWaiting` + reload-on-controllerchange); las actualizaciones se aplican en la próxima apertura, sin interrumpir formularios ni el onboarding.
 
 ---
 

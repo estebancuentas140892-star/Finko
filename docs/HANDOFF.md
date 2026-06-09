@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente ía o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-08 (refactor(P4): eliminar dialogo() muerta; auditoría integral cerrada; 1123/1123 verde)
+> Última actualización: 2026-06-08 (fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil; 1123/1123 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil · 2026-06-08
+
+Bug reportado en móvil: al ingresar por primera vez y escribir el nombre, la página se recargaba sola a los pocos segundos y se perdía lo escrito. Causa raíz: `sw-register.js` recargaba la página en `controllerchange`, y el SW usaba `skipWaiting()` + `clients.claim()`. En la PRIMERA visita (sin SW previo), cuando el SW recién instalado hacía `clients.claim()`, el controlador pasaba de null a SW y `controllerchange` se disparaba, recargando justo durante el onboarding (los "pocos segundos" = tiempo de cachear `CORE_ASSETS`). Footgun clásico de claim + reload-on-controllerchange. Descartados otros sospechosos: no hay listeners de focus/blur/visibilitychange, `loadData()` solo corre una vez, los re-render son scoped por sección (`renderSmart`) y nunca tocan modales. Fix: quitar `skipWaiting()` del SW (una versión nueva queda en "waiting" y se aplica en la próxima apertura, sin recargar en caliente) y eliminar el listener de `controllerchange → reload()`. Offline-first intacto. SW v120 → v121. 1123/1123 tests verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `service-worker.js` | Eliminar `self.skipWaiting()` del handler `install` (con comentario explicando por qué). Refinar comentario de `clients.claim()` en `activate`. CACHE_NAME v120 → v121. |
+| `modules/infra/sw-register.js` | Eliminar el listener `controllerchange` + `window.location.reload()` + flag `_ya_recargado`. La versión nueva se aplica sola en la próxima apertura limpia. Comentario explicando el bug evitado. |
+
+---
 
 ### refactor(P4): eliminar dialogo() muerta · 2026-06-08
 

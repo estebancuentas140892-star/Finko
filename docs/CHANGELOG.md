@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(sw): eliminar recarga automática que interrumpía el onboarding en móvil · 2026-06-08
+
+Bug reportado en la web móvil: al ingresar por primera vez y escribir el nombre en el onboarding, a los pocos segundos la página se recargaba sola y se perdía lo escrito; a veces ocurría de nuevo. Causa raíz identificada: el service worker usaba `self.skipWaiting()` (install) + `self.clients.claim()` (activate), y `sw-register.js` escuchaba `controllerchange` para hacer `window.location.reload()`. En la PRIMERA visita no hay SW controlando la página; cuando el SW recién instalado hacía `clients.claim()`, el controlador pasaba de null a SW y `controllerchange` se disparaba, recargando la página justo durante el onboarding. El retraso de "unos segundos" es el tiempo que tarda el SW en cachear todos los `CORE_ASSETS` (más notorio en móvil). Es el footgun clásico de `clients.claim()` + reload-on-controllerchange: se dispara también en la primera instalación, no solo en updates.
+
+Descartados otros posibles orígenes tras revisión: no existe ningún listener de `focus`/`blur`/`visibilitychange`/`pageshow`/`online`; `loadData()` se ejecuta una sola vez en el bootstrap (no hay rehidratación por foco); los re-render de sesión usan `renderSmart` (scoped por sección) y nunca tocan los overlays de modales (verificado: un input de onboarding conserva su valor y su nodo tras esperar, sin recrearse). Las dos recargas de `config/index.js` son intencionales tras resetear/importar datos (acción explícita del usuario).
+
+Solución: quitar `skipWaiting()` (un SW nuevo queda en "waiting" y se aplica solo en la próxima apertura limpia, sin tomar el control en caliente) y eliminar el listener `controllerchange → reload()`. Nunca se recarga en medio de una interacción. Offline-first intacto. SW v120 → v121. 1123/1123 tests verdes.
+
+- **`service-worker.js`:** Eliminar `self.skipWaiting()` del handler `install` (comentario explicando por qué). Refinar comentario de `self.clients.claim()` en `activate` (sigue habilitando offline en la primera instalación; en updates ya no interrumpe porque sin skipWaiting el SW solo activa en la próxima apertura). `CACHE_NAME` v120 → v121.
+- **`modules/infra/sw-register.js`:** Eliminar el bloque `controllerchange` + `window.location.reload()` + flag `_ya_recargado`. Comentario documentando el bug evitado. Se conserva `reg.update()` para pre-cachear la versión nueva.
+
+---
+
 ### refactor(P4): eliminar dialogo() muerta · 2026-06-08
 
 Último hallazgo de la auditoría integral. Función `dialogo()` en `modules/infra/utils.js` era un wrapper temporal alrededor de `window.confirm()` / `window.alert()`. Completamente reemplazada por `confirmar()` modal en `ui/confirm.js`. Nadie la importaba ni la usaba. Eliminada la función, su docstring, sus 3 tests y los imports Vitest que solo esos tests requerían. **Auditoría integral completada**: app 100% lint verde, cero inconsistencias UX, código limpio. SW v120. 1123/1123 tests verdes (-3 tests eliminados).

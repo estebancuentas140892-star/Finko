@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v120';
+const CACHE_NAME = 'finko-v121';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -158,8 +158,11 @@ self.addEventListener('install', (event) => {
     })
   );
 
-  // Tomar control sin esperar a que las tabs abiertas recarguen.
-  self.skipWaiting();
+  // NO usamos skipWaiting(): un SW nuevo NO debe tomar el control en caliente
+  // mientras el usuario está usando la app (escribiendo en el onboarding, en un
+  // formulario, etc.). Sin skipWaiting el SW nuevo queda en estado "waiting" y
+  // se activa solo en la próxima apertura limpia de la app, sin recargar la
+  // página en medio de una interacción. (Ver sw-register.js.)
 });
 
 // ── ACTIVATE ───────────────────────────────────────────────────────────────
@@ -176,7 +179,11 @@ self.addEventListener('activate', (event) => {
       )
   );
 
-  // Controlar todas las tabs ya abiertas sin esperar recarga.
+  // clients.claim() hace que este SW controle la página apenas se activa.
+  // En la PRIMERA instalación (no había SW antes) eso habilita el modo offline
+  // de inmediato. En una ACTUALIZACIÓN, como no usamos skipWaiting, este SW solo
+  // se activa cuando ya no quedan páginas controladas por el SW viejo (próxima
+  // apertura), así que claim nunca interrumpe una sesión en curso.
   self.clients.claim();
 });
 

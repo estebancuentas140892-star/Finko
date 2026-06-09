@@ -24,25 +24,26 @@ if ('serviceWorker' in navigator) {
       }).catch(function () { /* ignorar */ });
     }
   } else {
-    // Cuando un SW nuevo toma control (skipWaiting + clients.claim), los assets
-    // en memoria son los viejos. Recargar la pagina automaticamente para que el
-    // usuario vea el CSS/JS nuevo sin tener que cerrar y abrir la app manualmente.
-    // Flag para no entrar en bucle infinito en la primera instalacion.
-    let _ya_recargado = false;
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (_ya_recargado) return;
-      _ya_recargado = true;
-      window.location.reload();
-    });
-
+    // IMPORTANTE: no recargamos la página automáticamente.
+    //
+    // Antes había un listener de 'controllerchange' que llamaba a
+    // location.reload() para forzar la versión nueva. El problema: en la PRIMERA
+    // visita (sin SW previo), cuando el SW recién instalado hacía clients.claim()
+    // el controlador pasaba de null a SW y 'controllerchange' se disparaba,
+    // recargando la página justo cuando el usuario nuevo estaba escribiendo su
+    // nombre en el onboarding. Resultado: la pantalla "saltaba" sola a los pocos
+    // segundos (el tiempo que tarda el SW en cachear los assets).
+    //
+    // Ahora el SW ya no usa skipWaiting (ver service-worker.js): una versión
+    // nueva queda en "waiting" y se aplica sola en la próxima apertura limpia de
+    // la app. Nunca se recarga en medio de una interacción (onboarding, modales,
+    // formularios). El offline-first se mantiene intacto.
     navigator.serviceWorker
       .register('./service-worker.js')
       .then(function (reg) {
-        // Forzar chequeo de version nueva del SW al arrancar la app.
-        // Sin esto, el navegador puede demorar hasta 24h en re-fetchear el SW,
-        // dejando al usuario con CSS/JS viejo aunque ya haya un deploy nuevo.
-        // skipWaiting + clients.claim (en el SW) hacen que la nueva version
-        // tome control inmediatamente cuando se detecta.
+        // Chequear si hay una versión nueva del SW al arrancar, para que quede
+        // pre-cacheada y lista de activar en la próxima apertura. Sin esto el
+        // navegador puede demorar hasta 24h en re-fetchear el SW.
         reg.update().catch(function () { /* offline o sin red: ignorar */ });
       })
       .catch(function (err) {
