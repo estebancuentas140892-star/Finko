@@ -76,7 +76,7 @@ async function _activarNotificaciones() {
     S.config.notificaciones = true;
     save();
     renderPanelConfig();
-    announce('Recordatorios activados. Recibirás una alerta al abrir Finko si tenés compromisos próximos.');
+    announce('Recordatorios activados. Recibirás una alerta al abrir Finko si tienes compromisos próximos.');
   } else if (resultado === 'denied') {
     announce('El navegador bloqueó las notificaciones. Habilitá el permiso desde la configuración del navegador.', 'assertive');
   } else {

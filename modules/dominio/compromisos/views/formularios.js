@@ -17,12 +17,17 @@ import { FRECUENCIAS } from '../../../core/constants.js';
 
 /**
  * Devuelve el HTML del formulario para registrar un abono a una deuda.
- * Si no hay cuentas activas, devuelve un estado vacío con instrucción.
+ *
+ * Selección de cuenta según la cantidad de cuentas activas en S:
+ *   - 0 cuentas: estado vacío con instrucción.
+ *   - 1 cuenta:  hidden input + hint con nombre y saldo (se asume sin preguntar).
+ *   - Varias:    select obligatorio + display reactivo `#abono-saldo-disponible`.
+ *
  * @param {import('../../../core/state.js').Compromiso} deuda
  * @returns {string}
  */
 export function renderFormAbono(deuda) {
-  const cuentas = S.cuentas.filter(c => c.activa !== false);
+  const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
   if (cuentas.length === 0) {
     return `
       <div class="empty-state">
@@ -35,10 +40,35 @@ export function renderFormAbono(deuda) {
 
   const saldo = Number(deuda.saldoTotal) || 0;
   const cuota = Number(deuda.cuotaMensual) || 0;
-  const cuentaOpts = cuentas.map(c =>
-    `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`
-  ).join('');
   const fechaHoy = new Date().toISOString().slice(0, 10);
+
+  // Una sola cuenta: se asume automáticamente, sin preguntar.
+  let cuentaHtml;
+  if (cuentas.length === 1) {
+    const c = cuentas[0];
+    const saldoCuenta = c.saldo ?? 0;
+    cuentaHtml = `
+      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+      <p class="form-hint quick-add__cuenta-hint${saldoCuenta <= 0 ? ' form-hint--danger' : ''}" role="status">
+        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldoCuenta)}
+      </p>`;
+  } else {
+    const cuentaOpts = cuentas.map(c =>
+      `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`
+    ).join('');
+    cuentaHtml = `
+      <div class="form-group">
+        <label for="abono-cuenta" class="label">¿De qué cuenta sale el dinero?</label>
+        <select id="abono-cuenta" name="cuentaId" class="input"
+                required aria-required="true">
+          <option value="">Elige una cuenta</option>
+          ${cuentaOpts}
+        </select>
+        <p id="abono-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
+          Elige una cuenta para ver el saldo disponible.
+        </p>
+      </div>`;
+  }
 
   return `
     <form id="form-abono" novalidate
@@ -61,17 +91,7 @@ export function renderFormAbono(deuda) {
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
 
-      <div class="form-group">
-        <label for="abono-cuenta" class="label">¿De qué cuenta sale el dinero?</label>
-        <select id="abono-cuenta" name="cuentaId" class="input"
-                required aria-required="true">
-          <option value="">Elige una cuenta</option>
-          ${cuentaOpts}
-        </select>
-        <p id="abono-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-          Elige una cuenta para ver el saldo disponible.
-        </p>
-      </div>
+      ${cuentaHtml}
 
       <div class="form-group">
         <label for="abono-fecha" class="label">Fecha del abono</label>
@@ -136,7 +156,8 @@ export function renderChooserCompromiso() {
 /**
  * Devuelve el HTML del formulario tailored para el tipo de deuda elegido.
  *
- * Entidad: tasa EA obligatoria (la tasa anual efectiva del crédito).
+ * Entidad: tasa EA opcional (muchas personas no la conocen; si falta, se guarda
+ *          null y la app invita a consultarla para análisis más precisos).
  * Personal: tasa mensual opcional (gota a gota suele cobrar 5-20% mensual).
  *
  * El tipo va en un hidden para que `normalizarCompromiso` lo recoja sin que
@@ -152,13 +173,13 @@ export function renderFormDeuda(tipo) {
     .join('');
 
   const tasaLabel = esEntidad
-    ? 'Tasa de interés (%)'
+    ? 'Tasa de interés anual % EA (opcional)'
     : 'Tasa de interés mensual % (opcional)';
 
   const tasaPlaceholder = esEntidad ? '28.5' : '10';
 
   const tasaHint = esEntidad
-    ? 'Ingresa la tasa anual efectiva (% EA) que te cobran. La encuentras en tu extracto, contrato o la app del banco.'
+    ? 'La encuentras en tu extracto, contrato o la app del banco. ¿No conoces tu tasa? Puedes continuar sin este dato, pero te recomendamos consultarla con tu banco o entidad financiera para obtener recomendaciones más precisas sobre tus deudas.'
     : 'Si no cobra interés, deja el campo en blanco. Los prestamistas particulares (natilleras, persona natural) suelen cobrar entre 5% y 20% mensual.';
 
   const descPlaceholder = esEntidad
@@ -181,7 +202,7 @@ export function renderFormDeuda(tipo) {
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" />
-        <p class="form-hint">El total que todavía debés. Finko lo muestra en tu resumen general.</p>
+        <p class="form-hint">El total que todavía debes. Finko lo muestra en tu resumen general.</p>
       </div>
 
       <div class="form-group">
@@ -199,7 +220,6 @@ export function renderFormDeuda(tipo) {
                  min="0" max="${esEntidad ? '200' : '100'}" step="0.01"
                  placeholder="${_esc(tasaPlaceholder)}"
                  aria-describedby="comp-tasa-hint"
-                 ${esEntidad ? 'required aria-required="true"' : ''}
                  autocomplete="off" />
           <input type="hidden" name="tasaUnidad" value="${esEntidad ? 'EA' : 'mensual'}" />
         </div>

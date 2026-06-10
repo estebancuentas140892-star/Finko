@@ -187,7 +187,7 @@ export function nivelAlertaMora(proximos) {
  *
  * Reglas v6:
  * - tipo='fijo'           → requiere monto y frecuencia (Cuotas recurrentes).
- * - tipo='deuda-entidad'  → requiere saldoTotal, cuotaMensual y tasa (% EA > 0).
+ * - tipo='deuda-entidad'  → requiere saldoTotal, cuotaMensual; tasa opcional (% EA).
  * - tipo='deuda-personal' → requiere saldoTotal, cuotaMensual; tasa opcional (% mensual).
  *
  * @param {Record<string, string>} datos
@@ -200,14 +200,14 @@ export function validarCompromiso(datos) {
     errores.push('La descripción del compromiso es obligatoria.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
-    errores.push('Debés elegir la frecuencia.');
+    errores.push('Debes elegir la frecuencia.');
   }
   const diaPago = Number(datos.diaPago);
   if (!Number.isInteger(diaPago) || diaPago < 1 || diaPago > 31) {
     errores.push('El día de pago debe ser un número entero entre 1 y 31.');
   }
   if (!datos.tipo || !TIPOS_COMPROMISO.includes(datos.tipo)) {
-    errores.push('Debés elegir el tipo de compromiso.');
+    errores.push('Debes elegir el tipo de compromiso.');
   }
 
   if (datos.tipo === 'fijo') {
@@ -218,7 +218,7 @@ export function validarCompromiso(datos) {
   } else if (esDeuda(datos.tipo)) {
     const saldo = Number(datos.saldoTotal);
     if (isNaN(saldo) || saldo <= 0) {
-      errores.push('El saldo total que aún debés debe ser mayor a 0.');
+      errores.push('El saldo total que aún debes debe ser mayor a 0.');
     }
     const cuota = Number(datos.cuotaMensual);
     if (isNaN(cuota) || cuota <= 0) {
@@ -227,17 +227,20 @@ export function validarCompromiso(datos) {
     const tasa = Number(datos.tasa);
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null;
     if (datos.tipo === 'deuda-entidad') {
-      if (!tieneTasa || isNaN(tasa) || tasa < 0) {
-        errores.push('La tasa EA es obligatoria para deudas con entidad.');
-      } else if (tasa > 200) {
-        errores.push('La tasa EA parece demasiado alta (más de 200%). Verificá el valor.');
+      // Opcional: muchas personas no conocen su tasa EA. Si la dan, validar rango.
+      if (tieneTasa) {
+        if (isNaN(tasa) || tasa < 0) {
+          errores.push('La tasa EA debe ser un número mayor o igual a 0.');
+        } else if (tasa > 200) {
+          errores.push('La tasa EA parece demasiado alta (más de 200%). Verifica el valor.');
+        }
       }
     } else if (tieneTasa) {
       // Personal: opcional pero si la ponen, validar rango razonable (mensual).
       if (isNaN(tasa) || tasa < 0) {
         errores.push('La tasa mensual debe ser un número mayor o igual a 0.');
       } else if (tasa > 100) {
-        errores.push('La tasa mensual parece demasiado alta (más de 100% mensual). Verificá el valor.');
+        errores.push('La tasa mensual parece demasiado alta (más de 100% mensual). Verifica el valor.');
       }
     }
     if (tieneTasa) {
@@ -296,8 +299,11 @@ export function detectarDeudaCreciente(datos) {
  *
  * v6:
  * - 'fijo'           → { monto, frecuencia, diaPago }
- * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, tasa, tasaUnidad='EA' }
+ * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, tasa|null, tasaUnidad='EA' }
+ *                       (tasa null = desconocida; 0 significaría "sin interés",
+ *                       que en una entidad casi nunca es cierto)
  * - 'deuda-personal' → { saldoTotal, cuotaMensual, tasa?, tasaUnidad? }
+ *                       (sin tasa = 0: el form dice "si no cobra interés, deja en blanco")
  *
  * @param {Record<string, string>} datos
  */
@@ -322,7 +328,7 @@ export function normalizarCompromiso(datos) {
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null
       && !isNaN(tasaPct) && tasaPct >= 0;
     if (datos.tipo === 'deuda-entidad') {
-      base.tasa       = tieneTasa ? tasaPct / 100 : 0;
+      base.tasa       = tieneTasa ? tasaPct / 100 : null;
       base.tasaUnidad = 'EA';
     } else {
       base.tasa       = tieneTasa ? tasaPct / 100 : 0;
@@ -626,9 +632,14 @@ const MAX_MESES_SIMULACION = 600;
  * Requiere: deuda (entidad o personal), activo, saldoTotal>0, cuotaMensual>0.
  * La tasa se convierte a EA si está en mensual; si no hay tasa válida, queda 0.
  *
+ * `tasaDesconocida` marca las deudas con entidad cuya tasa el usuario no registró
+ * (tasa null). En la simulación se tratan como 0%, lo que subestima sus intereses:
+ * el motor de recomendación lo señala para que el usuario confirme la tasa real.
+ *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
  * @returns {Array<{ id: string, descripcion: string, tipo: string,
- *                   saldo: number, tasaEA: number, cuota: number }>}
+ *                   saldo: number, tasaEA: number, cuota: number,
+ *                   tasaDesconocida: boolean }>}
  */
 export function filtrarDeudasPagables(compromisos) {
   return compromisosActivos(compromisos)
@@ -642,6 +653,7 @@ export function filtrarDeudasPagables(compromisos) {
       saldo:       c.saldoTotal,
       tasaEA:      tasaEADe(c),
       cuota:       c.cuotaMensual,
+      tasaDesconocida: c.tipo === 'deuda-entidad' && (c.tasa === null || c.tasa === undefined),
     }));
 }
 
@@ -798,55 +810,184 @@ export function compararEstrategias(deudas, extraMensual) {
 }
 
 /**
- * Recomienda una estrategia de pago basada en el perfil de deudas del usuario.
- * Heurística pedagógica (no busca óptimo matemático, busca claridad):
+ * Ahorro de intereses (COP) a partir del cual avalancha "vale el esfuerzo"
+ * frente a bola de nieve cuando ambas estrategias completan el plan. Por debajo,
+ * el ahorro marginal no compensa la motivación de cerrar deudas chicas primero.
+ */
+const UMBRAL_AHORRO_MATERIAL = 50_000;
+
+/**
+ * Recomienda una estrategia de pago analizando la simulación real de ambas
+ * estrategias, no solo la dispersión de tasas. El motor decide en este orden:
  *
- *  - 0 o 1 deuda: no recomienda nada (`null`). Una sola deuda no necesita estrategia.
- *  - Todas con tasa 0: Bola de nieve (Avalancha no aporta nada).
- *  - Diferencia entre tasa máxima y mínima ≥ 5 puntos EA: Avalancha (el ahorro de
- *    intereses justifica el esfuerzo psicológico de no ver cierres rápidos).
- *  - Tasas similares (< 5 pts de diferencia): Bola de nieve (la motivación de
- *    cerrar deudas pesa más que el ahorro marginal).
+ *  1. 0 o 1 deuda → no recomienda nada (una sola deuda no necesita estrategia).
+ *  2. Ninguna estrategia completa el plan (`viable: false`) → no recomienda
+ *     avalancha ni bola: diagnostica qué deudas crecen porque su cuota no cubre
+ *     el interés, y calcula el pago extra mínimo para que el plan sí termine.
+ *  3. Solo una estrategia completa → esa (la otra dejaría una deuda creciendo).
+ *  4. Ambas completan:
+ *     - Todas sin interés → bola de nieve (avalancha no aporta nada).
+ *     - Avalancha ahorra de forma material (≥ UMBRAL_AHORRO_MATERIAL en
+ *       intereses o ≥ 1 mes) → avalancha.
+ *     - Ahorro inmaterial o empate → bola de nieve (la motivación pesa más).
  *
- * El umbral de 5 puntos es un balance: por debajo de eso, el ahorro real suele
- * ser menor que el costo emocional de no ver progreso rápido.
+ * La decisión usa `extraMensual` porque cambia el resultado: un plan inviable
+ * sin extra puede volverse viable (y cambiar de recomendación) con un aporte.
  *
  * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {number} [extraMensual=0] COP adicionales por mes que el usuario aporta.
  * @returns {{
  *   estrategia: 'avalancha' | 'bolaNieve' | null,
  *   razon: string,
+ *   viable: boolean,
+ *   diagnostico: {
+ *     deudasCrecientes: Array<{ id: string, descripcion: string, deficitMensual: number }>,
+ *     extraMinimo: number | null,
+ *   } | null,
+ *   ahorroIntereses: number,
+ *   ahorroMeses: number,
  * }}
  */
-export function recomendarEstrategia(deudas) {
-  if (!Array.isArray(deudas) || deudas.length < 2) {
-    return { estrategia: null, razon: '' };
-  }
+export function recomendarEstrategia(deudas, extraMensual = 0) {
+  const vacia = {
+    estrategia: null, razon: '', viable: true, diagnostico: null,
+    ahorroIntereses: 0, ahorroMeses: 0,
+  };
+  if (!Array.isArray(deudas) || deudas.length < 2) return vacia;
 
-  const tasas = deudas.map(d => d.tasaEA ?? 0);
-  const tasaMax = Math.max(...tasas);
-  const tasaMin = Math.min(...tasas);
-  // Redondeamos a 2 decimales para tolerar errores de punto flotante (0.15 - 0.10
-  // arroja 0.04999... en JS y no superaría el umbral exacto de 5 pts).
-  const diff = Math.round((tasaMax - tasaMin) * 10000) / 100;
+  const comp = compararEstrategias(deudas, extraMensual);
+  const avalanchaCompleta = comp.avalancha.completo;
+  const bolaCompleta      = comp.bolaNieve.completo;
 
-  if (tasaMax === 0) {
+  // Caso 2: ningún plan cierra → inviable. Diagnóstico + pago extra mínimo.
+  if (!avalanchaCompleta && !bolaCompleta) {
     return {
-      estrategia: 'bolaNieve',
-      razon: 'Tus deudas no cobran intereses, así que cerrar la más pequeña primero te da progreso visible sin perder plata por elegir un orden u otro.',
+      estrategia: null,
+      razon: '',
+      viable: false,
+      diagnostico: _diagnosticarInviabilidad(deudas),
+      ahorroIntereses: 0,
+      ahorroMeses: 0,
     };
   }
 
-  if (diff >= 5) {
+  // Caso 3: solo una estrategia logra terminar el plan.
+  if (avalanchaCompleta && !bolaCompleta) {
     return {
       estrategia: 'avalancha',
-      razon: 'Tenés una deuda con tasa de interés mucho más alta que las otras. Atacarla primero reduce el peso de los intereses en tus finanzas y te hace ahorrar más a largo plazo.',
+      razon: 'Con tu pago actual, solo atacando primero la deuda más cara (Avalancha) logras terminar de pagar todo. Con Bola de nieve, la deuda de interés más alto seguiría creciendo.',
+      viable: true, diagnostico: null,
+      ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
+    };
+  }
+  if (bolaCompleta && !avalanchaCompleta) {
+    return {
+      estrategia: 'bolaNieve',
+      razon: 'Con tu pago actual, el orden Bola de nieve es el único que logra cerrar todas tus deudas. Liberar cuotas al cerrar las más chicas te da el flujo para terminar.',
+      viable: true, diagnostico: null,
+      ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
+    };
+  }
+
+  // Caso 4: ambas completan. Decidir por ahorro real.
+  const todasSinInteres = deudas.every(d => (d.tasaEA ?? 0) === 0);
+  if (todasSinInteres) {
+    return {
+      estrategia: 'bolaNieve',
+      razon: 'Tus deudas no cobran intereses, así que cerrar la más pequeña primero te da progreso visible sin perder dinero por elegir un orden u otro.',
+      viable: true, diagnostico: null,
+      ahorroIntereses: 0, ahorroMeses: 0,
+    };
+  }
+
+  const ahorroMaterial = comp.ahorroIntereses >= UMBRAL_AHORRO_MATERIAL || comp.ahorroMeses >= 1;
+  if (comp.mejor === 'avalancha' && ahorroMaterial) {
+    return {
+      estrategia: 'avalancha',
+      razon: 'Atacar primero la deuda con la tasa más alta te ahorra más en intereses y/o te hace terminar antes. Mira el detalle para ver cuánto.',
+      viable: true, diagnostico: null,
+      ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
     };
   }
 
   return {
     estrategia: 'bolaNieve',
-    razon: 'Tus deudas cobran tasas parecidas, así que el ahorro por elegir la más cara primero es pequeño. Cerrar la más chica te da impulso visible para seguir.',
+    razon: 'El ahorro por priorizar la deuda más cara es pequeño en tu caso, así que pesa más la motivación: cerrar primero la deuda más chica te da impulso visible para seguir.',
+    viable: true, diagnostico: null,
+    ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
   };
+}
+
+/**
+ * Diagnostica por qué un plan de deudas no cierra: lista las deudas cuya cuota
+ * no alcanza a cubrir su propio interés mensual (crecen mes a mes) y calcula el
+ * pago extra mínimo que volvería viable el plan completo.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @returns {{
+ *   deudasCrecientes: Array<{ id: string, descripcion: string, deficitMensual: number }>,
+ *   extraMinimo: number | null,
+ * }}
+ */
+function _diagnosticarInviabilidad(deudas) {
+  const deudasCrecientes = deudas
+    .map(d => {
+      const tasaMensual    = _tasaMensualDesdeEA(d.tasaEA ?? 0);
+      const interesMensual = d.saldo * tasaMensual;
+      return {
+        id:             d.id,
+        descripcion:    d.descripcion,
+        deficitMensual: interesMensual - (d.cuota || 0),
+      };
+    })
+    .filter(x => x.deficitMensual > 0.01)
+    .map(({ id, descripcion, deficitMensual }) => ({ id, descripcion, deficitMensual }));
+
+  return {
+    deudasCrecientes,
+    extraMinimo: _calcularExtraMinimoViable(deudas),
+  };
+}
+
+/**
+ * Calcula el pago extra mensual mínimo (múltiplo de $10.000) que hace que el
+ * plan complete bajo la estrategia Avalancha (la óptima en intereses).
+ *
+ * Cota superior segura: si el extra cubre todo el interés del primer mes
+ * (cuando los saldos, y por tanto los intereses, son máximos), el saldo total
+ * baja desde el inicio y el plan cierra. Sobre esa cota se hace búsqueda binaria.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @returns {number | null} Extra mínimo en COP, o null si no se pudo determinar.
+ */
+function _calcularExtraMinimoViable(deudas) {
+  const PASO = 10_000;
+  const interesPrimerMes = deudas.reduce(
+    (acc, d) => acc + d.saldo * _tasaMensualDesdeEA(d.tasaEA ?? 0), 0);
+  const sumaCuotas = deudas.reduce((acc, d) => acc + (d.cuota || 0), 0);
+
+  // Extra que faltaría para cubrir el interés del primer mes, redondeado al
+  // siguiente múltiplo de PASO (estrictamente por encima del punto de equilibrio
+  // para garantizar que el saldo total baje y no se estanque).
+  let hi = Math.ceil(Math.max(PASO, interesPrimerMes - sumaCuotas) / PASO) * PASO;
+
+  // Seguridad: si la cota teórica no cerrara (no debería), ampliar una vez.
+  if (!simularEstrategiaPago(deudas, hi, 'avalancha').completo) {
+    hi *= 2;
+    if (!simularEstrategiaPago(deudas, hi, 'avalancha').completo) return null;
+  }
+
+  // Búsqueda binaria del menor múltiplo de PASO en [0, hi] que completa el plan.
+  let lo = 0;
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / (2 * PASO)) * PASO;
+    if (simularEstrategiaPago(deudas, mid, 'avalancha').completo) {
+      hi = mid;
+    } else {
+      lo = mid + PASO;
+    }
+  }
+  return lo;
 }
 
 // ── ABONOS A DEUDAS (ADR 002) ────────────────────────────────────
@@ -917,7 +1058,7 @@ export function ajustarMontoAbono(monto, saldoActual) {
  *
  * Reglas:
  *   - monto: número > 0.
- *   - cuentaId: requerido (de qué cuenta sale la plata).
+ *   - cuentaId: requerido (de qué cuenta sale el dinero).
  *   - fecha: requerida y con formato YYYY-MM-DD.
  *   - deuda: debe existir, estar activa y tener saldoTotal > 0.
  *
@@ -932,7 +1073,7 @@ export function validarAbono(datos, deuda) {
     errores.push('El monto del abono debe ser mayor a 0.');
   }
   if (!datos?.cuentaId?.trim?.()) {
-    errores.push('Debés elegir de qué cuenta sale la plata.');
+    errores.push('Debes elegir de qué cuenta sale el dinero.');
   }
   if (!datos?.fecha?.trim?.()) {
     errores.push('La fecha es obligatoria.');
@@ -946,7 +1087,7 @@ export function validarAbono(datos, deuda) {
       errores.push('Solo se puede abonar a deudas (entidad o personal).');
     }
     if (deuda.activo === false) {
-      errores.push('No podés abonar a una deuda archivada.');
+      errores.push('No puedes abonar a una deuda archivada.');
     }
     const saldo = Number(deuda.saldoTotal);
     if (!Number.isFinite(saldo) || saldo <= 0) {

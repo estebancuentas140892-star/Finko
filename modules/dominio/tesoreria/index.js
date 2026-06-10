@@ -244,7 +244,7 @@ async function _eliminarCuenta(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar cuenta',
-    mensaje:        `¿Querés eliminar "${cuenta.nombre}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${cuenta.nombre}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -608,7 +608,7 @@ async function _eliminarIngreso(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar ingreso',
-    mensaje:        `¿Querés eliminar el ingreso "${ing.descripcion}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar el ingreso "${ing.descripcion}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });

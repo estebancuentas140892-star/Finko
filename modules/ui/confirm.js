@@ -11,7 +11,7 @@
  * Uso:
  *   const ok = await confirmar({
  *     titulo: 'Eliminar cuenta',
- *     mensaje: `¿Querés eliminar "Davivienda Ahorros"?`,
+ *     mensaje: `¿Quieres eliminar "Davivienda Ahorros"?`,
  *     confirmarTexto: 'Eliminar',
  *     peligroso: true,
  *   });

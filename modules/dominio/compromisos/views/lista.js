@@ -103,11 +103,16 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     : `${dias} días`;
 
   // Tasa mostrada en la unidad original para que coincida con la entrada.
+  // En entidad, tasa null = desconocida (el usuario no la registró): se invita
+  // a confirmarla en vez de afirmar "sin interés", que casi nunca es cierto.
+  const tasaDesconocida = compromiso.tasa === null || compromiso.tasa === undefined;
   const tasaMostrada = compromiso.tasa > 0
     ? (compromiso.tasaUnidad === 'mensual'
         ? `${Math.round(compromiso.tasa * 100)}% mensual`
         : `${Math.round(tasaEA)}%`)
-    : 'sin interés';
+    : tasaDesconocida && tipo === 'deuda-entidad'
+      ? 'tasa por confirmar'
+      : 'sin interés';
 
   // Jerarquía de la card: nombre (título) > saldo (monto, ancla a la derecha)
   // > cuota + día de pago (subtítulo accionable) > tipo + tasa (contexto).
@@ -169,7 +174,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">💳</p>
       <p class="empty-state__title">Sin deudas registradas</p>
-      <p class="empty-state__desc">Agregá tus créditos con entidad (banco, tarjeta) o personales (familiar, gota a gota). Finko te muestra el orden óptimo de pago según la estrategia que elijas.</p>
+      <p class="empty-state__desc">Agrega tus créditos con entidad (banco, tarjeta) o personales (familiar, gota a gota). Finko te muestra el orden óptimo de pago según la estrategia que elijas.</p>
       <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar deuda</button>
       <p class="empty-state__tip">💡 Tip: los gastos fijos recurrentes (arriendo, servicios) se agregan desde la sección Agenda.</p>
     </div>`;

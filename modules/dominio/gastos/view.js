@@ -267,8 +267,8 @@ export function renderFormGastoRapido() {
     return `
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">🏦</p>
-        <p class="form-empty__title">Primero necesitás una cuenta</p>
-        <p class="form-empty__desc">Para registrar gastos, agregá al menos una cuenta o billetera en Mis Cuentas.</p>
+        <p class="form-empty__title">Primero necesitas una cuenta</p>
+        <p class="form-empty__desc">Para registrar gastos, agrega al menos una cuenta o billetera en Mis Cuentas.</p>
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">🏦 Ir a Mis Cuentas</a>
       </div>`;
   }
@@ -289,14 +289,14 @@ export function renderFormGastoRapido() {
       <div class="form-group">
         <label for="gasto-rapido-cuenta" class="label">¿Desde qué cuenta?</label>
         <select id="gasto-rapido-cuenta" name="cuentaId" class="input" required aria-required="true">
-          <option value="">Elegí una cuenta</option>
+          <option value="">Elige una cuenta</option>
           ${opciones}
         </select>
       </div>`;
   }
 
   return `
-    <p class="quick-add__hint">Apuntalo ahora. Lo completás después con calma.</p>
+    <p class="quick-add__hint">Anótalo ahora. Lo puedes completar después con calma.</p>
     <form id="form-gasto-rapido" novalidate>
       <div class="form-group">
         <label for="gasto-rapido-monto" class="label">¿Cuánto gastaste?</label>
@@ -319,9 +319,13 @@ export function renderFormGastoRapido() {
 /**
  * Devuelve el HTML del formulario de nuevo gasto.
  *
- * Incluye un selector de cuenta obligatorio y un display reactivo
- * `#gasto-saldo-disponible` que muestra el saldo de la cuenta elegida
- * (lo actualiza el listener `change` en `gastos/index.js`).
+ * Selección de cuenta según la cantidad de cuentas activas en S:
+ *   - 0 cuentas: empty state guiado con CTA "Ir a Mis cuentas".
+ *   - 1 cuenta:  `<input type="hidden" name="cuentaId">` + hint con nombre y saldo
+ *                (la app asume esa cuenta sin preguntar).
+ *   - Varias:    `<select name="cuentaId">` obligatorio + display reactivo
+ *                `#gasto-saldo-disponible` (lo actualiza el listener `change`
+ *                en `gastos/index.js`).
  *
  * @returns {string}
  */
@@ -330,10 +334,7 @@ export function renderFormGasto() {
     .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
-  const cuentas = S.cuentas.filter(c => c.activa !== false);
-  const cuentaOpts = cuentas
-    .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`)
-    .join('');
+  const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
   // El gasto no puede existir sin cuenta de origen.
@@ -347,13 +348,21 @@ export function renderFormGasto() {
       </div>`;
   }
 
-  return `
-    <form id="form-gasto" novalidate>
-      <div class="form-group">
-        <label for="gasto-descripcion" class="label">Descripción</label>
-        <input id="gasto-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Almuerzo en restaurante" required aria-required="true" autocomplete="off" />
-      </div>
+  // Una sola cuenta: se asume automáticamente, sin preguntar.
+  let cuentaHtml;
+  if (cuentas.length === 1) {
+    const c = cuentas[0];
+    const saldo = c.saldo ?? 0;
+    cuentaHtml = `
+      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+      <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
+        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
+      </p>`;
+  } else {
+    const cuentaOpts = cuentas
+      .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`)
+      .join('');
+    cuentaHtml = `
       <div class="form-group">
         <label for="gasto-cuenta" class="label">De qué cuenta sale</label>
         <select id="gasto-cuenta" name="cuentaId" class="input" required aria-required="true">
@@ -363,7 +372,17 @@ export function renderFormGasto() {
         <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
           Elige una cuenta para ver el saldo disponible.
         </p>
+      </div>`;
+  }
+
+  return `
+    <form id="form-gasto" novalidate>
+      <div class="form-group">
+        <label for="gasto-descripcion" class="label">Descripción</label>
+        <input id="gasto-descripcion" name="descripcion" class="input" type="text"
+               placeholder="Ej. Almuerzo en restaurante" required aria-required="true" autocomplete="off" />
       </div>
+      ${cuentaHtml}
       <div class="form-group">
         <label for="gasto-monto" class="label">Monto (COP)</label>
         <input id="gasto-monto" name="monto" class="input" type="number"

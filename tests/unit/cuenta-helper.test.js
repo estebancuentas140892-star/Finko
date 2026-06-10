@@ -82,7 +82,7 @@ describe('resolverCuenta() - 0 cuentas activas', () => {
     // El diálogo debe haberse añadido al body.
     const titulo = document.getElementById('cta-sin-cuentas-title');
     expect(titulo).not.toBeNull();
-    expect(titulo.textContent).toContain('Necesitás una cuenta primero');
+    expect(titulo.textContent).toContain('Necesitas una cuenta primero');
   });
 });
 

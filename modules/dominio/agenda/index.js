@@ -163,7 +163,7 @@ async function _eliminarGastoFijo(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar gasto fijo',
-    mensaje:        `¿Querés eliminar "${comp.descripcion}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${comp.descripcion}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });

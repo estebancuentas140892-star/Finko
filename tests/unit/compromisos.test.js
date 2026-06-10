@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   compromisosActivos,
   calcularCompromisoMensual,
@@ -27,6 +27,8 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
+import { renderFormAbono } from '../../modules/dominio/compromisos/views/formularios.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -341,6 +343,16 @@ describe('normalizarCompromiso()', () => {
     expect(result.tasaUnidad).toBe('mensual');
   });
 
+  it('para tipo=deuda-entidad sin tasa, queda tasa=null (desconocida) y tasaUnidad="EA"', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '5000000', cuotaMensual: '300000', tasa: '', tasaUnidad: 'EA',
+    };
+    const result = normalizarCompromiso(datos);
+    expect(result.tasa).toBeNull();
+    expect(result.tasaUnidad).toBe('EA');
+  });
+
   it('para tipo=fijo no agrega campos de deuda aunque vengan en el form', () => {
     const datos = {
       ...datosFormValidos, tipo: 'fijo',
@@ -380,10 +392,15 @@ describe('validarCompromiso() - reglas de deuda (v6)', () => {
     expect(validarCompromiso(datos)).toEqual([]);
   });
 
-  it('reporta error si deuda-entidad no tiene tasa', () => {
+  it('deuda-entidad sin tasa es válida (tasa opcional)', () => {
     const datos = { ...datosEntidad, tasa: '' };
+    expect(validarCompromiso(datos)).toEqual([]);
+  });
+
+  it('deuda-entidad con tasa negativa: error', () => {
+    const datos = { ...datosEntidad, tasa: '-5' };
     const errores = validarCompromiso(datos);
-    expect(errores.some(e => /tasa.*obligatoria/i.test(e))).toBe(true);
+    expect(errores.some(e => /tasa/i.test(e))).toBe(true);
   });
 
   it('reporta error si saldoTotal es 0 o menor', () => {
@@ -517,16 +534,37 @@ describe('filtrarDeudasPagables', () => {
     expect(filtrarDeudasPagables([sinTasa])[0].tasaEA).toBe(0);
   });
 
+  it('incluye deudas con tasa=null (desconocida): simula con tasaEA 0', () => {
+    const tasaNull = deudaBase({ tasa: null });
+    expect(filtrarDeudasPagables([tasaNull])).toHaveLength(1);
+    expect(filtrarDeudasPagables([tasaNull])[0].tasaEA).toBe(0);
+  });
+
+  it('marca tasaDesconocida=true para deuda-entidad con tasa null', () => {
+    const tasaNull = deudaBase({ tasa: null });
+    expect(filtrarDeudasPagables([tasaNull])[0].tasaDesconocida).toBe(true);
+  });
+
+  it('tasaDesconocida=false cuando la entidad tiene tasa registrada', () => {
+    expect(filtrarDeudasPagables([deudaBase()])[0].tasaDesconocida).toBe(false);
+  });
+
+  it('tasaDesconocida=false para deuda-personal sin tasa (0 = sin interés real)', () => {
+    const personal = deudaBase({ tipo: 'deuda-personal', tasa: 0, tasaUnidad: 'mensual' });
+    expect(filtrarDeudasPagables([personal])[0].tasaDesconocida).toBe(false);
+  });
+
   it('mapea al shape esperado', () => {
     const deuda = deudaBase();
     const [d] = filtrarDeudasPagables([deuda]);
     expect(d).toEqual({
-      id:          'd1',
-      descripcion: 'Tarjeta Visa',
-      tipo:        'deuda-entidad',
-      saldo:       1_000_000,
-      tasaEA:      0.30,
-      cuota:       200_000,
+      id:              'd1',
+      descripcion:     'Tarjeta Visa',
+      tipo:            'deuda-entidad',
+      saldo:           1_000_000,
+      tasaEA:          0.30,
+      cuota:           200_000,
+      tasaDesconocida: false,
     });
   });
 
@@ -635,54 +673,135 @@ describe('compararEstrategias', () => {
   });
 });
 
-// ── recomendarEstrategia() (v7) ────────────────────────────────────
+// ── recomendarEstrategia() basada en simulación ────────────────────
 
 describe('recomendarEstrategia', () => {
+  // Helper: deuda pagable (shape de filtrarDeudasPagables).
+  const dp = (o = {}) => ({
+    id: 'd', descripcion: 'Deuda', saldo: 1_000_000, tasaEA: 0.20, cuota: 100_000, ...o,
+  });
+  // 10% mensual expresado como EA exacta (para reproducir el caso del usuario).
+  const EA_10_MENSUAL = Math.pow(1.10, 12) - 1;
+
   it('una sola deuda no genera recomendación', () => {
-    const r = recomendarEstrategia([{ id: 'a', tasaEA: 0.20, saldo: 1_000_000 }]);
+    const r = recomendarEstrategia([dp()]);
     expect(r.estrategia).toBeNull();
     expect(r.razon).toBe('');
+    expect(r.viable).toBe(true);
   });
 
-  it('lista vacia o input invalido devuelve null', () => {
+  it('lista vacia o input invalido devuelve null y viable', () => {
     expect(recomendarEstrategia([]).estrategia).toBeNull();
     expect(recomendarEstrategia(null).estrategia).toBeNull();
-    expect(recomendarEstrategia(undefined).estrategia).toBeNull();
+    expect(recomendarEstrategia(undefined).viable).toBe(true);
   });
 
-  it('todas las deudas con tasa 0 sugiere Bola de nieve', () => {
+  it('ambas completan y todas sin interés: Bola de nieve', () => {
     const r = recomendarEstrategia([
-      { id: 'a', tasaEA: 0, saldo: 1_000_000 },
-      { id: 'b', tasaEA: 0, saldo: 500_000 },
+      dp({ id: 'a', tasaEA: 0, saldo: 1_000_000, cuota: 100_000 }),
+      dp({ id: 'b', tasaEA: 0, saldo: 500_000,   cuota: 100_000 }),
     ]);
     expect(r.estrategia).toBe('bolaNieve');
+    expect(r.viable).toBe(true);
     expect(r.razon).toMatch(/no cobran inter[eé]s(es)?/i);
   });
 
-  it('diferencia de tasas >= 5 puntos EA sugiere Avalancha', () => {
+  it('ambas completan y avalancha ahorra de forma material: Avalancha', () => {
     const r = recomendarEstrategia([
-      { id: 'a', tasaEA: 0.28, saldo: 5_000_000 },
-      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
-    ]);
+      dp({ id: 'cara',   tasaEA: 0.40, saldo: 5_000_000, cuota: 200_000 }),
+      dp({ id: 'barata', tasaEA: 0.05, saldo: 500_000,   cuota: 50_000 }),
+    ], 100_000);
     expect(r.estrategia).toBe('avalancha');
-    expect(r.razon).toMatch(/m[aá]s alta|intereses/i);
+    expect(r.viable).toBe(true);
+    expect(r.ahorroIntereses).toBeGreaterThan(0);
   });
 
-  it('tasas similares (<5 pts) sugiere Bola de nieve', () => {
+  it('ambas completan con tasas iguales (empate): Bola de nieve', () => {
     const r = recomendarEstrategia([
-      { id: 'a', tasaEA: 0.12, saldo: 5_000_000 },
-      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
-    ]);
+      dp({ id: 'a', tasaEA: 0.10, saldo: 1_000_000, cuota: 100_000 }),
+      dp({ id: 'b', tasaEA: 0.10, saldo: 1_000_000, cuota: 100_000 }),
+    ], 50_000);
     expect(r.estrategia).toBe('bolaNieve');
-    expect(r.razon).toMatch(/parecidas/i);
+    expect(r.viable).toBe(true);
   });
 
-  it('limite exacto de 5 puntos califica como Avalancha', () => {
+  // Escenario reportado por el usuario: deuda al 10% mensual con cuota que no
+  // cubre el interés + deuda sin interés. Ningún orden cierra el plan.
+  it('plan inviable: no recomienda estrategia, devuelve diagnóstico', () => {
     const r = recomendarEstrategia([
-      { id: 'a', tasaEA: 0.15, saldo: 1_000_000 },
-      { id: 'b', tasaEA: 0.10, saldo: 1_000_000 },
-    ]);
+      dp({ id: 'interes', descripcion: 'Crédito caro', saldo: 200_000, tasaEA: EA_10_MENSUAL, cuota: 10_000 }),
+      dp({ id: 'cero',    descripcion: 'Préstamo',     saldo: 200_000, tasaEA: 0,             cuota: 20_000 }),
+    ], 0);
+    expect(r.viable).toBe(false);
+    expect(r.estrategia).toBeNull();
+    expect(r.diagnostico).not.toBeNull();
+  });
+
+  it('plan inviable: señala la deuda creciente (cuota < interés)', () => {
+    const r = recomendarEstrategia([
+      dp({ id: 'interes', descripcion: 'Crédito caro', saldo: 200_000, tasaEA: EA_10_MENSUAL, cuota: 10_000 }),
+      dp({ id: 'cero',    descripcion: 'Préstamo',     saldo: 200_000, tasaEA: 0,             cuota: 20_000 }),
+    ], 0);
+    const ids = r.diagnostico.deudasCrecientes.map(d => d.id);
+    expect(ids).toContain('interes');
+    expect(ids).not.toContain('cero');
+    const creciente = r.diagnostico.deudasCrecientes.find(d => d.id === 'interes');
+    expect(creciente.deficitMensual).toBeCloseTo(10_000, 0); // 20k interés - 10k cuota
+  });
+
+  it('plan inviable: extraMinimo vuelve viable el plan y es mínimo en la grilla', () => {
+    const deudas = [
+      dp({ id: 'interes', saldo: 200_000, tasaEA: EA_10_MENSUAL, cuota: 10_000 }),
+      dp({ id: 'cero',    saldo: 200_000, tasaEA: 0,             cuota: 20_000 }),
+    ];
+    const r = recomendarEstrategia(deudas, 0);
+    const extra = r.diagnostico.extraMinimo;
+    expect(extra).toBeGreaterThan(0);
+    // Con el extra mínimo, el plan completa.
+    expect(simularEstrategiaPago(deudas, extra, 'avalancha').completo).toBe(true);
+    // Un escalón menos (10.000) ya no completa: confirma minimalidad en la grilla.
+    if (extra >= 10_000) {
+      expect(simularEstrategiaPago(deudas, extra - 10_000, 'avalancha').completo).toBe(false);
+    }
+  });
+
+  it('un extra suficiente convierte un plan inviable en viable', () => {
+    const deudas = [
+      dp({ id: 'interes', saldo: 200_000, tasaEA: EA_10_MENSUAL, cuota: 10_000 }),
+      dp({ id: 'cero',    saldo: 200_000, tasaEA: 0,             cuota: 20_000 }),
+    ];
+    expect(recomendarEstrategia(deudas, 0).viable).toBe(false);
+    const conExtra = recomendarEstrategia(deudas, 500_000);
+    expect(conExtra.viable).toBe(true);
+    expect(conExtra.estrategia).not.toBeNull();
+  });
+
+  it('solo avalancha cierra el plan: la recomienda', () => {
+    // Deuda tóxica con saldo grande y tasa muy alta. Bola la deja al final
+    // (ataca primero la de menor saldo) y la tóxica crece sin cerrar; Avalancha
+    // la ataca primero y sí completa el plan.
+    const deudas = [
+      dp({ id: 'toxica',  descripcion: 'Gota a gota', saldo: 1_000_000, tasaEA: EA_10_MENSUAL, cuota: 10_000 }),
+      dp({ id: 'benigna', descripcion: 'Sin interés', saldo: 900_000,   tasaEA: 0,             cuota: 20_000 }),
+    ];
+    const avalancha = simularEstrategiaPago(deudas, 100_000, 'avalancha');
+    const bola      = simularEstrategiaPago(deudas, 100_000, 'bolaNieve');
+    // Precondición del escenario: avalancha cierra, bola no.
+    expect(avalancha.completo).toBe(true);
+    expect(bola.completo).toBe(false);
+    const r = recomendarEstrategia(deudas, 100_000);
     expect(r.estrategia).toBe('avalancha');
+    expect(r.viable).toBe(true);
+  });
+
+  it('nunca recomienda una estrategia cuyo plan no cierra (invariante)', () => {
+    // Si bola completa, avalancha también (avalancha es óptima en intereses):
+    // por tanto el motor jamás devuelve estrategia con viable=false.
+    const r = recomendarEstrategia([
+      dp({ id: 'a', tasaEA: 0.30, saldo: 3_000_000, cuota: 50_000 }),
+      dp({ id: 'b', tasaEA: 0.10, saldo: 1_000_000, cuota: 30_000 }),
+    ], 0);
+    if (r.estrategia !== null) expect(r.viable).toBe(true);
   });
 });
 
@@ -1265,6 +1384,71 @@ describe('validarAbono()', () => {
   it('acumula múltiples errores en una sola pasada', () => {
     const errs = validarAbono({ monto: '0', cuentaId: '', fecha: '' }, null);
     expect(errs.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+// ── renderFormAbono() - selector de cuenta ───────────────────────
+
+describe('renderFormAbono() - selector de cuenta', () => {
+  const deuda = {
+    id: 'd1',
+    descripcion: 'Tarjeta de crédito',
+    tipo: 'deuda-entidad',
+    saldoTotal: 2_000_000,
+    cuotaMensual: 200_000,
+    activo: true,
+  };
+
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+
+  beforeEach(() => {
+    S.cuentas = [];
+  });
+
+  it('sin cuentas: estado vacío con instrucción, sin form', () => {
+    S.cuentas = [];
+    const html = renderFormAbono(deuda);
+    expect(html).not.toContain('form-abono');
+    expect(html).toContain('al menos una cuenta activa');
+  });
+
+  it('1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormAbono(deuda);
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('Sale de:');
+    expect(html).toContain('Nequi principal');
+    expect(html).not.toContain('<select id="abono-cuenta"');
+  });
+
+  it('1 cuenta con saldo en cero: hint con clase de advertencia', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 0)];
+    const html = renderFormAbono(deuda);
+    expect(html).toContain('form-hint--danger');
+  });
+
+  it('1 cuenta activa + 1 inactiva: se asume la activa', () => {
+    S.cuentas = [
+      cuenta('c1', 'Bancolombia'),
+      { ...cuenta('c2', 'Cerrada'), activa: false },
+    ];
+    const html = renderFormAbono(deuda);
+    expect(html).toContain('value="c1"');
+    expect(html).not.toContain('<select id="abono-cuenta"');
+  });
+
+  it('varias cuentas: select visible con todas las activas', () => {
+    S.cuentas = [
+      cuenta('c1', 'Bancolombia'),
+      cuenta('c2', 'Nequi'),
+    ];
+    const html = renderFormAbono(deuda);
+    expect(html).toContain('<select id="abono-cuenta"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
   });
 });
 

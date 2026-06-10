@@ -3,7 +3,7 @@
  *
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  *
- * Préstamo personal = plata que TÚ prestaste a familia/amigos (espejo de
+ * Préstamo personal = dinero que TÚ prestaste a familia/amigos (espejo de
  * `compromisos.deuda`, donde tú le debes a alguien). Es informal, sin tasa
  * de interés ni amortización - solo registro de monto, pagos parciales,
  * antigüedad y opcionalmente una fecha pactada de devolución.

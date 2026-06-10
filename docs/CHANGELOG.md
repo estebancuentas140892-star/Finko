@@ -7,6 +7,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): motor de recomendación de estrategia basado en simulación · 2026-06-09
+
+`recomendarEstrategia(deudas, extraMensual)` deja de decidir por la dispersión de tasas y ahora decide a partir de la **simulación real** de ambas estrategias. El cambio nace de un caso reportado: deuda al 10% mensual con cuota que no cubre el interés + deuda sin interés, donde la app recomendaba Avalancha aunque el plan **nunca termina**. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). SW v131 → v132. 1256/1256 tests verdes (+8 netos en compromisos).
+
+Orden de decisión: 0/1 deuda → sin recomendación; ninguna estrategia cierra → `viable: false` con diagnóstico (deudas crecientes + pago extra mínimo viable); solo una cierra → esa; ambas cierran → Bola si todas sin interés o ahorro inmaterial, Avalancha si ahorra >= $50.000 o >= 1 mes. Invariante clave: "si Bola cierra, Avalancha cierra", así el motor nunca recomienda un plan que no termina.
+
+- **`modules/dominio/compromisos/logic.js`:** `recomendarEstrategia` reescrita (firma con `extraMensual`, retorno extendido con `viable`/`diagnostico`/`ahorroIntereses`/`ahorroMeses`, retrocompatible). Nuevos helpers `_diagnosticarInviabilidad` y `_calcularExtraMinimoViable` (búsqueda binaria en múltiplos de $10.000). `filtrarDeudasPagables` marca `tasaDesconocida` para deuda-entidad con `tasa: null`. Constante `UMBRAL_AHORRO_MATERIAL = 50.000`.
+- **`modules/dominio/compromisos/views/estrategia.js`:** pasa `extraMensual` al motor. Banner `_renderDiagnosticoInviable` (plan que no cierra) y nota `_renderAvisoTasaDesconocida` (tasa sin registrar). Sin marcar card recomendada cuando el plan es inviable.
+- **`modules/dominio/compromisos/views/lista.js`:** deuda-entidad con tasa null muestra "tasa por confirmar" en vez de "sin interés".
+- **`styles/components/charts.css`:** clases `.estrategia-card__alerta` (danger) y `.estrategia-card__nota` (info), siguiendo el patrón de `.estrategia-card__no-aplica`. Solo `var(--fk-*)`.
+- **`tests/unit/compromisos.test.js`:** bloque `recomendarEstrategia` reescrito (escenario inviable del usuario, extra mínimo, transición inviable→viable, solo-avalancha, invariante) + tests de `tasaDesconocida`.
+- **`service-worker.js`:** `CACHE_NAME` v131 → v132.
+
+---
+
+### feat(deudas): tasa de interés opcional en deudas con entidad · 2026-06-09
+
+La tasa EA dejó de ser obligatoria al registrar una deuda con entidad: muchas personas no la conocen. Si se omite, la deuda se guarda con `tasa: null` (desconocida, distinto de 0 = "sin interés") y la app invita a consultarla. El form muestra un hint informativo. Parte de la misma sesión que el motor de recomendación.
+
+- **`modules/dominio/compromisos/logic.js`:** `validarCompromiso` ya no exige tasa para `deuda-entidad` (valida rango solo si se ingresa). `normalizarCompromiso` guarda `null` cuando falta.
+- **`modules/dominio/compromisos/views/formularios.js`:** label "(opcional)", sin `required`, hint con el mensaje "¿No conoces tu tasa? Puedes continuar...".
+- **`modules/dominio/compromisos/views/lista.js`:** "tasa por confirmar" para entidad sin tasa.
+- **`tests/unit/compromisos.test.js`:** sin tasa = válido, tasa negativa = error, normalización a `null`.
+
+---
+
 ### feat(ingresos): motor de distribución adaptativa del ingreso (Fase 3) · 2026-06-09
 
 Fase 3 y cierre de la serie "coaching de ingresos". Tarjeta "¿Cómo distribuir $X?" debajo del nudge de próximo cobro, con split adaptativo basado en la regla 50/30/20 ajustada al peso real de los gastos fijos del usuario. Sin cambio de schema. SW v130 → v131. 1235/1235 tests verdes (+14).

@@ -235,7 +235,7 @@ export function validarIngreso(datos) {
     errores.push('El monto debe ser un número mayor a 0.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
-    errores.push('Debés elegir una frecuencia válida.');
+    errores.push('Debes elegir una frecuencia válida.');
   }
   // diaPago es opcional; si se proporcionó y la frecuencia lo soporta, validar rango.
   if (datos.diaPago !== undefined && datos.diaPago !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia)) {
@@ -285,14 +285,14 @@ export function validarCuenta(datos) {
 
   // Nombre es opcional: si esta vacio, normalizarCuenta() lo autogenera.
   if (!datos.banco?.trim() || datos.banco === '') {
-    errores.push('Debés elegir un banco o billetera.');
+    errores.push('Debes elegir un banco o billetera.');
   }
   // Las billeteras y el efectivo no tienen un "tipo de cuenta" bancario:
   // el selector se oculta en el form y el tipo se normaliza automáticamente.
   const clase = _claseBanco(datos.banco ?? '');
   if (clase !== 'efectivo' && clase !== 'billetera'
       && (!datos.tipo?.trim() || datos.tipo === '')) {
-    errores.push('Debés elegir el tipo de cuenta.');
+    errores.push('Debes elegir el tipo de cuenta.');
   }
   const saldo = Number(datos.saldo);
   if (isNaN(saldo) || saldo < 0) {

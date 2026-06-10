@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (motor distribución adaptativa Fase 3; 1235/1235 verde)
+> Última actualización: 2026-06-09 (motor de recomendación de deudas por simulación; 1256/1256 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1235/1235 verdes (+14: sugerirDistribucionIngreso) |
+| Tests unitarios + integración | 1256/1256 verdes (+8: recomendarEstrategia por simulación) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,34 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): motor de recomendación de estrategia por simulación · 2026-06-09
+
+`recomendarEstrategia(deudas, extraMensual)` decide a partir de la simulación real de ambas estrategias, no de la dispersión de tasas. Caso que lo motivó: deuda al 10% mensual con cuota que no cubre el interés + deuda sin interés, donde el plan nunca cierra y la app igual recomendaba Avalancha. Ahora detecta planes inviables (`viable: false`), diagnostica la deuda creciente y calcula el pago extra mínimo. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). SW v131 → v132. 1256/1256 tests verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `recomendarEstrategia` reescrita (firma con `extraMensual`, retorno extendido y retrocompatible). Helpers `_diagnosticarInviabilidad` y `_calcularExtraMinimoViable` (búsqueda binaria). `filtrarDeudasPagables` marca `tasaDesconocida`. Constante `UMBRAL_AHORRO_MATERIAL`. |
+| `modules/dominio/compromisos/views/estrategia.js` | Pasa `extraMensual` al motor. Banner de plan inviable + nota de tasa desconocida. |
+| `modules/dominio/compromisos/views/lista.js` | "tasa por confirmar" para entidad con tasa null. |
+| `styles/components/charts.css` | `.estrategia-card__alerta` (danger) y `.estrategia-card__nota` (info). |
+| `tests/unit/compromisos.test.js` | Bloque `recomendarEstrategia` reescrito + tests de `tasaDesconocida`. |
+| `docs/DECISIONS/006-recomendacion-deudas-por-simulacion.md` | Nuevo ADR. |
+| `service-worker.js` | v131 → v132. |
+
+---
+
+### feat(deudas): tasa de interés opcional en deudas con entidad · 2026-06-09
+
+La tasa EA dejó de ser obligatoria al registrar una deuda con entidad (muchas personas no la conocen). Si se omite, se guarda `tasa: null` (desconocida ≠ 0) y la app invita a consultarla. Misma sesión que el motor de recomendación.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `validarCompromiso` no exige tasa para entidad; `normalizarCompromiso` guarda `null` si falta. |
+| `modules/dominio/compromisos/views/formularios.js` | Label "(opcional)", sin `required`, hint informativo "¿No conoces tu tasa?...". |
+| `tests/unit/compromisos.test.js` | Sin tasa = válido, tasa negativa = error, normalización a `null`. |
+
+---
 
 ### feat(ingresos): motor de distribución adaptativa del ingreso (Fase 3) · 2026-06-09
 
@@ -87,52 +115,15 @@ Fase 1 de la mejora de "Mis ingresos". Agrega el campo opcional `diaPago` (núme
 
 ---
 
-### fix(a11y): agregar skip link "Saltar al contenido principal" (WCAG 2.4.1) · 2026-06-09
-
-El CSS `.skip-link` existía desde la fase inicial pero el elemento `<a>` nunca se había agregado al HTML. Un usuario que navega solo con teclado no podía saltarse los 20+ enlaces de la barra lateral para ir directo al contenido: debía recorrerlos todos en cada carga. Ahora `index.html` tiene `<a class="skip-link" href="#main-content">Saltar al contenido principal</a>` como primer elemento del `<body>`. El destino `#main-content` ya tenía `tabindex="-1"` (correcto). Se agrega test `'tiene skip link apuntando a #main-content (WCAG 2.4.1)'` en `tests/unit/a11y.test.js`. SW v127 → v128.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Primer elemento del `<body>`: `<a class="skip-link" href="#main-content">Saltar al contenido principal</a>` |
-| `tests/unit/a11y.test.js` | +1 test: verifica que el skip link existe, apunta a `#main-content` y que el destino tiene `tabindex="-1"` |
-| `service-worker.js` | `CACHE_NAME` v127 → v128 |
-
----
-
-### refactor(cuentas): formulario dinámico por clase de entidad + schema v11 + ADR IVA · 2026-06-09
-
-Dos mejoras de UX en Mis Cuentas decididas con el usuario, más una decisión de producto documentada:
-
-1. **Formulario dinámico por clase de entidad.** `BANCOS_CO` ahora tiene `clase` ('banco'/'billetera'/'efectivo'/'otro'). El select "Tipo de cuenta" empieza oculto y vacío; al elegir el banco, JS lo puebla con los tipos válidos para esa clase (banco: Corriente/Ahorros; billetera: oculto, saldo único; efectivo: oculto; otro: Ahorros/Otro). La cuota de manejo también se oculta para Efectivo. `_toggleCamposEfectivo` se generaliza a `_toggleCamposPorClase`.
-2. **Quitar "Inversión" de los tipos de cuenta.** Las inversiones reales viven en la sección Inversión (J.2). Las cuentas viejas con `tipo='Inversión'` migran a `'Otro'` (schema v10 → v11, migración idempotente). `normalizarCuenta` ahora asigna el tipo correcto por clase: billetera → banco id ('Nequi'); efectivo → 'Efectivo'; banco/otro → lo que eligió el usuario.
-3. **ADR 005:** documentada la decisión de no desglozar IVA/servicio en gastos. El total pagado es suficiente para finanzas personales; desglosar no cambia ninguna decisión y añade fricción.
-
-SW v126 → v127. 1182/1182 tests verdes (+18).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `clase` en cada entrada de `BANCOS_CO`. Quitar `'Inversión'` de `TIPOS_CUENTA`. Nuevo `TIPOS_POR_CLASE`. |
-| `modules/core/storage.js` | `SCHEMA_VERSION` 10 → 11. Migración v10 → v11: `tipo='Inversión'` → `'Otro'`. |
-| `modules/core/state.js` | `_version` inicial 10 → 11. |
-| `modules/dominio/tesoreria/logic.js` | Importa `BANCOS_CO`. Helper `_claseBanco`. `validarCuenta`: no exige tipo para billeteras. `normalizarCuenta`: tipo por clase. |
-| `modules/dominio/tesoreria/view.js` | Tipo select inicia oculto y vacío (JS lo puebla). Quitar `TIPOS_CUENTA` del import. |
-| `modules/dominio/tesoreria/index.js` | Importa `BANCOS_CO`, `TIPOS_POR_CLASE`, `esc`. `_toggleCamposPorClase` (4 clases). `_editarCuenta` reordenado. |
-| `tests/unit/tesoreria.test.js` | +4 tests: billetera sin tipo válido, normalizar billetera, nombre explícito. |
-| `tests/unit/storage.test.js` | +5 tests: migración v11 (reasigna, no toca otros, preserva campos, no-op, idempotente). |
-| `tests/unit/constants.test.js` | +10 tests: clase por entidad + TIPOS_CUENTA sin Inversión + consistencia TIPOS_POR_CLASE. |
-| `tests/unit/state.test.js` | Assert `_version` 10 → 11. |
-| `docs/DECISIONS/005-no-desglose-iva-servicio.md` | Nuevo ADR: por qué no se desgloza IVA/propina en el registro de gastos. |
-| `service-worker.js` | v126 → v127. |
-
----
-
-> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
 ## 4. Qué sigue (roadmap post-v1.0)
 
 **Serie cerrada:** "Coaching de ingresos" (Fases 1, 2 y 3) completada el 2026-06-09. `diaPago` en ingresos + nudge de próximo cobro + tarjeta de distribución adaptativa. SW v128 → v131. 1235/1235 tests verdes.
+
+**Mejoras de deudas (2026-06-09):** tasa de interés opcional al registrar deuda con entidad + motor de recomendación de estrategia por simulación (detecta planes inviables y calcula pago extra mínimo). SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md).
 
 **Próxima tarea natural:** ninguna urgente. Opciones disponibles abajo.
 

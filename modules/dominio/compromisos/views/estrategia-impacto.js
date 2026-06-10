@@ -12,7 +12,7 @@ import { f, esc as _esc } from '../../../infra/utils.js';
 
 /**
  * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
- *   1. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   1. Apuntas primero a            → info (azul, la deuda que esta estrategia prioriza)
  *   2. Total en intereses           → danger (rojo, el costo real que esta estrategia minimiza)
  *   + Comparativa vs Bola de nieve  → banner siempre visible (3 escenarios)
  *
@@ -22,7 +22,7 @@ import { f, esc as _esc } from '../../../infra/utils.js';
  * por un mensaje comparativo siempre visible que comunica el ahorro real
  * (o explica por qué no hay ahorro y cómo conseguirlo).
  *
- * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
+ * "Apuntas primero a" muestra la deuda prioritaria de la estrategia (la de
  * mayor tasa), no la que se cierra primero (que podría ser otra si tiene
  * cuota grande o saldo chico). Es lo que el usuario debe atacar con su
  * presupuesto extra para que esta estrategia funcione.
@@ -37,7 +37,7 @@ export function renderImpactoAvalancha(resultado, extraMensual) {
   const target = activa.orden?.[0];
   const filaTarget = target
     ? `<li class="estrategia-card__metrica">
-         <span class="estrategia-card__metrica-label">Apuntás primero a</span>
+         <span class="estrategia-card__metrica-label">Apuntas primero a</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">
            ${_esc(target.descripcion)}
          </strong>
@@ -49,7 +49,7 @@ export function renderImpactoAvalancha(resultado, extraMensual) {
     <ul class="estrategia-card__metricas">
       ${filaTarget}
       <li class="estrategia-card__metrica">
-        <span class="estrategia-card__metrica-label">Total que pagás en intereses</span>
+        <span class="estrategia-card__metrica-label">Total que pagas en intereses</span>
         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
       </li>
     </ul>
@@ -58,16 +58,16 @@ export function renderImpactoAvalancha(resultado, extraMensual) {
 
 /**
  * Bola de nieve enfoca el progreso psicológico. Sus métricas (en orden):
- *   1. Apuntás primero a            → info (azul, la deuda que esta estrategia prioriza)
- *   2. Cerrás tu primera deuda en   → success (verde, su victoria temprana)
+ *   1. Apuntas primero a            → info (azul, la deuda que esta estrategia prioriza)
+ *   2. Cierras tu primera deuda en   → success (verde, su victoria temprana)
  *
  * Decisión v7.10: removida "Libre de deudas en" igual que en Avalancha
  * (suele coincidir entre estrategias y no aportaba valor comparativo).
  * Bola de nieve no incluye comparativa Avalancha-vs-BN: el ahorro financiero
- * es la métrica de Avalancha; aquí la victoria propia es "Cerrás tu primera
+ * es la métrica de Avalancha; aquí la victoria propia es "Cierras tu primera
  * deuda en" (impulso psicológico, motivación temprana).
  *
- * "Apuntás primero a" muestra la deuda prioritaria de la estrategia (la de
+ * "Apuntas primero a" muestra la deuda prioritaria de la estrategia (la de
  * menor saldo). Suele coincidir con la primera que se cierra, así que evitamos
  * repetir su nombre como tip en la fila siguiente para no duplicar la info.
  */
@@ -80,7 +80,7 @@ export function renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const target = activa.orden?.[0];
   const filaTarget = target
     ? `<li class="estrategia-card__metrica">
-         <span class="estrategia-card__metrica-label">Apuntás primero a</span>
+         <span class="estrategia-card__metrica-label">Apuntas primero a</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--info">
            ${_esc(target.descripcion)}
          </strong>
@@ -100,7 +100,7 @@ export function renderImpactoBolaNieve(resultado, deudas, extraMensual) {
   const mostrarTipPrimera = primera && primera.id !== target?.id;
   const filaPrimera = primera
     ? `<li class="estrategia-card__metrica">
-         <span class="estrategia-card__metrica-label">Cerrás tu primera deuda en</span>
+         <span class="estrategia-card__metrica-label">Cierras tu primera deuda en</span>
          <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--success">
            ${formatearDuracion(primera.mesPagado)}
          </strong>
@@ -154,7 +154,7 @@ function _renderComparativa(resultado, extraMensual) {
   if (extraMensual > 0) {
     return `
       <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
-        ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve).
+        ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Puedes elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve).
       </p>`;
   }
 

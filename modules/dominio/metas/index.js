@@ -60,7 +60,7 @@ async function _eliminarMeta(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar meta',
-    mensaje:        `¿Querés eliminar la meta "${meta.nombre}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar la meta "${meta.nombre}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -108,7 +108,7 @@ function _guardarAbonoMeta() {
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const requiereCuenta = cuentasActivas.length > 1;
   const erroresCuenta  = requiereCuenta && !datos.cuentaId
-    ? ['Debés elegir desde qué cuenta sale el dinero.']
+    ? ['Debes elegir desde qué cuenta sale el dinero.']
     : [];
   const errores = [...validarAbono(datos.monto), ...erroresCuenta];
 

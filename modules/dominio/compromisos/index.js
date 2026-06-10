@@ -82,7 +82,7 @@ async function _guardarCompromiso() {
   if (alerta) {
     const ok = await confirmar({
       titulo:         'La cuota no cubre los intereses',
-      mensaje:        `La cuota mensual (${f(alerta.cuotaMensual)}) es menor al interés mensual de esta deuda (${f(alerta.interesMensual)}). Con esta cuota, la deuda crece ${f(alerta.deficit)} cada mes en vez de bajar. ¿Querés registrarla de todas formas?`,
+      mensaje:        `La cuota mensual (${f(alerta.cuotaMensual)}) es menor al interés mensual de esta deuda (${f(alerta.interesMensual)}). Con esta cuota, la deuda crece ${f(alerta.deficit)} cada mes en vez de bajar. ¿Quieres registrarla de todas formas?`,
       confirmarTexto: 'Registrar igual',
       peligroso:      false,
     });
@@ -108,7 +108,7 @@ async function _eliminarCompromiso(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar compromiso',
-    mensaje:        `¿Querés eliminar "${compromiso.descripcion}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${compromiso.descripcion}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -268,7 +268,7 @@ async function _archivarCompromiso(el) {
 
   const ok = await confirmar({
     titulo:         'Archivar deuda saldada',
-    mensaje:        `"${compromiso.descripcion}" tiene saldo $0. ¿Querés archivarla para que no aparezca más en la lista?`,
+    mensaje:        `"${compromiso.descripcion}" tiene saldo $0. ¿Quieres archivarla para que no aparezca más en la lista?`,
     confirmarTexto: 'Archivar',
     peligroso:      false,
   });
@@ -305,7 +305,7 @@ function _actualizarTipProyeccion() {
   }
 
   const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
-  tipEl.textContent = `Con este abono terminás ${etiqueta}.`;
+  tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
 }
 
 function _actualizarSaldoDisponibleAbono() {
@@ -315,7 +315,7 @@ function _actualizarSaldoDisponibleAbono() {
 
   const cuentaId = sel.value;
   if (!cuentaId) {
-    tip.textContent = 'Elegí una cuenta para ver el saldo disponible.';
+    tip.textContent = 'Elige una cuenta para ver el saldo disponible.';
     tip.classList.remove('form-hint--danger');
     tip.classList.add('form-hint--muted');
     return;

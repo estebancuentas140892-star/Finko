@@ -61,10 +61,10 @@ function _mostrarGuiadoCero(contexto) {
   overlay.innerHTML = `
     <div class="modal modal--confirm" role="document">
       <header class="modal__header">
-        <h2 id="cta-sin-cuentas-title" class="modal__title">Necesitás una cuenta primero</h2>
+        <h2 id="cta-sin-cuentas-title" class="modal__title">Necesitas una cuenta primero</h2>
       </header>
       <div class="modal__body">
-        <p class="confirm__mensaje">Para ${_esc(contexto)}, primero registrá al menos una cuenta en Mis Cuentas. Solo te toma un momento.</p>
+        <p class="confirm__mensaje">Para ${_esc(contexto)}, primero agrega al menos una cuenta en Mis Cuentas. Solo te toma un momento.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-role="cancelar">Ahora no</button>
@@ -134,7 +134,7 @@ function _mostrarPickerCuenta(activas, contexto) {
           <h2 id="cuenta-picker-title" class="modal__title">¿Desde qué cuenta?</h2>
         </header>
         <div class="modal__body">
-          <p class="confirm__mensaje">Elegí la cuenta desde la que querés ${_esc(contexto)}.</p>
+          <p class="confirm__mensaje">Elige la cuenta desde la que quieres ${_esc(contexto)}.</p>
           <div class="cuenta-picker__lista" role="list">
             ${botones}
           </div>

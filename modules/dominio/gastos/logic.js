@@ -136,13 +136,13 @@ export function validarGasto(datos) {
     errores.push('El monto debe ser un número mayor a 0.');
   }
   if (!datos.categoria?.trim()) {
-    errores.push('Debés elegir una categoría.');
+    errores.push('Debes elegir una categoría.');
   }
   if (!datos.fecha?.trim()) {
     errores.push('La fecha es obligatoria.');
   }
   if (!datos.cuentaId?.trim()) {
-    errores.push('Debés elegir de qué cuenta sale la plata.');
+    errores.push('Debes elegir de qué cuenta sale el dinero.');
   }
 
   return errores;
@@ -273,7 +273,7 @@ export function validarGastoRapido(monto, cuentaId = null, requiereCuenta = fals
     errores.push('El monto debe ser un número mayor a 0.');
   }
   if (requiereCuenta && !cuentaId?.trim?.()) {
-    errores.push('Elegí desde qué cuenta sale el dinero.');
+    errores.push('Elige desde qué cuenta sale el dinero.');
   }
   return errores;
 }

@@ -622,6 +622,40 @@
 .estrategia-card__no-aplica .estrategia-card__bloque-titulo {
   color: var(--fk-warning-text);
 }
+
+/* Banner de plan inviable: ninguna estrategia cierra con el pago actual.
+   Tono danger (más grave que "no aplica"). */
+.estrategia-card__alerta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-danger-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-danger-text) 40%, transparent);
+  border-radius: var(--fk-radius-md);
+  margin-bottom: var(--fk-space-3);
+}
+.estrategia-card__alerta .estrategia-card__bloque-titulo {
+  color: var(--fk-danger-text);
+}
+.estrategia-card__alerta-lista {
+  margin: 0;
+  padding-left: var(--fk-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+  font-size: var(--fk-text-sm);
+  line-height: 1.4;
+}
+
+/* Nota informativa: deudas con tasa sin registrar (se simulan como 0%). */
+.estrategia-card__nota {
+  padding: var(--fk-space-3);
+  background: var(--fk-info-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-info-text) 30%, transparent);
+  border-radius: var(--fk-radius-md);
+  margin-bottom: var(--fk-space-3);
+}
 .estrategia-card__metrica-tip {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);

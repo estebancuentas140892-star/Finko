@@ -229,8 +229,7 @@ test.describe('Gastos - CRUD', () => {
     const form = page.locator('#modal-gasto-body form');
     await form.locator('[name="descripcion"]').fill('Mercado prueba E2E');
     await form.locator('[name="monto"]').fill('150000');
-    // Selector de cuenta (obligatorio): la cuenta creada tiene nombre auto "Efectivo"
-    await form.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
+    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
     // Seleccionar la primera opción real del select de categoría
     await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
@@ -312,8 +311,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
 
-    // Selector de cuenta OBLIGATORIO - seleccionar por texto (nombre auto "Efectivo")
-    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
+    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
 
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
@@ -363,7 +361,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="descripcion"]').fill('Gasto a editar');
     await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
-    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
+    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
@@ -427,7 +425,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="descripcion"]').fill('Gasto a eliminar');
     await formGasto.locator('[name="monto"]').fill('200000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
-    await formGasto.locator('select[name="cuentaId"]').selectOption({ label: 'Efectivo' });
+    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
     const hoy = new Date().toISOString().slice(0, 10);
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
@@ -625,7 +623,7 @@ test.describe('Agenda', () => {
 // del día cuando hay un gasto-abono del mes actual vinculado al compromiso.
 
 test.describe('Agenda - badge abono', () => {
-  test('muestra badge "Ya abonaste este mes" en el detalle del día', async ({ page }) => {
+  test('muestra badge "Ya pagaste este mes" en el detalle del día', async ({ page }) => {
     const compromisoId = 'comp-badge-e2e';
     const hoy     = new Date();
     const anio    = hoy.getFullYear();
@@ -673,6 +671,6 @@ test.describe('Agenda - badge abono', () => {
     // El panel de detalle debe mostrar el badge de abono
     const badge = page.locator('.cal-detail__badge-abono');
     await expect(badge).toBeVisible({ timeout: 3_000 });
-    await expect(badge).toContainText('Ya abonaste este mes');
+    await expect(badge).toContainText('Ya pagaste este mes');
   });
 });

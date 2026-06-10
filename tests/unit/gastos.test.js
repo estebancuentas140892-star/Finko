@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   gastosMes,
   totalGastos,
@@ -16,6 +16,8 @@ import {
   esGastoPendiente,
   gastosPendientes,
 } from '../../modules/dominio/gastos/logic.js';
+import { renderFormGasto } from '../../modules/dominio/gastos/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -545,5 +547,64 @@ describe('gastosPendientes()', () => {
     const copia = [...gastos];
     gastosPendientes(gastos);
     expect(gastos).toEqual(copia);
+  });
+});
+
+// ── renderFormGasto() - selector de cuenta ───────────────────────
+
+describe('renderFormGasto() - selector de cuenta', () => {
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+
+  beforeEach(() => {
+    S.cuentas = [];
+  });
+
+  it('sin cuentas: empty state guiado, sin form', () => {
+    S.cuentas = [];
+    const html = renderFormGasto();
+    expect(html).not.toContain('form-gasto');
+    expect(html).toContain('Ir a Mis cuentas');
+  });
+
+  it('1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('type="hidden"');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('Sale de:');
+    expect(html).toContain('Nequi principal');
+    expect(html).not.toContain('<select id="gasto-cuenta"');
+  });
+
+  it('1 cuenta con saldo en cero: hint con clase de advertencia', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 0)];
+    const html = renderFormGasto();
+    expect(html).toContain('form-hint--danger');
+  });
+
+  it('1 cuenta activa + 1 inactiva: se asume la activa', () => {
+    S.cuentas = [
+      cuenta('c1', 'Bancolombia'),
+      { ...cuenta('c2', 'Cerrada'), activa: false },
+    ];
+    const html = renderFormGasto();
+    expect(html).toContain('value="c1"');
+    expect(html).not.toContain('<select id="gasto-cuenta"');
+  });
+
+  it('varias cuentas: select visible con todas las activas', () => {
+    S.cuentas = [
+      cuenta('c1', 'Bancolombia'),
+      cuenta('c2', 'Nequi'),
+    ];
+    const html = renderFormGasto();
+    expect(html).toContain('<select id="gasto-cuenta"');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
+    expect(html).not.toContain('type="hidden"');
   });
 });

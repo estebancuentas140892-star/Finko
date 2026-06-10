@@ -120,7 +120,9 @@ function _editarGasto(el) {
 
   // Precargar cuenta si el gasto la tenía (los gastos de versiones previas
   // pueden venir con cuentaId null - el usuario tendrá que elegir una).
-  const cuentaSel = form.querySelector('[name="cuentaId"]');
+  // Solo aplica al select (varias cuentas): con una sola cuenta activa el
+  // form trae un hidden con su id y el gasto queda asociado a esa cuenta.
+  const cuentaSel = form.querySelector('select[name="cuentaId"]');
   if (cuentaSel) {
     cuentaSel.value = gasto.cuentaId ?? '';
     _actualizarSaldoDisponible();
@@ -208,7 +210,7 @@ function _guardarGastoRapido() {
   renderListaGastos();
   updSaldo();
 
-  announce('Gasto rápido guardado. Lo podés completar después en Gastos.');
+  announce('Gasto rápido guardado. Lo puedes completar después en Gastos.');
   _toastGastoRapido(ultimo);
 }
 
@@ -297,7 +299,7 @@ async function _eliminarGasto(el) {
 
   const ok = await confirmar({
     titulo:         'Eliminar gasto',
-    mensaje:        `¿Querés eliminar "${gasto.descripcion}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${gasto.descripcion}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -335,7 +337,7 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
 
 /**
  * Aplica un mapa de deltas { cuentaId → delta } a los saldos.
- * Útil al editar un gasto que puede mover plata entre cuentas.
+ * Útil al editar un gasto que puede mover dinero entre cuentas.
  * @param {Record<string, number>} deltas
  */
 function _aplicarDeltasASaldos(deltas) {
@@ -371,7 +373,7 @@ function _actualizarSaldoDisponible() {
 
   const cuentaId = sel.value;
   if (!cuentaId) {
-    tip.textContent = 'Elegí una cuenta para ver el saldo disponible.';
+    tip.textContent = 'Elige una cuenta para ver el saldo disponible.';
     tip.classList.remove('form-hint--danger');
     tip.classList.add('form-hint--muted');
     return;

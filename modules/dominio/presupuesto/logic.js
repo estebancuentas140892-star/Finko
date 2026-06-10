@@ -151,9 +151,9 @@ export function validarPresupuesto(datos, presupuestosExistentes = [], presupues
   const errores = [];
 
   if (!datos.categoria?.trim()) {
-    errores.push('Debés elegir una categoría.');
+    errores.push('Debes elegir una categoría.');
   } else if (!CATEGORIAS_GASTO.includes(datos.categoria)) {
-    errores.push(`Categoría inválida. Usá una de: ${CATEGORIAS_GASTO.join(', ')}.`);
+    errores.push(`Categoría inválida. Usa una de: ${CATEGORIAS_GASTO.join(', ')}.`);
   }
 
   const monto = Number(datos.montoMensual);

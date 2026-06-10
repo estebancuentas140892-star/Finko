@@ -14,7 +14,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { esc as _esc } from '../../../infra/utils.js';
+import { esc as _esc, f } from '../../../infra/utils.js';
 import {
   filtrarDeudasPagables,
   compararEstrategias,
@@ -96,7 +96,7 @@ export function renderEstrategiaPago() {
   // a sus espaldas).
 
   const { extraMensual, estrategia, expandidoExtra } = _uiEstrategia;
-  const recomendacion = recomendarEstrategia(deudas);
+  const recomendacion = recomendarEstrategia(deudas, extraMensual);
 
   el.innerHTML = `
     <article class="estrategia-card">
@@ -107,6 +107,9 @@ export function renderEstrategiaPago() {
         </p>
       </header>
 
+      ${_renderAvisoTasaDesconocida(deudas)}
+      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico)}
+
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
         ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
@@ -116,6 +119,70 @@ export function renderEstrategiaPago() {
 
       ${_renderAcordeonExtra(expandidoExtra, extraMensual)}
     </article>`;
+}
+
+/**
+ * Banner de diagnóstico cuando ninguna estrategia logra cerrar el plan con el
+ * pago actual. Explica qué deudas crecen (su cuota no cubre el interés) y cuánto
+ * extra mensual haría viable el plan. No marca ninguna estrategia como mejor:
+ * con este flujo, ninguna termina de pagar.
+ *
+ * @param {{ deudasCrecientes: Array<{ id, descripcion, deficitMensual }>, extraMinimo: number|null }} diagnostico
+ */
+function _renderDiagnosticoInviable(diagnostico) {
+  if (!diagnostico) return '';
+  const { deudasCrecientes, extraMinimo } = diagnostico;
+
+  const listaCrecientes = deudasCrecientes.length > 0
+    ? `<ul class="estrategia-card__alerta-lista">
+         ${deudasCrecientes.map(d => `
+           <li><strong>${_esc(d.descripcion)}</strong>: crece ${f(d.deficitMensual)} al mes
+               porque la cuota no alcanza a cubrir el interés.</li>`).join('')}
+       </ul>`
+    : '';
+
+  const sugerenciaExtra = extraMinimo
+    ? `<p class="estrategia-card__bloque-body">
+         Para que tu plan funcione, necesitarías aportar al menos
+         <strong>${f(extraMinimo)} extra cada mes</strong>. Abre "¿Puedes pagar algo
+         extra cada mes?" abajo para simular el impacto.</p>`
+    : `<p class="estrategia-card__bloque-body">
+         Con el pago actual la deuda crece más rápido de lo que la reduces. Considera
+         renegociar la cuota o la tasa con tu entidad.</p>`;
+
+  return `
+    <div class="estrategia-card__alerta" role="status">
+      <p class="estrategia-card__bloque-titulo">⚠️ Con tu pago actual, estas deudas no se terminan de pagar</p>
+      ${listaCrecientes}
+      ${sugerenciaExtra}
+      <p class="estrategia-card__bloque-body">
+        <strong>Otras salidas:</strong> renegociar la tasa, consolidar las deudas en
+        un crédito más barato, o aumentar la cuota de la deuda más cara.
+      </p>
+    </div>`;
+}
+
+/**
+ * Nota informativa cuando alguna deuda con entidad no tiene tasa registrada.
+ * Esas deudas se simulan como 0% y subestiman los intereses reales, así que las
+ * recomendaciones podrían ser menos precisas hasta que el usuario confirme la tasa.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ */
+function _renderAvisoTasaDesconocida(deudas) {
+  const sinTasa = deudas.filter(d => d.tasaDesconocida);
+  if (sinTasa.length === 0) return '';
+
+  const nombres = sinTasa.map(d => `<strong>${_esc(d.descripcion)}</strong>`).join(', ');
+  const verbo = sinTasa.length === 1 ? 'tiene' : 'tienen';
+  return `
+    <div class="estrategia-card__nota" role="note">
+      <p class="estrategia-card__bloque-body">
+        ℹ️ ${nombres} no ${verbo} tasa registrada. La calculamos como 0% por ahora,
+        pero eso subestima los intereses: confirma la tasa con tu banco para una
+        recomendación más precisa.
+      </p>
+    </div>`;
 }
 
 const _META_ESTRATEGIA = {

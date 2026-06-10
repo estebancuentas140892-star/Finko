@@ -118,7 +118,7 @@ async function _eliminarPersonal(el) {
 
   const ok = await confirmar({
     titulo:         'Borrar préstamo',
-    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve la plata, solo limpia el registro.`,
+    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve el dinero, solo limpia el registro.`,
     confirmarTexto: 'Borrar',
     peligroso:      true,
   });
