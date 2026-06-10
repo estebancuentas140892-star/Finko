@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 11;
+const SCHEMA_VERSION = 12;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -183,6 +183,19 @@ function _migrate(raw) {
       for (const c of data.cuentas) {
         if (c && typeof c === 'object' && c.tipo === 'Inversión') {
           c.tipo = 'Otro';
+        }
+      }
+    }
+  }
+
+  // v11 → v12: se agrega `diaPago` (día del mes, 1-31) a los ingresos recurrentes.
+  // Los ingresos existentes quedan con diaPago: null (dato no capturado aún).
+  // Idempotente: si diaPago ya está presente en el item, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 12) {
+    if (Array.isArray(data.ingresos)) {
+      for (const i of data.ingresos) {
+        if (i && typeof i === 'object' && !('diaPago' in i)) {
+          i.diaPago = null;
         }
       }
     }

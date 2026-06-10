@@ -454,6 +454,65 @@ describe('Migración v10 → v11 (quitar tipo de cuenta Inversión)', () => {
   });
 });
 
+describe('Migración v11 → v12 (diaPago en ingresos)', () => {
+  it('ingresos existentes reciben diaPago: null', () => {
+    const v11 = {
+      ...createInitialState(),
+      _version: 11,
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v11));
+
+    loadData();
+
+    expect(S.ingresos.find(i => i.id === 'i1').diaPago).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('ingresos con diaPago ya seteado no se sobreescriben (idempotente)', () => {
+    const v11 = {
+      ...createInitialState(),
+      _version: 11,
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', activo: true, diaPago: 30 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v11));
+
+    loadData();
+
+    expect(S.ingresos.find(i => i.id === 'i1').diaPago).toBe(30);
+  });
+
+  it('sin ingresos en el snapshot → no lanza', () => {
+    const v11 = { ...createInitialState(), _version: 11, ingresos: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v11));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.ingresos).toEqual([]);
+  });
+
+  it('varios ingresos: todos reciben diaPago: null si no lo tenían', () => {
+    const v11 = {
+      ...createInitialState(),
+      _version: 11,
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true },
+        { id: 'i2', descripcion: 'Arriendo', monto: 800_000, frecuencia: 'Mensual', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v11));
+
+    loadData();
+
+    expect(S.ingresos.every(i => 'diaPago' in i)).toBe(true);
+    expect(S.ingresos.find(i => i.id === 'i1').diaPago).toBeNull();
+    expect(S.ingresos.find(i => i.id === 'i2').diaPago).toBeNull();
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

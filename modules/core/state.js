@@ -37,12 +37,15 @@ import { SMMLV } from './constants.js';
 
 /**
  * @typedef {Object} Ingreso
- * @property {string} id
- * @property {string} descripcion
- * @property {number} monto           COP.
- * @property {string} frecuencia      Ver FRECUENCIAS.
- * @property {boolean} activo
- * @property {string} fechaCreacion   ISO 8601.
+ * @property {string}      id
+ * @property {string}      descripcion
+ * @property {number}      monto           COP.
+ * @property {string}      frecuencia      Ver FRECUENCIAS.
+ * @property {number|null} diaPago         Día del mes (1-31) en que llega el pago.
+ *                                          Para Quincenal: primer día (1-15); el segundo
+ *                                          es diaPago + 15. null si no se capturó.
+ * @property {boolean}     activo
+ * @property {string}      fechaCreacion   ISO 8601.
  */
 
 /**
@@ -215,7 +218,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 11,
+    _version: 12,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -255,7 +258,7 @@ export function createInitialState() {
     /** Presupuestos por categoría (envelope budgeting). v2. */
     presupuestos: [],
 
-    /** Préstamos personales: plata que TÚ prestaste a otros (F.2, v3). */
+    /** Préstamos personales: dinero que TÚ prestaste a otros (F.2, v3). */
     personales: [],
 
     /** IDs de logros ya desbloqueados por el usuario (G.3, v4). */
