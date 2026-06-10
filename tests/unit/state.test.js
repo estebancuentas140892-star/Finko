@@ -18,14 +18,15 @@ describe('S - schema v3 inicial', () => {
     expect(S).toHaveProperty('gastos');
     expect(S).toHaveProperty('compromisos');
     expect(S).toHaveProperty('metas');
+    expect(S).toHaveProperty('apartados');
     expect(S).toHaveProperty('presupuestos');
     expect(S).toHaveProperty('personales');
     expect(S).toHaveProperty('ahorro');
     expect(S).toHaveProperty('inversiones');
   });
 
-  it('arranca con _version = 12', () => {
-    expect(S._version).toBe(12);
+  it('arranca con _version = 13', () => {
+    expect(S._version).toBe(13);
   });
 
   it('arranca con onboarded en false', () => {
@@ -38,6 +39,7 @@ describe('S - schema v3 inicial', () => {
     expect(S.gastos).toEqual([]);
     expect(S.compromisos).toEqual([]);
     expect(S.metas).toEqual([]);
+    expect(S.apartados).toEqual([]);
     expect(S.presupuestos).toEqual([]);
     expect(S.personales).toEqual([]);
     expect(S.inversiones).toEqual([]);

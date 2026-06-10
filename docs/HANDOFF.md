@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-09 (motor de recomendación de deudas por simulación; 1256/1256 verde)
+> Última actualización: 2026-06-10 (Apartados Fase 1: dominio para gastos previsibles; 1296/1296 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1256/1256 verdes (+8: recomendarEstrategia por simulación) |
+| Tests unitarios + integración | 1296/1296 verdes (+40: dominio Apartados) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(apartados): nuevo dominio para gastos previsibles - Fase 1 · 2026-06-10
+
+Sobres para separar dinero ante gastos previsibles (SOAT, impuestos, productos personales). Dominio nuevo (no extiende Metas), schema v13. Calcula cuánto apartar por periodo de cobro: "aparta $30.000 por quincena". Plantillas rápidas + hint en vivo + aporte que descuenta cuenta (patrón 0/1/varias). Ver [ADR 007](DECISIONS/007-dominio-apartados.md). SW v132 → v133. 1296/1296 verdes (+40).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/{logic,view,index}.js` | Dominio nuevo. `calcularAporteSugerido` es el corazón: faltante / periodos hasta la fecha. |
+| `modules/core/state.js` + `storage.js` | typedef Apartado, slice `apartados`, `_version` 13, migración v12 → v13. |
+| `index.html` | Ícono, sección, 2 modales, enlaces en sidebar y menú "más". |
+| `modules/infra/router.js` + `ui/bootstrap.js` | Ruta y `initApartados()`. |
+| `styles/components/domain.css` | Plantillas y sugerencia (solo `var(--fk-*)`). |
+| `tests/unit/apartados.test.js` (37) + storage/state | Lógica pura + migración v13. |
+| `docs/DECISIONS/007-dominio-apartados.md` | ADR nuevo. `service-worker.js` v132 → v133. |
+
+**Pendiente (fases siguientes):** Fase 2 recurrencia/ciclo (SOAT anual que se reinicia); Fase 3 derivar la frecuencia de aporte desde `S.ingresos` + nudges proactivos.
+
+---
 
 ### feat(deudas): motor de recomendación de estrategia por simulación · 2026-06-09
 
@@ -97,25 +115,7 @@ Nudge "Recibes X en N días" encima de la lista de ingresos. Dos funciones puras
 
 ---
 
-### feat(ingresos): diaPago en fuentes de ingreso recurrentes (schema v12) · 2026-06-09
-
-Fase 1 de la mejora de "Mis ingresos". Agrega el campo opcional `diaPago` (número 1-31) al shape de `Ingreso`. Desbloquea la Fase 2 (alerta proactiva de pago) y la Fase 3 (motor de distribución adaptativo). Schema v11 → v12. SW v128 → v129. 1201/1201 tests verdes (+18).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/state.js` | `diaPago?: number\|null` en `@typedef Ingreso`. `_version` 11 → 12. |
-| `modules/core/storage.js` | `SCHEMA_VERSION` 11 → 12. Migración v11 → v12: agrega `diaPago: null` a ingresos existentes. |
-| `modules/dominio/tesoreria/logic.js` | Exporta `FRECUENCIAS_CON_DIA`. `validarIngreso` y `normalizarIngreso` con soporte de `diaPago`. |
-| `modules/dominio/tesoreria/view.js` | Campo `diaPago` en el form (oculto/visible según frecuencia). Hint en item de lista cuando diaPago está seteado. |
-| `modules/dominio/tesoreria/index.js` | `_attachDiaPagoToggle(form)`: toggle de visibilidad + max/label dinámicos por frecuencia. |
-| `tests/unit/tesoreria.test.js` | +14 tests: `validarIngreso` (9) y `normalizarIngreso` (5) con diaPago. |
-| `tests/unit/storage.test.js` | +4 tests: migración v11 → v12. |
-| `tests/unit/state.test.js` | Assert `_version` 11 → 12. |
-| `service-worker.js` | `CACHE_NAME` v128 → v129. |
-
----
-
-> Para tareas anteriores (skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (diaPago schema v12, skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -125,7 +125,9 @@ Fase 1 de la mejora de "Mis ingresos". Agrega el campo opcional `diaPago` (núme
 
 **Mejoras de deudas (2026-06-09):** tasa de interés opcional al registrar deuda con entidad + motor de recomendación de estrategia por simulación (detecta planes inviables y calcula pago extra mínimo). SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md).
 
-**Próxima tarea natural:** ninguna urgente. Opciones disponibles abajo.
+**Apartados (2026-06-10):** dominio nuevo para gastos previsibles, Fase 1 cerrada. SW v132 → v133. 1296/1296 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
+
+**Próxima tarea natural:** Apartados Fase 2 (recurrencia/ciclo: un apartado como el SOAT se reinicia tras cumplirse/gastarse) y Fase 3 (derivar la frecuencia de aporte desde `S.ingresos` + nudges "tu SOAT vence en N meses, aparta $X").
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.

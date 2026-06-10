@@ -397,6 +397,32 @@ details[open] > .herramienta-inline__titulo::after {
 }
 
 /* ════════════════════════════════════════════════════════════
+   APARTADOS - plantillas rápidas y sugerencia de aporte.
+   ════════════════════════════════════════════════════════════ */
+
+.apartado-plantillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-3);
+}
+
+.apartado__sugerencia {
+  margin-top: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-info-bg);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+  line-height: 1.4;
+}
+
+.apartado__sugerencia-detalle {
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+}
+
+/* ════════════════════════════════════════════════════════════
    ABONO A DEUDAS (ADR 002) - botón Abonar, badge Saldada
    (compromisos) y badge "Ya abonaste" (agenda).
    ════════════════════════════════════════════════════════════ */

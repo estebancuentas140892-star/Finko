@@ -127,6 +127,19 @@ import { SMMLV } from './constants.js';
  */
 
 /**
+ * @typedef {Object} Apartado
+ * @property {string}      id
+ * @property {string}      nombre            Ej. "SOAT", "Productos personales".
+ * @property {string}      icono             Emoji.
+ * @property {number}      montoObjetivo     COP a reunir para el gasto previsible.
+ * @property {number}      montoActual       COP acumulado vía aportes.
+ * @property {string|null} fechaObjetivo     YYYY-MM-DD: cuándo se necesita. null si sin plazo.
+ * @property {string}      frecuenciaAporte  Cada cuánto aporta: Diario|Semanal|Quincenal|Mensual.
+ * @property {boolean}     completado
+ * @property {string}      fechaCreacion     ISO 8601.
+ */
+
+/**
  * @typedef {Object} PerfilFiscal
  * @property {boolean} ivaResponsable        true si el usuario es responsable del IVA.
  * @property {boolean} obligadoContabilidad  true si está obligado a llevar contabilidad.
@@ -208,6 +221,7 @@ import { SMMLV } from './constants.js';
  *   gastos: Gasto[],
  *   compromisos: Compromiso[],
  *   metas: Meta[],
+ *   apartados: Apartado[],
  *   presupuestos: Presupuesto[],
  *   personales: Personal[],
  *   logros: string[],
@@ -218,7 +232,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 12,
+    _version: 13,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
@@ -254,6 +268,9 @@ export function createInitialState() {
 
     /** Metas de ahorro. */
     metas: [],
+
+    /** Apartados: sobres para gastos previsibles (SOAT, productos, etc.). v13. */
+    apartados: [],
 
     /** Presupuestos por categoría (envelope budgeting). v2. */
     presupuestos: [],

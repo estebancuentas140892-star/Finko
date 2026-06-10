@@ -61,6 +61,7 @@
     <symbol id="i-personales" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
     <symbol id="i-presupuesto" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
     <symbol id="i-metas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+    <symbol id="i-apartados" viewBox="0 0 24 24"><path d="M3 7l2-4h14l2 4"/><rect width="18" height="13" x="3" y="7" rx="2"/><path d="M12 7v13"/></symbol>
     <symbol id="i-analisis" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
     <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
@@ -176,6 +177,12 @@
                role="listitem" aria-label="Metas de ahorro">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="nav-item__label">Metas</span>
+            </a>
+
+            <a class="nav-item nav-item--no-mobile" href="#apartados" data-section="apartados"
+               role="listitem" aria-label="Apartados para gastos previsibles">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
+              <span class="nav-item__label">Apartados</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#inversion" data-section="inversion"
@@ -449,6 +456,21 @@
 
       </section>
 
+      <!-- APARTADOS -->
+      <section class="section" id="sec-apartados" aria-labelledby="title-apartados">
+        <header class="section__header">
+          <h1 class="section__title" id="title-apartados">Apartados</h1>
+          <button class="btn btn-primary" data-action="nuevo-apartado"
+                  aria-label="Crear nuevo apartado">
+            + Apartado
+          </button>
+        </header>
+        <div id="lista-apartados">
+          <!-- apartados/view.js renderiza aquí -->
+        </div>
+
+      </section>
+
       <!-- ANÁLISIS -->
       <section class="section" id="sec-analisis" aria-labelledby="title-analisis">
         <header class="section__header">
@@ -703,6 +725,38 @@
     </div>
   </div>
 
+  <!-- Modal: Nuevo apartado -->
+  <div class="modal-overlay" id="modal-apartado"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-apartado-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-apartado-title">Nuevo apartado</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-apartado-body">
+        <!-- apartados/index.js inyecta el form aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Aportar a un apartado -->
+  <div class="modal-overlay" id="modal-aporte-apartado"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-aporte-apartado-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-aporte-apartado-title">Aportar a apartado</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-aporte-apartado-body">
+        <!-- apartados/index.js inyecta el form de aporte aquí -->
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Importar CSV de gastos -->
   <div class="modal-overlay" id="modal-import"
        role="dialog" aria-modal="true"
@@ -779,6 +833,10 @@
             <a class="menu-mas__item" href="#metas" data-section="metas">
               <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="menu-mas__label">Metas</span>
+            </a>
+            <a class="menu-mas__item" href="#apartados" data-section="apartados">
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
+              <span class="menu-mas__label">Apartados</span>
             </a>
             <a class="menu-mas__item" href="#inversion" data-section="inversion">
               <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>

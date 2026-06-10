@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): nuevo dominio para gastos previsibles - Fase 1 · 2026-06-10
+
+Sobres para separar dinero anticipadamente ante gastos que de otro modo llegan como emergencia (SOAT, impuestos, productos personales). Dominio nuevo (no extiende Metas) con schema v13. El valor central: dado el monto, la fecha objetivo y la frecuencia de cobro, Finko calcula cuánto separar por periodo ("aparta $30.000 por quincena"). Ver [ADR 007](DECISIONS/007-dominio-apartados.md). SW v132 → v133. 1296/1296 tests verdes (+40).
+
+`calcularAporteSugerido(apartado, hoyISO)` divide el faltante entre el número de periodos hasta la fecha (redondeo hacia arriba para llegar o superar el objetivo a tiempo). `hoyISO` inyectable para testeo determinista. Sin fecha o con fecha pasada devuelve null (no hay ritmo que calcular).
+
+- **`modules/dominio/apartados/logic.js`:** funciones puras (apartadosActivos, calcularProgreso, diasHastaFecha, calcularAporteSugerido, etiquetaPeriodo, validar/normalizar) + catálogos FRECUENCIAS_APORTE y PLANTILLAS_APARTADO.
+- **`modules/dominio/apartados/view.js`:** lista con sugerencia de aporte por card, formulario con plantillas rápidas + hint en vivo, formulario de aporte con selector de cuenta (patrón 0/1/varias).
+- **`modules/dominio/apartados/index.js`:** handlers (crear, eliminar, aportar, aplicar plantilla, sugerencia en vivo). El aporte descuenta saldo de la cuenta de origen.
+- **`modules/core/state.js`:** typedef Apartado + slice `apartados: []` + `_version` 13.
+- **`modules/core/storage.js`:** SCHEMA_VERSION 13 + migración v12 → v13 idempotente.
+- **`index.html`:** símbolo `#i-apartados`, sección `#sec-apartados`, modales `#modal-apartado` y `#modal-aporte-apartado`, enlaces en sidebar y menú "más" (grupo Crecer).
+- **`modules/infra/router.js`:** ruta `apartados` → `sec-apartados`. **`modules/ui/bootstrap.js`:** `initApartados()`.
+- **`styles/components/domain.css`:** `.apartado-plantillas`, `.apartado__sugerencia` (solo `var(--fk-*)`).
+- **`tests/unit/apartados.test.js`:** 37 tests de lógica. **storage.test.js / state.test.js:** migración v13 y nuevo slice.
+- **`service-worker.js`:** v132 → v133 + 3 módulos nuevos en CORE_ASSETS.
+
+---
+
 ### feat(deudas): motor de recomendación de estrategia basado en simulación · 2026-06-09
 
 `recomendarEstrategia(deudas, extraMensual)` deja de decidir por la dispersión de tasas y ahora decide a partir de la **simulación real** de ambas estrategias. El cambio nace de un caso reportado: deuda al 10% mensual con cuota que no cubre el interés + deuda sin interés, donde la app recomendaba Avalancha aunque el plan **nunca termina**. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). SW v131 → v132. 1256/1256 tests verdes (+8 netos en compromisos).

@@ -21,6 +21,19 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 ---
 
+### N. Apartados (gastos previsibles)
+
+**Objetivo:** ayudar a prepararse poco a poco para gastos que de otro modo llegan como emergencia (SOAT, impuestos, productos personales). Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
+
+**Completadas:**
+- ✅ N.1 (Fase 1) - Dominio Apartados: CRUD, aporte que descuenta cuenta (patrón 0/1/varias), plantillas rápidas, y `calcularAporteSugerido` (cuánto separar por periodo de cobro) con hint en vivo. Schema v13. - 2026-06-10.
+
+**Pendientes:**
+- N.2 (Fase 2) - Recurrencia/ciclo: un apartado como el SOAT se reinicia automáticamente tras cumplirse o gastarse (campos `recurrente` + `periodoMeses`). Maneja el "vuelve a empezar" sin recrearlo a mano.
+- N.3 (Fase 3) - Derivar la frecuencia de aporte automáticamente desde `S.ingresos` (que ya tiene `frecuencia` + `diaPago`) + nudges proactivos ("Tu SOAT vence en N meses, aparta $X") en dashboard/agenda.
+
+---
+
 ### M. Captura de datos más precisa (gasto rápido + flujos)
 
 **Objetivo:** que cada dato se pida en el momento adecuado y los registros queden organizados y consistentes. Mejora de UX en 3 fases pedida por el usuario.

@@ -513,6 +513,47 @@ describe('Migración v11 → v12 (diaPago en ingresos)', () => {
   });
 });
 
+describe('Migración v12 → v13 (dominio Apartados)', () => {
+  it('snapshot sin apartados recibe la colección vacía', () => {
+    const v12 = { ...createInitialState(), _version: 12 };
+    delete v12.apartados;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v12));
+
+    loadData();
+
+    expect(Array.isArray(S.apartados)).toBe(true);
+    expect(S.apartados).toEqual([]);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('apartados existentes se preservan (idempotente)', () => {
+    const v12 = {
+      ...createInitialState(),
+      _version: 12,
+      apartados: [
+        { id: 'a1', nombre: 'SOAT', icono: '🚗', montoObjetivo: 360_000,
+          montoActual: 60_000, fechaObjetivo: '2026-12-10',
+          frecuenciaAporte: 'Quincenal', completado: false },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v12));
+
+    loadData();
+
+    expect(S.apartados).toHaveLength(1);
+    expect(S.apartados[0].id).toBe('a1');
+    expect(S.apartados[0].montoActual).toBe(60_000);
+  });
+
+  it('apartados con valor no-array se normaliza a []', () => {
+    const v12 = { ...createInitialState(), _version: 12, apartados: null };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v12));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.apartados).toEqual([]);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();
