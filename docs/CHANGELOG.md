@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): recurrencia y ciclo automático - Fase 2 · 2026-06-10
+
+Un apartado para un gasto que se repite (SOAT anual, impuestos, mercado mensual) ahora se reinicia para el próximo periodo en vez de recrearse a mano. Schema v14. SW v133 → v134. 1320/1320 tests verdes (+24).
+
+Al crear un apartado se puede marcar "Se repite" y elegir cada cuántos meses (mensual, trimestral, semestral, anual). Cuando un apartado recurrente reúne el dinero, **no desaparece** de la lista: queda en estado "✅ ¡Listo!" con el botón "Ya lo usé". Al usarlo, `reiniciarCiclo` vacía el monto (conservando el excedente sobre el objetivo), avanza la fecha objetivo al siguiente vencimiento y vuelve a estado en progreso.
+
+- **`modules/dominio/apartados/logic.js`:** `recurrente`/`periodoMeses` en validar/normalizar. Nuevas funciones puras: `reiniciarCiclo` (avanza la fecha hasta superar hoy, conserva excedente), `avanzarMeses` (suma meses recortando al último día del mes), `estaListoParaReiniciar`, `etiquetaPeriodoMeses`. `apartadosActivos` mantiene visibles los recurrentes completados. Catálogo `PERIODOS_RECURRENCIA`.
+- **`modules/dominio/apartados/view.js`:** checkbox "Se repite" + select de periodo (oculto hasta marcar) en el form; badge "🔁 Se repite cada año" y estado "✅ ¡Listo!" con botón "Ya lo usé" en la card.
+- **`modules/dominio/apartados/index.js`:** handler `_reiniciarApartado` + toggle de visibilidad del periodo según el checkbox.
+- **`modules/core/state.js`:** `recurrente`/`periodoMeses` en typedef Apartado + `_version` 14.
+- **`modules/core/storage.js`:** SCHEMA_VERSION 14 + migración v13 → v14 idempotente (apartados existentes pasan a no recurrentes).
+- **`styles/components/domain.css`:** `.apartado__listo` (estado completo recurrente, color success).
+- **`tests/unit/apartados.test.js`:** +21 tests. **storage/state.test:** migración v14 y `_version` 14.
+- **`service-worker.js`:** v133 → v134.
+
+---
+
 ### feat(apartados): nuevo dominio para gastos previsibles - Fase 1 · 2026-06-10
 
 Sobres para separar dinero anticipadamente ante gastos que de otro modo llegan como emergencia (SOAT, impuestos, productos personales). Dominio nuevo (no extiende Metas) con schema v13. El valor central: dado el monto, la fecha objetivo y la frecuencia de cobro, Finko calcula cuánto separar por periodo ("aparta $30.000 por quincena"). Ver [ADR 007](DECISIONS/007-dominio-apartados.md). SW v132 → v133. 1296/1296 tests verdes (+40).

@@ -19,7 +19,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { f, hoy } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
-  calcularProgreso, calcularAporteSugerido,
+  calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
 } from './logic.js';
 import { renderListaApartados, renderFormApartado, renderFormAporteApartado } from './view.js';
 
@@ -30,6 +30,8 @@ function _nuevoApartado() {
   if (!overlay) return;
   resetModal(overlay);
   _resetSugerenciaLive();
+  // resetModal limpia los campos; el periodo vuelve a ocultarse con el checkbox.
+  _togglePeriodoRecurrencia(false);
   abrirModal(overlay);
 }
 
@@ -73,6 +75,29 @@ async function _eliminarApartado(el) {
   eliminar('apartados', id);
   renderListaApartados();
   announce(`Apartado "${apartado.nombre}" eliminado.`);
+}
+
+/**
+ * El usuario ya usó el dinero de un apartado recurrente (pagó el SOAT): se
+ * reinicia el ciclo para el próximo periodo.
+ * @param {HTMLElement} el
+ */
+function _reiniciarApartado(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const apartado = S.apartados.find(a => a.id === id);
+  if (!apartado) return;
+
+  const reiniciado = reiniciarCiclo(apartado, hoy());
+  editar('apartados', id, {
+    montoActual:   reiniciado.montoActual,
+    completado:    reiniciado.completado,
+    fechaObjetivo: reiniciado.fechaObjetivo,
+  });
+
+  renderListaApartados();
+  announce(`Apartado "${apartado.nombre}" reiniciado para el próximo ciclo.`);
 }
 
 // ── HANDLERS: PLANTILLAS + SUGERENCIA EN VIVO ────────────────────
@@ -232,12 +257,23 @@ function _inyectarFormApartado() {
   // Recalcular el aporte sugerido cada vez que cambian monto, fecha o frecuencia.
   form.addEventListener('input', _actualizarSugerenciaLive);
   form.addEventListener('change', _actualizarSugerenciaLive);
+
+  // Mostrar/ocultar el periodo de recurrencia según el checkbox "Se repite".
+  const checkRecurrente = form.querySelector('#apartado-recurrente');
+  checkRecurrente?.addEventListener('change', () => _togglePeriodoRecurrencia(checkRecurrente.checked));
+}
+
+/** Muestra u oculta el campo "¿cada cuánto se repite?" según el checkbox. */
+function _togglePeriodoRecurrencia(visible) {
+  const group = document.getElementById('apartado-periodo-group');
+  if (group) group.hidden = !visible;
 }
 
 export function initApartados() {
   registrarAccion('nuevo-apartado',     _nuevoApartado);
   registrarAccion('eliminar-apartado',  _eliminarApartado);
   registrarAccion('aportar-apartado',   _abrirAporte);
+  registrarAccion('reiniciar-apartado', _reiniciarApartado);
   registrarAccion('apartado-plantilla', _aplicarPlantilla);
 
   _inyectarFormApartado();

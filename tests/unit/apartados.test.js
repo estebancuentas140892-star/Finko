@@ -1,15 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import {
   apartadosActivos,
+  estaListoParaReiniciar,
   calcularProgreso,
   diasHastaFecha,
   calcularAporteSugerido,
   etiquetaPeriodo,
+  etiquetaPeriodoMeses,
+  avanzarMeses,
+  reiniciarCiclo,
   validarApartado,
   validarAbonoApartado,
   normalizarApartado,
   FRECUENCIAS_APORTE,
   PLANTILLAS_APARTADO,
+  PERIODOS_RECURRENCIA,
+  PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from '../../modules/dominio/apartados/logic.js';
 
@@ -43,15 +49,42 @@ describe('apartadosActivos()', () => {
     expect(apartadosActivos(lista)).toHaveLength(2);
   });
 
-  it('excluye los completados', () => {
+  it('excluye los completados no recurrentes', () => {
     const lista = [apartadoBase(), apartadoBase({ id: 'a2', completado: true })];
     expect(apartadosActivos(lista)).toHaveLength(1);
     expect(apartadosActivos(lista)[0].id).toBe('a1');
   });
 
+  it('mantiene visibles los completados recurrentes (esperan reinicio)', () => {
+    const lista = [
+      apartadoBase({ id: 'a2', completado: true, recurrente: true, periodoMeses: 12 }),
+    ];
+    expect(apartadosActivos(lista)).toHaveLength(1);
+    expect(apartadosActivos(lista)[0].id).toBe('a2');
+  });
+
   it('es defensivo ante null/undefined', () => {
     expect(apartadosActivos(null)).toEqual([]);
     expect(apartadosActivos(undefined)).toEqual([]);
+  });
+});
+
+// ── estaListoParaReiniciar() ─────────────────────────────────────
+
+describe('estaListoParaReiniciar()', () => {
+  it('true cuando es recurrente y alcanzó el objetivo', () => {
+    const a = apartadoBase({ recurrente: true, periodoMeses: 12, montoActual: 360_000, montoObjetivo: 360_000 });
+    expect(estaListoParaReiniciar(a)).toBe(true);
+  });
+
+  it('false si es recurrente pero aún no llega al objetivo', () => {
+    const a = apartadoBase({ recurrente: true, periodoMeses: 12, montoActual: 100_000, montoObjetivo: 360_000 });
+    expect(estaListoParaReiniciar(a)).toBe(false);
+  });
+
+  it('false si está completo pero no es recurrente', () => {
+    const a = apartadoBase({ recurrente: false, montoActual: 360_000, montoObjetivo: 360_000 });
+    expect(estaListoParaReiniciar(a)).toBe(false);
   });
 });
 
@@ -232,6 +265,109 @@ describe('validarApartado()', () => {
     const errs = validarApartado({ ...datosFormValidos, frecuenciaAporte: 'Trimestral' });
     expect(errs.some(e => /frecuencia/i.test(e))).toBe(true);
   });
+
+  it('recurrente sin periodo válido reporta error', () => {
+    const errs = validarApartado({ ...datosFormValidos, recurrente: 'on', periodoMeses: '0' });
+    expect(errs.some(e => /repite/i.test(e))).toBe(true);
+  });
+
+  it('recurrente con periodo válido no produce error', () => {
+    expect(validarApartado({ ...datosFormValidos, recurrente: 'on', periodoMeses: '12' })).toEqual([]);
+  });
+
+  it('no exige periodo si no es recurrente', () => {
+    expect(validarApartado({ ...datosFormValidos, recurrente: '', periodoMeses: '' })).toEqual([]);
+  });
+});
+
+// ── avanzarMeses() ───────────────────────────────────────────────
+
+describe('avanzarMeses()', () => {
+  it('suma meses dentro del mismo año', () => {
+    expect(avanzarMeses('2026-06-10', 3)).toBe('2026-09-10');
+  });
+
+  it('cruza el cambio de año', () => {
+    expect(avanzarMeses('2026-12-10', 12)).toBe('2027-12-10');
+  });
+
+  it('recorta al último día del mes cuando el día no existe', () => {
+    // 31 de enero + 1 mes → 28 de febrero (2026 no es bisiesto).
+    expect(avanzarMeses('2026-01-31', 1)).toBe('2026-02-28');
+    // En año bisiesto, 29 de febrero.
+    expect(avanzarMeses('2028-01-31', 1)).toBe('2028-02-29');
+  });
+
+  it('devuelve null ante entradas inválidas', () => {
+    expect(avanzarMeses('no-fecha', 3)).toBeNull();
+    expect(avanzarMeses('2026-06-10', 0)).toBeNull();
+    expect(avanzarMeses('2026-06-10', -1)).toBeNull();
+    expect(avanzarMeses('2026-06-10', 1.5)).toBeNull();
+  });
+});
+
+// ── reiniciarCiclo() ─────────────────────────────────────────────
+
+describe('reiniciarCiclo()', () => {
+  it('avanza la fecha un periodo y vacía el monto (recurrente)', () => {
+    const a = apartadoBase({
+      recurrente: true, periodoMeses: 12,
+      montoActual: 360_000, montoObjetivo: 360_000,
+      fechaObjetivo: '2026-12-10', completado: true,
+    });
+    const r = reiniciarCiclo(a, '2026-12-10');
+    expect(r.fechaObjetivo).toBe('2027-12-10');
+    expect(r.montoActual).toBe(0);
+    expect(r.completado).toBe(false);
+  });
+
+  it('conserva el excedente sobre el objetivo', () => {
+    const a = apartadoBase({
+      recurrente: true, periodoMeses: 12,
+      montoActual: 400_000, montoObjetivo: 360_000,
+      fechaObjetivo: '2026-12-10', completado: true,
+    });
+    const r = reiniciarCiclo(a, '2026-12-10');
+    expect(r.montoActual).toBe(40_000); // 400.000 - 360.000
+  });
+
+  it('avanza más de un periodo si la fecha sigue en el pasado', () => {
+    const a = apartadoBase({
+      recurrente: true, periodoMeses: 12,
+      montoActual: 360_000, montoObjetivo: 360_000,
+      fechaObjetivo: '2024-03-01', completado: true,
+    });
+    // Hoy 2026-06: 2024 + 12 = 2025 (pasado), +12 = 2026-03 (pasado), +12 = 2027-03 (futuro).
+    const r = reiniciarCiclo(a, '2026-06-10');
+    expect(diasHastaFecha(r.fechaObjetivo, '2026-06-10')).toBeGreaterThan(0);
+    expect(r.fechaObjetivo).toBe('2027-03-01');
+  });
+
+  it('usa hoy como base si no tiene fecha objetivo', () => {
+    const a = apartadoBase({
+      recurrente: true, periodoMeses: 6,
+      montoActual: 360_000, montoObjetivo: 360_000,
+      fechaObjetivo: null, completado: true,
+    });
+    const r = reiniciarCiclo(a, '2026-06-10');
+    expect(r.fechaObjetivo).toBe('2026-12-10');
+  });
+
+  it('no es recurrente: devuelve el apartado intacto', () => {
+    const a = apartadoBase({ recurrente: false, montoActual: 360_000, completado: true });
+    expect(reiniciarCiclo(a, '2026-06-10')).toBe(a);
+  });
+});
+
+// ── etiquetaPeriodoMeses() ───────────────────────────────────────
+
+describe('etiquetaPeriodoMeses()', () => {
+  it('mapea los periodos comunes', () => {
+    expect(etiquetaPeriodoMeses(1)).toBe('cada mes');
+    expect(etiquetaPeriodoMeses(12)).toBe('cada año');
+    expect(etiquetaPeriodoMeses(3)).toBe('cada 3 meses');
+    expect(etiquetaPeriodoMeses(6)).toBe('cada 6 meses');
+  });
 });
 
 // ── validarAbonoApartado() ───────────────────────────────────────
@@ -260,8 +396,27 @@ describe('normalizarApartado()', () => {
       montoActual:      0,
       fechaObjetivo:    null,
       frecuenciaAporte: 'Quincenal',
+      recurrente:       false,
+      periodoMeses:     null,
       completado:       false,
     });
+  });
+
+  it('sin recurrencia: recurrente false y periodoMeses null', () => {
+    const r = normalizarApartado(datosFormValidos);
+    expect(r.recurrente).toBe(false);
+    expect(r.periodoMeses).toBeNull();
+  });
+
+  it('checkbox marcado ("on") activa recurrencia con su periodo', () => {
+    const r = normalizarApartado({ ...datosFormValidos, recurrente: 'on', periodoMeses: '12' });
+    expect(r.recurrente).toBe(true);
+    expect(r.periodoMeses).toBe(12);
+  });
+
+  it('recurrente sin periodo válido cae al default (anual)', () => {
+    const r = normalizarApartado({ ...datosFormValidos, recurrente: 'on', periodoMeses: '' });
+    expect(r.periodoMeses).toBe(PERIODO_RECURRENCIA_DEFAULT);
   });
 
   it('icono vacío cae al default', () => {
@@ -300,5 +455,13 @@ describe('catálogos', () => {
       expect(typeof p.icono).toBe('string');
     }
     expect(PLANTILLAS_APARTADO.some(p => /emergencia/i.test(p.nombre))).toBe(false);
+  });
+
+  it('PERIODOS_RECURRENCIA incluye el anual (SOAT) con meses y etiqueta', () => {
+    expect(PERIODOS_RECURRENCIA.some(p => p.meses === 12)).toBe(true);
+    for (const p of PERIODOS_RECURRENCIA) {
+      expect(Number.isInteger(p.meses)).toBe(true);
+      expect(typeof p.etiqueta).toBe('string');
+    }
   });
 });

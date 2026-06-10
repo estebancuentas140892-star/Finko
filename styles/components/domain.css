@@ -422,6 +422,16 @@ details[open] > .herramienta-inline__titulo::after {
   font-size: var(--fk-text-xs);
 }
 
+.apartado__listo {
+  margin-top: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-success-bg);
+  color: var(--fk-success-text);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+  line-height: 1.4;
+}
+
 /* ════════════════════════════════════════════════════════════
    ABONO A DEUDAS (ADR 002) - botón Abonar, badge Saldada
    (compromisos) y badge "Ya abonaste" (agenda).

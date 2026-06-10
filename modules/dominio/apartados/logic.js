@@ -50,14 +50,43 @@ export const PLANTILLAS_APARTADO = [
 /** Icono por defecto cuando el usuario no elige uno. */
 export const ICONO_APARTADO_DEFAULT = '📦';
 
+/**
+ * Presets de periodo de recurrencia (cada cuántos meses se repite el gasto).
+ * El SOAT y los impuestos suelen ser anuales; el mercado, mensual.
+ */
+export const PERIODOS_RECURRENCIA = [
+  { meses: 1,  etiqueta: 'Cada mes' },
+  { meses: 3,  etiqueta: 'Cada 3 meses' },
+  { meses: 6,  etiqueta: 'Cada 6 meses' },
+  { meses: 12, etiqueta: 'Cada año' },
+];
+
+/** Periodo por defecto para un apartado recurrente (anual: SOAT, impuestos). */
+export const PERIODO_RECURRENCIA_DEFAULT = 12;
+
 // ── CONSULTAS ────────────────────────────────────────────────────
 
 /**
- * Filtra apartados que aún no están completados.
+ * Filtra los apartados que deben mostrarse en la lista.
+ *
+ * Un apartado no recurrente desaparece al completarse (el gasto fue único).
+ * Un apartado recurrente completado SÍ se mantiene visible: ya reunió el dinero
+ * pero sigue activo, esperando que el usuario lo use y reinicie el ciclo (el
+ * SOAT del próximo año, los impuestos del próximo periodo).
+ *
  * @param {import('../../core/state.js').Apartado[]} apartados
  */
 export function apartadosActivos(apartados) {
-  return (apartados ?? []).filter(a => a.completado !== true);
+  return (apartados ?? []).filter(a => a.completado !== true || a.recurrente === true);
+}
+
+/**
+ * True si el apartado ya reunió el dinero y está listo para usarse y reiniciar.
+ * Solo aplica a recurrentes (los no recurrentes completados ya no se listan).
+ * @param {import('../../core/state.js').Apartado} apartado
+ */
+export function estaListoParaReiniciar(apartado) {
+  return apartado?.recurrente === true && calcularProgreso(apartado).completado === true;
 }
 
 /**
@@ -157,6 +186,88 @@ export function etiquetaPeriodo(frecuencia) {
   }
 }
 
+/**
+ * Etiqueta legible de cada cuánto se repite un apartado recurrente.
+ * @param {number} meses
+ * @returns {string} ej. "cada año", "cada 3 meses".
+ */
+export function etiquetaPeriodoMeses(meses) {
+  if (meses === 1)  return 'cada mes';
+  if (meses === 12) return 'cada año';
+  return `cada ${meses} meses`;
+}
+
+// ── RECURRENCIA ──────────────────────────────────────────────────
+
+/**
+ * Suma `meses` a una fecha YYYY-MM-DD, recortando al último día del mes cuando
+ * el día original no existe en el mes destino (ej. 31 de enero + 1 mes → 28/29
+ * de febrero, no el 3 de marzo que daría el overflow de Date).
+ *
+ * @param {string} fechaISO - YYYY-MM-DD.
+ * @param {number} meses - número de meses a sumar (entero positivo).
+ * @returns {string|null} nueva fecha YYYY-MM-DD, o null si la entrada es inválida.
+ */
+export function avanzarMeses(fechaISO, meses) {
+  if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return null;
+  if (!Number.isInteger(meses) || meses <= 0) return null;
+
+  const [anio, mes, dia] = fechaISO.split('-').map(Number);
+  const indiceMesDestino = (mes - 1) + meses;
+  const anioDestino = anio + Math.floor(indiceMesDestino / 12);
+  const mesDestino  = ((indiceMesDestino % 12) + 12) % 12; // 0-11
+
+  // Día 0 del mes siguiente = último día del mes destino.
+  const ultimoDia = new Date(anioDestino, mesDestino + 1, 0).getDate();
+  const diaDestino = Math.min(dia, ultimoDia);
+
+  const mm = String(mesDestino + 1).padStart(2, '0');
+  const dd = String(diaDestino).padStart(2, '0');
+  return `${anioDestino}-${mm}-${dd}`;
+}
+
+/**
+ * Reinicia el ciclo de un apartado recurrente: el usuario ya usó el dinero (pagó
+ * el SOAT, los impuestos) y el apartado vuelve a empezar para el próximo periodo.
+ *
+ * - Conserva el excedente sobre el objetivo (si reunió de más, no se pierde).
+ * - Vuelve a `completado: false`.
+ * - Avanza `fechaObjetivo` por `periodoMeses` hasta que quede en el futuro (cubre
+ *   el caso de reiniciar mucho después del vencimiento).
+ *
+ * No-op (devuelve el apartado intacto) si no es recurrente.
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @param {string} hoyISO - YYYY-MM-DD (día de referencia, inyectable).
+ * @returns {import('../../core/state.js').Apartado}
+ */
+export function reiniciarCiclo(apartado, hoyISO) {
+  if (!apartado || apartado.recurrente !== true) return apartado;
+
+  const periodoMeses = Number(apartado.periodoMeses) > 0
+    ? Number(apartado.periodoMeses)
+    : PERIODO_RECURRENCIA_DEFAULT;
+
+  // Base del avance: la fecha objetivo actual, o hoy si no tiene.
+  let nuevaFecha = apartado.fechaObjetivo && /^\d{4}-\d{2}-\d{2}$/.test(apartado.fechaObjetivo)
+    ? apartado.fechaObjetivo
+    : hoyISO;
+
+  // Avanzar al menos un periodo, y seguir avanzando hasta superar hoy.
+  do {
+    nuevaFecha = avanzarMeses(nuevaFecha, periodoMeses);
+  } while (nuevaFecha && diasHastaFecha(nuevaFecha, hoyISO) <= 0);
+
+  const excedente = Math.max(0, (Number(apartado.montoActual) || 0) - (Number(apartado.montoObjetivo) || 0));
+
+  return {
+    ...apartado,
+    montoActual:   excedente,
+    completado:    false,
+    fechaObjetivo: nuevaFecha,
+  };
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
@@ -186,7 +297,26 @@ export function validarApartado(datos) {
     errores.push('La frecuencia de aporte no es válida.');
   }
 
+  // Recurrencia: si el apartado se repite, el periodo debe ser un entero > 0.
+  if (_esRecurrente(datos?.recurrente)) {
+    const periodo = Number(datos?.periodoMeses);
+    if (!Number.isInteger(periodo) || periodo <= 0) {
+      errores.push('Indica cada cuántos meses se repite el apartado.');
+    }
+  }
+
   return errores;
+}
+
+/**
+ * Interpreta el valor de "recurrente" del formulario. Un checkbox HTML envía
+ * 'on' cuando está marcado y no envía la clave cuando no lo está; también
+ * aceptamos booleanos por si llega desde código.
+ * @param {unknown} valor
+ * @returns {boolean}
+ */
+function _esRecurrente(valor) {
+  return valor === true || valor === 'on' || valor === 'true' || valor === '1';
 }
 
 /**
@@ -214,6 +344,11 @@ export function normalizarApartado(datos) {
     ? datos.frecuenciaAporte
     : 'Mensual';
 
+  const recurrente = _esRecurrente(datos.recurrente);
+  const periodoMeses = recurrente
+    ? (Number(datos.periodoMeses) > 0 ? Number(datos.periodoMeses) : PERIODO_RECURRENCIA_DEFAULT)
+    : null;
+
   return {
     nombre:           datos.nombre.trim(),
     icono:            datos.icono?.trim() || ICONO_APARTADO_DEFAULT,
@@ -221,6 +356,8 @@ export function normalizarApartado(datos) {
     montoActual:      0,
     fechaObjetivo:    datos.fechaObjetivo?.trim() || null,
     frecuenciaAporte: frecuencia,
+    recurrente,
+    periodoMeses,
     completado:       false,
   };
 }

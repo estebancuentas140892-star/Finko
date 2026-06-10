@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 13;
+const SCHEMA_VERSION = 14;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -207,6 +207,20 @@ function _migrate(raw) {
   if ((typeof data._version === 'number' ? data._version : 1) < 13) {
     if (!Array.isArray(data.apartados)) {
       data.apartados = [];
+    }
+  }
+
+  // v13 → v14: recurrencia en apartados (gasto que se repite, como el SOAT anual).
+  // Los apartados existentes pasan a ser no recurrentes (gasto único). Idempotente:
+  // si el campo ya está presente, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 14) {
+    if (Array.isArray(data.apartados)) {
+      for (const a of data.apartados) {
+        if (a && typeof a === 'object') {
+          if (!('recurrente' in a))   a.recurrente = false;
+          if (!('periodoMeses' in a)) a.periodoMeses = null;
+        }
+      }
     }
   }
 

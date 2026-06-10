@@ -554,6 +554,54 @@ describe('Migración v12 → v13 (dominio Apartados)', () => {
   });
 });
 
+describe('Migración v13 → v14 (recurrencia en apartados)', () => {
+  it('apartados existentes pasan a no recurrentes', () => {
+    const v13 = {
+      ...createInitialState(),
+      _version: 13,
+      apartados: [
+        { id: 'a1', nombre: 'SOAT', icono: '🚗', montoObjetivo: 360_000,
+          montoActual: 60_000, fechaObjetivo: '2026-12-10',
+          frecuenciaAporte: 'Quincenal', completado: false },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v13));
+
+    loadData();
+
+    expect(S.apartados[0].recurrente).toBe(false);
+    expect(S.apartados[0].periodoMeses).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('apartados con recurrencia ya seteada no se sobreescriben (idempotente)', () => {
+    const v13 = {
+      ...createInitialState(),
+      _version: 13,
+      apartados: [
+        { id: 'a1', nombre: 'SOAT', icono: '🚗', montoObjetivo: 360_000,
+          montoActual: 0, fechaObjetivo: '2026-12-10',
+          frecuenciaAporte: 'Quincenal', completado: false,
+          recurrente: true, periodoMeses: 12 },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v13));
+
+    loadData();
+
+    expect(S.apartados[0].recurrente).toBe(true);
+    expect(S.apartados[0].periodoMeses).toBe(12);
+  });
+
+  it('sin apartados en el snapshot no lanza', () => {
+    const v13 = { ...createInitialState(), _version: 13, apartados: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v13));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.apartados).toEqual([]);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

@@ -7,10 +7,14 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import {
   apartadosActivos,
+  estaListoParaReiniciar,
   calcularProgreso,
   calcularAporteSugerido,
+  etiquetaPeriodoMeses,
   FRECUENCIAS_APORTE,
   PLANTILLAS_APARTADO,
+  PERIODOS_RECURRENCIA,
+  PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from './logic.js';
 
@@ -35,7 +39,9 @@ function _renderApartadoItem(apartado) {
   const nombre = _esc(apartado.nombre);
   const icono  = _esc(apartado.icono ?? ICONO_APARTADO_DEFAULT);
   const { porcentaje, faltante, completado } = calcularProgreso(apartado);
-  const sugerido = calcularAporteSugerido(apartado, hoy());
+  const listo  = estaListoParaReiniciar(apartado);
+  // Un apartado listo para reiniciar ya reunió el dinero: no mostramos sugerencia.
+  const sugerido = listo ? null : calcularAporteSugerido(apartado, hoy());
 
   const claseProgreso = completado
     ? 'progress-bar--complete'
@@ -45,20 +51,43 @@ function _renderApartadoItem(apartado) {
   if (apartado.fechaObjetivo) {
     subtitleParts.push(`Para el ${fechaLegible(apartado.fechaObjetivo)}`);
   }
+  if (apartado.recurrente) {
+    subtitleParts.push(`🔁 Se repite ${_esc(etiquetaPeriodoMeses(apartado.periodoMeses ?? PERIODO_RECURRENCIA_DEFAULT))}`);
+  }
 
-  // Mensaje central de valor: cuánto apartar por periodo para llegar a tiempo.
-  const sugerenciaHtml = sugerido
-    ? `<p class="apartado__sugerencia" role="status">
+  // Mensaje central: si ya reunió el dinero (recurrente), invitarlo a usarlo y
+  // reiniciar; si aún le falta, la sugerencia de cuánto apartar por periodo.
+  let mensajeHtml = '';
+  if (listo) {
+    mensajeHtml = `<p class="apartado__listo" role="status">
+         ✅ ¡Listo! Ya reuniste el dinero. Cuando lo uses, reinicia el ciclo para el próximo gasto.
+       </p>`;
+  } else if (sugerido) {
+    mensajeHtml = `<p class="apartado__sugerencia" role="status">
          💡 Aparta <strong>${f(sugerido.aportePorPeriodo)}</strong> ${_esc(sugerido.etiquetaPeriodo)}
          <span class="apartado__sugerencia-detalle">· ${sugerido.numPeriodos} ${sugerido.numPeriodos === 1 ? 'aporte' : 'aportes'} antes de la fecha</span>
-       </p>`
-    : '';
+       </p>`;
+  }
+
+  // Acción principal: "Ya lo usé" (reinicia el ciclo) si está listo; si no, aportar.
+  let accionPrincipal = '';
+  if (listo) {
+    accionPrincipal = `<button class="btn btn-ghost btn-sm"
+                data-action="reiniciar-apartado"
+                data-id="${_esc(apartado.id)}"
+                aria-label="Marcar ${nombre} como usado y reiniciar el ciclo">Ya lo usé</button>`;
+  } else if (!completado) {
+    accionPrincipal = `<button class="btn btn-ghost btn-sm"
+                data-action="aportar-apartado"
+                data-id="${_esc(apartado.id)}"
+                aria-label="Aportar a ${nombre}">+ Aportar</button>`;
+  }
 
   return `
     <article class="list-item" data-id="${_esc(apartado.id)}">
       <div class="list-item__icon" aria-hidden="true">${icono}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${nombre}${completado ? ' ✅' : ''}</p>
+        <p class="list-item__title">${nombre}${listo ? ' ✅' : ''}</p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
         <div class="progress" role="progressbar"
              aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
@@ -66,13 +95,10 @@ function _renderApartadoItem(apartado) {
           <div class="progress-bar ${claseProgreso}" style="width:${porcentaje}%"></div>
         </div>
         <p class="list-item__progress-label">${porcentaje}%${faltante > 0 ? ` · Faltan ${f(faltante)}` : ''}</p>
-        ${sugerenciaHtml}
+        ${mensajeHtml}
       </div>
       <div class="list-item__action">
-        ${!completado ? `<button class="btn btn-ghost btn-sm"
-                data-action="aportar-apartado"
-                data-id="${_esc(apartado.id)}"
-                aria-label="Aportar a ${nombre}">+ Aportar</button>` : ''}
+        ${accionPrincipal}
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-apartado"
                 data-id="${_esc(apartado.id)}"
@@ -113,6 +139,10 @@ export function renderFormApartado() {
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
+  const periodoOpts = PERIODOS_RECURRENCIA
+    .map(p => `<option value="${p.meses}"${p.meses === PERIODO_RECURRENCIA_DEFAULT ? ' selected' : ''}>${_esc(p.etiqueta)}</option>`)
+    .join('');
+
   return `
     <form id="form-apartado" novalidate>
       <p class="form-hint form-hint--muted">¿Para qué gasto quieres prepararte? Toca uno o escribe el tuyo.</p>
@@ -141,6 +171,20 @@ export function renderFormApartado() {
           ${frecOpts}
         </select>
       </div>
+
+      <div class="form-group form-group--checkbox">
+        <label class="checkbox-row">
+          <input id="apartado-recurrente" name="recurrente" type="checkbox" />
+          <span>Se repite (gasto recurrente, como el SOAT o los impuestos)</span>
+        </label>
+      </div>
+      <div class="form-group" id="apartado-periodo-group" hidden>
+        <label for="apartado-periodo" class="label">¿Cada cuánto se repite?</label>
+        <select id="apartado-periodo" name="periodoMeses" class="input">
+          ${periodoOpts}
+        </select>
+      </div>
+
       <div class="form-group">
         <label for="apartado-icono" class="label">Emoji (opcional)</label>
         <input id="apartado-icono" name="icono" class="input" type="text"

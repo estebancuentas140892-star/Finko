@@ -135,6 +135,8 @@ import { SMMLV } from './constants.js';
  * @property {number}      montoActual       COP acumulado vía aportes.
  * @property {string|null} fechaObjetivo     YYYY-MM-DD: cuándo se necesita. null si sin plazo.
  * @property {string}      frecuenciaAporte  Cada cuánto aporta: Diario|Semanal|Quincenal|Mensual.
+ * @property {boolean}     recurrente        true si el gasto se repite (SOAT anual, impuestos). v14.
+ * @property {number|null} periodoMeses      Cada cuántos meses se repite (12 anual, 6 semestral). v14.
  * @property {boolean}     completado
  * @property {string}      fechaCreacion     ISO 8601.
  */
@@ -232,7 +234,7 @@ import { SMMLV } from './constants.js';
 export function createInitialState() {
   return {
     /** Versión del schema persistido. Bumpear en cada migración nueva. */
-    _version: 13,
+    _version: 14,
 
     /** True tras completar el wizard inicial. */
     onboarded: false,
