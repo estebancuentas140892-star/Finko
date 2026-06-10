@@ -28,9 +28,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 **Completadas:**
 - ✅ N.1 (Fase 1) - Dominio Apartados: CRUD, aporte que descuenta cuenta (patrón 0/1/varias), plantillas rápidas, y `calcularAporteSugerido` (cuánto separar por periodo de cobro) con hint en vivo. Schema v13. - 2026-06-10.
 - ✅ N.2 (Fase 2) - Recurrencia/ciclo: campos `recurrente` + `periodoMeses`; un apartado recurrente completado queda "¡Listo!" y al usarlo (`reiniciarCiclo`) avanza al siguiente periodo conservando el excedente. Schema v14. - 2026-06-10.
+- ✅ N.3 (Fase 3) - Frecuencia automática + nudge de proximidad: el form pre-selecciona la frecuencia de aporte según `S.ingresos`; nudge en la sección cuando hay apartados con fecha objetivo en los próximos 60 días. - 2026-06-10.
 
-**Pendientes:**
-- N.3 (Fase 3) - Derivar la frecuencia de aporte automáticamente desde `S.ingresos` (que ya tiene `frecuencia` + `diaPago`) + nudges proactivos ("Tu SOAT vence en N meses, aparta $X") en dashboard/agenda.
+**Sin tareas pendientes en esta serie.** Las 3 fases de Apartados están cerradas.
 
 ---
 

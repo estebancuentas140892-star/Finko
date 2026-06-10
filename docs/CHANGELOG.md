@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): frecuencia automática + nudge de proximidad - Fase 3 · 2026-06-10
+
+Al abrir "Nuevo apartado", la frecuencia de aporte se pre-selecciona según los ingresos activos del usuario (`frecuenciaPrincipalIngresos`). Si el usuario cobra quincenal, el select ya muestra "Quincenal" sin tocar nada. Si no hay ingresos, cae a "Mensual".
+
+Cuando hay apartados con fecha objetivo en los próximos 60 días (no completados), aparece un nudge informativo en la sección: "SOAT vence en 30 días · Aparta $X por quincena para llegar a tiempo." Si hay más de uno, menciona cuántos adicionales. SW v134 → v135. 1333/1333 tests verdes (+13).
+
+- **`modules/dominio/apartados/logic.js`:** `frecuenciaPrincipalIngresos(ingresos)` mapea FRECUENCIAS → FRECUENCIAS_APORTE y elige la más común entre ingresos activos. `apartadosProximos(apartados, hoyISO, diasUmbral)` filtra y ordena por urgencia. Constante `MAPA_FRECUENCIA_A_APORTE`.
+- **`modules/dominio/apartados/view.js`:** `renderFormApartado(frecuenciaPreferida)` pre-selecciona la opción correcta. `renderNudgeApartadosProximos()` escribe en `#apartados-nudge-proximos`.
+- **`modules/dominio/apartados/index.js`:** `_nuevoApartado` re-inyecta el form para recalcular la frecuencia; nudge en pipeline de render y EventBus.
+- **`index.html`:** `<div id="apartados-nudge-proximos">` antes de `#lista-apartados`.
+- **`tests/unit/apartados.test.js`:** +13 tests (6 para `frecuenciaPrincipalIngresos`, 7 para `apartadosProximos`).
+- **`service-worker.js`:** v134 → v135.
+
+---
+
 ### feat(apartados): recurrencia y ciclo automático - Fase 2 · 2026-06-10
 
 Un apartado para un gasto que se repite (SOAT anual, impuestos, mercado mensual) ahora se reinicia para el próximo periodo en vez de recrearse a mano. Schema v14. SW v133 → v134. 1320/1320 tests verdes (+24).

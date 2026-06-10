@@ -10,7 +10,10 @@ import {
   estaListoParaReiniciar,
   calcularProgreso,
   calcularAporteSugerido,
+  diasHastaFecha,
+  etiquetaPeriodo,
   etiquetaPeriodoMeses,
+  apartadosProximos,
   FRECUENCIAS_APORTE,
   PLANTILLAS_APARTADO,
   PERIODOS_RECURRENCIA,
@@ -118,14 +121,65 @@ function _renderEmptyState() {
     </div>`;
 }
 
+// ── NUDGE DE PROXIMIDAD ──────────────────────────────────────────
+
+/**
+ * Renderiza un aviso cuando hay apartados con fecha objetivo próxima (60 días).
+ * Muestra el más urgente con cuánto falta y cuánto apartar. Si hay más, lo
+ * menciona. No-op si el contenedor no existe o no hay apartados próximos.
+ */
+export function renderNudgeApartadosProximos() {
+  const el = document.getElementById('apartados-nudge-proximos');
+  if (!el) return;
+
+  const proximos = apartadosProximos(S.apartados, hoy());
+  if (proximos.length === 0) { el.innerHTML = ''; return; }
+
+  el.innerHTML = _renderNudgeProximos(proximos);
+}
+
+/**
+ * @param {import('../../core/state.js').Apartado[]} proximos - ordenados de más urgente.
+ * @returns {string}
+ */
+function _renderNudgeProximos(proximos) {
+  const principal = proximos[0];
+  const otros     = proximos.length - 1;
+  const nombre    = _esc(principal.nombre);
+  const icono     = _esc(principal.icono ?? ICONO_APARTADO_DEFAULT);
+
+  const dias      = diasHastaFecha(principal.fechaObjetivo, hoy()) ?? 0;
+  const cuandoStr = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
+
+  const sugerido  = calcularAporteSugerido(principal, hoy());
+  const sugerenciaStr = sugerido
+    ? `Aparta <strong>${f(sugerido.aportePorPeriodo)}</strong> ${_esc(etiquetaPeriodo(principal.frecuenciaAporte))} para llegar a tiempo.`
+    : `Faltan <strong>${f(calcularProgreso(principal).faltante)}</strong>.`;
+
+  const otrosHtml = otros > 0
+    ? `<p class="nudge__desc nudge__desc--muted">y ${otros} ${otros === 1 ? 'apartado más' : 'apartados más'} con fecha próxima</p>`
+    : '';
+
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${nombre} vence ${cuandoStr}</p>
+        <p class="nudge__desc">${sugerenciaStr}</p>
+        ${otrosHtml}
+      </div>
+    </div>`;
+}
+
 // ── FORMULARIO: NUEVO APARTADO ───────────────────────────────────
 
 /**
  * Devuelve el HTML del formulario de nuevo apartado, con plantillas rápidas y
  * un hint en vivo del aporte sugerido (lo actualiza el listener en index.js).
+ * @param {string} [frecuenciaPreferida] Pre-selección derivada de S.ingresos.
  * @returns {string}
  */
-export function renderFormApartado() {
+export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
   const plantillasHtml = PLANTILLAS_APARTADO
     .map(p => `
       <button type="button" class="chip"
@@ -136,7 +190,7 @@ export function renderFormApartado() {
     .join('');
 
   const frecOpts = FRECUENCIAS_APORTE
-    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .map(fr => `<option value="${_esc(fr)}"${fr === frecuenciaPreferida ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
   const periodoOpts = PERIODOS_RECURRENCIA

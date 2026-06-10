@@ -22,6 +22,22 @@
  */
 export const FRECUENCIAS_APORTE = ['Diario', 'Semanal', 'Quincenal', 'Mensual'];
 
+/**
+ * Mapeo de FRECUENCIAS (core) → FRECUENCIAS_APORTE.
+ * Las frecuencias más largas (Bimestral, Trimestral, etc.) se asimilan a
+ * 'Mensual', que es la frecuencia de planificación más cercana.
+ */
+const MAPA_FRECUENCIA_A_APORTE = {
+  Diario:    'Diario',
+  Semanal:   'Semanal',
+  Quincenal: 'Quincenal',
+  Mensual:   'Mensual',
+  Bimestral: 'Mensual',
+  Trimestral:'Mensual',
+  Semestral: 'Mensual',
+  Anual:     'Mensual',
+};
+
 /** Días calendario que dura cada periodo de aporte (promedio). */
 const DIAS_POR_PERIODO = {
   Diario:    1,
@@ -87,6 +103,56 @@ export function apartadosActivos(apartados) {
  */
 export function estaListoParaReiniciar(apartado) {
   return apartado?.recurrente === true && calcularProgreso(apartado).completado === true;
+}
+
+/**
+ * Devuelve la frecuencia de aporte recomendada a partir de los ingresos del
+ * usuario. Busca la frecuencia más común entre los ingresos activos, mapeada a
+ * una de FRECUENCIAS_APORTE. Si no hay ingresos activos, devuelve 'Mensual'.
+ *
+ * Se inyecta `ingresos` (no importa tesorería) para respetar ADN #10.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @returns {string} Una de FRECUENCIAS_APORTE.
+ */
+export function frecuenciaPrincipalIngresos(ingresos) {
+  const activos = (ingresos ?? []).filter(i => i.activo !== false);
+  if (activos.length === 0) return 'Mensual';
+
+  const conteo = {};
+  for (const i of activos) {
+    const f = MAPA_FRECUENCIA_A_APORTE[i.frecuencia] ?? 'Mensual';
+    conteo[f] = (conteo[f] ?? 0) + 1;
+  }
+
+  // Más frecuente primero; en empate, la de mayor granularidad (índice menor).
+  return Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1] || FRECUENCIAS_APORTE.indexOf(a[0]) - FRECUENCIAS_APORTE.indexOf(b[0]))
+    .at(0)?.[0] ?? 'Mensual';
+}
+
+/**
+ * Devuelve los apartados activos cuya fecha objetivo vence dentro de
+ * `diasUmbral` días (inclusive). Excluye los ya completados o listos para
+ * reiniciar (que ya tienen el dinero). Ordena de más urgente a menos.
+ *
+ * @param {import('../../core/state.js').Apartado[]} apartados
+ * @param {string}  hoyISO    YYYY-MM-DD.
+ * @param {number}  [diasUmbral=60]
+ * @returns {import('../../core/state.js').Apartado[]}
+ */
+export function apartadosProximos(apartados, hoyISO, diasUmbral = 60) {
+  return (apartados ?? [])
+    .filter(a => {
+      if (a.completado === true) return false;
+      const dias = diasHastaFecha(a.fechaObjetivo, hoyISO);
+      return dias !== null && dias >= 0 && dias <= diasUmbral;
+    })
+    .sort((a, b) => {
+      const da = diasHastaFecha(a.fechaObjetivo, hoyISO) ?? Infinity;
+      const db = diasHastaFecha(b.fechaObjetivo, hoyISO) ?? Infinity;
+      return da - db;
+    });
 }
 
 /**

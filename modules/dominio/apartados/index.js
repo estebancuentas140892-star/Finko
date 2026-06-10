@@ -11,7 +11,7 @@
 import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
@@ -20,17 +20,21 @@ import { f, hoy } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
   calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
+  frecuenciaPrincipalIngresos,
 } from './logic.js';
-import { renderListaApartados, renderFormApartado, renderFormAporteApartado } from './view.js';
+import {
+  renderListaApartados, renderFormApartado, renderFormAporteApartado,
+  renderNudgeApartadosProximos,
+} from './view.js';
 
 // ── HANDLERS: CREAR / ELIMINAR ───────────────────────────────────
 
 function _nuevoApartado() {
   const overlay = document.getElementById('modal-apartado');
   if (!overlay) return;
-  resetModal(overlay);
+  // Re-inyectar para actualizar la frecuencia pre-seleccionada según ingresos actuales.
+  _inyectarFormApartado();
   _resetSugerenciaLive();
-  // resetModal limpia los campos; el periodo vuelve a ocultarse con el checkbox.
   _togglePeriodoRecurrencia(false);
   abrirModal(overlay);
 }
@@ -244,7 +248,8 @@ function _inyectarFormApartado() {
   const body = document.getElementById('modal-apartado-body');
   if (!body) return;
 
-  body.innerHTML = renderFormApartado();
+  const frecuenciaPreferida = frecuenciaPrincipalIngresos(S.ingresos);
+  body.innerHTML = renderFormApartado(frecuenciaPreferida);
 
   const form = body.querySelector('#form-apartado');
   if (!form) return;
@@ -281,13 +286,16 @@ export function initApartados() {
   EventBus.on('state:change', ({ section }) => {
     if (section === 'apartados') {
       renderSmart(renderListaApartados, 'apartados');
+      renderNudgeApartadosProximos();
     }
   });
 
   // Re-render al navegar a #apartados (no hay state:change que lo dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(renderListaApartados, 'apartados');
+    renderNudgeApartadosProximos();
   });
 
   renderSmart(renderListaApartados, 'apartados');
+  renderNudgeApartadosProximos();
 }

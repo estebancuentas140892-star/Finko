@@ -9,6 +9,8 @@ import {
   etiquetaPeriodoMeses,
   avanzarMeses,
   reiniciarCiclo,
+  frecuenciaPrincipalIngresos,
+  apartadosProximos,
   validarApartado,
   validarAbonoApartado,
   normalizarApartado,
@@ -438,6 +440,95 @@ describe('normalizarApartado()', () => {
     const r = normalizarApartado(datosFormValidos);
     expect(r.montoActual).toBe(0);
     expect(r.completado).toBe(false);
+  });
+});
+
+// ── frecuenciaPrincipalIngresos() ────────────────────────────────
+
+describe('frecuenciaPrincipalIngresos()', () => {
+  const ingreso = (frecuencia, activo = true) => ({ id: 'i1', descripcion: 'Nómina', monto: 1_000_000, frecuencia, activo, fechaCreacion: '2026-01-01' });
+
+  it('sin ingresos devuelve Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos(null)).toBe('Mensual');
+  });
+
+  it('un ingreso Quincenal → devuelve Quincenal', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Quincenal')])).toBe('Quincenal');
+  });
+
+  it('la frecuencia más común gana', () => {
+    const lista = [ingreso('Quincenal'), ingreso('Quincenal'), ingreso('Mensual')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+
+  it('frecuencias no soportadas (Trimestral, Anual) se mapean a Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Trimestral')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso('Anual')])).toBe('Mensual');
+  });
+
+  it('los ingresos inactivos no cuentan', () => {
+    const lista = [ingreso('Quincenal', false), ingreso('Mensual', true)];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Mensual');
+  });
+
+  it('en empate numérico prefiere la frecuencia más granular', () => {
+    // Quincenal (índice 2) vs Mensual (índice 3): gana Quincenal.
+    const lista = [ingreso('Quincenal'), ingreso('Mensual')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+});
+
+// ── apartadosProximos() ──────────────────────────────────────────
+
+describe('apartadosProximos()', () => {
+  const hoy = '2026-06-10';
+  const apt = (overrides) => apartadoBase({ fechaObjetivo: '2026-07-10', completado: false, ...overrides });
+
+  it('devuelve apartados dentro del umbral por defecto (60 días)', () => {
+    const lista = [apt({ id: 'a1', fechaObjetivo: '2026-07-01' })];
+    expect(apartadosProximos(lista, hoy)).toHaveLength(1);
+  });
+
+  it('excluye apartados más allá del umbral', () => {
+    const lista = [apt({ id: 'a1', fechaObjetivo: '2026-12-31' })];
+    expect(apartadosProximos(lista, hoy)).toHaveLength(0);
+  });
+
+  it('excluye apartados completados', () => {
+    const lista = [apt({ id: 'a1', completado: true, fechaObjetivo: '2026-06-15' })];
+    expect(apartadosProximos(lista, hoy)).toHaveLength(0);
+  });
+
+  it('excluye apartados sin fecha objetivo', () => {
+    const lista = [apt({ id: 'a1', fechaObjetivo: null })];
+    expect(apartadosProximos(lista, hoy)).toHaveLength(0);
+  });
+
+  it('ordena de más urgente a menos urgente', () => {
+    const lista = [
+      apt({ id: 'a2', fechaObjetivo: '2026-07-20' }),
+      apt({ id: 'a1', fechaObjetivo: '2026-06-15' }),
+    ];
+    const r = apartadosProximos(lista, hoy);
+    expect(r[0].id).toBe('a1');
+    expect(r[1].id).toBe('a2');
+  });
+
+  it('respeta umbral personalizado', () => {
+    const lista = [
+      apt({ id: 'a1', fechaObjetivo: '2026-06-20' }),
+      apt({ id: 'a2', fechaObjetivo: '2026-07-01' }),
+    ];
+    // Con umbral 15 días solo entra el que vence en 10.
+    const r = apartadosProximos(lista, hoy, 15);
+    expect(r).toHaveLength(1);
+    expect(r[0].id).toBe('a1');
+  });
+
+  it('devuelve array vacío si no hay apartados próximos', () => {
+    expect(apartadosProximos([], hoy)).toEqual([]);
+    expect(apartadosProximos(null, hoy)).toEqual([]);
   });
 });
 

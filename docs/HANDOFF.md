@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-10 (Apartados Fase 2: recurrencia y ciclo automático; 1320/1320 verde)
+> Última actualización: 2026-06-10 (Apartados Fase 3: frecuencia automática + nudge de proximidad; 1333/1333 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1320/1320 verdes (+24: recurrencia en Apartados) |
+| Tests unitarios + integración | 1333/1333 verdes (+13: frecuencia automática + nudge de proximidad) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,32 +39,29 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(apartados): frecuencia automática + nudge de proximidad - Fase 3 · 2026-06-10
+
+Al abrir "Nuevo apartado", la frecuencia de aporte se pre-selecciona según los ingresos activos del usuario. El modal ya abre con "Quincenal" marcado si el usuario cobra quincenal, sin tocar nada. Si no hay ingresos, cae a "Mensual". Cuando hay apartados que vencen en 60 días, un nudge en la sección avisa: "SOAT vence en 30 días · Aparta $X por quincena." ADN #10 respetado (logic.js recibe `ingresos` como parámetro; view.js lee S directamente). SW v134 → v135. 1333/1333 verdes (+13).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/logic.js` | `frecuenciaPrincipalIngresos(ingresos)`: moda de frecuencias activas → FRECUENCIAS_APORTE. `apartadosProximos(apartados, hoyISO, umbral)`: filtra y ordena por urgencia. |
+| `modules/dominio/apartados/view.js` | `renderFormApartado(frecuenciaPreferida)`: pre-selecciona la opción. `renderNudgeApartadosProximos()`: nudge informativo con el más urgente y recuento de otros. |
+| `modules/dominio/apartados/index.js` | `_nuevoApartado` re-inyecta el form para leer `S.ingresos` actualizado; nudge en pipeline de render. |
+| `index.html` | `#apartados-nudge-proximos` antes de `#lista-apartados`. `service-worker.js` v134 → v135. |
+| `tests/unit/apartados.test.js` (+13) | 6 para `frecuenciaPrincipalIngresos`, 7 para `apartadosProximos`. |
+
+---
+
 ### feat(apartados): recurrencia y ciclo automático - Fase 2 · 2026-06-10
 
 Un apartado para un gasto que se repite (SOAT anual, impuestos) se reinicia para el próximo periodo en vez de recrearse a mano. Schema v14. Al marcar "Se repite" + periodo, cuando reúne el dinero queda "✅ ¡Listo!" con botón "Ya lo usé": `reiniciarCiclo` vacía el monto (conserva excedente), avanza la fecha al siguiente vencimiento y vuelve a en progreso. SW v133 → v134. 1320/1320 verdes (+24).
 
 | Archivo | Cambio |
 |---|---|
-| `modules/dominio/apartados/logic.js` | `reiniciarCiclo`, `avanzarMeses` (recorta a fin de mes), `estaListoParaReiniciar`, `etiquetaPeriodoMeses`, `PERIODOS_RECURRENCIA`. `apartadosActivos` mantiene recurrentes completados. |
-| `modules/dominio/apartados/{view,index}.js` | Checkbox "Se repite" + select de periodo (toggle); badge y estado "¡Listo!" + botón "Ya lo usé" (handler `_reiniciarApartado`). |
+| `modules/dominio/apartados/logic.js` | `reiniciarCiclo`, `avanzarMeses`, `estaListoParaReiniciar`, `etiquetaPeriodoMeses`, `PERIODOS_RECURRENCIA`. |
+| `modules/dominio/apartados/{view,index}.js` | Checkbox "Se repite" + select (toggle); badge "¡Listo!" + botón "Ya lo usé". |
 | `modules/core/{state,storage}.js` | `recurrente`/`periodoMeses`, `_version` 14, migración v13 → v14. |
-| `styles/components/domain.css` | `.apartado__listo` (success). |
-| `tests/unit/apartados.test.js` (+21) + storage/state | Recurrencia + migración v14. `service-worker.js` v133 → v134. |
-
-**Pendiente:** Fase 3 derivar la frecuencia de aporte desde `S.ingresos` + nudges proactivos ("tu SOAT vence en N meses").
-
----
-
-### feat(apartados): nuevo dominio para gastos previsibles - Fase 1 · 2026-06-10
-
-Sobres para separar dinero ante gastos previsibles (SOAT, impuestos, productos personales). Dominio nuevo (no extiende Metas), schema v13. Calcula cuánto apartar por periodo de cobro: "aparta $30.000 por quincena". Plantillas rápidas + hint en vivo + aporte que descuenta cuenta (patrón 0/1/varias). Ver [ADR 007](DECISIONS/007-dominio-apartados.md). SW v132 → v133. 1296/1296 verdes (+40).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/{logic,view,index}.js` | Dominio nuevo. `calcularAporteSugerido` es el corazón: faltante / periodos hasta la fecha. |
-| `modules/core/state.js` + `storage.js` | typedef Apartado, slice `apartados`, `_version` 13, migración v12 → v13. |
-| `index.html` | Ícono, sección, 2 modales, enlaces en sidebar y menú "más". |
-| `tests/unit/apartados.test.js` (37) + router/bootstrap/css | Lógica pura, ruta, registro, estilos. ADR 007. |
 
 ---
 
@@ -111,7 +108,7 @@ Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo c
 
 ---
 
-> Para tareas anteriores (alerta de próximo cobro, diaPago schema v12, skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (Apartados Fase 1, alerta de próximo cobro, diaPago schema v12, skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -121,9 +118,9 @@ Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo c
 
 **Mejoras de deudas (2026-06-09):** tasa de interés opcional al registrar deuda con entidad + motor de recomendación de estrategia por simulación (detecta planes inviables y calcula pago extra mínimo). SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md).
 
-**Apartados (2026-06-10):** dominio nuevo para gastos previsibles. Fases 1 (base + cálculo de aporte) y 2 (recurrencia/ciclo automático) cerradas. SW v132 → v134. 1320/1320 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
+**Apartados (2026-06-10):** dominio nuevo para gastos previsibles. Fases 1 (CRUD), 2 (recurrencia/ciclo) y 3 (frecuencia automática + nudge de proximidad) cerradas. SW v132 → v135. 1333/1333 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
 
-**Próxima tarea natural:** Apartados Fase 3 (derivar la frecuencia de aporte desde `S.ingresos` + nudges proactivos "tu SOAT vence en N meses, aparta $X" en dashboard/agenda).
+**Próxima tarea natural:** mejora de UX para apartados en el dashboard global (nudge cross-section visible sin navegar a #apartados), o cualquier otra tarea del [ROADMAP](ROADMAP.md).
 
 **Otras opciones:**
 - **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
