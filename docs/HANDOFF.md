@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-10 (Apartados Fase 3: frecuencia automática + nudge de proximidad; 1333/1333 verde)
+> Última actualización: 2026-06-10 (Apartados Fase 3 cierra la última serie pendiente; todas las fases post-v1.0 completadas; 1333/1333 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -112,21 +112,20 @@ Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo c
 
 ---
 
-## 4. Qué sigue (roadmap post-v1.0)
+## 4. Estado de finalización (v1.0 + post-v1.0)
 
-**Serie cerrada:** "Coaching de ingresos" (Fases 1, 2 y 3) completada el 2026-06-09. `diaPago` en ingresos + nudge de próximo cobro + tarjeta de distribución adaptativa. SW v128 → v131. 1235/1235 tests verdes.
+**🎯 Hito: todas las series pendientes completadas.**
 
-**Mejoras de deudas (2026-06-09):** tasa de interés opcional al registrar deuda con entidad + motor de recomendación de estrategia por simulación (detecta planes inviables y calcula pago extra mínimo). SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md).
+- ✅ **"Coaching de ingresos"** (Fases 1, 2, 3): diaPago + nudge de próximo cobro + distribución adaptativa. SW v128 → v131. 1235/1235 verdes. 2026-06-09.
+- ✅ **"Mejoras de deudas"**: tasa opcional + motor de recomendación por simulación. SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). 2026-06-09.
+- ✅ **"Apartados"** (Fases 1, 2, 3): CRUD + recurrencia/ciclo + frecuencia automática + nudge de proximidad. SW v132 → v135. 1333/1333 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md). 2026-06-10.
 
-**Apartados (2026-06-10):** dominio nuevo para gastos previsibles. Fases 1 (CRUD), 2 (recurrencia/ciclo) y 3 (frecuencia automática + nudge de proximidad) cerradas. SW v132 → v135. 1333/1333 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
+**Tareas opcionales / futuras:**
+- **E.2-2027** — Enero 2027: actualizar SMMLV/UVT a valores 2027 cuando se publiquen oficialmente (Haiku, ~15 min).
+- **E.5** — Agregar IPC como constante anual si se quiere mostrar inflación observada (Haiku, Bajo).
+- **A.5** — Setup de dominio custom cuando el usuario tenga URL registrada. No requiere código. Guía lista en `docs/SETUP_DOMINIO.md`.
 
-**Próxima tarea natural:** mejora de UX para apartados en el dashboard global (nudge cross-section visible sin navegar a #apartados), o cualquier otra tarea del [ROADMAP](ROADMAP.md).
-
-**Otras opciones:**
-- **A.5 - Dominio custom** deploy en dominio propio. No requiere código. Ver guía en `docs/SETUP_DOMINIO.md`.
-- **E.2 - SMMLV + UVT 2027** en enero 2027 (~15 min, Haiku): búsqueda de valores oficiales y actualización de `LEGAL_POR_ANIO` en `constants.js`.
-
-**Estado base:** App en producción estable (`https://finko-brown.vercel.app`).
+**App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100, 1333/1333 tests verdes, cero deuda técnica conocida).
 
 > **Importante para futuros desarrolladores:** Antes de instalar dependencias o configurar
 > un nuevo entorno, leer [`docs/SECURITY.md`](SECURITY.md). Incluye política anti-malware npm,
