@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v2): sistema de iconos SVG propio (reemplaza emojis de UI chrome) · 2026-06-11
+
+Segunda fase del rediseño visual 2026. Elimina los emojis de UI chrome reemplazándolos con un set SVG geométrico propio. El sprite existente en `index.html` crece con 11 nuevos `<symbol>`. El módulo `infra/icons.js` centraliza la generación de strings SVG inline. SW v145 → v146.
+
+- **`modules/infra/icons.js`** (nuevo): helper `icon(id, cls='icon')` devuelve `<svg class="..."><use href="#i-id"/></svg>`.
+- **`index.html`**: 11 nuevos symbols (recurring, search, lightbulb, alert, moon, sun, bolt, trophy, mountain, circle, check-circle). Quick-add y modal usan `#i-bolt`. Hero guide sin cuentas usa `#i-cuentas`.
+- **`styles/components/forms.css`**: modificador `.icon--lg` (3rem, stroke-width 1.5).
+- **`styles/components/atoms.css`**: `.empty-state__icon .icon--lg` con color acento y 3.5rem.
+- **`styles/components/config.css`**: `.cal-dot--*` agrega `color:` para colorear icons SVG.
+- **`modules/dominio/compromisos/logic.js`**: `ICONO_TIPO` pasa de emoji a IDs de sprite.
+- **Views de 10 dominios**: empty states con `<div class="empty-state__icon">icon(...)</div>`, list-item icons (gastos, personales), nudge icons (ahorro, tesoreria, alertas, estrategia).
+- **`modules/dominio/tesoreria/logic.js`**: `icono: 'gastos'` (era `'💸'`).
+- **`tests/unit/tesoreria.test.js`**: actualiza expect `icono` de `'💸'` a `'gastos'`.
+- **`service-worker.js`**: v145 → v146.
+
+---
+
 ### feat(rediseno-v1): tokens v2 + tipografía: Inter tnum, sin glow, sin DM Mono · 2026-06-11
 
 Primera fase del rediseño visual 2026. Toda la app cambia de DM Mono a Inter para valores financieros (tnum activado), y el "glow" neón se reemplaza por elevación con ring de acento. SW v144 → v145. Tests 1359/1359 verdes.

@@ -39,6 +39,25 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(rediseno-v2): sistema de iconos SVG propio (reemplaza emojis de UI chrome) · 2026-06-11
+
+Segunda fase del rediseño visual 2026. Crea `infra/icons.js` con helper `icon(id, cls)` que referencia el sprite SVG de `index.html`. Agrega 11 nuevos symbols al sprite. Reemplaza todos los emojis de UI chrome por SVG: empty states (10 vistas), list-item icons, nudge icons, iconos de estrategia, quick-add, modal y toggle de tema. `ICONO_TIPO` en compromisos pasa a IDs de icono. SW v145 → v146. Tests 1359/1359 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/icons.js` | Nuevo: `icon(id, cls)` devuelve `<svg><use href="#i-id"/></svg>`. |
+| `index.html` | 11 nuevos `<symbol>` en el sprite (recurring, search, lightbulb, alert, moon, sun, bolt, trophy, mountain, circle, check-circle). Quick-add y modal gasto rápido usan `#i-bolt`. Hero guide usa `#i-cuentas`. |
+| `styles/components/forms.css` | `.icon--lg` (3rem, stroke-width 1.5): modificador para empty states. |
+| `styles/components/atoms.css` | `.empty-state__icon .icon--lg`: color acento + 3.5rem. |
+| `styles/components/config.css` | `.cal-dot--*`: agrega `color:` junto a `background:` para colorear iconos SVG inline. |
+| `modules/dominio/compromisos/logic.js` | `ICONO_TIPO` pasa de emoji a IDs: `'recurring'`, `'cuentas'`, `'personales'`. |
+| Views de 10 dominios | Empty states: `<div class="empty-state__icon">icon(...)</div>`. List-item icons. Nudge icons. |
+| `modules/dominio/tesoreria/logic.js` | `icono: 'gastos'` (era `'💸'`). |
+| `tests/unit/tesoreria.test.js` | Actualiza expect `icono` de `'💸'` a `'gastos'`. |
+| `service-worker.js` | v145 → v146. |
+
+---
+
 ### feat(rediseno-v1): tokens v2 + tipografía: Inter tnum, sin glow, sin DM Mono · 2026-06-11
 
 Primera fase del rediseño visual 2026. Los montos de toda la app ahora usan Inter (igual que el resto del texto) con `tabular-nums` para alineación numérica. Eliminada la fuente DM Mono y sus dos archivos `@font-face`. El "glow" neón reemplazado por un sistema de elevación con ring sutil de acento. SW v144 → v145. Tests 1359/1359 verdes.
@@ -92,16 +111,7 @@ El empty state de Metas mencionaba "fondo de emergencia" como meta sugerida, com
 
 ---
 
-### fix(tesoreria): card de distribución visible para todas las frecuencias de ingreso · 2026-06-11
-
-La card "¿Cómo distribuir $X?" en Mis Ingresos no aparecía para usuarios con ingresos quincenales, semanales o diarios. Tres bugs corregidos: (1) `estimarSalarioMensual` ahora convierte todas las frecuencias a mensual usando `_FACTOR_MENSUAL`; (2) el cálculo de gastos fijos usa la nueva función `calcularGastosFijosMensuales` que corrige el filtro de frecuencia (lowercase vs Mensual); (3) `tieneDeudas` corregido de `tipo === 'deuda'` a `'deuda-entidad' || 'deuda-personal'` (el tipo string `'deuda'` nunca existió). SW v141 → v142. 1359/1359 tests verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `_FACTOR_MENSUAL` constante. `estimarSalarioMensual` multifrecuencia. Nueva `calcularGastosFijosMensuales`. |
-| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso` usa `calcularGastosFijosMensuales`; `tieneDeudas` tipo corregido. |
-| `tests/unit/tesoreria.test.js` | Test `estimarSalarioMensual` actualizado; 2 nuevos tests frecuencias. 6 nuevos tests `calcularGastosFijosMensuales`. |
-| `service-worker.js` | v141 → v142. |
+> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

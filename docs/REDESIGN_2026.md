@@ -88,7 +88,7 @@ Cada fase: tests verdes + bump de SW + verificación visual en la app + commit a
 | Fase | Estado |
 |---|---|
 | F1 | Completada 2026-06-11 |
-| F2 | Pendiente |
+| F2 | Completada 2026-06-11 |
 | F3 | Pendiente |
 | F4 | Pendiente |
 | F5 | Pendiente |
