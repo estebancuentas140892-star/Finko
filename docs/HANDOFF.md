@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-10 (Apartados Fase 3 cierra la última serie pendiente; todas las fases post-v1.0 completadas; 1333/1333 verde)
+> Última actualización: 2026-06-10 (fix abono parcial en Agenda; 1351/1351 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1333/1333 verdes (+13: frecuencia automática + nudge de proximidad) |
+| Tests unitarios + integración | 1351/1351 verdes (+18: fix abono parcial en Agenda) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(agenda): abono parcial no marca la cuota como pagada · 2026-06-10
+
+El badge "Ya pagaste este mes" en la Agenda ahora distingue tres estados: sin pago, abono parcial (ámbar: "Abonado $X de $Y este mes") y cuota cubierta (verde: "✓ Ya pagaste este mes"). Antes, cualquier gasto vinculado a una deuda ese mes activaba el badge verde sin revisar el monto. La lógica es pura y testeable.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `calcularAbonosDelMes` y `estadoPagoMes` (nueva lógica pura; fijos = cualquier pago completo; deudas = suma vs cuotaMensual). |
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem` usa `estadoPagoMes`; badge parcial con clase `--parcial`. |
+| `styles/components/domain.css` | `.cal-detail__badge-abono--parcial` con `--fk-warning-text`. |
+| `tests/unit/compromisos.test.js` | +18 tests para `calcularAbonosDelMes` y `estadoPagoMes`. |
+| `service-worker.js` | v135 → v136. |
+
+---
 
 ### feat(apartados): frecuencia automática + nudge de proximidad - Fase 3 · 2026-06-10
 
@@ -93,22 +107,7 @@ La tasa EA dejó de ser obligatoria al registrar una deuda con entidad (muchas p
 
 ---
 
-### feat(ingresos): motor de distribución adaptativa del ingreso (Fase 3) · 2026-06-09
-
-Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo cobro. Split 50/30/20 adaptado al peso real de gastos fijos. Alertas y CTAs según contexto: fondo de emergencia, deudas, inversiones. Sin nuevo schema ni CSS. SW v130 → v131. 1235/1235 tests verdes (+14).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `sugerirDistribucionIngreso(ingresoMensual, contexto)`: pura, 3 escenarios (<=50%, 51-70%, >70% fijos), CTAs dinámicos. |
-| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso()` + `_renderDistribucion()`. Lee S directamente sin importar otros dominios. |
-| `modules/dominio/tesoreria/index.js` | Importa y llama en `_renderTodo`. EventBus extendido: ahora reacciona a `ahorro` e `inversiones`. |
-| `index.html` | `<div id="ingresos-distribucion">` entre nudge y lista de ingresos. |
-| `tests/unit/tesoreria.test.js` | +14 tests: split suma 100 para 8 valores de pctFijos, alertas/CTAs por contexto, coherencia de montos. |
-| `service-worker.js` | `CACHE_NAME` v130 → v131. |
-
----
-
-> Para tareas anteriores (Apartados Fase 1, alerta de próximo cobro, diaPago schema v12, skip link WCAG, formulario dinámico de cuentas + schema v11, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (motor distribución ingresos, Apartados Fase 1, alerta próximo cobro, diaPago schema v12, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -119,6 +118,7 @@ Tarjeta "¿Cómo distribuir $X?" en Mis ingresos, debajo del nudge de próximo c
 - ✅ **"Coaching de ingresos"** (Fases 1, 2, 3): diaPago + nudge de próximo cobro + distribución adaptativa. SW v128 → v131. 1235/1235 verdes. 2026-06-09.
 - ✅ **"Mejoras de deudas"**: tasa opcional + motor de recomendación por simulación. SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). 2026-06-09.
 - ✅ **"Apartados"** (Fases 1, 2, 3): CRUD + recurrencia/ciclo + frecuencia automática + nudge de proximidad. SW v132 → v135. 1333/1333 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md). 2026-06-10.
+- ✅ **fix(agenda) abono parcial**: badge de Agenda distingue abono parcial de cuota cubierta. SW v135 → v136. 1351/1351 verdes. 2026-06-10.
 
 **Tareas opcionales / futuras:**
 - **E.2-2027** — Enero 2027: actualizar SMMLV/UVT a valores 2027 cuando se publiquen oficialmente (Haiku, ~15 min).

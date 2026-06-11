@@ -454,6 +454,10 @@ details[open] > .herramienta-inline__titulo::after {
   margin-top: var(--fk-space-1);
 }
 
+.cal-detail__badge-abono--parcial {
+  color: var(--fk-warning-text);
+}
+
 /* Fila de acciones de gasto fijo (Editar / Eliminar / Marcar pagado). */
 .cal-detail__actions {
   grid-column: 1 / -1;

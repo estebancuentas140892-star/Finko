@@ -11,7 +11,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { FRECUENCIAS } from '../../core/constants.js';
-import { LABEL_TIPO, ICONO_TIPO } from '../compromisos/logic.js';
+import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
@@ -270,14 +270,21 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
   const idEsc = _esc(c.id ?? '');
 
-  // Badge "Ya pagaste este mes": aparece si hay un gasto vinculado a este
-  // compromiso vía compromisoId en el mes visualizado.
-  const prefijo  = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
-  const pagado   = Array.isArray(S.gastos) &&
-    S.gastos.some(g => g.compromisoId === c.id && g.fecha?.startsWith(prefijo));
-  const badgeHtml = pagado
-    ? `<p class="cal-detail__badge-abono" role="status">✓ Ya pagaste este mes</p>`
-    : '';
+  // Badge de estado de pago: distingue cuota cubierta, abono parcial y sin pago.
+  // Para deudas se compara el total abonado contra cuotaMensual; para fijos
+  // basta con que exista cualquier gasto vinculado ese mes.
+  const prefijo    = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
+  const gastos     = Array.isArray(S.gastos) ? S.gastos : [];
+  const estadoPago = estadoPagoMes(gastos, c, prefijo);
+
+  let badgeHtml = '';
+  if (estadoPago === 'completo') {
+    badgeHtml = `<p class="cal-detail__badge-abono" role="status">✓ Ya pagaste este mes</p>`;
+  } else if (estadoPago === 'parcial') {
+    const totalAbonado = calcularAbonosDelMes(gastos, c.id, prefijo);
+    const cuota = Number(c.cuotaMensual) || 0;
+    badgeHtml = `<p class="cal-detail__badge-abono cal-detail__badge-abono--parcial" role="status">Abonado ${f(totalAbonado)} de ${f(cuota)} este mes</p>`;
+  }
 
   // Acciones solo para gastos fijos.
   let accionesHtml = '';

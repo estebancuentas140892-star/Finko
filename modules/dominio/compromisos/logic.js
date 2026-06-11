@@ -1098,6 +1098,51 @@ export function validarAbono(datos, deuda) {
 }
 
 /**
+ * Suma los abonos de un compromiso en un mes dado.
+ * Un abono es un gasto en S.gastos con `compromisoId` apuntando al compromiso
+ * y fecha dentro del mes indicado por `prefijoMes` ('YYYY-MM').
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} compromisoId
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {number} Total abonado en COP.
+ */
+export function calcularAbonosDelMes(gastos, compromisoId, prefijoMes) {
+  if (!Array.isArray(gastos) || !compromisoId || !prefijoMes) return 0;
+  return gastos
+    .filter(g => g.compromisoId === compromisoId && g.fecha?.startsWith(prefijoMes))
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+}
+
+/**
+ * Estado de pago de un compromiso en el mes indicado por `prefijoMes` ('YYYY-MM').
+ *
+ * - 'ninguno':  no hay gastos vinculados ese mes.
+ * - 'parcial':  hay abonos pero no cubren la cuotaMensual (solo aplica a deudas).
+ * - 'completo': los abonos cubren o superan la cuotaMensual; o es un gasto fijo
+ *               con cualquier gasto vinculado (los fijos se pagan de una vez).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {import('../../core/state.js').Compromiso} compromiso
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {'ninguno' | 'parcial' | 'completo'}
+ */
+export function estadoPagoMes(gastos, compromiso, prefijoMes) {
+  if (!compromiso?.id || !prefijoMes) return 'ninguno';
+
+  const totalAbonado = calcularAbonosDelMes(gastos, compromiso.id, prefijoMes);
+  if (totalAbonado <= 0) return 'ninguno';
+
+  // Gastos fijos: cualquier importe registrado = pagado (no tienen cuota parcial).
+  if (compromiso.tipo === 'fijo') return 'completo';
+
+  // Deudas: comparar abonos contra cuota mensual.
+  const cuota = Number(compromiso.cuotaMensual) || 0;
+  if (cuota <= 0) return 'completo';
+  return totalAbonado >= cuota ? 'completo' : 'parcial';
+}
+
+/**
  * Calcula el delta a aplicar al `saldoTotal` de uno o dos compromisos cuando
  * un gasto se edita o crea o elimina.
  *

@@ -23,6 +23,8 @@ import {
   validarAbono,
   deltasSaldoCompromisoPorEdicionGasto,
   detectarDeudaCreciente,
+  calcularAbonosDelMes,
+  estadoPagoMes,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
   ICONO_TIPO,
@@ -1676,5 +1678,115 @@ describe('integración: flujo completo de abono a deuda', () => {
 
     const saldoRestaurado = revertirAbonoDeSaldo(saldoTrasAbono, montoAbono);
     expect(saldoRestaurado).toBe(500_000);
+  });
+});
+
+// ── calcularAbonosDelMes ─────────────────────────────────────────
+
+describe('calcularAbonosDelMes()', () => {
+  const gastos = [
+    { compromisoId: 'deuda-1', fecha: '2026-06-05', monto: 20_000 },
+    { compromisoId: 'deuda-1', fecha: '2026-06-20', monto: 30_000 },
+    { compromisoId: 'deuda-2', fecha: '2026-06-10', monto: 50_000 },
+    { compromisoId: 'deuda-1', fecha: '2026-05-15', monto: 100_000 },
+  ];
+
+  it('suma los abonos del mes correcto para un compromiso', () => {
+    expect(calcularAbonosDelMes(gastos, 'deuda-1', '2026-06')).toBe(50_000);
+  });
+
+  it('no suma abonos de otro mes', () => {
+    expect(calcularAbonosDelMes(gastos, 'deuda-1', '2026-05')).toBe(100_000);
+  });
+
+  it('no suma abonos de otro compromiso', () => {
+    expect(calcularAbonosDelMes(gastos, 'deuda-2', '2026-06')).toBe(50_000);
+  });
+
+  it('devuelve 0 si no hay gastos para ese compromiso y mes', () => {
+    expect(calcularAbonosDelMes(gastos, 'deuda-99', '2026-06')).toBe(0);
+  });
+
+  it('devuelve 0 con array vacío', () => {
+    expect(calcularAbonosDelMes([], 'deuda-1', '2026-06')).toBe(0);
+  });
+
+  it('devuelve 0 con gastos null/undefined', () => {
+    expect(calcularAbonosDelMes(null, 'deuda-1', '2026-06')).toBe(0);
+  });
+
+  it('ignora gastos sin compromisoId', () => {
+    const g = [{ fecha: '2026-06-01', monto: 999 }];
+    expect(calcularAbonosDelMes(g, 'deuda-1', '2026-06')).toBe(0);
+  });
+});
+
+// ── estadoPagoMes ────────────────────────────────────────────────
+
+describe('estadoPagoMes()', () => {
+  const deuda = {
+    id: 'deuda-1', tipo: 'deuda-entidad', cuotaMensual: 200_000,
+  };
+  const fijo = {
+    id: 'fijo-1', tipo: 'fijo', monto: 500_000,
+  };
+
+  const gastoDeuda20k  = [{ compromisoId: 'deuda-1', fecha: '2026-06-10', monto: 20_000 }];
+  const gastoDeuda200k = [{ compromisoId: 'deuda-1', fecha: '2026-06-10', monto: 200_000 }];
+  const gastoFijo      = [{ compromisoId: 'fijo-1',  fecha: '2026-06-05', monto: 500_000 }];
+
+  it('ninguno: sin gastos vinculados ese mes', () => {
+    expect(estadoPagoMes([], deuda, '2026-06')).toBe('ninguno');
+  });
+
+  it('parcial: abono de deuda cubre menos que la cuota', () => {
+    expect(estadoPagoMes(gastoDeuda20k, deuda, '2026-06')).toBe('parcial');
+  });
+
+  it('completo: abono de deuda cubre exactamente la cuota', () => {
+    expect(estadoPagoMes(gastoDeuda200k, deuda, '2026-06')).toBe('completo');
+  });
+
+  it('completo: abono de deuda supera la cuota', () => {
+    const g = [{ compromisoId: 'deuda-1', fecha: '2026-06-10', monto: 250_000 }];
+    expect(estadoPagoMes(g, deuda, '2026-06')).toBe('completo');
+  });
+
+  it('completo: múltiples abonos que juntos cubren la cuota', () => {
+    const g = [
+      { compromisoId: 'deuda-1', fecha: '2026-06-05', monto: 100_000 },
+      { compromisoId: 'deuda-1', fecha: '2026-06-20', monto: 100_000 },
+    ];
+    expect(estadoPagoMes(g, deuda, '2026-06')).toBe('completo');
+  });
+
+  it('parcial: múltiples abonos que no alcanzan la cuota', () => {
+    const g = [
+      { compromisoId: 'deuda-1', fecha: '2026-06-05', monto: 50_000 },
+      { compromisoId: 'deuda-1', fecha: '2026-06-20', monto: 50_000 },
+    ];
+    expect(estadoPagoMes(g, deuda, '2026-06')).toBe('parcial');
+  });
+
+  it('gasto fijo: cualquier pago vinculado = completo (no tiene cuota parcial)', () => {
+    expect(estadoPagoMes(gastoFijo, fijo, '2026-06')).toBe('completo');
+  });
+
+  it('gasto fijo: sin gastos vinculados = ninguno', () => {
+    expect(estadoPagoMes([], fijo, '2026-06')).toBe('ninguno');
+  });
+
+  it('ninguno: compromiso null', () => {
+    expect(estadoPagoMes(gastoDeuda20k, null, '2026-06')).toBe('ninguno');
+  });
+
+  it('completo: deuda sin cuotaMensual definida, cualquier abono = completo', () => {
+    const deudaSinCuota = { id: 'deuda-1', tipo: 'deuda-entidad', cuotaMensual: 0 };
+    expect(estadoPagoMes(gastoDeuda20k, deudaSinCuota, '2026-06')).toBe('completo');
+  });
+
+  it('ninguno: gastos de otro mes no cuentan', () => {
+    const gOtroMes = [{ compromisoId: 'deuda-1', fecha: '2026-05-10', monto: 200_000 }];
+    expect(estadoPagoMes(gOtroMes, deuda, '2026-06')).toBe('ninguno');
   });
 });

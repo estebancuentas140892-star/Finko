@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(agenda): abono parcial ya no marca la cuota como pagada · 2026-06-10
+
+Corregida la lógica del badge "Ya pagaste este mes" en la Agenda. Antes, cualquier gasto vinculado a una deuda ese mes activaba el badge verde sin importar el monto. Ahora distingue tres estados: sin pago, abono parcial y cuota cubierta.
+
+- `estadoPagoMes(gastos, compromiso, prefijoMes)`: función pura nueva. Para gastos fijos: cualquier pago = completo. Para deudas: compara la suma de abonos del mes contra `cuotaMensual` y devuelve `'ninguno' | 'parcial' | 'completo'`.
+- `calcularAbonosDelMes(gastos, compromisoId, prefijoMes)`: función pura nueva. Suma los abonos de un compromiso en el mes indicado.
+- Badge verde "✓ Ya pagaste este mes" solo aparece cuando la cuota está cubierta.
+- Badge ámbar "Abonado $X de $Y este mes" aparece cuando hay un abono parcial (solo para deudas).
+- Los gastos fijos no cambian: cualquier pago vinculado = completo (no tienen cuota parcial).
+- +18 tests nuevos en `compromisos.test.js` (`calcularAbonosDelMes` y `estadoPagoMes`).
+- SW v135 → v136.
+
+**Archivos:**
+
+- **`modules/dominio/compromisos/logic.js`:** `calcularAbonosDelMes` y `estadoPagoMes` exportadas en la sección de abonos.
+- **`modules/dominio/agenda/view.js`:** `_renderDetalleItem` usa `estadoPagoMes`; badge parcial con clase `--parcial`.
+- **`styles/components/domain.css`:** `.cal-detail__badge-abono--parcial` con `color: var(--fk-warning-text)`.
+- **`tests/unit/compromisos.test.js`:** +18 tests para las dos nuevas funciones puras.
+- **`service-worker.js`:** v135 → v136.
+
+---
+
 ### feat(apartados): frecuencia automática + nudge de proximidad - Fase 3 · 2026-06-10
 
 Al abrir "Nuevo apartado", la frecuencia de aporte se pre-selecciona según los ingresos activos del usuario (`frecuenciaPrincipalIngresos`). Si el usuario cobra quincenal, el select ya muestra "Quincenal" sin tocar nada. Si no hay ingresos, cae a "Mensual".
