@@ -13,7 +13,7 @@
   --fk-accent-hover:  #38dca6;
   --fk-accent-subtle: rgba(31, 209, 148, 0.12);
   --fk-accent-border: rgba(31, 209, 148, 0.32);
-  --fk-accent-glow:   rgba(31, 209, 148, 0.16);
+  --fk-accent-glow:   rgba(31, 209, 148, 0.08);
 
   /* ── FONDOS (modo oscuro - default) ─────────────────────────── */
   --fk-bg-base:        #101218;
@@ -108,7 +108,7 @@
 
   /* ── TIPOGRAFÍA ──────────────────────────────────────────────── */
   --fk-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --fk-font-mono: 'DM Mono', 'Courier New', monospace;
+  --fk-font-mono: var(--fk-font-sans);
 
   /* Escala de texto (base 16px) */
   --fk-text-xs:   0.75rem;    /* 12px */
@@ -158,7 +158,7 @@
   --fk-shadow-sm:   0 1px 3px rgba(4, 6, 12, 0.45);
   --fk-shadow-md:   0 4px 16px rgba(4, 6, 12, 0.5);
   --fk-shadow-lg:   0 8px 32px rgba(4, 6, 12, 0.55);
-  --fk-shadow-glow: 0 0 24px var(--fk-accent-glow);
+  --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(4, 6, 12, 0.45);
 
   /* ── Z-INDEX ─────────────────────────────────────────────────── */
   --fk-z-dropdown:      50;

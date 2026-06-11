@@ -35,7 +35,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**V.1 - Rediseño visual, Fase 1: tokens v2 + tipografía.** Paleta refinada dark/light, sistema de elevación sin glow, montos a Inter `tnum`, eliminar DM Mono. Plan completo y restricciones en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
+**V.2 - Rediseño visual, Fase 2: sistema de iconos SVG propio.** Reemplazar emojis en sidebar, bottom nav, list-items, headers de card y empty states por un set SVG inline geométrico en `infra/icons.js`. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
 
 Otras pendientes (no urgentes):
 

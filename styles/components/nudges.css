@@ -151,7 +151,7 @@
   border-left: 3px solid var(--fk-success);
   border-radius: var(--fk-radius-xl);
   padding: var(--fk-space-3) var(--fk-space-5);
-  box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
+  box-shadow: var(--fk-shadow-lg);
   pointer-events: none;
 }
 

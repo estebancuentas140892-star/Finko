@@ -26,7 +26,7 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 **Objetivo:** que Finko se sienta como una app financiera moderna, confiable y motivante, sin tocar el ADN técnico. Plan completo, diagnóstico y restricciones en [`REDESIGN_2026.md`](REDESIGN_2026.md).
 
 **Fases pendientes (una por sesión, en orden):**
-- V.1 (F1) - Tokens v2 + tipografía: paleta refinada dark/light, sistema de elevación sin glow, montos a Inter `tnum`, eliminar DM Mono. Sonnet 4.6 - Alto.
+- ✅ V.1 (F1) - Tokens v2 + tipografía. Completada 2026-06-11.
 - V.2 (F2) - Sistema de iconos SVG propio: adiós emojis en UI estructural. Sonnet 4.6 - Alto.
 - V.3 (F3) - Componentes núcleo v2: cards, list-items, progress (barra + anillo SVG). Sonnet 4.6 - Alto.
 - V.4 (F4) - Dashboard bento en desktop + hero card + count-up. Sonnet 4.6 - Alto.

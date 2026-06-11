@@ -61,7 +61,7 @@ body.light-theme {
   --fk-shadow-sm:   0 1px 3px rgba(26, 32, 60, 0.10);
   --fk-shadow-md:   0 4px 16px rgba(26, 32, 60, 0.09);
   --fk-shadow-lg:   0 8px 32px rgba(26, 32, 60, 0.11);
-  --fk-shadow-glow: 0 0 24px rgba(0, 107, 61, 0.18);
+  --fk-shadow-glow: 0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(26, 32, 60, 0.12);
 }
 
 /* ── TRANSICIÓN SUAVE ENTRE TEMAS ──────────────────────────────

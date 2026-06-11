@@ -45,6 +45,27 @@ p {
   font-feature-settings: 'tnum' 1;
 }
 
+/* Números tabulares para todos los elementos de valor financiero.
+   Necesario ahora que --fk-font-mono usa Inter (proporcional por defecto).
+   Un solo bloque centralizado en base evita repetir la declaración en ~20 selectores. */
+.card__value,
+.bento__value,
+.list-item__amount,
+.list-item__value,
+.metric-card__value,
+.patrimonio-hero__valor,
+.proyeccion-card__valor,
+.renta-criterio__valor,
+.cat-row__monto,
+.comparacion__monto,
+.patron__factor,
+.chart-stat__valor,
+.chart-axis__label,
+.sidebar__saldo-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
 /* Links visibles en contextos de texto */
 .link {
   color: var(--fk-text-accent);

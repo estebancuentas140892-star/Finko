@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v1): tokens v2 + tipografía: Inter tnum, sin glow, sin DM Mono · 2026-06-11
+
+Primera fase del rediseño visual 2026. Toda la app cambia de DM Mono a Inter para valores financieros (tnum activado), y el "glow" neón se reemplaza por elevación con ring de acento. SW v144 → v145. Tests 1359/1359 verdes.
+
+- **`styles/tokens.css`:** `--fk-font-mono` ahora apunta a `var(--fk-font-sans)` (Inter). `--fk-shadow-glow` reemplazado: `0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(4,6,12,0.45)`. `--fk-accent-glow` reducido a alpha 0.08.
+- **`styles/themes.css`:** `--fk-shadow-glow` light: `0 0 0 1.5px var(--fk-accent-border), 0 4px 20px rgba(26,32,60,0.12)`.
+- **`styles/main.css`:** Eliminados los dos bloques `@font-face` de DM Mono (400 y 500). Los archivos `.woff2` en `assets/fonts/` ya no se referencian; se pueden borrar manualmente.
+- **`styles/base.css`:** Bloque tnum centralizado con 14 selectores de valores financieros: `font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1`.
+- **`styles/components/config.css`:** `install-banner`: quitado `0 0 32px var(--fk-accent-glow)` inline.
+- **`styles/components/nudges.css`:** `logro-toast`: quitado `0 0 32px var(--fk-accent-glow)` inline.
+- **`styles/components/charts.css`:** `comp-chooser__btn:hover`: simplificado a `var(--fk-shadow-glow)`.
+- **`service-worker.js`:** v144 → v145.
+
+---
+
 ### docs(redesign): plan maestro de modernización visual 2026 · 2026-06-11
 
 Auditoría visual completa de la app (desktop 1280px y móvil 375px, dark y light, con datos de demostración) y plan del rediseño en 7 fases + 1 opcional de producto. Sin cambios de código.

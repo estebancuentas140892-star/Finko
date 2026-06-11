@@ -380,7 +380,7 @@
   border-color: var(--fk-accent);
   outline: none;
   transform: translateY(-2px);
-  box-shadow: var(--fk-shadow-md), var(--fk-shadow-glow);
+  box-shadow: var(--fk-shadow-glow);
 }
 
 .comp-chooser__btn:active {

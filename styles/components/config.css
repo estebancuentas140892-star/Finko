@@ -225,7 +225,7 @@
   background: var(--fk-bg-elevated);
   border: 1px solid var(--fk-border-default);
   border-radius: var(--fk-radius-xl);
-  box-shadow: var(--fk-shadow-lg), 0 0 32px var(--fk-accent-glow);
+  box-shadow: var(--fk-shadow-lg);
   animation: fadeInUp 0.35s ease-out;
 }
 

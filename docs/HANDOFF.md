@@ -39,9 +39,26 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(rediseno-v1): tokens v2 + tipografía: Inter tnum, sin glow, sin DM Mono · 2026-06-11
+
+Primera fase del rediseño visual 2026. Los montos de toda la app ahora usan Inter (igual que el resto del texto) con `tabular-nums` para alineación numérica. Eliminada la fuente DM Mono y sus dos archivos `@font-face`. El "glow" neón reemplazado por un sistema de elevación con ring sutil de acento. SW v144 → v145. Tests 1359/1359 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/tokens.css` | `--fk-font-mono` apunta a `var(--fk-font-sans)`. `--fk-shadow-glow` reemplazado: ring 1.5px acento + sombra de elevación. `--fk-accent-glow` reducido a 0.08 alpha (sin brillo neón). |
+| `styles/themes.css` | `--fk-shadow-glow` light mode: ring acento + elevación azul-tinta. |
+| `styles/main.css` | Eliminados los dos bloques `@font-face` de DM Mono (400 y 500). |
+| `styles/base.css` | Bloque tnum centralizado: 14 selectores de valores financieros reciben `font-variant-numeric: tabular-nums`. |
+| `styles/components/config.css` | `install-banner`: removido `0 0 32px var(--fk-accent-glow)` inline. |
+| `styles/components/nudges.css` | `logro-toast`: removido `0 0 32px var(--fk-accent-glow)` inline. |
+| `styles/components/charts.css` | `comp-chooser__btn:hover`: simplificado a `var(--fk-shadow-glow)`. |
+| `service-worker.js` | v144 → v145. |
+
+---
+
 ### docs(redesign): plan maestro de modernización visual 2026 · 2026-06-11
 
-Auditoría visual de toda la app con datos de demostración (desktop y móvil, dark y light) y plan del rediseño en fases. Diagnóstico: emojis como iconografía, montos en DM Mono "estilo terminal", estética neón sobre negro, desktop de una columna, progreso visualmente tímido, jerarquía débil en cards, microinteracciones ausentes. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md): 7 fases de UI (V.1 a V.7 en ROADMAP) + 1 opcional de producto (V.8, mecánicas de hábito). **La siguiente tarea es V.1: tokens v2 + tipografía.**
+Auditoría visual de toda la app con datos de demostración (desktop y móvil, dark y light) y plan del rediseño en fases. Diagnóstico: emojis como iconografía, montos en DM Mono "estilo terminal", estética neón sobre negro, desktop de una columna, progreso visualmente tímido, jerarquía débil en cards, microinteracciones ausentes. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md): 7 fases de UI (V.1 a V.7 en ROADMAP) + 1 opcional de producto (V.8, mecánicas de hábito).
 
 | Archivo | Cambio |
 |---|---|
@@ -87,20 +104,6 @@ La card "¿Cómo distribuir $X?" en Mis Ingresos no aparecía para usuarios con 
 | `service-worker.js` | v141 → v142. |
 
 ---
-
-### feat(agenda): acciones Abonar/Editar/Eliminar para deudas en la Agenda · 2026-06-11
-
-Las tarjetas de deuda en el detalle del día de la Agenda ahora tienen los mismos botones que los gastos fijos. Abonar reutiliza la acción `abrir-abono` ya registrada por compromisos. Eliminar reutiliza `eliminar-compromiso`. Editar usa una nueva acción `editar-compromiso` que abre el modal de compromisos pre-rellenado (sin pasar por el chooser). Fix secundario: se corrigió el bug `!pagado` (variable inexistente) en el bloque de acciones del gasto fijo, reemplazado por `estadoPago !== 'completo'`. SW v140 → v141.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | Bloque `accionesHtml` extendido con rama `deuda-entidad/deuda-personal`; fix bug `pagado` → `estadoPago`. |
-| `modules/dominio/compromisos/index.js` | `_editarCompromiso(el)`: abre modal pre-rellenado. `_guardarCompromiso`: detecta `form.dataset.id` y usa `editar` en modo edit. Nuevo `registrarAccion('editar-compromiso', ...)`. |
-| `modules/dominio/compromisos/views/formularios.js` | `renderFormDeuda(tipo, deuda = null)`: pre-fill de todos los campos en modo edit; botones "Cancelar/Actualizar deuda" vs "Volver/Guardar deuda". |
-| `service-worker.js` | v140 → v141. |
-
----
-
 
 > Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
