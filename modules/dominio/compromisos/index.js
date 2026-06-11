@@ -77,15 +77,16 @@ async function _guardarCompromiso() {
     return;
   }
 
-  // Alerta: la cuota no cubre el interés mensual, la deuda crece mes a mes.
+  // Alerta: la cuota no cubre el interés mensual, la deuda no baja o crece.
   const alerta = detectarDeudaCreciente(datos);
   if (alerta) {
-    const ok = await confirmar({
-      titulo:         'La cuota no cubre los intereses',
-      mensaje:        `La cuota mensual (${f(alerta.cuotaMensual)}) es menor al interés mensual de esta deuda (${f(alerta.interesMensual)}). Con esta cuota, la deuda crece ${f(alerta.deficit)} cada mes en vez de bajar. ¿Quieres registrarla de todas formas?`,
-      confirmarTexto: 'Registrar igual',
-      peligroso:      false,
-    });
+    const titulo  = alerta.deficit === 0
+      ? 'La cuota solo cubre los intereses'
+      : 'La cuota no alcanza para cubrir los intereses';
+    const mensaje = alerta.deficit === 0
+      ? `Con este pago de ${f(alerta.cuotaMensual)}, solo cubrirás los intereses del mes. El saldo de la deuda se quedará igual y nunca bajará mientras mantengas esta cuota. Para empezar a reducir lo que debes, necesitas aumentar el pago mensual. ¿Quieres registrarla de todas formas?`
+      : `Con este pago de ${f(alerta.cuotaMensual)}, no cubres los intereses mensuales de ${f(alerta.interesMensual)}. El saldo crecerá ${f(alerta.deficit)} cada mes en lugar de bajar: mientras más tiempo pase, más deberás. Para que la deuda empiece a bajar, necesitas pagar al menos ${f(alerta.interesMensual)} al mes. ¿Quieres registrarla de todas formas?`;
+    const ok = await confirmar({ titulo, mensaje, confirmarTexto: 'Registrar igual', peligroso: false });
     if (!ok) return;
   }
 

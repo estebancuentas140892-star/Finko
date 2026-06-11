@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos): mensajes de alerta "cuota no cubre intereses" reescritos · 2026-06-11
+
+Reemplazado el mensaje técnico que aparecía al registrar una deuda cuya cuota no cubre los intereses mensuales. El texto anterior usaba lenguaje contable y el caso de empate exacto producía la frase confusa "la deuda crece $0 cada mes".
+
+Ahora hay dos mensajes distintos según el caso:
+- **Cuota = interés (deficit = 0):** Título "La cuota solo cubre los intereses". Mensaje: explica que el saldo se quedará igual indefinidamente y pide aumentar el pago.
+- **Cuota < interés (deficit > 0):** Título "La cuota no alcanza para cubrir los intereses". Mensaje: explica que el saldo crecerá $X cada mes, cuánto es el interés real y cuánto hay que pagar como mínimo.
+
+**Archivo:** `modules/dominio/compromisos/index.js` (bloque `_guardarCompromiso`). Sin tests nuevos: la lógica de detección es la misma (`detectarDeudaCreciente`), solo cambió el copy del diálogo de confirmación.
+
+---
+
 ### fix(agenda): abono parcial ya no marca la cuota como pagada · 2026-06-10
 
 Corregida la lógica del badge "Ya pagaste este mes" en la Agenda. Antes, cualquier gasto vinculado a una deuda ese mes activaba el badge verde sin importar el monto. Ahora distingue tres estados: sin pago, abono parcial y cuota cubierta.

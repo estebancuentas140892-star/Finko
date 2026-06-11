@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-10 (fix abono parcial en Agenda; 1351/1351 verde)
+> Última actualización: 2026-06-11 (fix copy alerta cuota/interés en deudas; 1351/1351 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos): mensajes de alerta "cuota no cubre intereses" reescritos · 2026-06-11
+
+Reemplazados los mensajes técnicos del diálogo de confirmación al registrar una deuda cuya cuota no alcanza para cubrir los intereses. El texto anterior producía "la deuda crece $0" en el caso de empate exacto, que no significaba nada para el usuario. Ahora hay dos mensajes claros según el caso: cuota = interés (saldo se queda igual) y cuota < interés (saldo crece cada mes). Cada mensaje incluye los montos relevantes y dice cuánto hay que pagar como mínimo.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/index.js` | Dos mensajes: `deficit === 0` ("La cuota solo cubre los intereses") y `deficit > 0` ("La cuota no alcanza para cubrir los intereses") con montos concretos y acción recomendada. |
+
+---
 
 ### fix(agenda): abono parcial no marca la cuota como pagada · 2026-06-10
 
@@ -95,19 +105,7 @@ Un apartado para un gasto que se repite (SOAT anual, impuestos) se reinicia para
 
 ---
 
-### feat(deudas): tasa de interés opcional en deudas con entidad · 2026-06-09
-
-La tasa EA dejó de ser obligatoria al registrar una deuda con entidad (muchas personas no la conocen). Si se omite, se guarda `tasa: null` (desconocida ≠ 0) y la app invita a consultarla. Misma sesión que el motor de recomendación.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `validarCompromiso` no exige tasa para entidad; `normalizarCompromiso` guarda `null` si falta. |
-| `modules/dominio/compromisos/views/formularios.js` | Label "(opcional)", sin `required`, hint informativo "¿No conoces tu tasa?...". |
-| `tests/unit/compromisos.test.js` | Sin tasa = válido, tasa negativa = error, normalización a `null`. |
-
----
-
-> Para tareas anteriores (motor distribución ingresos, Apartados Fase 1, alerta próximo cobro, diaPago schema v12, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (tasa opcional en deudas, motor distribución ingresos, Apartados Fase 1, alerta próximo cobro, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
