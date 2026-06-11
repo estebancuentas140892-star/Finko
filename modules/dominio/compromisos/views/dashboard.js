@@ -82,42 +82,53 @@ export function renderPanelVencidos() {
 // ── DASHBOARD: PANEL PRÓXIMAS PRIORIDADES ────────────────────────
 
 /**
- * Renderiza en `#panel-prioridades` los compromisos de los próximos 7 días,
- * agrupados por día (HOY → mañana → en N días). Reemplaza a Card Hoy
- * unificando hoy + próximos en una sola sección.
+ * Renderiza en `#panel-prioridades` los compromisos, préstamos personales y
+ * apartados con vencimiento en los próximos 7 días, agrupados por día.
  *
- * Si no hay compromisos activos, limpia el panel (sin ruido para usuarios
- * nuevos). Si hay activos pero ninguno en 7 días, muestra "Sin compromisos
- * próximos. 🎉".
+ * Fuentes de datos:
+ *   - S.compromisos  (diaPago recurrente)
+ *   - S.personales   (fechaLimite, si el préstamo no está liquidado)
+ *   - S.apartados    (fechaObjetivo, si el apartado no está completado)
  *
+ * Si no hay nada activo en ninguna fuente, limpia el panel.
  * No-op si el contenedor no existe.
  */
 export function renderPanelPrioridades() {
   const el = document.getElementById('panel-prioridades');
   if (!el) return;
 
-  const activos = compromisosActivos(S.compromisos);
-  if (activos.length === 0) {
+  const proxComp = compromisosProximos(S.compromisos, 7);
+  const proxPers = _personalesProximos(7);
+  const proxApar = _apartadosProximos(7);
+
+  const compActivos = compromisosActivos(S.compromisos).length > 0;
+  if (!compActivos && proxPers.length === 0 && proxApar.length === 0) {
     el.innerHTML = '';
     return;
   }
 
-  const proximos = compromisosProximos(S.compromisos, 7);
-  const grupos   = agruparPorDiasRestantes(proximos);
+  const proxTodos = [...proxComp, ...proxPers, ...proxApar]
+    .sort((a, b) => a.diasRestantes - b.diasRestantes);
+  const grupos = agruparPorDiasRestantes(proxTodos);
 
   let bodyHtml;
   if (grupos.length === 0) {
-    bodyHtml = `<p class="prioridades-card__empty">Sin compromisos próximos. 🎉</p>`;
+    bodyHtml = `<p class="prioridades-card__empty">Sin vencimientos próximos. 🎉</p>`;
   } else {
     bodyHtml = grupos.map(g => {
       const items = g.items.map(c => {
-        const tipo  = c.tipo ?? 'fijo';
-        const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
+        const tipo     = c.tipo ?? 'fijo';
+        const dotTipo  = tipo === 'personal' ? 'deuda-personal'
+          : tipo === 'apartado'  ? 'fijo'
+          : tipo;
+        const icono    = tipo === 'personal'  ? '🤝'
+          : tipo === 'apartado'  ? _esc(c.icono ?? '📦')
+          : _esc(ICONO_TIPO[tipo] ?? '🔁');
         const desc  = _esc(c.descripcion ?? '(sin descripción)');
         const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
         return `
           <li class="prioridades-card__item">
-            <span class="prioridades-card__dot cal-dot--${tipo}" aria-hidden="true">${icono}</span>
+            <span class="prioridades-card__dot cal-dot--${dotTipo}" aria-hidden="true">${icono}</span>
             <span class="prioridades-card__name">${desc}</span>
             ${monto ? `<span class="prioridades-card__amount">${monto}</span>` : ''}
           </li>`;
@@ -145,7 +156,7 @@ export function renderPanelPrioridades() {
     </section>`;
 }
 
-// ── HELPER ───────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────
 
 /**
  * Devuelve la fecha local (no UTC) en formato YYYY-MM-DD.
@@ -159,4 +170,63 @@ function _hoyISOLocal() {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Días desde hoy hasta una fecha ISO YYYY-MM-DD.
+ * Devuelve null si la fecha es inválida. Negativo si ya pasó.
+ * Usa comparación local (sin UTC) para consistencia con el resto de la UI.
+ */
+function _diasHastaFechaISO(fechaISO) {
+  if (!fechaISO || typeof fechaISO !== 'string') return null;
+  const partes = fechaISO.split('-').map(Number);
+  if (partes.length !== 3 || partes.some(isNaN)) return null;
+  const [yyyy, mm, dd] = partes;
+  const hoy    = new Date();
+  const hoyMs  = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()).getTime();
+  const targetMs = new Date(yyyy, mm - 1, dd).getTime();
+  return Math.round((targetMs - hoyMs) / 86_400_000);
+}
+
+/**
+ * Items de S.personales cuya fechaLimite cae en los próximos `diasLimite` días.
+ * Solo incluye préstamos no liquidados.
+ */
+function _personalesProximos(diasLimite) {
+  const lista = Array.isArray(S.personales) ? S.personales : [];
+  const resultado = [];
+  for (const p of lista) {
+    if (p.liquidado || !p.fechaLimite) continue;
+    const dias = _diasHastaFechaISO(p.fechaLimite);
+    if (dias === null || dias < 0 || dias > diasLimite) continue;
+    resultado.push({
+      diasRestantes: dias,
+      tipo:          'personal',
+      descripcion:   `${p.persona} te debe`,
+      monto:         Math.max(0, (p.monto || 0) - (p.pagado || 0)),
+    });
+  }
+  return resultado;
+}
+
+/**
+ * Items de S.apartados cuya fechaObjetivo cae en los próximos `diasLimite` días.
+ * Solo incluye apartados no completados con fecha pactada.
+ */
+function _apartadosProximos(diasLimite) {
+  const lista = Array.isArray(S.apartados) ? S.apartados : [];
+  const resultado = [];
+  for (const a of lista) {
+    if (a.completado || !a.fechaObjetivo) continue;
+    const dias = _diasHastaFechaISO(a.fechaObjetivo);
+    if (dias === null || dias < 0 || dias > diasLimite) continue;
+    resultado.push({
+      diasRestantes: dias,
+      tipo:          'apartado',
+      descripcion:   a.nombre,
+      monto:         Math.max(0, (a.montoObjetivo || 0) - (a.montoActual || 0)),
+      icono:         a.icono ?? '📦',
+    });
+  }
+  return resultado;
 }

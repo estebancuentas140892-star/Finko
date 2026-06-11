@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(dashboard): Próximas Prioridades ahora incluye préstamos y apartados · 2026-06-11
+
+El panel "Próximas prioridades" del Dashboard solo mostraba compromisos (gastos fijos y deudas). Ahora también incluye préstamos personales con `fechaLimite` próxima y apartados con `fechaObjetivo` próxima. La lógica vive en dos helpers privados en `dashboard.js` que leen `S.personales` y `S.apartados` directamente (sin importar de otros dominios, ADN #10 respetado). SW v139 → v140.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/dashboard.js` | `renderPanelPrioridades` combina compromisos + personales + apartados. Nuevos helpers `_personalesProximos`, `_apartadosProximos`, `_diasHastaFechaISO`. Guard actualizado. |
+| `service-worker.js` | v139 → v140. |
+
+---
+
 ### fix(apartados): texto "Se repite" mejorado en el formulario · 2026-06-11
 
 Reemplazado el texto del checkbox "Se repite" y la etiqueta del selector de período en el formulario de Apartados. Se eliminó el término "recurrente" (jargon) y se sustituyó por lenguaje cotidiano. Se agregó un `form-hint` bajo el selector explicando el auto-reinicio, la ventaja principal de la funcionalidad que antes era invisible para el usuario. SW v138 → v139.
@@ -58,16 +69,6 @@ El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo 
 |---|---|
 | `modules/dominio/personales/view.js` | `_renderResumen` se llama solo si `lista.length >= 2`. |
 | `service-worker.js` | v137 → v138. |
-
----
-
-### fix(compromisos): mensajes de alerta "cuota no cubre intereses" reescritos · 2026-06-11
-
-Reemplazados los mensajes técnicos del diálogo de confirmación al registrar una deuda cuya cuota no alcanza para cubrir los intereses. El texto anterior producía "la deuda crece $0" en el caso de empate exacto, que no significaba nada para el usuario. Ahora hay dos mensajes claros según el caso: cuota = interés (saldo se queda igual) y cuota < interés (saldo crece cada mes). Cada mensaje incluye los montos relevantes y dice cuánto hay que pagar como mínimo.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/index.js` | Dos mensajes: `deficit === 0` ("La cuota solo cubre los intereses") y `deficit > 0` ("La cuota no alcanza para cubrir los intereses") con montos concretos y acción recomendada. |
 
 ---
 

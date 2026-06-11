@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(dashboard): Próximas Prioridades incluye préstamos y apartados · 2026-06-11
+
+El panel "Próximas prioridades" del Dashboard solo consultaba `S.compromisos`. Ahora también muestra:
+- Préstamos personales (`S.personales`) con `fechaLimite` dentro de los próximos 7 días y no liquidados.
+- Apartados (`S.apartados`) con `fechaObjetivo` dentro de los próximos 7 días y no completados.
+
+Los tres tipos se combinan, ordenan por días restantes y se agrupan (Hoy / Mañana / En N días). El ADN #10 se respeta: no hay imports entre dominios; los helpers privados leen `S` directamente. SW v139 → v140.
+
+- **`modules/dominio/compromisos/views/dashboard.js`:** `renderPanelPrioridades` unifica tres fuentes. Nuevos helpers privados `_diasHastaFechaISO`, `_personalesProximos`, `_apartadosProximos`. Guard simplificado: oculta solo si no hay nada activo en ninguna fuente.
+- **`service-worker.js`:** v139 → v140.
+
+---
+
 ### fix(apartados): texto "Se repite" mejorado en el formulario · 2026-06-11
 
 Reemplazados el label del checkbox y la etiqueta del selector de período en el formulario de nuevo apartado. Se eliminó el término técnico "recurrente" y se describe el comportamiento con ejemplos cotidianos. Se agrega un `form-hint` bajo el selector que explica el auto-reinicio del apartado al usar el dinero: el beneficio principal de la función, que antes era invisible para el usuario. SW v138 → v139.
