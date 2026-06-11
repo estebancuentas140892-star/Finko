@@ -35,8 +35,10 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-Verificar el formulario de cuentas en la app (`python -m http.server 8080`): crear un banco (tipos: Corriente/Ahorros), crear una billetera (Nequi: tipo oculto), crear Efectivo (4x1000 y cuota ocultos), editar cada una. Si todo funciona, commitear docs y decidir qué sigue:
+**V.1 - Rediseño visual, Fase 1: tokens v2 + tipografía.** Paleta refinada dark/light, sistema de elevación sin glow, montos a Inter `tnum`, eliminar DM Mono. Plan completo y restricciones en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
+
+Otras pendientes (no urgentes):
 
 **A.5** - Deploy en dominio custom. No requiere cambios de código. Guía en `docs/SETUP_DOMINIO.md`.
 
-**O bien E.2-2027** - Actualizar SMMLV + UVT en enero 2027. Cambio mecánico en `constants.js`. Modelo: Haiku 4.5.
+**E.2-2027** - Actualizar SMMLV + UVT en enero 2027. Cambio mecánico en `constants.js`. Modelo: Haiku 4.5.

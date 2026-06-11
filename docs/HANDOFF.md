@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### docs(redesign): plan maestro de modernización visual 2026 · 2026-06-11
+
+Auditoría visual de toda la app con datos de demostración (desktop y móvil, dark y light) y plan del rediseño en fases. Diagnóstico: emojis como iconografía, montos en DM Mono "estilo terminal", estética neón sobre negro, desktop de una columna, progreso visualmente tímido, jerarquía débil en cards, microinteracciones ausentes. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md): 7 fases de UI (V.1 a V.7 en ROADMAP) + 1 opcional de producto (V.8, mecánicas de hábito). **La siguiente tarea es V.1: tokens v2 + tipografía.**
+
+| Archivo | Cambio |
+|---|---|
+| `docs/REDESIGN_2026.md` | Nuevo: diagnóstico, dirección "calma con energía", fases, restricciones. |
+| `docs/ROADMAP.md` | Serie V (Rediseño visual 2026) con V.1-V.8. |
+
+---
+
 ### feat(ux): subtítulos permanentes + urgencia visual en Apartados · 2026-06-11
 
 Tres mejoras visuales sin cambios de lógica o tests. Subtítulos de sección permanentes para Ahorro, Metas y Apartados (visibles siempre, no solo en el empty state). Badge de urgencia inline en el subtitle de cada apartado: rojo si vence en ≤7 días, ámbar en 8-30 días. Estado "Listo para usar" en apartados recurrentes que ya reunieron el dinero: borde y fondo verde en el card. SW v143 → v144.
@@ -90,17 +101,6 @@ Las tarjetas de deuda en el detalle del día de la Agenda ahora tienen los mismo
 
 ---
 
-### fix(dashboard): Próximas Prioridades ahora incluye préstamos y apartados · 2026-06-11
-
-El panel "Próximas prioridades" del Dashboard solo mostraba compromisos (gastos fijos y deudas). Ahora también incluye préstamos personales con `fechaLimite` próxima y apartados con `fechaObjetivo` próxima. La lógica vive en dos helpers privados en `dashboard.js` que leen `S.personales` y `S.apartados` directamente (sin importar de otros dominios, ADN #10 respetado). SW v139 → v140.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/dashboard.js` | `renderPanelPrioridades` combina compromisos + personales + apartados. Nuevos helpers `_personalesProximos`, `_apartadosProximos`, `_diasHastaFechaISO`. Guard actualizado. |
-| `service-worker.js` | v139 → v140. |
-
----
-
 
 > Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
@@ -116,9 +116,9 @@ El panel "Próximas prioridades" del Dashboard solo mostraba compromisos (gastos
 - ✅ **fix(agenda) abono parcial**: badge de Agenda distingue abono parcial de cuota cubierta. SW v135 → v136. 1351/1351 verdes. 2026-06-10.
 
 **Tareas opcionales / futuras:**
-- **E.2-2027** — Enero 2027: actualizar SMMLV/UVT a valores 2027 cuando se publiquen oficialmente (Haiku, ~15 min).
-- **E.5** — Agregar IPC como constante anual si se quiere mostrar inflación observada (Haiku, Bajo).
-- **A.5** — Setup de dominio custom cuando el usuario tenga URL registrada. No requiere código. Guía lista en `docs/SETUP_DOMINIO.md`.
+- **E.2-2027**: Enero 2027, actualizar SMMLV/UVT a valores 2027 cuando se publiquen oficialmente (Haiku, ~15 min).
+- **E.5**: Agregar IPC como constante anual si se quiere mostrar inflación observada (Haiku, Bajo).
+- **A.5**: Setup de dominio custom cuando el usuario tenga URL registrada. No requiere código. Guía lista en `docs/SETUP_DOMINIO.md`.
 
 **App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100, 1333/1333 tests verdes, cero deuda técnica conocida).
 

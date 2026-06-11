@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(redesign): plan maestro de modernización visual 2026 · 2026-06-11
+
+Auditoría visual completa de la app (desktop 1280px y móvil 375px, dark y light, con datos de demostración) y plan del rediseño en 7 fases + 1 opcional de producto. Sin cambios de código.
+
+- **`docs/REDESIGN_2026.md`** (nuevo): diagnóstico (7 problemas que hacen ver la app anticuada, 6 activos que se conservan), dirección de diseño ("calma con energía"), fases F1-F8 con archivos y modelos sugeridos, restricciones innegociables por fase (tokens, offline, Lighthouse, a11y, SW bump).
+- **`docs/ROADMAP.md`:** nueva serie V (Rediseño visual 2026) con tareas V.1 a V.8 apuntando al plan.
+
+---
+
 ### feat(ux): subtítulos permanentes + urgencia visual en Apartados · 2026-06-11
 
 Tres mejoras visuales sin cambios de lógica. SW v143 → v144.

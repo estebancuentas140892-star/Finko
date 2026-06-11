@@ -21,6 +21,22 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 
 ---
 
+### V. Rediseño visual 2026 (modernización UI/UX)
+
+**Objetivo:** que Finko se sienta como una app financiera moderna, confiable y motivante, sin tocar el ADN técnico. Plan completo, diagnóstico y restricciones en [`REDESIGN_2026.md`](REDESIGN_2026.md).
+
+**Fases pendientes (una por sesión, en orden):**
+- V.1 (F1) - Tokens v2 + tipografía: paleta refinada dark/light, sistema de elevación sin glow, montos a Inter `tnum`, eliminar DM Mono. Sonnet 4.6 - Alto.
+- V.2 (F2) - Sistema de iconos SVG propio: adiós emojis en UI estructural. Sonnet 4.6 - Alto.
+- V.3 (F3) - Componentes núcleo v2: cards, list-items, progress (barra + anillo SVG). Sonnet 4.6 - Alto.
+- V.4 (F4) - Dashboard bento en desktop + hero card + count-up. Sonnet 4.6 - Alto.
+- V.5 (F5) - Secciones de progreso: Metas, Apartados, Ahorro, Score. Sonnet 4.6 - Medio.
+- V.6 (F6) - Microinteracciones: hover, llenado animado, checkmark de pago. Sonnet 4.6 - Medio.
+- V.7 (F7) - Estados vacíos ilustrados + navegación pulida. Sonnet 4.6 - Medio.
+- V.8 (F8, opcional) - Mecánicas de hábito (racha, resumen semanal). Decisión de producto pendiente. Opus 4.8 - Medio.
+
+---
+
 ### N. Apartados (gastos previsibles)
 
 **Objetivo:** ayudar a prepararse poco a poco para gastos que de otro modo llegan como emergencia (SOAT, impuestos, productos personales). Ver [ADR 007](DECISIONS/007-dominio-apartados.md).
