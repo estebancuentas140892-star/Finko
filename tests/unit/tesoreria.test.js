@@ -17,6 +17,7 @@ import {
   diasParaProximoPago,
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
+  calcularGastosFijosMensuales,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -268,12 +269,22 @@ describe('estimarSalarioMensual()', () => {
     expect(estimarSalarioMensual([])).toBe(0);
   });
 
-  it('suma solo los ingresos con frecuencia Mensual', () => {
+  it('convierte todas las frecuencias a equivalente mensual', () => {
     const ingresos = [
-      ingresoBase({ monto: 2_000_000, frecuencia: 'Mensual' }),
-      ingresoBase({ id: 'i2', monto: 500_000, frecuencia: 'Quincenal' }),
+      ingresoBase({ monto: 2_000_000, frecuencia: 'Mensual' }),   // x1 = 2_000_000
+      ingresoBase({ id: 'i2', monto: 500_000, frecuencia: 'Quincenal' }), // x2 = 1_000_000
     ];
-    expect(estimarSalarioMensual(ingresos)).toBe(2_000_000);
+    expect(estimarSalarioMensual(ingresos)).toBe(3_000_000);
+  });
+
+  it('convierte frecuencia Semanal (x4.33)', () => {
+    const ingresos = [ingresoBase({ monto: 200_000, frecuencia: 'Semanal' })];
+    expect(estimarSalarioMensual(ingresos)).toBeCloseTo(866_000, -3);
+  });
+
+  it('excluye frecuencias desconocidas (factor 0)', () => {
+    const ingresos = [ingresoBase({ monto: 1_000_000, frecuencia: 'Bimestral' })];
+    expect(estimarSalarioMensual(ingresos)).toBe(0);
   });
 
   it('suma multiples ingresos mensuales', () => {
@@ -294,6 +305,54 @@ describe('estimarSalarioMensual()', () => {
   it('trata activo undefined como activo', () => {
     const ingreso = { id: 'i1', descripcion: 'S', monto: 1_500_000, frecuencia: 'Mensual' };
     expect(estimarSalarioMensual([ingreso])).toBe(1_500_000);
+  });
+});
+
+// ── calcularGastosFijosMensuales() ───────────────────────────────
+
+const compFijoBase = (overrides = {}) => ({
+  id: 'cf1',
+  tipo: 'fijo',
+  frecuencia: 'Mensual',
+  monto: 300_000,
+  activo: true,
+  ...overrides,
+});
+
+describe('calcularGastosFijosMensuales()', () => {
+  it('retorna 0 con array vacio', () => {
+    expect(calcularGastosFijosMensuales([])).toBe(0);
+  });
+
+  it('retorna 0 con argumento no-array', () => {
+    expect(calcularGastosFijosMensuales(null)).toBe(0);
+    expect(calcularGastosFijosMensuales(undefined)).toBe(0);
+  });
+
+  it('suma compromisos fijos mensuales', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', monto: 300_000 }),
+      compFijoBase({ id: 'c2', monto: 200_000 }),
+    ];
+    expect(calcularGastosFijosMensuales(comps)).toBe(500_000);
+  });
+
+  it('convierte fijo quincenal a mensual (x2)', () => {
+    const comps = [compFijoBase({ monto: 150_000, frecuencia: 'Quincenal' })];
+    expect(calcularGastosFijosMensuales(comps)).toBe(300_000);
+  });
+
+  it('excluye compromisos tipo deuda-entidad', () => {
+    const comps = [
+      compFijoBase({ id: 'c1', monto: 300_000 }),
+      compFijoBase({ id: 'c2', tipo: 'deuda-entidad', monto: 500_000 }),
+    ];
+    expect(calcularGastosFijosMensuales(comps)).toBe(300_000);
+  });
+
+  it('excluye compromisos inactivos', () => {
+    const comps = [compFijoBase({ monto: 300_000, activo: false })];
+    expect(calcularGastosFijosMensuales(comps)).toBe(0);
   });
 });
 

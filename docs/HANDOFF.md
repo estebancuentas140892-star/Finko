@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (fix copy modal pago préstamos + alerta cuota/interés; 1351/1351 verde)
+> Última actualización: 2026-06-11 (fix card distribución ingresos visible para todas las frecuencias; 1359/1359 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1351/1351 verdes (+18: fix abono parcial en Agenda) |
+| Tests unitarios + integración | 1359/1359 verdes (+8: calcularGastosFijosMensuales + estimarSalarioMensual multifrecuencia) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): card de distribución visible para todas las frecuencias de ingreso · 2026-06-11
+
+La card "¿Cómo distribuir $X?" en Mis Ingresos no aparecía para usuarios con ingresos quincenales, semanales o diarios. Tres bugs corregidos: (1) `estimarSalarioMensual` ahora convierte todas las frecuencias a mensual usando `_FACTOR_MENSUAL`; (2) el cálculo de gastos fijos usa la nueva función `calcularGastosFijosMensuales` que corrige el filtro de frecuencia (lowercase vs Mensual); (3) `tieneDeudas` corregido de `tipo === 'deuda'` a `'deuda-entidad' || 'deuda-personal'` (el tipo string `'deuda'` nunca existió). SW v141 → v142. 1359/1359 tests verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `_FACTOR_MENSUAL` constante. `estimarSalarioMensual` multifrecuencia. Nueva `calcularGastosFijosMensuales`. |
+| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso` usa `calcularGastosFijosMensuales`; `tieneDeudas` tipo corregido. |
+| `tests/unit/tesoreria.test.js` | Test `estimarSalarioMensual` actualizado; 2 nuevos tests frecuencias. 6 nuevos tests `calcularGastosFijosMensuales`. |
+| `service-worker.js` | v141 → v142. |
+
+---
 
 ### feat(agenda): acciones Abonar/Editar/Eliminar para deudas en la Agenda · 2026-06-11
 
@@ -85,19 +98,6 @@ El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo 
 
 ---
 
-### fix(agenda): abono parcial no marca la cuota como pagada · 2026-06-10
-
-El badge "Ya pagaste este mes" en la Agenda ahora distingue tres estados: sin pago, abono parcial (ámbar: "Abonado $X de $Y este mes") y cuota cubierta (verde: "✓ Ya pagaste este mes"). Antes, cualquier gasto vinculado a una deuda ese mes activaba el badge verde sin revisar el monto. La lógica es pura y testeable.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `calcularAbonosDelMes` y `estadoPagoMes` (nueva lógica pura; fijos = cualquier pago completo; deudas = suma vs cuotaMensual). |
-| `modules/dominio/agenda/view.js` | `_renderDetalleItem` usa `estadoPagoMes`; badge parcial con clase `--parcial`. |
-| `styles/components/domain.css` | `.cal-detail__badge-abono--parcial` con `--fk-warning-text`. |
-| `tests/unit/compromisos.test.js` | +18 tests para `calcularAbonosDelMes` y `estadoPagoMes`. |
-| `service-worker.js` | v135 → v136. |
-
----
 
 > Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

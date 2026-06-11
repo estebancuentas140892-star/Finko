@@ -8,6 +8,16 @@
 
 import { GMF, FRECUENCIAS, BANCOS_CO } from '../../core/constants.js';
 
+// Tabla de conversión a mensual. Local para no importar de otro dominio (ADN #10).
+// Frecuencias de baja periodicidad (Bimestral, Trimestral, Semestral, Anual,
+// 'Única vez') se excluyen intencionalmente: no representan flujo mensual recurrente.
+const _FACTOR_MENSUAL = {
+  'Diario':    30,
+  'Semanal':   4.33,
+  'Quincenal': 2,
+  'Mensual':   1,
+};
+
 /**
  * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
  * Si el id no se encuentra en BANCOS_CO, devuelve 'otro' como fallback seguro.
@@ -80,16 +90,31 @@ export function diasParaPrimaSemestral(hoy = new Date()) {
 // ── PRIMA DE SERVICIOS - distribución (G.3.F8) ──────────────────
 
 /**
- * Estima el salario mensual como suma de todos los ingresos activos
- * con frecuencia 'Mensual'. Proxy para calcular la prima semestral.
+ * Suma todos los ingresos activos proyectados a unidad mensual.
+ * Usa _FACTOR_MENSUAL para convertir frecuencias distintas a Mensual.
+ * Frecuencias no listadas (Bimestral, Anual, etc.) se excluyen del cómputo.
  *
  * @param {import('../../core/state.js').Ingreso[]} ingresos
- * @returns {number} COP/mes (0 si no hay ingresos mensuales registrados).
+ * @returns {number} COP/mes equivalente (0 si no hay ingresos con frecuencia reconocida).
  */
 export function estimarSalarioMensual(ingresos) {
   return ingresos
-    .filter(i => i.activo !== false && i.frecuencia === 'Mensual')
-    .reduce((acc, i) => acc + (i.monto ?? 0), 0);
+    .filter(i => i.activo !== false)
+    .reduce((acc, i) => acc + (i.monto ?? 0) * (_FACTOR_MENSUAL[i.frecuencia] ?? 0), 0);
+}
+
+/**
+ * Suma los gastos fijos activos de S.compromisos proyectados a unidad mensual.
+ * Solo cuenta tipo 'fijo'; las deudas tienen su propia cuotaMensual.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {number} COP/mes equivalente.
+ */
+export function calcularGastosFijosMensuales(compromisos) {
+  if (!Array.isArray(compromisos)) return 0;
+  return compromisos
+    .filter(c => c.activo !== false && c.tipo === 'fijo')
+    .reduce((acc, c) => acc + (c.monto ?? 0) * (_FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
 }
 
 /**

@@ -17,6 +17,7 @@ import {
   FRECUENCIAS_CON_DIA,
   detectarNudgeProximoIngreso,
   estimarSalarioMensual,
+  calcularGastosFijosMensuales,
   sugerirDistribucionIngreso,
 } from './logic.js';
 
@@ -262,12 +263,10 @@ export function renderDistribucionIngreso() {
   const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
   if (!ingresoMensual) { el.innerHTML = ''; return; }
 
-  const gastosFijosMensuales = (S.compromisos ?? [])
-    .filter(c => c.activo !== false && c.tipo === 'fijo' && c.frecuencia === 'mensual')
-    .reduce((acc, c) => acc + (c.monto ?? 0), 0);
+  const gastosFijosMensuales = calcularGastosFijosMensuales(S.compromisos ?? []);
 
   const tieneDeudas = (S.compromisos ?? [])
-    .some(c => c.activo !== false && c.tipo === 'deuda');
+    .some(c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'));
 
   const tieneFondoActivo = S.ahorro?.fondoEmergencia?.activo === true;
   const montoFondo = (S.ahorro?.fondoEmergencia?.montoActual ?? 0)

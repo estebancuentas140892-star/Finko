@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(tesoreria): card de distribución visible para todos los ingresos · 2026-06-11
+
+La card "¿Cómo distribuir $X?" no aparecía para usuarios con ingresos quincenales, semanales o diarios porque `estimarSalarioMensual` solo sumaba frecuencia `'Mensual'`. Tres bugs corregidos. SW v141 → v142. Tests: 1359/1359 verdes (+8).
+
+- **`modules/dominio/tesoreria/logic.js`:** Constante `_FACTOR_MENSUAL` (Diario: 30, Semanal: 4.33, Quincenal: 2, Mensual: 1). `estimarSalarioMensual` ahora incluye todos los ingresos activos multiplicados por su factor; frecuencias desconocidas quedan en 0. Nueva función `calcularGastosFijosMensuales(compromisos)`: suma solo compromisos `tipo === 'fijo'` activos, con conversión por `_FACTOR_MENSUAL`.
+- **`modules/dominio/tesoreria/view.js`:** `renderDistribucionIngreso` usa `calcularGastosFijosMensuales` (reemplaza filtro inline con `c.frecuencia === 'mensual'` en minúscula que siempre daba 0). `tieneDeudas` corregido: `c.tipo === 'deuda'` → `'deuda-entidad' || 'deuda-personal'` (el tipo string `'deuda'` nunca existió en el modelo).
+- **`tests/unit/tesoreria.test.js`:** Test de `estimarSalarioMensual` actualizado; 2 tests nuevos (Semanal, frecuencia desconocida). 6 tests nuevos para `calcularGastosFijosMensuales`.
+- **`service-worker.js`:** v141 → v142.
+
+---
+
 ### feat(agenda): acciones Abonar/Editar/Eliminar para deudas · 2026-06-11
 
 Las tarjetas de deuda (`deuda-entidad`, `deuda-personal`) en el detalle del día de la Agenda ahora tienen botones de acción como los gastos fijos. Abonar reutiliza la acción `abrir-abono` del dominio compromisos. Eliminar reutiliza `eliminar-compromiso`. Editar usa la nueva acción `editar-compromiso` que abre el modal de compromisos pre-rellenado saltando el chooser. Fix secundario: variable `pagado` inexistente reemplazada por `estadoPago !== 'completo'`. SW v140 → v141.
