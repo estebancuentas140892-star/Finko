@@ -77,9 +77,9 @@ function _renderEmptyState() {
     <div class="empty-state">
       <p class="empty-state__icon" aria-hidden="true">🎯</p>
       <p class="empty-state__title">Sin metas de ahorro</p>
-      <p class="empty-state__desc">Define una meta, como un viaje, un fondo de emergencia o lo que quieras, y lleva el control de tu progreso.</p>
+      <p class="empty-state__desc">Define un objetivo libre: un viaje, una laptop, la boda o lo que quieras. Para gastos que sabes que vienen (SOAT, impuestos, arriendo), usa Apartados: ahí Finko calcula cuánto separar en cada cobro.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>
-      <p class="empty-state__tip">💡 Tip: una buena primera meta es el fondo de emergencia: al menos 3 meses de tus gastos fijos. Te da tranquilidad antes de cualquier otra meta.</p>
+      <p class="empty-state__tip">💡 Tip: para el fondo de emergencia, entra a la sección Ahorro. Finko calcula cuántos meses de colchón ya tienes y te avisa cuánto falta.</p>
     </div>`;
 }
 

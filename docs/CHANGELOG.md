@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(metas): copy del empty state desambigua Metas vs Ahorro vs Apartados · 2026-06-11
+
+El empty state de Metas mencionaba "fondo de emergencia" como primera meta sugerida, compitiendo con la sección Ahorro y confundiendo al usuario. Se reescribió la descripción y el tip para guiar al usuario al dominio correcto. SW v142 → v143.
+
+- **`modules/dominio/metas/view.js`:** Descripción: "un viaje, un fondo de emergencia o lo que quieras" → "un objetivo libre: un viaje, una laptop, la boda...". Tip: redirige fondo de emergencia a Ahorro y gastos previsibles (SOAT, impuestos) a Apartados.
+- **`service-worker.js`:** v142 → v143.
+
+---
+
 ### fix(tesoreria): card de distribución visible para todos los ingresos · 2026-06-11
 
 La card "¿Cómo distribuir $X?" no aparecía para usuarios con ingresos quincenales, semanales o diarios porque `estimarSalarioMensual` solo sumaba frecuencia `'Mensual'`. Tres bugs corregidos. SW v141 → v142. Tests: 1359/1359 verdes (+8).

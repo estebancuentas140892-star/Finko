@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (fix card distribución ingresos visible para todas las frecuencias; 1359/1359 verde)
+> Última actualización: 2026-06-11 (fix copy Metas desambigua vs Ahorro vs Apartados; 1359/1359 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(metas): copy del empty state desambigua Metas vs Ahorro vs Apartados · 2026-06-11
+
+El empty state de Metas mencionaba "fondo de emergencia" como meta sugerida, compitiendo directamente con la sección Ahorro. Se reescribió descripción y tip para guiar al usuario al dominio correcto. SW v142 → v143.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | Desc y tip del empty state reescritos: Metas = objetivos aspiracionales; fondo de emergencia → Ahorro; gastos previsibles (SOAT, impuestos) → Apartados. |
+| `service-worker.js` | v142 → v143. |
+
+---
 
 ### fix(tesoreria): card de distribución visible para todas las frecuencias de ingreso · 2026-06-11
 
@@ -87,16 +98,6 @@ Reemplazado el texto del checkbox "Se repite" y la etiqueta del selector de per�
 
 ---
 
-### fix(personales): resumen oculto cuando hay un solo préstamo · 2026-06-11
-
-El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo se muestra cuando hay 2 o más préstamos. Con un solo préstamo, el resumen repite la misma información que ya muestra la tarjeta, así que se oculta. SW v137 → v138.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/personales/view.js` | `_renderResumen` se llama solo si `lista.length >= 2`. |
-| `service-worker.js` | v137 → v138. |
-
----
 
 
 > Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
