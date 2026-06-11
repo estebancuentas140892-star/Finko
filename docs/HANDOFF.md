@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (fix copy Metas desambigua vs Ahorro vs Apartados; 1359/1359 verde)
+> Última actualización: 2026-06-11 (subtítulos permanentes + urgencia visual en Apartados; 1359/1359 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ux): subtítulos permanentes + urgencia visual en Apartados · 2026-06-11
+
+Tres mejoras visuales sin cambios de lógica o tests. Subtítulos de sección permanentes para Ahorro, Metas y Apartados (visibles siempre, no solo en el empty state). Badge de urgencia inline en el subtitle de cada apartado: rojo si vence en ≤7 días, ámbar en 8-30 días. Estado "Listo para usar" en apartados recurrentes que ya reunieron el dinero: borde y fondo verde en el card. SW v143 → v144.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Subtítulos permanentes: Ahorro ("Tu colchón..."), Metas ("Objetivos aspiracionales..."), Apartados ("Reservas para gastos previsibles..."). |
+| `modules/dominio/apartados/view.js` | `list-item--listo` cuando está listo para reiniciar; badge `badge--danger`/`badge--warn` por días restantes. |
+| `styles/components/forms.css` | `.badge--danger` (rojo, mismo patrón que `.badge--warn`). |
+| `styles/components/domain.css` | `.list-item--listo` + `:hover`. |
+| `service-worker.js` | v143 → v144. |
+
+---
 
 ### fix(metas): copy del empty state desambigua Metas vs Ahorro vs Apartados · 2026-06-11
 
@@ -86,18 +100,6 @@ El panel "Próximas prioridades" del Dashboard solo mostraba compromisos (gastos
 | `service-worker.js` | v139 → v140. |
 
 ---
-
-### fix(apartados): texto "Se repite" mejorado en el formulario · 2026-06-11
-
-Reemplazado el texto del checkbox "Se repite" y la etiqueta del selector de período en el formulario de Apartados. Se eliminó el término "recurrente" (jargon) y se sustituyó por lenguaje cotidiano. Se agregó un `form-hint` bajo el selector explicando el auto-reinicio, la ventaja principal de la funcionalidad que antes era invisible para el usuario. SW v138 → v139.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/view.js` | Checkbox: "Este gasto se repite cada cierto tiempo (SOAT, impuesto predial, matrícula...)". Select label: "¿Cada cuánto tiempo se repite?". Hint nuevo: "Cuando marques 'Ya lo usé', el apartado arranca de cero para la próxima vez." |
-| `service-worker.js` | v138 → v139. |
-
----
-
 
 
 > Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).

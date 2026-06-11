@@ -440,6 +440,11 @@ form:not(.config-form) .form-group:not(:first-child) {
   color: var(--fk-warning);
   border: 1px solid color-mix(in srgb, var(--fk-warning) 35%, transparent);
 }
+.badge--danger {
+  background: color-mix(in srgb, var(--fk-danger) 18%, transparent);
+  color: var(--fk-danger);
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 35%, transparent);
+}
 
 /* Placeholder de texto dentro de list-item (gasto sin completar). */
 .list-item__placeholder {

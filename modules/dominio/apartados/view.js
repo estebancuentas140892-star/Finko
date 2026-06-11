@@ -50,12 +50,19 @@ function _renderApartadoItem(apartado) {
     ? 'progress-bar--complete'
     : porcentaje >= 80 ? 'progress-bar--near' : '';
 
+  const dias = diasHastaFecha(apartado.fechaObjetivo, hoy());
+
   const subtitleParts = [`${f(apartado.montoActual ?? 0)} / ${f(apartado.montoObjetivo ?? 0)}`];
   if (apartado.fechaObjetivo) {
     subtitleParts.push(`Para el ${fechaLegible(apartado.fechaObjetivo)}`);
   }
   if (apartado.recurrente) {
     subtitleParts.push(`🔁 Se repite ${_esc(etiquetaPeriodoMeses(apartado.periodoMeses ?? PERIODO_RECURRENCIA_DEFAULT))}`);
+  }
+  if (dias !== null && !completado && !listo && dias >= 0 && dias <= 30) {
+    const clsBadge = dias <= 7 ? 'badge badge--danger' : 'badge badge--warn';
+    const txtDias  = dias === 0 ? 'Hoy' : dias === 1 ? 'Mañana' : `${dias} días`;
+    subtitleParts.push(`<span class="${clsBadge}">${txtDias}</span>`);
   }
 
   // Mensaje central: si ya reunió el dinero (recurrente), invitarlo a usarlo y
@@ -87,7 +94,7 @@ function _renderApartadoItem(apartado) {
   }
 
   return `
-    <article class="list-item" data-id="${_esc(apartado.id)}">
+    <article class="list-item${listo ? ' list-item--listo' : ''}" data-id="${_esc(apartado.id)}">
       <div class="list-item__icon" aria-hidden="true">${icono}</div>
       <div class="list-item__body">
         <p class="list-item__title">${nombre}${listo ? ' ✅' : ''}</p>

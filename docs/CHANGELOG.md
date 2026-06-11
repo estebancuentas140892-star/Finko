@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ux): subtítulos permanentes + urgencia visual en Apartados · 2026-06-11
+
+Tres mejoras visuales sin cambios de lógica. SW v143 → v144.
+
+- **`index.html`:** Subtítulos de sección permanentes para Ahorro ("Tu colchón para imprevistos, en meses de gastos cubiertos"), Metas ("Objetivos aspiracionales: viaje, laptop, boda...") y Apartados ("Reservas para gastos previsibles: SOAT, impuestos, arriendo"). Ahora el usuario entiende el propósito de cada sección sin necesidad de que esté vacía.
+- **`modules/dominio/apartados/view.js`:** (1) Card recibe `list-item--listo` cuando el apartado recurrente ya reunió el dinero: borde y fondo verde. (2) Badge de urgencia inline en el subtitle: rojo si vence en ≤7 días, ámbar si vence en 8-30 días.
+- **`styles/components/forms.css`:** `.badge--danger` (rojo, mismo patrón que `.badge--warn`).
+- **`styles/components/domain.css`:** `.list-item--listo` y su estado `:hover`.
+- **`service-worker.js`:** v143 → v144.
+
+---
+
 ### fix(metas): copy del empty state desambigua Metas vs Ahorro vs Apartados · 2026-06-11
 
 El empty state de Metas mencionaba "fondo de emergencia" como primera meta sugerida, compitiendo con la sección Ahorro y confundiendo al usuario. Se reescribió la descripción y el tip para guiar al usuario al dominio correcto. SW v142 → v143.

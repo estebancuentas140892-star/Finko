@@ -761,3 +761,12 @@ details[open] > .herramienta-inline__titulo::after {
 .balance-tira__value.bento__value--accent { color: var(--fk-text-accent); }
 .balance-tira__value.bento__value--danger { color: var(--fk-danger); }
 
+/* Apartado recurrente con el dinero ya reunido, esperando ser usado. */
+.list-item--listo {
+  border-color: var(--fk-success);
+  background: var(--fk-success-bg);
+}
+.list-item--listo:hover {
+  background: color-mix(in srgb, var(--fk-success) 15%, transparent);
+}
+
