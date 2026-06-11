@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): acciones Abonar/Editar/Eliminar para deudas · 2026-06-11
+
+Las tarjetas de deuda (`deuda-entidad`, `deuda-personal`) en el detalle del día de la Agenda ahora tienen botones de acción como los gastos fijos. Abonar reutiliza la acción `abrir-abono` del dominio compromisos. Eliminar reutiliza `eliminar-compromiso`. Editar usa la nueva acción `editar-compromiso` que abre el modal de compromisos pre-rellenado saltando el chooser. Fix secundario: variable `pagado` inexistente reemplazada por `estadoPago !== 'completo'`. SW v140 → v141.
+
+- **`modules/dominio/agenda/view.js`:** `accionesHtml` extendido con rama para deudas; fix bug `!pagado` → `estadoPago !== 'completo'`.
+- **`modules/dominio/compromisos/index.js`:** `_editarCompromiso(el)` abre el modal pre-rellenado. `_guardarCompromiso` detecta `form.dataset.id` y usa `editar` vs `guardar`. `registrarAccion('editar-compromiso', ...)`.
+- **`modules/dominio/compromisos/views/formularios.js`:** `renderFormDeuda(tipo, deuda = null)` pre-rellena todos los campos en modo edit y cambia botones a "Cancelar/Actualizar deuda".
+- **`service-worker.js`:** v140 → v141.
+
+---
+
 ### fix(dashboard): Próximas Prioridades incluye préstamos y apartados · 2026-06-11
 
 El panel "Próximas prioridades" del Dashboard solo consultaba `S.compromisos`. Ahora también muestra:

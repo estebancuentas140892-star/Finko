@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(agenda): acciones Abonar/Editar/Eliminar para deudas en la Agenda · 2026-06-11
+
+Las tarjetas de deuda en el detalle del día de la Agenda ahora tienen los mismos botones que los gastos fijos. Abonar reutiliza la acción `abrir-abono` ya registrada por compromisos. Eliminar reutiliza `eliminar-compromiso`. Editar usa una nueva acción `editar-compromiso` que abre el modal de compromisos pre-rellenado (sin pasar por el chooser). Fix secundario: se corrigió el bug `!pagado` (variable inexistente) en el bloque de acciones del gasto fijo, reemplazado por `estadoPago !== 'completo'`. SW v140 → v141.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | Bloque `accionesHtml` extendido con rama `deuda-entidad/deuda-personal`; fix bug `pagado` → `estadoPago`. |
+| `modules/dominio/compromisos/index.js` | `_editarCompromiso(el)`: abre modal pre-rellenado. `_guardarCompromiso`: detecta `form.dataset.id` y usa `editar` en modo edit. Nuevo `registrarAccion('editar-compromiso', ...)`. |
+| `modules/dominio/compromisos/views/formularios.js` | `renderFormDeuda(tipo, deuda = null)`: pre-fill de todos los campos en modo edit; botones "Cancelar/Actualizar deuda" vs "Volver/Guardar deuda". |
+| `service-worker.js` | v140 → v141. |
+
+---
+
 ### fix(dashboard): Próximas Prioridades ahora incluye préstamos y apartados · 2026-06-11
 
 El panel "Próximas prioridades" del Dashboard solo mostraba compromisos (gastos fijos y deudas). Ahora también incluye préstamos personales con `fechaLimite` próxima y apartados con `fechaObjetivo` próxima. La lógica vive en dos helpers privados en `dashboard.js` que leen `S.personales` y `S.apartados` directamente (sin importar de otros dominios, ADN #10 respetado). SW v139 → v140.
@@ -83,20 +96,6 @@ El badge "Ya pagaste este mes" en la Agenda ahora distingue tres estados: sin pa
 | `styles/components/domain.css` | `.cal-detail__badge-abono--parcial` con `--fk-warning-text`. |
 | `tests/unit/compromisos.test.js` | +18 tests para `calcularAbonosDelMes` y `estadoPagoMes`. |
 | `service-worker.js` | v135 → v136. |
-
----
-
-### feat(apartados): frecuencia automática + nudge de proximidad - Fase 3 · 2026-06-10
-
-Al abrir "Nuevo apartado", la frecuencia de aporte se pre-selecciona según los ingresos activos del usuario. El modal ya abre con "Quincenal" marcado si el usuario cobra quincenal, sin tocar nada. Si no hay ingresos, cae a "Mensual". Cuando hay apartados que vencen en 60 días, un nudge en la sección avisa: "SOAT vence en 30 días · Aparta $X por quincena." ADN #10 respetado (logic.js recibe `ingresos` como parámetro; view.js lee S directamente). SW v134 → v135. 1333/1333 verdes (+13).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/logic.js` | `frecuenciaPrincipalIngresos(ingresos)`: moda de frecuencias activas → FRECUENCIAS_APORTE. `apartadosProximos(apartados, hoyISO, umbral)`: filtra y ordena por urgencia. |
-| `modules/dominio/apartados/view.js` | `renderFormApartado(frecuenciaPreferida)`: pre-selecciona la opción. `renderNudgeApartadosProximos()`: nudge informativo con el más urgente y recuento de otros. |
-| `modules/dominio/apartados/index.js` | `_nuevoApartado` re-inyecta el form para leer `S.ingresos` actualizado; nudge en pipeline de render. |
-| `index.html` | `#apartados-nudge-proximos` antes de `#lista-apartados`. `service-worker.js` v134 → v135. |
-| `tests/unit/apartados.test.js` (+13) | 6 para `frecuenciaPrincipalIngresos`, 7 para `apartadosProximos`. |
 
 ---
 

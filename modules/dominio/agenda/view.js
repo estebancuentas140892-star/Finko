@@ -286,10 +286,9 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
     badgeHtml = `<p class="cal-detail__badge-abono cal-detail__badge-abono--parcial" role="status">Abonado ${f(totalAbonado)} de ${f(cuota)} este mes</p>`;
   }
 
-  // Acciones solo para gastos fijos.
   let accionesHtml = '';
   if (tipo === 'fijo') {
-    const btnPagar = !pagado ? `
+    const btnPagar = estadoPago !== 'completo' ? `
       <button type="button" class="btn btn-sm btn-primary"
               data-action="agenda-marcar-pagado-fijo" data-id="${idEsc}"
               aria-label="Marcar como pagado este mes: ${desc}">
@@ -306,6 +305,25 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
                 aria-label="Eliminar ${desc}"
                 style="color: var(--fk-danger-text);">Eliminar</button>
         ${btnPagar}
+      </div>`;
+  } else if (tipo === 'deuda-entidad' || tipo === 'deuda-personal') {
+    const btnAbonar = estadoPago !== 'completo' ? `
+      <button type="button" class="btn btn-sm btn-primary"
+              data-action="abrir-abono" data-id="${idEsc}"
+              aria-label="Registrar abono a ${desc}">
+        Abonar
+      </button>` : '';
+
+    accionesHtml = `
+      <div class="cal-detail__actions">
+        <button type="button" class="btn btn-sm btn-ghost"
+                data-action="editar-compromiso" data-id="${idEsc}"
+                aria-label="Editar ${desc}">Editar</button>
+        <button type="button" class="btn btn-sm btn-ghost"
+                data-action="eliminar-compromiso" data-id="${idEsc}"
+                aria-label="Eliminar ${desc}"
+                style="color: var(--fk-danger-text);">Eliminar</button>
+        ${btnAbonar}
       </div>`;
   }
 

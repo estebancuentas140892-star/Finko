@@ -164,12 +164,17 @@ export function renderChooserCompromiso() {
  * el usuario tenga que seleccionarlo (ya eligió en el chooser del paso 1).
  *
  * @param {'deuda-entidad'|'deuda-personal'} tipo
+ * @param {import('../../../core/state.js').Compromiso|null} [deuda] Cuando se pasa, activa el modo edición (pre-rellena los campos).
  * @returns {string}
  */
-export function renderFormDeuda(tipo) {
+export function renderFormDeuda(tipo, deuda = null) {
   const esEntidad = tipo === 'deuda-entidad';
+  const modoEdit  = deuda !== null;
   const frecOpts  = FRECUENCIAS
-    .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .map(fr => {
+      const selFr = modoEdit ? deuda.frecuencia : 'Mensual';
+      return `<option value="${_esc(fr)}"${fr === selFr ? ' selected' : ''}>${_esc(fr)}</option>`;
+    })
     .join('');
 
   const tasaLabel = esEntidad
@@ -186,6 +191,16 @@ export function renderFormDeuda(tipo) {
     ? 'Ej. Tarjeta Visa Bancolombia'
     : 'Ej. Préstamo de mamá, Crédito particular';
 
+  const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
+  const vSaldo = modoEdit ? (deuda.saldoTotal ?? '') : '';
+  const vCuota = modoEdit ? (deuda.cuotaMensual ?? '') : '';
+  const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
+  const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
+
+  const volverBtn = modoEdit
+    ? `<button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>`
+    : `<button type="button" class="btn btn-ghost" data-action="comp-volver-chooser">← Volver</button>`;
+
   return `
     <form id="form-compromiso" novalidate>
       <input type="hidden" name="tipo" value="${_esc(tipo)}" />
@@ -194,14 +209,14 @@ export function renderFormDeuda(tipo) {
         <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
                placeholder="${_esc(descPlaceholder)}" required aria-required="true"
-               autocomplete="off" />
+               autocomplete="off" value="${vDesc}" />
       </div>
 
       <div class="form-group">
         <label for="comp-saldo" class="label">¿Cuánto debes en total? (COP)</label>
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
-               autocomplete="off" />
+               autocomplete="off" value="${vSaldo}" />
         <p class="form-hint">El total que todavía debes. Finko lo muestra en tu resumen general.</p>
       </div>
 
@@ -209,7 +224,7 @@ export function renderFormDeuda(tipo) {
         <label for="comp-cuota" class="label">¿Cuánto pagas cada mes? (COP)</label>
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
-               autocomplete="off" />
+               autocomplete="off" value="${vCuota}" />
         <p class="form-hint">Finko la incluye en tu resumen mensual para que veas cuánto te queda libre.</p>
       </div>
 
@@ -220,7 +235,7 @@ export function renderFormDeuda(tipo) {
                  min="0" max="${esEntidad ? '200' : '100'}" step="0.01"
                  placeholder="${_esc(tasaPlaceholder)}"
                  aria-describedby="comp-tasa-hint"
-                 autocomplete="off" />
+                 autocomplete="off" value="${vTasa}" />
           <input type="hidden" name="tasaUnidad" value="${esEntidad ? 'EA' : 'mensual'}" />
         </div>
         <p id="comp-tasa-hint" class="form-hint">${_esc(tasaHint)}</p>
@@ -236,13 +251,13 @@ export function renderFormDeuda(tipo) {
       <div class="form-group">
         <label for="comp-dia" class="label">Día de pago del mes (1-31)</label>
         <input id="comp-dia" name="diaPago" class="input" type="number"
-               min="1" max="31" step="1" placeholder="1" required aria-required="true" />
+               min="1" max="31" step="1" placeholder="1" required aria-required="true"
+               value="${vDia}" />
       </div>
 
       <div class="modal__footer">
-        <button type="button" class="btn btn-ghost"
-                data-action="comp-volver-chooser">← Volver</button>
-        <button type="submit" class="btn btn-primary">Guardar deuda</button>
+        ${volverBtn}
+        <button type="submit" class="btn btn-primary">${modoEdit ? 'Actualizar deuda' : 'Guardar deuda'}</button>
       </div>
     </form>`;
 }

@@ -90,13 +90,50 @@ async function _guardarCompromiso() {
     if (!ok) return;
   }
 
-  guardar('compromisos', normalizarCompromiso(datos));
+  const idEdit = form.dataset.id || null;
+
+  if (idEdit) {
+    editar('compromisos', idEdit, normalizarCompromiso(datos));
+  } else {
+    guardar('compromisos', normalizarCompromiso(datos));
+  }
 
   const overlay = document.getElementById('modal-compromiso');
   if (overlay) cerrarModal(overlay);
 
   _renderTodo();
-  announce('Compromiso guardado correctamente.');
+  announce(idEdit ? 'Deuda actualizada.' : 'Compromiso guardado correctamente.');
+}
+
+/** @param {HTMLElement} el */
+function _editarCompromiso(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const comp = S.compromisos.find(c => c.id === id);
+  if (!comp) return;
+
+  const overlay = document.getElementById('modal-compromiso');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar deuda';
+
+  const body = document.getElementById('modal-compromiso-body');
+  if (!body) return;
+
+  body.innerHTML = renderFormDeuda(comp.tipo, comp);
+
+  const formEl = body.querySelector('#form-compromiso');
+  if (formEl) {
+    formEl.dataset.id = id;
+    formEl.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _guardarCompromiso();
+    });
+  }
+
+  abrirModal(overlay);
 }
 
 /** @param {HTMLElement} el */
@@ -372,6 +409,7 @@ function _inyectarForm() {
 
 export function initCompromisos() {
   registrarAccion('nuevo-compromiso',        _nuevoCompromiso);
+  registrarAccion('editar-compromiso',       _editarCompromiso);
   registrarAccion('eliminar-compromiso',     _eliminarCompromiso);
   registrarAccion('abrir-abono',             _abrirAbono);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
