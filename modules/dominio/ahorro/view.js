@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -51,7 +52,7 @@ function _renderEmptyState(gastosFijosMensuales) {
 
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">🐷</p>
+      <div class="empty-state__icon">${icon('ahorro', 'icon icon--lg')}</div>
       <p class="empty-state__title">Empieza tu fondo de emergencia</p>
       <p class="empty-state__desc">Es la base de cualquier plan financiero: un colchón con 3 a 6 meses de tus gastos fijos para imprevistos (salud, trabajo, casa). Sin esto, una urgencia se paga con deuda cara.</p>
       <button class="btn btn-primary" data-action="ahorro-activar-fondo">+ Activar fondo</button>
@@ -192,23 +193,23 @@ function _renderNudgeTasa(tasaAhorro) {
   let icono, titulo, desc, nivel;
 
   if (tasaAhorro >= 20) {
-    icono = '🏆'; nivel = 'nudge-success';
+    icono = icon('trophy'); nivel = 'nudge-success';
     titulo = `Excelente: ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
     desc   = 'Superas el umbral recomendado del 20%. ¡Sigue así!';
   } else if (tasaAhorro >= 10) {
-    icono = '📈'; nivel = 'nudge-info';
+    icono = icon('inversion'); nivel = 'nudge-info';
     titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
     desc   = 'Vas bien. La meta recomendada es el 20%. Un poco más y llegas.';
   } else if (tasaAhorro > 0) {
-    icono = '💡'; nivel = 'nudge-medium';
+    icono = icon('lightbulb'); nivel = 'nudge-medium';
     titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
     desc   = 'La meta recomendada es el 20%. Revisa tus gastos variables para mejorar.';
   } else if (tasaAhorro === 0) {
-    icono = '⚠️'; nivel = 'nudge-medium';
+    icono = icon('alert'); nivel = 'nudge-medium';
     titulo = 'Este mes tus gastos igualan tus ingresos.';
     desc   = 'No queda margen para ahorrar. Revisa tus gastos para liberar espacio.';
   } else {
-    icono = '🚨'; nivel = 'nudge-high';
+    icono = icon('alert'); nivel = 'nudge-high';
     titulo = `Este mes tus gastos superan tus ingresos en ${Math.abs(tasaAhorro)}%.`;
     desc   = 'Estás gastando más de lo que ganas. Revisarlo es urgente.';
   }

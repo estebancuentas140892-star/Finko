@@ -10,6 +10,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { icon } from '../../../infra/icons.js';
 import {
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
@@ -35,7 +36,7 @@ export function renderAlertaFijosSinPagar() {
 
   const hayUrgente = fijos.some(f => f.severidad === 'urgente');
   const nivel      = hayUrgente ? 'nudge-high' : 'nudge-medium';
-  const icono      = hayUrgente ? '🔴' : '🟡';
+  const icono      = icon('alert');
   const n          = fijos.length;
   const titulo     = n === 1
     ? '1 gasto fijo venció este mes'
@@ -85,7 +86,7 @@ export function renderAlertaDeudasDurmiendo() {
 
   const hayAlta = deudas.some(d => d.severidad === 'alta');
   const nivel   = hayAlta ? 'nudge-high' : 'nudge-medium';
-  const icono   = hayAlta ? '⚠️' : '💤';
+  const icono   = hayAlta ? icon('alert') : icon('moon');
   const n       = deudas.length;
   const titulo  = n === 1
     ? '1 deuda lleva tiempo sin actividad'

@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
 import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
 
@@ -169,7 +170,7 @@ function _renderGastoItem(gasto) {
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
-      <div class="list-item__icon" aria-hidden="true">💸</div>
+      <div class="list-item__icon" aria-hidden="true">${icon('gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${_esc(gasto.fecha)}${nota}</p>
@@ -193,7 +194,7 @@ function _renderGastoItem(gasto) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">💸</p>
+      <div class="empty-state__icon">${icon('gastos', 'icon icon--lg')}</div>
       <p class="empty-state__title">Sin gastos este mes</p>
       <p class="empty-state__desc">Anota cada compra o pago que haces: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu dinero.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
@@ -204,7 +205,7 @@ function _renderEmptyState() {
 function _renderEmptyFiltro() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">🔍</p>
+      <div class="empty-state__icon">${icon('search', 'icon icon--lg')}</div>
       <p class="empty-state__title">Nada acá este mes</p>
       <p class="empty-state__desc">No registraste gastos en esta categoría todavía.</p>
       <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
@@ -266,10 +267,10 @@ export function renderFormGastoRapido() {
   if (cuentas.length === 0) {
     return `
       <div class="form-empty">
-        <p class="form-empty__icon" aria-hidden="true">🏦</p>
+        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Para registrar gastos, agrega al menos una cuenta o billetera en Mis Cuentas.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">🏦 Ir a Mis Cuentas</a>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">${icon('cuentas')} Ir a Mis Cuentas</a>
       </div>`;
   }
 
@@ -341,10 +342,10 @@ export function renderFormGasto() {
   if (cuentas.length === 0) {
     return `
       <div class="form-empty">
-        <p class="form-empty__icon" aria-hidden="true">🏦</p>
+        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Para registrar un gasto, agrega al menos una cuenta o billetera en Mis cuentas. Así sabes de dónde sale el dinero.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">🏦 Ir a Mis cuentas</a>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">${icon('cuentas')} Ir a Mis cuentas</a>
       </div>`;
   }
 

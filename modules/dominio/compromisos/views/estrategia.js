@@ -15,6 +15,7 @@
 
 import { S } from '../../../core/state.js';
 import { esc as _esc, f } from '../../../infra/utils.js';
+import { icon } from '../../../infra/icons.js';
 import {
   filtrarDeudasPagables,
   compararEstrategias,
@@ -186,8 +187,8 @@ function _renderAvisoTasaDesconocida(deudas) {
 }
 
 const _META_ESTRATEGIA = {
-  avalancha: { icono: '🏔️', nombre: 'Avalancha' },
-  bolaNieve: { icono: '⚪', nombre: 'Bola de nieve' },
+  avalancha: { icono: icon('mountain'), nombre: 'Avalancha' },
+  bolaNieve: { icono: icon('circle'),   nombre: 'Bola de nieve' },
 };
 
 // Resúmenes integrados (mecanismo + ideal en 1 párrafo). La razón de

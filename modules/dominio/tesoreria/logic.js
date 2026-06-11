@@ -547,7 +547,7 @@ export function detectarNudgeGMF(gmfData) {
   return {
     id:                'gmf-costo',
     nivel:             'nudge-info',
-    icono:             '💸',
+    icono:             'gastos',
     cantidadCuentasGMF,
     gastosGravados,
     costoGMF,

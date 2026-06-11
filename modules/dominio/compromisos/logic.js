@@ -32,11 +32,11 @@ export const LABEL_TIPO = {
   'deuda-personal': 'Deuda personal',
 };
 
-/** Emoji por tipo de compromiso. */
+/** Id de icono SVG por tipo de compromiso (referencia al sprite #i-*). */
 export const ICONO_TIPO = {
-  'fijo':           '🔁',
-  'deuda-entidad':  '🏦',
-  'deuda-personal': '🤝',
+  'fijo':           'recurring',
+  'deuda-entidad':  'cuentas',
+  'deuda-personal': 'personales',
 };
 
 /** Devuelve true si el tipo corresponde a una deuda (entidad o personal). */

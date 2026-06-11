@@ -10,6 +10,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { icon } from '../../../infra/icons.js';
 import {
   compromisosActivos,
   compromisosProximos,
@@ -48,7 +49,7 @@ export function renderPanelVencidos() {
 
   const items = vencidos.map(v => {
     const tipo  = v.tipo ?? 'fijo';
-    const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
+    const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
     const desc  = _esc(v.descripcion);
     const monto = f(v.monto);
     const dias  = v.diasAtraso;
@@ -121,9 +122,9 @@ export function renderPanelPrioridades() {
         const dotTipo  = tipo === 'personal' ? 'deuda-personal'
           : tipo === 'apartado'  ? 'fijo'
           : tipo;
-        const icono    = tipo === 'personal'  ? '🤝'
-          : tipo === 'apartado'  ? _esc(c.icono ?? '📦')
-          : _esc(ICONO_TIPO[tipo] ?? '🔁');
+        const icono    = tipo === 'personal'  ? icon('personales')
+          : tipo === 'apartado'  ? (c.icono ? _esc(c.icono) : icon('apartados'))
+          : icon(ICONO_TIPO[tipo] ?? 'recurring');
         const desc  = _esc(c.descripcion ?? '(sin descripción)');
         const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
         return `
@@ -225,7 +226,7 @@ function _apartadosProximos(diasLimite) {
       tipo:          'apartado',
       descripcion:   a.nombre,
       monto:         Math.max(0, (a.montoObjetivo || 0) - (a.montoActual || 0)),
-      icono:         a.icono ?? '📦',
+      icono:         a.icono ?? null,
     });
   }
   return resultado;

@@ -156,6 +156,12 @@
   filter: drop-shadow(0 4px 12px color-mix(in srgb, var(--fk-accent) 20%, transparent));
 }
 
+.empty-state__icon .icon--lg {
+  color: var(--fk-accent);
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
 .empty-state__title {
   font-size: var(--fk-text-xl);
   font-weight: var(--fk-font-bold);

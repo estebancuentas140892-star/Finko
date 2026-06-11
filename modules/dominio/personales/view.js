@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import {
   calcularPendiente,
   calcularDias,
@@ -118,7 +119,7 @@ function _renderPersonalItem(prestamo, hoy) {
 
   return `
     <article class="list-item" data-id="${_esc(prestamo.id)}">
-      <div class="list-item__icon" aria-hidden="true">${liquidado ? '✅' : '🤝'}</div>
+      <div class="list-item__icon" aria-hidden="true">${liquidado ? icon('check-circle') : icon('personales')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${persona}
           <span class="${chipClase}">${chipLabel}</span>
@@ -148,7 +149,7 @@ function _renderPersonalItem(prestamo, hoy) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">🤝</p>
+      <div class="empty-state__icon">${icon('personales', 'icon icon--lg')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
       <p class="empty-state__desc">Registra los préstamos que haces a familia y amigos para no olvidarte. Sin presión: solo es para ti.</p>
       <button class="btn btn-primary" data-action="nuevo-personal">+ Agregar préstamo</button>

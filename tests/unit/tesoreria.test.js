@@ -711,7 +711,7 @@ describe('detectarNudgeGMF()', () => {
     expect(n).not.toBeNull();
     expect(n.nivel).toBe('nudge-info');
     expect(n.id).toBe('gmf-costo');
-    expect(n.icono).toBe('💸');
+    expect(n.icono).toBe('gastos');
   });
 
   it('nudge expone los valores numéricos del mes para que la vista los formatee', () => {

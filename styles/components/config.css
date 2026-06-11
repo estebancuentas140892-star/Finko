@@ -554,9 +554,9 @@
   background: var(--fk-text-muted);
 }
 
-.cal-dot--fijo           { background: var(--fk-dom-presupuesto); }
-.cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos); }
-.cal-dot--deuda-personal { background: var(--fk-dom-personales); }
+.cal-dot--fijo           { background: var(--fk-dom-presupuesto); color: var(--fk-dom-presupuesto); }
+.cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos); color: var(--fk-dom-compromisos); }
+.cal-dot--deuda-personal { background: var(--fk-dom-personales);  color: var(--fk-dom-personales); }
 
 .cal-day__more {
   font-size: 10px;

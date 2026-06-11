@@ -9,6 +9,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
 import {
   cuentasActivas,
@@ -86,7 +87,7 @@ function _renderCuentaItem(cuenta) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">🏦</p>
+      <div class="empty-state__icon">${icon('cuentas', 'icon icon--lg')}</div>
       <p class="empty-state__title">¿Dónde tienes tu dinero?</p>
       <p class="empty-state__desc">Agrega tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en el dashboard.</p>
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
@@ -242,7 +243,7 @@ function _renderNudgeProximo({ principal, otrosProximos }) {
     : '';
   return `
     <div class="nudge nudge-info" role="status">
-      <span class="nudge__icon" aria-hidden="true">💰</span>
+      <span class="nudge__icon" aria-hidden="true">${icon('saldo')}</span>
       <div class="nudge__body">
         <p class="nudge__title">Recibes "${_esc(descripcion)}" ${cuandoStr}</p>
         ${otrosHtml}
@@ -311,7 +312,7 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }) {
 
   return `
     <div class="nudge nudge-info" role="region" aria-label="Distribución sugerida del ingreso">
-      <span class="nudge__icon" aria-hidden="true">💡</span>
+      <span class="nudge__icon" aria-hidden="true">${icon('lightbulb')}</span>
       <div class="nudge__body">
         <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
         <p class="nudge__desc">${_esc(razon)}</p>
@@ -482,7 +483,7 @@ function _renderNudgeGMF(nudge) {
   const n = nudge.cantidadCuentasGMF === 1 ? '1 cuenta' : `${nudge.cantidadCuentasGMF} cuentas`;
   return `
     <div class="nudge nudge-info" role="status">
-      <span class="nudge__icon" aria-hidden="true">${nudge.icono}</span>
+      <span class="nudge__icon" aria-hidden="true">${icon(nudge.icono)}</span>
       <div class="nudge__body">
         <p class="nudge__title">4x1000 estimado este mes: ${f(nudge.costoGMF)}</p>
         <p class="nudge__desc">Calculado desde ${f(nudge.gastosGravados)} en gastos registrados desde ${_esc(n)} con GMF. Las cuentas de nómina y AFC están exentas: consulta con tu banco si aplica.</p>

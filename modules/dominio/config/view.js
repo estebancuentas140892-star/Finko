@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { legalVigente, estadoVigenciaLegal, SMMLV, APP_VERSION } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
@@ -52,7 +53,7 @@ function _renderAvisoVigencia() {
 
 function _renderTema() {
   const light = document.body.classList.contains('light-theme');
-  const icono = light ? '☀️' : '🌙';
+  const icono = light ? icon('sun') : icon('moon');
   const label = light ? 'Tema claro activo' : 'Tema oscuro activo';
   return `
     <section class="config-section" aria-labelledby="config-tema-title">
