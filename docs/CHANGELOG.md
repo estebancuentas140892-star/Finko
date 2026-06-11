@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(personales): hint del modal de pago reescrito · 2026-06-11
+
+Reemplazado el texto de ayuda del modal "Me pagaron" en Préstamos personales. El texto anterior usaba lenguaje técnico ("por defecto se carga", "pago parcial"). El nuevo se adapta al contexto: el usuario es el prestamista que recibe dinero, no quien paga una deuda. SW v136 → v137.
+
+- **`modules/dominio/personales/view.js`:** hint de `$200.000` → "El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo."
+- **`service-worker.js`:** v136 → v137.
+
+---
+
 ### fix(compromisos): mensajes de alerta "cuota no cubre intereses" reescritos · 2026-06-11
 
 Reemplazado el mensaje técnico que aparecía al registrar una deuda cuya cuota no cubre los intereses mensuales. El texto anterior usaba lenguaje contable y el caso de empate exacto producía la frase confusa "la deuda crece $0 cada mes".

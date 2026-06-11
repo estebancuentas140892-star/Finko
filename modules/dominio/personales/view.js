@@ -221,7 +221,7 @@ export function renderFormPagoPersonal(prestamo) {
         <input id="pago-monto" name="monto" class="input" type="number"
                min="1" max="${pendiente}" step="1000"
                value="${pendiente}" required aria-required="true" />
-        <p class="form-hint">Por defecto se carga el total pendiente; puedes ajustarlo si es un pago parcial.</p>
+        <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

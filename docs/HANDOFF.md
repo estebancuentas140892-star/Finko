@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (fix copy alerta cuota/interés en deudas; 1351/1351 verde)
+> Última actualización: 2026-06-11 (fix copy modal pago préstamos + alerta cuota/interés; 1351/1351 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(personales): hint del modal de pago reescrito · 2026-06-11
+
+Reemplazado el hint "Por defecto se carga el total pendiente; puedes ajustarlo si es un pago parcial." por "El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo." El cambio adapta el lenguaje al contexto: el usuario es el prestamista que recibe dinero, no quien paga. SW v136 → v137.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/personales/view.js` | Hint del `renderFormPagoPersonal` reescrito. |
+| `service-worker.js` | v136 → v137. |
+
+---
 
 ### fix(compromisos): mensajes de alerta "cuota no cubre intereses" reescritos · 2026-06-11
 
@@ -89,23 +100,7 @@ Un apartado para un gasto que se repite (SOAT anual, impuestos) se reinicia para
 
 ---
 
-### feat(deudas): motor de recomendación de estrategia por simulación · 2026-06-09
-
-`recomendarEstrategia(deudas, extraMensual)` decide a partir de la simulación real de ambas estrategias, no de la dispersión de tasas. Caso que lo motivó: deuda al 10% mensual con cuota que no cubre el interés + deuda sin interés, donde el plan nunca cierra y la app igual recomendaba Avalancha. Ahora detecta planes inviables (`viable: false`), diagnostica la deuda creciente y calcula el pago extra mínimo. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). SW v131 → v132. 1256/1256 tests verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `recomendarEstrategia` reescrita (firma con `extraMensual`, retorno extendido y retrocompatible). Helpers `_diagnosticarInviabilidad` y `_calcularExtraMinimoViable` (búsqueda binaria). `filtrarDeudasPagables` marca `tasaDesconocida`. Constante `UMBRAL_AHORRO_MATERIAL`. |
-| `modules/dominio/compromisos/views/estrategia.js` | Pasa `extraMensual` al motor. Banner de plan inviable + nota de tasa desconocida. |
-| `modules/dominio/compromisos/views/lista.js` | "tasa por confirmar" para entidad con tasa null. |
-| `styles/components/charts.css` | `.estrategia-card__alerta` (danger) y `.estrategia-card__nota` (info). |
-| `tests/unit/compromisos.test.js` | Bloque `recomendarEstrategia` reescrito + tests de `tasaDesconocida`. |
-| `docs/DECISIONS/006-recomendacion-deudas-por-simulacion.md` | Nuevo ADR. |
-| `service-worker.js` | v131 → v132. |
-
----
-
-> Para tareas anteriores (tasa opcional en deudas, motor distribución ingresos, Apartados Fase 1, alerta próximo cobro, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
