@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(personales): resumen oculto con un solo préstamo · 2026-06-11
+
+El bloque de resumen en la sección "Me deben" (Total prestado, Te han devuelto, Pendiente, Activos) ahora se muestra solo cuando hay 2 o más préstamos. Con un único préstamo, el resumen duplica la información que ya muestra la tarjeta del préstamo. SW v137 → v138.
+
+- **`modules/dominio/personales/view.js`:** `renderListaPersonales` envuelve `_renderResumen` en `lista.length >= 2 ? ... : ''`.
+- **`service-worker.js`:** v137 → v138.
+
+---
+
 ### fix(personales): hint del modal de pago reescrito · 2026-06-11
 
 Reemplazado el texto de ayuda del modal "Me pagaron" en Préstamos personales. El texto anterior usaba lenguaje técnico ("por defecto se carga", "pago parcial"). El nuevo se adapta al contexto: el usuario es el prestamista que recibe dinero, no quien paga una deuda. SW v136 → v137.

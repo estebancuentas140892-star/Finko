@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(personales): resumen oculto cuando hay un solo préstamo · 2026-06-11
+
+El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo se muestra cuando hay 2 o más préstamos. Con un solo préstamo, el resumen repite la misma información que ya muestra la tarjeta, así que se oculta. SW v137 → v138.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/personales/view.js` | `_renderResumen` se llama solo si `lista.length >= 2`. |
+| `service-worker.js` | v137 → v138. |
+
+---
+
 ### fix(personales): hint del modal de pago reescrito · 2026-06-11
 
 Reemplazado el hint "Por defecto se carga el total pendiente; puedes ajustarlo si es un pago parcial." por "El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo." El cambio adapta el lenguaje al contexto: el usuario es el prestamista que recibe dinero, no quien paga. SW v136 → v137.
@@ -85,18 +96,6 @@ Al abrir "Nuevo apartado", la frecuencia de aporte se pre-selecciona según los 
 | `modules/dominio/apartados/index.js` | `_nuevoApartado` re-inyecta el form para leer `S.ingresos` actualizado; nudge en pipeline de render. |
 | `index.html` | `#apartados-nudge-proximos` antes de `#lista-apartados`. `service-worker.js` v134 → v135. |
 | `tests/unit/apartados.test.js` (+13) | 6 para `frecuenciaPrincipalIngresos`, 7 para `apartadosProximos`. |
-
----
-
-### feat(apartados): recurrencia y ciclo automático - Fase 2 · 2026-06-10
-
-Un apartado para un gasto que se repite (SOAT anual, impuestos) se reinicia para el próximo periodo en vez de recrearse a mano. Schema v14. Al marcar "Se repite" + periodo, cuando reúne el dinero queda "✅ ¡Listo!" con botón "Ya lo usé": `reiniciarCiclo` vacía el monto (conserva excedente), avanza la fecha al siguiente vencimiento y vuelve a en progreso. SW v133 → v134. 1320/1320 verdes (+24).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/logic.js` | `reiniciarCiclo`, `avanzarMeses`, `estaListoParaReiniciar`, `etiquetaPeriodoMeses`, `PERIODOS_RECURRENCIA`. |
-| `modules/dominio/apartados/{view,index}.js` | Checkbox "Se repite" + select (toggle); badge "¡Listo!" + botón "Ya lo usé". |
-| `modules/core/{state,storage}.js` | `recurrente`/`periodoMeses`, `_version` 14, migración v13 → v14. |
 
 ---
 

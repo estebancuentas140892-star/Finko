@@ -36,7 +36,7 @@ export function renderListaPersonales() {
   const hoy = new Date();
 
   el.innerHTML = `
-    ${_renderResumen(resumen)}
+    ${lista.length >= 2 ? _renderResumen(resumen) : ''}
     <div class="personales-lista">
       ${ordenadas.map(p => _renderPersonalItem(p, hoy)).join('')}
     </div>`;
