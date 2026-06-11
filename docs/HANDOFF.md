@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(apartados): texto "Se repite" mejorado en el formulario · 2026-06-11
+
+Reemplazado el texto del checkbox "Se repite" y la etiqueta del selector de período en el formulario de Apartados. Se eliminó el término "recurrente" (jargon) y se sustituyó por lenguaje cotidiano. Se agregó un `form-hint` bajo el selector explicando el auto-reinicio, la ventaja principal de la funcionalidad que antes era invisible para el usuario. SW v138 → v139.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/view.js` | Checkbox: "Este gasto se repite cada cierto tiempo (SOAT, impuesto predial, matrícula...)". Select label: "¿Cada cuánto tiempo se repite?". Hint nuevo: "Cuando marques 'Ya lo usé', el apartado arranca de cero para la próxima vez." |
+| `service-worker.js` | v138 → v139. |
+
+---
+
 ### fix(personales): resumen oculto cuando hay un solo préstamo · 2026-06-11
 
 El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo se muestra cuando hay 2 o más préstamos. Con un solo préstamo, el resumen repite la misma información que ya muestra la tarjeta, así que se oculta. SW v137 → v138.
@@ -47,17 +58,6 @@ El bloque de resumen (Total prestado, Te han devuelto, Pendiente, Activos) solo 
 |---|---|
 | `modules/dominio/personales/view.js` | `_renderResumen` se llama solo si `lista.length >= 2`. |
 | `service-worker.js` | v137 → v138. |
-
----
-
-### fix(personales): hint del modal de pago reescrito · 2026-06-11
-
-Reemplazado el hint "Por defecto se carga el total pendiente; puedes ajustarlo si es un pago parcial." por "El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo." El cambio adapta el lenguaje al contexto: el usuario es el prestamista que recibe dinero, no quien paga. SW v136 → v137.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/personales/view.js` | Hint del `renderFormPagoPersonal` reescrito. |
-| `service-worker.js` | v136 → v137. |
 
 ---
 

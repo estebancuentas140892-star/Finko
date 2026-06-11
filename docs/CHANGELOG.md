@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(apartados): texto "Se repite" mejorado en el formulario · 2026-06-11
+
+Reemplazados el label del checkbox y la etiqueta del selector de período en el formulario de nuevo apartado. Se eliminó el término técnico "recurrente" y se describe el comportamiento con ejemplos cotidianos. Se agrega un `form-hint` bajo el selector que explica el auto-reinicio del apartado al usar el dinero: el beneficio principal de la función, que antes era invisible para el usuario. SW v138 → v139.
+
+- **`modules/dominio/apartados/view.js`:** Checkbox "Se repite (gasto recurrente...)" → "Este gasto se repite cada cierto tiempo (SOAT, impuesto predial, matrícula...)". Label select "¿Cada cuánto se repite?" → "¿Cada cuánto tiempo se repite?". Hint nuevo bajo el select.
+- **`service-worker.js`:** v138 → v139.
+
+---
+
 ### fix(personales): resumen oculto con un solo préstamo · 2026-06-11
 
 El bloque de resumen en la sección "Me deben" (Total prestado, Te han devuelto, Pendiente, Activos) ahora se muestra solo cuando hay 2 o más préstamos. Con un único préstamo, el resumen duplica la información que ya muestra la tarjeta del préstamo. SW v137 → v138.

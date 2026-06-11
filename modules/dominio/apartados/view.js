@@ -229,14 +229,15 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
       <div class="form-group form-group--checkbox">
         <label class="checkbox-row">
           <input id="apartado-recurrente" name="recurrente" type="checkbox" />
-          <span>Se repite (gasto recurrente, como el SOAT o los impuestos)</span>
+          <span>Este gasto se repite cada cierto tiempo (SOAT, impuesto predial, matrícula...)</span>
         </label>
       </div>
       <div class="form-group" id="apartado-periodo-group" hidden>
-        <label for="apartado-periodo" class="label">¿Cada cuánto se repite?</label>
+        <label for="apartado-periodo" class="label">¿Cada cuánto tiempo se repite?</label>
         <select id="apartado-periodo" name="periodoMeses" class="input">
           ${periodoOpts}
         </select>
+        <p class="form-hint">Cuando marques "Ya lo usé", el apartado arranca de cero para la próxima vez.</p>
       </div>
 
       <div class="form-group">
