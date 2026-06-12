@@ -29,7 +29,7 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ V.1 (F1) - Tokens v2 + tipografía. Completada 2026-06-11.
 - ✅ V.2 (F2) - Sistema de iconos SVG propio. Completada 2026-06-11.
 - ✅ V.3 (F3) - Componentes núcleo v2: progress grueso + anillo SVG + list-item con aire. Completada 2026-06-11.
-- V.4 (F4) - Dashboard bento en desktop + hero card + count-up. Sonnet 4.6 - Alto.
+- ✅ V.4 (F4) - Dashboard bento grid + accesos rápidos + count-up del saldo. Completada 2026-06-11.
 - V.5 (F5) - Secciones de progreso: Metas, Apartados, Ahorro, Score. Sonnet 4.6 - Medio.
 - V.6 (F6) - Microinteracciones: hover, llenado animado, checkmark de pago. Sonnet 4.6 - Medio.
 - V.7 (F7) - Estados vacíos ilustrados + navegación pulida. Sonnet 4.6 - Medio.

@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v4): dashboard bento grid, accesos rápidos y count-up del saldo · 2026-06-11
+
+Cuarta fase del rediseño visual 2026. El dashboard pasa de columna única a composición bento 12 cols: hero de saldo (8) + accesos rápidos (4) en la fila 1; paneles dinámicos de vencidos y prioridades (6 cada uno) en la fila 2. Los paneles dinámicos parten con `[hidden]` y se activan solo cuando tienen datos: el grid nunca muestra celdas vacías. Count-up animado del saldo al entrar al dashboard (easeOutCubic, 500ms, respeta `prefers-reduced-motion`). Fix: el selector de la animación `cardIn` era `.sec.active` (nunca coincidía); corregido a `.section.active`. Emojis restantes en headers de panel reemplazados por SVG icons. SW v147 → v148. Tests 1373/1373 verdes (sin cambios).
+
+- **`index.html`**: sección de dashboard envuelta en `.bento.bento--dash`. Hero pierde `--solo` y gana `--wide` (8 de 12 cols). Nuevo `<nav class="bento__cell bento__cell--accesos">` con 4 links: Compromisos, Metas, Tesorería, Análisis. `#panel-vencidos` y `#panel-prioridades` reciben `bento__cell--half` y atributo `hidden` inicial. `#panel-gastos-pendientes` se mueve fuera del grid (nudge de ancho completo).
+- **`styles/layout.css`**: `.bento__cell[hidden] { display: none }` para que las celdas vacías no ocupen espacio en el grid. Estilos de `.bento__cell--accesos`, `.accesos__grid` (grid 2 cols), `.acceso-item` (flex columna, hover, focus-visible), `.acceso-item__icon` (32px, fondo elevated), `.acceso-item__icon .icon` (18px, color acento). Fix: selector de la animación cardIn corregido a `.section.active`.
+- **`styles/responsive.css`**: `.bento__cell--accesos { grid-column: span 6 }` en tablet (768-1023) para que ocupe fila completa tras el hero.
+- **`modules/dominio/compromisos/views/dashboard.js`**: `el.hidden = true` cuando el panel queda vacío, `el.hidden = false` al llenarlo. `⚠️` → `icon('alert')` y `📅` → `icon('agenda')` en los títulos de panel. Elimina emoji `🎉` del empty state de prioridades.
+- **`modules/dominio/gastos/view.js`**: `el.hidden = true/false` en `renderPendientesOrganizar()`.
+- **`modules/infra/render.js`**: helper `_countUp(el, from, to, 500)` con easeOutCubic y cancelación de RAF. `updSaldo()` lo usa cuando está en el dashboard y el saldo cambia; en caso contrario actualiza el texto directamente. `_prevSaldo` (null inicial) permite la animación de 0 → saldo en la primera visita.
+- **`service-worker.js`**: v147 → v148.
+
+---
+
 ### feat(rediseno-v3): componentes núcleo v2: progress grueso animado, anillo SVG, list-item con aire · 2026-06-11
 
 Tercera fase del rediseño visual 2026. El progreso pasa de tímido a protagonista: barra de 12px con llenado de entrada animado y un anillo SVG reutilizable listo para F5. De paso consolida tres fuentes de verdad dispersas del progreso lineal y arregla clases que las vistas emitían sin CSS. SW v146 → v147. Tests 1373/1373 verdes (+14).

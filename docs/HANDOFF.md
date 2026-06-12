@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (rediseño V.3: componentes núcleo v2; 1373/1373 verde)
+> Última actualización: 2026-06-11 (rediseño V.4: dashboard bento + count-up; 1373/1373 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(rediseno-v4): dashboard bento grid, accesos rápidos y count-up del saldo · 2026-06-11
+
+Cuarta fase del rediseño visual 2026. Compone el dashboard en un bento grid 12 columnas: hero de saldo (8 cols) + accesos rápidos (4 cols) en la primera fila, paneles dinámicos de vencidos y prioridades (6 cols cada uno) en la segunda. Los paneles arrancan con `[hidden]` y los activa el JS solo cuando hay datos (cero celdas vacías en el grid). Count-up animado en el saldo al entrar al dashboard o cuando cambia el valor. Fix: selector `.sec.active` en la animación `cardIn` corregido a `.section.active`. SW v147 → v148. Tests 1373/1373 verdes (sin cambios).
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Dashboard envuelto en `.bento.bento--dash`. Hero pasa de `--solo` a `--wide` (8 cols). Nuevo cell `bento__cell--accesos` con 4 atajos (Compromisos, Metas, Tesorería, Análisis). Paneles vencidos/prioridades: clases `bento__cell--half` + arrancan `[hidden]`. Gastos pendientes fuera del grid. |
+| `styles/layout.css` | `.bento__cell[hidden]`: `display: none`. Estilos de `.accesos__grid` (2 cols) y `.acceso-item` (flex col, icon 32px). Fix: `.section.active` en lugar de `.sec.active` para la animación de entrada. |
+| `styles/responsive.css` | `.bento__cell--accesos`: `span 6` en tablet (full row). |
+| `modules/dominio/compromisos/views/dashboard.js` | Toggle `el.hidden` en ambos paneles. Reemplaza `⚠️` por `icon('alert')` y `📅` por `icon('agenda')`. Elimina emoji `🎉`. |
+| `modules/dominio/gastos/view.js` | Toggle `el.hidden` en `renderPendientesOrganizar()`. |
+| `modules/infra/render.js` | Count-up animado (`_countUp`, easeOutCubic, 500ms): anima el saldo cuando el usuario está en el dashboard y el valor cambia. Sin animación bajo `prefers-reduced-motion`. |
+| `service-worker.js` | v147 → v148. |
+
+---
 
 ### feat(rediseno-v3): componentes núcleo v2: progress grueso animado, anillo SVG, list-item con aire · 2026-06-11
 
@@ -100,20 +116,6 @@ Auditoría visual de toda la app con datos de demostración (desktop y móvil, d
 |---|---|
 | `docs/REDESIGN_2026.md` | Nuevo: diagnóstico, dirección "calma con energía", fases, restricciones. |
 | `docs/ROADMAP.md` | Serie V (Rediseño visual 2026) con V.1-V.8. |
-
----
-
-### feat(ux): subtítulos permanentes + urgencia visual en Apartados · 2026-06-11
-
-Tres mejoras visuales sin cambios de lógica o tests. Subtítulos de sección permanentes para Ahorro, Metas y Apartados (visibles siempre, no solo en el empty state). Badge de urgencia inline en el subtitle de cada apartado: rojo si vence en ≤7 días, ámbar en 8-30 días. Estado "Listo para usar" en apartados recurrentes que ya reunieron el dinero: borde y fondo verde en el card. SW v143 → v144.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Subtítulos permanentes: Ahorro ("Tu colchón..."), Metas ("Objetivos aspiracionales..."), Apartados ("Reservas para gastos previsibles..."). |
-| `modules/dominio/apartados/view.js` | `list-item--listo` cuando está listo para reiniciar; badge `badge--danger`/`badge--warn` por días restantes. |
-| `styles/components/forms.css` | `.badge--danger` (rojo, mismo patrón que `.badge--warn`). |
-| `styles/components/domain.css` | `.list-item--listo` + `:hover`. |
-| `service-worker.js` | v143 → v144. |
 
 ---
 

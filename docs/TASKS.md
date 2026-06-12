@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1373/1373 tests verdes, lint limpio.** Último cambio: **rediseño V.3, componentes núcleo v2** (progress 12px animado, `progressRing()` en `infra/svg.js`, list-item con aire, chips unificados). Antes: V.2 iconos SVG propios, V.1 tokens v2.
+**App estable, 1373/1373 tests verdes, lint limpio.** Último cambio: **rediseño V.4, dashboard bento** (grid 12 cols, hero 8 cols + accesos rápidos 4 cols, paneles dinámicos con hidden, count-up del saldo). Antes: V.3 componentes núcleo v2, V.2 iconos SVG, V.1 tokens v2.
 
 ---
 
@@ -35,7 +35,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**V.4 - Rediseño visual, Fase 4: dashboard bento.** Composición desktop en bento grid (hero + pendientes + prioridades + accesos), hero card rediseñada, count-up del saldo. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
+**V.5 - Rediseño visual, Fase 5: secciones de progreso.** Metas, Apartados y Ahorro con anillo/barra protagonista, hitos y jerarquía nueva. Score de salud de Análisis con gauge mejorado. Usar `progressRing()` (listo en `infra/svg.js`). Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Medio.
 
 Otras pendientes (no urgentes):
 
