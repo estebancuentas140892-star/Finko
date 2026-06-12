@@ -229,8 +229,10 @@ export function renderPendientesOrganizar() {
   const n = gastosPendientes(S.gastos).length;
   if (n === 0) {
     el.innerHTML = '';
+    el.hidden = true;
     return;
   }
+  el.hidden = false;
 
   const titulo = n === 1
     ? 'Tienes 1 gasto por organizar'

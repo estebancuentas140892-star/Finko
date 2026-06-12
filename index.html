@@ -272,45 +272,74 @@
           <span class="quick-add__chevron" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></span>
         </button>
 
-        <!-- HERO: tu dinero disponible (siempre visible, fuera del bento).
-             Si el usuario aún no registró cuentas, render.js (updSaldo) oculta
-             #saldo-desc y muestra #hero-guia-saldo: una guía de primeros pasos
-             que le dice qué hacer y lo lleva a Tesorería a registrar su dinero. -->
-        <article class="bento__cell bento__cell--accent bento__cell--hero bento__cell--solo">
-          <!-- Estado normal: visible cuando hay cuentas registradas -->
-          <svg class="bento__icon icon" id="hero-saldo-icon" aria-hidden="true"><use href="#i-saldo"/></svg>
-          <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
-          <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
-          <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
+        <!-- BENTO GRID del dashboard: hero + accesos + paneles dinámicos.
+             Los paneles dinámicos arrancan con [hidden]; dashboard.js los
+             activa cuando hay datos. Esto evita celdas vacías en el grid. -->
+        <div class="bento bento--dash">
 
-          <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
-          <div class="hero-guia" id="hero-guia-saldo" hidden>
-            <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
-            <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
-            <p class="hero-guia__desc">
-              Agrega tus cuentas o billeteras y Finko calcula
-              automáticamente cuánto tienes disponible hoy.
-            </p>
-            <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
-              <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
-              Agregar mis cuentas
-            </a>
-          </div>
-        </article>
+          <!-- HERO: saldo disponible (8 cols desktop / full en tablet+mobile).
+               render.js (updSaldo) controla el estado vacío vs. con cuentas. -->
+          <article class="bento__cell bento__cell--wide bento__cell--accent bento__cell--hero">
+            <!-- Estado normal: visible cuando hay cuentas registradas -->
+            <svg class="bento__icon icon" id="hero-saldo-icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+            <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
+            <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
+            <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
-        <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
-             Solo se renderiza si hay items; sin ellos, queda vacío. -->
-        <div id="panel-vencidos" role="region" aria-label="Deudas y pagos vencidos"></div>
+            <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
+            <div class="hero-guia" id="hero-guia-saldo" hidden>
+              <span class="hero-guia__icon" aria-hidden="true"><svg class="icon icon--lg" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+              <p class="hero-guia__title">¿Dónde tienes tu dinero?</p>
+              <p class="hero-guia__desc">
+                Agrega tus cuentas o billeteras y Finko calcula
+                automáticamente cuánto tienes disponible hoy.
+              </p>
+              <a class="btn btn-primary btn-lg hero-guia__cta" href="#tesoreria">
+                <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+                Agregar mis cuentas
+              </a>
+            </div>
+          </article>
 
-        <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
-             Reemplaza Card Hoy (hoy + próximos en una sola vista). -->
-        <div id="panel-prioridades" role="region" aria-label="Próximas prioridades"></div>
+          <!-- ACCESOS RÁPIDOS: 4 atajos a secciones clave (4 cols desktop). -->
+          <nav class="bento__cell bento__cell--accesos" aria-label="Accesos rápidos">
+            <p class="bento__label">Accesos rápidos</p>
+            <div class="accesos__grid">
+              <a href="#compromisos" class="acceso-item">
+                <span class="acceso-item__icon" aria-hidden="true"><svg class="icon"><use href="#i-deudas"/></svg></span>
+                <span class="acceso-item__label">Compromisos</span>
+              </a>
+              <a href="#metas" class="acceso-item">
+                <span class="acceso-item__icon" aria-hidden="true"><svg class="icon"><use href="#i-metas"/></svg></span>
+                <span class="acceso-item__label">Metas</span>
+              </a>
+              <a href="#tesoreria" class="acceso-item">
+                <span class="acceso-item__icon" aria-hidden="true"><svg class="icon"><use href="#i-cuentas"/></svg></span>
+                <span class="acceso-item__label">Tesorería</span>
+              </a>
+              <a href="#analisis" class="acceso-item">
+                <span class="acceso-item__icon" aria-hidden="true"><svg class="icon"><use href="#i-analisis"/></svg></span>
+                <span class="acceso-item__label">Análisis</span>
+              </a>
+            </div>
+          </nav>
 
-        <!-- GASTOS POR ORGANIZAR: recordatorio agregado de los gastos
-             registrados con "Gasto rápido" que aún no tienen descripción ni
-             categoría. gastos/view.js (renderPendientesOrganizar) lo llena;
-             si no hay pendientes queda vacío. -->
-        <div id="panel-gastos-pendientes" role="region" aria-label="Gastos por organizar"></div>
+          <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
+               dashboard.js lo llena; [hidden] hasta que haya datos. -->
+          <div id="panel-vencidos" class="bento__cell bento__cell--half"
+               role="region" aria-label="Deudas y pagos vencidos" hidden></div>
+
+          <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
+               dashboard.js lo llena; [hidden] hasta que haya datos. -->
+          <div id="panel-prioridades" class="bento__cell bento__cell--half"
+               role="region" aria-label="Próximas prioridades" hidden></div>
+
+        </div><!-- /.bento -->
+
+        <!-- GASTOS POR ORGANIZAR: nudge de ancho completo, fuera del grid.
+             gastos/view.js lo llena; [hidden] si no hay pendientes. -->
+        <div id="panel-gastos-pendientes" role="region"
+             aria-label="Gastos por organizar" hidden></div>
       </section>
 
       <!-- GASTOS -->

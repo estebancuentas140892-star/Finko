@@ -244,6 +244,8 @@
 .bento__cell:hover {
   border-color: var(--fk-border-default);
 }
+/* Hidden cells must not occupy grid space */
+.bento__cell[hidden] { display: none; }
 
 /* Variantes de tamaño */
 .bento__cell--wide   { grid-column: span 8; }
@@ -409,22 +411,80 @@
 .bento__cell[data-dominio="presupuesto"] .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-presupuesto) 40%, transparent)); }
 .bento__cell[data-dominio="personales"]  .bento__icon { filter: drop-shadow(0 0 8px color-mix(in srgb, var(--fk-dom-personales)  40%, transparent)); }
 
+/* ── ACCESOS RÁPIDOS ─────────────────────────────────────
+   4 atajos en cuadrícula 2x2. En desktop ocupan 4 cols (celda base).
+   El grid interno no hereda min-height del bento (auto). */
+.bento__cell--accesos {
+  gap: var(--fk-space-3);
+}
+
+.accesos__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-2);
+  flex: 1;
+  align-content: start;
+  margin-top: var(--fk-space-1);
+}
+
+.acceso-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3) var(--fk-space-2);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  text-decoration: none;
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  transition:
+    background-color var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+  text-align: center;
+}
+.acceso-item:hover {
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-primary);
+}
+.acceso-item:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+}
+
+.acceso-item__icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+}
+.acceso-item__icon .icon {
+  width: 18px;
+  height: 18px;
+  color: var(--fk-text-accent);
+}
+.acceso-item__label {
+  font-size: var(--fk-text-xs);
+  line-height: 1.2;
+}
+
 /* ── CASCADA DE ENTRADA del dashboard ──────────────────────
    Cada cell aparece con un delay escalonado (40ms × index).
-   Total máximo: 7 cells × 40ms = 280ms.
+   Total máximo: 4 cells × 40ms = 160ms (hero, accesos, vencidos, prioridades).
    Respeta prefers-reduced-motion (no animación). */
 @media (prefers-reduced-motion: no-preference) {
-  .sec.active .bento--dash .bento__cell {
+  .section.active .bento--dash .bento__cell {
     animation: cardIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   }
-  .sec.active .bento--dash .bento__cell:nth-child(1) { animation-delay:   0ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(2) { animation-delay:  40ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(3) { animation-delay:  80ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(4) { animation-delay: 120ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(5) { animation-delay: 160ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(6) { animation-delay: 200ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(7) { animation-delay: 240ms; }
-  .sec.active .bento--dash .bento__cell:nth-child(8) { animation-delay: 280ms; }
+  .section.active .bento--dash .bento__cell:nth-child(1) { animation-delay:   0ms; }
+  .section.active .bento--dash .bento__cell:nth-child(2) { animation-delay:  40ms; }
+  .section.active .bento--dash .bento__cell:nth-child(3) { animation-delay:  80ms; }
+  .section.active .bento--dash .bento__cell:nth-child(4) { animation-delay: 120ms; }
+  .section.active .bento--dash .bento__cell:nth-child(5) { animation-delay: 160ms; }
 }
 
 /* Hover en desktop: lift sutil */

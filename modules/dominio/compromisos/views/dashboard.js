@@ -39,8 +39,10 @@ export function renderPanelVencidos() {
 
   if (vencidos.length === 0) {
     el.innerHTML = '';
+    el.hidden = true;
     return;
   }
+  el.hidden = false;
 
   const n      = vencidos.length;
   const titulo = n === 1
@@ -70,7 +72,7 @@ export function renderPanelVencidos() {
   el.innerHTML = `
     <section class="vencidos-card" aria-label="Compromisos vencidos">
       <header class="vencidos-card__header">
-        <h2 class="vencidos-card__title">⚠️ ${titulo}</h2>
+        <h2 class="vencidos-card__title">${icon('alert')} ${titulo}</h2>
         <a href="#compromisos" class="vencidos-card__link"
            aria-label="Ir a compromisos">Gestionar</a>
       </header>
@@ -105,8 +107,10 @@ export function renderPanelPrioridades() {
   const compActivos = compromisosActivos(S.compromisos).length > 0;
   if (!compActivos && proxPers.length === 0 && proxApar.length === 0) {
     el.innerHTML = '';
+    el.hidden = true;
     return;
   }
+  el.hidden = false;
 
   const proxTodos = [...proxComp, ...proxPers, ...proxApar]
     .sort((a, b) => a.diasRestantes - b.diasRestantes);
@@ -114,7 +118,7 @@ export function renderPanelPrioridades() {
 
   let bodyHtml;
   if (grupos.length === 0) {
-    bodyHtml = `<p class="prioridades-card__empty">Sin vencimientos próximos. 🎉</p>`;
+    bodyHtml = `<p class="prioridades-card__empty">Todo al día. Sin vencimientos en los próximos 7 días.</p>`;
   } else {
     bodyHtml = grupos.map(g => {
       const items = g.items.map(c => {
@@ -147,7 +151,7 @@ export function renderPanelPrioridades() {
   el.innerHTML = `
     <section class="prioridades-card" aria-label="Próximas prioridades">
       <header class="prioridades-card__header">
-        <h2 class="prioridades-card__title">📅 Próximas prioridades</h2>
+        <h2 class="prioridades-card__title">${icon('agenda')} Próximas prioridades</h2>
         <a href="#agenda" class="prioridades-card__link"
            aria-label="Ir a la agenda">Ver agenda</a>
       </header>

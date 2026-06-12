@@ -114,10 +114,12 @@
     grid-template-columns: repeat(6, 1fr);
     grid-auto-rows: minmax(140px, auto);
   }
-  .bento__cell         { grid-column: span 3; }
-  .bento__cell--wide   { grid-column: span 6; }
-  .bento__cell--full   { grid-column: span 6; }
-  .bento__cell--half   { grid-column: span 3; }
+  .bento__cell              { grid-column: span 3; }
+  .bento__cell--wide        { grid-column: span 6; }
+  .bento__cell--full        { grid-column: span 6; }
+  .bento__cell--half        { grid-column: span 3; }
+  /* Accesos: full row en tablet ya que hero ocupa la fila anterior */
+  .bento__cell--accesos     { grid-column: span 6; }
 
   /* ── TOUCH TARGETS - Apple HIG 44pt mínimo ─────────────────── */
   .btn         { min-height: 44px; }

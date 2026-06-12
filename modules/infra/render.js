@@ -14,6 +14,30 @@ import { f } from './utils.js';
 /** @type {Array<() => void>} Funciones de render registradas por los dominios. */
 const _renders = [];
 
+// ── COUNT-UP ─────────────────────────────────────────────────────
+let _prevSaldo   = null;
+let _countUpRaf  = null;
+
+function _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function _countUp(el, from, to, duration = 500) {
+  if (_countUpRaf) cancelAnimationFrame(_countUpRaf);
+  const start = performance.now();
+  const diff  = to - from;
+  function tick(now) {
+    const t       = Math.min((now - start) / duration, 1);
+    const current = from + diff * _easeOutCubic(t);
+    el.textContent = f(Math.round(current));
+    if (t < 1) {
+      _countUpRaf = requestAnimationFrame(tick);
+    } else {
+      el.textContent = f(to);
+      _countUpRaf = null;
+    }
+  }
+  _countUpRaf = requestAnimationFrame(tick);
+}
+
 /**
  * Registra una función de render de dominio para que `renderAll` la invoque.
  * Cada dominio llama a esto en su `index.js` durante el bootstrap.
@@ -58,15 +82,27 @@ export function renderSmart(fn, key) {
  */
 export function updSaldo() {
   const cuentasActivas = S.cuentas.filter(c => c.activa !== false);
-  const totalCuentas = cuentasActivas.reduce((acc, c) => acc + (c.saldo ?? 0), 0);
+  const totalCuentas   = cuentasActivas.reduce((acc, c) => acc + (c.saldo ?? 0), 0);
+  const sinCuentas     = cuentasActivas.length === 0;
 
-  const elSaldo   = document.getElementById('saldo-total');
-  if (elSaldo) elSaldo.textContent = f(totalCuentas);
-
-  const sinCuentas = cuentasActivas.length === 0;
+  const elSaldo = document.getElementById('saldo-total');
+  if (elSaldo) {
+    if (!sinCuentas) {
+      const onDash       = (location.hash.slice(1) || 'dash') === 'dash';
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (onDash && !reducedMotion && _prevSaldo !== totalCuentas) {
+        _countUp(elSaldo, _prevSaldo ?? 0, totalCuentas);
+      } else {
+        elSaldo.textContent = f(totalCuentas);
+      }
+    } else {
+      elSaldo.textContent = f(0);
+    }
+    _prevSaldo = totalCuentas;
+  }
 
   // Con cuentas: muestra el saldo normal y oculta la guía de primeros pasos.
-  // Sin cuentas: oculta el ícono, label y valor ($0) para no confundir,
+  // Sin cuentas: oculta el ícono, label y valor para no confundir;
   //              muestra la guía de onboarding con el CTA a Mis cuentas.
   const guia  = document.getElementById('hero-guia-saldo');
   const desc  = document.getElementById('saldo-desc');
