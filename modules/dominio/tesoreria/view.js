@@ -9,7 +9,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
 import {
   cuentasActivas,
@@ -87,11 +87,11 @@ function _renderCuentaItem(cuenta) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('cuentas', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('cuentas')}</div>
       <p class="empty-state__title">¿Dónde tienes tu dinero?</p>
       <p class="empty-state__desc">Agrega tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en el dashboard.</p>
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
-      <p class="empty-state__tip">💡 Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
     </div>`;
 }
 

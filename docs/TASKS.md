@@ -7,7 +7,9 @@
 
 ## Estado actual
 
-**App estable, 1375/1375 tests verdes, lint limpio.** Último cambio: **rediseño V.6, microinteracciones** (press universal en botones, lift al hover en cards y list-items, anillo con llenado animado vía pathLength, checkmark con pop, count-up reutilizable en `infra/animate.js`, fix de sectionIn muerta). Antes: V.5 anillos de progreso, V.4 bento dashboard, V.3 componentes núcleo.
+**App estable, 1381/1381 tests verdes, lint limpio.** Último cambio: **rediseño V.7, empty states ilustrados + nav con indicador** (helper `emptyArt()`, 10 empty states migrados, indicador de sección activa en sidebar y bottom nav, fix: icons.js faltaba en el SW). Con esto cierran las 7 fases de UI del rediseño 2026; queda V.8 (decisión de producto). Antes: V.6 microinteracciones, V.5 anillos de progreso, V.4 bento dashboard.
+
+**Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
 ---
 
@@ -35,7 +37,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**V.7 - Rediseño visual, Fase 7: estados vacíos ilustrados + navegación pulida.** Última fase de UI del rediseño 2026. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Medio.
+**V.8 - Mecánicas de hábito (racha de registro, resumen semanal).** Requiere decisión de producto con el usuario antes de codear: qué mecánicas sí, cuáles no, y cómo evitar presión tipo juego en una app financiera. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Opus 4.8 - Medio (cuando se decida).
 
 Otras pendientes (no urgentes):
 

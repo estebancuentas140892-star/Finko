@@ -5,7 +5,7 @@
 
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc }     from '../../infra/utils.js';
-import { icon }               from '../../infra/icons.js';
+import { icon, emptyArt }     from '../../infra/icons.js';
 import { CATEGORIAS_GASTO }   from '../../core/constants.js';
 import {
   presupuestosActivos,
@@ -147,11 +147,11 @@ function _renderSinPresupuesto(presupuestos) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('presupuesto', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('presupuesto')}</div>
       <p class="empty-state__title">Sin presupuestos</p>
       <p class="empty-state__desc">Asigna un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te avisa cuando te acerques al límite.</p>
       <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear presupuesto</button>
-      <p class="empty-state__tip">💡 Tip: empieza con 2 o 3 categorías donde más gastas. Finko muestra el avance en tiempo real cada vez que registras un gasto.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: empieza con 2 o 3 categorías donde más gastas. Finko muestra el avance en tiempo real cada vez que registras un gasto.</p>
     </div>`;
 }
 

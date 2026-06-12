@@ -39,6 +39,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(rediseno-v7): empty states ilustrados y navegación con indicador activo · 2026-06-12
+
+Séptima y última fase de UI del rediseño visual 2026. Nuevo helper `emptyArt(id)` en `infra/icons.js`: ilustración SVG geométrica (círculo de fondo, órbita punteada animada, puntos flotantes, icono del dominio centrado) que reemplaza el icono suelto en los 10 empty states. Navegación pulida: indicador de acento en el item activo (barra vertical en sidebar, horizontal en bottom nav), press scale y micro-zoom del icono al hover. Fix 1: el empty state de Deudas aún usaba emoji 💳 (escapado de V.2). Fix 2: `infra/icons.js` faltaba en CORE_ASSETS del SW desde V.2 (brecha offline-first). Tips de empty states unificados con `icon('lightbulb')`. SW v150 → v151. Tests 1381/1381 verdes (+6). Desde esta tarea rige el deploy continuo: cada cierre se pushea a Vercel de inmediato.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/icons.js` | Nuevo `emptyArt(id)`: ilustración geométrica para empty states; colores y animación en CSS, cero inline. |
+| `tests/unit/icons.test.js` | Nuevo: 6 tests de `icon()` y `emptyArt()` (sprite, clases, aria-hidden, sin colores inline). |
+| Views de 9 dominios + `compromisos/views/lista.js` | Empty states usan `emptyArt(dominio)`; tips con `icon('lightbulb')`; Deudas pierde el emoji 💳. |
+| `styles/components/atoms.css` | Estilos `.empty-art__*` + animaciones `empty-orbit` (40s) y `empty-float`, gateadas por no-preference. |
+| `styles/layout.css` | `.nav-item::before`: barra de acento del item activo (crece desde el centro); press scale; zoom 1.1 del icono al hover. |
+| `styles/responsive.css` | El indicador pasa a barra horizontal en el borde superior del bottom nav. |
+| `service-worker.js` | v150 → v151; `icons.js` agregado a CORE_ASSETS (faltaba desde V.2). |
+
+---
+
 ### feat(rediseno-v6): microinteracciones: press universal, lift al hover, anillo y checkmark animados · 2026-06-12
 
 Sexta fase del rediseño visual 2026. Press scale(0.97) en todos los botones (antes solo móvil), lift sutil al hover en cards y list-items (gateado por prefers-reduced-motion), llenado de entrada animado del anillo de progreso (refactor a pathLength="100": dashoffset normalizado permite un keyframe CSS genérico para cualquier tamaño), checkmark con pop de overshoot al pagar/completar (metas, apartados, personales, badge de pago en agenda), y count-up extraído a `infra/animate.js` como helper reutilizable por elemento. Fix: la animación `sectionIn` nunca corría (selector `.sec.active`; las secciones usan `.section`, mismo bug que cardIn corregido en V.4). SW v149 → v150. Tests 1375/1375 verdes (+1 neto).
@@ -107,25 +123,6 @@ Tercera fase del rediseño visual 2026. Consolida el progreso lineal en `atoms.c
 | `styles/base.css` | `.list-item__progress-label` y `.progress-ring__label` al bloque tnum centralizado. |
 | `modules/dominio/personales/view.js` | Barra de pago usa `.progress`/`.progress-bar` estándar (la anterior no tenía CSS: invisible). Chips de antigüedad con clases existentes (`chip-danger` etc., antes `chip--danger` inexistente). |
 | `service-worker.js` | v146 → v147. |
-
----
-
-### feat(rediseno-v2): sistema de iconos SVG propio (reemplaza emojis de UI chrome) · 2026-06-11
-
-Segunda fase del rediseño visual 2026. Crea `infra/icons.js` con helper `icon(id, cls)` que referencia el sprite SVG de `index.html`. Agrega 11 nuevos symbols al sprite. Reemplaza todos los emojis de UI chrome por SVG: empty states (10 vistas), list-item icons, nudge icons, iconos de estrategia, quick-add, modal y toggle de tema. `ICONO_TIPO` en compromisos pasa a IDs de icono. SW v145 → v146. Tests 1359/1359 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/icons.js` | Nuevo: `icon(id, cls)` devuelve `<svg><use href="#i-id"/></svg>`. |
-| `index.html` | 11 nuevos `<symbol>` en el sprite (recurring, search, lightbulb, alert, moon, sun, bolt, trophy, mountain, circle, check-circle). Quick-add y modal gasto rápido usan `#i-bolt`. Hero guide usa `#i-cuentas`. |
-| `styles/components/forms.css` | `.icon--lg` (3rem, stroke-width 1.5): modificador para empty states. |
-| `styles/components/atoms.css` | `.empty-state__icon .icon--lg`: color acento + 3.5rem. |
-| `styles/components/config.css` | `.cal-dot--*`: agrega `color:` junto a `background:` para colorear iconos SVG inline. |
-| `modules/dominio/compromisos/logic.js` | `ICONO_TIPO` pasa de emoji a IDs: `'recurring'`, `'cuentas'`, `'personales'`. |
-| Views de 10 dominios | Empty states: `<div class="empty-state__icon">icon(...)</div>`. List-item icons. Nudge icons. |
-| `modules/dominio/tesoreria/logic.js` | `icono: 'gastos'` (era `'💸'`). |
-| `tests/unit/tesoreria.test.js` | Actualiza expect `icono` de `'💸'` a `'gastos'`. |
-| `service-worker.js` | v145 → v146. |
 
 ---
 

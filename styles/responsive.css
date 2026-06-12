@@ -88,6 +88,22 @@
     border-radius: 0;
   }
 
+  /* Indicador activo en bottom nav: barra horizontal al borde superior
+     (reposiciona el ::before vertical del sidebar, layout.css) */
+  .nav-item::before {
+    left: 50%;
+    top: 0;
+    translate: -50% 0;
+    width: 0;
+    height: 3px;
+    transition: width var(--fk-transition-base);
+  }
+  .nav-item.active::before,
+  .nav-item[aria-current="page"]::before {
+    width: 44%;
+    height: 3px;
+  }
+
   .nav-item__icon { font-size: 1.25rem; width: auto; }
   .nav-item__badge { display: none; }
 

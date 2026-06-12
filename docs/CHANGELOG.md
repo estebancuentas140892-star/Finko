@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v7): empty states ilustrados y navegación con indicador activo · 2026-06-12
+
+Séptima y última fase de UI del rediseño visual 2026. Los empty states pasan de icono suelto a ilustración SVG geométrica con vida sutil, y la navegación gana un indicador de sección activa. SW v150 → v151. Tests 1381/1381 verdes (+6).
+
+- **`modules/infra/icons.js`**: nuevo `emptyArt(id)`: composición SVG de 120x120 (círculo de fondo sutil, órbita punteada, 3 puntos decorativos, spark en cruz y el icono del dominio centrado a 48px vía `<use>`). Decorativa (`aria-hidden`), colores solo en CSS, cero estilos inline.
+- **`tests/unit/icons.test.js`** (nuevo): 6 tests: `icon()` referencia el sprite, clase default/custom, aria-hidden; `emptyArt()` compone las 4 capas, es decorativa y no fija colores inline.
+- **Views de 9 dominios** (gastos x2, tesoreria, personales, inversiones, metas, apartados, ahorro, presupuesto): `<div class="empty-state__icon">${emptyArt('dominio')}</div>` en lugar del icono `icon--lg`. Tips con `💡` unificados a `${icon('lightbulb')} Tip:` (patrón de Ahorro).
+- **`modules/dominio/compromisos/views/lista.js`**: el empty state de Deudas aún usaba emoji `💳` (escapado de V.2); ahora `emptyArt('deudas')` + tip con lightbulb. Nuevo import de `infra/icons.js`.
+- **`styles/components/atoms.css`**: bloque `.empty-art__*`: fondo `--fk-accent-subtle`, órbita `--fk-accent-border`, puntos y spark en acento con opacidad, icono `--fk-text-accent` stroke 1.5. Animaciones `empty-orbit` (rotación 40s lineal) y `empty-float` (flotado 4s alternate) solo bajo `prefers-reduced-motion: no-preference`.
+- **`styles/layout.css`**: `.nav-item` gana `position: relative`, press `scale(0.97)` y `transform` en su transition. `::before`: barra de acento de 3px al borde izquierdo que crece desde el centro (height 0 → 60%) al activarse. Zoom 1.1 del icono al hover bajo no-preference.
+- **`styles/responsive.css`**: en móvil el indicador se reposiciona como barra horizontal en el borde superior del item del bottom nav (width 0 → 44%).
+- **`service-worker.js`**: v150 → v151. Fix offline-first: `./modules/infra/icons.js` no estaba en CORE_ASSETS desde su creación en V.2 (sobrevivía solo por el cache de runtime del fetch handler).
+
+---
+
 ### feat(rediseno-v6): microinteracciones: press universal, lift al hover, anillo y checkmark animados · 2026-06-12
 
 Sexta fase del rediseño visual 2026. La app gana feedback táctil y de progreso: press scale(0.97) en todos los botones (antes solo en pantallas táctiles), lift sutil al hover en cards (-2px) y list-items (-1px) gateado por `prefers-reduced-motion: no-preference`, llenado de entrada animado del anillo de progreso, checkmark con pop de overshoot al pagar/completar, y el count-up de V.4 extraído como helper reutilizable. Fix: la animación `sectionIn` de entrada de sección nunca corría (selector `.sec.active`; las secciones usan `.section`; mismo bug que `cardIn`, corregido en V.4 solo para layout.css). SW v149 → v150. Tests 1375/1375 verdes (+1 neto).

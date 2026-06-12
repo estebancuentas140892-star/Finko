@@ -181,6 +181,51 @@
   height: 3.5rem;
 }
 
+/* Ilustración geométrica de empty state (F7): la genera
+   infra/icons.js → emptyArt(). Colores solo aquí, cero inline. */
+.empty-art {
+  width: 7.5rem;
+  height: 7.5rem;
+  display: block;
+}
+.empty-art__bg    { fill: var(--fk-accent-subtle); }
+.empty-art__orbit { stroke: var(--fk-accent-border); stroke-width: 1.5; }
+.empty-art__dot   { fill: var(--fk-accent); opacity: 0.55; }
+.empty-art__dot--sm { opacity: 0.35; }
+.empty-art__spark {
+  stroke: var(--fk-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.6;
+}
+.empty-art__icon {
+  color: var(--fk-text-accent);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Vida sutil: órbita girando lenta + puntos flotando.
+   Solo bajo no-preference; a11y.css además colapsa duraciones. */
+@media (prefers-reduced-motion: no-preference) {
+  .empty-art__orbit {
+    animation: empty-orbit 40s linear infinite;
+    transform-origin: center;
+  }
+  .empty-art__dots {
+    animation: empty-float 4s ease-in-out infinite alternate;
+  }
+}
+@keyframes empty-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes empty-float {
+  from { transform: translateY(2px); }
+  to   { transform: translateY(-2px); }
+}
+
 .empty-state__title {
   font-size: var(--fk-text-xl);
   font-weight: var(--fk-font-bold);

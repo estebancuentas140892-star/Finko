@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
 
@@ -72,7 +72,7 @@ function _renderMetaItem(meta) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('metas', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('metas')}</div>
       <p class="empty-state__title">Sin metas de ahorro</p>
       <p class="empty-state__desc">Define un objetivo libre: un viaje, una laptop, la boda o lo que quieras. Para gastos que sabes que vienen (SOAT, impuestos, arriendo), usa Apartados: ahí Finko calcula cuánto separar en cada cobro.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>

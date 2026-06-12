@@ -61,6 +61,7 @@
 }
 
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--fk-space-3);
@@ -76,12 +77,16 @@
   width: 100%;
   transition:
     background-color var(--fk-transition-fast),
-    color var(--fk-transition-fast);
+    color var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
   min-height: 40px;
 }
 .nav-item:hover {
   background: var(--fk-bg-hover);
   color: var(--fk-text-primary);
+}
+.nav-item:active {
+  transform: scale(0.97);
 }
 .nav-item.active,
 .nav-item[aria-current="page"] {
@@ -89,11 +94,37 @@
   color: var(--fk-text-accent);
   font-weight: var(--fk-font-semibold);
 }
+/* Indicador de sección activa (F7): barra de acento al borde izquierdo
+   del item, crece desde el centro al activarse. En móvil el bottom nav
+   lo reposiciona al borde superior (responsive.css). */
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  translate: 0 -50%;
+  width: 3px;
+  height: 0;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-accent);
+  transition: height var(--fk-transition-base);
+}
+.nav-item.active::before,
+.nav-item[aria-current="page"]::before {
+  height: 60%;
+}
 .nav-item__icon {
   font-size: 1.1rem;
   width: 20px;
   text-align: center;
   flex-shrink: 0;
+  transition: transform var(--fk-transition-fast);
+}
+/* Microfeedback: el icono crece apenas al hover (solo con movimiento) */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-item:hover .nav-item__icon {
+    transform: scale(1.1);
+  }
 }
 /* Ícono SVG de navegación (Parte 3C). La doble clase gana specificity
    sobre los overrides de .nav-item__icon en responsive.css (que ponían

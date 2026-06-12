@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import {
   apartadosActivos,
@@ -113,7 +113,7 @@ function _renderApartadoItem(apartado) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('apartados', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('apartados')}</div>
       <p class="empty-state__title">Sin apartados todavía</p>
       <p class="empty-state__desc">Separa dinero poco a poco para los gastos que sabes que vienen (SOAT, impuestos, productos personales) y deja de afrontarlos como emergencias.</p>
       <button class="btn btn-primary" data-action="nuevo-apartado">+ Crear apartado</button>

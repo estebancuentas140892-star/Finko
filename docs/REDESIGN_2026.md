@@ -93,5 +93,5 @@ Cada fase: tests verdes + bump de SW + verificación visual en la app + commit a
 | F4 | Completada 2026-06-11 |
 | F5 | Completada 2026-06-11 |
 | F6 | Completada 2026-06-12 |
-| F7 | Pendiente |
+| F7 | Completada 2026-06-12 |
 | F8 | Sin decidir (producto) |

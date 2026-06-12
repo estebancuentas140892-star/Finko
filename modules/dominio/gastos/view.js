@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO } from '../../core/constants.js';
 import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
 
@@ -194,18 +194,18 @@ function _renderGastoItem(gasto) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('gastos', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('gastos')}</div>
       <p class="empty-state__title">Sin gastos este mes</p>
       <p class="empty-state__desc">Anota cada compra o pago que haces: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu dinero.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
-      <p class="empty-state__tip">💡 Tip: desde el dashboard, el botón "Anotar un gasto" te permite apuntar el monto en segundos. La descripción la agregas después.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: desde el dashboard, el botón "Anotar un gasto" te permite apuntar el monto en segundos. La descripción la agregas después.</p>
     </div>`;
 }
 
 function _renderEmptyFiltro() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('search', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('search')}</div>
       <p class="empty-state__title">Nada acá este mes</p>
       <p class="empty-state__desc">No registraste gastos en esta categoría todavía.</p>
       <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>

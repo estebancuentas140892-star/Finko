@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import {
   calcularObjetivoFondo,
@@ -53,7 +53,7 @@ function _renderEmptyState(gastosFijosMensuales) {
 
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('ahorro', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('ahorro')}</div>
       <p class="empty-state__title">Empieza tu fondo de emergencia</p>
       <p class="empty-state__desc">Es la base de cualquier plan financiero: un colchón con 3 a 6 meses de tus gastos fijos para imprevistos (salud, trabajo, casa). Sin esto, una urgencia se paga con deuda cara.</p>
       <button class="btn btn-primary" data-action="ahorro-activar-fondo">+ Activar fondo</button>

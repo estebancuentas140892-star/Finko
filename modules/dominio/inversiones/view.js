@@ -5,7 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, emptyArt } from '../../infra/icons.js';
 import { INFLACION_OBJETIVO } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
 import {
@@ -52,11 +52,11 @@ export function renderInversion() {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <div class="empty-state__icon">${icon('inversion', 'icon icon--lg')}</div>
+      <div class="empty-state__icon">${emptyArt('inversion')}</div>
       <p class="empty-state__title">Registra tus inversiones</p>
       <p class="empty-state__desc">Lleva en un solo lugar tu portafolio real: CDT, fondos, acciones o cripto. Ver cuánto tienes invertido es el primer paso para que tu dinero trabaje por ti.</p>
       <button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>
-      <p class="empty-state__tip">💡 Tip: primero asegura tu fondo de emergencia en Ahorro. Invierte el dinero que no vas a necesitar a corto plazo.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: primero asegura tu fondo de emergencia en Ahorro. Invierte el dinero que no vas a necesitar a corto plazo.</p>
     </div>`;
 }
 
