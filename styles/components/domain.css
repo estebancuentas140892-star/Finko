@@ -364,34 +364,32 @@ details[open] > .herramienta-inline__titulo::after {
   display: none;
 }
 
-.chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.8rem;
-  border-radius: var(--fk-radius-full);
-  font-size: var(--fk-text-xs);
-  font-weight: 500;
-  border: 1px solid var(--fk-border-subtle);
-  background: var(--fk-bg-surface);
-  color: var(--fk-text-secondary);
+/* La base visual de .chip vive en atoms.css (v2). Aquí solo la capa
+   interactiva de los chips de filtro/plantilla, que siempre son
+   <button>: así un <span class="chip"> informativo (ej. "Saldada")
+   no recibe cursor pointer ni hover. */
+button.chip {
   cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background-color var(--fk-transition-fast),
+    color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
 }
 
-.chip:hover {
+button.chip:hover:not(.chip--active) {
   color: var(--fk-text-primary);
-  border-color: var(--fk-border);
+  border-color: var(--fk-border-strong);
 }
 
+/* Mismo patrón que .btn-primary: texto oscuro sobre acento (AA);
+   antes usaba blanco sobre esmeralda, que no alcanzaba contraste. */
 .chip--active {
   background: var(--fk-accent);
   border-color: var(--fk-accent);
-  color: var(--fk-text-on-bold);
+  color: var(--fk-text-on-accent);
 }
 
-.chip:focus-visible {
+button.chip:focus-visible {
   outline: 2px solid var(--fk-accent);
   outline-offset: 2px;
 }

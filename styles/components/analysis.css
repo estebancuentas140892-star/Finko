@@ -113,14 +113,13 @@
   color: var(--fk-text-muted);
 }
 
-.progress     { width: 100%; height: 8px; background: var(--fk-bg-elevated); border-radius: var(--fk-radius-full); overflow: hidden; }
-.progress-bar { height: 100%; background: var(--fk-accent); border-radius: var(--fk-radius-full); transition: width var(--fk-transition-slow); }
+/* La base .progress / .progress-bar y los modificadores genéricos
+   (--warn, --danger, --near, --complete) viven en atoms.css (v2).
+   Aquí solo los modificadores propios del panel de Análisis. */
 .progress-bar--salud-excelente { background: var(--fk-accent); }
 .progress-bar--salud-buena     { background: var(--fk-success); }
 .progress-bar--salud-ajustada  { background: var(--fk-warning); }
 .progress-bar--salud-critica   { background: var(--fk-danger); }
-.progress-bar--warn            { background: var(--fk-warning); }
-.progress-bar--danger          { background: var(--fk-danger); }
 
 /* ── F.3: Score de Salud Financiera ────────────────────── */
 .score-card {

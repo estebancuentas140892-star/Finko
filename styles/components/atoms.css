@@ -19,6 +19,7 @@
   background: var(--fk-bg-elevated);
   color: var(--fk-text-secondary);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .chip-success { background: var(--fk-success-bg); color: var(--fk-success-text); border-color: color-mix(in srgb, var(--fk-success) 20%, transparent); }
 .chip-warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); border-color: color-mix(in srgb, var(--fk-warning) 20%, transparent); }
@@ -52,7 +53,7 @@
   display: flex;
   align-items: center;
   gap: var(--fk-space-3);
-  padding: var(--fk-space-3) var(--fk-space-4);
+  padding: var(--fk-space-4);
   border-radius: var(--fk-radius-md);
   border: 1px solid var(--fk-border-subtle);
   background: var(--fk-bg-surface);
@@ -65,9 +66,9 @@
   border-color: var(--fk-border-default);
 }
 .list-item__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--fk-radius-sm);
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  border-radius: var(--fk-radius-md);
   background: var(--fk-bg-elevated);
   display: flex;
   align-items: center;
@@ -109,7 +110,18 @@
 .list-item__subtitle {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
-  margin-top: 2px;
+  margin-top: var(--fk-space-1);
+}
+/* Progreso dentro del list-item: aire sobre la barra y label debajo.
+   Las vistas (metas, apartados) emiten .list-item__progress-label
+   con "N% · Faltan $X"; hasta el rediseño v2 no tenía estilo propio. */
+.list-item__body .progress {
+  margin-top: var(--fk-space-2);
+}
+.list-item__progress-label {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-top: var(--fk-space-1);
 }
 /* amount: monto en columna __meta (compromisos, gastos, personales).
    Ancla visual de la card: un paso más grande que el título para que el
@@ -240,24 +252,48 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   PROGRESS BAR
+   PROGRESS BAR + PROGRESS RING (v2, rediseño 2026)
+   Única fuente de verdad del progreso lineal: las vistas emiten
+   .progress > .progress-bar (+ modificador de estado). El anillo
+   lo genera infra/svg.js → progressRing(); aquí solo su color.
    ════════════════════════════════════════════════════════════ */
 
 .progress {
   width: 100%;
-  height: var(--fk-space-2);
+  height: var(--fk-space-3);
   background: var(--fk-bg-elevated);
   border-radius: var(--fk-radius-full);
   overflow: hidden;
 }
-.progress__bar {
+.progress-bar {
   height: 100%;
   background: var(--fk-accent);
   border-radius: var(--fk-radius-full);
+  transform-origin: left;
+  animation: progress-fill var(--fk-transition-slow) both;
   transition: width var(--fk-transition-slow);
 }
-.progress__bar--warning { background: var(--fk-warning); }
-.progress__bar--danger  { background: var(--fk-danger); }
+/* Llenado de entrada: solo transform (compositor); el ancho final lo
+   fija el style inline de cada vista. a11y.css anula la animación
+   global bajo prefers-reduced-motion. */
+@keyframes progress-fill {
+  from { transform: scaleX(0); }
+}
+.progress-bar--near     { background: var(--fk-accent-hover); }
+.progress-bar--complete { background: var(--fk-success); }
+.progress-bar--warn     { background: var(--fk-warning); }
+.progress-bar--danger   { background: var(--fk-danger); }
+
+.progress-ring {
+  display: block;
+  flex-shrink: 0;
+}
+.progress-ring__track { stroke: var(--fk-bg-elevated); }
+.progress-ring__bar   { stroke: currentColor; }
+.progress-ring__label {
+  fill: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+}
 
 /* ════════════════════════════════════════════════════════════
    TOGGLE (switch)

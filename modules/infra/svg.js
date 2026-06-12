@@ -125,6 +125,54 @@ export function donut(segmentos, opts = {}) {
   </svg>`;
 }
 
+// ── ANILLO DE PROGRESO ───────────────────────────────────────────
+
+/**
+ * Genera un anillo de progreso (gauge circular) para un porcentaje 0-100.
+ *
+ * Mismo principio que donut(): un track completo y un arco con
+ * stroke-dasharray, rotado -90° para empezar arriba. Los colores no van
+ * inline: viven en CSS (.progress-ring__track / .progress-ring__bar);
+ * el arco usa currentColor, así el contexto decide el color (dominio,
+ * estado, etc.). Con pct=0 no se emite el arco: stroke-linecap="round"
+ * dibujaría un punto visible aun con longitud cero.
+ *
+ * @param {number} porcentaje - 0 a 100; fuera de rango se recorta.
+ * @param {Object} [opts]
+ * @param {number}  [opts.size=64]       - Lado del viewBox (cuadrado).
+ * @param {number}  [opts.strokeWidth=6] - Grosor del track y el arco.
+ * @param {boolean} [opts.conLabel=true] - Porcentaje centrado en el anillo.
+ * @param {string}  [opts.ariaLabel]     - Default: "Progreso: N%".
+ * @returns {string} SVG completo.
+ */
+export function progressRing(porcentaje, opts = {}) {
+  const { size = 64, strokeWidth = 6, conLabel = true } = opts;
+
+  const pct       = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+  const pctLabel  = Math.round(pct);
+  const ariaLabel = opts.ariaLabel ?? `Progreso: ${pctLabel}%`;
+
+  const radius        = (size - strokeWidth) / 2;
+  const cx            = size / 2;
+  const cy            = size / 2;
+  const circumference = 2 * Math.PI * radius;
+  const arco          = (pct / 100) * circumference;
+
+  const barHtml = arco > 0
+    ? `<circle class="progress-ring__bar" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${arco.toFixed(2)} ${(circumference - arco).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`
+    : '';
+
+  const labelHtml = conLabel
+    ? `<text class="progress-ring__label" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${Math.round(size * 0.26)}">${pctLabel}%</text>`
+    : '';
+
+  return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${_esc(ariaLabel)}" class="progress-ring">
+    <circle class="progress-ring__track" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}"/>
+    ${barHtml}
+    ${labelHtml}
+  </svg>`;
+}
+
 // ── PALETA ───────────────────────────────────────────────────────
 
 /**

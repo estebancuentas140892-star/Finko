@@ -87,12 +87,12 @@ function _renderPersonalItem(prestamo, hoy) {
   const pct       = porcentajePagado(prestamo);
 
   const chipClase = liquidado
-    ? 'chip chip--success'
+    ? 'chip chip-success'
     : antig === 'viejo'
-    ? 'chip chip--danger'
+    ? 'chip chip-danger'
     : antig === 'mediano'
-    ? 'chip chip--warning'
-    : 'chip chip--neutral';
+    ? 'chip chip-warning'
+    : 'chip';
 
   const chipLabel = liquidado
     ? 'Liquidado'
@@ -125,10 +125,10 @@ function _renderPersonalItem(prestamo, hoy) {
           <span class="${chipClase}">${chipLabel}</span>
         </p>
         <p class="list-item__subtitle">Pendiente: ${f(pendiente)} de ${f(prestamo.monto)}</p>
-        <div class="list-item__progress" role="progressbar"
+        <div class="progress" role="progressbar"
              aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
              aria-label="${pct}% pagado">
-          <div class="list-item__progress-bar" style="width:${pct}%"></div>
+          <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
         </div>
         ${motivoHtml}
         ${fechaLim}

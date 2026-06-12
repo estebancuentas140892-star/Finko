@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   sparkline,
   donut,
+  progressRing,
   colorearSegmentos,
   PALETA_CATEGORIAS,
 } from '../../modules/infra/svg.js';
@@ -138,6 +139,83 @@ describe('donut()', () => {
   it('respeta strokeWidth custom', () => {
     const out = donut([{ label: 'A', valor: 100, color: '#000' }], { strokeWidth: 30 });
     expect(out).toContain('stroke-width="30"');
+  });
+});
+
+// ── progressRing() ───────────────────────────────────────────────
+
+describe('progressRing()', () => {
+  it('genera un SVG con role img y la clase progress-ring', () => {
+    const out = progressRing(50);
+    expect(out).toContain('<svg');
+    expect(out).toContain('role="img"');
+    expect(out).toContain('class="progress-ring"');
+  });
+
+  it('incluye el track y el arco con sus clases', () => {
+    const out = progressRing(50);
+    expect(out).toContain('progress-ring__track');
+    expect(out).toContain('progress-ring__bar');
+  });
+
+  it('con 0% no emite el arco (linecap round dibujaría un punto)', () => {
+    const out = progressRing(0);
+    expect(out).toContain('progress-ring__track');
+    expect(out).not.toContain('progress-ring__bar');
+  });
+
+  it('recorta porcentajes fuera de rango', () => {
+    expect(progressRing(-20)).not.toContain('progress-ring__bar'); // → 0
+    expect(progressRing(150)).toContain('>100%<');                  // → 100
+  });
+
+  it('NaN y undefined se tratan como 0', () => {
+    expect(progressRing(NaN)).toContain('>0%<');
+    expect(progressRing(undefined)).toContain('>0%<');
+  });
+
+  it('el dasharray del arco es proporcional al porcentaje', () => {
+    // size=64, strokeWidth=6 → r=29, circunferencia=182.21; 50% → 91.11
+    const out = progressRing(50);
+    expect(out).toContain('stroke-dasharray="91.11 91.11"');
+  });
+
+  it('100% cubre la circunferencia completa', () => {
+    const out = progressRing(100);
+    expect(out).toContain('stroke-dasharray="182.21 0.00"');
+  });
+
+  it('viewBox por defecto 64x64 y custom con opts.size', () => {
+    expect(progressRing(50)).toContain('viewBox="0 0 64 64"');
+    expect(progressRing(50, { size: 100 })).toContain('viewBox="0 0 100 100"');
+  });
+
+  it('respeta strokeWidth custom', () => {
+    const out = progressRing(50, { strokeWidth: 10 });
+    expect(out).toContain('stroke-width="10"');
+  });
+
+  it('muestra el porcentaje centrado por defecto y lo oculta con conLabel:false', () => {
+    expect(progressRing(75)).toContain('>75%<');
+    expect(progressRing(75, { conLabel: false })).not.toContain('<text');
+  });
+
+  it('redondea el label con porcentajes decimales', () => {
+    expect(progressRing(33.4)).toContain('>33%<');
+  });
+
+  it('aria-label por defecto y custom escapado', () => {
+    expect(progressRing(40)).toContain('aria-label="Progreso: 40%"');
+    const out = progressRing(40, { ariaLabel: 'Meta <viaje>' });
+    expect(out).toContain('aria-label="Meta &lt;viaje&gt;"');
+  });
+
+  it('el arco arranca arriba (rotación -90°)', () => {
+    expect(progressRing(50)).toContain('rotate(-90');
+  });
+
+  it('no fija colores inline: el color vive en CSS', () => {
+    expect(progressRing(50)).not.toContain('stroke="#');
   });
 });
 
