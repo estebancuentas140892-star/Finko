@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (subtítulos permanentes + urgencia visual en Apartados; 1359/1359 verde)
+> Última actualización: 2026-06-11 (rediseño V.3: componentes núcleo v2; 1373/1373 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1359/1359 verdes (+8: calcularGastosFijosMensuales + estimarSalarioMensual multifrecuencia) |
+| Tests unitarios + integración | 1373/1373 verdes (+14: progressRing en infra/svg.js) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(rediseno-v3): componentes núcleo v2: progress grueso animado, anillo SVG, list-item con aire · 2026-06-11
+
+Tercera fase del rediseño visual 2026. Consolida el progreso lineal en `atoms.css` como única fuente (antes duplicado en `analysis.css` y con una variante BEM muerta): barra de 12px con llenado de entrada vía transform y modificadores `--near`/`--complete` que las vistas ya emitían sin CSS. Nuevo `progressRing()` en `infra/svg.js` (puro, listo para F5). List-item v2 con más aire. Chips unificados con capa interactiva acotada a `button.chip`. Fix: la barra de Personales era invisible (clases sin CSS). SW v146 → v147. Tests 1373/1373 verdes (+14).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/svg.js` | Nuevo `progressRing(pct, opts)`: anillo SVG puro; colores vía CSS (track elevated, arco currentColor), label central opcional. |
+| `tests/unit/svg.test.js` | 14 tests de progressRing (clamp, dasharray proporcional, label, aria, sin colores inline). |
+| `styles/components/atoms.css` | Progress v2: única fuente de `.progress`/`.progress-bar`, 12px, animación `progress-fill` (solo transform), modificadores `--near`/`--complete`/`--warn`/`--danger`. Estilos del anillo. List-item v2: padding 16px, icono 40px radius-md, `.list-item__progress-label` por fin definido. `.chip` base con flex-shrink. |
+| `styles/components/analysis.css` | Elimina base duplicada de `.progress`/`.progress-bar` y los modificadores genéricos (migrados a atoms); conserva `--salud-*`/`--score-*`. |
+| `styles/components/domain.css` | `.chip` duplicado reducido a capa interactiva `button.chip` (cursor, hover, focus). Chip activo con texto oscuro sobre acento (AA; antes blanco sin contraste). |
+| `styles/base.css` | `.list-item__progress-label` y `.progress-ring__label` al bloque tnum centralizado. |
+| `modules/dominio/personales/view.js` | Barra de pago usa `.progress`/`.progress-bar` estándar (la anterior no tenía CSS: invisible). Chips de antigüedad con clases existentes (`chip-danger` etc., antes `chip--danger` inexistente). |
+| `service-worker.js` | v146 → v147. |
+
+---
 
 ### feat(rediseno-v2): sistema de iconos SVG propio (reemplaza emojis de UI chrome) · 2026-06-11
 
@@ -97,17 +114,6 @@ Tres mejoras visuales sin cambios de lógica o tests. Subtítulos de sección pe
 | `styles/components/forms.css` | `.badge--danger` (rojo, mismo patrón que `.badge--warn`). |
 | `styles/components/domain.css` | `.list-item--listo` + `:hover`. |
 | `service-worker.js` | v143 → v144. |
-
----
-
-### fix(metas): copy del empty state desambigua Metas vs Ahorro vs Apartados · 2026-06-11
-
-El empty state de Metas mencionaba "fondo de emergencia" como meta sugerida, compitiendo directamente con la sección Ahorro. Se reescribió descripción y tip para guiar al usuario al dominio correcto. SW v142 → v143.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/metas/view.js` | Desc y tip del empty state reescritos: Metas = objetivos aspiracionales; fondo de emergencia → Ahorro; gastos previsibles (SOAT, impuestos) → Apartados. |
-| `service-worker.js` | v142 → v143. |
 
 ---
 

@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-09
+> Última actualización: 2026-06-11
 
 ---
 
 ## Estado actual
 
-**App estable, 1183/1183 tests verdes, lint limpio.** Último cambio: **skip link WCAG 2.4.1** (`index.html` + test). Antes: formulario de cuentas dinámico (schema v11). ADR 005 cerrado (no desglozar IVA/propina).
+**App estable, 1373/1373 tests verdes, lint limpio.** Último cambio: **rediseño V.3, componentes núcleo v2** (progress 12px animado, `progressRing()` en `infra/svg.js`, list-item con aire, chips unificados). Antes: V.2 iconos SVG propios, V.1 tokens v2.
 
 ---
 
@@ -35,7 +35,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**V.3 - Rediseño visual, Fase 3: componentes núcleo v2.** Card con jerarquía interna, list-item con más aire, barra de progreso gruesa animada, anillo SVG reutilizable. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
+**V.4 - Rediseño visual, Fase 4: dashboard bento.** Composición desktop en bento grid (hero + pendientes + prioridades + accesos), hero card rediseñada, count-up del saldo. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Alto.
 
 Otras pendientes (no urgentes):
 

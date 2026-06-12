@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v3): componentes núcleo v2: progress grueso animado, anillo SVG, list-item con aire · 2026-06-11
+
+Tercera fase del rediseño visual 2026. El progreso pasa de tímido a protagonista: barra de 12px con llenado de entrada animado y un anillo SVG reutilizable listo para F5. De paso consolida tres fuentes de verdad dispersas del progreso lineal y arregla clases que las vistas emitían sin CSS. SW v146 → v147. Tests 1373/1373 verdes (+14).
+
+- **`modules/infra/svg.js`**: nuevo `progressRing(porcentaje, opts)`: anillo de progreso puro (sin DOM). Track + arco con stroke-dasharray, rotado -90°, label central opcional con el %. Colores vía CSS: track `--fk-bg-elevated`, arco `currentColor` (el contexto decide). Con 0% no emite el arco (linecap round dibujaría un punto).
+- **`tests/unit/svg.test.js`**: 14 tests de progressRing: clamp de rango, NaN→0, dasharray proporcional, viewBox, aria-label escapado, label on/off y redondeo, sin colores inline.
+- **`styles/components/atoms.css`**: única fuente del progreso lineal. `.progress` sube a 12px (`--fk-space-3`). `.progress-bar` con animación `progress-fill` de entrada (solo transform, anulada por a11y.css bajo prefers-reduced-motion). Modificadores `--near` (accent-hover) y `--complete` (success) por fin definidos: metas/apartados/ahorro los emitían sin CSS. `--warn`/`--danger` migrados desde analysis.css. Eliminada la variante BEM muerta `.progress__bar`. Estilos del anillo (`.progress-ring__*`). List-item v2: padding 16px, icono 40px con radius-md, subtitle con margen de token, `.list-item__progress-label` definido (era invisible como estilo propio). `.chip` base gana `flex-shrink: 0`.
+- **`styles/components/analysis.css`**: elimina la base duplicada de `.progress`/`.progress-bar` y los modificadores genéricos; conserva solo `--salud-*` y `--score-*`. `.score-factor__bar` mantiene sus 6px (las barras de factores siguen siendo secundarias).
+- **`styles/components/domain.css`**: el `.chip` duplicado (pisaba al de atoms por orden de import) queda reducido a la capa interactiva, acotada a `button.chip`: un `<span class="chip">` informativo ya no recibe cursor pointer. Chip activo con texto oscuro sobre acento (patrón btn-primary, AA; antes blanco sobre esmeralda ~1.8:1).
+- **`styles/base.css`**: `.list-item__progress-label` y `.progress-ring__label` entran al bloque tnum centralizado.
+- **`modules/dominio/personales/view.js`**: la barra de pago usa `.progress`/`.progress-bar` estándar; la anterior (`list-item__progress-bar`) no tenía CSS y era invisible. Préstamo liquidado marca `--complete`. Chips de antigüedad con las clases que existen (`chip-danger`, `chip-warning`, `chip-success`; antes `chip--*` inexistentes, todos se veían grises).
+- **`service-worker.js`**: v146 → v147.
+
+---
+
 ### feat(rediseno-v2): sistema de iconos SVG propio (reemplaza emojis de UI chrome) · 2026-06-11
 
 Segunda fase del rediseño visual 2026. Elimina los emojis de UI chrome reemplazándolos con un set SVG geométrico propio. El sprite existente en `index.html` crece con 11 nuevos `<symbol>`. El módulo `infra/icons.js` centraliza la generación de strings SVG inline. SW v145 → v146.
@@ -1357,7 +1372,7 @@ Feedback del usuario: en la card de Avalancha faltaba mostrar el impacto financi
 
 **Cambios:**
 
-1. **Nuevo helper `_renderComparativa(resultado, extraMensual)` en `view.js`** — siempre devuelve un banner cubriendo los 3 escenarios posibles:
+1. **Nuevo helper `_renderComparativa(resultado, extraMensual)` en `view.js`**: siempre devuelve un banner cubriendo los 3 escenarios posibles:
    - **Hay ahorro real** (`ahorroIntereses > 0.5` o `ahorroMeses > 0`): banner verde success "💰 Con Avalancha te ahorrarías **$X** en intereses [y **Y** de tiempo] frente a Bola de nieve". Junta intereses y tiempo en la misma frase con "y" si ambos difieren.
    - **Empate sin extra** (`extraMensual === 0`, sin diff): banner azul info "ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Probá agregar un pago extra mensual abajo para ver dónde empieza a aparecer el ahorro con Avalancha." Apunta al acordeón de extra como CTA implícito.
    - **Empate con extra** (`extraMensual > 0`, sin diff): banner azul info "ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Podés elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve)."
@@ -1429,15 +1444,15 @@ Iteración doble tras v7.7. Primero el usuario pidió la métrica "Apuntás prim
 1. **Nueva métrica "Apuntás primero a" en Bola de nieve (`view.js::_renderImpactoBolaNieve`):**
    - Antes: BN mostraba solo "Libre de deudas en" y "Cerrás tu primera deuda en" (con el nombre de la deuda como tip).
    - Ahora: 2da métrica = "Apuntás primero a: <nombre de la deuda>" (color info azul) + tip "la deuda más chica". Misma posición que en Avalancha → estructura visual idéntica entre ambas estrategias.
-   - La deuda mostrada es `resultado.bolaNieve.orden[0]` — la primera del array ordenado por la estrategia (saldo ascendente), la deuda prioritaria que el usuario debe atacar con el extra para que el efecto bola funcione.
+   - La deuda mostrada es `resultado.bolaNieve.orden[0]`: la primera del array ordenado por la estrategia (saldo ascendente), la deuda prioritaria que el usuario debe atacar con el extra para que el efecto bola funcione.
 
 2. **Tip de "Cerrás tu primera deuda en" ahora condicional (BN):**
    - Antes: siempre mostraba el nombre de la primera deuda en cerrarse como tip.
    - Ahora: solo lo muestra cuando la primera en cerrarse difiere de la priorizada (edge case con saldos o cuotas raras donde otra deuda se apaga antes que la target). En el caso habitual (target === primera) se omite para no repetir el nombre en filas contiguas con "Apuntás primero a".
 
 3. **Tip de "Apuntás primero a" en Avalancha más humano (`view.js::_renderImpactoAvalancha`):**
-   - Antes: "la deuda con tasa más alta" — técnico, describe el dato pero no el impacto.
-   - Ahora: "la deuda que más intereses te genera" — comunica el *por qué* (el efecto sobre las finanzas) en lugar del *qué* (el valor de la tasa). Lenguaje más cercano al usuario no financiero.
+   - Antes: "la deuda con tasa más alta": técnico, describe el dato pero no el impacto.
+   - Ahora: "la deuda que más intereses te genera": comunica el *por qué* (el efecto sobre las finanzas) en lugar del *qué* (el valor de la tasa). Lenguaje más cercano al usuario no financiero.
 
 **Estructura final de métricas (3 filas en cada una, espejo visual en las dos primeras):**
 - Avalancha: LIBRE DE DEUDAS EN (azul) · APUNTÁS PRIMERO A "la deuda que más intereses te genera" (azul) · TOTAL QUE PAGÁS EN INTERESES (rojo).
@@ -1466,7 +1481,7 @@ Iteración tras feedback del usuario sobre v7.6. Tres temas: el usuario sospech�
 1. **Nueva métrica "Apuntás primero a" en Avalancha (`view.js::_renderImpactoAvalancha`):**
    - Antes: Avalancha mostraba solo "Libre de deudas en" y "Total en intereses". El usuario no veía diferencia conceptual con Bola de nieve.
    - Ahora: 2da métrica = "Apuntás primero a: <nombre de la deuda>" (color info azul) + tip "la deuda con tasa más alta".
-   - La deuda mostrada es `resultado.avalancha.orden[0]` — la primera del array ordenado por la estrategia (mayor tasaEA), que es la deuda que esta estrategia prioriza con todo el extra disponible.
+   - La deuda mostrada es `resultado.avalancha.orden[0]`: la primera del array ordenado por la estrategia (mayor tasaEA), que es la deuda que esta estrategia prioriza con todo el extra disponible.
    - **No usamos "Cerrás tu primera deuda en"** en Avalancha (probada inicialmente) porque con deudas con tasa 0% mezcladas, la primera en cerrarse puede ser la chica sin interés, que es la misma que aparece en BN → no comunicaría la diferencia entre estrategias.
    - Resultado: ahora el usuario ve "Apuntás primero a: **Tarjeta Visa**" (Avalancha) vs "Cerrás tu primera deuda en 6 meses (**Préstamo mama**)" (BN). Diferencia conceptual visible incluso cuando el tiempo total coincide.
 2. **Copy de Avalancha más claro (`_RESUMEN_ESTRATEGIA.avalancha`):**
