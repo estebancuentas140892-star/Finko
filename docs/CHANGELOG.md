@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v5): anillos de progreso protagonistas en Metas, Apartados, Ahorro y Score · 2026-06-11
+
+Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente disponible a héroe visual en cuatro secciones. Metas y Apartados: anillo 56px reemplaza el slot de icono cuadrado 40px y elimina la barra de progreso lineal. Ahorro: anillo 88px reemplaza el icono + barra del hero del fondo de emergencia; faltante movido al bloque de título. Score de salud (Análisis): anillo 120px con opción `etiqueta` muestra el número del score (sin "%") y reemplaza el número suelto + barra; clase de color por banda (excelente/buena/ajustada/critica). Emojis de UI estructural reemplazados por SVG icons. `svg.js` recibe dos mejoras backward-compat: atributos `width`/`height` explícitos en el SVG (evita stretch en flex containers) y opción `etiqueta` para label personalizado. SW v148 → v149. Tests 1374/1374 verdes (+1).
+
+- **`modules/infra/svg.js`**: agrega `width="${size}" height="${size}"` al elemento SVG (fix para flex containers que estiraban el anillo al ancho total). Opción `etiqueta`: cuando se pasa, reemplaza "N%" en el label central por el string dado; se escapa con `_esc`. Backward-compatible: sin `etiqueta` el comportamiento es idéntico al anterior.
+- **`tests/unit/svg.test.js`**: test nuevo: `etiqueta` custom reemplaza el porcentaje en el label; verifica escape HTML (`<ok>` → `&lt;ok&gt;`) y que "N%" no aparece cuando hay etiqueta.
+- **`modules/dominio/metas/view.js`**: `_renderMetaItem` usa anillo 56px en el slot `list-item__icon--ring` con clase de estado según porcentaje (`default`/`near` ≥80%/`complete` 100%). Barra de progreso eliminada. Emoji del icono de meta movido al título. `_renderEmptyState`: `💡 Tip:` sin emoji.
+- **`modules/dominio/apartados/view.js`**: mismo patrón de anillo que Metas con estado `(completado || listo) ? 'complete'`. Emojis estructurales: `🔁` → `icon('recurring')`, `✅` → `icon('check-circle')`, `💡` → `icon('lightbulb')`. `_renderEmptyState`: `📦` → `icon('apartados', 'icon icon--lg')`.
+- **`modules/dominio/ahorro/view.js`**: `_renderHero` usa anillo 88px en lugar del `fondo-hero__icon` + barra; `faltanteHtml` movido al `title-wrap`; `fondo-hero__progress` eliminado; `🎉` → `icon('trophy')`. `_renderHabitoSection`: `💳` → `icon('deudas')`. `_renderEmptyState`: `📊` → `icon('analisis')`, tip con `icon('lightbulb')`.
+- **`modules/dominio/analisis/view.js`**: `_renderScoreSalud` usa anillo 120px con `etiqueta: score.score` (solo número, sin "%"); clase de color en wrapper según banda. Barra `score-card__bar` y número suelto eliminados. Factor labels: `💳` → `icon('deudas')`, `💰` → `icon('saldo')`, `📊` → `icon('analisis')`, `🛡️` → `icon('ahorro')`. Título "📊 Score de salud" → "Score de salud".
+- **`styles/components/atoms.css`**: clases `.progress-ring-wrap` y modificadores `--near`/`--complete`/`--excelente`/`--buena`/`--ajustada`/`--critica` para colorear el arco vía `currentColor`. `.list-item__icon--ring`: 56×56px, background transparent, sin border-radius ni padding.
+- **`service-worker.js`**: v148 → v149.
+
+---
+
 ### feat(rediseno-v4): dashboard bento grid, accesos rápidos y count-up del saldo · 2026-06-11
 
 Cuarta fase del rediseño visual 2026. El dashboard pasa de columna única a composición bento 12 cols: hero de saldo (8) + accesos rápidos (4) en la fila 1; paneles dinámicos de vencidos y prioridades (6 cada uno) en la fila 2. Los paneles dinámicos parten con `[hidden]` y se activan solo cuando tienen datos: el grid nunca muestra celdas vacías. Count-up animado del saldo al entrar al dashboard (easeOutCubic, 500ms, respeta `prefers-reduced-motion`). Fix: el selector de la animación `cardIn` era `.sec.active` (nunca coincidía); corregido a `.section.active`. Emojis restantes en headers de panel reemplazados por SVG icons. SW v147 → v148. Tests 1373/1373 verdes (sin cambios).

@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
+import { progressRing } from '../../infra/svg.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -47,8 +48,8 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null) {
 function _renderEmptyState(gastosFijosMensuales) {
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, 3);
   const preview = objetivoPreview > 0
-    ? `<p class="empty-state__tip">📊 Con tus gastos fijos actuales, 3 meses de colchón equivalen a <strong>${f(objetivoPreview)}</strong>.</p>`
-    : `<p class="empty-state__tip">💡 Tip: registra tus gastos fijos (arriendo, servicios, suscripciones) desde Agenda para que Finko calcule cuánto necesitas en tu fondo.</p>`;
+    ? `<p class="empty-state__tip">${icon('analisis')} Con tus gastos fijos actuales, 3 meses de colchón equivalen a <strong>${f(objetivoPreview)}</strong>.</p>`
+    : `<p class="empty-state__tip">${icon('lightbulb')} Tip: registra tus gastos fijos (arriendo, servicios, suscripciones) desde Agenda para que Finko calcule cuánto necesitas en tu fondo.</p>`;
 
   return `
     <div class="empty-state">
@@ -71,15 +72,12 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
   const colchon    = mesesDeColchon(montoTotal, gastosFijosMensuales);
   const { porcentaje, faltante, completado } = progreso;
 
-  const claseProgreso = completado
-    ? 'progress-bar--complete'
-    : porcentaje >= 80 ? 'progress-bar--near' : '';
+  const claseAnillo = completado ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
 
-  // Subtítulo de meses cubiertos.
   const subColchon = colchon === null
     ? `<span class="fondo-hero__sub">Registra tus gastos fijos para ver cuántos meses cubre.</span>`
     : completado
-      ? `<span class="fondo-hero__sub fondo-hero__sub--ok">✓ Cubre ${_fmtMeses(colchon)} de tus gastos fijos.</span>`
+      ? `<span class="fondo-hero__sub fondo-hero__sub--ok">Cubre ${_fmtMeses(colchon)} de tus gastos fijos.</span>`
       : `<span class="fondo-hero__sub">Cubre ${_fmtMeses(colchon)} de los ${metaMeses} que apuntas.</span>`;
 
   const labelObjetivo = objetivo > 0
@@ -91,7 +89,7 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
     : '';
 
   const banner = completado
-    ? `<p class="fondo-hero__banner" role="status">🎉 ¡Fondo de emergencia completo! Cualquier aporte extra suma colchón.</p>`
+    ? `<p class="fondo-hero__banner" role="status">${icon('trophy')} ¡Fondo de emergencia completo! Cualquier aporte extra suma colchón.</p>`
     : '';
 
   const compromisoMensual = Number(S.ahorro?.compromisoMensual) || 0;
@@ -99,13 +97,14 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
   return `
     <article class="fondo-hero" aria-label="Fondo de emergencia">
       <header class="fondo-hero__header">
-        <div class="fondo-hero__icon" aria-hidden="true">
-          <svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" aria-hidden="true">
+          ${progressRing(porcentaje, { size: 88, strokeWidth: 7, ariaLabel: `Fondo de emergencia: ${porcentaje}%` })}
         </div>
         <div class="fondo-hero__title-wrap">
           <p class="fondo-hero__label">Fondo de emergencia</p>
           <p class="fondo-hero__title">${f(montoTotal)}</p>
           ${subColchon}
+          ${faltanteHtml}
         </div>
         <button class="btn btn-ghost btn-icon"
                 data-action="ahorro-editar"
@@ -114,17 +113,10 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
         </button>
       </header>
 
-      <div class="progress fondo-hero__progress" role="progressbar"
-           aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-           aria-label="Progreso del fondo: ${porcentaje}%">
-        <div class="progress-bar ${claseProgreso}" style="width:${porcentaje}%"></div>
-      </div>
       <p class="fondo-hero__meta">
-        <span class="fondo-hero__pct">${porcentaje}%</span>
         <span class="fondo-hero__meta-label">${labelObjetivo}</span>
       </p>
 
-      ${faltanteHtml}
       ${banner}
     </article>
 
@@ -138,7 +130,7 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro) {
 
   const compromisoHtml = compromisoMensual > 0
     ? `<div class="ahorro-habito__compromiso">
-        <span>💳 Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
+        <span>${icon('deudas')} Compromiso mensual: <strong>${f(compromisoMensual)}</strong></span>
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso"
                 aria-label="Editar compromiso mensual">Editar</button>
       </div>`

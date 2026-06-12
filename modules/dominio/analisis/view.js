@@ -6,7 +6,8 @@
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { estadoVigenciaLegal } from '../../core/constants.js';
-import { sparkline, donut, colorearSegmentos } from '../../infra/svg.js';
+import { sparkline, donut, colorearSegmentos, progressRing } from '../../infra/svg.js';
+import { icon } from '../../infra/icons.js';
 import { gastosMes } from '../gastos/logic.js';
 import {
   generarResumen, serieGastosMensual, seriePorCategoria,
@@ -215,14 +216,13 @@ function _renderScoreSalud(resumen) {
   const score = calcularScoreSalud(resumen, ahorroData);
   const banda = clasificarScore(score.score);
   const ETIQUETAS = {
-    excelente: { emoji: '🌟', label: 'Excelente' },
-    buena:     { emoji: '👍', label: 'Buena' },
-    ajustada:  { emoji: '⚠️', label: 'Ajustada' },
-    critica:   { emoji: '🔴', label: 'Crítica' },
+    excelente: { iconoBanda: 'trophy',       label: 'Excelente' },
+    buena:     { iconoBanda: 'check-circle', label: 'Buena' },
+    ajustada:  { iconoBanda: 'alert',        label: 'Ajustada' },
+    critica:   { iconoBanda: 'alert',        label: 'Crítica' },
   };
-  const { emoji, label } = ETIQUETAS[banda];
+  const { iconoBanda, label } = ETIQUETAS[banda];
 
-  // Nudge si no hay fondo activo: invita a activarlo indicando el impacto en el score.
   const nudgeFondo = !ahorroData.activo
     ? `<p class="analisis__hint">
         Sin fondo de emergencia: tu base financiera esta expuesta.
@@ -232,45 +232,37 @@ function _renderScoreSalud(resumen) {
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-score-title">
-      <h2 class="analisis__section-title" id="analisis-score-title">📊 Score de salud</h2>
+      <h2 class="analisis__section-title" id="analisis-score-title">Score de salud</h2>
       <div class="score-card score-card--${banda}">
         <div class="score-card__hero">
-          <p class="score-card__numero">${score.score}</p>
-          <p class="score-card__sobre">/ 100</p>
-          <p class="score-card__label">${emoji} ${label}</p>
-        </div>
-
-        <div class="progress score-card__bar" role="progressbar"
-             aria-valuenow="${score.score}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Score de salud: ${score.score} de 100">
-          <div class="progress-bar progress-bar--score-${banda}"
-               style="width:${score.score}%"></div>
+          ${progressRing(score.score, { size: 120, strokeWidth: 8, etiqueta: score.score, ariaLabel: `Score de salud: ${score.score} de 100` })}
+          <p class="score-card__label">${icon(iconoBanda)} ${label}</p>
         </div>
 
         <div class="score-card__factors">
           <div class="score-factor">
-            <p class="score-factor__label">💳 Deuda</p>
+            <p class="score-factor__label">${icon('deudas')} Deuda</p>
             <p class="score-factor__valor">${score.factors.deuda}</p>
             <div class="progress score-factor__bar">
               <div class="progress-bar" style="width:${score.factors.deuda}%"></div>
             </div>
           </div>
           <div class="score-factor">
-            <p class="score-factor__label">💰 Liquidez</p>
+            <p class="score-factor__label">${icon('saldo')} Liquidez</p>
             <p class="score-factor__valor">${score.factors.liquidez}</p>
             <div class="progress score-factor__bar">
               <div class="progress-bar" style="width:${score.factors.liquidez}%"></div>
             </div>
           </div>
           <div class="score-factor">
-            <p class="score-factor__label">📊 Control</p>
+            <p class="score-factor__label">${icon('analisis')} Control</p>
             <p class="score-factor__valor">${score.factors.control}</p>
             <div class="progress score-factor__bar">
               <div class="progress-bar" style="width:${score.factors.control}%"></div>
             </div>
           </div>
           <div class="score-factor">
-            <p class="score-factor__label">🛡️ Ahorro</p>
+            <p class="score-factor__label">${icon('ahorro')} Ahorro</p>
             <p class="score-factor__valor">${score.factors.ahorro}</p>
             <div class="progress score-factor__bar">
               <div class="progress-bar" style="width:${score.factors.ahorro}%"></div>

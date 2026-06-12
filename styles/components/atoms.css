@@ -295,6 +295,25 @@
   font-weight: var(--fk-font-bold);
 }
 
+/* Color del arco via currentColor: una clase en el wrapper, sin inline styles */
+.progress-ring-wrap                { color: var(--fk-accent); }
+.progress-ring-wrap--near          { color: var(--fk-accent-hover); }
+.progress-ring-wrap--complete      { color: var(--fk-success); }
+.progress-ring-wrap--excelente     { color: var(--fk-accent); }
+.progress-ring-wrap--buena         { color: var(--fk-success); }
+.progress-ring-wrap--ajustada      { color: var(--fk-warning); }
+.progress-ring-wrap--critica       { color: var(--fk-danger); }
+
+/* Anillo como icono de list-item (reemplaza la casilla cuadrada con fondo) */
+.list-item__icon--ring {
+  width: 56px;
+  height: 56px;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  align-self: center;
+}
+
 /* ════════════════════════════════════════════════════════════
    TOGGLE (switch)
    ════════════════════════════════════════════════════════════ */

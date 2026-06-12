@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
+import { progressRing } from '../../infra/svg.js';
 import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -32,9 +33,7 @@ function _renderMetaItem(meta) {
   const diario  = calcularAhorroDiario(meta);
   const dias    = diasHastaFecha(meta.fechaLimite);
 
-  const claseProgreso = completada
-    ? 'progress-bar--complete'
-    : porcentaje >= 80 ? 'progress-bar--near' : '';
+  const claseAnillo = completada ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
 
   const subtitleParts = [`${f(meta.montoActual ?? 0)} / ${f(meta.montoObjetivo ?? 0)}`];
   if (meta.fechaLimite) {
@@ -49,16 +48,13 @@ function _renderMetaItem(meta) {
 
   return `
     <article class="list-item" data-id="${_esc(meta.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icono}</div>
+      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" aria-hidden="true">
+        ${progressRing(porcentaje, { size: 56, strokeWidth: 5, ariaLabel: `Progreso de ${nombre}: ${porcentaje}%` })}
+      </div>
       <div class="list-item__body">
-        <p class="list-item__title">${nombre}${completada ? ' ✅' : ''}</p>
+        <p class="list-item__title">${icono} ${nombre}${completada ? ` ${icon('check-circle')}` : ''}</p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        <div class="progress" role="progressbar"
-             aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Progreso de ${nombre}: ${porcentaje}%">
-          <div class="progress-bar ${claseProgreso}" style="width:${porcentaje}%"></div>
-        </div>
-        <p class="list-item__progress-label">${porcentaje}%${faltante > 0 ? ` · Faltante: ${f(faltante)}` : ''}</p>
+        ${faltante > 0 ? `<p class="list-item__progress-label">Falta: ${f(faltante)}</p>` : ''}
       </div>
       <div class="list-item__action">
         ${!completada ? `<button class="btn btn-ghost btn-sm"
@@ -80,7 +76,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin metas de ahorro</p>
       <p class="empty-state__desc">Define un objetivo libre: un viaje, una laptop, la boda o lo que quieras. Para gastos que sabes que vienen (SOAT, impuestos, arriendo), usa Apartados: ahí Finko calcula cuánto separar en cada cobro.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>
-      <p class="empty-state__tip">💡 Tip: para el fondo de emergencia, entra a la sección Ahorro. Finko calcula cuántos meses de colchón ya tienes y te avisa cuánto falta.</p>
+      <p class="empty-state__tip">Tip: para el fondo de emergencia, entra a la sección Ahorro. Finko calcula cuántos meses de colchón ya tienes y te avisa cuánto falta.</p>
     </div>`;
 }
 

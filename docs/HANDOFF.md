@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (rediseño V.4: dashboard bento + count-up; 1373/1373 verde)
+> Última actualización: 2026-06-11 (rediseño V.5: anillos de progreso como visual protagonista en Metas, Apartados, Ahorro y Score; 1374/1374 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(rediseno-v5): anillos de progreso protagonistas en Metas, Apartados, Ahorro y Score · 2026-06-11
+
+Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente disponible a héroe visual en cuatro secciones. Metas y Apartados: anillo 56px reemplaza el slot de icono cuadrado y elimina la barra de progreso. Ahorro: anillo 88px reemplaza el icono + barra del hero del fondo de emergencia. Score de salud (Análisis): anillo 120px con opción `etiqueta` reemplaza número + barra. Emojis de UI estructural reemplazados por SVG icons en las cuatro vistas. `svg.js` recibe dos mejoras: atributos `width`/`height` explícitos (fix para flex containers) y opción `etiqueta` para label personalizado. 1 test nuevo. SW v148 → v149. Tests 1374/1374 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/svg.js` | Agrega `width`/`height` al SVG (evita stretch en flex). Opción `etiqueta`: reemplaza "N%" por string dado (usado en score para mostrar solo el número). |
+| `tests/unit/svg.test.js` | Test nuevo: `etiqueta` custom reemplaza el porcentaje y escapa HTML. |
+| `modules/dominio/metas/view.js` | Anillo 56px como slot de icono con clase de estado (`default`/`near`/`complete`). Barra de progreso eliminada. Emoji de meta al título. |
+| `modules/dominio/apartados/view.js` | Mismo patrón de anillo. Emojis `🔁`/`✅`/`💡`/`📦` reemplazados por `icon('recurring')`/`icon('check-circle')`/`icon('lightbulb')`/`icon('apartados')`. |
+| `modules/dominio/ahorro/view.js` | Anillo 88px en hero del fondo; faltante movido al bloque de título; `🎉`/`💳`/`📊` reemplazados por `icon('trophy')`/`icon('deudas')`/`icon('analisis')`. |
+| `modules/dominio/analisis/view.js` | Anillo 120px con `etiqueta: score.score` (sin "%"); clase de color por banda (excelente/buena/ajustada/critica). Factor labels: emojis reemplazados por icons de dominio. Título sin emoji. |
+| `styles/components/atoms.css` | `.progress-ring-wrap` y modificadores de estado/banda para colorear arco vía `currentColor`. `.list-item__icon--ring`: 56px, sin fondo ni border-radius. |
+| `service-worker.js` | v148 → v149. |
+
+---
 
 ### feat(rediseno-v4): dashboard bento grid, accesos rápidos y count-up del saldo · 2026-06-11
 
@@ -105,17 +122,6 @@ Primera fase del rediseño visual 2026. Los montos de toda la app ahora usan Int
 | `styles/components/nudges.css` | `logro-toast`: removido `0 0 32px var(--fk-accent-glow)` inline. |
 | `styles/components/charts.css` | `comp-chooser__btn:hover`: simplificado a `var(--fk-shadow-glow)`. |
 | `service-worker.js` | v144 → v145. |
-
----
-
-### docs(redesign): plan maestro de modernización visual 2026 · 2026-06-11
-
-Auditoría visual de toda la app con datos de demostración (desktop y móvil, dark y light) y plan del rediseño en fases. Diagnóstico: emojis como iconografía, montos en DM Mono "estilo terminal", estética neón sobre negro, desktop de una columna, progreso visualmente tímido, jerarquía débil en cards, microinteracciones ausentes. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md): 7 fases de UI (V.1 a V.7 en ROADMAP) + 1 opcional de producto (V.8, mecánicas de hábito).
-
-| Archivo | Cambio |
-|---|---|
-| `docs/REDESIGN_2026.md` | Nuevo: diagnóstico, dirección "calma con energía", fases, restricciones. |
-| `docs/ROADMAP.md` | Serie V (Rediseño visual 2026) con V.1-V.8. |
 
 ---
 

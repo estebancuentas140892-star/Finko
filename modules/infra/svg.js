@@ -146,7 +146,7 @@ export function donut(segmentos, opts = {}) {
  * @returns {string} SVG completo.
  */
 export function progressRing(porcentaje, opts = {}) {
-  const { size = 64, strokeWidth = 6, conLabel = true } = opts;
+  const { size = 64, strokeWidth = 6, conLabel = true, etiqueta } = opts;
 
   const pct       = Math.max(0, Math.min(100, Number(porcentaje) || 0));
   const pctLabel  = Math.round(pct);
@@ -162,11 +162,12 @@ export function progressRing(porcentaje, opts = {}) {
     ? `<circle class="progress-ring__bar" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${arco.toFixed(2)} ${(circumference - arco).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`
     : '';
 
+  const displayLabel = etiqueta !== undefined ? _esc(String(etiqueta)) : `${pctLabel}%`;
   const labelHtml = conLabel
-    ? `<text class="progress-ring__label" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${Math.round(size * 0.26)}">${pctLabel}%</text>`
+    ? `<text class="progress-ring__label" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="${Math.round(size * 0.26)}">${displayLabel}</text>`
     : '';
 
-  return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${_esc(ariaLabel)}" class="progress-ring">
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="${_esc(ariaLabel)}" class="progress-ring">
     <circle class="progress-ring__track" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}"/>
     ${barHtml}
     ${labelHtml}

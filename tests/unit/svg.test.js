@@ -200,6 +200,12 @@ describe('progressRing()', () => {
     expect(progressRing(75, { conLabel: false })).not.toContain('<text');
   });
 
+  it('etiqueta custom reemplaza el porcentaje en el label', () => {
+    expect(progressRing(78, { etiqueta: 78 })).toContain('>78<');
+    expect(progressRing(78, { etiqueta: 78 })).not.toContain('>78%<');
+    expect(progressRing(50, { etiqueta: '<ok>' })).toContain('>&lt;ok&gt;<');
+  });
+
   it('redondea el label con porcentajes decimales', () => {
     expect(progressRing(33.4)).toContain('>33%<');
   });

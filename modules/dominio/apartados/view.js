@@ -5,6 +5,8 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
+import { progressRing } from '../../infra/svg.js';
 import {
   apartadosActivos,
   estaListoParaReiniciar,
@@ -43,12 +45,9 @@ function _renderApartadoItem(apartado) {
   const icono  = _esc(apartado.icono ?? ICONO_APARTADO_DEFAULT);
   const { porcentaje, faltante, completado } = calcularProgreso(apartado);
   const listo  = estaListoParaReiniciar(apartado);
-  // Un apartado listo para reiniciar ya reunió el dinero: no mostramos sugerencia.
   const sugerido = listo ? null : calcularAporteSugerido(apartado, hoy());
 
-  const claseProgreso = completado
-    ? 'progress-bar--complete'
-    : porcentaje >= 80 ? 'progress-bar--near' : '';
+  const claseAnillo = (completado || listo) ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
 
   const dias = diasHastaFecha(apartado.fechaObjetivo, hoy());
 
@@ -57,7 +56,7 @@ function _renderApartadoItem(apartado) {
     subtitleParts.push(`Para el ${fechaLegible(apartado.fechaObjetivo)}`);
   }
   if (apartado.recurrente) {
-    subtitleParts.push(`🔁 Se repite ${_esc(etiquetaPeriodoMeses(apartado.periodoMeses ?? PERIODO_RECURRENCIA_DEFAULT))}`);
+    subtitleParts.push(`${icon('recurring')} Recurrente: ${_esc(etiquetaPeriodoMeses(apartado.periodoMeses ?? PERIODO_RECURRENCIA_DEFAULT))}`);
   }
   if (dias !== null && !completado && !listo && dias >= 0 && dias <= 30) {
     const clsBadge = dias <= 7 ? 'badge badge--danger' : 'badge badge--warn';
@@ -65,21 +64,18 @@ function _renderApartadoItem(apartado) {
     subtitleParts.push(`<span class="${clsBadge}">${txtDias}</span>`);
   }
 
-  // Mensaje central: si ya reunió el dinero (recurrente), invitarlo a usarlo y
-  // reiniciar; si aún le falta, la sugerencia de cuánto apartar por periodo.
   let mensajeHtml = '';
   if (listo) {
     mensajeHtml = `<p class="apartado__listo" role="status">
-         ✅ ¡Listo! Ya reuniste el dinero. Cuando lo uses, reinicia el ciclo para el próximo gasto.
+         ${icon('check-circle')} ¡Listo! Ya reuniste el dinero. Cuando lo uses, reinicia el ciclo para el próximo gasto.
        </p>`;
   } else if (sugerido) {
     mensajeHtml = `<p class="apartado__sugerencia" role="status">
-         💡 Aparta <strong>${f(sugerido.aportePorPeriodo)}</strong> ${_esc(sugerido.etiquetaPeriodo)}
+         ${icon('lightbulb')} Aparta <strong>${f(sugerido.aportePorPeriodo)}</strong> ${_esc(sugerido.etiquetaPeriodo)}
          <span class="apartado__sugerencia-detalle">· ${sugerido.numPeriodos} ${sugerido.numPeriodos === 1 ? 'aporte' : 'aportes'} antes de la fecha</span>
        </p>`;
   }
 
-  // Acción principal: "Ya lo usé" (reinicia el ciclo) si está listo; si no, aportar.
   let accionPrincipal = '';
   if (listo) {
     accionPrincipal = `<button class="btn btn-ghost btn-sm"
@@ -95,16 +91,13 @@ function _renderApartadoItem(apartado) {
 
   return `
     <article class="list-item${listo ? ' list-item--listo' : ''}" data-id="${_esc(apartado.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icono}</div>
+      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" aria-hidden="true">
+        ${progressRing(porcentaje, { size: 56, strokeWidth: 5, ariaLabel: `Progreso de ${nombre}: ${porcentaje}%` })}
+      </div>
       <div class="list-item__body">
-        <p class="list-item__title">${nombre}${listo ? ' ✅' : ''}</p>
+        <p class="list-item__title">${icono} ${nombre}</p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
-        <div class="progress" role="progressbar"
-             aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Progreso de ${nombre}: ${porcentaje}%">
-          <div class="progress-bar ${claseProgreso}" style="width:${porcentaje}%"></div>
-        </div>
-        <p class="list-item__progress-label">${porcentaje}%${faltante > 0 ? ` · Faltan ${f(faltante)}` : ''}</p>
+        ${faltante > 0 && !listo ? `<p class="list-item__progress-label">Falta: ${f(faltante)}</p>` : ''}
         ${mensajeHtml}
       </div>
       <div class="list-item__action">
@@ -120,11 +113,11 @@ function _renderApartadoItem(apartado) {
 function _renderEmptyState() {
   return `
     <div class="empty-state">
-      <p class="empty-state__icon" aria-hidden="true">📦</p>
+      <div class="empty-state__icon">${icon('apartados', 'icon icon--lg')}</div>
       <p class="empty-state__title">Sin apartados todavía</p>
       <p class="empty-state__desc">Separa dinero poco a poco para los gastos que sabes que vienen (SOAT, impuestos, productos personales) y deja de afrontarlos como emergencias.</p>
       <button class="btn btn-primary" data-action="nuevo-apartado">+ Crear apartado</button>
-      <p class="empty-state__tip">💡 Tip: dale una fecha objetivo y Finko te dice cuánto separar en cada pago para llegar a tiempo.</p>
+      <p class="empty-state__tip">Tip: dale una fecha objetivo y Finko te dice cuánto separar en cada pago para llegar a tiempo.</p>
     </div>`;
 }
 
