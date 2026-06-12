@@ -67,7 +67,7 @@ function _renderApartadoItem(apartado) {
   let mensajeHtml = '';
   if (listo) {
     mensajeHtml = `<p class="apartado__listo" role="status">
-         ${icon('check-circle')} ¡Listo! Ya reuniste el dinero. Cuando lo uses, reinicia el ciclo para el próximo gasto.
+         ${icon('check-circle', 'icon icon--pop')} ¡Listo! Ya reuniste el dinero. Cuando lo uses, reinicia el ciclo para el próximo gasto.
        </p>`;
   } else if (sugerido) {
     mensajeHtml = `<p class="apartado__sugerencia" role="status">

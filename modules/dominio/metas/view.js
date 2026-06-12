@@ -52,7 +52,7 @@ function _renderMetaItem(meta) {
         ${progressRing(porcentaje, { size: 56, strokeWidth: 5, ariaLabel: `Progreso de ${nombre}: ${porcentaje}%` })}
       </div>
       <div class="list-item__body">
-        <p class="list-item__title">${icono} ${nombre}${completada ? ` ${icon('check-circle')}` : ''}</p>
+        <p class="list-item__title">${icono} ${nombre}${completada ? ` ${icon('check-circle', 'icon icon--pop')}` : ''}</p>
         <p class="list-item__subtitle">${subtitleParts.join(' · ')}</p>
         ${faltante > 0 ? `<p class="list-item__progress-label">Falta: ${f(faltante)}</p>` : ''}
       </div>

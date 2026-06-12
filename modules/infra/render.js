@@ -10,33 +10,13 @@
 
 import { S } from '../core/state.js';
 import { f } from './utils.js';
+import { countUp } from './animate.js';
 
 /** @type {Array<() => void>} Funciones de render registradas por los dominios. */
 const _renders = [];
 
-// ── COUNT-UP ─────────────────────────────────────────────────────
-let _prevSaldo   = null;
-let _countUpRaf  = null;
-
-function _easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-
-function _countUp(el, from, to, duration = 500) {
-  if (_countUpRaf) cancelAnimationFrame(_countUpRaf);
-  const start = performance.now();
-  const diff  = to - from;
-  function tick(now) {
-    const t       = Math.min((now - start) / duration, 1);
-    const current = from + diff * _easeOutCubic(t);
-    el.textContent = f(Math.round(current));
-    if (t < 1) {
-      _countUpRaf = requestAnimationFrame(tick);
-    } else {
-      el.textContent = f(to);
-      _countUpRaf = null;
-    }
-  }
-  _countUpRaf = requestAnimationFrame(tick);
-}
+/** Último saldo mostrado: permite animar solo cuando el valor cambia. */
+let _prevSaldo = null;
 
 /**
  * Registra una función de render de dominio para que `renderAll` la invoque.
@@ -88,10 +68,10 @@ export function updSaldo() {
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) {
     if (!sinCuentas) {
-      const onDash       = (location.hash.slice(1) || 'dash') === 'dash';
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (onDash && !reducedMotion && _prevSaldo !== totalCuentas) {
-        _countUp(elSaldo, _prevSaldo ?? 0, totalCuentas);
+      const onDash = (location.hash.slice(1) || 'dash') === 'dash';
+      // countUp respeta prefers-reduced-motion por su cuenta.
+      if (onDash && _prevSaldo !== totalCuentas) {
+        countUp(elSaldo, totalCuentas, { from: _prevSaldo ?? 0 });
       } else {
         elSaldo.textContent = f(totalCuentas);
       }

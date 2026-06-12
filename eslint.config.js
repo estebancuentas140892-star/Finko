@@ -46,6 +46,8 @@ export default [
         Storage: 'readonly',
         // Animación y Web Crypto
         requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        performance: 'readonly',
         crypto: 'readonly',
         // APIs de formularios y fetch
         FormData:   'readonly',

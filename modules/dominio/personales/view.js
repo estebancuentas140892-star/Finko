@@ -119,7 +119,7 @@ function _renderPersonalItem(prestamo, hoy) {
 
   return `
     <article class="list-item" data-id="${_esc(prestamo.id)}">
-      <div class="list-item__icon" aria-hidden="true">${liquidado ? icon('check-circle') : icon('personales')}</div>
+      <div class="list-item__icon" aria-hidden="true">${liquidado ? icon('check-circle', 'icon icon--pop') : icon('personales')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${persona}
           <span class="${chipClase}">${chipLabel}</span>

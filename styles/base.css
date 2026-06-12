@@ -199,17 +199,11 @@ select:focus {
   100% { transform: translateY(80px) rotate(720deg); opacity: 0; }
 }
 
-/* Aplicar entrada a paneles de sección al activarse */
+/* Aplicar entrada a paneles de sección al activarse.
+   (El selector era .sec.active y nunca coincidía: las secciones usan
+   .section. Mismo bug que cardIn, corregido en V.4 para layout.css.) */
 @media (prefers-reduced-motion: no-preference) {
-  .sec.active > *:first-child {
+  .section.active > *:first-child {
     animation: sectionIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-}
-
-/* Feedback táctil en botones (mobile) */
-@media (hover: none) {
-  .btn:active {
-    transform: scale(0.97);
-    transition: transform 80ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

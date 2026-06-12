@@ -59,11 +59,18 @@
   background: var(--fk-bg-surface);
   transition:
     background-color var(--fk-transition-fast),
-    border-color var(--fk-transition-fast);
+    border-color var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
 }
 .list-item:hover {
   background: var(--fk-bg-elevated);
   border-color: var(--fk-border-default);
+}
+/* Lift sutil al hover: solo si el usuario acepta movimiento */
+@media (prefers-reduced-motion: no-preference) {
+  .list-item:hover {
+    transform: translateY(-1px);
+  }
 }
 .list-item__icon {
   width: var(--fk-space-10);
@@ -289,7 +296,17 @@
   flex-shrink: 0;
 }
 .progress-ring__track { stroke: var(--fk-bg-elevated); }
-.progress-ring__bar   { stroke: currentColor; }
+.progress-ring__bar {
+  stroke: currentColor;
+  animation: ring-fill var(--fk-transition-slow) both;
+}
+/* Llenado de entrada del anillo: el arco usa pathLength="100", así
+   dashoffset 100 = oculto para cualquier tamaño; el valor final lo fija
+   el atributo del SVG (100 - pct). a11y.css anula la animación global
+   bajo prefers-reduced-motion. */
+@keyframes ring-fill {
+  from { stroke-dashoffset: 100; }
+}
 .progress-ring__label {
   fill: var(--fk-text-primary);
   font-weight: var(--fk-font-bold);

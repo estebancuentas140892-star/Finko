@@ -450,6 +450,9 @@ button.chip:focus-visible {
   font-size: var(--fk-text-xs);
   color: var(--fk-success-text);
   margin-top: var(--fk-space-1);
+  /* Pop de confirmación al marcar pagado (keyframes en forms.css) */
+  animation: check-pop var(--fk-transition-base) both;
+  transform-origin: left center;
 }
 
 .cal-detail__badge-abono--parcial {

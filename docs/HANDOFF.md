@@ -39,6 +39,27 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(rediseno-v6): microinteracciones: press universal, lift al hover, anillo y checkmark animados · 2026-06-12
+
+Sexta fase del rediseño visual 2026. Press scale(0.97) en todos los botones (antes solo móvil), lift sutil al hover en cards y list-items (gateado por prefers-reduced-motion), llenado de entrada animado del anillo de progreso (refactor a pathLength="100": dashoffset normalizado permite un keyframe CSS genérico para cualquier tamaño), checkmark con pop de overshoot al pagar/completar (metas, apartados, personales, badge de pago en agenda), y count-up extraído a `infra/animate.js` como helper reutilizable por elemento. Fix: la animación `sectionIn` nunca corría (selector `.sec.active`; las secciones usan `.section`, mismo bug que cardIn corregido en V.4). SW v149 → v150. Tests 1375/1375 verdes (+1 neto).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/svg.js` | Arco del anillo con `pathLength="100"`: dasharray fijo 100, dashoffset = 100 - pct para cualquier tamaño. Habilita la animación CSS genérica de llenado. |
+| `tests/unit/svg.test.js` | 2 tests de dasharray reescritos para pathLength + 1 nuevo (dashoffset independiente del tamaño). |
+| `modules/infra/animate.js` | Nuevo: `countUp(el, to, opts)` reutilizable, RAF por elemento (WeakMap), respeta prefers-reduced-motion internamente. |
+| `modules/infra/render.js` | Usa `countUp` de animate.js; elimina la implementación local de V.4. |
+| `styles/base.css` | Fix: `sectionIn` con selector `.section.active` (antes `.sec.active`, muerto). Press móvil movido a buttons.css como regla universal. |
+| `styles/components/buttons.css` | `.btn:active` scale(0.97) universal; `transform` agregado a transitions de btn y card; lift -2px en `.card-hover:hover`. |
+| `styles/components/atoms.css` | Keyframes `ring-fill` + animación en `.progress-ring__bar`; lift -1px en `.list-item:hover`. |
+| `styles/components/forms.css` | Keyframes `check-pop` (overshoot 1.15) + clase `.icon--pop`. |
+| `styles/components/domain.css` | `.cal-detail__badge-abono` con animación check-pop (pop al marcar pagado en agenda). |
+| `modules/dominio/{metas,apartados,personales}/view.js` | Checkmarks de completado con clase `icon--pop`. |
+| `eslint.config.js` | Globals `cancelAnimationFrame` y `performance` (usados desde V.4, faltaban). |
+| `service-worker.js` | v149 → v150; `animate.js` en CORE_ASSETS. |
+
+---
+
 ### feat(rediseno-v5): anillos de progreso protagonistas en Metas, Apartados, Ahorro y Score · 2026-06-11
 
 Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente disponible a héroe visual en cuatro secciones. Metas y Apartados: anillo 56px reemplaza el slot de icono cuadrado y elimina la barra de progreso. Ahorro: anillo 88px reemplaza el icono + barra del hero del fondo de emergencia. Score de salud (Análisis): anillo 120px con opción `etiqueta` reemplaza número + barra. Emojis de UI estructural reemplazados por SVG icons en las cuatro vistas. `svg.js` recibe dos mejoras: atributos `width`/`height` explícitos (fix para flex containers) y opción `etiqueta` para label personalizado. 1 test nuevo. SW v148 → v149. Tests 1374/1374 verdes.
@@ -105,23 +126,6 @@ Segunda fase del rediseño visual 2026. Crea `infra/icons.js` con helper `icon(i
 | `modules/dominio/tesoreria/logic.js` | `icono: 'gastos'` (era `'💸'`). |
 | `tests/unit/tesoreria.test.js` | Actualiza expect `icono` de `'💸'` a `'gastos'`. |
 | `service-worker.js` | v145 → v146. |
-
----
-
-### feat(rediseno-v1): tokens v2 + tipografía: Inter tnum, sin glow, sin DM Mono · 2026-06-11
-
-Primera fase del rediseño visual 2026. Los montos de toda la app ahora usan Inter (igual que el resto del texto) con `tabular-nums` para alineación numérica. Eliminada la fuente DM Mono y sus dos archivos `@font-face`. El "glow" neón reemplazado por un sistema de elevación con ring sutil de acento. SW v144 → v145. Tests 1359/1359 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/tokens.css` | `--fk-font-mono` apunta a `var(--fk-font-sans)`. `--fk-shadow-glow` reemplazado: ring 1.5px acento + sombra de elevación. `--fk-accent-glow` reducido a 0.08 alpha (sin brillo neón). |
-| `styles/themes.css` | `--fk-shadow-glow` light mode: ring acento + elevación azul-tinta. |
-| `styles/main.css` | Eliminados los dos bloques `@font-face` de DM Mono (400 y 500). |
-| `styles/base.css` | Bloque tnum centralizado: 14 selectores de valores financieros reciben `font-variant-numeric: tabular-nums`. |
-| `styles/components/config.css` | `install-banner`: removido `0 0 32px var(--fk-accent-glow)` inline. |
-| `styles/components/nudges.css` | `logro-toast`: removido `0 0 32px var(--fk-accent-glow)` inline. |
-| `styles/components/charts.css` | `comp-chooser__btn:hover`: simplificado a `var(--fk-shadow-glow)`. |
-| `service-worker.js` | v144 → v145. |
 
 ---
 

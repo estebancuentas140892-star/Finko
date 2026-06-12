@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-11
+> Última actualización: 2026-06-12
 
 ---
 
 ## Estado actual
 
-**App estable, 1374/1374 tests verdes, lint limpio.** Último cambio: **rediseño V.5, anillos de progreso** (Metas + Apartados ring 56px, Ahorro ring 88px, Score ring 120px con etiqueta, emojis estructurales → SVG icons). Antes: V.4 bento dashboard, V.3 componentes núcleo, V.2 iconos SVG, V.1 tokens v2.
+**App estable, 1375/1375 tests verdes, lint limpio.** Último cambio: **rediseño V.6, microinteracciones** (press universal en botones, lift al hover en cards y list-items, anillo con llenado animado vía pathLength, checkmark con pop, count-up reutilizable en `infra/animate.js`, fix de sectionIn muerta). Antes: V.5 anillos de progreso, V.4 bento dashboard, V.3 componentes núcleo.
 
 ---
 
@@ -35,7 +35,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**V.6 - Rediseño visual, Fase 6: microinteracciones.** Hover/press en cards, llenado animado de progreso al entrar en viewport, count-up reutilizable, checkmark animado al pagar/completar. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Medio.
+**V.7 - Rediseño visual, Fase 7: estados vacíos ilustrados + navegación pulida.** Última fase de UI del rediseño 2026. Plan en [`REDESIGN_2026.md`](REDESIGN_2026.md). Modelo: Sonnet 4.6 - Medio.
 
 Otras pendientes (no urgentes):
 

@@ -137,6 +137,12 @@ export function donut(segmentos, opts = {}) {
  * estado, etc.). Con pct=0 no se emite el arco: stroke-linecap="round"
  * dibujaría un punto visible aun con longitud cero.
  *
+ * El arco usa pathLength="100": normaliza la circunferencia a 100 unidades
+ * sin importar el tamaño real. Así dashoffset = 100 - pct para cualquier
+ * anillo, y el CSS anima el llenado de entrada con un keyframe genérico
+ * (from: dashoffset 100 = oculto; el valor final lo fija el atributo del
+ * SVG). Ver .progress-ring__bar en atoms.css.
+ *
  * @param {number} porcentaje - 0 a 100; fuera de rango se recorta.
  * @param {Object} [opts]
  * @param {number}  [opts.size=64]       - Lado del viewBox (cuadrado).
@@ -152,14 +158,12 @@ export function progressRing(porcentaje, opts = {}) {
   const pctLabel  = Math.round(pct);
   const ariaLabel = opts.ariaLabel ?? `Progreso: ${pctLabel}%`;
 
-  const radius        = (size - strokeWidth) / 2;
-  const cx            = size / 2;
-  const cy            = size / 2;
-  const circumference = 2 * Math.PI * radius;
-  const arco          = (pct / 100) * circumference;
+  const radius = (size - strokeWidth) / 2;
+  const cx     = size / 2;
+  const cy     = size / 2;
 
-  const barHtml = arco > 0
-    ? `<circle class="progress-ring__bar" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-dasharray="${arco.toFixed(2)} ${(circumference - arco).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`
+  const barHtml = pct > 0
+    ? `<circle class="progress-ring__bar" cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke-width="${strokeWidth}" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${(100 - pct).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`
     : '';
 
   const displayLabel = etiqueta !== undefined ? _esc(String(etiqueta)) : `${pctLabel}%`;

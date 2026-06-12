@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v6): microinteracciones: press universal, lift al hover, anillo y checkmark animados · 2026-06-12
+
+Sexta fase del rediseño visual 2026. La app gana feedback táctil y de progreso: press scale(0.97) en todos los botones (antes solo en pantallas táctiles), lift sutil al hover en cards (-2px) y list-items (-1px) gateado por `prefers-reduced-motion: no-preference`, llenado de entrada animado del anillo de progreso, checkmark con pop de overshoot al pagar/completar, y el count-up de V.4 extraído como helper reutilizable. Fix: la animación `sectionIn` de entrada de sección nunca corría (selector `.sec.active`; las secciones usan `.section`; mismo bug que `cardIn`, corregido en V.4 solo para layout.css). SW v149 → v150. Tests 1375/1375 verdes (+1 neto).
+
+- **`modules/infra/svg.js`**: el arco de `progressRing()` usa `pathLength="100"`: normaliza la circunferencia a 100 unidades sin importar el tamaño, así `stroke-dasharray="100"` y `stroke-dashoffset="${100 - pct}"` son universales y el CSS puede animar el llenado con un solo keyframe genérico (antes el dasharray dependía de la circunferencia real de cada anillo).
+- **`tests/unit/svg.test.js`**: los 2 tests de dasharray proporcional reescritos para el contrato pathLength (dasharray fijo, dashoffset = 100 - pct); 1 test nuevo: el dashoffset es independiente del tamaño del anillo. Neto +1 (1375).
+- **`modules/infra/animate.js`** (nuevo): `countUp(el, to, { from, duration })` anima montos con easeOutCubic y `f()`. RAF por elemento vía WeakMap (varias animaciones simultáneas sin pisarse), cancela la anterior si llega un valor nuevo, y respeta `prefers-reduced-motion` internamente (fija el valor final sin animar).
+- **`modules/infra/render.js`**: `updSaldo()` usa el `countUp` compartido; elimina `_countUp`, `_easeOutCubic` y `_countUpRaf` locales de V.4. El chequeo de reduced-motion ya no vive aquí (lo hace el helper).
+- **`styles/base.css`**: fix del selector de `sectionIn`: `.section.active > *:first-child` (antes `.sec.active`, nunca coincidía: la animación de entrada de sección estaba muerta desde su creación). El bloque de press táctil `@media (hover: none)` se elimina (reemplazado por la regla universal en buttons.css).
+- **`styles/components/buttons.css`**: `.btn:active:not(:disabled) { transform: scale(0.97) }` universal + `transform` en la transition del btn. `.card` gana `box-shadow` y `transform` en su transition; `.card-hover:hover` con lift `translateY(-2px)` bajo `prefers-reduced-motion: no-preference`.
+- **`styles/components/atoms.css`**: keyframes `ring-fill` (from: dashoffset 100 = arco oculto; el valor final lo fija el atributo del SVG) + animación en `.progress-ring__bar` con `--fk-transition-slow`. `.list-item:hover` con lift `translateY(-1px)` bajo no-preference + `transform` en su transition.
+- **`styles/components/forms.css`**: keyframes `check-pop` (scale 0 → 1.15 → 1 con fade) + clase `.icon--pop` con `--fk-transition-base`.
+- **`styles/components/domain.css`**: `.cal-detail__badge-abono` (badge "Ya pagaste este mes" de agenda) entra con check-pop al marcar pagado.
+- **`modules/dominio/metas/view.js`**, **`apartados/view.js`**, **`personales/view.js`**: los `icon('check-circle')` de completado llevan clase `icon icon--pop`.
+- **`eslint.config.js`**: globals `cancelAnimationFrame` y `performance` (render.js los usaba desde V.4; el lint no se había corrido sobre ese cambio).
+- **`service-worker.js`**: v149 → v150; `./modules/infra/animate.js` en CORE_ASSETS.
+
+---
+
 ### feat(rediseno-v5): anillos de progreso protagonistas en Metas, Apartados, Ahorro y Score · 2026-06-11
 
 Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente disponible a héroe visual en cuatro secciones. Metas y Apartados: anillo 56px reemplaza el slot de icono cuadrado 40px y elimina la barra de progreso lineal. Ahorro: anillo 88px reemplaza el icono + barra del hero del fondo de emergencia; faltante movido al bloque de título. Score de salud (Análisis): anillo 120px con opción `etiqueta` muestra el número del score (sin "%") y reemplaza el número suelto + barra; clase de color por banda (excelente/buena/ajustada/critica). Emojis de UI estructural reemplazados por SVG icons. `svg.js` recibe dos mejoras backward-compat: atributos `width`/`height` explícitos en el SVG (evita stretch en flex containers) y opción `etiqueta` para label personalizado. SW v148 → v149. Tests 1374/1374 verdes (+1).

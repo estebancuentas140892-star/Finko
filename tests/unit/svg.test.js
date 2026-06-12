@@ -174,15 +174,23 @@ describe('progressRing()', () => {
     expect(progressRing(undefined)).toContain('>0%<');
   });
 
-  it('el dasharray del arco es proporcional al porcentaje', () => {
-    // size=64, strokeWidth=6 → r=29, circunferencia=182.21; 50% → 91.11
+  it('el arco normaliza la circunferencia con pathLength=100', () => {
+    // dashoffset = 100 - pct, sin importar size: permite animar el llenado
+    // desde CSS con un keyframe genérico (from: dashoffset 100).
     const out = progressRing(50);
-    expect(out).toContain('stroke-dasharray="91.11 91.11"');
+    expect(out).toContain('pathLength="100"');
+    expect(out).toContain('stroke-dasharray="100"');
+    expect(out).toContain('stroke-dashoffset="50.00"');
   });
 
-  it('100% cubre la circunferencia completa', () => {
+  it('el dashoffset es independiente del tamaño del anillo', () => {
+    expect(progressRing(75)).toContain('stroke-dashoffset="25.00"');
+    expect(progressRing(75, { size: 120 })).toContain('stroke-dashoffset="25.00"');
+  });
+
+  it('100% cubre la circunferencia completa (dashoffset 0)', () => {
     const out = progressRing(100);
-    expect(out).toContain('stroke-dasharray="182.21 0.00"');
+    expect(out).toContain('stroke-dashoffset="0.00"');
   });
 
   it('viewBox por defecto 64x64 y custom con opts.size', () => {

@@ -25,9 +25,16 @@
     border-color var(--fk-transition-fast),
     color var(--fk-transition-fast),
     opacity var(--fk-transition-fast),
-    box-shadow var(--fk-transition-fast);
+    box-shadow var(--fk-transition-fast),
+    transform var(--fk-transition-fast);
   min-height: var(--fk-space-10);
   user-select: none;
+}
+
+/* Press: feedback táctil universal (antes solo en hover:none).
+   a11y.css reduce la transición a 0.01ms bajo prefers-reduced-motion. */
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn:disabled,
@@ -124,12 +131,22 @@
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-6);
-  transition: border-color var(--fk-transition-base);
+  transition:
+    border-color var(--fk-transition-base),
+    box-shadow var(--fk-transition-base),
+    transform var(--fk-transition-base);
 }
 
 .card-hover:hover {
   border-color: var(--fk-border-default);
   box-shadow: var(--fk-shadow-md);
+}
+
+/* Lift sutil al hover: solo si el usuario acepta movimiento */
+@media (prefers-reduced-motion: no-preference) {
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .card-elevated {
