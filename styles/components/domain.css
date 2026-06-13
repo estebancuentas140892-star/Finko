@@ -727,6 +727,90 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   RESUMEN-CARD - resumen semanal del dashboard (F8 / ADR 008).
+   Panel de solo lectura: gasto de 7 días + comparación + categoría
+   top + días activos del mes. Tono de reflexión, sin castigo.
+   ════════════════════════════════════════════════════════════ */
+
+.resumen-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  overflow: hidden;
+}
+
+.resumen-card__header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+
+.resumen-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.resumen-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--fk-border-subtle);
+}
+
+.resumen-card__stat {
+  background: var(--fk-bg-surface);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resumen-card__label {
+  font-size: var(--fk-text-xs);
+  font-weight: 600;
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.resumen-card__value {
+  font-size: var(--fk-text-2xl);
+  font-weight: 700;
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.resumen-card__stat--primary .resumen-card__value {
+  color: var(--fk-text-accent);
+}
+
+.resumen-card__value--sm {
+  font-size: var(--fk-text-lg);
+}
+
+.resumen-card__sub {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+
+.resumen-card__trend {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  margin: 0;
+}
+
+.resumen-card__trend--baja   { color: var(--fk-text-accent); }
+.resumen-card__trend--sube   { color: var(--fk-text-secondary); }
+.resumen-card__trend--neutro { color: var(--fk-text-muted); }
+
+/* ════════════════════════════════════════════════════════════
    BALANCE-TIRA - resumen ingresos vs gastos del mes.
    Tira simple (no card), color por signo.
    ════════════════════════════════════════════════════════════ */

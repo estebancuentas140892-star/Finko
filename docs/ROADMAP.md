@@ -33,7 +33,9 @@ Estas son las áreas pendientes / opcionales. Ninguna es bloqueante para usar la
 - ✅ V.5 (F5) - Secciones de progreso: Metas, Apartados, Ahorro, Score. Completada 2026-06-11.
 - ✅ V.6 (F6) - Microinteracciones: press universal, lift al hover, anillo y checkmark animados. Completada 2026-06-12.
 - ✅ V.7 (F7) - Estados vacíos ilustrados + navegación pulida. Completada 2026-06-12.
-- ⏳ V.8 (F8, opcional) - Mecánicas de hábito. **Decisión tomada 2026-06-12** ([ADR 008](DECISIONS/008-mecanicas-de-habito.md)): solo resumen semanal con "días activos del mes" como dato amable; sin racha con castigo. **Pendiente:** implementar la card de resumen (agregación de solo lectura + dashboard, sin schema). Sonnet 4.6 - Medio.
+- ✅ V.8 (F8) - Card de resumen semanal en el dashboard (agregación de solo lectura, "días activos del mes", sin racha). Decisión en [ADR 008](DECISIONS/008-mecanicas-de-habito.md). Completada 2026-06-13.
+
+_(Rediseño visual 2026 completo: las 8 fases cerradas.)_
 
 ---
 

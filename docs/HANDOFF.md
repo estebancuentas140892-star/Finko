@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-11 (rediseño V.5: anillos de progreso como visual protagonista en Metas, Apartados, Ahorro y Score; 1374/1374 verde)
+> Última actualización: 2026-06-13 (V.8: card de resumen semanal en el dashboard, lógica pura sin schema; 1402/1402 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1373/1373 verdes (+14: progressRing en infra/svg.js) |
+| Tests unitarios + integración | 1402/1402 verdes (+21: resumen/logic.js) |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(rediseno-v8): card de resumen semanal en el dashboard · 2026-06-13
+
+Implementación de la fase F8, según [ADR 008](DECISIONS/008-mecanicas-de-habito.md). Nuevo dominio `resumen/` (solo lectura, derivado de `S.gastos`): lógica pura de agregación (gasto de los últimos 7 días, comparación con la semana previa, categoría con más gasto, "días activos del mes") y una card de ancho completo en el bento del dashboard que aparece solo cuando hay actividad esta semana (patrón `[hidden]` de V.4). Tono calmo: la subida de gasto se muestra en color neutro, no como alarma; la bajada se refuerza en acento. Sin schema nuevo, sin migración, sin racha, sin telemetría. SW v151 → v152. Tests 1402/1402 verdes (+21).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/resumen/logic.js` | Nuevo: funciones puras `gastoUltimos7Dias`, `gastoSemanaPrevia`, `compararSemanas`, `categoriaTopSemana`, `diasActivosMes`, `resumenSemanal`, `hayResumen`. |
+| `modules/dominio/resumen/view.js` | Nuevo: `renderPanelResumen()` pinta `#panel-resumen`; oculta la card sin actividad. Tono de la tendencia neutral. |
+| `modules/dominio/resumen/index.js` | Nuevo: `initResumen()` engancha render en dashboard (registrarRender + state:change de gastos + hashchange). |
+| `tests/unit/resumen.test.js` | Nuevo: 21 tests de la lógica de agregación (ventanas de fecha, comparación, top, días activos, gate). |
+| `index.html` | Nuevo cell `#panel-resumen` (`bento__cell--full`, arranca `[hidden]`) tras prioridades. |
+| `styles/components/domain.css` | Estilos `.resumen-card__*`: grid auto-fit de stats, tonos de tendencia (baja/sube/neutro). |
+| `modules/ui/bootstrap.js` | Importa y llama `initResumen()`. |
+| `service-worker.js` | v151 → v152; 3 archivos de `resumen/` en CORE_ASSETS. |
+
+---
 
 ### docs(adr-008): decisión de producto V.8: resumen semanal sí, racha con castigo no · 2026-06-12
 
@@ -101,22 +118,6 @@ Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente 
 | `modules/dominio/analisis/view.js` | Anillo 120px con `etiqueta: score.score` (sin "%"); clase de color por banda (excelente/buena/ajustada/critica). Factor labels: emojis reemplazados por icons de dominio. Título sin emoji. |
 | `styles/components/atoms.css` | `.progress-ring-wrap` y modificadores de estado/banda para colorear arco vía `currentColor`. `.list-item__icon--ring`: 56px, sin fondo ni border-radius. |
 | `service-worker.js` | v148 → v149. |
-
----
-
-### feat(rediseno-v4): dashboard bento grid, accesos rápidos y count-up del saldo · 2026-06-11
-
-Cuarta fase del rediseño visual 2026. Compone el dashboard en un bento grid 12 columnas: hero de saldo (8 cols) + accesos rápidos (4 cols) en la primera fila, paneles dinámicos de vencidos y prioridades (6 cols cada uno) en la segunda. Los paneles arrancan con `[hidden]` y los activa el JS solo cuando hay datos (cero celdas vacías en el grid). Count-up animado en el saldo al entrar al dashboard o cuando cambia el valor. Fix: selector `.sec.active` en la animación `cardIn` corregido a `.section.active`. SW v147 → v148. Tests 1373/1373 verdes (sin cambios).
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Dashboard envuelto en `.bento.bento--dash`. Hero pasa de `--solo` a `--wide` (8 cols). Nuevo cell `bento__cell--accesos` con 4 atajos (Compromisos, Metas, Tesorería, Análisis). Paneles vencidos/prioridades: clases `bento__cell--half` + arrancan `[hidden]`. Gastos pendientes fuera del grid. |
-| `styles/layout.css` | `.bento__cell[hidden]`: `display: none`. Estilos de `.accesos__grid` (2 cols) y `.acceso-item` (flex col, icon 32px). Fix: `.section.active` en lugar de `.sec.active` para la animación de entrada. |
-| `styles/responsive.css` | `.bento__cell--accesos`: `span 6` en tablet (full row). |
-| `modules/dominio/compromisos/views/dashboard.js` | Toggle `el.hidden` en ambos paneles. Reemplaza `⚠️` por `icon('alert')` y `📅` por `icon('agenda')`. Elimina emoji `🎉`. |
-| `modules/dominio/gastos/view.js` | Toggle `el.hidden` en `renderPendientesOrganizar()`. |
-| `modules/infra/render.js` | Count-up animado (`_countUp`, easeOutCubic, 500ms): anima el saldo cuando el usuario está en el dashboard y el valor cambia. Sin animación bajo `prefers-reduced-motion`. |
-| `service-worker.js` | v147 → v148. |
 
 ---
 

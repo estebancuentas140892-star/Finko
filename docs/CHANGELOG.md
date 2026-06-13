@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(rediseno-v8): card de resumen semanal en el dashboard · 2026-06-13
+
+Implementación de la fase F8, cerrando el rediseño visual 2026. Materializa la decisión de producto del [ADR 008](DECISIONS/008-mecanicas-de-habito.md): solo resumen semanal, sin racha con castigo. Nuevo dominio `resumen/` de solo lectura, derivado de `S.gastos` con lógica pura (sin schema nuevo, sin migración). SW v151 → v152. Tests 1402/1402 verdes (+21).
+
+- **`modules/dominio/resumen/logic.js`** (nuevo): funciones puras sin DOM. `gastoUltimos7Dias` / `gastoSemanaPrevia` (ventanas de 0-6 y 7-13 días atrás), `compararSemanas` (direcciones subió/bajó/igual/sin-previa + porcentaje), `categoriaTopSemana`, `diasActivosMes` (días distintos del mes con gasto, mide actividad anotada no aperturas de la app), `registrosUltimos7Dias`, el agregador `resumenSemanal` y el gate `hayResumen`. Fechas en hora local (GMT-5) para que "hace 7 días" coincida con el día visible.
+- **`modules/dominio/resumen/view.js`** (nuevo): `renderPanelResumen()` pinta `#panel-resumen` con tres stats (gasto de 7 días + tendencia, categoría top, constancia). Tono calmo por decisión de producto: la subida de gasto va en color neutro (`--sube`), nunca como alarma; la bajada se refuerza en acento (`--baja`). Oculta la card (`hidden`) cuando no hay gasto esta semana.
+- **`modules/dominio/resumen/index.js`** (nuevo): `initResumen()` engancha el render al dashboard vía `registrarRender` (renderAll), `state:change` de gastos y `hashchange` a `#dash`. No registra acciones ni muta S.
+- **`tests/unit/resumen.test.js`** (nuevo): 21 tests sobre las ventanas de fecha (incluye límites e ítems futuros), comparación y porcentaje, categoría top con fallback a "Otros", días activos del mes y el gate de visibilidad.
+- **`index.html`**: nuevo cell `#panel-resumen` (`bento__cell--full`, arranca `[hidden]`) tras prioridades en el bento del dashboard.
+- **`styles/components/domain.css`**: bloque `.resumen-card__*`. Grid `auto-fit minmax(180px, 1fr)` (tres columnas en desktop, apiladas en móvil), separadores de 1px, montos en `tabular-nums`, tonos de tendencia baja/sube/neutro vía tokens.
+- **`modules/ui/bootstrap.js`**: importa y llama `initResumen()` tras `initCompromisos()`.
+- **`service-worker.js`**: v151 → v152; `logic.js`, `view.js` e `index.js` de `resumen/` en CORE_ASSETS.
+
+---
+
 ### feat(rediseno-v7): empty states ilustrados y navegación con indicador activo · 2026-06-12
 
 Séptima y última fase de UI del rediseño visual 2026. Los empty states pasan de icono suelto a ilustración SVG geométrica con vida sutil, y la navegación gana un indicador de sección activa. SW v150 → v151. Tests 1381/1381 verdes (+6).
