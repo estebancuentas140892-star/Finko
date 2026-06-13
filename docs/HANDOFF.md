@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### docs(adr-008): decisión de producto V.8: resumen semanal sí, racha con castigo no · 2026-06-12
+
+Decisión de producto de la fase F8 (mecánicas de hábito), tomada con el usuario antes de codear. Se descarta la racha estilo Duolingo (días consecutivos, aversión a la pérdida) por inadecuada en una app financiera de bienestar. Se construirá solo un **resumen semanal** de solo lectura (gasto de 7 días + comparación, categoría top, "días activos del mes" como contador amable que solo informa), derivado de `S` con lógica pura, sin schema nuevo. La implementación queda como próxima tarea. Sin código de app en este commit (solo ADR + docs).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/008-mecanicas-de-habito.md` | Nuevo ADR: tensión racha vs tono adulto, decisión (solo resumen semanal), alcance, qué NO se construye, alternativas descartadas. |
+| `docs/REDESIGN_2026.md`, `docs/ROADMAP.md` | F8/V.8 marcada "decisión tomada, implementación pendiente"; modelo bajado a Sonnet 4.6 - Medio (ya no hay decisión de producto que requiera Opus). |
+
+---
+
 ### feat(rediseno-v7): empty states ilustrados y navegación con indicador activo · 2026-06-12
 
 Séptima y última fase de UI del rediseño visual 2026. Nuevo helper `emptyArt(id)` en `infra/icons.js`: ilustración SVG geométrica (círculo de fondo, órbita punteada animada, puntos flotantes, icono del dominio centrado) que reemplaza el icono suelto en los 10 empty states. Navegación pulida: indicador de acento en el item activo (barra vertical en sidebar, horizontal en bottom nav), press scale y micro-zoom del icono al hover. Fix 1: el empty state de Deudas aún usaba emoji 💳 (escapado de V.2). Fix 2: `infra/icons.js` faltaba en CORE_ASSETS del SW desde V.2 (brecha offline-first). Tips de empty states unificados con `icon('lightbulb')`. SW v150 → v151. Tests 1381/1381 verdes (+6). Desde esta tarea rige el deploy continuo: cada cierre se pushea a Vercel de inmediato.
@@ -106,23 +117,6 @@ Cuarta fase del rediseño visual 2026. Compone el dashboard en un bento grid 12 
 | `modules/dominio/gastos/view.js` | Toggle `el.hidden` en `renderPendientesOrganizar()`. |
 | `modules/infra/render.js` | Count-up animado (`_countUp`, easeOutCubic, 500ms): anima el saldo cuando el usuario está en el dashboard y el valor cambia. Sin animación bajo `prefers-reduced-motion`. |
 | `service-worker.js` | v147 → v148. |
-
----
-
-### feat(rediseno-v3): componentes núcleo v2: progress grueso animado, anillo SVG, list-item con aire · 2026-06-11
-
-Tercera fase del rediseño visual 2026. Consolida el progreso lineal en `atoms.css` como única fuente (antes duplicado en `analysis.css` y con una variante BEM muerta): barra de 12px con llenado de entrada vía transform y modificadores `--near`/`--complete` que las vistas ya emitían sin CSS. Nuevo `progressRing()` en `infra/svg.js` (puro, listo para F5). List-item v2 con más aire. Chips unificados con capa interactiva acotada a `button.chip`. Fix: la barra de Personales era invisible (clases sin CSS). SW v146 → v147. Tests 1373/1373 verdes (+14).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/svg.js` | Nuevo `progressRing(pct, opts)`: anillo SVG puro; colores vía CSS (track elevated, arco currentColor), label central opcional. |
-| `tests/unit/svg.test.js` | 14 tests de progressRing (clamp, dasharray proporcional, label, aria, sin colores inline). |
-| `styles/components/atoms.css` | Progress v2: única fuente de `.progress`/`.progress-bar`, 12px, animación `progress-fill` (solo transform), modificadores `--near`/`--complete`/`--warn`/`--danger`. Estilos del anillo. List-item v2: padding 16px, icono 40px radius-md, `.list-item__progress-label` por fin definido. `.chip` base con flex-shrink. |
-| `styles/components/analysis.css` | Elimina base duplicada de `.progress`/`.progress-bar` y los modificadores genéricos (migrados a atoms); conserva `--salud-*`/`--score-*`. |
-| `styles/components/domain.css` | `.chip` duplicado reducido a capa interactiva `button.chip` (cursor, hover, focus). Chip activo con texto oscuro sobre acento (AA; antes blanco sin contraste). |
-| `styles/base.css` | `.list-item__progress-label` y `.progress-ring__label` al bloque tnum centralizado. |
-| `modules/dominio/personales/view.js` | Barra de pago usa `.progress`/`.progress-bar` estándar (la anterior no tenía CSS: invisible). Chips de antigüedad con clases existentes (`chip-danger` etc., antes `chip--danger` inexistente). |
-| `service-worker.js` | v146 → v147. |
 
 ---
 

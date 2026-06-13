@@ -65,7 +65,7 @@ Cada fase: tests verdes + bump de SW + verificación visual en la app + commit a
 | **F5. Secciones de progreso** | Metas, Apartados y Ahorro con anillo/barra protagonista, hitos y jerarquía nueva. Score de salud de Análisis con gauge mejorado. | views de `metas`, `apartados`, `ahorro` (tesoreria), `analisis`; `domain.css` | Sonnet 4.6 - Medio |
 | **F6. Microinteracciones** | Hover/press en cards y botones, llenado animado de progreso al entrar en viewport, count-up reutilizable, checkmark animado al pagar/completar. | `base.css`, `utils` (helper count-up), components | Sonnet 4.6 - Medio |
 | **F7. Estados vacíos + navegación** | Ilustraciones SVG inline geométricas para empty states; pulido de sidebar/bottom nav (estados activos, transiciones). | `atoms.css`, `layout.css`, views, `infra/icons.js` | Sonnet 4.6 - Medio |
-| **F8 (opcional, producto)** | Mecánicas de hábito: racha de registro, resumen semanal. Requiere decisión de producto aparte (no es solo UI). | por definir | Opus 4.8 - Medio |
+| **F8 (opcional, producto)** | Decisión tomada ([ADR 008](DECISIONS/008-mecanicas-de-habito.md)): solo resumen semanal con "días activos del mes" como dato amable; sin racha con castigo. Pendiente: implementar la card de resumen (lógica de agregación + dashboard). | `dashboard.js`, nuevo `logic.js` de resumen, `layout.css` | Sonnet 4.6 - Medio |
 
 **Orden razonado:** tokens primero (todo lo demás hereda), iconos segundo (los componentes los embeben), componentes tercero (las secciones los usan), y recién entonces composición por sección.
 
@@ -94,4 +94,4 @@ Cada fase: tests verdes + bump de SW + verificación visual en la app + commit a
 | F5 | Completada 2026-06-11 |
 | F6 | Completada 2026-06-12 |
 | F7 | Completada 2026-06-12 |
-| F8 | Sin decidir (producto) |
+| F8 | Decisión tomada 2026-06-12 (ADR 008); implementación pendiente |
