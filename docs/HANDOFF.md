@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-13 (fix agenda: íconos SVG en detalle del día; 1402/1402 verde)
+> Última actualización: 2026-06-13 ("Presupuesto" renombrado a "Límites de gasto", diferenciado de Apartados; 1402/1402 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): renombrar "Presupuesto" a "Límites de gasto" y diferenciar de Apartados · 2026-06-13
+
+El usuario volvió a sentir que Presupuesto y Apartados se parecían (ya se había tocado copy el 2026-06-11). Análisis: no son duplicados, son opuestos (tope que vigila el gasto vs dinero que se guarda para un gasto futuro); la confusión venía del nombre abstracto + el mismo dibujo de progreso para significados inversos + la adyacencia. Decisión con el usuario: NO fusionar (modo dual sería peor), diferenciar fuerte. Se renombró la sección a **"Límites de gasto"** solo de cara al usuario (el dominio interno sigue siendo `presupuesto`/`S.presupuestos`, sin migración) y se agregaron cross-links de desambiguación en ambos empty states. SW v153 → v154. Tests 1402/1402 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Nav (sidebar + menú "Más"), título, subtítulo nuevo, modal y botón → "Límites de gasto" / "+ Límite". |
+| `modules/dominio/presupuesto/view.js` | Empty state, form, hero y aria-labels renombrados; cross-link a Apartados. |
+| `modules/dominio/presupuesto/index.js` | Toasts y confirmación de borrado renombrados. |
+| `modules/dominio/presupuesto/logic.js` | Mensaje de duplicado renombrado; "Editá" → "Edita" (tuteo). |
+| `modules/dominio/apartados/view.js` | Cross-link a "Límites de gasto" en el empty state. |
+| `modules/dominio/logros/logic.js` | Descripción del logro "Planificador" actualizada. |
+| `styles/components/atoms.css` | Variante `.empty-state__tip--muted` para cross-links secundarios. |
+| `service-worker.js` | v153 → v154. |
+
+---
 
 ### fix(agenda): íconos SVG en detalle del día (deuda-personal y deuda-entidad) · 2026-06-13
 
@@ -93,27 +110,6 @@ Séptima y última fase de UI del rediseño visual 2026. Nuevo helper `emptyArt(
 | `styles/layout.css` | `.nav-item::before`: barra de acento del item activo (crece desde el centro); press scale; zoom 1.1 del icono al hover. |
 | `styles/responsive.css` | El indicador pasa a barra horizontal en el borde superior del bottom nav. |
 | `service-worker.js` | v150 → v151; `icons.js` agregado a CORE_ASSETS (faltaba desde V.2). |
-
----
-
-### feat(rediseno-v6): microinteracciones: press universal, lift al hover, anillo y checkmark animados · 2026-06-12
-
-Sexta fase del rediseño visual 2026. Press scale(0.97) en todos los botones (antes solo móvil), lift sutil al hover en cards y list-items (gateado por prefers-reduced-motion), llenado de entrada animado del anillo de progreso (refactor a pathLength="100": dashoffset normalizado permite un keyframe CSS genérico para cualquier tamaño), checkmark con pop de overshoot al pagar/completar (metas, apartados, personales, badge de pago en agenda), y count-up extraído a `infra/animate.js` como helper reutilizable por elemento. Fix: la animación `sectionIn` nunca corría (selector `.sec.active`; las secciones usan `.section`, mismo bug que cardIn corregido en V.4). SW v149 → v150. Tests 1375/1375 verdes (+1 neto).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/svg.js` | Arco del anillo con `pathLength="100"`: dasharray fijo 100, dashoffset = 100 - pct para cualquier tamaño. Habilita la animación CSS genérica de llenado. |
-| `tests/unit/svg.test.js` | 2 tests de dasharray reescritos para pathLength + 1 nuevo (dashoffset independiente del tamaño). |
-| `modules/infra/animate.js` | Nuevo: `countUp(el, to, opts)` reutilizable, RAF por elemento (WeakMap), respeta prefers-reduced-motion internamente. |
-| `modules/infra/render.js` | Usa `countUp` de animate.js; elimina la implementación local de V.4. |
-| `styles/base.css` | Fix: `sectionIn` con selector `.section.active` (antes `.sec.active`, muerto). Press móvil movido a buttons.css como regla universal. |
-| `styles/components/buttons.css` | `.btn:active` scale(0.97) universal; `transform` agregado a transitions de btn y card; lift -2px en `.card-hover:hover`. |
-| `styles/components/atoms.css` | Keyframes `ring-fill` + animación en `.progress-ring__bar`; lift -1px en `.list-item:hover`. |
-| `styles/components/forms.css` | Keyframes `check-pop` (overshoot 1.15) + clase `.icon--pop`. |
-| `styles/components/domain.css` | `.cal-detail__badge-abono` con animación check-pop (pop al marcar pagado en agenda). |
-| `modules/dominio/{metas,apartados,personales}/view.js` | Checkmarks de completado con clase `icon--pop`. |
-| `eslint.config.js` | Globals `cancelAnimationFrame` y `performance` (usados desde V.4, faltaban). |
-| `service-worker.js` | v149 → v150; `animate.js` en CORE_ASSETS. |
 
 ---
 

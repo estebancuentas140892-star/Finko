@@ -164,9 +164,9 @@
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
-               role="listitem" aria-label="Presupuesto por categoría">
+               role="listitem" aria-label="Límites de gasto por categoría">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
-              <span class="nav-item__label">Presupuesto</span>
+              <span class="nav-item__label">Límites de gasto</span>
             </a>
 
           </div>
@@ -453,13 +453,19 @@
 
       </section>
 
-      <!-- PRESUPUESTO -->
+      <!-- LÍMITES DE GASTO (antes "Presupuesto"): tope mensual por categoría.
+           Internamente sigue siendo el dominio "presupuesto" (S.presupuestos).
+           El renombre es solo de cara al usuario, para no confundir con Apartados
+           (guardar dinero) vs límite de gasto (vigilar cuánto sale). -->
       <section class="section" id="sec-presupuesto" aria-labelledby="title-presupuesto">
         <header class="section__header">
-          <h1 class="section__title" id="title-presupuesto">Presupuesto</h1>
+          <div>
+            <h1 class="section__title" id="title-presupuesto">Límites de gasto</h1>
+            <p class="section__subtitle">Cuánto quieres gastar como máximo por categoría cada mes</p>
+          </div>
           <button class="btn btn-primary" data-action="nuevo-presupuesto"
-                  aria-label="Crear nuevo presupuesto por categoría">
-            + Presupuesto
+                  aria-label="Crear nuevo límite de gasto por categoría">
+            + Límite
           </button>
         </header>
         <div id="panel-presupuesto">
@@ -709,7 +715,7 @@
        aria-labelledby="modal-presupuesto-title" aria-hidden="true">
     <div class="modal">
       <header class="modal__header">
-        <h2 class="modal__title" id="modal-presupuesto-title">Presupuesto por categoría</h2>
+        <h2 class="modal__title" id="modal-presupuesto-title">Nuevo límite de gasto</h2>
         <button class="modal__close btn btn-icon btn-ghost"
                 data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
       </header>
@@ -876,7 +882,7 @@
             </a>
             <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
               <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
-              <span class="menu-mas__label">Presupuesto</span>
+              <span class="menu-mas__label">Límites de gasto</span>
             </a>
           </div>
         </section>

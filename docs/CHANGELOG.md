@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): renombrar "Presupuesto" a "Límites de gasto" y diferenciar de Apartados · 2026-06-13
+
+El usuario reportó (de nuevo, tras el ajuste de copy del 2026-06-11) que Presupuesto y Apartados se sentían parecidos. Análisis: no son duplicados, son opuestos que colisionan en la superficie. Presupuesto = tope mensual de gasto por categoría (no guarda dinero, vigila lo que sale, 100% es malo). Apartados = ahorro programado para un gasto futuro (guarda dinero, 100% es logro). La confusión venía del nombre abstracto "Presupuesto" + el mismo dibujo de progreso para significados inversos + la adyacencia en el menú. Decisión (con el usuario): NO fusionar (un modo dual sería peor); diferenciar con fuerza. El renombre es solo de cara al usuario: el dominio interno sigue siendo `presupuesto` / `S.presupuestos` (sin migración, sin tocar schema ni datos). SW v153 → v154. Tests 1402/1402 verdes.
+
+- **`index.html`**: nav (sidebar + menú "Más"), título de sección, título de modal y botón pasan a "Límites de gasto" / "+ Límite" / "Nuevo límite de gasto". Nuevo subtítulo de sección ("Cuánto quieres gastar como máximo por categoría cada mes") para paridad con Ahorro/Metas/Apartados y para reforzar el encuadre de tope mensual.
+- **`modules/dominio/presupuesto/view.js`**: empty state, formulario (botón, hint), hero y aria-labels renombrados a "límite de gasto". Nuevo cross-link de desambiguación en el empty state apuntando a Apartados.
+- **`modules/dominio/presupuesto/index.js`**: toasts (`announce`) y diálogo de confirmación de borrado renombrados.
+- **`modules/dominio/presupuesto/logic.js`**: mensaje de duplicado renombrado a "límite" y corregido "Editá" (voseo) → "Edita" (tuteo, ADN #11). Sigue pasando el test `/ya existe/i`.
+- **`modules/dominio/apartados/view.js`**: nuevo cross-link en el empty state apuntando a "Límites de gasto".
+- **`modules/dominio/logros/logic.js`**: descripción del logro "Planificador" actualizada ("primer límite de gasto por categoría"; corrige "categoria" sin tilde).
+- **`styles/components/atoms.css`**: nueva variante `.empty-state__tip--muted` (sin borde de acento) para los cross-links secundarios.
+- **`service-worker.js`**: v153 → v154.
+
+---
+
 ### fix(agenda): íconos SVG en detalle del día (deuda-personal y deuda-entidad) · 2026-06-13
 
 Bug visual: `agenda/view.js` usaba `_esc(ICONO_TIPO[tipo])` en lugar de `icon()`, por lo que el ID de ícono SVG (`'personales'`, `'cuentas'`, `'recurring'`) se insertaba como texto literal dentro del contenedor circular de 36px, desbordando sobre el nombre del compromiso. El mismo error existía en `compromisos/views/lista.js` en el camino fallback (cuando no hay `ordenBadge` por estrategia activa). La causa raíz: `ICONO_TIPO` devuelve IDs de sprite SVG (migración F2), pero ambas vistas no actualizaron su llamada de renderizado al patron `icon()`. CSS defensivo añadido: `overflow: hidden` + `flex-shrink: 0` en `.cal-detail__icon`. SW v152 → v153. Tests 1402/1402 verdes (sin cambios de lógica).

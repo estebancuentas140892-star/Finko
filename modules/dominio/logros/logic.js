@@ -69,7 +69,7 @@ export const LOGROS = [
     id:     'planificador',
     nombre: 'Planificador',
     emoji:  '📊',
-    desc:   'Configuraste tu primer presupuesto por categoria.',
+    desc:   'Configuraste tu primer límite de gasto por categoría.',
     eval:   s => Array.isArray(s.presupuestos) && s.presupuestos.length > 0,
   },
   {

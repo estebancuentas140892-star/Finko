@@ -166,7 +166,7 @@ export function validarPresupuesto(datos, presupuestosExistentes = [], presupues
     const duplicado = presupuestosActivos(presupuestosExistentes)
       .some(p => p.categoria === datos.categoria && p.id !== presupuestoIdActual);
     if (duplicado) {
-      errores.push(`Ya existe un presupuesto para "${datos.categoria}". Editá el existente.`);
+      errores.push(`Ya existe un límite para "${datos.categoria}". Edita el existente.`);
     }
   }
 

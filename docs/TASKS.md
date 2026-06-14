@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1402/1402 tests verdes, lint limpio.** Último cambio: **V.8 implementación** (ADR 008): card de resumen semanal en el dashboard (gasto de 7 días + comparación, categoría top, "días activos del mes"), nuevo dominio `resumen/` de solo lectura, sin schema. Antes: V.7 empty states ilustrados + nav, V.6 microinteracciones, V.5 anillos de progreso. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1402/1402 tests verdes, lint limpio.** Último cambio: **renombre "Presupuesto" → "Límites de gasto"** y diferenciación de Apartados (cross-links + subtítulo; sin fusionar, sin migración). Antes: fix de íconos en Agenda, V.8 card de resumen semanal (ADR 008). **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 

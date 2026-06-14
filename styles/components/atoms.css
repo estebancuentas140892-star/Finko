@@ -253,6 +253,13 @@
   line-height: var(--fk-leading-relaxed);
 }
 
+/* Desambiguación cruzada ("¿buscabas la otra sección?"): secundaria, sin el
+   borde de acento del tip educativo, para que no compita con el CTA. */
+.empty-state__tip--muted {
+  background: transparent;
+  border-left-color: var(--fk-border-subtle);
+}
+
 /* ════════════════════════════════════════════════════════════
    SPINNER / SKELETON
    ════════════════════════════════════════════════════════════ */

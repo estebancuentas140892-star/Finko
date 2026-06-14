@@ -53,7 +53,7 @@ function _renderHero(presupuestos, gastos, anio, mes) {
   const porcentaje = asignado > 0 ? Math.round((gastado / asignado) * 100) : 0;
 
   return `
-    <section class="presupuesto-hero" aria-label="Resumen del presupuesto del mes">
+    <section class="presupuesto-hero" aria-label="Resumen de tus límites de gasto del mes">
       <div class="presupuesto-hero__totales">
         <div class="presupuesto-hero__metric">
           <span class="presupuesto-hero__label">Asignado</span>
@@ -71,7 +71,7 @@ function _renderHero(presupuestos, gastos, anio, mes) {
       ${asignado > 0 ? `
         <div class="progress" role="progressbar"
              aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Uso total del presupuesto: ${porcentaje}%">
+             aria-label="Uso total de tus límites de gasto: ${porcentaje}%">
           <div class="progress-bar ${_claseProgreso(porcentaje)}" style="width:${Math.min(porcentaje, 100)}%"></div>
         </div>
       ` : ''}
@@ -111,11 +111,11 @@ function _renderEnvelope(presupuesto, gastos, anio, mes) {
         <button class="btn btn-ghost btn-sm"
                 data-action="editar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
-                aria-label="Editar presupuesto de ${categoria}">Editar</button>
+                aria-label="Editar límite de gasto de ${categoria}">Editar</button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
-                aria-label="Eliminar presupuesto de ${categoria}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+                aria-label="Eliminar límite de gasto de ${categoria}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
 }
@@ -128,8 +128,8 @@ function _renderSinPresupuesto(presupuestos) {
   if (huerfanas.length === 0) return '';
 
   return `
-    <section class="envelope-huerfanas" aria-label="Categorías con gastos sin presupuesto">
-      <h3 class="envelope-huerfanas__title">Categorías con gastos del mes sin presupuesto asignado</h3>
+    <section class="envelope-huerfanas" aria-label="Categorías con gastos sin límite asignado">
+      <h3 class="envelope-huerfanas__title">Categorías con gastos del mes sin límite asignado</h3>
       <ul class="envelope-huerfanas__list">
         ${huerfanas.map(h => `
           <li>
@@ -138,7 +138,7 @@ function _renderSinPresupuesto(presupuestos) {
           </li>
         `).join('')}
       </ul>
-      <p class="envelope-huerfanas__hint">Asignales un presupuesto para hacer seguimiento mensual.</p>
+      <p class="envelope-huerfanas__hint">Asígnales un límite para hacer seguimiento mensual.</p>
     </section>`;
 }
 
@@ -148,10 +148,11 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('presupuesto')}</div>
-      <p class="empty-state__title">Sin presupuestos</p>
-      <p class="empty-state__desc">Asigna un monto mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te avisa cuando te acerques al límite.</p>
-      <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear presupuesto</button>
+      <p class="empty-state__title">Sin límites de gasto</p>
+      <p class="empty-state__desc">Pon un tope mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te avisa cuando te acerques al límite.</p>
+      <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear límite</button>
       <p class="empty-state__tip">${icon('lightbulb')} Tip: empieza con 2 o 3 categorías donde más gastas. Finko muestra el avance en tiempo real cada vez que registras un gasto.</p>
+      <p class="empty-state__tip empty-state__tip--muted">¿Quieres reunir dinero para un gasto que viene (SOAT, vacaciones)? Eso va en Apartados. Aquí solo le pones un tope a lo que gastas.</p>
     </div>`;
 }
 
@@ -184,7 +185,7 @@ export function renderFormPresupuesto(actual = null) {
           ${opciones}
         </select>
         ${editando
-          ? '<p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este presupuesto y crea uno nuevo.</p>'
+          ? '<p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este límite y crea uno nuevo.</p>'
           : ''}
       </div>
       <div class="form-group">
@@ -196,7 +197,7 @@ export function renderFormPresupuesto(actual = null) {
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Crear presupuesto'}</button>
+        <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Crear límite'}</button>
       </div>
     </form>`;
 }

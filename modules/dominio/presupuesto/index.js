@@ -77,10 +77,10 @@ function _guardarPresupuesto(form) {
 
   if (idActual) {
     editar('presupuestos', idActual, { montoMensual: Number(datos.montoMensual) });
-    announce('Presupuesto actualizado.');
+    announce('Límite de gasto actualizado.');
   } else {
     guardar('presupuestos', normalizarPresupuesto(datos));
-    announce(`Presupuesto creado para "${datos.categoria}".`);
+    announce(`Límite de gasto creado para "${datos.categoria}".`);
   }
 
   const overlay = _getOverlay();
@@ -96,8 +96,8 @@ async function _eliminarPresupuesto(el) {
   if (!p) return;
 
   const ok = await confirmar({
-    titulo:         'Eliminar presupuesto',
-    mensaje:        `¿Eliminar el presupuesto de "${p.categoria}"? Los gastos no se ven afectados.`,
+    titulo:         'Eliminar límite de gasto',
+    mensaje:        `¿Eliminar el límite de gasto de "${p.categoria}"? Los gastos no se ven afectados.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -105,7 +105,7 @@ async function _eliminarPresupuesto(el) {
 
   eliminar('presupuestos', id);
   renderPanelPresupuesto();
-  announce(`Presupuesto de "${p.categoria}" eliminado.`);
+  announce(`Límite de gasto de "${p.categoria}" eliminado.`);
 }
 
 // ── INIT ─────────────────────────────────────────────────────────

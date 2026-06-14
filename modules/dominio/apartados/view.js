@@ -118,6 +118,7 @@ function _renderEmptyState() {
       <p class="empty-state__desc">Separa dinero poco a poco para los gastos que sabes que vienen (SOAT, impuestos, productos personales) y deja de afrontarlos como emergencias.</p>
       <button class="btn btn-primary" data-action="nuevo-apartado">+ Crear apartado</button>
       <p class="empty-state__tip">Tip: dale una fecha objetivo y Finko te dice cuánto separar en cada pago para llegar a tiempo.</p>
+      <p class="empty-state__tip empty-state__tip--muted">¿Solo quieres ponerle un tope a lo que gastas al mes? Eso va en Límites de gasto. Aquí guardas dinero para un gasto futuro.</p>
     </div>`;
 }
 
