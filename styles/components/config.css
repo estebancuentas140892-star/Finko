@@ -678,6 +678,8 @@
   background: var(--fk-bg-surface);
   font-size: var(--fk-text-md);
   line-height: 1;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .cal-detail__body {

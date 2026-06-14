@@ -82,7 +82,7 @@ export function renderListaCompromisos() {
 function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
-  const icono    = _esc(ICONO_TIPO[tipo] ?? '💳');
+  const icono    = icon(ICONO_TIPO[tipo] ?? 'recurring');
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
   const dias     = proximoVencimiento(compromiso);

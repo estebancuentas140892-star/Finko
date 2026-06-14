@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-13 (V.8: card de resumen semanal en el dashboard, lógica pura sin schema; 1402/1402 verde)
+> Última actualización: 2026-06-13 (fix agenda: íconos SVG en detalle del día; 1402/1402 verde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(agenda): íconos SVG en detalle del día (deuda-personal y deuda-entidad) · 2026-06-13
+
+`agenda/view.js` usaba `_esc(ICONO_TIPO[tipo])` en lugar de `icon()`, por lo que el ID de ícono SVG (`'personales'`, `'cuentas'`, `'recurring'`) se renderizaba como texto literal dentro del contenedor circular de 36px, desbordando sobre el nombre del compromiso. El mismo error existía en `compromisos/views/lista.js` (fallback sin `ordenBadge`). Fix: importar `icon` en `agenda/view.js` y usarla en ambos archivos. CSS defensivo: `overflow: hidden` + `flex-shrink: 0` en `.cal-detail__icon`. SW v152 → v153. Tests 1402/1402 verdes (sin cambios de lógica).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | Importa `icon` de `infra/icons.js`; `icono = icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderDetalleItem`. |
+| `modules/dominio/compromisos/views/lista.js` | `icono = icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderCompromisoItem` (mismo bug, fallback sin estrategia). |
+| `styles/components/config.css` | `.cal-detail__icon`: `overflow: hidden; flex-shrink: 0` para contener el SVG y no ceder espacio bajo presión de flex. |
+| `service-worker.js` | v152 → v153. |
+
+---
 
 ### feat(rediseno-v8): card de resumen semanal en el dashboard · 2026-06-13
 
@@ -101,23 +114,6 @@ Sexta fase del rediseño visual 2026. Press scale(0.97) en todos los botones (an
 | `modules/dominio/{metas,apartados,personales}/view.js` | Checkmarks de completado con clase `icon--pop`. |
 | `eslint.config.js` | Globals `cancelAnimationFrame` y `performance` (usados desde V.4, faltaban). |
 | `service-worker.js` | v149 → v150; `animate.js` en CORE_ASSETS. |
-
----
-
-### feat(rediseno-v5): anillos de progreso protagonistas en Metas, Apartados, Ahorro y Score · 2026-06-11
-
-Quinta fase del rediseño visual 2026. `progressRing()` (F3) pasa de componente disponible a héroe visual en cuatro secciones. Metas y Apartados: anillo 56px reemplaza el slot de icono cuadrado y elimina la barra de progreso. Ahorro: anillo 88px reemplaza el icono + barra del hero del fondo de emergencia. Score de salud (Análisis): anillo 120px con opción `etiqueta` reemplaza número + barra. Emojis de UI estructural reemplazados por SVG icons en las cuatro vistas. `svg.js` recibe dos mejoras: atributos `width`/`height` explícitos (fix para flex containers) y opción `etiqueta` para label personalizado. 1 test nuevo. SW v148 → v149. Tests 1374/1374 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/svg.js` | Agrega `width`/`height` al SVG (evita stretch en flex). Opción `etiqueta`: reemplaza "N%" por string dado (usado en score para mostrar solo el número). |
-| `tests/unit/svg.test.js` | Test nuevo: `etiqueta` custom reemplaza el porcentaje y escapa HTML. |
-| `modules/dominio/metas/view.js` | Anillo 56px como slot de icono con clase de estado (`default`/`near`/`complete`). Barra de progreso eliminada. Emoji de meta al título. |
-| `modules/dominio/apartados/view.js` | Mismo patrón de anillo. Emojis `🔁`/`✅`/`💡`/`📦` reemplazados por `icon('recurring')`/`icon('check-circle')`/`icon('lightbulb')`/`icon('apartados')`. |
-| `modules/dominio/ahorro/view.js` | Anillo 88px en hero del fondo; faltante movido al bloque de título; `🎉`/`💳`/`📊` reemplazados por `icon('trophy')`/`icon('deudas')`/`icon('analisis')`. |
-| `modules/dominio/analisis/view.js` | Anillo 120px con `etiqueta: score.score` (sin "%"); clase de color por banda (excelente/buena/ajustada/critica). Factor labels: emojis reemplazados por icons de dominio. Título sin emoji. |
-| `styles/components/atoms.css` | `.progress-ring-wrap` y modificadores de estado/banda para colorear arco vía `currentColor`. `.list-item__icon--ring`: 56px, sin fondo ni border-radius. |
-| `service-worker.js` | v148 → v149. |
 
 ---
 

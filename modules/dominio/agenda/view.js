@@ -10,6 +10,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { FRECUENCIAS } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
@@ -263,7 +264,7 @@ function _renderDetalleDia(evs, year, month, dia) {
 
 function _renderDetalleItem(c, viewYear, viewMonth) {
   const tipo  = c.tipo ?? 'fijo';
-  const icono = _esc(ICONO_TIPO[tipo] ?? '🔁');
+  const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');

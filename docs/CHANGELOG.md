@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(agenda): íconos SVG en detalle del día (deuda-personal y deuda-entidad) · 2026-06-13
+
+Bug visual: `agenda/view.js` usaba `_esc(ICONO_TIPO[tipo])` en lugar de `icon()`, por lo que el ID de ícono SVG (`'personales'`, `'cuentas'`, `'recurring'`) se insertaba como texto literal dentro del contenedor circular de 36px, desbordando sobre el nombre del compromiso. El mismo error existía en `compromisos/views/lista.js` en el camino fallback (cuando no hay `ordenBadge` por estrategia activa). La causa raíz: `ICONO_TIPO` devuelve IDs de sprite SVG (migración F2), pero ambas vistas no actualizaron su llamada de renderizado al patron `icon()`. CSS defensivo añadido: `overflow: hidden` + `flex-shrink: 0` en `.cal-detail__icon`. SW v152 → v153. Tests 1402/1402 verdes (sin cambios de lógica).
+
+- **`modules/dominio/agenda/view.js`**: importa `icon` de `infra/icons.js`; cambia `_esc(ICONO_TIPO[tipo] ?? '🔁')` por `icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderDetalleItem`.
+- **`modules/dominio/compromisos/views/lista.js`**: cambia `_esc(ICONO_TIPO[tipo] ?? '💳')` por `icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderCompromisoItem` (misma causa raíz).
+- **`styles/components/config.css`**: `.cal-detail__icon` suma `overflow: hidden; flex-shrink: 0` para contener el SVG y no ceder ancho bajo presión de flex.
+- **`service-worker.js`**: v152 → v153.
+
+---
+
 ### feat(rediseno-v8): card de resumen semanal en el dashboard · 2026-06-13
 
 Implementación de la fase F8, cerrando el rediseño visual 2026. Materializa la decisión de producto del [ADR 008](DECISIONS/008-mecanicas-de-habito.md): solo resumen semanal, sin racha con castigo. Nuevo dominio `resumen/` de solo lectura, derivado de `S.gastos` con lógica pura (sin schema nuevo, sin migración). SW v151 → v152. Tests 1402/1402 verdes (+21).
