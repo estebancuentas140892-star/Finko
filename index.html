@@ -334,6 +334,11 @@
           <div id="panel-prioridades" class="bento__cell bento__cell--half"
                role="region" aria-label="Próximas prioridades" hidden></div>
 
+          <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido (>100%).
+               presupuesto/view.js lo llena; [hidden] si todos los límites están en 'ok'. -->
+          <div id="panel-limites" class="bento__cell bento__cell--full"
+               role="region" aria-label="Alertas de límites de gasto" hidden></div>
+
           <!-- RESUMEN DE LA SEMANA: gasto de 7 días, comparación, categoría top
                y días activos del mes (F8 / ADR 008). resumen/view.js lo llena;
                [hidden] hasta que haya actividad esta semana. -->

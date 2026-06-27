@@ -135,6 +135,26 @@ export function tienePresupuesto(categoria, presupuestos) {
   return presupuestosActivos(presupuestos).some(p => p.categoria === categoria);
 }
 
+/**
+ * Devuelve los envelopes activos que están en estado 'alerta' o 'excedido'
+ * en el mes/año dados, ordenados: excedidos primero, luego por porcentaje desc.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Array<{categoria:string, estado:string, porcentaje:number, gastado:number, asignado:number}>}
+ */
+export function alertasLimites(presupuestos, gastos, anio, mes) {
+  return presupuestosActivos(presupuestos)
+    .map(p => ({ categoria: p.categoria, ...calcularProgreso(p, gastos, anio, mes) }))
+    .filter(r => r.estado === 'alerta' || r.estado === 'excedido')
+    .sort((a, b) => {
+      if (a.estado !== b.estado) return a.estado === 'excedido' ? -1 : 1;
+      return b.porcentaje - a.porcentaje;
+    });
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

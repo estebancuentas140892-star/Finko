@@ -13,6 +13,7 @@ import {
   totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
+  alertasLimites,
 } from './logic.js';
 
 // ── RESUMEN + LISTA ──────────────────────────────────────────────
@@ -208,4 +209,62 @@ function _claseProgreso(porcentaje) {
   if (porcentaje > 100) return 'progress-bar--danger';
   if (porcentaje >= 75) return 'progress-bar--warn';
   return '';
+}
+
+// ── PANEL DE ALERTAS EN DASHBOARD ───────────────────────────────
+
+/**
+ * Renderiza en `#panel-limites` las alertas de límites de gasto del mes actual.
+ * Solo aparece cuando hay envelopes en estado 'alerta' (>=75%) o 'excedido' (>100%).
+ * No-op si el contenedor no existe.
+ */
+export function renderPanelLimites() {
+  const el = document.getElementById('panel-limites');
+  if (!el) return;
+
+  const hoy    = new Date();
+  const anio   = hoy.getFullYear();
+  const mes    = hoy.getMonth() + 1;
+  const alertas = alertasLimites(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
+
+  if (alertas.length === 0) {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+
+  const items = alertas.map(a => {
+    const emoji    = CATEGORIA_EMOJI[a.categoria] ?? '📦';
+    const cls      = a.estado === 'excedido' ? 'excedido' : 'alerta';
+    const badgeTxt = a.estado === 'excedido'
+      ? `Superado ${a.porcentaje}%`
+      : `${a.porcentaje}% usado`;
+    const sub = a.estado === 'excedido'
+      ? `Gastaste ${f(a.gastado)} de ${f(a.asignado)} (${f(a.gastado - a.asignado)} extra)`
+      : `Te quedan ${f(a.asignado - a.gastado)} de ${f(a.asignado)}`;
+
+    return `
+      <li class="limites-card__item">
+        <div class="limites-card__body">
+          <p class="limites-card__name">${emoji} ${_esc(a.categoria)}</p>
+          <p class="limites-card__sub">${sub}</p>
+        </div>
+        <span class="limites-card__badge limites-card__badge--${cls}">${badgeTxt}</span>
+      </li>`;
+  }).join('');
+
+  const n      = alertas.length;
+  const titulo = n === 1 ? '1 límite de gasto en alerta' : `${n} límites de gasto en alerta`;
+
+  el.innerHTML = `
+    <section class="limites-card" aria-label="Alertas de límites de gasto">
+      <header class="limites-card__header">
+        <h2 class="limites-card__title">${icon('presupuesto')} ${titulo}</h2>
+        <a href="#presupuesto" class="limites-card__link" aria-label="Ir a Límites de gasto">Ver todos</a>
+      </header>
+      <ul class="limites-card__list" role="list">
+        ${items}
+      </ul>
+    </section>`;
 }

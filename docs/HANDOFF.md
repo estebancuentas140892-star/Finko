@@ -39,6 +39,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(presupuesto): alertas de límites de gasto en el dashboard · 2026-06-27
+
+Nuevo bento panel `#panel-limites`: aparece en el dashboard solo cuando hay envelopes en alerta (>=75%) o excedido (>100%) en el mes actual. Badge rojo = excedido, naranja = alerta. Oculto si todo está en 'ok'. `alertasLimites()` en logic.js, `renderPanelLimites()` en view.js; ambos registrados en index.js. SW v162 → v163. Tests 1407/1407.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/logic.js` | Nueva `alertasLimites()`: filtra y ordena envelopes en alerta/excedido. |
+| `modules/dominio/presupuesto/view.js` | Nueva `renderPanelLimites()`: panel HTML con badges de estado. |
+| `modules/dominio/presupuesto/index.js` | Registra el panel en `registrarRender`, EventBus y hashchange. |
+| `index.html` | `<div id="panel-limites">` bento full-width antes del panel-resumen. |
+| `styles/components/domain.css` | 9 reglas `.limites-card*` con badges danger/warning. |
+| `service-worker.js` | v162 → v163. |
+
+---
+
 ### style(metas): microcopy motivacional al crear una meta · 2026-06-27
 
 Form de nueva meta ahora tiene: (1) párrafo intro "Escribe lo que quieres lograr..." antes de los campos, (2) hint bajo "Fecha límite" explicando el cálculo de ahorro diario, (3) placeholder del nombre con ejemplos variados. SW v161 → v162.
@@ -86,21 +101,6 @@ El resumen de totales (visible con 2+ préstamos) no tenia CSS: las clases `.per
 | `service-worker.js` | v158 → v159. |
 
 ---
-
-### fix(personales): la antigüedad se reinicia tras un abono · 2026-06-27
-
-En "Me deben", tras un abono parcial el chip de antigüedad seguia contando desde la fecha del prestamo original (ej. "177 dias, ya toca cobrar") aunque la persona acabara de pagar. Causa: `aplicarPago()` no guardaba la fecha del abono y `calcularDias()` contaba siempre desde `fecha`/`fechaLimite`. Fix: campo opcional `ultimoPago`; `calcularDias()` cuenta desde el evento mas reciente {fecha, fechaLimite, ultimoPago}. Aditivo, sin migracion. SW v157 → v158. Tests 1407/1407 verdes (+5).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/personales/logic.js` | `aplicarPago` registra `ultimoPago` si entro dinero; `calcularDias` toma la fecha mas reciente. |
-| `modules/dominio/personales/index.js` | Persiste `ultimoPago` via `editar()`. |
-| `modules/dominio/personales/view.js` | Hint "Último abono: <fecha>". |
-| `tests/unit/personales.test.js` | +5 tests. |
-| `service-worker.js` | v157 → v158. |
-
----
-
 
 
 

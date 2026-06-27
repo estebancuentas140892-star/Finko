@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): alertas de límites de gasto en el dashboard · 2026-06-27
+
+Nuevo panel `#panel-limites` en el bento del dashboard: aparece solo cuando al menos un límite de gasto está en estado 'alerta' (>=75%) o 'excedido' (>100%) en el mes en curso. Items ordenados (excedidos primero, luego alerta por porcentaje desc). Badge rojo para excedido, naranja para alerta. Oculto si todos los límites están en 'ok'. SW v162 → v163. Tests 1407/1407 verdes.
+
+- **`modules/dominio/presupuesto/logic.js`**: nueva función `alertasLimites()` filtra envelopes por estado y ordena.
+- **`modules/dominio/presupuesto/view.js`**: nueva `renderPanelLimites()` exportada; importa `alertasLimites`.
+- **`modules/dominio/presupuesto/index.js`**: registra `renderPanelLimites` en `registrarRender` + EventBus + hashchange.
+- **`index.html`**: nuevo `<div id="panel-limites">` bento full-width antes del panel de resumen.
+- **`styles/components/domain.css`**: 9 reglas nuevas para `.limites-card` y variantes de badge.
+- **`service-worker.js`**: v162 → v163.
+
+---
+
 ### style(metas): microcopy motivacional al crear una meta · 2026-06-27
 
 El form de nueva meta no tenia ningún texto de apoyo. Se agregan: (1) un párrafo intro que explica el valor de definir una fecha límite, (2) un `form-hint` bajo el campo de fecha que aclara qué cambia con y sin fecha, (3) placeholder de nombre actualizado a ejemplos más variados (viaje, laptop, boda). SW v161 → v162.

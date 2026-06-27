@@ -869,6 +869,94 @@ button.chip:focus-visible {
   text-align: right;
 }
 
+/* ── PANEL DE ALERTAS DE LÍMITES (dashboard) ──────────────────── */
+.limites-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+.limites-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.limites-card__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-weight-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+.limites-card__link {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+}
+
+.limites-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.limites-card__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+}
+
+.limites-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.limites-card__name {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-weight-medium);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.limites-card__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.limites-card__badge {
+  flex-shrink: 0;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-weight-semibold);
+  padding: 2px 8px;
+  border-radius: var(--fk-radius-sm);
+  white-space: nowrap;
+}
+
+.limites-card__badge--excedido {
+  background: var(--fk-danger-bg);
+  color: var(--fk-danger-text);
+}
+
+.limites-card__badge--alerta {
+  background: var(--fk-warning-bg);
+  color: var(--fk-warning-text);
+}
+
 /* Apartado recurrente con el dinero ya reunido, esperando ser usado. */
 .list-item--listo {
   border-color: var(--fk-success);
