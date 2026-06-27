@@ -238,6 +238,7 @@ function _abrirAbono(el) {
 
     body.querySelector('#abono-cuenta')?.addEventListener('change', _actualizarSaldoDisponibleAbono);
     body.querySelector('#abono-monto')?.addEventListener('input', _actualizarTipProyeccion);
+    _actualizarTipProyeccion();
   }
 
   abrirModal(overlay);

@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(compromisos): pre-llenar monto de abono con cuota mensual · 2026-06-27
+
+"Abonar" ahora abre con el campo de monto pre-llenado con `Math.min(cuota, saldo)` en vez de vacío. Hint: "Pre-llenado con tu cuota mensual." El tip de proyección se muestra al abrir. SW v164 → v165. Tests 1407/1407.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/formularios.js` | `value` pre-llenado + hint actualizado. |
+| `modules/dominio/compromisos/index.js` | `_actualizarTipProyeccion()` al abrir modal. |
+| `service-worker.js` | v164 → v165. |
+
+---
+
 ### feat(compromisos): botón "Simular" abono extra en deudas · 2026-06-27
 
 Botón "Simular" junto a "Abonar" en cada deuda activa. Abre el modal con input de monto extra mensual; al escribir muestra en tiempo real la comparación base vs con extra (meses, intereses, ahorro). `simularPagoDeuda()` en logic.js. SW v163 → v164. Tests 1407/1407.
@@ -93,21 +105,6 @@ Form de nueva meta ahora tiene: (1) párrafo intro "Escribe lo que quieres logra
 | `service-worker.js` | v160 → v161. |
 
 ---
-
-### style(gastos): renombrar "Anotar un gasto" a "Gasto rápido" · 2026-06-27
-
-Botón de acceso rápido en dashboard renombrado de "Anotar un gasto" a "Gasto rápido". Actualizado: title, aria-label, desc del botón. Tip del empty-state en Gastos también alineado al nuevo nombre. SW v159 → v160.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | title, aria-label y desc del botón quick-add actualizados. |
-| `modules/dominio/gastos/view.js` | Tip de empty-state apunta a "Gasto rápido". |
-| `service-worker.js` | v159 → v160. |
-
----
-
-
-
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

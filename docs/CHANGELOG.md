@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(compromisos): pre-llenar monto de abono con la cuota mensual · 2026-06-27
+
+Al abrir "Abonar" en una deuda, el campo de monto ahora viene pre-llenado con la cuota mensual (o el saldo pendiente si es menor). Antes el campo estaba vacío y el usuario tenia que escribir el valor cada vez. El hint explica el pre-llenado. El tip de proyección también se muestra al abrir (antes solo aparecia al escribir). SW v164 → v165.
+
+- **`modules/dominio/compromisos/views/formularios.js`**: `value="${Math.min(cuota, saldo)}"` en el input; hint actualizado.
+- **`modules/dominio/compromisos/index.js`**: llama `_actualizarTipProyeccion()` al abrir el modal.
+- **`service-worker.js`**: v164 → v165.
+
+---
+
 ### feat(compromisos): botón "Simular" para previsualizar abono extra en deudas · 2026-06-27
 
 Cada deuda activa en la lista de Compromisos ahora tiene un botón "Simular" junto a "Abonar". Abre el modal con un campo "Monto extra mensual": al escribir, se compara mes a mes (con interés compuesto) el escenario base (solo cuota) contra el escenario con abono extra. Muestra meses, intereses y ahorro en tiempo real. `simularPagoDeuda()` en logic.js (puro, testeable). SW v163 → v164.

@@ -86,9 +86,10 @@ export function renderFormAbono(deuda) {
         <label for="abono-monto" class="label">Monto del abono (COP)</label>
         <input id="abono-monto" name="monto" class="input" type="number"
                min="1" step="10000" placeholder="0"
+               value="${cuota > 0 ? Math.min(cuota, saldo) : ''}"
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
-        <p class="form-hint form-hint--muted">Máximo ${f(saldo)}. Si abonas más, se ajusta al saldo pendiente.</p>
+        <p class="form-hint form-hint--muted">${cuota > 0 ? `Pre-llenado con tu cuota mensual. ` : ''}Máximo ${f(saldo)}.</p>
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
 
