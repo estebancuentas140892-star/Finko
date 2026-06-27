@@ -314,6 +314,21 @@ export const CATEGORIAS_GASTO = [
   'Otros',
 ];
 
+/** Emoji visual por categoría de gasto. Usar solo en UI; nunca en el valor almacenado. */
+export const CATEGORIA_EMOJI = {
+  'Alimentación':       '🛒',
+  'Transporte':         '🚗',
+  'Vivienda':           '🏠',
+  'Salud':              '💊',
+  'Educación':          '📚',
+  'Entretenimiento':    '🎉',
+  'Ropa':               '👕',
+  'Servicios públicos': '💡',
+  'Deudas':             '💳',
+  'Ahorro':             '💰',
+  'Otros':              '📦',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

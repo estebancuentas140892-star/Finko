@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(ui): iconos emoji en selectores de categoría · 2026-06-27
+
+Cada categoría de gasto ahora muestra su emoji en el `<select>` del form de gasto, del form de Límites de gasto, en los chips de filtro y en el subtítulo de cada ítem de gasto. El valor almacenado y los atributos `data-cat` permanecen sin emoji. SW v160 → v161.
+
+- **`modules/core/constants.js`**: nuevo export `CATEGORIA_EMOJI` (mapa cat → emoji para las 11 categorías).
+- **`modules/dominio/gastos/view.js`**: emojis en `catOpts`, chips de filtro y subtítulo de ítem.
+- **`modules/dominio/presupuesto/view.js`**: emojis en opciones del form de Límites de gasto.
+- **`service-worker.js`**: v160 → v161.
+
+---
+
 ### style(gastos): renombrar "Anotar un gasto" a "Gasto rápido" en dashboard · 2026-06-27
 
 El botón de acceso rápido en el dashboard mostraba "Anotar un gasto" (texto largo, poco accionable). Renombrado a "Gasto rápido" en título, aria-label y desc. El tip del empty-state en Gastos también actualizado para coincidir. SW v159 → v160.

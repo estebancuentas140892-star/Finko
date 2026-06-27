@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
-import { CATEGORIAS_GASTO } from '../../core/constants.js';
+import { CATEGORIAS_GASTO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -93,7 +93,7 @@ export function renderFiltrosGastos() {
                 data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
                 aria-label="Filtrar por ${_esc(cat)}">
-          ${_esc(cat)}
+          ${CATEGORIA_EMOJI[cat] ?? ''} ${_esc(cat)}
         </button>`;
     }).join('');
 
@@ -162,7 +162,8 @@ function _renderGastoItem(gasto) {
   const desc = sinCompletar
     ? '<span class="list-item__placeholder">Sin completar</span>'
     : _esc(gasto.descripcion);
-  const cat  = _esc(gasto.categoria ?? 'Otros');
+  const catKey = gasto.categoria ?? 'Otros';
+  const cat    = `${CATEGORIA_EMOJI[catKey] ?? ''} ${_esc(catKey)}`;
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
   const badge = sinCompletar
     ? '<span class="badge badge--warn" title="Toca editar para completar este gasto">📝 Pendiente</span> '
@@ -334,7 +335,7 @@ export function renderFormGastoRapido() {
  */
 export function renderFormGasto() {
   const catOpts = CATEGORIAS_GASTO
-    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}">${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
 
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);

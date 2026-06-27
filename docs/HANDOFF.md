@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(ui): iconos emoji en selectores de categoría · 2026-06-27
+
+`CATEGORIA_EMOJI` (mapa centralizado en `constants.js`) añade un emoji a cada una de las 11 categorías de gasto. Se usa en: opciones del `<select>` en el form de gasto, opciones del form de Límites de gasto, chips de filtro en la vista de Gastos y subtítulo de cada ítem de gasto. Los valores almacenados y `data-cat` no cambian. SW v160 → v161. Tests 1407/1407 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | Nuevo export `CATEGORIA_EMOJI` con 11 entradas. |
+| `modules/dominio/gastos/view.js` | Emojis en catOpts, chips de filtro y subtítulo de ítem. |
+| `modules/dominio/presupuesto/view.js` | Emojis en opciones del form de Límites. |
+| `service-worker.js` | v160 → v161. |
+
+---
+
 ### style(gastos): renombrar "Anotar un gasto" a "Gasto rápido" · 2026-06-27
 
 Botón de acceso rápido en dashboard renombrado de "Anotar un gasto" a "Gasto rápido". Actualizado: title, aria-label, desc del botón. Tip del empty-state en Gastos también alineado al nuevo nombre. SW v159 → v160.
@@ -88,16 +101,6 @@ Al cambiar la frecuencia de Mensual a Quincenal en el form de ingreso, el valor 
 
 ---
 
-### fix(dashboard): doble borde rojo en "Pendientes del mes" · 2026-06-27
-
-Cada `.vencidos-card__item` tenia un `border-left: 2px solid` de severidad que, junto al `border-left: 3px` rojo de la card y el hover de la bento cell, creaba dos capas visuales superpuestas. Fix: se eliminan el borde del item y las reglas de modificador de severidad (leve/moderada/urgente). La linea roja de la card es el unico delimitador. Verificado: `borderLeftWidth: 0px` en items, `2.5px` (3px) rojo en card. SW v155 → v156. Tests 1402/1402 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/components/domain.css` | Elimina `border-left` del item y las 3 reglas de modificador de severidad. |
-| `service-worker.js` | v155 → v156. |
-
----
 
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
