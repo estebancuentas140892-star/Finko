@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(dashboard): eliminar doble borde rojo en items de "Pendientes del mes" · 2026-06-27
+
+`.vencidos-card__item` tenia `border-left: 2px solid transparent` que se coloreaba (leve/moderada/urgente) segun la severidad. Combinado con el `border-left: 3px solid var(--fk-danger)` de la card contenedora y el cambio de `border-color` del hover de la bento cell, el usuario veia dos capas visuales superpuestas al pasar el cursor. Fix: se eliminan el borde del item y las tres reglas de modificador. La linea roja de la card delimita toda la seccion. SW v155 → v156. Tests 1402/1402 verdes.
+
+- **`styles/components/domain.css`**: elimina `border-left: 2px solid transparent` de `.vencidos-card__item` y las tres reglas `.vencidos-card__item--leve/moderada/urgente`.
+- **`service-worker.js`**: v155 → v156.
+
+---
+
 ### fix(tokens): definir alias CSS faltantes - corrige padding y tipografia en Limites, Ahorro e Inversion · 2026-06-27
 
 `analysis.css` usaba tres familias de tokens que nunca se definieron en `tokens.css`: `--fk-fs-*` (tamanos de fuente), `--fk-fw-*` (pesos de fuente) y `--fk-space-xs/sm/md/lg/xl` (espaciado). CSS interpreta variables indefinidas como valor invalido, por lo que todas las propiedades de espaciado resolvian a 0px y los pesos/tamanos de fuente colgaban del valor por defecto del navegador. Resultado visible: cards de Limites de gasto, Ahorro e Inversion sin padding interno, sin separacion entre elementos y con tipografia incorrecta. Fix: agregar los aliases como punteros a los tokens numericos canonicos (`--fk-text-*`, `--fk-font-*`, `--fk-space-1..8`) en `tokens.css`. SW v154 → v155. Tests 1402/1402 verdes (sin cambios de logica).

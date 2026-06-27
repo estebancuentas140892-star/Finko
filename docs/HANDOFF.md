@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(dashboard): doble borde rojo en "Pendientes del mes" · 2026-06-27
+
+Cada `.vencidos-card__item` tenia un `border-left: 2px solid` de severidad que, junto al `border-left: 3px` rojo de la card y el hover de la bento cell, creaba dos capas visuales superpuestas. Fix: se eliminan el borde del item y las reglas de modificador de severidad (leve/moderada/urgente). La linea roja de la card es el unico delimitador. Verificado: `borderLeftWidth: 0px` en items, `2.5px` (3px) rojo en card. SW v155 → v156. Tests 1402/1402 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/components/domain.css` | Elimina `border-left` del item y las 3 reglas de modificador de severidad. |
+| `service-worker.js` | v155 → v156. |
+
+---
+
 ### fix(tokens): aliases CSS faltantes - corrige padding y tipografia en Limites, Ahorro e Inversion · 2026-06-27
 
 `analysis.css` usaba `--fk-fs-*`, `--fk-fw-*` y `--fk-space-xs/sm/md/lg/xl` que nunca se definieron en `tokens.css`. Las variables indefinidas hacen que CSS use el valor inicial (0 para espaciado), dejando las cards de Limites de gasto, Ahorro e Inversion sin padding ni separacion interna. Fix: 15 aliases nuevos en `tokens.css` que apuntan a los tokens numericos canonicos. Verificado: `padding: 16px`, `gap: 12px`, `marginBottom: 24px`. SW v154 → v155. Tests 1402/1402 verdes.

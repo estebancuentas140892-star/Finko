@@ -577,12 +577,7 @@ button.chip:focus-visible {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 1rem;
-  border-left: 2px solid transparent;
 }
-
-.vencidos-card__item--leve     { border-left-color: var(--fk-warning); }
-.vencidos-card__item--moderada { border-left-color: var(--fk-amber); }
-.vencidos-card__item--urgente  { border-left-color: var(--fk-danger); }
 
 .vencidos-card__icon {
   font-size: 1.1rem;
