@@ -59,6 +59,30 @@ describe('calcularDias()', () => {
     const dias = calcularDias({ fecha: '2026-06-01' }, ref);
     expect(dias).toBe(0);
   });
+
+  it('tras un abono, cuenta desde ultimoPago (no desde la fecha del préstamo)', () => {
+    const ref = new Date('2026-05-18T12:00:00');
+    const dias = calcularDias({ fecha: '2026-01-01', ultimoPago: '2026-05-15' }, ref);
+    expect(dias).toBe(3);
+  });
+
+  it('un abono posterior a una fechaLimite vencida reinicia el reloj', () => {
+    const ref = new Date('2026-05-18T12:00:00');
+    const dias = calcularDias(
+      { fecha: '2026-01-01', fechaLimite: '2026-02-01', ultimoPago: '2026-05-15' },
+      ref,
+    );
+    expect(dias).toBe(3);
+  });
+
+  it('un plazo pactado futuro mantiene el préstamo al día aunque haya abono', () => {
+    const ref = new Date('2026-05-18T12:00:00');
+    const dias = calcularDias(
+      { fecha: '2026-01-01', fechaLimite: '2026-12-31', ultimoPago: '2026-05-15' },
+      ref,
+    );
+    expect(dias).toBe(0);
+  });
 });
 
 // ── clasificarAntiguedad() ────────────────────────────────────────
@@ -292,5 +316,17 @@ describe('aplicarPago()', () => {
     const original = { id: 'x', monto: 100, pagado: 20 };
     aplicarPago(original, 30);
     expect(original.pagado).toBe(20);
+  });
+
+  it('registra ultimoPago con la fecha del abono cuando entra dinero', () => {
+    const r = aplicarPago({ monto: 100, pagado: 20 }, 30, '2026-05-15');
+    expect(r.ultimoPago).toBe('2026-05-15');
+  });
+
+  it('no registra ultimoPago si el pago fue rechazado (0 o inválido)', () => {
+    const r1 = aplicarPago({ monto: 100, pagado: 50 }, -10, '2026-05-15');
+    expect(r1.ultimoPago).toBeUndefined();
+    const r2 = aplicarPago({ monto: 100, pagado: 100 }, 50, '2026-05-15');
+    expect(r2.ultimoPago).toBeUndefined();  // ya liquidado, pendiente 0
   });
 });

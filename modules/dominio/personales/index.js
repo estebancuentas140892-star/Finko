@@ -93,8 +93,9 @@ function _confirmarPagoPersonal() {
 
   const actualizado = aplicarPago(prestamo, monto);
   editar('personales', id, {
-    pagado:    actualizado.pagado,
-    liquidado: actualizado.liquidado,
+    pagado:     actualizado.pagado,
+    liquidado:  actualizado.liquidado,
+    ultimoPago: actualizado.ultimoPago,
   });
 
   const overlay = document.getElementById('modal-pago-personal');

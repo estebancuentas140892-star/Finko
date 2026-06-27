@@ -106,6 +106,12 @@ function _renderPersonalItem(prestamo, hoy) {
     ? `<p class="list-item__hint">Pactó devolver: ${_esc(prestamo.fechaLimite)}</p>`
     : '';
 
+  // Cuando hay un abono, la antigüedad cuenta desde ahí: el hint explica
+  // por qué el chip de días puede ser bajo aunque el préstamo sea viejo.
+  const ultimoPagoHtml = (prestamo.ultimoPago && !liquidado)
+    ? `<p class="list-item__hint">Último abono: ${_esc(prestamo.ultimoPago)}</p>`
+    : '';
+
   const motivoHtml = motivo
     ? `<p class="list-item__hint">«${motivo}»</p>`
     : '';
@@ -131,6 +137,7 @@ function _renderPersonalItem(prestamo, hoy) {
           <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
         </div>
         ${motivoHtml}
+        ${ultimoPagoHtml}
         ${fechaLim}
       </div>
       <div class="list-item__meta">

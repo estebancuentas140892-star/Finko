@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(personales): la antigüedad se reinicia tras un abono ("Me pagaron") · 2026-06-27
+
+En "Me deben", tras registrar un abono parcial el chip de antigüedad seguía contando los días desde la fecha del préstamo original (ej. "177 días, ya toca cobrar"), ignorando que la persona acababa de pagar. Causa: `aplicarPago()` actualizaba `pagado`/`liquidado` pero no registraba la fecha del abono, y `calcularDias()` siempre contaba desde `fecha`/`fechaLimite`. Fix: nuevo campo opcional `ultimoPago` (fecha ISO del abono) que `aplicarPago()` registra solo cuando entra dinero; `calcularDias()` ahora cuenta desde el evento más reciente entre {fecha, fechaLimite, ultimoPago}. Un plazo pactado futuro sigue manteniendo el préstamo "al día" (0 días). Campo aditivo y opcional: sin migración de schema. SW v157 → v158. Tests 1407/1407 verdes (+5).
+
+- **`modules/dominio/personales/logic.js`**: `aplicarPago(prestamo, monto, fechaPago=hoy)` registra `ultimoPago` si `aplicado > 0`; `calcularDias()` toma la fecha más reciente (orden lexicográfico ISO) de los tres candidatos; typedef `Personal` documenta `ultimoPago`.
+- **`modules/dominio/personales/index.js`**: el handler de pago persiste `ultimoPago` vía `editar()`.
+- **`modules/dominio/personales/view.js`**: hint "Último abono: <fecha>" cuando hay abono y el préstamo sigue pendiente, para explicar por qué el chip de días bajó.
+- **`tests/unit/personales.test.js`**: +5 tests (cuenta desde ultimoPago, abono tras fechaLimite vencida, plazo futuro al día, registro y no-registro de ultimoPago).
+- **`service-worker.js`**: v157 → v158.
+
+---
+
 ### fix(tesoreria): limpiar diaPago y actualizar hint al cambiar a Quincenal · 2026-06-27
 
 Al cambiar la frecuencia de Mensual a Quincenal en el formulario de ingreso, el valor previo en `diaPago` (ej. 30) no se limpiaba, porque `_sync()` solo vaciaba el campo cuando el grupo se ocultaba. El usuario llegaba al submit con `diaPago=30` y frecuencia Quincenal, y la validacion lo rechazaba correctamente pero de forma confusa. Fix: en `_attachDiaPagoToggle._sync()`, si el valor actual supera el nuevo max al cambiar a Quincenal, se limpia. Ademas el hint se actualiza dinamicamente para explicar el rango 1-15 y el calculo del segundo dia. SW v156 → v157.

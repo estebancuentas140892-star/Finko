@@ -16,6 +16,7 @@
  * @property {string} fecha           ISO 8601 (YYYY-MM-DD) del préstamo.
  * @property {string} [motivo]        Descripción opcional ("mercado", "favor").
  * @property {string} [fechaLimite]   ISO 8601 opcional, fecha pactada de devolución.
+ * @property {string} [ultimoPago]    ISO 8601 (YYYY-MM-DD) del último abono recibido.
  * @property {boolean} liquidado      true cuando pagado ≥ monto.
  * @property {string} fechaCreacion   ISO 8601 timestamp.
  */
@@ -36,8 +37,14 @@ export function calcularPendiente(prestamo) {
 }
 
 /**
- * Días transcurridos desde la fecha del préstamo (o desde fechaLimite si la hay).
+ * Días transcurridos desde el evento más reciente de la relación.
  * Sirve para calcular antigüedad y clasificar la "incomodidad" del cobro.
+ *
+ * La antigüedad NO se cuenta siempre desde el préstamo original: un abono
+ * parcial ("Me pagaron") reinicia el reloj de incomodidad, y una fecha
+ * pactada de devolución manda sobre la fecha del préstamo. Tomamos la fecha
+ * más reciente entre {fecha, fechaLimite, ultimoPago}; si la más reciente
+ * está en el futuro (ej. plazo aún vigente), el Math.max final la lleva a 0.
  *
  * @param {Personal} prestamo
  * @param {Date|string} [fechaRef] default: ahora.
@@ -45,12 +52,15 @@ export function calcularPendiente(prestamo) {
  */
 export function calcularDias(prestamo, fechaRef = new Date()) {
   if (!prestamo?.fecha && !prestamo?.fechaLimite) return 0;
-  const ref = fechaRef instanceof Date ? fechaRef : new Date(fechaRef);
+  const ref = fechaRef instanceof Date ? new Date(fechaRef) : new Date(fechaRef);
   ref.setHours(0, 0, 0, 0);
 
-  // Si hay fechaLimite y ya pasó, contamos desde ahí (mora real).
-  // Sino contamos desde la fecha del préstamo.
-  const base  = prestamo.fechaLimite || prestamo.fecha;
+  // Orden lexicográfico de fechas ISO = orden cronológico: la última es la
+  // más reciente. Así un abono posterior a la fecha pactada reinicia el reloj.
+  const base = [prestamo.fecha, prestamo.fechaLimite, prestamo.ultimoPago]
+    .filter(Boolean)
+    .sort()
+    .pop();
   const fBase = new Date(base + 'T12:00:00');
   fBase.setHours(0, 0, 0, 0);
   const dias = Math.floor((ref - fBase) / 86_400_000);
@@ -210,19 +220,26 @@ export function normalizarPersonal(datos) {
  * Aplica un pago a un préstamo. Devuelve el objeto actualizado (no muta).
  * Si el monto pagado iguala o supera el saldo, marca `liquidado: true`.
  *
+ * Registra `ultimoPago` con la fecha del abono SOLO si efectivamente entró
+ * dinero: un pago rechazado (0 o inválido) no debe reiniciar el reloj de
+ * antigüedad que usa `calcularDias`.
+ *
  * @param {Personal} prestamo
  * @param {number} montoPago
+ * @param {string} [fechaPago] ISO 8601 (YYYY-MM-DD) del abono. Default: hoy.
  * @returns {Personal} objeto actualizado.
  */
-export function aplicarPago(prestamo, montoPago) {
+export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
   const pendiente = calcularPendiente(prestamo);
   const aplicado  = Math.min(Math.max(0, Number(montoPago) || 0), pendiente);
   const nuevoPagado = (prestamo.pagado || 0) + aplicado;
-  return {
+  const actualizado = {
     ...prestamo,
     pagado:    nuevoPagado,
     liquidado: nuevoPagado >= (prestamo.monto || 0),
   };
+  if (aplicado > 0) actualizado.ultimoPago = fechaPago;
+  return actualizado;
 }
 
 // ── HELPER ───────────────────────────────────────────────────────

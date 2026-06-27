@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (fix tesoreria: limpiar diaPago al cambiar a Quincenal en form de ingreso)
+> Última actualización: 2026-06-27 (fix personales: la antigüedad de "Me deben" se reinicia tras un abono)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(personales): la antigüedad se reinicia tras un abono · 2026-06-27
+
+En "Me deben", tras un abono parcial el chip de antigüedad seguia contando desde la fecha del prestamo original (ej. "177 dias, ya toca cobrar") aunque la persona acabara de pagar. Causa: `aplicarPago()` no guardaba la fecha del abono y `calcularDias()` contaba siempre desde `fecha`/`fechaLimite`. Fix: campo opcional `ultimoPago`; `calcularDias()` cuenta desde el evento mas reciente {fecha, fechaLimite, ultimoPago}. Aditivo, sin migracion. Verificado: 177d "viejo" → 2d "reciente"; pago rechazado no reinicia. SW v157 → v158. Tests 1407/1407 verdes (+5).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/personales/logic.js` | `aplicarPago` registra `ultimoPago` si entro dinero; `calcularDias` toma la fecha mas reciente. |
+| `modules/dominio/personales/index.js` | Persiste `ultimoPago` via `editar()`. |
+| `modules/dominio/personales/view.js` | Hint "Último abono: <fecha>". |
+| `tests/unit/personales.test.js` | +5 tests. |
+| `service-worker.js` | v157 → v158. |
+
+---
 
 ### fix(tesoreria): limpiar diaPago al cambiar a Quincenal · 2026-06-27
 
@@ -86,19 +100,6 @@ El usuario volvió a sentir que Presupuesto y Apartados se parecían (ya se hab�
 | `modules/dominio/logros/logic.js` | Descripción del logro "Planificador" actualizada. |
 | `styles/components/atoms.css` | Variante `.empty-state__tip--muted` para cross-links secundarios. |
 | `service-worker.js` | v153 → v154. |
-
----
-
-### fix(agenda): íconos SVG en detalle del día (deuda-personal y deuda-entidad) · 2026-06-13
-
-`agenda/view.js` usaba `_esc(ICONO_TIPO[tipo])` en lugar de `icon()`, por lo que el ID de ícono SVG (`'personales'`, `'cuentas'`, `'recurring'`) se renderizaba como texto literal dentro del contenedor circular de 36px, desbordando sobre el nombre del compromiso. El mismo error existía en `compromisos/views/lista.js` (fallback sin `ordenBadge`). Fix: importar `icon` en `agenda/view.js` y usarla en ambos archivos. CSS defensivo: `overflow: hidden` + `flex-shrink: 0` en `.cal-detail__icon`. SW v152 → v153. Tests 1402/1402 verdes (sin cambios de lógica).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | Importa `icon` de `infra/icons.js`; `icono = icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderDetalleItem`. |
-| `modules/dominio/compromisos/views/lista.js` | `icono = icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderCompromisoItem` (mismo bug, fallback sin estrategia). |
-| `styles/components/config.css` | `.cal-detail__icon`: `overflow: hidden; flex-shrink: 0` para contener el SVG y no ceder espacio bajo presión de flex. |
-| `service-worker.js` | v152 → v153. |
 
 ---
 
