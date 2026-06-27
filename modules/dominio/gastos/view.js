@@ -198,7 +198,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin gastos este mes</p>
       <p class="empty-state__desc">Anota cada compra o pago que haces: supermercado, transporte, comida, servicios... Finko los agrupa por categoría para que veas a dónde va tu dinero.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: desde el dashboard, el botón "Anotar un gasto" te permite apuntar el monto en segundos. La descripción la agregas después.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: desde el dashboard, el botón "Gasto rápido" te permite apuntar el monto en segundos. Describes el gasto después con calma.</p>
     </div>`;
 }
 

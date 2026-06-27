@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(gastos): renombrar "Anotar un gasto" a "Gasto rápido" · 2026-06-27
+
+Botón de acceso rápido en dashboard renombrado de "Anotar un gasto" a "Gasto rápido". Actualizado: title, aria-label, desc del botón. Tip del empty-state en Gastos también alineado al nuevo nombre. SW v159 → v160.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | title, aria-label y desc del botón quick-add actualizados. |
+| `modules/dominio/gastos/view.js` | Tip de empty-state apunta a "Gasto rápido". |
+| `service-worker.js` | v159 → v160. |
+
+---
+
 ### style(personales): card de resumen "Me deben" rediseñada · 2026-06-27
 
 El resumen de totales (visible con 2+ préstamos) no tenia CSS: las clases `.personales-resumen__*` existian en el HTML pero eran texto plano. Fix: reescribir `_renderResumen` para reutilizar `.resumen-card__grid/stat/label/value` y atoms `.progress`. Solo 3 reglas CSS nuevas para el wrapper y el footer. "Pendiente" destacado en verde acento. SW v158 → v159.
@@ -87,16 +99,6 @@ Cada `.vencidos-card__item` tenia un `border-left: 2px solid` de severidad que, 
 
 ---
 
-### fix(tokens): aliases CSS faltantes - corrige padding y tipografia en Limites, Ahorro e Inversion · 2026-06-27
-
-`analysis.css` usaba `--fk-fs-*`, `--fk-fw-*` y `--fk-space-xs/sm/md/lg/xl` que nunca se definieron en `tokens.css`. Las variables indefinidas hacen que CSS use el valor inicial (0 para espaciado), dejando las cards de Limites de gasto, Ahorro e Inversion sin padding ni separacion interna. Fix: 15 aliases nuevos en `tokens.css` que apuntan a los tokens numericos canonicos. Verificado: `padding: 16px`, `gap: 12px`, `marginBottom: 24px`. SW v154 → v155. Tests 1402/1402 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/tokens.css` | 15 aliases nuevos: `--fk-fs-xs/sm/base/lg/xl`, `--fk-fw-light/regular/medium/semibold/bold`, `--fk-space-xs/sm/md/lg/xl`. |
-| `service-worker.js` | v154 → v155. |
-
----
 
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 

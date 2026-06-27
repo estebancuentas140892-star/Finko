@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(gastos): renombrar "Anotar un gasto" a "Gasto rápido" en dashboard · 2026-06-27
+
+El botón de acceso rápido en el dashboard mostraba "Anotar un gasto" (texto largo, poco accionable). Renombrado a "Gasto rápido" en título, aria-label y desc. El tip del empty-state en Gastos también actualizado para coincidir. SW v159 → v160.
+
+- **`index.html`**: title → "Gasto rápido", aria-label → "Gasto rápido: solo el monto, describes después", desc → "Solo el monto. Describes el gasto después con calma."
+- **`modules/dominio/gastos/view.js`**: tip de empty-state apunta al nuevo nombre "Gasto rápido".
+- **`service-worker.js`**: v159 → v160.
+
+---
+
 ### style(personales): rediseñar card de resumen en "Me deben" · 2026-06-27
 
 El resumen de totales en "Me deben" (visible con 2+ préstamos) no tenia ningún estilo: las clases `.personales-resumen__*` existian en el HTML pero sin CSS, lo que producía texto plano sin estructura. Fix: reescribir `_renderResumen` para reutilizar `.resumen-card__grid/.resumen-card__stat/.resumen-card__value` (ya con CSS) en la grilla de stats y `.progress/.progress-bar` (atoms) en la barra de progreso. Solo 3 reglas CSS nuevas para el wrapper card y el footer. "Pendiente" ahora destacado en verde acento. SW v158 → v159.
