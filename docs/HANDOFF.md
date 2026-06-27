@@ -39,6 +39,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(compromisos): botón "Simular" abono extra en deudas · 2026-06-27
+
+Botón "Simular" junto a "Abonar" en cada deuda activa. Abre el modal con input de monto extra mensual; al escribir muestra en tiempo real la comparación base vs con extra (meses, intereses, ahorro). `simularPagoDeuda()` en logic.js. SW v163 → v164. Tests 1407/1407.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `simularPagoDeuda()`: simulación mes a mes con interés compuesto. |
+| `modules/dominio/compromisos/views/formularios.js` | `renderSimulacion()`: panel HTML del modal. |
+| `modules/dominio/compromisos/views/lista.js` | Botón "Simular" btn-ghost junto a "Abonar". |
+| `modules/dominio/compromisos/view.js` | Re-export `renderSimulacion`. |
+| `modules/dominio/compromisos/index.js` | Handler `_abrirSimulacion`, listener `_actualizarSimulacion`. |
+| `styles/components/domain.css` | 5 reglas `.sim-resultado*`. |
+| `service-worker.js` | v163 → v164. |
+
+---
+
 ### feat(presupuesto): alertas de límites de gasto en el dashboard · 2026-06-27
 
 Nuevo bento panel `#panel-limites`: aparece en el dashboard solo cuando hay envelopes en alerta (>=75%) o excedido (>100%) en el mes actual. Badge rojo = excedido, naranja = alerta. Oculto si todo está en 'ok'. `alertasLimites()` en logic.js, `renderPanelLimites()` en view.js; ambos registrados en index.js. SW v162 → v163. Tests 1407/1407.
@@ -90,17 +106,6 @@ Botón de acceso rápido en dashboard renombrado de "Anotar un gasto" a "Gasto r
 
 ---
 
-### style(personales): card de resumen "Me deben" rediseñada · 2026-06-27
-
-El resumen de totales (visible con 2+ préstamos) no tenia CSS: las clases `.personales-resumen__*` existian en el HTML pero eran texto plano. Fix: reescribir `_renderResumen` para reutilizar `.resumen-card__grid/stat/label/value` y atoms `.progress`. Solo 3 reglas CSS nuevas para el wrapper y el footer. "Pendiente" destacado en verde acento. SW v158 → v159.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/personales/view.js` | `_renderResumen` usa clases `resumen-card__*` y atoms `.progress`. |
-| `styles/components/domain.css` | 3 reglas: `.personales-resumen`, `.personales-resumen__footer`, `.personales-resumen__hint`. |
-| `service-worker.js` | v158 → v159. |
-
----
 
 
 

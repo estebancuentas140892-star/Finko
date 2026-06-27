@@ -957,6 +957,44 @@ button.chip:focus-visible {
   color: var(--fk-warning-text);
 }
 
+/* ── SIMULACIÓN DE ABONO EXTRA ────────────────────────────────── */
+.sim-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+}
+
+.sim-resultado__fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
+.sim-resultado__fila--destaco {
+  color: var(--fk-text-accent);
+  font-weight: var(--fk-weight-medium);
+}
+
+.sim-resultado__label {
+  white-space: nowrap;
+}
+
+.sim-resultado__ahorro {
+  margin: var(--fk-space-2) 0 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-success-bg);
+  border-radius: var(--fk-radius-sm);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-accent);
+}
+
 /* Apartado recurrente con el dinero ya reunido, esperando ser usado. */
 .list-item--listo {
   border-color: var(--fk-success);

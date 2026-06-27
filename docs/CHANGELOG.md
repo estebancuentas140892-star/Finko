@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(compromisos): botón "Simular" para previsualizar abono extra en deudas · 2026-06-27
+
+Cada deuda activa en la lista de Compromisos ahora tiene un botón "Simular" junto a "Abonar". Abre el modal con un campo "Monto extra mensual": al escribir, se compara mes a mes (con interés compuesto) el escenario base (solo cuota) contra el escenario con abono extra. Muestra meses, intereses y ahorro en tiempo real. `simularPagoDeuda()` en logic.js (puro, testeable). SW v163 → v164.
+
+- **`modules/dominio/compromisos/logic.js`**: nueva `simularPagoDeuda(saldo, tasaEA, cuota, extra)`.
+- **`modules/dominio/compromisos/views/formularios.js`**: nueva `renderSimulacion(deuda)`.
+- **`modules/dominio/compromisos/views/lista.js`**: botón "Simular" (btn-ghost) junto a "Abonar".
+- **`modules/dominio/compromisos/view.js`**: re-export `renderSimulacion`.
+- **`modules/dominio/compromisos/index.js`**: `_abrirSimulacion`, `_actualizarSimulacion`, acción `simular-abono`.
+- **`styles/components/domain.css`**: 5 reglas `.sim-resultado*` para el panel de resultados.
+- **`service-worker.js`**: v163 → v164.
+
+---
+
 ### feat(presupuesto): alertas de límites de gasto en el dashboard · 2026-06-27
 
 Nuevo panel `#panel-limites` en el bento del dashboard: aparece solo cuando al menos un límite de gasto está en estado 'alerta' (>=75%) o 'excedido' (>100%) en el mes en curso. Items ordenados (excedidos primero, luego alerta por porcentaje desc). Badge rojo para excedido, naranja para alerta. Oculto si todos los límites están en 'ok'. SW v162 → v163. Tests 1407/1407 verdes.

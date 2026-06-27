@@ -137,7 +137,11 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
          ? `<button class="btn btn-primary btn-sm abono-btn"
                     data-action="abrir-abono"
                     data-id="${_esc(compromiso.id)}"
-                    aria-label="Abonar a ${desc}">Abonar</button>`
+                    aria-label="Abonar a ${desc}">Abonar</button>
+            <button class="btn btn-ghost btn-sm"
+                    data-action="simular-abono"
+                    data-id="${_esc(compromiso.id)}"
+                    aria-label="Simular abono extra en ${desc}">Simular</button>`
          : ''}`;
 
   const accionHtml = saldada

@@ -17,7 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda, tasaEADe } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -30,7 +30,9 @@ import {
   renderAlertaDeudasDurmiendo,
   renderPanelVencidos,
   renderPanelPrioridades,
+  renderSimulacion,
 } from './view.js';
+import { formatearDuracion } from './views/estrategia-impacto.js';
 
 /**
  * Re-renderiza los paneles del dashboard que dependen de compromisos.
@@ -296,6 +298,80 @@ function _guardarAbono() {
   announce(msg);
 }
 
+// ── HANDLER SIMULACIÓN DE ABONO EXTRA ───────────────────────────
+
+/** @param {HTMLElement} el */
+function _abrirSimulacion(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const deuda = S.compromisos.find(c => c.id === id);
+  if (!deuda) return;
+
+  const overlay = document.getElementById('modal-abono');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = `Simular: ${deuda.descripcion}`;
+
+  const body = overlay.querySelector('.modal__body');
+  if (body) {
+    body.innerHTML = renderSimulacion(deuda);
+    body.querySelector('#sim-extra')?.addEventListener('input', _actualizarSimulacion);
+  }
+
+  abrirModal(overlay);
+  body?.querySelector('#sim-extra')?.focus();
+}
+
+function _actualizarSimulacion() {
+  const panel     = document.getElementById('panel-simulacion');
+  const input     = document.getElementById('sim-extra');
+  const resultado = document.getElementById('sim-resultado');
+  if (!panel || !input || !resultado) return;
+
+  const saldo = Number(panel.dataset.saldo);
+  const cuota = Number(panel.dataset.cuota);
+  const tasa  = Number(panel.dataset.tasa);
+  const extra = Number(input.value) || 0;
+
+  if (extra <= 0) { resultado.innerHTML = ''; return; }
+
+  const base     = simularPagoDeuda(saldo, tasa, cuota);
+  const conExtra = simularPagoDeuda(saldo, tasa, cuota, extra);
+
+  if (base.meses >= 600) {
+    resultado.innerHTML = '<p class="form-hint form-hint--danger">La cuota actual no cubre los intereses. No se puede proyectar.</p>';
+    return;
+  }
+  if (conExtra.meses >= 600) {
+    resultado.innerHTML = '<p class="form-hint form-hint--danger">El abono extra tampoco alcanza a cubrir los intereses.</p>';
+    return;
+  }
+
+  const mesesAhorro     = base.meses - conExtra.meses;
+  const interesesAhorro = base.intereses - conExtra.intereses;
+
+  const partes = [];
+  if (mesesAhorro > 0)     partes.push(`<strong>${formatearDuracion(mesesAhorro)}</strong>`);
+  if (interesesAhorro > 0) partes.push(`<strong>${f(interesesAhorro)}</strong> en intereses`);
+  const ahorro = partes.length > 0
+    ? `<p class="sim-resultado__ahorro">💰 Te ahorras ${partes.join(' y ')}.</p>`
+    : '';
+
+  resultado.innerHTML = `
+    <div class="sim-resultado">
+      <div class="sim-resultado__fila">
+        <span class="sim-resultado__label">Solo con tu cuota</span>
+        <span>${formatearDuracion(base.meses)} · ${f(base.intereses)} intereses</span>
+      </div>
+      <div class="sim-resultado__fila sim-resultado__fila--destaco">
+        <span class="sim-resultado__label">Con ${f(extra)}/mes extra</span>
+        <span>${formatearDuracion(conExtra.meses)} · ${f(conExtra.intereses)} intereses</span>
+      </div>
+      ${ahorro}
+    </div>`;
+}
+
 /** @param {HTMLElement} el */
 async function _archivarCompromiso(el) {
   const id = el.dataset.id;
@@ -412,6 +488,7 @@ export function initCompromisos() {
   registrarAccion('editar-compromiso',       _editarCompromiso);
   registrarAccion('eliminar-compromiso',     _eliminarCompromiso);
   registrarAccion('abrir-abono',             _abrirAbono);
+  registrarAccion('simular-abono',           _abrirSimulacion);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
   registrarAccion('toggle-extra-estrategia', _toggleExtraEstrategia);

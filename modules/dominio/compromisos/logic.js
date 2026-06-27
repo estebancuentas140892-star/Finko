@@ -628,6 +628,38 @@ export function agruparPorDiasRestantes(proximos) {
 const MAX_MESES_SIMULACION = 600;
 
 /**
+ * Simula el pago de una deuda individual mes a mes con interés compuesto.
+ * Devuelve cuántos meses toma saldarla y cuánto se paga en intereses.
+ *
+ * @param {number} saldo         Saldo actual en COP.
+ * @param {number} tasaEA        Tasa efectiva anual como decimal (0.28 = 28%).
+ * @param {number} cuotaMensual  Cuota mensual fija (sin el extra).
+ * @param {number} [abonoExtra=0] Monto extra que se agrega a la cuota cada mes.
+ * @returns {{ meses: number, intereses: number }}
+ */
+export function simularPagoDeuda(saldo, tasaEA, cuotaMensual, abonoExtra = 0) {
+  if (!Number.isFinite(saldo) || saldo <= 0) return { meses: 0, intereses: 0 };
+
+  const tasaMensual = tasaEA > 0 ? _tasaMensualDesdeEA(tasaEA) : 0;
+  const cuotaTotal  = (cuotaMensual || 0) + (abonoExtra || 0);
+  if (cuotaTotal <= 0) return { meses: MAX_MESES_SIMULACION, intereses: 0 };
+
+  let s = saldo;
+  let meses = 0;
+  let intereses = 0;
+
+  while (s > 0.01 && meses < MAX_MESES_SIMULACION) {
+    meses++;
+    const interesMes = s * tasaMensual;
+    s += interesMes;
+    intereses += interesMes;
+    s -= Math.min(cuotaTotal, s);
+  }
+
+  return { meses, intereses: Math.round(intereses) };
+}
+
+/**
  * Filtra compromisos que pueden entrar en una estrategia de pago.
  * Requiere: deuda (entidad o personal), activo, saldoTotal>0, cuotaMensual>0.
  * La tasa se convierte a EA si está en mensual; si no hay tasa válida, queda 0.

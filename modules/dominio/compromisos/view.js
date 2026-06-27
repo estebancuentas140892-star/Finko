@@ -18,6 +18,6 @@
 
 export { renderAlertaFijosSinPagar, renderAlertaDeudasDurmiendo } from './views/alertas.js';
 export { renderListaCompromisos } from './views/lista.js';
-export { renderFormAbono, renderChooserCompromiso, renderFormDeuda } from './views/formularios.js';
+export { renderFormAbono, renderChooserCompromiso, renderFormDeuda, renderSimulacion } from './views/formularios.js';
 export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago } from './views/estrategia.js';
 export { renderPanelVencidos, renderPanelPrioridades } from './views/dashboard.js';
