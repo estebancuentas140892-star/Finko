@@ -44,32 +44,35 @@ export function renderListaPersonales() {
 }
 
 function _renderResumen(r) {
+  const barClass = r.pctCobrado >= 100 ? ' progress-bar--complete' : '';
   return `
     <section class="personales-resumen" aria-label="Resumen de préstamos">
-      <div class="personales-resumen__grid">
-        <div>
-          <p class="personales-resumen__label">Total prestado</p>
-          <p class="personales-resumen__value">${f(r.totalPrestado)}</p>
+      <div class="resumen-card__grid">
+        <div class="resumen-card__stat">
+          <p class="resumen-card__label">Total prestado</p>
+          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalPrestado)}</p>
         </div>
-        <div>
-          <p class="personales-resumen__label">Te han devuelto</p>
-          <p class="personales-resumen__value">${f(r.totalCobrado)}</p>
+        <div class="resumen-card__stat resumen-card__stat--primary">
+          <p class="resumen-card__label">Pendiente</p>
+          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalPendiente)}</p>
         </div>
-        <div>
-          <p class="personales-resumen__label">Pendiente</p>
-          <p class="personales-resumen__value personales-resumen__value--accent">${f(r.totalPendiente)}</p>
+        <div class="resumen-card__stat">
+          <p class="resumen-card__label">Te han devuelto</p>
+          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalCobrado)}</p>
         </div>
-        <div>
-          <p class="personales-resumen__label">Activos</p>
-          <p class="personales-resumen__value">${r.activos}</p>
+        <div class="resumen-card__stat">
+          <p class="resumen-card__label">Activos</p>
+          <p class="resumen-card__value resumen-card__value--sm">${r.activos}</p>
         </div>
       </div>
-      <div class="personales-resumen__progress" role="progressbar"
-           aria-valuenow="${r.pctCobrado}" aria-valuemin="0" aria-valuemax="100"
-           aria-label="${r.pctCobrado}% cobrado">
-        <div class="personales-resumen__bar" style="width:${r.pctCobrado}%"></div>
+      <div class="personales-resumen__footer">
+        <div class="progress" role="progressbar"
+             aria-valuenow="${r.pctCobrado}" aria-valuemin="0" aria-valuemax="100"
+             aria-label="${r.pctCobrado}% cobrado">
+          <div class="progress-bar${barClass}" style="width:${r.pctCobrado}%"></div>
+        </div>
+        <p class="personales-resumen__hint">${r.pctCobrado}% cobrado</p>
       </div>
-      <p class="personales-resumen__hint">${r.pctCobrado}% cobrado</p>
     </section>`;
 }
 

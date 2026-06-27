@@ -841,6 +841,34 @@ button.chip:focus-visible {
 .balance-tira__value.bento__value--accent { color: var(--fk-text-accent); }
 .balance-tira__value.bento__value--danger { color: var(--fk-danger); }
 
+/* ════════════════════════════════════════════════════════════
+   PERSONALES-RESUMEN - card de resumen en "Me deben".
+   Reutiliza resumen-card__* para la grilla de stats.
+   ════════════════════════════════════════════════════════════ */
+
+.personales-resumen {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: var(--fk-space-4);
+  overflow: hidden;
+}
+
+.personales-resumen__footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--fk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.personales-resumen__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+  text-align: right;
+}
+
 /* Apartado recurrente con el dinero ya reunido, esperando ser usado. */
 .list-item--listo {
   border-color: var(--fk-success);

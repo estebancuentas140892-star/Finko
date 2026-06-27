@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(personales): rediseñar card de resumen en "Me deben" · 2026-06-27
+
+El resumen de totales en "Me deben" (visible con 2+ préstamos) no tenia ningún estilo: las clases `.personales-resumen__*` existian en el HTML pero sin CSS, lo que producía texto plano sin estructura. Fix: reescribir `_renderResumen` para reutilizar `.resumen-card__grid/.resumen-card__stat/.resumen-card__value` (ya con CSS) en la grilla de stats y `.progress/.progress-bar` (atoms) en la barra de progreso. Solo 3 reglas CSS nuevas para el wrapper card y el footer. "Pendiente" ahora destacado en verde acento. SW v158 → v159.
+
+- **`modules/dominio/personales/view.js`**: `_renderResumen` usa `resumen-card__grid/stat/label/value` y atoms `.progress`; nuevo wrapper `.personales-resumen__footer`.
+- **`styles/components/domain.css`**: 3 reglas nuevas: `.personales-resumen` (card wrapper), `.personales-resumen__footer` (barra + hint), `.personales-resumen__hint` (xs, muted, right-aligned).
+- **`service-worker.js`**: v158 → v159.
+
+---
+
 ### fix(personales): la antigüedad se reinicia tras un abono ("Me pagaron") · 2026-06-27
 
 En "Me deben", tras registrar un abono parcial el chip de antigüedad seguía contando los días desde la fecha del préstamo original (ej. "177 días, ya toca cobrar"), ignorando que la persona acababa de pagar. Causa: `aplicarPago()` actualizaba `pagado`/`liquidado` pero no registraba la fecha del abono, y `calcularDias()` siempre contaba desde `fecha`/`fechaLimite`. Fix: nuevo campo opcional `ultimoPago` (fecha ISO del abono) que `aplicarPago()` registra solo cuando entra dinero; `calcularDias()` ahora cuenta desde el evento más reciente entre {fecha, fechaLimite, ultimoPago}. Un plazo pactado futuro sigue manteniendo el préstamo "al día" (0 días). Campo aditivo y opcional: sin migración de schema. SW v157 → v158. Tests 1407/1407 verdes (+5).

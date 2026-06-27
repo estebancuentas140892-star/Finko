@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (fix personales: la antigüedad de "Me deben" se reinicia tras un abono)
+> Última actualización: 2026-06-27 (style personales: card de resumen "Me deben" rediseñada con resumen-card__*)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,9 +39,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(personales): card de resumen "Me deben" rediseñada · 2026-06-27
+
+El resumen de totales (visible con 2+ préstamos) no tenia CSS: las clases `.personales-resumen__*` existian en el HTML pero eran texto plano. Fix: reescribir `_renderResumen` para reutilizar `.resumen-card__grid/stat/label/value` y atoms `.progress`. Solo 3 reglas CSS nuevas para el wrapper y el footer. "Pendiente" destacado en verde acento. SW v158 → v159.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/personales/view.js` | `_renderResumen` usa clases `resumen-card__*` y atoms `.progress`. |
+| `styles/components/domain.css` | 3 reglas: `.personales-resumen`, `.personales-resumen__footer`, `.personales-resumen__hint`. |
+| `service-worker.js` | v158 → v159. |
+
+---
+
 ### fix(personales): la antigüedad se reinicia tras un abono · 2026-06-27
 
-En "Me deben", tras un abono parcial el chip de antigüedad seguia contando desde la fecha del prestamo original (ej. "177 dias, ya toca cobrar") aunque la persona acabara de pagar. Causa: `aplicarPago()` no guardaba la fecha del abono y `calcularDias()` contaba siempre desde `fecha`/`fechaLimite`. Fix: campo opcional `ultimoPago`; `calcularDias()` cuenta desde el evento mas reciente {fecha, fechaLimite, ultimoPago}. Aditivo, sin migracion. Verificado: 177d "viejo" → 2d "reciente"; pago rechazado no reinicia. SW v157 → v158. Tests 1407/1407 verdes (+5).
+En "Me deben", tras un abono parcial el chip de antigüedad seguia contando desde la fecha del prestamo original (ej. "177 dias, ya toca cobrar") aunque la persona acabara de pagar. Causa: `aplicarPago()` no guardaba la fecha del abono y `calcularDias()` contaba siempre desde `fecha`/`fechaLimite`. Fix: campo opcional `ultimoPago`; `calcularDias()` cuenta desde el evento mas reciente {fecha, fechaLimite, ultimoPago}. Aditivo, sin migracion. SW v157 → v158. Tests 1407/1407 verdes (+5).
 
 | Archivo | Cambio |
 |---|---|
@@ -83,23 +95,6 @@ Cada `.vencidos-card__item` tenia un `border-left: 2px solid` de severidad que, 
 |---|---|
 | `styles/tokens.css` | 15 aliases nuevos: `--fk-fs-xs/sm/base/lg/xl`, `--fk-fw-light/regular/medium/semibold/bold`, `--fk-space-xs/sm/md/lg/xl`. |
 | `service-worker.js` | v154 → v155. |
-
----
-
-### feat(presupuesto): renombrar "Presupuesto" a "Límites de gasto" y diferenciar de Apartados · 2026-06-13
-
-El usuario volvió a sentir que Presupuesto y Apartados se parecían (ya se había tocado copy el 2026-06-11). Análisis: no son duplicados, son opuestos (tope que vigila el gasto vs dinero que se guarda para un gasto futuro); la confusión venía del nombre abstracto + el mismo dibujo de progreso para significados inversos + la adyacencia. Decisión con el usuario: NO fusionar (modo dual sería peor), diferenciar fuerte. Se renombró la sección a **"Límites de gasto"** solo de cara al usuario (el dominio interno sigue siendo `presupuesto`/`S.presupuestos`, sin migración) y se agregaron cross-links de desambiguación en ambos empty states. SW v153 → v154. Tests 1402/1402 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Nav (sidebar + menú "Más"), título, subtítulo nuevo, modal y botón → "Límites de gasto" / "+ Límite". |
-| `modules/dominio/presupuesto/view.js` | Empty state, form, hero y aria-labels renombrados; cross-link a Apartados. |
-| `modules/dominio/presupuesto/index.js` | Toasts y confirmación de borrado renombrados. |
-| `modules/dominio/presupuesto/logic.js` | Mensaje de duplicado renombrado; "Editá" → "Edita" (tuteo). |
-| `modules/dominio/apartados/view.js` | Cross-link a "Límites de gasto" en el empty state. |
-| `modules/dominio/logros/logic.js` | Descripción del logro "Planificador" actualizada. |
-| `styles/components/atoms.css` | Variante `.empty-state__tip--muted` para cross-links secundarios. |
-| `service-worker.js` | v153 → v154. |
 
 ---
 
