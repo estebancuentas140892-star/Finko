@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-13 ("Presupuesto" renombrado a "Límites de gasto", diferenciado de Apartados; 1402/1402 verde)
+> Última actualización: 2026-06-27 (fix tokens CSS: aliases faltantes corrigen padding/tipografia en Limites/Ahorro/Inversion)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tokens): aliases CSS faltantes - corrige padding y tipografia en Limites, Ahorro e Inversion · 2026-06-27
+
+`analysis.css` usaba `--fk-fs-*`, `--fk-fw-*` y `--fk-space-xs/sm/md/lg/xl` que nunca se definieron en `tokens.css`. Las variables indefinidas hacen que CSS use el valor inicial (0 para espaciado), dejando las cards de Limites de gasto, Ahorro e Inversion sin padding ni separacion interna. Fix: 15 aliases nuevos en `tokens.css` que apuntan a los tokens numericos canonicos. Verificado: `padding: 16px`, `gap: 12px`, `marginBottom: 24px`. SW v154 → v155. Tests 1402/1402 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/tokens.css` | 15 aliases nuevos: `--fk-fs-xs/sm/base/lg/xl`, `--fk-fw-light/regular/medium/semibold/bold`, `--fk-space-xs/sm/md/lg/xl`. |
+| `service-worker.js` | v154 → v155. |
+
+---
 
 ### feat(presupuesto): renombrar "Presupuesto" a "Límites de gasto" y diferenciar de Apartados · 2026-06-13
 
@@ -94,22 +105,6 @@ Decisión de producto de la fase F8 (mecánicas de hábito), tomada con el usuar
 |---|---|
 | `docs/DECISIONS/008-mecanicas-de-habito.md` | Nuevo ADR: tensión racha vs tono adulto, decisión (solo resumen semanal), alcance, qué NO se construye, alternativas descartadas. |
 | `docs/REDESIGN_2026.md`, `docs/ROADMAP.md` | F8/V.8 marcada "decisión tomada, implementación pendiente"; modelo bajado a Sonnet 4.6 - Medio (ya no hay decisión de producto que requiera Opus). |
-
----
-
-### feat(rediseno-v7): empty states ilustrados y navegación con indicador activo · 2026-06-12
-
-Séptima y última fase de UI del rediseño visual 2026. Nuevo helper `emptyArt(id)` en `infra/icons.js`: ilustración SVG geométrica (círculo de fondo, órbita punteada animada, puntos flotantes, icono del dominio centrado) que reemplaza el icono suelto en los 10 empty states. Navegación pulida: indicador de acento en el item activo (barra vertical en sidebar, horizontal en bottom nav), press scale y micro-zoom del icono al hover. Fix 1: el empty state de Deudas aún usaba emoji 💳 (escapado de V.2). Fix 2: `infra/icons.js` faltaba en CORE_ASSETS del SW desde V.2 (brecha offline-first). Tips de empty states unificados con `icon('lightbulb')`. SW v150 → v151. Tests 1381/1381 verdes (+6). Desde esta tarea rige el deploy continuo: cada cierre se pushea a Vercel de inmediato.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/icons.js` | Nuevo `emptyArt(id)`: ilustración geométrica para empty states; colores y animación en CSS, cero inline. |
-| `tests/unit/icons.test.js` | Nuevo: 6 tests de `icon()` y `emptyArt()` (sprite, clases, aria-hidden, sin colores inline). |
-| Views de 9 dominios + `compromisos/views/lista.js` | Empty states usan `emptyArt(dominio)`; tips con `icon('lightbulb')`; Deudas pierde el emoji 💳. |
-| `styles/components/atoms.css` | Estilos `.empty-art__*` + animaciones `empty-orbit` (40s) y `empty-float`, gateadas por no-preference. |
-| `styles/layout.css` | `.nav-item::before`: barra de acento del item activo (crece desde el centro); press scale; zoom 1.1 del icono al hover. |
-| `styles/responsive.css` | El indicador pasa a barra horizontal en el borde superior del bottom nav. |
-| `service-worker.js` | v150 → v151; `icons.js` agregado a CORE_ASSETS (faltaba desde V.2). |
 
 ---
 

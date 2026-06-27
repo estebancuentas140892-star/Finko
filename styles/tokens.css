@@ -178,4 +178,24 @@
   --fk-header-height:     60px;
   --fk-content-max:       1440px;
   --fk-content-padding:   var(--fk-space-6);
+
+  /* ── ALIAS TIPOGRAFIA (fs = font-size, fw = font-weight) ────── */
+  --fk-fs-xs:      var(--fk-text-xs);    /* 12px */
+  --fk-fs-sm:      var(--fk-text-sm);    /* 14px */
+  --fk-fs-base:    var(--fk-text-base);  /* 16px */
+  --fk-fs-lg:      var(--fk-text-lg);    /* 18px */
+  --fk-fs-xl:      var(--fk-text-xl);    /* 20px */
+
+  --fk-fw-light:    var(--fk-font-light);    /* 300 */
+  --fk-fw-regular:  var(--fk-font-regular);  /* 400 */
+  --fk-fw-medium:   var(--fk-font-medium);   /* 500 */
+  --fk-fw-semibold: var(--fk-font-semibold); /* 600 */
+  --fk-fw-bold:     var(--fk-font-bold);     /* 700 */
+
+  /* ── ALIAS ESPACIO (t-shirt xs/sm/md/lg/xl) ──────────────────── */
+  --fk-space-xs: var(--fk-space-2);  /*  8px */
+  --fk-space-sm: var(--fk-space-3);  /* 12px */
+  --fk-space-md: var(--fk-space-4);  /* 16px */
+  --fk-space-lg: var(--fk-space-6);  /* 24px */
+  --fk-space-xl: var(--fk-space-8);  /* 32px */
 }

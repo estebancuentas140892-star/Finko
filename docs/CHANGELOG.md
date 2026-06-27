@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(tokens): definir alias CSS faltantes - corrige padding y tipografia en Limites, Ahorro e Inversion · 2026-06-27
+
+`analysis.css` usaba tres familias de tokens que nunca se definieron en `tokens.css`: `--fk-fs-*` (tamanos de fuente), `--fk-fw-*` (pesos de fuente) y `--fk-space-xs/sm/md/lg/xl` (espaciado). CSS interpreta variables indefinidas como valor invalido, por lo que todas las propiedades de espaciado resolvian a 0px y los pesos/tamanos de fuente colgaban del valor por defecto del navegador. Resultado visible: cards de Limites de gasto, Ahorro e Inversion sin padding interno, sin separacion entre elementos y con tipografia incorrecta. Fix: agregar los aliases como punteros a los tokens numericos canonicos (`--fk-text-*`, `--fk-font-*`, `--fk-space-1..8`) en `tokens.css`. SW v154 → v155. Tests 1402/1402 verdes (sin cambios de logica).
+
+- **`styles/tokens.css`**: 15 aliases nuevos dentro de `:root` - 5 de tamano de fuente (`--fk-fs-xs/sm/base/lg/xl`), 5 de peso (`--fk-fw-light/regular/medium/semibold/bold`) y 5 de espacio (`--fk-space-xs/sm/md/lg/xl`). Resuelve padding 16px, gap 12px y margin 24px en las cards, que antes eran 0.
+- **`service-worker.js`**: v154 → v155.
+
+---
+
 ### feat(presupuesto): renombrar "Presupuesto" a "Límites de gasto" y diferenciar de Apartados · 2026-06-13
 
 El usuario reportó (de nuevo, tras el ajuste de copy del 2026-06-11) que Presupuesto y Apartados se sentían parecidos. Análisis: no son duplicados, son opuestos que colisionan en la superficie. Presupuesto = tope mensual de gasto por categoría (no guarda dinero, vigila lo que sale, 100% es malo). Apartados = ahorro programado para un gasto futuro (guarda dinero, 100% es logro). La confusión venía del nombre abstracto "Presupuesto" + el mismo dibujo de progreso para significados inversos + la adyacencia en el menú. Decisión (con el usuario): NO fusionar (un modo dual sería peor); diferenciar con fuerza. El renombre es solo de cara al usuario: el dominio interno sigue siendo `presupuesto` / `S.presupuestos` (sin migración, sin tocar schema ni datos). SW v153 → v154. Tests 1402/1402 verdes.
