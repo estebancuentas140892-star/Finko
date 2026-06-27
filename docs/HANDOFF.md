@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (fix tokens CSS: aliases faltantes corrigen padding/tipografia en Limites/Ahorro/Inversion)
+> Última actualización: 2026-06-27 (fix tesoreria: limpiar diaPago al cambiar a Quincenal en form de ingreso)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): limpiar diaPago al cambiar a Quincenal · 2026-06-27
+
+Al cambiar la frecuencia de Mensual a Quincenal en el form de ingreso, el valor previo (ej. 30) no se limpiaba y llegaba al submit causando un error de validacion confuso. Fix: `_sync()` en `_attachDiaPagoToggle` limpia el campo si supera el nuevo max y actualiza el hint dinamicamente para explicar el calculo del segundo dia. SW v156 → v157.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/index.js` | `_sync()` limpia value > 15 al cambiar a Quincenal; hint dinamico. |
+| `service-worker.js` | v156 → v157. |
+
+---
 
 ### fix(dashboard): doble borde rojo en "Pendientes del mes" · 2026-06-27
 
@@ -88,34 +99,6 @@ El usuario volvió a sentir que Presupuesto y Apartados se parecían (ya se hab�
 | `modules/dominio/compromisos/views/lista.js` | `icono = icon(ICONO_TIPO[tipo] ?? 'recurring')` en `_renderCompromisoItem` (mismo bug, fallback sin estrategia). |
 | `styles/components/config.css` | `.cal-detail__icon`: `overflow: hidden; flex-shrink: 0` para contener el SVG y no ceder espacio bajo presión de flex. |
 | `service-worker.js` | v152 → v153. |
-
----
-
-### feat(rediseno-v8): card de resumen semanal en el dashboard · 2026-06-13
-
-Implementación de la fase F8, según [ADR 008](DECISIONS/008-mecanicas-de-habito.md). Nuevo dominio `resumen/` (solo lectura, derivado de `S.gastos`): lógica pura de agregación (gasto de los últimos 7 días, comparación con la semana previa, categoría con más gasto, "días activos del mes") y una card de ancho completo en el bento del dashboard que aparece solo cuando hay actividad esta semana (patrón `[hidden]` de V.4). Tono calmo: la subida de gasto se muestra en color neutro, no como alarma; la bajada se refuerza en acento. Sin schema nuevo, sin migración, sin racha, sin telemetría. SW v151 → v152. Tests 1402/1402 verdes (+21).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/resumen/logic.js` | Nuevo: funciones puras `gastoUltimos7Dias`, `gastoSemanaPrevia`, `compararSemanas`, `categoriaTopSemana`, `diasActivosMes`, `resumenSemanal`, `hayResumen`. |
-| `modules/dominio/resumen/view.js` | Nuevo: `renderPanelResumen()` pinta `#panel-resumen`; oculta la card sin actividad. Tono de la tendencia neutral. |
-| `modules/dominio/resumen/index.js` | Nuevo: `initResumen()` engancha render en dashboard (registrarRender + state:change de gastos + hashchange). |
-| `tests/unit/resumen.test.js` | Nuevo: 21 tests de la lógica de agregación (ventanas de fecha, comparación, top, días activos, gate). |
-| `index.html` | Nuevo cell `#panel-resumen` (`bento__cell--full`, arranca `[hidden]`) tras prioridades. |
-| `styles/components/domain.css` | Estilos `.resumen-card__*`: grid auto-fit de stats, tonos de tendencia (baja/sube/neutro). |
-| `modules/ui/bootstrap.js` | Importa y llama `initResumen()`. |
-| `service-worker.js` | v151 → v152; 3 archivos de `resumen/` en CORE_ASSETS. |
-
----
-
-### docs(adr-008): decisión de producto V.8: resumen semanal sí, racha con castigo no · 2026-06-12
-
-Decisión de producto de la fase F8 (mecánicas de hábito), tomada con el usuario antes de codear. Se descarta la racha estilo Duolingo (días consecutivos, aversión a la pérdida) por inadecuada en una app financiera de bienestar. Se construirá solo un **resumen semanal** de solo lectura (gasto de 7 días + comparación, categoría top, "días activos del mes" como contador amable que solo informa), derivado de `S` con lógica pura, sin schema nuevo. La implementación queda como próxima tarea. Sin código de app en este commit (solo ADR + docs).
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/008-mecanicas-de-habito.md` | Nuevo ADR: tensión racha vs tono adulto, decisión (solo resumen semanal), alcance, qué NO se construye, alternativas descartadas. |
-| `docs/REDESIGN_2026.md`, `docs/ROADMAP.md` | F8/V.8 marcada "decisión tomada, implementación pendiente"; modelo bajado a Sonnet 4.6 - Medio (ya no hay decisión de producto que requiera Opus). |
 
 ---
 

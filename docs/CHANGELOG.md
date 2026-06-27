@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(tesoreria): limpiar diaPago y actualizar hint al cambiar a Quincenal · 2026-06-27
+
+Al cambiar la frecuencia de Mensual a Quincenal en el formulario de ingreso, el valor previo en `diaPago` (ej. 30) no se limpiaba, porque `_sync()` solo vaciaba el campo cuando el grupo se ocultaba. El usuario llegaba al submit con `diaPago=30` y frecuencia Quincenal, y la validacion lo rechazaba correctamente pero de forma confusa. Fix: en `_attachDiaPagoToggle._sync()`, si el valor actual supera el nuevo max al cambiar a Quincenal, se limpia. Ademas el hint se actualiza dinamicamente para explicar el rango 1-15 y el calculo del segundo dia. SW v156 → v157.
+
+- **`modules/dominio/tesoreria/index.js`**: `_attachDiaPagoToggle._sync()` limpia `inputDia.value` si supera 15 al activar Quincenal; actualiza `hintDia.textContent` segun la frecuencia elegida.
+- **`service-worker.js`**: v156 → v157.
+
+---
+
 ### fix(dashboard): eliminar doble borde rojo en items de "Pendientes del mes" · 2026-06-27
 
 `.vencidos-card__item` tenia `border-left: 2px solid transparent` que se coloreaba (leve/moderada/urgente) segun la severidad. Combinado con el `border-left: 3px solid var(--fk-danger)` de la card contenedora y el cambio de `border-color` del hover de la bento cell, el usuario veia dos capas visuales superpuestas al pasar el cursor. Fix: se eliminan el borde del item y las tres reglas de modificador. La linea roja de la card delimita toda la seccion. SW v155 → v156. Tests 1402/1402 verdes.

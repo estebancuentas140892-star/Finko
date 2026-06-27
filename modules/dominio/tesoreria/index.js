@@ -506,19 +506,25 @@ function _attachDiaPagoToggle(form) {
   const labelDia = form.querySelector('#label-dia-pago');
   if (!selFrec || !grupoDia || !inputDia) return;
 
+  const hintDia = grupoDia.querySelector('.form-hint');
+
   function _sync() {
     const frec    = selFrec.value;
     const mostrar = FRECUENCIAS_CON_DIA.includes(frec);
     grupoDia.hidden = !mostrar;
-    if (!mostrar) inputDia.value = '';
-    if (frec === 'Quincenal') {
+    if (!mostrar) {
+      inputDia.value = '';
+    } else if (frec === 'Quincenal') {
       inputDia.max         = '15';
       inputDia.placeholder = 'Ej. 15';
       if (labelDia) labelDia.textContent = 'Día de la primera quincena (1-15)';
+      if (Number(inputDia.value) > 15) inputDia.value = '';
+      if (hintDia) hintDia.textContent = 'Ingresa el primer día (1 a 15). Finko calcula el segundo sumando 15. Ejemplo: ingresa 15 y verás los días 15 y 30.';
     } else {
       inputDia.max         = '31';
       inputDia.placeholder = 'Ej. 30';
       if (labelDia) labelDia.textContent = 'Día de pago (1-31)';
+      if (hintDia) hintDia.textContent = 'Opcional. ¿Qué día sueles recibir este pago?';
     }
   }
 
