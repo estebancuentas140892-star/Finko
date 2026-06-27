@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(metas): microcopy motivacional al crear una meta · 2026-06-27
+
+Form de nueva meta ahora tiene: (1) párrafo intro "Escribe lo que quieres lograr..." antes de los campos, (2) hint bajo "Fecha límite" explicando el cálculo de ahorro diario, (3) placeholder del nombre con ejemplos variados. SW v161 → v162.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | `renderFormMeta`: intro + hint en fecha + placeholder mejorado. |
+| `service-worker.js` | v161 → v162. |
+
+---
+
 ### style(ui): iconos emoji en selectores de categoría · 2026-06-27
 
 `CATEGORIA_EMOJI` (mapa centralizado en `constants.js`) añade un emoji a cada una de las 11 categorías de gasto. Se usa en: opciones del `<select>` en el form de gasto, opciones del form de Límites de gasto, chips de filtro en la vista de Gastos y subtítulo de cada ítem de gasto. Los valores almacenados y `data-cat` no cambian. SW v160 → v161. Tests 1407/1407 verdes.
@@ -90,16 +101,6 @@ En "Me deben", tras un abono parcial el chip de antigüedad seguia contando desd
 
 ---
 
-### fix(tesoreria): limpiar diaPago al cambiar a Quincenal · 2026-06-27
-
-Al cambiar la frecuencia de Mensual a Quincenal en el form de ingreso, el valor previo (ej. 30) no se limpiaba y llegaba al submit causando un error de validacion confuso. Fix: `_sync()` en `_attachDiaPagoToggle` limpia el campo si supera el nuevo max y actualiza el hint dinamicamente para explicar el calculo del segundo dia. SW v156 → v157.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/index.js` | `_sync()` limpia value > 15 al cambiar a Quincenal; hint dinamico. |
-| `service-worker.js` | v156 → v157. |
-
----
 
 
 

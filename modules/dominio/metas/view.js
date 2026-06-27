@@ -126,10 +126,11 @@ export function renderFormAbonoMeta(meta) {
 export function renderFormMeta() {
   return `
     <form id="form-meta" novalidate>
+      <p class="modal__intro">Escribe lo que quieres lograr. Con una fecha límite, Finko calcula cuánto guardar cada día para llegar a tiempo.</p>
       <div class="form-group">
         <label for="meta-nombre" class="label">Nombre de la meta</label>
         <input id="meta-nombre" name="nombre" class="input" type="text"
-               placeholder="Ej. Fondo de emergencia" required aria-required="true" autocomplete="off" />
+               placeholder="Ej. Viaje a la playa, laptop nueva, boda" required aria-required="true" autocomplete="off" />
       </div>
       <div class="form-group">
         <label for="meta-objetivo" class="label">Monto objetivo (COP)</label>
@@ -139,6 +140,7 @@ export function renderFormMeta() {
       <div class="form-group">
         <label for="meta-fecha" class="label">Fecha límite (opcional)</label>
         <input id="meta-fecha" name="fechaLimite" class="input" type="date" />
+        <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
       <div class="form-group">
         <label for="meta-icono" class="label">Emoji (opcional)</label>

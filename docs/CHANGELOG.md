@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(metas): microcopy motivacional al crear una meta · 2026-06-27
+
+El form de nueva meta no tenia ningún texto de apoyo. Se agregan: (1) un párrafo intro que explica el valor de definir una fecha límite, (2) un `form-hint` bajo el campo de fecha que aclara qué cambia con y sin fecha, (3) placeholder de nombre actualizado a ejemplos más variados (viaje, laptop, boda). SW v161 → v162.
+
+- **`modules/dominio/metas/view.js`**: `renderFormMeta` agrega `modal__intro`, hint en fecha límite y nuevo placeholder.
+- **`service-worker.js`**: v161 → v162.
+
+---
+
 ### style(ui): iconos emoji en selectores de categoría · 2026-06-27
 
 Cada categoría de gasto ahora muestra su emoji en el `<select>` del form de gasto, del form de Límites de gasto, en los chips de filtro y en el subtítulo de cada ítem de gasto. El valor almacenado y los atributos `data-cat` permanecen sin emoji. SW v160 → v161.
