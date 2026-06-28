@@ -235,12 +235,24 @@ function _renderLeyenda() {
 
 // ── DETALLE DEL DÍA ──────────────────────────────────────────────
 
+function _totalDia(evs) {
+  let sum = 0;
+  for (const c of evs) {
+    const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
+    const n = Number(raw);
+    if (Number.isFinite(n)) sum += n;
+  }
+  return sum;
+}
+
 function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
   const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
   const total   = evs.length;
   const resumen = total === 1 ? '1 compromiso' : `${total} compromisos`;
+  const sumaDia = _totalDia(evs);
+  const totalHtml = sumaDia > 0 ? ` · ${f(sumaDia)}` : '';
 
   const items = evs.map(c => _renderDetalleItem(c, year, month)).join('');
 
@@ -249,7 +261,7 @@ function _renderDetalleDia(evs, year, month, dia) {
       <header class="cal-detail__header">
         <div class="cal-detail__title-wrap">
           <h3 class="cal-detail__title">${titulo}</h3>
-          <p class="cal-detail__subtitle">${resumen}</p>
+          <p class="cal-detail__subtitle">${resumen}${totalHtml}</p>
         </div>
         <button type="button" class="cal-detail__close"
                 data-action="agenda-mostrar-dia"
@@ -268,7 +280,8 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');
-  const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
+  const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
+  const monto = Number.isFinite(Number(montoRaw)) ? f(Number(montoRaw)) : '';
   const idEsc = _esc(c.id ?? '');
 
   // Badge de estado de pago: distingue cuota cubierta, abono parcial y sin pago.
