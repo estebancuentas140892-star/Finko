@@ -11,6 +11,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { bancoAvatar, bancoClaseEmoji } from '../../../infra/bancos.js';
 import { FRECUENCIAS }   from '../../../core/constants.js';
 import { tasaEADe }      from '../logic.js';
 
@@ -51,11 +52,11 @@ export function renderFormAbono(deuda) {
     cuentaHtml = `
       <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
       <p class="form-hint quick-add__cuenta-hint${saldoCuenta <= 0 ? ' form-hint--danger' : ''}" role="status">
-        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldoCuenta)}
+        ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldoCuenta)}
       </p>`;
   } else {
     const cuentaOpts = cuentas.map(c =>
-      `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`
+      `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`
     ).join('');
     cuentaHtml = `
       <div class="form-group">
