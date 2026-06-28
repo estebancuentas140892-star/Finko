@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(analisis): el patrimonio neto suma inversiones y apartados · 2026-06-27
+
+Hallazgo de una revisión integral de la app. El patrimonio neto calculaba los activos como `cuentas + metas`, dejando por fuera la inversión y los apartados, dos activos reales: subestimaba el patrimonio. La prueba de que era un olvido (no una decisión): en el mismo archivo, `patrimonioBruto` (monitor de renta) ya sumaba `cuentas + inversiones`. Inversión (J.2) y Apartados (N.1) se añadieron después de escribir `calcularActivos` y nunca se conectaron al patrimonio neto.
+
+Ahora `activos = cuentas + metas + apartados + inversiones`. El fondo de emergencia se mantiene fuera a propósito: su aporte no descuenta la cuenta (es un tracker paralelo), por lo que ese dinero ya está contado dentro de `cuentas` y sumarlo lo duplicaría. Metas y apartados sí descuentan la cuenta al aportar, así que su saldo es dinero aparte que no duplica. Ejemplo verificado en la app: patrimonio neto pasó de −$2.830.000 a −$630.000 (activos $4.570.000 → $6.770.000). El Score de salud no cambia en ese caso porque la deuda aún supera los activos (factor Deuda en 0 por clamp). SW v170 → v171. Tests 1418/1418 (+7).
+
+- **`modules/dominio/analisis/logic.js`**: `calcularActivos(cuentas, metas, apartados=[], inversiones=[])` ahora suma los 4 buckets y expone `totalApartados` y `totalInversiones`; `generarResumen` recibe y propaga `apartados` e `inversiones`. Import nuevo de `apartadosActivos`.
+- **`modules/dominio/analisis/view.js`**: `renderAnalisis` pasa `S.apartados` y `S.inversiones`; el desglose de "Activos totales" muestra Apartados e Inversión cuando son > 0.
+- **`tests/unit/analisis.test.js`**: fixtures `apartado`/`inversion` + 7 casos nuevos (apartados, inversiones, combinación, exclusión del fondo).
+- **`tests/integration/flujos.test.js`**: llamadas a `generarResumen` reflejan la firma real (pasan `S.apartados`, `S.inversiones`).
+- **`service-worker.js`**: v170 → v171.
+
+---
+
 ### refactor(analisis): simplificar y jerarquizar la sección (F8) · 2026-06-27
 
 Análisis pasó de 10 secciones apiladas a una jerarquía de lectura clara, solo en la capa de vista (cero cambios en logic.js, schema, datos o tests). Orden nuevo: Score → Patrimonio → Tendencia → Por categoría visibles; "Más detalle de tus gastos" (Vs mes anterior, Patrón semanal, Gasto hormiga) y "Estado de tu renta" colapsados en `<details>`. Renta se abre sola si hay alerta de tope o recomendación fiscal. Se elimina la card "Resumen del mes" (3 cifras crudas redundantes). Subtítulo guía nuevo. Decisión en [ADR 010](DECISIONS/010-simplificacion-analisis.md). SW v169 → v170. Tests 1411/1411.

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (refactor analisis: simplificación y jerarquía, F8, ADR 010)
+> Última actualización: 2026-06-27 (fix analisis: patrimonio neto suma inversiones + apartados)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1411/1411 verdes |
+| Tests unitarios + integración | 1418/1418 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(analisis): el patrimonio neto suma inversiones y apartados · 2026-06-27
+
+De una revisión integral de la app. Los "Activos totales" del patrimonio neto eran `cuentas + metas` y omitían inversión y apartados (activos reales): se subestimaba el patrimonio. Ahora `activos = cuentas + metas + apartados + inversiones`; el fondo de emergencia queda fuera a propósito (su aporte no descuenta la cuenta, ya está en `cuentas`, sumarlo duplicaría). Verificado en la app: −$2.830.000 → −$630.000. SW v170 → v171. Tests 1418/1418 (+7).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/analisis/logic.js` | `calcularActivos` suma 4 buckets (+`totalApartados`/`totalInversiones`); `generarResumen` propaga apartados e inversiones. |
+| `modules/dominio/analisis/view.js` | Pasa `S.apartados`/`S.inversiones`; desglose de activos muestra Apartados e Inversión. |
+| `tests/unit/analisis.test.js` | Fixtures + 7 casos nuevos. |
+| `tests/integration/flujos.test.js` | Llamadas a `generarResumen` con la firma real. |
+| `service-worker.js` | v170 → v171. |
+
+---
 
 ### refactor(analisis): simplificar y jerarquizar la sección (F8) · 2026-06-27
 
@@ -90,19 +104,6 @@ Nudges de ahorro bajo (0-10%, 0%, negativo) ahora sugieren recortar estilo de vi
 |---|---|
 | `modules/dominio/ahorro/view.js` | Copy de `_renderNudgeTasa` en 3 rangos bajos. |
 | `service-worker.js` | v166 → v167. |
-
----
-
-### feat(tesoreria): presets de distribución de ingresos · 2026-06-27
-
-Chips de preset (Automático, 50/30/20, 70/20/10, 60/20/20) en la card "¿Cómo distribuir?". Selección persistida en `S.config.presetDistribucion`. Alerta si gastos fijos superan el % de necesidades del preset. SW v165 → v166. Tests 1407/1407.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `PRESETS_DISTRIBUCION` + `presetId` en `sugerirDistribucionIngreso`. |
-| `modules/dominio/tesoreria/view.js` | Chips de preset, pasa `presetId` desde `S.config`. |
-| `modules/dominio/tesoreria/index.js` | Acción `cambiar-preset-distribucion`, `save()` a config. |
-| `service-worker.js` | v165 → v166. |
 
 ---
 

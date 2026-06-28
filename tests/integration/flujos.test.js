@@ -124,7 +124,7 @@ describe('C.1 - Análisis cross-domain sobre el estado construido', () => {
   });
 
   it('generarResumen() agrega gastos, compromisos y saldos (sin ingresos, v8.8)', () => {
-    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas, S.apartados, S.inversiones);
     expect(r.gastoMes).toBe(800_000);
     expect(r.compromisoMensual).toBe(0);
     expect(r.egresos).toBe(800_000);
@@ -133,7 +133,7 @@ describe('C.1 - Análisis cross-domain sobre el estado construido', () => {
   });
 
   it('generarResumen() ya no expone métricas de ingreso ni balance', () => {
-    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas, S.apartados, S.inversiones);
     expect(r).not.toHaveProperty('ingresoMensual');
     expect(r).not.toHaveProperty('balance');
     expect(r).not.toHaveProperty('tasaAhorro');
@@ -141,7 +141,7 @@ describe('C.1 - Análisis cross-domain sobre el estado construido', () => {
   });
 
   it('generarResumen() con mes sin gastos: egresos en cero', () => {
-    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 4, S.metas);
+    const r = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 4, S.metas, S.apartados, S.inversiones);
     expect(r.gastoMes).toBe(0);
     expect(r.egresos).toBe(0);
     expect(r.saldoCuentas).toBe(2_000_000);
@@ -174,13 +174,13 @@ describe('C.1 - Persistencia roundtrip (flush + reload)', () => {
     resetS();
     buildEstadoBase();
 
-    const resumenAntes = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
+    const resumenAntes = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas, S.apartados, S.inversiones);
 
     _flushNow();
     Object.assign(S, createInitialState());
     loadData();
 
-    const resumenDespues = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas);
+    const resumenDespues = generarResumen(S.gastos, S.compromisos, S.cuentas, 2026, 5, S.metas, S.apartados, S.inversiones);
 
     expect(resumenDespues.gastoMes).toBe(resumenAntes.gastoMes);
     expect(resumenDespues.egresos).toBe(resumenAntes.egresos);

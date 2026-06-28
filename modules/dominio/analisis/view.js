@@ -31,7 +31,7 @@ export function renderAnalisis() {
   const mes  = Number(fechaHoy.slice(5, 7));
 
   const resumen = generarResumen(
-    S.gastos, S.compromisos, S.cuentas, anio, mes, S.metas
+    S.gastos, S.compromisos, S.cuentas, anio, mes, S.metas, S.apartados, S.inversiones
   );
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
@@ -323,8 +323,7 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
           <p class="metric-card__label">Activos totales</p>
           <p class="metric-card__value">${f(activos.total)}</p>
           <p class="metric-card__desc">
-            Cuentas ${f(activos.totalCuentas)}
-            ${activos.totalMetas > 0 ? ` · Metas ${f(activos.totalMetas)}` : ''}
+            Cuentas ${f(activos.totalCuentas)}${activos.totalMetas > 0 ? ` · Metas ${f(activos.totalMetas)}` : ''}${activos.totalApartados > 0 ? ` · Apartados ${f(activos.totalApartados)}` : ''}${activos.totalInversiones > 0 ? ` · Inversión ${f(activos.totalInversiones)}` : ''}
           </p>
         </article>
         <article class="metric-card">

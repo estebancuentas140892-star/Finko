@@ -13,6 +13,7 @@ import { totalGastosMes, gastosMes, gastosPorCategoria, detectarHormigas }
 import { calcularTotalCompromisos, compromisosActivos, esDeuda } from '../compromisos/logic.js';
 import { calcularTotalCuentas }                         from '../tesoreria/logic.js';
 import { metasActivas }                                 from '../metas/logic.js';
+import { apartadosActivos }                             from '../apartados/logic.js';
 import { calcularTotalInvertido }                       from '../inversiones/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 
@@ -22,24 +23,40 @@ const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
 // ── PATRIMONIO NETO Y PROYECCIÓN ─────────────────────────────────
 
 /**
- * Suma los activos del usuario: saldo de cuentas activas + monto acumulado
- * en metas no completadas.
+ * Suma los activos del usuario: saldo de cuentas activas + dinero ya apartado
+ * fuera de las cuentas (metas, apartados) + monto invertido.
  *
- * Las metas se cuentan como activo porque, contablemente, ese dinero pertenece
- * al usuario aunque esté "comprometido" para un objetivo específico.
+ * Por qué estos buckets, y no el fondo de emergencia:
+ *   - Metas y Apartados descuentan el saldo de la cuenta al aportar, así que su
+ *     `montoActual` es dinero que ya NO está en `cuentas`: sumarlo no duplica.
+ *   - Inversiones es dinero que salió de las cuentas hacia un instrumento real
+ *     (mismo criterio que `patrimonioBruto` del monitor de renta).
+ *   - El fondo de emergencia se excluye a propósito: su aporte NO descuenta la
+ *     cuenta (es un tracker paralelo), por lo que ese dinero ya está contado
+ *     dentro de `cuentas`. Sumarlo lo contaría dos veces.
  *
- * @param {import('../../core/state.js').Cuenta[]} cuentas
- * @param {import('../../core/state.js').Meta[]}   metas
- * @returns {{ totalCuentas: number, totalMetas: number, total: number }}
+ * Las metas/apartados se cuentan como activo porque, contablemente, ese dinero
+ * pertenece al usuario aunque esté "comprometido" para un objetivo específico.
+ *
+ * @param {import('../../core/state.js').Cuenta[]}    cuentas
+ * @param {import('../../core/state.js').Meta[]}      metas
+ * @param {import('../../core/state.js').Apartado[]}  [apartados=[]]
+ * @param {import('../../core/state.js').Inversion[]} [inversiones=[]]
+ * @returns {{ totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, total: number }}
  */
-export function calcularActivos(cuentas, metas) {
+export function calcularActivos(cuentas, metas, apartados = [], inversiones = []) {
   const totalCuentas = calcularTotalCuentas(cuentas);
   const totalMetas   = metasActivas(metas)
     .reduce((acc, m) => acc + (m.montoActual ?? 0), 0);
+  const totalApartados = apartadosActivos(apartados)
+    .reduce((acc, a) => acc + (Number(a.montoActual) || 0), 0);
+  const totalInversiones = calcularTotalInvertido(inversiones);
   return {
     totalCuentas,
     totalMetas,
-    total: totalCuentas + totalMetas,
+    totalApartados,
+    totalInversiones,
+    total: totalCuentas + totalMetas + totalApartados + totalInversiones,
   };
 }
 
@@ -140,6 +157,8 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  * @param {number} anio
  * @param {number} mes  1-12
  * @param {import('../../core/state.js').Meta[]} [metas=[]]  - opcional.
+ * @param {import('../../core/state.js').Apartado[]} [apartados=[]]  - opcional.
+ * @param {import('../../core/state.js').Inversion[]} [inversiones=[]]  - opcional.
  * @returns {{
  *   gastoMes: number,
  *   compromisoMensual: number,
@@ -147,13 +166,13 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   egresos: number,
  *   porCategoria: Record<string, number>,
  *   hormigas: Array<{categoria:string, total:number, cantidad:number, promedio:number}>,
- *   activos: { totalCuentas: number, totalMetas: number, total: number },
+ *   activos: { totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, total: number },
  *   pasivos: { total: number, cantidadDeudas: number, deudasSinSaldo: number },
  *   patrimonioNeto: number,
  *   volatilidad: number,
  * }}
  */
-export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = []) {
+export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = []) {
   const gastoMes          = totalGastosMes(gastos, anio, mes);
   const compromisoMensual = calcularTotalCompromisos(compromisos);
   const saldoCuentas      = calcularTotalCuentas(cuentas);
@@ -162,7 +181,7 @@ export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = 
   const porCategoria      = gastosPorCategoria(gastosMesActual);
   const hormigas          = detectarHormigas(gastosMesActual);
 
-  const activos        = calcularActivos(cuentas, metas);
+  const activos        = calcularActivos(cuentas, metas, apartados, inversiones);
   const pasivos        = calcularPasivos(compromisos);
   const patrimonioNeto = calcularPatrimonioNeto(activos.total, pasivos.total);
 

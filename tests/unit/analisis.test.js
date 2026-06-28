@@ -49,6 +49,17 @@ const deuda = (overrides = {}) => ({
   ...overrides,
 });
 
+const apartado = (overrides = {}) => ({
+  id: 'ap1', nombre: 'SOAT', icono: '🚗', montoObjetivo: 600_000,
+  montoActual: 200_000, fechaObjetivo: '2026-08-15', frecuenciaAporte: 'Mensual',
+  recurrente: true, periodoMeses: 12, completado: false, ...overrides,
+});
+
+const inversion = (overrides = {}) => ({
+  id: 'inv1', tipo: 'CDT', nombre: 'CDT Bancolombia', monto: 2_000_000,
+  tasaEA: 10.5, plazoMeses: 12, fechaInicio: '2026-03-01', ...overrides,
+});
+
 // ── generarResumen() ──────────────────────────────────────────────
 
 describe('generarResumen()', () => {
@@ -140,6 +151,16 @@ describe('generarResumen()', () => {
     expect(resumen.activos.total).toBe(1_500_000);
   });
 
+  it('agrega apartados e inversiones a los activos del resumen', () => {
+    const resumen = generarResumen(
+      [], [], [cuenta()], ANIO, MES, [meta()], [apartado()], [inversion()]
+    );
+    // 500_000 + 1_000_000 + 200_000 + 2_000_000 = 3_700_000
+    expect(resumen.activos.totalApartados).toBe(200_000);
+    expect(resumen.activos.totalInversiones).toBe(2_000_000);
+    expect(resumen.activos.total).toBe(3_700_000);
+  });
+
   it('agrega pasivos de deudas en resumen', () => {
     const resumen = generarResumen([], [deuda()], [], ANIO, MES);
     expect(resumen.pasivos.total).toBe(12_000_000);
@@ -186,7 +207,50 @@ describe('calcularActivos()', () => {
 
   it('devuelve ceros con arrays vacíos', () => {
     const r = calcularActivos([], []);
-    expect(r).toEqual({ totalCuentas: 0, totalMetas: 0, total: 0 });
+    expect(r).toEqual({
+      totalCuentas: 0, totalMetas: 0, totalApartados: 0, totalInversiones: 0, total: 0,
+    });
+  });
+
+  it('suma el montoActual de apartados activos', () => {
+    const r = calcularActivos([], [], [apartado()]);
+    expect(r.totalApartados).toBe(200_000);
+    expect(r.total).toBe(200_000);
+  });
+
+  it('ignora apartados no recurrentes ya completados (su dinero ya se gastó)', () => {
+    const apartados = [
+      apartado(),
+      apartado({ id: 'ap2', montoActual: 999_999, completado: true, recurrente: false }),
+    ];
+    const r = calcularActivos([], [], apartados);
+    expect(r.totalApartados).toBe(200_000);
+  });
+
+  it('incluye apartados recurrentes completados (el dinero sigue reservado)', () => {
+    const r = calcularActivos([], [], [
+      apartado({ montoActual: 600_000, completado: true, recurrente: true }),
+    ]);
+    expect(r.totalApartados).toBe(600_000);
+  });
+
+  it('suma el monto invertido de las inversiones', () => {
+    const r = calcularActivos([], [], [], [inversion()]);
+    expect(r.totalInversiones).toBe(2_000_000);
+    expect(r.total).toBe(2_000_000);
+  });
+
+  it('combina cuentas + metas + apartados + inversiones en el total', () => {
+    const r = calcularActivos([cuenta()], [meta()], [apartado()], [inversion()]);
+    // 500_000 + 1_000_000 + 200_000 + 2_000_000
+    expect(r.total).toBe(3_700_000);
+  });
+
+  it('excluye el fondo de emergencia (no recibe ese bucket): no duplica cuentas', () => {
+    // calcularActivos no toma el fondo como parámetro a propósito; su dinero ya
+    // vive en `cuentas` porque el aporte al fondo no descuenta la cuenta.
+    const r = calcularActivos([cuenta({ saldo: 1_000_000 })], []);
+    expect(r.total).toBe(1_000_000);
   });
 
   it('maneja metas sin montoActual definido', () => {
