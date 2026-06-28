@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
@@ -174,7 +174,7 @@ function _renderGastoItem(gasto) {
       <div class="list-item__icon" aria-hidden="true">${icon('gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
-        <p class="list-item__subtitle">${cat} · ${_esc(gasto.fecha)}${nota}</p>
+        <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount">${f(gasto.monto)}</p>

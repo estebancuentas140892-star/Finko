@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(gastos): fecha legible en la lista de gastos (UX A) · 2026-06-28
+
+La lista de gastos mostraba la fecha en formato ISO crudo ("2026-06-26"), el único dominio de la app que no usaba el helper `fechaLegible`. Ahora muestra "26 de junio de 2026", consistente con ahorro, metas, apartados e inversiones. Cambio de 2 líneas en la vista. Tests 1418/1418. SW v173 → v174.
+
+- **`modules/dominio/gastos/view.js`**: import `fechaLegible` + reemplazo de `_esc(gasto.fecha)` por `fechaLegible(gasto.fecha)`.
+- **`service-worker.js`**: v173 → v174.
+
+---
+
 ### fix(compromisos): chip de urgencia claro y con color (Hallazgo 3) · 2026-06-28
 
 Hallazgo de la revisión integral. El chip de urgencia de cada deuda (lista de Compromisos) tenía tres defectos en el mismo bloque:

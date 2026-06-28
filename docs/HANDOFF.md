@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(gastos): fecha legible en la lista de gastos (UX A) · 2026-06-28
+
+La lista de Gastos mostraba la fecha en ISO crudo ("2026-06-26"), el único dominio sin `fechaLegible`. Ahora muestra "26 de junio de 2026", consistente con el resto de la app. 2 líneas en la vista. SW v173 → v174. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | Import `fechaLegible` + reemplazo en `_renderGastoItem`. |
+| `service-worker.js` | v173 → v174. |
+
+---
+
 ### fix(compromisos): chip de urgencia claro y con color (Hallazgo 3) · 2026-06-28
 
 Hallazgo 3 de la revisión. El chip de urgencia de cada deuda tenía 3 defectos en el mismo bloque: (1) texto ambiguo "17 días" → ahora "Vence en 17 días"; (2) clase de color con doble guion (`chip--warning`) que no existe en CSS, el chip se veía siempre gris → corregido a `chip-warning`, ahora pinta ámbar/rojo según urgencia; (3) aria-label redundante "Vence en Vence hoy" → ahora coincide con el visible. Cero lógica, cero tests nuevos. SW v172 → v173. Tests 1418/1418.
@@ -76,34 +87,6 @@ De una revisión integral de la app. Los "Activos totales" del patrimonio neto e
 | `tests/unit/analisis.test.js` | Fixtures + 7 casos nuevos. |
 | `tests/integration/flujos.test.js` | Llamadas a `generarResumen` con la firma real. |
 | `service-worker.js` | v170 → v171. |
-
----
-
-### refactor(analisis): simplificar y jerarquizar la sección (F8) · 2026-06-27
-
-Análisis de 10 secciones apiladas a jerarquía clara (solo vista, sin tocar logic/schema/tests). Score → Patrimonio → Tendencia → Categorías arriba; "Más detalle de gastos" y "Estado de renta" colapsados en `<details>` (renta se abre si hay alerta). Card "Resumen del mes" eliminada. Subtítulo guía nuevo. Ver [ADR 010](DECISIONS/010-simplificacion-analisis.md). SW v169 → v170. Tests 1411/1411.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/analisis/view.js` | `renderAnalisis` reordenado; `_renderGrupoColapsable`; renta colapsable; `_renderMetricas` eliminado. |
-| `index.html` | Subtítulo en header de Análisis. |
-| `styles/components/analysis.css` | Reglas `.analisis-grupo*`. |
-| `docs/DECISIONS/010-simplificacion-analisis.md` | ADR nuevo. |
-| `service-worker.js` | v169 → v170. |
-
----
-
-### style(apartados): rediseño del formulario (F7) · 2026-06-27
-
-Form de nuevo apartado reorganizado: emoji inline con el nombre (grid), recurrencia dentro de `<details>` colapsable, mejor microcopy en frecuencia. SW v168 → v169. Tests 1411/1411.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/view.js` | `renderFormApartado` reestructurado. |
-| `styles/components/domain.css` | Reglas `.apartado-nombre-row*` y `.form-details*`. |
-| `service-worker.js` | v168 → v169. |
-
----
 
 ---
 
