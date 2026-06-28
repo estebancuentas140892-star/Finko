@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): selector de tarjetas + reparto-fallback en Gasto rápido (2/4 flujos) · 2026-06-28
+
+El gasto rápido ahora muestra el mismo selector de tarjetas con avatares de entidad que el gasto completo. Si la cuenta elegida no cubre el monto, abre el picker de reparto con la elegida como prioridad (se cobra primero). Si es la única y no alcanza, pide confirmación de sobregiro. Verificado en la app: cubre → sin picker, directo; no cubre → Nequi $400k + Bancolombia $50k; sin negativos. SW v185 → v186. Tests 1433/1433.
+
+- **`modules/dominio/gastos/view.js`**: `renderFormGastoRapido` con `renderSelectorCuenta` (tarjetas radio con avatar).
+- **`modules/dominio/gastos/index.js`**: `_guardarGastoRapido` con `resolverPagoConPreferida` + confirm de sobregiro para 1 cuenta; removido import de `resolverPagoMultiCuenta`.
+- **`service-worker.js`**: v185 → v186.
+
+---
+
 ### feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza · 2026-06-28
 
 Rediseño de la selección de cuenta en el gasto, por feedback del usuario. El paso 3 anterior había quitado el selector del formulario (regresión: el usuario no podía indicar de qué cuenta salía el dinero, y un gasto mayor al saldo dejaba la cuenta en negativo). Ahora el formulario vuelve a tener el selector, como **lista de tarjetas seleccionables** donde cada cuenta muestra su **avatar de entidad** (Bancolombia, Nequi, Efectivo), su nombre y su saldo (decisión del usuario: lista de tarjetas, no menú desplegable). El comportamiento sigue el modelo pedido: se elige una cuenta; si **cubre** el monto, se usa directo (sin negativos, sin pasos extra); si **no alcanza** y hay más cuentas, se abre el picker de reparto avisando "X no alcanza para cubrir $Y" y pre-sembrando la elegida; la cuenta elegida se cobra primero y el resto se completa por mayor saldo, nunca dejando negativos. Si la cuenta elegida no alcanza y es la única, se pide confirmación explícita de sobregiro (no más negativos silenciosos). Meta acordada con el usuario: aplicar a los **4 flujos**; este cierra Gastos (formulario completo, crear y editar). Verificado en la app: cuenta que cubre → sin picker, un gasto, saldos sin negativos; cuenta que no cubre ($300.000 desde Bancolombia $100.000) → Bancolombia $100.000 + Nequi $200.000; editar un gasto pre-selecciona su cuenta; 1 cuenta insuficiente → diálogo de confirmación. Tests 1433/1433. SW v184 → v185.

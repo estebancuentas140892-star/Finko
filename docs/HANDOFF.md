@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza)
+> Última actualización: 2026-06-28 (feat(gastos): selector de tarjetas en Gasto rápido, 2/4 flujos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos): selector de tarjetas en Gasto rápido (2/4 flujos) · 2026-06-28
+
+El gasto rápido ahora muestra el mismo selector de tarjetas con avatares de entidad que el gasto completo. Si la cuenta elegida no cubre el monto, abre el picker de reparto con la elegida como prioridad (se cobra primero). Si es la única y no alcanza, pide confirmación de sobregiro. Verificado: cubre → sin picker, directo; no cubre → Nequi $400k + Bancolombia $50k; sin negativos. SW v185 → v186. Tests 1433/1433.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | `renderFormGastoRapido` con `renderSelectorCuenta`. |
+| `modules/dominio/gastos/index.js` | `_guardarGastoRapido` con `resolverPagoConPreferida` + confirm sobregiro. |
+
+---
 
 ### feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza · 2026-06-28
 
@@ -89,17 +100,6 @@ El "Abonar" a una deuda ahora puede cubrirse combinando varias cuentas, sin nega
 | `modules/infra/cuenta-helper.js` | Nuevo `resolverPagoMultiCuenta` + picker multi con checkboxes y preview de reparto. |
 | `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa el reparto; crea un gasto por cuenta. |
 | `styles/components/domain.css` | Estilos `.cuenta-multi__*`. |
-
----
-
-### feat(deudas): iconos de cuenta en el abono · 2026-06-28
-
-Mismo patrón de iconos de cuenta aplicado al modal de abono a deudas: avatar con color de la cuenta elegida en el hint de saldo + emoji por tipo de entidad (🏦/📱/💵) en las opciones del select. Reusa `infra/bancos.js`. Verificado en la app (Nequi morado "Nq"). SW v179 → v180. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/formularios.js` | Hint de cuenta única con avatar; opciones del select con emoji por tipo. |
-| `modules/dominio/compromisos/index.js` | `_actualizarSaldoDisponibleAbono` muestra el avatar de la cuenta elegida. |
 
 ---
 
