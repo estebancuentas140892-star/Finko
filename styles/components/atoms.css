@@ -154,6 +154,15 @@
   background: transparent;
 }
 
+/* Gastos: realce del icono de categoría como un chip de acento. El fondo
+   elevado por defecto contrasta poco con la card y el emoji se "perdía".
+   Un tinte de marca + borde delimita el contenedor y lo hace fácil de
+   identificar de un vistazo. Solo aplica a la lista de gastos. */
+.list-item__icon--cat {
+  background: var(--fk-accent-subtle);
+  border: 1px solid var(--fk-accent-border);
+}
+
 /* ════════════════════════════════════════════════════════════
    EMPTY STATE
    ════════════════════════════════════════════════════════════ */

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(deudas): selector de tarjetas en "Abonar", 4/4 flujos, cierra la serie)
+> Última actualización: 2026-06-28 (style(gastos): chip de acento en el icono de categoría + quitar emoji redundante del subtítulo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(gastos): chip de acento en el icono de categoría + subtítulo sin emoji redundante · 2026-06-28
+
+Por feedback del usuario: en la lista de gastos el icono de la izquierda (emoji de categoría) contrastaba poco con la card y costaba identificarlo, y el subtítulo repetía el mismo emoji junto al nombre de la categoría. Ahora el icono se enmarca en un chip de acento (fondo `--fk-accent-subtle` + borde `--fk-accent-border`) que lo delimita y resalta, y el subtítulo muestra solo el nombre de la categoría (sin emoji). El realce es exclusivo de Gastos vía el modificador `list-item__icon--cat`: no toca el `.list-item__icon` global que comparten Tesorería (avatares de banco), Metas/Apartados (anillos de progreso), Personales y Compromisos. Verificado en navegador (tema oscuro): chip verde visible, emoji solo en el chip, subtítulo "Categoría · fecha". SW v188 → v189. Tests 1438/1438.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | `_renderGastoItem`: clase `list-item__icon--cat` en el icono; subtítulo sin emoji (`cat = _esc(catKey)`). |
+| `styles/components/atoms.css` | Nuevo `.list-item__icon--cat` (chip de acento, solo Gastos). |
+
+---
+
 ### feat(deudas): selector de tarjetas + reparto-fallback en "Abonar" (4/4 flujos, cierra la serie) · 2026-06-28
 
 Cierra la serie "selector de tarjetas + reparto solo si no alcanza" en los 4 flujos de pago (Gastos, Gasto rápido, Agenda y ahora Deudas). El formulario de abono vuelve a tener el selector de tarjetas (avatar, nombre, saldo); se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". `validarAbono` vuelve a exigir `cuentaId`. Verificado en navegador: cubre (Bancolombia $2M, abono $200k) → un solo gasto-abono, sin picker; no cubre (Nequi $100k, abono $500k) → reparto Nequi $100k + Bancolombia $400k, saldo de la deuda baja de $1.500.000 a $1.000.000, saldos de cuentas sin negativos. Tests 1438/1438 (2 actualizados, sin nuevos: la cobertura de `resolverPagoConPreferida` ya existía). SW v187 → v188.
@@ -72,19 +83,6 @@ El gasto rápido ahora muestra el mismo selector de tarjetas con avatares de ent
 |---|---|
 | `modules/dominio/gastos/view.js` | `renderFormGastoRapido` con `renderSelectorCuenta`. |
 | `modules/dominio/gastos/index.js` | `_guardarGastoRapido` con `resolverPagoConPreferida` + confirm sobregiro. |
-
----
-
-### feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza · 2026-06-28
-
-Por feedback del usuario, se rediseñó la selección de cuenta en el gasto (el paso 3 anterior la había quitado, una regresión). El formulario vuelve a tener el selector de cuenta de origen, ahora como **tarjetas seleccionables con el avatar de cada entidad** (Bancolombia, Nequi, Efectivo). El reparto multi-cuenta pasa a ser **fallback**: solo se abre cuando la cuenta elegida no alcanza, avisando "X no alcanza" y pre-sembrando la elegida; la cuenta elegida se cobra primero y el resto completa por mayor saldo (sin negativos). Para 1 sola cuenta que no cubre, se pide confirmación de sobregiro (no más negativos silenciosos). Decisión del usuario: **lista de tarjetas** + aplicar a los **4 flujos** (este cierra Gastos; faltan Gasto rápido, Agenda, Deudas). Verificado en la app: cubre → sin picker; no cubre → Bancolombia $100k + Nequi $200k; editar pre-selecciona la cuenta correcta; 1 cuenta insuficiente → confirm. SW v184 → v185. Tests 1433/1433.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/cuenta-helper.js` | `renderSelectorCuenta` (tarjetas radio con avatar) + `resolverPagoConPreferida` (fallback con aviso). |
-| `modules/infra/distribuir-pago.js` | Parámetro `prioridadId`: la cuenta elegida se cobra primero. |
-| `modules/dominio/gastos/{view,index,logic}.js` | Form con selector de tarjetas; `_guardarGasto` con preferida + confirm de sobregiro. |
-| `styles/components/domain.css` | Tarjetas `.cuenta-sel` + aviso del picker. |
 
 ---
 

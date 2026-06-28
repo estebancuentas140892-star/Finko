@@ -185,7 +185,9 @@ function _renderGastoItem(gasto) {
     ? '<span class="list-item__placeholder">Sin completar</span>'
     : _esc(gasto.descripcion);
   const catKey = gasto.categoria ?? 'Otros';
-  const cat    = `${CATEGORIA_EMOJI[catKey] ?? ''} ${_esc(catKey)}`;
+  // El icono principal (izquierda) ya representa la categoría: en el subtítulo
+  // basta con el nombre, sin repetir el emoji.
+  const cat    = _esc(catKey);
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
   const badge = sinCompletar
     ? '<span class="badge badge--warn" title="Toca editar para completar este gasto">📝 Pendiente</span> '
@@ -193,7 +195,7 @@ function _renderGastoItem(gasto) {
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
-      <div class="list-item__icon" aria-hidden="true">${CATEGORIA_EMOJI[catKey] ?? icon('gastos')}</div>
+      <div class="list-item__icon list-item__icon--cat" aria-hidden="true">${CATEGORIA_EMOJI[catKey] ?? icon('gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>
