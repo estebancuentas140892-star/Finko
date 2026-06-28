@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): barra de total al tope de la lista (UX B) · 2026-06-28
+
+La lista de gastos mostraba cada gasto pero no el total: para saber cuánto llevaba gastado en el mes había que ir a Análisis. Ahora una barra al tope muestra "N gastos · $total". Refleja siempre lo visible: sin filtro es el total del mes (el dato que pedía el hallazgo); con una categoría activa pasa a ser el total de esa categoría y el chip activo lo desambigua. Reusa el helper `totalGastos` ya existente; cero lógica nueva. Verificado en la app: 5 gastos → $172.000 sin filtro; 2 gastos → $107.000 filtrando Alimentación. Tests 1418/1418. SW v174 → v175.
+
+- **`modules/dominio/gastos/view.js`**: import `totalGastos` + `_renderResumen()` prepende la barra cuando hay ítems visibles.
+- **`styles/components/domain.css`**: reglas `.gastos-resumen*` (flex, border-bottom, total en `--fk-text-lg` bold).
+- **`styles/base.css`**: `.gastos-resumen__total` agregado a la lista de tabular-nums.
+- **`service-worker.js`**: v174 → v175.
+
+---
+
 ### style(gastos): fecha legible en la lista de gastos (UX A) · 2026-06-28
 
 La lista de gastos mostraba la fecha en formato ISO crudo ("2026-06-26"), el único dominio de la app que no usaba el helper `fechaLegible`. Ahora muestra "26 de junio de 2026", consistente con ahorro, metas, apartados e inversiones. Cambio de 2 líneas en la vista. Tests 1418/1418. SW v173 → v174.

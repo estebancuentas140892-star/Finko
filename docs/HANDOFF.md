@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(gastos): barra de total al tope de la lista (UX B) · 2026-06-28
+
+La lista de Gastos no mostraba total; había que ir a Análisis. Ahora una barra "N gastos · $total" al tope refleja lo visible: total del mes sin filtro, total de categoría con filtro activo (el chip desambigua). Reusa `totalGastos`, cero lógica nueva. SW v174 → v175. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | `_renderResumen()` + import `totalGastos`. |
+| `styles/components/domain.css` | Reglas `.gastos-resumen*`. |
+| `styles/base.css` | `.gastos-resumen__total` en tabular-nums. |
+| `service-worker.js` | v174 → v175. |
+
+---
+
 ### style(gastos): fecha legible en la lista de gastos (UX A) · 2026-06-28
 
 La lista de Gastos mostraba la fecha en ISO crudo ("2026-06-26"), el único dominio sin `fechaLegible`. Ahora muestra "26 de junio de 2026", consistente con el resto de la app. 2 líneas en la vista. SW v173 → v174. Tests 1418/1418.
@@ -76,29 +89,7 @@ Hallazgo 2 de la revisión. 8 cadenas en voseo → tuteo en HTML, logic.js y vie
 
 ---
 
-### fix(analisis): el patrimonio neto suma inversiones y apartados · 2026-06-27
-
-De una revisión integral de la app. Los "Activos totales" del patrimonio neto eran `cuentas + metas` y omitían inversión y apartados (activos reales): se subestimaba el patrimonio. Ahora `activos = cuentas + metas + apartados + inversiones`; el fondo de emergencia queda fuera a propósito (su aporte no descuenta la cuenta, ya está en `cuentas`, sumarlo duplicaría). Verificado en la app: −$2.830.000 → −$630.000. SW v170 → v171. Tests 1418/1418 (+7).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/analisis/logic.js` | `calcularActivos` suma 4 buckets (+`totalApartados`/`totalInversiones`); `generarResumen` propaga apartados e inversiones. |
-| `modules/dominio/analisis/view.js` | Pasa `S.apartados`/`S.inversiones`; desglose de activos muestra Apartados e Inversión. |
-| `tests/unit/analisis.test.js` | Fixtures + 7 casos nuevos. |
-| `tests/integration/flujos.test.js` | Llamadas a `generarResumen` con la firma real. |
-| `service-worker.js` | v170 → v171. |
-
----
-
 > Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
-
----
-
-> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
-
----
-
-> Para tareas anteriores (motor recomendación deudas, tasa opcional, motor distribución ingresos, Apartados Fase 1, ADR 005), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

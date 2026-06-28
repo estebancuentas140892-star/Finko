@@ -63,6 +63,7 @@ p {
 .patron__factor,
 .chart-stat__valor,
 .chart-axis__label,
+.gastos-resumen__total,
 .sidebar__saldo-value {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;

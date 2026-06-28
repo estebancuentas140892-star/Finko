@@ -395,6 +395,31 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   GASTOS-RESUMEN - barra de total al tope de la lista de gastos.
+   Refleja lo visible: total del mes (sin filtro) o de la categoría activa.
+   ════════════════════════════════════════════════════════════ */
+
+.gastos-resumen {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--fk-space-2) var(--fk-space-1) var(--fk-space-3);
+  border-bottom: 1px solid var(--fk-border-default);
+  margin-bottom: var(--fk-space-2);
+}
+
+.gastos-resumen__count {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+
+.gastos-resumen__total {
+  font-size: var(--fk-text-lg);
+  font-weight: 700;
+  color: var(--fk-text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════
    APARTADOS - plantillas rápidas y sugerencia de aporte.
    ════════════════════════════════════════════════════════════ */
 

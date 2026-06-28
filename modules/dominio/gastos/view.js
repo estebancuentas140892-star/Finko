@@ -7,7 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO, CATEGORIA_EMOJI } from '../../core/constants.js';
-import { gastosMes, filtrarGastos, gastosPendientes } from './logic.js';
+import { gastosMes, filtrarGastos, gastosPendientes, totalGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -148,9 +148,30 @@ export function renderListaGastos() {
 
   const filtrados = filtrarGastos(delMes, _filtroCategoria);
 
-  el.innerHTML = filtrados.length === 0
-    ? _renderEmptyFiltro()
-    : filtrados.map(_renderGastoItem).join('');
+  if (filtrados.length === 0) {
+    el.innerHTML = _renderEmptyFiltro();
+    return;
+  }
+
+  el.innerHTML = _renderResumen(filtrados) + filtrados.map(_renderGastoItem).join('');
+}
+
+/**
+ * Barra de total al tope de la lista. Describe siempre lo que está visible:
+ * sin filtro es el total del mes; con una categoría activa es el total de esa
+ * categoría (el chip activo lo desambigua). Solo se renderiza cuando hay ítems.
+ * @param {import('../../core/state.js').Gasto[]} gastos visibles
+ */
+function _renderResumen(gastos) {
+  const n     = gastos.length;
+  const conteo = n === 1 ? '1 gasto' : `${n} gastos`;
+  const total = totalGastos(gastos);
+  return `
+    <div class="gastos-resumen" role="status"
+         aria-label="${conteo}, total ${f(total)}">
+      <span class="gastos-resumen__count">${conteo}</span>
+      <span class="gastos-resumen__total">${f(total)}</span>
+    </div>`;
 }
 
 /** @param {import('../../core/state.js').Gasto} gasto */
