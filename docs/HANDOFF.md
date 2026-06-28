@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(deudas): abono repartido entre varias cuentas)
+> Última actualización: 2026-06-28 (feat(gastos): gasto repartido entre cuentas, cierra "todos los pagos")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos): gasto y gasto rápido repartidos entre cuentas (paso 3 de 3) · 2026-06-28
+
+Cierra la serie "todos los pagos": registrar un gasto (form completo o gasto rápido) puede repartirse entre varias cuentas, sin negativos. Reusa `distribuirPago` + el picker. En creación no hay selector de cuenta inline (se elige al confirmar, un registro por cuenta usada); en edición se conserva el selector (cada registro sigue siendo de una cuenta). Verificado: gasto $900.000 → Bancolombia $600.000 + Nequi $300.000 (2 registros); gasto rápido $150.000 → Nequi $100.000 + Efectivo $50.000 (2 pendientes); editar un gasto mantiene su selector con la cuenta correcta. SW v183 → v184. Tests 1423/1423.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | `renderFormGasto(modoEdicion)`: selector solo en edición. `renderFormGastoRapido` sin selector inline. |
+| `modules/dominio/gastos/index.js` | `_guardarGasto`/`_guardarGastoRapido` async con `resolverPagoMultiCuenta`; un gasto por cuenta. `_montarFormGasto(modoEdicion)`. |
+| `modules/dominio/gastos/logic.js` | `validarGasto(datos, requiereCuenta)`. |
+| `tests/unit/gastos.test.js` | Tests de `renderFormGasto` al nuevo contrato (creación sin selector, edición con él). |
+
+---
 
 ### feat(deudas): abono repartido entre varias cuentas (paso 2 de 3) · 2026-06-28
 
@@ -84,21 +97,6 @@ Mismo patrón de iconos de cuenta aplicado al modal de abono a deudas: avatar co
 |---|---|
 | `modules/dominio/compromisos/views/formularios.js` | Hint de cuenta única con avatar; opciones del select con emoji por tipo. |
 | `modules/dominio/compromisos/index.js` | `_actualizarSaldoDisponibleAbono` muestra el avatar de la cuenta elegida. |
-
----
-
-### feat(cuentas): iconos de entidad en selección de cuenta · 2026-06-28
-
-Las entidades bancarias y el efectivo ahora se muestran con su icono (avatar con color corporativo) al elegir cuenta. Helper compartido `bancoAvatar`/`bancoClaseEmoji` en infra. Picker de Agenda: avatar por cuenta. Gastos: avatar de la cuenta en el hint de saldo + emoji por tipo (🏦/📱/💵) en cada opción del select (un `<option>` nativo no admite avatar con color). Tesorería refactorizada para reusar el helper. SW v178 → v179. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/bancos.js` | Nuevo. `bancoAvatar(bancoId)` + `bancoClaseEmoji(bancoId)`. |
-| `modules/infra/cuenta-helper.js` | Picker de cuenta: avatar con color por botón. |
-| `modules/dominio/gastos/view.js` | Hint de cuenta única con avatar; opciones del select con emoji por tipo. |
-| `modules/dominio/gastos/index.js` | Display de saldo con avatar de la cuenta elegida. |
-| `modules/dominio/tesoreria/view.js` | `_bankAvatarHtml` delega en el helper compartido. |
-| `styles/components/nudges.css`, `styles/components/domain.css` | Variante inline del avatar + grupo en cuenta-picker. |
 
 ---
 

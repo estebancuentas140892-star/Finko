@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): gasto y gasto rápido repartidos entre varias cuentas (paso 3 de 3) · 2026-06-28
+
+Cierra la serie "todos los pagos": registrar un gasto (formulario completo o gasto rápido) ahora puede repartirse entre varias cuentas, sin dejar ninguna en negativo, igual que Agenda (paso 1) y Abono de Deudas (paso 2). Reusa el núcleo `distribuirPago` y el picker multi-cuenta. Diseño que respeta la edición: en **creación** el formulario ya no lleva selector de cuenta inline (se elige al confirmar y se crea un registro por cada cuenta usada); en **edición** se conserva el selector, porque cada registro de gasto sigue siendo de una sola cuenta (un gasto repartido son N registros independientes, editables por separado). El gasto rápido con una sola cuenta sigue siendo instantáneo (el picker resuelve sin mostrar UI). Verificado en la app: gasto $900.000 con cuentas 600/400/100 → Bancolombia $600.000 + Nequi $300.000 (2 registros, misma descripción/categoría), saldos 0/$100.000/$100.000 sin negativos; gasto rápido $150.000 → Nequi $100.000 + Efectivo $50.000 (2 pendientes); editar un gasto mantiene su selector con la cuenta correcta pre-cargada. Tests 1423/1423. SW v183 → v184.
+
+- **`modules/dominio/gastos/view.js`**: `renderFormGasto(modoEdicion = false)` solo renderiza selector de cuenta en edición. `renderFormGastoRapido` ya no renderiza selector (ni hidden ni `<select>`).
+- **`modules/dominio/gastos/index.js`**: `_guardarGasto` ahora es async; rama creación usa `resolverPagoMultiCuenta` y crea un gasto por cuenta (nota "Gasto repartido entre varias cuentas" cuando son ≥ 2); rama edición intacta. `_guardarGastoRapido` async con el mismo reparto. `_montarFormGasto(modoEdicion)` propagado desde `_nuevoGasto(false)` y `_editarGasto(true)`.
+- **`modules/dominio/gastos/logic.js`**: `validarGasto(datos, requiereCuenta = true)`; en creación se llama con `false` (la cuenta se elige al confirmar).
+- **`tests/unit/gastos.test.js`**: tests de `renderFormGasto` actualizados (creación sin selector, edición con selector single/varias).
+- **`service-worker.js`**: v183 → v184.
+
+---
+
 ### feat(deudas): abono repartido entre varias cuentas (paso 2 de 3) · 2026-06-28
 
 El "Abonar" a una deuda ahora permite cubrir el monto combinando varias cuentas (banco + efectivo) sin dejar ninguna en negativo, igual que el "Marcar pagado" de Agenda (paso 1). Reusa el núcleo `distribuirPago` y el picker multi-cuenta. Cambio de UX: el formulario de abono ya no lleva selector de cuenta inline; el usuario escribe el monto y, al "Registrar abono", se abre el picker "¿Desde qué cuentas?" con el monto ajustado. Crea un gasto-abono por cada cuenta usada (vinculado por `compromisoId`) y reduce el `saldoTotal` de la deuda por el total abonado una sola vez. Verificado en la app: cuota $900.000 con cuentas de $600.000/$400.000/$100.000 → Bancolombia $600.000 + Nequi $300.000, la deuda baja de $2.000.000 a $1.100.000, saldos quedan 0/$100.000/$100.000 sin negativos. Caso de 1 cuenta: conserva el confirm de sobregiro. **Pendiente:** paso 3 (Gastos / Gasto rápido). Tests 1423/1423. SW v182 → v183.
