@@ -43,18 +43,44 @@ export function renderAnalisis() {
   const comparacion   = calcularComparacionCategorias(S.gastos, anio, mes);
   const patronSemanal = detectarPatronGastoSemanal(S.gastos, fechaHoy);
 
-  el.innerHTML = `
-    ${_renderMetricas(resumen)}
-    ${_renderScoreSalud(resumen)}
-    ${_renderRecomendacionFiscal()}
-    ${_renderEstadoRenta(anio)}
-    ${_renderPatrimonio(resumen)}
-    ${_renderTendencia(serieGastos)}
-    ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
+  // Orden de lectura (F8): primero "cómo estoy" (salud + patrimonio), luego
+  // "a dónde va mi dinero" (tendencia + categorías). El detalle fino de gastos
+  // y lo fiscal quedan colapsados para no enterrar lo importante.
+  const detalleGastos = `
     ${_renderComparacionCategorias(comparacion)}
     ${_renderPatronSemanal(patronSemanal)}
     ${_renderHormigas(resumen.hormigas)}
   `;
+
+  el.innerHTML = `
+    ${_renderScoreSalud(resumen)}
+    ${_renderPatrimonio(resumen)}
+    ${_renderTendencia(serieGastos)}
+    ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
+    ${_renderGrupoColapsable('Más detalle de tus gastos', detalleGastos)}
+    ${_renderEstadoRenta(anio)}
+  `;
+}
+
+// ── HELPER: GRUPO COLAPSABLE ─────────────────────────────────────
+
+/**
+ * Envuelve contenido en un `<details>` colapsable con un encabezado guía.
+ * Devuelve '' si el contenido está vacío (todas las sub-cards sin datos), para
+ * no mostrar un grupo vacío.
+ *
+ * @param {string} titulo
+ * @param {string} contenido  HTML ya renderizado de las sub-secciones.
+ * @param {{ abierto?: boolean }} [opts]
+ * @returns {string}
+ */
+function _renderGrupoColapsable(titulo, contenido, { abierto = false } = {}) {
+  if (!contenido || contenido.trim() === '') return '';
+  return `
+    <details class="analisis-grupo"${abierto ? ' open' : ''}>
+      <summary class="analisis-grupo__summary">${_esc(titulo)}</summary>
+      <div class="analisis-grupo__body">${contenido}</div>
+    </details>`;
 }
 
 // ── SECCIONES INTERNAS ───────────────────────────────────────────
@@ -126,19 +152,27 @@ function _renderEstadoRenta(anio) {
       </div>`
     : '';
 
+  // El grupo se abre solo si hay algo que el usuario debería ver ya: una alerta
+  // de tope o una recomendación por su perfil fiscal. Si no, queda colapsado.
+  const recomFiscal = _renderRecomendacionFiscal();
+  const abierto     = tieneAlerta || recomFiscal !== '';
+
   return `
-    <section class="analisis__section" aria-labelledby="analisis-renta-title">
-      <h2 class="analisis__section-title" id="analisis-renta-title">📋 Estado de tu renta (${anio})</h2>
-      <p class="analisis__hint">
-        UVT vigente: ${f(estado.uvt)}. Topes calculados a partir de tus datos en Finko.
-        Confirma con un contador antes de declarar.
-      </p>
-      ${avisoVigencia}
-      ${bannerNudges}
-      <div class="renta-criterios">
-        ${filas}
+    <details class="analisis-grupo"${abierto ? ' open' : ''}>
+      <summary class="analisis-grupo__summary">📋 Estado de tu renta (${anio})</summary>
+      <div class="analisis-grupo__body">
+        ${recomFiscal}
+        <p class="analisis__hint">
+          UVT vigente: ${f(estado.uvt)}. Topes calculados a partir de tus datos en Finko.
+          Confirma con un contador antes de declarar.
+        </p>
+        ${avisoVigencia}
+        ${bannerNudges}
+        <div class="renta-criterios">
+          ${filas}
+        </div>
       </div>
-    </section>`;
+    </details>`;
 }
 
 function _renderCriterioRenta(c) {
@@ -182,27 +216,6 @@ function _renderNudgeRenta(n) {
         <p class="nudge__desc">${_esc(n.mensaje)}</p>
       </div>
     </div>`;
-}
-
-function _renderMetricas({ gastoMes, compromisoMensual, egresos }) {
-  return `
-    <section class="analisis__section" aria-labelledby="analisis-metricas-title">
-      <h2 class="analisis__section-title" id="analisis-metricas-title">Resumen del mes</h2>
-      <div class="metric-grid">
-        <article class="metric-card">
-          <p class="metric-card__label">Gastos registrados</p>
-          <p class="metric-card__value">${f(gastoMes)}</p>
-        </article>
-        <article class="metric-card">
-          <p class="metric-card__label">Compromisos mensuales</p>
-          <p class="metric-card__value">${f(compromisoMensual)}</p>
-        </article>
-        <article class="metric-card">
-          <p class="metric-card__label">Total egresos</p>
-          <p class="metric-card__value">${f(egresos)}</p>
-        </article>
-      </div>
-    </section>`;
 }
 
 function _renderScoreSalud(resumen) {

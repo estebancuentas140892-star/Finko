@@ -47,6 +47,43 @@
   padding: var(--fk-space-4) 0;
 }
 
+/* ── Grupo colapsable (F8) ───────────────────────────────── */
+.analisis-grupo {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: var(--fk-space-6);
+  overflow: hidden;
+}
+.analisis-grupo__summary {
+  padding: var(--fk-space-4);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+.analisis-grupo__summary::-webkit-details-marker { display: none; }
+.analisis-grupo__summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+  transition: transform 0.15s ease;
+}
+.analisis-grupo[open] > .analisis-grupo__summary::after {
+  transform: rotate(180deg);
+}
+.analisis-grupo__body {
+  padding: 0 var(--fk-space-4) var(--fk-space-4);
+}
+/* Las sub-secciones dentro de un grupo no necesitan su margen externo. */
+.analisis-grupo__body .analisis__section:last-child {
+  margin-bottom: 0;
+}
+
 /* ── Métricas del mes ────────────────────────────────────── */
 .metric-grid {
   display: grid;

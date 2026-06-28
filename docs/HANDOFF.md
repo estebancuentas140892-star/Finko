@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (feat ahorro: vista consolidada del ahorro total, F6, ADR 009)
+> Última actualización: 2026-06-27 (refactor analisis: simplificación y jerarquía, F8, ADR 010)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(analisis): simplificar y jerarquizar la sección (F8) · 2026-06-27
+
+Análisis de 10 secciones apiladas a jerarquía clara (solo vista, sin tocar logic/schema/tests). Score → Patrimonio → Tendencia → Categorías arriba; "Más detalle de gastos" y "Estado de renta" colapsados en `<details>` (renta se abre si hay alerta). Card "Resumen del mes" eliminada. Subtítulo guía nuevo. Ver [ADR 010](DECISIONS/010-simplificacion-analisis.md). SW v169 → v170. Tests 1411/1411.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/analisis/view.js` | `renderAnalisis` reordenado; `_renderGrupoColapsable`; renta colapsable; `_renderMetricas` eliminado. |
+| `index.html` | Subtítulo en header de Análisis. |
+| `styles/components/analysis.css` | Reglas `.analisis-grupo*`. |
+| `docs/DECISIONS/010-simplificacion-analisis.md` | ADR nuevo. |
+| `service-worker.js` | v169 → v170. |
+
+---
 
 ### style(apartados): rediseño del formulario (F7) · 2026-06-27
 
@@ -89,18 +103,6 @@ Chips de preset (Automático, 50/30/20, 70/20/10, 60/20/20) en la card "¿Cómo 
 | `modules/dominio/tesoreria/view.js` | Chips de preset, pasa `presetId` desde `S.config`. |
 | `modules/dominio/tesoreria/index.js` | Acción `cambiar-preset-distribucion`, `save()` a config. |
 | `service-worker.js` | v165 → v166. |
-
----
-
-### feat(compromisos): pre-llenar monto de abono con cuota mensual · 2026-06-27
-
-"Abonar" ahora abre con el campo de monto pre-llenado con `Math.min(cuota, saldo)` en vez de vacío. Hint: "Pre-llenado con tu cuota mensual." El tip de proyección se muestra al abrir. SW v164 → v165. Tests 1407/1407.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/formularios.js` | `value` pre-llenado + hint actualizado. |
-| `modules/dominio/compromisos/index.js` | `_actualizarTipProyeccion()` al abrir modal. |
-| `service-worker.js` | v164 → v165. |
 
 ---
 

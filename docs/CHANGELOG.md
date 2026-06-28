@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(analisis): simplificar y jerarquizar la sección (F8) · 2026-06-27
+
+Análisis pasó de 10 secciones apiladas a una jerarquía de lectura clara, solo en la capa de vista (cero cambios en logic.js, schema, datos o tests). Orden nuevo: Score → Patrimonio → Tendencia → Por categoría visibles; "Más detalle de tus gastos" (Vs mes anterior, Patrón semanal, Gasto hormiga) y "Estado de tu renta" colapsados en `<details>`. Renta se abre sola si hay alerta de tope o recomendación fiscal. Se elimina la card "Resumen del mes" (3 cifras crudas redundantes). Subtítulo guía nuevo. Decisión en [ADR 010](DECISIONS/010-simplificacion-analisis.md). SW v169 → v170. Tests 1411/1411.
+
+- **`modules/dominio/analisis/view.js`**: `renderAnalisis` reordenado; `_renderGrupoColapsable` nuevo; `_renderEstadoRenta` ahora es `<details>` que incluye la recomendación fiscal; `_renderMetricas` eliminado.
+- **`index.html`**: subtítulo en el header de Análisis.
+- **`styles/components/analysis.css`**: reglas `.analisis-grupo*`.
+- **`docs/DECISIONS/010-simplificacion-analisis.md`**: ADR nuevo.
+- **`service-worker.js`**: v169 → v170.
+
+---
+
 ### style(apartados): rediseño del formulario (F7) · 2026-06-27
 
 El form de nuevo apartado se reorganiza: (1) emoji inline con el nombre en una fila (grid 3.5rem + 1fr) en vez de un campo suelto al final, (2) sección de recurrencia dentro de `<details>` colapsable en vez de checkbox + grupo visible, (3) mejor microcopy en la pregunta de frecuencia ("¿Cada cuánto puedes aportar?" + hint explicando cómo Finko usa la frecuencia). CSS nuevo: `.apartado-nombre-row*` y `.form-details*`. SW v168 → v169.
