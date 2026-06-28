@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(cuentas): iconos de entidad en selección de cuenta · 2026-06-28
+
+Las cuentas bancarias y el efectivo ahora se acompañan de su icono (avatar circular con iniciales y color corporativo) en todos los puntos donde se elige cuenta. Un `<select>` nativo no admite renderizar el avatar con color, así que el enfoque varía por contexto: el picker de Agenda (botones custom) muestra el avatar completo por cuenta; en Gastos, el hint de saldo muestra el avatar de la cuenta elegida y cada `<option>` del select lleva un emoji por tipo de entidad (🏦 banco, 📱 billetera, 💵 efectivo). Se extrae un helper compartido a infra para no duplicar la lógica del avatar (Tesorería lo reusa). Sin cambios de lógica ni de datos; accesibilidad intacta (se conserva el select nativo). Verificado en la app con 3 cuentas (Bancolombia amarillo, Nequi morado, Efectivo verde). Tests 1418/1418. SW v178 → v179.
+
+- **`modules/infra/bancos.js`**: nuevo. `bancoAvatar(bancoId)` (HTML del avatar) y `bancoClaseEmoji(bancoId)` (emoji por clase de entidad).
+- **`modules/infra/cuenta-helper.js`**: el picker de cuenta (`_mostrarPickerCuenta`) envuelve avatar + nombre en `.cuenta-picker__main` y muestra el avatar por botón.
+- **`modules/dominio/gastos/view.js`**: hint de cuenta única con `bancoAvatar`; opciones del select multi-cuenta con `bancoClaseEmoji`.
+- **`modules/dominio/gastos/index.js`**: `_actualizarSaldoDisponible` muestra el avatar de la cuenta elegida (innerHTML + esc).
+- **`modules/dominio/tesoreria/view.js`**: `_bankAvatarHtml` delega en el helper compartido (DRY).
+- **`styles/components/nudges.css`**: variante `.form-hint .bank-avatar` (avatar inline más pequeño y centrado).
+- **`styles/components/domain.css`**: `.cuenta-picker__main` (grupo avatar + nombre).
+- **`service-worker.js`**: v178 → v179 + precache de `bancos.js`.
+
+---
+
 ### refactor(gastos): reestructura de categorías v14→v15 · 2026-06-28
 
 Separación de "Alimentación" en "Mercado" (compra de víveres) y "Restaurantes" (comidas fuera). Nuevas categorías: "Hogar" (reparaciones, artículos del hogar), "Mascotas" (comida, veterinario), "Cuidado personal" (higiene, belleza). Internamente: "Deudas" (usado por compromisos/abonos) y "Ahorro" (usado por tesorería) se ocultan del formulario de gasto (siguen siendo válidas en datos existentes). Schema v14→v15: gastos y presupuestos con "Alimentación" se migran a "Mercado" idempotentemente. CATEGORIAS_GASTO crece a 16 (todas válidas); CATEGORIAS_GASTO_USUARIO reduce a 13 (solo visible al usuario). Validación de presupuesto sigue aceptando todas las 16 para compatibilidad histórica. Tests 1418/1418. SW v177 → v178.

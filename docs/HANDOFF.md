@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (refactor(gastos): reestructura de categorías v14→v15)
+> Última actualización: 2026-06-28 (feat(cuentas): iconos de entidad en selección de cuenta)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(cuentas): iconos de entidad en selección de cuenta · 2026-06-28
+
+Las entidades bancarias y el efectivo ahora se muestran con su icono (avatar con color corporativo) al elegir cuenta. Helper compartido `bancoAvatar`/`bancoClaseEmoji` en infra. Picker de Agenda: avatar por cuenta. Gastos: avatar de la cuenta en el hint de saldo + emoji por tipo (🏦/📱/💵) en cada opción del select (un `<option>` nativo no admite avatar con color). Tesorería refactorizada para reusar el helper. SW v178 → v179. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/bancos.js` | Nuevo. `bancoAvatar(bancoId)` + `bancoClaseEmoji(bancoId)`. |
+| `modules/infra/cuenta-helper.js` | Picker de cuenta: avatar con color por botón. |
+| `modules/dominio/gastos/view.js` | Hint de cuenta única con avatar; opciones del select con emoji por tipo. |
+| `modules/dominio/gastos/index.js` | Display de saldo con avatar de la cuenta elegida. |
+| `modules/dominio/tesoreria/view.js` | `_bankAvatarHtml` delega en el helper compartido. |
+| `styles/components/nudges.css`, `styles/components/domain.css` | Variante inline del avatar + grupo en cuenta-picker. |
+
+---
 
 ### refactor(gastos): reestructura de categorías v14→v15 · 2026-06-28
 
@@ -89,28 +104,6 @@ La lista de Gastos no mostraba total; había que ir a Análisis. Ahora una barra
 | `styles/components/domain.css` | Reglas `.gastos-resumen*`. |
 | `styles/base.css` | `.gastos-resumen__total` en tabular-nums. |
 | `service-worker.js` | v174 → v175. |
-
----
-
-### style(gastos): fecha legible en la lista de gastos (UX A) · 2026-06-28
-
-La lista de Gastos mostraba la fecha en ISO crudo ("2026-06-26"), el único dominio sin `fechaLegible`. Ahora muestra "26 de junio de 2026", consistente con el resto de la app. 2 líneas en la vista. SW v173 → v174. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/view.js` | Import `fechaLegible` + reemplazo en `_renderGastoItem`. |
-| `service-worker.js` | v173 → v174. |
-
----
-
-### fix(compromisos): chip de urgencia claro y con color (Hallazgo 3) · 2026-06-28
-
-Hallazgo 3 de la revisión. El chip de urgencia de cada deuda tenía 3 defectos en el mismo bloque: (1) texto ambiguo "17 días" → ahora "Vence en 17 días"; (2) clase de color con doble guion (`chip--warning`) que no existe en CSS, el chip se veía siempre gris → corregido a `chip-warning`, ahora pinta ámbar/rojo según urgencia; (3) aria-label redundante "Vence en Vence hoy" → ahora coincide con el visible. Cero lógica, cero tests nuevos. SW v172 → v173. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/lista.js` | `_renderCompromisoItem`: clase de color, label con verbo, aria-label. |
-| `service-worker.js` | v172 → v173. |
 
 ---
 
