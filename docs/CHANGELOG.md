@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(copy): reemplazar voseo por tuteo en 8 cadenas (ADN #11) · 2026-06-27
+
+Violación de la regla ADN #11 (lenguaje tuteo, no voseo). Se identificaron 8 cadenas en voseo durante la revisión integral y se corrigieron a tuteo. Cambio mecánico, cero lógica. Tests 1418/1418. SW v171 → v172.
+
+- **`index.html`**: "Instalá" → "Instala", "Tocá" → "Toca", "Deslizá" → "Desliza" (3 en el onboarding de instalación PWA).
+- **`modules/dominio/analisis/logic.js`**: "gastás" → "gastas" (insight de patrón de gasto).
+- **`modules/dominio/compromisos/views/estrategia.js`**: "usá" → "usa" (sugerencia de estrategia de pago).
+- **`modules/dominio/personales/index.js`**: "Poné" → "Pon" (validación de monto).
+- **`modules/dominio/import/logic.js`**: "Usá" → "Usa" (error de formato de fecha en CSV).
+- **`service-worker.js`**: v171 → v172.
+
+---
+
 ### fix(analisis): el patrimonio neto suma inversiones y apartados · 2026-06-27
 
 Hallazgo de una revisión integral de la app. El patrimonio neto calculaba los activos como `cuentas + metas`, dejando por fuera la inversión y los apartados, dos activos reales: subestimaba el patrimonio. La prueba de que era un olvido (no una decisión): en el mismo archivo, `patrimonioBruto` (monitor de renta) ya sumaba `cuentas + inversiones`. Inversión (J.2) y Apartados (N.1) se añadieron después de escribir `calcularActivos` y nunca se conectaron al patrimonio neto.

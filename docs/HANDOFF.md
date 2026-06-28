@@ -39,6 +39,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(copy): reemplazar voseo por tuteo (ADN #11) · 2026-06-27
+
+Hallazgo 2 de la revisión. 8 cadenas en voseo → tuteo en HTML, logic.js y views (Instalá → Instala, Tocá → Toca, gastás → gastas, usá → usa, Poné → Pon, Usá → Usa). Cambio mecánico, cero lógica, cero test changes. SW v171 → v172. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Onboarding PWA: 3 cadenas voseo → tuteo. |
+| `modules/dominio/analisis/logic.js` | Insight de gasto: "gastás" → "gastas". |
+| `modules/dominio/compromisos/views/estrategia.js` | Sugerencia estrategia: "usá" → "usa". |
+| `modules/dominio/personales/index.js` | Validación monto: "Poné" → "Pon". |
+| `modules/dominio/import/logic.js` | Error CSV: "Usá" → "Usa". |
+| `service-worker.js` | v171 → v172. |
+
+---
+
 ### fix(analisis): el patrimonio neto suma inversiones y apartados · 2026-06-27
 
 De una revisión integral de la app. Los "Activos totales" del patrimonio neto eran `cuentas + metas` y omitían inversión y apartados (activos reales): se subestimaba el patrimonio. Ahora `activos = cuentas + metas + apartados + inversiones`; el fondo de emergencia queda fuera a propósito (su aporte no descuenta la cuenta, ya está en `cuentas`, sumarlo duplicaría). Verificado en la app: −$2.830.000 → −$630.000. SW v170 → v171. Tests 1418/1418 (+7).
@@ -93,17 +108,6 @@ Card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo
 | `tests/unit/ahorro.test.js` | +4 tests. |
 | `docs/DECISIONS/009-consolidado-de-ahorro.md` | ADR nuevo. |
 | `service-worker.js` | v167 → v168. |
-
----
-
-### style(ahorro): nudge prioriza reducir estilo de vida · 2026-06-27
-
-Nudges de ahorro bajo (0-10%, 0%, negativo) ahora sugieren recortar estilo de vida (entretenimiento, salidas, suscripciones) antes de tocar ahorro o fijos. SW v166 → v167.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/ahorro/view.js` | Copy de `_renderNudgeTasa` en 3 rangos bajos. |
-| `service-worker.js` | v166 → v167. |
 
 ---
 

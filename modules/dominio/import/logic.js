@@ -138,7 +138,7 @@ export function validarFila(fila) {
   // Fecha.
   const fechaParseada = parsearFecha(fila.fecha);
   if (!fechaParseada) {
-    errores.push(`Fecha inválida: "${fila.fecha || '(vacía)'}". Usá YYYY-MM-DD o DD/MM/YYYY.`);
+    errores.push(`Fecha inválida: "${fila.fecha || '(vacía)'}". Usa YYYY-MM-DD o DD/MM/YYYY.`);
   }
 
   // Monto.

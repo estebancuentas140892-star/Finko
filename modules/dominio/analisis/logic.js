@@ -590,7 +590,7 @@ export function detectarPatronGastoSemanal(gastos, hoyISO, config = {}) {
         nombre:   d.nombre,
         factor,
         severidad,
-        etiqueta: `Los ${d.nombre.toLowerCase()} gastás ${factor}× el promedio`,
+        etiqueta: `Los ${d.nombre.toLowerCase()} gastas ${factor}× el promedio`,
       };
     })
     .sort((a, b) => b.factor - a.factor);

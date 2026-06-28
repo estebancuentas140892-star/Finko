@@ -301,7 +301,7 @@ function _renderNoAplica(estrategia) {
           Actualmente todas tus deudas son sin interés, así que cualquier orden de pago da el mismo resultado.
         </p>
         <p class="estrategia-card__bloque-body">
-          <strong>Sugerencia:</strong> usá Bola de nieve para cerrar primero la más chica.
+          <strong>Sugerencia:</strong> usa Bola de nieve para cerrar primero la más chica.
         </p>
       </div>`;
   }

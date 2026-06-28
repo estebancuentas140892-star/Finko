@@ -81,7 +81,7 @@ function _confirmarPagoPersonal() {
   if (!prestamo) return;
 
   if (!Number.isFinite(monto) || monto <= 0) {
-    announce('Poné un monto mayor a 0.', 'assertive');
+    announce('Pon un monto mayor a 0.', 'assertive');
     return;
   }
 
