@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): iconos de cuenta en el abono · 2026-06-28
+
+Completa la serie de iconos de cuenta: el modal de abono a deudas (ADR 002) ahora aplica el mismo patrón que Gastos. El hint de saldo muestra el avatar con color de la cuenta elegida y cada `<option>` del select lleva el emoji por tipo de entidad (🏦 banco, 📱 billetera, 💵 efectivo). Reusa el helper `infra/bancos.js`. Sin cambios de lógica; el select sigue siendo nativo (accesibilidad intacta). Verificado en la app: al elegir Nequi, el hint muestra el avatar morado "Nq". Tests 1418/1418. SW v179 → v180.
+
+- **`modules/dominio/compromisos/views/formularios.js`**: `renderFormAbono` usa `bancoAvatar` en el hint de cuenta única y `bancoClaseEmoji` en las opciones del select.
+- **`modules/dominio/compromisos/index.js`**: `_actualizarSaldoDisponibleAbono` muestra el avatar de la cuenta elegida (innerHTML + esc).
+- **`service-worker.js`**: v179 → v180.
+
+---
+
 ### feat(cuentas): iconos de entidad en selección de cuenta · 2026-06-28
 
 Las cuentas bancarias y el efectivo ahora se acompañan de su icono (avatar circular con iniciales y color corporativo) en todos los puntos donde se elige cuenta. Un `<select>` nativo no admite renderizar el avatar con color, así que el enfoque varía por contexto: el picker de Agenda (botones custom) muestra el avatar completo por cuenta; en Gastos, el hint de saldo muestra el avatar de la cuenta elegida y cada `<option>` del select lleva un emoji por tipo de entidad (🏦 banco, 📱 billetera, 💵 efectivo). Se extrae un helper compartido a infra para no duplicar la lógica del avatar (Tesorería lo reusa). Sin cambios de lógica ni de datos; accesibilidad intacta (se conserva el select nativo). Verificado en la app con 3 cuentas (Bancolombia amarillo, Nequi morado, Efectivo verde). Tests 1418/1418. SW v178 → v179.

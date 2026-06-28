@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(cuentas): iconos de entidad en selección de cuenta)
+> Última actualización: 2026-06-28 (feat(deudas): iconos de cuenta en el abono)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): iconos de cuenta en el abono · 2026-06-28
+
+Mismo patrón de iconos de cuenta aplicado al modal de abono a deudas: avatar con color de la cuenta elegida en el hint de saldo + emoji por tipo de entidad (🏦/📱/💵) en las opciones del select. Reusa `infra/bancos.js`. Verificado en la app (Nequi morado "Nq"). SW v179 → v180. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/formularios.js` | Hint de cuenta única con avatar; opciones del select con emoji por tipo. |
+| `modules/dominio/compromisos/index.js` | `_actualizarSaldoDisponibleAbono` muestra el avatar de la cuenta elegida. |
+
+---
 
 ### feat(cuentas): iconos de entidad en selección de cuenta · 2026-06-28
 
@@ -91,19 +102,6 @@ Las fechas ISO en Me deben ("Pactó devolver: 2026-08-15", "Último abono: 2026-
 |---|---|
 | `modules/dominio/personales/view.js` | Import `fechaLegible` + reemplazo en `fechaLimite` y `ultimoPago`. |
 | `service-worker.js` | v175 → v176. |
-
----
-
-### feat(gastos): barra de total al tope de la lista (UX B) · 2026-06-28
-
-La lista de Gastos no mostraba total; había que ir a Análisis. Ahora una barra "N gastos · $total" al tope refleja lo visible: total del mes sin filtro, total de categoría con filtro activo (el chip desambigua). Reusa `totalGastos`, cero lógica nueva. SW v174 → v175. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/view.js` | `_renderResumen()` + import `totalGastos`. |
-| `styles/components/domain.css` | Reglas `.gastos-resumen*`. |
-| `styles/base.css` | `.gastos-resumen__total` en tabular-nums. |
-| `service-worker.js` | v174 → v175. |
 
 ---
 
