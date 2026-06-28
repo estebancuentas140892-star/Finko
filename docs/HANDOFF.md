@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(ui): pulido visual y copy en dashboard, gastos, agenda, deudas)
+> Última actualización: 2026-06-28 (refactor(gastos): reestructura de categorías v14→v15)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(gastos): reestructura de categorías v14→v15 · 2026-06-28
+
+Dividir "Alimentación" en "Mercado" y "Restaurantes" + agregar Hogar, Mascotas, Cuidado personal. Ocultar "Deudas" y "Ahorro" del formulario (quedan internas para sistema). Migración v14→v15 renombra gastos/presupuestos existentes: "Alimentación" → "Mercado". Schema CATEGORIAS_GASTO (16 total) + CATEGORIAS_GASTO_USUARIO (13 visibles). SW v177 → v178. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | CATEGORIAS_GASTO: +5 categorías; CATEGORIAS_GASTO_USUARIO: nueva constante con visible-user-facing. |
+| `modules/core/storage.js` | v14→v15: renombra "Alimentación" en gastos y presupuestos a "Mercado". SCHEMA_VERSION 15. |
+| `modules/dominio/gastos/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
+| `modules/dominio/presupuesto/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
+| `tests/integration/flujos.test.js` | Test de migración: espera "Mercado" en presupuestos. |
+
+---
 
 ### style(ui): mejorar visual y copy en dashboard, gastos, agenda y deudas · 2026-06-28
 

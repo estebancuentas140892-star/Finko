@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(gastos): reestructura de categorías v14→v15 · 2026-06-28
+
+Separación de "Alimentación" en "Mercado" (compra de víveres) y "Restaurantes" (comidas fuera). Nuevas categorías: "Hogar" (reparaciones, artículos del hogar), "Mascotas" (comida, veterinario), "Cuidado personal" (higiene, belleza). Internamente: "Deudas" (usado por compromisos/abonos) y "Ahorro" (usado por tesorería) se ocultan del formulario de gasto (siguen siendo válidas en datos existentes). Schema v14→v15: gastos y presupuestos con "Alimentación" se migran a "Mercado" idempotentemente. CATEGORIAS_GASTO crece a 16 (todas válidas); CATEGORIAS_GASTO_USUARIO reduce a 13 (solo visible al usuario). Validación de presupuesto sigue aceptando todas las 16 para compatibilidad histórica. Tests 1418/1418. SW v177 → v178.
+
+- **`modules/core/constants.js`**: CATEGORIAS_GASTO: ['Mercado', 'Restaurantes', 'Transporte', 'Vivienda', 'Salud', 'Educación', 'Entretenimiento', 'Ropa', 'Servicios públicos', 'Hogar', 'Mascotas', 'Cuidado personal', 'Deudas', 'Ahorro', 'Alimentación', 'Otros']. CATEGORIAS_GASTO_USUARIO export nuevo (filtra 3). CATEGORIA_EMOJI: nuevos emojis 🍽️ 🏡 🐾 💅; mantiene "Alimentación" para compatibilidad.
+- **`modules/core/storage.js`**: migración v14→v15 que renombra 'Alimentación'→'Mercado' en arrays gastos y presupuestos. SCHEMA_VERSION 15.
+- **`modules/dominio/gastos/view.js`**: `renderFormGasto` importa y usa CATEGORIAS_GASTO_USUARIO.
+- **`modules/dominio/presupuesto/view.js`**: `renderFormPresupuesto` importa y usa CATEGORIAS_GASTO_USUARIO.
+- **`tests/integration/flujos.test.js`**: test de migración v2→v3 ajustado: espera 'Mercado' en lugar de 'Alimentación'.
+- **`service-worker.js`**: v177 → v178.
+
+---
+
 ### style(ui): mejorar visual y copy en dashboard, gastos, agenda y deudas · 2026-06-28
 
 Pulido visual de cuatro secciones: (1) **Dashboard resumen**: gasto semanal ahora en rojo (`--fk-danger-text`) en lugar de verde (`--fk-text-accent`), reflejando que es dinero que salió; categoría top acompañada por emoji (🛒, 🚗, 🎉...) para identificación visual rápida. (2) **Lista de Gastos**: cada gasto muestra emoji de su categoría en lugar del icono genérico de dólar, consistente con el resumen. (3) **Dashboard**: eliminada sección "Accesos rápidos" (nav con 4 atajos); el dashboard es ahora más limpio y enfocado en datos financieros. (4) **Agenda y Compromisos**: removidos 2 hints redundantes ("Finko lo incluye en tu resumen..."); lenguaje de deudas mejorado: "Fintech" reemplazado por términos cercanos ("Cooperativa, fondo de empleados") en línea con el ADN #11 (tono profesional y accesible). Cero cambios en lógica, schema ni tests. SW v176 → v177. Tests 1418/1418.
