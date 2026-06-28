@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(gastos): iconos de categoría con fondo de color vivo por categoría, estilo "app de hábitos")
+> Última actualización: 2026-06-28 (style(gastos): icono de categoría sobrio, emoji grande con relieve sin fondo de color)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,16 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### style(gastos): iconos de categoría con fondo de color vivo por categoría · 2026-06-28
+### style(gastos): icono de categoría sobrio, emoji grande con relieve · 2026-06-28
 
-Segunda iteración del icono de gastos (la primera, un chip de acento verde tenue, no resaltaba lo suficiente). Por pedido del usuario (referencia: Duolingo y apps similares con iconos muy visibles), cada categoría ahora tiene su propio fondo sólido y vivo (verde Mercado, naranja Restaurantes, azul Transporte, fucsia Entretenimiento, rojo Salud, ámbar Servicios, etc.), con esquinas redondeadas (`--fk-radius-lg`), sombra sutil y emoji más grande. El color identifica la categoría de un vistazo. También se conserva el subtítulo sin el emoji redundante (de la iteración anterior). El realce sigue siendo exclusivo de Gastos vía `list-item__icon--cat` + `data-cat="<slug>"`; el color concreto llega por el token `--fk-cat-<slug>`. No toca el `.list-item__icon` global de otras secciones. Verificado en navegador (tema claro): cada gasto con su color, emoji legible; los `--fk-cat-*` son iguales en ambos temas. SW v189 → v190. Tests 1438/1438.
+Tercera y última iteración del icono de gastos. La versión anterior (fondo de color vivo por categoría, estilo Duolingo) saturaba y cansaba la vista, así que el usuario pidió algo más sobrio: solo el icono, con contraste y sombreado. Ahora el emoji va grande (1.5rem) sobre un contenedor neutro (`--fk-bg-elevated`) con borde sutil (`--fk-border-subtle`), esquinas redondeadas (`--fk-radius-lg`) y sombra suave (`--fk-shadow-sm`) que le da relieve y lo despega de la card, sin recargar el color. Se revirtió todo lo de la versión de colores: tokens `--fk-cat-*`, `CATEGORIA_SLUG` y `data-cat` (sin dead code). Se conserva el subtítulo sin emoji redundante. Verificado en navegador (tema oscuro): tiles neutros con relieve, emoji grande y legible, sin saturación. SW v190 → v191. Tests 1438/1438.
 
 | Archivo | Cambio |
 |---|---|
-| `styles/tokens.css` | 15 tokens `--fk-cat-*` (colores vivos por categoría, consistentes entre temas). |
-| `modules/core/constants.js` | `CATEGORIA_SLUG`: categoría → slug de color. |
-| `modules/dominio/gastos/view.js` | `_renderGastoItem`: `data-cat="<slug>"` en el icono. |
-| `styles/components/atoms.css` | `.list-item__icon--cat` rediseñado: fondo sólido por `data-cat`, radius `lg`, sombra, emoji 1.375rem. |
+| `styles/components/atoms.css` | `.list-item__icon--cat`: contenedor neutro + borde sutil + sombra + emoji 1.5rem (sin fondo de color). |
+| `styles/tokens.css` | Removidos los 15 tokens `--fk-cat-*`. |
+| `modules/core/constants.js` | Removido `CATEGORIA_SLUG`. |
+| `modules/dominio/gastos/view.js` | `_renderGastoItem` sin `data-cat`; quitado el import de `CATEGORIA_SLUG`. |
 
 ---
 

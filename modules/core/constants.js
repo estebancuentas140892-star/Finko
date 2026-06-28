@@ -353,31 +353,6 @@ export const CATEGORIA_EMOJI = {
   'Otros':              '📦',
 };
 
-/**
- * Slug de categoría → enlaza cada categoría con su token de color de fondo
- * (`--fk-cat-<slug>`) para el icono de la lista de gastos. Mapa explícito (no
- * derivado por normalización) para que sea estable y obvio qué color recibe
- * cada categoría. Las no listadas caen en 'otros'.
- */
-export const CATEGORIA_SLUG = {
-  'Mercado':            'mercado',
-  'Restaurantes':       'restaurantes',
-  'Transporte':         'transporte',
-  'Vivienda':           'vivienda',
-  'Salud':              'salud',
-  'Educación':          'educacion',
-  'Entretenimiento':    'entretenimiento',
-  'Ropa':               'ropa',
-  'Servicios públicos': 'servicios',
-  'Hogar':              'hogar',
-  'Mascotas':           'mascotas',
-  'Cuidado personal':   'cuidado',
-  'Deudas':             'deudas',
-  'Ahorro':             'ahorro',
-  'Alimentación':       'mercado',
-  'Otros':              'otros',
-};
-
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',
