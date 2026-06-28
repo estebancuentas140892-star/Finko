@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(ahorro): nudge prioriza reducir estilo de vida · 2026-06-27
+
+Nudges de ahorro bajo (0-10%, 0%, negativo) ahora sugieren recortar estilo de vida (entretenimiento, salidas, suscripciones) antes de tocar ahorro o fijos. SW v166 → v167.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/ahorro/view.js` | Copy de `_renderNudgeTasa` en 3 rangos bajos. |
+| `service-worker.js` | v166 → v167. |
+
+---
+
 ### feat(tesoreria): presets de distribución de ingresos · 2026-06-27
 
 Chips de preset (Automático, 50/30/20, 70/20/10, 60/20/20) en la card "¿Cómo distribuir?". Selección persistida en `S.config.presetDistribucion`. Alerta si gastos fijos superan el % de necesidades del preset. SW v165 → v166. Tests 1407/1407.
@@ -95,14 +106,6 @@ Nuevo bento panel `#panel-limites`: aparece en el dashboard solo cuando hay enve
 
 ---
 
-### style(metas): microcopy motivacional al crear una meta · 2026-06-27
-
-Form de nueva meta ahora tiene: (1) párrafo intro "Escribe lo que quieres lograr..." antes de los campos, (2) hint bajo "Fecha límite" explicando el cálculo de ahorro diario, (3) placeholder del nombre con ejemplos variados. SW v161 → v162.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/metas/view.js` | `renderFormMeta`: intro + hint en fecha + placeholder mejorado. |
-| `service-worker.js` | v161 → v162. |
 
 ---
 

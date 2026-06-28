@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(ahorro): nudge prioriza reducir estilo de vida antes de tocar ahorro · 2026-06-27
+
+Los 3 nudges de ahorro bajo (0-10%, 0%, negativo) ahora sugieren primero recortar gastos de estilo de vida (entretenimiento, salidas, suscripciones) antes de tocar el ahorro o los fijos. Antes decian genéricamente "revisa tus gastos". SW v166 → v167.
+
+- **`modules/dominio/ahorro/view.js`**: copy de `_renderNudgeTasa` actualizado en los 3 rangos bajos.
+- **`service-worker.js`**: v166 → v167.
+
+---
+
 ### feat(tesoreria): presets de distribución de ingresos (50/30/20, 70/20/10, etc.) · 2026-06-27
 
 La card "¿Cómo distribuir?" ahora tiene chips de preset: Automático (adapta según gastos fijos), 50/30/20, 70/20/10, 60/20/20. El usuario elige y la distribución se recalcula al instante. Selección persistida en `S.config.presetDistribucion`. Si los gastos fijos superan el % asignado a necesidades, una alerta lo indica. SW v165 → v166.

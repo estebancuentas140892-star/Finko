@@ -195,15 +195,15 @@ function _renderNudgeTasa(tasaAhorro) {
   } else if (tasaAhorro > 0) {
     icono = icon('lightbulb'); nivel = 'nudge-medium';
     titulo = `Ahorras el ${tasaAhorro}% de tus ingresos este mes.`;
-    desc   = 'La meta recomendada es el 20%. Revisa tus gastos variables para mejorar.';
+    desc   = 'Antes de recortar el ahorro, revisa tus gastos de estilo de vida (entretenimiento, salidas, suscripciones). Son los más fáciles de ajustar.';
   } else if (tasaAhorro === 0) {
     icono = icon('alert'); nivel = 'nudge-medium';
     titulo = 'Este mes tus gastos igualan tus ingresos.';
-    desc   = 'No queda margen para ahorrar. Revisa tus gastos para liberar espacio.';
+    desc   = 'Revisa primero tus gastos de estilo de vida: entretenimiento, salidas, suscripciones. Son más fáciles de reducir que los fijos.';
   } else {
     icono = icon('alert'); nivel = 'nudge-high';
     titulo = `Este mes tus gastos superan tus ingresos en ${Math.abs(tasaAhorro)}%.`;
-    desc   = 'Estás gastando más de lo que ganas. Revisarlo es urgente.';
+    desc   = 'Antes de tocar el ahorro, reduce gastos de estilo de vida. Si no alcanza, revisa tus gastos fijos.';
   }
 
   return `
