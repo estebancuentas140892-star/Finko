@@ -543,6 +543,74 @@ button.chip:focus-visible {
   color: var(--fk-text-secondary);
 }
 
+/* Pago repartido entre varias cuentas (multi-selección). */
+.cuenta-multi__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+
+.cuenta-multi__row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  cursor: pointer;
+}
+
+.cuenta-multi__row:hover,
+.cuenta-multi__row:focus-within {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-focus);
+}
+
+.cuenta-multi__check {
+  width: var(--fk-space-5);
+  height: var(--fk-space-5);
+  flex-shrink: 0;
+  accent-color: var(--fk-primary);
+  cursor: pointer;
+}
+
+.cuenta-multi__row .cuenta-picker__main {
+  flex: 1;
+}
+
+.cuenta-multi__cifras {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--fk-space-1);
+  text-align: right;
+}
+
+.cuenta-multi__draw {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-primary);
+  font-weight: var(--fk-font-medium);
+}
+
+.cuenta-multi__draw--idle {
+  color: var(--fk-text-muted);
+  font-weight: var(--fk-font-regular);
+}
+
+.cuenta-multi__resumen {
+  margin-top: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-success-text);
+}
+
+.cuenta-multi__resumen--danger {
+  color: var(--fk-danger-text);
+}
+
 /* ════════════════════════════════════════════════════════════
    HERO SOLO - card de saldo visible fuera de un bento grid.
    ════════════════════════════════════════════════════════════ */

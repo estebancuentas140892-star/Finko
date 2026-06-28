@@ -13,9 +13,10 @@
  * Acciones sobre gastos fijos existentes:
  * - Editar: abre modal-gasto-fijo pre-rellenado con los datos del compromiso.
  * - Eliminar: confirmación + elimina de S.compromisos.
- * - Marcar pagado este mes: usa resolverCuenta (0/1/varias) y registra un gasto
- *   vinculado al compromiso vía compromisoId para que el badge "Ya pagaste este mes"
- *   aparezca automáticamente en el calendario.
+ * - Marcar pagado este mes: usa resolverPagoMultiCuenta (0/1/varias, con reparto
+ *   automático entre cuentas sin dejar negativos) y registra un gasto por cada
+ *   cuenta usada, vinculado al compromiso vía compromisoId, para que el badge
+ *   "Ya pagaste este mes" aparezca automáticamente en el calendario.
  */
 
 import { S, EventBus } from '../../core/state.js';
@@ -27,7 +28,7 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverCuenta } from '../../infra/cuenta-helper.js';
+import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia } from './view.js';
 
@@ -178,7 +179,8 @@ async function _eliminarGastoFijo(el) {
 
 /**
  * Registra el pago del mes actual de un gasto fijo.
- * Usa resolverCuenta para el flujo inteligente de selección de cuenta.
+ * Usa resolverPagoMultiCuenta: reparte el monto entre una o varias cuentas
+ * (mayor saldo primero) sin dejar ninguna en negativo.
  * @param {HTMLElement} el - botón con data-id del compromiso.
  */
 async function _marcarPagadoGastoFijo(el) {
@@ -197,43 +199,49 @@ async function _marcarPagadoGastoFijo(el) {
     return;
   }
 
-  // Resolver qué cuenta usar (0/1/varias).
-  const cuentaId = await resolverCuenta(
-    S.cuentas,
-    `registrar el pago de "${comp.descripcion}"`,
-  );
-  if (cuentaId === null) return; // usuario canceló o fue redirigido a Mis Cuentas
-
   const monto = Number(comp.monto) || 0;
 
-  // Confirmación cuando se descuenta de una cuenta (la cuenta puede quedar negativa).
-  const cuenta = S.cuentas.find(c => c.id === cuentaId);
-  const nombreCuenta = cuenta?.nombre ?? 'la cuenta';
-  const saldoCuenta  = cuenta?.saldo ?? 0;
-
-  const ok = await confirmar({
-    titulo:         'Registrar pago',
-    mensaje:        `¿Registrar pago de ${f(monto)} de "${comp.descripcion}" desde ${nombreCuenta}?${saldoCuenta < monto ? ` El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.` : ''}`,
-    confirmarTexto: 'Registrar pago',
-    peligroso:      saldoCuenta < monto,
-  });
-  if (!ok) return;
-
-  // Crear el gasto vinculado al compromiso.
-  guardar('gastos', {
-    descripcion:        `Pago: ${comp.descripcion}`,
+  // Resolver el reparto del pago entre una o varias cuentas (sin negativos).
+  const splits = await resolverPagoMultiCuenta(
+    S.cuentas,
     monto,
-    categoria:          'Gastos fijos',
-    fecha:              hoy(),
-    cuentaId:           cuentaId || null,
-    nota:               '',
-    compromisoId:       id,
-    pendienteCompletar: false,
-  });
+    `registrar el pago de "${comp.descripcion}"`,
+  );
+  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-  // Descontar del saldo de la cuenta.
-  if (cuenta) {
-    editar('cuentas', cuentaId, { saldo: saldoCuenta - monto });
+  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
+  // Confirmamos el sobregiro, igual que el flujo de cuenta única anterior.
+  if (splits.length === 1) {
+    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+    const saldoCuenta = c?.saldo ?? 0;
+    if (saldoCuenta < splits[0].monto) {
+      const ok = await confirmar({
+        titulo:         'Registrar pago',
+        mensaje:        `¿Registrar pago de ${f(monto)} de "${comp.descripcion}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+        confirmarTexto: 'Registrar pago',
+        peligroso:      true,
+      });
+      if (!ok) return;
+    }
+  }
+
+  // Aplicar cada split: un gasto vinculado + descuento de su cuenta.
+  const repartido = splits.length > 1;
+  for (const s of splits) {
+    guardar('gastos', {
+      descripcion:        `Pago: ${comp.descripcion}`,
+      monto:              s.monto,
+      categoria:          'Gastos fijos',
+      fecha:              hoy(),
+      cuentaId:           s.cuentaId || null,
+      nota:               repartido ? 'Pago repartido entre varias cuentas' : '',
+      compromisoId:       id,
+      pendienteCompletar: false,
+    });
+    const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
+    if (cuenta) {
+      editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto });
+    }
   }
 
   renderAgenda();
