@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(personales): fecha legible en Me deben (UX C) · 2026-06-28
+
+Del barrido visual de spacing/jerarquía. Las fechas ISO crudas en la sección Me deben ("Pactó devolver: 2026-08-15", "Último abono: 2026-06-20") eran las últimas vistas que no usaban `fechaLegible`. Ahora muestran "15 de agosto de 2026", consistente con Gastos, Metas, Apartados, Inversiones y Ahorro. 2 líneas en la vista. Tests 1418/1418. SW v175 → v176.
+
+- **`modules/dominio/personales/view.js`**: import `fechaLegible` + reemplazo en `fechaLimite` y `ultimoPago`.
+- **`service-worker.js`**: v175 → v176.
+
+---
+
 ### feat(gastos): barra de total al tope de la lista (UX B) · 2026-06-28
 
 La lista de gastos mostraba cada gasto pero no el total: para saber cuánto llevaba gastado en el mes había que ir a Análisis. Ahora una barra al tope muestra "N gastos · $total". Refleja siempre lo visible: sin filtro es el total del mes (el dato que pedía el hallazgo); con una categoría activa pasa a ser el total de esa categoría y el chip activo lo desambigua. Reusa el helper `totalGastos` ya existente; cero lógica nueva. Verificado en la app: 5 gastos → $172.000 sin filtro; 2 gastos → $107.000 filtrando Alimentación. Tests 1418/1418. SW v174 → v175.

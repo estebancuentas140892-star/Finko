@@ -4,7 +4,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import {
   calcularPendiente,
@@ -106,13 +106,13 @@ function _renderPersonalItem(prestamo, hoy) {
     : `${dias} ${dias === 1 ? 'día' : 'días'}`;
 
   const fechaLim = prestamo.fechaLimite
-    ? `<p class="list-item__hint">Pactó devolver: ${_esc(prestamo.fechaLimite)}</p>`
+    ? `<p class="list-item__hint">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</p>`
     : '';
 
   // Cuando hay un abono, la antigüedad cuenta desde ahí: el hint explica
   // por qué el chip de días puede ser bajo aunque el préstamo sea viejo.
   const ultimoPagoHtml = (prestamo.ultimoPago && !liquidado)
-    ? `<p class="list-item__hint">Último abono: ${_esc(prestamo.ultimoPago)}</p>`
+    ? `<p class="list-item__hint">Último abono: ${fechaLegible(prestamo.ultimoPago)}</p>`
     : '';
 
   const motivoHtml = motivo

@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(personales): fecha legible en Me deben (UX C) · 2026-06-28
+
+Las fechas ISO en Me deben ("Pactó devolver: 2026-08-15", "Último abono: 2026-06-20") eran las últimas vistas sin `fechaLegible`. Ahora muestran formato largo, consistente con el resto. SW v175 → v176. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/personales/view.js` | Import `fechaLegible` + reemplazo en `fechaLimite` y `ultimoPago`. |
+| `service-worker.js` | v175 → v176. |
+
+---
+
 ### feat(gastos): barra de total al tope de la lista (UX B) · 2026-06-28
 
 La lista de Gastos no mostraba total; había que ir a Análisis. Ahora una barra "N gastos · $total" al tope refleja lo visible: total del mes sin filtro, total de categoría con filtro activo (el chip desambigua). Reusa `totalGastos`, cero lógica nueva. SW v174 → v175. Tests 1418/1418.
@@ -71,21 +82,6 @@ Hallazgo 3 de la revisión. El chip de urgencia de cada deuda tenía 3 defectos 
 |---|---|
 | `modules/dominio/compromisos/views/lista.js` | `_renderCompromisoItem`: clase de color, label con verbo, aria-label. |
 | `service-worker.js` | v172 → v173. |
-
----
-
-### fix(copy): reemplazar voseo por tuteo (ADN #11) · 2026-06-27
-
-Hallazgo 2 de la revisión. 8 cadenas en voseo → tuteo en HTML, logic.js y views (Instalá → Instala, Tocá → Toca, gastás → gastas, usá → usa, Poné → Pon, Usá → Usa). Cambio mecánico, cero lógica, cero test changes. SW v171 → v172. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Onboarding PWA: 3 cadenas voseo → tuteo. |
-| `modules/dominio/analisis/logic.js` | Insight de gasto: "gastás" → "gastas". |
-| `modules/dominio/compromisos/views/estrategia.js` | Sugerencia estrategia: "usá" → "usa". |
-| `modules/dominio/personales/index.js` | Validación monto: "Poné" → "Pon". |
-| `modules/dominio/import/logic.js` | Error CSV: "Usá" → "Usa". |
-| `service-worker.js` | v171 → v172. |
 
 ---
 
