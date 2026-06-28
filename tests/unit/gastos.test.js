@@ -568,9 +568,18 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('Ir a Mis cuentas');
   });
 
-  it('1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
-    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+  it('creación (sin modoEdicion): form sin selector de cuenta (se elige al confirmar)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000), cuenta('c2', 'Bancolombia')];
     const html = renderFormGasto();
+    expect(html).toContain('form-gasto');
+    expect(html).toContain('name="monto"');
+    expect(html).not.toContain('name="cuentaId"');
+    expect(html).not.toContain('gasto-cuenta');
+  });
+
+  it('edición 1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormGasto(true);
     expect(html).toContain('type="hidden"');
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');
@@ -579,28 +588,18 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).not.toContain('<select id="gasto-cuenta"');
   });
 
-  it('1 cuenta con saldo en cero: hint con clase de advertencia', () => {
+  it('edición 1 cuenta con saldo en cero: hint con clase de advertencia', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 0)];
-    const html = renderFormGasto();
+    const html = renderFormGasto(true);
     expect(html).toContain('form-hint--danger');
   });
 
-  it('1 cuenta activa + 1 inactiva: se asume la activa', () => {
-    S.cuentas = [
-      cuenta('c1', 'Bancolombia'),
-      { ...cuenta('c2', 'Cerrada'), activa: false },
-    ];
-    const html = renderFormGasto();
-    expect(html).toContain('value="c1"');
-    expect(html).not.toContain('<select id="gasto-cuenta"');
-  });
-
-  it('varias cuentas: select visible con todas las activas', () => {
+  it('edición varias cuentas: select visible con todas las activas', () => {
     S.cuentas = [
       cuenta('c1', 'Bancolombia'),
       cuenta('c2', 'Nequi'),
     ];
-    const html = renderFormGasto();
+    const html = renderFormGasto(true);
     expect(html).toContain('<select id="gasto-cuenta"');
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');

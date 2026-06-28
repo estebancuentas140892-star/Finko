@@ -299,28 +299,8 @@ export function renderFormGastoRapido() {
       </div>`;
   }
 
-  let cuentaHtml;
-  if (cuentas.length === 1) {
-    const c = cuentas[0];
-    cuentaHtml = `
-      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      <p class="quick-add__cuenta-hint" role="status">
-        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(c.saldo ?? 0)}
-      </p>`;
-  } else {
-    const opciones = cuentas
-      .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)} · ${f(c.saldo ?? 0)}</option>`)
-      .join('');
-    cuentaHtml = `
-      <div class="form-group">
-        <label for="gasto-rapido-cuenta" class="label">¿Desde qué cuenta?</label>
-        <select id="gasto-rapido-cuenta" name="cuentaId" class="input" required aria-required="true">
-          <option value="">Elige una cuenta</option>
-          ${opciones}
-        </select>
-      </div>`;
-  }
-
+  // La cuenta (o cuentas) de origen se eligen al confirmar: con una sola cuenta
+  // el guardado es instantáneo; con varias, se abre el reparto multi-cuenta.
   return `
     <p class="quick-add__hint">Anótalo ahora. Lo puedes completar después con calma.</p>
     <form id="form-gasto-rapido" novalidate>
@@ -332,7 +312,6 @@ export function renderFormGastoRapido() {
                min="0" step="1000" placeholder="0"
                autocomplete="off" />
       </div>
-      ${cuentaHtml}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -345,17 +324,18 @@ export function renderFormGastoRapido() {
 /**
  * Devuelve el HTML del formulario de nuevo gasto.
  *
- * Selección de cuenta según la cantidad de cuentas activas en S:
+ * Selección de cuenta:
  *   - 0 cuentas: empty state guiado con CTA "Ir a Mis cuentas".
- *   - 1 cuenta:  `<input type="hidden" name="cuentaId">` + hint con nombre y saldo
- *                (la app asume esa cuenta sin preguntar).
- *   - Varias:    `<select name="cuentaId">` obligatorio + display reactivo
- *                `#gasto-saldo-disponible` (lo actualiza el listener `change`
- *                en `gastos/index.js`).
+ *   - Creación (`modoEdicion=false`): sin selector inline; la(s) cuenta(s) se
+ *     eligen al confirmar (reparto multi-cuenta, ver `resolverPagoMultiCuenta`).
+ *   - Edición (`modoEdicion=true`): mantiene el selector de la cuenta del
+ *     registro (un gasto editado sigue siendo de una sola cuenta). Con 1 cuenta,
+ *     hidden + hint; con varias, `<select>` + display `#gasto-saldo-disponible`.
  *
+ * @param {boolean} [modoEdicion=false]
  * @returns {string}
  */
-export function renderFormGasto() {
+export function renderFormGasto(modoEdicion = false) {
   const catOpts = CATEGORIAS_GASTO_USUARIO
     .map(c => `<option value="${_esc(c)}">${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
@@ -374,31 +354,33 @@ export function renderFormGasto() {
       </div>`;
   }
 
-  // Una sola cuenta: se asume automáticamente, sin preguntar.
-  let cuentaHtml;
-  if (cuentas.length === 1) {
-    const c = cuentas[0];
-    const saldo = c.saldo ?? 0;
-    cuentaHtml = `
-      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
-        ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
-      </p>`;
-  } else {
-    const cuentaOpts = cuentas
-      .map(c => `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`)
-      .join('');
-    cuentaHtml = `
-      <div class="form-group">
-        <label for="gasto-cuenta" class="label">De qué cuenta sale</label>
-        <select id="gasto-cuenta" name="cuentaId" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
-          ${cuentaOpts}
-        </select>
-        <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-          Elige una cuenta para ver el saldo disponible.
-        </p>
-      </div>`;
+  // Selector de cuenta solo en edición: la creación reparte al confirmar.
+  let cuentaHtml = '';
+  if (modoEdicion) {
+    if (cuentas.length === 1) {
+      const c = cuentas[0];
+      const saldo = c.saldo ?? 0;
+      cuentaHtml = `
+        <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+        <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
+          ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
+        </p>`;
+    } else {
+      const cuentaOpts = cuentas
+        .map(c => `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`)
+        .join('');
+      cuentaHtml = `
+        <div class="form-group">
+          <label for="gasto-cuenta" class="label">De qué cuenta sale</label>
+          <select id="gasto-cuenta" name="cuentaId" class="input" required aria-required="true">
+            <option value="">Seleccionar…</option>
+            ${cuentaOpts}
+          </select>
+          <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
+            Elige una cuenta para ver el saldo disponible.
+          </p>
+        </div>`;
+    }
   }
 
   return `

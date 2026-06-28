@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f, esc as _esc } from '../../infra/utils.js';
 import { bancoAvatar } from '../../infra/bancos.js';
 import { confirmar } from '../../ui/confirm.js';
+import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
 import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
@@ -34,7 +35,7 @@ function _nuevoGasto() {
 
   // Re-inyectar el form cada vez: las opciones del selector de cuenta
   // dependen de S.cuentas, que puede haber cambiado desde la última apertura.
-  _montarFormGasto();
+  _montarFormGasto(false);
 
   // Pre-rellenar la fecha con hoy para mejor UX.
   const fechaInput = overlay.querySelector('#gasto-fecha');
@@ -46,24 +47,24 @@ function _nuevoGasto() {
   abrirModal(overlay);
 }
 
-function _guardarGasto() {
+async function _guardarGasto() {
   const form = document.getElementById('form-gasto');
   if (!form) return;
 
-  const datos = Object.fromEntries(new FormData(form));
-  const errores = validarGasto(datos);
+  const datos  = Object.fromEntries(new FormData(form));
+  const idEdit = form.dataset.id || null;
 
+  // En edición la cuenta viene del form; en creación se elige al confirmar.
+  const errores = validarGasto(datos, Boolean(idEdit));
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
   }
 
-  const idEdit = form.dataset.id || null;
-  const gasto  = normalizarGasto(datos);
-
   if (idEdit) {
     // En edición calculamos los deltas a aplicar a los saldos comparando
     // contra el gasto anterior. Maneja cambios de monto y/o de cuenta.
+    const gasto = normalizarGasto(datos);
     const anterior = S.gastos.find(g => g.id === idEdit);
     if (anterior) {
       const deltas = deltasPorEdicionDeGasto(
@@ -82,9 +83,22 @@ function _guardarGasto() {
     }
     editar('gastos', idEdit, gasto);
   } else {
-    // En creación descontamos el monto del saldo de la cuenta elegida.
-    _ajustarSaldoCuenta(gasto.cuentaId, -gasto.monto);
-    guardar('gastos', gasto);
+    // En creación, el gasto se reparte entre una o varias cuentas (sin
+    // negativos cuando hay de dónde repartir). Un registro por cuenta usada.
+    const base = normalizarGasto(datos); // plantilla: cuentaId null, monto base
+    const splits = await resolverPagoMultiCuenta(S.cuentas, base.monto, 'registrar el gasto');
+    if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+    const repartido = splits.length > 1;
+    for (const s of splits) {
+      guardar('gastos', {
+        ...base,
+        cuentaId: s.cuentaId || null,
+        monto:    s.monto,
+        nota:     repartido ? [base.nota, 'Gasto repartido entre varias cuentas'].filter(Boolean).join(' · ') : base.nota,
+      });
+      _ajustarSaldoCuenta(s.cuentaId, -s.monto);
+    }
   }
 
   const overlay = document.getElementById('modal-gasto');
@@ -106,7 +120,7 @@ function _editarGasto(el) {
   if (!overlay) return;
 
   resetModal(overlay);
-  _montarFormGasto();
+  _montarFormGasto(true);
 
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -176,33 +190,29 @@ function _abrirGastoRapido() {
   }, 200);
 }
 
-function _guardarGastoRapido() {
+async function _guardarGastoRapido() {
   const form = document.getElementById('form-gasto-rapido');
   if (!form) return;
 
-  const monto    = form.querySelector('[name="monto"]')?.value ?? '';
-  const cuentaId = form.querySelector('[name="cuentaId"]')?.value || null;
+  const monto = form.querySelector('[name="monto"]')?.value ?? '';
 
-  // La elección de cuenta es obligatoria solo cuando hay varias (el select está visible).
-  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const requiereCuenta = cuentasActivas.length > 1;
-
-  const errores = validarGastoRapido(monto, cuentaId, requiereCuenta);
-
+  // La cuenta se elige al confirmar; aquí solo validamos el monto.
+  const errores = validarGastoRapido(monto);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
   }
 
-  const nuevo = normalizarGastoRapido(monto, hoy(), cuentaId);
-  guardar('gastos', nuevo);
+  // Repartir entre una o varias cuentas (con 1 cuenta, instantáneo y sin UI).
+  const splits = await resolverPagoMultiCuenta(S.cuentas, Number(monto), 'registrar el gasto');
+  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-  // Descontar del saldo de la cuenta de origen.
-  if (cuentaId) {
-    _ajustarSaldoCuenta(cuentaId, -Number(monto));
+  for (const s of splits) {
+    guardar('gastos', normalizarGastoRapido(s.monto, hoy(), s.cuentaId));
+    _ajustarSaldoCuenta(s.cuentaId, -s.monto);
   }
 
-  // Tomar el id del ultimo gasto (crud.js lo asigno).
+  // Tomar el id del último gasto (crud.js lo asignó).
   const ultimo = S.gastos[S.gastos.length - 1];
 
   const overlay = document.getElementById('modal-gasto-rapido');
@@ -400,11 +410,11 @@ function _actualizarSaldoDisponible() {
  * que el modal se abre, porque las opciones del selector de cuenta
  * dependen de `S.cuentas`, que puede cambiar entre aperturas.
  */
-function _montarFormGasto() {
+function _montarFormGasto(modoEdicion = false) {
   const body = document.getElementById('modal-gasto-body');
   if (!body) return;
 
-  body.innerHTML = renderFormGasto();
+  body.innerHTML = renderFormGasto(modoEdicion);
 
   const form = body.querySelector('#form-gasto');
   if (!form) return;  // empty state (sin cuentas): no hay form, no hay listeners.

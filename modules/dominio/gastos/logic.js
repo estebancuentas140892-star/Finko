@@ -125,7 +125,7 @@ export function gastosPendientes(gastos) {
  * @param {Record<string, string>} datos
  * @returns {string[]}
  */
-export function validarGasto(datos) {
+export function validarGasto(datos, requiereCuenta = true) {
   const errores = [];
 
   if (!datos.descripcion?.trim()) {
@@ -141,7 +141,9 @@ export function validarGasto(datos) {
   if (!datos.fecha?.trim()) {
     errores.push('La fecha es obligatoria.');
   }
-  if (!datos.cuentaId?.trim()) {
+  // En creación, la(s) cuenta(s) se eligen al confirmar (reparto multi-cuenta),
+  // así que `requiereCuenta` es false. En edición se valida la cuenta del form.
+  if (requiereCuenta && !datos.cuentaId?.trim()) {
     errores.push('Debes elegir de qué cuenta sale el dinero.');
   }
 
