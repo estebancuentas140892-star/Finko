@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 14;
+const SCHEMA_VERSION = 15;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -219,6 +219,28 @@ function _migrate(raw) {
         if (a && typeof a === 'object') {
           if (!('recurrente' in a))   a.recurrente = false;
           if (!('periodoMeses' in a)) a.periodoMeses = null;
+        }
+      }
+    }
+  }
+
+  // v14 → v15: reestructura de categorías de gasto.
+  // "Alimentación" se divide en "Mercado" y "Restaurantes"; los gastos
+  // existentes se migran a "Mercado" (la más frecuente de las dos).
+  // Los presupuestos con categoría "Alimentación" también se migran.
+  // Idempotente: si la categoría ya no es "Alimentación", no cambia nada.
+  if ((typeof data._version === 'number' ? data._version : 1) < 15) {
+    if (Array.isArray(data.gastos)) {
+      for (const g of data.gastos) {
+        if (g && typeof g === 'object' && g.categoria === 'Alimentación') {
+          g.categoria = 'Mercado';
+        }
+      }
+    }
+    if (Array.isArray(data.presupuestos)) {
+      for (const p of data.presupuestos) {
+        if (p && typeof p === 'object' && p.categoria === 'Alimentación') {
+          p.categoria = 'Mercado';
         }
       }
     }

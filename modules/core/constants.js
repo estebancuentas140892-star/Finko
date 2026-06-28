@@ -299,9 +299,15 @@ export const TIPOS_POR_CLASE = {
   otro:      ['Ahorros', 'Otro'],
 };
 
-/** Categorías de gasto variable. */
+/**
+ * Todas las categorías de gasto reconocidas por el sistema, incluyendo las
+ * internas ("Deudas", "Ahorro") que el código usa al crear gastos-abono o
+ * al calcular distribución de ingresos. No se deben eliminar: romperían la
+ * lógica de compromisos/index.js y tesorería/logic.js.
+ */
 export const CATEGORIAS_GASTO = [
-  'Alimentación',
+  'Mercado',
+  'Restaurantes',
   'Transporte',
   'Vivienda',
   'Salud',
@@ -309,14 +315,28 @@ export const CATEGORIAS_GASTO = [
   'Entretenimiento',
   'Ropa',
   'Servicios públicos',
+  'Hogar',
+  'Mascotas',
+  'Cuidado personal',
   'Deudas',
   'Ahorro',
+  'Alimentación',
   'Otros',
 ];
 
+/**
+ * Categorías visibles en el formulario de gasto. Excluye las internas
+ * ("Deudas" para abonos, "Ahorro" para aportes) y la legacy
+ * ("Alimentación", reemplazada por Mercado/Restaurantes en v15).
+ */
+export const CATEGORIAS_GASTO_USUARIO = CATEGORIAS_GASTO.filter(
+  c => c !== 'Deudas' && c !== 'Ahorro' && c !== 'Alimentación',
+);
+
 /** Emoji visual por categoría de gasto. Usar solo en UI; nunca en el valor almacenado. */
 export const CATEGORIA_EMOJI = {
-  'Alimentación':       '🛒',
+  'Mercado':            '🛒',
+  'Restaurantes':       '🍽️',
   'Transporte':         '🚗',
   'Vivienda':           '🏠',
   'Salud':              '💊',
@@ -324,8 +344,12 @@ export const CATEGORIA_EMOJI = {
   'Entretenimiento':    '🎉',
   'Ropa':               '👕',
   'Servicios públicos': '💡',
+  'Hogar':              '🏡',
+  'Mascotas':           '🐾',
+  'Cuidado personal':   '💅',
   'Deudas':             '💳',
   'Ahorro':             '💰',
+  'Alimentación':       '🛒',
   'Otros':              '📦',
 };
 

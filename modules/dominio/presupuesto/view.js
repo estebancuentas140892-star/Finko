@@ -6,7 +6,7 @@
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc }     from '../../infra/utils.js';
 import { icon, emptyArt }     from '../../infra/icons.js';
-import { CATEGORIAS_GASTO, CATEGORIA_EMOJI } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import {
   presupuestosActivos,
   calcularProgreso,
@@ -168,7 +168,7 @@ function _renderEmptyState() {
  */
 export function renderFormPresupuesto(actual = null) {
   const editando = !!actual;
-  const opciones = CATEGORIAS_GASTO
+  const opciones = CATEGORIAS_GASTO_USUARIO
     .filter(c => editando ? true : !tienePresupuesto(c, S.presupuestos))
     .map(c => {
       const selected = editando && actual.categoria === c ? 'selected' : '';

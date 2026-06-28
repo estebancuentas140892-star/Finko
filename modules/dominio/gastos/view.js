@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
-import { CATEGORIAS_GASTO, CATEGORIA_EMOJI } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { gastosMes, filtrarGastos, gastosPendientes, totalGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -355,7 +355,7 @@ export function renderFormGastoRapido() {
  * @returns {string}
  */
 export function renderFormGasto() {
-  const catOpts = CATEGORIAS_GASTO
+  const catOpts = CATEGORIAS_GASTO_USUARIO
     .map(c => `<option value="${_esc(c)}">${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
 

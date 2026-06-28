@@ -676,7 +676,7 @@ describe('F.2 - Migración schema v2 → v3 (préstamos personales)', () => {
     loadFixture(BASE_V2);
 
     expect(S.presupuestos).toHaveLength(1);
-    expect(S.presupuestos[0].categoria).toBe('Alimentación');
+    expect(S.presupuestos[0].categoria).toBe('Mercado');
   });
 
   it('migración es idempotente: v3 con personales no los pierde', () => {
