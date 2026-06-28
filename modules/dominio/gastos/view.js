@@ -277,12 +277,10 @@ export function renderPendientesOrganizar() {
 /**
  * Devuelve el HTML que se inyecta en `#modal-gasto-rapido-body` en cada apertura.
  *
- * Tres estados según la cantidad de cuentas activas en S:
- *   - 0 cuentas: empty state guiado con CTA "Ir a Mis Cuentas".
- *   - 1 cuenta:  form con `<input type="hidden" name="cuentaId">` + hint de cuenta/saldo.
- *   - Varias:    form con `<select name="cuentaId">` para que el usuario elija.
- *
- * Se re-inyecta en cada apertura del modal para reflejar cambios en S.cuentas.
+ * Si no hay cuentas activas, muestra un empty state guiado. Si hay al menos una,
+ * muestra el formulario con el selector de tarjetas de cuenta (mismo componente
+ * que el gasto completo). Se re-inyecta en cada apertura para reflejar cambios
+ * en S.cuentas.
  *
  * @returns {string}
  */
@@ -299,8 +297,6 @@ export function renderFormGastoRapido() {
       </div>`;
   }
 
-  // La cuenta (o cuentas) de origen se eligen al confirmar: con una sola cuenta
-  // el guardado es instantáneo; con varias, se abre el reparto multi-cuenta.
   return `
     <p class="quick-add__hint">Anótalo ahora. Lo puedes completar después con calma.</p>
     <form id="form-gasto-rapido" novalidate>
@@ -312,6 +308,7 @@ export function renderFormGastoRapido() {
                min="0" step="1000" placeholder="0"
                autocomplete="off" />
       </div>
+      ${renderSelectorCuenta(cuentas)}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>

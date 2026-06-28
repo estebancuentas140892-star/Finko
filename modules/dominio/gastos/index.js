@@ -17,7 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoMultiCuenta, resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
@@ -208,18 +208,33 @@ async function _guardarGastoRapido() {
   const form = document.getElementById('form-gasto-rapido');
   if (!form) return;
 
-  const monto = form.querySelector('[name="monto"]')?.value ?? '';
+  const monto    = form.querySelector('[name="monto"]')?.value ?? '';
+  const cuentaId = form.querySelector('input[name="cuentaId"]:checked')?.value || null;
 
-  // La cuenta se elige al confirmar; aquí solo validamos el monto.
-  const errores = validarGastoRapido(monto);
+  const errores = validarGastoRapido(monto, cuentaId, true);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
   }
 
-  // Repartir entre una o varias cuentas (con 1 cuenta, instantáneo y sin UI).
-  const splits = await resolverPagoMultiCuenta(S.cuentas, Number(monto), 'registrar el gasto');
+  // Usa la cuenta elegida; si no alcanza y hay más cuentas, abre el reparto.
+  const splits = await resolverPagoConPreferida(S.cuentas, Number(monto), cuentaId, 'registrar el gasto');
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+  // Una sola cuenta que no alcanza: confirmar el sobregiro.
+  if (splits.length === 1) {
+    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+    const saldoCuenta = c?.saldo ?? 0;
+    if (saldoCuenta < splits[0].monto) {
+      const ok = await confirmar({
+        titulo:         'Registrar gasto',
+        mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
+        confirmarTexto: 'Registrar gasto',
+        peligroso:      true,
+      });
+      if (!ok) return;
+    }
+  }
 
   for (const s of splits) {
     guardar('gastos', normalizarGastoRapido(s.monto, hoy(), s.cuentaId));
