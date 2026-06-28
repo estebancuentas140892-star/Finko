@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): abono repartido entre varias cuentas (paso 2 de 3) · 2026-06-28
+
+El "Abonar" a una deuda ahora permite cubrir el monto combinando varias cuentas (banco + efectivo) sin dejar ninguna en negativo, igual que el "Marcar pagado" de Agenda (paso 1). Reusa el núcleo `distribuirPago` y el picker multi-cuenta. Cambio de UX: el formulario de abono ya no lleva selector de cuenta inline; el usuario escribe el monto y, al "Registrar abono", se abre el picker "¿Desde qué cuentas?" con el monto ajustado. Crea un gasto-abono por cada cuenta usada (vinculado por `compromisoId`) y reduce el `saldoTotal` de la deuda por el total abonado una sola vez. Verificado en la app: cuota $900.000 con cuentas de $600.000/$400.000/$100.000 → Bancolombia $600.000 + Nequi $300.000, la deuda baja de $2.000.000 a $1.100.000, saldos quedan 0/$100.000/$100.000 sin negativos. Caso de 1 cuenta: conserva el confirm de sobregiro. **Pendiente:** paso 3 (Gastos / Gasto rápido). Tests 1423/1423. SW v182 → v183.
+
+- **`modules/dominio/compromisos/views/formularios.js`**: `renderFormAbono` ya no renderiza selector de cuenta (ni hint de cuenta única ni `<select>`); las cuentas se eligen al confirmar. Removidos imports `bancoAvatar`/`bancoClaseEmoji`.
+- **`modules/dominio/compromisos/index.js`**: `_guardarAbono` ahora es async y usa `resolverPagoMultiCuenta`; crea un gasto por cuenta (nota "Abono repartido entre varias cuentas" cuando son ≥ 2) y reduce el saldo de la deuda una vez. Removida `_actualizarSaldoDisponibleAbono` y su listener; import muerto `tasaEADe` eliminado.
+- **`modules/dominio/compromisos/logic.js`**: `validarAbono` ya no exige `cuentaId` (se elige al confirmar, no en el formulario).
+- **`tests/unit/compromisos.test.js`**: tests de `validarAbono` (sin error de cuenta) y `renderFormAbono` (sin selector) actualizados al nuevo contrato.
+- **`service-worker.js`**: v182 → v183.
+
+---
+
 ### feat(agenda): pago de gasto fijo repartido entre varias cuentas (paso 1 de 3) · 2026-06-28
 
 Al marcar un gasto fijo como pagado, el usuario ya no está limitado a una sola cuenta: puede combinar varias (banco + efectivo) para cubrir el monto total, como pasa en la vida real. El sistema reparte automáticamente desde la cuenta con más saldo primero y nunca deja una cuenta en negativo. Núcleo reutilizable construido una vez para extender luego a Abono de Deudas (paso 2) y Gastos/Gasto rápido (paso 3). Verificado en la app: Arriendo $900.000 con cuentas de $600.000/$400.000/$100.000 → pre-selecciona Bancolombia ($600.000) + Nequi ($300.000), crea 2 gastos vinculados, saldos quedan 0/$100.000/$100.000 sin negativos, badge "Ya pagaste este mes" aparece (la suma alimenta `estadoPagoMes`). Caso de fondos insuficientes: muestra "Faltan $X" y deshabilita confirmar. Caso de 1 cuenta: conserva el confirm de sobregiro anterior. Tests 1426/1426. SW v181 → v182.

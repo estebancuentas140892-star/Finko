@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(agenda): pago repartido entre varias cuentas)
+> Última actualización: 2026-06-28 (feat(deudas): abono repartido entre varias cuentas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): abono repartido entre varias cuentas (paso 2 de 3) · 2026-06-28
+
+El "Abonar" a una deuda ahora puede cubrirse combinando varias cuentas, sin negativos. Reusa el núcleo `distribuirPago` + el picker del paso 1. El form de abono ya no lleva selector de cuenta inline: el monto se escribe y al "Registrar abono" se abre el picker multi-cuenta. Crea un gasto-abono por cuenta y reduce el `saldoTotal` de la deuda por el total una vez. Verificado: cuota $900.000 con cuentas 600/400/100 → Bancolombia $600.000 + Nequi $300.000, deuda baja de $2.000.000 a $1.100.000, sin saldos negativos. **Pendiente:** paso 3 Gastos/Gasto rápido. SW v182 → v183. Tests 1423/1423.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono` sin selector de cuenta (se elige al confirmar). |
+| `modules/dominio/compromisos/index.js` | `_guardarAbono` async con `resolverPagoMultiCuenta`; un gasto por cuenta. Removido `_actualizarSaldoDisponibleAbono`. |
+| `modules/dominio/compromisos/logic.js` | `validarAbono` ya no exige `cuentaId`. |
+| `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` al nuevo contrato. |
+
+---
 
 ### feat(agenda): pago repartido entre varias cuentas (paso 1 de 3) · 2026-06-28
 
@@ -86,20 +99,6 @@ Las entidades bancarias y el efectivo ahora se muestran con su icono (avatar con
 | `modules/dominio/gastos/index.js` | Display de saldo con avatar de la cuenta elegida. |
 | `modules/dominio/tesoreria/view.js` | `_bankAvatarHtml` delega en el helper compartido. |
 | `styles/components/nudges.css`, `styles/components/domain.css` | Variante inline del avatar + grupo en cuenta-picker. |
-
----
-
-### refactor(gastos): reestructura de categorías v14→v15 · 2026-06-28
-
-Dividir "Alimentación" en "Mercado" y "Restaurantes" + agregar Hogar, Mascotas, Cuidado personal. Ocultar "Deudas" y "Ahorro" del formulario (quedan internas para sistema). Migración v14→v15 renombra gastos/presupuestos existentes: "Alimentación" → "Mercado". Schema CATEGORIAS_GASTO (16 total) + CATEGORIAS_GASTO_USUARIO (13 visibles). SW v177 → v178. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | CATEGORIAS_GASTO: +5 categorías; CATEGORIAS_GASTO_USUARIO: nueva constante con visible-user-facing. |
-| `modules/core/storage.js` | v14→v15: renombra "Alimentación" en gastos y presupuestos a "Mercado". SCHEMA_VERSION 15. |
-| `modules/dominio/gastos/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
-| `modules/dominio/presupuesto/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
-| `tests/integration/flujos.test.js` | Test de migración: espera "Mercado" en presupuestos. |
 
 ---
 
