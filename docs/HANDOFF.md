@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(agenda): selector de tarjetas en "Marcar pagado", 3/4 flujos)
+> Última actualización: 2026-06-28 (feat(deudas): selector de tarjetas en "Abonar", 4/4 flujos, cierra la serie)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(deudas): selector de tarjetas + reparto-fallback en "Abonar" (4/4 flujos, cierra la serie) · 2026-06-28
+
+Cierra la serie "selector de tarjetas + reparto solo si no alcanza" en los 4 flujos de pago (Gastos, Gasto rápido, Agenda y ahora Deudas). El formulario de abono vuelve a tener el selector de tarjetas (avatar, nombre, saldo); se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". `validarAbono` vuelve a exigir `cuentaId`. Verificado en navegador: cubre (Bancolombia $2M, abono $200k) → un solo gasto-abono, sin picker; no cubre (Nequi $100k, abono $500k) → reparto Nequi $100k + Bancolombia $400k, saldo de la deuda baja de $1.500.000 a $1.000.000, saldos de cuentas sin negativos. Tests 1438/1438 (2 actualizados, sin nuevos: la cobertura de `resolverPagoConPreferida` ya existía). SW v187 → v188.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono` con `renderSelectorCuenta` (selector de tarjetas restaurado). |
+| `modules/dominio/compromisos/logic.js` | `validarAbono` vuelve a exigir `cuentaId`. |
+| `modules/dominio/compromisos/index.js` | `_guardarAbono` usa `resolverPagoConPreferida` en vez de `resolverPagoMultiCuenta`. |
+| `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` actualizados al nuevo contrato (cuentaId requerido, selector presente). |
+
+---
+
 ### feat(agenda): selector de tarjetas + reparto-fallback en "Marcar pagado" (3/4 flujos) · 2026-06-28
 
 Al marcar un gasto fijo como pagado, con varias cuentas ahora aparece el mismo selector de tarjetas (avatar de entidad, nombre y saldo) que en Gastos: se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". Con una sola cuenta no pregunta (regla de cuenta única); si esa cuenta no cubre, pide confirmación de sobregiro. Reusa `renderSelectorCuenta` + `resolverPagoConPreferida`. Verificado en navegador: cubre (Bancolombia $2M) → un gasto directo, sin picker; no cubre (Nequi $100k) → Nequi $100k + Bancolombia $400k, total $500k sin negativos. **Pendiente:** 4/4 Deudas (Abonar). SW v186 → v187. Tests 1438/1438.
@@ -72,32 +85,6 @@ Por feedback del usuario, se rediseñó la selección de cuenta en el gasto (el 
 | `modules/infra/distribuir-pago.js` | Parámetro `prioridadId`: la cuenta elegida se cobra primero. |
 | `modules/dominio/gastos/{view,index,logic}.js` | Form con selector de tarjetas; `_guardarGasto` con preferida + confirm de sobregiro. |
 | `styles/components/domain.css` | Tarjetas `.cuenta-sel` + aviso del picker. |
-
----
-
-### feat(gastos): gasto y gasto rápido repartidos entre cuentas (paso 3 de 3) · 2026-06-28
-
-Cierra la serie "todos los pagos": registrar un gasto (form completo o gasto rápido) puede repartirse entre varias cuentas, sin negativos. Reusa `distribuirPago` + el picker. En creación no hay selector de cuenta inline (se elige al confirmar, un registro por cuenta usada); en edición se conserva el selector (cada registro sigue siendo de una cuenta). Verificado: gasto $900.000 → Bancolombia $600.000 + Nequi $300.000 (2 registros); gasto rápido $150.000 → Nequi $100.000 + Efectivo $50.000 (2 pendientes); editar un gasto mantiene su selector con la cuenta correcta. SW v183 → v184. Tests 1423/1423.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/view.js` | `renderFormGasto(modoEdicion)`: selector solo en edición. `renderFormGastoRapido` sin selector inline. |
-| `modules/dominio/gastos/index.js` | `_guardarGasto`/`_guardarGastoRapido` async con `resolverPagoMultiCuenta`; un gasto por cuenta. `_montarFormGasto(modoEdicion)`. |
-| `modules/dominio/gastos/logic.js` | `validarGasto(datos, requiereCuenta)`. |
-| `tests/unit/gastos.test.js` | Tests de `renderFormGasto` al nuevo contrato (creación sin selector, edición con él). |
-
----
-
-### feat(deudas): abono repartido entre varias cuentas (paso 2 de 3) · 2026-06-28
-
-El "Abonar" a una deuda ahora puede cubrirse combinando varias cuentas, sin negativos. Reusa el núcleo `distribuirPago` + el picker del paso 1. El form de abono ya no lleva selector de cuenta inline: el monto se escribe y al "Registrar abono" se abre el picker multi-cuenta. Crea un gasto-abono por cuenta y reduce el `saldoTotal` de la deuda por el total una vez. Verificado: cuota $900.000 con cuentas 600/400/100 → Bancolombia $600.000 + Nequi $300.000, deuda baja de $2.000.000 a $1.100.000, sin saldos negativos. **Pendiente:** paso 3 Gastos/Gasto rápido. SW v182 → v183. Tests 1423/1423.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono` sin selector de cuenta (se elige al confirmar). |
-| `modules/dominio/compromisos/index.js` | `_guardarAbono` async con `resolverPagoMultiCuenta`; un gasto por cuenta. Removido `_actualizarSaldoDisponibleAbono`. |
-| `modules/dominio/compromisos/logic.js` | `validarAbono` ya no exige `cuentaId`. |
-| `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` al nuevo contrato. |
 
 ---
 

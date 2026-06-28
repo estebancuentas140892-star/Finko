@@ -1345,9 +1345,9 @@ describe('validarAbono()', () => {
     expect(errs.some(e => /monto/i.test(e))).toBe(true);
   });
 
-  it('cuentaId ya no se valida aquí (se elige al confirmar): sin error de cuenta', () => {
+  it('cuentaId vacío: error (selector de tarjetas restaurado en el form)', () => {
     const errs = validarAbono(abonoValido({ cuentaId: '' }), deudaValida());
-    expect(errs).toEqual([]);
+    expect(errs.some(e => /cuenta/i.test(e))).toBe(true);
   });
 
   it('fecha vacía: error', () => {
@@ -1416,7 +1416,7 @@ describe('renderFormAbono() - formulario', () => {
     expect(html).toContain('al menos una cuenta activa');
   });
 
-  it('con cuentas: muestra el form (monto/fecha) sin selector de cuenta', () => {
+  it('con cuentas: muestra el form (monto/fecha) con selector de tarjetas', () => {
     S.cuentas = [
       cuenta('c1', 'Bancolombia', 1_000_000),
       cuenta('c2', 'Nequi'),
@@ -1424,9 +1424,11 @@ describe('renderFormAbono() - formulario', () => {
     const html = renderFormAbono(deuda);
     expect(html).toContain('form-abono');
     expect(html).toContain('name="monto"');
-    // Las cuentas de origen se eligen al confirmar, no en el formulario.
-    expect(html).not.toContain('name="cuentaId"');
-    expect(html).not.toContain('abono-cuenta');
+    // Selector de tarjetas restaurado: una cuenta cubre, si no hay reparto-fallback.
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
   });
 });
 

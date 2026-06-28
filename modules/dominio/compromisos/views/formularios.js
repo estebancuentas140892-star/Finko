@@ -13,16 +13,18 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { FRECUENCIAS }   from '../../../core/constants.js';
 import { tasaEADe }      from '../logic.js';
+import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
 
 /**
  * Devuelve el HTML del formulario para registrar un abono a una deuda.
  *
- * Las cuentas de origen se eligen al confirmar: el abono puede repartirse
- * entre una o varias cuentas (ver `resolverPagoMultiCuenta`), sin dejar
- * ninguna en negativo. Si no hay ninguna cuenta activa, muestra un estado
- * vacío con instrucción.
+ * Incluye el selector de tarjetas (mismo patrón que Gastos): el usuario elige
+ * la cuenta de origen y, si no alcanza para cubrir el abono, el reparto entre
+ * varias cuentas se resuelve al confirmar (`resolverPagoConPreferida`), sin
+ * dejar ninguna en negativo. Si no hay ninguna cuenta activa, muestra un
+ * estado vacío con instrucción.
  *
  * @param {import('../../../core/state.js').Compromiso} deuda
  * @returns {string}
@@ -64,6 +66,8 @@ export function renderFormAbono(deuda) {
         <p class="form-hint form-hint--muted">${cuota > 0 ? `Pre-llenado con tu cuota mensual. ` : ''}Máximo ${f(saldo)}.</p>
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
+
+      ${renderSelectorCuenta(cuentas, { label: '¿De qué cuenta sale el abono?' })}
 
       <div class="form-group">
         <label for="abono-fecha" class="label">Fecha del abono</label>

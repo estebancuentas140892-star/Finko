@@ -17,7 +17,7 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
+import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda } from './logic.js';
 import {
   renderListaCompromisos,
@@ -263,15 +263,16 @@ async function _guardarAbono() {
     Number(deuda.saldoTotal),
   );
 
-  // Resolver el reparto del abono entre una o varias cuentas (sin negativos).
-  const splits = await resolverPagoMultiCuenta(
+  // Usa la cuenta elegida; si no alcanza y hay más cuentas, abre el reparto.
+  const splits = await resolverPagoConPreferida(
     S.cuentas,
     montoAjustado,
+    datos.cuentaId,
     `registrar el abono a "${deuda.descripcion}"`,
   );
   if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
+  // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
   if (splits.length === 1) {
     const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
     const saldoCuenta = c?.saldo ?? 0;
