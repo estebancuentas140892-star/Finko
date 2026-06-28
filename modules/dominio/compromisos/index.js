@@ -15,10 +15,10 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { f, esc as _esc } from '../../infra/utils.js';
-import { bancoAvatar } from '../../infra/bancos.js';
+import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda, tasaEADe } from './logic.js';
+import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -237,7 +237,6 @@ function _abrirAbono(el) {
       _guardarAbono();
     });
 
-    body.querySelector('#abono-cuenta')?.addEventListener('change', _actualizarSaldoDisponibleAbono);
     body.querySelector('#abono-monto')?.addEventListener('input', _actualizarTipProyeccion);
     _actualizarTipProyeccion();
   }
@@ -245,7 +244,7 @@ function _abrirAbono(el) {
   abrirModal(overlay);
 }
 
-function _guardarAbono() {
+async function _guardarAbono() {
   const form = document.getElementById('form-abono');
   if (!form) return;
 
@@ -264,27 +263,50 @@ function _guardarAbono() {
     Number(deuda.saldoTotal),
   );
 
-  // Crear el gasto-abono en el dominio de gastos.
-  guardar('gastos', {
-    descripcion:       `Abono: ${deuda.descripcion}`,
-    monto:             montoAjustado,
-    categoria:         'Deudas',
-    fecha:             datos.fecha,
-    cuentaId:          datos.cuentaId || null,
-    nota:              datos.nota?.trim() || '',
-    compromisoId:      deudaId,
-    pendienteCompletar: false,
-  });
+  // Resolver el reparto del abono entre una o varias cuentas (sin negativos).
+  const splits = await resolverPagoMultiCuenta(
+    S.cuentas,
+    montoAjustado,
+    `registrar el abono a "${deuda.descripcion}"`,
+  );
+  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
 
-  // Descontar de la cuenta elegida.
-  if (datos.cuentaId) {
-    const cuenta = S.cuentas.find(c => c.id === datos.cuentaId);
-    if (cuenta) {
-      editar('cuentas', datos.cuentaId, { saldo: (cuenta.saldo ?? 0) - montoAjustado });
+  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
+  if (splits.length === 1) {
+    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+    const saldoCuenta = c?.saldo ?? 0;
+    if (saldoCuenta < splits[0].monto) {
+      const ok = await confirmar({
+        titulo:         'Registrar abono',
+        mensaje:        `¿Registrar abono de ${f(montoAjustado)} desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+        confirmarTexto: 'Registrar abono',
+        peligroso:      true,
+      });
+      if (!ok) return;
     }
   }
 
-  // Reducir el saldo de la deuda.
+  // Aplicar cada split: un gasto-abono vinculado + descuento de su cuenta.
+  const repartido = splits.length > 1;
+  const notaBase  = datos.nota?.trim() || '';
+  for (const s of splits) {
+    guardar('gastos', {
+      descripcion:        `Abono: ${deuda.descripcion}`,
+      monto:              s.monto,
+      categoria:          'Deudas',
+      fecha:              datos.fecha,
+      cuentaId:           s.cuentaId || null,
+      nota:               repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
+      compromisoId:       deudaId,
+      pendienteCompletar: false,
+    });
+    const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
+    if (cuenta) {
+      editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto });
+    }
+  }
+
+  // Reducir el saldo de la deuda por el total abonado.
   const nuevoSaldo = saldaDeuda ? 0 : Math.max(0, (Number(deuda.saldoTotal) || 0) - montoAjustado);
   editar('compromisos', deudaId, { saldoTotal: nuevoSaldo });
 
@@ -422,31 +444,6 @@ function _actualizarTipProyeccion() {
 
   const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
   tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
-}
-
-function _actualizarSaldoDisponibleAbono() {
-  const sel = document.getElementById('abono-cuenta');
-  const tip = document.getElementById('abono-saldo-disponible');
-  if (!sel || !tip) return;
-
-  const cuentaId = sel.value;
-  if (!cuentaId) {
-    tip.textContent = 'Elige una cuenta para ver el saldo disponible.';
-    tip.classList.remove('form-hint--danger');
-    tip.classList.add('form-hint--muted');
-    return;
-  }
-
-  const cuenta = S.cuentas.find(c => c.id === cuentaId);
-  if (!cuenta) {
-    tip.textContent = 'Cuenta no encontrada.';
-    return;
-  }
-
-  const saldo = cuenta.saldo ?? 0;
-  tip.innerHTML = `${bancoAvatar(cuenta.banco)} Saldo disponible en <strong>${_esc(cuenta.nombre)}</strong>: ${f(saldo)}`;
-  tip.classList.toggle('form-hint--danger', saldo <= 0);
-  tip.classList.toggle('form-hint--muted',  saldo >  0);
 }
 
 // ── HANDLERS ESTRATEGIA ──────────────────────────────────────────

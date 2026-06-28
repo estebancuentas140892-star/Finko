@@ -1345,9 +1345,9 @@ describe('validarAbono()', () => {
     expect(errs.some(e => /monto/i.test(e))).toBe(true);
   });
 
-  it('cuentaId vacío: error', () => {
+  it('cuentaId ya no se valida aquí (se elige al confirmar): sin error de cuenta', () => {
     const errs = validarAbono(abonoValido({ cuentaId: '' }), deudaValida());
-    expect(errs.some(e => /cuenta/i.test(e))).toBe(true);
+    expect(errs).toEqual([]);
   });
 
   it('fecha vacía: error', () => {
@@ -1384,14 +1384,14 @@ describe('validarAbono()', () => {
   });
 
   it('acumula múltiples errores en una sola pasada', () => {
-    const errs = validarAbono({ monto: '0', cuentaId: '', fecha: '' }, null);
-    expect(errs.length).toBeGreaterThanOrEqual(4);
+    const errs = validarAbono({ monto: '0', fecha: '' }, null);
+    expect(errs.length).toBeGreaterThanOrEqual(3);
   });
 });
 
-// ── renderFormAbono() - selector de cuenta ───────────────────────
+// ── renderFormAbono() - formulario ───────────────────────────────
 
-describe('renderFormAbono() - selector de cuenta', () => {
+describe('renderFormAbono() - formulario', () => {
   const deuda = {
     id: 'd1',
     descripcion: 'Tarjeta de crédito',
@@ -1416,41 +1416,17 @@ describe('renderFormAbono() - selector de cuenta', () => {
     expect(html).toContain('al menos una cuenta activa');
   });
 
-  it('1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
-    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
-    const html = renderFormAbono(deuda);
-    expect(html).toContain('name="cuentaId"');
-    expect(html).toContain('value="c1"');
-    expect(html).toContain('Sale de:');
-    expect(html).toContain('Nequi principal');
-    expect(html).not.toContain('<select id="abono-cuenta"');
-  });
-
-  it('1 cuenta con saldo en cero: hint con clase de advertencia', () => {
-    S.cuentas = [cuenta('c1', 'Nequi', 0)];
-    const html = renderFormAbono(deuda);
-    expect(html).toContain('form-hint--danger');
-  });
-
-  it('1 cuenta activa + 1 inactiva: se asume la activa', () => {
+  it('con cuentas: muestra el form (monto/fecha) sin selector de cuenta', () => {
     S.cuentas = [
-      cuenta('c1', 'Bancolombia'),
-      { ...cuenta('c2', 'Cerrada'), activa: false },
-    ];
-    const html = renderFormAbono(deuda);
-    expect(html).toContain('value="c1"');
-    expect(html).not.toContain('<select id="abono-cuenta"');
-  });
-
-  it('varias cuentas: select visible con todas las activas', () => {
-    S.cuentas = [
-      cuenta('c1', 'Bancolombia'),
+      cuenta('c1', 'Bancolombia', 1_000_000),
       cuenta('c2', 'Nequi'),
     ];
     const html = renderFormAbono(deuda);
-    expect(html).toContain('<select id="abono-cuenta"');
-    expect(html).toContain('value="c1"');
-    expect(html).toContain('value="c2"');
+    expect(html).toContain('form-abono');
+    expect(html).toContain('name="monto"');
+    // Las cuentas de origen se eligen al confirmar, no en el formulario.
+    expect(html).not.toContain('name="cuentaId"');
+    expect(html).not.toContain('abono-cuenta');
   });
 });
 

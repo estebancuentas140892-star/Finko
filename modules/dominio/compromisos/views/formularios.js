@@ -11,7 +11,6 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { bancoAvatar, bancoClaseEmoji } from '../../../infra/bancos.js';
 import { FRECUENCIAS }   from '../../../core/constants.js';
 import { tasaEADe }      from '../logic.js';
 
@@ -20,10 +19,10 @@ import { tasaEADe }      from '../logic.js';
 /**
  * Devuelve el HTML del formulario para registrar un abono a una deuda.
  *
- * Selección de cuenta según la cantidad de cuentas activas en S:
- *   - 0 cuentas: estado vacío con instrucción.
- *   - 1 cuenta:  hidden input + hint con nombre y saldo (se asume sin preguntar).
- *   - Varias:    select obligatorio + display reactivo `#abono-saldo-disponible`.
+ * Las cuentas de origen se eligen al confirmar: el abono puede repartirse
+ * entre una o varias cuentas (ver `resolverPagoMultiCuenta`), sin dejar
+ * ninguna en negativo. Si no hay ninguna cuenta activa, muestra un estado
+ * vacío con instrucción.
  *
  * @param {import('../../../core/state.js').Compromiso} deuda
  * @returns {string}
@@ -43,34 +42,6 @@ export function renderFormAbono(deuda) {
   const saldo = Number(deuda.saldoTotal) || 0;
   const cuota = Number(deuda.cuotaMensual) || 0;
   const fechaHoy = new Date().toISOString().slice(0, 10);
-
-  // Una sola cuenta: se asume automáticamente, sin preguntar.
-  let cuentaHtml;
-  if (cuentas.length === 1) {
-    const c = cuentas[0];
-    const saldoCuenta = c.saldo ?? 0;
-    cuentaHtml = `
-      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      <p class="form-hint quick-add__cuenta-hint${saldoCuenta <= 0 ? ' form-hint--danger' : ''}" role="status">
-        ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldoCuenta)}
-      </p>`;
-  } else {
-    const cuentaOpts = cuentas.map(c =>
-      `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`
-    ).join('');
-    cuentaHtml = `
-      <div class="form-group">
-        <label for="abono-cuenta" class="label">¿De qué cuenta sale el dinero?</label>
-        <select id="abono-cuenta" name="cuentaId" class="input"
-                required aria-required="true">
-          <option value="">Elige una cuenta</option>
-          ${cuentaOpts}
-        </select>
-        <p id="abono-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-          Elige una cuenta para ver el saldo disponible.
-        </p>
-      </div>`;
-  }
 
   return `
     <form id="form-abono" novalidate
@@ -93,8 +64,6 @@ export function renderFormAbono(deuda) {
         <p class="form-hint form-hint--muted">${cuota > 0 ? `Pre-llenado con tu cuota mensual. ` : ''}Máximo ${f(saldo)}.</p>
         <p id="abono-tip-proyeccion" class="form-hint form-hint--muted" aria-live="polite"></p>
       </div>
-
-      ${cuentaHtml}
 
       <div class="form-group">
         <label for="abono-fecha" class="label">Fecha del abono</label>

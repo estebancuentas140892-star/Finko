@@ -1090,11 +1090,13 @@ export function ajustarMontoAbono(monto, saldoActual) {
  *
  * Reglas:
  *   - monto: número > 0.
- *   - cuentaId: requerido (de qué cuenta sale el dinero).
  *   - fecha: requerida y con formato YYYY-MM-DD.
  *   - deuda: debe existir, estar activa y tener saldoTotal > 0.
  *
- * @param {{ monto?: string|number, cuentaId?: string, fecha?: string }} datos
+ * La cuenta (o cuentas) de origen se eligen al confirmar, no en el formulario,
+ * así que no se validan aquí.
+ *
+ * @param {{ monto?: string|number, fecha?: string }} datos
  * @param {import('../../core/state.js').Compromiso | null | undefined} deuda
  * @returns {string[]} Lista de errores (vacía si todo OK).
  */
@@ -1103,9 +1105,6 @@ export function validarAbono(datos, deuda) {
   const monto = Number(datos?.monto);
   if (!Number.isFinite(monto) || monto <= 0) {
     errores.push('El monto del abono debe ser mayor a 0.');
-  }
-  if (!datos?.cuentaId?.trim?.()) {
-    errores.push('Debes elegir de qué cuenta sale el dinero.');
   }
   if (!datos?.fecha?.trim?.()) {
     errores.push('La fecha es obligatoria.');
