@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(ui): mejorar visual y copy en dashboard, gastos, agenda y deudas · 2026-06-28
+
+Pulido visual de cuatro secciones: (1) **Dashboard resumen**: gasto semanal ahora en rojo (`--fk-danger-text`) en lugar de verde (`--fk-text-accent`), reflejando que es dinero que salió; categoría top acompañada por emoji (🛒, 🚗, 🎉...) para identificación visual rápida. (2) **Lista de Gastos**: cada gasto muestra emoji de su categoría en lugar del icono genérico de dólar, consistente con el resumen. (3) **Dashboard**: eliminada sección "Accesos rápidos" (nav con 4 atajos); el dashboard es ahora más limpio y enfocado en datos financieros. (4) **Agenda y Compromisos**: removidos 2 hints redundantes ("Finko lo incluye en tu resumen..."); lenguaje de deudas mejorado: "Fintech" reemplazado por términos cercanos ("Cooperativa, fondo de empleados") en línea con el ADN #11 (tono profesional y accesible). Cero cambios en lógica, schema ni tests. SW v176 → v177. Tests 1418/1418.
+
+- **`modules/dominio/resumen/view.js`**: import `CATEGORIA_EMOJI` + emoji en categoría top.
+- **`styles/components/domain.css`**: `.resumen-card__stat--primary .resumen-card__value` color: `--fk-text-accent` → `--fk-danger-text`.
+- **`modules/dominio/gastos/view.js`**: `list-item__icon` muestra emoji de categoría con fallback a icono genérico.
+- **`index.html`**: eliminado nav completo `.bento__cell--accesos` (Accesos rápidos).
+- **`modules/dominio/agenda/view.js`**: eliminado hint en campo Monto de gasto fijo.
+- **`modules/dominio/compromisos/views/formularios.js`**: cambios de copy en chooser (Entidad/Personal) + eliminados 2 hints en formulario.
+- **`service-worker.js`**: v176 → v177.
+
+---
+
 ### style(personales): fecha legible en Me deben (UX C) · 2026-06-28
 
 Del barrido visual de spacing/jerarquía. Las fechas ISO crudas en la sección Me deben ("Pactó devolver: 2026-08-15", "Último abono: 2026-06-20") eran las últimas vistas que no usaban `fechaLegible`. Ahora muestran "15 de agosto de 2026", consistente con Gastos, Metas, Apartados, Inversiones y Ahorro. 2 líneas en la vista. Tests 1418/1418. SW v175 → v176.
