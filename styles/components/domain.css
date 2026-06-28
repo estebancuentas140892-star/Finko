@@ -611,6 +611,61 @@ button.chip:focus-visible {
   color: var(--fk-danger-text);
 }
 
+/* Aviso "la cuenta elegida no alcanza" dentro del picker de reparto. */
+.cuenta-multi__aviso {
+  margin-bottom: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-danger-text);
+}
+
+/* Selector de cuenta en-formulario (tarjetas seleccionables con radio). */
+.cuenta-sel__lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+
+.cuenta-sel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  cursor: pointer;
+  transition: background var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+
+.cuenta-sel__row:hover {
+  background: var(--fk-bg-hover);
+}
+
+.cuenta-sel__row:focus-within {
+  border-color: var(--fk-border-focus);
+}
+
+.cuenta-sel__radio {
+  width: var(--fk-space-5);
+  height: var(--fk-space-5);
+  flex-shrink: 0;
+  accent-color: var(--fk-primary);
+  cursor: pointer;
+}
+
+.cuenta-sel__row .cuenta-picker__main {
+  flex: 1;
+}
+
+/* Tarjeta seleccionada: borde y fondo resaltados. */
+.cuenta-sel__row:has(.cuenta-sel__radio:checked) {
+  border-color: var(--fk-primary);
+  background: var(--fk-bg-hover);
+}
+
 /* ════════════════════════════════════════════════════════════
    HERO SOLO - card de saldo visible fuera de un bento grid.
    ════════════════════════════════════════════════════════════ */

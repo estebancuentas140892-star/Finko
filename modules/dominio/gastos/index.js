@@ -15,10 +15,9 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { hoy, f, esc as _esc } from '../../infra/utils.js';
-import { bancoAvatar } from '../../infra/bancos.js';
+import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
+import { resolverPagoMultiCuenta, resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
@@ -33,9 +32,9 @@ function _nuevoGasto() {
   if (!overlay) return;
   resetModal(overlay);
 
-  // Re-inyectar el form cada vez: las opciones del selector de cuenta
+  // Re-inyectar el form cada vez: las tarjetas del selector de cuenta
   // dependen de S.cuentas, que puede haber cambiado desde la última apertura.
-  _montarFormGasto(false);
+  _montarFormGasto();
 
   // Pre-rellenar la fecha con hoy para mejor UX.
   const fechaInput = overlay.querySelector('#gasto-fecha');
@@ -54,8 +53,8 @@ async function _guardarGasto() {
   const datos  = Object.fromEntries(new FormData(form));
   const idEdit = form.dataset.id || null;
 
-  // En edición la cuenta viene del form; en creación se elige al confirmar.
-  const errores = validarGasto(datos, Boolean(idEdit));
+  // La cuenta de origen viene del selector de tarjetas (radio name="cuentaId").
+  const errores = validarGasto(datos);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
@@ -83,11 +82,29 @@ async function _guardarGasto() {
     }
     editar('gastos', idEdit, gasto);
   } else {
-    // En creación, el gasto se reparte entre una o varias cuentas (sin
-    // negativos cuando hay de dónde repartir). Un registro por cuenta usada.
-    const base = normalizarGasto(datos); // plantilla: cuentaId null, monto base
-    const splits = await resolverPagoMultiCuenta(S.cuentas, base.monto, 'registrar el gasto');
+    // En creación: se usa la cuenta elegida. Si no alcanza, el reparto entre
+    // varias se resuelve al confirmar, sin dejar ninguna en negativo. Un
+    // registro por cuenta usada.
+    const base = normalizarGasto(datos); // incluye la cuenta elegida
+    const splits = await resolverPagoConPreferida(
+      S.cuentas, base.monto, base.cuentaId, 'registrar el gasto',
+    );
     if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+    // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
+    if (splits.length === 1) {
+      const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+      const saldoCuenta = c?.saldo ?? 0;
+      if (saldoCuenta < splits[0].monto) {
+        const ok = await confirmar({
+          titulo:         'Registrar gasto',
+          mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
+          confirmarTexto: 'Registrar gasto',
+          peligroso:      true,
+        });
+        if (!ok) return;
+      }
+    }
 
     const repartido = splits.length > 1;
     for (const s of splits) {
@@ -120,7 +137,7 @@ function _editarGasto(el) {
   if (!overlay) return;
 
   resetModal(overlay);
-  _montarFormGasto(true);
+  _montarFormGasto();
 
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -133,14 +150,11 @@ function _editarGasto(el) {
   const notaEl = form.querySelector('[name="nota"]');
   if (notaEl) notaEl.value = gasto.nota ?? '';
 
-  // Precargar cuenta si el gasto la tenía (los gastos de versiones previas
-  // pueden venir con cuentaId null - el usuario tendrá que elegir una).
-  // Solo aplica al select (varias cuentas): con una sola cuenta activa el
-  // form trae un hidden con su id y el gasto queda asociado a esa cuenta.
-  const cuentaSel = form.querySelector('select[name="cuentaId"]');
-  if (cuentaSel) {
-    cuentaSel.value = gasto.cuentaId ?? '';
-    _actualizarSaldoDisponible();
+  // Precargar la cuenta del gasto en el selector de tarjetas. Si el gasto venía
+  // sin cuenta (versiones previas), queda la pre-selección por defecto.
+  if (gasto.cuentaId) {
+    const radio = form.querySelector(`input[name="cuentaId"][value="${gasto.cuentaId}"]`);
+    if (radio) radio.checked = true;
   }
 
   const titulo = overlay.querySelector('.modal__title');
@@ -371,50 +385,19 @@ function _ajustarSaldoDeuda(compromisoId, delta) {
   editar('compromisos', compromisoId, { saldoTotal: nuevoSaldo });
 }
 
-/**
- * Refresca el texto del display `#gasto-saldo-disponible` según la cuenta
- * seleccionada en el `<select name="cuentaId">`. Si no hay cuenta elegida,
- * muestra el placeholder original. Si la cuenta tiene saldo negativo,
- * usa una clase de advertencia.
- */
-function _actualizarSaldoDisponible() {
-  const sel = document.getElementById('gasto-cuenta');
-  const tip = document.getElementById('gasto-saldo-disponible');
-  if (!sel || !tip) return;
-
-  const cuentaId = sel.value;
-  if (!cuentaId) {
-    tip.textContent = 'Elige una cuenta para ver el saldo disponible.';
-    tip.classList.remove('form-hint--danger');
-    tip.classList.add('form-hint--muted');
-    return;
-  }
-
-  const cuenta = S.cuentas.find(c => c.id === cuentaId);
-  if (!cuenta) {
-    tip.textContent = 'Cuenta no encontrada.';
-    return;
-  }
-
-  const saldo = cuenta.saldo ?? 0;
-  tip.innerHTML = `${bancoAvatar(cuenta.banco)} Saldo disponible en <strong>${_esc(cuenta.nombre)}</strong>: ${f(saldo)}`;
-  tip.classList.toggle('form-hint--danger', saldo <= 0);
-  tip.classList.toggle('form-hint--muted',  saldo >  0);
-}
-
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 /**
- * (Re)Inyecta el HTML del formulario de gasto en el modal y attacha los
- * listeners. Se llama desde `_nuevoGasto()` y `_editarGasto()` cada vez
- * que el modal se abre, porque las opciones del selector de cuenta
+ * (Re)Inyecta el HTML del formulario de gasto en el modal y attacha el
+ * listener de submit. Se llama desde `_nuevoGasto()` y `_editarGasto()` cada
+ * vez que el modal se abre, porque las tarjetas del selector de cuenta
  * dependen de `S.cuentas`, que puede cambiar entre aperturas.
  */
-function _montarFormGasto(modoEdicion = false) {
+function _montarFormGasto() {
   const body = document.getElementById('modal-gasto-body');
   if (!body) return;
 
-  body.innerHTML = renderFormGasto(modoEdicion);
+  body.innerHTML = renderFormGasto();
 
   const form = body.querySelector('#form-gasto');
   if (!form) return;  // empty state (sin cuentas): no hay form, no hay listeners.
@@ -423,9 +406,6 @@ function _montarFormGasto(modoEdicion = false) {
     e.preventDefault();
     _guardarGasto();
   });
-
-  // Cada cambio del select actualiza el display de saldo disponible.
-  body.querySelector('#gasto-cuenta')?.addEventListener('change', _actualizarSaldoDisponible);
 }
 
 export function initGastos() {

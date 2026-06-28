@@ -23,6 +23,45 @@ import { distribuirPago } from './distribuir-pago.js';
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
 /**
+ * Renderiza un selector de cuenta en-formulario: una tarjeta seleccionable por
+ * cuenta activa, con su avatar de entidad, nombre y saldo. El valor elegido se
+ * lee del radio `name="cuentaId"`. Pre-selecciona `selectedId` si se indica, o
+ * la cuenta de mayor saldo. Devuelve '' si no hay cuentas activas (el caller
+ * muestra su propio estado vacío).
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas
+ * @param {{ selectedId?: string|null, label?: string }} [opts]
+ * @returns {string}
+ */
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?' } = {}) {
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) return '';
+
+  const sel = (selectedId && activas.some(c => c.id === selectedId))
+    ? selectedId
+    : [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id;
+
+  const filas = activas.map(c => `
+      <label class="cuenta-sel__row">
+        <input type="radio" name="cuentaId" class="cuenta-sel__radio"
+               value="${_esc(c.id)}" ${c.id === sel ? 'checked' : ''} />
+        <span class="cuenta-picker__main">
+          ${bancoAvatar(c.banco)}
+          <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
+        </span>
+        <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
+      </label>`).join('');
+
+  return `
+    <div class="form-group">
+      <span class="label">${_esc(label)}</span>
+      <div class="cuenta-sel__lista" role="radiogroup" aria-label="${_esc(label)}">
+        ${filas}
+      </div>
+    </div>`;
+}
+
+/**
  * Resuelve la cuenta a usar para un movimiento de forma inteligente.
  *
  * @param {import('../core/state.js').Cuenta[]} cuentas - lista completa de S.cuentas.
@@ -77,6 +116,48 @@ export async function resolverPagoMultiCuenta(cuentas, monto, contexto = 'comple
   }
 
   return _mostrarPickerMultiCuenta(activas, Number(monto) || 0, contexto);
+}
+
+/**
+ * Resuelve el reparto de un pago partiendo de una cuenta preferida (la que el
+ * usuario eligió en el formulario):
+ *   - 0 cuentas: diálogo guiado a Mis Cuentas. Devuelve null.
+ *   - La preferida cubre el monto: la usa por el total. Devuelve un split.
+ *   - La preferida no alcanza y es la única cuenta: devuelve un split por el
+ *     total (el caller confirma el sobregiro, no hay con qué repartir).
+ *   - La preferida no alcanza y hay más cuentas: abre el picker de reparto
+ *     pre-sembrado con la preferida, para completar sin dejar negativos.
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas
+ * @param {number} monto
+ * @param {string|null} preferidaId - cuenta elegida en el formulario.
+ * @param {string} [contexto]
+ * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
+ */
+export async function resolverPagoConPreferida(cuentas, monto, preferidaId, contexto = 'completar esta operación') {
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) {
+    _mostrarGuiadoCero(contexto);
+    return null;
+  }
+
+  const m = Number(monto) || 0;
+  const preferida = activas.find(c => c.id === preferidaId) || activas[0];
+  const saldoPref = preferida.saldo ?? 0;
+
+  // La cuenta elegida cubre el monto: úsala directamente, sin negativo.
+  if (saldoPref >= m) {
+    return [{ cuentaId: preferida.id, monto: m }];
+  }
+
+  // No alcanza y no hay con qué repartir: un solo split (el caller confirma).
+  if (activas.length === 1) {
+    return [{ cuentaId: preferida.id, monto: m }];
+  }
+
+  // No alcanza y hay más cuentas: repartir, avisando y pre-sembrando la preferida.
+  const aviso = `${preferida.nombre} no alcanza para cubrir ${f(m)} (saldo ${f(saldoPref)}). Completa con otra(s) cuenta(s).`;
+  return _mostrarPickerMultiCuenta(activas, m, contexto, preferida.id, aviso);
 }
 
 // ── CASO 0 CUENTAS ───────────────────────────────────────────────
@@ -215,6 +296,34 @@ function _mostrarPickerCuenta(activas, contexto) {
 // ── CASO VARIAS CUENTAS: PAGO REPARTIDO ──────────────────────────
 
 /**
+ * Conjunto de cuentas a pre-marcar partiendo de una preferida: incluye la
+ * preferida y, si no alcanza, agrega las demás por mayor saldo hasta cubrir.
+ *
+ * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {number} monto
+ * @param {string} preferidaId
+ * @returns {Set<string>}
+ */
+function _preseleccionConPreferida(activas, monto, preferidaId) {
+  const set = new Set();
+  let acumulado = 0;
+  const pref = activas.find(c => c.id === preferidaId);
+  if (pref) {
+    set.add(pref.id);
+    acumulado += Math.max(0, pref.saldo ?? 0);
+  }
+  const otras = activas
+    .filter(c => c.id !== preferidaId && (c.saldo ?? 0) > 0)
+    .sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
+  for (const c of otras) {
+    if (acumulado >= monto) break;
+    set.add(c.id);
+    acumulado += c.saldo ?? 0;
+  }
+  return set;
+}
+
+/**
  * Picker multi-selección: el usuario marca una o varias cuentas y el sistema
  * reparte el monto entre ellas (mayor saldo primero) sin dejar negativos.
  * Resuelve con el array de splits cuando el pago queda cubierto, o null.
@@ -222,16 +331,24 @@ function _mostrarPickerCuenta(activas, contexto) {
  * @param {import('../core/state.js').Cuenta[]} activas
  * @param {number} monto
  * @param {string} contexto
+ * @param {string|null} [preferidaId] - cuenta a pre-sembrar (la elegida en el form).
+ * @param {string} [aviso] - mensaje de advertencia (ej. "la cuenta no alcanza").
  * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
  */
-function _mostrarPickerMultiCuenta(activas, monto, contexto) {
+function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null, aviso = '') {
   return new Promise(resolve => {
-    // Pre-selección: el conjunto mínimo (mayor saldo primero) que cubre el
-    // monto; si ni todas alcanzan, se pre-marcan todas.
-    const previo = distribuirPago(activas, monto);
-    const preSel = new Set(
-      previo.ok ? previo.splits.map(s => s.cuentaId) : activas.map(c => c.id),
-    );
+    // Pre-selección: si hay cuenta preferida, partir de ella y sumar las de
+    // mayor saldo hasta cubrir. Si no, el conjunto mínimo (mayor saldo primero);
+    // si ni todas alcanzan, se pre-marcan todas.
+    let preSel;
+    if (preferidaId) {
+      preSel = _preseleccionConPreferida(activas, monto, preferidaId);
+    } else {
+      const previo = distribuirPago(activas, monto);
+      preSel = new Set(
+        previo.ok ? previo.splits.map(s => s.cuentaId) : activas.map(c => c.id),
+      );
+    }
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -260,6 +377,7 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto) {
           <h2 id="cuenta-multi-title" class="modal__title">¿Desde qué cuentas?</h2>
         </header>
         <div class="modal__body">
+          ${aviso ? `<p class="cuenta-multi__aviso">${_esc(aviso)}</p>` : ''}
           <p class="confirm__mensaje">Elige una o varias cuentas para ${_esc(contexto)} de <strong>${f(monto)}</strong>. Repartimos automáticamente desde la de mayor saldo, sin dejar ninguna en negativo.</p>
           <div class="cuenta-multi__lista">
             ${filas}
@@ -288,7 +406,7 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto) {
 
     function _recalcular() {
       const sel = _seleccionActual();
-      const r = distribuirPago(sel, monto);
+      const r = distribuirPago(sel, monto, preferidaId);
       ultimo = r;
 
       const porCuenta = new Map(r.splits.map(s => [s.cuentaId, s.monto]));

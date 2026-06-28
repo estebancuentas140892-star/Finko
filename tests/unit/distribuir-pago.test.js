@@ -72,4 +72,33 @@ describe('distribuirPago()', () => {
     expect(distribuirPago(undefined, 100).splits).toEqual([]);
     expect(distribuirPago([cta('a', 500)], 'x').ok).toBe(false);
   });
+
+  it('con prioridadId cobra primero de esa cuenta, luego completa con las demás', () => {
+    // La elegida ("chica", 100k) no cubre 300k: se usa toda y el resto sale de "grande".
+    const r = distribuirPago([cta('chica', 100_000), cta('grande', 900_000)], 300_000, 'chica');
+    expect(r.ok).toBe(true);
+    expect(r.splits).toEqual([
+      { cuentaId: 'chica', monto: 100_000 },
+      { cuentaId: 'grande', monto: 200_000 },
+    ]);
+  });
+
+  it('con prioridadId, las demás conservan el orden mayor-saldo-primero', () => {
+    const r = distribuirPago(
+      [cta('pref', 50_000), cta('media', 300_000), cta('alta', 800_000)],
+      600_000,
+      'pref',
+    );
+    expect(r.ok).toBe(true);
+    // pref (50k) primero, luego alta (800k) cubre el resto; media no se usa.
+    expect(r.splits).toEqual([
+      { cuentaId: 'pref', monto: 50_000 },
+      { cuentaId: 'alta', monto: 550_000 },
+    ]);
+  });
+
+  it('con prioridadId que cubre por sí sola: solo usa esa cuenta', () => {
+    const r = distribuirPago([cta('pref', 900_000), cta('otra', 800_000)], 300_000, 'pref');
+    expect(r.splits).toEqual([{ cuentaId: 'pref', monto: 300_000 }]);
+  });
 });

@@ -8,7 +8,11 @@
  */
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { resolverCuenta } from '../../modules/infra/cuenta-helper.js';
+import {
+  resolverCuenta,
+  renderSelectorCuenta,
+  resolverPagoConPreferida,
+} from '../../modules/infra/cuenta-helper.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -137,5 +141,88 @@ describe('resolverCuenta() - varias cuentas activas', () => {
 
     const resultado = await promesa;
     expect(resultado).toBeNull();
+  });
+});
+
+// ── renderSelectorCuenta() ───────────────────────────────────────
+
+describe('renderSelectorCuenta()', () => {
+  it('sin cuentas activas: devuelve cadena vacía', () => {
+    expect(renderSelectorCuenta([])).toBe('');
+    expect(renderSelectorCuenta(undefined)).toBe('');
+    expect(renderSelectorCuenta([cuentaActiva({ activa: false })])).toBe('');
+  });
+
+  it('renderiza un radio name="cuentaId" por cuenta activa', () => {
+    const html = renderSelectorCuenta([
+      cuentaActiva({ id: 'c1', nombre: 'Bancolombia', saldo: 600_000 }),
+      cuentaActiva({ id: 'c2', nombre: 'Nequi', saldo: 400_000 }),
+    ]);
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('type="radio"');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
+  });
+
+  it('pre-selecciona la cuenta de mayor saldo por defecto', () => {
+    const html = renderSelectorCuenta([
+      cuentaActiva({ id: 'menor', saldo: 100_000 }),
+      cuentaActiva({ id: 'mayor', saldo: 900_000 }),
+    ]);
+    expect(html).toMatch(/value="mayor"[^>]*checked|checked[^>]*value="mayor"/);
+  });
+
+  it('respeta selectedId si la cuenta existe', () => {
+    const html = renderSelectorCuenta([
+      cuentaActiva({ id: 'c1', saldo: 900_000 }),
+      cuentaActiva({ id: 'c2', saldo: 100_000 }),
+    ], { selectedId: 'c2' });
+    expect(html).toMatch(/value="c2"[^>]*checked|checked[^>]*value="c2"/);
+  });
+});
+
+// ── resolverPagoConPreferida() ───────────────────────────────────
+
+describe('resolverPagoConPreferida()', () => {
+  it('0 cuentas: devuelve null y abre el diálogo guiado', async () => {
+    const resultado = await resolverPagoConPreferida([], 100_000, null);
+    expect(resultado).toBeNull();
+    expect(document.getElementById('cta-sin-cuentas-title')).not.toBeNull();
+  });
+
+  it('la cuenta preferida cubre el monto: un solo split, sin DOM', async () => {
+    const cuentas = [
+      cuentaActiva({ id: 'c1', saldo: 600_000 }),
+      cuentaActiva({ id: 'c2', saldo: 400_000 }),
+    ];
+    const splits = await resolverPagoConPreferida(cuentas, 500_000, 'c1');
+    expect(splits).toEqual([{ cuentaId: 'c1', monto: 500_000 }]);
+    expect(document.querySelector('.modal-overlay')).toBeNull();
+  });
+
+  it('preferida no alcanza y es la única cuenta: split por el total (caller confirma)', async () => {
+    const cuentas = [cuentaActiva({ id: 'c1', saldo: 100_000 })];
+    const splits = await resolverPagoConPreferida(cuentas, 500_000, 'c1');
+    expect(splits).toEqual([{ cuentaId: 'c1', monto: 500_000 }]);
+    expect(document.querySelector('.modal-overlay')).toBeNull();
+  });
+
+  it('preferida no alcanza y hay más cuentas: abre el picker de reparto con aviso', async () => {
+    const cuentas = [
+      cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
+      cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 900_000 }),
+    ];
+    const promesa = resolverPagoConPreferida(cuentas, 500_000, 'c1');
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(document.getElementById('cuenta-multi-title')).not.toBeNull();
+    expect(document.querySelector('.cuenta-multi__aviso')).not.toBeNull();
+
+    // Confirmar el reparto pre-sembrado (cubre con c1 + c2).
+    document.querySelector('[data-role="confirmar"]')?.click();
+    const splits = await promesa;
+    expect(Array.isArray(splits)).toBe(true);
+    expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);
   });
 });

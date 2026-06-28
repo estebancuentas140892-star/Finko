@@ -7,7 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
-import { bancoAvatar, bancoClaseEmoji } from '../../infra/bancos.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { gastosMes, filtrarGastos, gastosPendientes, totalGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -327,15 +327,17 @@ export function renderFormGastoRapido() {
  * Selección de cuenta:
  *   - 0 cuentas: empty state guiado con CTA "Ir a Mis cuentas".
  *   - Creación (`modoEdicion=false`): sin selector inline; la(s) cuenta(s) se
- *     eligen al confirmar (reparto multi-cuenta, ver `resolverPagoMultiCuenta`).
- *   - Edición (`modoEdicion=true`): mantiene el selector de la cuenta del
- *     registro (un gasto editado sigue siendo de una sola cuenta). Con 1 cuenta,
- *     hidden + hint; con varias, `<select>` + display `#gasto-saldo-disponible`.
+ *     se eligen al confirmar (reparto multi-cuenta).
  *
- * @param {boolean} [modoEdicion=false]
+ * El formulario muestra el selector de cuenta (tarjetas con icono de entidad)
+ * tanto en creación como en edición. En creación, si la cuenta elegida no
+ * alcanza, el reparto entre varias se resuelve al confirmar (sin negativos);
+ * en edición el registro sigue siendo de una sola cuenta. La pre-selección la
+ * ajusta el caller (`_editarGasto`) en modo edición.
+ *
  * @returns {string}
  */
-export function renderFormGasto(modoEdicion = false) {
+export function renderFormGasto() {
   const catOpts = CATEGORIAS_GASTO_USUARIO
     .map(c => `<option value="${_esc(c)}">${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
@@ -354,35 +356,6 @@ export function renderFormGasto(modoEdicion = false) {
       </div>`;
   }
 
-  // Selector de cuenta solo en edición: la creación reparte al confirmar.
-  let cuentaHtml = '';
-  if (modoEdicion) {
-    if (cuentas.length === 1) {
-      const c = cuentas[0];
-      const saldo = c.saldo ?? 0;
-      cuentaHtml = `
-        <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-        <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
-          ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
-        </p>`;
-    } else {
-      const cuentaOpts = cuentas
-        .map(c => `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`)
-        .join('');
-      cuentaHtml = `
-        <div class="form-group">
-          <label for="gasto-cuenta" class="label">De qué cuenta sale</label>
-          <select id="gasto-cuenta" name="cuentaId" class="input" required aria-required="true">
-            <option value="">Seleccionar…</option>
-            ${cuentaOpts}
-          </select>
-          <p id="gasto-saldo-disponible" class="form-hint form-hint--muted" aria-live="polite">
-            Elige una cuenta para ver el saldo disponible.
-          </p>
-        </div>`;
-    }
-  }
-
   return `
     <form id="form-gasto" novalidate>
       <div class="form-group">
@@ -390,7 +363,7 @@ export function renderFormGasto(modoEdicion = false) {
         <input id="gasto-descripcion" name="descripcion" class="input" type="text"
                placeholder="Ej. Almuerzo en restaurante" required aria-required="true" autocomplete="off" />
       </div>
-      ${cuentaHtml}
+      ${renderSelectorCuenta(cuentas)}
       <div class="form-group">
         <label for="gasto-monto" class="label">Monto (COP)</label>
         <input id="gasto-monto" name="monto" class="input" type="number"

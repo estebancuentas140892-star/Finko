@@ -568,42 +568,29 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('Ir a Mis cuentas');
   });
 
-  it('creación (sin modoEdicion): form sin selector de cuenta (se elige al confirmar)', () => {
-    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000), cuenta('c2', 'Bancolombia')];
+  it('con varias cuentas: selector de tarjetas (radios name="cuentaId") con todas las activas', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
     const html = renderFormGasto();
     expect(html).toContain('form-gasto');
-    expect(html).toContain('name="monto"');
-    expect(html).not.toContain('name="cuentaId"');
-    expect(html).not.toContain('gasto-cuenta');
-  });
-
-  it('edición 1 cuenta activa: hidden input + hint con nombre y saldo, sin select', () => {
-    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
-    const html = renderFormGasto(true);
-    expect(html).toContain('type="hidden"');
-    expect(html).toContain('name="cuentaId"');
-    expect(html).toContain('value="c1"');
-    expect(html).toContain('Sale de:');
-    expect(html).toContain('Nequi principal');
-    expect(html).not.toContain('<select id="gasto-cuenta"');
-  });
-
-  it('edición 1 cuenta con saldo en cero: hint con clase de advertencia', () => {
-    S.cuentas = [cuenta('c1', 'Nequi', 0)];
-    const html = renderFormGasto(true);
-    expect(html).toContain('form-hint--danger');
-  });
-
-  it('edición varias cuentas: select visible con todas las activas', () => {
-    S.cuentas = [
-      cuenta('c1', 'Bancolombia'),
-      cuenta('c2', 'Nequi'),
-    ];
-    const html = renderFormGasto(true);
-    expect(html).toContain('<select id="gasto-cuenta"');
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('type="radio"');
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');
     expect(html).toContain('value="c2"');
-    expect(html).not.toContain('type="hidden"');
+  });
+
+  it('pre-selecciona la cuenta de mayor saldo', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
+    const html = renderFormGasto();
+    // El radio con value="c1" (mayor saldo) debe venir checked.
+    expect(html).toMatch(/value="c1"[^>]*checked|checked[^>]*value="c1"/);
+  });
+
+  it('1 cuenta activa: una sola tarjeta pre-seleccionada', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('checked');
   });
 });
