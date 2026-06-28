@@ -556,6 +556,13 @@ export function detectarNudgeGMF(gmfData) {
 
 // ── DISTRIBUCIÓN ADAPTATIVA DEL INGRESO (Fase 3) ─────────────────
 
+export const PRESETS_DISTRIBUCION = [
+  { id: 'auto',     label: 'Automático', n: 0,  e: 0,  a: 0  },
+  { id: '50-30-20', label: '50/30/20',   n: 50, e: 30, a: 20 },
+  { id: '70-20-10', label: '70/20/10',   n: 70, e: 20, a: 10 },
+  { id: '60-20-20', label: '60/20/20',   n: 60, e: 20, a: 20 },
+];
+
 /**
  * Sugiere cómo distribuir el ingreso mensual adaptando la regla 50/30/20
  * al peso real de los gastos fijos del usuario.
@@ -568,6 +575,7 @@ export function detectarNudgeGMF(gmfData) {
  *   tieneFondoActivo?:     boolean,
  *   fondoCompleto?:        boolean,
  *   tieneInversiones?:     boolean,
+ *   presetId?:             string,
  * }} [contexto]
  * @returns {{
  *   ingresoMensual: number,
@@ -589,6 +597,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   tieneFondoActivo     = false,
   fondoCompleto        = false,
   tieneInversiones     = false,
+  presetId             = 'auto',
 } = {}) {
   if (!ingresoMensual || ingresoMensual <= 0) return null;
 
@@ -604,7 +613,22 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   const alertas = [];
   const ctas    = [];
 
-  if (pctFijos > 70) {
+  const preset = presetId && presetId !== 'auto'
+    ? PRESETS_DISTRIBUCION.find(p => p.id === presetId)
+    : null;
+
+  if (preset) {
+    necesidadesPct = preset.n;
+    estiloVidaPct  = preset.e;
+    ahorroInvPct   = preset.a;
+    metodo = preset.label;
+    razon  = pctFijos > 0
+      ? `Distribución ${preset.label} aplicada. Tus gastos fijos son el ${pctFijos}% de tus ingresos.`
+      : `Distribución ${preset.label} aplicada.`;
+    if (pctFijos > necesidadesPct) {
+      alertas.push(`Tus gastos fijos (${pctFijos}%) superan lo asignado a necesidades (${necesidadesPct}%). Considera ajustar el preset.`);
+    }
+  } else if (pctFijos > 70) {
     necesidadesPct = Math.min(pctFijos, 85);
     const restante = 100 - necesidadesPct;
     ahorroInvPct   = Math.max(5, Math.round(restante * 0.3));

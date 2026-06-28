@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(tesoreria): presets de distribución de ingresos · 2026-06-27
+
+Chips de preset (Automático, 50/30/20, 70/20/10, 60/20/20) en la card "¿Cómo distribuir?". Selección persistida en `S.config.presetDistribucion`. Alerta si gastos fijos superan el % de necesidades del preset. SW v165 → v166. Tests 1407/1407.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `PRESETS_DISTRIBUCION` + `presetId` en `sugerirDistribucionIngreso`. |
+| `modules/dominio/tesoreria/view.js` | Chips de preset, pasa `presetId` desde `S.config`. |
+| `modules/dominio/tesoreria/index.js` | Acción `cambiar-preset-distribucion`, `save()` a config. |
+| `service-worker.js` | v165 → v166. |
+
+---
+
 ### feat(compromisos): pre-llenar monto de abono con cuota mensual · 2026-06-27
 
 "Abonar" ahora abre con el campo de monto pre-llenado con `Math.min(cuota, saldo)` en vez de vacío. Hint: "Pre-llenado con tu cuota mensual." El tip de proyección se muestra al abrir. SW v164 → v165. Tests 1407/1407.
@@ -92,17 +105,6 @@ Form de nueva meta ahora tiene: (1) párrafo intro "Escribe lo que quieres logra
 | `service-worker.js` | v161 → v162. |
 
 ---
-
-### style(ui): iconos emoji en selectores de categoría · 2026-06-27
-
-`CATEGORIA_EMOJI` (mapa centralizado en `constants.js`) añade un emoji a cada una de las 11 categorías de gasto. Se usa en: opciones del `<select>` en el form de gasto, opciones del form de Límites de gasto, chips de filtro en la vista de Gastos y subtítulo de cada ítem de gasto. Los valores almacenados y `data-cat` no cambian. SW v160 → v161. Tests 1407/1407 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | Nuevo export `CATEGORIA_EMOJI` con 11 entradas. |
-| `modules/dominio/gastos/view.js` | Emojis en catOpts, chips de filtro y subtítulo de ítem. |
-| `modules/dominio/presupuesto/view.js` | Emojis en opciones del form de Límites. |
-| `service-worker.js` | v160 → v161. |
 
 ---
 

@@ -20,6 +20,7 @@ import {
   estimarSalarioMensual,
   calcularGastosFijosMensuales,
   sugerirDistribucionIngreso,
+  PRESETS_DISTRIBUCION,
 } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -279,27 +280,45 @@ export function renderDistribucionIngreso() {
 
   const tieneInversiones = (S.inversiones ?? []).length > 0;
 
+  const presetId = S.config?.presetDistribucion ?? 'auto';
+
   const dist = sugerirDistribucionIngreso(ingresoMensual, {
     gastosFijosMensuales,
     tieneDeudas,
     tieneFondoActivo,
     fondoCompleto,
     tieneInversiones,
+    presetId,
   });
 
-  el.innerHTML = dist ? _renderDistribucion(dist) : '';
+  el.innerHTML = dist ? _renderDistribucion(dist, presetId) : '';
 }
 
-/** @param {ReturnType<typeof sugerirDistribucionIngreso>} dist */
-function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }) {
+/**
+ * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
+ * @param {string} presetActivo
+ */
+function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo) {
   const { necesidades, estiloVida, ahorro } = split;
 
+  const presetChips = PRESETS_DISTRIBUCION.map(p => {
+    const activo = p.id === presetActivo;
+    return `
+      <button type="button"
+              class="chip${activo ? ' chip--active' : ''}"
+              data-action="cambiar-preset-distribucion"
+              data-preset="${_esc(p.id)}"
+              aria-pressed="${activo}">
+        ${_esc(p.label)}
+      </button>`;
+  }).join('');
+
   const rowsHtml = [
-    { icon: '📦', ...necesidades },
-    { icon: '🎯', ...estiloVida },
-    { icon: '💰', ...ahorro },
-  ].map(({ icon, label, pct, monto }) =>
-    `<p class="nudge__desc"><strong>${icon} ${_esc(label)}</strong> ${pct}% · ${f(monto)}</p>`
+    { icn: '📦', ...necesidades },
+    { icn: '🎯', ...estiloVida },
+    { icn: '💰', ...ahorro },
+  ].map(({ icn, label, pct, monto }) =>
+    `<p class="nudge__desc"><strong>${icn} ${_esc(label)}</strong> ${pct}% · ${f(monto)}</p>`
   ).join('');
 
   const alertasHtml = alertas.map(a =>
@@ -315,6 +334,9 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }) {
       <span class="nudge__icon" aria-hidden="true">${icon('lightbulb')}</span>
       <div class="nudge__body">
         <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
+        <div class="filtros-bar" role="group" aria-label="Preset de distribución">
+          ${presetChips}
+        </div>
         <p class="nudge__desc">${_esc(razon)}</p>
         ${rowsHtml}
         ${alertasHtml}

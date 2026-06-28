@@ -9,6 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
+import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
@@ -626,6 +627,16 @@ async function _eliminarIngreso(el) {
   announce(`Ingreso "${ing.descripcion}" eliminado.`);
 }
 
+/** @param {HTMLElement} el */
+function _cambiarPreset(el) {
+  const presetId = el.dataset.preset;
+  if (!presetId) return;
+  if (!S.config) S.config = {};
+  S.config.presetDistribucion = presetId;
+  save();
+  renderDistribucionIngreso();
+}
+
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -637,6 +648,7 @@ export function initTesoreria() {
   registrarAccion('nuevo-ingreso',   _nuevoIngreso);
   registrarAccion('editar-ingreso',  _editarIngreso);
   registrarAccion('eliminar-ingreso', _eliminarIngreso);
+  registrarAccion('cambiar-preset-distribucion', _cambiarPreset);
 
   _inyectarForm();
 

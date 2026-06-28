@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): presets de distribución de ingresos (50/30/20, 70/20/10, etc.) · 2026-06-27
+
+La card "¿Cómo distribuir?" ahora tiene chips de preset: Automático (adapta según gastos fijos), 50/30/20, 70/20/10, 60/20/20. El usuario elige y la distribución se recalcula al instante. Selección persistida en `S.config.presetDistribucion`. Si los gastos fijos superan el % asignado a necesidades, una alerta lo indica. SW v165 → v166.
+
+- **`modules/dominio/tesoreria/logic.js`**: `PRESETS_DISTRIBUCION` + parámetro `presetId` en `sugerirDistribucionIngreso`.
+- **`modules/dominio/tesoreria/view.js`**: chips de preset en `_renderDistribucion`; pasa `presetId` desde `S.config`.
+- **`modules/dominio/tesoreria/index.js`**: acción `cambiar-preset-distribucion`, persiste con `save()`.
+- **`service-worker.js`**: v165 → v166.
+
+---
+
 ### feat(compromisos): pre-llenar monto de abono con la cuota mensual · 2026-06-27
 
 Al abrir "Abonar" en una deuda, el campo de monto ahora viene pre-llenado con la cuota mensual (o el saldo pendiente si es menor). Antes el campo estaba vacío y el usuario tenia que escribir el valor cada vez. El hint explica el pre-llenado. El tip de proyección también se muestra al abrir (antes solo aparecia al escribir). SW v164 → v165.
