@@ -192,7 +192,7 @@ function _renderGastoItem(gasto) {
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icon('gastos')}</div>
+      <div class="list-item__icon" aria-hidden="true">${CATEGORIA_EMOJI[catKey] ?? icon('gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>

@@ -373,7 +373,6 @@ export function renderFormGastoFijo() {
         <input id="gfijo-monto" name="monto" class="input" type="number"
                min="1" step="1000" placeholder="0" required aria-required="true"
                autocomplete="off" />
-        <p class="form-hint">Finko lo incluye en tu resumen mensual de gastos.</p>
       </div>
 
       <div class="form-group">

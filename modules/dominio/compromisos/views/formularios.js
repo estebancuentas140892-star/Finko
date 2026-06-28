@@ -129,12 +129,11 @@ export function renderChooserCompromiso() {
     <div class="comp-chooser" role="group" aria-label="Elegir tipo de deuda">
       <button type="button" class="comp-chooser__btn"
               data-action="comp-elegir-tipo" data-tipo="deuda-entidad"
-              aria-label="Deuda con entidad: banco, fintech, tarjeta de crédito">
+              aria-label="Deuda con entidad: banco, cooperativa, tarjeta de crédito">
         <span class="comp-chooser__icon" aria-hidden="true">🏦</span>
         <strong class="comp-chooser__label">Entidad</strong>
         <span class="comp-chooser__desc">
-          Banco, fintech, tarjeta de crédito, ICETEX.
-          La tasa va en % EA (anual efectivo).
+          Banco, cooperativa, fondo de empleados, tarjeta de crédito, ICETEX.
         </span>
       </button>
       <button type="button" class="comp-chooser__btn"
@@ -144,7 +143,6 @@ export function renderChooserCompromiso() {
         <strong class="comp-chooser__label">Personal</strong>
         <span class="comp-chooser__desc">
           Familiar, amigo, natillera o prestamista particular.
-          La tasa en % mensual es opcional.
         </span>
       </button>
     </div>
@@ -219,7 +217,6 @@ export function renderFormDeuda(tipo, deuda = null) {
         <input id="comp-saldo" name="saldoTotal" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" value="${vSaldo}" />
-        <p class="form-hint">El total que todavía debes. Finko lo muestra en tu resumen general.</p>
       </div>
 
       <div class="form-group">
@@ -227,7 +224,6 @@ export function renderFormDeuda(tipo, deuda = null) {
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
                min="1" step="10000" placeholder="0" required aria-required="true"
                autocomplete="off" value="${vCuota}" />
-        <p class="form-hint">Finko la incluye en tu resumen mensual para que veas cuánto te queda libre.</p>
       </div>
 
       <div class="form-group">

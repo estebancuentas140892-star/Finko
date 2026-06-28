@@ -807,7 +807,7 @@ button.chip:focus-visible {
 }
 
 .resumen-card__stat--primary .resumen-card__value {
-  color: var(--fk-text-accent);
+  color: var(--fk-danger-text);
 }
 
 .resumen-card__value--sm {
