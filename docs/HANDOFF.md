@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(gastos): gasto repartido entre cuentas, cierra "todos los pagos")
+> Última actualización: 2026-06-28 (feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza · 2026-06-28
+
+Por feedback del usuario, se rediseñó la selección de cuenta en el gasto (el paso 3 anterior la había quitado, una regresión). El formulario vuelve a tener el selector de cuenta de origen, ahora como **tarjetas seleccionables con el avatar de cada entidad** (Bancolombia, Nequi, Efectivo). El reparto multi-cuenta pasa a ser **fallback**: solo se abre cuando la cuenta elegida no alcanza, avisando "X no alcanza" y pre-sembrando la elegida; la cuenta elegida se cobra primero y el resto completa por mayor saldo (sin negativos). Para 1 sola cuenta que no cubre, se pide confirmación de sobregiro (no más negativos silenciosos). Decisión del usuario: **lista de tarjetas** + aplicar a los **4 flujos** (este cierra Gastos; faltan Gasto rápido, Agenda, Deudas). Verificado en la app: cubre → sin picker; no cubre → Bancolombia $100k + Nequi $200k; editar pre-selecciona la cuenta correcta; 1 cuenta insuficiente → confirm. SW v184 → v185. Tests 1433/1433.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/cuenta-helper.js` | `renderSelectorCuenta` (tarjetas radio con avatar) + `resolverPagoConPreferida` (fallback con aviso). |
+| `modules/infra/distribuir-pago.js` | Parámetro `prioridadId`: la cuenta elegida se cobra primero. |
+| `modules/dominio/gastos/{view,index,logic}.js` | Form con selector de tarjetas; `_guardarGasto` con preferida + confirm de sobregiro. |
+| `styles/components/domain.css` | Tarjetas `.cuenta-sel` + aviso del picker. |
+
+---
 
 ### feat(gastos): gasto y gasto rápido repartidos entre cuentas (paso 3 de 3) · 2026-06-28
 
@@ -76,16 +89,6 @@ El "Abonar" a una deuda ahora puede cubrirse combinando varias cuentas, sin nega
 | `modules/infra/cuenta-helper.js` | Nuevo `resolverPagoMultiCuenta` + picker multi con checkboxes y preview de reparto. |
 | `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa el reparto; crea un gasto por cuenta. |
 | `styles/components/domain.css` | Estilos `.cuenta-multi__*`. |
-
----
-
-### feat(agenda): monto por obligación y total del día · 2026-06-28
-
-Al seleccionar un día del calendario, el detalle ahora muestra: (1) el monto de cada obligación (gastos fijos usan `monto`, deudas usan `cuotaMensual`, antes las deudas no mostraban valor); (2) el total acumulado del día en el subtítulo ("3 compromisos · $1.250.000"). SW v180 → v181. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | `_renderDetalleItem`: monto según tipo; `_totalDia` helper + total en subtítulo. |
 
 ---
 

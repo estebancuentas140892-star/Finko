@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): selector de cuenta con iconos + reparto solo si no alcanza · 2026-06-28
+
+Rediseño de la selección de cuenta en el gasto, por feedback del usuario. El paso 3 anterior había quitado el selector del formulario (regresión: el usuario no podía indicar de qué cuenta salía el dinero, y un gasto mayor al saldo dejaba la cuenta en negativo). Ahora el formulario vuelve a tener el selector, como **lista de tarjetas seleccionables** donde cada cuenta muestra su **avatar de entidad** (Bancolombia, Nequi, Efectivo), su nombre y su saldo (decisión del usuario: lista de tarjetas, no menú desplegable). El comportamiento sigue el modelo pedido: se elige una cuenta; si **cubre** el monto, se usa directo (sin negativos, sin pasos extra); si **no alcanza** y hay más cuentas, se abre el picker de reparto avisando "X no alcanza para cubrir $Y" y pre-sembrando la elegida; la cuenta elegida se cobra primero y el resto se completa por mayor saldo, nunca dejando negativos. Si la cuenta elegida no alcanza y es la única, se pide confirmación explícita de sobregiro (no más negativos silenciosos). Meta acordada con el usuario: aplicar a los **4 flujos**; este cierra Gastos (formulario completo, crear y editar). Verificado en la app: cuenta que cubre → sin picker, un gasto, saldos sin negativos; cuenta que no cubre ($300.000 desde Bancolombia $100.000) → Bancolombia $100.000 + Nequi $200.000; editar un gasto pre-selecciona su cuenta; 1 cuenta insuficiente → diálogo de confirmación. Tests 1433/1433. SW v184 → v185.
+
+- **`modules/infra/cuenta-helper.js`**: `renderSelectorCuenta(cuentas, {selectedId, label})` (tarjetas radio `name="cuentaId"` con avatar, pre-selecciona mayor saldo). `resolverPagoConPreferida(cuentas, monto, preferidaId, contexto)`: usa la preferida si cubre; si no y hay más cuentas, abre el picker con aviso y pre-selección sembrada; si es la única, devuelve un split (el caller confirma). `_mostrarPickerMultiCuenta` acepta `preferidaId` y `aviso`; `_preseleccionConPreferida` arma el conjunto inicial.
+- **`modules/infra/distribuir-pago.js`**: parámetro opcional `prioridadId`; esa cuenta se cobra primero (sort estable) y el resto completa por mayor saldo.
+- **`modules/dominio/gastos/view.js`**: `renderFormGasto` usa `renderSelectorCuenta` en crear y editar; removidos imports `bancoAvatar`/`bancoClaseEmoji`.
+- **`modules/dominio/gastos/index.js`**: `_guardarGasto` (creación) con `resolverPagoConPreferida` + confirm de sobregiro para 1 cuenta; `_editarGasto` pre-selecciona el radio de la cuenta del registro; removida `_actualizarSaldoDisponible` y su listener.
+- **`modules/dominio/gastos/logic.js`**: `validarGasto` vuelve a exigir `cuentaId` (selector restaurado).
+- **`styles/components/domain.css`**: tarjetas `.cuenta-sel__*` (con estado seleccionado vía `:has`) + `.cuenta-multi__aviso`.
+- **`service-worker.js`**: v184 → v185.
+
+---
+
 ### feat(gastos): gasto y gasto rápido repartidos entre varias cuentas (paso 3 de 3) · 2026-06-28
 
 Cierra la serie "todos los pagos": registrar un gasto (formulario completo o gasto rápido) ahora puede repartirse entre varias cuentas, sin dejar ninguna en negativo, igual que Agenda (paso 1) y Abono de Deudas (paso 2). Reusa el núcleo `distribuirPago` y el picker multi-cuenta. Diseño que respeta la edición: en **creación** el formulario ya no lleva selector de cuenta inline (se elige al confirmar y se crea un registro por cada cuenta usada); en **edición** se conserva el selector, porque cada registro de gasto sigue siendo de una sola cuenta (un gasto repartido son N registros independientes, editables por separado). El gasto rápido con una sola cuenta sigue siendo instantáneo (el picker resuelve sin mostrar UI). Verificado en la app: gasto $900.000 con cuentas 600/400/100 → Bancolombia $600.000 + Nequi $300.000 (2 registros, misma descripción/categoría), saldos 0/$100.000/$100.000 sin negativos; gasto rápido $150.000 → Nequi $100.000 + Efectivo $50.000 (2 pendientes); editar un gasto mantiene su selector con la cuenta correcta pre-cargada. Tests 1423/1423. SW v183 → v184.
