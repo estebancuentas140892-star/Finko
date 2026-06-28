@@ -525,6 +525,13 @@ button.chip:focus-visible {
   outline: none;
 }
 
+.cuenta-picker__main {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  min-width: 0;
+}
+
 .cuenta-picker__nombre {
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-semibold);

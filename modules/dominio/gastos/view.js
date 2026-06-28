@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
+import { bancoAvatar, bancoClaseEmoji } from '../../infra/bancos.js';
 import { gastosMes, filtrarGastos, gastosPendientes, totalGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -381,11 +382,11 @@ export function renderFormGasto() {
     cuentaHtml = `
       <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
       <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
-        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
+        ${bancoAvatar(c.banco)} Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
       </p>`;
   } else {
     const cuentaOpts = cuentas
-      .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)}</option>`)
+      .map(c => `<option value="${_esc(c.id)}">${bancoClaseEmoji(c.banco)} ${_esc(c.nombre)}</option>`)
       .join('');
     cuentaHtml = `
       <div class="form-group">

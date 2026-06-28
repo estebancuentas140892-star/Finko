@@ -15,7 +15,8 @@ import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { hoy, f } from '../../infra/utils.js';
+import { hoy, f, esc as _esc } from '../../infra/utils.js';
+import { bancoAvatar } from '../../infra/bancos.js';
 import { confirmar } from '../../ui/confirm.js';
 import {
   validarGasto, normalizarGasto,
@@ -386,7 +387,7 @@ function _actualizarSaldoDisponible() {
   }
 
   const saldo = cuenta.saldo ?? 0;
-  tip.textContent = `Saldo disponible en ${cuenta.nombre}: ${f(saldo)}`;
+  tip.innerHTML = `${bancoAvatar(cuenta.banco)} Saldo disponible en <strong>${_esc(cuenta.nombre)}</strong>: ${f(saldo)}`;
   tip.classList.toggle('form-hint--danger', saldo <= 0);
   tip.classList.toggle('form-hint--muted',  saldo >  0);
 }

@@ -244,6 +244,16 @@
   font-size: 10px;
 }
 
+/* Avatar inline dentro de un hint de texto (ej. cuenta de origen del gasto):
+   se reduce y se centra verticalmente con el texto que lo acompaña. */
+.form-hint .bank-avatar {
+  width: 22px;
+  height: 22px;
+  font-size: 9px;
+  vertical-align: middle;
+  margin-right: var(--fk-space-1);
+}
+
 /* ════════════════════════════════════════════════════════════
    BANK PICKER - custom combobox para seleccionar banco.
    El dropdown usa position:fixed para no quedar cortado por

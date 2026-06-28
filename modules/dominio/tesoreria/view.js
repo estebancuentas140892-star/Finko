@@ -10,6 +10,7 @@
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
+import { bancoAvatar } from '../../infra/bancos.js';
 import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
 import {
   cuentasActivas,
@@ -524,12 +525,6 @@ function _renderNudgeGMF(nudge) {
  * @returns {string} HTML span del avatar.
  */
 function _bankAvatarHtml(bancoId) {
-  const banco = BANCOS_CO.find(b => b.id === bancoId);
-  const iniciales = banco ? banco.iniciales : '?';
-  const color     = banco ? banco.color     : '#6B7280';
-  const texto     = banco ? banco.texto     : '#ffffff';
-  return `<span class="bank-avatar"
-               style="background:${color};color:${texto}"
-               aria-hidden="true">${iniciales}</span>`;
+  return bancoAvatar(bancoId);
 }
 

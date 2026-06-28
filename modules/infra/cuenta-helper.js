@@ -17,6 +17,7 @@
 import { trapFocus, releaseFocus } from './a11y.js';
 import { esc as _esc, f } from './utils.js';
 import { navigate } from './router.js';
+import { bancoAvatar } from './bancos.js';
 
 // ── API PÚBLICA ──────────────────────────────────────────────────
 
@@ -124,7 +125,10 @@ function _mostrarPickerCuenta(activas, contexto) {
               data-role="elegir"
               data-cuenta-id="${_esc(c.id)}"
               aria-label="Usar cuenta ${_esc(c.nombre)}, saldo ${f(c.saldo ?? 0)}">
-        <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
+        <span class="cuenta-picker__main">
+          ${bancoAvatar(c.banco)}
+          <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
+        </span>
         <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
       </button>`).join('');
 
