@@ -957,6 +957,49 @@ button.chip:focus-visible {
   color: var(--fk-warning-text);
 }
 
+/* ── APARTADOS: FORM REDISEÑO (F7) ────────────────────────────── */
+.apartado-nombre-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  gap: var(--fk-space-2);
+}
+
+.apartado-nombre-row__emoji {
+  text-align: center;
+  font-size: var(--fk-text-lg);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.form-details {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  margin-bottom: var(--fk-space-3);
+}
+
+.form-details__summary {
+  padding: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.form-details__summary::-webkit-details-marker { display: none; }
+
+.form-details__summary::before {
+  content: '▸ ';
+  font-size: var(--fk-text-xs);
+}
+
+.form-details[open] > .form-details__summary::before {
+  content: '▾ ';
+}
+
+.form-details__body {
+  padding: 0 var(--fk-space-3) var(--fk-space-3);
+}
+
 /* ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────── */
 .ahorro-total {
   background: var(--fk-bg-surface);

@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### style(apartados): rediseño del formulario (F7) · 2026-06-27
+
+El form de nuevo apartado se reorganiza: (1) emoji inline con el nombre en una fila (grid 3.5rem + 1fr) en vez de un campo suelto al final, (2) sección de recurrencia dentro de `<details>` colapsable en vez de checkbox + grupo visible, (3) mejor microcopy en la pregunta de frecuencia ("¿Cada cuánto puedes aportar?" + hint explicando cómo Finko usa la frecuencia). CSS nuevo: `.apartado-nombre-row*` y `.form-details*`. SW v168 → v169.
+
+- **`modules/dominio/apartados/view.js`**: `renderFormApartado` reestructurado (emoji inline, `<details>`, copy).
+- **`styles/components/domain.css`**: reglas `.apartado-nombre-row*` y `.form-details*`.
+- **`service-worker.js`**: v168 → v169.
+
+---
+
 ### feat(ahorro): vista consolidada del ahorro total (F6) · 2026-06-27
 
 "Múltiples tipos de ahorro" se entrega como una card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo de emergencia + metas + apartados + inversiones, con desglose ordenado y barra de participación por vehículo. Decisión de no generalizar el schema (un solo fondo → varios) ni etiquetar vehículo, documentada en [ADR 009](DECISIONS/009-consolidado-de-ahorro.md): la fragmentación se cura con visibilidad, no con más conceptos. Cero migración. `consolidarAhorro()` es pura; el view lee S de los 4 slices sin importar otros dominios (ADN #10). SW v167 → v168. Tests 1411/1411 verdes (+4).

@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### style(apartados): rediseño del formulario (F7) · 2026-06-27
+
+Form de nuevo apartado reorganizado: emoji inline con el nombre (grid), recurrencia dentro de `<details>` colapsable, mejor microcopy en frecuencia. SW v168 → v169. Tests 1411/1411.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/view.js` | `renderFormApartado` reestructurado. |
+| `styles/components/domain.css` | Reglas `.apartado-nombre-row*` y `.form-details*`. |
+| `service-worker.js` | v168 → v169. |
+
+---
+
 ### feat(ahorro): vista consolidada del ahorro total (F6) · 2026-06-27
 
 Card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo + metas + apartados + inversiones con desglose y barras de participación. Se decidió NO generalizar el schema (un fondo → varios) ni etiquetar vehículo: la fragmentación se cura con visibilidad. Ver [ADR 009](DECISIONS/009-consolidado-de-ahorro.md). `consolidarAhorro()` pura; el view lee S de los 4 slices sin cross-import (ADN #10). SW v167 → v168. Tests 1411/1411 (+4).
@@ -92,26 +104,9 @@ Chips de preset (Automático, 50/30/20, 70/20/10, 60/20/20) en la card "¿Cómo 
 
 ---
 
-### feat(compromisos): botón "Simular" abono extra en deudas · 2026-06-27
-
-Botón "Simular" junto a "Abonar" en cada deuda activa. Abre el modal con input de monto extra mensual; al escribir muestra en tiempo real la comparación base vs con extra (meses, intereses, ahorro). `simularPagoDeuda()` en logic.js. SW v163 → v164. Tests 1407/1407.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `simularPagoDeuda()`: simulación mes a mes con interés compuesto. |
-| `modules/dominio/compromisos/views/formularios.js` | `renderSimulacion()`: panel HTML del modal. |
-| `modules/dominio/compromisos/views/lista.js` | Botón "Simular" btn-ghost junto a "Abonar". |
-| `modules/dominio/compromisos/view.js` | Re-export `renderSimulacion`. |
-| `modules/dominio/compromisos/index.js` | Handler `_abrirSimulacion`, listener `_actualizarSimulacion`. |
-| `styles/components/domain.css` | 5 reglas `.sim-resultado*`. |
-| `service-worker.js` | v163 → v164. |
-
 ---
 
----
-
-
----
+> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

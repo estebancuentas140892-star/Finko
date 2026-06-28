@@ -207,8 +207,12 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
 
       <div class="form-group">
         <label for="apartado-nombre" class="label">Nombre del apartado</label>
-        <input id="apartado-nombre" name="nombre" class="input" type="text"
-               placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off" />
+        <div class="apartado-nombre-row">
+          <input id="apartado-icono" name="icono" class="input apartado-nombre-row__emoji" type="text"
+                 maxlength="4" placeholder="📦" autocomplete="off" aria-label="Emoji" />
+          <input id="apartado-nombre" name="nombre" class="input apartado-nombre-row__nombre" type="text"
+                 placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off" />
+        </div>
       </div>
       <div class="form-group">
         <label for="apartado-objetivo" class="label">¿Cuánto necesitas reunir? (COP)</label>
@@ -221,31 +225,31 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
         <input id="apartado-fecha" name="fechaObjetivo" class="input" type="date" />
       </div>
       <div class="form-group">
-        <label for="apartado-frecuencia" class="label">¿Cada cuánto recibes ingresos?</label>
+        <label for="apartado-frecuencia" class="label">¿Cada cuánto puedes aportar?</label>
         <select id="apartado-frecuencia" name="frecuenciaAporte" class="input">
           ${frecOpts}
         </select>
+        <p class="form-hint">Elige según la frecuencia con que recibes tu pago. Finko calcula cuánto separar en cada cobro.</p>
       </div>
 
-      <div class="form-group form-group--checkbox">
-        <label class="checkbox-row">
-          <input id="apartado-recurrente" name="recurrente" type="checkbox" />
-          <span>Este gasto se repite cada cierto tiempo (SOAT, impuesto predial, matrícula...)</span>
-        </label>
-      </div>
-      <div class="form-group" id="apartado-periodo-group" hidden>
-        <label for="apartado-periodo" class="label">¿Cada cuánto tiempo se repite?</label>
-        <select id="apartado-periodo" name="periodoMeses" class="input">
-          ${periodoOpts}
-        </select>
-        <p class="form-hint">Cuando marques "Ya lo usé", el apartado arranca de cero para la próxima vez.</p>
-      </div>
-
-      <div class="form-group">
-        <label for="apartado-icono" class="label">Emoji (opcional)</label>
-        <input id="apartado-icono" name="icono" class="input" type="text"
-               maxlength="4" placeholder="📦" autocomplete="off" />
-      </div>
+      <details class="form-details">
+        <summary class="form-details__summary">Este gasto se repite (SOAT, impuestos, matrícula...)</summary>
+        <div class="form-details__body">
+          <div class="form-group form-group--checkbox">
+            <label class="checkbox-row">
+              <input id="apartado-recurrente" name="recurrente" type="checkbox" />
+              <span>Activar recurrencia</span>
+            </label>
+          </div>
+          <div class="form-group" id="apartado-periodo-group" hidden>
+            <label for="apartado-periodo" class="label">¿Cada cuánto tiempo se repite?</label>
+            <select id="apartado-periodo" name="periodoMeses" class="input">
+              ${periodoOpts}
+            </select>
+            <p class="form-hint">Cuando marques "Ya lo usé", el apartado arranca de cero para la próxima vez.</p>
+          </div>
+        </div>
+      </details>
 
       <p id="apartado-sugerencia-live" class="form-hint form-hint--muted" aria-live="polite">
         Ponle un monto y una fecha para ver cuánto separar en cada pago.
