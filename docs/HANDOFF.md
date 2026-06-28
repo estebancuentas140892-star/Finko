@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(gastos): chip de acento en el icono de categoría + quitar emoji redundante del subtítulo)
+> Última actualización: 2026-06-28 (style(gastos): iconos de categoría con fondo de color vivo por categoría, estilo "app de hábitos")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,14 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### style(gastos): chip de acento en el icono de categoría + subtítulo sin emoji redundante · 2026-06-28
+### style(gastos): iconos de categoría con fondo de color vivo por categoría · 2026-06-28
 
-Por feedback del usuario: en la lista de gastos el icono de la izquierda (emoji de categoría) contrastaba poco con la card y costaba identificarlo, y el subtítulo repetía el mismo emoji junto al nombre de la categoría. Ahora el icono se enmarca en un chip de acento (fondo `--fk-accent-subtle` + borde `--fk-accent-border`) que lo delimita y resalta, y el subtítulo muestra solo el nombre de la categoría (sin emoji). El realce es exclusivo de Gastos vía el modificador `list-item__icon--cat`: no toca el `.list-item__icon` global que comparten Tesorería (avatares de banco), Metas/Apartados (anillos de progreso), Personales y Compromisos. Verificado en navegador (tema oscuro): chip verde visible, emoji solo en el chip, subtítulo "Categoría · fecha". SW v188 → v189. Tests 1438/1438.
+Segunda iteración del icono de gastos (la primera, un chip de acento verde tenue, no resaltaba lo suficiente). Por pedido del usuario (referencia: Duolingo y apps similares con iconos muy visibles), cada categoría ahora tiene su propio fondo sólido y vivo (verde Mercado, naranja Restaurantes, azul Transporte, fucsia Entretenimiento, rojo Salud, ámbar Servicios, etc.), con esquinas redondeadas (`--fk-radius-lg`), sombra sutil y emoji más grande. El color identifica la categoría de un vistazo. También se conserva el subtítulo sin el emoji redundante (de la iteración anterior). El realce sigue siendo exclusivo de Gastos vía `list-item__icon--cat` + `data-cat="<slug>"`; el color concreto llega por el token `--fk-cat-<slug>`. No toca el `.list-item__icon` global de otras secciones. Verificado en navegador (tema claro): cada gasto con su color, emoji legible; los `--fk-cat-*` son iguales en ambos temas. SW v189 → v190. Tests 1438/1438.
 
 | Archivo | Cambio |
 |---|---|
-| `modules/dominio/gastos/view.js` | `_renderGastoItem`: clase `list-item__icon--cat` en el icono; subtítulo sin emoji (`cat = _esc(catKey)`). |
-| `styles/components/atoms.css` | Nuevo `.list-item__icon--cat` (chip de acento, solo Gastos). |
+| `styles/tokens.css` | 15 tokens `--fk-cat-*` (colores vivos por categoría, consistentes entre temas). |
+| `modules/core/constants.js` | `CATEGORIA_SLUG`: categoría → slug de color. |
+| `modules/dominio/gastos/view.js` | `_renderGastoItem`: `data-cat="<slug>"` en el icono. |
+| `styles/components/atoms.css` | `.list-item__icon--cat` rediseñado: fondo sólido por `data-cat`, radius `lg`, sombra, emoji 1.375rem. |
 
 ---
 

@@ -15,6 +15,29 @@
   --fk-accent-border: rgba(31, 209, 148, 0.32);
   --fk-accent-glow:   rgba(31, 209, 148, 0.08);
 
+  /* ── COLORES DE CATEGORÍA DE GASTO ──────────────────────────────
+     Fondo sólido y vivo por categoría (estilo "app de hábitos"): el color
+     ayuda a identificar la categoría de un vistazo, con el emoji encima.
+     Son consistentes entre temas (no se sobrescriben en light-theme): se
+     eligieron con luminosidad media para verse bien sobre fondo claro y
+     oscuro. El glyph que va encima es un emoji multicolor, así que el
+     fondo no necesita garantizar contraste de texto (es decorativo). */
+  --fk-cat-mercado:         #16a34a;   /* verde */
+  --fk-cat-restaurantes:    #f97316;   /* naranja */
+  --fk-cat-transporte:      #3b82f6;   /* azul */
+  --fk-cat-vivienda:        #8b5cf6;   /* violeta */
+  --fk-cat-salud:           #ef4444;   /* rojo */
+  --fk-cat-educacion:       #0ea5e9;   /* azul cielo */
+  --fk-cat-entretenimiento: #ec4899;   /* fucsia */
+  --fk-cat-ropa:            #14b8a6;   /* teal */
+  --fk-cat-servicios:       #f59e0b;   /* ámbar */
+  --fk-cat-hogar:           #0d9488;   /* esmeralda azulada */
+  --fk-cat-mascotas:        #d97706;   /* naranja tostado */
+  --fk-cat-cuidado:         #f43f5e;   /* rosa */
+  --fk-cat-deudas:          #e11d48;   /* carmín */
+  --fk-cat-ahorro:          #eab308;   /* dorado */
+  --fk-cat-otros:           #64748b;   /* slate */
+
   /* ── FONDOS (modo oscuro - default) ─────────────────────────── */
   --fk-bg-base:        #101218;
   --fk-bg-surface:     #181b23;

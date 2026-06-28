@@ -154,14 +154,33 @@
   background: transparent;
 }
 
-/* Gastos: realce del icono de categoría como un chip de acento. El fondo
-   elevado por defecto contrasta poco con la card y el emoji se "perdía".
-   Un tinte de marca + borde delimita el contenedor y lo hace fácil de
-   identificar de un vistazo. Solo aplica a la lista de gastos. */
+/* Gastos: icono de categoría con fondo sólido y vivo, propio de cada
+   categoría (estilo "app de hábitos"). El color, más el emoji encima, hace
+   que cada gasto se identifique de un vistazo. El fondo elevado por defecto
+   contrastaba muy poco y el emoji se "perdía". Solo aplica a la lista de
+   gastos; el color concreto llega por `data-cat` → token `--fk-cat-*`. */
 .list-item__icon--cat {
-  background: var(--fk-accent-subtle);
-  border: 1px solid var(--fk-accent-border);
+  border: none;
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-cat-otros);   /* fallback si falta data-cat */
+  font-size: 1.375rem;               /* emoji más grande y legible */
+  box-shadow: var(--fk-shadow-sm);   /* leve profundidad tipo "badge" */
 }
+.list-item__icon--cat[data-cat="mercado"]         { background: var(--fk-cat-mercado); }
+.list-item__icon--cat[data-cat="restaurantes"]    { background: var(--fk-cat-restaurantes); }
+.list-item__icon--cat[data-cat="transporte"]      { background: var(--fk-cat-transporte); }
+.list-item__icon--cat[data-cat="vivienda"]        { background: var(--fk-cat-vivienda); }
+.list-item__icon--cat[data-cat="salud"]           { background: var(--fk-cat-salud); }
+.list-item__icon--cat[data-cat="educacion"]       { background: var(--fk-cat-educacion); }
+.list-item__icon--cat[data-cat="entretenimiento"] { background: var(--fk-cat-entretenimiento); }
+.list-item__icon--cat[data-cat="ropa"]            { background: var(--fk-cat-ropa); }
+.list-item__icon--cat[data-cat="servicios"]       { background: var(--fk-cat-servicios); }
+.list-item__icon--cat[data-cat="hogar"]           { background: var(--fk-cat-hogar); }
+.list-item__icon--cat[data-cat="mascotas"]        { background: var(--fk-cat-mascotas); }
+.list-item__icon--cat[data-cat="cuidado"]         { background: var(--fk-cat-cuidado); }
+.list-item__icon--cat[data-cat="deudas"]          { background: var(--fk-cat-deudas); }
+.list-item__icon--cat[data-cat="ahorro"]          { background: var(--fk-cat-ahorro); }
+.list-item__icon--cat[data-cat="otros"]           { background: var(--fk-cat-otros); }
 
 /* ════════════════════════════════════════════════════════════
    EMPTY STATE
