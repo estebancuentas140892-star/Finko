@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-27 (style personales: card de resumen "Me deben" rediseñada con resumen-card__*)
+> Última actualización: 2026-06-27 (feat ahorro: vista consolidada del ahorro total, F6, ADR 009)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1402/1402 verdes (+21: resumen/logic.js) |
+| Tests unitarios + integración | 1411/1411 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ahorro): vista consolidada del ahorro total (F6) · 2026-06-27
+
+Card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo + metas + apartados + inversiones con desglose y barras de participación. Se decidió NO generalizar el schema (un fondo → varios) ni etiquetar vehículo: la fragmentación se cura con visibilidad. Ver [ADR 009](DECISIONS/009-consolidado-de-ahorro.md). `consolidarAhorro()` pura; el view lee S de los 4 slices sin cross-import (ADN #10). SW v167 → v168. Tests 1411/1411 (+4).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/ahorro/logic.js` | Nueva `consolidarAhorro()`. |
+| `modules/dominio/ahorro/view.js` | Nueva `renderResumenAhorroConsolidado()`. |
+| `modules/dominio/ahorro/index.js` | Render bundleado + EventBus a metas/apartados/inversiones. |
+| `index.html` | `<div id="panel-ahorro-consolidado">`. |
+| `styles/components/domain.css` | Reglas `.ahorro-total*`. |
+| `tests/unit/ahorro.test.js` | +4 tests. |
+| `docs/DECISIONS/009-consolidado-de-ahorro.md` | ADR nuevo. |
+| `service-worker.js` | v167 → v168. |
+
+---
 
 ### style(ahorro): nudge prioriza reducir estilo de vida · 2026-06-27
 
@@ -90,19 +107,6 @@ Botón "Simular" junto a "Abonar" en cada deuda activa. Abre el modal con input 
 | `service-worker.js` | v163 → v164. |
 
 ---
-
-### feat(presupuesto): alertas de límites de gasto en el dashboard · 2026-06-27
-
-Nuevo bento panel `#panel-limites`: aparece en el dashboard solo cuando hay envelopes en alerta (>=75%) o excedido (>100%) en el mes actual. Badge rojo = excedido, naranja = alerta. Oculto si todo está en 'ok'. `alertasLimites()` en logic.js, `renderPanelLimites()` en view.js; ambos registrados en index.js. SW v162 → v163. Tests 1407/1407.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/logic.js` | Nueva `alertasLimites()`: filtra y ordena envelopes en alerta/excedido. |
-| `modules/dominio/presupuesto/view.js` | Nueva `renderPanelLimites()`: panel HTML con badges de estado. |
-| `modules/dominio/presupuesto/index.js` | Registra el panel en `registrarRender`, EventBus y hashchange. |
-| `index.html` | `<div id="panel-limites">` bento full-width antes del panel-resumen. |
-| `styles/components/domain.css` | 9 reglas `.limites-card*` con badges danger/warning. |
-| `service-worker.js` | v162 → v163. |
 
 ---
 

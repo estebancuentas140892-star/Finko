@@ -97,6 +97,37 @@ export function calcularTasaAhorro(ingresos, gastos) {
   return Math.round(((ing - gas) / ing) * 100);
 }
 
+// ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────────
+
+/**
+ * Consolida en una sola vista cuánto tiene el usuario guardado a través de los
+ * cuatro vehículos que Finko ya rastrea: fondo de emergencia, metas, apartados
+ * e inversiones. Función pura: recibe los totales ya sumados (el caller los lee
+ * de S sin que este dominio importe a otro, regla ADN #10).
+ *
+ * @param {{ fondo?: number, metas?: number, apartados?: number, inversiones?: number }} [montos]
+ * @returns {{
+ *   total: number,
+ *   desglose: Array<{ clave: string, label: string, monto: number, pct: number }>,
+ * }}
+ *   - desglose excluye los vehículos en 0 y se ordena de mayor a menor monto.
+ *   - pct es la participación de cada vehículo en el total (entero 0-100).
+ */
+export function consolidarAhorro({ fondo = 0, metas = 0, apartados = 0, inversiones = 0 } = {}) {
+  const items = [
+    { clave: 'fondo',       label: 'Fondo de emergencia', monto: Math.max(0, Number(fondo)       || 0) },
+    { clave: 'metas',       label: 'Metas',               monto: Math.max(0, Number(metas)       || 0) },
+    { clave: 'apartados',   label: 'Apartados',           monto: Math.max(0, Number(apartados)   || 0) },
+    { clave: 'inversiones', label: 'Inversiones',         monto: Math.max(0, Number(inversiones) || 0) },
+  ];
+  const total = items.reduce((sum, i) => sum + i.monto, 0);
+  const desglose = items
+    .filter(i => i.monto > 0)
+    .map(i => ({ ...i, pct: total > 0 ? Math.round((i.monto / total) * 100) : 0 }))
+    .sort((a, b) => b.monto - a.monto);
+  return { total, desglose };
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

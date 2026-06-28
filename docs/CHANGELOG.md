@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(ahorro): vista consolidada del ahorro total (F6) · 2026-06-27
+
+"Múltiples tipos de ahorro" se entrega como una card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo de emergencia + metas + apartados + inversiones, con desglose ordenado y barra de participación por vehículo. Decisión de no generalizar el schema (un solo fondo → varios) ni etiquetar vehículo, documentada en [ADR 009](DECISIONS/009-consolidado-de-ahorro.md): la fragmentación se cura con visibilidad, no con más conceptos. Cero migración. `consolidarAhorro()` es pura; el view lee S de los 4 slices sin importar otros dominios (ADN #10). SW v167 → v168. Tests 1411/1411 verdes (+4).
+
+- **`modules/dominio/ahorro/logic.js`**: nueva `consolidarAhorro({fondo, metas, apartados, inversiones})`.
+- **`modules/dominio/ahorro/view.js`**: nueva `renderResumenAhorroConsolidado()` (lee S inline, sin cross-import).
+- **`modules/dominio/ahorro/index.js`**: render bundleado + EventBus extendido a metas/apartados/inversiones.
+- **`index.html`**: `<div id="panel-ahorro-consolidado">` al tope de la sección Ahorro.
+- **`styles/components/domain.css`**: reglas `.ahorro-total*`.
+- **`tests/unit/ahorro.test.js`**: +4 tests de `consolidarAhorro`.
+- **`docs/DECISIONS/009-consolidado-de-ahorro.md`**: ADR nuevo.
+- **`service-worker.js`**: v167 → v168.
+
+---
+
 ### style(ahorro): nudge prioriza reducir estilo de vida antes de tocar ahorro · 2026-06-27
 
 Los 3 nudges de ahorro bajo (0-10%, 0%, negativo) ahora sugieren primero recortar gastos de estilo de vida (entretenimiento, salidas, suscripciones) antes de tocar el ahorro o los fijos. Antes decian genéricamente "revisa tus gastos". SW v166 → v167.

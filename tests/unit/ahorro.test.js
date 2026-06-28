@@ -20,6 +20,8 @@ import {
   normalizarMontoAporte,
   validarCompromisoMensual,
   normalizarCompromisoMensual,
+  // F6
+  consolidarAhorro,
 } from '../../modules/dominio/ahorro/logic.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
@@ -395,5 +397,36 @@ describe('normalizarCompromisoMensual', () => {
     expect(normalizarCompromisoMensual(-100)).toBe(0);
     expect(normalizarCompromisoMensual('abc')).toBe(0);
     expect(normalizarCompromisoMensual(NaN)).toBe(0);
+  });
+});
+
+// ── consolidarAhorro (F6) ────────────────────────────────────────
+
+describe('consolidarAhorro', () => {
+  it('suma los cuatro vehículos y calcula porcentajes', () => {
+    const r = consolidarAhorro({ fondo: 500_000, metas: 300_000, apartados: 100_000, inversiones: 100_000 });
+    expect(r.total).toBe(1_000_000);
+    // Ordenado de mayor a menor: fondo (50%), metas (30%), apartados (10%), inversiones (10%)
+    expect(r.desglose.map(d => d.clave)).toEqual(['fondo', 'metas', 'apartados', 'inversiones']);
+    expect(r.desglose[0].pct).toBe(50);
+    expect(r.desglose[1].pct).toBe(30);
+  });
+
+  it('excluye los vehículos en 0 del desglose', () => {
+    const r = consolidarAhorro({ fondo: 200_000, metas: 0, apartados: 0, inversiones: 50_000 });
+    expect(r.total).toBe(250_000);
+    expect(r.desglose.map(d => d.clave)).toEqual(['fondo', 'inversiones']);
+  });
+
+  it('devuelve total 0 y desglose vacío sin montos', () => {
+    const r = consolidarAhorro();
+    expect(r.total).toBe(0);
+    expect(r.desglose).toEqual([]);
+  });
+
+  it('trata negativos y no-numéricos como 0', () => {
+    const r = consolidarAhorro({ fondo: -100, metas: 'abc', apartados: NaN, inversiones: 80_000 });
+    expect(r.total).toBe(80_000);
+    expect(r.desglose.map(d => d.clave)).toEqual(['inversiones']);
   });
 });

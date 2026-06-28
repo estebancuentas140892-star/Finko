@@ -32,6 +32,7 @@ import {
 import {
   renderAhorro, renderFormFondo,
   renderFormAporte, renderFormCompromisoMensual,
+  renderResumenAhorroConsolidado,
 } from './view.js';
 
 // ── FACTOR DE FRECUENCIA ─────────────────────────────────────────
@@ -375,6 +376,7 @@ function _guardarCompromisoMensual(form) {
  */
 function _renderAhorroBound() {
   renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  renderResumenAhorroConsolidado();
 }
 
 export function initAhorro() {
@@ -387,12 +389,16 @@ export function initAhorro() {
 
   // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
   // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).
+  // metas/apartados/inversiones alimentan el consolidado de ahorro (F6).
   EventBus.on('state:change', ({ section }) => {
     if (
-      section === 'ahorro'     ||
+      section === 'ahorro'      ||
       section === 'compromisos' ||
-      section === 'ingresos'   ||
-      section === 'gastos'
+      section === 'ingresos'    ||
+      section === 'gastos'      ||
+      section === 'metas'       ||
+      section === 'apartados'   ||
+      section === 'inversiones'
     ) {
       renderSmart(_renderAhorroBound, 'ahorro');
     }

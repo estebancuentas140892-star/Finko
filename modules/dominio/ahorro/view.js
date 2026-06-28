@@ -13,9 +13,18 @@ import {
   mesesDeColchon,
   calcularMontoTotalFondo,
   ordenarAportesPorFecha,
+  consolidarAhorro,
   META_MESES_MIN,
   META_MESES_MAX,
 } from './logic.js';
+
+// Mapa clave de vehículo → sección de destino + emoji. Solo routing/UI, no lógica.
+const _VEHICULO_META = {
+  fondo:       { seccion: 'ahorro',    emoji: '🛡️' },
+  metas:       { seccion: 'metas',     emoji: '🎯' },
+  apartados:   { seccion: 'apartados', emoji: '📦' },
+  inversiones: { seccion: 'inversion', emoji: '📈' },
+};
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -41,6 +50,81 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null) {
   }
 
   el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro);
+}
+
+// ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────────
+
+/**
+ * Renderiza en `#panel-ahorro-consolidado` el total de ahorro repartido entre
+ * los cuatro vehículos (fondo, metas, apartados, inversiones). Solo lectura.
+ *
+ * Lee S directamente (permitido para un view), pero NO importa otros dominios:
+ * suma inline los montos de cada slice, igual que compromisos/views/dashboard.js
+ * lee S.personales y S.apartados sin importar esos módulos (regla ADN #10).
+ *
+ * Se oculta cuando el total es 0 (patrón [hidden] del resto de paneles).
+ * No-op si el contenedor no existe.
+ */
+export function renderResumenAhorroConsolidado() {
+  const el = document.getElementById('panel-ahorro-consolidado');
+  if (!el) return;
+
+  const fondo = S.ahorro?.fondoEmergencia ?? { activo: false };
+  const fondoTotal = fondo.activo
+    ? calcularMontoTotalFondo(fondo.montoActual, Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [])
+    : 0;
+
+  const metasTotal = (Array.isArray(S.metas) ? S.metas : [])
+    .filter(m => m.completada !== true)
+    .reduce((sum, m) => sum + (Number(m.montoActual) || 0), 0);
+
+  const apartadosTotal = (Array.isArray(S.apartados) ? S.apartados : [])
+    .reduce((sum, a) => sum + (Number(a.montoActual) || 0), 0);
+
+  const inversionesTotal = (Array.isArray(S.inversiones) ? S.inversiones : [])
+    .reduce((sum, i) => sum + (Number(i.monto) || 0), 0);
+
+  const { total, desglose } = consolidarAhorro({
+    fondo:       fondoTotal,
+    metas:       metasTotal,
+    apartados:   apartadosTotal,
+    inversiones: inversionesTotal,
+  });
+
+  if (total <= 0) {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+
+  const filas = desglose.map(d => {
+    const meta = _VEHICULO_META[d.clave] ?? { seccion: 'ahorro', emoji: '💰' };
+    const enlace = d.clave === 'fondo'
+      ? ''
+      : `<a href="#${meta.seccion}" class="ahorro-total__link" aria-label="Ir a ${_esc(d.label)}">Ver →</a>`;
+    return `
+      <li class="ahorro-total__item">
+        <span class="ahorro-total__nombre">${meta.emoji} ${_esc(d.label)}</span>
+        <span class="ahorro-total__barra" aria-hidden="true">
+          <span class="ahorro-total__barra-fill" style="width:${d.pct}%"></span>
+        </span>
+        <span class="ahorro-total__monto">${f(d.monto)} <span class="ahorro-total__pct">${d.pct}%</span></span>
+        ${enlace}
+      </li>`;
+  }).join('');
+
+  el.innerHTML = `
+    <section class="ahorro-total" aria-label="Tu ahorro total">
+      <header class="ahorro-total__header">
+        <p class="ahorro-total__label">Tu ahorro total</p>
+        <p class="ahorro-total__valor">${f(total)}</p>
+        <p class="ahorro-total__sub">Suma de fondo, metas, apartados e inversiones.</p>
+      </header>
+      <ul class="ahorro-total__lista" role="list">
+        ${filas}
+      </ul>
+    </section>`;
 }
 
 // ── EMPTY STATE ──────────────────────────────────────────────────
