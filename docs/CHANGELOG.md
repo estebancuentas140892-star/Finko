@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): pago de gasto fijo repartido entre varias cuentas (paso 1 de 3) · 2026-06-28
+
+Al marcar un gasto fijo como pagado, el usuario ya no está limitado a una sola cuenta: puede combinar varias (banco + efectivo) para cubrir el monto total, como pasa en la vida real. El sistema reparte automáticamente desde la cuenta con más saldo primero y nunca deja una cuenta en negativo. Núcleo reutilizable construido una vez para extender luego a Abono de Deudas (paso 2) y Gastos/Gasto rápido (paso 3). Verificado en la app: Arriendo $900.000 con cuentas de $600.000/$400.000/$100.000 → pre-selecciona Bancolombia ($600.000) + Nequi ($300.000), crea 2 gastos vinculados, saldos quedan 0/$100.000/$100.000 sin negativos, badge "Ya pagaste este mes" aparece (la suma alimenta `estadoPagoMes`). Caso de fondos insuficientes: muestra "Faltan $X" y deshabilita confirmar. Caso de 1 cuenta: conserva el confirm de sobregiro anterior. Tests 1426/1426. SW v181 → v182.
+
+- **`modules/infra/distribuir-pago.js`** (nuevo): `distribuirPago(cuentas, monto)` puro. Ordena por saldo descendente, toma de cada cuenta `min(restante, saldo)` hasta cubrir. Devuelve `{ ok, splits, cubierto, faltante }`. Nunca produce saldos negativos.
+- **`tests/unit/distribuir-pago.test.js`** (nuevo): 8 tests (una cuenta, mayor-saldo-primero, reparto entre dos, tope por saldo, ignora saldo ≤ 0, monto 0, sin cuentas, entradas inválidas).
+- **`modules/infra/cuenta-helper.js`**: nuevo `resolverPagoMultiCuenta(cuentas, monto, contexto)` (0/1/varias) + picker `_mostrarPickerMultiCuenta` con checkboxes, avatar por cuenta, pre-selección del conjunto mínimo que cubre, preview "Se usará $X" / "No se usará (ya cubierto)" por cuenta, resumen "✓ Cubre" / "Faltan $X", y confirmar habilitado solo cuando cubre.
+- **`modules/dominio/agenda/index.js`**: `_marcarPagadoGastoFijo` usa el reparto y crea un gasto por cada cuenta usada (nota "Pago repartido entre varias cuentas" cuando son ≥ 2). `resolverCuenta` ya no se usa aquí.
+- **`styles/components/domain.css`**: estilos `.cuenta-multi__*` (filas con checkbox, cifras, preview de reparto, resumen ok/danger).
+- **`service-worker.js`**: v181 → v182 + precache de `distribuir-pago.js`.
+
+---
+
 ### feat(agenda): monto por obligación y total del día · 2026-06-28
 
 Al seleccionar un día del calendario, el detalle del día ahora muestra el monto de cada obligación pendiente (gastos fijos usan `c.monto`, deudas usan `c.cuotaMensual`). Antes, las deudas (entidad y personal) no mostraban valor porque el código buscaba `c.monto`, campo que no existe en deudas. Además, el subtítulo del detalle agrega el total acumulado del día ("3 compromisos · $1.250.000"), para que el usuario sepa de un vistazo cuánto necesita ese día. Verificado con 3 compromisos el mismo día: Arriendo $900.000, Tarjeta Visa $250.000, Préstamo de mamá $100.000 → total $1.250.000. Tests 1418/1418. SW v180 → v181.

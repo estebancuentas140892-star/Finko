@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(agenda): monto por obligación y total del día)
+> Última actualización: 2026-06-28 (feat(agenda): pago repartido entre varias cuentas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): pago repartido entre varias cuentas (paso 1 de 3) · 2026-06-28
+
+"Marcar pagado" de un gasto fijo ahora permite cubrir el monto combinando varias cuentas (banco + efectivo) sin dejar ninguna en negativo. Reparte desde la cuenta con más saldo primero. Núcleo reutilizable: función pura `distribuirPago` (8 tests) + picker multi-cuenta accesible (`resolverPagoMultiCuenta`). Crea un gasto por cada cuenta usada; la suma alimenta `estadoPagoMes` sin cambiar el schema. **Pendiente (mismo patrón):** paso 2 Abono de Deudas, paso 3 Gastos/Gasto rápido. SW v181 → v182. Tests 1426/1426.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/distribuir-pago.js` | Nuevo. `distribuirPago(cuentas, monto)` puro: reparte mayor-saldo-primero, sin negativos. |
+| `tests/unit/distribuir-pago.test.js` | Nuevo. 8 tests (orden, tope por saldo, cobertura parcial, bordes). |
+| `modules/infra/cuenta-helper.js` | Nuevo `resolverPagoMultiCuenta` + picker multi con checkboxes y preview de reparto. |
+| `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa el reparto; crea un gasto por cuenta. |
+| `styles/components/domain.css` | Estilos `.cuenta-multi__*`. |
+
+---
 
 ### feat(agenda): monto por obligación y total del día · 2026-06-28
 
@@ -86,21 +100,6 @@ Dividir "Alimentación" en "Mercado" y "Restaurantes" + agregar Hogar, Mascotas,
 | `modules/dominio/gastos/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
 | `modules/dominio/presupuesto/view.js` | Select de categoría usa CATEGORIAS_GASTO_USUARIO. |
 | `tests/integration/flujos.test.js` | Test de migración: espera "Mercado" en presupuestos. |
-
----
-
-### style(ui): mejorar visual y copy en dashboard, gastos, agenda y deudas · 2026-06-28
-
-Pulido visual y de experiencia: (1) gasto semanal en dashboard ahora en rojo (color de salida) en vez de verde (positivo); (2) lista de gastos muestra emoji de categoría en lugar de icono genérico; (3) Dashboard: eliminada sección "Accesos rápidos" innecesaria; (4) Agenda y Deudas: removidos hints redundantes ("Finko lo incluye en tu resumen..."), lenguaje de deudas mejorado ("cooperativa, fondo de empleados" en lugar de "fintech"). SW v176 → v177. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/resumen/view.js` | Import `CATEGORIA_EMOJI` + emoji en categoría top. |
-| `styles/components/domain.css` | `.resumen-card__stat--primary .resumen-card__value`: `--fk-text-accent` → `--fk-danger-text`. |
-| `modules/dominio/gastos/view.js` | `list-item__icon`: emoji de categoría con fallback a icono genérico. |
-| `index.html` | Eliminado nav `.bento__cell--accesos` (Accesos rápidos). |
-| `modules/dominio/agenda/view.js` | Removido hint innecesario de `gasto fijo`. |
-| `modules/dominio/compromisos/views/formularios.js` | Cambio de copy: "fintech" → "cooperativa, fondo de empleados"; removidos 2 hints redundantes. |
 
 ---
 
