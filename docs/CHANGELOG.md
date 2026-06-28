@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): monto por obligación y total del día · 2026-06-28
+
+Al seleccionar un día del calendario, el detalle del día ahora muestra el monto de cada obligación pendiente (gastos fijos usan `c.monto`, deudas usan `c.cuotaMensual`). Antes, las deudas (entidad y personal) no mostraban valor porque el código buscaba `c.monto`, campo que no existe en deudas. Además, el subtítulo del detalle agrega el total acumulado del día ("3 compromisos · $1.250.000"), para que el usuario sepa de un vistazo cuánto necesita ese día. Verificado con 3 compromisos el mismo día: Arriendo $900.000, Tarjeta Visa $250.000, Préstamo de mamá $100.000 → total $1.250.000. Tests 1418/1418. SW v180 → v181.
+
+- **`modules/dominio/agenda/view.js`**: `_renderDetalleItem` resuelve `montoRaw` según tipo (`c.monto` para fijos, `c.cuotaMensual` para deudas). `_totalDia(evs)` nuevo helper que suma montos; `_renderDetalleDia` lo muestra en el subtítulo.
+- **`service-worker.js`**: v180 → v181.
+
+---
+
 ### feat(deudas): iconos de cuenta en el abono · 2026-06-28
 
 Completa la serie de iconos de cuenta: el modal de abono a deudas (ADR 002) ahora aplica el mismo patrón que Gastos. El hint de saldo muestra el avatar con color de la cuenta elegida y cada `<option>` del select lleva el emoji por tipo de entidad (🏦 banco, 📱 billetera, 💵 efectivo). Reusa el helper `infra/bancos.js`. Sin cambios de lógica; el select sigue siendo nativo (accesibilidad intacta). Verificado en la app: al elegir Nequi, el hint muestra el avatar morado "Nq". Tests 1418/1418. SW v179 → v180.

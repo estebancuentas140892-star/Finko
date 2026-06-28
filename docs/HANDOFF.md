@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(deudas): iconos de cuenta en el abono)
+> Última actualización: 2026-06-28 (feat(agenda): monto por obligación y total del día)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): monto por obligación y total del día · 2026-06-28
+
+Al seleccionar un día del calendario, el detalle ahora muestra: (1) el monto de cada obligación (gastos fijos usan `monto`, deudas usan `cuotaMensual`, antes las deudas no mostraban valor); (2) el total acumulado del día en el subtítulo ("3 compromisos · $1.250.000"). SW v180 → v181. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem`: monto según tipo; `_totalDia` helper + total en subtítulo. |
+
+---
 
 ### feat(deudas): iconos de cuenta en el abono · 2026-06-28
 
@@ -91,17 +101,6 @@ Pulido visual y de experiencia: (1) gasto semanal en dashboard ahora en rojo (co
 | `index.html` | Eliminado nav `.bento__cell--accesos` (Accesos rápidos). |
 | `modules/dominio/agenda/view.js` | Removido hint innecesario de `gasto fijo`. |
 | `modules/dominio/compromisos/views/formularios.js` | Cambio de copy: "fintech" → "cooperativa, fondo de empleados"; removidos 2 hints redundantes. |
-
----
-
-### style(personales): fecha legible en Me deben (UX C) · 2026-06-28
-
-Las fechas ISO en Me deben ("Pactó devolver: 2026-08-15", "Último abono: 2026-06-20") eran las últimas vistas sin `fechaLegible`. Ahora muestran formato largo, consistente con el resto. SW v175 → v176. Tests 1418/1418.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/personales/view.js` | Import `fechaLegible` + reemplazo en `fechaLimite` y `ultimoPago`. |
-| `service-worker.js` | v175 → v176. |
 
 ---
 
