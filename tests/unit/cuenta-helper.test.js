@@ -12,6 +12,7 @@ import {
   resolverCuenta,
   renderSelectorCuenta,
   resolverPagoConPreferida,
+  resolverPagoConSelector,
 } from '../../modules/infra/cuenta-helper.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -223,6 +224,78 @@ describe('resolverPagoConPreferida()', () => {
     document.querySelector('[data-role="confirmar"]')?.click();
     const splits = await promesa;
     expect(Array.isArray(splits)).toBe(true);
+    expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);
+  });
+});
+
+// ── resolverPagoConSelector() ────────────────────────────────────
+
+describe('resolverPagoConSelector()', () => {
+  it('0 cuentas: devuelve null y abre el diálogo guiado', async () => {
+    const resultado = await resolverPagoConSelector([], 100_000);
+    expect(resultado).toBeNull();
+    expect(document.getElementById('cta-sin-cuentas-title')).not.toBeNull();
+  });
+
+  it('1 cuenta: un solo split por el total, sin preguntar (sin DOM)', async () => {
+    const cuentas = [cuentaActiva({ id: 'unica', saldo: 100_000 })];
+    const splits = await resolverPagoConSelector(cuentas, 500_000);
+    expect(splits).toEqual([{ cuentaId: 'unica', monto: 500_000 }]);
+    expect(document.querySelector('.modal-overlay')).toBeNull();
+  });
+
+  it('varias cuentas: muestra el selector de tarjetas para elegir preferida', async () => {
+    const cuentas = [
+      cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 600_000 }),
+      cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 400_000 }),
+    ];
+    const promesa = resolverPagoConSelector(cuentas, 500_000);
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(document.getElementById('cuenta-pref-title')).not.toBeNull();
+    expect(document.querySelectorAll('input[name="cuentaId"]').length).toBe(2);
+
+    // Cancelar deja la promesa resuelta en null.
+    document.querySelector('[data-role="cancelar"]')?.click();
+    expect(await promesa).toBeNull();
+  });
+
+  it('preferida elegida cubre: un solo split por el total, sin reparto', async () => {
+    const cuentas = [
+      cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 600_000 }),
+      cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 400_000 }),
+    ];
+    const promesa = resolverPagoConSelector(cuentas, 300_000);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Elegir explícitamente c2 (cubre 300k con saldo 400k) y continuar.
+    document.querySelector('input[name="cuentaId"][value="c2"]').checked = true;
+    document.querySelector('[data-role="confirmar"]')?.click();
+
+    const splits = await promesa;
+    expect(splits).toEqual([{ cuentaId: 'c2', monto: 300_000 }]);
+    // No debe quedar ningún overlay (no se abrió el picker de reparto).
+    expect(document.querySelector('.modal-overlay')).toBeNull();
+  });
+
+  it('preferida elegida no alcanza: encadena el picker de reparto', async () => {
+    const cuentas = [
+      cuentaActiva({ id: 'c1', nombre: 'Nequi', saldo: 100_000 }),
+      cuentaActiva({ id: 'c2', nombre: 'Bancolombia', saldo: 900_000 }),
+    ];
+    const promesa = resolverPagoConSelector(cuentas, 500_000);
+    await new Promise(r => setTimeout(r, 0));
+
+    // Elegir c1 (no alcanza) y continuar: debe abrir el picker de reparto.
+    document.querySelector('input[name="cuentaId"][value="c1"]').checked = true;
+    document.querySelector('[data-role="confirmar"]')?.click();
+    await new Promise(r => setTimeout(r, 0));
+
+    expect(document.getElementById('cuenta-multi-title')).not.toBeNull();
+    expect(document.querySelector('.cuenta-multi__aviso')).not.toBeNull();
+
+    document.querySelector('[data-role="confirmar"]')?.click();
+    const splits = await promesa;
     expect(splits.reduce((s, x) => s + x.monto, 0)).toBe(500_000);
   });
 });

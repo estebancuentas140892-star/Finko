@@ -160,6 +160,43 @@ export async function resolverPagoConPreferida(cuentas, monto, preferidaId, cont
   return _mostrarPickerMultiCuenta(activas, m, contexto, preferida.id, aviso);
 }
 
+/**
+ * Resuelve el reparto de un pago cuando NO hay un selector de cuenta en el
+ * formulario (flujos de un solo clic, como "Marcar pagado" de Agenda):
+ *   - 0 cuentas: diálogo guiado a Mis Cuentas. Devuelve null.
+ *   - 1 cuenta: la usa por el total sin preguntar (regla de cuenta única). El
+ *     caller confirma el sobregiro si el saldo no alcanza.
+ *   - Varias cuentas: muestra el selector de tarjetas para elegir la cuenta
+ *     preferida y luego aplica el reparto-fallback de `resolverPagoConPreferida`
+ *     (solo abre el picker de reparto si la elegida no cubre el monto).
+ *
+ * @param {import('../core/state.js').Cuenta[]} cuentas
+ * @param {number} monto
+ * @param {string} [contexto]
+ * @returns {Promise<Array<{cuentaId:string, monto:number}>|null>}
+ */
+export async function resolverPagoConSelector(cuentas, monto, contexto = 'completar esta operación') {
+  const activas = (cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) {
+    _mostrarGuiadoCero(contexto);
+    return null;
+  }
+
+  const m = Number(monto) || 0;
+
+  // Regla de cuenta única: no se pregunta. El caller confirma el sobregiro.
+  if (activas.length === 1) {
+    return [{ cuentaId: activas[0].id, monto: m }];
+  }
+
+  // Varias cuentas: primero elegir la preferida con el selector de tarjetas.
+  const preferidaId = await _mostrarSelectorPreferida(activas, m, contexto);
+  if (preferidaId === null) return null; // canceló
+
+  // Reparto-fallback: usa la preferida si cubre; si no, abre el picker.
+  return resolverPagoConPreferida(cuentas, m, preferidaId, contexto);
+}
+
 // ── CASO 0 CUENTAS ───────────────────────────────────────────────
 
 /**
@@ -284,6 +321,72 @@ function _mostrarPickerCuenta(activas, contexto) {
       const btn = e.target.closest('[data-role]');
       if (btn?.dataset.role === 'elegir') {
         _cerrar(btn.dataset.cuentaId || null);
+      } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {
+        _cerrar(null);
+      }
+    });
+
+    document.addEventListener('keydown', _onKey);
+  });
+}
+
+/**
+ * Muestra el selector de tarjetas para elegir la cuenta preferida de un pago
+ * (flujos sin formulario, como "Marcar pagado"). Reusa `renderSelectorCuenta`,
+ * de modo que se ve igual que el selector embebido en los formularios de gasto.
+ * Resuelve con el id de la cuenta elegida o null si el usuario cancela.
+ *
+ * @param {import('../core/state.js').Cuenta[]} activas
+ * @param {number} monto
+ * @param {string} contexto
+ * @returns {Promise<string|null>}
+ */
+function _mostrarSelectorPreferida(activas, monto, contexto) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.dataset.open = '';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-labelledby', 'cuenta-pref-title');
+
+    overlay.innerHTML = `
+      <div class="modal modal--confirm" role="document">
+        <header class="modal__header">
+          <h2 id="cuenta-pref-title" class="modal__title">¿Desde qué cuenta?</h2>
+        </header>
+        <div class="modal__body">
+          <p class="confirm__mensaje">Elige la cuenta para ${_esc(contexto)} de <strong>${f(monto)}</strong>. Si no alcanza, podrás repartirlo entre varias.</p>
+          ${renderSelectorCuenta(activas, { label: 'Cuenta de origen' })}
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn-ghost" data-role="cancelar">Cancelar</button>
+          <button type="button" class="btn btn-primary" data-role="confirmar">Continuar</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    const panel = overlay.querySelector('.modal');
+    trapFocus(panel);
+    setTimeout(() => overlay.querySelector('.cuenta-sel__radio:checked')?.focus(), 0);
+
+    function _cerrar(valor) {
+      releaseFocus();
+      overlay.remove();
+      document.removeEventListener('keydown', _onKey);
+      resolve(valor);
+    }
+
+    function _onKey(e) {
+      if (e.key === 'Escape') { e.stopPropagation(); _cerrar(null); }
+    }
+
+    overlay.addEventListener('click', e => {
+      const btn = e.target.closest('[data-role]');
+      if (btn?.dataset.role === 'confirmar') {
+        const elegida = overlay.querySelector('input[name="cuentaId"]:checked')?.value || null;
+        _cerrar(elegida);
       } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {
         _cerrar(null);
       }

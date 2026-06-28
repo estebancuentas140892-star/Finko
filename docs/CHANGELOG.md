@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): selector de tarjetas + reparto-fallback en "Marcar pagado" (3/4 flujos) · 2026-06-28
+
+Tercer flujo de la serie "selector de tarjetas + reparto solo si no alcanza" (tras Gastos y Gasto rápido). Al marcar un gasto fijo como pagado, ya no se va directo al picker multi-cuenta: con varias cuentas se muestra primero el **mismo selector de tarjetas** que en los formularios de gasto (avatar de entidad, nombre y saldo) para elegir la cuenta de origen; solo si esa cuenta **no alcanza** se abre el reparto-fallback, pre-sembrado con la elegida y avisando "X no alcanza para cubrir $Y". Con **una sola cuenta** no se pregunta (regla de cuenta única); si esa única cuenta no cubre, se conserva el confirm de sobregiro. Como "Marcar pagado" es un flujo de un clic sin formulario, se agregó un helper que encapsula el patrón completo. Verificado en navegador (Chromium): cubre (Bancolombia $2.000.000) → un gasto directo, sin picker; no cubre (Nequi $100.000) → Nequi $100.000 cobrada primero + Bancolombia $400.000, total $500.000, sin negativos; aviso "Nequi no alcanza para cubrir $500.000 (saldo $100.000)". **Pendiente:** 4/4 Deudas (Abonar). Tests 1438/1438. SW v186 → v187.
+
+- **`modules/infra/cuenta-helper.js`**: nueva `resolverPagoConSelector(cuentas, monto, contexto)`: 0 cuentas → diálogo guiado; 1 cuenta → split por el total (el caller confirma sobregiro); varias → `_mostrarSelectorPreferida` (selector de tarjetas, reusa `renderSelectorCuenta`) y luego `resolverPagoConPreferida` (reparto solo si no alcanza). Nueva privada `_mostrarSelectorPreferida`.
+- **`modules/dominio/agenda/index.js`**: `_marcarPagadoGastoFijo` usa `resolverPagoConSelector` en lugar de `resolverPagoMultiCuenta`; docstrings actualizados. La lógica de aplicar splits y el confirm de sobregiro para 1 cuenta quedan iguales.
+- **`tests/unit/cuenta-helper.test.js`**: 5 tests de `resolverPagoConSelector` (0 cuentas, 1 cuenta sin DOM, varias muestran selector, preferida que cubre → split único, preferida insuficiente → encadena el picker de reparto).
+- **`service-worker.js`**: v186 → v187.
+
+---
+
 ### feat(gastos): selector de tarjetas + reparto-fallback en Gasto rápido (2/4 flujos) · 2026-06-28
 
 El gasto rápido ahora muestra el mismo selector de tarjetas con avatares de entidad que el gasto completo. Si la cuenta elegida no cubre el monto, abre el picker de reparto con la elegida como prioridad (se cobra primero). Si es la única y no alcanza, pide confirmación de sobregiro. Verificado en la app: cubre → sin picker, directo; no cubre → Nequi $400k + Bancolombia $50k; sin negativos. SW v185 → v186. Tests 1433/1433.

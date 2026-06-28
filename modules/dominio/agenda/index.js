@@ -13,10 +13,12 @@
  * Acciones sobre gastos fijos existentes:
  * - Editar: abre modal-gasto-fijo pre-rellenado con los datos del compromiso.
  * - Eliminar: confirmación + elimina de S.compromisos.
- * - Marcar pagado este mes: usa resolverPagoMultiCuenta (0/1/varias, con reparto
- *   automático entre cuentas sin dejar negativos) y registra un gasto por cada
- *   cuenta usada, vinculado al compromiso vía compromisoId, para que el badge
- *   "Ya pagaste este mes" aparezca automáticamente en el calendario.
+ * - Marcar pagado este mes: usa resolverPagoConSelector. Con varias cuentas
+ *   muestra el selector de tarjetas para elegir la cuenta preferida y solo abre
+ *   el reparto si no alcanza (reparto-fallback, sin dejar negativos); con una
+ *   sola cuenta no pregunta. Registra un gasto por cada cuenta usada, vinculado
+ *   al compromiso vía compromisoId, para que el badge "Ya pagaste este mes"
+ *   aparezca automáticamente en el calendario.
  */
 
 import { S, EventBus } from '../../core/state.js';
@@ -28,7 +30,7 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
-import { resolverPagoMultiCuenta } from '../../infra/cuenta-helper.js';
+import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia } from './view.js';
 
@@ -179,8 +181,9 @@ async function _eliminarGastoFijo(el) {
 
 /**
  * Registra el pago del mes actual de un gasto fijo.
- * Usa resolverPagoMultiCuenta: reparte el monto entre una o varias cuentas
- * (mayor saldo primero) sin dejar ninguna en negativo.
+ * Usa resolverPagoConSelector: con varias cuentas pide elegir la cuenta
+ * preferida (selector de tarjetas) y solo reparte si esa cuenta no alcanza,
+ * sin dejar ninguna en negativo. Con una sola cuenta no pregunta.
  * @param {HTMLElement} el - botón con data-id del compromiso.
  */
 async function _marcarPagadoGastoFijo(el) {
@@ -201,8 +204,8 @@ async function _marcarPagadoGastoFijo(el) {
 
   const monto = Number(comp.monto) || 0;
 
-  // Resolver el reparto del pago entre una o varias cuentas (sin negativos).
-  const splits = await resolverPagoMultiCuenta(
+  // Elegir la cuenta preferida (si hay varias) y resolver el reparto-fallback.
+  const splits = await resolverPagoConSelector(
     S.cuentas,
     monto,
     `registrar el pago de "${comp.descripcion}"`,

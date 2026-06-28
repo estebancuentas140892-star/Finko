@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(gastos): selector de tarjetas en Gasto rápido, 2/4 flujos)
+> Última actualización: 2026-06-28 (feat(agenda): selector de tarjetas en "Marcar pagado", 3/4 flujos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1418/1418 verdes |
+| Tests unitarios + integración | 1438/1438 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): selector de tarjetas + reparto-fallback en "Marcar pagado" (3/4 flujos) · 2026-06-28
+
+Al marcar un gasto fijo como pagado, con varias cuentas ahora aparece el mismo selector de tarjetas (avatar de entidad, nombre y saldo) que en Gastos: se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". Con una sola cuenta no pregunta (regla de cuenta única); si esa cuenta no cubre, pide confirmación de sobregiro. Reusa `renderSelectorCuenta` + `resolverPagoConPreferida`. Verificado en navegador: cubre (Bancolombia $2M) → un gasto directo, sin picker; no cubre (Nequi $100k) → Nequi $100k + Bancolombia $400k, total $500k sin negativos. **Pendiente:** 4/4 Deudas (Abonar). SW v186 → v187. Tests 1438/1438.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/cuenta-helper.js` | Nueva `resolverPagoConSelector` (0/1/varias: selector de tarjetas + reparto-fallback) + `_mostrarSelectorPreferida`. |
+| `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa `resolverPagoConSelector` en vez de `resolverPagoMultiCuenta`. |
+| `tests/unit/cuenta-helper.test.js` | 5 tests de `resolverPagoConSelector` (0/1/varias, cubre, reparto encadenado). |
+
+---
 
 ### feat(gastos): selector de tarjetas en Gasto rápido (2/4 flujos) · 2026-06-28
 
@@ -86,20 +98,6 @@ El "Abonar" a una deuda ahora puede cubrirse combinando varias cuentas, sin nega
 | `modules/dominio/compromisos/index.js` | `_guardarAbono` async con `resolverPagoMultiCuenta`; un gasto por cuenta. Removido `_actualizarSaldoDisponibleAbono`. |
 | `modules/dominio/compromisos/logic.js` | `validarAbono` ya no exige `cuentaId`. |
 | `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` al nuevo contrato. |
-
----
-
-### feat(agenda): pago repartido entre varias cuentas (paso 1 de 3) · 2026-06-28
-
-"Marcar pagado" de un gasto fijo ahora permite cubrir el monto combinando varias cuentas (banco + efectivo) sin dejar ninguna en negativo. Reparte desde la cuenta con más saldo primero. Núcleo reutilizable: función pura `distribuirPago` (8 tests) + picker multi-cuenta accesible (`resolverPagoMultiCuenta`). Crea un gasto por cada cuenta usada; la suma alimenta `estadoPagoMes` sin cambiar el schema. **Pendiente (mismo patrón):** paso 2 Abono de Deudas, paso 3 Gastos/Gasto rápido. SW v181 → v182. Tests 1426/1426.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/distribuir-pago.js` | Nuevo. `distribuirPago(cuentas, monto)` puro: reparte mayor-saldo-primero, sin negativos. |
-| `tests/unit/distribuir-pago.test.js` | Nuevo. 8 tests (orden, tope por saldo, cobertura parcial, bordes). |
-| `modules/infra/cuenta-helper.js` | Nuevo `resolverPagoMultiCuenta` + picker multi con checkboxes y preview de reparto. |
-| `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa el reparto; crea un gasto por cuenta. |
-| `styles/components/domain.css` | Estilos `.cuenta-multi__*`. |
 
 ---
 
