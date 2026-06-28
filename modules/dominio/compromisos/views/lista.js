@@ -91,17 +91,22 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const saldo    = Number(compromiso.saldoTotal) || 0;
   const tasaEA   = tasaEADe(compromiso) * 100;
 
+  // Modificadores de color de atoms.css (un solo guion). Antes se usaban
+  // `chip--danger/warning/neutral` (doble guion), que no existen: el chip de
+  // urgencia se veía siempre gris. El nivel normal usa la base `.chip` (gris).
   const chipClase = nivel === 'urgente'
-    ? 'chip chip--danger'
+    ? 'chip chip-danger'
     : nivel === 'proximo'
-    ? 'chip chip--warning'
-    : 'chip chip--neutral';
+    ? 'chip chip-warning'
+    : 'chip';
 
+  // El label lleva el verbo "Vence" para que el chip se entienda solo: "17 días"
+  // a secas es ambiguo (¿antigüedad? ¿atraso? ¿faltan?). Aquí siempre es futuro.
   const diasLabel = dias === 0
     ? 'Vence hoy'
     : dias === 1
-    ? 'Mañana'
-    : `${dias} días`;
+    ? 'Vence mañana'
+    : `Vence en ${dias} días`;
 
   // Tasa mostrada en la unidad original para que coincida con la entrada.
   // En entidad, tasa null = desconocida (el usuario no la registró): se invita
@@ -160,7 +165,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
       <div class="list-item__icon" aria-hidden="true">${ordenBadge || icono}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}
-          <span class="${chipClase}" aria-label="Vence en ${diasLabel}">${diasLabel}</span>
+          <span class="${chipClase}" aria-label="${diasLabel}">${diasLabel}</span>
         </p>
         <p class="list-item__subtitle">${subtitle}</p>
         <p class="list-item__hint">${contexto}</p>

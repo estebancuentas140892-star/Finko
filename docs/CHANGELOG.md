@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos): chip de urgencia claro y con color (Hallazgo 3) · 2026-06-28
+
+Hallazgo de la revisión integral. El chip de urgencia de cada deuda (lista de Compromisos) tenía tres defectos en el mismo bloque:
+
+1. **Texto ambiguo**: mostraba "17 días" a secas. Sin verbo, "N días" se lee como antigüedad, atraso o duración, no como "faltan N días para el vencimiento". Ahora: "Vence hoy" / "Vence mañana" / "Vence en N días".
+2. **Color muerto**: usaba las clases `chip--danger` / `chip--warning` / `chip--neutral` (doble guion), que no existen en el CSS (los modificadores de atoms.css son `chip-danger` / `chip-warning`, un guion). El chip se veía siempre gris: la urgencia (rojo para urgente, ámbar para próximo) nunca se pintaba. Corregido a un guion; el nivel normal usa la base `.chip` (gris). Verificado en la app: el chip "Vence en 7 días" pasó de gris a ámbar (`color: rgb(255,184,46)`).
+3. **aria-label redundante**: se construía como `Vence en ${diasLabel}`, produciendo "Vence en Vence hoy" para una deuda que vence hoy. Ahora el aria coincide con el texto visible.
+
+Cero cambios de lógica ni de tests (ningún test asertaba sobre el label de la vista). Tests 1418/1418. SW v172 → v173.
+
+- **`modules/dominio/compromisos/views/lista.js`**: `_renderCompromisoItem` corrige clase de color del chip, label con verbo y aria-label.
+- **`service-worker.js`**: v172 → v173.
+
+---
+
 ### fix(copy): reemplazar voseo por tuteo en 8 cadenas (ADN #11) · 2026-06-27
 
 Violación de la regla ADN #11 (lenguaje tuteo, no voseo). Se identificaron 8 cadenas en voseo durante la revisión integral y se corrigieron a tuteo. Cambio mecánico, cero lógica. Tests 1418/1418. SW v171 → v172.

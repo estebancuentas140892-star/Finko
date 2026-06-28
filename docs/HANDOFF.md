@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(compromisos): chip de urgencia claro y con color (Hallazgo 3) · 2026-06-28
+
+Hallazgo 3 de la revisión. El chip de urgencia de cada deuda tenía 3 defectos en el mismo bloque: (1) texto ambiguo "17 días" → ahora "Vence en 17 días"; (2) clase de color con doble guion (`chip--warning`) que no existe en CSS, el chip se veía siempre gris → corregido a `chip-warning`, ahora pinta ámbar/rojo según urgencia; (3) aria-label redundante "Vence en Vence hoy" → ahora coincide con el visible. Cero lógica, cero tests nuevos. SW v172 → v173. Tests 1418/1418.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/lista.js` | `_renderCompromisoItem`: clase de color, label con verbo, aria-label. |
+| `service-worker.js` | v172 → v173. |
+
+---
+
 ### fix(copy): reemplazar voseo por tuteo (ADN #11) · 2026-06-27
 
 Hallazgo 2 de la revisión. 8 cadenas en voseo → tuteo en HTML, logic.js y views (Instalá → Instala, Tocá → Toca, gastás → gastas, usá → usa, Poné → Pon, Usá → Usa). Cambio mecánico, cero lógica, cero test changes. SW v171 → v172. Tests 1418/1418.
@@ -91,23 +102,6 @@ Form de nuevo apartado reorganizado: emoji inline con el nombre (grid), recurren
 | `modules/dominio/apartados/view.js` | `renderFormApartado` reestructurado. |
 | `styles/components/domain.css` | Reglas `.apartado-nombre-row*` y `.form-details*`. |
 | `service-worker.js` | v168 → v169. |
-
----
-
-### feat(ahorro): vista consolidada del ahorro total (F6) · 2026-06-27
-
-Card de solo lectura al tope de la sección Ahorro: "Tu ahorro total" suma fondo + metas + apartados + inversiones con desglose y barras de participación. Se decidió NO generalizar el schema (un fondo → varios) ni etiquetar vehículo: la fragmentación se cura con visibilidad. Ver [ADR 009](DECISIONS/009-consolidado-de-ahorro.md). `consolidarAhorro()` pura; el view lee S de los 4 slices sin cross-import (ADN #10). SW v167 → v168. Tests 1411/1411 (+4).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/ahorro/logic.js` | Nueva `consolidarAhorro()`. |
-| `modules/dominio/ahorro/view.js` | Nueva `renderResumenAhorroConsolidado()`. |
-| `modules/dominio/ahorro/index.js` | Render bundleado + EventBus a metas/apartados/inversiones. |
-| `index.html` | `<div id="panel-ahorro-consolidado">`. |
-| `styles/components/domain.css` | Reglas `.ahorro-total*`. |
-| `tests/unit/ahorro.test.js` | +4 tests. |
-| `docs/DECISIONS/009-consolidado-de-ahorro.md` | ADR nuevo. |
-| `service-worker.js` | v167 → v168. |
 
 ---
 
