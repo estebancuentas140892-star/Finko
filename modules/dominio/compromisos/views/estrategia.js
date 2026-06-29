@@ -1,9 +1,9 @@
 /**
  * compromisos/views/estrategia.js - card de estrategia de pago de deudas (F.4).
  *
- * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa,
- * acordeón abierto). Es un singleton mutable; persiste mientras la pestaña
- * está abierta y vuelve a defaults al recargar.
+ * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa).
+ * Es un singleton mutable; persiste mientras la pestaña está abierta y vuelve
+ * a defaults al recargar.
  *
  * Las funciones públicas `setEstrategiaUI` y `getEstrategiaUI` permiten que
  * `index.js` mute el estado desde los handlers, y que `lista.js` lo lea para
@@ -27,7 +27,7 @@ import {
   renderResumenExtra,
 } from './estrategia-impacto.js';
 
-// Estado UI local: extra mensual, estrategia activa, acordeón abierto.
+// Estado UI local: extra mensual, estrategia activa.
 // Persiste mientras la pestaña está abierta; al recargar vuelve a defaults.
 // estrategia=null indica "no elegida aún" (mostramos solo las cards).
 const _uiEstrategia = {

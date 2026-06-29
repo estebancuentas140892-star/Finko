@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v197';
+const CACHE_NAME = 'finko-v198';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [

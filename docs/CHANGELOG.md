@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(deudas): barrido de dead code del acordeón (ADR 011, S3) · 2026-06-28
+
+Tercer y último slice de limpieza del rediseño de simulación de deudas (ADR 011). El acordeón "Paga un extra cada mes" ya se había eliminado por completo en S1 (estado `expandidoExtra`, acción `toggle-extra-estrategia`, handler `_toggleExtraEstrategia` y CSS `.estrategia-card__acordeon*` / `.estrategia-card__link`), así que S3 fue un barrido de control para cazar residuos. Un grep de `acordeon`/`expandido`/`toggle-extra` por JS, CSS y tests confirmó que: (1) el CSS no tiene reglas de acordeón vivas, (2) las menciones en CHANGELOG/ADR son historia intencional, (3) `smoke.test.js` y `agenda/view.js` usan "expandido" para otras features (sidebar colapsable, detalle del día). Las únicas referencias vivas que sobraban eran 3 comentarios desactualizados: el docstring y el comentario del estado UI en `estrategia.js` decían que `_uiEstrategia` guardaba "acordeón abierto" (campo eliminado en S1), y `index.js` conservaba un comentario tombstone en inglés sobre la acción removida. Se corrigieron los tres. Cambio sin runtime (solo comentarios). Verificado: 1450/1450 unit + integración, lint limpio, grep de residuos en cero. SW v197 → v198.
+
+- **`modules/dominio/compromisos/views/estrategia.js`**: quitada la mención a "acordeón abierto" del docstring del módulo y del comentario que describe `_uiEstrategia` (el estado solo guarda `extraMensual` y `estrategia`).
+- **`modules/dominio/compromisos/index.js`**: eliminado el comentario `// toggle-extra-estrategia removed (ADR 011)...` del bloque de `registrarAccion` (la ausencia de la acción ya no necesita nota).
+- **`service-worker.js`**: v197 → v198.
+
+---
+
 ### refactor(deudas): eliminado el botón "Simular" por deuda (ADR 011, S2) · 2026-06-28
 
 Segundo slice del rediseño de simulación de deudas (ADR 011). Cada fila de deuda tenía un botón "Simular" que abría, sobre el modal de abono, una simulación individual de solo lectura (`renderSimulacion`): el usuario escribía un extra mensual y veía meses/intereses ahorrados para esa deuda aislada. Esa superficie sobraba: solo mostraba una deuda, sin reflejar cómo interactúan entre sí (cuotas que se liberan, volcamiento del extra a la siguiente), y el panel unificado de S1 (extra mensual siempre visible + resumen de impacto sobre todo el portafolio) ya cubre el caso con más contexto. Se eliminó el botón de la lista y toda su maquinaria asociada, dejando cero dead code: la acción delegada `simular-abono`, los handlers `_abrirSimulacion` y `_actualizarSimulacion`, la vista `renderSimulacion` y su re-export en el barrel, las 5 reglas CSS `.sim-resultado*` (que solo usaba ese handler) y los imports que quedaban huérfanos (`renderSimulacion`, `simularPagoDeuda` y `formatearDuracion` en index.js; `tasaEADe` en formularios.js). El modal compartido `modal-abono` sigue intacto para "Abonar". Ningún test (unit ni E2E) referenciaba la simulación por deuda, así que el conteo no cambia. Verificado: 1450/1450 unit + integración, 57/57 E2E, y render de `renderListaCompromisos` en happy-dom con una deuda sembrada (contiene `data-action="abrir-abono"` y "Abonar", no contiene `simular-abono` ni "Simular"). SW v196 → v197.

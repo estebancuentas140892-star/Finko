@@ -421,7 +421,6 @@ export function initCompromisos() {
   registrarAccion('abrir-abono',             _abrirAbono);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
-  // toggle-extra-estrategia removed (ADR 011): the extra input is always visible.
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',     _volverChooser);
 

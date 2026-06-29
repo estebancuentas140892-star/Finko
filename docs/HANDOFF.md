@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (refactor(deudas): eliminado el botón "Simular" por deuda, ADR 011 S2)
+> Última actualización: 2026-06-28 (refactor(deudas): barrido de dead code del acordeón, ADR 011 S3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(deudas): barrido de dead code del acordeón (ADR 011, S3) · 2026-06-28
+
+Tercer slice del rediseño de simulación de deudas (ADR 011), de cierre. S1 ya había eliminado el acordeón "Paga un extra cada mes" (su estado `expandidoExtra`, la acción `toggle-extra-estrategia`, el handler y el CSS), así que S3 fue solo barrer los residuos que quedaron: un barrido por `acordeon`/`expandido`/`toggle-extra` en JS, CSS y tests confirmó que el CSS estaba limpio y que las únicas referencias vivas eran 3 comentarios desactualizados. Se corrigieron: el docstring y el comentario inline de `estrategia.js` decían que `_uiEstrategia` guardaba "acordeón abierto" (campo que ya no existe), y `index.js` tenía un comentario tombstone en inglés sobre la acción removida. Las demás coincidencias son historia intencional (CHANGELOG, ADR) o de otras features (sidebar colapsable, detalle de Agenda). Sin cambios de runtime: solo comentarios. Verificado: 1450/1450, lint limpio, grep de residuos en cero. SW v197 → v198.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia.js` | Quitada la mención a "acordeón abierto" del docstring y del comentario del estado UI (el campo ya no existe). |
+| `modules/dominio/compromisos/index.js` | Eliminado el comentario tombstone `toggle-extra-estrategia removed`. |
+| `service-worker.js` | `CACHE_NAME` v197 → v198. |
+
+---
 
 ### refactor(deudas): eliminado el botón "Simular" por deuda (ADR 011, S2) · 2026-06-28
 
@@ -94,17 +106,6 @@ Primera de dos mejoras de Gastos pedidas por el usuario. La lista mostraba los g
 | `modules/dominio/gastos/view.js` | `renderListaGastos` ordena con `ordenarRecientesPrimero` antes de mapear. |
 | `tests/unit/gastos.test.js` | 5 tests de `ordenarRecientesPrimero`. |
 | `service-worker.js` | `CACHE_NAME` v193 → v194. |
-
----
-
-### style(dashboard): hero a ancho completo cuando no hay gastos por organizar · 2026-06-28
-
-Segunda y última mejora del Dashboard pedida por el usuario (cierra el pedido). Tras subir la tarjeta "gastos por organizar" junto al hero, quedaba un hueco a su derecha en el caso común sin pendientes (tarjeta `[hidden]`, hero a `span 8`). Ahora, cuando la tarjeta está oculta, el hero se expande a `span 12` (ancho completo) y no queda aire muerto. CSS puro con `:has()` sobre el `[hidden]` del panel (mismo patrón que `.list-item__icon:has(.bank-avatar)`): cero JS, cero acoplamiento del dominio gastos al layout. En tablet/mobile `span 12` se recorta a la fila completa (sin cambios fuera de desktop). Verificado por medición: desktop sin pendientes hero `span 12`, con pendientes `span 8` + tarjeta al lado, mobile sin regresión. 1438/1438. SW v192 → v193.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/layout.css` | Regla `.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero { grid-column: span 12; }`. |
-| `service-worker.js` | `CACHE_NAME` v192 → v193. |
 
 ---
 
