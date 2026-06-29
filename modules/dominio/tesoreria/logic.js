@@ -708,3 +708,62 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
     },
   };
 }
+
+// ── DISTRIBUIR MI INGRESO: grupo Ahorro (ADR 012, MC.4a) ─────────
+
+/**
+ * Arma el plan por defecto para repartir el grupo Ahorro de un ingreso entre
+ * sus destinos fondeables: fondo de emergencia, metas y apartados.
+ *
+ * Default teachable "fondo primero": si el fondo está activo y aún no se
+ * completó, se le sugiere todo el presupuesto de ahorro (el usuario redistribuye
+ * a su gusto en las filas editables). Metas y apartados empiezan en 0.
+ *
+ * Pura: recibe datos planos (sin S, sin DOM, sin importar otros dominios). El
+ * estado de "completado" del fondo se pasa ya resuelto (la vista lo lee del flag
+ * persistido `S.ahorro.fondoEmergencia.completado`).
+ *
+ * @param {{
+ *   budget: number,
+ *   fondo: { activo: boolean, completado: boolean } | null,
+ *   metas?: Array<{ id: string, nombre: string }>,
+ *   apartados?: Array<{ id: string, nombre: string }>,
+ * }} args
+ * @returns {Array<{ tipo: 'fondo'|'meta'|'apartado', id: string|null, nombre: string, monto: number }>}
+ */
+export function construirPlanAhorro({ budget, fondo, metas = [], apartados = [] }) {
+  const b = Math.max(0, Math.round(Number(budget) || 0));
+  const destinos = [];
+
+  if (fondo && fondo.activo) {
+    destinos.push({
+      tipo:   'fondo',
+      id:     null,
+      nombre: 'Fondo de emergencia',
+      monto:  fondo.completado ? 0 : b,
+    });
+  }
+  for (const m of metas)     destinos.push({ tipo: 'meta',     id: m.id, nombre: m.nombre, monto: 0 });
+  for (const a of apartados) destinos.push({ tipo: 'apartado', id: a.id, nombre: a.nombre, monto: 0 });
+
+  return destinos;
+}
+
+/**
+ * Resume un plan de distribución frente al monto total del ingreso.
+ *
+ * @param {number} montoIngreso - total que se está repartiendo.
+ * @param {Array<{ monto: number }>} destinos - filas del plan (cualquier grupo).
+ * @returns {{ asignado: number, sinAsignar: number, excede: boolean }}
+ *   asignado: suma de los montos. sinAsignar: lo que queda del ingreso (>= 0).
+ *   excede: true si se asignó más que el ingreso (no se puede confirmar).
+ */
+export function resumirPlanDistribucion(montoIngreso, destinos) {
+  const asignado = (destinos ?? []).reduce((s, d) => s + (Number(d.monto) || 0), 0);
+  const m = Number(montoIngreso) || 0;
+  return {
+    asignado,
+    sinAsignar: Math.max(0, m - asignado),
+    excede:     asignado > m,
+  };
+}

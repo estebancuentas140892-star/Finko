@@ -17,7 +17,8 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { esc as _esc } from '../../infra/utils.js';
+import { esc as _esc, f } from '../../infra/utils.js';
+import { resolverCuenta } from '../../infra/cuenta-helper.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../core/constants.js';
 import {
   validarCuenta,
@@ -28,6 +29,7 @@ import {
   normalizarIngreso,
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
+  resumirPlanDistribucion,
 } from './logic.js';
 import {
   renderListaCuentas,
@@ -692,6 +694,150 @@ function _guardarDistribucionPersonalizada() {
   announce(`Distribución personalizada guardada: ${valores.n}% necesidades, ${valores.e}% estilo de vida, ${valores.a}% ahorro.`);
 }
 
+// ── DISTRIBUIR MI INGRESO: grupo Ahorro (ADR 012, MC.4a) ─────────
+
+/** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
+let _snapshotDistribucion = null;
+let _snackbarTimer = null;
+const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'logros'];
+
+/** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
+function _toggleDistribuirIngreso(el) {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  el.setAttribute('aria-expanded', String(!panel.hidden));
+  if (!panel.hidden) {
+    _recalcularDistribucion();
+    document.getElementById('distribuir-monto')?.focus();
+  }
+}
+
+/** Lee las filas activas (toggle on) con monto > 0 del panel. */
+function _leerItemsDistribucion(panel) {
+  return [...panel.querySelectorAll('.distribuir__fila')]
+    .filter(fila => fila.querySelector('[data-dist-destino-toggle]')?.checked)
+    .map(fila => {
+      const inp = fila.querySelector('.distribuir__monto');
+      return {
+        tipo:  inp?.dataset.distTipo,
+        id:    inp?.dataset.distId || null,
+        monto: Number(inp?.value) || 0,
+      };
+    })
+    .filter(it => it.monto > 0);
+}
+
+/** Recalcula el resumen en vivo y habilita/deshabilita "Distribuir". Sin tocar S. */
+function _recalcularDistribucion() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (!panel) return;
+  const monto     = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const items     = _leerItemsDistribucion(panel);
+  const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
+
+  const resumenEl = document.getElementById('distribuir-resumen');
+  const boton     = panel.querySelector('[data-action="confirmar-distribucion"]');
+  const valido    = monto > 0 && asignado > 0 && !excede;
+
+  if (resumenEl) {
+    resumenEl.textContent = excede
+      ? `Asignaste ${f(asignado)}, más que tu ingreso de ${f(monto)}. Reduce algún destino.`
+      : `A tus ahorros: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
+    resumenEl.classList.toggle('form-hint--danger', excede);
+  }
+  if (boton) boton.disabled = !valido;
+}
+
+/** Habilita/deshabilita el input de monto de una fila según su toggle, y recalcula. */
+function _onToggleDestinoDistribucion(checkbox) {
+  const fila = checkbox.closest('.distribuir__fila');
+  const inp  = fila?.querySelector('.distribuir__monto');
+  if (inp) inp.disabled = !checkbox.checked;
+  _recalcularDistribucion();
+}
+
+/** Copia profunda de las slices indicadas (S es JSON-serializable). */
+function _clonarSlices(keys) {
+  const snap = {};
+  for (const k of keys) snap[k] = JSON.parse(JSON.stringify(S[k] ?? null));
+  return snap;
+}
+
+/** Restaura las slices desde un snapshot previo. */
+function _restaurarSlices(snap) {
+  for (const k of Object.keys(snap)) S[k] = snap[k];
+}
+
+/**
+ * Aplica la distribución: acredita el ingreso a la cuenta de origen, descuenta lo
+ * que físicamente sale (metas + apartados; el aporte al fondo no descuenta, ADR
+ * 009) y delega cada porción a su dominio por EventBus. Guarda snapshot para undo.
+ */
+async function _confirmarDistribucion() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (!panel) return;
+
+  const monto = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const items = _leerItemsDistribucion(panel);
+  const { asignado, excede } = resumirPlanDistribucion(monto, items);
+  if (monto <= 0 || asignado <= 0 || excede) return;
+
+  const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
+  if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
+
+  // Snapshot antes de tocar nada, para un "Deshacer" atómico.
+  _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
+
+  // Acreditar el ingreso y descontar solo lo que sale de la cuenta (no el fondo).
+  const descontable = items
+    .filter(i => i.tipo !== 'fondo')
+    .reduce((s, i) => s + i.monto, 0);
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (cuenta) {
+    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable });
+  }
+
+  // Cada dominio aplica su porción con su propia lógica (ADN #10).
+  EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
+
+  updSaldo();
+  announce(`Distribuiste ${f(asignado)} de tu ingreso hacia tus ahorros.`);
+  _mostrarSnackbarDeshacer();
+}
+
+/** Revierte la última distribución restaurando el snapshot. */
+function _deshacerDistribucion() {
+  if (!_snapshotDistribucion) return;
+  _restaurarSlices(_snapshotDistribucion);
+  _snapshotDistribucion = null;
+  _quitarSnackbarDeshacer();
+  save();
+  _SLICES_DISTRIBUCION.forEach(s => EventBus.emit('state:change', { section: s }));
+  updSaldo();
+  announce('Distribución deshecha. Tu dinero volvió a como estaba.');
+}
+
+/** Muestra un snackbar no bloqueante con "Deshacer" (vive en body, sobrevive re-renders). */
+function _mostrarSnackbarDeshacer() {
+  _quitarSnackbarDeshacer();
+  const bar = document.createElement('div');
+  bar.className = 'snackbar';
+  bar.id = 'snackbar-distribucion';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `
+    <span class="snackbar__msg">Distribución aplicada.</span>
+    <button type="button" class="btn btn-ghost btn-sm" data-action="deshacer-distribucion">Deshacer</button>`;
+  document.body.appendChild(bar);
+  _snackbarTimer = setTimeout(_quitarSnackbarDeshacer, 8000);
+}
+
+/** Quita el snackbar y limpia el timer. */
+function _quitarSnackbarDeshacer() {
+  if (_snackbarTimer) { clearTimeout(_snackbarTimer); _snackbarTimer = null; }
+  document.getElementById('snackbar-distribucion')?.remove();
+}
+
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -706,13 +852,28 @@ export function initTesoreria() {
   registrarAccion('cambiar-preset-distribucion', _cambiarPreset);
   registrarAccion('toggle-distribucion-personalizada', _toggleDistribucionPersonalizada);
   registrarAccion('guardar-distribucion-personalizada', _guardarDistribucionPersonalizada);
+  registrarAccion('toggle-distribuir-ingreso', _toggleDistribuirIngreso);
+  registrarAccion('confirmar-distribucion',    _confirmarDistribucion);
+  registrarAccion('deshacer-distribucion',     _deshacerDistribucion);
 
-  // Suma en vivo del editor de distribución personalizada (sin re-render
-  // completo, igual que el extra mensual de deudas en ADR 011 S1).
+  // Recalculo en vivo (sin re-render completo, igual que el extra mensual de
+  // deudas en ADR 011 S1): el editor personalizado y el panel "Distribuir mi
+  // ingreso" comparten el patrón de listener delegado por dataset.action.
   document.addEventListener('input', (e) => {
     const t = e.target;
-    if (t instanceof HTMLInputElement && t.dataset.action === 'ajustar-distribucion-personalizada') {
+    if (!(t instanceof HTMLInputElement)) return;
+    if (t.dataset.action === 'ajustar-distribucion-personalizada') {
       _actualizarSumaDistribucionPersonalizada();
+    } else if (t.dataset.action === 'recalcular-distribucion') {
+      _recalcularDistribucion();
+    }
+  });
+
+  // Los toggles de cada destino del panel disparan `change`, no `input`.
+  document.addEventListener('change', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.hasAttribute('data-dist-destino-toggle')) {
+      _onToggleDestinoDistribucion(t);
     }
   });
 

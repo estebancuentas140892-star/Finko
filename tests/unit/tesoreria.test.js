@@ -19,6 +19,8 @@ import {
   sugerirDistribucionIngreso,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
+  construirPlanAhorro,
+  resumirPlanDistribucion,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1171,5 +1173,77 @@ describe('esDistribucionPersonalizadaValida()', () => {
     expect(esDistribucionPersonalizadaValida(null)).toBe(false);
     expect(esDistribucionPersonalizadaValida(undefined)).toBe(false);
     expect(esDistribucionPersonalizadaValida('80-10-10')).toBe(false);
+  });
+});
+
+// ── construirPlanAhorro() (MC.4a) ─────────────────────────────────
+describe('construirPlanAhorro()', () => {
+  it('con fondo activo e incompleto sugiere todo el presupuesto al fondo', () => {
+    const plan = construirPlanAhorro({
+      budget: 600_000,
+      fondo: { activo: true, completado: false },
+      metas: [{ id: 'm1', nombre: 'Viaje' }],
+      apartados: [{ id: 'a1', nombre: 'SOAT' }],
+    });
+    const fondo = plan.find(d => d.tipo === 'fondo');
+    expect(fondo.monto).toBe(600_000);
+    expect(plan.find(d => d.id === 'm1').monto).toBe(0);
+    expect(plan.find(d => d.id === 'a1').monto).toBe(0);
+  });
+
+  it('con fondo completo lo deja en 0 (no sobre-fondea)', () => {
+    const plan = construirPlanAhorro({
+      budget: 600_000,
+      fondo: { activo: true, completado: true },
+      metas: [], apartados: [],
+    });
+    expect(plan.find(d => d.tipo === 'fondo').monto).toBe(0);
+  });
+
+  it('sin fondo activo no incluye fila de fondo', () => {
+    const plan = construirPlanAhorro({
+      budget: 600_000,
+      fondo: { activo: false, completado: false },
+      metas: [{ id: 'm1', nombre: 'Viaje' }],
+      apartados: [],
+    });
+    expect(plan.some(d => d.tipo === 'fondo')).toBe(false);
+    expect(plan).toHaveLength(1);
+  });
+
+  it('lista una fila por cada meta y apartado, en 0 por defecto', () => {
+    const plan = construirPlanAhorro({
+      budget: 0,
+      fondo: null,
+      metas: [{ id: 'm1', nombre: 'Viaje' }, { id: 'm2', nombre: 'Carro' }],
+      apartados: [{ id: 'a1', nombre: 'SOAT' }],
+    });
+    expect(plan).toHaveLength(3);
+    expect(plan.every(d => d.monto === 0)).toBe(true);
+  });
+
+  it('sin destinos devuelve un plan vacío', () => {
+    expect(construirPlanAhorro({ budget: 500_000, fondo: null })).toEqual([]);
+  });
+});
+
+// ── resumirPlanDistribucion() (MC.4a) ─────────────────────────────
+describe('resumirPlanDistribucion()', () => {
+  it('suma lo asignado y calcula lo que queda del ingreso', () => {
+    const r = resumirPlanDistribucion(3_000_000, [{ monto: 400_000 }, { monto: 200_000 }]);
+    expect(r.asignado).toBe(600_000);
+    expect(r.sinAsignar).toBe(2_400_000);
+    expect(r.excede).toBe(false);
+  });
+
+  it('marca excede cuando lo asignado supera el ingreso', () => {
+    const r = resumirPlanDistribucion(500_000, [{ monto: 400_000 }, { monto: 300_000 }]);
+    expect(r.excede).toBe(true);
+    expect(r.sinAsignar).toBe(0);
+  });
+
+  it('ignora montos no numéricos y trata el plan vacío como 0', () => {
+    expect(resumirPlanDistribucion(1_000_000, [{ monto: NaN }, {}]).asignado).toBe(0);
+    expect(resumirPlanDistribucion(1_000_000, []).sinAsignar).toBe(1_000_000);
   });
 });

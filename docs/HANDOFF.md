@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (docs: ADR 012, diseño de auto-distribución de ingresos "Distribuir mi ingreso", MC.4)
+> Última actualización: 2026-06-29 (feat(tesoreria): "Distribuir mi ingreso" grupo Ahorro + undo, ADR 012 MC.4a)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): "Distribuir mi ingreso", grupo Ahorro + undo (ADR 012, MC.4a) · 2026-06-29
+
+Primer slice de implementación de la auto-distribución de ingresos. En "¿Cómo distribuir mi dinero?" aparece un botón "💸 Distribuir mi ingreso" (solo si hay destinos de ahorro fondeables) que abre un panel inline editable: monto a distribuir + una fila por destino del grupo Ahorro (Fondo de emergencia, Metas, Apartados) con toggle y monto, más un resumen en vivo ("A tus ahorros / Queda disponible") que bloquea el confirmar si se asigna más que el ingreso. Al confirmar: se elige la cuenta de origen (`resolverCuenta`, patrón 0/1/varias), se toma un **snapshot** de las slices afectadas, se **acredita el ingreso** a la cuenta y se descuenta solo lo que físicamente sale (metas + apartados; el aporte al fondo no descuenta, ADR 009), y cada dominio aplica su porción por **EventBus** (`distribucion:aplicar`): ahorro registra el aporte al fondo, metas/apartados suman a su `montoActual` y recalculan completado con su propia lógica (ADN #10, sin imports cruzados). Un **snackbar "Deshacer"** restaura el snapshot de forma atómica. Pendiente del default "fondo primero": sugiere todo el presupuesto de ahorro al fondo si está incompleto; el usuario redistribuye. Verificado: 8 tests de lógica nuevos (1468 total), test de integración desechable en happy-dom (apply + undo cross-domain), 57/57 E2E, y verificación en el navegador real (panel renderiza con nombres, distribuir deja la cuenta en 8M = 5M+3M sin descontar el fondo, aporte de 600k al fondo, snackbar visible). Se corrigió un bug de layout: el input de monto se estiraba a 100% y aplastaba el nombre del destino; `flex: 0 0 9rem` (flex-basis fija gana sobre `.input{width:100%}` en flexbox). SW v202 → v203. **Pendientes:** MC.4b (deudas), MC.4c (filas informativas necesidades/estilo de vida), MC.4d (de-duplicación + mapeo), MC.4e (inversiones).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirPlanAhorro` (default fondo-first) + `resumirPlanDistribucion` (puras). |
+| `modules/dominio/tesoreria/view.js` | Botón "Distribuir mi ingreso" + panel inline (`_renderPanelDistribuir`). |
+| `modules/dominio/tesoreria/index.js` | Orquestación: snapshot/credit/decrement, emit `distribucion:aplicar`, recalc en vivo, snackbar undo. |
+| `modules/dominio/ahorro/index.js` | Suscriptor `distribucion:aplicar`: aporta al fondo (sin descontar cuenta). |
+| `modules/dominio/metas/index.js` | Suscriptor: suma a la meta y recalcula `completada`. |
+| `modules/dominio/apartados/index.js` | Suscriptor: suma al apartado y recalcula `completado`. |
+| `styles/components/forms.css` | Panel `.distribuir-ingreso` + `.snackbar` (con fix `flex: 0 0 9rem`). |
+| `tests/unit/tesoreria.test.js` | 9 tests nuevos. |
+| `service-worker.js` | `CACHE_NAME` v202 → v203. |
+
+---
 
 ### docs: ADR 012, diseño de auto-distribución de ingresos (MC.4) · 2026-06-29
 
@@ -85,17 +103,6 @@ Segunda tarea del backlog "Mis cuentas + distribución". Al hacer clic en un chi
 | `modules/dominio/tesoreria/view.js` | `_renderDistribucion` envuelve razón + filas + alertas + ctas en `<div class="distribucion-rows">`, fuera de la barra de chips. |
 | `styles/components/domain.css` | Nuevas `.distribucion-rows` + `@keyframes distribucion-rows-in`. |
 | `service-worker.js` | `CACHE_NAME` v199 → v200. |
-
----
-
-### style(cuentas): textos de ayuda simplificados en el form de nueva cuenta (MC.1) · 2026-06-28
-
-Primera tarea del backlog "Mis cuentas + distribución" pedido por el usuario. El form de nueva/editar cuenta tenía dos párrafos de explicación debajo de sus checkboxes: uno describía qué es el 4x1000 (impuesto, exenciones de nómina/AFC) y otro aclaraba que la cuota de manejo era opcional. El usuario los consideró innecesarios: la mayoría ya sabe qué es el 4x1000, y un switch ya comunica "opcional" por sí solo. Se eliminaron ambos párrafos `<p class="form-hint form-hint--muted">`, dejando solo la pregunta de cada checkbox. Cambio de copy puro, sin tocar lógica ni `name`/`id` de los inputs. Verificado: 1450/1450 unit + integración, lint limpio, y render real de `renderFormCuenta()` confirmado en happy-dom (las dos preguntas se conservan, las dos explicaciones desaparecen). El preview del entorno seguía sin cargar la app (mismo artefacto de sesiones anteriores), así que la verificación fue por render directo en vez de captura visual. SW v198 → v199.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/view.js` | Eliminados los dos `<p class="form-hint form-hint--muted">` del 4x1000 y de la cuota de manejo en `renderFormCuenta`. |
-| `service-worker.js` | `CACHE_NAME` v198 → v199. |
 
 ---
 

@@ -186,6 +186,77 @@ form:not(.config-form) .form-group:not(:first-child) {
 .distribucion-personalizada .btn {
   margin-top: var(--fk-space-2);
 }
+
+/* Panel "Distribuir mi ingreso" (ADR 012, MC.4a). Mismo patrón de fieldset
+   condicional que .distribucion-personalizada: oculto por defecto, un botón lo
+   despliega. Cada destino es una fila con toggle (incluir) y monto editable. */
+.distribuir__abrir {
+  margin-top: var(--fk-space-3);
+}
+.distribuir-ingreso {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-3);
+  margin: var(--fk-space-3) 0 0;
+  background: var(--fk-bg-hover);
+}
+.distribuir-ingreso[hidden] {
+  display: none;
+}
+.distribuir-ingreso legend {
+  padding: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin-bottom: var(--fk-space-2);
+}
+.distribuir-ingreso__destinos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+  margin: var(--fk-space-2) 0;
+}
+.distribuir__fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+.distribuir__toggle {
+  flex: 1;
+  min-width: 0;
+}
+/* flex-basis fija (no auto) para que gane sobre el `width: 100%` de .input en
+   el contexto flex; si no, el monto se estira y aplasta el nombre del destino. */
+.distribuir__monto {
+  flex: 0 0 9rem;
+}
+.distribuir__monto:disabled {
+  opacity: 0.5;
+}
+
+/* Snackbar no bloqueante (ej. "Distribución aplicada. Deshacer"). Vive en
+   document.body, sobrevive a los re-render del nudge. */
+.snackbar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--fk-space-5);
+  transform: translateX(-50%);
+  z-index: var(--fk-z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  max-width: calc(100vw - var(--fk-space-6));
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  border: 1px solid var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  box-shadow: var(--fk-shadow-lg);
+}
+.snackbar__msg {
+  font-size: var(--fk-text-sm);
+}
+
 .list-item__hint {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);

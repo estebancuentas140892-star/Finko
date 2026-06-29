@@ -182,6 +182,20 @@ export function initMetas() {
     }
   });
 
+  // "Distribuir mi ingreso" (ADR 012, MC.4a): aplica los abonos a metas del plan.
+  // Solo suma a montoActual y recalcula `completada`; el descuento de la cuenta
+  // de origen lo hace tesorería de forma centralizada (no aquí).
+  EventBus.on('distribucion:aplicar', ({ items }) => {
+    const abonos = (items ?? []).filter(i => i.tipo === 'meta' && i.monto > 0);
+    for (const it of abonos) {
+      const meta = S.metas.find(m => m.id === it.id);
+      if (!meta) continue;
+      const nuevoMonto = (meta.montoActual ?? 0) + it.monto;
+      const { completada } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
+      editar('metas', it.id, { montoActual: nuevoMonto, completada });
+    }
+  });
+
   // Re-render al navegar a #metas - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {

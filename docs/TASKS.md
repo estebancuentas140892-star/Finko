@@ -56,8 +56,8 @@ Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más
 ✅ **MC.4 (diseño)** - ADR 012 escrito: auto-distribución de ingresos "Distribuir mi ingreso". Decisiones: híbrido (mueve lo fondeable, informa lo demás), acredita el ingreso y reparte, confirmaciones parciales, orquestación por EventBus + undo por snapshot - 2026-06-29. Ver [ADR 012](DECISIONS/012-auto-distribucion-ingresos.md).
 
 Slices de implementación de MC.4 (smallest-first, ver ADR 012):
-- **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot. **Siguiente sugerido.**
-- **MC.4b** - Sumar Deudas como destino fondeable (abono real).
+- ✅ **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+- **MC.4b** - Sumar Deudas como destino fondeable (abono real). **Siguiente sugerido.**
 - **MC.4c** - Filas informativas de Necesidades y Estilo de vida (solo monto de referencia).
 - **MC.4d** - Guard de de-duplicación ("ya distribuiste tu quincena") + silenciar el nudge tras distribuir + persistir mapeo de destinos preferidos.
 - **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable.

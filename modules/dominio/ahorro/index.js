@@ -404,6 +404,23 @@ export function initAhorro() {
     }
   });
 
+  // "Distribuir mi ingreso" (ADR 012, MC.4a): tesorería emite el plan y cada
+  // dominio aplica su porción. Aquí, los aportes al fondo de emergencia. El
+  // aporte NO descuenta cuenta (su dinero "se queda" donde está, ADR 009):
+  // tesorería solo descuenta lo de metas/apartados, no lo del fondo.
+  EventBus.on('distribucion:aplicar', ({ items }) => {
+    const aportesFondo = (items ?? []).filter(i => i.tipo === 'fondo' && i.monto > 0);
+    if (aportesFondo.length === 0) return;
+    if (!S.ahorro?.fondoEmergencia?.activo) return;
+    if (!Array.isArray(S.ahorro.aportes)) S.ahorro.aportes = [];
+    for (const it of aportesFondo) {
+      S.ahorro.aportes.push({ id: genId(), monto: it.monto, fecha: hoy(), nota: 'Distribución de ingreso' });
+    }
+    _actualizarCompletado();
+    save();
+    EventBus.emit('state:change', { section: 'ahorro' });
+  });
+
   // Para que renderAll() también dibuje esta sección.
   registrarRender(_renderAhorroBound);
 

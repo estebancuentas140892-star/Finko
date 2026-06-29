@@ -23,6 +23,7 @@ import {
   sugerirDistribucionIngreso,
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,
+  construirPlanAhorro,
 } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -295,15 +296,96 @@ export function renderDistribucionIngreso() {
     distribucionPersonalizada,
   });
 
-  el.innerHTML = dist ? _renderDistribucion(dist, presetId, distribucionPersonalizada) : '';
+  // Destinos fondeables del grupo Ahorro para "Distribuir mi ingreso" (MC.4a):
+  // fondo de emergencia (si está activo), metas y apartados aún no completados.
+  const fondo = S.ahorro?.fondoEmergencia;
+  const fondoParaPlan = (fondo && fondo.activo)
+    ? { activo: true, completado: fondo.completado === true }
+    : null;
+  const metasIncompletas = (S.metas ?? [])
+    .filter(m => m.completada !== true)
+    .map(m => ({ id: m.id, nombre: m.nombre }));
+  const apartadosIncompletos = (S.apartados ?? [])
+    .filter(a => a.completado !== true)
+    .map(a => ({ id: a.id, nombre: a.nombre }));
+
+  const destinosAhorro = construirPlanAhorro({
+    budget:    dist.split.ahorro.monto,
+    fondo:     fondoParaPlan,
+    metas:     metasIncompletas,
+    apartados: apartadosIncompletos,
+  });
+
+  el.innerHTML = dist
+    ? _renderDistribucion(dist, presetId, distribucionPersonalizada, {
+        montoIngreso: ingresoMensual,
+        ahorroPct:    dist.split.ahorro.pct,
+        ahorroBudget: dist.split.ahorro.monto,
+        destinosAhorro,
+      })
+    : '';
+}
+
+/**
+ * Botón "Distribuir mi ingreso" + panel inline editable del grupo Ahorro (MC.4a).
+ * El panel arranca oculto; el botón lo despliega. Cada destino es una fila con
+ * toggle (incluir) y monto editable; el resumen en vivo y el botón "Distribuir"
+ * se manejan desde index.js. Devuelve '' si no hay destinos de ahorro fondeables.
+ *
+ * @param {number} montoIngreso
+ * @param {number} ahorroPct
+ * @param {number} ahorroBudget
+ * @param {Array<{tipo:string, id:string|null, nombre:string, monto:number}>} destinos
+ * @returns {string}
+ */
+function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinos) {
+  if (!destinos || destinos.length === 0) return '';
+
+  const filas = destinos.map(d => `
+        <div class="distribuir__fila">
+          <label class="checkbox-row distribuir__toggle">
+            <input type="checkbox" data-dist-destino-toggle checked />
+            <span>${_esc(d.nombre)}</span>
+          </label>
+          <input type="number" class="input distribuir__monto"
+                 min="0" step="10000" inputmode="numeric" value="${d.monto}"
+                 aria-label="Monto para ${_esc(d.nombre)}"
+                 data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"
+                 data-action="recalcular-distribucion" />
+        </div>`).join('');
+
+  return `
+        <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
+                data-action="toggle-distribuir-ingreso"
+                aria-expanded="false" aria-controls="distribuir-ingreso-panel">
+          💸 Distribuir mi ingreso
+        </button>
+        <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso" hidden>
+          <legend>Reparte hacia tus ahorros. El resto queda disponible en tu cuenta.</legend>
+          <div class="form-group">
+            <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
+            <input id="distribuir-monto" type="number" class="input"
+                   min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
+                   data-action="recalcular-distribucion" />
+          </div>
+          <p class="form-hint">Sugerencia: ${f(ahorroBudget)} a ahorro (${ahorroPct}%). Ajusta cada destino:</p>
+          <div class="distribuir-ingreso__destinos">
+            ${filas}
+          </div>
+          <p id="distribuir-resumen" class="form-hint" role="status"></p>
+          <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion">
+            Distribuir
+          </button>
+        </fieldset>`;
 }
 
 /**
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
  * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, destinosAhorro:Array}} distribuir
  */
-function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada) {
+function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada, distribuir) {
   const { necesidades, estiloVida, ahorro } = split;
 
   const presetChips = PRESETS_DISTRIBUCION.map(p => {
@@ -400,6 +482,7 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
           ${alertasHtml}
           ${ctasHtml}
         </div>
+        ${_renderPanelDistribuir(distribuir.montoIngreso, distribuir.ahorroPct, distribuir.ahorroBudget, distribuir.destinosAhorro)}
       </div>
     </div>`;
 }

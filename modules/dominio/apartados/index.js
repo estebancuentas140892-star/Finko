@@ -290,6 +290,20 @@ export function initApartados() {
     }
   });
 
+  // "Distribuir mi ingreso" (ADR 012, MC.4a): aplica los aportes a apartados del
+  // plan. Solo suma a montoActual y recalcula `completado`; el descuento de la
+  // cuenta de origen lo hace tesorería de forma centralizada (no aquí).
+  EventBus.on('distribucion:aplicar', ({ items }) => {
+    const aportes = (items ?? []).filter(i => i.tipo === 'apartado' && i.monto > 0);
+    for (const it of aportes) {
+      const apartado = S.apartados.find(a => a.id === it.id);
+      if (!apartado) continue;
+      const nuevoMonto = (apartado.montoActual ?? 0) + it.monto;
+      const { completado } = calcularProgreso({ ...apartado, montoActual: nuevoMonto });
+      editar('apartados', it.id, { montoActual: nuevoMonto, completado });
+    }
+  });
+
   // Re-render al navegar a #apartados (no hay state:change que lo dispare).
   window.addEventListener('hashchange', () => {
     renderSmart(renderListaApartados, 'apartados');
