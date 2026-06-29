@@ -8,7 +8,7 @@ import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { gastosMes, filtrarGastos, gastosPendientes, totalGastos } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -154,7 +154,10 @@ export function renderListaGastos() {
     return;
   }
 
-  el.innerHTML = _renderResumen(filtrados) + filtrados.map(_renderGastoItem).join('');
+  // Más recientes primero: el último gasto registrado queda al tope, visible
+  // sin desplazarse. El total del resumen es independiente del orden.
+  const ordenados = ordenarRecientesPrimero(filtrados);
+  el.innerHTML = _renderResumen(ordenados) + ordenados.map(_renderGastoItem).join('');
 }
 
 /**

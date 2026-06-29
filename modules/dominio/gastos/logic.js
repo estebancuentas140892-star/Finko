@@ -30,6 +30,24 @@ export function gastosMes(gastos, anio, mes) {
 }
 
 /**
+ * Ordena gastos para mostrar primero los más recientes: por fecha descendente
+ * y, a igualdad de fecha, el último registrado primero. El desempate sale del
+ * orden de inserción inverso: `guardar` hace `push` (último al final) y `genId`
+ * es aleatorio (no ordenable por tiempo), así que la posición en el array es la
+ * única señal de "cuál se registró después". No muta el array recibido.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @returns {import('../../core/state.js').Gasto[]}
+ */
+export function ordenarRecientesPrimero(gastos) {
+  // reverse() deja el último registrado primero; el sort estable (ES2019)
+  // conserva ese orden dentro de los gastos con la misma fecha.
+  return [...gastos]
+    .reverse()
+    .sort((a, b) => (b.fecha ?? '').localeCompare(a.fecha ?? ''));
+}
+
+/**
  * Suma los montos de un array de gastos.
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @returns {number} Total en COP.

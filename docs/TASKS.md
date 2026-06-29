@@ -37,7 +37,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-El pedido del Dashboard quedó cerrado (2026-06-28): "gastos por organizar" se subió junto al hero y el hero pasa a ancho completo cuando no hay pendientes (sin hueco). No hay una tarea de UI/producto activa. A la espera de feedback del usuario desde su celular.
+**Tarea 2 (Gastos) - guía de categorías de gasto fijo.** Segunda mitad del pedido de Gastos. Algunas categorías (Servicios públicos, Vivienda, etc.) suelen corresponder a gastos fijos o compromisos. En vez de quitarlas, orientar al usuario: al elegir una de esas categorías al registrar un gasto, mostrar un mensaje no bloqueante tipo "Esta categoría suele corresponder a un gasto fijo. ¿Registrarlo como ocasional o agregarlo a Compromisos?". Requiere: (1) decidir qué categorías marcar como "típicamente fijas" (revisar `CATEGORIAS_GASTO_USUARIO` en `constants.js`), (2) un nudge en el form de gasto que reaccione a la categoría elegida sin limitar la decisión, con atajo a Compromisos. Primera mitad (orden recientes primero) cerrada 2026-06-28.
 
 Pendientes no urgentes (mantenimiento):
 

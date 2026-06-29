@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): lista con los más recientes primero · 2026-06-28
+
+Primera de dos mejoras de la sección Gastos pedidas por el usuario. La lista mostraba los gastos en orden de inserción (el último registrado quedaba al fondo, había que desplazarse para verlo). Ahora se muestran los más recientes primero: por fecha descendente y, a igualdad de fecha, el último registrado al tope. El desempate sale del orden de inserción inverso, porque `guardar` hace `push` y `genId` usa `crypto.randomUUID()` (no ordenable por tiempo): la posición en el array es la única señal de "cuál se registró después". Se resolvió con una función pura nueva `ordenarRecientesPrimero` (sort estable ES2019 sobre el array invertido) en `gastos/logic.js`, que la vista aplica antes de renderizar la lista del mes (el total del resumen es independiente del orden). Verificado: 5 tests unitarios nuevos (fecha desc, empate por inserción inversa, criterio combinado, no muta, vacío) + ejecución de la función servida en el navegador (seed de 4 gastos → orden `g2, g4, g3, g1` correcto) y confirmación de que la vista servida la usa. 1438 → 1443 tests. SW v193 → v194.
+
+- **`modules/dominio/gastos/logic.js`**: nueva `ordenarRecientesPrimero(gastos)` (pura, no muta; fecha desc + desempate por inserción inversa).
+- **`modules/dominio/gastos/view.js`**: `renderListaGastos` ordena `filtrados` con `ordenarRecientesPrimero` antes de mapear (resumen + ítems sobre el array ordenado).
+- **`tests/unit/gastos.test.js`**: 5 tests de `ordenarRecientesPrimero`.
+- **`service-worker.js`**: v193 → v194.
+
+---
+
 ### style(dashboard): hero a ancho completo cuando no hay gastos por organizar · 2026-06-28
 
 Segunda y última mejora del Dashboard pedida por el usuario, cierra el pedido. Al subir la tarjeta "gastos por organizar" junto al hero (feat anterior), quedaba un hueco a la derecha del hero (las 4 columnas que liberaron los accesos rápidos al eliminarse) en el caso común sin pendientes: la tarjeta queda `[hidden]` y el hero, a `span 8`, dejaba aire muerto. Ahora, cuando la tarjeta está oculta, el hero se expande a `span 12` (todo el ancho) y no queda hueco. Se resolvió con CSS puro usando `:has()` sobre el atributo `[hidden]` del panel (`.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero`), el mismo patrón que `.list-item__icon:has(.bank-avatar)` de atoms.css: el layout reacciona solo al estado del panel sin que el dominio gastos sepa nada del bento (cero acoplamiento, cero JS). En tablet (6 cols) y mobile (1 col), `span 12` se recorta a la fila completa, así que el hero no cambia fuera de desktop. Se evaluaron y descartaron las otras dos opciones: mover un panel dinámico al hueco (los paneles son `span 6` y también `[hidden]` hasta tener datos, no rellenan de forma fiable) y dejar el aire (el usuario marcó el hueco como problema estético). Verificado por medición en navegador: desktop sin pendientes hero a `span 12` (1079px, sin hueco), desktop con pendientes hero a `span 8` (714px, tarjeta al lado), mobile hero a ancho de columna en ambos estados (sin regresión). 1438/1438 tests, sin errores de consola. SW v192 → v193.

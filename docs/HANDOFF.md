@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(dashboard): hero a ancho completo cuando no hay gastos por organizar)
+> Última actualización: 2026-06-28 (feat(gastos): lista con los más recientes primero)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos): lista con los más recientes primero · 2026-06-28
+
+Primera de dos mejoras de Gastos pedidas por el usuario. La lista mostraba los gastos en orden de inserción (el último registrado al fondo). Ahora van los más recientes primero: fecha descendente y, a igualdad de fecha, el último registrado al tope (desempate por orden de inserción inverso, ya que `guardar` hace `push` y `genId` es aleatorio). Función pura nueva `ordenarRecientesPrimero` en `gastos/logic.js`, aplicada por la vista antes de renderizar. Verificado: 5 tests nuevos + ejecución de la función servida en el navegador (orden correcto); el render en vivo no se pudo capturar porque el contexto del preview quedó envenenado tras limpiar caché varias veces (artefacto del entorno, no del código: la suite importa `view.js` y pasa). 1438 → 1443 tests. SW v193 → v194. **Pendiente (Tarea 2):** guía de categorías de gasto fijo (nudge no bloqueante al elegir Servicios públicos, Vivienda, etc.).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/logic.js` | Nueva `ordenarRecientesPrimero` (pura: fecha desc + desempate por inserción inversa, no muta). |
+| `modules/dominio/gastos/view.js` | `renderListaGastos` ordena con `ordenarRecientesPrimero` antes de mapear. |
+| `tests/unit/gastos.test.js` | 5 tests de `ordenarRecientesPrimero`. |
+| `service-worker.js` | `CACHE_NAME` v193 → v194. |
+
+---
 
 ### style(dashboard): hero a ancho completo cuando no hay gastos por organizar · 2026-06-28
 
@@ -85,18 +98,6 @@ Cierra la serie "selector de tarjetas + reparto solo si no alcanza" en los 4 flu
 | `modules/dominio/compromisos/logic.js` | `validarAbono` vuelve a exigir `cuentaId`. |
 | `modules/dominio/compromisos/index.js` | `_guardarAbono` usa `resolverPagoConPreferida` en vez de `resolverPagoMultiCuenta`. |
 | `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` actualizados al nuevo contrato (cuentaId requerido, selector presente). |
-
----
-
-### feat(agenda): selector de tarjetas + reparto-fallback en "Marcar pagado" (3/4 flujos) · 2026-06-28
-
-Al marcar un gasto fijo como pagado, con varias cuentas ahora aparece el mismo selector de tarjetas (avatar de entidad, nombre y saldo) que en Gastos: se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". Con una sola cuenta no pregunta (regla de cuenta única); si esa cuenta no cubre, pide confirmación de sobregiro. Reusa `renderSelectorCuenta` + `resolverPagoConPreferida`. Verificado en navegador: cubre (Bancolombia $2M) → un gasto directo, sin picker; no cubre (Nequi $100k) → Nequi $100k + Bancolombia $400k, total $500k sin negativos. **Pendiente:** 4/4 Deudas (Abonar). SW v186 → v187. Tests 1438/1438.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/infra/cuenta-helper.js` | Nueva `resolverPagoConSelector` (0/1/varias: selector de tarjetas + reparto-fallback) + `_mostrarSelectorPreferida`. |
-| `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa `resolverPagoConSelector` en vez de `resolverPagoMultiCuenta`. |
-| `tests/unit/cuenta-helper.test.js` | 5 tests de `resolverPagoConSelector` (0/1/varias, cubre, reparto encadenado). |
 
 ---
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   gastosMes,
+  ordenarRecientesPrimero,
   totalGastos,
   totalGastosMes,
   gastosPorCategoria,
@@ -67,6 +68,50 @@ describe('gastosMes()', () => {
 
   it('devuelve vacío con array de gastos vacío', () => {
     expect(gastosMes([], 2026, 5)).toEqual([]);
+  });
+});
+
+// ── ordenarRecientesPrimero() ────────────────────────────────────
+
+describe('ordenarRecientesPrimero()', () => {
+  it('ordena por fecha descendente (más reciente primero)', () => {
+    const gastos = [
+      gastoBase({ id: 'g1', fecha: '2026-05-02' }),
+      gastoBase({ id: 'g2', fecha: '2026-05-20' }),
+      gastoBase({ id: 'g3', fecha: '2026-05-11' }),
+    ];
+    expect(ordenarRecientesPrimero(gastos).map(g => g.id)).toEqual(['g2', 'g3', 'g1']);
+  });
+
+  it('a igualdad de fecha, deja primero el último registrado (orden de inserción inverso)', () => {
+    const gastos = [
+      gastoBase({ id: 'viejo',    fecha: '2026-05-10' }),
+      gastoBase({ id: 'medio',    fecha: '2026-05-10' }),
+      gastoBase({ id: 'reciente', fecha: '2026-05-10' }),
+    ];
+    expect(ordenarRecientesPrimero(gastos).map(g => g.id)).toEqual(['reciente', 'medio', 'viejo']);
+  });
+
+  it('combina ambos criterios: fecha desc y, en empate, último registrado primero', () => {
+    const gastos = [
+      gastoBase({ id: 'a', fecha: '2026-05-10' }),
+      gastoBase({ id: 'b', fecha: '2026-05-15' }),
+      gastoBase({ id: 'c', fecha: '2026-05-10' }),
+    ];
+    expect(ordenarRecientesPrimero(gastos).map(g => g.id)).toEqual(['b', 'c', 'a']);
+  });
+
+  it('no muta el array recibido', () => {
+    const gastos = [
+      gastoBase({ id: 'g1', fecha: '2026-05-02' }),
+      gastoBase({ id: 'g2', fecha: '2026-05-20' }),
+    ];
+    ordenarRecientesPrimero(gastos);
+    expect(gastos.map(g => g.id)).toEqual(['g1', 'g2']);
+  });
+
+  it('devuelve vacío con array vacío', () => {
+    expect(ordenarRecientesPrimero([])).toEqual([]);
   });
 });
 
