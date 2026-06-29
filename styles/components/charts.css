@@ -809,6 +809,29 @@
   background: color-mix(in srgb, var(--fk-info) 12%, transparent);
   border-left-color: var(--fk-info);
 }
+/* D.4: bloque "¿Cómo elegir?" con una frase por estrategia (decisión por prioridad). */
+.estrategia-card__decidir {
+  margin: 0;
+  padding: var(--fk-space-3);
+  background: color-mix(in srgb, var(--fk-info) 12%, transparent);
+  border-left: 3px solid var(--fk-info);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+}
+.estrategia-card__decidir-titulo {
+  margin: 0 0 var(--fk-space-2) 0;
+  font-weight: 700;
+}
+.estrategia-card__decidir-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--fk-space-2);
+}
+.estrategia-card__decidir-item {
+  margin: 0;
+}
 @media (max-width: 480px) {
   .estrategia-card-pick { padding: var(--fk-space-3); min-height: 84px; }
   .estrategia-card-pick__icono { font-size: 1.5rem; }

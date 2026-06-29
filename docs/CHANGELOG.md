@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): comparación explicada Avalancha vs Bola de nieve (D.4) · 2026-06-29
+
+La comparativa de la card de estrategia deja de ser un solo dato y se convierte en una ayuda para **decidir según la prioridad del usuario**, sin lógica financiera nueva. Cuando las dos estrategias tienen un argumento real, aparece un bloque "¿Cómo elegir?" con una frase por estrategia:
+
+- 💰 **Avalancha**: cuánto ahorras en intereses (y cuánto antes terminas, si difiere). "Te conviene si tu prioridad es pagar lo menos posible."
+- 🏆 **Bola de nieve**: cuánto antes cierras tu primera deuda. "Te conviene si necesitas un avance temprano que te motive a seguir."
+
+El "cuánto antes" de Bola de nieve se calcula comparando en qué mes cada estrategia cierra su primera deuda (`mesPagado` que la simulación ya devuelve en `orden[]`): no se simula nada nuevo, solo se lee un dato existente. Ejemplo real (Tarjeta 40% $5M + crédito 10% $500k, $100k extra): "Avalancha: ahorras $116.188 en intereses y terminas 1 mes antes" / "Bola de nieve: cierras tu primera deuda 7 meses antes".
+
+Escenarios cubiertos sin tocar el resto: si solo Avalancha aventaja, se conserva el banner verde de ahorro de antes; si cuestan lo mismo pero Bola de nieve cierra antes su primera deuda, se sugiere por el avance rápido; si es empate puro, se mantienen los mensajes de "elegir por preferencia" (con extra) o "prueba un pago extra" (sin extra). En plan inviable la comparativa sigue sin mostrarse (hereda el guard de D.1: no resta cifras divergentes).
+
+Verificado: 3 tests de render nuevos (1604 → 1607) sobre `renderImpactoAvalancha` (bloque de decisión con las dos frases; empate con extra; empate sin extra) + suite E2E `estrategia-pago` 12/12 verde + lint limpio. SW v219 → v220.
+
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: `_renderComparativa` reescrita en 4 escenarios + helper `_mesPrimeraDeudaCerrada` (lee `orden[].mesPagado`, sin simular).
+- **`styles/components/charts.css`**: `.estrategia-card__decidir*` (bloque "¿Cómo elegir?" con una frase por estrategia).
+- **`tests/unit/compromisos.test.js`**: 3 tests nuevos.
+- **`service-worker.js`**: v219 → v220.
+
+---
+
 ### feat(deudas): consolidar deudas interactivo + aplicar (D.3b) · 2026-06-29
 
 Segundo y último slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). En el bloque "Tu plan no se sostiene", la salida "consolidar las deudas" pasa de texto plano a herramienta interactiva (🏦 Consolidar tus deudas):

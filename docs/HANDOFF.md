@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (fix(compromisos): impacto de simulación sin cifras absurdas, D.1)
+> Última actualización: 2026-06-29 (feat(deudas): comparación explicada Avalancha vs Bola de nieve, D.4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1604/1604 verdes |
+| Tests unitarios + integración | 1607/1607 verdes |
 | Tests E2E | 61/61 verde. Suites: `smoke` 28 tests, `estrategia-pago` 12 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): comparación explicada Avalancha vs Bola de nieve (D.4) · 2026-06-29
+
+La comparativa de la card de estrategia ahora ayuda a **decidir según prioridad**, sin lógica nueva. Cuando las dos estrategias tienen un argumento real, aparece un bloque "¿Cómo elegir?" con una frase por estrategia: Avalancha (cuánto ahorras en intereses y, si difiere, cuánto antes terminas) y Bola de nieve (cuánto antes cierras tu primera deuda). El "cuánto antes" sale de comparar el `mesPagado` de la primera deuda que cierra cada estrategia (dato que la simulación ya devuelve en `orden[]`), no de simular de nuevo. Si solo Avalancha aventaja se conserva el banner verde de ahorro; si cuestan lo mismo pero Bola de nieve cierra antes, se sugiere por el avance rápido; el empate puro mantiene los mensajes previos. En plan inviable la comparativa sigue sin mostrarse (guard de D.1). Verificado: 3 tests de render nuevos (1604 → 1607) + E2E `estrategia-pago` 12/12 + lint limpio. SW v219 → v220.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | `_renderComparativa` en 4 escenarios + helper `_mesPrimeraDeudaCerrada`. |
+| `styles/components/charts.css` | `.estrategia-card__decidir*` (bloque "¿Cómo elegir?"). |
+| `tests/unit/compromisos.test.js` | 3 tests de render D.4. |
+| `service-worker.js` | v219 → v220. |
+
+---
 
 ### feat(deudas): consolidar deudas interactivo + aplicar (D.3b) · 2026-06-29
 
@@ -97,16 +110,6 @@ Implementación del primer slice de la Revisión D.2 ([ADR 011](DECISIONS/011-un
 | `tests/unit/compromisos.test.js` | 4 tests de jerarquía D.2a (picker antes de acelerador, `<details>` colapsado/abierto, input dentro). |
 | `tests/e2e/estrategia-pago.test.js` | Test 5 abre el `<details>` antes de llenar el extra. |
 | `service-worker.js` | v215 → v216. |
-
----
-
-### docs(deudas): ADR 011 revisado, replanteada la jerarquía de la simulación (D.2) · 2026-06-29
-
-Tarea de diseño (sin código). El usuario observó que el pago extra mensual aparece como protagonista arriba de la card de Deudas, antes de elegir estrategia. Se revisó [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md) para **sustituir el slice S1**: el eje principal vuelve a ser elegir **Avalancha vs Bola de nieve** (sube al tope), y el pago extra pasa a ser **contextual**: acelerador plegable ("¿Puedes pagar más rápido?", colapsado bajo el detalle) cuando el plan es viable, y **primer remedio** dentro del bloque "Tu plan no se sostiene" cuando Finko detecta deudas que crecen. Renegociar y consolidar quedan como las otras dos salidas del bloque inviable (texto hasta D.3). Decisiones cerradas con el usuario: alcance = solo ADR + slices; el pago extra se conserva como acelerador plegable en planes viables (no se elimina). Implementación dividida en D.2a (reordenar + acelerador plegable) y D.2b (remedio en plan inviable), ambas sin lógica nueva. Sin tests ni SW bump (no se tocó código).
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Sección "Revisión D.2": nueva jerarquía, S1 sustituido, slices D.2a/D.2b. |
 
 ---
 

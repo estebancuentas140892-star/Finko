@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1604/1604 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **D.3b** consolidar deudas interactivo + aplicar (crea el crédito nuevo y archiva las consolidadas). **Con esto ADR 011 queda completamente implementado.** Antes: D.3a renegociar la tasa. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **D.4** comparación explicada Avalancha vs Bola de nieve (bloque "¿Cómo elegir?" con una frase por estrategia, sin lógica nueva). Antes: D.3b consolidar deudas + aplicar, con lo que **ADR 011 quedó completamente implementado**. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -43,7 +43,7 @@ _(sin tarea activa)_
 - ✅ **D.3a / S4** - "Renegociar tasa" interactivo + aplicar (`simularRenegociacion`). 16 unit + 2 E2E. SW v218. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **D.3b / S5** - "Consolidar deudas" interactivo + aplicar (`simularConsolidacion`: crea el crédito nuevo y archiva las consolidadas). 12 unit + 2 E2E. SW v219. Ver [CHANGELOG](CHANGELOG.md).
 
-**Siguiente sugerido del backlog "Visión de Deudas": D.4** (comparación explicada Avalancha vs Bola de nieve, enriquecer el mensaje, Sonnet 4.6 - Medio). Luego D.5 (categorías de deuda en dos dimensiones, Opus 4.8 - Alto).
+**Siguiente sugerido del backlog "Visión de Deudas": D.5** (categorías de deuda en dos dimensiones, decisión de modelo de datos, Opus 4.8 - Alto). D.4 cerrada (ver abajo).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -55,7 +55,7 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 ✅ **D.3 (= ADR 011 S4/S5) - Convertir la simulación en acción.** Completa, corte vertical por herramienta: D.3a (renegociar tasa + aplicar) + D.3b (consolidar + aplicar). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **D.4 (mejora UI)** - Comparación explicada Avalancha vs Bola de nieve: además del resultado, frases que ayuden a decidir según prioridades ("con Avalancha ahorras $X más en intereses"; "con Bola de nieve cierras tu primera deuda un mes antes"). Ya existen `compararEstrategias` y `_renderComparativa`; es enriquecer el mensaje, no lógica nueva. Modelo: Sonnet 4.6 - Medio.
+✅ **D.4 (mejora UI)** - Comparación explicada Avalancha vs Bola de nieve: bloque "¿Cómo elegir?" con una frase por estrategia (Avalancha = ahorro en intereses y, si difiere, terminar antes; Bola de nieve = cerrar la primera deuda antes). El "cuánto antes" sale de comparar `mesPagado` de la primera deuda que cierra cada estrategia (dato ya devuelto en `orden[]`), sin lógica nueva. Conserva el banner verde cuando solo Avalancha aventaja y los mensajes de empate. 3 tests de render. SW v219 → v220 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **D.5 (evoluciona lo entregado)** - Categorías de deuda en **dos dimensiones**: hoy hay un solo campo "tipo de obligación" (`CATEGORIAS_DEUDA`, 12). El usuario propone separar **Tipo de deuda** (tarjeta, libre inversión, vivienda, educativo, vehículo, cooperativa, compra a cuotas, otra) y **Acreedor** (familiar, amigo, vecino, particular, natillera, banco, cooperativa, entidad financiera, empresa, otro). Decidir si reemplaza o complementa el campo actual y si el acreedor reemplaza la distinción entidad/personal. Posible schema bump + migración. Modelo: Opus 4.8 - Alto (decisión de modelo de datos).
 
@@ -164,4 +164,19 @@ Visión del usuario para que Apartados tenga un propósito claro y diferenciado 
 
 - **AP.4 (épica, requiere ADR)** - Recordatorios automáticos de aporte en Agenda al recibir el ingreso ("Hoy recibiste tu ingreso, recuerda apartar $X para el SOAT"). **Cuidar la duplicación:** "Distribuir mi ingreso" (MC.4) ya acredita el ingreso y reparte a los apartados al llegar el cobro, con nudge propio; y Apartados ya tiene nudge de proximidad (60 días). El ADR debe decidir si se extiende MC.4 o el nudge existente, o se crea un recordatorio nuevo en Agenda, sin solapar. Modelo: Opus 4.8 - Alto.
 
-- **AP.5 (diseño, requiere ADR)** - Taxonomía de categorías de toda la app: definir por escrito la identidad de cada sección para que no se solapen (Gastos = cotidianos e imprevistos; Agenda = pagos periódicos en fecha; Apartados = ahorro para gastos previsibles espaciados; Deudas = obligaciones con terceros; Ahorros = ahorro libre + metas). Conecta con la decisión previa "no fusionar, diferenciar por copy" (revisión UX jun-2026) y alimenta EP.0. Sin código. Modelo: Opus 4.8 - Alto.
+- **AP.5 (diseño, requiere ADR)** - Taxonomía de categorías de toda la app: definir por escrito la identidad de cada sección para que no se solapen (Gastos = cotidianos e imprevistos; Agenda = pagos periódicos en fecha; Apartados = ahorro para gastos previsibles espaciados; Deudas = obligaciones con terceros; Ahorros = ahorro libre + metas). Conecta con la decisión previa "no fusionar, diferenciar por copy" (revisión UX jun-2026) y alimenta EP.0. Sin código. Modelo: Opus 4.8 - Alto. **Nota:** AG.3 (abajo) es el insumo detallado de esta tarea; conviene fusionarlas en un solo ADR de taxonomía.
+
+### Backlog del usuario "Agenda + taxonomía de categorías" (2026-06-29)
+
+Observaciones del usuario sobre la sección Agenda y, a partir de ahí, una propuesta de taxonomía de categorías para toda la app. El hilo conductor: que el usuario entienda de forma natural dónde registrar cada movimiento sin pensarlo dos veces, porque las categorías son la base de muchas funciones (análisis, límites de gasto, recomendaciones, distribución inteligente).
+
+- **AG.1 (decisión + copy)** - Nombre de la sección: ¿**Agenda** o **Calendario**? El usuario se inclina por "Agenda" (transmite organizar compromisos y pagos futuros) frente a "Calendario" (suena a eventos o citas en general), pero quiere analizar cuál es más intuitivo. Entregable: decidir el término y, si cambia, renombrar etiqueta de nav + título de sección + copys. Sin lógica. Modelo: Sonnet 4.6 - Bajo (o Haiku si solo se confirma "Agenda" sin cambios).
+
+- **AG.2 (mejora UI, posiblemente ya hecha)** - Iconografía a la izquierda del nombre en las categorías de Agenda, consistente con el resto de la app. **Verificar primero:** desde el schema v17 ya existe `CATEGORIA_AGENDA_EMOJI` y el emoji ya se renderiza en el selector del form (`agenda/view.js:376`) y en la lista (`agenda/view.js:284`), igual que MC.9 hizo para ingresos. Si el usuario ya lo ve, AG.2 está cerrada; si pide más prominencia o ícono SVG en vez de emoji, es un ajuste de placement. No abrir trabajo nuevo sin confirmar la brecha. Modelo: Sonnet 4.6 - Bajo.
+
+- **AG.3 (diseño, requiere ADR) = insumo de AP.5** - Definir la identidad de cada sección y la lógica de categorías compartidas. Propuesta del usuario:
+  - **Agenda**: pagos recurrentes de la rutina (arriendo, administración, servicios públicos, plan de datos, internet, TV, mercado, gimnasio, suscripciones, seguros mensuales). Frecuencia definida (mensual, quincenal).
+  - **Gastos**: gasto variable del día a día (restaurantes, café, transporte, ropa, cine, entretenimiento, belleza, compras ocasionales, gastos hormiga).
+  - **Apartados**: gastos futuros previsibles que no llegan todos los meses (SOAT, técnico-mecánica, predial, cuido y arena de mascotas, aseo personal, útiles, matrícula, mantenimiento del vehículo, cumpleaños, navidad, vacaciones).
+  - **Metas**: objetivos de mediano/largo plazo (viajar, casa, computador, vehículo, casarse, negocio).
+  - **Lógica de solapamiento (clave):** no prohibir que una categoría exista en dos secciones, sino definir el **contexto**. Ejemplo del usuario: "Mercado" es recurrente y va en Agenda; pero una compra adicional e imprevista del mercado va en Gastos. El ADR debe documentar esta regla de contexto por sección. Conecta con MC.5 (límites de gasto) y la decisión "no fusionar, diferenciar por copy". Modelo: Opus 4.8 - Alto.

@@ -130,18 +130,42 @@ export function renderImpactoBolaNieve(resultado, deudas, extraMensual) {
 }
 
 /**
+ * Mes en que una estrategia cierra su PRIMERA deuda (la victoria más temprana,
+ * el argumento de impulso de Bola de nieve). Lee `orden[].mesPagado` que la
+ * simulación ya calculó; devuelve null si ninguna deuda alcanza a cerrarse.
+ *
+ * @param {{ orden: Array<{ mesPagado: number|null }> }} resultado
+ * @returns {number|null}
+ */
+function _mesPrimeraDeudaCerrada(resultado) {
+  const meses = (resultado.orden || [])
+    .map(o => o.mesPagado)
+    .filter(m => Number.isFinite(m));
+  return meses.length ? Math.min(...meses) : null;
+}
+
+/**
  * Renderiza el mensaje comparativo Avalancha vs Bola de nieve. Siempre devuelve
- * algo (los 3 escenarios están cubiertos), para que el usuario entienda el
- * impacto real de elegir Avalancha en su situación actual.
+ * algo cuando ambos planes cierran, para que el usuario decida según su
+ * prioridad: gastar lo menos posible (Avalancha) o sentir un avance temprano
+ * que motive (Bola de nieve).
+ *
+ * D.4 enriquece el mensaje con frases que ayudan a decidir, sin lógica nueva:
+ * además del ahorro de Avalancha, cuánto antes cierra Bola de nieve su primera
+ * deuda. El "antes" sale de comparar `mesPrimeraDeudaCerrada` de cada estrategia
+ * (datos ya devueltos por la simulación), no de simular de nuevo.
  *
  * Escenarios:
- *   1. Hay ahorro real (intereses o tiempo): banner verde con el monto y el
- *      tiempo ganado, si difiere.
- *   2. Empate con extra = 0: banner azul invitando a probar un pago extra
- *      mensual para que aparezca el ahorro (caso típico: deudas con tasa 0
- *      mezcladas que igualan ambas estrategias sin acelerador).
- *   3. Empate con extra > 0: banner azul explicando que ambas dan lo mismo
- *      en este caso y el usuario puede elegir por preferencia.
+ *   1. Las dos estrategias tienen una ventaja real (Avalancha ahorra dinero y
+ *      Bola de nieve cierra antes la primera deuda): bloque "¿Cómo elegir?" con
+ *      las dos frases, una por prioridad. Es el corazón de la decisión.
+ *   2. Solo Avalancha tiene ventaja (Bola de nieve no cierra antes su primera
+ *      deuda): banner verde con el ahorro, como antes.
+ *   3. Solo Bola de nieve aventaja (mismo costo, pero cierra antes): banner azul
+ *      sugiriéndola para ver avances más rápido sin pagar de más.
+ *   4. Empate sin ninguna ventaja: banner azul. Con extra > 0, ambas dan lo
+ *      mismo y se elige por preferencia; con extra = 0, invita a probar un pago
+ *      extra para que aparezca el ahorro de Avalancha.
  *
  * Solo se invoca desde Avalancha (es la estrategia óptima en términos
  * financieros; Bola de nieve no tiene "ahorro" que mostrar respecto a sí misma).
@@ -155,19 +179,52 @@ function _renderComparativa(resultado, extraMensual) {
   const { ahorroIntereses, ahorroMeses } = resultado;
   const hayAhorroIntereses = ahorroIntereses > 0.5;
   const hayAhorroTiempo    = ahorroMeses > 0;
-  const hayAhorro          = hayAhorroIntereses || hayAhorroTiempo;
+  const ventajaAvalancha   = hayAhorroIntereses || hayAhorroTiempo;
 
-  if (hayAhorro) {
+  // Ventaja de impulso de Bola de nieve: ¿cierra su primera deuda antes que
+  // Avalancha? La diferencia de meses es su argumento de decisión.
+  const primeraAvalancha = _mesPrimeraDeudaCerrada(resultado.avalancha);
+  const primeraBolaNieve = _mesPrimeraDeudaCerrada(resultado.bolaNieve);
+  const ventajaMesesBN = (primeraAvalancha != null && primeraBolaNieve != null)
+    ? primeraAvalancha - primeraBolaNieve
+    : 0;
+  const ventajaBolaNieve = ventajaMesesBN > 0;
+
+  // Escenario 1: las dos prioridades tienen un argumento real. Bloque de decisión.
+  if (ventajaAvalancha && ventajaBolaNieve) {
+    const partes = [];
+    if (hayAhorroIntereses) partes.push(`ahorras <strong>${f(ahorroIntereses)}</strong> en intereses`);
+    if (hayAhorroTiempo)    partes.push(`terminas <strong>${formatearDuracion(ahorroMeses)}</strong> antes`);
+    return `
+      <div class="estrategia-card__decidir">
+        <p class="estrategia-card__decidir-titulo">¿Cómo elegir?</p>
+        <ul class="estrategia-card__decidir-lista">
+          <li class="estrategia-card__decidir-item">💰 <strong>Avalancha</strong>: ${partes.join(' y ')}. Te conviene si tu prioridad es pagar lo menos posible.</li>
+          <li class="estrategia-card__decidir-item">🏆 <strong>Bola de nieve</strong>: cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes. Te conviene si necesitas un avance temprano que te motive a seguir.</li>
+        </ul>
+      </div>`;
+  }
+
+  // Escenario 2: solo Avalancha aventaja. Banner verde con el ahorro.
+  if (ventajaAvalancha) {
     const partes = [];
     if (hayAhorroIntereses) partes.push(`<strong>${f(ahorroIntereses)}</strong> en intereses`);
     if (hayAhorroTiempo)    partes.push(`<strong>${formatearDuracion(ahorroMeses)}</strong>`);
-    const detalle = partes.join(' y ');
     return `
       <p class="estrategia-card__ahorro">
-        💰 Con Avalancha te ahorrarías ${detalle} frente a Bola de nieve.
+        💰 Con Avalancha te ahorrarías ${partes.join(' y ')} frente a Bola de nieve.
       </p>`;
   }
 
+  // Escenario 3: mismo costo, pero Bola de nieve cierra antes la primera deuda.
+  if (ventajaBolaNieve) {
+    return `
+      <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
+        🏆 Avalancha y Bola de nieve te cuestan lo mismo, pero con Bola de nieve cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes: elígela para ver avances más rápido.
+      </p>`;
+  }
+
+  // Escenario 4: empate sin ventaja para ningún lado.
   if (extraMensual > 0) {
     return `
       <p class="estrategia-card__ahorro estrategia-card__ahorro--info">

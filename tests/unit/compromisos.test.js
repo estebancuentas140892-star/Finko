@@ -2076,6 +2076,58 @@ describe('impacto de deudas - plan base inviable (regresión cifras absurdas)', 
   });
 });
 
+// ── comparativa D.4: frases que ayudan a decidir Avalancha vs Bola de nieve ──
+
+describe('comparativa Avalancha vs Bola de nieve (D.4)', () => {
+  it('escenario clásico: bloque "¿Cómo elegir?" con las dos frases de decisión', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'cara',  descripcion: 'Tarjeta',       saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.40, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'chica', descripcion: 'Crédito chico', saldoTotal: 500_000,   cuotaMensual: 50_000,  tasa: 0.10, tasaUnidad: 'EA' }),
+    ]);
+    const resultado = compararEstrategias(deudas, 100_000);
+    // Precondición: las dos estrategias tienen una ventaja real.
+    expect(resultado.ahorroIntereses).toBeGreaterThan(0);
+
+    const html = renderImpactoAvalancha(resultado, 100_000);
+
+    expect(html).toContain('¿Cómo elegir?');
+    expect(html).toContain('estrategia-card__decidir');
+    // Lado Avalancha: ahorro de dinero.
+    expect(html).toContain('Avalancha');
+    expect(html).toContain('en intereses');
+    // Lado Bola de nieve: impulso temprano (cierra antes la primera deuda).
+    expect(html).toContain('Bola de nieve');
+    expect(html).toContain('cierras tu primera deuda');
+    expect(html).toContain('antes');
+    // Nunca cifras divergentes.
+    expect(html).not.toContain('e+');
+  });
+
+  it('empate con extra > 0: ambas dan lo mismo, sin bloque de decisión', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'a', descripcion: 'A', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'b', descripcion: 'B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
+    ]);
+    const resultado = compararEstrategias(deudas, 50_000);
+    const html = renderImpactoAvalancha(resultado, 50_000);
+
+    expect(html).toContain('mismo costo');
+    expect(html).not.toContain('¿Cómo elegir?');
+  });
+
+  it('empate sin extra: invita a probar un pago extra, sin bloque de decisión', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'a', descripcion: 'A', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'b', descripcion: 'B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
+    ]);
+    const resultado = compararEstrategias(deudas, 0);
+    const html = renderImpactoAvalancha(resultado, 0);
+
+    expect(html).toContain('Prueba agregar un pago extra');
+    expect(html).not.toContain('¿Cómo elegir?');
+  });
+});
+
 // ── renderEstrategiaPago: jerarquía D.2a (picker arriba, acelerador plegable) ──
 
 describe('renderEstrategiaPago jerarquía D.2a', () => {
