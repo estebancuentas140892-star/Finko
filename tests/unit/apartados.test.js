@@ -20,6 +20,8 @@ import {
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from '../../modules/dominio/apartados/logic.js';
+import { renderFormAporteApartado } from '../../modules/dominio/apartados/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -554,5 +556,46 @@ describe('catálogos', () => {
       expect(Number.isInteger(p.meses)).toBe(true);
       expect(typeof p.etiqueta).toBe('string');
     }
+  });
+});
+
+// ── renderFormAporteApartado() - selector de cuenta compartido ────
+
+describe('renderFormAporteApartado() - selector de cuenta', () => {
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+
+  it('sin cuentas activas no muestra selector (el aporte vale como seguimiento)', () => {
+    S.cuentas = [];
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).toContain('form-aporte-apartado');
+    expect(html).not.toContain('name="cuentaId"');
+  });
+
+  it('con una cuenta: una sola tarjeta del selector compartido, pre-seleccionada', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('type="radio"');
+    expect(html).toContain('name="cuentaId"');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('checked');
+  });
+
+  it('con varias cuentas: el selector de tarjetas lista todas y preselecciona la de mayor saldo', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
+    // c1 (mayor saldo) viene checked.
+    expect(html).toMatch(/value="c1"[^>]*checked|checked[^>]*value="c1"/);
+  });
+
+  it('ya no usa el <select> de texto plano anterior', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).not.toContain('id="aporte-apartado-cuenta"');
   });
 });

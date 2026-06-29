@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(compromisos): categorías predefinidas para deudas)
+> Última actualización: 2026-06-29 (feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1558/1558 verdes |
+| Tests unitarios + integración | 1562/1562 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta (AP.1) · 2026-06-29
+
+El aporte a un apartado usaba un `<select>` de texto plano sin logo del banco y sin opción de completar desde otra cuenta. Se unificó al **selector de tarjetas compartido** (Gastos/Abono/Pago): `renderSelectorCuenta` (avatar de la entidad + radios `name="cuentaId"`) en el form y `resolverPagoConPreferida` al guardar (reparto-fallback sin negativos; confirma sobregiro con una sola cuenta). Se preserva el aporte como seguimiento cuando no hay cuentas activas (sube `montoActual` sin descontar). Primer paso del backlog "Visión de Apartados". Verificado: 4 tests de render nuevos (1562 total), lint limpio, 57/57 E2E. SW v212 → v213.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/view.js` | `renderFormAporteApartado` usa `renderSelectorCuenta`; eliminado el helper local `_renderCuentaSelectorAporte`. |
+| `modules/dominio/apartados/index.js` | `_guardarAporte` async con `resolverPagoConPreferida` (reparto + sobregiro); descuenta por split; mantiene aporte-seguimiento sin cuentas. |
+| `tests/unit/apartados.test.js` | 4 tests de render de `renderFormAporteApartado`. |
+| `service-worker.js` | v212 → v213. |
+
+---
 
 ### feat(compromisos): categorías predefinidas para deudas (tipo de obligación) · 2026-06-29
 
@@ -96,23 +109,6 @@ Bug en la automatización "Salario mínimo": pre-llenaba el campo `monto` con el
 | `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle`: pre-llena el monto por período y escucha el `change` de frecuencia. |
 | `tests/unit/tesoreria.test.js` | 7 tests nuevos (incluye regresión MC.8). |
 | `service-worker.js` | `CACHE_NAME` v208 → v209. |
-
----
-
-### feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte · 2026-06-29
-
-Se agregó un campo **categoría** al registrar un ingreso, con 12 categorías predefinidas (Salario, Salario mínimo, Honorarios, Comisión, Arriendo, Pensión, Subsidio, Bonificación, Cuota, Venta, Rendimientos, Otro). Migración idempotente v15 → v16 (`categoria: null` en ingresos existentes). Automatización: al elegir "Salario mínimo", aparece "¿Recibo subsidio de transporte?" con checkbox; marcado → monto = SMMLV + auxilio (leídos de `constants.js`). La lista de ingresos muestra "Mensual · Honorarios". Verificado: 12 tests nuevos (1506 total), render desechable en happy-dom, lint limpio, 57/57 E2E. SW v207 → v208.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_INGRESO` (12 categorías). |
-| `modules/core/storage.js` | Migración v15 → v16: `categoria: null` en ingresos. |
-| `modules/core/state.js` | Typedef `Ingreso` con `categoria`. |
-| `modules/dominio/tesoreria/logic.js` | `validarIngreso` + `normalizarIngreso` con categoría; `calcularSalarioMinimo`. |
-| `modules/dominio/tesoreria/view.js` | Selector de categoría en form; fieldset subsidio; categoría en lista. |
-| `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle` (show/hide subsidio, pre-llenado). |
-| `tests/unit/tesoreria.test.js` | 12 tests nuevos. |
-| `service-worker.js` | v207 → v208. |
 
 ---
 

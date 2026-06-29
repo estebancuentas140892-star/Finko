@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import {
   apartadosActivos,
   estaListoParaReiniciar,
@@ -277,7 +278,7 @@ export function renderFormAporteApartado(apartado) {
     : '';
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = _renderCuentaSelectorAporte(cuentasActivas);
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?' });
 
   return `
     <form id="form-aporte-apartado" novalidate>
@@ -299,41 +300,4 @@ export function renderFormAporteApartado(apartado) {
         <button type="submit" class="btn btn-primary">Registrar aporte</button>
       </div>
     </form>`;
-}
-
-// ── HELPERS ──────────────────────────────────────────────────────
-
-/**
- * Selector de cuenta de origen del aporte, patrón 0/1/varias.
- * - 0 cuentas: sin selector (el aporte vale como seguimiento).
- * - 1 cuenta:  hidden + hint (se asume sin preguntar).
- * - Varias:    select obligatorio.
- *
- * @param {import('../../core/state.js').Cuenta[]} cuentas - solo las activas.
- * @returns {string}
- */
-function _renderCuentaSelectorAporte(cuentas) {
-  if (cuentas.length === 0) return '';
-
-  if (cuentas.length === 1) {
-    const c = cuentas[0];
-    const saldo = c.saldo ?? 0;
-    return `
-      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      <p class="form-hint quick-add__cuenta-hint${saldo <= 0 ? ' form-hint--danger' : ''}" role="status">
-        💳 Sale de: <strong>${_esc(c.nombre)}</strong> · Disponible: ${f(saldo)}
-      </p>`;
-  }
-
-  const opts = cuentas
-    .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)} (${f(c.saldo ?? 0)})</option>`)
-    .join('');
-  return `
-    <div class="form-group">
-      <label for="aporte-apartado-cuenta" class="label">¿Desde qué cuenta?</label>
-      <select id="aporte-apartado-cuenta" name="cuentaId" class="input" required aria-required="true">
-        <option value="">Elegir cuenta…</option>
-        ${opts}
-      </select>
-    </div>`;
 }

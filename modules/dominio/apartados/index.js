@@ -16,6 +16,7 @@ import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
+import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { f, hoy } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
@@ -185,20 +186,12 @@ function _abrirAporte(el) {
   abrirModal(overlay);
 }
 
-function _guardarAporte() {
+async function _guardarAporte() {
   const form = document.getElementById('form-aporte-apartado');
   if (!form) return;
 
-  const datos = Object.fromEntries(new FormData(form));
-
-  // Si hay varias cuentas activas, elegir cuenta es obligatorio.
-  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const requiereCuenta = cuentasActivas.length > 1;
-  const erroresCuenta  = requiereCuenta && !datos.cuentaId
-    ? ['Debes elegir desde qué cuenta sale el dinero.']
-    : [];
-  const errores = [...validarAbonoApartado(datos.monto), ...erroresCuenta];
-
+  const datos   = Object.fromEntries(new FormData(form));
+  const errores = validarAbonoApartado(datos.monto);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
@@ -207,15 +200,46 @@ function _guardarAporte() {
   const apartado = S.apartados.find(a => a.id === datos.apartadoId);
   if (!apartado) return;
 
-  const aporte     = Number(datos.monto);
+  const aporte = Number(datos.monto);
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+
+  // Resolver de qué cuenta(s) sale el dinero, reusando el patrón compartido:
+  // usa la cuenta elegida en el selector y, si no alcanza y hay más, reparte.
+  // Con 0 cuentas activas el aporte vale como seguimiento (no descuenta nada).
+  let splits = [];
+  if (cuentasActivas.length > 0) {
+    splits = await resolverPagoConPreferida(
+      S.cuentas,
+      aporte,
+      datos.cuentaId,
+      `registrar el aporte a "${apartado.nombre}"`,
+    );
+    if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+    // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay reparto).
+    if (splits.length === 1) {
+      const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+      const saldoCuenta = c?.saldo ?? 0;
+      if (saldoCuenta < splits[0].monto) {
+        const ok = await confirmar({
+          titulo:         'Registrar aporte',
+          mensaje:        `¿Registrar aporte de ${f(aporte)} a "${apartado.nombre}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+          confirmarTexto: 'Registrar aporte',
+          peligroso:      true,
+        });
+        if (!ok) return;
+      }
+    }
+  }
+
   const nuevoMonto = (apartado.montoActual ?? 0) + aporte;
   const { completado } = calcularProgreso({ ...apartado, montoActual: nuevoMonto });
 
   editar('apartados', datos.apartadoId, { montoActual: nuevoMonto, completado });
 
-  // Descontar del saldo de la cuenta de origen (si se eligió una).
-  if (datos.cuentaId) {
-    _ajustarSaldoCuenta(datos.cuentaId, -aporte);
+  // Descontar el aporte de cada cuenta del reparto.
+  for (const s of splits) {
+    _ajustarSaldoCuenta(s.cuentaId, -s.monto);
   }
 
   const overlay = document.getElementById('modal-aporte-apartado');

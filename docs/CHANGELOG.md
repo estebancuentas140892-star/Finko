@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta (AP.1) · 2026-06-29
+
+El formulario de aporte a un apartado usaba un `<select>` de texto plano (`_renderCuentaSelectorAporte`), sin logo del banco y sin opción de completar el aporte desde otra cuenta cuando la elegida no alcanzaba. Se unificó al **selector de tarjetas compartido** que ya usan Gastos, Abono a deuda y Pago de gasto fijo: `renderSelectorCuenta` (logo de la entidad vía `bancoAvatar` + nombre + saldo, con radios `name="cuentaId"`) en el formulario, y `resolverPagoConPreferida` al guardar (usa la cuenta elegida y, si no cubre el monto y hay más cuentas, abre el picker de reparto sin dejar ninguna en negativo; con una sola cuenta confirma el sobregiro). Se preserva el comportamiento de **aporte como seguimiento** cuando no hay cuentas activas: el apartado sube su `montoActual` sin descontar de ninguna cuenta. Cambio de UI + handler, sin lógica financiera ni schema nuevos.
+
+Parte del backlog "Visión de Apartados": deja la sección consistente con el resto de la app (mismo patrón 0/1/varias con iconos de banco) y más intuitiva al aportar.
+
+Verificado: 4 tests de render nuevos (1558 → 1562 unit + integración): sin cuentas no muestra selector (aporte como seguimiento), una cuenta muestra una tarjeta pre-seleccionada, varias cuentas listan todas y preseleccionan la de mayor saldo, y ya no aparece el `<select>` anterior. Lint limpio, 57/57 E2E sin regresiones. SW v212 → v213.
+
+- **`modules/dominio/apartados/view.js`**: `renderFormAporteApartado` usa `renderSelectorCuenta`; eliminado el helper local `_renderCuentaSelectorAporte`.
+- **`modules/dominio/apartados/index.js`**: `_guardarAporte` ahora es `async` y usa `resolverPagoConPreferida` (reparto-fallback + confirmación de sobregiro); descuenta por cada split; mantiene el aporte-seguimiento sin cuentas.
+- **`tests/unit/apartados.test.js`**: 4 tests de render de `renderFormAporteApartado`.
+- **`service-worker.js`**: v212 → v213.
+
+---
+
 ### feat(compromisos): categorías predefinidas para deudas (tipo de obligación) · 2026-06-29
 
 Se agregó un campo **tipo de obligación** al formulario de nueva deuda (paso 2, tanto entidad como personal), con 12 categorías predefinidas y emoji: 💳 Tarjeta de crédito, 💵 Crédito de consumo, 🏠 Crédito hipotecario, 🚗 Crédito vehicular, 🎓 Crédito educativo, 🧾 Libranza, 🔄 Crédito rotativo, 📉 Sobregiro, 🏪 Microcrédito, 🤝 Préstamo personal, 💧 Gota a gota, 📦 Otro. Catálogo único (`CATEGORIAS_DEUDA` + `CATEGORIA_DEUDA_EMOJI` en `constants.js`): el mismo selector aparece para `deuda-entidad` y `deuda-personal`, sin filtrar por tipo, ya que varias categorías son ambiguas según quién presta (ej. "Préstamo personal" puede ser de un familiar o de una fintech). El campo se valida y normaliza en `compromisos/logic.js` (`validarCompromiso`, `normalizarCompromiso`), exclusivo de las ramas de deuda (los gastos fijos siguen usando su propio catálogo `CATEGORIAS_AGENDA`, sin relación). Migración idempotente v17 → v18: las deudas existentes quedan con `categoria: null`. El selector aparece en `renderFormDeuda` (preselecciona la categoría guardada al editar) y el emoji + nombre se muestran en la card de la lista de deudas, antepuesto al contexto tipo/tasa ("💳 Tarjeta de crédito · Deuda con entidad · 28%").

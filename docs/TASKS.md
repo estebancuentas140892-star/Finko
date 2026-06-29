@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1558/1558 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **categorías predefinidas para Deudas** (12 tipos de obligación + emoji, schema v18); cierra el backlog "Mis cuentas: ajustes a ingresos". Antes: categorías predefinidas para Agenda. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1562/1562 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **formulario de aporte de Apartados** unificado al selector de tarjetas compartido (logo del banco + reparto multi-cuenta). Antes: categorías predefinidas para Deudas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -131,3 +131,19 @@ Slices (smallest-first):
 - **EP.3 (grupo "Crecer")** - Desplegar a: Metas, Ahorro, Inversión. Modelo sugerido: Sonnet 4.6 - Bajo.
 
 - **EP.4 (grupo "Organizar")** - Desplegar a: Mis cuentas, Análisis (y las demás que EP.0 haya decidido incluir). Modelo sugerido: Sonnet 4.6 - Bajo.
+
+---
+
+### Backlog del usuario "Visión de Apartados" (2026-06-29)
+
+Visión del usuario para que Apartados tenga un propósito claro y diferenciado del resto: **"ahorrar poco a poco para gastos futuros que sabemos que llegarán, evitando que sean un golpe al bolsillo"**. Casos típicos: SOAT, revisión técnico-mecánica, impuesto predial, matrículas/semestre, renovación de documentos, regalos, mantenimiento del vehículo, cuido y arena de mascotas, aseo personal, vacaciones. Ejemplo guía: mantener perro y gato puede costar ~$420.000 cuando coinciden alimento y arena; si el usuario ya apartó $300.000, solo completa $120.000 y el golpe es mínimo.
+
+✅ **AP.1** - Formulario de aporte unificado al selector de tarjetas compartido (`renderSelectorCuenta` + `resolverPagoConPreferida`): muestra el logo del banco y permite elegir una o varias cuentas, con reparto automático cuando una no alcanza, igual que Gastos/Abono/Pago. Reemplaza el `<select>` de texto plano; preserva el aporte como seguimiento cuando no hay cuentas activas. 4 tests de render nuevos. SW v212 → v213 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+
+- **AP.2 (chico)** - Ampliar `PLANTILLAS_APARTADO` con las categorías que faltan de la lista del usuario: revisión técnico-mecánica, impuesto predial, matrículas/semestre, renovación de documentos, mascotas (alimento), arena de gatos. Hoy hay 9 plantillas; cuidar duplicados ("Impuestos" ya existe). Tocar: `apartados/logic.js` + tests. Modelo: Sonnet 4.6 - Bajo.
+
+- **AP.3 (propósito) = EP.1** - El mensaje "¿qué problema resuelve Apartados?" es el piloto de la épica EP (ver backlog EP arriba). La filosofía y el ejemplo de mascotas son el insumo de copy ya aprobado. Depende de EP.0 (decidir el patrón del banner de propósito).
+
+- **AP.4 (épica, requiere ADR)** - Recordatorios automáticos de aporte en Agenda al recibir el ingreso ("Hoy recibiste tu ingreso, recuerda apartar $X para el SOAT"). **Cuidar la duplicación:** "Distribuir mi ingreso" (MC.4) ya acredita el ingreso y reparte a los apartados al llegar el cobro, con nudge propio; y Apartados ya tiene nudge de proximidad (60 días). El ADR debe decidir si se extiende MC.4 o el nudge existente, o se crea un recordatorio nuevo en Agenda, sin solapar. Modelo: Opus 4.8 - Alto.
+
+- **AP.5 (diseño, requiere ADR)** - Taxonomía de categorías de toda la app: definir por escrito la identidad de cada sección para que no se solapen (Gastos = cotidianos e imprevistos; Agenda = pagos periódicos en fecha; Apartados = ahorro para gastos previsibles espaciados; Deudas = obligaciones con terceros; Ahorros = ahorro libre + metas). Conecta con la decisión previa "no fusionar, diferenciar por copy" (revisión UX jun-2026) y alimenta EP.0. Sin código. Modelo: Opus 4.8 - Alto.
