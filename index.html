@@ -301,6 +301,13 @@
             </div>
           </article>
 
+          <!-- GASTOS POR ORGANIZAR: junto al hero (desktop, span 4) o bajo él
+               (mobile, full). Vive como celda del bento para máxima visibilidad
+               sin romper el patrón [hidden] (no ocupa columna si no hay nada).
+               gastos/view.js lo llena; [hidden] si no hay pendientes. -->
+          <div id="panel-gastos-pendientes" class="bento__cell" role="region"
+               aria-label="Gastos por organizar" hidden></div>
+
           <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
                dashboard.js lo llena; [hidden] hasta que haya datos. -->
           <div id="panel-vencidos" class="bento__cell bento__cell--half"
@@ -323,11 +330,6 @@
                role="region" aria-label="Resumen de la semana" hidden></div>
 
         </div><!-- /.bento -->
-
-        <!-- GASTOS POR ORGANIZAR: nudge de ancho completo, fuera del grid.
-             gastos/view.js lo llena; [hidden] si no hay pendientes. -->
-        <div id="panel-gastos-pendientes" role="region"
-             aria-label="Gastos por organizar" hidden></div>
       </section>
 
       <!-- GASTOS -->

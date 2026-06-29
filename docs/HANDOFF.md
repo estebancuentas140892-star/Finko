@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(gastos): icono de categoría sobrio, emoji grande con relieve sin fondo de color)
+> Última actualización: 2026-06-28 (feat(dashboard): "gastos por organizar" junto al hero en desktop / bajo él en mobile)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(dashboard): "gastos por organizar" junto al hero (desktop) / bajo él (mobile) · 2026-06-28
+
+Primera de dos mejoras del Dashboard pedidas por el usuario. La tarjeta "Tienes N gastos por organizar" vivía al fondo del Dashboard, fuera del bento grid, fácil de pasar por alto. Ahora vive como celda del bento justo después del hero: en escritorio ocupa las 4 columnas libres a la derecha de "Tu dinero disponible hoy" (rellena el hueco que dejaron los accesos rápidos al eliminarse), y en móvil se apila a ancho completo justo debajo. La celda es "bare" (sin fondo, borde ni padding propios) para que el nudge interno sea la única tarjeta visible, estirado a la altura del hero y centrado en vertical: sin doble chrome. Verificado en navegador a 1366px (lado a lado, misma altura) y 375px (apilado, ancho completo); axe-core sin violaciones; 1438/1438. SW v191 → v192. **Pendiente (Tarea A):** rebalancear el bento para el caso sin pendientes (reaparece el hueco a la derecha del hero cuando la tarjeta está oculta).
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | `#panel-gastos-pendientes` movido dentro del `.bento` tras el hero, ahora `class="bento__cell"` (span 4 desktop / span 1 mobile). |
+| `styles/layout.css` | Celda `#panel-gastos-pendientes` bare + nudge interno `flex:1` + `align-content:center` + radius xl. |
+| `service-worker.js` | `CACHE_NAME` v191 → v192. |
+
+---
 
 ### style(gastos): icono de categoría sobrio, emoji grande con relieve · 2026-06-28
 
