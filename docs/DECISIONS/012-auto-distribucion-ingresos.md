@@ -122,3 +122,17 @@ Cada slice es verificable en la app de forma aislada. MC.4a entrega ya el valor 
 - Inversiones no es fondeable hasta tener un aporte incremental (MC.4e); en v1 es solo informativa.
 - Cada dominio fondeable gana un suscriptor de EventBus y un aporte programático (reusando su `logic.js`): trabajo repartido por slices, no un solo cambio.
 - La feature toca varias slices de `S`; el undo por snapshot debe copiar exactamente las afectadas para que "Deshacer" sea fiel.
+
+---
+
+## Estado de implementación
+
+**MC.4 completa (a-e), 2026-06-29.** Los 5 slices están en producción:
+
+- **MC.4a**: entrada + panel editable + grupo Ahorro (Fondo/Metas/Apartados) vía EventBus + undo por snapshot.
+- **MC.4b**: Deudas como destino fondeable (abono real, orden Avalancha, topado al saldo).
+- **MC.4c**: filas informativas de Necesidades y Estilo de vida (solo referencia, no se mueven).
+- **MC.4d**: la acción se habilita solo al llegar el cobro del periodo (`estadoDistribucion` + `ultimoPagoHasta`), nudge "Hoy recibes tu ingreso, ¿distribuir?" y guard de de-duplicación por periodo (`S.config.ultimaDistribucionPeriodo`, revertible en el undo). Persistir el mapeo de destinos preferidos quedó fuera (no se implementó en este slice).
+- **MC.4e**: Inversiones se volvió fondeable con un aporte incremental al capital del holding (`construirPlanInversiones` + suscriptor en `inversiones/index.js`). Esto cierra la restricción "Inversiones es solo informativa en v1" listada arriba.
+
+La evolución posterior (Automático inteligente y asistente guiado de 3 pasos) se trata como épicas nuevas (MC.6, MC.7) con su propio ADR.

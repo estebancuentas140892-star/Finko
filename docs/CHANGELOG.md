@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(inversiones): Inversiones como destino fondeable de "Distribuir mi ingreso" (ADR 012, MC.4e) · 2026-06-29
+
+Quinto y último slice de la auto-distribución de ingresos (ADR 012), que cierra MC.4. El ADR había dejado Inversiones como destino **solo informativo** porque el dominio no tenía un primitivo de "aportar a un holding existente" (solo crear/eliminar holdings). Este slice agrega ese aporte incremental y suma Inversiones como destino fondeable real del panel "Distribuir mi ingreso".
+
+Lógica pura nueva en `tesoreria/logic.js`: `construirPlanInversiones({ inversiones })` arma una fila por holding (cada una arranca en monto 0, el usuario decide cuánto aportar) y lleva el capital actual del holding (`invertido`) solo como contexto, ordenadas de mayor a menor posición. El aporte **incrementa el `monto` (capital) del holding existente**: para un holding proyectable (CDT/fondo con tasa y plazo) la proyección al vencimiento se recalcula sobre el nuevo capital; para los de retorno variable simplemente sube el total invertido del portafolio. Aportar a inversiones **sí descuenta** de la cuenta de origen (es dinero que sale, igual que metas/apartados/deudas, a diferencia del fondo): el filtro de descontable ya existente (`i.tipo !== 'fondo'`) lo cubre sin cambios.
+
+Orquestación por EventBus respetando el ADN #10: el panel emite el mismo `distribucion:aplicar` y el **nuevo suscriptor en `inversiones/index.js`** aplica su porción con `editar('inversiones', id, { monto: capital + aporte })`, usando su propia lógica de dominio (cero imports cruzados). Se agregó `inversiones` a `_SLICES_DISTRIBUCION`, de modo que el snapshot de "Deshacer" restaura también el capital de los holdings de forma atómica. El gating del botón pasó de "hay ahorro o deudas" a "hay ahorro, deudas o inversiones": ahora el panel aparece también para quien solo tiene inversiones. El panel muestra una subsección "Aportar a inversiones" con una fila por holding (nombre + capital actual), y el legend pasó a "tus ahorros, deudas e inversiones".
+
+Verificado: 4 tests de lógica nuevos (`construirPlanInversiones`: fila con monto 0 y capital como contexto, orden por capital desc, defaults cuando faltan datos, vacío/no-array), 1490 → 1494 unit + integración, lint limpio, un test desechable en happy-dom que ejerció el flujo real (el suscriptor de inversiones sube el capital del holding de $1.000.000 a $1.500.000 al emitir `distribucion:aplicar`, y el panel renderiza la subsección "Aportar a inversiones" con el holding y su capital "invertido $X"), y 57/57 E2E sin regresiones. El preview del entorno volvió a caer en `chrome-error` (condición recurrente ya documentada), así que la verificación de UI se apoyó en el test de render y los E2E; en producción el bump de SW v207 fuerza assets frescos. SW v206 → v207. **MC.4 completa** (a-e); quedan abiertas las épicas MC.6 y MC.7 (requieren ADR).
+
+- **`modules/dominio/tesoreria/logic.js`**: `construirPlanInversiones` (fila por holding, monto 0, capital como contexto, orden por capital desc).
+- **`modules/dominio/tesoreria/view.js`**: calcula `destinosInversiones`; `_renderPanelDistribuir` agrega la subsección "Aportar a inversiones" y suma inversiones al gating; `_filaDistribuir` muestra el capital invertido; legend actualizado.
+- **`modules/dominio/tesoreria/index.js`**: `inversiones` agregado a `_SLICES_DISTRIBUCION` (undo restaura el capital de los holdings).
+- **`modules/dominio/inversiones/index.js`**: suscriptor `distribucion:aplicar` que incrementa el `monto` del holding (el descuento de cuenta lo hace tesorería); import de `editar`.
+- **`tests/unit/tesoreria.test.js`**: 4 tests de `construirPlanInversiones`.
+- **`service-worker.js`**: v206 → v207.
+
+---
+
 ### feat(tesoreria): "Distribuir mi ingreso" se habilita al llegar el cobro + guard de de-duplicación (ADR 012, MC.4d) · 2026-06-29
 
 Cuarto slice de la auto-distribución de ingresos (ADR 012). Hasta ahora el botón "💸 Distribuir mi ingreso" aparecía siempre que hubiera un destino fondeable, sin importar la fecha: el usuario podía repartir el mismo ingreso varias veces o antes de cobrarlo. Este slice ata la acción al calendario del cobro y la protege contra el doble conteo, los dos puntos que el ADR dejó pendientes para evitar distorsionar el saldo de la cuenta.

@@ -905,3 +905,25 @@ export function construirPlanDeudas({ deudas = [] }) {
     }))
     .sort((a, b) => (b.tasaEA - a.tasaEA) || (a.saldoTotal - b.saldoTotal));
 }
+
+/**
+ * Arma las filas de inversiones fondeables para "Distribuir mi ingreso" (MC.4e).
+ * Un aporte incrementa el `monto` (capital) del holding existente; aquí cada fila
+ * arranca en 0 (el usuario decide cuánto aportar) y lleva el capital actual
+ * (`invertido`) solo como contexto. Ordenadas por posición de mayor a menor.
+ * Pura: recibe las inversiones y no lee S ni el DOM.
+ *
+ * @param {{ inversiones?: Array<{id:string, nombre?:string, tipo?:string, monto?:number}> }} args
+ * @returns {Array<{ tipo:'inversion', id:string, nombre:string, monto:number, invertido:number }>}
+ */
+export function construirPlanInversiones({ inversiones = [] }) {
+  return (Array.isArray(inversiones) ? inversiones : [])
+    .map(inv => ({
+      tipo:      'inversion',
+      id:        inv.id,
+      nombre:    inv.nombre ?? 'Inversión',
+      monto:     0,
+      invertido: Number(inv.monto) || 0,
+    }))
+    .sort((a, b) => b.invertido - a.invertido);
+}

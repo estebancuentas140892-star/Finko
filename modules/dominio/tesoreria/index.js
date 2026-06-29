@@ -700,7 +700,7 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
-const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'logros', 'config'];
+const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
 
 /** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
 function _toggleDistribuirIngreso(el) {

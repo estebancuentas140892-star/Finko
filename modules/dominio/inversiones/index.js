@@ -9,7 +9,7 @@
  */
 
 import { S, EventBus }               from '../../core/state.js';
-import { guardar, eliminar }         from '../../infra/crud.js';
+import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion }           from '../../ui/actions.js';
 import { abrirModal, cerrarModal }   from '../../ui/modales.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
@@ -106,6 +106,18 @@ export function initInversiones() {
   EventBus.on('state:change', ({ section }) => {
     if (section === 'inversiones') {
       renderSmart(_renderInversionBound, 'inversion');
+    }
+  });
+
+  // "Distribuir mi ingreso" (ADR 012, MC.4e): aplica los aportes a inversiones del
+  // plan. Solo incrementa el capital (`monto`) del holding; el descuento de la
+  // cuenta de origen lo centraliza tesorería (no aquí), igual que metas/apartados.
+  EventBus.on('distribucion:aplicar', ({ items }) => {
+    const aportes = (items ?? []).filter(i => i.tipo === 'inversion' && i.monto > 0);
+    for (const it of aportes) {
+      const inv = (S.inversiones ?? []).find(x => x.id === it.id);
+      if (!inv) continue;
+      editar('inversiones', it.id, { monto: (Number(inv.monto) || 0) + it.monto });
     }
   });
 

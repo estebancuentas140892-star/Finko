@@ -25,6 +25,7 @@ import {
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
   construirPlanDeudas,
+  construirPlanInversiones,
   estadoDistribucion,
 } from './logic.js';
 
@@ -325,6 +326,10 @@ export function renderDistribucionIngreso() {
       && (Number(c.saldoTotal) || 0) > 0);
   const destinosDeudas = construirPlanDeudas({ deudas: deudasPendientes });
 
+  // Inversiones (MC.4e): cada holding es un destino fondeable; el aporte
+  // incrementa su capital. El descuento de la cuenta lo centraliza tesorería.
+  const destinosInversiones = construirPlanInversiones({ inversiones: S.inversiones ?? [] });
+
   // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
   // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
   const estadoDist = estadoDistribucion(
@@ -341,6 +346,7 @@ export function renderDistribucionIngreso() {
         estiloVidaPct:   dist.split.estiloVida.pct,
         destinosAhorro,
         destinosDeudas,
+        destinosInversiones,
         estado:          estadoDist,
       })
     : '';
@@ -348,15 +354,18 @@ export function renderDistribucionIngreso() {
 
 /**
  * Una fila de destino del panel: toggle (incluir) + monto editable. Para deudas
- * muestra el saldo pendiente como contexto.
+ * muestra el saldo pendiente y para inversiones el capital actual, como contexto.
  *
- * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number}} d
+ * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number}} d
  * @returns {string}
  */
 function _filaDistribuir(d) {
-  const sub = d.tipo === 'deuda' && d.saldoTotal != null
-    ? ` <span class="distribuir__saldo">saldo ${f(d.saldoTotal)}</span>`
-    : '';
+  let sub = '';
+  if (d.tipo === 'deuda' && d.saldoTotal != null) {
+    sub = ` <span class="distribuir__saldo">saldo ${f(d.saldoTotal)}</span>`;
+  } else if (d.tipo === 'inversion' && d.invertido != null) {
+    sub = ` <span class="distribuir__saldo">invertido ${f(d.invertido)}</span>`;
+  }
   return `
         <div class="distribuir__fila">
           <label class="checkbox-row distribuir__toggle">
@@ -372,25 +381,27 @@ function _filaDistribuir(d) {
 }
 
 /**
- * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b/MC.4d).
+ * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b/MC.4d/MC.4e).
  * El panel arranca oculto; el botón lo despliega. Reparte hacia el grupo Ahorro
- * (Fondo, Metas, Apartados) y, como abono real, hacia las Deudas pendientes
- * (ordenadas por prioridad de pago). El resumen en vivo y el botón "Distribuir"
- * se manejan desde index.js. Devuelve '' si no hay ningún destino fondeable.
+ * (Fondo, Metas, Apartados), como abono real hacia las Deudas pendientes
+ * (ordenadas por prioridad de pago) y como aporte de capital hacia las
+ * Inversiones. El resumen en vivo y el botón "Distribuir" se manejan desde
+ * index.js. Devuelve '' si no hay ningún destino fondeable.
  *
  * Gating por fecha (MC.4d): la acción solo aparece cuando el cobro del periodo
  * ya llegó y aún no se distribuyó ('listo') o cuando no hay fecha datable
  * ('sin-fecha', se mantiene disponible). Si ya se distribuyó este periodo
  * ('distribuido') o el cobro aún no llega ('pendiente'), se informa sin botón.
  *
- * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
   const { montoIngreso, ahorroPct, ahorroBudget, necesidadesPct, estiloVidaPct } = d;
-  const ahorro = d.destinosAhorro ?? [];
-  const deudas = d.destinosDeudas ?? [];
-  if (ahorro.length === 0 && deudas.length === 0) return '';
+  const ahorro      = d.destinosAhorro ?? [];
+  const deudas      = d.destinosDeudas ?? [];
+  const inversiones = d.destinosInversiones ?? [];
+  if (ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0) return '';
 
   const est = d.estado?.estado ?? 'sin-fecha';
 
@@ -417,6 +428,13 @@ function _renderPanelDistribuir(d) {
           <p class="form-hint distribuir__subtitulo">Abonar a deudas (ordenadas por prioridad de pago):</p>
           <div class="distribuir-ingreso__destinos">
             ${deudas.map(_filaDistribuir).join('')}
+          </div>`
+    : '';
+  const seccionInversiones = inversiones.length > 0
+    ? `
+          <p class="form-hint distribuir__subtitulo">Aportar a inversiones:</p>
+          <div class="distribuir-ingreso__destinos">
+            ${inversiones.map(_filaDistribuir).join('')}
           </div>`
     : '';
 
@@ -447,7 +465,7 @@ function _renderPanelDistribuir(d) {
           💸 Distribuir mi ingreso
         </button>
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso" hidden>
-          <legend>Reparte hacia tus ahorros y deudas. El resto queda disponible en tu cuenta.</legend>
+          <legend>Reparte hacia tus ahorros, deudas e inversiones. El resto queda disponible en tu cuenta.</legend>
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
             <input id="distribuir-monto" type="number" class="input"
@@ -457,6 +475,7 @@ function _renderPanelDistribuir(d) {
           <p class="form-hint">Sugerencia: ${f(ahorroBudget)} a ahorro (${ahorroPct}%). Ajusta cada destino:</p>
           ${ahorro.length > 0 ? `<div class="distribuir-ingreso__destinos">${filasAhorro}</div>` : ''}
           ${seccionDeudas}
+          ${seccionInversiones}
           ${seccionInfo}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion">

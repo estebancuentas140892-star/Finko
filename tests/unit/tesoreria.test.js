@@ -22,6 +22,7 @@ import {
   construirPlanAhorro,
   resumirPlanDistribucion,
   construirPlanDeudas,
+  construirPlanInversiones,
   ultimoPagoHasta,
   estadoDistribucion,
 } from '../../modules/dominio/tesoreria/logic.js';
@@ -1400,5 +1401,34 @@ describe('construirPlanDeudas()', () => {
   it('sin deudas devuelve un plan vacío', () => {
     expect(construirPlanDeudas({ deudas: [] })).toEqual([]);
     expect(construirPlanDeudas({})).toEqual([]);
+  });
+});
+
+// ── construirPlanInversiones() (MC.4e) ────────────────────────────
+describe('construirPlanInversiones()', () => {
+  it('arma una fila por holding con monto 0 y capital actual como contexto', () => {
+    const plan = construirPlanInversiones({ inversiones: [
+      { id: 'inv1', nombre: 'CDT Bancolombia', tipo: 'CDT', monto: 5_000_000 },
+    ]});
+    expect(plan[0]).toMatchObject({ tipo: 'inversion', id: 'inv1', nombre: 'CDT Bancolombia', monto: 0, invertido: 5_000_000 });
+  });
+
+  it('ordena de mayor a menor capital invertido', () => {
+    const plan = construirPlanInversiones({ inversiones: [
+      { id: 'chica',  nombre: 'Cripto', monto: 500_000 },
+      { id: 'grande', nombre: 'Fondo',  monto: 9_000_000 },
+    ]});
+    expect(plan.map(p => p.id)).toEqual(['grande', 'chica']);
+  });
+
+  it('nombre por defecto y capital 0 cuando faltan datos', () => {
+    const plan = construirPlanInversiones({ inversiones: [{ id: 'inv1' }] });
+    expect(plan[0]).toMatchObject({ tipo: 'inversion', id: 'inv1', nombre: 'Inversión', monto: 0, invertido: 0 });
+  });
+
+  it('sin inversiones devuelve un plan vacío', () => {
+    expect(construirPlanInversiones({ inversiones: [] })).toEqual([]);
+    expect(construirPlanInversiones({})).toEqual([]);
+    expect(construirPlanInversiones({ inversiones: null })).toEqual([]);
   });
 });
