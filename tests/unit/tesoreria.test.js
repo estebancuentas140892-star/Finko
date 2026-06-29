@@ -26,6 +26,7 @@ import {
   ultimoPagoHasta,
   estadoDistribucion,
   calcularSalarioMinimo,
+  montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
 
@@ -930,6 +931,42 @@ describe('calcularSalarioMinimo()', () => {
     expect(r.smmlv).toBe(SMMLV);
     expect(r.auxilio).toBe(AUXILIO_TRANSPORTE);
     expect(r.total).toBe(SMMLV + AUXILIO_TRANSPORTE);
+  });
+});
+
+// ── montoSalarioMinimoPorPeriodo() ──────────────────────────────────
+
+describe('montoSalarioMinimoPorPeriodo()', () => {
+  it('Mensual devuelve el ancla mensual completa', () => {
+    expect(montoSalarioMinimoPorPeriodo(false, 'Mensual')).toBe(SMMLV);
+  });
+
+  it('Mensual con subsidio incluye el auxilio', () => {
+    expect(montoSalarioMinimoPorPeriodo(true, 'Mensual')).toBe(SMMLV + AUXILIO_TRANSPORTE);
+  });
+
+  it('Quincenal divide el ancla entre 2', () => {
+    expect(montoSalarioMinimoPorPeriodo(false, 'Quincenal')).toBe(Math.round(SMMLV / 2));
+  });
+
+  it('Semanal divide el ancla entre 4.33', () => {
+    expect(montoSalarioMinimoPorPeriodo(false, 'Semanal')).toBe(Math.round(SMMLV / 4.33));
+  });
+
+  it('Diario divide el ancla entre 30', () => {
+    expect(montoSalarioMinimoPorPeriodo(false, 'Diario')).toBe(Math.round(SMMLV / 30));
+  });
+
+  it('frecuencia no reconocida cae al valor mensual completo (factor 1)', () => {
+    expect(montoSalarioMinimoPorPeriodo(false, 'Anual')).toBe(SMMLV);
+  });
+
+  it('el monto por período no duplica el ingreso mensual estimado (regresión MC.8)', () => {
+    // Antes del fix, monto = ancla mensual completa y estimarSalarioMensual la
+    // multiplicaba por el factor: Quincenal quedaba ≈ 2 × SMMLV.
+    const monto    = montoSalarioMinimoPorPeriodo(false, 'Quincenal');
+    const estimado = estimarSalarioMensual([{ monto, frecuencia: 'Quincenal', activo: true }]);
+    expect(Math.abs(estimado - SMMLV)).toBeLessThanOrEqual(5);
   });
 });
 

@@ -27,7 +27,7 @@ import {
   compromisoCuotaManejoDeCuenta,
   validarIngreso,
   normalizarIngreso,
-  calcularSalarioMinimo,
+  montoSalarioMinimoPorPeriodo,
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
@@ -541,9 +541,12 @@ function _attachDiaPagoToggle(form) {
 /**
  * Conecta la lógica condicional de la categoría al form de ingreso:
  * - Muestra/oculta el fieldset de subsidio de transporte al elegir "Salario mínimo".
- * - Al marcar el checkbox de subsidio, pre-llena el monto con SMMLV + auxilio.
- * - Al desmarcar, vuelve al SMMLV solo.
- * - Al elegir "Salario mínimo", pre-llena el monto con SMMLV y la descripción.
+ * - Pre-llena el monto por período (salario mínimo dividido por la frecuencia).
+ * - Re-pre-llena al cambiar el subsidio o la frecuencia de pago.
+ * - Al elegir "Salario mínimo", también pre-llena la descripción.
+ *
+ * El salario mínimo es un ancla mensual; el campo `monto` guarda el valor por
+ * período. Por eso Quincenal pre-llena la mitad y Semanal una cuarta parte aprox.
  *
  * @param {HTMLFormElement} form
  */
@@ -551,9 +554,16 @@ function _attachCategoriaToggle(form) {
   const selCat      = form.querySelector('[name="categoria"]');
   const grupoSubsid = form.querySelector('#form-group-salario-min');
   const cbSubsidio  = form.querySelector('#ingreso-subsidio');
+  const selFrec     = form.querySelector('[name="frecuencia"]');
   const inputMonto  = form.querySelector('[name="monto"]');
   const inputDesc   = form.querySelector('[name="descripcion"]');
   if (!selCat || !grupoSubsid || !cbSubsidio) return;
+
+  function _prellenarMonto() {
+    if (!inputMonto) return;
+    const frec = selFrec?.value || 'Mensual';
+    inputMonto.value = montoSalarioMinimoPorPeriodo(cbSubsidio.checked, frec);
+  }
 
   function _syncCategoria() {
     const esSalMin = selCat.value === 'Salario mínimo';
@@ -562,16 +572,16 @@ function _attachCategoriaToggle(form) {
       cbSubsidio.checked = false;
       return;
     }
-    const { total } = calcularSalarioMinimo(cbSubsidio.checked);
-    if (inputMonto) inputMonto.value = total;
+    _prellenarMonto();
     if (inputDesc && !inputDesc.value.trim()) inputDesc.value = 'Salario mínimo';
   }
 
   selCat.addEventListener('change', _syncCategoria);
   cbSubsidio.addEventListener('change', () => {
-    if (selCat.value !== 'Salario mínimo') return;
-    const { total } = calcularSalarioMinimo(cbSubsidio.checked);
-    if (inputMonto) inputMonto.value = total;
+    if (selCat.value === 'Salario mínimo') _prellenarMonto();
+  });
+  selFrec?.addEventListener('change', () => {
+    if (selCat.value === 'Salario mínimo') _prellenarMonto();
   });
 }
 

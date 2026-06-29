@@ -413,6 +413,24 @@ export function calcularSalarioMinimo(conSubsidio) {
   return { smmlv: SMMLV, auxilio, total: SMMLV + auxilio };
 }
 
+/**
+ * Convierte el salario mínimo (un ancla mensual: SMMLV + auxilio) al monto por
+ * período de pago. El campo `monto` de un ingreso guarda el valor por período,
+ * no el mensual: por eso Quincenal devuelve la mitad y Semanal una cuarta parte
+ * aprox. Divide por _FACTOR_MENSUAL para que `monto × factor ≈ ancla mensual`,
+ * consistente con estimarSalarioMensual. Frecuencias sin factor reconocido
+ * (Bimestral, Anual, etc.) caen al valor mensual completo (factor 1).
+ *
+ * @param {boolean} conSubsidio - true si recibe auxilio de transporte.
+ * @param {string}  frecuencia  - Frecuencia de pago ('Mensual', 'Quincenal', ...).
+ * @returns {number} Monto por período en COP (redondeado a peso).
+ */
+export function montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia) {
+  const { total } = calcularSalarioMinimo(conSubsidio);
+  const factor = _FACTOR_MENSUAL[frecuencia] ?? 1;
+  return Math.round(total / factor);
+}
+
 // ── VALIDACIÓN CUENTAS ───────────────────────────────────────────
 
 /**

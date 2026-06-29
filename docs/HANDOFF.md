@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte)
+> Última actualización: 2026-06-29 (fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia, MC.8)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1506/1506 verdes |
+| Tests unitarios + integración | 1513/1513 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia (MC.8) · 2026-06-29
+
+Bug en la automatización "Salario mínimo": pre-llenaba el campo `monto` con el valor **mensual** completo (SMMLV + auxilio), pero `monto` es el valor **por período** y `estimarSalarioMensual` lo multiplica por el factor de la frecuencia. Resultado: con Quincenal el ingreso mensual estimado quedaba al doble (Semanal, ~4.3×). Fix: el salario mínimo se trata como un **ancla mensual** y se divide por la frecuencia para obtener el monto por período (Mensual = completo, Quincenal = /2, Semanal = /4.33, Diario = /30; frecuencias sin factor reconocido caen al mensual). Además la automatización ahora **reacciona al cambiar la frecuencia** (antes solo a la categoría y al checkbox de subsidio). Verificado: 7 tests nuevos (1513 total) incluido un test de regresión que confirma que el monto por período × frecuencia ≈ SMMLV (ya no se duplica), lint limpio. SW v208 → v209.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia)` (ancla mensual / factor, reusa `_FACTOR_MENSUAL`). |
+| `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle`: pre-llena el monto por período y escucha el `change` de frecuencia. |
+| `tests/unit/tesoreria.test.js` | 7 tests nuevos (incluye regresión MC.8). |
+| `service-worker.js` | `CACHE_NAME` v208 → v209. |
+
+---
 
 ### feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte · 2026-06-29
 
@@ -93,19 +106,6 @@ Cuarto slice de la auto-distribución. Antes el botón "Distribuir mi ingreso" s
 | `styles/components/forms.css` | `.distribuir__cta`, `.distribuir__hecho`, `.distribuir__pendiente`. |
 | `tests/unit/tesoreria.test.js` | 17 tests de `ultimoPagoHasta` y `estadoDistribucion`. |
 | `service-worker.js` | `CACHE_NAME` v205 → v206. |
-
----
-
-### feat(tesoreria): filas informativas Necesidades/Estilo de vida en el panel (ADR 012, MC.4c) · 2026-06-29
-
-Tercer slice de la auto-distribución, de cierre del panel base. El panel "Distribuir mi ingreso" ahora muestra, bajo "Esto queda en tu cuenta (no se mueve)", dos filas de referencia: Necesidades y Estilo de vida con su % y su monto. No son editables ni mueven dinero (las obligaciones se pagan al vencer; el estilo de vida se gasta a lo largo del mes); solo completan la foto de los 3 grupos para que el usuario entienda a dónde va todo su ingreso. Los montos se recalculan en vivo al cambiar el "Monto a distribuir" (son % del ingreso, leídos de `data-dist-pct`). Cambio solo de UI (view + index + CSS), sin lógica financiera nueva ni cross-domain. Verificado: 1473/1473, lint limpio, y un test desechable en happy-dom (las filas muestran 50%→$1.5M y 30%→$900k sobre 3M, y recalculan a $1M/$600k al bajar el monto a 2M). SW v204 → v205. **Pendientes de MC.4:** MC.4d (habilitar solo al llegar el ingreso + nudge "Hoy recibes tu ingreso, ¿distribuir?" + de-duplicación), MC.4e (inversiones). Backlog nuevo del usuario: MC.6 (Automático inteligente, no 50/30/20 fijo + quitar duplicidad) y MC.7 (asistente guiado de 3 pasos con obligaciones itemizadas y aportes auto-calculados); ambas épicas, requieren ADR.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/view.js` | Bloque informativo Necesidades/Estilo de vida en el panel; pasa `necesidadesPct`/`estiloVidaPct`. |
-| `modules/dominio/tesoreria/index.js` | `_recalcularDistribucion` recalcula los montos informativos en vivo. |
-| `styles/components/forms.css` | `.distribuir__info` + `.distribuir__info-fila`. |
-| `service-worker.js` | `CACHE_NAME` v204 → v205. |
 
 ---
 

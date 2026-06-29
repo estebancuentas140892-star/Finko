@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia (MC.8) · 2026-06-29
+
+Corrige el cálculo del salario mínimo según la frecuencia de pago. La automatización "Salario mínimo" pre-llenaba el campo `monto` con el valor **mensual** completo (`SMMLV + auxilio`), pero `monto` representa el valor **por período** y `estimarSalarioMensual` lo multiplica por `_FACTOR_MENSUAL` (Quincenal × 2, Semanal × 4.33, Diario × 30). Efecto del bug: al elegir Quincenal, el ingreso mensual estimado (que alimenta la tasa de ahorro, la distribución y el balance) quedaba al **doble**; con Semanal, ~4.3×.
+
+Fix: el salario mínimo es un **ancla mensual** y se divide por la frecuencia para obtener el monto por período. Nuevo helper puro `montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia)` que reusa `_FACTOR_MENSUAL` (así `monto × factor ≈ ancla mensual`, consistente con `estimarSalarioMensual`): Mensual = completo, Quincenal = /2, Semanal = /4.33, Diario = /30; las frecuencias sin factor reconocido (Bimestral, Anual, etc.) caen al valor mensual completo (factor 1, evita división por cero). Además la automatización ahora **reacciona también al cambiar la frecuencia** (`_attachCategoriaToggle` escucha el `change` del select de frecuencia, no solo la categoría y el checkbox de subsidio): cambiar de Mensual a Quincenal re-pre-llena el monto a la mitad en vivo.
+
+Sin cambios de schema ni de datos guardados (solo afecta el valor sugerido al crear/editar). `index.js` dejó de importar `calcularSalarioMinimo` (ya no lo usa directo) y pasó a `montoSalarioMinimoPorPeriodo`. Verificado: 7 tests de lógica nuevos (1506 → 1513 unit + integración), incluido un test de **regresión** que arma un ingreso con el monto por período Quincenal y confirma que `estimarSalarioMensual` da ≈ SMMLV (ya no el doble); lint limpio. SW v208 → v209.
+
+- **`modules/dominio/tesoreria/logic.js`**: `montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia)` (ancla mensual / `_FACTOR_MENSUAL`, redondeo a peso, fallback factor 1).
+- **`modules/dominio/tesoreria/index.js`**: `_attachCategoriaToggle` pre-llena el monto por período y escucha el `change` de frecuencia; import de `calcularSalarioMinimo` → `montoSalarioMinimoPorPeriodo`.
+- **`tests/unit/tesoreria.test.js`**: 7 tests nuevos de `montoSalarioMinimoPorPeriodo` (incluye regresión MC.8).
+- **`service-worker.js`**: v208 → v209.
+
+---
+
 ### feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte · 2026-06-29
 
 Se agregó un campo **categoría** al registrar un ingreso recurrente, con 12 categorías predefinidas (Salario, Salario mínimo, Honorarios, Comisión, Arriendo, Pensión, Subsidio, Bonificación, Cuota, Venta, Rendimientos, Otro). El selector aparece como primer campo del formulario (antes de la descripción) para guiar la clasificación desde el inicio. La categoría es opcional: los ingresos existentes quedan con `categoria: null` (migración idempotente v15 → v16, mismo patrón que `diaPago`). La validación acepta vacío (opcional) pero rechaza valores fuera del catálogo. `normalizarIngreso` guarda la categoría si es válida; si no, `null`. La lista de ingresos muestra la categoría junto a la frecuencia ("Mensual · Honorarios").
