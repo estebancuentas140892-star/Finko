@@ -37,7 +37,16 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-El pedido de Gastos quedó cerrado (2026-06-28): recientes primero (Task 1) + guía de categorías fijas (Task 2). El pedido de Dashboard también cerrado en la misma sesión. A la espera de feedback del usuario desde su celular.
+**ADR 011 en curso: rediseño de simulación de deudas.** S1 cerrado (extra mensual siempre visible + resumen de impacto en vivo). Pendientes:
+- **S2** - Eliminar botón "Simular" por deuda (absorber en el panel unificado).
+- **S3** - Limpiar dead code del acordeón eliminado (CSS, acciones).
+- **S4** - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
+- **S5** - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
+
+Además quedan **3 tareas del backlog del usuario** (2026-06-28):
+- Categorías predefinidas para Agenda (13 categorías de gastos fijos).
+- Categorías predefinidas para Deudas (12 tipos de obligación).
+- (Categorías de Agenda y Deudas son independientes del rediseño de simulación.)
 
 Pendientes no urgentes (mantenimiento):
 

@@ -18,7 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, simularPagoDeuda, filtrarDeudasPagables, compararEstrategias } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -33,7 +33,7 @@ import {
   renderPanelPrioridades,
   renderSimulacion,
 } from './view.js';
-import { formatearDuracion } from './views/estrategia-impacto.js';
+import { formatearDuracion, renderResumenExtra } from './views/estrategia-impacto.js';
 
 /**
  * Re-renderiza los paneles del dashboard que dependen de compromisos.
@@ -464,15 +464,22 @@ function _cambiarExtraEstrategia(el) {
   renderEstrategiaPago();
 }
 
-function _toggleExtraEstrategia() {
-  const actual = getEstrategiaUI().expandidoExtra;
-  setEstrategiaUI({ expandidoExtra: !actual });
-  renderEstrategiaPago();
-  // Si abrimos, hacemos focus al input para que el usuario pueda escribir directo.
-  if (!actual) {
-    queueMicrotask(() => document.getElementById('estrategia-extra')?.focus());
-  }
+function _actualizarResumenEnVivo(el) {
+  const extra = Number(el.value) || 0;
+  const resumen = document.querySelector('.estrategia-card__resumen-extra');
+  if (!resumen) return;
+
+  const deudas = filtrarDeudasPagables(S.compromisos);
+  if (deudas.length < 2) return;
+
+  const sinExtra = compararEstrategias(deudas, 0);
+  const conExtra = extra > 0 ? compararEstrategias(deudas, extra) : null;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderResumenExtra(sinExtra, conExtra, extra);
+  const nuevo = tmp.firstElementChild;
+  if (nuevo) resumen.replaceWith(nuevo);
 }
+
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
@@ -491,14 +498,22 @@ export function initCompromisos() {
   registrarAccion('simular-abono',           _abrirSimulacion);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
-  registrarAccion('toggle-extra-estrategia', _toggleExtraEstrategia);
+  // toggle-extra-estrategia removed (ADR 011): the extra input is always visible.
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',     _volverChooser);
 
   _inyectarForm();
 
-  // El input de "extra mensual" usa `change` (al blur) en vez de click,
-  // así no perdemos focus durante el tipeo. Delegado a nivel documento.
+  // El extra mensual reacciona en dos tiempos:
+  //   - `input`: actualiza el resumen de impacto en vivo (sin re-renderizar
+  //     la card entera, para no perder el foco del input).
+  //   - `change` (blur): re-renderiza la card completa (estrategias + detalle).
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {
+      _actualizarResumenEnVivo(t);
+    }
+  });
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {

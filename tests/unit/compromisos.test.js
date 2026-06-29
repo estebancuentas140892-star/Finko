@@ -30,6 +30,7 @@ import {
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderResumenExtra } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1766,5 +1767,52 @@ describe('estadoPagoMes()', () => {
   it('ninguno: gastos de otro mes no cuentan', () => {
     const gOtroMes = [{ compromisoId: 'deuda-1', fecha: '2026-05-10', monto: 200_000 }];
     expect(estadoPagoMes(gOtroMes, deuda, '2026-06')).toBe('ninguno');
+  });
+});
+
+// ── renderResumenExtra() ────────────────────────────────────────
+
+describe('renderResumenExtra()', () => {
+  it('sin extra, muestra invitación a probar', () => {
+    const html = renderResumenExtra(null, null, 0);
+    expect(html).toContain('Escribe un monto');
+    expect(html).toContain('resumen-extra');
+    expect(html).not.toContain('--activo');
+  });
+
+  it('con extra y ahorro real, muestra impacto con clase --activo', () => {
+    const sinExtra = {
+      avalancha: { meses: 36, interesesTotales: 500_000, completo: true },
+      bolaNieve: { meses: 38, interesesTotales: 520_000, completo: true },
+    };
+    const conExtra = {
+      avalancha: { meses: 24, interesesTotales: 300_000, completo: true },
+      bolaNieve: { meses: 26, interesesTotales: 320_000, completo: true },
+    };
+    const html = renderResumenExtra(sinExtra, conExtra, 100_000);
+    expect(html).toContain('--activo');
+    expect(html).toContain('Impacto de tu pago extra');
+    expect(html).toContain('$100.000');
+    expect(html).toContain('menos');
+  });
+
+  it('con extra pero sin mejora significativa, sugiere monto mayor', () => {
+    const base = {
+      avalancha: { meses: 12, interesesTotales: 50_000, completo: true },
+    };
+    const igual = {
+      avalancha: { meses: 12, interesesTotales: 50_000, completo: true },
+    };
+    const html = renderResumenExtra(base, igual, 1000);
+    expect(html).toContain('no cambia significativamente');
+    expect(html).not.toContain('--activo');
+  });
+
+  it('si ambos planes son inviables, no muestra resumen', () => {
+    const inviable = {
+      avalancha: { meses: 600, interesesTotales: 0, completo: false },
+    };
+    const html = renderResumenExtra(inviable, inviable, 50_000);
+    expect(html).toBe('');
   });
 });

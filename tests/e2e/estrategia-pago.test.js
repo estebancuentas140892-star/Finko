@@ -204,8 +204,7 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
     const interesesLabel = page.locator('.estrategia-card__metrica-valor--danger').first();
     const sinExtra = await interesesLabel.textContent();
 
-    // Abrir el acordeon (cerrado por defecto) para acceder al input
-    await page.locator('[data-action="toggle-extra-estrategia"]').click();
+    // El input de extra mensual ya es visible (ADR 011: no hay acordeón)
     await page.waitForSelector('#estrategia-extra', { timeout: 3_000 });
 
     // Ingresar $500 000 de extra: el input dispara cambiar-extra-estrategia

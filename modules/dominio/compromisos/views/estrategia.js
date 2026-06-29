@@ -24,6 +24,7 @@ import {
 import {
   renderImpactoAvalancha,
   renderImpactoBolaNieve,
+  renderResumenExtra,
 } from './estrategia-impacto.js';
 
 // Estado UI local: extra mensual, estrategia activa, acordeón abierto.
@@ -32,7 +33,6 @@ import {
 const _uiEstrategia = {
   extraMensual:   0,
   estrategia:     null,
-  expandidoExtra: false,
 };
 
 /**
@@ -45,9 +45,6 @@ export function setEstrategiaUI(patch) {
   }
   if (patch.estrategia === 'avalancha' || patch.estrategia === 'bolaNieve') {
     _uiEstrategia.estrategia = patch.estrategia;
-  }
-  if (patch.expandidoExtra !== undefined) {
-    _uiEstrategia.expandidoExtra = Boolean(patch.expandidoExtra);
   }
 }
 
@@ -96,8 +93,12 @@ export function renderEstrategiaPago() {
   // y mostramos un mensaje "no aplica" en el detalle (más educativo que cambiar
   // a sus espaldas).
 
-  const { extraMensual, estrategia, expandidoExtra } = _uiEstrategia;
+  const { extraMensual, estrategia } = _uiEstrategia;
   const recomendacion = recomendarEstrategia(deudas, extraMensual);
+
+  const resumenExtraHtml = extraMensual > 0
+    ? renderResumenExtra(compararEstrategias(deudas, 0), compararEstrategias(deudas, extraMensual), extraMensual)
+    : renderResumenExtra(null, null, 0);
 
   el.innerHTML = `
     <article class="estrategia-card">
@@ -108,6 +109,9 @@ export function renderEstrategiaPago() {
         </p>
       </header>
 
+      ${_renderExtraMensual(extraMensual)}
+      ${resumenExtraHtml}
+
       ${_renderAvisoTasaDesconocida(deudas)}
       ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico)}
 
@@ -117,8 +121,6 @@ export function renderEstrategiaPago() {
       </div>
 
       ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual, hayTasaPositiva)}
-
-      ${_renderAcordeonExtra(expandidoExtra, extraMensual)}
     </article>`;
 }
 
@@ -309,41 +311,19 @@ function _renderNoAplica(estrategia) {
 }
 
 /**
- * Acordeón opcional para pagar extra cada mes. Colapsado por defecto.
- * Cuando se expande, muestra el input y recalcula el detalle.
+ * Control de extra mensual, siempre visible arriba de la card. El usuario
+ * escribe un monto y el resumen de impacto se recalcula en vivo (input event).
  */
-function _renderAcordeonExtra(abierto, extraMensual) {
-  if (!abierto) {
-    return `
-      <button type="button"
-              class="estrategia-card__link"
-              data-action="toggle-extra-estrategia"
-              aria-expanded="false">
-        💪 ¿Puedes pagar algo extra cada mes? Calcula el impacto
-      </button>`;
-  }
+function _renderExtraMensual(extraMensual) {
   return `
-    <div class="estrategia-card__acordeon">
-      <div class="estrategia-card__acordeon-header">
-        <p class="estrategia-card__acordeon-titulo">
-          💪 Paga un extra cada mes
-        </p>
-        <button type="button"
-                class="btn btn-ghost btn-icon estrategia-card__acordeon-cerrar"
-                data-action="toggle-extra-estrategia"
-                aria-expanded="true"
-                aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
-      </div>
-      <p class="estrategia-card__acordeon-desc">
-        Cualquier monto adicional acelera el cierre y ahorra intereses.
-        Prueba con $50.000 y mira la diferencia arriba.
-      </p>
+    <div class="estrategia-card__extra">
       <div class="form-group">
-        <label for="estrategia-extra" class="label">Pago extra mensual (COP)</label>
+        <label for="estrategia-extra" class="label">💪 ¿Puedes pagar algo extra cada mes?</label>
         <input id="estrategia-extra" class="input" type="number"
-               min="0" step="10000" value="${extraMensual}"
-               placeholder="0" autocomplete="off" inputmode="numeric"
+               min="0" step="10000" value="${extraMensual || ''}"
+               placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
                data-action="cambiar-extra-estrategia" />
+        <p class="form-hint">Cualquier monto adicional acelera el cierre y ahorra intereses.</p>
       </div>
     </div>`;
 }

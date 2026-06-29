@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(gastos): guía de categorías de gasto fijo)
+> Última actualización: 2026-06-28 (feat(deudas): extra mensual visible + resumen de impacto en vivo, ADR 011 S1)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): extra mensual siempre visible con resumen de impacto en vivo (ADR 011, S1) · 2026-06-28
+
+Primer slice del rediseño de simulación de deudas (ADR 011). El input de "pago extra mensual" estaba escondido en un acordeón colapsado al fondo de la card de estrategia. Ahora está siempre visible arriba de la card, con un resumen de impacto que compara "sin extra" vs "con extra" al instante: meses menos, intereses ahorrados. Se actualiza en vivo (evento `input`, sin perder foco) y la card completa se recalcula al salir del campo. Se eliminó el acordeón completo. **Pendientes:** S2 (eliminar botón "Simular" por deuda), S3 (limpiar dead code del acordeón), S4/S5 (herramientas interactivas: renegociar tasa y consolidar). 1446 → 1450 tests. SW v195 → v196.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | ADR nuevo (diseño completo: 5 slices). |
+| `modules/dominio/compromisos/views/estrategia.js` | Extra + resumen arriba de las cards; eliminado el acordeón. |
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | Nueva `renderResumenExtra`. |
+| `modules/dominio/compromisos/index.js` | `input` para resumen en vivo; eliminado `_toggleExtraEstrategia`. |
+| `styles/components/charts.css` | CSS de extra + resumen; eliminado CSS del acordeón. |
+| `tests/unit/compromisos.test.js` | 4 tests de `renderResumenExtra`. |
+| `tests/e2e/estrategia-pago.test.js` | Corregido (ya no abre acordeón). |
+
+---
 
 ### feat(gastos): guía de categorías de gasto fijo (nudge no bloqueante) · 2026-06-28
 
@@ -86,19 +102,6 @@ Primera de dos mejoras del Dashboard pedidas por el usuario. La tarjeta "Tienes 
 | `index.html` | `#panel-gastos-pendientes` movido dentro del `.bento` tras el hero, ahora `class="bento__cell"` (span 4 desktop / span 1 mobile). |
 | `styles/layout.css` | Celda `#panel-gastos-pendientes` bare + nudge interno `flex:1` + `align-content:center` + radius xl. |
 | `service-worker.js` | `CACHE_NAME` v191 → v192. |
-
----
-
-### feat(deudas): selector de tarjetas + reparto-fallback en "Abonar" (4/4 flujos, cierra la serie) · 2026-06-28
-
-Cierra la serie "selector de tarjetas + reparto solo si no alcanza" en los 4 flujos de pago (Gastos, Gasto rápido, Agenda y ahora Deudas). El formulario de abono vuelve a tener el selector de tarjetas (avatar, nombre, saldo); se elige la cuenta y solo si no alcanza se abre el reparto, pre-sembrado y avisando "X no alcanza". `validarAbono` vuelve a exigir `cuentaId`. Verificado en navegador: cubre (Bancolombia $2M, abono $200k) → un solo gasto-abono, sin picker; no cubre (Nequi $100k, abono $500k) → reparto Nequi $100k + Bancolombia $400k, saldo de la deuda baja de $1.500.000 a $1.000.000, saldos de cuentas sin negativos. Tests 1438/1438 (2 actualizados, sin nuevos: la cobertura de `resolverPagoConPreferida` ya existía). SW v187 → v188.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono` con `renderSelectorCuenta` (selector de tarjetas restaurado). |
-| `modules/dominio/compromisos/logic.js` | `validarAbono` vuelve a exigir `cuentaId`. |
-| `modules/dominio/compromisos/index.js` | `_guardarAbono` usa `resolverPagoConPreferida` en vez de `resolverPagoMultiCuenta`. |
-| `tests/unit/compromisos.test.js` | Tests de `validarAbono` y `renderFormAbono` actualizados al nuevo contrato (cuentaId requerido, selector presente). |
 
 ---
 

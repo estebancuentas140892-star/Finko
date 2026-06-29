@@ -165,6 +165,58 @@ function _renderComparativa(resultado, extraMensual) {
 }
 
 /**
+ * Resumen de impacto del extra mensual, siempre visible entre el input de extra
+ * y las cards de estrategia. Compara "sin extra" vs "con extra" usando la mejor
+ * estrategia (avalancha). Si el extra es 0, muestra una invitación a probar.
+ * Si el plan base es inviable, no muestra resumen (el diagnóstico lo cubre).
+ *
+ * @param {ReturnType<import('../logic.js').compararEstrategias>|null} sinExtra resultado con extra=0
+ * @param {ReturnType<import('../logic.js').compararEstrategias>|null} conExtra resultado con el extra del usuario
+ * @param {number} extraMensual
+ */
+export function renderResumenExtra(sinExtra, conExtra, extraMensual) {
+  if (!extraMensual || extraMensual <= 0) {
+    return `
+      <div class="estrategia-card__resumen-extra" role="status">
+        <p class="estrategia-card__bloque-body">
+          Escribe un monto arriba y mira al instante cuánto tiempo y dinero te ahorras.
+        </p>
+      </div>`;
+  }
+
+  if (!sinExtra || !conExtra) return '';
+
+  const base  = sinExtra.avalancha;
+  const extra = conExtra.avalancha;
+  if (!base.completo && !extra.completo) return '';
+
+  const mesesMenos     = Math.max(0, base.meses - extra.meses);
+  const interesesMenos = Math.max(0, base.interesesTotales - extra.interesesTotales);
+
+  if (mesesMenos <= 0 && interesesMenos <= 0) {
+    return `
+      <div class="estrategia-card__resumen-extra" role="status">
+        <p class="estrategia-card__bloque-body">
+          Con ${f(extraMensual)}/mes extra, el plan no cambia significativamente.
+          Prueba con un monto mayor.
+        </p>
+      </div>`;
+  }
+
+  const partes = [];
+  if (mesesMenos > 0)     partes.push(`<strong>${formatearDuracion(mesesMenos)} menos</strong>`);
+  if (interesesMenos > 0) partes.push(`<strong>${f(interesesMenos)} menos en intereses</strong>`);
+
+  return `
+    <div class="estrategia-card__resumen-extra estrategia-card__resumen-extra--activo" role="status">
+      <p class="estrategia-card__bloque-titulo">🎯 Impacto de tu pago extra</p>
+      <p class="estrategia-card__bloque-body">
+        Con ${f(extraMensual)}/mes adicional terminas ${partes.join(' y ')}.
+      </p>
+    </div>`;
+}
+
+/**
  * Convierte una cantidad de meses a una etiqueta legible en español.
  * Hasta 11 meses: "X meses" (o "1 mes"). Desde 12: "X años Y meses" omitiendo
  * la parte que sea 0 y respetando singulares.

@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): extra mensual siempre visible con resumen de impacto en vivo (ADR 011, S1) · 2026-06-28
+
+Primer slice del rediseño de simulación de deudas (ADR 011). El input de "pago extra mensual" vivía escondido en un acordeón colapsado al fondo de la card de estrategia: el usuario escribía un valor y no veía nada hasta elegir Avalancha o Bola de nieve. Ahora el input está siempre visible arriba de la card de estrategia, y debajo aparece un **resumen de impacto** que compara "sin extra" vs "con extra" al instante: nueva fecha de fin, meses menos, intereses ahorrados. El resumen se actualiza en vivo (evento `input`, sin perder foco: solo reemplaza el div del resumen) y la card completa se recalcula al salir del campo (`change`). La función `renderResumenExtra` compara dos resultados de `compararEstrategias` (extra=0 vs extra=N) y renderiza un banner: invitación si extra=0, banner verde con impacto si hay ahorro, banner neutro si no hay mejora significativa, vacío si el plan es inviable (el diagnóstico lo cubre). Se eliminó el acordeón (`expandidoExtra`, `toggle-extra-estrategia`, `_toggleExtraEstrategia`, CSS de `.estrategia-card__link` y `.estrategia-card__acordeon*`). E2E actualizado (ya no abre acordeón). Verificado: 4 tests nuevos de `renderResumenExtra` + E2E corregido. 1446 → 1450 tests. SW v195 → v196.
+
+- **`docs/DECISIONS/011-unificacion-simulador-deudas.md`**: ADR nuevo (diseño completo del rediseño: 5 slices, principios, alternativas descartadas).
+- **`modules/dominio/compromisos/views/estrategia.js`**: el render principal ahora pone el input de extra y el resumen de impacto arriba de las cards de estrategia; eliminado el acordeón y `expandidoExtra` del estado UI.
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: nueva `renderResumenExtra(sinExtra, conExtra, extraMensual)` (pura).
+- **`modules/dominio/compromisos/index.js`**: evento `input` para actualización en vivo del resumen (sin re-render completo); `change` para re-render completo. Eliminados `_toggleExtraEstrategia` y su acción. Nuevos imports (`filtrarDeudasPagables`, `compararEstrategias`, `renderResumenExtra`).
+- **`styles/components/charts.css`**: nuevas `.estrategia-card__extra`, `.estrategia-card__resumen-extra`, `.estrategia-card__resumen-extra--activo`; eliminadas `.estrategia-card__link`, `.estrategia-card__acordeon*`.
+- **`tests/unit/compromisos.test.js`**: 4 tests de `renderResumenExtra` (invitación, impacto real, sin mejora, inviable).
+- **`tests/e2e/estrategia-pago.test.js`**: corregido (ya no abre acordeón).
+- **`service-worker.js`**: v195 → v196.
+
+---
+
 ### feat(gastos): guía de categorías de gasto fijo (nudge no bloqueante) · 2026-06-28
 
 Segunda de dos mejoras de la sección Gastos pedidas por el usuario. Algunas categorías (Vivienda, Servicios públicos, Educación) suelen corresponder a gastos fijos mensuales, pero estaban mezcladas con las variables sin ninguna orientación. Ahora, al elegir una de esas categorías en el formulario de gasto, aparece un hint no bloqueante debajo del select: "Esta categoría suele ser un gasto fijo mensual. Si es recurrente, puedes registrarlo en Agenda para llevarlo mejor." (con link a Agenda). El hint no limita la decisión: el usuario puede ignorarlo y registrar el gasto como ocasional. Se implementó con: (1) nueva constante `CATEGORIAS_TIPICAMENTE_FIJAS` (Set) en `constants.js` con las 3 categorías típicamente recurrentes, (2) un `<p>` hint oculto por defecto en el form de gasto (`view.js`), (3) un `change` listener en el `<select>` de categoría dentro de `_montarFormGasto` (`index.js`) que muestra/oculta el hint según `Set.has()`, y (4) una nueva variante CSS `.form-hint--info` en `forms.css`. Se evaluó y descartó incluir Salud y Transporte (demasiado variable: un taxi, una consulta médica). Verificado: 3 tests nuevos (constante, hint en form, categorías excluidas) + verificación de los archivos servidos en el navegador. 1443 → 1446 tests. SW v194 → v195.

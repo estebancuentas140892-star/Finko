@@ -672,48 +672,19 @@
   line-height: 1.4;
 }
 
-/* v7: acordeón "pagá extra". */
-.estrategia-card__link {
-  display: block;
-  width: 100%;
-  margin-top: var(--fk-space-2);
-  padding: var(--fk-space-3);
-  background: transparent;
-  border: 1px dashed var(--fk-border-default);
+/* v11 (ADR 011): control de extra mensual siempre visible + resumen de impacto. */
+.estrategia-card__extra {
+  margin-bottom: var(--fk-space-3);
+}
+.estrategia-card__resumen-extra {
+  padding: var(--fk-space-3) var(--fk-space-4);
   border-radius: var(--fk-radius-md);
-  color: var(--fk-text-muted);
-  font-size: var(--fk-text-sm);
-  text-align: center;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  background: var(--fk-bg-elevated);
+  margin-bottom: var(--fk-space-4);
 }
-.estrategia-card__link:hover,
-.estrategia-card__link:focus-visible {
-  border-color: var(--fk-accent);
-  color: var(--fk-text-primary);
-}
-.estrategia-card__acordeon {
-  margin-top: var(--fk-space-2);
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-surface);
-  border-radius: var(--fk-radius-md);
-}
-.estrategia-card__acordeon-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--fk-space-2);
-}
-.estrategia-card__acordeon-titulo {
-  margin: 0;
-  font-weight: 600;
-  font-size: var(--fk-text-base);
-}
-.estrategia-card__acordeon-desc {
-  margin: 0 0 var(--fk-space-3) 0;
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-muted);
-  line-height: 1.4;
+.estrategia-card__resumen-extra--activo {
+  background: var(--fk-nudge-success-bg);
+  border: 1px solid var(--fk-nudge-success-border);
 }
 
 /* v6: input + select para tasa con unidad (% EA vs % mensual). */
