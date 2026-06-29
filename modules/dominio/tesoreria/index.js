@@ -27,6 +27,7 @@ import {
   compromisoCuotaManejoDeCuenta,
   validarIngreso,
   normalizarIngreso,
+  calcularSalarioMinimo,
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
@@ -537,6 +538,43 @@ function _attachDiaPagoToggle(form) {
   _sync();
 }
 
+/**
+ * Conecta la lógica condicional de la categoría al form de ingreso:
+ * - Muestra/oculta el fieldset de subsidio de transporte al elegir "Salario mínimo".
+ * - Al marcar el checkbox de subsidio, pre-llena el monto con SMMLV + auxilio.
+ * - Al desmarcar, vuelve al SMMLV solo.
+ * - Al elegir "Salario mínimo", pre-llena el monto con SMMLV y la descripción.
+ *
+ * @param {HTMLFormElement} form
+ */
+function _attachCategoriaToggle(form) {
+  const selCat      = form.querySelector('[name="categoria"]');
+  const grupoSubsid = form.querySelector('#form-group-salario-min');
+  const cbSubsidio  = form.querySelector('#ingreso-subsidio');
+  const inputMonto  = form.querySelector('[name="monto"]');
+  const inputDesc   = form.querySelector('[name="descripcion"]');
+  if (!selCat || !grupoSubsid || !cbSubsidio) return;
+
+  function _syncCategoria() {
+    const esSalMin = selCat.value === 'Salario mínimo';
+    grupoSubsid.hidden = !esSalMin;
+    if (!esSalMin) {
+      cbSubsidio.checked = false;
+      return;
+    }
+    const { total } = calcularSalarioMinimo(cbSubsidio.checked);
+    if (inputMonto) inputMonto.value = total;
+    if (inputDesc && !inputDesc.value.trim()) inputDesc.value = 'Salario mínimo';
+  }
+
+  selCat.addEventListener('change', _syncCategoria);
+  cbSubsidio.addEventListener('change', () => {
+    if (selCat.value !== 'Salario mínimo') return;
+    const { total } = calcularSalarioMinimo(cbSubsidio.checked);
+    if (inputMonto) inputMonto.value = total;
+  });
+}
+
 /** Abre el modal de ingreso en modo creación. */
 function _nuevoIngreso() {
   const overlay = document.getElementById('modal-ingreso');
@@ -551,7 +589,10 @@ function _nuevoIngreso() {
       e.preventDefault();
       _guardarIngreso();
     });
-    if (form) _attachDiaPagoToggle(form);
+    if (form) {
+      _attachDiaPagoToggle(form);
+      _attachCategoriaToggle(form);
+    }
   }
   abrirModal(overlay);
 }
@@ -605,6 +646,7 @@ function _editarIngreso(el) {
         _guardarIngreso();
       });
       _attachDiaPagoToggle(form);
+      _attachCategoriaToggle(form);
     }
   }
   abrirModal(overlay);

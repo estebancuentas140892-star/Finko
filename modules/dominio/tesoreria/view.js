@@ -11,12 +11,13 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
-import { BANCOS_CO, FRECUENCIAS } from '../../core/constants.js';
+import { BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO } from '../../core/constants.js';
 import {
   cuentasActivas,
   calcularCostoGMF,
   detectarNudgeGMF,
   FRECUENCIAS_CON_DIA,
+  calcularSalarioMinimo,
   detectarNudgeProximoIngreso,
   estimarSalarioMensual,
   calcularGastosFijosMensuales,
@@ -135,6 +136,7 @@ function _renderEmptyStateIngresos() {
 function _renderIngresoItem(ing) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
+  const catLabel = ing.categoria ? ` · ${_esc(ing.categoria)}` : '';
 
   let diaHint = '';
   if (ing.diaPago) {
@@ -148,7 +150,7 @@ function _renderIngresoItem(ing) {
     <article class="list-item" data-id="${_esc(ing.id)}">
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
-        <p class="list-item__subtitle">${frec}</p>
+        <p class="list-item__subtitle">${frec}${catLabel}</p>
         ${diaHint}
       </div>
       <div class="list-item__meta">
@@ -177,14 +179,38 @@ export function renderFormIngreso(ingreso = null) {
     .map(fr => `<option value="${_esc(fr)}"${ingreso?.frecuencia === fr ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
+  const catOpts = CATEGORIAS_INGRESO
+    .map(c => `<option value="${_esc(c)}"${ingreso?.categoria === c ? ' selected' : ''}>${_esc(c)}</option>`)
+    .join('');
+
+  const esSalarioMin = ingreso?.categoria === 'Salario mínimo';
+  const { smmlv, auxilio } = calcularSalarioMinimo(true);
+
   return `
     <form id="form-ingreso" novalidate>
+      <div class="form-group">
+        <label for="ingreso-cat" class="label">Categoría</label>
+        <select id="ingreso-cat" name="categoria" class="input">
+          <option value="">Seleccionar…</option>
+          ${catOpts}
+        </select>
+      </div>
       <div class="form-group">
         <label for="ingreso-desc" class="label">Descripción</label>
         <input id="ingreso-desc" name="descripcion" class="input" type="text"
                value="${ingreso ? _esc(ingreso.descripcion) : ''}"
                placeholder="Ej. Salario empresa, Arriendo apartamento"
                required aria-required="true" autocomplete="off" />
+      </div>
+      <div id="form-group-salario-min" class="form-group form-group--checkbox"${esSalarioMin ? '' : ' hidden'}>
+        <label class="checkbox-row">
+          <input type="checkbox" id="ingreso-subsidio" name="conSubsidio" />
+          <span>Recibo subsidio de transporte</span>
+        </label>
+        <p class="form-hint form-hint--muted">
+          SMMLV ${f(smmlv)} + auxilio ${f(auxilio)} = ${f(smmlv + auxilio)}.
+          Si marcas esta opción, Finko ajusta el monto automáticamente.
+        </p>
       </div>
       <div class="form-group">
         <label for="ingreso-monto" class="label">Monto (COP)</label>

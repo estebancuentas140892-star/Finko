@@ -77,6 +77,7 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
 
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:
+- ✅ Categorías predefinidas para Ingresos (12 categorías + automatización "Salario mínimo" con subsidio de transporte) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - Categorías predefinidas para Agenda (13 categorías de gastos fijos).
 - Categorías predefinidas para Deudas (12 tipos de obligación).
 

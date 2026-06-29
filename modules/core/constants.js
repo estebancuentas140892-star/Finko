@@ -365,6 +365,26 @@ export const CATEGORIA_EMOJI = {
   'Otros':              '📦',
 };
 
+/**
+ * Categorías predefinidas para ingresos recurrentes.
+ * El orden define el del selector en el formulario.
+ * 'Salario mínimo' dispara la automatización de subsidio de transporte.
+ */
+export const CATEGORIAS_INGRESO = [
+  'Salario',
+  'Salario mínimo',
+  'Honorarios',
+  'Comisión',
+  'Arriendo',
+  'Pensión',
+  'Subsidio',
+  'Bonificación',
+  'Cuota',
+  'Venta',
+  'Rendimientos',
+  'Otro',
+];
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

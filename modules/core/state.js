@@ -41,6 +41,7 @@ import { SMMLV } from './constants.js';
  * @property {string}      descripcion
  * @property {number}      monto           COP.
  * @property {string}      frecuencia      Ver FRECUENCIAS.
+ * @property {string|null} categoria       Ver CATEGORIAS_INGRESO. null si no se capturó (v16).
  * @property {number|null} diaPago         Día del mes (1-31) en que llega el pago.
  *                                          Para Quincenal: primer día (1-15); el segundo
  *                                          es diaPago + 15. null si no se capturó.

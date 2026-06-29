@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (docs: ADR 013 distribución "Automático inteligente", MC.6 diseño)
+> Última actualización: 2026-06-29 (feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1494/1494 verdes |
+| Tests unitarios + integración | 1506/1506 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte · 2026-06-29
+
+Se agregó un campo **categoría** al registrar un ingreso, con 12 categorías predefinidas (Salario, Salario mínimo, Honorarios, Comisión, Arriendo, Pensión, Subsidio, Bonificación, Cuota, Venta, Rendimientos, Otro). Migración idempotente v15 → v16 (`categoria: null` en ingresos existentes). Automatización: al elegir "Salario mínimo", aparece "¿Recibo subsidio de transporte?" con checkbox; marcado → monto = SMMLV + auxilio (leídos de `constants.js`). La lista de ingresos muestra "Mensual · Honorarios". Verificado: 12 tests nuevos (1506 total), render desechable en happy-dom, lint limpio, 57/57 E2E. SW v207 → v208.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_INGRESO` (12 categorías). |
+| `modules/core/storage.js` | Migración v15 → v16: `categoria: null` en ingresos. |
+| `modules/core/state.js` | Typedef `Ingreso` con `categoria`. |
+| `modules/dominio/tesoreria/logic.js` | `validarIngreso` + `normalizarIngreso` con categoría; `calcularSalarioMinimo`. |
+| `modules/dominio/tesoreria/view.js` | Selector de categoría en form; fieldset subsidio; categoría en lista. |
+| `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle` (show/hide subsidio, pre-llenado). |
+| `tests/unit/tesoreria.test.js` | 12 tests nuevos. |
+| `service-worker.js` | v207 → v208. |
+
+---
 
 ### docs: ADR 013, distribución "Automático inteligente" (MC.6, diseño) · 2026-06-29
 
@@ -91,20 +108,6 @@ Tercer slice de la auto-distribución, de cierre del panel base. El panel "Distr
 | `service-worker.js` | `CACHE_NAME` v204 → v205. |
 
 ---
-
-### feat(tesoreria): "Distribuir mi ingreso" suma Deudas como destino (ADR 012, MC.4b) · 2026-06-29
-
-Segundo slice de la auto-distribución. El panel ahora reparte también hacia las deudas pendientes como abono real. Bajo una subsección "Abonar a deudas (ordenadas por prioridad de pago)" aparece una fila por deuda con saldo > 0, ordenadas estilo Avalancha (mayor interés efectivo anual primero, la estrategia óptima recomendada), cada una con su saldo como contexto. El abono se topa al saldo (no se paga de más; el excedente se queda en la cuenta) en `_leerItemsDistribucion`, así el resumen y el apply usan el mismo monto efectivo. Al confirmar, la deuda se aplica por el mismo EventBus `distribucion:aplicar`: el suscriptor en `compromisos/index.js` baja `saldoTotal` (topado en 0) con su propia lógica; tesorería centraliza el descuento de la cuenta (las deudas, como metas/apartados, sí salen de la cuenta). Se agregó `compromisos` al snapshot de undo. Lógica pura nueva `construirPlanDeudas` (ordena por EA desc replicando localmente `tasaEADe` con comentario, ADN #10). El botón "Distribuir mi ingreso" ahora también aparece cuando solo hay deudas (sin destinos de ahorro). Verificado: 5 tests de lógica nuevos (1473 total), test de integración desechable en happy-dom (orden por prioridad, tope al saldo, descuento de cuenta, undo), 57/57 E2E. El navegador local cargó módulos cacheados de la sesión anterior en :8080 y no mostró las filas de deuda; se confirmó que los archivos servidos sí contienen el código nuevo, y la verificación quedó en el test de integración (el SW v204 fuerza assets frescos en producción). SW v203 → v204. **Pendientes:** MC.4c (filas informativas necesidades/estilo de vida), MC.4d (de-duplicación + mapeo), MC.4e (inversiones).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirPlanDeudas` (orden Avalancha) + `_tasaEADeuda` (replicado, ADN). |
-| `modules/dominio/tesoreria/view.js` | Subsección de deudas en el panel + `_filaDistribuir` (muestra saldo). |
-| `modules/dominio/tesoreria/index.js` | Tope del abono al saldo; `compromisos` en el snapshot; copy del resumen. |
-| `modules/dominio/compromisos/index.js` | Suscriptor `distribucion:aplicar`: baja `saldoTotal` de la deuda. |
-| `styles/components/forms.css` | `.distribuir__subtitulo` + `.distribuir__saldo`. |
-| `tests/unit/tesoreria.test.js` | 5 tests de `construirPlanDeudas`. |
-| `service-worker.js` | `CACHE_NAME` v203 → v204. |
 
 ---
 

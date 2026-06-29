@@ -25,7 +25,9 @@ import {
   construirPlanInversiones,
   ultimoPagoHasta,
   estadoDistribucion,
+  calcularSalarioMinimo,
 } from '../../modules/dominio/tesoreria/logic.js';
+import { CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -871,6 +873,82 @@ describe('normalizarIngreso()', () => {
   it('diaPago en frecuencia no soportada (Diario) → diaPago es null', () => {
     const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Diario', diaPago: '3' });
     expect(r.diaPago).toBeNull();
+  });
+
+  it('con categoria válida → guarda la categoria', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', categoria: 'Salario' });
+    expect(r.categoria).toBe('Salario');
+  });
+
+  it('sin categoria → categoria es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual' });
+    expect(r.categoria).toBeNull();
+  });
+
+  it('categoria vacía → categoria es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', categoria: '' });
+    expect(r.categoria).toBeNull();
+  });
+
+  it('categoria inválida → categoria es null', () => {
+    const r = normalizarIngreso({ descripcion: 'x', monto: '1', frecuencia: 'Mensual', categoria: 'Inexistente' });
+    expect(r.categoria).toBeNull();
+  });
+});
+
+// ── validarIngreso() categoria ──────────────────────────────────────
+
+describe('validarIngreso() categoria', () => {
+  it('categoria válida → sin errores de categoria', () => {
+    const errores = validarIngreso({ descripcion: 'x', monto: '100', frecuencia: 'Mensual', categoria: 'Honorarios' });
+    expect(errores).toEqual([]);
+  });
+
+  it('categoria vacía → sin errores (es opcional)', () => {
+    const errores = validarIngreso({ descripcion: 'x', monto: '100', frecuencia: 'Mensual', categoria: '' });
+    expect(errores).toEqual([]);
+  });
+
+  it('categoria inválida → error', () => {
+    const errores = validarIngreso({ descripcion: 'x', monto: '100', frecuencia: 'Mensual', categoria: 'Inventada' });
+    expect(errores).toContain('La categoría seleccionada no es válida.');
+  });
+});
+
+// ── calcularSalarioMinimo() ─────────────────────────────────────────
+
+describe('calcularSalarioMinimo()', () => {
+  it('sin subsidio devuelve SMMLV sin auxilio', () => {
+    const r = calcularSalarioMinimo(false);
+    expect(r.smmlv).toBe(SMMLV);
+    expect(r.auxilio).toBe(0);
+    expect(r.total).toBe(SMMLV);
+  });
+
+  it('con subsidio suma el auxilio de transporte', () => {
+    const r = calcularSalarioMinimo(true);
+    expect(r.smmlv).toBe(SMMLV);
+    expect(r.auxilio).toBe(AUXILIO_TRANSPORTE);
+    expect(r.total).toBe(SMMLV + AUXILIO_TRANSPORTE);
+  });
+});
+
+// ── CATEGORIAS_INGRESO ──────────────────────────────────────────────
+
+describe('CATEGORIAS_INGRESO', () => {
+  it('contiene 12 categorías predefinidas', () => {
+    expect(CATEGORIAS_INGRESO).toHaveLength(12);
+  });
+
+  it('incluye Salario mínimo (dispara automatización)', () => {
+    expect(CATEGORIAS_INGRESO).toContain('Salario mínimo');
+  });
+
+  it('todas son strings no vacíos', () => {
+    for (const c of CATEGORIAS_INGRESO) {
+      expect(typeof c).toBe('string');
+      expect(c.length).toBeGreaterThan(0);
+    }
   });
 });
 

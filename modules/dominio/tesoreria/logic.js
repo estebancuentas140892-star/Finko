@@ -6,7 +6,7 @@
  * - Testeable en Node/Vitest sin ningún mock de navegador.
  */
 
-import { GMF, FRECUENCIAS, BANCOS_CO } from '../../core/constants.js';
+import { GMF, FRECUENCIAS, BANCOS_CO, CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../core/constants.js';
 
 // Tabla de conversión a mensual. Local para no importar de otro dominio (ADN #10).
 // Frecuencias de baja periodicidad (Bimestral, Trimestral, Semestral, Anual,
@@ -360,6 +360,9 @@ export function validarIngreso(datos) {
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
     errores.push('Debes elegir una frecuencia válida.');
   }
+  if (datos.categoria && !CATEGORIAS_INGRESO.includes(datos.categoria)) {
+    errores.push('La categoría seleccionada no es válida.');
+  }
   // diaPago es opcional; si se proporcionó y la frecuencia lo soporta, validar rango.
   if (datos.diaPago !== undefined && datos.diaPago !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia)) {
     const dia    = Number(datos.diaPago);
@@ -385,13 +388,29 @@ export function normalizarIngreso(datos) {
   const diaPago = (diaRaw !== undefined && diaRaw !== '' && FRECUENCIAS_CON_DIA.includes(datos.frecuencia))
     ? Number(diaRaw)
     : null;
+  const categoria = datos.categoria && CATEGORIAS_INGRESO.includes(datos.categoria)
+    ? datos.categoria
+    : null;
   return {
     descripcion: datos.descripcion.trim(),
     monto:       Number(datos.monto),
     frecuencia:  datos.frecuencia,
+    categoria,
     activo:      true,
     diaPago,
   };
+}
+
+/**
+ * Calcula el monto del salario mínimo legal vigente con o sin subsidio de
+ * transporte. Pura: lee las constantes legales exportadas.
+ *
+ * @param {boolean} conSubsidio - true si el usuario recibe auxilio de transporte.
+ * @returns {{ smmlv: number, auxilio: number, total: number }}
+ */
+export function calcularSalarioMinimo(conSubsidio) {
+  const auxilio = conSubsidio ? AUXILIO_TRANSPORTE : 0;
+  return { smmlv: SMMLV, auxilio, total: SMMLV + auxilio };
 }
 
 // ── VALIDACIÓN CUENTAS ───────────────────────────────────────────

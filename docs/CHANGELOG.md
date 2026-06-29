@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): categorías predefinidas para ingresos + automatización "Salario mínimo" con subsidio de transporte · 2026-06-29
+
+Se agregó un campo **categoría** al registrar un ingreso recurrente, con 12 categorías predefinidas (Salario, Salario mínimo, Honorarios, Comisión, Arriendo, Pensión, Subsidio, Bonificación, Cuota, Venta, Rendimientos, Otro). El selector aparece como primer campo del formulario (antes de la descripción) para guiar la clasificación desde el inicio. La categoría es opcional: los ingresos existentes quedan con `categoria: null` (migración idempotente v15 → v16, mismo patrón que `diaPago`). La validación acepta vacío (opcional) pero rechaza valores fuera del catálogo. `normalizarIngreso` guarda la categoría si es válida; si no, `null`. La lista de ingresos muestra la categoría junto a la frecuencia ("Mensual · Honorarios").
+
+Automatización "Salario mínimo": al elegir la categoría "Salario mínimo", aparece un fieldset condicional con un checkbox "¿Recibo subsidio de transporte?" y un hint informativo que muestra SMMLV + auxilio = total (valores vigentes leídos de `constants.js`). Si se marca, el monto se pre-llena con SMMLV + auxilio; si se desmarca, solo SMMLV. La descripción se pre-llena con "Salario mínimo" si estaba vacía. El helper puro `calcularSalarioMinimo(conSubsidio)` lee `SMMLV` y `AUXILIO_TRANSPORTE` de las constantes legales vigentes (se actualizan automáticamente con `LEGAL_POR_ANIO`). El fieldset arranca oculto y se muestra/oculta con `_attachCategoriaToggle` en index.js (mismo patrón que `_attachDiaPagoToggle` y `_toggleCuotaFieldset`).
+
+Verificado: 12 tests de lógica nuevos (`normalizarIngreso` con categoría 4, `validarIngreso` con categoría 3, `calcularSalarioMinimo` 2, `CATEGORIAS_INGRESO` 3), 1494 → 1506 unit + integración, lint limpio, test desechable de render en happy-dom (5 checks: selector con 12 categorías, pre-selección en edición, hint de SMMLV, categoría en lista, sin categoría no muestra separador), 57/57 E2E sin regresiones. SW v207 → v208.
+
+- **`modules/core/constants.js`**: `CATEGORIAS_INGRESO` (12 categorías).
+- **`modules/core/storage.js`**: migración v15 → v16: `categoria: null` en ingresos existentes.
+- **`modules/core/state.js`**: typedef `Ingreso` actualizado con `categoria`.
+- **`modules/dominio/tesoreria/logic.js`**: `validarIngreso` valida categoría; `normalizarIngreso` guarda categoría; `calcularSalarioMinimo(conSubsidio)`.
+- **`modules/dominio/tesoreria/view.js`**: selector de categoría en `renderFormIngreso`; fieldset "subsidio de transporte"; categoría en `_renderIngresoItem`.
+- **`modules/dominio/tesoreria/index.js`**: `_attachCategoriaToggle` (show/hide subsidio, pre-llenado de monto); wired en `_nuevoIngreso` y `_editarIngreso`.
+- **`tests/unit/tesoreria.test.js`**: 12 tests nuevos.
+- **`service-worker.js`**: v207 → v208.
+
+---
+
 ### docs: ADR 013, distribución "Automático inteligente" (MC.6, diseño) · 2026-06-29
 
 Tarea de diseño (sin código): se escribió el ADR para evolucionar el modo **Automático** de "¿Cómo distribuir mi dinero?", porque toca el motor `sugerirDistribucionIngreso` (lógica financiera central) y la barra de presets. Problema que ataca: hoy Automático solo adapta la distribución según el peso de los gastos fijos y, en el caso común (gastos fijos bajos o sin registrar), devuelve **50/30/20 fijo**; además la barra muestra a la vez un chip "Automático" y uno "50/30/20" que dan el mismo resultado (duplicidad). Decisiones tomadas con el usuario (2 preguntas): (1) **alcance** = Automático sigue devolviendo los 3 grupos (Necesidades/Estilo de vida/Ahorro) pero con los **porcentajes calculados desde los datos reales**; el reparto fino por destino se queda en el panel de MC.4 y, más adelante, en el asistente guiado MC.7 (no se mete waterfall por destino en este slice); (2) **duplicidad** = Automático queda por defecto y los 3 presets fijos se mueven a un grupo secundario "Métodos clásicos" (no se eliminan: 50/30/20 es un ancla conocida). El motor pasa a un **modelo de pisos por prioridad**: Necesidades = gastos fijos + cuotas mínimas de deuda (obligaciones); Ahorro = suma de prioridades en orden (cerrar fondo incompleto, abono extra a deudas caras, aportes a metas/apartados con plazo, o una base sana si no hay urgencias); Estilo de vida = lo que queda, con un piso de sostenibilidad que cede ante Necesidades pero gana sobre el ahorro extra. Transparencia obligatoria: Automático siempre explica en una línea el porqué (la `razon` enriquecida). Sin cambios de schema (todos los insumos se derivan de slices existentes; la lógica sigue pura, recibiendo arrays planos desde la vista, ADN #9/#10). 3 slices definidos (MC.6a motor, MC.6b barra de presets, MC.6c señales más ricas, opcional). Sin cambios de código ni de tests aún.

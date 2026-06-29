@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 15;
+const SCHEMA_VERSION = 16;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -241,6 +241,19 @@ function _migrate(raw) {
       for (const p of data.presupuestos) {
         if (p && typeof p === 'object' && p.categoria === 'Alimentación') {
           p.categoria = 'Mercado';
+        }
+      }
+    }
+  }
+
+  // v15 → v16: se agrega `categoria` a los ingresos recurrentes.
+  // Los ingresos existentes quedan con categoria: null (dato no capturado aún).
+  // Idempotente: si categoria ya está presente en el item, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 16) {
+    if (Array.isArray(data.ingresos)) {
+      for (const i of data.ingresos) {
+        if (i && typeof i === 'object' && !('categoria' in i)) {
+          i.categoria = null;
         }
       }
     }
