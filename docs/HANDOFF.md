@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1576/1576 verdes |
-| Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
+| Tests unitarios + integración | 1592/1592 verdes |
+| Tests E2E | 59/59 verde. Suites: `smoke` 28 tests, `estrategia-pago` 10 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): renegociar la tasa interactivo + aplicar (D.3a) · 2026-06-29
+
+Primer slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md): la simulación deja de ser solo what-if y puede **convertirse en acción**. Dentro del bloque "Tu plan no se sostiene", "renegociar la tasa" pasa de texto a herramienta interactiva (🤝): el usuario elige una deuda con tasa conocida, escribe la tasa que cree poder conseguir (en la unidad nativa: EA para entidad, mensual para personal), ve la comparación en vivo y, con "Aplicar nueva tasa", escribe el cambio sobre la deuda en un paso (con confirmación). Nueva lógica pura `simularRenegociacion` (reusa `simularPagoDeuda`, que ahora expone `completo`); maneja el caso inviable→viable sin cifras divergentes (patrón D.1). El "Aplicar" es la primera superficie de la simulación que muta `S`, por eso pide confirmación. Corte **vertical por herramienta** acordado con el usuario (cada una simula y aplica de punta a punta). Verificado: 16 tests unitarios nuevos + 2 E2E (la verificación del cableado de eventos va por E2E, no por el preview, que cachea módulos). SW v217 → v218.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `simularRenegociacion`; `simularPagoDeuda` devuelve `completo`; `filtrarDeudasPagables` expone `tasaUnidad`. |
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | `renderComparativaRenegociacion` + `renderRenegociar` (movido aquí para mantener `estrategia.js` < 400 líneas). |
+| `modules/dominio/compromisos/views/estrategia.js` | Estado UI `renegociar*`; el bloque inviable monta la herramienta. |
+| `modules/dominio/compromisos/index.js` | Handlers `_cambiarRenegociarDeuda`, `_actualizarRenegociacionEnVivo`, `_aplicarRenegociacion` + cableado input/change/click. |
+| `styles/components/charts.css` | Estilos `.estrategia-card__renegociar-*`. |
+| `eslint.config.js` | `HTMLSelectElement` global. |
+| `tests/unit/compromisos.test.js`, `tests/e2e/estrategia-pago.test.js` | 16 unit + 2 E2E. |
+| `service-worker.js` | v217 → v218. |
+
+---
 
 ### refactor(deudas): pago extra como primer remedio en plan inviable (D.2b) · 2026-06-29
 
@@ -86,18 +103,6 @@ El resumen "Impacto de tu pago extra" mostraba "terminas 49 años antes y ahorra
 | `modules/dominio/compromisos/views/estrategia-impacto.js` | Guardas por `completo` en `renderResumenExtra`, `renderImpactoAvalancha`, `_renderComparativa`. |
 | `tests/unit/compromisos.test.js` | 4 tests de regresión de impacto con plan inviable. |
 | `service-worker.js` | v214 → v215. |
-
----
-
-### feat(apartados): plantillas de gasto previsible ampliadas (AP.2) · 2026-06-29
-
-`PLANTILLAS_APARTADO` pasó de 9 a 15: se agregaron 📋 Revisión técnico-mecánica, 🏛️ Impuesto predial, 🎓 Matrícula o semestre, 🪪 Renovación de documentos, 🐾 Alimento para mascotas, 🐱 Arena para gatos. "Impuestos" se conserva como genérico (vehículo) sin duplicarse con "Impuesto predial" (vivienda). Catálogo reordenado por afinidad (vehículo, impuestos/vivienda, mascotas, educación, regalos/vacaciones). Cambio puramente de datos, sin schema ni migración. Verificado: 2 tests nuevos (1564 total), lint limpio, 57/57 E2E. SW v213 → v214.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` de 9 a 15 entradas, reordenada. |
-| `tests/unit/apartados.test.js` | 2 tests nuevos. |
-| `service-worker.js` | v213 → v214. |
 
 ---
 

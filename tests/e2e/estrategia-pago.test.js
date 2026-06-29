@@ -263,3 +263,87 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
   });
 
 });
+
+// ── SUITE: Renegociar la tasa (D.3a) ──────────────────────────────────────────
+
+/**
+ * Inyecta un plan inviable: una deuda grande cuya cuota no cubre el interés
+ * (crece mes a mes) más una chica. Ninguna estrategia cierra el plan, así que
+ * aparece el bloque "Tu plan no se sostiene" con la herramienta de renegociar.
+ */
+async function inyectarPlanInviable(page) {
+  await page.addInitScript(() => {
+    const estado = {
+      _version: 18,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [], ingresos: [], gastos: [], metas: [],
+      prestamos: [], presupuestos: [], apartados: [], config: {},
+      compromisos: [
+        {
+          id: 'reneg-a', descripcion: 'Tarjeta cara E2E',
+          monto: 50000, frecuencia: 'Mensual', diaPago: 5,
+          tipo: 'deuda-entidad', activo: true,
+          saldoTotal: 10000000, cuotaMensual: 50000,
+          tasa: 0.30, tasaUnidad: 'EA', categoria: null,
+        },
+        {
+          id: 'reneg-b', descripcion: 'Préstamo chico E2E',
+          monto: 100000, frecuencia: 'Mensual', diaPago: 15,
+          tipo: 'deuda-personal', activo: true,
+          saldoTotal: 500000, cuotaMensual: 100000,
+          tasa: 0.10, tasaUnidad: 'mensual', categoria: null,
+        },
+      ],
+    };
+    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  });
+}
+
+test.describe('Renegociar la tasa (D.3a)', () => {
+
+  test('la herramienta aparece en el bloque inviable y compara en vivo', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+
+    const tool = page.locator('.estrategia-card__remedio--renegociar');
+    await expect(tool).toBeVisible({ timeout: 5_000 });
+    await expect(tool).toContainText('Renegociar la tasa');
+
+    // Sin tasa nueva, el botón Aplicar está deshabilitado.
+    const aplicar = page.locator('[data-action="aplicar-renegociacion"]');
+    await expect(aplicar).toBeDisabled();
+
+    // Escribir una tasa baja vuelve viable la deuda: la comparación se actualiza
+    // y el botón se habilita.
+    await page.locator('#renegociar-tasa').fill('2');
+    await expect(page.locator('.estrategia-card__renegociar-comparativa')).toContainText('saldas', { timeout: 3_000 });
+    await expect(aplicar).toBeEnabled();
+  });
+
+  test('aplicar la nueva tasa la escribe en la deuda y vuelve viable el plan', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+
+    // Una tasa muy baja vuelve pagable la deuda grande → todo el plan viable.
+    await page.locator('#renegociar-tasa').fill('1');
+    const aplicar = page.locator('[data-action="aplicar-renegociacion"]');
+    await expect(aplicar).toBeEnabled({ timeout: 3_000 });
+    await aplicar.click();
+
+    // Confirmar en el modal de confirmación.
+    await page.locator('[data-role="confirmar"]').click();
+
+    // El plan ya no es inviable: el bloque de alerta desaparece.
+    await expect(page.locator('.estrategia-card__alerta')).toHaveCount(0, { timeout: 3_000 });
+
+    // Y la deuda quedó con la nueva tasa (0.01 EA) en localStorage. save() está
+    // debounced 200ms, así que se hace polling hasta que el escritura aterrice.
+    await expect.poll(async () => page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      const t = s.compromisos.find(c => c.id === 'reneg-a')?.tasa;
+      return Math.abs(t - 0.01) < 1e-6;
+    }), { timeout: 2_000 }).toBe(true);
+  });
+
+});

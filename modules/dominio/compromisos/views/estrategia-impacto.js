@@ -9,6 +9,7 @@
  */
 
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { simularRenegociacion, tasaMensualToEA } from '../logic.js';
 
 /**
  * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
@@ -249,6 +250,141 @@ export function renderResumenExtra(sinExtra, conExtra, extraMensual) {
         Con ${f(extraMensual)}/mes adicional terminas ${partes.join(' y ')}.
       </p>
     </div>`;
+}
+
+/**
+ * Formatea un porcentaje legible: entero sin decimales, fraccionario con uno.
+ * @param {number} pct
+ */
+function _fmtPct(pct) {
+  const n = Number(pct) || 0;
+  return `${Number.isInteger(n) ? String(n) : n.toFixed(1)}%`;
+}
+
+/**
+ * Herramienta interactiva "Renegociar la tasa" (D.3a). Vive dentro del bloque
+ * inviable de la card. Aplica a las deudas con tasa conocida > 0: el usuario
+ * elige una, escribe la tasa que cree poder conseguir (en la unidad nativa de
+ * la deuda) y ve el impacto en vivo. El botón "Aplicar" (que escribe sobre la
+ * deuda) queda habilitado solo si la nueva tasa mejora el plan.
+ *
+ * Función de presentación pura: recibe el estado UI por parámetro, no lee S.
+ *
+ * @param {ReturnType<import('../logic.js').filtrarDeudasPagables>} deudas
+ * @param {{ renegociarDeudaId: string|null, renegociarTasaPct: number }} ui
+ * @returns {string}
+ */
+export function renderRenegociar(deudas, ui) {
+  const candidatas = deudas.filter(d => d.tasaEA > 0);
+  if (candidatas.length === 0) return '';
+
+  const selId = candidatas.some(d => d.id === ui.renegociarDeudaId)
+    ? ui.renegociarDeudaId
+    : candidatas[0].id;
+  const sel = candidatas.find(d => d.id === selId);
+
+  const esEA   = sel.tasaUnidad !== 'mensual';
+  const sufijo = esEA ? 'EA' : 'mensual';
+  // Tasa actual mostrada en la unidad nativa de la deuda.
+  const tasaActualPct = esEA
+    ? sel.tasaEA * 100
+    : (Math.pow(1 + sel.tasaEA, 1 / 12) - 1) * 100;
+
+  const nuevaPct = Number(ui.renegociarTasaPct) || 0;
+  const sim = nuevaPct > 0
+    ? simularRenegociacion(sel, esEA ? nuevaPct / 100 : tasaMensualToEA(nuevaPct / 100))
+    : null;
+  const puedeAplicar = !!(sim && sim.mejora);
+
+  const selectorHtml = candidatas.length > 1
+    ? `<div class="form-group">
+         <label for="renegociar-deuda" class="label">¿Qué deuda quieres renegociar?</label>
+         <select id="renegociar-deuda" class="input" data-action="cambiar-renegociar-deuda">
+           ${candidatas.map(d => `<option value="${d.id}"${d.id === selId ? ' selected' : ''}>${_esc(d.descripcion)}</option>`).join('')}
+         </select>
+       </div>`
+    : `<p class="estrategia-card__bloque-body">Deuda: <strong>${_esc(sel.descripcion)}</strong></p>`;
+
+  return `
+    <div class="estrategia-card__remedio estrategia-card__remedio--renegociar">
+      <p class="estrategia-card__bloque-titulo">🤝 Renegociar la tasa</p>
+      <p class="estrategia-card__bloque-body">
+        Si tu entidad te baja la tasa, cada cuota abona más a lo que debes y la deuda cierra antes.
+      </p>
+      ${selectorHtml}
+      <p class="estrategia-card__bloque-body">
+        Tasa actual: <strong>${_fmtPct(tasaActualPct)} ${sufijo}</strong>
+      </p>
+      <div class="form-group">
+        <label for="renegociar-tasa" class="label">Nueva tasa (% ${sufijo})</label>
+        <input id="renegociar-tasa" class="input" type="number"
+               min="0" step="0.1" value="${nuevaPct || ''}"
+               placeholder="Ej. ${esEA ? '24' : '2'}" autocomplete="off" inputmode="decimal"
+               data-action="cambiar-renegociar-tasa" data-deuda="${selId}" data-unidad="${sufijo}" />
+      </div>
+      <div class="estrategia-card__renegociar-comparativa">
+        ${renderComparativaRenegociacion(sim, nuevaPct, sufijo)}
+      </div>
+      <button type="button" class="btn btn--primary estrategia-card__renegociar-aplicar"
+              data-action="aplicar-renegociacion" data-deuda="${selId}" data-unidad="${sufijo}"
+              ${puedeAplicar ? '' : 'disabled'}>
+        Aplicar nueva tasa
+      </button>
+    </div>`;
+}
+
+/**
+ * Renderiza la comparación "tasa actual vs nueva tasa" para una sola deuda
+ * (D.3a). Cubre todos los escenarios de forma honesta, sin restar cifras
+ * divergentes cuando algún plan no se termina de pagar.
+ *
+ * @param {ReturnType<import('../logic.js').simularRenegociacion>|null} sim
+ * @param {number} nuevaPct  Tasa nueva que escribió el usuario (en su unidad).
+ * @param {'EA'|'mensual'} unidad
+ * @returns {string}
+ */
+export function renderComparativaRenegociacion(sim, nuevaPct, unidad) {
+  const sufijo = unidad === 'mensual' ? 'mensual' : 'EA';
+
+  if (!sim || !(nuevaPct > 0)) {
+    return `
+      <p class="estrategia-card__bloque-body">
+        Escribe la tasa que crees poder conseguir y compárala con la actual.
+      </p>`;
+  }
+
+  // La nueva tasa tampoco cubre los intereses: la deuda seguiría creciendo.
+  if (!sim.nueva.completo) {
+    return `
+      <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--warn">
+        Ni con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> la cuota alcanza a cubrir los intereses: la deuda seguiría creciendo. Necesitas una tasa más baja o, además, aumentar la cuota.
+      </p>`;
+  }
+
+  // Plan actual inviable y el nuevo sí cierra: mejora cualitativa.
+  if (!sim.actual.completo) {
+    return `
+      <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
+        🎯 Con la tasa actual esta deuda no se termina de pagar. Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> sí la saldas en <strong>${formatearDuracion(sim.nueva.meses)}</strong>.
+      </p>`;
+  }
+
+  // Ambos cierran pero la nueva no mejora (igual o más alta).
+  if (!sim.mejora) {
+    return `
+      <p class="estrategia-card__bloque-body">
+        Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> tu plan no mejora: esa tasa es igual o más alta que la actual.
+      </p>`;
+  }
+
+  const partes = [];
+  if (sim.ahorroMeses > 0)     partes.push(`<strong>${formatearDuracion(sim.ahorroMeses)} menos</strong>`);
+  if (sim.ahorroIntereses > 0) partes.push(`<strong>${f(sim.ahorroIntereses)} menos en intereses</strong>`);
+
+  return `
+    <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
+      🎯 Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> pagas esta deuda en <strong>${formatearDuracion(sim.nueva.meses)}</strong>: ${partes.join(' y ')} frente a la tasa actual.
+    </p>`;
 }
 
 /**

@@ -18,7 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, tasaMensualToEA } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -31,7 +31,7 @@ import {
   renderPanelVencidos,
   renderPanelPrioridades,
 } from './view.js';
-import { renderResumenExtra } from './views/estrategia-impacto.js';
+import { renderResumenExtra, renderComparativaRenegociacion } from './views/estrategia-impacto.js';
 
 /**
  * Re-renderiza los paneles del dashboard que dependen de compromisos.
@@ -404,6 +404,73 @@ function _actualizarResumenEnVivo(el) {
   if (nuevo) resumen.replaceWith(nuevo);
 }
 
+// ── HANDLERS RENEGOCIAR TASA (D.3a) ──────────────────────────────
+
+/** Cambia la deuda elegida en la herramienta de renegociar; resetea la tasa
+ *  escrita (su unidad puede diferir entre entidad y personal). */
+function _cambiarRenegociarDeuda(el) {
+  setEstrategiaUI({ renegociarDeudaId: el.value, renegociarTasaPct: 0 });
+  renderEstrategiaPago();
+}
+
+/**
+ * Actualiza en vivo la comparación de renegociación al escribir la nueva tasa.
+ * Commitea el valor a estado (sin re-render) por dos razones: que sobreviva a
+ * un re-render por otra causa, y que el clic en "Aplicar" no compita con un
+ * re-render por `change` (blur) que reemplazaría el botón a mitad de clic.
+ */
+function _actualizarRenegociacionEnVivo(el) {
+  setEstrategiaUI({ renegociarTasaPct: el.value });
+
+  const cont = document.querySelector('.estrategia-card__renegociar-comparativa');
+  if (!cont) return;
+
+  const deudaId = el.dataset.deuda;
+  const unidad  = el.dataset.unidad;
+  const pct     = Number(el.value) || 0;
+
+  const deuda = filtrarDeudasPagables(S.compromisos).find(d => d.id === deudaId);
+  if (!deuda) return;
+
+  const nuevaEA = unidad === 'mensual' ? tasaMensualToEA(pct / 100) : pct / 100;
+  const sim = pct > 0 ? simularRenegociacion(deuda, nuevaEA) : null;
+  cont.innerHTML = renderComparativaRenegociacion(sim, pct, unidad);
+
+  const btn = document.querySelector('[data-action="aplicar-renegociacion"]');
+  if (btn) btn.disabled = !(sim && sim.mejora);
+}
+
+/**
+ * Aplica la nueva tasa a la deuda: escribe `tasa` + `tasaUnidad` en S. Es la
+ * única acción de la simulación que muta datos (ADR 011, Revisión D.3); por eso
+ * pide confirmación explícita. Lee el valor del input en vivo al hacer clic.
+ */
+async function _aplicarRenegociacion(el) {
+  const deudaId = el.dataset.deuda;
+  const unidad  = el.dataset.unidad === 'mensual' ? 'mensual' : 'EA';
+  if (!deudaId) return;
+
+  const input = document.getElementById('renegociar-tasa');
+  const pct = Number(input?.value);
+  if (!Number.isFinite(pct) || pct < 0) return;
+
+  const deuda = S.compromisos.find(c => c.id === deudaId);
+  if (!deuda) return;
+
+  const ok = await confirmar({
+    titulo:         'Aplicar nueva tasa',
+    mensaje:        `¿Actualizar la tasa de "${deuda.descripcion}" a ${pct}% ${unidad}? Reemplaza la tasa registrada y recalcula tu plan. Confírmala con tu entidad antes de hacerlo.`,
+    confirmarTexto: 'Aplicar',
+    peligroso:      false,
+  });
+  if (!ok) return;
+
+  editar('compromisos', deudaId, { tasa: pct / 100, tasaUnidad: unidad });
+  setEstrategiaUI({ renegociarTasaPct: 0 });
+  _renderTodo();
+  announce(`Tasa de "${deuda.descripcion}" actualizada a ${pct}% ${unidad}.`);
+}
+
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
@@ -421,25 +488,29 @@ export function initCompromisos() {
   registrarAccion('abrir-abono',             _abrirAbono);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
+  registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',     _volverChooser);
 
   _inyectarForm();
 
-  // El extra mensual reacciona en dos tiempos:
-  //   - `input`: actualiza el resumen de impacto en vivo (sin re-renderizar
-  //     la card entera, para no perder el foco del input).
-  //   - `change` (blur): re-renderiza la card completa (estrategias + detalle).
+  // El extra mensual y la tasa de renegociación reaccionan en vivo al escribir:
+  //   - extra: `input` actualiza el resumen sin re-render; `change` (blur)
+  //     re-renderiza la card completa.
+  //   - renegociar tasa: `input` actualiza la comparación y commitea el valor
+  //     a estado (sin re-render) para no perder el clic en "Aplicar".
   document.addEventListener('input', (e) => {
     const t = e.target;
-    if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {
-      _actualizarResumenEnVivo(t);
-    }
+    if (!(t instanceof HTMLInputElement)) return;
+    if (t.dataset.action === 'cambiar-extra-estrategia')  _actualizarResumenEnVivo(t);
+    else if (t.dataset.action === 'cambiar-renegociar-tasa') _actualizarRenegociacionEnVivo(t);
   });
   document.addEventListener('change', (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {
       _cambiarExtraEstrategia(t);
+    } else if (t instanceof HTMLSelectElement && t.dataset.action === 'cambiar-renegociar-deuda') {
+      _cambiarRenegociarDeuda(t);
     }
   });
 

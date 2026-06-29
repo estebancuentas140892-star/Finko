@@ -721,6 +721,15 @@
   border-radius: var(--fk-radius-md);
   background: var(--fk-bg-elevated);
 }
+/* D.3a: herramienta "Renegociar la tasa". */
+.estrategia-card__renegociar-comparativa {
+  margin: var(--fk-space-3) 0;
+}
+.estrategia-card__renegociar-msg--ok   { color: var(--fk-success-text); }
+.estrategia-card__renegociar-msg--warn { color: var(--fk-warning-text); }
+.estrategia-card__renegociar-aplicar {
+  width: 100%;
+}
 
 /* v6: input + select para tasa con unidad (% EA vs % mensual). */
 .tasa-input-group {

@@ -7,6 +7,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): renegociar la tasa interactivo + aplicar (D.3a) · 2026-06-29
+
+Primer slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md): la simulación de deudas deja de ser solo "what-if" y puede **convertirse en acción**. En el bloque "Tu plan no se sostiene", la salida "renegociar la tasa" pasa de texto plano a herramienta interactiva (🤝 Renegociar la tasa):
+
+- El usuario elige una deuda con tasa conocida (selector si hay varias), ve su tasa actual y escribe la tasa que cree poder conseguir, **en la unidad nativa de la deuda** (% EA para deudas con entidad, % mensual para préstamos personales / gota a gota).
+- La comparación se actualiza **en vivo** al escribir: cuánto se acorta el plazo y cuánto se ahorra en intereses. Cubre todos los escenarios sin cifras absurdas (hereda el patrón de D.1): si la tasa actual no se termina de pagar pero la nueva sí, lo dice de forma cualitativa; si ni la nueva cubre los intereses, advierte que la deuda seguiría creciendo.
+- El botón **"Aplicar nueva tasa"** se habilita solo si la nueva tasa mejora el plan; al confirmarlo, escribe `tasa` + `tasaUnidad` sobre la deuda en un paso (sin reeditarla a mano).
+
+**Cambio de principio (documentado en la Revisión D.3 del ADR):** la decisión original fijaba que las herramientas what-if "nunca modifican `S`". Se reformula: la simulación sigue sin tocar datos; solo un botón "Aplicar" explícito, con confirmación, los escribe. La mutación pasa de efecto colateral a decisión deliberada.
+
+Lógica nueva: `simularRenegociacion(deuda, nuevaTasaEA)` (pura, reusa `simularPagoDeuda`). `simularPagoDeuda` ahora devuelve `completo` (sin romper consumidores: no tenía ninguno en producción) para distinguir el plan que cierra del que diverge. `filtrarDeudasPagables` expone `tasaUnidad` para preguntar y aplicar en la unidad correcta.
+
+Corte **vertical por herramienta** acordado con el usuario: cada herramienta simula y aplica de punta a punta. D.3b (consolidar) queda pendiente.
+
+Verificado: 16 tests unitarios nuevos (1576 → 1592) sobre `simularPagoDeuda.completo`, `simularRenegociacion` (incluye inviable→viable y la nueva tasa que tampoco cubre intereses), `renderComparativaRenegociacion` y el render de la herramienta en el bloque inviable; + 2 E2E nuevos (57 → 59) que ejercen el cableado real en Chromium: escribir la tasa actualiza la comparación y habilita Aplicar, y aplicar escribe la nueva tasa y vuelve viable el plan. El cableado de eventos se verifica por E2E (no por el preview, que cachea los módulos de forma agresiva). Lint limpio. SW v217 → v218.
+
+- **`modules/dominio/compromisos/logic.js`**: `simularRenegociacion`; `simularPagoDeuda` devuelve `completo`; `filtrarDeudasPagables` expone `tasaUnidad`.
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: `renderComparativaRenegociacion` + `renderRenegociar` (movido aquí para mantener `estrategia.js` bajo 400 líneas).
+- **`modules/dominio/compromisos/views/estrategia.js`**: estado UI `renegociarDeudaId` / `renegociarTasaPct`; el bloque inviable monta la herramienta.
+- **`modules/dominio/compromisos/index.js`**: handlers `_cambiarRenegociarDeuda`, `_actualizarRenegociacionEnVivo`, `_aplicarRenegociacion` + cableado input/change/click.
+- **`styles/components/charts.css`**: estilos de la herramienta de renegociar.
+- **`eslint.config.js`**: `HTMLSelectElement` como global del navegador.
+- **`tests/unit/compromisos.test.js`**: 16 tests nuevos. **`tests/e2e/estrategia-pago.test.js`**: 2 tests E2E nuevos.
+- **`service-worker.js`**: v217 → v218.
+
+---
+
 ### refactor(deudas): pago extra como primer remedio en plan inviable (D.2b) · 2026-06-29
 
 Segundo slice de la Revisión D.2 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). Cuando el plan no se sostiene (`recomendacion.viable === false`), el pago extra mensual deja de aparecer como acelerador plegable y sube como **primer remedio** ("💪 Aumenta tu cuota") dentro del bloque de diagnóstico "⚠️ Con tu pago actual, estas deudas no se terminan de pagar". El input de extra y el resumen de impacto en vivo (`renderResumenExtra`) son los mismos que en el acelerador de D.2a, solo cambian de ubicación: en el remedio están prominentes (no plegados) porque el extra no es opcional, es la salida más directa. Como viable e inviable son estados excluyentes, el input se renderiza en un solo lugar a la vez (acelerador o remedio, nunca ambos en pantalla). Las "Otras salidas" (renegociar la tasa, consolidar) quedan como texto orientativo hasta D.3. Lógica financiera intacta.

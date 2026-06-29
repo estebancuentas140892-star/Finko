@@ -30,6 +30,7 @@ export default [
         MutationObserver: 'readonly',
         queueMicrotask: 'readonly',
         HTMLInputElement: 'readonly',
+        HTMLSelectElement: 'readonly',
         KeyboardEvent: 'readonly',
         CSS: 'readonly',
         Event: 'readonly',

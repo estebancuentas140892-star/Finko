@@ -647,14 +647,17 @@ const MAX_MESES_SIMULACION = 600;
  * @param {number} tasaEA        Tasa efectiva anual como decimal (0.28 = 28%).
  * @param {number} cuotaMensual  Cuota mensual fija (sin el extra).
  * @param {number} [abonoExtra=0] Monto extra que se agrega a la cuota cada mes.
- * @returns {{ meses: number, intereses: number }}
+ * @returns {{ meses: number, intereses: number, completo: boolean }}
+ *   `completo=false` cuando la cuota no cubre el interés y la deuda no se salda
+ *   dentro del tope de meses (en ese caso `intereses` es una cifra divergente,
+ *   no un total real: no debe restarse contra otro escenario).
  */
 export function simularPagoDeuda(saldo, tasaEA, cuotaMensual, abonoExtra = 0) {
-  if (!Number.isFinite(saldo) || saldo <= 0) return { meses: 0, intereses: 0 };
+  if (!Number.isFinite(saldo) || saldo <= 0) return { meses: 0, intereses: 0, completo: true };
 
   const tasaMensual = tasaEA > 0 ? _tasaMensualDesdeEA(tasaEA) : 0;
   const cuotaTotal  = (cuotaMensual || 0) + (abonoExtra || 0);
-  if (cuotaTotal <= 0) return { meses: MAX_MESES_SIMULACION, intereses: 0 };
+  if (cuotaTotal <= 0) return { meses: MAX_MESES_SIMULACION, intereses: 0, completo: false };
 
   let s = saldo;
   let meses = 0;
@@ -668,7 +671,51 @@ export function simularPagoDeuda(saldo, tasaEA, cuotaMensual, abonoExtra = 0) {
     s -= Math.min(cuotaTotal, s);
   }
 
-  return { meses, intereses: Math.round(intereses) };
+  return { meses, intereses: Math.round(intereses), completo: s <= 0.01 };
+}
+
+/**
+ * Simula renegociar la tasa de UNA deuda: compara el plan con la tasa vigente
+ * contra el plan con una tasa EA nueva, manteniendo la misma cuota mensual.
+ * What-if puro (reusa `simularPagoDeuda`): no muta nada.
+ *
+ * El ahorro solo se calcula si ambos escenarios saldan la deuda. Si el plan
+ * actual no cierra (la cuota no cubre el interés) pero el nuevo sí, la mejora
+ * es cualitativa ("de no pagarse a pagarse"): no se resta una cifra divergente.
+ *
+ * @param {{ saldo: number, tasaEA: number, cuota: number }} deuda
+ * @param {number} nuevaTasaEA  Nueva tasa efectiva anual (decimal, 0.20 = 20%).
+ * @returns {{
+ *   actual: { meses: number, intereses: number, completo: boolean },
+ *   nueva:  { meses: number, intereses: number, completo: boolean },
+ *   ahorroMeses: number,
+ *   ahorroIntereses: number,
+ *   mejora: boolean,
+ * } | null}  null si los datos de la deuda no permiten simular.
+ */
+export function simularRenegociacion(deuda, nuevaTasaEA) {
+  if (!deuda) return null;
+  const saldo      = Number(deuda.saldo);
+  const cuota      = Number(deuda.cuota);
+  const tasaActual = Number(deuda.tasaEA);
+  const tasaNueva  = Number(nuevaTasaEA);
+  if (!(saldo > 0) || !(cuota > 0)) return null;
+  if (!Number.isFinite(tasaActual) || tasaActual < 0) return null;
+  if (!Number.isFinite(tasaNueva)  || tasaNueva  < 0) return null;
+
+  const actual = simularPagoDeuda(saldo, tasaActual, cuota, 0);
+  const nueva  = simularPagoDeuda(saldo, tasaNueva,  cuota, 0);
+
+  const ambosCompletan  = actual.completo && nueva.completo;
+  const ahorroMeses     = ambosCompletan ? Math.max(0, actual.meses - nueva.meses) : 0;
+  const ahorroIntereses = ambosCompletan ? Math.max(0, actual.intereses - nueva.intereses) : 0;
+
+  // La nueva tasa "mejora" si vuelve pagable una deuda que no lo era, o si
+  // (siendo ambas pagables) acorta el plazo o reduce intereses de forma real.
+  const mejora = (!actual.completo && nueva.completo)
+    || (ambosCompletan && (ahorroMeses > 0 || ahorroIntereses > 0.5));
+
+  return { actual, nueva, ahorroMeses, ahorroIntereses, mejora };
 }
 
 /**
@@ -697,6 +744,10 @@ export function filtrarDeudasPagables(compromisos) {
       saldo:       c.saldoTotal,
       tasaEA:      tasaEADe(c),
       cuota:       c.cuotaMensual,
+      // Unidad nativa de la tasa registrada: la herramienta de renegociación
+      // pregunta y aplica en la misma unidad (EA para entidad, mensual para
+      // los gota a gota / préstamos personales).
+      tasaUnidad:  c.tasaUnidad === 'mensual' ? 'mensual' : 'EA',
       tasaDesconocida: c.tipo === 'deuda-entidad' && (c.tasa === null || c.tasa === undefined),
     }));
 }

@@ -48,8 +48,8 @@ La simulación de pago de deudas hoy vive en **tres superficies dispersas** que 
 | S1 | ~~Extra mensual como control principal + resumen de impacto siempre visible~~ **Sustituido por la Revisión D.2** (ver abajo) | No (reusa `compararEstrategias`) |
 | S2 | Eliminar botón "Simular" por deuda y su modal | No (solo eliminación) |
 | S3 | Reorganizar el acordeón (ya absorbido en S1, limpiar el dead code) | No |
-| S4 | "Renegociar tasa" interactivo | `simularRenegociacion` + tests |
-| S5 | "Consolidar deudas" interactivo | `simularConsolidacion` + tests |
+| S4 | "Renegociar tasa" interactivo **+ aplicar** (= D.3a, hecho; ver Revisión D.3) | `simularRenegociacion` + tests |
+| S5 | "Consolidar deudas" interactivo + aplicar (= D.3b, pendiente) | `simularConsolidacion` + tests |
 
 ---
 
@@ -113,3 +113,30 @@ S4 y S5 de la decisión original equivalen a **D.3**: convierten renegociar y co
 - La elección Avalancha vs Bola de nieve recupera el centro de la card. El pago extra deja de competir por la atención antes de que exista una estrategia elegida.
 - El acelerador plegable mantiene accesible la palanca de "pagar más rápido" sin imponerla. Hay que cuidar la a11y del disclosure: botón con `aria-expanded`, foco visible, tokens `--fk-*`.
 - Tests de render que asuman el input de extra arriba de las cards se actualizan en D.2a. La lógica financiera (`compararEstrategias`, `recomendarEstrategia`, `simularEstrategiaPago`) no se toca.
+
+---
+
+## Revisión D.3 (2026-06-29): la simulación puede convertirse en acción
+
+**Estado de la revisión:** Aceptada
+**Motiva:** backlog del usuario "Visión de Deudas" (D.3).
+**Autores:** Esteban (producto), Claude Opus 4.8 (diseño + implementación).
+
+### Qué cambia respecto a la decisión original
+
+La decisión original (punto 4) fijó que las herramientas interactivas son **"what-if": nunca modifican `S`**. D.3 matiza ese principio: la **simulación sigue siendo what-if** (escribir una tasa nueva y ver el impacto no toca los datos), pero se añade una **acción explícita de "Aplicar"** que sí escribe el cambio sobre la deuda en un paso, para no obligar al usuario a reeditarla a mano.
+
+El principio se reformula así: **la simulación nunca muta `S`; solo un botón "Aplicar" explícito, con confirmación, lo hace.** La mutación deja de ser un efecto colateral de simular y pasa a ser una decisión deliberada del usuario.
+
+### Corte por herramienta (acordado con el usuario)
+
+D.3 se implementa **vertical por herramienta** (cada una simula y aplica de punta a punta), no horizontal:
+
+- **D.3a (renegociar tasa):** `simularRenegociacion(deuda, nuevaTasaEA)` (puro, reusa `simularPagoDeuda`, que ahora expone `completo`). La herramienta vive en el bloque "Tu plan no se sostiene": el usuario elige una deuda con tasa conocida, escribe la tasa que cree poder conseguir (en la unidad nativa de la deuda: EA para entidad, mensual para personal) y ve la comparación en vivo. El botón "Aplicar nueva tasa" se habilita solo si la nueva tasa mejora el plan, pide confirmación y escribe `tasa` + `tasaUnidad` sobre la deuda. Cubre el caso inviable→viable sin restar cifras divergentes (hereda el patrón de D.1).
+- **D.3b (consolidar deudas):** pendiente. `simularConsolidacion` + herramienta + aplicar (crear el crédito nuevo y archivar las consolidadas).
+
+### Consecuencias
+
+- `simularPagoDeuda` ahora devuelve `completo` (sin romper a sus consumidores; no tenía ninguno en producción). `filtrarDeudasPagables` expone `tasaUnidad` para que la herramienta pregunte y aplique en la unidad correcta.
+- La verificación del cableado de eventos (input/change/click) se hace por **E2E (Playwright)**, no por el preview: el dev-server cachea los módulos de forma agresiva y no refleja los cambios (ver memoria "preview envenenado").
+- La a11y del flujo de aplicar reusa el modal `confirmar()` existente; el botón "Aplicar" arranca `disabled` mientras no haya una tasa que mejore.

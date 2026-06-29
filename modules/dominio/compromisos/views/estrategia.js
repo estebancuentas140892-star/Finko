@@ -26,14 +26,17 @@ import {
   renderImpactoAvalancha,
   renderImpactoBolaNieve,
   renderResumenExtra,
+  renderRenegociar,
 } from './estrategia-impacto.js';
 
-// Estado UI local: extra mensual, estrategia activa.
+// Estado UI local: extra mensual, estrategia activa, herramienta de renegociación.
 // Persiste mientras la pestaña está abierta; al recargar vuelve a defaults.
 // estrategia=null indica "no elegida aún" (mostramos solo las cards).
 const _uiEstrategia = {
-  extraMensual:   0,
-  estrategia:     null,
+  extraMensual:       0,
+  estrategia:         null,
+  renegociarDeudaId:  null,  // deuda elegida en la herramienta de renegociar tasa
+  renegociarTasaPct:  0,     // nueva tasa escrita, en la unidad nativa de la deuda
 };
 
 /**
@@ -46,6 +49,13 @@ export function setEstrategiaUI(patch) {
   }
   if (patch.estrategia === 'avalancha' || patch.estrategia === 'bolaNieve') {
     _uiEstrategia.estrategia = patch.estrategia;
+  }
+  if (patch.renegociarDeudaId !== undefined) {
+    _uiEstrategia.renegociarDeudaId = patch.renegociarDeudaId || null;
+  }
+  if (patch.renegociarTasaPct !== undefined) {
+    const n = Number(patch.renegociarTasaPct);
+    _uiEstrategia.renegociarTasaPct = Number.isFinite(n) && n >= 0 ? n : 0;
   }
 }
 
@@ -111,7 +121,7 @@ export function renderEstrategiaPago() {
       </header>
 
       ${_renderAvisoTasaDesconocida(deudas)}
-      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml)}
+      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml, deudas)}
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
@@ -135,8 +145,9 @@ export function renderEstrategiaPago() {
  * @param {{ deudasCrecientes: Array<{ id, descripcion, deficitMensual }>, extraMinimo: number|null }} diagnostico
  * @param {number} extraMensual
  * @param {string} resumenExtraHtml
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
  */
-function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml) {
+function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml, deudas) {
   if (!diagnostico) return '';
   const { deudasCrecientes, extraMinimo } = diagnostico;
 
@@ -174,9 +185,11 @@ function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml)
         ${resumenExtraHtml}
       </div>
 
+      ${renderRenegociar(deudas, _uiEstrategia)}
+
       <p class="estrategia-card__bloque-body">
-        <strong>Otras salidas:</strong> renegociar la tasa o consolidar las deudas en
-        un crédito más barato.
+        <strong>Otra salida:</strong> consolidar las deudas en un crédito más barato
+        (próximamente).
       </p>
     </div>`;
 }

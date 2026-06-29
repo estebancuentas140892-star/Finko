@@ -10,7 +10,9 @@ import {
   validarCompromiso,
   normalizarCompromiso,
   filtrarDeudasPagables,
+  simularPagoDeuda,
   simularEstrategiaPago,
+  simularRenegociacion,
   compararEstrategias,
   recomendarEstrategia,
   detectarFijosSinPagarEsteMes,
@@ -31,7 +33,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
-import { renderResumenExtra, renderImpactoAvalancha } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
+import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
@@ -700,6 +702,7 @@ describe('filtrarDeudasPagables', () => {
       saldo:           1_000_000,
       tasaEA:          0.30,
       cuota:           200_000,
+      tasaUnidad:      'EA',
       tasaDesconocida: false,
     });
   });
@@ -2159,5 +2162,134 @@ describe('renderEstrategiaPago D.2b plan inviable', () => {
     const remedio = document.querySelector('.estrategia-card__remedio');
     const resumen = remedio.querySelector('.estrategia-card__resumen-extra');
     expect(resumen).not.toBeNull();
+  });
+});
+
+// ── simularPagoDeuda: bandera completo (D.3a) ────────────────────
+
+describe('simularPagoDeuda completo', () => {
+  it('completo=true cuando la cuota salda la deuda', () => {
+    const r = simularPagoDeuda(1_000_000, 0.30, 200_000);
+    expect(r.completo).toBe(true);
+    expect(r.meses).toBeGreaterThan(0);
+  });
+
+  it('completo=false cuando la cuota no cubre el interés (la deuda crece)', () => {
+    const r = simularPagoDeuda(10_000_000, 0.30, 50_000);
+    expect(r.completo).toBe(false);
+  });
+
+  it('completo=true para saldo 0 (nada que pagar)', () => {
+    expect(simularPagoDeuda(0, 0.30, 100_000).completo).toBe(true);
+  });
+
+  it('completo=false si la cuota total es 0', () => {
+    expect(simularPagoDeuda(1_000_000, 0.30, 0, 0).completo).toBe(false);
+  });
+});
+
+// ── simularRenegociacion (D.3a) ──────────────────────────────────
+
+describe('simularRenegociacion', () => {
+  it('bajar la tasa reduce meses e intereses (ambos planes cierran)', () => {
+    const r = simularRenegociacion({ saldo: 5_000_000, tasaEA: 0.40, cuota: 300_000 }, 0.20);
+    expect(r.actual.completo).toBe(true);
+    expect(r.nueva.completo).toBe(true);
+    expect(r.ahorroIntereses).toBeGreaterThan(0);
+    expect(r.mejora).toBe(true);
+  });
+
+  it('una tasa igual no mejora el plan', () => {
+    const r = simularRenegociacion({ saldo: 5_000_000, tasaEA: 0.20, cuota: 300_000 }, 0.20);
+    expect(r.mejora).toBe(false);
+    expect(r.ahorroIntereses).toBe(0);
+    expect(r.ahorroMeses).toBe(0);
+  });
+
+  it('mejora cualitativa: el plan actual no cierra pero la nueva tasa sí', () => {
+    const r = simularRenegociacion({ saldo: 10_000_000, tasaEA: 0.40, cuota: 60_000 }, 0.03);
+    expect(r.actual.completo).toBe(false);
+    expect(r.nueva.completo).toBe(true);
+    expect(r.mejora).toBe(true);
+    // No se resta una cifra divergente: el ahorro queda en 0 (mejora cualitativa).
+    expect(r.ahorroIntereses).toBe(0);
+    expect(r.ahorroMeses).toBe(0);
+  });
+
+  it('si la nueva tasa tampoco cubre los intereses, no mejora', () => {
+    const r = simularRenegociacion({ saldo: 10_000_000, tasaEA: 0.40, cuota: 50_000 }, 0.35);
+    expect(r.nueva.completo).toBe(false);
+    expect(r.mejora).toBe(false);
+  });
+
+  it('null si la deuda no tiene saldo o cuota válidos', () => {
+    expect(simularRenegociacion({ saldo: 0, tasaEA: 0.3, cuota: 100_000 }, 0.2)).toBeNull();
+    expect(simularRenegociacion({ saldo: 1_000_000, tasaEA: 0.3, cuota: 0 }, 0.2)).toBeNull();
+    expect(simularRenegociacion(null, 0.2)).toBeNull();
+  });
+});
+
+// ── renderComparativaRenegociacion (D.3a) ────────────────────────
+
+describe('renderComparativaRenegociacion', () => {
+  it('sin tasa nueva, invita a escribir', () => {
+    expect(renderComparativaRenegociacion(null, 0, 'EA')).toContain('Escribe la tasa');
+  });
+
+  it('mejora con ahorro: muestra "menos" y el plazo nuevo', () => {
+    const sim = simularRenegociacion({ saldo: 5_000_000, tasaEA: 0.40, cuota: 300_000 }, 0.20);
+    const html = renderComparativaRenegociacion(sim, 20, 'EA');
+    expect(html).toContain('🎯');
+    expect(html).toContain('menos');
+  });
+
+  it('plan actual inviable y nueva viable: mensaje cualitativo sin cifras absurdas', () => {
+    const sim = simularRenegociacion({ saldo: 10_000_000, tasaEA: 0.40, cuota: 60_000 }, 0.03);
+    const html = renderComparativaRenegociacion(sim, 3, 'EA');
+    expect(html).toContain('no se termina de pagar');
+    expect(html).not.toContain('e+');
+    expect(html).not.toContain('menos en intereses');
+  });
+
+  it('la nueva tasa tampoco cubre intereses: advierte que la deuda crece', () => {
+    const sim = simularRenegociacion({ saldo: 10_000_000, tasaEA: 0.40, cuota: 50_000 }, 0.35);
+    const html = renderComparativaRenegociacion(sim, 35, 'EA');
+    expect(html).toContain('seguiría creciendo');
+  });
+});
+
+// ── renderEstrategiaPago: herramienta renegociar en bloque inviable (D.3a) ──
+
+describe('renderRenegociar (D.3a) en el bloque inviable', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, renegociarDeudaId: null, renegociarTasaPct: 0 });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('muestra la herramienta de renegociar dentro del bloque inviable', () => {
+    renderEstrategiaPago();
+    const tool = document.querySelector('.estrategia-card__remedio--renegociar');
+    expect(tool).not.toBeNull();
+    expect(tool.querySelector('#renegociar-tasa')).not.toBeNull();
+    expect(tool.textContent).toContain('Renegociar la tasa');
+  });
+
+  it('el botón Aplicar arranca deshabilitado (sin tasa nueva)', () => {
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-renegociacion"]');
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('con una tasa nueva que vuelve viable la deuda, Aplicar se habilita', () => {
+    setEstrategiaUI({ renegociarDeudaId: 'd1', renegociarTasaPct: 2 });
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-renegociacion"]');
+    expect(btn.disabled).toBe(false);
+    expect(btn.dataset.deuda).toBe('d1');
+    expect(btn.dataset.unidad).toBe('EA');
   });
 });
