@@ -395,6 +395,22 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   DISTRIBUCION-ROWS - bloque de "¿Cómo distribuir mi dinero?".
+   Al cambiar de preset (50/30/20 ↔ 70/20/10...), el bloque entero se
+   reemplaza con los nuevos porcentajes y montos. Sin esta animación el
+   cambio se ve como un parpadeo instantáneo; con ella, el contenido
+   nuevo entra con una transición corta en vez de aparecer de golpe.
+   ════════════════════════════════════════════════════════════ */
+
+.distribucion-rows {
+  animation: distribucion-rows-in var(--fk-transition-slow) both;
+}
+
+@keyframes distribucion-rows-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+/* ════════════════════════════════════════════════════════════
    GASTOS-RESUMEN - barra de total al tope de la lista de gastos.
    Refleja lo visible: total del mes (sin filtro) o de la categoría activa.
    ════════════════════════════════════════════════════════════ */

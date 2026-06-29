@@ -338,10 +338,12 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
         <div class="filtros-bar" role="group" aria-label="Preset de distribución">
           ${presetChips}
         </div>
-        <p class="nudge__desc">${_esc(razon)}</p>
-        ${rowsHtml}
-        ${alertasHtml}
-        ${ctasHtml}
+        <div class="distribucion-rows">
+          <p class="nudge__desc">${_esc(razon)}</p>
+          ${rowsHtml}
+          ${alertasHtml}
+          ${ctasHtml}
+        </div>
       </div>
     </div>`;
 }

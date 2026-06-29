@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(cuentas): textos de ayuda simplificados en el form de nueva cuenta, MC.1)
+> Última actualización: 2026-06-28 (style(tesoreria): transición suave al cambiar de preset de distribución, MC.2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### style(tesoreria): transición suave al cambiar de preset de distribución (MC.2, parte 1) · 2026-06-28
+
+Segunda tarea del backlog "Mis cuentas + distribución". Al hacer clic en un chip de preset (50/30/20, 70/20/10, 60/20/20) en "¿Cómo distribuir mi dinero?", `renderDistribucionIngreso()` reemplaza por completo el `innerHTML` del bloque: los porcentajes y montos nuevos aparecían de golpe, sin transición, lo que se sentía brusco. Se envolvió el contenido que cambia con el preset (razón + filas de porcentaje/monto + alertas + CTAs) en un nuevo contenedor `.distribucion-rows`, dejando la barra de chips fuera (estable, no se vuelve a animar solo por su propio cambio de estado activo). Se le dio una animación de entrada corta (`distribucion-rows-in`: fade + 4px de desplazamiento vertical, `var(--fk-transition-slow)` = 350ms) siguiendo el patrón ya usado en `progress-fill`/`ring-fill`/`check-pop` (solo `from`, `both`, sin envolver en su propio `@media prefers-reduced-motion`: la app ya anula toda animación globalmente en `a11y.css` bajo esa preferencia). Es la primera mitad de MC.2; la distribución personalizada por porcentajes queda para una sesión aparte. Verificado: 1450/1450 unit + integración, lint limpio, y verificación funcional con un test desechable en happy-dom (el wrapper `.distribucion-rows` existe, el contenido cambia entre presets, la barra de chips queda fuera del bloque animado, y la regla CSS + el keyframe están en `domain.css`). El preview del entorno no cargó la app (mismo artefacto recurrente: ni un servidor reusado ni uno nuevo logran salir de `chrome-error`), así que no hubo captura visual de la animación en este ciclo. SW v199 → v200.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | `_renderDistribucion` envuelve razón + filas + alertas + ctas en `<div class="distribucion-rows">`, fuera de la barra de chips. |
+| `styles/components/domain.css` | Nuevas `.distribucion-rows` + `@keyframes distribucion-rows-in`. |
+| `service-worker.js` | `CACHE_NAME` v199 → v200. |
+
+---
 
 ### style(cuentas): textos de ayuda simplificados en el form de nueva cuenta (MC.1) · 2026-06-28
 
@@ -90,20 +102,6 @@ Primer slice del rediseño de simulación de deudas (ADR 011). El input de "pago
 | `styles/components/charts.css` | CSS de extra + resumen; eliminado CSS del acordeón. |
 | `tests/unit/compromisos.test.js` | 4 tests de `renderResumenExtra`. |
 | `tests/e2e/estrategia-pago.test.js` | Corregido (ya no abre acordeón). |
-
----
-
-### feat(gastos): guía de categorías de gasto fijo (nudge no bloqueante) · 2026-06-28
-
-Segunda de dos mejoras de Gastos pedidas por el usuario. Al elegir Vivienda, Servicios públicos o Educación en el formulario de gasto, aparece un hint info debajo del select: "Esta categoría suele ser un gasto fijo mensual. Si es recurrente, puedes registrarlo en Agenda para llevarlo mejor." No limita la decisión (el usuario puede ignorarlo). Se implementó con `CATEGORIAS_TIPICAMENTE_FIJAS` (Set en `constants.js`), un hint oculto en el form (`view.js`), un `change` listener en `_montarFormGasto` (`index.js`), y `.form-hint--info` en `forms.css`. 1443 → 1446 tests. SW v194 → v195.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | Nueva `CATEGORIAS_TIPICAMENTE_FIJAS` (Set: Vivienda, Servicios públicos, Educación). |
-| `modules/dominio/gastos/view.js` | Hint oculto `#hint-categoria-fija` tras el `<select>` de categoría. |
-| `modules/dominio/gastos/index.js` | `change` listener en categoría que muestra/oculta el hint. |
-| `styles/components/forms.css` | `.form-hint--info { color: var(--fk-info-text); }`. |
-| `tests/unit/gastos.test.js` | 3 tests nuevos. |
 
 ---
 
