@@ -233,6 +233,14 @@ form:not(.config-form) .form-group:not(:first-child) {
 .distribuir__monto:disabled {
   opacity: 0.5;
 }
+.distribuir__subtitulo {
+  margin-top: var(--fk-space-3);
+  font-weight: var(--fk-font-medium);
+}
+.distribuir__saldo {
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+}
 
 /* Snackbar no bloqueante (ej. "Distribución aplicada. Deshacer"). Vive en
    document.body, sobrevive a los re-render del nudge. */

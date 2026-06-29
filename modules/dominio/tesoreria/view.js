@@ -24,6 +24,7 @@ import {
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
+  construirPlanDeudas,
 } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -316,43 +317,76 @@ export function renderDistribucionIngreso() {
     apartados: apartadosIncompletos,
   });
 
+  // Deudas con saldo pendiente (MC.4b): destinos fondeables vía abono real.
+  const deudasPendientes = (S.compromisos ?? [])
+    .filter(c => c.activo !== false
+      && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal')
+      && (Number(c.saldoTotal) || 0) > 0);
+  const destinosDeudas = construirPlanDeudas({ deudas: deudasPendientes });
+
   el.innerHTML = dist
     ? _renderDistribucion(dist, presetId, distribucionPersonalizada, {
         montoIngreso: ingresoMensual,
         ahorroPct:    dist.split.ahorro.pct,
         ahorroBudget: dist.split.ahorro.monto,
         destinosAhorro,
+        destinosDeudas,
       })
     : '';
 }
 
 /**
- * Botón "Distribuir mi ingreso" + panel inline editable del grupo Ahorro (MC.4a).
- * El panel arranca oculto; el botón lo despliega. Cada destino es una fila con
- * toggle (incluir) y monto editable; el resumen en vivo y el botón "Distribuir"
- * se manejan desde index.js. Devuelve '' si no hay destinos de ahorro fondeables.
+ * Una fila de destino del panel: toggle (incluir) + monto editable. Para deudas
+ * muestra el saldo pendiente como contexto.
  *
- * @param {number} montoIngreso
- * @param {number} ahorroPct
- * @param {number} ahorroBudget
- * @param {Array<{tipo:string, id:string|null, nombre:string, monto:number}>} destinos
+ * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number}} d
  * @returns {string}
  */
-function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinos) {
-  if (!destinos || destinos.length === 0) return '';
-
-  const filas = destinos.map(d => `
+function _filaDistribuir(d) {
+  const sub = d.tipo === 'deuda' && d.saldoTotal != null
+    ? ` <span class="distribuir__saldo">saldo ${f(d.saldoTotal)}</span>`
+    : '';
+  return `
         <div class="distribuir__fila">
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-dist-destino-toggle checked />
-            <span>${_esc(d.nombre)}</span>
+            <span>${_esc(d.nombre)}${sub}</span>
           </label>
           <input type="number" class="input distribuir__monto"
                  min="0" step="10000" inputmode="numeric" value="${d.monto}"
                  aria-label="Monto para ${_esc(d.nombre)}"
                  data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"
                  data-action="recalcular-distribucion" />
-        </div>`).join('');
+        </div>`;
+}
+
+/**
+ * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b).
+ * El panel arranca oculto; el botón lo despliega. Reparte hacia el grupo Ahorro
+ * (Fondo, Metas, Apartados) y, como abono real, hacia las Deudas pendientes
+ * (ordenadas por prioridad de pago). El resumen en vivo y el botón "Distribuir"
+ * se manejan desde index.js. Devuelve '' si no hay ningún destino fondeable.
+ *
+ * @param {number} montoIngreso
+ * @param {number} ahorroPct
+ * @param {number} ahorroBudget
+ * @param {Array<object>} destinosAhorro
+ * @param {Array<object>} destinosDeudas
+ * @returns {string}
+ */
+function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinosAhorro, destinosDeudas) {
+  const ahorro = destinosAhorro ?? [];
+  const deudas = destinosDeudas ?? [];
+  if (ahorro.length === 0 && deudas.length === 0) return '';
+
+  const filasAhorro = ahorro.map(_filaDistribuir).join('');
+  const seccionDeudas = deudas.length > 0
+    ? `
+          <p class="form-hint distribuir__subtitulo">Abonar a deudas (ordenadas por prioridad de pago):</p>
+          <div class="distribuir-ingreso__destinos">
+            ${deudas.map(_filaDistribuir).join('')}
+          </div>`
+    : '';
 
   return `
         <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
@@ -361,7 +395,7 @@ function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinos)
           💸 Distribuir mi ingreso
         </button>
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso" hidden>
-          <legend>Reparte hacia tus ahorros. El resto queda disponible en tu cuenta.</legend>
+          <legend>Reparte hacia tus ahorros y deudas. El resto queda disponible en tu cuenta.</legend>
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
             <input id="distribuir-monto" type="number" class="input"
@@ -369,9 +403,8 @@ function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinos)
                    data-action="recalcular-distribucion" />
           </div>
           <p class="form-hint">Sugerencia: ${f(ahorroBudget)} a ahorro (${ahorroPct}%). Ajusta cada destino:</p>
-          <div class="distribuir-ingreso__destinos">
-            ${filas}
-          </div>
+          ${ahorro.length > 0 ? `<div class="distribuir-ingreso__destinos">${filasAhorro}</div>` : ''}
+          ${seccionDeudas}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion">
             Distribuir
@@ -383,7 +416,7 @@ function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinos)
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
  * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
- * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, destinosAhorro:Array}} distribuir
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, destinosAhorro:Array, destinosDeudas:Array}} distribuir
  */
 function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada, distribuir) {
   const { necesidades, estiloVida, ahorro } = split;
@@ -482,7 +515,7 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
           ${alertasHtml}
           ${ctasHtml}
         </div>
-        ${_renderPanelDistribuir(distribuir.montoIngreso, distribuir.ahorroPct, distribuir.ahorroBudget, distribuir.destinosAhorro)}
+        ${_renderPanelDistribuir(distribuir.montoIngreso, distribuir.ahorroPct, distribuir.ahorroBudget, distribuir.destinosAhorro, distribuir.destinosDeudas)}
       </div>
     </div>`;
 }

@@ -57,8 +57,8 @@ Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más
 
 Slices de implementación de MC.4 (smallest-first, ver ADR 012):
 - ✅ **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.4b** - Sumar Deudas como destino fondeable (abono real). **Siguiente sugerido.**
-- **MC.4c** - Filas informativas de Necesidades y Estilo de vida (solo monto de referencia).
+- ✅ **MC.4b** - Deudas como destino fondeable: abono real vía EventBus, ordenadas por prioridad (Avalancha), topado al saldo - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+- **MC.4c** - Filas informativas de Necesidades y Estilo de vida (solo monto de referencia). **Siguiente sugerido.**
 - **MC.4d** - Guard de de-duplicación ("ya distribuiste tu quincena") + silenciar el nudge tras distribuir + persistir mapeo de destinos preferidos.
 - **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable.
 

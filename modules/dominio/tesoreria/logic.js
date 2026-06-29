@@ -767,3 +767,43 @@ export function resumirPlanDistribucion(montoIngreso, destinos) {
     excede:     asignado > m,
   };
 }
+
+/**
+ * Tasa efectiva anual (decimal) de una deuda según su `tasaUnidad`.
+ * Replicado de compromisos/logic.js (`tasaEADe` / `tasaMensualToEA`) para no
+ * crear dependencia cruzada entre dominios (ADN #10). Mantener en sync si la
+ * fórmula cambia allá.
+ *
+ * @param {{ tasa?: number, tasaUnidad?: string }} c
+ * @returns {number}
+ */
+function _tasaEADeuda(c) {
+  const t = Number(c?.tasa);
+  if (!Number.isFinite(t) || t < 0) return 0;
+  return c?.tasaUnidad === 'mensual' ? Math.pow(1 + t, 12) - 1 : t;
+}
+
+/**
+ * Arma las filas de deudas fondeables para "Distribuir mi ingreso" (MC.4b),
+ * ordenadas por prioridad de pago estilo Avalancha (mayor interés efectivo
+ * primero, que es la estrategia óptima recomendada). Empate por menor saldo.
+ *
+ * Cada fila arranca en monto 0 (el usuario decide cuánto abonar). `saldoTotal`
+ * se incluye para mostrarlo y para topar el abono (no se paga más de lo que se
+ * debe). Pura: recibe las deudas y no lee S ni el DOM.
+ *
+ * @param {{ deudas?: Array<{id:string, descripcion?:string, saldoTotal?:number, tasa?:number, tasaUnidad?:string}> }} args
+ * @returns {Array<{ tipo:'deuda', id:string, nombre:string, monto:number, saldoTotal:number, tasaEA:number }>}
+ */
+export function construirPlanDeudas({ deudas = [] }) {
+  return deudas
+    .map(d => ({
+      tipo:       'deuda',
+      id:         d.id,
+      nombre:     d.descripcion ?? d.nombre ?? 'Deuda',
+      monto:      0,
+      saldoTotal: Number(d.saldoTotal) || 0,
+      tasaEA:     _tasaEADeuda(d),
+    }))
+    .sort((a, b) => (b.tasaEA - a.tasaEA) || (a.saldoTotal - b.saldoTotal));
+}

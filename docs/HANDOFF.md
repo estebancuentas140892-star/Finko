@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(tesoreria): "Distribuir mi ingreso" grupo Ahorro + undo, ADR 012 MC.4a)
+> Última actualización: 2026-06-29 (feat(tesoreria): "Distribuir mi ingreso" suma Deudas como destino, ADR 012 MC.4b)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): "Distribuir mi ingreso" suma Deudas como destino (ADR 012, MC.4b) · 2026-06-29
+
+Segundo slice de la auto-distribución. El panel ahora reparte también hacia las deudas pendientes como abono real. Bajo una subsección "Abonar a deudas (ordenadas por prioridad de pago)" aparece una fila por deuda con saldo > 0, ordenadas estilo Avalancha (mayor interés efectivo anual primero, la estrategia óptima recomendada), cada una con su saldo como contexto. El abono se topa al saldo (no se paga de más; el excedente se queda en la cuenta) en `_leerItemsDistribucion`, así el resumen y el apply usan el mismo monto efectivo. Al confirmar, la deuda se aplica por el mismo EventBus `distribucion:aplicar`: el suscriptor en `compromisos/index.js` baja `saldoTotal` (topado en 0) con su propia lógica; tesorería centraliza el descuento de la cuenta (las deudas, como metas/apartados, sí salen de la cuenta). Se agregó `compromisos` al snapshot de undo. Lógica pura nueva `construirPlanDeudas` (ordena por EA desc replicando localmente `tasaEADe` con comentario, ADN #10). El botón "Distribuir mi ingreso" ahora también aparece cuando solo hay deudas (sin destinos de ahorro). Verificado: 5 tests de lógica nuevos (1473 total), test de integración desechable en happy-dom (orden por prioridad, tope al saldo, descuento de cuenta, undo), 57/57 E2E. El navegador local cargó módulos cacheados de la sesión anterior en :8080 y no mostró las filas de deuda; se confirmó que los archivos servidos sí contienen el código nuevo, y la verificación quedó en el test de integración (el SW v204 fuerza assets frescos en producción). SW v203 → v204. **Pendientes:** MC.4c (filas informativas necesidades/estilo de vida), MC.4d (de-duplicación + mapeo), MC.4e (inversiones).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirPlanDeudas` (orden Avalancha) + `_tasaEADeuda` (replicado, ADN). |
+| `modules/dominio/tesoreria/view.js` | Subsección de deudas en el panel + `_filaDistribuir` (muestra saldo). |
+| `modules/dominio/tesoreria/index.js` | Tope del abono al saldo; `compromisos` en el snapshot; copy del resumen. |
+| `modules/dominio/compromisos/index.js` | Suscriptor `distribucion:aplicar`: baja `saldoTotal` de la deuda. |
+| `styles/components/forms.css` | `.distribuir__subtitulo` + `.distribuir__saldo`. |
+| `tests/unit/tesoreria.test.js` | 5 tests de `construirPlanDeudas`. |
+| `service-worker.js` | `CACHE_NAME` v203 → v204. |
+
+---
 
 ### feat(tesoreria): "Distribuir mi ingreso", grupo Ahorro + undo (ADR 012, MC.4a) · 2026-06-29
 
@@ -91,18 +107,6 @@ Cierra MC.2. Antes solo se podía elegir entre 3 presets fijos (50/30/20, 70/20/
 | `styles/components/forms.css` | Nueva `.distribucion-personalizada` (mismo patrón que `.cuota-fieldset`). |
 | `tests/unit/tesoreria.test.js` | 9 tests nuevos. |
 | `service-worker.js` | `CACHE_NAME` v200 → v201. |
-
----
-
-### style(tesoreria): transición suave al cambiar de preset de distribución (MC.2, parte 1) · 2026-06-28
-
-Segunda tarea del backlog "Mis cuentas + distribución". Al hacer clic en un chip de preset (50/30/20, 70/20/10, 60/20/20) en "¿Cómo distribuir mi dinero?", `renderDistribucionIngreso()` reemplaza por completo el `innerHTML` del bloque: los porcentajes y montos nuevos aparecían de golpe, sin transición, lo que se sentía brusco. Se envolvió el contenido que cambia con el preset (razón + filas de porcentaje/monto + alertas + CTAs) en un nuevo contenedor `.distribucion-rows`, dejando la barra de chips fuera (estable, no se vuelve a animar solo por su propio cambio de estado activo). Se le dio una animación de entrada corta (`distribucion-rows-in`: fade + 4px de desplazamiento vertical, `var(--fk-transition-slow)` = 350ms) siguiendo el patrón ya usado en `progress-fill`/`ring-fill`/`check-pop` (solo `from`, `both`, sin envolver en su propio `@media prefers-reduced-motion`: la app ya anula toda animación globalmente en `a11y.css` bajo esa preferencia). Es la primera mitad de MC.2; la distribución personalizada por porcentajes queda para una sesión aparte. Verificado: 1450/1450 unit + integración, lint limpio, y verificación funcional con un test desechable en happy-dom (el wrapper `.distribucion-rows` existe, el contenido cambia entre presets, la barra de chips queda fuera del bloque animado, y la regla CSS + el keyframe están en `domain.css`). El preview del entorno no cargó la app (mismo artefacto recurrente: ni un servidor reusado ni uno nuevo logran salir de `chrome-error`), así que no hubo captura visual de la animación en este ciclo. SW v199 → v200.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/view.js` | `_renderDistribucion` envuelve razón + filas + alertas + ctas en `<div class="distribucion-rows">`, fuera de la barra de chips. |
-| `styles/components/domain.css` | Nuevas `.distribucion-rows` + `@keyframes distribucion-rows-in`. |
-| `service-worker.js` | `CACHE_NAME` v199 → v200. |
 
 ---
 

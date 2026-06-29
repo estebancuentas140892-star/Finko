@@ -458,6 +458,19 @@ export function initCompromisos() {
     }
   });
 
+  // "Distribuir mi ingreso" (ADR 012, MC.4b): aplica los abonos a deudas del
+  // plan. Solo baja `saldoTotal` (topado en 0); el descuento de la cuenta de
+  // origen lo centraliza tesorería. Los montos ya vienen topados al saldo.
+  EventBus.on('distribucion:aplicar', ({ items }) => {
+    const abonos = (items ?? []).filter(i => i.tipo === 'deuda' && i.monto > 0);
+    for (const it of abonos) {
+      const deuda = S.compromisos.find(c => c.id === it.id);
+      if (!deuda) continue;
+      const nuevoSaldo = Math.max(0, (Number(deuda.saldoTotal) || 0) - it.monto);
+      editar('compromisos', it.id, { saldoTotal: nuevoSaldo });
+    }
+  });
+
   // Re-render al navegar a #compromisos o #dash.
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';

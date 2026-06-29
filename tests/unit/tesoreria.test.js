@@ -21,6 +21,7 @@ import {
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
   resumirPlanDistribucion,
+  construirPlanDeudas,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1245,5 +1246,46 @@ describe('resumirPlanDistribucion()', () => {
   it('ignora montos no numéricos y trata el plan vacío como 0', () => {
     expect(resumirPlanDistribucion(1_000_000, [{ monto: NaN }, {}]).asignado).toBe(0);
     expect(resumirPlanDistribucion(1_000_000, []).sinAsignar).toBe(1_000_000);
+  });
+});
+
+// ── construirPlanDeudas() (MC.4b) ─────────────────────────────────
+describe('construirPlanDeudas()', () => {
+  it('ordena por interés efectivo anual descendente (Avalancha)', () => {
+    const plan = construirPlanDeudas({ deudas: [
+      { id: 'd1', descripcion: 'Banco', saldoTotal: 1_000_000, tasa: 0.25, tasaUnidad: 'EA' },
+      { id: 'd2', descripcion: 'Gota a gota', saldoTotal: 500_000, tasa: 0.05, tasaUnidad: 'mensual' },
+    ]});
+    // 5% mensual ≈ 79.6% EA, supera al 25% EA: la deuda personal va primero.
+    expect(plan.map(d => d.id)).toEqual(['d2', 'd1']);
+  });
+
+  it('cada fila arranca en 0 y conserva el saldoTotal', () => {
+    const plan = construirPlanDeudas({ deudas: [
+      { id: 'd1', descripcion: 'Tarjeta', saldoTotal: 2_000_000, tasa: 0.30, tasaUnidad: 'EA' },
+    ]});
+    expect(plan[0]).toMatchObject({ tipo: 'deuda', id: 'd1', nombre: 'Tarjeta', monto: 0, saldoTotal: 2_000_000 });
+  });
+
+  it('desempata por menor saldo cuando la tasa coincide', () => {
+    const plan = construirPlanDeudas({ deudas: [
+      { id: 'grande', descripcion: 'A', saldoTotal: 3_000_000, tasa: 0.20, tasaUnidad: 'EA' },
+      { id: 'chica',  descripcion: 'B', saldoTotal: 1_000_000, tasa: 0.20, tasaUnidad: 'EA' },
+    ]});
+    expect(plan.map(d => d.id)).toEqual(['chica', 'grande']);
+  });
+
+  it('trata tasa ausente o inválida como 0% (va al final)', () => {
+    const plan = construirPlanDeudas({ deudas: [
+      { id: 'sinTasa', descripcion: 'Préstamo familiar', saldoTotal: 500_000 },
+      { id: 'conTasa', descripcion: 'Banco', saldoTotal: 500_000, tasa: 0.10, tasaUnidad: 'EA' },
+    ]});
+    expect(plan[0].id).toBe('conTasa');
+    expect(plan.find(d => d.id === 'sinTasa').tasaEA).toBe(0);
+  });
+
+  it('sin deudas devuelve un plan vacío', () => {
+    expect(construirPlanDeudas({ deudas: [] })).toEqual([]);
+    expect(construirPlanDeudas({})).toEqual([]);
   });
 });

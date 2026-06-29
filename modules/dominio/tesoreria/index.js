@@ -699,7 +699,7 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
-const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'logros'];
+const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'logros'];
 
 /** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
 function _toggleDistribuirIngreso(el) {
@@ -713,17 +713,27 @@ function _toggleDistribuirIngreso(el) {
   }
 }
 
-/** Lee las filas activas (toggle on) con monto > 0 del panel. */
+/** Saldo pendiente actual de una deuda (0 si no existe). */
+function _saldoDeuda(id) {
+  const d = (S.compromisos ?? []).find(c => c.id === id);
+  return Number(d?.saldoTotal) || 0;
+}
+
+/**
+ * Lee las filas activas (toggle on) con monto > 0 del panel. Para deudas, topa
+ * el abono al saldo pendiente: no se paga más de lo que se debe (el excedente
+ * se queda en la cuenta). Así el resumen y el apply usan el mismo monto efectivo.
+ */
 function _leerItemsDistribucion(panel) {
   return [...panel.querySelectorAll('.distribuir__fila')]
     .filter(fila => fila.querySelector('[data-dist-destino-toggle]')?.checked)
     .map(fila => {
       const inp = fila.querySelector('.distribuir__monto');
-      return {
-        tipo:  inp?.dataset.distTipo,
-        id:    inp?.dataset.distId || null,
-        monto: Number(inp?.value) || 0,
-      };
+      const tipo = inp?.dataset.distTipo;
+      const id   = inp?.dataset.distId || null;
+      let monto  = Number(inp?.value) || 0;
+      if (tipo === 'deuda') monto = Math.min(monto, _saldoDeuda(id));
+      return { tipo, id, monto };
     })
     .filter(it => it.monto > 0);
 }
@@ -743,7 +753,7 @@ function _recalcularDistribucion() {
   if (resumenEl) {
     resumenEl.textContent = excede
       ? `Asignaste ${f(asignado)}, más que tu ingreso de ${f(monto)}. Reduce algún destino.`
-      : `A tus ahorros: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
+      : `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
     resumenEl.classList.toggle('form-hint--danger', excede);
   }
   if (boton) boton.disabled = !valido;
@@ -802,7 +812,7 @@ async function _confirmarDistribucion() {
   EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
 
   updSaldo();
-  announce(`Distribuiste ${f(asignado)} de tu ingreso hacia tus ahorros.`);
+  announce(`Distribuiste ${f(asignado)} de tu ingreso.`);
   _mostrarSnackbarDeshacer();
 }
 
