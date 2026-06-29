@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(gastos): lista con los más recientes primero)
+> Última actualización: 2026-06-28 (feat(gastos): guía de categorías de gasto fijo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(gastos): guía de categorías de gasto fijo (nudge no bloqueante) · 2026-06-28
+
+Segunda de dos mejoras de Gastos pedidas por el usuario. Al elegir Vivienda, Servicios públicos o Educación en el formulario de gasto, aparece un hint info debajo del select: "Esta categoría suele ser un gasto fijo mensual. Si es recurrente, puedes registrarlo en Agenda para llevarlo mejor." No limita la decisión (el usuario puede ignorarlo). Se implementó con `CATEGORIAS_TIPICAMENTE_FIJAS` (Set en `constants.js`), un hint oculto en el form (`view.js`), un `change` listener en `_montarFormGasto` (`index.js`), y `.form-hint--info` en `forms.css`. 1443 → 1446 tests. SW v194 → v195.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | Nueva `CATEGORIAS_TIPICAMENTE_FIJAS` (Set: Vivienda, Servicios públicos, Educación). |
+| `modules/dominio/gastos/view.js` | Hint oculto `#hint-categoria-fija` tras el `<select>` de categoría. |
+| `modules/dominio/gastos/index.js` | `change` listener en categoría que muestra/oculta el hint. |
+| `styles/components/forms.css` | `.form-hint--info { color: var(--fk-info-text); }`. |
+| `tests/unit/gastos.test.js` | 3 tests nuevos. |
+
+---
+
 ### feat(gastos): lista con los más recientes primero · 2026-06-28
 
 Primera de dos mejoras de Gastos pedidas por el usuario. La lista mostraba los gastos en orden de inserción (el último registrado al fondo). Ahora van los más recientes primero: fecha descendente y, a igualdad de fecha, el último registrado al tope (desempate por orden de inserción inverso, ya que `guardar` hace `push` y `genId` es aleatorio). Función pura nueva `ordenarRecientesPrimero` en `gastos/logic.js`, aplicada por la vista antes de renderizar. Verificado: 5 tests nuevos + ejecución de la función servida en el navegador (orden correcto); el render en vivo no se pudo capturar porque el contexto del preview quedó envenenado tras limpiar caché varias veces (artefacto del entorno, no del código: la suite importa `view.js` y pasa). 1438 → 1443 tests. SW v193 → v194. **Pendiente (Tarea 2):** guía de categorías de gasto fijo (nudge no bloqueante al elegir Servicios públicos, Vivienda, etc.).
@@ -72,19 +86,6 @@ Primera de dos mejoras del Dashboard pedidas por el usuario. La tarjeta "Tienes 
 | `index.html` | `#panel-gastos-pendientes` movido dentro del `.bento` tras el hero, ahora `class="bento__cell"` (span 4 desktop / span 1 mobile). |
 | `styles/layout.css` | Celda `#panel-gastos-pendientes` bare + nudge interno `flex:1` + `align-content:center` + radius xl. |
 | `service-worker.js` | `CACHE_NAME` v191 → v192. |
-
----
-
-### style(gastos): icono de categoría sobrio, emoji grande con relieve · 2026-06-28
-
-Tercera y última iteración del icono de gastos. La versión anterior (fondo de color vivo por categoría, estilo Duolingo) saturaba y cansaba la vista, así que el usuario pidió algo más sobrio: solo el icono, con contraste y sombreado. Ahora el emoji va grande (1.5rem) sobre un contenedor neutro (`--fk-bg-elevated`) con borde sutil (`--fk-border-subtle`), esquinas redondeadas (`--fk-radius-lg`) y sombra suave (`--fk-shadow-sm`) que le da relieve y lo despega de la card, sin recargar el color. Se revirtió todo lo de la versión de colores: tokens `--fk-cat-*`, `CATEGORIA_SLUG` y `data-cat` (sin dead code). Se conserva el subtítulo sin emoji redundante. Verificado en navegador (tema oscuro): tiles neutros con relieve, emoji grande y legible, sin saturación. SW v190 → v191. Tests 1438/1438.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/components/atoms.css` | `.list-item__icon--cat`: contenedor neutro + borde sutil + sombra + emoji 1.5rem (sin fondo de color). |
-| `styles/tokens.css` | Removidos los 15 tokens `--fk-cat-*`. |
-| `modules/core/constants.js` | Removido `CATEGORIA_SLUG`. |
-| `modules/dominio/gastos/view.js` | `_renderGastoItem` sin `data-cat`; quitado el import de `CATEGORIA_SLUG`. |
 
 ---
 

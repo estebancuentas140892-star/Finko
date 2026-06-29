@@ -23,6 +23,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   deltasPorEdicionDeGasto,
 } from './logic.js';
+import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
 import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -421,6 +422,21 @@ function _montarFormGasto() {
     e.preventDefault();
     _guardarGasto();
   });
+
+  const catSelect = form.querySelector('[name="categoria"]');
+  const hintFija  = form.querySelector('#hint-categoria-fija');
+  if (catSelect && hintFija) {
+    catSelect.addEventListener('change', () => {
+      const esFija = CATEGORIAS_TIPICAMENTE_FIJAS.has(catSelect.value);
+      hintFija.hidden = !esFija;
+      if (esFija) {
+        hintFija.innerHTML =
+          `Esta categoría suele ser un gasto fijo mensual. ` +
+          `Si es recurrente, puedes <a href="#agenda" data-action="modal-close" ` +
+          `class="link">registrarlo en Agenda</a> para llevarlo mejor.`;
+      }
+    });
+  }
 }
 
 export function initGastos() {

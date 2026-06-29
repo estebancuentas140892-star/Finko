@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(gastos): guía de categorías de gasto fijo (nudge no bloqueante) · 2026-06-28
+
+Segunda de dos mejoras de la sección Gastos pedidas por el usuario. Algunas categorías (Vivienda, Servicios públicos, Educación) suelen corresponder a gastos fijos mensuales, pero estaban mezcladas con las variables sin ninguna orientación. Ahora, al elegir una de esas categorías en el formulario de gasto, aparece un hint no bloqueante debajo del select: "Esta categoría suele ser un gasto fijo mensual. Si es recurrente, puedes registrarlo en Agenda para llevarlo mejor." (con link a Agenda). El hint no limita la decisión: el usuario puede ignorarlo y registrar el gasto como ocasional. Se implementó con: (1) nueva constante `CATEGORIAS_TIPICAMENTE_FIJAS` (Set) en `constants.js` con las 3 categorías típicamente recurrentes, (2) un `<p>` hint oculto por defecto en el form de gasto (`view.js`), (3) un `change` listener en el `<select>` de categoría dentro de `_montarFormGasto` (`index.js`) que muestra/oculta el hint según `Set.has()`, y (4) una nueva variante CSS `.form-hint--info` en `forms.css`. Se evaluó y descartó incluir Salud y Transporte (demasiado variable: un taxi, una consulta médica). Verificado: 3 tests nuevos (constante, hint en form, categorías excluidas) + verificación de los archivos servidos en el navegador. 1443 → 1446 tests. SW v194 → v195.
+
+- **`modules/core/constants.js`**: nueva `CATEGORIAS_TIPICAMENTE_FIJAS` (Set de 'Vivienda', 'Servicios públicos', 'Educación').
+- **`modules/dominio/gastos/view.js`**: `renderFormGasto` emite `<p id="hint-categoria-fija" class="form-hint form-hint--info" hidden>` tras el `<select>` de categoría.
+- **`modules/dominio/gastos/index.js`**: `_montarFormGasto` attacha `change` listener al `<select>` de categoría que muestra/oculta el hint con link a Agenda.
+- **`styles/components/forms.css`**: nueva `.form-hint--info { color: var(--fk-info-text); }`.
+- **`tests/unit/gastos.test.js`**: 3 tests (constante contiene las 3, excluye las variables, form incluye hint oculto).
+- **`service-worker.js`**: v194 → v195.
+
+---
+
 ### feat(gastos): lista con los más recientes primero · 2026-06-28
 
 Primera de dos mejoras de la sección Gastos pedidas por el usuario. La lista mostraba los gastos en orden de inserción (el último registrado quedaba al fondo, había que desplazarse para verlo). Ahora se muestran los más recientes primero: por fecha descendente y, a igualdad de fecha, el último registrado al tope. El desempate sale del orden de inserción inverso, porque `guardar` hace `push` y `genId` usa `crypto.randomUUID()` (no ordenable por tiempo): la posición en el array es la única señal de "cuál se registró después". Se resolvió con una función pura nueva `ordenarRecientesPrimero` (sort estable ES2019 sobre el array invertido) en `gastos/logic.js`, que la vista aplica antes de renderizar la lista del mes (el total del resumen es independiente del orden). Verificado: 5 tests unitarios nuevos (fecha desc, empate por inserción inversa, criterio combinado, no muta, vacío) + ejecución de la función servida en el navegador (seed de 4 gastos → orden `g2, g4, g3, g1` correcto) y confirmación de que la vista servida la usa. 1438 → 1443 tests. SW v193 → v194.

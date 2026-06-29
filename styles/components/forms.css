@@ -95,6 +95,7 @@ form:not(.config-form) .form-group:not(:first-child) {
 }
 .form-hint--muted   { color: var(--fk-text-muted); }
 .form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
+.form-hint--info    { color: var(--fk-info-text); }
 
 /* Empty-state que reemplaza al form cuando faltan prerrequisitos
    (ej: intentar crear un gasto sin tener cuentas creadas). */

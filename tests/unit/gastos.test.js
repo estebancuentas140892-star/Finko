@@ -18,6 +18,7 @@ import {
   gastosPendientes,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto } from '../../modules/dominio/gastos/view.js';
+import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -637,5 +638,30 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');
     expect(html).toContain('checked');
+  });
+
+  it('incluye hint-categoria-fija oculto por defecto', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('id="hint-categoria-fija"');
+    expect(html).toContain('hidden');
+  });
+});
+
+// ── CATEGORIAS_TIPICAMENTE_FIJAS ────────────────────────────────
+
+describe('CATEGORIAS_TIPICAMENTE_FIJAS', () => {
+  it('marca Vivienda, Servicios públicos y Educación como fijas', () => {
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Vivienda')).toBe(true);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Servicios públicos')).toBe(true);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Educación')).toBe(true);
+  });
+
+  it('no marca categorías variables como fijas', () => {
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Mercado')).toBe(false);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Restaurantes')).toBe(false);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Transporte')).toBe(false);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Entretenimiento')).toBe(false);
+    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Otros')).toBe(false);
   });
 });

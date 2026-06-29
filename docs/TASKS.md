@@ -37,7 +37,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**Tarea 2 (Gastos) - guía de categorías de gasto fijo.** Segunda mitad del pedido de Gastos. Algunas categorías (Servicios públicos, Vivienda, etc.) suelen corresponder a gastos fijos o compromisos. En vez de quitarlas, orientar al usuario: al elegir una de esas categorías al registrar un gasto, mostrar un mensaje no bloqueante tipo "Esta categoría suele corresponder a un gasto fijo. ¿Registrarlo como ocasional o agregarlo a Compromisos?". Requiere: (1) decidir qué categorías marcar como "típicamente fijas" (revisar `CATEGORIAS_GASTO_USUARIO` en `constants.js`), (2) un nudge en el form de gasto que reaccione a la categoría elegida sin limitar la decisión, con atajo a Compromisos. Primera mitad (orden recientes primero) cerrada 2026-06-28.
+El pedido de Gastos quedó cerrado (2026-06-28): recientes primero (Task 1) + guía de categorías fijas (Task 2). El pedido de Dashboard también cerrado en la misma sesión. A la espera de feedback del usuario desde su celular.
 
 Pendientes no urgentes (mantenimiento):
 

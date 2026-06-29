@@ -333,6 +333,18 @@ export const CATEGORIAS_GASTO_USUARIO = CATEGORIAS_GASTO.filter(
   c => c !== 'Deudas' && c !== 'Ahorro' && c !== 'Alimentación',
 );
 
+/**
+ * Categorías que suelen corresponder a gastos fijos mensuales (recurrentes).
+ * Al elegir una de estas en el formulario de gasto, se muestra un hint no
+ * bloqueante que orienta al usuario a registrarlo como gasto fijo en Agenda
+ * si es recurrente. No limita la decisión: puede registrarlo como ocasional.
+ */
+export const CATEGORIAS_TIPICAMENTE_FIJAS = new Set([
+  'Vivienda',
+  'Servicios públicos',
+  'Educación',
+]);
+
 /** Emoji visual por categoría de gasto. Usar solo en UI; nunca en el valor almacenado. */
 export const CATEGORIA_EMOJI = {
   'Mercado':            '🛒',
