@@ -11,7 +11,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
-import { BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO } from '../../core/constants.js';
+import { BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI } from '../../core/constants.js';
 import {
   cuentasActivas,
   calcularCostoGMF,
@@ -136,7 +136,9 @@ function _renderEmptyStateIngresos() {
 function _renderIngresoItem(ing) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
-  const catLabel = ing.categoria ? ` · ${_esc(ing.categoria)}` : '';
+  const catLabel = ing.categoria
+    ? ` · ${CATEGORIA_INGRESO_EMOJI[ing.categoria] ?? ''} ${_esc(ing.categoria)}`
+    : '';
 
   let diaHint = '';
   if (ing.diaPago) {
@@ -180,7 +182,7 @@ export function renderFormIngreso(ingreso = null) {
     .join('');
 
   const catOpts = CATEGORIAS_INGRESO
-    .map(c => `<option value="${_esc(c)}"${ingreso?.categoria === c ? ' selected' : ''}>${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}"${ingreso?.categoria === c ? ' selected' : ''}>${CATEGORIA_INGRESO_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
 
   const esSalarioMin = ingreso?.categoria === 'Salario mínimo';

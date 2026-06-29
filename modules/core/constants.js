@@ -385,6 +385,22 @@ export const CATEGORIAS_INGRESO = [
   'Otro',
 ];
 
+/** Emoji visual por categoría de ingreso. Usar solo en UI; nunca en el valor almacenado. */
+export const CATEGORIA_INGRESO_EMOJI = {
+  'Salario':         '💼',
+  'Salario mínimo':  '🏷️',
+  'Honorarios':      '💵',
+  'Comisión':        '🤝',
+  'Arriendo':        '🏠',
+  'Pensión':         '👴',
+  'Subsidio':        '🪙',
+  'Bonificación':    '🎁',
+  'Cuota':           '🧾',
+  'Venta':           '💰',
+  'Rendimientos':    '📈',
+  'Otro':            '📦',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

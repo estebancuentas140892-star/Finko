@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   cuentasActivas,
   calcularTotalCuentas,
@@ -28,7 +28,9 @@ import {
   calcularSalarioMinimo,
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
-import { CATEGORIAS_INGRESO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
+import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
+import { renderFormIngreso, renderListaIngresos } from '../../modules/dominio/tesoreria/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -986,6 +988,67 @@ describe('CATEGORIAS_INGRESO', () => {
       expect(typeof c).toBe('string');
       expect(c.length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ── CATEGORIA_INGRESO_EMOJI ──────────────────────────────────────────
+
+describe('CATEGORIA_INGRESO_EMOJI', () => {
+  it('tiene un emoji para cada categoría de CATEGORIAS_INGRESO', () => {
+    for (const c of CATEGORIAS_INGRESO) {
+      expect(CATEGORIA_INGRESO_EMOJI[c]).toBeTruthy();
+      expect(typeof CATEGORIA_INGRESO_EMOJI[c]).toBe('string');
+    }
+  });
+
+  it('no tiene entradas huérfanas fuera del catálogo', () => {
+    for (const key of Object.keys(CATEGORIA_INGRESO_EMOJI)) {
+      expect(CATEGORIAS_INGRESO).toContain(key);
+    }
+  });
+});
+
+// ── renderFormIngreso() - iconografía de categorías (MC.9) ──────────
+
+describe('renderFormIngreso() - iconografía de categorías', () => {
+  it('cada <option> del selector de categoría incluye su emoji', () => {
+    const html = renderFormIngreso();
+    for (const c of CATEGORIAS_INGRESO) {
+      expect(html).toContain(`${CATEGORIA_INGRESO_EMOJI[c]} ${c}`);
+    }
+  });
+
+  it('la categoría seleccionada en edición conserva el emoji', () => {
+    const html = renderFormIngreso({ categoria: 'Arriendo', frecuencia: 'Mensual', descripcion: 'Apto' });
+    expect(html).toContain('value="Arriendo" selected');
+    expect(html).toContain('🏠 Arriendo');
+  });
+});
+
+describe('renderListaIngresos() - iconografía de categorías (MC.9)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-ingresos"></div>';
+    S.ingresos = [];
+  });
+
+  it('muestra el emoji de la categoría junto al nombre en cada ítem', () => {
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Apto centro', monto: 1_200_000,
+      frecuencia: 'Mensual', categoria: 'Arriendo', activo: true,
+    }];
+    renderListaIngresos();
+    const html = document.getElementById('lista-ingresos').innerHTML;
+    expect(html).toContain('🏠 Arriendo');
+  });
+
+  it('sin categoría no muestra emoji ni separador', () => {
+    S.ingresos = [{
+      id: 'i2', descripcion: 'Freelance', monto: 500_000,
+      frecuencia: 'Quincenal', categoria: null, activo: true,
+    }];
+    renderListaIngresos();
+    const html = document.getElementById('lista-ingresos').innerHTML;
+    expect(html).not.toContain('·');
   });
 });
 

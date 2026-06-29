@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): iconografía en las categorías de ingresos (MC.9) · 2026-06-29
+
+Cada categoría de ingreso muestra un emoji representativo, siguiendo el mismo patrón que `CATEGORIA_EMOJI` en categorías de gasto. Nuevo mapa `CATEGORIA_INGRESO_EMOJI` en `constants.js` con las 12 categorías: 💼 Salario, 🏷️ Salario mínimo, 💵 Honorarios, 🤝 Comisión, 🏠 Arriendo, 👴 Pensión, 🪙 Subsidio, 🎁 Bonificación, 🧾 Cuota, 💰 Venta, 📈 Rendimientos, 📦 Otro. El emoji aparece en el texto de cada `<option>` del selector de categoría en el formulario de ingreso, y junto al nombre de la categoría en la lista de ingresos ("· 🏠 Arriendo"). Cambio puramente visual: no toca `logic.js`, ni el valor almacenado en `S.ingresos` (la categoría sigue siendo el string plano, el emoji se resuelve solo en la capa de vista).
+
+Verificado: 6 tests nuevos (1513 → 1519 unit + integración): cobertura del mapa contra el catálogo `CATEGORIAS_INGRESO` (sin huecos ni huérfanos), render del selector con emoji por opción, preselección en edición conserva el emoji, y render de la lista (con categoría muestra emoji, sin categoría no muestra separador). Lint limpio, 57/57 E2E sin regresiones. SW v209 → v210.
+
+- **`modules/core/constants.js`**: `CATEGORIA_INGRESO_EMOJI` (12 categorías, mismo patrón que `CATEGORIA_EMOJI`).
+- **`modules/dominio/tesoreria/view.js`**: emoji en las `<option>` de `renderFormIngreso` y en `_renderIngresoItem` (lista).
+- **`tests/unit/tesoreria.test.js`**: 6 tests nuevos.
+- **`service-worker.js`**: v209 → v210.
+
+---
+
 ### fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia (MC.8) · 2026-06-29
 
 Corrige el cálculo del salario mínimo según la frecuencia de pago. La automatización "Salario mínimo" pre-llenaba el campo `monto` con el valor **mensual** completo (`SMMLV + auxilio`), pero `monto` representa el valor **por período** y `estimarSalarioMensual` lo multiplica por `_FACTOR_MENSUAL` (Quincenal × 2, Semanal × 4.33, Diario × 30). Efecto del bug: al elegir Quincenal, el ingreso mensual estimado (que alimenta la tasa de ahorro, la distribución y el balance) quedaba al **doble**; con Semanal, ~4.3×.

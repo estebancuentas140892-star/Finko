@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia, MC.8)
+> Última actualización: 2026-06-29 (feat(tesoreria): iconografía en las categorías de ingresos, MC.9)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1513/1513 verdes |
+| Tests unitarios + integración | 1519/1519 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): iconografía en las categorías de ingresos (MC.9) · 2026-06-29
+
+Cada categoría de ingreso muestra un emoji representativo, mismo patrón que `CATEGORIA_EMOJI` de gastos. Nuevo mapa `CATEGORIA_INGRESO_EMOJI` en `constants.js` (12 categorías: 💼 Salario, 🏷️ Salario mínimo, 💵 Honorarios, 🤝 Comisión, 🏠 Arriendo, 👴 Pensión, 🪙 Subsidio, 🎁 Bonificación, 🧾 Cuota, 💰 Venta, 📈 Rendimientos, 📦 Otro). El emoji aparece en cada `<option>` del selector de categoría y junto al nombre en la lista de ingresos. Cambio puramente visual: la categoría guardada sigue siendo el string plano, el emoji se resuelve en la vista. Verificado: 6 tests nuevos (1519 total): cobertura del mapa contra el catálogo, render del selector y de la lista (con/sin categoría), lint limpio, 57/57 E2E. SW v209 → v210.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIA_INGRESO_EMOJI` (12 categorías). |
+| `modules/dominio/tesoreria/view.js` | Emoji en `<option>` de `renderFormIngreso` y en `_renderIngresoItem`. |
+| `tests/unit/tesoreria.test.js` | 6 tests nuevos. |
+| `service-worker.js` | v209 → v210. |
+
+---
 
 ### fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia (MC.8) · 2026-06-29
 
@@ -91,21 +104,6 @@ Quinto y último slice de la auto-distribución: cierra MC.4. El ADR había deja
 | `modules/dominio/inversiones/index.js` | Suscriptor `distribucion:aplicar` que incrementa el capital del holding. |
 | `tests/unit/tesoreria.test.js` | 4 tests de `construirPlanInversiones`. |
 | `service-worker.js` | `CACHE_NAME` v206 → v207. |
-
----
-
-### feat(tesoreria): "Distribuir mi ingreso" se habilita al llegar el cobro + guard de de-duplicación (ADR 012, MC.4d) · 2026-06-29
-
-Cuarto slice de la auto-distribución. Antes el botón "Distribuir mi ingreso" salía siempre que hubiera un destino fondeable; ahora la acción se ata al calendario del cobro y se protege contra el doble conteo. Lógica pura nueva: `ultimoPagoHasta` (fecha ISO del cobro más reciente ya ocurrido, espejo hacia atrás de `diasParaProximoPago`, Mensual/Quincenal) y `estadoDistribucion` que devuelve `{ estado, periodoISO, esHoy }` con cuatro estados: `'sin-fecha'` (sin día de pago registrado: la acción se mantiene, no hay regresión), `'pendiente'` (hay día de pago pero el cobro de este periodo aún no llega, p. ej. ingreso registrado hoy con día ya pasado: oculta el botón), `'listo'` (ya llegó y no se ha distribuido) y `'distribuido'` (ya se repartió este periodo). El periodo = fecha del cobro más reciente (<= hoy y posterior a `fechaCreacion` del ingreso) y es la clave de de-duplicación. La UI muestra en `'listo'` un nudge "💸 Hoy recibes tu ingreso. ¿Deseas distribuirlo ahora?" sobre el botón, en `'distribuido'` "✓ Ya distribuiste tu ingreso de este periodo" sin botón, y en `'pendiente'` un aviso muted. Al confirmar se marca `S.config.ultimaDistribucionPeriodo` (antes de mover dinero, para que el re-render ya oculte el botón); el snapshot de undo incluye ahora la slice `config`, así "Deshacer" revierte la marca. Cambio aditivo, sin migración. Verificado: 17 tests de lógica nuevos (1490 total), test de render desechable en happy-dom (los cuatro estados), lint limpio, 57/57 E2E. El preview volvió a caer en `chrome-error` (recurrente): verificación por render + E2E. SW v205 → v206. **Pendiente de MC.4:** MC.4e (inversiones, opcional). Quedan abiertas MC.6 y MC.7 (épicas, requieren ADR).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `ultimoPagoHasta` + `estadoDistribucion` (gating por fecha + clave de periodo) + helper `_isoFecha`. |
-| `modules/dominio/tesoreria/view.js` | El panel ramifica por estado: nudge "¿distribuir?", "ya distribuiste", aviso "pendiente", o fallback. |
-| `modules/dominio/tesoreria/index.js` | Marca `ultimaDistribucionPeriodo` al confirmar; `config` en el snapshot de undo. |
-| `styles/components/forms.css` | `.distribuir__cta`, `.distribuir__hecho`, `.distribuir__pendiente`. |
-| `tests/unit/tesoreria.test.js` | 17 tests de `ultimoPagoHasta` y `estadoDistribucion`. |
-| `service-worker.js` | `CACHE_NAME` v205 → v206. |
 
 ---
 

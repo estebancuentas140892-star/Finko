@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1402/1402 tests verdes, lint limpio.** Último cambio: **renombre "Presupuesto" → "Límites de gasto"** y diferenciación de Apartados (cross-links + subtítulo; sin fusionar, sin migración). Antes: fix de íconos en Agenda, V.8 card de resumen semanal (ADR 008). **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1519/1519 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **MC.9** iconografía en categorías de ingresos (emoji por categoría en selector y lista). Antes: **MC.8** fix del salario mínimo por frecuencia. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -82,7 +82,7 @@ Seguimiento a las categorías de ingreso recién entregadas. Arrancar por el bug
 
 ✅ **MC.8 (BUG)** - Corregido el cálculo del salario mínimo según la frecuencia: el salario mínimo se trata como ancla mensual y se divide por la frecuencia para pre-llenar el monto por período (helper puro `montoSalarioMinimoPorPeriodo`); la automatización ahora reacciona también al cambiar la frecuencia. 7 tests nuevos (incluye regresión). SW v208 → v209 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **MC.9 (mejora UI)** - **Iconografía en las categorías de ingresos.** Cada categoría con un emoji representativo, consistente con el resto de la app (patrón de los íconos de categorías de gasto en `constants.js`). Mostrar el ícono en el selector del formulario (texto de la `<option>`) y en la lista de ingresos junto al nombre de la categoría. Íconos sugeridos por el usuario: 💼 Salario, 🏠 Arriendo, 💵 Honorarios, 🎁 Bonificación, 📈 Rendimientos, 🤝 Comisión, 🪙 Subsidio, 📦 Otro. Faltan por definir: Salario mínimo, Pensión, Cuota, Venta. Tocar: `constants.js` (mapa categoría → emoji), `tesoreria/view.js` (selector + lista) + tests de render. Modelo sugerido: Sonnet 4.6 - Bajo (UI aislada, sin lógica nueva).
+✅ **MC.9 (mejora UI)** - Iconografía en las categorías de ingresos: `CATEGORIA_INGRESO_EMOJI` en `constants.js` (12 categorías, mismo patrón que `CATEGORIA_EMOJI` de gastos); el selector del form y la lista de ingresos muestran el emoji junto al nombre. 6 tests nuevos (mapa completo + render del selector y la lista). SW v209 → v210 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:
 - ✅ Categorías predefinidas para Ingresos (12 categorías + automatización "Salario mínimo" con subsidio de transporte) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
