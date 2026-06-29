@@ -76,6 +76,14 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
 
+### Backlog del usuario "Mis cuentas: ajustes a ingresos" (2026-06-29)
+
+Seguimiento a las categorías de ingreso recién entregadas. Arrancar por el bug.
+
+- **MC.8 (BUG, prioritario)** - **Corregir el cálculo del salario mínimo según la frecuencia.** Hoy, al elegir la categoría "Salario mínimo", la automatización pre-llena `monto` con el valor **mensual** completo (SMMLV + auxilio). Pero `monto` es el valor **por período** y `estimarSalarioMensual` multiplica por `_FACTOR_MENSUAL` (Quincenal × 2, Semanal × 4.33): si el usuario elige Quincenal, el ingreso mensual estimado queda **al doble**. Fix: tratar el salario mínimo como un **ancla mensual** y dividir por la frecuencia de pago para obtener el monto por período (Mensual = completo, Quincenal = /2, Semanal = /4.33). La automatización debe reaccionar **también al cambiar la frecuencia** (hoy solo reacciona a la categoría y al checkbox de subsidio), no solo al seleccionar la categoría. Tocar: `tesoreria/index.js` (`_attachCategoriaToggle`, acoplar al `change` de frecuencia), posible helper puro en `logic.js` (dividir valor mensual por frecuencia, reusando el factor) + tests. Modelo sugerido: Opus 4.8 - Bajo (bug sutil en lógica financiera con repro clara).
+
+- **MC.9 (mejora UI)** - **Iconografía en las categorías de ingresos.** Cada categoría con un emoji representativo, consistente con el resto de la app (patrón de los íconos de categorías de gasto en `constants.js`). Mostrar el ícono en el selector del formulario (texto de la `<option>`) y en la lista de ingresos junto al nombre de la categoría. Íconos sugeridos por el usuario: 💼 Salario, 🏠 Arriendo, 💵 Honorarios, 🎁 Bonificación, 📈 Rendimientos, 🤝 Comisión, 🪙 Subsidio, 📦 Otro. Faltan por definir: Salario mínimo, Pensión, Cuota, Venta. Tocar: `constants.js` (mapa categoría → emoji), `tesoreria/view.js` (selector + lista) + tests de render. Modelo sugerido: Sonnet 4.6 - Bajo (UI aislada, sin lógica nueva).
+
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:
 - ✅ Categorías predefinidas para Ingresos (12 categorías + automatización "Salario mínimo" con subsidio de transporte) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - Categorías predefinidas para Agenda (13 categorías de gastos fijos).
