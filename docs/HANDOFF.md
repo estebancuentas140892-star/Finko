@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1572/1572 verdes |
+| Tests unitarios + integración | 1576/1576 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(deudas): pago extra como primer remedio en plan inviable (D.2b) · 2026-06-29
+
+Segundo slice de la Revisión D.2 ([ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). Cuando Finko detecta que el plan no se sostiene (deudas que crecen porque la cuota no cubre el interés), el pago extra mensual ya no aparece como acelerador plegable: sube como **primer remedio** ("💪 Aumenta tu cuota") dentro del bloque "⚠️ Con tu pago actual, estas deudas no se terminan de pagar". El input y el resumen de impacto en vivo son los mismos que en el acelerador, solo cambian de ubicación y contexto. Viable e inviable son estados excluyentes: el input se renderiza en un solo lugar a la vez (acelerador o remedio, nunca ambos). Lógica financiera intacta. Verificado: 4 tests de render nuevos (1576 total), lint limpio. SW v216 → v217.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia.js` | `_renderDiagnosticoInviable` recibe `extraMensual` + `resumenExtraHtml` y embebe el input como remedio. `renderEstrategiaPago` condiciona acelerador a `recomendacion.viable`. |
+| `styles/components/charts.css` | `.estrategia-card__remedio` (bloque de remedio dentro de la alerta). |
+| `tests/unit/compromisos.test.js` | 4 tests D.2b (sin acelerador en plan inviable, input en remedio, remedio dentro de alerta, resumen dentro de remedio). |
+| `service-worker.js` | v216 → v217. |
+
+---
 
 ### refactor(deudas): picker arriba + acelerador plegable del pago extra (D.2a) · 2026-06-29
 
@@ -85,19 +98,6 @@ El resumen "Impacto de tu pago extra" mostraba "terminas 49 años antes y ahorra
 | `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` de 9 a 15 entradas, reordenada. |
 | `tests/unit/apartados.test.js` | 2 tests nuevos. |
 | `service-worker.js` | v213 → v214. |
-
----
-
-### feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta (AP.1) · 2026-06-29
-
-El aporte a un apartado usaba un `<select>` de texto plano sin logo del banco y sin opción de completar desde otra cuenta. Se unificó al **selector de tarjetas compartido** (Gastos/Abono/Pago): `renderSelectorCuenta` (avatar de la entidad + radios `name="cuentaId"`) en el form y `resolverPagoConPreferida` al guardar (reparto-fallback sin negativos; confirma sobregiro con una sola cuenta). Se preserva el aporte como seguimiento cuando no hay cuentas activas (sube `montoActual` sin descontar). Primer paso del backlog "Visión de Apartados". Verificado: 4 tests de render nuevos (1562 total), lint limpio, 57/57 E2E. SW v212 → v213.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/view.js` | `renderFormAporteApartado` usa `renderSelectorCuenta`; eliminado el helper local `_renderCuentaSelectorAporte`. |
-| `modules/dominio/apartados/index.js` | `_guardarAporte` async con `resolverPagoConPreferida` (reparto + sobregiro); descuenta por split; mantiene aporte-seguimiento sin cuentas. |
-| `tests/unit/apartados.test.js` | 4 tests de render de `renderFormAporteApartado`. |
-| `service-worker.js` | v212 → v213. |
 
 ---
 

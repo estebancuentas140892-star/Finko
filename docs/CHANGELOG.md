@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(deudas): pago extra como primer remedio en plan inviable (D.2b) · 2026-06-29
+
+Segundo slice de la Revisión D.2 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). Cuando el plan no se sostiene (`recomendacion.viable === false`), el pago extra mensual deja de aparecer como acelerador plegable y sube como **primer remedio** ("💪 Aumenta tu cuota") dentro del bloque de diagnóstico "⚠️ Con tu pago actual, estas deudas no se terminan de pagar". El input de extra y el resumen de impacto en vivo (`renderResumenExtra`) son los mismos que en el acelerador de D.2a, solo cambian de ubicación: en el remedio están prominentes (no plegados) porque el extra no es opcional, es la salida más directa. Como viable e inviable son estados excluyentes, el input se renderiza en un solo lugar a la vez (acelerador o remedio, nunca ambos en pantalla). Las "Otras salidas" (renegociar la tasa, consolidar) quedan como texto orientativo hasta D.3. Lógica financiera intacta.
+
+**Completa D.2 (Revisión D.2 de ADR 011):** la jerarquía de la simulación queda como el ADR la definió (picker protagonista, extra contextual). Pendientes: D.3 (S4/S5, renegociar/consolidar interactivos + aplicar el cambio sobre la deuda).
+
+Verificado: 4 tests de render nuevos (1572 → 1576 unit + integración): plan inviable no muestra acelerador, input vive dentro del remedio, remedio dentro de la alerta, resumen dentro del remedio. Lint limpio. SW v216 → v217.
+
+- **`modules/dominio/compromisos/views/estrategia.js`**: `_renderDiagnosticoInviable` recibe `extraMensual` + `resumenExtraHtml` y embebe el input como remedio; `renderEstrategiaPago` condiciona el acelerador a `recomendacion.viable`.
+- **`styles/components/charts.css`**: `.estrategia-card__remedio`.
+- **`tests/unit/compromisos.test.js`**: 4 tests D.2b.
+- **`service-worker.js`**: v216 → v217.
+
+---
+
 ### refactor(deudas): picker arriba + acelerador plegable del pago extra (D.2a) · 2026-06-29
 
 Implementación del primer slice de la Revisión D.2 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). La card de estrategia de pago se reordenó para que el **picker Avalancha vs Bola de nieve** sea lo primero accionable (protagonista), y el pago extra mensual baje a un **acelerador plegable** ("💪 ¿Puedes pagar más rápido?", `<details>` nativo colapsado bajo el detalle de la estrategia). El `<details>` se abre automáticamente si el usuario ya escribió un monto (`extraMensual > 0`), y se mantiene abierto tras el re-render por `change` (blur). La lógica financiera no se tocó: `compararEstrategias`, `renderResumenExtra`, `_actualizarResumenEnVivo` etc. siguen funcionando igual, solo se reubicaron. Corregido también un voseo heredado ("Probá" → "Prueba") en el mensaje de empate de la comparativa Avalancha vs Bola de nieve.

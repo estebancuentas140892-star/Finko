@@ -3,7 +3,8 @@
  *
  * Jerarquía (Revisión D.2, ADR 011): picker Avalancha/Bola de nieve arriba
  * (protagonista) → detalle de la estrategia elegida → acelerador plegable
- * "¿Puedes pagar más rápido?" (extra mensual + resumen de impacto, colapsado).
+ * "¿Puedes pagar más rápido?" (plan viable) o primer remedio "Aumenta tu
+ * cuota" dentro del bloque "Tu plan no se sostiene" (plan inviable).
  *
  * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa).
  * Es un singleton mutable; persiste mientras la pestaña está abierta y vuelve
@@ -110,7 +111,7 @@ export function renderEstrategiaPago() {
       </header>
 
       ${_renderAvisoTasaDesconocida(deudas)}
-      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico)}
+      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml)}
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
@@ -118,19 +119,24 @@ export function renderEstrategiaPago() {
       </div>
 
       ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual, hayTasaPositiva)}
-      ${_renderAceleradorExtra(extraMensual, resumenExtraHtml)}
+      ${recomendacion.viable ? _renderAceleradorExtra(extraMensual, resumenExtraHtml) : ''}
     </article>`;
 }
 
 /**
- * Banner de diagnóstico cuando ninguna estrategia logra cerrar el plan con el
- * pago actual. Explica qué deudas crecen (su cuota no cubre el interés) y cuánto
- * extra mensual haría viable el plan. No marca ninguna estrategia como mejor:
- * con este flujo, ninguna termina de pagar.
+ * Bloque "Tu plan no se sostiene" (D.2b, ADR 011 rev.). Aparece cuando ninguna
+ * estrategia logra cerrar el plan con el pago actual. Estructura:
+ *   1. Diagnóstico: qué deudas crecen y por qué.
+ *   2. Primer remedio: input de pago extra (prominente, no plegable) + resumen
+ *      de impacto en vivo. Es la misma superficie que el acelerador de D.2a,
+ *      pero aquí el extra no es opcional: es la salida más directa.
+ *   3. Otras salidas (texto): renegociar tasa, consolidar (interactivos en D.3).
  *
  * @param {{ deudasCrecientes: Array<{ id, descripcion, deficitMensual }>, extraMinimo: number|null }} diagnostico
+ * @param {number} extraMensual
+ * @param {string} resumenExtraHtml
  */
-function _renderDiagnosticoInviable(diagnostico) {
+function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml) {
   if (!diagnostico) return '';
   const { deudasCrecientes, extraMinimo } = diagnostico;
 
@@ -145,20 +151,32 @@ function _renderDiagnosticoInviable(diagnostico) {
   const sugerenciaExtra = extraMinimo
     ? `<p class="estrategia-card__bloque-body">
          Para que tu plan funcione, necesitarías aportar al menos
-         <strong>${f(extraMinimo)} extra cada mes</strong>. Abre "¿Puedes pagar
-         más rápido?" abajo para simular el impacto.</p>`
+         <strong>${f(extraMinimo)} extra cada mes</strong>.</p>`
     : `<p class="estrategia-card__bloque-body">
-         Con el pago actual la deuda crece más rápido de lo que la reduces. Considera
-         renegociar la cuota o la tasa con tu entidad.</p>`;
+         Con el pago actual la deuda crece más rápido de lo que la reduces.</p>`;
 
   return `
     <div class="estrategia-card__alerta" role="status">
       <p class="estrategia-card__bloque-titulo">⚠️ Con tu pago actual, estas deudas no se terminan de pagar</p>
       ${listaCrecientes}
       ${sugerenciaExtra}
+
+      <div class="estrategia-card__remedio">
+        <p class="estrategia-card__bloque-titulo">💪 Aumenta tu cuota</p>
+        <div class="form-group">
+          <label for="estrategia-extra" class="label">Pago extra mensual</label>
+          <input id="estrategia-extra" class="input" type="number"
+                 min="0" step="10000" value="${extraMensual || ''}"
+                 placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
+                 data-action="cambiar-extra-estrategia" />
+          <p class="form-hint">Escribe un monto y mira si tu plan se vuelve viable.</p>
+        </div>
+        ${resumenExtraHtml}
+      </div>
+
       <p class="estrategia-card__bloque-body">
-        <strong>Otras salidas:</strong> renegociar la tasa, consolidar las deudas en
-        un crédito más barato, o aumentar la cuota de la deuda más cara.
+        <strong>Otras salidas:</strong> renegociar la tasa o consolidar las deudas en
+        un crédito más barato.
       </p>
     </div>`;
 }

@@ -2119,3 +2119,45 @@ describe('renderEstrategiaPago jerarquía D.2a', () => {
     expect(acelerador.contains(inputGlobal)).toBe(true);
   });
 });
+
+// ── renderEstrategiaPago: D.2b (plan inviable: extra como remedio, no acelerador) ──
+
+describe('renderEstrategiaPago D.2b plan inviable', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0 });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('no muestra el acelerador plegable cuando el plan es inviable', () => {
+    renderEstrategiaPago();
+    const acelerador = document.querySelector('.estrategia-card__acelerador');
+    expect(acelerador).toBeNull();
+  });
+
+  it('el input de extra vive dentro del bloque de remedio', () => {
+    renderEstrategiaPago();
+    const remedio = document.querySelector('.estrategia-card__remedio');
+    expect(remedio).not.toBeNull();
+    const input = remedio.querySelector('#estrategia-extra');
+    expect(input).not.toBeNull();
+  });
+
+  it('el remedio está dentro del bloque de alerta (diagnóstico inviable)', () => {
+    renderEstrategiaPago();
+    const alerta = document.querySelector('.estrategia-card__alerta');
+    const remedio = alerta.querySelector('.estrategia-card__remedio');
+    expect(remedio).not.toBeNull();
+    expect(alerta.textContent).toContain('Aumenta tu cuota');
+  });
+
+  it('el resumen de impacto se muestra dentro del remedio', () => {
+    renderEstrategiaPago();
+    const remedio = document.querySelector('.estrategia-card__remedio');
+    const resumen = remedio.querySelector('.estrategia-card__resumen-extra');
+    expect(resumen).not.toBeNull();
+  });
+});
