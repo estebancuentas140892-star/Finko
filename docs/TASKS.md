@@ -53,7 +53,15 @@ Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más
 
 ✅ **MC.3** - Reformulado el nudge de deudas en la distribución: ahora invita a recortar Estilo de vida antes que el ahorro - 2026-06-28. Ver [CHANGELOG](CHANGELOG.md).
 
-- **MC.4 (épica, requiere ADR)** - Auto-distribución de ingresos: al recibir quincena/salario, botón "Distribuir mi ingreso" que reparte los porcentajes a cuentas/ahorro/apartados/metas/inversiones/deudas para confirmar de una, sin recorrer la app a mano. **Siguiente sugerido (requiere ADR antes de codear).**
+✅ **MC.4 (diseño)** - ADR 012 escrito: auto-distribución de ingresos "Distribuir mi ingreso". Decisiones: híbrido (mueve lo fondeable, informa lo demás), acredita el ingreso y reparte, confirmaciones parciales, orquestación por EventBus + undo por snapshot - 2026-06-29. Ver [ADR 012](DECISIONS/012-auto-distribucion-ingresos.md).
+
+Slices de implementación de MC.4 (smallest-first, ver ADR 012):
+- **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot. **Siguiente sugerido.**
+- **MC.4b** - Sumar Deudas como destino fondeable (abono real).
+- **MC.4c** - Filas informativas de Necesidades y Estilo de vida (solo monto de referencia).
+- **MC.4d** - Guard de de-duplicación ("ya distribuiste tu quincena") + silenciar el nudge tras distribuir + persistir mapeo de destinos preferidos.
+- **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable.
+
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
 
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:

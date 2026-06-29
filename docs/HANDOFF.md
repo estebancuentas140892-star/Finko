@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (copy(tesoreria): nudge de deudas invita a recortar estilo de vida en vez del ahorro, MC.3)
+> Última actualización: 2026-06-29 (docs: ADR 012, diseño de auto-distribución de ingresos "Distribuir mi ingreso", MC.4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs: ADR 012, diseño de auto-distribución de ingresos (MC.4) · 2026-06-29
+
+Tarea de diseño (sin código): se escribió el ADR para "Distribuir mi ingreso" antes de implementar, porque toca el ADN (cross-domain, posible schema). El registro del ingreso reveló el hecho clave: **registrar un ingreso hoy NO acredita saldo a ninguna cuenta** (es solo una definición de flujo), y los destinos son heterogéneos (el fondo de emergencia trackea sin mover dinero; metas/apartados/deudas descuentan una cuenta; inversiones solo crea/elimina holdings, sin aporte incremental; necesidades y estilo de vida no son buckets que se fondeen el día del cobro). Decisiones tomadas con el usuario: (1) comportamiento **híbrido**, mueve dinero real solo a lo fondeable (fondo, metas, apartados, deudas), informa el resto; (2) la acción **acredita el ingreso** a la cuenta de origen y luego reparte (el remanente queda como saldo), para resolver el cobro de un gesto; (3) confirmaciones parciales de primera clase (filas editables con toggle); (4) orquestación por **EventBus** + **undo por snapshot** para respetar el ADN (#10) y dar reversión atómica. 5 slices definidos (MC.4a-e), empezando por el grupo Ahorro. Sin cambios de código ni de tests aún.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/012-auto-distribucion-ingresos.md` | ADR nuevo (diseño completo: hechos del modelo, decisión híbrida, orquestación, 5 slices, alternativas, consecuencias). |
+
+---
 
 ### copy(tesoreria): nudge de deudas invita a recortar estilo de vida en vez del ahorro (MC.3) · 2026-06-28
 
@@ -86,18 +96,6 @@ Primera tarea del backlog "Mis cuentas + distribución" pedido por el usuario. E
 |---|---|
 | `modules/dominio/tesoreria/view.js` | Eliminados los dos `<p class="form-hint form-hint--muted">` del 4x1000 y de la cuota de manejo en `renderFormCuenta`. |
 | `service-worker.js` | `CACHE_NAME` v198 → v199. |
-
----
-
-### refactor(deudas): barrido de dead code del acordeón (ADR 011, S3) · 2026-06-28
-
-Tercer slice del rediseño de simulación de deudas (ADR 011), de cierre. S1 ya había eliminado el acordeón "Paga un extra cada mes" (su estado `expandidoExtra`, la acción `toggle-extra-estrategia`, el handler y el CSS), así que S3 fue solo barrer los residuos que quedaron: un barrido por `acordeon`/`expandido`/`toggle-extra` en JS, CSS y tests confirmó que el CSS estaba limpio y que las únicas referencias vivas eran 3 comentarios desactualizados. Se corrigieron: el docstring y el comentario inline de `estrategia.js` decían que `_uiEstrategia` guardaba "acordeón abierto" (campo que ya no existe), y `index.js` tenía un comentario tombstone en inglés sobre la acción removida. Las demás coincidencias son historia intencional (CHANGELOG, ADR) o de otras features (sidebar colapsable, detalle de Agenda). Sin cambios de runtime: solo comentarios. Verificado: 1450/1450, lint limpio, grep de residuos en cero. SW v197 → v198.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia.js` | Quitada la mención a "acordeón abierto" del docstring y del comentario del estado UI (el campo ya no existe). |
-| `modules/dominio/compromisos/index.js` | Eliminado el comentario tombstone `toggle-extra-estrategia removed`. |
-| `service-worker.js` | `CACHE_NAME` v197 → v198. |
 
 ---
 
