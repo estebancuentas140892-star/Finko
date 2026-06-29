@@ -22,6 +22,7 @@ import {
   calcularGastosFijosMensuales,
   sugerirDistribucionIngreso,
   PRESETS_DISTRIBUCION,
+  esDistribucionPersonalizadaValida,
 } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -282,6 +283,7 @@ export function renderDistribucionIngreso() {
   const tieneInversiones = (S.inversiones ?? []).length > 0;
 
   const presetId = S.config?.presetDistribucion ?? 'auto';
+  const distribucionPersonalizada = S.config?.distribucionPersonalizada ?? null;
 
   const dist = sugerirDistribucionIngreso(ingresoMensual, {
     gastosFijosMensuales,
@@ -290,16 +292,18 @@ export function renderDistribucionIngreso() {
     fondoCompleto,
     tieneInversiones,
     presetId,
+    distribucionPersonalizada,
   });
 
-  el.innerHTML = dist ? _renderDistribucion(dist, presetId) : '';
+  el.innerHTML = dist ? _renderDistribucion(dist, presetId, distribucionPersonalizada) : '';
 }
 
 /**
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
+ * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
  */
-function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo) {
+function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada) {
   const { necesidades, estiloVida, ahorro } = split;
 
   const presetChips = PRESETS_DISTRIBUCION.map(p => {
@@ -313,6 +317,56 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
         ${_esc(p.label)}
       </button>`;
   }).join('');
+
+  const personalizadaValida = esDistribucionPersonalizadaValida(distribucionPersonalizada);
+  const personalizadaActiva = presetActivo === 'personalizado' && personalizadaValida;
+  const personalizadaLabel  = personalizadaValida
+    ? `${distribucionPersonalizada.n}/${distribucionPersonalizada.e}/${distribucionPersonalizada.a}`
+    : 'Personalizar';
+
+  const personalizadaChip = `
+      <button type="button"
+              class="chip${personalizadaActiva ? ' chip--active' : ''}"
+              data-action="toggle-distribucion-personalizada"
+              aria-expanded="false"
+              aria-controls="distribucion-personalizada-fieldset">
+        ✎ ${_esc(personalizadaLabel)}
+      </button>`;
+
+  // Punto de partida del editor: lo ya guardado si existe; si no, el split
+  // activo (siempre suma 100), para ajustar en vez de partir de cero.
+  const prefillN = personalizadaValida ? distribucionPersonalizada.n : necesidades.pct;
+  const prefillE = personalizadaValida ? distribucionPersonalizada.e : estiloVida.pct;
+  const prefillA = personalizadaValida ? distribucionPersonalizada.a : ahorro.pct;
+
+  const editorPersonalizada = `
+    <fieldset id="distribucion-personalizada-fieldset" class="distribucion-personalizada" hidden>
+      <legend>Crea tu distribución: los 3 porcentajes deben sumar 100%.</legend>
+      <div class="distribucion-personalizada__inputs">
+        <div class="form-group">
+          <label for="dist-pct-n" class="label">📦 Necesidades</label>
+          <input id="dist-pct-n" type="number" class="input" min="0" max="100" step="1"
+                 inputmode="numeric" value="${prefillN}"
+                 data-action="ajustar-distribucion-personalizada" data-dist-pct="n" />
+        </div>
+        <div class="form-group">
+          <label for="dist-pct-e" class="label">🎯 Estilo de vida</label>
+          <input id="dist-pct-e" type="number" class="input" min="0" max="100" step="1"
+                 inputmode="numeric" value="${prefillE}"
+                 data-action="ajustar-distribucion-personalizada" data-dist-pct="e" />
+        </div>
+        <div class="form-group">
+          <label for="dist-pct-a" class="label">💰 Ahorro</label>
+          <input id="dist-pct-a" type="number" class="input" min="0" max="100" step="1"
+                 inputmode="numeric" value="${prefillA}"
+                 data-action="ajustar-distribucion-personalizada" data-dist-pct="a" />
+        </div>
+      </div>
+      <p id="distribucion-personalizada-msg" class="form-hint" role="status"></p>
+      <button type="button" class="btn btn-primary btn-sm" data-action="guardar-distribucion-personalizada">
+        Guardar mi distribución
+      </button>
+    </fieldset>`;
 
   const rowsHtml = [
     { icn: '📦', ...necesidades },
@@ -337,7 +391,9 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
         <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
         <div class="filtros-bar" role="group" aria-label="Preset de distribución">
           ${presetChips}
+          ${personalizadaChip}
         </div>
+        ${editorPersonalizada}
         <div class="distribucion-rows">
           <p class="nudge__desc">${_esc(razon)}</p>
           ${rowsHtml}

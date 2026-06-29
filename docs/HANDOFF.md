@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (style(tesoreria): transición suave al cambiar de preset de distribución, MC.2)
+> Última actualización: 2026-06-28 (feat(tesoreria): distribución de porcentajes personalizada, MC.2 parte 2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): distribución de porcentajes personalizada (MC.2, parte 2) · 2026-06-28
+
+Cierra MC.2. Antes solo se podía elegir entre 3 presets fijos (50/30/20, 70/20/10, 60/20/20) o el modo Automático; el usuario pidió poder definir su propia mezcla (ej. 80/10/10). Se agregó un cuarto chip "Personalizar" en la barra de presets que abre un editor inline (mismo patrón que el fieldset condicional de cuota de manejo: oculto por defecto, un clic lo despliega sin re-renderizar el nudge entero) con 3 campos numéricos (Necesidades, Estilo de vida, Ahorro). Mientras escribe, un mensaje en vivo muestra la suma y el botón "Guardar mi distribución" solo se habilita si suma exactamente 100%. Al guardar, se persiste `S.config.distribucionPersonalizada` + `presetDistribucion: 'personalizado'`, se recalcula todo con `sugerirDistribucionIngreso` (nuevo parámetro `distribucionPersonalizada`, nueva función pura `esDistribucionPersonalizadaValida`), y el chip pasa a mostrar la mezcla real ("80/10/10") en vez de la etiqueta genérica. Si los datos guardados quedaran corruptos o incompletos, cae automáticamente al ajuste automático existente (mismo comportamiento que un `presetId` desconocido). Verificado: 1459/1459 unit + integración (9 tests nuevos: 4 de la rama `personalizado` en `sugerirDistribucionIngreso`, 5 de `esDistribucionPersonalizadaValida`), lint limpio, y un test de integración desechable en happy-dom que simuló el flujo completo (abrir editor, escribir, validar suma en vivo, guardar, reabrir) usando el dispatcher real de `data-action`. El preview del entorno no cargó la app en ningún intento (4 intentos en total entre esta tarea y la anterior, todos en `chrome-error`), así que no hubo captura visual; queda para que el usuario la confirme en su celular. SW v200 → v201.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Nueva `esDistribucionPersonalizadaValida(d)`; `sugerirDistribucionIngreso` acepta `distribucionPersonalizada` y resuelve `presetId: 'personalizado'`. |
+| `modules/dominio/tesoreria/view.js` | Chip "Personalizar" + fieldset `#distribucion-personalizada-fieldset` con 3 inputs, prellenados con lo guardado o con el split activo. |
+| `modules/dominio/tesoreria/index.js` | Handlers `_toggleDistribucionPersonalizada`, `_actualizarSumaDistribucionPersonalizada`, `_guardarDistribucionPersonalizada`; listener `input` delegado. |
+| `styles/components/forms.css` | Nueva `.distribucion-personalizada` (mismo patrón que `.cuota-fieldset`). |
+| `tests/unit/tesoreria.test.js` | 9 tests nuevos. |
+| `service-worker.js` | `CACHE_NAME` v200 → v201. |
+
+---
 
 ### style(tesoreria): transición suave al cambiar de preset de distribución (MC.2, parte 1) · 2026-06-28
 
@@ -86,22 +101,6 @@ Segundo slice del rediseño de simulación de deudas (ADR 011). Cada fila de deu
 | `modules/dominio/compromisos/views/formularios.js` | Eliminada `renderSimulacion` y el import `tasaEADe` (sin uso). |
 | `styles/components/domain.css` | Eliminado el bloque `.sim-resultado*` (5 reglas muertas). |
 | `service-worker.js` | `CACHE_NAME` v196 → v197. |
-
----
-
-### feat(deudas): extra mensual siempre visible con resumen de impacto en vivo (ADR 011, S1) · 2026-06-28
-
-Primer slice del rediseño de simulación de deudas (ADR 011). El input de "pago extra mensual" estaba escondido en un acordeón colapsado al fondo de la card de estrategia. Ahora está siempre visible arriba de la card, con un resumen de impacto que compara "sin extra" vs "con extra" al instante: meses menos, intereses ahorrados. Se actualiza en vivo (evento `input`, sin perder foco) y la card completa se recalcula al salir del campo. Se eliminó el acordeón completo. **Pendientes:** S2 (eliminar botón "Simular" por deuda), S3 (limpiar dead code del acordeón), S4/S5 (herramientas interactivas: renegociar tasa y consolidar). 1446 → 1450 tests. SW v195 → v196.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | ADR nuevo (diseño completo: 5 slices). |
-| `modules/dominio/compromisos/views/estrategia.js` | Extra + resumen arriba de las cards; eliminado el acordeón. |
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | Nueva `renderResumenExtra`. |
-| `modules/dominio/compromisos/index.js` | `input` para resumen en vivo; eliminado `_toggleExtraEstrategia`. |
-| `styles/components/charts.css` | CSS de extra + resumen; eliminado CSS del acordeón. |
-| `tests/unit/compromisos.test.js` | 4 tests de `renderResumenExtra`. |
-| `tests/e2e/estrategia-pago.test.js` | Corregido (ya no abre acordeón). |
 
 ---
 

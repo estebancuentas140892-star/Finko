@@ -18,6 +18,7 @@ import {
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
   calcularGastosFijosMensuales,
+  esDistribucionPersonalizadaValida,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1099,5 +1100,69 @@ describe('sugerirDistribucionIngreso()', () => {
     const r = sugerirDistribucionIngreso(2_500_000);
     const sumaMontos = r.split.necesidades.monto + r.split.estiloVida.monto + r.split.ahorro.monto;
     expect(Math.abs(sumaMontos - 2_500_000)).toBeLessThanOrEqual(3);
+  });
+
+  it('usa la distribución personalizada cuando presetId es "personalizado" y es válida', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      presetId: 'personalizado',
+      distribucionPersonalizada: { n: 80, e: 10, a: 10 },
+    });
+    expect(r.metodo).toBe('Personalizada');
+    expect(r.split.necesidades.pct).toBe(80);
+    expect(r.split.estiloVida.pct).toBe(10);
+    expect(r.split.ahorro.pct).toBe(10);
+  });
+
+  it('cae al ajuste automático si presetId es "personalizado" pero la distribución es inválida', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      presetId: 'personalizado',
+      distribucionPersonalizada: { n: 80, e: 10, a: 5 }, // suma 95, no 100
+    });
+    expect(r.metodo).not.toBe('Personalizada');
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+  });
+
+  it('cae al ajuste automático si presetId es "personalizado" sin distribución guardada', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { presetId: 'personalizado' });
+    expect(r.metodo).not.toBe('Personalizada');
+  });
+
+  it('avisa "tu distribución" (no "el preset") cuando los fijos superan lo personalizado', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 2_800_000, // 93%, supera el 80% de necesidades
+      presetId: 'personalizado',
+      distribucionPersonalizada: { n: 80, e: 10, a: 10 },
+    });
+    expect(r.alertas.some(a => a.includes('tu distribución'))).toBe(true);
+    expect(r.alertas.some(a => a.includes('el preset'))).toBe(false);
+  });
+});
+
+// ── esDistribucionPersonalizadaValida() ───────────────────────────
+describe('esDistribucionPersonalizadaValida()', () => {
+  it('acepta 3 porcentajes que suman exactamente 100', () => {
+    expect(esDistribucionPersonalizadaValida({ n: 80, e: 10, a: 10 })).toBe(true);
+    expect(esDistribucionPersonalizadaValida({ n: 0, e: 0, a: 100 })).toBe(true);
+  });
+
+  it('rechaza si la suma no es exactamente 100', () => {
+    expect(esDistribucionPersonalizadaValida({ n: 80, e: 10, a: 5 })).toBe(false);
+    expect(esDistribucionPersonalizadaValida({ n: 80, e: 10, a: 15 })).toBe(false);
+  });
+
+  it('rechaza valores fuera de 0-100', () => {
+    expect(esDistribucionPersonalizadaValida({ n: -10, e: 50, a: 60 })).toBe(false);
+    expect(esDistribucionPersonalizadaValida({ n: 110, e: -10, a: 0 })).toBe(false);
+  });
+
+  it('rechaza valores no numéricos o ausentes', () => {
+    expect(esDistribucionPersonalizadaValida({ n: NaN, e: 10, a: 10 })).toBe(false);
+    expect(esDistribucionPersonalizadaValida({ n: 80, e: 10 })).toBe(false);
+  });
+
+  it('rechaza null, undefined y no-objetos', () => {
+    expect(esDistribucionPersonalizadaValida(null)).toBe(false);
+    expect(esDistribucionPersonalizadaValida(undefined)).toBe(false);
+    expect(esDistribucionPersonalizadaValida('80-10-10')).toBe(false);
   });
 });

@@ -564,6 +564,21 @@ export const PRESETS_DISTRIBUCION = [
 ];
 
 /**
+ * Valida una distribución de porcentajes creada por el usuario: los 3 valores
+ * deben ser números finitos entre 0 y 100, y sumar exactamente 100.
+ * Pura: no lee S, no toca el DOM.
+ *
+ * @param {{n:number, e:number, a:number}|null|undefined} d
+ * @returns {boolean}
+ */
+export function esDistribucionPersonalizadaValida(d) {
+  if (!d || typeof d !== 'object') return false;
+  const { n, e, a } = d;
+  if (![n, e, a].every(v => Number.isFinite(v) && v >= 0 && v <= 100)) return false;
+  return n + e + a === 100;
+}
+
+/**
  * Sugiere cómo distribuir el ingreso mensual adaptando la regla 50/30/20
  * al peso real de los gastos fijos del usuario.
  * Orientativo: nunca prescriptivo. Usa solo datos registrados en Finko.
@@ -576,6 +591,7 @@ export const PRESETS_DISTRIBUCION = [
  *   fondoCompleto?:        boolean,
  *   tieneInversiones?:     boolean,
  *   presetId?:             string,
+ *   distribucionPersonalizada?: {n:number, e:number, a:number}|null,
  * }} [contexto]
  * @returns {{
  *   ingresoMensual: number,
@@ -598,6 +614,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   fondoCompleto        = false,
   tieneInversiones     = false,
   presetId             = 'auto',
+  distribucionPersonalizada = null,
 } = {}) {
   if (!ingresoMensual || ingresoMensual <= 0) return null;
 
@@ -613,9 +630,13 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   const alertas = [];
   const ctas    = [];
 
-  const preset = presetId && presetId !== 'auto'
-    ? PRESETS_DISTRIBUCION.find(p => p.id === presetId)
-    : null;
+  const preset = presetId === 'personalizado'
+    ? (esDistribucionPersonalizadaValida(distribucionPersonalizada)
+        ? { label: 'Personalizada', ...distribucionPersonalizada }
+        : null)
+    : (presetId && presetId !== 'auto'
+        ? PRESETS_DISTRIBUCION.find(p => p.id === presetId)
+        : null);
 
   if (preset) {
     necesidadesPct = preset.n;
@@ -626,7 +647,8 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       ? `Distribución ${preset.label} aplicada. Tus gastos fijos son el ${pctFijos}% de tus ingresos.`
       : `Distribución ${preset.label} aplicada.`;
     if (pctFijos > necesidadesPct) {
-      alertas.push(`Tus gastos fijos (${pctFijos}%) superan lo asignado a necesidades (${necesidadesPct}%). Considera ajustar el preset.`);
+      const sujeto = presetId === 'personalizado' ? 'tu distribución' : 'el preset';
+      alertas.push(`Tus gastos fijos (${pctFijos}%) superan lo asignado a necesidades (${necesidadesPct}%). Considera ajustar ${sujeto}.`);
     }
   } else if (pctFijos > 70) {
     necesidadesPct = Math.min(pctFijos, 85);

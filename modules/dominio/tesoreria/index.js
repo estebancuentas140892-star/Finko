@@ -27,6 +27,7 @@ import {
   validarIngreso,
   normalizarIngreso,
   FRECUENCIAS_CON_DIA,
+  esDistribucionPersonalizadaValida,
 } from './logic.js';
 import {
   renderListaCuentas,
@@ -637,6 +638,60 @@ function _cambiarPreset(el) {
   renderDistribucionIngreso();
 }
 
+// ── DISTRIBUCIÓN PERSONALIZADA (porcentajes propios) ────────────
+
+/** Lee los 3 porcentajes del editor. Valores no numéricos cuentan como 0. */
+function _leerInputsDistribucionPersonalizada(fieldset) {
+  const get = (key) => Number(fieldset.querySelector(`[data-dist-pct="${key}"]`)?.value) || 0;
+  return { n: get('n'), e: get('e'), a: get('a') };
+}
+
+/** Abre/cierra el editor sin re-renderizar el nudge (mismo patrón que _toggleCuotaFieldset). */
+function _toggleDistribucionPersonalizada(el) {
+  const fieldset = document.getElementById('distribucion-personalizada-fieldset');
+  if (!fieldset) return;
+  fieldset.hidden = !fieldset.hidden;
+  el.setAttribute('aria-expanded', String(!fieldset.hidden));
+  if (!fieldset.hidden) {
+    _actualizarSumaDistribucionPersonalizada();
+    fieldset.querySelector('[data-dist-pct="n"]')?.focus();
+  }
+}
+
+/** Actualiza el mensaje de suma y habilita/deshabilita "Guardar" en vivo, sin re-render. */
+function _actualizarSumaDistribucionPersonalizada() {
+  const fieldset = document.getElementById('distribucion-personalizada-fieldset');
+  const msg      = document.getElementById('distribucion-personalizada-msg');
+  const boton    = fieldset?.querySelector('[data-action="guardar-distribucion-personalizada"]');
+  if (!fieldset || !msg || !boton) return;
+
+  const valores = _leerInputsDistribucionPersonalizada(fieldset);
+  const suma    = valores.n + valores.e + valores.a;
+  const valida  = esDistribucionPersonalizadaValida(valores);
+
+  msg.textContent = valida
+    ? `Suma: ${suma}%. Lista para guardar.`
+    : `Suma: ${suma}%. Debe ser exactamente 100%.`;
+  msg.classList.toggle('form-hint--danger', !valida);
+  boton.disabled = !valida;
+}
+
+/** Persiste la distribución personalizada y la activa como preset. */
+function _guardarDistribucionPersonalizada() {
+  const fieldset = document.getElementById('distribucion-personalizada-fieldset');
+  if (!fieldset) return;
+
+  const valores = _leerInputsDistribucionPersonalizada(fieldset);
+  if (!esDistribucionPersonalizadaValida(valores)) return;
+
+  if (!S.config) S.config = {};
+  S.config.distribucionPersonalizada = valores;
+  S.config.presetDistribucion = 'personalizado';
+  save();
+  renderDistribucionIngreso();
+  announce(`Distribución personalizada guardada: ${valores.n}% necesidades, ${valores.e}% estilo de vida, ${valores.a}% ahorro.`);
+}
+
 /**
  * Inicializa el dominio de tesorería.
  * Registra acciones, inyecta el form, suscribe al EventBus y hace el primer render.
@@ -649,6 +704,17 @@ export function initTesoreria() {
   registrarAccion('editar-ingreso',  _editarIngreso);
   registrarAccion('eliminar-ingreso', _eliminarIngreso);
   registrarAccion('cambiar-preset-distribucion', _cambiarPreset);
+  registrarAccion('toggle-distribucion-personalizada', _toggleDistribucionPersonalizada);
+  registrarAccion('guardar-distribucion-personalizada', _guardarDistribucionPersonalizada);
+
+  // Suma en vivo del editor de distribución personalizada (sin re-render
+  // completo, igual que el extra mensual de deudas en ADR 011 S1).
+  document.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t instanceof HTMLInputElement && t.dataset.action === 'ajustar-distribucion-personalizada') {
+      _actualizarSumaDistribucionPersonalizada();
+    }
+  });
 
   _inyectarForm();
 
