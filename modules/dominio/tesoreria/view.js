@@ -419,9 +419,6 @@ export function renderFormCuenta() {
                  name="aplica4x1000" />
           <span>A esta cuenta le aplica el 4x1000 (GMF)</span>
         </label>
-        <p class="form-hint form-hint--muted">
-          El 4x1000 es un impuesto de $4 por cada $1.000 que retiras o transfieres. Las cuentas de nómina y AFC están exentas por ley: si la tuya lo es, deja esta opción desmarcada.
-        </p>
       </div>
 
       <div class="form-group form-group--checkbox">
@@ -432,9 +429,6 @@ export function renderFormCuenta() {
                  data-cuota-toggle />
           <span>Esta cuenta cobra cuota de manejo mensual</span>
         </label>
-        <p class="form-hint form-hint--muted">
-          Opcional. Si no sabes el monto, déjalo desactivado.
-        </p>
       </div>
 
       <fieldset id="cuenta-cuota-fieldset" class="cuota-fieldset" hidden>

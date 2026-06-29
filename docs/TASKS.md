@@ -43,10 +43,11 @@ _(sin tarea activa)_
 
 ### Backlog del usuario "Mis cuentas + distribución" (2026-06-28)
 
-Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más pequeña:
+Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más pequeña.
 
-- **MC.1 (copy, pequeño)** - Simplificar los textos de ayuda del form de nueva cuenta: eliminar la descripción larga del 4x1000 (dejar solo la pregunta) y el "Opcional. Si no sabes el monto, déjalo desactivado." de la cuota de manejo (un switch ya se entiende como opcional). **Siguiente sugerido.**
-- **MC.2 (UI, mediano)** - Distribución del dinero: suavizar con animación el cambio entre presets (50/30/20 ↔ 70/20/10) y permitir que el usuario cree su propia distribución de porcentajes (ej. 80/10/10).
+✅ **MC.1** - Simplificados los textos de ayuda del form de nueva cuenta (eliminada la descripción del 4x1000 y el "Opcional..." de la cuota de manejo) - 2026-06-28. Ver [CHANGELOG](CHANGELOG.md).
+
+- **MC.2 (UI, mediano)** - Distribución del dinero: suavizar con animación el cambio entre presets (50/30/20 ↔ 70/20/10) y permitir que el usuario cree su propia distribución de porcentajes (ej. 80/10/10). **Siguiente sugerido.**
 - **MC.3 (copy + lógica menor)** - Reformular el nudge de deudas en la distribución: en vez de "considera destinar parte del ahorro al pago de deudas", invitar a recortar primero Estilo de vida antes que el ahorro (mensaje educativo).
 - **MC.4 (épica, requiere ADR)** - Auto-distribución de ingresos: al recibir quincena/salario, botón "Distribuir mi ingreso" que reparte los porcentajes a cuentas/ahorro/apartados/metas/inversiones/deudas para confirmar de una, sin recorrer la app a mano.
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.

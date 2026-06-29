@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (refactor(deudas): barrido de dead code del acordeón, ADR 011 S3)
+> Última actualización: 2026-06-28 (style(cuentas): textos de ayuda simplificados en el form de nueva cuenta, MC.1)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### style(cuentas): textos de ayuda simplificados en el form de nueva cuenta (MC.1) · 2026-06-28
+
+Primera tarea del backlog "Mis cuentas + distribución" pedido por el usuario. El form de nueva/editar cuenta tenía dos párrafos de explicación debajo de sus checkboxes: uno describía qué es el 4x1000 (impuesto, exenciones de nómina/AFC) y otro aclaraba que la cuota de manejo era opcional. El usuario los consideró innecesarios: la mayoría ya sabe qué es el 4x1000, y un switch ya comunica "opcional" por sí solo. Se eliminaron ambos párrafos `<p class="form-hint form-hint--muted">`, dejando solo la pregunta de cada checkbox. Cambio de copy puro, sin tocar lógica ni `name`/`id` de los inputs. Verificado: 1450/1450 unit + integración, lint limpio, y render real de `renderFormCuenta()` confirmado en happy-dom (las dos preguntas se conservan, las dos explicaciones desaparecen). El preview del entorno seguía sin cargar la app (mismo artefacto de sesiones anteriores), así que la verificación fue por render directo en vez de captura visual. SW v198 → v199.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Eliminados los dos `<p class="form-hint form-hint--muted">` del 4x1000 y de la cuota de manejo en `renderFormCuenta`. |
+| `service-worker.js` | `CACHE_NAME` v198 → v199. |
+
+---
 
 ### refactor(deudas): barrido de dead code del acordeón (ADR 011, S3) · 2026-06-28
 
@@ -93,19 +104,6 @@ Segunda de dos mejoras de Gastos pedidas por el usuario. Al elegir Vivienda, Ser
 | `modules/dominio/gastos/index.js` | `change` listener en categoría que muestra/oculta el hint. |
 | `styles/components/forms.css` | `.form-hint--info { color: var(--fk-info-text); }`. |
 | `tests/unit/gastos.test.js` | 3 tests nuevos. |
-
----
-
-### feat(gastos): lista con los más recientes primero · 2026-06-28
-
-Primera de dos mejoras de Gastos pedidas por el usuario. La lista mostraba los gastos en orden de inserción (el último registrado al fondo). Ahora van los más recientes primero: fecha descendente y, a igualdad de fecha, el último registrado al tope (desempate por orden de inserción inverso, ya que `guardar` hace `push` y `genId` es aleatorio). Función pura nueva `ordenarRecientesPrimero` en `gastos/logic.js`, aplicada por la vista antes de renderizar. Verificado: 5 tests nuevos + ejecución de la función servida en el navegador (orden correcto); el render en vivo no se pudo capturar porque el contexto del preview quedó envenenado tras limpiar caché varias veces (artefacto del entorno, no del código: la suite importa `view.js` y pasa). 1438 → 1443 tests. SW v193 → v194. **Pendiente (Tarea 2):** guía de categorías de gasto fijo (nudge no bloqueante al elegir Servicios públicos, Vivienda, etc.).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/logic.js` | Nueva `ordenarRecientesPrimero` (pura: fecha desc + desempate por inserción inversa, no muta). |
-| `modules/dominio/gastos/view.js` | `renderListaGastos` ordena con `ordenarRecientesPrimero` antes de mapear. |
-| `tests/unit/gastos.test.js` | 5 tests de `ordenarRecientesPrimero`. |
-| `service-worker.js` | `CACHE_NAME` v193 → v194. |
 
 ---
 
