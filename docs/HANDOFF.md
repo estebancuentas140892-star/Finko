@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(tesoreria): "Distribuir mi ingreso" suma Deudas como destino, ADR 012 MC.4b)
+> Última actualización: 2026-06-29 (feat(tesoreria): filas informativas Necesidades/Estilo de vida en el panel, ADR 012 MC.4c)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): filas informativas Necesidades/Estilo de vida en el panel (ADR 012, MC.4c) · 2026-06-29
+
+Tercer slice de la auto-distribución, de cierre del panel base. El panel "Distribuir mi ingreso" ahora muestra, bajo "Esto queda en tu cuenta (no se mueve)", dos filas de referencia: Necesidades y Estilo de vida con su % y su monto. No son editables ni mueven dinero (las obligaciones se pagan al vencer; el estilo de vida se gasta a lo largo del mes); solo completan la foto de los 3 grupos para que el usuario entienda a dónde va todo su ingreso. Los montos se recalculan en vivo al cambiar el "Monto a distribuir" (son % del ingreso, leídos de `data-dist-pct`). Cambio solo de UI (view + index + CSS), sin lógica financiera nueva ni cross-domain. Verificado: 1473/1473, lint limpio, y un test desechable en happy-dom (las filas muestran 50%→$1.5M y 30%→$900k sobre 3M, y recalculan a $1M/$600k al bajar el monto a 2M). SW v204 → v205. **Pendientes de MC.4:** MC.4d (habilitar solo al llegar el ingreso + nudge "Hoy recibes tu ingreso, ¿distribuir?" + de-duplicación), MC.4e (inversiones). Backlog nuevo del usuario: MC.6 (Automático inteligente, no 50/30/20 fijo + quitar duplicidad) y MC.7 (asistente guiado de 3 pasos con obligaciones itemizadas y aportes auto-calculados); ambas épicas, requieren ADR.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Bloque informativo Necesidades/Estilo de vida en el panel; pasa `necesidadesPct`/`estiloVidaPct`. |
+| `modules/dominio/tesoreria/index.js` | `_recalcularDistribucion` recalcula los montos informativos en vivo. |
+| `styles/components/forms.css` | `.distribuir__info` + `.distribuir__info-fila`. |
+| `service-worker.js` | `CACHE_NAME` v204 → v205. |
+
+---
 
 ### feat(tesoreria): "Distribuir mi ingreso" suma Deudas como destino (ADR 012, MC.4b) · 2026-06-29
 
@@ -92,21 +105,6 @@ Tercera tarea del backlog "Mis cuentas + distribución". Cuando el usuario tiene
 | `modules/dominio/tesoreria/logic.js` | Texto de la alerta de deudas en `sugerirDistribucionIngreso`. |
 | `tests/unit/tesoreria.test.js` | 1 test nuevo. |
 | `service-worker.js` | `CACHE_NAME` v201 → v202. |
-
----
-
-### feat(tesoreria): distribución de porcentajes personalizada (MC.2, parte 2) · 2026-06-28
-
-Cierra MC.2. Antes solo se podía elegir entre 3 presets fijos (50/30/20, 70/20/10, 60/20/20) o el modo Automático; el usuario pidió poder definir su propia mezcla (ej. 80/10/10). Se agregó un cuarto chip "Personalizar" en la barra de presets que abre un editor inline (mismo patrón que el fieldset condicional de cuota de manejo: oculto por defecto, un clic lo despliega sin re-renderizar el nudge entero) con 3 campos numéricos (Necesidades, Estilo de vida, Ahorro). Mientras escribe, un mensaje en vivo muestra la suma y el botón "Guardar mi distribución" solo se habilita si suma exactamente 100%. Al guardar, se persiste `S.config.distribucionPersonalizada` + `presetDistribucion: 'personalizado'`, se recalcula todo con `sugerirDistribucionIngreso` (nuevo parámetro `distribucionPersonalizada`, nueva función pura `esDistribucionPersonalizadaValida`), y el chip pasa a mostrar la mezcla real ("80/10/10") en vez de la etiqueta genérica. Si los datos guardados quedaran corruptos o incompletos, cae automáticamente al ajuste automático existente (mismo comportamiento que un `presetId` desconocido). Verificado: 1459/1459 unit + integración (9 tests nuevos: 4 de la rama `personalizado` en `sugerirDistribucionIngreso`, 5 de `esDistribucionPersonalizadaValida`), lint limpio, y un test de integración desechable en happy-dom que simuló el flujo completo (abrir editor, escribir, validar suma en vivo, guardar, reabrir) usando el dispatcher real de `data-action`. El preview del entorno no cargó la app en ningún intento (4 intentos en total entre esta tarea y la anterior, todos en `chrome-error`), así que no hubo captura visual; queda para que el usuario la confirme en su celular. SW v200 → v201.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | Nueva `esDistribucionPersonalizadaValida(d)`; `sugerirDistribucionIngreso` acepta `distribucionPersonalizada` y resuelve `presetId: 'personalizado'`. |
-| `modules/dominio/tesoreria/view.js` | Chip "Personalizar" + fieldset `#distribucion-personalizada-fieldset` con 3 inputs, prellenados con lo guardado o con el split activo. |
-| `modules/dominio/tesoreria/index.js` | Handlers `_toggleDistribucionPersonalizada`, `_actualizarSumaDistribucionPersonalizada`, `_guardarDistribucionPersonalizada`; listener `input` delegado. |
-| `styles/components/forms.css` | Nueva `.distribucion-personalizada` (mismo patrón que `.cuota-fieldset`). |
-| `tests/unit/tesoreria.test.js` | 9 tests nuevos. |
-| `service-worker.js` | `CACHE_NAME` v200 → v201. |
 
 ---
 

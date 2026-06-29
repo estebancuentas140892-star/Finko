@@ -58,9 +58,16 @@ Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más
 Slices de implementación de MC.4 (smallest-first, ver ADR 012):
 - ✅ **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **MC.4b** - Deudas como destino fondeable: abono real vía EventBus, ordenadas por prioridad (Avalancha), topado al saldo - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.4c** - Filas informativas de Necesidades y Estilo de vida (solo monto de referencia). **Siguiente sugerido.**
-- **MC.4d** - Guard de de-duplicación ("ya distribuiste tu quincena") + silenciar el nudge tras distribuir + persistir mapeo de destinos preferidos.
+- ✅ **MC.4c** - Filas informativas de Necesidades y Estilo de vida en el panel (solo monto de referencia, recalculadas en vivo) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+- **MC.4d** - Habilitar "Distribuir mi ingreso" solo cuando llega la fecha del ingreso (según su frecuencia) + nudge "Hoy recibes tu ingreso. ¿Deseas distribuirlo ahora?" + guard de de-duplicación ("ya distribuiste este periodo") + persistir mapeo de destinos preferidos. **Siguiente sugerido.**
 - **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable.
+
+### Backlog del usuario "distribución inteligente + asistente guiado" (2026-06-29)
+
+Visión nueva del usuario para evolucionar "Distribuir mi ingreso" como diferenciador. Ambas son épicas: requieren ADR antes de codear.
+
+- **MC.6 (épica, requiere ADR)** - "Automático" inteligente: en vez de proponer siempre 50/30/20 fijo, analizar toda la información financiera (gastos fijos, deudas, metas, fondo, apartados, inversiones, ingresos, frecuencia de pago, historial de gastos, límites configurados) y recomendar una distribución personalizada. Además, eliminar la duplicidad: si Automático recomienda, no mostrar 50/30/20 también como preset independiente. Toca el motor `sugerirDistribucionIngreso` y la barra de presets.
+- **MC.7 (épica mayor, requiere ADR)** - Convertir "Distribuir mi ingreso" en un asistente guiado de 3 pasos: (1) **Necesidades** itemizadas automáticamente (gastos fijos, cuotas de deuda, compromisos de Agenda) con nombre/categoría/valor; (2) **Ahorro** con aportes auto-calculados por objetivo según su meta y la frecuencia del ingreso (ej. meta de $5M a un año → cuánto por quincena), priorizando el fondo de emergencia con el excedente; (3) **Estilo de vida** repartido entre las cuentas activas / efectivo. El usuario solo revisa, ajusta y confirma. Construye sobre MC.4a-e.
 
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
 

@@ -756,6 +756,14 @@ function _recalcularDistribucion() {
       : `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
     resumenEl.classList.toggle('form-hint--danger', excede);
   }
+
+  // Filas informativas (MC.4c): recalcular Necesidades / Estilo de vida según el
+  // monto actual (son % del ingreso; no se mueven, solo informan).
+  panel.querySelectorAll('[data-dist-info]').forEach(span => {
+    const pct = Number(span.dataset.distPct) || 0;
+    span.textContent = f(Math.round(monto * pct / 100));
+  });
+
   if (boton) boton.disabled = !valido;
 }
 

@@ -326,9 +326,11 @@ export function renderDistribucionIngreso() {
 
   el.innerHTML = dist
     ? _renderDistribucion(dist, presetId, distribucionPersonalizada, {
-        montoIngreso: ingresoMensual,
-        ahorroPct:    dist.split.ahorro.pct,
-        ahorroBudget: dist.split.ahorro.monto,
+        montoIngreso:    ingresoMensual,
+        ahorroPct:       dist.split.ahorro.pct,
+        ahorroBudget:    dist.split.ahorro.monto,
+        necesidadesPct:  dist.split.necesidades.pct,
+        estiloVidaPct:   dist.split.estiloVida.pct,
         destinosAhorro,
         destinosDeudas,
       })
@@ -367,16 +369,13 @@ function _filaDistribuir(d) {
  * (ordenadas por prioridad de pago). El resumen en vivo y el botón "Distribuir"
  * se manejan desde index.js. Devuelve '' si no hay ningún destino fondeable.
  *
- * @param {number} montoIngreso
- * @param {number} ahorroPct
- * @param {number} ahorroBudget
- * @param {Array<object>} destinosAhorro
- * @param {Array<object>} destinosDeudas
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array}} d
  * @returns {string}
  */
-function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinosAhorro, destinosDeudas) {
-  const ahorro = destinosAhorro ?? [];
-  const deudas = destinosDeudas ?? [];
+function _renderPanelDistribuir(d) {
+  const { montoIngreso, ahorroPct, ahorroBudget, necesidadesPct, estiloVidaPct } = d;
+  const ahorro = d.destinosAhorro ?? [];
+  const deudas = d.destinosDeudas ?? [];
   if (ahorro.length === 0 && deudas.length === 0) return '';
 
   const filasAhorro = ahorro.map(_filaDistribuir).join('');
@@ -387,6 +386,25 @@ function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinosA
             ${deudas.map(_filaDistribuir).join('')}
           </div>`
     : '';
+
+  // Filas informativas (MC.4c): Necesidades y Estilo de vida no se mueven en este
+  // panel (las obligaciones se pagan al vencer; el estilo de vida se gasta a lo
+  // largo del mes). Se muestran como referencia del plan completo de los 3 grupos.
+  // index.js recalcula sus montos en vivo al cambiar el monto a distribuir.
+  const nMonto = Math.round(montoIngreso * necesidadesPct / 100);
+  const eMonto = Math.round(montoIngreso * estiloVidaPct  / 100);
+  const seccionInfo = `
+          <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
+          <div class="distribuir__info">
+            <p class="distribuir__info-fila">
+              <span>📦 Necesidades · ${necesidadesPct}%</span>
+              <span data-dist-info="necesidades" data-dist-pct="${necesidadesPct}">${f(nMonto)}</span>
+            </p>
+            <p class="distribuir__info-fila">
+              <span>🎯 Estilo de vida · ${estiloVidaPct}%</span>
+              <span data-dist-info="estiloVida" data-dist-pct="${estiloVidaPct}">${f(eMonto)}</span>
+            </p>
+          </div>`;
 
   return `
         <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
@@ -405,6 +423,7 @@ function _renderPanelDistribuir(montoIngreso, ahorroPct, ahorroBudget, destinosA
           <p class="form-hint">Sugerencia: ${f(ahorroBudget)} a ahorro (${ahorroPct}%). Ajusta cada destino:</p>
           ${ahorro.length > 0 ? `<div class="distribuir-ingreso__destinos">${filasAhorro}</div>` : ''}
           ${seccionDeudas}
+          ${seccionInfo}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion">
             Distribuir
@@ -515,7 +534,7 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
           ${alertasHtml}
           ${ctasHtml}
         </div>
-        ${_renderPanelDistribuir(distribuir.montoIngreso, distribuir.ahorroPct, distribuir.ahorroBudget, distribuir.destinosAhorro, distribuir.destinosDeudas)}
+        ${_renderPanelDistribuir(distribuir)}
       </div>
     </div>`;
 }
