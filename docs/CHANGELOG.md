@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): plantillas de gasto previsible ampliadas (AP.2) · 2026-06-29
+
+`PLANTILLAS_APARTADO` pasó de 9 a 15 plantillas rápidas, incorporando los gastos previsibles que el usuario identificó como faltantes: 📋 Revisión técnico-mecánica, 🏛️ Impuesto predial, 🎓 Matrícula o semestre, 🪪 Renovación de documentos, 🐾 Alimento para mascotas, 🐱 Arena para gatos. Se evitó duplicar "Impuestos" (queda como el genérico, típicamente vehículo) con "Impuesto predial" (vivienda), ya que son obligaciones distintas y ambas previsibles. Se reordenó el catálogo agrupando por afinidad (vehículo, impuestos/vivienda, mascotas, educación, regalos/vacaciones) para que el listado de chips sea más fácil de escanear al crear un apartado. Cambio puramente de datos: sin lógica nueva, sin schema, sin migración (las plantillas no se persisten, solo prellenan el formulario).
+
+Parte del backlog "Visión de Apartados".
+
+Verificado: 2 tests de lógica nuevos (1562 → 1564 unit + integración): 15 plantillas sin nombres duplicados, y cobertura de las 6 plantillas nuevas. Lint limpio, 57/57 E2E sin regresiones. SW v213 → v214.
+
+- **`modules/dominio/apartados/logic.js`**: `PLANTILLAS_APARTADO` ampliada de 9 a 15 entradas, reordenada por afinidad.
+- **`tests/unit/apartados.test.js`**: 2 tests nuevos.
+- **`service-worker.js`**: v213 → v214.
+
+---
+
 ### feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta (AP.1) · 2026-06-29
 
 El formulario de aporte a un apartado usaba un `<select>` de texto plano (`_renderCuentaSelectorAporte`), sin logo del banco y sin opción de completar el aporte desde otra cuenta cuando la elegida no alcanzaba. Se unificó al **selector de tarjetas compartido** que ya usan Gastos, Abono a deuda y Pago de gasto fijo: `renderSelectorCuenta` (logo de la entidad vía `bancoAvatar` + nombre + saldo, con radios `name="cuentaId"`) en el formulario, y `resolverPagoConPreferida` al guardar (usa la cuenta elegida y, si no cubre el monto y hay más cuentas, abre el picker de reparto sin dejar ninguna en negativo; con una sola cuenta confirma el sobregiro). Se preserva el comportamiento de **aporte como seguimiento** cuando no hay cuentas activas: el apartado sube su `montoActual` sin descontar de ninguna cuenta. Cambio de UI + handler, sin lógica financiera ni schema nuevos.

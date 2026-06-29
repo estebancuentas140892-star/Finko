@@ -52,15 +52,21 @@ const DIAS_POR_PERIODO = {
  * se omite a propósito: ya vive en el dominio Ahorro.
  */
 export const PLANTILLAS_APARTADO = [
-  { nombre: 'SOAT',                     icono: '🚗' },
-  { nombre: 'Impuestos',               icono: '🧾' },
-  { nombre: 'Mantenimiento del vehículo', icono: '🔧' },
-  { nombre: 'Arriendo',                 icono: '🏠' },
-  { nombre: 'Mercado',                  icono: '🛒' },
-  { nombre: 'Productos personales',     icono: '🧴' },
-  { nombre: 'Útiles escolares',         icono: '📚' },
-  { nombre: 'Regalos',                  icono: '🎁' },
-  { nombre: 'Vacaciones',               icono: '✈️' },
+  { nombre: 'SOAT',                        icono: '🚗' },
+  { nombre: 'Revisión técnico-mecánica',   icono: '📋' },
+  { nombre: 'Mantenimiento del vehículo',  icono: '🔧' },
+  { nombre: 'Impuestos',                   icono: '🧾' },
+  { nombre: 'Impuesto predial',            icono: '🏛️' },
+  { nombre: 'Arriendo',                    icono: '🏠' },
+  { nombre: 'Mercado',                     icono: '🛒' },
+  { nombre: 'Alimento para mascotas',      icono: '🐾' },
+  { nombre: 'Arena para gatos',            icono: '🐱' },
+  { nombre: 'Productos personales',        icono: '🧴' },
+  { nombre: 'Útiles escolares',            icono: '📚' },
+  { nombre: 'Matrícula o semestre',        icono: '🎓' },
+  { nombre: 'Renovación de documentos',    icono: '🪪' },
+  { nombre: 'Regalos',                     icono: '🎁' },
+  { nombre: 'Vacaciones',                  icono: '✈️' },
 ];
 
 /** Icono por defecto cuando el usuario no elige uno. */

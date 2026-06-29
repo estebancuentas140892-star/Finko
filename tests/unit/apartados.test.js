@@ -550,6 +550,24 @@ describe('catálogos', () => {
     expect(PLANTILLAS_APARTADO.some(p => /emergencia/i.test(p.nombre))).toBe(false);
   });
 
+  it('PLANTILLAS_APARTADO trae 15 plantillas sin nombres duplicados (AP.2)', () => {
+    expect(PLANTILLAS_APARTADO).toHaveLength(15);
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(new Set(nombres).size).toBe(nombres.length);
+  });
+
+  it('incluye las plantillas nuevas de AP.2 (gastos previsibles que faltaban)', () => {
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(nombres).toEqual(expect.arrayContaining([
+      'Revisión técnico-mecánica',
+      'Impuesto predial',
+      'Matrícula o semestre',
+      'Renovación de documentos',
+      'Alimento para mascotas',
+      'Arena para gatos',
+    ]));
+  });
+
   it('PERIODOS_RECURRENCIA incluye el anual (SOAT) con meses y etiqueta', () => {
     expect(PERIODOS_RECURRENCIA.some(p => p.meses === 12)).toBe(true);
     for (const p of PERIODOS_RECURRENCIA) {

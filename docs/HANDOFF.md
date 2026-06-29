@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta)
+> Última actualización: 2026-06-29 (feat(apartados): plantillas de gasto previsible ampliadas, AP.2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1562/1562 verdes |
+| Tests unitarios + integración | 1564/1564 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(apartados): plantillas de gasto previsible ampliadas (AP.2) · 2026-06-29
+
+`PLANTILLAS_APARTADO` pasó de 9 a 15: se agregaron 📋 Revisión técnico-mecánica, 🏛️ Impuesto predial, 🎓 Matrícula o semestre, 🪪 Renovación de documentos, 🐾 Alimento para mascotas, 🐱 Arena para gatos. "Impuestos" se conserva como genérico (vehículo) sin duplicarse con "Impuesto predial" (vivienda). Catálogo reordenado por afinidad (vehículo, impuestos/vivienda, mascotas, educación, regalos/vacaciones). Cambio puramente de datos, sin schema ni migración. Verificado: 2 tests nuevos (1564 total), lint limpio, 57/57 E2E. SW v213 → v214.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` de 9 a 15 entradas, reordenada. |
+| `tests/unit/apartados.test.js` | 2 tests nuevos. |
+| `service-worker.js` | v213 → v214. |
+
+---
 
 ### feat(apartados): formulario de aporte con selector de tarjetas y reparto multi-cuenta (AP.1) · 2026-06-29
 
@@ -83,19 +95,6 @@ Campo **categoría** en el formulario "Nuevo gasto fijo" de Agenda: 13 categorí
 | `modules/dominio/agenda/index.js` | Pre-rellena categoría al editar. |
 | `tests/unit/compromisos.test.js`, `tests/unit/agenda.test.js`, `tests/unit/storage.test.js` | 20 tests nuevos. |
 | `service-worker.js` | v210 → v211. |
-
----
-
-### feat(tesoreria): iconografía en las categorías de ingresos (MC.9) · 2026-06-29
-
-Cada categoría de ingreso muestra un emoji representativo, mismo patrón que `CATEGORIA_EMOJI` de gastos. Nuevo mapa `CATEGORIA_INGRESO_EMOJI` en `constants.js` (12 categorías: 💼 Salario, 🏷️ Salario mínimo, 💵 Honorarios, 🤝 Comisión, 🏠 Arriendo, 👴 Pensión, 🪙 Subsidio, 🎁 Bonificación, 🧾 Cuota, 💰 Venta, 📈 Rendimientos, 📦 Otro). El emoji aparece en cada `<option>` del selector de categoría y junto al nombre en la lista de ingresos. Cambio puramente visual: la categoría guardada sigue siendo el string plano, el emoji se resuelve en la vista. Verificado: 6 tests nuevos (1519 total): cobertura del mapa contra el catálogo, render del selector y de la lista (con/sin categoría), lint limpio, 57/57 E2E. SW v209 → v210.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIA_INGRESO_EMOJI` (12 categorías). |
-| `modules/dominio/tesoreria/view.js` | Emoji en `<option>` de `renderFormIngreso` y en `_renderIngresoItem`. |
-| `tests/unit/tesoreria.test.js` | 6 tests nuevos. |
-| `service-worker.js` | v209 → v210. |
 
 ---
 

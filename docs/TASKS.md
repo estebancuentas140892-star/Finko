@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1562/1562 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **formulario de aporte de Apartados** unificado al selector de tarjetas compartido (logo del banco + reparto multi-cuenta). Antes: categorías predefinidas para Deudas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1564/1564 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **AP.2** plantillas de Apartados ampliadas de 9 a 15 (revisión técnico-mecánica, predial, matrícula, renovación de documentos, mascotas). Antes: AP.1 formulario de aporte con selector de tarjetas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -140,7 +140,7 @@ Visión del usuario para que Apartados tenga un propósito claro y diferenciado 
 
 ✅ **AP.1** - Formulario de aporte unificado al selector de tarjetas compartido (`renderSelectorCuenta` + `resolverPagoConPreferida`): muestra el logo del banco y permite elegir una o varias cuentas, con reparto automático cuando una no alcanza, igual que Gastos/Abono/Pago. Reemplaza el `<select>` de texto plano; preserva el aporte como seguimiento cuando no hay cuentas activas. 4 tests de render nuevos. SW v212 → v213 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **AP.2 (chico)** - Ampliar `PLANTILLAS_APARTADO` con las categorías que faltan de la lista del usuario: revisión técnico-mecánica, impuesto predial, matrículas/semestre, renovación de documentos, mascotas (alimento), arena de gatos. Hoy hay 9 plantillas; cuidar duplicados ("Impuestos" ya existe). Tocar: `apartados/logic.js` + tests. Modelo: Sonnet 4.6 - Bajo.
+✅ **AP.2** - `PLANTILLAS_APARTADO` ampliada de 9 a 15: Revisión técnico-mecánica, Impuesto predial (sin duplicar "Impuestos", que sigue siendo el genérico/vehículo), Matrícula o semestre, Renovación de documentos, Alimento para mascotas, Arena para gatos. Reordenada por afinidad (vehículo, impuestos/vivienda, mascotas, educación, regalos/vacaciones). 2 tests nuevos (15 plantillas, sin duplicados, cubre las 6 nuevas). SW v213 → v214 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **AP.3 (propósito) = EP.1** - El mensaje "¿qué problema resuelve Apartados?" es el piloto de la épica EP (ver backlog EP arriba). La filosofía y el ejemplo de mascotas son el insumo de copy ya aprobado. Depende de EP.0 (decidir el patrón del banner de propósito).
 
