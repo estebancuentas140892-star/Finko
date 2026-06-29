@@ -59,8 +59,8 @@ Slices de implementación de MC.4 (smallest-first, ver ADR 012):
 - ✅ **MC.4a** - Entrada "Distribuir mi ingreso" + panel editable (toggles + montos + remanente en vivo) + acreditar ingreso + aplicar grupo Ahorro (Fondo, Metas, Apartados) vía EventBus + undo por snapshot - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **MC.4b** - Deudas como destino fondeable: abono real vía EventBus, ordenadas por prioridad (Avalancha), topado al saldo - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **MC.4c** - Filas informativas de Necesidades y Estilo de vida en el panel (solo monto de referencia, recalculadas en vivo) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.4d** - Habilitar "Distribuir mi ingreso" solo cuando llega la fecha del ingreso (según su frecuencia) + nudge "Hoy recibes tu ingreso. ¿Deseas distribuirlo ahora?" + guard de de-duplicación ("ya distribuiste este periodo") + persistir mapeo de destinos preferidos. **Siguiente sugerido.**
-- **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable.
+- ✅ **MC.4d** - "Distribuir mi ingreso" se habilita solo al llegar la fecha del cobro (`estadoDistribucion` + `ultimoPagoHasta`) + nudge "Hoy recibes tu ingreso. ¿Deseas distribuirlo ahora?" + guard de de-duplicación por periodo (`S.config.ultimaDistribucionPeriodo`, revertible en el undo) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md). Nota: persistir el mapeo de destinos preferidos quedó fuera de este slice (no se pidió en la tarea); si se quiere, abrir un MC.4d-2.
+- **MC.4e (opcional)** - Dar a Inversiones un aporte incremental y sumarlo como destino fondeable. **Único pendiente de MC.4.**
 
 ### Backlog del usuario "distribución inteligente + asistente guiado" (2026-06-29)
 

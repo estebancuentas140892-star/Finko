@@ -254,6 +254,21 @@ form:not(.config-form) .form-group:not(:first-child) {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-secondary);
 }
+/* Nudge "Hoy recibes tu ingreso. ¿Distribuir?" sobre el botón (MC.4d). */
+.distribuir__cta {
+  margin-top: var(--fk-space-3);
+  font-weight: var(--fk-font-medium);
+}
+/* Confirmación tras distribuir el cobro de este periodo (guard de-dup, MC.4d). */
+.distribuir__hecho {
+  margin-top: var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-success-text);
+}
+/* Aviso cuando el cobro del periodo aún no llega (MC.4d). */
+.distribuir__pendiente {
+  margin-top: var(--fk-space-3);
+}
 
 /* Snackbar no bloqueante (ej. "Distribución aplicada. Deshacer"). Vive en
    document.body, sobrevive a los re-render del nudge. */

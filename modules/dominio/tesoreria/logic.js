@@ -233,6 +233,104 @@ export function detectarNudgeProximoIngreso(ingresos, hoy = new Date()) {
   return { principal: proximos[0], otrosProximos };
 }
 
+// ── DISTRIBUIR AL LLEGAR EL COBRO (ADR 012, MC.4d) ───────────────
+
+/** Formatea un Date a 'YYYY-MM-DD' en hora local. */
+function _isoFecha(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Devuelve la fecha (ISO 'YYYY-MM-DD') del cobro más reciente que ya ocurrió
+ * (<= hoy) de un ingreso recurrente, o null si no aplica. Es el espejo hacia
+ * atrás de `diasParaProximoPago`: mira el mes actual y el anterior y toma el
+ * último día de cobro que no sea futuro. Solo soporta Mensual y Quincenal.
+ *
+ * @param {string}      frecuencia
+ * @param {number|null} diaPago
+ * @param {Date}        [hoy]
+ * @returns {string | null}
+ */
+export function ultimoPagoHasta(frecuencia, diaPago, hoy = new Date()) {
+  if (!diaPago || (frecuencia !== 'Mensual' && frecuencia !== 'Quincenal')) return null;
+
+  const hoyNorm = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+  function _fechaEnMes(anio, mes, dia) {
+    const ultimo = new Date(anio, mes + 1, 0).getDate();
+    return new Date(anio, mes, Math.min(dia, ultimo));
+  }
+  function _candidatosMes(anio, mes) {
+    if (frecuencia === 'Mensual') return [_fechaEnMes(anio, mes, diaPago)];
+    return [_fechaEnMes(anio, mes, diaPago), _fechaEnMes(anio, mes, diaPago + 15)];
+  }
+
+  const anio     = hoyNorm.getFullYear();
+  const mes      = hoyNorm.getMonth();
+  const prevMes  = mes === 0 ? 11 : mes - 1;
+  const prevAnio = mes === 0 ? anio - 1 : anio;
+
+  const ultimo = [
+    ..._candidatosMes(prevAnio, prevMes),
+    ..._candidatosMes(anio, mes),
+  ]
+    .filter(fch => fch <= hoyNorm)
+    .sort((a, b) => b - a)[0];
+
+  return ultimo ? _isoFecha(ultimo) : null;
+}
+
+/**
+ * Estado de la acción "Distribuir mi ingreso" según la fecha de cobro de los
+ * ingresos y el último periodo ya distribuido. Pura (sin S, sin DOM).
+ *
+ * El "periodo" es la fecha del cobro más reciente (<= hoy y no anterior a la
+ * creación del ingreso) entre los ingresos activos con día de pago datable
+ * (Mensual / Quincenal). Esa fecha ISO es la clave de de-duplicación.
+ *
+ * Estados:
+ *   'sin-fecha'   : ningún ingreso activo tiene un cobro datable → el caller
+ *                   mantiene la acción disponible (no se puede aplicar el guard).
+ *   'pendiente'   : hay cobros datables pero el de este periodo aún no llega
+ *                   (primer pago futuro tras crear el ingreso) → acción oculta.
+ *   'listo'       : ya llegó el cobro de este periodo y no se ha distribuido.
+ *   'distribuido' : el cobro de este periodo ya se distribuyó (mismo periodoISO).
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @param {string|null} ultimaDistribucionPeriodo - periodoISO de la última distribución.
+ * @param {Date} [hoy]
+ * @returns {{ estado:'sin-fecha'|'pendiente'|'listo'|'distribuido', periodoISO: string|null, esHoy: boolean }}
+ */
+export function estadoDistribucion(ingresos, ultimaDistribucionPeriodo = null, hoy = new Date()) {
+  const base = { estado: 'sin-fecha', periodoISO: null, esHoy: false };
+  if (!Array.isArray(ingresos)) return base;
+
+  const activos = ingresos.filter(i => i.activo !== false && i.diaPago);
+  let hayDatable = false;  // algún ingreso con frecuencia datable (Mensual/Quincenal)
+  let mejorCobro = null;   // periodoISO más reciente de un cobro ya recibido
+
+  for (const i of activos) {
+    const ultISO = ultimoPagoHasta(i.frecuencia, i.diaPago, hoy);
+    if (!ultISO) continue;          // frecuencia no datable (Anual, etc.)
+    hayDatable = true;
+    // No datar cobros anteriores a la creación del ingreso: evita el falso
+    // "ya recibiste" al registrar hoy un ingreso cuyo día de pago ya pasó.
+    const creadoISO = typeof i.fechaCreacion === 'string' ? i.fechaCreacion.slice(0, 10) : null;
+    if (creadoISO && ultISO < creadoISO) continue;
+    if (!mejorCobro || ultISO > mejorCobro) mejorCobro = ultISO;
+  }
+
+  if (!hayDatable) return base;                                          // 'sin-fecha'
+  if (!mejorCobro) return { estado: 'pendiente', periodoISO: null, esHoy: false };
+
+  const hoyISO = _isoFecha(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
+  return {
+    estado:     ultimaDistribucionPeriodo === mejorCobro ? 'distribuido' : 'listo',
+    periodoISO: mejorCobro,
+    esHoy:      mejorCobro === hoyISO,
+  };
+}
+
 // ── VALIDACIÓN INGRESOS ──────────────────────────────────────────
 
 /**

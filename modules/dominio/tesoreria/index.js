@@ -30,6 +30,7 @@ import {
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
+  estadoDistribucion,
 } from './logic.js';
 import {
   renderListaCuentas,
@@ -699,7 +700,7 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
-const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'logros'];
+const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'logros', 'config'];
 
 /** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
 function _toggleDistribuirIngreso(el) {
@@ -806,6 +807,15 @@ async function _confirmarDistribucion() {
 
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.
   _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
+
+  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d). Se hace
+  // antes de los movimientos para que el re-render que disparan ya lo refleje
+  // (oculta el botón). El snapshot anterior no lo incluye, así "Deshacer" lo revierte.
+  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+  if (estado.periodoISO) {
+    if (!S.config) S.config = {};
+    S.config.ultimaDistribucionPeriodo = estado.periodoISO;
+  }
 
   // Acreditar el ingreso y descontar solo lo que sale de la cuenta (no el fondo).
   const descontable = items

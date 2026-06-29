@@ -22,6 +22,8 @@ import {
   construirPlanAhorro,
   resumirPlanDistribucion,
   construirPlanDeudas,
+  ultimoPagoHasta,
+  estadoDistribucion,
 } from '../../modules/dominio/tesoreria/logic.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -1009,6 +1011,117 @@ describe('detectarNudgeProximoIngreso()', () => {
     const r = detectarNudgeProximoIngreso(ingresos, hoy);
     expect(r.principal.descripcion).toBe('Salario');
     expect(r.otrosProximos).toBe(0);
+  });
+});
+
+// ── ultimoPagoHasta() (MC.4d) ─────────────────────────────────────
+
+describe('ultimoPagoHasta()', () => {
+  it('Mensual: el día de pago ya pasó este mes → ese mismo día', () => {
+    const hoy = new Date(2026, 6, 5); // 5 jul 2026
+    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-06-30');
+  });
+
+  it('Mensual: hoy es el día de pago → hoy', () => {
+    const hoy = new Date(2026, 5, 30); // 30 jun 2026
+    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-06-30');
+  });
+
+  it('Mensual: el día de pago aún no llega este mes → el del mes anterior', () => {
+    const hoy = new Date(2026, 5, 10); // 10 jun 2026
+    expect(ultimoPagoHasta('Mensual', 30, hoy)).toBe('2026-05-30');
+  });
+
+  it('Mensual: día 31 en mes corto → último día del mes', () => {
+    const hoy = new Date(2026, 1, 15); // 15 feb 2026
+    expect(ultimoPagoHasta('Mensual', 31, hoy)).toBe('2026-01-31');
+  });
+
+  it('Quincenal: tras la segunda quincena → día+15', () => {
+    const hoy = new Date(2026, 5, 20); // 20 jun 2026
+    expect(ultimoPagoHasta('Quincenal', 15, hoy)).toBe('2026-06-15');
+  });
+
+  it('Quincenal: entre las dos quincenas del mes → primera quincena', () => {
+    const hoy = new Date(2026, 5, 16); // 16 jun 2026
+    expect(ultimoPagoHasta('Quincenal', 15, hoy)).toBe('2026-06-15');
+  });
+
+  it('null cuando no hay diaPago', () => {
+    expect(ultimoPagoHasta('Mensual', null, new Date(2026, 5, 20))).toBeNull();
+  });
+
+  it('null para frecuencia no datable (Anual)', () => {
+    expect(ultimoPagoHasta('Anual', 15, new Date(2026, 5, 20))).toBeNull();
+  });
+});
+
+// ── estadoDistribucion() (MC.4d) ──────────────────────────────────
+
+describe('estadoDistribucion()', () => {
+  const hoy = new Date(2026, 6, 5); // 5 jul 2026; cobro mensual día 30 → 30 jun
+
+  it('sin-fecha: ningún ingreso con día de pago', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: null }];
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.estado).toBe('sin-fecha');
+    expect(r.periodoISO).toBeNull();
+  });
+
+  it('sin-fecha: argumento no-array', () => {
+    expect(estadoDistribucion(null, null, hoy).estado).toBe('sin-fecha');
+  });
+
+  it('sin-fecha: solo frecuencias no datables (Anual con día)', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Prima', frecuencia: 'Anual', activo: true, diaPago: 15 }];
+    expect(estadoDistribucion(ingresos, null, hoy).estado).toBe('sin-fecha');
+  });
+
+  it('listo: el cobro del periodo ya llegó y no se ha distribuido', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.estado).toBe('listo');
+    expect(r.periodoISO).toBe('2026-06-30');
+    expect(r.esHoy).toBe(false);
+  });
+
+  it('listo con esHoy cuando el cobro es hoy', () => {
+    const hoyPago = new Date(2026, 5, 30); // 30 jun 2026
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoyPago);
+    expect(r.estado).toBe('listo');
+    expect(r.esHoy).toBe(true);
+  });
+
+  it('distribuido: el periodo ya distribuido coincide con la marca', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, '2026-06-30', hoy);
+    expect(r.estado).toBe('distribuido');
+    expect(r.periodoISO).toBe('2026-06-30');
+  });
+
+  it('pendiente: ingreso creado después del último cobro → aún no llega', () => {
+    // Creado el 2 jul; el último día 30 (30 jun) es anterior a la creación.
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.estado).toBe('pendiente');
+    expect(r.periodoISO).toBeNull();
+  });
+
+  it('toma el cobro más reciente entre varios ingresos', () => {
+    const ingresos = [
+      { id: 'i1', descripcion: 'Arriendo', frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      { id: 'i2', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+    ];
+    // hoy=5 jul: Arriendo→5 jul, Salario→30 jun. El más reciente es 5 jul.
+    const r = estadoDistribucion(ingresos, null, hoy);
+    expect(r.periodoISO).toBe('2026-07-05');
+    expect(r.esHoy).toBe(true);
+  });
+
+  it('ingreso inactivo no cuenta para el estado', () => {
+    const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: false, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    expect(estadoDistribucion(ingresos, null, hoy).estado).toBe('sin-fecha');
   });
 });
 

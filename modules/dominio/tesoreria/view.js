@@ -25,6 +25,7 @@ import {
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
   construirPlanDeudas,
+  estadoDistribucion,
 } from './logic.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -324,6 +325,13 @@ export function renderDistribucionIngreso() {
       && (Number(c.saldoTotal) || 0) > 0);
   const destinosDeudas = construirPlanDeudas({ deudas: deudasPendientes });
 
+  // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
+  // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
+  const estadoDist = estadoDistribucion(
+    S.ingresos ?? [],
+    S.config?.ultimaDistribucionPeriodo ?? null,
+  );
+
   el.innerHTML = dist
     ? _renderDistribucion(dist, presetId, distribucionPersonalizada, {
         montoIngreso:    ingresoMensual,
@@ -333,6 +341,7 @@ export function renderDistribucionIngreso() {
         estiloVidaPct:   dist.split.estiloVida.pct,
         destinosAhorro,
         destinosDeudas,
+        estado:          estadoDist,
       })
     : '';
 }
@@ -363,13 +372,18 @@ function _filaDistribuir(d) {
 }
 
 /**
- * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b).
+ * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b/MC.4d).
  * El panel arranca oculto; el botón lo despliega. Reparte hacia el grupo Ahorro
  * (Fondo, Metas, Apartados) y, como abono real, hacia las Deudas pendientes
  * (ordenadas por prioridad de pago). El resumen en vivo y el botón "Distribuir"
  * se manejan desde index.js. Devuelve '' si no hay ningún destino fondeable.
  *
- * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array}} d
+ * Gating por fecha (MC.4d): la acción solo aparece cuando el cobro del periodo
+ * ya llegó y aún no se distribuyó ('listo') o cuando no hay fecha datable
+ * ('sin-fecha', se mantiene disponible). Si ya se distribuyó este periodo
+ * ('distribuido') o el cobro aún no llega ('pendiente'), se informa sin botón.
+ *
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
@@ -377,6 +391,25 @@ function _renderPanelDistribuir(d) {
   const ahorro = d.destinosAhorro ?? [];
   const deudas = d.destinosDeudas ?? [];
   if (ahorro.length === 0 && deudas.length === 0) return '';
+
+  const est = d.estado?.estado ?? 'sin-fecha';
+
+  // Ya distribuido este periodo: confirmación, sin reabrir el panel (guard MC.4d).
+  if (est === 'distribuido') {
+    return `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`;
+  }
+  // El cobro de este periodo aún no llega: la acción se habilita al recibirlo.
+  if (est === 'pendiente') {
+    return `<p class="distribuir__pendiente form-hint form-hint--muted">💸 Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`;
+  }
+
+  // 'listo' (o 'sin-fecha' como fallback): la acción está disponible. En 'listo'
+  // antecede un nudge con la invitación a distribuir el cobro recién recibido.
+  const cta = est === 'listo'
+    ? `<p class="distribuir__cta" role="status">💸 ${d.estado.esHoy
+        ? 'Hoy recibes tu ingreso.'
+        : `Recibiste tu ingreso el ${_fechaCorta(d.estado.periodoISO)}.`} ¿Deseas distribuirlo ahora?</p>`
+    : '';
 
   const filasAhorro = ahorro.map(_filaDistribuir).join('');
   const seccionDeudas = deudas.length > 0
@@ -407,6 +440,7 @@ function _renderPanelDistribuir(d) {
           </div>`;
 
   return `
+        ${cta}
         <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
                 data-action="toggle-distribuir-ingreso"
                 aria-expanded="false" aria-controls="distribuir-ingreso-panel">
