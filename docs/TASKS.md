@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1568/1568 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **D.1 (BUG)** corregido el impacto del pago extra en Deudas, que mostraba cifras absurdas (~$6e29) cuando la cuota no cubre intereses. Antes: AP.2 plantillas de Apartados. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1568/1568 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **D.2 (diseño)** revisado ADR 011, replanteada la jerarquía de la simulación de deudas (estrategia como protagonista, pago extra contextual). Sin código. Antes: D.1 (BUG) impacto del pago extra sin cifras absurdas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -37,9 +37,11 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**ADR 011 en curso: rediseño de simulación de deudas.** S1, S2 y S3 cerrados (extra mensual siempre visible + resumen de impacto en vivo; eliminado el botón "Simular" por deuda; barrido de dead code del acordeón). Pendientes:
-- **S4** - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
-- **S5** - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
+**ADR 011 en curso: rediseño de simulación de deudas.** S2 y S3 cerrados (eliminado el botón "Simular" por deuda; barrido de dead code del acordeón). **S1 sustituido por la Revisión D.2** (2026-06-29): la jerarquía vuelve a la estrategia, el pago extra es contextual (acelerador plegable / remedio). Pendientes de implementación, en orden:
+- **D.2a** - Reordenar la card: picker Avalancha/Bola de nieve arriba; pago extra a un acelerador plegable bajo el detalle (solo plan viable); quitar el input + resumen siempre visibles del tope. Sin lógica nueva (reubica `_renderExtraMensual` + `renderResumenExtra`). Modelo: Sonnet 4.6 - Medio.
+- **D.2b** - Plan inviable: el pago extra sube como primer remedio dentro de "Tu plan no se sostiene" (input + impacto en vivo); renegociar y consolidar quedan como texto hasta D.3. Sin lógica nueva. Modelo: Sonnet 4.6 - Medio.
+- **S4** (= parte de D.3) - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
+- **S5** (= parte de D.3) - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -47,7 +49,7 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 ✅ **D.1 (BUG)** - Corregido el cálculo del impacto del pago extra, que mostraba cifras absurdas ("terminas 49 años antes y ahorras $6e29") cuando la cuota no cubre los intereses. Raíz: con un plan base inviable, `simularEstrategiaPago` diverge (saldo crece, `interesesTotales` explota, meses topa en 600) y los renderers restaban contra esa base. Fix en los 3 puntos de fuga (`estrategia-impacto.js`): `renderResumenExtra` (si la base es inviable, explica que sin el extra no se paga, sin restar), `renderImpactoAvalancha` ("No se termina de pagar" en vez del total divergente) y `_renderComparativa` (no compara estrategias si alguna no completa). 4 tests de regresión. SW v214 → v215 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **D.2 (diseño, revisa ADR 011 S1)** - Replantear la jerarquía de la simulación: el eje principal debe ser elegir Avalancha vs Bola de nieve; el pago extra **no** debería estar siempre visible como protagonista (esto revierte la decisión S1 de ADR 011). Las alternativas (aumentar cuota, renegociar tasa, consolidar) aparecerían solo cuando Finko detecta que el plan es inviable (deudas que crecen). Requiere actualizar ADR 011. Modelo: Opus 4.8 - Alto.
+✅ **D.2 (diseño, revisa ADR 011 S1)** - Replanteada la jerarquía de la simulación: el eje principal vuelve a ser elegir Avalancha vs Bola de nieve; el pago extra deja de ser protagonista y pasa a ser contextual (acelerador plegable en plan viable, primer remedio en plan inviable). ADR 011 revisado (sección "Revisión D.2", S1 sustituido). Implementación dividida en D.2a + D.2b (ver "Próxima tarea sugerida" arriba). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **D.3 (= ADR 011 S4/S5) - Convertir la simulación en acción.** Tras simular (aumentar cuota / renegociar tasa / consolidar), permitir **aplicar** el cambio en un paso (actualizar `cuotaMensual` o `tasa` de la deuda sin volver a editarla a mano). Construye sobre S4 (`simularRenegociacion`) y S5 (`simularConsolidacion`) ya pendientes. Modelo: Opus 4.8 - Medio.
 

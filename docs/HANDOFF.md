@@ -39,6 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### docs(deudas): ADR 011 revisado, replanteada la jerarquía de la simulación (D.2) · 2026-06-29
+
+Tarea de diseño (sin código). El usuario observó que el pago extra mensual aparece como protagonista arriba de la card de Deudas, antes de elegir estrategia. Se revisó [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md) para **sustituir el slice S1**: el eje principal vuelve a ser elegir **Avalancha vs Bola de nieve** (sube al tope), y el pago extra pasa a ser **contextual**: acelerador plegable ("¿Puedes pagar más rápido?", colapsado bajo el detalle) cuando el plan es viable, y **primer remedio** dentro del bloque "Tu plan no se sostiene" cuando Finko detecta deudas que crecen. Renegociar y consolidar quedan como las otras dos salidas del bloque inviable (texto hasta D.3). Decisiones cerradas con el usuario: alcance = solo ADR + slices; el pago extra se conserva como acelerador plegable en planes viables (no se elimina). Implementación dividida en D.2a (reordenar + acelerador plegable) y D.2b (remedio en plan inviable), ambas sin lógica nueva. Sin tests ni SW bump (no se tocó código).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Sección "Revisión D.2": nueva jerarquía, S1 sustituido, slices D.2a/D.2b. |
+
+---
+
 ### fix(compromisos): el impacto de la simulación no muestra cifras absurdas con planes inviables (D.1) · 2026-06-29
 
 El resumen "Impacto de tu pago extra" mostraba "terminas 49 años antes y ahorras $6e29" cuando la cuota no cubre los intereses. Raíz: con un plan base inviable, `simularEstrategiaPago` diverge (saldo crece, `interesesTotales` explota, meses topa en 600) y los renderers restaban contra esa base. Fix en los 3 puntos de fuga de `estrategia-impacto.js`, todos por `completo === false`: `renderResumenExtra` (mensaje honesto "sin el extra no se paga" en vez de restar), `renderImpactoAvalancha` ("No se termina de pagar" en vez del total divergente) y `_renderComparativa` (no compara si alguna estrategia no completa). Sin tocar la lógica de simulación. Primer ítem del backlog "Visión de Deudas". Verificado: 4 tests de regresión nuevos (1568 total) con la simulación real, lint limpio, 57/57 E2E. SW v214 → v215.
@@ -90,25 +100,6 @@ Campo **tipo de obligación** en el formulario de nueva deuda (entidad y persona
 | `modules/dominio/compromisos/views/lista.js` | Emoji + nombre en `_renderCompromisoItem`. |
 | `tests/unit/compromisos.test.js`, `tests/unit/storage.test.js` | 21 tests nuevos. |
 | `service-worker.js` | v211 → v212. |
-
----
-
-### feat(agenda): categorías predefinidas para gastos fijos · 2026-06-29
-
-Campo **categoría** en el formulario "Nuevo gasto fijo" de Agenda: 13 categorías con emoji (🏠 Arriendo, 🏢 Administración, 💡 Servicios públicos, 🌐 Internet, 📱 Telefonía, 🎬 Streaming, 🛡️ Seguros, 📚 Educación, 🏋️ Gimnasio, 💳 Cuota de manejo, 🚗 Transporte, 🐾 Mascotas, 📦 Otro). Agenda no tiene almacenamiento propio (vista calendario sobre `S.compromisos`), así que el campo vive en `Compromiso` con `tipo='fijo'`: `CATEGORIAS_AGENDA` + `CATEGORIA_AGENDA_EMOJI` en `constants.js`, validados/normalizados en `compromisos/logic.js` (exclusivos de `tipo='fijo'`, las deudas no lo exponen). Migración idempotente v16 → v17 (`categoria: null` en fijos existentes). El selector aparece en el form de Agenda y el emoji + nombre en el detalle del día ("Gasto fijo · Mensual · 🌐 Internet"). Verificado: 20 tests nuevos (1539 total) en `compromisos.test.js`, `agenda.test.js` y `storage.test.js` (migración + idempotencia + exclusión de deudas); lint limpio, 57/57 E2E. SW v210 → v211.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_AGENDA` (13 categorías) + `CATEGORIA_AGENDA_EMOJI`. |
-| `modules/core/storage.js` | Migración v16 → v17: `categoria: null` en compromisos `tipo='fijo'`. |
-| `modules/core/state.js` | Typedef `Compromiso` con `categoria` (solo fijo). |
-| `modules/dominio/compromisos/logic.js` | `validarCompromiso` + `normalizarCompromiso` con categoría (solo fijo). |
-| `modules/dominio/agenda/view.js` | Selector de categoría en `renderFormGastoFijo`; emoji en `_renderDetalleItem`. |
-| `modules/dominio/agenda/index.js` | Pre-rellena categoría al editar. |
-| `tests/unit/compromisos.test.js`, `tests/unit/agenda.test.js`, `tests/unit/storage.test.js` | 20 tests nuevos. |
-| `service-worker.js` | v210 → v211. |
-
----
 
 ---
 

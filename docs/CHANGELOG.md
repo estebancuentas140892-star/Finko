@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(deudas): ADR 011 revisado, replanteada la jerarquía de la simulación (D.2) · 2026-06-29
+
+Tarea de diseño, sin código. El usuario observó (backlog "Visión de Deudas") que en la card de estrategia de Deudas el pago extra mensual aparece como protagonista, arriba de la elección de estrategia: lo primero que ve es "¿puedes pagar algo extra?" antes de decidir **cómo** va a pagar. Eso es la decisión S1 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md), que el usuario pidió revertir.
+
+Se revisó ADR 011 con una sección **"Revisión D.2"** que **sustituye el slice S1** y redefine la jerarquía de la card:
+
+1. **Eje principal = elegir Avalancha vs Bola de nieve** (sube al tope, protagonista).
+2. **Detalle de la estrategia elegida** (por qué te conviene / cómo funciona + impacto + comparativa): sin cambios.
+3. **Pago extra contextual**, ya no protagonista: en un **plan viable** es un **acelerador plegable** ("¿Puedes pagar más rápido?", colapsado bajo el detalle); en un **plan inviable** (deudas que crecen, `recomendacion.viable === false`) se eleva como **primer remedio** dentro del bloque "Tu plan no se sostiene", junto a renegociar la tasa y consolidar (que siguen como texto hasta D.3).
+
+Como viable e inviable son estados excluyentes, el input de extra se renderiza en un solo lugar a la vez. La lógica financiera (`compararEstrategias`, `recomendarEstrategia`, `simularEstrategiaPago`) no se toca.
+
+Decisiones cerradas con el usuario: alcance de esta tarea = solo ADR + slices (la implementación va aparte, mismo patrón que MC.4/MC.6); el pago extra se conserva como acelerador plegable en planes viables (no se elimina, para no quitarle la palanca de "pagar más rápido" a quien tiene un plan sano).
+
+La implementación queda dividida en dos slices sin lógica nueva: **D.2a** (reordenar la card + acelerador plegable) y **D.2b** (pago extra como remedio en plan inviable). S4/S5 de la decisión original equivalen a **D.3** (renegociar/consolidar interactivos + aplicar el cambio sobre la deuda).
+
+Sin tests ni bump de service worker: no se tocó código de la app.
+
+- **`docs/DECISIONS/011-unificacion-simulador-deudas.md`**: sección "Revisión D.2" (nueva jerarquía, S1 sustituido, slices D.2a/D.2b); banner de revisión en el encabezado; fila S1 marcada como sustituida en la tabla de slices.
+
+---
+
 ### fix(compromisos): el impacto de la simulación no muestra cifras absurdas con planes inviables (D.1) · 2026-06-29
 
 El resumen "🎯 Impacto de tu pago extra" mostraba resultados sin sentido cuando la cuota de una deuda no alcanzaba a cubrir sus intereses: por ejemplo "Con $40.000/mes adicional terminas 49 años y 4 meses antes y ahorras $6,16e+29 en intereses". Raíz del bug: si el plan base (sin extra) es inviable, `simularEstrategiaPago` diverge (el saldo crece cada mes, `interesesTotales` se dispara exponencialmente y `meses` se topa en `MAX_MESES_SIMULACION` = 600). Los renderers de impacto restaban contra esa base divergente (`base.meses - extra.meses`, `base.interesesTotales - extra.interesesTotales`), produciendo el "49 años antes" (≈ 600 − pocos meses) y el "$6e29".
