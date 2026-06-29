@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(deudas): extra mensual visible + resumen de impacto en vivo, ADR 011 S1)
+> Última actualización: 2026-06-28 (refactor(deudas): eliminado el botón "Simular" por deuda, ADR 011 S2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1438/1438 verdes |
+| Tests unitarios + integración | 1450/1450 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(deudas): eliminado el botón "Simular" por deuda (ADR 011, S2) · 2026-06-28
+
+Segundo slice del rediseño de simulación de deudas (ADR 011). Cada fila de deuda tenía un botón "Simular" que abría un modal con una simulación individual (meses/intereses ahorrados con un extra). Esa superficie aislada confundía: mostraba el impacto de una sola deuda, sin reflejar cómo interactúan entre sí (cuotas liberadas, volcamiento), y ya quedó cubierta por el panel unificado de S1 (extra mensual + resumen de impacto sobre todo el portafolio). Se eliminó el botón y toda su maquinaria: la acción `simular-abono`, los handlers `_abrirSimulacion` y `_actualizarSimulacion`, la vista `renderSimulacion` y su re-export, las 5 reglas CSS `.sim-resultado*` (ya muertas), y los imports que quedaban sin uso (`renderSimulacion`, `simularPagoDeuda`, `formatearDuracion` en index.js; `tasaEADe` en formularios.js). Ningún test referenciaba la simulación por deuda, así que el conteo no cambia. Verificado: 1450/1450 unit + integración, 57/57 E2E, y render de la lista en happy-dom (Abonar presente, "Simular" ausente). **Pendientes:** S3 (limpiar dead code residual del acordeón), S4/S5 (herramientas what-if: renegociar tasa y consolidar). SW v196 → v197.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/lista.js` | Eliminado el botón "Simular" de la fila de deuda. |
+| `modules/dominio/compromisos/index.js` | Eliminados `_abrirSimulacion`, `_actualizarSimulacion`, la acción `simular-abono` y 3 imports sin uso. |
+| `modules/dominio/compromisos/view.js` | Eliminado el re-export de `renderSimulacion`. |
+| `modules/dominio/compromisos/views/formularios.js` | Eliminada `renderSimulacion` y el import `tasaEADe` (sin uso). |
+| `styles/components/domain.css` | Eliminado el bloque `.sim-resultado*` (5 reglas muertas). |
+| `service-worker.js` | `CACHE_NAME` v196 → v197. |
+
+---
 
 ### feat(deudas): extra mensual siempre visible con resumen de impacto en vivo (ADR 011, S1) · 2026-06-28
 
@@ -90,18 +105,6 @@ Segunda y última mejora del Dashboard pedida por el usuario (cierra el pedido).
 |---|---|
 | `styles/layout.css` | Regla `.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero { grid-column: span 12; }`. |
 | `service-worker.js` | `CACHE_NAME` v192 → v193. |
-
----
-
-### feat(dashboard): "gastos por organizar" junto al hero (desktop) / bajo él (mobile) · 2026-06-28
-
-Primera de dos mejoras del Dashboard pedidas por el usuario. La tarjeta "Tienes N gastos por organizar" vivía al fondo del Dashboard, fuera del bento grid, fácil de pasar por alto. Ahora vive como celda del bento justo después del hero: en escritorio ocupa las 4 columnas libres a la derecha de "Tu dinero disponible hoy" (rellena el hueco que dejaron los accesos rápidos al eliminarse), y en móvil se apila a ancho completo justo debajo. La celda es "bare" (sin fondo, borde ni padding propios) para que el nudge interno sea la única tarjeta visible, estirado a la altura del hero y centrado en vertical: sin doble chrome. Verificado en navegador a 1366px (lado a lado, misma altura) y 375px (apilado, ancho completo); axe-core sin violaciones; 1438/1438. SW v191 → v192. **Pendiente (Tarea A):** rebalancear el bento para el caso sin pendientes (reaparece el hueco a la derecha del hero cuando la tarjeta está oculta).
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | `#panel-gastos-pendientes` movido dentro del `.bento` tras el hero, ahora `class="bento__cell"` (span 4 desktop / span 1 mobile). |
-| `styles/layout.css` | Celda `#panel-gastos-pendientes` bare + nudge interno `flex:1` + `align-content:center` + radius xl. |
-| `service-worker.js` | `CACHE_NAME` v191 → v192. |
 
 ---
 

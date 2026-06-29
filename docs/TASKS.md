@@ -1,7 +1,7 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-13
+> Última actualización: 2026-06-28
 
 ---
 
@@ -37,9 +37,8 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**ADR 011 en curso: rediseño de simulación de deudas.** S1 cerrado (extra mensual siempre visible + resumen de impacto en vivo). Pendientes:
-- **S2** - Eliminar botón "Simular" por deuda (absorber en el panel unificado).
-- **S3** - Limpiar dead code del acordeón eliminado (CSS, acciones).
+**ADR 011 en curso: rediseño de simulación de deudas.** S1 y S2 cerrados (extra mensual siempre visible + resumen de impacto en vivo; eliminado el botón "Simular" por deuda y su maquinaria). Pendientes:
+- **S3** - Limpiar dead code residual del acordeón eliminado (CSS, acciones).
 - **S4** - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
 - **S5** - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
 

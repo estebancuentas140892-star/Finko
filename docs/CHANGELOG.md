@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(deudas): eliminado el botón "Simular" por deuda (ADR 011, S2) · 2026-06-28
+
+Segundo slice del rediseño de simulación de deudas (ADR 011). Cada fila de deuda tenía un botón "Simular" que abría, sobre el modal de abono, una simulación individual de solo lectura (`renderSimulacion`): el usuario escribía un extra mensual y veía meses/intereses ahorrados para esa deuda aislada. Esa superficie sobraba: solo mostraba una deuda, sin reflejar cómo interactúan entre sí (cuotas que se liberan, volcamiento del extra a la siguiente), y el panel unificado de S1 (extra mensual siempre visible + resumen de impacto sobre todo el portafolio) ya cubre el caso con más contexto. Se eliminó el botón de la lista y toda su maquinaria asociada, dejando cero dead code: la acción delegada `simular-abono`, los handlers `_abrirSimulacion` y `_actualizarSimulacion`, la vista `renderSimulacion` y su re-export en el barrel, las 5 reglas CSS `.sim-resultado*` (que solo usaba ese handler) y los imports que quedaban huérfanos (`renderSimulacion`, `simularPagoDeuda` y `formatearDuracion` en index.js; `tasaEADe` en formularios.js). El modal compartido `modal-abono` sigue intacto para "Abonar". Ningún test (unit ni E2E) referenciaba la simulación por deuda, así que el conteo no cambia. Verificado: 1450/1450 unit + integración, 57/57 E2E, y render de `renderListaCompromisos` en happy-dom con una deuda sembrada (contiene `data-action="abrir-abono"` y "Abonar", no contiene `simular-abono` ni "Simular"). SW v196 → v197.
+
+- **`modules/dominio/compromisos/views/lista.js`**: eliminado el `<button data-action="simular-abono">Simular</button>` de la fila de deuda; queda solo "Abonar".
+- **`modules/dominio/compromisos/index.js`**: eliminados los handlers `_abrirSimulacion` y `_actualizarSimulacion`, la línea `registrarAccion('simular-abono', ...)` y los imports sin uso `renderSimulacion`, `simularPagoDeuda` y `formatearDuracion`.
+- **`modules/dominio/compromisos/view.js`**: removido `renderSimulacion` del re-export de `formularios.js`.
+- **`modules/dominio/compromisos/views/formularios.js`**: eliminada la función `renderSimulacion` y el import `tasaEADe` (ya sin uso en el archivo).
+- **`styles/components/domain.css`**: eliminado el bloque "SIMULACIÓN DE ABONO EXTRA" (`.sim-resultado`, `.sim-resultado__fila`, `--destaco`, `__label`, `__ahorro`).
+- **`service-worker.js`**: v196 → v197.
+
+---
+
 ### feat(deudas): extra mensual siempre visible con resumen de impacto en vivo (ADR 011, S1) · 2026-06-28
 
 Primer slice del rediseño de simulación de deudas (ADR 011). El input de "pago extra mensual" vivía escondido en un acordeón colapsado al fondo de la card de estrategia: el usuario escribía un valor y no veía nada hasta elegir Avalancha o Bola de nieve. Ahora el input está siempre visible arriba de la card de estrategia, y debajo aparece un **resumen de impacto** que compara "sin extra" vs "con extra" al instante: nueva fecha de fin, meses menos, intereses ahorrados. El resumen se actualiza en vivo (evento `input`, sin perder foco: solo reemplaza el div del resumen) y la card completa se recalcula al salir del campo (`change`). La función `renderResumenExtra` compara dos resultados de `compararEstrategias` (extra=0 vs extra=N) y renderiza un banner: invitación si extra=0, banner verde con impacto si hay ahorro, banner neutro si no hay mejora significativa, vacío si el plan es inviable (el diagnóstico lo cubre). Se eliminó el acordeón (`expandidoExtra`, `toggle-extra-estrategia`, `_toggleExtraEstrategia`, CSS de `.estrategia-card__link` y `.estrategia-card__acordeon*`). E2E actualizado (ya no abre acordeón). Verificado: 4 tests nuevos de `renderResumenExtra` + E2E corregido. 1446 → 1450 tests. SW v195 → v196.

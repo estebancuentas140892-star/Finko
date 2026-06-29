@@ -12,7 +12,6 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { FRECUENCIAS }   from '../../../core/constants.js';
-import { tasaEADe }      from '../logic.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
@@ -232,45 +231,4 @@ export function renderFormDeuda(tipo, deuda = null) {
         <button type="submit" class="btn btn-primary">${modoEdit ? 'Actualizar deuda' : 'Guardar deuda'}</button>
       </div>
     </form>`;
-}
-
-// ── SIMULACIÓN DE ABONO EXTRA ───────────────────────────────────
-
-/**
- * Panel de solo lectura para simular el impacto de un abono extra mensual.
- * El input `#sim-extra` dispara la actualización del resultado `#sim-resultado`
- * desde `index.js`.
- *
- * @param {import('../../../core/state.js').Compromiso} deuda
- * @returns {string}
- */
-export function renderSimulacion(deuda) {
-  const saldo = Number(deuda.saldoTotal) || 0;
-  const cuota = Number(deuda.cuotaMensual) || 0;
-  const tasa  = tasaEADe(deuda);
-
-  const tasaLabel = deuda.tasa > 0
-    ? (deuda.tasaUnidad === 'mensual'
-        ? `${Math.round(deuda.tasa * 100)}% mensual`
-        : `${Math.round(tasa * 100)}% EA`)
-    : 'sin interés';
-
-  return `
-    <div id="panel-simulacion"
-         data-saldo="${saldo}" data-cuota="${cuota}" data-tasa="${tasa}">
-      <p class="form-hint form-hint--muted">
-        Saldo: <strong>${f(saldo)}</strong> · Cuota: ${f(cuota)}/mes · ${_esc(tasaLabel)}
-      </p>
-      <div class="form-group">
-        <label for="sim-extra" class="label">Monto extra mensual (COP)</label>
-        <input id="sim-extra" type="number" class="input"
-               min="1" step="10000" placeholder="Ej. 100000"
-               inputmode="numeric" autocomplete="off" />
-        <p class="form-hint">¿Cuánto podrías pagar de más cada mes, además de tu cuota?</p>
-      </div>
-      <div id="sim-resultado" aria-live="polite"></div>
-      <div class="modal__footer">
-        <button type="button" class="btn btn-ghost" data-action="modal-close">Cerrar</button>
-      </div>
-    </div>`;
 }

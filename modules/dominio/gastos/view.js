@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
-import { CATEGORIAS_GASTO_USUARIO, CATEGORIAS_TIPICAMENTE_FIJAS, CATEGORIA_EMOJI } from '../../core/constants.js';
+import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos } from './logic.js';
 
