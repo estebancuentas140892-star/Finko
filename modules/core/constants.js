@@ -438,6 +438,41 @@ export const CATEGORIA_AGENDA_EMOJI = {
   'Otro':               '📦',
 };
 
+/**
+ * Tipos de obligación predefinidos para deudas (Compromiso tipo='deuda-entidad'|'deuda-personal').
+ * El orden define el del selector en el formulario de nueva deuda.
+ */
+export const CATEGORIAS_DEUDA = [
+  'Tarjeta de crédito',
+  'Crédito de consumo',
+  'Crédito hipotecario',
+  'Crédito vehicular',
+  'Crédito educativo',
+  'Libranza',
+  'Crédito rotativo',
+  'Sobregiro',
+  'Microcrédito',
+  'Préstamo personal',
+  'Gota a gota',
+  'Otro',
+];
+
+/** Emoji visual por tipo de obligación de deuda. Usar solo en UI; nunca en el valor almacenado. */
+export const CATEGORIA_DEUDA_EMOJI = {
+  'Tarjeta de crédito':  '💳',
+  'Crédito de consumo':  '💵',
+  'Crédito hipotecario': '🏠',
+  'Crédito vehicular':   '🚗',
+  'Crédito educativo':   '🎓',
+  'Libranza':            '🧾',
+  'Crédito rotativo':    '🔄',
+  'Sobregiro':           '📉',
+  'Microcrédito':        '🏪',
+  'Préstamo personal':   '🤝',
+  'Gota a gota':         '💧',
+  'Otro':                '📦',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

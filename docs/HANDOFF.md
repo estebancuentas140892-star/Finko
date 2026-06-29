@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(agenda): categorías predefinidas para gastos fijos)
+> Última actualización: 2026-06-29 (feat(compromisos): categorías predefinidas para deudas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1539/1539 verdes |
+| Tests unitarios + integración | 1558/1558 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(compromisos): categorías predefinidas para deudas (tipo de obligación) · 2026-06-29
+
+Campo **tipo de obligación** en el formulario de nueva deuda (entidad y personal): 12 categorías con emoji (💳 Tarjeta de crédito, 💵 Crédito de consumo, 🏠 Crédito hipotecario, 🚗 Crédito vehicular, 🎓 Crédito educativo, 🧾 Libranza, 🔄 Crédito rotativo, 📉 Sobregiro, 🏪 Microcrédito, 🤝 Préstamo personal, 💧 Gota a gota, 📦 Otro). Catálogo único (`CATEGORIAS_DEUDA` + `CATEGORIA_DEUDA_EMOJI`): el mismo selector sirve para `deuda-entidad` y `deuda-personal`, sin filtrar por tipo. Validado/normalizado en `compromisos/logic.js`, exclusivo de las ramas de deuda (los fijos siguen usando `CATEGORIAS_AGENDA`, sin relación). Migración idempotente v17 → v18 (`categoria: null` en deudas existentes). El selector aparece en `renderFormDeuda` y el emoji + nombre en la card de la lista de deudas ("💳 Tarjeta de crédito · Deuda con entidad · 28%"). **Cierra el backlog "Mis cuentas: ajustes a ingresos": las 3 categorías predefinidas (Ingresos, Agenda, Deudas) quedan completas.** Verificado: 21 tests nuevos (1558 total) en `compromisos.test.js` y `storage.test.js`; lint limpio, 57/57 E2E. SW v211 → v212.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_DEUDA` (12 categorías) + `CATEGORIA_DEUDA_EMOJI`. |
+| `modules/core/storage.js` | Migración v17 → v18: `categoria: null` en deudas existentes. |
+| `modules/core/state.js` | Typedef `Compromiso.categoria` documentado para ambos catálogos. |
+| `modules/dominio/compromisos/logic.js` | `validarCompromiso` + `normalizarCompromiso` con categoría (rama deuda). |
+| `modules/dominio/compromisos/views/formularios.js` | Selector de categoría en `renderFormDeuda`. |
+| `modules/dominio/compromisos/views/lista.js` | Emoji + nombre en `_renderCompromisoItem`. |
+| `tests/unit/compromisos.test.js`, `tests/unit/storage.test.js` | 21 tests nuevos. |
+| `service-worker.js` | v211 → v212. |
+
+---
 
 ### feat(agenda): categorías predefinidas para gastos fijos · 2026-06-29
 
@@ -96,16 +113,6 @@ Se agregó un campo **categoría** al registrar un ingreso, con 12 categorías p
 | `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle` (show/hide subsidio, pre-llenado). |
 | `tests/unit/tesoreria.test.js` | 12 tests nuevos. |
 | `service-worker.js` | v207 → v208. |
-
----
-
-### docs: ADR 013, distribución "Automático inteligente" (MC.6, diseño) · 2026-06-29
-
-Tarea de diseño (sin código). El modo Automático de "¿Cómo distribuir mi dinero?" hoy solo adapta según los gastos fijos y, en el caso común, devuelve 50/30/20 fijo; además la barra duplica "Automático" y "50/30/20". El ADR diseña su evolución. Decisiones con el usuario (2 preguntas): alcance = sigue siendo distribución en 3 grupos pero con % calculados desde los datos reales (el reparto por destino se queda en MC.4 / futuro MC.7); duplicidad = Automático por defecto y los 3 presets fijos pasan a un grupo secundario "Métodos clásicos". El motor pasa a un modelo de pisos por prioridad: Necesidades = gastos fijos + cuotas mínimas de deuda; Ahorro = prioridades en orden (cerrar fondo, abono extra a deudas caras, metas/apartados con plazo, o base sana); Estilo de vida = lo que queda con piso de sostenibilidad. Transparencia obligatoria (Automático explica el porqué). Sin cambios de schema, lógica pura. 3 slices: MC.6a (motor), MC.6b (barra de presets), MC.6c (señales más ricas, opcional). Sin código ni tests aún.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/013-distribucion-automatica-inteligente.md` | ADR nuevo (modelo de pisos por prioridad, resolución de la duplicidad, transparencia, alternativas, consecuencias, 3 slices). |
 
 ---
 

@@ -6,7 +6,7 @@
  * Tipos: 'fijo' (arriendo, servicio), 'deuda' (cuota), 'agenda' (próximo pago puntual).
  */
 
-import { FRECUENCIAS, CATEGORIAS_AGENDA } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA } from '../../core/constants.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -227,6 +227,9 @@ export function validarCompromiso(datos) {
     if (isNaN(cuota) || cuota <= 0) {
       errores.push('La cuota mensual debe ser un número mayor a 0.');
     }
+    if (datos.categoria && !CATEGORIAS_DEUDA.includes(datos.categoria)) {
+      errores.push('La categoría seleccionada no es válida.');
+    }
     const tasa = Number(datos.tasa);
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null;
     if (datos.tipo === 'deuda-entidad') {
@@ -301,11 +304,11 @@ export function detectarDeudaCreciente(datos) {
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
  * v6:
- * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null } (categoria desde v17)
- * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, tasa|null, tasaUnidad='EA' }
+ * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null } (categoria desde v17, CATEGORIAS_AGENDA)
+ * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA' }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
- *                       que en una entidad casi nunca es cierto)
- * - 'deuda-personal' → { saldoTotal, cuotaMensual, tasa?, tasaUnidad? }
+ *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
+ * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad? }
  *                       (sin tasa = 0: el form dice "si no cobra interés, deja en blanco")
  *
  * @param {Record<string, string>} datos
@@ -330,6 +333,9 @@ export function normalizarCompromiso(datos) {
   if (esDeuda(datos.tipo)) {
     base.saldoTotal   = Number(datos.saldoTotal);
     base.cuotaMensual = Number(datos.cuotaMensual);
+    base.categoria    = datos.categoria && CATEGORIAS_DEUDA.includes(datos.categoria)
+      ? datos.categoria
+      : null;
     const tasaPct = Number(datos.tasa);
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null
       && !isNaN(tasaPct) && tasaPct >= 0;

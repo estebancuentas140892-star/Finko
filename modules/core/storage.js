@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 17;
+const SCHEMA_VERSION = 18;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -267,6 +267,21 @@ function _migrate(raw) {
     if (Array.isArray(data.compromisos)) {
       for (const c of data.compromisos) {
         if (c && typeof c === 'object' && c.tipo === 'fijo' && !('categoria' in c)) {
+          c.categoria = null;
+        }
+      }
+    }
+  }
+
+  // v17 → v18: se agrega `categoria` (tipo de obligación) a las deudas
+  // (Compromiso tipo='deuda-entidad'|'deuda-personal'). Las deudas existentes
+  // quedan con categoria: null (dato no capturado aún).
+  // Idempotente: si categoria ya está presente en el item, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 18) {
+    if (Array.isArray(data.compromisos)) {
+      for (const c of data.compromisos) {
+        const esDeuda = c?.tipo === 'deuda-entidad' || c?.tipo === 'deuda-personal';
+        if (c && typeof c === 'object' && esDeuda && !('categoria' in c)) {
           c.categoria = null;
         }
       }

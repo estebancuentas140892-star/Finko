@@ -22,6 +22,7 @@ import {
   ICONO_TIPO,
 } from '../logic.js';
 import { getEstrategiaUI } from './estrategia.js';
+import { CATEGORIA_DEUDA_EMOJI } from '../../../core/constants.js';
 
 /**
  * Renderiza la lista de deudas en `#lista-compromisos`.
@@ -126,7 +127,10 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const subtitle = cuota > 0
     ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
     : `${frec} · día ${compromiso.diaPago}`;
-  const contexto = `${label} · ${tasaMostrada}`;
+  const catLabel = compromiso.categoria
+    ? `${CATEGORIA_DEUDA_EMOJI[compromiso.categoria] ?? ''} ${_esc(compromiso.categoria)} · `
+    : '';
+  const contexto = `${catLabel}${label} · ${tasaMostrada}`;
 
   const ordenBadge = ordenEstrategia
     ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`

@@ -76,8 +76,6 @@ import { SMMLV } from './constants.js';
  * @property {string} fechaCreacion      ISO 8601.
  *
  * @property {number} [monto]            COP. Cuota fija mensual. Solo para tipo='fijo'.
- * @property {string|null} [categoria]   Una de CATEGORIAS_AGENDA, o null si no se eligió.
- *                                       Solo para tipo='fijo' (v17).
  *
  * @property {number} [saldoTotal]       COP. Lo que aún se debe en total. Solo para
  *                                       deudas. Se descuenta al pagar (manual).
@@ -86,6 +84,10 @@ import { SMMLV } from './constants.js';
  * @property {number} [tasa]             Decimal 0-1 según `tasaUnidad`. Solo deudas.
  * @property {string} [tasaUnidad]       'EA' (anual, banco/tarjeta) o 'mensual'
  *                                       (gota a gota, préstamo personal). Solo deudas.
+ *
+ * @property {string|null} [categoria]   Para tipo='fijo': una de CATEGORIAS_AGENDA (v17).
+ *                                       Para deudas: una de CATEGORIAS_DEUDA (v18).
+ *                                       null si no se eligió.
  *
  * @property {string}  [cuentaId]        FK a Cuenta.id. Solo se setea cuando
  *                                       el compromiso fue creado automáticamente

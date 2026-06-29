@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(compromisos): categorías predefinidas para deudas (tipo de obligación) · 2026-06-29
+
+Se agregó un campo **tipo de obligación** al formulario de nueva deuda (paso 2, tanto entidad como personal), con 12 categorías predefinidas y emoji: 💳 Tarjeta de crédito, 💵 Crédito de consumo, 🏠 Crédito hipotecario, 🚗 Crédito vehicular, 🎓 Crédito educativo, 🧾 Libranza, 🔄 Crédito rotativo, 📉 Sobregiro, 🏪 Microcrédito, 🤝 Préstamo personal, 💧 Gota a gota, 📦 Otro. Catálogo único (`CATEGORIAS_DEUDA` + `CATEGORIA_DEUDA_EMOJI` en `constants.js`): el mismo selector aparece para `deuda-entidad` y `deuda-personal`, sin filtrar por tipo, ya que varias categorías son ambiguas según quién presta (ej. "Préstamo personal" puede ser de un familiar o de una fintech). El campo se valida y normaliza en `compromisos/logic.js` (`validarCompromiso`, `normalizarCompromiso`), exclusivo de las ramas de deuda (los gastos fijos siguen usando su propio catálogo `CATEGORIAS_AGENDA`, sin relación). Migración idempotente v17 → v18: las deudas existentes quedan con `categoria: null`. El selector aparece en `renderFormDeuda` (preselecciona la categoría guardada al editar) y el emoji + nombre se muestran en la card de la lista de deudas, antepuesto al contexto tipo/tasa ("💳 Tarjeta de crédito · Deuda con entidad · 28%").
+
+Cierra el backlog "Mis cuentas: ajustes a ingresos" (2026-06-29): las 3 categorías predefinidas (Ingresos, Agenda, Deudas) quedan completas.
+
+Verificado: 21 tests de lógica y render nuevos (1539 → 1558 unit + integración): catálogo y mapa de emoji completos, `validarCompromiso`/`normalizarCompromiso` con categoría válida/inválida/ausente para ambos tipos de deuda, render del selector (incluida la preselección en edición) y de la card de la lista con y sin categoría (`compromisos.test.js`), y migración v17→v18 idempotente + exclusión de gastos fijos (`storage.test.js`). Lint limpio, 57/57 E2E sin regresiones. SW v211 → v212.
+
+- **`modules/core/constants.js`**: `CATEGORIAS_DEUDA` (12 categorías) + `CATEGORIA_DEUDA_EMOJI`.
+- **`modules/core/storage.js`**: migración v17 → v18: `categoria: null` en deudas (`deuda-entidad`/`deuda-personal`) existentes; `SCHEMA_VERSION` 17 → 18.
+- **`modules/core/state.js`**: typedef `Compromiso.categoria` documentado para ambos catálogos (fijo → `CATEGORIAS_AGENDA`, deuda → `CATEGORIAS_DEUDA`).
+- **`modules/dominio/compromisos/logic.js`**: `validarCompromiso` valida categoría en la rama `esDeuda`; `normalizarCompromiso` guarda categoría o `null` para deudas.
+- **`modules/dominio/compromisos/views/formularios.js`**: selector de categoría en `renderFormDeuda`, preselección en edición.
+- **`modules/dominio/compromisos/views/lista.js`**: emoji + nombre de categoría en el contexto de `_renderCompromisoItem`.
+- **`tests/unit/compromisos.test.js`**, **`tests/unit/storage.test.js`**: 21 tests nuevos; 1 test existente actualizado para reflejar el cascade de migraciones hasta v18.
+- **`service-worker.js`**: v211 → v212.
+
+---
+
 ### feat(agenda): categorías predefinidas para gastos fijos · 2026-06-29
 
 Se agregó un campo **categoría** al formulario "Nuevo gasto fijo" de Agenda, con 13 categorías predefinidas y emoji: 🏠 Arriendo, 🏢 Administración, 💡 Servicios públicos, 🌐 Internet, 📱 Telefonía, 🎬 Streaming, 🛡️ Seguros, 📚 Educación, 🏋️ Gimnasio, 💳 Cuota de manejo, 🚗 Transporte, 🐾 Mascotas, 📦 Otro. La Agenda no tiene almacenamiento propio (es una vista calendario sobre `S.compromisos`), así que el campo vive en el `Compromiso` con `tipo='fijo'`: nuevo catálogo `CATEGORIAS_AGENDA` + mapa `CATEGORIA_AGENDA_EMOJI` en `constants.js`, validados/normalizados en `compromisos/logic.js` (`validarCompromiso`, `normalizarCompromiso`), exclusivos de `tipo='fijo'` (las deudas no exponen este campo). Migración idempotente v16 → v17: los gastos fijos existentes quedan con `categoria: null`. El selector aparece en el formulario de Agenda (`renderFormGastoFijo`, campo opcional) y el emoji + nombre se muestran en el detalle del día junto a la frecuencia ("Gasto fijo · Mensual · 🌐 Internet").

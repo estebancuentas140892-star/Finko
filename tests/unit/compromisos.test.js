@@ -29,10 +29,11 @@ import {
   LABEL_TIPO,
   ICONO_TIPO,
 } from '../../modules/dominio/compromisos/logic.js';
-import { renderFormAbono } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
+import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderResumenExtra } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { S } from '../../modules/core/state.js';
-import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -111,6 +112,36 @@ describe('CATEGORIA_AGENDA_EMOJI', () => {
   it('no tiene entradas huérfanas fuera del catálogo', () => {
     for (const key of Object.keys(CATEGORIA_AGENDA_EMOJI)) {
       expect(CATEGORIAS_AGENDA).toContain(key);
+    }
+  });
+});
+
+// ── CATEGORIAS_DEUDA / CATEGORIA_DEUDA_EMOJI ──────────────────────
+
+describe('CATEGORIAS_DEUDA', () => {
+  it('contiene 12 tipos de obligación predefinidos', () => {
+    expect(CATEGORIAS_DEUDA).toHaveLength(12);
+  });
+
+  it('todas son strings no vacíos', () => {
+    for (const c of CATEGORIAS_DEUDA) {
+      expect(typeof c).toBe('string');
+      expect(c.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('CATEGORIA_DEUDA_EMOJI', () => {
+  it('tiene un emoji para cada categoría de CATEGORIAS_DEUDA', () => {
+    for (const c of CATEGORIAS_DEUDA) {
+      expect(CATEGORIA_DEUDA_EMOJI[c]).toBeTruthy();
+      expect(typeof CATEGORIA_DEUDA_EMOJI[c]).toBe('string');
+    }
+  });
+
+  it('no tiene entradas huérfanas fuera del catálogo', () => {
+    for (const key of Object.keys(CATEGORIA_DEUDA_EMOJI)) {
+      expect(CATEGORIAS_DEUDA).toContain(key);
     }
   });
 });
@@ -430,12 +461,28 @@ describe('normalizarCompromiso()', () => {
     expect(result.categoria).toBeNull();
   });
 
-  it('para deudas no agrega el campo categoria', () => {
+  it('para deudas guarda la categoría válida del catálogo de obligación', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Gota a gota',
+    };
+    expect(normalizarCompromiso(datos).categoria).toBe('Gota a gota');
+  });
+
+  it('para deudas sin categoría, queda categoria=null', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '5000000', cuotaMensual: '300000',
+    };
+    expect(normalizarCompromiso(datos).categoria).toBeNull();
+  });
+
+  it('para deudas, una categoría del catálogo de Agenda (fijo) no es válida', () => {
     const datos = {
       ...datosFormValidos, tipo: 'deuda-personal',
       saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Internet',
     };
-    expect(normalizarCompromiso(datos)).not.toHaveProperty('categoria');
+    expect(normalizarCompromiso(datos).categoria).toBeNull();
   });
 });
 
@@ -502,6 +549,22 @@ describe('validarCompromiso() - reglas de deuda (v6)', () => {
       saldoTotal: '-9999', cuotaMensual: '-100', tasa: '-1',
     };
     expect(validarCompromiso(datos)).toEqual([]);
+  });
+
+  it('categoria es opcional para deudas: sin categoria no hay error', () => {
+    expect(validarCompromiso(datosEntidad)).toEqual([]);
+  });
+
+  it('acepta cualquier categoría del catálogo de obligación para deuda-entidad y deuda-personal', () => {
+    for (const cat of CATEGORIAS_DEUDA) {
+      expect(validarCompromiso({ ...datosEntidad, categoria: cat })).toEqual([]);
+      expect(validarCompromiso({ ...datosPersonal, categoria: cat })).toEqual([]);
+    }
+  });
+
+  it('reporta error si la categoría no está en el catálogo de obligación', () => {
+    const errores = validarCompromiso({ ...datosEntidad, categoria: 'Inventada' });
+    expect(errores.some(e => /categor/i.test(e))).toBe(true);
   });
 });
 
@@ -1499,6 +1562,72 @@ describe('renderFormAbono() - formulario', () => {
     expect(html).toContain('cuenta-sel__lista');
     expect(html).toContain('value="c1"');
     expect(html).toContain('value="c2"');
+  });
+});
+
+// ── renderFormDeuda() - selector de tipo de obligación ────────────
+
+describe('renderFormDeuda() - selector de categoría', () => {
+  it('incluye un <option> con emoji para cada categoría de CATEGORIAS_DEUDA', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    for (const c of CATEGORIAS_DEUDA) {
+      expect(html).toContain(`${CATEGORIA_DEUDA_EMOJI[c]} ${c}`);
+    }
+  });
+
+  it('aparece igual para deuda-entidad y deuda-personal (catálogo único)', () => {
+    const htmlEntidad  = renderFormDeuda('deuda-entidad');
+    const htmlPersonal = renderFormDeuda('deuda-personal');
+    expect(htmlEntidad).toContain('💧 Gota a gota');
+    expect(htmlPersonal).toContain('💳 Tarjeta de crédito');
+  });
+
+  it('en modo edición preselecciona la categoría guardada', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', activo: true,
+    };
+    const html = renderFormDeuda('deuda-entidad', deuda);
+    expect(html).toContain('value="Tarjeta de crédito" selected');
+  });
+
+  it('en modo creación ninguna categoría viene preseleccionada', () => {
+    const html = renderFormDeuda('deuda-personal');
+    const selectMatch = html.match(/<select id="comp-categoria"[\s\S]*?<\/select>/);
+    expect(selectMatch).not.toBeNull();
+    expect(selectMatch[0]).not.toContain('selected');
+  });
+});
+
+// ── renderListaCompromisos() - categoría en el contexto ───────────
+
+describe('renderListaCompromisos() - categoría en el contexto', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+  });
+
+  it('muestra el emoji y el nombre de la categoría en la card de la deuda', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    }];
+    renderListaCompromisos();
+    const html = document.getElementById('lista-compromisos').innerHTML;
+    expect(html).toContain('💳 Tarjeta de crédito');
+  });
+
+  it('sin categoría no antepone nada al contexto (tipo · tasa)', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: null, tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    }];
+    renderListaCompromisos();
+    const html = document.getElementById('lista-compromisos').innerHTML;
+    expect(html).toContain('Deuda con entidad · 28%');
   });
 });
 

@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1539/1539 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **categorías predefinidas para Agenda** (13 categorías de gastos fijos + emoji, schema v17). Antes: **MC.9** iconografía en categorías de ingresos. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1558/1558 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **categorías predefinidas para Deudas** (12 tipos de obligación + emoji, schema v18); cierra el backlog "Mis cuentas: ajustes a ingresos". Antes: categorías predefinidas para Agenda. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -87,7 +87,7 @@ Seguimiento a las categorías de ingreso recién entregadas. Arrancar por el bug
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:
 - ✅ Categorías predefinidas para Ingresos (12 categorías + automatización "Salario mínimo" con subsidio de transporte) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ Categorías predefinidas para Agenda (13 categorías de gastos fijos + emoji, schema v17) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- Categorías predefinidas para Deudas (12 tipos de obligación).
+- ✅ Categorías predefinidas para Deudas (12 tipos de obligación + emoji, schema v18) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md). **Backlog "Mis cuentas: ajustes a ingresos" + las 3 categorías predefinidas completas.**
 
 Pendientes no urgentes (mantenimiento):
 

@@ -638,7 +638,7 @@ describe('Migración v16 → v17 (categoria en gastos fijos de Agenda)', () => {
     expect(S.compromisos[0].categoria).toBe('Internet');
   });
 
-  it('no agrega categoria a deudas (campo exclusivo de tipo=fijo)', () => {
+  it('la migración v16→v17 en sí no toca deudas (lo hace v17→v18, ver siguiente describe)', () => {
     const v16 = {
       ...createInitialState(),
       _version: 16,
@@ -651,12 +651,77 @@ describe('Migración v16 → v17 (categoria en gastos fijos de Agenda)', () => {
 
     loadData();
 
-    expect(S.compromisos[0]).not.toHaveProperty('categoria');
+    // El cascade de migraciones llega hasta v18, que sí agrega categoria: null
+    // a las deudas (no es que v16→v17 la haya tocado).
+    expect(S.compromisos[0].categoria).toBeNull();
   });
 
   it('sin compromisos en el snapshot no lanza', () => {
     const v16 = { ...createInitialState(), _version: 16, compromisos: [] };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v16));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.compromisos).toEqual([]);
+  });
+});
+
+describe('Migración v17 → v18 (categoria/tipo de obligación en deudas)', () => {
+  it('deudas (entidad y personal) sin categoria quedan con categoria: null', () => {
+    const v17 = {
+      ...createInitialState(),
+      _version: 17,
+      compromisos: [
+        { id: 'c1', descripcion: 'Tarjeta Visa', saldoTotal: 2_000_000, cuotaMensual: 200_000,
+          frecuencia: 'Mensual', diaPago: 5, tipo: 'deuda-entidad', activo: true },
+        { id: 'c2', descripcion: 'Préstamo de mamá', saldoTotal: 500_000, cuotaMensual: 50_000,
+          frecuencia: 'Mensual', diaPago: 10, tipo: 'deuda-personal', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v17));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBeNull();
+    expect(S.compromisos[1].categoria).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('deudas con categoria ya seteada no se sobreescriben (idempotente)', () => {
+    const v17 = {
+      ...createInitialState(),
+      _version: 17,
+      compromisos: [
+        { id: 'c1', descripcion: 'Tarjeta Visa', saldoTotal: 2_000_000, cuotaMensual: 200_000,
+          frecuencia: 'Mensual', diaPago: 5, tipo: 'deuda-entidad', activo: true,
+          categoria: 'Tarjeta de crédito' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v17));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBe('Tarjeta de crédito');
+  });
+
+  it('no agrega categoria a gastos fijos (campo exclusivo de deudas en esta migración)', () => {
+    const v17 = {
+      ...createInitialState(),
+      _version: 17,
+      compromisos: [
+        { id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, frecuencia: 'Mensual',
+          diaPago: 5, tipo: 'fijo', activo: true, categoria: null },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v17));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBeNull();
+  });
+
+  it('sin compromisos en el snapshot no lanza', () => {
+    const v17 = { ...createInitialState(), _version: 17, compromisos: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v17));
 
     expect(() => loadData()).not.toThrow();
     expect(S.compromisos).toEqual([]);

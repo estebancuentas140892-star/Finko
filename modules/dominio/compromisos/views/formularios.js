@@ -11,7 +11,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { FRECUENCIAS }   from '../../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../../core/constants.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
@@ -170,6 +170,13 @@ export function renderFormDeuda(tipo, deuda = null) {
   const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
 
+  const catOpts = CATEGORIAS_DEUDA
+    .map(c => {
+      const selCat = modoEdit ? deuda.categoria : null;
+      return `<option value="${_esc(c)}"${c === selCat ? ' selected' : ''}>${CATEGORIA_DEUDA_EMOJI[c] ?? ''} ${_esc(c)}</option>`;
+    })
+    .join('');
+
   const volverBtn = modoEdit
     ? `<button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>`
     : `<button type="button" class="btn btn-ghost" data-action="comp-volver-chooser">← Volver</button>`;
@@ -183,6 +190,14 @@ export function renderFormDeuda(tipo, deuda = null) {
         <input id="comp-descripcion" name="descripcion" class="input" type="text"
                placeholder="${_esc(descPlaceholder)}" required aria-required="true"
                autocomplete="off" value="${vDesc}" />
+      </div>
+
+      <div class="form-group">
+        <label for="comp-categoria" class="label">Tipo de obligación</label>
+        <select id="comp-categoria" name="categoria" class="input">
+          <option value="">Seleccionar…</option>
+          ${catOpts}
+        </select>
       </div>
 
       <div class="form-group">
