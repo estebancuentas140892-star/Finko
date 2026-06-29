@@ -1,7 +1,7 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-28
+> Última actualización: 2026-06-29
 
 ---
 
@@ -80,7 +80,7 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 
 Seguimiento a las categorías de ingreso recién entregadas. Arrancar por el bug.
 
-- **MC.8 (BUG, prioritario)** - **Corregir el cálculo del salario mínimo según la frecuencia.** Hoy, al elegir la categoría "Salario mínimo", la automatización pre-llena `monto` con el valor **mensual** completo (SMMLV + auxilio). Pero `monto` es el valor **por período** y `estimarSalarioMensual` multiplica por `_FACTOR_MENSUAL` (Quincenal × 2, Semanal × 4.33): si el usuario elige Quincenal, el ingreso mensual estimado queda **al doble**. Fix: tratar el salario mínimo como un **ancla mensual** y dividir por la frecuencia de pago para obtener el monto por período (Mensual = completo, Quincenal = /2, Semanal = /4.33). La automatización debe reaccionar **también al cambiar la frecuencia** (hoy solo reacciona a la categoría y al checkbox de subsidio), no solo al seleccionar la categoría. Tocar: `tesoreria/index.js` (`_attachCategoriaToggle`, acoplar al `change` de frecuencia), posible helper puro en `logic.js` (dividir valor mensual por frecuencia, reusando el factor) + tests. Modelo sugerido: Opus 4.8 - Bajo (bug sutil en lógica financiera con repro clara).
+✅ **MC.8 (BUG)** - Corregido el cálculo del salario mínimo según la frecuencia: el salario mínimo se trata como ancla mensual y se divide por la frecuencia para pre-llenar el monto por período (helper puro `montoSalarioMinimoPorPeriodo`); la automatización ahora reacciona también al cambiar la frecuencia. 7 tests nuevos (incluye regresión). SW v208 → v209 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **MC.9 (mejora UI)** - **Iconografía en las categorías de ingresos.** Cada categoría con un emoji representativo, consistente con el resto de la app (patrón de los íconos de categorías de gasto en `constants.js`). Mostrar el ícono en el selector del formulario (texto de la `<option>`) y en la lista de ingresos junto al nombre de la categoría. Íconos sugeridos por el usuario: 💼 Salario, 🏠 Arriendo, 💵 Honorarios, 🎁 Bonificación, 📈 Rendimientos, 🤝 Comisión, 🪙 Subsidio, 📦 Otro. Faltan por definir: Salario mínimo, Pensión, Cuota, Venta. Tocar: `constants.js` (mapa categoría → emoji), `tesoreria/view.js` (selector + lista) + tests de render. Modelo sugerido: Sonnet 4.6 - Bajo (UI aislada, sin lógica nueva).
 
@@ -96,3 +96,38 @@ Pendientes no urgentes (mantenimiento):
 **E.2-2027** - Actualizar SMMLV + UVT en enero 2027. Cambio mecánico en `constants.js`. Modelo: Haiku 4.5.
 
 **Mejora candidata (resumen V.8):** retroalimentación del usuario en el celular puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas (mencionado como opcional en ADR 008). Esperar feedback antes de iterar.
+
+---
+
+### Backlog del usuario "Explicar el propósito de cada sección" (2026-06-29)
+
+**Visión.** Cada sección debe responder en pocos segundos una pregunta simple para el usuario nuevo: **¿qué problema me ayuda a resolver esta sección?**. Hoy las funciones son buenas pero alguien que entra por primera vez no entiende de inmediato para qué sirve cada apartado ni el beneficio que obtiene. La meta no es llenar la app de texto, sino dar un mensaje breve, cercano y fácil de entender que genere contexto, eduque y motive mejores hábitos. Finko no solo registra movimientos: también explica el propósito de cada herramienta.
+
+**Tono obligatorio** (ADN regla 11 + estilo de escritura regla 7.1): voz "tú", cercano y profesional, sin jerga, "dinero" (no "plata"), cero guion largo. Estructura sugerida del mensaje: (1) una pregunta gancho que toca un dolor real, (2) una o dos frases que nombran el problema, (3) una frase de cómo Finko ayuda.
+
+**Copy de referencia aprobado por el usuario (Apartados):**
+> ¿Te ha pasado que, de un momento a otro, debes pagar el SOAT, comprar el alimento de tu mascota, reponer tus productos de aseo personal o cubrir otro gasto importante que no esperabas? Aunque son gastos previsibles, muchas veces olvidamos prepararnos y terminamos usando nuestros ahorros, aplazando metas o endeudándonos. Apartados te ayuda a evitarlo: destina una pequeña parte de tus ingresos para cada gasto futuro y, cuando llegue el momento de pagarlo, ya tendrás el dinero (o gran parte de él) disponible.
+
+**Ideas de beneficio por sección (insumo del usuario, a pulir en EP.0):**
+- **Gastos:** conocer en qué se va tu dinero y detectar hábitos que puedes mejorar.
+- **Deudas:** la mejor estrategia para salir de ellas pagando menos intereses y en menos tiempo.
+- **Metas:** convertir tus objetivos en un plan de ahorro alcanzable.
+- **Ahorros:** crear un respaldo para imprevistos y construir estabilidad.
+- **Agenda:** no olvidar pagos y evitar intereses por mora o recargos.
+- **Límites de gasto:** controlar tus gastos antes de exceder el presupuesto que definiste.
+- **Mis cuentas:** centralizar tus ingresos y organizar cómo distribuirlos de forma inteligente.
+- **Análisis:** transformar tus movimientos en información clara para tomar mejores decisiones.
+
+**Épica: requiere diseño antes de codear (introduce un patrón de UI transversal nuevo).**
+
+Slices (smallest-first):
+
+- **EP.0 (diseño, requiere ADR)** - Definir el patrón único reutilizable. Decisiones a cerrar con el usuario: ubicación (banner colapsable arriba del contenido de cada sección vs. tip dentro del empty state vs. ícono "?" que despliega), persistencia (¿se puede colapsar/descartar de forma permanente por sección en `S.config`? ¿reaparece?), longitud máxima y estructura del copy, accesibilidad (rol, foco, contraste con tokens `--fk-*`), y a qué secciones aplica (las 8 del insumo del usuario + decidir Inversión, Compromisos, Personales, Dashboard, Calculadoras). Entregable: ADR + copy aprobado por sección. Modelo sugerido: Opus 4.8 - Alto (decisión arquitectural acotada, nuevo patrón de UI transversal).
+
+- **EP.1 (piloto)** - Implementar el componente base reutilizable (helper en `infra/render.js` o partial) + persistencia del estado colapsado + aplicarlo a **una** sección piloto: **Apartados** (ya tiene el copy de referencia). Verificar el patrón en la app (desktop + móvil), a11y y tests de render. Modelo sugerido: Sonnet 4.6 - Medio (feature de un dominio siguiendo patrón nuevo, con tests).
+
+- **EP.2 (grupo "Gastar bien")** - Desplegar el copy al grupo: Gastos, Deudas, Agenda, Límites de gasto. Solo copy + reuso del componente de EP.1. Modelo sugerido: Sonnet 4.6 - Bajo (copy + patrón ya existente).
+
+- **EP.3 (grupo "Crecer")** - Desplegar a: Metas, Ahorro, Inversión. Modelo sugerido: Sonnet 4.6 - Bajo.
+
+- **EP.4 (grupo "Organizar")** - Desplegar a: Mis cuentas, Análisis (y las demás que EP.0 haya decidido incluir). Modelo sugerido: Sonnet 4.6 - Bajo.
