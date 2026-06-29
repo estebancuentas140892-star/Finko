@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 16;
+const SCHEMA_VERSION = 17;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -254,6 +254,20 @@ function _migrate(raw) {
       for (const i of data.ingresos) {
         if (i && typeof i === 'object' && !('categoria' in i)) {
           i.categoria = null;
+        }
+      }
+    }
+  }
+
+  // v16 → v17: se agrega `categoria` a los gastos fijos (Compromiso tipo='fijo').
+  // Los gastos fijos existentes quedan con categoria: null (dato no capturado aún).
+  // Solo aplica a tipo='fijo'; deudas no tienen este campo.
+  // Idempotente: si categoria ya está presente en el item, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 17) {
+    if (Array.isArray(data.compromisos)) {
+      for (const c of data.compromisos) {
+        if (c && typeof c === 'object' && c.tipo === 'fijo' && !('categoria' in c)) {
+          c.categoria = null;
         }
       }
     }

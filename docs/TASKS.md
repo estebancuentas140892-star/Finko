@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1519/1519 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **MC.9** iconografía en categorías de ingresos (emoji por categoría en selector y lista). Antes: **MC.8** fix del salario mínimo por frecuencia. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1539/1539 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **categorías predefinidas para Agenda** (13 categorías de gastos fijos + emoji, schema v17). Antes: **MC.9** iconografía en categorías de ingresos. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -86,7 +86,7 @@ Seguimiento a las categorías de ingreso recién entregadas. Arrancar por el bug
 
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:
 - ✅ Categorías predefinidas para Ingresos (12 categorías + automatización "Salario mínimo" con subsidio de transporte) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- Categorías predefinidas para Agenda (13 categorías de gastos fijos).
+- ✅ Categorías predefinidas para Agenda (13 categorías de gastos fijos + emoji, schema v17) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - Categorías predefinidas para Deudas (12 tipos de obligación).
 
 Pendientes no urgentes (mantenimiento):

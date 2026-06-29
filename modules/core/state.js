@@ -76,6 +76,8 @@ import { SMMLV } from './constants.js';
  * @property {string} fechaCreacion      ISO 8601.
  *
  * @property {number} [monto]            COP. Cuota fija mensual. Solo para tipo='fijo'.
+ * @property {string|null} [categoria]   Una de CATEGORIAS_AGENDA, o null si no se eligió.
+ *                                       Solo para tipo='fijo' (v17).
  *
  * @property {number} [saldoTotal]       COP. Lo que aún se debe en total. Solo para
  *                                       deudas. Se descuenta al pagar (manual).

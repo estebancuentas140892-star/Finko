@@ -11,7 +11,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
-import { FRECUENCIAS } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, totalEventosDelMes } from './logic.js';
 
@@ -280,6 +280,9 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');
+  const catLabel = (tipo === 'fijo' && c.categoria)
+    ? ` · ${CATEGORIA_AGENDA_EMOJI[c.categoria] ?? ''} ${_esc(c.categoria)}`
+    : '';
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
   const monto = Number.isFinite(Number(montoRaw)) ? f(Number(montoRaw)) : '';
   const idEsc = _esc(c.id ?? '');
@@ -346,7 +349,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
       <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
-        <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}</p>
+        <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}</p>
         ${badgeHtml}
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
@@ -359,7 +362,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
 /**
  * Devuelve el HTML del formulario simplificado de gasto fijo.
  *
- * Solo 4 campos visibles: descripcion, monto, frecuencia, diaPago.
+ * Campos visibles: descripcion, categoria (opcional), monto, frecuencia, diaPago.
  * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
  * lo guarde como un compromiso de tipo fijo en S.compromisos.
  *
@@ -368,6 +371,10 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
 export function renderFormGastoFijo() {
   const frecOpts = FRECUENCIAS
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
+    .join('');
+
+  const catOpts = CATEGORIAS_AGENDA
+    .map(c => `<option value="${_esc(c)}">${CATEGORIA_AGENDA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
     .join('');
 
   return `
@@ -379,6 +386,14 @@ export function renderFormGastoFijo() {
         <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
                placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
                autocomplete="off" />
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-categoria" class="label">Categoría</label>
+        <select id="gfijo-categoria" name="categoria" class="input">
+          <option value="">Seleccionar…</option>
+          ${catOpts}
+        </select>
       </div>
 
       <div class="form-group">

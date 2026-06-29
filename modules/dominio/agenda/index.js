@@ -108,11 +108,13 @@ function _inyectarFormGastoFijo(compromiso = null) {
   if (compromiso) {
     form.dataset.id = compromiso.id;
     const f_desc = form.querySelector('[name="descripcion"]');
+    const f_cat = form.querySelector('[name="categoria"]');
     const f_monto = form.querySelector('[name="monto"]');
     const f_frec = form.querySelector('[name="frecuencia"]');
     const f_dia = form.querySelector('[name="diaPago"]');
     const f_btn = form.querySelector('[type="submit"]');
     if (f_desc) f_desc.value = compromiso.descripcion ?? '';
+    if (f_cat) f_cat.value = compromiso.categoria ?? '';
     if (f_monto) f_monto.value = compromiso.monto ?? '';
     if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';

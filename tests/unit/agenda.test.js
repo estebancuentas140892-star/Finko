@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, totalEventosDelMes, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
+import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
+import { S } from '../../modules/core/state.js';
+import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -380,5 +383,70 @@ describe('eventosEnProximos', () => {
     expect(r.diasRestantes).toBe(6); // 28 + 6 = 3 junio
     expect(r.fecha.getMonth()).toBe(5); // junio
     expect(r.fecha.getDate()).toBe(3);
+  });
+});
+
+// ── renderFormGastoFijo() - selector de categoría (Agenda) ────────
+
+describe('renderFormGastoFijo() - selector de categoría', () => {
+  it('incluye un <option> con emoji para cada categoría de CATEGORIAS_AGENDA', () => {
+    const html = renderFormGastoFijo();
+    for (const c of CATEGORIAS_AGENDA) {
+      expect(html).toContain(`${CATEGORIA_AGENDA_EMOJI[c]} ${c}`);
+    }
+  });
+
+  it('la categoría es opcional: el select no es required', () => {
+    const html = renderFormGastoFijo();
+    const selectMatch = html.match(/<select id="gfijo-categoria"[^>]*>/);
+    expect(selectMatch).not.toBeNull();
+    expect(selectMatch[0]).not.toContain('required');
+  });
+});
+
+// ── renderAgenda() - categoría en el detalle del día ──────────────
+
+describe('renderAgenda() - categoría en el detalle del día', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('muestra el emoji y el nombre de la categoría del gasto fijo', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).toContain('🌐 Internet');
+  });
+
+  it('sin categoría no agrega nada después de la frecuencia en el detalle', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: null })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).toContain('Gasto fijo · Mensual</p>');
+  });
+
+  it('las deudas no muestran categoría (campo exclusivo de tipo=fijo)', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-personal',
+      cuotaMensual: 100_000, saldoTotal: 1_000_000, categoria: 'Internet',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).not.toContain('🌐 Internet');
   });
 });

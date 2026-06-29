@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): categorías predefinidas para gastos fijos · 2026-06-29
+
+Se agregó un campo **categoría** al formulario "Nuevo gasto fijo" de Agenda, con 13 categorías predefinidas y emoji: 🏠 Arriendo, 🏢 Administración, 💡 Servicios públicos, 🌐 Internet, 📱 Telefonía, 🎬 Streaming, 🛡️ Seguros, 📚 Educación, 🏋️ Gimnasio, 💳 Cuota de manejo, 🚗 Transporte, 🐾 Mascotas, 📦 Otro. La Agenda no tiene almacenamiento propio (es una vista calendario sobre `S.compromisos`), así que el campo vive en el `Compromiso` con `tipo='fijo'`: nuevo catálogo `CATEGORIAS_AGENDA` + mapa `CATEGORIA_AGENDA_EMOJI` en `constants.js`, validados/normalizados en `compromisos/logic.js` (`validarCompromiso`, `normalizarCompromiso`), exclusivos de `tipo='fijo'` (las deudas no exponen este campo). Migración idempotente v16 → v17: los gastos fijos existentes quedan con `categoria: null`. El selector aparece en el formulario de Agenda (`renderFormGastoFijo`, campo opcional) y el emoji + nombre se muestran en el detalle del día junto a la frecuencia ("Gasto fijo · Mensual · 🌐 Internet").
+
+Verificado: 20 tests de lógica nuevos (1519 → 1539 unit + integración): catálogo y mapa de emoji completos (`compromisos.test.js`), `validarCompromiso`/`normalizarCompromiso` con categoría válida/inválida/ausente y exclusión en deudas, render del selector y del detalle del día con y sin categoría (`agenda.test.js`), y migración v16→v17 idempotente + exclusión de deudas (`storage.test.js`). Lint limpio, 57/57 E2E sin regresiones. SW v210 → v211.
+
+- **`modules/core/constants.js`**: `CATEGORIAS_AGENDA` (13 categorías) + `CATEGORIA_AGENDA_EMOJI`.
+- **`modules/core/storage.js`**: migración v16 → v17: `categoria: null` en compromisos `tipo='fijo'` existentes; `SCHEMA_VERSION` 16 → 17.
+- **`modules/core/state.js`**: typedef `Compromiso` con `categoria` (solo `tipo='fijo'`).
+- **`modules/dominio/compromisos/logic.js`**: `validarCompromiso` valida categoría (opcional, solo fijo); `normalizarCompromiso` guarda categoría o `null`.
+- **`modules/dominio/agenda/view.js`**: selector de categoría en `renderFormGastoFijo`; emoji + nombre en `_renderDetalleItem`.
+- **`modules/dominio/agenda/index.js`**: `_inyectarFormGastoFijo` pre-rellena la categoría al editar.
+- **`tests/unit/compromisos.test.js`**, **`tests/unit/agenda.test.js`**, **`tests/unit/storage.test.js`**: 20 tests nuevos; 1 test existente (`v5 → v6: tipo=fijo no se toca`) actualizado para reflejar el cascade de migraciones hasta v17.
+- **`service-worker.js`**: v210 → v211.
+
+---
+
 ### feat(tesoreria): iconografía en las categorías de ingresos (MC.9) · 2026-06-29
 
 Cada categoría de ingreso muestra un emoji representativo, siguiendo el mismo patrón que `CATEGORIA_EMOJI` en categorías de gasto. Nuevo mapa `CATEGORIA_INGRESO_EMOJI` en `constants.js` con las 12 categorías: 💼 Salario, 🏷️ Salario mínimo, 💵 Honorarios, 🤝 Comisión, 🏠 Arriendo, 👴 Pensión, 🪙 Subsidio, 🎁 Bonificación, 🧾 Cuota, 💰 Venta, 📈 Rendimientos, 📦 Otro. El emoji aparece en el texto de cada `<option>` del selector de categoría en el formulario de ingreso, y junto al nombre de la categoría en la lista de ingresos ("· 🏠 Arriendo"). Cambio puramente visual: no toca `logic.js`, ni el valor almacenado en `S.ingresos` (la categoría sigue siendo el string plano, el emoji se resuelve solo en la capa de vista).

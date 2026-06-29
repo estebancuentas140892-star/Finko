@@ -225,7 +225,9 @@ describe('Migración idempotente', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(v5));
     loadData();
 
-    expect(S.compromisos[0]).toEqual(fijo);
+    // El cascade de migraciones llega hasta v17, que agrega categoria: null
+    // a los fijos sin categoria (no afecta el resto de los campos).
+    expect(S.compromisos[0]).toEqual({ ...fijo, categoria: null });
   });
 });
 
@@ -599,6 +601,65 @@ describe('Migración v13 → v14 (recurrencia en apartados)', () => {
 
     expect(() => loadData()).not.toThrow();
     expect(S.apartados).toEqual([]);
+  });
+});
+
+describe('Migración v16 → v17 (categoria en gastos fijos de Agenda)', () => {
+  it('compromisos tipo=fijo sin categoria quedan con categoria: null', () => {
+    const v16 = {
+      ...createInitialState(),
+      _version: 16,
+      compromisos: [
+        { id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, frecuencia: 'Mensual',
+          diaPago: 5, tipo: 'fijo', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v16));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBeNull();
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('compromisos con categoria ya seteada no se sobreescriben (idempotente)', () => {
+    const v16 = {
+      ...createInitialState(),
+      _version: 16,
+      compromisos: [
+        { id: 'c1', descripcion: 'Internet hogar', monto: 89_000, frecuencia: 'Mensual',
+          diaPago: 5, tipo: 'fijo', activo: true, categoria: 'Internet' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v16));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBe('Internet');
+  });
+
+  it('no agrega categoria a deudas (campo exclusivo de tipo=fijo)', () => {
+    const v16 = {
+      ...createInitialState(),
+      _version: 16,
+      compromisos: [
+        { id: 'c1', descripcion: 'Tarjeta', saldoTotal: 1_000_000, cuotaMensual: 100_000,
+          frecuencia: 'Mensual', diaPago: 5, tipo: 'deuda-entidad', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v16));
+
+    loadData();
+
+    expect(S.compromisos[0]).not.toHaveProperty('categoria');
+  });
+
+  it('sin compromisos en el snapshot no lanza', () => {
+    const v16 = { ...createInitialState(), _version: 16, compromisos: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v16));
+
+    expect(() => loadData()).not.toThrow();
+    expect(S.compromisos).toEqual([]);
   });
 });
 

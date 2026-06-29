@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(tesoreria): iconografía en las categorías de ingresos, MC.9)
+> Última actualización: 2026-06-29 (feat(agenda): categorías predefinidas para gastos fijos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1519/1519 verdes |
+| Tests unitarios + integración | 1539/1539 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): categorías predefinidas para gastos fijos · 2026-06-29
+
+Campo **categoría** en el formulario "Nuevo gasto fijo" de Agenda: 13 categorías con emoji (🏠 Arriendo, 🏢 Administración, 💡 Servicios públicos, 🌐 Internet, 📱 Telefonía, 🎬 Streaming, 🛡️ Seguros, 📚 Educación, 🏋️ Gimnasio, 💳 Cuota de manejo, 🚗 Transporte, 🐾 Mascotas, 📦 Otro). Agenda no tiene almacenamiento propio (vista calendario sobre `S.compromisos`), así que el campo vive en `Compromiso` con `tipo='fijo'`: `CATEGORIAS_AGENDA` + `CATEGORIA_AGENDA_EMOJI` en `constants.js`, validados/normalizados en `compromisos/logic.js` (exclusivos de `tipo='fijo'`, las deudas no lo exponen). Migración idempotente v16 → v17 (`categoria: null` en fijos existentes). El selector aparece en el form de Agenda y el emoji + nombre en el detalle del día ("Gasto fijo · Mensual · 🌐 Internet"). Verificado: 20 tests nuevos (1539 total) en `compromisos.test.js`, `agenda.test.js` y `storage.test.js` (migración + idempotencia + exclusión de deudas); lint limpio, 57/57 E2E. SW v210 → v211.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_AGENDA` (13 categorías) + `CATEGORIA_AGENDA_EMOJI`. |
+| `modules/core/storage.js` | Migración v16 → v17: `categoria: null` en compromisos `tipo='fijo'`. |
+| `modules/core/state.js` | Typedef `Compromiso` con `categoria` (solo fijo). |
+| `modules/dominio/compromisos/logic.js` | `validarCompromiso` + `normalizarCompromiso` con categoría (solo fijo). |
+| `modules/dominio/agenda/view.js` | Selector de categoría en `renderFormGastoFijo`; emoji en `_renderDetalleItem`. |
+| `modules/dominio/agenda/index.js` | Pre-rellena categoría al editar. |
+| `tests/unit/compromisos.test.js`, `tests/unit/agenda.test.js`, `tests/unit/storage.test.js` | 20 tests nuevos. |
+| `service-worker.js` | v210 → v211. |
+
+---
 
 ### feat(tesoreria): iconografía en las categorías de ingresos (MC.9) · 2026-06-29
 
@@ -89,21 +106,6 @@ Tarea de diseño (sin código). El modo Automático de "¿Cómo distribuir mi di
 | Archivo | Cambio |
 |---|---|
 | `docs/DECISIONS/013-distribucion-automatica-inteligente.md` | ADR nuevo (modelo de pisos por prioridad, resolución de la duplicidad, transparencia, alternativas, consecuencias, 3 slices). |
-
----
-
-### feat(inversiones): Inversiones como destino fondeable de "Distribuir mi ingreso" (ADR 012, MC.4e) · 2026-06-29
-
-Quinto y último slice de la auto-distribución: cierra MC.4. El ADR había dejado Inversiones como destino solo informativo porque el dominio no tenía "aportar a un holding existente" (solo crear/eliminar). Este slice agrega ese aporte incremental: `construirPlanInversiones` (pura) arma una fila por holding con monto 0 editable y el capital actual como contexto; el aporte incrementa el `monto` (capital) del holding y **sí descuenta** de la cuenta de origen (como metas/apartados/deudas; el filtro `i.tipo !== 'fondo'` ya lo cubría). Orquestación por EventBus (ADN #10): el nuevo suscriptor en `inversiones/index.js` aplica su porción con `editar('inversiones', ...)`. Se sumó `inversiones` a `_SLICES_DISTRIBUCION` (el undo restaura el capital), y el gating del botón ahora considera ahorro, deudas o inversiones. El panel muestra una subsección "Aportar a inversiones". Verificado: 4 tests de lógica nuevos (1494 total), test desechable en happy-dom (suscriptor real sube el capital $1M → $1.5M; el panel renderiza la subsección), lint limpio, 57/57 E2E. Preview en `chrome-error` (recurrente): verificación por render + E2E. SW v206 → v207. **MC.4 completa.** Pendientes: épicas MC.6 (Automático inteligente) y MC.7 (asistente guiado), ambas requieren ADR.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirPlanInversiones` (fila por holding, capital como contexto). |
-| `modules/dominio/tesoreria/view.js` | Subsección "Aportar a inversiones"; inversiones en el gating; capital en la fila; legend. |
-| `modules/dominio/tesoreria/index.js` | `inversiones` en `_SLICES_DISTRIBUCION` (undo del capital). |
-| `modules/dominio/inversiones/index.js` | Suscriptor `distribucion:aplicar` que incrementa el capital del holding. |
-| `tests/unit/tesoreria.test.js` | 4 tests de `construirPlanInversiones`. |
-| `service-worker.js` | `CACHE_NAME` v206 → v207. |
 
 ---
 

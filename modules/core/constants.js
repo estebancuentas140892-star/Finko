@@ -401,6 +401,43 @@ export const CATEGORIA_INGRESO_EMOJI = {
   'Otro':            '📦',
 };
 
+/**
+ * Categorías predefinidas para gastos fijos (sección Agenda, Compromiso tipo='fijo').
+ * El orden define el del selector en el formulario "Nuevo gasto fijo".
+ */
+export const CATEGORIAS_AGENDA = [
+  'Arriendo',
+  'Administración',
+  'Servicios públicos',
+  'Internet',
+  'Telefonía',
+  'Streaming',
+  'Seguros',
+  'Educación',
+  'Gimnasio',
+  'Cuota de manejo',
+  'Transporte',
+  'Mascotas',
+  'Otro',
+];
+
+/** Emoji visual por categoría de gasto fijo (Agenda). Usar solo en UI; nunca en el valor almacenado. */
+export const CATEGORIA_AGENDA_EMOJI = {
+  'Arriendo':           '🏠',
+  'Administración':     '🏢',
+  'Servicios públicos': '💡',
+  'Internet':           '🌐',
+  'Telefonía':          '📱',
+  'Streaming':          '🎬',
+  'Seguros':            '🛡️',
+  'Educación':          '📚',
+  'Gimnasio':           '🏋️',
+  'Cuota de manejo':    '💳',
+  'Transporte':         '🚗',
+  'Mascotas':           '🐾',
+  'Otro':               '📦',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

@@ -6,7 +6,7 @@
  * Tipos: 'fijo' (arriendo, servicio), 'deuda' (cuota), 'agenda' (próximo pago puntual).
  */
 
-import { FRECUENCIAS } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA } from '../../core/constants.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -215,6 +215,9 @@ export function validarCompromiso(datos) {
     if (isNaN(monto) || monto <= 0) {
       errores.push('El monto debe ser un número mayor a 0.');
     }
+    if (datos.categoria && !CATEGORIAS_AGENDA.includes(datos.categoria)) {
+      errores.push('La categoría seleccionada no es válida.');
+    }
   } else if (esDeuda(datos.tipo)) {
     const saldo = Number(datos.saldoTotal);
     if (isNaN(saldo) || saldo <= 0) {
@@ -298,7 +301,7 @@ export function detectarDeudaCreciente(datos) {
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
  * v6:
- * - 'fijo'           → { monto, frecuencia, diaPago }
+ * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null } (categoria desde v17)
  * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, tasa|null, tasaUnidad='EA' }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto)
@@ -318,6 +321,9 @@ export function normalizarCompromiso(datos) {
 
   if (datos.tipo === 'fijo') {
     base.monto = Number(datos.monto);
+    base.categoria = datos.categoria && CATEGORIAS_AGENDA.includes(datos.categoria)
+      ? datos.categoria
+      : null;
     return base;
   }
 

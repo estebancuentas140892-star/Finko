@@ -32,6 +32,7 @@ import {
 import { renderFormAbono } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderResumenExtra } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { S } from '../../modules/core/state.js';
+import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -80,6 +81,36 @@ describe('catálogos exportados', () => {
   it('ICONO_TIPO cubre todos los tipos', () => {
     for (const tipo of TIPOS_COMPROMISO) {
       expect(ICONO_TIPO[tipo]).toBeTruthy();
+    }
+  });
+});
+
+// ── CATEGORIAS_AGENDA / CATEGORIA_AGENDA_EMOJI (MC.9-Agenda) ──────
+
+describe('CATEGORIAS_AGENDA', () => {
+  it('contiene 13 categorías predefinidas', () => {
+    expect(CATEGORIAS_AGENDA).toHaveLength(13);
+  });
+
+  it('todas son strings no vacíos', () => {
+    for (const c of CATEGORIAS_AGENDA) {
+      expect(typeof c).toBe('string');
+      expect(c.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('CATEGORIA_AGENDA_EMOJI', () => {
+  it('tiene un emoji para cada categoría de CATEGORIAS_AGENDA', () => {
+    for (const c of CATEGORIAS_AGENDA) {
+      expect(CATEGORIA_AGENDA_EMOJI[c]).toBeTruthy();
+      expect(typeof CATEGORIA_AGENDA_EMOJI[c]).toBe('string');
+    }
+  });
+
+  it('no tiene entradas huérfanas fuera del catálogo', () => {
+    for (const key of Object.keys(CATEGORIA_AGENDA_EMOJI)) {
+      expect(CATEGORIAS_AGENDA).toContain(key);
     }
   });
 });
@@ -269,6 +300,21 @@ describe('validarCompromiso()', () => {
     const errores = validarCompromiso({ descripcion: '', monto: '0', frecuencia: '', diaPago: '0', tipo: '' });
     expect(errores.length).toBeGreaterThanOrEqual(3);
   });
+
+  it('categoria es opcional para tipo=fijo: sin categoria no hay error', () => {
+    expect(validarCompromiso({ ...datosFormValidos, tipo: 'fijo' })).toEqual([]);
+  });
+
+  it('acepta cualquier categoría del catálogo de Agenda para tipo=fijo', () => {
+    for (const cat of CATEGORIAS_AGENDA) {
+      expect(validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: cat })).toEqual([]);
+    }
+  });
+
+  it('reporta error si la categoría no está en el catálogo de Agenda', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada' });
+    expect(errores[0]).toMatch(/categor/i);
+  });
 });
 
 // ── normalizarCompromiso() ────────────────────────────────────────
@@ -367,6 +413,29 @@ describe('normalizarCompromiso()', () => {
     expect(result).not.toHaveProperty('cuotaMensual');
     expect(result).not.toHaveProperty('tasa');
     expect(result).not.toHaveProperty('tasaUnidad');
+  });
+
+  it('para tipo=fijo guarda la categoría válida', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Internet' });
+    expect(result.categoria).toBe('Internet');
+  });
+
+  it('para tipo=fijo sin categoría, queda categoria=null', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo' });
+    expect(result.categoria).toBeNull();
+  });
+
+  it('para tipo=fijo con categoría inválida, queda categoria=null', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada' });
+    expect(result.categoria).toBeNull();
+  });
+
+  it('para deudas no agrega el campo categoria', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Internet',
+    };
+    expect(normalizarCompromiso(datos)).not.toHaveProperty('categoria');
   });
 });
 
