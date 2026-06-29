@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1564/1564 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **AP.2** plantillas de Apartados ampliadas de 9 a 15 (revisión técnico-mecánica, predial, matrícula, renovación de documentos, mascotas). Antes: AP.1 formulario de aporte con selector de tarjetas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1568/1568 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **D.1 (BUG)** corregido el impacto del pago extra en Deudas, que mostraba cifras absurdas (~$6e29) cuando la cuota no cubre intereses. Antes: AP.2 plantillas de Apartados. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -40,6 +40,20 @@ _(sin tarea activa)_
 **ADR 011 en curso: rediseño de simulación de deudas.** S1, S2 y S3 cerrados (extra mensual siempre visible + resumen de impacto en vivo; eliminado el botón "Simular" por deuda; barrido de dead code del acordeón). Pendientes:
 - **S4** - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
 - **S5** - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
+
+### Backlog del usuario "Visión de Deudas" (2026-06-29)
+
+Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan con ADR 011, así que conviene actualizar ese ADR antes de codear D.2/D.3.
+
+✅ **D.1 (BUG)** - Corregido el cálculo del impacto del pago extra, que mostraba cifras absurdas ("terminas 49 años antes y ahorras $6e29") cuando la cuota no cubre los intereses. Raíz: con un plan base inviable, `simularEstrategiaPago` diverge (saldo crece, `interesesTotales` explota, meses topa en 600) y los renderers restaban contra esa base. Fix en los 3 puntos de fuga (`estrategia-impacto.js`): `renderResumenExtra` (si la base es inviable, explica que sin el extra no se paga, sin restar), `renderImpactoAvalancha` ("No se termina de pagar" en vez del total divergente) y `_renderComparativa` (no compara estrategias si alguna no completa). 4 tests de regresión. SW v214 → v215 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+
+- **D.2 (diseño, revisa ADR 011 S1)** - Replantear la jerarquía de la simulación: el eje principal debe ser elegir Avalancha vs Bola de nieve; el pago extra **no** debería estar siempre visible como protagonista (esto revierte la decisión S1 de ADR 011). Las alternativas (aumentar cuota, renegociar tasa, consolidar) aparecerían solo cuando Finko detecta que el plan es inviable (deudas que crecen). Requiere actualizar ADR 011. Modelo: Opus 4.8 - Alto.
+
+- **D.3 (= ADR 011 S4/S5) - Convertir la simulación en acción.** Tras simular (aumentar cuota / renegociar tasa / consolidar), permitir **aplicar** el cambio en un paso (actualizar `cuotaMensual` o `tasa` de la deuda sin volver a editarla a mano). Construye sobre S4 (`simularRenegociacion`) y S5 (`simularConsolidacion`) ya pendientes. Modelo: Opus 4.8 - Medio.
+
+- **D.4 (mejora UI)** - Comparación explicada Avalancha vs Bola de nieve: además del resultado, frases que ayuden a decidir según prioridades ("con Avalancha ahorras $X más en intereses"; "con Bola de nieve cierras tu primera deuda un mes antes"). Ya existen `compararEstrategias` y `_renderComparativa`; es enriquecer el mensaje, no lógica nueva. Modelo: Sonnet 4.6 - Medio.
+
+- **D.5 (evoluciona lo entregado)** - Categorías de deuda en **dos dimensiones**: hoy hay un solo campo "tipo de obligación" (`CATEGORIAS_DEUDA`, 12). El usuario propone separar **Tipo de deuda** (tarjeta, libre inversión, vivienda, educativo, vehículo, cooperativa, compra a cuotas, otra) y **Acreedor** (familiar, amigo, vecino, particular, natillera, banco, cooperativa, entidad financiera, empresa, otro). Decidir si reemplaza o complementa el campo actual y si el acreedor reemplaza la distinción entidad/personal. Posible schema bump + migración. Modelo: Opus 4.8 - Alto (decisión de modelo de datos).
 
 ### Backlog del usuario "Mis cuentas + distribución" (2026-06-28)
 

@@ -45,13 +45,24 @@ export function renderImpactoAvalancha(resultado, extraMensual) {
        </li>`
     : '';
 
+  // Con el pago actual el plan puede no completarse (la cuota no cubre los
+  // intereses y la deuda crece): en ese caso `interesesTotales` no es un total
+  // finito sino una acumulación divergente, así que no se muestra como cifra.
+  const filaIntereses = activa.completo
+    ? `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Total que pagas en intereses</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
+       </li>`
+    : `<li class="estrategia-card__metrica">
+         <span class="estrategia-card__metrica-label">Total que pagas en intereses</span>
+         <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">No se termina de pagar</strong>
+         <span class="estrategia-card__metrica-tip">con la cuota actual la deuda crece: los intereses no paran de sumar</span>
+       </li>`;
+
   return `
     <ul class="estrategia-card__metricas">
       ${filaTarget}
-      <li class="estrategia-card__metrica">
-        <span class="estrategia-card__metrica-label">Total que pagas en intereses</span>
-        <strong class="estrategia-card__metrica-valor estrategia-card__metrica-valor--danger">${f(activa.interesesTotales)}</strong>
-      </li>
+      ${filaIntereses}
     </ul>
     ${_renderComparativa(resultado, extraMensual)}`;
 }
@@ -135,6 +146,11 @@ export function renderImpactoBolaNieve(resultado, deudas, extraMensual) {
  * financieros; Bola de nieve no tiene "ahorro" que mostrar respecto a sí misma).
  */
 function _renderComparativa(resultado, extraMensual) {
+  // Comparar el costo de las dos estrategias solo tiene sentido si ambas cierran
+  // el plan. Si alguna no se completa, sus intereses son divergentes y restarlos
+  // daría cifras absurdas; el banner de diagnóstico ya explica la situación.
+  if (!resultado.avalancha.completo || !resultado.bolaNieve.completo) return '';
+
   const { ahorroIntereses, ahorroMeses } = resultado;
   const hayAhorroIntereses = ahorroIntereses > 0.5;
   const hayAhorroTiempo    = ahorroMeses > 0;
@@ -188,7 +204,26 @@ export function renderResumenExtra(sinExtra, conExtra, extraMensual) {
 
   const base  = sinExtra.avalancha;
   const extra = conExtra.avalancha;
-  if (!base.completo && !extra.completo) return '';
+
+  // Si ni con el extra el plan se completa, no hay impacto que mostrar: el banner
+  // de diagnóstico ("estas deudas no se terminan de pagar") lo cubre por separado.
+  // (extra incompleto implica base incompleto: con menos dinero tampoco se cierra.)
+  if (!extra.completo) return '';
+
+  // El plan base (sin extra) no se completa pero el extra sí lo vuelve viable.
+  // No se puede decir "terminas X antes / ahorras $Y": la base es divergente (la
+  // cuota no cubre los intereses, así que no hay un "antes" real ni un total de
+  // intereses finito que comparar; restarlo daría cifras absurdas). Se comunica
+  // el valor real del extra: vuelve pagable una deuda que sola no se terminaba.
+  if (!base.completo) {
+    return `
+      <div class="estrategia-card__resumen-extra estrategia-card__resumen-extra--activo" role="status">
+        <p class="estrategia-card__bloque-titulo">🎯 Impacto de tu pago extra</p>
+        <p class="estrategia-card__bloque-body">
+          Sin este pago extra, tus cuotas no alcanzan a cubrir los intereses y la deuda no se termina de pagar. Con <strong>${f(extraMensual)}/mes adicional</strong> sí logras saldarla en <strong>${formatearDuracion(extra.meses)}</strong>.
+        </p>
+      </div>`;
+  }
 
   const mesesMenos     = Math.max(0, base.meses - extra.meses);
   const interesesMenos = Math.max(0, base.interesesTotales - extra.interesesTotales);

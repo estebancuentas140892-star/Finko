@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(compromisos): el impacto de la simulación no muestra cifras absurdas con planes inviables (D.1) · 2026-06-29
+
+El resumen "🎯 Impacto de tu pago extra" mostraba resultados sin sentido cuando la cuota de una deuda no alcanzaba a cubrir sus intereses: por ejemplo "Con $40.000/mes adicional terminas 49 años y 4 meses antes y ahorras $6,16e+29 en intereses". Raíz del bug: si el plan base (sin extra) es inviable, `simularEstrategiaPago` diverge (el saldo crece cada mes, `interesesTotales` se dispara exponencialmente y `meses` se topa en `MAX_MESES_SIMULACION` = 600). Los renderers de impacto restaban contra esa base divergente (`base.meses - extra.meses`, `base.interesesTotales - extra.interesesTotales`), produciendo el "49 años antes" (≈ 600 − pocos meses) y el "$6e29".
+
+Se corrigieron los tres puntos donde el valor divergente se filtraba a la UI, todos con la misma causa (`completo === false`):
+
+1. **`renderResumenExtra`**: el guard solo retornaba vacío si **ambos** planes eran inviables. Ahora retorna vacío si el plan con extra no completa (cubre el caso de ambos inviables) y, cuando la base es inviable pero el extra sí logra pagar, muestra un mensaje honesto en lugar de restar: "Sin este pago extra, tus cuotas no alcanzan a cubrir los intereses y la deuda no se termina de pagar. Con $X/mes adicional sí logras saldarla en N".
+2. **`renderImpactoAvalancha`**: "Total que pagas en intereses" mostraba `interesesTotales` directo. Ahora, si el plan no completa, muestra "No se termina de pagar" con un tip ("con la cuota actual la deuda crece") en vez de la cifra divergente.
+3. **`_renderComparativa`**: comparaba el costo de Avalancha vs Bola de nieve aunque alguna no completara. Ahora solo compara si **ambas** completan; si no, no muestra el banner (el diagnóstico de "estas deudas no se terminan de pagar" ya cubre la situación).
+
+Sin cambios en la lógica de simulación (`simularEstrategiaPago`, `compararEstrategias`): el arreglo vive en la capa de presentación, que es donde el dato divergente se presentaba como si fuera un total real. Parte del backlog "Visión de Deudas".
+
+Verificado: 4 tests de regresión nuevos (1564 → 1568 unit + integración) que reproducen el escenario real con la simulación verdadera (deuda de $10.000.000 con cuota $50.000 < interés ~$221.000/mes): confirman que la base no completa, que el extra grande sí, y que la UI ya no muestra "terminas", "menos en intereses", "e+" ni "te ahorrarías" en ese caso, sino el mensaje honesto. Lint limpio, 57/57 E2E sin regresiones. SW v214 → v215.
+
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: guardas por `completo` en `renderResumenExtra`, `renderImpactoAvalancha` y `_renderComparativa`.
+- **`tests/unit/compromisos.test.js`**: 4 tests de regresión de impacto con plan inviable.
+- **`service-worker.js`**: v214 → v215.
+
+---
+
 ### feat(apartados): plantillas de gasto previsible ampliadas (AP.2) · 2026-06-29
 
 `PLANTILLAS_APARTADO` pasó de 9 a 15 plantillas rápidas, incorporando los gastos previsibles que el usuario identificó como faltantes: 📋 Revisión técnico-mecánica, 🏛️ Impuesto predial, 🎓 Matrícula o semestre, 🪪 Renovación de documentos, 🐾 Alimento para mascotas, 🐱 Arena para gatos. Se evitó duplicar "Impuestos" (queda como el genérico, típicamente vehículo) con "Impuesto predial" (vivienda), ya que son obligaciones distintas y ambas previsibles. Se reordenó el catálogo agrupando por afinidad (vehículo, impuestos/vivienda, mascotas, educación, regalos/vacaciones) para que el listado de chips sea más fácil de escanear al crear un apartado. Cambio puramente de datos: sin lógica nueva, sin schema, sin migración (las plantillas no se persisten, solo prellenan el formulario).

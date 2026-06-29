@@ -31,7 +31,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
-import { renderResumenExtra } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
+import { renderResumenExtra, renderImpactoAvalancha } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
 
@@ -2012,5 +2012,61 @@ describe('renderResumenExtra()', () => {
     };
     const html = renderResumenExtra(inviable, inviable, 50_000);
     expect(html).toBe('');
+  });
+});
+
+// ── Regresión: el impacto no muestra cifras absurdas con plan inviable ────
+// Bug reportado: la cuota no cubre el interés → la simulación base diverge
+// (saldo crece, interesesTotales explota a ~1e29 y meses se topa en 600). Al
+// comparar contra esa base salían "terminas 49 años antes y ahorras $6e29".
+
+describe('impacto de deudas - plan base inviable (regresión cifras absurdas)', () => {
+  // Deuda donde la cuota ($50.000) no cubre el interés mensual (~$221.000):
+  // sola, su saldo crece mes a mes y nunca se paga.
+  const deudasInviables = () => filtrarDeudasPagables([
+    deudaBase({ saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+  ]);
+
+  it('precondición: la base diverge (no completa) y un extra grande sí la vuelve viable', () => {
+    const deudas = deudasInviables();
+    expect(compararEstrategias(deudas, 0).avalancha.completo).toBe(false);
+    expect(compararEstrategias(deudas, 2_000_000).avalancha.completo).toBe(true);
+  });
+
+  it('renderResumenExtra: con base inviable explica que sin el extra no se paga, sin cifras absurdas', () => {
+    const deudas   = deudasInviables();
+    const sinExtra = compararEstrategias(deudas, 0);
+    const conExtra = compararEstrategias(deudas, 2_000_000);
+
+    const html = renderResumenExtra(sinExtra, conExtra, 2_000_000);
+
+    expect(html).toContain('Impacto de tu pago extra');
+    expect(html).toContain('no se termina de pagar');
+    // El bug mostraba "terminas X años antes" y "$...e+29": no deben aparecer.
+    expect(html).not.toContain('terminas');
+    expect(html).not.toContain('menos en intereses');
+    expect(html).not.toContain('e+');
+  });
+
+  it('renderImpactoAvalancha: plan incompleto muestra "No se termina de pagar" en vez del total divergente', () => {
+    const resultado = compararEstrategias(deudasInviables(), 0);
+    const html = renderImpactoAvalancha(resultado, 0);
+
+    expect(html).toContain('No se termina de pagar');
+    expect(html).not.toContain('e+');
+    // No debe colarse el banner comparativo con un ahorro entre estrategias.
+    expect(html).not.toContain('te ahorrarías');
+  });
+
+  it('renderImpactoAvalancha: plan completo sigue mostrando el total de intereses normal', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ saldoTotal: 1_000_000, cuotaMensual: 200_000, tasa: 0.30, tasaUnidad: 'EA' }),
+    ]);
+    const resultado = compararEstrategias(deudas, 0);
+    expect(resultado.avalancha.completo).toBe(true);
+
+    const html = renderImpactoAvalancha(resultado, 0);
+    expect(html).toContain('Total que pagas en intereses');
+    expect(html).not.toContain('No se termina de pagar');
   });
 });

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(apartados): plantillas de gasto previsible ampliadas, AP.2)
+> Última actualización: 2026-06-29 (fix(compromisos): impacto de simulación sin cifras absurdas, D.1)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1564/1564 verdes |
+| Tests unitarios + integración | 1568/1568 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos): el impacto de la simulación no muestra cifras absurdas con planes inviables (D.1) · 2026-06-29
+
+El resumen "Impacto de tu pago extra" mostraba "terminas 49 años antes y ahorras $6e29" cuando la cuota no cubre los intereses. Raíz: con un plan base inviable, `simularEstrategiaPago` diverge (saldo crece, `interesesTotales` explota, meses topa en 600) y los renderers restaban contra esa base. Fix en los 3 puntos de fuga de `estrategia-impacto.js`, todos por `completo === false`: `renderResumenExtra` (mensaje honesto "sin el extra no se paga" en vez de restar), `renderImpactoAvalancha` ("No se termina de pagar" en vez del total divergente) y `_renderComparativa` (no compara si alguna estrategia no completa). Sin tocar la lógica de simulación. Primer ítem del backlog "Visión de Deudas". Verificado: 4 tests de regresión nuevos (1568 total) con la simulación real, lint limpio, 57/57 E2E. SW v214 → v215.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | Guardas por `completo` en `renderResumenExtra`, `renderImpactoAvalancha`, `_renderComparativa`. |
+| `tests/unit/compromisos.test.js` | 4 tests de regresión de impacto con plan inviable. |
+| `service-worker.js` | v214 → v215. |
+
+---
 
 ### feat(apartados): plantillas de gasto previsible ampliadas (AP.2) · 2026-06-29
 
@@ -95,19 +107,6 @@ Campo **categoría** en el formulario "Nuevo gasto fijo" de Agenda: 13 categorí
 | `modules/dominio/agenda/index.js` | Pre-rellena categoría al editar. |
 | `tests/unit/compromisos.test.js`, `tests/unit/agenda.test.js`, `tests/unit/storage.test.js` | 20 tests nuevos. |
 | `service-worker.js` | v210 → v211. |
-
----
-
-### fix(tesoreria): salario mínimo se pre-llena por período según la frecuencia (MC.8) · 2026-06-29
-
-Bug en la automatización "Salario mínimo": pre-llenaba el campo `monto` con el valor **mensual** completo (SMMLV + auxilio), pero `monto` es el valor **por período** y `estimarSalarioMensual` lo multiplica por el factor de la frecuencia. Resultado: con Quincenal el ingreso mensual estimado quedaba al doble (Semanal, ~4.3×). Fix: el salario mínimo se trata como un **ancla mensual** y se divide por la frecuencia para obtener el monto por período (Mensual = completo, Quincenal = /2, Semanal = /4.33, Diario = /30; frecuencias sin factor reconocido caen al mensual). Además la automatización ahora **reacciona al cambiar la frecuencia** (antes solo a la categoría y al checkbox de subsidio). Verificado: 7 tests nuevos (1513 total) incluido un test de regresión que confirma que el monto por período × frecuencia ≈ SMMLV (ya no se duplica), lint limpio. SW v208 → v209.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia)` (ancla mensual / factor, reusa `_FACTOR_MENSUAL`). |
-| `modules/dominio/tesoreria/index.js` | `_attachCategoriaToggle`: pre-llena el monto por período y escucha el `change` de frecuencia. |
-| `tests/unit/tesoreria.test.js` | 7 tests nuevos (incluye regresión MC.8). |
-| `service-worker.js` | `CACHE_NAME` v208 → v209. |
 
 ---
 
