@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(dashboard): "gastos por organizar" junto al hero en desktop / bajo él en mobile)
+> Última actualización: 2026-06-28 (style(dashboard): hero a ancho completo cuando no hay gastos por organizar)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### style(dashboard): hero a ancho completo cuando no hay gastos por organizar · 2026-06-28
+
+Segunda y última mejora del Dashboard pedida por el usuario (cierra el pedido). Tras subir la tarjeta "gastos por organizar" junto al hero, quedaba un hueco a su derecha en el caso común sin pendientes (tarjeta `[hidden]`, hero a `span 8`). Ahora, cuando la tarjeta está oculta, el hero se expande a `span 12` (ancho completo) y no queda aire muerto. CSS puro con `:has()` sobre el `[hidden]` del panel (mismo patrón que `.list-item__icon:has(.bank-avatar)`): cero JS, cero acoplamiento del dominio gastos al layout. En tablet/mobile `span 12` se recorta a la fila completa (sin cambios fuera de desktop). Verificado por medición: desktop sin pendientes hero `span 12`, con pendientes `span 8` + tarjeta al lado, mobile sin regresión. 1438/1438. SW v192 → v193.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/layout.css` | Regla `.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero { grid-column: span 12; }`. |
+| `service-worker.js` | `CACHE_NAME` v192 → v193. |
+
+---
 
 ### feat(dashboard): "gastos por organizar" junto al hero (desktop) / bajo él (mobile) · 2026-06-28
 
@@ -86,17 +97,6 @@ Al marcar un gasto fijo como pagado, con varias cuentas ahora aparece el mismo s
 | `modules/infra/cuenta-helper.js` | Nueva `resolverPagoConSelector` (0/1/varias: selector de tarjetas + reparto-fallback) + `_mostrarSelectorPreferida`. |
 | `modules/dominio/agenda/index.js` | `_marcarPagadoGastoFijo` usa `resolverPagoConSelector` en vez de `resolverPagoMultiCuenta`. |
 | `tests/unit/cuenta-helper.test.js` | 5 tests de `resolverPagoConSelector` (0/1/varias, cubre, reparto encadenado). |
-
----
-
-### feat(gastos): selector de tarjetas en Gasto rápido (2/4 flujos) · 2026-06-28
-
-El gasto rápido ahora muestra el mismo selector de tarjetas con avatares de entidad que el gasto completo. Si la cuenta elegida no cubre el monto, abre el picker de reparto con la elegida como prioridad (se cobra primero). Si es la única y no alcanza, pide confirmación de sobregiro. Verificado: cubre → sin picker, directo; no cubre → Nequi $400k + Bancolombia $50k; sin negativos. SW v185 → v186. Tests 1433/1433.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/gastos/view.js` | `renderFormGastoRapido` con `renderSelectorCuenta`. |
-| `modules/dominio/gastos/index.js` | `_guardarGastoRapido` con `resolverPagoConPreferida` + confirm sobregiro. |
 
 ---
 

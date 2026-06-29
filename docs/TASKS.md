@@ -37,7 +37,7 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**Tarea A (Dashboard) - rebalancear el bento sin pendientes.** Al mover "gastos por organizar" junto al hero (feat(dashboard), 2026-06-28), el hueco a la derecha del hero se rellena cuando hay pendientes, pero reaparece cuando la tarjeta está oculta (sin gastos por organizar). Falta decidir qué hacer con esas 4 columnas en ese caso (hero a ancho completo, mover un panel dinámico, o aceptar el aire del estado limpio). Es la segunda mitad del pedido del usuario sobre el Dashboard.
+El pedido del Dashboard quedó cerrado (2026-06-28): "gastos por organizar" se subió junto al hero y el hero pasa a ancho completo cuando no hay pendientes (sin hueco). No hay una tarea de UI/producto activa. A la espera de feedback del usuario desde su celular.
 
 Pendientes no urgentes (mantenimiento):
 

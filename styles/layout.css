@@ -312,6 +312,17 @@
   border-radius: var(--fk-radius-xl);
 }
 
+/* Sin gastos por organizar, la tarjeta queda [hidden] y dejaría un hueco a la
+   derecha del hero (las 4 columnas que liberaron los accesos rápidos). Cuando
+   eso pasa, el hero se expande a todo el ancho y no queda aire muerto. Puro
+   CSS con :has() (mismo patrón que .list-item__icon:has(.bank-avatar)): el
+   layout reacciona al atributo [hidden] del panel sin que el dominio gastos
+   sepa nada del bento. En tablet (6 cols) y mobile (1 col), span 12 se recorta
+   a la fila completa, así que el hero sigue igual fuera de desktop. */
+.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero {
+  grid-column: span 12;
+}
+
 /* Variantes visuales */
 .bento__cell--accent {
   border-color: var(--fk-accent-border);
