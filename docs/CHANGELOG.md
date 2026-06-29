@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(deudas): picker arriba + acelerador plegable del pago extra (D.2a) · 2026-06-29
+
+Implementación del primer slice de la Revisión D.2 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). La card de estrategia de pago se reordenó para que el **picker Avalancha vs Bola de nieve** sea lo primero accionable (protagonista), y el pago extra mensual baje a un **acelerador plegable** ("💪 ¿Puedes pagar más rápido?", `<details>` nativo colapsado bajo el detalle de la estrategia). El `<details>` se abre automáticamente si el usuario ya escribió un monto (`extraMensual > 0`), y se mantiene abierto tras el re-render por `change` (blur). La lógica financiera no se tocó: `compararEstrategias`, `renderResumenExtra`, `_actualizarResumenEnVivo` etc. siguen funcionando igual, solo se reubicaron. Corregido también un voseo heredado ("Probá" → "Prueba") en el mensaje de empate de la comparativa Avalancha vs Bola de nieve.
+
+Parte del backlog "Visión de Deudas".
+
+Verificado: 4 tests de render nuevos (1568 → 1572 unit + integración) que comprueban la jerarquía (picker antes de acelerador, `<details>` colapsado por defecto, abierto con extra > 0, input dentro del acelerador). E2E test 5 actualizado (abre el `<details>` antes de llenar el input). Lint limpio. SW v215 → v216.
+
+- **`modules/dominio/compromisos/views/estrategia.js`**: reordenado `renderEstrategiaPago` (picker arriba, acelerador abajo); nuevo `_renderAceleradorExtra` (envuelve input + resumen en `<details>`); eliminado `_renderExtraMensual`; actualizado texto del diagnóstico inviable.
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: corregido voseo "Probá" → "Prueba" en `_renderComparativa`.
+- **`styles/components/charts.css`**: estilos `.estrategia-card__acelerador*` (disclosure nativo con `▾` rotado, patrón `analisis-grupo`).
+- **`tests/unit/compromisos.test.js`**: 4 tests de jerarquía D.2a + import de `renderEstrategiaPago`/`setEstrategiaUI`.
+- **`tests/e2e/estrategia-pago.test.js`**: test 5 abre el `<details>` antes de llenar el extra.
+- **`service-worker.js`**: v215 → v216.
+
+---
+
 ### docs(deudas): ADR 011 revisado, replanteada la jerarquía de la simulación (D.2) · 2026-06-29
 
 Tarea de diseño, sin código. El usuario observó (backlog "Visión de Deudas") que en la card de estrategia de Deudas el pago extra mensual aparece como protagonista, arriba de la elección de estrategia: lo primero que ve es "¿puedes pagar algo extra?" antes de decidir **cómo** va a pagar. Eso es la decisión S1 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md), que el usuario pidió revertir.

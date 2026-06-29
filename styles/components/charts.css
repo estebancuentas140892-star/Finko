@@ -672,15 +672,43 @@
   line-height: 1.4;
 }
 
-/* v11 (ADR 011): control de extra mensual siempre visible + resumen de impacto. */
-.estrategia-card__extra {
-  margin-bottom: var(--fk-space-3);
+/* D.2a (ADR 011 rev): acelerador plegable de pago extra. */
+.estrategia-card__acelerador {
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-top: var(--fk-space-4);
+  overflow: hidden;
+}
+.estrategia-card__acelerador-summary {
+  padding: var(--fk-space-3) var(--fk-space-4);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+.estrategia-card__acelerador-summary::-webkit-details-marker { display: none; }
+.estrategia-card__acelerador-summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-sm);
+  transition: transform 0.15s ease;
+}
+.estrategia-card__acelerador[open] > .estrategia-card__acelerador-summary::after {
+  transform: rotate(180deg);
+}
+.estrategia-card__acelerador-body {
+  padding: 0 var(--fk-space-4) var(--fk-space-4);
 }
 .estrategia-card__resumen-extra {
   padding: var(--fk-space-3) var(--fk-space-4);
   border-radius: var(--fk-radius-md);
   background: var(--fk-bg-elevated);
-  margin-bottom: var(--fk-space-4);
+  margin-top: var(--fk-space-3);
 }
 .estrategia-card__resumen-extra--activo {
   background: var(--fk-nudge-success-bg);

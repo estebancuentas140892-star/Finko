@@ -204,8 +204,9 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
     const interesesLabel = page.locator('.estrategia-card__metrica-valor--danger').first();
     const sinExtra = await interesesLabel.textContent();
 
-    // El input de extra mensual ya es visible (ADR 011: no hay acordeón)
-    await page.waitForSelector('#estrategia-extra', { timeout: 3_000 });
+    // El input de extra vive en un <details> colapsado (D.2a): abrirlo primero.
+    await page.locator('.estrategia-card__acelerador-summary').click();
+    await page.waitForSelector('#estrategia-extra', { state: 'visible', timeout: 3_000 });
 
     // Ingresar $500 000 de extra: el input dispara cambiar-extra-estrategia
     const inputExtra = page.locator('#estrategia-extra');

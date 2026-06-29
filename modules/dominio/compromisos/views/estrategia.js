@@ -1,13 +1,13 @@
 /**
  * compromisos/views/estrategia.js - card de estrategia de pago de deudas (F.4).
  *
+ * Jerarquía (Revisión D.2, ADR 011): picker Avalancha/Bola de nieve arriba
+ * (protagonista) → detalle de la estrategia elegida → acelerador plegable
+ * "¿Puedes pagar más rápido?" (extra mensual + resumen de impacto, colapsado).
+ *
  * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa).
  * Es un singleton mutable; persiste mientras la pestaña está abierta y vuelve
  * a defaults al recargar.
- *
- * Las funciones públicas `setEstrategiaUI` y `getEstrategiaUI` permiten que
- * `index.js` mute el estado desde los handlers, y que `lista.js` lo lea para
- * aplicar el orden estratégico a la lista de deudas.
  *
  * Los renderers de "Tu impacto" (Avalancha, Bola de nieve, comparativa) viven
  * en `estrategia-impacto.js` para mantener este archivo bajo 400 líneas.
@@ -109,9 +109,6 @@ export function renderEstrategiaPago() {
         </p>
       </header>
 
-      ${_renderExtraMensual(extraMensual)}
-      ${resumenExtraHtml}
-
       ${_renderAvisoTasaDesconocida(deudas)}
       ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico)}
 
@@ -121,6 +118,7 @@ export function renderEstrategiaPago() {
       </div>
 
       ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual, hayTasaPositiva)}
+      ${_renderAceleradorExtra(extraMensual, resumenExtraHtml)}
     </article>`;
 }
 
@@ -147,8 +145,8 @@ function _renderDiagnosticoInviable(diagnostico) {
   const sugerenciaExtra = extraMinimo
     ? `<p class="estrategia-card__bloque-body">
          Para que tu plan funcione, necesitarías aportar al menos
-         <strong>${f(extraMinimo)} extra cada mes</strong>. Abre "¿Puedes pagar algo
-         extra cada mes?" abajo para simular el impacto.</p>`
+         <strong>${f(extraMinimo)} extra cada mes</strong>. Abre "¿Puedes pagar
+         más rápido?" abajo para simular el impacto.</p>`
     : `<p class="estrategia-card__bloque-body">
          Con el pago actual la deuda crece más rápido de lo que la reduces. Considera
          renegociar la cuota o la tasa con tu entidad.</p>`;
@@ -311,19 +309,24 @@ function _renderNoAplica(estrategia) {
 }
 
 /**
- * Control de extra mensual, siempre visible arriba de la card. El usuario
- * escribe un monto y el resumen de impacto se recalcula en vivo (input event).
+ * Acelerador plegable: envuelve el input de extra mensual + resumen de impacto
+ * en un `<details>` colapsado bajo el detalle de la estrategia (Revisión D.2
+ * de ADR 011). Se abre automáticamente si el usuario ya escribió un monto.
  */
-function _renderExtraMensual(extraMensual) {
+function _renderAceleradorExtra(extraMensual, resumenHtml) {
   return `
-    <div class="estrategia-card__extra">
-      <div class="form-group">
-        <label for="estrategia-extra" class="label">💪 ¿Puedes pagar algo extra cada mes?</label>
-        <input id="estrategia-extra" class="input" type="number"
-               min="0" step="10000" value="${extraMensual || ''}"
-               placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
-               data-action="cambiar-extra-estrategia" />
-        <p class="form-hint">Cualquier monto adicional acelera el cierre y ahorra intereses.</p>
+    <details class="estrategia-card__acelerador"${extraMensual > 0 ? ' open' : ''}>
+      <summary class="estrategia-card__acelerador-summary">💪 ¿Puedes pagar más rápido?</summary>
+      <div class="estrategia-card__acelerador-body">
+        <div class="form-group">
+          <label for="estrategia-extra" class="label">Pago extra mensual</label>
+          <input id="estrategia-extra" class="input" type="number"
+                 min="0" step="10000" value="${extraMensual || ''}"
+                 placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
+                 data-action="cambiar-extra-estrategia" />
+          <p class="form-hint">Cualquier monto adicional acelera el cierre y ahorra intereses.</p>
+        </div>
+        ${resumenHtml}
       </div>
-    </div>`;
+    </details>`;
 }

@@ -32,6 +32,7 @@ import {
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderResumenExtra, renderImpactoAvalancha } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
+import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
 
@@ -2068,5 +2069,53 @@ describe('impacto de deudas - plan base inviable (regresión cifras absurdas)', 
     const html = renderImpactoAvalancha(resultado, 0);
     expect(html).toContain('Total que pagas en intereses');
     expect(html).not.toContain('No se termina de pagar');
+  });
+});
+
+// ── renderEstrategiaPago: jerarquía D.2a (picker arriba, acelerador plegable) ──
+
+describe('renderEstrategiaPago jerarquía D.2a', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0 });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda A', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.28, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.12, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('el picker aparece antes del acelerador en el DOM', () => {
+    renderEstrategiaPago();
+    const el = document.getElementById('estrategia-pago');
+    const picker = el.querySelector('.estrategia-cards');
+    const acelerador = el.querySelector('.estrategia-card__acelerador');
+    expect(picker).not.toBeNull();
+    expect(acelerador).not.toBeNull();
+    expect(picker.compareDocumentPosition(acelerador) & 4).toBeTruthy();
+  });
+
+  it('el acelerador es un <details> colapsado por defecto (extra=0)', () => {
+    renderEstrategiaPago();
+    const details = document.querySelector('.estrategia-card__acelerador');
+    expect(details.tagName).toBe('DETAILS');
+    expect(details.hasAttribute('open')).toBe(false);
+  });
+
+  it('el acelerador se abre cuando el extra es > 0', () => {
+    setEstrategiaUI({ extraMensual: 50_000 });
+    renderEstrategiaPago();
+    const details = document.querySelector('.estrategia-card__acelerador');
+    expect(details.hasAttribute('open')).toBe(true);
+  });
+
+  it('el input de extra vive dentro del acelerador, no arriba de la card', () => {
+    renderEstrategiaPago();
+    const acelerador = document.querySelector('.estrategia-card__acelerador');
+    const input = acelerador.querySelector('#estrategia-extra');
+    expect(input).not.toBeNull();
+    const header = document.querySelector('.estrategia-card__header');
+    const inputGlobal = document.getElementById('estrategia-extra');
+    expect(header.compareDocumentPosition(inputGlobal) & 4).toBeTruthy();
+    expect(acelerador.contains(inputGlobal)).toBe(true);
   });
 });

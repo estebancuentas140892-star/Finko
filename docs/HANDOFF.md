@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1568/1568 verdes |
+| Tests unitarios + integración | 1572/1572 verdes |
 | Tests E2E | 57/57 verde. Suites: `smoke` 28 tests, `estrategia-pago` 8 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### refactor(deudas): picker arriba + acelerador plegable del pago extra (D.2a) · 2026-06-29
+
+Implementación del primer slice de la Revisión D.2 ([ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). La card de estrategia de Deudas se reordenó para que el **picker Avalancha vs Bola de nieve** sea lo primero accionable (protagonista), y el pago extra mensual baje a un **acelerador plegable** ("💪 ¿Puedes pagar más rápido?", `<details>` colapsado bajo el detalle). El `<details>` se abre automáticamente si el usuario ya escribió un monto (extra > 0). La lógica financiera no se tocó: mismo `compararEstrategias`, `renderResumenExtra`, etc., solo reubicados. Corregido también un voseo ("Probá" → "Prueba") en la comparativa. Verificado: 4 tests de render nuevos (1572 total), lint limpio, E2E actualizado (abre el `<details>` antes de llenar el input). SW v215 → v216.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia.js` | Reordenado `renderEstrategiaPago`: picker arriba, `_renderAceleradorExtra` (nuevo, `<details>`) abajo. Eliminado `_renderExtraMensual`. Actualizado texto del diagnóstico inviable. |
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | Corregido voseo "Probá" → "Prueba" en `_renderComparativa`. |
+| `styles/components/charts.css` | Estilos `.estrategia-card__acelerador*` (disclosure nativo, `▾` rotado). |
+| `tests/unit/compromisos.test.js` | 4 tests de jerarquía D.2a (picker antes de acelerador, `<details>` colapsado/abierto, input dentro). |
+| `tests/e2e/estrategia-pago.test.js` | Test 5 abre el `<details>` antes de llenar el extra. |
+| `service-worker.js` | v215 → v216. |
+
+---
 
 ### docs(deudas): ADR 011 revisado, replanteada la jerarquía de la simulación (D.2) · 2026-06-29
 
@@ -83,23 +98,6 @@ El aporte a un apartado usaba un `<select>` de texto plano sin logo del banco y 
 | `modules/dominio/apartados/index.js` | `_guardarAporte` async con `resolverPagoConPreferida` (reparto + sobregiro); descuenta por split; mantiene aporte-seguimiento sin cuentas. |
 | `tests/unit/apartados.test.js` | 4 tests de render de `renderFormAporteApartado`. |
 | `service-worker.js` | v212 → v213. |
-
----
-
-### feat(compromisos): categorías predefinidas para deudas (tipo de obligación) · 2026-06-29
-
-Campo **tipo de obligación** en el formulario de nueva deuda (entidad y personal): 12 categorías con emoji (💳 Tarjeta de crédito, 💵 Crédito de consumo, 🏠 Crédito hipotecario, 🚗 Crédito vehicular, 🎓 Crédito educativo, 🧾 Libranza, 🔄 Crédito rotativo, 📉 Sobregiro, 🏪 Microcrédito, 🤝 Préstamo personal, 💧 Gota a gota, 📦 Otro). Catálogo único (`CATEGORIAS_DEUDA` + `CATEGORIA_DEUDA_EMOJI`): el mismo selector sirve para `deuda-entidad` y `deuda-personal`, sin filtrar por tipo. Validado/normalizado en `compromisos/logic.js`, exclusivo de las ramas de deuda (los fijos siguen usando `CATEGORIAS_AGENDA`, sin relación). Migración idempotente v17 → v18 (`categoria: null` en deudas existentes). El selector aparece en `renderFormDeuda` y el emoji + nombre en la card de la lista de deudas ("💳 Tarjeta de crédito · Deuda con entidad · 28%"). **Cierra el backlog "Mis cuentas: ajustes a ingresos": las 3 categorías predefinidas (Ingresos, Agenda, Deudas) quedan completas.** Verificado: 21 tests nuevos (1558 total) en `compromisos.test.js` y `storage.test.js`; lint limpio, 57/57 E2E. SW v211 → v212.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_DEUDA` (12 categorías) + `CATEGORIA_DEUDA_EMOJI`. |
-| `modules/core/storage.js` | Migración v17 → v18: `categoria: null` en deudas existentes. |
-| `modules/core/state.js` | Typedef `Compromiso.categoria` documentado para ambos catálogos. |
-| `modules/dominio/compromisos/logic.js` | `validarCompromiso` + `normalizarCompromiso` con categoría (rama deuda). |
-| `modules/dominio/compromisos/views/formularios.js` | Selector de categoría en `renderFormDeuda`. |
-| `modules/dominio/compromisos/views/lista.js` | Emoji + nombre en `_renderCompromisoItem`. |
-| `tests/unit/compromisos.test.js`, `tests/unit/storage.test.js` | 21 tests nuevos. |
-| `service-worker.js` | v211 → v212. |
 
 ---
 

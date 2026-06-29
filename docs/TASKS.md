@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1568/1568 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **D.2 (diseño)** revisado ADR 011, replanteada la jerarquía de la simulación de deudas (estrategia como protagonista, pago extra contextual). Sin código. Antes: D.1 (BUG) impacto del pago extra sin cifras absurdas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1572/1572 tests verdes, lint limpio, 57/57 E2E.** Último cambio: **D.2a** picker Avalancha/Bola de nieve arriba + pago extra como acelerador plegable. Antes: D.2 (diseño) revisado ADR 011. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -38,7 +38,7 @@ _(sin tarea activa)_
 ## Próxima tarea sugerida
 
 **ADR 011 en curso: rediseño de simulación de deudas.** S2 y S3 cerrados (eliminado el botón "Simular" por deuda; barrido de dead code del acordeón). **S1 sustituido por la Revisión D.2** (2026-06-29): la jerarquía vuelve a la estrategia, el pago extra es contextual (acelerador plegable / remedio). Pendientes de implementación, en orden:
-- **D.2a** - Reordenar la card: picker Avalancha/Bola de nieve arriba; pago extra a un acelerador plegable bajo el detalle (solo plan viable); quitar el input + resumen siempre visibles del tope. Sin lógica nueva (reubica `_renderExtraMensual` + `renderResumenExtra`). Modelo: Sonnet 4.6 - Medio.
+- ✅ **D.2a** - Reordenada la card: picker arriba, acelerador plegable ("¿Puedes pagar más rápido?") abajo. 4 tests nuevos. SW v215 → v216 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - **D.2b** - Plan inviable: el pago extra sube como primer remedio dentro de "Tu plan no se sostiene" (input + impacto en vivo); renegociar y consolidar quedan como texto hasta D.3. Sin lógica nueva. Modelo: Sonnet 4.6 - Medio.
 - **S4** (= parte de D.3) - "Renegociar tasa" interactivo (`simularRenegociacion` + tests).
 - **S5** (= parte de D.3) - "Consolidar deudas" interactivo (`simularConsolidacion` + tests).
