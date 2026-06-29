@@ -9,7 +9,7 @@
  */
 
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { simularRenegociacion, tasaMensualToEA } from '../logic.js';
+import { simularRenegociacion, simularConsolidacion, tasaMensualToEA } from '../logic.js';
 
 /**
  * Avalancha enfoca el ahorro financiero. Sus métricas (en orden):
@@ -331,6 +331,121 @@ export function renderRenegociar(deudas, ui) {
         Aplicar nueva tasa
       </button>
     </div>`;
+}
+
+/**
+ * Herramienta interactiva "Consolidar tus deudas" (D.3b). Junta todas las deudas
+ * pagables en un crédito nuevo único: el usuario ingresa la tasa EA y la cuota
+ * del crédito y ve la comparación contra su plan actual. El botón "Consolidar"
+ * (que crea la deuda nueva y archiva las consolidadas) se habilita solo si la
+ * consolidación reduce los intereses o vuelve pagable un plan inviable.
+ *
+ * Función de presentación pura: recibe el estado UI por parámetro, no lee S.
+ *
+ * @param {ReturnType<import('../logic.js').filtrarDeudasPagables>} deudas
+ * @param {{ consolidarTasaPct: number, consolidarCuota: number }} ui
+ * @returns {string}
+ */
+export function renderConsolidar(deudas, ui) {
+  if (!Array.isArray(deudas) || deudas.length < 2) return '';
+
+  const saldoTotal = deudas.reduce((a, d) => a + (Number(d.saldo) || 0), 0);
+  const cuotaTotal = deudas.reduce((a, d) => a + (Number(d.cuota) || 0), 0);
+
+  const tasaPct = Number(ui.consolidarTasaPct) || 0;
+  const cuota   = Number(ui.consolidarCuota)   || 0;
+  const sim = (tasaPct > 0 && cuota > 0)
+    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota })
+    : null;
+  const puedeAplicar = !!(sim && sim.mejora);
+
+  return `
+    <div class="estrategia-card__remedio estrategia-card__remedio--consolidar">
+      <p class="estrategia-card__bloque-titulo">🏦 Consolidar tus deudas</p>
+      <p class="estrategia-card__bloque-body">
+        Junta tus <strong>${deudas.length}</strong> deudas en un solo crédito nuevo. Si consigues una tasa
+        más baja que la mezcla actual, pagas menos intereses y manejas una sola cuota.
+      </p>
+      <p class="estrategia-card__bloque-body">
+        Hoy debes en total <strong>${f(saldoTotal)}</strong> y pagas <strong>${f(cuotaTotal)}/mes</strong>.
+      </p>
+      <div class="form-group">
+        <label for="consolidar-tasa" class="label">Tasa del crédito nuevo (% EA)</label>
+        <input id="consolidar-tasa" class="input" type="number"
+               min="0" step="0.1" value="${tasaPct || ''}"
+               placeholder="Ej. 18" autocomplete="off" inputmode="decimal"
+               data-action="cambiar-consolidar" />
+      </div>
+      <div class="form-group">
+        <label for="consolidar-cuota" class="label">Cuota mensual del crédito nuevo</label>
+        <input id="consolidar-cuota" class="input" type="number"
+               min="0" step="10000" value="${cuota || ''}"
+               placeholder="Ej. 400000" autocomplete="off" inputmode="numeric"
+               data-action="cambiar-consolidar" />
+      </div>
+      <div class="estrategia-card__consolidar-comparativa">
+        ${renderComparativaConsolidacion(sim)}
+      </div>
+      <button type="button" class="btn btn--primary estrategia-card__consolidar-aplicar"
+              data-action="aplicar-consolidacion" ${puedeAplicar ? '' : 'disabled'}>
+        Consolidar en un crédito nuevo
+      </button>
+    </div>`;
+}
+
+/**
+ * Renderiza la comparación "plan actual vs consolidado" (D.3b). Honesta en todos
+ * los escenarios: no resta cifras divergentes y distingo entre bajar la cuota
+ * (alarga el plazo) y bajar el interés total (el beneficio real de consolidar).
+ *
+ * @param {ReturnType<import('../logic.js').simularConsolidacion>|null} sim
+ * @returns {string}
+ */
+export function renderComparativaConsolidacion(sim) {
+  if (!sim) {
+    return `
+      <p class="estrategia-card__bloque-body">
+        Ingresa la tasa y la cuota del crédito nuevo para compararlo con tu plan actual.
+      </p>`;
+  }
+
+  // El crédito nuevo tampoco se paga: cuota por debajo del interés.
+  if (!sim.consolidado.completo) {
+    return `
+      <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--warn">
+        Con esa cuota, el crédito nuevo tampoco alcanza a cubrir los intereses: subiría en vez de bajar. Sube la cuota o busca una tasa más baja.
+      </p>`;
+  }
+
+  // Plan actual inviable y el consolidado sí cierra: mejora cualitativa.
+  if (!sim.actual.completo) {
+    return `
+      <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
+        🎯 Hoy tu plan no se sostiene. Consolidando, saldas todo en <strong>${formatearDuracion(sim.consolidado.meses)}</strong> con una cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
+      </p>`;
+  }
+
+  // Ambos cierran pero no baja el interés: consolidar así no conviene.
+  if (!sim.mejora) {
+    const masMeses = sim.ahorroMeses < 0
+      ? ` Además, tardarías <strong>${formatearDuracion(-sim.ahorroMeses)} más</strong>.`
+      : '';
+    return `
+      <p class="estrategia-card__bloque-body">
+        Consolidar así no te ahorra intereses: pagarías <strong>${f(sim.consolidado.intereses)}</strong> frente a <strong>${f(sim.actual.intereses)}</strong> de tu plan actual.${masMeses}
+      </p>`;
+  }
+
+  // Mejora real: ahorro de intereses. El plazo puede subir o bajar.
+  const tiempo = sim.ahorroMeses > 0
+    ? ` y terminas <strong>${formatearDuracion(sim.ahorroMeses)} antes</strong>`
+    : sim.ahorroMeses < 0
+      ? ` (tardas <strong>${formatearDuracion(-sim.ahorroMeses)} más</strong>, pero pagas menos intereses)`
+      : '';
+  return `
+    <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
+      🎯 Consolidando ahorras <strong>${f(sim.ahorroIntereses)} en intereses</strong>${tiempo}. Pagarías una sola cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
+    </p>`;
 }
 
 /**

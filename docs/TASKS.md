@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1592/1592 tests verdes, lint limpio, 59/59 E2E.** Último cambio: **D.3a** renegociar la tasa interactivo + aplicar (la simulación ya muta la deuda con confirmación). Antes: D.2b pago extra como remedio. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1604/1604 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **D.3b** consolidar deudas interactivo + aplicar (crea el crédito nuevo y archiva las consolidadas). **Con esto ADR 011 queda completamente implementado.** Antes: D.3a renegociar la tasa. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -37,11 +37,13 @@ _(sin tarea activa)_
 
 ## Próxima tarea sugerida
 
-**ADR 011 en curso: rediseño de simulación de deudas.** S2 y S3 cerrados (eliminado el botón "Simular" por deuda; barrido de dead code del acordeón). **S1 sustituido por la Revisión D.2** (2026-06-29): la jerarquía vuelve a la estrategia, el pago extra es contextual (acelerador plegable / remedio). Pendientes de implementación, en orden:
-- ✅ **D.2a** - Reordenada la card: picker arriba, acelerador plegable ("¿Puedes pagar más rápido?") abajo. 4 tests nuevos. SW v215 → v216 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- ✅ **D.2b** - Plan inviable: el pago extra sube como primer remedio ("Aumenta tu cuota") dentro del diagnóstico. 4 tests nuevos. SW v216 → v217 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- ✅ **D.3a / S4** - "Renegociar tasa" interactivo + aplicar (`simularRenegociacion`, escribe la nueva tasa sobre la deuda con confirmación). 16 unit + 2 E2E. SW v217 → v218 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **D.3b / S5** - "Consolidar deudas" interactivo + aplicar (`simularConsolidacion`: simular un crédito nuevo, comparar contra la mejor estrategia, y aplicar = crear el crédito y archivar las consolidadas). Más pesada que D.3a (modela un crédito nuevo, no solo cambia un campo). Modelo: Opus 4.8 - Alto.
+**✅ ADR 011 (rediseño de simulación de deudas) completamente implementado** (2026-06-29). S1 sustituido por la Revisión D.2; S2/S3 hechos; S4/S5 = D.3a/D.3b hechos. Trazabilidad de los slices:
+- ✅ **D.2a** - Reordenada la card: picker arriba, acelerador plegable ("¿Puedes pagar más rápido?") abajo. SW v216. Ver [CHANGELOG](CHANGELOG.md).
+- ✅ **D.2b** - Plan inviable: el pago extra sube como primer remedio ("Aumenta tu cuota") dentro del diagnóstico. SW v217. Ver [CHANGELOG](CHANGELOG.md).
+- ✅ **D.3a / S4** - "Renegociar tasa" interactivo + aplicar (`simularRenegociacion`). 16 unit + 2 E2E. SW v218. Ver [CHANGELOG](CHANGELOG.md).
+- ✅ **D.3b / S5** - "Consolidar deudas" interactivo + aplicar (`simularConsolidacion`: crea el crédito nuevo y archiva las consolidadas). 12 unit + 2 E2E. SW v219. Ver [CHANGELOG](CHANGELOG.md).
+
+**Siguiente sugerido del backlog "Visión de Deudas": D.4** (comparación explicada Avalancha vs Bola de nieve, enriquecer el mensaje, Sonnet 4.6 - Medio). Luego D.5 (categorías de deuda en dos dimensiones, Opus 4.8 - Alto).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -51,7 +53,7 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 ✅ **D.2 (diseño, revisa ADR 011 S1)** - Replanteada la jerarquía de la simulación: el eje principal vuelve a ser elegir Avalancha vs Bola de nieve; el pago extra deja de ser protagonista y pasa a ser contextual (acelerador plegable en plan viable, primer remedio en plan inviable). ADR 011 revisado (sección "Revisión D.2", S1 sustituido). Implementación dividida en D.2a + D.2b (ver "Próxima tarea sugerida" arriba). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-🔄 **D.3 (= ADR 011 S4/S5) - Convertir la simulación en acción.** En curso, corte vertical por herramienta. ✅ D.3a (renegociar tasa + aplicar). Pendiente D.3b (consolidar + aplicar), ver "Próxima tarea sugerida" arriba.
+✅ **D.3 (= ADR 011 S4/S5) - Convertir la simulación en acción.** Completa, corte vertical por herramienta: D.3a (renegociar tasa + aplicar) + D.3b (consolidar + aplicar). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **D.4 (mejora UI)** - Comparación explicada Avalancha vs Bola de nieve: además del resultado, frases que ayuden a decidir según prioridades ("con Avalancha ahorras $X más en intereses"; "con Bola de nieve cierras tu primera deuda un mes antes"). Ya existen `compararEstrategias` y `_renderComparativa`; es enriquecer el mensaje, no lógica nueva. Modelo: Sonnet 4.6 - Medio.
 

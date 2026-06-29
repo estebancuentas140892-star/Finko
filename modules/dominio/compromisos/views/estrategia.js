@@ -27,6 +27,7 @@ import {
   renderImpactoBolaNieve,
   renderResumenExtra,
   renderRenegociar,
+  renderConsolidar,
 } from './estrategia-impacto.js';
 
 // Estado UI local: extra mensual, estrategia activa, herramienta de renegociación.
@@ -37,6 +38,8 @@ const _uiEstrategia = {
   estrategia:         null,
   renegociarDeudaId:  null,  // deuda elegida en la herramienta de renegociar tasa
   renegociarTasaPct:  0,     // nueva tasa escrita, en la unidad nativa de la deuda
+  consolidarTasaPct:  0,     // tasa EA del crédito de consolidación
+  consolidarCuota:    0,     // cuota mensual del crédito de consolidación
 };
 
 /**
@@ -56,6 +59,14 @@ export function setEstrategiaUI(patch) {
   if (patch.renegociarTasaPct !== undefined) {
     const n = Number(patch.renegociarTasaPct);
     _uiEstrategia.renegociarTasaPct = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  if (patch.consolidarTasaPct !== undefined) {
+    const n = Number(patch.consolidarTasaPct);
+    _uiEstrategia.consolidarTasaPct = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  if (patch.consolidarCuota !== undefined) {
+    const n = Number(patch.consolidarCuota);
+    _uiEstrategia.consolidarCuota = Number.isFinite(n) && n >= 0 ? n : 0;
   }
 }
 
@@ -187,10 +198,7 @@ function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml,
 
       ${renderRenegociar(deudas, _uiEstrategia)}
 
-      <p class="estrategia-card__bloque-body">
-        <strong>Otra salida:</strong> consolidar las deudas en un crédito más barato
-        (próximamente).
-      </p>
+      ${renderConsolidar(deudas, _uiEstrategia)}
     </div>`;
 }
 

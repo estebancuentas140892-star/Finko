@@ -347,3 +347,62 @@ test.describe('Renegociar la tasa (D.3a)', () => {
   });
 
 });
+
+// ── SUITE: Consolidar deudas (D.3b) ───────────────────────────────────────────
+
+test.describe('Consolidar deudas (D.3b)', () => {
+
+  test('la herramienta aparece y compara en vivo', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+
+    const tool = page.locator('.estrategia-card__remedio--consolidar');
+    await expect(tool).toBeVisible({ timeout: 5_000 });
+    await expect(tool).toContainText('Consolidar tus deudas');
+
+    const aplicar = page.locator('[data-action="aplicar-consolidacion"]');
+    await expect(aplicar).toBeDisabled();
+
+    // Un crédito barato (8% EA) con cuota suficiente vuelve viable el plan.
+    await page.locator('#consolidar-tasa').fill('8');
+    await page.locator('#consolidar-cuota').fill('400000');
+    await expect(page.locator('.estrategia-card__consolidar-comparativa')).toContainText('saldas', { timeout: 3_000 });
+    await expect(aplicar).toBeEnabled();
+  });
+
+  test('consolidar crea el crédito nuevo y archiva las deudas previas', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+
+    await page.locator('#consolidar-tasa').fill('8');
+    await page.locator('#consolidar-cuota').fill('400000');
+    const aplicar = page.locator('[data-action="aplicar-consolidacion"]');
+    await expect(aplicar).toBeEnabled({ timeout: 3_000 });
+    await aplicar.click();
+
+    // Confirmar en el modal.
+    await page.locator('[data-role="confirmar"]').click();
+
+    // Tras consolidar: las 2 deudas previas quedan archivadas (activo:false) y
+    // hay una deuda nueva activa "Crédito de consolidación" con saldo 10.5 M.
+    await expect.poll(async () => page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      const activas = s.compromisos.filter(c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'));
+      const previasArchivadas = ['reneg-a', 'reneg-b'].every(id =>
+        s.compromisos.find(c => c.id === id)?.activo === false);
+      const nueva = s.compromisos.find(c => c.descripcion === 'Crédito de consolidación');
+      return {
+        activasCount: activas.length,
+        previasArchivadas,
+        nuevaSaldo: nueva?.saldoTotal,
+        nuevaCuota: nueva?.cuotaMensual,
+      };
+    }), { timeout: 2_000 }).toEqual({
+      activasCount: 1,
+      previasArchivadas: true,
+      nuevaSaldo: 10_500_000,
+      nuevaCuota: 400_000,
+    });
+  });
+
+});

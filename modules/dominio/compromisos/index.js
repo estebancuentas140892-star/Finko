@@ -18,7 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, tasaMensualToEA } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, tasaMensualToEA } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -31,7 +31,7 @@ import {
   renderPanelVencidos,
   renderPanelPrioridades,
 } from './view.js';
-import { renderResumenExtra, renderComparativaRenegociacion } from './views/estrategia-impacto.js';
+import { renderResumenExtra, renderComparativaRenegociacion, renderComparativaConsolidacion } from './views/estrategia-impacto.js';
 
 /**
  * Re-renderiza los paneles del dashboard que dependen de compromisos.
@@ -471,6 +471,83 @@ async function _aplicarRenegociacion(el) {
   announce(`Tasa de "${deuda.descripcion}" actualizada a ${pct}% ${unidad}.`);
 }
 
+// ── HANDLERS CONSOLIDAR DEUDAS (D.3b) ────────────────────────────
+
+/**
+ * Actualiza en vivo la comparación de consolidación al escribir la tasa o la
+ * cuota del crédito nuevo. Lee ambos inputs (no solo el que disparó el evento)
+ * y commitea a estado, sin re-render, por la misma razón que renegociar: que el
+ * clic en "Consolidar" no compita con un re-render por `change` (blur).
+ */
+function _actualizarConsolidacionEnVivo() {
+  const cont = document.querySelector('.estrategia-card__consolidar-comparativa');
+  if (!cont) return;
+
+  const tasaPct = Number(document.getElementById('consolidar-tasa')?.value) || 0;
+  const cuota   = Number(document.getElementById('consolidar-cuota')?.value) || 0;
+  setEstrategiaUI({ consolidarTasaPct: tasaPct, consolidarCuota: cuota });
+
+  const deudas = filtrarDeudasPagables(S.compromisos);
+  const sim = (tasaPct > 0 && cuota > 0)
+    ? simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota })
+    : null;
+  cont.innerHTML = renderComparativaConsolidacion(sim);
+
+  const btn = document.querySelector('[data-action="aplicar-consolidacion"]');
+  if (btn) btn.disabled = !(sim && sim.mejora);
+}
+
+/**
+ * Aplica la consolidación: crea una deuda nueva (crédito de consolidación) con
+ * el saldo sumado y archiva (activo:false) las deudas consolidadas. Muta varios
+ * registros, así que pide una confirmación explícita y clara.
+ */
+async function _aplicarConsolidacion() {
+  const tasaPct = Number(document.getElementById('consolidar-tasa')?.value);
+  const cuota   = Number(document.getElementById('consolidar-cuota')?.value);
+  if (!(tasaPct >= 0) || !(cuota > 0)) return;
+
+  const deudas = filtrarDeudasPagables(S.compromisos);
+  if (deudas.length < 2) return;
+
+  // Confirmar contra la simulación real: solo aplicar si mejora.
+  const sim = simularConsolidacion(deudas, { tasaEA: tasaPct / 100, cuota });
+  if (!sim || !sim.mejora) return;
+
+  const saldoTotal = deudas.reduce((a, d) => a + (Number(d.saldo) || 0), 0);
+  const n = deudas.length;
+
+  const ok = await confirmar({
+    titulo:         'Consolidar tus deudas',
+    mensaje:        `¿Crear un crédito de consolidación de ${f(saldoTotal)} a ${tasaPct}% EA con cuota ${f(cuota)}/mes y archivar tus ${n} deudas actuales? Hazlo solo cuando tengas el crédito aprobado: cambia tus deudas registradas.`,
+    confirmarTexto: 'Consolidar',
+    peligroso:      false,
+  });
+  if (!ok) return;
+
+  // Crear el crédito nuevo (entidad: tasa EA) antes de archivar las consolidadas.
+  guardar('compromisos', {
+    descripcion:  'Crédito de consolidación',
+    frecuencia:   'Mensual',
+    diaPago:      Math.min(new Date().getDate(), 28),
+    tipo:         'deuda-entidad',
+    activo:       true,
+    saldoTotal,
+    cuotaMensual: cuota,
+    categoria:    null,
+    tasa:         tasaPct / 100,
+    tasaUnidad:   'EA',
+  });
+  for (const d of deudas) {
+    editar('compromisos', d.id, { activo: false });
+  }
+
+  setEstrategiaUI({ consolidarTasaPct: 0, consolidarCuota: 0 });
+  _renderTodo();
+  updSaldo();
+  announce(`${n} deudas consolidadas en un crédito nuevo de ${f(saldoTotal)}.`);
+}
+
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
@@ -489,6 +566,7 @@ export function initCompromisos() {
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
   registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
+  registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',     _volverChooser);
 
@@ -502,8 +580,9 @@ export function initCompromisos() {
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) return;
-    if (t.dataset.action === 'cambiar-extra-estrategia')  _actualizarResumenEnVivo(t);
+    if (t.dataset.action === 'cambiar-extra-estrategia')     _actualizarResumenEnVivo(t);
     else if (t.dataset.action === 'cambiar-renegociar-tasa') _actualizarRenegociacionEnVivo(t);
+    else if (t.dataset.action === 'cambiar-consolidar')      _actualizarConsolidacionEnVivo();
   });
   document.addEventListener('change', (e) => {
     const t = e.target;

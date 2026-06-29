@@ -7,6 +7,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): consolidar deudas interactivo + aplicar (D.3b) · 2026-06-29
+
+Segundo y último slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). En el bloque "Tu plan no se sostiene", la salida "consolidar las deudas" pasa de texto plano a herramienta interactiva (🏦 Consolidar tus deudas):
+
+- Junta **todas** las deudas pagables en un crédito nuevo único: muestra cuánto se debe en total y la cuota actual, y pide la **tasa EA** y la **cuota mensual** del crédito nuevo.
+- Compara **en vivo** el plan actual (mejor estrategia, Avalancha, sin extra) contra el crédito consolidado: cuánto se ahorra en intereses, en cuánto cambia el plazo y cuál sería la cuota única. Honesta en todos los escenarios: si el plan actual no se sostiene pero el consolidado sí, lo dice de forma cualitativa; si la cuota nueva no cubre los intereses, advierte que tampoco se pagaría; si no baja los intereses, avisa que consolidar así no conviene.
+- El botón **"Consolidar en un crédito nuevo"** se habilita solo si reduce los intereses o vuelve pagable un plan inviable (bajar solo la cuota, a más interés total, no cuenta como mejora). Al confirmar, **crea** la deuda de consolidación (tipo entidad, EA, saldo = suma) y **archiva** (`activo:false`) las deudas consolidadas, en un paso.
+
+Lógica nueva pura: `simularConsolidacion(deudas, { tasaEA, cuota })` (reusa `simularEstrategiaPago` para el baseline y `simularPagoDeuda` para el crédito nuevo). El ahorro de meses se devuelve con signo: consolidar a una cuota menor puede alargar el plazo aunque baje el interés total, y el renderer lo dice. Alcance v1: consolida todas las deudas (la selección parcial queda como mejora futura).
+
+**Con D.3a + D.3b, S4 y S5 quedan cerrados: ADR 011 está completamente implementado** (S1 sustituido por la Revisión D.2, S2/S3 hechos, S4/S5 = D.3a/D.3b).
+
+Verificado: 12 tests unitarios nuevos (1592 → 1604) sobre `simularConsolidacion` (ahorra / no ahorra / cuota insuficiente / inviable→viable / null), `renderComparativaConsolidacion` y el render de la herramienta; + 2 E2E nuevos (59 → 61) que ejercen el flujo real en Chromium: ingresar tasa+cuota actualiza la comparación y habilita el botón, y consolidar crea el crédito de $10.5M y archiva las 2 deudas previas. El cableado de eventos se verifica por E2E (no por el preview). Lint limpio. SW v218 → v219.
+
+- **`modules/dominio/compromisos/logic.js`**: `simularConsolidacion`.
+- **`modules/dominio/compromisos/views/estrategia-impacto.js`**: `renderConsolidar` + `renderComparativaConsolidacion`.
+- **`modules/dominio/compromisos/views/estrategia.js`**: estado UI `consolidarTasaPct` / `consolidarCuota`; el bloque inviable monta la herramienta.
+- **`modules/dominio/compromisos/index.js`**: handlers `_actualizarConsolidacionEnVivo`, `_aplicarConsolidacion` (crea la deuda nueva + archiva las consolidadas) + cableado input/click.
+- **`styles/components/charts.css`**: estilos de la herramienta de consolidar.
+- **`tests/unit/compromisos.test.js`**: 12 tests nuevos. **`tests/e2e/estrategia-pago.test.js`**: 2 tests E2E nuevos.
+- **`service-worker.js`**: v218 → v219.
+
+---
+
 ### feat(deudas): renegociar la tasa interactivo + aplicar (D.3a) · 2026-06-29
 
 Primer slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md): la simulación de deudas deja de ser solo "what-if" y puede **convertirse en acción**. En el bloque "Tu plan no se sostiene", la salida "renegociar la tasa" pasa de texto plano a herramienta interactiva (🤝 Renegociar la tasa):

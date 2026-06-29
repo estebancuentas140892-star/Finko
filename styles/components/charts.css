@@ -721,13 +721,15 @@
   border-radius: var(--fk-radius-md);
   background: var(--fk-bg-elevated);
 }
-/* D.3a: herramienta "Renegociar la tasa". */
-.estrategia-card__renegociar-comparativa {
+/* D.3a/D.3b: herramientas "Renegociar la tasa" y "Consolidar". */
+.estrategia-card__renegociar-comparativa,
+.estrategia-card__consolidar-comparativa {
   margin: var(--fk-space-3) 0;
 }
 .estrategia-card__renegociar-msg--ok   { color: var(--fk-success-text); }
 .estrategia-card__renegociar-msg--warn { color: var(--fk-warning-text); }
-.estrategia-card__renegociar-aplicar {
+.estrategia-card__renegociar-aplicar,
+.estrategia-card__consolidar-aplicar {
   width: 100%;
 }
 

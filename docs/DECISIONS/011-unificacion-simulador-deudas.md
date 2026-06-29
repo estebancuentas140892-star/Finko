@@ -49,7 +49,7 @@ La simulación de pago de deudas hoy vive en **tres superficies dispersas** que 
 | S2 | Eliminar botón "Simular" por deuda y su modal | No (solo eliminación) |
 | S3 | Reorganizar el acordeón (ya absorbido en S1, limpiar el dead code) | No |
 | S4 | "Renegociar tasa" interactivo **+ aplicar** (= D.3a, hecho; ver Revisión D.3) | `simularRenegociacion` + tests |
-| S5 | "Consolidar deudas" interactivo + aplicar (= D.3b, pendiente) | `simularConsolidacion` + tests |
+| S5 | "Consolidar deudas" interactivo **+ aplicar** (= D.3b, hecho; ver Revisión D.3) | `simularConsolidacion` + tests |
 
 ---
 
@@ -133,10 +133,12 @@ El principio se reformula así: **la simulación nunca muta `S`; solo un botón 
 D.3 se implementa **vertical por herramienta** (cada una simula y aplica de punta a punta), no horizontal:
 
 - **D.3a (renegociar tasa):** `simularRenegociacion(deuda, nuevaTasaEA)` (puro, reusa `simularPagoDeuda`, que ahora expone `completo`). La herramienta vive en el bloque "Tu plan no se sostiene": el usuario elige una deuda con tasa conocida, escribe la tasa que cree poder conseguir (en la unidad nativa de la deuda: EA para entidad, mensual para personal) y ve la comparación en vivo. El botón "Aplicar nueva tasa" se habilita solo si la nueva tasa mejora el plan, pide confirmación y escribe `tasa` + `tasaUnidad` sobre la deuda. Cubre el caso inviable→viable sin restar cifras divergentes (hereda el patrón de D.1).
-- **D.3b (consolidar deudas):** pendiente. `simularConsolidacion` + herramienta + aplicar (crear el crédito nuevo y archivar las consolidadas).
+- **D.3b (consolidar deudas):** `simularConsolidacion(deudas, { tasaEA, cuota })` (puro). Junta **todas** las deudas pagables en un crédito nuevo único (saldo = suma) y compara el plan actual (Avalancha, sin extra) contra el crédito nuevo. El "Aplicar" muta más de un registro: **crea** la deuda de consolidación (`guardar`, tipo `deuda-entidad`, EA) y **archiva** (`activo:false`) las consolidadas; por eso la confirmación nombra el monto, la tasa y cuántas deudas se archivan. El botón se habilita solo si consolidar reduce los intereses o vuelve pagable un plan inviable (bajar solo la cuota, a más interés total, no cuenta como mejora). El ahorro de meses se muestra con signo (consolidar a una cuota menor puede alargar el plazo aunque baje el interés). Alcance v1: consolida todas las deudas; la selección parcial queda como mejora futura.
 
 ### Consecuencias
 
 - `simularPagoDeuda` ahora devuelve `completo` (sin romper a sus consumidores; no tenía ninguno en producción). `filtrarDeudasPagables` expone `tasaUnidad` para que la herramienta pregunte y aplique en la unidad correcta.
 - La verificación del cableado de eventos (input/change/click) se hace por **E2E (Playwright)**, no por el preview: el dev-server cachea los módulos de forma agresiva y no refleja los cambios (ver memoria "preview envenenado").
-- La a11y del flujo de aplicar reusa el modal `confirmar()` existente; el botón "Aplicar" arranca `disabled` mientras no haya una tasa que mejore.
+- La a11y de los flujos de aplicar reusa el modal `confirmar()` existente; los botones "Aplicar" / "Consolidar" arrancan `disabled` mientras no haya un cambio que mejore.
+
+**Con D.3a + D.3b, S4 y S5 quedan cerrados: ADR 011 está completamente implementado** (S1 sustituido por la Revisión D.2; S2/S3 hechos; S4/S5 hechos como D.3a/D.3b).

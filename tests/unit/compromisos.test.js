@@ -13,6 +13,7 @@ import {
   simularPagoDeuda,
   simularEstrategiaPago,
   simularRenegociacion,
+  simularConsolidacion,
   compararEstrategias,
   recomendarEstrategia,
   detectarFijosSinPagarEsteMes,
@@ -33,7 +34,7 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
-import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
+import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
@@ -2291,5 +2292,123 @@ describe('renderRenegociar (D.3a) en el bloque inviable', () => {
     expect(btn.disabled).toBe(false);
     expect(btn.dataset.deuda).toBe('d1');
     expect(btn.dataset.unidad).toBe('EA');
+  });
+});
+
+// ── simularConsolidacion (D.3b) ──────────────────────────────────
+
+describe('simularConsolidacion', () => {
+  // Plan viable: dos deudas que se pagan con su cuota actual.
+  const viables = () => filtrarDeudasPagables([
+    deudaBase({ id: 'a', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.40, tasaUnidad: 'EA' }),
+    deudaBase({ id: 'b', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.30, tasaUnidad: 'EA' }),
+  ]);
+
+  it('consolidar a una tasa más baja ahorra intereses (ambos planes cierran)', () => {
+    const r = simularConsolidacion(viables(), { tasaEA: 0.15, cuota: 300_000 });
+    expect(r.actual.completo).toBe(true);
+    expect(r.consolidado.completo).toBe(true);
+    expect(r.consolidado.saldo).toBe(6_000_000);
+    expect(r.ahorroIntereses).toBeGreaterThan(0);
+    expect(r.mejora).toBe(true);
+  });
+
+  it('consolidar a una tasa más alta no mejora (no ahorra intereses)', () => {
+    const r = simularConsolidacion(viables(), { tasaEA: 0.60, cuota: 300_000 });
+    expect(r.consolidado.completo).toBe(true);
+    expect(r.mejora).toBe(false);
+    expect(r.ahorroIntereses).toBeLessThanOrEqual(0);
+  });
+
+  it('si la cuota nueva no cubre el interés, el crédito tampoco se paga', () => {
+    const r = simularConsolidacion(viables(), { tasaEA: 0.15, cuota: 5_000 });
+    expect(r.consolidado.completo).toBe(false);
+    expect(r.mejora).toBe(false);
+  });
+
+  it('mejora cualitativa: plan actual inviable que el crédito nuevo vuelve pagable', () => {
+    const inviables = filtrarDeudasPagables([
+      deudaBase({ id: 'a', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'b', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ]);
+    const r = simularConsolidacion(inviables, { tasaEA: 0.08, cuota: 400_000 });
+    expect(r.actual.completo).toBe(false);
+    expect(r.consolidado.completo).toBe(true);
+    expect(r.mejora).toBe(true);
+    expect(r.ahorroIntereses).toBe(0); // no se resta una cifra divergente
+  });
+
+  it('null si no hay deudas o la cuota es inválida', () => {
+    expect(simularConsolidacion([], { tasaEA: 0.1, cuota: 100_000 })).toBeNull();
+    expect(simularConsolidacion(viables(), { tasaEA: 0.1, cuota: 0 })).toBeNull();
+  });
+});
+
+// ── renderComparativaConsolidacion (D.3b) ────────────────────────
+
+describe('renderComparativaConsolidacion', () => {
+  const viables = () => filtrarDeudasPagables([
+    deudaBase({ id: 'a', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.40, tasaUnidad: 'EA' }),
+    deudaBase({ id: 'b', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.30, tasaUnidad: 'EA' }),
+  ]);
+
+  it('sin simulación, invita a ingresar datos', () => {
+    expect(renderComparativaConsolidacion(null)).toContain('Ingresa la tasa');
+  });
+
+  it('mejora: muestra el ahorro en intereses', () => {
+    const sim = simularConsolidacion(viables(), { tasaEA: 0.15, cuota: 300_000 });
+    const html = renderComparativaConsolidacion(sim);
+    expect(html).toContain('🎯');
+    expect(html).toContain('ahorras');
+    expect(html).toContain('en intereses');
+  });
+
+  it('sin ahorro: avisa que consolidar así no conviene', () => {
+    const sim = simularConsolidacion(viables(), { tasaEA: 0.60, cuota: 300_000 });
+    const html = renderComparativaConsolidacion(sim);
+    expect(html).toContain('no te ahorra intereses');
+  });
+
+  it('cuota demasiado baja: advierte que el crédito tampoco se paga', () => {
+    const sim = simularConsolidacion(viables(), { tasaEA: 0.15, cuota: 5_000 });
+    const html = renderComparativaConsolidacion(sim);
+    expect(html).toContain('tampoco alcanza');
+    expect(html).not.toContain('e+');
+  });
+});
+
+// ── renderEstrategiaPago: herramienta consolidar en bloque inviable (D.3b) ──
+
+describe('renderConsolidar (D.3b) en el bloque inviable', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, consolidarTasaPct: 0, consolidarCuota: 0 });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('muestra la herramienta de consolidar dentro del bloque inviable', () => {
+    renderEstrategiaPago();
+    const tool = document.querySelector('.estrategia-card__remedio--consolidar');
+    expect(tool).not.toBeNull();
+    expect(tool.querySelector('#consolidar-tasa')).not.toBeNull();
+    expect(tool.querySelector('#consolidar-cuota')).not.toBeNull();
+    expect(tool.textContent).toContain('Consolidar tus deudas');
+  });
+
+  it('el botón Consolidar arranca deshabilitado (sin datos)', () => {
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-consolidacion"]');
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('con tasa + cuota que mejoran el plan, Consolidar se habilita', () => {
+    setEstrategiaUI({ consolidarTasaPct: 8, consolidarCuota: 400_000 });
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-consolidacion"]');
+    expect(btn.disabled).toBe(false);
   });
 });

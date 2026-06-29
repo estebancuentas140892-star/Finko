@@ -719,6 +719,69 @@ export function simularRenegociacion(deuda, nuevaTasaEA) {
 }
 
 /**
+ * Simula consolidar TODAS las deudas en un crédito nuevo único. Compara el plan
+ * actual (mejor estrategia, Avalancha, sin extra) contra un crédito nuevo con
+ * saldo = suma de los saldos, su propia tasa EA y su propia cuota mensual.
+ * What-if puro: no muta nada.
+ *
+ * El ahorro de intereses solo se calcula si ambos planes cierran. Igual que en
+ * renegociar, un plan actual inviable que el crédito nuevo vuelve pagable es una
+ * mejora cualitativa (no se resta una cifra divergente). El ahorro de meses se
+ * deja con signo: consolidar a una cuota menor puede alargar el plazo aunque
+ * baje el interés, y el renderer debe poder decirlo con honestidad.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {{ tasaEA: number, cuota: number }} nuevoCredito  tasa EA decimal + cuota mensual.
+ * @returns {{
+ *   actual:      { meses: number, intereses: number, completo: boolean, cuotaMensual: number },
+ *   consolidado: { meses: number, intereses: number, completo: boolean, cuotaMensual: number, saldo: number },
+ *   ahorroIntereses: number,
+ *   ahorroMeses: number,
+ *   mejora: boolean,
+ * } | null}  null si los datos no permiten simular.
+ */
+export function simularConsolidacion(deudas, nuevoCredito) {
+  if (!Array.isArray(deudas) || deudas.length === 0) return null;
+
+  const saldoTotal       = deudas.reduce((a, d) => a + (Number(d.saldo)  || 0), 0);
+  const cuotaActualTotal = deudas.reduce((a, d) => a + (Number(d.cuota)  || 0), 0);
+  const tasaNueva  = Number(nuevoCredito?.tasaEA);
+  const cuotaNueva = Number(nuevoCredito?.cuota);
+  if (!(saldoTotal > 0)) return null;
+  if (!Number.isFinite(tasaNueva) || tasaNueva < 0) return null;
+  if (!(cuotaNueva > 0)) return null;
+
+  const planActual = simularEstrategiaPago(deudas, 0, 'avalancha');
+  const cons       = simularPagoDeuda(saldoTotal, tasaNueva, cuotaNueva, 0);
+
+  const actual = {
+    meses:        planActual.meses,
+    intereses:    Math.round(planActual.interesesTotales),
+    completo:     planActual.completo,
+    cuotaMensual: cuotaActualTotal,
+  };
+  const consolidado = {
+    meses:        cons.meses,
+    intereses:    cons.intereses,
+    completo:     cons.completo,
+    cuotaMensual: cuotaNueva,
+    saldo:        saldoTotal,
+  };
+
+  const ambosCompletan  = actual.completo && consolidado.completo;
+  const ahorroIntereses = ambosCompletan ? actual.intereses - consolidado.intereses : 0;
+  const ahorroMeses     = ambosCompletan ? actual.meses - consolidado.meses : 0; // con signo
+
+  // Consolidar "mejora" si vuelve pagable un plan inviable, o si (cerrando ambos)
+  // reduce el total de intereses. Bajar solo la cuota (a más interés total) no se
+  // marca como mejora: el botón "Aplicar" se reserva para un beneficio real.
+  const mejora = (!actual.completo && consolidado.completo)
+    || (ambosCompletan && ahorroIntereses > 0.5);
+
+  return { actual, consolidado, ahorroIntereses, ahorroMeses, mejora };
+}
+
+/**
  * Filtra compromisos que pueden entrar en una estrategia de pago.
  * Requiere: deuda (entidad o personal), activo, saldoTotal>0, cuotaMensual>0.
  * La tasa se convierte a EA si está en mensual; si no hay tasa válida, queda 0.

@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1592/1592 verdes |
-| Tests E2E | 59/59 verde. Suites: `smoke` 28 tests, `estrategia-pago` 10 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
+| Tests unitarios + integración | 1604/1604 verdes |
+| Tests E2E | 61/61 verde. Suites: `smoke` 28 tests, `estrategia-pago` 12 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): consolidar deudas interactivo + aplicar (D.3b) · 2026-06-29
+
+Segundo y último slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). En el bloque "Tu plan no se sostiene", "consolidar" pasa de texto a herramienta interactiva (🏦): el usuario ingresa la tasa EA y la cuota de un crédito nuevo que juntaría **todas** sus deudas (saldo = suma), y ve en vivo cómo se compara con su plan actual (mejor estrategia). El botón "Consolidar en un crédito nuevo" se habilita solo si baja los intereses o vuelve pagable un plan inviable; al confirmar, **crea** la deuda de consolidación y **archiva** (`activo:false`) las consolidadas en un paso. `simularConsolidacion` (pura) muestra el ahorro de meses con signo (consolidar a una cuota menor puede alargar el plazo aunque baje el interés). **Con esto S4 y S5 quedan cerrados: ADR 011 está completamente implementado.** Verificado: 12 unit + 2 E2E nuevos (el E2E confirma que se crea el crédito de $10.5M y se archivan las 2 deudas). SW v218 → v219.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `simularConsolidacion(deudas, { tasaEA, cuota })`. |
+| `modules/dominio/compromisos/views/estrategia-impacto.js` | `renderConsolidar` + `renderComparativaConsolidacion`. |
+| `modules/dominio/compromisos/views/estrategia.js` | Estado UI `consolidar*`; el bloque inviable monta la herramienta. |
+| `modules/dominio/compromisos/index.js` | Handlers `_actualizarConsolidacionEnVivo`, `_aplicarConsolidacion` (crea + archiva) + cableado. |
+| `styles/components/charts.css` | Estilos de la herramienta de consolidar. |
+| `tests/unit/compromisos.test.js`, `tests/e2e/estrategia-pago.test.js` | 12 unit + 2 E2E. |
+| `service-worker.js` | v218 → v219. |
+
+---
 
 ### feat(deudas): renegociar la tasa interactivo + aplicar (D.3a) · 2026-06-29
 
@@ -91,18 +107,6 @@ Tarea de diseño (sin código). El usuario observó que el pago extra mensual ap
 | Archivo | Cambio |
 |---|---|
 | `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Sección "Revisión D.2": nueva jerarquía, S1 sustituido, slices D.2a/D.2b. |
-
----
-
-### fix(compromisos): el impacto de la simulación no muestra cifras absurdas con planes inviables (D.1) · 2026-06-29
-
-El resumen "Impacto de tu pago extra" mostraba "terminas 49 años antes y ahorras $6e29" cuando la cuota no cubre los intereses. Raíz: con un plan base inviable, `simularEstrategiaPago` diverge (saldo crece, `interesesTotales` explota, meses topa en 600) y los renderers restaban contra esa base. Fix en los 3 puntos de fuga de `estrategia-impacto.js`, todos por `completo === false`: `renderResumenExtra` (mensaje honesto "sin el extra no se paga" en vez de restar), `renderImpactoAvalancha` ("No se termina de pagar" en vez del total divergente) y `_renderComparativa` (no compara si alguna estrategia no completa). Sin tocar la lógica de simulación. Primer ítem del backlog "Visión de Deudas". Verificado: 4 tests de regresión nuevos (1568 total) con la simulación real, lint limpio, 57/57 E2E. SW v214 → v215.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | Guardas por `completo` en `renderResumenExtra`, `renderImpactoAvalancha`, `_renderComparativa`. |
-| `tests/unit/compromisos.test.js` | 4 tests de regresión de impacto con plan inviable. |
-| `service-worker.js` | v214 → v215. |
 
 ---
 
