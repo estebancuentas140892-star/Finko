@@ -51,8 +51,9 @@ Observaciones nuevas del usuario, de menor a mayor alcance. Arrancar por la más
 
 ✅ **MC.2 (parte 2 de 2)** - Distribución de porcentajes personalizada: chip "Personalizar" abre un editor inline de 3 campos (Necesidades/Estilo de vida/Ahorro) con suma en vivo y validación de 100%; persiste en `S.config.distribucionPersonalizada` - 2026-06-28. Ver [CHANGELOG](CHANGELOG.md). **MC.2 completa.**
 
-- **MC.3 (copy + lógica menor)** - Reformular el nudge de deudas en la distribución: en vez de "considera destinar parte del ahorro al pago de deudas", invitar a recortar primero Estilo de vida antes que el ahorro (mensaje educativo). **Siguiente sugerido.**
-- **MC.4 (épica, requiere ADR)** - Auto-distribución de ingresos: al recibir quincena/salario, botón "Distribuir mi ingreso" que reparte los porcentajes a cuentas/ahorro/apartados/metas/inversiones/deudas para confirmar de una, sin recorrer la app a mano.
+✅ **MC.3** - Reformulado el nudge de deudas en la distribución: ahora invita a recortar Estilo de vida antes que el ahorro - 2026-06-28. Ver [CHANGELOG](CHANGELOG.md).
+
+- **MC.4 (épica, requiere ADR)** - Auto-distribución de ingresos: al recibir quincena/salario, botón "Distribuir mi ingreso" que reparte los porcentajes a cuentas/ahorro/apartados/metas/inversiones/deudas para confirmar de una, sin recorrer la app a mano. **Siguiente sugerido (requiere ADR antes de codear).**
 - **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
 
 Pendientes previos del backlog (2026-06-28), independientes de lo anterior:

@@ -686,7 +686,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   }
 
   if (tieneDeudas) {
-    alertas.push('Tienes deudas activas: considera destinar parte del ahorro al pago de deudas.');
+    alertas.push('Tienes deudas activas: antes de reducir tu ahorro, intenta recortar primero tu presupuesto de estilo de vida.');
     ctas.push({ label: 'Ver estrategia de deudas', seccion: 'compromisos' });
   }
 

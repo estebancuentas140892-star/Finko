@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-28 (feat(tesoreria): distribución de porcentajes personalizada, MC.2 parte 2)
+> Última actualización: 2026-06-28 (copy(tesoreria): nudge de deudas invita a recortar estilo de vida en vez del ahorro, MC.3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### copy(tesoreria): nudge de deudas invita a recortar estilo de vida en vez del ahorro (MC.3) · 2026-06-28
+
+Tercera tarea del backlog "Mis cuentas + distribución". Cuando el usuario tiene deudas activas, "¿Cómo distribuir mi dinero?" mostraba: "Tienes deudas activas: considera destinar parte del ahorro al pago de deudas." El usuario señaló que el ahorro no debería ser el primer sacrificio: es más coherente invitar a recortar primero el presupuesto de Estilo de vida. Se cambió el texto de la alerta en `sugerirDistribucionIngreso` a: "Tienes deudas activas: antes de reducir tu ahorro, intenta recortar primero tu presupuesto de estilo de vida." El CTA ("Ver estrategia de deudas" → sección compromisos) no cambió. Cambio de copy puro, sin lógica nueva. Verificado: 1460/1460 unit + integración (1 test nuevo que confirma la mención a "estilo de vida" y la ausencia del texto viejo; el test existente de la alerta seguía pasando por usar un `includes('deuda')` laxo), lint limpio, y un test desechable en happy-dom que confirmó el render real de `renderDistribucionIngreso()` con el mensaje correctamente escapado. El preview del entorno volvió a fallar (5to intento acumulado, mismo `chrome-error`). SW v201 → v202.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Texto de la alerta de deudas en `sugerirDistribucionIngreso`. |
+| `tests/unit/tesoreria.test.js` | 1 test nuevo. |
+| `service-worker.js` | `CACHE_NAME` v201 → v202. |
+
+---
 
 ### feat(tesoreria): distribución de porcentajes personalizada (MC.2, parte 2) · 2026-06-28
 
@@ -86,21 +98,6 @@ Tercer slice del rediseño de simulación de deudas (ADR 011), de cierre. S1 ya 
 | `modules/dominio/compromisos/views/estrategia.js` | Quitada la mención a "acordeón abierto" del docstring y del comentario del estado UI (el campo ya no existe). |
 | `modules/dominio/compromisos/index.js` | Eliminado el comentario tombstone `toggle-extra-estrategia removed`. |
 | `service-worker.js` | `CACHE_NAME` v197 → v198. |
-
----
-
-### refactor(deudas): eliminado el botón "Simular" por deuda (ADR 011, S2) · 2026-06-28
-
-Segundo slice del rediseño de simulación de deudas (ADR 011). Cada fila de deuda tenía un botón "Simular" que abría un modal con una simulación individual (meses/intereses ahorrados con un extra). Esa superficie aislada confundía: mostraba el impacto de una sola deuda, sin reflejar cómo interactúan entre sí (cuotas liberadas, volcamiento), y ya quedó cubierta por el panel unificado de S1 (extra mensual + resumen de impacto sobre todo el portafolio). Se eliminó el botón y toda su maquinaria: la acción `simular-abono`, los handlers `_abrirSimulacion` y `_actualizarSimulacion`, la vista `renderSimulacion` y su re-export, las 5 reglas CSS `.sim-resultado*` (ya muertas), y los imports que quedaban sin uso (`renderSimulacion`, `simularPagoDeuda`, `formatearDuracion` en index.js; `tasaEADe` en formularios.js). Ningún test referenciaba la simulación por deuda, así que el conteo no cambia. Verificado: 1450/1450 unit + integración, 57/57 E2E, y render de la lista en happy-dom (Abonar presente, "Simular" ausente). **Pendientes:** S3 (limpiar dead code residual del acordeón), S4/S5 (herramientas what-if: renegociar tasa y consolidar). SW v196 → v197.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/lista.js` | Eliminado el botón "Simular" de la fila de deuda. |
-| `modules/dominio/compromisos/index.js` | Eliminados `_abrirSimulacion`, `_actualizarSimulacion`, la acción `simular-abono` y 3 imports sin uso. |
-| `modules/dominio/compromisos/view.js` | Eliminado el re-export de `renderSimulacion`. |
-| `modules/dominio/compromisos/views/formularios.js` | Eliminada `renderSimulacion` y el import `tasaEADe` (sin uso). |
-| `styles/components/domain.css` | Eliminado el bloque `.sim-resultado*` (5 reglas muertas). |
-| `service-worker.js` | `CACHE_NAME` v196 → v197. |
 
 ---
 

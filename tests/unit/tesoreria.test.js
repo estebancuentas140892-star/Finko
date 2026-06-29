@@ -1089,6 +1089,13 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.ctas.some(c => c.seccion === 'compromisos')).toBe(true);
   });
 
+  it('la alerta de deudas invita a recortar estilo de vida, no el ahorro', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { tieneDeudas: true });
+    const alerta = r.alertas.find(a => a.includes('deuda'));
+    expect(alerta).toContain('estilo de vida');
+    expect(alerta).not.toContain('destina el porcentaje de ahorro al pago');
+  });
+
   it('usa label "Ahorro e inversión" cuando el usuario ya invierte', () => {
     const r = sugerirDistribucionIngreso(3_000_000, {
       tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: true,
