@@ -7,6 +7,14 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs: ADR 013, distribución "Automático inteligente" (MC.6, diseño) · 2026-06-29
+
+Tarea de diseño (sin código): se escribió el ADR para evolucionar el modo **Automático** de "¿Cómo distribuir mi dinero?", porque toca el motor `sugerirDistribucionIngreso` (lógica financiera central) y la barra de presets. Problema que ataca: hoy Automático solo adapta la distribución según el peso de los gastos fijos y, en el caso común (gastos fijos bajos o sin registrar), devuelve **50/30/20 fijo**; además la barra muestra a la vez un chip "Automático" y uno "50/30/20" que dan el mismo resultado (duplicidad). Decisiones tomadas con el usuario (2 preguntas): (1) **alcance** = Automático sigue devolviendo los 3 grupos (Necesidades/Estilo de vida/Ahorro) pero con los **porcentajes calculados desde los datos reales**; el reparto fino por destino se queda en el panel de MC.4 y, más adelante, en el asistente guiado MC.7 (no se mete waterfall por destino en este slice); (2) **duplicidad** = Automático queda por defecto y los 3 presets fijos se mueven a un grupo secundario "Métodos clásicos" (no se eliminan: 50/30/20 es un ancla conocida). El motor pasa a un **modelo de pisos por prioridad**: Necesidades = gastos fijos + cuotas mínimas de deuda (obligaciones); Ahorro = suma de prioridades en orden (cerrar fondo incompleto, abono extra a deudas caras, aportes a metas/apartados con plazo, o una base sana si no hay urgencias); Estilo de vida = lo que queda, con un piso de sostenibilidad que cede ante Necesidades pero gana sobre el ahorro extra. Transparencia obligatoria: Automático siempre explica en una línea el porqué (la `razon` enriquecida). Sin cambios de schema (todos los insumos se derivan de slices existentes; la lógica sigue pura, recibiendo arrays planos desde la vista, ADN #9/#10). 3 slices definidos (MC.6a motor, MC.6b barra de presets, MC.6c señales más ricas, opcional). Sin cambios de código ni de tests aún.
+
+- **`docs/DECISIONS/013-distribucion-automatica-inteligente.md`**: ADR nuevo (contexto, modelo de pisos por prioridad, resolución de la duplicidad, transparencia, alternativas, consecuencias, 3 slices).
+
+---
+
 ### feat(inversiones): Inversiones como destino fondeable de "Distribuir mi ingreso" (ADR 012, MC.4e) · 2026-06-29
 
 Quinto y último slice de la auto-distribución de ingresos (ADR 012), que cierra MC.4. El ADR había dejado Inversiones como destino **solo informativo** porque el dominio no tenía un primitivo de "aportar a un holding existente" (solo crear/eliminar holdings). Este slice agrega ese aporte incremental y suma Inversiones como destino fondeable real del panel "Distribuir mi ingreso".

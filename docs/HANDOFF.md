@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(inversiones): Inversiones como destino fondeable de "Distribuir mi ingreso", ADR 012 MC.4e; MC.4 completa)
+> Última actualización: 2026-06-29 (docs: ADR 013 distribución "Automático inteligente", MC.6 diseño)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs: ADR 013, distribución "Automático inteligente" (MC.6, diseño) · 2026-06-29
+
+Tarea de diseño (sin código). El modo Automático de "¿Cómo distribuir mi dinero?" hoy solo adapta según los gastos fijos y, en el caso común, devuelve 50/30/20 fijo; además la barra duplica "Automático" y "50/30/20". El ADR diseña su evolución. Decisiones con el usuario (2 preguntas): alcance = sigue siendo distribución en 3 grupos pero con % calculados desde los datos reales (el reparto por destino se queda en MC.4 / futuro MC.7); duplicidad = Automático por defecto y los 3 presets fijos pasan a un grupo secundario "Métodos clásicos". El motor pasa a un modelo de pisos por prioridad: Necesidades = gastos fijos + cuotas mínimas de deuda; Ahorro = prioridades en orden (cerrar fondo, abono extra a deudas caras, metas/apartados con plazo, o base sana); Estilo de vida = lo que queda con piso de sostenibilidad. Transparencia obligatoria (Automático explica el porqué). Sin cambios de schema, lógica pura. 3 slices: MC.6a (motor), MC.6b (barra de presets), MC.6c (señales más ricas, opcional). Sin código ni tests aún.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/013-distribucion-automatica-inteligente.md` | ADR nuevo (modelo de pisos por prioridad, resolución de la duplicidad, transparencia, alternativas, consecuencias, 3 slices). |
+
+---
 
 ### feat(inversiones): Inversiones como destino fondeable de "Distribuir mi ingreso" (ADR 012, MC.4e) · 2026-06-29
 
@@ -95,24 +105,6 @@ Segundo slice de la auto-distribución. El panel ahora reparte también hacia la
 | `styles/components/forms.css` | `.distribuir__subtitulo` + `.distribuir__saldo`. |
 | `tests/unit/tesoreria.test.js` | 5 tests de `construirPlanDeudas`. |
 | `service-worker.js` | `CACHE_NAME` v203 → v204. |
-
----
-
-### feat(tesoreria): "Distribuir mi ingreso", grupo Ahorro + undo (ADR 012, MC.4a) · 2026-06-29
-
-Primer slice de implementación de la auto-distribución de ingresos. En "¿Cómo distribuir mi dinero?" aparece un botón "💸 Distribuir mi ingreso" (solo si hay destinos de ahorro fondeables) que abre un panel inline editable: monto a distribuir + una fila por destino del grupo Ahorro (Fondo de emergencia, Metas, Apartados) con toggle y monto, más un resumen en vivo ("A tus ahorros / Queda disponible") que bloquea el confirmar si se asigna más que el ingreso. Al confirmar: se elige la cuenta de origen (`resolverCuenta`, patrón 0/1/varias), se toma un **snapshot** de las slices afectadas, se **acredita el ingreso** a la cuenta y se descuenta solo lo que físicamente sale (metas + apartados; el aporte al fondo no descuenta, ADR 009), y cada dominio aplica su porción por **EventBus** (`distribucion:aplicar`): ahorro registra el aporte al fondo, metas/apartados suman a su `montoActual` y recalculan completado con su propia lógica (ADN #10, sin imports cruzados). Un **snackbar "Deshacer"** restaura el snapshot de forma atómica. Pendiente del default "fondo primero": sugiere todo el presupuesto de ahorro al fondo si está incompleto; el usuario redistribuye. Verificado: 8 tests de lógica nuevos (1468 total), test de integración desechable en happy-dom (apply + undo cross-domain), 57/57 E2E, y verificación en el navegador real (panel renderiza con nombres, distribuir deja la cuenta en 8M = 5M+3M sin descontar el fondo, aporte de 600k al fondo, snackbar visible). Se corrigió un bug de layout: el input de monto se estiraba a 100% y aplastaba el nombre del destino; `flex: 0 0 9rem` (flex-basis fija gana sobre `.input{width:100%}` en flexbox). SW v202 → v203. **Pendientes:** MC.4b (deudas), MC.4c (filas informativas necesidades/estilo de vida), MC.4d (de-duplicación + mapeo), MC.4e (inversiones).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirPlanAhorro` (default fondo-first) + `resumirPlanDistribucion` (puras). |
-| `modules/dominio/tesoreria/view.js` | Botón "Distribuir mi ingreso" + panel inline (`_renderPanelDistribuir`). |
-| `modules/dominio/tesoreria/index.js` | Orquestación: snapshot/credit/decrement, emit `distribucion:aplicar`, recalc en vivo, snackbar undo. |
-| `modules/dominio/ahorro/index.js` | Suscriptor `distribucion:aplicar`: aporta al fondo (sin descontar cuenta). |
-| `modules/dominio/metas/index.js` | Suscriptor: suma a la meta y recalcula `completada`. |
-| `modules/dominio/apartados/index.js` | Suscriptor: suma al apartado y recalcula `completado`. |
-| `styles/components/forms.css` | Panel `.distribuir-ingreso` + `.snackbar` (con fix `flex: 0 0 9rem`). |
-| `tests/unit/tesoreria.test.js` | 9 tests nuevos. |
-| `service-worker.js` | `CACHE_NAME` v202 → v203. |
 
 ---
 
