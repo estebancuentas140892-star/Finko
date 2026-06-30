@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(propósito): ADR 016 - banner de propósito de sección (EP.0) · 2026-06-30
+
+Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra EP.0: define el patrón único reutilizable de la épica "explicar el propósito de cada sección". [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md).
+
+**Decisiones cerradas con el usuario:**
+
+1. **Ubicación = banner colapsable arriba del contenido**, debajo del `section__header` y antes de los nudges. Visible tenga o no datos la sección (no depende del empty state). Aparece expandido para el usuario nuevo; un control lo colapsa a una línea re-abrible. Se descartaron "solo en el empty state" (desaparece con los datos, sin sitio en Dashboard/Análisis) e "ícono de ayuda (?)" (muy escondido para el usuario nuevo).
+2. **Persistencia = se colapsa, nunca se borra.** Estado por sección en `S.config.propositoColapsado` (mapa `{ [seccion]: true }`), lectura **defensiva sin migración** (igual que `presetDistribucion`). "Reactivar todo" desde Ajustes. No reaparece solo.
+3. **Sin cambio de schema.** Escribir la primera preferencia crea la clave; `save()` la persiste.
+4. **Copy = tres tiempos** (pregunta gancho que toca un dolor, nombrar el problema, cómo Finko ayuda), 3-4 frases (~40-60 palabras), tono ADN regla 11 + estilo 7.1 (voz "tú", "dinero", cero guion largo).
+5. **11 secciones:** las 10 núcleo (Gastos, Deudas, Agenda, Apartados, Metas, Ahorro, Inversión, Límites de gasto, Mis cuentas, Análisis) + **Personales**. Fuera: Dashboard (resumen agregado), Calculadoras (autoexplicativa), Ajustes.
+6. **A11y = patrón disclosure:** `<button aria-expanded>` + `aria-controls`, cuerpo `role="region"` con `aria-labelledby`; no `role="alert"`. Borde izquierdo en el color de la sección (`--fk-dom-*`), cuerpo `--fk-text-secondary` (AA), solo tokens `--fk-*`, respeta `prefers-reduced-motion`, área táctil 44px.
+
+Incluye **copy propuesto para las 11 secciones** (Apartados con el texto ya aprobado) y el patrón de implementación (un helper, un mapa de copy, slots en `index.html`, 2 data-actions + acción de reactivar). Define los slices **EP.1** (piloto: helper + persistencia + Apartados) a **EP.4**.
+
+- **`docs/DECISIONS/016-banner-proposito-de-seccion.md`**: ADR nuevo (contexto, decisión de ubicación/persistencia/copy/secciones/a11y/patrón, copy por sección, alternativas, consecuencias, slices EP.1-EP.4).
+
+---
+
 ### feat(tesoreria): barra de presets Automático + Personalizar + grupo "Métodos clásicos" (MC.6b) · 2026-06-30
 
 Continúa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md) (MC.6a). La tarjeta "¿Cómo distribuir...?" tenía 4 chips en una sola fila (Automático + los 3 clásicos) + Personalizar. Ahora la **fila principal** muestra solo **Automático** y **Personalizar**; los 3 presets fijos (50/30/20, 70/20/10, 60/20/20) se mueven a un `<details>` colapsable titulado **"Métodos clásicos"**. Dentro del disclosure: los chips de los clásicos + un texto de transparencia ("Porcentajes fijos. No consideran tus gastos reales."). El `<details>` arranca abierto si el preset activo es un clásico, cerrado si es `auto` o `personalizado`. Sin cambios en lógica ni schema ni tests. 1649/1649 verdes; 64/64 E2E. SW v226 → v227.

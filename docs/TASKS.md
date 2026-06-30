@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1649/1649 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.5a** categorías de deuda curadas (12 → 7) + migración v18→v19; label "Tipo de deuda". SW v226. Antes: D.5 (diseño) ADR 015. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1649/1649 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **EP.0** (diseño) [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) del banner de propósito de sección. Antes: **MC.6b** barra de presets Automático + Personalizar + grupo "Métodos clásicos" (SW v227). **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -45,7 +45,7 @@ _(sin tarea activa)_
 
 **✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica.
 
-**✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** Siguiente sugerido del backlog del usuario: **EP.0** (épica "explicar el propósito de cada sección", requiere ADR, Opus 4.8 - Alto), **MC.6b** (barra de presets Automático + Personalizar + grupo "Métodos clásicos", Sonnet 4.6 - Medio), o **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo).
+**✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** **MC.6b y EP.0 cerrados (2026-06-30).** Siguiente sugerido: **EP.1** (piloto del banner de propósito: helper + persistencia + Apartados, Sonnet 4.6 - Medio), **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo), o **MC.6c** (señales más ricas para la distribución, opcional).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -156,15 +156,15 @@ Pendientes no urgentes (mantenimiento):
 
 Slices (smallest-first):
 
-- **EP.0 (diseño, requiere ADR)** - Definir el patrón único reutilizable. Decisiones a cerrar con el usuario: ubicación (banner colapsable arriba del contenido de cada sección vs. tip dentro del empty state vs. ícono "?" que despliega), persistencia (¿se puede colapsar/descartar de forma permanente por sección en `S.config`? ¿reaparece?), longitud máxima y estructura del copy, accesibilidad (rol, foco, contraste con tokens `--fk-*`), y a qué secciones aplica (las 8 del insumo del usuario + decidir Inversión, Compromisos, Personales, Dashboard, Calculadoras). Entregable: ADR + copy aprobado por sección. Modelo sugerido: Opus 4.8 - Alto (decisión arquitectural acotada, nuevo patrón de UI transversal).
+✅ **EP.0 (diseño) = [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md).** Patrón único reutilizable del banner de propósito. Decisiones cerradas con el usuario: (1) **ubicación** = banner colapsable arriba del contenido (debajo del `section__header`), visible tenga o no datos; (2) **persistencia** = se colapsa a una línea re-abrible, nunca se borra; estado por sección en `S.config.propositoColapsado` (lectura defensiva, **sin migración**), "reactivar todo" desde Ajustes; (3) **11 secciones** = las 10 núcleo + Personales (Dashboard y Calculadoras fuera); (4) **copy** = tres tiempos (pregunta gancho, problema, cómo Finko ayuda), 3-4 frases; (5) **a11y** = patrón disclosure, borde del color de la sección, AA, respeta `prefers-reduced-motion`. Incluye copy propuesto por sección. 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
 
-- **EP.1 (piloto)** - Implementar el componente base reutilizable (helper en `infra/render.js` o partial) + persistencia del estado colapsado + aplicarlo a **una** sección piloto: **Apartados** (ya tiene el copy de referencia). Verificar el patrón en la app (desktop + móvil), a11y y tests de render. Modelo sugerido: Sonnet 4.6 - Medio (feature de un dominio siguiendo patrón nuevo, con tests).
+- **EP.1 (piloto)** - Implementar el componente base reutilizable (helper en `ui/proposito.js` o infra) + mapa de copy (`PROPOSITOS_SECCION`) + persistencia del estado colapsado (`S.config.propositoColapsado`, lectura defensiva sin migración) + 2 data-actions (`colapsar-proposito`, `expandir-proposito`) + acción "reactivar" en Ajustes + slot en `index.html`, aplicado a la sección piloto **Apartados** (copy ya aprobado en ADR 016). Verificar el patrón en la app (desktop + móvil), a11y (disclosure) y tests de render. Modelo sugerido: Sonnet 4.6 - Medio (feature de un dominio siguiendo patrón nuevo, con tests).
 
-- **EP.2 (grupo "Gastar bien")** - Desplegar el copy al grupo: Gastos, Deudas, Agenda, Límites de gasto. Solo copy + reuso del componente de EP.1. Modelo sugerido: Sonnet 4.6 - Bajo (copy + patrón ya existente).
+- **EP.2 (grupo "Gastar bien")** - Copy + slot para: Gastos, Deudas, Agenda, Límites de gasto. Copy propuesto en ADR 016. Solo entrada de copy + slot + reuso del componente de EP.1. Modelo sugerido: Sonnet 4.6 - Bajo.
 
-- **EP.3 (grupo "Crecer")** - Desplegar a: Metas, Ahorro, Inversión. Modelo sugerido: Sonnet 4.6 - Bajo.
+- **EP.3 (grupo "Crecer")** - Copy + slot para: Metas, Ahorro, Inversión. Copy propuesto en ADR 016. Modelo sugerido: Sonnet 4.6 - Bajo.
 
-- **EP.4 (grupo "Organizar")** - Desplegar a: Mis cuentas, Análisis (y las demás que EP.0 haya decidido incluir). Modelo sugerido: Sonnet 4.6 - Bajo.
+- **EP.4 (grupo "Organizar")** - Copy + slot para: Mis cuentas, Análisis, Personales. Copy propuesto en ADR 016. Modelo sugerido: Sonnet 4.6 - Bajo.
 
 ---
 

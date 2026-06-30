@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(tesoreria): MC.6b - barra de presets Automático + Personalizar + grupo "Métodos clásicos")
+> Última actualización: 2026-06-30 (docs(propósito): EP.0 - ADR 016 del banner de propósito de sección)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(propósito): ADR 016 - banner de propósito de sección (EP.0) · 2026-06-30
+
+Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) define el patrón único reutilizable de la épica "explicar el propósito de cada sección". Decisiones cerradas con el usuario: (1) **ubicación** = banner colapsable arriba del contenido, debajo del `section__header`, visible tenga o no datos; (2) **persistencia** = se colapsa a una línea re-abrible, nunca se borra; estado por sección en `S.config.propositoColapsado` (lectura defensiva, **sin migración**), con "reactivar todo" desde Ajustes; (3) **secciones** = las 10 núcleo + Personales (11 en total; Dashboard y Calculadoras quedan fuera); (4) **copy** = tres tiempos (pregunta gancho, nombrar el problema, cómo Finko ayuda), 3-4 frases, tono ADN; (5) **a11y** = patrón disclosure (`aria-expanded` + `aria-controls`, `role="region"`), borde en el color de la sección, contraste AA, respeta `prefers-reduced-motion`. Incluye copy propuesto para las 11 secciones. Define los slices EP.1 (piloto: helper + Apartados) a EP.4.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/016-banner-proposito-de-seccion.md` | ADR nuevo: ubicación, persistencia sin schema, estructura de copy, 11 secciones, a11y, patrón de implementación, copy propuesto por sección, alternativas, consecuencias, slices EP.1-EP.4. |
+
+---
 
 ### feat(tesoreria): barra de presets Automático + Personalizar + grupo "Métodos clásicos" (MC.6b) · 2026-06-30
 
@@ -91,21 +101,6 @@ Cierra la jornada 2 de "Visión de Deudas". El pago extra de "Aumentar la cuota"
 | `tests/unit/compromisos.test.js` | Describe `repartirExtraEnCuotas` (6) + 2 tests del estado del botón. |
 | `tests/e2e/estrategia-pago.test.js` | Suite "Aumentar la cuota (D.9)" (1 test de aplicar). |
 | `service-worker.js` | v224 → v225. |
-
----
-
-### feat(deudas): panel de alternativas con selector (D.8, ADR 011 rev. D.7) · 2026-06-29
-
-Implementa la jerarquía de la Revisión D.7 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). El bloque inviable deja de mostrar diagnóstico + pago extra + renegociar + consolidar todo a la vez: ahora, debajo del detalle de la estrategia, aparece **un solo botón de alerta** ("🚨 Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo") que abre **un panel** con el diagnóstico y un **selector** de 3 alternativas (💪 Aumentar la cuota · 🤝 Renegociar la tasa · 🏦 Consolidar) que muestra **solo la elegida**. Default: "Aumentar la cuota". El selector solo ofrece las alternativas que aplican (renegociar exige tasa > 0, consolidar exige >= 2 deudas). Estado del panel en `_uiEstrategia` (`panelAlternativasAbierto`, `alternativaActiva`), no `<details>`, porque la card se re-renderiza por cada tecla. `renderRenegociar` y `renderConsolidar` (D.3a/D.3b) se reubican sin tocar su lógica. 2 data-actions nuevos (`abrir-panel-alternativas`, `elegir-alternativa`). 8 tests unitarios nuevos + 2 E2E nuevos (cableado verificado por E2E, no por preview). SW v223 → v224.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia.js` | `_renderBloqueInviable`, `_renderBotonAlerta`, `_renderPanelAlternativas`, `_renderContenidoAlternativa`, `_renderRemedioExtra`, `_renderDiagnosticoTexto`; reemplazan `_renderDiagnosticoInviable`. Bloque inviable se mueve debajo del detalle. Estado UI `panelAlternativasAbierto` + `alternativaActiva`. |
-| `modules/dominio/compromisos/index.js` | Handlers `_abrirPanelAlternativas`, `_elegirAlternativa` + registro de las 2 acciones nuevas. |
-| `styles/components/charts.css` | `.estrategia-card__alerta-boton`, `.estrategia-card__selector(-opcion)`, `.estrategia-card__diagnostico`; `.estrategia-card__alerta` ahora condicional (solo con el panel abierto). |
-| `tests/unit/compromisos.test.js` | Describe D.8 reescrito (8 tests); `beforeEach` de renegociar/consolidar abren el panel y eligen la alternativa. |
-| `tests/e2e/estrategia-pago.test.js` | Suite "Panel de alternativas (D.8)" (2 tests nuevos) + helper `abrirAlternativa`; suites de renegociar/consolidar actualizadas para pasar por el selector. |
-| `service-worker.js` | v223 → v224. |
 
 ---
 
