@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): barra de presets Automático + Personalizar + grupo "Métodos clásicos" (MC.6b) · 2026-06-30
+
+Continúa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md) (MC.6a). La tarjeta "¿Cómo distribuir...?" tenía 4 chips en una sola fila (Automático + los 3 clásicos) + Personalizar. Ahora la **fila principal** muestra solo **Automático** y **Personalizar**; los 3 presets fijos (50/30/20, 70/20/10, 60/20/20) se mueven a un `<details>` colapsable titulado **"Métodos clásicos"**. Dentro del disclosure: los chips de los clásicos + un texto de transparencia ("Porcentajes fijos. No consideran tus gastos reales."). El `<details>` arranca abierto si el preset activo es un clásico, cerrado si es `auto` o `personalizado`. Sin cambios en lógica ni schema ni tests. 1649/1649 verdes; 64/64 E2E. SW v226 → v227.
+
+- **`modules/dominio/tesoreria/view.js`**: `_renderDistribucion` reemplaza `presetChips` (todos juntos) por `autoChip` en la fila principal y `clasicosChips` dentro de un `<details class="distribucion-clasicos">`.
+- **`styles/components/domain.css`**: `.distribucion-clasicos` (margen) + `.distribucion-clasicos__toggle` (cursor, color, tamaño) tras la sección `.distribucion-rows`.
+- **`service-worker.js`**: v226 → v227.
+
+---
+
 ### feat(deudas): categorías de deuda curadas (12 → 7) + migración v18→v19 (D.5a, ADR 015) · 2026-06-29
 
 Implementa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md). Refina el eje "qué" del modelo de deuda y deja el eje "quién" (Entidad/Personal) intacto.

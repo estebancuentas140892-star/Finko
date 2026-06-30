@@ -104,7 +104,7 @@ Visión nueva del usuario para evolucionar "Distribuir mi ingreso" como diferenc
 
 Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 ✅ **MC.6a** - Modelo de pisos para distribución automática: `sugerirDistribucionIngreso` reescrita (pisos: Necesidades duro → Ahorro por prioridades → Estilo de vida residual con piso 10%). Nuevo helper puro `calcularAporteMensualObjetivos`. `view.js` computa 4 nuevos inputs desde S. 16 tests nuevos + 4 actualizados. 1617 → 1633 verdes - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.6b** - Barra de presets: Automático + Personalizar en la fila principal; los 3 clásicos a un grupo secundario "Métodos clásicos" (disclosure) + copy de transparencia.
+✅ **MC.6b** - Barra de presets: Automático + Personalizar en la fila principal; los 3 clásicos a `<details>` "Métodos clásicos" + copy de transparencia. SW v226 → v227 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
 - **MC.6c (opcional)** - Señales más ricas: historial de gastos variables (proxy de estilo de vida), inversiones como prioridad tras el fondo.
 - **MC.7 (épica mayor, requiere ADR)** - Convertir "Distribuir mi ingreso" en un asistente guiado de 3 pasos: (1) **Necesidades** itemizadas automáticamente (gastos fijos, cuotas de deuda, compromisos de Agenda) con nombre/categoría/valor; (2) **Ahorro** con aportes auto-calculados por objetivo según su meta y la frecuencia del ingreso (ej. meta de $5M a un año → cuánto por quincena), priorizando el fondo de emergencia con el excedente; (3) **Estilo de vida** repartido entre las cuentas activas / efectivo. El usuario solo revisa, ajusta y confirma. Construye sobre MC.4a-e.
 

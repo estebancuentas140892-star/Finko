@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(deudas): D.5a - categorías de deuda curadas (12 → 7) + migración v18→v19)
+> Última actualización: 2026-06-30 (feat(tesoreria): MC.6b - barra de presets Automático + Personalizar + grupo "Métodos clásicos")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): barra de presets Automático + Personalizar + grupo "Métodos clásicos" (MC.6b) · 2026-06-30
+
+Continúa MC.6a (modelo de pisos). La barra de chips de la tarjeta "¿Cómo distribuir...?" se reestructura: la **fila principal** muestra solo "Automático" y "Personalizar"; los 3 presets fijos (50/30/20, 70/20/10, 60/20/20) pasan a un `<details>` secundario titulado **"Métodos clásicos"**, con un texto de transparencia ("Porcentajes fijos. No consideran tus gastos reales."). El `<details>` queda abierto si algún preset clásico está activo. Sin cambios en lógica ni schema. 1649/1649 verdes. SW v226 → v227.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | `_renderDistribucion`: reemplaza `presetChips` por `autoChip` (fila principal) y `clasicosChips` (en `<details>`). |
+| `styles/components/domain.css` | `.distribucion-clasicos` + `.distribucion-clasicos__toggle` (estilos del `<details>`). |
+| `service-worker.js` | v226 → v227. |
+
+---
 
 ### feat(deudas): categorías de deuda curadas (12 → 7) + migración v18→v19 (D.5a, ADR 015) · 2026-06-29
 
@@ -94,16 +106,6 @@ Implementa la jerarquía de la Revisión D.7 de [ADR 011](DECISIONS/011-unificac
 | `tests/unit/compromisos.test.js` | Describe D.8 reescrito (8 tests); `beforeEach` de renegociar/consolidar abren el panel y eligen la alternativa. |
 | `tests/e2e/estrategia-pago.test.js` | Suite "Panel de alternativas (D.8)" (2 tests nuevos) + helper `abrirAlternativa`; suites de renegociar/consolidar actualizadas para pasar por el selector. |
 | `service-worker.js` | v223 → v224. |
-
----
-
-### docs(deudas): revisión D.7 de ADR 011 - botón único → panel con selector para el plan inviable (D.7) · 2026-06-29
-
-Tarea de **diseño** (sin código de producción). El bloque inviable de la card de estrategia hoy muestra **a la vez** el diagnóstico, el pago extra, renegociar y consolidar: se siente saturado. La Revisión D.7 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md) replantea la jerarquía: con el plan inviable, Avalancha y Bola de nieve siguen de protagonistas y, **debajo del detalle**, aparece **un solo botón de alerta** ("🚨 Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo") que abre **un panel** con un **selector** de 3 alternativas (Aumentar la cuota · Renegociar · Consolidar) que muestra **una a la vez**. El estado del panel vive en `_uiEstrategia` (no `<details>`, porque la card se re-renderiza por tecla). Decisión clave para D.9: "Aplicar" en "Aumentar la cuota" es **automático** (Finko reparte el extra cubriendo déficits y concentrando el remanente en la mayor tasa, sin preguntar a qué deuda), porque una elección manual mal hecha pierde la intención de Finko. Define los slices D.8 (Sonnet 4.6 - Alto, reorg de UI) y D.9 (Opus 4.8 - Alto, acción aplicable + lógica nueva).
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Nueva sección "Revisión D.7" (jerarquía botón → panel → selector, decisión D.9 de reparto automático, slices D.8/D.9, alternativas y consecuencias). |
 
 ---
 

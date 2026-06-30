@@ -554,17 +554,30 @@ function _renderPanelDistribuir(d) {
 function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada, distribuir) {
   const { necesidades, estiloVida, ahorro } = split;
 
-  const presetChips = PRESETS_DISTRIBUCION.map(p => {
-    const activo = p.id === presetActivo;
-    return `
+  const autoActivo = presetActivo === 'auto';
+  const autoChip = `
       <button type="button"
-              class="chip${activo ? ' chip--active' : ''}"
+              class="chip${autoActivo ? ' chip--active' : ''}"
               data-action="cambiar-preset-distribucion"
-              data-preset="${_esc(p.id)}"
-              aria-pressed="${activo}">
-        ${_esc(p.label)}
+              data-preset="auto"
+              aria-pressed="${autoActivo}">
+        Automático
       </button>`;
-  }).join('');
+
+  const clasicosActivo = ['50-30-20', '70-20-10', '60-20-20'].includes(presetActivo);
+  const clasicosChips = PRESETS_DISTRIBUCION
+    .filter(p => p.id !== 'auto')
+    .map(p => {
+      const activo = p.id === presetActivo;
+      return `
+        <button type="button"
+                class="chip${activo ? ' chip--active' : ''}"
+                data-action="cambiar-preset-distribucion"
+                data-preset="${_esc(p.id)}"
+                aria-pressed="${activo}">
+          ${_esc(p.label)}
+        </button>`;
+    }).join('');
 
   const personalizadaValida = esDistribucionPersonalizadaValida(distribucionPersonalizada);
   const personalizadaActiva = presetActivo === 'personalizado' && personalizadaValida;
@@ -638,9 +651,16 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
       <div class="nudge__body">
         <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
         <div class="filtros-bar" role="group" aria-label="Preset de distribución">
-          ${presetChips}
+          ${autoChip}
           ${personalizadaChip}
         </div>
+        <details class="distribucion-clasicos"${clasicosActivo ? ' open' : ''}>
+          <summary class="distribucion-clasicos__toggle">Métodos clásicos</summary>
+          <div class="filtros-bar" role="group" aria-label="Métodos clásicos de distribución">
+            ${clasicosChips}
+          </div>
+          <p class="form-hint form-hint--muted">Porcentajes fijos. No consideran tus gastos reales.</p>
+        </details>
         ${editorPersonalizada}
         <div class="distribucion-rows">
           <p class="nudge__desc">${_esc(razon)}</p>
