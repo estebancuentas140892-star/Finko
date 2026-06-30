@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (fix(a11y): A11Y.1 - role="listitem" en enlaces de nav)
+> Última actualización: 2026-06-30 (fix(a11y): A11Y.2 - quitar aria-live del &lt;main&gt;)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(a11y): quitar aria-live="polite" del &lt;main&gt; (A11Y.2) · 2026-06-30
+
+Segundo hallazgo de la auditoría de accesibilidad. El `<main>` tenía `aria-live="polite"`: cada render y cambio de sección se anunciaba en cascada al lector de pantalla. La app ya tiene regiones live dedicadas y correctas (`announce()`, toasts de logros, hints de formularios, nudges con `role="alert"`), que quedan intactas. Fix sin cambio visual ni de comportamiento: quitado el `aria-live` del `<main>` (se conserva `tabindex="-1"` del skip link). 1658/1658 verdes. SW v232 → v233. Pendiente A11Y.3 (mover el foco al navegar) para el anuncio limpio de sección.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Quitado `aria-live="polite"` del `<main id="main-content">`. |
+| `service-worker.js` | v232 → v233. |
+
+---
 
 ### fix(a11y): quitar role="listitem" de los enlaces de navegación (A11Y.1) · 2026-06-30
 
@@ -100,25 +111,7 @@ Reutiliza el helper de EP.1. Agrega 4 entradas a `PROPOSITOS_SECCION` (copy apro
 
 ---
 
-### feat(proposito): piloto del banner de propósito en Apartados (EP.1) · 2026-06-30
-
-Implementa el patrón definido en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Crea el helper reutilizable `modules/ui/proposito.js` con: `PROPOSITOS_SECCION` (mapa de copy; Apartados en este slice), `htmlBannerProposito(seccion, config)` (función pura: devuelve HTML expandido o colapsado según `S.config.propositoColapsado[seccion]`), `renderBannerProposito(seccion)` (inyecta en `#proposito-{seccion}`), `initBannersProposito()` (registra `colapsar-proposito` y `expandir-proposito`) y `reactivarPropositos()` (restablece todos los banners desde Ajustes). En Apartados: el banner aparece arriba de los nudges con el copy aprobado en EP.0; pulsar "Entendido, ocultar" lo colapsa a una sola línea re-abrible con el título de la sección. La preferencia se persiste en `S.config.propositoColapsado` sin migración (lectura defensiva). Ajustes suma una sección "Mensajes de ayuda" con botón "Mostrar todos los mensajes de ayuda" que solo aparece si al menos un banner está colapsado. 9 unit tests nuevos. 1649 → 1658 verdes. SW v227 → v228.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/ui/proposito.js` | Nuevo: `PROPOSITOS_SECCION`, `htmlBannerProposito` (pura), `renderBannerProposito`, `initBannersProposito`, `reactivarPropositos`. |
-| `index.html` | `<div id="proposito-apartados">` en `#sec-apartados`, entre el header y `#apartados-nudge-proximos`. |
-| `modules/dominio/apartados/index.js` | Import + call de `renderBannerProposito('apartados')` en init y hashchange. |
-| `modules/dominio/config/view.js` | `_renderPropositos()`: sección "Mensajes de ayuda" en el panel de Ajustes. |
-| `modules/dominio/config/index.js` | Import de `reactivarPropositos` + registro de `reactivar-propositos`. |
-| `modules/ui/bootstrap.js` | Import + call de `initBannersProposito()` antes de `initTesoreria`. |
-| `styles/components/domain.css` | `.banner-proposito` + `.banner-proposito--colapsado` + variante de color por sección. |
-| `tests/unit/proposito.test.js` | 9 unit tests de `htmlBannerProposito` (expandido, colapsado, sección desconocida, edge cases). |
-| `service-worker.js` | `proposito.js` en `CORE_ASSETS`; v227 → v228. |
-
----
-
-> Para tareas anteriores, ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(a11y): quitar aria-live="polite" del &lt;main&gt; (A11Y.2) · 2026-06-30
+
+Segundo hallazgo de la auditoría de accesibilidad/color/responsividad. El `<main>` tenía `aria-live="polite"`, lo que convertía todo el contenido en una región viva: cada render y cada cambio de sección se anunciaba en cascada al lector de pantalla (firehose). La app ya tiene regiones live dedicadas y correctas (`announce()` en `modules/infra/a11y.js`, toasts de logros, hints de formularios de abono/aporte, nudges con `role="alert"`), que cubren los anuncios puntuales sin ruido. Fix sin cambio visual ni de comportamiento: eliminado el atributo `aria-live` del `<main>`; se conserva `tabindex="-1"` (destino del skip link, WCAG 2.4.1). 1658/1658 verdes (incluye el test axe de `index.html`). SW v232 → v233.
+
+- **`index.html`**: `<main class="main-content" id="main-content" tabindex="-1" aria-live="polite">` → sin `aria-live`.
+- **`service-worker.js`**: v232 → v233.
+
+> Nota: el anuncio limpio de cambio de sección ("estás en la sección X") al navegar lo aporta A11Y.3 (mover el foco al contenido), pendiente.
+
+---
+
 ### fix(a11y): quitar role="listitem" de los enlaces de navegación (A11Y.1) · 2026-06-30
 
 Primer hallazgo de la auditoría de accesibilidad/color/responsividad (2026-06-30, ver TASKS.md). Los 13 `<a class="nav-item">` del sidebar (+ el botón "Más") tenían `role="listitem"` pisando su rol nativo `link`/`button`, así que el lector de pantalla los anunciaba como ítems de lista en vez de enlaces navegables. Fix sin cambio visual: los 4 contenedores intermedios (uno por grupo: Diario, Gestión, Crecer, Herramientas) pasan de `role="list"` a `role="group"` (agrupación por `aria-labelledby`, sin exigir hijos `listitem`) y se quita `role="listitem"` de los 13 enlaces y el botón "Más". `sidebar__nav` (role="list") y cada `.nav-group` (role="listitem") quedan intactos porque no son interactivos y la anidación sigue siendo ARIA válida. 1658/1658 unit + 64/64 E2E verdes. SW v231 → v232.
