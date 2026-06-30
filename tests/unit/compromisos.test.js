@@ -14,6 +14,7 @@ import {
   simularEstrategiaPago,
   simularRenegociacion,
   simularConsolidacion,
+  repartirExtraEnCuotas,
   compararEstrategias,
   recomendarEstrategia,
   detectarFijosSinPagarEsteMes,
@@ -2246,6 +2247,24 @@ describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
     expect(resumen).not.toBeNull();
   });
 
+  it('D.9: el botón "Aplicar este aumento" arranca deshabilitado sin extra', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true, extraMensual: 0 });
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-aumento-cuota"]');
+    expect(btn).not.toBeNull();
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('D.9: con un extra > 0 el botón "Aplicar este aumento" se habilita', () => {
+    // Extra pequeño: ayuda pero no alcanza a volver viable el plan (sigue
+    // mostrándose el bloque inviable con el botón).
+    setEstrategiaUI({ panelAlternativasAbierto: true, extraMensual: 10_000 });
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-aumento-cuota"]');
+    expect(btn).not.toBeNull();
+    expect(btn.disabled).toBe(false);
+  });
+
   it('elegir "renegociar" en el selector muestra solo esa alternativa', () => {
     setEstrategiaUI({ panelAlternativasAbierto: true, alternativaActiva: 'renegociar' });
     renderEstrategiaPago();
@@ -2516,5 +2535,95 @@ describe('renderConsolidar (D.3b) en el bloque inviable', () => {
     renderEstrategiaPago();
     const btn = document.querySelector('[data-action="aplicar-consolidacion"]');
     expect(btn.disabled).toBe(false);
+  });
+});
+
+// ── repartirExtraEnCuotas (D.9) ──────────────────────────────────
+
+describe('repartirExtraEnCuotas', () => {
+  // Interés mensual de una deuda con la misma fórmula que la lógica.
+  const interesMensual = (saldo, tasaEA) => saldo * (Math.pow(1 + tasaEA, 1 / 12) - 1);
+
+  it('guarda: extra <= 0, deudas vacías o no-array devuelven reparto vacío', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'a', saldoTotal: 1_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+    ]);
+    expect(repartirExtraEnCuotas(deudas, 0)).toEqual({ incrementos: [], totalRepartido: 0 });
+    expect(repartirExtraEnCuotas(deudas, -100)).toEqual({ incrementos: [], totalRepartido: 0 });
+    expect(repartirExtraEnCuotas([], 50_000)).toEqual({ incrementos: [], totalRepartido: 0 });
+    expect(repartirExtraEnCuotas(null, 50_000)).toEqual({ incrementos: [], totalRepartido: 0 });
+  });
+
+  it('una sola deuda creciente: el extra (menor que el déficit) sube su cuota', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'cara', descripcion: 'Tarjeta cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'sana', descripcion: 'Préstamo sano', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ]);
+    const { incrementos, totalRepartido } = repartirExtraEnCuotas(deudas, 50_000);
+    // Solo la deuda que crece recibe el aumento; la sana no se toca.
+    expect(incrementos).toHaveLength(1);
+    expect(incrementos[0].id).toBe('cara');
+    expect(incrementos[0].incremento).toBe(50_000);
+    expect(incrementos[0].cuotaNueva).toBe(100_000);
+    expect(totalRepartido).toBe(50_000);
+  });
+
+  it('cubre primero el déficit y vuelca el remanente a la deuda de mayor tasa', () => {
+    // La que crece (B, 20% EA) no es la de mayor tasa (A, 60% EA, pero sana).
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'A', descripcion: 'Cara sana',  saldoTotal: 1_000_000,  cuotaMensual: 200_000, tasa: 0.60, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'B', descripcion: 'Barata crece', saldoTotal: 10_000_000, cuotaMensual: 50_000,  tasa: 0.20, tasaUnidad: 'EA' }),
+    ]);
+    const deficitB = interesMensual(10_000_000, 0.20) - 50_000;
+    const extra = 300_000; // > déficit de B
+    const { incrementos, totalRepartido } = repartirExtraEnCuotas(deudas, extra);
+
+    const incB = incrementos.find(i => i.id === 'B');
+    const incA = incrementos.find(i => i.id === 'A');
+    expect(incB).toBeDefined();
+    expect(incA).toBeDefined();
+    // B recibe (al menos) su déficit: con su cuota nueva ya no crece.
+    expect(incB.cuotaNueva).toBeGreaterThanOrEqual(interesMensual(10_000_000, 0.20) - 1);
+    // El remanente (extra - déficit de B) va a la de mayor tasa, A.
+    expect(incA.incremento).toBeCloseTo(extra - deficitB, -1);
+    expect(totalRepartido).toBeCloseTo(extra, -1);
+  });
+
+  it('extra menor que el déficit total: cubre primero la que más rápido crece', () => {
+    // Dos deudas que crecen; B crece más rápido que C.
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'B', descripcion: 'Crece mucho', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'C', descripcion: 'Crece poco',  saldoTotal: 3_000_000,  cuotaMensual: 40_000, tasa: 0.25, tasaUnidad: 'EA' }),
+    ]);
+    const deficitB = interesMensual(10_000_000, 0.30) - 50_000;
+    const extra = Math.round(deficitB / 2); // alcanza solo para parte de B
+    const { incrementos } = repartirExtraEnCuotas(deudas, extra);
+    // Todo el extra va a B (la que más rápido crece); C no recibe nada.
+    expect(incrementos).toHaveLength(1);
+    expect(incrementos[0].id).toBe('B');
+    expect(incrementos[0].incremento).toBe(extra);
+  });
+
+  it('sin deudas crecientes: todo el extra va a la deuda de mayor tasa', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'alta', saldoTotal: 1_000_000, cuotaMensual: 300_000, tasa: 0.40, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'baja', saldoTotal: 1_000_000, cuotaMensual: 300_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ]);
+    const { incrementos, totalRepartido } = repartirExtraEnCuotas(deudas, 80_000);
+    expect(incrementos).toHaveLength(1);
+    expect(incrementos[0].id).toBe('alta');
+    expect(incrementos[0].incremento).toBe(80_000);
+    expect(totalRepartido).toBe(80_000);
+  });
+
+  it('cuotaNueva = cuotaActual + incremento en cada deuda afectada', () => {
+    const deudas = filtrarDeudasPagables([
+      deudaBase({ id: 'x', saldoTotal: 8_000_000, cuotaMensual: 60_000, tasa: 0.35, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'y', saldoTotal: 2_000_000, cuotaMensual: 30_000, tasa: 0.28, tasaUnidad: 'EA' }),
+    ]);
+    const { incrementos } = repartirExtraEnCuotas(deudas, 400_000);
+    for (const i of incrementos) {
+      expect(i.cuotaNueva).toBe(i.cuotaActual + i.incremento);
+    }
   });
 });

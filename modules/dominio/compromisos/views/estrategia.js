@@ -253,8 +253,14 @@ function _renderContenidoAlternativa(activa, extraMensual, resumenExtraHtml, deu
   return _renderRemedioExtra(extraMensual, resumenExtraHtml);
 }
 
-/** Contenido de "Aumentar la cuota": mismo input + resumen de D.2b, reubicado. */
+/**
+ * Contenido de "Aumentar la cuota": input + resumen de D.2b, reubicado, más el
+ * botón "Aplicar" de D.9. El input usa su propia acción (`cambiar-extra-remedio`)
+ * que commitea el valor en vivo sin re-render, para que el botón "Aplicar" no se
+ * pierda al hacer clic (mismo patrón que renegociar/consolidar en D.3).
+ */
 function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
+  const puedeAplicar = extraMensual > 0;
   return `
     <div class="estrategia-card__remedio">
       <p class="estrategia-card__bloque-titulo">💪 Aumenta tu cuota</p>
@@ -263,10 +269,14 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
         <input id="estrategia-extra" class="input" type="number"
                min="0" step="10000" value="${extraMensual || ''}"
                placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
-               data-action="cambiar-extra-estrategia" />
+               data-action="cambiar-extra-remedio" />
         <p class="form-hint">Escribe un monto y mira si tu plan se vuelve viable.</p>
       </div>
       ${resumenExtraHtml}
+      <button type="button" class="btn btn-primary estrategia-card__aumentar-aplicar"
+              data-action="aplicar-aumento-cuota" ${puedeAplicar ? '' : 'disabled'}>
+        Aplicar este aumento
+      </button>
     </div>`;
 }
 

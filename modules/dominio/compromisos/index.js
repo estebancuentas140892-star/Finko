@@ -18,7 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, tasaMensualToEA } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -401,6 +401,12 @@ function _actualizarResumenEnVivo(el) {
   tmp.innerHTML = renderResumenExtra(sinExtra, conExtra, extra);
   const nuevo = tmp.firstElementChild;
   if (nuevo) resumen.replaceWith(nuevo);
+
+  // D.9: en el bloque inviable hay un botón "Aplicar este aumento". Se habilita
+  // con cualquier extra > 0 (subir la cuota siempre ayuda). En el acelerador del
+  // plan viable este botón no existe, así que el query devuelve null y no pasa nada.
+  const btn = document.querySelector('[data-action="aplicar-aumento-cuota"]');
+  if (btn) btn.disabled = !(extra > 0);
 }
 
 // ── HANDLERS PANEL DE ALTERNATIVAS (D.8) ─────────────────────────
@@ -418,6 +424,61 @@ function _elegirAlternativa(el) {
   if (alternativa !== 'aumentar' && alternativa !== 'renegociar' && alternativa !== 'consolidar') return;
   setEstrategiaUI({ alternativaActiva: alternativa });
   renderEstrategiaPago();
+}
+
+// ── HANDLERS AUMENTAR LA CUOTA (D.9) ─────────────────────────────
+
+/**
+ * Input del extra dentro del bloque inviable ("Aumenta tu cuota"). Commitea el
+ * valor a estado en vivo (sin re-render) para no perder el clic en "Aplicar",
+ * y actualiza el resumen + el estado del botón. Usa su propia acción para no
+ * disparar el re-render que sí hace el acelerador del plan viable al blur.
+ */
+function _actualizarRemedioExtraEnVivo(el) {
+  setEstrategiaUI({ extraMensual: el.value });
+  _actualizarResumenEnVivo(el);
+}
+
+/**
+ * Aplica el aumento de cuota (D.9): reparte el extra automáticamente
+ * (`repartirExtraEnCuotas`: cubre déficits, remanente a la mayor tasa) y escribe
+ * la nueva `cuotaMensual` sobre cada deuda afectada. Es la tercera superficie de
+ * "simular → aplicar" (tras D.3a/D.3b); muta `S`, por eso pide confirmación que
+ * nombra cada deuda y su nueva cuota. Lee el extra del input en vivo al hacer clic.
+ */
+async function _aplicarAumentoCuota() {
+  const input = document.getElementById('estrategia-extra');
+  const extra = Number(input ? input.value : getEstrategiaUI().extraMensual);
+  if (!Number.isFinite(extra) || extra <= 0) return;
+
+  const deudas = filtrarDeudasPagables(S.compromisos);
+  const { incrementos } = repartirExtraEnCuotas(deudas, extra);
+  if (incrementos.length === 0) return;
+
+  const lista = incrementos
+    .map(i => `${i.descripcion} sube de ${f(i.cuotaActual)} a ${f(i.cuotaNueva)}/mes`)
+    .join('; ');
+  const ok = await confirmar({
+    titulo:         'Aumentar tu cuota',
+    mensaje:        `Repartiremos ${f(extra)} extra al mes así: ${lista}. Esa nueva cuota se usará en tus pagos programados y al distribuir tu ingreso. Aplícalo solo si puedes sostener el aumento.`,
+    confirmarTexto: 'Aplicar aumento',
+    peligroso:      false,
+  });
+  if (!ok) return;
+
+  for (const i of incrementos) {
+    editar('compromisos', i.id, { cuotaMensual: i.cuotaNueva });
+  }
+
+  // El extra ya quedó incorporado a las cuotas: se resetea para no contarlo dos
+  // veces en la simulación. Se cierra el panel para volver al estado limpio.
+  setEstrategiaUI({ extraMensual: 0, panelAlternativasAbierto: false });
+  _renderTodo();
+
+  const n = incrementos.length;
+  announce(n === 1
+    ? 'Tu cuota mensual aumentó. Finko la usará en tus próximos pagos.'
+    : `Aumentaste la cuota de ${n} deudas. Finko las usará en tus próximos pagos.`);
 }
 
 // ── HANDLERS RENEGOCIAR TASA (D.3a) ──────────────────────────────
@@ -583,6 +644,7 @@ export function initCompromisos() {
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
   registrarAccion('abrir-panel-alternativas', _abrirPanelAlternativas);
   registrarAccion('elegir-alternativa',      _elegirAlternativa);
+  registrarAccion('aplicar-aumento-cuota',   _aplicarAumentoCuota);
   registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
@@ -591,14 +653,18 @@ export function initCompromisos() {
   _inyectarForm();
 
   // El extra mensual y la tasa de renegociación reaccionan en vivo al escribir:
-  //   - extra: `input` actualiza el resumen sin re-render; `change` (blur)
-  //     re-renderiza la card completa.
+  //   - extra (acelerador del plan viable): `input` actualiza el resumen sin
+  //     re-render; `change` (blur) re-renderiza la card completa.
+  //   - extra (remedio del plan inviable, D.9): `input` commitea el valor y
+  //     actualiza resumen + botón, sin re-render, para no perder el clic en
+  //     "Aplicar este aumento" (no tiene handler de `change`).
   //   - renegociar tasa: `input` actualiza la comparación y commitea el valor
   //     a estado (sin re-render) para no perder el clic en "Aplicar".
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) return;
     if (t.dataset.action === 'cambiar-extra-estrategia')     _actualizarResumenEnVivo(t);
+    else if (t.dataset.action === 'cambiar-extra-remedio')   _actualizarRemedioExtraEnVivo(t);
     else if (t.dataset.action === 'cambiar-renegociar-tasa') _actualizarRenegociacionEnVivo(t);
     else if (t.dataset.action === 'cambiar-consolidar')      _actualizarConsolidacionEnVivo();
   });

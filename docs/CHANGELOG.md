@@ -7,6 +7,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): "Aumentar la cuota" como acción aplicable real (D.9, ADR 011 rev. D.7) · 2026-06-29
+
+Tercera y última superficie de "simular → aplicar" de la jornada 2 de "Visión de Deudas" (tras D.3a renegociar y D.3b consolidar). El pago extra de "Aumentar la cuota" deja de ser solo what-if (D.2b): ahora un botón **"Aplicar este aumento"** lo escribe sobre las deudas.
+
+**Reparto automático (decidido con el usuario en la Revisión D.7).** Nueva función pura `repartirExtraEnCuotas(deudas, extra)` que traduce el extra (un monto que la simulación vuelca dinámicamente sobre la deuda prioritaria) a incrementos concretos de `cuotaMensual` por deuda. Criterio fijo, sin preguntarle al usuario a qué deuda (una elección manual mal hecha pierde la intención de Finko):
+
+1. **Frena el crecimiento primero:** cubre el déficit mensual (`interesMensual - cuota`) de las deudas que crecen, empezando por las que más rápido crecen, hasta agotar el extra.
+2. **El remanente, a la deuda de mayor tasa** (Avalancha): donde cada peso adicional ahorra más intereses.
+
+El botón pide **confirmación** que nombra cada deuda y su nueva cuota (la mutación es deliberada, no un efecto colateral de simular), y escribe `cuotaMensual` vía `editar`. Ese valor alimenta sin lógica nueva los **pagos programados** (`calcularCompromisoMensual` lee `cuotaMensual`) y la **distribución automática** (el piso de Necesidades de MC.6a suma `cuotasDeudaMensuales`).
+
+El input del extra en el bloque inviable usa su propia acción (`cambiar-extra-remedio`) que commitea el valor en vivo **sin re-render** (igual que renegociar/consolidar en D.3), para que el clic en "Aplicar" no se pierda por un re-render al blur. El acelerador del plan viable conserva `cambiar-extra-estrategia` (que sí re-renderiza).
+
+**Limitación v1 (documentada en el ADR):** `cuotaMensual` es estático; no replica el volcado dinámico de la simulación. Si el extra no cubre todos los déficits, algunas deudas crecen más lento pero no se frenan del todo; cuando una deuda cierra, su cuota liberada no se reasigna sola. El usuario re-aplica. El volcado automático queda como mejora futura.
+
+8 tests unitarios nuevos (6 de `repartirExtraEnCuotas` + 2 del estado del botón) + 1 E2E nuevo (aplicar sube `cuotaMensual` de la deuda que crece, deja la sana intacta). 1637 → 1645 verdes; 63 → 64 E2E. SW v224 → v225.
+
+- **`modules/dominio/compromisos/logic.js`**: `repartirExtraEnCuotas` (función pura nueva).
+- **`modules/dominio/compromisos/views/estrategia.js`**: `_renderRemedioExtra` suma el botón "Aplicar este aumento" (`btn-primary`, deshabilitado sin extra) y cambia el input a `data-action="cambiar-extra-remedio"`.
+- **`modules/dominio/compromisos/index.js`**: `_aplicarAumentoCuota` (reparte, confirma, escribe `cuotaMensual`, resetea extra + cierra panel), `_actualizarRemedioExtraEnVivo` (commitea + actualiza en vivo); `_actualizarResumenEnVivo` togglea el botón; registro de `aplicar-aumento-cuota` + cableado de `cambiar-extra-remedio`; import de `repartirExtraEnCuotas`.
+- **`styles/components/charts.css`**: `.estrategia-card__aumentar-aplicar` (ancho completo + margen).
+- **`tests/unit/compromisos.test.js`**: describe `repartirExtraEnCuotas` (6 tests) + 2 tests del estado del botón en el bloque inviable; import nuevo.
+- **`tests/e2e/estrategia-pago.test.js`**: suite "Aumentar la cuota (D.9)" (1 test de aplicar punta a punta).
+- **`service-worker.js`**: v224 → v225.
+
+---
+
 ### feat(deudas): panel de alternativas con selector (D.8, ADR 011 rev. D.7) · 2026-06-29
 
 Implementa la jerarquía diseñada en la [Revisión D.7 de ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). El bloque inviable de la card de estrategia dejaba de verse limpio: diagnóstico + pago extra + renegociar + consolidar, los tres a la vez.

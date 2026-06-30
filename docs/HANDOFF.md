@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(deudas): D.8 - panel de alternativas con selector, botón único reemplaza los 3 remedios simultáneos)
+> Última actualización: 2026-06-29 (feat(deudas): D.9 - "Aumentar la cuota" como acción aplicable real, con reparto automático del extra)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1637/1637 verdes |
-| Tests E2E | 63/63 verde. Suites: `smoke` 28 tests, `estrategia-pago` 14 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
+| Tests unitarios + integración | 1645/1645 verdes |
+| Tests E2E | 64/64 verde. Suites: `smoke` 28 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): "Aumentar la cuota" como acción aplicable real (D.9, ADR 011 rev. D.7) · 2026-06-29
+
+Cierra la jornada 2 de "Visión de Deudas". El pago extra de "Aumentar la cuota" deja de ser solo what-if: ahora se puede **Aplicar**. Nueva función pura `repartirExtraEnCuotas(deudas, extra)` que traduce el extra (un monto que la simulación vuelca dinámicamente) a incrementos concretos de `cuotaMensual` por deuda, con el criterio decidido en la Revisión D.7: **automático, sin preguntar a qué deuda** (1) cubre el déficit de las que más rápido crecen para frenar el crecimiento, (2) el remanente a la deuda de mayor tasa (Avalancha). El botón "Aplicar este aumento" pide confirmación que nombra cada deuda y su nueva cuota, y escribe `cuotaMensual` vía EventBus. Ese valor alimenta los pagos programados (`calcularCompromisoMensual`) y la distribución automática (`cuotasDeudaMensuales` en MC.6a) sin lógica nueva. El input usa su propia acción (`cambiar-extra-remedio`) que commitea en vivo sin re-render, para no perder el clic en "Aplicar". 8 unit nuevos (`repartirExtraEnCuotas` + estado del botón) + 1 E2E nuevo. 1637 → 1645 verdes; 63 → 64 E2E. SW v224 → v225.
+
+**Limitación v1 (documentada en el ADR):** `cuotaMensual` es estático; no replica el volcado dinámico. Si una deuda cierra, su cuota liberada no se reasigna sola: el usuario re-aplica.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | `repartirExtraEnCuotas` (función pura nueva: cubre déficits + remanente a la mayor tasa). |
+| `modules/dominio/compromisos/views/estrategia.js` | `_renderRemedioExtra` suma el botón "Aplicar este aumento"; el input usa `cambiar-extra-remedio`. |
+| `modules/dominio/compromisos/index.js` | `_aplicarAumentoCuota` (confirmación + escribe `cuotaMensual`), `_actualizarRemedioExtraEnVivo`; `_actualizarResumenEnVivo` togglea el botón; registro + cableado del input. |
+| `styles/components/charts.css` | `.estrategia-card__aumentar-aplicar`. |
+| `tests/unit/compromisos.test.js` | Describe `repartirExtraEnCuotas` (6) + 2 tests del estado del botón. |
+| `tests/e2e/estrategia-pago.test.js` | Suite "Aumentar la cuota (D.9)" (1 test de aplicar). |
+| `service-worker.js` | v224 → v225. |
+
+---
 
 ### feat(deudas): panel de alternativas con selector (D.8, ADR 011 rev. D.7) · 2026-06-29
 
@@ -87,17 +105,6 @@ Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md)
 | `modules/dominio/tesoreria/logic.js` | `calcularAporteMensualObjetivos` + `sugerirDistribucionIngreso` reescrita. |
 | `modules/dominio/tesoreria/view.js` | 4 nuevos inputs computados desde S. |
 | `tests/unit/tesoreria.test.js` | 16 tests nuevos + 4 actualizados + import. |
-
----
-
-### feat(constants): mapeo sección → grupo financiero (TX.5, ADR 014) · 2026-06-29
-
-Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega en `constants.js` el mapeo canónico sección → grupo financiero como código reutilizable: `GRUPOS_FINANCIEROS` (3 grupos en orden de prioridad), `LABEL_GRUPO_FINANCIERO` (etiquetas UI), `GRUPO_POR_SECCION` (mapa clave→grupo para las 7 secciones) y `clasificarSeccionEnGrupo` (función pura). **Con TX.5, la serie completa TX.1-TX.5 queda cerrada y el ADR 014 implementado.** 8 tests nuevos. 1609 → 1617 verdes. Sin SW bump.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `GRUPOS_FINANCIEROS`, `LABEL_GRUPO_FINANCIERO`, `GRUPO_POR_SECCION`, `clasificarSeccionEnGrupo`. |
-| `tests/unit/constants.test.js` | 8 tests TX.5 + imports. |
 
 ---
 

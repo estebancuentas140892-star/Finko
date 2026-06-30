@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1637/1637 tests verdes, lint limpio, 63/63 E2E.** Último cambio: **D.8** panel de alternativas con selector (implementa la Revisión D.7 de ADR 011): botón único reemplaza los 3 remedios simultáneos del bloque inviable. SW v224. Antes: D.7 (diseño) revisión D.7 de ADR 011. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1645/1645 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.9** "Aumentar la cuota" como acción aplicable real (cierra ADR 011 jornada 2): reparto automático del extra que escribe `cuotaMensual`. SW v225. Antes: D.8 panel de alternativas con selector. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -43,7 +43,7 @@ _(sin tarea activa)_
 - ✅ **D.3a / S4** - "Renegociar tasa" interactivo + aplicar (`simularRenegociacion`). 16 unit + 2 E2E. SW v218. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **D.3b / S5** - "Consolidar deudas" interactivo + aplicar (`simularConsolidacion`: crea el crédito nuevo y archiva las consolidadas). 12 unit + 2 E2E. SW v219. Ver [CHANGELOG](CHANGELOG.md).
 
-**Siguiente sugerido: D.9** (jornada 2 de "Visión de Deudas"): "Aumentar la cuota" como acción aplicable real, con el reparto automático ya decidido en la Revisión D.7 de ADR 011 (cubre déficits, remanente a la mayor tasa, sin preguntar a qué deuda). Modelo: Opus 4.8 - Alto. Después: D.5 (categorías de deuda en dos dimensiones, Opus 4.8 - Alto).
+**✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica. **Siguiente sugerido: D.5** (categorías de deuda en dos dimensiones: Tipo de deuda + Acreedor, decisión de modelo de datos, posible schema bump). Modelo: Opus 4.8 - Alto. También quedan EP.0 (épica "explicar el propósito de cada sección", requiere ADR) y MC.6b/MC.7 (distribución).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -69,7 +69,7 @@ Segunda ronda de observaciones del usuario sobre la sección Deudas. Objetivo co
 
 ✅ **D.8 (implementa D.7) - Panel de alternativas con selector** - Botón único de alerta que alterna `panelAlternativasAbierto`; panel con diagnóstico + selector de 3 alternativas (`alternativaActiva`, default "Aumentar la cuota") que muestra **solo el contenido de la opción elegida** (no las tres a la vez). Renegociar (D.3a) y Consolidar (D.3b) **reubicados** dentro del selector sin tocar su lógica. "Aumentar la cuota" sigue siendo simulación hasta que D.9 le sume Aplicar. Estado del panel en `_uiEstrategia`, 2 data-actions nuevos (`abrir-panel-alternativas`, `elegir-alternativa`). El bloque inviable se movió **debajo del detalle** (corrige la deriva de que vivía arriba del picker). 8 unit + 2 E2E nuevos. 1633 → 1637 verdes; 61 → 63 E2E. SW v223 → v224 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **D.9 (implementa D.7) - "Aumentar la cuota" como acción aplicable real** - Hoy el pago extra es what-if (D.2b). Al pulsar Aplicar, Finko **reparte el extra automáticamente** (decidido en la Revisión D.7): cubre el déficit de cada deuda que crece para que ninguna siga creciendo, y concentra el remanente en la deuda de mayor tasa (criterio Avalancha). **No le pregunta al usuario a qué deuda** (una elección manual mal hecha pierde la intención de Finko). Escribe la nueva `cuotaMensual` sobre las deudas afectadas (con confirmación que nombra cada una), y ese valor alimenta los **pagos programados** y las **próximas distribuciones de ingreso** (MC.4/MC.6). Es la tercera superficie de "simular → aplicar" (tras D.3a y D.3b) e introduce una **función pura nueva** de reparto + tests. Limitación v1: `cuotaMensual` es estático; el volcado al cerrar una deuda queda como re-aplicar manual. Modelo: Opus 4.8 - Alto (muta `S`, cruza con distribución y pagos, lógica financiera nueva).
+✅ **D.9 (implementa D.7) - "Aumentar la cuota" como acción aplicable real** - El pago extra deja de ser solo what-if (D.2b). El botón "Aplicar este aumento" reparte el extra **automáticamente** (`repartirExtraEnCuotas`: cubre el déficit de las que más rápido crecen, remanente a la mayor tasa; sin preguntar a qué deuda) y escribe la nueva `cuotaMensual` sobre cada deuda afectada (con confirmación que nombra cada una). Ese valor alimenta los pagos programados (`calcularCompromisoMensual`) y la distribución automática (`cuotasDeudaMensuales` en MC.6a) sin lógica nueva. Tercera superficie de "simular → aplicar". Limitación v1: `cuotaMensual` es estático; el volcado al cerrar una deuda queda como re-aplicar manual. 8 unit + 1 E2E. 1637 → 1645 verdes; 63 → 64 E2E. SW v224 → v225 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 ### Backlog del usuario "Mis cuentas + distribución" (2026-06-28)
 

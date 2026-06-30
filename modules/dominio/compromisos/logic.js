@@ -1148,6 +1148,99 @@ function _calcularExtraMinimoViable(deudas) {
   return lo;
 }
 
+/**
+ * Reparte un pago extra mensual entre las cuotas de las deudas (D.9, ADR 011
+ * rev. D.7). Es la traducción del "extra" what-if (un monto que la simulación
+ * vuelca dinámicamente sobre la deuda prioritaria) a incrementos concretos de
+ * `cuotaMensual` por deuda, que sí se pueden persistir y alimentan los pagos
+ * programados y la distribución de ingreso.
+ *
+ * Criterio fijo (decidido con el usuario): **automático, siempre conviene**.
+ * No se le pregunta al usuario a qué deuda aplicarlo: una elección manual mal
+ * hecha pierde la intención de Finko. El reparto:
+ *
+ *   1. **Frena el crecimiento primero.** Cubre el déficit mensual
+ *      (`interesMensual - cuota`) de las deudas que crecen, empezando por las
+ *      que más rápido crecen, hasta agotar el extra. Cada peso aquí evita que
+ *      una deuda siga subiendo.
+ *   2. **El remanente, a la deuda de mayor tasa** (criterio Avalancha): donde
+ *      cada peso adicional ahorra más intereses.
+ *
+ * Función pura: no muta `deudas` ni `S`. El handler que aplica escribe las
+ * `cuotaNueva` resultantes sobre cada deuda con confirmación.
+ *
+ * Limitación v1: `cuotaMensual` es estático y no replica el "volcado" dinámico
+ * de la simulación (cuando una deuda cierra, su cuota liberada no se reasigna
+ * sola). Si el extra no alcanza a cubrir todos los déficits, algunas deudas
+ * crecen más lento pero no se frenan del todo; el usuario puede re-aplicar.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {number} extra  Pago extra mensual total a repartir (COP, > 0).
+ * @returns {{
+ *   incrementos: Array<{ id: string, descripcion: string, cuotaActual: number, incremento: number, cuotaNueva: number }>,
+ *   totalRepartido: number,
+ * }}  incrementos solo incluye las deudas cuya cuota cambia (incremento >= 1).
+ */
+export function repartirExtraEnCuotas(deudas, extra) {
+  const monto = Number(extra);
+  if (!Array.isArray(deudas) || deudas.length === 0 || !(monto > 0)) {
+    return { incrementos: [], totalRepartido: 0 };
+  }
+
+  const trabajo = deudas.map(d => {
+    const tasaEA         = Number(d.tasaEA) || 0;
+    const cuotaActual    = Number(d.cuota)  || 0;
+    const interesMensual = (Number(d.saldo) || 0) * _tasaMensualDesdeEA(tasaEA);
+    return {
+      id:          d.id,
+      descripcion: d.descripcion,
+      tasaEA,
+      cuotaActual,
+      deficit:     interesMensual - cuotaActual,
+      incremento:  0,
+    };
+  });
+
+  let restante = monto;
+
+  // 1. Cubrir el déficit de las que más rápido crecen, hasta agotar el extra.
+  const crecientes = trabajo
+    .filter(t => t.deficit > 0.01)
+    .sort((a, b) => b.deficit - a.deficit);
+  for (const t of crecientes) {
+    if (restante <= 0.01) break;
+    const asignar = Math.min(restante, t.deficit);
+    t.incremento += asignar;
+    restante     -= asignar;
+  }
+
+  // 2. El remanente, a la deuda de mayor tasa (Avalancha).
+  if (restante > 0.01) {
+    const prioritaria = trabajo.reduce(
+      (mejor, t) => (t.tasaEA > mejor.tasaEA ? t : mejor), trabajo[0]);
+    prioritaria.incremento += restante;
+    restante = 0;
+  }
+
+  const incrementos = trabajo
+    .map(t => {
+      const incremento = Math.round(t.incremento);
+      return {
+        id:          t.id,
+        descripcion: t.descripcion,
+        cuotaActual: t.cuotaActual,
+        incremento,
+        cuotaNueva:  t.cuotaActual + incremento,
+      };
+    })
+    .filter(t => t.incremento > 0);
+
+  return {
+    incrementos,
+    totalRepartido: incrementos.reduce((a, t) => a + t.incremento, 0),
+  };
+}
+
 // ── ABONOS A DEUDAS (ADR 002) ────────────────────────────────────
 //
 // Un "abono" es un Gasto categorizado como "Deudas" con el campo opcional

@@ -456,3 +456,37 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
   });
 
 });
+
+// ── SUITE: Aumentar la cuota (D.9) ────────────────────────────────────────────
+
+test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => {
+
+  test('aplicar el aumento sube la cuotaMensual de la deuda que crece', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+    await abrirAlternativa(page, 'aumentar');
+
+    // Sin extra, el botón "Aplicar este aumento" está deshabilitado.
+    const aplicar = page.locator('[data-action="aplicar-aumento-cuota"]');
+    await expect(aplicar).toBeVisible({ timeout: 5_000 });
+    await expect(aplicar).toBeDisabled();
+
+    // Un extra pequeño (no vuelve viable el plan) habilita el botón.
+    await page.locator('#estrategia-extra').fill('100000');
+    await expect(aplicar).toBeEnabled({ timeout: 3_000 });
+    await aplicar.click();
+
+    // Confirmar en el modal.
+    await page.locator('[data-role="confirmar"]').click();
+
+    // La deuda que crece (reneg-a, mayor déficit) sube su cuota de 50.000 a
+    // 150.000; la chica sana (reneg-b) no se toca. save() está debounced 200ms.
+    await expect.poll(async () => page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      const a = s.compromisos.find(c => c.id === 'reneg-a')?.cuotaMensual;
+      const b = s.compromisos.find(c => c.id === 'reneg-b')?.cuotaMensual;
+      return { a, b };
+    }), { timeout: 2_000 }).toEqual({ a: 150_000, b: 100_000 });
+  });
+
+});

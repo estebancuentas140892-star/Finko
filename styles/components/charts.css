@@ -792,8 +792,13 @@
 .estrategia-card__renegociar-msg--ok   { color: var(--fk-success-text); }
 .estrategia-card__renegociar-msg--warn { color: var(--fk-warning-text); }
 .estrategia-card__renegociar-aplicar,
-.estrategia-card__consolidar-aplicar {
+.estrategia-card__consolidar-aplicar,
+.estrategia-card__aumentar-aplicar {
   width: 100%;
+}
+/* D.9: separa el botón "Aplicar este aumento" del resumen de impacto. */
+.estrategia-card__aumentar-aplicar {
+  margin-top: var(--fk-space-3);
 }
 
 /* v6: input + select para tasa con unidad (% EA vs % mensual). */
