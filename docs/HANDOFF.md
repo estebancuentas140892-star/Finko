@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(proposito): EP.2 - banners en Gastos, Deudas, Agenda y Límites de gasto)
+> Última actualización: 2026-06-30 (feat(proposito): EP.3 - banners en Metas, Ahorro e Inversión)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(proposito): banners de propósito en Metas, Ahorro e Inversión (EP.3) · 2026-06-30
+
+Mismo patrón que EP.2. Agrega 3 entradas a `PROPOSITOS_SECCION` (`metas`, `ahorro`, `inversion`), 3 slots en `index.html` y calls en los 3 dominios. CSS: púrpura para Metas, verde menta para Ahorro, azul cian para Inversión. Sin tests nuevos. 1658/1658 verdes. SW v229 → v230.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/proposito.js` | 3 entradas nuevas en `PROPOSITOS_SECCION`: `metas`, `ahorro`, `inversion`. |
+| `index.html` | Slots `proposito-metas`, `proposito-ahorro`, `proposito-inversion`. |
+| `modules/dominio/metas/index.js` | Import + calls de `renderBannerProposito('metas')`. |
+| `modules/dominio/ahorro/index.js` | Import + calls de `renderBannerProposito('ahorro')`. |
+| `modules/dominio/inversiones/index.js` | Import + calls de `renderBannerProposito('inversion')`. |
+| `styles/components/domain.css` | Variantes de color para metas, ahorro, inversion (expandido + colapsado). |
+| `service-worker.js` | v229 → v230. |
+
+---
 
 ### feat(proposito): banners de propósito en Gastos, Deudas, Agenda y Límites de gasto (EP.2) · 2026-06-30
 
@@ -93,21 +109,6 @@ Continúa MC.6a (modelo de pisos). La barra de chips de la tarjeta "¿Cómo dist
 | `modules/dominio/tesoreria/view.js` | `_renderDistribucion`: reemplaza `presetChips` por `autoChip` (fila principal) y `clasicosChips` (en `<details>`). |
 | `styles/components/domain.css` | `.distribucion-clasicos` + `.distribucion-clasicos__toggle` (estilos del `<details>`). |
 | `service-worker.js` | v226 → v227. |
-
----
-
-### feat(deudas): categorías de deuda curadas (12 → 7) + migración v18→v19 (D.5a, ADR 015) · 2026-06-29
-
-Implementa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md). El eje "qué" (`CATEGORIAS_DEUDA`, antes "Tipo de obligación") se cura de 12 a 7 valores orientados al propósito: Tarjeta de crédito 💳, Libre inversión 💵, Vivienda 🏠, Vehículo 🚗, Educativo 🎓, Compra a cuotas 🛍️, Otra 📦. El label del form pasa a "Tipo de deuda". Migración idempotente v18 → v19 remapea la `categoria` de las deudas existentes (los informales como Gota a gota, Libranza, Préstamo personal, Microcrédito, Sobregiro colapsan en "Libre inversión": su "quién" ya lo captura Entidad/Personal). El eje "quién" (Entidad/Personal) y la lógica financiera no se tocan. No se agregó campo "Acreedor". 4 tests de migración nuevos; tests de catálogo y form actualizados. 1645 → 1649 verdes. SW v225 → v226.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_DEUDA` (12 → 7) + `CATEGORIA_DEUDA_EMOJI` curados. |
-| `modules/core/storage.js` | `SCHEMA_VERSION` 18 → 19 + migración v18→v19 (remapeo idempotente de `categoria`). |
-| `modules/dominio/compromisos/views/formularios.js` | Label "Tipo de obligación" → "Tipo de deuda". |
-| `tests/unit/compromisos.test.js` | Catálogo 12 → 7; valores `Gota a gota` → `Libre inversión` en 2 tests. |
-| `tests/unit/storage.test.js` | Describe nuevo "Migración v18 → v19" (4 tests). |
-| `service-worker.js` | v225 → v226. |
 
 ---
 

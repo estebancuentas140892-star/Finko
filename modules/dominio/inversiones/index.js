@@ -19,6 +19,7 @@ import { confirmar }                 from '../../ui/confirm.js';
 import { f, hoy }                    from '../../infra/utils.js';
 import { validarInversion, normalizarInversion } from './logic.js';
 import { renderInversion, renderFormInversion }  from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
 
@@ -126,8 +127,10 @@ export function initInversiones() {
 
   // Re-render al navegar a #inversion (mismo patrón que ahorro/metas).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('inversion');
     renderSmart(_renderInversionBound, 'inversion');
   });
 
+  renderBannerProposito('inversion');
   renderSmart(_renderInversionBound, 'inversion');
 }

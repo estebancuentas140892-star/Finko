@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(proposito): banners de propósito en Metas, Ahorro e Inversión (EP.3) · 2026-06-30
+
+Reutiliza el helper de EP.1/EP.2. Sin tests nuevos (la lógica de `htmlBannerProposito` ya tiene cobertura completa). 1658/1658 verdes. SW v229 → v230.
+
+- **`modules/ui/proposito.js`**: 3 entradas nuevas en `PROPOSITOS_SECCION`: `metas`, `ahorro`, `inversion`. Copy aprobado en ADR 016.
+- **`index.html`**: slots `proposito-metas`, `proposito-ahorro`, `proposito-inversion`.
+- **`modules/dominio/metas/index.js`**: import + calls de `renderBannerProposito('metas')` en hashchange e init.
+- **`modules/dominio/ahorro/index.js`**: import + calls de `renderBannerProposito('ahorro')` en hashchange e init.
+- **`modules/dominio/inversiones/index.js`**: import + calls de `renderBannerProposito('inversion')` en hashchange e init.
+- **`styles/components/domain.css`**: variantes de color expandido + colapsado para metas (`--fk-dom-metas`), ahorro (`--fk-dom-ahorro`), inversion (`--fk-dom-inversion`).
+- **`service-worker.js`**: v229 → v230.
+
+---
+
 ### feat(proposito): banners de propósito en Gastos, Deudas, Agenda y Límites de gasto (EP.2) · 2026-06-30
 
 Reutiliza el helper de EP.1. Sin tests nuevos (la lógica de `htmlBannerProposito` ya tiene cobertura completa). 1658/1658 verdes. SW v228 → v229.

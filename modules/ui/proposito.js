@@ -39,6 +39,18 @@ export const PROPOSITOS_SECCION = {
     titulo: '¿Para qué sirve Límites de gasto?',
     texto: '¿Llegas a fin de mes sin saber por qué no te alcanzó? Sin un tope claro, es fácil gastar de más sin darte cuenta. Límites de gasto te deja fijar cuánto quieres gastar por categoría y te avisa antes de pasarte, no después.',
   },
+  metas: {
+    titulo: '¿Para qué sirve Metas?',
+    texto: '¿Tienes un sueño pero no sabes cómo llegar a él? Sin un plan, ahorrar para algo grande se siente imposible. Metas convierte cada objetivo en un plan de ahorro con pasos claros: cuánto apartar y cuándo lo vas a lograr.',
+  },
+  ahorro: {
+    titulo: '¿Para qué sirve Ahorro?',
+    texto: '¿Qué pasaría si mañana llega un gasto inesperado? Sin un respaldo, un imprevisto se cubre con deuda o desarma tus planes. Ahorro te ayuda a construir tu fondo de emergencia, el colchón para los momentos difíciles y tu base de tranquilidad.',
+  },
+  inversion: {
+    titulo: '¿Para qué sirve Inversión?',
+    texto: '¿Tu dinero está creciendo o solo guardado? El dinero quieto pierde valor con el tiempo por la inflación. Inversión te ayuda a llevar el registro de lo que inviertes y ver cómo tu patrimonio crece más allá del ahorro.',
+  },
 };
 
 // ── RENDER ───────────────────────────────────────────────────────

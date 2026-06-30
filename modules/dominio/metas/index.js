@@ -19,6 +19,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { f } from '../../infra/utils.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -199,8 +200,10 @@ export function initMetas() {
   // Re-render al navegar a #metas - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('metas');
     renderSmart(renderListaMetas, 'metas');
   });
 
+  renderBannerProposito('metas');
   renderSmart(renderListaMetas, 'metas');
 }

@@ -34,6 +34,7 @@ import {
   renderFormAporte, renderFormCompromisoMensual,
   renderResumenAhorroConsolidado,
 } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── FACTOR DE FRECUENCIA ─────────────────────────────────────────
 
@@ -426,8 +427,10 @@ export function initAhorro() {
 
   // Re-render al navegar a #ahorro (mismo patrón que metas/presupuesto).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('ahorro');
     renderSmart(_renderAhorroBound, 'ahorro');
   });
 
+  renderBannerProposito('ahorro');
   renderSmart(_renderAhorroBound, 'ahorro');
 }

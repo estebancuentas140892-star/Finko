@@ -1306,6 +1306,9 @@ button.chip:focus-visible {
 .banner-proposito[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
 .banner-proposito[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }
 .banner-proposito[data-seccion="presupuesto"] { border-left-color: var(--fk-dom-presupuesto); }
+.banner-proposito[data-seccion="metas"]       { border-left-color: var(--fk-dom-metas); }
+.banner-proposito[data-seccion="ahorro"]      { border-left-color: var(--fk-dom-ahorro); }
+.banner-proposito[data-seccion="inversion"]   { border-left-color: var(--fk-dom-inversion); }
 
 .banner-proposito__texto {
   font-size: var(--fk-text-sm);
@@ -1352,4 +1355,7 @@ button.chip:focus-visible {
 .banner-proposito--colapsado[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
 .banner-proposito--colapsado[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }
 .banner-proposito--colapsado[data-seccion="presupuesto"] { border-left-color: var(--fk-dom-presupuesto); }
+.banner-proposito--colapsado[data-seccion="metas"]       { border-left-color: var(--fk-dom-metas); }
+.banner-proposito--colapsado[data-seccion="ahorro"]      { border-left-color: var(--fk-dom-ahorro); }
+.banner-proposito--colapsado[data-seccion="inversion"]   { border-left-color: var(--fk-dom-inversion); }
 
