@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(constants): mapeo sección → grupo financiero (TX.5, ADR 014) · 2026-06-29
+
+Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega a `constants.js` el mapeo canónico sección → grupo financiero como código reutilizable por MC.5 (límites de gasto) y MC.6 (distribución inteligente):
+
+- **`GRUPOS_FINANCIEROS`**: `['necesidades', 'estilo-de-vida', 'ahorro']` (en orden de prioridad de cubrimiento).
+- **`LABEL_GRUPO_FINANCIERO`**: etiqueta legible por grupo para uso en UI (`Necesidades`, `Estilo de vida`, `Ahorro`).
+- **`GRUPO_POR_SECCION`**: mapa `seccion → grupo` (agenda/deudas → necesidades; gastos → estilo-de-vida; apartados/metas/ahorro/inversion → ahorro). Claves en minúsculas, alineadas con los módulos de dominio.
+- **`clasificarSeccionEnGrupo(seccion)`**: función pura que devuelve el grupo o `null` si la sección es desconocida.
+
+Con esto la regla de clasificación vive en un solo lugar; cualquier nueva feature que necesite razonar por grupos la importa en vez de duplicarla. 8 tests nuevos en `constants.test.js` (estructura de GRUPOS_FINANCIEROS, labels, mapeo por sección, null para desconocida, cobertura de los 3 grupos). 1609 → 1617 verdes. Sin SW bump (no cambia producción).
+
+- **`modules/core/constants.js`**: `GRUPOS_FINANCIEROS`, `LABEL_GRUPO_FINANCIERO`, `GRUPO_POR_SECCION`, `clasificarSeccionEnGrupo`.
+- **`tests/unit/constants.test.js`**: 8 tests TX.5 + imports nuevos.
+
+---
+
 ### test(constants): guardarraíl de consistencia de emojis entre catálogos (TX.4) · 2026-06-29
 
 Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega 2 tests automáticos al archivo `constants.test.js` que verifican el invariante central del ADR: **toda etiqueta compartida entre catálogos usa el mismo emoji en todos los catálogos donde aparece**.

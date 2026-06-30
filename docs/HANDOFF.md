@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (test(constants): TX.4 - guardarraíl de consistencia de emojis entre catálogos)
+> Última actualización: 2026-06-29 (feat(constants): TX.5 - mapeo sección → grupo financiero, ADR 014 completo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(constants): mapeo sección → grupo financiero (TX.5, ADR 014) · 2026-06-29
+
+Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega en `constants.js` el mapeo canónico sección → grupo financiero como código reutilizable: `GRUPOS_FINANCIEROS` (3 grupos en orden de prioridad), `LABEL_GRUPO_FINANCIERO` (etiquetas UI), `GRUPO_POR_SECCION` (mapa clave→grupo para las 7 secciones) y `clasificarSeccionEnGrupo` (función pura). **Con TX.5, la serie completa TX.1-TX.5 queda cerrada y el ADR 014 implementado.** 8 tests nuevos. 1609 → 1617 verdes. Sin SW bump.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `GRUPOS_FINANCIEROS`, `LABEL_GRUPO_FINANCIERO`, `GRUPO_POR_SECCION`, `clasificarSeccionEnGrupo`. |
+| `tests/unit/constants.test.js` | 8 tests TX.5 + imports. |
+
+---
+
 ### test(constants): guardarraíl de consistencia de emojis entre catálogos (TX.4) · 2026-06-29
 
 Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2 tests en `constants.test.js`: el primero verifica que la lista de etiquetas compartidas entre catálogos no está vacía (smoke del guardarraíl); el segundo verifica que toda etiqueta compartida usa el mismo emoji en todos los catálogos donde aparece. Detecta hoy 6 compartidas que pasan: Mercado 🛒, Transporte 🚗, Servicios públicos 💡, Educación 📚, Mascotas 🐾, Arriendo 🏠. Fallará automáticamente ante cualquier desajuste futuro. 1607 → 1609 verdes. Sin SW bump.
@@ -49,21 +60,9 @@ Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2
 
 ---
 
-### feat(apartados): curar PLANTILLAS_APARTADO - Cumpleaños y Navidad (TX.2) · 2026-06-29
-
-Segundo slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Cumpleaños** 🎂 y **Navidad** 🎄 a `PLANTILLAS_APARTADO` (hoy solo existía "Regalos"). Insertas después de "Regalos", antes de "Vacaciones". 15 → 17 plantillas. 1607/1607 verdes. SW v221 → v222.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` (+Cumpleaños 🎂, +Navidad 🎄). |
-| `tests/unit/apartados.test.js` | Longitud 15 → 17. |
-| `service-worker.js` | v221 → v222. |
-
----
-
 ### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
 
-Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Mercado** 🛒 y **Suscripciones** 🔔 al catálogo de categorías de la sección Agenda. Mercado es el caso canónico del ADR (en Agenda = compra mensual planeada; en Gastos = compra imprevista suelta). Emoji de Mercado consistente con el de la sección Gastos (guardarraíl de consistencia del ADR). Longitud 13 → 15. Tests verdes automáticamente (los existentes iteran sobre el catálogo). 1607/1607 verdes. SW v220 → v221.
+Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Mercado** 🛒 y **Suscripciones** 🔔 al catálogo de categorías de la sección Agenda. Mercado es el caso canónico del ADR (en Agenda = compra mensual planeada; en Gastos = compra imprevista suelta). Emoji de Mercado consistente con el de la sección Gastos (guardarraíl de consistencia del ADR). Longitud 13 → 15. 1607/1607 verdes. SW v220 → v221.
 
 | Archivo | Cambio |
 |---|---|

@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1609/1609 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.4** guardarraíl de consistencia de emojis entre catálogos (2 tests). Antes: TX.2 Cumpleaños + Navidad en Apartados, TX.1 Mercado + Suscripciones en Agenda. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1617/1617 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.5** mapeo sección → grupo financiero (ADR 014 completo: TX.1-TX.5 cerradas). Antes: TX.4 guardarraíl de consistencia de emojis. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -181,4 +181,4 @@ Slices de implementación de ADR 014 (smallest-first, a confirmar la curación):
 ✅ **TX.2** - `PLANTILLAS_APARTADO` curada: Cumpleaños 🎂 y Navidad 🎄 (después de "Regalos", antes de "Vacaciones"). 15 → 17 plantillas. 1607/1607 verdes. SW v221 → v222 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - **TX.3 (opcional)** - Gastos: agregar Café ☕ y Gastos hormiga 🐜 si el usuario los quiere explícitos. Modelo: Sonnet 4.6 - Bajo.
 ✅ **TX.4** - Guardarraíl de consistencia: 2 tests en `constants.test.js` que verifican que toda etiqueta compartida entre catálogos (Gastos, Agenda, Ingresos, Deudas, Apartados) usa el mismo emoji. Detecta hoy 6 compartidas: Mercado 🛒, Transporte 🚗, Servicios públicos 💡, Educación 📚, Mascotas 🐾, Arriendo 🏠. 1607 → 1609 verdes - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **TX.5** - Helper puro de mapeo sección → grupo (Necesidades / Estilo de vida / Ahorro), reutilizable por MC.5 y MC.6. Modelo: Sonnet 4.6 - Medio.
+✅ **TX.5** - Mapeo sección → grupo financiero: `GRUPOS_FINANCIEROS`, `LABEL_GRUPO_FINANCIERO`, `GRUPO_POR_SECCION` y `clasificarSeccionEnGrupo` en `constants.js`. 8 tests. 1609 → 1617 verdes - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
