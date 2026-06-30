@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (docs(deudas): D.5 - ADR 015, categorías de deuda en dos dimensiones (quién = Entidad/Personal, qué = Tipo de deuda curado))
+> Última actualización: 2026-06-29 (feat(deudas): D.5a - categorías de deuda curadas (12 → 7) + migración v18→v19)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1645/1645 verdes |
+| Tests unitarios + integración | 1649/1649 verdes |
 | Tests E2E | 64/64 verde. Suites: `smoke` 28 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): categorías de deuda curadas (12 → 7) + migración v18→v19 (D.5a, ADR 015) · 2026-06-29
+
+Implementa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md). El eje "qué" (`CATEGORIAS_DEUDA`, antes "Tipo de obligación") se cura de 12 a 7 valores orientados al propósito: Tarjeta de crédito 💳, Libre inversión 💵, Vivienda 🏠, Vehículo 🚗, Educativo 🎓, Compra a cuotas 🛍️, Otra 📦. El label del form pasa a "Tipo de deuda". Migración idempotente v18 → v19 remapea la `categoria` de las deudas existentes (los informales como Gota a gota, Libranza, Préstamo personal, Microcrédito, Sobregiro colapsan en "Libre inversión": su "quién" ya lo captura Entidad/Personal). El eje "quién" (Entidad/Personal) y la lógica financiera no se tocan. No se agregó campo "Acreedor". 4 tests de migración nuevos; tests de catálogo y form actualizados. 1645 → 1649 verdes. SW v225 → v226.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_DEUDA` (12 → 7) + `CATEGORIA_DEUDA_EMOJI` curados. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 18 → 19 + migración v18→v19 (remapeo idempotente de `categoria`). |
+| `modules/dominio/compromisos/views/formularios.js` | Label "Tipo de obligación" → "Tipo de deuda". |
+| `tests/unit/compromisos.test.js` | Catálogo 12 → 7; valores `Gota a gota` → `Libre inversión` en 2 tests. |
+| `tests/unit/storage.test.js` | Describe nuevo "Migración v18 → v19" (4 tests). |
+| `service-worker.js` | v225 → v226. |
+
+---
 
 ### docs(deudas): ADR 015 - categorías de deuda en dos dimensiones (D.5) · 2026-06-29
 
@@ -89,18 +104,6 @@ Tarea de **diseño** (sin código de producción). El bloque inviable de la card
 | Archivo | Cambio |
 |---|---|
 | `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Nueva sección "Revisión D.7" (jerarquía botón → panel → selector, decisión D.9 de reparto automático, slices D.8/D.9, alternativas y consecuencias). |
-
----
-
-### feat(tesoreria): modelo de pisos para distribución automática (MC.6a, ADR 013) · 2026-06-29
-
-Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Reescribe el modo `auto` de `sugerirDistribucionIngreso` con el modelo de pisos: Necesidades (gastos fijos + cuotas de deuda), Ahorro (fondo → objetivos → base sana 20%), Estilo de vida (residual, piso 10%). Nuevo helper puro `calcularAporteMensualObjetivos`. `view.js` computa 4 nuevos inputs desde S (cuotas, faltante fondo, aporte a objetivos, límites). 16 tests nuevos + 4 actualizados. 1617 → 1633 verdes.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `calcularAporteMensualObjetivos` + `sugerirDistribucionIngreso` reescrita. |
-| `modules/dominio/tesoreria/view.js` | 4 nuevos inputs computados desde S. |
-| `tests/unit/tesoreria.test.js` | 16 tests nuevos + 4 actualizados + import. |
 
 ---
 

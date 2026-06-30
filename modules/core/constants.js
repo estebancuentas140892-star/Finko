@@ -443,38 +443,32 @@ export const CATEGORIA_AGENDA_EMOJI = {
 };
 
 /**
- * Tipos de obligación predefinidos para deudas (Compromiso tipo='deuda-entidad'|'deuda-personal').
+ * Tipo de deuda (eje "qué") para deudas (Compromiso tipo='deuda-entidad'|'deuda-personal').
+ * Valores orientados al propósito, ortogonales al eje "quién" (Entidad/Personal,
+ * que define la unidad de tasa). Curado de 12 a 7 en ADR 015 (antes "Tipo de
+ * obligación"). Los productos-mecanismo y la distinción formal/informal (Gota a
+ * gota, Libranza, Sobregiro) viven en el eje Entidad/Personal y en la tasa, no aquí.
  * El orden define el del selector en el formulario de nueva deuda.
  */
 export const CATEGORIAS_DEUDA = [
   'Tarjeta de crédito',
-  'Crédito de consumo',
-  'Crédito hipotecario',
-  'Crédito vehicular',
-  'Crédito educativo',
-  'Libranza',
-  'Crédito rotativo',
-  'Sobregiro',
-  'Microcrédito',
-  'Préstamo personal',
-  'Gota a gota',
-  'Otro',
+  'Libre inversión',
+  'Vivienda',
+  'Vehículo',
+  'Educativo',
+  'Compra a cuotas',
+  'Otra',
 ];
 
-/** Emoji visual por tipo de obligación de deuda. Usar solo en UI; nunca en el valor almacenado. */
+/** Emoji visual por tipo de deuda. Usar solo en UI; nunca en el valor almacenado. */
 export const CATEGORIA_DEUDA_EMOJI = {
-  'Tarjeta de crédito':  '💳',
-  'Crédito de consumo':  '💵',
-  'Crédito hipotecario': '🏠',
-  'Crédito vehicular':   '🚗',
-  'Crédito educativo':   '🎓',
-  'Libranza':            '🧾',
-  'Crédito rotativo':    '🔄',
-  'Sobregiro':           '📉',
-  'Microcrédito':        '🏪',
-  'Préstamo personal':   '🤝',
-  'Gota a gota':         '💧',
-  'Otro':                '📦',
+  'Tarjeta de crédito': '💳',
+  'Libre inversión':    '💵',
+  'Vivienda':           '🏠',
+  'Vehículo':           '🚗',
+  'Educativo':          '🎓',
+  'Compra a cuotas':    '🛍️',
+  'Otra':               '📦',
 };
 
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */

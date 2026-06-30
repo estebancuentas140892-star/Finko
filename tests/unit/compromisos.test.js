@@ -124,8 +124,8 @@ describe('CATEGORIA_AGENDA_EMOJI', () => {
 // ── CATEGORIAS_DEUDA / CATEGORIA_DEUDA_EMOJI ──────────────────────
 
 describe('CATEGORIAS_DEUDA', () => {
-  it('contiene 12 tipos de obligación predefinidos', () => {
-    expect(CATEGORIAS_DEUDA).toHaveLength(12);
+  it('contiene 7 tipos de deuda predefinidos (curado en ADR 015)', () => {
+    expect(CATEGORIAS_DEUDA).toHaveLength(7);
   });
 
   it('todas son strings no vacíos', () => {
@@ -466,12 +466,12 @@ describe('normalizarCompromiso()', () => {
     expect(result.categoria).toBeNull();
   });
 
-  it('para deudas guarda la categoría válida del catálogo de obligación', () => {
+  it('para deudas guarda la categoría válida del catálogo de tipo de deuda', () => {
     const datos = {
       ...datosFormValidos, tipo: 'deuda-personal',
-      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Gota a gota',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Libre inversión',
     };
-    expect(normalizarCompromiso(datos).categoria).toBe('Gota a gota');
+    expect(normalizarCompromiso(datos).categoria).toBe('Libre inversión');
   });
 
   it('para deudas sin categoría, queda categoria=null', () => {
@@ -1584,7 +1584,7 @@ describe('renderFormDeuda() - selector de categoría', () => {
   it('aparece igual para deuda-entidad y deuda-personal (catálogo único)', () => {
     const htmlEntidad  = renderFormDeuda('deuda-entidad');
     const htmlPersonal = renderFormDeuda('deuda-personal');
-    expect(htmlEntidad).toContain('💧 Gota a gota');
+    expect(htmlEntidad).toContain('💵 Libre inversión');
     expect(htmlPersonal).toContain('💳 Tarjeta de crédito');
   });
 

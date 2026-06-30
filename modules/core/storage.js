@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 18;
+const SCHEMA_VERSION = 19;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -283,6 +283,37 @@ function _migrate(raw) {
         const esDeuda = c?.tipo === 'deuda-entidad' || c?.tipo === 'deuda-personal';
         if (c && typeof c === 'object' && esDeuda && !('categoria' in c)) {
           c.categoria = null;
+        }
+      }
+    }
+  }
+
+  // v18 → v19: se cura el "Tipo de deuda" (antes "Tipo de obligación") de 12 a 7
+  // valores orientados al propósito (ADR 015). Remapea la `categoria` de las
+  // deudas existentes al nuevo valor. Idempotente: solo toca valores que están
+  // en el mapa viejo; los nuevos, `null` o vacío se dejan igual.
+  if ((typeof data._version === 'number' ? data._version : 1) < 19) {
+    const REMAPEO_TIPO_DEUDA = {
+      'Tarjeta de crédito':  'Tarjeta de crédito',
+      'Crédito de consumo':  'Libre inversión',
+      'Crédito hipotecario': 'Vivienda',
+      'Crédito vehicular':   'Vehículo',
+      'Crédito educativo':   'Educativo',
+      'Libranza':            'Libre inversión',
+      'Crédito rotativo':    'Libre inversión',
+      'Sobregiro':           'Libre inversión',
+      'Microcrédito':        'Libre inversión',
+      'Préstamo personal':   'Libre inversión',
+      'Gota a gota':         'Libre inversión',
+      'Otro':                'Otra',
+    };
+    if (Array.isArray(data.compromisos)) {
+      for (const c of data.compromisos) {
+        const esDeuda = c?.tipo === 'deuda-entidad' || c?.tipo === 'deuda-personal';
+        if (c && typeof c === 'object' && esDeuda
+            && typeof c.categoria === 'string'
+            && Object.prototype.hasOwnProperty.call(REMAPEO_TIPO_DEUDA, c.categoria)) {
+          c.categoria = REMAPEO_TIPO_DEUDA[c.categoria];
         }
       }
     }

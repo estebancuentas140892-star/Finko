@@ -193,7 +193,7 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       <div class="form-group">
-        <label for="comp-categoria" class="label">Tipo de obligación</label>
+        <label for="comp-categoria" class="label">Tipo de deuda</label>
         <select id="comp-categoria" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}

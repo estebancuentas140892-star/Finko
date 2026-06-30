@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1645/1645 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.5 (diseño)** ADR 015: categorías de deuda en dos dimensiones (quién = Entidad/Personal, qué = Tipo de deuda curado; sin campo Acreedor). Antes: D.9 cerró la jornada 2 de Deudas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1649/1649 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.5a** categorías de deuda curadas (12 → 7) + migración v18→v19; label "Tipo de deuda". SW v226. Antes: D.5 (diseño) ADR 015. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -45,7 +45,7 @@ _(sin tarea activa)_
 
 **✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica.
 
-**✅ D.5 (diseño) cerrado: [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).** Decisión: dos dimensiones = quién (Entidad/Personal, intacto) por qué (Tipo de deuda, curado); sin campo Acreedor. **Siguiente sugerido: D.5a** (implementación, Opus 4.8 - Medio): curar `CATEGORIAS_DEUDA` (12 → 7) + emoji, migración v18 → v19, renombrar label, tests. El usuario revisa antes la lista curada y el mapeo del ADR. También quedan EP.0 (épica "explicar el propósito de cada sección", requiere ADR) y MC.6b/MC.7 (distribución).
+**✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** Siguiente sugerido del backlog del usuario: **EP.0** (épica "explicar el propósito de cada sección", requiere ADR, Opus 4.8 - Alto), **MC.6b** (barra de presets Automático + Personalizar + grupo "Métodos clásicos", Sonnet 4.6 - Medio), o **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -61,7 +61,7 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 ✅ **D.5 (diseño) = [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).** Categorías de deuda en dos dimensiones. Decisión con el usuario: el modelo ya tiene los dos ejes (**quién** = Entidad/Personal, define la tasa; **qué** = `categoria`). Se refina el eje "qué" (Tipo de deuda, curado 12 → 7) y se deja "quién" intacto. **No** se agrega campo "Acreedor" (jerga confusa, se solapa con Entidad/Personal; los acreedores quedan como ejemplos en el chooser). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **D.5a (implementa D.5)** - Curar `CATEGORIAS_DEUDA` (12 → 7: Tarjeta de crédito, Libre inversión, Vivienda, Vehículo, Educativo, Compra a cuotas, Otra) + `CATEGORIA_DEUDA_EMOJI`; migración idempotente v18 → v19 (remapeo de `categoria` según la tabla del ADR); renombrar el label del form "Tipo de obligación" → "Tipo de deuda"; actualizar tests de constantes, migración y guardarraíl TX.4. **Confirmar con el usuario la lista curada y el mapeo antes de codear** (la migración remapea datos existentes; el usuario puede pedir conservar Gota a gota o Microcrédito como tipo propio). Modelo: Opus 4.8 - Medio (schema bump con migración, lógica acotada).
+✅ **D.5a (implementa D.5)** - `CATEGORIAS_DEUDA` curado (12 → 7: Tarjeta de crédito, Libre inversión, Vivienda, Vehículo, Educativo, Compra a cuotas, Otra) + `CATEGORIA_DEUDA_EMOJI`; migración idempotente v18 → v19 (`REMAPEO_TIPO_DEUDA`); label del form "Tipo de obligación" → "Tipo de deuda". El usuario aprobó la lista curada y el mapeo tal cual del ADR (los informales colapsan en "Libre inversión"). 4 tests de migración + catálogo/form actualizados. 1645 → 1649 verdes. SW v225 → v226 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 ### Backlog del usuario "Visión de Deudas, jornada 2" (2026-06-29)
 

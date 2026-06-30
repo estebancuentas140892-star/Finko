@@ -7,6 +7,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): categorías de deuda curadas (12 → 7) + migración v18→v19 (D.5a, ADR 015) · 2026-06-29
+
+Implementa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md). Refina el eje "qué" del modelo de deuda y deja el eje "quién" (Entidad/Personal) intacto.
+
+**`CATEGORIAS_DEUDA` curado de 12 a 7** valores orientados al propósito, ortogonales a Entidad/Personal: Tarjeta de crédito 💳, Libre inversión 💵, Vivienda 🏠, Vehículo 🚗, Educativo 🎓, Compra a cuotas 🛍️ (nuevo), Otra 📦. El label del formulario pasa de "Tipo de obligación" a **"Tipo de deuda"**.
+
+**Migración idempotente v18 → v19** (`SCHEMA_VERSION` 18 → 19): remapea la `categoria` de las deudas existentes según la tabla del ADR. Los valores informales o mecanismo (Gota a gota, Préstamo personal, Libranza, Microcrédito, Sobregiro, Crédito rotativo, Crédito de consumo) colapsan en "Libre inversión"; hipotecario → Vivienda; vehicular → Vehículo; educativo → Educativo; Otro → Otra. Solo toca strings que están en el mapa viejo: `null`, vacío o valores ya curados se dejan igual (idempotente, re-ejecutable). Solo aplica a deudas; los gastos fijos no se tocan.
+
+**No se agregó campo "Acreedor"** (decisión del ADR: jerga confusa, se solapa con Entidad/Personal). El eje "quién" y la lógica financiera (tasa EA/mensual, simulaciones) no se tocan.
+
+4 tests de migración nuevos en `storage.test.js` (remapeo, idempotencia, null intacto, fijos intactos); tests de catálogo (12 → 7) y de form actualizados en `compromisos.test.js`. El guardarraíl TX.4 (consistencia de emojis entre catálogos) sigue verde: ninguno de los 7 nuevos valores comparte etiqueta con otro catálogo. 1645 → 1649 verdes; 64/64 E2E. SW v225 → v226.
+
+- **`modules/core/constants.js`**: `CATEGORIAS_DEUDA` (12 → 7) + `CATEGORIA_DEUDA_EMOJI` curados.
+- **`modules/core/storage.js`**: `SCHEMA_VERSION` 18 → 19 + bloque de migración v18→v19 (`REMAPEO_TIPO_DEUDA`).
+- **`modules/dominio/compromisos/views/formularios.js`**: label "Tipo de obligación" → "Tipo de deuda".
+- **`tests/unit/compromisos.test.js`**: catálogo 12 → 7; `Gota a gota` → `Libre inversión` en el test de `normalizarCompromiso` y en el de render del form.
+- **`tests/unit/storage.test.js`**: describe nuevo "Migración v18 → v19" (4 tests).
+- **`service-worker.js`**: v225 → v226.
+
+---
+
 ### docs(deudas): ADR 015 - categorías de deuda en dos dimensiones (D.5) · 2026-06-29
 
 Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra las dos preguntas que el backlog "Visión de Deudas" (D.5) dejó abiertas.

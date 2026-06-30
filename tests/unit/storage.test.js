@@ -728,6 +728,89 @@ describe('Migración v17 → v18 (categoria/tipo de obligación en deudas)', () 
   });
 });
 
+describe('Migración v18 → v19 (curación de Tipo de deuda, ADR 015)', () => {
+  it('remapea los valores viejos de categoria a los nuevos', () => {
+    const v18 = {
+      ...createInitialState(),
+      _version: 18,
+      compromisos: [
+        { id: 'c1', descripcion: 'Tarjeta', saldoTotal: 2_000_000, cuotaMensual: 200_000,
+          frecuencia: 'Mensual', diaPago: 5, tipo: 'deuda-entidad', activo: true,
+          categoria: 'Crédito de consumo' },
+        { id: 'c2', descripcion: 'Gota a gota', saldoTotal: 500_000, cuotaMensual: 50_000,
+          frecuencia: 'Mensual', diaPago: 10, tipo: 'deuda-personal', activo: true,
+          categoria: 'Gota a gota' },
+        { id: 'c3', descripcion: 'Casa', saldoTotal: 100_000_000, cuotaMensual: 1_000_000,
+          frecuencia: 'Mensual', diaPago: 1, tipo: 'deuda-entidad', activo: true,
+          categoria: 'Crédito hipotecario' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v18));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBe('Libre inversión');
+    expect(S.compromisos[1].categoria).toBe('Libre inversión');
+    expect(S.compromisos[2].categoria).toBe('Vivienda');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('preserva los valores que no cambian de etiqueta (Tarjeta de crédito) y deja null sin tocar', () => {
+    const v18 = {
+      ...createInitialState(),
+      _version: 18,
+      compromisos: [
+        { id: 'c1', descripcion: 'Visa', saldoTotal: 1_000_000, cuotaMensual: 100_000,
+          frecuencia: 'Mensual', diaPago: 5, tipo: 'deuda-entidad', activo: true,
+          categoria: 'Tarjeta de crédito' },
+        { id: 'c2', descripcion: 'Sin tipo', saldoTotal: 300_000, cuotaMensual: 30_000,
+          frecuencia: 'Mensual', diaPago: 8, tipo: 'deuda-personal', activo: true,
+          categoria: null },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v18));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBe('Tarjeta de crédito');
+    expect(S.compromisos[1].categoria).toBeNull();
+  });
+
+  it('es idempotente: un valor ya curado (Vivienda) no se altera', () => {
+    const v19 = {
+      ...createInitialState(),
+      _version: 19,
+      compromisos: [
+        { id: 'c1', descripcion: 'Casa', saldoTotal: 100_000_000, cuotaMensual: 1_000_000,
+          frecuencia: 'Mensual', diaPago: 1, tipo: 'deuda-entidad', activo: true,
+          categoria: 'Vivienda' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v19));
+
+    loadData();
+
+    expect(S.compromisos[0].categoria).toBe('Vivienda');
+  });
+
+  it('no toca la categoria de los gastos fijos', () => {
+    const v18 = {
+      ...createInitialState(),
+      _version: 18,
+      compromisos: [
+        { id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, frecuencia: 'Mensual',
+          diaPago: 5, tipo: 'fijo', activo: true, categoria: 'Crédito de consumo' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v18));
+
+    loadData();
+
+    // El remapeo solo aplica a deudas; un fijo con ese string raro se deja igual.
+    expect(S.compromisos[0].categoria).toBe('Crédito de consumo');
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();
