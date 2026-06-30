@@ -105,37 +105,36 @@
              Bottom nav mobile: Dashboard · Gastos · Agenda · [Más] -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-principal">Diario</span>
-          <div role="list" aria-labelledby="nav-label-principal">
+          <div role="group" aria-labelledby="nav-label-principal">
 
             <a class="nav-item active" href="#dash" data-section="dash"
-               role="listitem" aria-current="page" aria-label="Dashboard: resumen financiero">
+               aria-current="page" aria-label="Dashboard: resumen financiero">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-home"/></svg>
               <span class="nav-item__label">Dashboard</span>
             </a>
 
             <a class="nav-item" href="#gast" data-section="gast"
-               role="listitem" aria-label="Gastos">
+               aria-label="Gastos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
               <span class="nav-item__label">Gastos</span>
             </a>
 
             <!-- Agenda: visible en mobile (tercer slot del bottom nav) -->
             <a class="nav-item" href="#agenda" data-section="agenda"
-               role="listitem" aria-label="Agenda y calendario del mes">
+               aria-label="Agenda y calendario del mes">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-agenda"/></svg>
               <span class="nav-item__label">Agenda</span>
             </a>
 
             <!-- Deudas: solo desktop (demasiados slots para mobile) -->
             <a class="nav-item nav-item--no-mobile" href="#compromisos" data-section="compromisos"
-               role="listitem" aria-label="Mis deudas y compromisos">
+               aria-label="Mis deudas y compromisos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
               <span class="nav-item__label">Deudas</span>
             </a>
 
             <!-- Boton "Mas" solo visible en mobile (< 1024px). Abre el modal #modal-mas. -->
             <button class="nav-item nav-item--mobile-only" type="button"
-                    role="listitem"
                     data-action="modal-open" data-modal="modal-mas"
                     aria-label="Mas opciones" aria-haspopup="dialog">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-mas"/></svg>
@@ -148,23 +147,23 @@
         <!-- GRUPO 2: Gestión semanal/mensual. Solo desktop. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-gestion">Gestión</span>
-          <div role="list" aria-labelledby="nav-label-gestion">
+          <div role="group" aria-labelledby="nav-label-gestion">
 
             <!-- Mis cuentas: setup inicial, luego automático. Solo desktop. -->
             <a class="nav-item nav-item--no-mobile" href="#tesoreria" data-section="tesoreria"
-               role="listitem" aria-label="Mis cuentas y saldos">
+               aria-label="Mis cuentas y saldos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
               <span class="nav-item__label">Mis cuentas</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#personales" data-section="personales"
-               role="listitem" aria-label="Préstamos personales: me deben">
+               aria-label="Préstamos personales: me deben">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>
               <span class="nav-item__label">Me deben</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#presupuesto" data-section="presupuesto"
-               role="listitem" aria-label="Límites de gasto por categoría">
+               aria-label="Límites de gasto por categoría">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
               <span class="nav-item__label">Límites de gasto</span>
             </a>
@@ -176,28 +175,28 @@
              Hogar natural de Metas y, próximamente, Ahorro e Inversión. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-crecer">Crecer</span>
-          <div role="list" aria-labelledby="nav-label-crecer">
+          <div role="group" aria-labelledby="nav-label-crecer">
 
             <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
-               role="listitem" aria-label="Ahorro y fondo de emergencia">
+               aria-label="Ahorro y fondo de emergencia">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
               <span class="nav-item__label">Ahorro</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
-               role="listitem" aria-label="Metas de ahorro">
+               aria-label="Metas de ahorro">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
               <span class="nav-item__label">Metas</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#apartados" data-section="apartados"
-               role="listitem" aria-label="Apartados para gastos previsibles">
+               aria-label="Apartados para gastos previsibles">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
               <span class="nav-item__label">Apartados</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#inversion" data-section="inversion"
-               role="listitem" aria-label="Inversiones y portafolio">
+               aria-label="Inversiones y portafolio">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>
               <span class="nav-item__label">Inversión</span>
             </a>
@@ -208,10 +207,10 @@
         <!-- GRUPO 4: Herramientas (esporádico). Solo desktop. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-herramientas">Herramientas</span>
-          <div role="list" aria-labelledby="nav-label-herramientas">
+          <div role="group" aria-labelledby="nav-label-herramientas">
 
             <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
-               role="listitem" aria-label="Análisis financiero">
+               aria-label="Análisis financiero">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
               <span class="nav-item__label">Análisis</span>
             </a>

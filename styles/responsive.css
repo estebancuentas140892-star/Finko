@@ -64,9 +64,9 @@
     overflow: hidden;
   }
 
-  /* Aplanar cadena nav: sidebar__nav > nav-group > div[role=list] → fila única */
+  /* Aplanar cadena nav: sidebar__nav > nav-group > div[role=group] → fila única */
   .sidebar__nav > .nav-group,
-  .sidebar__nav > .nav-group > [role="list"] {
+  .sidebar__nav > .nav-group > [role="group"] {
     display: flex;
     flex-direction: row;
     flex: 1;

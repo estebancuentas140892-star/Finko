@@ -47,6 +47,32 @@ _(sin tarea activa)_
 
 **✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** **MC.6b, EP.0, EP.1 y EP.2 cerrados (2026-06-30).** Siguiente sugerido: **EP.3** (copy + slot para Metas, Ahorro, Inversión; reutiliza helper EP.1, Sonnet 4.6 - Bajo), **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo), o **MC.6c** (señales más ricas para la distribución, opcional).
 
+### Backlog de auditoría: accesibilidad, color y responsividad (2026-06-30)
+
+Auditoría de la app en 3 frentes (lectores de pantalla y teclado, contraste de color y legibilidad, responsividad). **Hallazgo general: la base es sólida.** Contraste casi todo AA/AAA en ambos temas, responsive completo (breakpoints, tipografía fluida, touch targets, anti-zoom iOS), `prefers-reduced-motion` y `forced-colors` cubiertos, formularios dinámicos con `id` + `<label for>`. Lo de abajo son ajustes puntuales. **Ninguno cambia la interfaz visual** (son semántica ARIA, foco y micro-ajustes de tono de color).
+
+Severidad: Alta (afecta a usuarios reales de lector de pantalla hoy) · Media (mejora notable) · Baja/Verificación (pulido o requiere prueba en dispositivo).
+
+✅ **A11Y.1 (alta) - Quitado `role="listitem"` de los enlaces de navegación.** Los 13 `<a class="nav-item">` + el botón "Más" tenían `role="listitem"` pisando su rol nativo (`link`/`button`); el lector de pantalla los anunciaba como ítems de lista, no como enlaces navegables. Fix mínimo: los 4 contenedores intermedios (uno por grupo de nav) pasan de `role="list"` a `role="group"` (agrupación por etiqueta sin exigir hijos `listitem`) y se quita `role="listitem"` de los 13 enlaces + el botón. `sidebar__nav` (role="list") y cada `.nav-group` (role="listitem") quedan intactos: siguen siendo válidos porque no son interactivos. Ajustado el selector `[role="list"]` → `[role="group"]` en `styles/responsive.css` (aplanado del bottom nav en mobile) para no romper el layout. 1658/1658 unit + 64/64 E2E verdes. SW v231 → v232 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
+
+**A11Y.2 (alta) - Quitar `aria-live="polite"` del `<main>`.** En [index.html](../index.html) `<main ... aria-live="polite">` convierte todo el contenido en una región viva: cada render y cada cambio de sección se anuncia en cascada al lector. La app ya tiene regiones live dedicadas (`announce()` en [modules/infra/a11y.js](../modules/infra/a11y.js)). Fix: eliminar el `aria-live` del `<main>`. Sin cambio visual. Modelo sugerido: Sonnet 4.6 - Bajo.
+
+**A11Y.3 (media) - Mover el foco al navegar de sección.** En [modules/infra/router.js](../modules/infra/router.js) `showSection` llama `.focus()` sobre `#sec-*`, pero esas secciones no tienen `tabindex`, así que el foco no se mueve (no-op silencioso). Al cambiar de sección, el usuario de teclado/lector se queda en el enlace anterior y no se anuncia el contenido nuevo. Fix: dar `tabindex="-1"` a las secciones (o enfocar su `h1`/`#main-content`). Sin cambio visual. Modelo sugerido: Sonnet 4.6 - Bajo.
+
+**A11Y.4 (media) - Fondo `inert` mientras hay un modal abierto.** En [modules/ui/modales.js](../modules/ui/modales.js) `abrirModal` atrapa el Tab pero no marca el resto de la app como `inert`, así que el cursor virtual del lector puede seguir leyendo lo que está detrás del modal. Fix: poner `inert` (o `aria-hidden`) en `.app-shell` al abrir y quitarlo al cerrar. Sin cambio visual. Modelo sugerido: Sonnet 4.6 - Bajo.
+
+**A11Y.5 (verificación) - Pase axe sobre formularios dinámicos.** El test [tests/unit/a11y.test.js](../tests/unit/a11y.test.js) solo ve el HTML inicial; los formularios reales se inyectan por JS y no se auditan. El patrón actual (`id` + `<label for>`) está bien en los que se muestrearon (Gastos, Deudas, abonos), pero conviene un pase axe en E2E con un modal abierto para cerrar la brecha. Modelo sugerido: Sonnet 4.6 - Medio.
+
+**COL.1 (baja) - `--fk-warning` en modo claro queda apenas por debajo de AA como texto pequeño.** `#a06800` sobre `--fk-bg-base` (`#f6f7fa`) da 4.38:1 (AA pide 4.5 para texto normal); se usa en `.chip-warning`, `.badge--warn` y hints de aviso. Fix: oscurecer a ~`#8a5a00` en [styles/themes.css](../styles/themes.css) (el modo oscuro ya está en 10.8:1, no se toca). Cambio de color casi imperceptible. Modelo sugerido: Haiku 4.5.
+
+**COL.2 (opcional) - `--fk-text-disabled` no cumple contraste** (2.05:1 oscuro / 1.92:1 claro). El texto deshabilitado está exento de WCAG, pero para baja visión cuesta leerlo. Fix opcional: subir un punto el tono en [styles/tokens.css](../styles/tokens.css) y [styles/themes.css](../styles/themes.css). Modelo sugerido: Haiku 4.5.
+
+**RWD.1 (verificación) - Probar reflow real a 320px y zoom 200%.** El CSS responsive está completo en código, pero el preview del entorno no carga (ver memoria). Verificar en dispositivo o con un E2E a 320px que no haya scroll horizontal ni solapes (sobre todo en modales con `.input--big-amount` y la barra inferior). Nota menor: los labels del nav bajan a 10px bajo 360px (aceptable con icono, vigilar). Modelo sugerido: Sonnet 4.6 - Bajo.
+
+**DOC.1 (baja) - `docs/DESIGN_SYSTEM.md` desactualizado.** Documenta `--fk-accent: #00dc82` y la fuente DM Mono, pero [styles/tokens.css](../styles/tokens.css) ya usa `#1fd194` e Inter para mono. El doc afirma "WCAG AA mínimo": conviene mantenerlo veraz. Fix: actualizar tokens y fuentes en [docs/DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). Modelo sugerido: Haiku 4.5.
+
+---
+
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
 Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan con ADR 011, así que conviene actualizar ese ADR antes de codear D.2/D.3.

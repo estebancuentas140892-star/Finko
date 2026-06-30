@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(a11y): quitar role="listitem" de los enlaces de navegación (A11Y.1) · 2026-06-30
+
+Primer hallazgo de la auditoría de accesibilidad/color/responsividad (2026-06-30, ver TASKS.md). Los 13 `<a class="nav-item">` del sidebar (+ el botón "Más") tenían `role="listitem"` pisando su rol nativo `link`/`button`, así que el lector de pantalla los anunciaba como ítems de lista en vez de enlaces navegables. Fix sin cambio visual: los 4 contenedores intermedios (uno por grupo: Diario, Gestión, Crecer, Herramientas) pasan de `role="list"` a `role="group"` (agrupación por `aria-labelledby`, sin exigir hijos `listitem`) y se quita `role="listitem"` de los 13 enlaces y el botón "Más". `sidebar__nav` (role="list") y cada `.nav-group` (role="listitem") quedan intactos porque no son interactivos y la anidación sigue siendo ARIA válida. 1658/1658 unit + 64/64 E2E verdes. SW v231 → v232.
+
+- **`index.html`**: 4 contenedores `role="list"` → `role="group"`; quitado `role="listitem"` de los 13 `<a class="nav-item">` y del botón "Más".
+- **`styles/responsive.css`**: selector `.sidebar__nav > .nav-group > [role="list"]` → `[role="group"]` (aplanado del bottom nav en mobile, sin esto se rompía el layout < 1024px).
+- **`service-worker.js`**: v231 → v232.
+
+---
+
 ### feat(proposito): banners de propósito en Mis cuentas, Análisis y Personales (EP.4) · 2026-06-30
 
 Completa la épica EP (11 de 11 secciones). Reutiliza el helper de EP.1/EP.2/EP.3. Sin tests nuevos. 1658/1658 verdes. SW v230 → v231.

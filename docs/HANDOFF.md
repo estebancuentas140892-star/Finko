@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(proposito): EP.4 - banners en Mis cuentas, Análisis y Personales)
+> Última actualización: 2026-06-30 (fix(a11y): A11Y.1 - role="listitem" en enlaces de nav)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(a11y): quitar role="listitem" de los enlaces de navegación (A11Y.1) · 2026-06-30
+
+Primer hallazgo de la auditoría de accesibilidad/color/responsividad (2026-06-30). Los 13 `<a class="nav-item">` del sidebar + el botón "Más" tenían `role="listitem"` pisando su rol nativo `link`/`button`: el lector de pantalla los anunciaba como ítems de lista, no como enlaces navegables. Fix sin cambio visual: 4 contenedores intermedios `role="list"` → `role="group"`; quitado `role="listitem"` de los enlaces y el botón. Ajustado el selector equivalente en `responsive.css` para no romper el bottom nav mobile. 1658/1658 unit + 64/64 E2E verdes. SW v231 → v232.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 4× `role="list"` → `role="group"`; quitado `role="listitem"` de 13 enlaces + botón "Más". |
+| `styles/responsive.css` | Selector `[role="list"]` → `[role="group"]` (aplanado bottom nav mobile). |
+| `service-worker.js` | v231 → v232. |
+
+---
 
 ### feat(proposito): banners de propósito en Mis cuentas, Análisis y Personales (EP.4) · 2026-06-30
 
@@ -103,28 +115,6 @@ Implementa el patrón definido en [ADR 016](DECISIONS/016-banner-proposito-de-se
 | `styles/components/domain.css` | `.banner-proposito` + `.banner-proposito--colapsado` + variante de color por sección. |
 | `tests/unit/proposito.test.js` | 9 unit tests de `htmlBannerProposito` (expandido, colapsado, sección desconocida, edge cases). |
 | `service-worker.js` | `proposito.js` en `CORE_ASSETS`; v227 → v228. |
-
----
-
-### docs(propósito): ADR 016 - banner de propósito de sección (EP.0) · 2026-06-30
-
-Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) define el patrón único reutilizable de la épica "explicar el propósito de cada sección". Decisiones cerradas con el usuario: (1) **ubicación** = banner colapsable arriba del contenido, debajo del `section__header`, visible tenga o no datos; (2) **persistencia** = se colapsa a una línea re-abrible, nunca se borra; estado por sección en `S.config.propositoColapsado` (lectura defensiva, **sin migración**), con "reactivar todo" desde Ajustes; (3) **secciones** = las 10 núcleo + Personales (11 en total; Dashboard y Calculadoras quedan fuera); (4) **copy** = tres tiempos (pregunta gancho, nombrar el problema, cómo Finko ayuda), 3-4 frases, tono ADN; (5) **a11y** = patrón disclosure (`aria-expanded` + `aria-controls`, `role="region"`), borde en el color de la sección, contraste AA, respeta `prefers-reduced-motion`. Incluye copy propuesto para las 11 secciones. Define los slices EP.1 (piloto: helper + Apartados) a EP.4.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/016-banner-proposito-de-seccion.md` | ADR nuevo: ubicación, persistencia sin schema, estructura de copy, 11 secciones, a11y, patrón de implementación, copy propuesto por sección, alternativas, consecuencias, slices EP.1-EP.4. |
-
----
-
-### feat(tesoreria): barra de presets Automático + Personalizar + grupo "Métodos clásicos" (MC.6b) · 2026-06-30
-
-Continúa MC.6a (modelo de pisos). La barra de chips de la tarjeta "¿Cómo distribuir...?" se reestructura: la **fila principal** muestra solo "Automático" y "Personalizar"; los 3 presets fijos (50/30/20, 70/20/10, 60/20/20) pasan a un `<details>` secundario titulado **"Métodos clásicos"**, con un texto de transparencia ("Porcentajes fijos. No consideran tus gastos reales."). El `<details>` queda abierto si algún preset clásico está activo. Sin cambios en lógica ni schema. 1649/1649 verdes. SW v226 → v227.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/view.js` | `_renderDistribucion`: reemplaza `presetChips` por `autoChip` (fila principal) y `clasicosChips` (en `<details>`). |
-| `styles/components/domain.css` | `.distribucion-clasicos` + `.distribucion-clasicos__toggle` (estilos del `<details>`). |
-| `service-worker.js` | v226 → v227. |
 
 ---
 
