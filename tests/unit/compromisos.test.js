@@ -93,8 +93,8 @@ describe('catálogos exportados', () => {
 // ── CATEGORIAS_AGENDA / CATEGORIA_AGENDA_EMOJI (MC.9-Agenda) ──────
 
 describe('CATEGORIAS_AGENDA', () => {
-  it('contiene 13 categorías predefinidas', () => {
-    expect(CATEGORIAS_AGENDA).toHaveLength(13);
+  it('contiene 15 categorías predefinidas', () => {
+    expect(CATEGORIAS_AGENDA).toHaveLength(15);
   });
 
   it('todas son strings no vacíos', () => {
