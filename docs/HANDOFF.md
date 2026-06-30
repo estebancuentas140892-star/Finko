@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (fix(a11y): A11Y.2 - quitar aria-live del &lt;main&gt;)
+> Última actualización: 2026-06-30 (fix(a11y): A11Y.3 - foco al navegar de sección)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(a11y): mover el foco al navegar de sección (A11Y.3) · 2026-06-30
+
+Tercer hallazgo de la auditoría de accesibilidad; cierra el anuncio limpio de sección que A11Y.2 dejó pendiente. `showSection` llamaba `.focus()` sobre `#sec-*` pero las secciones no tenían `tabindex` (no-op): al navegar, el foco se quedaba en el enlace anterior. Fix sin cambio visual: `tabindex="-1"` en las 13 secciones; `showSection(hash, moveFocus)` enfoca solo en navegaciones reales (no en carga inicial, para no robar el foco antes del skip link); `.section:focus { outline: none }` para que el foco programático no dibuje recuadro (el item de nav activo ya marca dónde estás). La sección anuncia su título como landmark vía `aria-labelledby`. 1658/1658 unit + 64/64 E2E verdes. SW v233 → v234.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | `tabindex="-1"` en las 13 `<section class="section">`. |
+| `modules/infra/router.js` | `showSection(hash, moveFocus)`; foco solo en navegaciones, no en arranque. |
+| `styles/base.css` | `.section:focus { outline: none }`. |
+| `service-worker.js` | v233 → v234. |
+
+---
 
 ### fix(a11y): quitar aria-live="polite" del &lt;main&gt; (A11Y.2) · 2026-06-30
 
@@ -94,24 +107,7 @@ Mismo patrón que EP.2. Agrega 3 entradas a `PROPOSITOS_SECCION` (`metas`, `ahor
 
 ---
 
-### feat(proposito): banners de propósito en Gastos, Deudas, Agenda y Límites de gasto (EP.2) · 2026-06-30
-
-Reutiliza el helper de EP.1. Agrega 4 entradas a `PROPOSITOS_SECCION` (copy aprobado en ADR 016), 4 slots en `index.html` y llama `renderBannerProposito` en el init y hashchange de cada dominio. CSS: variantes de color por sección (gastos naranja, compromisos rojo, presupuesto amarillo; agenda usa el acento por defecto). Sin tests nuevos: la lógica de `htmlBannerProposito` ya tiene cobertura completa en EP.1. 1658/1658 verdes. SW v228 → v229.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/ui/proposito.js` | 4 entradas nuevas en `PROPOSITOS_SECCION`: `gast`, `compromisos`, `agenda`, `presupuesto`. |
-| `index.html` | Slots `proposito-gast`, `proposito-compromisos`, `proposito-agenda`, `proposito-presupuesto`. |
-| `modules/dominio/gastos/index.js` | Import + calls de `renderBannerProposito('gast')`. |
-| `modules/dominio/compromisos/index.js` | Import + calls de `renderBannerProposito('compromisos')`. |
-| `modules/dominio/agenda/index.js` | Import + calls de `renderBannerProposito('agenda')`. |
-| `modules/dominio/presupuesto/index.js` | Import + calls de `renderBannerProposito('presupuesto')`. |
-| `styles/components/domain.css` | Variantes de color para gast, compromisos y presupuesto (expandido + colapsado). |
-| `service-worker.js` | v228 → v229. |
-
----
-
-> Para tareas anteriores (EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

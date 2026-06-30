@@ -7,6 +7,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(a11y): mover el foco al navegar de sección (A11Y.3) · 2026-06-30
+
+Tercer hallazgo de la auditoría de accesibilidad, y cierre del anuncio limpio de sección que A11Y.2 dejó pendiente. `showSection` en `router.js` ya llamaba `.focus()` sobre `#sec-*`, pero las secciones no tenían `tabindex`, así que era un no-op silencioso: al cambiar de sección, el usuario de teclado/lector se quedaba en el enlace anterior y no se anunciaba el contenido nuevo. Fix en tres piezas, sin cambio visual: (1) `tabindex="-1"` en las 13 secciones de `index.html`; (2) `showSection(hash, moveFocus)` mueve el foco solo en navegaciones reales (hashchange), no en la carga inicial, para no robar el foco antes del skip link; (3) regla `.section:focus { outline: none }` en `base.css` para que el foco programático no dibuje un recuadro alrededor de toda la sección (el indicador visual de "dónde estás" ya lo da el item de nav activo con `aria-current="page"`). Al recibir foco, la sección anuncia su título como landmark vía `aria-labelledby`. 1658/1658 unit + 64/64 E2E verdes. SW v233 → v234.
+
+- **`index.html`**: `tabindex="-1"` en las 13 `<section class="section">` (dash, gast, compromisos, agenda, personales, tesoreria, presupuesto, ahorro, inversion, metas, apartados, analisis, config).
+- **`modules/infra/router.js`**: `showSection(hash, moveFocus = false)`; `initRouter` pasa `!inicial` para enfocar solo en navegaciones, no en el arranque.
+- **`styles/base.css`**: `.section:focus { outline: none }` (foco programático sin recuadro).
+- **`service-worker.js`**: v233 → v234.
+
+---
+
 ### fix(a11y): quitar aria-live="polite" del &lt;main&gt; (A11Y.2) · 2026-06-30
 
 Segundo hallazgo de la auditoría de accesibilidad/color/responsividad. El `<main>` tenía `aria-live="polite"`, lo que convertía todo el contenido en una región viva: cada render y cada cambio de sección se anunciaba en cascada al lector de pantalla (firehose). La app ya tiene regiones live dedicadas y correctas (`announce()` en `modules/infra/a11y.js`, toasts de logros, hints de formularios de abono/aporte, nudges con `role="alert"`), que cubren los anuncios puntuales sin ruido. Fix sin cambio visual ni de comportamiento: eliminado el atributo `aria-live` del `<main>`; se conserva `tabindex="-1"` (destino del skip link, WCAG 2.4.1). 1658/1658 verdes (incluye el test axe de `index.html`). SW v232 → v233.

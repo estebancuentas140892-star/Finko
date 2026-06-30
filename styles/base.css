@@ -91,6 +91,14 @@ p {
   border-radius: var(--fk-radius-sm);
 }
 
+/* Las secciones reciben foco programático desde el router (tabindex="-1") solo
+   para que el lector de pantalla anuncie el cambio de sección. El indicador
+   visual de "dónde estás" ya lo da el item de nav activo (aria-current="page"),
+   así que no dibujamos un recuadro alrededor de toda la sección. */
+.section:focus {
+  outline: none;
+}
+
 /* Inputs y textareas: focus siempre visible */
 input:focus,
 textarea:focus,

@@ -31,7 +31,7 @@ function currentHash() {
   return location.hash.slice(1) || DEFAULT_HASH;
 }
 
-function showSection(hash) {
+function showSection(hash, moveFocus = false) {
   const resolved = REDIRECTS.get(hash) ?? hash;
   if (resolved !== hash) {
     history.replaceState(null, '', `#${resolved}`);
@@ -44,14 +44,22 @@ function showSection(hash) {
     if (el) el.classList.toggle('active', sectionId === targetId);
   }
 
-  document.getElementById(targetId)?.focus({ preventScroll: true });
+  // Mover el foco al contenido recién mostrado solo en navegaciones reales.
+  // La sección tiene tabindex="-1" + aria-labelledby: al recibir foco, el
+  // lector de pantalla anuncia el título de la sección como landmark.
+  // En la carga inicial no se mueve, para no robar el foco antes del skip link.
+  if (moveFocus) {
+    document.getElementById(targetId)?.focus({ preventScroll: true });
+  }
 }
 
 export function initRouter(onNavigate) {
+  let inicial = true;
   const handler = () => {
     const hash = currentHash();
-    showSection(hash);
+    showSection(hash, !inicial);
     onNavigate?.(hash);
+    inicial = false;
   };
 
   window.addEventListener('hashchange', handler);
