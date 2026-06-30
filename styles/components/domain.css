@@ -1309,6 +1309,9 @@ button.chip:focus-visible {
 .banner-proposito[data-seccion="metas"]       { border-left-color: var(--fk-dom-metas); }
 .banner-proposito[data-seccion="ahorro"]      { border-left-color: var(--fk-dom-ahorro); }
 .banner-proposito[data-seccion="inversion"]   { border-left-color: var(--fk-dom-inversion); }
+.banner-proposito[data-seccion="tesoreria"]   { border-left-color: var(--fk-dom-tesoreria); }
+.banner-proposito[data-seccion="analisis"]    { border-left-color: var(--fk-dom-analisis); }
+.banner-proposito[data-seccion="personales"]  { border-left-color: var(--fk-dom-personales); }
 
 .banner-proposito__texto {
   font-size: var(--fk-text-sm);
@@ -1358,4 +1361,7 @@ button.chip:focus-visible {
 .banner-proposito--colapsado[data-seccion="metas"]       { border-left-color: var(--fk-dom-metas); }
 .banner-proposito--colapsado[data-seccion="ahorro"]      { border-left-color: var(--fk-dom-ahorro); }
 .banner-proposito--colapsado[data-seccion="inversion"]   { border-left-color: var(--fk-dom-inversion); }
+.banner-proposito--colapsado[data-seccion="tesoreria"]   { border-left-color: var(--fk-dom-tesoreria); }
+.banner-proposito--colapsado[data-seccion="analisis"]    { border-left-color: var(--fk-dom-analisis); }
+.banner-proposito--colapsado[data-seccion="personales"]  { border-left-color: var(--fk-dom-personales); }
 

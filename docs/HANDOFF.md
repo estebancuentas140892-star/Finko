@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(proposito): EP.3 - banners en Metas, Ahorro e Inversión)
+> Última actualización: 2026-06-30 (feat(proposito): EP.4 - banners en Mis cuentas, Análisis y Personales)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(proposito): banners de propósito en Mis cuentas, Análisis y Personales (EP.4) · 2026-06-30
+
+Completa la épica EP: 3 entradas finales en `PROPOSITOS_SECCION` (tesoreria, analisis, personales), 3 slots en `index.html` y calls en los 3 dominios. CSS: azul para Mis cuentas, turquesa para Análisis, rosa para Personales. Sin tests nuevos. 1658/1658 verdes. SW v230 → v231. Épica EP completada: 11 de 11 secciones (Apartados, Gastos, Deudas, Mi Agenda, Límites de gasto, Metas, Ahorro, Inversión, Mis cuentas, Análisis, Personales).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/proposito.js` | 3 entradas finales: `tesoreria`, `analisis`, `personales`. |
+| `index.html` | Slots `proposito-tesoreria`, `proposito-analisis`, `proposito-personales`. |
+| `modules/dominio/tesoreria/index.js` | Import + calls de `renderBannerProposito('tesoreria')`. |
+| `modules/dominio/analisis/index.js` | Import + calls de `renderBannerProposito('analisis')`. |
+| `modules/dominio/personales/index.js` | Import + calls de `renderBannerProposito('personales')`. |
+| `styles/components/domain.css` | Variantes de color (expandido + colapsado) para tesoreria, analisis, personales. |
+| `service-worker.js` | v230 → v231. |
+
+---
 
 ### feat(proposito): banners de propósito en Metas, Ahorro e Inversión (EP.3) · 2026-06-30
 

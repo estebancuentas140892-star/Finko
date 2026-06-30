@@ -7,6 +7,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(proposito): banners de propósito en Mis cuentas, Análisis y Personales (EP.4) · 2026-06-30
+
+Completa la épica EP (11 de 11 secciones). Reutiliza el helper de EP.1/EP.2/EP.3. Sin tests nuevos. 1658/1658 verdes. SW v230 → v231.
+
+- **`modules/ui/proposito.js`**: 3 entradas finales en `PROPOSITOS_SECCION`: `tesoreria` (Mis cuentas), `analisis` (Análisis), `personales` (Personales). Copy aprobado en ADR 016.
+- **`index.html`**: slots `proposito-tesoreria`, `proposito-analisis`, `proposito-personales`.
+- **`modules/dominio/tesoreria/index.js`**: import + calls de `renderBannerProposito('tesoreria')` en hashchange e init.
+- **`modules/dominio/analisis/index.js`**: import + calls de `renderBannerProposito('analisis')` en hashchange e init.
+- **`modules/dominio/personales/index.js`**: import + calls de `renderBannerProposito('personales')` en hashchange e init.
+- **`styles/components/domain.css`**: variantes de color expandido + colapsado para tesoreria (`--fk-dom-tesoreria`), analisis (`--fk-dom-analisis`), personales (`--fk-dom-personales`).
+- **`service-worker.js`**: v230 → v231.
+
+---
+
 ### feat(proposito): banners de propósito en Metas, Ahorro e Inversión (EP.3) · 2026-06-30
 
 Reutiliza el helper de EP.1/EP.2. Sin tests nuevos (la lógica de `htmlBannerProposito` ya tiene cobertura completa). 1658/1658 verdes. SW v229 → v230.

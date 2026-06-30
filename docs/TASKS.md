@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1658/1658 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **EP.3** banners en Metas, Ahorro e Inversión (SW v230). Antes: **EP.2** banners en Gastos, Deudas, Agenda y Límites de gasto (SW v229). **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1658/1658 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **EP.4** banners en Mis cuentas, Análisis y Personales (SW v231). **Épica EP completa: todas las 11 secciones tienen banner de propósito.** Antes: EP.1-3. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 

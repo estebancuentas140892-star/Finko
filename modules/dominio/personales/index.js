@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { validarPersonal, normalizarPersonal, aplicarPago, calcularPendiente } from './logic.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HANDLERS NUEVO / GUARDAR ─────────────────────────────────────
 
@@ -157,11 +158,13 @@ export function initPersonales() {
 
   // Re-render en cada navegación a #personales (sigue patrón de calculadoras).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('personales');
     renderSmart(renderListaPersonales, 'personales');
   });
 
   // Render inicial: si la sección está activa al bootstrap.
   // registrarRender garantiza que renderAll() lo dispare después del initRouter.
   registrarRender(() => renderSmart(renderListaPersonales, 'personales'));
+  renderBannerProposito('personales');
   renderSmart(renderListaPersonales, 'personales');
 }

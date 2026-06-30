@@ -51,6 +51,18 @@ export const PROPOSITOS_SECCION = {
     titulo: '¿Para qué sirve Inversión?',
     texto: '¿Tu dinero está creciendo o solo guardado? El dinero quieto pierde valor con el tiempo por la inflación. Inversión te ayuda a llevar el registro de lo que inviertes y ver cómo tu patrimonio crece más allá del ahorro.',
   },
+  tesoreria: {
+    titulo: '¿Para qué sirve Mis cuentas?',
+    texto: '¿Tienes claro cuánto dinero tienes y dónde está? Con varias cuentas y billeteras es fácil perder el rastro. Mis cuentas reúne todo tu dinero en un solo lugar y te ayuda a distribuir cada ingreso de forma inteligente.',
+  },
+  analisis: {
+    titulo: '¿Para qué sirve Análisis?',
+    texto: '¿Tus números te dicen algo o son solo cifras sueltas? Registrar movimientos sirve de poco si no entiendes qué significan. Análisis transforma tus datos en información clara para que tomes mejores decisiones con tu dinero.',
+  },
+  personales: {
+    titulo: '¿Para qué sirve Me deben?',
+    texto: '¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién? Los préstamos entre conocidos se olvidan fácil y generan incomodidad. Personales lleva la cuenta de lo que te deben: quién, cuánto y desde cuándo, sin malos ratos.',
+  },
 };
 
 // ── RENDER ───────────────────────────────────────────────────────

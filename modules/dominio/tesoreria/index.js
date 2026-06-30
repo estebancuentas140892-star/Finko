@@ -20,6 +20,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { esc as _esc, f } from '../../infra/utils.js';
 import { resolverCuenta } from '../../infra/cuenta-helper.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../core/constants.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 import {
   validarCuenta,
   normalizarCuenta,
@@ -976,9 +977,11 @@ export function initTesoreria() {
   // Re-render al navegar a #tesoreria - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('tesoreria');
     renderSmart(_renderTodo, 'tesoreria');
   });
 
   // Render inicial si ya estamos en #tesoreria al cargar.
+  renderBannerProposito('tesoreria');
   renderSmart(_renderTodo, 'tesoreria');
 }

@@ -8,6 +8,7 @@
 import { EventBus } from '../../core/state.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { renderAnalisis } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // Secciones cuyos cambios requieren re-analisis.
 const SECCIONES_OBSERVADAS = new Set([
@@ -28,9 +29,11 @@ export function initAnalisis() {
   // Re-render al navegar a #analisis (sin esto la sección aparece vacía
   // hasta que cambien datos relevantes).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('analisis');
     renderSmart(renderAnalisis, 'analisis');
   });
 
   // Render inicial si arrancamos directamente en #analisis.
+  renderBannerProposito('analisis');
   renderSmart(renderAnalisis, 'analisis');
 }
