@@ -550,8 +550,8 @@ describe('catálogos', () => {
     expect(PLANTILLAS_APARTADO.some(p => /emergencia/i.test(p.nombre))).toBe(false);
   });
 
-  it('PLANTILLAS_APARTADO trae 15 plantillas sin nombres duplicados (AP.2)', () => {
-    expect(PLANTILLAS_APARTADO).toHaveLength(15);
+  it('PLANTILLAS_APARTADO trae 17 plantillas sin nombres duplicados (AP.2 + TX.2)', () => {
+    expect(PLANTILLAS_APARTADO).toHaveLength(17);
     const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
     expect(new Set(nombres).size).toBe(nombres.length);
   });

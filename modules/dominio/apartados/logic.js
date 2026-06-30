@@ -66,6 +66,8 @@ export const PLANTILLAS_APARTADO = [
   { nombre: 'Matrícula o semestre',        icono: '🎓' },
   { nombre: 'Renovación de documentos',    icono: '🪪' },
   { nombre: 'Regalos',                     icono: '🎁' },
+  { nombre: 'Cumpleaños',                  icono: '🎂' },
+  { nombre: 'Navidad',                     icono: '🎄' },
   { nombre: 'Vacaciones',                  icono: '✈️' },
 ];
 
