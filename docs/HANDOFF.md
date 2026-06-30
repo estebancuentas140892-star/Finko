@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(apartados): TX.2 - Cumpleaños + Navidad en PLANTILLAS_APARTADO)
+> Última actualización: 2026-06-29 (test(constants): TX.4 - guardarraíl de consistencia de emojis entre catálogos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### test(constants): guardarraíl de consistencia de emojis entre catálogos (TX.4) · 2026-06-29
+
+Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2 tests en `constants.test.js`: el primero verifica que la lista de etiquetas compartidas entre catálogos no está vacía (smoke del guardarraíl); el segundo verifica que toda etiqueta compartida usa el mismo emoji en todos los catálogos donde aparece. Detecta hoy 6 compartidas que pasan: Mercado 🛒, Transporte 🚗, Servicios públicos 💡, Educación 📚, Mascotas 🐾, Arriendo 🏠. Fallará automáticamente ante cualquier desajuste futuro. 1607 → 1609 verdes. Sin SW bump.
+
+| Archivo | Cambio |
+|---|---|
+| `tests/unit/constants.test.js` | 2 tests TX.4 + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`. |
+
+---
+
 ### feat(apartados): curar PLANTILLAS_APARTADO - Cumpleaños y Navidad (TX.2) · 2026-06-29
 
 Segundo slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Cumpleaños** 🎂 y **Navidad** 🎄 a `PLANTILLAS_APARTADO` (hoy solo existía "Regalos"). Insertas después de "Regalos", antes de "Vacaciones". 15 → 17 plantillas. 1607/1607 verdes. SW v221 → v222.
@@ -60,19 +70,6 @@ Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias
 | `modules/core/constants.js` | `CATEGORIAS_AGENDA` (+Mercado, +Suscripciones) y `CATEGORIA_AGENDA_EMOJI` (+2). |
 | `tests/unit/compromisos.test.js` | Longitud 13 → 15. |
 | `service-worker.js` | v220 → v221. |
-
----
-
-### feat(deudas): comparación explicada Avalancha vs Bola de nieve (D.4) · 2026-06-29
-
-La comparativa de la card de estrategia ahora ayuda a **decidir según prioridad**, sin lógica nueva. Cuando las dos estrategias tienen un argumento real, aparece un bloque "¿Cómo elegir?" con una frase por estrategia: Avalancha (cuánto ahorras en intereses y, si difiere, cuánto antes terminas) y Bola de nieve (cuánto antes cierras tu primera deuda). El "cuánto antes" sale de comparar el `mesPagado` de la primera deuda que cierra cada estrategia (dato que la simulación ya devuelve en `orden[]`), no de simular de nuevo. Si solo Avalancha aventaja se conserva el banner verde de ahorro; si cuestan lo mismo pero Bola de nieve cierra antes, se sugiere por el avance rápido; el empate puro mantiene los mensajes previos. En plan inviable la comparativa sigue sin mostrarse (guard de D.1). Verificado: 3 tests de render nuevos (1604 → 1607) + E2E `estrategia-pago` 12/12 + lint limpio. SW v219 → v220.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | `_renderComparativa` en 4 escenarios + helper `_mesPrimeraDeudaCerrada`. |
-| `styles/components/charts.css` | `.estrategia-card__decidir*` (bloque "¿Cómo elegir?"). |
-| `tests/unit/compromisos.test.js` | 3 tests de render D.4. |
-| `service-worker.js` | v219 → v220. |
 
 ---
 

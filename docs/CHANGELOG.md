@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(constants): guardarraíl de consistencia de emojis entre catálogos (TX.4) · 2026-06-29
+
+Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega 2 tests automáticos al archivo `constants.test.js` que verifican el invariante central del ADR: **toda etiqueta compartida entre catálogos usa el mismo emoji en todos los catálogos donde aparece**.
+
+El test reúne pares `(etiqueta, emoji)` de los 5 catálogos (Gastos, Agenda, Ingresos, Deudas, `PLANTILLAS_APARTADO`), agrupa por nombre exacto y falla si alguna etiqueta compartida tiene emojis distintos. Incluye un smoke test que verifica que la lista de compartidas no esté vacía (evita falsos verdes por lista vacía).
+
+Hoy detecta 6 etiquetas compartidas y las 6 pasan: Mercado 🛒, Transporte 🚗, Servicios públicos 💡, Educación 📚, Mascotas 🐾, Arriendo 🏠. El test fallará automáticamente si en el futuro alguien introduce un desajuste. 1607 → 1609 tests verdes. Sin SW bump (solo tests).
+
+- **`tests/unit/constants.test.js`**: 2 tests nuevos + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`.
+
+---
+
 ### feat(apartados): curar PLANTILLAS_APARTADO - Cumpleaños y Navidad (TX.2) · 2026-06-29
 
 Segundo slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Cumpleaños** 🎂 y **Navidad** 🎄 a `PLANTILLAS_APARTADO`. Antes solo existía "Regalos" (genérico); estas dos son gastos previsibles de fecha fija que merecen plantilla propia para que el usuario empiece a apartar con anticipación. Se insertan después de "Regalos" (mismo grupo de eventos/celebraciones), antes de "Vacaciones". 15 → 17 plantillas. Test de longitud actualizado. 1607/1607 verdes. SW v221 → v222.
