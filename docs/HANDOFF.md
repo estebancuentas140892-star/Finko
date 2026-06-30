@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(deudas): comparación explicada Avalancha vs Bola de nieve, D.4)
+> Última actualización: 2026-06-29 (docs: ADR 014 taxonomía de categorías transversal, AG.3 = AP.5)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(categorias): ADR 014 taxonomía de categorías transversal (AG.3 = AP.5) · 2026-06-29
+
+Tarea de diseño (sin código). Se escribió [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md), que **unifica AG.3 y AP.5**. Decisión central: **la sección define la intención y la categoría la refina**; el significado de un movimiento es el par **(sección, categoría)**, no la categoría sola. Cada sección responde una pregunta distinta (Agenda = pago periódico en fecha; Gastos = consumo variable; Apartados = gasto previsible futuro; Deudas = obligación con terceros; Metas = ahorro con propósito). Una misma categoría puede vivir en varias secciones y la sección la desambigua (caso canónico: Mercado). Consistencia mismo concepto ⇒ misma etiqueta/emoji. Las funciones transversales (límites MC.5, distribución MC.6, análisis) leen (sección, categoría) y mapean a los 3 grupos por sección. Sin schema. Implementación futura en slices TX.1-TX.5 (curar Agenda/Apartados, guardarraíl de consistencia, helper de mapeo sección → grupo), a confirmar con el usuario.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/014-taxonomia-categorias-transversal.md` | ADR nuevo (absorbe AG.3 + AP.5). |
+
+---
 
 ### feat(deudas): comparación explicada Avalancha vs Bola de nieve (D.4) · 2026-06-29
 
@@ -95,21 +105,6 @@ Segundo slice de la Revisión D.2 ([ADR 011](DECISIONS/011-unificacion-simulador
 | `styles/components/charts.css` | `.estrategia-card__remedio` (bloque de remedio dentro de la alerta). |
 | `tests/unit/compromisos.test.js` | 4 tests D.2b (sin acelerador en plan inviable, input en remedio, remedio dentro de alerta, resumen dentro de remedio). |
 | `service-worker.js` | v216 → v217. |
-
----
-
-### refactor(deudas): picker arriba + acelerador plegable del pago extra (D.2a) · 2026-06-29
-
-Implementación del primer slice de la Revisión D.2 ([ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). La card de estrategia de Deudas se reordenó para que el **picker Avalancha vs Bola de nieve** sea lo primero accionable (protagonista), y el pago extra mensual baje a un **acelerador plegable** ("💪 ¿Puedes pagar más rápido?", `<details>` colapsado bajo el detalle). El `<details>` se abre automáticamente si el usuario ya escribió un monto (extra > 0). La lógica financiera no se tocó: mismo `compararEstrategias`, `renderResumenExtra`, etc., solo reubicados. Corregido también un voseo ("Probá" → "Prueba") en la comparativa. Verificado: 4 tests de render nuevos (1572 total), lint limpio, E2E actualizado (abre el `<details>` antes de llenar el input). SW v215 → v216.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia.js` | Reordenado `renderEstrategiaPago`: picker arriba, `_renderAceleradorExtra` (nuevo, `<details>`) abajo. Eliminado `_renderExtraMensual`. Actualizado texto del diagnóstico inviable. |
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | Corregido voseo "Probá" → "Prueba" en `_renderComparativa`. |
-| `styles/components/charts.css` | Estilos `.estrategia-card__acelerador*` (disclosure nativo, `▾` rotado). |
-| `tests/unit/compromisos.test.js` | 4 tests de jerarquía D.2a (picker antes de acelerador, `<details>` colapsado/abierto, input dentro). |
-| `tests/e2e/estrategia-pago.test.js` | Test 5 abre el `<details>` antes de llenar el extra. |
-| `service-worker.js` | v215 → v216. |
 
 ---
 

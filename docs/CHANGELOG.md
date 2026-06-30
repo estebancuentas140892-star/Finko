@@ -7,6 +7,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(categorias): ADR 014 taxonomía de categorías transversal (AG.3 = AP.5) · 2026-06-29
+
+Tarea de diseño (sin código). El usuario pidió definir muy bien las categorías de toda la app, porque son la base del análisis, los límites de gasto, las recomendaciones y la distribución inteligente, y evitar que una misma categoría aparezca en varias secciones sin una razón clara. Se escribió [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md), que **unifica AG.3 (categorías de Agenda) y AP.5 (taxonomía de toda la app)** en una sola decisión.
+
+Decisiones centrales:
+- **La sección define la intención; la categoría la refina.** Cada sección responde una pregunta distinta: Agenda ("¿qué pago periódico tengo en fecha?"), Gastos ("¿en qué se me fue el dinero?"), Apartados ("¿qué gasto grande sé que llega?"), Deudas ("¿a quién le debo?"), Metas ("¿qué quiero lograr?"). El significado de un movimiento es el par **(sección, categoría)**, no la categoría sola.
+- **Una categoría puede vivir en varias secciones; la sección es el desambiguador** (caso canónico: Mercado mensual en Agenda vs compra imprevista en Gastos vs ahorro estacional en Apartados). No se prohíben los solapamientos: se documenta el contexto.
+- **Consistencia:** mismo concepto ⇒ misma etiqueta y emoji en todas las secciones (guardarraíl con test, TX.4).
+- **Catálogo curado por identidad** (no volcar todo en todas) + el puente entre secciones es un nudge no bloqueante (`CATEGORIAS_TIPICAMENTE_FIJAS`), no un muro.
+- **Las funciones transversales leen (sección, categoría):** mapeo a los 3 grupos (Necesidades = Agenda + cuota de deuda; Estilo de vida = Gastos; Ahorro = Apartados + Metas + fondo + inversión + abono extra). Alimenta MC.5 y consolida MC.6.
+- **Sin cambio de schema:** es documentación + curación de constantes.
+
+Implementación futura en slices TX.1-TX.5 (curar Agenda, Apartados; guardarraíl de consistencia; helper de mapeo sección → grupo). La curación concreta de catálogos se confirma con el usuario antes de codear. Sin tests ni SW bump (no se tocó código).
+
+- **`docs/DECISIONS/014-taxonomia-categorias-transversal.md`**: ADR nuevo.
+
+---
+
 ### feat(deudas): comparación explicada Avalancha vs Bola de nieve (D.4) · 2026-06-29
 
 La comparativa de la card de estrategia deja de ser un solo dato y se convierte en una ayuda para **decidir según la prioridad del usuario**, sin lógica financiera nueva. Cuando las dos estrategias tienen un argumento real, aparece un bloque "¿Cómo elegir?" con una frase por estrategia:

@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **D.4** comparación explicada Avalancha vs Bola de nieve (bloque "¿Cómo elegir?" con una frase por estrategia, sin lógica nueva). Antes: D.3b consolidar deudas + aplicar, con lo que **ADR 011 quedó completamente implementado**. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **ADR 014** taxonomía de categorías transversal (diseño, unifica AG.3 + AP.5). Antes: D.4 comparación explicada Avalancha vs Bola de nieve. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -164,7 +164,7 @@ Visión del usuario para que Apartados tenga un propósito claro y diferenciado 
 
 - **AP.4 (épica, requiere ADR)** - Recordatorios automáticos de aporte en Agenda al recibir el ingreso ("Hoy recibiste tu ingreso, recuerda apartar $X para el SOAT"). **Cuidar la duplicación:** "Distribuir mi ingreso" (MC.4) ya acredita el ingreso y reparte a los apartados al llegar el cobro, con nudge propio; y Apartados ya tiene nudge de proximidad (60 días). El ADR debe decidir si se extiende MC.4 o el nudge existente, o se crea un recordatorio nuevo en Agenda, sin solapar. Modelo: Opus 4.8 - Alto.
 
-- **AP.5 (diseño, requiere ADR)** - Taxonomía de categorías de toda la app: definir por escrito la identidad de cada sección para que no se solapen (Gastos = cotidianos e imprevistos; Agenda = pagos periódicos en fecha; Apartados = ahorro para gastos previsibles espaciados; Deudas = obligaciones con terceros; Ahorros = ahorro libre + metas). Conecta con la decisión previa "no fusionar, diferenciar por copy" (revisión UX jun-2026) y alimenta EP.0. Sin código. Modelo: Opus 4.8 - Alto. **Nota:** AG.3 (abajo) es el insumo detallado de esta tarea; conviene fusionarlas en un solo ADR de taxonomía.
+✅ **AP.5 (diseño) = AG.3** - Taxonomía de categorías de toda la app. **Absorbida en [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md)** (ver AG.3 abajo), que cierra la identidad de cada sección, la regla de contexto para categorías compartidas y el mapeo sección → grupo. Implementación en slices TX.1-TX.5 - 2026-06-29.
 
 ### Backlog del usuario "Agenda + taxonomía de categorías" (2026-06-29)
 
@@ -174,9 +174,11 @@ Observaciones del usuario sobre la sección Agenda y, a partir de ahí, una prop
 
 - **AG.2 (mejora UI, posiblemente ya hecha)** - Iconografía a la izquierda del nombre en las categorías de Agenda, consistente con el resto de la app. **Verificar primero:** desde el schema v17 ya existe `CATEGORIA_AGENDA_EMOJI` y el emoji ya se renderiza en el selector del form (`agenda/view.js:376`) y en la lista (`agenda/view.js:284`), igual que MC.9 hizo para ingresos. Si el usuario ya lo ve, AG.2 está cerrada; si pide más prominencia o ícono SVG en vez de emoji, es un ajuste de placement. No abrir trabajo nuevo sin confirmar la brecha. Modelo: Sonnet 4.6 - Bajo.
 
-- **AG.3 (diseño, requiere ADR) = insumo de AP.5** - Definir la identidad de cada sección y la lógica de categorías compartidas. Propuesta del usuario:
-  - **Agenda**: pagos recurrentes de la rutina (arriendo, administración, servicios públicos, plan de datos, internet, TV, mercado, gimnasio, suscripciones, seguros mensuales). Frecuencia definida (mensual, quincenal).
-  - **Gastos**: gasto variable del día a día (restaurantes, café, transporte, ropa, cine, entretenimiento, belleza, compras ocasionales, gastos hormiga).
-  - **Apartados**: gastos futuros previsibles que no llegan todos los meses (SOAT, técnico-mecánica, predial, cuido y arena de mascotas, aseo personal, útiles, matrícula, mantenimiento del vehículo, cumpleaños, navidad, vacaciones).
-  - **Metas**: objetivos de mediano/largo plazo (viajar, casa, computador, vehículo, casarse, negocio).
-  - **Lógica de solapamiento (clave):** no prohibir que una categoría exista en dos secciones, sino definir el **contexto**. Ejemplo del usuario: "Mercado" es recurrente y va en Agenda; pero una compra adicional e imprevista del mercado va en Gastos. El ADR debe documentar esta regla de contexto por sección. Conecta con MC.5 (límites de gasto) y la decisión "no fusionar, diferenciar por copy". Modelo: Opus 4.8 - Alto.
+✅ **AG.3 (diseño) = AP.5** - [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) escrito (unifica AG.3 + AP.5). Decisión central: **la sección define la intención y la categoría la refina**; el significado de un movimiento es el par (sección, categoría). Cada sección responde una pregunta distinta; una categoría puede vivir en varias secciones y la sección la desambigua (caso canónico: Mercado); consistencia mismo concepto ⇒ misma etiqueta/emoji; las funciones transversales mapean a los 3 grupos por sección. Sin schema. La curación concreta de catálogos queda en slices TX.1-TX.5 (a confirmar con el usuario) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+
+Slices de implementación de ADR 014 (smallest-first, a confirmar la curación):
+- **TX.1** - Curar `CATEGORIAS_AGENDA`: agregar Mercado 🛒 y Suscripciones (evaluar Televisión). Tests del mapa de emoji. Modelo: Sonnet 4.6 - Bajo.
+- **TX.2** - Curar `PLANTILLAS_APARTADO`: agregar Cumpleaños 🎂 y Navidad 🎄. Tests. Modelo: Sonnet 4.6 - Bajo.
+- **TX.3 (opcional)** - Gastos: agregar Café ☕ y Gastos hormiga 🐜 si el usuario los quiere explícitos. Modelo: Sonnet 4.6 - Bajo.
+- **TX.4** - Guardarraíl de consistencia: test que verifica que las etiquetas compartidas entre catálogos usan el mismo emoji. Modelo: Sonnet 4.6 - Bajo.
+- **TX.5** - Helper puro de mapeo sección → grupo (Necesidades / Estilo de vida / Ahorro), reutilizable por MC.5 y MC.6. Modelo: Sonnet 4.6 - Medio.
