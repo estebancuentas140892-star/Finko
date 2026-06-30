@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(constants): TX.5 - mapeo sección → grupo financiero, ADR 014 completo)
+> Última actualización: 2026-06-29 (feat(tesoreria): MC.6a - modelo de pisos para distribución automática, ADR 013)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(tesoreria): modelo de pisos para distribución automática (MC.6a, ADR 013) · 2026-06-29
+
+Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Reescribe el modo `auto` de `sugerirDistribucionIngreso` con el modelo de pisos: Necesidades (gastos fijos + cuotas de deuda), Ahorro (fondo → objetivos → base sana 20%), Estilo de vida (residual, piso 10%). Nuevo helper puro `calcularAporteMensualObjetivos`. `view.js` computa 4 nuevos inputs desde S (cuotas, faltante fondo, aporte a objetivos, límites). 16 tests nuevos + 4 actualizados. 1617 → 1633 verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `calcularAporteMensualObjetivos` + `sugerirDistribucionIngreso` reescrita. |
+| `modules/dominio/tesoreria/view.js` | 4 nuevos inputs computados desde S. |
+| `tests/unit/tesoreria.test.js` | 16 tests nuevos + 4 actualizados + import. |
+
+---
+
 ### feat(constants): mapeo sección → grupo financiero (TX.5, ADR 014) · 2026-06-29
 
 Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega en `constants.js` el mapeo canónico sección → grupo financiero como código reutilizable: `GRUPOS_FINANCIEROS` (3 grupos en orden de prioridad), `LABEL_GRUPO_FINANCIERO` (etiquetas UI), `GRUPO_POR_SECCION` (mapa clave→grupo para las 7 secciones) y `clasificarSeccionEnGrupo` (función pura). **Con TX.5, la serie completa TX.1-TX.5 queda cerrada y el ADR 014 implementado.** 8 tests nuevos. 1609 → 1617 verdes. Sin SW bump.
@@ -57,18 +69,6 @@ Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2
 | Archivo | Cambio |
 |---|---|
 | `tests/unit/constants.test.js` | 2 tests TX.4 + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`. |
-
----
-
-### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
-
-Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Mercado** 🛒 y **Suscripciones** 🔔 al catálogo de categorías de la sección Agenda. Mercado es el caso canónico del ADR (en Agenda = compra mensual planeada; en Gastos = compra imprevista suelta). Emoji de Mercado consistente con el de la sección Gastos (guardarraíl de consistencia del ADR). Longitud 13 → 15. 1607/1607 verdes. SW v220 → v221.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_AGENDA` (+Mercado, +Suscripciones) y `CATEGORIA_AGENDA_EMOJI` (+2). |
-| `tests/unit/compromisos.test.js` | Longitud 13 → 15. |
-| `service-worker.js` | v220 → v221. |
 
 ---
 

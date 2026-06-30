@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1617/1617 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.5** mapeo sección → grupo financiero (ADR 014 completo: TX.1-TX.5 cerradas). Antes: TX.4 guardarraíl de consistencia de emojis. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1633/1633 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **MC.6a** modelo de pisos para distribución automática (ADR 013). Antes: TX.5 mapeo sección → grupo. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -87,7 +87,7 @@ Visión nueva del usuario para evolucionar "Distribuir mi ingreso" como diferenc
 ✅ **MC.6 (diseño)** - ADR 013 escrito: distribución "Automático inteligente". Decisiones con el usuario: alcance = sigue siendo distribución en 3 grupos pero con % calculados desde los datos reales (modelo de pisos por prioridad); duplicidad = Automático por defecto y los 3 presets fijos pasan a un grupo secundario "Métodos clásicos" - 2026-06-29. Ver [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
 
 Slices de implementación de MC.6 (smallest-first, ver ADR 013):
-- **MC.6a** - Reescribir el modo `auto` de `sugerirDistribucionIngreso`: nuevos insumos (cuotas de deuda mensuales, faltante del fondo, aporte mensual a objetivos con plazo, suma de límites) + modelo de pisos (Necesidades obligatorias → Ahorro por prioridades → Estilo de vida con piso) + `razon` enriquecida + tests. **Siguiente sugerido.**
+✅ **MC.6a** - Modelo de pisos para distribución automática: `sugerirDistribucionIngreso` reescrita (pisos: Necesidades duro → Ahorro por prioridades → Estilo de vida residual con piso 10%). Nuevo helper puro `calcularAporteMensualObjetivos`. `view.js` computa 4 nuevos inputs desde S. 16 tests nuevos + 4 actualizados. 1617 → 1633 verdes - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - **MC.6b** - Barra de presets: Automático + Personalizar en la fila principal; los 3 clásicos a un grupo secundario "Métodos clásicos" (disclosure) + copy de transparencia.
 - **MC.6c (opcional)** - Señales más ricas: historial de gastos variables (proxy de estilo de vida), inversiones como prioridad tras el fondo.
 - **MC.7 (épica mayor, requiere ADR)** - Convertir "Distribuir mi ingreso" en un asistente guiado de 3 pasos: (1) **Necesidades** itemizadas automáticamente (gastos fijos, cuotas de deuda, compromisos de Agenda) con nombre/categoría/valor; (2) **Ahorro** con aportes auto-calculados por objetivo según su meta y la frecuencia del ingreso (ej. meta de $5M a un año → cuánto por quincena), priorizando el fondo de emergencia con el excedente; (3) **Estilo de vida** repartido entre las cuentas activas / efectivo. El usuario solo revisa, ajusta y confirma. Construye sobre MC.4a-e.

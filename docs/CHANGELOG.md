@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(tesoreria): modelo de pisos para distribución automática (MC.6a, ADR 013) · 2026-06-29
+
+Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Reescribe el modo `auto` de `sugerirDistribucionIngreso` con el **modelo de pisos por prioridad** en vez de la regla fija 50/30/20:
+
+**Modelo (sin tocar presets ni personalizado):**
+1. **Necesidades (piso duro):** `gastosFijosMensuales + cuotasDeudaMensuales`. Las cuotas de deuda son obligación, no ahorro.
+2. **Ahorro (prioridades en orden):** fondo incompleto (`faltanteFondo / 12`), objetivos con fecha (`aporteMensualObjetivos`), o base sana 20% si no hay prioridades activas.
+3. **Estilo de vida (residual, con piso mínimo 10%):** cede ante Necesidades pero gana sobre el ahorro extra.
+4. **Normalización** a 100.
+
+**Nuevos params de entrada:** `cuotasDeudaMensuales`, `faltanteFondo`, `aporteMensualObjetivos`, `sumaLimites`. **Nuevo campo de salida:** `pctObligaciones`. **Nuevo `metodo`:** `'pisos'`. **Alertas:** obligaciones >= 80%, límite de gasto informativo, overflow 100/0/0. **Razón enriquecida** con los componentes que influyeron.
+
+**Nuevo helper puro `calcularAporteMensualObjetivos(metas, apartados, hoy)`:** calcula el aporte mensual necesario para cubrir todos los objetivos (metas + apartados) con fecha futura y saldo pendiente. `view.js` computa los 4 nuevos inputs desde `S` (cuotas de deuda, faltante del fondo, aporte mensual a objetivos, suma de límites) y los pasa a la función. Lógica sigue pura (ADN #9/#10): sin leer S directamente en logic.js.
+
+16 tests nuevos (4 de `calcularAporteMensualObjetivos` + 12 del modelo de pisos). 4 tests existentes actualizados (metodo `'50/30/20'`/`'ajustado'` → `'pisos'`, pcts del caso sin datos). 1617 → 1633 verdes.
+
+- **`modules/dominio/tesoreria/logic.js`**: `calcularAporteMensualObjetivos` + `sugerirDistribucionIngreso` reescrita.
+- **`modules/dominio/tesoreria/view.js`**: `calcularAporteMensualObjetivos` importada + 4 nuevos inputs computados.
+- **`tests/unit/tesoreria.test.js`**: 16 tests nuevos + 4 actualizados + import.
+
+---
+
 ### feat(constants): mapeo sección → grupo financiero (TX.5, ADR 014) · 2026-06-29
 
 Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Agrega a `constants.js` el mapeo canónico sección → grupo financiero como código reutilizable por MC.5 (límites de gasto) y MC.6 (distribución inteligente):
