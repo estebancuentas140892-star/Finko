@@ -7,6 +7,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### refactor(deudas): quitar aviso de fijos vencidos de la sección Deudas (D.6) · 2026-06-29
+
+El panel del Dashboard "N pendientes del mes" (`#panel-vencidos`, `detectarVencidosCompletos`) ya centraliza todos los vencidos del mes: fijos, deudas y agenda. El nudge `#nudge-fijos-sin-pagar` en `sec-compromisos` duplicaba ese subconjunto (solo fijos) y vivía en la sección equivocada. Eliminado completamente (función, re-export, import, call y nodo HTML). `renderAlertaDeudasDurmiendo` no se toca: es información propia de Deudas, no duplicada en el dashboard. 1633/1633 verdes. SW v222 → v223.
+
+- **`index.html`**: eliminado `<div id="nudge-fijos-sin-pagar">`.
+- **`modules/dominio/compromisos/views/alertas.js`**: eliminada `renderAlertaFijosSinPagar`.
+- **`modules/dominio/compromisos/view.js`**: eliminado re-export.
+- **`modules/dominio/compromisos/index.js`**: eliminados import y llamada en `_renderTodo()`.
+- **`service-worker.js`**: v222 → v223.
+
+---
+
 ### feat(tesoreria): modelo de pisos para distribución automática (MC.6a, ADR 013) · 2026-06-29
 
 Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Reescribe el modo `auto` de `sugerirDistribucionIngreso` con el **modelo de pisos por prioridad** en vez de la regla fija 50/30/20:

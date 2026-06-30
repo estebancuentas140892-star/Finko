@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(tesoreria): MC.6a - modelo de pisos para distribución automática, ADR 013)
+> Última actualización: 2026-06-29 (refactor(deudas): D.6 - quitar aviso de fijos vencidos de la sección Deudas)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### refactor(deudas): quitar aviso de fijos vencidos de la sección Deudas (D.6) · 2026-06-29
+
+El panel "N pendientes del mes" del Dashboard ya centraliza todos los vencidos del mes (fijos, deudas, agenda): el nudge `#nudge-fijos-sin-pagar` en Deudas duplicaba ese subconjunto en el lugar equivocado. Eliminado completamente: función, re-export, import, call y nodo HTML. `renderAlertaDeudasDurmiendo` intacta. 1633/1633 verdes. SW v222 → v223.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Eliminado `<div id="nudge-fijos-sin-pagar">`. |
+| `modules/dominio/compromisos/views/alertas.js` | Eliminada `renderAlertaFijosSinPagar`. |
+| `modules/dominio/compromisos/view.js` | Eliminado re-export. |
+| `modules/dominio/compromisos/index.js` | Eliminados import y call en `_renderTodo()`. |
+| `service-worker.js` | v222 → v223. |
+
+---
+
 ### feat(tesoreria): modelo de pisos para distribución automática (MC.6a, ADR 013) · 2026-06-29
 
 Primer slice del [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md). Reescribe el modo `auto` de `sugerirDistribucionIngreso` con el modelo de pisos: Necesidades (gastos fijos + cuotas de deuda), Ahorro (fondo → objetivos → base sana 20%), Estilo de vida (residual, piso 10%). Nuevo helper puro `calcularAporteMensualObjetivos`. `view.js` computa 4 nuevos inputs desde S (cuotas, faltante fondo, aporte a objetivos, límites). 16 tests nuevos + 4 actualizados. 1617 → 1633 verdes.
@@ -69,22 +83,6 @@ Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2
 | Archivo | Cambio |
 |---|---|
 | `tests/unit/constants.test.js` | 2 tests TX.4 + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`. |
-
----
-
-### feat(deudas): consolidar deudas interactivo + aplicar (D.3b) · 2026-06-29
-
-Segundo y último slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). En el bloque "Tu plan no se sostiene", "consolidar" pasa de texto a herramienta interactiva (🏦): el usuario ingresa la tasa EA y la cuota de un crédito nuevo que juntaría **todas** sus deudas (saldo = suma), y ve en vivo cómo se compara con su plan actual (mejor estrategia). El botón "Consolidar en un crédito nuevo" se habilita solo si baja los intereses o vuelve pagable un plan inviable; al confirmar, **crea** la deuda de consolidación y **archiva** (`activo:false`) las consolidadas en un paso. `simularConsolidacion` (pura) muestra el ahorro de meses con signo (consolidar a una cuota menor puede alargar el plazo aunque baje el interés). **Con esto S4 y S5 quedan cerrados: ADR 011 está completamente implementado.** Verificado: 12 unit + 2 E2E nuevos (el E2E confirma que se crea el crédito de $10.5M y se archivan las 2 deudas). SW v218 → v219.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `simularConsolidacion(deudas, { tasaEA, cuota })`. |
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | `renderConsolidar` + `renderComparativaConsolidacion`. |
-| `modules/dominio/compromisos/views/estrategia.js` | Estado UI `consolidar*`; el bloque inviable monta la herramienta. |
-| `modules/dominio/compromisos/index.js` | Handlers `_actualizarConsolidacionEnVivo`, `_aplicarConsolidacion` (crea + archiva) + cableado. |
-| `styles/components/charts.css` | Estilos de la herramienta de consolidar. |
-| `tests/unit/compromisos.test.js`, `tests/e2e/estrategia-pago.test.js` | 12 unit + 2 E2E. |
-| `service-worker.js` | v218 → v219. |
 
 ---
 

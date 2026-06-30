@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1633/1633 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **MC.6a** modelo de pisos para distribución automática (ADR 013). Antes: TX.5 mapeo sección → grupo. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1633/1633 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **D.6** quitar aviso de fijos vencidos de Deudas (duplicado en Dashboard). Antes: MC.6a modelo de pisos. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -63,7 +63,7 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 Segunda ronda de observaciones del usuario sobre la sección Deudas. Objetivo común: que la sección se sienta **limpia**, con Avalancha y Bola de nieve siempre de protagonistas, y que las herramientas de ayuda aparezcan **solo cuando hacen falta**, una a la vez. Varias revisan otra vez la jerarquía de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md) (que en D.2/D.3 ya replanteamos), así que **conviene una revisión D.7 del ADR antes de codear** D.7/D.8/D.9.
 
-- **D.6 (mejora UI, contenida)** - Quitar de la sección Deudas el aviso "N gastos fijos vencieron este mes" (`#nudge-fijos-sin-pagar` en `sec-compromisos`, vía `renderAlertaFijosSinPagar`, G.1). El Dashboard **ya** tiene el panel "N pendientes del mes" (`#panel-vencidos` en `sec-dash`, `detectarVencidosCompletos`) que incluye fijos, deudas y agenda vencidos: el aviso de Deudas está duplicando esa información. Verificar que el panel del dashboard cubre todo lo que mostraba el nudge (no perder info: el nudge dice "¿ya los registraste?"; el panel solo lista) y, si es así, **eliminar el nudge de Deudas**; si el panel no cubre el matiz de "registrar", portarlo al dashboard. Cuidar también `#nudge-deudas-durmiendo` (otra alerta G.1 en la misma sección): el usuario solo mencionó los fijos vencidos, no tocar deudas durmiendo sin confirmar. Modelo: Sonnet 4.6 - Bajo.
+✅ **D.6 (mejora UI, contenida)** - Eliminado el nudge `#nudge-fijos-sin-pagar` de la sección Deudas: el panel "N pendientes del mes" del Dashboard ya centraliza todos los vencidos (fijos, deudas, agenda). Eliminada también la función `renderAlertaFijosSinPagar` completa (función, re-export, import, call y nodo HTML). `renderAlertaDeudasDurmiendo` intacta. 1633/1633 verdes. SW v222 → v223 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 - **D.7 (diseño, revisa ADR 011)** - Replantear el bloque inviable ("⚠️ Con tu pago actual, estas deudas no se terminan de pagar..."). Hoy muestra el diagnóstico + el remedio de pago extra + las herramientas de renegociar/consolidar, todo a la vez, y se siente saturado. Propuesta del usuario: cuando el plan no es viable, Avalancha/Bola de nieve siguen de protagonistas y aparece **un solo botón destacado** ("⚠️ ¿Necesitas mejorar tu plan de pago?" / "🚨 Explorar alternativas para salir de las deudas") que abre un **panel** con las 3 alternativas. Entregable: revisión del ADR 011 con la nueva jerarquía (botón → panel → selector de una alternativa a la vez) y los slices D.8/D.9. Modelo: Opus 4.8 - Alto.
 
