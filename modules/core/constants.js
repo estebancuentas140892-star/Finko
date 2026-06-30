@@ -489,3 +489,49 @@ export const FRECUENCIAS = [
   'Anual',
   'Única vez',
 ];
+
+// ── Grupos financieros y mapeo sección → grupo (ADR 014) ─────────
+
+/**
+ * Los tres grupos en que se clasifica el dinero del usuario.
+ * El orden refleja la prioridad de cubrimiento: Necesidades primero.
+ * Reutilizado por MC.5 (límites de gasto) y MC.6 (distribución inteligente).
+ */
+export const GRUPOS_FINANCIEROS = ['necesidades', 'estilo-de-vida', 'ahorro'];
+
+/** Etiqueta legible por grupo, para usar en UI. */
+export const LABEL_GRUPO_FINANCIERO = {
+  'necesidades':    'Necesidades',
+  'estilo-de-vida': 'Estilo de vida',
+  'ahorro':         'Ahorro',
+};
+
+/**
+ * Mapeo canónico sección → grupo financiero (ADR 014).
+ * Claves: identificadores del dominio en S (en minúsculas).
+ *   'agenda'    → compromisos tipo='fijo'
+ *   'deudas'    → compromisos tipo='deuda-entidad'|'deuda-personal' (cuota mínima)
+ *   'gastos'    → S.gastos (consumo variable)
+ *   'apartados' → S.apartados
+ *   'metas'     → S.metas
+ *   'ahorro'    → S.ahorro (fondo de emergencia + aportes)
+ *   'inversion' → S.inversiones
+ */
+export const GRUPO_POR_SECCION = {
+  'agenda':    'necesidades',
+  'deudas':    'necesidades',
+  'gastos':    'estilo-de-vida',
+  'apartados': 'ahorro',
+  'metas':     'ahorro',
+  'ahorro':    'ahorro',
+  'inversion': 'ahorro',
+};
+
+/**
+ * Devuelve el grupo financiero al que pertenece una sección.
+ * @param {string} seccion  Clave de sección (ej. 'gastos', 'agenda', 'deudas').
+ * @returns {'necesidades'|'estilo-de-vida'|'ahorro'|null}
+ */
+export function clasificarSeccionEnGrupo(seccion) {
+  return GRUPO_POR_SECCION[seccion] ?? null;
+}

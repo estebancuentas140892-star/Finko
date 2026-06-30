@@ -11,6 +11,10 @@ import {
   CATEGORIA_AGENDA_EMOJI,
   CATEGORIA_INGRESO_EMOJI,
   CATEGORIA_DEUDA_EMOJI,
+  GRUPOS_FINANCIEROS,
+  LABEL_GRUPO_FINANCIERO,
+  GRUPO_POR_SECCION,
+  clasificarSeccionEnGrupo,
 } from '../../modules/core/constants.js';
 import { PLANTILLAS_APARTADO } from '../../modules/dominio/apartados/logic.js';
 
@@ -207,6 +211,56 @@ describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
         `"${label}" aparece en [${ocurrencias.map(o => o.fuente).join(', ')}] ` +
         `con emojis distintos: ${emojisDistintos.join(' vs ')}`,
       ).toHaveLength(1);
+    }
+  });
+});
+
+// ── TX.5: mapeo sección → grupo financiero (ADR 014) ─────────────
+
+describe('TX.5 - Mapeo sección → grupo financiero (ADR 014)', () => {
+  it('GRUPOS_FINANCIEROS tiene exactamente los 3 grupos en orden de prioridad', () => {
+    expect(GRUPOS_FINANCIEROS).toEqual(['necesidades', 'estilo-de-vida', 'ahorro']);
+  });
+
+  it('LABEL_GRUPO_FINANCIERO tiene etiqueta legible para cada grupo', () => {
+    for (const g of GRUPOS_FINANCIEROS) {
+      expect(typeof LABEL_GRUPO_FINANCIERO[g]).toBe('string');
+      expect(LABEL_GRUPO_FINANCIERO[g].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('Agenda y Deudas mapean a necesidades', () => {
+    expect(clasificarSeccionEnGrupo('agenda')).toBe('necesidades');
+    expect(clasificarSeccionEnGrupo('deudas')).toBe('necesidades');
+  });
+
+  it('Gastos mapea a estilo-de-vida', () => {
+    expect(clasificarSeccionEnGrupo('gastos')).toBe('estilo-de-vida');
+  });
+
+  it('Apartados, Metas, Ahorro e Inversión mapean a ahorro', () => {
+    expect(clasificarSeccionEnGrupo('apartados')).toBe('ahorro');
+    expect(clasificarSeccionEnGrupo('metas')).toBe('ahorro');
+    expect(clasificarSeccionEnGrupo('ahorro')).toBe('ahorro');
+    expect(clasificarSeccionEnGrupo('inversion')).toBe('ahorro');
+  });
+
+  it('sección desconocida devuelve null', () => {
+    expect(clasificarSeccionEnGrupo('desconocida')).toBeNull();
+    expect(clasificarSeccionEnGrupo('')).toBeNull();
+    expect(clasificarSeccionEnGrupo(undefined)).toBeNull();
+  });
+
+  it('todo valor de GRUPO_POR_SECCION es un grupo válido', () => {
+    for (const grupo of Object.values(GRUPO_POR_SECCION)) {
+      expect(GRUPOS_FINANCIEROS).toContain(grupo);
+    }
+  });
+
+  it('los tres grupos están representados en GRUPO_POR_SECCION', () => {
+    const gruposRepresentados = new Set(Object.values(GRUPO_POR_SECCION));
+    for (const g of GRUPOS_FINANCIEROS) {
+      expect(gruposRepresentados.has(g)).toBe(true);
     }
   });
 });
