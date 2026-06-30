@@ -7,7 +7,12 @@ import {
   BANCOS_CO,
   TIPOS_CUENTA,
   TIPOS_POR_CLASE,
+  CATEGORIA_EMOJI,
+  CATEGORIA_AGENDA_EMOJI,
+  CATEGORIA_INGRESO_EMOJI,
+  CATEGORIA_DEUDA_EMOJI,
 } from '../../modules/core/constants.js';
+import { PLANTILLAS_APARTADO } from '../../modules/dominio/apartados/logic.js';
 
 // Fechas en hora local (mes 0-indexado) para evitar corrimientos de zona.
 const enAnio = (anio) => new Date(anio, 5, 15);
@@ -150,6 +155,58 @@ describe('TIPOS_CUENTA y TIPOS_POR_CLASE', () => {
       for (const t of tipos) {
         expect(TIPOS_CUENTA).toContain(t);
       }
+    }
+  });
+});
+
+// ── TX.4: guardarraíl de consistencia de emojis entre catálogos (ADR 014) ──
+//
+// ADR 014 exige que toda etiqueta compartida entre catálogos use el mismo
+// emoji en todos los catálogos donde aparece. Este test falla si alguien
+// introduce un desajuste (ej. Mercado 🛒 en Gastos pero 🥕 en Agenda).
+//
+// Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas + PLANTILLAS_APARTADO.
+// Se ignoran etiquetas internas de Gastos (Deudas, Ahorro, Alimentación).
+// La comparación es por nombre exacto (case-sensitive): "Otro" ≠ "Otros".
+
+describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
+  // Pares (label, emoji, fuente) de todos los catálogos.
+  const entradas = [
+    ...Object.entries(CATEGORIA_EMOJI)
+      .filter(([k]) => !['Deudas', 'Ahorro', 'Alimentación'].includes(k))
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Gastos' })),
+    ...Object.entries(CATEGORIA_AGENDA_EMOJI)
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Agenda' })),
+    ...Object.entries(CATEGORIA_INGRESO_EMOJI)
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Ingresos' })),
+    ...Object.entries(CATEGORIA_DEUDA_EMOJI)
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas' })),
+    ...PLANTILLAS_APARTADO
+      .map(p => ({ label: p.nombre, emoji: p.icono, fuente: 'Apartados' })),
+  ];
+
+  // Agrupar por etiqueta.
+  const porLabel = {};
+  for (const { label, emoji, fuente } of entradas) {
+    (porLabel[label] ??= []).push({ emoji, fuente });
+  }
+
+  // Solo las etiquetas que aparecen en más de un catálogo.
+  const compartidas = Object.entries(porLabel)
+    .filter(([, ocurrencias]) => ocurrencias.length > 1);
+
+  it('hay al menos una etiqueta compartida entre catálogos (smoke del propio guardarraíl)', () => {
+    expect(compartidas.length).toBeGreaterThan(0);
+  });
+
+  it('toda etiqueta compartida usa el mismo emoji en todos los catálogos', () => {
+    for (const [label, ocurrencias] of compartidas) {
+      const emojisDistintos = [...new Set(ocurrencias.map(o => o.emoji))];
+      expect(
+        emojisDistintos,
+        `"${label}" aparece en [${ocurrencias.map(o => o.fuente).join(', ')}] ` +
+        `con emojis distintos: ${emojisDistintos.join(' vs ')}`,
+      ).toHaveLength(1);
     }
   });
 });
