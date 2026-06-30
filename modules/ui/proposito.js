@@ -23,6 +23,22 @@ export const PROPOSITOS_SECCION = {
     titulo: '¿Para qué sirve Apartados?',
     texto: '¿Te ha pasado que, de un momento a otro, debes pagar el SOAT, comprar el alimento de tu mascota, reponer tus productos de aseo personal o cubrir otro gasto importante que no esperabas? Aunque son gastos previsibles, muchas veces olvidamos prepararnos y terminamos usando nuestros ahorros, aplazando metas o endeudándonos. Apartados te ayuda a evitarlo: destina una pequeña parte de tus ingresos para cada gasto futuro y, cuando llegue el momento de pagarlo, ya tendrás el dinero (o gran parte de él) disponible.',
   },
+  gast: {
+    titulo: '¿Para qué sirve Gastos?',
+    texto: '¿Sabes en qué se te va el dinero cada mes? Muchas veces se escapa en compras pequeñas que ni recordamos. Gastos te muestra en qué gastas de verdad, para que descubras hábitos que puedes mejorar y decidas con información.',
+  },
+  compromisos: {
+    titulo: '¿Para qué sirve Deudas?',
+    texto: '¿Sientes que pagas y pagas pero la deuda no baja? Sin un plan, los intereses te cobran de más y la salida se alarga. Deudas arma la mejor estrategia para que pagues menos intereses y salgas más rápido, una cuota a la vez.',
+  },
+  agenda: {
+    titulo: '¿Para qué sirve Mi Agenda?',
+    texto: '¿Se te ha pasado un pago y te tocó asumir intereses o recargos? Las fechas se acumulan y es fácil olvidar una. Agenda reúne tus pagos periódicos en un solo lugar para que no se te pase ninguno y evites cobros por mora.',
+  },
+  presupuesto: {
+    titulo: '¿Para qué sirve Límites de gasto?',
+    texto: '¿Llegas a fin de mes sin saber por qué no te alcanzó? Sin un tope claro, es fácil gastar de más sin darte cuenta. Límites de gasto te deja fijar cuánto quieres gastar por categoría y te avisa antes de pasarte, no después.',
+  },
 };
 
 // ── RENDER ───────────────────────────────────────────────────────

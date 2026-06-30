@@ -19,6 +19,7 @@ import { mostrarErroresForm }        from '../../infra/form-errors.js';
 import { confirmar }                 from '../../ui/confirm.js';
 import { validarPresupuesto, normalizarPresupuesto } from './logic.js';
 import { renderPanelPresupuesto, renderFormPresupuesto, renderPanelLimites } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HELPERS DE MODAL ─────────────────────────────────────────────
 
@@ -127,12 +128,14 @@ export function initPresupuesto() {
   // El panel de alertas vive en el dashboard: se actualiza en cada renderAll().
   registrarRender(() => renderSmart(renderPanelLimites, 'dash'));
 
+  renderBannerProposito('presupuesto');
   renderSmart(renderPanelPresupuesto, 'presupuesto');
   renderPanelLimites();
 
   // El hash routing puede entrar tarde a esta sección; re-renderizamos al navegar.
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
+    renderBannerProposito('presupuesto');
     renderSmart(renderPanelPresupuesto, 'presupuesto');
     if (hash === 'dash') renderPanelLimites();
   });

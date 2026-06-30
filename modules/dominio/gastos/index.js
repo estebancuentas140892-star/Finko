@@ -23,6 +23,7 @@ import {
   validarGastoRapido, normalizarGastoRapido,
   deltasPorEdicionDeGasto,
 } from './logic.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
 import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
 
@@ -468,10 +469,12 @@ export function initGastos() {
 
   // Re-render al navegar a #gast: filtros + lista.
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('gast');
     renderSmart(renderFiltrosGastos, 'gast');
     renderSmart(renderListaGastos, 'gast');
   });
 
+  renderBannerProposito('gast');
   renderSmart(renderFiltrosGastos, 'gast');
   renderSmart(renderListaGastos, 'gast');
 }

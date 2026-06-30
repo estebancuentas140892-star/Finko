@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(proposito): banners de propósito en Gastos, Deudas, Agenda y Límites de gasto (EP.2) · 2026-06-30
+
+Reutiliza el helper de EP.1. Sin tests nuevos (la lógica de `htmlBannerProposito` ya tiene cobertura completa). 1658/1658 verdes. SW v228 → v229.
+
+- **`modules/ui/proposito.js`**: 4 entradas nuevas en `PROPOSITOS_SECCION`: `gast` (Gastos), `compromisos` (Deudas), `agenda` (Mi Agenda), `presupuesto` (Límites de gasto). Copy aprobado en ADR 016.
+- **`index.html`**: slots `proposito-gast`, `proposito-compromisos`, `proposito-agenda`, `proposito-presupuesto`.
+- **`modules/dominio/gastos/index.js`**: import + calls de `renderBannerProposito('gast')` en hashchange e init.
+- **`modules/dominio/compromisos/index.js`**: import + calls de `renderBannerProposito('compromisos')` en hashchange e init.
+- **`modules/dominio/agenda/index.js`**: import + calls de `renderBannerProposito('agenda')` en hashchange e init.
+- **`modules/dominio/presupuesto/index.js`**: import + calls de `renderBannerProposito('presupuesto')` en hashchange e init.
+- **`styles/components/domain.css`**: variantes de color expandido + colapsado para gast (`--fk-dom-gastos`), compromisos (`--fk-dom-compromisos`), presupuesto (`--fk-dom-presupuesto`); agenda usa `--fk-accent` por defecto.
+- **`service-worker.js`**: v228 → v229.
+
+---
+
 ### feat(proposito): piloto del banner de propósito en Apartados (EP.1) · 2026-06-30
 
 Implementa el patrón definido en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Piloto de la épica EP: el banner se aplica a la sección Apartados. El helper `modules/ui/proposito.js` es reutilizable (cada slice EP.2-EP.4 solo agrega copy al mapa y un slot en `index.html`). 9 unit tests de `htmlBannerProposito`. 1649 → 1658 verdes. SW v227 → v228.

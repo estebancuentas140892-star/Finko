@@ -32,6 +32,7 @@ import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
@@ -286,9 +287,11 @@ export function initAgenda() {
   // Re-render al navegar a #agenda.
   window.addEventListener('hashchange', () => {
     if ((location.hash.slice(1) || 'dash') === 'agenda') {
+      renderBannerProposito('agenda');
       renderSmart(renderAgenda, 'agenda');
     }
   });
 
+  renderBannerProposito('agenda');
   renderSmart(renderAgenda, 'agenda');
 }

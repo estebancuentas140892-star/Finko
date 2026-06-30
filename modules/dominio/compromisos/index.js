@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA } from './logic.js';
 import {
   renderListaCompromisos,
@@ -708,10 +709,14 @@ export function initCompromisos() {
   // Re-render al navegar a #compromisos o #dash.
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
-    if (hash === 'compromisos') renderSmart(_renderTodo, 'compromisos');
-    if (hash === 'dash')        renderSmart(_renderDashboardPanels, 'dash');
+    if (hash === 'compromisos') {
+      renderBannerProposito('compromisos');
+      renderSmart(_renderTodo, 'compromisos');
+    }
+    if (hash === 'dash') renderSmart(_renderDashboardPanels, 'dash');
   });
 
+  renderBannerProposito('compromisos');
   renderSmart(_renderTodo, 'compromisos');
   renderSmart(_renderDashboardPanels, 'dash');
 }

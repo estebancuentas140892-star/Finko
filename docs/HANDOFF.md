@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(proposito): EP.1 - piloto del banner de propósito en Apartados)
+> Última actualización: 2026-06-30 (feat(proposito): EP.2 - banners en Gastos, Deudas, Agenda y Límites de gasto)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(proposito): banners de propósito en Gastos, Deudas, Agenda y Límites de gasto (EP.2) · 2026-06-30
+
+Reutiliza el helper de EP.1. Agrega 4 entradas a `PROPOSITOS_SECCION` (copy aprobado en ADR 016), 4 slots en `index.html` y llama `renderBannerProposito` en el init y hashchange de cada dominio. CSS: variantes de color por sección (gastos naranja, compromisos rojo, presupuesto amarillo; agenda usa el acento por defecto). Sin tests nuevos: la lógica de `htmlBannerProposito` ya tiene cobertura completa en EP.1. 1658/1658 verdes. SW v228 → v229.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/proposito.js` | 4 entradas nuevas en `PROPOSITOS_SECCION`: `gast`, `compromisos`, `agenda`, `presupuesto`. |
+| `index.html` | Slots `proposito-gast`, `proposito-compromisos`, `proposito-agenda`, `proposito-presupuesto`. |
+| `modules/dominio/gastos/index.js` | Import + calls de `renderBannerProposito('gast')`. |
+| `modules/dominio/compromisos/index.js` | Import + calls de `renderBannerProposito('compromisos')`. |
+| `modules/dominio/agenda/index.js` | Import + calls de `renderBannerProposito('agenda')`. |
+| `modules/dominio/presupuesto/index.js` | Import + calls de `renderBannerProposito('presupuesto')`. |
+| `styles/components/domain.css` | Variantes de color para gast, compromisos y presupuesto (expandido + colapsado). |
+| `service-worker.js` | v228 → v229. |
+
+---
 
 ### feat(proposito): piloto del banner de propósito en Apartados (EP.1) · 2026-06-30
 
@@ -91,16 +108,6 @@ Implementa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md). El e
 | `tests/unit/compromisos.test.js` | Catálogo 12 → 7; valores `Gota a gota` → `Libre inversión` en 2 tests. |
 | `tests/unit/storage.test.js` | Describe nuevo "Migración v18 → v19" (4 tests). |
 | `service-worker.js` | v225 → v226. |
-
----
-
-### docs(deudas): ADR 015 - categorías de deuda en dos dimensiones (D.5) · 2026-06-29
-
-Tarea de **diseño** (sin código de producción). [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md) resuelve las dos preguntas abiertas del backlog D.5. Decisión con el usuario: el modelo de dos dimensiones ya existe en parte (**quién** = Entidad/Personal, que define la unidad de tasa; **qué** = `categoria`). D.5 refina el eje "qué" y deja "quién" intacto. (1) "Tipo de deuda" **reemplaza** "Tipo de obligación": se cura `CATEGORIAS_DEUDA` de 12 a 7 valores orientados al propósito (Tarjeta de crédito, Libre inversión, Vivienda, Vehículo, Educativo, Compra a cuotas, Otra) + migración v18 → v19. (2) **No** se agrega campo "Acreedor": el usuario lo encontró confuso (jerga) y Entidad/Personal ya separa el "quién"; los acreedores granulares siguen como texto de ayuda en el chooser. Un solo slice de implementación: **D.5a** (Opus 4.8 - Medio). El usuario revisa la lista curada + el mapeo de migración antes de codear.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/015-categorias-de-deuda-dos-dimensiones.md` | ADR nuevo: dos dimensiones (quién/qué), no agregar Acreedor, lista curada + mapeo de migración v18→v19, slice D.5a, alternativas y consecuencias. |
 
 ---
 

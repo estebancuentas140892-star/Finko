@@ -1301,8 +1301,11 @@ button.chip:focus-visible {
   margin-bottom: var(--fk-space-4);
 }
 
-/* Color de acento por sección (agregar en EP.2-EP.4 para cada sección nueva). */
-.banner-proposito[data-seccion="apartados"] { border-left-color: var(--fk-dom-ahorro); }
+/* Color de acento por sección. */
+.banner-proposito[data-seccion="apartados"]   { border-left-color: var(--fk-dom-ahorro); }
+.banner-proposito[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
+.banner-proposito[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }
+.banner-proposito[data-seccion="presupuesto"] { border-left-color: var(--fk-dom-presupuesto); }
 
 .banner-proposito__texto {
   font-size: var(--fk-text-sm);
@@ -1345,7 +1348,8 @@ button.chip:focus-visible {
   margin-bottom: var(--fk-space-3);
 }
 
-.banner-proposito--colapsado[data-seccion="apartados"] {
-  border-left-color: var(--fk-dom-ahorro);
-}
+.banner-proposito--colapsado[data-seccion="apartados"]   { border-left-color: var(--fk-dom-ahorro); }
+.banner-proposito--colapsado[data-seccion="gast"]        { border-left-color: var(--fk-dom-gastos); }
+.banner-proposito--colapsado[data-seccion="compromisos"] { border-left-color: var(--fk-dom-compromisos); }
+.banner-proposito--colapsado[data-seccion="presupuesto"] { border-left-color: var(--fk-dom-presupuesto); }
 
