@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.1** curar `CATEGORIAS_AGENDA` (Mercado + Suscripciones). Antes: ADR 014 taxonomía de categorías transversal. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.2** curar `PLANTILLAS_APARTADO` (Cumpleaños + Navidad). Antes: TX.1 curar `CATEGORIAS_AGENDA`. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -178,7 +178,7 @@ Observaciones del usuario sobre la sección Agenda y, a partir de ahí, una prop
 
 Slices de implementación de ADR 014 (smallest-first, a confirmar la curación):
 ✅ **TX.1** - `CATEGORIAS_AGENDA` curada: Mercado 🛒 (caso canónico de contexto, emoji consistente con Gastos) y Suscripciones 🔔 (bucket más amplio que Streaming). Longitud 13 → 15. 1607/1607 verdes. SW v220 → v221 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
-- **TX.2** - Curar `PLANTILLAS_APARTADO`: agregar Cumpleaños 🎂 y Navidad 🎄. Tests. Modelo: Sonnet 4.6 - Bajo.
+✅ **TX.2** - `PLANTILLAS_APARTADO` curada: Cumpleaños 🎂 y Navidad 🎄 (después de "Regalos", antes de "Vacaciones"). 15 → 17 plantillas. 1607/1607 verdes. SW v221 → v222 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - **TX.3 (opcional)** - Gastos: agregar Café ☕ y Gastos hormiga 🐜 si el usuario los quiere explícitos. Modelo: Sonnet 4.6 - Bajo.
 - **TX.4** - Guardarraíl de consistencia: test que verifica que las etiquetas compartidas entre catálogos usan el mismo emoji. Modelo: Sonnet 4.6 - Bajo.
 - **TX.5** - Helper puro de mapeo sección → grupo (Necesidades / Estilo de vida / Ahorro), reutilizable por MC.5 y MC.6. Modelo: Sonnet 4.6 - Medio.

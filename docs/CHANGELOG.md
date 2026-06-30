@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(apartados): curar PLANTILLAS_APARTADO - Cumpleaños y Navidad (TX.2) · 2026-06-29
+
+Segundo slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Cumpleaños** 🎂 y **Navidad** 🎄 a `PLANTILLAS_APARTADO`. Antes solo existía "Regalos" (genérico); estas dos son gastos previsibles de fecha fija que merecen plantilla propia para que el usuario empiece a apartar con anticipación. Se insertan después de "Regalos" (mismo grupo de eventos/celebraciones), antes de "Vacaciones". 15 → 17 plantillas. Test de longitud actualizado. 1607/1607 verdes. SW v221 → v222.
+
+- **`modules/dominio/apartados/logic.js`**: `PLANTILLAS_APARTADO` (+Cumpleaños, +Navidad).
+- **`tests/unit/apartados.test.js`**: longitud 15 → 17.
+- **`service-worker.js`**: v221 → v222.
+
+---
+
 ### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
 
 Primer slice de implementación de [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan dos categorías a `CATEGORIAS_AGENDA` (gastos fijos recurrentes de la sección Agenda):

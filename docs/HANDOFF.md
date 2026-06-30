@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(agenda): TX.1 - Mercado + Suscripciones en CATEGORIAS_AGENDA)
+> Última actualización: 2026-06-29 (feat(apartados): TX.2 - Cumpleaños + Navidad en PLANTILLAS_APARTADO)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(apartados): curar PLANTILLAS_APARTADO - Cumpleaños y Navidad (TX.2) · 2026-06-29
+
+Segundo slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Cumpleaños** 🎂 y **Navidad** 🎄 a `PLANTILLAS_APARTADO` (hoy solo existía "Regalos"). Insertas después de "Regalos", antes de "Vacaciones". 15 → 17 plantillas. 1607/1607 verdes. SW v221 → v222.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` (+Cumpleaños 🎂, +Navidad 🎄). |
+| `tests/unit/apartados.test.js` | Longitud 15 → 17. |
+| `service-worker.js` | v221 → v222. |
+
+---
+
 ### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
 
 Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Mercado** 🛒 y **Suscripciones** 🔔 al catálogo de categorías de la sección Agenda. Mercado es el caso canónico del ADR (en Agenda = compra mensual planeada; en Gastos = compra imprevista suelta). Emoji de Mercado consistente con el de la sección Gastos (guardarraíl de consistencia del ADR). Longitud 13 → 15. Tests verdes automáticamente (los existentes iteran sobre el catálogo). 1607/1607 verdes. SW v220 → v221.
@@ -48,16 +60,6 @@ Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias
 | `modules/core/constants.js` | `CATEGORIAS_AGENDA` (+Mercado, +Suscripciones) y `CATEGORIA_AGENDA_EMOJI` (+2). |
 | `tests/unit/compromisos.test.js` | Longitud 13 → 15. |
 | `service-worker.js` | v220 → v221. |
-
----
-
-### docs(categorias): ADR 014 taxonomía de categorías transversal (AG.3 = AP.5) · 2026-06-29
-
-Tarea de diseño (sin código). Se escribió [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md), que **unifica AG.3 y AP.5**. Decisión central: **la sección define la intención y la categoría la refina**; el significado de un movimiento es el par **(sección, categoría)**, no la categoría sola. Cada sección responde una pregunta distinta (Agenda = pago periódico en fecha; Gastos = consumo variable; Apartados = gasto previsible futuro; Deudas = obligación con terceros; Metas = ahorro con propósito). Una misma categoría puede vivir en varias secciones y la sección la desambigua (caso canónico: Mercado). Consistencia mismo concepto ⇒ misma etiqueta/emoji. Las funciones transversales (límites MC.5, distribución MC.6, análisis) leen (sección, categoría) y mapean a los 3 grupos por sección. Sin schema. Implementación futura en slices TX.1-TX.5 (curar Agenda/Apartados, guardarraíl de consistencia, helper de mapeo sección → grupo), a confirmar con el usuario.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/014-taxonomia-categorias-transversal.md` | ADR nuevo (absorbe AG.3 + AP.5). |
 
 ---
 
