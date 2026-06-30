@@ -27,6 +27,7 @@ import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
   renderNudgeApartadosProximos,
 } from './view.js';
+import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HANDLERS: CREAR / ELIMINAR ───────────────────────────────────
 
@@ -330,10 +331,12 @@ export function initApartados() {
 
   // Re-render al navegar a #apartados (no hay state:change que lo dispare).
   window.addEventListener('hashchange', () => {
+    renderBannerProposito('apartados');
     renderSmart(renderListaApartados, 'apartados');
     renderNudgeApartadosProximos();
   });
 
+  renderBannerProposito('apartados');
   renderSmart(renderListaApartados, 'apartados');
   renderNudgeApartadosProximos();
 }

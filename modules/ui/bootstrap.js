@@ -35,11 +35,13 @@ import { initImport } from '../dominio/import/index.js';
 import { initLogros } from '../dominio/logros/index.js';
 import { initMenuMas } from './menu-mas.js';
 import { initInstallPrompt } from './install-prompt.js';
+import { initBannersProposito } from './proposito.js';
 
 loadData();
 initAcciones();
 
 // Dominios: registran sus acciones antes de que el usuario pueda interactuar.
+initBannersProposito();
 initTesoreria();
 initGastos();
 initMetas();

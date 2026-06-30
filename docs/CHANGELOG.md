@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(proposito): piloto del banner de propósito en Apartados (EP.1) · 2026-06-30
+
+Implementa el patrón definido en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Piloto de la épica EP: el banner se aplica a la sección Apartados. El helper `modules/ui/proposito.js` es reutilizable (cada slice EP.2-EP.4 solo agrega copy al mapa y un slot en `index.html`). 9 unit tests de `htmlBannerProposito`. 1649 → 1658 verdes. SW v227 → v228.
+
+- **`modules/ui/proposito.js`**: nuevo helper - `PROPOSITOS_SECCION`, `htmlBannerProposito` (pura), `renderBannerProposito`, `initBannersProposito`, `reactivarPropositos`.
+- **`index.html`**: `<div id="proposito-apartados">` en `#sec-apartados`, entre el header y `#apartados-nudge-proximos`.
+- **`modules/dominio/apartados/index.js`**: import + call de `renderBannerProposito('apartados')` en init y hashchange.
+- **`modules/dominio/config/view.js`**: `_renderPropositos()` - sección "Mensajes de ayuda" en Ajustes, con botón "Mostrar todos" cuando hay banners colapsados.
+- **`modules/dominio/config/index.js`**: import de `reactivarPropositos` + registro de `reactivar-propositos`.
+- **`modules/ui/bootstrap.js`**: import + call de `initBannersProposito()` antes de `initTesoreria`.
+- **`styles/components/domain.css`**: `.banner-proposito`, `.banner-proposito--colapsado`, variante por sección (`[data-seccion="apartados"]`).
+- **`tests/unit/proposito.test.js`**: 9 unit tests (expandido, colapsado, sección desconocida, edge cases de config).
+- **`service-worker.js`**: `proposito.js` en `CORE_ASSETS`; v227 → v228.
+
+---
+
 ### docs(propósito): ADR 016 - banner de propósito de sección (EP.0) · 2026-06-30
 
 Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra EP.0: define el patrón único reutilizable de la épica "explicar el propósito de cada sección". [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md).

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (docs(propósito): EP.0 - ADR 016 del banner de propósito de sección)
+> Última actualización: 2026-06-30 (feat(proposito): EP.1 - piloto del banner de propósito en Apartados)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1649/1649 verdes |
+| Tests unitarios + integración | 1658/1658 verdes |
 | Tests E2E | 64/64 verde. Suites: `smoke` 28 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(proposito): piloto del banner de propósito en Apartados (EP.1) · 2026-06-30
+
+Implementa el patrón definido en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). Crea el helper reutilizable `modules/ui/proposito.js` con: `PROPOSITOS_SECCION` (mapa de copy; Apartados en este slice), `htmlBannerProposito(seccion, config)` (función pura: devuelve HTML expandido o colapsado según `S.config.propositoColapsado[seccion]`), `renderBannerProposito(seccion)` (inyecta en `#proposito-{seccion}`), `initBannersProposito()` (registra `colapsar-proposito` y `expandir-proposito`) y `reactivarPropositos()` (restablece todos los banners desde Ajustes). En Apartados: el banner aparece arriba de los nudges con el copy aprobado en EP.0; pulsar "Entendido, ocultar" lo colapsa a una sola línea re-abrible con el título de la sección. La preferencia se persiste en `S.config.propositoColapsado` sin migración (lectura defensiva). Ajustes suma una sección "Mensajes de ayuda" con botón "Mostrar todos los mensajes de ayuda" que solo aparece si al menos un banner está colapsado. 9 unit tests nuevos. 1649 → 1658 verdes. SW v227 → v228.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/proposito.js` | Nuevo: `PROPOSITOS_SECCION`, `htmlBannerProposito` (pura), `renderBannerProposito`, `initBannersProposito`, `reactivarPropositos`. |
+| `index.html` | `<div id="proposito-apartados">` en `#sec-apartados`, entre el header y `#apartados-nudge-proximos`. |
+| `modules/dominio/apartados/index.js` | Import + call de `renderBannerProposito('apartados')` en init y hashchange. |
+| `modules/dominio/config/view.js` | `_renderPropositos()`: sección "Mensajes de ayuda" en el panel de Ajustes. |
+| `modules/dominio/config/index.js` | Import de `reactivarPropositos` + registro de `reactivar-propositos`. |
+| `modules/ui/bootstrap.js` | Import + call de `initBannersProposito()` antes de `initTesoreria`. |
+| `styles/components/domain.css` | `.banner-proposito` + `.banner-proposito--colapsado` + variante de color por sección. |
+| `tests/unit/proposito.test.js` | 9 unit tests de `htmlBannerProposito` (expandido, colapsado, sección desconocida, edge cases). |
+| `service-worker.js` | `proposito.js` en `CORE_ASSETS`; v227 → v228. |
+
+---
 
 ### docs(propósito): ADR 016 - banner de propósito de sección (EP.0) · 2026-06-30
 
@@ -83,24 +101,6 @@ Tarea de **diseño** (sin código de producción). [ADR 015](DECISIONS/015-categ
 | Archivo | Cambio |
 |---|---|
 | `docs/DECISIONS/015-categorias-de-deuda-dos-dimensiones.md` | ADR nuevo: dos dimensiones (quién/qué), no agregar Acreedor, lista curada + mapeo de migración v18→v19, slice D.5a, alternativas y consecuencias. |
-
----
-
-### feat(deudas): "Aumentar la cuota" como acción aplicable real (D.9, ADR 011 rev. D.7) · 2026-06-29
-
-Cierra la jornada 2 de "Visión de Deudas". El pago extra de "Aumentar la cuota" deja de ser solo what-if: ahora se puede **Aplicar**. Nueva función pura `repartirExtraEnCuotas(deudas, extra)` que traduce el extra (un monto que la simulación vuelca dinámicamente) a incrementos concretos de `cuotaMensual` por deuda, con el criterio decidido en la Revisión D.7: **automático, sin preguntar a qué deuda** (1) cubre el déficit de las que más rápido crecen para frenar el crecimiento, (2) el remanente a la deuda de mayor tasa (Avalancha). El botón "Aplicar este aumento" pide confirmación que nombra cada deuda y su nueva cuota, y escribe `cuotaMensual` vía EventBus. Ese valor alimenta los pagos programados (`calcularCompromisoMensual`) y la distribución automática (`cuotasDeudaMensuales` en MC.6a) sin lógica nueva. El input usa su propia acción (`cambiar-extra-remedio`) que commitea en vivo sin re-render, para no perder el clic en "Aplicar". 8 unit nuevos (`repartirExtraEnCuotas` + estado del botón) + 1 E2E nuevo. 1637 → 1645 verdes; 63 → 64 E2E. SW v224 → v225.
-
-**Limitación v1 (documentada en el ADR):** `cuotaMensual` es estático; no replica el volcado dinámico. Si una deuda cierra, su cuota liberada no se reasigna sola: el usuario re-aplica.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `repartirExtraEnCuotas` (función pura nueva: cubre déficits + remanente a la mayor tasa). |
-| `modules/dominio/compromisos/views/estrategia.js` | `_renderRemedioExtra` suma el botón "Aplicar este aumento"; el input usa `cambiar-extra-remedio`. |
-| `modules/dominio/compromisos/index.js` | `_aplicarAumentoCuota` (confirmación + escribe `cuotaMensual`), `_actualizarRemedioExtraEnVivo`; `_actualizarResumenEnVivo` togglea el botón; registro + cableado del input. |
-| `styles/components/charts.css` | `.estrategia-card__aumentar-aplicar`. |
-| `tests/unit/compromisos.test.js` | Describe `repartirExtraEnCuotas` (6) + 2 tests del estado del botón. |
-| `tests/e2e/estrategia-pago.test.js` | Suite "Aumentar la cuota (D.9)" (1 test de aplicar). |
-| `service-worker.js` | v224 → v225. |
 
 ---
 

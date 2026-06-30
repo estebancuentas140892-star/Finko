@@ -1287,3 +1287,65 @@ button.chip:focus-visible {
   background: color-mix(in srgb, var(--fk-success) 15%, transparent);
 }
 
+/* ════════════════════════════════════════════════════════════
+   BANNER-PROPOSITO - mensaje de propósito de sección.
+   Patrón disclosure colapsable (ADR 016, épica EP).
+   ════════════════════════════════════════════════════════════ */
+
+.banner-proposito {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-default);
+  border-left: 3px solid var(--fk-accent);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  margin-bottom: var(--fk-space-4);
+}
+
+/* Color de acento por sección (agregar en EP.2-EP.4 para cada sección nueva). */
+.banner-proposito[data-seccion="apartados"] { border-left-color: var(--fk-dom-ahorro); }
+
+.banner-proposito__texto {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0 0 var(--fk-space-2) 0;
+}
+
+.banner-proposito__toggle {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.banner-proposito__toggle:hover {
+  color: var(--fk-text-secondary);
+}
+
+.banner-proposito__toggle:focus-visible {
+  outline: 2px solid var(--fk-accent);
+  outline-offset: 2px;
+  border-radius: var(--fk-radius-sm);
+}
+
+/* Estado colapsado: solo una línea re-abrible. */
+.banner-proposito--colapsado {
+  background: transparent;
+  border: none;
+  border-left: 3px solid var(--fk-border-default);
+  border-radius: 0;
+  padding: 0 var(--fk-space-3);
+  margin-bottom: var(--fk-space-3);
+}
+
+.banner-proposito--colapsado[data-seccion="apartados"] {
+  border-left-color: var(--fk-dom-ahorro);
+}
+

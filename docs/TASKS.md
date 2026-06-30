@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-29
+> Última actualización: 2026-06-30
 
 ---
 
 ## Estado actual
 
-**App estable, 1649/1649 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **EP.0** (diseño) [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) del banner de propósito de sección. Antes: **MC.6b** barra de presets Automático + Personalizar + grupo "Métodos clásicos" (SW v227). **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1658/1658 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **EP.1** piloto del banner de propósito en Apartados (SW v228). Antes: **EP.0** (diseño) [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -45,7 +45,7 @@ _(sin tarea activa)_
 
 **✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica.
 
-**✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** **MC.6b y EP.0 cerrados (2026-06-30).** Siguiente sugerido: **EP.1** (piloto del banner de propósito: helper + persistencia + Apartados, Sonnet 4.6 - Medio), **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo), o **MC.6c** (señales más ricas para la distribución, opcional).
+**✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** **MC.6b, EP.0 y EP.1 cerrados (2026-06-30).** Siguiente sugerido: **EP.2** (copy + slot para Gastos, Deudas, Agenda, Límites de gasto; reutiliza helper EP.1, Sonnet 4.6 - Bajo), **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo), o **MC.6c** (señales más ricas para la distribución, opcional).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 

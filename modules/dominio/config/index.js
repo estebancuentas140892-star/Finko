@@ -17,6 +17,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
 import { gastosACSV } from '../export/logic.js';
+import { reactivarPropositos } from '../../ui/proposito.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -207,6 +208,7 @@ export function initConfig() {
   registrarAccion('resetear-app',           _resetearApp);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
+  registrarAccion('reactivar-propositos',   () => { reactivarPropositos(); renderPanelConfig(); });
 
   // El panel se inyecta la primera vez que la sección está activa.
   renderSmart(_inyectarPanel, 'config');

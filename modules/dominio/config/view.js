@@ -26,6 +26,7 @@ export function renderPanelConfig() {
     ${_renderTema()}
     ${_renderInstalarApp()}
     ${_renderNotificaciones()}
+    ${_renderPropositos()}
     ${_renderDatos()}
     ${_renderAcercaDe()}
   `;
@@ -275,6 +276,25 @@ function _renderDatosRenta() {
         </div>
         <button type="submit" class="btn btn-primary">Guardar datos de renta</button>
       </form>
+    </section>`;
+}
+
+function _renderPropositos() {
+  const colapsado = S.config?.propositoColapsado ?? {};
+  const hayColapsados = Object.values(colapsado).some(v => v === true);
+  return `
+    <section class="config-section" aria-labelledby="config-propositos-title">
+      <h2 class="config-section__title" id="config-propositos-title">💬 Mensajes de ayuda</h2>
+      <p class="config-section__desc">
+        En cada sección hay un mensaje que explica para qué sirve y cómo usarla.
+        Puedes ocultarlo cuando quieras y reabrirlo en cualquier momento.
+      </p>
+      ${hayColapsados
+        ? `<button class="btn btn-secondary" data-action="reactivar-propositos">
+             Mostrar todos los mensajes de ayuda
+           </button>`
+        : `<p class="form-hint">Todos los mensajes están visibles.</p>`
+      }
     </section>`;
 }
 
