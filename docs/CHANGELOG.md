@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(deudas): panel de alternativas con selector (D.8, ADR 011 rev. D.7) · 2026-06-29
+
+Implementa la jerarquía diseñada en la [Revisión D.7 de ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). El bloque inviable de la card de estrategia dejaba de verse limpio: diagnóstico + pago extra + renegociar + consolidar, los tres a la vez.
+
+**Estructura nueva** (debajo del detalle de la estrategia elegida, mismo lugar que el acelerador en un plan viable):
+
+1. **Botón único de alerta**, cerrado por defecto: 🚨 *Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo*.
+2. Al activarlo, **panel** con el diagnóstico (qué deudas crecen, extra mínimo) + un **selector** de 3 alternativas (💪 Aumentar la cuota · 🤝 Renegociar la tasa · 🏦 Consolidar) que muestra **solo la elegida**, nunca las tres. Default: "Aumentar la cuota". El selector omite alternativas que no aplican (renegociar exige tasa > 0; consolidar exige >= 2 deudas).
+
+`renderRenegociar` (D.3a) y `renderConsolidar` (D.3b) se reubican dentro del selector sin tocar su lógica ni sus tests de simulación/aplicar. Estado del panel en el singleton `_uiEstrategia` (`panelAlternativasAbierto`, `alternativaActiva`), no `<details>`: la card se re-renderiza por cada tecla y un `<details>` perdería su `open`. 2 data-actions nuevos (`abrir-panel-alternativas`, `elegir-alternativa`).
+
+8 tests unitarios reescritos/nuevos en el describe del bloque inviable (botón cerrado por defecto, apertura del panel, default "aumentar", selector intercambia una alternativa a la vez). 2 suites E2E actualizadas (renegociar y consolidar ahora pasan primero por el botón + selector) + 1 suite E2E nueva ("Panel de alternativas") con 2 tests. 1633 → 1637 verdes; 61 → 63 E2E. SW v223 → v224.
+
+- **`modules/dominio/compromisos/views/estrategia.js`**: `_renderDiagnosticoInviable` reemplazada por `_renderBloqueInviable` + `_renderBotonAlerta` + `_renderPanelAlternativas` + `_renderContenidoAlternativa` + `_renderRemedioExtra` + `_renderDiagnosticoTexto`; el bloque inviable se mueve debajo de `_renderDetalleEstrategia` (antes vivía arriba del picker). Estado UI `panelAlternativasAbierto` + `alternativaActiva` en `_uiEstrategia` y `setEstrategiaUI`.
+- **`modules/dominio/compromisos/index.js`**: `_abrirPanelAlternativas` (alterna el panel) + `_elegirAlternativa` (cambia la alternativa visible); registradas como `abrir-panel-alternativas` y `elegir-alternativa`. Importa `getEstrategiaUI`.
+- **`styles/components/charts.css`**: `.estrategia-card__alerta-boton(-chevron)`, `.estrategia-card__selector(-opcion)(--activa)`, `.estrategia-card__diagnostico`; `.estrategia-card__alerta` ahora se renderiza solo con el panel abierto (antes era siempre visible en plan inviable).
+- **`tests/unit/compromisos.test.js`**: describe `renderEstrategiaPago D.8 plan inviable` reescrito (8 tests); `beforeEach` de los describes de renegociar/consolidar abren el panel y seleccionan su alternativa antes de renderizar.
+- **`tests/e2e/estrategia-pago.test.js`**: helper `abrirAlternativa(page, id)`; suite nueva "Panel de alternativas del plan inviable (D.8)" (2 tests); suites de renegociar/consolidar actualizadas para pasar por el botón + selector.
+- **`service-worker.js`**: v223 → v224.
+
+---
+
 ### docs(deudas): revisión D.7 de ADR 011 - botón único → panel con selector para el plan inviable (D.7) · 2026-06-29
 
 Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra la pregunta de jerarquía que la jornada 2 de "Visión de Deudas" dejó abierta para el bloque inviable de la card de estrategia.

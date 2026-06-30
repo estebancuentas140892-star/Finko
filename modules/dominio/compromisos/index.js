@@ -26,6 +26,7 @@ import {
   renderFormAbono,
   renderEstrategiaPago,
   setEstrategiaUI,
+  getEstrategiaUI,
   renderAlertaDeudasDurmiendo,
   renderPanelVencidos,
   renderPanelPrioridades,
@@ -402,6 +403,23 @@ function _actualizarResumenEnVivo(el) {
   if (nuevo) resumen.replaceWith(nuevo);
 }
 
+// ── HANDLERS PANEL DE ALTERNATIVAS (D.8) ─────────────────────────
+
+/** Alterna el panel de alternativas del bloque inviable (botón único). */
+function _abrirPanelAlternativas() {
+  const { panelAlternativasAbierto } = getEstrategiaUI();
+  setEstrategiaUI({ panelAlternativasAbierto: !panelAlternativasAbierto });
+  renderEstrategiaPago();
+}
+
+/** Cambia la alternativa visible en el selector (una a la vez). */
+function _elegirAlternativa(el) {
+  const alternativa = el.dataset.alternativa;
+  if (alternativa !== 'aumentar' && alternativa !== 'renegociar' && alternativa !== 'consolidar') return;
+  setEstrategiaUI({ alternativaActiva: alternativa });
+  renderEstrategiaPago();
+}
+
 // ── HANDLERS RENEGOCIAR TASA (D.3a) ──────────────────────────────
 
 /** Cambia la deuda elegida en la herramienta de renegociar; resetea la tasa
@@ -563,6 +581,8 @@ export function initCompromisos() {
   registrarAccion('abrir-abono',             _abrirAbono);
   registrarAccion('archivar-compromiso',     _archivarCompromiso);
   registrarAccion('elegir-estrategia',       _elegirEstrategia);
+  registrarAccion('abrir-panel-alternativas', _abrirPanelAlternativas);
+  registrarAccion('elegir-alternativa',      _elegirAlternativa);
   registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);

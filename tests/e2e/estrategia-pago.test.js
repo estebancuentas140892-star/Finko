@@ -269,7 +269,7 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
 /**
  * Inyecta un plan inviable: una deuda grande cuya cuota no cubre el interés
  * (crece mes a mes) más una chica. Ninguna estrategia cierra el plan, así que
- * aparece el bloque "Tu plan no se sostiene" con la herramienta de renegociar.
+ * aparece el botón único de alerta (D.7/D.8) que abre el panel de alternativas.
  */
 async function inyectarPlanInviable(page) {
   await page.addInitScript(() => {
@@ -300,15 +300,60 @@ async function inyectarPlanInviable(page) {
   });
 }
 
-test.describe('Renegociar la tasa (D.3a)', () => {
+/** Activa el botón de alerta y elige una alternativa en el selector (D.8). */
+async function abrirAlternativa(page, alternativa) {
+  await page.locator('[data-action="abrir-panel-alternativas"]').click();
+  await page.waitForSelector('.estrategia-card__selector', { timeout: 3_000 });
+  if (alternativa !== 'aumentar') {
+    await page.locator(`[data-action="elegir-alternativa"][data-alternativa="${alternativa}"]`).click();
+  }
+}
 
-  test('la herramienta aparece en el bloque inviable y compara en vivo', async ({ page }) => {
+// ── SUITE: Panel de alternativas (D.8) ────────────────────────────────────────
+
+test.describe('Panel de alternativas del plan inviable (D.8)', () => {
+
+  test('el plan inviable muestra un botón único; el panel está cerrado por defecto', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
+
+    const boton = page.locator('[data-action="abrir-panel-alternativas"]');
+    await expect(boton).toBeVisible({ timeout: 5_000 });
+    await expect(boton).toHaveAttribute('aria-expanded', 'false');
+
+    // Ningún remedio se muestra a la vez mientras el panel está cerrado.
+    await expect(page.locator('.estrategia-card__remedio')).toHaveCount(0);
+    await expect(page.locator('.estrategia-card__selector')).toHaveCount(0);
+  });
+
+  test('activar el botón abre el panel con "Aumentar la cuota" por defecto', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+
+    await abrirAlternativa(page, 'aumentar');
+
+    await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.estrategia-card__selector-opcion')).toHaveCount(3);
+    await expect(page.locator('#estrategia-extra')).toBeVisible();
+    // Las otras dos alternativas no se muestran a la vez.
+    await expect(page.locator('.estrategia-card__remedio--renegociar')).toHaveCount(0);
+    await expect(page.locator('.estrategia-card__remedio--consolidar')).toHaveCount(0);
+  });
+
+});
+
+test.describe('Renegociar la tasa (D.3a) dentro del panel de alternativas (D.8)', () => {
+
+  test('la herramienta aparece al elegirla en el selector y compara en vivo', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+    await abrirAlternativa(page, 'renegociar');
 
     const tool = page.locator('.estrategia-card__remedio--renegociar');
     await expect(tool).toBeVisible({ timeout: 5_000 });
     await expect(tool).toContainText('Renegociar la tasa');
+    // El remedio "Aumentar la cuota" no se muestra a la vez.
+    await expect(page.locator('#estrategia-extra')).toHaveCount(0);
 
     // Sin tasa nueva, el botón Aplicar está deshabilitado.
     const aplicar = page.locator('[data-action="aplicar-renegociacion"]');
@@ -324,6 +369,7 @@ test.describe('Renegociar la tasa (D.3a)', () => {
   test('aplicar la nueva tasa la escribe en la deuda y vuelve viable el plan', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
+    await abrirAlternativa(page, 'renegociar');
 
     // Una tasa muy baja vuelve pagable la deuda grande → todo el plan viable.
     await page.locator('#renegociar-tasa').fill('1');
@@ -334,8 +380,8 @@ test.describe('Renegociar la tasa (D.3a)', () => {
     // Confirmar en el modal de confirmación.
     await page.locator('[data-role="confirmar"]').click();
 
-    // El plan ya no es inviable: el bloque de alerta desaparece.
-    await expect(page.locator('.estrategia-card__alerta')).toHaveCount(0, { timeout: 3_000 });
+    // El plan ya no es inviable: el botón de alerta y el panel desaparecen.
+    await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toHaveCount(0, { timeout: 3_000 });
 
     // Y la deuda quedó con la nueva tasa (0.01 EA) en localStorage. save() está
     // debounced 200ms, así que se hace polling hasta que el escritura aterrice.
@@ -350,15 +396,18 @@ test.describe('Renegociar la tasa (D.3a)', () => {
 
 // ── SUITE: Consolidar deudas (D.3b) ───────────────────────────────────────────
 
-test.describe('Consolidar deudas (D.3b)', () => {
+test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)', () => {
 
-  test('la herramienta aparece y compara en vivo', async ({ page }) => {
+  test('la herramienta aparece al elegirla en el selector y compara en vivo', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
+    await abrirAlternativa(page, 'consolidar');
 
     const tool = page.locator('.estrategia-card__remedio--consolidar');
     await expect(tool).toBeVisible({ timeout: 5_000 });
     await expect(tool).toContainText('Consolidar tus deudas');
+    // El remedio "Aumentar la cuota" no se muestra a la vez.
+    await expect(page.locator('#estrategia-extra')).toHaveCount(0);
 
     const aplicar = page.locator('[data-action="aplicar-consolidacion"]');
     await expect(aplicar).toBeDisabled();
@@ -373,6 +422,7 @@ test.describe('Consolidar deudas (D.3b)', () => {
   test('consolidar crea el crédito nuevo y archiva las deudas previas', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
+    await abrirAlternativa(page, 'consolidar');
 
     await page.locator('#consolidar-tasa').fill('8');
     await page.locator('#consolidar-cuota').fill('400000');

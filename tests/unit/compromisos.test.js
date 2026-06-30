@@ -2176,12 +2176,12 @@ describe('renderEstrategiaPago jerarquía D.2a', () => {
   });
 });
 
-// ── renderEstrategiaPago: D.2b (plan inviable: extra como remedio, no acelerador) ──
+// ── renderEstrategiaPago: D.8 (plan inviable: botón único → panel con selector) ──
 
-describe('renderEstrategiaPago D.2b plan inviable', () => {
+describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="estrategia-pago"></div>';
-    setEstrategiaUI({ extraMensual: 0 });
+    setEstrategiaUI({ extraMensual: 0, panelAlternativasAbierto: false, alternativaActiva: 'aumentar' });
     S.compromisos = [
       deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
       deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
@@ -2194,27 +2194,73 @@ describe('renderEstrategiaPago D.2b plan inviable', () => {
     expect(acelerador).toBeNull();
   });
 
-  it('el input de extra vive dentro del bloque de remedio', () => {
+  it('con el panel cerrado, solo se ve el botón de alerta (sin remedios abiertos)', () => {
+    renderEstrategiaPago();
+    const boton = document.querySelector('.estrategia-card__alerta-boton');
+    expect(boton).not.toBeNull();
+    expect(boton.getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelector('.estrategia-card__alerta')).toBeNull();
+    expect(document.querySelector('.estrategia-card__remedio')).toBeNull();
+  });
+
+  it('activar el botón abre el panel con el diagnóstico y el selector', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true });
+    renderEstrategiaPago();
+    const boton = document.querySelector('.estrategia-card__alerta-boton');
+    expect(boton.getAttribute('aria-expanded')).toBe('true');
+    const panel = document.querySelector('.estrategia-card__alerta');
+    expect(panel).not.toBeNull();
+    expect(panel.textContent).toContain('Por qué tu plan no se sostiene');
+    const selector = panel.querySelector('.estrategia-card__selector');
+    expect(selector).not.toBeNull();
+    expect(selector.querySelectorAll('.estrategia-card__selector-opcion').length).toBe(3);
+  });
+
+  it('por defecto, la alternativa activa es "Aumentar la cuota"', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
     const remedio = document.querySelector('.estrategia-card__remedio');
     expect(remedio).not.toBeNull();
     const input = remedio.querySelector('#estrategia-extra');
     expect(input).not.toBeNull();
+    expect(remedio.textContent).toContain('Aumenta tu cuota');
+    // Las otras dos alternativas no se muestran a la vez.
+    expect(document.querySelector('.estrategia-card__remedio--renegociar')).toBeNull();
+    expect(document.querySelector('.estrategia-card__remedio--consolidar')).toBeNull();
   });
 
-  it('el remedio está dentro del bloque de alerta (diagnóstico inviable)', () => {
+  it('el remedio de aumentar cuota está dentro del panel de alternativas', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
-    const alerta = document.querySelector('.estrategia-card__alerta');
-    const remedio = alerta.querySelector('.estrategia-card__remedio');
+    const panel = document.querySelector('.estrategia-card__alerta');
+    const remedio = panel.querySelector('.estrategia-card__remedio');
     expect(remedio).not.toBeNull();
-    expect(alerta.textContent).toContain('Aumenta tu cuota');
+    expect(panel.textContent).toContain('Aumenta tu cuota');
   });
 
-  it('el resumen de impacto se muestra dentro del remedio', () => {
+  it('el resumen de impacto se muestra dentro del remedio activo', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
     const remedio = document.querySelector('.estrategia-card__remedio');
     const resumen = remedio.querySelector('.estrategia-card__resumen-extra');
     expect(resumen).not.toBeNull();
+  });
+
+  it('elegir "renegociar" en el selector muestra solo esa alternativa', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true, alternativaActiva: 'renegociar' });
+    renderEstrategiaPago();
+    expect(document.querySelector('.estrategia-card__remedio--renegociar')).not.toBeNull();
+    expect(document.querySelector('.estrategia-card__remedio--consolidar')).toBeNull();
+    // El remedio "aumentar" (genérico) tampoco se muestra a la vez.
+    expect(document.querySelector('#estrategia-extra')).toBeNull();
+  });
+
+  it('elegir "consolidar" en el selector muestra solo esa alternativa', () => {
+    setEstrategiaUI({ panelAlternativasAbierto: true, alternativaActiva: 'consolidar' });
+    renderEstrategiaPago();
+    expect(document.querySelector('.estrategia-card__remedio--consolidar')).not.toBeNull();
+    expect(document.querySelector('.estrategia-card__remedio--renegociar')).toBeNull();
+    expect(document.querySelector('#estrategia-extra')).toBeNull();
   });
 });
 
@@ -2316,7 +2362,11 @@ describe('renderComparativaRenegociacion', () => {
 describe('renderRenegociar (D.3a) en el bloque inviable', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="estrategia-pago"></div>';
-    setEstrategiaUI({ extraMensual: 0, renegociarDeudaId: null, renegociarTasaPct: 0 });
+    // D.8: la herramienta vive detrás del panel de alternativas, en "renegociar".
+    setEstrategiaUI({
+      extraMensual: 0, renegociarDeudaId: null, renegociarTasaPct: 0,
+      panelAlternativasAbierto: true, alternativaActiva: 'renegociar',
+    });
     S.compromisos = [
       deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
       deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
@@ -2435,7 +2485,11 @@ describe('renderComparativaConsolidacion', () => {
 describe('renderConsolidar (D.3b) en el bloque inviable', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="estrategia-pago"></div>';
-    setEstrategiaUI({ extraMensual: 0, consolidarTasaPct: 0, consolidarCuota: 0 });
+    // D.8: la herramienta vive detrás del panel de alternativas, en "consolidar".
+    setEstrategiaUI({
+      extraMensual: 0, consolidarTasaPct: 0, consolidarCuota: 0,
+      panelAlternativasAbierto: true, alternativaActiva: 'consolidar',
+    });
     S.compromisos = [
       deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
       deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),

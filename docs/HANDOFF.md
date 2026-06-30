@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (docs(deudas): D.7 - revisión D.7 de ADR 011, botón único → panel con selector para el plan inviable)
+> Última actualización: 2026-06-29 (feat(deudas): D.8 - panel de alternativas con selector, botón único reemplaza los 3 remedios simultáneos)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1607/1607 verdes |
-| Tests E2E | 61/61 verde. Suites: `smoke` 28 tests, `estrategia-pago` 12 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
+| Tests unitarios + integración | 1637/1637 verdes |
+| Tests E2E | 63/63 verde. Suites: `smoke` 28 tests, `estrategia-pago` 14 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(deudas): panel de alternativas con selector (D.8, ADR 011 rev. D.7) · 2026-06-29
+
+Implementa la jerarquía de la Revisión D.7 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md). El bloque inviable deja de mostrar diagnóstico + pago extra + renegociar + consolidar todo a la vez: ahora, debajo del detalle de la estrategia, aparece **un solo botón de alerta** ("🚨 Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo") que abre **un panel** con el diagnóstico y un **selector** de 3 alternativas (💪 Aumentar la cuota · 🤝 Renegociar la tasa · 🏦 Consolidar) que muestra **solo la elegida**. Default: "Aumentar la cuota". El selector solo ofrece las alternativas que aplican (renegociar exige tasa > 0, consolidar exige >= 2 deudas). Estado del panel en `_uiEstrategia` (`panelAlternativasAbierto`, `alternativaActiva`), no `<details>`, porque la card se re-renderiza por cada tecla. `renderRenegociar` y `renderConsolidar` (D.3a/D.3b) se reubican sin tocar su lógica. 2 data-actions nuevos (`abrir-panel-alternativas`, `elegir-alternativa`). 8 tests unitarios nuevos + 2 E2E nuevos (cableado verificado por E2E, no por preview). SW v223 → v224.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/estrategia.js` | `_renderBloqueInviable`, `_renderBotonAlerta`, `_renderPanelAlternativas`, `_renderContenidoAlternativa`, `_renderRemedioExtra`, `_renderDiagnosticoTexto`; reemplazan `_renderDiagnosticoInviable`. Bloque inviable se mueve debajo del detalle. Estado UI `panelAlternativasAbierto` + `alternativaActiva`. |
+| `modules/dominio/compromisos/index.js` | Handlers `_abrirPanelAlternativas`, `_elegirAlternativa` + registro de las 2 acciones nuevas. |
+| `styles/components/charts.css` | `.estrategia-card__alerta-boton`, `.estrategia-card__selector(-opcion)`, `.estrategia-card__diagnostico`; `.estrategia-card__alerta` ahora condicional (solo con el panel abierto). |
+| `tests/unit/compromisos.test.js` | Describe D.8 reescrito (8 tests); `beforeEach` de renegociar/consolidar abren el panel y eligen la alternativa. |
+| `tests/e2e/estrategia-pago.test.js` | Suite "Panel de alternativas (D.8)" (2 tests nuevos) + helper `abrirAlternativa`; suites de renegociar/consolidar actualizadas para pasar por el selector. |
+| `service-worker.js` | v223 → v224. |
+
+---
 
 ### docs(deudas): revisión D.7 de ADR 011 - botón único → panel con selector para el plan inviable (D.7) · 2026-06-29
 
@@ -83,16 +98,6 @@ Cuarto y último slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transver
 |---|---|
 | `modules/core/constants.js` | `GRUPOS_FINANCIEROS`, `LABEL_GRUPO_FINANCIERO`, `GRUPO_POR_SECCION`, `clasificarSeccionEnGrupo`. |
 | `tests/unit/constants.test.js` | 8 tests TX.5 + imports. |
-
----
-
-### test(constants): guardarraíl de consistencia de emojis entre catálogos (TX.4) · 2026-06-29
-
-Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2 tests en `constants.test.js`: el primero verifica que la lista de etiquetas compartidas entre catálogos no está vacía (smoke del guardarraíl); el segundo verifica que toda etiqueta compartida usa el mismo emoji en todos los catálogos donde aparece. Detecta hoy 6 compartidas que pasan: Mercado 🛒, Transporte 🚗, Servicios públicos 💡, Educación 📚, Mascotas 🐾, Arriendo 🏠. Fallará automáticamente ante cualquier desajuste futuro. 1607 → 1609 verdes. Sin SW bump.
-
-| Archivo | Cambio |
-|---|---|
-| `tests/unit/constants.test.js` | 2 tests TX.4 + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`. |
 
 ---
 

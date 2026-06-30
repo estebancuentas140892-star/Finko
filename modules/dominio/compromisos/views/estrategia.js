@@ -1,14 +1,15 @@
 /**
  * compromisos/views/estrategia.js - card de estrategia de pago de deudas (F.4).
  *
- * Jerarquía (Revisión D.2, ADR 011): picker Avalancha/Bola de nieve arriba
+ * Jerarquía (Revisión D.7, ADR 011): picker Avalancha/Bola de nieve arriba
  * (protagonista) → detalle de la estrategia elegida → acelerador plegable
- * "¿Puedes pagar más rápido?" (plan viable) o primer remedio "Aumenta tu
- * cuota" dentro del bloque "Tu plan no se sostiene" (plan inviable).
+ * "¿Puedes pagar más rápido?" (plan viable) o, en plan inviable, un botón
+ * único de alerta que abre un panel con un selector de 3 alternativas
+ * (Aumentar la cuota / Renegociar / Consolidar) que muestra una a la vez.
  *
- * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa).
- * Es un singleton mutable; persiste mientras la pestaña está abierta y vuelve
- * a defaults al recargar.
+ * Aloja el estado UI local `_uiEstrategia` (extra mensual, estrategia activa,
+ * estado del panel de alternativas). Es un singleton mutable; persiste
+ * mientras la pestaña está abierta y vuelve a defaults al recargar.
  *
  * Los renderers de "Tu impacto" (Avalancha, Bola de nieve, comparativa) viven
  * en `estrategia-impacto.js` para mantener este archivo bajo 400 líneas.
@@ -40,6 +41,8 @@ const _uiEstrategia = {
   renegociarTasaPct:  0,     // nueva tasa escrita, en la unidad nativa de la deuda
   consolidarTasaPct:  0,     // tasa EA del crédito de consolidación
   consolidarCuota:    0,     // cuota mensual del crédito de consolidación
+  panelAlternativasAbierto: false,   // D.8: panel de alternativas (plan inviable) abierto/cerrado
+  alternativaActiva:  'aumentar',    // D.8: 'aumentar' | 'renegociar' | 'consolidar'
 };
 
 /**
@@ -67,6 +70,12 @@ export function setEstrategiaUI(patch) {
   if (patch.consolidarCuota !== undefined) {
     const n = Number(patch.consolidarCuota);
     _uiEstrategia.consolidarCuota = Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+  if (patch.panelAlternativasAbierto !== undefined) {
+    _uiEstrategia.panelAlternativasAbierto = !!patch.panelAlternativasAbierto;
+  }
+  if (patch.alternativaActiva === 'aumentar' || patch.alternativaActiva === 'renegociar' || patch.alternativaActiva === 'consolidar') {
+    _uiEstrategia.alternativaActiva = patch.alternativaActiva;
   }
 }
 
@@ -132,7 +141,6 @@ export function renderEstrategiaPago() {
       </header>
 
       ${_renderAvisoTasaDesconocida(deudas)}
-      ${recomendacion.viable ? '' : _renderDiagnosticoInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml, deudas)}
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
@@ -140,26 +148,130 @@ export function renderEstrategiaPago() {
       </div>
 
       ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual, hayTasaPositiva)}
-      ${recomendacion.viable ? _renderAceleradorExtra(extraMensual, resumenExtraHtml) : ''}
+      ${recomendacion.viable
+        ? _renderAceleradorExtra(extraMensual, resumenExtraHtml)
+        : _renderBloqueInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml, deudas)}
     </article>`;
 }
 
 /**
- * Bloque "Tu plan no se sostiene" (D.2b, ADR 011 rev.). Aparece cuando ninguna
- * estrategia logra cerrar el plan con el pago actual. Estructura:
- *   1. Diagnóstico: qué deudas crecen y por qué.
- *   2. Primer remedio: input de pago extra (prominente, no plegable) + resumen
- *      de impacto en vivo. Es la misma superficie que el acelerador de D.2a,
- *      pero aquí el extra no es opcional: es la salida más directa.
- *   3. Otras salidas (texto): renegociar tasa, consolidar (interactivos en D.3).
+ * Bloque inviable (Revisión D.7, ADR 011). Aparece cuando ninguna estrategia
+ * logra cerrar el plan con el pago actual, debajo del detalle de la
+ * estrategia elegida (mismo lugar que el acelerador en un plan viable).
+ *
+ * Mientras está cerrado, se resume en un solo botón de alerta (sin saturar
+ * la card con los 3 remedios a la vez). Al activarlo, despliega un panel con
+ * el diagnóstico y un selector que muestra una alternativa a la vez.
  *
  * @param {{ deudasCrecientes: Array<{ id, descripcion, deficitMensual }>, extraMinimo: number|null }} diagnostico
  * @param {number} extraMensual
  * @param {string} resumenExtraHtml
  * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
  */
-function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml, deudas) {
+function _renderBloqueInviable(diagnostico, extraMensual, resumenExtraHtml, deudas) {
   if (!diagnostico) return '';
+  const abierto = _uiEstrategia.panelAlternativasAbierto;
+  return `
+    ${_renderBotonAlerta(abierto)}
+    ${abierto ? _renderPanelAlternativas(diagnostico, extraMensual, resumenExtraHtml, deudas) : ''}`;
+}
+
+/**
+ * Botón único que resume el estado inviable y alterna el panel de alternativas.
+ * Cambia de copy entre cerrado (alerta + invitación a actuar) y abierto
+ * (encabezado corto, el panel ya explica el detalle).
+ */
+function _renderBotonAlerta(abierto) {
+  const texto = abierto
+    ? 'Tu plan de pago no se sostiene'
+    : 'Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo';
+  return `
+    <button type="button" class="estrategia-card__alerta-boton"
+            data-action="abrir-panel-alternativas"
+            aria-expanded="${abierto ? 'true' : 'false'}"
+            aria-controls="estrategia-panel-alternativas">
+      <span>🚨 ${texto}</span>
+      <span class="estrategia-card__alerta-boton-chevron" aria-hidden="true">${abierto ? '▴' : '▾'}</span>
+    </button>`;
+}
+
+// Las 3 alternativas que ofrece el panel. "aumentar" siempre aplica;
+// "renegociar" exige al menos una deuda con tasa > 0; "consolidar" exige
+// >= 2 deudas pagables (ya garantizado: el bloque inviable solo aparece con
+// >= 2 deudas, pero se valida igual por defensividad y consistencia con
+// el guard propio de `renderConsolidar`).
+const _META_ALTERNATIVAS = [
+  { id: 'aumentar',   icono: '💪', nombre: 'Aumentar la cuota' },
+  { id: 'renegociar', icono: '🤝', nombre: 'Renegociar la tasa' },
+  { id: 'consolidar', icono: '🏦', nombre: 'Consolidar' },
+];
+
+function _alternativasDisponibles(deudas) {
+  const tieneRenegociar = deudas.some(d => d.tasaEA > 0);
+  const tieneConsolidar = deudas.length >= 2;
+  return _META_ALTERNATIVAS.filter(a =>
+    a.id === 'aumentar' ||
+    (a.id === 'renegociar' && tieneRenegociar) ||
+    (a.id === 'consolidar' && tieneConsolidar));
+}
+
+/**
+ * Panel desplegado por el botón de alerta: diagnóstico + selector de
+ * alternativas + el contenido de la alternativa elegida (solo esa).
+ */
+function _renderPanelAlternativas(diagnostico, extraMensual, resumenExtraHtml, deudas) {
+  const disponibles = _alternativasDisponibles(deudas);
+  const activa = disponibles.some(a => a.id === _uiEstrategia.alternativaActiva)
+    ? _uiEstrategia.alternativaActiva
+    : disponibles[0].id;
+
+  return `
+    <div id="estrategia-panel-alternativas" class="estrategia-card__alerta" role="region" aria-label="Alternativas para tu plan de pago">
+      ${_renderDiagnosticoTexto(diagnostico)}
+
+      <div class="estrategia-card__selector" role="group" aria-label="Elige una alternativa">
+        ${disponibles.map(a => `
+          <button type="button"
+                  class="estrategia-card__selector-opcion${activa === a.id ? ' estrategia-card__selector-opcion--activa' : ''}"
+                  data-action="elegir-alternativa"
+                  data-alternativa="${a.id}"
+                  aria-pressed="${activa === a.id ? 'true' : 'false'}">
+            <span aria-hidden="true">${a.icono}</span> ${a.nombre}
+          </button>`).join('')}
+      </div>
+
+      <div class="estrategia-card__alternativa-contenido">
+        ${_renderContenidoAlternativa(activa, extraMensual, resumenExtraHtml, deudas)}
+      </div>
+    </div>`;
+}
+
+/** Despacha al contenido de la alternativa elegida (una sola a la vez). */
+function _renderContenidoAlternativa(activa, extraMensual, resumenExtraHtml, deudas) {
+  if (activa === 'renegociar') return renderRenegociar(deudas, _uiEstrategia);
+  if (activa === 'consolidar') return renderConsolidar(deudas, _uiEstrategia);
+  return _renderRemedioExtra(extraMensual, resumenExtraHtml);
+}
+
+/** Contenido de "Aumentar la cuota": mismo input + resumen de D.2b, reubicado. */
+function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
+  return `
+    <div class="estrategia-card__remedio">
+      <p class="estrategia-card__bloque-titulo">💪 Aumenta tu cuota</p>
+      <div class="form-group">
+        <label for="estrategia-extra" class="label">Pago extra mensual</label>
+        <input id="estrategia-extra" class="input" type="number"
+               min="0" step="10000" value="${extraMensual || ''}"
+               placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
+               data-action="cambiar-extra-estrategia" />
+        <p class="form-hint">Escribe un monto y mira si tu plan se vuelve viable.</p>
+      </div>
+      ${resumenExtraHtml}
+    </div>`;
+}
+
+/** Texto del diagnóstico: qué deudas crecen y el extra mínimo estimado. */
+function _renderDiagnosticoTexto(diagnostico) {
   const { deudasCrecientes, extraMinimo } = diagnostico;
 
   const listaCrecientes = deudasCrecientes.length > 0
@@ -178,27 +290,10 @@ function _renderDiagnosticoInviable(diagnostico, extraMensual, resumenExtraHtml,
          Con el pago actual la deuda crece más rápido de lo que la reduces.</p>`;
 
   return `
-    <div class="estrategia-card__alerta" role="status">
-      <p class="estrategia-card__bloque-titulo">⚠️ Con tu pago actual, estas deudas no se terminan de pagar</p>
+    <div class="estrategia-card__diagnostico">
+      <p class="estrategia-card__bloque-titulo">⚠️ Por qué tu plan no se sostiene</p>
       ${listaCrecientes}
       ${sugerenciaExtra}
-
-      <div class="estrategia-card__remedio">
-        <p class="estrategia-card__bloque-titulo">💪 Aumenta tu cuota</p>
-        <div class="form-group">
-          <label for="estrategia-extra" class="label">Pago extra mensual</label>
-          <input id="estrategia-extra" class="input" type="number"
-                 min="0" step="10000" value="${extraMensual || ''}"
-                 placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
-                 data-action="cambiar-extra-estrategia" />
-          <p class="form-hint">Escribe un monto y mira si tu plan se vuelve viable.</p>
-        </div>
-        ${resumenExtraHtml}
-      </div>
-
-      ${renderRenegociar(deudas, _uiEstrategia)}
-
-      ${renderConsolidar(deudas, _uiEstrategia)}
     </div>`;
 }
 

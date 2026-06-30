@@ -623,17 +623,23 @@
   color: var(--fk-warning-text);
 }
 
-/* Banner de plan inviable: ninguna estrategia cierra con el pago actual.
-   Tono danger (más grave que "no aplica"). */
+/* Panel de plan inviable: ninguna estrategia cierra con el pago actual.
+   Tono danger (más grave que "no aplica"). Desde D.7/D.8 solo se renderiza
+   cuando el usuario abre el botón de alerta (ver más abajo). */
 .estrategia-card__alerta {
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-2);
+  gap: var(--fk-space-3);
   padding: var(--fk-space-3);
   background: var(--fk-danger-bg);
   border: 1px solid color-mix(in srgb, var(--fk-danger-text) 40%, transparent);
   border-radius: var(--fk-radius-md);
-  margin-bottom: var(--fk-space-3);
+  margin-top: var(--fk-space-3);
+}
+.estrategia-card__diagnostico {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
 }
 .estrategia-card__alerta .estrategia-card__bloque-titulo {
   color: var(--fk-danger-text);
@@ -646,6 +652,63 @@
   gap: var(--fk-space-1);
   font-size: var(--fk-text-sm);
   line-height: 1.4;
+}
+
+/* D.7/D.8: botón único que resume el plan inviable y abre el panel de
+   alternativas. Mismo lugar que el acelerador plegable de un plan viable. */
+.estrategia-card__alerta-boton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  width: 100%;
+  margin-top: var(--fk-space-4);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-danger-bg);
+  border: 1.5px solid color-mix(in srgb, var(--fk-danger-text) 50%, transparent);
+  border-radius: var(--fk-radius-lg);
+  color: var(--fk-danger-text);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.estrategia-card__alerta-boton:hover {
+  background: color-mix(in srgb, var(--fk-danger-bg) 60%, var(--fk-danger) 12%);
+}
+.estrategia-card__alerta-boton-chevron {
+  font-size: var(--fk-text-sm);
+  flex-shrink: 0;
+}
+
+/* D.8: selector de 3 alternativas dentro del panel (una visible a la vez). */
+.estrategia-card__selector {
+  display: flex;
+  gap: var(--fk-space-2);
+  flex-wrap: wrap;
+}
+.estrategia-card__selector-opcion {
+  flex: 1 1 auto;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--fk-transition-fast), background-color var(--fk-transition-fast), color var(--fk-transition-fast);
+}
+.estrategia-card__selector-opcion:hover {
+  border-color: var(--fk-border-strong);
+}
+.estrategia-card__selector-opcion--activa {
+  border-color: var(--fk-accent);
+  background: color-mix(in srgb, var(--fk-accent) 12%, var(--fk-bg-surface));
+  color: var(--fk-text-primary);
 }
 
 /* Nota informativa: deudas con tasa sin registrar (se simulan como 0%). */
