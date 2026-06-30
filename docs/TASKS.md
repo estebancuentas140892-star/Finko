@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1645/1645 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.9** "Aumentar la cuota" como acción aplicable real (cierra ADR 011 jornada 2): reparto automático del extra que escribe `cuotaMensual`. SW v225. Antes: D.8 panel de alternativas con selector. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1645/1645 tests verdes, lint limpio, 64/64 E2E.** Último cambio: **D.5 (diseño)** ADR 015: categorías de deuda en dos dimensiones (quién = Entidad/Personal, qué = Tipo de deuda curado; sin campo Acreedor). Antes: D.9 cerró la jornada 2 de Deudas. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -43,7 +43,9 @@ _(sin tarea activa)_
 - ✅ **D.3a / S4** - "Renegociar tasa" interactivo + aplicar (`simularRenegociacion`). 16 unit + 2 E2E. SW v218. Ver [CHANGELOG](CHANGELOG.md).
 - ✅ **D.3b / S5** - "Consolidar deudas" interactivo + aplicar (`simularConsolidacion`: crea el crédito nuevo y archiva las consolidadas). 12 unit + 2 E2E. SW v219. Ver [CHANGELOG](CHANGELOG.md).
 
-**✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica. **Siguiente sugerido: D.5** (categorías de deuda en dos dimensiones: Tipo de deuda + Acreedor, decisión de modelo de datos, posible schema bump). Modelo: Opus 4.8 - Alto. También quedan EP.0 (épica "explicar el propósito de cada sección", requiere ADR) y MC.6b/MC.7 (distribución).
+**✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica.
+
+**✅ D.5 (diseño) cerrado: [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).** Decisión: dos dimensiones = quién (Entidad/Personal, intacto) por qué (Tipo de deuda, curado); sin campo Acreedor. **Siguiente sugerido: D.5a** (implementación, Opus 4.8 - Medio): curar `CATEGORIAS_DEUDA` (12 → 7) + emoji, migración v18 → v19, renombrar label, tests. El usuario revisa antes la lista curada y el mapeo del ADR. También quedan EP.0 (épica "explicar el propósito de cada sección", requiere ADR) y MC.6b/MC.7 (distribución).
 
 ### Backlog del usuario "Visión de Deudas" (2026-06-29)
 
@@ -57,7 +59,9 @@ Observaciones del usuario sobre la sección Deudas. Varias revisan o se cruzan c
 
 ✅ **D.4 (mejora UI)** - Comparación explicada Avalancha vs Bola de nieve: bloque "¿Cómo elegir?" con una frase por estrategia (Avalancha = ahorro en intereses y, si difiere, terminar antes; Bola de nieve = cerrar la primera deuda antes). El "cuánto antes" sale de comparar `mesPagado` de la primera deuda que cierra cada estrategia (dato ya devuelto en `orden[]`), sin lógica nueva. Conserva el banner verde cuando solo Avalancha aventaja y los mensajes de empate. 3 tests de render. SW v219 → v220 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
-- **D.5 (evoluciona lo entregado)** - Categorías de deuda en **dos dimensiones**: hoy hay un solo campo "tipo de obligación" (`CATEGORIAS_DEUDA`, 12). El usuario propone separar **Tipo de deuda** (tarjeta, libre inversión, vivienda, educativo, vehículo, cooperativa, compra a cuotas, otra) y **Acreedor** (familiar, amigo, vecino, particular, natillera, banco, cooperativa, entidad financiera, empresa, otro). Decidir si reemplaza o complementa el campo actual y si el acreedor reemplaza la distinción entidad/personal. Posible schema bump + migración. Modelo: Opus 4.8 - Alto (decisión de modelo de datos).
+✅ **D.5 (diseño) = [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).** Categorías de deuda en dos dimensiones. Decisión con el usuario: el modelo ya tiene los dos ejes (**quién** = Entidad/Personal, define la tasa; **qué** = `categoria`). Se refina el eje "qué" (Tipo de deuda, curado 12 → 7) y se deja "quién" intacto. **No** se agrega campo "Acreedor" (jerga confusa, se solapa con Entidad/Personal; los acreedores quedan como ejemplos en el chooser). 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
+
+- **D.5a (implementa D.5)** - Curar `CATEGORIAS_DEUDA` (12 → 7: Tarjeta de crédito, Libre inversión, Vivienda, Vehículo, Educativo, Compra a cuotas, Otra) + `CATEGORIA_DEUDA_EMOJI`; migración idempotente v18 → v19 (remapeo de `categoria` según la tabla del ADR); renombrar el label del form "Tipo de obligación" → "Tipo de deuda"; actualizar tests de constantes, migración y guardarraíl TX.4. **Confirmar con el usuario la lista curada y el mapeo antes de codear** (la migración remapea datos existentes; el usuario puede pedir conservar Gota a gota o Microcrédito como tipo propio). Modelo: Opus 4.8 - Medio (schema bump con migración, lógica acotada).
 
 ### Backlog del usuario "Visión de Deudas, jornada 2" (2026-06-29)
 

@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(deudas): ADR 015 - categorías de deuda en dos dimensiones (D.5) · 2026-06-29
+
+Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra las dos preguntas que el backlog "Visión de Deudas" (D.5) dejó abiertas.
+
+**Decisión (con el usuario).** El modelo de dos dimensiones ya existe en parte: **`tipo` (Entidad/Personal) es el eje "quién"** (y define la unidad de tasa: EA en entidades, mensual en informales) y **`categoria` es el eje "qué"**. D.5 refina el eje "qué" y deja "quién" intacto.
+
+1. **"Tipo de deuda" reemplaza "Tipo de obligación"** (mismo eje, valores curados). `CATEGORIAS_DEUDA` pasa de 12 a 7 valores orientados al propósito, ortogonales a Entidad/Personal: Tarjeta de crédito 💳, Libre inversión 💵, Vivienda 🏠, Vehículo 🚗, Educativo 🎓, Compra a cuotas 🛍️, Otra 📦. Migración idempotente v18 → v19 remapea los valores viejos (los informales como Gota a gota, Libranza, Préstamo personal colapsan en "Libre inversión": su naturaleza de "quién" ya la captura Entidad/Personal).
+2. **No se agrega un campo "Acreedor".** El usuario reportó que "acreedor" le resulta jerga confusa y que Entidad/Personal ya separa el "quién" con claridad. Un acreedor granular se solaparía con Entidad/Personal y recargaría el formulario. Los acreedores (banco, cooperativa, familiar, natillera...) siguen como **texto de ayuda** en el chooser, sin volverse un campo obligatorio.
+
+**Implementación:** un solo slice **D.5a** (Opus 4.8 - Medio): `constants.js` curado + migración v18 → v19 + label del form + tests (constantes, migración, guardarraíl TX.4). El usuario revisa la lista curada y el mapeo de migración antes de codear (la migración remapea datos existentes).
+
+- **`docs/DECISIONS/015-categorias-de-deuda-dos-dimensiones.md`**: ADR nuevo (contexto, decisión de las dos dimensiones, no agregar Acreedor, lista curada + tabla de migración, slice D.5a, alternativas y consecuencias).
+
+---
+
 ### feat(deudas): "Aumentar la cuota" como acción aplicable real (D.9, ADR 011 rev. D.7) · 2026-06-29
 
 Tercera y última superficie de "simular → aplicar" de la jornada 2 de "Visión de Deudas" (tras D.3a renegociar y D.3b consolidar). El pago extra de "Aumentar la cuota" deja de ser solo what-if (D.2b): ahora un botón **"Aplicar este aumento"** lo escribe sobre las deudas.

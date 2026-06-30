@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (feat(deudas): D.9 - "Aumentar la cuota" como acción aplicable real, con reparto automático del extra)
+> Última actualización: 2026-06-29 (docs(deudas): D.5 - ADR 015, categorías de deuda en dos dimensiones (quién = Entidad/Personal, qué = Tipo de deuda curado))
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(deudas): ADR 015 - categorías de deuda en dos dimensiones (D.5) · 2026-06-29
+
+Tarea de **diseño** (sin código de producción). [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md) resuelve las dos preguntas abiertas del backlog D.5. Decisión con el usuario: el modelo de dos dimensiones ya existe en parte (**quién** = Entidad/Personal, que define la unidad de tasa; **qué** = `categoria`). D.5 refina el eje "qué" y deja "quién" intacto. (1) "Tipo de deuda" **reemplaza** "Tipo de obligación": se cura `CATEGORIAS_DEUDA` de 12 a 7 valores orientados al propósito (Tarjeta de crédito, Libre inversión, Vivienda, Vehículo, Educativo, Compra a cuotas, Otra) + migración v18 → v19. (2) **No** se agrega campo "Acreedor": el usuario lo encontró confuso (jerga) y Entidad/Personal ya separa el "quién"; los acreedores granulares siguen como texto de ayuda en el chooser. Un solo slice de implementación: **D.5a** (Opus 4.8 - Medio). El usuario revisa la lista curada + el mapeo de migración antes de codear.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/015-categorias-de-deuda-dos-dimensiones.md` | ADR nuevo: dos dimensiones (quién/qué), no agregar Acreedor, lista curada + mapeo de migración v18→v19, slice D.5a, alternativas y consecuencias. |
+
+---
 
 ### feat(deudas): "Aumentar la cuota" como acción aplicable real (D.9, ADR 011 rev. D.7) · 2026-06-29
 
@@ -79,20 +89,6 @@ Tarea de **diseño** (sin código de producción). El bloque inviable de la card
 | Archivo | Cambio |
 |---|---|
 | `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Nueva sección "Revisión D.7" (jerarquía botón → panel → selector, decisión D.9 de reparto automático, slices D.8/D.9, alternativas y consecuencias). |
-
----
-
-### refactor(deudas): quitar aviso de fijos vencidos de la sección Deudas (D.6) · 2026-06-29
-
-El panel "N pendientes del mes" del Dashboard ya centraliza todos los vencidos del mes (fijos, deudas, agenda): el nudge `#nudge-fijos-sin-pagar` en Deudas duplicaba ese subconjunto en el lugar equivocado. Eliminado completamente: función, re-export, import, call y nodo HTML. `renderAlertaDeudasDurmiendo` intacta. 1633/1633 verdes. SW v222 → v223.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Eliminado `<div id="nudge-fijos-sin-pagar">`. |
-| `modules/dominio/compromisos/views/alertas.js` | Eliminada `renderAlertaFijosSinPagar`. |
-| `modules/dominio/compromisos/view.js` | Eliminado re-export. |
-| `modules/dominio/compromisos/index.js` | Eliminados import y call en `_renderTodo()`. |
-| `service-worker.js` | v222 → v223. |
 
 ---
 
