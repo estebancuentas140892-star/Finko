@@ -7,6 +7,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
+
+Primer slice de implementación de [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan dos categorías a `CATEGORIAS_AGENDA` (gastos fijos recurrentes de la sección Agenda):
+
+- **Mercado 🛒**: el mercado mensual del hogar, caso canónico de la regla de contexto del ADR (Mercado en Agenda = compra planeada recurrente; en Gastos = compra suelta imprevista; en Apartados = ahorro estacional). Emoji 🛒 consistente con `CATEGORIA_EMOJI['Mercado']` de la sección Gastos (guardarraíl ADR 014).
+- **Suscripciones 🔔**: bucket más amplio que Streaming para apps y servicios digitales de pago (Netflix, Spotify, Adobe, etc.). Emoji propio 🔔 (no existe en otros catálogos).
+
+Ambas se insertan en el orden lógico del catálogo (hogar arriba, conectividad y ocio en el medio, "Otro" al final). Longitud 13 → 15. Tests: longitud actualizada; los tests de emoji-por-categoría y de render del selector (`agenda.test.js:392`) cubren las nuevas entradas automáticamente. 1607/1607 verdes. SW v220 → v221.
+
+- **`modules/core/constants.js`**: `CATEGORIAS_AGENDA` (+2) y `CATEGORIA_AGENDA_EMOJI` (+2).
+- **`tests/unit/compromisos.test.js`**: longitud 13 → 15.
+- **`service-worker.js`**: v220 → v221.
+
+---
+
 ### docs(categorias): ADR 014 taxonomía de categorías transversal (AG.3 = AP.5) · 2026-06-29
 
 Tarea de diseño (sin código). El usuario pidió definir muy bien las categorías de toda la app, porque son la base del análisis, los límites de gasto, las recomendaciones y la distribución inteligente, y evitar que una misma categoría aparezca en varias secciones sin una razón clara. Se escribió [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md), que **unifica AG.3 (categorías de Agenda) y AP.5 (taxonomía de toda la app)** en una sola decisión.

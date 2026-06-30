@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (docs: ADR 014 taxonomía de categorías transversal, AG.3 = AP.5)
+> Última actualización: 2026-06-29 (feat(agenda): TX.1 - Mercado + Suscripciones en CATEGORIAS_AGENDA)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(agenda): curar CATEGORIAS_AGENDA - Mercado y Suscripciones (TX.1) · 2026-06-29
+
+Primer slice de implementación del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). Se agregan **Mercado** 🛒 y **Suscripciones** 🔔 al catálogo de categorías de la sección Agenda. Mercado es el caso canónico del ADR (en Agenda = compra mensual planeada; en Gastos = compra imprevista suelta). Emoji de Mercado consistente con el de la sección Gastos (guardarraíl de consistencia del ADR). Longitud 13 → 15. Tests verdes automáticamente (los existentes iteran sobre el catálogo). 1607/1607 verdes. SW v220 → v221.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_AGENDA` (+Mercado, +Suscripciones) y `CATEGORIA_AGENDA_EMOJI` (+2). |
+| `tests/unit/compromisos.test.js` | Longitud 13 → 15. |
+| `service-worker.js` | v220 → v221. |
+
+---
 
 ### docs(categorias): ADR 014 taxonomía de categorías transversal (AG.3 = AP.5) · 2026-06-29
 
@@ -92,19 +104,6 @@ Primer slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulado
 | `eslint.config.js` | `HTMLSelectElement` global. |
 | `tests/unit/compromisos.test.js`, `tests/e2e/estrategia-pago.test.js` | 16 unit + 2 E2E. |
 | `service-worker.js` | v217 → v218. |
-
----
-
-### refactor(deudas): pago extra como primer remedio en plan inviable (D.2b) · 2026-06-29
-
-Segundo slice de la Revisión D.2 ([ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). Cuando Finko detecta que el plan no se sostiene (deudas que crecen porque la cuota no cubre el interés), el pago extra mensual ya no aparece como acelerador plegable: sube como **primer remedio** ("💪 Aumenta tu cuota") dentro del bloque "⚠️ Con tu pago actual, estas deudas no se terminan de pagar". El input y el resumen de impacto en vivo son los mismos que en el acelerador, solo cambian de ubicación y contexto. Viable e inviable son estados excluyentes: el input se renderiza en un solo lugar a la vez (acelerador o remedio, nunca ambos). Lógica financiera intacta. Verificado: 4 tests de render nuevos (1576 total), lint limpio. SW v216 → v217.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/views/estrategia.js` | `_renderDiagnosticoInviable` recibe `extraMensual` + `resumenExtraHtml` y embebe el input como remedio. `renderEstrategiaPago` condiciona acelerador a `recomendacion.viable`. |
-| `styles/components/charts.css` | `.estrategia-card__remedio` (bloque de remedio dentro de la alerta). |
-| `tests/unit/compromisos.test.js` | 4 tests D.2b (sin acelerador en plan inviable, input en remedio, remedio dentro de alerta, resumen dentro de remedio). |
-| `service-worker.js` | v216 → v217. |
 
 ---
 

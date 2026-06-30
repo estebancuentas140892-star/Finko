@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **ADR 014** taxonomía de categorías transversal (diseño, unifica AG.3 + AP.5). Antes: D.4 comparación explicada Avalancha vs Bola de nieve. **Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1607/1607 tests verdes, lint limpio, 61/61 E2E.** Último cambio: **TX.1** curar `CATEGORIAS_AGENDA` (Mercado + Suscripciones). Antes: ADR 014 taxonomía de categorías transversal. **Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -177,7 +177,7 @@ Observaciones del usuario sobre la sección Agenda y, a partir de ahí, una prop
 ✅ **AG.3 (diseño) = AP.5** - [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) escrito (unifica AG.3 + AP.5). Decisión central: **la sección define la intención y la categoría la refina**; el significado de un movimiento es el par (sección, categoría). Cada sección responde una pregunta distinta; una categoría puede vivir en varias secciones y la sección la desambigua (caso canónico: Mercado); consistencia mismo concepto ⇒ misma etiqueta/emoji; las funciones transversales mapean a los 3 grupos por sección. Sin schema. La curación concreta de catálogos queda en slices TX.1-TX.5 (a confirmar con el usuario) - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 
 Slices de implementación de ADR 014 (smallest-first, a confirmar la curación):
-- **TX.1** - Curar `CATEGORIAS_AGENDA`: agregar Mercado 🛒 y Suscripciones (evaluar Televisión). Tests del mapa de emoji. Modelo: Sonnet 4.6 - Bajo.
+✅ **TX.1** - `CATEGORIAS_AGENDA` curada: Mercado 🛒 (caso canónico de contexto, emoji consistente con Gastos) y Suscripciones 🔔 (bucket más amplio que Streaming). Longitud 13 → 15. 1607/1607 verdes. SW v220 → v221 - 2026-06-29. Ver [CHANGELOG](CHANGELOG.md).
 - **TX.2** - Curar `PLANTILLAS_APARTADO`: agregar Cumpleaños 🎂 y Navidad 🎄. Tests. Modelo: Sonnet 4.6 - Bajo.
 - **TX.3 (opcional)** - Gastos: agregar Café ☕ y Gastos hormiga 🐜 si el usuario los quiere explícitos. Modelo: Sonnet 4.6 - Bajo.
 - **TX.4** - Guardarraíl de consistencia: test que verifica que las etiquetas compartidas entre catálogos usan el mismo emoji. Modelo: Sonnet 4.6 - Bajo.
