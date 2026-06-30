@@ -26,7 +26,6 @@ import {
   renderFormAbono,
   renderEstrategiaPago,
   setEstrategiaUI,
-  renderAlertaFijosSinPagar,
   renderAlertaDeudasDurmiendo,
   renderPanelVencidos,
   renderPanelPrioridades,
@@ -50,7 +49,6 @@ function _renderDashboardPanels() {
 function _renderTodo() {
   // En v6 la card de estrategia va ARRIBA (define el orden de pago).
   renderEstrategiaPago();
-  renderAlertaFijosSinPagar();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
 }

@@ -6,7 +6,7 @@
  * para `index.js` y para cualquier consumidor externo.
  *
  * Sub-módulos:
- *   - views/alertas.js       → renderAlertaFijosSinPagar, renderAlertaDeudasDurmiendo
+ *   - views/alertas.js       → renderAlertaDeudasDurmiendo
  *   - views/lista.js         → renderListaCompromisos
  *   - views/formularios.js   → renderChooserCompromiso, renderFormDeuda, renderFormAbono
  *   - views/estrategia.js    → setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago
@@ -16,7 +16,7 @@
  * logic.js); pueden leer S, no mutarlo. Cero imports cross-dominio.
  */
 
-export { renderAlertaFijosSinPagar, renderAlertaDeudasDurmiendo } from './views/alertas.js';
+export { renderAlertaDeudasDurmiendo } from './views/alertas.js';
 export { renderListaCompromisos } from './views/lista.js';
 export { renderFormAbono, renderChooserCompromiso, renderFormDeuda } from './views/formularios.js';
 export { setEstrategiaUI, getEstrategiaUI, renderEstrategiaPago } from './views/estrategia.js';

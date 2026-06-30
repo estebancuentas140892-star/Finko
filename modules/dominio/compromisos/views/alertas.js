@@ -1,9 +1,9 @@
 /**
- * compromisos/views/alertas.js - nudges del dashboard relacionados con compromisos.
+ * compromisos/views/alertas.js - nudges de la sección Deudas relacionados con compromisos.
  *
- * Renderiza dos alertas independientes:
- *   - Fijos sin pagar este mes (G.1)
- *   - Deudas durmiendo sin actividad (G.1)
+ * Renderiza la alerta de deudas durmiendo (G.1).
+ * Los gastos fijos vencidos del mes se centralizaron en el panel
+ * "N pendientes del mes" del Dashboard (#panel-vencidos, D.6).
  *
  * Puede leer S. No puede mutarlo. Sin lógica de negocio (toda en logic.js).
  */
@@ -12,58 +12,8 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
 import {
-  detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
 } from '../logic.js';
-
-// ── ALERTA: FIJOS SIN PAGAR ESTE MES (G.1) ───────────────────────
-
-/**
- * Renderiza (o limpia) la alerta de fijos cuyo dia de pago ya paso este mes
- * en `#nudge-fijos-sin-pagar`. No-op si el contenedor no existe.
- */
-export function renderAlertaFijosSinPagar() {
-  const el = document.getElementById('nudge-fijos-sin-pagar');
-  if (!el) return;
-
-  const hoyISO = new Date().toISOString().slice(0, 10);
-  const fijos  = detectarFijosSinPagarEsteMes(S.compromisos, hoyISO);
-
-  if (fijos.length === 0) {
-    el.innerHTML = '';
-    return;
-  }
-
-  const hayUrgente = fijos.some(f => f.severidad === 'urgente');
-  const nivel      = hayUrgente ? 'nudge-high' : 'nudge-medium';
-  const icono      = icon('alert');
-  const n          = fijos.length;
-  const titulo     = n === 1
-    ? '1 gasto fijo venció este mes'
-    : `${n} gastos fijos vencieron este mes`;
-
-  const items = fijos.slice(0, 3).map(fx => {
-    const desc  = _esc(fx.descripcion);
-    const dias  = fx.diasAtraso;
-    const label = dias === 0 ? 'venció hoy'
-      : dias === 1           ? 'venció hace 1 dia'
-      :                        `venció hace ${dias} dias`;
-    return `<p class="nudge__desc"><strong>${desc}</strong>: ${label} · ${f(fx.monto)}</p>`;
-  }).join('');
-
-  const extra = fijos.length > 3
-    ? `<p class="nudge__desc nudge__desc--muted">+${fijos.length - 3} mas...</p>`
-    : '';
-
-  el.innerHTML = `
-    <div class="nudge ${nivel}" role="alert" aria-live="polite">
-      <span class="nudge__icon" aria-hidden="true">${icono}</span>
-      <div class="nudge__body">
-        <p class="nudge__title">${titulo}. ¿Ya los registraste?</p>
-        ${items}${extra}
-      </div>
-    </div>`;
-}
 
 // ── ALERTA: DEUDAS DURMIENDO (G.1) ───────────────────────────────
 
