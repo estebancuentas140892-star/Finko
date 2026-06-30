@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-29 (refactor(deudas): D.6 - quitar aviso de fijos vencidos de la sección Deudas)
+> Última actualización: 2026-06-29 (docs(deudas): D.7 - revisión D.7 de ADR 011, botón único → panel con selector para el plan inviable)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,16 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(deudas): revisión D.7 de ADR 011 - botón único → panel con selector para el plan inviable (D.7) · 2026-06-29
+
+Tarea de **diseño** (sin código de producción). El bloque inviable de la card de estrategia hoy muestra **a la vez** el diagnóstico, el pago extra, renegociar y consolidar: se siente saturado. La Revisión D.7 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md) replantea la jerarquía: con el plan inviable, Avalancha y Bola de nieve siguen de protagonistas y, **debajo del detalle**, aparece **un solo botón de alerta** ("🚨 Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo") que abre **un panel** con un **selector** de 3 alternativas (Aumentar la cuota · Renegociar · Consolidar) que muestra **una a la vez**. El estado del panel vive en `_uiEstrategia` (no `<details>`, porque la card se re-renderiza por tecla). Decisión clave para D.9: "Aplicar" en "Aumentar la cuota" es **automático** (Finko reparte el extra cubriendo déficits y concentrando el remanente en la mayor tasa, sin preguntar a qué deuda), porque una elección manual mal hecha pierde la intención de Finko. Define los slices D.8 (Sonnet 4.6 - Alto, reorg de UI) y D.9 (Opus 4.8 - Alto, acción aplicable + lógica nueva).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/011-unificacion-simulador-deudas.md` | Nueva sección "Revisión D.7" (jerarquía botón → panel → selector, decisión D.9 de reparto automático, slices D.8/D.9, alternativas y consecuencias). |
+
+---
 
 ### refactor(deudas): quitar aviso de fijos vencidos de la sección Deudas (D.6) · 2026-06-29
 
@@ -83,23 +93,6 @@ Tercer slice del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). 2
 | Archivo | Cambio |
 |---|---|
 | `tests/unit/constants.test.js` | 2 tests TX.4 + imports de los 4 mapas de emoji y `PLANTILLAS_APARTADO`. |
-
----
-
-### feat(deudas): renegociar la tasa interactivo + aplicar (D.3a) · 2026-06-29
-
-Primer slice de la Revisión D.3 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md): la simulación deja de ser solo what-if y puede **convertirse en acción**. Dentro del bloque "Tu plan no se sostiene", "renegociar la tasa" pasa de texto a herramienta interactiva (🤝): el usuario elige una deuda con tasa conocida, escribe la tasa que cree poder conseguir (en la unidad nativa: EA para entidad, mensual para personal), ve la comparación en vivo y, con "Aplicar nueva tasa", escribe el cambio sobre la deuda en un paso (con confirmación). Nueva lógica pura `simularRenegociacion` (reusa `simularPagoDeuda`, que ahora expone `completo`); maneja el caso inviable→viable sin cifras divergentes (patrón D.1). El "Aplicar" es la primera superficie de la simulación que muta `S`, por eso pide confirmación. Corte **vertical por herramienta** acordado con el usuario (cada una simula y aplica de punta a punta). Verificado: 16 tests unitarios nuevos + 2 E2E (la verificación del cableado de eventos va por E2E, no por el preview, que cachea módulos). SW v217 → v218.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | `simularRenegociacion`; `simularPagoDeuda` devuelve `completo`; `filtrarDeudasPagables` expone `tasaUnidad`. |
-| `modules/dominio/compromisos/views/estrategia-impacto.js` | `renderComparativaRenegociacion` + `renderRenegociar` (movido aquí para mantener `estrategia.js` < 400 líneas). |
-| `modules/dominio/compromisos/views/estrategia.js` | Estado UI `renegociar*`; el bloque inviable monta la herramienta. |
-| `modules/dominio/compromisos/index.js` | Handlers `_cambiarRenegociarDeuda`, `_actualizarRenegociacionEnVivo`, `_aplicarRenegociacion` + cableado input/change/click. |
-| `styles/components/charts.css` | Estilos `.estrategia-card__renegociar-*`. |
-| `eslint.config.js` | `HTMLSelectElement` global. |
-| `tests/unit/compromisos.test.js`, `tests/e2e/estrategia-pago.test.js` | 16 unit + 2 E2E. |
-| `service-worker.js` | v217 → v218. |
 
 ---
 

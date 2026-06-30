@@ -7,6 +7,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(deudas): revisión D.7 de ADR 011 - botón único → panel con selector para el plan inviable (D.7) · 2026-06-29
+
+Tarea de **diseño** (solo ADR, sin código de producción ni SW bump). Cierra la pregunta de jerarquía que la jornada 2 de "Visión de Deudas" dejó abierta para el bloque inviable de la card de estrategia.
+
+**Problema.** Cuando el plan no se sostiene, hoy el bloque "Tu plan no se sostiene" (`_renderDiagnosticoInviable`) muestra **a la vez** el diagnóstico, el remedio de pago extra ("💪 Aumenta tu cuota"), `renderRenegociar` (🤝) y `renderConsolidar` (🏦). Tres remedios completos abiertos en cascada saturan la card y tapan la decisión principal (qué estrategia seguir).
+
+**Decisión (Revisión D.7 de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)).** Con el plan inviable, Avalancha y Bola de nieve siguen de protagonistas y, **debajo del detalle** (donde el plan viable pone el acelerador plegable), aparece **un solo botón de alerta + acción**:
+
+> 🚨 Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo
+
+El botón abre **un panel** con: (1) el diagnóstico (qué deudas crecen, extra mínimo), (2) un **selector** de 3 alternativas (💪 Aumentar la cuota · 🤝 Renegociar la tasa · 🏦 Consolidar) que muestra **una a la vez** (no las tres). Default: "Aumentar la cuota". Renegociar y Consolidar conservan su Simular + Aplicar de D.3; solo se reubican dentro del selector.
+
+**Estado del panel en `_uiEstrategia`, no `<details>`:** la card se re-renderiza por cada tecla, así que un `<details>` perdería el `open`. Dos campos nuevos (`panelAlternativasAbierto`, `alternativaActiva`) y dos data-actions (`abrir-panel-alternativas`, `elegir-alternativa`), solo estado UI.
+
+**Decisión D.9 (reparto automático, acordada con el usuario):** al aplicar "Aumentar la cuota", Finko **no pregunta** a qué deuda; reparte el extra de la forma que siempre conviene (cubrir el déficit de cada deuda que crece para que ninguna siga creciendo, y el remanente a la deuda de mayor tasa). Escribe `cuotaMensual` sobre las deudas afectadas (con confirmación), y ese valor alimenta los pagos programados y la distribución de ingreso (MC.4/MC.6). Motivo: una elección manual mal hecha pierde la intención de Finko. Limitación v1: `cuotaMensual` es estático; el volcado al cerrar una deuda queda como re-aplicar manual (mejora futura).
+
+**Slices definidos:** D.8 (Sonnet 4.6 - Alto, panel + selector, reubicar renderers, sin lógica financiera nueva) y D.9 (Opus 4.8 - Alto, "Aumentar la cuota" aplicable + función pura de reparto + tests).
+
+- **`docs/DECISIONS/011-unificacion-simulador-deudas.md`**: nueva sección "Revisión D.7" (jerarquía botón → panel → selector, copy del botón, estado UI del panel, decisión D.9 de reparto automático, slices D.8/D.9, alternativas consideradas y consecuencias).
+
+---
+
 ### refactor(deudas): quitar aviso de fijos vencidos de la sección Deudas (D.6) · 2026-06-29
 
 El panel del Dashboard "N pendientes del mes" (`#panel-vencidos`, `detectarVencidosCompletos`) ya centraliza todos los vencidos del mes: fijos, deudas y agenda. El nudge `#nudge-fijos-sin-pagar` en `sec-compromisos` duplicaba ese subconjunto (solo fijos) y vivía en la sección equivocada. Eliminado completamente (función, re-export, import, call y nodo HTML). `renderAlertaDeudasDurmiendo` no se toca: es información propia de Deudas, no duplicada en el dashboard. 1633/1633 verdes. SW v222 → v223.
