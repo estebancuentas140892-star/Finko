@@ -21,6 +21,7 @@ import {
   detectarNudgeProximoIngreso,
   estimarSalarioMensual,
   calcularGastosFijosMensuales,
+  calcularAporteMensualObjetivos,
   sugerirDistribucionIngreso,
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,
@@ -314,11 +315,43 @@ export function renderDistribucionIngreso() {
 
   const tieneInversiones = (S.inversiones ?? []).length > 0;
 
+  // Cuotas mínimas mensuales de todas las deudas activas (Necesidades, ADR 013).
+  const cuotasDeudaMensuales = (S.compromisos ?? [])
+    .filter(c => c.activo !== false
+      && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+    .reduce((sum, c) => sum + (Number(c.cuotaMensual) || 0), 0);
+
+  // Faltante del fondo de emergencia (Ahorro, ADR 013).
+  const faltanteFondo = (() => {
+    const fe = S.ahorro?.fondoEmergencia;
+    if (!fe?.activo || fondoCompleto) return 0;
+    const objetivo = gastosFijosMensuales > 0
+      ? gastosFijosMensuales * (fe.metaMeses ?? 3)
+      : 0;
+    if (objetivo <= 0) return 0;
+    const actual = (Number(fe.montoActual) || 0)
+      + (S.ahorro?.aportes ?? []).reduce((a, ap) => a + (Number(ap.monto) || 0), 0);
+    return Math.max(0, objetivo - actual);
+  })();
+
+  // Aporte mensual para metas y apartados con fecha objetivo (Ahorro, ADR 013).
+  const metasConFecha     = (S.metas     ?? []).filter(m => !m.completada   && m.fechaLimite);
+  const apartadosConFecha = (S.apartados ?? []).filter(a => !a.completado   && a.fechaObjetivo);
+  const aporteMensualObjetivos = calcularAporteMensualObjetivos(metasConFecha, apartadosConFecha);
+
+  // Suma de límites de gasto (informativo: valida el Estilo de vida sugerido).
+  const sumaLimites = (S.presupuestos ?? [])
+    .reduce((sum, p) => sum + (Number(p.montoMensual) || 0), 0);
+
   const presetId = S.config?.presetDistribucion ?? 'auto';
   const distribucionPersonalizada = S.config?.distribucionPersonalizada ?? null;
 
   const dist = sugerirDistribucionIngreso(ingresoMensual, {
     gastosFijosMensuales,
+    cuotasDeudaMensuales,
+    faltanteFondo,
+    aporteMensualObjetivos,
+    sumaLimites,
     tieneDeudas,
     tieneFondoActivo,
     fondoCompleto,

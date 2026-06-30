@@ -714,27 +714,75 @@ export function esDistribucionPersonalizadaValida(d) {
 }
 
 /**
- * Sugiere cómo distribuir el ingreso mensual adaptando la regla 50/30/20
- * al peso real de los gastos fijos del usuario.
+ * Calcula cuánto aportar por mes para llegar a tiempo a todas las metas
+ * y apartados con fecha objetivo que aún tienen saldo pendiente.
+ * Pura: recibe arrays planos, sin leer S ni el DOM.
+ *
+ * @param {Array<{montoObjetivo:number, montoActual:number, fechaLimite:string, completada:boolean}>} metas
+ * @param {Array<{montoObjetivo:number, montoActual:number, fechaObjetivo:string|null, completado:boolean}>} apartados
+ * @param {Date} [hoy]
+ * @returns {number} Aporte mensual total necesario (COP, sin decimales).
+ */
+export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy = new Date()) {
+  const tsHoy = hoy instanceof Date ? hoy.getTime() : Date.now();
+
+  const candidatos = [
+    ...metas
+      .filter(m => !m.completada && m.fechaLimite)
+      .map(m => ({
+        faltante: Math.max(0, (Number(m.montoObjetivo) || 0) - (Number(m.montoActual) || 0)),
+        fecha:    m.fechaLimite,
+      })),
+    ...apartados
+      .filter(a => !a.completado && a.fechaObjetivo)
+      .map(a => ({
+        faltante: Math.max(0, (Number(a.montoObjetivo) || 0) - (Number(a.montoActual) || 0)),
+        fecha:    a.fechaObjetivo,
+      })),
+  ];
+
+  return candidatos.reduce((sum, { faltante, fecha }) => {
+    if (faltante <= 0) return sum;
+    const msRestantes = new Date(fecha).getTime() - tsHoy;
+    if (msRestantes <= 0) return sum; // fecha ya pasó
+    const mesesRestantes = Math.max(1, Math.round(msRestantes / (1000 * 60 * 60 * 24 * 30.44)));
+    return sum + Math.ceil(faltante / mesesRestantes);
+  }, 0);
+}
+
+// Constantes del modelo de pisos (ADR 013, MC.6a).
+const _PISO_EV_PCT     = 10;  // % mínimo de estilo de vida (sostenibilidad)
+const _HORIZONTE_FONDO = 12;  // meses para cerrar el fondo incompleto
+const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades activas
+
+/**
+ * Sugiere cómo distribuir el ingreso mensual en 3 grupos: Necesidades,
+ * Estilo de vida y Ahorro. El modo 'auto' usa un modelo de pisos por prioridad
+ * sobre los datos reales registrados (ADR 013, MC.6a).
  * Orientativo: nunca prescriptivo. Usa solo datos registrados en Finko.
  *
  * @param {number} ingresoMensual
  * @param {{
- *   gastosFijosMensuales?: number,
- *   tieneDeudas?:          boolean,
- *   tieneFondoActivo?:     boolean,
- *   fondoCompleto?:        boolean,
- *   tieneInversiones?:     boolean,
- *   presetId?:             string,
+ *   gastosFijosMensuales?:    number,
+ *   cuotasDeudaMensuales?:    number,
+ *   faltanteFondo?:           number,
+ *   aporteMensualObjetivos?:  number,
+ *   sumaLimites?:             number,
+ *   tieneDeudas?:             boolean,
+ *   tieneFondoActivo?:        boolean,
+ *   fondoCompleto?:           boolean,
+ *   tieneInversiones?:        boolean,
+ *   presetId?:                string,
  *   distribucionPersonalizada?: {n:number, e:number, a:number}|null,
  * }} [contexto]
  * @returns {{
- *   ingresoMensual: number,
- *   pctFijos:       number,
- *   metodo:         string,
- *   razon:          string,
- *   alertas:        string[],
- *   ctas:           {label:string, seccion:string}[],
+ *   ingresoMensual:  number,
+ *   pctFijos:        number,
+ *   pctObligaciones: number,
+ *   metodo:          string,
+ *   razon:           string,
+ *   alertas:         string[],
+ *   ctas:            {label:string, seccion:string}[],
  *   split: {
  *     necesidades: {pct:number, monto:number, label:string},
  *     estiloVida:  {pct:number, monto:number, label:string},
@@ -743,18 +791,27 @@ export function esDistribucionPersonalizadaValida(d) {
  * } | null}
  */
 export function sugerirDistribucionIngreso(ingresoMensual, {
-  gastosFijosMensuales = 0,
-  tieneDeudas          = false,
-  tieneFondoActivo     = false,
-  fondoCompleto        = false,
-  tieneInversiones     = false,
-  presetId             = 'auto',
+  gastosFijosMensuales    = 0,
+  cuotasDeudaMensuales    = 0,
+  faltanteFondo           = 0,
+  aporteMensualObjetivos  = 0,
+  sumaLimites             = 0,
+  tieneDeudas             = false,
+  tieneFondoActivo        = false,
+  fondoCompleto           = false,
+  tieneInversiones        = false,
+  presetId                = 'auto',
   distribucionPersonalizada = null,
 } = {}) {
   if (!ingresoMensual || ingresoMensual <= 0) return null;
 
   const pctFijos = gastosFijosMensuales > 0
     ? Math.round((gastosFijosMensuales / ingresoMensual) * 100)
+    : 0;
+
+  const montoNec = (Number(gastosFijosMensuales) || 0) + (Number(cuotasDeudaMensuales) || 0);
+  const pctObligaciones = montoNec > 0
+    ? Math.min(100, Math.round(montoNec / ingresoMensual * 100))
     : 0;
 
   let necesidadesPct;
@@ -774,6 +831,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
         : null);
 
   if (preset) {
+    // ── Preset fijo o personalizado: aplica tal cual ──
     necesidadesPct = preset.n;
     estiloVidaPct  = preset.e;
     ahorroInvPct   = preset.a;
@@ -785,29 +843,68 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       const sujeto = presetId === 'personalizado' ? 'tu distribución' : 'el preset';
       alertas.push(`Tus gastos fijos (${pctFijos}%) superan lo asignado a necesidades (${necesidadesPct}%). Considera ajustar ${sujeto}.`);
     }
-  } else if (pctFijos > 70) {
-    necesidadesPct = Math.min(pctFijos, 85);
-    const restante = 100 - necesidadesPct;
-    ahorroInvPct   = Math.max(5, Math.round(restante * 0.3));
-    estiloVidaPct  = restante - ahorroInvPct;
-    metodo = 'ajustado-fijos-altos';
-    razon  = `Tus gastos fijos representan el ${pctFijos}% de tus ingresos (según lo que registras en Finko). Hay poco margen: cubre lo necesario primero.`;
-    alertas.push(`Tus gastos fijos consumen más del 70% de tus ingresos. Revisa compromisos y suscripciones recurrentes.`);
-  } else if (pctFijos > 50) {
-    necesidadesPct = pctFijos;
-    const restante = 100 - necesidadesPct;
-    ahorroInvPct   = Math.max(10, Math.round(restante * 0.4));
-    estiloVidaPct  = restante - ahorroInvPct;
-    metodo = 'ajustado';
-    razon  = `Tus gastos fijos son el ${pctFijos}% de tus ingresos (según lo que registras en Finko). Ajustamos para que el ahorro no quede en cero.`;
   } else {
-    necesidadesPct = 50;
-    estiloVidaPct  = 30;
-    ahorroInvPct   = 20;
-    metodo = '50/30/20';
-    razon  = pctFijos > 0
-      ? `Tus gastos fijos son el ${pctFijos}% de tus ingresos: dentro del rango saludable. La distribución 50/30/20 aplica bien.`
-      : 'Registra tus gastos fijos en Compromisos para una recomendación más precisa.';
+    // ── Modo auto: modelo de pisos por prioridad (ADR 013, MC.6a) ──
+    metodo = 'pisos';
+
+    if (montoNec >= ingresoMensual) {
+      // Caso extremo: obligaciones cubren todo el ingreso.
+      necesidadesPct = 100;
+      estiloVidaPct  = 0;
+      ahorroInvPct   = 0;
+      razon = `Tus obligaciones fijas (gastos en Agenda y cuotas de deudas) consumen la totalidad de tu ingreso registrado. Reducir compromisos es urgente.`;
+      alertas.push(`Tus obligaciones (${pctObligaciones}%) consumen todo tu ingreso: no queda margen para ahorro ni estilo de vida. Revisa gastos fijos y deudas.`);
+    } else {
+      // Paso 2: ahorro ideal (prioridades en orden).
+      let montoAhorroIdeal = 0;
+      if (!fondoCompleto && faltanteFondo > 0) {
+        montoAhorroIdeal += Math.ceil(faltanteFondo / _HORIZONTE_FONDO);
+      }
+      if (aporteMensualObjetivos > 0) {
+        montoAhorroIdeal += aporteMensualObjetivos;
+      }
+      const tieneAhorroEspecifico = montoAhorroIdeal > 0;
+      if (!tieneAhorroEspecifico) {
+        montoAhorroIdeal = Math.round(ingresoMensual * _BASE_AHORRO_PCT / 100);
+      }
+
+      // Paso 3: estilo de vida residual con piso mínimo.
+      // El piso cede ante Necesidades (piso duro) pero gana sobre el ahorro extra.
+      const pisoEV = Math.round(ingresoMensual * _PISO_EV_PCT / 100);
+      const disponibleParaAhorro = Math.max(0, ingresoMensual - montoNec - pisoEV);
+      const montoAhorro = Math.max(0, Math.min(montoAhorroIdeal, disponibleParaAhorro));
+
+      // Paso 4: convertir a pct, residuo de redondeo en estiloVida.
+      necesidadesPct = Math.min(100, Math.round(montoNec    / ingresoMensual * 100));
+      ahorroInvPct   = Math.min(100 - necesidadesPct, Math.round(montoAhorro / ingresoMensual * 100));
+      estiloVidaPct  = 100 - necesidadesPct - ahorroInvPct;
+
+      // Razón: refleja qué componentes influyeron.
+      const partesRazon = [];
+      if (pctObligaciones > 0) {
+        partesRazon.push(`tus obligaciones son el ${pctObligaciones}% de tu ingreso`);
+      }
+      if (!fondoCompleto && faltanteFondo > 0) {
+        partesRazon.push('tu fondo de emergencia aún no está completo');
+      }
+      if (aporteMensualObjetivos > 0) {
+        partesRazon.push('tienes objetivos con fecha');
+      }
+      razon = partesRazon.length > 0
+        ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
+        : 'Registra tus gastos fijos en Agenda y tus deudas en Compromisos para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
+
+      // Alerta si las obligaciones dejan poco margen.
+      if (pctObligaciones >= 80) {
+        alertas.push(`Tus obligaciones representan el ${pctObligaciones}% de tu ingreso, dejando poco margen. Revisa si puedes reducir gastos fijos o deudas.`);
+      }
+
+      // Alerta informativa si los límites de gasto superan el Estilo de vida sugerido.
+      const montoEV = Math.round(ingresoMensual * estiloVidaPct / 100);
+      if (sumaLimites > 0 && sumaLimites > montoEV * 1.1) {
+        alertas.push(`Tus límites de gasto suman más del presupuesto sugerido para Estilo de vida. Considera ajustar los límites o el preset.`);
+      }
+    }
   }
 
   if (!tieneFondoActivo) {
@@ -832,6 +929,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   return {
     ingresoMensual,
     pctFijos,
+    pctObligaciones,
     metodo,
     razon,
     alertas,

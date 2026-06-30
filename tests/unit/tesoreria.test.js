@@ -17,6 +17,7 @@ import {
   diasParaProximoPago,
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
+  calcularAporteMensualObjetivos,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
@@ -1314,34 +1315,40 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(sugerirDistribucionIngreso(-1_000)).toBeNull();
   });
 
-  it('usa 50/30/20 cuando no hay gastos fijos registrados', () => {
+  it('MC.6a: sin datos registrados usa base saludable 20% ahorro y razón invita a registrar', () => {
     const r = sugerirDistribucionIngreso(3_000_000);
-    expect(r.metodo).toBe('50/30/20');
-    expect(r.split.necesidades.pct).toBe(50);
-    expect(r.split.estiloVida.pct).toBe(30);
+    expect(r.metodo).toBe('pisos');
+    // Sin obligaciones: necesidades=0, ahorro=20% base sana, estiloVida=80%
+    expect(r.split.necesidades.pct).toBe(0);
     expect(r.split.ahorro.pct).toBe(20);
+    expect(r.split.estiloVida.pct).toBe(80);
+    expect(r.razon).toContain('Registra');
   });
 
-  it('usa 50/30/20 cuando pctFijos <= 50 (fijos sanos)', () => {
+  it('MC.6a: gastos fijos 40% → necesidades=40, ahorro=20 base sana, estiloVida=40', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 }); // 40%
-    expect(r.metodo).toBe('50/30/20');
+    expect(r.metodo).toBe('pisos');
     expect(r.pctFijos).toBe(40);
+    expect(r.split.necesidades.pct).toBe(40);
+    expect(r.split.ahorro.pct).toBe(20);
+    expect(r.split.estiloVida.pct).toBe(40);
   });
 
-  it('ajusta el split cuando pctFijos esta entre 50 y 70', () => {
+  it('MC.6a: gastos fijos 60% → necesidades=60, ahorro=20 base, estiloVida=20 (piso EV)', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_800_000 }); // 60%
-    expect(r.metodo).toBe('ajustado');
+    expect(r.metodo).toBe('pisos');
     expect(r.split.necesidades.pct).toBe(60);
     expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
-    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(10);
+    expect(r.split.estiloVida.pct).toBeGreaterThanOrEqual(10); // piso EV
+    expect(r.split.ahorro.pct).toBeGreaterThan(0);
   });
 
-  it('aplica ajuste agresivo cuando pctFijos es mayor que 70', () => {
+  it('MC.6a: gastos fijos 80% → necesidades=80, ahorro capado, alerta de obligaciones altas', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 2_400_000 }); // 80%
-    expect(r.metodo).toBe('ajustado-fijos-altos');
+    expect(r.metodo).toBe('pisos');
     expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
-    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(5);
-    expect(r.alertas.length).toBeGreaterThan(0);
+    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(0);
+    expect(r.alertas.some(a => a.includes('80%') || a.includes('obligaciones'))).toBe(true);
   });
 
   it('el split siempre suma 100 para distintos niveles de pctFijos', () => {
@@ -1429,6 +1436,100 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.metodo).not.toBe('Personalizada');
   });
 
+  // ── Tests nuevos del modelo de pisos (MC.6a) ──────────────────
+
+  it('MC.6a: cuotasDeudaMensuales sube las necesidades', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 600_000,  // 20%
+      cuotasDeudaMensuales: 600_000,  // 20% → obligaciones 40%
+    });
+    expect(r.pctObligaciones).toBe(40);
+    expect(r.split.necesidades.pct).toBe(40);
+  });
+
+  it('MC.6a: faltanteFondo activa prioridad de ahorro (base sana no aplica)', () => {
+    // Faltante 1.2M → ceil(1.2M/12) = 100k/mes como prioridad específica.
+    // La base sana (20%) no aplica porque hay una prioridad activa.
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      faltanteFondo: 1_200_000,
+      fondoCompleto: false,
+    });
+    expect(r.metodo).toBe('pisos');
+    // 100k / 3M ≈ 3% → el ahorro refleja el aporte al fondo, no la base sana.
+    expect(r.split.ahorro.pct).toBeGreaterThanOrEqual(3);
+    // monto = round(3M * 3/100) = 90k ≥ ceil(1.2M/12/3M*100)% de 3M
+    expect(r.split.ahorro.monto).toBeGreaterThanOrEqual(80_000);
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+  });
+
+  it('MC.6a: faltanteFondo eleva ahorro por encima de la base sana cuando es grande', () => {
+    // Faltante 3.6M → 300k/mes. Base sana 600k → el mayor gana (600k). Pero con
+    // fondo incompleto el ideal es 300k; como base sana (600k) > 300k, gana base.
+    // Caso donde fondo manda: faltante 4.8M → 400k/mes < base sana → base sana 600k
+    // Forzamos faltante alto para que domine: faltante 9.6M → 800k/mes > 600k base.
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      faltanteFondo: 9_600_000,
+      fondoCompleto: false,
+    });
+    expect(r.split.ahorro.monto).toBeGreaterThan(600_000); // supera la base sana
+  });
+
+  it('MC.6a: aporteMensualObjetivos sube el ahorro', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      aporteMensualObjetivos: 500_000,
+      fondoCompleto: true,
+    });
+    // Ahorro ideal = 500k (objetivos). Base sana no aplica (hay prioridad específica).
+    expect(r.metodo).toBe('pisos');
+    expect(r.razon).toContain('objetivos');
+    expect(r.split.ahorro.monto).toBeGreaterThanOrEqual(500_000);
+  });
+
+  it('MC.6a: obligaciones mayores que ingreso → 100/0/0 y alerta fuerte', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 2_000_000,
+      cuotasDeudaMensuales: 1_500_000, // total 3.5M > 3M
+    });
+    expect(r.split.necesidades.pct).toBe(100);
+    expect(r.split.estiloVida.pct).toBe(0);
+    expect(r.split.ahorro.pct).toBe(0);
+    expect(r.alertas.some(a => a.includes('todo tu ingreso') || a.includes('100%'))).toBe(true);
+  });
+
+  it('MC.6a: piso de estilo de vida nunca cede ante el ahorro ideal', () => {
+    // Obligaciones 50% + ahorro ideal muy alto → EV queda en el piso 10%.
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 1_500_000, // 50%
+      aporteMensualObjetivos: 1_800_000, // ideal imposible de cumplir completo
+      fondoCompleto: true,
+    });
+    expect(r.split.estiloVida.pct).toBeGreaterThanOrEqual(10);
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+  });
+
+  it('MC.6a: razon menciona el pct de obligaciones cuando hay datos registrados', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 900_000,
+      cuotasDeudaMensuales: 300_000, // 40% total
+    });
+    expect(r.razon).toContain('40%');
+  });
+
+  it('MC.6a: sumaLimites mayor que montoEV genera alerta informativa', () => {
+    // Gastos fijos 50% → EV sugerido ~30% → montoEV ~900k. sumaLimites=3M >> 900k.
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 1_500_000,
+      sumaLimites: 3_000_000,
+    });
+    expect(r.alertas.some(a => a.includes('límites de gasto'))).toBe(true);
+  });
+
+  it('MC.6a: pctObligaciones está siempre en el resultado', () => {
+    const r = sugerirDistribucionIngreso(3_000_000);
+    expect(typeof r.pctObligaciones).toBe('number');
+    expect(r.pctObligaciones).toBe(0); // sin cuotas ni fijos
+  });
+
   it('avisa "tu distribución" (no "el preset") cuando los fijos superan lo personalizado', () => {
     const r = sugerirDistribucionIngreso(3_000_000, {
       gastosFijosMensuales: 2_800_000, // 93%, supera el 80% de necesidades
@@ -1441,6 +1542,56 @@ describe('sugerirDistribucionIngreso()', () => {
 });
 
 // ── esDistribucionPersonalizadaValida() ───────────────────────────
+// ── calcularAporteMensualObjetivos() (MC.6a) ──────────────────────
+describe('calcularAporteMensualObjetivos()', () => {
+  const hoy = new Date('2026-07-01');
+
+  it('devuelve 0 sin metas ni apartados', () => {
+    expect(calcularAporteMensualObjetivos([], [], hoy)).toBe(0);
+  });
+
+  it('ignora metas completadas', () => {
+    const m = [{ montoObjetivo: 1_000_000, montoActual: 0, fechaLimite: '2026-12-01', completada: true }];
+    expect(calcularAporteMensualObjetivos(m, [], hoy)).toBe(0);
+  });
+
+  it('ignora metas sin fechaLimite', () => {
+    const m = [{ montoObjetivo: 1_000_000, montoActual: 0, fechaLimite: null, completada: false }];
+    expect(calcularAporteMensualObjetivos(m, [], hoy)).toBe(0);
+  });
+
+  it('ignora metas con fechaLimite ya pasada', () => {
+    const m = [{ montoObjetivo: 1_000_000, montoActual: 0, fechaLimite: '2026-01-01', completada: false }];
+    expect(calcularAporteMensualObjetivos(m, [], hoy)).toBe(0);
+  });
+
+  it('calcula el aporte mensual para una meta con faltante y fecha futura', () => {
+    // faltante 1.2M en 6 meses → ceil(1.2M/6) = 200k
+    const m = [{ montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: '2027-01-01', completada: false }];
+    const resultado = calcularAporteMensualObjetivos(m, [], hoy);
+    expect(resultado).toBeGreaterThan(0);
+    expect(resultado).toBeLessThanOrEqual(1_200_000); // no puede superar el faltante total
+  });
+
+  it('suma los aportes de varias metas y apartados', () => {
+    const metas = [
+      { montoObjetivo: 600_000, montoActual: 0, fechaLimite: '2027-01-01', completada: false },
+    ];
+    const apartados = [
+      { montoObjetivo: 360_000, montoActual: 0, fechaObjetivo: '2027-01-01', completado: false },
+    ];
+    const solo1 = calcularAporteMensualObjetivos(metas, [], hoy);
+    const solo2 = calcularAporteMensualObjetivos([], apartados, hoy);
+    const ambos = calcularAporteMensualObjetivos(metas, apartados, hoy);
+    expect(ambos).toBe(solo1 + solo2);
+  });
+
+  it('ignora apartados sin fechaObjetivo', () => {
+    const a = [{ montoObjetivo: 500_000, montoActual: 0, fechaObjetivo: null, completado: false }];
+    expect(calcularAporteMensualObjetivos([], a, hoy)).toBe(0);
+  });
+});
+
 describe('esDistribucionPersonalizadaValida()', () => {
   it('acepta 3 porcentajes que suman exactamente 100', () => {
     expect(esDistribucionPersonalizadaValida({ n: 80, e: 10, a: 10 })).toBe(true);
