@@ -340,6 +340,53 @@
 .grupo-card__fig dd { color: var(--fk-text-primary); margin: 0; font-weight: var(--fk-fw-semibold); }
 .grupo-card__fig dd.is-negative { color: var(--fk-danger); }
 
+/* ── MC.5c: desglose por item dentro de cada tarjeta de grupo ── */
+.grupo-card__desglose {
+  margin-top: var(--fk-space-xs);
+  border-color: var(--fk-border);
+}
+
+.grupo-card__desglose .analisis-grupo__summary {
+  padding: var(--fk-space-sm);
+  font-size: var(--fk-fs-sm);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-secondary);
+}
+
+.grupo-card__item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--fk-space-sm) var(--fk-space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+}
+
+.grupo-card__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+  font-size: var(--fk-fs-xs);
+}
+
+.grupo-card__item-nombre { color: var(--fk-text-primary); }
+.grupo-card__item-sub    { color: var(--fk-text-muted); white-space: nowrap; }
+.grupo-card__item[data-estado-pago="ninguno"] .grupo-card__item-sub { color: var(--fk-warning); }
+
+.grupo-card__desglose-empty {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: var(--fk-space-xs) 0 0;
+}
+
+.grupo-card__desglose-hint {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0 0 var(--fk-space-sm);
+  padding: 0 var(--fk-space-sm);
+}
+
 /* Estado vacío: sin ingreso registrado, invita a planificar en Mis cuentas. */
 .grupos-resumen--vacio {
   background: var(--fk-bg-elevated);

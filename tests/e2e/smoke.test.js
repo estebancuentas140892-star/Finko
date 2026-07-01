@@ -749,4 +749,54 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(page.locator('.grupo-card[data-grupo="estilo-de-vida"]')).toBeVisible();
     await expect(page.locator('.grupo-card[data-grupo="ahorro"]')).toBeVisible();
   });
+
+  test('desglose de Necesidades (MC.5c): un fijo pagado este mes aparece en el detalle', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.compromisos = [{
+        id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual',
+        diaPago: 5, monto: 800_000, activo: true, categoria: null,
+        fechaCreacion: '2026-01-01T00:00:00.000Z',
+      }];
+      st.gastos = [{
+        id: 'g1', descripcion: 'Pago arriendo', monto: 800_000, categoria: 'Vivienda',
+        fecha: hoy, cuentaId: null, nota: '', compromisoId: 'cf1',
+      }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const card = page.locator('.grupo-card[data-grupo="necesidades"]');
+    await card.locator('.grupo-card__desglose summary').click();
+    await expect(card.locator('.grupo-card__item')).toHaveCount(1);
+    await expect(card.locator('.grupo-card__item-nombre')).toContainText('Arriendo');
+    await expect(card.locator('.grupo-card__item-sub')).toContainText('Pagado');
+  });
+
+  test('desglose de Ahorro (MC.5c): fondo activo muestra aportado este mes', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.ahorro = {
+        fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 100_000 },
+        aportes: [{ id: 'a1', monto: 50_000, fecha: hoy }],
+        compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const card = page.locator('.grupo-card[data-grupo="ahorro"]');
+    await card.locator('.grupo-card__desglose summary').click();
+    await expect(card.locator('.grupo-card__item')).toHaveCount(1);
+    await expect(card.locator('.grupo-card__item-nombre')).toContainText('Fondo de emergencia');
+    await expect(card.locator('.grupo-card__item-sub')).toContainText('este mes');
+  });
 });

@@ -5,6 +5,8 @@ import {
   calcularProgreso,
   resumenGrupos,
   ejecutadoPorGrupoDelMes,
+  desgloseNecesidadesDelMes,
+  desgloseAhorroDelMes,
   totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
@@ -303,6 +305,168 @@ describe('ejecutadoPorGrupoDelMes()', () => {
     expect(resumen.necesidades.ejecutado).toBe(300_000);
     expect(resumen['estilo-de-vida'].ejecutado).toBe(100_000);
     expect(resumen.ahorro.ejecutado).toBe(50_000);
+  });
+});
+
+// ── desgloseNecesidadesDelMes() (MC.5c, ADR 017) ──────────────────────────────
+
+const compromisoFijo = (overrides = {}) => ({
+  id:            'cf1',
+  descripcion:   'Arriendo',
+  tipo:          'fijo',
+  frecuencia:    'Mensual',
+  diaPago:       5,
+  monto:         800_000,
+  activo:        true,
+  categoria:     null,
+  fechaCreacion: '2026-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
+const compromisoDeuda = (overrides = {}) => ({
+  id:            'cd1',
+  descripcion:   'Tarjeta Bancolombia',
+  tipo:          'deuda-entidad',
+  frecuencia:    'Mensual',
+  diaPago:       10,
+  cuotaMensual:  150_000,
+  saldoTotal:    1_000_000,
+  activo:        true,
+  categoria:     null,
+  fechaCreacion: '2026-01-01T00:00:00.000Z',
+  ...overrides,
+});
+
+describe('desgloseNecesidadesDelMes()', () => {
+  it('un fijo con gasto vinculado este mes queda "completo"', () => {
+    const compromisos = [compromisoFijo()];
+    const gastos = [gasto({ id: 'g1', monto: 800_000, compromisoId: 'cf1', fecha: '2026-05-05' })];
+    const [item] = desgloseNecesidadesDelMes(compromisos, gastos, 2026, 5);
+    expect(item.tipo).toBe('fijo');
+    expect(item.montoReferencia).toBe(800_000);
+    expect(item.ejecutado).toBe(800_000);
+    expect(item.estadoPago).toBe('completo');
+  });
+
+  it('un fijo sin gasto vinculado este mes queda "ninguno"', () => {
+    const [item] = desgloseNecesidadesDelMes([compromisoFijo()], [], 2026, 5);
+    expect(item.estadoPago).toBe('ninguno');
+    expect(item.ejecutado).toBe(0);
+  });
+
+  it('una deuda con abono parcial (menor a la cuota) queda "parcial"', () => {
+    const compromisos = [compromisoDeuda({ cuotaMensual: 150_000 })];
+    const gastos = [gasto({ id: 'g1', monto: 80_000, compromisoId: 'cd1', fecha: '2026-05-10' })];
+    const [item] = desgloseNecesidadesDelMes(compromisos, gastos, 2026, 5);
+    expect(item.tipo).toBe('deuda');
+    expect(item.montoReferencia).toBe(150_000);
+    expect(item.estadoPago).toBe('parcial');
+  });
+
+  it('una deuda con abono que cubre o supera la cuota queda "completo"', () => {
+    const compromisos = [compromisoDeuda({ cuotaMensual: 150_000 })];
+    const gastos = [gasto({ id: 'g1', monto: 150_000, compromisoId: 'cd1', fecha: '2026-05-10' })];
+    const [item] = desgloseNecesidadesDelMes(compromisos, gastos, 2026, 5);
+    expect(item.estadoPago).toBe('completo');
+  });
+
+  it('excluye compromisos inactivos', () => {
+    const compromisos = [compromisoFijo({ activo: false })];
+    expect(desgloseNecesidadesDelMes(compromisos, [], 2026, 5)).toHaveLength(0);
+  });
+
+  it('no incluye tipos ajenos a fijo/deuda', () => {
+    const compromisos = [compromisoFijo({ id: 'x', tipo: 'otro' })];
+    expect(desgloseNecesidadesDelMes(compromisos, [], 2026, 5)).toHaveLength(0);
+  });
+
+  it('ordena: pendientes/parciales antes que completos, luego por monto descendente', () => {
+    const compromisos = [
+      compromisoFijo({ id: 'grande-pagado', monto: 900_000 }),
+      compromisoFijo({ id: 'chico-pendiente', monto: 100_000 }),
+      compromisoDeuda({ id: 'grande-pendiente', cuotaMensual: 500_000 }),
+    ];
+    const gastos = [gasto({ id: 'g1', monto: 900_000, compromisoId: 'grande-pagado', fecha: '2026-05-05' })];
+    const orden = desgloseNecesidadesDelMes(compromisos, gastos, 2026, 5).map(i => i.id);
+    expect(orden).toEqual(['grande-pendiente', 'chico-pendiente', 'grande-pagado']);
+  });
+
+  it('gastos de otros meses no cuentan como ejecutado', () => {
+    const compromisos = [compromisoFijo()];
+    const gastos = [gasto({ id: 'g1', monto: 800_000, compromisoId: 'cf1', fecha: '2026-04-05' })];
+    const [item] = desgloseNecesidadesDelMes(compromisos, gastos, 2026, 5);
+    expect(item.estadoPago).toBe('ninguno');
+  });
+
+  it('sin compromisos devuelve array vacío', () => {
+    expect(desgloseNecesidadesDelMes([], [], 2026, 5)).toEqual([]);
+    expect(desgloseNecesidadesDelMes(null, null, 2026, 5)).toEqual([]);
+  });
+});
+
+// ── desgloseAhorroDelMes() (MC.5c, ADR 017) ───────────────────────────────────
+
+describe('desgloseAhorroDelMes()', () => {
+  it('sin nada activo devuelve array vacío', () => {
+    expect(desgloseAhorroDelMes(null, [], [], [], 2026, 5)).toEqual([]);
+  });
+
+  it('fondo activo: acumulado suma montoActual + todos los aportes; aportadoEsteMes solo el del mes', () => {
+    const ahorro = {
+      fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 200_000 },
+      aportes: [
+        { id: 'a1', monto: 50_000, fecha: '2026-05-03' },
+        { id: 'a2', monto: 30_000, fecha: '2026-04-20' },
+      ],
+    };
+    const [item] = desgloseAhorroDelMes(ahorro, [], [], [], 2026, 5);
+    expect(item.tipo).toBe('fondo');
+    expect(item.acumulado).toBe(280_000);
+    expect(item.aportadoEsteMes).toBe(50_000);
+  });
+
+  it('fondo inactivo no aparece en el desglose', () => {
+    const ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [] };
+    expect(desgloseAhorroDelMes(ahorro, [], [], [], 2026, 5)).toEqual([]);
+  });
+
+  it('metas completadas se excluyen; las activas muestran acumulado/objetivo', () => {
+    const metas = [
+      { id: 'm1', nombre: 'Viaje', montoObjetivo: 2_000_000, montoActual: 500_000, completada: false },
+      { id: 'm2', nombre: 'Moto',  montoObjetivo: 5_000_000, montoActual: 5_000_000, completada: true },
+    ];
+    const items = desgloseAhorroDelMes(null, metas, [], [], 2026, 5);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ id: 'm1', tipo: 'meta', acumulado: 500_000, objetivo: 2_000_000, aportadoEsteMes: null });
+  });
+
+  it('apartados completados se excluyen; los activos muestran acumulado/objetivo', () => {
+    const apartados = [
+      { id: 'ap1', nombre: 'SOAT', montoObjetivo: 400_000, montoActual: 100_000, completado: false },
+      { id: 'ap2', nombre: 'Impuestos', montoObjetivo: 300_000, montoActual: 300_000, completado: true },
+    ];
+    const items = desgloseAhorroDelMes(null, [], apartados, [], 2026, 5);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ id: 'ap1', tipo: 'apartado', acumulado: 100_000, objetivo: 400_000 });
+  });
+
+  it('inversiones aparecen todas, sin objetivo (null)', () => {
+    const inversiones = [{ id: 'i1', nombre: 'CDT Bancolombia', monto: 1_000_000 }];
+    const items = desgloseAhorroDelMes(null, [], [], inversiones, 2026, 5);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ id: 'i1', tipo: 'inversion', acumulado: 1_000_000, objetivo: null });
+  });
+
+  it('combina los 4 destinos cuando todos están activos', () => {
+    const ahorro = {
+      fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 100_000 },
+      aportes: [],
+    };
+    const metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_000_000, montoActual: 200_000, completada: false }];
+    const apartados = [{ id: 'ap1', nombre: 'SOAT', montoObjetivo: 300_000, montoActual: 50_000, completado: false }];
+    const inversiones = [{ id: 'i1', nombre: 'CDT', monto: 500_000 }];
+    const items = desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, 2026, 5);
+    expect(items.map(i => i.tipo)).toEqual(['fondo', 'meta', 'apartado', 'inversion']);
   });
 });
 

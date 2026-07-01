@@ -172,6 +172,150 @@ export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes) {
   return { necesidades, 'estilo-de-vida': estiloVida, ahorro };
 }
 
+// ── DESGLOSE POR ITEM DENTRO DE CADA GRUPO (MC.5c, ADR 017) ───────
+
+/**
+ * Desglose de Necesidades por item (gasto fijo o deuda) del mes en curso.
+ *
+ * ADR 017 decisión 4: en v1 no hay presupuesto por item (el presupuesto es el
+ * del grupo); aquí solo se informa el monto de referencia del compromiso
+ * (`monto` para fijos, `cuotaMensual` para deudas) y si ya se pagó este mes.
+ *
+ * Pura: recibe compromisos y gastos ya extraídos de S; no importa
+ * `compromisos/logic.js` (regla ADN #10, misma decisión que MC.5a/MC.5b).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Array<{
+ *   id: string,
+ *   descripcion: string,
+ *   tipo: 'fijo'|'deuda',
+ *   categoria: string|null,
+ *   montoReferencia: number,
+ *   ejecutado: number,
+ *   estadoPago: 'ninguno'|'parcial'|'completo',
+ * }>} Ordenado: pendientes primero, luego por monto de referencia descendente.
+ */
+export function desgloseNecesidadesDelMes(compromisos, gastos, anio, mes) {
+  const delMes = gastosMes(gastos ?? [], anio, mes);
+
+  const items = (compromisos ?? [])
+    .filter(c => c.activo !== false
+      && (c.tipo === 'fijo' || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+    .map(c => {
+      const esDeudaTipo = c.tipo !== 'fijo';
+      const montoReferencia = Number(esDeudaTipo ? c.cuotaMensual : c.monto) || 0;
+      const ejecutado = delMes
+        .filter(g => g.compromisoId === c.id)
+        .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+
+      let estadoPago;
+      if (ejecutado <= 0)                                     estadoPago = 'ninguno';
+      else if (!esDeudaTipo)                                  estadoPago = 'completo'; // fijos: un abono cubre el mes
+      else if (montoReferencia > 0 && ejecutado < montoReferencia) estadoPago = 'parcial';
+      else                                                     estadoPago = 'completo';
+
+      return {
+        id:              c.id,
+        descripcion:     c.descripcion ?? '',
+        tipo:            esDeudaTipo ? 'deuda' : 'fijo',
+        categoria:       c.categoria ?? null,
+        montoReferencia,
+        ejecutado,
+        estadoPago,
+      };
+    });
+
+  const RANGO_ESTADO = { ninguno: 0, parcial: 1, completo: 2 };
+  return items.sort((a, b) => {
+    if (a.estadoPago !== b.estadoPago) return RANGO_ESTADO[a.estadoPago] - RANGO_ESTADO[b.estadoPago];
+    return b.montoReferencia - a.montoReferencia;
+  });
+}
+
+/**
+ * Desglose de Ahorro por destino: fondo de emergencia, metas, apartados e
+ * inversiones (ADR 017, decisión 1 y 4).
+ *
+ * Solo el fondo tiene aportes fechados (`ahorro.aportes`), así que solo él
+ * reporta `aportadoEsteMes`; metas, apartados e inversiones no guardan un
+ * historial de aportes con fecha (mismo límite que `ejecutadoPorGrupoDelMes`),
+ * así que muestran su acumulado a la fecha (`acumulado`/`objetivo`), no un
+ * corte mensual. La vista debe ser honesta sobre esta diferencia.
+ *
+ * Pura: recibe los arrays/objeto ya extraídos de S; no importa otros dominios.
+ *
+ * @param {import('../../core/state.js').Ahorro|null|undefined} ahorro
+ * @param {import('../../core/state.js').Meta[]} metas
+ * @param {import('../../core/state.js').Apartado[]} apartados
+ * @param {import('../../core/state.js').Inversion[]} inversiones
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Array<{
+ *   id: string,
+ *   nombre: string,
+ *   tipo: 'fondo'|'meta'|'apartado'|'inversion',
+ *   acumulado: number,
+ *   objetivo: number|null,
+ *   aportadoEsteMes: number|null,
+ * }>}
+ */
+export function desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, anio, mes) {
+  const prefijo = `${anio}-${String(mes).padStart(2, '0')}`;
+  const items = [];
+
+  const fondo = ahorro?.fondoEmergencia;
+  if (fondo?.activo) {
+    const aportes       = ahorro?.aportes ?? [];
+    const aportesTotal  = aportes.reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+    const aportadoEsteMes = aportes
+      .filter(a => typeof a?.fecha === 'string' && a.fecha.startsWith(prefijo))
+      .reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+
+    items.push({
+      id:              'fondo',
+      nombre:          'Fondo de emergencia',
+      tipo:            'fondo',
+      acumulado:       (Number(fondo.montoActual) || 0) + aportesTotal,
+      objetivo:        null,
+      aportadoEsteMes,
+    });
+  }
+
+  for (const m of (metas ?? [])) {
+    if (m.completada === true) continue;
+    items.push({
+      id: m.id, nombre: m.nombre, tipo: 'meta',
+      acumulado:       Number(m.montoActual)   || 0,
+      objetivo:        Number(m.montoObjetivo) || 0,
+      aportadoEsteMes: null,
+    });
+  }
+
+  for (const a of (apartados ?? [])) {
+    if (a.completado === true) continue;
+    items.push({
+      id: a.id, nombre: a.nombre, tipo: 'apartado',
+      acumulado:       Number(a.montoActual)   || 0,
+      objetivo:        Number(a.montoObjetivo) || 0,
+      aportadoEsteMes: null,
+    });
+  }
+
+  for (const inv of (inversiones ?? [])) {
+    items.push({
+      id: inv.id, nombre: inv.nombre, tipo: 'inversion',
+      acumulado:       Number(inv.monto) || 0,
+      objetivo:        null,
+      aportadoEsteMes: null,
+    });
+  }
+
+  return items;
+}
+
 /**
  * Suma el monto mensual de todos los envelopes activos.
  * @param {import('../../core/state.js').Presupuesto[]} presupuestos

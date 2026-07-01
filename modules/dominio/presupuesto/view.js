@@ -21,6 +21,8 @@ import {
   alertasLimites,
   resumenGrupos,
   ejecutadoPorGrupoDelMes,
+  desgloseNecesidadesDelMes,
+  desgloseAhorroDelMes,
 } from './logic.js';
 import {
   estimarSalarioMensual,
@@ -63,13 +65,15 @@ export function renderPanelPresupuesto() {
   `;
 }
 
-// ── RESUMEN POR GRUPO FINANCIERO (MC.5b, ADR 017) ────────────────
+// ── RESUMEN POR GRUPO FINANCIERO (MC.5b/MC.5c, ADR 017) ──────────
 
 /**
  * Resumen read-only de los 3 grupos financieros del mes en curso.
  * El presupuesto asignado sale de la distribución de ingreso de Mis cuentas
  * (misma función que "Distribuir mi ingreso"); el ejecutado, de los flujos ya
  * registrados. Si no hay ingreso registrado, guía al usuario a Mis cuentas.
+ * Necesidades y Ahorro incluyen, además, un desglose colapsable por item
+ * (MC.5c); Estilo de vida tiene el suyo más abajo (topes por categoría).
  *
  * @param {number} anio
  * @param {number} mes - 1-12
@@ -93,7 +97,19 @@ function _renderResumenGrupos(anio, mes) {
   );
   const resumen = resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo);
 
-  const cards = GRUPOS_FINANCIEROS.map(g => _renderGrupoCard(g, resumen[g])).join('');
+  const itemsNecesidades = desgloseNecesidadesDelMes(S.compromisos ?? [], S.gastos ?? [], anio, mes);
+  const itemsAhorro       = desgloseAhorroDelMes(
+    S.ahorro, S.metas ?? [], S.apartados ?? [], S.inversiones ?? [], anio, mes,
+  );
+  const desglosePorGrupo = {
+    'necesidades':    _renderDesgloseNecesidades(itemsNecesidades),
+    'estilo-de-vida': '',
+    'ahorro':         _renderDesgloseAhorro(itemsAhorro),
+  };
+
+  const cards = GRUPOS_FINANCIEROS
+    .map(g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g]))
+    .join('');
 
   return `
     <section class="grupos-resumen" aria-label="Seguimiento de tus tres grupos financieros este mes">
@@ -110,9 +126,10 @@ function _renderResumenGrupos(anio, mes) {
  * Una tarjeta de grupo dentro del resumen.
  * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
  * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
+ * @param {string} [desgloseHtml=''] - HTML del detalle colapsable por item (MC.5c).
  * @returns {string} HTML.
  */
-function _renderGrupoCard(grupo, r) {
+function _renderGrupoCard(grupo, r, desgloseHtml = '') {
   const label       = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
   const pctVisual   = Math.min(r.pct, 100);
   const restanteNeg = r.restante < 0;
@@ -143,7 +160,80 @@ function _renderGrupoCard(grupo, r) {
           <dd class="${restanteNeg ? 'is-negative' : ''}">${f(Math.abs(r.restante))}</dd>
         </div>
       </dl>
+      ${desgloseHtml}
     </article>`;
+}
+
+// ── DESGLOSE POR ITEM (MC.5c, ADR 017) ───────────────────────────
+
+const _EMOJI_ITEM_NECESIDAD = { fijo: '🏠', deuda: '💳' };
+const _ETIQUETA_ESTADO_PAGO = { ninguno: 'Pendiente', parcial: 'Abono parcial', completo: 'Pagado' };
+const _EMOJI_ITEM_AHORRO    = { fondo: '🛟', meta: '🎯', apartado: '📦', inversion: '📈' };
+
+/**
+ * Detalle colapsable de Necesidades: un item por gasto fijo o deuda activa,
+ * con su monto de referencia y si ya se pagó este mes.
+ * @param {ReturnType<typeof desgloseNecesidadesDelMes>} items
+ * @returns {string} HTML. `''` si no hay items (el caller no debería mostrar el `<details>`).
+ */
+function _renderDesgloseNecesidades(items) {
+  if (items.length === 0) {
+    return `<p class="grupo-card__desglose-empty">Aún no registras gastos fijos ni deudas en Calendario.</p>`;
+  }
+
+  const filas = items.map(it => {
+    const emoji = _EMOJI_ITEM_NECESIDAD[it.tipo] ?? '📦';
+    const sub   = it.estadoPago === 'ninguno'
+      ? `Pendiente · ${f(it.montoReferencia)}`
+      : `${_ETIQUETA_ESTADO_PAGO[it.estadoPago]} · ${f(it.ejecutado)}`;
+
+    return `
+      <li class="grupo-card__item" data-estado-pago="${it.estadoPago}">
+        <span class="grupo-card__item-nombre">${emoji} ${_esc(it.descripcion)}</span>
+        <span class="grupo-card__item-sub">${sub}</span>
+      </li>`;
+  }).join('');
+
+  return `
+    <details class="analisis-grupo grupo-card__desglose">
+      <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
+      <ul class="grupo-card__item-list" role="list">${filas}</ul>
+    </details>`;
+}
+
+/**
+ * Detalle colapsable de Ahorro: un item por destino (fondo, meta, apartado,
+ * inversión). Solo el fondo tiene corte mensual; el resto muestra su
+ * acumulado a la fecha (el copy lo aclara para no confundir con "este mes").
+ * @param {ReturnType<typeof desgloseAhorroDelMes>} items
+ * @returns {string} HTML.
+ */
+function _renderDesgloseAhorro(items) {
+  if (items.length === 0) {
+    return `<p class="grupo-card__desglose-empty">Aún no tienes un fondo, meta, apartado o inversión activos.</p>`;
+  }
+
+  const filas = items.map(it => {
+    const emoji = _EMOJI_ITEM_AHORRO[it.tipo] ?? '📦';
+    const sub   = it.tipo === 'fondo'
+      ? `${f(it.aportadoEsteMes)} este mes · ${f(it.acumulado)} acumulado`
+      : it.objetivo
+        ? `${f(it.acumulado)} de ${f(it.objetivo)}`
+        : `${f(it.acumulado)} acumulado`;
+
+    return `
+      <li class="grupo-card__item">
+        <span class="grupo-card__item-nombre">${emoji} ${_esc(it.nombre)}</span>
+        <span class="grupo-card__item-sub">${sub}</span>
+      </li>`;
+  }).join('');
+
+  return `
+    <details class="analisis-grupo grupo-card__desglose">
+      <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
+      <ul class="grupo-card__item-list" role="list">${filas}</ul>
+      <p class="grupo-card__desglose-hint">Salvo el fondo de emergencia, estos montos son el acumulado a la fecha, no solo de este mes.</p>
+    </details>`;
 }
 
 /** Estado vacío del resumen: sin ingreso registrado, guía a Mis cuentas. */

@@ -7,6 +7,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): desglose por item dentro de cada grupo en Límites de gasto (MC.5c) · 2026-06-30
+
+Tercer slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)): las tarjetas de **Necesidades** y **Ahorro** ahora tienen un detalle colapsable ("Ver detalle (N)") con un item por fuente, reusando el patrón `<details>` de Análisis (`.analisis-grupo`). Estilo de vida no lo necesita: su detalle ya es la sección de topes por categoría de MC.5b.
+
+**Necesidades** desglosa por gasto fijo y por deuda activa (`desgloseNecesidadesDelMes`): cada item muestra su monto de referencia (cuota del fijo o cuota mensual de la deuda) y si ya se pagó este mes, con 3 estados: pendiente, abono parcial (solo deudas, cuando el abono no cubre la cuota) o pagado. Ordenado con los pendientes primero (lo que necesita atención), luego por monto descendente. Coherente con ADR 017 decisión 4: sin presupuesto por item, solo informativo.
+
+**Ahorro** desglosa por destino (`desgloseAhorroDelMes`): fondo de emergencia, cada meta activa, cada apartado activo, cada inversión. Solo el fondo tiene aportes fechados, así que solo él reporta "aportado este mes"; metas/apartados/inversiones muestran su acumulado a la fecha (`montoActual`/`montoObjetivo`), y el copy lo aclara explícitamente para no sugerir un corte mensual que el dato no soporta (mismo límite de fidelidad ya documentado en MC.5b).
+
+Ambas funciones son puras y no importan otros dominios (mismo criterio ADN #10 de MC.5a/MC.5b): solo leen campos de los arrays/objetos que el caller ya extrajo de `S`. 16 tests unitarios nuevos + 2 E2E (abrir el detalle de Necesidades con un fijo pagado; abrir el de Ahorro con el fondo activo). 1691 → 1707 unit; 67 → 69 E2E. Lint limpio. SW v238 → v239.
+
+- **`modules/dominio/presupuesto/logic.js`**: `desgloseNecesidadesDelMes()` y `desgloseAhorroDelMes()` nuevas.
+- **`modules/dominio/presupuesto/view.js`**: `_renderDesgloseNecesidades`, `_renderDesgloseAhorro`; `_renderGrupoCard` recibe `desgloseHtml` opcional; `_renderResumenGrupos` computa los dos desgloses y los pasa a Necesidades/Ahorro (Estilo de vida no lo necesita).
+- **`styles/components/analysis.css`**: `.grupo-card__desglose` (reusa `.analisis-grupo`) + `.grupo-card__item*` + estados vacíos.
+- **`tests/unit/presupuesto.test.js`**: 16 tests nuevos + fixtures `compromisoFijo`/`compromisoDeuda`.
+- **`tests/e2e/smoke.test.js`**: 2 tests nuevos.
+- **`service-worker.js`**: v238 → v239.
+
+---
+
 ### feat(presupuesto): resumen read-only de los 3 grupos en Límites de gasto (MC.5b) · 2026-06-30
 
 Segundo slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)): Límites de gasto empieza a ser un centro de control. Arriba de la sección aparece **"Tu plan del mes por grupo"** con una tarjeta por cada grupo financiero (Necesidades / Estilo de vida / Ahorro), cada una con presupuesto asignado, ejecutado, disponible, porcentaje y barra de progreso (reusa `.progress` + los umbrales 75%/100%). Los topes por categoría de siempre quedan debajo, re-enmarcados como **"Estilo de vida: topes por categoría"** (el detalle del grupo), sin migrar nada. Si no hay ingreso registrado, un estado vacío guía a Mis cuentas ("Distribuir mi ingreso").
