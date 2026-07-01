@@ -87,6 +87,24 @@ Tres ideas del usuario para pulir la experiencia. Las dos últimas (EP.5, EP.6) 
 
 ---
 
+### Propuesta del usuario: renombrar secciones principales (2026-06-30)
+
+Propuesta del usuario y **evaluación UX/IA** (pidió elegir la mejor opción para un usuario primerizo, aunque difiera de su sugerencia). **Reconsideración de AG.1**, que antes se inclinaba por "Agenda".
+
+**Decisión recomendada: Dashboard → Inicio, Agenda → Calendario** (coincide con la propuesta del usuario). Razones de arquitectura de la información:
+
+- **Dashboard → Inicio.** "Dashboard" es jerga en inglés, opaca para el público objetivo (baja alfabetización tecnológica/financiera). "Inicio" es el término convencional en español para la pantalla principal (Home): universal y no limita la sección a una sola función. Descartadas: "Hoy" (subdescribe, la sección tiene resumen, score, logros y accesos, no solo lo de hoy) y "Agenda" (colisiona si Agenda pasa a Calendario).
+- **Agenda → Calendario.** Para un usuario primerizo la heurística que más ayuda es "el nombre coincide con lo que veo": la sección es visualmente una cuadrícula de calendario mensual, así que "Calendario" da reconocimiento inmediato y sin explicación. "Agenda" es más orientado al propósito (cosas por hacer), válido pero más abstracto y para algunos suena a directorio o planificador. La objeción de AG.1 ("Calendario suena a eventos o citas") queda neutralizada porque toda la app es financiera: cada cosa en ese calendario es un pago, meta o apartado. Renombrar ambas libera la palabra "Agenda" y elimina ambigüedad. Trade-off asumido: se pierde algo de la connotación de "compromisos por cumplir", pero se gana reconocimiento inmediato, que pesa más en el primer uso.
+
+**Guía de implementación (clave de IA): renombrar solo la etiqueta visible, no la ruta ni el código.**
+- **Mantener estables:** el hash de ruta (`#dash`, `#agenda`), los `id` del DOM (`sec-dash`, `sec-agenda`, `title-agenda`) y el nombre del dominio en el código (`agenda`). Cambiar la ruta rompería deep links, bookmarks y el cache del SW sin beneficio. La identidad interna sigue siendo "agenda"; solo el humano ve "Calendario".
+- **Cambiar solo el texto de cara al usuario:** labels de nav (sidebar + bottom nav, `nav-item__label` "Dashboard" y "Agenda" en [index.html:113](../index.html) y [:126](../index.html)) + sus `aria-label` ([:111](../index.html), [:124](../index.html)); título "Mi Agenda" → "Calendario" ([index.html:381](../index.html)); copy del banner de propósito ("¿Para qué sirve Mi Agenda?" en [modules/ui/proposito.js](../modules/ui/proposito.js)); y auditar el resto de copy de cara al usuario que diga "Agenda" o "Dashboard" (nudges, empty states, textos de "Distribuir mi ingreso"). Sin schema. Bump de SW.
+- **Impacto en backlog:** las tareas que mencionan "Agenda" (AP.4, MT.2, AH.4, AG.2, TX.6) siguen válidas; su copy de cara al usuario usará "Calendario", pero los nombres de archivo/dominio no cambian.
+
+Modelo: Sonnet 4.6 - Bajo (renombre de labels + auditoría de copy, sin lógica; sube a Medio si la auditoría de copy resulta amplia).
+
+---
+
 ### Backlog del usuario "Me deben (Personales)" (2026-06-30)
 
 Cinco ideas del usuario sobre "Me deben" (dominio `personales`, préstamos que tú das). **PE.1 invierte la premisa actual del dominio** (hoy es "informal, sin tasa"); **PE.2 y PE.4 comparten un humanizador de fechas nuevo**.
@@ -303,7 +321,7 @@ Visión del usuario para que Apartados tenga un propósito claro y diferenciado 
 
 Observaciones del usuario sobre la sección Agenda y, a partir de ahí, una propuesta de taxonomía de categorías para toda la app. El hilo conductor: que el usuario entienda de forma natural dónde registrar cada movimiento sin pensarlo dos veces, porque las categorías son la base de muchas funciones (análisis, límites de gasto, recomendaciones, distribución inteligente).
 
-- **AG.1 (decisión + copy)** - Nombre de la sección: ¿**Agenda** o **Calendario**? El usuario se inclina por "Agenda" (transmite organizar compromisos y pagos futuros) frente a "Calendario" (suena a eventos o citas en general), pero quiere analizar cuál es más intuitivo. Entregable: decidir el término y, si cambia, renombrar etiqueta de nav + título de sección + copys. Sin lógica. Modelo: Sonnet 4.6 - Bajo (o Haiku si solo se confirma "Agenda" sin cambios).
+- **AG.1 (resuelta 2026-06-30) = Agenda → Calendario.** Reconsiderado con el usuario: se decide **Calendario** (reversa del lean inicial hacia "Agenda"), por reconocimiento inmediato del formato para un usuario primerizo. Va junto con **Dashboard → Inicio** en el backlog "Renombrar secciones principales" (arriba), que trae la evaluación UX/IA completa y la guía de implementación (renombrar solo la etiqueta visible; mantener ruta `#agenda`, `id` y dominio estables).
 
 - **AG.2 (mejora UI, brecha confirmada 2026-06-30)** - Emoji de categoría **a la izquierda** de cada item de Agenda. Confirmado con el usuario: hoy el emoji ya existe (`CATEGORIA_AGENDA_EMOJI`, schema v17) pero se renderiza **en el subtítulo** (` · 🛒 Mercado`, `_renderDetalleItem` en [modules/dominio/agenda/view.js:284](../modules/dominio/agenda/view.js)); el ícono izquierdo sigue siendo el genérico por tipo (`icon(ICONO_TIPO[tipo])`, [view.js:279](../modules/dominio/agenda/view.js)). El usuario lo quiere como en Gastos: el emoji de categoría **como ícono principal a la izquierda** (para un fijo con categoría), con fallback al ícono de tipo cuando no hay categoría. Ajuste de placement, sin schema. Parte de la misma serie de consistencia visual que TX.6/TX.7. Modelo: Sonnet 4.6 - Bajo.
 
