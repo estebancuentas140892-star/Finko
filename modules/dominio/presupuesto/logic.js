@@ -316,23 +316,28 @@ export function desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, anio
   return items;
 }
 
-// ── ALERTAS Y REFUERZOS INTELIGENTES (MC.5d, ADR 017) ─────────────
+// ── MENSAJES POR ROL (MC.5d + MC.8a, ADR 017 y ADR 019) ───────────
 
 /**
- * Genera los mensajes de alerta y refuerzo del mes, por item de Estilo de
- * vida (categorías con envelope) y por grupo financiero, siguiendo los
- * ejemplos aprobados por el usuario en ADR 017 decisión 5. Tono orientativo,
- * nunca prescriptivo (ADN regla 11).
+ * Genera los mensajes del mes por grupo financiero, con **tratamiento
+ * asimétrico por rol** (ADR 019): cada grupo habla según su naturaleza, no
+ * con una plantilla común. Tono orientativo, nunca prescriptivo (ADN regla 11).
  *
- * Para Ahorro, superar el 100% es bueno (aportaste más de lo planeado), al
- * revés que Necesidades/Estilo de vida: por eso Ahorro solo genera un
- * mensaje de refuerzo cuando `pct >= 100`, ignorando la etiqueta genérica
- * `estado` de `resumenGrupos` (pensada para gasto, no para ahorro).
+ * - **Necesidades = monitorear.** Son gastos esenciales que se pagan sí o sí:
+ *   no se "limitan", se monitorean. Cuando el gasto en necesidades supera lo
+ *   que la distribución les asignó, no es una falta del usuario, sino que sus
+ *   necesidades pesan más sobre el ingreso. Se emite un mensaje **informativo**
+ *   (`tipo: 'info'`), sin la palabra "límite" ni tono de alarma. Estar cerca
+ *   del presupuesto (estado 'alerta') no genera nada: es normal.
+ * - **Ahorro = celebrar.** Superar lo planeado es una victoria. Se refuerza
+ *   siempre que `pct >= 100`, con más calidez cuando el usuario aportó de más
+ *   (`ejecutado > asignado`) que cuando solo cumplió.
+ * - **Estilo de vida = controlar.** Único grupo con alertas preventivas, por
+ *   categoría (`alertasCategoria`) y por grupo. Sin cambios respecto a MC.5d.
  *
  * El refuerzo combinado ("cumpliste todas tus necesidades y aún ahorras")
  * exige que TODOS los items de Necesidades del mes estén pagados (dato más
- * fino que el ratio del grupo) y que el grupo Necesidades no esté excedido,
- * para no mostrar un mensaje contradictorio con una alerta de grupo.
+ * fino que el ratio del grupo) y que el grupo Necesidades no esté excedido.
  *
  * Pura: recibe las estructuras ya calculadas por el caller (`alertasLimites`,
  * `resumenGrupos`, `desgloseNecesidadesDelMes`); no lee `S`.
@@ -345,10 +350,10 @@ export function desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, anio
  * @returns {Array<{
  *   id: string,
  *   grupo: 'necesidades'|'estilo-de-vida'|'ahorro'|null,
- *   tipo: 'alerta'|'refuerzo',
+ *   tipo: 'alerta'|'refuerzo'|'info',
  *   severidad: 'alerta'|'excedido'|null,
  *   mensaje: string,
- * }>} `severidad` es `null` para `tipo: 'refuerzo'` (no aplica).
+ * }>} `severidad` solo aplica a `tipo: 'alerta'`; es `null` para 'refuerzo' e 'info'.
  */
 export function generarMensajesLimites({
   alertasCategoria = [],
@@ -357,7 +362,7 @@ export function generarMensajesLimites({
 } = {}) {
   const mensajes = [];
 
-  // 1) Item de Estilo de vida (categoría) en alerta o excedido.
+  // 1) Estilo de vida por categoría: el único grupo que se controla (ADR 019).
   for (const a of alertasCategoria) {
     if (a.estado === 'excedido') {
       mensajes.push({
@@ -378,17 +383,13 @@ export function generarMensajesLimites({
     }
   }
 
-  // 2) Grupo Necesidades.
+  // 2) Necesidades: se monitorean, no se limitan (ADR 019). Solo informa cuando
+  //    pesan más de lo previsto; estar cerca del presupuesto no genera nada.
   const nec = resumen?.necesidades;
   if (nec?.estado === 'excedido') {
     mensajes.push({
-      id: 'grupo-necesidades', grupo: 'necesidades', tipo: 'alerta', severidad: 'excedido',
-      mensaje: 'Tus necesidades superaron lo que planeaste para este mes. Revisa qué gasto fijo o cuota subió.',
-    });
-  } else if (nec?.estado === 'alerta') {
-    mensajes.push({
-      id: 'grupo-necesidades', grupo: 'necesidades', tipo: 'alerta', severidad: 'alerta',
-      mensaje: 'Tus necesidades están cerca del límite que planeaste este mes. Vigila los gastos fijos y las cuotas que faltan.',
+      id: 'grupo-necesidades', grupo: 'necesidades', tipo: 'info', severidad: null,
+      mensaje: 'Tus necesidades están consumiendo una parte importante de tu ingreso este mes. Considera revisar tu plan general o dónde puedes reducir otros gastos.',
     });
   }
 
@@ -406,20 +407,23 @@ export function generarMensajesLimites({
     });
   }
 
-  // 4) Grupo Ahorro: cumplir o superar el 100% es una buena noticia.
+  // 4) Ahorro: celebrar. Superar lo planeado se refuerza con más calidez que cumplir.
   const ah = resumen?.ahorro;
   if (ah && ah.asignado > 0 && ah.pct >= 100) {
+    const superoLoPlaneado = ah.ejecutado > ah.asignado;
     mensajes.push({
       id: 'grupo-ahorro', grupo: 'ahorro', tipo: 'refuerzo', severidad: null,
-      mensaje: 'Vas por buen camino. Cumpliste con el ahorro programado para este período.',
+      mensaje: superoLoPlaneado
+        ? '¡Excelente! Este mes estás ahorrando más de lo planeado. Cada peso que ahorras hoy es tranquilidad mañana.'
+        : 'Vas por buen camino. Cumpliste con el ahorro que planeaste este mes.',
     });
   }
 
   // 5) Refuerzo combinado: todas las necesidades del mes pagadas y aún hay ahorro.
   const necesidadesCompletas = itemsNecesidades.length > 0
     && itemsNecesidades.every(it => it.estadoPago === 'completo');
-  const necesidadesSinAlerta = nec?.estado !== 'excedido';
-  if (necesidadesCompletas && necesidadesSinAlerta && ah && ah.ejecutado > 0) {
+  const necesidadesSinExceso = nec?.estado !== 'excedido';
+  if (necesidadesCompletas && necesidadesSinExceso && ah && ah.ejecutado > 0) {
     mensajes.push({
       id: 'refuerzo-combinado', grupo: null, tipo: 'refuerzo', severidad: null,
       mensaje: 'Cumpliste todas tus necesidades este mes y aún tienes dinero para ahorrar. Excelente trabajo.',
@@ -436,6 +440,33 @@ export function generarMensajesLimites({
 export function totalAsignadoMensual(presupuestos) {
   return presupuestosActivos(presupuestos)
     .reduce((acc, p) => acc + (p.montoMensual ?? 0), 0);
+}
+
+/**
+ * Cobertura de los límites por categoría frente al presupuesto de Estilo de
+ * vida (la "olla finita" de MC.8, ADR 019 decisión 2). Indica cuánto del
+ * presupuesto de Estilo de vida (que sale de la distribución de Mis cuentas)
+ * cubren los topes actuales y cuánto queda sin tope, para dar la noción de
+ * presupuesto acotado sin obligar al usuario a asignar el 100% ni a ponerle
+ * tope a cada categoría.
+ *
+ * Pura: reusa `totalAsignadoMensual`, no lee `S` ni el DOM.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @param {number} presupuestoEstiloVida - monto del grupo Estilo de vida (distribución).
+ * @returns {{limites:number, presupuesto:number, sinTope:number, excede:boolean}}
+ *   `sinTope` es lo que queda del presupuesto sin ningún tope (nunca negativo);
+ *   `excede` es true cuando la suma de topes supera el presupuesto de Estilo de vida.
+ */
+export function coberturaLimitesEstiloVida(presupuestos, presupuestoEstiloVida) {
+  const limites     = totalAsignadoMensual(presupuestos);
+  const presupuesto = Math.max(0, Number(presupuestoEstiloVida) || 0);
+  return {
+    limites,
+    presupuesto,
+    sinTope: Math.max(0, presupuesto - limites),
+    excede:  limites > presupuesto,
+  };
 }
 
 /**

@@ -9,6 +9,7 @@ import {
   desgloseAhorroDelMes,
   generarMensajesLimites,
   totalAsignadoMensual,
+  coberturaLimitesEstiloVida,
   categoriasSinPresupuesto,
   tienePresupuesto,
   validarPresupuesto,
@@ -471,7 +472,7 @@ describe('desgloseAhorroDelMes()', () => {
   });
 });
 
-// ── generarMensajesLimites() (MC.5d, ADR 017) ─────────────────────────────────
+// ── generarMensajesLimites() (MC.5d + MC.8a, ADR 017 y ADR 019) ───────────────
 
 const resumenGrupo = (overrides = {}) => ({
   asignado: 1_000_000, ejecutado: 500_000, restante: 500_000, pct: 50, estado: 'ok',
@@ -517,20 +518,21 @@ describe('generarMensajesLimites()', () => {
     expect(generarMensajesLimites({ alertasCategoria })).toEqual([]);
   });
 
-  it('grupo Necesidades excedido genera alerta de grupo', () => {
+  it('MC.8a: Necesidades excedido genera un mensaje informativo (tipo info), no una alerta ni "límite"', () => {
     const resumen = { necesidades: resumenGrupo({ estado: 'excedido' }) };
     const [m] = generarMensajesLimites({ resumen });
-    expect(m).toMatchObject({ grupo: 'necesidades', tipo: 'alerta', severidad: 'excedido' });
+    expect(m).toMatchObject({ grupo: 'necesidades', tipo: 'info', severidad: null });
+    expect(m.mensaje).toContain('consumiendo una parte importante de tu ingreso');
+    expect(m.mensaje.toLowerCase()).not.toContain('límite');
+    expect(m.mensaje.toLowerCase()).not.toContain('superaste');
   });
 
-  it('grupo Necesidades en alerta genera mensaje distinto', () => {
+  it('MC.8a: Necesidades en alerta (cerca del presupuesto) no genera ningún mensaje (es normal)', () => {
     const resumen = { necesidades: resumenGrupo({ estado: 'alerta' }) };
-    const [m] = generarMensajesLimites({ resumen });
-    expect(m.severidad).toBe('alerta');
-    expect(m.mensaje).toContain('Vigila los gastos fijos');
+    expect(generarMensajesLimites({ resumen })).toEqual([]);
   });
 
-  it('grupo Necesidades "ok" no genera alerta de grupo', () => {
+  it('Necesidades "ok" no genera ningún mensaje', () => {
     const resumen = { necesidades: resumenGrupo({ estado: 'ok' }) };
     expect(generarMensajesLimites({ resumen })).toEqual([]);
   });
@@ -547,17 +549,18 @@ describe('generarMensajesLimites()', () => {
     expect(m.severidad).toBe('excedido');
   });
 
-  it('grupo Ahorro con pct >= 100 genera refuerzo, con el mensaje exacto del ADR', () => {
-    const resumen = { ahorro: resumenGrupo({ estado: 'alerta', pct: 100 }) };
+  it('MC.8a: Ahorro que cumple justo lo planeado (ejecutado === asignado) genera el refuerzo "Cumpliste"', () => {
+    const resumen = { ahorro: resumenGrupo({ asignado: 600_000, ejecutado: 600_000, pct: 100, estado: 'alerta' }) };
     const [m] = generarMensajesLimites({ resumen });
     expect(m).toMatchObject({ grupo: 'ahorro', tipo: 'refuerzo', severidad: null });
-    expect(m.mensaje).toBe('Vas por buen camino. Cumpliste con el ahorro programado para este período.');
+    expect(m.mensaje).toBe('Vas por buen camino. Cumpliste con el ahorro que planeaste este mes.');
   });
 
-  it('grupo Ahorro excedido (aportaste de más) también genera el refuerzo, no una alerta', () => {
-    const resumen = { ahorro: resumenGrupo({ estado: 'excedido', pct: 130 }) };
+  it('MC.8a: Ahorro que supera lo planeado (ejecutado > asignado) genera un refuerzo más cálido', () => {
+    const resumen = { ahorro: resumenGrupo({ asignado: 600_000, ejecutado: 800_000, pct: 133, estado: 'excedido' }) };
     const [m] = generarMensajesLimites({ resumen });
-    expect(m.tipo).toBe('refuerzo');
+    expect(m).toMatchObject({ grupo: 'ahorro', tipo: 'refuerzo' });
+    expect(m.mensaje).toBe('¡Excelente! Este mes estás ahorrando más de lo planeado. Cada peso que ahorras hoy es tranquilidad mañana.');
   });
 
   it('grupo Ahorro por debajo de 100% no genera ningún mensaje', () => {
@@ -610,8 +613,8 @@ describe('generarMensajesLimites()', () => {
     const itemsNecesidades = [itemNecesidad({ estadoPago: 'completo' })];
     const mensajes = generarMensajesLimites({ resumen, itemsNecesidades });
     expect(mensajes.find(m => m.grupo === null)).toBeUndefined();
-    // Sí debe seguir mostrando la alerta de grupo de Necesidades.
-    expect(mensajes.some(m => m.id === 'grupo-necesidades')).toBe(true);
+    // Sí debe seguir mostrando el mensaje informativo de Necesidades (tipo info).
+    expect(mensajes.some(m => m.id === 'grupo-necesidades' && m.tipo === 'info')).toBe(true);
   });
 });
 
@@ -637,6 +640,54 @@ describe('totalAsignadoMensual()', () => {
 
   it('lista vacía devuelve 0', () => {
     expect(totalAsignadoMensual([])).toBe(0);
+  });
+});
+
+// ── coberturaLimitesEstiloVida() (MC.8a, ADR 019) ─────────────────────────────
+
+describe('coberturaLimitesEstiloVida()', () => {
+  it('sin límites, todo el presupuesto queda sin tope', () => {
+    expect(coberturaLimitesEstiloVida([], 900_000)).toEqual({
+      limites: 0, presupuesto: 900_000, sinTope: 900_000, excede: false,
+    });
+  });
+
+  it('los límites cubren parte del presupuesto y el resto queda sin tope', () => {
+    const lista = [
+      presupuesto({ id: 'a', montoMensual: 500_000 }),
+      presupuesto({ id: 'b', montoMensual: 200_000 }),
+    ];
+    expect(coberturaLimitesEstiloVida(lista, 900_000)).toEqual({
+      limites: 700_000, presupuesto: 900_000, sinTope: 200_000, excede: false,
+    });
+  });
+
+  it('cuando los límites igualan el presupuesto, sinTope es 0 y no excede', () => {
+    const lista = [presupuesto({ id: 'a', montoMensual: 900_000 })];
+    const r = coberturaLimitesEstiloVida(lista, 900_000);
+    expect(r.sinTope).toBe(0);
+    expect(r.excede).toBe(false);
+  });
+
+  it('cuando los límites superan el presupuesto, excede es true y sinTope nunca es negativo', () => {
+    const lista = [presupuesto({ id: 'a', montoMensual: 1_200_000 })];
+    const r = coberturaLimitesEstiloVida(lista, 900_000);
+    expect(r.excede).toBe(true);
+    expect(r.sinTope).toBe(0);
+  });
+
+  it('ignora envelopes inactivos al sumar los límites', () => {
+    const lista = [
+      presupuesto({ id: 'a', montoMensual: 500_000 }),
+      presupuesto({ id: 'b', montoMensual: 300_000, activo: false }),
+    ];
+    expect(coberturaLimitesEstiloVida(lista, 900_000).limites).toBe(500_000);
+  });
+
+  it('presupuesto inválido o 0 se trata como 0', () => {
+    expect(coberturaLimitesEstiloVida([], 0).presupuesto).toBe(0);
+    expect(coberturaLimitesEstiloVida([], undefined).presupuesto).toBe(0);
+    expect(coberturaLimitesEstiloVida([], -100).presupuesto).toBe(0);
   });
 });
 

@@ -171,23 +171,35 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
     </article>`;
 }
 
-// ── ALERTAS Y REFUERZOS (MC.5d, ADR 017) ──────────────────────────
+// ── ALERTAS Y REFUERZOS POR ROL (MC.5d + MC.8a, ADR 017 y ADR 019) ──
 
-const _NUDGE_ICONO = { alerta: { alerta: '⏰', excedido: '⚠️' }, refuerzo: '✅' };
-const _NUDGE_CLASE = { alerta: 'nudge-medium', excedido: 'nudge-high', refuerzo: 'nudge-success' };
+const _NUDGE_CLASE = { excedido: 'nudge-high', alerta: 'nudge-medium', info: 'nudge-info', refuerzo: 'nudge-success' };
+const _NUDGE_ICONO = { excedido: '⚠️', alerta: '⏰', info: 'ℹ️', refuerzo: '✅' };
+
+/**
+ * Nivel visual de un nudge según el tipo/severidad del mensaje. Los mensajes
+ * de refuerzo (Ahorro) van en verde; los informativos (Necesidades, ADR 019)
+ * en azul calmado; las alertas de Estilo de vida en ámbar (`alerta`) o rojo
+ * (`excedido`).
+ * @param {ReturnType<typeof generarMensajesLimites>[number]} m
+ * @returns {'excedido'|'alerta'|'info'|'refuerzo'}
+ */
+function _nivelNudge(m) {
+  if (m.tipo === 'refuerzo') return 'refuerzo';
+  if (m.tipo === 'info')     return 'info';
+  return m.severidad === 'excedido' ? 'excedido' : 'alerta';
+}
 
 /**
  * HTML de un mensaje individual, reusando el sistema de nudges de la app
- * (`.nudge nudge-medium|nudge-high|nudge-success`).
+ * (`.nudge nudge-high|nudge-medium|nudge-info|nudge-success`).
  * @param {ReturnType<typeof generarMensajesLimites>[number]} m
  */
 function _renderNudge(m) {
-  const clase = m.tipo === 'refuerzo' ? _NUDGE_CLASE.refuerzo : (_NUDGE_CLASE[m.severidad] ?? _NUDGE_CLASE.alerta);
-  const icono = m.tipo === 'refuerzo' ? _NUDGE_ICONO.refuerzo : (_NUDGE_ICONO.alerta[m.severidad] ?? _NUDGE_ICONO.alerta.alerta);
-
+  const nivel = _nivelNudge(m);
   return `
-    <div class="nudge ${clase}" role="status">
-      <span class="nudge__icon" aria-hidden="true">${icono}</span>
+    <div class="nudge ${_NUDGE_CLASE[nivel]}" role="status">
+      <span class="nudge__icon" aria-hidden="true">${_NUDGE_ICONO[nivel]}</span>
       <div class="nudge__body">
         <p class="nudge__title">${_esc(m.mensaje)}</p>
       </div>

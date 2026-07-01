@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (docs(adr): ADR 019, Límites de gasto con tratamiento asimétrico por rol. Diseño de MC.8, revisa ADR 017)
+> Última actualización: 2026-07-01 (feat(presupuesto): MC.8a, mensajes de Límites por rol, Necesidades informativo y Ahorro más cálido)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1752/1752 verdes |
-| Tests E2E | 76/76 verde. Suites: `smoke` 40 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1758/1758 verdes |
+| Tests E2E | 77/77 verde. Suites: `smoke` 41 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): mensajes de Límites por rol (MC.8a) · 2026-07-01
+
+Primer slice de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md)). `generarMensajesLimites` (`presupuesto/logic.js`) reencuadrada por rol: **Necesidades** deja de alertar con "límite" y, cuando su gasto supera lo asignado, emite un mensaje **informativo** (`tipo: 'info'` nuevo, "consumiendo una parte importante de tu ingreso..."); estar cerca del presupuesto ya no genera nada. **Ahorro** distingue cumplir ("Cumpliste con el ahorro que planeaste") de superar (mensaje más cálido "¡Excelente!..."). **Estilo de vida** sin cambios. Nueva `coberturaLimitesEstiloVida(presupuestos, presupuestoEV)` (la "olla finita") que devuelve `{limites, presupuesto, sinTope, excede}`; la usará MC.8b. Se ajustó el render de nudges (`_nivelNudge` + nivel `nudge-info`). Pendiente MC.8b: el chrome de las tarjetas (barra roja, "Excedido") todavía sigue el modelo simétrico de MC.5b. 6 unit netos + 1 E2E. 1752/1752 → 1758/1758 unit; 76/76 → 77/77 E2E. Verificado en el navegador. SW v244 → v245.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/logic.js` | `generarMensajesLimites` por rol; `coberturaLimitesEstiloVida` nueva. |
+| `modules/dominio/presupuesto/view.js` | `_nivelNudge` + soporte del nivel `nudge-info`. |
+| `tests/unit/presupuesto.test.js`, `tests/e2e/smoke.test.js` | tests actualizados + `coberturaLimitesEstiloVida` + E2E de Ahorro. |
+| `service-worker.js` | v244 → v245. |
+
+---
 
 ### docs(adr): ADR 019, Límites de gasto con tratamiento asimétrico por rol (MC.8, diseño) · 2026-07-01
 
@@ -90,18 +103,7 @@ Primer slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), 
 
 ---
 
-### docs(adr): ADR 018, "Distribuir mi ingreso" como asistente guiado de 3 pasos (MC.7, diseño) · 2026-07-01
-
-Diseño de la épica MC.7. El panel "Distribuir mi ingreso" (MC.4a-e) evoluciona a un asistente guiado: (1) **Necesidades** itemizada como preview read-only (gastos fijos de Agenda + cuotas de deuda + compromisos), sin mover dinero ni schema; (2) **Ahorro** con aportes auto-calculados por objetivo (`faltante / periodos restantes` para los que tienen fecha, 0 + hint para los que no; fondo con el excedente); (3) **Estilo de vida** repartido entre cuentas (omitido con cuenta única). Decisiones cerradas con el usuario: preview (no reservar) en Paso 1, sugerir 0 en objetivos sin fecha, arrancar la implementación por el Paso 2. Confirmación única, sin schema nuevo, reusa el apply-plan/undo y el gating por fecha de MC.4. Solo docs.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/018-asistente-distribuir-ingreso.md` | Nuevo ADR (contexto, 7 decisiones, alternativas, consecuencias, 6 slices MC.7a-f). |
-| `docs/TASKS.md` | MC.7 diseño cerrado + slices MC.7a a MC.7f. |
-
----
-
-> Para tareas anteriores (MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
