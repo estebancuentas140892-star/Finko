@@ -131,6 +131,48 @@ export function resumenGrupos(asignadoPorGrupo = {}, ejecutadoPorGrupo = {}) {
 }
 
 /**
+ * Deriva el ejecutado del mes por grupo financiero desde los flujos ya
+ * registrados en Finko (ADR 017, decisión 3). Sin schema nuevo: todo sale de
+ * datos que cada dominio ya guarda.
+ *
+ * Partición de `gastos` (evita doble conteo entre Necesidades y Estilo de vida):
+ *   - **Necesidades:** gastos del mes vinculados a un compromiso (`compromisoId`),
+ *     es decir pagos de gastos fijos marcados en Calendario y abonos a deudas.
+ *   - **Estilo de vida:** gastos variables del mes (sin `compromisoId`).
+ *
+ * Ahorro se toma de los aportes fechados al fondo de emergencia
+ * (`S.ahorro.aportes`). Metas, apartados e inversiones no guardan un historial
+ * de aportes con fecha, así que su ejecutado mensual no es derivable hoy; queda
+ * fuera del alcance de este slice (el copy es honesto: "según lo que registras").
+ *
+ * Pura: recibe los arrays ya extraídos de S por el caller; no lee S ni el DOM.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {import('../../core/state.js').Aporte[]} aportesFondo  S.ahorro.aportes
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {Record<'necesidades'|'estilo-de-vida'|'ahorro', number>}
+ */
+export function ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes) {
+  const delMes = gastosMes(gastos ?? [], anio, mes);
+
+  const necesidades = delMes
+    .filter(g => !!g.compromisoId)
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+
+  const estiloVida = delMes
+    .filter(g => !g.compromisoId)
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+
+  const prefijo = `${anio}-${String(mes).padStart(2, '0')}`;
+  const ahorro = (aportesFondo ?? [])
+    .filter(a => typeof a?.fecha === 'string' && a.fecha.startsWith(prefijo))
+    .reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+
+  return { necesidades, 'estilo-de-vida': estiloVida, ahorro };
+}
+
+/**
  * Suma el monto mensual de todos los envelopes activos.
  * @param {import('../../core/state.js').Presupuesto[]} presupuestos
  */

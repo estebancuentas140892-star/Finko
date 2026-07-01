@@ -6,7 +6,12 @@
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc }     from '../../infra/utils.js';
 import { icon, emptyArt }     from '../../infra/icons.js';
-import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
+import {
+  CATEGORIAS_GASTO_USUARIO,
+  CATEGORIA_EMOJI,
+  GRUPOS_FINANCIEROS,
+  LABEL_GRUPO_FINANCIERO,
+} from '../../core/constants.js';
 import {
   presupuestosActivos,
   calcularProgreso,
@@ -14,13 +19,23 @@ import {
   categoriasSinPresupuesto,
   tienePresupuesto,
   alertasLimites,
+  resumenGrupos,
+  ejecutadoPorGrupoDelMes,
 } from './logic.js';
+import {
+  estimarSalarioMensual,
+  construirContextoDistribucion,
+  sugerirDistribucionIngreso,
+} from '../tesoreria/logic.js';
 
 // ── RESUMEN + LISTA ──────────────────────────────────────────────
 
 /**
  * Renderiza el panel completo de presupuesto en `#panel-presupuesto`.
- * Incluye: hero (totales del mes), lista de envelopes, categorías huérfanas.
+ * Estructura (ADR 017, MC.5b):
+ *   1. Resumen de los 3 grupos financieros (centro de control): asignado desde
+ *      la distribución de Mis cuentas, ejecutado desde los flujos del mes.
+ *   2. Detalle de Estilo de vida: los topes por categoría (envelope budgeting).
  * No-op si el contenedor no existe.
  */
 export function renderPanelPresupuesto() {
@@ -34,13 +49,111 @@ export function renderPanelPresupuesto() {
   const activos = presupuestosActivos(S.presupuestos);
 
   el.innerHTML = `
-    ${_renderHero(activos, S.gastos, anio, mes)}
-    ${activos.length === 0
-      ? _renderEmptyState()
-      : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, S.gastos, anio, mes)).join('')}</div>`
-    }
-    ${_renderSinPresupuesto(activos)}
+    ${_renderResumenGrupos(anio, mes)}
+    <section class="estilo-detalle" aria-labelledby="estilo-detalle-title">
+      <h2 class="estilo-detalle__title" id="estilo-detalle-title">Estilo de vida: topes por categoría</h2>
+      <p class="estilo-detalle__hint">Ponle un máximo mensual a las categorías donde más gastas. Es el detalle del grupo Estilo de vida.</p>
+      ${_renderHero(activos, S.gastos, anio, mes)}
+      ${activos.length === 0
+        ? _renderEmptyState()
+        : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, S.gastos, anio, mes)).join('')}</div>`
+      }
+      ${_renderSinPresupuesto(activos)}
+    </section>
   `;
+}
+
+// ── RESUMEN POR GRUPO FINANCIERO (MC.5b, ADR 017) ────────────────
+
+/**
+ * Resumen read-only de los 3 grupos financieros del mes en curso.
+ * El presupuesto asignado sale de la distribución de ingreso de Mis cuentas
+ * (misma función que "Distribuir mi ingreso"); el ejecutado, de los flujos ya
+ * registrados. Si no hay ingreso registrado, guía al usuario a Mis cuentas.
+ *
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @returns {string} HTML.
+ */
+function _renderResumenGrupos(anio, mes) {
+  const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
+  const dist = ingresoMensual
+    ? sugerirDistribucionIngreso(ingresoMensual, construirContextoDistribucion(S))
+    : null;
+
+  if (!dist) return _renderResumenGruposVacio();
+
+  const asignadoPorGrupo = {
+    'necesidades':    dist.split.necesidades.monto,
+    'estilo-de-vida': dist.split.estiloVida.monto,
+    'ahorro':         dist.split.ahorro.monto,
+  };
+  const ejecutadoPorGrupo = ejecutadoPorGrupoDelMes(
+    S.gastos ?? [], S.ahorro?.aportes ?? [], anio, mes,
+  );
+  const resumen = resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo);
+
+  const cards = GRUPOS_FINANCIEROS.map(g => _renderGrupoCard(g, resumen[g])).join('');
+
+  return `
+    <section class="grupos-resumen" aria-label="Seguimiento de tus tres grupos financieros este mes">
+      <header class="grupos-resumen__header">
+        <h2 class="grupos-resumen__title">Tu plan del mes por grupo</h2>
+        <a href="#tesoreria" class="grupos-resumen__link" aria-label="Ajustar tu distribución en Mis cuentas">Ajustar en Mis cuentas</a>
+      </header>
+      <div class="grupos-resumen__grid">${cards}</div>
+      <p class="grupos-resumen__nota">El presupuesto de cada grupo sale de cómo repartes tu ingreso en Mis cuentas. Lo ejecutado refleja lo que registras en Finko este mes.</p>
+    </section>`;
+}
+
+/**
+ * Una tarjeta de grupo dentro del resumen.
+ * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
+ * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
+ * @returns {string} HTML.
+ */
+function _renderGrupoCard(grupo, r) {
+  const label       = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
+  const pctVisual   = Math.min(r.pct, 100);
+  const restanteNeg = r.restante < 0;
+  const restanteLbl = restanteNeg ? 'Excedido' : 'Disponible';
+
+  return `
+    <article class="grupo-card" data-grupo="${grupo}" data-estado="${r.estado}">
+      <div class="grupo-card__header">
+        <p class="grupo-card__name">${label}</p>
+        <span class="grupo-card__pct">${r.pct}%</span>
+      </div>
+      <div class="progress" role="progressbar"
+           aria-valuenow="${r.pct}" aria-valuemin="0" aria-valuemax="100"
+           aria-label="Uso de ${label}: ${r.pct}%">
+        <div class="progress-bar ${_claseProgreso(r.pct)}" style="width:${pctVisual}%"></div>
+      </div>
+      <dl class="grupo-card__figs">
+        <div class="grupo-card__fig">
+          <dt>Ejecutado</dt>
+          <dd>${f(r.ejecutado)}</dd>
+        </div>
+        <div class="grupo-card__fig">
+          <dt>Presupuesto</dt>
+          <dd>${f(r.asignado)}</dd>
+        </div>
+        <div class="grupo-card__fig">
+          <dt>${restanteLbl}</dt>
+          <dd class="${restanteNeg ? 'is-negative' : ''}">${f(Math.abs(r.restante))}</dd>
+        </div>
+      </dl>
+    </article>`;
+}
+
+/** Estado vacío del resumen: sin ingreso registrado, guía a Mis cuentas. */
+function _renderResumenGruposVacio() {
+  return `
+    <section class="grupos-resumen grupos-resumen--vacio" aria-label="Seguimiento por grupo financiero">
+      <p class="grupos-resumen__vacio-title">Aún no tienes un plan del mes por grupo</p>
+      <p class="grupos-resumen__vacio-desc">Registra tus ingresos y usa "Distribuir mi ingreso" en Mis cuentas para repartirlos entre Necesidades, Estilo de vida y Ahorro. Aquí verás cuánto llevas ejecutado en cada grupo.</p>
+      <a href="#tesoreria" class="btn btn-secondary">Ir a Mis cuentas</a>
+    </section>`;
 }
 
 // ── HERO ─────────────────────────────────────────────────────────

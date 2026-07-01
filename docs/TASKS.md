@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1677/1677 unit + 65/65 E2E verdes, lint limpio.** Último cambio: **MC.5a**, primer slice de la épica de Límites como centro de control (SW v237). Antes: renombre de secciones Dashboard → Inicio y Agenda → Calendario (SW v236), fix de flakiness E2E (fecha "hoy" en hora local), **A11Y.4** fondo inerte con modal abierto (SW v235), auditoría a11y A11Y.1-3. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1691/1691 unit + 67/67 E2E verdes, lint limpio.** Último cambio: **MC.5b**, resumen read-only de los 3 grupos en Límites de gasto (SW v238). Antes: **MC.5a**, primer slice de la épica de Límites como centro de control (SW v237); renombre de secciones Dashboard → Inicio y Agenda → Calendario (SW v236), fix de flakiness E2E (fecha "hoy" en hora local), **A11Y.4** fondo inerte con modal abierto (SW v235), auditoría a11y A11Y.1-3. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -224,7 +224,7 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 
 Slices de implementación de MC.5 (smallest-first, ver ADR 017):
 ✅ **MC.5a** - `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: agrega `{asignado, ejecutado, restante, pct, estado}` por cada uno de los 3 `GRUPOS_FINANCIEROS`, reusando `UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO` (mismo criterio que `calcularProgreso`). Pura: recibe los montos ya sumados por el caller, no lee `S` ni importa otros dominios. 9 tests nuevos. 1677/1677 unit + 65/65 E2E verdes. SW v236 → v237 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.5b** - Vista read-only del resumen de los 3 grupos arriba de Límites (asignado desde la distribución, ejecutado desde los flujos del mes); topes por categoría como detalle de Estilo de vida; estado vacío que guía a Mis cuentas si no hay ingreso. Modelo: Sonnet 4.6 - Alto.
+✅ **MC.5b** - Resumen read-only de los 3 grupos arriba de Límites ("Tu plan del mes por grupo"): asignado desde la distribución (`sugerirDistribucionIngreso`, vía nuevo helper puro compartido `construirContextoDistribucion`), ejecutado desde los flujos del mes (`ejecutadoPorGrupoDelMes`: Necesidades = gastos con `compromisoId`, Estilo de vida = gastos sin `compromisoId`, Ahorro = aportes fechados al fondo). Topes por categoría re-enmarcados como detalle de Estilo de vida; estado vacío que guía a Mis cuentas si no hay ingreso. 14 unit + 2 E2E nuevos. 1691/1691 unit + 67/67 E2E. SW v237 → v238 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
 - **MC.5c** - Desglose por item dentro de cada grupo (Necesidades por fijo/deuda, Ahorro por destino, Estilo de vida por categoría). Modelo: Sonnet 4.6 - Medio.
 - **MC.5d** - Alertas y refuerzos inteligentes por grupo y por item (los ejemplos aprobados del usuario), puras en `logic.js`. Modelo: Sonnet 4.6 - Medio.
 - **MC.5e (opcional)** - CTAs cruzados con Mis cuentas + copy de complementariedad + alinear el banner de propósito (EP.2). Modelo: Sonnet 4.6 - Bajo.

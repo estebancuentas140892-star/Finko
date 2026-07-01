@@ -4,6 +4,7 @@ import {
   calcularGastadoCategoria,
   calcularProgreso,
   resumenGrupos,
+  ejecutadoPorGrupoDelMes,
   totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
@@ -230,6 +231,78 @@ describe('resumenGrupos()', () => {
     );
     const grupo = resumenGrupos({ necesidades: 400_000 }, { necesidades: 300_000 }).necesidades;
     expect(progresoCategoria.estado).toBe(grupo.estado);
+  });
+});
+
+// ── ejecutadoPorGrupoDelMes() (MC.5b, ADR 017) ────────────────────────────────
+
+describe('ejecutadoPorGrupoDelMes()', () => {
+  it('Necesidades = gastos con compromisoId; Estilo de vida = gastos sin compromisoId', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 200_000, compromisoId: 'c1', fecha: '2026-05-03' }),
+      gasto({ id: 'g2', monto: 50_000,  fecha: '2026-05-10' }),
+      gasto({ id: 'g3', monto: 30_000,  fecha: '2026-05-20' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5);
+    expect(r.necesidades).toBe(200_000);
+    expect(r['estilo-de-vida']).toBe(80_000);
+    expect(r.ahorro).toBe(0);
+  });
+
+  it('Ahorro = aportes al fondo con fecha dentro del mes', () => {
+    const aportes = [
+      { id: 'a1', monto: 100_000, fecha: '2026-05-05' },
+      { id: 'a2', monto: 40_000,  fecha: '2026-05-28' },
+      { id: 'a3', monto: 999_999, fecha: '2026-04-30' }, // mes anterior: se ignora
+    ];
+    const r = ejecutadoPorGrupoDelMes([], aportes, 2026, 5);
+    expect(r.ahorro).toBe(140_000);
+  });
+
+  it('ignora los gastos de otros meses', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 10_000, fecha: '2026-04-30' }),
+      gasto({ id: 'g2', monto: 20_000, fecha: '2026-06-01' }),
+      gasto({ id: 'g3', monto: 30_000, fecha: '2026-05-15' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5);
+    expect(r['estilo-de-vida']).toBe(30_000);
+    expect(r.necesidades).toBe(0);
+  });
+
+  it('compromisoId null o vacío cuenta como Estilo de vida', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 10_000, compromisoId: null, fecha: '2026-05-01' }),
+      gasto({ id: 'g2', monto: 20_000, compromisoId: '',   fecha: '2026-05-01' }),
+    ];
+    const r = ejecutadoPorGrupoDelMes(gastos, [], 2026, 5);
+    expect(r['estilo-de-vida']).toBe(30_000);
+    expect(r.necesidades).toBe(0);
+  });
+
+  it('sin datos: los 3 grupos en 0', () => {
+    expect(ejecutadoPorGrupoDelMes([], [], 2026, 5))
+      .toEqual({ necesidades: 0, 'estilo-de-vida': 0, ahorro: 0 });
+  });
+
+  it('acepta null/undefined sin romper', () => {
+    expect(ejecutadoPorGrupoDelMes(null, null, 2026, 5))
+      .toEqual({ necesidades: 0, 'estilo-de-vida': 0, ahorro: 0 });
+  });
+
+  it('su salida alimenta resumenGrupos como ejecutadoPorGrupo', () => {
+    const gastos = [
+      gasto({ id: 'g1', monto: 300_000, compromisoId: 'c1', fecha: '2026-05-02' }),
+      gasto({ id: 'g2', monto: 100_000, fecha: '2026-05-02' }),
+    ];
+    const ejecutado = ejecutadoPorGrupoDelMes(gastos, [{ monto: 50_000, fecha: '2026-05-02' }], 2026, 5);
+    const resumen = resumenGrupos(
+      { necesidades: 600_000, 'estilo-de-vida': 400_000, ahorro: 200_000 },
+      ejecutado,
+    );
+    expect(resumen.necesidades.ejecutado).toBe(300_000);
+    expect(resumen['estilo-de-vida'].ejecutado).toBe(100_000);
+    expect(resumen.ahorro.ejecutado).toBe(50_000);
   });
 });
 

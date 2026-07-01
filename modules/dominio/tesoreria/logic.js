@@ -750,6 +750,95 @@ export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy =
   }, 0);
 }
 
+/**
+ * Construye el contexto que espera `sugerirDistribucionIngreso` a partir de los
+ * datos crudos del estado (compromisos, ahorro, metas, apartados, inversiones,
+ * presupuestos, config). Centraliza la lectura de la "realidad registrada" para
+ * que Mis cuentas (la distribución) y Límites (el seguimiento, MC.5) construyan
+ * el reparto sobre exactamente los mismos insumos.
+ *
+ * Pura: recibe las porciones del estado como argumento (no lee el singleton S
+ * ni el DOM). Se invoca como `construirContextoDistribucion(S)` porque S ya
+ * expone estas claves; los tests pueden pasar objetos mínimos.
+ *
+ * @param {{
+ *   compromisos?:  import('../../core/state.js').Compromiso[],
+ *   ahorro?:       import('../../core/state.js').Ahorro|null,
+ *   metas?:        import('../../core/state.js').Meta[],
+ *   apartados?:    import('../../core/state.js').Apartado[],
+ *   inversiones?:  import('../../core/state.js').Inversion[],
+ *   presupuestos?: import('../../core/state.js').Presupuesto[],
+ *   config?:       import('../../core/state.js').Config|null,
+ * }} [estado]
+ * @returns {Parameters<typeof sugerirDistribucionIngreso>[1]}
+ */
+export function construirContextoDistribucion({
+  compromisos  = [],
+  ahorro       = null,
+  metas        = [],
+  apartados    = [],
+  inversiones  = [],
+  presupuestos = [],
+  config       = null,
+} = {}) {
+  const gastosFijosMensuales = calcularGastosFijosMensuales(compromisos ?? []);
+
+  const tieneDeudas = (compromisos ?? [])
+    .some(c => c.activo !== false && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'));
+
+  const tieneFondoActivo = ahorro?.fondoEmergencia?.activo === true;
+  const montoFondo = (ahorro?.fondoEmergencia?.montoActual ?? 0)
+    + (ahorro?.aportes ?? []).reduce((acc, a) => acc + (a.monto ?? 0), 0);
+  const objetivoFondo = tieneFondoActivo && gastosFijosMensuales > 0
+    ? gastosFijosMensuales * (ahorro?.fondoEmergencia?.metaMeses ?? 3)
+    : 0;
+  const fondoCompleto = tieneFondoActivo && objetivoFondo > 0 && montoFondo >= objetivoFondo;
+
+  const tieneInversiones = (inversiones ?? []).length > 0;
+
+  // Cuotas mínimas mensuales de todas las deudas activas (Necesidades, ADR 013).
+  const cuotasDeudaMensuales = (compromisos ?? [])
+    .filter(c => c.activo !== false
+      && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+    .reduce((sum, c) => sum + (Number(c.cuotaMensual) || 0), 0);
+
+  // Faltante del fondo de emergencia (Ahorro, ADR 013).
+  const faltanteFondo = (() => {
+    const fe = ahorro?.fondoEmergencia;
+    if (!fe?.activo || fondoCompleto) return 0;
+    const objetivo = gastosFijosMensuales > 0
+      ? gastosFijosMensuales * (fe.metaMeses ?? 3)
+      : 0;
+    if (objetivo <= 0) return 0;
+    const actual = (Number(fe.montoActual) || 0)
+      + (ahorro?.aportes ?? []).reduce((a, ap) => a + (Number(ap.monto) || 0), 0);
+    return Math.max(0, objetivo - actual);
+  })();
+
+  // Aporte mensual para metas y apartados con fecha objetivo (Ahorro, ADR 013).
+  const metasConFecha     = (metas     ?? []).filter(m => !m.completada && m.fechaLimite);
+  const apartadosConFecha = (apartados ?? []).filter(a => !a.completado && a.fechaObjetivo);
+  const aporteMensualObjetivos = calcularAporteMensualObjetivos(metasConFecha, apartadosConFecha);
+
+  // Suma de límites de gasto (informativo: valida el Estilo de vida sugerido).
+  const sumaLimites = (presupuestos ?? [])
+    .reduce((sum, p) => sum + (Number(p.montoMensual) || 0), 0);
+
+  return {
+    gastosFijosMensuales,
+    cuotasDeudaMensuales,
+    faltanteFondo,
+    aporteMensualObjetivos,
+    sumaLimites,
+    tieneDeudas,
+    tieneFondoActivo,
+    fondoCompleto,
+    tieneInversiones,
+    presetId:                  config?.presetDistribucion ?? 'auto',
+    distribucionPersonalizada: config?.distribucionPersonalizada ?? null,
+  };
+}
+
 // Constantes del modelo de pisos (ADR 013, MC.6a).
 const _PISO_EV_PCT     = 10;  // % mínimo de estilo de vida (sostenibilidad)
 const _HORIZONTE_FONDO = 12;  // meses para cerrar el fondo incompleto

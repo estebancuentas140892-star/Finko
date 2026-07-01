@@ -719,3 +719,34 @@ test.describe('Agenda - badge abono', () => {
     await expect(badge).toContainText('Ya pagaste este mes');
   });
 });
+
+// ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
+
+test.describe('Límites de gasto - resumen por grupo', () => {
+  test('sin ingreso registrado guía a Mis cuentas', async ({ page }) => {
+    await saltearOnboarding(page); // ingresos: []
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const vacio = page.locator('.grupos-resumen--vacio');
+    await expect(vacio).toBeVisible({ timeout: 3_000 });
+    await expect(vacio.locator('a[href="#tesoreria"]')).toBeVisible();
+  });
+
+  test('con ingreso registrado muestra las 3 tarjetas de grupo', async ({ page }) => {
+    await saltearOnboarding(page);
+    // Segundo addInitScript: agrega un ingreso mensual al estado ya sembrado.
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    await expect(page.locator('.grupos-resumen__grid .grupo-card')).toHaveCount(3);
+    await expect(page.locator('.grupo-card[data-grupo="necesidades"]')).toBeVisible();
+    await expect(page.locator('.grupo-card[data-grupo="estilo-de-vida"]')).toBeVisible();
+    await expect(page.locator('.grupo-card[data-grupo="ahorro"]')).toBeVisible();
+  });
+});

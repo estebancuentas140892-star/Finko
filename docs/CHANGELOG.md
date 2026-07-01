@@ -7,6 +7,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): resumen read-only de los 3 grupos en Límites de gasto (MC.5b) · 2026-06-30
+
+Segundo slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)): Límites de gasto empieza a ser un centro de control. Arriba de la sección aparece **"Tu plan del mes por grupo"** con una tarjeta por cada grupo financiero (Necesidades / Estilo de vida / Ahorro), cada una con presupuesto asignado, ejecutado, disponible, porcentaje y barra de progreso (reusa `.progress` + los umbrales 75%/100%). Los topes por categoría de siempre quedan debajo, re-enmarcados como **"Estilo de vida: topes por categoría"** (el detalle del grupo), sin migrar nada. Si no hay ingreso registrado, un estado vacío guía a Mis cuentas ("Distribuir mi ingreso").
+
+Integración clave: el **asignado por grupo** sale de la misma distribución que Mis cuentas (`sugerirDistribucionIngreso`, MC.6a), así que Mis cuentas planifica y Límites vigila el mismo plan. Para evitar duplicar la lectura del estado, se extrajo el helper puro **`construirContextoDistribucion(estado)`** en `tesoreria/logic.js` (centraliza los ~40 líneas de contexto de la distribución) y se refactorizó `tesoreria/view.js` para consumirlo: extracción behavior-preserving (test cruzado "mismo split"). El **ejecutado por grupo** lo deriva `ejecutadoPorGrupoDelMes(gastos, aportesFondo, anio, mes)` de los flujos ya registrados, sin schema nuevo: Necesidades = gastos del mes con `compromisoId` (pagos de fijos + abonos a deudas), Estilo de vida = gastos del mes sin `compromisoId` (partición sin doble conteo), Ahorro = aportes fechados al fondo (`S.ahorro.aportes`). Metas/apartados/inversiones no guardan aportes con fecha, así que su ejecutado mensual no es derivable hoy; el copy es honesto ("lo que registras en Finko"). MC.5c sumará el desglose por item.
+
+14 tests unitarios nuevos (7 de `ejecutadoPorGrupoDelMes`, 7 de `construirContextoDistribucion`) + 2 E2E (estado vacío que guía a Mis cuentas; 3 tarjetas de grupo con ingreso). 1677 → 1691 unit; 65 → 67 E2E. Lint limpio. SW v237 → v238.
+
+- **`modules/dominio/tesoreria/logic.js`**: `construirContextoDistribucion()` nueva (helper puro compartido: lee compromisos/ahorro/metas/apartados/inversiones/presupuestos/config y arma el contexto de la distribución).
+- **`modules/dominio/tesoreria/view.js`**: `renderDistribucionIngreso` consume el helper (elimina ~40 líneas de contexto inline); imports `calcularGastosFijosMensuales`/`calcularAporteMensualObjetivos` reemplazados por `construirContextoDistribucion`.
+- **`modules/dominio/presupuesto/logic.js`**: `ejecutadoPorGrupoDelMes()` nueva (ejecutado del mes por grupo desde los flujos).
+- **`modules/dominio/presupuesto/view.js`**: `_renderResumenGrupos` + `_renderGrupoCard` + `_renderResumenGruposVacio`; el panel ahora arranca con el resumen de grupos y re-enmarca los envelopes como detalle de Estilo de vida. Importa la distribución de `tesoreria/logic.js` y las constantes de grupo.
+- **`index.html`**: subtítulo de la sección Límites actualizado ("Sigue tu plan del mes por grupo y ponle un tope a lo que gastas").
+- **`styles/components/analysis.css`** + **`styles/responsive.css`**: estilos de `.grupos-resumen` / `.grupo-card` / estado vacío / encabezado de detalle; grid de 3 grupos colapsa a 1 columna en móvil.
+- **`tests/unit/presupuesto.test.js`**, **`tests/unit/tesoreria.test.js`**: 14 tests nuevos.
+- **`tests/e2e/smoke.test.js`**: 2 tests nuevos (`Límites de gasto - resumen por grupo`).
+- **`service-worker.js`**: v237 → v238.
+
+---
+
 ### feat(presupuesto): resumenGrupos, primer slice de Límites como centro de control (MC.5a) · 2026-06-30
 
 Primer slice de implementación de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Nueva función pura `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: recibe dos mapas con los montos ya sumados por grupo financiero (`necesidades`, `estilo-de-vida`, `ahorro`, de `GRUPOS_FINANCIEROS`) y devuelve, por cada uno, `{asignado, ejecutado, restante, pct, estado}`. Reusa el mismo criterio de estado que ya tiene `calcularProgreso` para los topes por categoría (`UMBRAL_ALERTA` 75%, `UMBRAL_EXCEDIDO` 100%), así que Necesidades/Estilo de vida/Ahorro y los topes por categoría comparten exactamente la misma semántica de "ok/alerta/excedido". Función pura por diseño: no lee `S` ni importa otros dominios (regla ADN #10); el caller (MC.5b, siguiente slice) será quien resuelva el asignado desde la distribución de ingreso y el ejecutado desde los flujos del mes de cada dominio. 9 tests nuevos, incluida una prueba cruzada que confirma que `resumenGrupos` y `calcularProgreso` coinciden en el estado ante el mismo porcentaje. 1667 → 1677 verdes; 65/65 E2E (sin cambios de superficie, solo lógica nueva). SW v236 → v237.

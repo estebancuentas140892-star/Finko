@@ -252,6 +252,129 @@
   border-radius: var(--fk-radius-md);
 }
 
+/* ── MC.5b: Resumen de los 3 grupos financieros (centro de control) ── */
+.grupos-resumen {
+  margin-bottom: var(--fk-space-xl);
+}
+
+.grupos-resumen__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-sm);
+  margin-bottom: var(--fk-space-md);
+}
+
+.grupos-resumen__title {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.grupos-resumen__link {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-accent);
+  white-space: nowrap;
+}
+
+.grupos-resumen__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-md);
+}
+
+.grupos-resumen__nota {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: var(--fk-space-md) 0 0;
+}
+
+.grupo-card {
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-sm);
+}
+
+.grupo-card[data-estado="alerta"]   { border-color: color-mix(in srgb, var(--fk-warning) 40%, transparent); }
+.grupo-card[data-estado="excedido"] { border-color: color-mix(in srgb, var(--fk-danger)  50%, transparent); background: var(--fk-danger-bg); }
+
+.grupo-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--fk-space-xs);
+}
+
+.grupo-card__name {
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.grupo-card__pct {
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-fs-sm);
+}
+
+.grupo-card__figs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-xs);
+  margin: 0;
+}
+
+.grupo-card__fig {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-sm);
+  font-size: var(--fk-fs-sm);
+}
+
+.grupo-card__fig dt { color: var(--fk-text-muted); margin: 0; }
+.grupo-card__fig dd { color: var(--fk-text-primary); margin: 0; font-weight: var(--fk-fw-semibold); }
+.grupo-card__fig dd.is-negative { color: var(--fk-danger); }
+
+/* Estado vacío: sin ingreso registrado, invita a planificar en Mis cuentas. */
+.grupos-resumen--vacio {
+  background: var(--fk-bg-elevated);
+  border: 1px dashed var(--fk-border);
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-lg);
+  text-align: center;
+}
+
+.grupos-resumen__vacio-title {
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0 0 var(--fk-space-sm);
+}
+
+.grupos-resumen__vacio-desc {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-md);
+}
+
+/* Encabezado del bloque de topes por categoría (detalle de Estilo de vida). */
+.estilo-detalle__title {
+  font-size: var(--fk-fs-lg);
+  font-weight: var(--fk-fw-bold);
+  color: var(--fk-text-primary);
+  margin: 0 0 var(--fk-space-xs);
+}
+
+.estilo-detalle__hint {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0 0 var(--fk-space-md);
+}
+
 /* ── D.5: Envelope budgeting (presupuesto por categoría) ── */
 .presupuesto-hero {
   background: var(--fk-bg-elevated);

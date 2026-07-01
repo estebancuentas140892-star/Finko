@@ -17,6 +17,7 @@ import {
   diasParaProximoPago,
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
+  construirContextoDistribucion,
   calcularAporteMensualObjetivos,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
@@ -1302,6 +1303,71 @@ describe('estadoDistribucion()', () => {
   it('ingreso inactivo no cuenta para el estado', () => {
     const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: false, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
     expect(estadoDistribucion(ingresos, null, hoy).estado).toBe('sin-fecha');
+  });
+});
+
+// ── construirContextoDistribucion() (MC.5b, ADR 017) ──────────────
+describe('construirContextoDistribucion()', () => {
+  it('estado vacío: contexto con ceros y defaults', () => {
+    expect(construirContextoDistribucion({})).toMatchObject({
+      gastosFijosMensuales:      0,
+      cuotasDeudaMensuales:      0,
+      faltanteFondo:             0,
+      aporteMensualObjetivos:    0,
+      sumaLimites:               0,
+      tieneDeudas:               false,
+      tieneFondoActivo:          false,
+      fondoCompleto:             false,
+      tieneInversiones:          false,
+      presetId:                  'auto',
+      distribucionPersonalizada: null,
+    });
+  });
+
+  it('sin argumento no rompe', () => {
+    expect(construirContextoDistribucion().presetId).toBe('auto');
+  });
+
+  it('deriva gastos fijos, cuotas de deuda y tieneDeudas de compromisos', () => {
+    const ctx = construirContextoDistribucion({
+      compromisos: [
+        compFijoBase({ id: 'f1', monto: 400_000 }),
+        { id: 'd1', tipo: 'deuda-entidad', activo: true, cuotaMensual: 250_000 },
+      ],
+    });
+    expect(ctx.gastosFijosMensuales).toBe(400_000);
+    expect(ctx.cuotasDeudaMensuales).toBe(250_000);
+    expect(ctx.tieneDeudas).toBe(true);
+  });
+
+  it('lee el preset y la distribución personalizada de config', () => {
+    const ctx = construirContextoDistribucion({
+      config: {
+        presetDistribucion:        'personalizado',
+        distribucionPersonalizada: { n: 50, e: 30, a: 20 },
+      },
+    });
+    expect(ctx.presetId).toBe('personalizado');
+    expect(ctx.distribucionPersonalizada).toEqual({ n: 50, e: 30, a: 20 });
+  });
+
+  it('suma los límites de gasto (presupuestos)', () => {
+    const ctx = construirContextoDistribucion({
+      presupuestos: [{ montoMensual: 100_000 }, { montoMensual: 50_000 }],
+    });
+    expect(ctx.sumaLimites).toBe(150_000);
+  });
+
+  it('detecta inversiones activas', () => {
+    expect(construirContextoDistribucion({ inversiones: [{ id: 'x' }] }).tieneInversiones).toBe(true);
+    expect(construirContextoDistribucion({ inversiones: [] }).tieneInversiones).toBe(false);
+  });
+
+  it('el contexto derivado produce el mismo split que pasar los inputs a mano', () => {
+    const ctx      = construirContextoDistribucion({ compromisos: [compFijoBase({ id: 'f1', monto: 1_200_000 })] });
+    const derivado = sugerirDistribucionIngreso(3_000_000, ctx);
+    const aMano    = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 1_200_000 });
+    expect(derivado.split).toEqual(aMano.split);
   });
 });
 
