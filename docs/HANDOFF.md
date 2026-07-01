@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (feat(tesoreria): MC.7c, desglose itemizado de Necesidades en "Distribuir mi ingreso")
+> Última actualización: 2026-07-01 (docs(adr): ADR 019, Límites de gasto con tratamiento asimétrico por rol. Diseño de MC.8, revisa ADR 017)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(adr): ADR 019, Límites de gasto con tratamiento asimétrico por rol (MC.8, diseño) · 2026-07-01
+
+Diseño de la épica MC.8, que revisa las decisiones 1, 4 y 5 del [ADR 017](DECISIONS/017-limites-centro-de-control.md) sin revertir su núcleo. Los tres grupos de Límites dejan de tratarse igual y pasan a reflejar su **rol**: (1) **Necesidades** = monitorear (sin límites, sin alarma; copy informativo tipo "usan el X% de tu ingreso", no "te pasaste"); (2) **Ahorro** = celebrar (refuerzo cálido al cumplir/superar, nunca alerta); (3) **Estilo de vida** = controlar (único con topes por categoría). Los topes se **fusionan dentro de la tarjeta de Estilo de vida** (adiós al bloque suelto), con "agregar bajo demanda" + conciencia de "olla finita" (cuánto del presupuesto cubren los límites), rechazando el 100% obligatorio. Layout desktop: Necesidades + Ahorro en 2 columnas compactas, Estilo de vida en fila completa. Decisión pragmática: todas las categorías siguen limitables (reclasificar por grupo se difiere). Sin schema nuevo. Pausa MC.7 (íbamos por MC.7d), que se retoma después. Solo docs.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/019-limites-por-rol.md` | Nuevo ADR (contexto, 6 decisiones, alternativas, consecuencias, 4 slices MC.8a-d). |
+| `docs/TASKS.md` | MC.8 diseño cerrado + slices MC.8a a MC.8d; MC.7 marcado en pausa. |
+
+---
 
 ### feat(tesoreria): desglose itemizado de Necesidades en "Distribuir mi ingreso" (MC.7c) · 2026-07-01
 
@@ -90,21 +101,7 @@ Diseño de la épica MC.7. El panel "Distribuir mi ingreso" (MC.4a-e) evoluciona
 
 ---
 
-### feat(presupuesto): CTAs cruzados y copy de complementariedad con Mis cuentas (MC.5e) · 2026-06-30
-
-Quinto slice, opcional, de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md), decisión 7). **Con esto, la épica MC.5 queda completa (a-e).** `sugerirDistribucionIngreso` agrega un CTA incondicional "Ver tu seguimiento en Límites de gasto" (sin cambios en `tesoreria/view.js`, el `ctasHtml` ya mapea `dist.ctas`). La nota de Límites se reescribió: "Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan." El banner de propósito de Límites (EP.2, ADR 016) se alineó con esa identidad de seguimiento. 2 unit + 2 E2E nuevos. 1726/1726 → 1728/1728 unit; 71/71 → 73/73 E2E. SW v240 → v241.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | CTA incondicional a `presupuesto` en `sugerirDistribucionIngreso`. |
-| `modules/ui/proposito.js` | Copy de `PROPOSITOS_SECCION.presupuesto` reescrito. |
-| `modules/dominio/presupuesto/view.js` | `.grupos-resumen__nota` reescrita. |
-| `tests/unit/tesoreria.test.js`, `tests/unit/proposito.test.js`, `tests/e2e/smoke.test.js` | 2 unit + 2 E2E nuevos. |
-| `service-worker.js` | v240 → v241. |
-
----
-
-> Para tareas anteriores (MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
