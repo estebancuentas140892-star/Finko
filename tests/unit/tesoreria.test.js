@@ -1457,6 +1457,17 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.ctas.some(c => c.seccion === 'compromisos')).toBe(true);
   });
 
+  it('MC.5e: siempre agrega un CTA cruzado a Límites de gasto (presupuesto)', () => {
+    // Sin contexto (caso más simple) y con varios flags activos: el CTA de
+    // seguimiento en Límites siempre está presente, independiente del resto.
+    expect(sugerirDistribucionIngreso(3_000_000).ctas.some(c => c.seccion === 'presupuesto')).toBe(true);
+    expect(sugerirDistribucionIngreso(3_000_000, {
+      tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: true, tieneDeudas: true,
+    }).ctas.some(c => c.seccion === 'presupuesto')).toBe(true);
+    expect(sugerirDistribucionIngreso(3_000_000, { presetId: '50-30-20' })
+      .ctas.some(c => c.seccion === 'presupuesto')).toBe(true);
+  });
+
   it('la alerta de deudas invita a recortar estilo de vida, no el ahorro', () => {
     const r = sugerirDistribucionIngreso(3_000_000, { tieneDeudas: true });
     const alerta = r.alertas.find(a => a.includes('deuda'));

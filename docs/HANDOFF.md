@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(presupuesto): MC.5d, alertas y refuerzos inteligentes por grupo y por item en Límites)
+> Última actualización: 2026-06-30 (feat(presupuesto): MC.5e, CTAs cruzados y copy de complementariedad con Mis cuentas. MC.5 completa)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1726/1726 verdes |
-| Tests E2E | 71/71 verde. Suites: `smoke` 35 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1728/1728 verdes |
+| Tests E2E | 73/73 verde. Suites: `smoke` 37 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): CTAs cruzados y copy de complementariedad con Mis cuentas (MC.5e) · 2026-06-30
+
+Quinto slice, opcional, de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md), decisión 7). **Con esto, la épica MC.5 queda completa (a-e).** `sugerirDistribucionIngreso` agrega un CTA incondicional "Ver tu seguimiento en Límites de gasto" (sin cambios en `tesoreria/view.js`, el `ctasHtml` ya mapea `dist.ctas`). La nota de Límites se reescribió: "Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan." El banner de propósito de Límites (EP.2, ADR 016) se alineó con esa identidad de seguimiento. 2 unit + 2 E2E nuevos. 1726/1726 → 1728/1728 unit; 71/71 → 73/73 E2E. SW v240 → v241.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | CTA incondicional a `presupuesto` en `sugerirDistribucionIngreso`. |
+| `modules/ui/proposito.js` | Copy de `PROPOSITOS_SECCION.presupuesto` reescrito. |
+| `modules/dominio/presupuesto/view.js` | `.grupos-resumen__nota` reescrita. |
+| `tests/unit/tesoreria.test.js`, `tests/unit/proposito.test.js`, `tests/e2e/smoke.test.js` | 2 unit + 2 E2E nuevos. |
+| `service-worker.js` | v240 → v241. |
+
+---
 
 ### feat(presupuesto): alertas y refuerzos inteligentes por grupo y por item en Límites de gasto (MC.5d) · 2026-06-30
 
@@ -83,18 +97,6 @@ Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). L
 
 ---
 
-### feat(presupuesto): resumenGrupos, primer slice de Límites como centro de control (MC.5a) · 2026-06-30
-
-Primer slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Nueva función pura `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: agrega `{asignado, ejecutado, restante, pct, estado}` por cada grupo financiero (Necesidades, Estilo de vida, Ahorro), reusando el mismo umbral 75%/100% que ya usan los topes por categoría (`calcularProgreso`). Pura por diseño: no lee `S` ni importa otros dominios; el siguiente slice (MC.5b) le pasará el asignado desde la distribución de ingreso y el ejecutado desde los flujos del mes. 9 tests nuevos. 1677/1677 unit + 65/65 E2E verdes. SW v236 → v237.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/logic.js` | `resumenGrupos()` nueva; import de `GRUPOS_FINANCIEROS`. |
-| `tests/unit/presupuesto.test.js` | 9 tests nuevos. |
-| `service-worker.js` | v236 → v237. |
-
----
-
 ### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
 
 Evaluación UX/IA de una propuesta del usuario (eligiendo la mejor opción para un usuario primerizo). Se coincide con su propuesta: "Dashboard" es jerga opaca, "Inicio" es universal; "Agenda" → "Calendario" porque para un usuario primerizo gana el reconocimiento del formato visual (reconsidera AG.1). Clave de IA: se cambió **solo la etiqueta visible**, no la ruta ni el código (hash `#dash`/`#agenda`, `id` del DOM y dominio `agenda` quedan estables, para no romper deep links, bookmarks ni el cache del SW). Cambios en nav, título de sección, banner de propósito y 7 menciones de copy en Gastos/Tesorería/Deudas/Ahorro. Bonus fix: "tus deudas en Compromisos" (nombre obsoleto) → "en la sección Deudas" en la copia de recomendación de distribución. Fix de lint pre-existente en `proposito.js` de paso. 1667/1667 unit + 65/65 E2E verdes. SW v235 → v236.
@@ -109,7 +111,7 @@ Evaluación UX/IA de una propuesta del usuario (eligiendo la mejor opción para 
 
 ---
 
-> Para tareas anteriores (docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

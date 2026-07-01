@@ -1011,6 +1011,10 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
     ctas.push({ label: 'Ver estrategia de deudas', seccion: 'compromisos' });
   }
 
+  // CTA cruzado (MC.5e, ADR 017 decisión 7): Mis cuentas planifica el reparto,
+  // Límites de gasto vigila que se cumpla. Siempre presente cuando hay distribución.
+  ctas.push({ label: 'Ver tu seguimiento en Límites de gasto', seccion: 'presupuesto' });
+
   const nMonto = Math.round(ingresoMensual * necesidadesPct / 100);
   const eMonto = Math.round(ingresoMensual * estiloVidaPct  / 100);
   const aMonto = Math.round(ingresoMensual * ahorroInvPct   / 100);

@@ -53,6 +53,14 @@ describe('htmlBannerProposito', () => {
     expect(html).toContain(PROPOSITOS_SECCION.apartados.titulo);
   });
 
+  it('MC.5e (ADR 017 decisión 7): el propósito de Límites de gasto se alinea con "Mis cuentas planifica, Límites vigila"', () => {
+    const { texto } = PROPOSITOS_SECCION.presupuesto;
+    expect(texto).toContain('Mis cuentas');
+    expect(texto).toContain('Necesidades');
+    expect(texto).toContain('Estilo de vida');
+    expect(texto).toContain('Ahorro');
+  });
+
   it('config=null se trata como sin preferencias (expandido)', () => {
     const html = htmlBannerProposito('apartados', null ?? {});
     expect(html).toContain('data-action="colapsar-proposito"');

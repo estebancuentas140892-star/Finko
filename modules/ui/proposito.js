@@ -37,7 +37,7 @@ export const PROPOSITOS_SECCION = {
   },
   presupuesto: {
     titulo: '¿Para qué sirve Límites de gasto?',
-    texto: '¿Llegas a fin de mes sin saber por qué no te alcanzó? Sin un tope claro, es fácil gastar de más sin darte cuenta. Límites de gasto te deja fijar cuánto quieres gastar por categoría y te avisa antes de pasarte, no después.',
+    texto: '¿Llegas a fin de mes sin saber por qué no te alcanzó? Mis cuentas te ayuda a repartir tu ingreso en Necesidades, Estilo de vida y Ahorro; Límites de gasto vigila que cumplas ese plan y te avisa antes de pasarte, no después. También puedes fijar un tope por categoría para un control más fino.',
   },
   metas: {
     titulo: '¿Para qué sirve Metas?',

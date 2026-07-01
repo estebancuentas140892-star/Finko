@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): CTAs cruzados y copy de complementariedad con Mis cuentas (MC.5e) · 2026-06-30
+
+Quinto y último slice (opcional) de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md), decisión 7). **Con esto, MC.5 queda completa (a-e).** Cierra el círculo "Mis cuentas planifica, Límites vigila" con enlaces en ambas direcciones y copy explícito de esa relación.
+
+`sugerirDistribucionIngreso` (`tesoreria/logic.js`) agrega un CTA incondicional nuevo ("Ver tu seguimiento en Límites de gasto → `#presupuesto`") cada vez que hay una distribución calculada, sin necesitar cambios en `tesoreria/view.js` (el `ctasHtml` ya mapea `dist.ctas` a botones). Del otro lado, Límites de gasto ya enlazaba a Mis cuentas desde MC.5b ("Ajustar en Mis cuentas"); la nota de la sección se reescribió para nombrar explícitamente la relación: "Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan." El banner de propósito de Límites (EP.2, ADR 016, en `modules/ui/proposito.js`) se alinea con la misma identidad de seguimiento: menciona a Mis cuentas y los 3 grupos, en vez de describir solo el envelope budgeting por categoría.
+
+2 unit + 2 E2E nuevos. 1726 → 1728 unit; 71 → 73 E2E. Lint limpio. SW v240 → v241.
+
+- **`modules/dominio/tesoreria/logic.js`**: `ctas.push({ label: 'Ver tu seguimiento en Límites de gasto', seccion: 'presupuesto' })` incondicional en `sugerirDistribucionIngreso`.
+- **`modules/ui/proposito.js`**: copy de `PROPOSITOS_SECCION.presupuesto` reescrito (menciona Mis cuentas, Necesidades/Estilo de vida/Ahorro).
+- **`modules/dominio/presupuesto/view.js`**: `.grupos-resumen__nota` reescrita con la frase "Mis cuentas planifica... Límites vigila".
+- **`tests/unit/tesoreria.test.js`**, **`tests/unit/proposito.test.js`**: 2 tests nuevos.
+- **`tests/e2e/smoke.test.js`**: 2 tests nuevos (nota de complementariedad en Límites; CTA cruzado visible en Mis cuentas).
+- **`service-worker.js`**: v240 → v241.
+
+---
+
 ### feat(presupuesto): alertas y refuerzos inteligentes por grupo y por item en Límites de gasto (MC.5d) · 2026-06-30
 
 Cuarto y último slice obligatorio de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md); MC.5e queda como opcional). Nueva función pura **`generarMensajesLimites({ alertasCategoria, resumen, itemsNecesidades })`** en `presupuesto/logic.js` que produce los mensajes de alerta y refuerzo aprobados por el usuario en la decisión 5 del ADR, reusando el sistema de nudges ya existente en la app (`.nudge nudge-medium|nudge-high|nudge-success`) en vez de inventar un componente nuevo.

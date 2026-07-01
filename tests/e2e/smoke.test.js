@@ -840,4 +840,38 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(nudge).toBeVisible({ timeout: 3_000 });
     await expect(nudge).toHaveText('Vas por buen camino. Cumpliste con el ahorro programado para este período.');
   });
+
+  test('MC.5e: la nota de la sección menciona la complementariedad con Mis cuentas', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    await expect(page.locator('.grupos-resumen__nota')).toHaveText(
+      'Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan. Lo ejecutado refleja lo que registras en Finko este mes.',
+    );
+  });
+});
+
+// ── Mis cuentas: CTA cruzado a Límites de gasto (MC.5e, ADR 017) ─────────────
+
+test.describe('Mis cuentas - CTA cruzado a Límites de gasto', () => {
+  test('la distribución sugerida siempre enlaza a Límites de gasto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    const cta = page.locator('#ingresos-distribucion a[href="#presupuesto"]');
+    await expect(cta).toBeVisible({ timeout: 3_000 });
+    await expect(cta).toContainText('Ver tu seguimiento en Límites de gasto');
+  });
 });
