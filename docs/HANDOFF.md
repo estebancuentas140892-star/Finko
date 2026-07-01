@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (feat(tesoreria): MC.7b, aporte de ahorro por objetivo en "Distribuir mi ingreso")
+> Última actualización: 2026-07-01 (feat(tesoreria): MC.7c, desglose itemizado de Necesidades en "Distribuir mi ingreso")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1741/1741 verdes |
-| Tests E2E | 75/75 verde. Suites: `smoke` 39 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1752/1752 verdes |
+| Tests E2E | 76/76 verde. Suites: `smoke` 40 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): desglose itemizado de Necesidades en "Distribuir mi ingreso" (MC.7c) · 2026-07-01
+
+Tercer slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), decisión 2), el Paso 1 del asistente. Nueva `construirDesgloseNecesidades(compromisos)` en `tesoreria/logic.js`: una fila por gasto fijo y por deuda activos (nombre, categoría, monto mensual), ordenadas de mayor a menor. Solo lectura: no mueve dinero ni crea schema, cada obligación se paga al vencer como hoy. El monto normaliza a mensual igual que `calcularGastosFijosMensuales` (fijo) y usa `cuotaMensual` (deuda), para coincidir con el "Necesidades" agregado que ya mostraba el panel. En la vista es un `<details>` colapsable bajo la fila de Necesidades, reusando el patrón `.analisis-grupo` con clases propias (sin acoplar Mis cuentas al markup de Límites) y emojis por categoría (reusa `CATEGORIA_AGENDA_EMOJI`/`CATEGORIA_DEUDA_EMOJI`). 11 unit + 1 E2E nuevos. 1741/1741 → 1752/1752 unit; 75/75 → 76/76 E2E. Verificado en el navegador. SW v243 → v244.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` nueva. |
+| `modules/dominio/tesoreria/view.js` | `_renderDesgloseNecesidades()`/`_emojiNecesidad()` nuevas; insertadas en `_renderPanelDistribuir`. |
+| `styles/components/forms.css` | `.distribuir__nec-desglose` + `.distribuir__nec-item*`. |
+| `tests/unit/tesoreria.test.js`, `tests/e2e/smoke.test.js` | 11 unit + 1 E2E nuevos. |
+| `service-worker.js` | v243 → v244. |
+
+---
 
 ### feat(tesoreria): aporte de ahorro por objetivo en "Distribuir mi ingreso" (MC.7b) · 2026-07-01
 
@@ -90,23 +104,7 @@ Quinto slice, opcional, de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-contr
 
 ---
 
-### feat(presupuesto): resumen read-only de los 3 grupos en Límites de gasto (MC.5b) · 2026-06-30
-
-Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Límites de gasto arranca ahora con **"Tu plan del mes por grupo"**: una tarjeta por grupo financiero (Necesidades / Estilo de vida / Ahorro) con asignado, ejecutado, disponible, % y barra de progreso. Los topes por categoría quedan debajo como "detalle de Estilo de vida". El **asignado** sale de la misma distribución que Mis cuentas (`sugerirDistribucionIngreso`); para no duplicarla se extrajo el helper puro `construirContextoDistribucion` en `tesoreria/logic.js` y se refactorizó `tesoreria/view.js` para consumirlo (extracción sin cambio de comportamiento). El **ejecutado** lo deriva `ejecutadoPorGrupoDelMes` de los flujos del mes sin schema nuevo (Necesidades = gastos con `compromisoId`; Estilo de vida = gastos sin `compromisoId`; Ahorro = aportes fechados al fondo). Estado vacío que guía a Mis cuentas si no hay ingreso. 14 unit + 2 E2E nuevos. 1691/1691 unit + 67/67 E2E. SW v237 → v238.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirContextoDistribucion()` nueva (helper puro compartido). |
-| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso` consume el helper (menos duplicación). |
-| `modules/dominio/presupuesto/logic.js` | `ejecutadoPorGrupoDelMes()` nueva. |
-| `modules/dominio/presupuesto/view.js` | `_renderResumenGrupos` + tarjetas + estado vacío; re-enmarca envelopes. |
-| `index.html`, `styles/components/analysis.css`, `styles/responsive.css` | subtítulo + estilos del resumen por grupo (grid 3→1 col en móvil). |
-| `tests/unit/presupuesto.test.js`, `tests/unit/tesoreria.test.js`, `tests/e2e/smoke.test.js` | 14 unit + 2 E2E nuevos. |
-| `service-worker.js` | v237 → v238. |
-
----
-
-> Para tareas anteriores (MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

@@ -118,6 +118,49 @@ export function calcularGastosFijosMensuales(compromisos) {
 }
 
 /**
+ * Desglose itemizado de Necesidades para el Paso 1 del asistente "Distribuir
+ * mi ingreso" (MC.7c, ADR 018 decisión 2): una fila por gasto fijo y por deuda
+ * activos, con nombre, categoría y su equivalente mensual. Es una vista de
+ * solo lectura: no mueve dinero ni cambia nada, solo ayuda al usuario a ver
+ * cuánto de su ingreso ya está comprometido este mes (las obligaciones se
+ * siguen pagando al vencer, como hoy).
+ *
+ * El monto mensual de cada fila usa la misma normalización que ya usa el
+ * modelo de distribución, para que la suma del desglose coincida con el
+ * "Necesidades" agregado que muestra el resto del panel: fijo = `monto *
+ * _FACTOR_MENSUAL[frecuencia]` (igual que `calcularGastosFijosMensuales`),
+ * deuda = `cuotaMensual` (ya mensual). Los compromisos con frecuencia de baja
+ * periodicidad (Bimestral, Anual, etc.) no representan flujo mensual
+ * recurrente y se excluyen, igual que en el agregado.
+ *
+ * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number}>}
+ *   Ordenado de mayor a menor monto.
+ */
+export function construirDesgloseNecesidades(compromisos = []) {
+  return compromisos
+    .filter(c => c.activo !== false
+      && (c.tipo === 'fijo' || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+    .map(c => {
+      const esDeuda = c.tipo !== 'fijo';
+      const monto = esDeuda
+        ? Number(c.cuotaMensual) || 0
+        : (Number(c.monto) || 0) * (_FACTOR_MENSUAL[c.frecuencia] ?? 0);
+      return {
+        id:        c.id,
+        nombre:    c.descripcion ?? '',
+        categoria: c.categoria ?? null,
+        tipo:      esDeuda ? 'deuda' : 'fijo',
+        monto,
+      };
+    })
+    .filter(it => it.monto > 0)
+    .sort((a, b) => b.monto - a.monto);
+}
+
+/**
  * Calcula la prima semestral estimada y sugiere su distribución.
  *
  * Fórmula simplificada (semestre completo = 180 dias trabajados):

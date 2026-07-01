@@ -11,7 +11,10 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
-import { BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI } from '../../core/constants.js';
+import {
+  BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI,
+  CATEGORIA_AGENDA_EMOJI, CATEGORIA_DEUDA_EMOJI,
+} from '../../core/constants.js';
 import {
   cuentasActivas,
   calcularCostoGMF,
@@ -25,6 +28,7 @@ import {
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,
   construirDesgloseAhorroPorObjetivo,
+  construirDesgloseNecesidades,
   construirPlanDeudas,
   construirPlanInversiones,
   estadoDistribucion,
@@ -333,6 +337,10 @@ export function renderDistribucionIngreso() {
   // incrementa su capital. El descuento de la cuenta lo centraliza tesorería.
   const destinosInversiones = construirPlanInversiones({ inversiones: S.inversiones ?? [] });
 
+  // Desglose itemizado de Necesidades (Paso 1 del asistente, MC.7c, ADR 018):
+  // vista de solo lectura, no mueve dinero.
+  const itemsNecesidades = construirDesgloseNecesidades(S.compromisos ?? []);
+
   // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
   // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
   const estadoDist = estadoDistribucion(
@@ -350,6 +358,7 @@ export function renderDistribucionIngreso() {
         destinosAhorro,
         destinosDeudas,
         destinosInversiones,
+        itemsNecesidades,
         estado:          estadoDist,
       })
     : '';
@@ -395,6 +404,40 @@ function _filaDistribuir(d) {
         ${hint}`;
 }
 
+/** Emoji de una fila de Necesidades: por categoría si existe, si no un genérico por tipo. */
+function _emojiNecesidad(it) {
+  const porCategoria = it.tipo === 'fijo'
+    ? CATEGORIA_AGENDA_EMOJI[it.categoria]
+    : CATEGORIA_DEUDA_EMOJI[it.categoria];
+  return porCategoria ?? (it.tipo === 'fijo' ? '🏠' : '💳');
+}
+
+/**
+ * Desglose itemizado de Necesidades (Paso 1 del asistente, MC.7c, ADR 018):
+ * vista de solo lectura dentro de "Esto queda en tu cuenta (no se mueve)".
+ * No mueve dinero: cada obligación se sigue pagando al vencer, como hoy.
+ *
+ * @param {ReturnType<typeof construirDesgloseNecesidades>} items
+ * @returns {string} HTML. `''` si no hay compromisos que mostrar.
+ */
+function _renderDesgloseNecesidades(items) {
+  if (items.length === 0) return '';
+
+  const filas = items.map(it => `
+        <li class="distribuir__nec-item">
+          <span class="distribuir__nec-item-nombre">
+            ${_emojiNecesidad(it)} ${_esc(it.nombre)}${it.categoria ? ` <span class="distribuir__nec-item-cat">· ${_esc(it.categoria)}</span>` : ''}
+          </span>
+          <span class="distribuir__nec-item-monto">${f(it.monto)}</span>
+        </li>`).join('');
+
+  return `
+          <details class="analisis-grupo distribuir__nec-desglose">
+            <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
+            <ul class="distribuir__nec-item-list" role="list">${filas}</ul>
+          </details>`;
+}
+
 /**
  * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b/MC.4d/MC.4e).
  * El panel arranca oculto; el botón lo despliega. Reparte hacia el grupo Ahorro
@@ -408,7 +451,7 @@ function _filaDistribuir(d) {
  * ('sin-fecha', se mantiene disponible). Si ya se distribuyó este periodo
  * ('distribuido') o el cobro aún no llega ('pendiente'), se informa sin botón.
  *
- * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
+ * @param {{montoIngreso:number, ahorroPct:number, ahorroBudget:number, necesidadesPct:number, estiloVidaPct:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
@@ -466,6 +509,7 @@ function _renderPanelDistribuir(d) {
               <span>📦 Necesidades · ${necesidadesPct}%</span>
               <span data-dist-info="necesidades" data-dist-pct="${necesidadesPct}">${f(nMonto)}</span>
             </p>
+            ${_renderDesgloseNecesidades(d.itemsNecesidades ?? [])}
             <p class="distribuir__info-fila">
               <span>🎯 Estilo de vida · ${estiloVidaPct}%</span>
               <span data-dist-info="estiloVida" data-dist-pct="${estiloVidaPct}">${f(eMonto)}</span>

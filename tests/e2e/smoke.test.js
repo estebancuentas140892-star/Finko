@@ -933,4 +933,39 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
     const hint = page.locator('.distribuir__hint a[href="#metas"]');
     await expect(hint).toBeVisible({ timeout: 3_000 });
   });
+
+  test('MC.7c: el desglose de Necesidades lista gastos fijos y deudas, ordenados de mayor a menor, sin mover dinero', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' };
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        { id: 'cf2', descripcion: 'Internet', tipo: 'fijo', categoria: 'Internet', frecuencia: 'Mensual', diaPago: 10, monto: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        { id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const desglose = page.locator('.distribuir__nec-desglose');
+    await expect(desglose).toBeVisible({ timeout: 3_000 });
+    await desglose.locator('summary').click();
+
+    const items = desglose.locator('.distribuir__nec-item');
+    await expect(items).toHaveCount(3);
+    await expect(items.nth(0)).toContainText('Arriendo');
+    await expect(items.nth(0)).toContainText('$800.000');
+    await expect(items.nth(1)).toContainText('Tarjeta Bancolombia');
+    await expect(items.nth(1)).toContainText('$250.000');
+    await expect(items.nth(2)).toContainText('Internet');
+    await expect(items.nth(2)).toContainText('$100.000');
+
+    // Es solo lectura: a diferencia de las filas de ahorro/deudas/inversiones, no tiene inputs editables.
+    await expect(desglose.locator('input')).toHaveCount(0);
+  });
 });

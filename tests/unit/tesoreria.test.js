@@ -20,6 +20,7 @@ import {
   construirContextoDistribucion,
   calcularAporteMensualObjetivos,
   construirDesgloseAhorroPorObjetivo,
+  construirDesgloseNecesidades,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
@@ -367,6 +368,83 @@ describe('calcularGastosFijosMensuales()', () => {
   it('excluye compromisos inactivos', () => {
     const comps = [compFijoBase({ monto: 300_000, activo: false })];
     expect(calcularGastosFijosMensuales(comps)).toBe(0);
+  });
+});
+
+// ── construirDesgloseNecesidades() (MC.7c, ADR 018) ───────────────
+
+const compDeudaBase = (overrides = {}) => ({
+  id: 'd1',
+  tipo: 'deuda-entidad',
+  descripcion: 'Tarjeta Bancolombia',
+  categoria: 'Tarjeta de crédito',
+  cuotaMensual: 250_000,
+  activo: true,
+  ...overrides,
+});
+
+describe('construirDesgloseNecesidades()', () => {
+  it('sin compromisos devuelve array vacío', () => {
+    expect(construirDesgloseNecesidades([])).toEqual([]);
+    expect(construirDesgloseNecesidades()).toEqual([]);
+  });
+
+  it('un fijo mensual aparece con su monto tal cual, tipo "fijo"', () => {
+    const comps = [compFijoBase({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000 })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([
+      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', tipo: 'fijo', monto: 800_000 },
+    ]);
+  });
+
+  it('un fijo quincenal se normaliza a mensual (x2)', () => {
+    const comps = [compFijoBase({ id: 'cf1', descripcion: 'Mercado', categoria: null, monto: 150_000, frecuencia: 'Quincenal' })];
+    expect(construirDesgloseNecesidades(comps)[0].monto).toBe(300_000);
+  });
+
+  it('una deuda usa cuotaMensual, tipo "deuda"', () => {
+    const comps = [compDeudaBase()];
+    expect(construirDesgloseNecesidades(comps)).toEqual([
+      { id: 'd1', nombre: 'Tarjeta Bancolombia', categoria: 'Tarjeta de crédito', tipo: 'deuda', monto: 250_000 },
+    ]);
+  });
+
+  it('deuda-personal también cuenta como Necesidad', () => {
+    const comps = [compDeudaBase({ tipo: 'deuda-personal' })];
+    expect(construirDesgloseNecesidades(comps)[0].tipo).toBe('deuda');
+  });
+
+  it('excluye compromisos inactivos', () => {
+    const comps = [compFijoBase({ activo: false }), compDeudaBase({ activo: false })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('excluye compromisos que no son fijo ni deuda (ej. otro tipo futuro)', () => {
+    const comps = [{ id: 'x1', tipo: 'otro-tipo', descripcion: 'X', monto: 100_000, activo: true }];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('excluye un fijo con frecuencia de baja periodicidad (no representa flujo mensual)', () => {
+    const comps = [compFijoBase({ frecuencia: 'Anual', monto: 1_200_000 })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('excluye una deuda sin cuotaMensual (0 o ausente)', () => {
+    const comps = [compDeudaBase({ cuotaMensual: 0 }), compDeudaBase({ id: 'd2', cuotaMensual: undefined })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('ordena de mayor a menor monto, mezclando fijos y deudas', () => {
+    const comps = [
+      compFijoBase({ id: 'cf1', descripcion: 'Internet', monto: 100_000 }),
+      compDeudaBase({ id: 'd1', descripcion: 'Tarjeta', cuotaMensual: 400_000 }),
+      compFijoBase({ id: 'cf2', descripcion: 'Arriendo', monto: 800_000 }),
+    ];
+    expect(construirDesgloseNecesidades(comps).map(it => it.id)).toEqual(['cf2', 'd1', 'cf1']);
+  });
+
+  it('categoria null cuando el compromiso no tiene categoría asignada', () => {
+    const comps = [compFijoBase({ categoria: undefined })];
+    expect(construirDesgloseNecesidades(comps)[0].categoria).toBeNull();
   });
 });
 
