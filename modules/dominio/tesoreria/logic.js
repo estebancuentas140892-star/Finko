@@ -760,15 +760,14 @@ export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy =
 }
 
 /**
- * Desglose de aportes de ahorro sugeridos por objetivo, para el Paso 2 del
- * asistente "Distribuir mi ingreso" (MC.7a, ADR 018 decisión 3). A diferencia
- * de `construirPlanAhorro` (que hoy sugiere todo el presupuesto al fondo),
- * esta función reparte un aporte sugerido POR CADA meta y apartado activo,
- * usando la misma fórmula que `calcularAporteMensualObjetivos` (faltante
- * entre meses restantes) pero fila por fila en vez de solo el total. Los
- * objetivos sin fecha no se pueden calcular con certeza: sugieren 0 en vez
- * de adivinar (decisión del usuario), con un hint en la vista invitando a
- * ponerles fecha.
+ * Desglose de aportes de ahorro sugeridos por objetivo, para las filas de
+ * Ahorro del panel "Distribuir mi ingreso" (MC.7a/MC.7b, ADR 018 decisión 3).
+ * Reparte un aporte sugerido POR CADA meta y apartado activo, usando la misma
+ * fórmula que `calcularAporteMensualObjetivos` (faltante entre meses
+ * restantes) pero fila por fila en vez de solo el total. Los objetivos sin
+ * fecha no se pueden calcular con certeza: sugieren 0 en vez de adivinar
+ * (decisión del usuario). Cada fila expone `sinFecha` para que la vista
+ * muestre un hint invitando a ponerle fecha al objetivo (MC.7b).
  *
  * El fondo de emergencia conserva su prioridad: recibe el excedente del
  * presupuesto de ahorro que quede tras los aportes sugeridos a metas y
@@ -787,8 +786,9 @@ export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy =
  *   budgetAhorro?: number,
  *   hoy?:         Date,
  * }} [args]
- * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number}>}
- *   Mismo orden y forma que `construirPlanAhorro`: fondo primero (si activo), luego metas, luego apartados.
+ * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number, sinFecha:boolean}>}
+ *   Fondo primero (si activo), luego metas, luego apartados.
+ *   `sinFecha` siempre es `false` para la fila del fondo (no aplica).
  */
 export function construirDesgloseAhorroPorObjetivo({
   metas = [], apartados = [], fondo = null, budgetAhorro = 0, hoy = new Date(),
@@ -801,6 +801,7 @@ export function construirDesgloseAhorroPorObjetivo({
     .map(m => ({
       tipo: 'meta', id: m.id, nombre: m.nombre,
       monto: _aporteMensualObjetivo(m.montoObjetivo, m.montoActual, m.fechaLimite, tsHoy),
+      sinFecha: !m.fechaLimite,
     }));
 
   const filasApartados = apartados
@@ -808,6 +809,7 @@ export function construirDesgloseAhorroPorObjetivo({
     .map(a => ({
       tipo: 'apartado', id: a.id, nombre: a.nombre,
       monto: _aporteMensualObjetivo(a.montoObjetivo, a.montoActual, a.fechaObjetivo, tsHoy),
+      sinFecha: !a.fechaObjetivo,
     }));
 
   const totalObjetivos = [...filasMetas, ...filasApartados].reduce((s, f) => s + f.monto, 0);
@@ -818,6 +820,7 @@ export function construirDesgloseAhorroPorObjetivo({
     filas.push({
       tipo: 'fondo', id: null, nombre: 'Fondo de emergencia',
       monto: fondo.completado ? 0 : excedente,
+      sinFecha: false,
     });
   }
   filas.push(...filasMetas, ...filasApartados);
@@ -1111,44 +1114,6 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
 }
 
 // ── DISTRIBUIR MI INGRESO: grupo Ahorro (ADR 012, MC.4a) ─────────
-
-/**
- * Arma el plan por defecto para repartir el grupo Ahorro de un ingreso entre
- * sus destinos fondeables: fondo de emergencia, metas y apartados.
- *
- * Default teachable "fondo primero": si el fondo está activo y aún no se
- * completó, se le sugiere todo el presupuesto de ahorro (el usuario redistribuye
- * a su gusto en las filas editables). Metas y apartados empiezan en 0.
- *
- * Pura: recibe datos planos (sin S, sin DOM, sin importar otros dominios). El
- * estado de "completado" del fondo se pasa ya resuelto (la vista lo lee del flag
- * persistido `S.ahorro.fondoEmergencia.completado`).
- *
- * @param {{
- *   budget: number,
- *   fondo: { activo: boolean, completado: boolean } | null,
- *   metas?: Array<{ id: string, nombre: string }>,
- *   apartados?: Array<{ id: string, nombre: string }>,
- * }} args
- * @returns {Array<{ tipo: 'fondo'|'meta'|'apartado', id: string|null, nombre: string, monto: number }>}
- */
-export function construirPlanAhorro({ budget, fondo, metas = [], apartados = [] }) {
-  const b = Math.max(0, Math.round(Number(budget) || 0));
-  const destinos = [];
-
-  if (fondo && fondo.activo) {
-    destinos.push({
-      tipo:   'fondo',
-      id:     null,
-      nombre: 'Fondo de emergencia',
-      monto:  fondo.completado ? 0 : b,
-    });
-  }
-  for (const m of metas)     destinos.push({ tipo: 'meta',     id: m.id, nombre: m.nombre, monto: 0 });
-  for (const a of apartados) destinos.push({ tipo: 'apartado', id: a.id, nombre: a.nombre, monto: 0 });
-
-  return destinos;
-}
 
 /**
  * Resume un plan de distribución frente al monto total del ingreso.

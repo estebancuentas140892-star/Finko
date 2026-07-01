@@ -22,7 +22,6 @@ import {
   construirDesgloseAhorroPorObjetivo,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
-  construirPlanAhorro,
   resumirPlanDistribucion,
   construirPlanDeudas,
   construirPlanInversiones,
@@ -1694,14 +1693,32 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     const metas = [metaConFecha()];
     const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
     const esperado = calcularAporteMensualObjetivos(metas, [], hoy);
-    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: esperado }]);
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: esperado, sinFecha: false }]);
     expect(esperado).toBeGreaterThan(0);
   });
 
-  it('una meta sin fechaLimite sugiere 0 (no adivina)', () => {
+  it('una meta sin fechaLimite sugiere 0 (no adivina) y marca sinFecha', () => {
     const metas = [metaConFecha({ fechaLimite: null })];
     const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
-    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: 0 }]);
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: 0, sinFecha: true }]);
+  });
+
+  it('un apartado sin fechaObjetivo sugiere 0 y marca sinFecha', () => {
+    const apartados = [apartadoConFecha({ fechaObjetivo: null })];
+    const filas = construirDesgloseAhorroPorObjetivo({ apartados, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([{ tipo: 'apartado', id: 'ap1', nombre: 'SOAT', monto: 0, sinFecha: true }]);
+  });
+
+  it('una meta con fecha NO marca sinFecha, aunque su fecha ya haya pasado', () => {
+    const metas = [metaConFecha({ fechaLimite: '2026-01-01' })];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    expect(filas[0].sinFecha).toBe(false);
+  });
+
+  it('la fila del fondo siempre tiene sinFecha en false (no aplica)', () => {
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ fondo, budgetAhorro: 1_000_000, hoy });
+    expect(filas[0].sinFecha).toBe(false);
   });
 
   it('una meta con fechaLimite ya pasada sugiere 0', () => {
@@ -1740,7 +1757,7 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     const aporteMeta = calcularAporteMensualObjetivos(metas, [], hoy);
     const fondo = { activo: true, completado: false };
     const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, budgetAhorro: 1_000_000, hoy });
-    expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta });
+    expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta, sinFecha: false });
   });
 
   it('el fondo va primero en el orden (fondo, metas, apartados)', () => {
@@ -1754,7 +1771,7 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
   it('el fondo completo siempre queda en 0, aunque haya excedente', () => {
     const fondo = { activo: true, completado: true };
     const filas = construirDesgloseAhorroPorObjetivo({ fondo, budgetAhorro: 1_000_000, hoy });
-    expect(filas).toEqual([{ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 0 }]);
+    expect(filas).toEqual([{ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 0, sinFecha: false }]);
   });
 
   it('el fondo inactivo no aparece en el desglose', () => {
@@ -1817,57 +1834,6 @@ describe('esDistribucionPersonalizadaValida()', () => {
     expect(esDistribucionPersonalizadaValida(null)).toBe(false);
     expect(esDistribucionPersonalizadaValida(undefined)).toBe(false);
     expect(esDistribucionPersonalizadaValida('80-10-10')).toBe(false);
-  });
-});
-
-// ── construirPlanAhorro() (MC.4a) ─────────────────────────────────
-describe('construirPlanAhorro()', () => {
-  it('con fondo activo e incompleto sugiere todo el presupuesto al fondo', () => {
-    const plan = construirPlanAhorro({
-      budget: 600_000,
-      fondo: { activo: true, completado: false },
-      metas: [{ id: 'm1', nombre: 'Viaje' }],
-      apartados: [{ id: 'a1', nombre: 'SOAT' }],
-    });
-    const fondo = plan.find(d => d.tipo === 'fondo');
-    expect(fondo.monto).toBe(600_000);
-    expect(plan.find(d => d.id === 'm1').monto).toBe(0);
-    expect(plan.find(d => d.id === 'a1').monto).toBe(0);
-  });
-
-  it('con fondo completo lo deja en 0 (no sobre-fondea)', () => {
-    const plan = construirPlanAhorro({
-      budget: 600_000,
-      fondo: { activo: true, completado: true },
-      metas: [], apartados: [],
-    });
-    expect(plan.find(d => d.tipo === 'fondo').monto).toBe(0);
-  });
-
-  it('sin fondo activo no incluye fila de fondo', () => {
-    const plan = construirPlanAhorro({
-      budget: 600_000,
-      fondo: { activo: false, completado: false },
-      metas: [{ id: 'm1', nombre: 'Viaje' }],
-      apartados: [],
-    });
-    expect(plan.some(d => d.tipo === 'fondo')).toBe(false);
-    expect(plan).toHaveLength(1);
-  });
-
-  it('lista una fila por cada meta y apartado, en 0 por defecto', () => {
-    const plan = construirPlanAhorro({
-      budget: 0,
-      fondo: null,
-      metas: [{ id: 'm1', nombre: 'Viaje' }, { id: 'm2', nombre: 'Carro' }],
-      apartados: [{ id: 'a1', nombre: 'SOAT' }],
-    });
-    expect(plan).toHaveLength(3);
-    expect(plan.every(d => d.monto === 0)).toBe(true);
-  });
-
-  it('sin destinos devuelve un plan vacío', () => {
-    expect(construirPlanAhorro({ budget: 500_000, fondo: null })).toEqual([]);
   });
 });
 

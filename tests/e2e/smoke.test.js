@@ -875,3 +875,62 @@ test.describe('Mis cuentas - CTA cruzado a Límites de gasto', () => {
     await expect(cta).toContainText('Ver tu seguimiento en Límites de gasto');
   });
 });
+
+// ── Mis cuentas: aporte de ahorro por objetivo en "Distribuir mi ingreso" (MC.7a/MC.7b, ADR 018) ──
+
+test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => {
+  test('una meta con fecha muestra un aporte sugerido (no 0) y el fondo recibe el excedente', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      const futura = new Date();
+      futura.setMonth(futura.getMonth() + 6);
+      const fechaLimite = futura.toISOString().slice(0, 10);
+
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' }; // ahorro = 20% de 3.000.000 = 600.000
+      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite, completada: false }];
+      st.ahorro = {
+        fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 100_000 },
+        aportes: [], compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const inputMeta  = page.locator('input.distribuir__monto[data-dist-tipo="meta"][data-dist-id="m1"]');
+    const inputFondo = page.locator('input.distribuir__monto[data-dist-tipo="fondo"]');
+    await expect(inputMeta).toBeVisible({ timeout: 3_000 });
+
+    const montoMeta  = Number(await inputMeta.inputValue());
+    const montoFondo = Number(await inputFondo.inputValue());
+    expect(montoMeta).toBeGreaterThan(0);
+    expect(montoMeta).toBeLessThanOrEqual(1_200_000);
+    expect(montoFondo).toBe(600_000 - montoMeta); // el fondo recibe el excedente, no el budget completo
+  });
+
+  test('una meta sin fecha sugiere 0 y muestra el hint invitando a ponerle fecha', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' };
+      st.metas = [{ id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0, fechaLimite: null, completada: false }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const inputMeta = page.locator('input.distribuir__monto[data-dist-tipo="meta"][data-dist-id="m1"]');
+    await expect(inputMeta).toBeVisible({ timeout: 3_000 });
+    await expect(inputMeta).toHaveValue('0');
+
+    const hint = page.locator('.distribuir__hint a[href="#metas"]');
+    await expect(hint).toBeVisible({ timeout: 3_000 });
+  });
+});

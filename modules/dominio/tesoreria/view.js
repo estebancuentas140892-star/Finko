@@ -24,7 +24,7 @@ import {
   sugerirDistribucionIngreso,
   PRESETS_DISTRIBUCION,
   esDistribucionPersonalizadaValida,
-  construirPlanAhorro,
+  construirDesgloseAhorroPorObjetivo,
   construirPlanDeudas,
   construirPlanInversiones,
   estadoDistribucion,
@@ -307,23 +307,19 @@ export function renderDistribucionIngreso() {
   const dist = sugerirDistribucionIngreso(ingresoMensual, contexto);
 
   // Destinos fondeables del grupo Ahorro para "Distribuir mi ingreso" (MC.4a):
-  // fondo de emergencia (si está activo), metas y apartados aún no completados.
+  // fondo de emergencia (si está activo), metas y apartados aún no completados,
+  // con un aporte sugerido por objetivo (MC.7a/MC.7b, ADR 018) en vez de todo
+  // al fondo por defecto.
   const fondo = S.ahorro?.fondoEmergencia;
   const fondoParaPlan = (fondo && fondo.activo)
     ? { activo: true, completado: fondo.completado === true }
     : null;
-  const metasIncompletas = (S.metas ?? [])
-    .filter(m => m.completada !== true)
-    .map(m => ({ id: m.id, nombre: m.nombre }));
-  const apartadosIncompletos = (S.apartados ?? [])
-    .filter(a => a.completado !== true)
-    .map(a => ({ id: a.id, nombre: a.nombre }));
 
-  const destinosAhorro = construirPlanAhorro({
-    budget:    dist.split.ahorro.monto,
-    fondo:     fondoParaPlan,
-    metas:     metasIncompletas,
-    apartados: apartadosIncompletos,
+  const destinosAhorro = construirDesgloseAhorroPorObjetivo({
+    metas:        S.metas ?? [],
+    apartados:    S.apartados ?? [],
+    fondo:        fondoParaPlan,
+    budgetAhorro: dist.split.ahorro.monto,
   });
 
   // Deudas con saldo pendiente (MC.4b): destinos fondeables vía abono real.
@@ -359,11 +355,16 @@ export function renderDistribucionIngreso() {
     : '';
 }
 
+/** Sección a la que enlaza el hint de "sin fecha", según el tipo de objetivo. */
+const _SECCION_OBJETIVO = { meta: 'metas', apartado: 'apartados' };
+
 /**
  * Una fila de destino del panel: toggle (incluir) + monto editable. Para deudas
  * muestra el saldo pendiente y para inversiones el capital actual, como contexto.
+ * Para metas/apartados sin fecha (`sinFecha`, MC.7a/MC.7b) agrega un hint que
+ * invita a ponerle fecha, para que el aporte se pueda calcular la próxima vez.
  *
- * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number}} d
+ * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number, sinFecha?:boolean}} d
  * @returns {string}
  */
 function _filaDistribuir(d) {
@@ -373,6 +374,12 @@ function _filaDistribuir(d) {
   } else if (d.tipo === 'inversion' && d.invertido != null) {
     sub = ` <span class="distribuir__saldo">invertido ${f(d.invertido)}</span>`;
   }
+
+  const seccionHint = _SECCION_OBJETIVO[d.tipo];
+  const hint = (d.sinFecha && seccionHint)
+    ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}">${seccionHint === 'metas' ? 'Metas' : 'Apartados'}</a> para calcular cuánto aportar.</p>`
+    : '';
+
   return `
         <div class="distribuir__fila">
           <label class="checkbox-row distribuir__toggle">
@@ -384,7 +391,8 @@ function _filaDistribuir(d) {
                  aria-label="Monto para ${_esc(d.nombre)}"
                  data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"
                  data-action="recalcular-distribucion" />
-        </div>`;
+        </div>
+        ${hint}`;
 }
 
 /**

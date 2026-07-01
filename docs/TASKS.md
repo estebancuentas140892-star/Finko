@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1743/1743 unit + 73/73 E2E verdes, lint limpio.** Último cambio: **MC.7a**, desglose de aportes de ahorro por objetivo (`construirDesgloseAhorroPorObjetivo`), primer slice de MC.7 (SW v242). Aún no integrado en el panel (eso es MC.7b). Antes: ADR 018 (diseño de MC.7); MC.5 completa (a-e), Límites de gasto como centro de control. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1741/1741 unit + 75/75 E2E verdes, lint limpio.** Último cambio: **MC.7b**, el panel "Distribuir mi ingreso" sugiere un aporte por meta/apartado (con hint si falta fecha) y el fondo recibe el excedente, segundo slice de MC.7 (SW v243). Antes: MC.7a (lógica del desglose); ADR 018 (diseño de MC.7); MC.5 completa (a-e). **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -222,7 +222,7 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 
 Slices de implementación de MC.7 (smallest-first, ver ADR 018):
 ✅ **MC.7a** - `construirDesgloseAhorroPorObjetivo()` en `tesoreria/logic.js`: **desglose de aportes de ahorro por objetivo** (una fila por meta/apartado con su aporte sugerido: `faltante / meses restantes` con fecha, 0 sin fecha; fondo con el excedente si está incompleto). Reusa la fórmula de `calcularAporteMensualObjetivos` vía el helper privado `_aporteMensualObjetivo` extraído (refactor sin cambio de comportamiento). Aún no integrada en el panel (MC.7b). 15 tests nuevos. 1728/1728 → 1743/1743 unit. SW v241 → v242 - 2026-07-01. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.7b** - Integrar ese desglose como **default editable** en las filas de Ahorro del panel actual (reemplaza el default "todo al fondo" de `construirPlanAhorro`), con hint para objetivos sin fecha. Modelo: Sonnet 4.6 - Medio.
+✅ **MC.7b** - El panel "Distribuir mi ingreso" integra el desglose de MC.7a como **default editable**: cada meta/apartado activo muestra su aporte sugerido y el fondo recibe el excedente (reemplazó el default "todo al fondo" de `construirPlanAhorro`, eliminada por quedar sin llamadores). Hint bajo la fila de objetivos sin fecha, con enlace a Metas/Apartados. 3 unit + 2 E2E nuevos (neto, tras quitar 5 de `construirPlanAhorro`). 1743/1743 → 1741/1741 unit; 73/73 → 75/75 E2E. Verificado en el navegador. SW v242 → v243 - 2026-07-01. Ver [CHANGELOG](CHANGELOG.md).
 - **MC.7c** - Paso 1: **desglose itemizado de Necesidades** (gastos fijos de Agenda + cuotas de deuda + compromisos del periodo) como preview read-only con nombre/categoría/valor. Modelo: Sonnet 4.6 - Medio.
 - **MC.7d** - Convertir el panel en **shell de asistente por pasos** (avanzar/atrás inline, confirmación única), integrando Paso 1 y Paso 2. Modelo: Sonnet 4.6 - Alto.
 - **MC.7e** - Paso 3: **reparto de Estilo de vida entre cuentas** (omitido con una sola cuenta). Se decide aquí si mueve dinero o es guía. Modelo: Sonnet 4.6 - Medio/Alto.

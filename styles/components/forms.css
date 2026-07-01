@@ -221,6 +221,11 @@ form:not(.config-form) .form-group:not(:first-child) {
   justify-content: space-between;
   gap: var(--fk-space-2);
 }
+/* Hint "sin fecha" (MC.7b): sin margin-top propio, el gap del contenedor
+   flex ya separa la fila del hint. */
+.distribuir-ingreso__destinos .distribuir__hint {
+  margin-top: 0;
+}
 .distribuir__toggle {
   flex: 1;
   min-width: 0;

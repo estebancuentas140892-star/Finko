@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (feat(tesoreria): MC.7a, desglose de aportes de ahorro por objetivo)
+> Última actualización: 2026-07-01 (feat(tesoreria): MC.7b, aporte de ahorro por objetivo en "Distribuir mi ingreso")
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1743/1743 verdes |
-| Tests E2E | 73/73 verde. Suites: `smoke` 37 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1741/1741 verdes |
+| Tests E2E | 75/75 verde. Suites: `smoke` 39 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): aporte de ahorro por objetivo en "Distribuir mi ingreso" (MC.7b) · 2026-07-01
+
+Segundo slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), decisión 3). El panel ya no arranca "todo al fondo": cada meta/apartado activo muestra su aporte sugerido (`construirDesgloseAhorroPorObjetivo`, MC.7a), y el fondo recibe el excedente. Objetivos sin fecha muestran $0 y un hint bajo su fila invitando a ponerle fecha (enlace a Metas/Apartados). `construirPlanAhorro` quedó sin llamadores y se eliminó (con sus 5 tests) en vez de dejarla muerta. La función de MC.7a ahora expone `sinFecha` por fila para que la vista sepa cuándo mostrar el hint. 3 unit + 2 E2E nuevos (neto, tras quitar los 5 de `construirPlanAhorro`). 1743/1743 → 1741/1741 unit; 73/73 → 75/75 E2E. Verificado en el navegador (meta a 6 meses con $1.200.000 de faltante → sugiere $200.000; fondo con presupuesto $600.000 → recibe $400.000 de excedente; meta sin fecha → $0 + hint). SW v242 → v243.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseAhorroPorObjetivo()` expone `sinFecha`; `construirPlanAhorro()` eliminada. |
+| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso` usa el desglose por objetivo; `_filaDistribuir` agrega el hint de "sin fecha". |
+| `styles/components/forms.css` | `.distribuir-ingreso__destinos .distribuir__hint`. |
+| `tests/unit/tesoreria.test.js`, `tests/e2e/smoke.test.js` | 3 unit + 2 E2E nuevos; describe de `construirPlanAhorro` eliminado. |
+| `service-worker.js` | v242 → v243. |
+
+---
 
 ### feat(tesoreria): desglose de aportes de ahorro por objetivo (MC.7a) · 2026-07-01
 
@@ -76,20 +90,6 @@ Quinto slice, opcional, de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-contr
 
 ---
 
-### feat(presupuesto): alertas y refuerzos inteligentes por grupo y por item en Límites de gasto (MC.5d) · 2026-06-30
-
-Cuarto slice (obligatorio) de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md); MC.5e queda opcional). Nueva `generarMensajesLimites()` en `presupuesto/logic.js`, reusando el sistema de nudges ya existente (`.nudge nudge-medium|nudge-high|nudge-success`) en vez de un componente nuevo. Genera: alerta por categoría de Estilo de vida en 75-99%/excedida (reusa `alertasLimites`), alerta de grupo para Necesidades/Estilo de vida, refuerzo para Ahorro cuando `pct >= 100` (ahí superar el 100% es bueno, al revés que gasto), y un refuerzo combinado ("Cumpliste todas tus necesidades... Excelente trabajo") cuando todos los items de Necesidades están pagados y el grupo no está excedido. Función pura, sin importar otros dominios. 19 unit + 2 E2E nuevos. 1707/1707 → 1726/1726 unit; 69/69 → 71/71 E2E. SW v239 → v240.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/logic.js` | `generarMensajesLimites()` nueva. |
-| `modules/dominio/presupuesto/view.js` | `_renderNudge`/`_renderNudgesGrupo`/`_renderRefuerzoCombinado`; tarjetas reciben `nudgesHtml`. |
-| `styles/components/analysis.css` | `.grupo-card .nudge` (ajuste de espaciado del sistema de nudges existente). |
-| `tests/unit/presupuesto.test.js`, `tests/e2e/smoke.test.js` | 19 unit + 2 E2E nuevos. |
-| `service-worker.js` | v239 → v240. |
-
----
-
 ### feat(presupuesto): resumen read-only de los 3 grupos en Límites de gasto (MC.5b) · 2026-06-30
 
 Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Límites de gasto arranca ahora con **"Tu plan del mes por grupo"**: una tarjeta por grupo financiero (Necesidades / Estilo de vida / Ahorro) con asignado, ejecutado, disponible, % y barra de progreso. Los topes por categoría quedan debajo como "detalle de Estilo de vida". El **asignado** sale de la misma distribución que Mis cuentas (`sugerirDistribucionIngreso`); para no duplicarla se extrajo el helper puro `construirContextoDistribucion` en `tesoreria/logic.js` y se refactorizó `tesoreria/view.js` para consumirlo (extracción sin cambio de comportamiento). El **ejecutado** lo deriva `ejecutadoPorGrupoDelMes` de los flujos del mes sin schema nuevo (Necesidades = gastos con `compromisoId`; Estilo de vida = gastos sin `compromisoId`; Ahorro = aportes fechados al fondo). Estado vacío que guía a Mis cuentas si no hay ingreso. 14 unit + 2 E2E nuevos. 1691/1691 unit + 67/67 E2E. SW v237 → v238.
@@ -106,7 +106,7 @@ Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). L
 
 ---
 
-> Para tareas anteriores (MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
