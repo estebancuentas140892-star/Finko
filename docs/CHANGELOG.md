@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### docs(adr): ADR 017, Límites de gasto como centro de control (MC.5, diseño) · 2026-06-30
+
+Diseño de la épica MC.5: convertir Límites de gasto en un centro de control de los tres grupos financieros (Necesidades / Estilo de vida / Ahorro), integrado con la distribución de Mis cuentas. Decisiones cerradas con el usuario: (1) enfoque diseño primero (este ADR) y luego slices; (2) el presupuesto asignado por grupo sale de la distribución (`sugerirDistribucionIngreso`, MC.6a), Límites solo hace seguimiento, sin datos nuevos; (3) los topes por categoría actuales se conservan como el detalle del grupo Estilo de vida, sin migrar. El ejecutado por grupo se deriva de los flujos del mes de cada dominio, reusando `GRUPO_POR_SECCION` (ADR 014). Sin schema nuevo en v1. Alertas inteligentes por grupo y por item con el tono orientativo de siempre. Implementación en 5 slices (MC.5a a MC.5e). Solo docs (ADR + backlog); sin cambio de código ni tests.
+
+- **`docs/DECISIONS/017-limites-centro-de-control.md`** (nuevo): el ADR completo (contexto, 7 decisiones, alternativas, consecuencias, slices).
+- **`docs/TASKS.md`**: MC.5 marcada como diseño cerrado; agregados los slices MC.5a a MC.5e con modelos sugeridos.
+
+---
+
 ### test(e2e): fecha "hoy" en hora local, no UTC · 2026-06-30
 
 Fix de la flakiness detectada al cerrar A11Y.4: 9 usos de `new Date().toISOString().slice(0, 10)` en `smoke.test.js` y `ahorro-inversion.test.js` calculaban "hoy" en UTC. En zonas horarias negativas (Colombia UTC-5), cerca de medianoche local eso da el dia siguiente en UTC; el gasto/aporte quedaba guardado con fecha de mañana y la app, que filtra "este mes" en hora local, no lo mostraba (4 tests de Gastos fallaban solo en la tarde del ultimo dia del mes). Fix: helper `hoyLocal()` (nuevo en ambos archivos) que replica `hoy()` de `modules/infra/utils.js` con getters locales (`getFullYear/getMonth/getDate`) en vez de `toISOString()`. Sin cambio de codigo de produccion, solo tests. 1667/1667 unit + 65/65 E2E verdes (antes 61/65 en frontera de mes).

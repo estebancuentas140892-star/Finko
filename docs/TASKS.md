@@ -170,7 +170,16 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 - **MC.6c (opcional)** - Señales más ricas: historial de gastos variables (proxy de estilo de vida), inversiones como prioridad tras el fondo.
 - **MC.7 (épica mayor, requiere ADR)** - Convertir "Distribuir mi ingreso" en un asistente guiado de 3 pasos: (1) **Necesidades** itemizadas automáticamente (gastos fijos, cuotas de deuda, compromisos de Agenda) con nombre/categoría/valor; (2) **Ahorro** con aportes auto-calculados por objetivo según su meta y la frecuencia del ingreso (ej. meta de $5M a un año → cuánto por quincena), priorizando el fondo de emergencia con el excedente; (3) **Estilo de vida** repartido entre las cuentas activas / efectivo. El usuario solo revisa, ajusta y confirma. Construye sobre MC.4a-e.
 
-- **MC.5 (épica mayor, requiere ADR + posible schema)** - Límites de gastos como centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro): clasificar cada categoría en un grupo, fijar límites por categoría, y mostrar % consumido + disponible + alertas al acercarse/superar. Toca Gastos, Deudas, Agenda, Apartados y Mis cuentas; depende de definir bien las categorías transversales.
+✅ **MC.5 (diseño) = [ADR 017](DECISIONS/017-limites-centro-de-control.md).** Límites de gasto como centro de control de los 3 grupos. Decisiones cerradas con el usuario: (1) **enfoque** = diseño primero (ADR), luego slices; (2) **presupuesto por grupo** = sale de la distribución (MC.6), Límites solo hace seguimiento, cero datos nuevos ni schema; (3) **topes por categoría** = se conservan como el detalle del grupo Estilo de vida (no se migran). El ejecutado por grupo se deriva de los flujos del mes (Agenda + deudas → Necesidades; `gastosMes` → Estilo de vida; fondo + metas + apartados + inversiones → Ahorro), reusando `GRUPO_POR_SECCION` (ADR 014) y `sugerirDistribucionIngreso` (ADR 013). Sin schema nuevo en v1 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
+
+Slices de implementación de MC.5 (smallest-first, ver ADR 017):
+- **MC.5a** - `logic.js` puro: `resumenGrupos(asignado, ejecutado)` → `{asignado, ejecutado, restante, pct, estado}` por grupo, reusando los umbrales 75%/100%. Tests. Modelo: Sonnet 4.6 - Medio.
+- **MC.5b** - Vista read-only del resumen de los 3 grupos arriba de Límites (asignado desde la distribución, ejecutado desde los flujos del mes); topes por categoría como detalle de Estilo de vida; estado vacío que guía a Mis cuentas si no hay ingreso. Modelo: Sonnet 4.6 - Alto.
+- **MC.5c** - Desglose por item dentro de cada grupo (Necesidades por fijo/deuda, Ahorro por destino, Estilo de vida por categoría). Modelo: Sonnet 4.6 - Medio.
+- **MC.5d** - Alertas y refuerzos inteligentes por grupo y por item (los ejemplos aprobados del usuario), puras en `logic.js`. Modelo: Sonnet 4.6 - Medio.
+- **MC.5e (opcional)** - CTAs cruzados con Mis cuentas + copy de complementariedad + alinear el banner de propósito (EP.2). Modelo: Sonnet 4.6 - Bajo.
+
+Nota: el asignado por grupo sale de la distribución, así que MC.5 se beneficia de resolver antes **MC.10/MC.11** (piso de ahorro + detección de déficit), aunque puede construirse sobre el modelo actual y afinar cuando esos entren.
 
 ### Backlog del usuario "Mis cuentas: ajustes a ingresos" (2026-06-29)
 

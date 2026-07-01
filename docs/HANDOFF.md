@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (test(e2e): fecha "hoy" en hora local, no UTC)
+> Última actualización: 2026-06-30 (docs(adr): ADR 017, Límites como centro de control, MC.5 diseño)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(adr): ADR 017, Límites de gasto como centro de control (MC.5, diseño) · 2026-06-30
+
+Diseño de la épica MC.5. Límites de gasto se convierte en un centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro) integrado con la distribución de Mis cuentas: Mis cuentas planifica, Límites vigila. Decisiones cerradas con el usuario: presupuesto por grupo desde la distribución (MC.6a, cero datos nuevos ni schema), topes por categoría conservados como detalle de Estilo de vida, ejecutado derivado de los flujos del mes reusando `GRUPO_POR_SECCION` (ADR 014). Implementación en 5 slices (MC.5a a MC.5e). Solo docs.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/017-limites-centro-de-control.md` | Nuevo ADR (contexto, 7 decisiones, alternativas, consecuencias, slices). |
+| `docs/TASKS.md` | MC.5 diseño cerrado + slices MC.5a a MC.5e. |
+
+---
 
 ### test(e2e): fecha "hoy" en hora local, no UTC · 2026-06-30
 
@@ -87,19 +98,7 @@ Segundo hallazgo de la auditoría de accesibilidad. El `<main>` tenía `aria-liv
 
 ---
 
-### fix(a11y): quitar role="listitem" de los enlaces de navegación (A11Y.1) · 2026-06-30
-
-Primer hallazgo de la auditoría de accesibilidad/color/responsividad (2026-06-30). Los 13 `<a class="nav-item">` del sidebar + el botón "Más" tenían `role="listitem"` pisando su rol nativo `link`/`button`: el lector de pantalla los anunciaba como ítems de lista, no como enlaces navegables. Fix sin cambio visual: 4 contenedores intermedios `role="list"` → `role="group"`; quitado `role="listitem"` de los enlaces y el botón. Ajustado el selector equivalente en `responsive.css` para no romper el bottom nav mobile. 1658/1658 unit + 64/64 E2E verdes. SW v231 → v232.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | 4× `role="list"` → `role="group"`; quitado `role="listitem"` de 13 enlaces + botón "Más". |
-| `styles/responsive.css` | Selector `[role="list"]` → `[role="group"]` (aplanado bottom nav mobile). |
-| `service-worker.js` | v231 → v232. |
-
----
-
-> Para tareas anteriores (EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
