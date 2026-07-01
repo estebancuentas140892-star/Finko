@@ -71,6 +71,21 @@ async function irADash(page) {
  */
 const modalCerrado = (id) => `#${id}:not([data-open])`;
 
+/**
+ * Fecha de hoy en `YYYY-MM-DD`, hora local (no UTC).
+ * Replica `hoy()` de `modules/infra/utils.js`: usar `toISOString()` es
+ * incorrecto porque en zonas horarias negativas (Colombia UTC-5) puede
+ * devolver el dia siguiente cerca de medianoche, y la app filtra "este mes"
+ * en hora local.
+ */
+function hoyLocal() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 // ── SUITE A: Ahorro ─────────────────────────────────────────────────────────
 
 test.describe('Ahorro - fondo de emergencia (J.1)', () => {
@@ -137,7 +152,7 @@ test.describe('Ahorro - fondo de emergencia (J.1)', () => {
     await page.waitForSelector('#modal-ahorro[data-open]', { timeout: 5_000 });
     const formAporte = page.locator('#modal-ahorro-body form#form-aporte');
     await formAporte.locator('[name="monto"]').fill('200000');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await formAporte.locator('[name="fecha"]').fill(hoy);
     await formAporte.locator('button[type="submit"]').click();
 
@@ -214,7 +229,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await form.locator('select[name="tipo"]').selectOption('CDT');
     await form.locator('[name="nombre"]').fill('CDT Bancolombia E2E');
     await form.locator('[name="monto"]').fill('5000000');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await form.locator('[name="fechaInicio"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
 
@@ -245,7 +260,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await form.locator('[name="monto"]').fill('10000000');
     await form.locator('[name="tasaEA"]').fill('10');
     await form.locator('[name="plazoMeses"]').fill('12');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await form.locator('[name="fechaInicio"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
 
@@ -274,7 +289,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await form.locator('select[name="tipo"]').selectOption('Fondo');
     await form.locator('[name="nombre"]').fill('Fondo a eliminar E2E');
     await form.locator('[name="monto"]').fill('2000000');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await form.locator('[name="fechaInicio"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('.inversion-lista__items')).toContainText(
@@ -313,7 +328,7 @@ test.describe('Inversión - portafolio real (J.2)', () => {
     await form.locator('select[name="tipo"]').selectOption('Acciones');
     await form.locator('[name="nombre"]').fill('Acciones Colombia E2E');
     await form.locator('[name="monto"]').fill('8000000');
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await form.locator('[name="fechaInicio"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
     await expect(page.locator('.inversion-hero__title')).toHaveText('$8.000.000', { timeout: 3_000 });

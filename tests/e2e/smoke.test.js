@@ -48,6 +48,21 @@ const modalCerrado = (id) =>
   `#${id}:not([data-open])`;
 
 /**
+ * Fecha de hoy en `YYYY-MM-DD`, hora local (no UTC).
+ * Replica `hoy()` de `modules/infra/utils.js`: usar `toISOString()` es
+ * incorrecto porque en zonas horarias negativas (Colombia UTC-5) puede
+ * devolver el dia siguiente cerca de medianoche, y la app filtra "este mes"
+ * en hora local.
+ */
+function hoyLocal() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
  * Crea una cuenta de tipo Efectivo con el saldo indicado.
  *
  * El form de cuenta fue rediseñado en v8.7-v8.9:
@@ -233,7 +248,7 @@ test.describe('Gastos - CRUD', () => {
     // Seleccionar la primera opción real del select de categoría
     await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await form.locator('[name="fecha"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
 
@@ -343,7 +358,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
 
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
 
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
 
@@ -392,7 +407,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(
@@ -456,7 +471,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="monto"]').fill('200000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = hoyLocal();
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(

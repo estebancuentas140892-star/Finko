@@ -7,6 +7,15 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### test(e2e): fecha "hoy" en hora local, no UTC · 2026-06-30
+
+Fix de la flakiness detectada al cerrar A11Y.4: 9 usos de `new Date().toISOString().slice(0, 10)` en `smoke.test.js` y `ahorro-inversion.test.js` calculaban "hoy" en UTC. En zonas horarias negativas (Colombia UTC-5), cerca de medianoche local eso da el dia siguiente en UTC; el gasto/aporte quedaba guardado con fecha de mañana y la app, que filtra "este mes" en hora local, no lo mostraba (4 tests de Gastos fallaban solo en la tarde del ultimo dia del mes). Fix: helper `hoyLocal()` (nuevo en ambos archivos) que replica `hoy()` de `modules/infra/utils.js` con getters locales (`getFullYear/getMonth/getDate`) en vez de `toISOString()`. Sin cambio de codigo de produccion, solo tests. 1667/1667 unit + 65/65 E2E verdes (antes 61/65 en frontera de mes).
+
+- **`tests/e2e/smoke.test.js`**: helper `hoyLocal()`; 4 usos de `toISOString()` reemplazados.
+- **`tests/e2e/ahorro-inversion.test.js`**: helper `hoyLocal()`; 5 usos de `toISOString()` reemplazados.
+
+---
+
 ### fix(a11y): fondo inerte mientras hay un modal abierto (A11Y.4) · 2026-06-30
 
 Cuarto hallazgo de la auditoría de accesibilidad. `abrirModal` atrapaba el Tab dentro del panel (`trapFocus`) pero no marcaba el resto de la app como inerte, así que el cursor virtual del lector de pantalla podía seguir leyendo el contenido detrás del modal, y `aria-modal="true"` no basta por sí solo (soporte inconsistente entre lectores). Fix sin cambio visual: `abrirModal` marca `.app-shell` con el atributo `inert` (WCAG 2.4.3, refuerza `aria-modal`) y `cerrarModal` lo libera. Los modales viven como hermanos de `.app-shell` en `index.html`, así que inertizar el fondo no afecta al propio modal. Orden cuidado: el `inert` se pone **después** de `trapFocus` (que ya guardó el botón que abrió el modal) y se quita **antes** de `releaseFocus` (para que ese botón pueda recibir el foco de vuelta al cerrar). Los overlays dinámicos (`confirm.js`, `cuenta-helper.js`) ya viven fuera de `.app-shell` y se cierran con `overlay.remove()`, así que apilan bien sobre un modal base. Nuevo archivo de tests `tests/unit/modales.test.js` (9 tests: contrato de apertura/cierre, `inert` puesto/liberado, foco restaurado, resetModal) + 1 E2E en `smoke.test.js` que valida el `inert` real en navegador. 1667/1667 unit verdes; el E2E nuevo en verde. SW v234 → v235.

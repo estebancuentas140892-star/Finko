@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (fix(a11y): A11Y.4 - fondo inerte con modal abierto)
+> Última actualización: 2026-06-30 (test(e2e): fecha "hoy" en hora local, no UTC)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1667/1667 verdes |
-| Tests E2E | 64/64 verde. Suites: `smoke` 28 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
+| Tests E2E | 65/65 verde. Suites: `smoke` 29 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### test(e2e): fecha "hoy" en hora local, no UTC · 2026-06-30
+
+Fix de la flakiness detectada al cerrar A11Y.4: los E2E calculaban "hoy" con `toISOString()` (UTC), lo que hacia fallar 4 tests de Gastos en la tarde del ultimo dia del mes en Colombia (UTC-5). Nuevo helper `hoyLocal()` en `smoke.test.js` y `ahorro-inversion.test.js`, replica `hoy()` de `utils.js` con getters locales. Solo tests, sin cambio de codigo de produccion, sin bump de SW. 1667/1667 unit + 65/65 E2E verdes (antes 61/65).
+
+| Archivo | Cambio |
+|---|---|
+| `tests/e2e/smoke.test.js` | Helper `hoyLocal()`; 4 usos de `toISOString()` reemplazados. |
+| `tests/e2e/ahorro-inversion.test.js` | Helper `hoyLocal()`; 5 usos de `toISOString()` reemplazados. |
+
+---
 
 ### fix(a11y): fondo inerte mientras hay un modal abierto (A11Y.4) · 2026-06-30
 
@@ -88,23 +99,7 @@ Primer hallazgo de la auditoría de accesibilidad/color/responsividad (2026-06-3
 
 ---
 
-### feat(proposito): banners de propósito en Mis cuentas, Análisis y Personales (EP.4) · 2026-06-30
-
-Completa la épica EP: 3 entradas finales en `PROPOSITOS_SECCION` (tesoreria, analisis, personales), 3 slots en `index.html` y calls en los 3 dominios. CSS: azul para Mis cuentas, turquesa para Análisis, rosa para Personales. Sin tests nuevos. 1658/1658 verdes. SW v230 → v231. Épica EP completada: 11 de 11 secciones (Apartados, Gastos, Deudas, Mi Agenda, Límites de gasto, Metas, Ahorro, Inversión, Mis cuentas, Análisis, Personales).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/ui/proposito.js` | 3 entradas finales: `tesoreria`, `analisis`, `personales`. |
-| `index.html` | Slots `proposito-tesoreria`, `proposito-analisis`, `proposito-personales`. |
-| `modules/dominio/tesoreria/index.js` | Import + calls de `renderBannerProposito('tesoreria')`. |
-| `modules/dominio/analisis/index.js` | Import + calls de `renderBannerProposito('analisis')`. |
-| `modules/dominio/personales/index.js` | Import + calls de `renderBannerProposito('personales')`. |
-| `styles/components/domain.css` | Variantes de color (expandido + colapsado) para tesoreria, analisis, personales. |
-| `service-worker.js` | v230 → v231. |
-
----
-
-> Para tareas anteriores (EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
