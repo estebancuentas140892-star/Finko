@@ -32,8 +32,8 @@ export const PROPOSITOS_SECCION = {
     texto: '¿Sientes que pagas y pagas pero la deuda no baja? Sin un plan, los intereses te cobran de más y la salida se alarga. Deudas arma la mejor estrategia para que pagues menos intereses y salgas más rápido, una cuota a la vez.',
   },
   agenda: {
-    titulo: '¿Para qué sirve Mi Agenda?',
-    texto: '¿Se te ha pasado un pago y te tocó asumir intereses o recargos? Las fechas se acumulan y es fácil olvidar una. Agenda reúne tus pagos periódicos en un solo lugar para que no se te pase ninguno y evites cobros por mora.',
+    titulo: '¿Para qué sirve Calendario?',
+    texto: '¿Se te ha pasado un pago y te tocó asumir intereses o recargos? Las fechas se acumulan y es fácil olvidar una. Calendario reúne tus pagos periódicos en un solo lugar para que no se te pase ninguno y evites cobros por mora.',
   },
   presupuesto: {
     titulo: '¿Para qué sirve Límites de gasto?',
@@ -82,7 +82,7 @@ export function htmlBannerProposito(seccion, config = {}) {
   return colapsado ? _htmlColapsado(seccion, info) : _htmlExpandido(seccion, info);
 }
 
-function _htmlExpandido(seccion, { titulo, texto }) {
+function _htmlExpandido(seccion, { texto }) {
   return `
     <div class="banner-proposito" data-seccion="${_esc(seccion)}">
       <p class="banner-proposito__texto">${texto}</p>

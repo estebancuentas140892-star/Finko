@@ -615,8 +615,8 @@ test.describe('Agenda', () => {
   });
 
   test('carga y muestra calendario del mes', async ({ page }) => {
-    // Heading "Mi Agenda"
-    await expect(page.locator('h1').filter({ hasText: 'Mi Agenda' })).toBeVisible();
+    // Heading "Calendario"
+    await expect(page.locator('h1').filter({ hasText: 'Calendario' })).toBeVisible();
 
     // Cabecera calendario: mes actual (Mayo o similar)
     await expect(page.locator('.cal-card__title')).toBeVisible();

@@ -7,6 +7,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
+
+Evaluación UX/IA de una propuesta del usuario (pidió elegir la mejor opción para un usuario primerizo, aunque difiriera de su sugerencia): se coincide con su propuesta. "Dashboard" es jerga en inglés opaca para el público objetivo; "Inicio" es el término convencional para la pantalla principal y no limita la sección a una función. "Agenda" → "Calendario" porque para un usuario primerizo gana el reconocimiento del formato visual (la sección es un calendario mensual); reconsidera AG.1, que antes se inclinaba por "Agenda". Implementado con una guía clave de arquitectura de la información: **se cambió solo la etiqueta visible**, no la ruta ni el código. El hash (`#dash`, `#agenda`), los `id` del DOM (`sec-dash`, `sec-agenda`, `title-agenda`) y el nombre del dominio (`agenda`) quedan estables; cambiar la ruta habría roto deep links, bookmarks y el cache del SW sin ningún beneficio. Cambios: labels de nav (sidebar + bottom nav) y sus `aria-label`, título de sección "Mi Agenda" → "Calendario", el banner de propósito de Calendario, y 7 menciones de copy en Gastos, Tesorería, Deudas y Ahorro que decían "...desde Agenda" / "...en Agenda". Bonus fix adyacente: la copia de recomendación de distribución (`tesoreria/logic.js`) decía "tus deudas en Compromisos", un nombre ya obsoleto de la sección Deudas; corregido de paso, junto a la línea que ya se estaba editando. También se corrigió un lint pre-existente en `proposito.js` (`titulo` sin usar en `_htmlExpandido`), detectado al auditar el mismo archivo. 1 assert E2E actualizado (heading "Calendario"). 1667/1667 unit + 65/65 E2E verdes. SW v235 → v236.
+
+- **`index.html`**: labels de nav "Dashboard" → "Inicio", "Agenda" → "Calendario" (sidebar + bottom nav); `aria-label` correspondientes; título de sección "Mi Agenda" → "Calendario"; comentarios de doc actualizados.
+- **`modules/ui/proposito.js`**: copy del banner de propósito de Calendario ("¿Para qué sirve Calendario?"); fix de lint (`_htmlExpandido` ya no destructura `titulo`, que no usaba).
+- **`modules/dominio/gastos/index.js`**: hint "registrarlo en Calendario" (antes "en Agenda").
+- **`modules/dominio/tesoreria/view.js`**: hint del form de gasto fijo, "Lo vas a ver en Calendario y en Deudas".
+- **`modules/dominio/tesoreria/logic.js`**: 2 cadenas de `razon` en `sugerirDistribucionIngreso` ("gastos en Calendario", "Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas").
+- **`modules/dominio/compromisos/views/lista.js`**: tip del empty state de deudas, "se agregan desde la sección Calendario".
+- **`modules/dominio/ahorro/view.js`**: 2 tips del form del fondo de emergencia, "desde Calendario".
+- **`tests/e2e/smoke.test.js`**: assert del heading actualizado a "Calendario".
+- **`service-worker.js`**: v235 → v236.
+
+---
+
 ### docs(adr): ADR 017, Límites de gasto como centro de control (MC.5, diseño) · 2026-06-30
 
 Diseño de la épica MC.5: convertir Límites de gasto en un centro de control de los tres grupos financieros (Necesidades / Estilo de vida / Ahorro), integrado con la distribución de Mis cuentas. Decisiones cerradas con el usuario: (1) enfoque diseño primero (este ADR) y luego slices; (2) el presupuesto asignado por grupo sale de la distribución (`sugerirDistribucionIngreso`, MC.6a), Límites solo hace seguimiento, sin datos nuevos; (3) los topes por categoría actuales se conservan como el detalle del grupo Estilo de vida, sin migrar. El ejecutado por grupo se deriva de los flujos del mes de cada dominio, reusando `GRUPO_POR_SECCION` (ADR 014). Sin schema nuevo en v1. Alertas inteligentes por grupo y por item con el tono orientativo de siempre. Implementación en 5 slices (MC.5a a MC.5e). Solo docs (ADR + backlog); sin cambio de código ni tests.

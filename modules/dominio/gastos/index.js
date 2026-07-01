@@ -434,7 +434,7 @@ function _montarFormGasto() {
         hintFija.innerHTML =
           `Esta categoría suele ser un gasto fijo mensual. ` +
           `Si es recurrente, puedes <a href="#agenda" data-action="modal-close" ` +
-          `class="link">registrarlo en Agenda</a> para llevarlo mejor.`;
+          `class="link">registrarlo en Calendario</a> para llevarlo mejor.`;
       }
     });
   }

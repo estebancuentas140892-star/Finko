@@ -133,7 +133,7 @@ function _renderEmptyState(gastosFijosMensuales) {
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, 3);
   const preview = objetivoPreview > 0
     ? `<p class="empty-state__tip">${icon('analisis')} Con tus gastos fijos actuales, 3 meses de colchón equivalen a <strong>${f(objetivoPreview)}</strong>.</p>`
-    : `<p class="empty-state__tip">${icon('lightbulb')} Tip: registra tus gastos fijos (arriendo, servicios, suscripciones) desde Agenda para que Finko calcule cuánto necesitas en tu fondo.</p>`;
+    : `<p class="empty-state__tip">${icon('lightbulb')} Tip: registra tus gastos fijos (arriendo, servicios, suscripciones) desde Calendario para que Finko calcule cuánto necesitas en tu fondo.</p>`;
 
   return `
     <div class="empty-state">
@@ -316,7 +316,7 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
   const previewHtml = objetivoPreview > 0
     ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong> (${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)} de gastos fijos al mes).</p>`
-    : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Agenda, Finko calcula automáticamente el objetivo.</p>`;
+    : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Calendario, Finko calcula automáticamente el objetivo.</p>`;
 
   return `
     <form id="form-fondo" novalidate>

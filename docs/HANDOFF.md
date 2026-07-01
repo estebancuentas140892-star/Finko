@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (docs(adr): ADR 017, Límites como centro de control, MC.5 diseño)
+> Última actualización: 2026-06-30 (feat(nav): renombrar secciones, Dashboard→Inicio y Agenda→Calendario)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
+
+Evaluación UX/IA de una propuesta del usuario (eligiendo la mejor opción para un usuario primerizo). Se coincide con su propuesta: "Dashboard" es jerga opaca, "Inicio" es universal; "Agenda" → "Calendario" porque para un usuario primerizo gana el reconocimiento del formato visual (reconsidera AG.1). Clave de IA: se cambió **solo la etiqueta visible**, no la ruta ni el código (hash `#dash`/`#agenda`, `id` del DOM y dominio `agenda` quedan estables, para no romper deep links, bookmarks ni el cache del SW). Cambios en nav, título de sección, banner de propósito y 7 menciones de copy en Gastos/Tesorería/Deudas/Ahorro. Bonus fix: "tus deudas en Compromisos" (nombre obsoleto) → "en la sección Deudas" en la copia de recomendación de distribución. Fix de lint pre-existente en `proposito.js` de paso. 1667/1667 unit + 65/65 E2E verdes. SW v235 → v236.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Labels de nav + `aria-label` + título de sección "Mi Agenda" → "Calendario". |
+| `modules/ui/proposito.js` | Copy del banner de Calendario; fix de lint (`titulo` sin usar). |
+| `modules/dominio/gastos/index.js`, `tesoreria/view.js`, `tesoreria/logic.js`, `compromisos/views/lista.js`, `ahorro/view.js` | 7 menciones de copy "Agenda" → "Calendario"; "Compromisos" → "Deudas". |
+| `tests/e2e/smoke.test.js` | Assert de heading actualizado a "Calendario". |
+| `service-worker.js` | v235 → v236. |
+
+---
+
 ### docs(adr): ADR 017, Límites de gasto como centro de control (MC.5, diseño) · 2026-06-30
 
 Diseño de la épica MC.5. Límites de gasto se convierte en un centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro) integrado con la distribución de Mis cuentas: Mis cuentas planifica, Límites vigila. Decisiones cerradas con el usuario: presupuesto por grupo desde la distribución (MC.6a, cero datos nuevos ni schema), topes por categoría conservados como detalle de Estilo de vida, ejecutado derivado de los flujos del mes reusando `GRUPO_POR_SECCION` (ADR 014). Implementación en 5 slices (MC.5a a MC.5e). Solo docs.
@@ -47,17 +61,6 @@ Diseño de la épica MC.5. Límites de gasto se convierte en un centro de contro
 |---|---|
 | `docs/DECISIONS/017-limites-centro-de-control.md` | Nuevo ADR (contexto, 7 decisiones, alternativas, consecuencias, slices). |
 | `docs/TASKS.md` | MC.5 diseño cerrado + slices MC.5a a MC.5e. |
-
----
-
-### test(e2e): fecha "hoy" en hora local, no UTC · 2026-06-30
-
-Fix de la flakiness detectada al cerrar A11Y.4: los E2E calculaban "hoy" con `toISOString()` (UTC), lo que hacia fallar 4 tests de Gastos en la tarde del ultimo dia del mes en Colombia (UTC-5). Nuevo helper `hoyLocal()` en `smoke.test.js` y `ahorro-inversion.test.js`, replica `hoy()` de `utils.js` con getters locales. Solo tests, sin cambio de codigo de produccion, sin bump de SW. 1667/1667 unit + 65/65 E2E verdes (antes 61/65).
-
-| Archivo | Cambio |
-|---|---|
-| `tests/e2e/smoke.test.js` | Helper `hoyLocal()`; 4 usos de `toISOString()` reemplazados. |
-| `tests/e2e/ahorro-inversion.test.js` | Helper `hoyLocal()`; 5 usos de `toISOString()` reemplazados. |
 
 ---
 

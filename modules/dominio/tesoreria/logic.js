@@ -852,7 +852,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       necesidadesPct = 100;
       estiloVidaPct  = 0;
       ahorroInvPct   = 0;
-      razon = `Tus obligaciones fijas (gastos en Agenda y cuotas de deudas) consumen la totalidad de tu ingreso registrado. Reducir compromisos es urgente.`;
+      razon = `Tus obligaciones fijas (gastos en Calendario y cuotas de deudas) consumen la totalidad de tu ingreso registrado. Reducir compromisos es urgente.`;
       alertas.push(`Tus obligaciones (${pctObligaciones}%) consumen todo tu ingreso: no queda margen para ahorro ni estilo de vida. Revisa gastos fijos y deudas.`);
     } else {
       // Paso 2: ahorro ideal (prioridades en orden).
@@ -892,7 +892,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       }
       razon = partesRazon.length > 0
         ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
-        : 'Registra tus gastos fijos en Agenda y tus deudas en Compromisos para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
+        : 'Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
 
       // Alerta si las obligaciones dejan poco margen.
       if (pctObligaciones >= 80) {

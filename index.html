@@ -102,15 +102,15 @@
 
         <!-- GRUPO 1: Uso diario. En mobile estos items forman el bottom nav visible.
              Solo los que NO tienen nav-item--no-mobile aparecen en mobile.
-             Bottom nav mobile: Dashboard · Gastos · Agenda · [Más] -->
+             Bottom nav mobile: Inicio · Gastos · Calendario · [Más] -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-principal">Diario</span>
           <div role="group" aria-labelledby="nav-label-principal">
 
             <a class="nav-item active" href="#dash" data-section="dash"
-               aria-current="page" aria-label="Dashboard: resumen financiero">
+               aria-current="page" aria-label="Inicio: resumen financiero">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-home"/></svg>
-              <span class="nav-item__label">Dashboard</span>
+              <span class="nav-item__label">Inicio</span>
             </a>
 
             <a class="nav-item" href="#gast" data-section="gast"
@@ -119,11 +119,11 @@
               <span class="nav-item__label">Gastos</span>
             </a>
 
-            <!-- Agenda: visible en mobile (tercer slot del bottom nav) -->
+            <!-- Calendario (dominio interno: agenda): visible en mobile (tercer slot del bottom nav) -->
             <a class="nav-item" href="#agenda" data-section="agenda"
-               aria-label="Agenda y calendario del mes">
+               aria-label="Calendario de pagos y compromisos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-agenda"/></svg>
-              <span class="nav-item__label">Agenda</span>
+              <span class="nav-item__label">Calendario</span>
             </a>
 
             <!-- Deudas: solo desktop (demasiados slots para mobile) -->
@@ -375,10 +375,10 @@
         </div>
       </section>
 
-      <!-- AGENDA (vista calendario sobre compromisos + alta de gastos fijos) -->
+      <!-- CALENDARIO (dominio interno: agenda; vista calendario sobre compromisos + alta de gastos fijos) -->
       <section class="section" id="sec-agenda" tabindex="-1" aria-labelledby="title-agenda">
         <header class="section__header">
-          <h1 class="section__title" id="title-agenda">Mi Agenda</h1>
+          <h1 class="section__title" id="title-agenda">Calendario</h1>
           <button class="btn btn-primary" data-action="nuevo-gasto-fijo"
                   aria-label="Registrar nuevo gasto fijo">
             + Agregar gasto fijo
@@ -883,7 +883,7 @@
       </header>
       <div class="modal__body">
         <!-- Agrupado por intención (espejo del sidebar desktop): Gestión,
-             Crecer, Herramientas. Agenda, Gastos y Dashboard ya están en la
+             Crecer, Herramientas. Calendario, Gastos e Inicio ya están en la
              barra inferior de móvil, no se repiten aquí. -->
 
         <section class="menu-mas__group" aria-labelledby="menu-mas-gestion">

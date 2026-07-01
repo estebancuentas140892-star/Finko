@@ -186,6 +186,6 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin deudas registradas</p>
       <p class="empty-state__desc">Agrega tus créditos con entidad (banco, tarjeta) o personales (familiar, gota a gota). Finko te muestra el orden óptimo de pago según la estrategia que elijas.</p>
       <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar deuda</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: los gastos fijos recurrentes (arriendo, servicios) se agregan desde la sección Agenda.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: los gastos fijos recurrentes (arriendo, servicios) se agregan desde la sección Calendario.</p>
     </div>`;
 }

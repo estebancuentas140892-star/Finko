@@ -781,7 +781,7 @@ export function renderFormCuenta() {
                  placeholder="Ej. 15" />
         </div>
         <p class="form-hint form-hint--muted">
-          Finko crea un gasto fijo mensual con este monto y día. Lo vas a ver en Agenda y en Deudas.
+          Finko crea un gasto fijo mensual con este monto y día. Lo vas a ver en Calendario y en Deudas.
         </p>
       </fieldset>
 
