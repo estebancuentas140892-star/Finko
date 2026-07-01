@@ -340,6 +340,13 @@
 .grupo-card__fig dd { color: var(--fk-text-primary); margin: 0; font-weight: var(--fk-fw-semibold); }
 .grupo-card__fig dd.is-negative { color: var(--fk-danger); }
 
+/* ── MC.5d: alertas/refuerzos anidados dentro de la tarjeta de grupo ── */
+.grupo-card .nudge {
+  margin: var(--fk-space-xs) 0 0;
+  padding: var(--fk-space-sm);
+}
+.grupo-card .nudge .nudge__title { font-size: var(--fk-fs-xs); }
+
 /* ── MC.5c: desglose por item dentro de cada tarjeta de grupo ── */
 .grupo-card__desglose {
   margin-top: var(--fk-space-xs);

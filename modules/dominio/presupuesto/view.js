@@ -23,6 +23,7 @@ import {
   ejecutadoPorGrupoDelMes,
   desgloseNecesidadesDelMes,
   desgloseAhorroDelMes,
+  generarMensajesLimites,
 } from './logic.js';
 import {
   estimarSalarioMensual,
@@ -107,8 +108,11 @@ function _renderResumenGrupos(anio, mes) {
     'ahorro':         _renderDesgloseAhorro(itemsAhorro),
   };
 
+  const alertasCategoria = alertasLimites(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
+  const mensajes = generarMensajesLimites({ alertasCategoria, resumen, itemsNecesidades });
+
   const cards = GRUPOS_FINANCIEROS
-    .map(g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g]))
+    .map(g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g], _renderNudgesGrupo(mensajes, g)))
     .join('');
 
   return `
@@ -117,6 +121,7 @@ function _renderResumenGrupos(anio, mes) {
         <h2 class="grupos-resumen__title">Tu plan del mes por grupo</h2>
         <a href="#tesoreria" class="grupos-resumen__link" aria-label="Ajustar tu distribución en Mis cuentas">Ajustar en Mis cuentas</a>
       </header>
+      ${_renderRefuerzoCombinado(mensajes)}
       <div class="grupos-resumen__grid">${cards}</div>
       <p class="grupos-resumen__nota">El presupuesto de cada grupo sale de cómo repartes tu ingreso en Mis cuentas. Lo ejecutado refleja lo que registras en Finko este mes.</p>
     </section>`;
@@ -127,9 +132,10 @@ function _renderResumenGrupos(anio, mes) {
  * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
  * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
  * @param {string} [desgloseHtml=''] - HTML del detalle colapsable por item (MC.5c).
+ * @param {string} [nudgesHtml=''] - HTML de alertas/refuerzos del grupo (MC.5d).
  * @returns {string} HTML.
  */
-function _renderGrupoCard(grupo, r, desgloseHtml = '') {
+function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
   const label       = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
   const pctVisual   = Math.min(r.pct, 100);
   const restanteNeg = r.restante < 0;
@@ -160,8 +166,49 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '') {
           <dd class="${restanteNeg ? 'is-negative' : ''}">${f(Math.abs(r.restante))}</dd>
         </div>
       </dl>
+      ${nudgesHtml}
       ${desgloseHtml}
     </article>`;
+}
+
+// ── ALERTAS Y REFUERZOS (MC.5d, ADR 017) ──────────────────────────
+
+const _NUDGE_ICONO = { alerta: { alerta: '⏰', excedido: '⚠️' }, refuerzo: '✅' };
+const _NUDGE_CLASE = { alerta: 'nudge-medium', excedido: 'nudge-high', refuerzo: 'nudge-success' };
+
+/**
+ * HTML de un mensaje individual, reusando el sistema de nudges de la app
+ * (`.nudge nudge-medium|nudge-high|nudge-success`).
+ * @param {ReturnType<typeof generarMensajesLimites>[number]} m
+ */
+function _renderNudge(m) {
+  const clase = m.tipo === 'refuerzo' ? _NUDGE_CLASE.refuerzo : (_NUDGE_CLASE[m.severidad] ?? _NUDGE_CLASE.alerta);
+  const icono = m.tipo === 'refuerzo' ? _NUDGE_ICONO.refuerzo : (_NUDGE_ICONO.alerta[m.severidad] ?? _NUDGE_ICONO.alerta.alerta);
+
+  return `
+    <div class="nudge ${clase}" role="status">
+      <span class="nudge__icon" aria-hidden="true">${icono}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${_esc(m.mensaje)}</p>
+      </div>
+    </div>`;
+}
+
+/**
+ * Mensajes de un grupo específico (excluye el refuerzo combinado, que no
+ * pertenece a ningún grupo y se muestra aparte).
+ * @param {ReturnType<typeof generarMensajesLimites>} mensajes
+ * @param {string} grupo
+ * @returns {string} HTML.
+ */
+function _renderNudgesGrupo(mensajes, grupo) {
+  return mensajes.filter(m => m.grupo === grupo).map(_renderNudge).join('');
+}
+
+/** Refuerzo combinado (no pertenece a ningún grupo específico). */
+function _renderRefuerzoCombinado(mensajes) {
+  const m = mensajes.find(x => x.grupo === null);
+  return m ? _renderNudge(m) : '';
 }
 
 // ── DESGLOSE POR ITEM (MC.5c, ADR 017) ───────────────────────────

@@ -7,6 +7,7 @@ import {
   ejecutadoPorGrupoDelMes,
   desgloseNecesidadesDelMes,
   desgloseAhorroDelMes,
+  generarMensajesLimites,
   totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
@@ -467,6 +468,150 @@ describe('desgloseAhorroDelMes()', () => {
     const inversiones = [{ id: 'i1', nombre: 'CDT', monto: 500_000 }];
     const items = desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, 2026, 5);
     expect(items.map(i => i.tipo)).toEqual(['fondo', 'meta', 'apartado', 'inversion']);
+  });
+});
+
+// ── generarMensajesLimites() (MC.5d, ADR 017) ─────────────────────────────────
+
+const resumenGrupo = (overrides = {}) => ({
+  asignado: 1_000_000, ejecutado: 500_000, restante: 500_000, pct: 50, estado: 'ok',
+  ...overrides,
+});
+
+const itemNecesidad = (overrides = {}) => ({
+  id: 'n1', descripcion: 'Arriendo', tipo: 'fijo', categoria: null,
+  montoReferencia: 800_000, ejecutado: 800_000, estadoPago: 'completo',
+  ...overrides,
+});
+
+describe('generarMensajesLimites()', () => {
+  it('sin datos no genera ningún mensaje', () => {
+    expect(generarMensajesLimites()).toEqual([]);
+    expect(generarMensajesLimites({})).toEqual([]);
+  });
+
+  it('categoría en alerta (75-99%) genera mensaje con el % y el nombre exacto', () => {
+    const alertasCategoria = [{ categoria: 'Restaurantes', estado: 'alerta', porcentaje: 80, gastado: 400_000, asignado: 500_000 }];
+    const [m] = generarMensajesLimites({ alertasCategoria });
+    expect(m).toMatchObject({ grupo: 'estilo-de-vida', tipo: 'alerta', severidad: 'alerta' });
+    expect(m.mensaje).toBe('Ya usaste el 80% de tu presupuesto para Restaurantes. Intenta moderar este tipo de gastos los próximos días.');
+  });
+
+  it('categoría excedida (>100%) genera mensaje distinto con severidad "excedido"', () => {
+    const alertasCategoria = [{ categoria: 'Mercado', estado: 'excedido', porcentaje: 130, gastado: 650_000, asignado: 500_000 }];
+    const [m] = generarMensajesLimites({ alertasCategoria });
+    expect(m.severidad).toBe('excedido');
+    expect(m.mensaje).toContain('Superaste tu límite para Mercado');
+  });
+
+  it('varias categorías generan un mensaje cada una', () => {
+    const alertasCategoria = [
+      { categoria: 'A', estado: 'alerta',   porcentaje: 80,  gastado: 1, asignado: 1 },
+      { categoria: 'B', estado: 'excedido', porcentaje: 120, gastado: 1, asignado: 1 },
+    ];
+    expect(generarMensajesLimites({ alertasCategoria })).toHaveLength(2);
+  });
+
+  it('categoría "ok" no genera mensaje', () => {
+    const alertasCategoria = [{ categoria: 'X', estado: 'ok', porcentaje: 10, gastado: 1, asignado: 100 }];
+    expect(generarMensajesLimites({ alertasCategoria })).toEqual([]);
+  });
+
+  it('grupo Necesidades excedido genera alerta de grupo', () => {
+    const resumen = { necesidades: resumenGrupo({ estado: 'excedido' }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m).toMatchObject({ grupo: 'necesidades', tipo: 'alerta', severidad: 'excedido' });
+  });
+
+  it('grupo Necesidades en alerta genera mensaje distinto', () => {
+    const resumen = { necesidades: resumenGrupo({ estado: 'alerta' }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m.severidad).toBe('alerta');
+    expect(m.mensaje).toContain('Vigila los gastos fijos');
+  });
+
+  it('grupo Necesidades "ok" no genera alerta de grupo', () => {
+    const resumen = { necesidades: resumenGrupo({ estado: 'ok' }) };
+    expect(generarMensajesLimites({ resumen })).toEqual([]);
+  });
+
+  it('grupo Estilo de vida en alerta usa el mensaje exacto aprobado en el ADR', () => {
+    const resumen = { 'estilo-de-vida': resumenGrupo({ estado: 'alerta' }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m.mensaje).toBe('Tus gastos de estilo de vida están creciendo más rápido de lo previsto. Revisa si puedes reducir algunos consumos.');
+  });
+
+  it('grupo Estilo de vida excedido genera mensaje distinto', () => {
+    const resumen = { 'estilo-de-vida': resumenGrupo({ estado: 'excedido' }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m.severidad).toBe('excedido');
+  });
+
+  it('grupo Ahorro con pct >= 100 genera refuerzo, con el mensaje exacto del ADR', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'alerta', pct: 100 }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m).toMatchObject({ grupo: 'ahorro', tipo: 'refuerzo', severidad: null });
+    expect(m.mensaje).toBe('Vas por buen camino. Cumpliste con el ahorro programado para este período.');
+  });
+
+  it('grupo Ahorro excedido (aportaste de más) también genera el refuerzo, no una alerta', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'excedido', pct: 130 }) };
+    const [m] = generarMensajesLimites({ resumen });
+    expect(m.tipo).toBe('refuerzo');
+  });
+
+  it('grupo Ahorro por debajo de 100% no genera ningún mensaje', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'alerta', pct: 80 }) };
+    expect(generarMensajesLimites({ resumen })).toEqual([]);
+  });
+
+  it('grupo Ahorro sin asignado (0) no genera refuerzo aunque pct sea 0/NaN', () => {
+    const resumen = { ahorro: resumenGrupo({ asignado: 0, ejecutado: 0, pct: 0, estado: 'ok' }) };
+    expect(generarMensajesLimites({ resumen })).toEqual([]);
+  });
+
+  it('refuerzo combinado: todas las necesidades pagadas + ahorro ejecutado > 0', () => {
+    const resumen = {
+      necesidades: resumenGrupo({ estado: 'ok' }),
+      ahorro:      resumenGrupo({ estado: 'ok', ejecutado: 100_000, pct: 20 }),
+    };
+    const itemsNecesidades = [itemNecesidad({ estadoPago: 'completo' })];
+    const mensajes = generarMensajesLimites({ resumen, itemsNecesidades });
+    const combinado = mensajes.find(m => m.grupo === null);
+    expect(combinado).toBeDefined();
+    expect(combinado.mensaje).toBe('Cumpliste todas tus necesidades este mes y aún tienes dinero para ahorrar. Excelente trabajo.');
+  });
+
+  it('refuerzo combinado no aparece si algún item de Necesidades está pendiente o parcial', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'ok', ejecutado: 100_000, pct: 20 }) };
+    const itemsNecesidades = [itemNecesidad({ estadoPago: 'completo' }), itemNecesidad({ id: 'n2', estadoPago: 'ninguno' })];
+    const mensajes = generarMensajesLimites({ resumen, itemsNecesidades });
+    expect(mensajes.find(m => m.grupo === null)).toBeUndefined();
+  });
+
+  it('refuerzo combinado no aparece si no hay items de Necesidades registrados', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'ok', ejecutado: 100_000, pct: 20 }) };
+    const mensajes = generarMensajesLimites({ resumen, itemsNecesidades: [] });
+    expect(mensajes.find(m => m.grupo === null)).toBeUndefined();
+  });
+
+  it('refuerzo combinado no aparece si el ahorro ejecutado es 0', () => {
+    const resumen = { ahorro: resumenGrupo({ estado: 'ok', ejecutado: 0, pct: 0 }) };
+    const itemsNecesidades = [itemNecesidad({ estadoPago: 'completo' })];
+    const mensajes = generarMensajesLimites({ resumen, itemsNecesidades });
+    expect(mensajes.find(m => m.grupo === null)).toBeUndefined();
+  });
+
+  it('refuerzo combinado no aparece si el grupo Necesidades está excedido, aunque los items estén completos', () => {
+    const resumen = {
+      necesidades: resumenGrupo({ estado: 'excedido' }),
+      ahorro:      resumenGrupo({ estado: 'ok', ejecutado: 100_000, pct: 20 }),
+    };
+    const itemsNecesidades = [itemNecesidad({ estadoPago: 'completo' })];
+    const mensajes = generarMensajesLimites({ resumen, itemsNecesidades });
+    expect(mensajes.find(m => m.grupo === null)).toBeUndefined();
+    // Sí debe seguir mostrando la alerta de grupo de Necesidades.
+    expect(mensajes.some(m => m.id === 'grupo-necesidades')).toBe(true);
   });
 });
 

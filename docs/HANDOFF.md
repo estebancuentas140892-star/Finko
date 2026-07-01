@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(presupuesto): MC.5c, desglose por item dentro de cada grupo en Límites)
+> Última actualización: 2026-06-30 (feat(presupuesto): MC.5d, alertas y refuerzos inteligentes por grupo y por item en Límites)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1707/1707 verdes |
-| Tests E2E | 69/69 verde. Suites: `smoke` 33 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1726/1726 verdes |
+| Tests E2E | 71/71 verde. Suites: `smoke` 35 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): alertas y refuerzos inteligentes por grupo y por item en Límites de gasto (MC.5d) · 2026-06-30
+
+Cuarto slice (obligatorio) de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md); MC.5e queda opcional). Nueva `generarMensajesLimites()` en `presupuesto/logic.js`, reusando el sistema de nudges ya existente (`.nudge nudge-medium|nudge-high|nudge-success`) en vez de un componente nuevo. Genera: alerta por categoría de Estilo de vida en 75-99%/excedida (reusa `alertasLimites`), alerta de grupo para Necesidades/Estilo de vida, refuerzo para Ahorro cuando `pct >= 100` (ahí superar el 100% es bueno, al revés que gasto), y un refuerzo combinado ("Cumpliste todas tus necesidades... Excelente trabajo") cuando todos los items de Necesidades están pagados y el grupo no está excedido. Función pura, sin importar otros dominios. 19 unit + 2 E2E nuevos. 1707/1707 → 1726/1726 unit; 69/69 → 71/71 E2E. SW v239 → v240.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/logic.js` | `generarMensajesLimites()` nueva. |
+| `modules/dominio/presupuesto/view.js` | `_renderNudge`/`_renderNudgesGrupo`/`_renderRefuerzoCombinado`; tarjetas reciben `nudgesHtml`. |
+| `styles/components/analysis.css` | `.grupo-card .nudge` (ajuste de espaciado del sistema de nudges existente). |
+| `tests/unit/presupuesto.test.js`, `tests/e2e/smoke.test.js` | 19 unit + 2 E2E nuevos. |
+| `service-worker.js` | v239 → v240. |
+
+---
 
 ### feat(presupuesto): desglose por item dentro de cada grupo en Límites de gasto (MC.5c) · 2026-06-30
 
@@ -95,18 +109,7 @@ Evaluación UX/IA de una propuesta del usuario (eligiendo la mejor opción para 
 
 ---
 
-### docs(adr): ADR 017, Límites de gasto como centro de control (MC.5, diseño) · 2026-06-30
-
-Diseño de la épica MC.5. Límites de gasto se convierte en un centro de control de los 3 grupos (Necesidades / Estilo de vida / Ahorro) integrado con la distribución de Mis cuentas: Mis cuentas planifica, Límites vigila. Decisiones cerradas con el usuario: presupuesto por grupo desde la distribución (MC.6a, cero datos nuevos ni schema), topes por categoría conservados como detalle de Estilo de vida, ejecutado derivado de los flujos del mes reusando `GRUPO_POR_SECCION` (ADR 014). Implementación en 5 slices (MC.5a a MC.5e). Solo docs.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/017-limites-centro-de-control.md` | Nuevo ADR (contexto, 7 decisiones, alternativas, consecuencias, slices). |
-| `docs/TASKS.md` | MC.5 diseño cerrado + slices MC.5a a MC.5e. |
-
----
-
-> Para tareas anteriores (A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

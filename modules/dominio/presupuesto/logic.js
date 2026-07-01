@@ -316,6 +316,119 @@ export function desgloseAhorroDelMes(ahorro, metas, apartados, inversiones, anio
   return items;
 }
 
+// ── ALERTAS Y REFUERZOS INTELIGENTES (MC.5d, ADR 017) ─────────────
+
+/**
+ * Genera los mensajes de alerta y refuerzo del mes, por item de Estilo de
+ * vida (categorías con envelope) y por grupo financiero, siguiendo los
+ * ejemplos aprobados por el usuario en ADR 017 decisión 5. Tono orientativo,
+ * nunca prescriptivo (ADN regla 11).
+ *
+ * Para Ahorro, superar el 100% es bueno (aportaste más de lo planeado), al
+ * revés que Necesidades/Estilo de vida: por eso Ahorro solo genera un
+ * mensaje de refuerzo cuando `pct >= 100`, ignorando la etiqueta genérica
+ * `estado` de `resumenGrupos` (pensada para gasto, no para ahorro).
+ *
+ * El refuerzo combinado ("cumpliste todas tus necesidades y aún ahorras")
+ * exige que TODOS los items de Necesidades del mes estén pagados (dato más
+ * fino que el ratio del grupo) y que el grupo Necesidades no esté excedido,
+ * para no mostrar un mensaje contradictorio con una alerta de grupo.
+ *
+ * Pura: recibe las estructuras ya calculadas por el caller (`alertasLimites`,
+ * `resumenGrupos`, `desgloseNecesidadesDelMes`); no lee `S`.
+ *
+ * @param {{
+ *   alertasCategoria?: ReturnType<typeof alertasLimites>,
+ *   resumen?:          ReturnType<typeof resumenGrupos>,
+ *   itemsNecesidades?: ReturnType<typeof desgloseNecesidadesDelMes>,
+ * }} [datos]
+ * @returns {Array<{
+ *   id: string,
+ *   grupo: 'necesidades'|'estilo-de-vida'|'ahorro'|null,
+ *   tipo: 'alerta'|'refuerzo',
+ *   severidad: 'alerta'|'excedido'|null,
+ *   mensaje: string,
+ * }>} `severidad` es `null` para `tipo: 'refuerzo'` (no aplica).
+ */
+export function generarMensajesLimites({
+  alertasCategoria = [],
+  resumen           = {},
+  itemsNecesidades  = [],
+} = {}) {
+  const mensajes = [];
+
+  // 1) Item de Estilo de vida (categoría) en alerta o excedido.
+  for (const a of alertasCategoria) {
+    if (a.estado === 'excedido') {
+      mensajes.push({
+        id:      `categoria-${a.categoria}`,
+        grupo:   'estilo-de-vida',
+        tipo:    'alerta',
+        severidad: 'excedido',
+        mensaje: `Superaste tu límite para ${a.categoria} este mes. Revisa este gasto antes de que termine el mes.`,
+      });
+    } else if (a.estado === 'alerta') {
+      mensajes.push({
+        id:      `categoria-${a.categoria}`,
+        grupo:   'estilo-de-vida',
+        tipo:    'alerta',
+        severidad: 'alerta',
+        mensaje: `Ya usaste el ${a.porcentaje}% de tu presupuesto para ${a.categoria}. Intenta moderar este tipo de gastos los próximos días.`,
+      });
+    }
+  }
+
+  // 2) Grupo Necesidades.
+  const nec = resumen?.necesidades;
+  if (nec?.estado === 'excedido') {
+    mensajes.push({
+      id: 'grupo-necesidades', grupo: 'necesidades', tipo: 'alerta', severidad: 'excedido',
+      mensaje: 'Tus necesidades superaron lo que planeaste para este mes. Revisa qué gasto fijo o cuota subió.',
+    });
+  } else if (nec?.estado === 'alerta') {
+    mensajes.push({
+      id: 'grupo-necesidades', grupo: 'necesidades', tipo: 'alerta', severidad: 'alerta',
+      mensaje: 'Tus necesidades están cerca del límite que planeaste este mes. Vigila los gastos fijos y las cuotas que faltan.',
+    });
+  }
+
+  // 3) Grupo Estilo de vida (nivel de grupo, además del detalle por categoría).
+  const ev = resumen?.['estilo-de-vida'];
+  if (ev?.estado === 'excedido') {
+    mensajes.push({
+      id: 'grupo-estilo-de-vida', grupo: 'estilo-de-vida', tipo: 'alerta', severidad: 'excedido',
+      mensaje: 'Tus gastos de estilo de vida superaron lo que planeaste este mes.',
+    });
+  } else if (ev?.estado === 'alerta') {
+    mensajes.push({
+      id: 'grupo-estilo-de-vida', grupo: 'estilo-de-vida', tipo: 'alerta', severidad: 'alerta',
+      mensaje: 'Tus gastos de estilo de vida están creciendo más rápido de lo previsto. Revisa si puedes reducir algunos consumos.',
+    });
+  }
+
+  // 4) Grupo Ahorro: cumplir o superar el 100% es una buena noticia.
+  const ah = resumen?.ahorro;
+  if (ah && ah.asignado > 0 && ah.pct >= 100) {
+    mensajes.push({
+      id: 'grupo-ahorro', grupo: 'ahorro', tipo: 'refuerzo', severidad: null,
+      mensaje: 'Vas por buen camino. Cumpliste con el ahorro programado para este período.',
+    });
+  }
+
+  // 5) Refuerzo combinado: todas las necesidades del mes pagadas y aún hay ahorro.
+  const necesidadesCompletas = itemsNecesidades.length > 0
+    && itemsNecesidades.every(it => it.estadoPago === 'completo');
+  const necesidadesSinAlerta = nec?.estado !== 'excedido';
+  if (necesidadesCompletas && necesidadesSinAlerta && ah && ah.ejecutado > 0) {
+    mensajes.push({
+      id: 'refuerzo-combinado', grupo: null, tipo: 'refuerzo', severidad: null,
+      mensaje: 'Cumpliste todas tus necesidades este mes y aún tienes dinero para ahorrar. Excelente trabajo.',
+    });
+  }
+
+  return mensajes;
+}
+
 /**
  * Suma el monto mensual de todos los envelopes activos.
  * @param {import('../../core/state.js').Presupuesto[]} presupuestos

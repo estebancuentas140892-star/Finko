@@ -7,6 +7,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): alertas y refuerzos inteligentes por grupo y por item en Límites de gasto (MC.5d) · 2026-06-30
+
+Cuarto y último slice obligatorio de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md); MC.5e queda como opcional). Nueva función pura **`generarMensajesLimites({ alertasCategoria, resumen, itemsNecesidades })`** en `presupuesto/logic.js` que produce los mensajes de alerta y refuerzo aprobados por el usuario en la decisión 5 del ADR, reusando el sistema de nudges ya existente en la app (`.nudge nudge-medium|nudge-high|nudge-success`) en vez de inventar un componente nuevo.
+
+Reglas: (1) cada categoría de Estilo de vida en alerta (75-99%) o excedida (>100%) genera un mensaje propio, reusando `alertasLimites` ya existente; (2) cada grupo (Necesidades, Estilo de vida) genera una alerta de grupo cuando está en alerta o excedido; (3) el grupo Ahorro es la excepción deliberada: superar el 100% ahí es una buena noticia (aportaste más de lo planeado), así que solo genera un mensaje de **refuerzo** cuando `pct >= 100`, ignorando la etiqueta genérica `estado` de `resumenGrupos` (pensada para gasto, no para ahorro); (4) un refuerzo combinado ("Cumpliste todas tus necesidades este mes y aún tienes dinero para ahorrar. Excelente trabajo.") aparece cuando **todos** los items de Necesidades del mes están pagados (dato más fino que el ratio de grupo, viene de `desgloseNecesidadesDelMes` de MC.5c) y el grupo Necesidades no está excedido (evita un mensaje contradictorio con una alerta simultánea). Los mensajes de grupo se muestran dentro de su tarjeta; el refuerzo combinado, como banner arriba de la grilla.
+
+Función pura, sin importar otros dominios (regla ADN #10, mismo criterio de MC.5a-c). 19 unit + 2 E2E nuevos. 1707 → 1726 unit; 69 → 71 E2E. Lint limpio. SW v239 → v240.
+
+- **`modules/dominio/presupuesto/logic.js`**: `generarMensajesLimites()` nueva.
+- **`modules/dominio/presupuesto/view.js`**: `_renderNudge`, `_renderNudgesGrupo`, `_renderRefuerzoCombinado`; `_renderGrupoCard` recibe `nudgesHtml` opcional.
+- **`styles/components/analysis.css`**: `.grupo-card .nudge` (ajuste de espaciado del sistema de nudges ya existente al anidarlo en la tarjeta compacta).
+- **`tests/unit/presupuesto.test.js`**: 19 tests nuevos.
+- **`tests/e2e/smoke.test.js`**: 2 tests nuevos (alerta de categoría en Estilo de vida; refuerzo de Ahorro al 100%).
+- **`service-worker.js`**: v239 → v240.
+
+---
+
 ### feat(presupuesto): desglose por item dentro de cada grupo en Límites de gasto (MC.5c) · 2026-06-30
 
 Tercer slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)): las tarjetas de **Necesidades** y **Ahorro** ahora tienen un detalle colapsable ("Ver detalle (N)") con un item por fuente, reusando el patrón `<details>` de Análisis (`.analisis-grupo`). Estilo de vida no lo necesita: su detalle ya es la sección de topes por categoría de MC.5b.

@@ -799,4 +799,45 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(card.locator('.grupo-card__item-nombre')).toContainText('Fondo de emergencia');
     await expect(card.locator('.grupo-card__item-sub')).toContainText('este mes');
   });
+
+  test('alerta de Estilo de vida (MC.5d): un límite por categoría en 80% muestra el nudge exacto del ADR', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+      st.gastos = [{ id: 'g1', descripcion: 'Almuerzo', monto: 80_000, categoria: 'Restaurantes', fecha: hoy, cuentaId: null, nota: '' }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const nudge = page.locator('.grupo-card[data-grupo="estilo-de-vida"] .nudge-medium .nudge__title');
+    await expect(nudge).toBeVisible({ timeout: 3_000 });
+    await expect(nudge).toHaveText('Ya usaste el 80% de tu presupuesto para Restaurantes. Intenta moderar este tipo de gastos los próximos días.');
+  });
+
+  test('refuerzo de Ahorro (MC.5d): cumplir el 100% del ahorro planeado muestra el mensaje exacto del ADR', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      // Preset fijo 50/30/20: ahorro = 20% de 3.000.000 = 600.000.
+      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
+      st.ahorro = {
+        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
+        aportes: [{ id: 'a1', monto: 600_000, fecha: hoy }],
+        compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const nudge = page.locator('.grupo-card[data-grupo="ahorro"] .nudge-success .nudge__title');
+    await expect(nudge).toBeVisible({ timeout: 3_000 });
+    await expect(nudge).toHaveText('Vas por buen camino. Cumpliste con el ahorro programado para este período.');
+  });
 });
