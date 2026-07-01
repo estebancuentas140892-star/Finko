@@ -864,6 +864,36 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(nudge).toHaveText('¡Excelente! Este mes estás ahorrando más de lo planeado. Cada peso que ahorras hoy es tranquilidad mañana.');
   });
 
+  test('MC.8: superar la meta de Ahorro se ve en verde (logro), nunca en rojo', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { notificaciones: false, presetDistribucion: '50-30-20' }; // ahorro planeado 600.000
+      st.ahorro = {
+        fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 },
+        aportes: [{ id: 'a1', monto: 900_000, fecha: hoy }], // aporta más de lo planeado
+        compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const card = page.locator('.grupo-card[data-grupo="ahorro"]');
+    // Estado visual "logro" (verde), no "excedido" (rojo).
+    await expect(card).toHaveAttribute('data-estado', 'logro');
+    // Barra de progreso verde (progress-bar--complete), no roja (--danger).
+    await expect(card.locator('.progress-bar.progress-bar--complete')).toBeVisible();
+    await expect(card.locator('.progress-bar--danger')).toHaveCount(0);
+    // La tercera cifra celebra el excedente en positivo, no lo marca como "Excedido" rojo.
+    const fig = card.locator('.grupo-card__fig').last();
+    await expect(fig.locator('dt')).toHaveText('Ahorrado de más');
+    await expect(fig.locator('dd')).toHaveClass(/is-positive/);
+    await expect(fig.locator('dd.is-negative')).toHaveCount(0);
+  });
+
   test('MC.5e: la nota de la sección menciona la complementariedad con Mis cuentas', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {

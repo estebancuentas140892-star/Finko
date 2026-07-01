@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1758/1758 unit + 77/77 E2E verdes, lint limpio.** Último cambio: **MC.8a**, mensajes de Límites por rol (Necesidades informativo sin "límite", Ahorro más cálido) + helper de "olla finita" `coberturaLimitesEstiloVida` (SW v245). Primer slice de MC.8. Siguiente: **MC.8b** (fusionar topes en la tarjeta de Estilo de vida; card chrome por rol). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. Antes: ADR 019 (diseño de MC.8), MC.7a-c. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1758/1758 unit + 78/78 E2E verdes, lint limpio.** Último cambio: **fix de retroalimentación visual del Ahorro** (petición del usuario dentro de MC.8): superar la meta se ve en verde (`logro`), nunca en rojo; "Ahorrado de más" en verde (SW v246). Antes: MC.8a (mensajes por rol + `coberturaLimitesEstiloVida`). Siguiente: **MC.8b** (fusionar topes en la tarjeta de Estilo de vida; reencuadre del chrome de Necesidades). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -232,7 +232,7 @@ Slices de implementación de MC.7 (smallest-first, ver ADR 018). **⏸ En pausa 
 
 Slices de implementación de MC.8 (smallest-first, ver ADR 019):
 ✅ **MC.8a** - `generarMensajesLimites` reencuadrada por rol en `presupuesto/logic.js`: Necesidades pasa de alerta con "límite" a mensaje **informativo** (`tipo: 'info'` nuevo; solo cuando su gasto supera lo asignado); Ahorro distingue cumplir de superar (copy más cálido al superar); Estilo de vida sin cambios. Nueva `coberturaLimitesEstiloVida(presupuestos, presupuestoEV)` (la "olla finita"). Soporte de render del nivel `nudge-info` (`_nivelNudge`). Pendiente MC.8b: el chrome de las tarjetas (barra roja, "Excedido") aún sigue el modelo simétrico. 6 unit netos + 1 E2E. 1752/1752 → 1758/1758 unit; 76/76 → 77/77 E2E. Verificado en el navegador. SW v244 → v245 - 2026-07-01. Ver [CHANGELOG](CHANGELOG.md).
-- **MC.8b** - `presupuesto/view.js`: fusionar los topes por categoría **dentro** de la tarjeta de Estilo de vida y eliminar la sección suelta. Necesidades sin controles, Ahorro con refuerzo, Estilo de vida con límites + botón "Agregar límite" + línea de "olla finita". Tests + E2E. Modelo: Sonnet 4.6 - Alto.
+- **MC.8b** - `presupuesto/view.js`: fusionar los topes por categoría **dentro** de la tarjeta de Estilo de vida y eliminar la sección suelta. Necesidades sin controles, Ahorro con refuerzo, Estilo de vida con límites + botón "Agregar límite" + línea de "olla finita". Tests + E2E. Modelo: Sonnet 4.6 - Alto. **Nota:** la paleta positiva del chrome de Ahorro (verde al superar la meta, estado `logro`) ya se hizo aparte el 2026-07-01 por petición del usuario; falta el chrome de Necesidades (sin alarma) y la fusión estructural.
 - **MC.8c** - Layout: Necesidades + Ahorro en 2 columnas compactas y Estilo de vida en fila completa (desktop); apilado en móvil. CSS + responsive. Verificación visual. Modelo: Sonnet 4.6 - Bajo/Medio.
 - **MC.8d (opcional)** - Pulido: copy final por grupo, iconos por categoría, estados vacíos, a11y. Modelo: Sonnet 4.6 - Bajo.
 

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (feat(presupuesto): MC.8a, mensajes de Límites por rol, Necesidades informativo y Ahorro más cálido)
+> Última actualización: 2026-07-01 (fix(presupuesto): la tarjeta de Ahorro celebra en verde al superar la meta, nunca en rojo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1758/1758 verdes |
-| Tests E2E | 77/77 verde. Suites: `smoke` 41 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests E2E | 78/78 verde. Suites: `smoke` 42 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(presupuesto): la tarjeta de Ahorro celebra en verde al superar la meta (MC.8) · 2026-07-01
+
+Petición del usuario: superar la meta de Ahorro se pintaba de rojo (barra danger, "Excedido" rojo), lo que transmite error cuando es un buen hábito. `_renderGrupoCard` (`presupuesto/view.js`) se hace consciente del rol para Ahorro: `pct >= 100` usa paleta positiva (verde), nunca ámbar ni rojo. Barra `progress-bar--complete` verde, estado visual nuevo `logro` (borde/fondo verdes) en vez de `excedido`, y la tercera cifra "Ahorrado de más" en verde (`is-positive`) en vez de "Excedido" rojo; no llegar aún es "Te falta" (neutro). Consolida la regla de color: verde = logros/ahorro, ámbar = advertencias, rojo = incumplimientos. Necesidades conserva su chrome (su reencuadre es MC.8b). 1 E2E nuevo. 1758/1758 unit; 77/77 → 78/78 E2E. Verificado en el navegador. SW v245 → v246.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/view.js` | `_renderGrupoCard` con paleta positiva por rol para Ahorro (estado `logro`, barra verde, cifra `is-positive`). |
+| `styles/components/analysis.css` | `.grupo-card[data-estado="logro"]` + `.grupo-card__fig dd.is-positive`. |
+| `tests/e2e/smoke.test.js` | 1 test nuevo (Ahorro superado en verde, nunca rojo). |
+| `service-worker.js` | v245 → v246. |
+
+---
 
 ### feat(presupuesto): mensajes de Límites por rol (MC.8a) · 2026-07-01
 
@@ -91,19 +104,7 @@ Segundo slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md),
 
 ---
 
-### feat(tesoreria): desglose de aportes de ahorro por objetivo (MC.7a) · 2026-07-01
-
-Primer slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), decisión 3). Nueva `construirDesgloseAhorroPorObjetivo({ metas, apartados, fondo, budgetAhorro, hoy })` en `tesoreria/logic.js`: a diferencia de `construirPlanAhorro` (que hoy sugiere todo el presupuesto al fondo), reparte un aporte sugerido por cada meta/apartado activo (faltante entre meses restantes, misma fórmula que `calcularAporteMensualObjetivos`), y el fondo de emergencia recibe el excedente que quede (nunca negativo; 0 si ya está completo). Objetivos sin fecha sugieren 0 en vez de adivinar. Se extrajo el helper privado `_aporteMensualObjetivo` para no duplicar la fórmula; `calcularAporteMensualObjetivos` se refactorizó para reusarlo (comportamiento idéntico, sus 8 tests existentes siguen en verde). Aún no integrada en el panel (eso es MC.7b): es solo la lógica, pura y testeada en aislamiento. 15 tests nuevos. 1728/1728 → 1743/1743 unit. SW v241 → v242.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirDesgloseAhorroPorObjetivo()` nueva; `_aporteMensualObjetivo()` extraído; `calcularAporteMensualObjetivos()` refactorizada. |
-| `tests/unit/tesoreria.test.js` | 15 tests nuevos. |
-| `service-worker.js` | v241 → v242. |
-
----
-
-> Para tareas anteriores (docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

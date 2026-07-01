@@ -302,6 +302,8 @@
 
 .grupo-card[data-estado="alerta"]   { border-color: color-mix(in srgb, var(--fk-warning) 40%, transparent); }
 .grupo-card[data-estado="excedido"] { border-color: color-mix(in srgb, var(--fk-danger)  50%, transparent); background: var(--fk-danger-bg); }
+/* Ahorro cumplido o superado: logro, no exceso (ADR 019, MC.8). Verde. */
+.grupo-card[data-estado="logro"]    { border-color: color-mix(in srgb, var(--fk-success) 50%, transparent); background: var(--fk-success-bg); }
 
 .grupo-card__header {
   display: flex;
@@ -339,6 +341,7 @@
 .grupo-card__fig dt { color: var(--fk-text-muted); margin: 0; }
 .grupo-card__fig dd { color: var(--fk-text-primary); margin: 0; font-weight: var(--fk-fw-semibold); }
 .grupo-card__fig dd.is-negative { color: var(--fk-danger); }
+.grupo-card__fig dd.is-positive { color: var(--fk-success); }
 
 /* ── MC.5d: alertas/refuerzos anidados dentro de la tarjeta de grupo ── */
 .grupo-card .nudge {

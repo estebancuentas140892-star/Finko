@@ -129,6 +129,14 @@ function _renderResumenGrupos(anio, mes) {
 
 /**
  * Una tarjeta de grupo dentro del resumen.
+ *
+ * Ahorro = celebrar (ADR 019): cumplir o superar la meta es un logro, no un
+ * exceso. Su tarjeta usa la paleta positiva (verde), nunca ámbar ni rojo:
+ * barra `progress-bar--complete` al llegar al 100%, estado visual `logro`
+ * (borde/fondo verde) y la tercera cifra en positivo ("Ahorrado de más"). Los
+ * demás grupos conservan su estado de gasto (alerta/excedido) por ahora; el
+ * reencuadre de Necesidades es MC.8b.
+ *
  * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
  * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
  * @param {string} [desgloseHtml=''] - HTML del detalle colapsable por item (MC.5c).
@@ -139,10 +147,23 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
   const label       = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
   const pctVisual   = Math.min(r.pct, 100);
   const restanteNeg = r.restante < 0;
-  const restanteLbl = restanteNeg ? 'Excedido' : 'Disponible';
+  const esAhorro    = grupo === 'ahorro';
+  const ahorroLogrado = esAhorro && r.asignado > 0 && r.pct >= 100;
+
+  const estadoVisual = esAhorro ? (ahorroLogrado ? 'logro' : 'ok') : r.estado;
+  const claseBarra   = esAhorro ? (ahorroLogrado ? 'progress-bar--complete' : '') : _claseProgreso(r.pct);
+
+  // Tercera cifra: para Ahorro, superar la meta es positivo ("Ahorrado de más",
+  // verde) y no llegar aún es neutro ("Te falta"). Para el resto, disponible/excedido.
+  const figLabel = esAhorro
+    ? (restanteNeg ? 'Ahorrado de más' : 'Te falta')
+    : (restanteNeg ? 'Excedido' : 'Disponible');
+  const figClase = restanteNeg
+    ? (esAhorro ? 'is-positive' : 'is-negative')
+    : '';
 
   return `
-    <article class="grupo-card" data-grupo="${grupo}" data-estado="${r.estado}">
+    <article class="grupo-card" data-grupo="${grupo}" data-estado="${estadoVisual}">
       <div class="grupo-card__header">
         <p class="grupo-card__name">${label}</p>
         <span class="grupo-card__pct">${r.pct}%</span>
@@ -150,7 +171,7 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
       <div class="progress" role="progressbar"
            aria-valuenow="${r.pct}" aria-valuemin="0" aria-valuemax="100"
            aria-label="Uso de ${label}: ${r.pct}%">
-        <div class="progress-bar ${_claseProgreso(r.pct)}" style="width:${pctVisual}%"></div>
+        <div class="progress-bar ${claseBarra}" style="width:${pctVisual}%"></div>
       </div>
       <dl class="grupo-card__figs">
         <div class="grupo-card__fig">
@@ -162,8 +183,8 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
           <dd>${f(r.asignado)}</dd>
         </div>
         <div class="grupo-card__fig">
-          <dt>${restanteLbl}</dt>
-          <dd class="${restanteNeg ? 'is-negative' : ''}">${f(Math.abs(r.restante))}</dd>
+          <dt>${figLabel}</dt>
+          <dd class="${figClase}">${f(Math.abs(r.restante))}</dd>
         </div>
       </dl>
       ${nudgesHtml}
