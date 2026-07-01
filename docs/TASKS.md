@@ -87,6 +87,22 @@ Tres ideas del usuario para pulir la experiencia. Las dos últimas (EP.5, EP.6) 
 
 ---
 
+### Backlog del usuario "Me deben (Personales)" (2026-06-30)
+
+Cinco ideas del usuario sobre "Me deben" (dominio `personales`, préstamos que tú das). **PE.1 invierte la premisa actual del dominio** (hoy es "informal, sin tasa"); **PE.2 y PE.4 comparten un humanizador de fechas nuevo**.
+
+**PE.1 (schema + lógica financiera) - Tasa de interés opcional + reparto capital/interés.** Hoy el préstamo es "informal, sin tasa de interés ni amortización" por diseño (`personales/logic.js` línea 7). El usuario pide un campo opcional de tasa; con él, Finko calcularía capital, interés generado, saldo pendiente y total recuperado. Requiere schema (campo `tasa` + unidad en el `Personal`, migración idempotente) y lógica de amortización, reusable desde la de deudas ([modules/infra/financiero.js](../modules/infra/financiero.js), sistema francés). Al haber tasa, cada pago se reparte en capital vs interés (ver PE.4). Modelo: Opus 4.8 - Medio (nueva lógica financiera CO + schema).
+
+**PE.2 - Humanizar la antigüedad.** El chip muestra los días exactos ("1.825 días", `_renderPersonalItem` en [modules/dominio/personales/view.js:100](../modules/dominio/personales/view.js)). El usuario pide un formato natural: "Hace 5 años", "Hace 8 meses", "Hace 3 semanas", "Hace 5 días". Nuevo helper puro de tiempo relativo (en `personales/logic.js` o, mejor, en [infra/utils.js](../modules/infra/utils.js) para reusar; hoy solo existe `fechaLegible`, que es fecha absoluta). Modelo: Sonnet 4.6 - Medio (helper puro + tests + aplicarlo).
+
+**PE.3 - Suavizar el copy de los estados.** El estado "viejo" muestra "N días, ya toca cobrar" ([view.js:103](../modules/dominio/personales/view.js)), que suena a presión. El usuario prefiere un tono de seguimiento: "La fecha de pago ya pasó", "El pago está pendiente", "Próximo pago en 5 días", "Pago programado para hoy". Nota: los estados "próximo pago en X" y "para hoy" se basan en una fecha pactada (`fechaLimite`), no solo en la antigüedad, así que además de copy hay algo de lógica de estado por vencimiento. Coherente con el tono neutral ([ADR 003](DECISIONS/003-tono-neutral-profesional.md)) y ADN regla 11. Modelo: Sonnet 4.6 - Medio (copy + estado por fecha pactada).
+
+**PE.4 (reusa PE.2, se completa con PE.1) - Mejorar el estado tras un pago.** Tras registrar un pago, el chip muestra "0 días" ([view.js:106](../modules/dominio/personales/view.js), porque `ultimoPago` reinicia `calcularDias` a 0), poco informativo. El usuario pide estados como "Recibiste la cuota de este mes", "Último pago: hoy / ayer / hace 15 días", reusando el humanizador de PE.2 sobre `ultimoPago` (ya existe el hint "Último abono: {fecha}" en [view.js:114](../modules/dominio/personales/view.js), pero el chip principal sigue mostrando "0 días"). Con PE.1 (tasa), cada pago además indica cuánto fue a capital, cuánto a interés y el saldo restante. Modelo: Sonnet 4.6 - Medio.
+
+**PE.5 - "Te han devuelto" en verde.** El indicador "Te han devuelto" (`r.totalCobrado` en [view.js:60](../modules/dominio/personales/view.js)) muestra dinero recuperado; el usuario pide resaltarlo en verde (positivo, ingreso), coherente con los patrones financieros. Cambio de clase/color con tokens `--fk-*` (verde de éxito). Modelo: Sonnet 4.6 - Bajo (color con tokens).
+
+---
+
 ### Backlog del usuario "Ahorro (Fondo de emergencia)" (2026-06-30)
 
 Cuatro ideas del usuario sobre el Fondo de emergencia. **AH.4 converge con MT.2 (Metas) y AP.4 (Apartados)** en un mismo ADR de recordatorios de aporte en Agenda; **AH.3 tensiona el modelo actual del fondo** (que hoy no mueve dinero).
