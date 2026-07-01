@@ -87,6 +87,22 @@ Tres ideas del usuario para pulir la experiencia. Las dos últimas (EP.5, EP.6) 
 
 ---
 
+### Backlog del usuario "Metas" (2026-06-30)
+
+Cinco ideas del usuario sobre la sección Metas. Varias replican patrones ya establecidos en otras secciones (categorías tipo MC.9/TX.1/D.5a; abono unificado tipo AP.1), y una (MT.2) se solapa con AP.4.
+
+**MT.1 - Categorías para metas.** Metas hoy no tiene campo `categoria`, solo `icono` (default 🎯, ver `normalizarMeta` en [modules/dominio/metas/logic.js:108](../modules/dominio/metas/logic.js)). Agregar `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en `constants.js` (mismo patrón que MC.9 para ingresos, TX.1 para Agenda, D.5a para deudas), selector en el form de nueva meta y emoji junto al nombre en la lista. Categorías propuestas por el usuario: ✈️ Viajes, 🎂 Cumpleaños, 💍 Boda, 🏠 Vivienda, 🚗 Vehículo, 💻 Computador, 📱 Celular, 🎓 Educación, 👶 Hijo(s), 🏖️ Vacaciones, 💼 Emprendimiento, 📦 Otra. **Ojo de consistencia (TX.4):** "Educación" ya usa 📚 en Gastos/Agenda, así que el guardarraíl de `constants.test.js` fallaría con 🎓; reconciliar el emoji de las etiquetas compartidas (Educación, Vivienda ya es 🏠 en deudas). Schema: probablemente sin migración (campo `categoria` opcional de lectura defensiva); confirmar al implementar. Modelo: Sonnet 4.6 - Medio.
+
+**MT.2 (épica, requiere ADR, junto con AP.4) - Integración de Metas con Agenda.** Según la frecuencia de ingreso (semanal, quincenal, mensual...), Finko programaría recordatorios de aporte a cada meta en Agenda, con el color de la meta, su nombre y un botón "Abonar" que funcione igual que los demás. **Se solapa fuerte con AP.4** (recordatorios automáticos de aporte en Agenda para Apartados, ya marcada "requiere ADR" por duplicación con MC.4 "Distribuir mi ingreso" y el nudge de proximidad). Conviene un ADR único que decida el modelo de "recordatorios de aporte en Agenda según frecuencia de ingreso" para metas y apartados a la vez, sin solapar con MC.4. Depende también de MT.5 (el botón "Abonar" debe usar el flujo unificado) y se beneficia de MT.1 (color/ícono de la meta). Modelo: diseño Opus 4.8 - Alto (cross-domain, trade-offs de duplicación).
+
+**MT.3 (depende de MT.1) - Simplificar la selección de emoji.** Quitar el campo independiente "Emoji (opcional)" del form ([metas/view.js:145](../modules/dominio/metas/view.js)). Nueva regla: si el usuario elige categoría, la meta usa el emoji de esa categoría; si no elige categoría, aparece un botón pequeño junto al nombre para agregar un emoji opcional; si no quiere ninguno, queda vacío. Simplifica el form y conserva la personalización. `icono` pasa a derivarse de la categoría o del emoji manual. Modelo: Sonnet 4.6 - Medio (UX del form + derivación del ícono).
+
+**MT.4 - Ahorro sugerido según la frecuencia de ingreso, no "por día".** Hoy la meta muestra cuánto ahorrar por día (`calcularAhorroDiario` en [metas/logic.js:59](../modules/dominio/metas/logic.js), render "/día" en [view.js:46](../modules/dominio/metas/view.js)). El usuario pide alinearlo con su frecuencia de cobro: si cobra quincenal, cuánto por quincena; si mensual, mensual; etc. Nueva función pura que reparte el faltante entre el número de periodos de la frecuencia (de `S.ingresos`) hasta `fechaLimite`, y el copy se ajusta ("$X por quincena"). Es el mismo espíritu que la parte 2 de MC.7 (aportes auto-calculados por objetivo según la frecuencia del ingreso). Modelo: Sonnet 4.6 - Medio (lógica pura + copy; lee la frecuencia de ingreso).
+
+**MT.5 - Unificar el flujo de abono con el selector de cuentas compartido.** El abono a meta usa un `<select>` de texto plano (`_renderCuentaSelectorAbono` en [metas/view.js:168](../modules/dominio/metas/view.js)), distinto del resto de la app. Portar el patrón de AP.1: usar `renderSelectorCuenta` + `resolverPagoConPreferida` ([modules/infra/cuenta-helper.js](../modules/infra/cuenta-helper.js)) para mostrar cada cuenta con su logo, permitir combinar varias cuando una no alcanza, y bloquear el abono con un mensaje claro si aun combinando no hay fondos suficientes. Es un port directo del trabajo ya hecho en Apartados. Modelo: Sonnet 4.6 - Medio.
+
+---
+
 ### Backlog del usuario "Deudas, jornada 3" (2026-06-30)
 
 Tres observaciones nuevas del usuario sobre la sección Deudas. La primera revisa una decisión de [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md); la segunda afina la explicación de la recomendación de [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md).
