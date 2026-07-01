@@ -7,6 +7,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### fix(a11y): fondo inerte mientras hay un modal abierto (A11Y.4) · 2026-06-30
+
+Cuarto hallazgo de la auditoría de accesibilidad. `abrirModal` atrapaba el Tab dentro del panel (`trapFocus`) pero no marcaba el resto de la app como inerte, así que el cursor virtual del lector de pantalla podía seguir leyendo el contenido detrás del modal, y `aria-modal="true"` no basta por sí solo (soporte inconsistente entre lectores). Fix sin cambio visual: `abrirModal` marca `.app-shell` con el atributo `inert` (WCAG 2.4.3, refuerza `aria-modal`) y `cerrarModal` lo libera. Los modales viven como hermanos de `.app-shell` en `index.html`, así que inertizar el fondo no afecta al propio modal. Orden cuidado: el `inert` se pone **después** de `trapFocus` (que ya guardó el botón que abrió el modal) y se quita **antes** de `releaseFocus` (para que ese botón pueda recibir el foco de vuelta al cerrar). Los overlays dinámicos (`confirm.js`, `cuenta-helper.js`) ya viven fuera de `.app-shell` y se cierran con `overlay.remove()`, así que apilan bien sobre un modal base. Nuevo archivo de tests `tests/unit/modales.test.js` (9 tests: contrato de apertura/cierre, `inert` puesto/liberado, foco restaurado, resetModal) + 1 E2E en `smoke.test.js` que valida el `inert` real en navegador. 1667/1667 unit verdes; el E2E nuevo en verde. SW v234 → v235.
+
+- **`modules/ui/modales.js`**: `abrirModal` marca `.app-shell` como `inert` (tras `trapFocus`); `cerrarModal` lo libera (antes de `releaseFocus`). Helper `_fondo()`.
+- **`tests/unit/modales.test.js`** (nuevo): 9 tests del contrato de modales + `inert`.
+- **`tests/e2e/smoke.test.js`**: suite "Accesibilidad - fondo inerte con modal" (abrir marca `inert`, cerrar lo libera).
+- **`service-worker.js`**: v234 → v235.
+
+> Nota de entorno: al correr los E2E la tarde del 2026-06-30 (frontera de mes), 4 tests de Gastos fallan por un artefacto de zona horaria del propio test (usa `new Date().toISOString().slice(0,10)`, que en UTC ya es 2026-07-01, mientras la app filtra "este mes" en hora local Colombia UTC-5). El gasto se crea y persiste bien; solo queda archivado en julio. No es regresión de código ni de A11Y.4 (reproducido en `main` limpio); se resuelve solo al cambiar de mes. Candidato a fix de test: calcular "hoy" en hora local, no UTC.
+
+---
+
 ### fix(a11y): mover el foco al navegar de sección (A11Y.3) · 2026-06-30
 
 Tercer hallazgo de la auditoría de accesibilidad, y cierre del anuncio limpio de sección que A11Y.2 dejó pendiente. `showSection` en `router.js` ya llamaba `.focus()` sobre `#sec-*`, pero las secciones no tenían `tabindex`, así que era un no-op silencioso: al cambiar de sección, el usuario de teclado/lector se quedaba en el enlace anterior y no se anunciaba el contenido nuevo. Fix en tres piezas, sin cambio visual: (1) `tabindex="-1"` en las 13 secciones de `index.html`; (2) `showSection(hash, moveFocus)` mueve el foco solo en navegaciones reales (hashchange), no en la carga inicial, para no robar el foco antes del skip link; (3) regla `.section:focus { outline: none }` en `base.css` para que el foco programático no dibuje un recuadro alrededor de toda la sección (el indicador visual de "dónde estás" ya lo da el item de nav activo con `aria-current="page"`). Al recibir foco, la sección anuncia su título como landmark vía `aria-labelledby`. 1658/1658 unit + 64/64 E2E verdes. SW v233 → v234.

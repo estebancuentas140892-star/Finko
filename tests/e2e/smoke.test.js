@@ -273,6 +273,36 @@ test.describe('Tesorería - cuenta y saldo', () => {
   });
 });
 
+// ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────
+// Con un modal abierto, el fondo `.app-shell` debe quedar `inert` para que el
+// lector de pantalla y el teclado no alcancen el contenido de atrás; al cerrar,
+// el `inert` se libera. Se valida en navegador real (happy-dom no aplica inert).
+
+test.describe('Accesibilidad - fondo inerte con modal', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+  });
+
+  test('abrir un modal marca .app-shell inert y cerrarlo lo libera', async ({ page }) => {
+    const shell = page.locator('.app-shell');
+
+    // Estado inicial: fondo interactivo.
+    await expect(shell).not.toHaveAttribute('inert', '');
+
+    // Abrir el modal de nueva cuenta.
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    await expect(shell).toHaveAttribute('inert', '');
+
+    // Cerrar el modal libera el fondo.
+    await page.click('#modal-cuenta [data-action="modal-close"]');
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+    await expect(shell).not.toHaveAttribute('inert', '');
+  });
+});
+
 // ── SUITE 7: Gastos-Cuenta (flujo integrado) ────────────────────────────────
 // Smoke test del flujo crítico: crear cuenta → crear gasto (selector cuenta
 // obligatorio) → verificar saldo decrementado → editar gasto (cambiar monto/cuenta)

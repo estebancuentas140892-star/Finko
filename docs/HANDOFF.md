@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (fix(a11y): A11Y.3 - foco al navegar de sección)
+> Última actualización: 2026-06-30 (fix(a11y): A11Y.4 - fondo inerte con modal abierto)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1658/1658 verdes |
+| Tests unitarios + integración | 1667/1667 verdes |
 | Tests E2E | 64/64 verde. Suites: `smoke` 28 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 12 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(a11y): fondo inerte mientras hay un modal abierto (A11Y.4) · 2026-06-30
+
+Cuarto hallazgo de la auditoría de accesibilidad. `abrirModal` atrapaba el Tab pero no marcaba el fondo como inerte, así que el cursor virtual del lector de pantalla podía leer el contenido detrás del modal (`aria-modal` solo no basta). Fix sin cambio visual: `abrirModal` pone `inert` en `.app-shell` y `cerrarModal` lo quita. Los modales son hermanos de `.app-shell`, así que inertizar el fondo no los afecta. Orden: `inert` después de `trapFocus`, se libera antes de `releaseFocus` (para restaurar el foco al botón que abrió el modal). Nuevo `tests/unit/modales.test.js` (9 tests) + 1 E2E que valida el `inert` real en navegador. 1667/1667 unit verdes. SW v234 → v235. Nota: 4 E2E de Gastos fallan solo hoy por un artefacto de zona horaria del test en frontera de mes (no es regresión; ver CHANGELOG).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/modales.js` | `abrirModal` marca `.app-shell` inert; `cerrarModal` lo libera. Helper `_fondo()`. |
+| `tests/unit/modales.test.js` | Nuevo: 9 tests del contrato de modales + `inert`. |
+| `tests/e2e/smoke.test.js` | Suite E2E "fondo inerte con modal". |
+| `service-worker.js` | v234 → v235. |
+
+---
 
 ### fix(a11y): mover el foco al navegar de sección (A11Y.3) · 2026-06-30
 
@@ -91,23 +104,7 @@ Completa la épica EP: 3 entradas finales en `PROPOSITOS_SECCION` (tesoreria, an
 
 ---
 
-### feat(proposito): banners de propósito en Metas, Ahorro e Inversión (EP.3) · 2026-06-30
-
-Mismo patrón que EP.2. Agrega 3 entradas a `PROPOSITOS_SECCION` (`metas`, `ahorro`, `inversion`), 3 slots en `index.html` y calls en los 3 dominios. CSS: púrpura para Metas, verde menta para Ahorro, azul cian para Inversión. Sin tests nuevos. 1658/1658 verdes. SW v229 → v230.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/ui/proposito.js` | 3 entradas nuevas en `PROPOSITOS_SECCION`: `metas`, `ahorro`, `inversion`. |
-| `index.html` | Slots `proposito-metas`, `proposito-ahorro`, `proposito-inversion`. |
-| `modules/dominio/metas/index.js` | Import + calls de `renderBannerProposito('metas')`. |
-| `modules/dominio/ahorro/index.js` | Import + calls de `renderBannerProposito('ahorro')`. |
-| `modules/dominio/inversiones/index.js` | Import + calls de `renderBannerProposito('inversion')`. |
-| `styles/components/domain.css` | Variantes de color para metas, ahorro, inversion (expandido + colapsado). |
-| `service-worker.js` | v229 → v230. |
-
----
-
-> Para tareas anteriores (EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
