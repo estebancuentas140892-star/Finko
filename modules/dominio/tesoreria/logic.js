@@ -714,6 +714,29 @@ export function esDistribucionPersonalizadaValida(d) {
 }
 
 /**
+ * Aporte mensual ideal para UN objetivo con fecha: el faltante repartido
+ * entre los meses que quedan hasta esa fecha, redondeado hacia arriba (mejor
+ * pasarse un poco que llegar corto). 0 si ya se cumplió, si no tiene fecha,
+ * o si la fecha ya pasó. Fórmula compartida por `calcularAporteMensualObjetivos`
+ * (total agregado) y `construirDesgloseAhorroPorObjetivo` (fila por fila,
+ * MC.7a, ADR 018) para no duplicar el cálculo.
+ *
+ * @param {number} montoObjetivo
+ * @param {number} montoActual
+ * @param {string|null|undefined} fecha - YYYY-MM-DD.
+ * @param {number} tsHoy - `Date.getTime()` de "hoy".
+ * @returns {number}
+ */
+function _aporteMensualObjetivo(montoObjetivo, montoActual, fecha, tsHoy) {
+  const faltante = Math.max(0, (Number(montoObjetivo) || 0) - (Number(montoActual) || 0));
+  if (faltante <= 0 || !fecha) return 0;
+  const msRestantes = new Date(fecha).getTime() - tsHoy;
+  if (msRestantes <= 0) return 0; // fecha ya pasó
+  const mesesRestantes = Math.max(1, Math.round(msRestantes / (1000 * 60 * 60 * 24 * 30.44)));
+  return Math.ceil(faltante / mesesRestantes);
+}
+
+/**
  * Calcula cuánto aportar por mes para llegar a tiempo a todas las metas
  * y apartados con fecha objetivo que aún tienen saldo pendiente.
  * Pura: recibe arrays planos, sin leer S ni el DOM.
@@ -726,28 +749,80 @@ export function esDistribucionPersonalizadaValida(d) {
 export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy = new Date()) {
   const tsHoy = hoy instanceof Date ? hoy.getTime() : Date.now();
 
-  const candidatos = [
-    ...metas
-      .filter(m => !m.completada && m.fechaLimite)
-      .map(m => ({
-        faltante: Math.max(0, (Number(m.montoObjetivo) || 0) - (Number(m.montoActual) || 0)),
-        fecha:    m.fechaLimite,
-      })),
-    ...apartados
-      .filter(a => !a.completado && a.fechaObjetivo)
-      .map(a => ({
-        faltante: Math.max(0, (Number(a.montoObjetivo) || 0) - (Number(a.montoActual) || 0)),
-        fecha:    a.fechaObjetivo,
-      })),
-  ];
+  const aportesMetas = metas
+    .filter(m => !m.completada && m.fechaLimite)
+    .map(m => _aporteMensualObjetivo(m.montoObjetivo, m.montoActual, m.fechaLimite, tsHoy));
+  const aportesApartados = apartados
+    .filter(a => !a.completado && a.fechaObjetivo)
+    .map(a => _aporteMensualObjetivo(a.montoObjetivo, a.montoActual, a.fechaObjetivo, tsHoy));
 
-  return candidatos.reduce((sum, { faltante, fecha }) => {
-    if (faltante <= 0) return sum;
-    const msRestantes = new Date(fecha).getTime() - tsHoy;
-    if (msRestantes <= 0) return sum; // fecha ya pasó
-    const mesesRestantes = Math.max(1, Math.round(msRestantes / (1000 * 60 * 60 * 24 * 30.44)));
-    return sum + Math.ceil(faltante / mesesRestantes);
-  }, 0);
+  return [...aportesMetas, ...aportesApartados].reduce((sum, monto) => sum + monto, 0);
+}
+
+/**
+ * Desglose de aportes de ahorro sugeridos por objetivo, para el Paso 2 del
+ * asistente "Distribuir mi ingreso" (MC.7a, ADR 018 decisión 3). A diferencia
+ * de `construirPlanAhorro` (que hoy sugiere todo el presupuesto al fondo),
+ * esta función reparte un aporte sugerido POR CADA meta y apartado activo,
+ * usando la misma fórmula que `calcularAporteMensualObjetivos` (faltante
+ * entre meses restantes) pero fila por fila en vez de solo el total. Los
+ * objetivos sin fecha no se pueden calcular con certeza: sugieren 0 en vez
+ * de adivinar (decisión del usuario), con un hint en la vista invitando a
+ * ponerles fecha.
+ *
+ * El fondo de emergencia conserva su prioridad: recibe el excedente del
+ * presupuesto de ahorro que quede tras los aportes sugeridos a metas y
+ * apartados (nunca negativo). Si el fondo ya está completo, o si los
+ * objetivos ya consumen todo el presupuesto, el fondo queda en 0. La suma de
+ * los montos puede superar `budgetAhorro` si hay objetivos urgentes; eso se
+ * valida en la capa que integra el plan (`resumirPlanDistribucion`), no aquí:
+ * todo es editable, el auto-cálculo es solo el punto de partida.
+ *
+ * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
+ *
+ * @param {{
+ *   metas?:       Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaLimite:string|null, completada:boolean}>,
+ *   apartados?:   Array<{id:string, nombre:string, montoObjetivo:number, montoActual:number, fechaObjetivo:string|null, completado:boolean}>,
+ *   fondo?:       {activo:boolean, completado:boolean}|null,
+ *   budgetAhorro?: number,
+ *   hoy?:         Date,
+ * }} [args]
+ * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number}>}
+ *   Mismo orden y forma que `construirPlanAhorro`: fondo primero (si activo), luego metas, luego apartados.
+ */
+export function construirDesgloseAhorroPorObjetivo({
+  metas = [], apartados = [], fondo = null, budgetAhorro = 0, hoy = new Date(),
+} = {}) {
+  const tsHoy  = hoy instanceof Date ? hoy.getTime() : Date.now();
+  const budget = Math.max(0, Math.round(Number(budgetAhorro) || 0));
+
+  const filasMetas = metas
+    .filter(m => m.completada !== true)
+    .map(m => ({
+      tipo: 'meta', id: m.id, nombre: m.nombre,
+      monto: _aporteMensualObjetivo(m.montoObjetivo, m.montoActual, m.fechaLimite, tsHoy),
+    }));
+
+  const filasApartados = apartados
+    .filter(a => a.completado !== true)
+    .map(a => ({
+      tipo: 'apartado', id: a.id, nombre: a.nombre,
+      monto: _aporteMensualObjetivo(a.montoObjetivo, a.montoActual, a.fechaObjetivo, tsHoy),
+    }));
+
+  const totalObjetivos = [...filasMetas, ...filasApartados].reduce((s, f) => s + f.monto, 0);
+  const excedente = Math.max(0, budget - totalObjetivos);
+
+  const filas = [];
+  if (fondo && fondo.activo) {
+    filas.push({
+      tipo: 'fondo', id: null, nombre: 'Fondo de emergencia',
+      monto: fondo.completado ? 0 : excedente,
+    });
+  }
+  filas.push(...filasMetas, ...filasApartados);
+
+  return filas;
 }
 
 /**

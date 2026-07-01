@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (docs(adr): ADR 018, "Distribuir mi ingreso" como asistente guiado de 3 pasos. Diseño de MC.7)
+> Última actualización: 2026-07-01 (feat(tesoreria): MC.7a, desglose de aportes de ahorro por objetivo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1728/1728 verdes |
+| Tests unitarios + integración | 1743/1743 verdes |
 | Tests E2E | 73/73 verde. Suites: `smoke` 37 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): desglose de aportes de ahorro por objetivo (MC.7a) · 2026-07-01
+
+Primer slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), decisión 3). Nueva `construirDesgloseAhorroPorObjetivo({ metas, apartados, fondo, budgetAhorro, hoy })` en `tesoreria/logic.js`: a diferencia de `construirPlanAhorro` (que hoy sugiere todo el presupuesto al fondo), reparte un aporte sugerido por cada meta/apartado activo (faltante entre meses restantes, misma fórmula que `calcularAporteMensualObjetivos`), y el fondo de emergencia recibe el excedente que quede (nunca negativo; 0 si ya está completo). Objetivos sin fecha sugieren 0 en vez de adivinar. Se extrajo el helper privado `_aporteMensualObjetivo` para no duplicar la fórmula; `calcularAporteMensualObjetivos` se refactorizó para reusarlo (comportamiento idéntico, sus 8 tests existentes siguen en verde). Aún no integrada en el panel (eso es MC.7b): es solo la lógica, pura y testeada en aislamiento. 15 tests nuevos. 1728/1728 → 1743/1743 unit. SW v241 → v242.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseAhorroPorObjetivo()` nueva; `_aporteMensualObjetivo()` extraído; `calcularAporteMensualObjetivos()` refactorizada. |
+| `tests/unit/tesoreria.test.js` | 15 tests nuevos. |
+| `service-worker.js` | v241 → v242. |
+
+---
 
 ### docs(adr): ADR 018, "Distribuir mi ingreso" como asistente guiado de 3 pasos (MC.7, diseño) · 2026-07-01
 
@@ -78,20 +90,6 @@ Cuarto slice (obligatorio) de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-co
 
 ---
 
-### feat(presupuesto): desglose por item dentro de cada grupo en Límites de gasto (MC.5c) · 2026-06-30
-
-Tercer slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Las tarjetas de Necesidades y Ahorro suman un detalle colapsable ("Ver detalle (N)", reusa `.analisis-grupo`) con un item por fuente. **Necesidades** (`desgloseNecesidadesDelMes`): cada gasto fijo/deuda activo con su monto de referencia y estado de pago del mes (pendiente / abono parcial / pagado), pendientes primero. **Ahorro** (`desgloseAhorroDelMes`): fondo de emergencia, metas activas, apartados activos, inversiones; solo el fondo tiene aportes fechados así que solo él reporta "aportado este mes", el resto muestra acumulado a la fecha (copy honesto sobre esa diferencia). Ambas funciones puras, sin importar otros dominios (ADN #10). 16 unit + 2 E2E nuevos. 1691/1691 → 1707/1707 unit; 67/67 → 69/69 E2E. SW v238 → v239.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/logic.js` | `desgloseNecesidadesDelMes()` + `desgloseAhorroDelMes()` nuevas. |
-| `modules/dominio/presupuesto/view.js` | `_renderDesgloseNecesidades`/`_renderDesgloseAhorro`; `_renderGrupoCard` recibe detalle opcional. |
-| `styles/components/analysis.css` | `.grupo-card__desglose` + `.grupo-card__item*`. |
-| `tests/unit/presupuesto.test.js`, `tests/e2e/smoke.test.js` | 16 unit + 2 E2E nuevos. |
-| `service-worker.js` | v238 → v239. |
-
----
-
 ### feat(presupuesto): resumen read-only de los 3 grupos en Límites de gasto (MC.5b) · 2026-06-30
 
 Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Límites de gasto arranca ahora con **"Tu plan del mes por grupo"**: una tarjeta por grupo financiero (Necesidades / Estilo de vida / Ahorro) con asignado, ejecutado, disponible, % y barra de progreso. Los topes por categoría quedan debajo como "detalle de Estilo de vida". El **asignado** sale de la misma distribución que Mis cuentas (`sugerirDistribucionIngreso`); para no duplicarla se extrajo el helper puro `construirContextoDistribucion` en `tesoreria/logic.js` y se refactorizó `tesoreria/view.js` para consumirlo (extracción sin cambio de comportamiento). El **ejecutado** lo deriva `ejecutadoPorGrupoDelMes` de los flujos del mes sin schema nuevo (Necesidades = gastos con `compromisoId`; Estilo de vida = gastos sin `compromisoId`; Ahorro = aportes fechados al fondo). Estado vacío que guía a Mis cuentas si no hay ingreso. 14 unit + 2 E2E nuevos. 1691/1691 unit + 67/67 E2E. SW v237 → v238.
@@ -108,7 +106,7 @@ Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). L
 
 ---
 
-> Para tareas anteriores (feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

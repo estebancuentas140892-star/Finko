@@ -19,6 +19,7 @@ import {
   sugerirDistribucionIngreso,
   construirContextoDistribucion,
   calcularAporteMensualObjetivos,
+  construirDesgloseAhorroPorObjetivo,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   construirPlanAhorro,
@@ -1666,6 +1667,128 @@ describe('calcularAporteMensualObjetivos()', () => {
   it('ignora apartados sin fechaObjetivo', () => {
     const a = [{ montoObjetivo: 500_000, montoActual: 0, fechaObjetivo: null, completado: false }];
     expect(calcularAporteMensualObjetivos([], a, hoy)).toBe(0);
+  });
+});
+
+// ── construirDesgloseAhorroPorObjetivo() (MC.7a, ADR 018) ─────────
+describe('construirDesgloseAhorroPorObjetivo()', () => {
+  const hoy = new Date('2026-07-01');
+
+  const metaConFecha = (overrides = {}) => ({
+    id: 'm1', nombre: 'Viaje', montoObjetivo: 1_200_000, montoActual: 0,
+    fechaLimite: '2027-01-01', completada: false,
+    ...overrides,
+  });
+  const apartadoConFecha = (overrides = {}) => ({
+    id: 'ap1', nombre: 'SOAT', montoObjetivo: 360_000, montoActual: 0,
+    fechaObjetivo: '2027-01-01', completado: false,
+    ...overrides,
+  });
+
+  it('sin metas, apartados ni fondo devuelve array vacío', () => {
+    expect(construirDesgloseAhorroPorObjetivo({ hoy })).toEqual([]);
+    expect(construirDesgloseAhorroPorObjetivo()).toEqual([]);
+  });
+
+  it('una meta con fecha sugiere faltante/meses restantes, igual que calcularAporteMensualObjetivos', () => {
+    const metas = [metaConFecha()];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    const esperado = calcularAporteMensualObjetivos(metas, [], hoy);
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: esperado }]);
+    expect(esperado).toBeGreaterThan(0);
+  });
+
+  it('una meta sin fechaLimite sugiere 0 (no adivina)', () => {
+    const metas = [metaConFecha({ fechaLimite: null })];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([{ tipo: 'meta', id: 'm1', nombre: 'Viaje', monto: 0 }]);
+  });
+
+  it('una meta con fechaLimite ya pasada sugiere 0', () => {
+    const metas = [metaConFecha({ fechaLimite: '2026-01-01' })];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    expect(filas[0].monto).toBe(0);
+  });
+
+  it('una meta ya cumplida (faltante 0) sugiere 0', () => {
+    const metas = [metaConFecha({ montoActual: 1_200_000 })];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    expect(filas[0].monto).toBe(0);
+  });
+
+  it('una meta completada no aparece en el desglose', () => {
+    const metas = [metaConFecha({ completada: true })];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([]);
+  });
+
+  it('un apartado completado no aparece en el desglose', () => {
+    const apartados = [apartadoConFecha({ completado: true })];
+    const filas = construirDesgloseAhorroPorObjetivo({ apartados, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([]);
+  });
+
+  it('metas y apartados aparecen en ese orden (metas primero, luego apartados)', () => {
+    const metas     = [metaConFecha()];
+    const apartados = [apartadoConFecha()];
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, apartados, budgetAhorro: 2_000_000, hoy });
+    expect(filas.map(f => f.tipo)).toEqual(['meta', 'apartado']);
+  });
+
+  it('el fondo activo e incompleto recibe el excedente tras los aportes a objetivos', () => {
+    const metas = [metaConFecha()]; // aporte ~200.000 (1.2M/6 meses)
+    const aporteMeta = calcularAporteMensualObjetivos(metas, [], hoy);
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, budgetAhorro: 1_000_000, hoy });
+    expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta });
+  });
+
+  it('el fondo va primero en el orden (fondo, metas, apartados)', () => {
+    const metas     = [metaConFecha()];
+    const apartados = [apartadoConFecha()];
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, apartados, fondo, budgetAhorro: 2_000_000, hoy });
+    expect(filas.map(f => f.tipo)).toEqual(['fondo', 'meta', 'apartado']);
+  });
+
+  it('el fondo completo siempre queda en 0, aunque haya excedente', () => {
+    const fondo = { activo: true, completado: true };
+    const filas = construirDesgloseAhorroPorObjetivo({ fondo, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([{ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 0 }]);
+  });
+
+  it('el fondo inactivo no aparece en el desglose', () => {
+    const fondo = { activo: false, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ fondo, budgetAhorro: 1_000_000, hoy });
+    expect(filas).toEqual([]);
+  });
+
+  it('el excedente nunca es negativo: si los objetivos superan el budget, el fondo queda en 0', () => {
+    // faltante 12M en 6 meses -> aporte sugerido 2M, muy por encima del budget de 500k.
+    const metas = [metaConFecha({ montoObjetivo: 12_000_000, montoActual: 0 })];
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, budgetAhorro: 500_000, hoy });
+    const fila = filas.find(f => f.tipo === 'fondo');
+    expect(fila.monto).toBe(0);
+  });
+
+  it('sin budgetAhorro (0) el fondo no recibe nada y los aportes a objetivos no se ven afectados', () => {
+    const metas = [metaConFecha()];
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, hoy });
+    const filaFondo = filas.find(f => f.tipo === 'fondo');
+    const filaMeta  = filas.find(f => f.tipo === 'meta');
+    expect(filaFondo.monto).toBe(0);
+    expect(filaMeta.monto).toBeGreaterThan(0);
+  });
+
+  it('varias metas y apartados sin fecha: todas sugieren 0 y el fondo recibe todo el budget', () => {
+    const metas     = [metaConFecha({ id: 'm1', fechaLimite: null }), metaConFecha({ id: 'm2', fechaLimite: null })];
+    const apartados = [apartadoConFecha({ id: 'ap1', fechaObjetivo: null })];
+    const fondo = { activo: true, completado: false };
+    const filas = construirDesgloseAhorroPorObjetivo({ metas, apartados, fondo, budgetAhorro: 800_000, hoy });
+    expect(filas.filter(f => f.tipo !== 'fondo').every(f => f.monto === 0)).toBe(true);
+    expect(filas.find(f => f.tipo === 'fondo').monto).toBe(800_000);
   });
 });
 
