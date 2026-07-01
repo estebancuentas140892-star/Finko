@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(presupuesto): MC.5e, CTAs cruzados y copy de complementariedad con Mis cuentas. MC.5 completa)
+> Última actualización: 2026-07-01 (docs(adr): ADR 018, "Distribuir mi ingreso" como asistente guiado de 3 pasos. Diseño de MC.7)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(adr): ADR 018, "Distribuir mi ingreso" como asistente guiado de 3 pasos (MC.7, diseño) · 2026-07-01
+
+Diseño de la épica MC.7. El panel "Distribuir mi ingreso" (MC.4a-e) evoluciona a un asistente guiado: (1) **Necesidades** itemizada como preview read-only (gastos fijos de Agenda + cuotas de deuda + compromisos), sin mover dinero ni schema; (2) **Ahorro** con aportes auto-calculados por objetivo (`faltante / periodos restantes` para los que tienen fecha, 0 + hint para los que no; fondo con el excedente); (3) **Estilo de vida** repartido entre cuentas (omitido con cuenta única). Decisiones cerradas con el usuario: preview (no reservar) en Paso 1, sugerir 0 en objetivos sin fecha, arrancar la implementación por el Paso 2. Confirmación única, sin schema nuevo, reusa el apply-plan/undo y el gating por fecha de MC.4. Solo docs.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/018-asistente-distribuir-ingreso.md` | Nuevo ADR (contexto, 7 decisiones, alternativas, consecuencias, 6 slices MC.7a-f). |
+| `docs/TASKS.md` | MC.7 diseño cerrado + slices MC.7a a MC.7f. |
+
+---
 
 ### feat(presupuesto): CTAs cruzados y copy de complementariedad con Mis cuentas (MC.5e) · 2026-06-30
 
@@ -97,21 +108,7 @@ Segundo slice de MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). L
 
 ---
 
-### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
-
-Evaluación UX/IA de una propuesta del usuario (eligiendo la mejor opción para un usuario primerizo). Se coincide con su propuesta: "Dashboard" es jerga opaca, "Inicio" es universal; "Agenda" → "Calendario" porque para un usuario primerizo gana el reconocimiento del formato visual (reconsidera AG.1). Clave de IA: se cambió **solo la etiqueta visible**, no la ruta ni el código (hash `#dash`/`#agenda`, `id` del DOM y dominio `agenda` quedan estables, para no romper deep links, bookmarks ni el cache del SW). Cambios en nav, título de sección, banner de propósito y 7 menciones de copy en Gastos/Tesorería/Deudas/Ahorro. Bonus fix: "tus deudas en Compromisos" (nombre obsoleto) → "en la sección Deudas" en la copia de recomendación de distribución. Fix de lint pre-existente en `proposito.js` de paso. 1667/1667 unit + 65/65 E2E verdes. SW v235 → v236.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Labels de nav + `aria-label` + título de sección "Mi Agenda" → "Calendario". |
-| `modules/ui/proposito.js` | Copy del banner de Calendario; fix de lint (`titulo` sin usar). |
-| `modules/dominio/gastos/index.js`, `tesoreria/view.js`, `tesoreria/logic.js`, `compromisos/views/lista.js`, `ahorro/view.js` | 7 menciones de copy "Agenda" → "Calendario"; "Compromisos" → "Deudas". |
-| `tests/e2e/smoke.test.js` | Assert de heading actualizado a "Calendario". |
-| `service-worker.js` | v235 → v236. |
-
----
-
-> Para tareas anteriores (MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
