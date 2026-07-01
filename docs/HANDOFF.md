@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-01 (fix(presupuesto): la tarjeta de Ahorro celebra en verde al superar la meta, nunca en rojo)
+> Última actualización: 2026-07-01 (feat(presupuesto): los topes por categoría se fusionan dentro de la tarjeta de Estilo de vida; Necesidades sin alarma)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1758/1758 verdes |
-| Tests E2E | 78/78 verde. Suites: `smoke` 42 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests E2E | 81/81 verde. Suites: `smoke` 45 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): los topes se fusionan dentro de la tarjeta de Estilo de vida (MC.8b) · 2026-07-01
+
+Segundo slice grande de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md), decisiones 2 y 4). Se elimina el bloque suelto "Estilo de vida: topes por categoría" (y su hero de totales): ahora los topes viven **dentro** de la tarjeta de Estilo de vida (`_renderDetalleEstiloVida`), con tres piezas nuevas: la línea de "olla finita" (`coberturaLimitesEstiloVida`, MC.8a) que dice cuánto del presupuesto de Estilo de vida cubren los límites y cuánto queda sin tope, sin forzar el 100%; los envelopes por categoría con sus alertas; y el botón "Agregar límite" (topes bajo demanda). `_renderGrupoCard` pasa a ser **consciente del rol**: Necesidades = monitorear (estado neutro `monitor`, sin barra ámbar ni roja, tercera cifra "Sobre lo previsto" sin rojo aunque supere lo previsto); Ahorro = celebrar (verde, ya venía de MC.8); Estilo de vida = controlar (conserva alerta/excedido). El estado sin ingreso conserva la gestión de topes (sin olla finita). Se eliminaron `_renderHero` y `_renderEmptyState` (código muerto tras la fusión). 3 E2E nuevos. 1758/1758 unit; 42/42 → 45/45 smoke E2E. SW v246 → v247. Pendiente MC.8c: layout (Necesidades + Ahorro en 2 columnas, Estilo de vida en fila completa).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/view.js` | Topes fusionados en la tarjeta de Estilo de vida (`_renderDetalleEstiloVida`, `_renderOllaFinita`); `_renderGrupoCard` consciente del rol; `_renderHero`/`_renderEmptyState` eliminados. |
+| `styles/components/analysis.css` | `.estilo-limites*`, `.estilo-olla*`, `.estilo-limites-standalone*`; se quitó `.estilo-detalle*` y `.presupuesto-hero*`. |
+| `styles/responsive.css` | Se quitó la regla móvil de `.presupuesto-hero__totales`. |
+| `tests/e2e/smoke.test.js` | 3 tests nuevos (fusión + botón, olla finita, Necesidades sin alarma). |
+| `service-worker.js` | v246 → v247. |
+
+---
 
 ### fix(presupuesto): la tarjeta de Ahorro celebra en verde al superar la meta (MC.8) · 2026-07-01
 
@@ -90,21 +104,7 @@ Tercer slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), 
 
 ---
 
-### feat(tesoreria): aporte de ahorro por objetivo en "Distribuir mi ingreso" (MC.7b) · 2026-07-01
-
-Segundo slice de MC.7 ([ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md), decisión 3). El panel ya no arranca "todo al fondo": cada meta/apartado activo muestra su aporte sugerido (`construirDesgloseAhorroPorObjetivo`, MC.7a), y el fondo recibe el excedente. Objetivos sin fecha muestran $0 y un hint bajo su fila invitando a ponerle fecha (enlace a Metas/Apartados). `construirPlanAhorro` quedó sin llamadores y se eliminó (con sus 5 tests) en vez de dejarla muerta. La función de MC.7a ahora expone `sinFecha` por fila para que la vista sepa cuándo mostrar el hint. 3 unit + 2 E2E nuevos (neto, tras quitar los 5 de `construirPlanAhorro`). 1743/1743 → 1741/1741 unit; 73/73 → 75/75 E2E. Verificado en el navegador (meta a 6 meses con $1.200.000 de faltante → sugiere $200.000; fondo con presupuesto $600.000 → recibe $400.000 de excedente; meta sin fecha → $0 + hint). SW v242 → v243.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirDesgloseAhorroPorObjetivo()` expone `sinFecha`; `construirPlanAhorro()` eliminada. |
-| `modules/dominio/tesoreria/view.js` | `renderDistribucionIngreso` usa el desglose por objetivo; `_filaDistribuir` agrega el hint de "sin fecha". |
-| `styles/components/forms.css` | `.distribuir-ingreso__destinos .distribuir__hint`. |
-| `tests/unit/tesoreria.test.js`, `tests/e2e/smoke.test.js` | 3 unit + 2 E2E nuevos; describe de `construirPlanAhorro` eliminado. |
-| `service-worker.js` | v242 → v243. |
-
----
-
-> Para tareas anteriores (MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

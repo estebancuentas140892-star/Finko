@@ -5,7 +5,7 @@
 
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc }     from '../../infra/utils.js';
-import { icon, emptyArt }     from '../../infra/icons.js';
+import { icon }               from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
   CATEGORIA_EMOJI,
@@ -15,7 +15,6 @@ import {
 import {
   presupuestosActivos,
   calcularProgreso,
-  totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
   alertasLimites,
@@ -24,6 +23,7 @@ import {
   desgloseNecesidadesDelMes,
   desgloseAhorroDelMes,
   generarMensajesLimites,
+  coberturaLimitesEstiloVida,
 } from './logic.js';
 import {
   estimarSalarioMensual,
@@ -35,10 +35,9 @@ import {
 
 /**
  * Renderiza el panel completo de presupuesto en `#panel-presupuesto`.
- * Estructura (ADR 017, MC.5b):
- *   1. Resumen de los 3 grupos financieros (centro de control): asignado desde
- *      la distribución de Mis cuentas, ejecutado desde los flujos del mes.
- *   2. Detalle de Estilo de vida: los topes por categoría (envelope budgeting).
+ * Estructura (ADR 019, MC.8b): un solo relato por grupo. El resumen de los 3
+ * grupos financieros es el centro; los topes por categoría (envelope budgeting)
+ * viven **dentro** de la tarjeta de Estilo de vida, no en un bloque suelto.
  * No-op si el contenedor no existe.
  */
 export function renderPanelPresupuesto() {
@@ -49,21 +48,7 @@ export function renderPanelPresupuesto() {
   const anio  = ahora.getFullYear();
   const mes   = ahora.getMonth() + 1;
 
-  const activos = presupuestosActivos(S.presupuestos);
-
-  el.innerHTML = `
-    ${_renderResumenGrupos(anio, mes)}
-    <section class="estilo-detalle" aria-labelledby="estilo-detalle-title">
-      <h2 class="estilo-detalle__title" id="estilo-detalle-title">Estilo de vida: topes por categoría</h2>
-      <p class="estilo-detalle__hint">Ponle un máximo mensual a las categorías donde más gastas. Es el detalle del grupo Estilo de vida.</p>
-      ${_renderHero(activos, S.gastos, anio, mes)}
-      ${activos.length === 0
-        ? _renderEmptyState()
-        : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, S.gastos, anio, mes)).join('')}</div>`
-      }
-      ${_renderSinPresupuesto(activos)}
-    </section>
-  `;
+  el.innerHTML = _renderResumenGrupos(anio, mes);
 }
 
 // ── RESUMEN POR GRUPO FINANCIERO (MC.5b/MC.5c, ADR 017) ──────────
@@ -86,7 +71,7 @@ function _renderResumenGrupos(anio, mes) {
     ? sugerirDistribucionIngreso(ingresoMensual, construirContextoDistribucion(S))
     : null;
 
-  if (!dist) return _renderResumenGruposVacio();
+  if (!dist) return _renderResumenGruposVacio(anio, mes);
 
   const asignadoPorGrupo = {
     'necesidades':    dist.split.necesidades.monto,
@@ -104,7 +89,7 @@ function _renderResumenGrupos(anio, mes) {
   );
   const desglosePorGrupo = {
     'necesidades':    _renderDesgloseNecesidades(itemsNecesidades),
-    'estilo-de-vida': '',
+    'estilo-de-vida': _renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida']),
     'ahorro':         _renderDesgloseAhorro(itemsAhorro),
   };
 
@@ -128,39 +113,61 @@ function _renderResumenGrupos(anio, mes) {
 }
 
 /**
- * Una tarjeta de grupo dentro del resumen.
+ * Una tarjeta de grupo dentro del resumen, con **tratamiento asimétrico por
+ * rol** (ADR 019): la paleta y la tercera cifra reflejan la naturaleza del
+ * grupo, no una plantilla común.
  *
- * Ahorro = celebrar (ADR 019): cumplir o superar la meta es un logro, no un
- * exceso. Su tarjeta usa la paleta positiva (verde), nunca ámbar ni rojo:
- * barra `progress-bar--complete` al llegar al 100%, estado visual `logro`
- * (borde/fondo verde) y la tercera cifra en positivo ("Ahorrado de más"). Los
- * demás grupos conservan su estado de gasto (alerta/excedido) por ahora; el
- * reencuadre de Necesidades es MC.8b.
+ * - **Necesidades = monitorear.** Son gastos esenciales que se pagan sí o sí,
+ *   así que la tarjeta es siempre neutra (estado `monitor`, sin ámbar ni rojo):
+ *   el porcentaje es informativo (cuánto del ingreso consumen), no un umbral de
+ *   peligro. La tercera cifra nunca marca "Excedido" en rojo.
+ * - **Ahorro = celebrar.** Cumplir o superar la meta es un logro: paleta
+ *   positiva (verde), barra `progress-bar--complete` al 100%, estado `logro` y
+ *   la tercera cifra en positivo ("Ahorrado de más").
+ * - **Estilo de vida = controlar.** Único grupo que conserva el estado de gasto
+ *   (alerta/excedido) con su barra ámbar/roja: es donde "acercarse al límite"
+ *   tiene sentido.
  *
  * @param {string} grupo - clave de GRUPOS_FINANCIEROS.
  * @param {{asignado:number, ejecutado:number, restante:number, pct:number, estado:string}} r
- * @param {string} [desgloseHtml=''] - HTML del detalle colapsable por item (MC.5c).
+ * @param {string} [desgloseHtml=''] - HTML del detalle del grupo (desglose MC.5c o topes MC.8b).
  * @param {string} [nudgesHtml=''] - HTML de alertas/refuerzos del grupo (MC.5d).
  * @returns {string} HTML.
  */
 function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
-  const label       = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
-  const pctVisual   = Math.min(r.pct, 100);
-  const restanteNeg = r.restante < 0;
-  const esAhorro    = grupo === 'ahorro';
+  const label         = LABEL_GRUPO_FINANCIERO[grupo] ?? grupo;
+  const pctVisual     = Math.min(r.pct, 100);
+  const restanteNeg   = r.restante < 0;
+  const esNecesidades = grupo === 'necesidades';
+  const esAhorro      = grupo === 'ahorro';
   const ahorroLogrado = esAhorro && r.asignado > 0 && r.pct >= 100;
 
-  const estadoVisual = esAhorro ? (ahorroLogrado ? 'logro' : 'ok') : r.estado;
-  const claseBarra   = esAhorro ? (ahorroLogrado ? 'progress-bar--complete' : '') : _claseProgreso(r.pct);
+  // Estado visual y color de barra por rol.
+  let estadoVisual, claseBarra;
+  if (esNecesidades) {
+    estadoVisual = 'monitor';   // neutro: se monitorea, no se alarma.
+    claseBarra   = '';
+  } else if (esAhorro) {
+    estadoVisual = ahorroLogrado ? 'logro' : 'ok';
+    claseBarra   = ahorroLogrado ? 'progress-bar--complete' : '';
+  } else {
+    estadoVisual = r.estado;
+    claseBarra   = _claseProgreso(r.pct);
+  }
 
-  // Tercera cifra: para Ahorro, superar la meta es positivo ("Ahorrado de más",
-  // verde) y no llegar aún es neutro ("Te falta"). Para el resto, disponible/excedido.
-  const figLabel = esAhorro
-    ? (restanteNeg ? 'Ahorrado de más' : 'Te falta')
-    : (restanteNeg ? 'Excedido' : 'Disponible');
-  const figClase = restanteNeg
-    ? (esAhorro ? 'is-positive' : 'is-negative')
-    : '';
+  // Tercera cifra por rol: Necesidades neutra siempre; Ahorro celebra el
+  // excedente en positivo; Estilo de vida marca el exceso en rojo.
+  let figLabel, figClase;
+  if (esNecesidades) {
+    figLabel = restanteNeg ? 'Sobre lo previsto' : 'Disponible';
+    figClase = '';
+  } else if (esAhorro) {
+    figLabel = restanteNeg ? 'Ahorrado de más' : 'Te falta';
+    figClase = restanteNeg ? 'is-positive' : '';
+  } else {
+    figLabel = restanteNeg ? 'Excedido' : 'Disponible';
+    figClase = restanteNeg ? 'is-negative' : '';
+  }
 
   return `
     <article class="grupo-card" data-grupo="${grupo}" data-estado="${estadoVisual}">
@@ -316,50 +323,91 @@ function _renderDesgloseAhorro(items) {
     </details>`;
 }
 
-/** Estado vacío del resumen: sin ingreso registrado, guía a Mis cuentas. */
-function _renderResumenGruposVacio() {
+/**
+ * Estado vacío del resumen: sin ingreso registrado, guía a Mis cuentas. Aún
+ * sin un plan del mes, conserva la gestión de topes por categoría (sin la
+ * "olla finita", que necesita el presupuesto de Estilo de vida): un usuario
+ * puede ponerle un tope a lo que gasta antes de registrar sus ingresos.
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ */
+function _renderResumenGruposVacio(anio, mes) {
   return `
     <section class="grupos-resumen grupos-resumen--vacio" aria-label="Seguimiento por grupo financiero">
       <p class="grupos-resumen__vacio-title">Aún no tienes un plan del mes por grupo</p>
       <p class="grupos-resumen__vacio-desc">Registra tus ingresos y usa "Distribuir mi ingreso" en Mis cuentas para repartirlos entre Necesidades, Estilo de vida y Ahorro. Aquí verás cuánto llevas ejecutado en cada grupo.</p>
       <a href="#tesoreria" class="btn btn-secondary">Ir a Mis cuentas</a>
+    </section>
+    <section class="estilo-limites-standalone" aria-labelledby="estilo-limites-standalone-title">
+      <h2 class="estilo-limites-standalone__title" id="estilo-limites-standalone-title">Límites por categoría</h2>
+      ${_renderDetalleEstiloVida(anio, mes, 0)}
     </section>`;
 }
 
-// ── HERO ─────────────────────────────────────────────────────────
+// ── DETALLE DE ESTILO DE VIDA: TOPES POR CATEGORÍA (MC.8b, ADR 019) ──
 
-function _renderHero(presupuestos, gastos, anio, mes) {
-  const asignado = totalAsignadoMensual(presupuestos);
-  const gastado  = presupuestos.reduce((acc, p) => {
-    return acc + calcularProgreso(p, gastos, anio, mes).gastado;
-  }, 0);
-  const restante   = asignado - gastado;
-  const porcentaje = asignado > 0 ? Math.round((gastado / asignado) * 100) : 0;
+/**
+ * Detalle del grupo Estilo de vida: los topes por categoría (envelope
+ * budgeting) fusionados **dentro** de su tarjeta (ADR 019, decisión 2).
+ * Reemplaza el antiguo bloque suelto "Estilo de vida: topes por categoría".
+ * Muestra, en orden:
+ *   1. la "olla finita": cuánto del presupuesto de Estilo de vida cubren los
+ *      topes actuales y cuánto queda sin tope (sin obligar a asignar el 100%);
+ *   2. los envelopes activos, o un mensaje breve si no hay ninguno;
+ *   3. las categorías con gasto pero sin tope (sugerencia de dónde poner uno);
+ *   4. el botón "Agregar límite" (topes bajo demanda).
+ *
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @param {number} presupuestoEV - monto del grupo Estilo de vida (distribución).
+ * @returns {string} HTML.
+ */
+function _renderDetalleEstiloVida(anio, mes, presupuestoEV) {
+  const activos   = presupuestosActivos(S.presupuestos);
+  const gastos    = S.gastos ?? [];
+  const cobertura = coberturaLimitesEstiloVida(activos, presupuestoEV);
+
+  const lista = activos.length === 0
+    ? `<p class="estilo-limites__vacio">Aún no le has puesto tope a ninguna categoría. Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.</p>`
+    : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes)).join('')}</div>`;
 
   return `
-    <section class="presupuesto-hero" aria-label="Resumen de tus límites de gasto del mes">
-      <div class="presupuesto-hero__totales">
-        <div class="presupuesto-hero__metric">
-          <span class="presupuesto-hero__label">Asignado</span>
-          <span class="presupuesto-hero__value">${f(asignado)}</span>
-        </div>
-        <div class="presupuesto-hero__metric">
-          <span class="presupuesto-hero__label">Gastado</span>
-          <span class="presupuesto-hero__value">${f(gastado)}</span>
-        </div>
-        <div class="presupuesto-hero__metric">
-          <span class="presupuesto-hero__label">Restante</span>
-          <span class="presupuesto-hero__value ${restante < 0 ? 'is-negative' : ''}">${f(restante)}</span>
-        </div>
+    <div class="estilo-limites">
+      <p class="estilo-limites__intro">Ponle un máximo mensual a las categorías donde más gastas y te aviso antes de pasarte. Es un tope a lo que gastas, no un ahorro.</p>
+      ${_renderOllaFinita(cobertura)}
+      ${lista}
+      ${_renderSinPresupuesto(activos)}
+      <div class="estilo-limites__actions">
+        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">+ Agregar límite</button>
       </div>
-      ${asignado > 0 ? `
-        <div class="progress" role="progressbar"
-             aria-valuenow="${porcentaje}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Uso total de tus límites de gasto: ${porcentaje}%">
-          <div class="progress-bar ${_claseProgreso(porcentaje)}" style="width:${Math.min(porcentaje, 100)}%"></div>
-        </div>
-      ` : ''}
-    </section>`;
+    </div>`;
+}
+
+/**
+ * Línea de "olla finita" (ADR 019, decisión 2): cuánto del presupuesto de
+ * Estilo de vida cubren los topes actuales y cuánto queda sin tope. Da la
+ * noción de presupuesto acotado sin forzar a asignar el 100% ni a ponerle tope
+ * a cada categoría.
+ *
+ * @param {ReturnType<typeof coberturaLimitesEstiloVida>} cobertura
+ * @returns {string} HTML. `''` cuando no hay presupuesto ni topes que mostrar.
+ */
+function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
+  if (presupuesto <= 0) {
+    return limites > 0
+      ? `<p class="estilo-olla">Tus límites suman ${f(limites)} este mes.</p>`
+      : '';
+  }
+  if (excede) {
+    return `<p class="estilo-olla estilo-olla--excede">Tus límites suman ${f(limites)}, más que los ${f(presupuesto)} que tu plan asigna a Estilo de vida. Revisa si alguno quedó muy alto.</p>`;
+  }
+  if (limites === 0) {
+    return `<p class="estilo-olla">Tu plan asigna ${f(presupuesto)} a Estilo de vida este mes. Aún no le has puesto un límite a ninguna categoría.</p>`;
+  }
+  if (sinTope === 0) {
+    return `<p class="estilo-olla">Tus límites cubren todo tu Estilo de vida (${f(presupuesto)}). No te queda dinero sin tope.</p>`;
+  }
+  return `<p class="estilo-olla">Tus límites cubren ${f(limites)} de los ${f(presupuesto)} de tu Estilo de vida. Te quedan ${f(sinTope)} sin tope.</p>`;
 }
 
 // ── ENVELOPE INDIVIDUAL ──────────────────────────────────────────
@@ -424,20 +472,6 @@ function _renderSinPresupuesto(presupuestos) {
       </ul>
       <p class="envelope-huerfanas__hint">Asígnales un límite para hacer seguimiento mensual.</p>
     </section>`;
-}
-
-// ── EMPTY STATE ──────────────────────────────────────────────────
-
-function _renderEmptyState() {
-  return `
-    <div class="empty-state">
-      <div class="empty-state__icon">${emptyArt('presupuesto')}</div>
-      <p class="empty-state__title">Sin límites de gasto</p>
-      <p class="empty-state__desc">Pon un tope mensual por categoría, por ejemplo, $500.000 para Alimentación, y Finko te avisa cuando te acerques al límite.</p>
-      <button class="btn btn-primary" data-action="nuevo-presupuesto">+ Crear límite</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: empieza con 2 o 3 categorías donde más gastas. Finko muestra el avance en tiempo real cada vez que registras un gasto.</p>
-      <p class="empty-state__tip empty-state__tip--muted">¿Quieres reunir dinero para un gasto que viene (SOAT, vacaciones)? Eso va en Apartados. Aquí solo le pones un tope a lo que gastas.</p>
-    </div>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────

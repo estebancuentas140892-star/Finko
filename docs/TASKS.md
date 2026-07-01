@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-06-30
+> Última actualización: 2026-07-01
 
 ---
 
 ## Estado actual
 
-**App estable, 1758/1758 unit + 78/78 E2E verdes, lint limpio.** Último cambio: **fix de retroalimentación visual del Ahorro** (petición del usuario dentro de MC.8): superar la meta se ve en verde (`logro`), nunca en rojo; "Ahorrado de más" en verde (SW v246). Antes: MC.8a (mensajes por rol + `coberturaLimitesEstiloVida`). Siguiente: **MC.8b** (fusionar topes en la tarjeta de Estilo de vida; reencuadre del chrome de Necesidades). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1758/1758 unit + 81/81 E2E verdes, lint limpio.** Último cambio: **MC.8b** (fusión de topes en la tarjeta de Estilo de vida): desaparece el bloque suelto y su hero; los topes viven dentro de la tarjeta con la línea de "olla finita" (`coberturaLimitesEstiloVida`) y el botón "Agregar límite"; `_renderGrupoCard` es consciente del rol y Necesidades queda neutra (estado `monitor`, sin alarma). SW v247. Antes: fix visual del Ahorro (verde al superar), MC.8a (mensajes por rol). Siguiente: **MC.8c** (layout: Necesidades + Ahorro en dos columnas compactas, Estilo de vida en fila completa; apilado en móvil. CSS + responsive). Luego **MC.8d** (pulido opcional). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 

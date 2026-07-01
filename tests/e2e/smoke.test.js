@@ -908,6 +908,80 @@ test.describe('Límites de gasto - resumen por grupo', () => {
       'Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan. Lo ejecutado refleja lo que registras en Finko este mes.',
     );
   });
+
+  test('MC.8b: los topes por categoría viven dentro de la tarjeta de Estilo de vida, sin bloque suelto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const card = page.locator('.grupo-card[data-grupo="estilo-de-vida"]');
+    // El envelope y el botón "Agregar límite" viven DENTRO de la tarjeta.
+    await expect(card.locator('.estilo-limites')).toBeVisible();
+    await expect(card.locator('.envelope[data-id="p1"]')).toBeVisible();
+    await expect(card.locator('.estilo-limites [data-action="nuevo-presupuesto"]')).toHaveText('+ Agregar límite');
+    // El bloque suelto y el hero antiguos ya no existen en ningún lado.
+    await expect(page.locator('.estilo-detalle')).toHaveCount(0);
+    await expect(page.locator('.presupuesto-hero')).toHaveCount(0);
+  });
+
+  test('MC.8b: la "olla finita" indica cuánto del Estilo de vida cubren los topes', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      // Preset 50/30/20: Estilo de vida = 30% de 3.000.000 = 900.000.
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
+      st.presupuestos = [{ id: 'p1', categoria: 'Restaurantes', montoMensual: 300_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const olla = page.locator('.grupo-card[data-grupo="estilo-de-vida"] .estilo-olla');
+    await expect(olla).toBeVisible({ timeout: 3_000 });
+    await expect(olla).toHaveText(
+      'Tus límites cubren $300.000 de los $900.000 de tu Estilo de vida. Te quedan $600.000 sin tope.',
+    );
+  });
+
+  test('MC.8b: Necesidades se monitorea sin alarma, aunque supere lo previsto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      // Preset 50/30/20 con ingreso 1.000.000: Necesidades asignado = 500.000.
+      // Se ejecutan 600.000 (por encima). Antes de MC.8b la tarjeta iba en rojo.
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { notificaciones: false, presetDistribucion: '50-30-20' };
+      st.compromisos = [{
+        id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual',
+        diaPago: 5, monto: 600_000, activo: true, categoria: null,
+        fechaCreacion: '2026-01-01T00:00:00.000Z',
+      }];
+      st.gastos = [{
+        id: 'g1', descripcion: 'Pago arriendo', monto: 600_000, categoria: 'Vivienda',
+        fecha: hoy, cuentaId: null, nota: '', compromisoId: 'cf1',
+      }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+    await page.goto('/#presupuesto');
+    await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
+
+    const card = page.locator('.grupo-card[data-grupo="necesidades"]');
+    // Estado neutro "monitor": nunca "excedido" (rojo) ni "alerta" (ámbar).
+    await expect(card).toHaveAttribute('data-estado', 'monitor');
+    await expect(card.locator('.progress-bar--danger')).toHaveCount(0);
+    await expect(card.locator('.progress-bar--warn')).toHaveCount(0);
+    // La tercera cifra informa el exceso sin pintarlo de rojo.
+    const fig = card.locator('.grupo-card__fig').last();
+    await expect(fig.locator('dt')).toHaveText('Sobre lo previsto');
+    await expect(fig.locator('dd.is-negative')).toHaveCount(0);
+  });
 });
 
 // ── Mis cuentas: CTA cruzado a Límites de gasto (MC.5e, ADR 017) ─────────────

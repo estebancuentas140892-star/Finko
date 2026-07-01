@@ -418,57 +418,63 @@
   margin: 0 0 var(--fk-space-md);
 }
 
-/* Encabezado del bloque de topes por categoría (detalle de Estilo de vida). */
-.estilo-detalle__title {
+/* ── MC.8b: topes por categoría fusionados en la tarjeta de Estilo de vida ── */
+.estilo-limites {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-md);
+  margin-top: var(--fk-space-xs);
+  padding-top: var(--fk-space-md);
+  border-top: 1px solid var(--fk-border);
+}
+
+.estilo-limites__intro {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+/* "Olla finita": cuánto del presupuesto de Estilo de vida cubren los topes. */
+.estilo-olla {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-secondary);
+  margin: 0;
+  padding: var(--fk-space-sm) var(--fk-space-md);
+  background: var(--fk-bg-base);
+  border-radius: var(--fk-radius-sm);
+}
+
+.estilo-olla--excede { color: var(--fk-warning); }
+
+.estilo-limites__vacio {
+  font-size: var(--fk-fs-sm);
+  color: var(--fk-text-muted);
+  margin: 0;
+}
+
+.estilo-limites__actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Dentro de la tarjeta, los envelopes contrastan sobre el fondo elevado y las
+   huérfanas no arrastran su margen superior grande (el gap del flex ya separa). */
+.estilo-limites .envelope { background: var(--fk-bg-base); }
+.estilo-limites .envelope-huerfanas { margin-top: 0; }
+
+/* Bloque de topes cuando aún no hay plan del mes (estado sin ingreso). */
+.estilo-limites-standalone {
+  margin-top: var(--fk-space-lg);
+}
+
+.estilo-limites-standalone__title {
   font-size: var(--fk-fs-lg);
   font-weight: var(--fk-fw-bold);
   color: var(--fk-text-primary);
   margin: 0 0 var(--fk-space-xs);
 }
 
-.estilo-detalle__hint {
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-muted);
-  margin: 0 0 var(--fk-space-md);
-}
-
 /* ── D.5: Envelope budgeting (presupuesto por categoría) ── */
-.presupuesto-hero {
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-lg);
-  margin-bottom: var(--fk-space-lg);
-}
-
-.presupuesto-hero__totales {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--fk-space-md);
-  margin-bottom: var(--fk-space-md);
-}
-
-.presupuesto-hero__metric {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-xs);
-}
-
-.presupuesto-hero__label {
-  font-size: var(--fk-fs-xs);
-  color: var(--fk-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.presupuesto-hero__value {
-  font-size: var(--fk-fs-lg);
-  font-weight: var(--fk-fw-bold);
-  color: var(--fk-text-primary);
-}
-
-.presupuesto-hero__value.is-negative { color: var(--fk-danger); }
-
 .envelope-list {
   display: flex;
   flex-direction: column;

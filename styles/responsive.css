@@ -229,10 +229,6 @@
   .proyeccion-grid {
     grid-template-columns: 1fr;
   }
-  .presupuesto-hero__totales {
-    grid-template-columns: 1fr;
-    gap: var(--fk-space-3);
-  }
   .grupos-resumen__grid {
     grid-template-columns: 1fr;
   }
