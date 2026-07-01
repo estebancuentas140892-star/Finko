@@ -7,6 +7,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+### feat(presupuesto): resumenGrupos, primer slice de Límites como centro de control (MC.5a) · 2026-06-30
+
+Primer slice de implementación de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Nueva función pura `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: recibe dos mapas con los montos ya sumados por grupo financiero (`necesidades`, `estilo-de-vida`, `ahorro`, de `GRUPOS_FINANCIEROS`) y devuelve, por cada uno, `{asignado, ejecutado, restante, pct, estado}`. Reusa el mismo criterio de estado que ya tiene `calcularProgreso` para los topes por categoría (`UMBRAL_ALERTA` 75%, `UMBRAL_EXCEDIDO` 100%), así que Necesidades/Estilo de vida/Ahorro y los topes por categoría comparten exactamente la misma semántica de "ok/alerta/excedido". Función pura por diseño: no lee `S` ni importa otros dominios (regla ADN #10); el caller (MC.5b, siguiente slice) será quien resuelva el asignado desde la distribución de ingreso y el ejecutado desde los flujos del mes de cada dominio. 9 tests nuevos, incluida una prueba cruzada que confirma que `resumenGrupos` y `calcularProgreso` coinciden en el estado ante el mismo porcentaje. 1667 → 1677 verdes; 65/65 E2E (sin cambios de superficie, solo lógica nueva). SW v236 → v237.
+
+- **`modules/dominio/presupuesto/logic.js`**: `resumenGrupos()` nueva; import de `GRUPOS_FINANCIEROS` desde `core/constants.js`.
+- **`tests/unit/presupuesto.test.js`**: 9 tests nuevos (`describe('resumenGrupos()')`).
+- **`service-worker.js`**: v236 → v237.
+
+---
+
 ### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
 
 Evaluación UX/IA de una propuesta del usuario (pidió elegir la mejor opción para un usuario primerizo, aunque difiriera de su sugerencia): se coincide con su propuesta. "Dashboard" es jerga en inglés opaca para el público objetivo; "Inicio" es el término convencional para la pantalla principal y no limita la sección a una función. "Agenda" → "Calendario" porque para un usuario primerizo gana el reconocimiento del formato visual (la sección es un calendario mensual); reconsidera AG.1, que antes se inclinaba por "Agenda". Implementado con una guía clave de arquitectura de la información: **se cambió solo la etiqueta visible**, no la ruta ni el código. El hash (`#dash`, `#agenda`), los `id` del DOM (`sec-dash`, `sec-agenda`, `title-agenda`) y el nombre del dominio (`agenda`) quedan estables; cambiar la ruta habría roto deep links, bookmarks y el cache del SW sin ningún beneficio. Cambios: labels de nav (sidebar + bottom nav) y sus `aria-label`, título de sección "Mi Agenda" → "Calendario", el banner de propósito de Calendario, y 7 menciones de copy en Gastos, Tesorería, Deudas y Ahorro que decían "...desde Agenda" / "...en Agenda". Bonus fix adyacente: la copia de recomendación de distribución (`tesoreria/logic.js`) decía "tus deudas en Compromisos", un nombre ya obsoleto de la sección Deudas; corregido de paso, junto a la línea que ya se estaba editando. También se corrigió un lint pre-existente en `proposito.js` (`titulo` sin usar en `_htmlExpandido`), detectado al auditar el mismo archivo. 1 assert E2E actualizado (heading "Calendario"). 1667/1667 unit + 65/65 E2E verdes. SW v235 → v236.

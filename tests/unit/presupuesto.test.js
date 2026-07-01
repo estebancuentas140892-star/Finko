@@ -3,6 +3,7 @@ import {
   presupuestosActivos,
   calcularGastadoCategoria,
   calcularProgreso,
+  resumenGrupos,
   totalAsignadoMensual,
   categoriasSinPresupuesto,
   tienePresupuesto,
@@ -149,6 +150,86 @@ describe('calcularProgreso()', () => {
   it('umbrales accesibles como constantes', () => {
     expect(UMBRAL_ALERTA).toBe(0.75);
     expect(UMBRAL_EXCEDIDO).toBe(1.00);
+  });
+});
+
+// ── resumenGrupos() (MC.5a, ADR 017) ──────────────────────────────────────────
+
+describe('resumenGrupos()', () => {
+  it('devuelve las 3 claves de grupo financiero', () => {
+    const r = resumenGrupos({}, {});
+    expect(Object.keys(r).sort()).toEqual(['ahorro', 'estilo-de-vida', 'necesidades']);
+  });
+
+  it('calcula asignado, ejecutado y restante por grupo', () => {
+    const r = resumenGrupos(
+      { necesidades: 1_000_000, 'estilo-de-vida': 400_000, ahorro: 200_000 },
+      { necesidades: 600_000, 'estilo-de-vida': 100_000, ahorro: 50_000 },
+    );
+    expect(r.necesidades).toEqual({
+      asignado: 1_000_000, ejecutado: 600_000, restante: 400_000, pct: 60, estado: 'ok',
+    });
+    expect(r['estilo-de-vida']).toEqual({
+      asignado: 400_000, ejecutado: 100_000, restante: 300_000, pct: 25, estado: 'ok',
+    });
+    expect(r.ahorro).toEqual({
+      asignado: 200_000, ejecutado: 50_000, restante: 150_000, pct: 25, estado: 'ok',
+    });
+  });
+
+  it('estado "alerta" entre 75% y 100%', () => {
+    const r = resumenGrupos({ necesidades: 500_000 }, { necesidades: 400_000 }); // 80%
+    expect(r.necesidades.pct).toBe(80);
+    expect(r.necesidades.estado).toBe('alerta');
+  });
+
+  it('estado "alerta" exacto en 75%', () => {
+    const r = resumenGrupos({ necesidades: 400_000 }, { necesidades: 300_000 }); // 75%
+    expect(r.necesidades.estado).toBe('alerta');
+  });
+
+  it('estado "excedido" cuando el ejecutado supera el asignado', () => {
+    const r = resumenGrupos({ ahorro: 200_000 }, { ahorro: 250_000 });
+    expect(r.ahorro.pct).toBe(125);
+    expect(r.ahorro.restante).toBe(-50_000);
+    expect(r.ahorro.estado).toBe('excedido');
+  });
+
+  it('exactamente 100% no es excedido, todavía es alerta', () => {
+    const r = resumenGrupos({ ahorro: 200_000 }, { ahorro: 200_000 });
+    expect(r.ahorro.pct).toBe(100);
+    expect(r.ahorro.estado).toBe('alerta');
+  });
+
+  it('asignado en 0 no divide por cero: pct 0, estado ok', () => {
+    const r = resumenGrupos({}, { 'estilo-de-vida': 50_000 });
+    expect(r['estilo-de-vida'].pct).toBe(0);
+    expect(r['estilo-de-vida'].estado).toBe('ok');
+  });
+
+  it('grupo sin ejecutado devuelve ejecutado 0 y restante = asignado', () => {
+    const r = resumenGrupos({ necesidades: 300_000 }, {});
+    expect(r.necesidades.ejecutado).toBe(0);
+    expect(r.necesidades.restante).toBe(300_000);
+    expect(r.necesidades.estado).toBe('ok');
+  });
+
+  it('sin argumentos no rompe: los 3 grupos en 0', () => {
+    const r = resumenGrupos();
+    for (const grupo of ['necesidades', 'estilo-de-vida', 'ahorro']) {
+      expect(r[grupo]).toEqual({ asignado: 0, ejecutado: 0, restante: 0, pct: 0, estado: 'ok' });
+    }
+  });
+
+  it('usa los mismos umbrales que calcularProgreso', () => {
+    // 75% exacto: alerta en ambas funciones.
+    const progresoCategoria = calcularProgreso(
+      { montoMensual: 400_000, categoria: 'X' },
+      [{ monto: 300_000, categoria: 'X', fecha: '2026-05-01' }],
+      2026, 5,
+    );
+    const grupo = resumenGrupos({ necesidades: 400_000 }, { necesidades: 300_000 }).necesidades;
+    expect(progresoCategoria.estado).toBe(grupo.estado);
   });
 });
 

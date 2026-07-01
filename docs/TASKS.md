@@ -7,7 +7,7 @@
 
 ## Estado actual
 
-**App estable, 1667/1667 unit + 65/65 E2E verdes, lint limpio.** Último cambio: renombre de secciones, Dashboard → Inicio y Agenda → Calendario (SW v236, ver abajo). Antes: fix de flakiness E2E (fecha "hoy" en hora local), **A11Y.4** fondo inerte con modal abierto (SW v235), auditoría a11y A11Y.1-3, épica EP completa (11/11 secciones con banner de propósito). **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1677/1677 unit + 65/65 E2E verdes, lint limpio.** Último cambio: **MC.5a**, primer slice de la épica de Límites como centro de control (SW v237). Antes: renombre de secciones Dashboard → Inicio y Agenda → Calendario (SW v236), fix de flakiness E2E (fecha "hoy" en hora local), **A11Y.4** fondo inerte con modal abierto (SW v235), auditoría a11y A11Y.1-3. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -223,7 +223,7 @@ Slices de implementación de MC.6 (smallest-first, ver ADR 013):
 ✅ **MC.5 (diseño) = [ADR 017](DECISIONS/017-limites-centro-de-control.md).** Límites de gasto como centro de control de los 3 grupos. Decisiones cerradas con el usuario: (1) **enfoque** = diseño primero (ADR), luego slices; (2) **presupuesto por grupo** = sale de la distribución (MC.6), Límites solo hace seguimiento, cero datos nuevos ni schema; (3) **topes por categoría** = se conservan como el detalle del grupo Estilo de vida (no se migran). El ejecutado por grupo se deriva de los flujos del mes (Agenda + deudas → Necesidades; `gastosMes` → Estilo de vida; fondo + metas + apartados + inversiones → Ahorro), reusando `GRUPO_POR_SECCION` (ADR 014) y `sugerirDistribucionIngreso` (ADR 013). Sin schema nuevo en v1 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
 
 Slices de implementación de MC.5 (smallest-first, ver ADR 017):
-- **MC.5a** - `logic.js` puro: `resumenGrupos(asignado, ejecutado)` → `{asignado, ejecutado, restante, pct, estado}` por grupo, reusando los umbrales 75%/100%. Tests. Modelo: Sonnet 4.6 - Medio.
+✅ **MC.5a** - `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: agrega `{asignado, ejecutado, restante, pct, estado}` por cada uno de los 3 `GRUPOS_FINANCIEROS`, reusando `UMBRAL_ALERTA`/`UMBRAL_EXCEDIDO` (mismo criterio que `calcularProgreso`). Pura: recibe los montos ya sumados por el caller, no lee `S` ni importa otros dominios. 9 tests nuevos. 1677/1677 unit + 65/65 E2E verdes. SW v236 → v237 - 2026-06-30. Ver [CHANGELOG](CHANGELOG.md).
 - **MC.5b** - Vista read-only del resumen de los 3 grupos arriba de Límites (asignado desde la distribución, ejecutado desde los flujos del mes); topes por categoría como detalle de Estilo de vida; estado vacío que guía a Mis cuentas si no hay ingreso. Modelo: Sonnet 4.6 - Alto.
 - **MC.5c** - Desglose por item dentro de cada grupo (Necesidades por fijo/deuda, Ahorro por destino, Estilo de vida por categoría). Modelo: Sonnet 4.6 - Medio.
 - **MC.5d** - Alertas y refuerzos inteligentes por grupo y por item (los ejemplos aprobados del usuario), puras en `logic.js`. Modelo: Sonnet 4.6 - Medio.

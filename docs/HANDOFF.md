@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-06-30 (feat(nav): renombrar secciones, Dashboard→Inicio y Agenda→Calendario)
+> Última actualización: 2026-06-30 (feat(presupuesto): MC.5a, resumenGrupos por grupo financiero)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1667/1667 verdes |
+| Tests unitarios + integración | 1677/1677 verdes |
 | Tests E2E | 65/65 verde. Suites: `smoke` 29 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(presupuesto): resumenGrupos, primer slice de Límites como centro de control (MC.5a) · 2026-06-30
+
+Primer slice de la épica MC.5 ([ADR 017](DECISIONS/017-limites-centro-de-control.md)). Nueva función pura `resumenGrupos(asignadoPorGrupo, ejecutadoPorGrupo)` en `presupuesto/logic.js`: agrega `{asignado, ejecutado, restante, pct, estado}` por cada grupo financiero (Necesidades, Estilo de vida, Ahorro), reusando el mismo umbral 75%/100% que ya usan los topes por categoría (`calcularProgreso`). Pura por diseño: no lee `S` ni importa otros dominios; el siguiente slice (MC.5b) le pasará el asignado desde la distribución de ingreso y el ejecutado desde los flujos del mes. 9 tests nuevos. 1677/1677 unit + 65/65 E2E verdes. SW v236 → v237.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/logic.js` | `resumenGrupos()` nueva; import de `GRUPOS_FINANCIEROS`. |
+| `tests/unit/presupuesto.test.js` | 9 tests nuevos. |
+| `service-worker.js` | v236 → v237. |
+
+---
 
 ### feat(nav): renombrar secciones, Dashboard → Inicio y Agenda → Calendario · 2026-06-30
 
@@ -90,18 +102,7 @@ Tercer hallazgo de la auditoría de accesibilidad; cierra el anuncio limpio de s
 
 ---
 
-### fix(a11y): quitar aria-live="polite" del &lt;main&gt; (A11Y.2) · 2026-06-30
-
-Segundo hallazgo de la auditoría de accesibilidad. El `<main>` tenía `aria-live="polite"`: cada render y cambio de sección se anunciaba en cascada al lector de pantalla. La app ya tiene regiones live dedicadas y correctas (`announce()`, toasts de logros, hints de formularios, nudges con `role="alert"`), que quedan intactas. Fix sin cambio visual ni de comportamiento: quitado el `aria-live` del `<main>` (se conserva `tabindex="-1"` del skip link). 1658/1658 verdes. SW v232 → v233. Pendiente A11Y.3 (mover el foco al navegar) para el anuncio limpio de sección.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Quitado `aria-live="polite"` del `<main id="main-content">`. |
-| `service-worker.js` | v232 → v233. |
-
----
-
-> Para tareas anteriores (A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

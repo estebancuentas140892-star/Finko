@@ -9,7 +9,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest.
  */
 
-import { CATEGORIAS_GASTO } from '../../core/constants.js';
+import { CATEGORIAS_GASTO, GRUPOS_FINANCIEROS } from '../../core/constants.js';
 import { gastosMes }        from '../gastos/logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -83,6 +83,51 @@ export function calcularProgreso(presupuesto, gastos, anio, mes) {
   else                                           estado = 'ok';
 
   return { gastado, asignado, restante, porcentaje, estado };
+}
+
+// ── RESUMEN POR GRUPO FINANCIERO (MC.5a, ADR 017) ─────────────────
+
+/**
+ * Agrega asignado/ejecutado/restante/% por cada uno de los 3 grupos
+ * financieros (Necesidades, Estilo de vida, Ahorro), con el mismo criterio
+ * de estado que `calcularProgreso` (75% alerta, 100% excedido).
+ *
+ * Pura: recibe los montos ya sumados por el caller (asignado desde la
+ * distribución de ingreso, ejecutado desde los flujos del mes de cada
+ * dominio); no lee `S` ni importa otros dominios (regla ADN #10).
+ *
+ * @param {Partial<Record<'necesidades'|'estilo-de-vida'|'ahorro', number>>} [asignadoPorGrupo]
+ * @param {Partial<Record<'necesidades'|'estilo-de-vida'|'ahorro', number>>} [ejecutadoPorGrupo]
+ * @returns {Record<string, {
+ *   asignado: number,
+ *   ejecutado: number,
+ *   restante: number,
+ *   pct: number,
+ *   estado: 'ok' | 'alerta' | 'excedido',
+ * }>}
+ */
+export function resumenGrupos(asignadoPorGrupo = {}, ejecutadoPorGrupo = {}) {
+  const resumen = {};
+
+  for (const grupo of GRUPOS_FINANCIEROS) {
+    const asignado  = Number(asignadoPorGrupo?.[grupo])  || 0;
+    const ejecutado = Number(ejecutadoPorGrupo?.[grupo]) || 0;
+    const restante  = asignado - ejecutado;
+
+    const pct = asignado > 0
+      ? Math.round((ejecutado / asignado) * 100)
+      : 0;
+
+    let estado;
+    if (asignado === 0)                             estado = 'ok';
+    else if (ejecutado > asignado * UMBRAL_EXCEDIDO) estado = 'excedido';
+    else if (ejecutado >= asignado * UMBRAL_ALERTA)  estado = 'alerta';
+    else                                              estado = 'ok';
+
+    resumen[grupo] = { asignado, ejecutado, restante, pct, estado };
+  }
+
+  return resumen;
 }
 
 /**
