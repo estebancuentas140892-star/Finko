@@ -1,7 +1,7 @@
 # CLAUDE.md - Finko Claude
 
 > **Este archivo es el punto de entrada para Claude Code (y cualquier asistente IA) al abrir esta carpeta.**
-> Última revisión: 2026-05-18
+> Última revisión: 2026-07-02
 
 ---
 
@@ -73,39 +73,42 @@ Al cerrar una tarea **siempre** decir, en este orden:
 ```
 ─── Próximo paso ──────────────────────────────────
 Tarea siguiente : <título corto>
-Modelo sugerido : <Haiku 4.5 | Sonnet 4.6 - <nivel> | Opus 4.7 - <nivel>>
+Modelo sugerido : <Haiku 4.5 | Sonnet 5 - <nivel> | Opus 4.8 - <nivel> | Fable 5 - <nivel>>
 Por qué         : <una línea justificando modelo+nivel>
 ───────────────────────────────────────────────────
 ```
 
+**Escala de modelos (familia Claude 5, revisada 2026-07-02):**
+
+- **Haiku 4.5:** tareas rápidas y sencillas; prioriza velocidad.
+- **Sonnet 5:** equilibrio rendimiento/costo; el caballo de batalla del día a día.
+- **Opus 4.8:** trabajo complejo que requiere razonamiento profundo.
+- **Fable 5:** máximo razonamiento; proyectos extensos, decisiones críticas, agentes de larga duración. Sujeto a límites de uso más estrictos.
+
 **Combinaciones válidas modelo + nivel** (no inventar otras, no mezclar):
 
-| Modelo      | Niveles permitidos                                |
-|---          |---                                                |
-| Haiku 4.5   | (sin nivel - siempre se escribe `Haiku 4.5`)                |
-| Sonnet 4.6  | Bajo · Medio · Alto · Max                                   |
-| Opus 4.7    | Bajo · Medio · Alto · Extra Alto · Max                      |
-| Opus 4.8    | Bajo · Medio · Alto · Extra · Max                           |
+| Modelo      | Niveles permitidos                            |
+|---          |---                                            |
+| Haiku 4.5   | (sin nivel: siempre se escribe `Haiku 4.5`)   |
+| Sonnet 5    | Bajo · Medio · Alto                           |
+| Opus 4.8    | Alto · Extra                                  |
+| Fable 5     | Alto · Extra · Max                            |
 
 **Cuándo usar cada combinación.** Objetivo: **ahorrar tokens sin sacrificar calidad de código**. Ante la duda, subir un escalón antes que bajarlo: la calidad nunca se sacrifica.
 
-| Combinación                | Cuándo usarla                                                                                              |
-|---                         |---                                                                                                          |
-| **Haiku 4.5**              | Verificación de tests verdes, lint, scripts triviales, renombres mecánicos, bumps de constantes (E.1/E.2), leer-y-reportar sin decisiones. |
-| **Sonnet 4.6 - Bajo**      | CSS aislado, ajuste de copy, fix puntual con causa ya identificada, doc update; < 30 min, 1-2 archivos.    |
-| **Sonnet 4.6 - Medio**     | Feature nueva en un solo dominio siguiendo patrón ya existente; 30-90 min, 3-6 archivos, tests nuevos.     |
-| **Sonnet 4.6 - Alto**      | Feature que toca varios dominios o introduce patrones de UI/datos nuevos; 90 min - media jornada.          |
-| **Sonnet 4.6 - Max**       | Equivalente a Opus Medio/Alto pero con el costo de Sonnet: lógica compleja, refactor cross-domain acotado, debugging sin pista clara. Preferir sobre Opus cuando el dominio es UI o tests (no finanzas CO puras). |
-| **Opus 4.7 - Bajo**        | Bug sutil en lógica financiera (regla 72, sistema francés, EA↔mensual, retenciones) con repro clara.       |
-| **Opus 4.7 - Medio**       | Nueva lógica financiera CO no trivial (amortización de deudas, escenarios fiscales, proyecciones).         |
-| **Opus 4.7 - Alto**        | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio.        |
-| **Opus 4.7 - Extra Alto**  | Refactor mayor o feature multidominio con trade-offs no obvios y riesgo real de regresión.                  |
-| **Opus 4.7 - Max**         | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).      |
-| **Opus 4.8 - Bajo**        | Mismo uso que Opus 4.7 - Bajo: bug sutil en lógica financiera con repro clara.                             |
-| **Opus 4.8 - Medio**       | Mismo uso que Opus 4.7 - Medio: nueva lógica financiera CO no trivial.                                     |
-| **Opus 4.8 - Alto**        | Mismo uso que Opus 4.7 - Alto: decisión arquitectural acotada, refactor cross-domain, nuevo dominio.       |
-| **Opus 4.8 - Extra**       | Mismo uso que Opus 4.7 - Extra Alto: refactor mayor o feature multidominio con trade-offs.                 |
-| **Opus 4.8 - Max**         | Mismo uso que Opus 4.7 - Max: reescritura crítica, debugging extremo, cambio en el ADN.                    |
+| Combinación           | Cuándo usarla                                                                                              |
+|---                    |---                                                                                                          |
+| **Haiku 4.5**         | Verificación de tests verdes, lint, scripts triviales, renombres mecánicos, bumps de constantes (E.1/E.2), leer y reportar sin decisiones. |
+| **Sonnet 5 - Bajo**   | CSS aislado, ajuste de copy, fix puntual con causa ya identificada, doc update; < 30 min, 1-2 archivos.    |
+| **Sonnet 5 - Medio**  | Trabajo cotidiano: feature nueva en un solo dominio siguiendo patrón ya existente; 30-90 min, 3-6 archivos, tests nuevos. Punto de partida si hay duda. |
+| **Sonnet 5 - Alto**   | Feature que toca varios dominios o introduce patrones de UI/datos nuevos; refactor acotado, debugging con pista clara, revisión de código; 90 min - media jornada. |
+| **Opus 4.8 - Alto**   | Bug sutil en lógica financiera (regla 72, sistema francés, EA↔mensual, retenciones), nueva lógica financiera CO no trivial, debugging sin pista clara. |
+| **Opus 4.8 - Extra**  | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio, tareas largas de varios pasos.  |
+| **Fable 5 - Alto**    | Refactor mayor o feature multidominio con trade-offs no obvios y riesgo real de regresión.                 |
+| **Fable 5 - Extra**   | Auditoría o análisis de la base de código completa, investigación técnica profunda, trabajo agéntico de larga duración. |
+| **Fable 5 - Max**     | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).     |
+
+**Regla práctica de escalado:** empezar con el modelo más sencillo que pueda resolver la tarea. Si falta profundidad, subir primero el **nivel de esfuerzo** dentro del mismo modelo; solo cuando el alcance supere al modelo, saltar al siguiente (Haiku → Sonnet → Opus → Fable).
 
 **Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después de verificar y commitear lo actual**, no qué se hace **ahora**. Si el usuario pide encadenar tareas, recordar esta regla y proponer hacer la primera, verificar en la app, y recién después la segunda.
 
