@@ -74,7 +74,6 @@
   color: var(--fk-text-primary);
 }
 .chart-stat--positivo .chart-stat__valor { color: var(--fk-text-accent); }
-.chart-stat--negativo .chart-stat__valor { color: var(--fk-danger); }
 
 /* Donut - distribución por categoría */
 .analisis__cat-layout {

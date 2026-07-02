@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (fix(copy): voseo, tildes y términos viejos corregidos, AUD.3)
+> Última actualización: 2026-07-02 (fix(color): semántica de color del gasto neutral, no roja, AUD.4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(color): semántica de color del gasto neutral, no roja (AUD.4) · 2026-07-02
+
+Cuarto slice de la auditoría integral del 2026-07-02. Dos lugares pintaban el monto de gasto en rojo fijo, lo que contradice el criterio de ADR 019 (verde = logro, ámbar = advertencia, rojo = incumplimiento) y el tono neutral de ADR 008: gastar no es incumplir. (1) El total de "Resumen de la semana" en Inicio y el "Pendiente" en Préstamos ([styles/components/domain.css](../styles/components/domain.css), clase compartida `.resumen-card__stat--primary`) usaban `--fk-danger-text`; ahora `--fk-text-primary` (neutro). (2) La variación al alza del gasto mensual en Análisis (`.chart-stat--negativo`, [styles/components/charts.css](../styles/components/charts.css)) usaba `--fk-danger`; se eliminó la regla (el color base de `.chart-stat__valor` ya es neutro) y se quitó la asignación de esa clase en [analisis/view.js](../modules/dominio/analisis/view.js). Se decidió neutro y no ámbar para la variación al alza, por consistencia con el texto de tendencia semanal (ya neutro desde F8) y porque no hay un umbral incumplido que justifique una advertencia. Bajar el gasto sigue en verde (`chart-stat--positivo`, `resumen-card__trend--baja`): sí es un logro. Sin tests nuevos (cambio de color puro, sin lógica; ningún test referenciaba estas clases). 1764/1764 unit + 81/81 E2E verdes. SW v250 → v251.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/components/domain.css` | `.resumen-card__stat--primary .resumen-card__value`: `--fk-danger-text` → `--fk-text-primary`. |
+| `styles/components/charts.css` | Eliminada `.chart-stat--negativo` (color danger); el neutro ya es el default de `.chart-stat__valor`. |
+| `modules/dominio/analisis/view.js` | `_renderTendencia` ya no asigna `chart-stat--negativo` al subir el gasto. |
+| `service-worker.js` | v250 → v251. |
+
+---
 
 ### fix(copy): voseo, tildes y términos viejos corregidos (AUD.3) · 2026-07-02
 
@@ -99,20 +112,7 @@ Segundo slice grande de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md), decis
 
 ---
 
-### fix(presupuesto): la tarjeta de Ahorro celebra en verde al superar la meta (MC.8) · 2026-07-01
-
-Petición del usuario: superar la meta de Ahorro se pintaba de rojo (barra danger, "Excedido" rojo), lo que transmite error cuando es un buen hábito. `_renderGrupoCard` (`presupuesto/view.js`) se hace consciente del rol para Ahorro: `pct >= 100` usa paleta positiva (verde), nunca ámbar ni rojo. Barra `progress-bar--complete` verde, estado visual nuevo `logro` (borde/fondo verdes) en vez de `excedido`, y la tercera cifra "Ahorrado de más" en verde (`is-positive`) en vez de "Excedido" rojo; no llegar aún es "Te falta" (neutro). Consolida la regla de color: verde = logros/ahorro, ámbar = advertencias, rojo = incumplimientos. Necesidades conserva su chrome (su reencuadre es MC.8b). 1 E2E nuevo. 1758/1758 unit; 77/77 → 78/78 E2E. Verificado en el navegador. SW v245 → v246.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/view.js` | `_renderGrupoCard` con paleta positiva por rol para Ahorro (estado `logro`, barra verde, cifra `is-positive`). |
-| `styles/components/analysis.css` | `.grupo-card[data-estado="logro"]` + `.grupo-card__fig dd.is-positive`. |
-| `tests/e2e/smoke.test.js` | 1 test nuevo (Ahorro superado en verde, nunca rojo). |
-| `service-worker.js` | v245 → v246. |
-
----
-
-> Para tareas anteriores (MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

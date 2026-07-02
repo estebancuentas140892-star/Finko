@@ -419,9 +419,9 @@ function _renderTendencia(serie) {
   const sinBase  = anterior === 0 && delta > 0;
   const deltaPct = anterior > 0 ? Math.round((delta / anterior) * 100) : 0;
 
-  // Tendencia: ⬆ = más gasto (malo), ⬇ = menos gasto (bueno).
+  // Gastar más no es incumplir (ADR 019): solo bajar el gasto se celebra
+  // en verde; subir queda en el color neutro por defecto de chart-stat__valor.
   const tendenciaClase = sinBase ? ''
-    : delta > 0 ? 'chart-stat--negativo'
     : delta < 0 ? 'chart-stat--positivo'
     :             '';
   const tendenciaIcono = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
