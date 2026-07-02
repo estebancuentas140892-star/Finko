@@ -35,6 +35,8 @@ import {
 } from '../../modules/dominio/compromisos/logic.js';
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
+import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
+import { renderPanelPrioridades } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
@@ -1219,6 +1221,18 @@ describe('detectarVencidosCompletos', () => {
     expect(result[0].tipo).toBe('deuda-entidad');
   });
 
+  it('expone la cuota mensual como monto en deudas vencidas (regresión: mostraba $0)', () => {
+    const result = detectarVencidosCompletos([
+      comp({ id: 'a', tipo: 'fijo', diaPago: 1 }),
+      comp({
+        id: 'b', tipo: 'deuda-entidad', diaPago: 1,
+        monto: undefined, cuotaMensual: 410_000, saldoTotal: 5_800_000,
+      }),
+    ], '2026-05-15');
+    expect(result.find(r => r.id === 'a').monto).toBe(1_500_000);
+    expect(result.find(r => r.id === 'b').monto).toBe(410_000);
+  });
+
   it('no incluye compromisos cuyo dia de pago aun no llego', () => {
     // diaPago=20, hoy=15 → diasAtraso=-5
     expect(detectarVencidosCompletos(
@@ -1634,6 +1648,57 @@ describe('renderListaCompromisos() - categoría en el contexto', () => {
     renderListaCompromisos();
     const html = document.getElementById('lista-compromisos').innerHTML;
     expect(html).toContain('Deuda con entidad · 28%');
+  });
+});
+
+// ── renderAlertaDeudasDurmiendo() ────────────────────────────────
+
+describe('renderAlertaDeudasDurmiendo() - saldo pendiente (regresión $NaN)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="nudge-deudas-durmiendo"></div>';
+    S.compromisos = [];
+  });
+
+  it('muestra el saldoTotal formateado de la deuda, nunca NaN', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
+      saldoTotal: 5_800_000, cuotaMensual: 410_000, frecuencia: 'Mensual',
+      diaPago: 2, activo: true, fechaCreacion: '2025-01-15T10:00:00Z',
+    }];
+    renderAlertaDeudasDurmiendo();
+    const html = document.getElementById('nudge-deudas-durmiendo').innerHTML;
+    expect(html).toContain('$5.800.000 pendiente');
+    expect(html).not.toContain('NaN');
+  });
+});
+
+// ── renderPanelPrioridades() ─────────────────────────────────────
+
+describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifra)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-prioridades"></div>';
+    S.compromisos = [];
+    S.personales  = [];
+    S.apartados   = [];
+  });
+
+  it('muestra la cuota mensual de una deuda próxima a vencer', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
+      saldoTotal: 5_800_000, cuotaMensual: 410_000, frecuencia: 'Mensual',
+      diaPago: DIA_HOY, activo: true, fechaCreacion: '2025-01-15T10:00:00Z',
+    }];
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).toContain('Préstamo moto');
+    expect(html).toContain('$410.000');
+  });
+
+  it('sigue mostrando el monto de los gastos fijos', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_HOY })];
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).toContain('$1.500.000');
   });
 });
 

@@ -414,14 +414,22 @@ function _renderTendencia(serie) {
   const actual  = valores[valores.length - 1];
   const anterior = valores.length >= 2 ? valores[valores.length - 2] : actual;
   const delta   = actual - anterior;
+  // Sin gastos el mes anterior no hay base para un porcentaje: mostrar
+  // "↑ 0%" en rojo confunde. Mismo criterio que el resumen semanal (F8).
+  const sinBase  = anterior === 0 && delta > 0;
   const deltaPct = anterior > 0 ? Math.round((delta / anterior) * 100) : 0;
 
   // Tendencia: ⬆ = más gasto (malo), ⬇ = menos gasto (bueno).
-  const tendenciaClase = delta > 0 ? 'chart-stat--negativo' : delta < 0 ? 'chart-stat--positivo' : '';
+  const tendenciaClase = sinBase ? ''
+    : delta > 0 ? 'chart-stat--negativo'
+    : delta < 0 ? 'chart-stat--positivo'
+    :             '';
   const tendenciaIcono = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
-  const tendenciaTexto = delta === 0
-    ? 'Igual que el mes pasado'
-    : `${tendenciaIcono} ${Math.abs(deltaPct)}% vs mes anterior`;
+  const tendenciaTexto = sinBase
+    ? 'Sin gastos el mes anterior para comparar'
+    : delta === 0
+      ? 'Igual que el mes pasado'
+      : `${tendenciaIcono} ${Math.abs(deltaPct)}% vs mes anterior`;
 
   const svg = sparkline(valores, {
     width: 600, height: 80, color: 'var(--fk-accent, #00dc82)',

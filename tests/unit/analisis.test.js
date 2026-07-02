@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   generarResumen,
   calcularActivos,
@@ -19,6 +19,8 @@ import {
   detectarNudgesRenta,
 } from '../../modules/dominio/analisis/logic.js';
 import { UVT, TOPES_RENTA_UVT } from '../../modules/core/constants.js';
+import { renderAnalisis } from '../../modules/dominio/analisis/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -1414,5 +1416,46 @@ describe('calcularEstadoRenta() con datos fiscales manuales', () => {
     }, 2026);
     expect(crit(r, 'patrimonioBruto').valor).toBe(5_000_000);
     expect(crit(r, 'consumosTotales').valor).toBe(1_000_000);
+  });
+});
+
+// ── renderAnalisis() - variación de tendencia ────────────────────
+
+describe('renderAnalisis() - variación sin base (regresión: "↑ 0%" en rojo)', () => {
+  /** Fecha YYYY-MM-DD del día `dia` del mes actual + offset. */
+  const fechaMes = (offset, dia) => {
+    const ahora = new Date();
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() + offset, dia);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos      = [];
+    S.compromisos = [];
+    S.cuentas     = [];
+    S.metas       = [];
+    S.apartados   = [];
+    S.inversiones = [];
+  });
+
+  it('sin gastos el mes anterior muestra el aviso neutro, no un porcentaje', () => {
+    S.gastos = [gasto({ fecha: fechaMes(0, 1), monto: 387_000 })];
+    renderAnalisis();
+    const html = document.getElementById('panel-analisis').innerHTML;
+    expect(html).toContain('Sin gastos el mes anterior para comparar');
+    expect(html).not.toContain('0% vs mes anterior');
+  });
+
+  it('con gastos en ambos meses sí muestra el porcentaje de variación', () => {
+    S.gastos = [
+      gasto({ id: 'g1', fecha: fechaMes(-1, 1), monto: 200_000 }),
+      gasto({ id: 'g2', fecha: fechaMes(0, 1),  monto: 300_000 }),
+    ];
+    renderAnalisis();
+    const html = document.getElementById('panel-analisis').innerHTML;
+    expect(html).toContain('↑ 50% vs mes anterior');
   });
 });

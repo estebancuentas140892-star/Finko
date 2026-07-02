@@ -587,7 +587,8 @@ export function detectarVencidosCompletos(compromisos, hoyISO, config = {}) {
       id:          c.id,
       descripcion: c.descripcion || 'Sin nombre',
       tipo:        c.tipo,
-      monto:       Number(c.monto) || 0,
+      // Las deudas no tienen `monto` desde v6: lo que vence cada mes es la cuota.
+      monto:       esDeuda(c.tipo) ? (Number(c.cuotaMensual) || 0) : (Number(c.monto) || 0),
       diaPago,
       diasAtraso,
       severidad,

@@ -45,7 +45,7 @@ export function renderAlertaDeudasDurmiendo() {
   const items = deudas.slice(0, 3).map(d => {
     const desc    = _esc(d.descripcion);
     const meses   = d.mesesDesdeCreacion;
-    const saldo   = f(d.saldoPendiente);
+    const saldo   = f(d.saldoTotal);
     const consejo = d.sugerencia === 'liquidar'
       ? 'puedes liquidarla con la próxima cuota'
       : 'retoma los pagos para evitar intereses';

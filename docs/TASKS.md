@@ -1,13 +1,13 @@
 # TASKS - Finko Claude
 
 > Tablero de tareas activas. Se actualiza al final de cada sesión.
-> Última actualización: 2026-07-01
+> Última actualización: 2026-07-02
 
 ---
 
 ## Estado actual
 
-**App estable, 1758/1758 unit + 81/81 E2E verdes, lint limpio.** Último cambio: **MC.8b** (fusión de topes en la tarjeta de Estilo de vida): desaparece el bloque suelto y su hero; los topes viven dentro de la tarjeta con la línea de "olla finita" (`coberturaLimitesEstiloVida`) y el botón "Agregar límite"; `_renderGrupoCard` es consciente del rol y Necesidades queda neutra (estado `monitor`, sin alarma). SW v247. Antes: fix visual del Ahorro (verde al superar), MC.8a (mensajes por rol). Siguiente: **MC.8c** (layout: Necesidades + Ahorro en dos columnas compactas, Estilo de vida en fila completa; apilado en móvil. CSS + responsive). Luego **MC.8d** (pulido opcional). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
+**App estable, 1764/1764 unit + 81/81 E2E verdes, lint limpio.** Último cambio: **AUD.1** (los 4 bugs funcionales visibles de la auditoría integral del 2026-07-02: $NaN en el nudge de deudas durmiendo, $0 en deudas vencidas, monto omitido en prioridades, variación "↑ 0%" sin base en Análisis). SW v248. Antes: MC.8b (fusión de topes en la tarjeta de Estilo de vida), fix visual del Ahorro, MC.8a. Siguiente sugerido: **AUD.2** (variables CSS fantasma, ver backlog de auditoría integral abajo) o **MC.8c** (layout: Necesidades + Ahorro en dos columnas compactas, Estilo de vida en fila completa). **MC.7 en pausa** (íbamos por MC.7d), se retoma tras MC.8. **Épica EP completa. Rediseño visual 2026 completo: las 8 fases cerradas.**
 
 **Workflow vigente desde 2026-06-12: deploy continuo.** Cada tarea cerrada se verifica (tests + desktop + móvil), se commitea y se pushea a producción de inmediato (Vercel auto-redeploya: https://finko-brown.vercel.app). El usuario valida cada cambio desde su celular.
 
@@ -46,6 +46,24 @@ _(sin tarea activa)_
 **✅ Jornada 2 de "Visión de Deudas" completa (D.6-D.9).** El bloque inviable quedó limpio: botón único → panel → selector, y "Aumentar la cuota" ya aplica.
 
 **✅ D.5 + D.5a cerrados: categorías de deuda en dos dimensiones ([ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md)).** Eje "qué" curado (12 → 7), migración v18 → v19, sin campo Acreedor. **Con esto, la serie completa de Deudas (D.1-D.9 + D.5/D.5a) queda cerrada.** **MC.6b, EP.0, EP.1 y EP.2 cerrados (2026-06-30).** Siguiente sugerido: **EP.3** (copy + slot para Metas, Ahorro, Inversión; reutiliza helper EP.1, Sonnet 4.6 - Bajo), **AG.1** (decidir nombre Agenda vs Calendario, Sonnet 4.6 - Bajo), o **MC.6c** (señales más ricas para la distribución, opcional).
+
+### Backlog de auditoría integral (2026-07-02)
+
+Auditoría completa de producto pedida por el usuario (UX, UI, tipografía, a11y, lenguaje, arquitectura de información, integración, rendimiento, responsive, consistencia funcional). Método: revisión de código de infra + CSS + vistas de todos los dominios, más 29 capturas reales con Playwright (desktop 1280px y móvil 375px, tema claro y oscuro, datos sembrados y estado vacío). **Hallazgo general: base sobresaliente; deuda corta y localizada.** Sin acciones de rediseño: la UI actual es moderna y la tipografía (Inter variable self-hosted) es la correcta. ✅ **AUD.1** (los 4 bugs funcionales visibles) se corrigió el 2026-07-02, ver [CHANGELOG](CHANGELOG.md). Quedan:
+
+**AUD.2 (media) - Variables CSS fantasma.** 15 variables usadas pero nunca definidas (~34 usos): `--fk-primary` (el `accent-color` de radios/checkboxes cae al azul del navegador, visible en el selector de cuenta), `--fk-border` (bordes caen a `currentColor`), `--fk-bg`/`--fk-surface`/`--fk-text` (fondos de charts transparentes), `--fk-weight-bold/medium/semibold/regular` y `--fk-font-normal` (pesos caen a regular), `--fk-radius`, `--fk-radius-pill`, `--fk-surface-subtle`, `--fk-text-md`, `--fk-text-2xs`. Archivos: [styles/components/charts.css](../styles/components/charts.css), [domain.css](../styles/components/domain.css), [analysis.css](../styles/components/analysis.css), [forms.css](../styles/components/forms.css), [config.css](../styles/components/config.css). Mapear cada una al token real de [styles/tokens.css](../styles/tokens.css). Detección reproducible: extraer `var(--fk-...)` usados y compararlos contra los definidos en tokens.css + themes.css. Modelo: Sonnet 4.6 - Bajo.
+
+**AUD.3 (media) - Copy: voseo, tildes y términos viejos.** (1) [modules/dominio/logros/logic.js](../modules/dominio/logros/logic.js): "Tenes 3 o mas", "un prestamo que vos le diste", "configuracion", "esta lista" (viola ADN regla 11; ya anotado también en LG.1). (2) "Ver agenda" / "Ir a la agenda" en [compromisos/views/dashboard.js](../modules/dominio/compromisos/views/dashboard.js) (la sección se llama Calendario desde AG.1). (3) "dashboard" en empty states de [gastos/view.js](../modules/dominio/gastos/view.js) y [tesoreria/view.js](../modules/dominio/tesoreria/view.js) (la sección se llama Inicio). (4) `APP_VERSION = '0.1.0'` en [core/constants.js](../modules/core/constants.js), visible en Ajustes > Acerca de Finko (el proyecto va en v1.x). (5) "Toca una estrategia" en Deudas se lee raro en desktop; "Elige una estrategia" sirve en ambos. Modelo: Sonnet 4.6 - Bajo.
+
+**AUD.4 (media) - Semántica de color del gasto.** El total de "Resumen de la semana" (Inicio) se pinta rojo fijo (`.resumen-card__stat--primary .resumen-card__value` en [styles/components/domain.css](../styles/components/domain.css)) y en Análisis la subida de gasto también va en rojo (`chart-stat--negativo`), cuando gastar no es incumplir: contradice el criterio consolidado en ADR 019 (verde = logro, ámbar = advertencia, rojo = incumplimiento) y el tono neutral de ADR 008 (el propio resumen semanal presenta la subida sin alarma en el texto). Propuesta: total semanal en neutro (`--fk-text-primary`); decidir si la variación al alza en Análisis queda neutra o ámbar. Modelo: Sonnet 4.6 - Bajo.
+
+**AUD.5 (media) - Descubribilidad y robustez.** Tres ajustes independientes que pueden ir juntos: (1) **Sidebar con pliegue**: en alturas de ventana <= 800px el grupo Herramientas (Análisis) queda bajo el scroll interno del sidebar sin ningún indicio visual; compactar el espaciado vertical de los nav-groups o añadir un fade que insinúe scroll ([styles/layout.css](../styles/layout.css)). (2) **Tormenta de toasts de logros**: al desbloquearse varios a la vez (restaurar respaldo JSON, importar CSV) se encadena un toast con confetti cada 1.4s ([logros/index.js](../modules/dominio/logros/index.js)) que tapa contenido; si se desbloquean más de 2, mostrar uno solo "Desbloqueaste N logros" (se cruza con LG.1a). (3) **`save()` sin flush al cerrar**: el debounce de 200ms ([core/storage.js](../modules/core/storage.js)) puede perder el último cambio si la pestaña se cierra o el sistema mata la PWA en móvil; agregar flush inmediato en `visibilitychange` (hidden) / `pagehide`. Modelo: Sonnet 4.6 - Medio.
+
+**AUD.6 (baja, opcional) - Hint del modelo del fondo de emergencia.** Metas y Apartados descuentan de las cuentas al aportar; el Fondo de emergencia no (tracker paralelo, documentado en [analisis/logic.js](../modules/dominio/analisis/logic.js) y coherente en el patrimonio neto). El usuario no ve esa diferencia y puede hacer doble contabilidad mental. Un hint en la card del fondo ("este dinero sigue en tus cuentas; el fondo solo lo aparta de tu vista") cierra la brecha. Ojo: **AH.3** (backlog Ahorro) propone lo contrario (que el aporte sí descuente); resolver ambos en la misma decisión. Modelo: Sonnet 4.6 - Bajo (o se absorbe en el ADR de AH.3).
+
+Notas sin acción inmediata: la dona de "Gastos por categoría" (Análisis) usa colores por categoría pero las barras laterales son todas verdes (unificar la paleta si se toca Análisis); el layout de Límites en 3 columnas desiguales ya lo cubre **MC.8c**.
+
+---
 
 ### Backlog de auditoría: accesibilidad, color y responsividad (2026-06-30)
 

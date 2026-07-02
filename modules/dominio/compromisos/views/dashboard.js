@@ -130,7 +130,10 @@ export function renderPanelPrioridades() {
           : tipo === 'apartado'  ? (c.icono ? _esc(c.icono) : icon('apartados'))
           : icon(ICONO_TIPO[tipo] ?? 'recurring');
         const desc  = _esc(c.descripcion ?? '(sin descripción)');
-        const monto = Number.isFinite(Number(c.monto)) ? f(Number(c.monto)) : '';
+        // Las deudas guardan su cuota en `cuotaMensual` (v6); fijos, préstamos
+        // personales y apartados llegan con `monto`.
+        const valor = Number(c.monto ?? c.cuotaMensual);
+        const monto = Number.isFinite(valor) ? f(valor) : '';
         return `
           <li class="prioridades-card__item">
             <span class="prioridades-card__dot cal-dot--${dotTipo}" aria-hidden="true">${icono}</span>
