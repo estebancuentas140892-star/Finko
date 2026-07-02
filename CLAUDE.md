@@ -78,6 +78,15 @@ Por qué         : <una línea justificando modelo+nivel>
 ───────────────────────────────────────────────────
 ```
 
+**Orden de prioridad al elegir modelo + nivel (regla del usuario, 2026-07-02):** la calidad del resultado manda siempre, en especial en programación. Nunca sacrificar calidad de código, razonamiento, arquitectura o confiabilidad para ahorrar tokens.
+
+1. Elegir el modelo con mayor probabilidad de entregar la mejor solución para la tarea.
+2. Si dos modelos ofrecen prácticamente el mismo nivel de calidad, preferir el más eficiente en tokens.
+3. Ajustar el nivel de esfuerzo solo cuando haga falta: no usar uno superior sin razón, pero tampoco recortar si compromete el resultado.
+4. No usar un modelo excesivo para una tarea simple, pero tampoco uno insuficiente para ahorrar tokens si eso puede afectar la solución.
+
+La optimización de tokens es el criterio de desempate, nunca el criterio principal.
+
 **Escala de modelos (familia Claude 5, revisada 2026-07-02):**
 
 - **Haiku 4.5:** tareas rápidas y sencillas; prioriza velocidad.
