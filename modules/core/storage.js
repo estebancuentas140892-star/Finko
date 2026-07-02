@@ -375,12 +375,30 @@ function _flush() {
 }
 
 /**
- * Sólo para tests: fuerza un flush inmediato sin esperar al debounce.
- * No usar en código de producción - siempre llamar a save().
+ * Fuerza un flush inmediato sin esperar al debounce. Uso normal: siempre
+ * llamar a save(). Excepciones válidas: tests, y `initFlushOnHide()` abajo
+ * (cierre de pestaña, donde no hay tiempo de esperar los 200ms).
  */
 export function _flushNow() {
   if (_saveTimer != null) clearTimeout(_saveTimer);
   _flush();
+}
+
+/**
+ * Registra el flush inmediato de S al ocultar o cerrar la pestaña.
+ * El debounce de save() (200ms) puede perder el último cambio si el usuario
+ * cierra la pestaña o el sistema mata la PWA en móvil antes de que corra.
+ * Solo flushea si hay un guardado pendiente (_saveTimer activo); no escribe
+ * a localStorage sin necesidad.
+ */
+export function initFlushOnHide() {
+  const flushSiPendiente = () => {
+    if (_saveTimer != null) _flushNow();
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushSiPendiente();
+  });
+  window.addEventListener('pagehide', flushSiPendiente);
 }
 
 export { STORAGE_KEY, SCHEMA_VERSION };

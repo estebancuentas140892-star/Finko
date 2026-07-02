@@ -60,6 +60,30 @@
   gap: var(--fk-space-1);
 }
 
+/* En ventanas bajas el último grupo (Herramientas) queda bajo el scroll
+   interno del nav sin ningún indicio visual. Se compacta el espaciado y se
+   añade un fade pegado al fondo que insinúa que hay más para desplazar.
+   min-width 1024px: solo el sidebar de escritorio, no el bottom nav móvil
+   (que ya aplana el nav a fila y no tiene scroll vertical). */
+@media (max-height: 800px) and (min-width: 1024px) {
+  .nav-group {
+    margin-top: var(--fk-space-2);
+  }
+  .nav-group__label {
+    padding-bottom: 4px;
+  }
+  .sidebar__nav::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    display: block;
+    height: 20px;
+    margin-top: -20px;
+    background: linear-gradient(to bottom, transparent, var(--fk-bg-surface));
+    pointer-events: none;
+  }
+}
+
 .nav-item {
   position: relative;
   display: flex;

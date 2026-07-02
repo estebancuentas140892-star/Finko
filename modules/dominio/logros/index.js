@@ -49,6 +49,13 @@ function _checkYMostrar() {
   S.logros = [...yaLogrados, ...nuevos];
   save();
 
+  // 3+ logros a la vez (ej. al restaurar un respaldo o importar un CSV) satura
+  // la pantalla con un toast encadenado cada 1.4s; un solo toast resume mejor.
+  if (nuevos.length > 2) {
+    _mostrarToast({ emoji: '🏆', nombre: `${nuevos.length} logros nuevos` }, 'Logros desbloqueados');
+    return;
+  }
+
   // Mostrar de a uno con un pequeño delay para que no se solapen.
   nuevos.forEach((id, i) => {
     const logro = LOGROS.find(l => l.id === id);
@@ -66,8 +73,9 @@ const DURACION_MS = 2500;
  * Se auto-elimina tras DURACION_MS ms.
  *
  * @param {{ emoji: string, nombre: string }} logro
+ * @param {string} [label] Texto de la etiqueta superior. Default: "Logro desbloqueado".
  */
-function _mostrarToast(logro) {
+function _mostrarToast(logro, label = 'Logro desbloqueado') {
   const toast = document.createElement('div');
   toast.className = 'logro-toast';
   toast.setAttribute('role', 'status');
@@ -75,7 +83,7 @@ function _mostrarToast(logro) {
   toast.innerHTML = `
     <span class="logro-toast__emoji" aria-hidden="true">${logro.emoji}</span>
     <div class="logro-toast__body">
-      <p class="logro-toast__label">Logro desbloqueado</p>
+      <p class="logro-toast__label">${_esc(label)}</p>
       <p class="logro-toast__nombre">${_esc(logro.nombre)}</p>
     </div>`;
 

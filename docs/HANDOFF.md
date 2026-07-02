@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (fix(color): semántica de color del gasto neutral, no roja, AUD.4)
+> Última actualización: 2026-07-02 (fix(ux): descubribilidad y robustez, sidebar/toasts/flush de guardado, AUD.5)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(ux): descubribilidad y robustez, sidebar/toasts/flush de guardado (AUD.5) · 2026-07-02
+
+Quinto slice de la auditoría integral del 2026-07-02, tres ajustes independientes. (1) **Sidebar con pliegue**: en ventanas de altura <= 800px (solo escritorio, `min-width: 1024px`) el último grupo del sidebar (Herramientas) queda bajo el scroll interno sin ningún indicio visual; [styles/layout.css](../styles/layout.css) compacta el espaciado vertical de los `.nav-group` y agrega un fade `position: sticky` pegado al fondo del `.sidebar__nav` que insinúa que hay más para desplazar. (2) **Tormenta de toasts de logros**: al desbloquearse 3 o más logros a la vez (restaurar un respaldo JSON, importar un CSV) se encadenaba un toast con confetti cada 1.4s que tapaba contenido; [logros/index.js](../modules/dominio/logros/index.js) ahora muestra un solo toast resumen ("N logros nuevos") cuando `nuevos.length > 2`, reusando `_mostrarToast` con un label configurable. Verificado con un script Playwright temporal (no comiteado): 6 logros desbloqueados a la vez → 1 solo toast. (3) **`save()` sin flush al cerrar**: el debounce de 200ms podía perder el último cambio si la pestaña se cerraba o el sistema mataba la PWA en móvil antes de que corriera; nueva `initFlushOnHide()` en [core/storage.js](../modules/core/storage.js) escucha `visibilitychange` (hidden) y `pagehide`, y fuerza el flush solo si hay un guardado pendiente. Registrada en [ui/bootstrap.js](../modules/ui/bootstrap.js) justo después de `loadData()`. Sin tests nuevos (cambios de CSS/UX sin lógica pura nueva que testear en happy-dom; el toast de logros ya está fuera del alcance de tests unitarios por decisión previa del proyecto, ver comentario en `tests/unit/logros.test.js`). 1764/1764 unit + 81/81 E2E verdes. SW v251 → v252.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/layout.css` | Media query `(max-height: 800px) and (min-width: 1024px)`: espaciado compacto de `.nav-group` + fade sticky al fondo de `.sidebar__nav`. |
+| `modules/dominio/logros/index.js` | `_checkYMostrar` muestra un solo toast resumen si `nuevos.length > 2`; `_mostrarToast` acepta un `label` opcional. |
+| `modules/core/storage.js` | Nueva `initFlushOnHide()`: flush inmediato en `visibilitychange`/`pagehide` si hay guardado pendiente. |
+| `modules/ui/bootstrap.js` | Registra `initFlushOnHide()` justo después de `loadData()`. |
+| `service-worker.js` | v251 → v252. |
+
+---
+
 ### fix(color): semántica de color del gasto neutral, no roja (AUD.4) · 2026-07-02
 
 Cuarto slice de la auditoría integral del 2026-07-02. Dos lugares pintaban el monto de gasto en rojo fijo, lo que contradice el criterio de ADR 019 (verde = logro, ámbar = advertencia, rojo = incumplimiento) y el tono neutral de ADR 008: gastar no es incumplir. (1) El total de "Resumen de la semana" en Inicio y el "Pendiente" en Préstamos ([styles/components/domain.css](../styles/components/domain.css), clase compartida `.resumen-card__stat--primary`) usaban `--fk-danger-text`; ahora `--fk-text-primary` (neutro). (2) La variación al alza del gasto mensual en Análisis (`.chart-stat--negativo`, [styles/components/charts.css](../styles/components/charts.css)) usaba `--fk-danger`; se eliminó la regla (el color base de `.chart-stat__valor` ya es neutro) y se quitó la asignación de esa clase en [analisis/view.js](../modules/dominio/analisis/view.js). Se decidió neutro y no ámbar para la variación al alza, por consistencia con el texto de tendencia semanal (ya neutro desde F8) y porque no hay un umbral incumplido que justifique una advertencia. Bajar el gasto sigue en verde (`chart-stat--positivo`, `resumen-card__trend--baja`): sí es un logro. Sin tests nuevos (cambio de color puro, sin lógica; ningún test referenciaba estas clases). 1764/1764 unit + 81/81 E2E verdes. SW v250 → v251.
@@ -64,22 +78,6 @@ Tercer slice de la auditoría integral del 2026-07-02. Cinco correcciones puntua
 | `modules/core/constants.js` | `APP_VERSION` `'0.1.0'` → `'1.0.0'`. |
 | `modules/dominio/compromisos/views/estrategia.js` | "Toca una estrategia" → "Elige una estrategia". |
 | `service-worker.js` | v249 → v250. |
-
----
-
-### fix(css): 15 variables CSS fantasma mapeadas a tokens reales (AUD.2) · 2026-07-02
-
-Segundo slice de la auditoría integral del 2026-07-02. `charts.css`, `domain.css`, `analysis.css`, `forms.css`, `config.css` y `layout.css` usaban 15 variables `--fk-*` nunca definidas en `tokens.css`: sin definición, el navegador cae al valor inicial (`accent-color` de radios/checkboxes se veía azul del navegador en vez del verde de marca; bordes caían a `currentColor`, invisibles; fondos de charts quedaban transparentes; pesos de fuente caían a `regular`). Mapeo aplicado según el patrón ya establecido en el resto del código: `--fk-primary` → `--fk-accent`; `--fk-border` → `--fk-border-subtle` (convención dominante para bordes de tarjeta, 35 usos contra 15 de `border-default`); `--fk-bg`/`--fk-surface`/`--fk-surface-subtle` → `--fk-bg-surface`/`--fk-bg-elevated` según jerarquía visual (excepto dos usos como `color:` sobre círculos de acento, que van a `--fk-text-on-accent`); `--fk-text` → `--fk-text-primary`; `--fk-weight-*`/`--fk-font-normal` → `--fk-font-*`/`--fk-font-regular`; `--fk-radius` → `--fk-radius-sm`; `--fk-radius-pill` → `--fk-radius-full`; `--fk-text-md` → `--fk-text-base`; `--fk-text-2xs` → `--fk-text-xs` (sin equivalente exacto en la escala, xs es el más cercano). Cero cambios de lógica ni de HTML. Verificado en navegador: Análisis (sparkline, dona, tarjetas de stats) y Presupuesto (estado vacío con borde punteado) ahora muestran bordes y fondos reales en vez de transparentes. 1764/1764 unit verdes (sin cambios de comportamiento, solo visual). SW v248 → v249.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/components/charts.css` | 15 usos: sparkline, donut, stats, import CSV, tarjetas de estrategia de deuda. |
-| `styles/components/domain.css` | 11 usos: selector de cuenta (radio/checkbox), tarjeta de límites, consolidado de ahorro. |
-| `styles/components/analysis.css` | 14 usos: tarjetas de grupo, envelopes, fondo de emergencia, inversión, tabla comparativa. |
-| `styles/components/forms.css` | 2 usos: badge genérico, placeholder de gasto sin completar. |
-| `styles/components/config.css` | 2 usos: título y emoji del detalle de calendario. |
-| `styles/layout.css` | 1 uso: separador de sub-header de sección. |
-| `service-worker.js` | v248 → v249. |
 
 ---
 
@@ -112,7 +110,7 @@ Segundo slice grande de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md), decis
 
 ---
 
-> Para tareas anteriores (fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
