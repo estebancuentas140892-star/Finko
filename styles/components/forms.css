@@ -624,7 +624,7 @@ form:not(.config-form) .form-group:not(:first-child) {
   align-items: center;
   padding: 2px 8px;
   border-radius: var(--fk-radius-full);
-  font-size: var(--fk-text-2xs, 0.7rem);
+  font-size: var(--fk-text-xs);
   font-weight: var(--fk-font-semibold);
   letter-spacing: 0.02em;
   vertical-align: 0.1em;
@@ -645,7 +645,7 @@ form:not(.config-form) .form-group:not(:first-child) {
 .list-item__placeholder {
   font-style: italic;
   color: var(--fk-text-secondary);
-  font-weight: var(--fk-font-normal);
+  font-weight: var(--fk-font-regular);
 }
 
 /* Input group (prefijo/sufijo) */

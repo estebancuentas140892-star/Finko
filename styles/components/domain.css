@@ -325,7 +325,7 @@ details[open] > .herramienta-inline__titulo::after {
   color: var(--fk-text-secondary);
   cursor: pointer;
   padding: 0.25rem 0.6rem;
-  border-radius: var(--fk-radius);
+  border-radius: var(--fk-radius-sm);
   transition: color 0.15s, background 0.15s;
 }
 
@@ -607,7 +607,7 @@ button.chip:focus-visible {
   width: var(--fk-space-5);
   height: var(--fk-space-5);
   flex-shrink: 0;
-  accent-color: var(--fk-primary);
+  accent-color: var(--fk-accent);
   cursor: pointer;
 }
 
@@ -625,7 +625,7 @@ button.chip:focus-visible {
 
 .cuenta-multi__draw {
   font-size: var(--fk-text-xs);
-  color: var(--fk-primary);
+  color: var(--fk-accent);
   font-weight: var(--fk-font-medium);
 }
 
@@ -686,7 +686,7 @@ button.chip:focus-visible {
   width: var(--fk-space-5);
   height: var(--fk-space-5);
   flex-shrink: 0;
-  accent-color: var(--fk-primary);
+  accent-color: var(--fk-accent);
   cursor: pointer;
 }
 
@@ -696,7 +696,7 @@ button.chip:focus-visible {
 
 /* Tarjeta seleccionada: borde y fondo resaltados. */
 .cuenta-sel__row:has(.cuenta-sel__radio:checked) {
-  border-color: var(--fk-primary);
+  border-color: var(--fk-accent);
   background: var(--fk-bg-hover);
 }
 
@@ -1073,7 +1073,7 @@ button.chip:focus-visible {
 
 .limites-card__title {
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-weight-semibold);
+  font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
   margin: 0;
   display: flex;
@@ -1116,7 +1116,7 @@ button.chip:focus-visible {
 
 .limites-card__name {
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-weight-medium);
+  font-weight: var(--fk-font-medium);
   color: var(--fk-text-primary);
   margin: 0;
 }
@@ -1130,7 +1130,7 @@ button.chip:focus-visible {
 .limites-card__badge {
   flex-shrink: 0;
   font-size: var(--fk-text-xs);
-  font-weight: var(--fk-weight-semibold);
+  font-weight: var(--fk-font-semibold);
   padding: 2px 8px;
   border-radius: var(--fk-radius-sm);
   white-space: nowrap;
@@ -1212,7 +1212,7 @@ button.chip:focus-visible {
 
 .ahorro-total__valor {
   font-size: var(--fk-text-3xl);
-  font-weight: var(--fk-weight-bold);
+  font-weight: var(--fk-font-bold);
   color: var(--fk-text-accent);
   margin: 2px 0;
 }
@@ -1260,7 +1260,7 @@ button.chip:focus-visible {
 
 .ahorro-total__monto {
   font-size: var(--fk-text-sm);
-  font-weight: var(--fk-weight-medium);
+  font-weight: var(--fk-font-medium);
   color: var(--fk-text-primary);
   white-space: nowrap;
 }
@@ -1268,7 +1268,7 @@ button.chip:focus-visible {
 .ahorro-total__pct {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
-  font-weight: var(--fk-weight-regular);
+  font-weight: var(--fk-font-regular);
 }
 
 .ahorro-total__link {

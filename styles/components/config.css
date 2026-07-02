@@ -611,7 +611,7 @@
 
 .cal-detail__title {
   margin: 0;
-  font-size: var(--fk-text-md);
+  font-size: var(--fk-text-base);
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
 }
@@ -676,7 +676,7 @@
   height: 36px;
   border-radius: var(--fk-radius-full);
   background: var(--fk-bg-surface);
-  font-size: var(--fk-text-md);
+  font-size: var(--fk-text-base);
   line-height: 1;
   overflow: hidden;
   flex-shrink: 0;

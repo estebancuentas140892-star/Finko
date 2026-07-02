@@ -292,7 +292,7 @@
 
 .grupo-card {
   background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
+  border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
   padding: var(--fk-space-md);
   display: flex;
@@ -353,7 +353,7 @@
 /* ── MC.5c: desglose por item dentro de cada tarjeta de grupo ── */
 .grupo-card__desglose {
   margin-top: var(--fk-space-xs);
-  border-color: var(--fk-border);
+  border-color: var(--fk-border-subtle);
 }
 
 .grupo-card__desglose .analisis-grupo__summary {
@@ -400,7 +400,7 @@
 /* Estado vacío: sin ingreso registrado, invita a planificar en Mis cuentas. */
 .grupos-resumen--vacio {
   background: var(--fk-bg-elevated);
-  border: 1px dashed var(--fk-border);
+  border: 1px dashed var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-lg);
   text-align: center;
@@ -425,7 +425,7 @@
   gap: var(--fk-space-md);
   margin-top: var(--fk-space-xs);
   padding-top: var(--fk-space-md);
-  border-top: 1px solid var(--fk-border);
+  border-top: 1px solid var(--fk-border-subtle);
 }
 
 .estilo-limites__intro {
@@ -483,7 +483,7 @@
 
 .envelope {
   background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
+  border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
   padding: var(--fk-space-md);
   display: flex;
@@ -532,7 +532,7 @@
 .envelope-huerfanas {
   margin-top: var(--fk-space-xl);
   padding: var(--fk-space-md);
-  border: 1px dashed var(--fk-border);
+  border: 1px dashed var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
   background: var(--fk-bg-base);
 }
@@ -571,7 +571,7 @@
 /* ── J.1: Fondo de emergencia (Ahorro) ───────────────────── */
 .fondo-hero {
   background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
+  border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-lg);
   margin-bottom: var(--fk-space-lg);
@@ -731,7 +731,7 @@
   margin: 0;
   padding: var(--fk-space-3);
   text-align: center;
-  border: 1px dashed var(--fk-border);
+  border: 1px dashed var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
 }
 
@@ -748,7 +748,7 @@
 
 .inversion-hero {
   background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
+  border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-lg);
   margin-bottom: var(--fk-space-lg);
@@ -819,7 +819,7 @@
   align-items: baseline;
   gap: var(--fk-space-1);
   padding: var(--fk-space-1) var(--fk-space-3);
-  border-radius: var(--fk-radius-pill, 999px);
+  border-radius: var(--fk-radius-full);
   background: color-mix(in srgb, var(--fk-dom-inversion) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--fk-dom-inversion) 22%, transparent);
   font-size: var(--fk-fs-sm);
@@ -890,7 +890,7 @@
 
 .inversion-proy {
   background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border);
+  border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-md) var(--fk-space-lg);
   margin-bottom: var(--fk-space-lg);
@@ -932,7 +932,7 @@
 }
 
 .inversion-proy__real {
-  border-top: 1px solid var(--fk-border);
+  border-top: 1px solid var(--fk-border-subtle);
   padding-top: var(--fk-space-3);
   display: flex;
   flex-direction: column;
@@ -1003,7 +1003,7 @@
   color: var(--fk-text-muted);
   margin: var(--fk-space-md) 0 0;
   padding: var(--fk-space-3);
-  border: 1px dashed var(--fk-border);
+  border: 1px dashed var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);
 }
 
@@ -1103,7 +1103,7 @@
   text-align: left;
   padding: var(--fk-space-2) var(--fk-space-2);
   color: var(--fk-text-muted);
-  font-weight: var(--fk-font-normal);
+  font-weight: var(--fk-font-regular);
   border-bottom: 1px solid var(--fk-border-subtle);
   white-space: nowrap;
 }

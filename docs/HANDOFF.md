@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (fix(dashboard/analisis): montos reales de deudas en los paneles de Inicio y variación sin base en Análisis, AUD.1)
+> Última actualización: 2026-07-02 (fix(css): 15 variables CSS fantasma mapeadas a tokens reales, AUD.2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(css): 15 variables CSS fantasma mapeadas a tokens reales (AUD.2) · 2026-07-02
+
+Segundo slice de la auditoría integral del 2026-07-02. `charts.css`, `domain.css`, `analysis.css`, `forms.css`, `config.css` y `layout.css` usaban 15 variables `--fk-*` nunca definidas en `tokens.css`: sin definición, el navegador cae al valor inicial (`accent-color` de radios/checkboxes se veía azul del navegador en vez del verde de marca; bordes caían a `currentColor`, invisibles; fondos de charts quedaban transparentes; pesos de fuente caían a `regular`). Mapeo aplicado según el patrón ya establecido en el resto del código: `--fk-primary` → `--fk-accent`; `--fk-border` → `--fk-border-subtle` (convención dominante para bordes de tarjeta, 35 usos contra 15 de `border-default`); `--fk-bg`/`--fk-surface`/`--fk-surface-subtle` → `--fk-bg-surface`/`--fk-bg-elevated` según jerarquía visual (excepto dos usos como `color:` sobre círculos de acento, que van a `--fk-text-on-accent`); `--fk-text` → `--fk-text-primary`; `--fk-weight-*`/`--fk-font-normal` → `--fk-font-*`/`--fk-font-regular`; `--fk-radius` → `--fk-radius-sm`; `--fk-radius-pill` → `--fk-radius-full`; `--fk-text-md` → `--fk-text-base`; `--fk-text-2xs` → `--fk-text-xs` (sin equivalente exacto en la escala, xs es el más cercano). Cero cambios de lógica ni de HTML. Verificado en navegador: Análisis (sparkline, dona, tarjetas de stats) y Presupuesto (estado vacío con borde punteado) ahora muestran bordes y fondos reales en vez de transparentes. 1764/1764 unit verdes (sin cambios de comportamiento, solo visual). SW v248 → v249.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/components/charts.css` | 15 usos: sparkline, donut, stats, import CSV, tarjetas de estrategia de deuda. |
+| `styles/components/domain.css` | 11 usos: selector de cuenta (radio/checkbox), tarjeta de límites, consolidado de ahorro. |
+| `styles/components/analysis.css` | 14 usos: tarjetas de grupo, envelopes, fondo de emergencia, inversión, tabla comparativa. |
+| `styles/components/forms.css` | 2 usos: badge genérico, placeholder de gasto sin completar. |
+| `styles/components/config.css` | 2 usos: título y emoji del detalle de calendario. |
+| `styles/layout.css` | 1 uso: separador de sub-header de sección. |
+| `service-worker.js` | v248 → v249. |
+
+---
 
 ### fix(dashboard/analisis): montos reales de deudas en Inicio y variación sin base en Análisis (AUD.1) · 2026-07-02
 
@@ -94,18 +110,7 @@ Primer slice de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md)). `generarMens
 
 ---
 
-### docs(adr): ADR 019, Límites de gasto con tratamiento asimétrico por rol (MC.8, diseño) · 2026-07-01
-
-Diseño de la épica MC.8, que revisa las decisiones 1, 4 y 5 del [ADR 017](DECISIONS/017-limites-centro-de-control.md) sin revertir su núcleo. Los tres grupos de Límites dejan de tratarse igual y pasan a reflejar su **rol**: (1) **Necesidades** = monitorear (sin límites, sin alarma; copy informativo tipo "usan el X% de tu ingreso", no "te pasaste"); (2) **Ahorro** = celebrar (refuerzo cálido al cumplir/superar, nunca alerta); (3) **Estilo de vida** = controlar (único con topes por categoría). Los topes se **fusionan dentro de la tarjeta de Estilo de vida** (adiós al bloque suelto), con "agregar bajo demanda" + conciencia de "olla finita" (cuánto del presupuesto cubren los límites), rechazando el 100% obligatorio. Layout desktop: Necesidades + Ahorro en 2 columnas compactas, Estilo de vida en fila completa. Decisión pragmática: todas las categorías siguen limitables (reclasificar por grupo se difiere). Sin schema nuevo. Pausa MC.7 (íbamos por MC.7d), que se retoma después. Solo docs.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/019-limites-por-rol.md` | Nuevo ADR (contexto, 6 decisiones, alternativas, consecuencias, 4 slices MC.8a-d). |
-| `docs/TASKS.md` | MC.8 diseño cerrado + slices MC.8a a MC.8d; MC.7 marcado en pausa. |
-
----
-
-> Para tareas anteriores (MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
