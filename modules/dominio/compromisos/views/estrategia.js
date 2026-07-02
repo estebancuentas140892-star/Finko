@@ -388,7 +388,7 @@ function _renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensua
   if (!estrategia) {
     return `
       <p class="estrategia-card__placeholder">
-        Toca una estrategia para ver el detalle y cómo te ayuda.
+        Elige una estrategia para ver el detalle y cómo te ayuda.
       </p>`;
   }
   // Caso: Avalancha sin sentido → solo el mensaje "no aplica".

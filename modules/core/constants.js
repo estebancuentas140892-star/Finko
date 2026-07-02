@@ -218,7 +218,7 @@ export const INFLACION_OBJETIVO = 0.03;
 export const APP_NAME = 'Finko';
 
 /** Versión semántica. Debe mantenerse en sync con `package.json`. */
-export const APP_VERSION = '0.1.0';
+export const APP_VERSION = '1.0.0';
 
 // ── ALIASES DE COMPATIBILIDAD (DEPRECATED) ───────────────────────
 //

@@ -156,7 +156,7 @@ export function renderPanelPrioridades() {
       <header class="prioridades-card__header">
         <h2 class="prioridades-card__title">${icon('agenda')} Próximas prioridades</h2>
         <a href="#agenda" class="prioridades-card__link"
-           aria-label="Ir a la agenda">Ver agenda</a>
+           aria-label="Ir al calendario">Ver calendario</a>
       </header>
       <div class="prioridades-card__body">
         ${bodyHtml}

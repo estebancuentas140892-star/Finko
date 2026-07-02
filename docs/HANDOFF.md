@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (fix(css): 15 variables CSS fantasma mapeadas a tokens reales, AUD.2)
+> Última actualización: 2026-07-02 (fix(copy): voseo, tildes y términos viejos corregidos, AUD.3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(copy): voseo, tildes y términos viejos corregidos (AUD.3) · 2026-07-02
+
+Tercer slice de la auditoría integral del 2026-07-02. Cinco correcciones puntuales de copy: (1) [logros/logic.js](../modules/dominio/logros/logic.js) tenía 4 descripciones en voseo o sin tildes ("Tenes", "un prestamo que vos le diste", "configuracion", "esta lista"), que violan la regla ADN 11 (tuteo, español neutro); corregidas a tuteo con tildes correctas. (2) El enlace "Ver agenda" en el panel de prioridades de Inicio ([compromisos/views/dashboard.js](../modules/dominio/compromisos/views/dashboard.js)) quedó desactualizado desde que la sección se renombró a Calendario (AG.1); ahora dice "Ver calendario". (3) Los empty states de Gastos y Mis cuentas ([gastos/view.js](../modules/dominio/gastos/view.js), [tesoreria/view.js](../modules/dominio/tesoreria/view.js)) mencionaban "el dashboard", término que la app ya no usa desde el renombre a Inicio; corregidos a "Inicio". (4) `APP_VERSION` en [core/constants.js](../modules/core/constants.js) decía `'0.1.0'`, visible en Ajustes > Acerca de Finko, pero el proyecto está en v1.0.0 (`package.json`); sincronizado. (5) "Toca una estrategia" en el placeholder de Deudas ([compromisos/views/estrategia.js](../modules/dominio/compromisos/views/estrategia.js)) se leía raro en desktop (no hay "toque" en mouse); cambiado a "Elige una estrategia". Sin tests nuevos (copy sin lógica asociada; ningún test existente referenciaba estos textos). 1764/1764 unit + 81/81 E2E verdes. SW v249 → v250.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/logros/logic.js` | 4 descripciones de logros: tuteo + tildes correctas. |
+| `modules/dominio/compromisos/views/dashboard.js` | "Ver agenda" → "Ver calendario" en el panel de prioridades. |
+| `modules/dominio/gastos/view.js`, `modules/dominio/tesoreria/view.js` | "el dashboard" → "Inicio" en empty states. |
+| `modules/core/constants.js` | `APP_VERSION` `'0.1.0'` → `'1.0.0'`. |
+| `modules/dominio/compromisos/views/estrategia.js` | "Toca una estrategia" → "Elige una estrategia". |
+| `service-worker.js` | v249 → v250. |
+
+---
 
 ### fix(css): 15 variables CSS fantasma mapeadas a tokens reales (AUD.2) · 2026-07-02
 
@@ -97,20 +112,7 @@ Petición del usuario: superar la meta de Ahorro se pintaba de rojo (barra dange
 
 ---
 
-### feat(presupuesto): mensajes de Límites por rol (MC.8a) · 2026-07-01
-
-Primer slice de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md)). `generarMensajesLimites` (`presupuesto/logic.js`) reencuadrada por rol: **Necesidades** deja de alertar con "límite" y, cuando su gasto supera lo asignado, emite un mensaje **informativo** (`tipo: 'info'` nuevo, "consumiendo una parte importante de tu ingreso..."); estar cerca del presupuesto ya no genera nada. **Ahorro** distingue cumplir ("Cumpliste con el ahorro que planeaste") de superar (mensaje más cálido "¡Excelente!..."). **Estilo de vida** sin cambios. Nueva `coberturaLimitesEstiloVida(presupuestos, presupuestoEV)` (la "olla finita") que devuelve `{limites, presupuesto, sinTope, excede}`; la usará MC.8b. Se ajustó el render de nudges (`_nivelNudge` + nivel `nudge-info`). Pendiente MC.8b: el chrome de las tarjetas (barra roja, "Excedido") todavía sigue el modelo simétrico de MC.5b. 6 unit netos + 1 E2E. 1752/1752 → 1758/1758 unit; 76/76 → 77/77 E2E. Verificado en el navegador. SW v244 → v245.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/logic.js` | `generarMensajesLimites` por rol; `coberturaLimitesEstiloVida` nueva. |
-| `modules/dominio/presupuesto/view.js` | `_nivelNudge` + soporte del nivel `nudge-info`. |
-| `tests/unit/presupuesto.test.js`, `tests/e2e/smoke.test.js` | tests actualizados + `coberturaLimitesEstiloVida` + E2E de Ahorro. |
-| `service-worker.js` | v244 → v245. |
-
----
-
-> Para tareas anteriores (docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
 
 ---
 

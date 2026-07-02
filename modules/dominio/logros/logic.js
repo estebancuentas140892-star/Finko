@@ -27,7 +27,7 @@ export const LOGROS = [
     id:     'primer-paso',
     nombre: 'Primer paso',
     emoji:  '💚',
-    desc:   'Completaste la configuracion inicial de Finko.',
+    desc:   'Completaste la configuración inicial de Finko.',
     eval:   s => s.onboarded === true,
   },
   {
@@ -76,7 +76,7 @@ export const LOGROS = [
     id:     'diversificador',
     nombre: 'Bien diversificado',
     emoji:  '🏛️',
-    desc:   'Tenes 3 o mas cuentas o billeteras registradas.',
+    desc:   'Tienes 3 o más cuentas o billeteras registradas.',
     eval:   s => Array.isArray(s.cuentas) &&
                  s.cuentas.filter(c => c.activa !== false).length >= 3,
   },
@@ -84,21 +84,21 @@ export const LOGROS = [
     id:     'prestamista',
     nombre: 'Prestamista',
     emoji:  '🤝',
-    desc:   'Registraste un prestamo que vos le diste a alguien.',
+    desc:   'Registraste un préstamo que le diste a alguien.',
     eval:   s => Array.isArray(s.personales) && s.personales.length > 0,
   },
   {
     id:     'diez-gastos',
     nombre: 'Hábito registrado',
     emoji:  '🔥',
-    desc:   'Llevas 10 o mas gastos registrados.',
+    desc:   'Llevas 10 o más gastos registrados.',
     eval:   s => Array.isArray(s.gastos) && s.gastos.length >= 10,
   },
   {
     id:     'fondo-emergencia',
     nombre: 'Red de seguridad',
     emoji:  '🛡️',
-    desc:   'Completaste tu fondo de emergencia. Tu base financiera esta lista.',
+    desc:   'Completaste tu fondo de emergencia. Tu base financiera está lista.',
     eval:   s => s.ahorro?.fondoEmergencia?.completado === true,
   },
 ];
