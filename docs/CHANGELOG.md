@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): ahorro sugerido según la frecuencia de ingreso, no "por día" (MT.4) · 2026-07-02
+
+La lista de Metas siempre mostraba "$X/día" como ritmo sugerido de ahorro, sin importar cómo cobra el usuario en la realidad. Para alguien que recibe su sueldo cada quincena, pensar en "cuánto por día" no ayuda a planear: el gesto natural es "cuánto aparto en cada quincena". MT.4 reemplaza ese cálculo fijo por uno que reparte el faltante entre los periodos de la frecuencia real de ingreso del usuario, mismo espíritu que ya resolvió Apartados (AP.1) para sus propios aportes sugeridos.
+
+Nueva `calcularAhorroPorPeriodo(meta, frecuenciaIngresos)` en [metas/logic.js](../modules/dominio/metas/logic.js) reemplaza a `calcularAhorroDiario` (eliminada): calcula cuántos periodos completos quedan hasta la fecha límite según la frecuencia (Diario = 1 día, Semanal = 7, Quincenal = 15, Mensual = 30; las frecuencias más largas como Trimestral o Anual se asimilan a Mensual, la unidad de planificación más cercana) y reparte el faltante entre esos periodos, redondeando hacia arriba (mejor pasarse un poco que llegar corto, mismo criterio que Apartados). La frecuencia no es un campo por meta (a diferencia de Apartados, que sí tiene `frecuenciaAporte` seleccionable por ítem): se deriva una sola vez de los ingresos activos del usuario con `frecuenciaPrincipalIngresos(S.ingresos)`, la frecuencia más común entre ellos.
+
+Esta función es una copia intencional de la homónima de `apartados/logic.js`: Metas no puede importar de Apartados porque ambos son dominios y el ADN #10 prohíbe que un dominio importe a otro. La duplicación de esta idea (mapeo de frecuencia + conteo de la más común) ya es el patrón establecido en el código: tesorería tiene su propio `_FACTOR_MENSUAL`, independiente del `DIAS_POR_PERIODO` de Apartados. `renderListaMetas()` en [metas/view.js](../modules/dominio/metas/view.js) calcula la frecuencia una sola vez para toda la lista (es la misma para todas las metas, no cambia por ítem) y la pasa a `_renderMetaItem`, que ahora muestra "$X por quincena", "$X por semana", "$X al mes" o "$X por día" según corresponda, con exactamente la misma redacción que ya usa Apartados en `etiquetaPeriodo` (consistencia de vocabulario entre secciones, mismo espíritu que el guardarraíl de emojis de TX.4/ADR 014, aunque aquí no hay un test automático que lo fuerce).
+
+Los tests con fechas relativas (`new Date(); setDate(...)`) usaban antes `toISOString().slice(0,10)`, que puede desplazar un día en zonas horarias UTC negativas como Colombia según la hora exacta en que corre el test (el mismo problema que ya resolvió `hoyLocal()` en los E2E). Se agregó un helper local `isoEnDias(dias)` en `metas.test.js` que construye la fecha con los getters locales de `Date`, evitando el off-by-one; dos aserciones de conteo exacto de periodos fallaban intermitentemente antes de este ajuste y quedaron estables después. Verificado con 22 tests unitarios nuevos (`frecuenciaPrincipalIngresos`, `etiquetaPeriodoAhorro`, `calcularAhorroPorPeriodo`, y el render real de `renderListaMetas` con distintas frecuencias) más 1 E2E en Chromium real (ingreso Quincenal sembrado, meta con fecha límite a 90 días muestra "por quincena" y nunca "/día"). 1804/1804 → 1819/1819 unit; 88/88 → 89/89 E2E. Lint limpio. SW v258 → v259.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/logic.js` | Nuevas `frecuenciaPrincipalIngresos()`, `etiquetaPeriodoAhorro()`, `calcularAhorroPorPeriodo()`; eliminada `calcularAhorroDiario()`. |
+| `modules/dominio/metas/view.js` | `renderListaMetas()` calcula la frecuencia de ingreso una sola vez; `_renderMetaItem` recibe la frecuencia y muestra el monto por periodo con su etiqueta. |
+| `tests/unit/metas.test.js` | 22 tests nuevos; helper `isoEnDias()` para fechas relativas sin drift de zona horaria. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - ritmo de ahorro según frecuencia (MT.4)", 1 test. |
+| `service-worker.js` | v258 → v259. |
+
+---
+
 ### feat(metas): unificar el flujo de abono con el selector de cuentas compartido (MT.5) · 2026-07-02
 
 El abono a una meta tenía su propia implementación de selector de cuenta, separada del resto de la app: un `<select>` de texto plano, obligatorio elegir cuando había 2 o más cuentas, y una lógica de descuento que solo restaba de una cuenta sin repartir ni confirmar sobregiros. Apartados ya había resuelto exactamente este problema en AP.1 con dos piezas de [infra/cuenta-helper.js](../modules/infra/cuenta-helper.js): `renderSelectorCuenta` (tarjetas seleccionables con avatar de banco, nombre y saldo, preselecciona la de mayor saldo) y `resolverPagoConPreferida` (usa la cuenta elegida si cubre el monto; si no alcanza y hay más cuentas, abre un picker de reparto que no deja ninguna en negativo; con una sola cuenta que no alcanza, pide confirmar el sobregiro). MT.5 es el port directo de ese patrón a Metas.

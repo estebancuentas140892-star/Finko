@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(metas): unificar el flujo de abono con el selector de cuentas compartido, MT.5)
+> Última actualización: 2026-07-02 (feat(metas): ahorro sugerido según la frecuencia de ingreso, MT.4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1804/1804 verdes |
-| Tests E2E | 88/88 verde. Suites: `smoke` 52 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1819/1819 verdes |
+| Tests E2E | 89/89 verde. Suites: `smoke` 53 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): ahorro sugerido según la frecuencia de ingreso, no "por día" (MT.4) · 2026-07-02
+
+La lista de Metas siempre mostraba "$X/día" como ritmo de ahorro sugerido, sin importar cómo cobra el usuario: para alguien que recibe su sueldo quincenal, pensar en días sueltos no ayuda a planear. Nueva `calcularAhorroPorPeriodo(meta, frecuenciaIngresos)` en [metas/logic.js](../modules/dominio/metas/logic.js) reemplaza a `calcularAhorroDiario` (eliminada): reparte el faltante entre los periodos de la frecuencia real de ingreso (Diario/Semanal/Quincenal/Mensual; las más largas como Trimestral o Anual caen a Mensual), no entre días. La frecuencia se deriva de `S.ingresos` con `frecuenciaPrincipalIngresos()`, duplicado intencional de la función homónima de Apartados (AP.1): Metas no puede importar de Apartados (ADN #10, ningún dominio importa a otro), así que cada dominio mantiene su propia copia de esta idea, igual que tesorería tiene su propio `_FACTOR_MENSUAL` independiente. `renderListaMetas()` en [metas/view.js](../modules/dominio/metas/view.js) calcula la frecuencia una sola vez (es la misma para todas las metas) y la pasa a cada `_renderMetaItem`, que ahora muestra "$X por quincena" / "$X por semana" / "$X al mes" / "$X por día" según corresponda, con la misma redacción que ya usa Apartados (consistencia de vocabulario entre secciones). Verificado con 1 E2E en Chromium real (ingreso Quincenal sembrado, meta con fecha límite muestra "por quincena", nunca "/día") más 22 tests unitarios nuevos (`frecuenciaPrincipalIngresos`, `etiquetaPeriodoAhorro`, `calcularAhorroPorPeriodo`, y el render real de la lista). Las fechas de prueba usan un helper `isoEnDias()` en hora local (mismo criterio que `hoyLocal()` de los E2E) para evitar el off-by-one de `toISOString()` en zonas UTC negativas como Colombia. 1804/1804 → 1819/1819 unit; 88/88 → 89/89 E2E. Lint limpio. SW v258 → v259.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/logic.js` | Nuevas `frecuenciaPrincipalIngresos()`, `etiquetaPeriodoAhorro()`, `calcularAhorroPorPeriodo()`; eliminada `calcularAhorroDiario()`. |
+| `modules/dominio/metas/view.js` | `renderListaMetas()` calcula la frecuencia una vez; `_renderMetaItem` muestra el monto por periodo con su etiqueta. |
+| `tests/unit/metas.test.js` | 22 tests nuevos; helper `isoEnDias()` para fechas relativas sin drift de zona horaria. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - ritmo de ahorro según frecuencia (MT.4)", 1 test. |
+| `service-worker.js` | v258 → v259. |
+
+---
 
 ### feat(metas): unificar el flujo de abono con el selector de cuentas compartido (MT.5) · 2026-07-02
 
@@ -101,21 +115,7 @@ Icono de ojo junto al saldo del hero de Inicio, estilo app bancaria, para usar F
 
 ---
 
-### feat(inicio): totales al pie de "Próximas prioridades" y "Pendientes del mes" (IN.1) · 2026-07-02
-
-Los dos paneles del dashboard no sumaban sus listas: el usuario tenía que sumar a mano cuánto necesitaba para cubrir lo vencido o lo que viene en 7 días. Nueva `sumarMontos(items)` pura en [compromisos/logic.js](../modules/dominio/compromisos/logic.js) (mismo criterio `monto ?? cuotaMensual` de AUD.1), consumida por ambos paneles en [dashboard.js](../modules/dominio/compromisos/views/dashboard.js): "Total de gastos vencidos" y "Total de próximas prioridades" (este último solo cuando hay algo que mostrar, no en el estado "Todo al día"). El preview del entorno sirvió JS viejo por caché HTTP agresiva (ver nota en memoria del proyecto); verificado en su lugar con tests de render sobre happy-dom, que ejecutan el código de producción real. 6 tests nuevos. 1770/1770 → 1774/1774 unit. SW v253 → v254.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | Nueva `sumarMontos(items)`. |
-| `modules/dominio/compromisos/views/dashboard.js` | Total al pie en ambos paneles. |
-| `styles/components/domain.css` | `.vencidos-card__total`, `.prioridades-card__total`. |
-| `tests/unit/compromisos.test.js` | 6 tests (4 lógica + 2 render). |
-| `service-worker.js` | v253 → v254. |
-
----
-
-> Para tareas anteriores (IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

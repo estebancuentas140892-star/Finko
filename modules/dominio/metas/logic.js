@@ -5,6 +5,37 @@
 
 import { CATEGORIA_META_EMOJI } from '../../core/constants.js';
 
+// ── CONSTANTES DE RITMO DE AHORRO (MT.4) ──────────────────────────
+
+/**
+ * Frecuencias con sentido como "cada cuánto ahorro para esta meta", alineadas
+ * a la frecuencia con la que el usuario recibe ingresos. Subconjunto de
+ * FRECUENCIAS (core/constants.js). Duplicado intencional de la misma idea en
+ * `apartados/logic.js` (`FRECUENCIAS_APORTE`): Metas no puede importar de
+ * Apartados (ADN #10, ningún dominio importa a otro).
+ */
+export const FRECUENCIAS_AHORRO = ['Diario', 'Semanal', 'Quincenal', 'Mensual'];
+
+/** Mapeo de FRECUENCIAS (core) → FRECUENCIAS_AHORRO; las más largas caen a 'Mensual'. */
+const MAPA_FRECUENCIA_A_AHORRO = {
+  Diario:     'Diario',
+  Semanal:    'Semanal',
+  Quincenal:  'Quincenal',
+  Mensual:    'Mensual',
+  Bimestral:  'Mensual',
+  Trimestral: 'Mensual',
+  Semestral:  'Mensual',
+  Anual:      'Mensual',
+};
+
+/** Días calendario que dura cada periodo de ahorro (promedio). */
+const DIAS_POR_PERIODO_AHORRO = {
+  Diario:    1,
+  Semanal:   7,
+  Quincenal: 15,
+  Mensual:   30,
+};
+
 // ── CONSULTAS ────────────────────────────────────────────────────
 
 /**
@@ -51,19 +82,87 @@ export function diasHastaFecha(fechaLimite) {
 }
 
 /**
- * Cuánto hay que ahorrar por día para alcanzar la meta antes del límite.
- * Devuelve `null` si no hay fecha límite o el plazo ya venció.
- * Devuelve `0` si la meta ya está cubierta.
+ * Devuelve la frecuencia de ahorro recomendada a partir de los ingresos del
+ * usuario: la más común entre los ingresos activos, mapeada a una de
+ * FRECUENCIAS_AHORRO. Si no hay ingresos activos, devuelve 'Mensual'.
+ *
+ * Se inyecta `ingresos` (no se lee S ni se importa tesorería) para respetar
+ * ADN #10. Misma lógica que `frecuenciaPrincipalIngresos` de Apartados.
+ *
+ * @param {import('../../core/state.js').Ingreso[]} ingresos
+ * @returns {string} Una de FRECUENCIAS_AHORRO.
+ */
+export function frecuenciaPrincipalIngresos(ingresos) {
+  const activos = (ingresos ?? []).filter(i => i.activo !== false);
+  if (activos.length === 0) return 'Mensual';
+
+  const conteo = {};
+  for (const i of activos) {
+    const f = MAPA_FRECUENCIA_A_AHORRO[i.frecuencia] ?? 'Mensual';
+    conteo[f] = (conteo[f] ?? 0) + 1;
+  }
+
+  // Más frecuente primero; en empate, la de mayor granularidad (índice menor).
+  return Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1] || FRECUENCIAS_AHORRO.indexOf(a[0]) - FRECUENCIAS_AHORRO.indexOf(b[0]))
+    .at(0)?.[0] ?? 'Mensual';
+}
+
+/**
+ * Etiqueta legible del periodo de ahorro para usar en la lista de metas.
+ * @param {string} frecuencia - una de FRECUENCIAS_AHORRO.
+ * @returns {string} ej. "por quincena", "al mes".
+ */
+export function etiquetaPeriodoAhorro(frecuencia) {
+  switch (frecuencia) {
+    case 'Diario':    return 'por día';
+    case 'Semanal':   return 'por semana';
+    case 'Quincenal': return 'por quincena';
+    case 'Mensual':   return 'al mes';
+    default:          return 'al mes';
+  }
+}
+
+/**
+ * Calcula cuánto ahorrar por periodo (según la frecuencia de ingreso del
+ * usuario) para alcanzar la meta antes de la fecha límite. Reemplaza el
+ * antiguo "$X por día" fijo (MT.4): reparte el faltante entre los periodos
+ * de la frecuencia real con la que el usuario cobra, no entre días sueltos.
+ *
+ * Devuelve `null` cuando no hay nada que sugerir:
+ *   - la meta ya está cubierta (faltante <= 0), o
+ *   - no hay fecha límite (sin plazo no hay ritmo), o
+ *   - la fecha ya pasó.
  *
  * @param {import('../../core/state.js').Meta} meta
- * @returns {number|null}
+ * @param {string} frecuenciaIngresos - una de FRECUENCIAS_AHORRO; cualquier
+ *   otro valor cae a 'Mensual' (lectura defensiva).
+ * @returns {{
+ *   montoPorPeriodo: number,
+ *   numPeriodos: number,
+ *   frecuencia: string,
+ *   etiqueta: string,
+ * }|null}
  */
-export function calcularAhorroDiario(meta) {
+export function calcularAhorroPorPeriodo(meta, frecuenciaIngresos) {
   const { faltante } = calcularProgreso(meta);
-  if (faltante <= 0) return 0;
+  if (faltante <= 0) return null;
+
   const dias = diasHastaFecha(meta.fechaLimite);
   if (dias === null || dias <= 0) return null;
-  return Math.ceil(faltante / dias);
+
+  const frecuencia = FRECUENCIAS_AHORRO.includes(frecuenciaIngresos) ? frecuenciaIngresos : 'Mensual';
+  const diasPorPeriodo = DIAS_POR_PERIODO_AHORRO[frecuencia];
+
+  const numPeriodos     = Math.max(1, Math.ceil(dias / diasPorPeriodo));
+  const montoPorPeriodo = Math.ceil(faltante / numPeriodos);
+
+  return {
+    montoPorPeriodo,
+    numPeriodos,
+    frecuencia,
+    etiqueta: etiquetaPeriodoAhorro(frecuencia),
+  };
 }
 
 // ── VALIDACIÓN ───────────────────────────────────────────────────

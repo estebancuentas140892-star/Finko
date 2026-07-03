@@ -9,7 +9,10 @@ import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { CATEGORIAS_META, CATEGORIA_META_EMOJI } from '../../core/constants.js';
-import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
+import {
+  metasActivas, calcularProgreso, calcularAhorroPorPeriodo,
+  frecuenciaPrincipalIngresos, diasHastaFecha,
+} from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
 
@@ -22,17 +25,24 @@ export function renderListaMetas() {
   if (!el) return;
 
   const activas = metasActivas(S.metas);
+  // MT.4: el ritmo de ahorro sugerido usa la frecuencia real de ingreso del
+  // usuario (quincenal, mensual...), no "por día" fijo. Se calcula una sola
+  // vez para toda la lista: es la misma frecuencia para todas las metas.
+  const frecuenciaIngresos = frecuenciaPrincipalIngresos(S.ingresos);
   el.innerHTML = activas.length === 0
     ? _renderEmptyState()
-    : activas.map(_renderMetaItem).join('');
+    : activas.map(m => _renderMetaItem(m, frecuenciaIngresos)).join('');
 }
 
-/** @param {import('../../core/state.js').Meta} meta */
-function _renderMetaItem(meta) {
+/**
+ * @param {import('../../core/state.js').Meta} meta
+ * @param {string} frecuenciaIngresos - una de FRECUENCIAS_AHORRO (MT.4).
+ */
+function _renderMetaItem(meta, frecuenciaIngresos) {
   const nombre  = _esc(meta.nombre);
   const icono   = _esc(meta.icono ?? '🎯');
   const { porcentaje, faltante, completada } = calcularProgreso(meta);
-  const diario  = calcularAhorroDiario(meta);
+  const ahorro  = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
   const dias    = diasHastaFecha(meta.fechaLimite);
 
   const claseAnillo = completada ? 'complete' : porcentaje >= 80 ? 'near' : 'default';
@@ -44,8 +54,8 @@ function _renderMetaItem(meta) {
   if (dias !== null && dias > 0 && !completada) {
     subtitleParts.push(`${dias} días restantes`);
   }
-  if (diario !== null && diario > 0) {
-    subtitleParts.push(`${f(diario)}/día`);
+  if (ahorro) {
+    subtitleParts.push(`${f(ahorro.montoPorPeriodo)} ${ahorro.etiqueta}`);
   }
 
   return `

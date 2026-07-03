@@ -256,15 +256,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : converge con AP.4 y AH.4 (mismo ADR). Se beneficia de MT.1 (color/ícono) y MT.5 (flujo de abono unificado).
 - Modelo     : diseño Opus 4.8 - Alto
 
-#### MT.4 - Ahorro sugerido según la frecuencia de ingreso, no "por día"
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : reemplazar "$X por día" por el reparto del faltante entre los periodos de la frecuencia de cobro del usuario (quincenal, mensual...) hasta la fecha límite.
-- Secciones  : Metas
-- Archivos   : `modules/dominio/metas/logic.js` (`calcularAhorroDiario`, línea ~59), `modules/dominio/metas/view.js` (línea ~46)
-- Depende de : nada. Mismo espíritu que MC.7 (aportes por objetivo según frecuencia).
-- Modelo     : Sonnet 5 - Medio
-
 ---
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)

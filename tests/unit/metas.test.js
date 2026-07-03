@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   metasActivas,
   calcularProgreso,
-  calcularAhorroDiario,
+  calcularAhorroPorPeriodo,
+  frecuenciaPrincipalIngresos,
+  etiquetaPeriodoAhorro,
   diasHastaFecha,
   validarMeta,
   validarAbono,
@@ -31,6 +33,21 @@ const datosFormValidos = {
   fechaLimite:   '',
   icono:         '✈️',
 };
+
+/**
+ * Fecha `YYYY-MM-DD` a N días desde hoy, en hora local (no UTC).
+ * `toISOString()` puede desplazar un día en zonas UTC-negativas (Colombia)
+ * según la hora en que corra el test; este helper evita ese off-by-one,
+ * igual que `hoyLocal()` en los E2E.
+ */
+function isoEnDias(dias) {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 // ── metasActivas() ────────────────────────────────────────────────
 
@@ -131,36 +148,117 @@ describe('diasHastaFecha()', () => {
   });
 });
 
-// ── calcularAhorroDiario() ────────────────────────────────────────
+// ── frecuenciaPrincipalIngresos() (MT.4) ──────────────────────────
 
-describe('calcularAhorroDiario()', () => {
-  it('devuelve 0 si la meta ya está completa', () => {
+describe('frecuenciaPrincipalIngresos()', () => {
+  const ingreso = (frecuencia, activo = true) => ({
+    id: 'i1', descripcion: 'Nómina', monto: 1_000_000, frecuencia, activo, fechaCreacion: '2026-01-01',
+  });
+
+  it('sin ingresos devuelve Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos(null)).toBe('Mensual');
+  });
+
+  it('un ingreso Quincenal devuelve Quincenal', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Quincenal')])).toBe('Quincenal');
+  });
+
+  it('la frecuencia más común gana', () => {
+    const lista = [ingreso('Quincenal'), ingreso('Quincenal'), ingreso('Mensual')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+
+  it('frecuencias no soportadas (Trimestral, Anual) se mapean a Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Trimestral')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso('Anual')])).toBe('Mensual');
+  });
+
+  it('los ingresos inactivos no cuentan', () => {
+    const lista = [ingreso('Quincenal', false), ingreso('Mensual', true)];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Mensual');
+  });
+
+  it('en empate numérico prefiere la frecuencia más granular', () => {
+    const lista = [ingreso('Quincenal'), ingreso('Mensual')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+});
+
+// ── etiquetaPeriodoAhorro() (MT.4) ─────────────────────────────────
+
+describe('etiquetaPeriodoAhorro()', () => {
+  it('mapea cada frecuencia a su etiqueta', () => {
+    expect(etiquetaPeriodoAhorro('Diario')).toBe('por día');
+    expect(etiquetaPeriodoAhorro('Semanal')).toBe('por semana');
+    expect(etiquetaPeriodoAhorro('Quincenal')).toBe('por quincena');
+    expect(etiquetaPeriodoAhorro('Mensual')).toBe('al mes');
+  });
+
+  it('una frecuencia desconocida cae a "al mes"', () => {
+    expect(etiquetaPeriodoAhorro('Trimestral')).toBe('al mes');
+    expect(etiquetaPeriodoAhorro(undefined)).toBe('al mes');
+  });
+});
+
+// ── calcularAhorroPorPeriodo() (MT.4) ──────────────────────────────
+
+describe('calcularAhorroPorPeriodo()', () => {
+  it('devuelve null si la meta ya está completa', () => {
     const meta = metaBase({ montoActual: 5_000_000, montoObjetivo: 5_000_000 });
-    expect(calcularAhorroDiario(meta)).toBe(0);
+    expect(calcularAhorroPorPeriodo(meta, 'Mensual')).toBeNull();
   });
 
   it('devuelve null si no hay fechaLimite', () => {
     const meta = metaBase({ fechaLimite: null });
-    expect(calcularAhorroDiario(meta)).toBeNull();
+    expect(calcularAhorroPorPeriodo(meta, 'Mensual')).toBeNull();
   });
 
   it('devuelve null si la fecha ya venció', () => {
     const meta = metaBase({ fechaLimite: '2020-01-01' });
-    expect(calcularAhorroDiario(meta)).toBeNull();
+    expect(calcularAhorroPorPeriodo(meta, 'Mensual')).toBeNull();
   });
 
-  it('devuelve número positivo con fecha futura', () => {
-    const futura = new Date();
-    futura.setDate(futura.getDate() + 100);
-    const iso = futura.toISOString().slice(0, 10);
-    const meta = metaBase({
-      montoActual: 0,
-      montoObjetivo: 1_000_000,
-      fechaLimite: iso,
-    });
-    const diario = calcularAhorroDiario(meta);
-    expect(diario).toBeGreaterThan(0);
-    expect(diario).toBeLessThanOrEqual(10_500); // ~1_000_000 / 100 + rounding
+  it('con frecuencia Quincenal reparte entre quincenas, no entre días', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 600_000, fechaLimite: isoEnDias(90) });
+
+    const r = calcularAhorroPorPeriodo(meta, 'Quincenal');
+    expect(r).not.toBeNull();
+    expect(r.frecuencia).toBe('Quincenal');
+    expect(r.etiqueta).toBe('por quincena');
+    // 90 días / 15 = 6 quincenas.
+    expect(r.numPeriodos).toBe(6);
+    expect(r.montoPorPeriodo).toBe(Math.ceil(600_000 / 6));
+    // El monto acumulado por periodo cubre el faltante.
+    expect(r.montoPorPeriodo * r.numPeriodos).toBeGreaterThanOrEqual(600_000);
+  });
+
+  it('con frecuencia Semanal reparte entre semanas', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 700_000, fechaLimite: isoEnDias(70) });
+
+    const r = calcularAhorroPorPeriodo(meta, 'Semanal');
+    expect(r.frecuencia).toBe('Semanal');
+    expect(r.etiqueta).toBe('por semana');
+    expect(r.numPeriodos).toBe(10); // 70 / 7
+    expect(r.montoPorPeriodo).toBe(Math.ceil(700_000 / 10));
+  });
+
+  it('una frecuencia no soportada cae a Mensual (lectura defensiva)', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 300_000, fechaLimite: isoEnDias(90) });
+    const r = calcularAhorroPorPeriodo(meta, 'Trimestral');
+    expect(r.frecuencia).toBe('Mensual');
+  });
+
+  it('descuenta lo ya ahorrado del faltante', () => {
+    const meta = metaBase({ montoActual: 400_000, montoObjetivo: 1_000_000, fechaLimite: isoEnDias(100) });
+    const r = calcularAhorroPorPeriodo(meta, 'Mensual');
+    expect(r.montoPorPeriodo * r.numPeriodos).toBeGreaterThanOrEqual(600_000);
+  });
+
+  it('garantiza al menos 1 periodo cuando la fecha es muy cercana', () => {
+    const meta = metaBase({ montoActual: 0, montoObjetivo: 100_000, fechaLimite: isoEnDias(1) });
+    const r = calcularAhorroPorPeriodo(meta, 'Mensual');
+    expect(r.numPeriodos).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -362,6 +460,53 @@ describe('renderListaMetas() - emoji de categoría en la lista', () => {
     }];
     renderListaMetas();
     expect(document.querySelector('.list-item__title').textContent).toContain('🎯');
+  });
+});
+
+// ── renderListaMetas() - ritmo de ahorro según frecuencia (MT.4) ──
+
+describe('renderListaMetas() - ritmo de ahorro según frecuencia', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas"></div>';
+  });
+
+  it('con ingreso Quincenal, la meta muestra el monto "por quincena", no "por día"', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Nómina', monto: 1_500_000, frecuencia: 'Quincenal', activo: true, fechaCreacion: '2026-01-01' }];
+    S.metas = [{
+      ...normalizarMeta(datosFormValidos),
+      id: 'm1',
+      montoObjetivo: 600_000,
+      montoActual: 0,
+      fechaLimite: isoEnDias(90),
+    }];
+
+    renderListaMetas();
+    const subtitulo = document.querySelector('.list-item__subtitle').textContent;
+    expect(subtitulo).toContain('por quincena');
+    expect(subtitulo).not.toContain('/día');
+  });
+
+  it('sin ingresos registrados, cae a "al mes" (Mensual por defecto)', () => {
+    S.ingresos = [];
+    S.metas = [{
+      ...normalizarMeta(datosFormValidos),
+      id: 'm1',
+      montoObjetivo: 600_000,
+      montoActual: 0,
+      fechaLimite: isoEnDias(90),
+    }];
+
+    renderListaMetas();
+    expect(document.querySelector('.list-item__subtitle').textContent).toContain('al mes');
+  });
+
+  it('sin fecha límite, no muestra ninguna línea de ritmo de ahorro', () => {
+    S.ingresos = [];
+    S.metas = [{ ...normalizarMeta(datosFormValidos), id: 'm1', fechaLimite: null }];
+
+    renderListaMetas();
+    const subtitulo = document.querySelector('.list-item__subtitle').textContent;
+    expect(subtitulo).not.toMatch(/por día|por semana|por quincena|al mes/);
   });
 });
 

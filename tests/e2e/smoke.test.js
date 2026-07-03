@@ -364,6 +364,52 @@ test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
   });
 });
 
+// ── SUITE 1e: Metas - ritmo de ahorro según frecuencia (MT.4) ────────────────
+// Antes la lista siempre mostraba "$X/día". Ahora reparte el faltante entre
+// los periodos de la frecuencia con la que el usuario cobra (S.ingresos).
+
+test.describe('Metas - ritmo de ahorro según frecuencia (MT.4)', () => {
+  test('con un ingreso Quincenal, la meta muestra el monto "por quincena", no "por día"', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [{
+          id: 'i1', descripcion: 'Nómina', monto: 1500000,
+          frecuencia: 'Quincenal', activo: true, fechaCreacion: '2026-01-01',
+        }],
+        gastos: [],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+
+    const futura = new Date();
+    futura.setDate(futura.getDate() + 90);
+    const anio = futura.getFullYear();
+    const mes  = String(futura.getMonth() + 1).padStart(2, '0');
+    const dia  = String(futura.getDate()).padStart(2, '0');
+
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Estudio de idiomas');
+    await form.locator('#meta-objetivo').fill('600000');
+    await form.locator('#meta-fecha').fill(`${anio}-${mes}-${dia}`);
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    const subtitulo = page.locator('#lista-metas .list-item__subtitle');
+    await expect(subtitulo).toContainText('por quincena');
+    await expect(subtitulo).not.toContainText('/día');
+  });
+});
+
 // ── SUITE 2: Onboarding ─────────────────────────────────────────────────────
 // Modo serial: el SW compartido entre workers paralelos puede interferir con
 // los tests de onboarding (que dependen de localStorage vacío). Serial garantiza
