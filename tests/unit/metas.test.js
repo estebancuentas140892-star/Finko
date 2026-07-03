@@ -329,10 +329,11 @@ describe('renderFormMeta() - selector de categoría', () => {
     }
   });
 
-  it('conserva el campo de emoji libre', () => {
+  it('conserva el campo de emoji libre, oculto por defecto (MT.3)', () => {
     const html = renderFormMeta();
     expect(html).toContain('id="meta-icono"');
     expect(html).toContain('name="icono"');
+    expect(html).toMatch(/<div class="form-group" id="form-group-meta-icono" hidden>/);
   });
 });
 

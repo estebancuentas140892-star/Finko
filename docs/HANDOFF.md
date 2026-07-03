@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(metas): categorías con emoji, MT.1)
+> Última actualización: 2026-07-02 (feat(metas): simplificar la selección de emoji, MT.3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1803/1803 verdes |
-| Tests E2E | 84/84 verde. Suites: `smoke` 48 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests E2E | 86/86 verde. Suites: `smoke` 50 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): simplificar la selección de emoji (MT.3) · 2026-07-02
+
+El campo "Emoji (opcional)" del form de meta era suelto: aparecía siempre, sin relación con la categoría elegida (MT.1), y un usuario podía dejarlo con un emoji que ya no correspondía a la categoría final. Ahora el campo vive oculto por defecto (`#form-group-meta-icono`, [metas/view.js](../modules/dominio/metas/view.js)) y solo se muestra cuando la categoría elegida es "Otra": el resto de las categorías ya trae su emoji (MT.1), así que no hay nada que elegir. `_syncCategoriaMeta()` nueva en [metas/index.js](../modules/dominio/metas/index.js), enganchada al `change` del selector de categoría, alterna el `hidden` y **limpia el valor del input al ocultarlo**: sin esto, un emoji tecleado con "Otra" sobrevivía si el usuario cambiaba de opinión y elegía otra categoría antes de guardar (`FormData` sigue mandando campos ocultos, y `normalizarMeta` prioriza el emoji explícito sobre el de la categoría). También se llama al abrir el modal (`_nuevaMeta`, después de `resetModal`) para que el campo empiece siempre oculto, sin depender de un estado que `resetModal` no toca (limpia valores de input pero no atributos `hidden`). La nota de la tarjeta sobre un "emoji emocional en la parte inferior del form/card" ya no aplica: el changelog de junio 2026 muestra que ese emoji se movió al título de la card, no queda ningún emoji suelto por eliminar. Verificado con 5 E2E en Chromium real (campo oculto por defecto, se muestra solo con "Otra", se guarda el emoji manual, y el caso crítico: cambiar de "Otra" a otra categoría limpia el emoji y usa el de la categoría nueva). 1803/1803 unit; 84/84 → 86/86 E2E. Lint limpio. SW v256 → v257.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | El form-group del emoji queda `hidden` por defecto; label actualizado ("Elige un emoji para tu meta"). |
+| `modules/dominio/metas/index.js` | Nueva `_syncCategoriaMeta(form)`: alterna `hidden` según la categoría y limpia el emoji al ocultarlo; enganchada al `change` del selector y llamada tras `resetModal` en `_nuevaMeta`. |
+| `modules/dominio/metas/logic.js` | Comentario de `normalizarMeta` actualizado para reflejar el nuevo comportamiento del form. |
+| `tests/unit/metas.test.js` | Test de `renderFormMeta` actualizado: el form-group del emoji nace `hidden`. |
+| `tests/e2e/smoke.test.js` | 3 tests nuevos (campo oculto/visible según categoría, guardado del emoji manual, limpieza al cambiar de categoría); 1 test viejo reescrito porque ya no aplicaba con el campo siempre visible. |
+| `service-worker.js` | v256 → v257. |
+
+---
 
 ### feat(metas): categorías con emoji (MT.1) · 2026-07-02
 
@@ -98,34 +113,7 @@ El indicador "Categoría con más gasto" del resumen semanal de Inicio ([resumen
 
 ---
 
-### fix(ux): descubribilidad y robustez, sidebar/toasts/flush de guardado (AUD.5) · 2026-07-02
-
-Quinto slice de la auditoría integral del 2026-07-02, tres ajustes independientes. (1) **Sidebar con pliegue**: en ventanas de altura <= 800px (solo escritorio, `min-width: 1024px`) el último grupo del sidebar (Herramientas) queda bajo el scroll interno sin ningún indicio visual; [styles/layout.css](../styles/layout.css) compacta el espaciado vertical de los `.nav-group` y agrega un fade `position: sticky` pegado al fondo del `.sidebar__nav` que insinúa que hay más para desplazar. (2) **Tormenta de toasts de logros**: al desbloquearse 3 o más logros a la vez (restaurar un respaldo JSON, importar un CSV) se encadenaba un toast con confetti cada 1.4s que tapaba contenido; [logros/index.js](../modules/dominio/logros/index.js) ahora muestra un solo toast resumen ("N logros nuevos") cuando `nuevos.length > 2`, reusando `_mostrarToast` con un label configurable. Verificado con un script Playwright temporal (no comiteado): 6 logros desbloqueados a la vez → 1 solo toast. (3) **`save()` sin flush al cerrar**: el debounce de 200ms podía perder el último cambio si la pestaña se cerraba o el sistema mataba la PWA en móvil antes de que corriera; nueva `initFlushOnHide()` en [core/storage.js](../modules/core/storage.js) escucha `visibilitychange` (hidden) y `pagehide`, y fuerza el flush solo si hay un guardado pendiente. Registrada en [ui/bootstrap.js](../modules/ui/bootstrap.js) justo después de `loadData()`. Sin tests nuevos (cambios de CSS/UX sin lógica pura nueva que testear en happy-dom; el toast de logros ya está fuera del alcance de tests unitarios por decisión previa del proyecto, ver comentario en `tests/unit/logros.test.js`). 1764/1764 unit + 81/81 E2E verdes. SW v251 → v252.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/layout.css` | Media query `(max-height: 800px) and (min-width: 1024px)`: espaciado compacto de `.nav-group` + fade sticky al fondo de `.sidebar__nav`. |
-| `modules/dominio/logros/index.js` | `_checkYMostrar` muestra un solo toast resumen si `nuevos.length > 2`; `_mostrarToast` acepta un `label` opcional. |
-| `modules/core/storage.js` | Nueva `initFlushOnHide()`: flush inmediato en `visibilitychange`/`pagehide` si hay guardado pendiente. |
-| `modules/ui/bootstrap.js` | Registra `initFlushOnHide()` justo después de `loadData()`. |
-| `service-worker.js` | v251 → v252. |
-
----
-
-### fix(color): semántica de color del gasto neutral, no roja (AUD.4) · 2026-07-02
-
-Cuarto slice de la auditoría integral del 2026-07-02. Dos lugares pintaban el monto de gasto en rojo fijo, lo que contradice el criterio de ADR 019 (verde = logro, ámbar = advertencia, rojo = incumplimiento) y el tono neutral de ADR 008: gastar no es incumplir. (1) El total de "Resumen de la semana" en Inicio y el "Pendiente" en Préstamos ([styles/components/domain.css](../styles/components/domain.css), clase compartida `.resumen-card__stat--primary`) usaban `--fk-danger-text`; ahora `--fk-text-primary` (neutro). (2) La variación al alza del gasto mensual en Análisis (`.chart-stat--negativo`, [styles/components/charts.css](../styles/components/charts.css)) usaba `--fk-danger`; se eliminó la regla (el color base de `.chart-stat__valor` ya es neutro) y se quitó la asignación de esa clase en [analisis/view.js](../modules/dominio/analisis/view.js). Se decidió neutro y no ámbar para la variación al alza, por consistencia con el texto de tendencia semanal (ya neutro desde F8) y porque no hay un umbral incumplido que justifique una advertencia. Bajar el gasto sigue en verde (`chart-stat--positivo`, `resumen-card__trend--baja`): sí es un logro. Sin tests nuevos (cambio de color puro, sin lógica; ningún test referenciaba estas clases). 1764/1764 unit + 81/81 E2E verdes. SW v250 → v251.
-
-| Archivo | Cambio |
-|---|---|
-| `styles/components/domain.css` | `.resumen-card__stat--primary .resumen-card__value`: `--fk-danger-text` → `--fk-text-primary`. |
-| `styles/components/charts.css` | Eliminada `.chart-stat--negativo` (color danger); el neutro ya es el default de `.chart-stat__valor`. |
-| `modules/dominio/analisis/view.js` | `_renderTendencia` ya no asigna `chart-stat--negativo` al subir el gasto. |
-| `service-worker.js` | v250 → v251. |
-
----
-
-> Para tareas anteriores (AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

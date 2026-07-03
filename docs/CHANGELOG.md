@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): simplificar la selección de emoji (MT.3) · 2026-07-02
+
+MT.1 agregó categorías con emoji a Metas, pero dejó el campo "Emoji (opcional)" suelto: visible siempre, sin relación con la categoría elegida. Un usuario podía escribir un emoji, cambiar de categoría, y el emoji manual seguía ganando (por la prioridad de `normalizarMeta`) sin que la UI diera ninguna pista de por qué. MT.3 simplifica: el campo vive oculto por defecto (`#form-group-meta-icono` en [metas/view.js](../modules/dominio/metas/view.js)) y solo aparece cuando la categoría elegida es "Otra", la válvula de escape del catálogo (ADR 014, principio 7); el resto de las categorías ya trae su propio emoji, así que no hay nada que decidir.
+
+La pieza no trivial es evitar un emoji manual "fantasma": `_syncCategoriaMeta(form)`, nueva en [metas/index.js](../modules/dominio/metas/index.js) y enganchada al `change` del selector de categoría, alterna el `hidden` del campo y **limpia su valor al ocultarlo**. Sin esto, un usuario que prueba "Otra", escribe un emoji, y luego elige "Vivienda" antes de guardar, terminaría con el emoji viejo en la meta: `FormData` sigue enviando campos ocultos, y `normalizarMeta` prioriza el emoji explícito sobre el de la categoría (decisión de MT.1, sigue siendo correcta como contrato de la función). También se llama tras `resetModal()` en `_nuevaMeta()`, porque `resetModal` limpia valores de input pero no el atributo `hidden` que dejó una apertura anterior del modal.
+
+La segunda mitad de la tarjeta ("eliminar el emoji emocional de la parte inferior del form/card de meta") ya estaba resuelta: el changelog de junio 2026 registra que ese emoji se movió al título de la card en el rediseño de la lista (anillo de progreso + emoji junto al nombre), no queda ningún emoji suelto en la parte inferior del form ni de la card hoy.
+
+Verificado con 5 tests E2E en Chromium real (el preview del entorno sigue sin cargar, nota ya conocida): el campo nace oculto, se muestra solo con "Otra", el emoji manual se guarda con "Otra", y el caso crítico, cambiar de "Otra" a otra categoría antes de guardar usa el emoji de la categoría nueva y no el manual. Se reescribió un E2E de MT.1 que ya no aplicaba (asumía el campo siempre visible). Sin tests unitarios nuevos: el comportamiento de mostrar/ocultar y limpiar el campo vive en `index.js` (DOM + eventos), fuera del alcance de happy-dom por convención del proyecto (igual que los demás toggles condicionales de formulario); se ajustó el test existente de `renderFormMeta` para reflejar el nuevo markup. 1803/1803 unit; 84/84 → 86/86 E2E. Lint limpio. SW v256 → v257.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | El form-group del emoji nace `hidden`; label cambiado a "Elige un emoji para tu meta". |
+| `modules/dominio/metas/index.js` | Nueva `_syncCategoriaMeta(form)`: alterna `hidden` según la categoría y limpia el emoji al ocultarlo; enganchada al `change` del selector y llamada tras `resetModal` en `_nuevaMeta`. |
+| `modules/dominio/metas/logic.js` | Comentario de `normalizarMeta` actualizado para reflejar la nueva UI (la función en sí no cambió). |
+| `tests/unit/metas.test.js` | Test de `renderFormMeta` actualizado: el form-group del emoji nace `hidden`. |
+| `tests/e2e/smoke.test.js` | 3 tests nuevos (visibilidad condicional, guardado con "Otra", limpieza al cambiar de categoría); 1 test de MT.1 reescrito. |
+| `service-worker.js` | v256 → v257. |
+
+---
+
 ### feat(metas): categorías con emoji (MT.1) · 2026-07-02
 
 Metas de ahorro tenía nombre libre y un campo de emoji suelto (sin catálogo). Nuevo `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en [core/constants.js](../modules/core/constants.js), mismo patrón que los catálogos ya existentes (`CATEGORIA_EMOJI` de Gastos, `CATEGORIA_AGENDA_EMOJI`, `CATEGORIA_DEUDA_EMOJI`): 12 categorías con foco en objetivos de alto costo, priorizadas por el usuario el 2026-07-02 (Viajes, Cumpleaños, Boda, Vivienda, Vehículo, Computador, Celular, Educación, Hijo(s), Vacaciones, Emprendimiento, Otra).

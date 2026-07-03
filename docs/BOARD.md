@@ -256,15 +256,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : converge con AP.4 y AH.4 (mismo ADR). Se beneficia de MT.1 (color/ícono) y MT.5 (flujo de abono unificado).
 - Modelo     : diseño Opus 4.8 - Alto
 
-#### MT.3 (depende de MT.1) - Simplificar la selección de emoji
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : quitar el campo "Emoji (opcional)" suelto del form. Si hay categoría, usar su emoji; con "Otra", el usuario elige nombre e ícono a gusto. Eliminar también el emoji emocional de la parte inferior del form/card de meta (pedido del usuario 2026-07-02).
-- Secciones  : Metas
-- Archivos   : `modules/dominio/metas/view.js` (línea ~145)
-- Depende de : MT.1
-- Modelo     : Sonnet 5 - Medio
-
 #### MT.4 - Ahorro sugerido según la frecuencia de ingreso, no "por día"
 - Prioridad  : media
 - Estado     : pendiente

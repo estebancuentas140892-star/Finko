@@ -108,8 +108,10 @@ export function validarAbono(monto) {
  *
  * Prioridad del ícono (MT.1): emoji escrito a mano > emoji de la categoría
  * elegida > 🎯 por defecto. Así una categoría predefinida (Viajes, Boda...)
- * ya trae su emoji sin que el usuario tenga que elegirlo, pero un emoji
- * explícito (el caso de 'Otra', ver MT.3) siempre gana.
+ * ya trae su emoji sin que el usuario tenga que elegirlo. El form (MT.3)
+ * solo deja escribir un emoji a mano con la categoría 'Otra', pero esta
+ * función no depende de esa restricción de UI: sigue funcionando igual
+ * si algún día otro flujo manda ambos campos.
  *
  * @param {Record<string, string>} datos
  */

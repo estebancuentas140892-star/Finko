@@ -200,7 +200,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 });
 
-// ── SUITE 1c: Metas - categorías con emoji (MT.1) ────────────────────────────
+// ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────
 
 test.describe('Metas - categorías con emoji (MT.1)', () => {
   test.beforeEach(async ({ page }) => {
@@ -228,22 +228,61 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await expect(titulo).toContainText('Fiesta de matrimonio');
   });
 
-  test('un emoji escrito a mano gana sobre el de la categoría elegida', async ({ page }) => {
+  test('MT.3: el campo de emoji está oculto salvo con categoría "Otra"', async ({ page }) => {
     await page.click('[data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
     const form = page.locator('#modal-meta-body form');
-    await form.locator('#meta-nombre').fill('Viaje personalizado');
-    await form.locator('#meta-objetivo').fill('3000000');
+    await expect(form.locator('#form-group-meta-icono')).toBeHidden();
+
+    // Cualquier categoría predefinida mantiene el emoji oculto: ya trae el suyo.
     await form.locator('#meta-categoria').selectOption('Viajes');
-    await form.locator('#meta-icono').fill('🌴');
+    await expect(form.locator('#form-group-meta-icono')).toBeHidden();
+
+    // Solo "Otra" habilita elegir el emoji a mano.
+    await form.locator('#meta-categoria').selectOption('Otra');
+    await expect(form.locator('#form-group-meta-icono')).toBeVisible();
+  });
+
+  test('MT.3: con categoría "Otra" el emoji escrito a mano queda en la lista', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Estudio de grabación');
+    await form.locator('#meta-objetivo').fill('3000000');
+    await form.locator('#meta-categoria').selectOption('Otra');
+    await form.locator('#meta-icono').fill('🎸');
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo).toContainText('🌴');
-    await expect(titulo).not.toContainText('✈️');
+    await expect(titulo).toContainText('🎸');
+    await expect(titulo).not.toContainText('📦');
+  });
+
+  test('MT.3: volver de "Otra" a otra categoría limpia el emoji manual', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Reforma de la casa');
+    await form.locator('#meta-objetivo').fill('4000000');
+
+    // El usuario prueba "Otra" y escribe un emoji, pero se arrepiente y
+    // vuelve a una categoría predefinida antes de guardar.
+    await form.locator('#meta-categoria').selectOption('Otra');
+    await form.locator('#meta-icono').fill('🎸');
+    await form.locator('#meta-categoria').selectOption('Vivienda');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    // El emoji guardado es el de Vivienda (🏠), no el 🎸 que quedó escrito.
+    const titulo = page.locator('#lista-metas .list-item__title');
+    await expect(titulo).toContainText('🏠');
+    await expect(titulo).not.toContainText('🎸');
   });
 });
 

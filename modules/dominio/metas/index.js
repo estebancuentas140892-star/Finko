@@ -23,10 +23,33 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
+/**
+ * Alterna el campo de emoji libre (MT.3): solo tiene sentido con la
+ * categoría "Otra" (las demás ya traen su emoji, ver `normalizarMeta`).
+ * Al ocultarlo limpia su valor para que un emoji tecleado con "Otra" no
+ * sobreviva un cambio posterior a otra categoría (`FormData` sigue
+ * enviando los campos ocultos, y `normalizarMeta` prioriza el emoji
+ * explícito sobre el de la categoría).
+ *
+ * @param {HTMLFormElement} form
+ */
+function _syncCategoriaMeta(form) {
+  const selCategoria = form.querySelector('#meta-categoria');
+  const grupoIcono   = form.querySelector('#form-group-meta-icono');
+  const inputIcono   = form.querySelector('#meta-icono');
+  if (!selCategoria || !grupoIcono || !inputIcono) return;
+
+  const esOtra = selCategoria.value === 'Otra';
+  grupoIcono.hidden = !esOtra;
+  if (!esOtra) inputIcono.value = '';
+}
+
 function _nuevaMeta() {
   const overlay = document.getElementById('modal-meta');
   if (!overlay) return;
   resetModal(overlay);
+  const form = overlay.querySelector('#form-meta');
+  if (form) _syncCategoriaMeta(form);
   abrirModal(overlay);
 }
 
@@ -164,10 +187,12 @@ function _inyectarForm() {
 
   body.innerHTML = renderFormMeta();
 
-  body.querySelector('#form-meta')?.addEventListener('submit', (e) => {
+  const form = body.querySelector('#form-meta');
+  form?.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarMeta();
   });
+  form?.querySelector('#meta-categoria')?.addEventListener('change', () => _syncCategoriaMeta(form));
 }
 
 export function initMetas() {

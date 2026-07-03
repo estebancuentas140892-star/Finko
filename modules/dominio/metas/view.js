@@ -151,11 +151,14 @@ export function renderFormMeta() {
         </select>
         <p class="form-hint">Elige una categoría y Finko le pone el emoji automáticamente.</p>
       </div>
-      <div class="form-group">
-        <label for="meta-icono" class="label">Emoji (opcional)</label>
+      <!-- MT.3: el emoji ya no es un campo suelto para toda meta; solo con
+           categoría "Otra" tiene sentido elegirlo a mano (el resto ya trae
+           el emoji de su categoría). index.js (_syncCategoriaMeta) alterna
+           [hidden] al cambiar la categoría y limpia el valor al ocultarlo. -->
+      <div class="form-group" id="form-group-meta-icono" hidden>
+        <label for="meta-icono" class="label">Elige un emoji para tu meta</label>
         <input id="meta-icono" name="icono" class="input" type="text"
                maxlength="4" placeholder="🎯" autocomplete="off" />
-        <p class="form-hint">Solo si quieres reemplazar el emoji de la categoría.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
