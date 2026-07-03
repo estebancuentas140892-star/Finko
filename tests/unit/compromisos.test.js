@@ -21,6 +21,7 @@ import {
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
   agruparPorDiasRestantes,
+  sumarMontos,
   aplicarAbonoASaldo,
   revertirAbonoDeSaldo,
   ajustarMontoAbono,
@@ -36,7 +37,7 @@ import {
 import { renderFormAbono, renderFormDeuda } from '../../modules/dominio/compromisos/views/formularios.js';
 import { renderListaCompromisos } from '../../modules/dominio/compromisos/views/lista.js';
 import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/views/alertas.js';
-import { renderPanelPrioridades } from '../../modules/dominio/compromisos/views/dashboard.js';
+import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
@@ -1365,6 +1366,32 @@ describe('agruparPorDiasRestantes', () => {
   });
 });
 
+// ── sumarMontos (IN.1) ────────────────────────────────────────────
+
+describe('sumarMontos', () => {
+  it('devuelve 0 con lista vacia, nula o invalida', () => {
+    expect(sumarMontos([])).toBe(0);
+    expect(sumarMontos(null)).toBe(0);
+    expect(sumarMontos(undefined)).toBe(0);
+    expect(sumarMontos('foo')).toBe(0);
+  });
+
+  it('suma el campo monto de cada item', () => {
+    const items = [{ monto: 100_000 }, { monto: 50_000 }, { monto: 25_000 }];
+    expect(sumarMontos(items)).toBe(175_000);
+  });
+
+  it('usa cuotaMensual cuando monto no esta presente (deudas, v6)', () => {
+    const items = [{ monto: 100_000 }, { cuotaMensual: 300_000 }];
+    expect(sumarMontos(items)).toBe(400_000);
+  });
+
+  it('ignora items sin monto ni cuotaMensual valido', () => {
+    const items = [{ monto: 100_000 }, { descripcion: 'sin cifra' }, { monto: NaN }];
+    expect(sumarMontos(items)).toBe(100_000);
+  });
+});
+
 // ── aplicarAbonoASaldo() (ADR 002) ───────────────────────────────
 
 describe('aplicarAbonoASaldo()', () => {
@@ -1699,6 +1726,55 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
     expect(html).toContain('$1.500.000');
+  });
+
+  it('muestra el total de próximas prioridades al pie (IN.1)', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, diaPago: DIA_HOY }),
+      { id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
+        saldoTotal: 5_800_000, cuotaMensual: 410_000, frecuencia: 'Mensual',
+        diaPago: DIA_HOY, activo: true, fechaCreacion: '2025-01-15T10:00:00Z' },
+    ];
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).toContain('Total de próximas prioridades');
+    expect(html).toContain('$1.910.000');
+  });
+
+  it('no muestra el total en el estado "Todo al día" (hay activos pero ninguno en 7 días)', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_FUTURO })]; // fuera de la ventana de 7 días
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).toContain('Todo al día');
+    expect(html).not.toContain('prioridades-card__total');
+  });
+});
+
+// ── renderPanelVencidos() - total al pie (IN.1) ──────────────────
+
+describe('renderPanelVencidos() - total al pie (IN.1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-vencidos"></div>';
+    S.compromisos = [];
+  });
+
+  it('muestra el total de gastos vencidos al pie', () => {
+    // diaPago: 1 siempre vence si hoy es el día 2 o después del mes (nunca choca con hoy).
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 900_000, diaPago: 1 }),
+      compromisoBase({ id: 'c2', descripcion: 'Servicios', monto: 150_000, diaPago: 1 }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('Total de gastos vencidos');
+    expect(html).toContain('$1.050.000');
+  });
+
+  it('no renderiza nada (ni total) cuando no hay vencidos', () => {
+    renderPanelVencidos();
+    const el = document.getElementById('panel-vencidos');
+    expect(el.hidden).toBe(true);
+    expect(el.innerHTML).toBe('');
   });
 });
 

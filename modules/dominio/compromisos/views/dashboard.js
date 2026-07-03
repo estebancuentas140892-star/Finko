@@ -16,6 +16,7 @@ import {
   compromisosProximos,
   detectarVencidosCompletos,
   agruparPorDiasRestantes,
+  sumarMontos,
   ICONO_TIPO,
 } from '../logic.js';
 
@@ -69,6 +70,8 @@ export function renderPanelVencidos() {
       </li>`;
   }).join('');
 
+  const total = f(sumarMontos(vencidos));
+
   el.innerHTML = `
     <section class="vencidos-card" aria-label="Compromisos vencidos">
       <header class="vencidos-card__header">
@@ -79,6 +82,10 @@ export function renderPanelVencidos() {
       <ul class="vencidos-card__list" role="list">
         ${items}
       </ul>
+      <p class="vencidos-card__total">
+        <span>Total de gastos vencidos</span>
+        <span class="vencidos-card__total-amount">${total}</span>
+      </p>
     </section>`;
 }
 
@@ -117,9 +124,16 @@ export function renderPanelPrioridades() {
   const grupos = agruparPorDiasRestantes(proxTodos);
 
   let bodyHtml;
+  let totalHtml = '';
   if (grupos.length === 0) {
     bodyHtml = `<p class="prioridades-card__empty">Todo al día. Sin vencimientos en los próximos 7 días.</p>`;
   } else {
+    const total = f(sumarMontos(proxTodos));
+    totalHtml = `
+      <p class="prioridades-card__total">
+        <span>Total de próximas prioridades</span>
+        <span class="prioridades-card__total-amount">${total}</span>
+      </p>`;
     bodyHtml = grupos.map(g => {
       const items = g.items.map(c => {
         const tipo     = c.tipo ?? 'fijo';
@@ -161,6 +175,7 @@ export function renderPanelPrioridades() {
       <div class="prioridades-card__body">
         ${bodyHtml}
       </div>
+      ${totalHtml}
     </section>`;
 }
 

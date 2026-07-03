@@ -39,15 +39,6 @@ Campos de una tarjeta:
 
 ### Inicio (dashboard)
 
-#### IN.1 - Totales al pie de "Próximas prioridades" y "Pendientes del mes"
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : al final de cada listado del Inicio (próximas prioridades y vencidos del mes), mostrar la sumatoria ("Total de próximas prioridades: $X", "Total de gastos vencidos: $X") para que el usuario sepa de un vistazo cuánto necesita sin sumar a mano.
-- Secciones  : Inicio
-- Archivos   : `modules/dominio/compromisos/views/dashboard.js` (ambos paneles), posible helper puro en `compromisos/logic.js`
-- Depende de : nada. Usar el mismo criterio de monto que AUD.1 (`c.monto ?? c.cuotaMensual`).
-- Modelo     : Sonnet 5 - Bajo/Medio
-
 #### IN.2 - Ocultar/mostrar el dinero disponible (ojo, estilo app bancaria)
 - Prioridad  : media
 - Estado     : pendiente

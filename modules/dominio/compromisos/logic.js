@@ -632,6 +632,23 @@ export function agruparPorDiasRestantes(proximos) {
   }));
 }
 
+/**
+ * Suma el monto de una lista de items del dashboard (vencidos o próximas
+ * prioridades). Cada item trae `monto` (fijos, préstamos, apartados) o
+ * `cuotaMensual` (deudas, v6): mismo criterio `monto ?? cuotaMensual` que
+ * usa el render de cada item individual (AUD.1).
+ *
+ * @param {Array<{ monto?: number, cuotaMensual?: number }>} items
+ * @returns {number} Total en COP. 0 si la lista está vacía o es inválida.
+ */
+export function sumarMontos(items) {
+  if (!Array.isArray(items)) return 0;
+  return items.reduce((acc, it) => {
+    const valor = Number(it.monto ?? it.cuotaMensual ?? 0);
+    return acc + (Number.isFinite(valor) ? valor : 0);
+  }, 0);
+}
+
 // ── ESTRATEGIAS DE PAGO (F.4) ────────────────────────────────────
 
 /**

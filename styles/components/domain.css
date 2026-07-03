@@ -801,6 +801,24 @@ button.chip:focus-visible {
   flex-shrink: 0;
 }
 
+.vencidos-card__total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--fk-border-subtle);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+
+.vencidos-card__total-amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 700;
+  color: var(--fk-text-primary);
+}
+
 /* ════════════════════════════════════════════════════════════
    PRIORIDADES-CARD - compromisos próximos 7 días agrupados por día.
    Reemplaza Card Hoy: fusiona HOY + próximos en una sola vista.
@@ -908,6 +926,24 @@ button.chip:focus-visible {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);
   margin: 0;
+}
+
+.prioridades-card__total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--fk-border-subtle);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+
+.prioridades-card__total-amount {
+  font-size: var(--fk-text-sm);
+  font-weight: 700;
+  color: var(--fk-text-primary);
 }
 
 /* ════════════════════════════════════════════════════════════
