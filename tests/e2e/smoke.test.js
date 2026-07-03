@@ -1077,6 +1077,53 @@ test.describe('Agenda - leyenda sticky', () => {
   });
 });
 
+// ── Agenda - marca de color por tipo en el detalle (AG.7) ────────────────────
+// Cada registro del detalle del día lleva una franja lateral de color según
+// su tipo (mismos --fk-dom-* que los dots del calendario, AG.6), para
+// distinguir de un vistazo qué es qué en fechas cargadas.
+
+test.describe('Agenda - marca de color por tipo', () => {
+  test('un fijo y una deuda entidad el mismo día llevan colores de franja distintos', async ({ page }) => {
+    const diaPago = 15;
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          { id: 'fijo-color-e2e', tipo: 'fijo', descripcion: 'Mercado E2E',
+            monto: 100000, frecuencia: 'Mensual', diaPago },
+          { id: 'deuda-color-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
+            saldoTotal: 2000000, cuotaMensual: 200000, tasa: 24, tasaUnidad: 'EA',
+            frecuencia: 'Mensual', diaPago },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    const itemFijo  = page.locator('.cal-detail__item--fijo');
+    const itemDeuda = page.locator('.cal-detail__item--deuda-entidad');
+    await expect(itemFijo).toBeVisible({ timeout: 3_000 });
+    await expect(itemDeuda).toBeVisible({ timeout: 3_000 });
+
+    const colorFijo  = await itemFijo.evaluate(el => window.getComputedStyle(el).borderLeftColor);
+    const colorDeuda = await itemDeuda.evaluate(el => window.getComputedStyle(el).borderLeftColor);
+    expect(colorFijo).not.toBe(colorDeuda);
+    // transparent se resuelve a rgba(0, 0, 0, 0); ninguna franja debe quedar sin color.
+    expect(colorFijo).not.toBe('rgba(0, 0, 0, 0)');
+    expect(colorDeuda).not.toBe('rgba(0, 0, 0, 0)');
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {

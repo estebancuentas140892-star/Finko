@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(calendario): identificación visual por color en los registros del día (AG.7) · 2026-07-02
+
+En fechas cargadas (una quincena, el fin de mes) el detalle del día en Calendario mostraba todos los registros con el mismo aspecto visual: la única forma de distinguir un gasto fijo de una deuda con entidad o una deuda personal era leer su etiqueta de texto. AG.7 suma una identificación de color a cada item de la lista, reusando la misma paleta que AG.6 ya había fijado para los dots del mini calendario, así el significado de cada color es el mismo en toda la tarjeta.
+
+En [agenda/view.js](../modules/dominio/agenda/view.js), `_renderDetalleItem()` agrega la clase `cal-detail__item--${tipo}` al `<li>` de cada registro (el ícono ya tenía su propia clase `cal-detail__icon--${tipo}`, heredada de una tarea anterior, pero sin ningún CSS de color asociado hasta ahora). En [config.css](../styles/components/config.css), `.cal-detail__item` gana una franja lateral (`border-left: 3px solid`) que cada tipo colorea con su `--fk-dom-*` correspondiente: `--fk-dom-presupuesto` (amarillo) para fijo, `--fk-dom-compromisos` (rojo) para deuda entidad, `--fk-dom-personales` (rosa) para deuda personal. El padding izquierdo del item se recalcula con `calc(var(--fk-space-N) - 3px)` para que la franja no desplace el contenido ni el ícono; el ajuste se repite en el media query mobile porque ahí el padding base es más chico (`--fk-space-2` en vez de `--fk-space-3`). El ícono circular de cada registro también toma el color de su tipo (texto + un fondo tenue con `color-mix(in srgb, var(--fk-dom-*) 14%, var(--fk-bg-surface))`), mismo criterio de intensidad que ya usan los `dom-badge--*` de `nudges.css` para no saturar la tarjeta.
+
+No hubo que decidir nuevos colores: como el calendario solo mapea `S.compromisos` (los mismos 3 tipos que ya cubría la leyenda de AG.6), la paleta ya estaba resuelta y consistente con el resto de la app. Cuando el ADR de recordatorios de aporte (AP.4/MT.2/AH.4) sume tipos nuevos al calendario, sumarán aquí su propia clase `cal-detail__item--<tipo>` con el mismo patrón.
+
+Verificado con 4 tests unitarios nuevos (`cal-detail__item--fijo` en un gasto fijo, `--deuda-entidad` en una deuda con entidad, `--deuda-personal` en una deuda personal, y los tres tipos combinados el mismo día cada uno con su propia clase) más 1 E2E en Chromium real que siembra un fijo y una deuda entidad el mismo día y compara el `border-left-color` computado de ambos: deben ser colores distintos entre sí y ninguno debe quedar transparente (regresión que ocurriría si un tipo no matcheara ninguna clase CSS). 1831/1831 → 1835/1835 unit; 91/91 → 92/92 E2E. Lint limpio. SW v261 → v262.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem()` agrega `cal-detail__item--${tipo}` al `<li>` del detalle. |
+| `styles/components/config.css` | `.cal-detail__item--fijo/deuda-entidad/deuda-personal` (franja lateral + padding compensado, también en el media query mobile); `.cal-detail__icon--*` con color de texto y fondo tenue por tipo. |
+| `tests/unit/agenda.test.js` | 4 tests nuevos: clase por tipo (fijo, deuda entidad, deuda personal) y los 3 tipos combinados el mismo día. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - marca de color por tipo", 1 test que compara colores computados en Chromium real. |
+| `service-worker.js` | v261 → v262. |
+
+---
+
 ### feat(calendario): leyenda completa, con colores consistentes y siempre visible (AG.6) · 2026-07-02
 
 La leyenda del calendario (qué significa cada dot de color en los días) se renderizaba al final del panel, después del detalle del día. Con un día cargado de registros (una quincena, un fin de mes), el detalle empujaba la leyenda fuera de la pantalla justo cuando más ayudaba tenerla a mano: había que desplazarse hasta el fondo para consultarla.

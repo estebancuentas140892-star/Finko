@@ -688,6 +688,24 @@
   padding: var(--fk-space-3);
   background: var(--fk-bg-elevated);
   border-radius: var(--fk-radius-md);
+  border-left: 3px solid transparent;
+}
+
+/* AG.7: franja lateral por tipo, misma paleta que los dots del calendario
+   (cal-dot--*, AG.6) para que el color signifique lo mismo en toda la
+   tarjeta. Compensa el ancho de la franja restándolo del padding
+   izquierdo para no desplazar el contenido. */
+.cal-detail__item--fijo {
+  border-left-color: var(--fk-dom-presupuesto);
+  padding-left: calc(var(--fk-space-3) - 3px);
+}
+.cal-detail__item--deuda-entidad {
+  border-left-color: var(--fk-dom-compromisos);
+  padding-left: calc(var(--fk-space-3) - 3px);
+}
+.cal-detail__item--deuda-personal {
+  border-left-color: var(--fk-dom-personales);
+  padding-left: calc(var(--fk-space-3) - 3px);
 }
 
 .cal-detail__icon {
@@ -702,6 +720,19 @@
   line-height: 1;
   overflow: hidden;
   flex-shrink: 0;
+}
+
+.cal-detail__icon--fijo {
+  color: var(--fk-dom-presupuesto);
+  background: color-mix(in srgb, var(--fk-dom-presupuesto) 14%, var(--fk-bg-surface));
+}
+.cal-detail__icon--deuda-entidad {
+  color: var(--fk-dom-compromisos);
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 14%, var(--fk-bg-surface));
+}
+.cal-detail__icon--deuda-personal {
+  color: var(--fk-dom-personales);
+  background: color-mix(in srgb, var(--fk-dom-personales) 14%, var(--fk-bg-surface));
 }
 
 .cal-detail__body {
@@ -760,6 +791,13 @@
     grid-template-rows: auto auto;
     padding: var(--fk-space-2);
     gap: var(--fk-space-2);
+  }
+  /* Recalcula el padding compensado de la franja (AG.7) contra el padding
+     base de mobile, más chico que el de desktop. */
+  .cal-detail__item--fijo,
+  .cal-detail__item--deuda-entidad,
+  .cal-detail__item--deuda-personal {
+    padding-left: calc(var(--fk-space-2) - 3px);
   }
   .cal-detail__icon {
     grid-row: 1 / span 2;

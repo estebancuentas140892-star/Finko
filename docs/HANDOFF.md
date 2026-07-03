@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(calendario): leyenda sticky con colores consistentes, AG.6)
+> Última actualización: 2026-07-02 (feat(calendario): marca de color por tipo en el detalle del día, AG.7)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1831/1831 verdes |
-| Tests E2E | 91/91 verde. Suites: `smoke` 55 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1835/1835 verdes |
+| Tests E2E | 92/92 verde. Suites: `smoke` 56 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(calendario): marca de color por tipo en el detalle del día (AG.7) · 2026-07-02
+
+En fechas cargadas (quincenas, fin de mes) el detalle del día en Calendario listaba todos los registros con el mismo aspecto: había que leer cada etiqueta de tipo para distinguir un gasto fijo de una deuda. AG.7 suma una franja lateral de color a cada `.cal-detail__item`, reusando exactamente la misma paleta que ya identificaba cada tipo en los dots del calendario (AG.6): `--fk-dom-presupuesto` para fijo, `--fk-dom-compromisos` para deuda entidad, `--fk-dom-personales` para deuda personal. `_renderDetalleItem()` en [agenda/view.js](../modules/dominio/agenda/view.js) agrega la clase `cal-detail__item--${tipo}` al `<li>` (ya traía `cal-detail__icon--${tipo}` en el ícono, sin CSS de color propio hasta ahora). En [config.css](../styles/components/config.css), `.cal-detail__item` gana un `border-left: 3px solid transparent` de base y cada tipo lo colorea; el padding izquierdo se compensa con `calc()` para que la franja no desplace el contenido (recalculado también en el media query mobile, que usa un padding base más chico). El ícono de cada item también toma el color de su tipo, con un fondo tenue vía `color-mix()` (14% del color de dominio sobre `--fk-bg-surface`), coherente con el patrón ya usado en `dom-badge--*` de `nudges.css`. Verificado con 4 tests unitarios nuevos (una clase por tipo, y los tres tipos el mismo día cada uno con la suya) más 1 E2E en Chromium real que compara el `border-left-color` computado de un fijo contra una deuda entidad el mismo día: deben ser colores distintos y ninguno transparente. 1831/1831 → 1835/1835 unit; 91/91 → 92/92 E2E. Lint limpio. SW v261 → v262.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem()` agrega `cal-detail__item--${tipo}` al `<li>` del detalle. |
+| `styles/components/config.css` | `.cal-detail__item--fijo/deuda-entidad/deuda-personal` (franja lateral + padding compensado); `.cal-detail__icon--*` con color e ícono con fondo tenue por tipo; ajuste del padding compensado en el media query mobile. |
+| `tests/unit/agenda.test.js` | 4 tests nuevos: clase por tipo (fijo, deuda entidad, deuda personal) y los 3 tipos combinados el mismo día. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - marca de color por tipo", 1 test que compara colores computados en Chromium real. |
+| `service-worker.js` | v261 → v262. |
+
+---
 
 ### feat(calendario): leyenda completa, colores consistentes y siempre visible (AG.6) · 2026-07-02
 
@@ -97,22 +111,7 @@ El abono a una meta tenía su propio selector de cuenta (`<select>` de texto pla
 
 ---
 
-### feat(metas): simplificar la selección de emoji (MT.3) · 2026-07-02
-
-El campo "Emoji (opcional)" del form de meta era suelto: aparecía siempre, sin relación con la categoría elegida (MT.1), y un usuario podía dejarlo con un emoji que ya no correspondía a la categoría final. Ahora el campo vive oculto por defecto (`#form-group-meta-icono`, [metas/view.js](../modules/dominio/metas/view.js)) y solo se muestra cuando la categoría elegida es "Otra": el resto de las categorías ya trae su emoji (MT.1), así que no hay nada que elegir. `_syncCategoriaMeta()` nueva en [metas/index.js](../modules/dominio/metas/index.js), enganchada al `change` del selector de categoría, alterna el `hidden` y **limpia el valor del input al ocultarlo**: sin esto, un emoji tecleado con "Otra" sobrevivía si el usuario cambiaba de opinión y elegía otra categoría antes de guardar (`FormData` sigue mandando campos ocultos, y `normalizarMeta` prioriza el emoji explícito sobre el de la categoría). También se llama al abrir el modal (`_nuevaMeta`, después de `resetModal`) para que el campo empiece siempre oculto, sin depender de un estado que `resetModal` no toca (limpia valores de input pero no atributos `hidden`). La nota de la tarjeta sobre un "emoji emocional en la parte inferior del form/card" ya no aplica: el changelog de junio 2026 muestra que ese emoji se movió al título de la card, no queda ningún emoji suelto por eliminar. Verificado con 5 E2E en Chromium real (campo oculto por defecto, se muestra solo con "Otra", se guarda el emoji manual, y el caso crítico: cambiar de "Otra" a otra categoría limpia el emoji y usa el de la categoría nueva). 1803/1803 unit; 84/84 → 86/86 E2E. Lint limpio. SW v256 → v257.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/metas/view.js` | El form-group del emoji queda `hidden` por defecto; label actualizado ("Elige un emoji para tu meta"). |
-| `modules/dominio/metas/index.js` | Nueva `_syncCategoriaMeta(form)`: alterna `hidden` según la categoría y limpia el emoji al ocultarlo; enganchada al `change` del selector y llamada tras `resetModal` en `_nuevaMeta`. |
-| `modules/dominio/metas/logic.js` | Comentario de `normalizarMeta` actualizado para reflejar el nuevo comportamiento del form. |
-| `tests/unit/metas.test.js` | Test de `renderFormMeta` actualizado: el form-group del emoji nace `hidden`. |
-| `tests/e2e/smoke.test.js` | 3 tests nuevos (campo oculto/visible según categoría, guardado del emoji manual, limpieza al cambiar de categoría); 1 test viejo reescrito porque ya no aplicaba con el campo siempre visible. |
-| `service-worker.js` | v256 → v257. |
-
----
-
-> Para tareas anteriores (MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

@@ -350,7 +350,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   }
 
   return `
-    <li class="cal-detail__item">
+    <li class="cal-detail__item cal-detail__item--${tipo}">
       <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>

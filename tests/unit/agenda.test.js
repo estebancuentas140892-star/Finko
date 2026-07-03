@@ -599,3 +599,76 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     expect(iLeyenda).toBeLessThan(iDetalle);
   });
 });
+
+// ── renderAgenda() - marca de color por tipo en el detalle (AG.7) ─
+
+describe('renderAgenda() - marca de color por tipo en el detalle', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('un gasto fijo trae la clase cal-detail__item--fijo', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, tipo: 'fijo' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.classList.contains('cal-detail__item--fijo')).toBe(true);
+    expect(item.querySelector('.cal-detail__icon--fijo')).not.toBeNull();
+  });
+
+  it('una deuda con entidad trae la clase cal-detail__item--deuda-entidad', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd1', diaPago: 15, tipo: 'deuda-entidad',
+      cuotaMensual: 200_000, saldoTotal: 2_000_000,
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.classList.contains('cal-detail__item--deuda-entidad')).toBe(true);
+  });
+
+  it('una deuda personal trae la clase cal-detail__item--deuda-personal', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd2', diaPago: 15, tipo: 'deuda-personal',
+      cuotaMensual: 80_000, saldoTotal: 500_000,
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.classList.contains('cal-detail__item--deuda-personal')).toBe(true);
+  });
+
+  it('con varios tipos el mismo día, cada item lleva la clase de su propio tipo', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', diaPago: 15, tipo: 'fijo' }),
+      compromisoBase({
+        id: 'e1', diaPago: 15, tipo: 'deuda-entidad',
+        cuotaMensual: 200_000, saldoTotal: 2_000_000,
+      }),
+      compromisoBase({
+        id: 'p1', diaPago: 15, tipo: 'deuda-personal',
+        cuotaMensual: 80_000, saldoTotal: 500_000,
+      }),
+    ];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const items = [...document.querySelectorAll('.cal-detail__item')];
+    expect(items).toHaveLength(3);
+    expect(items.some(el => el.classList.contains('cal-detail__item--fijo'))).toBe(true);
+    expect(items.some(el => el.classList.contains('cal-detail__item--deuda-entidad'))).toBe(true);
+    expect(items.some(el => el.classList.contains('cal-detail__item--deuda-personal'))).toBe(true);
+  });
+});

@@ -65,15 +65,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar).
 - Modelo     : Sonnet 5 - Medio
 
-#### AG.7 - Identificación visual por color en los registros del día
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : cada registro del detalle del día lleva una marca visual del color de su tipo/categoría (franja lateral, indicador o fondo sutil), para distinguir de un vistazo qué es qué en fechas cargadas (quincenas, fin de mes).
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js` (`_renderDetalleItem`), CSS del calendario
-- Depende de : nada (AG.6 cerrada; la paleta por tipo vive en las clases `cal-dot--<tipo>` de `styles/components/config.css`)
-- Modelo     : Sonnet 5 - Bajo/Medio
-
 ---
 
 ### Mis cuentas (dominio `tesoreria`)
