@@ -247,15 +247,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 ### Metas (dominio `metas`)
 
-#### MT.1 - Categorías para metas
-- Prioridad  : alta (re-confirmada por el usuario el 2026-07-02)
-- Estado     : pendiente
-- Objetivo   : agregar `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` (mismo patrón que MC.9/TX.1/D.5a), selector en el form y emoji junto al nombre en la lista. Foco en objetivos de alto costo: ✈️ Viajes, 🎂 Cumpleaños, 💍 Boda, 🏠 Vivienda, 🚗 Vehículo, 💻 Computador, 📱 Celular, 🎓 Educación, 👶 Hijo(s), 🏖️ Vacaciones, 💼 Emprendimiento, 📦 Otra. Al elegir "Otra", el usuario puede poner nombre libre y elegir su propio ícono (ver MT.3).
-- Secciones  : Metas
-- Archivos   : `modules/core/constants.js`, `modules/dominio/metas/logic.js` (`normalizarMeta`, línea ~108), `modules/dominio/metas/view.js`
-- Depende de : nada. Ojo de consistencia (guardarraíl tipo TX.4): "Educación" ya usa 📚 en Gastos/Calendario, reconciliar emoji antes de usar 🎓. Sin migración (campo opcional de lectura defensiva).
-- Modelo     : Sonnet 5 - Medio
-
 #### MT.2 (épica, requiere ADR) - Integración de Metas con Calendario
 - Prioridad  : media
 - Estado     : requiere ADR

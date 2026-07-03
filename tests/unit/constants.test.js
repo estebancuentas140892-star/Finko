@@ -11,6 +11,8 @@ import {
   CATEGORIA_AGENDA_EMOJI,
   CATEGORIA_INGRESO_EMOJI,
   CATEGORIA_DEUDA_EMOJI,
+  CATEGORIAS_META,
+  CATEGORIA_META_EMOJI,
   GRUPOS_FINANCIEROS,
   LABEL_GRUPO_FINANCIERO,
   GRUPO_POR_SECCION,
@@ -163,13 +165,40 @@ describe('TIPOS_CUENTA y TIPOS_POR_CLASE', () => {
   });
 });
 
+// ── CATEGORIAS_META / CATEGORIA_META_EMOJI (MT.1) ─────────────────
+
+describe('CATEGORIAS_META / CATEGORIA_META_EMOJI', () => {
+  it('toda categoría de CATEGORIAS_META tiene un emoji en CATEGORIA_META_EMOJI', () => {
+    for (const cat of CATEGORIAS_META) {
+      expect(CATEGORIA_META_EMOJI[cat]).toBeDefined();
+      expect(typeof CATEGORIA_META_EMOJI[cat]).toBe('string');
+      expect(CATEGORIA_META_EMOJI[cat].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('CATEGORIA_META_EMOJI no tiene entradas huérfanas (todas están en CATEGORIAS_META)', () => {
+    for (const cat of Object.keys(CATEGORIA_META_EMOJI)) {
+      expect(CATEGORIAS_META).toContain(cat);
+    }
+  });
+
+  it('incluye la categoría de escape "Otra" con 📦', () => {
+    expect(CATEGORIAS_META).toContain('Otra');
+    expect(CATEGORIA_META_EMOJI['Otra']).toBe('📦');
+  });
+
+  it('sin categorías duplicadas', () => {
+    expect(new Set(CATEGORIAS_META).size).toBe(CATEGORIAS_META.length);
+  });
+});
+
 // ── TX.4: guardarraíl de consistencia de emojis entre catálogos (ADR 014) ──
 //
 // ADR 014 exige que toda etiqueta compartida entre catálogos use el mismo
 // emoji en todos los catálogos donde aparece. Este test falla si alguien
 // introduce un desajuste (ej. Mercado 🛒 en Gastos pero 🥕 en Agenda).
 //
-// Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas + PLANTILLAS_APARTADO.
+// Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas, Metas + PLANTILLAS_APARTADO.
 // Se ignoran etiquetas internas de Gastos (Deudas, Ahorro, Alimentación).
 // La comparación es por nombre exacto (case-sensitive): "Otro" ≠ "Otros".
 
@@ -185,6 +214,8 @@ describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
       .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Ingresos' })),
     ...Object.entries(CATEGORIA_DEUDA_EMOJI)
       .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas' })),
+    ...Object.entries(CATEGORIA_META_EMOJI)
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Metas' })),
     ...PLANTILLAS_APARTADO
       .map(p => ({ label: p.nombre, emoji: p.icono, fuente: 'Apartados' })),
   ];

@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
+import { CATEGORIAS_META, CATEGORIA_META_EMOJI } from '../../core/constants.js';
 import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
 
 // ── LISTA DE METAS ───────────────────────────────────────────────
@@ -143,9 +144,18 @@ export function renderFormMeta() {
         <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
       <div class="form-group">
+        <label for="meta-categoria" class="label">Categoría (opcional)</label>
+        <select id="meta-categoria" name="categoria" class="input">
+          <option value="">Sin categoría</option>
+          ${_renderOpcionesCategoria()}
+        </select>
+        <p class="form-hint">Elige una categoría y Finko le pone el emoji automáticamente.</p>
+      </div>
+      <div class="form-group">
         <label for="meta-icono" class="label">Emoji (opcional)</label>
         <input id="meta-icono" name="icono" class="input" type="text"
                maxlength="4" placeholder="🎯" autocomplete="off" />
+        <p class="form-hint">Solo si quieres reemplazar el emoji de la categoría.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
@@ -155,6 +165,17 @@ export function renderFormMeta() {
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────
+
+/**
+ * Devuelve las `<option>` de CATEGORIAS_META con su emoji (MT.1), en el
+ * orden del catálogo.
+ * @returns {string}
+ */
+function _renderOpcionesCategoria() {
+  return CATEGORIAS_META
+    .map(cat => `<option value="${_esc(cat)}">${CATEGORIA_META_EMOJI[cat]} ${_esc(cat)}</option>`)
+    .join('');
+}
 
 /**
  * Devuelve el HTML del selector de cuenta para el abono.

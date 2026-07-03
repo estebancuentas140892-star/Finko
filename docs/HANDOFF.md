@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(inicio): ojo para ocultar/mostrar el dinero disponible, IN.2)
+> Última actualización: 2026-07-02 (feat(metas): categorías con emoji, MT.1)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1787/1787 verdes |
-| Tests E2E | 82/82 verde. Suites: `smoke` 46 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1803/1803 verdes |
+| Tests E2E | 84/84 verde. Suites: `smoke` 48 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): categorías con emoji (MT.1) · 2026-07-02
+
+Nuevo catálogo `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en [core/constants.js](../modules/core/constants.js) (mismo patrón que MC.9/TX.1/D.5a), foco en objetivos de alto costo (Viajes, Cumpleaños, Boda, Vivienda, Vehículo, Computador, Celular, Educación, Hijo(s), Vacaciones, Emprendimiento, Otra). Selector "Categoría (opcional)" nuevo en el form de meta ([metas/view.js](../modules/dominio/metas/view.js)); `normalizarMeta()` ([metas/logic.js](../modules/dominio/metas/logic.js)) resuelve el emoji con prioridad emoji escrito a mano > emoji de la categoría > 🎯 por defecto, así el campo "Emoji (opcional)" existente sigue funcionando como override sin romper metas ya creadas (campo `categoria` opcional, lectura defensiva, sin migración). Dos reconciliaciones de emoji contra el guardarraíl de consistencia entre catálogos (ADR 014, TX.4): "Educación" usa 📚 (no 🎓, ya en uso en Gastos/Agenda) y "Vacaciones" usa ✈️ (no 🏖️, ya en uso en Apartados); el catálogo de Metas se sumó al test de guardarraíl TX.4 para que futuras ediciones no reintroduzcan el desajuste. El preview del entorno sigue sin cargar; verificado con 2 E2E nuevos en Chromium real (categoría con emoji en la lista, emoji manual gana sobre el de categoría). 22 tests unit nuevos. 1787/1787 → 1803/1803 unit; 82/82 → 84/84 E2E. SW v255 → v256.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` (12 categorías). |
+| `modules/dominio/metas/logic.js` | `normalizarMeta()` resuelve `categoria` e `icono` con la prioridad emoji manual > categoría > default. |
+| `modules/dominio/metas/view.js` | Selector de categoría en `renderFormMeta()`; helper `_renderOpcionesCategoria()`. |
+| `tests/unit/constants.test.js` | 4 tests de forma del catálogo + Metas sumado al guardarraíl TX.4. |
+| `tests/unit/metas.test.js` | 15 tests: `normalizarMeta` con categoría, selector en el form, emoji en la lista. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - categorías con emoji (MT.1)", 2 tests. |
+| `service-worker.js` | v255 → v256. |
+
+---
 
 ### feat(inicio): ojo para ocultar/mostrar el dinero disponible (IN.2) · 2026-07-02
 

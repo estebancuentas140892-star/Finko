@@ -471,6 +471,49 @@ export const CATEGORIA_DEUDA_EMOJI = {
   'Otra':               '📦',
 };
 
+/**
+ * Categorías predefinidas para metas de ahorro (Compromiso libre, no recurrente).
+ * Foco en objetivos de alto costo (MT.1). El orden define el del selector en
+ * el formulario "Nueva meta". Al elegir 'Otra', el usuario nombra la meta
+ * libremente y elige su propio ícono (ver MT.3).
+ */
+export const CATEGORIAS_META = [
+  'Viajes',
+  'Cumpleaños',
+  'Boda',
+  'Vivienda',
+  'Vehículo',
+  'Computador',
+  'Celular',
+  'Educación',
+  'Hijo(s)',
+  'Vacaciones',
+  'Emprendimiento',
+  'Otra',
+];
+
+/**
+ * Emoji visual por categoría de meta. Usar solo en UI; nunca en el valor
+ * almacenado. Dos reconciliaciones respecto de la lista original de la
+ * tarjeta MT.1, para respetar el guardarraíl de consistencia entre
+ * catálogos (ADR 014, TX.4): 'Educación' usa 📚 (no 🎓, ya en uso en Gastos
+ * y Agenda) y 'Vacaciones' usa ✈️ (no 🏖️, ya en uso en Apartados).
+ */
+export const CATEGORIA_META_EMOJI = {
+  'Viajes':         '✈️',
+  'Cumpleaños':     '🎂',
+  'Boda':           '💍',
+  'Vivienda':       '🏠',
+  'Vehículo':       '🚗',
+  'Computador':     '💻',
+  'Celular':        '📱',
+  'Educación':      '📚',
+  'Hijo(s)':        '👶',
+  'Vacaciones':     '✈️',
+  'Emprendimiento': '💼',
+  'Otra':           '📦',
+};
+
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
 export const FRECUENCIAS = [
   'Diario',

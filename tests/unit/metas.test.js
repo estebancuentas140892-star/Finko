@@ -8,7 +8,8 @@ import {
   validarAbono,
   normalizarMeta,
 } from '../../modules/dominio/metas/logic.js';
-import { renderFormAbonoMeta } from '../../modules/dominio/metas/view.js';
+import { renderFormAbonoMeta, renderFormMeta, renderListaMetas } from '../../modules/dominio/metas/view.js';
+import { CATEGORIAS_META, CATEGORIA_META_EMOJI } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -270,6 +271,96 @@ describe('normalizarMeta()', () => {
 
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarMeta(datosFormValidos)).not.toHaveProperty('id');
+  });
+});
+
+// ── normalizarMeta() - categoría (MT.1) ───────────────────────────
+
+describe('normalizarMeta() - categoría', () => {
+  it('categoria vacía o ausente queda como null', () => {
+    expect(normalizarMeta(datosFormValidos).categoria).toBeNull();
+    expect(normalizarMeta({ ...datosFormValidos, categoria: '' }).categoria).toBeNull();
+  });
+
+  it('preserva la categoria elegida', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Boda', icono: '' });
+    expect(result.categoria).toBe('Boda');
+  });
+
+  it('sin emoji explícito, usa el emoji de la categoría elegida', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Boda', icono: '' });
+    expect(result.icono).toBe(CATEGORIA_META_EMOJI['Boda']);
+  });
+
+  it('un emoji explícito gana sobre el de la categoría', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Boda', icono: '🎉' });
+    expect(result.icono).toBe('🎉');
+  });
+
+  it('sin categoria ni emoji, usa 🎯 por defecto', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: '', icono: '' });
+    expect(result.icono).toBe('🎯');
+  });
+
+  it('categoria "Otra" sin emoji explícito usa 📦', () => {
+    const result = normalizarMeta({ ...datosFormValidos, categoria: 'Otra', icono: '' });
+    expect(result.icono).toBe('📦');
+  });
+});
+
+// ── renderFormMeta() - selector de categoría (MT.1) ───────────────
+
+describe('renderFormMeta() - selector de categoría', () => {
+  it('incluye un select con name="categoria"', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('id="meta-categoria"');
+    expect(html).toContain('name="categoria"');
+  });
+
+  it('la opción "Sin categoría" tiene value vacío', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('<option value="">Sin categoría</option>');
+  });
+
+  it('lista todas las CATEGORIAS_META con su emoji', () => {
+    const html = renderFormMeta();
+    for (const cat of CATEGORIAS_META) {
+      expect(html).toContain(`<option value="${cat}">${CATEGORIA_META_EMOJI[cat]} ${cat}</option>`);
+    }
+  });
+
+  it('conserva el campo de emoji libre', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('id="meta-icono"');
+    expect(html).toContain('name="icono"');
+  });
+});
+
+// ── renderListaMetas() - emoji de categoría en la lista (MT.1) ────
+
+describe('renderListaMetas() - emoji de categoría en la lista', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas"></div>';
+  });
+
+  it('una meta creada con categoría "Boda" muestra 💍 junto al nombre', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Fiesta de bodas', categoria: 'Boda', icono: '' }),
+      id: 'm1',
+    }];
+    renderListaMetas();
+    const titulo = document.querySelector('.list-item__title').textContent;
+    expect(titulo).toContain('💍');
+    expect(titulo).toContain('Fiesta de bodas');
+  });
+
+  it('una meta sin categoría ni emoji muestra el default 🎯', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Objetivo libre', categoria: '', icono: '' }),
+      id: 'm1',
+    }];
+    renderListaMetas();
+    expect(document.querySelector('.list-item__title').textContent).toContain('🎯');
   });
 });
 

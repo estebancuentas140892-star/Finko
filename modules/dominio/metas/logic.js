@@ -3,6 +3,8 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
+import { CATEGORIA_META_EMOJI } from '../../core/constants.js';
+
 // ── CONSULTAS ────────────────────────────────────────────────────
 
 /**
@@ -103,15 +105,23 @@ export function validarAbono(monto) {
 /**
  * Convierte datos crudos del formulario al shape de S.metas.
  * Asume que los datos ya pasaron `validarMeta()`.
+ *
+ * Prioridad del ícono (MT.1): emoji escrito a mano > emoji de la categoría
+ * elegida > 🎯 por defecto. Así una categoría predefinida (Viajes, Boda...)
+ * ya trae su emoji sin que el usuario tenga que elegirlo, pero un emoji
+ * explícito (el caso de 'Otra', ver MT.3) siempre gana.
+ *
  * @param {Record<string, string>} datos
  */
 export function normalizarMeta(datos) {
+  const categoria = datos.categoria?.trim() || null;
   return {
     nombre:        datos.nombre.trim(),
     montoObjetivo: Number(datos.montoObjetivo),
     montoActual:   0,
     fechaLimite:   datos.fechaLimite?.trim() || null,
-    icono:         datos.icono?.trim()        || '🎯',
+    categoria,
+    icono:         datos.icono?.trim() || CATEGORIA_META_EMOJI[categoria] || '🎯',
     completada:    false,
   };
 }

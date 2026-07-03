@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): categorías con emoji (MT.1) · 2026-07-02
+
+Metas de ahorro tenía nombre libre y un campo de emoji suelto (sin catálogo). Nuevo `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en [core/constants.js](../modules/core/constants.js), mismo patrón que los catálogos ya existentes (`CATEGORIA_EMOJI` de Gastos, `CATEGORIA_AGENDA_EMOJI`, `CATEGORIA_DEUDA_EMOJI`): 12 categorías con foco en objetivos de alto costo, priorizadas por el usuario el 2026-07-02 (Viajes, Cumpleaños, Boda, Vivienda, Vehículo, Computador, Celular, Educación, Hijo(s), Vacaciones, Emprendimiento, Otra).
+
+Selector "Categoría (opcional)" nuevo en `renderFormMeta()` ([metas/view.js](../modules/dominio/metas/view.js)), con las opciones ya mostrando su emoji. `normalizarMeta()` ([metas/logic.js](../modules/dominio/metas/logic.js)) resuelve el emoji final con esta prioridad: emoji escrito a mano en el campo "Emoji (opcional)" (que se conserva, no se elimina en esta tarea) > emoji de la categoría elegida > 🎯 por defecto. Así una meta sin categoría se comporta exactamente igual que antes, y elegir una categoría predefinida trae su emoji sin que el usuario tenga que escribirlo. El emoji resuelto queda guardado en `meta.icono` como siempre; `_renderMetaItem` no cambió porque ya leía ese campo. Campo `categoria` nuevo y opcional en el shape de `Meta`, lectura defensiva, sin migración de schema.
+
+Reconciliación de emoji contra el guardarraíl de consistencia entre catálogos (ADR 014, TX.4, "mismo concepto ⇒ misma etiqueta y mismo emoji en todas las secciones"): la lista original de la tarjeta pedía 🎓 para "Educación" y 🏖️ para "Vacaciones", pero esas etiquetas ya existían con otro emoji en otros catálogos (Educación 📚 en Gastos/Agenda; Vacaciones ✈️ en Apartados). Se usaron los emojis ya establecidos en vez de introducir un desajuste, y el catálogo de Metas se sumó a la lista de fuentes del test de guardarraíl `TX.4` (antes cubría Gastos, Agenda, Ingresos, Deudas y Apartados) para que una edición futura de cualquiera de estos catálogos no vuelva a divergir sin que un test lo marque.
+
+El preview del entorno sigue sin cargar la app (nota ya conocida en la memoria del proyecto); verificado con 22 tests unitarios nuevos (forma del catálogo, prioridad del emoji en `normalizarMeta`, contenido del selector, emoji real en `renderListaMetas`) más 2 tests E2E nuevos en Chromium real: crear una meta con categoría "Boda" muestra 💍 en la lista, y un emoji escrito a mano gana sobre el de la categoría. 1787/1787 → 1803/1803 unit; 82/82 → 84/84 E2E. Lint limpio. SW v255 → v256.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_META` (12 categorías) + `CATEGORIA_META_EMOJI`, con la reconciliación de Educación y Vacaciones documentada en el comentario. |
+| `modules/dominio/metas/logic.js` | `normalizarMeta()`: nuevo campo `categoria`; `icono` se resuelve con prioridad manual > categoría > default. |
+| `modules/dominio/metas/view.js` | `renderFormMeta()` agrega el selector `#meta-categoria`; nuevo helper `_renderOpcionesCategoria()`. |
+| `tests/unit/constants.test.js` | Describe nuevo con 4 tests de forma del catálogo; `CATEGORIA_META_EMOJI` sumado a las fuentes del guardarraíl TX.4. |
+| `tests/unit/metas.test.js` | 15 tests nuevos: `normalizarMeta` con categoría (6), selector en `renderFormMeta` (4), emoji real en `renderListaMetas` (2), más los describe wrappers. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - categorías con emoji (MT.1)" con 2 tests. |
+| `service-worker.js` | v255 → v256. |
+
+---
+
 ### feat(inicio): ojo para ocultar/mostrar el dinero disponible (IN.2) · 2026-07-02
 
 Icono de ojo junto al saldo del hero de Inicio ("Tu dinero disponible hoy"), estilo app bancaria, para usar Finko en lugares públicos: alterna entre el monto visible y la máscara `$••••••` (largo fijo, para no revelar la magnitud del monto real). La preferencia persiste entre sesiones en `S.config.ocultarSaldo` con lectura defensiva (`=== true`; cualquier otro valor muestra el monto), sin migración de schema, como pedía la tarjeta.

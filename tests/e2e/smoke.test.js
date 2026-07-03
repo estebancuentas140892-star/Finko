@@ -200,6 +200,53 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
   });
 });
 
+// ── SUITE 1c: Metas - categorías con emoji (MT.1) ────────────────────────────
+
+test.describe('Metas - categorías con emoji (MT.1)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await page.click('a[href="#metas"]');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+  });
+
+  test('crear una meta con categoría "Boda" muestra 💍 junto al nombre en la lista', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Fiesta de matrimonio');
+    await form.locator('#meta-objetivo').fill('5000000');
+    await form.locator('#meta-categoria').selectOption('Boda');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-metas .list-item__title');
+    await expect(titulo).toContainText('💍');
+    await expect(titulo).toContainText('Fiesta de matrimonio');
+  });
+
+  test('un emoji escrito a mano gana sobre el de la categoría elegida', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Viaje personalizado');
+    await form.locator('#meta-objetivo').fill('3000000');
+    await form.locator('#meta-categoria').selectOption('Viajes');
+    await form.locator('#meta-icono').fill('🌴');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-metas .list-item__title');
+    await expect(titulo).toContainText('🌴');
+    await expect(titulo).not.toContainText('✈️');
+  });
+});
+
 // ── SUITE 2: Onboarding ─────────────────────────────────────────────────────
 // Modo serial: el SW compartido entre workers paralelos puede interferir con
 // los tests de onboarding (que dependen de localStorage vacío). Serial garantiza
