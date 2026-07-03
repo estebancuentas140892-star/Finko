@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado · 2026-07-03
+
+Tarea de decisión de diseño, sin código. BUG-009 (una misma deuda puede sobrepagarse combinando su cuota del checklist de Necesidades y un abono extra en "Distribuir mi ingreso") quedó registrado el mismo día con la pregunta abierta: ¿se permite pagar cuota + extra a la misma deuda en un mismo movimiento?
+
+**Decisión del usuario, con recomendación del análisis:** sí se permite, con tope coordinado. El extra efectivo pasa a ser `min(extra, saldoTotal - cuotaMarcada)`; si la cuota marcada ya cubre todo el saldo, el extra queda en 0 y se ignora. Pagar la cuota y abonar extra al capital en el mismo movimiento es un comportamiento financiero real y sano que Finko fomenta (el orden Avalancha de "Abonar extra a deudas" existe justo para eso), y el fix es la extensión natural del patrón de topes ya vigente: el docstring de `_leerItemsDistribucion` ya promete que "el resumen y el apply usan el mismo monto efectivo", solo que hoy el tope (`_saldoDeuda`) ignora la cuota marcada en el checklist. Alternativas descartadas: excluir la deuda de "Abonar extra" cuando su cuota está marcada (elimina un flujo legítimo y exige filas que aparecen/desaparecen en vivo) y bloquear la confirmación con un error (fricción, rechaza una intención válida).
+
+El diseño completo con los puntos de implementación (en `modules/dominio/tesoreria/index.js`: `_leerItemsDistribucion` recibe las Necesidades marcadas para restar la cuota del tope; helper puro del tope en `logic.js` con unit tests; E2E del escenario exacto del bug) quedó en la entrada BUG-009 de [BUGS.md](BUGS.md). La implementación es una tarea aparte; BUG-009 sigue pendiente hasta entonces.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/BUGS.md` | BUG-009 gana la línea "Diseño" con la decisión y el plan de implementación; se retira el "fix probable" abierto. |
+| `docs/HANDOFF.md` | Entrada en "Qué se hizo recientemente" (sale MC.7d slice 1 hacia el puntero de tareas anteriores). |
+| `docs/CHANGELOG.md` | Esta entrada. |
+
+---
+
 ### fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity (BUG-007, BUG-008) · 2026-07-03
 
 Cierra los dos bugs de baja prioridad de la revisión de Mis cuentas, dejando la sección sin bugs pendientes salvo BUG-009 (media, requiere una decisión de diseño).

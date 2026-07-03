@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity, BUG-007 y BUG-008)
+> Última actualización: 2026-07-03 (docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado · 2026-07-03
+
+Tarea de decisión de diseño, sin código. Con el usuario se decidió cómo debe comportarse una deuda que aparece a la vez en el checklist de Necesidades (su cuota) y en "Abonar extra a deudas" del panel "Distribuir mi ingreso": **se permiten ambos en un mismo movimiento**, y el tope del extra pasa a ser el saldo restante tras la cuota marcada (`efectivo = min(extra, saldoTotal - cuotaMarcada)`; si la cuota cubre todo el saldo, el extra queda en 0 y se ignora). Pagar la cuota y abonar extra al capital en el mismo movimiento es un comportamiento financiero real que Finko fomenta (el orden Avalancha existe para eso). Se descartaron las alternativas de excluir la deuda de "Abonar extra" (elimina un flujo legítimo, exige UI dinámica) y de bloquear la confirmación con error (fricción). El diseño completo con los puntos de implementación quedó en la entrada BUG-009 de [BUGS.md](BUGS.md); la implementación es la tarea siguiente.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/BUGS.md` | BUG-009 gana la línea "Diseño" con la decisión y el plan de implementación; se retira el "fix probable" abierto. |
+| `docs/CHANGELOG.md` | Entrada de la decisión. |
+| `docs/HANDOFF.md` | Esta entrada. |
+
+---
 
 ### fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity (BUG-007, BUG-008) · 2026-07-03
 
@@ -106,33 +118,7 @@ Verificado con 4 tests unitarios nuevos (tope de cuota activo/inactivo, exclusi�
 
 ---
 
-### feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso (MC.7d, slice 1) · 2026-07-03
-
-Primer slice de MC.7d, implementando R1/R4/R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md). El desglose de Necesidades del panel "Distribuir mi ingreso" (antes un `<details>` de solo lectura, MC.7c) pasa a ser una checklist: el usuario marca los gastos fijos y cuotas de deuda que cubre con este ingreso, y al confirmar cada marca registra exactamente el mismo pago que su flujo individual existente (pago de fijo como "Marcar pagado" de Agenda, cuota de deuda como abono), coherente con badges, Análisis y el ejecutado de Límites (ADR 017). **Alcance de este slice, decidido con el usuario:** solo fijos con frecuencia Mensual y deudas entran a la checklist; un fijo Quincenal/Semanal/Diario tiene más de una ocurrencia por periodo y una sola fila no puede representarlas sin pagar de más o de menos, así que quedan fuera hasta una tarea futura que modele sus vencimientos (mismo problema que ya resolvió `eventosDelMes` de Agenda). El shell de asistente paginado (avanzar/atrás) y el recálculo de Ahorro sobre el remanente real (R3) quedan pendientes en tarjetas separadas del BOARD.
-
-En [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js), `construirDesgloseNecesidades(compromisos, gastos, hoy)` gana dos parámetros: ahora filtra solo fijos Mensuales (antes mensualizaba Quincenal/Semanal/Diario con `_FACTOR_MENSUAL`, comportamiento que la revisión de ADR descartó por el riesgo de marcar como "pagado" un periodo cubierto solo a medias) y agrega `diaPago` y `pagado` por fila. Nuevas privadas `_prefijoMes()` y `_pagadoEstePeriodo()` duplican el guard de `estadoPagoMes` de compromisos/logic.js (mismo criterio del badge "Ya pagaste este mes" de Agenda: cualquier gasto vinculado alcanza para un fijo, la suma de abonos debe cubrir `cuotaMensual` para una deuda); duplicado intencional, no importación cruzada (ADN #10). El orden pone primero los no pagados (de mayor a menor monto).
-
-En [tesoreria/view.js](../modules/dominio/tesoreria/view.js), nueva `_filaNecesidad()` reemplaza el `<details>` de `_renderDesgloseNecesidades()` (eliminada): checkbox + nombre + categoría + día de pago + monto (no editable: es una obligación real, no una asignación libre); si `pagado`, el checkbox nace marcado y deshabilitado con "Ya pagado" en vez del monto. `_renderPanelDistribuir()` mueve la sección de Necesidades del bloque "Esto queda en tu cuenta (no se mueve)" a una sección accionable propia, primero en el panel (Paso 1 antes que Ahorro/Deudas/Inversiones); la fila informativa de Estilo de vida es lo único que queda en "no se mueve". El panel ahora también aparece cuando solo hay Necesidades (antes exigía al menos un destino de ahorro/deuda/inversión).
-
-En [tesoreria/index.js](../modules/dominio/tesoreria/index.js): nueva `_leerNecesidadesMarcadas()` (lee `[data-nec-toggle]`, monto fijo en `data-nec-monto`, no editable) se suma a `_leerItemsDistribucion()` en `_recalcularDistribucion()` para que el resumen en vivo incluya ambos; nueva `_aplicarNecesidad()` escribe directo en `'gastos'` (mismo patrón que Agenda y Compromisos: `gastos`/`cuentas` son un ledger compartido que cualquier dominio edita con `guardar`/`editar` de crud.js, no una violación de ADN #10) y descuenta `saldoTotal` para deudas; `_confirmarDistribucion()` la invoca por cada Necesidad marcada, dentro de la misma confirmación única que ya aplicaba Ahorro/Deudas/Inversiones. **Hallazgo de R4 aplicado:** `_SLICES_DISTRIBUCION` no incluía `'gastos'`; como este slice hace que el Paso 1 cree gastos, se agregó, o "Deshacer" habría dejado pagos huérfanos.
-
-**Bug encontrado y corregido durante la verificación E2E:** los primeros tests fallaban con el saldo/gasto sin persistir tras confirmar, pese a que el código corría sin errores (verificado con logging temporal en el código fuente). Causa: `save()` está debounced 200ms (ADN #5) y los tests leían `localStorage` inmediatamente después del click, antes del flush. No era un bug de la lógica de negocio: se corrigió agregando `page.waitForTimeout(400)` antes de leer `localStorage` en los tests de confirmar/deshacer, mismo patrón ya usado en otros E2E del proyecto que verifican persistencia.
-
-Verificado con 13 tests unitarios nuevos/reescritos (`construirDesgloseNecesidades` con fijos Mensuales, exclusión de Quincenal/Semanal/Diario, estado `pagado` por gasto del periodo, orden con pagados al final) más 4 E2E en Chromium real (checklist con día de pago y exclusión correcta; fila ya pagada deshabilitada; confirmar registra el mismo gasto que el flujo individual y descuenta la cuenta; Deshacer restaura saldo y borra el gasto). El preview interactivo del entorno no cargó la app (`chrome-error://chromewebdata/`, problema conocido de este entorno); la verificación se apoyó en E2E con Chromium real. 1851/1851 → 1857/1857 unit; 98/98 → 101/101 E2E. Lint limpio. SW v263 → v264.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` gana `gastos`/`hoy`, filtra solo fijos Mensuales, agrega `diaPago`/`pagado`; nuevas privadas `_prefijoMes()`, `_pagadoEstePeriodo()`. |
-| `modules/dominio/tesoreria/view.js` | Nueva `_filaNecesidad()` (reemplaza `_renderDesgloseNecesidades()`); `_renderPanelDistribuir()` mueve Necesidades a sección accionable propia (Paso 1). |
-| `modules/dominio/tesoreria/index.js` | Nuevas `_leerNecesidadesMarcadas()`, `_aplicarNecesidad()`; `_confirmarDistribucion()` aplica los pagos marcados; `_SLICES_DISTRIBUCION` suma `'gastos'`; listener de `change` para `[data-nec-toggle]`. |
-| `styles/components/forms.css` | Nueva `.distribuir__fila--pagado`, `.distribuir__nec-monto`; clases muertas del `<details>` eliminadas. |
-| `tests/unit/tesoreria.test.js` | `construirDesgloseNecesidades` reescrito: 13 tests (exclusión por frecuencia, `pagado`, `diaPago`, orden). |
-| `tests/e2e/smoke.test.js` | Suite "Distribuir mi ingreso: checklist de Necesidades" reemplaza el test de MC.7c; 4 tests nuevos. |
-| `service-worker.js` | v263 → v264. |
-
----
-
-> Para tareas anteriores (docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 
