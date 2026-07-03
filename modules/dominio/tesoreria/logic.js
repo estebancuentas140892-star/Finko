@@ -444,7 +444,7 @@ export function validarIngreso(datos) {
     errores.push('La descripción es obligatoria.');
   }
   const monto = Number(datos.monto);
-  if (isNaN(monto) || monto <= 0) {
+  if (!Number.isFinite(monto) || monto <= 0) {
     errores.push('El monto debe ser un número mayor a 0.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
@@ -545,18 +545,18 @@ export function validarCuenta(datos) {
     errores.push('Debes elegir el tipo de cuenta.');
   }
   const saldo = Number(datos.saldo);
-  if (isNaN(saldo) || saldo < 0) {
+  if (!Number.isFinite(saldo) || saldo < 0) {
     errores.push('El saldo debe ser un número igual o mayor a 0.');
   }
 
   // Validar cuota de manejo solo si el toggle está activo.
   if (_cuotaActiva(datos)) {
     const monto = Number(datos.cuotaManejoMonto);
-    if (isNaN(monto) || monto <= 0) {
+    if (!Number.isFinite(monto) || monto <= 0) {
       errores.push('El monto de la cuota de manejo debe ser mayor a 0.');
     }
     const dia = Number(datos.cuotaManejoDia);
-    if (isNaN(dia) || !Number.isInteger(dia) || dia < 1 || dia > 31) {
+    if (!Number.isInteger(dia) || dia < 1 || dia > 31) {
       errores.push('El día de cobro debe ser un número entre 1 y 31.');
     }
   }

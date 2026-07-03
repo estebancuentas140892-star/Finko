@@ -183,6 +183,17 @@ describe('validarCuenta()', () => {
     const errores = validarCuenta({ nombre: '', banco: '', tipo: '', saldo: 'x' });
     expect(errores.length).toBeGreaterThanOrEqual(3);
   });
+
+  it('BUG-008: reporta error si saldo es Infinity (ej. "1e999")', () => {
+    const errores = validarCuenta({ ...datosFormValidos, saldo: '1e999' });
+    expect(errores).toHaveLength(1);
+    expect(errores[0]).toMatch(/saldo/i);
+  });
+
+  it('BUG-008: reporta error si saldo es -Infinity', () => {
+    const errores = validarCuenta({ ...datosFormValidos, saldo: '-1e999' });
+    expect(errores).toHaveLength(1);
+  });
 });
 
 // ── normalizarCuenta() ───────────────────────────────────────────
@@ -667,6 +678,11 @@ describe('validarCuenta() con cuota de manejo', () => {
     const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '15000', cuotaManejoDia: '20' });
     expect(errs).toEqual([]);
   });
+
+  it('BUG-008: toggle encendido con monto Infinity ("1e999"): error', () => {
+    const errs = validarCuenta({ ...validBase, cuotaManejoActiva: 'on', cuotaManejoMonto: '1e999', cuotaManejoDia: '20' });
+    expect(errs.some(e => /monto.*cuota/i.test(e))).toBe(true);
+  });
 });
 
 // ── normalizarCuenta() con cuota ─────────────────────────────────
@@ -924,6 +940,12 @@ describe('validarIngreso()', () => {
 
   it('error si monto no es número', () => {
     expect(validarIngreso({ ...valid, monto: 'abc' })).toHaveLength(1);
+  });
+
+  it('BUG-008: error si monto es Infinity (ej. "1e999")', () => {
+    const errs = validarIngreso({ ...valid, monto: '1e999' });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/monto/i);
   });
 
   it('error si frecuencia no está en la lista de FRECUENCIAS', () => {

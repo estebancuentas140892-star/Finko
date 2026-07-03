@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity (BUG-007, BUG-008) · 2026-07-03
+
+Cierra los dos bugs de baja prioridad de la revisión de Mis cuentas, dejando la sección sin bugs pendientes salvo BUG-009 (media, requiere una decisión de diseño).
+
+**BUG-007:** el formulario de cuenta, al activar la cuota de manejo, decía "Finko crea un gasto fijo mensual con este monto y día. Lo vas a ver en Calendario y en Deudas." La sección Deudas solo lista deudas desde la reestructuración v6 (los gastos fijos, incluida la cuota de manejo, se gestionan en Calendario); el copy quedó desactualizado desde entonces. Fix de una línea en [tesoreria/view.js](../modules/dominio/tesoreria/view.js): "Lo verás en Calendario."
+
+**BUG-008:** `validarIngreso()` y `validarCuenta()` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js) usaban `isNaN(x) || x <= 0` (o `< 0`) para validar montos. `isNaN(Infinity)` es `false`, así que un monto como `'1e999'` (que `Number()` convierte a `Infinity`) pasaba la validación: un ingreso o saldo Infinity contaminaba la distribución sugerida con montos no representables en pantalla, y al persistir `JSON.stringify` lo serializaba silenciosamente como `null`, dejando un dato corrupto en `localStorage`. Fix: los tres guards (`monto` de ingreso, `saldo` de cuenta, `cuotaManejoMonto`) cambian a `!Number.isFinite(x)`, que rechaza `NaN`, `Infinity` y `-Infinity` por igual. El guard de `cuotaManejoDia` ya usaba `Number.isInteger`, que también excluye `Infinity`; se simplificó quitando el `isNaN` redundante que llevaba delante.
+
+El alcance de BUG-008 se mantuvo en tesorería, como quedó registrado originalmente ("el patrón probablemente se repite en otros dominios: confirmarlo al revisar cada sección"); extenderlo ahora a otros dominios habría sido un cambio de alcance no pedido.
+
+Verificado con 4 tests unitarios nuevos (`validarIngreso` rechaza monto Infinity; `validarCuenta` rechaza saldo Infinity y -Infinity; la cuota de manejo rechaza monto Infinity). Sin E2E nuevo: el copy no tenía ninguna aserción existente que actualizar y el cambio de validación ya está cubierto a nivel de lógica pura. 1866/1866 → 1870/1870 unit; 106/106 E2E sin cambios (sin regresiones). Lint limpio. SW v267 → v268.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Copy de la cuota de manejo: "Lo vas a ver en Calendario y en Deudas." → "Lo verás en Calendario." |
+| `modules/dominio/tesoreria/logic.js` | `validarIngreso()`, `validarCuenta()`: `isNaN` → `!Number.isFinite` en los 3 guards de monto/saldo; guard de `cuotaManejoDia` simplificado. |
+| `tests/unit/tesoreria.test.js` | 4 tests nuevos (BUG-008): rechazo de Infinity en monto de ingreso, saldo de cuenta (positivo y negativo) y monto de cuota de manejo. |
+| `service-worker.js` | v267 → v268. |
+| `docs/BUGS.md` | BUG-007 y BUG-008 resueltos (eliminados). |
+
+---
+
 ### fix(compromisos): el abono extra a deudas desde "Distribuir mi ingreso" registra el gasto (BUG-006); nuevo BUG-009 · 2026-07-03
 
 Cuarto bug de la revisión de Mis cuentas, ya de prioridad media. El panel "Distribuir mi ingreso" permite abonar un extra a cada deuda pendiente (sección "Abonar extra a deudas", aparte de la cuota del checklist de Necesidades). Al confirmar, el abono extra bajaba el `saldoTotal` de la deuda y descontaba la cuenta de origen, pero no dejaba ningún registro de gasto: el handler de `distribucion:aplicar` en [compromisos/index.js](../modules/dominio/compromisos/index.js) solo hacía `editar('compromisos', ...)` con el nuevo saldo. El abono quedaba invisible para Análisis (que lee los gastos del mes), para el ejecutado por grupo de Límites (ADR 017) y para el guard "ya pagado este periodo" del propio checklist. El flujo de abono individual (`_guardarAbono`) y el pago de cuota del checklist (`_aplicarNecesidad`) sí registran ese gasto; el abono extra era el único de los tres que no lo hacía.

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (fix(compromisos): el abono extra a deudas desde Distribuir registra el gasto, BUG-006; nuevo BUG-009)
+> Última actualización: 2026-07-03 (fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity, BUG-007 y BUG-008)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1866/1866 verdes |
+| Tests unitarios + integración | 1870/1870 verdes |
 | Tests E2E | 106/106 verde. Suites: `smoke` 70 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
@@ -39,6 +39,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity (BUG-007, BUG-008) · 2026-07-03
+
+Cierra los dos bugs de baja prioridad de la revisión de Mis cuentas. **BUG-007:** el hint de la cuota de manejo prometía verla "en Deudas", copy desactualizado desde la reestructuración v6 (los fijos, incluida la cuota de manejo, viven en Calendario). Fix: "Lo verás en Calendario." **BUG-008:** `validarIngreso()` y `validarCuenta()` usaban `isNaN(x) || x <= 0`, que no rechaza `Infinity` (`isNaN(Infinity) === false`); un monto como `'1e999'` pasaba la validación y contaminaba la distribución sugerida, y al persistir quedaba serializado como `null`. Fix: los 3 guards de monto/saldo cambian a `!Number.isFinite(x)`.
+
+El alcance de BUG-008 se mantuvo en tesorería, tal como quedó registrado originalmente; no se extendió a otros dominios (cambio de alcance no pedido).
+
+Verificado con 4 tests unitarios nuevos (Infinity rechazado en monto de ingreso, saldo de cuenta positivo/negativo, monto de cuota de manejo). Sin E2E nuevo: no había aserciones que actualizar. 1866/1866 → 1870/1870 unit; 106/106 E2E sin cambios. Lint limpio. SW v267 → v268. **Mis cuentas queda sin bugs pendientes salvo BUG-009** (media, sobrepago combinando cuota del checklist + abono extra en la misma deuda; requiere decisión de diseño).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Copy de la cuota de manejo corregido. |
+| `modules/dominio/tesoreria/logic.js` | `validarIngreso()`/`validarCuenta()`: `isNaN` → `!Number.isFinite` en 3 guards. |
+| `tests/unit/tesoreria.test.js` | 4 tests nuevos (BUG-008). |
+| `service-worker.js` | v267 → v268. |
+
+---
 
 ### fix(compromisos): el abono extra a deudas desde "Distribuir mi ingreso" registra el gasto (BUG-006) · 2026-07-03
 
@@ -89,17 +106,6 @@ Verificado con 4 tests unitarios nuevos (tope de cuota activo/inactivo, exclusi�
 
 ---
 
-### docs(revision): revisión exhaustiva de Mis cuentas, 6 bugs registrados (BUG-003 a BUG-008) · 2026-07-03
-
-Arranque del plan de validación sección por sección (orden: el flujo del dinero, Mis cuentas primero por ser la base y el dominio con el cambio más reciente). Se revisó el dominio completo, sus integraciones cross-dominio, los ADR 012/013/017/018 y el copy; cada sospecha se confirmó con sondas empíricas temporales (13 unitarias + 3 E2E en Chromium real, no commiteadas) antes de registrarse. Resultado: 6 bugs en [BUGS.md](BUGS.md). Los tres de prioridad alta comparten zona: BUG-003 (una Necesidad "Ya pagado" se vuelve a pagar al confirmar la distribución: un checkbox `checked disabled` sigue estando checked y `_leerNecesidadesMarcadas` solo filtra por `.checked`), BUG-004 (el checklist registra la cuota completa de una deuda aunque el saldo pendiente sea menor, e incluye deudas saldadas sin archivar) y BUG-005 (la cuota de manejo nace con `frecuencia: 'mensual'` en minúscula y queda fuera de todos los cálculos mensuales; requiere fix + migración idempotente). Los siguen BUG-006 (media: el abono extra a deudas desde el panel no crea el gasto, invisible para Análisis y Límites), BUG-007 y BUG-008 (bajas: copy de cuota de manejo y validaciones que aceptan Infinity). Quedaron además observaciones de UX sin registro de bug (detalle en el [CHANGELOG](CHANGELOG.md)), pendientes de decisión del usuario. Sin cambios de código: 1857/1857 unit intactos. **La sección Mis cuentas queda abierta hasta corregir sus bugs; la siguiente tarea natural es el fix del checklist (BUG-003 + BUG-004 juntos, misma zona de código).**
-
-| Archivo | Cambio |
-|---|---|
-| `docs/BUGS.md` | 6 entradas nuevas (BUG-003 a BUG-008). |
-| `docs/CHANGELOG.md` | Entrada de la revisión con hallazgos y observaciones. |
-
----
-
 ### feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso (MC.7d, slice 1) · 2026-07-03
 
 Primer slice de MC.7d, implementando R1/R4/R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md). El desglose de Necesidades del panel "Distribuir mi ingreso" (antes un `<details>` de solo lectura, MC.7c) pasa a ser una checklist: el usuario marca los gastos fijos y cuotas de deuda que cubre con este ingreso, y al confirmar cada marca registra exactamente el mismo pago que su flujo individual existente (pago de fijo como "Marcar pagado" de Agenda, cuota de deuda como abono), coherente con badges, Análisis y el ejecutado de Límites (ADR 017). **Alcance de este slice, decidido con el usuario:** solo fijos con frecuencia Mensual y deudas entran a la checklist; un fijo Quincenal/Semanal/Diario tiene más de una ocurrencia por periodo y una sola fila no puede representarlas sin pagar de más o de menos, así que quedan fuera hasta una tarea futura que modele sus vencimientos (mismo problema que ya resolvió `eventosDelMes` de Agenda). El shell de asistente paginado (avanzar/atrás) y el recálculo de Ahorro sobre el remanente real (R3) quedan pendientes en tarjetas separadas del BOARD.
@@ -126,7 +132,7 @@ Verificado con 13 tests unitarios nuevos/reescritos (`construirDesgloseNecesidad
 
 ---
 
-> Para tareas anteriores (docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 
