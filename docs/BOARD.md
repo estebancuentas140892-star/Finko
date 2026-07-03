@@ -65,15 +65,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar).
 - Modelo     : Sonnet 5 - Medio
 
-#### AG.5 - Total a pagar por día
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : al seleccionar un día del calendario con varios registros, mostrar la sumatoria ("Total a pagar hoy: $X.XXX.XXX") para saber de inmediato cuánto dinero se necesita ese día.
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js` (panel de detalle del día), helper puro en `agenda/logic.js`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo/Medio (lógica pura + render + tests)
-
 #### AG.6 - Leyenda del calendario completa, con colores consistentes y siempre visible
 - Prioridad  : media
 - Estado     : pendiente

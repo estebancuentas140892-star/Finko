@@ -13,7 +13,7 @@ import { f, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, totalEventosDelMes } from './logic.js';
+import { eventosDelMes, totalEventosDelMes, totalDia } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -235,24 +235,18 @@ function _renderLeyenda() {
 
 // ── DETALLE DEL DÍA ──────────────────────────────────────────────
 
-function _totalDia(evs) {
-  let sum = 0;
-  for (const c of evs) {
-    const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
-    const n = Number(raw);
-    if (Number.isFinite(n)) sum += n;
-  }
-  return sum;
-}
-
 function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
   const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
   const total   = evs.length;
   const resumen = total === 1 ? '1 compromiso' : `${total} compromisos`;
-  const sumaDia = _totalDia(evs);
-  const totalHtml = sumaDia > 0 ? ` · ${f(sumaDia)}` : '';
+  // AG.5: total a pagar ese día, visible de inmediato junto al título (no
+  // hay que desplazarse por la lista de items para verlo).
+  const sumaDia = totalDia(evs);
+  const totalPagarHtml = sumaDia > 0
+    ? `<p class="cal-detail__total">Total a pagar: <strong>${f(sumaDia)}</strong></p>`
+    : '';
 
   const items = evs.map(c => _renderDetalleItem(c, year, month)).join('');
 
@@ -261,7 +255,8 @@ function _renderDetalleDia(evs, year, month, dia) {
       <header class="cal-detail__header">
         <div class="cal-detail__title-wrap">
           <h3 class="cal-detail__title">${titulo}</h3>
-          <p class="cal-detail__subtitle">${resumen}${totalHtml}</p>
+          <p class="cal-detail__subtitle">${resumen}</p>
+          ${totalPagarHtml}
         </div>
         <button type="button" class="cal-detail__close"
                 data-action="agenda-mostrar-dia"

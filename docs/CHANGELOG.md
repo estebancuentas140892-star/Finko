@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(calendario): total a pagar por día (AG.5) · 2026-07-02
+
+El panel de detalle de un día en Calendario listaba cada compromiso por separado (nombre, frecuencia, monto individual) pero nunca los sumaba: para saber cuánto dinero necesitaba tener disponible ese día, el usuario tenía que sumar a mano cada monto de la lista. La sumatoria ya existía como código, pero solo como función privada `_totalDia` dentro de [agenda/view.js](../modules/dominio/agenda/view.js), sin exportar y sin un solo test, y su resultado se mostraba pegado al subtítulo pequeño y gris ("3 compromisos · $450.000"), fácil de pasar por alto.
+
+AG.5 extrae esa suma a `totalDia(evs)`, función pura y exportada en [agenda/logic.js](../modules/dominio/agenda/logic.js): mismo criterio que ya usa el render de cada item individual (`monto` para gastos fijos, `cuotaMensual` para deudas, nunca `saldoTotal`) y que `sumarMontos` de `compromisos/logic.js` (IN.1). Es una duplicación intencional, no una importación cruzada: Agenda no puede importar de Compromisos porque el ADN #10 prohíbe que un dominio importe a otro (aunque `agenda/view.js` ya importa varias funciones de `compromisos/logic.js` para el render de cada item, un acoplamiento existente que este cambio no extiende ni corrige, fuera del alcance de esta tarea). `_renderDetalleDia()` ahora muestra una línea propia, con más peso visual, justo bajo el título del panel: "Total a pagar: **$X**" (`.cal-detail__total`), visible de inmediato sin tener que desplazarse por la lista de items, en vez del monto perdido dentro del subtítulo. Color neutro (`--fk-text-primary`), no rojo: un compromiso programado para ese día no es un incumplimiento, mismo criterio de AUD.4/ADR 019 que ya gobierna el resto de la app. La línea solo aparece cuando la suma es mayor a 0 (compromisos sin monto capturado, como una deuda a la que aún no se le puso cuota, no generan una línea "Total a pagar: $0" vacía de sentido).
+
+Verificado con 9 tests unitarios nuevos (`totalDia` con fijos, deudas, mezcla de ambos, montos no numéricos y entradas nulas; render real del panel con uno y con varios compromisos, con y sin monto, y sin día seleccionado) más 1 E2E en Chromium real (un gasto fijo de $900.000 y una deuda con cuota de $150.000 el mismo día 20, el panel muestra "Total a pagar: $1.050.000"). 1819/1819 → 1829/1829 unit; 89/89 → 90/90 E2E. Lint limpio. SW v259 → v260.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/logic.js` | Nueva `totalDia(evs)`, función pura y exportada (antes privada en `view.js`, sin tests). |
+| `modules/dominio/agenda/view.js` | Eliminada `_totalDia`; `_renderDetalleDia` usa `totalDia` de `logic.js` y muestra una línea propia "Total a pagar" en vez de anexarlo al subtítulo. |
+| `styles/components/config.css` | Nueva `.cal-detail__total` (color neutro, monto en negrita). |
+| `tests/unit/agenda.test.js` | 9 tests nuevos: `totalDia` (5) + render del total en el panel de detalle (4). |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - total a pagar por día", 1 test. |
+| `service-worker.js` | v259 → v260. |
+
+---
+
 ### feat(metas): ahorro sugerido según la frecuencia de ingreso, no "por día" (MT.4) · 2026-07-02
 
 La lista de Metas siempre mostraba "$X/día" como ritmo sugerido de ahorro, sin importar cómo cobra el usuario en la realidad. Para alguien que recibe su sueldo cada quincena, pensar en "cuánto por día" no ayuda a planear: el gesto natural es "cuánto aparto en cada quincena". MT.4 reemplaza ese cálculo fijo por uno que reparte el faltante entre los periodos de la frecuencia real de ingreso del usuario, mismo espíritu que ya resolvió Apartados (AP.1) para sus propios aportes sugeridos.

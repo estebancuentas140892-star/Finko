@@ -980,6 +980,50 @@ test.describe('Agenda - badge abono', () => {
   });
 });
 
+// ── SUITE 12: Agenda - total a pagar por día (AG.5) ──────────────────────────
+// Con dos compromisos el mismo día (un fijo y una deuda), el panel de
+// detalle debe mostrar la sumatoria de ambos, no solo listarlos por separado.
+
+test.describe('Agenda - total a pagar por día', () => {
+  test('el detalle del día suma el gasto fijo y la cuota de la deuda', async ({ page }) => {
+    const diaPago = 20;
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          {
+            id: 'fijo-total-e2e', tipo: 'fijo', descripcion: 'Arriendo E2E',
+            monto: 900000, frecuencia: 'Mensual', diaPago,
+          },
+          {
+            id: 'deuda-total-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta E2E',
+            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+            frecuencia: 'Mensual', diaPago,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    const total = page.locator('.cal-detail__total');
+    await expect(total).toBeVisible({ timeout: 3_000 });
+    await expect(total).toContainText('Total a pagar');
+    await expect(total).toContainText('$1.050.000'); // 900.000 + 150.000
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {

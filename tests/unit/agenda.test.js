@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, totalEventosDelMes, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
@@ -273,6 +273,54 @@ describe('totalEventosDelMes', () => {
   });
 });
 
+// ── TOTAL A PAGAR POR DÍA (AG.5) ─────────────────────────────────
+
+describe('totalDia', () => {
+  it('devuelve 0 con input vacío o inválido', () => {
+    expect(totalDia([])).toBe(0);
+    expect(totalDia(null)).toBe(0);
+    expect(totalDia(undefined)).toBe(0);
+  });
+
+  it('suma el monto de los gastos fijos', () => {
+    const evs = [
+      compromisoBase({ id: 'c1', tipo: 'fijo', monto: 100_000 }),
+      compromisoBase({ id: 'c2', tipo: 'fijo', monto: 50_000 }),
+    ];
+    expect(totalDia(evs)).toBe(150_000);
+  });
+
+  it('suma la cuotaMensual de las deudas, no el saldoTotal', () => {
+    const evs = [
+      compromisoBase({ id: 'c1', tipo: 'deuda-entidad', cuotaMensual: 200_000, saldoTotal: 5_000_000 }),
+      compromisoBase({ id: 'c2', tipo: 'deuda-personal', cuotaMensual: 80_000, saldoTotal: 1_000_000 }),
+    ];
+    expect(totalDia(evs)).toBe(280_000);
+  });
+
+  it('mezcla fijos y deudas el mismo día', () => {
+    const evs = [
+      compromisoBase({ id: 'c1', tipo: 'fijo', monto: 100_000 }),
+      compromisoBase({ id: 'c2', tipo: 'deuda-entidad', cuotaMensual: 200_000 }),
+    ];
+    expect(totalDia(evs)).toBe(300_000);
+  });
+
+  it('ignora montos no numéricos sin reventar', () => {
+    const evs = [
+      compromisoBase({ id: 'c1', tipo: 'fijo', monto: 100_000 }),
+      compromisoBase({ id: 'c2', tipo: 'fijo', monto: undefined }),
+      { id: 'c3' }, // sin tipo ni monto
+    ];
+    expect(totalDia(evs)).toBe(100_000);
+  });
+
+  it('ignora entradas nulas o no-objeto en la lista', () => {
+    const evs = [compromisoBase({ id: 'c1', tipo: 'fijo', monto: 100_000 }), null, undefined];
+    expect(totalDia(evs)).toBe(100_000);
+  });
+});
+
 // ── EVENTOS DE HOY ───────────────────────────────────────────────
 
 describe('eventosDeHoy', () => {
@@ -448,5 +496,67 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     renderAgenda();
     const html = document.getElementById('panel-agenda').innerHTML;
     expect(html).not.toContain('🌐 Internet');
+  });
+});
+
+// ── renderAgenda() - total a pagar por día (AG.5) ─────────────────
+
+describe('renderAgenda() - total a pagar por día', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con un compromiso, muestra "Total a pagar" con el monto', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).toContain('cal-detail__total');
+    expect(html).toContain('Total a pagar');
+    expect(html).toContain('$300.000');
+  });
+
+  it('con varios compromisos, el total es la suma de todos', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', diaPago: 15, frecuencia: 'Mensual', monto: 300_000 }),
+      compromisoBase({
+        id: 'c2', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
+        cuotaMensual: 200_000, saldoTotal: 5_000_000,
+      }),
+    ];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).toContain('$500.000');
+  });
+
+  it('sin monto en ningún compromiso del día, no muestra la línea de total', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
+      cuotaMensual: undefined, saldoTotal: 1_000_000,
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).not.toContain('cal-detail__total');
+  });
+
+  it('sin día seleccionado, no hay panel de detalle ni total', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
+    renderAgenda();
+    const html = document.getElementById('panel-agenda').innerHTML;
+    expect(html).not.toContain('cal-detail__total');
   });
 });

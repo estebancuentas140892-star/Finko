@@ -152,6 +152,28 @@ export function eventosDeHoy(compromisos) {
 }
 
 /**
+ * Suma cuánto hay que pagar en un día del calendario: `monto` para gastos
+ * fijos, `cuotaMensual` para deudas (mismo criterio que usa el render de
+ * cada item individual y que `sumarMontos` de compromisos/logic.js, AUD.1).
+ * Duplicado intencional y no una importación cruzada: Agenda no puede
+ * importar de Compromisos (ADN #10, ningún dominio importa a otro).
+ *
+ * @param {Array<{ tipo?: string, monto?: number, cuotaMensual?: number }>} evs
+ * @returns {number} Total en COP. 0 si la lista está vacía o es inválida.
+ */
+export function totalDia(evs) {
+  if (!Array.isArray(evs)) return 0;
+  let total = 0;
+  for (const c of evs) {
+    if (!c || typeof c !== 'object') continue;
+    const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
+    const n = Number(raw);
+    if (Number.isFinite(n)) total += n;
+  }
+  return total;
+}
+
+/**
  * Busca el primer día con compromisos dentro de los próximos `diasMax` días
  * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
  * no tiene eventos.

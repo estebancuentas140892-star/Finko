@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(metas): ahorro sugerido según la frecuencia de ingreso, MT.4)
+> Última actualización: 2026-07-02 (feat(calendario): total a pagar por día, AG.5)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1819/1819 verdes |
-| Tests E2E | 89/89 verde. Suites: `smoke` 53 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1829/1829 verdes |
+| Tests E2E | 90/90 verde. Suites: `smoke` 54 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(calendario): total a pagar por día (AG.5) · 2026-07-02
+
+El panel de detalle del día en Calendario listaba los compromisos de ese día sin sumarlos: el usuario tenía que sumar a mano cuánto necesitaba tener disponible. Nueva `totalDia(evs)` pura en [agenda/logic.js](../modules/dominio/agenda/logic.js) (mismo criterio `monto` para fijos / `cuotaMensual` para deudas que ya usaba el render de cada item, y que `sumarMontos` de compromisos/logic.js de IN.1; duplicado intencional, no importación cruzada, porque Agenda no puede importar de Compromisos, ADN #10). Antes vivía como función privada `_totalDia` solo en `view.js`, sin tests. `_renderDetalleDia()` en [agenda/view.js](../modules/dominio/agenda/view.js) ahora muestra una línea propia "Total a pagar: **$X**" (`.cal-detail__total`) justo bajo el título, visible de inmediato sin desplazarse por la lista; antes el monto iba pegado en el subtítulo pequeño y gris ("3 compromisos · $450.000"). Color neutro, no rojo (criterio AUD.4/ADR 019: un compromiso programado no es un incumplimiento). Verificado con 1 E2E en Chromium real (un fijo + una deuda el mismo día, el total es la suma exacta) más 9 tests unitarios nuevos (`totalDia` con fijos/deudas/mezcla/entradas inválidas, y el render real del panel). 1819/1819 → 1829/1829 unit; 89/89 → 90/90 E2E. Lint limpio. SW v259 → v260.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/logic.js` | Nueva `totalDia(evs)`, función pura y exportada. |
+| `modules/dominio/agenda/view.js` | `_totalDia` privada eliminada; `_renderDetalleDia` usa `totalDia` de logic.js y muestra una línea propia "Total a pagar". |
+| `styles/components/config.css` | Nueva `.cal-detail__total` (color neutro, negrita en el monto). |
+| `tests/unit/agenda.test.js` | 9 tests nuevos: `totalDia` (5) + render del total en el panel (4). |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - total a pagar por día", 1 test. |
+| `service-worker.js` | v259 → v260. |
+
+---
 
 ### feat(metas): ahorro sugerido según la frecuencia de ingreso, no "por día" (MT.4) · 2026-07-02
 
@@ -98,24 +113,7 @@ Nuevo catálogo `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en [core/constants.js
 
 ---
 
-### feat(inicio): ojo para ocultar/mostrar el dinero disponible (IN.2) · 2026-07-02
-
-Icono de ojo junto al saldo del hero de Inicio, estilo app bancaria, para usar Finko en lugares públicos: alterna entre el monto visible y la máscara `$••••••` (largo fijo, no revela la magnitud). La preferencia vive en `S.config.ocultarSaldo` y persiste entre sesiones (lectura defensiva `=== true`, sin migración). `updSaldo()` en [infra/render.js](../modules/infra/render.js) aplica la máscara y sincroniza el botón (`aria-pressed` + swap ojo/ojo tachado); mientras está oculto, el monto real nunca toca el DOM y `stopCount()` (nueva en [infra/animate.js](../modules/infra/animate.js)) cancela cualquier countUp en vuelo que fuera a sobreescribir la máscara. Acción `saldo-visibilidad` registrada como built-in en [ui/actions.js](../modules/ui/actions.js). Sin cuentas registradas el ojo se oculta junto con el valor (empty state manda). Alcance decidido: solo el hero (el dato más sensible); extender a los demás montos de Inicio quedó como observación en el BOARD. El preview del entorno sigue sin cargar (nota en memoria del proyecto); verificado con 13 tests unit nuevos (happy-dom) + 1 E2E en Chromium real que cubre click, persistencia tras recarga y reversa. 1774/1774 → 1787/1787 unit; 81/81 → 82/82 E2E. SW v254 → v255.
-
-| Archivo | Cambio |
-|---|---|
-| `index.html` | Símbolos `i-eye`/`i-eye-off` en el sprite; botón `#saldo-ojo` en el hero. |
-| `modules/infra/render.js` | `updSaldo()` enmascara con `SALDO_MASCARA` y sincroniza el botón. |
-| `modules/infra/animate.js` | Nueva `stopCount(el)`: cancela el countUp activo de un elemento. |
-| `modules/ui/actions.js` | Acción built-in `saldo-visibilidad`: flip + `save()` + `updSaldo()`. |
-| `styles/components/domain.css` | `.hero-saldo` (fila monto + ojo) y refuerzo `[hidden]` del botón. |
-| `tests/unit/render.test.js` | Nuevo: 13 tests de máscara, defensiva, botón, empty state y acción. |
-| `tests/e2e/smoke.test.js` | 1 test: ocultar, persistir tras recarga, mostrar. |
-| `service-worker.js` | v254 → v255. |
-
----
-
-> Para tareas anteriores (IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

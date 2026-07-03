@@ -622,6 +622,17 @@
   color: var(--fk-text-secondary);
 }
 
+/* AG.5: total a pagar el día seleccionado. Neutro (no rojo): un compromiso
+   programado no es un incumplimiento, criterio de color de AUD.4/ADR 019. */
+.cal-detail__total {
+  margin: var(--fk-space-1) 0 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+}
+.cal-detail__total strong {
+  font-weight: var(--fk-font-bold);
+}
+
 .cal-detail__close {
   display: inline-flex;
   align-items: center;
