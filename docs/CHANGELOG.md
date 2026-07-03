@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): la cuota de manejo cuenta como gasto fijo mensual (BUG-005) · 2026-07-03
+
+Tercer bug de prioridad alta de la revisión exhaustiva de Mis cuentas. Cuando el usuario marca "esta cuenta cobra cuota de manejo mensual" en el formulario de cuenta, Finko crea un compromiso fijo vinculado (`esCuotaManejo: true`) que representa ese cobro recurrente. Ese compromiso nacía con `frecuencia: 'mensual'` en minúscula, pero todo el resto de la app compara contra `'Mensual'` capitalizado: el catálogo `FRECUENCIAS`, la tabla `_FACTOR_MENSUAL` de tesorería y la `FACTOR_MENSUAL` de compromisos. El resultado era una cuota fantasma: no sumaba en `calcularGastosFijosMensuales` (factor `undefined → 0`), así que no entraba en las Necesidades del modelo de distribución (`construirContextoDistribucion` → `sugerirDistribucionIngreso`), no inflaba el objetivo del fondo de emergencia (gastos fijos × meses de respaldo), no aparecía en el checklist de Necesidades de "Distribuir mi ingreso" (que filtra por `frecuencia === 'Mensual'`) y proyectaba $0 como equivalente mensual en la lógica de Deudas. Solo se veía en Calendario, y por casualidad: `_diasParaCompromiso` de Agenda trata cualquier frecuencia no reconocida como mensual (fallback conservador de su `default`).
+
+El fix tiene dos partes, porque hay dos poblaciones de datos. Para las cuotas que se creen de ahora en adelante, `compromisoDesdeCuotaManejo()` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js) escribe `'Mensual'`. Para las cuotas ya guardadas en los dispositivos de los usuarios, una migración idempotente v19 → v20 en [storage.js](../modules/core/storage.js) capitaliza la `frecuencia` de los compromisos con `esCuotaManejo === true` que tengan exactamente `'mensual'` (los que ya están en `'Mensual'`, o cualquier otro valor, se dejan igual; sin `esCuotaManejo` no se tocan). Como todas las migraciones del proyecto, corre en memoria (`S`) en cada `loadData()` y se persiste en el siguiente `save()`, no fuerza una escritura al cargar; el efecto es visible de inmediato porque la UI lee de `S`.
+
+Este cambio hace, por diseño, que la cuota de manejo aparezca ahora como una Necesidad marcable en "Distribuir mi ingreso": es una obligación mensual real, coherente con que el usuario pueda registrar su pago desde ahí igual que cualquier otro fijo (mismo `_pagadoEstePeriodo` compartido, sin doble registro con Calendario). Observación menor detectada al verificar en el navegador, no corregida aquí (es preexistente y ortogonal): el resumen de la tarjeta de distribución redondea a porcentaje entero, así que una necesidad de $15.000 sobre un ingreso de $3.000.000 (0,5%) se muestra como 1% · $30.000 en el resumen agregado, aunque el checklist muestra el monto exacto; afecta a cualquier necesidad pequeña, no solo a la cuota de manejo.
+
+Verificado con 6 tests unitarios nuevos (4 de la migración v19→v20: capitaliza la cuota, no toca un fijo normal, idempotente sobre 'Mensual', no-op sin compromisos; 2 de integración: la cuota generada cuenta en `calcularGastosFijosMensuales` y aparece en `construirDesgloseNecesidades`), el shape esperado de `compromisoDesdeCuotaManejo` actualizado a `'Mensual'` (el test afirmaba el valor buggy y lo entrenaba), más 1 E2E en Chromium real que carga un estado v19 con la cuota en minúscula, comprueba que aparece en el checklist tras la migración y que confirmar la distribución persiste `'Mensual'`. Verificación adicional en el preview interactivo (cargó bien): una cuota de manejo de $15.000 aparece en el checklist con su monto exacto y contribuye al cálculo de Necesidades del modelo de distribución. 1861/1861 → 1866/1866 unit; 103/103 → 104/104 E2E. Lint limpio. SW v265 → v266.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `compromisoDesdeCuotaManejo()` escribe `frecuencia: 'Mensual'` (era `'mensual'`). |
+| `modules/core/storage.js` | Migración v19 → v20: capitaliza la frecuencia de las cuotas de manejo ya guardadas; `SCHEMA_VERSION` 19 → 20. |
+| `tests/unit/storage.test.js` | 4 tests nuevos de la migración v19 → v20. |
+| `tests/unit/tesoreria.test.js` | Shape de `compromisoDesdeCuotaManejo` a `'Mensual'`; 1 test de integración (la cuota cuenta en cálculos mensuales y checklist). |
+| `tests/e2e/smoke.test.js` | 1 test nuevo: migración + aparición en el checklist + persistencia en Chromium real. |
+| `service-worker.js` | v265 → v266. |
+
+---
+
 ### fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas (BUG-003, BUG-004) · 2026-07-03
 
 Corrige los dos bugs de prioridad alta encontrados en la revisión exhaustiva de Mis cuentas del mismo día (ver la entrada de abajo). Ambos vivían en el checklist accionable de Necesidades del panel "Distribuir mi ingreso" (MC.7d, ADR 018).

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas, BUG-003 y BUG-004)
+> Última actualización: 2026-07-03 (fix(tesoreria): la cuota de manejo cuenta como gasto fijo mensual, BUG-005, con migración v19→v20)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,9 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1861/1861 verdes |
-| Tests E2E | 103/103 verde. Suites: `smoke` 67 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1866/1866 verdes |
+| Tests E2E | 104/104 verde. Suites: `smoke` 68 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +39,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): la cuota de manejo cuenta como gasto fijo mensual (BUG-005) · 2026-07-03
+
+Tercer bug de prioridad alta de la revisión de Mis cuentas. El compromiso que Finko crea al marcar "esta cuenta cobra cuota de manejo mensual" (`esCuotaManejo: true`) nacía con `frecuencia: 'mensual'` en minúscula, pero todo el resto de la app compara contra `'Mensual'` (catálogo `FRECUENCIAS`, tablas `_FACTOR_MENSUAL`/`FACTOR_MENSUAL`). Efecto: una cuota fantasma que no sumaba en gastos fijos mensuales, no entraba en el modelo de distribución ni en el objetivo del fondo, no aparecía en el checklist de Necesidades y proyectaba $0 en Deudas (solo se veía en Calendario, por el fallback de frecuencia desconocida de Agenda). Fix en dos partes: `compromisoDesdeCuotaManejo()` escribe `'Mensual'` para las cuotas nuevas, y una **migración idempotente v19 → v20** en storage.js capitaliza las ya guardadas (`SCHEMA_VERSION` 19 → 20). Como todas las migraciones, corre en memoria en cada `loadData()` y persiste en el siguiente `save()`. Por diseño la cuota ahora aparece como Necesidad marcable en "Distribuir mi ingreso" (es una obligación mensual real). Observación menor preexistente, no corregida: el resumen de la tarjeta de distribución redondea a % entero, así que una necesidad de $15.000 sobre $3M (0,5%) se ve como 1% · $30.000 en el agregado, aunque el checklist muestra el monto exacto.
+
+Verificado con 6 tests unitarios nuevos (4 de migración, 2 de integración) + shape actualizado + 1 E2E en Chromium real (carga estado v19, verifica checklist tras migración y persistencia al confirmar). Verificación en vivo en el preview. 1861/1861 → 1866/1866 unit; 103/103 → 104/104 E2E. Lint limpio. SW v265 → v266. **Quedan en Mis cuentas: BUG-006 (media), BUG-007 y BUG-008 (bajas).**
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `compromisoDesdeCuotaManejo()` escribe `frecuencia: 'Mensual'`. |
+| `modules/core/storage.js` | Migración v19 → v20 (capitaliza cuotas de manejo guardadas); `SCHEMA_VERSION` 19 → 20. |
+| `tests/unit/storage.test.js` | 4 tests de la migración v19 → v20. |
+| `tests/unit/tesoreria.test.js` | Shape a `'Mensual'`; 1 test de integración. |
+| `tests/e2e/smoke.test.js` | 1 test nuevo (migración + checklist + persistencia). |
+| `service-worker.js` | v265 → v266. |
+
+---
 
 ### fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas (BUG-003, BUG-004) · 2026-07-03
 
@@ -107,29 +125,7 @@ Tarea solo de documentación: sin cambios de código, tests ni service worker. L
 
 ---
 
-### feat(calendario): nombre automático según la categoría en el gasto fijo (AG.4) · 2026-07-02
-
-El form de gasto fijo pedía descripción y categoría como dos campos independientes, aunque para categorías predefinidas (Mercado, Arriendo, Internet...) ambos dicen lo mismo: pedir un nombre aparte de "Mercado" es redundante. AG.4 hace que, con una categoría predefinida, el nombre del registro sea la propia categoría; el campo de texto libera su rol y pasa a ser una nota opcional. Solo con la categoría "Otro" (o sin categoría) el campo vuelve a ser el nombre obligatorio del gasto.
-
-En [compromisos/logic.js](../modules/dominio/compromisos/logic.js), nueva `_categoriaFijoConNombreAuto(datos)` detecta cuándo aplica (tipo fijo + categoría del catálogo de Agenda + distinta de "Otro"). `validarCompromiso()` deja de exigir descripción cuando aplica; `normalizarCompromiso()` deriva `descripcion = categoria` y guarda lo que el usuario escribió como `nota` (cadena vacía si no escribió nada). Sin categoría o con "Otro", el comportamiento es el de siempre: `descripcion` es el texto del usuario y `nota` queda ''. Es un campo nuevo, pero opcional y con lectura defensiva (`c.nota ?? ''`), así que no requiere migración de los compromisos ya guardados.
-
-En [agenda/view.js](../modules/dominio/agenda/view.js), `renderFormGastoFijo()` reordena los campos (categoría primero, nombre/nota después) para que la causalidad sea clara en la UI, y le da al label del campo un id (`gfijo-descripcion-label`) para que el JS pueda alternarlo. `_renderDetalleItem()` deja de repetir la categoría en el subtítulo cuando coincide con el nombre (nombre automático) y muestra la nota cuando existe. En [agenda/index.js](../modules/dominio/agenda/index.js), nueva `_syncCategoriaGastoFijo(form)` (mismo patrón que `_syncCategoriaMeta` de MT.3) alterna label, placeholder y `required` según la categoría elegida, enganchada al `change` del selector y llamada también al abrir el modal (nuevo o edición); en edición, si el compromiso tiene nombre automático, el campo de texto se prellena con `nota`, no con `descripcion`.
-
-Verificado con 10 tests unitarios nuevos (`validarCompromiso`/`normalizarCompromiso` con categoría predefinida, "Otro" y sin categoría; orden de campos y estado por defecto del form; supresión de la categoría duplicada y render de la nota en el detalle) más 4 E2E en Chromium real (el label y el `required` cambian al elegir/quitar una categoría predefinida; guardar con categoría y sin texto usa la categoría como nombre; guardar con categoría y una nota la muestra en el subtítulo). 1838/1838 → 1851/1851 unit; 94/94 → 98/98 E2E. Lint limpio. SW v262 → v263.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/compromisos/logic.js` | Nueva `_categoriaFijoConNombreAuto()`; `validarCompromiso()` y `normalizarCompromiso()` para tipo fijo derivan `descripcion`/`nota` según la categoría. |
-| `modules/dominio/agenda/view.js` | `renderFormGastoFijo()` reordena categoría antes del nombre y agrega `#gfijo-descripcion-label`; `_renderDetalleItem()` suprime la categoría duplicada y muestra la nota. |
-| `modules/dominio/agenda/index.js` | Nueva `_syncCategoriaGastoFijo(form)`; prefill de edición usa `nota` cuando el nombre es automático. |
-| `tests/unit/compromisos.test.js` | 6 tests nuevos: validación y normalización con categoría predefinida, "Otro" y sin categoría. |
-| `tests/unit/agenda.test.js` | 4 tests nuevos: orden de campos, estado por defecto del form, supresión de categoría duplicada, render de la nota. |
-| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - nombre automático según la categoría", 4 tests. |
-| `service-worker.js` | v262 → v263. |
-
----
-
-> Para tareas anteriores (AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

@@ -1786,4 +1786,42 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     // 1.000.000 + 3.000.000 (ingreso) - 50.000 (solo lo que realmente se debía).
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(3_950_000);
   });
+
+  test('BUG-005: una cuota de manejo guardada con frecuencia "mensual" se migra a "Mensual" y aparece en el checklist', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      // Estado pre-fix (schema v19): la cuota de manejo nació con 'mensual' minúscula.
+      // Al cargar, la migración v19→v20 debe capitalizarla, y entonces la cuota
+      // entra al checklist de Necesidades (antes quedaba excluida por el filtro Mensual).
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st._version = 19;
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true,
+        cuotaManejo: { monto: 15_000, diaCobro: 5 } }];
+      st.compromisos = [
+        { id: 'cm1', descripcion: 'Cuota de manejo Nequi', monto: 15_000, frecuencia: 'mensual',
+          diaPago: 5, tipo: 'fijo', activo: true, cuentaId: 'c1', esCuotaManejo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    // La migración v19→v20 corre en memoria (S) al cargar, como todas las
+    // migraciones del proyecto (no fuerza un save; persiste en el próximo
+    // guardado, idempotente en cada carga). El efecto observable es que la
+    // cuota ya cuenta como Necesidad Mensual en el panel de distribución.
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await expect(page.locator('[data-nec-id="cm1"]')).toHaveCount(1);
+    await expect(page.locator('[data-nec-id="cm1"]')).toHaveAttribute('data-nec-monto', '15000');
+
+    // Al confirmar (dispara save), la frecuencia migrada ya queda persistida.
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
+    const frec = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('fk_v1')).compromisos.find(c => c.id === 'cm1').frecuencia);
+    expect(frec).toBe('Mensual');
+  });
 });

@@ -811,6 +811,68 @@ describe('Migración v18 → v19 (curación de Tipo de deuda, ADR 015)', () => {
   });
 });
 
+describe('Migración v19 → v20 (frecuencia de la cuota de manejo, BUG-005)', () => {
+  it('capitaliza la frecuencia "mensual" de las cuotas de manejo ya guardadas', () => {
+    const v19 = {
+      ...createInitialState(),
+      _version: 19,
+      compromisos: [
+        { id: 'cm1', descripcion: 'Cuota de manejo Nequi', monto: 15_000, frecuencia: 'mensual',
+          diaPago: 5, tipo: 'fijo', activo: true, cuentaId: 'c1', esCuotaManejo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v19));
+
+    loadData();
+
+    expect(S.compromisos[0].frecuencia).toBe('Mensual');
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('no toca la frecuencia de un gasto fijo normal que no es cuota de manejo', () => {
+    const v19 = {
+      ...createInitialState(),
+      _version: 19,
+      compromisos: [
+        // Un fijo normal jamás tuvo 'mensual' en minúscula (el form usa el catálogo
+        // 'Mensual'); pero aunque lo tuviera por corrupción, sin esCuotaManejo se deja igual.
+        { id: 'f1', descripcion: 'Arriendo', monto: 1_500_000, frecuencia: 'mensual',
+          diaPago: 5, tipo: 'fijo', activo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v19));
+
+    loadData();
+
+    expect(S.compromisos[0].frecuencia).toBe('mensual');
+  });
+
+  it('es idempotente: una cuota de manejo ya en "Mensual" no se altera', () => {
+    const v20 = {
+      ...createInitialState(),
+      _version: 20,
+      compromisos: [
+        { id: 'cm1', descripcion: 'Cuota de manejo Davivienda', monto: 12_000, frecuencia: 'Mensual',
+          diaPago: 3, tipo: 'fijo', activo: true, cuentaId: 'c1', esCuotaManejo: true },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v20));
+
+    loadData();
+
+    expect(S.compromisos[0].frecuencia).toBe('Mensual');
+  });
+
+  it('sin compromisos, la migración no falla (no-op)', () => {
+    const v19 = { ...createInitialState(), _version: 19, compromisos: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v19));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

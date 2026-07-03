@@ -2,7 +2,7 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-03 (BUG-003 y BUG-004 solucionados).
+> Última actualización: 2026-07-03 (BUG-003, BUG-004 y BUG-005 solucionados).
 
 ---
 
@@ -26,17 +26,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 
 ## Pendientes
 
-> Los BUG-005 a BUG-008 salieron de la revisión exhaustiva de Mis cuentas (2026-07-03). Cada uno fue reproducido con sondas empíricas (unitarias en happy-dom y E2E en Chromium real) antes de registrarse; las sondas no se commitearon (eran temporales, el fix debe traer sus propios tests).
-
-### BUG-005 - La cuota de manejo nace con frecuencia 'mensual' en minúscula y queda fuera de todos los cálculos mensuales
-- Estado    : pendiente
-- Prioridad : alta
-- Problema  : el compromiso que Finko crea para la cuota de manejo de una cuenta no suma en los gastos fijos mensuales: no entra en las Necesidades del modelo de distribución (Mis cuentas y Límites), no infla el objetivo del fondo de emergencia (gastos fijos × meses de respaldo), no aparece en el checklist de Necesidades y proyecta $0 como equivalente mensual en Deudas. Solo se ve en Calendario porque `_diasParaCompromiso` de Agenda trata cualquier frecuencia desconocida como mensual (fallback conservador). Confirmado con sondas unitarias.
-- Causa     : `compromisoDesdeCuotaManejo()` escribe `frecuencia: 'mensual'`; el catálogo `FRECUENCIAS` y todas las tablas de factor mensual (`_FACTOR_MENSUAL` de tesorería, `FACTOR_MENSUAL` de compromisos) usan 'Mensual' capitalizado. Fix: escribir 'Mensual' + migración idempotente en storage.js que capitalice la frecuencia de los compromisos `esCuotaManejo` ya guardados.
-- Archivo   : modules/dominio/tesoreria/logic.js
-- Función   : `compromisoDesdeCuotaManejo`
-- Líneas    : ~646-659 (el literal está en la 652)
-- Secciones : Mis cuentas, Calendario, Deudas, Ahorro, Límites de gasto
+> Los BUG-006 a BUG-008 salieron de la revisión exhaustiva de Mis cuentas (2026-07-03). Cada uno fue reproducido con sondas empíricas (unitarias en happy-dom y E2E en Chromium real) antes de registrarse; las sondas no se commitearon (eran temporales, el fix debe traer sus propios tests).
 
 ### BUG-006 - El abono extra a deudas desde "Distribuir mi ingreso" no registra el gasto
 - Estado    : pendiente

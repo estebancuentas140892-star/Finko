@@ -705,13 +705,22 @@ describe('compromisoDesdeCuotaManejo()', () => {
     expect(compromisoDesdeCuotaManejo(cuenta)).toEqual({
       descripcion:    'Cuota de manejo Nequi',
       monto:          12_000,
-      frecuencia:     'mensual',
+      frecuencia:     'Mensual', // BUG-005: capitalizada, para contar en los cálculos mensuales
       diaPago:        5,
       tipo:           'fijo',
       activo:         true,
       cuentaId:       'c-nequi',
       esCuotaManejo:  true,
     });
+  });
+
+  it('BUG-005: la cuota generada cuenta en los gastos fijos mensuales y en el checklist de Necesidades', () => {
+    const cuenta = cuentaBase({ id: 'c1', nombre: 'Nequi', cuotaManejo: { monto: 15_000, diaCobro: 5 } });
+    const comp = { ...compromisoDesdeCuotaManejo(cuenta), id: 'cm1' };
+    expect(calcularGastosFijosMensuales([comp])).toBe(15_000);
+    const filas = construirDesgloseNecesidades([comp], [], new Date());
+    expect(filas).toHaveLength(1);
+    expect(filas[0].monto).toBe(15_000);
   });
 
   it('propaga el estado activo de la cuenta al compromiso', () => {

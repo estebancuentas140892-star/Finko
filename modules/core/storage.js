@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 19;
+const SCHEMA_VERSION = 20;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -314,6 +314,24 @@ function _migrate(raw) {
             && typeof c.categoria === 'string'
             && Object.prototype.hasOwnProperty.call(REMAPEO_TIPO_DEUDA, c.categoria)) {
           c.categoria = REMAPEO_TIPO_DEUDA[c.categoria];
+        }
+      }
+    }
+  }
+
+  // v19 → v20: corrige la frecuencia de la cuota de manejo (BUG-005).
+  // `compromisoDesdeCuotaManejo` la creaba con 'mensual' en minúscula; todo el
+  // resto de la app compara contra 'Mensual' capitalizado, así que la cuota
+  // quedaba fuera de los gastos fijos mensuales, del checklist de Necesidades y
+  // del objetivo del fondo de emergencia. Capitaliza la frecuencia de los
+  // compromisos `esCuotaManejo` ya guardados. Idempotente: solo toca los que
+  // tienen exactamente 'mensual'; los que ya están en 'Mensual' (o cualquier
+  // otro valor) se dejan igual.
+  if ((typeof data._version === 'number' ? data._version : 1) < 20) {
+    if (Array.isArray(data.compromisos)) {
+      for (const c of data.compromisos) {
+        if (c && typeof c === 'object' && c.esCuotaManejo === true && c.frecuencia === 'mensual') {
+          c.frecuencia = 'Mensual';
         }
       }
     }

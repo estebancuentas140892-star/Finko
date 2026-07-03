@@ -649,6 +649,13 @@ export function normalizarCuenta(datos) {
  *
  * NO incluye `id` ni `fechaCreacion`: los asigna crud.js cuando se persiste.
  *
+ * La frecuencia es 'Mensual' capitalizada (BUG-005): todo el catálogo
+ * `FRECUENCIAS` y las tablas de factor mensual (`_FACTOR_MENSUAL` aquí,
+ * `FACTOR_MENSUAL` en compromisos) comparan contra la forma capitalizada;
+ * con 'mensual' en minúscula la cuota quedaba fuera de los gastos fijos
+ * mensuales, del checklist de Necesidades y del objetivo del fondo. La
+ * migración v19→v20 de storage.js corrige las cuotas ya guardadas.
+ *
  * @param {import('../../core/state.js').Cuenta} cuenta
  * @returns {Omit<import('../../core/state.js').Compromiso, 'id' | 'fechaCreacion'> | null}
  */
@@ -658,7 +665,7 @@ export function compromisoDesdeCuotaManejo(cuenta) {
   return {
     descripcion:    `Cuota de manejo ${cuenta.nombre}`,
     monto,
-    frecuencia:     'mensual',
+    frecuencia:     'Mensual',
     diaPago:        diaCobro,
     tipo:           'fijo',
     activo:         cuenta.activa !== false,
