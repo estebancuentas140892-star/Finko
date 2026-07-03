@@ -2,7 +2,7 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-03 (revisión exhaustiva de Mis cuentas).
+> Última actualización: 2026-07-03 (BUG-003 y BUG-004 solucionados).
 
 ---
 
@@ -26,27 +26,7 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 
 ## Pendientes
 
-> Los BUG-003 a BUG-008 salieron de la revisión exhaustiva de Mis cuentas (2026-07-03). Cada uno fue reproducido con sondas empíricas (unitarias en happy-dom y E2E en Chromium real) antes de registrarse; las sondas no se commitearon (eran temporales, el fix debe traer sus propios tests).
-
-### BUG-003 - Doble pago de una Necesidad "Ya pagado" al confirmar la distribución
-- Estado    : pendiente
-- Prioridad : alta
-- Problema  : con un gasto fijo o deuda ya pagados este periodo, la fila del checklist de Necesidades aparece marcada y deshabilitada ("Ya pagado"), pero al confirmar "Distribuir mi ingreso" ese pago se registra OTRA VEZ: segundo gasto vinculado al mismo compromiso y segundo descuento de la cuenta. El resumen en vivo ("Asignado: $X") también suma esas filas. Reproducido E2E: fijo de $800.000 ya pagado terminó con 2 gastos y el saldo descontado dos veces.
-- Causa     : `_leerNecesidadesMarcadas()` filtra solo por `chk.checked`; un checkbox `checked disabled` sigue reportando `checked === true`. El comentario de la función asume lo contrario. Fix: exigir además `!chk.disabled` (y un E2E que confirme la distribución con una fila pagada presente).
-- Archivo   : modules/dominio/tesoreria/index.js
-- Función   : `_leerNecesidadesMarcadas`
-- Líneas    : ~805-814
-- Secciones : Mis cuentas (contamina Gastos, Análisis y Límites con el gasto duplicado)
-
-### BUG-004 - El checklist de Necesidades sobrepaga deudas: no topa la cuota al saldo ni excluye saldadas
-- Estado    : pendiente
-- Prioridad : alta
-- Problema  : (1) una deuda con `cuotaMensual` mayor que su `saldoTotal` restante aparece con la cuota completa, y al confirmar se registra el abono completo: deuda de $50.000 con cuota de $200.000 genera un gasto de $200.000 y descuenta $200.000 de la cuenta (la deuda queda en $0 y los $150.000 extra salen del saldo como gasto real). (2) Una deuda saldada (`saldoTotal` 0) que aún no se archiva sigue apareciendo como pendiente con su cuota completa; el formulario de abono individual sí la rechaza ("Esta deuda ya está saldada"). Reproducido con sondas unitarias y E2E.
-- Causa     : `construirDesgloseNecesidades()` usa `cuotaMensual` sin toparla contra `saldoTotal` ni exigir `saldoTotal > 0`; `_aplicarNecesidad()` topa el saldo de la deuda en 0 pero registra el gasto por el monto completo. Los abonos extra del mismo panel sí se topan (`_leerItemsDistribucion`). Fix: `monto = min(cuotaMensual, saldoTotal)` y excluir deudas con `saldoTotal <= 0`, mismo criterio que `deudasPendientes` y que el guard del abono individual.
-- Archivo   : modules/dominio/tesoreria/logic.js y modules/dominio/tesoreria/index.js
-- Función   : `construirDesgloseNecesidades` / `_aplicarNecesidad`
-- Líneas    : ~176-199 (logic.js) y ~882-912 (index.js)
-- Secciones : Mis cuentas, Deudas
+> Los BUG-005 a BUG-008 salieron de la revisión exhaustiva de Mis cuentas (2026-07-03). Cada uno fue reproducido con sondas empíricas (unitarias en happy-dom y E2E en Chromium real) antes de registrarse; las sondas no se commitearon (eran temporales, el fix debe traer sus propios tests).
 
 ### BUG-005 - La cuota de manejo nace con frecuencia 'mensual' en minúscula y queda fuera de todos los cálculos mensuales
 - Estado    : pendiente

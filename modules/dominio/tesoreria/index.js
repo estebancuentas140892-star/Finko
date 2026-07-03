@@ -797,14 +797,17 @@ function _leerItemsDistribucion(panel) {
 /**
  * Lee las Necesidades marcadas del checklist del Paso 1 (ADR 018 revisión
  * 2026-07-02, R1). A diferencia de `_leerItemsDistribucion`, el monto no es
- * editable (viene fijo en `data-nec-monto`) y las ya pagadas quedan
- * deshabilitadas, así que `.checked` por sí solo ya excluye ese caso.
- * `tipo` distingue 'necesidad-fijo'/'necesidad-deuda' del tipo 'deuda' de los
- * abonos extra (Paso 2), para que `_confirmarDistribucion` los aplique distinto.
+ * editable (viene fijo en `data-nec-monto`). Las ya pagadas quedan marcadas Y
+ * deshabilitadas (para comunicar "esto ya está cubierto"), pero un checkbox
+ * `checked disabled` sigue reportando `.checked === true`: sin excluir
+ * `disabled` explícitamente, confirmar la distribución volvía a pagar una
+ * Necesidad ya pagada (BUG-003). `tipo` distingue 'necesidad-fijo'/
+ * 'necesidad-deuda' del tipo 'deuda' de los abonos extra (Paso 2), para que
+ * `_confirmarDistribucion` los aplique distinto.
  */
 function _leerNecesidadesMarcadas(panel) {
   return [...panel.querySelectorAll('[data-nec-toggle]')]
-    .filter(chk => chk.checked)
+    .filter(chk => chk.checked && !chk.disabled)
     .map(chk => ({
       tipo:  chk.dataset.necTipo === 'deuda' ? 'necesidad-deuda' : 'necesidad-fijo',
       id:    chk.dataset.necId || null,

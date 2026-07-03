@@ -379,6 +379,7 @@ const compDeudaBase = (overrides = {}) => ({
   descripcion: 'Tarjeta Bancolombia',
   categoria: 'Tarjeta de crédito',
   cuotaMensual: 250_000,
+  saldoTotal: 500_000, // mayor que la cuota: el tope de BUG-004 no interfiere por defecto
   activo: true,
   ...overrides,
 });
@@ -441,6 +442,26 @@ describe('construirDesgloseNecesidades()', () => {
 
   it('excluye una deuda sin cuotaMensual (0 o ausente)', () => {
     const comps = [compDeudaBase({ cuotaMensual: 0 }), compDeudaBase({ id: 'd2', cuotaMensual: undefined })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('BUG-004: topa la cuota de una deuda al saldo pendiente cuando la cuota lo supera', () => {
+    const comps = [compDeudaBase({ cuotaMensual: 200_000, saldoTotal: 50_000 })];
+    expect(construirDesgloseNecesidades(comps)[0].monto).toBe(50_000);
+  });
+
+  it('BUG-004: la cuota no se topa cuando el saldo pendiente la cubre de sobra', () => {
+    const comps = [compDeudaBase({ cuotaMensual: 200_000, saldoTotal: 1_000_000 })];
+    expect(construirDesgloseNecesidades(comps)[0].monto).toBe(200_000);
+  });
+
+  it('BUG-004: excluye una deuda ya saldada (saldoTotal 0) aunque siga activa y con cuotaMensual', () => {
+    const comps = [compDeudaBase({ saldoTotal: 0 })];
+    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  });
+
+  it('BUG-004: excluye una deuda con saldoTotal negativo', () => {
+    const comps = [compDeudaBase({ saldoTotal: -100 })];
     expect(construirDesgloseNecesidades(comps)).toEqual([]);
   });
 

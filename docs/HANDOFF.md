@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (docs(revision): revisión exhaustiva de Mis cuentas, BUG-003 a BUG-008 registrados)
+> Última actualización: 2026-07-03 (fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas, BUG-003 y BUG-004)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1857/1857 verdes |
-| Tests E2E | 101/101 verde. Suites: `smoke` 65 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1861/1861 verdes |
+| Tests E2E | 103/103 verde. Suites: `smoke` 67 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas (BUG-003, BUG-004) · 2026-07-03
+
+Corrige los dos bugs de prioridad alta de la revisión exhaustiva de Mis cuentas del mismo día (entrada siguiente en esta lista). **BUG-003:** un checkbox `checked disabled` (fila "Ya pagado" del checklist) sigue reportando `.checked === true`; `_leerNecesidadesMarcadas()` filtraba solo por eso, así que confirmar la distribución con una fila ya pagada presente la volvía a pagar (segundo gasto, segundo descuento de cuenta). Fix: el filtro exige además `!chk.disabled`. **BUG-004:** el checklist ofrecía y registraba la cuota completa de una deuda sin toparla contra su saldo pendiente, y no excluía deudas ya saldadas (`saldoTotal <= 0`). Fix: `monto = Math.min(cuotaMensual, saldoTotal)` y el filtro de entrada exige `saldoTotal > 0`, mismo criterio que ya usan las filas de "Abonar extra a deudas" del mismo panel.
+
+Verificado con 4 tests unitarios nuevos (tope de cuota activo/inactivo, exclusión de deuda saldada, exclusión de saldo negativo) más 2 E2E en Chromium real que reproducen los escenarios exactos de los bugs. Verificación adicional en vivo en el preview interactivo (cargó sin problemas esta vez): confirmé la distribución con las tres condiciones a la vez (fijo ya pagado + deuda con cuota mayor al saldo + deuda saldada) y el saldo final, el conteo de gastos y el saldo de la deuda coincidieron con lo esperado. 1857/1857 → 1861/1861 unit; 101/101 → 103/103 E2E. Lint limpio. SW v264 → v265.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/index.js` | `_leerNecesidadesMarcadas()` agrega `&& !chk.disabled` al filtro. |
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` topa el monto de deuda a `saldoTotal` y excluye deudas saldadas. |
+| `tests/unit/tesoreria.test.js` | `compDeudaBase()` gana `saldoTotal` por defecto; 4 tests nuevos. |
+| `tests/e2e/smoke.test.js` | 2 tests nuevos: BUG-003 y BUG-004. |
+| `service-worker.js` | v264 → v265. |
+
+---
 
 ### docs(revision): revisión exhaustiva de Mis cuentas, 6 bugs registrados (BUG-003 a BUG-008) · 2026-07-03
 
@@ -113,27 +129,7 @@ Verificado con 10 tests unitarios nuevos (`validarCompromiso`/`normalizarComprom
 
 ---
 
-### feat(calendario): emoji de categoría como ícono principal (AG.2) · 2026-07-02
-
-En el detalle del día, un gasto fijo con categoría (Mercado, Internet, Arriendo...) mostraba el emoji de esa categoría solo como decoración dentro del subtítulo (` · 🌐 Internet`), mientras el ícono principal a la izquierda seguía siendo el genérico por tipo (el mismo para todos los gastos fijos). En Gastos ese problema ya estaba resuelto: el emoji de categoría es el ícono principal, y AG.2 porta ese mismo patrón a Agenda.
-
-En [agenda/view.js](../modules/dominio/agenda/view.js), `_renderDetalleItem()` calcula `emojiCategoria` (el emoji de `CATEGORIA_AGENDA_EMOJI` cuando el tipo es fijo y tiene categoría) y lo usa como ícono principal en vez de `icon(ICONO_TIPO[tipo])`; sin categoría (o en deudas, campo exclusivo de tipo fijo), cae al ícono genérico de siempre. El subtítulo ya no repite el emoji: ahora solo dice el nombre de la categoría (` · Internet`), igual que Gastos evita el emoji duplicado en `list-item__subtitle`. En [config.css](../styles/components/config.css) se sumó `.cal-detail__icon--emoji` con un `font-size` mayor (1.375rem) para que el emoji se lea con presencia, mismo criterio que `.list-item__icon--cat` de Gastos (1.5rem, "emoji grande, protagonista").
-
-De paso se corrigió un descuido de la tarea anterior (AG.7): el commit de esa tarea documentaba el bump de `service-worker.js` a v262, pero el archivo nunca se tocó y quedó en v261, así que ese cambio se desplegó sin invalidar el caché de los usuarios. Este commit hace el bump real a v262, cubriendo tanto AG.7 (retroactivo) como AG.2.
-
-Verificado con 5 tests unitarios nuevos (emoji en el ícono sin duplicarse en el subtítulo; fallback al ícono genérico sin categoría; emoji sin `<svg>` con categoría; deudas siguen con el ícono genérico) más 2 E2E en Chromium real (con categoría el ícono no tiene `<svg>` y contiene el emoji; sin categoría sí tiene `<svg>`). Se reescribieron 2 tests existentes de AG.6/categoría que asumían el emoji pegado al texto del subtítulo (markup que este cambio reemplaza). 1835/1835 → 1838/1838 unit; 92/92 → 94/94 E2E. Lint limpio. SW v261 → v262 (bump real, cubre también AG.7).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | `_renderDetalleItem()`: el emoji de categoría pasa a ser el ícono principal (`emojiCategoria ?? icon(...)`); el subtítulo ya no repite el emoji. |
-| `styles/components/config.css` | Nueva `.cal-detail__icon--emoji` (tamaño mayor para el emoji protagonista). |
-| `tests/unit/agenda.test.js` | 2 tests reescritos (emoji en el ícono, no en el subtítulo) + 3 tests nuevos (fallback sin categoría, sin `<svg>` con categoría, deuda con ícono genérico). |
-| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - emoji de categoría como ícono principal", 2 tests. |
-| `service-worker.js` | v261 → v262 (bump que faltaba de AG.7, corregido aquí). |
-
----
-
-> Para tareas anteriores (AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

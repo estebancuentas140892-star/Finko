@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas (BUG-003, BUG-004) · 2026-07-03
+
+Corrige los dos bugs de prioridad alta encontrados en la revisión exhaustiva de Mis cuentas del mismo día (ver la entrada de abajo). Ambos vivían en el checklist accionable de Necesidades del panel "Distribuir mi ingreso" (MC.7d, ADR 018).
+
+**BUG-003:** una fila del checklist ya pagada este periodo nace `checked disabled` para comunicar "esto ya está cubierto", pero un checkbox deshabilitado sigue reportando `.checked === true` en el DOM. `_leerNecesidadesMarcadas()` en [tesoreria/index.js](../modules/dominio/tesoreria/index.js) filtraba solo por `.checked`, así que confirmar la distribución con esa fila presente volvía a pagar un gasto o abono ya registrado: segundo gasto vinculado al mismo compromiso, segundo descuento de la cuenta. Fix de una línea: el filtro exige además `!chk.disabled`. Esto también corrige el resumen en vivo ("Asignado: $X"), que antes sumaba el monto de las filas ya pagadas.
+
+**BUG-004:** `construirDesgloseNecesidades()` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js) usaba `cuotaMensual` de una deuda sin toparla contra su `saldoTotal` pendiente ni excluir las deudas ya saldadas (`saldoTotal <= 0`). Una deuda con cuota de $200.000 y saldo pendiente de solo $50.000 ofrecía y registraba el abono completo de $200.000: la deuda quedaba en $0 correctamente, pero $150.000 de más salían de la cuenta como gasto real, sin ningún lugar a donde ir. Una deuda ya saldada pero sin archivar seguía apareciendo como pendiente, algo que el formulario de abono individual ya rechazaba ("Esta deuda ya está saldada"). Fix: `monto = Math.min(cuotaMensual, saldoTotal)` y el filtro de entrada exige `saldoTotal > 0`, mismo criterio que ya usa `deudasPendientes` en `view.js` para las filas de "Abonar extra a deudas".
+
+Verificado con 4 tests unitarios nuevos en `construirDesgloseNecesidades` (tope activo, tope no interfiere cuando el saldo alcanza, exclusión de deuda saldada, exclusión de saldo negativo) más 2 E2E nuevos en Chromium real que reproducen exactamente los escenarios de los bugs: confirmar con una Necesidad ya pagada presente no la duplica y el resumen en vivo la excluye; el checklist topa la cuota de una deuda a su saldo pendiente y excluye una deuda saldada, con el abono real registrado por el monto correcto. Verificación adicional en el preview interactivo (que esta vez sí cargó la app): confirmé la distribución en vivo con las tres condiciones a la vez (fijo ya pagado + deuda con cuota mayor al saldo + deuda saldada) y el saldo final de la cuenta, el conteo de gastos y el saldo de la deuda coincidieron con lo esperado. 1857/1857 → 1861/1861 unit; 101/101 → 103/103 E2E. Lint limpio. SW v264 → v265.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/index.js` | `_leerNecesidadesMarcadas()` agrega `&& !chk.disabled` al filtro. |
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` topa el monto de deuda a `saldoTotal` y excluye deudas con `saldoTotal <= 0`. |
+| `tests/unit/tesoreria.test.js` | `compDeudaBase()` gana `saldoTotal` por defecto; 4 tests nuevos de BUG-004. |
+| `tests/e2e/smoke.test.js` | 2 tests nuevos: BUG-003 (confirmar sin duplicar una fila ya pagada) y BUG-004 (tope de cuota + exclusión de deuda saldada). |
+| `service-worker.js` | v264 → v265. |
+
+---
+
 ### docs(revision): revisión exhaustiva de Mis cuentas, 6 bugs registrados (BUG-003 a BUG-008) · 2026-07-03
 
 Arranque del plan de validación sección por sección acordado con el usuario (orden: seguir el flujo del dinero, empezando por Mis cuentas como base de todo y dominio con el cambio más reciente). La revisión cubrió el dominio completo (`tesoreria/logic.js`, `view.js`, `index.js`, 3.208 líneas), sus integraciones (crud, cuenta-helper, EventBus `distribucion:aplicar` en los 5 dominios consumidores, Agenda "Marcar pagado", abono individual de Deudas), los ADR que lo gobiernan (012, 013, 017, 018) y todo el copy de la sección. Cada sospecha se confirmó empíricamente antes de registrarse: 13 sondas unitarias (happy-dom) y 3 sondas E2E (Chromium real), temporales y no commiteadas; el fix de cada bug debe traer sus propios tests.

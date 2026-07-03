@@ -1713,4 +1713,77 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
     expect(st.gastos.find(g => g.compromisoId === 'cf1')).toBeUndefined();
   });
+
+  test('BUG-003: confirmar con una Necesidad ya pagada presente no la vuelve a pagar', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+        { id: 'cf2', descripcion: 'Internet', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 10, monto: 200_000, activo: true, categoria: null },
+      ];
+      st.gastos = [{
+        id: 'g1', descripcion: 'Pago: Arriendo', monto: 800_000, categoria: 'Gastos fijos',
+        fecha: hoy, cuentaId: 'c1', compromisoId: 'cf1', nota: '',
+      }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeChecked();
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeDisabled();
+
+    // El resumen en vivo no debe contar la fila "Ya pagado": solo cf2 (200.000).
+    await expect(page.locator('#distribuir-resumen')).toContainText('200.000');
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+
+    expect(st.gastos.filter(g => g.compromisoId === 'cf1')).toHaveLength(1); // sigue existiendo solo el original
+    expect(st.gastos.find(g => g.compromisoId === 'cf2')).toBeTruthy();
+    // 1.000.000 + 3.000.000 (ingreso) - 200.000 (solo cf2, cf1 ya estaba pagado).
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(3_800_000);
+  });
+
+  test('BUG-004: el checklist topa la cuota de una deuda a su saldo pendiente y excluye una deuda saldada', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 50_000, cuotaMensual: 200_000, diaPago: 15, activo: true },
+        { id: 'd2', descripcion: 'Ya saldada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 300_000, diaPago: 20, activo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    // d1 aparece topada a su saldo (50.000, no 200.000); d2 no aparece (saldada).
+    await expect(page.locator('[data-nec-id="d1"]')).toHaveAttribute('data-nec-monto', '50000');
+    await expect(page.locator('[data-nec-id="d2"]')).toHaveCount(0);
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+
+    const abono = st.gastos.find(g => g.compromisoId === 'd1');
+    expect(abono.monto).toBe(50_000);
+    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(0);
+    // 1.000.000 + 3.000.000 (ingreso) - 50.000 (solo lo que realmente se debía).
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(3_950_000);
+  });
 });

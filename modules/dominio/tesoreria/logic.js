@@ -162,8 +162,11 @@ function _pagadoEstePeriodo(gastos, compromisoId, prefijoMes, cuotaDeuda) {
  * tiene más de una ocurrencia dentro del periodo y esta checklist modela una
  * fila = un pago completo del periodo; marcarla pagaría de menos o de más.
  * Modelar sus múltiples vencimientos (como ya hace `eventosDelMes` de Agenda)
- * queda para una tarea futura. Las deudas no tienen este problema: su
- * `cuotaMensual` ya es, por definición, la obligación completa del mes.
+ * queda para una tarea futura. Para deudas, la cuota se topa al saldo
+ * pendiente (`min(cuotaMensual, saldoTotal)`, BUG-004): sin el tope, una
+ * cuota mayor al saldo restante pagaría de más. Las deudas ya saldadas
+ * (`saldoTotal <= 0`) quedan excluidas, mismo criterio que rechaza el
+ * formulario de abono individual ("Esta deuda ya está saldada").
  *
  * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
  *
@@ -179,10 +182,16 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
   return compromisos
     .filter(c => c.activo !== false
       && ((c.tipo === 'fijo' && c.frecuencia === 'Mensual')
-        || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+        || ((c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal') && (Number(c.saldoTotal) || 0) > 0)))
     .map(c => {
       const esDeuda = c.tipo !== 'fijo';
-      const monto = esDeuda ? Number(c.cuotaMensual) || 0 : Number(c.monto) || 0;
+      // Para deudas, la cuota nunca puede superar el saldo pendiente: pagar
+      // más de lo que se debe registraría un gasto real por dinero que no
+      // salió a cubrir la deuda (BUG-004). El abono individual y los abonos
+      // extra del mismo panel (`_leerItemsDistribucion`) ya aplican este tope.
+      const monto = esDeuda
+        ? Math.min(Number(c.cuotaMensual) || 0, Number(c.saldoTotal) || 0)
+        : Number(c.monto) || 0;
       const diaPagoNum = Number(c.diaPago);
       return {
         id:        c.id,
