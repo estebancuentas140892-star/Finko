@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado)
+> Última actualización: 2026-07-03 (fix(tesoreria): tope coordinado entre cuota del checklist y abono extra, BUG-009)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1870/1870 verdes |
-| Tests E2E | 106/106 verde. Suites: `smoke` 70 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1875/1875 verdes |
+| Tests E2E | 107/107 verde. Suites: `smoke` 71 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -40,15 +40,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado · 2026-07-03
+### fix(tesoreria): tope coordinado entre cuota del checklist y abono extra (BUG-009) · 2026-07-03
 
-Tarea de decisión de diseño, sin código. Con el usuario se decidió cómo debe comportarse una deuda que aparece a la vez en el checklist de Necesidades (su cuota) y en "Abonar extra a deudas" del panel "Distribuir mi ingreso": **se permiten ambos en un mismo movimiento**, y el tope del extra pasa a ser el saldo restante tras la cuota marcada (`efectivo = min(extra, saldoTotal - cuotaMarcada)`; si la cuota cubre todo el saldo, el extra queda en 0 y se ignora). Pagar la cuota y abonar extra al capital en el mismo movimiento es un comportamiento financiero real que Finko fomenta (el orden Avalancha existe para eso). Se descartaron las alternativas de excluir la deuda de "Abonar extra" (elimina un flujo legítimo, exige UI dinámica) y de bloquear la confirmación con error (fricción). El diseño completo con los puntos de implementación quedó en la entrada BUG-009 de [BUGS.md](BUGS.md); la implementación es la tarea siguiente.
+Cierra el último bug pendiente de la revisión de Mis cuentas. Con el usuario se decidió el diseño el mismo día (ver el CHANGELOG anterior): una deuda que aparece a la vez en el checklist de Necesidades (su cuota, marcada por defecto) y en "Abonar extra a deudas" del panel "Distribuir mi ingreso" **puede pagar ambos en un mismo movimiento**, pero el extra ya no topa contra el saldo previo sin más (lo que permitía sobrepagar); topa contra lo que queda **tras** la cuota marcada.
+
+Nuevo helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): `disponible = max(0, saldoTotal - cuotaMarcada)`, `efectivo = min(extraSolicitado, disponible)`. `_leerItemsDistribucion()` en [tesoreria/index.js](../modules/dominio/tesoreria/index.js) gana un segundo parámetro (las Necesidades ya leídas por `_leerNecesidadesMarcadas`), suma la cuota marcada de la misma deuda (`tipo === 'necesidad-deuda'` con el mismo `id`) y llama al helper en vez del `Math.min(monto, _saldoDeuda(id))` anterior. `_recalcularDistribucion()` y `_confirmarDistribucion()` ahora leen las Necesidades primero y se las pasan a `_leerItemsDistribucion()`, así el resumen en vivo y el apply comparten el mismo monto efectivo (la promesa que ya hacía el docstring de esa función, ahora cierta también quando ambos flujos tocan la misma deuda).
+
+Verificado con 5 tests unitarios nuevos de `topeAbonoExtraDeuda` (sin cuota marcada = comportamiento previo; resta la cuota antes de topar; permite el extra hasta lo que queda; nunca negativo si la cuota supera el saldo; valores no numéricos como 0) más 1 E2E en Chromium real que reproduce el escenario exacto del bug: deuda con saldo 300.000 y cuota 100.000, el usuario marca la cuota (por defecto) y pide un extra de 300.000; el resumen en vivo ya muestra "Asignado: $300.000" (no $400.000), y tras confirmar la deuda queda en 0 (nunca negativa), los dos gastos suman exactamente 300.000 y la cuenta se debita 300.000, no 400.000. 1870/1870 → 1875/1875 unit; 106/106 → 107/107 E2E. Lint limpio. SW v268 → v269.
 
 | Archivo | Cambio |
 |---|---|
-| `docs/BUGS.md` | BUG-009 gana la línea "Diseño" con la decisión y el plan de implementación; se retira el "fix probable" abierto. |
-| `docs/CHANGELOG.md` | Entrada de la decisión. |
-| `docs/HANDOFF.md` | Esta entrada. |
+| `modules/dominio/tesoreria/logic.js` | Nuevo helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)`. |
+| `modules/dominio/tesoreria/index.js` | `_leerItemsDistribucion()` gana el parámetro `necesidades` y usa `topeAbonoExtraDeuda`; `_recalcularDistribucion()` y `_confirmarDistribucion()` le pasan las Necesidades ya leídas. |
+| `tests/unit/tesoreria.test.js` | 5 tests nuevos de `topeAbonoExtraDeuda`. |
+| `tests/e2e/smoke.test.js` | Suite nueva "cuota del checklist + abono extra a la misma deuda no sobrepaga (BUG-009)", 1 test. |
+| `service-worker.js` | v268 → v269. |
+| `docs/BUGS.md` | BUG-009 resuelto (eliminado). Sin errores pendientes. |
 
 ---
 

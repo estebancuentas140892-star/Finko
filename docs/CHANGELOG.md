@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): tope coordinado entre cuota del checklist y abono extra (BUG-009) · 2026-07-03
+
+Cierra el último bug pendiente de la revisión exhaustiva de Mis cuentas, implementando el diseño decidido con el usuario el mismo día (entrada anterior). Una deuda con `cuotaMensual > 0` y saldo pendiente aparece a la vez en el checklist de Necesidades del panel "Distribuir mi ingreso" (su cuota, marcada por defecto) y en "Abonar extra a deudas" (input libre); si el usuario marcaba ambos, la cuenta se debitaba `cuota + extra` mientras la deuda solo podía bajar hasta 0, sobrepagando.
+
+El fix agrega un helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): calcula `disponible = max(0, saldoTotal - cuotaMarcada)` y devuelve `min(extraSolicitado, disponible)`. En [tesoreria/index.js](../modules/dominio/tesoreria/index.js), `_leerItemsDistribucion()` gana un segundo parámetro (las Necesidades ya leídas por `_leerNecesidadesMarcadas`), suma la cuota marcada de la misma deuda por `id` y usa el helper en vez del `Math.min(monto, _saldoDeuda(id))` anterior, que topaba contra el saldo previo sin descontar lo que la cuota del checklist ya iba a pagar. `_recalcularDistribucion()` y `_confirmarDistribucion()` ahora leen las Necesidades primero y se las pasan a `_leerItemsDistribucion()`, de modo que el resumen en vivo y el `apply` comparten el mismo monto efectivo, la garantía que el docstring de esa función ya prometía mucho antes de que ambos flujos pudieran chocar en la misma deuda.
+
+Verificado con 5 tests unitarios nuevos de `topeAbonoExtraDeuda` (sin cuota marcada replica el comportamiento previo; resta la cuota antes de topar el extra; permite el extra hasta lo que queda; nunca negativo si la cuota supera el saldo; valores no numéricos como 0) más 1 E2E en Chromium real que reproduce el escenario exacto del bug: deuda con saldo 300.000 y cuota 100.000 marcada por defecto, el usuario pide un extra de 300.000 (más de lo disponible); el resumen en vivo ya muestra "Asignado: $300.000" en vez de $400.000, y tras confirmar la deuda queda en 0 (nunca negativa), los dos gastos generados suman exactamente 300.000 y la cuenta se debita 300.000, no 400.000. 1870/1870 → 1875/1875 unit; 106/106 → 107/107 E2E. Lint limpio. SW v268 → v269.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Nuevo helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)`. |
+| `modules/dominio/tesoreria/index.js` | `_leerItemsDistribucion()` gana el parámetro `necesidades` y usa `topeAbonoExtraDeuda`; `_recalcularDistribucion()` y `_confirmarDistribucion()` le pasan las Necesidades ya leídas. |
+| `tests/unit/tesoreria.test.js` | 5 tests nuevos de `topeAbonoExtraDeuda`. |
+| `tests/e2e/smoke.test.js` | Suite nueva "cuota del checklist + abono extra a la misma deuda no sobrepaga (BUG-009)", 1 test. |
+| `service-worker.js` | v268 → v269. |
+| `docs/BUGS.md` | BUG-009 resuelto (eliminado). Sin errores pendientes por primera vez desde que se abrió el registro. |
+
+---
+
 ### docs(bugs): diseño de BUG-009 decidido, cuota + extra con tope coordinado · 2026-07-03
 
 Tarea de decisión de diseño, sin código. BUG-009 (una misma deuda puede sobrepagarse combinando su cuota del checklist de Necesidades y un abono extra en "Distribuir mi ingreso") quedó registrado el mismo día con la pregunta abierta: ¿se permite pagar cuota + extra a la misma deuda en un mismo movimiento?

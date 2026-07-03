@@ -1896,3 +1896,51 @@ test.describe('Mis cuentas - Distribuir mi ingreso: abono extra a deudas (BUG-00
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
   });
 });
+
+test.describe('Mis cuentas - Distribuir mi ingreso: cuota del checklist + abono extra a la misma deuda no sobrepaga (BUG-009)', () => {
+  test('el extra se topa a lo que queda tras la cuota marcada: la deuda llega a 0, nunca a negativo, y la cuenta se debita exactamente el saldo', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      // saldoTotal 300.000 con cuotaMensual 100.000: la deuda aparece a la vez en
+      // el checklist (cuota, marcada por defecto) y en "Abonar extra a deudas".
+      st.compromisos = [
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 300_000, cuotaMensual: 100_000, diaPago: 15, activo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    // La cuota (100.000) llega marcada por defecto en el checklist.
+    const checklist = page.locator('[data-nec-toggle][data-nec-tipo="deuda"][data-nec-id="d1"]');
+    await expect(checklist).toBeChecked();
+    await expect(checklist).toHaveAttribute('data-nec-monto', '100000');
+
+    // El usuario pide un extra de 300.000: más de lo que queda tras la cuota (200.000).
+    const inputExtra = page.locator('.distribuir__monto[data-dist-tipo="deuda"][data-dist-id="d1"]');
+    await inputExtra.fill('300000');
+
+    // El resumen en vivo ya refleja el tope coordinado: asignado = 100.000 (cuota) + 200.000 (extra topado), no 400.000.
+    await expect(page.locator('#distribuir-resumen')).toContainText('Asignado: $300.000');
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+
+    // La deuda queda exactamente en 0, nunca negativa.
+    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(0);
+    // La suma de los dos gastos (cuota + extra topado) es el saldo real de la deuda, no más.
+    const gastosDeuda = st.gastos.filter(g => g.compromisoId === 'd1');
+    const totalAbonado = gastosDeuda.reduce((s, g) => s + g.monto, 0);
+    expect(totalAbonado).toBe(300_000);
+    // La cuenta se debita exactamente el saldo pagado, no cuota + extra sin topar (400.000).
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 300_000);
+  });
+});

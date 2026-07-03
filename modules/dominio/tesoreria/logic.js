@@ -1247,6 +1247,27 @@ function _tasaEADeuda(c) {
 }
 
 /**
+ * Tope del abono extra a una deuda cuando su cuota del checklist de
+ * Necesidades ya está marcada en el mismo movimiento (BUG-009). El checklist
+ * y "Abonar extra a deudas" leen el mismo `saldoTotal` de forma independiente;
+ * sin coordinar sus topes, marcar ambos para la misma deuda podía debitar de
+ * la cuenta más de lo que la deuda realmente debe. El extra nunca puede
+ * superar lo que queda del saldo después de la cuota marcada; si la cuota ya
+ * cubre todo el saldo, el extra queda en 0.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {number} saldoTotal Saldo pendiente de la deuda antes de aplicar nada.
+ * @param {number} cuotaMarcada Cuota de esta deuda marcada en el checklist (0 si no está marcada).
+ * @param {number} extraSolicitado Monto que el usuario escribió en "Abonar extra".
+ * @returns {number}
+ */
+export function topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado) {
+  const disponible = Math.max(0, (Number(saldoTotal) || 0) - (Number(cuotaMarcada) || 0));
+  return Math.min(Number(extraSolicitado) || 0, disponible);
+}
+
+/**
  * Arma las filas de deudas fondeables para "Distribuir mi ingreso" (MC.4b),
  * ordenadas por prioridad de pago estilo Avalancha (mayor interés efectivo
  * primero, que es la estrategia óptima recomendada). Empate por menor saldo.

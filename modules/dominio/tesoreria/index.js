@@ -33,6 +33,7 @@ import {
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
   estadoDistribucion,
+  topeAbonoExtraDeuda,
 } from './logic.js';
 import {
   renderListaCuentas,
@@ -777,10 +778,16 @@ function _saldoDeuda(id) {
 
 /**
  * Lee las filas activas (toggle on) con monto > 0 del panel. Para deudas, topa
- * el abono al saldo pendiente: no se paga más de lo que se debe (el excedente
- * se queda en la cuenta). Así el resumen y el apply usan el mismo monto efectivo.
+ * el abono al saldo pendiente restando la cuota que el checklist de
+ * Necesidades ya haya marcado para esa misma deuda (BUG-009): sin esto, la
+ * cuota y el extra topaban por separado contra el mismo saldo previo y podían
+ * sumar más de lo que la deuda debe. Así el resumen y el apply usan el mismo
+ * monto efectivo.
+ *
+ * @param {Element} panel
+ * @param {Array<{tipo:string, id:string, monto:number}>} [necesidades] Salida de `_leerNecesidadesMarcadas`.
  */
-function _leerItemsDistribucion(panel) {
+function _leerItemsDistribucion(panel, necesidades = []) {
   return [...panel.querySelectorAll('.distribuir__fila')]
     .filter(fila => fila.querySelector('[data-dist-destino-toggle]')?.checked)
     .map(fila => {
@@ -788,7 +795,12 @@ function _leerItemsDistribucion(panel) {
       const tipo = inp?.dataset.distTipo;
       const id   = inp?.dataset.distId || null;
       let monto  = Number(inp?.value) || 0;
-      if (tipo === 'deuda') monto = Math.min(monto, _saldoDeuda(id));
+      if (tipo === 'deuda') {
+        const cuotaMarcada = necesidades
+          .filter(n => n.tipo === 'necesidad-deuda' && n.id === id)
+          .reduce((s, n) => s + n.monto, 0);
+        monto = topeAbonoExtraDeuda(_saldoDeuda(id), cuotaMarcada, monto);
+      }
       return { tipo, id, monto };
     })
     .filter(it => it.monto > 0);
@@ -820,8 +832,9 @@ function _leerNecesidadesMarcadas(panel) {
 function _recalcularDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
-  const monto     = Number(document.getElementById('distribuir-monto')?.value) || 0;
-  const items     = [..._leerNecesidadesMarcadas(panel), ..._leerItemsDistribucion(panel)];
+  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const necesidades = _leerNecesidadesMarcadas(panel);
+  const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
   const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
 
   const resumenEl = document.getElementById('distribuir-resumen');
@@ -927,7 +940,7 @@ async function _confirmarDistribucion() {
 
   const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
   const necesidades = _leerNecesidadesMarcadas(panel);
-  const items       = _leerItemsDistribucion(panel);
+  const items       = _leerItemsDistribucion(panel, necesidades);
   const todos       = [...necesidades, ...items];
   const { asignado, excede } = resumirPlanDistribucion(monto, todos);
   if (monto <= 0 || asignado <= 0 || excede) return;

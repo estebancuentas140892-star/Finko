@@ -24,6 +24,7 @@ import {
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
+  topeAbonoExtraDeuda,
   construirPlanDeudas,
   construirPlanInversiones,
   ultimoPagoHasta,
@@ -2034,6 +2035,33 @@ describe('resumirPlanDistribucion()', () => {
   it('ignora montos no numéricos y trata el plan vacío como 0', () => {
     expect(resumirPlanDistribucion(1_000_000, [{ monto: NaN }, {}]).asignado).toBe(0);
     expect(resumirPlanDistribucion(1_000_000, []).sinAsignar).toBe(1_000_000);
+  });
+});
+
+// ── topeAbonoExtraDeuda() (BUG-009) ───────────────────────────────
+describe('topeAbonoExtraDeuda()', () => {
+  it('sin cuota marcada, topa solo al saldo (comportamiento previo)', () => {
+    expect(topeAbonoExtraDeuda(1_000_000, 0, 300_000)).toBe(300_000);
+    expect(topeAbonoExtraDeuda(1_000_000, 0, 1_500_000)).toBe(1_000_000);
+  });
+
+  it('resta la cuota marcada del saldo antes de topar el extra', () => {
+    // saldo 100.000, cuota 100.000 (topada), extra pedido 100.000: no queda nada.
+    expect(topeAbonoExtraDeuda(100_000, 100_000, 100_000)).toBe(0);
+  });
+
+  it('permite el extra hasta lo que queda tras la cuota', () => {
+    // saldo 500.000, cuota 200.000: queda 300.000 disponibles para el extra.
+    expect(topeAbonoExtraDeuda(500_000, 200_000, 1_000_000)).toBe(300_000);
+    expect(topeAbonoExtraDeuda(500_000, 200_000, 100_000)).toBe(100_000);
+  });
+
+  it('nunca devuelve negativo si la cuota supera el saldo', () => {
+    expect(topeAbonoExtraDeuda(50_000, 100_000, 200_000)).toBe(0);
+  });
+
+  it('trata valores no numéricos como 0', () => {
+    expect(topeAbonoExtraDeuda(NaN, undefined, 'x')).toBe(0);
   });
 });
 
