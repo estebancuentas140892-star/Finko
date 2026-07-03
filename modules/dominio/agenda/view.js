@@ -290,7 +290,13 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // ícono genérico del tipo.
   const emojiCategoria = (tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_EMOJI[c.categoria] : null;
   const icono   = emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring');
-  const catLabel = (tipo === 'fijo' && c.categoria) ? ` · ${_esc(c.categoria)}` : '';
+  // AG.4: con categoría predefinida, el título (desc) ya ES la categoría
+  // (normalizarCompromiso), así que repetirla aquí sería redundante. Solo se
+  // muestra cuando difieren (p. ej. categoría "Otro" con nombre propio).
+  const catLabel = (tipo === 'fijo' && c.categoria && c.categoria !== c.descripcion)
+    ? ` · ${_esc(c.categoria)}`
+    : '';
+  const notaLabel = (tipo === 'fijo' && c.nota) ? ` · ${_esc(c.nota)}` : '';
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
   const monto = Number.isFinite(Number(montoRaw)) ? f(Number(montoRaw)) : '';
   const idEsc = _esc(c.id ?? '');
@@ -357,7 +363,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
       <span class="cal-detail__icon cal-detail__icon--${tipo}${emojiCategoria ? ' cal-detail__icon--emoji' : ''}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
-        <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}</p>
+        <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}${notaLabel}</p>
         ${badgeHtml}
       </div>
       ${monto ? `<p class="cal-detail__amount">${monto}</p>` : ''}
@@ -370,9 +376,16 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
 /**
  * Devuelve el HTML del formulario simplificado de gasto fijo.
  *
- * Campos visibles: descripcion, categoria (opcional), monto, frecuencia, diaPago.
+ * Campos visibles: categoria (opcional), descripcion/nota, monto, frecuencia, diaPago.
  * `tipo` va como input hidden con valor 'fijo' para que `normalizarCompromiso`
  * lo guarde como un compromiso de tipo fijo en S.compromisos.
+ *
+ * AG.4: con una categoría predefinida (cualquiera salvo "Otro"), el nombre
+ * del registro es la propia categoría, así que pedirlo aparte es redundante;
+ * el campo de texto pasa a ser una nota opcional. `_syncCategoriaGastoFijo`
+ * (en index.js) alterna el label/placeholder/`required` de este campo según
+ * la categoría elegida; el HTML nace en el estado por defecto (sin categoría,
+ * nombre obligatorio) y ese handler ajusta el resto en cada apertura.
  *
  * @returns {string}
  */
@@ -390,18 +403,18 @@ export function renderFormGastoFijo() {
       <input type="hidden" name="tipo" value="fijo" />
 
       <div class="form-group">
-        <label for="gfijo-descripcion" class="label">Descripción</label>
-        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
-               autocomplete="off" />
-      </div>
-
-      <div class="form-group">
         <label for="gfijo-categoria" class="label">Categoría</label>
         <select id="gfijo-categoria" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
+      </div>
+
+      <div class="form-group">
+        <label for="gfijo-descripcion" class="label" id="gfijo-descripcion-label">Descripción</label>
+        <input id="gfijo-descripcion" name="descripcion" class="input" type="text"
+               placeholder="Ej. Arriendo, Netflix, agua" required aria-required="true"
+               autocomplete="off" />
       </div>
 
       <div class="form-group">

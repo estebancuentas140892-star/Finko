@@ -1190,6 +1190,72 @@ test.describe('Agenda - emoji de categoría como ícono principal', () => {
   });
 });
 
+// ── Agenda - nombre automático según la categoría (AG.4) ─────────────────────
+// Con una categoría predefinida, el nombre del gasto fijo pasa a ser la
+// categoría y el campo de texto se convierte en una nota opcional; con
+// "Otro" o sin categoría, el campo sigue siendo el nombre obligatorio.
+
+test.describe('Agenda - nombre automático según la categoría', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto-fijo"]');
+    await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
+  });
+
+  test('al elegir una categoría predefinida, el campo pasa a "Nota (opcional)" y deja de ser obligatorio', async ({ page }) => {
+    const label = page.locator('#gfijo-descripcion-label');
+    const input = page.locator('#gfijo-descripcion');
+    await expect(label).toHaveText('Descripción');
+
+    await page.selectOption('#gfijo-categoria', 'Mercado');
+
+    await expect(label).toHaveText('Nota (opcional)');
+    await expect(input).not.toHaveAttribute('aria-required', 'true');
+  });
+
+  test('al volver a "Otro", el campo vuelve a ser "Descripción" obligatoria', async ({ page }) => {
+    const label = page.locator('#gfijo-descripcion-label');
+    const input = page.locator('#gfijo-descripcion');
+
+    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await expect(label).toHaveText('Nota (opcional)');
+
+    await page.selectOption('#gfijo-categoria', 'Otro');
+    await expect(label).toHaveText('Descripción');
+    await expect(input).toHaveAttribute('aria-required', 'true');
+  });
+
+  test('guardar con categoría predefinida y sin texto: el registro usa la categoría como nombre', async ({ page }) => {
+    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await page.fill('#gfijo-monto', '150000');
+    await page.fill('#gfijo-dia', '10');
+    await page.click('#form-gasto-fijo button[type="submit"]');
+
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await page.click(`[data-action="agenda-mostrar-dia"][data-day="10"]`);
+
+    const item = page.locator('.cal-detail__item').first();
+    await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
+  });
+
+  test('guardar con categoría predefinida y una nota: la nota queda en el subtítulo, el nombre es la categoría', async ({ page }) => {
+    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await page.fill('#gfijo-descripcion', 'Éxito de la esquina');
+    await page.fill('#gfijo-monto', '150000');
+    await page.fill('#gfijo-dia', '11');
+    await page.click('#form-gasto-fijo button[type="submit"]');
+
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await page.click(`[data-action="agenda-mostrar-dia"][data-day="11"]`);
+
+    const item = page.locator('.cal-detail__item').first();
+    await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
+    await expect(item.locator('.cal-detail__sub')).toContainText('Éxito de la esquina');
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {

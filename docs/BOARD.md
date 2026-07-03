@@ -47,14 +47,7 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 ### Calendario (dominio `agenda`)
 
-#### AG.4 - Nombre automático según la categoría en el form de gasto fijo
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : al elegir una categoría predefinida (Mercado, Servicios públicos, Arriendo...), no pedir nombre aparte: el nombre del registro es la categoría (pedir ambos es redundante). Solo con "Otros" se habilita personalizar nombre e ícono. Para las predefinidas, el campo de texto pasa a ser "Nota (opcional)".
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/compromisos/views/formularios.js` (form de fijo), `modules/core/constants.js` (`CATEGORIAS_AGENDA`)
-- Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar). Cuando exista, el ícono principal del detalle del día (AG.2, ya cerrada) puede enriquecerse para usarlo con categoría "Otros".
-- Modelo     : Sonnet 5 - Medio
+_(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
 
 ---
 

@@ -33,6 +33,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
@@ -114,18 +115,54 @@ function _inyectarFormGastoFijo(compromiso = null) {
     const f_frec = form.querySelector('[name="frecuencia"]');
     const f_dia = form.querySelector('[name="diaPago"]');
     const f_btn = form.querySelector('[type="submit"]');
-    if (f_desc) f_desc.value = compromiso.descripcion ?? '';
-    if (f_cat) f_cat.value = compromiso.categoria ?? '';
+    const categoria = compromiso.categoria ?? '';
+    const nombreAuto = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
+    if (f_cat) f_cat.value = categoria;
+    // AG.4: con categoría de nombre automático, el campo de texto muestra la
+    // nota (no la descripción, que ya es la categoría); si no, la descripción.
+    if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
     if (f_monto) f_monto.value = compromiso.monto ?? '';
     if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
   }
 
+  _syncCategoriaGastoFijo(form);
+  form.querySelector('[name="categoria"]')?.addEventListener('change', () => _syncCategoriaGastoFijo(form));
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarGastoFijo();
   });
+}
+
+/**
+ * AG.4: alterna el rol del campo de texto según la categoría elegida.
+ * Con una categoría predefinida (no "Otro"), el nombre lo da la categoría:
+ * el campo pasa a ser una nota opcional. Sin categoría, o con "Otro", el
+ * campo vuelve a ser el nombre obligatorio del registro.
+ * @param {HTMLFormElement} form
+ */
+function _syncCategoriaGastoFijo(form) {
+  const catSel   = form.querySelector('[name="categoria"]');
+  const nombre   = form.querySelector('[name="descripcion"]');
+  const etiqueta = form.querySelector('#gfijo-descripcion-label');
+  if (!catSel || !nombre || !etiqueta) return;
+
+  const categoria   = catSel.value;
+  const nombreAuto  = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
+
+  if (nombreAuto) {
+    etiqueta.textContent = 'Nota (opcional)';
+    nombre.placeholder   = 'Ej. Éxito, unidad 302, Netflix premium…';
+    nombre.required      = false;
+    nombre.removeAttribute('aria-required');
+  } else {
+    etiqueta.textContent = 'Descripción';
+    nombre.placeholder   = 'Ej. Arriendo, Netflix, agua';
+    nombre.required      = true;
+    nombre.setAttribute('aria-required', 'true');
+  }
 }
 
 function _guardarGastoFijo() {

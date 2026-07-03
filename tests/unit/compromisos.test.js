@@ -354,6 +354,27 @@ describe('validarCompromiso()', () => {
     const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada' });
     expect(errores[0]).toMatch(/categor/i);
   });
+
+  it('AG.4: con categoría predefinida (no "Otro"), la descripción puede ir vacía', () => {
+    const errores = validarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Mercado', descripcion: '',
+    });
+    expect(errores).toEqual([]);
+  });
+
+  it('AG.4: con categoría "Otro", la descripción sigue siendo obligatoria', () => {
+    const errores = validarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: '',
+    });
+    expect(errores.length).toBeGreaterThan(0);
+    expect(errores[0]).toMatch(/descripci/i);
+  });
+
+  it('AG.4: sin categoría, la descripción sigue siendo obligatoria', () => {
+    const errores = validarCompromiso({ ...datosFormValidos, tipo: 'fijo', descripcion: '' });
+    expect(errores.length).toBeGreaterThan(0);
+    expect(errores[0]).toMatch(/descripci/i);
+  });
 });
 
 // ── normalizarCompromiso() ────────────────────────────────────────
@@ -467,6 +488,36 @@ describe('normalizarCompromiso()', () => {
   it('para tipo=fijo con categoría inválida, queda categoria=null', () => {
     const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', categoria: 'Inventada' });
     expect(result.categoria).toBeNull();
+  });
+
+  it('AG.4: con categoría predefinida, la descripción es la categoría y el texto del form pasa a nota', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Mercado', descripcion: 'Éxito de la esquina',
+    });
+    expect(result.descripcion).toBe('Mercado');
+    expect(result.nota).toBe('Éxito de la esquina');
+  });
+
+  it('AG.4: con categoría predefinida y texto vacío, la nota queda como cadena vacía', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Mercado', descripcion: '',
+    });
+    expect(result.descripcion).toBe('Mercado');
+    expect(result.nota).toBe('');
+  });
+
+  it('AG.4: con categoría "Otro", la descripción es el texto escrito y no hay nota', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox',
+    });
+    expect(result.descripcion).toBe('Suscripción Xbox');
+    expect(result.nota).toBe('');
+  });
+
+  it('AG.4: sin categoría, la descripción es el texto escrito y no hay nota', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', descripcion: 'Arriendo' });
+    expect(result.descripcion).toBe('Arriendo');
+    expect(result.nota).toBe('');
   });
 
   it('para deudas guarda la categoría válida del catálogo de tipo de deuda', () => {

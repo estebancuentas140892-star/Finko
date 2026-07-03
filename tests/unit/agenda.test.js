@@ -450,6 +450,19 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     expect(selectMatch).not.toBeNull();
     expect(selectMatch[0]).not.toContain('required');
   });
+
+  it('AG.4: la categoría va antes que el campo de nombre en el DOM', () => {
+    const html = renderFormGastoFijo();
+    expect(html.indexOf('id="gfijo-categoria"')).toBeLessThan(html.indexOf('id="gfijo-descripcion"'));
+  });
+
+  it('AG.4: en el estado por defecto (sin categoría), el campo nace requerido con label "Descripción"', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('id="gfijo-descripcion-label">Descripción<');
+    const inputMatch = html.match(/<input id="gfijo-descripcion"[^>]*>/);
+    expect(inputMatch).not.toBeNull();
+    expect(inputMatch[0]).toContain('required');
+  });
 });
 
 // ── renderAgenda() - categoría en el detalle del día ──────────────
@@ -548,6 +561,65 @@ describe('renderAgenda() - emoji de categoría como ícono principal', () => {
     renderAgenda();
     const iconoEl = document.querySelector('.cal-detail__icon');
     expect(iconoEl.querySelector('svg')).not.toBeNull();
+  });
+});
+
+// ── renderAgenda() - nombre automático por categoría (AG.4) ───────
+
+describe('renderAgenda() - nombre automático por categoría', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con descripción igual a la categoría (nombre automático), no repite la categoría en el subtítulo', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', descripcion: 'Mercado', categoria: 'Mercado' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.querySelector('.cal-detail__name').textContent).toBe('Mercado');
+    // "Mercado" solo debe aparecer una vez: en el título, no repetido en el subtítulo.
+    const sub = item.querySelector('.cal-detail__sub').textContent;
+    expect(sub).not.toContain('Mercado');
+  });
+
+  it('con categoría "Otro" y nombre propio (distinto de la categoría), sí muestra la categoría en el subtítulo', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', descripcion: 'Suscripción Xbox', categoria: 'Otro' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.querySelector('.cal-detail__name').textContent).toBe('Suscripción Xbox');
+    expect(item.querySelector('.cal-detail__sub').textContent).toContain('Otro');
+  });
+
+  it('con nota, la muestra en el subtítulo del registro', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', descripcion: 'Mercado', categoria: 'Mercado', nota: 'Éxito de la esquina',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.querySelector('.cal-detail__sub').textContent).toContain('Éxito de la esquina');
+  });
+
+  it('sin nota, no agrega nada extra al subtítulo', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', descripcion: 'Mercado', categoria: 'Mercado' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.querySelector('.cal-detail__sub').textContent).toBe('Gasto fijo · Mensual');
   });
 });
 

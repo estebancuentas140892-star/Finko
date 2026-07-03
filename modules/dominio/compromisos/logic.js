@@ -45,6 +45,21 @@ export function esDeuda(tipo) {
 }
 
 /**
+ * AG.4: con una categoría predefinida de Agenda (cualquiera salvo 'Otro'),
+ * el nombre del gasto fijo es la propia categoría: pedir un nombre aparte
+ * sería redundante ("Mercado" ya lo dice todo). Solo con 'Otro' (o sin
+ * categoría) el usuario escribe su propio nombre.
+ * @param {{ tipo?: string, categoria?: string }} datos
+ * @returns {boolean}
+ */
+function _categoriaFijoConNombreAuto(datos) {
+  return datos.tipo === 'fijo'
+    && !!datos.categoria
+    && CATEGORIAS_AGENDA.includes(datos.categoria)
+    && datos.categoria !== 'Otro';
+}
+
+/**
  * Convierte una tasa mensual a su equivalente efectivo anual exacto.
  * tasaEA = (1 + tasaMensual)^12 - 1
  * @param {number} tasaMensual decimal (0.10 = 10% mensual)
@@ -196,7 +211,9 @@ export function nivelAlertaMora(proximos) {
 export function validarCompromiso(datos) {
   const errores = [];
 
-  if (!datos.descripcion?.trim()) {
+  // AG.4: con categoría predefinida (no 'Otro'), el nombre lo da la propia
+  // categoría; el campo de texto queda libre para una nota opcional.
+  if (!_categoriaFijoConNombreAuto(datos) && !datos.descripcion?.trim()) {
     errores.push('La descripción del compromiso es obligatoria.');
   }
   if (!datos.frecuencia || !FRECUENCIAS.includes(datos.frecuencia)) {
@@ -304,7 +321,11 @@ export function detectarDeudaCreciente(datos) {
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
  * v6:
- * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null } (categoria desde v17, CATEGORIAS_AGENDA)
+ * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null, nota } (categoria desde v17,
+ *                       CATEGORIAS_AGENDA; nota desde AG.4). Con categoría predefinida (no 'Otro'),
+ *                       descripcion es la propia categoría y lo que llega en el campo de texto se
+ *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
+ *                       nombre que escribió el usuario y nota queda ''.
  * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA' }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
@@ -323,10 +344,15 @@ export function normalizarCompromiso(datos) {
   };
 
   if (datos.tipo === 'fijo') {
-    base.monto = Number(datos.monto);
-    base.categoria = datos.categoria && CATEGORIAS_AGENDA.includes(datos.categoria)
+    const categoria = datos.categoria && CATEGORIAS_AGENDA.includes(datos.categoria)
       ? datos.categoria
       : null;
+    const nombreAuto = _categoriaFijoConNombreAuto(datos);
+
+    base.monto = Number(datos.monto);
+    base.categoria = categoria;
+    base.descripcion = nombreAuto ? categoria : datos.descripcion.trim();
+    base.nota = nombreAuto ? datos.descripcion.trim() : '';
     return base;
   }
 

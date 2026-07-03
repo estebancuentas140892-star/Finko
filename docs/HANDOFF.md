@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(calendario): emoji de categoría como ícono principal, AG.2)
+> Última actualización: 2026-07-02 (feat(calendario): nombre automático según la categoría en el gasto fijo, AG.4)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1838/1838 verdes |
-| Tests E2E | 94/94 verde. Suites: `smoke` 58 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1851/1851 verdes |
+| Tests E2E | 98/98 verde. Suites: `smoke` 62 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,28 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(calendario): nombre automático según la categoría en el gasto fijo (AG.4) · 2026-07-02
+
+El form de gasto fijo pedía descripción y categoría como dos campos independientes, aunque para categorías predefinidas (Mercado, Arriendo, Internet...) ambos dicen lo mismo: pedir un nombre aparte de "Mercado" es redundante. AG.4 hace que, con una categoría predefinida, el nombre del registro sea la propia categoría; el campo de texto libera su rol y pasa a ser una nota opcional. Solo con la categoría "Otro" (o sin categoría) el campo vuelve a ser el nombre obligatorio del gasto.
+
+En [compromisos/logic.js](../modules/dominio/compromisos/logic.js), nueva `_categoriaFijoConNombreAuto(datos)` detecta cuándo aplica (tipo fijo + categoría del catálogo de Agenda + distinta de "Otro"). `validarCompromiso()` deja de exigir descripción cuando aplica; `normalizarCompromiso()` deriva `descripcion = categoria` y guarda lo que el usuario escribió como `nota` (cadena vacía si no escribió nada). Sin categoría o con "Otro", el comportamiento es el de siempre: `descripcion` es el texto del usuario y `nota` queda ''. Es un campo nuevo, pero opcional y con lectura defensiva (`c.nota ?? ''`), así que no requiere migración de los compromisos ya guardados.
+
+En [agenda/view.js](../modules/dominio/agenda/view.js), `renderFormGastoFijo()` reordena los campos (categoría primero, nombre/nota después) para que la causalidad sea clara en la UI, y le da al label del campo un id (`gfijo-descripcion-label`) para que el JS pueda alternarlo. `_renderDetalleItem()` deja de repetir la categoría en el subtítulo cuando coincide con el nombre (nombre automático) y muestra la nota cuando existe. En [agenda/index.js](../modules/dominio/agenda/index.js), nueva `_syncCategoriaGastoFijo(form)` (mismo patrón que `_syncCategoriaMeta` de MT.3) alterna label, placeholder y `required` según la categoría elegida, enganchada al `change` del selector y llamada también al abrir el modal (nuevo o edición); en edición, si el compromiso tiene nombre automático, el campo de texto se prellena con `nota`, no con `descripcion`.
+
+Verificado con 10 tests unitarios nuevos (`validarCompromiso`/`normalizarCompromiso` con categoría predefinida, "Otro" y sin categoría; orden de campos y estado por defecto del form; supresión de la categoría duplicada y render de la nota en el detalle) más 4 E2E en Chromium real (el label y el `required` cambian al elegir/quitar una categoría predefinida; guardar con categoría y sin texto usa la categoría como nombre; guardar con categoría y una nota la muestra en el subtítulo). 1838/1838 → 1851/1851 unit; 94/94 → 98/98 E2E. Lint limpio. SW v262 → v263.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | Nueva `_categoriaFijoConNombreAuto()`; `validarCompromiso()` y `normalizarCompromiso()` para tipo fijo derivan `descripcion`/`nota` según la categoría. |
+| `modules/dominio/agenda/view.js` | `renderFormGastoFijo()` reordena categoría antes del nombre y agrega `#gfijo-descripcion-label`; `_renderDetalleItem()` suprime la categoría duplicada y muestra la nota. |
+| `modules/dominio/agenda/index.js` | Nueva `_syncCategoriaGastoFijo(form)`; prefill de edición usa `nota` cuando el nombre es automático. |
+| `tests/unit/compromisos.test.js` | 6 tests nuevos: validación y normalización con categoría predefinida, "Otro" y sin categoría. |
+| `tests/unit/agenda.test.js` | 4 tests nuevos: orden de campos, estado por defecto del form, supresión de categoría duplicada, render de la nota. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - nombre automático según la categoría", 4 tests. |
+| `service-worker.js` | v262 → v263. |
+
+---
 
 ### feat(calendario): emoji de categoría como ícono principal (AG.2) · 2026-07-02
 
@@ -103,21 +125,7 @@ El panel de detalle del día en Calendario listaba los compromisos de ese día s
 
 ---
 
-### feat(metas): ahorro sugerido según la frecuencia de ingreso, no "por día" (MT.4) · 2026-07-02
-
-La lista de Metas siempre mostraba "$X/día" como ritmo de ahorro sugerido, sin importar cómo cobra el usuario: para alguien que recibe su sueldo quincenal, pensar en días sueltos no ayuda a planear. Nueva `calcularAhorroPorPeriodo(meta, frecuenciaIngresos)` en [metas/logic.js](../modules/dominio/metas/logic.js) reemplaza a `calcularAhorroDiario` (eliminada): reparte el faltante entre los periodos de la frecuencia real de ingreso (Diario/Semanal/Quincenal/Mensual; las más largas como Trimestral o Anual caen a Mensual), no entre días. La frecuencia se deriva de `S.ingresos` con `frecuenciaPrincipalIngresos()`, duplicado intencional de la función homónima de Apartados (AP.1): Metas no puede importar de Apartados (ADN #10, ningún dominio importa a otro), así que cada dominio mantiene su propia copia de esta idea, igual que tesorería tiene su propio `_FACTOR_MENSUAL` independiente. `renderListaMetas()` en [metas/view.js](../modules/dominio/metas/view.js) calcula la frecuencia una sola vez (es la misma para todas las metas) y la pasa a cada `_renderMetaItem`, que ahora muestra "$X por quincena" / "$X por semana" / "$X al mes" / "$X por día" según corresponda, con la misma redacción que ya usa Apartados (consistencia de vocabulario entre secciones). Verificado con 1 E2E en Chromium real (ingreso Quincenal sembrado, meta con fecha límite muestra "por quincena", nunca "/día") más 22 tests unitarios nuevos (`frecuenciaPrincipalIngresos`, `etiquetaPeriodoAhorro`, `calcularAhorroPorPeriodo`, y el render real de la lista). Las fechas de prueba usan un helper `isoEnDias()` en hora local (mismo criterio que `hoyLocal()` de los E2E) para evitar el off-by-one de `toISOString()` en zonas UTC negativas como Colombia. 1804/1804 → 1819/1819 unit; 88/88 → 89/89 E2E. Lint limpio. SW v258 → v259.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/metas/logic.js` | Nuevas `frecuenciaPrincipalIngresos()`, `etiquetaPeriodoAhorro()`, `calcularAhorroPorPeriodo()`; eliminada `calcularAhorroDiario()`. |
-| `modules/dominio/metas/view.js` | `renderListaMetas()` calcula la frecuencia una vez; `_renderMetaItem` muestra el monto por periodo con su etiqueta. |
-| `tests/unit/metas.test.js` | 22 tests nuevos; helper `isoEnDias()` para fechas relativas sin drift de zona horaria. |
-| `tests/e2e/smoke.test.js` | Suite nueva "Metas - ritmo de ahorro según frecuencia (MT.4)", 1 test. |
-| `service-worker.js` | v258 → v259. |
-
----
-
-> Para tareas anteriores (MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 
