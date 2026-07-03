@@ -15,7 +15,7 @@ import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { f } from '../../infra/utils.js';
+import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -693,14 +693,28 @@ export function initCompromisos() {
     }
   });
 
-  // "Distribuir mi ingreso" (ADR 012, MC.4b): aplica los abonos a deudas del
-  // plan. Solo baja `saldoTotal` (topado en 0); el descuento de la cuenta de
-  // origen lo centraliza tesorería. Los montos ya vienen topados al saldo.
-  EventBus.on('distribucion:aplicar', ({ items }) => {
+  // "Distribuir mi ingreso" (ADR 012, MC.4b): aplica los abonos extra a deudas
+  // del plan. Registra el gasto-abono (mismo shape que el abono individual y que
+  // `_aplicarNecesidad` de tesorería, BUG-006: sin él el abono era invisible
+  // para Análisis, el ejecutado de Límites y el guard "ya pagado este periodo")
+  // y baja `saldoTotal` (topado en 0). El descuento de la cuenta de origen lo
+  // centraliza tesorería (el monto ya viene en `descontable`); aquí NO se toca
+  // la cuenta. Los montos ya vienen topados al saldo.
+  EventBus.on('distribucion:aplicar', ({ items, cuentaOrigenId = null }) => {
     const abonos = (items ?? []).filter(i => i.tipo === 'deuda' && i.monto > 0);
     for (const it of abonos) {
       const deuda = S.compromisos.find(c => c.id === it.id);
       if (!deuda) continue;
+      guardar('gastos', {
+        descripcion:        `Abono: ${deuda.descripcion}`,
+        monto:              it.monto,
+        categoria:          'Deudas',
+        fecha:              hoy(),
+        cuentaId:           cuentaOrigenId,
+        nota:               '',
+        compromisoId:       it.id,
+        pendienteCompletar: false,
+      });
       const nuevoSaldo = Math.max(0, (Number(deuda.saldoTotal) || 0) - it.monto);
       editar('compromisos', it.id, { saldoTotal: nuevoSaldo });
     }

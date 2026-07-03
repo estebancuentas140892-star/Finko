@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (fix(tesoreria): la cuota de manejo cuenta como gasto fijo mensual, BUG-005, con migración v19→v20)
+> Última actualización: 2026-07-03 (fix(compromisos): el abono extra a deudas desde Distribuir registra el gasto, BUG-006; nuevo BUG-009)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1866/1866 verdes |
-| Tests E2E | 104/104 verde. Suites: `smoke` 68 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests E2E | 106/106 verde. Suites: `smoke` 70 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos): el abono extra a deudas desde "Distribuir mi ingreso" registra el gasto (BUG-006) · 2026-07-03
+
+Cuarto bug de la revisión de Mis cuentas (prioridad media). El abono extra a una deuda desde el panel de distribución bajaba el `saldoTotal` y descontaba la cuenta, pero no creaba el gasto-abono: el handler de `distribucion:aplicar` en compromisos solo hacía `editar('compromisos', ...)`. El abono quedaba invisible para Análisis, para el ejecutado de Límites y para el guard "ya pagado este periodo". Fix: el handler crea el gasto con el mismo shape que el abono individual y que `_aplicarNecesidad` (categoría "Deudas", `compromisoId`, `cuentaId`), leyendo `cuentaOrigenId` del evento (ya viajaba). Sigue sin tocar la cuenta (tesorería centraliza el descuento vía `descontable`), así que no hay doble descuento; la slice `gastos` ya estaba en `_SLICES_DISTRIBUCION`, así que Deshacer revierte el nuevo gasto.
+
+**BUG-009 detectado al implementarlo (registrado, no corregido):** una misma deuda aparece a la vez en el checklist (su cuota) y en "Abonar extra"; marcar ambos con montos cercanos al saldo sobrepaga (la cuenta se debita `cuota + extra`, la deuda solo baja hasta 0). Preexistente en la matemática de la cuenta; el fix solo lo hizo visible. Requiere decisión de diseño, por eso se registró en vez de ampliar el alcance.
+
+Verificado con 2 E2E nuevos en Chromium real (el abono extra crea el gasto con shape correcto, baja la deuda y descuenta la cuenta una sola vez; Deshacer lo revierte). El fix vive en un handler de EventBus (capa index.js, no cubierta por unit tests), de ahí la verificación E2E. El preview interactivo sirvió un módulo cacheado de sesión previa (documentado en la memoria del entorno; el servidor sí sirve el código nuevo, confirmado por fetch), así que la E2E en Chromium fresco es la verificación autoritativa. 1866/1866 unit; 104/104 → 106/106 E2E. Lint limpio. SW v266 → v267. **Quedan en Mis cuentas: BUG-007, BUG-008 (bajas) y BUG-009 (media, decisión de diseño).**
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/index.js` | El handler de `distribucion:aplicar` crea el gasto-abono y lee `cuentaOrigenId`; importa `hoy`. |
+| `tests/e2e/smoke.test.js` | Suite nueva "abono extra a deudas (BUG-006)", 2 tests. |
+| `service-worker.js` | v266 → v267. |
+
+---
 
 ### fix(tesoreria): la cuota de manejo cuenta como gasto fijo mensual (BUG-005) · 2026-07-03
 
@@ -110,22 +126,7 @@ Verificado con 13 tests unitarios nuevos/reescritos (`construirDesgloseNecesidad
 
 ---
 
-### docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable · 2026-07-02
-
-Prerequisito de MC.7d. Tras validar en la app el desglose read-only de Necesidades (MC.7c), el usuario dio una dirección nueva (2026-07-02): cada grupo del asistente "Distribuir mi ingreso" debe mostrar sus registros como checklist seleccionable que registra pagos reales, no como lista informativa. Eso contradecía la decisión 2 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md) (Paso 1 read-only, sin mover dinero), así que el ADR se revisó antes de codear.
-
-La revisión (sección nueva "Revisión 2026-07-02" con decisiones R1-R5) define: **R1**, la checklist de Necesidades muestra nombre, cuota del periodo (fijo: su `monto` por ocurrencia; deuda: `cuotaMensual`, nunca el saldo total) y día de pago; los items marcados generan al confirmar exactamente los mismos registros que sus flujos individuales existentes (pago de fijo como "Marcar pagado" de Agenda, cuota de deuda como abono), con el guard "ya pagado este periodo" compartido para evitar doble registro. **R2**, una sola pregunta de cuenta al confirmar (patrón `cuenta-helper`, regla de cuenta única). **R3**, los pasos operan sobre el remanente real (el Paso 2 sugiere sobre el cobro menos las Necesidades marcadas). **R4**, la confirmación única aplica también los pagos del Paso 1; nota de implementación: agregar la slice `gastos` a `_SLICES_DISTRIBUCION` en `tesoreria/index.js` o el "Deshacer" dejaría pagos huérfanos. **R5**, sin schema nuevo (los pagos son gastos normales con `compromisoId`). Las decisiones 2, 5 y 6 originales quedan marcadas como revisadas/ajustadas con el texto original conservado como historia; la tabla de slices refleja MC.7a/b/c entregados y MC.7d ampliado.
-
-Tarea solo de documentación: sin cambios de código, tests ni service worker. La tarjeta MC.7d del BOARD pasó de "requiere revisión de ADR" a "pendiente", con el diseño cerrado y `Sonnet 5 - Alto` como modelo de implementación.
-
-| Archivo | Cambio |
-|---|---|
-| `docs/DECISIONS/018-asistente-distribuir-ingreso.md` | Sección "Revisión 2026-07-02" (R1-R5, alternativas y consecuencias); notas de revisión en las decisiones 2, 5 y 6; tabla de slices actualizada (MC.7a/b/c entregados, MC.7d ampliado); modelos de slices restantes en escala Claude 5. |
-| `docs/BOARD.md` | Tarjeta MC.7d: estado a "pendiente (ADR revisado)", objetivo alineado con R1-R5, archivos afectados precisados. |
-
----
-
-> Para tareas anteriores (AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

@@ -1825,3 +1825,74 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     expect(frec).toBe('Mensual');
   });
 });
+
+test.describe('Mis cuentas - Distribuir mi ingreso: abono extra a deudas (BUG-006)', () => {
+  test('el abono extra a una deuda registra el gasto, baja el saldo y descuenta la cuenta una sola vez', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      // cuotaMensual 0: la deuda no aparece en el checklist de Necesidades, solo
+      // en "Abonar extra a deudas". Así se aísla la ruta del abono extra (BUG-006).
+      st.compromisos = [
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    // No hay fila de checklist (cuotaMensual 0); sí un input de abono extra.
+    await expect(page.locator('[data-nec-toggle]')).toHaveCount(0);
+    const inputExtra = page.locator('.distribuir__monto[data-dist-tipo="deuda"]');
+    await expect(inputExtra).toHaveCount(1);
+    await inputExtra.fill('500000');
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+
+    // BUG-006: ahora existe el gasto-abono, con el mismo shape que el abono individual.
+    const abono = st.gastos.find(g => g.compromisoId === 'd1');
+    expect(abono).toBeTruthy();
+    expect(abono.monto).toBe(500_000);
+    expect(abono.categoria).toBe('Deudas');
+    expect(abono.cuentaId).toBe('c1');
+    // La deuda bajó y la cuenta se descontó una sola vez (tesorería centraliza el descuento).
+    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(1_500_000);
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 500_000);
+  });
+
+  test('Deshacer revierte el abono extra: borra el gasto y restaura el saldo de la deuda y la cuenta', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await page.locator('.distribuir__monto[data-dist-tipo="deuda"]').fill('500000');
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.click('[data-action="deshacer-distribucion"]');
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.gastos.find(g => g.compromisoId === 'd1')).toBeUndefined();
+    expect(st.compromisos.find(c => c.id === 'd1').saldoTotal).toBe(2_000_000);
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
+  });
+});
