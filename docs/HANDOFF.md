@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable)
+> Última actualización: 2026-07-03 (feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso, MC.7d slice 1)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1851/1851 verdes |
-| Tests E2E | 98/98 verde. Suites: `smoke` 62 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1857/1857 verdes |
+| Tests E2E | 101/101 verde. Suites: `smoke` 65 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,32 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso (MC.7d, slice 1) · 2026-07-03
+
+Primer slice de MC.7d, implementando R1/R4/R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md). El desglose de Necesidades del panel "Distribuir mi ingreso" (antes un `<details>` de solo lectura, MC.7c) pasa a ser una checklist: el usuario marca los gastos fijos y cuotas de deuda que cubre con este ingreso, y al confirmar cada marca registra exactamente el mismo pago que su flujo individual existente (pago de fijo como "Marcar pagado" de Agenda, cuota de deuda como abono), coherente con badges, Análisis y el ejecutado de Límites (ADR 017). **Alcance de este slice, decidido con el usuario:** solo fijos con frecuencia Mensual y deudas entran a la checklist; un fijo Quincenal/Semanal/Diario tiene más de una ocurrencia por periodo y una sola fila no puede representarlas sin pagar de más o de menos, así que quedan fuera hasta una tarea futura que modele sus vencimientos (mismo problema que ya resolvió `eventosDelMes` de Agenda). El shell de asistente paginado (avanzar/atrás) y el recálculo de Ahorro sobre el remanente real (R3) quedan pendientes en tarjetas separadas del BOARD.
+
+En [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js), `construirDesgloseNecesidades(compromisos, gastos, hoy)` gana dos parámetros: ahora filtra solo fijos Mensuales (antes mensualizaba Quincenal/Semanal/Diario con `_FACTOR_MENSUAL`, comportamiento que la revisión de ADR descartó por el riesgo de marcar como "pagado" un periodo cubierto solo a medias) y agrega `diaPago` y `pagado` por fila. Nuevas privadas `_prefijoMes()` y `_pagadoEstePeriodo()` duplican el guard de `estadoPagoMes` de compromisos/logic.js (mismo criterio del badge "Ya pagaste este mes" de Agenda: cualquier gasto vinculado alcanza para un fijo, la suma de abonos debe cubrir `cuotaMensual` para una deuda); duplicado intencional, no importación cruzada (ADN #10). El orden pone primero los no pagados (de mayor a menor monto).
+
+En [tesoreria/view.js](../modules/dominio/tesoreria/view.js), nueva `_filaNecesidad()` reemplaza el `<details>` de `_renderDesgloseNecesidades()` (eliminada): checkbox + nombre + categoría + día de pago + monto (no editable: es una obligación real, no una asignación libre); si `pagado`, el checkbox nace marcado y deshabilitado con "Ya pagado" en vez del monto. `_renderPanelDistribuir()` mueve la sección de Necesidades del bloque "Esto queda en tu cuenta (no se mueve)" a una sección accionable propia, primero en el panel (Paso 1 antes que Ahorro/Deudas/Inversiones); la fila informativa de Estilo de vida es lo único que queda en "no se mueve". El panel ahora también aparece cuando solo hay Necesidades (antes exigía al menos un destino de ahorro/deuda/inversión).
+
+En [tesoreria/index.js](../modules/dominio/tesoreria/index.js): nueva `_leerNecesidadesMarcadas()` (lee `[data-nec-toggle]`, monto fijo en `data-nec-monto`, no editable) se suma a `_leerItemsDistribucion()` en `_recalcularDistribucion()` para que el resumen en vivo incluya ambos; nueva `_aplicarNecesidad()` escribe directo en `'gastos'` (mismo patrón que Agenda y Compromisos: `gastos`/`cuentas` son un ledger compartido que cualquier dominio edita con `guardar`/`editar` de crud.js, no una violación de ADN #10) y descuenta `saldoTotal` para deudas; `_confirmarDistribucion()` la invoca por cada Necesidad marcada, dentro de la misma confirmación única que ya aplicaba Ahorro/Deudas/Inversiones. **Hallazgo de R4 aplicado:** `_SLICES_DISTRIBUCION` no incluía `'gastos'`; como este slice hace que el Paso 1 cree gastos, se agregó, o "Deshacer" habría dejado pagos huérfanos.
+
+**Bug encontrado y corregido durante la verificación E2E:** los primeros tests fallaban con el saldo/gasto sin persistir tras confirmar, pese a que el código corría sin errores (verificado con logging temporal en el código fuente). Causa: `save()` está debounced 200ms (ADN #5) y los tests leían `localStorage` inmediatamente después del click, antes del flush. No era un bug de la lógica de negocio: se corrigió agregando `page.waitForTimeout(400)` antes de leer `localStorage` en los tests de confirmar/deshacer, mismo patrón ya usado en otros E2E del proyecto que verifican persistencia.
+
+Verificado con 13 tests unitarios nuevos/reescritos (`construirDesgloseNecesidades` con fijos Mensuales, exclusión de Quincenal/Semanal/Diario, estado `pagado` por gasto del periodo, orden con pagados al final) más 4 E2E en Chromium real (checklist con día de pago y exclusión correcta; fila ya pagada deshabilitada; confirmar registra el mismo gasto que el flujo individual y descuenta la cuenta; Deshacer restaura saldo y borra el gasto). El preview interactivo del entorno no cargó la app (`chrome-error://chromewebdata/`, problema conocido de este entorno); la verificación se apoyó en E2E con Chromium real. 1851/1851 → 1857/1857 unit; 98/98 → 101/101 E2E. Lint limpio. SW v263 → v264.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` gana `gastos`/`hoy`, filtra solo fijos Mensuales, agrega `diaPago`/`pagado`; nuevas privadas `_prefijoMes()`, `_pagadoEstePeriodo()`. |
+| `modules/dominio/tesoreria/view.js` | Nueva `_filaNecesidad()` (reemplaza `_renderDesgloseNecesidades()`); `_renderPanelDistribuir()` mueve Necesidades a sección accionable propia (Paso 1). |
+| `modules/dominio/tesoreria/index.js` | Nuevas `_leerNecesidadesMarcadas()`, `_aplicarNecesidad()`; `_confirmarDistribucion()` aplica los pagos marcados; `_SLICES_DISTRIBUCION` suma `'gastos'`; listener de `change` para `[data-nec-toggle]`. |
+| `styles/components/forms.css` | Nueva `.distribuir__fila--pagado`, `.distribuir__nec-monto`; clases muertas del `<details>` eliminadas. |
+| `tests/unit/tesoreria.test.js` | `construirDesgloseNecesidades` reescrito: 13 tests (exclusión por frecuencia, `pagado`, `diaPago`, orden). |
+| `tests/e2e/smoke.test.js` | Suite "Distribuir mi ingreso: checklist de Necesidades" reemplaza el test de MC.7c; 4 tests nuevos. |
+| `service-worker.js` | v263 → v264. |
+
+---
 
 ### docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable · 2026-07-02
 
@@ -110,22 +136,7 @@ En fechas cargadas (quincenas, fin de mes) el detalle del día en Calendario lis
 
 ---
 
-### feat(calendario): leyenda completa, colores consistentes y siempre visible (AG.6) · 2026-07-02
-
-La leyenda del calendario se renderizaba al final del panel, después del detalle del día: con un día cargado de registros quedaba desplazada fuera de vista justo cuando más ayudaba. Ahora [agenda/view.js](../modules/dominio/agenda/view.js) la ubica entre el calendario y el detalle, y `.cal-legend` ([config.css](../styles/components/config.css)) es sticky, con fondo, borde y radio propios (al quedar pegada, el contenido del detalle pasa por debajo y no debe transparentarse). El obstáculo real estaba en el shell: `.main-content` tenía `overflow-x: hidden`, que lo convierte en scroll container y anula el `position: sticky` de cualquier descendiente; pasó a `overflow-x: clip` ([layout.css](../styles/layout.css)), mismo recorte horizontal sin ese efecto secundario. Sobre los colores: el calendario hoy solo mapea `S.compromisos`, así que los 3 tipos de la leyenda (gasto fijo `--fk-dom-presupuesto`, deuda entidad `--fk-dom-compromisos`, deuda personal `--fk-dom-personales`) ya cubren todos los eventos posibles con colores únicos y consistentes; no hubo que tocarlos. Los tipos futuros (metas, apartados, fondo) entrarán cuando el ADR de recordatorios de aporte (AP.4/MT.2/AH.4) los sume, con la guía dejada en el doc de `_renderLeyenda`. Verificado con 2 tests unit nuevos (los 3 dots presentes; la leyenda antes del detalle en el DOM) y 1 E2E en Chromium real que abre un día con 10 registros, scrollea al fondo (guard de `scrollY > 0` para no pasar trivialmente) y verifica la leyenda dentro del viewport. 1829/1829 → 1831/1831 unit; 90/90 → 91/91 E2E. Lint limpio. SW v260 → v261.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | La leyenda se renderiza entre el calendario y el detalle del día; doc de `_renderLeyenda` con la guía para tipos futuros. |
-| `styles/components/config.css` | `.cal-legend` sticky (top), con fondo, borde y radio propios. |
-| `styles/layout.css` | `.main-content` pasa de `overflow-x: hidden` a `clip`: hidden creaba un scroll container que anulaba el sticky. |
-| `tests/unit/agenda.test.js` | 2 tests nuevos: dots de los 3 tipos en la leyenda, orden leyenda → detalle. |
-| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - leyenda sticky", 1 test con scroll real. |
-| `service-worker.js` | v260 → v261. |
-
----
-
-> Para tareas anteriores (AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

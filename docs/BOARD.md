@@ -3,7 +3,7 @@
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
-> Última actualización: 2026-07-02.
+> Última actualización: 2026-07-03.
 
 ---
 
@@ -62,14 +62,23 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada
 - Modelo     : sin definir
 
-#### MC.7d - Asistente por pasos con checklist por grupo
+#### MC.7d (continuación) - Recalcular Ahorro sobre el remanente real + shell paginado
 - Prioridad  : alta
-- Estado     : pendiente (ADR 018 revisado el 2026-07-02: el Paso 1 es checklist accionable, diseño cerrado)
-- Objetivo   : el panel "Distribuir mi ingreso" pasa a ser un asistente guiado de 3 pasos (Necesidades → Ahorro → Estilo de vida) según la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md) (secciones R1-R5). **Paso 1 Necesidades** (deudas entidad + deudas personales + gastos fijos): checklist con nombre, cuota del periodo actual (nunca el saldo total) y día de pago; el usuario marca cuáles cubre con este ingreso; total en vivo; guard "ya pagado este periodo" compartido con Agenda; al confirmar registra los mismos movimientos que los flujos individuales existentes (pago de fijo, abono de cuota). **Paso 2 Ahorro** (fondo, metas, apartados, inversiones): misma checklist con el aporte por objetivo (reusa el desglose de MC.7a/b), calculado sobre el remanente real tras el Paso 1. Confirmación única al final (una sola pregunta de cuenta, patrón `cuenta-helper`), apply-plan/undo (agregar slice `gastos` al snapshot) y gating por fecha de MC.4.
+- Estado     : pendiente
+- Objetivo   : slice 1 de MC.7d ya entregado (2026-07-03): Necesidades es una checklist accionable que registra pagos reales al confirmar (R1/R4/R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md)). Queda pendiente **R3**: el Paso 2 (Ahorro) hoy sugiere sus aportes sobre el % teórico del split total, sin importar qué Necesidades se marcaron; debería recalcularse en vivo sobre el remanente real (monto a distribuir menos las Necesidades marcadas), igual que el resumen ya combina ambos grupos. También queda pendiente convertir el panel en un **shell de asistente paginado** (avanzar/atrás entre Necesidades → Ahorro/Deudas/Inversiones → Estilo de vida) en vez de un solo fieldset con scroll continuo, como preveía la decisión 1 original del ADR.
 - Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js` (`construirDesgloseNecesidades`), `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js` (`_SLICES_DISTRIBUCION`, `_confirmarDistribucion`), `modules/infra/cuenta-helper.js`
-- Depende de : nada (MC.7a/b/c entregados; ADR 018 ya revisado)
+- Archivos   : `modules/dominio/tesoreria/logic.js`, `modules/dominio/tesoreria/view.js` (`_renderPanelDistribuir`), `modules/dominio/tesoreria/index.js` (`_recalcularDistribucion`)
+- Depende de : nada (checklist de Necesidades ya entregada)
 - Modelo     : Sonnet 5 - Alto
+
+#### MC.7g (opcional) - Fijos Quincenal/Semanal/Diario en la checklist de Necesidades
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : la checklist de Necesidades (MC.7d, slice 1) solo incluye fijos con frecuencia Mensual: un Quincenal/Semanal/Diario tiene más de una ocurrencia por periodo y una sola fila no puede representarlas sin pagar de más o de menos. Modelar sus vencimientos dentro del periodo (mismo problema que ya resolvió `eventosDelMes` de Agenda) para poder incluirlos.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/logic.js` (`construirDesgloseNecesidades`)
+- Depende de : nada. Solo tiene sentido si el usuario lo pide: la mayoría de fijos recurrentes de uso diario (arriendo, servicios, suscripciones) ya son Mensuales.
+- Modelo     : sin definir
 
 #### MC.7e - Paso 3: el remanente de Estilo de vida se reparte entre cuentas
 - Prioridad  : alta

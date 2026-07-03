@@ -17,7 +17,7 @@ import { confirmar } from '../../ui/confirm.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
-import { esc as _esc, f } from '../../infra/utils.js';
+import { esc as _esc, f, hoy } from '../../infra/utils.js';
 import { resolverCuenta } from '../../infra/cuenta-helper.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../core/constants.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -753,7 +753,9 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
-const _SLICES_DISTRIBUCION = ['cuentas', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
+// 'gastos' (ADR 018 revisión 2026-07-02, R4): el Paso 1 de Necesidades registra
+// pagos reales; sin esta slice en el snapshot, "Deshacer" dejaría esos gastos huérfanos.
+const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
 
 /** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
 function _toggleDistribuirIngreso(el) {
@@ -792,12 +794,31 @@ function _leerItemsDistribucion(panel) {
     .filter(it => it.monto > 0);
 }
 
+/**
+ * Lee las Necesidades marcadas del checklist del Paso 1 (ADR 018 revisión
+ * 2026-07-02, R1). A diferencia de `_leerItemsDistribucion`, el monto no es
+ * editable (viene fijo en `data-nec-monto`) y las ya pagadas quedan
+ * deshabilitadas, así que `.checked` por sí solo ya excluye ese caso.
+ * `tipo` distingue 'necesidad-fijo'/'necesidad-deuda' del tipo 'deuda' de los
+ * abonos extra (Paso 2), para que `_confirmarDistribucion` los aplique distinto.
+ */
+function _leerNecesidadesMarcadas(panel) {
+  return [...panel.querySelectorAll('[data-nec-toggle]')]
+    .filter(chk => chk.checked)
+    .map(chk => ({
+      tipo:  chk.dataset.necTipo === 'deuda' ? 'necesidad-deuda' : 'necesidad-fijo',
+      id:    chk.dataset.necId || null,
+      monto: Number(chk.dataset.necMonto) || 0,
+    }))
+    .filter(it => it.monto > 0);
+}
+
 /** Recalcula el resumen en vivo y habilita/deshabilita "Distribuir". Sin tocar S. */
 function _recalcularDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
   const monto     = Number(document.getElementById('distribuir-monto')?.value) || 0;
-  const items     = _leerItemsDistribucion(panel);
+  const items     = [..._leerNecesidadesMarcadas(panel), ..._leerItemsDistribucion(panel)];
   const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
 
   const resumenEl = document.getElementById('distribuir-resumen');
@@ -842,17 +863,70 @@ function _restaurarSlices(snap) {
 }
 
 /**
+ * Aplica el pago de una Necesidad marcada del Paso 1 (ADR 018 revisión
+ * 2026-07-02, R1): genera exactamente el mismo registro que su flujo
+ * individual existente, para que quede coherente con Agenda, Deudas, Análisis
+ * y el ejecutado de Límites (ADR 017). Escribe directo en 'gastos', el mismo
+ * patrón que ya usan Agenda y Compromisos (ledger compartido entre dominios,
+ * no una violación de ADN #10: `cuentas` y `gastos` los edita cualquier
+ * dominio con `guardar`/`editar` de crud.js, igual que aquí).
+ *
+ * - Fijo: mismo gasto que "Marcar pagado este mes" de Agenda (categoría
+ *   "Gastos fijos", vinculado por `compromisoId`).
+ * - Deuda: mismo gasto que el formulario de abono individual (categoría
+ *   "Deudas") más el descuento de `saldoTotal`, topado en 0.
+ *
+ * @param {{tipo:'necesidad-fijo'|'necesidad-deuda', id:string, monto:number}} item
+ * @param {string} cuentaId
+ */
+function _aplicarNecesidad(item, cuentaId) {
+  const comp = (S.compromisos ?? []).find(c => c.id === item.id);
+  if (!comp) return;
+
+  if (item.tipo === 'necesidad-fijo') {
+    guardar('gastos', {
+      descripcion:        `Pago: ${comp.descripcion}`,
+      monto:              item.monto,
+      categoria:          'Gastos fijos',
+      fecha:              hoy(),
+      cuentaId,
+      nota:               '',
+      compromisoId:       item.id,
+      pendienteCompletar: false,
+    });
+    return;
+  }
+
+  guardar('gastos', {
+    descripcion:        `Abono: ${comp.descripcion}`,
+    monto:              item.monto,
+    categoria:          'Deudas',
+    fecha:              hoy(),
+    cuentaId,
+    nota:               '',
+    compromisoId:       item.id,
+    pendienteCompletar: false,
+  });
+  const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) - item.monto);
+  editar('compromisos', item.id, { saldoTotal: nuevoSaldo });
+}
+
+/**
  * Aplica la distribución: acredita el ingreso a la cuenta de origen, descuenta lo
- * que físicamente sale (metas + apartados; el aporte al fondo no descuenta, ADR
- * 009) y delega cada porción a su dominio por EventBus. Guarda snapshot para undo.
+ * que físicamente sale (Necesidades marcadas + metas/apartados/deudas/inversiones
+ * seleccionadas; el aporte al fondo no descuenta, ADR 009), registra los pagos
+ * de Necesidades (R1) y delega el resto a cada dominio por EventBus. Guarda
+ * snapshot para undo.
  */
 async function _confirmarDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
 
-  const monto = Number(document.getElementById('distribuir-monto')?.value) || 0;
-  const items = _leerItemsDistribucion(panel);
-  const { asignado, excede } = resumirPlanDistribucion(monto, items);
+  const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
+  const necesidades = _leerNecesidadesMarcadas(panel);
+  const items       = _leerItemsDistribucion(panel);
+  const todos       = [...necesidades, ...items];
+  const { asignado, excede } = resumirPlanDistribucion(monto, todos);
   if (monto <= 0 || asignado <= 0 || excede) return;
 
   const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
@@ -871,7 +945,7 @@ async function _confirmarDistribucion() {
   }
 
   // Acreditar el ingreso y descontar solo lo que sale de la cuenta (no el fondo).
-  const descontable = items
+  const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
@@ -879,7 +953,11 @@ async function _confirmarDistribucion() {
     editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable });
   }
 
-  // Cada dominio aplica su porción con su propia lógica (ADN #10).
+  // Necesidades (Paso 1, R1): tesorería aplica directo el pago real.
+  for (const it of necesidades) _aplicarNecesidad(it, cuentaId);
+
+  // Ahorro, abonos extra a deudas e inversiones: cada dominio aplica su
+  // porción con su propia lógica por EventBus (ADN #10).
   EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
 
   updSaldo();
@@ -953,8 +1031,13 @@ export function initTesoreria() {
   // Los toggles de cada destino del panel disparan `change`, no `input`.
   document.addEventListener('change', (e) => {
     const t = e.target;
-    if (t instanceof HTMLInputElement && t.hasAttribute('data-dist-destino-toggle')) {
+    if (!(t instanceof HTMLInputElement)) return;
+    if (t.hasAttribute('data-dist-destino-toggle')) {
       _onToggleDestinoDistribucion(t);
+    } else if (t.hasAttribute('data-nec-toggle')) {
+      // Necesidades (Paso 1, R1): sin monto editable que habilitar/deshabilitar,
+      // solo recalcular el resumen en vivo.
+      _recalcularDistribucion();
     }
   });
 

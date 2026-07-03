@@ -337,9 +337,10 @@ export function renderDistribucionIngreso() {
   // incrementa su capital. El descuento de la cuenta lo centraliza tesorería.
   const destinosInversiones = construirPlanInversiones({ inversiones: S.inversiones ?? [] });
 
-  // Desglose itemizado de Necesidades (Paso 1 del asistente, MC.7c, ADR 018):
-  // vista de solo lectura, no mueve dinero.
-  const itemsNecesidades = construirDesgloseNecesidades(S.compromisos ?? []);
+  // Checklist accionable de Necesidades (Paso 1 del asistente, MC.7d, ADR 018
+  // revisión 2026-07-02): el usuario marca cuáles cubre con este ingreso; al
+  // confirmar, cada marca registra el mismo pago que su flujo individual.
+  const itemsNecesidades = construirDesgloseNecesidades(S.compromisos ?? [], S.gastos ?? []);
 
   // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
   // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
@@ -413,38 +414,42 @@ function _emojiNecesidad(it) {
 }
 
 /**
- * Desglose itemizado de Necesidades (Paso 1 del asistente, MC.7c, ADR 018):
- * vista de solo lectura dentro de "Esto queda en tu cuenta (no se mueve)".
- * No mueve dinero: cada obligación se sigue pagando al vencer, como hoy.
+ * Una fila de la checklist de Necesidades (Paso 1, MC.7d, ADR 018 revisión
+ * 2026-07-02): checkbox + nombre + día de pago + monto. A diferencia de las
+ * filas de Ahorro/Deudas/Inversiones, el monto no es editable: es la cuota
+ * real de la obligación, no una asignación libre. Si ya se registró un pago
+ * este periodo, aparece marcada, deshabilitada y con "Ya pagado" en vez del
+ * monto, para que no se pueda volver a registrar (mismo guard que el badge
+ * "Ya pagaste este mes" de Agenda).
  *
- * @param {ReturnType<typeof construirDesgloseNecesidades>} items
- * @returns {string} HTML. `''` si no hay compromisos que mostrar.
+ * @param {{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}} it
+ * @returns {string}
  */
-function _renderDesgloseNecesidades(items) {
-  if (items.length === 0) return '';
-
-  const filas = items.map(it => `
-        <li class="distribuir__nec-item">
-          <span class="distribuir__nec-item-nombre">
-            ${_emojiNecesidad(it)} ${_esc(it.nombre)}${it.categoria ? ` <span class="distribuir__nec-item-cat">· ${_esc(it.categoria)}</span>` : ''}
-          </span>
-          <span class="distribuir__nec-item-monto">${f(it.monto)}</span>
-        </li>`).join('');
+function _filaNecesidad(it) {
+  const catSub = it.categoria ? ` <span class="distribuir__nec-item-cat">· ${_esc(it.categoria)}</span>` : '';
+  const diaSub = it.diaPago ? ` <span class="distribuir__saldo">día ${it.diaPago}</span>` : '';
+  const checkedAttr = it.pagado ? 'checked disabled' : 'checked';
 
   return `
-          <details class="analisis-grupo distribuir__nec-desglose">
-            <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
-            <ul class="distribuir__nec-item-list" role="list">${filas}</ul>
-          </details>`;
+        <div class="distribuir__fila${it.pagado ? ' distribuir__fila--pagado' : ''}">
+          <label class="checkbox-row distribuir__toggle">
+            <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
+                   data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" ${checkedAttr} />
+            <span>${_emojiNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}</span>
+          </label>
+          <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>
+        </div>`;
 }
 
 /**
- * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/MC.4b/MC.4d/MC.4e).
- * El panel arranca oculto; el botón lo despliega. Reparte hacia el grupo Ahorro
- * (Fondo, Metas, Apartados), como abono real hacia las Deudas pendientes
- * (ordenadas por prioridad de pago) y como aporte de capital hacia las
- * Inversiones. El resumen en vivo y el botón "Distribuir" se manejan desde
- * index.js. Devuelve '' si no hay ningún destino fondeable.
+ * Botón "Distribuir mi ingreso" + panel inline editable (ADR 012, MC.4a/b/d/e;
+ * ADR 018 revisión 2026-07-02, R1: checklist accionable de Necesidades).
+ * El panel arranca oculto; el botón lo despliega. Reparte hacia las Necesidades
+ * marcadas (gastos fijos mensuales y cuotas de deuda, como pago real), hacia el
+ * grupo Ahorro (Fondo, Metas, Apartados), como abono extra a las Deudas
+ * pendientes (ordenadas por prioridad de pago) y como aporte de capital hacia
+ * las Inversiones. El resumen en vivo y el botón "Distribuir" se manejan desde
+ * index.js. Devuelve '' si no hay ningún destino fondeable ni Necesidad que marcar.
  *
  * Gating por fecha (MC.4d): la acción solo aparece cuando el cobro del periodo
  * ya llegó y aún no se distribuyó ('listo') o cuando no hay fecha datable
@@ -455,11 +460,12 @@ function _renderDesgloseNecesidades(items) {
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
-  const { montoIngreso, ahorroPct, ahorroBudget, necesidadesPct, estiloVidaPct } = d;
+  const { montoIngreso, ahorroPct, ahorroBudget, estiloVidaPct } = d;
+  const necesidades = d.itemsNecesidades ?? [];
   const ahorro      = d.destinosAhorro ?? [];
   const deudas      = d.destinosDeudas ?? [];
   const inversiones = d.destinosInversiones ?? [];
-  if (ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0) return '';
+  if (necesidades.length === 0 && ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0) return '';
 
   const est = d.estado?.estado ?? 'sin-fecha';
 
@@ -480,10 +486,21 @@ function _renderPanelDistribuir(d) {
         : `Recibiste tu ingreso el ${_fechaCorta(d.estado.periodoISO)}.`} ¿Deseas distribuirlo ahora?</p>`
     : '';
 
+  // Paso 1 (R1): checklist de Necesidades, marcadas por defecto salvo las ya
+  // pagadas este periodo (checkbox deshabilitado, "Ya pagado"). Al confirmar,
+  // cada marca registra el mismo pago que su flujo individual (ver index.js).
+  const seccionNecesidades = necesidades.length > 0
+    ? `
+          <p class="form-hint distribuir__subtitulo">📦 Necesidades · marca las que cubres con este ingreso:</p>
+          <div class="distribuir-ingreso__destinos">
+            ${necesidades.map(_filaNecesidad).join('')}
+          </div>`
+    : '';
+
   const filasAhorro = ahorro.map(_filaDistribuir).join('');
   const seccionDeudas = deudas.length > 0
     ? `
-          <p class="form-hint distribuir__subtitulo">Abonar a deudas (ordenadas por prioridad de pago):</p>
+          <p class="form-hint distribuir__subtitulo">Abonar extra a deudas (ordenadas por prioridad de pago):</p>
           <div class="distribuir-ingreso__destinos">
             ${deudas.map(_filaDistribuir).join('')}
           </div>`
@@ -496,20 +513,13 @@ function _renderPanelDistribuir(d) {
           </div>`
     : '';
 
-  // Filas informativas (MC.4c): Necesidades y Estilo de vida no se mueven en este
-  // panel (las obligaciones se pagan al vencer; el estilo de vida se gasta a lo
-  // largo del mes). Se muestran como referencia del plan completo de los 3 grupos.
-  // index.js recalcula sus montos en vivo al cambiar el monto a distribuir.
-  const nMonto = Math.round(montoIngreso * necesidadesPct / 100);
-  const eMonto = Math.round(montoIngreso * estiloVidaPct  / 100);
+  // Fila informativa (MC.4c): Estilo de vida no se mueve en este panel (se
+  // gasta a lo largo del mes). index.js recalcula su monto en vivo al cambiar
+  // el monto a distribuir.
+  const eMonto = Math.round(montoIngreso * estiloVidaPct / 100);
   const seccionInfo = `
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
-            <p class="distribuir__info-fila">
-              <span>📦 Necesidades · ${necesidadesPct}%</span>
-              <span data-dist-info="necesidades" data-dist-pct="${necesidadesPct}">${f(nMonto)}</span>
-            </p>
-            ${_renderDesgloseNecesidades(d.itemsNecesidades ?? [])}
             <p class="distribuir__info-fila">
               <span>🎯 Estilo de vida · ${estiloVidaPct}%</span>
               <span data-dist-info="estiloVida" data-dist-pct="${estiloVidaPct}">${f(eMonto)}</span>
@@ -524,13 +534,14 @@ function _renderPanelDistribuir(d) {
           💸 Distribuir mi ingreso
         </button>
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso" hidden>
-          <legend>Reparte hacia tus ahorros, deudas e inversiones. El resto queda disponible en tu cuenta.</legend>
+          <legend>Reparte hacia tus necesidades, ahorros, deudas e inversiones. El resto queda disponible en tu cuenta.</legend>
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
             <input id="distribuir-monto" type="number" class="input"
                    min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
                    data-action="recalcular-distribucion" />
           </div>
+          ${seccionNecesidades}
           <p class="form-hint">Sugerencia: ${f(ahorroBudget)} a ahorro (${ahorroPct}%). Ajusta cada destino:</p>
           ${ahorro.length > 0 ? `<div class="distribuir-ingreso__destinos">${filasAhorro}</div>` : ''}
           ${seccionDeudas}

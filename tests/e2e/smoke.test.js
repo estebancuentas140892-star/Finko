@@ -1597,16 +1597,21 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
     await expect(hint).toBeVisible({ timeout: 3_000 });
   });
 
-  test('MC.7c: el desglose de Necesidades lista gastos fijos y deudas, ordenados de mayor a menor, sin mover dinero', async ({ page }) => {
+});
+
+// ── Mis cuentas: checklist accionable de Necesidades (MC.7d, ADR 018 revisión 2026-07-02) ──
+
+test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', () => {
+  test('lista fijos mensuales y deudas, marcadas por defecto, con día de pago; excluye un fijo Quincenal', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {
       const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
       st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
-      st.config = { presetDistribucion: '50-30-20' };
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
       st.compromisos = [
-        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
-        { id: 'cf2', descripcion: 'Internet', tipo: 'fijo', categoria: 'Internet', frecuencia: 'Mensual', diaPago: 10, monto: 100_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
-        { id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, activo: true, fechaCreacion: '2026-01-01T00:00:00.000Z' },
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', categoria: 'Arriendo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true },
+        { id: 'cf2', descripcion: 'Mercado', tipo: 'fijo', categoria: 'Mercado', frecuencia: 'Quincenal', diaPago: 1, monto: 150_000, activo: true },
+        { id: 'd1', descripcion: 'Tarjeta Bancolombia', tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', saldoTotal: 2_000_000, cuotaMensual: 250_000, diaPago: 15, activo: true },
       ];
       localStorage.setItem('fk_v1', JSON.stringify(st));
     });
@@ -1615,20 +1620,97 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
 
-    const desglose = page.locator('.distribuir__nec-desglose');
-    await expect(desglose).toBeVisible({ timeout: 3_000 });
-    await desglose.locator('summary').click();
+    await expect(page.locator('[data-nec-toggle]')).toHaveCount(2); // cf1 + d1; cf2 (Quincenal) queda fuera
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeChecked();
+    await expect(page.locator('[data-nec-id="d1"]')).toBeChecked();
+    await expect(page.locator('[data-nec-id="cf2"]')).toHaveCount(0);
 
-    const items = desglose.locator('.distribuir__nec-item');
-    await expect(items).toHaveCount(3);
-    await expect(items.nth(0)).toContainText('Arriendo');
-    await expect(items.nth(0)).toContainText('$800.000');
-    await expect(items.nth(1)).toContainText('Tarjeta Bancolombia');
-    await expect(items.nth(1)).toContainText('$250.000');
-    await expect(items.nth(2)).toContainText('Internet');
-    await expect(items.nth(2)).toContainText('$100.000');
+    const panel = page.locator('#distribuir-ingreso-panel');
+    await expect(panel).toContainText('Arriendo');
+    await expect(panel).toContainText('día 5');
+    await expect(panel).toContainText('Tarjeta Bancolombia');
+  });
 
-    // Es solo lectura: a diferencia de las filas de ahorro/deudas/inversiones, no tiene inputs editables.
-    await expect(desglose.locator('input')).toHaveCount(0);
+  test('una Necesidad ya pagada este periodo aparece marcada, deshabilitada, con "Ya pagado"', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript((hoy) => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      st.gastos = [{
+        id: 'g1', descripcion: 'Pago: Arriendo', monto: 800_000, categoria: 'Gastos fijos',
+        fecha: hoy, cuentaId: 'c1', compromisoId: 'cf1', nota: '',
+      }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    }, hoyLocal());
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const chk = page.locator('[data-nec-id="cf1"]');
+    await expect(chk).toBeChecked();
+    await expect(chk).toBeDisabled();
+    await expect(page.locator('.distribuir__fila--pagado')).toContainText('Ya pagado');
+  });
+
+  test('confirmar con una Necesidad de fijo marcada registra el mismo pago que "Marcar pagado" y descuenta la cuenta', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await page.click('[data-action="confirmar-distribucion"]');
+
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    // save() está debounced 200ms (ADN #5): esperar el flush antes de leer localStorage.
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(3_200_000); // 1.000.000 + 3.000.000 (ingreso) - 800.000 (pago)
+    const gasto = st.gastos.find(g => g.compromisoId === 'cf1');
+    expect(gasto).toBeTruthy();
+    expect(gasto.monto).toBe(800_000);
+    expect(gasto.categoria).toBe('Gastos fijos');
+    expect(gasto.cuentaId).toBe('c1');
+  });
+
+  test('Deshacer revierte el pago de una Necesidad: borra el gasto y restaura el saldo de la cuenta', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await page.click('[data-action="confirmar-distribucion"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.click('[data-action="deshacer-distribucion"]');
+
+    // save() está debounced 200ms (ADN #5): esperar el flush antes de leer localStorage.
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
+    expect(st.gastos.find(g => g.compromisoId === 'cf1')).toBeUndefined();
   });
 });

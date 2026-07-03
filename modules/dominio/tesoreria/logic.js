@@ -117,47 +117,85 @@ export function calcularGastosFijosMensuales(compromisos) {
     .reduce((acc, c) => acc + (c.monto ?? 0) * (_FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
 }
 
+/** 'YYYY-MM' del mes de `hoy`. Local para comparar contra `gasto.fecha` (ADN #10, sin importar Agenda). */
+function _prefijoMes(hoy) {
+  const yyyy = hoy.getFullYear();
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+}
+
 /**
- * Desglose itemizado de Necesidades para el Paso 1 del asistente "Distribuir
- * mi ingreso" (MC.7c, ADR 018 decisión 2): una fila por gasto fijo y por deuda
- * activos, con nombre, categoría y su equivalente mensual. Es una vista de
- * solo lectura: no mueve dinero ni cambia nada, solo ayuda al usuario a ver
- * cuánto de su ingreso ya está comprometido este mes (las obligaciones se
- * siguen pagando al vencer, como hoy).
+ * Si un compromiso ya tiene un pago registrado este periodo. Duplica el
+ * criterio de `estadoPagoMes` de compromisos/logic.js (mismo guard que usa el
+ * badge "Ya pagaste este mes" de Agenda): un fijo cuenta como pagado con
+ * cualquier gasto vinculado; una deuda, cuando la suma de abonos del periodo
+ * cubre `cuotaDeuda`. Duplicado intencional, no importación cruzada: tesorería
+ * no puede importar de Compromisos (ADN #10).
  *
- * El monto mensual de cada fila usa la misma normalización que ya usa el
- * modelo de distribución, para que la suma del desglose coincida con el
- * "Necesidades" agregado que muestra el resto del panel: fijo = `monto *
- * _FACTOR_MENSUAL[frecuencia]` (igual que `calcularGastosFijosMensuales`),
- * deuda = `cuotaMensual` (ya mensual). Los compromisos con frecuencia de baja
- * periodicidad (Bimestral, Anual, etc.) no representan flujo mensual
- * recurrente y se excluyen, igual que en el agregado.
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} compromisoId
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @param {number|null} cuotaDeuda Cuota mensual si es deuda; `null` si es fijo.
+ * @returns {boolean}
+ */
+function _pagadoEstePeriodo(gastos, compromisoId, prefijoMes, cuotaDeuda) {
+  if (!Array.isArray(gastos) || !compromisoId) return false;
+  const totalAbonado = gastos
+    .filter(g => g.compromisoId === compromisoId && g.fecha?.startsWith(prefijoMes))
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+  if (totalAbonado <= 0) return false;
+  if (cuotaDeuda == null) return true; // fijo: cualquier gasto vinculado = pagado
+  return totalAbonado >= cuotaDeuda;
+}
+
+/**
+ * Desglose itemizado y accionable de Necesidades para el Paso 1 del asistente
+ * "Distribuir mi ingreso" (MC.7d, ADR 018 revisión 2026-07-02, R1): una fila
+ * por gasto fijo mensual y por deuda activos, con nombre, categoría, la cuota
+ * real del periodo (nunca un equivalente mensual normalizado), el día de pago
+ * y si ya se registró un pago este periodo. El usuario marca cuáles cubre con
+ * este ingreso; al confirmar, cada marca genera el mismo registro que su flujo
+ * individual existente (pago de fijo o abono de deuda), ver `logic.js` de
+ * tesoreria/index.js.
+ *
+ * Solo incluye fijos con frecuencia 'Mensual': un fijo Quincenal/Semanal/Diario
+ * tiene más de una ocurrencia dentro del periodo y esta checklist modela una
+ * fila = un pago completo del periodo; marcarla pagaría de menos o de más.
+ * Modelar sus múltiples vencimientos (como ya hace `eventosDelMes` de Agenda)
+ * queda para una tarea futura. Las deudas no tienen este problema: su
+ * `cuotaMensual` ya es, por definición, la obligación completa del mes.
  *
  * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos
- * @returns {Array<{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number}>}
- *   Ordenado de mayor a menor monto.
+ * @param {import('../../core/state.js').Gasto[]} [gastos]
+ * @param {Date} [hoy]
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}>}
+ *   Los no pagados primero (de mayor a menor monto), luego los ya pagados.
  */
-export function construirDesgloseNecesidades(compromisos = []) {
+export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date()) {
+  const prefijoMes = _prefijoMes(hoy);
+
   return compromisos
     .filter(c => c.activo !== false
-      && (c.tipo === 'fijo' || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+      && ((c.tipo === 'fijo' && c.frecuencia === 'Mensual')
+        || c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
     .map(c => {
       const esDeuda = c.tipo !== 'fijo';
-      const monto = esDeuda
-        ? Number(c.cuotaMensual) || 0
-        : (Number(c.monto) || 0) * (_FACTOR_MENSUAL[c.frecuencia] ?? 0);
+      const monto = esDeuda ? Number(c.cuotaMensual) || 0 : Number(c.monto) || 0;
+      const diaPagoNum = Number(c.diaPago);
       return {
         id:        c.id,
         nombre:    c.descripcion ?? '',
         categoria: c.categoria ?? null,
         tipo:      esDeuda ? 'deuda' : 'fijo',
         monto,
+        diaPago:   Number.isInteger(diaPagoNum) ? diaPagoNum : null,
+        pagado:    _pagadoEstePeriodo(gastos, c.id, prefijoMes, esDeuda ? monto : null),
       };
     })
     .filter(it => it.monto > 0)
-    .sort((a, b) => b.monto - a.monto);
+    .sort((a, b) => (a.pagado !== b.pagado ? (a.pagado ? 1 : -1) : b.monto - a.monto));
 }
 
 /**
