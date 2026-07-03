@@ -1,0 +1,565 @@
+# Tablero - Finko Claude
+
+> Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
+> Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
+> Errores conocidos: ver [`BUGS.md`](BUGS.md).
+> Última actualización: 2026-07-02.
+
+---
+
+## En proceso
+
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1.)_
+
+---
+
+## Cómo usar este tablero
+
+1. Elegir **una** tarjeta de "Pendientes" (o del backlog del usuario si hay una nueva).
+2. Moverla a "En proceso" con la fecha de inicio.
+3. Trabajarla en una sola sesión cuando sea posible; verificar en la app + tests verdes.
+4. Al cerrar: commit → **borrar la tarjeta de este archivo** → agregar entrada en [`CHANGELOG.md`](CHANGELOG.md) → actualizar [`HANDOFF.md`](HANDOFF.md) (últimas 5) → si cerró un error, borrarlo de [`BUGS.md`](BUGS.md).
+
+Campos de una tarjeta:
+
+```markdown
+### <ID> - <título corto>
+- Prioridad  : alta | media | baja
+- Estado     : pendiente | opcional | requiere ADR
+- Objetivo   : qué resuelve, en una frase
+- Secciones  : secciones de la app afectadas
+- Archivos   : rutas relativas involucradas
+- Depende de : otra tarjeta o "nada"
+- Modelo     : combinación sugerida (ver `/CLAUDE.md` sección 2.3)
+```
+
+---
+
+## Pendientes por sección
+
+### Inicio (dashboard)
+
+#### IN.1 - Totales al pie de "Próximas prioridades" y "Pendientes del mes"
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : al final de cada listado del Inicio (próximas prioridades y vencidos del mes), mostrar la sumatoria ("Total de próximas prioridades: $X", "Total de gastos vencidos: $X") para que el usuario sepa de un vistazo cuánto necesita sin sumar a mano.
+- Secciones  : Inicio
+- Archivos   : `modules/dominio/compromisos/views/dashboard.js` (ambos paneles), posible helper puro en `compromisos/logic.js`
+- Depende de : nada. Usar el mismo criterio de monto que AUD.1 (`c.monto ?? c.cuotaMensual`).
+- Modelo     : Sonnet 5 - Bajo/Medio
+
+#### IN.2 - Ocultar/mostrar el dinero disponible (ojo, estilo app bancaria)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : icono de ojo junto al saldo del hero ("Tu dinero disponible hoy") que alterna entre monto visible y enmascarado (`$••••••`), para usar la app en lugares públicos. La preferencia persiste entre sesiones (`S.config`, lectura defensiva sin migración).
+- Secciones  : Inicio
+- Archivos   : `index.html` (hero, línea ~284), `modules/infra/render.js` (`updSaldo`), `modules/ui/actions.js` (data-action nuevo)
+- Depende de : nada. Decidir al implementar el alcance: solo el hero, o todos los montos de Inicio (recomendado empezar por el hero + las celdas bento del resumen).
+- Modelo     : Sonnet 5 - Medio
+
+#### IN.3 - "Categoría top" solo con gastos variables reales
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : el indicador de categoría con mayor gasto (resumen semanal) hoy suma todos los `S.gastos`, incluidos los generados por fijos y abonos a deuda (que llevan `compromisoId` y categorías como 'Deudas'). Filtrar a gastos sin `compromisoId` para que refleje hábitos de consumo reales, no obligaciones.
+- Secciones  : Inicio
+- Archivos   : `modules/dominio/resumen/logic.js` (`categoriaTopSemana`, línea ~140)
+- Depende de : nada. Coherente con la distinción que TX.6/TX.7 hacen visible en la lista de Gastos.
+- Modelo     : Sonnet 5 - Bajo (lógica pura + tests)
+
+_(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
+
+---
+
+### Calendario (dominio `agenda`)
+
+#### AG.2 - Emoji de categoría a la izquierda de cada item
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : mostrar el emoji de categoría (`CATEGORIA_AGENDA_EMOJI`) como ícono principal a la izquierda de cada item, como en Gastos, en vez del genérico por tipo. Hoy el emoji ya existe pero se renderiza en el subtítulo (` · 🛒 Mercado`). Fallback al ícono de tipo cuando no hay categoría. Con AG.4, si el registro es de categoría personalizada ("Otros"), usar el ícono elegido por el usuario.
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/view.js` (`_renderDetalleItem` línea ~284, ícono izquierdo línea ~279)
+- Depende de : nada (se enriquece con AG.4). Parte de la misma serie que TX.6/TX.7 (mismo lookup de emoji por origen); conviene un solo pase que unifique los tres.
+- Modelo     : Sonnet 5 - Bajo
+
+#### AG.4 - Nombre automático según la categoría en el form de gasto fijo
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : al elegir una categoría predefinida (Mercado, Servicios públicos, Arriendo...), no pedir nombre aparte: el nombre del registro es la categoría (pedir ambos es redundante). Solo con "Otros" se habilita personalizar nombre e ícono. Para las predefinidas, el campo de texto pasa a ser "Nota (opcional)".
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/compromisos/views/formularios.js` (form de fijo), `modules/core/constants.js` (`CATEGORIAS_AGENDA`)
+- Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar).
+- Modelo     : Sonnet 5 - Medio
+
+#### AG.5 - Total a pagar por día
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : al seleccionar un día del calendario con varios registros, mostrar la sumatoria ("Total a pagar hoy: $X.XXX.XXX") para saber de inmediato cuánto dinero se necesita ese día.
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/view.js` (panel de detalle del día), helper puro en `agenda/logic.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo/Medio (lógica pura + render + tests)
+
+#### AG.6 - Leyenda del calendario completa, con colores consistentes y siempre visible
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : la leyenda hoy solo muestra 3 tipos (gasto fijo, deuda entidad, deuda personal) y con muchos registros queda desplazada fuera de vista. (1) Cubrir todos los tipos de evento que el calendario muestre, cada uno con un color único y consistente con el resto de la app (`--fk-dom-*`); (2) fijarla (sticky) justo debajo del calendario para que siempre sea consultable.
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/view.js` (`_renderLeyenda`, línea ~221), CSS del calendario
+- Depende de : los tipos nuevos (metas, apartados, aportes de ahorro, inversiones) solo entran a la leyenda cuando esos eventos existan en el calendario, lo que decide el ADR de recordatorios de aporte (AP.4 + MT.2 + AH.4). Mientras tanto se puede cerrar la parte de sticky + colores de los 3 tipos actuales.
+- Modelo     : Sonnet 5 - Medio
+
+#### AG.7 - Identificación visual por color en los registros del día
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : cada registro del detalle del día lleva una marca visual del color de su tipo/categoría (franja lateral, indicador o fondo sutil), para distinguir de un vistazo qué es qué en fechas cargadas (quincenas, fin de mes).
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/view.js` (`_renderDetalleItem`), CSS del calendario
+- Depende de : AG.6 (usa la misma paleta de colores por tipo)
+- Modelo     : Sonnet 5 - Bajo/Medio
+
+---
+
+### Mis cuentas (dominio `tesoreria`)
+
+#### MC.6c (opcional) - Señales más ricas para la distribución automática
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : historial de gastos variables como proxy de estilo de vida; inversiones como prioridad tras el fondo, en el modelo de pisos de distribución.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/logic.js`
+- Depende de : nada
+- Modelo     : sin definir
+
+#### MC.7d (revisa ADR 018) - Asistente por pasos con checklist por grupo
+- Prioridad  : alta
+- Estado     : requiere revisión de ADR 018 antes de codear
+- Objetivo   : el panel "Distribuir mi ingreso" pasa a ser un asistente guiado de 3 pasos (Necesidades → Ahorro → Estilo de vida), con la dirección nueva del usuario (2026-07-02): cada grupo muestra sus registros como **checklist seleccionable**, no como lista informativa. **Paso 1 Necesidades** (deudas entidad + deudas personales + gastos fijos): cada item muestra nombre, cuota del periodo actual (nunca el saldo total), y fecha de pago; el usuario marca cuáles cubre con este ingreso; el total seleccionado se acumula en vivo; al confirmar se pregunta de qué cuenta(s) sale el dinero (patrón `cuenta-helper`). **Paso 2 Ahorro** (fondo, metas, apartados, inversiones): misma checklist con la cuota del periodo por objetivo (reusa el desglose de MC.7a/b). Confirmación única al final, reusa apply-plan/undo y el gating por fecha de MC.4. **Nota:** esto revisa la decisión 1 de ADR 018 (Paso 1 era preview read-only; ahora es accionable y mueve dinero), hay que actualizar el ADR antes de implementar.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/logic.js`, `modules/infra/cuenta-helper.js`, [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md)
+- Depende de : nada (MC.7a/b/c ya entregaron los desgloses que este paso reusa)
+- Modelo     : revisión de ADR Opus 4.8 - Alto; implementación Sonnet 5 - Alto
+
+#### MC.7e - Paso 3: el remanente de Estilo de vida se reparte entre cuentas
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : tras descontar Necesidades y Ahorro, el dinero restante es Estilo de vida y el paso decide **en qué cuentas queda disponible** (bancos, billeteras, efectivo), no qué gastos se hacen. Omitido con cuenta única (regla de cuenta única). UX del reparto: decisión delegada al implementador priorizando simplicidad y rapidez; recomendación inicial: montos directos con distribución sugerida pre-llenada (el remanente completo a la cuenta del ingreso) y ajuste manual opcional; los porcentajes solo si el ajuste manual resulta engorroso en pruebas reales.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/logic.js`
+- Depende de : MC.7d
+- Modelo     : Sonnet 5 - Medio/Alto
+
+#### MC.7f (opcional) - Pulido del asistente
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : copy por paso, transiciones, a11y del asistente (foco al avanzar, `aria` de pasos), estados vacíos.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/view.js`
+- Depende de : MC.7d, MC.7e
+- Modelo     : Sonnet 5 - Bajo
+
+#### MC.10 (diseño, revisa ADR 013) - Reservar siempre algo para ahorro cuando hay margen
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : con Necesidades altas, el modo automático reparte 0% a Ahorro porque el piso de Estilo de vida (10%) gana sobre el ahorro extra. Introducir un piso de ahorro que compita con el piso de estilo de vida al repartir el residuo; el ahorro solo debería quedar en $0 cuando de verdad no hay alternativa.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/logic.js` (`_PISO_EV_PCT` línea ~754, Paso 3 línea ~871)
+- Depende de : nada. Conviene resolver junto con MC.11 (ambas ajustan el reparto cuando Necesidades son altas). Revisa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
+- Modelo     : diseño Opus 4.8 - Medio; implementación Sonnet 5 - Medio
+
+#### MC.11 (diseño, revisa ADR 013) - Detectar déficit real y comunicarlo
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : cuando el ingreso no cubre las Necesidades (ej. gasto fijo registrado fuera de Agenda), el modelo no dispara el caso de déficit y muestra una distribución "ideal" incoherente. Detectar el déficit real y comunicarlo con recomendaciones accionables en vez de inventar porcentajes.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/logic.js` (línea ~812, `montoNec`; línea ~850, caso de déficit)
+- Depende de : nada. Conviene resolver junto con MC.10. Revisa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
+- Modelo     : diseño Opus 4.8 - Medio; implementación Sonnet 5 - Medio
+
+#### MC.12 - Renombrar "Ingreso" a "Ingresos fijos"
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : el bloque de ingresos de Mis cuentas se llama "Ingreso", demasiado general; renombrarlo "Ingresos fijos" para que quede claro que registra los recurrentes (salario, honorarios periódicos, pensión). Solo cambia la etiqueta visible y sus `aria-label`; ids del DOM, rutas y nombre del dominio quedan estables (misma guía que el renombre Dashboard → Inicio).
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/view.js`, posibles menciones de copy en otras vistas
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+---
+
+### Gastos (dominio `gastos`)
+
+#### TX.3 (opcional) - Café y Gastos hormiga explícitos
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : agregar categorías Café ☕ y Gastos hormiga 🐜 si el usuario las quiere explícitas en el catálogo.
+- Secciones  : Gastos
+- Archivos   : `modules/core/constants.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+#### TX.6 - Gastos de fijos heredan el emoji de su categoría de Agenda
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : un gasto originado en un fijo (tiene `compromisoId`) hoy muestra ícono genérico en la lista de Gastos. Resolver la categoría del fijo vía `compromisoId` y usar `CATEGORIA_AGENDA_EMOJI` como fallback del lookup.
+- Secciones  : Gastos, Calendario
+- Archivos   : `modules/dominio/gastos/view.js` (`_renderGastoItem` línea ~201), `modules/dominio/gastos/index.js` (línea ~78, `compromisoId`)
+- Depende de : nada. Mismo hook que TX.7 y AG.2; conviene un solo pase que unifique el lookup de emoji por origen.
+- Modelo     : Sonnet 5 - Medio
+
+#### TX.7 - Gastos de deudas muestran 🏦 vs 🤝 según el tipo
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : los abonos a deuda crean un gasto con `categoria: 'Deudas'` + `compromisoId`; hoy todas las deudas se ven igual. Diferenciar 🏦 (`deuda-entidad`) de 🤝 (`deuda-personal`) resolviendo el `compromisoId`.
+- Secciones  : Gastos, Deudas
+- Archivos   : `modules/dominio/compromisos/index.js` (línea ~295), `modules/dominio/gastos/view.js`
+- Depende de : nada. Mismo hook que TX.6.
+- Modelo     : Sonnet 5 - Medio
+
+---
+
+### Deudas (dominio `compromisos`, deuda)
+
+#### D.10 (diseño, revisa ADR 015) - Categorías propias para deudas personales
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : al elegir "Personal" en el chooser, el form sigue mostrando categorías de producto (Tarjeta de crédito, Vivienda...) que no encajan. Catálogo aparte de categorías de relación (Familiar, Amigo, Vecino, Natillera, Prestamista particular, Otro) cuando el tipo es personal.
+- Secciones  : Deudas
+- Archivos   : `modules/dominio/compromisos/views/formularios.js` (línea ~173)
+- Depende de : nada. Revisa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).
+- Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
+
+#### D.11 (mejora de lógica y copy, revisa ADR 011) - Explicar el porqué de la recomendación
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : cuando la deuda a atacar primero es la única (o principal) con tasa > 0, la explicación de `recomendarEstrategia` debe nombrar ese hecho (elimina el costo de interés, no solo "pesa la motivación").
+- Secciones  : Deudas
+- Archivos   : `modules/dominio/compromisos/logic.js` (`recomendarEstrategia`, línea ~1071)
+- Depende de : nada. Revisa [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md).
+- Modelo     : Opus 4.8 - Bajo (lógica financiera, requiere cuidado)
+
+#### D.12 (mejora UI) - Contextualizar el aviso de tasa desconocida por deuda
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : el aviso de tasa desconocida hoy es un banner único al tope de la sección; moverlo a un aviso por deuda en el render de la lista, para que se identifique al instante.
+- Secciones  : Deudas
+- Archivos   : `modules/dominio/compromisos/views/estrategia.js` (`_renderAvisoTasaDesconocida`, línea ~317), `modules/dominio/compromisos/views/lista.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio
+
+#### D.13 - "Fiado" como modalidad de deuda personal
+- Prioridad  : media
+- Estado     : requiere ADR (el mismo de D.10)
+- Objetivo   : el fiado (tienda de barrio, pequeño comercio, vendedor ambulante) es una deuda cotidiana muy común en Colombia; hoy toca registrarla como deuda personal genérica. Ofrecer una opción "Fiado" con interfaz adaptada: nombre de la tienda o persona, valor total, fecha en que se adquirió, fecha límite si existe, y notas opcionales.
+- Secciones  : Deudas
+- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `modules/core/constants.js`
+- Depende de : **resolver junto con D.10** (categorías propias para deuda personal): "Fiado" encaja como una de las categorías de relación de ese ADR, o como sub-tipo con campos propios. Un solo pase de diseño decide si es categoría o modalidad.
+- Modelo     : diseño junto a D.10 (Sonnet 5 - Alto); implementación Sonnet 5 - Medio
+
+---
+
+### Apartados (dominio `apartados`)
+
+#### AP.4 (épica, requiere ADR) - Recordatorios automáticos de aporte en Calendario
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : recordatorio en Calendario al recibir el ingreso ("Hoy recibiste tu ingreso, recuerda apartar $X para el SOAT"). Cuidar la duplicación con "Distribuir mi ingreso" (MC.4, ya acredita y reparte a los apartados) y el nudge de proximidad existente (60 días).
+- Secciones  : Apartados, Calendario, Mis cuentas
+- Archivos   : `modules/dominio/apartados/`, `modules/dominio/agenda/`
+- Depende de : converge con MT.2 (Metas) y AH.4 (Ahorro). **Un solo ADR debe decidir el modelo de recordatorios de aporte para los tres a la vez**, sin solapar con MC.4.
+- Modelo     : diseño Opus 4.8 - Alto (cross-domain, trade-offs de duplicación)
+
+---
+
+### Metas (dominio `metas`)
+
+#### MT.1 - Categorías para metas
+- Prioridad  : alta (re-confirmada por el usuario el 2026-07-02)
+- Estado     : pendiente
+- Objetivo   : agregar `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` (mismo patrón que MC.9/TX.1/D.5a), selector en el form y emoji junto al nombre en la lista. Foco en objetivos de alto costo: ✈️ Viajes, 🎂 Cumpleaños, 💍 Boda, 🏠 Vivienda, 🚗 Vehículo, 💻 Computador, 📱 Celular, 🎓 Educación, 👶 Hijo(s), 🏖️ Vacaciones, 💼 Emprendimiento, 📦 Otra. Al elegir "Otra", el usuario puede poner nombre libre y elegir su propio ícono (ver MT.3).
+- Secciones  : Metas
+- Archivos   : `modules/core/constants.js`, `modules/dominio/metas/logic.js` (`normalizarMeta`, línea ~108), `modules/dominio/metas/view.js`
+- Depende de : nada. Ojo de consistencia (guardarraíl tipo TX.4): "Educación" ya usa 📚 en Gastos/Calendario, reconciliar emoji antes de usar 🎓. Sin migración (campo opcional de lectura defensiva).
+- Modelo     : Sonnet 5 - Medio
+
+#### MT.2 (épica, requiere ADR) - Integración de Metas con Calendario
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : recordatorios de aporte a cada meta en Calendario según la frecuencia de ingreso, con color/nombre de la meta y botón "Abonar".
+- Secciones  : Metas, Calendario
+- Archivos   : `modules/dominio/metas/`, `modules/dominio/agenda/`
+- Depende de : converge con AP.4 y AH.4 (mismo ADR). Se beneficia de MT.1 (color/ícono) y MT.5 (flujo de abono unificado).
+- Modelo     : diseño Opus 4.8 - Alto
+
+#### MT.3 (depende de MT.1) - Simplificar la selección de emoji
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : quitar el campo "Emoji (opcional)" suelto del form. Si hay categoría, usar su emoji; con "Otra", el usuario elige nombre e ícono a gusto. Eliminar también el emoji emocional de la parte inferior del form/card de meta (pedido del usuario 2026-07-02).
+- Secciones  : Metas
+- Archivos   : `modules/dominio/metas/view.js` (línea ~145)
+- Depende de : MT.1
+- Modelo     : Sonnet 5 - Medio
+
+#### MT.4 - Ahorro sugerido según la frecuencia de ingreso, no "por día"
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : reemplazar "$X por día" por el reparto del faltante entre los periodos de la frecuencia de cobro del usuario (quincenal, mensual...) hasta la fecha límite.
+- Secciones  : Metas
+- Archivos   : `modules/dominio/metas/logic.js` (`calcularAhorroDiario`, línea ~59), `modules/dominio/metas/view.js` (línea ~46)
+- Depende de : nada. Mismo espíritu que MC.7 (aportes por objetivo según frecuencia).
+- Modelo     : Sonnet 5 - Medio
+
+#### MT.5 - Unificar el flujo de abono con el selector de cuentas compartido
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : portar el patrón de AP.1 (`renderSelectorCuenta` + `resolverPagoConPreferida`) al abono de metas, hoy un `<select>` de texto plano.
+- Secciones  : Metas
+- Archivos   : `modules/dominio/metas/view.js` (`_renderCuentaSelectorAbono`, línea ~168), `modules/infra/cuenta-helper.js`
+- Depende de : nada. Port directo del trabajo ya hecho en Apartados (AP.1).
+- Modelo     : Sonnet 5 - Medio
+
+---
+
+### Ahorro (dominio `ahorro`, fondo de emergencia)
+
+#### AUD.6 (opcional) - Hint del modelo del fondo de emergencia
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : el fondo de emergencia no descuenta las cuentas al aportar (a diferencia de Metas/Apartados); el usuario puede hacer doble contabilidad mental. Un hint en la card ("este dinero sigue en tus cuentas; el fondo solo lo aparta de tu vista") cierra la brecha.
+- Secciones  : Ahorro
+- Archivos   : `modules/dominio/ahorro/view.js`, `modules/dominio/analisis/logic.js` (tracker paralelo)
+- Depende de : **AH.3 propone lo contrario** (que el aporte sí descuente). Resolver ambos en la misma decisión; puede absorberse en el ADR de AH.3.
+- Modelo     : Sonnet 5 - Bajo (o absorbido en AH.3)
+
+#### AH.1 - Clarificar de dónde sale el objetivo del fondo
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : el hint "Con esa meta tu objetivo sería $480.000 (3 meses × $160.000...)" no explica de dónde sale ese número. Explicarlo mejor ("promedio de tus gastos fijos mensuales × meses de respaldo elegidos") o quitar el detalle.
+- Secciones  : Ahorro
+- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormFondo`, línea ~318), `modules/dominio/ahorro/index.js` (`gastosFijosMensuales`)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+#### AH.2 - Aporte recomendado según los ingresos, explicado
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : construir el aporte sugerido con datos reales (ingresos/promedio, frecuencia, gastos fijos, deudas, otras metas) en vez de un valor sin explicación; si falta info, pedir el promedio de ingreso mensual.
+- Secciones  : Ahorro
+- Archivos   : `modules/dominio/ahorro/`, `modules/dominio/tesoreria/logic.js` (MC.6a ya calcula `faltanteFondo / 12`)
+- Depende de : conviene alinear con MC.10/MC.11 para no tener dos motores de recomendación de ahorro.
+- Modelo     : Sonnet 5 - Medio (o Opus si toca el motor de distribución)
+
+#### AH.3 (revisa el modelo del fondo) - Registrar el origen del dinero en el aporte
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : el form de aporte hoy no pide cuenta ni descuenta saldo (diseño intencional: "el aporte NO descuenta cuenta"). Cambiar a elegir cuenta(s), validar saldo y sincronizar, como el resto de la app (patrón AP.1). Decisión de fondo: ¿el fondo mueve dinero fuera de las cuentas o sigue siendo marcador de dinero líquido?
+- Secciones  : Ahorro
+- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormAporte`, línea ~360), `modules/dominio/ahorro/index.js` (línea ~410)
+- Depende de : converge con AUD.6 (misma decisión).
+- Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
+
+#### AH.4 (épica, requiere ADR) - Quitar "Definir" e integrar el fondo con Calendario
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : el botón "Definir →" del compromiso mensual duplica "Distribuir mi ingreso" (MC.4). Quitarlo e integrar el fondo con Calendario: recordatorio "Hoy corresponde tu aporte al Fondo de emergencia" con botón de registro rápido.
+- Secciones  : Ahorro, Calendario
+- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormCompromisoMensual` línea ~400, botón línea ~223)
+- Depende de : converge con MT.2 y AP.4 (mismo ADR). Antes de quitar `compromisoMensual`, verificar si alimenta nudges o el Score de Salud. Depende de AH.3.
+- Modelo     : diseño Opus 4.8 - Alto
+
+---
+
+### Inversión (dominio `inversiones`)
+
+_(sin pendientes activos.)_
+
+---
+
+### Límites de gasto (dominio `presupuesto`)
+
+#### MC.8c - Layout de dos columnas + fila completa
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : desktop con Necesidades + Ahorro en 2 columnas compactas y Estilo de vida en fila completa; apilado en móvil.
+- Secciones  : Límites de gasto
+- Archivos   : `modules/dominio/presupuesto/view.js`, CSS relacionado
+- Depende de : nada. Ver [ADR 019](DECISIONS/019-limites-por-rol.md).
+- Modelo     : Sonnet 5 - Bajo/Medio
+
+#### MC.8d (opcional) - Pulido de Límites
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : copy final por grupo, iconos por categoría, estados vacíos, a11y.
+- Secciones  : Límites de gasto
+- Archivos   : `modules/dominio/presupuesto/view.js`
+- Depende de : MC.8c
+- Modelo     : Sonnet 5 - Bajo
+
+> Nota: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.
+
+---
+
+### Me deben (dominio `personales`)
+
+#### PE.1 (schema + lógica financiera) - Tasa de interés opcional + reparto capital/interés
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : campo opcional de tasa en el préstamo dado; con él, calcular capital, interés generado, saldo pendiente y total recuperado. Requiere migración idempotente y lógica de amortización (reusable de `infra/financiero.js`).
+- Secciones  : Me deben
+- Archivos   : `modules/dominio/personales/logic.js` (línea ~7), `modules/infra/financiero.js`
+- Depende de : nada. Al haber tasa, cada pago se reparte capital/interés (ver PE.4).
+- Modelo     : Opus 4.8 - Medio (nueva lógica financiera CO + schema)
+
+#### PE.2 - Humanizar la antigüedad
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : reemplazar "1.825 días" por formato natural ("Hace 5 años", "Hace 8 meses"...). Nuevo helper puro de tiempo relativo, idealmente en `infra/utils.js` para reuso.
+- Secciones  : Me deben
+- Archivos   : `modules/dominio/personales/view.js` (`_renderPersonalItem`, línea ~100), `modules/infra/utils.js`
+- Depende de : nada. Reusado por PE.4.
+- Modelo     : Sonnet 5 - Medio
+
+#### PE.3 - Suavizar el copy de los estados
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : cambiar "N días, ya toca cobrar" por tono de seguimiento: "La fecha de pago ya pasó", "El pago está pendiente", "Próximo pago en 5 días", "Pago programado para hoy". Los estados "próximo pago"/"para hoy" requieren algo de lógica de estado por `fechaLimite`, no solo antigüedad.
+- Secciones  : Me deben
+- Archivos   : `modules/dominio/personales/view.js` (línea ~103)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio
+
+#### PE.4 (reusa PE.2, se completa con PE.1) - Mejorar el estado tras un pago
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : tras un pago, el chip muestra "0 días" (poco informativo). Usar estados como "Recibiste la cuota de este mes", "Último pago: hoy / ayer / hace 15 días", reusando el humanizador de PE.2. Con PE.1, indicar además cuánto fue a capital vs interés.
+- Secciones  : Me deben
+- Archivos   : `modules/dominio/personales/view.js` (línea ~106, `ultimoPago`; línea ~114, hint ya existente)
+- Depende de : PE.2, se enriquece con PE.1
+- Modelo     : Sonnet 5 - Medio
+
+#### PE.5 - "Te han devuelto" en verde
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : resaltar `r.totalCobrado` en verde (positivo, ingreso), coherente con los patrones de color financieros de la app.
+- Secciones  : Me deben
+- Archivos   : `modules/dominio/personales/view.js` (línea ~60)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+---
+
+### Análisis (dominio `analisis`)
+
+_(sin pendientes activos. Observación sin acción inmediata: la dona de "Gastos por categoría" usa colores por categoría pero las barras laterales son todas verdes; unificar la paleta si se toca Análisis en otra tarea.)_
+
+---
+
+### Configuración (dominio `config`)
+
+_(sin pendientes activos.)_
+
+---
+
+## Transversal (afecta varias secciones)
+
+#### LG.1a (rápida) - Toast de logros más legible
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : subir la duración del toast (`DURACION_MS = 2500`) y/o permitir cerrarlo o pausarlo al pasar el cursor.
+- Secciones  : Transversal (todas, vía logros)
+- Archivos   : `modules/dominio/logros/index.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+#### LG.1b (épica, requiere ADR) - Sección de Logros
+- Prioridad  : media
+- Estado     : requiere ADR
+- Objetivo   : una sección o apartado "Logros" que muestre conseguidos, pendientes, progreso y cómo desbloquearlos. Decidir: sección propia vs. tarjeta en Ajustes/Inicio; qué logros muestran progreso parcial (extender `LOGROS` con `progreso(s)` opcional).
+- Secciones  : Transversal, posible sección nueva
+- Archivos   : `modules/dominio/logros/logic.js` (`LOGROS`), `S.logros`
+- Depende de : LG.1a (ya resuelto o no, es independiente)
+- Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
+
+#### EP.7 (unifica EP.5 + EP.6, revisa ADR 016) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
+- Prioridad  : alta
+- Estado     : requiere revisión de ADR 016 (la dirección ya la fijó el usuario el 2026-07-02)
+- Objetivo   : hoy cada sección acumula texto explicativo en varios lugares (banner de propósito arriba, descripción bajo el título, textos al pie), lo que genera ruido visual y esconde lo importante, sobre todo en móvil. Decisión del usuario: **divulgación progresiva**. (1) Cada sección tiene **una única** descripción breve y clara de su propósito; (2) esa descripción **se oculta automáticamente** cuando la sección ya tiene datos (deja de aportar y solo ocupa espacio); (3) barrido completo de la app para unificar mensajes, eliminar textos repetidos y priorizar contenido y acciones sobre explicación. Absorbe las antiguas EP.5 (auto-ocultar) y EP.6 (unificar propósito + empty state); reconfirmado con la observación del usuario en Metas ("la descripción solo debe aparecer al inicio").
+- Secciones  : Transversal (todas las secciones)
+- Archivos   : `modules/ui/proposito.js`, `S.config.propositoColapsado`, empty states y textos de cada `view.js`, [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)
+- Depende de : nada. Conviene: primero la revisión del ADR (inventario de textos por sección + qué queda y qué se va), luego implementar por grupos de secciones como se hizo con EP.1-EP.4.
+- Modelo     : revisión de ADR + inventario Opus 4.8 - Alto; implementación Sonnet 5 - Medio por grupo
+
+#### A11Y.5 (verificación) - Pase axe sobre formularios dinámicos
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : `tests/unit/a11y.test.js` solo audita el HTML inicial; los formularios se inyectan por JS y no se auditan. Agregar un pase axe en E2E con un modal abierto.
+- Secciones  : Transversal
+- Archivos   : `tests/unit/a11y.test.js`, `tests/e2e/`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio
+
+#### COL.1 (baja) - Contraste de `--fk-warning` en modo claro
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : `#a06800` sobre `--fk-bg-base` da 4.38:1 (AA pide 4.5 para texto normal). Oscurecer a ~`#8a5a00` en modo claro (el oscuro ya está en 10.8:1, no se toca).
+- Secciones  : Transversal (`.chip-warning`, `.badge--warn`, hints de aviso)
+- Archivos   : `styles/themes.css`
+- Depende de : nada
+- Modelo     : Haiku 4.5
+
+#### COL.2 (opcional) - Contraste de `--fk-text-disabled`
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : el texto deshabilitado (2.05:1 oscuro / 1.92:1 claro) está exento de WCAG pero cuesta leerlo con baja visión. Subir un punto el tono.
+- Secciones  : Transversal
+- Archivos   : `styles/tokens.css`, `styles/themes.css`
+- Depende de : nada
+- Modelo     : Haiku 4.5
+
+#### RWD.1 (verificación) - Probar reflow real a 320px y zoom 200%
+- Prioridad  : baja
+- Estado     : pendiente (bloqueada por preview del entorno, ver memoria del proyecto)
+- Objetivo   : el CSS responsive está completo en código; verificar en dispositivo real o con un E2E a 320px que no haya scroll horizontal ni solapes (modales con `.input--big-amount`, barra inferior). Nota menor: labels del nav bajan a 10px bajo 360px (aceptable, vigilar).
+- Secciones  : Transversal
+- Archivos   : `styles/responsive.css`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+---
+
+## Mantenimiento
+
+#### A.5 - Dominio custom en Vercel
+- Prioridad  : baja
+- Estado     : pendiente (espera a que el usuario registre un dominio)
+- Objetivo   : cambiar de `finko-brown.vercel.app` a un dominio propio. No requiere cambios de código.
+- Secciones  : Infraestructura
+- Archivos   : guía completa en [`SETUP_DOMINIO.md`](SETUP_DOMINIO.md)
+- Depende de : que el usuario tenga el dominio registrado
+- Modelo     : sin código, solo config en Vercel
+
+#### E.2-2027 - Actualizar SMMLV + UVT a valores 2027
+- Prioridad  : alta (cuando llegue la fecha)
+- Estado     : pendiente, programada para enero 2027
+- Objetivo   : reemplazar `2027: null` por la entrada completa en `LEGAL_POR_ANIO` con los valores oficiales de Mintrabajo (SMMLV) y DIAN (UVT). Ver instrucciones detalladas en [`HANDOFF.md`](HANDOFF.md) sección "Recordatorio enero 2027".
+- Secciones  : Transversal (constantes legales)
+- Archivos   : `modules/core/constants.js`
+- Depende de : publicación oficial de los decretos/resoluciones 2027
+- Modelo     : Haiku 4.5
+
+#### E.3 - Verificar GMF y otras tasas si hay reforma tributaria
+- Prioridad  : baja
+- Estado     : pendiente (ad-hoc, solo si hay reforma)
+- Objetivo   : revisar si una reforma tributaria cambia el GMF (4x1000) u otras constantes.
+- Secciones  : Transversal (constantes legales)
+- Archivos   : `modules/core/constants.js`
+- Depende de : que ocurra una reforma
+- Modelo     : Haiku 4.5
+
+#### E.5 (opcional) - IPC como constante anual
+- Prioridad  : baja
+- Estado     : opcional
+- Objetivo   : agregar el IPC observado como constante anual, si se quiere mostrar inflación real además de `INFLACION_OBJETIVO` (meta de BanRep).
+- Secciones  : Transversal (constantes legales)
+- Archivos   : `modules/core/constants.js`
+- Depende de : nada
+- Modelo     : Haiku 4.5

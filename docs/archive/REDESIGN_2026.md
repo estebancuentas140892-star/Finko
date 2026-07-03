@@ -1,5 +1,7 @@
 # Rediseño visual 2026 - Finko
 
+> **Archivado el 2026-07-02.** Las 8 fases (F1-F8) están completas; este documento es historia, no referencia activa. Se conserva por el diagnóstico y los principios de diseño, útiles como contexto de por qué la UI se ve como se ve. El estado actual de tokens/componentes vive en [`docs/DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md).
+>
 > Plan maestro de modernización UI/UX. Creado: 2026-06-11.
 > Objetivo: que Finko se sienta como una app financiera moderna, confiable y agradable de usar a diario, sin tocar el ADN técnico (vanilla JS, offline-first, sin build step).
 

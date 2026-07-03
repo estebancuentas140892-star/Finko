@@ -8,7 +8,7 @@
 
 ## Contexto
 
-La fase F8 del rediseño visual 2026 (ver [REDESIGN_2026.md](../REDESIGN_2026.md)) proponía "mecánicas de hábito: racha de registro + resumen semanal", marcada explícitamente como **decisión de producto, no solo UI**. Esta ADR cierra esa decisión antes de escribir código.
+La fase F8 del rediseño visual 2026 (ver [REDESIGN_2026.md](../archive/REDESIGN_2026.md)) proponía "mecánicas de hábito: racha de registro + resumen semanal", marcada explícitamente como **decisión de producto, no solo UI**. Esta ADR cierra esa decisión antes de escribir código.
 
 Estado actual de la gamificación en Finko:
 

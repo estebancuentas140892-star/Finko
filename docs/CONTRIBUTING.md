@@ -11,20 +11,20 @@
 ## Antes de empezar
 
 1. Lee [ARCHITECTURE.md](ARCHITECTURE.md) (10 min)
-2. Lee [TASKS.md](TASKS.md) - cuál es la tarea activa
-3. Lee el `REORG_*.md` o `DESIGN_SYSTEM.md` de la fase activa
-4. Corre `npm test` - debe pasar en verde antes de tocar nada
+2. Lee [BOARD.md](BOARD.md) - cuál es la tarjeta en proceso o la siguiente a elegir
+3. Si la tarjeta toca CSS/tokens, revisa [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)
+4. Corre `pnpm test` - debe pasar en verde antes de tocar nada
 
 ---
 
 ## Flujo de trabajo
 
 ```
-1. Arrancar desde la fase activa en TASKS.md
+1. Elegir una tarjeta pendiente de BOARD.md
 2. Hacer UNA sola tarea a la vez
-3. npm test - verde obligatorio antes de commitear
+3. pnpm test - verde obligatorio antes de commitear
 4. Commitear con el formato correcto
-5. Actualizar TASKS.md (mover tarea a completada)
+5. Actualizar BOARD.md (borrar la tarjeta completada) + CHANGELOG.md
 6. Reportar próxima tarea recomendada
 ```
 
@@ -52,9 +52,9 @@
 ### CSS
 
 - **Sin `style=""` inline** - siempre clases del design system.
-- **Usar tokens CSS** - `var(--fk-color-primary)` nunca colores hardcoded.
+- **Usar tokens CSS** - `var(--fk-accent)`, `var(--fk-space-4)`, nunca colores o tamaños hardcoded. Ver [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) para el catálogo completo.
 - **Respetar `@layer`** - no agregar reglas en capas incorrectas.
-- **Modo oscuro incluido** - toda nueva clase debe funcionar en ambos temas.
+- **Modo oscuro incluido** - toda nueva clase debe funcionar en ambos temas (probar los dos antes de commitear).
 
 ### HTML
 
@@ -112,36 +112,101 @@ a11y(modales): implementar focus trap en todos los modales
 - Descripción en español, imperativo presente: "agregar", "corregir", "actualizar" (no "agregué", "agregando").
 - Máximo 72 caracteres en la primera línea.
 - Si el commit afecta múltiples áreas, usa el área más importante o `app`.
-- `npm test` debe pasar en verde antes de cada commit.
+- `pnpm test` debe pasar en verde antes de cada commit.
 
 ---
 
 ## Tests
 
 - Cada `logic.js` nuevo tiene su `nombre.test.js` en `tests/unit/`.
-- Los tests corren con `npm test` (Vitest + happy-dom).
+- Los tests corren con `pnpm test` (Vitest + happy-dom).
 - Los tests de lógica financiera nunca usan mocks de `localStorage` - usan `happy-dom` o datos puros.
 - Cobertura objetivo: ≥ 90% en archivos de `core/` y `dominio/*/logic.js`.
 
 ```bash
-npm test              # Corre todos los tests una vez
-npm run test:watch    # TDD: re-corre al guardar
-npm run coverage      # Muestra cobertura detallada
+pnpm test              # Corre todos los tests una vez
+pnpm run test:watch    # TDD: re-corre al guardar
+pnpm run coverage      # Muestra cobertura detallada
 ```
 
 ---
 
 ## Actualizar constantes legales
 
-Las constantes en `modules/core/constants.js` tienen vencimiento trimestral.
-Protocolo cuando cambian (cada Q):
+Las únicas constantes con vencimiento son anuales: **SMMLV**, **auxilio de transporte** y **UVT** (regla ADN 12; la tasa de usura se eliminó del producto, ver [ADR 004](DECISIONS/004-eliminar-tasa-usura.md)). Viven en `LEGAL_POR_ANIO` dentro de `modules/core/constants.js`.
 
-1. Abrir `constants.js` y buscar `// REVISAR:`
-2. Actualizar los valores con fuente oficial (SFC, DIAN, Mintrabajo)
-3. Agregar comentario con la fuente y fecha de vigencia
-4. Bumpear `CACHE_NAME` en `service-worker.js`
-5. Commit: `chore: actualizar constantes legales Q2-2026`
-6. Agregar entrada en `CHANGELOG.md`
+Protocolo cuando se publican los valores nuevos (normalmente en enero):
+
+1. Buscar los valores oficiales: DIAN (UVT) y Mintrabajo (SMMLV, auxilio de transporte).
+2. En `constants.js`, agregar **una entrada nueva** en `LEGAL_POR_ANIO` para el año (no se crean exports `_20XX` sueltos; toda la app lee de la tabla histórica).
+3. Correr `pnpm test` (incluye `tests/unit/constants.test.js`).
+4. Bumpear `CACHE_NAME` en `service-worker.js`.
+5. Commit: `feat(E.2): cargar SMMLV + auxilio + UVT <año>`.
+6. Agregar entrada en `CHANGELOG.md`.
+
+Detalle paso a paso en [`HANDOFF.md`](HANDOFF.md) sección "Recordatorio enero 2027".
+
+---
+
+## Patrones a seguir
+
+### CRUD genérico
+
+```js
+import { guardar, editar, eliminar } from '../../infra/crud.js';
+
+guardar('gastos', { descripcion, monto, categoria, fecha });
+editar('gastos', id, { monto: 150000 });
+eliminar('gastos', id);
+```
+
+### Render inteligente
+
+`renderSmart` evita re-renderizar secciones que el usuario no está viendo.
+
+```js
+import { renderSmart } from '../../infra/render.js';
+
+EventBus.on('state:change', ({ section }) => {
+  if (section === 'gastos') renderSmart(renderGastos, 'gastos');
+});
+```
+
+### Announce para accesibilidad
+
+```js
+import { announce } from '../../infra/a11y.js';
+
+announce('Gasto guardado correctamente');       // polite
+announce('Error: monto inválido', 'assertive'); // urgente
+```
+
+### Modales - contrato
+
+- Abrir: `abrirModal('#modal-gasto')` - quita `aria-hidden`, agrega `data-open=""`, `trapFocus`, marca `.app-shell` como `inert`.
+- Cerrar: `cerrarModal('#modal-gasto')` - pone `aria-hidden="true"`, quita `data-open`, libera el `inert`, `releaseFocus`.
+- HTML del modal vive en `index.html` (estático). El formulario interno se inyecta dinámicamente.
+- Escape cierra el modal activo (manejado en `actions.js`).
+
+### Selector de cuenta compartido (patrón 0/1/varias)
+
+Cualquier flujo que mueva dinero (gasto, abono, aporte) usa el mismo patrón: sin cuentas activas → seguimiento sin descuento; una cuenta → autoselección; varias → selector con reparto automático si ninguna alcanza sola.
+
+```js
+import { renderSelectorCuenta, resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+```
+
+---
+
+## Qué NO hacer
+
+- No crear archivos fuera de la estructura propuesta sin discutirlo.
+- No agregar dependencias de runtime (`package.json` solo tiene devDeps).
+- No escribir tests de UI con mocks pesados - los tests son de `logic.js` puro + happy-dom para axe.
+- No usar `alert()` / `confirm()` nativos - usar `dialogo()` de `infra/utils.js` o el overlay de `ui/confirm.js`.
+- No hardcodear colores, tamaños o espaciados en CSS - usar tokens.
+- No hacer cambios destructivos (eliminar archivos, `reset --hard`) sin aprobación explícita.
+- No dejar tarjetas cerradas en `BOARD.md` - se borran al cerrar la tarea, la historia va en `CHANGELOG.md`.
 
 ---
 
@@ -149,9 +214,9 @@ Protocolo cuando cambian (cada Q):
 
 Antes de tocar código, leer en este orden:
 
-1. [IA_CONTEXT.md](IA_CONTEXT.md) - resumen completo del proyecto
-2. [TASKS.md](TASKS.md) - tarea activa y siguiente paso
-3. [ARCHITECTURE.md](ARCHITECTURE.md) - reglas innegociables
-4. El archivo específico de la fase activa
+1. [`/CLAUDE.md`](../CLAUDE.md) - workflow obligatorio + reglas ADN + estado actual.
+2. [BOARD.md](BOARD.md) - tarjeta en proceso y pendientes por sección.
+3. [ARCHITECTURE.md](ARCHITECTURE.md) - capas, flujo de datos, reglas innegociables.
+4. El archivo de decisión (`DECISIONS/NNN-*.md`) si la tarjeta lo referencia.
 
 Nunca hacer cambios destructivos (eliminar archivos, force push) sin confirmación explícita del humano.

@@ -13,8 +13,8 @@
 
 Ver:
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) → qué se hizo en cada fase/tarea ya cerrada.
-- [`docs/ROADMAP.md`](docs/ROADMAP.md) → siguientes fases/ideas activas (todo lo de v1.0 fue eliminado, está en CHANGELOG).
-- [`docs/TASKS.md`](docs/TASKS.md) → tareas activas hoy.
+- [`docs/BOARD.md`](docs/BOARD.md) → tablero Kanban: tarea en proceso + pendientes agrupados por sección de la app.
+- [`docs/BUGS.md`](docs/BUGS.md) → registro de errores conocidos, con archivo/función/línea exactos.
 
 ---
 
@@ -33,15 +33,16 @@ service-worker.js     → cache-first offline
 styles/               → CSS por capa (@layer)
 modules/
   core/               → state.js, storage.js, constants.js
-  infra/              → utils, render, a11y, crud, router
-  ui/                 → bootstrap, shell, actions, modales, onboarding
-  dominio/            → ingresos, gastos, compromisos, tesoreria,
-                        metas, analisis, calculadoras, config
+  infra/              → utils, render, a11y, crud, router, financiero, cuenta-helper, icons...
+  ui/                 → bootstrap, shell, actions, modales, onboarding, proposito...
+  dominio/            → 18 carpetas (agenda, ahorro, analisis, apartados, compromisos,
+                        gastos, tesoreria, metas, presupuesto, inversiones... detalle en
+                        docs/ARCHITECTURE.md sección 2.4)
 tests/
-  unit/               → 300 tests Vitest + happy-dom (lógica pura)
-  e2e/                → 18 smoke tests Playwright
+  unit/               → Vitest + happy-dom (lógica pura)
+  e2e/                → smoke tests Playwright
 scripts/              → gen-icons.py, lighthouse.js
-docs/                 → ARCHITECTURE, ROADMAP, CHANGELOG, etc.
+docs/                 → ARCHITECTURE, BOARD, BUGS, CHANGELOG, etc.
 ```
 
 ---
@@ -66,7 +67,7 @@ Al cerrar una tarea **siempre** decir, en este orden:
 
 ### 2.3 Cierre obligatorio de cada conversación
 
-**Obligatorio:** al final de **toda** respuesta (tarea cerrada, exploración, pregunta, ajuste pequeño - lo que sea) incluir el bloque `Próximo paso`. No omitirlo nunca, ni siquiera si la respuesta es corta. Si no hay tarea siguiente clara, proponer la más razonable del [`docs/ROADMAP.md`](docs/ROADMAP.md) y, si hay duda real, pedir input al usuario dentro del mismo bloque.
+**Obligatorio:** al final de **toda** respuesta (tarea cerrada, exploración, pregunta, ajuste pequeño - lo que sea) incluir el bloque `Próximo paso`. No omitirlo nunca, ni siquiera si la respuesta es corta. Si no hay tarea siguiente clara, proponer la más razonable del [`docs/BOARD.md`](docs/BOARD.md) y, si hay duda real, pedir input al usuario dentro del mismo bloque.
 
 **Formato exacto (copiar tal cual, solo cambian los valores):**
 
@@ -126,12 +127,12 @@ La optimización de tokens es el criterio de desempate, nunca el criterio princi
 Cuando una tarea/fase se completa, actualizar **en este orden**:
 
 1. **`docs/HANDOFF.md`** - sección "Qué se hizo recientemente": agregar la tarea cerrada al tope de la lista (mantener solo las últimas 5); actualizar "Qué sigue" si cambió el orden de prioridades. Este archivo es el punto de entrada para cualquier asistente o colaborador nuevo.
-2. **`docs/CHANGELOG.md`** - agregar la entrada bajo la versión correspondiente con fecha y archivos tocados.
-3. **`docs/ROADMAP.md`** - eliminar la tarea completada (moverla a "Completadas" si la sección existe, o quitarla directamente).
-4. **`docs/TASKS.md`** - eliminar la tarea si estaba en "En curso".
+2. **`docs/CHANGELOG.md`** - agregar la entrada bajo "Mes corriente" con fecha, archivos tocados y, si aplica, qué funcionalidades podría afectar y qué validación queda pendiente. Al cambiar de mes calendario: mover el mes recién cerrado a `docs/changelog/YYYY-MM.md` (crear el archivo con el mismo formato que los existentes) y agregarlo al índice "Meses anteriores".
+3. **`docs/BOARD.md`** - borrar la tarjeta de la tarea completada (de "En proceso" o de "Pendientes"). El tablero nunca conserva tarjetas cerradas.
+4. **`docs/BUGS.md`** - si la tarea solucionó un error registrado, borrar su entrada y referenciar el ID en el CHANGELOG.
 5. Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
 
-**Regla:** ROADMAP/TASKS siempre muestran solo lo **pendiente**. CHANGELOG es la memoria histórica. HANDOFF.md es el contexto vivo para retomar trabajo rápido.
+**Regla:** BOARD.md siempre muestra solo lo **pendiente**, agrupado por sección de la app. CHANGELOG es la memoria histórica. HANDOFF.md es el contexto vivo para retomar trabajo rápido. BUGS.md solo contiene errores sin resolver.
 
 ### 2.5 Confirmar antes de cambios destructivos
 
@@ -187,9 +188,9 @@ pnpm run format
 
 1. **Este archivo** (estás aquí) - 3 min.
 2. [`docs/HANDOFF.md`](docs/HANDOFF.md) - qué se hizo recientemente, qué sigue, cómo trabajamos - 2 min.
-3. [`docs/TASKS.md`](docs/TASKS.md) - tarea activa hoy.
+3. [`docs/BOARD.md`](docs/BOARD.md) - tarea en proceso hoy + pendientes por sección.
 4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - capas, flujo de datos, reglas - 10 min.
-5. [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) - patrones detallados de uso.
+5. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
 6. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
 7. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
 

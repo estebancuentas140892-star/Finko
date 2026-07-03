@@ -3,7 +3,7 @@
 **Estado:** Propuesta (diseño). Decisiones de modelo cerradas con el usuario; el detalle de cada slice se afina al implementarlo.
 **Fecha:** 2026-06-30
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
-**Relación:** implementa la épica **MC.5**. Reutiliza el mapeo sección → grupo de [ADR 014](014-taxonomia-categorias-transversal.md) (TX.5) y toma el presupuesto por grupo del modelo de distribución de [ADR 013](013-distribucion-automatica-inteligente.md) (MC.6a). Se beneficia de los refinamientos [MC.10 y MC.11](../TASKS.md) del modelo de distribución.
+**Relación:** implementa la épica **MC.5**. Reutiliza el mapeo sección → grupo de [ADR 014](014-taxonomia-categorias-transversal.md) (TX.5) y toma el presupuesto por grupo del modelo de distribución de [ADR 013](013-distribucion-automatica-inteligente.md) (MC.6a). Se beneficia de los refinamientos [MC.10 y MC.11](../BOARD.md) del modelo de distribución.
 
 ---
 

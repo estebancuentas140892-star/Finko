@@ -1,7 +1,7 @@
 # Arquitectura - Finko Claude
 
-> Documento vivo. Se actualiza al inicio de cada fase.
-> Última revisión: Fase 1 (2026-05-12)
+> Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio o se introduce un patrón nuevo.
+> Última revisión: 2026-07-02 (DOC.C, reescrito al estado real del proyecto).
 
 ---
 
@@ -12,14 +12,14 @@ Finko es una **PWA offline-first de página única (SPA)**. No hay servidor, no 
 ```
 Navegador
   │
-  ├─ index.html          → Shell (estructura, modales, navegación)
+  ├─ index.html          → Shell (estructura, modales, navegación, sprite SVG)
   ├─ service-worker.js   → Cache-first (offline garantizado)
   ├─ styles/main.css     → Design system vía @layer
   └─ modules/            → ES6 modules (sin bundler)
        ├─ core/          → Estado + persistencia + constantes
        ├─ infra/         → Utilidades transversales
        ├─ ui/            → Navegación + eventos + shell
-       └─ dominio/       → Lógica financiera por área
+       └─ dominio/       → Lógica financiera por área (18 dominios)
 ```
 
 ---
@@ -32,9 +32,9 @@ La capa más baja. Ningún otro módulo puede importar desde acá hacia arriba.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `state.js` | Singleton `S` mutable + EventBus |
-| `storage.js` | Persistencia en `localStorage` + migraciones idempotentes |
-| `constants.js` | Constantes legales colombianas (SMMLV, UVT, usura, GMF, bancos) |
+| `state.js` | Singleton `S` mutable (`createInitialState()`) + `EventBus` pub/sub |
+| `storage.js` | Persistencia en `localStorage` (clave `fk_v1`) + migraciones idempotentes (`SCHEMA_VERSION`) |
+| `constants.js` | Constantes legales colombianas (SMMLV, UVT, GMF, `LEGAL_POR_ANIO`), catálogos de categorías por dominio, mapeo sección → grupo financiero |
 
 ### 2.2 `modules/infra/`
 
@@ -42,11 +42,22 @@ Utilidades transversales sin dependencias de dominio.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `utils.js` | Formateo de moneda, fechas, diálogos nativos |
-| `render.js` | `renderSmart()`, `updSaldo()`, `updateBadge()`, `renderAll()` |
-| `a11y.js` | `announce()` para screen readers, `trapFocus()` para modales |
-| `crud.js` | Helper genérico: guardar / editar / eliminar en `S` |
+| `utils.js` | Formateo de moneda (`f()`), fechas, diálogos (`dialogo()`) |
+| `render.js` | `renderSmart()`, `updSaldo()`, `updateBadge()`, `renderAll()`, `registrarRender()` |
+| `a11y.js` | `announce()` para lectores de pantalla, `trapFocus()`/`releaseFocus()` para modales |
+| `crud.js` | Helper genérico: `guardar()`/`editar()`/`eliminar()` sobre `S`, emite `state:change` |
 | `router.js` | Hash routing (`#dash`, `#gastos`, `#metas`, …) |
+| `financiero.js` | Fórmulas financieras puras compartidas: `calcularCDT`, `calcularCredito` (sistema francés), `calcularInteresCompuesto`, `calcularRegla72`, `calcularRentabilidadReal`, `validarCampos` |
+| `cuenta-helper.js` | Patrón compartido "0/1/varias cuentas": `renderSelectorCuenta()` + `resolverPagoConPreferida()`, usado por Gastos, Deudas, Apartados y Metas |
+| `distribuir-pago.js` | `distribuirPago()`: reparte un monto entre varias cuentas cuando ninguna alcanza sola |
+| `icons.js` | `icon(id)` y `emptyArt(id)`: helpers que referencian el sprite SVG inline de `index.html` |
+| `svg.js` | Gráficos SVG generados (sparkline, donut) para Análisis |
+| `csv.js` | Parser/serializador CSV (RFC 4180 simplificado) para importar/exportar gastos |
+| `notificaciones.js` | Web Notifications API para recordatorios de compromisos próximos |
+| `form-errors.js` | Helpers de validación y mensajes de error en formularios |
+| `bancos.js` | Catálogo de bancos colombianos + resolución de ícono por banco |
+| `animate.js` | Helpers de animación (count-up, llenado de progreso) respetando `prefers-reduced-motion` |
+| `sw-register.js` | Registro del Service Worker |
 
 ### 2.3 `modules/ui/`
 
@@ -54,33 +65,50 @@ Bootstrap y orquestación de la interfaz.
 
 | Archivo | Responsabilidad |
 |---|---|
-| `bootstrap.js` | Entry point: importa dominios, registra `data-action`, inicializa app |
+| `bootstrap.js` | Entry point: `loadData()` → registra dominios → `initAcciones()` → `initShell()` → `initRouter()` → `initOnboarding()` → `renderAll()` |
 | `shell.js` | Sidebar, toggle de tema, navegación entre secciones |
-| `actions.js` | Delegador central de `data-action` - único lugar con `addEventListener` en document |
-| `modales.js` | Factory de modales con contrato uniforme (abrir, cerrar, reset) |
-| `onboarding.js` | Wizard de 3 pasos para usuario nuevo (`!S.onboarded`) |
+| `actions.js` | Delegador central de `data-action` - único lugar con `addEventListener('click', ...)` en `document` |
+| `modales.js` | Factory de modales: `abrirModal()` (trapFocus + `inert` en el fondo), `cerrarModal()` (releaseFocus), `resetModal()` |
+| `confirm.js` | Overlay de confirmación (reemplaza `confirm()` nativo) |
+| `onboarding.js` | Wizard de bienvenida para usuario nuevo (`!S.onboarded`) |
+| `proposito.js` | Banner colapsable de "propósito de sección" (qué resuelve cada sección), patrón de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) |
+| `menu-mas.js` | Menú "Más" (secciones que no caben en la bottom nav móvil) |
+| `install-prompt.js` | Prompt de instalación de la PWA (`beforeinstallprompt`) |
 
 ### 2.4 `modules/dominio/`
 
-Cada dominio tiene su propia carpeta con separación estricta:
+Cada dominio vive en su propia carpeta. Los dominios simples tienen 3 archivos; los que crecieron dividen `view.js` en una carpeta `views/` (barrel).
 
 ```
 dominio/nombre/
-  ├─ logic.js    → Cálculos puros. SIN DOM. Testeable en Node/Vitest.
-  ├─ view.js     → Genera HTML (innerHTML). Importa logic.js.
-  └─ index.js    → Exporta la API pública del dominio.
+  ├─ logic.js         → Cálculos puros. SIN DOM. Testeable en Node/Vitest.
+  ├─ view.js          → Genera HTML (innerHTML). Importa logic.js.
+  │    (o views/*.js  → sub-módulos + barrel, cuando view.js supera ~300 líneas)
+  └─ index.js         → API pública: wiring de acciones, registro de render, EventBus.
 ```
 
-| Dominio | Área funcional |
-|---|---|
-| `ingresos/` | Registro de ingresos quincenales, resumen, historial |
-| `gastos/` | Gastos variables, categorías, detector de hormigas |
-| `compromisos/` | Gastos fijos, deudas (Avalancha/Bola de Nieve), agenda de pagos |
-| `tesoreria/` | Cuentas bancarias, bolsillos, fondo de emergencia |
-| `metas/` | Objetivos de ahorro, inversiones |
-| `analisis/` | Salud financiera, logros, rachas, alertas, predicciones |
-| `calculadoras/` | CDT, crédito, interés compuesto, regla 72, prima (lazy-loaded) |
-| `exports/` | Exportar datos en JSON, CSV, HTML |
+18 carpetas bajo `dominio/` (algunas sin `logic.js` porque son de solo lectura o coordinación):
+
+| Dominio | Área funcional | Notas |
+|---|---|---|
+| `agenda/` | Gastos fijos y calendario de pagos (sección visible "Calendario") | |
+| `ahorro/` | Fondo de emergencia + hábito de aportar | |
+| `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
+| `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
+| `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista) |
+| `config/` | Ajustes, perfil, exportar/importar backup completo | sin `logic.js` propio |
+| `export/` | Serialización de gastos a CSV (`gastosACSV`) | solo `logic.js`, sin UI propia (se invoca desde `config`) |
+| `gastos/` | Gastos variables, categorías, detector de hormigas | |
+| `import/` | Importación de gastos desde CSV con preview y detección de duplicados | |
+| `inversiones/` | Portafolio real (CDT, fondo, cripto, acciones) | |
+| `logros/` | Sistema de logros y rachas (gamificación) | sin `view.js` propio (toast) |
+| `metas/` | Objetivos de ahorro con fecha límite | |
+| `personales/` | Préstamos que el usuario otorga a terceros ("Me deben") | |
+| `presupuesto/` | Límites de gasto (envelope budgeting) por categoría y por grupo financiero | |
+| `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
+| `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | |
+
+> **Nota de limpieza pendiente:** `modules/dominio/calculadoras/` y `modules/dominio/exports/` son carpetas **vacías**. La sección "Calculadoras" se retiró de la app en 2026-06-07 (sus fórmulas puras migraron a `infra/financiero.js`, usadas hoy por `inversiones/`); `exports/` nunca tuvo contenido (el dominio real es `export/`, singular). Ver [`docs/BOARD.md`](BOARD.md) para el borrado pendiente.
 
 ---
 
@@ -94,9 +122,9 @@ data-action (delegado en actions.js)
   │
   ▼
 Handler del dominio
-  │  mutación de S
+  │  mutación de S (directa o vía infra/crud.js)
   ▼
-save()          → localStorage (debounced 200ms)
+save()          → localStorage (debounced 200ms) + flush inmediato en visibilitychange/pagehide
   │
   ▼
 EventBus.emit('state:change', { section })
@@ -115,41 +143,41 @@ Nunca mutar `S` sin `save()`. Nunca renderizar sin que `S` esté actualizado.
 
 ## 4. Estado - Singleton `S`
 
-`state.js` exporta un único objeto `S` mutable. Toda la app comparte la misma referencia.
+`state.js` exporta un único objeto `S` mutable, creado por `createInitialState()`. Toda la app comparte la misma referencia.
 
 ```js
 // state.js
-export const S = {
-  // Se inicializa con los datos de localStorage en bootstrap
-};
+export const S = createInitialState();
 
 export const EventBus = {
   on(event, fn) { ... },
   off(event, fn) { ... },
-  emit(event, data) { ... },
+  emit(event, data) { ... },  // nunca lanza: excepciones de listeners se loguean y se ignoran
 };
 ```
 
 **Reglas:**
 - `S` es el único source of truth.
 - No se permite reactivity, proxies ni observers sobre `S`.
-- Toda lectura de `S` es síncrona y directa (`S.gastos`, `S.deudas`, etc.).
+- Toda lectura de `S` es síncrona y directa (`S.gastos`, `S.compromisos`, `S.cuentas`, etc.).
+- Los tipos de cada slice (`Cuenta`, `Gasto`, `Compromiso`, `Meta`, `Apartado`, `Personal`, `Ahorro`, `Inversion`, `Config`...) están documentados con JSDoc en `state.js`.
 
 ---
 
 ## 5. Persistencia - `storage.js`
 
-- Clave en localStorage: `fco_v1` (schema v1 para Finko Claude - versión fresca).
-- `loadData()` aplica todas las migraciones en orden al cargar.
+- Clave en localStorage: **`fk_v1`** (`STORAGE_KEY`).
+- `loadData()` aplica todas las migraciones en orden al cargar, hasta `SCHEMA_VERSION` (bump con cada migración; ver el archivo para el valor actual).
 - `save()` está debounced 200ms para no saturar escrituras.
+- `initFlushOnHide()` (registrado en `bootstrap.js`) fuerza un flush inmediato en `visibilitychange` (hidden) y `pagehide`, para no perder el último cambio si la pestaña se cierra antes de que corra el debounce.
 - Cada bump de schema crea una nueva función de migración idempotente.
 
 ```js
 // Patrón de migración
-function migrate_v1_to_v2(data) {
-  if (data.schemaVersion >= 2) return data;
+function migrate_vN_to_vNplus1(data) {
+  if (data._version >= N + 1) return data;
   // ... transformación ...
-  data.schemaVersion = 2;
+  data._version = N + 1;
   return data;
 }
 ```
@@ -168,15 +196,17 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Eventos estándar del sistema:
+Eventos reales del sistema:
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
-| `state:change` | Cualquier dominio tras mutación de S | `render.js` |
-| `state:save` | `storage.js` tras cada guardado | Opcional: feedback UI |
-| `ui:navigate` | `router.js` al cambiar hash | `shell.js` |
-| `ui:modal:open` | Cualquier dominio | `modales.js` |
-| `ui:modal:close` | `modales.js` | Limpieza general |
+| `state:change` | `infra/crud.js` tras cualquier mutación genérica; también dominios con lógica propia (`tesoreria/`, `ahorro/`) | `render.js` (re-render inteligente por sección) |
+| `state:save` | `storage.js` tras cada guardado exitoso | feedback UI opcional |
+| `theme:change` | `ui/shell.js` al alternar modo oscuro/claro | listeners de tema |
+| `onboarding:completado` | `ui/onboarding.js` al cerrar el wizard | `bootstrap.js` |
+| `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items` y descuenta la cuenta de origen) |
+
+`distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios entre sí: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 
 ---
 
@@ -212,23 +242,27 @@ document.addEventListener('click', e => {
 |---|---|
 | `reset` | Normalización cross-browser |
 | `base` | Tipografía base, box-sizing, focus visible global |
-| `tokens` | Variables CSS (paleta, espaciado, radii, sombras) |
+| `tokens` | Variables CSS (paleta, tipografía, espaciado, radii, sombras, colores por dominio `--fk-dom-*`) |
 | `layout` | Shell de app, sidebar, main content, Bento Grid |
-| `components` | `.btn`, `.card`, `.input`, `.chip`, `.modal`, `.list-item` (barrel: `styles/components.css` → 8 sub-módulos en `styles/components/`) |
+| `components` | `.btn`, `.card`, `.input`, `.chip`, `.modal`, `.list-item`... Barrel `styles/components.css` → 8 sub-módulos en `styles/components/` (`atoms`, `buttons`, `forms`, `domain`, `analysis`, `charts`, `config`, `nudges`) |
 | `modals` | Overlay, animaciones de apertura/cierre |
 | `themes` | Modo oscuro (default) y claro (`body.light-theme`) |
-| `a11y` | `prefers-reduced-motion`, alto contraste |
+| `a11y` | `prefers-reduced-motion`, alto contraste, `forced-colors` |
 | `responsive` | Breakpoints: 1440px / 1024px / 768px / 480px / 360px |
 | `utils` | `.sr-only`, `.visually-hidden`, helpers de display |
 
-### 8.1 Sistema de íconos SVG (Parte 3C)
+### 8.1 Sistema de íconos SVG
 
-Iconografía **híbrida**: SVG para la UI chrome (navegación), emojis para lo expresivo (tips, marca, celebraciones, estados vacíos). El tono cálido es ADN (regla 11), no se elimina.
+Iconografía **híbrida**: SVG para la UI chrome (navegación, botones estructurales), emojis para lo expresivo (categorías, logros, estados vacíos, tips). El tono cálido es ADN (regla 11), no se elimina.
 
 - **Sprite inline:** un `<svg>` oculto al inicio de `<body>` en `index.html` define cada ícono como `<symbol id="i-*" viewBox="0 0 24 24">` (geometría estilo Lucide, licencia MIT). Se define una sola vez.
-- **Uso:** `<svg class="icon"><use href="#i-home"/></svg>`. Funciona desde HTML estático y desde HTML generado en JS. Sin build step.
+- **Uso:** `icon('i-home')` en `infra/icons.js` genera `<svg class="icon"><use href="#i-home"/></svg>`. Funciona desde HTML estático y desde HTML generado en JS.
 - **Presentación:** la clase `.icon` (en `styles/components/forms.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2`. Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; menú "Más" tintado por dominio con `--fk-dom-*`).
-- **Regla:** los íconos nuevos de UI chrome se agregan como `<symbol>` al sprite; nunca se hardcodea `<path>` suelto ni se reintroduce emoji en navegación.
+- **Regla:** los íconos nuevos de UI chrome se agregan como `<symbol>` al sprite; nunca se hardcodea `<path>` suelto ni se reintroduce emoji en navegación estructural.
+
+### 8.2 Tipografía
+
+Una sola fuente: **Inter Variable**, self-hosted (`assets/fonts/inter-variable.woff2`, pesos 100-900 en un archivo). Los montos usan `font-variant-numeric: tabular-nums` con Inter, no una fuente monoespaciada aparte. Detalle completo en [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md).
 
 ---
 
@@ -243,17 +277,9 @@ Iconografía **híbrida**: SVG para la UI chrome (navegación), emojis para lo e
 
 ## 10. Reglas innegociables (ADN del proyecto)
 
-1. **Vanilla JS sin build step.** Ningún transpilador, bundler ni framework.
-2. **Offline-first.** La app funciona sin red tras la primera carga.
-3. **Sin servidor.** Sin backend, sin cuentas, sin sync. Privacidad absoluta.
-4. **Singleton `S` mutable.** No agregar reactivity ni proxies.
-5. **`save()` debounced.** No escribir a localStorage directamente ni fuera de `storage.js`.
-6. **Migraciones idempotentes.** Cada bump de schema aplica sin romper datos existentes.
-7. **`data-action` delegado.** 0 `onclick` en HTML estático.
-8. **Cero `window.X`** - todo vía EventBus e imports. Ninguna función global.
-9. **`logic.js` sin DOM.** Los cálculos no pueden tocar `document` ni `window`.
-10. **Lenguaje humano.** Términos claros para personas sin educación financiera.
-11. **Constantes legales vivas.** Tasa de usura, SMMLV y UVT con revisión trimestral obligatoria.
+Ver [`/CLAUDE.md`](../CLAUDE.md) sección 3 - es la fuente única de verdad de las reglas ADN (evita mantener dos copias que se desincronizan). Resumen:
+
+1. Vanilla JS sin build step. 2. Offline-first. 3. Sin servidor (`localStorage`, clave `fk_v1`). 4. Singleton `S` mutable. 5. `save()` debounced. 6. Migraciones idempotentes. 7. Cero `onclick=""`. 8. Cero `window.X`. 9. `logic.js` sin DOM. 10. Ningún dominio importa a otro. 11. Lenguaje humano, neutral y profesional. 12. Constantes legales con fecha de revisión.
 
 Cambiar cualquiera de estas reglas requiere crear un ADR en `docs/DECISIONS/`.
 
@@ -263,11 +289,11 @@ Cambiar cualquiera de estas reglas requiere crear un ADR en `docs/DECISIONS/`.
 
 | Elemento | Convención | Ejemplo |
 |---|---|---|
-| Dominios | Español neutro | `ingresos`, `compromisos`, `tesoreria` |
+| Dominios | Español neutro | `gastos`, `compromisos`, `tesoreria` |
 | Infra y UI | Inglés | `state`, `storage`, `render`, `actions` |
 | Archivos CSS | kebab-case | `tokens.css`, `main.css` |
-| Variables CSS | `--fk-*` | `--fk-color-primary`, `--fk-space-4` |
-| Eventos EventBus | `dominio:acción` | `state:change`, `ui:navigate` |
+| Variables CSS | `--fk-*` | `--fk-accent`, `--fk-space-4` |
+| Eventos EventBus | `dominio:acción` | `state:change`, `distribucion:aplicar` |
 | `data-action` | kebab-case verbo-sustantivo | `guardar-gasto`, `editar-deuda` |
 | Commits | `tipo(área): descripción` | `feat(gastos): agregar detector de hormigas` |
 
@@ -277,24 +303,26 @@ Cambiar cualquiera de estas reglas requiere crear un ADR en `docs/DECISIONS/`.
 
 ```
 core/constants.js   (sin dependencias)
-core/state.js       (sin dependencias)
-core/storage.js     ← state.js
-                    ← constants.js
+core/state.js       ← constants.js
+core/storage.js     ← state.js, constants.js
 
-infra/utils.js      ← state.js
-infra/a11y.js       (sin dependencias de dominio)
-infra/crud.js       ← state.js, storage.js
-infra/render.js     ← state.js
-infra/router.js     ← state.js, EventBus
+infra/utils.js       ← state.js
+infra/a11y.js         (sin dependencias de dominio)
+infra/crud.js        ← state.js, storage.js
+infra/render.js      ← state.js
+infra/router.js      ← state.js, EventBus
+infra/financiero.js   (sin dependencias de dominio, funciones puras)
+infra/cuenta-helper.js ← infra/utils.js
+infra/icons.js         (lee el sprite de index.html)
 
 ui/shell.js         ← infra/render.js, infra/router.js
 ui/modales.js       ← infra/a11y.js
 ui/actions.js       ← (registra handlers de todos los dominios)
 ui/bootstrap.js     ← todo lo anterior + todos los dominios
 
-dominio/*/logic.js  ← core/state.js, core/constants.js, infra/utils.js
-dominio/*/view.js   ← logic.js, infra/render.js
-dominio/*/index.js  ← logic.js, view.js
+dominio/*/logic.js  ← core/state.js, core/constants.js, infra/utils.js, infra/financiero.js
+dominio/*/view.js   ← logic.js, infra/render.js, infra/icons.js, infra/cuenta-helper.js
+dominio/*/index.js  ← logic.js, view.js, EventBus
 ```
 
-**Regla:** ningún `dominio/X` importa de `dominio/Y`. La comunicación cross-dominio va por EventBus.
+**Regla:** ningún `dominio/X` importa de `dominio/Y`. La comunicación cross-dominio va por `EventBus` (ver sección 6).

@@ -1,22 +1,22 @@
-# Finko - Tu plata, tu control
+# Finko - Tu dinero, tu control
 
 PWA offline-first para gestión financiera personal en Colombia.
 Sin servidor. Sin cuenta. Sin rastreo. Tu información nunca sale de tu dispositivo.
 
-**Versión actual:** `v1.0.0` ✅
+**Versión actual:** `v1.0.0` ✅ (post-v1.0 activo, ver [`docs/BOARD.md`](docs/BOARD.md))
 
 ---
 
 ## Qué hace
 
-- Registra ingresos, gastos y compromisos por quincena
-- Gestiona deudas con estrategias de Avalancha y Bola de Nieve
-- Administra cuentas bancarias, bolsillos y fondo de emergencia
-- Hace seguimiento de metas de ahorro e inversiones
-- Provee análisis de salud financiera, logros y alertas
-- Calcula CDT, crédito de consumo, interés compuesto, regla 72, prima de servicios
+- Registra ingresos, gastos, gastos fijos y deudas
+- Gestiona deudas con estrategias de Avalancha y Bola de Nieve, más renegociación y consolidación simuladas
+- Administra cuentas bancarias, efectivo y la distribución automática del ingreso ("Distribuir mi ingreso")
+- Hace seguimiento de metas de ahorro, apartados para gastos previsibles, fondo de emergencia e inversiones
+- Provee análisis de salud financiera, patrimonio neto, logros y alertas
+- Calcula CDT, crédito de consumo, interés compuesto y regla 72 (integrados en Inversión y Deudas)
 - Opera 100% offline: funciona sin internet después de la primera carga
-- Basada en normativa financiera colombiana (SMMLV, UVT, tasa de usura, GMF)
+- Basada en normativa financiera colombiana (SMMLV, UVT, GMF)
 
 ---
 
@@ -37,26 +37,28 @@ npx serve .
 
 ## Comandos de desarrollo
 
+El proyecto usa **pnpm** (ver [`docs/SECURITY.md`](docs/SECURITY.md) para el porqué de la migración desde npm).
+
 ```bash
 # Instalar dependencias de desarrollo
-npm install
+pnpm install
 
-# Tests unitarios (Vitest + happy-dom) - 300 tests
-npm test
-npm run test:watch          # modo TDD
-npm run coverage            # umbral 90% sobre capa lógica
+# Tests unitarios (Vitest + happy-dom)
+pnpm test
+pnpm run test:watch          # modo TDD
+pnpm run coverage            # umbral 90% sobre capa lógica
 
-# Tests E2E (Playwright + Chromium) - 18 smoke tests
-npm run test:e2e
-npm run test:e2e:ui         # con inspector
+# Tests E2E (Playwright + Chromium)
+pnpm run test:e2e
+pnpm run test:e2e:ui         # con inspector
 
 # Auditoría Lighthouse (requiere servidor en :8080 corriendo)
-npm run lighthouse
+pnpm run lighthouse
 # → coverage/lighthouse-report.html
 
 # Lint y formato
-npm run lint
-npm run format
+pnpm run lint
+pnpm run format
 ```
 
 ---
@@ -74,12 +76,12 @@ Finko_Claude/
 │  └─ main.css             ← punto de entrada CSS
 ├─ modules/
 │  ├─ core/                ← estado, persistencia, constantes
-│  ├─ infra/               ← utilidades, render, a11y, CRUD, router
+│  ├─ infra/               ← utilidades, render, a11y, CRUD, router, financiero...
 │  ├─ ui/                  ← bootstrap, shell, actions, modales, onboarding
-│  └─ dominio/             ← lógica por área (ingresos, gastos, compromisos, …)
+│  └─ dominio/             ← 16 dominios activos (gastos, compromisos, tesoreria, metas...)
 ├─ tests/
-│  ├─ unit/                ← 300 tests sobre logic.js puro
-│  └─ e2e/                 ← 18 smoke tests Playwright
+│  ├─ unit/                ← tests sobre logic.js puro (Vitest + happy-dom)
+│  └─ e2e/                 ← smoke tests Playwright
 ├─ scripts/                ← gen-icons.py, lighthouse.js
 └─ docs/                   ← documentación viva
 ```
@@ -94,11 +96,10 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | **Punto de entrada para Claude Code/Cursor.** Workflow + reglas + estado actual. |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Capas, flujo de datos, reglas innegociables. |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Solo lo pendiente (post-v1.0). |
-| [`docs/TASKS.md`](docs/TASKS.md) | Tarea activa hoy. |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Memoria del proyecto - qué se hizo en cada fase. |
-| [`docs/IA_CONTEXT.md`](docs/IA_CONTEXT.md) | Patrones de uso para asistentes IA. |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Convenciones, commits, naming. |
+| [`docs/BOARD.md`](docs/BOARD.md) | Tablero Kanban: tarea en proceso + pendientes por sección de la app. |
+| [`docs/BUGS.md`](docs/BUGS.md) | Registro de errores conocidos. |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Memoria del proyecto - mes corriente + índice a `docs/changelog/`. |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Convenciones, commits, naming, patrones de código. |
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Tokens, componentes, Bento Grid. |
 | [`docs/DECISIONS/`](docs/DECISIONS/) | ADRs (Architecture Decision Records). |
 
@@ -112,29 +113,25 @@ Arquitectura detallada en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 4. **Lógica separada del DOM** - cada dominio tiene `logic.js` (puro, testeable) y `view.js` (render).
 5. **Cero `onclick=""` en HTML estático** - todo vía `data-action` delegado.
 6. **Cero `window.X`** - todo vía EventBus e imports explícitos.
-7. **Lenguaje humano** - "Tu plata" antes que "Saldo disponible".
+7. **Lenguaje humano, neutral y profesional** - "Tu dinero disponible hoy" antes que "Saldo disponible" (tuteo, sin voseo ni "plata").
 
 ---
 
-## Métricas v1.0
+## Métricas actuales
 
-| Métrica | Resultado |
+Cifras de tests y cobertura vivas en [`docs/HANDOFF.md`](docs/HANDOFF.md) sección 2 (se actualizan en cada tarea; no se duplican aquí para no desincronizarse).
+
+| Métrica | Objetivo |
 |---|---|
-| Lighthouse Performance | **99** |
-| Lighthouse Accessibility | **100** |
-| Lighthouse Best Practices | **100** |
-| Lighthouse SEO | **100** |
-| Tests unitarios | **300/300** |
-| Tests E2E | **18/18** |
-| Cobertura lógica (líneas / funciones) | **99.6% / 100%** |
-| `onclick=""` en HTML | **0** |
-| `window.X` en módulos | **0** |
-| `style=""` inline en HTML | **0** |
-| LOC máximo por archivo de dominio | **230** (objetivo < 400) |
+| Lighthouse Performance / Accessibility / Best Practices / SEO | ≥ 99 en las 4 |
+| `onclick=""` en HTML | 0 |
+| `window.X` en módulos | 0 |
+| `style=""` inline en HTML | 0 |
+| Cobertura lógica (`core/` + `dominio/*/logic.js`) | ≥ 90% |
 
 ---
 
 ## Próximos pasos
 
-Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) - sección "Post-v1.0".
-Áreas activas: deploy a producción, mejora de íconos, tests de integración, mantenimiento de constantes legales.
+Ver [`docs/BOARD.md`](docs/BOARD.md).
+Áreas activas: deploy a dominio custom, mantenimiento de constantes legales, mejoras por sección.

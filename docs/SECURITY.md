@@ -199,7 +199,7 @@ _(todos los hallazgos críticos del audit 2026-05-18 resueltos - H1, H2, H3 ✅)
 
 Finko no es un servicio público - no hay programa formal de bug bounty.
 
-Si encontrás un problema de seguridad en el código del proyecto:
+Si encuentras un problema de seguridad en el código del proyecto:
 
 1. **NO** abrir issue público con detalles del exploit.
 2. Abrir issue genérico en GitHub con etiqueta `security`, sin detalles técnicos.
@@ -211,7 +211,5 @@ Si encontrás un problema de seguridad en el código del proyecto:
 
 | Fecha | Versión | Hallazgos | Documento |
 |---|---|---|---|
-| 2026-05-18 | v1.0.0 | 3 críticos (CSP, happy-dom, Permissions-Policy), 4 medios, 3 bajos | (en conversación) |
-| 2026-05-18 | v1.0.0 | H1-H3 resueltos: CSP estricto, happy-dom 15.11.7, Permissions-Policy extendida + HSTS | d454f1d |
-
-> **TODO:** crear `docs/AUDITS/2026-05-18.md` con el reporte completo cuando se decida implementar los hallazgos críticos.
+| 2026-05-18 | v1.0.0 | 3 críticos (CSP, happy-dom, Permissions-Policy), 4 medios, 3 bajos identificados | commit previo a `d454f1d` |
+| 2026-05-18 | v1.0.0 | H1-H3 resueltos: CSP estricto, happy-dom 15.11.7, Permissions-Policy extendida + HSTS | `d454f1d` |

@@ -114,36 +114,18 @@ Segundo slice grande de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md), decis
 
 ---
 
-## 4. Estado de finalización (v1.0 + post-v1.0)
+## 4. Mantenimiento y producción
 
-**🎯 Hito: todas las series pendientes completadas.**
+**App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100, cero deuda técnica conocida).
 
-- ✅ **"Coaching de ingresos"** (Fases 1, 2, 3): diaPago + nudge de próximo cobro + distribución adaptativa. SW v128 → v131. 1235/1235 verdes. 2026-06-09.
-- ✅ **"Mejoras de deudas"**: tasa opcional + motor de recomendación por simulación. SW v131 → v132. 1256/1256 verdes. Ver [ADR 006](DECISIONS/006-recomendacion-deudas-por-simulacion.md). 2026-06-09.
-- ✅ **"Apartados"** (Fases 1, 2, 3): CRUD + recurrencia/ciclo + frecuencia automática + nudge de proximidad. SW v132 → v135. 1333/1333 verdes. Ver [ADR 007](DECISIONS/007-dominio-apartados.md). 2026-06-10.
-- ✅ **fix(agenda) abono parcial**: badge de Agenda distingue abono parcial de cuota cubierta. SW v135 → v136. 1351/1351 verdes. 2026-06-10.
-
-**Tareas opcionales / futuras:**
-- **E.2-2027**: Enero 2027, actualizar SMMLV/UVT a valores 2027 cuando se publiquen oficialmente (Haiku, ~15 min).
-- **E.5**: Agregar IPC como constante anual si se quiere mostrar inflación observada (Haiku, Bajo).
-- **A.5**: Setup de dominio custom cuando el usuario tenga URL registrada. No requiere código. Guía lista en `docs/SETUP_DOMINIO.md`.
-
-**App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100, 1333/1333 tests verdes, cero deuda técnica conocida).
+La lista completa y vigente de tareas de mantenimiento y features opcionales vive en [`docs/BOARD.md`](BOARD.md) (secciones "Mantenimiento" y por sección de la app). Esta sección solo guarda el procedimiento detallado de la tarea recurrente más delicada.
 
 > **Importante para futuros desarrolladores:** Antes de instalar dependencias o configurar
 > un nuevo entorno, leer [`docs/SECURITY.md`](SECURITY.md). Incluye política anti-malware npm,
 > guía de migración a **pnpm** con defensas (`minimum-release-age`, `only-built-dependencies`),
 > y el audit de seguridad realizado el 2026-05-18.
 
-Tareas opcionales restantes:
-
-| Prioridad | Tarea | Cuándo | Nivel |
-|---|---|---|---|
-| 1 | **A.5 - Dominio custom** (opcional) | Cuando el usuario tenga dominio registrado | Guía lista en [`docs/SETUP_DOMINIO.md`](SETUP_DOMINIO.md) |
-| 2 | **E.2 - SMMLV + UVT** (anual) | **Enero 2027** - buscar nuevos valores Mintrabajo (SMMLV) + DIAN (UVT), actualizar `modules/core/constants.js` | ~15 min, Haiku |
-| 3 | **E.3 - GMF + reforma** (demanda) | Si hay reforma tributaria - verificar cambios en GMF | Ad-hoc |
-
-### Recordatorio enero 2027 - E.2
+### Recordatorio enero 2027 - E.2-2027
 
 > Desde la refactorización a tabla histórica, **no se crean exports `_2027`**: basta con agregar UNA entrada en `LEGAL_POR_ANIO`. Toda la app (UI, cálculos, tests) y el aviso de vigencia de P1 dejan de marcar "desactualizado" en cuanto la entrada existe.
 
@@ -171,12 +153,7 @@ Tareas opcionales restantes:
 
 ## 5. Cómo trabajamos (workflow)
 
-- **Una tarea a la vez.** No se empieza la siguiente sin verificar en la app y commitear.
-- **Al cerrar cada tarea:** actualizar este archivo (HANDOFF.md) + CHANGELOG.md; eliminar de ROADMAP.md y TASKS.md.
-- **Al final de cada respuesta:** bloque `─── Próximo paso ───` con modelo sugerido + nivel.
-- **Modelos permitidos:** `Haiku 4.5` (sin nivel) · `Sonnet 4.6 - Bajo/Medio/Alto` · `Opus 4.7 - Bajo/Medio/Alto/Extra Alto/Max`.
-- **Regla de oro:** calidad del código primero, ahorro de tokens segundo.
-- Workflow completo en [`/CLAUDE.md`](../CLAUDE.md) sección 2.
+Workflow completo (una tarea a la vez, cierre de conversación, selección de modelo) en [`/CLAUDE.md`](../CLAUDE.md) sección 2. No se duplica acá para no desincronizarse.
 
 ---
 
@@ -186,14 +163,14 @@ Tareas opcionales restantes:
 core/        → state.js (singleton S), storage.js (save debounced), constants.js (CO legales)
 infra/       → utils, render, a11y, crud, router, csv, svg, notificaciones
 ui/          → bootstrap (entry point), shell, actions (delegación data-action), modales, onboarding
-dominio/     → ingresos, gastos, compromisos, tesoreria, metas, analisis,
-               calculadoras, config, import, export
-tests/unit/  → lógica pura (Vitest + happy-dom) - 521 tests
-tests/e2e/   → smoke tests (Playwright) - 57 tests
+dominio/     → agenda, ahorro, analisis, apartados, calculadoras, compromisos,
+               config, export, gastos, import, inversiones, logros, metas,
+               personales, presupuesto, resumen, tesoreria
 ```
 
 Regla clave: **ningún dominio importa a otro** - comunicación exclusiva por `EventBus`.
 Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no lo muta.
+Detalle completo en [`docs/ARCHITECTURE.md`](ARCHITECTURE.md). Cifras de tests actuales: ver sección 2 arriba.
 
 ---
 
@@ -201,8 +178,8 @@ Todo `logic.js` es sin DOM (testeable en Node). Todo `view.js` solo lee `S`, no 
 
 ```bash
 python -m http.server 8080   # Servir la app (ES6 modules requieren HTTP)
-pnpm test                     # 1182 tests unitarios + integración
-pnpm run test:e2e             # 57 smoke tests Playwright
+pnpm test                     # tests unitarios + integración (Vitest + happy-dom)
+pnpm run test:e2e             # smoke tests Playwright
 pnpm run coverage             # umbral 90% capa lógica
 pnpm run lighthouse           # requiere servidor en :8080
 ```
