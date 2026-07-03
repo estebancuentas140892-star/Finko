@@ -47,22 +47,13 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 ### Calendario (dominio `agenda`)
 
-#### AG.2 - Emoji de categoría a la izquierda de cada item
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : mostrar el emoji de categoría (`CATEGORIA_AGENDA_EMOJI`) como ícono principal a la izquierda de cada item, como en Gastos, en vez del genérico por tipo. Hoy el emoji ya existe pero se renderiza en el subtítulo (` · 🛒 Mercado`). Fallback al ícono de tipo cuando no hay categoría. Con AG.4, si el registro es de categoría personalizada ("Otros"), usar el ícono elegido por el usuario.
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js` (`_renderDetalleItem` línea ~284, ícono izquierdo línea ~279)
-- Depende de : nada (se enriquece con AG.4). Parte de la misma serie que TX.6/TX.7 (mismo lookup de emoji por origen); conviene un solo pase que unifique los tres.
-- Modelo     : Sonnet 5 - Bajo
-
 #### AG.4 - Nombre automático según la categoría en el form de gasto fijo
 - Prioridad  : media
 - Estado     : pendiente
 - Objetivo   : al elegir una categoría predefinida (Mercado, Servicios públicos, Arriendo...), no pedir nombre aparte: el nombre del registro es la categoría (pedir ambos es redundante). Solo con "Otros" se habilita personalizar nombre e ícono. Para las predefinidas, el campo de texto pasa a ser "Nota (opcional)".
 - Secciones  : Calendario
 - Archivos   : `modules/dominio/compromisos/views/formularios.js` (form de fijo), `modules/core/constants.js` (`CATEGORIAS_AGENDA`)
-- Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar).
+- Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar). Cuando exista, el ícono principal del detalle del día (AG.2, ya cerrada) puede enriquecerse para usarlo con categoría "Otros".
 - Modelo     : Sonnet 5 - Medio
 
 ---

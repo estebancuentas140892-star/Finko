@@ -281,13 +281,16 @@ function _renderDetalleDia(evs, year, month, dia) {
 
 function _renderDetalleItem(c, viewYear, viewMonth) {
   const tipo  = c.tipo ?? 'fijo';
-  const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');
-  const catLabel = (tipo === 'fijo' && c.categoria)
-    ? ` · ${CATEGORIA_AGENDA_EMOJI[c.categoria] ?? ''} ${_esc(c.categoria)}`
-    : '';
+  // AG.2: con categoría, el emoji pasa a ser el ícono principal (izquierda),
+  // como en Gastos; el subtítulo ya no repite el emoji, solo el nombre.
+  // Sin categoría (o en deudas, campo exclusivo de tipo=fijo), fallback al
+  // ícono genérico del tipo.
+  const emojiCategoria = (tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_EMOJI[c.categoria] : null;
+  const icono   = emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring');
+  const catLabel = (tipo === 'fijo' && c.categoria) ? ` · ${_esc(c.categoria)}` : '';
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
   const monto = Number.isFinite(Number(montoRaw)) ? f(Number(montoRaw)) : '';
   const idEsc = _esc(c.id ?? '');
@@ -351,7 +354,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
 
   return `
     <li class="cal-detail__item cal-detail__item--${tipo}">
-      <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
+      <span class="cal-detail__icon cal-detail__icon--${tipo}${emojiCategoria ? ' cal-detail__icon--emoji' : ''}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}</p>

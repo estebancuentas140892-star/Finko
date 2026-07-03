@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(calendario): emoji de categoría como ícono principal (AG.2) · 2026-07-02
+
+En el detalle del día, un gasto fijo con categoría (Mercado, Internet, Arriendo, Servicios públicos...) mostraba el emoji de su categoría (`CATEGORIA_AGENDA_EMOJI`) únicamente dentro del subtítulo pequeño (` · 🌐 Internet`), mientras el ícono principal a la izquierda del registro seguía siendo el genérico por tipo, el mismo círculo para todos los gastos fijos sin distinción. Gastos ya había resuelto exactamente este problema (`CATEGORIA_EMOJI[catKey] ?? icon('gastos')` como ícono principal, con el emoji retirado del subtítulo para no repetirse): AG.2 porta ese mismo patrón a Agenda.
+
+En [agenda/view.js](../modules/dominio/agenda/view.js), `_renderDetalleItem()` calcula `emojiCategoria` (el emoji de la categoría cuando `tipo === 'fijo'` y el registro tiene `categoria`) y lo usa como ícono principal con `emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring')`: con emoji disponible, se muestra ese carácter directamente; sin categoría, o en deudas (`categoria` es un campo exclusivo de gastos fijos), cae al ícono SVG genérico de siempre, sin cambio de comportamiento. El subtítulo deja de repetir el emoji: pasa de ` · 🌐 Internet` a ` · Internet`, ya que el emoji ahora vive en el ícono principal y repetirlo sería ruido visual, igual que ya evita Gastos en `list-item__subtitle`.
+
+En [config.css](../styles/components/config.css) se agregó `.cal-detail__icon--emoji`, aplicada solo cuando el ícono muestra un emoji de categoría, con un `font-size` de 1.375rem (más grande que el 1rem base del ícono con SVG) para que el emoji se lea con presencia como protagonista del registro, mismo criterio de tamaño que ya usa `.list-item__icon--cat` de Gastos (1.5rem, "emoji grande, protagonista", documentado en `atoms.css`).
+
+**Corrección de un descuido de la tarea anterior (AG.7):** el commit de AG.7 documentaba el bump de `service-worker.js` de v261 a v262 tanto en el mensaje de commit como en HANDOFF y este mismo CHANGELOG, pero el archivo nunca se tocó: `CACHE_NAME` seguía en `finko-v261` después de ese push. Eso significa que los cambios de AG.7 (franja de color por tipo en el detalle del día) se desplegaron a producción sin invalidar el caché del service worker, así que los usuarios con una instalación PWA activa podían seguir viendo la versión sin la franja de color hasta que algún otro cambio bumpeara la caché. Este commit hace el bump real a v262, cubriendo retroactivamente AG.7 junto con AG.2.
+
+Verificado con 5 tests unitarios (2 reescritos de una tarea anterior que asumían el emoji pegado al texto del subtítulo, un markup que este cambio reemplaza; 3 nuevos para el fallback sin categoría, el emoji sin `<svg>` con categoría, y que las deudas conservan el ícono genérico) más 2 E2E en Chromium real (con categoría, el ícono no contiene ningún `<svg>` y sí el carácter emoji; sin categoría, el ícono sí contiene un `<svg>`). 1835/1835 → 1838/1838 unit; 92/92 → 94/94 E2E. Lint limpio. SW v261 → v262 (bump real, corrige también el vacío dejado por AG.7).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | `_renderDetalleItem()`: el emoji de categoría pasa a ser el ícono principal (`emojiCategoria ?? icon(...)`); el subtítulo ya no repite el emoji, solo el nombre de la categoría. |
+| `styles/components/config.css` | Nueva `.cal-detail__icon--emoji` (tamaño mayor para el emoji protagonista, mismo criterio que Gastos). |
+| `tests/unit/agenda.test.js` | 2 tests reescritos (emoji ahora en el ícono principal, no en el subtítulo) + 3 tests nuevos (fallback sin categoría, sin `<svg>` con categoría, deuda con ícono genérico). |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - emoji de categoría como ícono principal", 2 tests. |
+| `service-worker.js` | v261 → v262 (bump real; corrige el vacío dejado por el commit de AG.7). |
+
+---
+
 ### feat(calendario): identificación visual por color en los registros del día (AG.7) · 2026-07-02
 
 En fechas cargadas (una quincena, el fin de mes) el detalle del día en Calendario mostraba todos los registros con el mismo aspecto visual: la única forma de distinguir un gasto fijo de una deuda con entidad o una deuda personal era leer su etiqueta de texto. AG.7 suma una identificación de color a cada item de la lista, reusando la misma paleta que AG.6 ya había fijado para los dots del mini calendario, así el significado de cada color es el mismo en toda la tarjeta.

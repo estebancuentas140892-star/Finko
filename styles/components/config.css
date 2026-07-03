@@ -735,6 +735,13 @@
   background: color-mix(in srgb, var(--fk-dom-personales) 14%, var(--fk-bg-surface));
 }
 
+/* AG.2: con emoji de categoría, un poco más grande para que se lea bien
+   como protagonista del ícono (mismo criterio que .list-item__icon--cat
+   de Gastos). */
+.cal-detail__icon--emoji {
+  font-size: 1.375rem;
+}
+
 .cal-detail__body {
   min-width: 0;
 }

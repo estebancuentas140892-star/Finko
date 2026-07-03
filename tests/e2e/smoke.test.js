@@ -1124,6 +1124,72 @@ test.describe('Agenda - marca de color por tipo', () => {
   });
 });
 
+// ── Agenda - emoji de categoría como ícono principal (AG.2) ──────────────────
+// Un gasto fijo con categoría muestra el emoji de esa categoría como ícono
+// principal (izquierda), no el genérico por tipo; sin categoría, cae al
+// ícono genérico.
+
+test.describe('Agenda - emoji de categoría como ícono principal', () => {
+  test('con categoría, el ícono principal es el emoji (sin <svg>)', async ({ page }) => {
+    const diaPago = 15;
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          { id: 'fijo-emoji-e2e', tipo: 'fijo', descripcion: 'Internet E2E',
+            categoria: 'Internet', monto: 100000, frecuencia: 'Mensual', diaPago },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    const iconoEl = page.locator('.cal-detail__icon');
+    await expect(iconoEl).toBeVisible({ timeout: 3_000 });
+    await expect(iconoEl.locator('svg')).toHaveCount(0);
+    await expect(iconoEl).toContainText('🌐');
+  });
+
+  test('sin categoría, el ícono principal es el genérico del tipo (con <svg>)', async ({ page }) => {
+    const diaPago = 15;
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          { id: 'fijo-sin-cat-e2e', tipo: 'fijo', descripcion: 'Sin categoría E2E',
+            monto: 100000, frecuencia: 'Mensual', diaPago },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    const iconoEl = page.locator('.cal-detail__icon');
+    await expect(iconoEl).toBeVisible({ timeout: 3_000 });
+    await expect(iconoEl.locator('svg')).toHaveCount(1);
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {

@@ -468,13 +468,16 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     vi.useRealTimers();
   });
 
-  it('muestra el emoji y el nombre de la categoría del gasto fijo', () => {
+  it('AG.2: con categoría, el emoji es el ícono principal (izquierda), no se repite en el subtítulo', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
-    const html = document.getElementById('panel-agenda').innerHTML;
-    expect(html).toContain('🌐 Internet');
+    const item = document.querySelector('.cal-detail__item');
+    expect(item.querySelector('.cal-detail__icon').textContent).toContain('🌐');
+    expect(item.querySelector('.cal-detail__sub').textContent).toContain('Internet');
+    // El subtítulo ya no repite el emoji: ya vive en el ícono principal.
+    expect(item.querySelector('.cal-detail__sub').textContent).not.toContain('🌐');
   });
 
   it('sin categoría no agrega nada después de la frecuencia en el detalle', () => {
@@ -495,7 +498,56 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     mostrarDia(15);
     renderAgenda();
     const html = document.getElementById('panel-agenda').innerHTML;
-    expect(html).not.toContain('🌐 Internet');
+    expect(html).not.toContain('🌐');
+    expect(html).not.toContain('Internet');
+  });
+});
+
+// ── renderAgenda() - emoji de categoría como ícono principal (AG.2) ─
+
+describe('renderAgenda() - emoji de categoría como ícono principal', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('sin categoría, el ícono principal usa el ícono genérico del tipo (fallback)', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: null })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const iconoEl = document.querySelector('.cal-detail__icon');
+    expect(iconoEl.querySelector('svg')).not.toBeNull();
+  });
+
+  it('con categoría, el ícono principal es el emoji de la categoría (sin <svg>)', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const iconoEl = document.querySelector('.cal-detail__icon');
+    expect(iconoEl.querySelector('svg')).toBeNull();
+    expect(iconoEl.textContent.trim()).toBe(CATEGORIA_AGENDA_EMOJI['Internet']);
+  });
+
+  it('una deuda con entidad usa el ícono genérico del tipo, no hay campo categoría', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd1', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
+      cuotaMensual: 200_000, saldoTotal: 2_000_000,
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const iconoEl = document.querySelector('.cal-detail__icon');
+    expect(iconoEl.querySelector('svg')).not.toBeNull();
   });
 });
 
