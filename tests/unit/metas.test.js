@@ -423,7 +423,7 @@ describe('renderFormAbonoMeta()', () => {
   });
 });
 
-// ── renderFormAbonoMeta() - selector de cuenta (M.3) ─────────────
+// ── renderFormAbonoMeta() - selector de cuenta compartido (MT.5) ──
 
 describe('renderFormAbonoMeta() - selector de cuenta', () => {
   const cuenta = (id, nombre, saldo = 500_000) => ({
@@ -434,38 +434,42 @@ describe('renderFormAbonoMeta() - selector de cuenta', () => {
     S.cuentas = [];
   });
 
-  it('sin cuentas: no renderiza selector de cuenta', () => {
+  it('sin cuentas activas no muestra selector (el abono vale como seguimiento)', () => {
     S.cuentas = [];
     const html = renderFormAbonoMeta(metaBase());
-    expect(html).not.toContain('cuentaId');
-    expect(html).not.toContain('Desde qué cuenta');
+    expect(html).not.toContain('name="cuentaId"');
   });
 
-  it('1 cuenta activa: hidden input + hint con nombre y saldo', () => {
+  it('con una cuenta: una sola tarjeta del selector compartido, pre-seleccionada', () => {
     S.cuentas = [cuenta('c1', 'Nequi principal', 1_000_000)];
     const html = renderFormAbonoMeta(metaBase());
-    expect(html).toContain('type="hidden"');
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('type="radio"');
     expect(html).toContain('name="cuentaId"');
     expect(html).toContain('value="c1"');
-    expect(html).toContain('Sale de: Nequi principal');
+    expect(html).toContain('checked');
   });
 
   it('1 cuenta inactiva: no renderiza selector', () => {
     S.cuentas = [{ ...cuenta('c1', 'Inactiva'), activa: false }];
     const html = renderFormAbonoMeta(metaBase());
-    expect(html).not.toContain('cuentaId');
+    expect(html).not.toContain('name="cuentaId"');
   });
 
-  it('varias cuentas: select visible con todas las activas', () => {
-    S.cuentas = [
-      cuenta('c1', 'Bancolombia'),
-      cuenta('c2', 'Nequi'),
-    ];
+  it('con varias cuentas: el selector de tarjetas lista todas y preselecciona la de mayor saldo', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
     const html = renderFormAbonoMeta(metaBase());
-    expect(html).toContain('<select');
-    expect(html).toContain('name="cuentaId"');
-    expect(html).toContain('c1');
-    expect(html).toContain('c2');
-    expect(html).toContain('Desde qué cuenta');
+    expect(html).toContain('cuenta-sel__lista');
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
+    // c1 (mayor saldo) viene checked.
+    expect(html).toMatch(/value="c1"[^>]*checked|checked[^>]*value="c1"/);
+  });
+
+  it('ya no usa el <select> de texto plano anterior', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
+    const html = renderFormAbonoMeta(metaBase());
+    expect(html).not.toContain('id="abono-meta-cuenta"');
+    expect(html).not.toContain('<select');
   });
 });

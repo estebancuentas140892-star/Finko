@@ -12,11 +12,12 @@ import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart } from '../../infra/render.js';
+import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { f } from '../../infra/utils.js';
+import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -122,20 +123,19 @@ function _abrirAbonoMeta(el) {
   abrirModal(overlay);
 }
 
-function _guardarAbonoMeta() {
+/**
+ * Guarda el abono a una meta. MT.5: mismo patrón que `_guardarAporte` de
+ * Apartados (AP.1): resuelve la cuenta con `resolverPagoConPreferida`
+ * (usa la elegida en el selector de tarjetas y, si no alcanza y hay más
+ * cuentas, reparte sin dejar ninguna en negativo). Con 0 cuentas activas
+ * el abono vale como seguimiento y no descuenta nada.
+ */
+async function _guardarAbonoMeta() {
   const form = document.getElementById('form-abono-meta');
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
-
-  // Si hay varias cuentas activas el select es obligatorio.
-  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const requiereCuenta = cuentasActivas.length > 1;
-  const erroresCuenta  = requiereCuenta && !datos.cuentaId
-    ? ['Debes elegir desde qué cuenta sale el dinero.']
-    : [];
-  const errores = [...validarAbono(datos.monto), ...erroresCuenta];
-
+  const errores = validarAbono(datos.monto);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
@@ -145,20 +145,48 @@ function _guardarAbonoMeta() {
   if (!meta) return;
 
   const abono = Number(datos.monto);
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+
+  let splits = [];
+  if (cuentasActivas.length > 0) {
+    splits = await resolverPagoConPreferida(
+      S.cuentas,
+      abono,
+      datos.cuentaId,
+      `registrar el abono a "${meta.nombre}"`,
+    );
+    if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+    // Una sola cuenta que no alcanza: confirmar el sobregiro (no hay con qué repartir).
+    if (splits.length === 1) {
+      const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+      const saldoCuenta = c?.saldo ?? 0;
+      if (saldoCuenta < splits[0].monto) {
+        const ok = await confirmar({
+          titulo:         'Registrar abono',
+          mensaje:        `¿Registrar abono de ${f(abono)} a "${meta.nombre}" desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+          confirmarTexto: 'Registrar abono',
+          peligroso:      true,
+        });
+        if (!ok) return;
+      }
+    }
+  }
+
   const nuevoMonto = (meta.montoActual ?? 0) + abono;
   const { completada } = calcularProgreso({ ...meta, montoActual: nuevoMonto });
 
   editar('metas', datos.metaId, { montoActual: nuevoMonto, completada });
 
-  // Descontar del saldo de la cuenta de origen (si se eligió una).
-  if (datos.cuentaId) {
-    _ajustarSaldoCuenta(datos.cuentaId, -abono);
+  for (const s of splits) {
+    _ajustarSaldoCuenta(s.cuentaId, -s.monto);
   }
 
   const overlay = document.getElementById('modal-abono-meta');
   if (overlay) cerrarModal(overlay);
 
   renderListaMetas();
+  updSaldo();
   announce(completada
     ? `¡Meta "${meta.nombre}" completada! 🎉`
     : `Abono de ${f(abono)} registrado.`

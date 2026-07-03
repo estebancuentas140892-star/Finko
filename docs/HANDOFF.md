@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(metas): simplificar la selección de emoji, MT.3)
+> Última actualización: 2026-07-02 (feat(metas): unificar el flujo de abono con el selector de cuentas compartido, MT.5)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1803/1803 verdes |
-| Tests E2E | 86/86 verde. Suites: `smoke` 50 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1804/1804 verdes |
+| Tests E2E | 88/88 verde. Suites: `smoke` 52 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): unificar el flujo de abono con el selector de cuentas compartido (MT.5) · 2026-07-02
+
+El abono a una meta tenía su propio selector de cuenta (`<select>` de texto plano, obligatorio con 2+ cuentas) y su propia lógica de descuento: solo restaba de una cuenta, sin repartir si no alcanzaba y sin confirmar el sobregiro. Apartados ya había resuelto esto en AP.1 con `renderSelectorCuenta` (tarjetas seleccionables, preselecciona la de mayor saldo) + `resolverPagoConPreferida` (usa la elegida si cubre; si no alcanza y hay más cuentas, reparte sin dejar ninguna en negativo; con una sola cuenta, pide confirmar el sobregiro). MT.5 portó ese mismo patrón a Metas: [metas/view.js](../modules/dominio/metas/view.js) reemplaza `_renderCuentaSelectorAbono` (eliminada) por `renderSelectorCuenta`; `_guardarAbonoMeta()` en [metas/index.js](../modules/dominio/metas/index.js) se reescribió como async siguiendo exactamente el mismo flujo que `_guardarAporte` de Apartados: resuelve los splits con `resolverPagoConPreferida`, confirma el sobregiro cuando una sola cuenta no alcanza, y aplica el descuento a cada cuenta del reparto. De paso corrigió un vacío que Metas nunca tuvo resuelto: ahora llama a `updSaldo()` tras el abono, así el hero de Inicio refleja el nuevo saldo sin esperar a un `renderAll()` completo (Apartados ya lo hacía). El "select obligatorio con 2+ cuentas" desaparece: como el selector de tarjetas siempre preselecciona una cuenta, ya no hace falta forzar la elección. Verificado con 2 E2E nuevos en Chromium real (abono con una cuenta descuenta el saldo correcto en Tesorería; abono que no alcanza pide confirmar el sobregiro y deja el saldo en negativo tras confirmar), más los tests unitarios de `renderFormAbonoMeta` reescritos contra el nuevo markup (mismo patrón que los de Apartados). 1804/1804 unit; 86/86 → 88/88 E2E. Lint limpio. SW v257 → v258.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | `renderFormAbonoMeta()` usa `renderSelectorCuenta` de `cuenta-helper.js`; eliminada `_renderCuentaSelectorAbono`. |
+| `modules/dominio/metas/index.js` | `_guardarAbonoMeta()` async: resuelve cuenta(s) con `resolverPagoConPreferida`, confirma sobregiro con una sola cuenta, aplica el reparto, llama `updSaldo()`. |
+| `tests/unit/metas.test.js` | Describe "selector de cuenta" reescrito contra el markup de tarjetas (mismo patrón que `apartados.test.js`). |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - abono con selector de cuenta compartido (MT.5)", 2 tests. |
+| `service-worker.js` | v257 → v258. |
+
+---
 
 ### feat(metas): simplificar la selección de emoji (MT.3) · 2026-07-02
 
@@ -101,19 +115,7 @@ Los dos paneles del dashboard no sumaban sus listas: el usuario tenía que sumar
 
 ---
 
-### fix(inicio): la categoría con mayor gasto ya no cuenta fijos ni deudas (IN.3) · 2026-07-02
-
-El indicador "Categoría con más gasto" del resumen semanal de Inicio ([resumen/logic.js](../modules/dominio/resumen/logic.js)) sumaba todos los gastos de la semana, incluidos los generados automáticamente por un fijo o un abono a deuda (`compromisoId`). Con un arriendo de $900.000 y un mercado de $50.000 mostraba "Vivienda" en vez de "Alimentación", el hábito real. `categoriaTopSemana` ahora excluye los gastos con `compromisoId`, coherente con la distinción que TX.6/TX.7 ya hacen en Gastos. Las demás cifras del resumen (total 7 días, comparación, registros, días activos) no cambian, siguen midiendo actividad total. 2 tests de regresión. 1764/1764 → 1766/1766 unit. Verificado en el navegador con datos sembrados. SW v252 → v253.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/resumen/logic.js` | `categoriaTopSemana` descarta gastos con `compromisoId`. |
-| `tests/unit/resumen.test.js` | 2 tests de regresión. |
-| `service-worker.js` | v252 → v253. |
-
----
-
-> Para tareas anteriores (AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

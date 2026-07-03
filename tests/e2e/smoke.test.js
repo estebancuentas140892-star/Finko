@@ -286,6 +286,84 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
   });
 });
 
+// ── SUITE 1d: Metas - abono con selector de cuenta compartido (MT.5) ─────────
+// Antes el abono usaba un <select> propio y descontaba solo si el usuario
+// elegía cuenta manualmente. MT.5 lo unifica con el selector de tarjetas de
+// Apartados (AP.1): preselecciona la cuenta de mayor saldo y, si no alcanza,
+// confirma el sobregiro (0/1 cuenta) o reparte (varias). Se verifica el
+// descuento real de saldo en Tesorería, igual que la suite Gastos-Cuenta.
+
+test.describe('Metas - abono con selector de cuenta compartido (MT.5)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+  });
+
+  /** Crea una meta simple (sin categoría) y devuelve al llamador para encadenar. */
+  async function crearMetaSimple(page, nombre, montoObjetivo) {
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill(nombre);
+    await form.locator('#meta-objetivo').fill(String(montoObjetivo));
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+  }
+
+  test('con una cuenta, el abono preselecciona su tarjeta y descuenta el saldo', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 1_000_000);
+
+    await crearMetaSimple(page, 'Laptop nueva', 3_000_000);
+
+    await page.click('[data-action="abonar-meta"]');
+    await page.waitForSelector('#modal-abono-meta[data-open]');
+
+    // El selector compartido preselecciona la única cuenta activa.
+    await expect(page.locator('#modal-abono-meta-body .cuenta-sel__radio')).toBeChecked();
+
+    await page.locator('#abono-meta-monto').fill('200000');
+    await page.locator('#form-abono-meta button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+
+    // Progreso de la meta actualizado en la lista.
+    await expect(page.locator('#lista-metas')).toContainText('$200.000 / $3.000.000');
+
+    // Saldo de la cuenta descontado (1.000.000 - 200.000).
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText('$800.000', { timeout: 3_000 });
+  });
+
+  test('un abono que no alcanza pide confirmar el sobregiro', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 50_000);
+
+    await crearMetaSimple(page, 'Viaje sorpresa', 1_000_000);
+
+    await page.click('[data-action="abonar-meta"]');
+    await page.waitForSelector('#modal-abono-meta[data-open]');
+
+    await page.locator('#abono-meta-monto').fill('200000');
+    await page.locator('#form-abono-meta button[type="submit"]').click();
+
+    // Con una sola cuenta y sin alcanzar, se pide confirmar el sobregiro.
+    await expect(page.locator('.modal--confirm .modal__title')).toHaveText('Registrar abono');
+    await expect(page.locator('.confirm__mensaje')).toContainText('quedará en negativo');
+
+    await page.click('.modal--confirm [data-role="confirmar"]');
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+
+    // Saldo queda en negativo (50.000 - 200.000 = -150.000).
+    await page.goto('/#tesoreria');
+    await expect(page.locator('#lista-tesoreria')).toContainText('-$150.000', { timeout: 3_000 });
+  });
+});
+
 // ── SUITE 2: Onboarding ─────────────────────────────────────────────────────
 // Modo serial: el SW compartido entre workers paralelos puede interferir con
 // los tests de onboarding (que dependen de localStorage vacío). Serial garantiza

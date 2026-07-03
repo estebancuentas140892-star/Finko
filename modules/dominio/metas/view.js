@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { CATEGORIAS_META, CATEGORIA_META_EMOJI } from '../../core/constants.js';
 import { metasActivas, calcularProgreso, calcularAhorroDiario, diasHastaFecha } from './logic.js';
 
@@ -85,7 +86,10 @@ function _renderEmptyState() {
 
 /**
  * Devuelve el HTML del formulario de abono a una meta existente.
- * Si hay cuentas activas, incluye selector para descontar del saldo.
+ * Si hay cuentas activas, incluye el selector de tarjetas compartido
+ * (MT.5, mismo patrón que Apartados/AP.1): preselecciona la cuenta de
+ * mayor saldo; `index.js` resuelve el reparto real con
+ * `resolverPagoConPreferida` al guardar.
  * @param {import('../../core/state.js').Meta} meta
  * @returns {string}
  */
@@ -96,7 +100,7 @@ export function renderFormAbonoMeta(meta) {
     : '';
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
-  const cuentaHtml     = _renderCuentaSelectorAbono(cuentasActivas);
+  const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el abono?' });
 
   return `
     <form id="form-abono-meta" novalidate>
@@ -179,38 +183,3 @@ function _renderOpcionesCategoria() {
     .map(cat => `<option value="${_esc(cat)}">${CATEGORIA_META_EMOJI[cat]} ${_esc(cat)}</option>`)
     .join('');
 }
-
-/**
- * Devuelve el HTML del selector de cuenta para el abono.
- * - 0 cuentas: sin selector (el abono sigue siendo válido como seguimiento).
- * - 1 cuenta:  hidden input + hint con nombre y saldo disponible.
- * - Varias:    select visible con todas las cuentas activas.
- *
- * @param {import('../../core/state.js').Cuenta[]} cuentas - solo las activas.
- * @returns {string}
- */
-function _renderCuentaSelectorAbono(cuentas) {
-  if (cuentas.length === 0) return '';
-
-  if (cuentas.length === 1) {
-    const c = cuentas[0];
-    return `
-      <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
-      <p class="form-hint quick-add__cuenta-hint">
-        Sale de: ${_esc(c.nombre)} · Disponible: ${f(c.saldo ?? 0)}
-      </p>`;
-  }
-
-  const opts = cuentas
-    .map(c => `<option value="${_esc(c.id)}">${_esc(c.nombre)} (${f(c.saldo ?? 0)})</option>`)
-    .join('');
-  return `
-    <div class="form-group">
-      <label for="abono-meta-cuenta" class="label">¿Desde qué cuenta?</label>
-      <select id="abono-meta-cuenta" name="cuentaId" class="input" required aria-required="true">
-        <option value="">Elegir cuenta…</option>
-        ${opts}
-      </select>
-    </div>`;
-}
-

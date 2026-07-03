@@ -265,15 +265,6 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : nada. Mismo espíritu que MC.7 (aportes por objetivo según frecuencia).
 - Modelo     : Sonnet 5 - Medio
 
-#### MT.5 - Unificar el flujo de abono con el selector de cuentas compartido
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : portar el patrón de AP.1 (`renderSelectorCuenta` + `resolverPagoConPreferida`) al abono de metas, hoy un `<select>` de texto plano.
-- Secciones  : Metas
-- Archivos   : `modules/dominio/metas/view.js` (`_renderCuentaSelectorAbono`, línea ~168), `modules/infra/cuenta-helper.js`
-- Depende de : nada. Port directo del trabajo ya hecho en Apartados (AP.1).
-- Modelo     : Sonnet 5 - Medio
-
 ---
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)

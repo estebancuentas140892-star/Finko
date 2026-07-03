@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): unificar el flujo de abono con el selector de cuentas compartido (MT.5) · 2026-07-02
+
+El abono a una meta tenía su propia implementación de selector de cuenta, separada del resto de la app: un `<select>` de texto plano, obligatorio elegir cuando había 2 o más cuentas, y una lógica de descuento que solo restaba de una cuenta sin repartir ni confirmar sobregiros. Apartados ya había resuelto exactamente este problema en AP.1 con dos piezas de [infra/cuenta-helper.js](../modules/infra/cuenta-helper.js): `renderSelectorCuenta` (tarjetas seleccionables con avatar de banco, nombre y saldo, preselecciona la de mayor saldo) y `resolverPagoConPreferida` (usa la cuenta elegida si cubre el monto; si no alcanza y hay más cuentas, abre un picker de reparto que no deja ninguna en negativo; con una sola cuenta que no alcanza, pide confirmar el sobregiro). MT.5 es el port directo de ese patrón a Metas.
+
+En [metas/view.js](../modules/dominio/metas/view.js), `renderFormAbonoMeta()` cambia `_renderCuentaSelectorAbono` (función eliminada, 24 líneas de lógica 0/1/varias cuentas duplicada) por una llamada a `renderSelectorCuenta`. En [metas/index.js](../modules/dominio/metas/index.js), `_guardarAbonoMeta()` pasa a ser async y sigue el mismo esqueleto que `_guardarAporte` de Apartados: valida el monto, resuelve los splits con `resolverPagoConPreferida` (si hay cuentas activas), confirma el sobregiro cuando la única cuenta no alcanza (mismo texto y `peligroso: true` que Apartados, adaptado a "abono"), aplica el descuento a cada cuenta del reparto, y llama a `updSaldo()` tras guardar, algo que la implementación anterior nunca hacía (el hero de Inicio quedaba con el saldo viejo hasta el siguiente `renderAll()` completo). El chequeo manual "debes elegir cuenta si hay varias" desaparece: como el selector de tarjetas siempre trae una preselección, ya no hace falta forzar la elección a mano.
+
+Los tests de `renderFormAbonoMeta` que verificaban el `<select>` viejo se reescribieron contra el markup de tarjetas, calcados de los que ya existían para `renderFormAporteApartado` en `apartados.test.js` (mismo patrón: sin cuentas no hay selector, una cuenta trae una tarjeta preseleccionada, varias cuentas preseleccionan la de mayor saldo, ya no queda el `<select>` viejo). Se sumaron 2 E2E en Chromium real que ejercitan el flujo completo con una cuenta real: uno de abono normal que descuenta el saldo correcto (verificado en Tesorería, mismo patrón que la suite Gastos-Cuenta), y uno de abono que no alcanza, que confirma el diálogo de sobregiro y deja el saldo en negativo tras aceptar. 1804/1804 unit; 86/86 → 88/88 E2E. Lint limpio. SW v257 → v258.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/metas/view.js` | `renderFormAbonoMeta()` usa `renderSelectorCuenta` de `cuenta-helper.js`; eliminada `_renderCuentaSelectorAbono`. |
+| `modules/dominio/metas/index.js` | `_guardarAbonoMeta()` async: `resolverPagoConPreferida`, confirmación de sobregiro con una sola cuenta, reparto aplicado a cada split, `updSaldo()` tras guardar. |
+| `tests/unit/metas.test.js` | Describe "selector de cuenta" reescrito contra el nuevo markup, mismo patrón que `apartados.test.js`. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Metas - abono con selector de cuenta compartido (MT.5)", 2 tests. |
+| `service-worker.js` | v257 → v258. |
+
+---
+
 ### feat(metas): simplificar la selección de emoji (MT.3) · 2026-07-02
 
 MT.1 agregó categorías con emoji a Metas, pero dejó el campo "Emoji (opcional)" suelto: visible siempre, sin relación con la categoría elegida. Un usuario podía escribir un emoji, cambiar de categoría, y el emoji manual seguía ganando (por la prioridad de `normalizarMeta`) sin que la UI diera ninguna pista de por qué. MT.3 simplifica: el campo vive oculto por defecto (`#form-group-meta-icono` en [metas/view.js](../modules/dominio/metas/view.js)) y solo aparece cuando la categoría elegida es "Otra", la válvula de escape del catálogo (ADR 014, principio 7); el resto de las categorías ya trae su propio emoji, así que no hay nada que decidir.
