@@ -133,6 +133,10 @@ export function compararSemanas(actual, previa) {
  * Categoría con más gasto en los últimos 7 días.
  * Devuelve null si no hubo gasto en la semana.
  *
+ * Excluye los gastos con `compromisoId` (originados en un fijo o un abono a
+ * deuda, ver ADR 002): esos son obligaciones, no consumo variable, y no deben
+ * distorsionar el indicador de hábitos de gasto (IN.3).
+ *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {string} hoyISO
  * @returns {{ categoria: string, total: number }|null}
@@ -140,6 +144,7 @@ export function compararSemanas(actual, previa) {
 export function categoriaTopSemana(gastos, hoyISO) {
   const porCategoria = Object.create(null);
   for (const g of gastos ?? []) {
+    if (g.compromisoId) continue;
     const d = _diasAtras(g.fecha, hoyISO);
     if (d === null || d < 0 || d > 6) continue;
     const cat = g.categoria ?? 'Otros';

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (fix(ux): descubribilidad y robustez, sidebar/toasts/flush de guardado, AUD.5)
+> Última actualización: 2026-07-02 (fix(inicio): categoría con mayor gasto sin fijos ni deudas, IN.3)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1764/1764 verdes |
+| Tests unitarios + integración | 1766/1766 verdes |
 | Tests E2E | 81/81 verde. Suites: `smoke` 45 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -38,6 +38,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(inicio): la categoría con mayor gasto ya no cuenta fijos ni deudas (IN.3) · 2026-07-02
+
+El indicador "Categoría con más gasto" del resumen semanal de Inicio ([resumen/logic.js](../modules/dominio/resumen/logic.js)) sumaba todos los gastos de la semana, incluidos los generados automáticamente por un fijo o un abono a deuda (`compromisoId`). Con un arriendo de $900.000 y un mercado de $50.000 mostraba "Vivienda" en vez de "Alimentación", el hábito real. `categoriaTopSemana` ahora excluye los gastos con `compromisoId`, coherente con la distinción que TX.6/TX.7 ya hacen en Gastos. Las demás cifras del resumen (total 7 días, comparación, registros, días activos) no cambian, siguen midiendo actividad total. 2 tests de regresión. 1764/1764 → 1766/1766 unit. Verificado en el navegador con datos sembrados. SW v252 → v253.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/resumen/logic.js` | `categoriaTopSemana` descarta gastos con `compromisoId`. |
+| `tests/unit/resumen.test.js` | 2 tests de regresión. |
+| `service-worker.js` | v252 → v253. |
+
+---
 
 ### fix(ux): descubribilidad y robustez, sidebar/toasts/flush de guardado (AUD.5) · 2026-07-02
 
@@ -96,21 +108,7 @@ Primer slice de la **auditoría integral de producto** del 2026-07-02 (UX, UI, t
 
 ---
 
-### feat(presupuesto): los topes se fusionan dentro de la tarjeta de Estilo de vida (MC.8b) · 2026-07-01
-
-Segundo slice grande de MC.8 ([ADR 019](DECISIONS/019-limites-por-rol.md), decisiones 2 y 4). Se elimina el bloque suelto "Estilo de vida: topes por categoría" (y su hero de totales): ahora los topes viven **dentro** de la tarjeta de Estilo de vida (`_renderDetalleEstiloVida`), con tres piezas nuevas: la línea de "olla finita" (`coberturaLimitesEstiloVida`, MC.8a) que dice cuánto del presupuesto de Estilo de vida cubren los límites y cuánto queda sin tope, sin forzar el 100%; los envelopes por categoría con sus alertas; y el botón "Agregar límite" (topes bajo demanda). `_renderGrupoCard` pasa a ser **consciente del rol**: Necesidades = monitorear (estado neutro `monitor`, sin barra ámbar ni roja, tercera cifra "Sobre lo previsto" sin rojo aunque supere lo previsto); Ahorro = celebrar (verde, ya venía de MC.8); Estilo de vida = controlar (conserva alerta/excedido). El estado sin ingreso conserva la gestión de topes (sin olla finita). Se eliminaron `_renderHero` y `_renderEmptyState` (código muerto tras la fusión). 3 E2E nuevos. 1758/1758 unit; 42/42 → 45/45 smoke E2E. SW v246 → v247. Pendiente MC.8c: layout (Necesidades + Ahorro en 2 columnas, Estilo de vida en fila completa).
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/presupuesto/view.js` | Topes fusionados en la tarjeta de Estilo de vida (`_renderDetalleEstiloVida`, `_renderOllaFinita`); `_renderGrupoCard` consciente del rol; `_renderHero`/`_renderEmptyState` eliminados. |
-| `styles/components/analysis.css` | `.estilo-limites*`, `.estilo-olla*`, `.estilo-limites-standalone*`; se quitó `.estilo-detalle*` y `.presupuesto-hero*`. |
-| `styles/responsive.css` | Se quitó la regla móvil de `.presupuesto-hero__totales`. |
-| `tests/e2e/smoke.test.js` | 3 tests nuevos (fusión + botón, olla finita, Necesidades sin alarma). |
-| `service-worker.js` | v246 → v247. |
-
----
-
-> Para tareas anteriores (AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md).
+> Para tareas anteriores (MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

@@ -57,15 +57,6 @@ Campos de una tarjeta:
 - Depende de : nada. Decidir al implementar el alcance: solo el hero, o todos los montos de Inicio (recomendado empezar por el hero + las celdas bento del resumen).
 - Modelo     : Sonnet 5 - Medio
 
-#### IN.3 - "Categoría top" solo con gastos variables reales
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : el indicador de categoría con mayor gasto (resumen semanal) hoy suma todos los `S.gastos`, incluidos los generados por fijos y abonos a deuda (que llevan `compromisoId` y categorías como 'Deudas'). Filtrar a gastos sin `compromisoId` para que refleje hábitos de consumo reales, no obligaciones.
-- Secciones  : Inicio
-- Archivos   : `modules/dominio/resumen/logic.js` (`categoriaTopSemana`, línea ~140)
-- Depende de : nada. Coherente con la distinción que TX.6/TX.7 hacen visible en la lista de Gastos.
-- Modelo     : Sonnet 5 - Bajo (lógica pura + tests)
-
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
 ---

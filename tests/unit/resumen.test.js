@@ -133,6 +133,19 @@ describe('categoriaTopSemana()', () => {
     const gastos = [gasto({ fecha: '2026-05-01' })];
     expect(categoriaTopSemana(gastos, HOY)).toBeNull();
   });
+
+  it('excluye gastos con compromisoId (fijos y abonos a deuda)', () => {
+    const gastos = [
+      gasto({ fecha: '2026-06-13', categoria: 'Deudas', monto: 500_000, compromisoId: 'c1' }),
+      gasto({ fecha: '2026-06-12', categoria: 'Alimentación', monto: 20_000 }),
+    ];
+    expect(categoriaTopSemana(gastos, HOY)).toEqual({ categoria: 'Alimentación', total: 20_000 });
+  });
+
+  it('devuelve null si todos los gastos de la semana son de compromisoId', () => {
+    const gastos = [gasto({ fecha: '2026-06-13', categoria: 'Vivienda', monto: 800_000, compromisoId: 'c1' })];
+    expect(categoriaTopSemana(gastos, HOY)).toBeNull();
+  });
 });
 
 // ── diasActivosMes() ─────────────────────────────────────────────
