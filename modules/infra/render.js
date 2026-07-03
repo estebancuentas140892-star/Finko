@@ -10,7 +10,13 @@
 
 import { S } from '../core/state.js';
 import { f } from './utils.js';
-import { countUp } from './animate.js';
+import { countUp, stopCount } from './animate.js';
+
+/**
+ * Máscara del saldo cuando el usuario lo oculta (IN.2, estilo app bancaria).
+ * Largo fijo: no revela la magnitud del monto real.
+ */
+export const SALDO_MASCARA = '$••••••';
 
 /** @type {Array<() => void>} Funciones de render registradas por los dominios. */
 const _renders = [];
@@ -55,7 +61,10 @@ export function renderSmart(fn, key) {
  * Recalcula el saldo total visible en el dashboard.
  *
  * - Suma `saldo` de todas las `S.cuentas` activas.
- * - Actualiza `#saldo-total` con el valor formateado.
+ * - Actualiza `#saldo-total` con el valor formateado, o con `SALDO_MASCARA`
+ *   si el usuario ocultó el saldo con el ojo del hero (IN.2). La preferencia
+ *   vive en `S.config.ocultarSaldo` (lectura defensiva: solo `true` oculta).
+ * - Sincroniza el botón `#saldo-ojo`: icono ojo/ojo tachado + `aria-pressed`.
  * - Si el usuario aún no registró cuentas, muestra la guía de primeros pasos
  *   (`#hero-guia-saldo`) y oculta la descripción (`#saldo-desc`); con cuentas,
  *   al revés. Así un usuario nuevo sabe qué hacer ante el saldo en $0.
@@ -64,10 +73,18 @@ export function updSaldo() {
   const cuentasActivas = S.cuentas.filter(c => c.activa !== false);
   const totalCuentas   = cuentasActivas.reduce((acc, c) => acc + (c.saldo ?? 0), 0);
   const sinCuentas     = cuentasActivas.length === 0;
+  const oculto         = S.config?.ocultarSaldo === true;
 
   const elSaldo = document.getElementById('saldo-total');
   if (elSaldo) {
-    if (!sinCuentas) {
+    if (sinCuentas) {
+      elSaldo.textContent = f(0);
+    } else if (oculto) {
+      // El monto real nunca toca el DOM mientras está oculto. stopCount
+      // cancela un countUp en vuelo que sobreescribiría la máscara.
+      stopCount(elSaldo);
+      elSaldo.textContent = SALDO_MASCARA;
+    } else {
       const onDash = (location.hash.slice(1) || 'dash') === 'dash';
       // countUp respeta prefers-reduced-motion por su cuenta.
       if (onDash && _prevSaldo !== totalCuentas) {
@@ -75,14 +92,12 @@ export function updSaldo() {
       } else {
         elSaldo.textContent = f(totalCuentas);
       }
-    } else {
-      elSaldo.textContent = f(0);
     }
     _prevSaldo = totalCuentas;
   }
 
   // Con cuentas: muestra el saldo normal y oculta la guía de primeros pasos.
-  // Sin cuentas: oculta el ícono, label y valor para no confundir;
+  // Sin cuentas: oculta el ícono, label, valor y ojo para no confundir;
   //              muestra la guía de onboarding con el CTA a Mis cuentas.
   const guia  = document.getElementById('hero-guia-saldo');
   const desc  = document.getElementById('saldo-desc');
@@ -95,6 +110,16 @@ export function updSaldo() {
   if (icon)  icon.hidden  =  sinCuentas;
   if (label) label.hidden =  sinCuentas;
   if (valor) valor.hidden =  sinCuentas;
+
+  // Botón del ojo (IN.2): estado presionado = saldo oculto. El icono refleja
+  // el estado actual (ojo tachado mientras el monto está enmascarado).
+  const ojo = document.getElementById('saldo-ojo');
+  if (ojo) {
+    ojo.hidden = sinCuentas;
+    ojo.setAttribute('aria-pressed', String(oculto));
+    const use = ojo.querySelector('use');
+    if (use) use.setAttribute('href', oculto ? '#i-eye-off' : '#i-eye');
+  }
 }
 
 // ── ORQUESTADOR ──────────────────────────────────────────────────

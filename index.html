@@ -82,6 +82,8 @@
     <symbol id="i-mountain" viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></symbol>
     <symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></symbol>
     <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
   </svg>
 
   <div class="app-shell" id="app">
@@ -282,7 +284,18 @@
             <!-- Estado normal: visible cuando hay cuentas registradas -->
             <svg class="bento__icon icon" id="hero-saldo-icon" aria-hidden="true"><use href="#i-saldo"/></svg>
             <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
-            <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
+            <!-- Fila saldo + ojo (IN.2): el botón alterna entre monto visible y
+                 enmascarado para usar la app en lugares públicos. render.js
+                 (updSaldo) sincroniza máscara, icono y aria-pressed leyendo
+                 S.config.ocultarSaldo; la preferencia persiste entre sesiones. -->
+            <div class="hero-saldo">
+              <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
+              <button class="btn btn-ghost btn-icon hero-saldo__ojo" type="button" id="saldo-ojo"
+                      data-action="saldo-visibilidad" aria-pressed="false"
+                      aria-label="Ocultar tu dinero disponible">
+                <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+              </button>
+            </div>
             <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
             <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->

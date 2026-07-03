@@ -54,3 +54,20 @@ export function countUp(el, to, opts = {}) {
   }
   _rafs.set(el, requestAnimationFrame(tick));
 }
+
+/**
+ * Cancela la animación de countUp activa sobre `el`, si la hay.
+ * El textContent queda en el último frame pintado: el llamador decide qué
+ * escribir después (ej. updSaldo al enmascarar el saldo, IN.2). Sin esto,
+ * un frame pendiente sobreescribiría el texto nuevo con el monto animado.
+ *
+ * @param {HTMLElement} el
+ */
+export function stopCount(el) {
+  if (!el) return;
+  const prev = _rafs.get(el);
+  if (prev) {
+    cancelAnimationFrame(prev);
+    _rafs.delete(el);
+  }
+}

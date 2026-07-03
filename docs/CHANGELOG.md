@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(inicio): ojo para ocultar/mostrar el dinero disponible (IN.2) · 2026-07-02
+
+Icono de ojo junto al saldo del hero de Inicio ("Tu dinero disponible hoy"), estilo app bancaria, para usar Finko en lugares públicos: alterna entre el monto visible y la máscara `$••••••` (largo fijo, para no revelar la magnitud del monto real). La preferencia persiste entre sesiones en `S.config.ocultarSaldo` con lectura defensiva (`=== true`; cualquier otro valor muestra el monto), sin migración de schema, como pedía la tarjeta.
+
+Detalles de implementación: `updSaldo()` ([infra/render.js](../modules/infra/render.js)) es el único punto que escribe `#saldo-total`, así que la máscara vive ahí; exporta la constante `SALDO_MASCARA` y sincroniza el botón `#saldo-ojo` (icono ojo/ojo tachado vía swap del `href` del `<use>`, `aria-pressed`, oculto sin cuentas junto con el valor). Mientras el saldo está oculto el monto real nunca toca el DOM, y la nueva `stopCount(el)` ([infra/animate.js](../modules/infra/animate.js)) cancela un countUp en vuelo que de otro modo sobreescribiría la máscara frames después. La acción `saldo-visibilidad` se registra como built-in del shell en [ui/actions.js](../modules/ui/actions.js) (flip defensivo `!== true` + `save()` + `updSaldo()`). CSS en [styles/components/domain.css](../styles/components/domain.css) (capa `components`, para que el refuerzo `.hero-saldo__ojo[hidden]` gane a `display:inline-flex` de `.btn`); el botón reusa `btn btn-ghost btn-icon`. Sprite: símbolos `i-eye` / `i-eye-off` (geometría estilo Lucide, coherente con el resto).
+
+Alcance decidido (la tarjeta lo dejaba abierto): solo el hero, el dato más sensible y el subset más pequeño con sentido; extender la máscara a los demás montos de Inicio (totales de vencidos/prioridades, resumen semanal) quedó como observación en [BOARD.md](BOARD.md). Verificación: el preview del entorno sigue sin cargar (nota en memoria del proyecto), así que la evidencia es 13 tests unit nuevos en `tests/unit/render.test.js` (máscara, defensiva, sync del botón, empty state, acción vía `dispatch`) + 1 E2E nuevo en Chromium real (click → máscara, recarga → persiste, click → monto de vuelta). 1774/1774 → 1787/1787 unit; 81/81 → 82/82 E2E. Lint limpio. SW v254 → v255.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Símbolos `i-eye`/`i-eye-off` en el sprite; fila `.hero-saldo` con el botón `#saldo-ojo` (`data-action="saldo-visibilidad"`, `aria-pressed`). |
+| `modules/infra/render.js` | `SALDO_MASCARA` exportada; `updSaldo()` enmascara cuando `S.config.ocultarSaldo === true` y sincroniza el botón del ojo. |
+| `modules/infra/animate.js` | Nueva `stopCount(el)`: cancela el RAF del countUp activo de un elemento. |
+| `modules/ui/actions.js` | Acción built-in `saldo-visibilidad`: flip defensivo + `save()` + `updSaldo()`. |
+| `styles/components/domain.css` | Sección HERO-SALDO: fila monto + ojo, refuerzo `[hidden]`, icono a 1.375rem. |
+| `tests/unit/render.test.js` | Nuevo archivo: 13 tests de `updSaldo` + acción `saldo-visibilidad`. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Ocultar/mostrar el dinero disponible (IN.2)" con seed condicional (el reload no pisa la preferencia guardada). |
+| `service-worker.js` | v254 → v255. |
+
+---
+
 ### feat(inicio): totales al pie de "Próximas prioridades" y "Pendientes del mes" (IN.1) · 2026-07-02
 
 Los dos paneles del dashboard ([compromisos/views/dashboard.js](../modules/dominio/compromisos/views/dashboard.js)) listaban items sin sumatoria: el usuario tenía que sumar a mano cuánto necesitaba para cubrir lo vencido o lo que viene en los próximos 7 días. Nueva función pura `sumarMontos(items)` en [compromisos/logic.js](../modules/dominio/compromisos/logic.js) (mismo criterio `monto ?? cuotaMensual` que ya usa el render de cada item individual, AUD.1), consumida por `renderPanelVencidos` ("Total de gastos vencidos") y `renderPanelPrioridades` ("Total de próximas prioridades", solo cuando hay algo que mostrar; el estado "Todo al día" no lleva total). Nuevas clases `.vencidos-card__total` / `.prioridades-card__total` en [styles/components/domain.css](../styles/components/domain.css), fila con borde superior sutil y monto en negrita, coherente con el resto de las cards del dashboard. Verificación en el navegador bloqueada por caché HTTP agresiva del entorno de preview (`fetch` con `cache:'no-store'` sí traía el código nuevo, pero la navegación normal servía JS viejo); verificado en su lugar con tests de render sobre happy-dom, que ejecutan el código de producción real sin ese problema. 6 tests nuevos (4 `sumarMontos` + 2 de render por panel). 1770/1770 → 1774/1774 unit. SW v253 → v254.

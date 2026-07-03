@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(inicio): totales al pie de prioridades y vencidos, IN.1)
+> Última actualización: 2026-07-02 (feat(inicio): ojo para ocultar/mostrar el dinero disponible, IN.2)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1774/1774 verdes |
-| Tests E2E | 81/81 verde. Suites: `smoke` 45 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1787/1787 verdes |
+| Tests E2E | 82/82 verde. Suites: `smoke` 46 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,23 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(inicio): ojo para ocultar/mostrar el dinero disponible (IN.2) · 2026-07-02
+
+Icono de ojo junto al saldo del hero de Inicio, estilo app bancaria, para usar Finko en lugares públicos: alterna entre el monto visible y la máscara `$••••••` (largo fijo, no revela la magnitud). La preferencia vive en `S.config.ocultarSaldo` y persiste entre sesiones (lectura defensiva `=== true`, sin migración). `updSaldo()` en [infra/render.js](../modules/infra/render.js) aplica la máscara y sincroniza el botón (`aria-pressed` + swap ojo/ojo tachado); mientras está oculto, el monto real nunca toca el DOM y `stopCount()` (nueva en [infra/animate.js](../modules/infra/animate.js)) cancela cualquier countUp en vuelo que fuera a sobreescribir la máscara. Acción `saldo-visibilidad` registrada como built-in en [ui/actions.js](../modules/ui/actions.js). Sin cuentas registradas el ojo se oculta junto con el valor (empty state manda). Alcance decidido: solo el hero (el dato más sensible); extender a los demás montos de Inicio quedó como observación en el BOARD. El preview del entorno sigue sin cargar (nota en memoria del proyecto); verificado con 13 tests unit nuevos (happy-dom) + 1 E2E en Chromium real que cubre click, persistencia tras recarga y reversa. 1774/1774 → 1787/1787 unit; 81/81 → 82/82 E2E. SW v254 → v255.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Símbolos `i-eye`/`i-eye-off` en el sprite; botón `#saldo-ojo` en el hero. |
+| `modules/infra/render.js` | `updSaldo()` enmascara con `SALDO_MASCARA` y sincroniza el botón. |
+| `modules/infra/animate.js` | Nueva `stopCount(el)`: cancela el countUp activo de un elemento. |
+| `modules/ui/actions.js` | Acción built-in `saldo-visibilidad`: flip + `save()` + `updSaldo()`. |
+| `styles/components/domain.css` | `.hero-saldo` (fila monto + ojo) y refuerzo `[hidden]` del botón. |
+| `tests/unit/render.test.js` | Nuevo: 13 tests de máscara, defensiva, botón, empty state y acción. |
+| `tests/e2e/smoke.test.js` | 1 test: ocultar, persistir tras recarga, mostrar. |
+| `service-worker.js` | v254 → v255. |
+
+---
 
 ### feat(inicio): totales al pie de "Próximas prioridades" y "Pendientes del mes" (IN.1) · 2026-07-02
 
@@ -92,22 +109,7 @@ Cuarto slice de la auditoría integral del 2026-07-02. Dos lugares pintaban el m
 
 ---
 
-### fix(copy): voseo, tildes y términos viejos corregidos (AUD.3) · 2026-07-02
-
-Tercer slice de la auditoría integral del 2026-07-02. Cinco correcciones puntuales de copy: (1) [logros/logic.js](../modules/dominio/logros/logic.js) tenía 4 descripciones en voseo o sin tildes ("Tenes", "un prestamo que vos le diste", "configuracion", "esta lista"), que violan la regla ADN 11 (tuteo, español neutro); corregidas a tuteo con tildes correctas. (2) El enlace "Ver agenda" en el panel de prioridades de Inicio ([compromisos/views/dashboard.js](../modules/dominio/compromisos/views/dashboard.js)) quedó desactualizado desde que la sección se renombró a Calendario (AG.1); ahora dice "Ver calendario". (3) Los empty states de Gastos y Mis cuentas ([gastos/view.js](../modules/dominio/gastos/view.js), [tesoreria/view.js](../modules/dominio/tesoreria/view.js)) mencionaban "el dashboard", término que la app ya no usa desde el renombre a Inicio; corregidos a "Inicio". (4) `APP_VERSION` en [core/constants.js](../modules/core/constants.js) decía `'0.1.0'`, visible en Ajustes > Acerca de Finko, pero el proyecto está en v1.0.0 (`package.json`); sincronizado. (5) "Toca una estrategia" en el placeholder de Deudas ([compromisos/views/estrategia.js](../modules/dominio/compromisos/views/estrategia.js)) se leía raro en desktop (no hay "toque" en mouse); cambiado a "Elige una estrategia". Sin tests nuevos (copy sin lógica asociada; ningún test existente referenciaba estos textos). 1764/1764 unit + 81/81 E2E verdes. SW v249 → v250.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/logros/logic.js` | 4 descripciones de logros: tuteo + tildes correctas. |
-| `modules/dominio/compromisos/views/dashboard.js` | "Ver agenda" → "Ver calendario" en el panel de prioridades. |
-| `modules/dominio/gastos/view.js`, `modules/dominio/tesoreria/view.js` | "el dashboard" → "Inicio" en empty states. |
-| `modules/core/constants.js` | `APP_VERSION` `'0.1.0'` → `'1.0.0'`. |
-| `modules/dominio/compromisos/views/estrategia.js` | "Toca una estrategia" → "Elige una estrategia". |
-| `service-worker.js` | v249 → v250. |
-
----
-
-> Para tareas anteriores (AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

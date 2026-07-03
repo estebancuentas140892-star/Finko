@@ -10,6 +10,9 @@
 import { toggleTheme, toggleSidebarCollapse } from './shell.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { navigate } from '../infra/router.js';
+import { S } from '../core/state.js';
+import { save } from '../core/storage.js';
+import { updSaldo } from '../infra/render.js';
 
 /** Mapa de acciones registradas: nombre → función handler. */
 const _acciones = new Map();
@@ -83,6 +86,15 @@ export function initAcciones() {
     const destino = el.dataset.target
       || (el.getAttribute('href') || '').replace(/^#/, '');
     if (destino) navigate(destino);
+  });
+
+  // Ojo del hero (IN.2): alterna entre monto visible y enmascarado, estilo
+  // app bancaria, para usar Finko en lugares públicos. El flip con `!== true`
+  // es defensivo: cualquier valor raro heredado en S.config cae en "ocultar".
+  registrarAccion('saldo-visibilidad', () => {
+    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    save();
+    updSaldo();
   });
 
   document.addEventListener('click', _handleClick);

@@ -710,6 +710,29 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   HERO-SALDO (IN.2) - fila del monto disponible + botón de ojo
+   que oculta/muestra el saldo (estilo app bancaria).
+   ════════════════════════════════════════════════════════════ */
+
+.hero-saldo {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+/* .btn fija display:inline-flex, así que [hidden] necesita refuerzo
+   (mismo caso que .bento__cell[hidden] en layout.css). updSaldo() lo
+   oculta junto con el valor cuando no hay cuentas registradas. */
+.hero-saldo__ojo[hidden] { display: none; }
+
+/* Un paso más grande que el .btn-icon .icon genérico (18px): convive
+   con el monto XL del hero y necesita presencia y área táctil. */
+.hero-saldo__ojo .icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+/* ════════════════════════════════════════════════════════════
    VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
    Se renderiza solo si hay items. Scroll vertical si >5 items
    para no inflar el dashboard.

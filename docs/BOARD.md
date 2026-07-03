@@ -39,14 +39,7 @@ Campos de una tarjeta:
 
 ### Inicio (dashboard)
 
-#### IN.2 - Ocultar/mostrar el dinero disponible (ojo, estilo app bancaria)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : icono de ojo junto al saldo del hero ("Tu dinero disponible hoy") que alterna entre monto visible y enmascarado (`$••••••`), para usar la app en lugares públicos. La preferencia persiste entre sesiones (`S.config`, lectura defensiva sin migración).
-- Secciones  : Inicio
-- Archivos   : `index.html` (hero, línea ~284), `modules/infra/render.js` (`updSaldo`), `modules/ui/actions.js` (data-action nuevo)
-- Depende de : nada. Decidir al implementar el alcance: solo el hero, o todos los montos de Inicio (recomendado empezar por el hero + las celdas bento del resumen).
-- Modelo     : Sonnet 5 - Medio
+_(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el monto más sensible. Si el usuario lo pide, extender la máscara a los demás montos de Inicio: totales de vencidos/prioridades y cifras del resumen semanal.)_
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 

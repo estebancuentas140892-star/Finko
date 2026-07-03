@@ -150,6 +150,56 @@ test.describe('Dashboard', () => {
   });
 });
 
+// ── SUITE 1b: Ocultar/mostrar el dinero disponible (IN.2) ───────────────────
+// Suite propia sin el beforeEach de Dashboard: el seed debe ser CONDICIONAL
+// (solo si localStorage está vacío) porque los addInitScript corren de nuevo
+// en cada navegación y un seed incondicional pisaría la preferencia
+// `config.ocultarSaldo` que la app guarda a mitad del test, justo lo que el
+// reload quiere verificar.
+
+test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
+  test('el ojo oculta el saldo, persiste tras recargar y lo vuelve a mostrar', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 500000, activa: true }],
+        ingresos: [],
+        gastos: [],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // Estado inicial: monto visible, ojo sin presionar.
+    await expect(page.locator('#saldo-total')).toHaveText('$500.000');
+    await expect(page.locator('#saldo-ojo')).toHaveAttribute('aria-pressed', 'false');
+
+    // Click en el ojo: el monto se enmascara.
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••');
+    await expect(page.locator('#saldo-ojo')).toHaveAttribute('aria-pressed', 'true');
+
+    // Persistencia entre sesiones: esperar el debounce de save() (200ms)
+    // y recargar; la app debe arrancar con el saldo ya enmascarado.
+    await page.waitForTimeout(400);
+    await page.reload();
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••');
+    await expect(page.locator('#saldo-ojo')).toHaveAttribute('aria-pressed', 'true');
+
+    // Segundo click: el monto vuelve.
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$500.000');
+    await expect(page.locator('#saldo-ojo')).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
 // ── SUITE 2: Onboarding ─────────────────────────────────────────────────────
 // Modo serial: el SW compartido entre workers paralelos puede interferir con
 // los tests de onboarding (que dependen de localStorage vacío). Serial garantiza
