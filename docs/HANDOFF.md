@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(calendario): nombre automático según la categoría en el gasto fijo, AG.4)
+> Última actualización: 2026-07-02 (docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable · 2026-07-02
+
+Prerequisito de MC.7d. Tras validar en la app el desglose read-only de Necesidades (MC.7c), el usuario dio una dirección nueva (2026-07-02): cada grupo del asistente "Distribuir mi ingreso" debe mostrar sus registros como checklist seleccionable que registra pagos reales, no como lista informativa. Eso contradecía la decisión 2 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md) (Paso 1 read-only, sin mover dinero), así que el ADR se revisó antes de codear.
+
+La revisión (sección nueva "Revisión 2026-07-02" con decisiones R1-R5) define: **R1**, la checklist de Necesidades muestra nombre, cuota del periodo (fijo: su `monto` por ocurrencia; deuda: `cuotaMensual`, nunca el saldo total) y día de pago; los items marcados generan al confirmar exactamente los mismos registros que sus flujos individuales existentes (pago de fijo como "Marcar pagado" de Agenda, cuota de deuda como abono), con el guard "ya pagado este periodo" compartido para evitar doble registro. **R2**, una sola pregunta de cuenta al confirmar (patrón `cuenta-helper`, regla de cuenta única). **R3**, los pasos operan sobre el remanente real (el Paso 2 sugiere sobre el cobro menos las Necesidades marcadas). **R4**, la confirmación única aplica también los pagos del Paso 1; nota de implementación: agregar la slice `gastos` a `_SLICES_DISTRIBUCION` en `tesoreria/index.js` o el "Deshacer" dejaría pagos huérfanos. **R5**, sin schema nuevo (los pagos son gastos normales con `compromisoId`). Las decisiones 2, 5 y 6 originales quedan marcadas como revisadas/ajustadas con el texto original conservado como historia; la tabla de slices refleja MC.7a/b/c entregados y MC.7d ampliado.
+
+Tarea solo de documentación: sin cambios de código, tests ni service worker. La tarjeta MC.7d del BOARD pasó de "requiere revisión de ADR" a "pendiente", con el diseño cerrado y `Sonnet 5 - Alto` como modelo de implementación.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/018-asistente-distribuir-ingreso.md` | Sección "Revisión 2026-07-02" (R1-R5, alternativas y consecuencias); notas de revisión en las decisiones 2, 5 y 6; tabla de slices actualizada (MC.7a/b/c entregados, MC.7d ampliado); modelos de slices restantes en escala Claude 5. |
+| `docs/BOARD.md` | Tarjeta MC.7d: estado a "pendiente (ADR revisado)", objetivo alineado con R1-R5, archivos afectados precisados. |
+
+---
 
 ### feat(calendario): nombre automático según la categoría en el gasto fijo (AG.4) · 2026-07-02
 
@@ -110,22 +125,7 @@ La leyenda del calendario se renderizaba al final del panel, después del detall
 
 ---
 
-### feat(calendario): total a pagar por día (AG.5) · 2026-07-02
-
-El panel de detalle del día en Calendario listaba los compromisos de ese día sin sumarlos: el usuario tenía que sumar a mano cuánto necesitaba tener disponible. Nueva `totalDia(evs)` pura en [agenda/logic.js](../modules/dominio/agenda/logic.js) (mismo criterio `monto` para fijos / `cuotaMensual` para deudas que ya usaba el render de cada item, y que `sumarMontos` de compromisos/logic.js de IN.1; duplicado intencional, no importación cruzada, porque Agenda no puede importar de Compromisos, ADN #10). Antes vivía como función privada `_totalDia` solo en `view.js`, sin tests. `_renderDetalleDia()` en [agenda/view.js](../modules/dominio/agenda/view.js) ahora muestra una línea propia "Total a pagar: **$X**" (`.cal-detail__total`) justo bajo el título, visible de inmediato sin desplazarse por la lista; antes el monto iba pegado en el subtítulo pequeño y gris ("3 compromisos · $450.000"). Color neutro, no rojo (criterio AUD.4/ADR 019: un compromiso programado no es un incumplimiento). Verificado con 1 E2E en Chromium real (un fijo + una deuda el mismo día, el total es la suma exacta) más 9 tests unitarios nuevos (`totalDia` con fijos/deudas/mezcla/entradas inválidas, y el render real del panel). 1819/1819 → 1829/1829 unit; 89/89 → 90/90 E2E. Lint limpio. SW v259 → v260.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/logic.js` | Nueva `totalDia(evs)`, función pura y exportada. |
-| `modules/dominio/agenda/view.js` | `_totalDia` privada eliminada; `_renderDetalleDia` usa `totalDia` de logic.js y muestra una línea propia "Total a pagar". |
-| `styles/components/config.css` | Nueva `.cal-detail__total` (color neutro, negrita en el monto). |
-| `tests/unit/agenda.test.js` | 9 tests nuevos: `totalDia` (5) + render del total en el panel (4). |
-| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - total a pagar por día", 1 test. |
-| `service-worker.js` | v259 → v260. |
-
----
-
-> Para tareas anteriores (MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

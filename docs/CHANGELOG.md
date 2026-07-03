@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): revisión de ADR 018, el Paso 1 del asistente pasa a checklist accionable · 2026-07-02
+
+Prerequisito de MC.7d, sin cambios de código. Tras validar en la app el desglose read-only de Necesidades (MC.7c), el usuario dio la dirección nueva del 2026-07-02: cada grupo del asistente "Distribuir mi ingreso" debe mostrar sus registros como **checklist seleccionable que registra pagos reales**, no como lista informativa. Eso contradice la decisión 2 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md) (Paso 1 read-only, sin mover dinero), así que, siguiendo la regla del proyecto (tocar una decisión de un ADR requiere actualizarlo antes de codear), se revisó el ADR como tarea propia.
+
+Se agregó la sección "Revisión 2026-07-02" con cinco decisiones nuevas, ancladas en el código que ya existe:
+
+- **R1 (reemplaza la decisión 2):** la checklist de Necesidades muestra nombre, cuota del periodo actual (fijo: su `monto` por ocurrencia según su frecuencia; deuda: su `cuotaMensual`; nunca el saldo total ni el equivalente mensual normalizado) y día de pago. Los items marcados generan al confirmar exactamente los mismos registros que sus flujos individuales existentes: pago de fijo como "Marcar pagado este mes" de Agenda (gasto con `compromisoId`, categoría "Gastos fijos"), cuota de deuda como abono (baja `saldoTotal`, gasto de categoría "Deudas"). El guard "ya pagado este periodo" se comparte con el badge de Agenda (gasto del mes con `compromisoId`), lo que elimina el doble registro entre ambos flujos. Lo no marcado se comporta como hoy: queda en la cuenta y se paga al vencer.
+- **R2:** una sola pregunta de cuenta al confirmar todo el asistente, con el patrón `cuenta-helper` (con una sola cuenta activa no se pregunta, regla de cuenta única). Se descartó preguntar cuenta por cada item: fricción multiplicada para el caso común.
+- **R3:** los pasos se encadenan sobre el remanente real: el Paso 2 (Ahorro) sugiere sus aportes sobre el cobro menos las Necesidades marcadas, no sobre el porcentaje teórico del split; la validación total asignado ≤ monto del cobro es una sola para todo el asistente (generaliza `resumirPlanDistribucion`).
+- **R4 (ajusta la decisión 6):** la confirmación única aplica también los pagos del Paso 1, con el mismo apply-plan por EventBus y snapshot de undo. Nota de implementación obligatoria: `_SLICES_DISTRIBUCION` en `tesoreria/index.js` hoy no incluye la slice `gastos`; como el Paso 1 crea gastos, hay que agregarla o el "Deshacer" dejaría pagos huérfanos.
+- **R5 (confirma la decisión 7):** sin schema nuevo: los pagos son gastos normales con `compromisoId` y los abonos actualizan `saldoTotal`.
+
+Las decisiones 2, 5 y 6 originales quedan marcadas con notas de revisión y su texto se conserva como historia. La tabla de slices refleja MC.7a/b/c entregados y amplía MC.7d (extender `construirDesgloseNecesidades` con cuota del periodo, día de pago y estado pagado; sumar `gastos` al snapshot); la nota de modelos de los slices restantes pasa a la escala Claude 5. El desglose construido en MC.7c no se tira: evoluciona a checklist en MC.7d.
+
+En [BOARD.md](BOARD.md), la tarjeta MC.7d pasó de "requiere revisión de ADR 018 antes de codear" a "pendiente (diseño cerrado)", con el objetivo alineado a R1-R5, los archivos afectados precisados (`construirDesgloseNecesidades`, `_SLICES_DISTRIBUCION`, `_confirmarDistribucion`) y modelo de implementación `Sonnet 5 - Alto`.
+
+Tarea solo de documentación: sin tests nuevos ni bump de service worker. Suites verificadas verdes antes del commit (1851/1851 unit).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/018-asistente-distribuir-ingreso.md` | Sección "Revisión 2026-07-02" (R1-R5, alternativas y consecuencias de la revisión); notas en las decisiones 2, 5 y 6; estado y autores actualizados; tabla de slices y modelos al día. |
+| `docs/BOARD.md` | Tarjeta MC.7d actualizada: estado, objetivo R1-R5, archivos y modelo. |
+| `docs/HANDOFF.md` | Entrada nueva en "últimas 5 tareas" (sale AG.5 del listado detallado). |
+
+---
+
 ### feat(calendario): nombre automático según la categoría en el gasto fijo (AG.4) · 2026-07-02
 
 El form de "Nuevo gasto fijo" pedía descripción y categoría como dos campos independientes y ambos obligatorios de hecho, pero para las 13 categorías predefinidas (Mercado, Arriendo, Servicios públicos, Internet...) esa pregunta doble es redundante: si el usuario elige "Mercado" como categoría, escribir "Mercado" otra vez como nombre no aporta nada. AG.4 resuelve esto haciendo que, al elegir una categoría predefinida, el nombre del registro sea la propia categoría, y el campo de texto libere su rol original para convertirse en una nota opcional (por ejemplo, con categoría "Mercado" el usuario puede anotar "Éxito de la esquina" o "unidad 302"). Solo con la categoría "Otro" (o sin categoría elegida) el campo de texto vuelve a ser el nombre obligatorio del gasto, exactamente como funcionaba antes.

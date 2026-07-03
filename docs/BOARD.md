@@ -62,14 +62,14 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada
 - Modelo     : sin definir
 
-#### MC.7d (revisa ADR 018) - Asistente por pasos con checklist por grupo
+#### MC.7d - Asistente por pasos con checklist por grupo
 - Prioridad  : alta
-- Estado     : requiere revisión de ADR 018 antes de codear
-- Objetivo   : el panel "Distribuir mi ingreso" pasa a ser un asistente guiado de 3 pasos (Necesidades → Ahorro → Estilo de vida), con la dirección nueva del usuario (2026-07-02): cada grupo muestra sus registros como **checklist seleccionable**, no como lista informativa. **Paso 1 Necesidades** (deudas entidad + deudas personales + gastos fijos): cada item muestra nombre, cuota del periodo actual (nunca el saldo total), y fecha de pago; el usuario marca cuáles cubre con este ingreso; el total seleccionado se acumula en vivo; al confirmar se pregunta de qué cuenta(s) sale el dinero (patrón `cuenta-helper`). **Paso 2 Ahorro** (fondo, metas, apartados, inversiones): misma checklist con la cuota del periodo por objetivo (reusa el desglose de MC.7a/b). Confirmación única al final, reusa apply-plan/undo y el gating por fecha de MC.4. **Nota:** esto revisa la decisión 1 de ADR 018 (Paso 1 era preview read-only; ahora es accionable y mueve dinero), hay que actualizar el ADR antes de implementar.
+- Estado     : pendiente (ADR 018 revisado el 2026-07-02: el Paso 1 es checklist accionable, diseño cerrado)
+- Objetivo   : el panel "Distribuir mi ingreso" pasa a ser un asistente guiado de 3 pasos (Necesidades → Ahorro → Estilo de vida) según la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md) (secciones R1-R5). **Paso 1 Necesidades** (deudas entidad + deudas personales + gastos fijos): checklist con nombre, cuota del periodo actual (nunca el saldo total) y día de pago; el usuario marca cuáles cubre con este ingreso; total en vivo; guard "ya pagado este periodo" compartido con Agenda; al confirmar registra los mismos movimientos que los flujos individuales existentes (pago de fijo, abono de cuota). **Paso 2 Ahorro** (fondo, metas, apartados, inversiones): misma checklist con el aporte por objetivo (reusa el desglose de MC.7a/b), calculado sobre el remanente real tras el Paso 1. Confirmación única al final (una sola pregunta de cuenta, patrón `cuenta-helper`), apply-plan/undo (agregar slice `gastos` al snapshot) y gating por fecha de MC.4.
 - Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/logic.js`, `modules/infra/cuenta-helper.js`, [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md)
-- Depende de : nada (MC.7a/b/c ya entregaron los desgloses que este paso reusa)
-- Modelo     : revisión de ADR Opus 4.8 - Alto; implementación Sonnet 5 - Alto
+- Archivos   : `modules/dominio/tesoreria/logic.js` (`construirDesgloseNecesidades`), `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js` (`_SLICES_DISTRIBUCION`, `_confirmarDistribucion`), `modules/infra/cuenta-helper.js`
+- Depende de : nada (MC.7a/b/c entregados; ADR 018 ya revisado)
+- Modelo     : Sonnet 5 - Alto
 
 #### MC.7e - Paso 3: el remanente de Estilo de vida se reparte entre cuentas
 - Prioridad  : alta
