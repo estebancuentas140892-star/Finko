@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso, MC.7d slice 1)
+> Última actualización: 2026-07-03 (docs(revision): revisión exhaustiva de Mis cuentas, BUG-003 a BUG-008 registrados)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -38,6 +38,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### docs(revision): revisión exhaustiva de Mis cuentas, 6 bugs registrados (BUG-003 a BUG-008) · 2026-07-03
+
+Arranque del plan de validación sección por sección (orden: el flujo del dinero, Mis cuentas primero por ser la base y el dominio con el cambio más reciente). Se revisó el dominio completo, sus integraciones cross-dominio, los ADR 012/013/017/018 y el copy; cada sospecha se confirmó con sondas empíricas temporales (13 unitarias + 3 E2E en Chromium real, no commiteadas) antes de registrarse. Resultado: 6 bugs en [BUGS.md](BUGS.md). Los tres de prioridad alta comparten zona: BUG-003 (una Necesidad "Ya pagado" se vuelve a pagar al confirmar la distribución: un checkbox `checked disabled` sigue estando checked y `_leerNecesidadesMarcadas` solo filtra por `.checked`), BUG-004 (el checklist registra la cuota completa de una deuda aunque el saldo pendiente sea menor, e incluye deudas saldadas sin archivar) y BUG-005 (la cuota de manejo nace con `frecuencia: 'mensual'` en minúscula y queda fuera de todos los cálculos mensuales; requiere fix + migración idempotente). Los siguen BUG-006 (media: el abono extra a deudas desde el panel no crea el gasto, invisible para Análisis y Límites), BUG-007 y BUG-008 (bajas: copy de cuota de manejo y validaciones que aceptan Infinity). Quedaron además observaciones de UX sin registro de bug (detalle en el [CHANGELOG](CHANGELOG.md)), pendientes de decisión del usuario. Sin cambios de código: 1857/1857 unit intactos. **La sección Mis cuentas queda abierta hasta corregir sus bugs; la siguiente tarea natural es el fix del checklist (BUG-003 + BUG-004 juntos, misma zona de código).**
+
+| Archivo | Cambio |
+|---|---|
+| `docs/BUGS.md` | 6 entradas nuevas (BUG-003 a BUG-008). |
+| `docs/CHANGELOG.md` | Entrada de la revisión con hallazgos y observaciones. |
+
+---
 
 ### feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso (MC.7d, slice 1) · 2026-07-03
 
@@ -122,21 +133,7 @@ Verificado con 5 tests unitarios nuevos (emoji en el ícono sin duplicarse en el
 
 ---
 
-### feat(calendario): marca de color por tipo en el detalle del día (AG.7) · 2026-07-02
-
-En fechas cargadas (quincenas, fin de mes) el detalle del día en Calendario listaba todos los registros con el mismo aspecto: había que leer cada etiqueta de tipo para distinguir un gasto fijo de una deuda. AG.7 suma una franja lateral de color a cada `.cal-detail__item`, reusando exactamente la misma paleta que ya identificaba cada tipo en los dots del calendario (AG.6): `--fk-dom-presupuesto` para fijo, `--fk-dom-compromisos` para deuda entidad, `--fk-dom-personales` para deuda personal. `_renderDetalleItem()` en [agenda/view.js](../modules/dominio/agenda/view.js) agrega la clase `cal-detail__item--${tipo}` al `<li>` (ya traía `cal-detail__icon--${tipo}` en el ícono, sin CSS de color propio hasta ahora). En [config.css](../styles/components/config.css), `.cal-detail__item` gana un `border-left: 3px solid transparent` de base y cada tipo lo colorea; el padding izquierdo se compensa con `calc()` para que la franja no desplace el contenido (recalculado también en el media query mobile, que usa un padding base más chico). El ícono de cada item también toma el color de su tipo, con un fondo tenue vía `color-mix()` (14% del color de dominio sobre `--fk-bg-surface`), coherente con el patrón ya usado en `dom-badge--*` de `nudges.css`. Verificado con 4 tests unitarios nuevos (una clase por tipo, y los tres tipos el mismo día cada uno con la suya) más 1 E2E en Chromium real que compara el `border-left-color` computado de un fijo contra una deuda entidad el mismo día: deben ser colores distintos y ninguno transparente. 1831/1831 → 1835/1835 unit; 91/91 → 92/92 E2E. Lint limpio. SW v261 → v262.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/agenda/view.js` | `_renderDetalleItem()` agrega `cal-detail__item--${tipo}` al `<li>` del detalle. |
-| `styles/components/config.css` | `.cal-detail__item--fijo/deuda-entidad/deuda-personal` (franja lateral + padding compensado); `.cal-detail__icon--*` con color e ícono con fondo tenue por tipo; ajuste del padding compensado en el media query mobile. |
-| `tests/unit/agenda.test.js` | 4 tests nuevos: clase por tipo (fijo, deuda entidad, deuda personal) y los 3 tipos combinados el mismo día. |
-| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - marca de color por tipo", 1 test que compara colores computados en Chromium real. |
-| `service-worker.js` | v261 → v262. |
-
----
-
-> Para tareas anteriores (AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

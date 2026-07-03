@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(revision): revisión exhaustiva de Mis cuentas, 6 bugs registrados (BUG-003 a BUG-008) · 2026-07-03
+
+Arranque del plan de validación sección por sección acordado con el usuario (orden: seguir el flujo del dinero, empezando por Mis cuentas como base de todo y dominio con el cambio más reciente). La revisión cubrió el dominio completo (`tesoreria/logic.js`, `view.js`, `index.js`, 3.208 líneas), sus integraciones (crud, cuenta-helper, EventBus `distribucion:aplicar` en los 5 dominios consumidores, Agenda "Marcar pagado", abono individual de Deudas), los ADR que lo gobiernan (012, 013, 017, 018) y todo el copy de la sección. Cada sospecha se confirmó empíricamente antes de registrarse: 13 sondas unitarias (happy-dom) y 3 sondas E2E (Chromium real), temporales y no commiteadas; el fix de cada bug debe traer sus propios tests.
+
+**Hallazgos registrados en [BUGS.md](BUGS.md):** BUG-003 (alta: una Necesidad "Ya pagado" se vuelve a pagar al confirmar la distribución, porque un checkbox `checked disabled` sigue estando checked), BUG-004 (alta: el checklist ofrece y registra la cuota completa de una deuda aunque el saldo pendiente sea menor, e incluye deudas ya saldadas sin archivar), BUG-005 (alta: la cuota de manejo nace con frecuencia 'mensual' en minúscula y queda fuera de gastos fijos mensuales, checklist, objetivo del fondo y equivalente mensual de Deudas; solo se ve en Calendario por un fallback), BUG-006 (media: el abono extra a deudas desde el panel baja deuda y cuenta pero no crea el gasto, invisible para Análisis y Límites), BUG-007 (baja: copy que promete ver la cuota de manejo "en Deudas") y BUG-008 (baja: las validaciones aceptan Infinity vía '1e999').
+
+**Observaciones sin registro de bug (decisión del usuario pendiente):** el monto por defecto del panel para ingresos Quincenales es el mensual estimado (el doble del cobro real); sin día de pago no hay guard de periodo y una segunda confirmación acreditaría el ingreso dos veces; el copy del panel no avisa que el ingreso se acreditará a la cuenta (riesgo de doble conteo si el usuario ya actualizó su saldo a mano); la línea "Sugerencia: $X a ahorro" aparece aunque no haya destinos de ahorro; y la regla ADN #10 ("ningún dominio importa a otro") convive con 8+ imports cruzados de `logic.js` puro (analisis importa de 5 dominios, agenda de compromisos incluso en `index.js`, presupuesto de tesorería y gastos, config de export) mientras otros sitios duplican código citando esa misma regla: conviene un ADR que legalice el patrón "import de logic.js puro, solo lectura" o un refactor, pero no ambos criterios a la vez.
+
+Sin cambios de código ni de service worker. Suites verificadas antes y después: 1857/1857 unit, línea base intacta.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/BUGS.md` | 6 entradas nuevas (BUG-003 a BUG-008) con causa, archivo, función y líneas. |
+| `docs/HANDOFF.md` | Entrada de la revisión en "Qué se hizo recientemente". |
+
+---
+
 ### feat(tesoreria): Necesidades pasa a checklist accionable en Distribuir mi ingreso (MC.7d, slice 1) · 2026-07-03
 
 Primer slice de MC.7d: implementa las decisiones R1, R4 y R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md). El desglose de Necesidades del panel "Distribuir mi ingreso" (un `<details>` de solo lectura desde MC.7c) pasa a ser una checklist accionable: el usuario marca los gastos fijos mensuales y las cuotas de deuda que cubre con este ingreso, y al confirmar, cada marca genera exactamente el mismo registro que su flujo individual existente, sin inventar un tipo de movimiento nuevo.
