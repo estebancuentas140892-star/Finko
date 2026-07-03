@@ -101,14 +101,17 @@ export function renderAgenda() {
     ? _renderDetalleDia(eventos[_diaSeleccionado], _viewYear, _viewMonth, _diaSeleccionado)
     : '';
 
+  // AG.6: la leyenda va entre el calendario y el detalle del día (no al
+  // final), y es sticky vía CSS: con un día cargado de registros sigue
+  // visible mientras se recorre la lista.
   el.innerHTML = `
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventos)}
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos)}
     </article>
-    ${detalleHtml}
-    ${_renderLeyenda()}`;
+    ${_renderLeyenda()}
+    ${detalleHtml}`;
 }
 
 // ── PARTES ───────────────────────────────────────────────────────
@@ -218,6 +221,13 @@ function _renderDots(evs) {
   return `<div class="cal-day__dots">${dots}</div>`;
 }
 
+/**
+ * Leyenda de tipos: una entrada por cada tipo de evento que el calendario
+ * puede mostrar hoy, con su color de dominio (--fk-dom-*). Cuando el ADR de
+ * recordatorios de aporte (AP.4 / MT.2 / AH.4) sume eventos de metas,
+ * apartados o fondo de emergencia, agregar aquí su entrada con un
+ * `cal-dot--<tipo>` propio.
+ */
 function _renderLeyenda() {
   return `
     <div class="cal-legend" aria-label="Leyenda de tipos">

@@ -65,22 +65,13 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Depende de : nada. El ícono personalizado de "Otros" puede requerir un campo `icono` en el fijo (lectura defensiva, confirmar si necesita migración al implementar).
 - Modelo     : Sonnet 5 - Medio
 
-#### AG.6 - Leyenda del calendario completa, con colores consistentes y siempre visible
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : la leyenda hoy solo muestra 3 tipos (gasto fijo, deuda entidad, deuda personal) y con muchos registros queda desplazada fuera de vista. (1) Cubrir todos los tipos de evento que el calendario muestre, cada uno con un color único y consistente con el resto de la app (`--fk-dom-*`); (2) fijarla (sticky) justo debajo del calendario para que siempre sea consultable.
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js` (`_renderLeyenda`, línea ~221), CSS del calendario
-- Depende de : los tipos nuevos (metas, apartados, aportes de ahorro, inversiones) solo entran a la leyenda cuando esos eventos existan en el calendario, lo que decide el ADR de recordatorios de aporte (AP.4 + MT.2 + AH.4). Mientras tanto se puede cerrar la parte de sticky + colores de los 3 tipos actuales.
-- Modelo     : Sonnet 5 - Medio
-
 #### AG.7 - Identificación visual por color en los registros del día
 - Prioridad  : media
 - Estado     : pendiente
 - Objetivo   : cada registro del detalle del día lleva una marca visual del color de su tipo/categoría (franja lateral, indicador o fondo sutil), para distinguir de un vistazo qué es qué en fechas cargadas (quincenas, fin de mes).
 - Secciones  : Calendario
 - Archivos   : `modules/dominio/agenda/view.js` (`_renderDetalleItem`), CSS del calendario
-- Depende de : AG.6 (usa la misma paleta de colores por tipo)
+- Depende de : nada (AG.6 cerrada; la paleta por tipo vive en las clases `cal-dot--<tipo>` de `styles/components/config.css`)
 - Modelo     : Sonnet 5 - Bajo/Medio
 
 ---

@@ -212,7 +212,10 @@
 .main-content {
   grid-column: 2;
   min-width: 0;
-  overflow-x: hidden;
+  /* clip y no hidden: hidden convierte a .main-content en scroll container
+     y anula el position:sticky de sus descendientes (ej. .cal-legend,
+     AG.6). clip recorta igual el desborde horizontal sin ese efecto. */
+  overflow-x: clip;
 }
 
 /* Sección genérica */

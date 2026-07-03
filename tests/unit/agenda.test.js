@@ -560,3 +560,42 @@ describe('renderAgenda() - total a pagar por día', () => {
     expect(html).not.toContain('cal-detail__total');
   });
 });
+
+// ── renderAgenda() - leyenda bajo el calendario (AG.6) ────────────
+
+describe('renderAgenda() - leyenda bajo el calendario', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('la leyenda cubre los tres tipos actuales, cada uno con su dot de color', () => {
+    renderAgenda();
+    const leyenda = document.querySelector('.cal-legend');
+    expect(leyenda).not.toBeNull();
+    expect(leyenda.querySelector('.cal-dot--fijo')).not.toBeNull();
+    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).not.toBeNull();
+    expect(leyenda.querySelector('.cal-dot--deuda-personal')).not.toBeNull();
+  });
+
+  it('con un día abierto, la leyenda queda antes del detalle en el DOM', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', monto: 300_000 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const hijos    = [...document.getElementById('panel-agenda').children];
+    const iLeyenda = hijos.findIndex(el => el.classList.contains('cal-legend'));
+    const iDetalle = hijos.findIndex(el => el.classList.contains('cal-detail'));
+    expect(iLeyenda).toBeGreaterThan(-1);
+    expect(iDetalle).toBeGreaterThan(-1);
+    expect(iLeyenda).toBeLessThan(iDetalle);
+  });
+});

@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(calendario): leyenda completa, con colores consistentes y siempre visible (AG.6) · 2026-07-02
+
+La leyenda del calendario (qué significa cada dot de color en los días) se renderizaba al final del panel, después del detalle del día. Con un día cargado de registros (una quincena, un fin de mes), el detalle empujaba la leyenda fuera de la pantalla justo cuando más ayudaba tenerla a mano: había que desplazarse hasta el fondo para consultarla.
+
+AG.6 la reubica y la fija. En [agenda/view.js](../modules/dominio/agenda/view.js) la leyenda pasa a renderizarse entre el calendario y el detalle del día (justo debajo del calendario, como pedía la tarjeta), y `.cal-legend` en [config.css](../styles/components/config.css) es ahora `position: sticky` con un pequeño offset superior y fondo, borde y radio propios: al quedar pegada durante el scroll, el contenido del detalle pasa por debajo y no debe transparentarse. El obstáculo real estaba en el shell: `.main-content` tenía `overflow-x: hidden`, y un ancestro con overflow distinto de `visible` se convierte en scroll container, lo que anula el `position: sticky` de todos sus descendientes (el sticky pasa a calcularse contra un contenedor que nunca scrollea, no contra la ventana). Se cambió a `overflow-x: clip` en [layout.css](../styles/layout.css): recorta el desborde horizontal exactamente igual, pero sin crear scroll container. El comentario en el CSS deja el porqué para que nadie lo regrese a `hidden` por accidente.
+
+Sobre la parte de colores de la tarjeta: el calendario hoy solo mapea `S.compromisos` (`eventosDelMes`), así que los 3 tipos que la leyenda ya listaba (gasto fijo, deuda entidad, deuda personal) cubren todos los eventos posibles, cada uno con su color único y consistente con el resto de la app: `--fk-dom-presupuesto` (amarillo), `--fk-dom-compromisos` (rojo) y `--fk-dom-personales` (rosa). No hubo que tocar colores. Los tipos futuros (metas, apartados, aportes al fondo) entrarán a la leyenda cuando el ADR de recordatorios de aporte (AP.4 + MT.2 + AH.4) los sume al calendario; el doc de `_renderLeyenda` deja la guía (una entrada nueva con su `cal-dot--<tipo>`). AG.7 (marca de color por registro en el detalle del día) reusa esta misma paleta.
+
+Verificado con 2 tests unitarios nuevos (la leyenda trae los dots de los 3 tipos; con un día abierto la leyenda queda antes del detalle en el DOM) y 1 E2E en Chromium real que siembra 10 compromisos el mismo día, abre el detalle, scrollea al fondo del documento (con guard de `scrollY > 0` para que el test no pase trivialmente si el contenido no desborda) y verifica que la leyenda sigue completa dentro del viewport. El preview del entorno sigue sin cargar (servidor levantado pero sin respuesta); la verificación visual queda cubierta por el E2E. 1829/1829 → 1831/1831 unit; 90/90 → 91/91 E2E. Lint limpio. SW v260 → v261.
+
+**Podría afectar / validación pendiente:** el cambio de `overflow-x` en `.main-content` es global (todas las secciones). `clip` recorta igual que `hidden`, así que no debería notarse; validar en el celular que la leyenda queda pegada arriba al recorrer un día cargado y que ninguna sección muestra scroll horizontal nuevo.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | La leyenda se renderiza entre el calendario y el detalle del día; doc de `_renderLeyenda` con la guía para tipos futuros. |
+| `styles/components/config.css` | `.cal-legend` sticky (top), con fondo, borde y radio propios. |
+| `styles/layout.css` | `.main-content` pasa de `overflow-x: hidden` a `clip`: hidden creaba un scroll container que anulaba el sticky. |
+| `tests/unit/agenda.test.js` | 2 tests nuevos: dots de los 3 tipos en la leyenda, orden leyenda → detalle. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - leyenda sticky", 1 test con scroll real. |
+| `service-worker.js` | v260 → v261. |
+
+---
+
 ### feat(calendario): total a pagar por día (AG.5) · 2026-07-02
 
 El panel de detalle de un día en Calendario listaba cada compromiso por separado (nombre, frecuencia, monto individual) pero nunca los sumaba: para saber cuánto dinero necesitaba tener disponible ese día, el usuario tenía que sumar a mano cada monto de la lista. La sumatoria ya existía como código, pero solo como función privada `_totalDia` dentro de [agenda/view.js](../modules/dominio/agenda/view.js), sin exportar y sin un solo test, y su resultado se mostraba pegado al subtítulo pequeño y gris ("3 compromisos · $450.000"), fácil de pasar por alto.

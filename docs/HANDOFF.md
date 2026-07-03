@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-02 (feat(calendario): total a pagar por día, AG.5)
+> Última actualización: 2026-07-02 (feat(calendario): leyenda sticky con colores consistentes, AG.6)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1829/1829 verdes |
-| Tests E2E | 90/90 verde. Suites: `smoke` 54 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1831/1831 verdes |
+| Tests E2E | 91/91 verde. Suites: `smoke` 55 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
@@ -38,6 +38,21 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(calendario): leyenda completa, colores consistentes y siempre visible (AG.6) · 2026-07-02
+
+La leyenda del calendario se renderizaba al final del panel, después del detalle del día: con un día cargado de registros quedaba desplazada fuera de vista justo cuando más ayudaba. Ahora [agenda/view.js](../modules/dominio/agenda/view.js) la ubica entre el calendario y el detalle, y `.cal-legend` ([config.css](../styles/components/config.css)) es sticky, con fondo, borde y radio propios (al quedar pegada, el contenido del detalle pasa por debajo y no debe transparentarse). El obstáculo real estaba en el shell: `.main-content` tenía `overflow-x: hidden`, que lo convierte en scroll container y anula el `position: sticky` de cualquier descendiente; pasó a `overflow-x: clip` ([layout.css](../styles/layout.css)), mismo recorte horizontal sin ese efecto secundario. Sobre los colores: el calendario hoy solo mapea `S.compromisos`, así que los 3 tipos de la leyenda (gasto fijo `--fk-dom-presupuesto`, deuda entidad `--fk-dom-compromisos`, deuda personal `--fk-dom-personales`) ya cubren todos los eventos posibles con colores únicos y consistentes; no hubo que tocarlos. Los tipos futuros (metas, apartados, fondo) entrarán cuando el ADR de recordatorios de aporte (AP.4/MT.2/AH.4) los sume, con la guía dejada en el doc de `_renderLeyenda`. Verificado con 2 tests unit nuevos (los 3 dots presentes; la leyenda antes del detalle en el DOM) y 1 E2E en Chromium real que abre un día con 10 registros, scrollea al fondo (guard de `scrollY > 0` para no pasar trivialmente) y verifica la leyenda dentro del viewport. 1829/1829 → 1831/1831 unit; 90/90 → 91/91 E2E. Lint limpio. SW v260 → v261.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/view.js` | La leyenda se renderiza entre el calendario y el detalle del día; doc de `_renderLeyenda` con la guía para tipos futuros. |
+| `styles/components/config.css` | `.cal-legend` sticky (top), con fondo, borde y radio propios. |
+| `styles/layout.css` | `.main-content` pasa de `overflow-x: hidden` a `clip`: hidden creaba un scroll container que anulaba el sticky. |
+| `tests/unit/agenda.test.js` | 2 tests nuevos: dots de los 3 tipos en la leyenda, orden leyenda → detalle. |
+| `tests/e2e/smoke.test.js` | Suite nueva "Agenda - leyenda sticky", 1 test con scroll real. |
+| `service-worker.js` | v260 → v261. |
+
+---
 
 ### feat(calendario): total a pagar por día (AG.5) · 2026-07-02
 
@@ -97,23 +112,7 @@ El campo "Emoji (opcional)" del form de meta era suelto: aparecía siempre, sin 
 
 ---
 
-### feat(metas): categorías con emoji (MT.1) · 2026-07-02
-
-Nuevo catálogo `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` en [core/constants.js](../modules/core/constants.js) (mismo patrón que MC.9/TX.1/D.5a), foco en objetivos de alto costo (Viajes, Cumpleaños, Boda, Vivienda, Vehículo, Computador, Celular, Educación, Hijo(s), Vacaciones, Emprendimiento, Otra). Selector "Categoría (opcional)" nuevo en el form de meta ([metas/view.js](../modules/dominio/metas/view.js)); `normalizarMeta()` ([metas/logic.js](../modules/dominio/metas/logic.js)) resuelve el emoji con prioridad emoji escrito a mano > emoji de la categoría > 🎯 por defecto, así el campo "Emoji (opcional)" existente sigue funcionando como override sin romper metas ya creadas (campo `categoria` opcional, lectura defensiva, sin migración). Dos reconciliaciones de emoji contra el guardarraíl de consistencia entre catálogos (ADR 014, TX.4): "Educación" usa 📚 (no 🎓, ya en uso en Gastos/Agenda) y "Vacaciones" usa ✈️ (no 🏖️, ya en uso en Apartados); el catálogo de Metas se sumó al test de guardarraíl TX.4 para que futuras ediciones no reintroduzcan el desajuste. El preview del entorno sigue sin cargar; verificado con 2 E2E nuevos en Chromium real (categoría con emoji en la lista, emoji manual gana sobre el de categoría). 22 tests unit nuevos. 1787/1787 → 1803/1803 unit; 82/82 → 84/84 E2E. SW v255 → v256.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js` | `CATEGORIAS_META` + `CATEGORIA_META_EMOJI` (12 categorías). |
-| `modules/dominio/metas/logic.js` | `normalizarMeta()` resuelve `categoria` e `icono` con la prioridad emoji manual > categoría > default. |
-| `modules/dominio/metas/view.js` | Selector de categoría en `renderFormMeta()`; helper `_renderOpcionesCategoria()`. |
-| `tests/unit/constants.test.js` | 4 tests de forma del catálogo + Metas sumado al guardarraíl TX.4. |
-| `tests/unit/metas.test.js` | 15 tests: `normalizarMeta` con categoría, selector en el form, emoji en la lista. |
-| `tests/e2e/smoke.test.js` | Suite nueva "Metas - categorías con emoji (MT.1)", 2 tests. |
-| `service-worker.js` | v255 → v256. |
-
----
-
-> Para tareas anteriores (IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

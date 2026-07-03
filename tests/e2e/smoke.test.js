@@ -1024,6 +1024,59 @@ test.describe('Agenda - total a pagar por día', () => {
   });
 });
 
+// ── Agenda - leyenda sticky (AG.6) ───────────────────────────────────────────
+// La leyenda va justo debajo del calendario y es sticky: con un día cargado
+// de registros debe seguir dentro del viewport al desplazarse hasta el final
+// del detalle. Cubre también la regresión de overflow en .main-content
+// (un ancestro con overflow-x: hidden anularía el sticky).
+
+test.describe('Agenda - leyenda sticky', () => {
+  test('la leyenda sigue visible tras desplazarse al fondo del detalle', async ({ page }) => {
+    const diaPago = 15;
+
+    await page.addInitScript(({ diaPago }) => {
+      const compromisos = [];
+      for (let i = 1; i <= 10; i++) {
+        compromisos.push({
+          id: `sticky-e2e-${i}`, tipo: 'fijo', descripcion: `Fijo sticky ${i}`,
+          monto: 50000, frecuencia: 'Mensual', diaPago,
+        });
+      }
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos,
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+    await expect(page.locator('.cal-detail')).toBeVisible({ timeout: 3_000 });
+
+    // Desplazarse al final del documento. El guard de scrollY > 0 evita que
+    // el test pase trivialmente si el contenido no alcanzara a desbordar.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(100);
+    const scrollY = await page.evaluate(() => window.scrollY);
+    expect(scrollY).toBeGreaterThan(0);
+
+    // Sin sticky, la leyenda quedaría fuera del viewport por arriba.
+    const box      = await page.locator('.cal-legend').boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {
