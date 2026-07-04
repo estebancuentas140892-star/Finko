@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): TX.3, categorías Café y Gastos hormiga · 2026-07-04
+
+Cierra TX.3. Dos categorías nuevas en el catálogo de gastos: **Café ☕** y **Gastos hormiga 🐜** (el concepto conocido en finanzas personales para las fugas pequeñas y recurrentes). Aparecen automáticamente en el form de gasto, los envelopes de Límites y la dona de Análisis. Sin migración: los gastos existentes no cambian. Guardarraíl nuevo: toda categoría de gasto debe tener emoji propio (ninguna cae al fallback 📦).
+
+2005/2005 → 2008/2008 unit (3 nuevos); 128/128 E2E. Lint limpio. SW v292 → v293.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `Café` y `Gastos hormiga` en `CATEGORIAS_GASTO` + emojis. |
+| `tests/unit/constants.test.js` | Describe TX.3 (3 tests). |
+| `service-worker.js` | v292 → v293. |
+
+---
+
 ### feat(logros): LG.1b, vitrina de logros en Ajustes · 2026-07-04
 
 Cierra LG.1b con el ADR que pedía ([ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md)):

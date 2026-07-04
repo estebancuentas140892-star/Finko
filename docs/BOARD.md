@@ -75,14 +75,7 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 
 ### Gastos (dominio `gastos`)
 
-#### TX.3 (opcional) - Café y Gastos hormiga explícitos
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : agregar categorías Café ☕ y Gastos hormiga 🐜 si el usuario las quiere explícitas en el catálogo.
-- Secciones  : Gastos
-- Archivos   : `modules/core/constants.js`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
+_(sin pendientes activos.)_
 
 ---
 
