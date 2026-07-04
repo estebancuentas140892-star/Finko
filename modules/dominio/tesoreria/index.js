@@ -767,7 +767,9 @@ function _toggleDistribuirIngreso(el) {
   el.setAttribute('aria-expanded', String(!panel.hidden));
   if (!panel.hidden) {
     // El asistente siempre arranca en el primer paso (MC.7d, shell paginado).
-    _irAPasoDistribucion(panel, 0);
+    // `moverFoco: false` porque el foco real de apertura es el monto a
+    // distribuir (línea siguiente), no el contenedor del paso (MC.7f).
+    _irAPasoDistribucion(panel, 0, { moverFoco: false });
     document.getElementById('distribuir-monto')?.focus();
   }
 }
@@ -788,12 +790,21 @@ function _pasoActualDistribucion(panel) {
 /**
  * Muestra el paso `idx` (base 0) del asistente y ajusta navegación e indicador
  * (MC.7d: shell paginado con confirmación única al final). "Atrás" existe desde
- * el segundo paso; en el último, "Siguiente" cede su lugar a "Distribuir". El
- * indicador tiene role="status", así que actualizar su texto ya anuncia el
- * cambio de paso a lectores de pantalla. Si el botón con foco se oculta, el
- * foco pasa al de navegación que queda visible (no se pierde en el body).
+ * el segundo paso; en el último, "Siguiente" cede su lugar a "Distribuir".
+ *
+ * Foco (MC.7f, a11y): al avanzar/retroceder, el foco se mueve al contenedor
+ * del paso recién mostrado (`tabindex="-1"`, `role="group"` con `aria-label`
+ * "Paso X de N: <título>"). El foco por sí solo anuncia el cambio a lectores
+ * de pantalla, el patrón recomendado para asistentes multi-paso (WAI-ARIA
+ * APG), sin depender de que el usuario ya esté enfocado cerca del indicador
+ * `role="status"`. Se omite (`moverFoco: false`) en la apertura inicial del
+ * panel, donde el caller ya enfoca el monto a distribuir.
+ *
+ * @param {Element} panel
+ * @param {number} idx
+ * @param {{moverFoco?: boolean}} [opts]
  */
-function _irAPasoDistribucion(panel, idx) {
+function _irAPasoDistribucion(panel, idx, { moverFoco = true } = {}) {
   const pasos = _pasosDistribucion(panel);
   if (pasos.length === 0 || idx < 0 || idx >= pasos.length) return;
   pasos.forEach((p, i) => { p.hidden = i !== idx; });
@@ -806,16 +817,12 @@ function _irAPasoDistribucion(panel, idx) {
   if (siguiente) siguiente.hidden = esUltimo;
   if (confirmar) confirmar.hidden = !esUltimo;
 
-  if (document.activeElement === siguiente && esUltimo) {
-    (confirmar?.disabled ? atras : confirmar)?.focus();
-  } else if (document.activeElement === atras && idx === 0) {
-    siguiente?.focus();
-  }
-
   const indicador = panel.querySelector('[data-dist-paso-indicador]');
   if (indicador) {
     indicador.textContent = `Paso ${idx + 1} de ${pasos.length}: ${pasos[idx].dataset.distPasoTitulo ?? ''}`;
   }
+
+  if (moverFoco) pasos[idx].focus({ preventScroll: true });
 
   // Al entrar a un paso, las sugerencias R3 y el resumen quedan al día.
   _recalcularDistribucion();

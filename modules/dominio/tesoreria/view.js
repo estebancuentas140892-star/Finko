@@ -545,11 +545,19 @@ function _renderPanelDistribuir(d) {
             ${necesidades.map(_filaNecesidad).join('')}
           </div>`;
 
-  // Paso 2: la sugerencia de ahorro sale del remanente real (R3); index.js la
-  // actualiza en vivo (span data-dist-sugerencia-ahorro) al cambiar las marcas.
-  const hintSugerencia = necesidades.length > 0
-    ? `Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro, calculada sobre lo que queda tras tus Necesidades marcadas. Ajusta cada destino:`
-    : `Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro. Ajusta cada destino:`;
+  // Paso 2: título consistente con el resto de pasos (MC.7f), y la sugerencia
+  // de ahorro sale del remanente real (R3); index.js la actualiza en vivo
+  // (span data-dist-sugerencia-ahorro) al cambiar las marcas. El hint de
+  // sugerencia solo tiene sentido si hay al menos una fila de Ahorro donde
+  // ponerla (fondo, meta o apartado): sin ninguna, mostrarlo sería un estado
+  // vacío confuso ("sugerencia: $X a ahorro" sin ningún destino de ahorro
+  // debajo, MC.7f).
+  const tituloAsignaciones = `<p class="form-hint distribuir__subtitulo">💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:</p>`;
+  const seccionAhorro = ahorro.length > 0
+    ? `
+          <p class="form-hint">Sugerencia: <span data-dist-sugerencia-ahorro>${f(ahorroBudget)}</span> a ahorro${necesidades.length > 0 ? ', calculada sobre lo que queda tras tus Necesidades marcadas' : ''}.</p>
+          <div class="distribuir-ingreso__destinos">${ahorro.map(_filaDistribuir).join('')}</div>`
+    : '';
   const seccionDeudas = deudas.length > 0
     ? `
           <p class="form-hint distribuir__subtitulo">Abonar extra a deudas (ordenadas por prioridad de pago):</p>
@@ -565,8 +573,8 @@ function _renderPanelDistribuir(d) {
           </div>`
     : '';
   const seccionAsignaciones = `
-          <p class="form-hint">${hintSugerencia}</p>
-          ${ahorro.length > 0 ? `<div class="distribuir-ingreso__destinos">${ahorro.map(_filaDistribuir).join('')}</div>` : ''}
+          ${tituloAsignaciones}
+          ${seccionAhorro}
           ${seccionDeudas}
           ${seccionInversiones}`;
 
@@ -604,13 +612,22 @@ function _renderPanelDistribuir(d) {
   }
   pasos.push({ titulo: 'Estilo de vida', html: seccionInfo });
 
+  // `tabindex="-1"` (MC.7f, a11y): cada paso es un destino de foco programático
+  // (no forma parte del tab order normal). Al avanzar/retroceder, index.js
+  // enfoca el paso recién mostrado; su `aria-label` ya dice "Paso X de N: <título>",
+  // así que el foco por sí solo anuncia el cambio a lectores de pantalla, sin
+  // depender de que el usuario llegue justo al indicador con `role="status"`.
   const pasosHtml = pasos.map((p, i) => `
           <div class="distribuir__paso" data-dist-paso="${i}" data-dist-paso-titulo="${p.titulo}"
-               role="group" aria-label="Paso ${i + 1} de ${pasos.length}: ${p.titulo}"${i > 0 ? ' hidden' : ''}>
+               role="group" aria-label="Paso ${i + 1} de ${pasos.length}: ${p.titulo}" tabindex="-1"${i > 0 ? ' hidden' : ''}>
             ${p.html}
           </div>`).join('');
 
   const esUnicoPaso = pasos.length === 1;
+  // El indicador "Paso X de N" solo aporta con 2+ pasos: con uno solo no hay
+  // progresión que comunicar (MC.7f, estado vacío más limpio).
+  const indicadorPaso = esUnicoPaso ? '' : `
+          <p class="form-hint distribuir__paso-indicador" data-dist-paso-indicador role="status">Paso 1 de ${pasos.length}: ${pasos[0].titulo}</p>`;
   return `
         ${cta}
         <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
@@ -627,7 +644,7 @@ function _renderPanelDistribuir(d) {
                    min="0" step="10000" inputmode="numeric" value="${montoIngreso}"
                    data-action="recalcular-distribucion" />
           </div>
-          <p class="form-hint distribuir__paso-indicador" data-dist-paso-indicador role="status">Paso 1 de ${pasos.length}: ${pasos[0].titulo}</p>
+          ${indicadorPaso}
           ${pasosHtml}
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <div class="distribuir__nav">

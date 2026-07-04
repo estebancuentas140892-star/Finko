@@ -2030,6 +2030,85 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await expect(confirmar).toBeHidden();
   });
 
+  test('MC.7f: al avanzar/retroceder el foco se mueve al contenedor del paso (a11y)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.config = { presetDistribucion: '50-30-20' };
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      st.ahorro = {
+        fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
+        aportes: [], compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    // Apertura inicial: el foco real es el monto a distribuir, no el paso 1.
+    await expect(page.locator('#distribuir-monto')).toBeFocused();
+
+    await page.click('[data-action="distribuir-paso-siguiente"]');
+    await expect(page.locator('[data-dist-paso="1"]')).toBeFocused();
+
+    await page.click('[data-action="distribuir-paso-atras"]');
+    await expect(page.locator('[data-dist-paso="0"]')).toBeFocused();
+  });
+
+  test('MC.7f: con un solo paso no se muestra el indicador "Paso X de N"', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      // Sin compromisos, sin ahorro/metas/apartados/inversiones: el único
+      // contenido accionable es el reparto de Estilo de vida entre cuentas
+      // (MC.7e), así que el asistente arranca y termina en un solo paso.
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    await expect(page.locator('[data-dist-paso-indicador]')).toHaveCount(0);
+    await expect(page.locator('[data-action="distribuir-paso-siguiente"]')).toBeHidden();
+    await expect(page.locator('[data-action="confirmar-distribucion"]')).toBeVisible();
+  });
+
+  test('MC.7f: sin Necesidades marcables, el Paso 2 no muestra la sugerencia de ahorro si no hay dónde ponerla', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      // Sin fondo activo, sin metas ni apartados: ninguna fila de Ahorro. Con una
+      // deuda para que el paso 2 sí exista (abono extra), sin mostrar el hint de
+      // "sugerencia de ahorro" (estado vacío corregido en MC.7f).
+      st.compromisos = [
+        { id: 'd1', descripcion: 'Tarjeta', tipo: 'deuda-entidad', saldoTotal: 2_000_000, cuotaMensual: 0, diaPago: 15, activo: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    await expect(page.locator('text=💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:')).toBeVisible();
+    await expect(page.locator('[data-dist-sugerencia-ahorro]')).toHaveCount(0);
+    await expect(page.locator('.distribuir__monto[data-dist-tipo="deuda"]')).toBeVisible();
+  });
+
   test('R3: la sugerencia de ahorro se recalcula sobre el remanente real y respeta la edición manual del fondo', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {

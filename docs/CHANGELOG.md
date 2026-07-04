@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(tesoreria): MC.7f, pulido del asistente (copy, foco, transición, estados vacíos) · 2026-07-03
+
+Cierra MC.7f (opcional), el último punto de la épica MC.7. Ninguna lógica financiera nueva: ajustes de copy, accesibilidad y una transición sutil sobre el shell paginado que ya entregaron MC.7d y MC.7e.
+
+- **Copy por paso.** El Paso 2 ganó un título consistente con el resto ("💰 Ahorro, deudas e inversiones · ajusta cuánto destinar a cada una:"), igual que el Paso 1 ya tenía el suyo.
+- **Estado vacío corregido.** El hint "Sugerencia: $X a ahorro..." aparecía aunque no hubiera ninguna fila de Ahorro (sin fondo activo, sin metas, sin apartados) donde poner esa sugerencia, un texto confuso sin destino. Ahora solo se muestra cuando existe al menos una fila de Ahorro.
+- **Indicador de paso más limpio.** "Paso X de N" solo aporta con 2 o más pasos; con un asistente de un único paso (posible con MC.7e: 2+ cuentas pero nada más que repartir) el indicador ya no aparece.
+- **Foco al avanzar (a11y, WAI-ARIA APG para asistentes multi-paso).** Cada contenedor de paso ganó `tabindex="-1"`; al hacer clic en "Siguiente"/"Atrás", el foco se mueve al contenedor del paso recién mostrado. Su `aria-label` ("Paso X de N: <título>") queda anunciado por el simple hecho de recibir foco, sin depender de que el usuario esté cerca del indicador `role="status"`. Al abrir el panel por primera vez se preserva el comportamiento anterior (foco al monto a distribuir), no al contenedor del Paso 1.
+- **Transición sutil.** Un fade-in corto (180ms) al mostrar un paso nuevo, con `@media (prefers-reduced-motion: no-preference)` (mismo patrón que el resto de la app); `a11y.css` ya colapsa duraciones globalmente bajo `reduce` como defensa adicional.
+
+Verificado con 3 E2E nuevos en Chromium real (foco se mueve al paso al avanzar/retroceder y se preserva en la apertura inicial; indicador ausente con un solo paso; hint de ahorro ausente cuando no hay fila de Ahorro) y la suite completa de "Distribuir mi ingreso" (19 tests) sin regresiones. 1887/1887 unit sin cambios (nada de lo tocado tiene lógica pura nueva); 114/114 → 117/117 E2E. Lint limpio. SW v271 → v272.
+
+**La épica MC.7 (asistente "Distribuir mi ingreso") queda completa: MC.7a a MC.7f entregados.**
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Título del Paso 2; hint de ahorro condicionado a `ahorro.length > 0`; indicador de paso omitido con un solo paso; `tabindex="-1"` en cada contenedor de paso. |
+| `modules/dominio/tesoreria/index.js` | `_irAPasoDistribucion` gana `{ moverFoco }`; mueve el foco al contenedor del paso al avanzar/retroceder, salvo en la apertura inicial. |
+| `styles/components/forms.css` | Transición `distribuir-paso-in` (fade + translateY corto, bajo `prefers-reduced-motion: no-preference`); `.distribuir__paso:focus { outline: none }` (el cambio de contenido ya es la señal visual). |
+| `tests/e2e/smoke.test.js` | 3 tests nuevos (foco al avanzar/retroceder, indicador ausente con un paso, hint de ahorro ausente sin fila de Ahorro). |
+| `service-worker.js` | v271 → v272. |
+
+---
+
 ### feat(tesoreria): MC.7e, Paso 3 reparte Estilo de vida entre cuentas · 2026-07-03
 
 Cierra MC.7e (ADR 018 decisión 4), la última tarjeta de prioridad alta de la épica del asistente "Distribuir mi ingreso". Con **2 o más cuentas activas**, el paso final "Estilo de vida" gana una sección "¿Quieres mover parte a otras cuentas?": una fila editable por cuenta activa (mismo patrón toggle + monto del resto del panel), mostrando el saldo actual de cada una como contexto. Con **una sola cuenta activa** el paso sigue siendo puramente informativo, sin cambios (regla de cuenta única).

@@ -71,15 +71,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Solo tiene sentido si el usuario lo pide: la mayoría de fijos recurrentes de uso diario (arriendo, servicios, suscripciones) ya son Mensuales.
 - Modelo     : sin definir
 
-#### MC.7f (opcional) - Pulido del asistente
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : copy por paso, transiciones, a11y del asistente (foco al avanzar, `aria` de pasos), estados vacíos.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/view.js`
-- Depende de : nada (MC.7d y MC.7e ya cerradas, 2026-07-03)
-- Modelo     : Sonnet 5 - Bajo
-
 #### MC.10 (diseño, revisa ADR 013) - Reservar siempre algo para ahorro cuando hay margen
 - Prioridad  : media
 - Estado     : requiere ADR

@@ -289,6 +289,26 @@ form:not(.config-form) .form-group:not(:first-child) {
 .distribuir__nav-atras {
   margin-right: auto;
 }
+/* El paso enfocable (MC.7f, a11y) no necesita el anillo de foco por defecto:
+   el usuario ya ve el cambio de contenido, y el anillo alrededor de todo el
+   bloque sería ruido visual sin aportar nada nuevo. Los controles internos
+   (checkboxes, inputs) mantienen su propio foco visible normalmente. */
+.distribuir__paso:focus {
+  outline: none;
+}
+/* Transición sutil al cambiar de paso (MC.7f): fade-in corto. Los navegadores
+   reinician las animaciones CSS al pasar de display:none a visible, así que
+   basta con aplicarla a la regla ":not([hidden])". Respeta prefers-reduced-motion
+   (a11y.css además colapsa duraciones globalmente, doble defensa). */
+@media (prefers-reduced-motion: no-preference) {
+  .distribuir__paso:not([hidden]) {
+    animation: distribuir-paso-in 180ms ease both;
+  }
+}
+@keyframes distribuir-paso-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 /* Nudge "Hoy recibes tu ingreso. ¿Distribuir?" sobre el botón (MC.4d). */
 .distribuir__cta {
   margin-top: var(--fk-space-3);

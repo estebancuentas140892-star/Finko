@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(tesoreria): MC.7e, Paso 3 reparte Estilo de vida entre cuentas)
+> Última actualización: 2026-07-03 (fix(tesoreria): MC.7f, pulido del asistente. Épica MC.7 completa)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 1887/1887 verdes |
-| Tests E2E | 114/114 verde. Suites: `smoke` 78 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests E2E | 117/117 verde. Suites: `smoke` 81 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,22 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(tesoreria): MC.7f, pulido del asistente. Épica MC.7 completa · 2026-07-03
+
+Cierra MC.7f (opcional), sin lógica financiera nueva: copy consistente por paso (título del Paso 2 alineado con el Paso 1), un estado vacío corregido (el hint "Sugerencia: $X a ahorro..." ya no aparece si no hay ninguna fila de Ahorro donde ponerla), el indicador "Paso X de N" se omite con un solo paso, foco movido al contenedor del paso al avanzar/retroceder (`tabindex="-1"` + `role="group"`/`aria-label`, patrón WAI-ARIA APG para asistentes multi-paso, sin robar el foco en la apertura inicial) y una transición de fade corta bajo `prefers-reduced-motion: no-preference`.
+
+Verificado con 3 E2E nuevos (foco al avanzar/retroceder y preservado en apertura inicial; indicador ausente con un paso; hint de ahorro ausente sin fila de Ahorro) y las 19 pruebas existentes de "Distribuir mi ingreso" sin regresiones. 1887/1887 unit sin cambios; 114/114 → 117/117 E2E. Lint limpio. SW v271 → v272. **Épica MC.7 completa (MC.7a a MC.7f).**
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Título del Paso 2; hint de ahorro condicionado; indicador omitido con un paso; `tabindex="-1"` en cada paso. |
+| `modules/dominio/tesoreria/index.js` | `_irAPasoDistribucion` gana `{ moverFoco }`; mueve el foco al contenedor del paso al navegar. |
+| `styles/components/forms.css` | Transición `distribuir-paso-in`; `.distribuir__paso:focus { outline: none }`. |
+| `tests/e2e/smoke.test.js` | 3 tests nuevos. |
+| `service-worker.js` | v271 → v272. |
+
+---
 
 ### feat(tesoreria): MC.7e, Paso 3 reparte Estilo de vida entre cuentas · 2026-07-03
 
@@ -76,25 +92,6 @@ Verificado con 8 unit nuevos (`presupuestosSobreRemanente`) + 2 E2E nuevos en Ch
 
 ---
 
-### fix(tesoreria): tope coordinado entre cuota del checklist y abono extra (BUG-009) · 2026-07-03
-
-Cierra el último bug pendiente de la revisión de Mis cuentas. Con el usuario se decidió el diseño el mismo día (ver el CHANGELOG anterior): una deuda que aparece a la vez en el checklist de Necesidades (su cuota, marcada por defecto) y en "Abonar extra a deudas" del panel "Distribuir mi ingreso" **puede pagar ambos en un mismo movimiento**, pero el extra ya no topa contra el saldo previo sin más (lo que permitía sobrepagar); topa contra lo que queda **tras** la cuota marcada.
-
-Nuevo helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): `disponible = max(0, saldoTotal - cuotaMarcada)`, `efectivo = min(extraSolicitado, disponible)`. `_leerItemsDistribucion()` en [tesoreria/index.js](../modules/dominio/tesoreria/index.js) gana un segundo parámetro (las Necesidades ya leídas por `_leerNecesidadesMarcadas`), suma la cuota marcada de la misma deuda (`tipo === 'necesidad-deuda'` con el mismo `id`) y llama al helper en vez del `Math.min(monto, _saldoDeuda(id))` anterior. `_recalcularDistribucion()` y `_confirmarDistribucion()` ahora leen las Necesidades primero y se las pasan a `_leerItemsDistribucion()`, así el resumen en vivo y el apply comparten el mismo monto efectivo (la promesa que ya hacía el docstring de esa función, ahora cierta también quando ambos flujos tocan la misma deuda).
-
-Verificado con 5 tests unitarios nuevos de `topeAbonoExtraDeuda` (sin cuota marcada = comportamiento previo; resta la cuota antes de topar; permite el extra hasta lo que queda; nunca negativo si la cuota supera el saldo; valores no numéricos como 0) más 1 E2E en Chromium real que reproduce el escenario exacto del bug: deuda con saldo 300.000 y cuota 100.000, el usuario marca la cuota (por defecto) y pide un extra de 300.000; el resumen en vivo ya muestra "Asignado: $300.000" (no $400.000), y tras confirmar la deuda queda en 0 (nunca negativa), los dos gastos suman exactamente 300.000 y la cuenta se debita 300.000, no 400.000. 1870/1870 → 1875/1875 unit; 106/106 → 107/107 E2E. Lint limpio. SW v268 → v269.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | Nuevo helper puro `topeAbonoExtraDeuda(saldoTotal, cuotaMarcada, extraSolicitado)`. |
-| `modules/dominio/tesoreria/index.js` | `_leerItemsDistribucion()` gana el parámetro `necesidades` y usa `topeAbonoExtraDeuda`; `_recalcularDistribucion()` y `_confirmarDistribucion()` le pasan las Necesidades ya leídas. |
-| `tests/unit/tesoreria.test.js` | 5 tests nuevos de `topeAbonoExtraDeuda`. |
-| `tests/e2e/smoke.test.js` | Suite nueva "cuota del checklist + abono extra a la misma deuda no sobrepaga (BUG-009)", 1 test. |
-| `service-worker.js` | v268 → v269. |
-| `docs/BUGS.md` | BUG-009 resuelto (eliminado). Sin errores pendientes. |
-
----
-
 ### fix(tesoreria): copy de la cuota de manejo corregido y validaciones rechazan Infinity (BUG-007, BUG-008) · 2026-07-03
 
 Cierra los dos bugs de baja prioridad de la revisión de Mis cuentas. **BUG-007:** el hint de la cuota de manejo prometía verla "en Deudas", copy desactualizado desde la reestructuración v6 (los fijos, incluida la cuota de manejo, viven en Calendario). Fix: "Lo verás en Calendario." **BUG-008:** `validarIngreso()` y `validarCuenta()` usaban `isNaN(x) || x <= 0`, que no rechaza `Infinity` (`isNaN(Infinity) === false`); un monto como `'1e999'` pasaba la validación y contaminaba la distribución sugerida, y al persistir quedaba serializado como `null`. Fix: los 3 guards de monto/saldo cambian a `!Number.isFinite(x)`.
@@ -128,7 +125,7 @@ Verificado con 2 E2E nuevos en Chromium real (el abono extra crea el gasto con s
 
 ---
 
-> Para tareas anteriores (fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 
