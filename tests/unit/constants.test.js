@@ -11,6 +11,7 @@ import {
   CATEGORIA_AGENDA_EMOJI,
   CATEGORIA_INGRESO_EMOJI,
   CATEGORIA_DEUDA_EMOJI,
+  CATEGORIA_DEUDA_PERSONAL_EMOJI,
   CATEGORIAS_META,
   CATEGORIA_META_EMOJI,
   GRUPOS_FINANCIEROS,
@@ -214,6 +215,8 @@ describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
       .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Ingresos' })),
     ...Object.entries(CATEGORIA_DEUDA_EMOJI)
       .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas' })),
+    ...Object.entries(CATEGORIA_DEUDA_PERSONAL_EMOJI)
+      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas personales' })),
     ...Object.entries(CATEGORIA_META_EMOJI)
       .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Metas' })),
     ...PLANTILLAS_APARTADO

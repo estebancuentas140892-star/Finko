@@ -13,7 +13,7 @@ import { icon, emptyArt } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
 import {
   BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI,
-  CATEGORIA_AGENDA_EMOJI, CATEGORIA_DEUDA_EMOJI,
+  CATEGORIA_AGENDA_EMOJI, CATEGORIA_DEUDA_EMOJI, CATEGORIA_DEUDA_PERSONAL_EMOJI,
 } from '../../core/constants.js';
 import {
   cuentasActivas,
@@ -444,7 +444,7 @@ function _filaDistribuir(d) {
 function _emojiNecesidad(it) {
   const porCategoria = it.tipo === 'fijo'
     ? CATEGORIA_AGENDA_EMOJI[it.categoria]
-    : CATEGORIA_DEUDA_EMOJI[it.categoria];
+    : (CATEGORIA_DEUDA_EMOJI[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_EMOJI[it.categoria]);
   return porCategoria ?? (it.tipo === 'fijo' ? '🏠' : '💳');
 }
 

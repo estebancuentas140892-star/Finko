@@ -6,7 +6,7 @@
  * Tipos: 'fijo' (arriendo, servicio), 'deuda' (cuota), 'agenda' (próximo pago puntual).
  */
 
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL } from '../../core/constants.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -240,11 +240,20 @@ export function validarCompromiso(datos) {
     if (isNaN(saldo) || saldo <= 0) {
       errores.push('El saldo total que aún debes debe ser mayor a 0.');
     }
-    const cuota = Number(datos.cuotaMensual);
-    if (isNaN(cuota) || cuota <= 0) {
-      errores.push('La cuota mensual debe ser un número mayor a 0.');
+    // D.13: en deuda personal la cuota es opcional (fiado, préstamos sin
+    // cuota fija se abonan libre). Si viene, debe ser > 0. En entidad sigue
+    // siendo obligatoria: sin cuota no hay plan de pago que simular.
+    const esPersonal = datos.tipo === 'deuda-personal';
+    const cuotaVacia = datos.cuotaMensual === '' || datos.cuotaMensual === undefined || datos.cuotaMensual === null;
+    if (!(esPersonal && cuotaVacia)) {
+      const cuota = Number(datos.cuotaMensual);
+      if (isNaN(cuota) || cuota <= 0) {
+        errores.push('La cuota mensual debe ser un número mayor a 0.');
+      }
     }
-    if (datos.categoria && !CATEGORIAS_DEUDA.includes(datos.categoria)) {
+    // D.10: el catálogo del eje "qué/con quién" depende del eje Entidad/Personal.
+    const catalogoCat = esPersonal ? CATEGORIAS_DEUDA_PERSONAL : CATEGORIAS_DEUDA;
+    if (datos.categoria && !catalogoCat.includes(datos.categoria)) {
       errores.push('La categoría seleccionada no es válida.');
     }
     const tasa = Number(datos.tasa);
@@ -358,8 +367,11 @@ export function normalizarCompromiso(datos) {
 
   if (esDeuda(datos.tipo)) {
     base.saldoTotal   = Number(datos.saldoTotal);
-    base.cuotaMensual = Number(datos.cuotaMensual);
-    base.categoria    = datos.categoria && CATEGORIAS_DEUDA.includes(datos.categoria)
+    // D.13: sin cuota fija (deuda personal) se guarda 0: el simulador de
+    // estrategia la excluye y la lista muestra la frecuencia en su lugar.
+    base.cuotaMensual = Number(datos.cuotaMensual) || 0;
+    const catalogoCat = datos.tipo === 'deuda-personal' ? CATEGORIAS_DEUDA_PERSONAL : CATEGORIAS_DEUDA;
+    base.categoria    = datos.categoria && catalogoCat.includes(datos.categoria)
       ? datos.categoria
       : null;
     const tasaPct = Number(datos.tasa);

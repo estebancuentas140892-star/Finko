@@ -22,7 +22,11 @@ import {
   ICONO_TIPO,
 } from '../logic.js';
 import { getEstrategiaUI } from './estrategia.js';
-import { CATEGORIA_DEUDA_EMOJI } from '../../../core/constants.js';
+import { CATEGORIA_DEUDA_EMOJI, CATEGORIA_DEUDA_PERSONAL_EMOJI } from '../../../core/constants.js';
+
+// Lookup unificado: producto (entidad) + relación (personal). Sin colisiones:
+// el único label compartido ('Otro'/'Otra') difiere y ambos usan 📦.
+const _EMOJI_DEUDA = { ...CATEGORIA_DEUDA_EMOJI, ...CATEGORIA_DEUDA_PERSONAL_EMOJI };
 
 /**
  * Renderiza la lista de deudas en `#lista-compromisos`.
@@ -129,7 +133,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
     : `${frec} · día ${compromiso.diaPago}`;
   const catLabel = compromiso.categoria
-    ? `${CATEGORIA_DEUDA_EMOJI[compromiso.categoria] ?? ''} ${_esc(compromiso.categoria)} · `
+    ? `${_EMOJI_DEUDA[compromiso.categoria] ?? ''} ${_esc(compromiso.categoria)} · `
     : '';
   const contexto = `${catLabel}${label}${tasaMostrada ? ` · ${tasaMostrada}` : ''}`;
 

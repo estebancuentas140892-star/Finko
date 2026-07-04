@@ -133,8 +133,41 @@ function _editarCompromiso(el) {
       _guardarCompromiso();
     });
   }
+  _wireToggleFiado(body);
 
   abrirModal(overlay);
+}
+
+/**
+ * D.13: interfaz adaptada para Fiado. Un fiado (tienda de barrio, vendedor)
+ * no tiene cuota fija, ni tasa, ni frecuencia: se abona libre. Al elegir
+ * Fiado en el selector de relación se ocultan esos campos (y se limpian sus
+ * valores); el día de pago queda como recordatorio de la fecha acordada.
+ * Solo aplica a deuda personal: en entidad el selector es de producto.
+ * @param {HTMLElement} body - contenedor del form ya inyectado.
+ */
+function _wireToggleFiado(body) {
+  const form = body.querySelector('#form-compromiso');
+  const sel  = body.querySelector('#comp-categoria');
+  if (!form || !sel) return;
+  if (form.querySelector('input[name="tipo"]')?.value !== 'deuda-personal') return;
+
+  const grupos = ['#grupo-comp-cuota', '#grupo-comp-tasa', '#grupo-comp-frecuencia']
+    .map(s => body.querySelector(s))
+    .filter(Boolean);
+
+  const aplicar = () => {
+    const esFiado = sel.value === 'Fiado';
+    for (const g of grupos) g.hidden = esFiado;
+    if (esFiado) {
+      const cuota = form.querySelector('#comp-cuota');
+      const tasa  = form.querySelector('#comp-tasa');
+      if (cuota) cuota.value = '';
+      if (tasa)  tasa.value  = '';
+    }
+  };
+  sel.addEventListener('change', aplicar);
+  aplicar(); // estado inicial (ej. edición de un fiado existente)
 }
 
 /** @param {HTMLElement} el */
@@ -196,6 +229,7 @@ function _elegirTipoDeuda(el) {
     e.preventDefault();
     _guardarCompromiso();
   });
+  _wireToggleFiado(body);
 
   // Foco en el primer campo visible para accesibilidad.
   body.querySelector('input:not([type=hidden])')?.focus();

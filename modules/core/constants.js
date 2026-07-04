@@ -472,6 +472,34 @@ export const CATEGORIA_DEUDA_EMOJI = {
 };
 
 /**
+ * Relación de una deuda personal (eje "con quién", D.10, revisión del ADR 015).
+ * Solo aplica a Compromiso tipo='deuda-personal': el catálogo de producto
+ * (CATEGORIAS_DEUDA) no encaja cuando el acreedor es una persona o un comercio
+ * de barrio. 'Fiado' cubre la deuda de tienda o vendedor que fía (D.13).
+ * El orden define el del selector en el formulario de nueva deuda.
+ */
+export const CATEGORIAS_DEUDA_PERSONAL = [
+  'Familiar',
+  'Amigo',
+  'Vecino',
+  'Natillera',
+  'Prestamista particular',
+  'Fiado',
+  'Otro',
+];
+
+/** Emoji visual por relación de deuda personal. Solo UI; nunca en el valor almacenado. */
+export const CATEGORIA_DEUDA_PERSONAL_EMOJI = {
+  'Familiar':               '👪',
+  'Amigo':                  '🤝',
+  'Vecino':                 '🏘️',
+  'Natillera':              '💰',
+  'Prestamista particular': '💼',
+  'Fiado':                  '🏪',
+  'Otro':                   '📦',
+};
+
+/**
  * Categorías predefinidas para metas de ahorro (Compromiso libre, no recurrente).
  * Foco en objetivos de alto costo (MT.1). El orden define el del selector en
  * el formulario "Nueva meta". Al elegir 'Otra', el usuario nombra la meta

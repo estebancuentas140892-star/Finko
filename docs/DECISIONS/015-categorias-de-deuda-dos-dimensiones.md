@@ -1,8 +1,8 @@
 # ADR 015 - Categorías de deuda: dos dimensiones (quién y qué)
 
-**Estado:** Aceptada
+**Estado:** Aceptada (revisada 2026-07-03: D.10 y D.13, ver sección Revisión)
 **Fecha:** 2026-06-29
-**Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
+**Autores:** Esteban (producto), Claude Opus 4.8 (diseño); revisión Claude Fable 5
 
 ---
 
@@ -114,3 +114,30 @@ Un solo slice: el cambio quedó contenido (un campo curado + migración + label)
 - La migración v18 → v19 remapea `categoria`; al ser idempotente y best-effort, no rompe deudas existentes (los valores no mapeados o `null` se dejan igual).
 - Se pierde la etiqueta explícita de algunos productos (Gota a gota, Libranza, Microcrédito) en el eje "qué", pero su naturaleza se conserva en el eje "quién" (Entidad/Personal) y en la tasa. El usuario puede pedir reincorporar alguno antes de D.5a.
 - El guardarraíl TX.4 (consistencia de emojis entre catálogos) se revisa: ninguno de los nuevos valores ("Tarjeta de crédito", "Libre inversión", "Vivienda", "Vehículo", "Educativo", "Compra a cuotas", "Otra") comparte etiqueta exacta con otro catálogo, así que no introduce conflicto.
+
+---
+
+## Revisión 2026-07-03 - D.10 y D.13: relación para deudas personales y Fiado
+
+La lista curada de la decisión 3 quedó orientada a **producto** (Tarjeta, Vivienda, Educativo...), que encaja con deudas de entidad pero no con deudas personales: al elegir "Personal" en el chooser, el form seguía ofreciendo categorías de producto que no aplican (D.10). Y el fiado de tienda de barrio, una deuda cotidiana muy común en Colombia, obligaba a registrarse como deuda personal genérica con cuota y tasa inventadas (D.13).
+
+### Decisión 5: el eje "qué" se especializa por el eje "quién" (D.10)
+
+El campo `categoria` sigue siendo uno solo en el schema, pero su catálogo depende del tipo:
+
+- `deuda-entidad` → `CATEGORIAS_DEUDA` (producto, sin cambios).
+- `deuda-personal` → **`CATEGORIAS_DEUDA_PERSONAL`** (relación, nuevo): Familiar 👪, Amigo 🤝, Vecino 🏘️, Natillera 💰, Prestamista particular 💼, Fiado 🏪, Otro 📦. Label del form: "¿Con quién es la deuda?".
+
+**Sin migración:** las deudas personales existentes con un valor de producto se conservan tal cual (se siguen mostrando con su emoji de producto); al editarlas, el selector ofrece el catálogo de relación y el usuario reclasifica. Preferimos no borrar ni remapear a ciegas un dato que eligió el usuario. Validación y normalización aceptan solo el catálogo del tipo correspondiente para valores nuevos.
+
+### Decisión 6: Fiado es categoría con interfaz adaptada, no un tercer tipo (D.13)
+
+"Fiado" entra como **categoría de relación** del catálogo personal, no como un tercer `tipo` ni con campos de schema nuevos. Los campos que pedía la tarjeta se cubren con el modelo existente: nombre de la tienda → `descripcion`; valor total → `saldoTotal`; fecha en que se adquirió → `fechaCreacion` (automática); fecha límite → `diaPago` (con hint "si acordaron una fecha, usa ese día"); notas → la propia descripción.
+
+La **interfaz adaptada** es un toggle en el form personal: al elegir Fiado se ocultan cuota, tasa y frecuencia (una tienda no cobra interés ni pacta cuota; se abona libre) y sus valores se limpian.
+
+**Cambio de validación que habilita lo anterior: la cuota mensual pasa a ser opcional en toda deuda personal** (no solo Fiado): los préstamos de familia sin cuota fija son la norma, no la excepción. Si se diligencia, debe ser > 0; vacía se guarda como `cuotaMensual: 0`. Consecuencias deliberadas:
+
+- `filtrarDeudasPagables` ya excluía deudas con cuota ≤ 0: una deuda sin cuota **no entra al simulador de estrategia** (correcto: sin cuota no hay plan que simular). Sigue visible en la lista y se le puede abonar.
+- La lista muestra la frecuencia en lugar de "Cuota $0/mes" (ya era el fallback) y Agenda omite el monto cuando es 0.
+- En deuda con entidad la cuota sigue siendo obligatoria.

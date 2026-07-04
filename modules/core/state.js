@@ -86,7 +86,10 @@ import { SMMLV } from './constants.js';
  *                                       (gota a gota, préstamo personal). Solo deudas.
  *
  * @property {string|null} [categoria]   Para tipo='fijo': una de CATEGORIAS_AGENDA (v17).
- *                                       Para deudas: una de CATEGORIAS_DEUDA (v18).
+ *                                       Para deuda-entidad: una de CATEGORIAS_DEUDA (v18).
+ *                                       Para deuda-personal: una de CATEGORIAS_DEUDA_PERSONAL
+ *                                       (D.10; valores de producto anteriores se conservan
+ *                                       tal cual y se reclasifican al editar).
  *                                       null si no se eligió.
  *
  * @property {string}  [cuentaId]        FK a Cuenta.id. Solo se setea cuando

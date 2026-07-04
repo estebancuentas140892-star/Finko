@@ -41,7 +41,11 @@ import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/domin
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
-import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../modules/core/constants.js';
+import {
+  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI,
+  CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI,
+  CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_EMOJI,
+} from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -520,12 +524,17 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
-  it('para deudas guarda la categoría válida del catálogo de tipo de deuda', () => {
-    const datos = {
-      ...datosFormValidos, tipo: 'deuda-personal',
+  it('para deudas guarda la categoría válida del catálogo del tipo (D.10)', () => {
+    const entidad = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
       saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Libre inversión',
     };
-    expect(normalizarCompromiso(datos).categoria).toBe('Libre inversión');
+    expect(normalizarCompromiso(entidad).categoria).toBe('Libre inversión');
+    const personal = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Familiar',
+    };
+    expect(normalizarCompromiso(personal).categoria).toBe('Familiar');
   });
 
   it('para deudas sin categoría, queda categoria=null', () => {
@@ -614,9 +623,11 @@ describe('validarCompromiso() - reglas de deuda (v6)', () => {
     expect(validarCompromiso(datosEntidad)).toEqual([]);
   });
 
-  it('acepta cualquier categoría del catálogo de obligación para deuda-entidad y deuda-personal', () => {
+  it('acepta cualquier categoría del catálogo correspondiente al tipo (D.10)', () => {
     for (const cat of CATEGORIAS_DEUDA) {
       expect(validarCompromiso({ ...datosEntidad, categoria: cat })).toEqual([]);
+    }
+    for (const cat of CATEGORIAS_DEUDA_PERSONAL) {
       expect(validarCompromiso({ ...datosPersonal, categoria: cat })).toEqual([]);
     }
   });
@@ -1703,11 +1714,15 @@ describe('renderFormDeuda() - selector de categoría', () => {
     }
   });
 
-  it('aparece igual para deuda-entidad y deuda-personal (catálogo único)', () => {
+  it('D.10: entidad usa catálogo de producto, personal usa catálogo de relación', () => {
     const htmlEntidad  = renderFormDeuda('deuda-entidad');
     const htmlPersonal = renderFormDeuda('deuda-personal');
     expect(htmlEntidad).toContain('💵 Libre inversión');
-    expect(htmlPersonal).toContain('💳 Tarjeta de crédito');
+    expect(htmlEntidad).not.toContain('Familiar');
+    for (const c of CATEGORIAS_DEUDA_PERSONAL) {
+      expect(htmlPersonal).toContain(`${CATEGORIA_DEUDA_PERSONAL_EMOJI[c]} ${c}`);
+    }
+    expect(htmlPersonal).not.toContain('Tarjeta de crédito');
   });
 
   it('en modo edición preselecciona la categoría guardada', () => {
@@ -1725,6 +1740,92 @@ describe('renderFormDeuda() - selector de categoría', () => {
     const selectMatch = html.match(/<select id="comp-categoria"[\s\S]*?<\/select>/);
     expect(selectMatch).not.toBeNull();
     expect(selectMatch[0]).not.toContain('selected');
+  });
+
+  it('D.13: la cuota es opcional (sin required) solo en el form personal', () => {
+    const htmlEntidad  = renderFormDeuda('deuda-entidad');
+    const htmlPersonal = renderFormDeuda('deuda-personal');
+    const cuotaEntidad  = htmlEntidad.match(/<input id="comp-cuota"[\s\S]*?\/>/)[0];
+    const cuotaPersonal = htmlPersonal.match(/<input id="comp-cuota"[\s\S]*?\/>/)[0];
+    expect(cuotaEntidad).toContain('required');
+    expect(cuotaPersonal).not.toContain('required');
+  });
+});
+
+// ── D.10/D.13 - deuda personal: relación y cuota opcional ─────────
+
+describe('D.10/D.13 - validación y normalización de deuda personal', () => {
+  const fiado = {
+    tipo: 'deuda-personal', descripcion: 'Fiado tienda de don José',
+    saldoTotal: '80000', cuotaMensual: '', tasa: '', tasaUnidad: 'mensual',
+    frecuencia: 'Mensual', diaPago: '28', categoria: 'Fiado',
+  };
+
+  it('acepta una deuda personal sin cuota (fiado se abona libre)', () => {
+    expect(validarCompromiso(fiado)).toEqual([]);
+  });
+
+  it('si la cuota viene diligenciada debe ser mayor a 0', () => {
+    expect(validarCompromiso({ ...fiado, cuotaMensual: '0' }))
+      .toContainEqual(expect.stringMatching(/cuota/i));
+    expect(validarCompromiso({ ...fiado, cuotaMensual: '-5' }))
+      .toContainEqual(expect.stringMatching(/cuota/i));
+  });
+
+  it('la cuota sigue siendo obligatoria en deuda con entidad', () => {
+    const ent = { ...fiado, tipo: 'deuda-entidad', categoria: 'Tarjeta de crédito', tasaUnidad: 'EA' };
+    expect(validarCompromiso(ent)).toContainEqual(expect.stringMatching(/cuota/i));
+  });
+
+  it('valida la categoría contra el catálogo del tipo (relación vs producto)', () => {
+    expect(validarCompromiso({ ...fiado, categoria: 'Familiar' })).toEqual([]);
+    expect(validarCompromiso({ ...fiado, categoria: 'Tarjeta de crédito' }))
+      .toContainEqual(expect.stringMatching(/categoría/i));
+    const ent = {
+      ...fiado, tipo: 'deuda-entidad', cuotaMensual: '100000',
+      tasaUnidad: 'EA', categoria: 'Familiar',
+    };
+    expect(validarCompromiso(ent)).toContainEqual(expect.stringMatching(/categoría/i));
+  });
+
+  it('normaliza cuota vacía a 0 y conserva la relación', () => {
+    const r = normalizarCompromiso(fiado);
+    expect(r.cuotaMensual).toBe(0);
+    expect(r.categoria).toBe('Fiado');
+    expect(r.tasa).toBe(0);
+  });
+
+  it('normaliza a null una categoría fuera del catálogo del tipo', () => {
+    const r = normalizarCompromiso({ ...fiado, categoria: 'Vivienda' });
+    expect(r.categoria).toBeNull();
+  });
+
+  it('una deuda sin cuota queda fuera del simulador de estrategia', () => {
+    const deudas = filtrarDeudasPagables([
+      { id: 'a', tipo: 'deuda-personal', descripcion: 'Fiado', saldoTotal: 80_000, cuotaMensual: 0, activo: true },
+      { id: 'b', tipo: 'deuda-entidad',  descripcion: 'Tarjeta', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.3, tasaUnidad: 'EA', activo: true },
+    ]);
+    expect(deudas.map(d => d.id)).toEqual(['b']);
+  });
+});
+
+// ── CATEGORIAS_DEUDA_PERSONAL (D.10) ─────────────────────────────
+
+describe('CATEGORIAS_DEUDA_PERSONAL', () => {
+  it('contiene las relaciones esperadas, con Fiado incluido (D.13)', () => {
+    expect(CATEGORIAS_DEUDA_PERSONAL).toContain('Familiar');
+    expect(CATEGORIAS_DEUDA_PERSONAL).toContain('Natillera');
+    expect(CATEGORIAS_DEUDA_PERSONAL).toContain('Prestamista particular');
+    expect(CATEGORIAS_DEUDA_PERSONAL).toContain('Fiado');
+  });
+
+  it('tiene un emoji para cada relación y ninguno huérfano', () => {
+    for (const c of CATEGORIAS_DEUDA_PERSONAL) {
+      expect(CATEGORIA_DEUDA_PERSONAL_EMOJI[c]).toBeTruthy();
+    }
+    for (const key of Object.keys(CATEGORIA_DEUDA_PERSONAL_EMOJI)) {
+      expect(CATEGORIAS_DEUDA_PERSONAL).toContain(key);
+    }
   });
 });
 

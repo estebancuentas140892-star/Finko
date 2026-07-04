@@ -11,7 +11,13 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { FRECUENCIAS, CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI } from '../../../core/constants.js';
+import {
+  FRECUENCIAS,
+  CATEGORIAS_DEUDA,
+  CATEGORIA_DEUDA_EMOJI,
+  CATEGORIAS_DEUDA_PERSONAL,
+  CATEGORIA_DEUDA_PERSONAL_EMOJI,
+} from '../../../core/constants.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
@@ -166,14 +172,20 @@ export function renderFormDeuda(tipo, deuda = null) {
 
   const vDesc  = modoEdit ? _esc(deuda.descripcion ?? '') : '';
   const vSaldo = modoEdit ? (deuda.saldoTotal ?? '') : '';
-  const vCuota = modoEdit ? (deuda.cuotaMensual ?? '') : '';
+  const vCuota = modoEdit && deuda.cuotaMensual > 0 ? deuda.cuotaMensual : '';
   const vTasa  = modoEdit && deuda.tasa != null ? deuda.tasa : '';
   const vDia   = modoEdit ? (deuda.diaPago ?? '') : '';
 
-  const catOpts = CATEGORIAS_DEUDA
+  // D.10: el eje "qué/con quién" usa un catálogo distinto según Entidad/Personal.
+  // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
+  // (Familiar, Amigo, Fiado...). Mismo campo `categoria` en el schema.
+  const catalogo  = esEntidad ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA_PERSONAL;
+  const catEmojis = esEntidad ? CATEGORIA_DEUDA_EMOJI : CATEGORIA_DEUDA_PERSONAL_EMOJI;
+  const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Con quién es la deuda?';
+  const catOpts = catalogo
     .map(c => {
       const selCat = modoEdit ? deuda.categoria : null;
-      return `<option value="${_esc(c)}"${c === selCat ? ' selected' : ''}>${CATEGORIA_DEUDA_EMOJI[c] ?? ''} ${_esc(c)}</option>`;
+      return `<option value="${_esc(c)}"${c === selCat ? ' selected' : ''}>${catEmojis[c] ?? ''} ${_esc(c)}</option>`;
     })
     .join('');
 
@@ -193,11 +205,12 @@ export function renderFormDeuda(tipo, deuda = null) {
       </div>
 
       <div class="form-group">
-        <label for="comp-categoria" class="label">Tipo de deuda</label>
+        <label for="comp-categoria" class="label">${_esc(catLabel)}</label>
         <select id="comp-categoria" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
+        ${esEntidad ? '' : '<p class="form-hint">Si es una tienda o comercio que te fía, elige Fiado.</p>'}
       </div>
 
       <div class="form-group">
@@ -207,14 +220,15 @@ export function renderFormDeuda(tipo, deuda = null) {
                autocomplete="off" value="${vSaldo}" />
       </div>
 
-      <div class="form-group">
-        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes? (COP)</label>
+      <div class="form-group" id="grupo-comp-cuota">
+        <label for="comp-cuota" class="label">¿Cuánto pagas cada mes? (COP)${esEntidad ? '' : ' <span class="form-optional">opcional</span>'}</label>
         <input id="comp-cuota" name="cuotaMensual" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true"
+               min="1" step="10000" placeholder="0"${esEntidad ? ' required aria-required="true"' : ''}
                autocomplete="off" value="${vCuota}" />
+        ${esEntidad ? '' : '<p class="form-hint">Si no acordaron una cuota fija, déjalo en blanco: registras abonos cuando pagues.</p>'}
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="grupo-comp-tasa">
         <label for="comp-tasa" class="label">${_esc(tasaLabel)}</label>
         <div class="tasa-input-group">
           <input id="comp-tasa" name="tasa" class="input" type="number"
@@ -227,7 +241,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         <p id="comp-tasa-hint" class="form-hint">${_esc(tasaHint)}</p>
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="grupo-comp-frecuencia">
         <label for="comp-frecuencia" class="label">Frecuencia de pago</label>
         <select id="comp-frecuencia" name="frecuencia" class="input" required aria-required="true">
           ${frecOpts}
@@ -239,6 +253,7 @@ export function renderFormDeuda(tipo, deuda = null) {
         <input id="comp-dia" name="diaPago" class="input" type="number"
                min="1" max="31" step="1" placeholder="1" required aria-required="true"
                value="${vDia}" />
+        ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
       </div>
 
       <div class="modal__footer">

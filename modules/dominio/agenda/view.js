@@ -297,8 +297,9 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
     ? ` · ${_esc(c.categoria)}`
     : '';
   const notaLabel = (tipo === 'fijo' && c.nota) ? ` · ${_esc(c.nota)}` : '';
+  // Una deuda sin cuota fija (ej. fiado, D.13) no muestra "$0": se abona libre.
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
-  const monto = Number.isFinite(Number(montoRaw)) ? f(Number(montoRaw)) : '';
+  const monto = Number.isFinite(Number(montoRaw)) && Number(montoRaw) > 0 ? f(Number(montoRaw)) : '';
   const idEsc = _esc(c.id ?? '');
 
   // Badge de estado de pago: distingue cuota cubierta, abono parcial y sin pago.
