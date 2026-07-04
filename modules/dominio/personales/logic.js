@@ -21,6 +21,8 @@
  * @property {string} fechaCreacion   ISO 8601 timestamp.
  */
 
+import { tiempoRelativo } from '../../infra/utils.js';
+
 // ── CÁLCULOS POR PRÉSTAMO ────────────────────────────────────────
 
 /**
@@ -97,6 +99,69 @@ export function porcentajePagado(prestamo) {
   const pagado = prestamo?.pagado || 0;
   if (monto <= 0) return 0;
   return Math.min(100, Math.round((pagado / monto) * 100));
+}
+
+/**
+ * Estado de seguimiento de un préstamo para la UI.
+ *
+ * A diferencia de `clasificarAntiguedad` (que solo mide incomodidad por días),
+ * este estado mira la relación completa: si hay fecha pactada manda esa fecha
+ * (próximo / hoy / ya pasó); si no, el último abono o la fecha del préstamo.
+ *
+ * Tipos y significado de `dias`:
+ * - `liquidado` : ya no debe nada. `dias` = 0.
+ * - `proximo`   : fecha pactada en el futuro. `dias` = cuántos faltan.
+ * - `hoy`       : la fecha pactada es hoy. `dias` = 0.
+ * - `vencido`   : la fecha pactada ya pasó. `dias` = cuántos pasaron.
+ * - `abonado`   : sin fecha pactada, con abonos. `dias` = desde el último abono.
+ * - `pendiente` : sin fecha pactada ni abonos. `dias` = desde el préstamo.
+ *
+ * @param {Personal} prestamo
+ * @param {Date|string} [fechaRef] default: ahora.
+ * @returns {{ tipo: 'liquidado'|'proximo'|'hoy'|'vencido'|'abonado'|'pendiente', dias: number }}
+ */
+export function estadoPrestamo(prestamo, fechaRef = new Date()) {
+  if (calcularPendiente(prestamo) <= 0) return { tipo: 'liquidado', dias: 0 };
+
+  const ref = fechaRef instanceof Date ? new Date(fechaRef) : new Date(fechaRef);
+  ref.setHours(0, 0, 0, 0);
+
+  if (prestamo?.fechaLimite) {
+    const lim = new Date(prestamo.fechaLimite + 'T12:00:00');
+    lim.setHours(0, 0, 0, 0);
+    const diff = Math.round((lim - ref) / 86_400_000);
+    if (diff > 0)   return { tipo: 'proximo', dias: diff };
+    if (diff === 0) return { tipo: 'hoy', dias: 0 };
+    return { tipo: 'vencido', dias: -diff };
+  }
+
+  if (prestamo?.ultimoPago) {
+    return { tipo: 'abonado', dias: _diasDesde(prestamo.ultimoPago, ref) };
+  }
+  return { tipo: 'pendiente', dias: _diasDesde(prestamo?.fecha, ref) };
+}
+
+/**
+ * Copy del chip de estado, en tono de seguimiento (sin presión de cobro).
+ *
+ * @param {{ tipo: string, dias: number }} estado - salida de `estadoPrestamo`.
+ * @returns {string}
+ */
+export function labelEstado(estado) {
+  switch (estado.tipo) {
+    case 'liquidado':
+      return 'Liquidado';
+    case 'proximo':
+      return estado.dias === 1 ? 'Próximo pago mañana' : `Próximo pago en ${estado.dias} días`;
+    case 'hoy':
+      return 'Pago programado para hoy';
+    case 'vencido':
+      return `La fecha de pago pasó ${tiempoRelativo(estado.dias)}`;
+    case 'abonado':
+      return estado.dias === 0 ? 'Recibiste un abono hoy' : `Último abono ${tiempoRelativo(estado.dias)}`;
+    default:
+      return `Prestado ${tiempoRelativo(estado.dias)}`;
+  }
 }
 
 // ── AGREGADOS ────────────────────────────────────────────────────
@@ -243,6 +308,20 @@ export function aplicarPago(prestamo, montoPago, fechaPago = _hoyISO()) {
 }
 
 // ── HELPER ───────────────────────────────────────────────────────
+
+/**
+ * Días completos desde una fecha ISO hasta la referencia (ya normalizada a
+ * medianoche). Sin fecha o fecha futura devuelve 0.
+ * @param {string|undefined} iso
+ * @param {Date} ref
+ * @returns {number}
+ */
+function _diasDesde(iso, ref) {
+  if (!iso) return 0;
+  const base = new Date(iso + 'T12:00:00');
+  base.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((ref - base) / 86_400_000));
+}
 
 function _hoyISO() {
   const d = new Date();

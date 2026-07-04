@@ -3,6 +3,8 @@ import {
   calcularPendiente,
   calcularDias,
   clasificarAntiguedad,
+  estadoPrestamo,
+  labelEstado,
   porcentajePagado,
   calcularResumen,
   ordenarPersonales,
@@ -104,6 +106,95 @@ describe('clasificarAntiguedad()', () => {
     expect(clasificarAntiguedad(61)).toBe('viejo');
     expect(clasificarAntiguedad(180)).toBe('viejo');
     expect(clasificarAntiguedad(9999)).toBe('viejo');
+  });
+});
+
+// ── estadoPrestamo() ──────────────────────────────────────────────
+
+describe('estadoPrestamo() (PE.3/PE.4)', () => {
+  const ref = new Date('2026-05-18T12:00:00');
+
+  it('liquidado manda sobre todo lo demás', () => {
+    const r = estadoPrestamo(
+      { monto: 100, pagado: 100, fecha: '2026-01-01', fechaLimite: '2026-02-01' },
+      ref,
+    );
+    expect(r).toEqual({ tipo: 'liquidado', dias: 0 });
+  });
+
+  it('fecha pactada futura → proximo, con los días que faltan', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 0, fecha: '2026-01-01', fechaLimite: '2026-05-23' }, ref);
+    expect(r).toEqual({ tipo: 'proximo', dias: 5 });
+  });
+
+  it('fecha pactada hoy → hoy', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 0, fecha: '2026-01-01', fechaLimite: '2026-05-18' }, ref);
+    expect(r).toEqual({ tipo: 'hoy', dias: 0 });
+  });
+
+  it('fecha pactada pasada → vencido, con los días que pasaron', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 0, fecha: '2026-01-01', fechaLimite: '2026-05-10' }, ref);
+    expect(r).toEqual({ tipo: 'vencido', dias: 8 });
+  });
+
+  it('sin fecha pactada, con abono → abonado desde el último abono', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 30, fecha: '2026-01-01', ultimoPago: '2026-05-15' }, ref);
+    expect(r).toEqual({ tipo: 'abonado', dias: 3 });
+  });
+
+  it('abono hoy → abonado con 0 días', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 30, fecha: '2026-01-01', ultimoPago: '2026-05-18' }, ref);
+    expect(r).toEqual({ tipo: 'abonado', dias: 0 });
+  });
+
+  it('sin fecha pactada ni abonos → pendiente desde el préstamo', () => {
+    const r = estadoPrestamo({ monto: 100, pagado: 0, fecha: '2026-05-01' }, ref);
+    expect(r).toEqual({ tipo: 'pendiente', dias: 17 });
+  });
+
+  it('la fecha pactada manda aunque haya abono posterior', () => {
+    const r = estadoPrestamo(
+      { monto: 100, pagado: 30, fecha: '2026-01-01', fechaLimite: '2026-02-01', ultimoPago: '2026-05-15' },
+      ref,
+    );
+    expect(r.tipo).toBe('vencido');
+  });
+
+  it('tolera préstamo sin fechas', () => {
+    expect(estadoPrestamo({ monto: 100, pagado: 0 }, ref)).toEqual({ tipo: 'pendiente', dias: 0 });
+  });
+});
+
+// ── labelEstado() ─────────────────────────────────────────────────
+
+describe('labelEstado() (PE.3/PE.4, copy de seguimiento)', () => {
+  it('liquidado', () => {
+    expect(labelEstado({ tipo: 'liquidado', dias: 0 })).toBe('Liquidado');
+  });
+
+  it('proximo: singular mañana, plural en N días', () => {
+    expect(labelEstado({ tipo: 'proximo', dias: 1 })).toBe('Próximo pago mañana');
+    expect(labelEstado({ tipo: 'proximo', dias: 5 })).toBe('Próximo pago en 5 días');
+  });
+
+  it('hoy', () => {
+    expect(labelEstado({ tipo: 'hoy', dias: 0 })).toBe('Pago programado para hoy');
+  });
+
+  it('vencido humaniza los días transcurridos', () => {
+    expect(labelEstado({ tipo: 'vencido', dias: 1 })).toBe('La fecha de pago pasó ayer');
+    expect(labelEstado({ tipo: 'vencido', dias: 60 })).toBe('La fecha de pago pasó hace 2 meses');
+  });
+
+  it('abonado: hoy con copy propio, resto humanizado', () => {
+    expect(labelEstado({ tipo: 'abonado', dias: 0 })).toBe('Recibiste un abono hoy');
+    expect(labelEstado({ tipo: 'abonado', dias: 1 })).toBe('Último abono ayer');
+    expect(labelEstado({ tipo: 'abonado', dias: 15 })).toBe('Último abono hace 2 semanas');
+  });
+
+  it('pendiente humaniza la antigüedad (adiós "1.825 días")', () => {
+    expect(labelEstado({ tipo: 'pendiente', dias: 0 })).toBe('Prestado hoy');
+    expect(labelEstado({ tipo: 'pendiente', dias: 1825 })).toBe('Prestado hace 5 años');
   });
 });
 

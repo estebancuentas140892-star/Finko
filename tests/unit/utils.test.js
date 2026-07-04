@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { f, hoy, fechaLegible } from '../../modules/infra/utils.js';
+import { f, hoy, fechaLegible, tiempoRelativo } from '../../modules/infra/utils.js';
 
 describe('f() - formato moneda COP', () => {
   it('formatea cero', () => {
@@ -66,5 +66,46 @@ describe('fechaLegible() - formato largo en español', () => {
     // Verifica que el día 12 aparezca en la salida.
     const result = fechaLegible('2026-05-12');
     expect(result).toContain('12');
+  });
+});
+
+describe('tiempoRelativo() - días como texto natural (PE.2)', () => {
+  it('0 días → hoy, 1 día → ayer', () => {
+    expect(tiempoRelativo(0)).toBe('hoy');
+    expect(tiempoRelativo(1)).toBe('ayer');
+  });
+
+  it('2 a 6 días → hace N días', () => {
+    expect(tiempoRelativo(2)).toBe('hace 2 días');
+    expect(tiempoRelativo(6)).toBe('hace 6 días');
+  });
+
+  it('7 a 29 días → semanas, con singular', () => {
+    expect(tiempoRelativo(7)).toBe('hace 1 semana');
+    expect(tiempoRelativo(13)).toBe('hace 1 semana');
+    expect(tiempoRelativo(15)).toBe('hace 2 semanas');
+    expect(tiempoRelativo(29)).toBe('hace 4 semanas');
+  });
+
+  it('30 a 364 días → meses, con singular', () => {
+    expect(tiempoRelativo(30)).toBe('hace 1 mes');
+    expect(tiempoRelativo(59)).toBe('hace 1 mes');
+    expect(tiempoRelativo(240)).toBe('hace 8 meses');
+  });
+
+  it('365+ días → años, con singular', () => {
+    expect(tiempoRelativo(365)).toBe('hace 1 año');
+    expect(tiempoRelativo(1825)).toBe('hace 5 años');
+  });
+
+  it('valores negativos o inválidos cuentan como hoy', () => {
+    expect(tiempoRelativo(-3)).toBe('hoy');
+    expect(tiempoRelativo(NaN)).toBe('hoy');
+    expect(tiempoRelativo(undefined)).toBe('hoy');
+  });
+
+  it('trunca decimales antes de clasificar', () => {
+    expect(tiempoRelativo(1.9)).toBe('ayer');
+    expect(tiempoRelativo(6.99)).toBe('hace 6 días');
   });
 });

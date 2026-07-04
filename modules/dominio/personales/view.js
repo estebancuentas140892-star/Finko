@@ -10,6 +10,8 @@ import {
   calcularPendiente,
   calcularDias,
   clasificarAntiguedad,
+  estadoPrestamo,
+  labelEstado,
   porcentajePagado,
   calcularResumen,
   ordenarPersonales,
@@ -58,7 +60,7 @@ function _renderResumen(r) {
         </div>
         <div class="resumen-card__stat">
           <p class="resumen-card__label">Te han devuelto</p>
-          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalCobrado)}</p>
+          <p class="resumen-card__value resumen-card__value--sm text-success">${f(r.totalCobrado)}</p>
         </div>
         <div class="resumen-card__stat">
           <p class="resumen-card__label">Activos</p>
@@ -84,26 +86,23 @@ function _renderPersonalItem(prestamo, hoy) {
   const persona   = _esc(prestamo.persona);
   const motivo    = _esc(prestamo.motivo ?? '');
   const pendiente = calcularPendiente(prestamo);
-  const dias      = calcularDias(prestamo, hoy);
-  const antig     = clasificarAntiguedad(dias);
   const liquidado = pendiente <= 0;
   const pct       = porcentajePagado(prestamo);
 
-  const chipClase = liquidado
-    ? 'chip chip-success'
-    : antig === 'viejo'
-    ? 'chip chip-danger'
-    : antig === 'mediano'
-    ? 'chip chip-warning'
+  // Copy por estado (fecha pactada > último abono > antigüedad); el tono del
+  // chip sigue saliendo del reloj de incomodidad (que un abono reinicia).
+  const estado = estadoPrestamo(prestamo, hoy);
+  const antig  = clasificarAntiguedad(calcularDias(prestamo, hoy));
+
+  const chipClase =
+    estado.tipo === 'liquidado' ? 'chip chip-success'
+    : estado.tipo === 'hoy'     ? 'chip chip-warning'
+    : estado.tipo === 'vencido' ? (antig === 'viejo' ? 'chip chip-danger' : 'chip chip-warning')
+    : antig === 'viejo'         ? 'chip chip-danger'
+    : antig === 'mediano'       ? 'chip chip-warning'
     : 'chip';
 
-  const chipLabel = liquidado
-    ? 'Liquidado'
-    : antig === 'viejo'
-    ? `${dias} días, ya toca cobrar`
-    : antig === 'mediano'
-    ? `${dias} días`
-    : `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  const chipLabel = labelEstado(estado);
 
   const fechaLim = prestamo.fechaLimite
     ? `<p class="list-item__hint">Pactó devolver: ${fechaLegible(prestamo.fechaLimite)}</p>`
