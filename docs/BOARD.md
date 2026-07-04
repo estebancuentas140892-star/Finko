@@ -126,16 +126,7 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B y NAV.A2b (slices 1 y 2) cerradas; queda NAV.C.
-
-#### NAV.C - Pulidos de navegación
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : retrasar el toast de logro del primer uso (hoy pisa la hoja "Registrar", los tips y el modal Más en el primer minuto), revisar el nombre del grupo de gestión en el sidebar desktop ("Herramientas" ya quedó disuelto en NAV.B y Análisis vive en "Gestión"), y recortar los banners de propósito que exceden las 40 a 60 palabras de ADR 016 manteniendo los tres tiempos. Ver ADR 024, D6.
-- Secciones  : navegación, Inicio, Apartados
-- Archivos   : `modules/dominio/logros/index.js`, `index.html`, `modules/ui/proposito.js`
-- Depende de : nada (NAV.A2a y NAV.B cerradas)
-- Modelo     : Sonnet 5 - Medio
+> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B, NAV.A2b (slices 1 y 2) y NAV.C cerradas. Iniciativa completa, sin pendientes.
 
 ---
 

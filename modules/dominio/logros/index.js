@@ -37,7 +37,11 @@ export function initLogros() {
   // Tambien escuchar el evento de onboarding, ya que setea s.onboarded=true
   // pero no emite state:change. Sin esto, el logro "primer-paso" no aparecia
   // al registrar el nombre - solo se mostraba en el siguiente reload.
-  EventBus.on('onboarding:completado', _checkYMostrar);
+  // Retraso (NAV.C, ADR 024 D6): el toast con confetti aparecia al instante,
+  // pisando el cierre del wizard, la guia del hero vacio y una posible
+  // exploracion inmediata de "Registrar" o "Mas". Se da tiempo a que la
+  // pantalla se asiente antes de celebrar.
+  EventBus.on('onboarding:completado', () => setTimeout(_checkYMostrar, RETRASO_TOAST_ONBOARDING_MS));
 
   window.addEventListener('hashchange', () => {
     renderSmart(renderPanelLogros, 'config');
@@ -80,6 +84,9 @@ function _checkYMostrar() {
 // ── TOAST ────────────────────────────────────────────────────────
 
 const DURACION_MS = 5000;
+
+/** Retraso del primer toast tras completar el onboarding (NAV.C, ADR 024 D6). */
+const RETRASO_TOAST_ONBOARDING_MS = 4000;
 
 // Un toast a la vez: el siguiente entra cuando el anterior se va. Todos se
 // posicionan en el mismo punto fijo, y con la pausa por hover la vida de un

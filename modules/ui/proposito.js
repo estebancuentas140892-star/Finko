@@ -18,7 +18,7 @@ import { esc as _esc } from '../infra/utils.js';
 export const PROPOSITOS_SECCION = {
   apartados: {
     titulo: '¿Para qué sirve Apartados?',
-    texto: '¿Te ha pasado que, de un momento a otro, debes pagar el SOAT, comprar el alimento de tu mascota, reponer tus productos de aseo personal o cubrir otro gasto importante que no esperabas? Aunque son gastos previsibles, muchas veces olvidamos prepararnos y terminamos usando nuestros ahorros, aplazando metas o endeudándonos. Apartados te ayuda a evitarlo: destina una pequeña parte de tus ingresos para cada gasto futuro y, cuando llegue el momento de pagarlo, ya tendrás el dinero (o gran parte de él) disponible.',
+    texto: '¿Te ha pasado que de un momento a otro debes pagar el SOAT o cubrir otro gasto que no esperabas? Aunque son previsibles, es fácil no prepararte y terminar usando tus ahorros o endeudándote. Apartados te ayuda a evitarlo: separa poco a poco el dinero de cada gasto futuro, y cuando llegue el momento ya lo tendrás listo.',
   },
   gast: {
     titulo: '¿Para qué sirve Gastos?',

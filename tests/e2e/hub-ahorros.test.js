@@ -8,7 +8,7 @@
  * - Consolidado de ahorro (ADR 009) como cabecera común del hub.
  * - Renombre de la sección "Ahorro" a "Fondo de emergencia".
  * - Sidebar desktop: grupo "Ahorros" (antes "Crecer"), "Herramientas"
- *   disuelto con Análisis dentro de Gestión.
+ *   disuelto con Análisis dentro de Seguimiento (antes "Gestión", NAV.C).
  */
 
 import { test, expect } from '@playwright/test';
@@ -151,16 +151,16 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
 test.describe('NAV.B - sidebar desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('grupos: Diario, Gestión (con Análisis) y Ahorros; sin "Herramientas"', async ({ page }) => {
+  test('grupos: Diario, Seguimiento (con Análisis) y Ahorros; sin "Herramientas"', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
     const grupos = await page.$$eval('#sidebar .nav-group__label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Diario', 'Gestión', 'Ahorros']);
+    expect(grupos).toEqual(['Diario', 'Seguimiento', 'Ahorros']);
 
-    // Análisis vive dentro del grupo Gestión (Herramientas se disolvió).
+    // Análisis vive dentro del grupo Seguimiento (Herramientas se disolvió).
     const gestion = page.locator('.nav-group', { has: page.locator('#nav-label-gestion') });
     await expect(gestion.locator('a[href="#analisis"]')).toHaveCount(1);
 

@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV.C, pulidos de navegación · 2026-07-04
+
+Cierra la iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D6), última tarjeta pendiente tras NAV.A1, NAV.A2a, NAV.B y NAV.A2b. Tres pulidos acotados, sin lógica nueva:
+
+**Toast de logro retrasado.** El logro "Primer paso" (`s.onboarded === true`) se cumple en el instante en que el usuario termina el wizard, así que su toast con confetti aparecía pisando el cierre del modal de onboarding, la guía del hero vacío ("registrá tus cuentas en Tesorería") y una posible exploración inmediata de la hoja "Registrar" o el modal "Más". El listener de `onboarding:completado` en `logros/index.js` ahora envuelve `_checkYMostrar` en un `setTimeout` de 4 segundos; el resto de logros (disparados por `state:change`) siguen apareciendo al instante.
+
+**Nombre del grupo del sidebar desktop.** Al disolver "Herramientas" en NAV.B, Análisis quedó dentro del grupo "Gestión" junto a Mis cuentas, Me deben y Límites de gasto, pero ese nombre ya había sido señalado como poco predictivo (motivo por el que el modal "Más" lo había retirado en NAV.B, ADR 024 D5). Se renombra a **"Seguimiento"**, que describe mejor el hilo común: monitorear saldos, deudas a favor, topes y análisis, en vez de accionar sobre ellos.
+
+**Banner de propósito de Apartados.** Excedía el objetivo de 40 a 60 palabras de [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) por un buen margen (83 palabras, el único de las 11 secciones fuera de rango). Se recortó a 58 palabras quitando ejemplos redundantes de la lista de gastos previsibles, manteniendo los tres tiempos (pregunta, problema, solución) y la mención al SOAT que ya cubría un test unitario.
+
+2043/2043 unit; 147/147 E2E (se actualizó el texto de grupo esperado en `hub-ahorros.test.js`; sin tests nuevos, los tres cambios son de copy/timing sin lógica de dinero). SW v305 → v306.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/logros/index.js` | Retraso de 4s (`RETRASO_TOAST_ONBOARDING_MS`) en el toast disparado por `onboarding:completado`. |
+| `index.html` | Grupo del sidebar "Gestión" → "Seguimiento" (comentario actualizado). |
+| `modules/ui/proposito.js` | Texto de `PROPOSITOS_SECCION.apartados` recortado de 83 a 58 palabras. |
+| `tests/e2e/hub-ahorros.test.js` | Nombre de grupo esperado actualizado en el test de sidebar desktop. |
+| `service-worker.js` | v305 → v306. |
+
+---
+
 ### feat(nav): NAV.A2b slice 2, oferta de distribución tras un ingreso · 2026-07-04
 
 Cierre de NAV.A2b ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D3). Tras registrar un ingreso puntual (que ya subió el saldo de su cuenta en NAV.A1), Finko ofrece repartirlo con el asistente "Distribuir mi ingreso" de Mis cuentas. Es la pieza de lógica de dinero que se había separado a propósito del slice 1.
