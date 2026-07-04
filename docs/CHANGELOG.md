@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.6, Finko Icons v2 "trazo cálido con chispa" con piloto en la navegación · 2026-07-04
+
+Revisión del lenguaje de iconografía ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), sección "Revisión v2"). Al arrancar ID.3, el usuario replanteó el sistema: el lenguaje v1 (trazo 2, duotono 15 %, punto monocromo) cumplía pero se percibía neutro y frío. Tras análisis de mercado y 3 direcciones dibujadas sobre la paleta real, se adoptó la dirección A ("trazo cálido con chispa") combinada con C (insignias por dominio, para las categorías de ID.3); la B (sello sólido) se descartó por pesada en listas densas.
+
+Reglas v2: trazo 2.35 global vía CSS `.icon` (`--sm` 2.5, `--lg` 1.8; toda la familia gana cuerpo en un solo cambio), redondez sistemática (radios ≥ 2.9, ápices con arco), duotono al 22 %, y **la chispa**: el punto de valor pasa a `fill="var(--fk-icon-dot, currentColor)"` y el contexto lo enciende en color. La navegación lo pone en acento: item inactivo gris con chispa verde viva (firma visible de la familia); sin variable declarada cae a `currentColor`, cero regresión y cero JS.
+
+Piloto: los 14 símbolos de navegación redibujados en v2. Cambio de metáfora en Inversión: de zigzag con flecha a curva suave ascendente con la chispa en el extremo (progreso calmado). Verificado en preview (tema oscuro y claro: chispa `#1fd194` / `#13b377`, trazo computado 2.35px). 2024/2024 unit; 128/128 E2E. SW v299 → v300.
+
+**Pendiente de validación:** revisión visual del usuario en su celular (nav inferior, modal "Más", empty states con trazo 1.8).
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 14 símbolos de navegación redibujados en v2; comentario del sprite actualizado. |
+| `styles/components/forms.css` | `.icon` a trazo 2.35; `.icon--sm` 2.5; `.icon--lg` 1.8. |
+| `styles/layout.css` | `--fk-icon-dot: var(--fk-accent)` en `.nav-item__icon.icon` (chispa encendida en nav). |
+| `docs/DECISIONS/023-...md` | Sección "Revisión v2" con motivo, direcciones evaluadas y reglas nuevas. |
+| `service-worker.js` | v299 → v300. |
+
+---
+
 ### feat(ui): ID.2, familia Finko Icons en el resto de la UI estructural · 2026-07-04
 
 Tercera fase de la identidad visual ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). Se redibujan 8 símbolos existentes con el lenguaje (duotono + punto de valor): `i-saldo`, `i-recurring`, `i-lightbulb`, `i-alert`, `i-bolt`, `i-trophy`, `i-mountain` y `i-circle` (reinterpretado como "bola de nieve": dos círculos, uno chico creciendo a uno grande). Se agregan 5 símbolos nuevos: `i-star`, `i-percent`, `i-trending-up`, `i-info`, `i-bar-chart`; y se reutiliza `i-cuentas` para "Consolidar deudas" (misma metáfora, sin dibujo nuevo).

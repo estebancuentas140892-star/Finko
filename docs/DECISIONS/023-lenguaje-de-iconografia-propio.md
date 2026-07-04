@@ -1,9 +1,9 @@
 # ADR 023 - Lenguaje de iconografía propio (duotono + punto de valor)
 
-**Estado:** Aceptada
+**Estado:** Aceptada, revisada el 2026-07-04 (v2 "trazo cálido con chispa", ver sección final)
 **Fecha:** 2026-07-04
 **Autores:** Claude Fable 5 (análisis y decisión, revisión visual aprobada por Esteban)
-**Resuelve:** ID.1 e ID.2 (identidad visual: sistema de iconografía). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
+**Resuelve:** ID.1 e ID.2 (identidad visual: sistema de iconografía) y su revisión ID.6 (lenguaje v2). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
 
 ---
 
@@ -63,3 +63,30 @@ Iconos de categorías (gastos, ingresos, agenda, deudas, metas) con tinte por do
 - Los emojis de categorías siguen en las listas hasta ID.3; la sección de Gastos mantendrá el contraste entre nav propia y categorías emoji durante la transición.
 - Redibujar iconos es trabajo de criterio visual: cada símbolo nuevo debe verificarse a 22px (nav), 16px (botones) y 48px (empty states) en ambos temas antes de entrar al sprite.
 - La decisión del icono de Gastos registrada en la memoria del proyecto (serie sobria, no unificar con Compromisos/Personales) queda superada por esta ADR en su parte de "emoji vs SVG es intencional"; la parte de sobriedad se conserva como principio.
+
+---
+
+## Revisión v2 (2026-07-04): "trazo cálido con chispa" (ID.6)
+
+### Motivo
+
+Al arrancar ID.3, Esteban replanteó el sistema: el lenguaje v1 cumple pero se percibe neutro, frío y poco memorable ("iconos genéricos que podrían pertenecer a cualquier producto"). Pidió una identidad con personalidad que transmita confianza, cercanía, organización, progreso, tranquilidad, motivación y optimismo, sin sacrificar reconocimiento inmediato (la usabilidad manda sobre la creatividad).
+
+El diagnóstico técnico del frío confirmó cuatro causas: (1) trazo 2 sobre grid 24 es el peso exacto de Lucide, el acento de miles de apps; (2) el duotono al 15 % casi desaparece en fondo oscuro, el tema por defecto; (3) el punto de valor era del mismo color que el trazo, así que la firma no se registraba; (4) cero color fuera del estado activo, con 10 colores de dominio ya definidos en tokens y desaprovechados. El estudio de mercado (Wise, Monzo, Nubank como referentes de identidad; N26 como contraejemplo de línea fina elegante pero fría) y la teoría de diseño (redondez y terminaciones redondeadas se perciben cercanas; el peso del trazo comunica presencia; el color vehicula el optimismo) respaldan la dirección elegida.
+
+### Direcciones evaluadas
+
+- **A "trazo cálido con chispa" (elegida):** evolución del lenguaje v1 con más peso, más redondez y la firma encendida en color.
+- **B "sello sólido" (descartada):** siluetas rellenas con detalle en espacio negativo; máxima presencia, pero pesa en listas densas de 15 filas y le quita aire al tema oscuro.
+- **C "insignia por dominio" (adoptada como tratamiento de superficie):** el glifo vive en una teja redondeada teñida con el color de su sección (`--fk-dom-*` al ~14 % de fondo, glifo al 100 %). No es un lenguaje aparte: es cómo se presentarán las categorías en ID.3.
+
+### Reglas v2 (sustituyen a las reglas 1-3 del lenguaje; la 4 y la 5 siguen vigentes)
+
+1. **Trazo 2.35 global:** el grosor vive en CSS (`.icon`), así que toda la familia (incluidos los símbolos aún no redibujados y los glifos utilitarios) gana cuerpo en un solo cambio. Escalas: `.icon--sm` 2.5, `.icon--lg` 1.8.
+2. **Redondez sistemática:** esquinas y uniones muy redondeadas (radios ≥ 2.9 en contenedores, ápices con arco en vez de vértice, curvas antes que diagonales rectas). La redondez es el rasgo de cercanía.
+3. **Duotono al 22 %:** la región "cuerpo" sube de `fill-opacity=".15"` a `.22` para que se vea en fondo oscuro sin competir con el trazo.
+4. **La chispa:** el punto de valor pasa a `fill="var(--fk-icon-dot, currentColor)"`. El contexto la enciende declarando la variable (la navegación la pone en `--fk-accent`: item inactivo gris con chispa verde viva; las tejas de categoría la pondrán en su `--fk-dom-*`). Sin variable declarada cae a `currentColor`: cero regresión en el resto de la app y cero JS, porque las variables CSS atraviesan el shadow DOM de `<use>`.
+
+### Piloto ID.6 y fases
+
+Los 14 símbolos de navegación quedaron redibujados en v2. Un cambio de metáfora: Inversión pasa del zigzag con flecha a una **curva suave ascendente con la chispa en el extremo** (progreso calmado, "aquí vas hoy"); el zigzag transmitía volatilidad. En `i-mas`, el punto central es la chispa. Fases restantes: recalentar la geometría de los símbolos estructurales de ID.2 (que mientras tanto heredan el trazo 2.35) y las categorías con teja por dominio (ID.3).

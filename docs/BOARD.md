@@ -126,15 +126,24 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1 (lenguaje + piloto de navegación), ID.4 (espaciado y jerarquía) e ID.2 (resto de la UI estructural) cerradas, todas 2026-07-04; queda esta fase.
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1, ID.4, ID.2 e ID.6 (revisión v2 del lenguaje: "trazo cálido con chispa", piloto de navegación redibujado) cerradas, todas 2026-07-04. Quedan dos fases: ID.7 (estructurales a v2) e ID.3 (categorías).
 
-#### ID.3 - Iconos de categorías con tinte por dominio
+#### ID.7 - Símbolos estructurales al lenguaje v2
+- Prioridad  : media
+- Estado     : pendiente (espera validación del piloto ID.6 en el celular del usuario)
+- Objetivo   : recalentar la geometría de los ~20 símbolos estructurales (saldo, recurring, lightbulb, alert, bolt, trophy, mountain, circle, star, percent, trending-up, info, bar-chart) al lenguaje v2 del ADR 023 revisado: redondez sistemática, duotono al 22 % y chispa con `var(--fk-icon-dot, currentColor)`. Hoy heredan el trazo 2.35 global pero conservan geometría v1.
+- Secciones  : Transversal
+- Archivos   : `index.html` (sprite)
+- Depende de : validación visual de ID.6
+- Modelo     : Sonnet 5 - Alto
+
+#### ID.3 - Iconos de categorías en tejas teñidas por dominio
 - Prioridad  : media
 - Estado     : pendiente (requiere decisión del usuario sobre emojis de celebración)
-- Objetivo   : diseñar los ~40 iconos de categorías (gastos, ingresos, agenda, deudas, metas) en el lenguaje del ADR 023, teñidos con `--fk-dom-*`, y retirar los catálogos `CATEGORIA_*_EMOJI` de la UI estructural. Actualizar el guardarraíl TX.4. Decidir con el usuario el destino de los emojis de celebración (logros, confetti, tips).
-- Secciones  : Gastos, Calendario, Deudas, Metas, Límites, Análisis
-- Archivos   : `index.html` (sprite), `modules/core/constants.js`, vistas que consumen los catálogos, `tests/unit/constants.test.js`
-- Depende de : nada (ID.2 ya cerró)
+- Objetivo   : diseñar los ~40 iconos de categorías (gastos, ingresos, agenda, deudas, metas) en el lenguaje v2 del ADR 023 revisado, presentados en tejas teñidas con `--fk-dom-*` y chispa en el color del dominio (dirección C de la revisión). Retirar los catálogos `CATEGORIA_*_EMOJI` de la UI estructural (los selects quedan con texto plano; el emoji personalizado de Metas "Otra" y Apartados se conserva como dato del usuario). Actualizar el guardarraíl TX.4 para comparar ids de sprite en vez de emojis. Decidir con el usuario el destino de los emojis de celebración (logros, 🎉 de toasts, 💚 del onboarding; el confetti ya es CSS).
+- Secciones  : Gastos, Calendario, Deudas, Metas, Límites, Análisis, Mis cuentas, Inicio
+- Archivos   : `index.html` (sprite), `modules/core/constants.js`, 10 archivos consumidores (`gastos/view+logic`, `agenda/view`, `tesoreria/view`, `metas/view+logic`, `compromisos/views/lista+formularios`, `resumen/view`, `presupuesto/view`), `tests/unit/constants.test.js`
+- Depende de : validación visual de ID.6 (puede ir antes o después de ID.7)
 - Modelo     : Fable 5 - Alto
 
 #### ID.5 - Micropulido tipográfico de cifras

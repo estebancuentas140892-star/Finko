@@ -8,6 +8,9 @@
    La geometría vive en el sprite (#i-*, definido en index.html);
    la presentación se aplica aquí. stroke: currentColor hace que
    hereden el color del contexto (ej: nav activa = acento). Parte 3C.
+   Trazo 2.35 (Finko Icons v2, ADR 023 revisado): más cuerpo que el
+   2 estándar de las librerías de línea; da calidez a toda la familia,
+   incluidos los símbolos aún no redibujados en v2.
    ════════════════════════════════════════════════════════════ */
 .icon {
   display: inline-block;
@@ -15,7 +18,7 @@
   height: 1.25rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.35;
   stroke-linecap: round;
   stroke-linejoin: round;
   flex-shrink: 0;
@@ -37,14 +40,14 @@
 .icon--sm {
   width: 0.875rem;
   height: 0.875rem;
-  stroke-width: 2.25;
+  stroke-width: 2.5;
 }
 
 /* Íconos grandes: empty states, hero guide. */
 .icon--lg {
   width: 3rem;
   height: 3rem;
-  stroke-width: 1.5;
+  stroke-width: 1.8;
 }
 
 /* Checkmark de completado: pop con overshoot al renderizarse.

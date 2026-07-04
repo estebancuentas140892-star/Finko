@@ -167,10 +167,15 @@
 /* Ícono SVG de navegación (Parte 3C). La doble clase gana specificity
    sobre los overrides de .nav-item__icon en responsive.css (que ponían
    width:auto para el emoji, inservible en un <svg>). 22px da buena
-   legibilidad tanto en el sidebar como en el bottom-nav móvil. */
+   legibilidad tanto en el sidebar como en el bottom-nav móvil.
+   La chispa (Finko Icons v2, ADR 023 revisado) se enciende en acento:
+   la variable atraviesa el <use> y colorea el punto sólido de cada
+   símbolo aun con el item inactivo (gris + chispa verde). En el item
+   activo el icono completo ya es acento y la chispa se funde con él. */
 .nav-item__icon.icon {
   width: 22px;
   height: 22px;
+  --fk-icon-dot: var(--fk-accent);
 }
 .nav-item__label { flex: 1; }
 .nav-item__badge {
