@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): ADR 025, logotipos de marca y tejas unificadas · 2026-07-04
+
+Replanteo de la tarjeta ID.3 pedido por el usuario al arrancarla: siempre que un servicio o entidad tenga identidad visual reconocida (Netflix, Spotify, Nequi, Bancolombia, Claude...), mostrar su **logotipo oficial** en lugar de un icono genérico; las categorías sin marca siguen con iconos; un solo sistema visual, escalable por catálogo y con fallback automático. Pidió además el análisis fundamentado del paquete de iconos que mejor conviva con logotipos.
+
+**Análisis (con verificación real):** Simple Icons (CC0, glifos de marca monocromos con color oficial) cubre las marcas globales pero **no** la banca colombiana: Nequi, Daviplata, Bancolombia, Davivienda, Banco de Bogotá y Rappi devuelven 404 (verificado archivo por archivo; la primera consulta al listado devolvió un falso "todo existe" y se descartó). Ningún paquete cubre el corazón de Finko, así que adoptar uno completo era imposible. Además, Finko ya hacía identidad de marca a medias con el patrón correcto: `BANCOS_CO` (color corporativo + color de texto) y `bancoAvatar()` con iniciales.
+
+**Decisión ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)):** el unificador no es un paquete de iconos, es la **teja** (contenedor único de 40/32px). Dentro conviven dos especies: marca = glifo monocromo sobre fondo sólido de su color oficial (Simple Icons curado para globales + glifos propios para la banca CO); categoría = Finko Icons v2 sobre tinte `--fk-dom-*` con chispa (la dirección C del ADR 023, sin cambios). Resolución automática: catálogo `MARCAS` + `resolverMarca(texto)` por aliases, con fallback a categoría. Marco legal documentado (CC0 + uso nominativo, D5). Emojis de celebración conservados (D6, decisión que la antigua ID.3 dejaba abierta). La decisión de ID.6 (lenguaje propio) sale reforzada: se descartó explícitamente volver a un paquete genérico.
+
+Solo docs, sin código: tests (2043 unit, 147 E2E) y SW (v306) sin cambios.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/025-logotipos-de-marca-y-tejas.md` | ADR nuevo (contexto con cobertura verificada, D1 a D6, alternativas, fases). |
+| `docs/BOARD.md` | ID.3 re-cortada en MK.1 (tejas + banca CO, prioridad alta), MK.2 (marcas globales por alias) e ID.3 (categorías v2 en tejas); nota de la iniciativa actualizada. |
+| `docs/HANDOFF.md` | Entrada nueva; NAV.A2a movida a la línea de tareas anteriores. |
+
+---
+
 ### feat(nav): NAV.C, pulidos de navegación · 2026-07-04
 
 Cierra la iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D6), última tarjeta pendiente tras NAV.A1, NAV.A2a, NAV.B y NAV.A2b. Tres pulidos acotados, sin lógica nueva:
