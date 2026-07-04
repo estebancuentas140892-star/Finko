@@ -205,6 +205,78 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   VITRINA DE LOGROS (LG.1b, ADR 022)
+   Card "🏆 Logros" al final de Ajustes, renderizada por el dominio
+   logros en #panel-logros. Los pendientes van atenuados y con el
+   emoji en escala de grises; los de conteo muestran barra de progreso.
+   ════════════════════════════════════════════════════════════ */
+
+.logros-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.logro-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  padding: var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+}
+
+.logro-item__emoji {
+  font-size: 1.375rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.logro-item--off {
+  opacity: 0.75;
+}
+
+.logro-item--off .logro-item__emoji {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
+
+.logro-item__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.logro-item__nombre {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex-wrap: wrap;
+}
+
+.logro-item__desc {
+  margin: 2px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.logro-item .progress {
+  margin-top: var(--fk-space-2);
+}
+
+.logro-item__progreso {
+  margin: 2px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+
+/* ════════════════════════════════════════════════════════════
    INSTALL BANNER (PWA prompt persuasivo)
    Aparece tras el onboarding. Se posiciona arriba del bottom nav
    en mobile, en la esquina inferior derecha en desktop.
