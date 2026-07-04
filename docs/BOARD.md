@@ -276,15 +276,6 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-#### LG.1a (rápida) - Toast de logros más legible
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : subir la duración del toast (`DURACION_MS = 2500`) y/o permitir cerrarlo o pausarlo al pasar el cursor.
-- Secciones  : Transversal (todas, vía logros)
-- Archivos   : `modules/dominio/logros/index.js`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
-
 #### LG.1b (épica, requiere ADR) - Sección de Logros
 - Prioridad  : media
 - Estado     : requiere ADR

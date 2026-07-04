@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(personales): PE.2 a PE.5, estados de seguimiento humanizados en Me deben)
+> Última actualización: 2026-07-03 (feat(logros): LG.1a, toast de logros más legible)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(logros): LG.1a, toast de logros más legible · 2026-07-03
+
+Duración 2.5s → 5s; hover pausa el autocierre; botón ✕ de cierre manual (focusable). El toast pasa a `pointer-events: auto` y los toasts encadenados por timer se reemplazan por una cola de uno a la vez. 1914/1914 unit; 123/123 E2E (no intercepta ningún flujo). SW v279 → v280.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/logros/index.js` | Duración, pausa por hover, cierre, cola. |
+| `styles/components/nudges.css` | Toast interactivo; estilos de la ✕. |
+
+---
 
 ### feat(personales): PE.2 a PE.5, estados de seguimiento humanizados en Me deben · 2026-07-03
 
@@ -85,21 +96,7 @@ Un solo pase para ambas tarjetas (mismo hook). Nuevo helper puro `emojiPorOrigen
 
 ---
 
-### feat(ui): EP.7d, divulgación progresiva en Mis cuentas, Análisis y Me deben. Épica EP.7 completa · 2026-07-03
-
-Cierra el último slice de la revisión del ADR 016: Mis cuentas (título del empty recortado, ya no repite la pregunta gancho del banner), Análisis (subtítulo fuera, empties por sub-card revisados y conservados por ser cortos y específicos) y Me deben (empty recortado). `tieneDatos` real en los 3. 3 aserciones E2E actualizadas al nuevo título de Mis cuentas.
-
-1885/1885 unit verdes; 117/117 E2E (3 actualizadas). Lint limpio. Verificado vía `curl` (mismo síntoma de caché stale del preview). SW v275 → v276. **Épica EP.7 completa: las 11 secciones tienen una única descripción de propósito que se oculta sola al tener datos.** Tarjeta EP.7 borrada de BOARD.md.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/*`, `modules/dominio/personales/*` | Empty states recortados; `tieneDatos` real. |
-| `index.html`, `modules/dominio/analisis/index.js` | Subtítulo de Análisis fuera; `tieneDatos` real. |
-| `tests/e2e/navegacion-render.test.js` | 3 aserciones actualizadas. |
-
----
-
-> Para tareas anteriores (feat(ui) EP.7c divulgación progresiva Metas/Ahorro/Inversión, feat(ui) EP.7b divulgación progresiva Gastos/Deudas/Calendario/Límites, feat(ui) EP.7a banner con divulgación progresiva, docs(adr) ADR 016 revisado divulgación progresiva, chore(tesoreria) MC.12 renombrar "Ingreso" a "Ingresos fijos", fix(tesoreria) MC.7f pulido del asistente épica MC.7 completa, feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (feat(ui) EP.7d divulgación progresiva Mis cuentas/Análisis/Me deben con la épica EP.7 completa, feat(ui) EP.7c divulgación progresiva Metas/Ahorro/Inversión, feat(ui) EP.7b divulgación progresiva Gastos/Deudas/Calendario/Límites, feat(ui) EP.7a banner con divulgación progresiva, docs(adr) ADR 016 revisado divulgación progresiva, chore(tesoreria) MC.12 renombrar "Ingreso" a "Ingresos fijos", fix(tesoreria) MC.7f pulido del asistente épica MC.7 completa, feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

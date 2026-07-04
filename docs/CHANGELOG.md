@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(logros): LG.1a, toast de logros más legible · 2026-07-03
+
+Cierra LG.1a. Tres mejoras al toast de logro desbloqueado en [logros/index.js](../modules/dominio/logros/index.js):
+
+- **Duración:** `DURACION_MS` sube de 2.5s a 5s (2.5s no alcanzaba para leer el nombre del logro).
+- **Pausa al pasar el cursor:** `mouseenter` congela el tiempo restante y `mouseleave` lo retoma (mínimo 1s para que no muera apenas salga el cursor).
+- **Cierre manual:** botón ✕ con `aria-label`, también accesible por teclado (focusable, `:focus-visible` visible).
+
+Para poder interactuar, el toast pasa de `pointer-events: none` a `auto`. Los toasts encadenados por timer fijo (1.4s) se reemplazan por una cola de uno a la vez: con la pausa por hover la vida de un toast ya no es predecible, y dos toasts fijos en el mismo punto se solaparían (guard anti doble avance de cola entre `animationend` y su fallback).
+
+1914/1914 unit verdes; 123/123 E2E sin regresiones (el toast interactivo no intercepta ningún flujo). Lint limpio. SW v279 → v280.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/logros/index.js` | Duración 5s, pausa por hover, botón de cierre, cola de toasts. |
+| `styles/components/nudges.css` | `pointer-events: auto`; estilos de `.logro-toast__cerrar`. |
+| `service-worker.js` | v279 → v280. |
+
+---
+
 ### feat(personales): PE.2 a PE.5, estados de seguimiento humanizados en Me deben · 2026-07-03
 
 Cierra PE.2, PE.3, PE.4 y PE.5 en un solo pase (los cuatro reescriben el mismo chip de estado de `_renderPersonalItem` o líneas vecinas).
