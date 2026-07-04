@@ -102,24 +102,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada
 - Modelo     : Sonnet 5 - Bajo
 
-#### TX.6 - Gastos de fijos heredan el emoji de su categoría de Agenda
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : un gasto originado en un fijo (tiene `compromisoId`) hoy muestra ícono genérico en la lista de Gastos. Resolver la categoría del fijo vía `compromisoId` y usar `CATEGORIA_AGENDA_EMOJI` como fallback del lookup.
-- Secciones  : Gastos, Calendario
-- Archivos   : `modules/dominio/gastos/view.js` (`_renderGastoItem` línea ~201), `modules/dominio/gastos/index.js` (línea ~78, `compromisoId`)
-- Depende de : nada. Mismo hook que TX.7 y AG.2; conviene un solo pase que unifique el lookup de emoji por origen.
-- Modelo     : Sonnet 5 - Medio
-
-#### TX.7 - Gastos de deudas muestran 🏦 vs 🤝 según el tipo
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : los abonos a deuda crean un gasto con `categoria: 'Deudas'` + `compromisoId`; hoy todas las deudas se ven igual. Diferenciar 🏦 (`deuda-entidad`) de 🤝 (`deuda-personal`) resolviendo el `compromisoId`.
-- Secciones  : Gastos, Deudas
-- Archivos   : `modules/dominio/compromisos/index.js` (línea ~295), `modules/dominio/gastos/view.js`
-- Depende de : nada. Mismo hook que TX.6.
-- Modelo     : Sonnet 5 - Medio
-
 ---
 
 ### Deudas (dominio `compromisos`, deuda)

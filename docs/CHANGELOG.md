@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): TX.6 y TX.7, el gasto hereda el ícono de su compromiso de origen · 2026-07-03
+
+Cierra TX.6 y TX.7 en un solo pase (mismo hook, como sugería el tablero). Un gasto con `compromisoId` nació de un fijo de Calendario (checklist de Necesidades o "marcar pagado") o de un abono a deuda; hasta ahora mostraba el ícono genérico de su categoría: todos los abonos a deuda se veían iguales (💳 de 'Deudas') y los pagos de fijos con el 📦 de 'Otros'.
+
+Nuevo helper puro `emojiPorOrigen(gasto, compromisos)` en [gastos/logic.js](../modules/dominio/gastos/logic.js): fijo → emoji de su categoría de Agenda (`CATEGORIA_AGENDA_EMOJI`, ej. Arriendo 🏠); deuda con entidad → 🏦; deuda personal → 🤝; `null` si no hay origen resoluble (sin `compromisoId`, compromiso eliminado, fijo sin categoría), en cuyo caso `_renderGastoItem` cae al lookup por categoría de siempre. Sin violar la regla de dominios: la vista lee `S.compromisos` (permitido) y el helper es puro (recibe la lista como parámetro).
+
+Verificado con 7 unit tests nuevos del helper (fijo hereda, 🏦 vs 🤝, y los 4 caminos de fallback). 1885/1885 → 1892/1892 unit; 117/117 E2E sin regresiones. Lint limpio. Contenido servido verificado vía `curl`. SW v276 → v277.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/logic.js` | Nuevo `emojiPorOrigen` (importa `CATEGORIA_AGENDA_EMOJI`). |
+| `modules/dominio/gastos/view.js` | `_renderGastoItem` resuelve el ícono por origen antes del lookup por categoría. |
+| `tests/unit/gastos.test.js` | Suite `emojiPorOrigen` (7 tests). |
+| `service-worker.js` | v276 → v277. |
+
+---
+
 ### feat(ui): EP.7d, divulgación progresiva en Mis cuentas, Análisis y Me deben. Épica EP.7 completa · 2026-07-03
 
 Cierra EP.7d, el último slice de la revisión del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md), y con él la épica EP.7 completa (EP.7a a EP.7d):
