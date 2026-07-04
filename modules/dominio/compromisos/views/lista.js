@@ -110,15 +110,16 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     : `Vence en ${dias} días`;
 
   // Tasa mostrada en la unidad original para que coincida con la entrada.
-  // En entidad, tasa null = desconocida (el usuario no la registró): se invita
-  // a confirmarla en vez de afirmar "sin interés", que casi nunca es cierto.
-  const tasaDesconocida = compromiso.tasa === null || compromiso.tasa === undefined;
+  // En entidad, tasa null = desconocida (el usuario no la registró): el aviso
+  // por deuda de más abajo lo explica, en vez de afirmar "sin interés" aquí.
+  const tasaDesconocida  = compromiso.tasa === null || compromiso.tasa === undefined;
+  const entidadSinTasa   = tasaDesconocida && tipo === 'deuda-entidad';
   const tasaMostrada = compromiso.tasa > 0
     ? (compromiso.tasaUnidad === 'mensual'
         ? `${Math.round(compromiso.tasa * 100)}% mensual`
         : `${Math.round(tasaEA)}%`)
-    : tasaDesconocida && tipo === 'deuda-entidad'
-      ? 'tasa por confirmar'
+    : entidadSinTasa
+      ? null
       : 'sin interés';
 
   // Jerarquía de la card: nombre (título) > saldo (monto, ancla a la derecha)
@@ -130,7 +131,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const catLabel = compromiso.categoria
     ? `${CATEGORIA_DEUDA_EMOJI[compromiso.categoria] ?? ''} ${_esc(compromiso.categoria)} · `
     : '';
-  const contexto = `${catLabel}${label} · ${tasaMostrada}`;
+  const contexto = `${catLabel}${label}${tasaMostrada ? ` · ${tasaMostrada}` : ''}`;
 
   const ordenBadge = ordenEstrategia
     ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`
@@ -138,6 +139,12 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
 
   const esTipoDeuda = esDeuda(tipo);
   const saldada     = esTipoDeuda && saldo <= 0;
+
+  // D.12: aviso de tasa desconocida por deuda (antes era un banner único al
+  // tope de la card de estrategia y no se sabía a cuál deuda se refería).
+  const avisoTasa = (entidadSinTasa && !saldada)
+    ? `<p class="list-item__hint text-warning" role="note">⚠️ Tasa por confirmar: la calculamos como 0% y eso subestima los intereses. Confírmala con tu banco.</p>`
+    : '';
 
   const metaHtml = saldada
     ? `<span class="chip chip-success abono-saldada" role="status">Saldada</span>`
@@ -169,6 +176,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
         </p>
         <p class="list-item__subtitle">${subtitle}</p>
         <p class="list-item__hint">${contexto}</p>
+        ${avisoTasa}
       </div>
       <div class="list-item__meta">
         ${metaHtml}

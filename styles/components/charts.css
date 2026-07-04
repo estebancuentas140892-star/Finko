@@ -710,14 +710,6 @@
   color: var(--fk-text-primary);
 }
 
-/* Nota informativa: deudas con tasa sin registrar (se simulan como 0%). */
-.estrategia-card__nota {
-  padding: var(--fk-space-3);
-  background: var(--fk-info-bg);
-  border: 1px solid color-mix(in srgb, var(--fk-info-text) 30%, transparent);
-  border-radius: var(--fk-radius-md);
-  margin-bottom: var(--fk-space-3);
-}
 .estrategia-card__metrica-tip {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);

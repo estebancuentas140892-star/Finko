@@ -140,8 +140,6 @@ export function renderEstrategiaPago() {
         </p>
       </header>
 
-      ${_renderAvisoTasaDesconocida(deudas)}
-
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
         ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
         ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
@@ -307,28 +305,8 @@ function _renderDiagnosticoTexto(diagnostico) {
     </div>`;
 }
 
-/**
- * Nota informativa cuando alguna deuda con entidad no tiene tasa registrada.
- * Esas deudas se simulan como 0% y subestiman los intereses reales, así que las
- * recomendaciones podrían ser menos precisas hasta que el usuario confirme la tasa.
- *
- * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
- */
-function _renderAvisoTasaDesconocida(deudas) {
-  const sinTasa = deudas.filter(d => d.tasaDesconocida);
-  if (sinTasa.length === 0) return '';
-
-  const nombres = sinTasa.map(d => `<strong>${_esc(d.descripcion)}</strong>`).join(', ');
-  const verbo = sinTasa.length === 1 ? 'tiene' : 'tienen';
-  return `
-    <div class="estrategia-card__nota" role="note">
-      <p class="estrategia-card__bloque-body">
-        ℹ️ ${nombres} no ${verbo} tasa registrada. La calculamos como 0% por ahora,
-        pero eso subestima los intereses: confirma la tasa con tu banco para una
-        recomendación más precisa.
-      </p>
-    </div>`;
-}
+// El aviso de tasa desconocida vive ahora en la lista, por deuda (D.12):
+// ver `_renderCompromisoItem` en lista.js.
 
 const _META_ESTRATEGIA = {
   avalancha: { icono: icon('mountain'), nombre: 'Avalancha' },
