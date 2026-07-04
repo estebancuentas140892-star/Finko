@@ -181,15 +181,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : **AH.3 propone lo contrario** (que el aporte sí descuente). Resolver ambos en la misma decisión; puede absorberse en el ADR de AH.3.
 - Modelo     : Sonnet 5 - Bajo (o absorbido en AH.3)
 
-#### AH.1 - Clarificar de dónde sale el objetivo del fondo
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : el hint "Con esa meta tu objetivo sería $480.000 (3 meses × $160.000...)" no explica de dónde sale ese número. Explicarlo mejor ("promedio de tus gastos fijos mensuales × meses de respaldo elegidos") o quitar el detalle.
-- Secciones  : Ahorro
-- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormFondo`, línea ~318), `modules/dominio/ahorro/index.js` (`gastosFijosMensuales`)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
-
 #### AH.2 - Aporte recomendado según los ingresos, explicado
 - Prioridad  : media
 - Estado     : pendiente

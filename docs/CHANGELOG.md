@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(ahorro): AH.1, el hint del objetivo del fondo explica de dónde sale el número · 2026-07-03
+
+Cierra AH.1. En el formulario de activar/editar fondo ([ahorro/view.js](../modules/dominio/ahorro/view.js), `renderFormFondo`), el preview "Con esa meta tu objetivo sería $480.000 (3 meses × $160.000 de gastos fijos al mes)" no explicaba de dónde salía el $160.000. Ahora dice que es "lo que suman al mes tus gastos fijos de Calendario (arriendo, servicios, cuotas...)", que es exactamente cómo lo calcula `_gastosFijosMensuales()` (compromisos fijos activos proyectados a valor mensual).
+
+1914/1914 unit verdes; 123/123 E2E. Lint limpio. SW v280 → v281.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/ahorro/view.js` | Copy del preview del objetivo. |
+| `service-worker.js` | v280 → v281. |
+
+---
+
 ### feat(logros): LG.1a, toast de logros más legible · 2026-07-03
 
 Cierra LG.1a. Tres mejoras al toast de logro desbloqueado en [logros/index.js](../modules/dominio/logros/index.js):
