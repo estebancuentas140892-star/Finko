@@ -308,6 +308,7 @@ export const TIPOS_POR_CLASE = {
 export const CATEGORIAS_GASTO = [
   'Mercado',
   'Restaurantes',
+  'Café',
   'Transporte',
   'Vivienda',
   'Salud',
@@ -318,6 +319,7 @@ export const CATEGORIAS_GASTO = [
   'Hogar',
   'Mascotas',
   'Cuidado personal',
+  'Gastos hormiga',
   'Deudas',
   'Ahorro',
   'Alimentación',
@@ -349,6 +351,7 @@ export const CATEGORIAS_TIPICAMENTE_FIJAS = new Set([
 export const CATEGORIA_EMOJI = {
   'Mercado':            '🛒',
   'Restaurantes':       '🍽️',
+  'Café':               '☕',
   'Transporte':         '🚗',
   'Vivienda':           '🏠',
   'Salud':              '💊',
@@ -359,6 +362,7 @@ export const CATEGORIA_EMOJI = {
   'Hogar':              '🏡',
   'Mascotas':           '🐾',
   'Cuidado personal':   '💅',
+  'Gastos hormiga':     '🐜',
   'Deudas':             '💳',
   'Ahorro':             '💰',
   'Alimentación':       '🛒',

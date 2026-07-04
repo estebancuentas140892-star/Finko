@@ -7,6 +7,8 @@ import {
   BANCOS_CO,
   TIPOS_CUENTA,
   TIPOS_POR_CLASE,
+  CATEGORIAS_GASTO,
+  CATEGORIAS_GASTO_USUARIO,
   CATEGORIA_EMOJI,
   CATEGORIA_AGENDA_EMOJI,
   CATEGORIA_INGRESO_EMOJI,
@@ -202,6 +204,27 @@ describe('CATEGORIAS_META / CATEGORIA_META_EMOJI', () => {
 // Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas, Metas + PLANTILLAS_APARTADO.
 // Se ignoran etiquetas internas de Gastos (Deudas, Ahorro, Alimentación).
 // La comparación es por nombre exacto (case-sensitive): "Otro" ≠ "Otros".
+
+describe('TX.3 - Café y Gastos hormiga en el catálogo de gastos', () => {
+  it('las dos categorías nuevas existen y son visibles para el usuario', () => {
+    expect(CATEGORIAS_GASTO).toContain('Café');
+    expect(CATEGORIAS_GASTO).toContain('Gastos hormiga');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Café');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Gastos hormiga');
+  });
+
+  it('cada una tiene su emoji propio', () => {
+    expect(CATEGORIA_EMOJI['Café']).toBe('☕');
+    expect(CATEGORIA_EMOJI['Gastos hormiga']).toBe('🐜');
+  });
+
+  it('toda categoría de gasto tiene emoji (ninguna cae al fallback)', () => {
+    for (const c of CATEGORIAS_GASTO) {
+      expect(typeof CATEGORIA_EMOJI[c], `emoji de ${c}`).toBe('string');
+      expect(CATEGORIA_EMOJI[c].length, `emoji de ${c}`).toBeGreaterThan(0);
+    }
+  });
+});
 
 describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
   // Pares (label, emoji, fuente) de todos los catálogos.
