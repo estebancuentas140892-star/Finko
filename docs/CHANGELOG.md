@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### style(a11y): COL.1 y COL.2, contraste de warning en claro y texto deshabilitado · 2026-07-03
+
+Cierra COL.1 y COL.2 en un solo pase (mismo tipo de ajuste, mismos archivos de tokens).
+
+- **COL.1:** en modo claro `--fk-warning` (y `--fk-warning-text`) pasa de `#a06800` a `#8a5a00`: el contraste sobre `--fk-bg-base` sube de 4.38:1 a 5.5:1 (AA para texto normal, antes solo cumplía para texto grande). `--fk-warning-bg` se retinta al mismo tono. El modo oscuro (10.8:1) no se toca.
+- **COL.2:** `--fk-text-disabled` sube un punto de contraste en ambos temas: oscuro `#424858` → `#565d72` (2.05:1 → 2.9:1), claro `#b0b4c8` → `#8f94ac` (1.92:1 → 2.8:1). El texto deshabilitado está exento de WCAG, pero con baja visión era ilegible; sigue viéndose claramente inactivo frente a `--fk-text-muted`.
+
+1892/1892 unit verdes; 123/123 E2E (incluye el pase axe con `color-contrast` en Chromium real, que valida COL.1 directamente). Lint limpio. SW v277 → v278.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/themes.css` | Warning claro oscurecido; disabled claro oscurecido. |
+| `styles/tokens.css` | Disabled oscuro aclarado. |
+| `service-worker.js` | v277 → v278. |
+
+---
+
 ### test(a11y): A11Y.5, pase axe sobre formularios dinámicos en E2E · 2026-07-03
 
 Cierra A11Y.5. `tests/unit/a11y.test.js` solo auditaba el HTML estático de `index.html`; los formularios se inyectan por JS al abrir cada modal y quedaban sin auditar. Nueva suite [tests/e2e/a11y-forms.test.js](../tests/e2e/a11y-forms.test.js): abre en Chromium real los 5 modales representativos (Nuevo gasto, Nueva deuda, Nuevo gasto fijo, Nuevo apartado, Nueva cuenta) y el asistente "Distribuir mi ingreso" (con fondo activo para que haya contenido), inyecta axe-core (la misma devDependency del unit test, cero dependencias nuevas, en línea con `docs/SECURITY.md`) y corre WCAG 2.1 A/AA scoped al contenedor abierto, exigiendo cero violaciones critical/serious. En navegador real `color-contrast` sí es computable, así que no se excluye (a diferencia del unit test en happy-dom).

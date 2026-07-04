@@ -330,24 +330,6 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### COL.1 (baja) - Contraste de `--fk-warning` en modo claro
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : `#a06800` sobre `--fk-bg-base` da 4.38:1 (AA pide 4.5 para texto normal). Oscurecer a ~`#8a5a00` en modo claro (el oscuro ya está en 10.8:1, no se toca).
-- Secciones  : Transversal (`.chip-warning`, `.badge--warn`, hints de aviso)
-- Archivos   : `styles/themes.css`
-- Depende de : nada
-- Modelo     : Haiku 4.5
-
-#### COL.2 (opcional) - Contraste de `--fk-text-disabled`
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : el texto deshabilitado (2.05:1 oscuro / 1.92:1 claro) está exento de WCAG pero cuesta leerlo con baja visión. Subir un punto el tono.
-- Secciones  : Transversal
-- Archivos   : `styles/tokens.css`, `styles/themes.css`
-- Depende de : nada
-- Modelo     : Haiku 4.5
-
 #### RWD.1 (verificación) - Probar reflow real a 320px y zoom 200%
 - Prioridad  : baja
 - Estado     : pendiente (bloqueada por preview del entorno, ver memoria del proyecto)
