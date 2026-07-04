@@ -168,11 +168,4 @@ _(sin pendientes activos.)_
 - Depende de : que ocurra una reforma
 - Modelo     : Haiku 4.5
 
-#### E.5 (opcional) - IPC como constante anual
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : agregar el IPC observado como constante anual, si se quiere mostrar inflación real además de `INFLACION_OBJETIVO` (meta de BanRep).
-- Secciones  : Transversal (constantes legales)
-- Archivos   : `modules/core/constants.js`
-- Depende de : nada
-- Modelo     : Haiku 4.5
+_(Nota de mantenimiento anual: junto con E.2, cada enero agregar también la entrada del año en `IPC_OBSERVADO_POR_ANIO` con el cierre del DANE, ver E.5 en el CHANGELOG de 2026-07.)_

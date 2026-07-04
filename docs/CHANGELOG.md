@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(inversiones): E.5, IPC observado como constante anual · 2026-07-04
+
+Cierra E.5. Nueva constante `IPC_OBSERVADO_POR_ANIO` (variación anual del IPC al cierre de diciembre, decimal) con fuente y fecha de revisión (regla ADN #12): 2024 = 5,20% y 2025 = 5,10% (DANE, boletín de 2026-01-08), más el helper `ipcObservadoVigente()`.
+
+Primer consumidor: la **rentabilidad real del portafolio** de Inversión pasa a descontar la inflación observada (el dato real de pérdida de poder adquisitivo) en vez de la meta de BanRep (3%), que queda en el copy como referencia de largo plazo. Con tasas nominales típicas de CDT (~9-10% EA) la diferencia es material: real ~4,2% con IPC observado vs ~6,3% con la meta. Mantenimiento anual: agregar la entrada del año en enero, junto a E.2.
+
+2008/2008 → 2012/2012 unit (4 nuevos); 128/128 E2E. Lint limpio. SW v293 → v294.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `IPC_OBSERVADO_POR_ANIO` + `ipcObservadoVigente()`. |
+| `modules/dominio/inversiones/view.js` | Rentabilidad real con IPC observado; copy con ambas referencias. |
+| `tests/unit/constants.test.js` | Describe E.5 (4 tests). |
+| `service-worker.js` | v293 → v294. |
+
+---
+
 ### feat(gastos): TX.3, categorías Café y Gastos hormiga · 2026-07-04
 
 Cierra TX.3. Dos categorías nuevas en el catálogo de gastos: **Café ☕** y **Gastos hormiga 🐜** (el concepto conocido en finanzas personales para las fugas pequeñas y recurrentes). Aparecen automáticamente en el form de gasto, los envelopes de Límites y la dona de Análisis. Sin migración: los gastos existentes no cambian. Guardarraíl nuevo: toda categoría de gasto debe tener emoji propio (ninguna cae al fallback 📦).
