@@ -129,15 +129,6 @@ _(sin pendientes activos.)_
 - Depende de : **AH.3 propone lo contrario** (que el aporte sí descuente). Resolver ambos en la misma decisión; puede absorberse en el ADR de AH.3.
 - Modelo     : Sonnet 5 - Bajo (o absorbido en AH.3)
 
-#### AH.2 - Aporte recomendado según los ingresos, explicado
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : construir el aporte sugerido con datos reales (ingresos/promedio, frecuencia, gastos fijos, deudas, otras metas) en vez de un valor sin explicación; si falta info, pedir el promedio de ingreso mensual.
-- Secciones  : Ahorro
-- Archivos   : `modules/dominio/ahorro/`, `modules/dominio/tesoreria/logic.js` (MC.6a ya calcula `faltanteFondo / 12`)
-- Depende de : conviene alinear con MC.10/MC.11 para no tener dos motores de recomendación de ahorro.
-- Modelo     : Sonnet 5 - Medio (o Opus si toca el motor de distribución)
-
 #### AH.3 (revisa el modelo del fondo) - Registrar el origen del dinero en el aporte
 - Prioridad  : media
 - Estado     : requiere ADR

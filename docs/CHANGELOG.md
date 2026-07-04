@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ahorro): AH.2, aporte recomendado del fondo explicado con datos reales · 2026-07-04
+
+Cierra AH.2. El compromiso mensual del fondo de emergencia deja de ser una pregunta sin guía: el modal muestra un **aporte sugerido construido con los datos reales del usuario** y la explicación de dónde sale, con botón "Usar este monto".
+
+- Nueva `calcularAporteSugerido` (pura, en `ahorro/logic.js`), **alineada con el motor de distribución de Mis cuentas** (ADR 013, MC.6a/MC.10/MC.11) para no tener dos recomendaciones contradictorias: mismo horizonte de 12 meses para cerrar el fondo, mismos pisos (estilo de vida 10%, ahorro 5%), mismo reparto proporcional con margen corto y misma honestidad en déficit (si fijos + cuotas superan el ingreso: $0 y la verdad, sin inventar porcentajes).
+- Señales que usa: ingresos mensuales proyectados, gastos fijos, cuotas de deuda activas y el aporte que ya piden las metas/apartados con fecha (réplica local del cálculo de tesorería, regla ADN #10). Cinco bases posibles: `meta` (alcanza el ritmo de 12 meses), `capacidad` (sugiere lo que el margen permite y estima el plazo real; con más de 36 meses no promete fechas), `piso` (margen corto: proporcional 5/15), `deficit` y `completo`.
+- **Si falta el ingreso** (nada registrado), la sugerencia usa solo el faltante/12 y el form pide "¿Cuánto recibes al mes, aproximadamente?": la caja se recalcula en vivo mientras el usuario escribe, sin persistir el dato.
+- La sección de hábito, cuando no hay compromiso definido, acompaña la pregunta con "Según tus números, $X es un buen punto de partida".
+
+1974/1974 → 1983/1983 unit (9 tests nuevos); 127/127 E2E. Lint limpio. SW v288 → v289.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/ahorro/logic.js` | `calcularAporteSugerido` + constantes alineadas con ADR 013. |
+| `modules/dominio/ahorro/view.js` | Caja de sugerencia reutilizable; form con input de ingreso opcional; hint en hábito. |
+| `modules/dominio/ahorro/index.js` | Contexto (cuotas de deuda, objetivos con fecha); recálculo en vivo; acción `ahorro-usar-sugerido`. |
+| `tests/unit/ahorro.test.js` | 9 tests nuevos. |
+| `service-worker.js` | v288 → v289. |
+
+---
+
 ### feat(personales): PE.1, tasa de interés opcional y reparto capital/interés · 2026-07-04
 
 Cierra PE.1. El préstamo dado (Me deben) acepta una **tasa de interés mensual opcional**, el modelo del préstamo informal en Colombia ("te presto al 2% mensual"): interés simple sobre el capital pendiente, prorrateado por días (mes comercial de 30), sin capitalización. Sin tasa, nada cambia (retrocompatible en lógica, vista y tests).
