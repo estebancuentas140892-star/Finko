@@ -254,47 +254,11 @@ _(sin pendientes activos.)_
 #### PE.1 (schema + lógica financiera) - Tasa de interés opcional + reparto capital/interés
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : campo opcional de tasa en el préstamo dado; con él, calcular capital, interés generado, saldo pendiente y total recuperado. Requiere migración idempotente y lógica de amortización (reusable de `infra/financiero.js`).
+- Objetivo   : campo opcional de tasa en el préstamo dado; con él, calcular capital, interés generado, saldo pendiente y total recuperado. Requiere migración idempotente y lógica de amortización (reusable de `infra/financiero.js`). Al haber tasa, el chip de estado (PE.4, cerrada) puede indicar además cuánto del abono fue a capital vs interés.
 - Secciones  : Me deben
 - Archivos   : `modules/dominio/personales/logic.js` (línea ~7), `modules/infra/financiero.js`
-- Depende de : nada. Al haber tasa, cada pago se reparte capital/interés (ver PE.4).
+- Depende de : nada
 - Modelo     : Opus 4.8 - Medio (nueva lógica financiera CO + schema)
-
-#### PE.2 - Humanizar la antigüedad
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : reemplazar "1.825 días" por formato natural ("Hace 5 años", "Hace 8 meses"...). Nuevo helper puro de tiempo relativo, idealmente en `infra/utils.js` para reuso.
-- Secciones  : Me deben
-- Archivos   : `modules/dominio/personales/view.js` (`_renderPersonalItem`, línea ~100), `modules/infra/utils.js`
-- Depende de : nada. Reusado por PE.4.
-- Modelo     : Sonnet 5 - Medio
-
-#### PE.3 - Suavizar el copy de los estados
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : cambiar "N días, ya toca cobrar" por tono de seguimiento: "La fecha de pago ya pasó", "El pago está pendiente", "Próximo pago en 5 días", "Pago programado para hoy". Los estados "próximo pago"/"para hoy" requieren algo de lógica de estado por `fechaLimite`, no solo antigüedad.
-- Secciones  : Me deben
-- Archivos   : `modules/dominio/personales/view.js` (línea ~103)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio
-
-#### PE.4 (reusa PE.2, se completa con PE.1) - Mejorar el estado tras un pago
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : tras un pago, el chip muestra "0 días" (poco informativo). Usar estados como "Recibiste la cuota de este mes", "Último pago: hoy / ayer / hace 15 días", reusando el humanizador de PE.2. Con PE.1, indicar además cuánto fue a capital vs interés.
-- Secciones  : Me deben
-- Archivos   : `modules/dominio/personales/view.js` (línea ~106, `ultimoPago`; línea ~114, hint ya existente)
-- Depende de : PE.2, se enriquece con PE.1
-- Modelo     : Sonnet 5 - Medio
-
-#### PE.5 - "Te han devuelto" en verde
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : resaltar `r.totalCobrado` en verde (positivo, ingreso), coherente con los patrones de color financieros de la app.
-- Secciones  : Me deben
-- Archivos   : `modules/dominio/personales/view.js` (línea ~60)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
 
 ---
 

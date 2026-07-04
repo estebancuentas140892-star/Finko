@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(personales): PE.2 a PE.5, estados de seguimiento humanizados en Me deben · 2026-07-03
+
+Cierra PE.2, PE.3, PE.4 y PE.5 en un solo pase (los cuatro reescriben el mismo chip de estado de `_renderPersonalItem` o líneas vecinas).
+
+- **PE.2:** nuevo helper puro `tiempoRelativo(dias)` en [infra/utils.js](../modules/infra/utils.js): 0 → "hoy", 1 → "ayer", luego días/semanas/meses/años con singular correcto ("hace 1 mes", "hace 5 años"). Reusable por cualquier dominio.
+- **PE.3:** nueva lógica de estado por `fechaLimite` en [personales/logic.js](../modules/dominio/personales/logic.js): `estadoPrestamo()` devuelve `proximo` (fecha pactada futura), `hoy`, `vencido`, `abonado` o `pendiente`; `labelEstado()` produce el copy de seguimiento: "Próximo pago en 5 días", "Pago programado para hoy", "La fecha de pago pasó hace 2 meses", en vez de "N días, ya toca cobrar".
+- **PE.4:** tras un abono el chip ya no dice "0 días": muestra "Recibiste un abono hoy" o "Último abono hace 15 días" (reusa el humanizador de PE.2). El reparto capital/interés quedará para PE.1.
+- **PE.5:** el valor "Te han devuelto" del resumen usa `.text-success` (verde, coherente con los patrones de color financieros).
+
+El tono del chip (default/warning/danger) sigue saliendo del reloj de incomodidad (`clasificarAntiguedad` sobre `calcularDias`, que un abono reinicia); un préstamo vencido se muestra en warning si el reloj es reciente y solo pasa a danger cuando es viejo.
+
+1892/1892 → 1914/1914 unit verdes (7 tests de `tiempoRelativo`, 15 de `estadoPrestamo`/`labelEstado`); 123/123 E2E sin regresiones. Lint limpio. SW v278 → v279.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/utils.js` | Nuevo `tiempoRelativo(dias)`. |
+| `modules/dominio/personales/logic.js` | Nuevos `estadoPrestamo` y `labelEstado`. |
+| `modules/dominio/personales/view.js` | Chip por estado; "Te han devuelto" en verde. |
+| `tests/unit/utils.test.js`, `tests/unit/personales.test.js` | 29 tests nuevos. |
+| `service-worker.js` | v278 → v279. |
+
+---
+
 ### style(a11y): COL.1 y COL.2, contraste de warning en claro y texto deshabilitado · 2026-07-03
 
 Cierra COL.1 y COL.2 en un solo pase (mismo tipo de ajuste, mismos archivos de tokens).
