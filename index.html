@@ -137,7 +137,7 @@
                  central del bottom nav. Abre la hoja #modal-registrar. No es una
                  sección: es una acción global de registro en la zona del pulgar. -->
             <button class="nav-item nav-item--registrar nav-item--mobile-only" type="button"
-                    data-action="modal-open" data-modal="modal-registrar"
+                    data-action="registrar-abrir-hoja" data-modal="modal-registrar"
                     aria-label="Registrar un movimiento" aria-haspopup="dialog">
               <span class="nav-item__fab" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>
               <span class="nav-item__label">Registrar</span>
@@ -959,11 +959,13 @@
     </div>
   </div>
 
-  <!-- ── HOJA REGISTRAR (NAV.A2, ADR 024): acción global de registro ──
-       El botón central "+" del bottom nav la abre. Cada teja cierra la hoja
-       y dispara su acción destino (registrar-abrir en actions.js), reusando
-       los modales existentes de Gasto e Ingreso. Extensible: Abono a deuda y
-       Aporte a ahorro llegan cuando exista su selector de destino (NAV.B). -->
+  <!-- ── HOJA REGISTRAR (NAV.A2/A2b, ADR 024): acción global de registro ──
+       El botón central "+" del bottom nav la abre (registrar-abrir-hoja, que
+       reconstruye las tejas según los datos del usuario). Gasto e Ingreso son
+       fijas; Abono a deuda y Aporte a ahorro las inyecta registrar.js cuando
+       hay destino. Cada teja cierra la hoja y dispara su acción destino
+       (registrar-abrir en actions.js), reusando los modales existentes. Con
+       2+ destinos, la teja abre el selector "¿a cuál?" en la vista destino. -->
   <div class="modal-overlay" id="modal-registrar"
        role="dialog" aria-modal="true"
        aria-labelledby="modal-registrar-title" aria-hidden="true">
@@ -976,22 +978,28 @@
         </button>
       </header>
       <div class="modal__body">
-        <div class="menu-mas__grid registrar__grid">
-          <button class="menu-mas__item registrar__tile" type="button"
-                  data-action="registrar-abrir" data-target-action="nuevo-gasto"
-                  data-kind="gasto">
-            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
-            <span class="menu-mas__label">Gasto</span>
-            <span class="registrar__tile-desc">Una compra o pago que hiciste</span>
-          </button>
-          <button class="menu-mas__item registrar__tile" type="button"
-                  data-action="registrar-abrir" data-target-action="nuevo-ingreso-puntual"
-                  data-kind="ingreso">
-            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
-            <span class="menu-mas__label">Ingreso</span>
-            <span class="registrar__tile-desc">Dinero que recibiste</span>
-          </button>
+        <!-- Vista raíz: tejas de registro. registrar.js inserta Abono/Aporte
+             tras Ingreso según S; Gasto e Ingreso quedan fijas aquí. -->
+        <div id="registrar-vista-raiz">
+          <div class="menu-mas__grid registrar__grid" id="registrar-grid">
+            <button class="menu-mas__item registrar__tile" type="button"
+                    data-action="registrar-abrir" data-target-action="nuevo-gasto"
+                    data-kind="gasto">
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
+              <span class="menu-mas__label">Gasto</span>
+              <span class="registrar__tile-desc">Una compra o pago que hiciste</span>
+            </button>
+            <button class="menu-mas__item registrar__tile" type="button"
+                    data-action="registrar-abrir" data-target-action="nuevo-ingreso-puntual"
+                    data-kind="ingreso">
+              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+              <span class="menu-mas__label">Ingreso</span>
+              <span class="registrar__tile-desc">Dinero que recibiste</span>
+            </button>
+          </div>
         </div>
+        <!-- Vista destino: selector "¿a cuál?" (registrar.js la llena y muestra). -->
+        <div id="registrar-vista-destino" hidden></div>
       </div>
     </div>
   </div>

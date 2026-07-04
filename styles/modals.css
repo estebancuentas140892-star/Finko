@@ -158,9 +158,9 @@
   line-height: 1.2;
 }
 
-/* ── HOJA REGISTRAR (NAV.A2): dos tejas grandes gasto/ingreso ── */
+/* ── HOJA REGISTRAR (NAV.A2/A2b): tejas de registro + selector destino ── */
 
-/* Dos columnas: son pocas tejas y grandes (fork "salió / entró"). */
+/* Dos columnas: tejas grandes (Gasto/Ingreso y, si hay datos, Abono/Aporte). */
 .registrar__grid { grid-template-columns: repeat(2, 1fr); }
 
 .registrar__tile {
@@ -176,11 +176,78 @@
   font-size: var(--fk-text-xs);
   color: var(--fk-text-muted);
   line-height: 1.3;
+  /* El nombre del destino (o "Elige a cuál") no debe romper el alto de la teja. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .registrar__tile .menu-mas__icon.icon { width: 32px; height: 32px; }
-/* Color con propósito: gasto sale (naranja), ingreso entra (verde). */
+/* Color con propósito: gasto sale (naranja), ingreso entra (verde);
+   abono a deuda y aporte a ahorro heredan el color de su sección. */
 .registrar__tile[data-kind="gasto"]   .icon { color: var(--fk-dom-gastos); }
 .registrar__tile[data-kind="ingreso"] .icon { color: var(--fk-success); }
+.registrar__tile[data-kind="abono"]   .icon { color: var(--fk-dom-compromisos); }
+.registrar__tile[data-kind="aporte"]  .icon { color: var(--fk-dom-ahorro); }
+
+/* Selector "¿a cuál?" (2+ destinos): lista vertical dentro de la misma hoja. */
+.registrar__destino-head {
+  margin-bottom: var(--fk-space-3);
+}
+.registrar__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-2) var(--fk-space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+}
+.registrar__volver:hover { color: var(--fk-text-primary); }
+.registrar__volver .icon { width: 16px; height: 16px; }
+
+.registrar__destino-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.registrar__destino-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.registrar__destino-item:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+}
+.registrar__destino-nombre {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.registrar__destino-monto {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  white-space: nowrap;
+}
 
 /* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */
 

@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV.A2b slice 1, Abono a deuda y Aporte a ahorro en la hoja "Registrar" · 2026-07-04
+
+Primer corte de NAV.A2b ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D2). La hoja "Registrar" (que en NAV.A2a quedó con Gasto e Ingreso) suma las dos acciones que dependen de los datos del usuario y necesitan elegir un destino:
+
+- **Abono a deuda:** aparece solo si hay al menos una deuda activa con saldo pendiente (espejo de la condición del botón "Abonar" de la lista de Deudas).
+- **Aporte a ahorro:** aparece solo si hay fondo de emergencia activo, alguna meta no completada o algún apartado. Inversión queda fuera (ADR D2: no tiene flujo de aporte incremental, solo "nueva inversión").
+
+**Cómo funciona sin acoplar dominios:** módulo nuevo `ui/registrar.js` que lee `S` directamente (permitido para el shell, igual que el consolidado de ahorro; no importa ningún dominio, regla ADN #10) y reusa la acción built-in `registrar-abrir` incrustando el `data-id` del destino elegido. Así cada flujo de dinero ya existente (`abrir-abono`, `ahorro-nuevo-aporte`, `abonar-meta`, `aportar-apartado`) corre exactamente igual que desde su sección y acredita o descuenta la cuenta como siempre: **cero lógica de dinero nueva en este slice.**
+
+**Patrón 0/1/varias** (el mismo de `cuenta-helper` para el origen del dinero): 0 destinos → la teja no aparece; 1 destino → la teja enruta directo (con el `data-id` ya incrustado); 2+ → la teja abre el selector "¿a cuál?" dentro de la misma hoja (vista destino con lista + "Volver"), sin anidar modales. El botón central "+" pasa de `modal-open` a la acción nueva `registrar-abrir-hoja`, que reconstruye las tejas dinámicas desde `S` cada vez que la hoja se abre.
+
+**Diferido a slice 2 (nueva sesión):** la oferta del asistente de distribución tras registrar un ingreso, que necesita el modo "ya acreditado" en `_confirmarDistribucion` para no duplicar el abono (la trampa documentada en ADR 024 D3). Es la pieza de lógica de dinero riesgosa, aislada a propósito.
+
+El preview del entorno quedó con caché de módulos envenenado (ni recarga ni reinicio del server la bustan, síntoma ya documentado); verificado con E2E en Chromium fresco: la hoja muestra las 4 tejas con datos, el selector lista los destinos correctos y enruta a cada modal, y el caso de 1 destino salta el selector. 2043/2043 unit (+6, `registrar.test.js` cubre `destinosAbono`/`destinosAporte`); **144/144 E2E** (+6, nueva suite `registrar-destinos`); lint limpio; axe sobre el HTML estático sin violaciones. SW v303 → v304.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/registrar.js` | Módulo nuevo: `destinosAbono`/`destinosAporte` (puras) + tejas dinámicas + selector de destino + acciones `registrar-abrir-hoja`/`registrar-elegir-destino`/`registrar-volver`. |
+| `index.html` | Hoja con vista raíz (`#registrar-grid`) + vista destino; "+" del nav → `registrar-abrir-hoja`. |
+| `modules/ui/bootstrap.js` | `initRegistrar()` tras `initMenuMas()`. |
+| `styles/modals.css` | Tintes de las tejas Abono (deudas) / Aporte (ahorro) + estilos del selector de destino. |
+| `service-worker.js` | Precache de `modules/ui/registrar.js`; v303 → v304. |
+| `tests/unit/registrar.test.js` | Suite nueva (6 tests): destinos de abono y aporte, filtros y bordes. |
+| `tests/e2e/registrar-destinos.test.js` | Suite nueva (6 tests): tejas condicionales, selector, enrutado a cada modal, 0/1/varias. |
+
+---
+
 ### feat(nav): NAV.B, hub "Ahorros" con pestañas y consolidado · 2026-07-04
 
 Tercera tarea del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) (decisiones D4, D5 y D6). "¿Dónde están mis ahorros?" tenía cuatro respuestas que competían sin jerarquía; ahora tiene una:
