@@ -9,6 +9,9 @@ import {
   TIPOS_POR_CLASE,
   CATEGORIAS_GASTO,
   CATEGORIAS_GASTO_USUARIO,
+  INFLACION_OBJETIVO,
+  IPC_OBSERVADO_POR_ANIO,
+  ipcObservadoVigente,
   CATEGORIA_EMOJI,
   CATEGORIA_AGENDA_EMOJI,
   CATEGORIA_INGRESO_EMOJI,
@@ -204,6 +207,30 @@ describe('CATEGORIAS_META / CATEGORIA_META_EMOJI', () => {
 // Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas, Metas + PLANTILLAS_APARTADO.
 // Se ignoran etiquetas internas de Gastos (Deudas, Ahorro, Alimentación).
 // La comparación es por nombre exacto (case-sensitive): "Otro" ≠ "Otros".
+
+describe('E.5 - IPC observado como constante anual', () => {
+  it('tiene el cierre oficial del DANE para 2024 y 2025', () => {
+    expect(IPC_OBSERVADO_POR_ANIO[2024]).toBe(0.0520);
+    expect(IPC_OBSERVADO_POR_ANIO[2025]).toBe(0.0510);
+  });
+
+  it('ipcObservadoVigente devuelve el año más reciente publicado', () => {
+    const v = ipcObservadoVigente();
+    expect(v.anio).toBe(2025);
+    expect(v.valor).toBe(0.0510);
+  });
+
+  it('todos los valores son decimales razonables (entre 0 y 30%)', () => {
+    for (const [anio, valor] of Object.entries(IPC_OBSERVADO_POR_ANIO)) {
+      expect(valor, `IPC de ${anio}`).toBeGreaterThan(0);
+      expect(valor, `IPC de ${anio}`).toBeLessThan(0.30);
+    }
+  });
+
+  it('la meta de BanRep sigue disponible como referencia aparte', () => {
+    expect(INFLACION_OBJETIVO).toBe(0.03);
+  });
+});
 
 describe('TX.3 - Café y Gastos hormiga en el catálogo de gastos', () => {
   it('las dos categorías nuevas existen y son visibles para el usuario', () => {

@@ -205,12 +205,30 @@ export const TOPES_RENTA_UVT = {
 export const UMBRAL_ALERTA_RENTA = 0.80;
 
 /** Meta de inflación de largo plazo del Banco de la República (3 % EA).
- *  Supuesto por defecto para proyectar la rentabilidad REAL de inversiones
- *  (descuenta la pérdida de poder adquisitivo). Es una meta puntual, no el
- *  dato del mes: la inflación observada puede diferir.
+ *  Referencia de largo plazo; la inflación observada puede diferir.
  *  Fuente: Banco de la República, meta puntual de inflación de largo plazo.
  *  Revisar: anual (la meta puntual es estable en 3 % desde 2010). */
 export const INFLACION_OBJETIVO = 0.03;
+
+/** IPC observado por año: variación anual del IPC al cierre de diciembre,
+ *  como decimal (0.051 = 5,1 %). Es el dato real de pérdida de poder
+ *  adquisitivo, a diferencia de INFLACION_OBJETIVO (meta de BanRep).
+ *  Fuente: DANE, boletín técnico IPC de diciembre de cada año.
+ *  Revisar: enero de cada año, cuando el DANE publica el cierre (E.5). */
+export const IPC_OBSERVADO_POR_ANIO = {
+  2024: 0.0520,  // DANE, IPC dic-2024: 5,20 % anual
+  2025: 0.0510,  // DANE, IPC dic-2025: 5,10 % anual (boletín de 2026-01-08)
+};
+
+/**
+ * IPC observado más reciente publicado, con su año.
+ * @returns {{ anio: number, valor: number }} valor como decimal (0.051 = 5,1 %).
+ */
+export function ipcObservadoVigente() {
+  const anios = Object.keys(IPC_OBSERVADO_POR_ANIO).map(Number).sort((a, b) => b - a);
+  const anio  = anios[0];
+  return { anio, valor: IPC_OBSERVADO_POR_ANIO[anio] };
+}
 
 // ── METADATOS DE LA APP ──────────────────────────────────────────
 

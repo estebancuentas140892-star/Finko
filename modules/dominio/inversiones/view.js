@@ -6,7 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
-import { INFLACION_OBJETIVO } from '../../core/constants.js';
+import { INFLACION_OBJETIVO, ipcObservadoVigente } from '../../core/constants.js';
 import { calcularRegla72 } from '../../infra/financiero.js';
 import {
   calcularTotalInvertido,
@@ -19,8 +19,12 @@ import {
   TIPOS_INVERSION,
 } from './logic.js';
 
-/** Inflación esperada (%) usada en la rentabilidad real del portafolio. */
-const INFLACION_PCT = INFLACION_OBJETIVO * 100;
+/** Meta de inflación de BanRep (%), referencia de largo plazo en el copy. */
+const INFLACION_META_PCT = INFLACION_OBJETIVO * 100;
+
+/** IPC observado más reciente (E.5): el descuento real de poder adquisitivo. */
+const IPC_VIGENTE = ipcObservadoVigente();
+const IPC_PCT     = IPC_VIGENTE.valor * 100;
 
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
@@ -109,7 +113,9 @@ function _renderProyeccion(inversiones) {
       </section>`;
   }
 
-  const real = calcularRentabilidadRealPortafolio(inversiones, INFLACION_PCT);
+  // E.5: la rentabilidad real se descuenta con el IPC observado (dato DANE),
+  // no con la meta de BanRep: es la pérdida de poder adquisitivo real de hoy.
+  const real = calcularRentabilidadRealPortafolio(inversiones, IPC_PCT);
 
   const gananciaPositiva = proy.rendimientoEsperado >= 0;
   const notaNoProy = proy.noProyectables > 0
@@ -124,7 +130,7 @@ function _renderProyeccion(inversiones) {
           Rentabilidad nominal <strong>${_fmtTasa(real.tasaNominalPct)}%</strong> EA →
           real <strong class="${real.tasaRealPct >= 0 ? 'is-pos' : 'is-neg'}">${_fmtTasa(real.tasaRealPct)}%</strong>
         </p>
-        <p class="inversion-proy__real-nota">Ya descontada una inflación estimada del ${_fmtTasa(INFLACION_PCT)}% (meta del Banco de la República). La inflación real puede variar.</p>
+        <p class="inversion-proy__real-nota">Ya descontada la inflación observada de ${IPC_VIGENTE.anio}: ${_fmtTasa(IPC_PCT)}% anual (DANE, IPC). La meta de largo plazo del Banco de la República es ${_fmtTasa(INFLACION_META_PCT)}%.</p>
       </div>`
     : '';
 
