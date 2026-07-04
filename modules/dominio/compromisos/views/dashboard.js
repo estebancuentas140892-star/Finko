@@ -61,7 +61,7 @@ export function renderPanelVencidos() {
       :                         `hace ${dias} días`;
     return `
       <li class="vencidos-card__item vencidos-card__item--${v.severidad}">
-        <span class="vencidos-card__icon cal-dot--${tipo}" aria-hidden="true">${icono}</span>
+        <span class="vencidos-card__icon vencidos-card__icon--${tipo}" aria-hidden="true">${icono}</span>
         <div class="vencidos-card__body">
           <p class="vencidos-card__name">${desc}</p>
           <p class="vencidos-card__sub">venció ${cuando}</p>

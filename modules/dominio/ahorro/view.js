@@ -204,9 +204,7 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null)
         <span class="fondo-hero__meta-label">${labelObjetivo}</span>
       </p>
 
-      <p class="fondo-hero__meta">
-        <span class="fondo-hero__meta-label">Este dinero sigue en tus cuentas: el fondo solo lo marca como reservado para emergencias (a diferencia de Metas y Apartados, no descuenta saldo).</span>
-      </p>
+      <p class="fondo-hero__nota">Este dinero sigue en tus cuentas: el fondo solo lo marca como reservado para emergencias (a diferencia de Metas y Apartados, no descuenta saldo).</p>
 
       ${banner}
     </article>

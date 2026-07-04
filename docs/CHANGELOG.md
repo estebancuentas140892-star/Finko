@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.4, espaciado y jerarquía en las tarjetas más densas · 2026-07-04
+
+Segunda fase de la iniciativa de identidad visual 2026-07 (revisión aprobada por el usuario). Cinco puntos de la auditoría visual quedan resueltos:
+
+- **"¿Cómo distribuir?" (Mis cuentas, la tarjeta más densa en móvil):** las filas Necesidades/Estilo de vida/Ahorro pasan de párrafos corridos a un mini listado alineado (icono, etiqueta, porcentaje, monto) con filete discreto entre filas. Las alertas ("fondo aún no completo"...) ganan un callout con tinte de advertencia en vez de mezclarse con el texto. Los enlaces "Ver progreso/estrategia/seguimiento" pasan a fila propia con separación real entre ellos.
+- **Bug real, no solo espaciado:** el icono de "1 pendiente del mes" en Inicio era invisible: reutilizaba `.cal-dot--*`, que pinta fondo Y color del mismo tono, así que el SVG quedaba del mismo color que su propio fondo. Ahora es un chip con fondo tenue y el icono en el color completo del dominio (`vencidos-card__icon--fijo/deuda-entidad/deuda-personal`).
+- **Tarjeta del fondo (Ahorro):** la nota "este dinero sigue en tus cuentas..." se separa del dato "Objetivo: $X" con un filete y un peldaño menos de peso visual (ya no compite con la cifra).
+- **Confetti de logros en móvil:** cada pieza partía siempre desde `bottom:90px` y caía 80px; en desktop no pasaba nada, pero en móvil terminaba a 10px del borde, dentro de la franja del bottom-nav. Ahora en viewports < 1024px arranca por encima de esa franja (mismo criterio que ya usa el toast).
+- **Fade del sidebar (ventanas ≤ 800px de alto):** la franja que insinúa "hay más para desplazar" pasa de 20px a 36px con más paradas de color, así el borde de "HERRAMIENTAS" se ve como un desvanecido intencional y no como texto cortado a la mitad.
+
+2024/2024 unit; 128/128 E2E. Lint limpio. SW v297 → v298.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js` | Filas de distribución, alertas y CTAs con markup propio. |
+| `modules/dominio/compromisos/views/dashboard.js` | Icono de vencidos con clase de color dedicada (fix del bug de invisibilidad). |
+| `modules/dominio/ahorro/view.js` | Nota del fondo con clase propia (separada del dato). |
+| `modules/dominio/logros/index.js` | Confetti con clearance de bottom-nav en móvil. |
+| `styles/components/domain.css` | `.distribucion-row/-alerta/-ctas`, `.vencidos-card__icon--*`. |
+| `styles/components/analysis.css` | `.fondo-hero__nota`. |
+| `styles/layout.css` | Fade del sidebar más alto y suave; `.nav-item` compacto en ventanas bajas. |
+| `service-worker.js` | v297 → v298. |
+
+---
+
 ### feat(ui): ID.1, lenguaje de iconografía propio con piloto en la navegación · 2026-07-04
 
 Primera fase de la iniciativa de identidad visual 2026-07 (revisión aprobada por el usuario). Nace la familia **"Finko Icons"** ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): línea sobre grid 24 (trazo 2 heredado de `.icon`), **duotono** (la región "cuerpo" con `fill="currentColor" fill-opacity=".15"` como atributo del símbolo, atraviesa `<use>` sin CSS nuevo) y **punto de valor** (un círculo sólido integrado en la metáfora: la firma de la familia). Glifos utilitarios quedan monolínea a propósito.

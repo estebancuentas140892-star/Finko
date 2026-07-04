@@ -126,21 +126,12 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1 (lenguaje + piloto de navegación) cerró el 2026-07-04; estas son las fases restantes, en orden sugerido.
-
-#### ID.4 - Pase de espaciado y jerarquía en tarjetas densas
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : dar aire y jerarquía a los 5 puntos detectados en la revisión visual: tarjeta "¿Cómo distribuir?" (Mis cuentas, la más densa en móvil), tarjeta del fondo (Ahorro), toast de logros que tapa el bottom-nav móvil, fade del sidebar que corta "HERRAMIENTAS" en ventanas de ~800px de alto, y el 🟨 como icono de pendientes en Inicio (interino hasta ID.2).
-- Secciones  : Mis cuentas, Ahorro, Inicio, shell
-- Archivos   : `styles/components/domain.css`, `styles/components/atoms.css`, `styles/layout.css`, vistas de tesoreria/ahorro
-- Depende de : nada (independiente de ID.2/ID.3)
-- Modelo     : Sonnet 5 - Alto
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1 (lenguaje + piloto de navegación, 2026-07-04) e ID.4 (espaciado y jerarquía, 2026-07-04) cerradas; estas son las fases restantes, en orden sugerido.
 
 #### ID.2 - Familia Finko Icons en el resto de la UI estructural
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : extender el lenguaje del ADR 023 a los símbolos aún estilo Lucide (saldo, recurring, lightbulb, alert, trophy, mountain, eye...) y retirar los emojis de utilería en títulos y nudges (💡, 🟨, 💪, ✨) reemplazándolos por símbolos de la familia.
+- Objetivo   : extender el lenguaje del ADR 023 a los símbolos aún estilo Lucide (saldo, recurring, lightbulb, alert, trophy, mountain, eye...) y retirar los emojis de utilería en títulos y nudges (💡, 💪, ✨) reemplazándolos por símbolos de la familia.
 - Secciones  : todas (chrome de UI)
 - Archivos   : `index.html` (sprite), vistas que interpolan emojis de utilería
 - Depende de : nada (el lenguaje ya está definido)
@@ -161,7 +152,7 @@ _(sin pendientes activos.)_
 - Objetivo   : tracking levemente negativo y eje óptico de Inter en las cifras grandes (hero, patrimonio, bento values); solo si tras ID.2-ID.4 el detalle aún se nota.
 - Secciones  : Inicio, Análisis, Ahorro
 - Archivos   : `styles/base.css`, `styles/tokens.css`
-- Depende de : ID.4
+- Depende de : nada (ID.4 ya cerró)
 - Modelo     : Sonnet 5 - Bajo
 
 ---

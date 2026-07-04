@@ -747,17 +747,24 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
     { icn: '📦', ...necesidades },
     { icn: '🎯', ...estiloVida },
     { icn: '💰', ...ahorro },
-  ].map(({ icn, label, pct, monto }) =>
-    `<p class="nudge__desc"><strong>${icn} ${_esc(label)}</strong> ${pct}% · ${f(monto)}</p>`
+  ].map(({ icn, label, pct, monto }) => `
+          <div class="distribucion-row">
+            <span class="distribucion-row__icon" aria-hidden="true">${icn}</span>
+            <span class="distribucion-row__label">${_esc(label)}</span>
+            <span class="distribucion-row__pct">${pct}%</span>
+            <span class="distribucion-row__monto">${f(monto)}</span>
+          </div>`
   ).join('');
 
   const alertasHtml = alertas.map(a =>
-    `<p class="nudge__desc">⚠ ${_esc(a)}</p>`
+    `<p class="distribucion-alerta">⚠ <span>${_esc(a)}</span></p>`
   ).join('');
 
-  const ctasHtml = ctas.map(c =>
-    `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
-  ).join('');
+  const ctasHtml = ctas.length > 0
+    ? `<div class="distribucion-ctas">${ctas.map(c =>
+        `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
+      ).join('')}</div>`
+    : '';
 
   return `
     <div class="nudge nudge-info" role="region" aria-label="Distribución sugerida del ingreso">
@@ -777,7 +784,7 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
         </details>
         ${editorPersonalizada}
         <div class="distribucion-rows">
-          <p class="nudge__desc">${_esc(razon)}</p>
+          <p class="distribucion-rows__razon">${_esc(razon)}</p>
           ${rowsHtml}
           ${alertasHtml}
           ${ctasHtml}

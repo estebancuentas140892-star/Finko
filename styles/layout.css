@@ -72,14 +72,28 @@
   .nav-group__label {
     padding-bottom: 4px;
   }
+  /* Un poco más compacto para que quepa más contenido antes del fade
+     y reducir la chance de que la franja caiga justo sobre una etiqueta. */
+  .nav-item {
+    min-height: 36px;
+    padding-block: var(--fk-space-1);
+  }
+  /* Fade más alto y con más paradas: se difumina de a poco (nunca un
+     corte duro sobre una línea de texto), leyéndose como "hay más
+     abajo" en vez de una etiqueta partida a la mitad. */
   .sidebar__nav::after {
     content: '';
     position: sticky;
     bottom: 0;
     display: block;
-    height: 20px;
-    margin-top: -20px;
-    background: linear-gradient(to bottom, transparent, var(--fk-bg-surface));
+    height: 36px;
+    margin-top: -36px;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--fk-bg-surface) 55%, transparent) 65%,
+      var(--fk-bg-surface)
+    );
     pointer-events: none;
   }
 }

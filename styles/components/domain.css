@@ -404,10 +404,83 @@ button.chip:focus-visible {
 
 .distribucion-rows {
   animation: distribucion-rows-in var(--fk-transition-slow) both;
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--fk-space-2);
+  padding-top: var(--fk-space-3);
+  border-top: 1px solid var(--fk-border-subtle);
 }
 
 @keyframes distribucion-rows-in {
   from { opacity: 0; transform: translateY(4px); }
+}
+
+/* Frase que antecede las filas ("Con tus datos, así se ve..."): un peldaño
+   más de presencia que las filas para anunciar el bloque, sin competir con
+   los montos. */
+.distribucion-rows__razon {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 0 0 var(--fk-space-2);
+  line-height: var(--fk-leading-relaxed);
+}
+
+/* Cada fila (Necesidades/Estilo de vida/Ahorro): icono, etiqueta y cifras
+   alineados en columnas en vez de un párrafo corrido, separadas por un
+   filete discreto para que el ojo distinga una fila de la siguiente. */
+.distribucion-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: baseline;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-1);
+}
+.distribucion-row + .distribucion-row {
+  border-top: 1px solid var(--fk-border-subtle);
+}
+.distribucion-row__icon {
+  font-size: 1rem;
+  line-height: 1;
+  align-self: center;
+}
+.distribucion-row__label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.distribucion-row__pct {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.distribucion-row__monto {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Advertencia (ej. "fondo aún no está completo"): callout con tinte de
+   warning para que no se confunda con una fila de dato ni con la razón. */
+.distribucion-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  margin: var(--fk-space-2) 0 0;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  background: var(--fk-warning-bg);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-warning-text);
+  line-height: var(--fk-leading-snug);
+}
+
+.distribucion-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -791,10 +864,34 @@ button.chip:focus-visible {
   padding: 0.5rem 1rem;
 }
 
+/* Chip de icono por tipo: fondo tenue del color de dominio, icono en el
+   color completo. Antes reutilizaba .cal-dot--* (background Y color al
+   mismo tono), lo que pintaba el SVG del mismo color que su propio fondo
+   y lo volvía invisible; con background/color separados el icono se ve. */
 .vencidos-card__icon {
-  font-size: 1.1rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fk-radius-md);
   flex-shrink: 0;
-  line-height: 1;
+}
+.vencidos-card__icon .icon {
+  width: 18px;
+  height: 18px;
+}
+.vencidos-card__icon--fijo {
+  background: color-mix(in srgb, var(--fk-dom-presupuesto) 14%, transparent);
+  color: var(--fk-dom-presupuesto);
+}
+.vencidos-card__icon--deuda-entidad {
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 14%, transparent);
+  color: var(--fk-dom-compromisos);
+}
+.vencidos-card__icon--deuda-personal {
+  background: color-mix(in srgb, var(--fk-dom-personales) 14%, transparent);
+  color: var(--fk-dom-personales);
 }
 
 .vencidos-card__body {

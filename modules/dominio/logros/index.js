@@ -176,8 +176,19 @@ const _CONFETTI_COLORS = [
 /**
  * Lanza 24 piezas de confetti desde la zona inferior-central de la pantalla.
  * Cada pieza es un span.confetti-piece con posicion fixed y color aleatorio.
+ *
+ * En mobile (< 1024px) el punto de partida sube lo que ocupa el bottom-nav:
+ * antes caían siempre desde bottom:90px y la animación las desplaza 80px
+ * hacia abajo, así que en mobile terminaban a ~10px del borde, justo sobre
+ * la barra de navegación inferior (mismo ajuste que ya hace .logro-toast
+ * en nudges.css para no quedar tapado por ella).
  */
 function _lanzarConfetti() {
+  const enMobile = window.matchMedia('(max-width: 1023.98px)').matches;
+  const bottomInicial = enMobile
+    ? 'calc(var(--fk-header-height) + 90px + env(safe-area-inset-bottom, 0px))'
+    : '90px';
+
   for (let i = 0; i < 24; i++) {
     const p = document.createElement('span');
     p.className = 'confetti-piece';
@@ -190,7 +201,7 @@ function _lanzarConfetti() {
 
     Object.assign(p.style, {
       position:         'fixed',
-      bottom:           '90px',
+      bottom:           bottomInicial,
       left:             `${left}%`,
       background:       color,
       transform:        `rotate(${rot}deg)`,

@@ -670,6 +670,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Nota aclaratoria (no es un dato, es contexto): un peldaño por debajo del
+   objetivo, con un filete propio para no competir con el dato principal. */
+.fondo-hero__nota {
+  margin: var(--fk-space-2) 0 0;
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-muted);
+  line-height: var(--fk-leading-relaxed);
+}
+
 .fondo-hero__banner {
   margin: 0;
   padding: var(--fk-space-sm) var(--fk-space-md);
