@@ -204,6 +204,10 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null)
         <span class="fondo-hero__meta-label">${labelObjetivo}</span>
       </p>
 
+      <p class="fondo-hero__meta">
+        <span class="fondo-hero__meta-label">Este dinero sigue en tus cuentas: el fondo solo lo marca como reservado para emergencias (a diferencia de Metas y Apartados, no descuenta saldo).</span>
+      </p>
+
       ${banner}
     </article>
 
@@ -374,7 +378,7 @@ export function renderFormAporte({ fecha }) {
         <input id="aporte-monto" name="monto" class="input" type="number"
                min="1" step="10000" placeholder="100000"
                required aria-required="true" inputmode="numeric" autofocus />
-        <p class="form-hint">¿Cuánto apartaste para el fondo?</p>
+        <p class="form-hint">¿Cuánto apartaste para el fondo? Registrarlo no descuenta tus cuentas: el dinero sigue ahí, solo queda marcado como reservado.</p>
       </div>
 
       <div class="form-group">
