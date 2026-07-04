@@ -115,15 +115,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Revisa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).
 - Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
 
-#### D.12 (mejora UI) - Contextualizar el aviso de tasa desconocida por deuda
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : el aviso de tasa desconocida hoy es un banner único al tope de la sección; moverlo a un aviso por deuda en el render de la lista, para que se identifique al instante.
-- Secciones  : Deudas
-- Archivos   : `modules/dominio/compromisos/views/estrategia.js` (`_renderAvisoTasaDesconocida`, línea ~317), `modules/dominio/compromisos/views/lista.js`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio
-
 #### D.13 - "Fiado" como modalidad de deuda personal
 - Prioridad  : media
 - Estado     : requiere ADR (el mismo de D.10)

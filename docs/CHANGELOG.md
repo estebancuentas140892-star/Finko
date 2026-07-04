@@ -10,6 +10,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.12, aviso de tasa desconocida por deuda en la lista · 2026-07-03
+
+Cierra D.12. El aviso de tasa desconocida era un banner único al tope de la card de estrategia que listaba los nombres, pero al leer la lista de deudas no se identificaba a cuál correspondía. Ahora cada deuda con entidad sin tasa registrada muestra su propio aviso en la card ([lista.js](../modules/dominio/compromisos/views/lista.js)): "⚠️ Tasa por confirmar: la calculamos como 0% y eso subestima los intereses. Confírmala con tu banco." (`.text-warning`, `role="note"`). El contexto de la card ya no repite "tasa por confirmar" (el aviso lo reemplaza). El banner global y su CSS (`.estrategia-card__nota`) se retiran.
+
+1917/1917 unit verdes; 123/123 E2E. Lint limpio. SW v282 → v283.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/lista.js` | Aviso por deuda; contexto sin duplicar la tasa. |
+| `modules/dominio/compromisos/views/estrategia.js` | Banner global retirado. |
+| `styles/components/charts.css` | `.estrategia-card__nota` retirada (muerta). |
+| `service-worker.js` | v282 → v283. |
+
+---
+
 ### feat(compromisos): D.11, la recomendación nombra cuándo la deuda a atacar es la única con interés · 2026-07-03
 
 Cierra D.11 (revisó [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). En `recomendarEstrategia` ([compromisos/logic.js](../modules/dominio/compromisos/logic.js)), cuando ambas estrategias completan el plan y **una sola deuda cobra intereses**:
