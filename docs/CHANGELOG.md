@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.10 y MC.11, piso de ahorro y detección de déficit real · 2026-07-03
+
+Cierra MC.10 y MC.11 juntas, como sugería el tablero ([ADR 013 revisado](DECISIONS/013-distribucion-automatica-inteligente.md), decisiones A y B). Ambas ajustan el reparto del modo Automático cuando las Necesidades son altas:
+
+- **MC.10 (piso de ahorro):** nueva constante `_PISO_AHORRO_PCT = 5`. Cuando el residuo del ingreso no alcanza para el piso de Estilo de vida (10%) más el de ahorro, se reparte **proporcional a los pisos** (el ahorro recibe 1/3 del margen) en vez de irse entero a Estilo de vida. Antes, con obligaciones al 92%, el ahorro quedaba en $0 aunque hubiera fondo incompleto u objetivos con fecha. El ahorro solo queda en $0 sin margen real (obligaciones ≥ 100%) o con déficit real.
+- **MC.11 (déficit real):** `construirContextoDistribucion` incorpora el slice `gastos` y deriva `gastosDelMes`. Si los gastos ya registrados este mes superan el ingreso (ej. un fijo que no está en Calendario y se registró suelto), el modo auto deja de mostrar una distribución "ideal" incoherente: ahorro a $0, razón honesta ("tus gastos ya van en el 113% de tu ingreso: estás gastando más de lo que entra") y alerta accionable (revisar en Análisis, recortar Estilo de vida, registrar en Calendario los fijos que falten). Los presets explícitos no se tocan.
+
+El asignado por grupo de Límites de gasto mejora automáticamente (consume el mismo motor). 1927/1927 → 1934/1934 unit (7 tests nuevos); 127/127 E2E (una corrida con flaky de a11y-forms que pasó en retry; re-corrida limpia). Lint limpio. SW v286 → v287.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Piso de ahorro proporcional; `gastosDelMes` + rama de déficit real. |
+| `tests/unit/tesoreria.test.js` | 7 tests nuevos (3 de MC.10, 3 de MC.11, 1 de contexto). |
+| `docs/DECISIONS/013-...md` | Revisión con decisiones A y B. |
+| `service-worker.js` | v286 → v287. |
+
+---
+
 ### feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado · 2026-07-03
 
 Cierra D.10 y D.13 en un solo pase de diseño, como pedía el tablero ([ADR 015 revisado](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md), decisiones 5 y 6):

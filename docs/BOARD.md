@@ -71,24 +71,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Solo tiene sentido si el usuario lo pide: la mayoría de fijos recurrentes de uso diario (arriendo, servicios, suscripciones) ya son Mensuales.
 - Modelo     : sin definir
 
-#### MC.10 (diseño, revisa ADR 013) - Reservar siempre algo para ahorro cuando hay margen
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : con Necesidades altas, el modo automático reparte 0% a Ahorro porque el piso de Estilo de vida (10%) gana sobre el ahorro extra. Introducir un piso de ahorro que compita con el piso de estilo de vida al repartir el residuo; el ahorro solo debería quedar en $0 cuando de verdad no hay alternativa.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js` (`_PISO_EV_PCT` línea ~754, Paso 3 línea ~871)
-- Depende de : nada. Conviene resolver junto con MC.11 (ambas ajustan el reparto cuando Necesidades son altas). Revisa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
-- Modelo     : diseño Opus 4.8 - Medio; implementación Sonnet 5 - Medio
-
-#### MC.11 (diseño, revisa ADR 013) - Detectar déficit real y comunicarlo
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : cuando el ingreso no cubre las Necesidades (ej. gasto fijo registrado fuera de Agenda), el modelo no dispara el caso de déficit y muestra una distribución "ideal" incoherente. Detectar el déficit real y comunicarlo con recomendaciones accionables en vez de inventar porcentajes.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js` (línea ~812, `montoNec`; línea ~850, caso de déficit)
-- Depende de : nada. Conviene resolver junto con MC.10. Revisa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
-- Modelo     : diseño Opus 4.8 - Medio; implementación Sonnet 5 - Medio
-
 ---
 
 ### Gastos (dominio `gastos`)

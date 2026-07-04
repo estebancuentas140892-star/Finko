@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado)
+> Última actualización: 2026-07-03 (feat(tesoreria): MC.10 y MC.11, piso de ahorro y detección de déficit real)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1927/1927 verdes |
+| Tests unitarios + integración | 1934/1934 verdes |
 | Tests E2E | 127/127 verde. Suites: `smoke` 81 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `reflow-320` 4 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): MC.10 y MC.11, piso de ahorro y detección de déficit real · 2026-07-03
+
+ADR 013 revisado (decisiones A y B). MC.10: piso de ahorro (5%) que compite con el de Estilo de vida; con margen corto el residuo se reparte proporcional a los pisos (antes el ahorro quedaba en $0). MC.11: `gastosDelMes` en el contexto; si los gastos del mes superan el ingreso, el modo auto comunica el déficit con alerta accionable y no inventa % de ahorro. Límites mejora automáticamente (mismo motor). 1934/1934 unit (+7); 127/127 E2E. SW v286 → v287.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Piso de ahorro; déficit real. |
+| `docs/DECISIONS/013-...md` | Revisión con decisiones A y B. |
+
+---
 
 ### feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado · 2026-07-03
 
