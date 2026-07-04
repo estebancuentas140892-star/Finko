@@ -3,6 +3,8 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
+import { CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
+
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
 /**
@@ -294,4 +296,32 @@ export function validarGastoRapido(monto, cuentaId = null, requiereCuenta = fals
     errores.push('Elige desde qué cuenta sale el dinero.');
   }
   return errores;
+}
+
+// ── EMOJI POR ORIGEN (TX.6 / TX.7) ───────────────────────────────
+
+/**
+ * Emoji del gasto según su origen. Un gasto con `compromisoId` nació de un
+ * fijo de Calendario (pago del checklist o "marcar pagado") o de un abono a
+ * deuda; su ícono debe salir del compromiso de origen, no de la categoría
+ * genérica del gasto:
+ *
+ * - Fijo → emoji de su categoría de Agenda (CATEGORIA_AGENDA_EMOJI).
+ * - Deuda con entidad → 🏦. Deuda personal → 🤝.
+ *
+ * Devuelve null si el gasto no tiene origen resoluble (sin `compromisoId`,
+ * compromiso eliminado, o fijo sin categoría): el caller decide el fallback.
+ *
+ * @param {import('../../core/state.js').Gasto} gasto
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {string|null}
+ */
+export function emojiPorOrigen(gasto, compromisos) {
+  if (!gasto?.compromisoId) return null;
+  const comp = (compromisos ?? []).find(c => c.id === gasto.compromisoId);
+  if (!comp) return null;
+  if (comp.tipo === 'deuda-entidad')  return '🏦';
+  if (comp.tipo === 'deuda-personal') return '🤝';
+  if (comp.tipo === 'fijo')           return CATEGORIA_AGENDA_EMOJI[comp.categoria] ?? null;
+  return null;
 }

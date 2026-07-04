@@ -8,7 +8,7 @@ import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos, emojiPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -196,9 +196,14 @@ function _renderGastoItem(gasto) {
     ? '<span class="badge badge--warn" title="Toca editar para completar este gasto">📝 Pendiente</span> '
     : '';
 
+  // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
+  // ícono de su compromiso de origen (categoría de Agenda, o 🏦/🤝 por tipo
+  // de deuda); solo sin origen aplica el emoji de la categoría del gasto.
+  const emoji = emojiPorOrigen(gasto, S.compromisos) ?? CATEGORIA_EMOJI[catKey] ?? icon('gastos');
+
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
-      <div class="list-item__icon list-item__icon--cat" aria-hidden="true">${CATEGORIA_EMOJI[catKey] ?? icon('gastos')}</div>
+      <div class="list-item__icon list-item__icon--cat" aria-hidden="true">${emoji}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>
