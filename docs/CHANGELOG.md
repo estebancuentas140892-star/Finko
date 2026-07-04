@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### chore(tesoreria): MC.12, renombrar "Ingreso" a "Ingresos fijos" · 2026-07-03
+
+Cierra MC.12 (tarea de copy solamente). La sección de ingresos en Mis cuentas se llamaba "Ingreso" (singular, demasiado general); ahora se llama "Ingresos fijos" para dejar claro que registra recurrentes (salario, honorarios periódicos, pensión). Solo cambio en copy visible y `aria-label`; IDs internas del DOM quedan estables.
+
+Puntos tocados: titulo ("Mis ingresos" → "Mis ingresos fijos"), botón ("+ Ingreso" → "+ Ingreso fijo"), modal ("Nuevo ingreso" → "Nuevo ingreso fijo"), diálogo de edición ("Editar ingreso" → "Editar ingreso fijo"), diálogo de eliminación ("Eliminar ingreso" → "Eliminar ingreso fijo"), y mensajes de confirmación (guardado/actualizado/eliminado). Verificado en el preview. 1887/1887 unit verdes.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Título h2, botón, modal title. |
+| `modules/dominio/tesoreria/index.js` | Mensajes + diálogos. |
+
+---
+
 ### fix(tesoreria): MC.7f, pulido del asistente (copy, foco, transición, estados vacíos) · 2026-07-03
 
 Cierra MC.7f (opcional), el último punto de la épica MC.7. Ninguna lógica financiera nueva: ajustes de copy, accesibilidad y una transición sutil sobre el shell paginado que ya entregaron MC.7d y MC.7e.

@@ -89,15 +89,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Conviene resolver junto con MC.10. Revisa [ADR 013](DECISIONS/013-distribucion-automatica-inteligente.md).
 - Modelo     : diseño Opus 4.8 - Medio; implementación Sonnet 5 - Medio
 
-#### MC.12 - Renombrar "Ingreso" a "Ingresos fijos"
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : el bloque de ingresos de Mis cuentas se llama "Ingreso", demasiado general; renombrarlo "Ingresos fijos" para que quede claro que registra los recurrentes (salario, honorarios periódicos, pensión). Solo cambia la etiqueta visible y sus `aria-label`; ids del DOM, rutas y nombre del dominio quedan estables (misma guía que el renombre Dashboard → Inicio).
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/view.js`, posibles menciones de copy en otras vistas
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
-
 ---
 
 ### Gastos (dominio `gastos`)
