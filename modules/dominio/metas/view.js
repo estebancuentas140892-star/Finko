@@ -86,7 +86,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('metas')}</div>
       <p class="empty-state__title">Sin metas de ahorro</p>
-      <p class="empty-state__desc">Define un objetivo libre: un viaje, una laptop, la boda o lo que quieras. Para gastos que sabes que vienen (SOAT, impuestos, arriendo), usa Apartados: ahí Finko calcula cuánto separar en cada cobro.</p>
+      <p class="empty-state__desc">Crea tu primera meta: un viaje, una laptop, la boda o lo que quieras. Para gastos que ya sabes que vienen (SOAT, impuestos, arriendo), usa Apartados.</p>
       <button class="btn btn-primary" data-action="nueva-meta">+ Crear meta</button>
       <p class="empty-state__tip">Tip: para el fondo de emergencia, entra a la sección Ahorro. Finko calcula cuántos meses de colchón ya tienes y te avisa cuánto falta.</p>
     </div>`;

@@ -401,6 +401,7 @@ export function initAhorro() {
       section === 'apartados'   ||
       section === 'inversiones'
     ) {
+      renderBannerProposito('ahorro', _tieneDatosAhorro());
       renderSmart(_renderAhorroBound, 'ahorro');
     }
   });
@@ -427,10 +428,15 @@ export function initAhorro() {
 
   // Re-render al navegar a #ahorro (mismo patrón que metas/presupuesto).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('ahorro');
+    renderBannerProposito('ahorro', _tieneDatosAhorro());
     renderSmart(_renderAhorroBound, 'ahorro');
   });
 
-  renderBannerProposito('ahorro');
+  renderBannerProposito('ahorro', _tieneDatosAhorro());
   renderSmart(_renderAhorroBound, 'ahorro');
+}
+
+/** true si el fondo de emergencia está activo o ya hay algún aporte registrado. */
+function _tieneDatosAhorro() {
+  return Boolean(S.ahorro?.fondoEmergencia?.activo) || (S.ahorro?.aportes ?? []).length > 0;
 }

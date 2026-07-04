@@ -54,7 +54,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('inversion')}</div>
       <p class="empty-state__title">Registra tus inversiones</p>
-      <p class="empty-state__desc">Lleva en un solo lugar tu portafolio real: CDT, fondos, acciones o cripto. Ver cuánto tienes invertido es el primer paso para que tu dinero trabaje por ti.</p>
+      <p class="empty-state__desc">Registra tu primera inversión: CDT, fondo, acciones o cripto.</p>
       <button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>
       <p class="empty-state__tip">${icon('lightbulb')} Tip: primero asegura tu fondo de emergencia en Ahorro. Invierte el dinero que no vas a necesitar a corto plazo.</p>
     </div>`;

@@ -232,6 +232,7 @@ export function initMetas() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'metas') {
+      renderBannerProposito('metas', S.metas.length > 0);
       renderSmart(renderListaMetas, 'metas');
     }
   });
@@ -253,10 +254,10 @@ export function initMetas() {
   // Re-render al navegar a #metas - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('metas');
+    renderBannerProposito('metas', S.metas.length > 0);
     renderSmart(renderListaMetas, 'metas');
   });
 
-  renderBannerProposito('metas');
+  renderBannerProposito('metas', S.metas.length > 0);
   renderSmart(renderListaMetas, 'metas');
 }

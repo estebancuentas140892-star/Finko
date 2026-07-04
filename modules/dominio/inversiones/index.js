@@ -106,6 +106,7 @@ export function initInversiones() {
   // Re-render ante cambios en la colección de inversiones.
   EventBus.on('state:change', ({ section }) => {
     if (section === 'inversiones') {
+      renderBannerProposito('inversion', S.inversiones.length > 0);
       renderSmart(_renderInversionBound, 'inversion');
     }
   });
@@ -127,10 +128,10 @@ export function initInversiones() {
 
   // Re-render al navegar a #inversion (mismo patrón que ahorro/metas).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('inversion');
+    renderBannerProposito('inversion', S.inversiones.length > 0);
     renderSmart(_renderInversionBound, 'inversion');
   });
 
-  renderBannerProposito('inversion');
+  renderBannerProposito('inversion', S.inversiones.length > 0);
   renderSmart(_renderInversionBound, 'inversion');
 }

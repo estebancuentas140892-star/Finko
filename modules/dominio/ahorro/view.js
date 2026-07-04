@@ -139,7 +139,7 @@ function _renderEmptyState(gastosFijosMensuales) {
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('ahorro')}</div>
       <p class="empty-state__title">Empieza tu fondo de emergencia</p>
-      <p class="empty-state__desc">Es la base de cualquier plan financiero: un colchón con 3 a 6 meses de tus gastos fijos para imprevistos (salud, trabajo, casa). Sin esto, una urgencia se paga con deuda cara.</p>
+      <p class="empty-state__desc">Activa tu fondo con 3 a 6 meses de tus gastos fijos.</p>
       <button class="btn btn-primary" data-action="ahorro-activar-fondo">+ Activar fondo</button>
       ${preview}
     </div>`;
