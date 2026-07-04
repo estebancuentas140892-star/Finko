@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ahorro): AH.3 y AUD.6, ADR 020 fondo como marcador de liquidez + hint del modelo · 2026-07-04
+
+Cierra juntas AH.3 y AUD.6, que el tablero pedía resolver en la misma decisión ([ADR 020](DECISIONS/020-fondo-marcador-de-liquidez.md)):
+
+- **Decisión (AH.3):** el fondo de emergencia **sigue siendo un marcador de liquidez**: el aporte no pide cuenta de origen ni descuenta saldo. Se rechaza la variante con patrón AP.1 porque el modelo con descuento no tiene flujo de salida (el fondo no se "gasta" como una meta o un apartado: se usa en emergencias, y el dinero quedaría atrapado fuera de Mis cuentas), la migración retroactiva es imposible (los aportes históricos no tienen cuenta) y toda la app ya asume el marcador (Distribuir mi ingreso, Score, consolidado). La asimetría con Metas/Apartados es de propósito: esos vehículos son gasto futuro comprometido; el fondo es liquidez etiquetada.
+- **Implementación (AUD.6):** hint permanente en la card del fondo ("Este dinero sigue en tus cuentas: el fondo solo lo marca como reservado para emergencias") y en el form de aporte, cerrando la doble contabilidad mental que motivaba ambas tarjetas.
+- AH.4 pierde su dependencia de AH.3: el ADR de recordatorios (AP.4/MT.2/AH.4) puede diseñarse sobre un modelo ya fijado.
+
+1983/1983 unit; 127/127 E2E. Lint limpio. SW v289 → v290.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/020-fondo-marcador-de-liquidez.md` | ADR nuevo con la decisión y las alternativas rechazadas. |
+| `modules/dominio/ahorro/view.js` | Hint del modelo en card y form de aporte. |
+| `service-worker.js` | v289 → v290. |
+
+---
+
 ### feat(ahorro): AH.2, aporte recomendado del fondo explicado con datos reales · 2026-07-04
 
 Cierra AH.2. El compromiso mensual del fondo de emergencia deja de ser una pregunta sin guía: el modal muestra un **aporte sugerido construido con los datos reales del usuario** y la explicación de dónde sale, con botón "Usar este monto".

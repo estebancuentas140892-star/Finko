@@ -120,31 +120,13 @@ _(sin pendientes activos.)_
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)
 
-#### AUD.6 (opcional) - Hint del modelo del fondo de emergencia
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : el fondo de emergencia no descuenta las cuentas al aportar (a diferencia de Metas/Apartados); el usuario puede hacer doble contabilidad mental. Un hint en la card ("este dinero sigue en tus cuentas; el fondo solo lo aparta de tu vista") cierra la brecha.
-- Secciones  : Ahorro
-- Archivos   : `modules/dominio/ahorro/view.js`, `modules/dominio/analisis/logic.js` (tracker paralelo)
-- Depende de : **AH.3 propone lo contrario** (que el aporte sí descuente). Resolver ambos en la misma decisión; puede absorberse en el ADR de AH.3.
-- Modelo     : Sonnet 5 - Bajo (o absorbido en AH.3)
-
-#### AH.3 (revisa el modelo del fondo) - Registrar el origen del dinero en el aporte
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : el form de aporte hoy no pide cuenta ni descuenta saldo (diseño intencional: "el aporte NO descuenta cuenta"). Cambiar a elegir cuenta(s), validar saldo y sincronizar, como el resto de la app (patrón AP.1). Decisión de fondo: ¿el fondo mueve dinero fuera de las cuentas o sigue siendo marcador de dinero líquido?
-- Secciones  : Ahorro
-- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormAporte`, línea ~360), `modules/dominio/ahorro/index.js` (línea ~410)
-- Depende de : converge con AUD.6 (misma decisión).
-- Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
-
 #### AH.4 (épica, requiere ADR) - Quitar "Definir" e integrar el fondo con Calendario
 - Prioridad  : media
 - Estado     : requiere ADR
 - Objetivo   : el botón "Definir →" del compromiso mensual duplica "Distribuir mi ingreso" (MC.4). Quitarlo e integrar el fondo con Calendario: recordatorio "Hoy corresponde tu aporte al Fondo de emergencia" con botón de registro rápido.
 - Secciones  : Ahorro, Calendario
-- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormCompromisoMensual` línea ~400, botón línea ~223)
-- Depende de : converge con MT.2 y AP.4 (mismo ADR). Antes de quitar `compromisoMensual`, verificar si alimenta nudges o el Score de Salud. Depende de AH.3.
+- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormCompromisoMensual`, botón "Definir →")
+- Depende de : converge con MT.2 y AP.4 (mismo ADR). Antes de quitar `compromisoMensual`, verificar si alimenta nudges o el Score de Salud. AH.3 ya está resuelta (ADR 020: el fondo es marcador de liquidez, el aporte no descuenta).
 - Modelo     : diseño Opus 4.8 - Alto
 
 ---
