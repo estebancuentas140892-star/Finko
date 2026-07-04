@@ -166,12 +166,12 @@ Tocar cualquiera de estas reglas requiere un ADR en `docs/DECISIONS/` y discusi�
 python -m http.server 8080
 
 # Tests unitarios (happy-dom)
-pnpm test               # 596 tests
+pnpm test               # cifra vigente en docs/HANDOFF.md sección 2
 pnpm run test:watch
 pnpm run coverage       # umbral 90% sobre capa lógica
 
 # E2E (Playwright + Chromium)
-pnpm run test:e2e       # 18 smoke tests
+pnpm run test:e2e       # suites vigentes en docs/HANDOFF.md sección 2
 pnpm run test:e2e:ui
 
 # Lighthouse (requiere servidor en :8080 corriendo)

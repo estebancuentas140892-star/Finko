@@ -29,7 +29,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Tests unitarios + integración | 2024/2024 verdes |
 | Tests E2E | 128/128 verde. Suites: `smoke` 82 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `reflow-320` 4 tests. |
 | Schema version (localStorage) | v21 |
-| Lighthouse Performance | 99 |
+| Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
 | Lighthouse Best Practices | 100 |
 | Lighthouse SEO | 100 |
