@@ -126,16 +126,7 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B y NAV.A2b slice 1 cerradas; quedan NAV.A2b slice 2 y NAV.C.
-
-#### NAV.A2b slice 2 - Oferta de distribución tras un ingreso
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : tras registrar un ingreso puntual, ofrecer el asistente "Distribuir mi ingreso" de Mis cuentas. Requiere un **modo "ya acreditado"** en `_confirmarDistribucion` (`tesoreria/index.js`): hoy re-acredita la cuenta (`saldo + monto`) porque asume que el cobro recurrente aún no entró; como el ingreso puntual ya acreditó al registrarse, abrir el asistente con ese monto duplicaría el abono (ADR 024 D3). Es la pieza de lógica de dinero de NAV.A2b, aislada del slice 1 (tejas Abono/Aporte, ya cerrado). Necesita tests de no-doble-abono.
-- Secciones  : Mis cuentas, navegación
-- Archivos   : `modules/dominio/tesoreria/{logic,index}.js`, `modules/ui/registrar.js` (enganche tras el ingreso), `tests/`
-- Depende de : nada (NAV.A1, NAV.A2a, NAV.B y NAV.A2b slice 1 cerradas)
-- Modelo     : Opus 4.8 - Alto
+> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B y NAV.A2b (slices 1 y 2) cerradas; queda NAV.C.
 
 #### NAV.C - Pulidos de navegación
 - Prioridad  : baja

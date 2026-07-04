@@ -30,6 +30,7 @@ import {
   normalizarIngreso,
   validarIngresoPuntual,
   normalizarIngresoPuntual,
+  estimarSalarioMensual,
   montoSalarioMinimoPorPeriodo,
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
@@ -735,7 +736,7 @@ function _nuevoIngresoPuntual() {
  * trazable). No toca Análisis ni el resumen semanal (v8.8: la app no rastrea
  * ingresos como flujo, solo su efecto vía patrimonio).
  */
-function _guardarIngresoPuntual() {
+async function _guardarIngresoPuntual() {
   const form = document.getElementById('form-ingreso-puntual');
   if (!form) return;
 
@@ -758,6 +759,43 @@ function _guardarIngresoPuntual() {
   updSaldo();
   renderListaIngresosPuntuales();
   announce(`Ingreso de ${f(ingreso.monto)} registrado.`);
+
+  // NAV.A2b s2: ofrecer repartir el ingreso recién acreditado (modo "ya
+  // acreditado" del asistente). Tras cerrar el modal para no apilar diálogos.
+  await _ofrecerDistribucion(ingreso);
+}
+
+/**
+ * true si el asistente "Distribuir mi ingreso" está disponible. El panel solo se
+ * renderiza con un ingreso recurrente registrado (estimarSalarioMensual > 0):
+ * sin él no hay a dónde abrir la oferta.
+ */
+function _hayAsistenteDistribucion() {
+  return estimarSalarioMensual(S.ingresos ?? []) > 0;
+}
+
+/**
+ * Tras registrar un ingreso puntual (ya acreditado), ofrece repartirlo con el
+ * asistente en modo "ya acreditado" (NAV.A2b s2, ADR 024 D3). Solo si el
+ * asistente existe; si el usuario acepta, `distribuir:abrir` navega a Mis
+ * cuentas y lo abre con el monto y la cuenta del ingreso.
+ *
+ * @param {{ cuentaId: string, monto: number }} ingreso
+ */
+async function _ofrecerDistribucion(ingreso) {
+  if (!_hayAsistenteDistribucion()) return;
+
+  const ok = await confirmar({
+    titulo:         'Ingreso registrado',
+    mensaje:        `Sumaste ${f(ingreso.monto)} a tu cuenta. ¿Quieres repartirlo ahora entre tus necesidades, ahorros, deudas y demás?`,
+    confirmarTexto: 'Distribuir',
+    cancelarTexto:  'Ahora no',
+  });
+  if (!ok) return;
+
+  EventBus.emit('distribuir:abrir', {
+    preacreditado: { cuentaId: ingreso.cuentaId, monto: ingreso.monto },
+  });
 }
 
 /** @param {HTMLElement} el */
@@ -854,6 +892,15 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
+/**
+ * Modo "ya acreditado" (NAV.A2b s2, ADR 024 D3). Cuando un ingreso puntual ya
+ * subió el saldo de su cuenta y el usuario opta por distribuirlo, el asistente
+ * corre en este modo: NO re-acredita la cuenta (`+ monto`), usa la cuenta del
+ * ingreso como origen y no marca el periodo del ingreso recurrente. `null` = el
+ * flujo normal (el cobro recurrente aún no entró, el asistente lo acredita).
+ * @type {null | { cuentaId: string, monto: number }}
+ */
+let _distribucionPreacreditada = null;
 // 'gastos' (ADR 018 revisión 2026-07-02, R4): el Paso 1 de Necesidades registra
 // pagos reales; sin esta slice en el snapshot, "Deshacer" dejaría esos gastos huérfanos.
 const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
@@ -862,6 +909,9 @@ const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados
 function _toggleDistribuirIngreso(el) {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
+  // Abrir/cerrar a mano es siempre el flujo normal (el cobro recurrente aún no
+  // entró): descarta cualquier modo "ya acreditado" que quedara de una oferta.
+  _distribucionPreacreditada = null;
   panel.hidden = !panel.hidden;
   el.setAttribute('aria-expanded', String(!panel.hidden));
   if (!panel.hidden) {
@@ -874,19 +924,34 @@ function _toggleDistribuirIngreso(el) {
 }
 
 /**
- * Abre el asistente (sin toggle) en el primer paso, para el recordatorio de
- * día de ingreso del Calendario (ADR 021). No-op si el panel no existe o ya
- * está abierto. Sincroniza aria-expanded del botón y trae el panel a la vista.
+ * Abre el asistente (sin toggle) en el primer paso. Lo usan el recordatorio de
+ * día de ingreso del Calendario (ADR 021, sin payload) y la oferta tras un
+ * ingreso puntual (NAV.A2b s2, con `preacreditado`). No-op si el panel no
+ * existe. Sincroniza aria-expanded del botón y trae el panel a la vista.
+ *
+ * @param {{ preacreditado?: { cuentaId: string, monto: number } | null }} [opts]
  */
-function _abrirAsistenteDistribucion() {
+function _abrirAsistenteDistribucion({ preacreditado = null } = {}) {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
+
+  // Fijar el modo antes de recalcular: el resumen y el apply lo consultan.
+  _distribucionPreacreditada = preacreditado;
+
+  // Con un monto ya conocido (el ingreso recién acreditado), pre-cargarlo para
+  // que el asistente reparta esa cifra en vez del estimado del salario mensual.
+  if (preacreditado) {
+    const inputMonto = document.getElementById('distribuir-monto');
+    if (inputMonto) inputMonto.value = String(preacreditado.monto);
+  }
+
   if (panel.hidden) {
     panel.hidden = false;
     document.querySelector('[data-action="toggle-distribuir-ingreso"]')
       ?.setAttribute('aria-expanded', 'true');
-    _irAPasoDistribucion(panel, 0, { moverFoco: false });
   }
+  // Ir al paso 0 recalcula el resumen con el monto (y el modo) recién fijados.
+  _irAPasoDistribucion(panel, 0, { moverFoco: false });
   panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('distribuir-monto')?.focus({ preventScroll: true });
 }
@@ -1267,19 +1332,30 @@ async function _confirmarDistribucion() {
   // (MC.7e) por sí sola ya es una acción válida, aunque nada más esté marcado.
   if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excede || excedeTransferencia) return;
 
-  const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
+  // Modo "ya acreditado" (NAV.A2b s2): si el ingreso puntual ya subió el saldo,
+  // la cuenta de origen es la suya (no se vuelve a preguntar) y no se re-acredita.
+  // Si esa cuenta ya no existe (se borró entre registrar y distribuir), se cae al
+  // flujo normal (resolver cuenta + acreditar), para no perder el reparto.
+  const pre = _distribucionPreacreditada;
+  const yaAcreditado = !!pre && (S.cuentas ?? []).some(c => c.id === pre.cuentaId && c.activa !== false);
+
+  const cuentaId = yaAcreditado
+    ? pre.cuentaId
+    : await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
   if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
 
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.
   _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
 
-  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d). Se hace
-  // antes de los movimientos para que el re-render que disparan ya lo refleje
-  // (oculta el botón). El snapshot anterior no lo incluye, así "Deshacer" lo revierte.
-  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
-  if (estado.periodoISO) {
-    if (!S.config) S.config = {};
-    S.config.ultimaDistribucionPeriodo = estado.periodoISO;
+  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d). Solo en
+  // el flujo normal: el guard es del ingreso recurrente del mes; un ingreso
+  // puntual ya acreditado es un evento aparte y no debe consumir ese periodo.
+  if (!yaAcreditado) {
+    const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+    if (estado.periodoISO) {
+      if (!S.config) S.config = {};
+      S.config.ultimaDistribucionPeriodo = estado.periodoISO;
+    }
   }
 
   // Transferir primero (MC.7e): mueve saldo hacia las otras cuentas y devuelve
@@ -1287,14 +1363,17 @@ async function _confirmarDistribucion() {
   // origen), para descontarlo junto con lo demás que sale de esa cuenta.
   const totalTransferido = _aplicarTransferenciasCuentas(transferencias, cuentaId);
 
-  // Acreditar el ingreso y descontar lo que sale de la cuenta (no el fondo) y lo
-  // que se transfiere a otras cuentas: ambos dejan la cuenta de origen.
+  // Descontar lo que sale de la cuenta (no el fondo, ADR 009) y lo transferido a
+  // otras cuentas: ambos dejan la cuenta de origen. El ingreso solo se acredita
+  // en el flujo normal; en modo "ya acreditado" el dinero ya está en la cuenta,
+  // así que sumar `monto` otra vez sería un doble abono (ADR 024 D3).
+  const creditoIngreso = yaAcreditado ? 0 : monto;
   const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   if (cuenta) {
-    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable - totalTransferido });
+    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + creditoIngreso - descontable - totalTransferido });
   }
 
   // Necesidades (Paso 1, R1): tesorería aplica directo el pago real.
@@ -1303,6 +1382,9 @@ async function _confirmarDistribucion() {
   // Ahorro, abonos extra a deudas e inversiones: cada dominio aplica su
   // porción con su propia lógica por EventBus (ADN #10).
   EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
+
+  // El modo "ya acreditado" es de un solo uso: consumido, se vuelve al normal.
+  _distribucionPreacreditada = null;
 
   updSaldo();
   announce(`Distribuiste ${f(asignado)} de tu ingreso.`);
@@ -1417,14 +1499,15 @@ export function initTesoreria() {
     renderSmart(_renderTodo, 'tesoreria');
   });
 
-  // ADR 021: el recordatorio de día de ingreso del Calendario pide abrir el
-  // asistente. Puede llegar desde otra sección: se navega primero y el panel
-  // se abre tras el re-render del hashchange (por eso el setTimeout).
-  EventBus.on('distribuir:abrir', () => {
+  // ADR 021 / NAV.A2b s2: piden abrir el asistente. Puede llegar desde otra
+  // sección: se navega primero y el panel se abre tras el re-render del
+  // hashchange (por eso el setTimeout, que además fija el monto ya renderizado).
+  // El payload opcional lleva `preacreditado` cuando el ingreso ya subió el saldo.
+  EventBus.on('distribuir:abrir', (payload = {}) => {
     if ((location.hash.slice(1) || 'dash') !== 'tesoreria') {
       location.hash = '#tesoreria';
     }
-    setTimeout(_abrirAsistenteDistribucion, 0);
+    setTimeout(() => _abrirAsistenteDistribucion(payload), 0);
   });
 
   // Render inicial si ya estamos en #tesoreria al cargar.

@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV.A2b slice 2, oferta de distribución tras un ingreso · 2026-07-04
+
+Cierre de NAV.A2b ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D3). Tras registrar un ingreso puntual (que ya subió el saldo de su cuenta en NAV.A1), Finko ofrece repartirlo con el asistente "Distribuir mi ingreso" de Mis cuentas. Es la pieza de lógica de dinero que se había separado a propósito del slice 1.
+
+**El problema y el modo "ya acreditado":** `_confirmarDistribucion` acreditaba la cuenta con `saldo + monto - lo que sale` porque el asistente asumía que el cobro recurrente del mes **aún no había entrado**. Un ingreso puntual ya acreditó su cuenta al registrarse, así que abrir el asistente con ese monto y confirmar habría **duplicado el abono** (el saldo subiría dos veces). El modo nuevo (`_distribucionPreacreditada`):
+
+- **No re-acredita:** `creditoIngreso = 0`, así el saldo solo baja por lo que se reparte a Necesidades/deudas/otras cuentas (el aporte al fondo no descuenta, ADR 009). El dinero ya estaba en la cuenta.
+- **Usa la cuenta del ingreso como origen** (no vuelve a preguntar con `resolverCuenta`). Si esa cuenta se borró entre registrar y distribuir, cae al flujo normal para no perder el reparto.
+- **No consume el periodo del ingreso recurrente** (`ultimaDistribucionPeriodo`): ese guard de de-duplicación es del salario mensual; un ingreso puntual es un evento aparte y no debe ocultar la distribución del recurrente.
+
+**La oferta:** tras guardar el ingreso puntual (venga de la hoja "Registrar" o de "+ Ingreso" en Mis cuentas), un diálogo pregunta "¿Repartirlo ahora?". Al aceptar, reusa el evento `distribuir:abrir` (el mismo del recordatorio del Calendario, ADR 021) con un payload `preacreditado`: navega a Mis cuentas, abre el asistente y pre-carga el monto y la cuenta del ingreso. Solo se ofrece si el asistente existe (requiere un ingreso recurrente registrado: el panel no se renderiza sin `estimarSalarioMensual > 0`). El modo es de un solo uso: se limpia al confirmar la distribución y al abrir el asistente a mano (toggle), para no filtrarse a una distribución normal posterior.
+
+Verificado con E2E (el preview del entorno sigue con caché de módulos envenenado). El test clave de no-doble-abono: registrar $1.000.000 sobre una cuenta de $1.000.000 (saldo → $2.000.000), distribuir pagando un fijo de $800.000, y confirmar que el saldo queda en **$1.200.000** (no $3.000.000, que sería el doble abono); además el periodo recurrente no se marca. 2043/2043 unit; **147/147 E2E** (+3, nueva suite `registrar-distribucion`); el flujo normal de distribución (incluido el recordatorio ADR 021) sigue verde sin cambios. SW v304 → v305.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/index.js` | Estado `_distribucionPreacreditada`; `_ofrecerDistribucion` + `_hayAsistenteDistribucion` tras el ingreso; modo "ya acreditado" en `_confirmarDistribucion` (crédito, origen y guard de periodo); `_abrirAsistenteDistribucion` acepta `{preacreditado}` y pre-carga el monto; `distribuir:abrir` con payload; toggle manual limpia el modo. |
+| `service-worker.js` | v304 → v305. |
+| `tests/e2e/registrar-distribucion.test.js` | Suite nueva (3 tests): no-doble-abono, "Ahora no" no abre el asistente, sin ingreso recurrente no se ofrece. |
+
+---
+
 ### feat(nav): NAV.A2b slice 1, Abono a deuda y Aporte a ahorro en la hoja "Registrar" · 2026-07-04
 
 Primer corte de NAV.A2b ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) D2). La hoja "Registrar" (que en NAV.A2a quedó con Gasto e Ingreso) suma las dos acciones que dependen de los datos del usuario y necesitan elegir un destino:
