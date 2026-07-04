@@ -88,6 +88,19 @@ export function initAcciones() {
     if (destino) navigate(destino);
   });
 
+  // Hoja "Registrar" (NAV.A2, ADR 024): cada teja cierra la hoja y dispara su
+  // acción destino (nuevo-gasto, nuevo-ingreso-puntual...). Cerrar primero
+  // libera el foco y el `inert` del fondo antes de que la acción destino abra
+  // su propio modal, evitando dos modales anidados. Desacoplado: no importa
+  // dominios, solo invoca por nombre la acción ya registrada.
+  registrarAccion('registrar-abrir', (el, e) => {
+    const overlay = el.closest('.modal-overlay');
+    if (overlay) cerrarModal(overlay);
+    const destino = el.dataset.targetAction;
+    const fn = destino && _acciones.get(destino);
+    if (fn) fn(el, e);
+  });
+
   // Ojo del hero (IN.2): alterna entre monto visible y enmascarado, estilo
   // app bancaria, para usar Finko en lugares públicos. El flip con `!== true`
   // es defensivo: cualquier valor raro heredado en S.config cae en "ocultar".

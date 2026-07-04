@@ -73,6 +73,7 @@
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
     <symbol id="i-saldo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity=".15"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></symbol>
     <symbol id="i-ahorro" viewBox="0 0 24 24"><rect x="8.1" y="2.9" width="7.8" height="3" rx="1.5"/><path d="M7 5.9h10v10.2a3.9 3.9 0 0 1-3.9 3.9h-2.2A3.9 3.9 0 0 1 7 16.1z" fill="currentColor" fill-opacity=".22"/><circle cx="12" cy="13" r="3"/><circle cx="12" cy="13" r="1.5" fill="var(--fk-icon-dot, currentColor)" stroke="none"/></symbol>
@@ -132,7 +133,17 @@
               <span class="nav-item__label">Gastos</span>
             </a>
 
-            <!-- Calendario (dominio interno: agenda): visible en mobile (tercer slot del bottom nav) -->
+            <!-- Boton central "Registrar" (NAV.A2, ADR 024): solo mobile, slot
+                 central del bottom nav. Abre la hoja #modal-registrar. No es una
+                 sección: es una acción global de registro en la zona del pulgar. -->
+            <button class="nav-item nav-item--registrar nav-item--mobile-only" type="button"
+                    data-action="modal-open" data-modal="modal-registrar"
+                    aria-label="Registrar un movimiento" aria-haspopup="dialog">
+              <span class="nav-item__fab" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></span>
+              <span class="nav-item__label">Registrar</span>
+            </button>
+
+            <!-- Calendario (dominio interno: agenda): visible en mobile (cuarto slot del bottom nav) -->
             <a class="nav-item" href="#agenda" data-section="agenda"
                aria-label="Calendario de pagos y compromisos">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-agenda"/></svg>
@@ -918,6 +929,43 @@
     <div class="modal modal--onboarding">
       <div class="modal__body" id="onboarding-body">
         <!-- onboarding.js inyecta el contenido del wizard aquí -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HOJA REGISTRAR (NAV.A2, ADR 024): acción global de registro ──
+       El botón central "+" del bottom nav la abre. Cada teja cierra la hoja
+       y dispara su acción destino (registrar-abrir en actions.js), reusando
+       los modales existentes de Gasto e Ingreso. Extensible: Abono a deuda y
+       Aporte a ahorro llegan cuando exista su selector de destino (NAV.B). -->
+  <div class="modal-overlay" id="modal-registrar"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-registrar-title" aria-hidden="true">
+    <div class="modal modal--mas modal--registrar">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-registrar-title">¿Qué quieres registrar?</h2>
+        <button class="modal__close" type="button"
+                data-action="modal-close" aria-label="Cerrar">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>
+        </button>
+      </header>
+      <div class="modal__body">
+        <div class="menu-mas__grid registrar__grid">
+          <button class="menu-mas__item registrar__tile" type="button"
+                  data-action="registrar-abrir" data-target-action="nuevo-gasto"
+                  data-kind="gasto">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-gastos"/></svg>
+            <span class="menu-mas__label">Gasto</span>
+            <span class="registrar__tile-desc">Una compra o pago que hiciste</span>
+          </button>
+          <button class="menu-mas__item registrar__tile" type="button"
+                  data-action="registrar-abrir" data-target-action="nuevo-ingreso-puntual"
+                  data-kind="ingreso">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-saldo"/></svg>
+            <span class="menu-mas__label">Ingreso</span>
+            <span class="registrar__tile-desc">Dinero que recibiste</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>

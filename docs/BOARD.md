@@ -128,14 +128,14 @@ _(sin pendientes activos.)_
 
 > Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. Orden: NAV.A1 → NAV.A2 → NAV.B → NAV.C.
 
-#### NAV.A2 - Bottom nav de 5 posiciones con botón central "Registrar"
-- Prioridad  : alta
+#### NAV.A2b - Abono/Aporte en la hoja "Registrar" + oferta de distribución
+- Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : acción global de registro en la zona del pulgar: `Inicio · Gastos · [+] · Calendario · Más`. El "+" abre una hoja con Gasto e Ingreso (siempre) y, con divulgación progresiva, Abono a deuda y Aporte a ahorro. Incluye: el fix de BUG-010 (safe area del bottom nav, mismo bloque CSS), la actualización de los E2E de navegación/reflow, y **la oferta de distribución diferida de NAV.A1** (requiere un modo "ya acreditado" del asistente para no duplicar el abono, ver ADR 024 D3). Ver ADR 024, D1 y D2.
-- Secciones  : todas (navegación)
-- Archivos   : `index.html`, `styles/responsive.css`, `styles/layout.css`, `modules/ui/actions.js`, nuevo `modules/ui/registrar.js`, `modules/dominio/tesoreria/` (asistente ya acreditado), `tests/e2e/`
-- Depende de : NAV.A1 (cerrada)
-- Modelo     : Opus 4.8 - Extra
+- Objetivo   : sumar a la hoja "Registrar" (ya existe, NAV.A2a) las acciones **Abono a deuda** y **Aporte a ahorro**, y la **oferta de distribución** tras registrar un ingreso. Requiere piezas nuevas: un selector de destino "¿a qué deuda?" / "¿a qué meta, apartado o fondo?" (los flujos actuales exigen `data-id`, no hay entrada global), y un modo "ya acreditado" del asistente de distribución para no duplicar el abono (`_confirmarDistribucion` re-acredita la cuenta, ver ADR 024 D3). El selector de destino de Aporte encaja mejor junto al hub de NAV.B.
+- Secciones  : Deudas, Ahorros (hub NAV.B), Mis cuentas, navegación
+- Archivos   : `index.html`, `modules/ui/actions.js`, `modules/dominio/{compromisos,metas,apartados,ahorro,tesoreria}/`, `tests/e2e/`
+- Depende de : NAV.A2a (cerrada) y NAV.B
+- Modelo     : Opus 4.8 - Alto
 
 #### NAV.B - Hub "Ahorros": una entrada, cuatro pestañas
 - Prioridad  : media
@@ -143,16 +143,16 @@ _(sin pendientes activos.)_
 - Objetivo   : responder "¿dónde están mis ahorros?" con un solo destino: tarjeta única "Ahorros" en el modal Más (reemplaza 4), franja de pestañas `Fondo · Metas · Apartados · Inversión` sobre las 4 secciones existentes (enlaces, cero cambios de router), consolidado de ADR 009 como cabecera común, renombre de la sección "Ahorro" a "Fondo de emergencia" y grupo "Crecer" del sidebar desktop a "Ahorros". El modal Más queda en 7 tarjetas sin grupos. Ver ADR 024, D4 y D5.
 - Secciones  : Ahorro, Metas, Apartados, Inversión, navegación
 - Archivos   : `index.html`, `modules/ui/menu-mas.js`, `styles/layout.css`, `styles/components/`, `modules/ui/proposito.js` (copy del renombre), tests E2E de navegación
-- Depende de : NAV.A2 (para no rehacer el modal Más dos veces)
+- Depende de : NAV.A2a (cerrada; el modal Más no se rehace dos veces)
 - Modelo     : Sonnet 5 - Alto
 
 #### NAV.C - Pulidos de navegación
 - Prioridad  : baja
 - Estado     : pendiente
-- Objetivo   : retrasar el toast de logro del primer uso (hoy pisa tips y el modal Más en el primer minuto), revisar el nombre del grupo de gestión en el sidebar desktop (con "Herramientas" disuelto tras NAV.B), y recortar los banners de propósito que exceden las 40 a 60 palabras de ADR 016 manteniendo los tres tiempos. Ver ADR 024, D6.
+- Objetivo   : retrasar el toast de logro del primer uso (hoy pisa la hoja "Registrar", los tips y el modal Más en el primer minuto), revisar el nombre del grupo de gestión en el sidebar desktop (con "Herramientas" disuelto tras NAV.B), y recortar los banners de propósito que exceden las 40 a 60 palabras de ADR 016 manteniendo los tres tiempos. Ver ADR 024, D6.
 - Secciones  : navegación, Inicio, Apartados
 - Archivos   : `modules/dominio/logros/index.js`, `index.html`, `modules/ui/proposito.js`
-- Depende de : NAV.A2 y NAV.B
+- Depende de : NAV.A2a (cerrada) y NAV.B
 - Modelo     : Sonnet 5 - Medio
 
 ---

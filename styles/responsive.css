@@ -44,7 +44,10 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: var(--fk-header-height);
+    /* BUG-010: compensar el home indicator de iOS. La barra crece con el safe
+       area y los items se separan del borde físico (viewport-fit=cover). */
+    height: calc(var(--fk-header-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     flex-direction: row;
     border-right: none;
     border-top: 1px solid var(--fk-border-subtle);
@@ -116,13 +119,33 @@
     text-align: center;
   }
 
+  /* Botón central "Registrar" (NAV.A2): FAB de acento en el slot medio. Es una
+     acción, no una sección: no muestra el indicador activo. */
+  .nav-item--registrar { justify-content: flex-start; padding-top: var(--fk-space-1); }
+  .nav-item--registrar::before { content: none; }
+  .nav-item__fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--fk-btn-primary-bg);
+    color: var(--fk-text-on-accent);
+    box-shadow: 0 2px 8px rgba(4, 6, 12, 0.35);
+    margin-top: -6px;
+  }
+  .nav-item__fab .icon { width: 24px; height: 24px; stroke-width: 2.6; }
+  .nav-item--registrar:active .nav-item__fab { transform: scale(0.94); }
+
   /* Solo el primer nav-group (5 secciones core). El resto vive en Ajustes. */
   .nav-group:not(:first-child) { display: none; }
 
   .main-content {
     grid-column: 1;
     grid-row: 1;
-    padding-bottom: var(--fk-header-height);
+    /* Deja libre el alto de la barra inferior más el safe area (BUG-010). */
+    padding-bottom: calc(var(--fk-header-height) + env(safe-area-inset-bottom, 0px));
   }
 
   /* Bento: 6 cols en tablet (768-1023) */

@@ -112,9 +112,12 @@ Con el hub, "Más" baja de 10 tarjetas en 3 grupos a **7 tarjetas en una sola cu
 
 | Slice | Qué | Depende de | Modelo sugerido |
 |---|---|---|---|
-| **NAV.A1** ✅ | Ingreso puntual en `tesoreria` (logic + view + tests). Cerrado 2026-07-04: colección `S.ingresosPuntuales` (v22), sube/revierte saldo como espejo de Gastos, historial en Mis cuentas, sin tocar Análisis/resumen (v8.8). La oferta de distribución quedó diferida a NAV.A2 (ver D3, doble abono). | nada | Opus 4.8 - Alto |
-| **NAV.A2** | Bottom nav de 5 posiciones + hoja "Registrar" + fix BUG-010 + E2E actualizados. | NAV.A1 | Opus 4.8 - Extra |
-| **NAV.B** | Hub "Ahorros": tarjeta única en Más, franja de pestañas, consolidado como cabecera, renombre "Ahorro" a "Fondo de emergencia", sidebar desktop. | NAV.A2 | Sonnet 5 - Alto |
-| **NAV.C** | Pulidos: toast de logro retrasado, nombre del grupo de gestión en desktop, banners largos revisados. | NAV.A2 y NAV.B | Sonnet 5 - Medio |
+| **NAV.A1** ✅ | Ingreso puntual en `tesoreria` (logic + view + tests). Cerrado 2026-07-04: colección `S.ingresosPuntuales` (v22), sube/revierte saldo como espejo de Gastos, historial en Mis cuentas, sin tocar Análisis/resumen (v8.8). La oferta de distribución quedó diferida (ver D3, doble abono). | nada | Opus 4.8 - Alto |
+| **NAV.A2a** ✅ | Bottom nav de 5 (`Inicio · Gastos · [+] · Calendario · Más`) + hoja "Registrar" con las dos acciones globales autocontenidas (Gasto, Ingreso) + fix BUG-010 (safe area) + E2E. Cerrado 2026-07-04. | NAV.A1 | Opus 4.8 - Extra |
+| **NAV.A2b** | Sumar a la hoja "Registrar" las acciones **Abono a deuda** y **Aporte a ahorro** (necesitan un selector de destino "¿a qué deuda / a qué meta-apartado-fondo?" que hoy no existe: los flujos actuales exigen `data-id`), y la **oferta de distribución** tras un ingreso (requiere un modo "ya acreditado" del asistente, ver D3). El selector de destino de Aporte se resuelve mejor junto al hub de NAV.B. | NAV.A2a, NAV.B | Opus 4.8 - Alto |
+| **NAV.B** | Hub "Ahorros": tarjeta única en Más, franja de pestañas, consolidado como cabecera, renombre "Ahorro" a "Fondo de emergencia", sidebar desktop. | NAV.A2a | Sonnet 5 - Alto |
+| **NAV.C** | Pulidos: toast de logro retrasado (hoy pisa la hoja y los tips en el primer minuto), nombre del grupo de gestión en desktop, banners largos revisados. | NAV.A2a y NAV.B | Sonnet 5 - Medio |
 
 Cada slice se verifica en la app (desktop + móvil) con tests verdes antes de commit, según el workflow de [`/CLAUDE.md`](../../CLAUDE.md).
+
+> **Nota de implementación (NAV.A2a, 2026-07-04).** La hoja "Registrar" abre a través de la acción built-in `registrar-abrir` de `actions.js` (paralela a `ir-a-seccion`): cierra la hoja e invoca por nombre la acción destino ya registrada, sin anidar modales ni acoplar dominios (no hizo falta el módulo `ui/registrar.js` que este ADR anticipaba). Al implementar se confirmó que "Abono a deuda" y "Aporte a ahorro" no son acciones globales autocontenidas (necesitan elegir el destino primero), por eso se separaron a NAV.A2b; la hoja queda con dos tejas y lista para crecer.

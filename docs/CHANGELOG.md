@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV.A2a, bottom nav de 5 con botón central "Registrar" · 2026-07-04
+
+Segunda tarea del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md). El bottom nav móvil pasa de 4 a 5 posiciones: `Inicio · Gastos · [+] · Calendario · Más`. El "+" central es un FAB de acento (acción, no sección) que abre la hoja "¿Qué quieres registrar?" con dos tejas: **Gasto** (naranja, "una compra o pago") e **Ingreso** (verde, "dinero que recibiste"). Resuelve el hallazgo H1/H2 de la auditoría: registrar entró/salió deja de vivir solo en el botón de la esquina superior y queda siempre en la zona del pulgar, desde cualquier pantalla.
+
+La hoja enruta con una acción built-in `registrar-abrir` en `actions.js` (paralela a `ir-a-seccion`): cierra la hoja e invoca por nombre la acción destino ya registrada (`nuevo-gasto`, `nuevo-ingreso-puntual`), sin anidar modales ni acoplar dominios; no hizo falta el módulo `ui/registrar.js` que el ADR anticipaba.
+
+**Alcance (subset más pequeño con sentido):** la hoja lleva solo las dos acciones globales autocontenidas. "Abono a deuda" y "Aporte a ahorro" se separaron a NAV.A2b: no son globales (los flujos actuales exigen elegir la deuda/meta/apartado por `data-id`, un selector de destino que aún no existe y que encaja con el hub de NAV.B). La oferta de distribución sigue diferida (modo "ya acreditado" del asistente, ADR 024 D3).
+
+**Cierra [BUG-010]:** el bottom nav ahora compensa `env(safe-area-inset-bottom)` (altura + `padding-bottom`) y `.main-content` deja libre ese alto; en iPhone con home indicator los labels ya no quedan bajo la franja del sistema.
+
+Verificado en móvil 390x844 (nav en el orden correcto, la hoja abre y enruta a Gasto e Ingreso sin errores) y a 320px (sin scroll horizontal). 2037/2037 unit; **131/131 E2E** (+3, nueva suite `registrar-sheet`); lint limpio. SW v301 → v302.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Símbolo `i-plus`, botón central "Registrar" en el nav, hoja `modal-registrar`. |
+| `modules/ui/actions.js` | Acción built-in `registrar-abrir` (cierra la hoja e invoca la acción destino). |
+| `styles/responsive.css` | Fix BUG-010 (safe area en `.sidebar` y `.main-content`) + FAB `.nav-item--registrar`. |
+| `styles/modals.css` | Hoja "Registrar": grid de 2 tejas, descripciones y tintes gasto/ingreso. |
+| `tests/e2e/registrar-sheet.test.js` | Suite nueva (3 tests): nav de 5, hoja abre y enruta a Ingreso y a Gasto. |
+| `service-worker.js` | v301 → v302. |
+
+---
+
 ### feat(tesoreria): NAV.A1, ingreso puntual en Mis cuentas · 2026-07-04
 
 Primera tarea de implementación del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md). La auditoría detectó que registrar dinero que entra no tenía camino real: la única acción era la fuente fija (`nuevo-ingreso`), escondida y sin fecha ni cuenta. Ahora Mis cuentas tiene una sub-sección "Otros ingresos" con un botón "+ Ingreso" que abre "Registrar un ingreso": monto, cuenta destino (selector 0/1/varias de `cuenta-helper`; con 0 cuentas, guía a agregar una), descripción y categoría opcionales, y fecha (hoy por defecto).

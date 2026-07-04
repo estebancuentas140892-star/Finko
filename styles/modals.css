@@ -173,6 +173,30 @@
   line-height: 1.2;
 }
 
+/* ── HOJA REGISTRAR (NAV.A2): dos tejas grandes gasto/ingreso ── */
+
+/* Dos columnas: son pocas tejas y grandes (fork "salió / entró"). */
+.registrar__grid { grid-template-columns: repeat(2, 1fr); }
+
+.registrar__tile {
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-5) var(--fk-space-3);
+  min-height: 128px;
+}
+.registrar__tile .menu-mas__label {
+  font-size: var(--fk-text-base);
+  color: var(--fk-text-primary);
+}
+.registrar__tile-desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: 1.3;
+}
+.registrar__tile .menu-mas__icon.icon { width: 32px; height: 32px; }
+/* Color con propósito: gasto sale (naranja), ingreso entra (verde). */
+.registrar__tile[data-kind="gasto"]   .icon { color: var(--fk-dom-gastos); }
+.registrar__tile[data-kind="ingreso"] .icon { color: var(--fk-success); }
+
 /* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */
 
 .modal__header {
