@@ -168,7 +168,9 @@
           </div>
         </div>
 
-        <!-- GRUPO 2: Gestión semanal/mensual. Solo desktop. -->
+        <!-- GRUPO 2: Gestión semanal/mensual. Solo desktop. Análisis se integró
+             aquí al disolverse "Herramientas" (NAV.B, ADR 024 D6); el nombre del
+             grupo se revisa en NAV.C. -->
         <div class="nav-group" role="listitem">
           <span class="nav-group__label" id="nav-label-gestion">Gestión</span>
           <div role="group" aria-labelledby="nav-label-gestion">
@@ -192,19 +194,25 @@
               <span class="nav-item__label">Límites de gasto</span>
             </a>
 
+            <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
+               aria-label="Análisis financiero">
+              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
+              <span class="nav-item__label">Análisis</span>
+            </a>
+
           </div>
         </div>
 
-        <!-- GRUPO 3: Crecer (construir patrimonio a largo plazo). Solo desktop.
-             Hogar natural de Metas y, próximamente, Ahorro e Inversión. -->
+        <!-- GRUPO 3: Ahorros (hub NAV.B, ADR 024 D4/D6). En desktop hay espacio:
+             las 4 entradas directas se conservan bajo el nombre paraguas. -->
         <div class="nav-group" role="listitem">
-          <span class="nav-group__label" id="nav-label-crecer">Crecer</span>
-          <div role="group" aria-labelledby="nav-label-crecer">
+          <span class="nav-group__label" id="nav-label-ahorros">Ahorros</span>
+          <div role="group" aria-labelledby="nav-label-ahorros">
 
             <a class="nav-item nav-item--no-mobile" href="#ahorro" data-section="ahorro"
-               aria-label="Ahorro y fondo de emergencia">
+               aria-label="Fondo de emergencia">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
-              <span class="nav-item__label">Ahorro</span>
+              <span class="nav-item__label">Fondo de emergencia</span>
             </a>
 
             <a class="nav-item nav-item--no-mobile" href="#metas" data-section="metas"
@@ -223,20 +231,6 @@
                aria-label="Inversiones y portafolio">
               <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>
               <span class="nav-item__label">Inversión</span>
-            </a>
-
-          </div>
-        </div>
-
-        <!-- GRUPO 4: Herramientas (esporádico). Solo desktop. -->
-        <div class="nav-group" role="listitem">
-          <span class="nav-group__label" id="nav-label-herramientas">Herramientas</span>
-          <div role="group" aria-labelledby="nav-label-herramientas">
-
-            <a class="nav-item nav-item--no-mobile" href="#analisis" data-section="analisis"
-               aria-label="Análisis financiero">
-              <svg class="nav-item__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
-              <span class="nav-item__label">Análisis</span>
             </a>
 
           </div>
@@ -522,19 +516,27 @@
 
       <!-- AHORRO (J.1) - Fondo de emergencia + hábito de apartar -->
       <section class="section" id="sec-ahorro" tabindex="-1" aria-labelledby="title-ahorro">
+        <!-- HUB AHORROS (NAV.B, ADR 024 D4): franja de pestañas compartida por
+             Fondo/Metas/Apartados/Inversión. Son enlaces entre las secciones
+             existentes presentados como tabs: cero cambios de router. Cada
+             sección lleva su copia estática con su tab marcada aria-current. -->
+        <nav class="hub-tabs" aria-label="Ahorros">
+          <a class="hub-tabs__tab" href="#ahorro" aria-current="page">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+        </nav>
+        <!-- Consolidado (F6, ADR 009): cabecera común del hub. ahorro/view.js
+             llena cada slot [data-hub-consolidado]; [hidden] si el total es 0. -->
+        <div class="hub-consolidado" data-hub-consolidado="ahorro" hidden></div>
         <header class="section__header">
           <div>
-            <h1 class="section__title" id="title-ahorro">Ahorro</h1>
+            <h1 class="section__title" id="title-ahorro">Fondo de emergencia</h1>
           </div>
         </header>
         <div id="proposito-ahorro">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
         </div>
-        <!-- CONSOLIDADO (F6): total de ahorro repartido entre fondo, metas,
-             apartados e inversiones. ahorro/view.js lo llena; [hidden] si el
-             total es 0. -->
-        <div id="panel-ahorro-consolidado" role="region"
-             aria-label="Tu ahorro total" hidden></div>
         <div id="panel-ahorro">
           <!-- J.1: ahorro/view.js renderiza aquí -->
         </div>
@@ -542,6 +544,14 @@
 
       <!-- INVERSIÓN (J.2) - Portafolio real -->
       <section class="section" id="sec-inversion" tabindex="-1" aria-labelledby="title-inversion">
+        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
+        <nav class="hub-tabs" aria-label="Ahorros">
+          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion" aria-current="page">Inversión</a>
+        </nav>
+        <div class="hub-consolidado" data-hub-consolidado="inversion" hidden></div>
         <header class="section__header">
           <h1 class="section__title" id="title-inversion">Inversión</h1>
         </header>
@@ -555,6 +565,14 @@
 
       <!-- METAS -->
       <section class="section" id="sec-metas" tabindex="-1" aria-labelledby="title-metas">
+        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
+        <nav class="hub-tabs" aria-label="Ahorros">
+          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas" aria-current="page">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+        </nav>
+        <div class="hub-consolidado" data-hub-consolidado="metas" hidden></div>
         <header class="section__header">
           <div>
             <h1 class="section__title" id="title-metas">Metas</h1>
@@ -575,6 +593,14 @@
 
       <!-- APARTADOS -->
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
+        <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
+        <nav class="hub-tabs" aria-label="Ahorros">
+          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados" aria-current="page">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+        </nav>
+        <div class="hub-consolidado" data-hub-consolidado="apartados" hidden></div>
         <header class="section__header">
           <div>
             <h1 class="section__title" id="title-apartados">Apartados</h1>
@@ -983,67 +1009,41 @@
         </button>
       </header>
       <div class="modal__body">
-        <!-- Agrupado por intención (espejo del sidebar desktop): Gestión,
-             Crecer, Herramientas. Calendario, Gastos e Inicio ya están en la
-             barra inferior de móvil, no se repiten aquí. -->
-
-        <section class="menu-mas__group" aria-labelledby="menu-mas-gestion">
-          <h3 class="menu-mas__group-label" id="menu-mas-gestion">Gestión</h3>
-          <div class="menu-mas__grid">
-            <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
-              <span class="menu-mas__label">Deudas</span>
-            </a>
-            <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
-              <span class="menu-mas__label">Mis cuentas</span>
-            </a>
-            <a class="menu-mas__item" href="#personales" data-section="personales">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>
-              <span class="menu-mas__label">Me deben</span>
-            </a>
-            <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
-              <span class="menu-mas__label">Límites de gasto</span>
-            </a>
-          </div>
-        </section>
-
-        <section class="menu-mas__group" aria-labelledby="menu-mas-crecer">
-          <h3 class="menu-mas__group-label" id="menu-mas-crecer">Crecer</h3>
-          <div class="menu-mas__grid">
-            <a class="menu-mas__item" href="#ahorro" data-section="ahorro">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
-              <span class="menu-mas__label">Ahorro</span>
-            </a>
-            <a class="menu-mas__item" href="#metas" data-section="metas">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-metas"/></svg>
-              <span class="menu-mas__label">Metas</span>
-            </a>
-            <a class="menu-mas__item" href="#apartados" data-section="apartados">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-apartados"/></svg>
-              <span class="menu-mas__label">Apartados</span>
-            </a>
-            <a class="menu-mas__item" href="#inversion" data-section="inversion">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-inversion"/></svg>
-              <span class="menu-mas__label">Inversión</span>
-            </a>
-          </div>
-        </section>
-
-        <section class="menu-mas__group" aria-labelledby="menu-mas-herramientas">
-          <h3 class="menu-mas__group-label" id="menu-mas-herramientas">Herramientas</h3>
-          <div class="menu-mas__grid">
-            <a class="menu-mas__item" href="#analisis" data-section="analisis">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
-              <span class="menu-mas__label">Análisis</span>
-            </a>
-            <a class="menu-mas__item" href="#config" data-section="config">
-              <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
-              <span class="menu-mas__label">Ajustes</span>
-            </a>
-          </div>
-        </section>
+        <!-- 7 tarjetas en una sola cuadrícula, sin grupos (NAV.B, ADR 024 D5),
+             ordenadas por frecuencia de uso esperada. "Ahorros" es la entrada
+             única al hub (reemplaza a Ahorro/Metas/Apartados/Inversión).
+             Calendario, Gastos e Inicio ya están en la barra inferior de
+             móvil, no se repiten aquí. -->
+        <div class="menu-mas__grid">
+          <a class="menu-mas__item" href="#compromisos" data-section="compromisos">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-deudas"/></svg>
+            <span class="menu-mas__label">Deudas</span>
+          </a>
+          <a class="menu-mas__item" href="#tesoreria" data-section="tesoreria">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+            <span class="menu-mas__label">Mis cuentas</span>
+          </a>
+          <a class="menu-mas__item" href="#ahorro" data-section="ahorro">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ahorro"/></svg>
+            <span class="menu-mas__label">Ahorros</span>
+          </a>
+          <a class="menu-mas__item" href="#presupuesto" data-section="presupuesto">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-presupuesto"/></svg>
+            <span class="menu-mas__label">Límites de gasto</span>
+          </a>
+          <a class="menu-mas__item" href="#personales" data-section="personales">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-personales"/></svg>
+            <span class="menu-mas__label">Me deben</span>
+          </a>
+          <a class="menu-mas__item" href="#analisis" data-section="analisis">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-analisis"/></svg>
+            <span class="menu-mas__label">Análisis</span>
+          </a>
+          <a class="menu-mas__item" href="#config" data-section="config">
+            <svg class="menu-mas__icon icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
+            <span class="menu-mas__label">Ajustes</span>
+          </a>
+        </div>
       </div>
     </div>
   </div>

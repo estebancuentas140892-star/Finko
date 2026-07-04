@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV.B, hub "Ahorros" con pestañas y consolidado · 2026-07-04
+
+Tercera tarea del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md) (decisiones D4, D5 y D6). "¿Dónde están mis ahorros?" tenía cuatro respuestas que competían sin jerarquía; ahora tiene una:
+
+- **Modal "Más" plano (D5):** baja de 10 tarjetas en 3 grupos a **7 tarjetas en una sola cuadrícula** (Deudas, Mis cuentas, Ahorros, Límites de gasto, Me deben, Análisis, Ajustes). La tarjeta única "Ahorros" reemplaza a Ahorro/Metas/Apartados/Inversión y entra al hub por `#ahorro`. Desaparecen los rótulos "Gestión"/"Crecer"/"Herramientas".
+- **Franja de pestañas (D4):** `Fondo · Metas · Apartados · Inversión` en la cabecera de las 4 secciones. Son enlaces estáticos entre las secciones existentes presentados como tabs (componente `.hub-tabs`, la actual marcada con `aria-current="page"`): **cero cambios de router**, los deep links `#ahorro/#metas/#apartados/#inversion` siguen intactos, cero JS nuevo.
+- **Consolidado como cabecera común (D4 + ADR 009):** el "Tu ahorro total" que vivía solo en Ahorro ahora se dibuja en las 4 secciones vía slots `[data-hub-consolidado]` del shell. `renderResumenAhorroConsolidado()` llena todos los slots y omite el enlace "Ver" del vehículo de la sección actual; `ahorro/index.js` lo renderiza al navegar a cualquier hash del hub. Sigue oculto si el total es 0.
+- **Renombre (D4):** la sección "Ahorro" pasa a llamarse **"Fondo de emergencia"** (tab: "Fondo"); se actualizó el copy que la nombraba (propósito de sección, tips de Metas/Inversión, nudge de Inversión, hint del logro "Red de seguridad").
+- **Sidebar desktop (D6):** el grupo "Crecer" pasa a "Ahorros" (conserva las 4 entradas directas); "Herramientas" se disuelve y Análisis se integra a "Gestión" (el nombre de ese grupo se revisa en NAV.C).
+- **De paso:** `MAS_SECTIONS` en `shell.js` no incluía `apartados` ni `inversion`, así que el botón "Más" no se resaltaba como activo en esas secciones (bug preexistente, corregido); y se retiró el código muerto del toggle de tema en `menu-mas.js` (el botón `#menu-mas-tema` ya no existe en el HTML).
+
+Podría afectar: navegación móvil y desktop, y el render de las secciones del hub (el consolidado ahora también se dibuja en Metas/Apartados/Inversión). Verificado en preview (móvil 375px: pestañas, consolidado en Metas con enlaces correctos, modal de 7; desktop: grupos del sidebar) y con la suite nueva. 2037/2037 unit; **138/138 E2E** (+7, nueva suite `hub-ahorros`). SW v302 → v303. Validación pendiente: la del usuario en su celular.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Pestañas `.hub-tabs` + slots `[data-hub-consolidado]` en las 4 secciones, título "Fondo de emergencia", modal Más plano de 7, sidebar reorganizado. |
+| `modules/dominio/ahorro/view.js` | `renderResumenAhorroConsolidado()` multi-slot con `_htmlConsolidado(total, desglose, seccionActual)`. |
+| `modules/dominio/ahorro/index.js` | `_renderSegunSeccion()`: panel en `#ahorro`, consolidado en los 4 hashes del hub. |
+| `modules/ui/shell.js` | `MAS_SECTIONS` + `apartados`/`inversion`. |
+| `modules/ui/menu-mas.js` | Limpieza: solo cierra el modal al navegar (código de tema muerto retirado). |
+| `modules/ui/proposito.js` | Copy de `ahorro`: "¿Para qué sirve el Fondo de emergencia?". |
+| `modules/dominio/{metas,inversiones}/view.js`, `modules/dominio/{inversiones,logros}/logic.js`, `modules/core/constants.js` | Menciones a la sección "Ahorro" actualizadas (pestaña Fondo / sección Ahorros). |
+| `styles/layout.css`, `styles/modals.css` | Componente `.hub-tabs`; estilos de `.menu-mas__group*` retirados. |
+| `tests/e2e/hub-ahorros.test.js` | Suite nueva (7 tests): modal de 7, navegación por pestañas, consolidado visible/oculto, resaltado de "Más", sidebar desktop. |
+| `service-worker.js` | v302 → v303. |
+
+---
+
 ### feat(nav): NAV.A2a, bottom nav de 5 con botón central "Registrar" · 2026-07-04
 
 Segunda tarea del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md). El bottom nav móvil pasa de 4 a 5 posiciones: `Inicio · Gastos · [+] · Calendario · Más`. El "+" central es un FAB de acento (acción, no sección) que abre la hoja "¿Qué quieres registrar?" con dos tejas: **Gasto** (naranja, "una compra o pago") e **Ingreso** (verde, "dinero que recibiste"). Resuelve el hallazgo H1/H2 de la auditoría: registrar entró/salió deja de vivir solo en el botón de la esquina superior y queda siempre en la zona del pulgar, desde cualquier pantalla.

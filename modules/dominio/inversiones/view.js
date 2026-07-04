@@ -60,7 +60,7 @@ function _renderEmptyState() {
       <p class="empty-state__title">Registra tus inversiones</p>
       <p class="empty-state__desc">Registra tu primera inversión: CDT, fondo, acciones o cripto.</p>
       <button class="btn btn-primary" data-action="inversion-nueva">+ Registrar inversión</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: primero asegura tu fondo de emergencia en Ahorro. Invierte el dinero que no vas a necesitar a corto plazo.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Tip: primero asegura tu fondo de emergencia, en la pestaña Fondo (arriba). Invierte el dinero que no vas a necesitar a corto plazo.</p>
     </div>`;
 }
 
@@ -199,9 +199,9 @@ function _renderNudges(inversiones) {
 
 /** @param {{nivel:string, icono:string, titulo:string, desc:string}} n */
 function _renderNudge(n) {
-  // El nudge de fondo enlaza a la sección Ahorro como llamada a la acción.
+  // El nudge de fondo enlaza al Fondo de emergencia como llamada a la acción.
   const cta = (n.id === 'fondo-primero' || n.id === 'fondo-incompleto')
-    ? ` <a href="#ahorro" class="link">Ir a Ahorro</a>`
+    ? ` <a href="#ahorro" class="link">Ir al Fondo de emergencia</a>`
     : '';
   return `
     <div class="nudge ${_esc(n.nivel)}" role="status">

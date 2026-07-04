@@ -478,6 +478,20 @@ function _renderAhorroBound() {
   renderResumenAhorroConsolidado();
 }
 
+/**
+ * Render condicionado a la sección visible. El panel del fondo solo existe en
+ * #ahorro, pero el consolidado es la cabecera común del hub Ahorros (NAV.B,
+ * ADR 024 D4): sus slots [data-hub-consolidado] viven también en Metas,
+ * Apartados e Inversión, así que se dibuja al estar en cualquiera de las 4.
+ */
+function _renderSegunSeccion() {
+  renderBannerProposito('ahorro', _tieneDatosAhorro());
+  renderSmart(_renderAhorroBound, 'ahorro');
+  renderSmart(renderResumenAhorroConsolidado, 'metas');
+  renderSmart(renderResumenAhorroConsolidado, 'apartados');
+  renderSmart(renderResumenAhorroConsolidado, 'inversion');
+}
+
 export function initAhorro() {
   registrarAccion('ahorro-activar-fondo',     _activarFondo);
   registrarAccion('ahorro-editar',            _editarFondo);
@@ -500,8 +514,7 @@ export function initAhorro() {
       section === 'apartados'   ||
       section === 'inversiones'
     ) {
-      renderBannerProposito('ahorro', _tieneDatosAhorro());
-      renderSmart(_renderAhorroBound, 'ahorro');
+      _renderSegunSeccion();
     }
   });
 
@@ -525,14 +538,10 @@ export function initAhorro() {
   // Para que renderAll() también dibuje esta sección.
   registrarRender(_renderAhorroBound);
 
-  // Re-render al navegar a #ahorro (mismo patrón que metas/presupuesto).
-  window.addEventListener('hashchange', () => {
-    renderBannerProposito('ahorro', _tieneDatosAhorro());
-    renderSmart(_renderAhorroBound, 'ahorro');
-  });
+  // Re-render al navegar a cualquier sección del hub (patrón de metas/presupuesto).
+  window.addEventListener('hashchange', _renderSegunSeccion);
 
-  renderBannerProposito('ahorro', _tieneDatosAhorro());
-  renderSmart(_renderAhorroBound, 'ahorro');
+  _renderSegunSeccion();
 }
 
 /** true si el fondo de emergencia está activo o ya hay algún aporte registrado. */

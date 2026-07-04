@@ -445,7 +445,7 @@ export function detectarNudgesInversion(inversiones, contexto = {}) {
       nivel:  'nudge-high',
       icono:  '🛡️',
       titulo: 'Asegura tu fondo de emergencia antes de invertir',
-      desc:   'Si surge un imprevisto sin un colchón, podrías tener que vender una inversión en mal momento o endeudarte. Actívalo en la sección Ahorro.',
+      desc:   'Si surge un imprevisto sin un colchón, podrías tener que vender una inversión en mal momento o endeudarte. Actívalo en la pestaña Fondo.',
     });
   } else if (!fondoCompletado) {
     nudges.push({

@@ -55,22 +55,26 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia
   el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
 }
 
-// ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────────
+// ── CONSOLIDADO DE AHORRO (F6, cabecera del hub Ahorros en NAV.B) ─
 
 /**
- * Renderiza en `#panel-ahorro-consolidado` el total de ahorro repartido entre
- * los cuatro vehículos (fondo, metas, apartados, inversiones). Solo lectura.
+ * Renderiza el total de ahorro repartido entre los cuatro vehículos (fondo,
+ * metas, apartados, inversiones) en cada slot `[data-hub-consolidado]`: es la
+ * cabecera común del hub Ahorros (ADR 024 D4), visible en las secciones
+ * Fondo de emergencia, Metas, Apartados e Inversión. Solo lectura.
  *
  * Lee S directamente (permitido para un view), pero NO importa otros dominios:
  * suma inline los montos de cada slice, igual que compromisos/views/dashboard.js
  * lee S.personales y S.apartados sin importar esos módulos (regla ADN #10).
+ * Los slots viven en el shell (index.html), no dentro de otro dominio.
  *
- * Se oculta cuando el total es 0 (patrón [hidden] del resto de paneles).
- * No-op si el contenedor no existe.
+ * Cada slot declara en `data-hub-consolidado` la sección donde vive: la fila
+ * de ese vehículo omite su enlace "Ver" (ya estás ahí). Se oculta cuando el
+ * total es 0 (patrón [hidden] del resto de paneles). No-op sin slots.
  */
 export function renderResumenAhorroConsolidado() {
-  const el = document.getElementById('panel-ahorro-consolidado');
-  if (!el) return;
+  const slots = document.querySelectorAll('[data-hub-consolidado]');
+  if (slots.length === 0) return;
 
   const fondo = S.ahorro?.fondoEmergencia ?? { activo: false };
   const fondoTotal = fondo.activo
@@ -94,16 +98,27 @@ export function renderResumenAhorroConsolidado() {
     inversiones: inversionesTotal,
   });
 
-  if (total <= 0) {
-    el.innerHTML = '';
-    el.hidden = true;
-    return;
+  for (const el of slots) {
+    if (total <= 0) {
+      el.innerHTML = '';
+      el.hidden = true;
+      continue;
+    }
+    el.hidden = false;
+    el.innerHTML = _htmlConsolidado(total, desglose, el.dataset.hubConsolidado);
   }
-  el.hidden = false;
+}
 
+/**
+ * HTML del consolidado para un slot del hub.
+ * @param {number} total
+ * @param {Array<{clave:string, label:string, monto:number, pct:number}>} desglose
+ * @param {string} seccionActual - sección donde vive el slot (omite su enlace).
+ */
+function _htmlConsolidado(total, desglose, seccionActual) {
   const filas = desglose.map(d => {
     const meta = _VEHICULO_META[d.clave] ?? { seccion: 'ahorro', emoji: '💰' };
-    const enlace = d.clave === 'fondo'
+    const enlace = meta.seccion === seccionActual
       ? ''
       : `<a href="#${meta.seccion}" class="ahorro-total__link" aria-label="Ir a ${_esc(d.label)}">Ver →</a>`;
     return `
@@ -117,7 +132,7 @@ export function renderResumenAhorroConsolidado() {
       </li>`;
   }).join('');
 
-  el.innerHTML = `
+  return `
     <section class="ahorro-total" aria-label="Tu ahorro total">
       <header class="ahorro-total__header">
         <p class="ahorro-total__label">Tu ahorro total</p>

@@ -124,7 +124,7 @@ export const LOGROS = [
     nombre: 'Red de seguridad',
     emoji:  '🛡️',
     desc:   'Completaste tu fondo de emergencia. Tu base financiera está lista.',
-    hint:   'Completa tu fondo de emergencia en la sección Ahorro.',
+    hint:   'Completa tu fondo de emergencia en la sección Ahorros.',
     eval:   s => s.ahorro?.fondoEmergencia?.completado === true,
   },
 ];

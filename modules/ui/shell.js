@@ -12,11 +12,13 @@ const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
  * Secciones que en móvil NO están en la barra inferior y viven dentro del
  * menú "Más". Cuando el usuario está en una de ellas, el botón "Más" se
  * resalta como activo (antes ninguna pestaña se resaltaba: cero "estás aquí").
- * Al sumar secciones nuevas al menú "Más" (ej. Ahorro, Inversión), agregarlas aquí.
+ * Al sumar secciones nuevas al menú "Más", agregarlas aquí. Las 4 del hub
+ * Ahorros (NAV.B) cuentan: se llega a ellas por la tarjeta "Ahorros".
  */
 const MAS_SECTIONS = new Set([
   'compromisos', 'tesoreria', 'personales',
-  'ahorro', 'metas', 'presupuesto', 'analisis', 'config',
+  'ahorro', 'metas', 'apartados', 'inversion',
+  'presupuesto', 'analisis', 'config',
 ]);
 
 // ── THEME ───────────────────────────────────────────────────────

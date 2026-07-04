@@ -41,8 +41,8 @@ export const PROPOSITOS_SECCION = {
     texto: '¿Tienes un sueño pero no sabes cómo llegar a él? Sin un plan, ahorrar para algo grande se siente imposible. Metas convierte cada objetivo en un plan de ahorro con pasos claros: cuánto apartar y cuándo lo vas a lograr.',
   },
   ahorro: {
-    titulo: '¿Para qué sirve Ahorro?',
-    texto: '¿Qué pasaría si mañana llega un gasto inesperado? Sin un respaldo, un imprevisto se cubre con deuda o desarma tus planes. Ahorro te ayuda a construir tu fondo de emergencia, el colchón para los momentos difíciles y tu base de tranquilidad.',
+    titulo: '¿Para qué sirve el Fondo de emergencia?',
+    texto: '¿Qué pasaría si mañana llega un gasto inesperado? Sin un respaldo, un imprevisto se cubre con deuda o desarma tus planes. Fondo de emergencia es tu colchón para los momentos difíciles: aquí lo construyes poco a poco y ves cuántos meses de tranquilidad ya tienes.',
   },
   inversion: {
     titulo: '¿Para qué sirve Inversión?',

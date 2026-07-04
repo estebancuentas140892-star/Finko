@@ -276,6 +276,43 @@
   padding-top: var(--fk-space-6);
   border-top: 1px solid var(--fk-border-subtle);
 }
+
+/* ── HUB AHORROS (NAV.B, ADR 024 D4) ─────────────────────────
+   Franja de pestañas compartida por Fondo/Metas/Apartados/Inversión.
+   Son enlaces entre secciones (no tabs ARIA): la actual se marca con
+   aria-current="page" en el HTML estático de cada sección. */
+.hub-tabs {
+  display: flex;
+  gap: var(--fk-space-1);
+  margin-bottom: var(--fk-space-4);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  /* En anchos mínimos (320px) la franja se desplaza en vez de desbordar. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hub-tabs::-webkit-scrollbar {
+  display: none;
+}
+.hub-tabs__tab {
+  padding: var(--fk-space-2) var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition:
+    color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.hub-tabs__tab:hover {
+  color: var(--fk-text-primary);
+}
+.hub-tabs__tab[aria-current="page"] {
+  color: var(--fk-text-accent);
+  border-bottom-color: var(--fk-text-accent);
+}
 .section__sub-header .section__subtitle {
   font-size: var(--fk-text-lg);
   font-weight: var(--fk-font-bold);

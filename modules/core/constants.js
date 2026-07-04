@@ -290,7 +290,7 @@ export const BANCOS_CO = [
  * Tipos de cuenta soportados en el módulo de tesorería.
  *
  * "Inversión" se eliminó en v11: las inversiones reales (CDT, fondos, acciones,
- * cripto) viven en el dominio Inversión (sección "Crecer"), con monto, tasa y
+ * cripto) viven en el dominio Inversión (hub "Ahorros"), con monto, tasa y
  * plazo. Una cuenta de tesorería es un saldo disponible, no un instrumento de
  * inversión. Las cuentas viejas con tipo 'Inversión' se migran a 'Otro'.
  */
