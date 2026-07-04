@@ -330,15 +330,6 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### A11Y.5 (verificación) - Pase axe sobre formularios dinámicos
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : `tests/unit/a11y.test.js` solo audita el HTML inicial; los formularios se inyectan por JS y no se auditan. Agregar un pase axe en E2E con un modal abierto.
-- Secciones  : Transversal
-- Archivos   : `tests/unit/a11y.test.js`, `tests/e2e/`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio
-
 #### COL.1 (baja) - Contraste de `--fk-warning` en modo claro
 - Prioridad  : baja
 - Estado     : pendiente

@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### test(a11y): A11Y.5, pase axe sobre formularios dinámicos en E2E · 2026-07-03
+
+Cierra A11Y.5. `tests/unit/a11y.test.js` solo auditaba el HTML estático de `index.html`; los formularios se inyectan por JS al abrir cada modal y quedaban sin auditar. Nueva suite [tests/e2e/a11y-forms.test.js](../tests/e2e/a11y-forms.test.js): abre en Chromium real los 5 modales representativos (Nuevo gasto, Nueva deuda, Nuevo gasto fijo, Nuevo apartado, Nueva cuenta) y el asistente "Distribuir mi ingreso" (con fondo activo para que haya contenido), inyecta axe-core (la misma devDependency del unit test, cero dependencias nuevas, en línea con `docs/SECURITY.md`) y corre WCAG 2.1 A/AA scoped al contenedor abierto, exigiendo cero violaciones critical/serious. En navegador real `color-contrast` sí es computable, así que no se excluye (a diferencia del unit test en happy-dom).
+
+Resultado: los 6 formularios dinámicos pasan sin violaciones graves (ningún fix requerido). 117/117 → 123/123 E2E; 1892/1892 unit sin cambios; lint limpio. Solo tests: sin cambios en assets de producción, sin bump de SW.
+
+| Archivo | Cambio |
+|---|---|
+| `tests/e2e/a11y-forms.test.js` | Suite nueva (6 tests axe sobre modales y asistente). |
+
+---
+
 ### feat(gastos): TX.6 y TX.7, el gasto hereda el ícono de su compromiso de origen · 2026-07-03
 
 Cierra TX.6 y TX.7 en un solo pase (mismo hook, como sugería el tablero). Un gasto con `compromisoId` nació de un fijo de Calendario (checklist de Necesidades o "marcar pagado") o de un abono a deuda; hasta ahora mostraba el ícono genérico de su categoría: todos los abonos a deuda se veían iguales (💳 de 'Deudas') y los pagos de fijos con el 📦 de 'Otros'.
