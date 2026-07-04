@@ -16,7 +16,15 @@ import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
-import { validarPersonal, normalizarPersonal, aplicarPago, calcularPendiente } from './logic.js';
+import {
+  validarPersonal,
+  normalizarPersonal,
+  aplicarPago,
+  desglosarPago,
+  calcularPendiente,
+  tieneInteres,
+} from './logic.js';
+import { f } from '../../infra/utils.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -92,20 +100,33 @@ function _confirmarPagoPersonal() {
     return;
   }
 
+  const desglose    = desglosarPago(prestamo, monto);
   const actualizado = aplicarPago(prestamo, monto);
-  editar('personales', id, {
+  const patch = {
     pagado:     actualizado.pagado,
     liquidado:  actualizado.liquidado,
     ultimoPago: actualizado.ultimoPago,
-  });
+  };
+  if (tieneInteres(prestamo)) {
+    patch.capitalPagado    = actualizado.capitalPagado;
+    patch.interesPagado    = actualizado.interesPagado;
+    patch.interesPendiente = actualizado.interesPendiente;
+  }
+  editar('personales', id, patch);
 
   const overlay = document.getElementById('modal-pago-personal');
   if (overlay) cerrarModal(overlay);
 
   renderListaPersonales();
-  announce(actualizado.liquidado
-    ? `Préstamo de ${prestamo.persona} marcado como liquidado.`
-    : `Pago de ${prestamo.persona} registrado.`);
+  // Con tasa, el anuncio informa cuánto del abono fue a capital y cuánto a
+  // interés (PE.1); sin tasa, el copy de siempre.
+  if (actualizado.liquidado) {
+    announce(`Préstamo de ${prestamo.persona} marcado como liquidado.`);
+  } else if (tieneInteres(prestamo) && desglose.aInteres > 0) {
+    announce(`Pago de ${prestamo.persona} registrado: ${f(desglose.aCapital)} a capital y ${f(desglose.aInteres)} a interés.`);
+  } else {
+    announce(`Pago de ${prestamo.persona} registrado.`);
+  }
 }
 
 // ── HANDLER ELIMINAR ─────────────────────────────────────────────

@@ -8,6 +8,8 @@ import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import {
   calcularPendiente,
+  calcularCapitalPendiente,
+  calcularInteresPendiente,
   calcularDias,
   clasificarAntiguedad,
   estadoPrestamo,
@@ -15,6 +17,7 @@ import {
   porcentajePagado,
   calcularResumen,
   ordenarPersonales,
+  tieneInteres,
 } from './logic.js';
 
 // ── LISTA + RESUMEN ──────────────────────────────────────────────
@@ -83,11 +86,12 @@ function _renderResumen(r) {
  * @param {Date} hoy
  */
 function _renderPersonalItem(prestamo, hoy) {
-  const persona   = _esc(prestamo.persona);
-  const motivo    = _esc(prestamo.motivo ?? '');
-  const pendiente = calcularPendiente(prestamo);
-  const liquidado = pendiente <= 0;
-  const pct       = porcentajePagado(prestamo);
+  const persona    = _esc(prestamo.persona);
+  const motivo     = _esc(prestamo.motivo ?? '');
+  const conInteres = tieneInteres(prestamo);
+  const pendiente  = calcularPendiente(prestamo, hoy);
+  const liquidado  = pendiente <= 0;
+  const pct        = porcentajePagado(prestamo);
 
   // Copy por estado (fecha pactada > último abono > antigüedad); el tono del
   // chip sigue saliendo del reloj de incomodidad (que un abono reinicia).
@@ -118,6 +122,15 @@ function _renderPersonalItem(prestamo, hoy) {
     ? `<p class="list-item__hint">«${motivo}»</p>`
     : '';
 
+  // Con tasa (PE.1): desglose de interés en la card. El interés cobrado solo
+  // se menciona cuando existe, para no meter ruido en préstamos recién creados.
+  const interesCobrado = Number(prestamo.interesPagado) || 0;
+  const interesHtml = conInteres
+    ? `<p class="list-item__hint">Interés: ${prestamo.tasa}% mensual${
+        interesCobrado > 0 ? ` · Ya cobraste ${f(interesCobrado)} en intereses` : ''
+      }</p>`
+    : '';
+
   const accionPago = liquidado
     ? ''
     : `<button class="btn btn-ghost btn-sm"
@@ -132,12 +145,17 @@ function _renderPersonalItem(prestamo, hoy) {
         <p class="list-item__title">${persona}
           <span class="${chipClase}">${chipLabel}</span>
         </p>
-        <p class="list-item__subtitle">Pendiente: ${f(pendiente)} de ${f(prestamo.monto)}</p>
+        <p class="list-item__subtitle">${
+          conInteres && !liquidado
+            ? `Pendiente: ${f(pendiente)} (capital ${f(calcularCapitalPendiente(prestamo))} + interés ${f(calcularInteresPendiente(prestamo, hoy))})`
+            : `Pendiente: ${f(pendiente)} de ${f(prestamo.monto)}`
+        }</p>
         <div class="progress" role="progressbar"
              aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
              aria-label="${pct}% pagado">
           <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
         </div>
+        ${interesHtml}
         ${motivoHtml}
         ${ultimoPagoHtml}
         ${fechaLim}
@@ -187,6 +205,13 @@ export function renderFormPersonal() {
                min="1" step="1000" placeholder="0" required aria-required="true" />
       </div>
       <div class="form-group">
+        <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">opcional</span></label>
+        <input id="pers-tasa" name="tasa" class="input" type="number"
+               min="0" max="100" step="0.1" placeholder="Ej. 2"
+               inputmode="decimal" />
+        <p class="form-hint">Déjalo vacío si prestaste sin interés. Con tasa, el interés se calcula sobre el capital pendiente y cada pago cubre primero el interés.</p>
+      </div>
+      <div class="form-group">
         <label for="pers-fecha" class="label">Fecha del préstamo</label>
         <input id="pers-fecha" name="fecha" class="input" type="date"
                value="${hoy}" required aria-required="true" />
@@ -218,20 +243,31 @@ export function renderFormPersonal() {
  * @returns {string}
  */
 export function renderFormPagoPersonal(prestamo) {
-  const persona   = _esc(prestamo.persona);
-  const pendiente = calcularPendiente(prestamo);
+  const persona    = _esc(prestamo.persona);
+  const conInteres = tieneInteres(prestamo);
+  const pendiente  = calcularPendiente(prestamo);
+
+  // Con tasa (PE.1): mostrar el desglose capital/interés del pendiente y
+  // explicar el orden de aplicación del pago.
+  const desgloseHtml = conInteres
+    ? `<br />Capital: <strong>${f(calcularCapitalPendiente(prestamo))}</strong> · Interés acumulado: <strong>${f(calcularInteresPendiente(prestamo))}</strong>`
+    : '';
+  const hintInteres = conInteres
+    ? ' El pago cubre primero el interés acumulado y el resto baja el capital.'
+    : '';
+
   return `
     <form id="form-pago-personal" novalidate data-id="${_esc(prestamo.id)}">
       <p class="modal__intro">
         ¿Cuánto te pagó <strong>${persona}</strong>?<br />
-        Pendiente actual: <strong>${f(pendiente)}</strong>
+        Pendiente actual: <strong>${f(pendiente)}</strong>${desgloseHtml}
       </p>
       <div class="form-group">
         <label for="pago-monto" class="label">Monto recibido (COP)</label>
         <input id="pago-monto" name="monto" class="input" type="number"
                min="1" max="${pendiente}" step="1000"
                value="${pendiente}" required aria-required="true" />
-        <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.</p>
+        <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.${hintInteres}</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

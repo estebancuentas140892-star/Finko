@@ -87,6 +87,30 @@ export function calcularCredito(principal, tasaEA, plazoMeses) {
   };
 }
 
+// ── INTERÉS SIMPLE (préstamos informales) ─────────────────────────
+
+/**
+ * Interés simple acumulado sobre un capital a tasa mensual, prorrateado por
+ * días (mes comercial de 30 días). Es el modelo típico del préstamo informal
+ * en Colombia ("te presto al 2% mensual"): sin capitalización, el interés se
+ * calcula siempre sobre el capital pendiente.
+ *
+ * Fórmula: `I = capital × (tasa_mensual/100) × (días/30)`
+ *
+ * @param {number} capital        - Capital pendiente en COP.
+ * @param {number} tasaMensualPct - Tasa mensual como porcentaje (ej. 2 = 2%).
+ * @param {number} dias           - Días transcurridos (≥ 0).
+ * @returns {number} Interés en COP, redondeado a pesos. 0 si algún input es inválido.
+ */
+export function calcularInteresSimple(capital, tasaMensualPct, dias) {
+  const c = Number(capital);
+  const t = Number(tasaMensualPct);
+  const d = Number(dias);
+  if (!Number.isFinite(c) || !Number.isFinite(t) || !Number.isFinite(d)) return 0;
+  if (c <= 0 || t <= 0 || d <= 0) return 0;
+  return Math.round(c * (t / 100) * (d / 30));
+}
+
 // ── INTERÉS COMPUESTO ─────────────────────────────────────────────
 
 /**

@@ -3,10 +3,53 @@ import {
   calcularCDT,
   calcularCredito,
   calcularInteresCompuesto,
+  calcularInteresSimple,
   calcularRegla72,
   calcularRentabilidadReal,
   validarCampos,
 } from '../../modules/infra/financiero.js';
+
+// ── calcularInteresSimple() (PE.1) ────────────────────────────────
+
+describe('calcularInteresSimple()', () => {
+  it('un mes comercial completo (30 días) devuelve capital × tasa', () => {
+    // 1.000.000 al 2% mensual por 30 días = 20.000
+    expect(calcularInteresSimple(1_000_000, 2, 30)).toBe(20_000);
+  });
+
+  it('prorratea por días dentro del mes comercial', () => {
+    // 1.000.000 al 2% mensual por 15 días = 10.000
+    expect(calcularInteresSimple(1_000_000, 2, 15)).toBe(10_000);
+    // 45 días = mes y medio = 30.000
+    expect(calcularInteresSimple(1_000_000, 2, 45)).toBe(30_000);
+  });
+
+  it('es simple, no compuesto: el interés no genera interés', () => {
+    // 60 días = exactamente el doble de 30 días
+    const unMes  = calcularInteresSimple(500_000, 3, 30);
+    const dosMeses = calcularInteresSimple(500_000, 3, 60);
+    expect(dosMeses).toBe(unMes * 2);
+  });
+
+  it('redondea a pesos', () => {
+    // 100.000 al 1.5% por 7 días = 100.000 × 0.015 × 7/30 = 350
+    expect(calcularInteresSimple(100_000, 1.5, 7)).toBe(350);
+    // 33.333 al 2% por 10 días = 33.333 × 0.02 / 3 = 222.22 → 222
+    expect(calcularInteresSimple(33_333, 2, 10)).toBe(222);
+  });
+
+  it('devuelve 0 con inputs inválidos o sin efecto', () => {
+    expect(calcularInteresSimple(0, 2, 30)).toBe(0);
+    expect(calcularInteresSimple(-100, 2, 30)).toBe(0);
+    expect(calcularInteresSimple(100_000, 0, 30)).toBe(0);
+    expect(calcularInteresSimple(100_000, -1, 30)).toBe(0);
+    expect(calcularInteresSimple(100_000, 2, 0)).toBe(0);
+    expect(calcularInteresSimple(100_000, 2, -5)).toBe(0);
+    expect(calcularInteresSimple(NaN, 2, 30)).toBe(0);
+    expect(calcularInteresSimple(100_000, NaN, 30)).toBe(0);
+    expect(calcularInteresSimple(100_000, 2, Infinity)).toBe(0);
+  });
+});
 
 // ── calcularCDT() ─────────────────────────────────────────────────
 

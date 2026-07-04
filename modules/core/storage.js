@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 20;
+const SCHEMA_VERSION = 21;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -332,6 +332,24 @@ function _migrate(raw) {
       for (const c of data.compromisos) {
         if (c && typeof c === 'object' && c.esCuotaManejo === true && c.frecuencia === 'mensual') {
           c.frecuencia = 'Mensual';
+        }
+      }
+    }
+  }
+
+  // v20 → v21: tasa de interés mensual opcional en préstamos personales (PE.1).
+  // Los préstamos existentes quedan sin tasa (null) y con los acumuladores de
+  // capital/interés derivados de lo ya pagado: sin tasa no existía el interés,
+  // así que todo lo cobrado fue capital. Idempotente: si el campo ya está
+  // presente en el item, no se sobreescribe.
+  if ((typeof data._version === 'number' ? data._version : 1) < 21) {
+    if (Array.isArray(data.personales)) {
+      for (const p of data.personales) {
+        if (p && typeof p === 'object') {
+          if (!('tasa' in p))             p.tasa = null;
+          if (!('capitalPagado' in p))    p.capitalPagado = Math.min(Number(p.pagado) || 0, Number(p.monto) || 0);
+          if (!('interesPagado' in p))    p.interesPagado = 0;
+          if (!('interesPendiente' in p)) p.interesPendiente = 0;
         }
       }
     }

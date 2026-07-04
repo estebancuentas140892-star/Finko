@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   calcularPendiente,
+  calcularCapitalPendiente,
+  calcularInteresPendiente,
   calcularDias,
   clasificarAntiguedad,
   estadoPrestamo,
@@ -11,6 +13,8 @@ import {
   validarPersonal,
   normalizarPersonal,
   aplicarPago,
+  desglosarPago,
+  tieneInteres,
 } from '../../modules/dominio/personales/logic.js';
 
 // ── calcularPendiente() ───────────────────────────────────────────
@@ -419,5 +423,264 @@ describe('aplicarPago()', () => {
     expect(r1.ultimoPago).toBeUndefined();
     const r2 = aplicarPago({ monto: 100, pagado: 100 }, 50, '2026-05-15');
     expect(r2.ultimoPago).toBeUndefined();  // ya liquidado, pendiente 0
+  });
+});
+
+// ── PE.1: tasa de interés opcional ────────────────────────────────
+
+describe('tieneInteres() (PE.1)', () => {
+  it('true solo con tasa numérica mayor a 0', () => {
+    expect(tieneInteres({ tasa: 2 })).toBe(true);
+    expect(tieneInteres({ tasa: 0.5 })).toBe(true);
+  });
+
+  it('false sin tasa, con tasa 0, null o inválida', () => {
+    expect(tieneInteres({})).toBe(false);
+    expect(tieneInteres({ tasa: 0 })).toBe(false);
+    expect(tieneInteres({ tasa: null })).toBe(false);
+    expect(tieneInteres({ tasa: 'abc' })).toBe(false);
+    expect(tieneInteres(null)).toBe(false);
+  });
+});
+
+describe('calcularCapitalPendiente() (PE.1)', () => {
+  it('sin tasa: monto menos pagado (comportamiento clásico)', () => {
+    expect(calcularCapitalPendiente({ monto: 100_000, pagado: 40_000 })).toBe(60_000);
+  });
+
+  it('con tasa: usa capitalPagado, no pagado (el interés no baja capital)', () => {
+    const p = { monto: 100_000, pagado: 30_000, tasa: 2, capitalPagado: 10_000, interesPagado: 20_000 };
+    expect(calcularCapitalPendiente(p)).toBe(90_000);
+  });
+
+  it('nunca negativo', () => {
+    expect(calcularCapitalPendiente({ monto: 100, pagado: 500 })).toBe(0);
+    expect(calcularCapitalPendiente({ monto: 100, tasa: 2, capitalPagado: 500 })).toBe(0);
+  });
+});
+
+describe('calcularInteresPendiente() (PE.1)', () => {
+  it('0 para préstamos sin tasa', () => {
+    expect(calcularInteresPendiente({ monto: 100_000, pagado: 0, fecha: '2026-01-01' })).toBe(0);
+  });
+
+  it('devenga interés simple desde la fecha del préstamo', () => {
+    // 1.000.000 al 2% mensual, 30 días → 20.000
+    const p = { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+                capitalPagado: 0, interesPagado: 0, interesPendiente: 0 };
+    expect(calcularInteresPendiente(p, new Date('2026-05-31T12:00:00'))).toBe(20_000);
+  });
+
+  it('tras un abono, devenga desde ultimoPago y suma el snapshot pendiente', () => {
+    // Snapshot de 5.000 sin cobrar + 15 días más al 2% sobre 500.000 = 5.000
+    const p = { monto: 1_000_000, pagado: 500_000, fecha: '2026-01-01', tasa: 2,
+                capitalPagado: 500_000, interesPagado: 0, interesPendiente: 5_000,
+                ultimoPago: '2026-05-01' };
+    expect(calcularInteresPendiente(p, new Date('2026-05-16T12:00:00'))).toBe(10_000);
+  });
+
+  it('con el capital en 0 no devenga interés nuevo, solo devuelve el snapshot', () => {
+    const p = { monto: 100_000, pagado: 100_000, fecha: '2026-01-01', tasa: 2,
+                capitalPagado: 100_000, interesPagado: 0, interesPendiente: 3_000,
+                ultimoPago: '2026-03-01' };
+    expect(calcularInteresPendiente(p, new Date('2026-06-01T12:00:00'))).toBe(3_000);
+  });
+
+  it('acepta fechaRef como string ISO corto sin corrimiento de día', () => {
+    const p = { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+                capitalPagado: 0, interesPagado: 0, interesPendiente: 0 };
+    expect(calcularInteresPendiente(p, '2026-05-31')).toBe(20_000);
+  });
+});
+
+describe('calcularPendiente() con tasa (PE.1)', () => {
+  it('incluye capital pendiente más interés devengado', () => {
+    const p = { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+                capitalPagado: 0, interesPagado: 0, interesPendiente: 0 };
+    expect(calcularPendiente(p, new Date('2026-05-31T12:00:00'))).toBe(1_020_000);
+  });
+
+  it('sin tasa el segundo parámetro no cambia nada (retrocompatible)', () => {
+    expect(calcularPendiente({ monto: 100_000, pagado: 40_000 }, new Date('2030-01-01'))).toBe(60_000);
+  });
+});
+
+describe('desglosarPago() (PE.1)', () => {
+  const base = { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+                 capitalPagado: 0, interesPagado: 0, interesPendiente: 0 };
+
+  it('sin tasa: todo el pago va a capital', () => {
+    const r = desglosarPago({ monto: 100_000, pagado: 0 }, 30_000);
+    expect(r).toEqual({ aplicado: 30_000, aCapital: 30_000, aInteres: 0 });
+  });
+
+  it('con tasa: cubre primero el interés devengado', () => {
+    // A 30 días hay 20.000 de interés. Pago de 50.000: 20.000 interés + 30.000 capital.
+    const r = desglosarPago(base, 50_000, '2026-05-31');
+    expect(r).toEqual({ aplicado: 50_000, aCapital: 30_000, aInteres: 20_000 });
+  });
+
+  it('un pago menor al interés devengado va completo a interés', () => {
+    const r = desglosarPago(base, 8_000, '2026-05-31');
+    expect(r).toEqual({ aplicado: 8_000, aCapital: 0, aInteres: 8_000 });
+  });
+
+  it('recorta el pago al pendiente total (interés + capital)', () => {
+    const r = desglosarPago(base, 5_000_000, '2026-05-31');
+    expect(r).toEqual({ aplicado: 1_020_000, aCapital: 1_000_000, aInteres: 20_000 });
+  });
+
+  it('no muta el préstamo', () => {
+    const copia = { ...base };
+    desglosarPago(base, 50_000, '2026-05-31');
+    expect(base).toEqual(copia);
+  });
+});
+
+describe('aplicarPago() con tasa (PE.1)', () => {
+  const base = { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+                 capitalPagado: 0, interesPagado: 0, interesPendiente: 0 };
+
+  it('actualiza acumuladores de capital e interés y el total pagado', () => {
+    const r = aplicarPago(base, 50_000, '2026-05-31');
+    expect(r.pagado).toBe(50_000);
+    expect(r.interesPagado).toBe(20_000);
+    expect(r.capitalPagado).toBe(30_000);
+    expect(r.interesPendiente).toBe(0);
+    expect(r.ultimoPago).toBe('2026-05-31');
+    expect(r.liquidado).toBe(false);
+  });
+
+  it('un pago parcial del interés deja el resto como snapshot pendiente', () => {
+    const r = aplicarPago(base, 8_000, '2026-05-31');
+    expect(r.interesPagado).toBe(8_000);
+    expect(r.capitalPagado).toBe(0);
+    expect(r.interesPendiente).toBe(12_000);
+    expect(r.liquidado).toBe(false);
+  });
+
+  it('liquida solo cuando no queda capital NI interés pendiente', () => {
+    // Un pago del tamaño del capital no liquida: el interés se cobra primero,
+    // así que quedan 20.000 de capital pendiente.
+    const soloCapital = aplicarPago(base, 1_000_000, '2026-05-31');
+    expect(soloCapital.liquidado).toBe(false);
+    expect(soloCapital.interesPagado).toBe(20_000);
+    expect(soloCapital.capitalPagado).toBe(980_000);
+    expect(soloCapital.interesPendiente).toBe(0);
+
+    // Pagar todo (capital + interés) sí liquida.
+    const todo = aplicarPago(base, 1_020_000, '2026-05-31');
+    expect(todo.liquidado).toBe(true);
+    expect(todo.interesPendiente).toBe(0);
+    expect(todo.capitalPagado).toBe(1_000_000);
+    expect(todo.interesPagado).toBe(20_000);
+  });
+
+  it('el devengo continúa tras el abono sin contar doble el periodo anterior', () => {
+    // Abono al día 30 que cubre todo el interés y deja 500.000 de capital.
+    const tras = aplicarPago(base, 520_000, '2026-05-31');
+    expect(tras.capitalPagado).toBe(500_000);
+    expect(tras.interesPendiente).toBe(0);
+    // 30 días después: interés solo sobre los 500.000 restantes = 10.000.
+    expect(calcularInteresPendiente(tras, new Date('2026-06-30T12:00:00'))).toBe(10_000);
+  });
+
+  it('pago inválido no cambia nada (tampoco el ancla de devengo)', () => {
+    const r = aplicarPago(base, -10, '2026-05-31');
+    expect(r.pagado).toBe(0);
+    expect(r.interesPendiente).toBe(0);
+    expect(r.ultimoPago).toBeUndefined();
+  });
+
+  it('no muta el objeto original', () => {
+    const copia = { ...base };
+    aplicarPago(base, 50_000, '2026-05-31');
+    expect(base).toEqual(copia);
+  });
+});
+
+describe('porcentajePagado() con tasa (PE.1)', () => {
+  it('mide recuperación de capital, no el total recibido', () => {
+    const p = { monto: 100_000, pagado: 60_000, tasa: 2, capitalPagado: 40_000, interesPagado: 20_000 };
+    expect(porcentajePagado(p)).toBe(40);
+  });
+});
+
+describe('calcularResumen() con tasa (PE.1)', () => {
+  const ref = new Date('2026-05-31T12:00:00');
+
+  it('el pendiente incluye interés devengado y el cobrado incluye interés recibido', () => {
+    const r = calcularResumen([
+      { monto: 1_000_000, pagado: 0, fecha: '2026-05-01', tasa: 2,
+        capitalPagado: 0, interesPagado: 0, interesPendiente: 0 },
+      { monto: 100_000, pagado: 40_000 },
+    ], ref);
+    expect(r.totalPrestado).toBe(1_100_000);
+    expect(r.totalPendiente).toBe(1_020_000 + 60_000);
+    expect(r.totalCobrado).toBe(40_000);
+  });
+
+  it('pctCobrado no se infla con los intereses cobrados', () => {
+    // Capital totalmente recuperado + 20.000 de interés cobrado: 100%, no 102%.
+    const r = calcularResumen([
+      { monto: 1_000_000, pagado: 1_020_000, fecha: '2026-05-01', tasa: 2,
+        capitalPagado: 1_000_000, interesPagado: 20_000, interesPendiente: 0,
+        ultimoPago: '2026-05-31' },
+    ], ref);
+    expect(r.pctCobrado).toBe(100);
+    expect(r.liquidados).toBe(1);
+    expect(r.activos).toBe(0);
+  });
+
+  it('un préstamo con capital pagado pero interés pendiente sigue activo', () => {
+    const r = calcularResumen([
+      { monto: 100_000, pagado: 100_000, fecha: '2026-01-01', tasa: 2,
+        capitalPagado: 100_000, interesPagado: 0, interesPendiente: 3_000,
+        ultimoPago: '2026-03-01' },
+    ], ref);
+    expect(r.activos).toBe(1);
+    expect(r.liquidados).toBe(0);
+    expect(r.totalPendiente).toBe(3_000);
+  });
+});
+
+describe('validarPersonal() con tasa (PE.1)', () => {
+  it('acepta tasa vacía, ausente o válida', () => {
+    expect(validarPersonal({ persona: 'X', monto: '100' })).toEqual([]);
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: '' })).toEqual([]);
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: '2' })).toEqual([]);
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: '0.5' })).toEqual([]);
+  });
+
+  it('rechaza tasa negativa, mayor a 100 o no numérica', () => {
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: '-1' })).toContainEqual(
+      expect.stringMatching(/tasa/i),
+    );
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: '101' })).toContainEqual(
+      expect.stringMatching(/tasa/i),
+    );
+    expect(validarPersonal({ persona: 'X', monto: '100', tasa: 'abc' })).toContainEqual(
+      expect.stringMatching(/tasa/i),
+    );
+  });
+});
+
+describe('normalizarPersonal() con tasa (PE.1)', () => {
+  it('con tasa inicializa los acumuladores capital/interés', () => {
+    const r = normalizarPersonal({ persona: 'X', monto: '100000', tasa: '2' });
+    expect(r.tasa).toBe(2);
+    expect(r.capitalPagado).toBe(0);
+    expect(r.interesPagado).toBe(0);
+    expect(r.interesPendiente).toBe(0);
+  });
+
+  it('sin tasa (o tasa 0/vacía) no agrega campos de interés', () => {
+    const r1 = normalizarPersonal({ persona: 'X', monto: '100' });
+    expect(r1.tasa).toBeUndefined();
+    expect(r1.capitalPagado).toBeUndefined();
+    const r2 = normalizarPersonal({ persona: 'X', monto: '100', tasa: '' });
+    expect(r2.tasa).toBeUndefined();
+    const r3 = normalizarPersonal({ persona: 'X', monto: '100', tasa: '0' });
+    expect(r3.tasa).toBeUndefined();
   });
 });

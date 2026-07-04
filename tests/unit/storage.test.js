@@ -873,6 +873,76 @@ describe('Migración v19 → v20 (frecuencia de la cuota de manejo, BUG-005)', (
   });
 });
 
+describe('Migración v20 → v21 (tasa de interés en préstamos personales, PE.1)', () => {
+  it('los préstamos existentes quedan sin tasa y con acumuladores derivados de pagado', () => {
+    const v20 = {
+      ...createInitialState(),
+      _version: 20,
+      personales: [
+        { id: 'p1', persona: 'Tía Marta', monto: 100_000, pagado: 40_000,
+          fecha: '2026-01-01', liquidado: false, fechaCreacion: '2026-01-01T10:00:00Z' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v20));
+
+    loadData();
+
+    const p = S.personales[0];
+    expect(p.tasa).toBeNull();
+    expect(p.capitalPagado).toBe(40_000);      // todo lo cobrado fue capital
+    expect(p.interesPagado).toBe(0);
+    expect(p.interesPendiente).toBe(0);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('clampea capitalPagado a monto si pagado venía inflado', () => {
+    const v20 = {
+      ...createInitialState(),
+      _version: 20,
+      personales: [
+        { id: 'p1', persona: 'X', monto: 100_000, pagado: 250_000,
+          fecha: '2026-01-01', liquidado: true, fechaCreacion: '2026-01-01T10:00:00Z' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v20));
+
+    loadData();
+
+    expect(S.personales[0].capitalPagado).toBe(100_000);
+  });
+
+  it('es idempotente: no sobreescribe campos ya presentes', () => {
+    const v21 = {
+      ...createInitialState(),
+      _version: 21,
+      personales: [
+        { id: 'p1', persona: 'X', monto: 1_000_000, pagado: 50_000,
+          fecha: '2026-05-01', tasa: 2, capitalPagado: 30_000,
+          interesPagado: 20_000, interesPendiente: 1_500,
+          liquidado: false, fechaCreacion: '2026-05-01T10:00:00Z' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v21));
+
+    loadData();
+
+    const p = S.personales[0];
+    expect(p.tasa).toBe(2);
+    expect(p.capitalPagado).toBe(30_000);
+    expect(p.interesPagado).toBe(20_000);
+    expect(p.interesPendiente).toBe(1_500);
+  });
+
+  it('sin préstamos personales, la migración no falla (no-op)', () => {
+    const v20 = { ...createInitialState(), _version: 20, personales: [] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v20));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();
