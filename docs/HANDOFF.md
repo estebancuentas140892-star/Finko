@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites)
+> Última actualización: 2026-07-03 (feat(ui): EP.7c, divulgación progresiva en Metas, Ahorro e Inversión)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,19 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ui): EP.7c, divulgación progresiva en Metas, Ahorro e Inversión · 2026-07-03
+
+Aplica el patrón de EP.7a/b a los 3 dominios de "Crecer": subtítulos de Metas y Ahorro fuera de `index.html`; empty states recortados (Metas conserva en una línea la regla de contexto hacia Apartados; Ahorro ya no repite "un imprevisto se cubre con deuda" del banner); `tieneDatos` real en los 3 (Metas: `S.metas.length > 0`; Ahorro: fondo activo o algún aporte; Inversión: `S.inversiones.length > 0`).
+
+1885/1885 unit verdes; 117/117 E2E sin regresiones; lint limpio. Verificado sirviendo el contenido real vía `curl` (mismo síntoma de caché stale del preview ya documentado). SW v274 → v275. **Solo queda EP.7d (Mis cuentas, Análisis, Me deben) para cerrar la épica EP.7.**
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Subtítulos de Metas y Ahorro fuera. |
+| `modules/dominio/metas/*`, `modules/dominio/ahorro/*`, `modules/dominio/inversiones/*` | Empty states recortados; `tieneDatos` real. |
+
+---
 
 ### feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites · 2026-07-03
 
@@ -92,23 +105,7 @@ Copy solamente: la sección "Mis ingresos" en Mis cuentas ahora se llama "Mis in
 
 ---
 
-### fix(tesoreria): MC.7f, pulido del asistente. Épica MC.7 completa · 2026-07-03
-
-Cierra MC.7f (opcional), sin lógica financiera nueva: copy consistente por paso (título del Paso 2 alineado con el Paso 1), un estado vacío corregido (el hint "Sugerencia: $X a ahorro..." ya no aparece si no hay ninguna fila de Ahorro donde ponerla), el indicador "Paso X de N" se omite con un solo paso, foco movido al contenedor del paso al avanzar/retroceder (`tabindex="-1"` + `role="group"`/`aria-label`, patrón WAI-ARIA APG para asistentes multi-paso, sin robar el foco en la apertura inicial) y una transición de fade corta bajo `prefers-reduced-motion: no-preference`.
-
-Verificado con 3 E2E nuevos (foco al avanzar/retroceder y preservado en apertura inicial; indicador ausente con un paso; hint de ahorro ausente sin fila de Ahorro) y las 19 pruebas existentes de "Distribuir mi ingreso" sin regresiones. 1887/1887 unit sin cambios; 114/114 → 117/117 E2E. Lint limpio. SW v271 → v272. **Épica MC.7 completa (MC.7a a MC.7f).**
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/view.js` | Título del Paso 2; hint de ahorro condicionado; indicador omitido con un paso; `tabindex="-1"` en cada paso. |
-| `modules/dominio/tesoreria/index.js` | `_irAPasoDistribucion` gana `{ moverFoco }`; mueve el foco al contenedor del paso al navegar. |
-| `styles/components/forms.css` | Transición `distribuir-paso-in`; `.distribuir__paso:focus { outline: none }`. |
-| `tests/e2e/smoke.test.js` | 3 tests nuevos. |
-| `service-worker.js` | v271 → v272. |
-
----
-
-> Para tareas anteriores (feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (fix(tesoreria) MC.7f pulido del asistente épica MC.7 completa, feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

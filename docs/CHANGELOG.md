@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): EP.7c, divulgación progresiva en Metas, Ahorro e Inversión · 2026-07-03
+
+Aplica el patrón de EP.7a/EP.7b a los 3 dominios de "Crecer" del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md):
+
+- **Metas:** el `section__subtitle` "Objetivos aspiracionales: viaje, laptop, boda..." se quita de `index.html`; el empty state se recorta pero conserva en una línea la regla de contexto hacia Apartados (gastos previsibles vs objetivos libres); `tieneDatos = S.metas.length > 0`.
+- **Ahorro:** el `section__subtitle` "Tu colchón para imprevistos..." se quita; el empty state se recorta (ya no repite "un imprevisto se cubre con deuda" del banner); `tieneDatos` = fondo de emergencia activo o algún aporte ya registrado.
+- **Inversión:** sin subtítulo que barrer; empty state recortado; `tieneDatos = S.inversiones.length > 0`.
+
+Verificación: mismo síntoma de caché HTTP stale del preview ya documentado; se confirmó el contenido real servido vía `curl` y la conducta vía la suite E2E real. 1885/1885 unit verdes (sin cambios de lógica pura); 117/117 E2E sin regresiones. Lint limpio. SW v274 → v275.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Subtítulos de Metas y Ahorro fuera. |
+| `modules/dominio/metas/view.js`, `modules/dominio/metas/index.js` | Empty state recortado; `tieneDatos` real. |
+| `modules/dominio/ahorro/view.js`, `modules/dominio/ahorro/index.js` | Empty state recortado; nuevo helper `_tieneDatosAhorro()`. |
+| `modules/dominio/inversiones/view.js`, `modules/dominio/inversiones/index.js` | Empty state recortado; `tieneDatos` real. |
+| `service-worker.js` | v274 → v275. |
+
+---
+
 ### feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites · 2026-07-03
 
 Aplica el patrón de EP.7a (mecanismo `tieneDatos` ya listo) a los 4 dominios siguientes del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md):
