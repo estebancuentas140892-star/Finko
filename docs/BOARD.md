@@ -53,15 +53,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 
 ### Mis cuentas (dominio `tesoreria`)
 
-#### MC.6c (opcional) - Señales más ricas para la distribución automática
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : historial de gastos variables como proxy de estilo de vida; inversiones como prioridad tras el fondo, en el modelo de pisos de distribución.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js`
-- Depende de : nada
-- Modelo     : sin definir
-
 #### MC.7g (opcional) - Fijos Quincenal/Semanal/Diario en la checklist de Necesidades
 - Prioridad  : baja
 - Estado     : opcional

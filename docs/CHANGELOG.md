@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.6c, señales más ricas para la distribución automática · 2026-07-04
+
+Cierra MC.6c, la última tarjeta accionable del tablero. Dos señales nuevas en el motor de pisos (ADR 013):
+
+- **Historial de gasto variable como proxy del estilo de vida real.** Nueva `calcularGastoVariablePromedio(gastos, hoy, meses)`: promedio mensual del gasto variable (sin `compromisoId` y fuera de Deudas/Ahorro/Gastos fijos) sobre los últimos 3 meses completos; los meses sin registros no diluyen y el mes corriente se excluye. El motor eleva el piso de Estilo de vida a ese promedio cuando supera el 10% mínimo: sugerir menos de lo que el usuario de verdad gasta produce planes incumplibles. Si eso aprieta el ahorro por debajo de su ideal, alerta accionable con el rubro a recortar (mismo espíritu que MC.11) y la razón lo menciona. Sin historial, la señal queda apagada (retrocompatible: reparto idéntico al anterior).
+- **Inversiones como prioridad tras el fondo.** Con fondo completo y usuario que ya invierte, la razón agrega "tu fondo está completo, así que el ahorro puede ir a tus inversiones" y aparece la CTA "Aportar a tus inversiones" (antes ese caso no tenía CTA de inversión; "Explorar inversiones" sigue reservada a quien no invierte).
+
+Límites de gasto consume el mismo `construirContextoDistribucion`: mejora automáticamente. Un test viejo fijaba el contrato anterior ("ya invierte → sin CTA"); se actualizó al nuevo.
+
+2012/2012 → 2022/2022 unit (10 nuevos, 1 actualizado); 128/128 E2E. Lint limpio. SW v294 → v295.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | `calcularGastoVariablePromedio`; piso EV informado por historial; razón/alerta/CTA nuevas. |
+| `tests/unit/tesoreria.test.js` | 10 tests nuevos (proxy + señales), 1 actualizado. |
+| `service-worker.js` | v294 → v295. |
+
+---
+
 ### feat(inversiones): E.5, IPC observado como constante anual · 2026-07-04
 
 Cierra E.5. Nueva constante `IPC_OBSERVADO_POR_ANIO` (variación anual del IPC al cierre de diciembre, decimal) con fuente y fecha de revisión (regla ADN #12): 2024 = 5,20% y 2025 = 5,10% (DANE, boletín de 2026-01-08), más el helper `ipcObservadoVigente()`.
