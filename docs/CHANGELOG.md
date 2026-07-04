@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### test(rwd): RWD.1, verificación de reflow real a 320px en E2E · 2026-07-03
+
+Cierra RWD.1 (estaba bloqueada por el preview del entorno; se resolvió por la vía E2E que la propia tarjeta sugería). Nueva suite [tests/e2e/reflow-320.test.js](../tests/e2e/reflow-320.test.js) (4 tests, viewport 320×568, el punto de verificación de reflow de WCAG 1.4.10, que cubre el zoom 200%/400% en pantallas comunes):
+
+- Las 13 secciones, con **datos reales sembrados** (cuentas, gastos, deudas con nombre largo, fijo, meta, préstamo personal, límite, fondo con aportes), no generan scroll horizontal.
+- La barra inferior (la sidebar vuelta bottom bar en móvil) queda completa dentro del viewport.
+- El modal de gasto rápido (`.input--big-amount`, el caso de riesgo señalado) y el asistente "Distribuir mi ingreso" caben completos.
+
+Resultado: cero solapes ni overflow, ningún fix de CSS requerido. 123/123 → 127/127 E2E; unit sin cambios; solo tests, sin bump de SW. Nota menor de la tarjeta (labels del nav a 10px bajo 360px) sigue vigente y aceptable.
+
+| Archivo | Cambio |
+|---|---|
+| `tests/e2e/reflow-320.test.js` | Suite nueva (4 tests de reflow). |
+
+---
+
 ### feat(presupuesto): MC.8c, layout de dos columnas + fila completa en Límites · 2026-07-03
 
 Cierra MC.8c (ver [ADR 019](DECISIONS/019-limites-por-rol.md)). En desktop, el grid de "Tu plan del mes por grupo" pasa de 3 columnas iguales a: **Necesidades y Ahorro en 2 columnas compactas** (fila de arriba) y **Estilo de vida en fila completa** (es la card alta: contiene la olla finita, los envelopes y las huérfanas, y en 1/3 del ancho quedaba apretada). El DOM sigue el orden visual (Necesidades → Ahorro → Estilo de vida), que coincide con el orden del asistente "Distribuir mi ingreso". En móvil no cambia nada: `responsive.css` ya apila a 1 columna.

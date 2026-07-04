@@ -249,15 +249,6 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### RWD.1 (verificación) - Probar reflow real a 320px y zoom 200%
-- Prioridad  : baja
-- Estado     : pendiente (bloqueada por preview del entorno, ver memoria del proyecto)
-- Objetivo   : el CSS responsive está completo en código; verificar en dispositivo real o con un E2E a 320px que no haya scroll horizontal ni solapes (modales con `.input--big-amount`, barra inferior). Nota menor: labels del nav bajan a 10px bajo 360px (aceptable, vigilar).
-- Secciones  : Transversal
-- Archivos   : `styles/responsive.css`
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
-
 ---
 
 ## Mantenimiento
