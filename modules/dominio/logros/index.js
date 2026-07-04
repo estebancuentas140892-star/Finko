@@ -50,27 +50,45 @@ function _checkYMostrar() {
   save();
 
   // 3+ logros a la vez (ej. al restaurar un respaldo o importar un CSV) satura
-  // la pantalla con un toast encadenado cada 1.4s; un solo toast resume mejor.
+  // la pantalla con un toast tras otro; un solo toast resume mejor.
   if (nuevos.length > 2) {
-    _mostrarToast({ emoji: '🏆', nombre: `${nuevos.length} logros nuevos` }, 'Logros desbloqueados');
+    _encolarToast({ emoji: '🏆', nombre: `${nuevos.length} logros nuevos` }, 'Logros desbloqueados');
     return;
   }
 
-  // Mostrar de a uno con un pequeño delay para que no se solapen.
-  nuevos.forEach((id, i) => {
+  nuevos.forEach(id => {
     const logro = LOGROS.find(l => l.id === id);
     if (!logro) return;
-    setTimeout(() => _mostrarToast(logro), i * 1400);
+    _encolarToast(logro);
   });
 }
 
 // ── TOAST ────────────────────────────────────────────────────────
 
-const DURACION_MS = 2500;
+const DURACION_MS = 5000;
+
+// Un toast a la vez: el siguiente entra cuando el anterior se va. Todos se
+// posicionan en el mismo punto fijo, y con la pausa por hover la vida de un
+// toast ya no es predecible como para escalonarlos con timers.
+const _cola = [];
+let _toastActivo = false;
+
+function _encolarToast(logro, label) {
+  _cola.push({ logro, label });
+  if (!_toastActivo) _siguienteToast();
+}
+
+function _siguienteToast() {
+  const sig = _cola.shift();
+  if (!sig) { _toastActivo = false; return; }
+  _toastActivo = true;
+  _mostrarToast(sig.logro, sig.label);
+}
 
 /**
  * Crea y muestra el toast de logro desbloqueado con confetti.
- * Se auto-elimina tras DURACION_MS ms.
+ * Se auto-elimina tras DURACION_MS ms; pasar el cursor por encima pausa el
+ * conteo y la ✕ lo cierra al instante. Al irse, avisa a la cola.
  *
  * @param {{ emoji: string, nombre: string }} logro
  * @param {string} [label] Texto de la etiqueta superior. Default: "Logro desbloqueado".
@@ -85,24 +103,53 @@ function _mostrarToast(logro, label = 'Logro desbloqueado') {
     <div class="logro-toast__body">
       <p class="logro-toast__label">${_esc(label)}</p>
       <p class="logro-toast__nombre">${_esc(logro.nombre)}</p>
-    </div>`;
+    </div>
+    <button type="button" class="logro-toast__cerrar" aria-label="Cerrar aviso">&times;</button>`;
 
   document.body.appendChild(toast);
   _lanzarConfetti();
 
-  // Fade out y limpieza tras DURACION_MS.
-  // Nota: NO armar un `animationend` defensivo aquí. La animación de entrada
-  // (`toastIn`) dispara `animationend` ~350ms despues, y un listener con
-  // { once: true } cancelaria el timer del fade => el toast quedaría estancado.
-  // Si hace falta limpieza externa, chequear `toast.isConnected` al disparar.
-  setTimeout(() => {
-    if (!toast.isConnected) return;  // ya removido externamente
+  // Nota: NO armar un `animationend` defensivo global. La animación de entrada
+  // (`toastIn`) dispara `animationend` ~350ms despues; el listener del fade
+  // se arma recién dentro de `cerrar()` para no confundirse con la entrada.
+  let cerrado  = false;
+  let removido = false;
+  const cerrar = () => {
+    if (cerrado || !toast.isConnected) return;
+    cerrado = true;
     toast.classList.add('fade');
-    const onEnd = () => { toast.remove(); };
+    const onEnd = () => {
+      if (removido) return;   // animationend + fallback no deben avanzar la cola 2 veces
+      removido = true;
+      toast.remove();
+      _siguienteToast();
+    };
     toast.addEventListener('animationend', onEnd, { once: true });
     // Fallback por si animationend no dispara (prefers-reduced-motion).
     setTimeout(onEnd, 400);
-  }, DURACION_MS);
+  };
+
+  // Autocierre pausable: al entrar el cursor se congela el tiempo restante,
+  // al salir se retoma (con un mínimo para que no muera apenas salga).
+  let restante = DURACION_MS;
+  let inicio   = Date.now();
+  let timer    = setTimeout(cerrar, restante);
+
+  toast.addEventListener('mouseenter', () => {
+    if (cerrado || timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    restante -= Date.now() - inicio;
+  });
+  toast.addEventListener('mouseleave', () => {
+    if (cerrado || timer !== null) return;
+    inicio = Date.now();
+    timer = setTimeout(cerrar, Math.max(restante, 1000));
+  });
+  toast.querySelector('.logro-toast__cerrar').addEventListener('click', () => {
+    if (timer !== null) clearTimeout(timer);
+    cerrar();
+  });
 }
 
 // ── CONFETTI ─────────────────────────────────────────────────────

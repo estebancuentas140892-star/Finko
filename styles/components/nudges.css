@@ -126,7 +126,8 @@
 /* ════════════════════════════════════════════════════════════
    LOGRO TOAST - gamificación tipo Duolingo para finanzas
    Aparece cuando el usuario desbloquea un logro.
-   JS lo crea, lo agrega al body y lo elimina tras 4s.
+   JS lo crea, lo agrega al body y lo elimina tras 5s; el hover
+   pausa el conteo y la ✕ lo cierra al instante (LG.1a).
    ════════════════════════════════════════════════════════════ */
 
 .logro-toast {
@@ -152,7 +153,8 @@
   border-radius: var(--fk-radius-xl);
   padding: var(--fk-space-3) var(--fk-space-5);
   box-shadow: var(--fk-shadow-lg);
-  pointer-events: none;
+  /* Interactivo (LG.1a): hover pausa el autocierre y la ✕ lo cierra. */
+  pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -194,6 +196,26 @@
   /* Permitir wrap en pantallas chicas con nombres largos.
      overflow-wrap: anywhere por si el nombre fuera una palabra sin espacios. */
   overflow-wrap: anywhere;
+}
+
+.logro-toast__cerrar {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-left: var(--fk-space-2);
+  padding: var(--fk-space-1);
+  background: none;
+  border: none;
+  border-radius: var(--fk-radius-sm);
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.logro-toast__cerrar:hover,
+.logro-toast__cerrar:focus-visible {
+  color: var(--fk-text-primary);
+  background: var(--fk-bg-hover);
 }
 
 /* En mobile el bottom nav (60px) tapaba el toast en su posicion original
