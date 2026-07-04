@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(personales): PE.1, tasa de interés opcional y reparto capital/interés · 2026-07-04
+
+Cierra PE.1. El préstamo dado (Me deben) acepta una **tasa de interés mensual opcional**, el modelo del préstamo informal en Colombia ("te presto al 2% mensual"): interés simple sobre el capital pendiente, prorrateado por días (mes comercial de 30), sin capitalización. Sin tasa, nada cambia (retrocompatible en lógica, vista y tests).
+
+- **Con tasa, cada pago cubre primero el interés acumulado** y el resto baja el capital (orden estándar de imputación). `aplicarPago` mantiene los acumuladores `capitalPagado`, `interesPagado` e `interesPendiente` (snapshot del devengo al último abono, que es el ancla del devengo siguiente: no se cuenta doble).
+- La card muestra el desglose ("Pendiente: $X (capital $C + interés $I)"), la tasa y el interés ya cobrado; la barra de progreso mide **recuperación de capital** (no se infla con intereses). El modal de pago muestra capital e interés acumulado y explica el orden de imputación; el anuncio del abono dice cuánto fue a capital y cuánto a interés.
+- El resumen agregado incluye el interés devengado en "Pendiente" y el interés recibido en "Te han devuelto"; `pctCobrado` sigue midiendo capital.
+- **Schema v20 → v21** (migración idempotente): préstamos existentes quedan con `tasa: null` y acumuladores derivados de `pagado` (todo lo cobrado fue capital). Nueva fórmula reusable `calcularInteresSimple` en `infra/financiero.js`.
+
+1934/1934 → 1974/1974 unit (40 tests nuevos); 127/127 E2E. Lint limpio. SW v287 → v288.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/financiero.js` | Nueva `calcularInteresSimple(capital, tasaMensualPct, dias)`. |
+| `modules/dominio/personales/logic.js` | `tieneInteres`, `calcularCapitalPendiente`, `calcularInteresPendiente`, `desglosarPago`; `calcularPendiente`/`aplicarPago`/`porcentajePagado`/`calcularResumen`/validación/normalización con tasa. |
+| `modules/dominio/personales/view.js` | Campo de tasa en el form; desglose en card y modal de pago. |
+| `modules/dominio/personales/index.js` | Persiste acumuladores; anuncio con reparto capital/interés. |
+| `modules/core/storage.js` | Migración v20 → v21. |
+| `tests/unit/personales.test.js`, `tests/unit/storage.test.js`, `tests/unit/calculadoras.test.js` | 40 tests nuevos (lógica de interés, migración, fórmula). |
+| `service-worker.js` | v287 → v288. |
+
+---
+
 ### feat(tesoreria): MC.10 y MC.11, piso de ahorro y detección de déficit real · 2026-07-03
 
 Cierra MC.10 y MC.11 juntas, como sugería el tablero ([ADR 013 revisado](DECISIONS/013-distribucion-automatica-inteligente.md), decisiones A y B). Ambas ajustan el reparto del modo Automático cuando las Necesidades son altas:

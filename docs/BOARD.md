@@ -3,7 +3,7 @@
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
-> Última actualización: 2026-07-03.
+> Última actualización: 2026-07-04.
 
 ---
 
@@ -172,14 +172,7 @@ _(sin pendientes activos. Nota: si más adelante se resuelven MC.10/MC.11 (piso 
 
 ### Me deben (dominio `personales`)
 
-#### PE.1 (schema + lógica financiera) - Tasa de interés opcional + reparto capital/interés
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : campo opcional de tasa en el préstamo dado; con él, calcular capital, interés generado, saldo pendiente y total recuperado. Requiere migración idempotente y lógica de amortización (reusable de `infra/financiero.js`). Al haber tasa, el chip de estado (PE.4, cerrada) puede indicar además cuánto del abono fue a capital vs interés.
-- Secciones  : Me deben
-- Archivos   : `modules/dominio/personales/logic.js` (línea ~7), `modules/infra/financiero.js`
-- Depende de : nada
-- Modelo     : Opus 4.8 - Medio (nueva lógica financiera CO + schema)
+_(sin pendientes activos.)_
 
 ---
 
