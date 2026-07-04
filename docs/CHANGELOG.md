@@ -10,6 +10,19 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(presupuesto): MC.8d, pulido de Límites con iconos por categoría · 2026-07-03
+
+Cierra MC.8d. Los envelopes y la lista de categorías huérfanas de Límites de gasto muestran el emoji de su categoría (`CATEGORIA_EMOJI`, fallback 📦), igual que ya lo hacía el panel de alertas del dashboard. Los otros frentes de la tarjeta (copy final por grupo, estados vacíos, a11y) ya habían quedado cubiertos por EP.7b (banner y copy de Límites), MC.8b (fusión de topes en la card) y A11Y.1-5: sin más cambios.
+
+1917/1917 unit verdes; 127/127 E2E. Lint limpio. SW v284 → v285.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/view.js` | Emoji de categoría en envelopes y huérfanas. |
+| `service-worker.js` | v284 → v285. |
+
+---
+
 ### test(rwd): RWD.1, verificación de reflow real a 320px en E2E · 2026-07-03
 
 Cierra RWD.1 (estaba bloqueada por el preview del entorno; se resolvió por la vía E2E que la propia tarjeta sugería). Nueva suite [tests/e2e/reflow-320.test.js](../tests/e2e/reflow-320.test.js) (4 tests, viewport 320×568, el punto de verificación de reflow de WCAG 1.4.10, que cubre el zoom 200%/400% en pantallas comunes):

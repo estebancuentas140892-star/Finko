@@ -200,16 +200,7 @@ _(sin pendientes activos.)_
 
 ### Límites de gasto (dominio `presupuesto`)
 
-#### MC.8d (opcional) - Pulido de Límites
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : copy final por grupo, iconos por categoría, estados vacíos, a11y.
-- Secciones  : Límites de gasto
-- Archivos   : `modules/dominio/presupuesto/view.js`
-- Depende de : nada (MC.8c cerrada)
-- Modelo     : Sonnet 5 - Bajo
-
-> Nota: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.
+_(sin pendientes activos. Nota: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.)_
 
 ---
 
