@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): EP.7d, divulgación progresiva en Mis cuentas, Análisis y Me deben. Épica EP.7 completa · 2026-07-03
+
+Cierra EP.7d, el último slice de la revisión del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md), y con él la épica EP.7 completa (EP.7a a EP.7d):
+
+- **Mis cuentas:** el título del empty state ("¿Dónde tienes tu dinero?", una pregunta gancho que duplicaba la del banner) se recorta a "Agrega tu primera cuenta"; `tieneDatos` = alguna cuenta o algún ingreso ya registrado.
+- **Análisis:** el `section__subtitle` "Cómo está tu salud financiera..." se quita de `index.html`; los empties por sub-card (Gastos por categoría, Tendencia de gastos) se revisaron contra el criterio de "no repetir el banner" y ya eran cortos y específicos de su propio dato, se dejan igual; `tieneDatos = S.gastos.length > 0`.
+- **Me deben:** empty state recortado; `tieneDatos = S.personales.length > 0`. El fix de copy "Personales" → "Me deben" en el banner ya se había hecho en EP.7a.
+
+Se actualizaron 3 aserciones E2E que verificaban el título viejo del empty state de Mis cuentas.
+
+1885/1885 unit verdes; 117/117 E2E (3 actualizadas, sin regresiones). Lint limpio. Verificado sirviendo el contenido real vía `curl` (mismo síntoma de caché stale del preview ya documentado). SW v275 → v276.
+
+**Con EP.7d cerrado, la épica EP.7 (divulgación progresiva) queda completa en las 11 secciones**: cada una tiene una única descripción de propósito (el banner) que se oculta automáticamente en cuanto la sección tiene datos, sin colapso manual ni preferencia persistida.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js` | Empty state recortado; nuevo helper `_tieneDatosTesoreria()`. |
+| `index.html`, `modules/dominio/analisis/index.js` | Subtítulo de Análisis fuera; `tieneDatos` real. |
+| `modules/dominio/personales/view.js`, `modules/dominio/personales/index.js` | Empty state recortado; `tieneDatos` real. |
+| `tests/e2e/navegacion-render.test.js` | 3 aserciones actualizadas al nuevo título del empty state de Mis cuentas. |
+| `service-worker.js` | v275 → v276. |
+| `docs/BOARD.md` | Tarjeta EP.7 borrada (épica cerrada). |
+
+---
+
 ### feat(ui): EP.7c, divulgación progresiva en Metas, Ahorro e Inversión · 2026-07-03
 
 Aplica el patrón de EP.7a/EP.7b a los 3 dominios de "Crecer" del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md):
