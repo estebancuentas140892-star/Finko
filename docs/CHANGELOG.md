@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(logros): LG.1b, vitrina de logros en Ajustes · 2026-07-04
+
+Cierra LG.1b con el ADR que pedía ([ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md)):
+
+- **Decisión de ubicación:** card "🏆 Logros" al final de **Ajustes** (no sección propia: la nav ya tiene 13 secciones y la vitrina es solo lectura; no en Inicio: IN.1-IN.3 lo curaron como estado financiero del día). El momento de descubrimiento sigue siendo el toast (LG.1a); la vitrina es el "ver todos".
+- **Arquitectura:** `config` no puede importar `logros` (ADN #10), así que el shell expone `#panel-logros` junto a `#panel-config` y el dominio logros renderiza ahí su propia vista (`logros/view.js`, archivo nuevo, agregado al precache del SW).
+- **Catálogo extendido:** cada logro gana `hint` (cómo desbloquearlo, en imperativo; los conseguidos muestran `desc`) y `progreso(s)` opcional solo en los de conteo observable directo de S: `diez-gastos` (n de 10) y `diversificador` (n de 3 cuentas activas), con barra de progreso accesible. El progreso del fondo ya vive en Ahorro con su anillo: no se duplica.
+- Nueva `estadoLogros(s, idsPersistidos)` pura: desbloqueado = persistido en `S.logros` o cumplido en vivo (un logro ganado no se revoca aunque el estado retroceda).
+
+1994/1994 → 2005/2005 unit (11 nuevos); 128/128 E2E. Lint limpio. SW v291 → v292.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/022-vitrina-de-logros-en-ajustes.md` | ADR nuevo. |
+| `modules/dominio/logros/logic.js` | `hint` + `progreso` en el catálogo; `estadoLogros`. |
+| `modules/dominio/logros/view.js` | Archivo nuevo: vitrina. |
+| `modules/dominio/logros/index.js` | Render en init, state:change y hashchange. |
+| `index.html`, `service-worker.js` | Contenedor `#panel-logros`; asset nuevo + v291 → v292. |
+| `styles/components/config.css` | Estilos `.logro-item` (pendientes atenuados, emoji en gris). |
+| `tests/unit/logros.test.js` | 11 tests nuevos (estadoLogros + vitrina en happy-dom). |
+
+---
+
 ### feat(agenda): AP.4, MT.2 y AH.4, recordatorio de día de ingreso en Calendario · 2026-07-04
 
 Cierra las tres épicas de recordatorios de aporte con el único ADR que pedía el tablero ([ADR 021](DECISIONS/021-recordatorio-dia-de-ingreso.md)):

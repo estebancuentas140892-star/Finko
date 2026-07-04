@@ -142,14 +142,7 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-#### LG.1b (épica, requiere ADR) - Sección de Logros
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : una sección o apartado "Logros" que muestre conseguidos, pendientes, progreso y cómo desbloquearlos. Decidir: sección propia vs. tarjeta en Ajustes/Inicio; qué logros muestran progreso parcial (extender `LOGROS` con `progreso(s)` opcional).
-- Secciones  : Transversal, posible sección nueva
-- Archivos   : `modules/dominio/logros/logic.js` (`LOGROS`), `S.logros`
-- Depende de : LG.1a (ya resuelto o no, es independiente)
-- Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
+_(sin pendientes activos.)_
 
 ---
 
