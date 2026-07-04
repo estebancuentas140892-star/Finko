@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado · 2026-07-03
+
+Cierra D.10 y D.13 en un solo pase de diseño, como pedía el tablero ([ADR 015 revisado](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md), decisiones 5 y 6):
+
+- **D.10:** nuevo catálogo `CATEGORIAS_DEUDA_PERSONAL` (Familiar 👪, Amigo 🤝, Vecino 🏘️, Natillera 💰, Prestamista particular 💼, Fiado 🏪, Otro 📦). El form de deuda personal pregunta "¿Con quién es la deuda?" en vez de ofrecer productos de entidad (Tarjeta, Vivienda...). Mismo campo `categoria` en el schema; validación y normalización aceptan solo el catálogo del tipo. **Sin migración:** las deudas personales viejas con valor de producto se conservan tal cual y se reclasifican al editar (no se borra un dato elegido por el usuario).
+- **D.13:** "Fiado" entra como categoría de relación con **interfaz adaptada**: al elegirlo, el form oculta cuota, tasa y frecuencia (una tienda que fía no cobra interés ni pacta cuota; se abona libre) y el día de pago queda como recordatorio de la fecha acordada. Para habilitarlo, **la cuota mensual pasa a ser opcional en toda deuda personal** (los préstamos de familia sin cuota fija son la norma): si viene debe ser > 0, vacía se guarda `0`. El simulador de estrategia ya excluía cuota 0 (sin cuota no hay plan que simular); la lista muestra la frecuencia en su lugar y Agenda omite el monto cuando es 0.
+
+El guardarraíl TX.4 incorpora el catálogo nuevo (único label compartido: 'Otro' → 📦, consistente). 1917/1917 → 1927/1927 unit (10 nuevos, 3 actualizados); 127/127 E2E. Lint limpio. SW v285 → v286.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `CATEGORIAS_DEUDA_PERSONAL` + emojis. |
+| `modules/dominio/compromisos/logic.js` | Validación/normalización por catálogo del tipo; cuota opcional en personal. |
+| `modules/dominio/compromisos/views/formularios.js` | Catálogo y labels por tipo; cuota opcional; grupos con id para el toggle. |
+| `modules/dominio/compromisos/index.js` | `_wireToggleFiado` (oculta cuota/tasa/frecuencia al elegir Fiado). |
+| `modules/dominio/compromisos/views/lista.js`, `modules/dominio/tesoreria/view.js` | Lookup de emoji unificado producto + relación. |
+| `modules/dominio/agenda/view.js` | Deuda sin cuota no muestra "$0". |
+| `modules/core/state.js`, `docs/DECISIONS/015-...md` | JSDoc del schema; revisión del ADR. |
+| `tests/unit/compromisos.test.js`, `tests/unit/constants.test.js` | 10 tests nuevos; TX.4 con el catálogo nuevo. |
+| `service-worker.js` | v285 → v286. |
+
+---
+
 ### feat(presupuesto): MC.8d, pulido de Límites con iconos por categoría · 2026-07-03
 
 Cierra MC.8d. Los envelopes y la lista de categorías huérfanas de Límites de gasto muestran el emoji de su categoría (`CATEGORIA_EMOJI`, fallback 📦), igual que ya lo hacía el panel de alertas del dashboard. Los otros frentes de la tarjeta (copy final por grupo, estados vacíos, a11y) ya habían quedado cubiertos por EP.7b (banner y copy de Límites), MC.8b (fusión de topes en la card) y A11Y.1-5: sin más cambios.

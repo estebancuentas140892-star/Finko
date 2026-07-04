@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(presupuesto): MC.8d, pulido de Límites con iconos por categoría)
+> Última actualización: 2026-07-03 (feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1917/1917 verdes |
+| Tests unitarios + integración | 1927/1927 verdes |
 | Tests E2E | 127/127 verde. Suites: `smoke` 81 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `reflow-320` 4 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
@@ -39,6 +39,17 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(compromisos): D.10 y D.13, categorías de relación para deuda personal y Fiado · 2026-07-03
+
+ADR 015 revisado (decisiones 5 y 6). Nuevo catálogo `CATEGORIAS_DEUDA_PERSONAL` (Familiar, Amigo, Vecino, Natillera, Prestamista particular, Fiado, Otro): el form personal pregunta "¿Con quién es la deuda?". Fiado con interfaz adaptada (oculta cuota/tasa/frecuencia); la cuota pasa a ser opcional en toda deuda personal (vacía → 0, fuera del simulador, Agenda omite el $0). Sin migración: valores viejos se reclasifican al editar. 1927/1927 unit (+10); 127/127 E2E. SW v285 → v286.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js`, `modules/dominio/compromisos/*` | Catálogo de relación; cuota opcional; toggle Fiado. |
+| `docs/DECISIONS/015-...md` | Revisión con decisiones 5 y 6. |
+
+---
 
 ### feat(presupuesto): MC.8d, pulido de Límites con iconos por categoría · 2026-07-03
 

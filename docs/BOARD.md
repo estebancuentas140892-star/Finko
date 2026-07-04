@@ -106,23 +106,7 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 
 ### Deudas (dominio `compromisos`, deuda)
 
-#### D.10 (diseño, revisa ADR 015) - Categorías propias para deudas personales
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : al elegir "Personal" en el chooser, el form sigue mostrando categorías de producto (Tarjeta de crédito, Vivienda...) que no encajan. Catálogo aparte de categorías de relación (Familiar, Amigo, Vecino, Natillera, Prestamista particular, Otro) cuando el tipo es personal.
-- Secciones  : Deudas
-- Archivos   : `modules/dominio/compromisos/views/formularios.js` (línea ~173)
-- Depende de : nada. Revisa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).
-- Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
-
-#### D.13 - "Fiado" como modalidad de deuda personal
-- Prioridad  : media
-- Estado     : requiere ADR (el mismo de D.10)
-- Objetivo   : el fiado (tienda de barrio, pequeño comercio, vendedor ambulante) es una deuda cotidiana muy común en Colombia; hoy toca registrarla como deuda personal genérica. Ofrecer una opción "Fiado" con interfaz adaptada: nombre de la tienda o persona, valor total, fecha en que se adquirió, fecha límite si existe, y notas opcionales.
-- Secciones  : Deudas
-- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `modules/core/constants.js`
-- Depende de : **resolver junto con D.10** (categorías propias para deuda personal): "Fiado" encaja como una de las categorías de relación de ese ADR, o como sub-tipo con campos propios. Un solo pase de diseño decide si es categoría o modalidad.
-- Modelo     : diseño junto a D.10 (Sonnet 5 - Alto); implementación Sonnet 5 - Medio
+_(sin pendientes activos.)_
 
 ---
 
