@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.11, la recomendación nombra cuándo la deuda a atacar es la única con interés · 2026-07-03
+
+Cierra D.11 (revisó [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md)). En `recomendarEstrategia` ([compromisos/logic.js](../modules/dominio/compromisos/logic.js)), cuando ambas estrategias completan el plan y **una sola deuda cobra intereses**:
+
+- Si gana Avalancha, la razón la nombra: «"Tarjeta" es la única de tus deudas que cobra intereses. Pagarla primero no solo reduce ese costo: lo elimina...» (antes solo el copy genérico de tasa más alta).
+- Si esa deuda es además la más chica (Avalancha y Bola de nieve empatan y se recomienda Bola de nieve), la razón suma el hecho: cerrar la primera también deja el plan sin intereses (antes solo "pesa la motivación").
+- Con varias deudas con interés, el copy genérico no cambia.
+
+1914/1914 → 1917/1917 unit verdes (3 tests nuevos); 123/123 E2E (suite `estrategia-pago` sin regresiones). Lint limpio. SW v281 → v282.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic.js` | Razones específicas cuando hay una única deuda con tasa > 0. |
+| `tests/unit/compromisos.test.js` | 3 tests nuevos de D.11. |
+| `service-worker.js` | v281 → v282. |
+
+---
+
 ### fix(ahorro): AH.1, el hint del objetivo del fondo explica de dónde sale el número · 2026-07-03
 
 Cierra AH.1. En el formulario de activar/editar fondo ([ahorro/view.js](../modules/dominio/ahorro/view.js), `renderFormFondo`), el preview "Con esa meta tu objetivo sería $480.000 (3 meses × $160.000 de gastos fijos al mes)" no explicaba de dónde salía el $160.000. Ahora dice que es "lo que suman al mes tus gastos fijos de Calendario (arriendo, servicios, cuotas...)", que es exactamente cómo lo calcula `_gastosFijosMensuales()` (compromisos fijos activos proyectados a valor mensual).

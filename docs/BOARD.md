@@ -115,15 +115,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Revisa [ADR 015](DECISIONS/015-categorias-de-deuda-dos-dimensiones.md).
 - Modelo     : diseño Sonnet 5 - Alto; implementación Sonnet 5 - Medio
 
-#### D.11 (mejora de lógica y copy, revisa ADR 011) - Explicar el porqué de la recomendación
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : cuando la deuda a atacar primero es la única (o principal) con tasa > 0, la explicación de `recomendarEstrategia` debe nombrar ese hecho (elimina el costo de interés, no solo "pesa la motivación").
-- Secciones  : Deudas
-- Archivos   : `modules/dominio/compromisos/logic.js` (`recomendarEstrategia`, línea ~1071)
-- Depende de : nada. Revisa [ADR 011](DECISIONS/011-unificacion-simulador-deudas.md).
-- Modelo     : Opus 4.8 - Bajo (lógica financiera, requiere cuidado)
-
 #### D.12 (mejora UI) - Contextualizar el aviso de tasa desconocida por deuda
 - Prioridad  : baja
 - Estado     : pendiente
