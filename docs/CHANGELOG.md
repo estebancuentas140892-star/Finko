@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): AP.4, MT.2 y AH.4, recordatorio de día de ingreso en Calendario · 2026-07-04
+
+Cierra las tres épicas de recordatorios de aporte con el único ADR que pedía el tablero ([ADR 021](DECISIONS/021-recordatorio-dia-de-ingreso.md)):
+
+- **Modelo elegido:** el día de pago de cada ingreso activo (`diaPago`, capturado desde v12) aparece en Calendario como **evento de "día de ingreso"**: dot verde (`--fk-dom-ingresos`), entrada en la leyenda, item de detalle con el monto en verde, el recordatorio "Hoy llega tu dinero: recuerda apartar para tus objetivos" y botón **"Distribuir →"**. Respeta la frecuencia (Quincenal = dos ocurrencias, misma lógica que compromisos). El aria-label y el resumen del día distinguen "día de ingreso" de los compromisos a pagar, y el ingreso no infla el "Total a pagar".
+- **Sin duplicar a MC.4:** el CTA emite `distribuir:abrir` (EventBus); tesorería navega a Mis cuentas y abre el asistente "Distribuir mi ingreso" en el primer paso. Los montos por vehículo ("$X para el SOAT", "Abonar a la meta") viven SOLO en el asistente: cero réplica del motor de ADR 013 en Agenda. Se rechazó el modelo de N eventos por meta/apartado/fondo (spam + flujos paralelos inferiores).
+- El gating por fecha del asistente (MC.4d) sigue mandando: si el cobro aún no llega o ya se distribuyó, el usuario ve ese estado al llegar (degradación coherente).
+- El nudge de proximidad de Apartados (60 días) se mantiene; el botón "Definir →" del compromiso mensual se conserva (la parte de AH.4 que pedía quitarlo quedó superada por AH.2: ese form ahora es la casa del aporte sugerido explicado; se verificó que `compromisoMensual` no alimenta nudges ni Score).
+
+1983/1983 → 1994/1994 unit (11 nuevos); 127/127 → **128/128 E2E** (nuevo test del flujo completo: día en calendario → CTA → asistente abierto). Lint limpio. SW v290 → v291.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/021-recordatorio-dia-de-ingreso.md` | ADR nuevo (modelo agregado, alternativas rechazadas). |
+| `modules/dominio/agenda/logic.js` | `eventosIngresosDelMes`; `totalDia` excluye ingresos. |
+| `modules/dominio/agenda/view.js` | Merge por día, item de ingreso, leyenda, aria/resumen. |
+| `modules/dominio/agenda/index.js` | Acción `agenda-distribuir-ingreso`; re-render ante `ingresos`. |
+| `modules/dominio/tesoreria/index.js` | Listener `distribuir:abrir` + `_abrirAsistenteDistribucion`. |
+| `styles/components/config.css` | `cal-dot--ingreso`, franja e ícono del item (patrón AG.6/AG.7). |
+| `tests/unit/agenda.test.js`, `tests/e2e/smoke.test.js` | 11 unit + 1 E2E nuevos. |
+| `service-worker.js` | v290 → v291. |
+
+---
+
 ### feat(ahorro): AH.3 y AUD.6, ADR 020 fondo como marcador de liquidez + hint del modelo · 2026-07-04
 
 Cierra juntas AH.3 y AUD.6, que el tablero pedía resolver en la misma decisión ([ADR 020](DECISIONS/020-fondo-marcador-de-liquidez.md)):

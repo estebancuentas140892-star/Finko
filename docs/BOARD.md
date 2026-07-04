@@ -94,40 +94,19 @@ _(sin pendientes activos.)_
 
 ### Apartados (dominio `apartados`)
 
-#### AP.4 (épica, requiere ADR) - Recordatorios automáticos de aporte en Calendario
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : recordatorio en Calendario al recibir el ingreso ("Hoy recibiste tu ingreso, recuerda apartar $X para el SOAT"). Cuidar la duplicación con "Distribuir mi ingreso" (MC.4, ya acredita y reparte a los apartados) y el nudge de proximidad existente (60 días).
-- Secciones  : Apartados, Calendario, Mis cuentas
-- Archivos   : `modules/dominio/apartados/`, `modules/dominio/agenda/`
-- Depende de : converge con MT.2 (Metas) y AH.4 (Ahorro). **Un solo ADR debe decidir el modelo de recordatorios de aporte para los tres a la vez**, sin solapar con MC.4.
-- Modelo     : diseño Opus 4.8 - Alto (cross-domain, trade-offs de duplicación)
+_(sin pendientes activos.)_
 
 ---
 
 ### Metas (dominio `metas`)
 
-#### MT.2 (épica, requiere ADR) - Integración de Metas con Calendario
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : recordatorios de aporte a cada meta en Calendario según la frecuencia de ingreso, con color/nombre de la meta y botón "Abonar".
-- Secciones  : Metas, Calendario
-- Archivos   : `modules/dominio/metas/`, `modules/dominio/agenda/`
-- Depende de : converge con AP.4 y AH.4 (mismo ADR). Se beneficia de MT.1 (color/ícono) y MT.5 (flujo de abono unificado).
-- Modelo     : diseño Opus 4.8 - Alto
+_(sin pendientes activos.)_
 
 ---
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)
 
-#### AH.4 (épica, requiere ADR) - Quitar "Definir" e integrar el fondo con Calendario
-- Prioridad  : media
-- Estado     : requiere ADR
-- Objetivo   : el botón "Definir →" del compromiso mensual duplica "Distribuir mi ingreso" (MC.4). Quitarlo e integrar el fondo con Calendario: recordatorio "Hoy corresponde tu aporte al Fondo de emergencia" con botón de registro rápido.
-- Secciones  : Ahorro, Calendario
-- Archivos   : `modules/dominio/ahorro/view.js` (`renderFormCompromisoMensual`, botón "Definir →")
-- Depende de : converge con MT.2 y AP.4 (mismo ADR). Antes de quitar `compromisoMensual`, verificar si alimenta nudges o el Score de Salud. AH.3 ya está resuelta (ADR 020: el fondo es marcador de liquidez, el aporte no descuenta).
-- Modelo     : diseño Opus 4.8 - Alto
+_(sin pendientes activos.)_
 
 ---
 
