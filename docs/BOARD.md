@@ -114,7 +114,7 @@ _(sin pendientes activos.)_
 
 ### Análisis (dominio `analisis`)
 
-_(sin pendientes activos. Observación sin acción inmediata: la dona de "Gastos por categoría" usa colores por categoría pero las barras laterales son todas verdes; unificar la paleta si se toca Análisis en otra tarea.)_
+_(sin pendientes activos.)_
 
 ---
 

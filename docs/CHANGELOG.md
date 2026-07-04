@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### style(analisis): paleta unificada entre la dona y las barras por categoría · 2026-07-04
+
+Cierra la observación registrada en el tablero de Análisis. Las barras laterales de "Gastos por categoría" dejan de ser todas verdes: cada una usa **el color que la dona le asignó a su categoría** (misma fuente: `colorearSegmentos`), y las categorías agrupadas en "Otros" heredan el slate de ese segmento, para que el color cuente la misma historia en toda la sección. Sin dona (sin segmentos), las barras conservan el color por defecto.
+
+2022/2022 → 2024/2024 unit (2 nuevos); 128/128 E2E. Lint limpio. SW v295 → v296.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/analisis/view.js` | Barras con el color de su segmento de la dona. |
+| `tests/unit/analisis.test.js` | 2 tests nuevos (paleta unificada en happy-dom). |
+| `service-worker.js` | v295 → v296. |
+
+---
+
 ### feat(tesoreria): MC.6c, señales más ricas para la distribución automática · 2026-07-04
 
 Cierra MC.6c, la última tarjeta accionable del tablero. Dos señales nuevas en el motor de pisos (ADR 013):
