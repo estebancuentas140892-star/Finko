@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): ADR 016 revisado, divulgación progresiva (EP.7, fase de diseño) · 2026-07-03
+
+Cierra la fase de diseño de EP.7 (dirección fijada por el usuario el 2026-07-02, reconfirmada con su observación en Metas: "la descripción solo debe aparecer al inicio"). El [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) pasa de "banner siempre visible y colapsable" a **divulgación progresiva**:
+
+- **D1:** el banner de propósito es la descripción única de cada sección; los `section__subtitle` descriptivos (Límites, Ahorro, Metas, Apartados, Análisis) y las notas al pie que repiten propósito se eliminan.
+- **D2:** la visibilidad se deriva de los datos: el banner solo aparece mientras la sección no tiene datos. Se van el colapso manual, `S.config.propositoColapsado` (clave huérfana inofensiva, sin migración), las data-actions `colapsar-proposito`/`expandir-proposito` y el bloque "Mensajes de ayuda" de Ajustes.
+- **D3:** el empty state deja de describir y pasa a accionar (título + una línea + CTA); los tips accionables y las reglas de contexto de ADR 014 quedan.
+- **D4:** guards de formulario y notas contextuales de datos no se tocan.
+- **D5:** contrato: `htmlBannerProposito` devuelve `''` cuando la sección tiene datos; cada dominio pasa el mismo predicado de su empty state.
+
+La revisión incluye la tabla del criterio "tiene datos" para las 11 secciones, el inventario texto por texto (archivo y línea aproximada: qué queda, qué se recorta, qué se va, incluido el fix de copy "Personales" → "Me deben" en el banner) y los 4 slices de implementación: EP.7a (piloto: mecanismo + Apartados + Ajustes), EP.7b (Gastos, Deudas, Calendario, Límites), EP.7c (Metas, Ahorro, Inversión), EP.7d (Mis cuentas, Análisis, Me deben).
+
+Solo docs: sin cambios de código. 1887/1887 unit verdes (sin cambios). Podría afectar (cuando se implemente): visibilidad del banner en las 11 secciones, empty states, Ajustes. Validación pendiente: ninguna para esta fase; cada slice se verifica en la app al implementarse.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/016-banner-proposito-de-seccion.md` | Estado actualizado; notas "Revisada el 2026-07-03" en decisiones 1, 2, 6 y 7; sección "Revisión 2026-07-03" (por qué, D1 a D5, criterio por sección, inventario transversal y por sección, consecuencias, slices EP.7a a EP.7d). |
+| `docs/BOARD.md` | Tarjeta EP.7 actualizada: diseño cerrado, quedan los slices. |
+| `docs/HANDOFF.md` | Entrada nueva en "Qué se hizo recientemente". |
+
+---
+
 ### chore(tesoreria): MC.12, renombrar "Ingreso" a "Ingresos fijos" · 2026-07-03
 
 Cierra MC.12 (tarea de copy solamente). La sección de ingresos en Mis cuentas se llamaba "Ingreso" (singular, demasiado general); ahora se llama "Ingresos fijos" para dejar claro que registra recurrentes (salario, honorarios periódicos, pensión). Solo cambio en copy visible y `aria-label`; IDs internas del DOM quedan estables.

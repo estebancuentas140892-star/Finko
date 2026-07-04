@@ -348,14 +348,14 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### EP.7 (unifica EP.5 + EP.6, revisa ADR 016) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
+#### EP.7 (ADR 016 revisado el 2026-07-03) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
 - Prioridad  : alta
-- Estado     : requiere revisión de ADR 016 (la dirección ya la fijó el usuario el 2026-07-02)
-- Objetivo   : hoy cada sección acumula texto explicativo en varios lugares (banner de propósito arriba, descripción bajo el título, textos al pie), lo que genera ruido visual y esconde lo importante, sobre todo en móvil. Decisión del usuario: **divulgación progresiva**. (1) Cada sección tiene **una única** descripción breve y clara de su propósito; (2) esa descripción **se oculta automáticamente** cuando la sección ya tiene datos (deja de aportar y solo ocupa espacio); (3) barrido completo de la app para unificar mensajes, eliminar textos repetidos y priorizar contenido y acciones sobre explicación. Absorbe las antiguas EP.5 (auto-ocultar) y EP.6 (unificar propósito + empty state); reconfirmado con la observación del usuario en Metas ("la descripción solo debe aparecer al inicio").
+- Estado     : pendiente (la fase de diseño cerró el 2026-07-03; quedan los 4 slices de implementación)
+- Objetivo   : el banner de propósito pasa a ser **la descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**. Barrido: fuera el colapso manual (`S.config.propositoColapsado`, data-actions, bloque "Mensajes de ayuda" de Ajustes), fuera los 5 `section__subtitle` descriptivos y la nota al pie de Límites; los empty states se recortan a título + acción + CTA. El inventario completo (qué queda y qué se va, con archivo y línea) y el criterio "tiene datos" por sección están en la revisión del ADR.
 - Secciones  : Transversal (todas las secciones)
-- Archivos   : `modules/ui/proposito.js`, `S.config.propositoColapsado`, empty states y textos de cada `view.js`, [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)
-- Depende de : nada. Conviene: primero la revisión del ADR (inventario de textos por sección + qué queda y qué se va), luego implementar por grupos de secciones como se hizo con EP.1-EP.4.
-- Modelo     : revisión de ADR + inventario Opus 4.8 - Alto; implementación Sonnet 5 - Medio por grupo
+- Archivos   : `modules/ui/proposito.js`, `index.html`, `modules/dominio/config/view.js`, empty states de cada `view.js`; detalle por slice en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) sección "Revisión 2026-07-03"
+- Depende de : nada. Orden: EP.7a (piloto: mecanismo + Apartados + Ajustes) → EP.7b (Gastos, Deudas, Calendario, Límites) → EP.7c (Metas, Ahorro, Inversión) → EP.7d (Mis cuentas, Análisis, Me deben)
+- Modelo     : Sonnet 5 - Medio por slice
 
 #### A11Y.5 (verificación) - Pase axe sobre formularios dinámicos
 - Prioridad  : media

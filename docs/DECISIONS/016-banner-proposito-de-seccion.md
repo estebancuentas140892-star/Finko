@@ -1,6 +1,6 @@
 # ADR 016 - Banner de propósito de sección (patrón "¿para qué sirve esto?")
 
-**Estado:** Propuesta (diseño). Decisiones de patrón cerradas con el usuario; el copy por sección se aprueba en cada slice.
+**Estado:** Implementada (EP.1 a EP.4). **Revisada el 2026-07-03:** el banner pasa de "siempre visible y colapsable" a **divulgación progresiva**: una única descripción por sección, visible solo mientras la sección no tiene datos (ver sección "Revisión 2026-07-03"). La dirección la fijó el usuario el 2026-07-02; esta revisión es la fase de diseño de EP.7.
 **Fecha:** 2026-06-30
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
 **Relación:** vehículo natural de la regla de contexto de [ADR 014](014-taxonomia-categorias-transversal.md) (la taxonomía se enseña sobre todo en el copy). Es la épica EP; este ADR es EP.0 y habilita EP.1 a EP.4.
@@ -27,6 +27,8 @@ De ahí se extrae la estructura de tres tiempos: (1) una **pregunta gancho** que
 
 ### 1. Ubicación: banner colapsable arriba del contenido
 
+> **Revisada el 2026-07-03:** el banner conserva la ubicación, pero deja de mostrarse "tenga o no datos": ahora solo aparece mientras la sección **no** tiene datos. Ver "Revisión 2026-07-03".
+
 El mensaje es un **banner de propósito** que se monta como primer bloque dentro de cada sección, justo **debajo del `section__header`** y antes de los nudges y el contenido. Se muestra **tenga o no datos** la sección (no depende del empty state).
 
 - Para un usuario nuevo aparece **expandido**: lo primero que ve al entrar es para qué sirve la sección.
@@ -36,6 +38,8 @@ El mensaje es un **banner de propósito** que se monta como primer bloque dentro
 Se descartaron las otras dos ubicaciones evaluadas (ver Alternativas): "solo en el empty state" (desaparece con los datos y no tiene dónde ir en Dashboard/Análisis) y "ícono de ayuda (?)" (demasiado escondido para el usuario nuevo, que es justo a quien queremos educar).
 
 ### 2. Persistencia: se colapsa, nunca se borra
+
+> **Revisada el 2026-07-03:** el colapso manual y su persistencia se eliminan; la visibilidad se deriva de los datos de la sección, no de una preferencia. `S.config.propositoColapsado` deja de leerse y el bloque "Mensajes de ayuda" de Ajustes se retira. Ver "Revisión 2026-07-03".
 
 El estado colapsado/expandido se guarda **por sección** y persiste entre sesiones.
 
@@ -73,6 +77,8 @@ Aplica a **11 secciones**: las 10 núcleo del insumo del usuario más **Personal
 
 ### 6. Accesibilidad
 
+> **Revisada el 2026-07-03:** sin control de colapso ya no aplica el patrón disclosure (`aria-expanded`, `aria-controls`); el banner queda como bloque estático de texto. Color, contraste, tokens y área táctil de lo que quede se conservan tal cual.
+
 - **No** es `role="alert"` ni `role="status"`: no es urgente ni una novedad, es contenido informativo permanente. Se usa el **patrón disclosure** estándar.
 - El control de colapsar/expandir es un `<button>` con `aria-expanded` que refleja el estado y `aria-controls` apuntando al cuerpo del mensaje. El cuerpo es un contenedor con `role="region"` y `aria-labelledby` hacia el título de la sección (o un label propio "Para qué sirve [Sección]").
 - **Foco:** alternar no roba el foco de forma agresiva; al colapsar/expandir, el foco permanece en el botón que se accionó (que cambia de etiqueta pero conserva su posición).
@@ -81,6 +87,8 @@ Aplica a **11 secciones**: las 10 núcleo del insumo del usuario más **Personal
 - **Área táctil:** el control cumple el mínimo de 44px de los demás botones de la app.
 
 ### 7. Patrón de implementación (orientación para EP.1)
+
+> **Revisada el 2026-07-03:** el contrato cambia: el helper recibe si la sección tiene datos y devuelve vacío cuando los hay. Las dos data-actions (`colapsar-proposito`, `expandir-proposito`) y la acción `reactivar-propositos` de Ajustes se retiran. Ver "Revisión 2026-07-03".
 
 - **Un solo helper** renderiza el banner a partir de `{ seccion, titulo, cuerpo }`: devuelve el HTML expandido o la línea colapsada según `S.config.propositoColapsado[seccion]`. Vive en infra/ui (sin importar dominios), p. ej. `modules/ui/proposito.js`, y se registra como render para re-pintar al cambiar de estado.
 - **El copy vive en un único mapa** (`PROPOSITOS_SECCION` o equivalente), keado por sección, separado del markup. Agregar una sección nueva en EP.2 a EP.4 es **agregar una entrada de copy + un slot**, sin tocar la lógica.
@@ -162,6 +170,8 @@ Borradores que siguen la estructura de tres tiempos y el tono obligatorio. Apart
 
 ## Slices de implementación (smallest-first)
 
+> **Nota 2026-07-03:** EP.1 a EP.4 se completaron (ver CHANGELOG). Los slices de la revisión (EP.7a a EP.7d) están al final, en "Revisión 2026-07-03".
+
 Este ADR es diseño; la implementación va en slices independientes, cada uno verificable en la app (desktop + móvil) con tests de render y a11y.
 
 | Slice | Qué | Capas |
@@ -172,3 +182,145 @@ Este ADR es diseño; la implementación va en slices independientes, cada uno ve
 | **EP.4** | Copy + slot para **Mis cuentas, Análisis, Personales**. | mapa de copy + `index.html` + tests |
 
 > Modelos sugeridos (ver TASKS.md): EP.1 Sonnet 4.6 - Medio (patrón nuevo de un dominio con tests); EP.2 a EP.4 Sonnet 4.6 - Bajo (copy + reuso del componente).
+
+---
+
+## Revisión 2026-07-03 - Divulgación progresiva (EP.7)
+
+### Por qué se revisa
+
+EP.1 a EP.4 dejaron el banner funcionando en las 11 secciones, pero en la app real el resultado acumula capas de texto: banner de propósito arriba, `section__subtitle` bajo el título en 5 secciones, párrafos de empty state que re-explican lo mismo y notas al pie que repiten la relación entre secciones. En móvil, el ruido esconde el contenido y las acciones. El usuario fijó la dirección el 2026-07-02 y la reconfirmó con su observación en Metas ("la descripción solo debe aparecer al inicio"):
+
+1. Cada sección tiene **una única** descripción breve y clara de su propósito.
+2. Esa descripción **se oculta automáticamente** cuando la sección ya tiene datos (deja de aportar y solo ocupa espacio).
+3. Barrido completo para unificar mensajes, eliminar textos repetidos y priorizar contenido y acciones sobre explicación.
+
+Esta revisión absorbe las antiguas tarjetas EP.5 (auto-ocultar) y EP.6 (unificar propósito + empty state), unificadas en EP.7.
+
+### Decisión revisada
+
+**D1. El banner de propósito es la descripción única de cada sección.** Se conservan el copy aprobado (estructura de tres tiempos), la ubicación (primer bloque bajo el header) y la identidad visual (borde con el color de la sección). Los `section__subtitle` descriptivos y las notas al pie que repiten propósito se eliminan.
+
+**D2. Visibilidad derivada de los datos, sin preferencia manual.** El banner se muestra si y solo si la sección **no** tiene datos. Desaparecen el botón "Entendido, ocultar", la línea colapsada re-abrible, la preferencia `S.config.propositoColapsado` y la acción de reactivar en Ajustes. Racional: una sección vacía es de un usuario que aún no la usa, y ahí la descripción es el onboarding; su primera acción real la oculta sola. Una sola regla que razonar y menos código que mantener.
+
+**D3. El empty state deja de describir y pasa a accionar.** Cuando la sección está vacía conviven banner y empty state; para que no se repitan, el banner explica el porqué (problema y beneficio) y el empty state se adelgaza a título corto, una línea accionable y el CTA. Los tips accionables (atajos, datos calculados) y las reglas de contexto de ADR 014 (ej. "el tope va en Límites de gasto") sobreviven como tips: no son descripciones de propósito.
+
+**D4. Guards y notas de datos no se tocan.** Los guards de formulario ("Primero necesitas una cuenta...") y las notas contextuales que dependen de datos (proyección de Inversión, desgloses de Límites) no son propósito: quedan.
+
+**D5. Contrato de implementación.** `htmlBannerProposito` recibe además si la sección tiene datos y devuelve `''` cuando los hay; cada dominio pasa el **mismo predicado que ya usa para decidir su empty state**. Se retiran las data-actions `colapsar-proposito` y `expandir-proposito`, `reactivarPropositos()` y el bloque "Mensajes de ayuda" de `config/view.js`. `S.config.propositoColapsado` deja de leerse: queda como clave huérfana inofensiva en `localStorage` de usuarios existentes (lectura defensiva desde EP.1; no amerita migración ni bump de schema).
+
+### Criterio "tiene datos" por sección
+
+La tabla fija la intención; el slice confirma el detalle reusando el predicado del empty state de cada dominio.
+
+| Sección | Clave | La sección "tiene datos" cuando |
+|---|---|---|
+| Gastos | `gast` | `S.gastos.length > 0` (histórico: un mes sin gastos no re-muestra la descripción) |
+| Deudas | `compromisos` | alguna deuda registrada (`tipo` `deuda-entidad` o `deuda-personal`) |
+| Calendario | `agenda` | algún compromiso registrado (fijo o deuda: ambos generan eventos del mes) |
+| Me deben | `personales` | `S.personales.length > 0` |
+| Mis cuentas | `tesoreria` | `S.cuentas.length > 0` o `S.ingresos.length > 0` |
+| Límites de gasto | `presupuesto` | hay plan del mes (ingresos registrados) o algún tope por categoría (`S.presupuestos`) |
+| Ahorro | `ahorro` | `S.ahorro.fondoEmergencia.activo` o `S.ahorro.aportes.length > 0` |
+| Inversión | `inversion` | `S.inversiones.length > 0` |
+| Metas | `metas` | `S.metas.length > 0` |
+| Apartados | `apartados` | `S.apartados.length > 0` |
+| Análisis | `analisis` | `S.gastos.length > 0` (el mismo insumo que analiza) |
+
+### Inventario de textos: transversal
+
+| Texto | Veredicto |
+|---|---|
+| Banner de propósito (11 secciones, `modules/ui/proposito.js`) | **Queda** como descripción única; visible solo sin datos; pierde el toggle y la línea colapsada |
+| `section__subtitle` descriptivos en `index.html` (Límites ~472, Ahorro ~492, Metas ~526, Apartados ~547, Análisis ~571) | **Se van** (duplican el banner). El `h2` "Mis ingresos fijos" (~446) queda: es título de sub-bloque, no descripción |
+| Párrafos de empty state que re-explican el propósito | **Se recortan** a título + acción + CTA (detalle por sección abajo) |
+| Bloque "Mensajes de ayuda" de Ajustes (`config/view.js` `_renderPropositos` ~282, acción en `config/index.js` ~211) | **Se va** completo |
+| Guards de formularios y notas contextuales de datos | **Quedan** |
+
+### Inventario por sección
+
+**Gastos**
+- Banner `gast`: queda.
+- `gastos/view.js` ~227, desc del empty ("Anota cada compra o pago que haces... para que veas a dónde va tu dinero"): recortar, repite el banner; dejar la instrucción mínima.
+- ~229, tip "Gasto rápido": queda (atajo accionable).
+- ~237, "Nada acá este mes" (categoría filtrada): queda (estado de datos).
+- ~298 y ~354, guards "Primero necesitas una cuenta": quedan.
+
+**Deudas**
+- Banner `compromisos`: queda.
+- `compromisos/views/lista.js` ~187, desc del empty: recortar la frase "Finko te muestra el orden óptimo de pago..." (repite el banner); queda la instrucción de qué agregar.
+- ~189, tip "los gastos fijos... se agregan desde Calendario": queda (regla de contexto).
+- `views/formularios.js` ~36, guard de cuenta: queda. `views/estrategia.js` ~324, nota de estrategia: contextual, queda.
+
+**Calendario**
+- Banner `agenda`: queda. Sin subtítulo, sin empty clásico ni notas al pie: nada más que barrer.
+
+**Me deben**
+- Banner `personales`: queda, con fix de copy: el texto dice "Personales lleva la cuenta..." y la sección se llama "Me deben".
+- `personales/view.js` ~164, desc del empty ("Registra los préstamos... Sin presión: solo es para ti."): recortar, repite el banner; dejar la acción.
+
+**Mis cuentas**
+- Banner `tesoreria`: queda.
+- `tesoreria/view.js` ~105, empty de cuentas ("¿Dónde tienes tu dinero?"): recortar; la pregunta gancho duplica la del banner.
+- ~108, tip Nequi/Daviplata: queda (accionable).
+- ~134, empty de ingresos: queda (estado de sub-bloque, corto y accionable).
+
+**Límites de gasto**
+- `index.html` ~472, subtítulo "Sigue tu plan del mes por grupo...": se va.
+- Banner `presupuesto`: queda; su copy actual excede el patrón (4+ frases): re-ajustar a tres tiempos en el slice conservando la relación con Mis cuentas.
+- `presupuesto/view.js` ~111, nota "Mis cuentas planifica...; Límites de gasto vigila...": se va (repite el banner casi literal).
+- ~337, resumen vacío ("Aún no tienes un plan del mes por grupo" + CTA): queda como empty accionable; revisar que la desc no repita el banner.
+- ~268, ~300 (desgloses vacíos) y ~371 ("Aún no le has puesto tope..."): quedan (estados de datos accionables).
+
+**Ahorro**
+- `index.html` ~492, subtítulo "Tu colchón para imprevistos...": se va.
+- Banner `ahorro`: queda.
+- `ahorro/view.js` ~142, desc del empty ("Es la base de cualquier plan financiero..."): recortar, repite "un imprevisto se cubre con deuda" del banner.
+- ~135, tip dinámico con el objetivo calculado: queda (dato accionable).
+
+**Inversión**
+- Banner `inversion`: queda.
+- `inversiones/view.js` ~57, desc del empty ("Lleva en un solo lugar tu portafolio real..."): recortar, repite el banner.
+- ~59, tip "primero asegura tu fondo de emergencia": queda (regla de contexto).
+- ~107 y ~116, notas de proyección: quedan (contextuales de datos).
+
+**Metas**
+- `index.html` ~526, subtítulo "Objetivos aspiracionales...": se va.
+- Banner `metas`: queda.
+- `metas/view.js` ~89, desc del empty: recortar; conservar en una línea la regla de contexto hacia Apartados.
+- ~91, tip del fondo de emergencia hacia Ahorro: queda corto (regla de contexto).
+
+**Apartados**
+- `index.html` ~547, subtítulo "Reservas para gastos previsibles...": se va.
+- Banner `apartados`: queda (copy aprobado).
+- `apartados/view.js` ~119, desc del empty: recortar fuerte, repite SOAT/previsibles del banner.
+- ~121, tip de fecha objetivo: queda (accionable).
+- ~122, tip "el tope va en Límites de gasto": queda (regla de contexto).
+
+**Análisis**
+- `index.html` ~571, subtítulo "Cómo está tu salud financiera...": se va.
+- Banner `analisis`: queda.
+- `analisis/view.js` ~353 y ~408, empties por sub-card: quedan (estados de datos); revisar en el slice que ~408 no re-explique.
+
+### Consecuencias de la revisión
+
+**Positivas**
+- Una sección con datos muestra contenido y acciones, cero texto de propósito: el ruido desaparece justo cuando deja de aportar.
+- Una sección vacía educa una sola vez y sin repetirse: banner (porqué) + empty state (qué hacer).
+- Menos código: se van 2 data-actions, la persistencia del colapso y el bloque de Ajustes; la visibilidad es una función pura de los datos, fácil de testear.
+
+**Negativas / Restricciones**
+- Se pierde la relectura del propósito cuando ya hay datos: decisión consciente del usuario; las reglas de contexto clave sobreviven como tips accionables.
+- `propositoColapsado` queda huérfana en `localStorage` de usuarios existentes: inofensiva, nadie la lee; no amerita migración.
+- Los tests de EP.1 sobre colapso y persistencia se reemplazan por tests de visibilidad por datos.
+
+### Slices de implementación de EP.7
+
+| Slice | Qué | Secciones |
+|---|---|---|
+| **EP.7a (piloto)** | Mecanismo: helper con visibilidad por datos; retirar colapso, persistencia, acciones y el bloque de Ajustes; aplicar completo a Apartados (banner + subtítulo fuera + empty recortado); tests | Apartados, Ajustes |
+| **EP.7b** | Barrido: subtítulo y nota al pie de Límites fuera; empties recortados; copy del banner de Límites a tres tiempos | Gastos, Deudas, Calendario, Límites de gasto |
+| **EP.7c** | Subtítulos fuera + empties recortados | Metas, Ahorro, Inversión |
+| **EP.7d** | Subtítulo de Análisis fuera + empties recortados + fix "Personales" → "Me deben" en el banner | Mis cuentas, Análisis, Me deben |
+
+Modelos sugeridos: EP.7a Sonnet 5 - Medio (cambia el mecanismo, con tests); EP.7b a EP.7d Sonnet 5 - Medio (recortes de copy que requieren juicio, varios archivos por slice).
