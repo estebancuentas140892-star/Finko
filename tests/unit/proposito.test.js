@@ -14,43 +14,30 @@ describe('PROPOSITOS_SECCION', () => {
 
 describe('htmlBannerProposito', () => {
   it('devuelve string vacío para sección sin copy', () => {
-    expect(htmlBannerProposito('desconocida', {})).toBe('');
-    expect(htmlBannerProposito('', {})).toBe('');
+    expect(htmlBannerProposito('desconocida', false)).toBe('');
+    expect(htmlBannerProposito('', false)).toBe('');
   });
 
-  it('renderiza el banner expandido cuando no hay preferencia', () => {
-    const html = htmlBannerProposito('apartados', {});
+  it('renderiza el banner cuando la sección no tiene datos', () => {
+    const html = htmlBannerProposito('apartados', false);
     expect(html).toContain('banner-proposito');
-    expect(html).not.toContain('banner-proposito--colapsado');
-    expect(html).toContain('data-action="colapsar-proposito"');
-    expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('data-seccion="apartados"');
-    expect(html).toContain('Entendido, ocultar');
   });
 
-  it('renderiza expandido cuando propositoColapsado no tiene la sección', () => {
-    const html = htmlBannerProposito('apartados', { propositoColapsado: { gastos: true } });
-    expect(html).not.toContain('banner-proposito--colapsado');
-    expect(html).toContain('data-action="colapsar-proposito"');
+  it('tieneDatos por defecto es false: renderiza si se omite el argumento', () => {
+    const html = htmlBannerProposito('apartados');
+    expect(html).toContain('banner-proposito');
   });
 
-  it('renderiza el banner colapsado cuando propositoColapsado[seccion] === true', () => {
-    const html = htmlBannerProposito('apartados', { propositoColapsado: { apartados: true } });
-    expect(html).toContain('banner-proposito--colapsado');
-    expect(html).toContain('data-action="expandir-proposito"');
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).not.toContain('data-action="colapsar-proposito"');
+  it('devuelve string vacío cuando la sección ya tiene datos (divulgación progresiva)', () => {
+    const html = htmlBannerProposito('apartados', true);
+    expect(html).toBe('');
   });
 
-  it('el banner expandido contiene el texto del copy de Apartados', () => {
-    const html = htmlBannerProposito('apartados', {});
+  it('el banner contiene el texto del copy de Apartados', () => {
+    const html = htmlBannerProposito('apartados', false);
     expect(html).toContain('SOAT');
     expect(html).toContain('Apartados te ayuda');
-  });
-
-  it('el banner colapsado muestra el título', () => {
-    const html = htmlBannerProposito('apartados', { propositoColapsado: { apartados: true } });
-    expect(html).toContain(PROPOSITOS_SECCION.apartados.titulo);
   });
 
   it('MC.5e (ADR 017 decisión 7): el propósito de Límites de gasto se alinea con "Mis cuentas planifica, Límites vigila"', () => {
@@ -61,13 +48,8 @@ describe('htmlBannerProposito', () => {
     expect(texto).toContain('Ahorro');
   });
 
-  it('config=null se trata como sin preferencias (expandido)', () => {
-    const html = htmlBannerProposito('apartados', null ?? {});
-    expect(html).toContain('data-action="colapsar-proposito"');
-  });
-
-  it('propositoColapsado con false no se trata como colapsado', () => {
-    const html = htmlBannerProposito('apartados', { propositoColapsado: { apartados: false } });
-    expect(html).not.toContain('banner-proposito--colapsado');
+  it('EP.7d: el propósito de Me deben ya no dice "Personales"', () => {
+    const { texto } = PROPOSITOS_SECCION.personales;
+    expect(texto).toContain('Me deben');
   });
 });

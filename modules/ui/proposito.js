@@ -1,17 +1,14 @@
 /**
- * proposito.js - banner de propósito de sección (ADR 016, épica EP).
+ * proposito.js - banner de propósito de sección (ADR 016, revisión 2026-07-03: EP.7).
  *
  * Reglas:
  * - htmlBannerProposito() es pura: sin DOM, sin S. Testeable en happy-dom/Node.
- * - renderBannerProposito() inyecta en el DOM leyendo S.config.
- * - initBannersProposito() registra las acciones colapsar/expandir.
- * - reactivarPropositos() se exporta para que config/index.js la llame.
+ * - Divulgación progresiva: el banner es la única descripción de la sección y
+ *   solo se muestra mientras la sección no tiene datos (`tieneDatos === false`).
+ * - renderBannerProposito() inyecta en el DOM; cada dominio decide su propio
+ *   `tieneDatos` reusando el predicado de su empty state.
  */
 
-import { S } from '../core/state.js';
-import { save } from '../core/storage.js';
-import { registrarAccion } from './actions.js';
-import { announce } from '../infra/a11y.js';
 import { esc as _esc } from '../infra/utils.js';
 
 /**
@@ -61,51 +58,27 @@ export const PROPOSITOS_SECCION = {
   },
   personales: {
     titulo: '¿Para qué sirve Me deben?',
-    texto: '¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién? Los préstamos entre conocidos se olvidan fácil y generan incomodidad. Personales lleva la cuenta de lo que te deben: quién, cuánto y desde cuándo, sin malos ratos.',
+    texto: '¿Le prestaste dinero a alguien y ya no recuerdas cuánto ni a quién? Los préstamos entre conocidos se olvidan fácil y generan incomodidad. Me deben lleva la cuenta de lo que te deben: quién, cuánto y desde cuándo, sin malos ratos.',
   },
 };
 
 // ── RENDER ───────────────────────────────────────────────────────
 
 /**
- * Devuelve el HTML del banner de propósito para `seccion`.
+ * Devuelve el HTML del banner de propósito para `seccion`, o '' si la sección
+ * no tiene copy o ya tiene datos (divulgación progresiva).
  * Pura: no lee S, no toca el DOM.
  *
  * @param {string} seccion - clave de PROPOSITOS_SECCION (ej. 'apartados').
- * @param {object} [config] - objeto equivalente a S.config.
- * @returns {string} HTML listo para inyectar, o '' si la sección no tiene copy.
+ * @param {boolean} tieneDatos - true si la sección ya tiene datos del usuario.
+ * @returns {string} HTML listo para inyectar, o ''.
  */
-export function htmlBannerProposito(seccion, config = {}) {
+export function htmlBannerProposito(seccion, tieneDatos = false) {
   const info = PROPOSITOS_SECCION[seccion];
-  if (!info) return '';
-  const colapsado = (config.propositoColapsado ?? {})[seccion] === true;
-  return colapsado ? _htmlColapsado(seccion, info) : _htmlExpandido(seccion, info);
-}
-
-function _htmlExpandido(seccion, { texto }) {
+  if (!info || tieneDatos) return '';
   return `
     <div class="banner-proposito" data-seccion="${_esc(seccion)}">
-      <p class="banner-proposito__texto">${texto}</p>
-      <button type="button"
-              class="banner-proposito__toggle"
-              data-action="colapsar-proposito"
-              data-seccion="${_esc(seccion)}"
-              aria-expanded="true">
-        Entendido, ocultar
-      </button>
-    </div>`;
-}
-
-function _htmlColapsado(seccion, { titulo }) {
-  return `
-    <div class="banner-proposito banner-proposito--colapsado" data-seccion="${_esc(seccion)}">
-      <button type="button"
-              class="banner-proposito__toggle"
-              data-action="expandir-proposito"
-              data-seccion="${_esc(seccion)}"
-              aria-expanded="false">
-        ${titulo}
-      </button>
+      <p class="banner-proposito__texto">${info.texto}</p>
     </div>`;
 }
 
@@ -114,54 +87,10 @@ function _htmlColapsado(seccion, { titulo }) {
  * No-op si el slot no existe en el DOM.
  *
  * @param {string} seccion
+ * @param {boolean} tieneDatos - true si la sección ya tiene datos del usuario.
  */
-export function renderBannerProposito(seccion) {
+export function renderBannerProposito(seccion, tieneDatos) {
   const el = document.getElementById(`proposito-${seccion}`);
   if (!el) return;
-  el.innerHTML = htmlBannerProposito(seccion, S.config ?? {});
-}
-
-// ── HANDLERS ─────────────────────────────────────────────────────
-
-/** @param {HTMLElement} el */
-function _colapsarProposito(el) {
-  const seccion = el.dataset.seccion;
-  if (!seccion) return;
-  if (!S.config) S.config = {};
-  if (!S.config.propositoColapsado) S.config.propositoColapsado = {};
-  S.config.propositoColapsado[seccion] = true;
-  save();
-  renderBannerProposito(seccion);
-}
-
-/** @param {HTMLElement} el */
-function _expandirProposito(el) {
-  const seccion = el.dataset.seccion;
-  if (!seccion) return;
-  if (!S.config) S.config = {};
-  if (!S.config.propositoColapsado) S.config.propositoColapsado = {};
-  delete S.config.propositoColapsado[seccion];
-  save();
-  renderBannerProposito(seccion);
-}
-
-/**
- * Limpia todas las preferencias de colapso, expandiendo todos los banners.
- * Se llama desde Ajustes (acción 'reactivar-propositos').
- */
-export function reactivarPropositos() {
-  if (!S.config) S.config = {};
-  S.config.propositoColapsado = {};
-  save();
-  for (const seccion of Object.keys(PROPOSITOS_SECCION)) {
-    renderBannerProposito(seccion);
-  }
-  announce('Mensajes de propósito reactivados.');
-}
-
-// ── INIT ─────────────────────────────────────────────────────────
-
-export function initBannersProposito() {
-  registrarAccion('colapsar-proposito', _colapsarProposito);
-  registrarAccion('expandir-proposito', _expandirProposito);
+  el.innerHTML = htmlBannerProposito(seccion, tieneDatos);
 }

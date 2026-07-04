@@ -310,6 +310,7 @@ export function initApartados() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'apartados') {
+      renderBannerProposito('apartados', S.apartados.length > 0);
       renderSmart(renderListaApartados, 'apartados');
       renderNudgeApartadosProximos();
     }
@@ -331,12 +332,12 @@ export function initApartados() {
 
   // Re-render al navegar a #apartados (no hay state:change que lo dispare).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('apartados');
+    renderBannerProposito('apartados', S.apartados.length > 0);
     renderSmart(renderListaApartados, 'apartados');
     renderNudgeApartadosProximos();
   });
 
-  renderBannerProposito('apartados');
+  renderBannerProposito('apartados', S.apartados.length > 0);
   renderSmart(renderListaApartados, 'apartados');
   renderNudgeApartadosProximos();
 }
