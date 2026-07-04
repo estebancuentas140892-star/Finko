@@ -2325,3 +2325,59 @@ test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida en
     expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000);
   });
 });
+
+// ── SUITE: Agenda - día de ingreso (ADR 021) ─────────────────────────────────
+// El día de pago de un ingreso activo aparece en el calendario como evento
+// propio, y su CTA "Distribuir" navega a Mis cuentas y abre el asistente
+// "Distribuir mi ingreso" (una sola fuente de verdad para el reparto).
+
+test.describe('Agenda - día de ingreso (ADR 021)', () => {
+  test('el día de pago muestra el evento y Distribuir abre el asistente en Mis cuentas', async ({ page }) => {
+    // El día de pago es HOY: así el gating por fecha del asistente (MC.4d)
+    // queda en 'listo' y el panel existe al llegar desde el calendario.
+    const diaPago = new Date().getDate();
+
+    await page.addInitScript(({ diaPago }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [
+          { id: 'cta-ing-e2e', nombre: 'Nequi', tipo: 'Billetera digital', saldo: 500000, activa: true },
+          { id: 'cta-ing-e2e-2', nombre: 'Bancolombia', tipo: 'Ahorros', saldo: 200000, activa: true },
+        ],
+        ingresos:  [{
+          id: 'ing-e2e', descripcion: 'Salario', monto: 2000000,
+          frecuencia: 'Mensual', diaPago, categoria: null, activo: true,
+          fechaCreacion: '2026-01-10T10:00:00Z',
+        }],
+        gastos: [], compromisos: [],
+        // Una meta con fecha: destino de ahorro fondeable para que el
+        // asistente tenga pasos que mostrar.
+        metas: [{
+          id: 'meta-ing-e2e', nombre: 'Viaje', montoObjetivo: 3000000,
+          montoActual: 0, fechaLimite: '2027-06-01', completada: false,
+          fechaCreacion: '2026-01-10T10:00:00Z',
+        }],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { diaPago });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    // El día del ingreso es interactivo y su detalle muestra el evento verde.
+    await page.locator(`[data-action="agenda-mostrar-dia"][data-day="${diaPago}"]`).click();
+
+    const item = page.locator('.cal-detail__item--ingreso');
+    await expect(item).toBeVisible({ timeout: 3_000 });
+    await expect(item).toContainText('Salario');
+
+    // El CTA navega a Mis cuentas y abre el asistente.
+    await item.locator('[data-action="agenda-distribuir-ingreso"]').click();
+
+    await expect(page).toHaveURL(/#tesoreria/);
+    const panel = page.locator('#distribuir-ingreso-panel');
+    await expect(panel).toBeVisible({ timeout: 3_000 });
+  });
+});

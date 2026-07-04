@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
@@ -794,5 +794,132 @@ describe('renderAgenda() - marca de color por tipo en el detalle', () => {
     expect(items.some(el => el.classList.contains('cal-detail__item--fijo'))).toBe(true);
     expect(items.some(el => el.classList.contains('cal-detail__item--deuda-entidad'))).toBe(true);
     expect(items.some(el => el.classList.contains('cal-detail__item--deuda-personal'))).toBe(true);
+  });
+});
+
+// ── eventosIngresosDelMes() (ADR 021) ────────────────────────────
+
+const ingresoBase = (overrides = {}) => ({
+  id:            'i1',
+  descripcion:   'Salario',
+  monto:         2_000_000,
+  frecuencia:    'Mensual',
+  diaPago:       15,
+  categoria:     null,
+  activo:        true,
+  fechaCreacion: '2026-01-10T10:00:00Z',
+  ...overrides,
+});
+
+describe('eventosIngresosDelMes() (ADR 021)', () => {
+  it('mapea el ingreso mensual a su día de pago con tipo ingreso', () => {
+    const evs = eventosIngresosDelMes([ingresoBase()], 2026, 5);
+    expect(Object.keys(evs)).toEqual(['15']);
+    expect(evs[15][0].tipo).toBe('ingreso');
+    expect(evs[15][0].dia).toBe(15);
+    expect(evs[15][0].descripcion).toBe('Salario');
+  });
+
+  it('quincenal genera dos ocurrencias (diaPago y diaPago+15)', () => {
+    const evs = eventosIngresosDelMes([ingresoBase({ frecuencia: 'Quincenal', diaPago: 1 })], 2026, 5);
+    expect(evs[1]).toHaveLength(1);
+    expect(evs[16]).toHaveLength(1);
+  });
+
+  it('ignora ingresos inactivos o sin diaPago (dato no capturado)', () => {
+    expect(eventosIngresosDelMes([ingresoBase({ activo: false })], 2026, 5)).toEqual({});
+    expect(eventosIngresosDelMes([ingresoBase({ diaPago: null })], 2026, 5)).toEqual({});
+  });
+
+  it('tolera input inválido', () => {
+    expect(eventosIngresosDelMes(null, 2026, 5)).toEqual({});
+    expect(eventosIngresosDelMes([ingresoBase()], 2026, 99)).toEqual({});
+  });
+});
+
+describe('totalDia() con día de ingreso (ADR 021)', () => {
+  it('no suma el ingreso al total a pagar del día', () => {
+    const evs = [
+      { tipo: 'ingreso', monto: 2_000_000 },
+      { tipo: 'fijo', monto: 100_000 },
+      { tipo: 'deuda-entidad', cuotaMensual: 50_000 },
+    ];
+    expect(totalDia(evs)).toBe(150_000);
+  });
+});
+
+// ── renderAgenda() - día de ingreso (ADR 021) ────────────────────
+
+describe('renderAgenda() - día de ingreso (ADR 021)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    S.ingresos = [];
+    vi.useRealTimers();
+  });
+
+  it('el día de pago del ingreso muestra dot verde y detalle con CTA Distribuir', () => {
+    S.ingresos = [ingresoBase({ diaPago: 15 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-dot--ingreso')).not.toBeNull();
+
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item--ingreso');
+    expect(item).not.toBeNull();
+    expect(item.textContent).toContain('Salario');
+    expect(item.textContent).toContain('+$2.000.000');
+    expect(item.querySelector('[data-action="agenda-distribuir-ingreso"]')).not.toBeNull();
+  });
+
+  it('el ingreso no infla el "Total a pagar" del día', () => {
+    S.ingresos    = [ingresoBase({ diaPago: 15 })];
+    S.compromisos = [compromisoBase({ diaPago: 15 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toContain('$1.500.000');
+    expect(total.textContent).not.toContain('$3.500.000');
+  });
+
+  it('el ingreso aparece antes que los compromisos del mismo día', () => {
+    S.ingresos    = [ingresoBase({ diaPago: 15 })];
+    S.compromisos = [compromisoBase({ diaPago: 15 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const items = [...document.querySelectorAll('.cal-detail__item')];
+    expect(items[0].classList.contains('cal-detail__item--ingreso')).toBe(true);
+  });
+
+  it('la leyenda incluye la entrada de día de ingreso', () => {
+    renderAgenda();
+    expect(document.querySelector('.cal-legend').textContent).toContain('Día de ingreso');
+  });
+
+  it('la cabecera sigue contando solo compromisos (el ingreso no es uno)', () => {
+    S.ingresos = [ingresoBase({ diaPago: 15 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-card__subtitle').textContent).toContain('Sin compromisos');
+  });
+
+  it('el resumen del día distingue ingreso de compromisos', () => {
+    S.ingresos    = [ingresoBase({ diaPago: 15 })];
+    S.compromisos = [compromisoBase({ diaPago: 15 })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const sub = document.querySelector('.cal-detail__subtitle');
+    expect(sub.textContent).toContain('día de ingreso');
+    expect(sub.textContent).toContain('1 compromiso');
   });
 });

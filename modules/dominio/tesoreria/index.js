@@ -774,6 +774,24 @@ function _toggleDistribuirIngreso(el) {
   }
 }
 
+/**
+ * Abre el asistente (sin toggle) en el primer paso, para el recordatorio de
+ * día de ingreso del Calendario (ADR 021). No-op si el panel no existe o ya
+ * está abierto. Sincroniza aria-expanded del botón y trae el panel a la vista.
+ */
+function _abrirAsistenteDistribucion() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (!panel) return;
+  if (panel.hidden) {
+    panel.hidden = false;
+    document.querySelector('[data-action="toggle-distribuir-ingreso"]')
+      ?.setAttribute('aria-expanded', 'true');
+    _irAPasoDistribucion(panel, 0, { moverFoco: false });
+  }
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('distribuir-monto')?.focus({ preventScroll: true });
+}
+
 // ── ASISTENTE PAGINADO (MC.7d, ADR 018) ──────────────────────────
 
 /** Pasos del asistente (secciones paginadas del panel), en orden. */
@@ -1295,6 +1313,16 @@ export function initTesoreria() {
   window.addEventListener('hashchange', () => {
     renderBannerProposito('tesoreria', _tieneDatosTesoreria());
     renderSmart(_renderTodo, 'tesoreria');
+  });
+
+  // ADR 021: el recordatorio de día de ingreso del Calendario pide abrir el
+  // asistente. Puede llegar desde otra sección: se navega primero y el panel
+  // se abre tras el re-render del hashchange (por eso el setTimeout).
+  EventBus.on('distribuir:abrir', () => {
+    if ((location.hash.slice(1) || 'dash') !== 'tesoreria') {
+      location.hash = '#tesoreria';
+    }
+    setTimeout(_abrirAsistenteDistribucion, 0);
   });
 
   // Render inicial si ya estamos en #tesoreria al cargar.

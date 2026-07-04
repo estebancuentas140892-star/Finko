@@ -128,6 +128,46 @@ export function eventosDelMes(compromisos, year, month) {
 }
 
 /**
+ * Mapea los ingresos activos a los días del mes en que llega su pago
+ * (ADR 021: recordatorio de día de ingreso). Reusa la misma lógica de
+ * frecuencia que los compromisos: un Ingreso tiene la misma forma relevante
+ * (`frecuencia`, `diaPago`, `fechaCreacion`). Cada evento queda marcado con
+ * `tipo: 'ingreso'` para que la vista lo distinga de un compromiso y
+ * `totalDia` no lo sume como dinero a pagar.
+ *
+ * @param {Array<{descripcion:string, monto:number, frecuencia:string,
+ *                diaPago:number|null, activo:boolean, fechaCreacion?:string}>} ingresos
+ * @param {number} year   Año completo (ej. 2026).
+ * @param {number} month  Mes 0-indexed (0=Enero, 11=Diciembre).
+ * @returns {Record<number, Array<Object>>} Mapa { dia: [evento, ...] }.
+ */
+export function eventosIngresosDelMes(ingresos, year, month) {
+  if (!Array.isArray(ingresos)) return {};
+  if (!Number.isInteger(year))  return {};
+  if (!Number.isInteger(month) || month < 0 || month > 11) return {};
+
+  const diasEnMes = _diasDelMes(year, month);
+  /** @type {Record<number, any[]>} */
+  const eventos = {};
+
+  for (const ing of ingresos) {
+    if (!ing || typeof ing !== 'object') continue;
+    if (ing.activo === false) continue;
+
+    const diaPagoRaw = Number(ing.diaPago);
+    if (!Number.isInteger(diaPagoRaw) || diaPagoRaw < 1 || diaPagoRaw > 31) continue;
+
+    const dias = _diasParaCompromiso(ing, year, month, diasEnMes);
+    for (const d of dias) {
+      if (!eventos[d]) eventos[d] = [];
+      eventos[d].push({ ...ing, dia: d, tipo: 'ingreso' });
+    }
+  }
+
+  return eventos;
+}
+
+/**
  * Cuenta total de eventos en el mes (suma de longitudes de cada día).
  * Útil para badges o resúmenes en la cabecera del calendario.
  *
@@ -166,6 +206,8 @@ export function totalDia(evs) {
   let total = 0;
   for (const c of evs) {
     if (!c || typeof c !== 'object') continue;
+    // Un día de ingreso (ADR 021) no es dinero a pagar: se excluye del total.
+    if (c.tipo === 'ingreso') continue;
     const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
     const n = Number(raw);
     if (Number.isFinite(n)) total += n;

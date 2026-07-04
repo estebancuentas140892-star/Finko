@@ -13,7 +13,7 @@ import { f, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, totalEventosDelMes, totalDia } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -88,7 +88,20 @@ export function renderAgenda() {
   _ensureFecha();
 
   const compromisos = Array.isArray(S.compromisos) ? S.compromisos : [];
-  const eventos     = eventosDelMes(compromisos, _viewYear, _viewMonth);
+  const eventosComp = eventosDelMes(compromisos, _viewYear, _viewMonth);
+
+  // ADR 021: los días de pago de los ingresos activos también son eventos
+  // (recordatorio de apartar para los objetivos). Se mergean por día, con el
+  // ingreso primero: es el "dinero que entra" del día.
+  const ingresos    = Array.isArray(S.ingresos) ? S.ingresos : [];
+  const eventosIng  = eventosIngresosDelMes(ingresos, _viewYear, _viewMonth);
+
+  /** @type {Record<number, any[]>} */
+  const eventos = {};
+  for (const [d, evs] of Object.entries(eventosIng)) eventos[d] = [...evs];
+  for (const [d, evs] of Object.entries(eventosComp)) {
+    eventos[d] = eventos[d] ? [...eventos[d], ...evs] : [...evs];
+  }
 
   // Si el día seleccionado se quedó sin eventos (ej. usuario eliminó el
   // compromiso desde otra sección), cerramos el detalle para no mostrar
@@ -106,7 +119,7 @@ export function renderAgenda() {
   // visible mientras se recorre la lista.
   el.innerHTML = `
     <article class="cal-card">
-      ${_renderCabecera(_viewYear, _viewMonth, eventos)}
+      ${_renderCabecera(_viewYear, _viewMonth, eventosComp)}
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos)}
     </article>
@@ -179,8 +192,14 @@ function _renderGrid(year, month, eventos) {
       !hayEvs  && 'cal-day--inactive',
     ].filter(Boolean).join(' ');
 
+    // ADR 021: el aria-label distingue día de ingreso de compromisos a pagar.
+    const nIng  = evs.filter(e => e?.tipo === 'ingreso').length;
+    const nComp = evs.length - nIng;
+    const partes = [];
+    if (nIng > 0)  partes.push('día de ingreso');
+    if (nComp > 0) partes.push(`${nComp} ${nComp === 1 ? 'compromiso' : 'compromisos'}`);
     const aria = hayEvs
-      ? `Día ${d}, ${evs.length} ${evs.length === 1 ? 'compromiso' : 'compromisos'}`
+      ? `Día ${d}, ${partes.join(', ')}`
       : `Día ${d}, sin compromisos`;
 
     // Solo días con eventos son interactivos: tener data-action sólo en
@@ -223,14 +242,15 @@ function _renderDots(evs) {
 
 /**
  * Leyenda de tipos: una entrada por cada tipo de evento que el calendario
- * puede mostrar hoy, con su color de dominio (--fk-dom-*). Cuando el ADR de
- * recordatorios de aporte (AP.4 / MT.2 / AH.4) sume eventos de metas,
- * apartados o fondo de emergencia, agregar aquí su entrada con un
- * `cal-dot--<tipo>` propio.
+ * puede mostrar, con su color de dominio (--fk-dom-*). El evento de día de
+ * ingreso (ADR 021) usa el verde de marca de ingresos.
  */
 function _renderLeyenda() {
   return `
     <div class="cal-legend" aria-label="Leyenda de tipos">
+      <span class="cal-legend__item">
+        <span class="cal-dot cal-dot--ingreso" aria-hidden="true"></span> Día de ingreso
+      </span>
       <span class="cal-legend__item">
         <span class="cal-dot cal-dot--fijo" aria-hidden="true"></span> Gasto fijo
       </span>
@@ -249,8 +269,13 @@ function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
   const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
-  const total   = evs.length;
-  const resumen = total === 1 ? '1 compromiso' : `${total} compromisos`;
+  // ADR 021: el resumen separa el día de ingreso de los compromisos a pagar.
+  const nIng    = evs.filter(e => e?.tipo === 'ingreso').length;
+  const nComp   = evs.length - nIng;
+  const partes  = [];
+  if (nIng > 0)  partes.push('día de ingreso');
+  if (nComp > 0) partes.push(nComp === 1 ? '1 compromiso' : `${nComp} compromisos`);
+  const resumen = partes.join(' · ');
   // AG.5: total a pagar ese día, visible de inmediato junto al título (no
   // hay que desplazarse por la lista de items para verlo).
   const sumaDia = totalDia(evs);
@@ -258,7 +283,9 @@ function _renderDetalleDia(evs, year, month, dia) {
     ? `<p class="cal-detail__total">Total a pagar: <strong>${f(sumaDia)}</strong></p>`
     : '';
 
-  const items = evs.map(c => _renderDetalleItem(c, year, month)).join('');
+  const items = evs.map(c => c?.tipo === 'ingreso'
+    ? _renderDetalleItemIngreso(c)
+    : _renderDetalleItem(c, year, month)).join('');
 
   return `
     <section class="cal-detail" aria-label="Compromisos del ${titulo}">
@@ -277,6 +304,39 @@ function _renderDetalleDia(evs, year, month, dia) {
         ${items}
       </ul>
     </section>`;
+}
+
+/**
+ * Item de detalle para un día de ingreso (ADR 021). Muestra el ingreso que
+ * llega ese día y el recordatorio de apartar para los objetivos, con el CTA
+ * que abre el asistente "Distribuir mi ingreso" de Mis cuentas (una sola
+ * fuente de verdad para los montos sugeridos: sin réplica del motor aquí).
+ *
+ * @param {{ id:string, descripcion?:string, monto?:number, frecuencia?:string }} ing
+ * @returns {string}
+ */
+function _renderDetalleItemIngreso(ing) {
+  const desc  = _esc(ing.descripcion ?? 'Ingreso');
+  const frec  = _esc(ing.frecuencia ?? '');
+  const monto = Number(ing.monto) || 0;
+
+  return `
+    <li class="cal-detail__item cal-detail__item--ingreso">
+      <span class="cal-detail__icon cal-detail__icon--ingreso cal-detail__icon--emoji" aria-hidden="true">💰</span>
+      <div class="cal-detail__body">
+        <p class="cal-detail__name">${desc}</p>
+        <p class="cal-detail__sub">Ingreso${frec ? ` · ${frec}` : ''}</p>
+        <p class="cal-detail__badge-abono" role="status">Hoy llega tu dinero: recuerda apartar para tus objetivos antes de gastarlo.</p>
+      </div>
+      ${monto > 0 ? `<p class="cal-detail__amount text-success">+${f(monto)}</p>` : ''}
+      <div class="cal-detail__actions">
+        <button type="button" class="btn btn-sm btn-primary"
+                data-action="agenda-distribuir-ingreso"
+                aria-label="Distribuir el ingreso ${desc} entre tus objetivos">
+          Distribuir →
+        </button>
+      </div>
+    </li>`;
 }
 
 function _renderDetalleItem(c, viewYear, viewMonth) {

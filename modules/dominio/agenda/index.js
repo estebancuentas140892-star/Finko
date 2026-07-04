@@ -292,6 +292,17 @@ async function _marcarPagadoGastoFijo(el) {
   announce(`Pago de ${f(monto)} registrado para "${comp.descripcion}".`);
 }
 
+// ── HANDLER: DISTRIBUIR DESDE EL DÍA DE INGRESO (ADR 021) ───────
+
+/**
+ * CTA del evento de día de ingreso: delega en tesorería vía EventBus
+ * (`distribuir:abrir`), que navega a Mis cuentas y abre el asistente
+ * "Distribuir mi ingreso". Agenda no conoce el panel ni el motor de reparto.
+ */
+function _distribuirDesdeAgenda() {
+  EventBus.emit('distribuir:abrir');
+}
+
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /** Devuelve el prefijo YYYY-MM del mes actual para comparar fechas. */
@@ -312,11 +323,14 @@ export function initAgenda() {
   registrarAccion('agenda-editar-fijo',       _editarGastoFijo);
   registrarAccion('agenda-eliminar-fijo',     _eliminarGastoFijo);
   registrarAccion('agenda-marcar-pagado-fijo', _marcarPagadoGastoFijo);
+  registrarAccion('agenda-distribuir-ingreso', _distribuirDesdeAgenda);
 
   _inyectarFormGastoFijo();
 
+  // ADR 021: el calendario también muestra los días de ingreso, así que un
+  // cambio en S.ingresos (alta, edición de diaPago, baja) debe re-renderizar.
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'compromisos') {
+    if (section === 'compromisos' || section === 'ingresos') {
       renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }

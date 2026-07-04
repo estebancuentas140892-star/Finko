@@ -554,6 +554,7 @@
   background: var(--fk-text-muted);
 }
 
+.cal-dot--ingreso        { background: var(--fk-dom-ingresos);    color: var(--fk-dom-ingresos); }
 .cal-dot--fijo           { background: var(--fk-dom-presupuesto); color: var(--fk-dom-presupuesto); }
 .cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos); color: var(--fk-dom-compromisos); }
 .cal-dot--deuda-personal { background: var(--fk-dom-personales);  color: var(--fk-dom-personales); }
@@ -695,6 +696,10 @@
    (cal-dot--*, AG.6) para que el color signifique lo mismo en toda la
    tarjeta. Compensa el ancho de la franja restándolo del padding
    izquierdo para no desplazar el contenido. */
+.cal-detail__item--ingreso {
+  border-left-color: var(--fk-dom-ingresos);
+  padding-left: calc(var(--fk-space-3) - 3px);
+}
 .cal-detail__item--fijo {
   border-left-color: var(--fk-dom-presupuesto);
   padding-left: calc(var(--fk-space-3) - 3px);
@@ -722,6 +727,10 @@
   flex-shrink: 0;
 }
 
+.cal-detail__icon--ingreso {
+  color: var(--fk-dom-ingresos);
+  background: color-mix(in srgb, var(--fk-dom-ingresos) 14%, var(--fk-bg-surface));
+}
 .cal-detail__icon--fijo {
   color: var(--fk-dom-presupuesto);
   background: color-mix(in srgb, var(--fk-dom-presupuesto) 14%, var(--fk-bg-surface));
@@ -801,6 +810,7 @@
   }
   /* Recalcula el padding compensado de la franja (AG.7) contra el padding
      base de mobile, más chico que el de desktop. */
+  .cal-detail__item--ingreso,
   .cal-detail__item--fijo,
   .cal-detail__item--deuda-entidad,
   .cal-detail__item--deuda-personal {
