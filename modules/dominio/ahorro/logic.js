@@ -9,6 +9,8 @@
  * respetamos la regla ADN #10: ahorro no importa de otro dominio.
  */
 
+import { f } from '../../infra/utils.js';
+
 // ── RANGOS PERMITIDOS ────────────────────────────────────────────
 
 /** Mínimo razonable de meses del fondo. */
@@ -277,6 +279,161 @@ export function normalizarMontoAporte(raw) {
   const n = Number(raw);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.round(n);
+}
+
+// ── APORTE SUGERIDO AL FONDO (AH.2) ──────────────────────────────
+
+// Constantes replicadas del motor de distribución de Mis cuentas (ADR 013,
+// MC.6a/MC.10) para que la sugerencia del fondo y la de "Distribuir mi
+// ingreso" nunca se contradigan. Se replican en vez de importarse porque
+// ningún dominio importa a otro (regla ADN #10).
+const _PISO_EV_PCT     = 10;  // % mínimo de estilo de vida (sostenibilidad)
+const _PISO_AHORRO_PCT = 5;   // % mínimo de ahorro cuando el margen es corto
+
+/** Meses del horizonte para cerrar el fondo incompleto (ADR 013). */
+export const HORIZONTE_FONDO_MESES = 12;
+
+/**
+ * Aporte mensual sugerido al fondo de emergencia, con explicación (AH.2).
+ *
+ * Construye la sugerencia con los datos reales del usuario en vez de un
+ * número sin contexto. Sigue el mismo modelo de pisos del motor de
+ * distribución (ADR 013): cerrar el fondo en 12 meses si el margen alcanza;
+ * si no, sugerir lo que el margen permite tras reservar un mínimo de estilo
+ * de vida (10%) y el aporte a otras metas con fecha; con margen muy corto,
+ * la parte proporcional del piso de ahorro (5 de 15); sin margen, cero y
+ * la verdad (mismo espíritu que MC.11: no inventar recomendaciones).
+ *
+ * @param {{
+ *   faltanteFondo?:          number,  // COP que faltan para el objetivo
+ *   ingresosMensuales?:      number,  // COP/mes. 0 o ausente = sin datos.
+ *   gastosFijosMensuales?:   number,  // COP/mes de fijos activos.
+ *   cuotasDeudaMensuales?:   number,  // COP/mes de cuotas de deuda activas.
+ *   aporteMensualObjetivos?: number,  // COP/mes que piden metas/apartados con fecha.
+ * }} [ctx]
+ * @returns {{
+ *   monto: number,
+ *   base: 'completo'|'meta'|'capacidad'|'piso'|'deficit'|'sin-ingreso',
+ *   meses: number|null,   // meses estimados para completar el fondo a ese ritmo
+ *   razones: string[],    // explicación en lenguaje humano (1-3 frases)
+ * }}
+ */
+export function calcularAporteSugerido({
+  faltanteFondo          = 0,
+  ingresosMensuales      = 0,
+  gastosFijosMensuales   = 0,
+  cuotasDeudaMensuales   = 0,
+  aporteMensualObjetivos = 0,
+} = {}) {
+  const faltante = Math.max(0, Number(faltanteFondo) || 0);
+  if (faltante <= 0) {
+    return {
+      monto: 0, base: 'completo', meses: 0,
+      razones: ['Tu fondo ya está completo. Cualquier aporte extra suma colchón.'],
+    };
+  }
+
+  const ritmoMeta = _redondearMiles(faltante / HORIZONTE_FONDO_MESES);
+
+  const ingreso = Math.max(0, Number(ingresosMensuales) || 0);
+  if (ingreso <= 0) {
+    return {
+      monto: ritmoMeta, base: 'sin-ingreso', meses: HORIZONTE_FONDO_MESES,
+      razones: [
+        `Te faltan ${f(faltante)}: con ${f(ritmoMeta)} al mes completas tu fondo en unos ${HORIZONTE_FONDO_MESES} meses.`,
+        'La sugerencia aún no considera tu capacidad real. Cuéntale a Finko cuánto recibes al mes para afinarla.',
+      ],
+    };
+  }
+
+  const fijos     = Math.max(0, Number(gastosFijosMensuales)   || 0);
+  const cuotas    = Math.max(0, Number(cuotasDeudaMensuales)   || 0);
+  const objetivos = Math.max(0, Number(aporteMensualObjetivos) || 0);
+  const margen    = ingreso - fijos - cuotas;
+
+  if (margen <= 0) {
+    return {
+      monto: 0, base: 'deficit', meses: null,
+      razones: [
+        `Tus gastos fijos (${f(fijos)}) y cuotas de deuda (${f(cuotas)}) igualan o superan tu ingreso mensual (${f(ingreso)}).`,
+        'Antes de comprometer un aporte, revisa tus gastos en Análisis o ajusta tus fijos en Calendario. El fondo puede esperar; las obligaciones no.',
+      ],
+    };
+  }
+
+  const pisoEV     = ingreso * _PISO_EV_PCT / 100;
+  const pisoAhorro = ingreso * _PISO_AHORRO_PCT / 100;
+  // Capacidad real para el fondo: margen menos un mínimo de estilo de vida
+  // y menos lo que ya piden tus otras metas con fecha.
+  const capacidad = margen - pisoEV - objetivos;
+
+  const notaObjetivos = objetivos > 0
+    ? ` y el aporte a tus otras metas con fecha (${f(objetivos)})`
+    : '';
+
+  if (capacidad >= ritmoMeta) {
+    return {
+      monto: ritmoMeta, base: 'meta',
+      meses: Math.ceil(faltante / ritmoMeta),
+      razones: [
+        `Te faltan ${f(faltante)}: con ${f(ritmoMeta)} al mes completas tu fondo en unos ${HORIZONTE_FONDO_MESES} meses.`,
+        `Te alcanza: tu ingreso (${f(ingreso)}) menos gastos fijos (${f(fijos)})` +
+          `${cuotas > 0 ? `, cuotas de deuda (${f(cuotas)})` : ''}${notaObjetivos}` +
+          ` deja margen suficiente sin apretar tu estilo de vida.`,
+      ],
+    };
+  }
+
+  if (capacidad >= pisoAhorro) {
+    const monto = _redondearMiles(capacidad);
+    const meses = Math.ceil(faltante / monto);
+    return {
+      monto, base: 'capacidad', meses,
+      razones: [
+        `Para cerrar el fondo en ${HORIZONTE_FONDO_MESES} meses necesitarías ${f(ritmoMeta)}, pero tu margen real da para ${f(monto)} al mes.`,
+        `Es tu ingreso (${f(ingreso)}) menos gastos fijos (${f(fijos)})` +
+          `${cuotas > 0 ? `, cuotas de deuda (${f(cuotas)})` : ''}${notaObjetivos}` +
+          ` y un mínimo para tu estilo de vida.`,
+        _fraseRitmo(meses),
+      ],
+    };
+  }
+
+  // Margen corto: parte proporcional del piso de ahorro (5 de 15), igual que
+  // el reparto proporcional de pisos de MC.10.
+  const montoPiso = _redondearMiles(margen * _PISO_AHORRO_PCT / (_PISO_EV_PCT + _PISO_AHORRO_PCT));
+  const meses     = Math.ceil(faltante / montoPiso);
+  return {
+    monto: montoPiso, base: 'piso', meses,
+    razones: [
+      `Tu margen está apretado: tras gastos fijos y cuotas te quedan ${f(margen)} al mes.`,
+      `Empieza con ${f(montoPiso)} para no frenar el hábito. Cuando tu margen mejore, la sugerencia sube sola.`,
+    ],
+  };
+}
+
+/**
+ * Redondea hacia arriba a miles de COP, con mínimo de $1.000.
+ * @param {number} x
+ * @returns {number}
+ */
+function _redondearMiles(x) {
+  const n = Number(x);
+  if (!Number.isFinite(n) || n <= 0) return 1000;
+  return Math.max(1000, Math.ceil(n / 1000) * 1000);
+}
+
+/**
+ * Frase del ritmo estimado. Con más de 36 meses no promete plazos: invita a
+ * revisar gastos en su lugar.
+ * @param {number} meses
+ * @returns {string}
+ */
+function _fraseRitmo(meses) {
+  if (meses > 36) {
+    return 'A ese ritmo el fondo tardaría más de 3 años. Si puedes recortar algo de estilo de vida, el plazo baja rápido.';
+  }
+  return `A ese ritmo completas el fondo en unos ${meses} meses.`;
 }
 
 // ── COMPROMISO MENSUAL ("págate primero", J.1b) ──────────────────

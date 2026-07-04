@@ -37,8 +37,11 @@ const _VEHICULO_META = {
  * @param {number|null} tasaAhorro           Tasa de ahorro mensual (%) calculada
  *                                           por index.js desde S.ingresos + S.gastos.
  *                                           null si no hay ingresos registrados.
+ * @param {Object|null} sugerencia           Aporte sugerido (AH.2) calculado por
+ *                                           index.js con calcularAporteSugerido.
+ *                                           null si no se puede calcular.
  */
-export function renderAhorro(gastosFijosMensuales, tasaAhorro = null) {
+export function renderAhorro(gastosFijosMensuales, tasaAhorro = null, sugerencia = null) {
   const el = document.getElementById('panel-ahorro');
   if (!el) return;
 
@@ -49,7 +52,7 @@ export function renderAhorro(gastosFijosMensuales, tasaAhorro = null) {
     return;
   }
 
-  el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro);
+  el.innerHTML = _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia);
 }
 
 // ── CONSOLIDADO DE AHORRO (F6) ───────────────────────────────────
@@ -147,7 +150,7 @@ function _renderEmptyState(gastosFijosMensuales) {
 
 // ── HERO DEL FONDO (estado activo) ───────────────────────────────
 
-function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
+function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null) {
   const { metaMeses, montoActual: montoBase } = fondo;
   const aportes    = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
   const montoTotal = calcularMontoTotalFondo(montoBase, aportes);
@@ -204,13 +207,19 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro) {
       ${banner}
     </article>
 
-    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro)}`;
+    ${_renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia)}`;
 }
 
 // ── SECCIÓN DE HÁBITO (aportes + compromiso + tasa) ──────────────
 
-function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro) {
+function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro, sugerencia = null) {
   const ordenados = ordenarAportesPorFecha(aportes);
+
+  // AH.2: si no hay compromiso definido y hay una sugerencia con datos
+  // reales, la pregunta viene acompañada del punto de partida.
+  const hintSugerido = (sugerencia && sugerencia.monto > 0)
+    ? ` Según tus números, ${f(sugerencia.monto)} es un buen punto de partida.`
+    : '';
 
   const compromisoHtml = compromisoMensual > 0
     ? `<div class="ahorro-habito__compromiso">
@@ -219,7 +228,7 @@ function _renderHabitoSection(aportes, compromisoMensual, tasaAhorro) {
                 aria-label="Editar compromiso mensual">Editar</button>
       </div>`
     : `<p class="ahorro-habito__sin-compromiso">
-        ¿Cuánto quieres apartar cada mes?
+        ¿Cuánto quieres apartar cada mes?${hintSugerido}
         <button class="btn btn-ghost btn-sm" data-action="ahorro-editar-compromiso">Definir →</button>
       </p>`;
 
@@ -394,10 +403,28 @@ export function renderFormAporte({ fecha }) {
  * HTML del formulario para definir o editar el compromiso mensual de ahorro
  * ("págate primero": cuánto se compromete el usuario a apartar cada mes).
  *
- * @param {number} compromisoMensual Valor actual. 0 = sin compromiso.
+ * @param {number}      compromisoMensual Valor actual. 0 = sin compromiso.
+ * @param {Object|null} sugerencia        Aporte sugerido (AH.2), salida de
+ *                                        calcularAporteSugerido. null = sin caja.
  * @returns {string}
  */
-export function renderFormCompromisoMensual(compromisoMensual) {
+export function renderFormCompromisoMensual(compromisoMensual, sugerencia = null) {
+  // AH.2: sin ingresos registrados, la sugerencia pide el promedio mensual
+  // para afinarse. El valor no se guarda: solo recalcula la caja en vivo.
+  const inputIngresoHtml = sugerencia?.base === 'sin-ingreso'
+    ? `
+      <div class="form-group">
+        <label for="sugerencia-ingreso" class="label">¿Cuánto recibes al mes, aproximadamente? (COP) <span class="form-optional">opcional</span></label>
+        <input id="sugerencia-ingreso" class="input" type="number"
+               min="0" step="10000" placeholder="Ej. 1500000" inputmode="numeric" />
+        <p class="form-hint">Solo se usa para afinar la sugerencia de abajo. No se guarda.</p>
+      </div>`
+    : '';
+
+  const cajaHtml = sugerencia
+    ? `<div id="caja-sugerencia">${renderCajaSugerencia(sugerencia)}</div>`
+    : '';
+
   return `
     <form id="form-compromiso" novalidate>
       <div class="form-group">
@@ -408,11 +435,49 @@ export function renderFormCompromisoMensual(compromisoMensual) {
         <p class="form-hint">Pon 0 para quitar el compromiso. Es un recordatorio personal: no afecta tu saldo hasta que registres el aporte.</p>
       </div>
 
+      ${inputIngresoHtml}
+      ${cajaHtml}
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar</button>
       </div>
     </form>`;
+}
+
+/**
+ * Caja con el aporte sugerido y su explicación (AH.2). Reutilizada por el
+ * form del compromiso mensual (render inicial y recálculo en vivo cuando el
+ * usuario escribe su ingreso promedio).
+ *
+ * @param {{ monto: number, base: string, razones: string[] }|null} sugerencia
+ * @returns {string}
+ */
+export function renderCajaSugerencia(sugerencia) {
+  if (!sugerencia) return '';
+  const { monto, base, razones } = sugerencia;
+  const razonesHtml = (razones ?? []).map(r => `<p class="nudge__desc">${r}</p>`).join('');
+
+  if (monto <= 0) {
+    const nivel = base === 'deficit' ? 'nudge-high' : 'nudge-success';
+    const icono = base === 'deficit' ? icon('alert') : icon('trophy');
+    return `
+      <div class="nudge ${nivel}" role="status">
+        <span class="nudge__icon" aria-hidden="true">${icono}</span>
+        <div class="nudge__body">${razonesHtml}</div>
+      </div>`;
+  }
+
+  return `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${icon('lightbulb')}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">Sugerido: ${f(monto)} al mes</p>
+        ${razonesHtml}
+        <button type="button" class="btn btn-ghost btn-sm"
+                data-action="ahorro-usar-sugerido" data-monto="${monto}">Usar este monto</button>
+      </div>
+    </div>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

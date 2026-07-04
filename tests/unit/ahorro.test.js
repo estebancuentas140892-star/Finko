@@ -22,6 +22,9 @@ import {
   normalizarCompromisoMensual,
   // F6
   consolidarAhorro,
+  // AH.2
+  calcularAporteSugerido,
+  HORIZONTE_FONDO_MESES,
 } from '../../modules/dominio/ahorro/logic.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
@@ -428,5 +431,110 @@ describe('consolidarAhorro', () => {
     const r = consolidarAhorro({ fondo: -100, metas: 'abc', apartados: NaN, inversiones: 80_000 });
     expect(r.total).toBe(80_000);
     expect(r.desglose.map(d => d.clave)).toEqual(['inversiones']);
+  });
+});
+
+// ── calcularAporteSugerido (AH.2) ────────────────────────────────
+
+describe('calcularAporteSugerido (AH.2)', () => {
+  it('fondo completo: monto 0, base completo', () => {
+    const r = calcularAporteSugerido({ faltanteFondo: 0, ingresosMensuales: 2_000_000 });
+    expect(r.monto).toBe(0);
+    expect(r.base).toBe('completo');
+    expect(r.meses).toBe(0);
+    expect(r.razones[0]).toMatch(/completo/i);
+  });
+
+  it('sin ingresos: sugiere faltante/12 y pide el promedio mensual', () => {
+    // 2.400.000 / 12 = 200.000
+    const r = calcularAporteSugerido({ faltanteFondo: 2_400_000, ingresosMensuales: 0 });
+    expect(r.monto).toBe(200_000);
+    expect(r.base).toBe('sin-ingreso');
+    expect(r.meses).toBe(HORIZONTE_FONDO_MESES);
+    expect(r.razones.join(' ')).toMatch(/cuánto recibes al mes/i);
+  });
+
+  it('redondea el ritmo hacia arriba a miles', () => {
+    // 1.000.000 / 12 = 83.333,3 → 84.000
+    const r = calcularAporteSugerido({ faltanteFondo: 1_000_000, ingresosMensuales: 0 });
+    expect(r.monto).toBe(84_000);
+  });
+
+  it('con margen holgado sugiere el ritmo de 12 meses y explica por qué alcanza', () => {
+    // Ingreso 3M, fijos 1M, cuotas 200k → margen 1.8M; piso EV 300k;
+    // capacidad 1.5M ≥ ritmo 200k → base meta.
+    const r = calcularAporteSugerido({
+      faltanteFondo: 2_400_000,
+      ingresosMensuales: 3_000_000,
+      gastosFijosMensuales: 1_000_000,
+      cuotasDeudaMensuales: 200_000,
+    });
+    expect(r.monto).toBe(200_000);
+    expect(r.base).toBe('meta');
+    expect(r.meses).toBe(12);
+    expect(r.razones.join(' ')).toMatch(/te alcanza/i);
+    expect(r.razones.join(' ')).toContain('$3.000.000');
+  });
+
+  it('las otras metas con fecha reducen la capacidad disponible', () => {
+    // Ingreso 2M, fijos 1M → margen 1M; piso EV 200k; objetivos 700k
+    // → capacidad 100k < ritmo 200k, y 100k ≥ piso ahorro (100k) → base capacidad.
+    const r = calcularAporteSugerido({
+      faltanteFondo: 2_400_000,
+      ingresosMensuales: 2_000_000,
+      gastosFijosMensuales: 1_000_000,
+      aporteMensualObjetivos: 700_000,
+    });
+    expect(r.base).toBe('capacidad');
+    expect(r.monto).toBe(100_000);
+    expect(r.meses).toBe(24);
+    expect(r.razones.join(' ')).toMatch(/otras metas con fecha/i);
+  });
+
+  it('margen corto: parte proporcional del piso de ahorro (margen/3)', () => {
+    // Ingreso 2M, fijos 1.7M, cuotas 150k → margen 150k; piso EV 200k
+    // → capacidad negativa → piso: 150k × 5/15 = 50.000.
+    const r = calcularAporteSugerido({
+      faltanteFondo: 2_400_000,
+      ingresosMensuales: 2_000_000,
+      gastosFijosMensuales: 1_700_000,
+      cuotasDeudaMensuales: 150_000,
+    });
+    expect(r.base).toBe('piso');
+    expect(r.monto).toBe(50_000);
+    expect(r.razones.join(' ')).toMatch(/apretado/i);
+  });
+
+  it('sin margen: monto 0 y la verdad, sin inventar porcentaje', () => {
+    const r = calcularAporteSugerido({
+      faltanteFondo: 2_400_000,
+      ingresosMensuales: 1_500_000,
+      gastosFijosMensuales: 1_200_000,
+      cuotasDeudaMensuales: 400_000,
+    });
+    expect(r.monto).toBe(0);
+    expect(r.base).toBe('deficit');
+    expect(r.meses).toBeNull();
+    expect(r.razones.join(' ')).toMatch(/igualan o superan/i);
+  });
+
+  it('con más de 36 meses de plazo no promete fechas: invita a recortar', () => {
+    // Ingreso 2M, fijos 1M → margen 1M; piso EV 200k; objetivos 700k
+    // → capacidad 100k; faltante 6M → 60 meses.
+    const r = calcularAporteSugerido({
+      faltanteFondo: 6_000_000,
+      ingresosMensuales: 2_000_000,
+      gastosFijosMensuales: 1_000_000,
+      aporteMensualObjetivos: 700_000,
+    });
+    expect(r.base).toBe('capacidad');
+    expect(r.razones.join(' ')).toMatch(/más de 3 años/i);
+  });
+
+  it('inputs vacíos o inválidos degradan con gracia', () => {
+    const r = calcularAporteSugerido();
+    expect(r.base).toBe('completo');
+    const r2 = calcularAporteSugerido({ faltanteFondo: NaN, ingresosMensuales: 'abc' });
+    expect(r2.base).toBe('completo');
   });
 });

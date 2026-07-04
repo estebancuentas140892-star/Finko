@@ -28,11 +28,12 @@ import {
   validarCompromisoMensual, normalizarCompromisoMensual,
   calcularTasaAhorro,
   calcularObjetivoFondo, calcularProgresoFondo, calcularMontoTotalFondo,
+  calcularAporteSugerido,
 } from './logic.js';
 import {
   renderAhorro, renderFormFondo,
   renderFormAporte, renderFormCompromisoMensual,
-  renderResumenAhorroConsolidado,
+  renderResumenAhorroConsolidado, renderCajaSugerencia,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -75,6 +76,77 @@ function _gastosFijosMensuales() {
     total += (Number(c.monto) || 0) * factor;
   }
   return total;
+}
+
+// ── APORTE SUGERIDO (AH.2) ───────────────────────────────────────
+
+/**
+ * Cuotas mínimas mensuales de todas las deudas activas. Réplica del cálculo
+ * de `construirContextoDistribucion` (tesorería, ADR 013) para no importar
+ * de otro dominio (regla ADN #10).
+ * @returns {number} COP/mes
+ */
+function _cuotasDeudaMensuales() {
+  return (Array.isArray(S.compromisos) ? S.compromisos : [])
+    .filter(c => c && c.activo !== false
+      && (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal'))
+    .reduce((sum, c) => sum + (Number(c.cuotaMensual) || 0), 0);
+}
+
+/**
+ * COP/mes que piden las metas y apartados con fecha objetivo: el faltante de
+ * cada uno repartido entre los meses que quedan. Réplica compacta de
+ * `calcularAporteMensualObjetivos` (tesorería, ADR 013), misma fórmula.
+ * @returns {number} COP/mes
+ */
+function _aporteMensualObjetivos() {
+  const tsHoy = Date.now();
+  const ritmo = (montoObjetivo, montoActual, fecha) => {
+    const faltante = Math.max(0, (Number(montoObjetivo) || 0) - (Number(montoActual) || 0));
+    if (faltante <= 0 || !fecha) return 0;
+    const msRestantes = new Date(fecha).getTime() - tsHoy;
+    if (msRestantes <= 0) return 0;
+    const mesesRestantes = Math.max(1, Math.round(msRestantes / (1000 * 60 * 60 * 24 * 30.44)));
+    return Math.ceil(faltante / mesesRestantes);
+  };
+
+  const deMetas = (Array.isArray(S.metas) ? S.metas : [])
+    .filter(m => m && !m.completada && m.fechaLimite)
+    .reduce((sum, m) => sum + ritmo(m.montoObjetivo, m.montoActual, m.fechaLimite), 0);
+  const deApartados = (Array.isArray(S.apartados) ? S.apartados : [])
+    .filter(a => a && !a.completado && a.fechaObjetivo)
+    .reduce((sum, a) => sum + ritmo(a.montoObjetivo, a.montoActual, a.fechaObjetivo), 0);
+  return deMetas + deApartados;
+}
+
+/**
+ * Arma el aporte sugerido (AH.2) con los datos reales de S. Devuelve null si
+ * no se puede calcular un objetivo del fondo (fondo inactivo o sin gastos
+ * fijos registrados): sin objetivo no hay faltante que planear.
+ *
+ * @param {number|null} [ingresoOverride] Ingreso mensual escrito por el
+ *   usuario en el form (cuando no hay ingresos registrados). No se persiste.
+ * @returns {ReturnType<typeof calcularAporteSugerido>|null}
+ */
+function _construirSugerenciaAporte(ingresoOverride = null) {
+  const fondo = S.ahorro?.fondoEmergencia;
+  if (!fondo?.activo) return null;
+
+  const gastosFijos = _gastosFijosMensuales();
+  const objetivo    = calcularObjetivoFondo(gastosFijos, fondo.metaMeses ?? 3);
+  if (objetivo <= 0) return null;
+
+  const aportes  = Array.isArray(S.ahorro?.aportes) ? S.ahorro.aportes : [];
+  const total    = calcularMontoTotalFondo(fondo.montoActual, aportes);
+  const faltante = Math.max(0, objetivo - total);
+
+  return calcularAporteSugerido({
+    faltanteFondo:          faltante,
+    ingresosMensuales:      ingresoOverride ?? _calcularIngresosMensuales(),
+    gastosFijosMensuales:   gastosFijos,
+    cuotasDeudaMensuales:   _cuotasDeudaMensuales(),
+    aporteMensualObjetivos: _aporteMensualObjetivos(),
+  });
 }
 
 // ── CÁLCULO TASA DE AHORRO (J.1b) ────────────────────────────────
@@ -213,7 +285,7 @@ function _guardarFondo(form) {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  _renderAhorroBound();
   announce(yaActivo
     ? 'Fondo de emergencia actualizado.'
     : '¡Fondo de emergencia activado!'
@@ -239,7 +311,7 @@ async function _desactivarFondo() {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  _renderAhorroBound();
   announce('Fondo de emergencia desactivado.');
 }
 
@@ -293,7 +365,7 @@ function _guardarAporte(form) {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  _renderAhorroBound();
   announce(`Aporte de ${aporte.monto.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} registrado.`);
 }
 
@@ -319,7 +391,7 @@ async function _eliminarAporte(el) {
   save();
   EventBus.emit('state:change', { section: 'ahorro' });
 
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  _renderAhorroBound();
   announce('Aporte eliminado.');
 }
 
@@ -333,7 +405,7 @@ function _editarCompromisoMensual() {
   if (titulo) titulo.textContent = 'Compromiso mensual de ahorro';
 
   const compromisoActual = Number(S.ahorro?.compromisoMensual) || 0;
-  _setBody(renderFormCompromisoMensual(compromisoActual));
+  _setBody(renderFormCompromisoMensual(compromisoActual, _construirSugerenciaAporte()));
 
   const form = document.getElementById('form-compromiso');
   if (form) {
@@ -342,7 +414,33 @@ function _editarCompromisoMensual() {
       _guardarCompromisoMensual(form);
     });
   }
+
+  // AH.2: sin ingresos registrados, el form pide el promedio mensual y la
+  // caja de sugerencia se recalcula en vivo mientras el usuario escribe.
+  const inputIngreso = document.getElementById('sugerencia-ingreso');
+  if (inputIngreso) {
+    inputIngreso.addEventListener('input', () => {
+      const caja = document.getElementById('caja-sugerencia');
+      if (!caja) return;
+      const val = Number(inputIngreso.value);
+      const override = Number.isFinite(val) && val > 0 ? val : null;
+      caja.innerHTML = renderCajaSugerencia(_construirSugerenciaAporte(override));
+    });
+  }
+
   abrirModal(overlay);
+}
+
+/**
+ * Copia el monto sugerido (AH.2) al campo del compromiso mensual.
+ * @param {HTMLElement} el botón con data-monto.
+ */
+function _usarAporteSugerido(el) {
+  const monto = Number(el.dataset.monto);
+  const input = document.getElementById('compromiso-monto');
+  if (!input || !Number.isFinite(monto) || monto <= 0) return;
+  input.value = monto;
+  input.focus();
 }
 
 /** @param {HTMLFormElement} form */
@@ -362,7 +460,7 @@ function _guardarCompromisoMensual(form) {
   const overlay = _getOverlay();
   if (overlay) cerrarModal(overlay);
 
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  _renderAhorroBound();
   announce(S.ahorro.compromisoMensual > 0
     ? `Compromiso mensual de ${S.ahorro.compromisoMensual.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })} guardado.`
     : 'Compromiso mensual eliminado.'
@@ -376,7 +474,7 @@ function _guardarCompromisoMensual(form) {
  * Calcula gastosFijosMensuales al vuelo desde S.compromisos.
  */
 function _renderAhorroBound() {
-  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro());
+  renderAhorro(_gastosFijosMensuales(), _calcularTasaAhorro(), _construirSugerenciaAporte());
   renderResumenAhorroConsolidado();
 }
 
@@ -387,6 +485,7 @@ export function initAhorro() {
   registrarAccion('ahorro-nuevo-aporte',      _nuevoAporte);
   registrarAccion('ahorro-eliminar-aporte',   _eliminarAporte);
   registrarAccion('ahorro-editar-compromiso', _editarCompromisoMensual);
+  registrarAccion('ahorro-usar-sugerido',     _usarAporteSugerido);
 
   // El objetivo del fondo depende de gastos fijos: re-render ante cambios en
   // ahorro, compromisos, ingresos o gastos (la tasa de ahorro usa los 3 últimos).
