@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(presupuesto): MC.8c, layout de dos columnas + fila completa en Límites · 2026-07-03
+
+Cierra MC.8c (ver [ADR 019](DECISIONS/019-limites-por-rol.md)). En desktop, el grid de "Tu plan del mes por grupo" pasa de 3 columnas iguales a: **Necesidades y Ahorro en 2 columnas compactas** (fila de arriba) y **Estilo de vida en fila completa** (es la card alta: contiene la olla finita, los envelopes y las huérfanas, y en 1/3 del ancho quedaba apretada). El DOM sigue el orden visual (Necesidades → Ahorro → Estilo de vida), que coincide con el orden del asistente "Distribuir mi ingreso". En móvil no cambia nada: `responsive.css` ya apila a 1 columna.
+
+1917/1917 unit verdes; 123/123 E2E (los tests usan selectores `data-grupo`, independientes del orden). Lint limpio. SW v283 → v284.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/presupuesto/view.js` | Orden de cards Necesidades → Ahorro → Estilo de vida. |
+| `styles/components/analysis.css` | Grid a 2 columnas; Estilo de vida `grid-column: 1 / -1`. |
+| `service-worker.js` | v283 → v284. |
+
+---
+
 ### feat(compromisos): D.12, aviso de tasa desconocida por deuda en la lista · 2026-07-03
 
 Cierra D.12. El aviso de tasa desconocida era un banner único al tope de la card de estrategia que listaba los nombres, pero al leer la lista de deudas no se identificaba a cuál correspondía. Ahora cada deuda con entidad sin tasa registrada muestra su propio aviso en la card ([lista.js](../modules/dominio/compromisos/views/lista.js)): "⚠️ Tasa por confirmar: la calculamos como 0% y eso subestima los intereses. Confírmala con tu banco." (`.text-warning`, `role="note"`). El contexto de la card ya no repite "tasa por confirmar" (el aviso lo reemplaza). El banner global y su CSS (`.estrategia-card__nota`) se retiran.

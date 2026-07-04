@@ -200,22 +200,13 @@ _(sin pendientes activos.)_
 
 ### Límites de gasto (dominio `presupuesto`)
 
-#### MC.8c - Layout de dos columnas + fila completa
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : desktop con Necesidades + Ahorro en 2 columnas compactas y Estilo de vida en fila completa; apilado en móvil.
-- Secciones  : Límites de gasto
-- Archivos   : `modules/dominio/presupuesto/view.js`, CSS relacionado
-- Depende de : nada. Ver [ADR 019](DECISIONS/019-limites-por-rol.md).
-- Modelo     : Sonnet 5 - Bajo/Medio
-
 #### MC.8d (opcional) - Pulido de Límites
 - Prioridad  : baja
 - Estado     : opcional
 - Objetivo   : copy final por grupo, iconos por categoría, estados vacíos, a11y.
 - Secciones  : Límites de gasto
 - Archivos   : `modules/dominio/presupuesto/view.js`
-- Depende de : MC.8c
+- Depende de : nada (MC.8c cerrada)
 - Modelo     : Sonnet 5 - Bajo
 
 > Nota: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.
