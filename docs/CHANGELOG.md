@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.1, lenguaje de iconografía propio con piloto en la navegación · 2026-07-04
+
+Primera fase de la iniciativa de identidad visual 2026-07 (revisión aprobada por el usuario). Nace la familia **"Finko Icons"** ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): línea sobre grid 24 (trazo 2 heredado de `.icon`), **duotono** (la región "cuerpo" con `fill="currentColor" fill-opacity=".15"` como atributo del símbolo, atraviesa `<use>` sin CSS nuevo) y **punto de valor** (un círculo sólido integrado en la metáfora: la firma de la familia). Glifos utilitarios quedan monolínea a propósito.
+
+Piloto: los 14 símbolos de navegación redibujados (`i-home`, `i-gastos` recibo, `i-agenda` día marcado, `i-deudas`, `i-mas`, `i-cuentas`, `i-personales` persona + moneda, `i-presupuesto` velocímetro, `i-metas` diana, `i-apartados`, `i-ahorro` frasco con moneda, `i-inversion` curva con área, `i-analisis` dona, `i-ajustes` deslizadores). Dos metáforas cambian a propósito: Límites pasa de torta a velocímetro y Ahorro de cerdito a frasco (legibilidad a 22px). Ids intactos: ningún consumidor (`icon()`, `emptyArt()`, HTML) cambió. Verificado con capturas Playwright a 22/48px en ambos temas, sidebar y bottom-nav. Cero costo de rendimiento (sprite estático, sin peticiones ni JS nuevos).
+
+Fases siguientes en el tablero: ID.2 (resto del chrome), ID.3 (categorías, retira emojis estructurales), ID.4 (espaciado en tarjetas densas), ID.5 (micropulido de cifras).
+
+2024/2024 unit; 128/128 E2E. SW v296 → v297.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 14 símbolos de navegación redibujados + comentario del sprite actualizado. |
+| `docs/DECISIONS/023-lenguaje-de-iconografia-propio.md` | ADR nuevo: lenguaje Finko Icons y plan de fases. |
+| `docs/DESIGN_SYSTEM.md` | Sección Iconografía reescrita (lenguaje + estado de migración). |
+| `docs/BOARD.md` | Tarjetas ID.2-ID.5 en Transversal. |
+| `service-worker.js` | v296 → v297. |
+
+---
+
 ### style(analisis): paleta unificada entre la dona y las barras por categoría · 2026-07-04
 
 Cierra la observación registrada en el tablero de Análisis. Las barras laterales de "Gastos por categoría" dejan de ser todas verdes: cada una usa **el color que la dona le asignó a su categoría** (misma fuente: `colorearSegmentos`), y las categorías agrupadas en "Otros" heredan el slate de ese segmento, para que el color cuente la misma historia en toda la sección. Sin dona (sin segmentos), las barras conservan el color por defecto.

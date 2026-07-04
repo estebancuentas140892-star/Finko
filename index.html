@@ -39,38 +39,40 @@
   <a class="skip-link" href="#main-content">Saltar al contenido principal</a>
 
   <!-- ══════════════════════════════════════════════════════════
-       SPRITE DE ICONOS SVG (Parte 3C: migración híbrida emoji -> SVG).
-       Íconos de línea (estilo Lucide, licencia MIT) para la UI chrome de
-       navegación. Uso: <svg class="icon"><use href="#i-home"/></svg>.
+       SPRITE DE ICONOS SVG - familia "Finko Icons" (ADR 023).
+       Lenguaje propio: línea sobre grid 24, duotono (región "cuerpo" con
+       fill="currentColor" fill-opacity=".15") y un "punto de valor" sólido
+       integrado en la metáfora (la ventana, el día marcado, la moneda).
+       Uso: <svg class="icon"><use href="#i-home"/></svg>.
        Vanilla, sin build step: cada <symbol> define la geometría una sola
-       vez y <use> la reutiliza desde HTML estático o desde JS. El color
-       (currentColor) y el grosor de línea se aplican vía CSS (.icon), por
-       eso heredan el color del contexto (nav activa = acento, etc.).
-       El contenedor está oculto y no ocupa layout.
-       Solo migramos navegación: los emojis expresivos (tips, marca,
-       celebraciones, estados vacíos) se conservan a propósito.
+       vez y <use> la reutiliza desde HTML estático o desde JS. Trazo y
+       color vienen del CSS (.icon, currentColor); los atributos fill de
+       cada símbolo atraviesan <use> sin CSS adicional.
+       Estado de migración: navegación redibujada en ID.1 (piloto); los
+       símbolos utilitarios (edit, x, search...) son monolínea a propósito
+       y los demás conservan geometría estilo Lucide hasta ID.2.
        ══════════════════════════════════════════════════════════ -->
   <svg width="0" height="0" aria-hidden="true" focusable="false"
        style="position:absolute;width:0;height:0;overflow:hidden">
-    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
-    <symbol id="i-gastos" viewBox="0 0 24 24"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></symbol>
-    <symbol id="i-agenda" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></symbol>
-    <symbol id="i-deudas" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></symbol>
-    <symbol id="i-mas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
-    <symbol id="i-cuentas" viewBox="0 0 24 24"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
-    <symbol id="i-personales" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
-    <symbol id="i-presupuesto" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
-    <symbol id="i-metas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
-    <symbol id="i-apartados" viewBox="0 0 24 24"><path d="M3 7l2-4h14l2 4"/><rect width="18" height="13" x="3" y="7" rx="2"/><path d="M12 7v13"/></symbol>
-    <symbol id="i-analisis" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></symbol>
-    <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V19a1.8 1.8 0 0 1-1.8 1.8H5.8A1.8 1.8 0 0 1 4 19z" fill="currentColor" fill-opacity=".15"/><path d="M9.8 20.8v-4.6a2.2 2.2 0 0 1 4.4 0v4.6"/><circle cx="12" cy="9.3" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-gastos" viewBox="0 0 24 24"><path d="M6 3.2h12v17.3l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5z" fill="currentColor" fill-opacity=".15"/><path d="M9 8.3h6M9 11.8h3.5"/><circle cx="14.6" cy="15.6" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-agenda" viewBox="0 0 24 24"><path d="M3.5 7.2A2.4 2.4 0 0 1 5.9 4.8h12.2a2.4 2.4 0 0 1 2.4 2.4v2.6h-17z" fill="currentColor" fill-opacity=".15" stroke="none"/><rect x="3.5" y="4.8" width="17" height="16" rx="2.4"/><path d="M8 2.8v3.4M16 2.8v3.4M3.5 9.8h17"/><circle cx="15.2" cy="15.6" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-deudas" viewBox="0 0 24 24"><rect x="2.8" y="5.2" width="18.4" height="14" rx="2.4" fill="currentColor" fill-opacity=".15"/><path d="M2.8 9.8h18.4M6.4 15.4h4.2"/><circle cx="17" cy="15.4" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-mas" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-cuentas" viewBox="0 0 24 24"><path d="M3.5 8.8 12 3.6l8.5 5.2z" fill="currentColor" fill-opacity=".15"/><path d="M5.8 11.8v6.2M12 11.8v6.2M18.2 11.8v6.2M3.5 20.8h17"/><circle cx="12" cy="6.9" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-personales" viewBox="0 0 24 24"><circle cx="10" cy="7.6" r="3.6"/><path d="M3.4 20.6v-.8a6.6 6.6 0 0 1 13.2 0v.8z" fill="currentColor" fill-opacity=".15"/><circle cx="18.8" cy="8" r="2.9"/><circle cx="18.8" cy="8" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-presupuesto" viewBox="0 0 24 24"><circle cx="12" cy="12.6" r="4.6" fill="currentColor" fill-opacity=".15" stroke="none"/><path d="M4.6 17.8a9 9 0 1 1 14.8 0M12 12.6l4.4-4.4"/><circle cx="12" cy="12.6" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-metas" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.9" fill="currentColor" fill-opacity=".15"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-apartados" viewBox="0 0 24 24"><path d="M12 7H5.5A2 2 0 0 0 3.5 9v9.5a2 2 0 0 0 2 2H12z" fill="currentColor" fill-opacity=".15" stroke="none"/><path d="M3.5 7 5.4 3.8h13.2L20.5 7"/><rect x="3.5" y="7" width="17" height="13.5" rx="2"/><path d="M12 7v13.5"/><circle cx="7.7" cy="13.8" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-analisis" viewBox="0 0 24 24"><path d="M12 12V3.5a8.5 8.5 0 0 1 7.6 4.7z" fill="currentColor" fill-opacity=".15" stroke="none"/><circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5M12 12l7.6-3.9"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-ajustes" viewBox="0 0 24 24"><path d="M3.5 7h8.6M16.9 7h3.6M3.5 12h2.3M10.2 12h10.3M3.5 17h10.1M18.4 17h2.1"/><circle cx="14.5" cy="7" r="2.2"/><circle cx="8" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="17" r="2.2"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
     <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
     <symbol id="i-saldo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></symbol>
-    <symbol id="i-ahorro" viewBox="0 0 24 24"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></symbol>
-    <symbol id="i-inversion" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol>
+    <symbol id="i-ahorro" viewBox="0 0 24 24"><rect x="8.4" y="3.2" width="7.2" height="2.9" rx="1.1"/><path d="M7 6.1h10v10.7a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3z" fill="currentColor" fill-opacity=".15"/><circle cx="12" cy="13.4" r="2.8"/><circle cx="12" cy="13.4" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-inversion" viewBox="0 0 24 24"><path d="M3.5 17.5 9 12l3.5 3.5 8-8V20.5H3.5z" fill="currentColor" fill-opacity=".15" stroke="none"/><path d="M3.5 17.5 9 12l3.5 3.5 8-8"/><path d="M15.9 7.5h4.6v4.6"/><circle cx="12.5" cy="15.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
     <symbol id="i-recurring" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></symbol>
     <symbol id="i-lightbulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></symbol>

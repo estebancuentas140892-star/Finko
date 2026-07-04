@@ -164,10 +164,11 @@ En modo claro las sombras van tintadas hacia azul-tinta (`rgba(26,32,60,...)`) e
 
 ## Iconografía
 
-Híbrida por diseño (ver [ARCHITECTURE.md](ARCHITECTURE.md) sección 8.1):
+**Familia propia "Finko Icons"** ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)), en migración por fases desde el híbrido emoji/SVG anterior:
 
-- **SVG** para UI chrome: sprite inline en `index.html` (`<symbol id="i-*">`, geometría estilo Lucide, stroke 2, `currentColor`), consumido vía `icon('i-*')` de `infra/icons.js`. Cero emojis en navegación estructural.
-- **Emoji** para lo expresivo: categorías de dominio, logros, celebraciones, tips y empty states. Regla de consistencia: la misma etiqueta compartida entre catálogos usa el mismo emoji en toda la app (guardarraíl TX.4 en `constants.test.js`).
+- **Lenguaje:** línea sobre grid 24 (trazo 2, terminaciones redondeadas), **duotono** (la región "cuerpo" de la metáfora lleva `fill="currentColor" fill-opacity=".15"` como atributo del símbolo) y **punto de valor** (un círculo sólido r 1.2-1.6 integrado en la metáfora: la ventana de la casa, el día marcado, la moneda). Glifos utilitarios (x, chevron, edit, trash...) quedan monolínea sin duotono ni punto.
+- **Sprite:** inline en `index.html` (`<symbol id="i-*">`, `currentColor`), consumido vía `icon('i-*')` de `infra/icons.js`. Los atributos `fill` atraviesan `<use>` sin CSS adicional, así que el duotono se tiñe solo con el color del contexto (nav activa, tarjetas de dominio, empty states).
+- **Estado de migración:** navegación redibujada (ID.1, piloto); resto de UI estructural en ID.2; categorías con tinte por dominio en ID.3 (ahí se retiran los catálogos de emoji y se actualiza el guardarraíl TX.4). Mientras tanto los **emojis** siguen en categorías de dominio, logros, celebraciones y tips, con su regla de consistencia vigente: la misma etiqueta compartida entre catálogos usa el mismo emoji en toda la app.
 
 ---
 
