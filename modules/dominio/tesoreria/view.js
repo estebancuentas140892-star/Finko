@@ -32,6 +32,7 @@ import {
   presupuestosSobreRemanente,
   construirPlanDeudas,
   construirPlanInversiones,
+  construirFilasTransferenciaCuentas,
   estadoDistribucion,
 } from './logic.js';
 
@@ -353,6 +354,14 @@ export function renderDistribucionIngreso() {
   // incrementa su capital. El descuento de la cuenta lo centraliza tesorería.
   const destinosInversiones = construirPlanInversiones({ inversiones: S.inversiones ?? [] });
 
+  // Paso 3 (MC.7e, ADR 018 decisión 4): con 2+ cuentas activas, el usuario
+  // puede repartir el Estilo de vida entre ellas (transferencias internas, no
+  // gasto). Con una sola cuenta se omite (regla de cuenta única).
+  const cuentasParaTransferir = cuentasActivas(S.cuentas ?? []);
+  const destinosCuentas = cuentasParaTransferir.length > 1
+    ? construirFilasTransferenciaCuentas(cuentasParaTransferir)
+    : [];
+
   // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
   // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
   const estadoDist = estadoDistribucion(
@@ -370,6 +379,7 @@ export function renderDistribucionIngreso() {
         destinosAhorro,
         destinosDeudas,
         destinosInversiones,
+        destinosCuentas,
         itemsNecesidades,
         estado:          estadoDist,
       })
@@ -381,14 +391,20 @@ const _SECCION_OBJETIVO = { meta: 'metas', apartado: 'apartados' };
 
 /**
  * Una fila de destino del panel: toggle (incluir) + monto editable. Para deudas
- * muestra el saldo pendiente y para inversiones el capital actual, como contexto.
- * Para metas/apartados sin fecha (`sinFecha`, MC.7a/MC.7b) agrega un hint que
- * invita a ponerle fecha, para que el aporte se pueda calcular la próxima vez.
+ * muestra el saldo pendiente, para inversiones el capital actual y para
+ * cuentas (MC.7e) el saldo actual, todos como contexto. Para metas/apartados
+ * sin fecha (`sinFecha`, MC.7a/MC.7b) agrega un hint que invita a ponerle
+ * fecha, para que el aporte se pueda calcular la próxima vez.
  * `autoExcedente` (solo la fila del fondo, R3) marca el input con
  * `data-dist-auto` para que index.js re-absorba en vivo el excedente del
  * presupuesto de ahorro mientras el usuario no lo edite a mano.
  *
- * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number, sinFecha?:boolean, autoExcedente?:boolean}} d
+ * Las filas de tipo 'cuenta' (transferencias de Estilo de vida, MC.7e) arrancan
+ * **sin marcar**, a diferencia de las demás: por defecto no se mueve nada (el
+ * remanente completo queda en la cuenta de origen, como hoy); el usuario opta
+ * por mover dinero a otra cuenta explícitamente.
+ *
+ * @param {{tipo:string, id:string|null, nombre:string, monto:number, saldoTotal?:number, invertido?:number, saldoActual?:number, sinFecha?:boolean, autoExcedente?:boolean}} d
  * @returns {string}
  */
 function _filaDistribuir(d) {
@@ -397,6 +413,8 @@ function _filaDistribuir(d) {
     sub = ` <span class="distribuir__saldo">saldo ${f(d.saldoTotal)}</span>`;
   } else if (d.tipo === 'inversion' && d.invertido != null) {
     sub = ` <span class="distribuir__saldo">invertido ${f(d.invertido)}</span>`;
+  } else if (d.tipo === 'cuenta' && d.saldoActual != null) {
+    sub = ` <span class="distribuir__saldo">saldo ${f(d.saldoActual)}</span>`;
   }
 
   const seccionHint = _SECCION_OBJETIVO[d.tipo];
@@ -404,16 +422,19 @@ function _filaDistribuir(d) {
     ? `<p class="form-hint form-hint--muted distribuir__hint">Ponle una fecha en <a href="#${seccionHint}">${seccionHint === 'metas' ? 'Metas' : 'Apartados'}</a> para calcular cuánto aportar.</p>`
     : '';
 
+  const marcada = d.tipo !== 'cuenta';
+
   return `
         <div class="distribuir__fila">
           <label class="checkbox-row distribuir__toggle">
-            <input type="checkbox" data-dist-destino-toggle checked />
+            <input type="checkbox" data-dist-destino-toggle ${marcada ? 'checked' : ''} />
             <span>${_esc(d.nombre)}${sub}</span>
           </label>
           <input type="number" class="input distribuir__monto"
                  min="0" step="10000" inputmode="numeric" value="${d.monto}"
                  aria-label="Monto para ${_esc(d.nombre)}"
                  data-dist-tipo="${_esc(d.tipo)}" data-dist-id="${_esc(d.id ?? '')}"${d.autoExcedente ? ' data-dist-auto="1"' : ''}
+                 ${marcada ? '' : 'disabled'}
                  data-action="recalcular-distribucion" />
         </div>
         ${hint}`;
@@ -457,29 +478,34 @@ function _filaNecesidad(it) {
 
 /**
  * Botón "Distribuir mi ingreso" + asistente inline por pasos (ADR 012,
- * MC.4a/b/d/e; ADR 018, MC.7d: shell paginado con confirmación única al final).
- * El panel arranca oculto; el botón lo despliega ya en el primer paso. Solo se
- * crean los pasos con contenido:
+ * MC.4a/b/d/e; ADR 018, MC.7d: shell paginado con confirmación única al final;
+ * MC.7e: Paso 3 accionable con 2+ cuentas). El panel arranca oculto; el botón
+ * lo despliega ya en el primer paso. Solo se crean los pasos con contenido:
  *
  *   1. Necesidades (R1): checklist accionable; cada marca registra al confirmar
  *      el mismo pago que su flujo individual.
  *   2. Ahorro, deudas e inversiones: filas editables con la sugerencia de
  *      ahorro calculada sobre el remanente real tras las Necesidades marcadas
  *      (R3); abonos extra a deudas por prioridad de pago y aportes a inversiones.
- *   3. Estilo de vida: lo que queda disponible en la cuenta (informativo) y la
- *      confirmación única.
+ *   3. Estilo de vida: lo que queda disponible en la cuenta. Con una sola
+ *      cuenta activa es puramente informativo (regla de cuenta única); con 2+
+ *      cuentas (MC.7e) suma un reparto opcional: transferencias internas hacia
+ *      otras cuentas, sin tocar el total del remanente. La confirmación única
+ *      aplica todo al final.
  *
  * El monto a distribuir, el indicador de paso y el resumen en vivo quedan fuera
  * de la paginación (visibles en todos los pasos). La navegación avanzar/atrás,
  * el recálculo y el botón "Distribuir" se manejan desde index.js. Devuelve ''
- * si no hay ningún destino fondeable ni Necesidad que marcar.
+ * si no hay ningún destino fondeable, Necesidad que marcar, ni cuenta a la que
+ * repartir Estilo de vida (MC.7e: con 2+ cuentas el reparto es accionable
+ * aunque no haya Necesidades/Ahorro/Deudas/Inversiones que mostrar).
  *
  * Gating por fecha (MC.4d): la acción solo aparece cuando el cobro del periodo
  * ya llegó y aún no se distribuyó ('listo') o cuando no hay fecha datable
  * ('sin-fecha', se mantiene disponible). Si ya se distribuyó este periodo
  * ('distribuido') o el cobro aún no llega ('pendiente'), se informa sin botón.
  *
- * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
+ * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
  */
 function _renderPanelDistribuir(d) {
@@ -488,7 +514,8 @@ function _renderPanelDistribuir(d) {
   const ahorro      = d.destinosAhorro ?? [];
   const deudas      = d.destinosDeudas ?? [];
   const inversiones = d.destinosInversiones ?? [];
-  if (necesidades.length === 0 && ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0) return '';
+  const cuentas     = d.destinosCuentas ?? [];
+  if (necesidades.length === 0 && ahorro.length === 0 && deudas.length === 0 && inversiones.length === 0 && cuentas.length === 0) return '';
 
   const est = d.estado?.estado ?? 'sin-fecha';
 
@@ -543,9 +570,21 @@ function _renderPanelDistribuir(d) {
           ${seccionDeudas}
           ${seccionInversiones}`;
 
-  // Paso final (MC.4c): Estilo de vida no se mueve en este panel (se gasta a lo
-  // largo del mes). index.js recalcula su monto en vivo sobre el remanente (R3).
-  // MC.7e convertirá este paso en el reparto entre cuentas.
+  // Paso final (MC.4c): Estilo de vida no se mueve entre gastos/ahorro/deudas en
+  // este panel (se gasta a lo largo del mes). index.js recalcula su monto en
+  // vivo sobre el remanente (R3). Con 2+ cuentas activas (MC.7e, ADR 018
+  // decisión 4), el usuario puede repartir ese remanente entre sus cuentas:
+  // transferencias internas, no gasto. Con una sola cuenta se omite (regla de
+  // cuenta única): todo el remanente queda donde ya está.
+  const seccionCuentas = cuentas.length > 0
+    ? `
+          <p class="form-hint distribuir__subtitulo">¿Quieres mover parte a otras cuentas?</p>
+          <div class="distribuir-ingreso__destinos">
+            ${cuentas.map(_filaDistribuir).join('')}
+          </div>
+          <p id="distribuir-cuentas-resumen" class="form-hint form-hint--muted" role="status"></p>`
+    : '';
+
   const seccionInfo = `
           <p class="form-hint distribuir__subtitulo">Esto queda en tu cuenta (no se mueve):</p>
           <div class="distribuir__info">
@@ -554,6 +593,7 @@ function _renderPanelDistribuir(d) {
               <span data-dist-info="estiloVida">${f(evBudget)}</span>
             </p>
           </div>
+          ${seccionCuentas}
           <p class="form-hint form-hint--muted">Revisa el resumen y confirma: se registrarán los pagos y aportes que marcaste.</p>`;
 
   // Shell paginado (MC.7d): un paso visible a la vez, avanzar/atrás inline.

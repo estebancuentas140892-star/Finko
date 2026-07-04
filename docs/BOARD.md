@@ -71,22 +71,13 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada. Solo tiene sentido si el usuario lo pide: la mayoría de fijos recurrentes de uso diario (arriendo, servicios, suscripciones) ya son Mensuales.
 - Modelo     : sin definir
 
-#### MC.7e - Paso 3: el remanente de Estilo de vida se reparte entre cuentas
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : tras descontar Necesidades y Ahorro, el dinero restante es Estilo de vida y el paso decide **en qué cuentas queda disponible** (bancos, billeteras, efectivo), no qué gastos se hacen. Omitido con cuenta única (regla de cuenta única). UX del reparto: decisión delegada al implementador priorizando simplicidad y rapidez; recomendación inicial: montos directos con distribución sugerida pre-llenada (el remanente completo a la cuenta del ingreso) y ajuste manual opcional; los porcentajes solo si el ajuste manual resulta engorroso en pruebas reales.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/logic.js`
-- Depende de : nada (MC.7d cerrada el 2026-07-03; el paso final del asistente ya existe como vista informativa, este slice lo vuelve accionable)
-- Modelo     : Sonnet 5 - Medio/Alto
-
 #### MC.7f (opcional) - Pulido del asistente
 - Prioridad  : baja
 - Estado     : opcional
 - Objetivo   : copy por paso, transiciones, a11y del asistente (foco al avanzar, `aria` de pasos), estados vacíos.
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/view.js`
-- Depende de : MC.7e (MC.7d ya cerrada)
+- Depende de : nada (MC.7d y MC.7e ya cerradas, 2026-07-03)
 - Modelo     : Sonnet 5 - Bajo
 
 #### MC.10 (diseño, revisa ADR 013) - Reservar siempre algo para ahorro cuando hay margen

@@ -28,6 +28,7 @@ import {
   topeAbonoExtraDeuda,
   construirPlanDeudas,
   construirPlanInversiones,
+  construirFilasTransferenciaCuentas,
   ultimoPagoHasta,
   estadoDistribucion,
   calcularSalarioMinimo,
@@ -2183,5 +2184,34 @@ describe('construirPlanInversiones()', () => {
     expect(construirPlanInversiones({ inversiones: [] })).toEqual([]);
     expect(construirPlanInversiones({})).toEqual([]);
     expect(construirPlanInversiones({ inversiones: null })).toEqual([]);
+  });
+});
+
+// ── construirFilasTransferenciaCuentas() (MC.7e, ADR 018 decisión 4) ──
+describe('construirFilasTransferenciaCuentas()', () => {
+  it('arma una fila por cuenta con monto 0 (sin marcar) y el saldo actual como contexto', () => {
+    const filas = construirFilasTransferenciaCuentas([
+      { id: 'c1', nombre: 'Nequi', saldo: 300_000 },
+    ]);
+    expect(filas).toEqual([{ tipo: 'cuenta', id: 'c1', nombre: 'Nequi', monto: 0, saldoActual: 300_000 }]);
+  });
+
+  it('ordena de mayor a menor saldo actual', () => {
+    const filas = construirFilasTransferenciaCuentas([
+      { id: 'chica',  nombre: 'Efectivo', saldo: 50_000 },
+      { id: 'grande', nombre: 'Bancolombia', saldo: 2_000_000 },
+    ]);
+    expect(filas.map(f => f.id)).toEqual(['grande', 'chica']);
+  });
+
+  it('nombre por defecto y saldo 0 cuando faltan datos', () => {
+    const filas = construirFilasTransferenciaCuentas([{ id: 'c1' }]);
+    expect(filas[0]).toEqual({ tipo: 'cuenta', id: 'c1', nombre: 'Cuenta', monto: 0, saldoActual: 0 });
+  });
+
+  it('sin cuentas devuelve un array vacío', () => {
+    expect(construirFilasTransferenciaCuentas([])).toEqual([]);
+    expect(construirFilasTransferenciaCuentas()).toEqual([]);
+    expect(construirFilasTransferenciaCuentas(null)).toEqual([]);
   });
 });

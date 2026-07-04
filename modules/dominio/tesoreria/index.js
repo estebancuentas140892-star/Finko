@@ -845,6 +845,12 @@ function _saldoDeuda(id) {
  * sumar más de lo que la deuda debe. Así el resumen y el apply usan el mismo
  * monto efectivo.
  *
+ * Las filas de tipo 'cuenta' (transferencias de Estilo de vida entre cuentas,
+ * MC.7e) quedan explícitamente excluidas: no son parte del "asignado" del
+ * ingreso (no es gasto ni ahorro nuevo, es dinero que ya era del usuario
+ * moviéndose entre sus propias cuentas); se leen aparte con
+ * `_leerTransferenciasCuentas`.
+ *
  * @param {Element} panel
  * @param {Array<{tipo:string, id:string, monto:number}>} [necesidades] Salida de `_leerNecesidadesMarcadas`.
  */
@@ -864,7 +870,29 @@ function _leerItemsDistribucion(panel, necesidades = []) {
       }
       return { tipo, id, monto };
     })
-    .filter(it => it.monto > 0);
+    .filter(it => it.tipo !== 'cuenta' && it.monto > 0);
+}
+
+/**
+ * Lee las transferencias de Estilo de vida hacia otras cuentas marcadas en el
+ * Paso 3 (MC.7e, ADR 018 decisión 4): filas `data-dist-tipo="cuenta"` con su
+ * toggle activado y monto > 0. No pasan por `topeAbonoExtraDeuda` ni cuentan
+ * como "asignado" del ingreso (ver `_leerItemsDistribucion`): son
+ * redistribuciones internas, validadas aparte contra el presupuesto de Estilo
+ * de vida en `_recalcularDistribucion`.
+ *
+ * @param {Element} panel
+ * @returns {Array<{cuentaId:string, monto:number}>}
+ */
+function _leerTransferenciasCuentas(panel) {
+  return [...panel.querySelectorAll('.distribuir__fila')]
+    .filter(fila => fila.querySelector('[data-dist-destino-toggle]')?.checked)
+    .map(fila => {
+      const inp = fila.querySelector('.distribuir__monto');
+      if (inp?.dataset.distTipo !== 'cuenta') return null;
+      return { cuentaId: inp.dataset.distId || null, monto: Number(inp.value) || 0 };
+    })
+    .filter(it => it && it.monto > 0);
 }
 
 /**
@@ -900,6 +928,9 @@ function _leerNecesidadesMarcadas(panel) {
  * @param {Element} panel
  * @param {number} monto Monto a distribuir actual.
  * @param {Array<{tipo:string, id:string|null, monto:number}>} necesidades Salida de `_leerNecesidadesMarcadas`.
+ * @returns {{ahorro:number, estiloVida:number}} Presupuestos recién calculados
+ *   (para que `_recalcularDistribucion` valide las transferencias de MC.7e sin
+ *   tener que releer el DOM que esta misma función acaba de escribir).
  */
 function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
   const totalNec = necesidades.reduce((s, n) => s + n.monto, 0);
@@ -926,6 +957,23 @@ function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
 
   const evEl = panel.querySelector('[data-dist-info="estiloVida"]');
   if (evEl) evEl.textContent = f(estiloVida);
+
+  return { ahorro, estiloVida };
+}
+
+/**
+ * Valida las transferencias de Estilo de vida a otras cuentas (Paso 3, MC.7e)
+ * contra el presupuesto de Estilo de vida ya recalculado sobre el remanente
+ * real (R3): no se puede mover más de lo que ese presupuesto contiene. Reusa
+ * `resumirPlanDistribucion` (mismo shape `{monto}` que el resto del plan).
+ *
+ * @param {number} evBudget Presupuesto de Estilo de vida (`_actualizarSugerenciasRemanente`).
+ * @param {Array<{cuentaId:string, monto:number}>} transferencias Salida de `_leerTransferenciasCuentas`.
+ * @returns {{transferido:number, disponible:number, excede:boolean}}
+ */
+function _validarTransferenciasCuentas(evBudget, transferencias) {
+  const { asignado, sinAsignar, excede } = resumirPlanDistribucion(evBudget, transferencias);
+  return { transferido: asignado, disponible: sinAsignar, excede };
 }
 
 /** Recalcula el resumen en vivo y habilita/deshabilita "Distribuir". Sin tocar S. */
@@ -936,13 +984,28 @@ function _recalcularDistribucion() {
   const necesidades = _leerNecesidadesMarcadas(panel);
   // R3: primero refrescar las sugerencias sobre el remanente, para que el
   // resumen de abajo sume los montos ya actualizados.
-  _actualizarSugerenciasRemanente(panel, monto, necesidades);
+  const { estiloVida: evBudget } = _actualizarSugerenciasRemanente(panel, monto, necesidades);
   const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
   const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
 
+  // Paso 3 (MC.7e): transferencias hacia otras cuentas, validadas aparte
+  // contra el presupuesto de Estilo de vida (no contra el ingreso total).
+  const transferencias = _leerTransferenciasCuentas(panel);
+  const { transferido, excede: excedeTransferencia } = _validarTransferenciasCuentas(evBudget, transferencias);
+  const cuentasResumenEl = document.getElementById('distribuir-cuentas-resumen');
+  if (cuentasResumenEl) {
+    cuentasResumenEl.textContent = excedeTransferencia
+      ? `Repartiste ${f(transferido)}, más de los ${f(evBudget)} de Estilo de vida disponibles.`
+      : `Repartido entre cuentas: ${f(transferido)} de ${f(evBudget)} disponibles.`;
+    cuentasResumenEl.classList.toggle('form-hint--danger', excedeTransferencia);
+  }
+
   const resumenEl = document.getElementById('distribuir-resumen');
   const boton     = panel.querySelector('[data-action="confirmar-distribucion"]');
-  const valido    = monto > 0 && asignado > 0 && !excede;
+  // "Distribuir" se habilita si hay algo real que registrar: Necesidades/Ahorro/
+  // Deudas/Inversiones (asignado) o, con MC.7e, una transferencia entre cuentas
+  // (transferido), aunque no haya nada más marcado en los otros pasos.
+  const valido    = monto > 0 && (asignado > 0 || transferido > 0) && !excede && !excedeTransferencia;
 
   if (resumenEl) {
     resumenEl.textContent = excede
@@ -1024,11 +1087,35 @@ function _aplicarNecesidad(item, cuentaId) {
 }
 
 /**
+ * Aplica las transferencias de Estilo de vida hacia otras cuentas (Paso 3,
+ * MC.7e): mueve saldo de la cuenta de origen a cada cuenta destino. Una
+ * transferencia hacia la propia cuenta de origen es un no-op (el dinero ya
+ * está ahí: puede pasar si el usuario marcó una fila antes de que
+ * `resolverCuenta` resolviera cuál es la cuenta de origen, ya que ambos pasos
+ * son independientes por diseño, ver R2 del ADR 018).
+ *
+ * @param {Array<{cuentaId:string, monto:number}>} transferencias
+ * @param {string} cuentaOrigenId
+ * @returns {number} Total efectivamente transferido (excluye el no-op consigo misma).
+ */
+function _aplicarTransferenciasCuentas(transferencias, cuentaOrigenId) {
+  let total = 0;
+  for (const t of transferencias) {
+    if (!t.cuentaId || t.cuentaId === cuentaOrigenId || t.monto <= 0) continue;
+    const destino = (S.cuentas ?? []).find(c => c.id === t.cuentaId);
+    if (!destino) continue;
+    editar('cuentas', t.cuentaId, { saldo: (destino.saldo ?? 0) + t.monto });
+    total += t.monto;
+  }
+  return total;
+}
+
+/**
  * Aplica la distribución: acredita el ingreso a la cuenta de origen, descuenta lo
  * que físicamente sale (Necesidades marcadas + metas/apartados/deudas/inversiones
  * seleccionadas; el aporte al fondo no descuenta, ADR 009), registra los pagos
- * de Necesidades (R1) y delega el resto a cada dominio por EventBus. Guarda
- * snapshot para undo.
+ * de Necesidades (R1), reparte Estilo de vida entre cuentas si corresponde
+ * (MC.7e) y delega el resto a cada dominio por EventBus. Guarda snapshot para undo.
  */
 async function _confirmarDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
@@ -1039,7 +1126,22 @@ async function _confirmarDistribucion() {
   const items       = _leerItemsDistribucion(panel, necesidades);
   const todos       = [...necesidades, ...items];
   const { asignado, excede } = resumirPlanDistribucion(monto, todos);
-  if (monto <= 0 || asignado <= 0 || excede) return;
+
+  // Paso 3 (MC.7e): las transferencias a otras cuentas se validan contra el
+  // presupuesto de Estilo de vida sobre el remanente real (R3), no contra el
+  // ingreso total (mismo cálculo que `_recalcularDistribucion`).
+  const totalNec = necesidades.reduce((s, n) => s + n.monto, 0);
+  const { estiloVida: evBudget } = presupuestosSobreRemanente(
+    monto, totalNec,
+    Number(panel.dataset.ahorroPct) || 0,
+    Number(panel.dataset.estiloVidaPct) || 0,
+  );
+  const transferencias = _leerTransferenciasCuentas(panel);
+  const { transferido, excede: excedeTransferencia } = _validarTransferenciasCuentas(evBudget, transferencias);
+
+  // Igual que en `_recalcularDistribucion`: una transferencia entre cuentas
+  // (MC.7e) por sí sola ya es una acción válida, aunque nada más esté marcado.
+  if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excede || excedeTransferencia) return;
 
   const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
   if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
@@ -1056,13 +1158,19 @@ async function _confirmarDistribucion() {
     S.config.ultimaDistribucionPeriodo = estado.periodoISO;
   }
 
-  // Acreditar el ingreso y descontar solo lo que sale de la cuenta (no el fondo).
+  // Transferir primero (MC.7e): mueve saldo hacia las otras cuentas y devuelve
+  // el total efectivamente movido (excluye no-ops hacia la propia cuenta de
+  // origen), para descontarlo junto con lo demás que sale de esa cuenta.
+  const totalTransferido = _aplicarTransferenciasCuentas(transferencias, cuentaId);
+
+  // Acreditar el ingreso y descontar lo que sale de la cuenta (no el fondo) y lo
+  // que se transfiere a otras cuentas: ambos dejan la cuenta de origen.
   const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   if (cuenta) {
-    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable });
+    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable - totalTransferido });
   }
 
   // Necesidades (Paso 1, R1): tesorería aplica directo el pago real.

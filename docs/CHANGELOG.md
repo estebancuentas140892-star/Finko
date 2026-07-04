@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.7e, Paso 3 reparte Estilo de vida entre cuentas · 2026-07-03
+
+Cierra MC.7e (ADR 018 decisión 4), la última tarjeta de prioridad alta de la épica del asistente "Distribuir mi ingreso". Con **2 o más cuentas activas**, el paso final "Estilo de vida" gana una sección "¿Quieres mover parte a otras cuentas?": una fila editable por cuenta activa (mismo patrón toggle + monto del resto del panel), mostrando el saldo actual de cada una como contexto. Con **una sola cuenta activa** el paso sigue siendo puramente informativo, sin cambios (regla de cuenta única).
+
+Diseño deliberadamente conservador para evitar un problema de orden: la cuenta de origen (desde dónde sale el ingreso y se pagan Necesidades/Ahorro/Deudas/Inversiones) solo se resuelve **al confirmar** (R2 del ADR, una sola pregunta al final), así que en el momento de renderizar el Paso 3 todavía no se sabe cuál cuenta es "el origen". En vez de asumir una por defecto (riesgo de mover dinero por error si el usuario elige otra cuenta en el picker final), las filas de transferencia arrancan **sin marcar y en $0**: el remanente completo sigue en la cuenta de origen salvo que el usuario opte explícitamente por mover algo a otra. Al confirmar, cualquier fila cuyo destino resulte ser la propia cuenta de origen es un no-op transparente (el dinero ya estaba ahí).
+
+Nuevo helper puro `construirFilasTransferenciaCuentas(cuentas)` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): una fila por cuenta activa, ordenadas de mayor a menor saldo. En [tesoreria/index.js](../modules/dominio/tesoreria/index.js): `_leerTransferenciasCuentas()` lee las filas marcadas (excluidas explícitamente de `_leerItemsDistribucion`, que ya no las cuenta como "asignado" del ingreso: son redistribuciones internas, no gasto nuevo); `_validarTransferenciasCuentas()` topa la suma contra el presupuesto de Estilo de vida ya recalculado sobre el remanente real (R3), con su propio resumen en vivo (`#distribuir-cuentas-resumen`) y su propio bloqueo de "Distribuir" si excede. `_confirmarDistribucion()` aplica las transferencias antes de fijar el saldo final de la cuenta de origen (descuenta lo transferido junto con lo demás que sale de ahí); `_SLICES_DISTRIBUCION` ya incluía `cuentas`, así que "Deshacer" revierte todo sin cambios adicionales. Al arreglar el guard de habilitación se corrigió un bug encontrado durante la verificación: "Distribuir" exigía `asignado > 0`, lo que bloqueaba una distribución que **solo** mueve dinero entre cuentas (nada marcado en Necesidades/Ahorro/Deudas/Inversiones); ahora también se habilita con `transferido > 0`. También se corrigió el guard de contenido del panel (`_renderPanelDistribuir`), que antes ocultaba el botón entero si Necesidades/Ahorro/Deudas/Inversiones estaban vacíos, sin considerar que 2+ cuentas ya son motivo suficiente para mostrar el asistente.
+
+Sin schema nuevo (decisión 7 del ADR se mantiene): son ajustes de saldo entre cuentas ya existentes, igual que cualquier otro movimiento de tesorería.
+
+Verificado con 4 tests unitarios nuevos de `construirFilasTransferenciaCuentas` y 5 E2E nuevos en Chromium real (una cuenta activa sin filas de transferencia; 2+ cuentas sin marcar nada por defecto; el resumen en vivo bloquea "Distribuir" si excede el presupuesto de Estilo de vida; confirmar mueve el saldo correctamente entre cuentas; Deshacer revierte la transferencia). Verificación visual adicional en el preview (móvil): las filas de cuenta, el resumen en vivo y el bloqueo del botón. 1883/1883 → 1887/1887 unit; 109/109 → 114/114 E2E. Lint limpio. SW v270 → v271.
+
+Con esto, la épica del asistente "Distribuir mi ingreso" (MC.7) solo deja pendiente el pulido opcional MC.7f.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Nuevo helper puro `construirFilasTransferenciaCuentas(cuentas)`. |
+| `modules/dominio/tesoreria/view.js` | `_filaDistribuir` soporta tipo 'cuenta' (saldo actual, sin marcar por defecto); `_renderPanelDistribuir` agrega la sección de transferencias al paso final y corrige el guard de contenido vacío. |
+| `modules/dominio/tesoreria/index.js` | `_leerTransferenciasCuentas`, `_validarTransferenciasCuentas`, `_aplicarTransferenciasCuentas`; `_leerItemsDistribucion` excluye tipo 'cuenta'; guards de habilitación de "Distribuir" ahora aceptan `transferido > 0` sin nada más asignado. |
+| `tests/unit/tesoreria.test.js` | Suite `construirFilasTransferenciaCuentas` (4 tests). |
+| `tests/e2e/smoke.test.js` | Suite nueva "reparto de Estilo de vida entre cuentas (MC.7e)" (5 tests). |
+| `service-worker.js` | v270 → v271. |
+
+---
+
 ### feat(tesoreria): MC.7d completo, asistente paginado + ahorro sobre el remanente real (R3) · 2026-07-03
 
 Cierra la tarjeta MC.7d del tablero (las dos partes que quedaban tras el slice 1 del 2026-07-03). El panel "Distribuir mi ingreso" ahora es un **asistente paginado** de hasta 3 pasos (Necesidades → Ahorro, deudas e inversiones → Estilo de vida) con navegación Atrás/Siguiente inline, indicador "Paso X de N" (`role="status"`, anuncia el cambio a lectores de pantalla) y **confirmación única al final**: el botón "Distribuir" solo existe en el último paso. Solo se crean los pasos con contenido (sin Necesidades el asistente arranca en las asignaciones); el monto a distribuir, el indicador y el resumen en vivo quedan fuera de la paginación, visibles siempre. Al abrir, el asistente siempre arranca en el primer paso; si el botón con foco se oculta al navegar, el foco pasa al de navegación visible.

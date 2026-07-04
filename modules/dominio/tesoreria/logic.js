@@ -1358,3 +1358,34 @@ export function construirPlanInversiones({ inversiones = [] }) {
     }))
     .sort((a, b) => b.invertido - a.invertido);
 }
+
+/**
+ * Arma las filas de cuentas activas para el reparto de Estilo de vida entre
+ * cuentas (Paso 3, MC.7e, ADR 018 decisión 4). A diferencia de las demás filas
+ * del asistente, estas no representan gasto ni ahorro: son transferencias
+ * internas entre las cuentas del propio usuario, para decidir en qué cuenta
+ * queda disponible cada parte del dinero de Estilo de vida. Arrancan en monto
+ * 0 y sin marcar: por defecto no se mueve nada (el remanente completo queda en
+ * la cuenta de origen, como hoy); el usuario decide cuánto mover a cada una.
+ *
+ * Con una sola cuenta activa este reparto no aporta nada (no hay a dónde
+ * transferir); el caller omite la sección cuando `cuentas.length <= 1`
+ * (regla de cuenta única).
+ *
+ * Pura: recibe las cuentas y no lee S ni el DOM.
+ *
+ * @param {import('../../core/state.js').Cuenta[]} cuentas - cuentas activas.
+ * @returns {Array<{tipo:'cuenta', id:string, nombre:string, monto:number, saldoActual:number}>}
+ *   Ordenadas de mayor a menor saldo (mismo criterio que el selector de cuentas).
+ */
+export function construirFilasTransferenciaCuentas(cuentas = []) {
+  return (Array.isArray(cuentas) ? cuentas : [])
+    .map(c => ({
+      tipo:        'cuenta',
+      id:          c.id,
+      nombre:      c.nombre ?? 'Cuenta',
+      monto:       0,
+      saldoActual: Number(c.saldo) || 0,
+    }))
+    .sort((a, b) => b.saldoActual - a.saldoActual);
+}

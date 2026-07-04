@@ -2080,3 +2080,171 @@ test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)',
     await expect(fondo).toHaveValue('50000');
   });
 });
+
+// ── Mis cuentas: Paso 3 accionable, reparto de Estilo de vida entre cuentas (MC.7e, ADR 018 decisión 4) ──
+
+test.describe('Mis cuentas - Distribuir mi ingreso: reparto de Estilo de vida entre cuentas (MC.7e)', () => {
+  test('con una sola cuenta activa, el paso final es solo informativo (sin filas de transferencia)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      // El fondo activo asegura que el panel tenga contenido que mostrar
+      // (Ahorro): sin él, con una sola cuenta y sin compromisos, no habría
+      // ningún destino ni Necesidad, y el botón "Distribuir" no aparecería.
+      st.ahorro = {
+        fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
+        aportes: [], compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    await expect(page.locator('.distribuir__monto[data-dist-tipo="cuenta"]')).toHaveCount(0);
+    await expect(page.locator('text=¿Quieres mover parte a otras cuentas?')).toHaveCount(0);
+  });
+
+  test('con 2+ cuentas, el usuario reparte Estilo de vida sin marcar nada por defecto (todo queda en la cuenta de origen)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    // Dos filas de cuenta (Nequi con más saldo primero), ambas sin marcar por defecto.
+    const filasCuenta = page.locator('.distribuir__monto[data-dist-tipo="cuenta"]');
+    await expect(filasCuenta).toHaveCount(2);
+    const filaNequiDiv = page.locator('.distribuir__fila').filter({ has: page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c1"]') });
+    const filaNequi = filaNequiDiv.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c1"]');
+    const toggleNequi = filaNequiDiv.locator('[data-dist-destino-toggle]');
+    await expect(toggleNequi).not.toBeChecked();
+    await expect(filaNequi).toBeDisabled();
+
+    await expect(page.locator('#distribuir-cuentas-resumen')).toContainText('Repartido entre cuentas: $0 de $900.000 disponibles.');
+  });
+
+  test('marcar una transferencia se refleja en el resumen y bloquea "Distribuir" si excede el presupuesto de Estilo de vida', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    const filaBancolombiaDiv = page.locator('.distribuir__fila').filter({ has: page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]') });
+    const filaBancolombia = filaBancolombiaDiv.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]');
+    const toggleBancolombia = filaBancolombiaDiv.locator('[data-dist-destino-toggle]');
+    await toggleBancolombia.check();
+    await filaBancolombia.fill('300000');
+
+    await expect(page.locator('#distribuir-cuentas-resumen')).toContainText('Repartido entre cuentas: $300.000 de $900.000 disponibles.');
+    await expect(page.locator('[data-action="confirmar-distribucion"]')).toBeEnabled();
+
+    // Pedir más de lo disponible en Estilo de vida bloquea la confirmación.
+    await filaBancolombia.fill('1000000');
+    await expect(page.locator('#distribuir-cuentas-resumen')).toContainText('más de los $900.000 de Estilo de vida disponibles');
+    await expect(page.locator('[data-action="confirmar-distribucion"]')).toBeDisabled();
+  });
+
+  test('confirmar con una transferencia marcada mueve el saldo entre cuentas (sin afectar Necesidades ni Ahorro)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    const filaBancolombiaDiv = page.locator('.distribuir__fila').filter({ has: page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]') });
+    const filaBancolombia = filaBancolombiaDiv.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]');
+    const toggleBancolombia = filaBancolombiaDiv.locator('[data-dist-destino-toggle]');
+    await toggleBancolombia.check();
+    await filaBancolombia.fill('300000');
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    // Con 2 cuentas, resolverCuenta abre un picker: la de mayor saldo aparece
+    // primero y recibe foco; Nequi (mayor saldo) queda como cuenta de origen.
+    await page.click('[data-role="elegir"][data-cuenta-id="c1"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+
+    // Bancolombia recibió la transferencia; Nequi (origen) la descontó junto al resto.
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000 + 300_000);
+    // Nequi: 1.000.000 + 3.000.000 (ingreso) - 300.000 (transferencia a Bancolombia).
+    // Sin Necesidades ni Ahorro marcados en este estado (sin compromisos ni fondo activo).
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 300_000);
+  });
+
+  test('Deshacer revierte la transferencia entre cuentas junto con el resto de la distribución', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.config = { presetDistribucion: '50-30-20' }; // Estilo de vida = 30% de 3.000.000 = 900.000
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 500_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page);
+
+    const filaBancolombiaDiv = page.locator('.distribuir__fila').filter({ has: page.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]') });
+    const filaBancolombia = filaBancolombiaDiv.locator('.distribuir__monto[data-dist-tipo="cuenta"][data-dist-id="c2"]');
+    const toggleBancolombia = filaBancolombiaDiv.locator('[data-dist-destino-toggle]');
+    await toggleBancolombia.check();
+    await filaBancolombia.fill('300000');
+
+    await page.click('[data-action="confirmar-distribucion"]');
+    await page.click('[data-role="elegir"][data-cuenta-id="c1"]');
+    await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
+
+    await page.click('[data-action="deshacer-distribucion"]');
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000);
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(500_000);
+  });
+});
