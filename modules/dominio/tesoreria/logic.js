@@ -521,6 +521,58 @@ export function montoSalarioMinimoPorPeriodo(conSubsidio, frecuencia) {
   return Math.round(total / factor);
 }
 
+// ── VALIDACIÓN INGRESOS PUNTUALES (NAV.A1) ───────────────────────
+
+/**
+ * Valida los datos del formulario de ingreso puntual (dinero que entra una
+ * sola vez). A diferencia del ingreso recurrente, no tiene frecuencia ni día de
+ * pago: es un evento con monto, cuenta destino y fecha. La descripción y la
+ * categoría son opcionales.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {string[]} Mensajes de error (vacío = válido).
+ */
+export function validarIngresoPuntual(datos) {
+  const errores = [];
+  const monto = Number(datos.monto);
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El monto debe ser un número mayor a 0.');
+  }
+  if (!datos.cuentaId?.trim()) {
+    errores.push('Debes elegir la cuenta donde recibiste el dinero.');
+  }
+  if (!datos.fecha?.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(datos.fecha)) {
+    errores.push('La fecha es obligatoria.');
+  }
+  if (datos.categoria && !CATEGORIAS_INGRESO.includes(datos.categoria)) {
+    errores.push('La categoría seleccionada no es válida.');
+  }
+  return errores;
+}
+
+/**
+ * Convierte los datos crudos del formulario al shape de S.ingresosPuntuales[].
+ * Asume que los datos ya pasaron `validarIngresoPuntual()`. Si la descripción
+ * viene vacía, se autogenera desde la categoría (o "Ingreso" como fallback):
+ * un ingreso puntual debe poder registrarse en segundos, sin obligar a escribir.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {Omit<import('../../core/state.js').IngresoPuntual, 'id' | 'fechaCreacion'>}
+ */
+export function normalizarIngresoPuntual(datos) {
+  const categoria = datos.categoria && CATEGORIAS_INGRESO.includes(datos.categoria)
+    ? datos.categoria
+    : null;
+  const descripcion = datos.descripcion?.trim() || categoria || 'Ingreso';
+  return {
+    descripcion,
+    monto:     Number(datos.monto),
+    categoria,
+    cuentaId:  datos.cuentaId.trim(),
+    fecha:     datos.fecha,
+  };
+}
+
 // ── VALIDACIÓN CUENTAS ───────────────────────────────────────────
 
 /**

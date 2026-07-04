@@ -17,7 +17,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 21;
+const SCHEMA_VERSION = 22;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -352,6 +352,15 @@ function _migrate(raw) {
           if (!('interesPendiente' in p)) p.interesPendiente = 0;
         }
       }
+    }
+  }
+
+  // v21 → v22: nueva colección de ingresos puntuales (NAV.A1, ADR 024). El
+  // usuario existente arranca sin ingresos puntuales; el resto no cambia.
+  // Idempotente: si ya es un array, no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 22) {
+    if (!Array.isArray(data.ingresosPuntuales)) {
+      data.ingresosPuntuales = [];
     }
   }
 

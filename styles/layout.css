@@ -282,6 +282,13 @@
   color: var(--fk-text-primary);
   margin-top: 0;
 }
+/* Aclaración corta bajo un sub-header (ej. "Otros ingresos", NAV.A1). */
+.section__sub-hint {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-muted);
+  margin-top: calc(-1 * var(--fk-space-2));
+  margin-bottom: var(--fk-space-4);
+}
 
 /* ════════════════════════════════════════════════════════════
    BENTO GRID - dashboard

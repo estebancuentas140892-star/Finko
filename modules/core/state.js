@@ -50,6 +50,26 @@ import { SMMLV } from './constants.js';
  */
 
 /**
+ * Ingreso puntual: dinero que entra una sola vez (un trabajo, una venta, un
+ * regalo), a diferencia de `Ingreso` que es una fuente recurrente. Es un evento
+ * del ledger, no una plantilla: tiene fecha y cuenta destino, y al registrarlo
+ * acredita el saldo de esa cuenta (espejo de un Gasto, que lo descuenta).
+ *
+ * Solo tesorería lo lee. Análisis y el resumen semanal no lo consideran como
+ * flujo de ingreso: desde v8.8 la app no rastrea ingresos como flujo, solo
+ * refleja el efecto vía patrimonio (saldos − deudas). Ver NAV.A1 / ADR 024.
+ *
+ * @typedef {Object} IngresoPuntual
+ * @property {string}      id
+ * @property {string}      descripcion     Fuente legible ("Venta bici", "Freelance"). Puede autogenerarse.
+ * @property {number}      monto           COP.
+ * @property {string|null} categoria       Ver CATEGORIAS_INGRESO. null si no se capturó.
+ * @property {string}      cuentaId        FK a Cuenta.id: cuenta que recibió el dinero.
+ * @property {string}      fecha           ISO 8601 (YYYY-MM-DD): día en que se recibió.
+ * @property {string}      fechaCreacion   ISO 8601 timestamp.
+ */
+
+/**
  * @typedef {Object} Gasto
  * @property {string} id
  * @property {string} descripcion
@@ -228,6 +248,7 @@ import { SMMLV } from './constants.js';
  *   config: Config,
  *   cuentas: Cuenta[],
  *   ingresos: Ingreso[],
+ *   ingresosPuntuales: IngresoPuntual[],
  *   gastos: Gasto[],
  *   compromisos: Compromiso[],
  *   metas: Meta[],
@@ -267,8 +288,11 @@ export function createInitialState() {
     /** Cuentas / tesorería. */
     cuentas: [],
 
-    /** Ingresos recurrentes y únicos. */
+    /** Fuentes de ingreso recurrentes (plantillas: salario, arriendo...). */
     ingresos: [],
+
+    /** Ingresos puntuales: dinero que entra una sola vez, con fecha y cuenta destino (NAV.A1, v22). */
+    ingresosPuntuales: [],
 
     /** Gastos variables. */
     gastos: [],

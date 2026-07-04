@@ -148,6 +148,10 @@
   color: var(--fk-text-primary);
   white-space: nowrap;
 }
+/* Ingreso (monto que entra): se distingue en verde del gasto (NAV.A1). */
+.list-item__value--in {
+  color: var(--fk-success-text);
+}
 
 /* Cuando el icono contiene un bank-avatar, el wrapper no aporta bg propio */
 .list-item__icon:has(.bank-avatar) {

@@ -11,6 +11,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import {
   BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI,
   CATEGORIA_AGENDA_EMOJI, CATEGORIA_DEUDA_EMOJI, CATEGORIA_DEUDA_PERSONAL_EMOJI,
@@ -246,6 +247,123 @@ export function renderFormIngreso(ingreso = null) {
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>
+      </div>
+    </form>`;
+}
+
+// ── INGRESOS PUNTUALES (NAV.A1) ──────────────────────────────────
+
+/**
+ * Renderiza la lista de ingresos puntuales en `#lista-ingresos-puntuales`,
+ * más recientes primero. No-op si el contenedor no existe.
+ */
+export function renderListaIngresosPuntuales() {
+  const el = document.getElementById('lista-ingresos-puntuales');
+  if (!el) return;
+
+  const lista = Array.isArray(S.ingresosPuntuales) ? [...S.ingresosPuntuales] : [];
+  lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+
+  el.innerHTML = lista.length === 0
+    ? _renderEmptyStateIngresosPuntuales()
+    : lista.map(_renderIngresoPuntualItem).join('');
+}
+
+function _renderEmptyStateIngresosPuntuales() {
+  return `
+    <div class="empty-state empty-state--small">
+      <p class="empty-state__desc">Sin ingresos puntuales registrados. Cuando recibas dinero por un trabajo, una venta o un regalo, regístralo aquí y se suma a tu cuenta.</p>
+    </div>`;
+}
+
+/** Nombre legible de la cuenta destino, o '' si ya no existe. */
+function _nombreCuenta(cuentaId) {
+  const c = (S.cuentas ?? []).find(cta => cta.id === cuentaId);
+  return c ? c.nombre : '';
+}
+
+/**
+ * @param {import('../../core/state.js').IngresoPuntual} ing
+ * @returns {string}
+ */
+function _renderIngresoPuntualItem(ing) {
+  const desc = _esc(ing.descripcion);
+  const catLabel = ing.categoria
+    ? `${CATEGORIA_INGRESO_EMOJI[ing.categoria] ?? ''} ${_esc(ing.categoria)} · `
+    : '';
+  const cuentaNom = _nombreCuenta(ing.cuentaId);
+  const cuentaStr = cuentaNom ? ` · ${_esc(cuentaNom)}` : '';
+
+  return `
+    <article class="list-item" data-id="${_esc(ing.id)}">
+      <div class="list-item__body">
+        <p class="list-item__title">${desc}</p>
+        <p class="list-item__subtitle">${catLabel}${_esc(_fechaCorta(ing.fecha))}${cuentaStr}</p>
+      </div>
+      <div class="list-item__meta">
+        <p class="list-item__value list-item__value--in">+${f(ing.monto)}</p>
+      </div>
+      <div class="list-item__action">
+        <button class="btn btn-ghost btn-icon"
+                data-action="eliminar-ingreso-puntual"
+                data-id="${_esc(ing.id)}"
+                aria-label="Eliminar ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      </div>
+    </article>`;
+}
+
+/**
+ * Devuelve el HTML del formulario de nuevo ingreso puntual. Si no hay cuentas
+ * activas, muestra un estado guiado (el ingreso necesita una cuenta destino).
+ *
+ * @returns {string}
+ */
+export function renderFormIngresoPuntual() {
+  const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
+
+  if (cuentas.length === 0) {
+    return `
+      <div class="form-empty">
+        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
+        <p class="form-empty__title">Primero necesitas una cuenta</p>
+        <p class="form-empty__desc">Un ingreso necesita una cuenta donde entre el dinero. Agrega al menos una cuenta o billetera en Mis cuentas.</p>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="modal-close">${icon('cuentas')} Entendido</a>
+      </div>`;
+  }
+
+  const catOpts = CATEGORIAS_INGRESO
+    .map(c => `<option value="${_esc(c)}">${CATEGORIA_INGRESO_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
+    .join('');
+
+  return `
+    <form id="form-ingreso-puntual" novalidate>
+      <div class="form-group">
+        <label for="ingreso-p-monto" class="label">¿Cuánto recibiste? (COP)</label>
+        <input id="ingreso-p-monto" name="monto" class="input input--big-amount"
+               type="number" inputmode="numeric" min="1" step="10000" placeholder="0"
+               required aria-required="true" autocomplete="off" />
+      </div>
+      ${renderSelectorCuenta(cuentas, { label: '¿En qué cuenta entró el dinero?' })}
+      <div class="form-group">
+        <label for="ingreso-p-desc" class="label">Descripción (opcional)</label>
+        <input id="ingreso-p-desc" name="descripcion" class="input" type="text"
+               placeholder="Ej. Venta de la bici, Freelance, Regalo" autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label for="ingreso-p-cat" class="label">Categoría (opcional)</label>
+        <select id="ingreso-p-cat" name="categoria" class="input">
+          <option value="">Seleccionar…</option>
+          ${catOpts}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ingreso-p-fecha" class="label">Fecha</label>
+        <input id="ingreso-p-fecha" name="fecha" class="input" type="date"
+               required aria-required="true" />
+      </div>
+      <div class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar ingreso</button>
       </div>
     </form>`;
 }

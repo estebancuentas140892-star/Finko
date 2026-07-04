@@ -47,9 +47,15 @@ Consecuencia clave: **"pagar una deuda" deja de exigir encontrar la sección Deu
 
 ### D3. Ingreso puntual (capacidad nueva del dominio `tesoreria`)
 
-Flujo "Registrar ingreso": monto + cuenta destino (patrón 0/1/varias de `cuenta-helper`; con 0 cuentas, guard como en Gastos; con 1, no se pregunta) + fuente opcional. Aumenta el saldo de la cuenta y **queda en el histórico** (insumo para Análisis y el resumen semanal). Al confirmar, si el asistente de distribución aplica ([ADR 018](018-asistente-distribuir-ingreso.md)), se ofrece como paso opcional, nunca obligatorio.
+Flujo "Registrar ingreso": monto + cuenta destino (patrón 0/1/varias de `cuenta-helper`; con 0 cuentas, guard como en Gastos; con 1, no se pregunta) + fuente opcional. Aumenta el saldo de la cuenta y **queda en un histórico** visible en Mis cuentas.
 
-Detalle de datos (colección propia vs. reutilizar `S.ingresos` con un campo de tipo, y si amerita bump de schema o basta lectura defensiva) se cierra en NAV.A1; este ADR fija el contrato: registrar, sumar al saldo, alimentar Análisis, ofrecer distribución.
+> **Revisado en NAV.A1 (2026-07-04).** Al implementar se cerraron tres puntos que este ADR había dejado abiertos, uno de ellos corrigiendo una premisa equivocada de la redacción original:
+>
+> 1. **Alcance de visibilidad (decisión del usuario).** La redacción original decía "insumo para Análisis y el resumen semanal", sin saber que la v8.8 quitó a propósito el rastreo de ingresos como flujo (`analisis/logic.js`: "la app no rastrea ingresos"). El usuario eligió el punto medio: el ingreso puntual **sube el saldo** (y con eso ya se refleja en el hero "Tu dinero disponible" y en el patrimonio neto de Análisis, que es saldos − deudas) y **queda en un historial dentro de Mis cuentas**, pero **Análisis y el resumen semanal no cambian**. Se respeta la v8.8: el ingreso se refleja por su efecto (patrimonio), no como un flujo nuevo.
+> 2. **Modelo de datos.** Colección nueva `S.ingresosPuntuales` (migración v21→v22 idempotente), no reutilizar `S.ingresos`. Razón: `S.ingresos` son plantillas recurrentes (sin fecha ni cuenta) que alimentan la proyección mensual, el nudge de próximo cobro y el asistente de distribución; un evento puntual es una transacción con fecha y cuenta destino. Mezclarlos obligaría a filtrar por tipo en cada consumidor. El slice nuevo deja intactos a todos los consumidores actuales.
+> 3. **Efecto sobre el saldo, espejo de Gastos.** Registrar acredita la cuenta destino; eliminar revierte. Es exactamente el patrón de un gasto (que descuenta al registrar y devuelve al borrar), así el ledger y el saldo nunca divergen.
+>
+> **Diferido a NAV.A2:** el ofrecimiento del asistente de distribución al confirmar. Motivo concreto: `_confirmarDistribucion` **re-acredita** la cuenta (`saldo + monto`), porque asume que el cobro recurrente aún no entró; como el ingreso puntual ya acreditó la cuenta al registrarse, abrir el asistente con ese monto causaría un **doble abono**. Unificar ambos flujos (un modo "ya acreditado" del asistente) es propio de la hoja "Registrar" de NAV.A2, no de A1.
 
 ### D4. Hub "Ahorros": una entrada, cuatro pestañas
 
@@ -106,7 +112,7 @@ Con el hub, "Más" baja de 10 tarjetas en 3 grupos a **7 tarjetas en una sola cu
 
 | Slice | Qué | Depende de | Modelo sugerido |
 |---|---|---|---|
-| **NAV.A1** | Ingreso puntual en `tesoreria` (logic + view + tests). Sin tocar la navegación todavía: se expone con un botón "+ Ingreso" en Mis cuentas. | nada | Opus 4.8 - Alto |
+| **NAV.A1** ✅ | Ingreso puntual en `tesoreria` (logic + view + tests). Cerrado 2026-07-04: colección `S.ingresosPuntuales` (v22), sube/revierte saldo como espejo de Gastos, historial en Mis cuentas, sin tocar Análisis/resumen (v8.8). La oferta de distribución quedó diferida a NAV.A2 (ver D3, doble abono). | nada | Opus 4.8 - Alto |
 | **NAV.A2** | Bottom nav de 5 posiciones + hoja "Registrar" + fix BUG-010 + E2E actualizados. | NAV.A1 | Opus 4.8 - Extra |
 | **NAV.B** | Hub "Ahorros": tarjeta única en Más, franja de pestañas, consolidado como cabecera, renombre "Ahorro" a "Fondo de emergencia", sidebar desktop. | NAV.A2 | Sonnet 5 - Alto |
 | **NAV.C** | Pulidos: toast de logro retrasado, nombre del grupo de gestión en desktop, banners largos revisados. | NAV.A2 y NAV.B | Sonnet 5 - Medio |

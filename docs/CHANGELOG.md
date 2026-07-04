@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): NAV.A1, ingreso puntual en Mis cuentas · 2026-07-04
+
+Primera tarea de implementación del [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md). La auditoría detectó que registrar dinero que entra no tenía camino real: la única acción era la fuente fija (`nuevo-ingreso`), escondida y sin fecha ni cuenta. Ahora Mis cuentas tiene una sub-sección "Otros ingresos" con un botón "+ Ingreso" que abre "Registrar un ingreso": monto, cuenta destino (selector 0/1/varias de `cuenta-helper`; con 0 cuentas, guía a agregar una), descripción y categoría opcionales, y fecha (hoy por defecto).
+
+Decisiones de datos y alcance (ver ADR 024 D3, revisado): colección nueva `S.ingresosPuntuales` (migración v21→v22 idempotente), no reutilizar `S.ingresos` (plantillas recurrentes, otro shape). El registro **acredita el saldo** de la cuenta destino y eliminarlo lo **revierte**, espejo exacto de un gasto (que descuenta y devuelve). Respeta la v8.8: el ingreso se refleja por su efecto (hero "Tu dinero disponible" y patrimonio neto), **no** como flujo en Análisis ni en el resumen semanal, que no cambian. La oferta del asistente de distribución al confirmar quedó **diferida a NAV.A2**: `_confirmarDistribucion` re-acredita la cuenta, así que abrirlo con el monto ya acreditado duplicaría el abono; unificar los flujos es propio de la hoja "Registrar".
+
+Verificado en la app (móvil 390x844): saldo 100k → 350k al registrar $250k, hero muestra $350.000, y al eliminar vuelve a 100k con 0 registros; cero errores de consola. 2037/2037 unit (+13); 128/128 E2E; lint limpio. SW v300 → v301.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/state.js` | Slice `ingresosPuntuales` + typedef `IngresoPuntual`. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 22 + migración v21→v22. |
+| `modules/dominio/tesoreria/logic.js` | `validarIngresoPuntual` + `normalizarIngresoPuntual` (puras). |
+| `modules/dominio/tesoreria/view.js` | `renderFormIngresoPuntual` + `renderListaIngresosPuntuales`. |
+| `modules/dominio/tesoreria/index.js` | Handlers nuevo/guardar/eliminar + acredita/revierte saldo + acciones + EventBus. |
+| `index.html` | Sub-sección "Otros ingresos" + modal `modal-ingreso-puntual`. |
+| `styles/layout.css`, `styles/components/atoms.css` | `.section__sub-hint` + `.list-item__value--in` (verde). |
+| `tests/unit/tesoreria.test.js`, `tests/unit/storage.test.js` | +13 tests (validar/normalizar + migración v22). |
+| `service-worker.js` | v300 → v301. |
+
+---
+
 ### docs(nav): auditoría de navegación móvil, ADR 024 y tarjetas NAV · 2026-07-04
 
 Auditoría completa de la navegación móvil con ojos de usuario nuevo (viewport 390x844 con Playwright, localStorage limpio) más lectura del código de navegación. Resultado del test de orientación (8 preguntas): 3 evidentes, 3 a medias, 2 fallidas. Hallazgos principales: no existe registro de ingreso puntual y el ingreso fijo vive escondido en Mis cuentas (asimetría entró/salió); no hay acción de registro global y los CTA de alta viven en la peor zona del pulgar; 10 de 13 secciones detrás del modal "Más"; el dinero guardado repartido en 4 secciones sin jerarquía; la barra inferior no compensa el safe area de iOS (registrado como BUG-010).

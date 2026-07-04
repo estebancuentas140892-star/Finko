@@ -943,6 +943,32 @@ describe('Migración v20 → v21 (tasa de interés en préstamos personales, PE.
   });
 });
 
+describe('Migración v21 → v22 (ingresos puntuales, NAV.A1)', () => {
+  it('un estado sin ingresosPuntuales recibe la colección vacía', () => {
+    const v21 = { ...createInitialState(), _version: 21 };
+    delete v21.ingresosPuntuales;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v21));
+
+    loadData();
+
+    expect(S.ingresosPuntuales).toEqual([]);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('es idempotente: no borra ingresos puntuales ya presentes', () => {
+    const existente = {
+      id: 'ip1', descripcion: 'Venta bici', monto: 300_000, categoria: 'Venta',
+      cuentaId: 'c1', fecha: '2026-07-01', fechaCreacion: '2026-07-01T10:00:00Z',
+    };
+    const v22 = { ...createInitialState(), _version: 22, ingresosPuntuales: [existente] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v22));
+
+    loadData();
+
+    expect(S.ingresosPuntuales).toEqual([existente]);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

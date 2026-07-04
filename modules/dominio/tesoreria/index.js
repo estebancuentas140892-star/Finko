@@ -28,6 +28,8 @@ import {
   compromisoCuotaManejoDeCuenta,
   validarIngreso,
   normalizarIngreso,
+  validarIngresoPuntual,
+  normalizarIngresoPuntual,
   montoSalarioMinimoPorPeriodo,
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
@@ -44,6 +46,8 @@ import {
   renderDistribucionIngreso,
   renderListaIngresos,
   renderFormIngreso,
+  renderListaIngresosPuntuales,
+  renderFormIngresoPuntual,
 } from './view.js';
 
 // ── RENDER COMPLETO ──────────────────────────────────────────────
@@ -55,6 +59,7 @@ function _renderTodo() {
   renderNudgeProximoIngreso();
   renderDistribucionIngreso();
   renderListaIngresos();
+  renderListaIngresosPuntuales();
 }
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -686,6 +691,100 @@ async function _eliminarIngreso(el) {
   announce(`Ingreso fijo "${ing.descripcion}" eliminado.`);
 }
 
+// ── INGRESOS PUNTUALES (NAV.A1) ──────────────────────────────────
+
+/**
+ * Ajusta el saldo de una cuenta en `delta` (positivo suma, negativo descuenta).
+ * No-op si la cuenta no existe. Espejo del helper de Gastos: el ledger mueve el
+ * saldo. Usa `editar()` para disparar save() + state:change.
+ *
+ * @param {string} cuentaId
+ * @param {number} delta
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
+}
+
+/** Abre el modal de ingreso puntual en modo creación. */
+function _nuevoIngresoPuntual() {
+  const overlay = document.getElementById('modal-ingreso-puntual');
+  if (!overlay) return;
+  const body = document.getElementById('modal-ingreso-puntual-body');
+  if (body) {
+    body.innerHTML = renderFormIngresoPuntual();
+    const form = body.querySelector('#form-ingreso-puntual');
+    if (form) {
+      // La fecha por defecto es hoy (se puede cambiar).
+      const inputFecha = form.querySelector('[name="fecha"]');
+      if (inputFecha) inputFecha.value = hoy();
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        _guardarIngresoPuntual();
+      });
+    }
+  }
+  abrirModal(overlay);
+}
+
+/**
+ * Lee el formulario, valida, acredita la cuenta destino y guarda el ingreso
+ * puntual. Acreditar el saldo es el efecto principal (el registro solo lo hace
+ * trazable). No toca Análisis ni el resumen semanal (v8.8: la app no rastrea
+ * ingresos como flujo, solo su efecto vía patrimonio).
+ */
+function _guardarIngresoPuntual() {
+  const form = document.getElementById('form-ingreso-puntual');
+  if (!form) return;
+
+  const datos = Object.fromEntries(new FormData(form));
+  const errores = validarIngresoPuntual(datos);
+  if (errores.length > 0) {
+    mostrarErroresForm(form, errores);
+    return;
+  }
+
+  const ingreso = normalizarIngresoPuntual(datos);
+
+  // Acreditar la cuenta destino (espejo de un gasto, que la descuenta).
+  _ajustarSaldoCuenta(ingreso.cuentaId, +ingreso.monto);
+  guardar('ingresosPuntuales', ingreso);
+
+  const overlay = document.getElementById('modal-ingreso-puntual');
+  if (overlay) cerrarModal(overlay);
+
+  updSaldo();
+  renderListaIngresosPuntuales();
+  announce(`Ingreso de ${f(ingreso.monto)} registrado.`);
+}
+
+/** @param {HTMLElement} el */
+async function _eliminarIngresoPuntual(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const ing = (S.ingresosPuntuales ?? []).find(i => i.id === id);
+  if (!ing) return;
+
+  const ok = await confirmar({
+    titulo:         'Eliminar ingreso',
+    mensaje:        `¿Quieres eliminar "${ing.descripcion}" (${f(ing.monto)})? Se descontará de tu cuenta y esta acción no se puede deshacer.`,
+    confirmarTexto: 'Eliminar',
+    peligroso:      true,
+  });
+  if (!ok) return;
+
+  // Revertir el abono al saldo de la cuenta (espejo del borrado de un gasto,
+  // que devuelve el monto). Si la cuenta ya no existe, solo se borra el registro.
+  _ajustarSaldoCuenta(ing.cuentaId, -ing.monto);
+  eliminar('ingresosPuntuales', id);
+
+  updSaldo();
+  renderListaIngresosPuntuales();
+  announce(`Ingreso "${ing.descripcion}" eliminado.`);
+}
+
 /** @param {HTMLElement} el */
 function _cambiarPreset(el) {
   const presetId = el.dataset.preset;
@@ -1253,6 +1352,8 @@ export function initTesoreria() {
   registrarAccion('nuevo-ingreso',   _nuevoIngreso);
   registrarAccion('editar-ingreso',  _editarIngreso);
   registrarAccion('eliminar-ingreso', _eliminarIngreso);
+  registrarAccion('nuevo-ingreso-puntual',    _nuevoIngresoPuntual);
+  registrarAccion('eliminar-ingreso-puntual', _eliminarIngresoPuntual);
   registrarAccion('cambiar-preset-distribucion', _cambiarPreset);
   registrarAccion('toggle-distribucion-personalizada', _toggleDistribucionPersonalizada);
   registrarAccion('guardar-distribucion-personalizada', _guardarDistribucionPersonalizada);
@@ -1299,6 +1400,7 @@ export function initTesoreria() {
       section === 'tesoreria'  ||
       section === 'compromisos' ||
       section === 'ingresos'   ||
+      section === 'ingresosPuntuales' ||
       section === 'ahorro'     ||
       section === 'inversiones'
     ) {

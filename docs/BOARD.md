@@ -128,22 +128,13 @@ _(sin pendientes activos.)_
 
 > Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. Orden: NAV.A1 → NAV.A2 → NAV.B → NAV.C.
 
-#### NAV.A1 - Ingreso puntual en Mis cuentas
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : hoy no existe forma de registrar dinero que llega una sola vez (trabajo independiente, venta, regalo): la única acción es `nuevo-ingreso` (fuente fija). Crear el flujo "Registrar ingreso": monto + cuenta destino (patrón 0/1/varias de `cuenta-helper`) + fuente opcional; suma al saldo, queda en el histórico (insumo de Análisis y resumen semanal) y al confirmar ofrece el asistente de distribución (ADR 018) si aplica. Detalle de datos (colección vs. campo tipo en `S.ingresos`, schema) se decide aquí. Ver ADR 024, D3.
-- Secciones  : Mis cuentas, Inicio, Análisis
-- Archivos   : `modules/dominio/tesoreria/logic.js`, `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js`, `index.html`, tests unitarios
-- Depende de : nada (prerequisito de NAV.A2)
-- Modelo     : Opus 4.8 - Alto
-
 #### NAV.A2 - Bottom nav de 5 posiciones con botón central "Registrar"
 - Prioridad  : alta
 - Estado     : pendiente
-- Objetivo   : acción global de registro en la zona del pulgar: `Inicio · Gastos · [+] · Calendario · Más`. El "+" abre una hoja con Gasto e Ingreso (siempre) y, con divulgación progresiva, Abono a deuda y Aporte a ahorro. Incluye el fix de BUG-010 (safe area del bottom nav, mismo bloque CSS) y la actualización de los E2E de navegación/reflow. Ver ADR 024, D1 y D2.
+- Objetivo   : acción global de registro en la zona del pulgar: `Inicio · Gastos · [+] · Calendario · Más`. El "+" abre una hoja con Gasto e Ingreso (siempre) y, con divulgación progresiva, Abono a deuda y Aporte a ahorro. Incluye: el fix de BUG-010 (safe area del bottom nav, mismo bloque CSS), la actualización de los E2E de navegación/reflow, y **la oferta de distribución diferida de NAV.A1** (requiere un modo "ya acreditado" del asistente para no duplicar el abono, ver ADR 024 D3). Ver ADR 024, D1 y D2.
 - Secciones  : todas (navegación)
-- Archivos   : `index.html`, `styles/responsive.css`, `styles/layout.css`, `modules/ui/actions.js`, nuevo `modules/ui/registrar.js`, `tests/e2e/`
-- Depende de : NAV.A1
+- Archivos   : `index.html`, `styles/responsive.css`, `styles/layout.css`, `modules/ui/actions.js`, nuevo `modules/ui/registrar.js`, `modules/dominio/tesoreria/` (asistente ya acreditado), `tests/e2e/`
+- Depende de : NAV.A1 (cerrada)
 - Modelo     : Opus 4.8 - Extra
 
 #### NAV.B - Hub "Ahorros": una entrada, cuatro pestañas

@@ -14,6 +14,8 @@ import {
   detectarNudgeGMF,
   validarIngreso,
   normalizarIngreso,
+  validarIngresoPuntual,
+  normalizarIngresoPuntual,
   diasParaProximoPago,
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
@@ -1100,6 +1102,73 @@ describe('validarIngreso() categoria', () => {
   it('categoria inválida → error', () => {
     const errores = validarIngreso({ descripcion: 'x', monto: '100', frecuencia: 'Mensual', categoria: 'Inventada' });
     expect(errores).toContain('La categoría seleccionada no es válida.');
+  });
+});
+
+// ── validarIngresoPuntual() (NAV.A1) ────────────────────────────────
+
+describe('validarIngresoPuntual()', () => {
+  const base = { monto: '150000', cuentaId: 'c1', fecha: '2026-07-04' };
+
+  it('datos válidos → sin errores', () => {
+    expect(validarIngresoPuntual(base)).toEqual([]);
+  });
+
+  it('válido con categoría y descripción opcionales', () => {
+    expect(validarIngresoPuntual({ ...base, categoria: 'Venta', descripcion: 'Bici' })).toEqual([]);
+  });
+
+  it('monto 0 o negativo → error', () => {
+    expect(validarIngresoPuntual({ ...base, monto: '0' })).toContain('El monto debe ser un número mayor a 0.');
+    expect(validarIngresoPuntual({ ...base, monto: '-5' })).toContain('El monto debe ser un número mayor a 0.');
+  });
+
+  it('monto no numérico → error', () => {
+    expect(validarIngresoPuntual({ ...base, monto: 'abc' })).toContain('El monto debe ser un número mayor a 0.');
+  });
+
+  it('sin cuentaId → error', () => {
+    expect(validarIngresoPuntual({ ...base, cuentaId: '' })).toContain('Debes elegir la cuenta donde recibiste el dinero.');
+  });
+
+  it('fecha ausente o con formato inválido → error', () => {
+    expect(validarIngresoPuntual({ ...base, fecha: '' })).toContain('La fecha es obligatoria.');
+    expect(validarIngresoPuntual({ ...base, fecha: '04/07/2026' })).toContain('La fecha es obligatoria.');
+  });
+
+  it('categoría inválida → error', () => {
+    expect(validarIngresoPuntual({ ...base, categoria: 'Inventada' })).toContain('La categoría seleccionada no es válida.');
+  });
+});
+
+// ── normalizarIngresoPuntual() (NAV.A1) ─────────────────────────────
+
+describe('normalizarIngresoPuntual()', () => {
+  const base = { monto: '150000', cuentaId: 'c1', fecha: '2026-07-04' };
+
+  it('mapea al shape esperado con monto numérico', () => {
+    const r = normalizarIngresoPuntual({ ...base, descripcion: 'Venta bici', categoria: 'Venta' });
+    expect(r).toEqual({
+      descripcion: 'Venta bici',
+      monto: 150000,
+      categoria: 'Venta',
+      cuentaId: 'c1',
+      fecha: '2026-07-04',
+    });
+  });
+
+  it('descripción vacía se autogenera desde la categoría', () => {
+    expect(normalizarIngresoPuntual({ ...base, descripcion: '  ', categoria: 'Venta' }).descripcion).toBe('Venta');
+  });
+
+  it('sin descripción ni categoría cae a "Ingreso"', () => {
+    const r = normalizarIngresoPuntual(base);
+    expect(r.descripcion).toBe('Ingreso');
+    expect(r.categoria).toBeNull();
+  });
+
+  it('categoría inválida se normaliza a null', () => {
+    expect(normalizarIngresoPuntual({ ...base, categoria: 'Inventada' }).categoria).toBeNull();
   });
 });
 
