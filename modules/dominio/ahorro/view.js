@@ -315,7 +315,7 @@ function _renderNudgeTasa(tasaAhorro) {
 export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosMensuales }) {
   const objetivoPreview = calcularObjetivoFondo(gastosFijosMensuales, metaMeses);
   const previewHtml = objetivoPreview > 0
-    ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong> (${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)} de gastos fijos al mes).</p>`
+    ? `<p class="form-hint">Con esa meta tu objetivo sería <strong>${f(objetivoPreview)}</strong>: ${metaMeses} ${metaMeses === 1 ? 'mes' : 'meses'} × ${f(gastosFijosMensuales)}, que es lo que suman al mes tus gastos fijos de Calendario (arriendo, servicios, cuotas...).</p>`
     : `<p class="form-hint">Aún no hay gastos fijos registrados. Cuando los agregues desde Calendario, Finko calcula automáticamente el objetivo.</p>`;
 
   return `
