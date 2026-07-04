@@ -272,6 +272,23 @@ form:not(.config-form) .form-group:not(:first-child) {
   color: var(--fk-text-secondary);
   white-space: nowrap;
 }
+/* Asistente paginado (MC.7d, ADR 018): un paso visible a la vez. El indicador
+   de paso, el monto a distribuir y el resumen viven fuera de la paginación.
+   Los pasos y botones ocultos se apagan con el [hidden] global (reset.css). */
+.distribuir__paso-indicador {
+  margin-top: var(--fk-space-3);
+  font-weight: var(--fk-font-medium);
+}
+.distribuir__nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+/* "Atrás" anclado a la izquierda; Siguiente/Distribuir a la derecha. */
+.distribuir__nav-atras {
+  margin-right: auto;
+}
 /* Nudge "Hoy recibes tu ingreso. ¿Distribuir?" sobre el botón (MC.4d). */
 .distribuir__cta {
   margin-top: var(--fk-space-3);

@@ -62,15 +62,6 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Depende de : nada
 - Modelo     : sin definir
 
-#### MC.7d (continuación) - Recalcular Ahorro sobre el remanente real + shell paginado
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : slice 1 de MC.7d ya entregado (2026-07-03): Necesidades es una checklist accionable que registra pagos reales al confirmar (R1/R4/R5 de la revisión 2026-07-02 de [ADR 018](DECISIONS/018-asistente-distribuir-ingreso.md)). Queda pendiente **R3**: el Paso 2 (Ahorro) hoy sugiere sus aportes sobre el % teórico del split total, sin importar qué Necesidades se marcaron; debería recalcularse en vivo sobre el remanente real (monto a distribuir menos las Necesidades marcadas), igual que el resumen ya combina ambos grupos. También queda pendiente convertir el panel en un **shell de asistente paginado** (avanzar/atrás entre Necesidades → Ahorro/Deudas/Inversiones → Estilo de vida) en vez de un solo fieldset con scroll continuo, como preveía la decisión 1 original del ADR.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js`, `modules/dominio/tesoreria/view.js` (`_renderPanelDistribuir`), `modules/dominio/tesoreria/index.js` (`_recalcularDistribucion`)
-- Depende de : nada (checklist de Necesidades ya entregada)
-- Modelo     : Sonnet 5 - Alto
-
 #### MC.7g (opcional) - Fijos Quincenal/Semanal/Diario en la checklist de Necesidades
 - Prioridad  : baja
 - Estado     : opcional
@@ -86,7 +77,7 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Objetivo   : tras descontar Necesidades y Ahorro, el dinero restante es Estilo de vida y el paso decide **en qué cuentas queda disponible** (bancos, billeteras, efectivo), no qué gastos se hacen. Omitido con cuenta única (regla de cuenta única). UX del reparto: decisión delegada al implementador priorizando simplicidad y rapidez; recomendación inicial: montos directos con distribución sugerida pre-llenada (el remanente completo a la cuenta del ingreso) y ajuste manual opcional; los porcentajes solo si el ajuste manual resulta engorroso en pruebas reales.
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/logic.js`
-- Depende de : MC.7d
+- Depende de : nada (MC.7d cerrada el 2026-07-03; el paso final del asistente ya existe como vista informativa, este slice lo vuelve accionable)
 - Modelo     : Sonnet 5 - Medio/Alto
 
 #### MC.7f (opcional) - Pulido del asistente
@@ -95,7 +86,7 @@ _(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 
 - Objetivo   : copy por paso, transiciones, a11y del asistente (foco al avanzar, `aria` de pasos), estados vacíos.
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/view.js`
-- Depende de : MC.7d, MC.7e
+- Depende de : MC.7e (MC.7d ya cerrada)
 - Modelo     : Sonnet 5 - Bajo
 
 #### MC.10 (diseño, revisa ADR 013) - Reservar siempre algo para ahorro cuando hay margen

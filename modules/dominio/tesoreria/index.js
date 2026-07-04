@@ -32,6 +32,7 @@ import {
   FRECUENCIAS_CON_DIA,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
+  presupuestosSobreRemanente,
   estadoDistribucion,
   topeAbonoExtraDeuda,
 } from './logic.js';
@@ -765,9 +766,69 @@ function _toggleDistribuirIngreso(el) {
   panel.hidden = !panel.hidden;
   el.setAttribute('aria-expanded', String(!panel.hidden));
   if (!panel.hidden) {
-    _recalcularDistribucion();
+    // El asistente siempre arranca en el primer paso (MC.7d, shell paginado).
+    _irAPasoDistribucion(panel, 0);
     document.getElementById('distribuir-monto')?.focus();
   }
+}
+
+// ── ASISTENTE PAGINADO (MC.7d, ADR 018) ──────────────────────────
+
+/** Pasos del asistente (secciones paginadas del panel), en orden. */
+function _pasosDistribucion(panel) {
+  return [...panel.querySelectorAll('[data-dist-paso]')];
+}
+
+/** Índice del paso visible (0 si no hay ninguno, estado imposible tras render). */
+function _pasoActualDistribucion(panel) {
+  const idx = _pasosDistribucion(panel).findIndex(p => !p.hidden);
+  return idx === -1 ? 0 : idx;
+}
+
+/**
+ * Muestra el paso `idx` (base 0) del asistente y ajusta navegación e indicador
+ * (MC.7d: shell paginado con confirmación única al final). "Atrás" existe desde
+ * el segundo paso; en el último, "Siguiente" cede su lugar a "Distribuir". El
+ * indicador tiene role="status", así que actualizar su texto ya anuncia el
+ * cambio de paso a lectores de pantalla. Si el botón con foco se oculta, el
+ * foco pasa al de navegación que queda visible (no se pierde en el body).
+ */
+function _irAPasoDistribucion(panel, idx) {
+  const pasos = _pasosDistribucion(panel);
+  if (pasos.length === 0 || idx < 0 || idx >= pasos.length) return;
+  pasos.forEach((p, i) => { p.hidden = i !== idx; });
+
+  const esUltimo  = idx === pasos.length - 1;
+  const atras     = panel.querySelector('[data-action="distribuir-paso-atras"]');
+  const siguiente = panel.querySelector('[data-action="distribuir-paso-siguiente"]');
+  const confirmar = panel.querySelector('[data-action="confirmar-distribucion"]');
+  if (atras)     atras.hidden     = idx === 0;
+  if (siguiente) siguiente.hidden = esUltimo;
+  if (confirmar) confirmar.hidden = !esUltimo;
+
+  if (document.activeElement === siguiente && esUltimo) {
+    (confirmar?.disabled ? atras : confirmar)?.focus();
+  } else if (document.activeElement === atras && idx === 0) {
+    siguiente?.focus();
+  }
+
+  const indicador = panel.querySelector('[data-dist-paso-indicador]');
+  if (indicador) {
+    indicador.textContent = `Paso ${idx + 1} de ${pasos.length}: ${pasos[idx].dataset.distPasoTitulo ?? ''}`;
+  }
+
+  // Al entrar a un paso, las sugerencias R3 y el resumen quedan al día.
+  _recalcularDistribucion();
+}
+
+function _pasoDistribucionSiguiente() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (panel) _irAPasoDistribucion(panel, _pasoActualDistribucion(panel) + 1);
+}
+
+function _pasoDistribucionAtras() {
+  const panel = document.getElementById('distribuir-ingreso-panel');
+  if (panel) _irAPasoDistribucion(panel, _pasoActualDistribucion(panel) - 1);
 }
 
 /** Saldo pendiente actual de una deuda (0 si no existe). */
@@ -828,12 +889,54 @@ function _leerNecesidadesMarcadas(panel) {
     .filter(it => it.monto > 0);
 }
 
+/**
+ * Recalcula en vivo las sugerencias que dependen del remanente real (ADR 018
+ * revisión 2026-07-02, R3): el monto del hint de ahorro, la fila del fondo
+ * (mientras el usuario no la edite a mano, absorbe el excedente del presupuesto
+ * de ahorro tras los aportes marcados a metas/apartados) y la fila informativa
+ * de Estilo de vida. Se invoca desde `_recalcularDistribucion` antes de sumar
+ * el plan, para que el resumen use los montos ya actualizados. Sin tocar S.
+ *
+ * @param {Element} panel
+ * @param {number} monto Monto a distribuir actual.
+ * @param {Array<{tipo:string, id:string|null, monto:number}>} necesidades Salida de `_leerNecesidadesMarcadas`.
+ */
+function _actualizarSugerenciasRemanente(panel, monto, necesidades) {
+  const totalNec = necesidades.reduce((s, n) => s + n.monto, 0);
+  const { ahorro, estiloVida } = presupuestosSobreRemanente(
+    monto,
+    totalNec,
+    Number(panel.dataset.ahorroPct) || 0,
+    Number(panel.dataset.estiloVidaPct) || 0,
+  );
+
+  const hintEl = panel.querySelector('[data-dist-sugerencia-ahorro]');
+  if (hintEl) hintEl.textContent = f(ahorro);
+
+  // La fila del fondo sigue la sugerencia automática (data-dist-auto, R3) hasta
+  // que el usuario la edite a mano (data-editado) o la excluya del plan (disabled).
+  const fondoInp = panel.querySelector('.distribuir__monto[data-dist-auto="1"]');
+  if (fondoInp && fondoInp.dataset.editado !== '1' && !fondoInp.disabled) {
+    const aportesMarcados = [...panel.querySelectorAll('.distribuir__monto')]
+      .filter(inp => inp.dataset.distTipo === 'meta' || inp.dataset.distTipo === 'apartado')
+      .filter(inp => inp.closest('.distribuir__fila')?.querySelector('[data-dist-destino-toggle]')?.checked)
+      .reduce((s, inp) => s + (Number(inp.value) || 0), 0);
+    fondoInp.value = Math.max(0, ahorro - aportesMarcados);
+  }
+
+  const evEl = panel.querySelector('[data-dist-info="estiloVida"]');
+  if (evEl) evEl.textContent = f(estiloVida);
+}
+
 /** Recalcula el resumen en vivo y habilita/deshabilita "Distribuir". Sin tocar S. */
 function _recalcularDistribucion() {
   const panel = document.getElementById('distribuir-ingreso-panel');
   if (!panel) return;
   const monto       = Number(document.getElementById('distribuir-monto')?.value) || 0;
   const necesidades = _leerNecesidadesMarcadas(panel);
+  // R3: primero refrescar las sugerencias sobre el remanente, para que el
+  // resumen de abajo sume los montos ya actualizados.
+  _actualizarSugerenciasRemanente(panel, monto, necesidades);
   const items       = [...necesidades, ..._leerItemsDistribucion(panel, necesidades)];
   const { asignado, sinAsignar, excede } = resumirPlanDistribucion(monto, items);
 
@@ -847,13 +950,6 @@ function _recalcularDistribucion() {
       : `Asignado: ${f(asignado)}. Queda disponible en tu cuenta: ${f(sinAsignar)}.`;
     resumenEl.classList.toggle('form-hint--danger', excede);
   }
-
-  // Filas informativas (MC.4c): recalcular Necesidades / Estilo de vida según el
-  // monto actual (son % del ingreso; no se mueven, solo informan).
-  panel.querySelectorAll('[data-dist-info]').forEach(span => {
-    const pct = Number(span.dataset.distPct) || 0;
-    span.textContent = f(Math.round(monto * pct / 100));
-  });
 
   if (boton) boton.disabled = !valido;
 }
@@ -1028,6 +1124,8 @@ export function initTesoreria() {
   registrarAccion('toggle-distribucion-personalizada', _toggleDistribucionPersonalizada);
   registrarAccion('guardar-distribucion-personalizada', _guardarDistribucionPersonalizada);
   registrarAccion('toggle-distribuir-ingreso', _toggleDistribuirIngreso);
+  registrarAccion('distribuir-paso-siguiente', _pasoDistribucionSiguiente);
+  registrarAccion('distribuir-paso-atras',     _pasoDistribucionAtras);
   registrarAccion('confirmar-distribucion',    _confirmarDistribucion);
   registrarAccion('deshacer-distribucion',     _deshacerDistribucion);
 
@@ -1040,6 +1138,9 @@ export function initTesoreria() {
     if (t.dataset.action === 'ajustar-distribucion-personalizada') {
       _actualizarSumaDistribucionPersonalizada();
     } else if (t.dataset.action === 'recalcular-distribucion') {
+      // R3: una fila editada a mano deja de seguir la sugerencia automática
+      // (solo la usa la fila del fondo, ver _actualizarSugerenciasRemanente).
+      if (t.classList.contains('distribuir__monto')) t.dataset.editado = '1';
       _recalcularDistribucion();
     }
   });

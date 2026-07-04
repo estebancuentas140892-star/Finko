@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (fix(tesoreria): tope coordinado entre cuota del checklist y abono extra, BUG-009)
+> Última actualización: 2026-07-03 (feat(tesoreria): MC.7d completo, asistente paginado + ahorro sobre el remanente real)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 1875/1875 verdes |
-| Tests E2E | 107/107 verde. Suites: `smoke` 71 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
+| Tests unitarios + integración | 1883/1883 verdes |
+| Tests E2E | 109/109 verde. Suites: `smoke` 73 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `navegacion-render` 6 tests, `install-prompt` 6 tests. |
 | Schema version (localStorage) | v20 |
 | Lighthouse Performance | 99 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,24 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(tesoreria): MC.7d completo, asistente paginado + ahorro sobre el remanente real (R3) · 2026-07-03
+
+Cierra la tarjeta MC.7d (las dos partes pendientes tras el slice 1). "Distribuir mi ingreso" es ahora un **asistente paginado** de hasta 3 pasos (Necesidades → Ahorro, deudas e inversiones → Estilo de vida): navegación Atrás/Siguiente inline, indicador "Paso X de N" con `role="status"`, y el botón "Distribuir" solo en el último paso (confirmación única, R4). Solo se crean los pasos con contenido; el monto, el indicador y el resumen en vivo quedan fuera de la paginación. **R3:** nuevo helper puro `presupuestosSobreRemanente` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): la sugerencia de ahorro se calcula sobre el remanente real (monto menos Necesidades marcadas), repartido en la proporción del split y topado a la sugerencia teórica (marcar menos Necesidades no infla el ahorro: lo no marcado sigue comprometido). La fila del fondo absorbe en vivo el excedente (`autoExcedente`/`data-dist-auto`) hasta que el usuario la edita a mano (`data-editado`).
+
+Verificado con 8 unit nuevos (`presupuestosSobreRemanente`) + 2 E2E nuevos en Chromium real (navegación del asistente; R3 en vivo con edición manual respetada); 8 E2E existentes adaptados al shell (helper `avanzarDistribuirHasta`); verificación visual en el preview (3 pasos, desktop y móvil). 1875/1875 → 1883/1883 unit; 107/107 → 109/109 E2E. Lint limpio. SW v269 → v270. **MC.7e (Paso 3: reparto entre cuentas) queda desbloqueada.**
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Nuevo `presupuestosSobreRemanente`; `construirDesgloseAhorroPorObjetivo` expone `autoExcedente`. |
+| `modules/dominio/tesoreria/view.js` | `_renderPanelDistribuir` reescrito como shell paginado; presupuesto inicial sobre el remanente. |
+| `modules/dominio/tesoreria/index.js` | Navegación por pasos; `_actualizarSugerenciasRemanente` (R3); flag `data-editado`. |
+| `styles/components/forms.css` | Indicador de paso + barra de navegación. |
+| `tests/unit/tesoreria.test.js` | Suite `presupuestosSobreRemanente` (8 tests); shapes con `autoExcedente`. |
+| `tests/e2e/smoke.test.js` | Helper `avanzarDistribuirHasta`; suite "asistente paginado (MC.7d)" (2 tests); 8 tests adaptados. |
+| `service-worker.js` | v269 → v270. |
+
+---
 
 ### fix(tesoreria): tope coordinado entre cuota del checklist y abono extra (BUG-009) · 2026-07-03
 
@@ -109,23 +127,7 @@ Verificado con 6 tests unitarios nuevos (4 de migración, 2 de integración) + s
 
 ---
 
-### fix(tesoreria): el checklist de Necesidades no vuelve a pagar lo ya pagado ni sobrepaga deudas (BUG-003, BUG-004) · 2026-07-03
-
-Corrige los dos bugs de prioridad alta de la revisión exhaustiva de Mis cuentas del mismo día (entrada siguiente en esta lista). **BUG-003:** un checkbox `checked disabled` (fila "Ya pagado" del checklist) sigue reportando `.checked === true`; `_leerNecesidadesMarcadas()` filtraba solo por eso, así que confirmar la distribución con una fila ya pagada presente la volvía a pagar (segundo gasto, segundo descuento de cuenta). Fix: el filtro exige además `!chk.disabled`. **BUG-004:** el checklist ofrecía y registraba la cuota completa de una deuda sin toparla contra su saldo pendiente, y no excluía deudas ya saldadas (`saldoTotal <= 0`). Fix: `monto = Math.min(cuotaMensual, saldoTotal)` y el filtro de entrada exige `saldoTotal > 0`, mismo criterio que ya usan las filas de "Abonar extra a deudas" del mismo panel.
-
-Verificado con 4 tests unitarios nuevos (tope de cuota activo/inactivo, exclusión de deuda saldada, exclusión de saldo negativo) más 2 E2E en Chromium real que reproducen los escenarios exactos de los bugs. Verificación adicional en vivo en el preview interactivo (cargó sin problemas esta vez): confirmé la distribución con las tres condiciones a la vez (fijo ya pagado + deuda con cuota mayor al saldo + deuda saldada) y el saldo final, el conteo de gastos y el saldo de la deuda coincidieron con lo esperado. 1857/1857 → 1861/1861 unit; 101/101 → 103/103 E2E. Lint limpio. SW v264 → v265.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/index.js` | `_leerNecesidadesMarcadas()` agrega `&& !chk.disabled` al filtro. |
-| `modules/dominio/tesoreria/logic.js` | `construirDesgloseNecesidades()` topa el monto de deuda a `saldoTotal` y excluye deudas saldadas. |
-| `tests/unit/tesoreria.test.js` | `compDeudaBase()` gana `saldoTotal` por defecto; 4 tests nuevos. |
-| `tests/e2e/smoke.test.js` | 2 tests nuevos: BUG-003 y BUG-004. |
-| `service-worker.js` | v264 → v265. |
-
----
-
-> Para tareas anteriores (feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

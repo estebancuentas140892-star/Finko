@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.7d completo, asistente paginado + ahorro sobre el remanente real (R3) · 2026-07-03
+
+Cierra la tarjeta MC.7d del tablero (las dos partes que quedaban tras el slice 1 del 2026-07-03). El panel "Distribuir mi ingreso" ahora es un **asistente paginado** de hasta 3 pasos (Necesidades → Ahorro, deudas e inversiones → Estilo de vida) con navegación Atrás/Siguiente inline, indicador "Paso X de N" (`role="status"`, anuncia el cambio a lectores de pantalla) y **confirmación única al final**: el botón "Distribuir" solo existe en el último paso. Solo se crean los pasos con contenido (sin Necesidades el asistente arranca en las asignaciones); el monto a distribuir, el indicador y el resumen en vivo quedan fuera de la paginación, visibles siempre. Al abrir, el asistente siempre arranca en el primer paso; si el botón con foco se oculta al navegar, el foco pasa al de navegación visible.
+
+**R3 (ADR 018 revisión 2026-07-02):** el Paso 2 ya no sugiere el ahorro como % teórico del split total. Nuevo helper puro `presupuestosSobreRemanente(monto, necesidadesMarcadas, ahorroPct, estiloVidaPct)` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js): reparte el **remanente real** (monto menos Necesidades marcadas) entre Ahorro y Estilo de vida conservando la proporción del split, con un tope en la sugerencia teórica de cada grupo (marcar menos Necesidades no infla el ahorro: lo no marcado sigue comprometido y se paga después por los flujos de siempre). La fila del fondo de emergencia absorbe en vivo el excedente de ese presupuesto tras los aportes marcados a metas/apartados (nuevo campo `autoExcedente` en `construirDesgloseAhorroPorObjetivo`, `data-dist-auto` en la vista), hasta que el usuario la edite a mano (`data-editado`, se respeta su valor) o la excluya del plan. El hint de sugerencia y la fila informativa de Estilo de vida también se recalculan en vivo al cambiar marcas o monto.
+
+Verificado con 8 tests unitarios nuevos de `presupuestosSobreRemanente` (anclaje al split cuando lo marcado iguala su % teórico; encogimiento proporcional con Necesidades altas; tope teórico al marcar menos; remanente 0; sin fuga por redondeo; splits con 0% en un grupo; entradas no numéricas) y 2 E2E nuevos en Chromium real (navegación completa del asistente con visibilidad de botones por paso; R3 en vivo: desmarcar una Necesidad de 2,7M sube la sugerencia del fondo de 120.000 a 600.000 y editarlo a mano lo saca del modo automático). Los 8 E2E existentes del panel se adaptaron al shell (helper `avanzarDistribuirHasta`). Verificación visual adicional en el preview (desktop y móvil): los 3 pasos, la navegación y los recálculos en vivo. 1875/1875 → 1883/1883 unit; 107/107 → 109/109 E2E. Lint limpio. SW v269 → v270.
+
+Con MC.7d cerrada, **MC.7e (Paso 3: reparto de Estilo de vida entre cuentas) queda desbloqueada**.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic.js` | Nuevo helper puro `presupuestosSobreRemanente`; `construirDesgloseAhorroPorObjetivo` expone `autoExcedente` en la fila del fondo. |
+| `modules/dominio/tesoreria/view.js` | `_renderPanelDistribuir` reescrito como shell paginado (pasos dinámicos, indicador, nav Atrás/Siguiente, Distribuir al final); presupuesto inicial sobre el remanente con el checklist por defecto; hint y fila de Estilo de vida con spans actualizables. |
+| `modules/dominio/tesoreria/index.js` | Navegación del asistente (`_irAPasoDistribucion`, acciones `distribuir-paso-siguiente`/`atras`); `_actualizarSugerenciasRemanente` (R3) invocada desde `_recalcularDistribucion`; flag `data-editado` al editar una fila a mano. |
+| `styles/components/forms.css` | Estilos del indicador de paso y la barra de navegación del asistente. |
+| `tests/unit/tesoreria.test.js` | Suite nueva `presupuestosSobreRemanente` (8 tests); shapes del fondo con `autoExcedente`. |
+| `tests/e2e/smoke.test.js` | Helper `avanzarDistribuirHasta`; suite nueva "asistente paginado (MC.7d)" (2 tests); 8 tests existentes adaptados al shell. |
+| `service-worker.js` | v269 → v270. |
+
+---
+
 ### fix(tesoreria): tope coordinado entre cuota del checklist y abono extra (BUG-009) · 2026-07-03
 
 Cierra el último bug pendiente de la revisión exhaustiva de Mis cuentas, implementando el diseño decidido con el usuario el mismo día (entrada anterior). Una deuda con `cuotaMensual > 0` y saldo pendiente aparece a la vez en el checklist de Necesidades del panel "Distribuir mi ingreso" (su cuota, marcada por defecto) y en "Abonar extra a deudas" (input libre); si el usuario marcaba ambos, la cuenta se debitaba `cuota + extra` mientras la deuda solo podía bajar hasta 0, sobrepagando.

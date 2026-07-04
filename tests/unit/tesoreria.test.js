@@ -21,6 +21,7 @@ import {
   calcularAporteMensualObjetivos,
   construirDesgloseAhorroPorObjetivo,
   construirDesgloseNecesidades,
+  presupuestosSobreRemanente,
   calcularGastosFijosMensuales,
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
@@ -1937,7 +1938,7 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     const aporteMeta = calcularAporteMensualObjetivos(metas, [], hoy);
     const fondo = { activo: true, completado: false };
     const filas = construirDesgloseAhorroPorObjetivo({ metas, fondo, budgetAhorro: 1_000_000, hoy });
-    expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta, sinFecha: false });
+    expect(filas[0]).toEqual({ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 1_000_000 - aporteMeta, sinFecha: false, autoExcedente: true });
   });
 
   it('el fondo va primero en el orden (fondo, metas, apartados)', () => {
@@ -1948,10 +1949,10 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     expect(filas.map(f => f.tipo)).toEqual(['fondo', 'meta', 'apartado']);
   });
 
-  it('el fondo completo siempre queda en 0, aunque haya excedente', () => {
+  it('el fondo completo siempre queda en 0, aunque haya excedente, y no sigue el excedente en vivo', () => {
     const fondo = { activo: true, completado: true };
     const filas = construirDesgloseAhorroPorObjetivo({ fondo, budgetAhorro: 1_000_000, hoy });
-    expect(filas).toEqual([{ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 0, sinFecha: false }]);
+    expect(filas).toEqual([{ tipo: 'fondo', id: null, nombre: 'Fondo de emergencia', monto: 0, sinFecha: false, autoExcedente: false }]);
   });
 
   it('el fondo inactivo no aparece en el desglose', () => {
@@ -1986,6 +1987,56 @@ describe('construirDesgloseAhorroPorObjetivo()', () => {
     const filas = construirDesgloseAhorroPorObjetivo({ metas, apartados, fondo, budgetAhorro: 800_000, hoy });
     expect(filas.filter(f => f.tipo !== 'fondo').every(f => f.monto === 0)).toBe(true);
     expect(filas.find(f => f.tipo === 'fondo').monto).toBe(800_000);
+  });
+});
+
+// ── presupuestosSobreRemanente() (MC.7d, ADR 018 revisión R3) ─────
+describe('presupuestosSobreRemanente()', () => {
+  it('con las Necesidades marcadas iguales a su % teórico devuelve los presupuestos del split', () => {
+    // 50/30/20 sobre 3M: Necesidades teóricas 1.5M; ahorro 600K, estilo de vida 900K.
+    expect(presupuestosSobreRemanente(3_000_000, 1_500_000, 20, 30))
+      .toEqual({ remanente: 1_500_000, ahorro: 600_000, estiloVida: 900_000 });
+  });
+
+  it('Necesidades altas encogen ambos grupos en proporción al split (R3)', () => {
+    // Remanente 300K con proporción ahorro:estilo de vida = 20:30.
+    expect(presupuestosSobreRemanente(3_000_000, 2_700_000, 20, 30))
+      .toEqual({ remanente: 300_000, ahorro: 120_000, estiloVida: 180_000 });
+  });
+
+  it('marcar menos Necesidades no infla el ahorro: tope en el teórico del split', () => {
+    // Nada marcado: el remanente es todo el cobro, pero lo no marcado sigue
+    // comprometido; el ahorro se queda en su 20% teórico.
+    expect(presupuestosSobreRemanente(3_000_000, 0, 20, 30))
+      .toEqual({ remanente: 3_000_000, ahorro: 600_000, estiloVida: 900_000 });
+  });
+
+  it('Necesidades que consumen todo el cobro (o más) dejan ambos presupuestos en 0', () => {
+    expect(presupuestosSobreRemanente(3_000_000, 3_000_000, 20, 30))
+      .toEqual({ remanente: 0, ahorro: 0, estiloVida: 0 });
+    expect(presupuestosSobreRemanente(3_000_000, 4_000_000, 20, 30))
+      .toEqual({ remanente: 0, ahorro: 0, estiloVida: 0 });
+  });
+
+  it('ahorro + estilo de vida nunca superan el remanente (sin fuga por redondeo)', () => {
+    const r = presupuestosSobreRemanente(1_000_001, 500_000, 33, 33);
+    expect(r.ahorro + r.estiloVida).toBeLessThanOrEqual(r.remanente);
+  });
+
+  it('con estilo de vida 0% el ahorro puede tomar todo el remanente, hasta su teórico', () => {
+    expect(presupuestosSobreRemanente(1_000_000, 800_000, 20, 0))
+      .toEqual({ remanente: 200_000, ahorro: 200_000, estiloVida: 0 });
+  });
+
+  it('con ahorro 0% todo el presupuesto flexible es estilo de vida', () => {
+    expect(presupuestosSobreRemanente(1_000_000, 400_000, 0, 30))
+      .toEqual({ remanente: 600_000, ahorro: 0, estiloVida: 300_000 });
+  });
+
+  it('monto no numérico, 0 o negativo devuelve todo en 0', () => {
+    expect(presupuestosSobreRemanente(NaN, 0, 20, 30)).toEqual({ remanente: 0, ahorro: 0, estiloVida: 0 });
+    expect(presupuestosSobreRemanente(0, 0, 20, 30)).toEqual({ remanente: 0, ahorro: 0, estiloVida: 0 });
+    expect(presupuestosSobreRemanente(-5, 0, 20, 30)).toEqual({ remanente: 0, ahorro: 0, estiloVida: 0 });
   });
 });
 

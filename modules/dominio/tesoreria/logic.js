@@ -883,9 +883,12 @@ export function calcularAporteMensualObjetivos(metas = [], apartados = [], hoy =
  *   budgetAhorro?: number,
  *   hoy?:         Date,
  * }} [args]
- * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number, sinFecha:boolean}>}
+ * @returns {Array<{tipo:'fondo'|'meta'|'apartado', id:string|null, nombre:string, monto:number, sinFecha:boolean, autoExcedente?:boolean}>}
  *   Fondo primero (si activo), luego metas, luego apartados.
  *   `sinFecha` siempre es `false` para la fila del fondo (no aplica).
+ *   `autoExcedente` solo existe en la fila del fondo: `true` cuando está
+ *   incompleto, es decir, cuando su sugerencia es el excedente del presupuesto
+ *   y debe re-absorberlo en vivo si el presupuesto cambia (R3, MC.7d).
  */
 export function construirDesgloseAhorroPorObjetivo({
   metas = [], apartados = [], fondo = null, budgetAhorro = 0, hoy = new Date(),
@@ -918,11 +921,53 @@ export function construirDesgloseAhorroPorObjetivo({
       tipo: 'fondo', id: null, nombre: 'Fondo de emergencia',
       monto: fondo.completado ? 0 : excedente,
       sinFecha: false,
+      autoExcedente: fondo.completado !== true,
     });
   }
   filas.push(...filasMetas, ...filasApartados);
 
   return filas;
+}
+
+/**
+ * Presupuestos de Ahorro y Estilo de vida sobre el remanente real del cobro
+ * (MC.7d, ADR 018 revisión 2026-07-02, R3): el asistente sugiere sus aportes
+ * de ahorro sobre lo que queda del monto a distribuir tras las Necesidades
+ * marcadas en el Paso 1, no sobre el porcentaje teórico del split completo.
+ *
+ * Reglas:
+ * - El remanente se reparte entre Ahorro y Estilo de vida conservando la
+ *   proporción del split (`ahorroPct : estiloVidaPct`): si las Necesidades
+ *   marcadas pesan más que su porcentaje teórico, ambos grupos se encogen en
+ *   proporción en vez de sugerir dinero que ya no queda.
+ * - Ningún grupo supera su sugerencia teórica (`pct% × monto`): marcar menos
+ *   Necesidades no infla el ahorro sugerido, porque lo no marcado sigue
+ *   comprometido (se paga después desde Calendario o Deudas, no es excedente).
+ * - `estiloVida` es el resto del remanente tras el ahorro (topado a su
+ *   teórico), así `ahorro + estiloVida` nunca supera el remanente.
+ *
+ * Pura: no lee `S` ni el DOM.
+ *
+ * @param {number} montoIngreso Monto a distribuir en este cobro.
+ * @param {number} necesidadesMarcadas Suma de las Necesidades marcadas en el Paso 1.
+ * @param {number} ahorroPct % del split para Ahorro (0-100).
+ * @param {number} estiloVidaPct % del split para Estilo de vida (0-100).
+ * @returns {{remanente:number, ahorro:number, estiloVida:number}}
+ */
+export function presupuestosSobreRemanente(montoIngreso, necesidadesMarcadas, ahorroPct, estiloVidaPct) {
+  const monto = Number(montoIngreso) || 0;
+  const nec   = Math.max(0, Number(necesidadesMarcadas) || 0);
+  const a     = Math.max(0, Number(ahorroPct) || 0);
+  const e     = Math.max(0, Number(estiloVidaPct) || 0);
+
+  const remanente = Math.max(0, monto - nec);
+  if (monto <= 0 || remanente <= 0) return { remanente: 0, ahorro: 0, estiloVida: 0 };
+
+  const ahorro = a > 0
+    ? Math.min(Math.round(monto * a / 100), Math.round(remanente * a / (a + e)))
+    : 0;
+  const estiloVida = Math.min(Math.round(monto * e / 100), remanente - ahorro);
+  return { remanente, ahorro, estiloVida };
 }
 
 /**

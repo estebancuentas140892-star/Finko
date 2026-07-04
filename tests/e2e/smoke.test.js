@@ -63,6 +63,23 @@ function hoyLocal() {
 }
 
 /**
+ * Avanza el asistente "Distribuir mi ingreso" (MC.7d, shell paginado) hasta
+ * que `selector` sea visible, o hasta el último paso si no se pasa selector
+ * (donde vive el botón "Distribuir"). El panel debe estar ya abierto.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string|null} [selector] - selector CSS que se busca al avanzar.
+ */
+async function avanzarDistribuirHasta(page, selector = null) {
+  const siguiente = page.locator('[data-action="distribuir-paso-siguiente"]');
+  for (let i = 0; i < 5; i++) {
+    if (selector && await page.locator(selector).first().isVisible()) return;
+    if (!(await siguiente.isVisible())) return;
+    await siguiente.click();
+  }
+}
+
+/**
  * Crea una cuenta de tipo Efectivo con el saldo indicado.
  *
  * El form de cuenta fue rediseñado en v8.7-v8.9:
@@ -1672,6 +1689,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page); // "Distribuir" vive en el último paso (MC.7d)
     await page.click('[data-action="confirmar-distribucion"]');
 
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
@@ -1702,6 +1720,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
+    await avanzarDistribuirHasta(page); // "Distribuir" vive en el último paso (MC.7d)
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1741,6 +1760,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     // El resumen en vivo no debe contar la fila "Ya pagado": solo cf2 (200.000).
     await expect(page.locator('#distribuir-resumen')).toContainText('200.000');
 
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1774,6 +1794,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await expect(page.locator('[data-nec-id="d1"]')).toHaveAttribute('data-nec-monto', '50000');
     await expect(page.locator('[data-nec-id="d2"]')).toHaveCount(0);
 
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1817,6 +1838,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await expect(page.locator('[data-nec-id="cm1"]')).toHaveAttribute('data-nec-monto', '15000');
 
     // Al confirmar (dispara save), la frecuencia migrada ya queda persistida.
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
     await page.waitForTimeout(400); // flush del save() debounced (ADN #5)
@@ -1851,6 +1873,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: abono extra a deudas (BUG-00
     await expect(inputExtra).toHaveCount(1);
     await inputExtra.fill('500000');
 
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1884,6 +1907,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: abono extra a deudas (BUG-00
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
     await page.locator('.distribuir__monto[data-dist-tipo="deuda"]').fill('500000');
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1922,12 +1946,15 @@ test.describe('Mis cuentas - Distribuir mi ingreso: cuota del checklist + abono 
     await expect(checklist).toHaveAttribute('data-nec-monto', '100000');
 
     // El usuario pide un extra de 300.000: más de lo que queda tras la cuota (200.000).
+    // El abono extra vive en el paso 2 del asistente (MC.7d).
+    await avanzarDistribuirHasta(page, '.distribuir__monto[data-dist-tipo="deuda"][data-dist-id="d1"]');
     const inputExtra = page.locator('.distribuir__monto[data-dist-tipo="deuda"][data-dist-id="d1"]');
     await inputExtra.fill('300000');
 
     // El resumen en vivo ya refleja el tope coordinado: asignado = 100.000 (cuota) + 200.000 (extra topado), no 400.000.
     await expect(page.locator('#distribuir-resumen')).toContainText('Asignado: $300.000');
 
+    await avanzarDistribuirHasta(page);
     await page.click('[data-action="confirmar-distribucion"]');
     await expect(page.locator('#snackbar-distribucion')).toBeVisible({ timeout: 3_000 });
 
@@ -1942,5 +1969,114 @@ test.describe('Mis cuentas - Distribuir mi ingreso: cuota del checklist + abono 
     expect(totalAbonado).toBe(300_000);
     // La cuenta se debita exactamente el saldo pagado, no cuota + extra sin topar (400.000).
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(1_000_000 + 3_000_000 - 300_000);
+  });
+});
+
+// ── Mis cuentas: asistente paginado + presupuesto sobre el remanente (MC.7d, ADR 018 R3) ──
+
+test.describe('Mis cuentas - Distribuir mi ingreso: asistente paginado (MC.7d)', () => {
+  test('el panel navega Necesidades → Ahorro → Estilo de vida con Atrás/Siguiente y confirma solo al final', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      st.config = { presetDistribucion: '50-30-20' };
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 800_000, activo: true, categoria: null },
+      ];
+      st.ahorro = {
+        fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
+        aportes: [], compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const indicador = page.locator('[data-dist-paso-indicador]');
+    const atras     = page.locator('[data-action="distribuir-paso-atras"]');
+    const siguiente = page.locator('[data-action="distribuir-paso-siguiente"]');
+    const confirmar = page.locator('[data-action="confirmar-distribucion"]');
+
+    // Paso 1: Necesidades visible, los demás ocultos; sin Atrás ni Distribuir.
+    await expect(indicador).toHaveText('Paso 1 de 3: Necesidades');
+    await expect(page.locator('[data-dist-paso="0"]')).toBeVisible();
+    await expect(page.locator('[data-dist-paso="1"]')).toBeHidden();
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeVisible();
+    await expect(atras).toBeHidden();
+    await expect(siguiente).toBeVisible();
+    await expect(confirmar).toBeHidden();
+
+    // Paso 2: asignaciones (fondo) visible, checklist oculta, aparece Atrás.
+    await siguiente.click();
+    await expect(indicador).toHaveText('Paso 2 de 3: Ahorro, deudas e inversiones');
+    await expect(page.locator('.distribuir__monto[data-dist-tipo="fondo"]')).toBeVisible();
+    await expect(page.locator('[data-nec-id="cf1"]')).toBeHidden();
+    await expect(atras).toBeVisible();
+
+    // Paso 3 (último): Estilo de vida + Distribuir; Siguiente desaparece.
+    await siguiente.click();
+    await expect(indicador).toHaveText('Paso 3 de 3: Estilo de vida');
+    await expect(page.locator('[data-dist-info="estiloVida"]')).toBeVisible();
+    await expect(confirmar).toBeVisible();
+    await expect(siguiente).toBeHidden();
+
+    // Atrás regresa al paso 2 y Distribuir vuelve a ocultarse.
+    await atras.click();
+    await expect(indicador).toHaveText('Paso 2 de 3: Ahorro, deudas e inversiones');
+    await expect(confirmar).toBeHidden();
+  });
+
+  test('R3: la sugerencia de ahorro se recalcula sobre el remanente real y respeta la edición manual del fondo', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 1_000_000, activa: true }];
+      // Preset 50-30-20: teórico de ahorro = 600.000. El arriendo de 2.700.000
+      // (marcado por defecto) deja un remanente de 300.000, que se reparte
+      // 20:30 entre Ahorro y Estilo de vida: 120.000 y 180.000.
+      st.config = { presetDistribucion: '50-30-20' };
+      st.compromisos = [
+        { id: 'cf1', descripcion: 'Arriendo', tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, monto: 2_700_000, activo: true, categoria: null },
+      ];
+      st.ahorro = {
+        fondoEmergencia: { activo: true, completado: false, metaMeses: 3, montoActual: 0 },
+        aportes: [], compromisoMensual: 0,
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="toggle-distribuir-ingreso"]');
+
+    const fondo = page.locator('.distribuir__monto[data-dist-tipo="fondo"]');
+    const hint  = page.locator('[data-dist-sugerencia-ahorro]');
+    const ev    = page.locator('[data-dist-info="estiloVida"]');
+
+    // Con el arriendo marcado, la sugerencia sale del remanente (no del 20% teórico).
+    await expect(fondo).toHaveValue('120000');
+    await expect(hint).toHaveText('$120.000');
+    await expect(ev).toHaveText('$180.000');
+
+    // Desmarcar el arriendo libera remanente: la sugerencia sube en vivo,
+    // topada al teórico del split (600.000, no el 40% del remanente).
+    await page.locator('[data-nec-id="cf1"]').uncheck();
+    await expect(fondo).toHaveValue('600000');
+    await expect(hint).toHaveText('$600.000');
+    await expect(ev).toHaveText('$900.000');
+
+    // Editar el fondo a mano lo saca del modo automático: re-marcar el
+    // arriendo actualiza el hint pero ya no pisa el valor del usuario.
+    await avanzarDistribuirHasta(page, '.distribuir__monto[data-dist-tipo="fondo"]');
+    await fondo.fill('50000');
+    await page.locator('[data-action="distribuir-paso-atras"]').click();
+    await page.locator('[data-nec-id="cf1"]').check();
+    await expect(hint).toHaveText('$120.000');
+    await expect(fondo).toHaveValue('50000');
   });
 });
