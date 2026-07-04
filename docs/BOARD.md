@@ -348,13 +348,13 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### EP.7 (mecanismo + Apartados listos, EP.7a cerrado 2026-07-03) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
+#### EP.7 (EP.7a + EP.7b cerrados, quedan EP.7c y EP.7d) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
 - Prioridad  : alta
-- Estado     : pendiente (quedan EP.7b, EP.7c, EP.7d)
-- Objetivo   : el banner de propósito pasa a ser **la descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**. El mecanismo ya está listo (EP.7a): `htmlBannerProposito`/`renderBannerProposito` reciben `tieneDatos` en vez de leer `S.config`; se retiró el colapso manual, las data-actions y el bloque "Mensajes de ayuda" de Ajustes. Falta aplicar el patrón (subtítulo fuera + empty recortado + `tieneDatos` real) a los 10 dominios restantes; hoy siguen llamando `renderBannerProposito(seccion)` sin `tieneDatos`, así que su banner queda siempre visible (sin colapso) hasta su propio slice.
-- Secciones  : Transversal (Gastos, Deudas, Calendario, Límites de gasto, Metas, Ahorro, Inversión, Mis cuentas, Análisis, Me deben)
+- Estado     : pendiente (quedan EP.7c y EP.7d)
+- Objetivo   : el banner de propósito pasa a ser **la descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**. Ya aplicado a Apartados, Gastos, Deudas, Calendario y Límites de gasto (`tieneDatos` real, subtítulos duplicados fuera, empty states recortados). Falta aplicar el mismo patrón a Metas, Ahorro, Inversión (EP.7c) y a Mis cuentas, Análisis, Me deben (EP.7d); esos 6 dominios siguen llamando `renderBannerProposito(seccion)` sin `tieneDatos`, así que su banner queda siempre visible (sin colapso) hasta su propio slice.
+- Secciones  : Transversal (Metas, Ahorro, Inversión, Mis cuentas, Análisis, Me deben)
 - Archivos   : `index.html` (subtítulos), empty states de cada `view.js`, llamadas a `renderBannerProposito` en cada `index.js`; detalle por sección en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) sección "Revisión 2026-07-03"
-- Depende de : nada. Orden: EP.7b (Gastos, Deudas, Calendario, Límites) → EP.7c (Metas, Ahorro, Inversión) → EP.7d (Mis cuentas, Análisis, Me deben)
+- Depende de : nada. Orden: EP.7c (Metas, Ahorro, Inversión) → EP.7d (Mis cuentas, Análisis, Me deben)
 - Modelo     : Sonnet 5 - Medio por slice
 
 #### A11Y.5 (verificación) - Pase axe sobre formularios dinámicos

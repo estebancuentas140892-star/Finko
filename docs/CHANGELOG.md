@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites · 2026-07-03
+
+Aplica el patrón de EP.7a (mecanismo `tieneDatos` ya listo) a los 4 dominios siguientes del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md):
+
+- **Gastos:** empty state recortado de un párrafo a una línea ("Anota tu primera compra o pago."); `tieneDatos = S.gastos.length > 0` (histórico completo, no solo el mes en curso).
+- **Deudas:** empty state recortado; `tieneDatos` reusa el helper existente `esDeuda(tipo)` de `compromisos/logic.js` sobre `S.compromisos`.
+- **Calendario:** sin subtítulo ni empty state que barrer, solo el wiring de `tieneDatos = S.compromisos.length > 0` (mismos compromisos que Deudas: un fijo o una deuda ya generan eventos del mes).
+- **Límites de gasto:** el `section__subtitle` "Sigue tu plan del mes por grupo..." se quita de `index.html`; la nota al pie del resumen ("Mis cuentas planifica...; Límites de gasto vigila...") se retira por repetir el banner casi literal; el copy del banner se reescribe a la estructura de tres tiempos del ADR conservando la relación con Mis cuentas; `tieneDatos` = ingresos registrados (`S.ingresos`) o algún tope por categoría (`S.presupuestos`).
+
+El E2E "MC.5e: la nota de la sección menciona la complementariedad con Mis cuentas" se actualiza: ahora verifica que la nota ya no existe (el mensaje lo cubre el banner, visible solo antes de tener datos).
+
+Verificación: se intentó verificar en el preview, pero el navegador arrastró una caché HTTP obstinada del entorno (síntoma ya documentado en memoria del proyecto: `python -m http.server` no envía `Cache-Control`, así que Chrome sirve módulos stale incluso tras recargar); se confirmó el contenido real servido vía `curl` directo y la verificación conductual se apoyó en la suite E2E real (Playwright/Chromium), que sí corre en un contexto limpio. 1885/1885 unit verdes (sin cambios de lógica pura); 117/117 E2E (1 test actualizado, sin regresiones). Lint limpio. SW v273 → v274.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js`, `modules/dominio/gastos/index.js` | Empty state recortado; `tieneDatos` real en los 3 puntos de render. |
+| `modules/dominio/compromisos/views/lista.js`, `modules/dominio/compromisos/index.js` | Empty state recortado; `tieneDatos` vía `esDeuda`. |
+| `modules/dominio/agenda/index.js` | `tieneDatos` real en los 3 puntos de render. |
+| `index.html`, `modules/dominio/presupuesto/view.js`, `modules/dominio/presupuesto/index.js`, `modules/ui/proposito.js` | Subtítulo y nota fuera; copy del banner reescrito; `tieneDatos` real. |
+| `tests/e2e/smoke.test.js` | Test "MC.5e" actualizado a la ausencia de la nota. |
+| `service-worker.js` | v273 → v274. |
+
+---
+
 ### feat(ui): EP.7a, banner de propósito con divulgación progresiva · 2026-07-03
 
 Cierra EP.7a, el slice piloto de la revisión del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). El banner de propósito pasa a ser la **descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**: `htmlBannerProposito(seccion, tieneDatos)` y `renderBannerProposito(seccion, tieneDatos)` reciben ahora si la sección tiene datos, en vez de leer `S.config.propositoColapsado`. Se retira el mecanismo de colapso manual completo: la clave `S.config.propositoColapsado` deja de leerse (queda huérfana e inofensiva en `localStorage` de usuarios existentes, sin migración), las data-actions `colapsar-proposito`/`expandir-proposito` se eliminan de `actions.js`, y el bloque "Mensajes de ayuda" de Ajustes (`config/view.js` `_renderPropositos`, `config/index.js` acción `reactivar-propositos`) se retira por completo.

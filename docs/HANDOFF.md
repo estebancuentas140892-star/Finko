@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-03 (feat(ui): EP.7a, banner de propósito con divulgación progresiva)
+> Última actualización: 2026-07-03 (feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -39,6 +39,20 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(ui): EP.7b, divulgación progresiva en Gastos, Deudas, Calendario y Límites · 2026-07-03
+
+Aplica el patrón de EP.7a (mecanismo `tieneDatos` ya listo) a 4 dominios más: Gastos y Deudas con empty state recortado; Calendario solo con el wiring de `tieneDatos`; Límites de gasto con el subtítulo y la nota al pie ("Mis cuentas planifica...; Límites vigila...") retirados y el copy del banner reescrito a la estructura de tres tiempos. `tieneDatos` de Deudas reusa el helper `esDeuda()` ya existente. El E2E que verificaba la nota retirada se actualizó para confirmar su ausencia.
+
+1885/1885 unit verdes; 117/117 E2E (1 actualizado). El preview arrastró caché stale del navegador (síntoma ya documentado); se verificó el contenido real servido vía `curl` y la conducta vía la suite E2E real. SW v273 → v274.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/*`, `modules/dominio/compromisos/*`, `modules/dominio/agenda/index.js` | `tieneDatos` real; empty states recortados. |
+| `index.html`, `modules/dominio/presupuesto/*`, `modules/ui/proposito.js` | Subtítulo y nota fuera; copy del banner de Límites reescrito. |
+| `tests/e2e/smoke.test.js` | Test "MC.5e" actualizado. |
+
+---
 
 ### feat(ui): EP.7a, banner de propósito con divulgación progresiva · 2026-07-03
 
@@ -94,25 +108,7 @@ Verificado con 3 E2E nuevos (foco al avanzar/retroceder y preservado en apertura
 
 ---
 
-### feat(tesoreria): MC.7e, Paso 3 reparte Estilo de vida entre cuentas · 2026-07-03
-
-Cierra MC.7e (ADR 018 decisión 4), última tarjeta de prioridad alta de la épica MC.7. Con 2+ cuentas activas, el paso final "Estilo de vida" del asistente gana un reparto opcional: filas toggle+monto por cuenta (mismo patrón del resto del panel), **sin marcar nada por defecto** (el remanente completo sigue en la cuenta de origen salvo que el usuario mueva algo explícitamente). Diseño así de conservador porque la cuenta de origen solo se resuelve al confirmar (R2 del ADR); una fila que termine apuntando a la propia cuenta de origen es un no-op. Con una sola cuenta el paso sigue siendo informativo.
-
-Nuevo helper puro `construirFilasTransferenciaCuentas` en [tesoreria/logic.js](../modules/dominio/tesoreria/logic.js). En [tesoreria/index.js](../modules/dominio/tesoreria/index.js): lectura/validación/aplicación separadas de las transferencias (excluidas del "asignado" del ingreso, ya que son redistribuciones internas); "Deshacer" las revierte gratis porque `cuentas` ya estaba en el snapshot. Al verificar se corrigieron dos guards: "Distribuir" exigía `asignado > 0` y bloqueaba una distribución que solo transfiere entre cuentas; y el guard de contenido vacío del panel no consideraba que 2+ cuentas ya ameritan mostrar el asistente.
-
-Verificado con 4 unit nuevos + 5 E2E nuevos (sin filas con 1 cuenta; nada marcado por defecto con 2+; bloqueo si excede el presupuesto de Estilo de vida; confirmar mueve saldo correctamente; Deshacer revierte). Verificación visual en el preview (móvil). 1883/1883 → 1887/1887 unit; 109/109 → 114/114 E2E. Lint limpio. SW v270 → v271. **La épica MC.7 solo deja pendiente el pulido opcional MC.7f.**
-
-| Archivo | Cambio |
-|---|---|
-| `modules/dominio/tesoreria/logic.js` | Nuevo `construirFilasTransferenciaCuentas`. |
-| `modules/dominio/tesoreria/view.js` | `_filaDistribuir` soporta tipo 'cuenta'; sección de transferencias en el paso final; guard de contenido vacío corregido. |
-| `modules/dominio/tesoreria/index.js` | `_leerTransferenciasCuentas`, `_validarTransferenciasCuentas`, `_aplicarTransferenciasCuentas`; guards de habilitación corregidos. |
-| `tests/unit/tesoreria.test.js`, `tests/e2e/smoke.test.js` | Tests nuevos (4 unit + 5 E2E). |
-| `service-worker.js` | v270 → v271. |
-
----
-
-> Para tareas anteriores (feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 
