@@ -1545,6 +1545,20 @@ describe('construirContextoDistribucion()', () => {
     expect(construirContextoDistribucion({ inversiones: [] }).tieneInversiones).toBe(false);
   });
 
+  it('MC.11: gastosDelMes suma solo los gastos del mes calendario actual', () => {
+    const d = new Date();
+    const mesActual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const ctx = construirContextoDistribucion({
+      gastos: [
+        { monto: 100_000, fecha: `${mesActual}-05` },
+        { monto: 50_000,  fecha: `${mesActual}-20` },
+        { monto: 999_000, fecha: '2020-01-15' }, // mes viejo: fuera
+      ],
+    });
+    expect(ctx.gastosDelMes).toBe(150_000);
+    expect(construirContextoDistribucion({}).gastosDelMes).toBe(0);
+  });
+
   it('el contexto derivado produce el mismo split que pasar los inputs a mano', () => {
     const ctx      = construirContextoDistribucion({ compromisos: [compFijoBase({ id: 'f1', monto: 1_200_000 })] });
     const derivado = sugerirDistribucionIngreso(3_000_000, ctx);
@@ -1606,6 +1620,66 @@ describe('sugerirDistribucionIngreso()', () => {
       const suma = r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct;
       expect(suma, `pctFijos=${pct}`).toBe(100);
     });
+  });
+
+  it('MC.10: con obligaciones al 92% el ahorro no queda en 0 (piso de ahorro compite con el de EV)', () => {
+    // Residuo 8% < pisoEV (10%) + pisoAhorro (5%): antes todo el margen iba a
+    // Estilo de vida y el ahorro quedaba en $0; ahora se reparte proporcional
+    // a los pisos (ahorro recibe 1/3 del margen).
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 2_760_000, // 92%
+      tieneFondoActivo: true, fondoCompleto: false, faltanteFondo: 6_000_000,
+    });
+    expect(r.split.necesidades.pct).toBe(92);
+    expect(r.split.ahorro.pct).toBeGreaterThan(0);
+    expect(r.split.estiloVida.pct).toBeGreaterThan(r.split.ahorro.pct); // EV conserva la mayor parte
+    expect(r.split.necesidades.pct + r.split.estiloVida.pct + r.split.ahorro.pct).toBe(100);
+  });
+
+  it('MC.10: el reparto proporcional nunca supera el ahorro ideal', () => {
+    // Ideal chico (objetivo con fecha de 30.000/mes) y margen corto: el ahorro
+    // se topa al ideal aunque la proporción de pisos permitiera más.
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 2_760_000, // 92%, residuo 240.000
+      aporteMensualObjetivos: 30_000,
+    });
+    expect(r.split.ahorro.monto).toBeLessThanOrEqual(31_000); // ideal + redondeo de pct
+  });
+
+  it('MC.10: el ahorro solo queda en 0 cuando de verdad no hay margen', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, { gastosFijosMensuales: 3_000_000 });
+    expect(r.split.ahorro.pct).toBe(0);
+    expect(r.split.necesidades.pct).toBe(100);
+  });
+
+  it('MC.11: gastos del mes por encima del ingreso → déficit real, ahorro 0 y alerta accionable', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 1_200_000,
+      gastosDelMes: 3_400_000, // 113% del ingreso
+    });
+    expect(r.split.ahorro.pct).toBe(0);
+    expect(r.razon).toContain('113%');
+    expect(r.razon).toContain('más de lo que entra');
+    expect(r.alertas.some(a => a.includes('Análisis') && a.includes('Calendario'))).toBe(true);
+  });
+
+  it('MC.11: con gastos del mes por debajo del ingreso no cambia nada', () => {
+    const conGastos = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 1_200_000, gastosDelMes: 1_500_000,
+    });
+    const sinGastos = sugerirDistribucionIngreso(3_000_000, {
+      gastosFijosMensuales: 1_200_000,
+    });
+    expect(conGastos.split).toEqual(sinGastos.split);
+    expect(conGastos.razon).toBe(sinGastos.razon);
+  });
+
+  it('MC.11: el déficit real no toca los presets explícitos', () => {
+    const r = sugerirDistribucionIngreso(3_000_000, {
+      presetId: '50-30-20', gastosDelMes: 4_000_000,
+    });
+    expect(r.split.necesidades.pct).toBe(50);
+    expect(r.split.ahorro.pct).toBe(20);
   });
 
   it('agrega alerta y CTA a ahorro cuando no hay fondo activo', () => {

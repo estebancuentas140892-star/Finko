@@ -1,8 +1,8 @@
 # ADR 013 - Distribución "Automático inteligente" (a la medida de los datos)
 
-**Estado:** Aceptada (diseño). Implementación pendiente por slices.
+**Estado:** Aceptada (revisada 2026-07-03: MC.10 y MC.11, ver sección Revisión)
 **Fecha:** 2026-06-29
-**Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
+**Autores:** Esteban (producto), Claude Opus 4.8 (diseño); revisión Claude Fable 5
 
 ---
 
@@ -128,3 +128,32 @@ Resultado: distribuciones distintas para realidades distintas. Gastos fijos alto
 Cada slice es verificable en la app de forma aislada. MC.6a entrega el valor central (la distribución a la medida); MC.6b elimina la duplicidad visual.
 
 > Relación con otras épicas: MC.7 (asistente guiado de 3 pasos) construye sobre este motor para **pre-asignar montos por destino**; MC.5 (límites como centro de control de los 3 grupos) puede alimentar a Automático con una clasificación categoría → grupo más fina. Ambas son ADRs aparte.
+
+---
+
+## Revisión 2026-07-03 - MC.10 y MC.11: piso de ahorro y déficit real
+
+Dos huecos del modelo de pisos detectados en uso:
+
+1. **MC.10:** con Necesidades altas (ej. 92%), el piso de Estilo de vida (10%) ganaba todo el margen y el Ahorro quedaba en $0, aunque el usuario tuviera fondo incompleto u objetivos con fecha.
+2. **MC.11:** el caso de déficit solo se disparaba cuando las obligaciones REGISTRADAS superaban el ingreso. Si el usuario gastaba más de lo que gana pero sus gastos fijos no estaban en Calendario (los registraba como gastos sueltos), el modelo mostraba una distribución "ideal" incoherente con su realidad.
+
+### Decisión A: piso de ahorro que compite con el piso de estilo de vida (MC.10)
+
+Nueva constante `_PISO_AHORRO_PCT = 5`. El reparto del residuo (`ingreso - obligaciones`) queda en 3 tramos:
+
+- **Residuo holgado** (≥ ahorro ideal + piso EV): el ahorro recibe su ideal (sin cambio).
+- **Residuo para ambos pisos** (≥ piso ahorro + piso EV): EV conserva su piso y el resto va a ahorro, topado al ideal (sin cambio: es la fórmula previa).
+- **Residuo corto** (< piso ahorro + piso EV, tramo nuevo): el residuo se reparte **proporcional a los pisos** (con 10/5, el ahorro recibe 1/3 del margen). Antes todo iba a EV y el ahorro quedaba en $0.
+
+El ahorro solo queda en $0 cuando no hay margen real (obligaciones ≥ 100%) o hay déficit real (Decisión B).
+
+### Decisión B: detección de déficit real por gastos del mes (MC.11)
+
+`construirContextoDistribucion` incorpora el slice `gastos` y deriva `gastosDelMes` (suma del mes calendario actual). En modo auto, si `gastosDelMes > ingreso`:
+
+- **Ahorro va a $0** (no se inventa un % de ahorro que no existe).
+- La `razon` dice la realidad: "tus gastos registrados ya van en el N% de tu ingreso: estás gastando más de lo que entra".
+- Alerta **accionable**: revisar gastos en Análisis, recortar Estilo de vida primero y registrar en Calendario los gastos fijos que falten (para que el plan los cuente como obligación).
+
+Los presets explícitos (50/30/20, personalizado...) no se tocan: el usuario eligió ese reparto a conciencia. Sin cambios de schema; la lógica sigue pura (el contexto se deriva de slices del estado).

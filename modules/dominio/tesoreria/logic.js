@@ -988,6 +988,7 @@ export function presupuestosSobreRemanente(montoIngreso, necesidadesMarcadas, ah
  *   apartados?:    import('../../core/state.js').Apartado[],
  *   inversiones?:  import('../../core/state.js').Inversion[],
  *   presupuestos?: import('../../core/state.js').Presupuesto[],
+ *   gastos?:       import('../../core/state.js').Gasto[],
  *   config?:       import('../../core/state.js').Config|null,
  * }} [estado]
  * @returns {Parameters<typeof sugerirDistribucionIngreso>[1]}
@@ -999,6 +1000,7 @@ export function construirContextoDistribucion({
   apartados    = [],
   inversiones  = [],
   presupuestos = [],
+  gastos       = [],
   config       = null,
 } = {}) {
   const gastosFijosMensuales = calcularGastosFijosMensuales(compromisos ?? []);
@@ -1044,12 +1046,20 @@ export function construirContextoDistribucion({
   const sumaLimites = (presupuestos ?? [])
     .reduce((sum, p) => sum + (Number(p.montoMensual) || 0), 0);
 
+  // Gastos ya registrados en el mes calendario actual (MC.11: déficit real).
+  const ahora   = new Date();
+  const prefijo = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  const gastosDelMes = (gastos ?? [])
+    .filter(g => g?.fecha?.startsWith(prefijo))
+    .reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+
   return {
     gastosFijosMensuales,
     cuotasDeudaMensuales,
     faltanteFondo,
     aporteMensualObjetivos,
     sumaLimites,
+    gastosDelMes,
     tieneDeudas,
     tieneFondoActivo,
     fondoCompleto,
@@ -1059,8 +1069,9 @@ export function construirContextoDistribucion({
   };
 }
 
-// Constantes del modelo de pisos (ADR 013, MC.6a).
+// Constantes del modelo de pisos (ADR 013, MC.6a; revisión MC.10).
 const _PISO_EV_PCT     = 10;  // % mínimo de estilo de vida (sostenibilidad)
+const _PISO_AHORRO_PCT = 5;   // % mínimo de ahorro cuando el margen es corto (MC.10)
 const _HORIZONTE_FONDO = 12;  // meses para cerrar el fondo incompleto
 const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades activas
 
@@ -1077,6 +1088,7 @@ const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades acti
  *   faltanteFondo?:           number,
  *   aporteMensualObjetivos?:  number,
  *   sumaLimites?:             number,
+ *   gastosDelMes?:            number,
  *   tieneDeudas?:             boolean,
  *   tieneFondoActivo?:        boolean,
  *   fondoCompleto?:           boolean,
@@ -1105,6 +1117,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   faltanteFondo           = 0,
   aporteMensualObjetivos  = 0,
   sumaLimites             = 0,
+  gastosDelMes            = 0,
   tieneDeudas             = false,
   tieneFondoActivo        = false,
   fondoCompleto           = false,
@@ -1177,31 +1190,64 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
         montoAhorroIdeal = Math.round(ingresoMensual * _BASE_AHORRO_PCT / 100);
       }
 
-      // Paso 3: estilo de vida residual con piso mínimo.
-      // El piso cede ante Necesidades (piso duro) pero gana sobre el ahorro extra.
-      const pisoEV = Math.round(ingresoMensual * _PISO_EV_PCT / 100);
-      const disponibleParaAhorro = Math.max(0, ingresoMensual - montoNec - pisoEV);
-      const montoAhorro = Math.max(0, Math.min(montoAhorroIdeal, disponibleParaAhorro));
+      // MC.11: déficit real. Los gastos ya registrados este mes superan el
+      // ingreso (ej. un gasto fijo que no está en Calendario): cualquier %
+      // de ahorro sería inventado. Se comunica y el ahorro va a 0.
+      const deficitReal = gastosDelMes > ingresoMensual;
+
+      // Paso 3: repartir el residuo entre Ahorro y Estilo de vida.
+      // El piso de EV cede ante Necesidades (piso duro) pero gana sobre el
+      // ahorro EXTRA; desde MC.10 el ahorro tiene su propio piso que compite:
+      // si el margen no alcanza para ambos pisos, el residuo se reparte
+      // proporcional a los pisos, y el ahorro solo queda en $0 cuando de
+      // verdad no hay margen (o hay déficit real).
+      const residuo    = ingresoMensual - montoNec;
+      const pisoEV     = Math.round(ingresoMensual * _PISO_EV_PCT / 100);
+      const pisoAhorro = Math.round(ingresoMensual * _PISO_AHORRO_PCT / 100);
+
+      let montoAhorro;
+      if (deficitReal) {
+        montoAhorro = 0;
+      } else if (residuo >= montoAhorroIdeal + pisoEV) {
+        montoAhorro = montoAhorroIdeal;
+      } else if (residuo >= pisoAhorro + pisoEV) {
+        // Alcanza para ambos pisos: EV conserva el suyo y el resto va a
+        // ahorro (sin superar su ideal).
+        montoAhorro = Math.min(montoAhorroIdeal, residuo - pisoEV);
+      } else {
+        // MC.10: ni los dos pisos caben. Reparto proporcional a los pisos
+        // (con piso EV 10% y piso ahorro 5%, el ahorro recibe 1/3 del margen).
+        montoAhorro = Math.min(
+          montoAhorroIdeal,
+          Math.round(residuo * pisoAhorro / (pisoAhorro + pisoEV)),
+        );
+      }
 
       // Paso 4: convertir a pct, residuo de redondeo en estiloVida.
       necesidadesPct = Math.min(100, Math.round(montoNec    / ingresoMensual * 100));
       ahorroInvPct   = Math.min(100 - necesidadesPct, Math.round(montoAhorro / ingresoMensual * 100));
       estiloVidaPct  = 100 - necesidadesPct - ahorroInvPct;
 
-      // Razón: refleja qué componentes influyeron.
-      const partesRazon = [];
-      if (pctObligaciones > 0) {
-        partesRazon.push(`tus obligaciones son el ${pctObligaciones}% de tu ingreso`);
+      if (deficitReal) {
+        const pctGastado = Math.round(gastosDelMes / ingresoMensual * 100);
+        razon = `Este mes tus gastos registrados ya van en el ${pctGastado}% de tu ingreso: estás gastando más de lo que entra, así que no sugerimos ahorro hasta cerrar ese hueco.`;
+        alertas.push('Gastos del mes por encima del ingreso: revisa tus gastos en Análisis y recorta primero Estilo de vida. Si un gasto fijo no está en Calendario, regístralo para que el plan lo tenga en cuenta.');
+      } else {
+        // Razón: refleja qué componentes influyeron.
+        const partesRazon = [];
+        if (pctObligaciones > 0) {
+          partesRazon.push(`tus obligaciones son el ${pctObligaciones}% de tu ingreso`);
+        }
+        if (!fondoCompleto && faltanteFondo > 0) {
+          partesRazon.push('tu fondo de emergencia aún no está completo');
+        }
+        if (aporteMensualObjetivos > 0) {
+          partesRazon.push('tienes objetivos con fecha');
+        }
+        razon = partesRazon.length > 0
+          ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
+          : 'Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
       }
-      if (!fondoCompleto && faltanteFondo > 0) {
-        partesRazon.push('tu fondo de emergencia aún no está completo');
-      }
-      if (aporteMensualObjetivos > 0) {
-        partesRazon.push('tienes objetivos con fecha');
-      }
-      razon = partesRazon.length > 0
-        ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
-        : 'Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
 
       // Alerta si las obligaciones dejan poco margen.
       if (pctObligaciones >= 80) {
