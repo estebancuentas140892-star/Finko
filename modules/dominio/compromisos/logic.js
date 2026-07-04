@@ -1033,6 +1033,9 @@ const UMBRAL_AHORRO_MATERIAL = 50_000;
  *       intereses o ≥ 1 mes) → avalancha.
  *     - Ahorro inmaterial o empate → bola de nieve (la motivación pesa más).
  *
+ * Si una sola deuda cobra intereses, la razón lo nombra: atacarla primero no
+ * "reduce" el costo de intereses, lo elimina (D.11).
+ *
  * La decisión usa `extraMensual` porque cambia el resultado: un plan inviable
  * sin extra puede volverse viable (y cambiar de recomendación) con un aporte.
  *
@@ -1102,19 +1105,31 @@ export function recomendarEstrategia(deudas, extraMensual = 0) {
     };
   }
 
+  // D.11: si una sola deuda cobra intereses, la recomendación nombra ese hecho.
+  const conInteres = deudas.filter(d => (d.tasaEA ?? 0) > 0);
+  const unicaConInteres = conInteres.length === 1 ? conInteres[0] : null;
+
   const ahorroMaterial = comp.ahorroIntereses >= UMBRAL_AHORRO_MATERIAL || comp.ahorroMeses >= 1;
   if (comp.mejor === 'avalancha' && ahorroMaterial) {
     return {
       estrategia: 'avalancha',
-      razon: 'Atacar primero la deuda con la tasa más alta te ahorra más en intereses y/o te hace terminar antes. Mira el detalle para ver cuánto.',
+      razon: unicaConInteres
+        ? `"${unicaConInteres.descripcion}" es la única de tus deudas que cobra intereses. Pagarla primero no solo reduce ese costo: lo elimina, y el resto del plan avanza sin generar intereses.`
+        : 'Atacar primero la deuda con la tasa más alta te ahorra más en intereses y/o te hace terminar antes. Mira el detalle para ver cuánto.',
       viable: true, diagnostico: null,
       ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
     };
   }
 
+  // Bola de nieve ataca primero la de menor saldo (mismo orden que la simulación).
+  const primeraBola = [...deudas].sort((a, b) => a.saldo - b.saldo)[0];
+  const bolaEliminaInteres = unicaConInteres !== null && primeraBola?.id === unicaConInteres.id;
+
   return {
     estrategia: 'bolaNieve',
-    razon: 'El ahorro por priorizar la deuda más cara es pequeño en tu caso, así que pesa más la motivación: cerrar primero la deuda más chica te da impulso visible para seguir.',
+    razon: bolaEliminaInteres
+      ? `Cerrar primero la deuda más chica te da impulso visible, y en tu caso esa ("${unicaConInteres.descripcion}") es además la única que cobra intereses: al liquidarla, el resto del plan deja de generar intereses.`
+      : 'El ahorro por priorizar la deuda más cara es pequeño en tu caso, así que pesa más la motivación: cerrar primero la deuda más chica te da impulso visible para seguir.',
     viable: true, diagnostico: null,
     ahorroIntereses: comp.ahorroIntereses, ahorroMeses: comp.ahorroMeses,
   };

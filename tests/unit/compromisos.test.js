@@ -920,6 +920,36 @@ describe('recomendarEstrategia', () => {
     expect(r.viable).toBe(true);
   });
 
+  it('D.11: única deuda con interés y avalancha material → la razón nombra que la elimina', () => {
+    const r = recomendarEstrategia([
+      dp({ id: 'cara', descripcion: 'Tarjeta',           tasaEA: 0.45, saldo: 5_000_000, cuota: 250_000 }),
+      dp({ id: 'cero', descripcion: 'Préstamo familiar', tasaEA: 0,    saldo: 500_000,   cuota: 50_000 }),
+    ], 100_000);
+    expect(r.estrategia).toBe('avalancha');
+    expect(r.razon).toContain('Tarjeta');
+    expect(r.razon).toMatch(/única/i);
+    expect(r.razon).toMatch(/elimina/i);
+  });
+
+  it('D.11: única deuda con interés que además es la más chica → Bola de nieve nombra que la primera elimina los intereses', () => {
+    const r = recomendarEstrategia([
+      dp({ id: 'chica-cara',  descripcion: 'Crédito tienda',    tasaEA: 0.30, saldo: 400_000,   cuota: 80_000 }),
+      dp({ id: 'grande-cero', descripcion: 'Préstamo familiar', tasaEA: 0,    saldo: 2_000_000, cuota: 100_000 }),
+    ], 50_000);
+    expect(r.estrategia).toBe('bolaNieve');
+    expect(r.razon).toContain('Crédito tienda');
+    expect(r.razon).toMatch(/única que cobra intereses/i);
+  });
+
+  it('D.11: con varias deudas con interés la razón genérica no cambia', () => {
+    const r = recomendarEstrategia([
+      dp({ id: 'cara',   tasaEA: 0.40, saldo: 5_000_000, cuota: 200_000 }),
+      dp({ id: 'barata', tasaEA: 0.05, saldo: 500_000,   cuota: 50_000 }),
+    ], 100_000);
+    expect(r.estrategia).toBe('avalancha');
+    expect(r.razon).toMatch(/tasa más alta/i);
+  });
+
   // Escenario reportado por el usuario: deuda al 10% mensual con cuota que no
   // cubre el interés + deuda sin interés. Ningún orden cierra el plan.
   it('plan inviable: no recomienda estrategia, devuelve diagnóstico', () => {
