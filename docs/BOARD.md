@@ -348,13 +348,13 @@ _(sin pendientes activos.)_
 - Depende de : LG.1a (ya resuelto o no, es independiente)
 - Modelo     : diseño Opus 4.8 - Alto; implementación Sonnet 5 - Medio
 
-#### EP.7 (ADR 016 revisado el 2026-07-03) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
+#### EP.7 (mecanismo + Apartados listos, EP.7a cerrado 2026-07-03) - Divulgación progresiva: una sola descripción por sección, que se oculta cuando hay datos
 - Prioridad  : alta
-- Estado     : pendiente (la fase de diseño cerró el 2026-07-03; quedan los 4 slices de implementación)
-- Objetivo   : el banner de propósito pasa a ser **la descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**. Barrido: fuera el colapso manual (`S.config.propositoColapsado`, data-actions, bloque "Mensajes de ayuda" de Ajustes), fuera los 5 `section__subtitle` descriptivos y la nota al pie de Límites; los empty states se recortan a título + acción + CTA. El inventario completo (qué queda y qué se va, con archivo y línea) y el criterio "tiene datos" por sección están en la revisión del ADR.
-- Secciones  : Transversal (todas las secciones)
-- Archivos   : `modules/ui/proposito.js`, `index.html`, `modules/dominio/config/view.js`, empty states de cada `view.js`; detalle por slice en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) sección "Revisión 2026-07-03"
-- Depende de : nada. Orden: EP.7a (piloto: mecanismo + Apartados + Ajustes) → EP.7b (Gastos, Deudas, Calendario, Límites) → EP.7c (Metas, Ahorro, Inversión) → EP.7d (Mis cuentas, Análisis, Me deben)
+- Estado     : pendiente (quedan EP.7b, EP.7c, EP.7d)
+- Objetivo   : el banner de propósito pasa a ser **la descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**. El mecanismo ya está listo (EP.7a): `htmlBannerProposito`/`renderBannerProposito` reciben `tieneDatos` en vez de leer `S.config`; se retiró el colapso manual, las data-actions y el bloque "Mensajes de ayuda" de Ajustes. Falta aplicar el patrón (subtítulo fuera + empty recortado + `tieneDatos` real) a los 10 dominios restantes; hoy siguen llamando `renderBannerProposito(seccion)` sin `tieneDatos`, así que su banner queda siempre visible (sin colapso) hasta su propio slice.
+- Secciones  : Transversal (Gastos, Deudas, Calendario, Límites de gasto, Metas, Ahorro, Inversión, Mis cuentas, Análisis, Me deben)
+- Archivos   : `index.html` (subtítulos), empty states de cada `view.js`, llamadas a `renderBannerProposito` en cada `index.js`; detalle por sección en [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) sección "Revisión 2026-07-03"
+- Depende de : nada. Orden: EP.7b (Gastos, Deudas, Calendario, Límites) → EP.7c (Metas, Ahorro, Inversión) → EP.7d (Mis cuentas, Análisis, Me deben)
 - Modelo     : Sonnet 5 - Medio por slice
 
 #### A11Y.5 (verificación) - Pase axe sobre formularios dinámicos

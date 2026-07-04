@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): EP.7a, banner de propósito con divulgación progresiva · 2026-07-03
+
+Cierra EP.7a, el slice piloto de la revisión del [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md). El banner de propósito pasa a ser la **descripción única** de cada sección y **solo se muestra mientras la sección no tiene datos**: `htmlBannerProposito(seccion, tieneDatos)` y `renderBannerProposito(seccion, tieneDatos)` reciben ahora si la sección tiene datos, en vez de leer `S.config.propositoColapsado`. Se retira el mecanismo de colapso manual completo: la clave `S.config.propositoColapsado` deja de leerse (queda huérfana e inofensiva en `localStorage` de usuarios existentes, sin migración), las data-actions `colapsar-proposito`/`expandir-proposito` se eliminan de `actions.js`, y el bloque "Mensajes de ayuda" de Ajustes (`config/view.js` `_renderPropositos`, `config/index.js` acción `reactivar-propositos`) se retira por completo.
+
+Piloto completo en Apartados: el `section__subtitle` "Reservas para gastos previsibles..." se quita de `index.html` (duplicaba el banner), el empty state se recorta de un párrafo largo a "Crea tu primer apartado para empezar a separar dinero." (los tips accionables y la regla de contexto hacia Límites de gasto se conservan), y `apartados/index.js` pasa `S.apartados.length > 0` como `tieneDatos` en los tres puntos de render (inicial, `hashchange`, `state:change`). Verificado en el preview: el banner desaparece al crear el primer apartado sin recargar.
+
+Fix de copy incidental (detectado al revisar el mapa completo): el banner de Me deben decía "Personales te ayuda..." en vez de "Me deben".
+
+Los 10 dominios restantes siguen llamando `renderBannerProposito(seccion)` con un solo argumento: `tieneDatos` queda `undefined` (falsy), así que su banner se sigue mostrando siempre (sin colapso posible) hasta que su propio slice (EP.7b a EP.7d) les aplique el patrón completo.
+
+Tests: se reescribió `tests/unit/proposito.test.js` completo (los tests de colapso/persistencia se reemplazan por tests de visibilidad por `tieneDatos`); 1887 → 1885 unit verdes (menos aserciones repartidas, misma cobertura). 117/117 E2E sin regresiones (ningún E2E tocaba el colapso). Lint limpio. SW v272 → v273.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/proposito.js` | `htmlBannerProposito`/`renderBannerProposito` reciben `tieneDatos`; se retira todo el mecanismo de colapso (handlers, `initBannersProposito`, `reactivarPropositos`); fix de copy "Personales" → "Me deben". |
+| `modules/ui/bootstrap.js` | Se retira el import y la llamada a `initBannersProposito()`. |
+| `modules/dominio/config/view.js` | Se retira `_renderPropositos()` y su slot en `renderPanelConfig`. |
+| `modules/dominio/config/index.js` | Se retira el import de `reactivarPropositos` y la acción `reactivar-propositos`. |
+| `index.html` | Subtítulo de Apartados eliminado. |
+| `modules/dominio/apartados/view.js` | Empty state recortado. |
+| `modules/dominio/apartados/index.js` | Los 3 renders del banner pasan `S.apartados.length > 0`. |
+| `tests/unit/proposito.test.js` | Reescrito para el nuevo contrato. |
+| `service-worker.js` | v272 → v273. |
+
+---
+
 ### docs(adr): ADR 016 revisado, divulgación progresiva (EP.7, fase de diseño) · 2026-07-03
 
 Cierra la fase de diseño de EP.7 (dirección fijada por el usuario el 2026-07-02, reconfirmada con su observación en Metas: "la descripción solo debe aparecer al inicio"). El [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md) pasa de "banner siempre visible y colapsable" a **divulgación progresiva**:
