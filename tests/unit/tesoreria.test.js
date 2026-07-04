@@ -18,6 +18,7 @@ import {
   detectarNudgeProximoIngreso,
   sugerirDistribucionIngreso,
   construirContextoDistribucion,
+  calcularGastoVariablePromedio,
   calcularAporteMensualObjetivos,
   construirDesgloseAhorroPorObjetivo,
   construirDesgloseNecesidades,
@@ -1700,11 +1701,13 @@ describe('sugerirDistribucionIngreso()', () => {
     expect(r.ctas.some(c => c.seccion === 'inversion')).toBe(true);
   });
 
-  it('no agrega CTA a inversion cuando el usuario ya invierte', () => {
+  it('MC.6c: con fondo completo y usuario que ya invierte, la CTA invita a aportar (no a explorar)', () => {
     const r = sugerirDistribucionIngreso(3_000_000, {
       tieneFondoActivo: true, fondoCompleto: true, tieneInversiones: true,
     });
-    expect(r.ctas.some(c => c.seccion === 'inversion')).toBe(false);
+    const inv = r.ctas.filter(c => c.seccion === 'inversion');
+    expect(inv).toHaveLength(1);
+    expect(inv[0].label).toBe('Aportar a tus inversiones');
   });
 
   it('agrega alerta y CTA a compromisos cuando hay deudas activas', () => {
@@ -2287,5 +2290,118 @@ describe('construirFilasTransferenciaCuentas()', () => {
     expect(construirFilasTransferenciaCuentas([])).toEqual([]);
     expect(construirFilasTransferenciaCuentas()).toEqual([]);
     expect(construirFilasTransferenciaCuentas(null)).toEqual([]);
+  });
+});
+
+// ── MC.6c: gasto variable como proxy de estilo de vida ───────────
+
+describe('calcularGastoVariablePromedio (MC.6c)', () => {
+  // Referencia fija: 15 de junio de 2026. Meses completos: mar, abr, may.
+  const HOY = new Date(2026, 5, 15);
+
+  it('promedia los meses completos anteriores y excluye el mes corriente', () => {
+    const gastos = [
+      { id: '1', monto: 300_000, categoria: 'Mercado',   fecha: '2026-05-10' },
+      { id: '2', monto: 500_000, categoria: 'Transporte', fecha: '2026-04-20' },
+      { id: '3', monto: 999_999, categoria: 'Mercado',   fecha: '2026-06-01' },  // mes corriente: fuera
+    ];
+    // (300.000 + 500.000) / 2 meses con datos = 400.000
+    expect(calcularGastoVariablePromedio(gastos, HOY)).toBe(400_000);
+  });
+
+  it('excluye abonos, aportes, pagos de fijos y gastos vinculados a compromisos', () => {
+    const gastos = [
+      { id: '1', monto: 200_000, categoria: 'Café',         fecha: '2026-05-10' },
+      { id: '2', monto: 900_000, categoria: 'Deudas',       fecha: '2026-05-11' },
+      { id: '3', monto: 900_000, categoria: 'Ahorro',       fecha: '2026-05-12' },
+      { id: '4', monto: 900_000, categoria: 'Gastos fijos', fecha: '2026-05-13' },
+      { id: '5', monto: 900_000, categoria: 'Mercado',      fecha: '2026-05-14', compromisoId: 'c1' },
+    ];
+    expect(calcularGastoVariablePromedio(gastos, HOY)).toBe(200_000);
+  });
+
+  it('un mes sin gastos no diluye el promedio', () => {
+    const gastos = [
+      { id: '1', monto: 600_000, categoria: 'Mercado', fecha: '2026-03-10' },
+      // abril y mayo sin registros
+    ];
+    expect(calcularGastoVariablePromedio(gastos, HOY)).toBe(600_000);
+  });
+
+  it('sin historial devuelve 0 (señal apagada)', () => {
+    expect(calcularGastoVariablePromedio([], HOY)).toBe(0);
+    expect(calcularGastoVariablePromedio(null, HOY)).toBe(0);
+    // Solo gastos del mes corriente: también 0.
+    expect(calcularGastoVariablePromedio(
+      [{ id: '1', monto: 100_000, categoria: 'Mercado', fecha: '2026-06-05' }], HOY,
+    )).toBe(0);
+  });
+});
+
+describe('sugerirDistribucionIngreso - señales MC.6c', () => {
+  // Base: ingreso 2M, obligaciones 1M (50%), fondo incompleto con ritmo
+  // ideal de 200.000/mes (faltante 2.4M / 12). Piso EV base: 200.000 (10%).
+  const base = {
+    gastosFijosMensuales: 800_000,
+    cuotasDeudaMensuales: 200_000,
+    faltanteFondo:        2_400_000,
+    tieneFondoActivo:     true,
+    fondoCompleto:        false,
+  };
+
+  it('sin historial de gasto variable, el reparto no cambia (retrocompatible)', () => {
+    const r = sugerirDistribucionIngreso(2_000_000, { ...base });
+    expect(r.split.ahorro.pct).toBe(10);       // 200.000: el ritmo ideal cabe
+    expect(r.split.estiloVida.pct).toBe(40);
+  });
+
+  it('el historial eleva el piso de Estilo de vida y aprieta el ahorro honestamente', () => {
+    const r = sugerirDistribucionIngreso(2_000_000, {
+      ...base,
+      gastoVariablePromedio: 900_000,  // vida real: 45% del ingreso
+    });
+    // residuo 1M >= pisoAhorro 100k + pisoEV 900k → ahorro = residuo - pisoEV = 100.000
+    expect(r.split.ahorro.monto).toBe(100_000);
+    expect(r.split.estiloVida.pct).toBe(45);
+    expect(r.razon).toContain('gasto variable');
+    expect(r.alertas.join(' ')).toMatch(/gasto variable .* limita cuánto puedes ahorrar/i);
+  });
+
+  it('un historial menor al piso base no infla el estilo de vida', () => {
+    const r = sugerirDistribucionIngreso(2_000_000, {
+      ...base,
+      gastoVariablePromedio: 100_000,  // 5%: por debajo del piso del 10%
+    });
+    expect(r.split.ahorro.pct).toBe(10);
+    expect(r.razon).not.toContain('gasto variable');
+  });
+
+  it('con fondo completo y usuario que ya invierte, el ahorro apunta a inversiones', () => {
+    const r = sugerirDistribucionIngreso(2_000_000, {
+      gastosFijosMensuales: 500_000,
+      tieneFondoActivo:     true,
+      fondoCompleto:        true,
+      tieneInversiones:     true,
+    });
+    expect(r.razon).toContain('puede ir a tus inversiones');
+    expect(r.ctas.map(c => c.label)).toContain('Aportar a tus inversiones');
+    expect(r.split.ahorro.label).toBe('Ahorro e inversión');
+  });
+
+  it('sin inversiones, la CTA sigue siendo explorar (no aportar)', () => {
+    const r = sugerirDistribucionIngreso(2_000_000, {
+      gastosFijosMensuales: 500_000,
+      tieneFondoActivo:     true,
+      fondoCompleto:        true,
+      tieneInversiones:     false,
+    });
+    const labels = r.ctas.map(c => c.label);
+    expect(labels).toContain('Explorar inversiones');
+    expect(labels).not.toContain('Aportar a tus inversiones');
+  });
+
+  it('construirContextoDistribucion expone gastoVariablePromedio', () => {
+    const ctx = construirContextoDistribucion({ gastos: [] });
+    expect(ctx.gastoVariablePromedio).toBe(0);
   });
 });

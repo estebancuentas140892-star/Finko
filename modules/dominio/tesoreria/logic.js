@@ -971,6 +971,42 @@ export function presupuestosSobreRemanente(montoIngreso, necesidadesMarcadas, ah
 }
 
 /**
+ * Promedio mensual del gasto variable de los últimos meses completos (MC.6c):
+ * el mejor proxy del estilo de vida real del usuario. Variable = gasto
+ * registrado a mano, sin vínculo a un compromiso (`compromisoId`) y fuera de
+ * las categorías internas ('Deudas' = abonos, 'Ahorro' = aportes,
+ * 'Gastos fijos' = pagos de Calendario): lo demás sale del presupuesto de
+ * Estilo de vida en la práctica.
+ *
+ * El mes corriente se excluye (está a medias). Solo promedia los meses que
+ * tienen algún gasto: un mes sin registros no diluye el promedio (el usuario
+ * pudo no usar la app). Sin ningún mes con datos devuelve 0 (señal apagada).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {Date} [hoy]
+ * @param {number} [meses=3] Ventana de meses completos hacia atrás.
+ * @returns {number} COP/mes (entero, ≥ 0).
+ */
+export function calcularGastoVariablePromedio(gastos, hoy = new Date(), meses = 3) {
+  const lista = Array.isArray(gastos) ? gastos : [];
+  const EXCLUIDAS = new Set(['Deudas', 'Ahorro', 'Gastos fijos']);
+
+  const totales = [];
+  for (let i = 1; i <= meses; i++) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    const prefijo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const suma = lista
+      .filter(g => g && typeof g.fecha === 'string' && g.fecha.startsWith(prefijo)
+        && !g.compromisoId && !EXCLUIDAS.has(g.categoria))
+      .reduce((s, g) => s + (Number(g.monto) || 0), 0);
+    if (suma > 0) totales.push(suma);
+  }
+
+  if (totales.length === 0) return 0;
+  return Math.round(totales.reduce((a, b) => a + b, 0) / totales.length);
+}
+
+/**
  * Construye el contexto que espera `sugerirDistribucionIngreso` a partir de los
  * datos crudos del estado (compromisos, ahorro, metas, apartados, inversiones,
  * presupuestos, config). Centraliza la lectura de la "realidad registrada" para
@@ -1053,6 +1089,9 @@ export function construirContextoDistribucion({
     .filter(g => g?.fecha?.startsWith(prefijo))
     .reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
 
+  // Historial de gasto variable como proxy del estilo de vida real (MC.6c).
+  const gastoVariablePromedio = calcularGastoVariablePromedio(gastos ?? [], ahora);
+
   return {
     gastosFijosMensuales,
     cuotasDeudaMensuales,
@@ -1060,6 +1099,7 @@ export function construirContextoDistribucion({
     aporteMensualObjetivos,
     sumaLimites,
     gastosDelMes,
+    gastoVariablePromedio,
     tieneDeudas,
     tieneFondoActivo,
     fondoCompleto,
@@ -1089,6 +1129,7 @@ const _BASE_AHORRO_PCT = 20;  // ahorro base sano cuando no hay prioridades acti
  *   aporteMensualObjetivos?:  number,
  *   sumaLimites?:             number,
  *   gastosDelMes?:            number,
+ *   gastoVariablePromedio?:   number,
  *   tieneDeudas?:             boolean,
  *   tieneFondoActivo?:        boolean,
  *   fondoCompleto?:           boolean,
@@ -1118,6 +1159,7 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
   aporteMensualObjetivos  = 0,
   sumaLimites             = 0,
   gastosDelMes            = 0,
+  gastoVariablePromedio   = 0,
   tieneDeudas             = false,
   tieneFondoActivo        = false,
   fondoCompleto           = false,
@@ -1202,7 +1244,13 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
       // proporcional a los pisos, y el ahorro solo queda en $0 cuando de
       // verdad no hay margen (o hay déficit real).
       const residuo    = ingresoMensual - montoNec;
-      const pisoEV     = Math.round(ingresoMensual * _PISO_EV_PCT / 100);
+      // MC.6c: el historial de gasto variable eleva el piso de Estilo de
+      // vida a la vida real del usuario: sugerir menos de lo que de verdad
+      // gasta produce planes incumplibles (y ahorros que no se concretan).
+      // El 10% del ingreso sigue siendo el mínimo de sostenibilidad.
+      const pisoEVBase = Math.round(ingresoMensual * _PISO_EV_PCT / 100);
+      const gastoVar   = Math.max(0, Math.round(Number(gastoVariablePromedio) || 0));
+      const pisoEV     = Math.max(pisoEVBase, gastoVar);
       const pisoAhorro = Math.round(ingresoMensual * _PISO_AHORRO_PCT / 100);
 
       let montoAhorro;
@@ -1244,9 +1292,25 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
         if (aporteMensualObjetivos > 0) {
           partesRazon.push('tienes objetivos con fecha');
         }
+        // MC.6c: el historial de gasto variable influyó en el reparto.
+        if (pisoEV > pisoEVBase) {
+          const pctVar = Math.round(pisoEV / ingresoMensual * 100);
+          partesRazon.push(`tu gasto variable reciente promedia el ${pctVar}% de tu ingreso y el plan lo respeta`);
+        }
+        // MC.6c: con el fondo completo, el ahorro apunta a las inversiones.
+        if (fondoCompleto && tieneInversiones) {
+          partesRazon.push('tu fondo está completo, así que el ahorro puede ir a tus inversiones');
+        }
         razon = partesRazon.length > 0
           ? `Calculamos tu distribución según tus datos: ${partesRazon.join(', ')}.`
           : 'Registra tus gastos fijos en Calendario y tus deudas en la sección Deudas para una recomendación a tu medida. Por ahora aplicamos una base saludable del 20% de ahorro.';
+      }
+
+      // MC.6c: si el estilo de vida real apretó el ahorro por debajo de su
+      // ideal, decirlo con el rubro accionable (mismo espíritu que MC.11).
+      if (!deficitReal && pisoEV > pisoEVBase && montoAhorro < montoAhorroIdeal) {
+        const pctVar = Math.round(pisoEV / ingresoMensual * 100);
+        alertas.push(`Tu gasto variable de los últimos meses promedia el ${pctVar}% de tu ingreso y limita cuánto puedes ahorrar. Si quieres ahorrar más, ese es el rubro a recortar (revísalo en Análisis).`);
       }
 
       // Alerta si las obligaciones dejan poco margen.
@@ -1270,6 +1334,10 @@ export function sugerirDistribucionIngreso(ingresoMensual, {
     ctas.push({ label: 'Ver progreso del fondo', seccion: 'ahorro' });
   } else if (!tieneInversiones) {
     ctas.push({ label: 'Explorar inversiones', seccion: 'inversion' });
+  } else {
+    // MC.6c: fondo completo y ya invierte: la siguiente prioridad del
+    // ahorro son sus inversiones.
+    ctas.push({ label: 'Aportar a tus inversiones', seccion: 'inversion' });
   }
 
   if (tieneDeudas) {
