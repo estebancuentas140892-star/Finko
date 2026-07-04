@@ -1447,7 +1447,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(fig.locator('dd.is-negative')).toHaveCount(0);
   });
 
-  test('MC.5e: la nota de la sección menciona la complementariedad con Mis cuentas', async ({ page }) => {
+  test('EP.7b: la nota de complementariedad con Mis cuentas ya no vive en el resumen (la cubre el banner de propósito)', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {
       const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
@@ -1457,9 +1457,7 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    await expect(page.locator('.grupos-resumen__nota')).toHaveText(
-      'Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan. Lo ejecutado refleja lo que registras en Finko este mes.',
-    );
+    await expect(page.locator('.grupos-resumen__nota')).toHaveCount(0);
   });
 
   test('MC.8b: los topes por categoría viven dentro de la tarjeta de Estilo de vida, sin bloque suelto', async ({ page }) => {

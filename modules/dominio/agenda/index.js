@@ -317,6 +317,7 @@ export function initAgenda() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
+      renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }
   });
@@ -324,11 +325,11 @@ export function initAgenda() {
   // Re-render al navegar a #agenda.
   window.addEventListener('hashchange', () => {
     if ((location.hash.slice(1) || 'dash') === 'agenda') {
-      renderBannerProposito('agenda');
+      renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }
   });
 
-  renderBannerProposito('agenda');
+  renderBannerProposito('agenda', S.compromisos.length > 0);
   renderSmart(renderAgenda, 'agenda');
 }

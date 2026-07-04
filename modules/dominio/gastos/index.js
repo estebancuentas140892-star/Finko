@@ -460,6 +460,7 @@ export function initGastos() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'gastos') {
+      renderBannerProposito('gast', S.gastos.length > 0);
       renderSmart(renderFiltrosGastos, 'gast');
       renderSmart(renderListaGastos, 'gast');
       renderPendientesOrganizar();
@@ -469,12 +470,12 @@ export function initGastos() {
 
   // Re-render al navegar a #gast: filtros + lista.
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('gast');
+    renderBannerProposito('gast', S.gastos.length > 0);
     renderSmart(renderFiltrosGastos, 'gast');
     renderSmart(renderListaGastos, 'gast');
   });
 
-  renderBannerProposito('gast');
+  renderBannerProposito('gast', S.gastos.length > 0);
   renderSmart(renderFiltrosGastos, 'gast');
   renderSmart(renderListaGastos, 'gast');
 }

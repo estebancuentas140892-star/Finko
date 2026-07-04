@@ -19,7 +19,7 @@ import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA } from './logic.js';
+import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, esDeuda } from './logic.js';
 import {
   renderListaCompromisos,
   renderChooserCompromiso,
@@ -685,6 +685,7 @@ export function initCompromisos() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'compromisos') {
+      renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
       renderSmart(_renderTodo, 'compromisos');
       // El dashboard también depende de compromisos: si el usuario crea/edita/
       // elimina uno y luego vuelve a #dash, el panel debe reflejarlo. renderSmart
@@ -724,13 +725,13 @@ export function initCompromisos() {
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
     if (hash === 'compromisos') {
-      renderBannerProposito('compromisos');
+      renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
       renderSmart(_renderTodo, 'compromisos');
     }
     if (hash === 'dash') renderSmart(_renderDashboardPanels, 'dash');
   });
 
-  renderBannerProposito('compromisos');
+  renderBannerProposito('compromisos', S.compromisos.some(c => esDeuda(c.tipo)));
   renderSmart(_renderTodo, 'compromisos');
   renderSmart(_renderDashboardPanels, 'dash');
 }

@@ -119,7 +119,8 @@ export function initPresupuesto() {
   // Los gastos afectan el progreso visual; re-render ante cualquier cambio
   // de gastos o de presupuestos.
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'presupuestos' || section === 'gastos') {
+    if (section === 'presupuestos' || section === 'gastos' || section === 'ingresos') {
+      renderBannerProposito('presupuesto', _tienePlanOTope());
       renderSmart(renderPanelPresupuesto, 'presupuesto');
       renderSmart(renderPanelLimites, 'dash');
     }
@@ -128,15 +129,20 @@ export function initPresupuesto() {
   // El panel de alertas vive en el dashboard: se actualiza en cada renderAll().
   registrarRender(() => renderSmart(renderPanelLimites, 'dash'));
 
-  renderBannerProposito('presupuesto');
+  renderBannerProposito('presupuesto', _tienePlanOTope());
   renderSmart(renderPanelPresupuesto, 'presupuesto');
   renderPanelLimites();
 
   // El hash routing puede entrar tarde a esta sección; re-renderizamos al navegar.
   window.addEventListener('hashchange', () => {
     const hash = location.hash.slice(1) || 'dash';
-    renderBannerProposito('presupuesto');
+    renderBannerProposito('presupuesto', _tienePlanOTope());
     renderSmart(renderPanelPresupuesto, 'presupuesto');
     if (hash === 'dash') renderPanelLimites();
   });
+}
+
+/** true si ya hay ingresos registrados (plan del mes posible) o algún tope por categoría. */
+function _tienePlanOTope() {
+  return (S.ingresos ?? []).length > 0 || (S.presupuestos ?? []).length > 0;
 }

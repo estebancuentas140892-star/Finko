@@ -108,7 +108,6 @@ function _renderResumenGrupos(anio, mes) {
       </header>
       ${_renderRefuerzoCombinado(mensajes)}
       <div class="grupos-resumen__grid">${cards}</div>
-      <p class="grupos-resumen__nota">Mis cuentas planifica cómo repartes tu ingreso; Límites de gasto vigila que cumplas ese plan. Lo ejecutado refleja lo que registras en Finko este mes.</p>
     </section>`;
 }
 
