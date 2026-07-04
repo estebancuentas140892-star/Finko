@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(nav): auditoría de navegación móvil, ADR 024 y tarjetas NAV · 2026-07-04
+
+Auditoría completa de la navegación móvil con ojos de usuario nuevo (viewport 390x844 con Playwright, localStorage limpio) más lectura del código de navegación. Resultado del test de orientación (8 preguntas): 3 evidentes, 3 a medias, 2 fallidas. Hallazgos principales: no existe registro de ingreso puntual y el ingreso fijo vive escondido en Mis cuentas (asimetría entró/salió); no hay acción de registro global y los CTA de alta viven en la peor zona del pulgar; 10 de 13 secciones detrás del modal "Más"; el dinero guardado repartido en 4 secciones sin jerarquía; la barra inferior no compensa el safe area de iOS (registrado como BUG-010).
+
+Decisión aprobada en [ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md): bottom nav de 5 posiciones con botón central "Registrar" (hoja con Gasto/Ingreso siempre y Abono/Aporte por divulgación progresiva), ingreso puntual como capacidad nueva de `tesoreria`, hub "Ahorros" (una entrada, cuatro pestañas, consolidado de ADR 009 como cabecera, sin fusionar dominios), modal "Más" plano de 7 tarjetas y pulidos. Revisa a nivel de navegación la decisión 2026-06 de no fusionar las 4 secciones de ahorro; los dominios no se tocan.
+
+Solo documentación: ninguna funcionalidad afectada. Validación pendiente: ninguna (la implementación arranca con NAV.A1).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/024-reorganizacion-navegacion-movil.md` | ADR nuevo: contexto (auditoría), decisión D1 a D6, alternativas, slices. |
+| `docs/BOARD.md` | Iniciativa de navegación 2026-07: tarjetas NAV.A1, NAV.A2, NAV.B y NAV.C. |
+| `docs/BUGS.md` | BUG-010 registrado (safe area del bottom nav). |
+| `docs/HANDOFF.md` | Entrada en "Qué se hizo recientemente". |
+
+---
+
 ### feat(ui): ID.6, Finko Icons v2 "trazo cálido con chispa" con piloto en la navegación · 2026-07-04
 
 Revisión del lenguaje de iconografía ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), sección "Revisión v2"). Al arrancar ID.3, el usuario replanteó el sistema: el lenguaje v1 (trazo 2, duotono 15 %, punto monocromo) cumplía pero se percibía neutro y frío. Tras análisis de mercado y 3 direcciones dibujadas sobre la paleta real, se adoptó la dirección A ("trazo cálido con chispa") combinada con C (insignias por dominio, para las categorías de ID.3); la B (sello sólido) se descartó por pesada en listas densas.

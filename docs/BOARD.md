@@ -126,6 +126,46 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
+> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. Orden: NAV.A1 → NAV.A2 → NAV.B → NAV.C.
+
+#### NAV.A1 - Ingreso puntual en Mis cuentas
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : hoy no existe forma de registrar dinero que llega una sola vez (trabajo independiente, venta, regalo): la única acción es `nuevo-ingreso` (fuente fija). Crear el flujo "Registrar ingreso": monto + cuenta destino (patrón 0/1/varias de `cuenta-helper`) + fuente opcional; suma al saldo, queda en el histórico (insumo de Análisis y resumen semanal) y al confirmar ofrece el asistente de distribución (ADR 018) si aplica. Detalle de datos (colección vs. campo tipo en `S.ingresos`, schema) se decide aquí. Ver ADR 024, D3.
+- Secciones  : Mis cuentas, Inicio, Análisis
+- Archivos   : `modules/dominio/tesoreria/logic.js`, `modules/dominio/tesoreria/view.js`, `modules/dominio/tesoreria/index.js`, `index.html`, tests unitarios
+- Depende de : nada (prerequisito de NAV.A2)
+- Modelo     : Opus 4.8 - Alto
+
+#### NAV.A2 - Bottom nav de 5 posiciones con botón central "Registrar"
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : acción global de registro en la zona del pulgar: `Inicio · Gastos · [+] · Calendario · Más`. El "+" abre una hoja con Gasto e Ingreso (siempre) y, con divulgación progresiva, Abono a deuda y Aporte a ahorro. Incluye el fix de BUG-010 (safe area del bottom nav, mismo bloque CSS) y la actualización de los E2E de navegación/reflow. Ver ADR 024, D1 y D2.
+- Secciones  : todas (navegación)
+- Archivos   : `index.html`, `styles/responsive.css`, `styles/layout.css`, `modules/ui/actions.js`, nuevo `modules/ui/registrar.js`, `tests/e2e/`
+- Depende de : NAV.A1
+- Modelo     : Opus 4.8 - Extra
+
+#### NAV.B - Hub "Ahorros": una entrada, cuatro pestañas
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : responder "¿dónde están mis ahorros?" con un solo destino: tarjeta única "Ahorros" en el modal Más (reemplaza 4), franja de pestañas `Fondo · Metas · Apartados · Inversión` sobre las 4 secciones existentes (enlaces, cero cambios de router), consolidado de ADR 009 como cabecera común, renombre de la sección "Ahorro" a "Fondo de emergencia" y grupo "Crecer" del sidebar desktop a "Ahorros". El modal Más queda en 7 tarjetas sin grupos. Ver ADR 024, D4 y D5.
+- Secciones  : Ahorro, Metas, Apartados, Inversión, navegación
+- Archivos   : `index.html`, `modules/ui/menu-mas.js`, `styles/layout.css`, `styles/components/`, `modules/ui/proposito.js` (copy del renombre), tests E2E de navegación
+- Depende de : NAV.A2 (para no rehacer el modal Más dos veces)
+- Modelo     : Sonnet 5 - Alto
+
+#### NAV.C - Pulidos de navegación
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : retrasar el toast de logro del primer uso (hoy pisa tips y el modal Más en el primer minuto), revisar el nombre del grupo de gestión en el sidebar desktop (con "Herramientas" disuelto tras NAV.B), y recortar los banners de propósito que exceden las 40 a 60 palabras de ADR 016 manteniendo los tres tiempos. Ver ADR 024, D6.
+- Secciones  : navegación, Inicio, Apartados
+- Archivos   : `modules/dominio/logros/index.js`, `index.html`, `modules/ui/proposito.js`
+- Depende de : NAV.A2 y NAV.B
+- Modelo     : Sonnet 5 - Medio
+
+---
+
 > Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1, ID.4, ID.2 e ID.6 (revisión v2 del lenguaje: "trazo cálido con chispa", piloto de navegación redibujado) cerradas, todas 2026-07-04. Quedan dos fases: ID.7 (estructurales a v2) e ID.3 (categorías).
 
 #### ID.7 - Símbolos estructurales al lenguaje v2
