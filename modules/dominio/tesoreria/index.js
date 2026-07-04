@@ -634,7 +634,7 @@ function _guardarIngreso() {
 
   renderListaIngresos();
   EventBus.emit('state:change', { section: 'ingresos' });
-  announce(idEdit ? 'Ingreso actualizado.' : 'Ingreso guardado.');
+  announce(idEdit ? 'Ingreso fijo actualizado.' : 'Ingreso fijo guardado.');
 }
 
 /** @param {HTMLElement} el */
@@ -647,7 +647,7 @@ function _editarIngreso(el) {
   const overlay = document.getElementById('modal-ingreso');
   if (!overlay) return;
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) titulo.textContent = 'Editar ingreso';
+  if (titulo) titulo.textContent = 'Editar ingreso fijo';
   const body = document.getElementById('modal-ingreso-body');
   if (body) {
     body.innerHTML = renderFormIngreso(ing);
@@ -673,8 +673,8 @@ async function _eliminarIngreso(el) {
   if (!ing) return;
 
   const ok = await confirmar({
-    titulo:         'Eliminar ingreso',
-    mensaje:        `¿Quieres eliminar el ingreso "${ing.descripcion}"? Esta acción no se puede deshacer.`,
+    titulo:         'Eliminar ingreso fijo',
+    mensaje:        `¿Quieres eliminar el ingreso fijo "${ing.descripcion}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -683,7 +683,7 @@ async function _eliminarIngreso(el) {
   eliminar('ingresos', id);
   renderListaIngresos();
   EventBus.emit('state:change', { section: 'ingresos' });
-  announce(`Ingreso "${ing.descripcion}" eliminado.`);
+  announce(`Ingreso fijo "${ing.descripcion}" eliminado.`);
 }
 
 /** @param {HTMLElement} el */
