@@ -1284,6 +1284,7 @@ export function initTesoreria() {
       section === 'ahorro'     ||
       section === 'inversiones'
     ) {
+      renderBannerProposito('tesoreria', _tieneDatosTesoreria());
       renderSmart(_renderTodo, 'tesoreria');
       updSaldo();
     }
@@ -1292,11 +1293,16 @@ export function initTesoreria() {
   // Re-render al navegar a #tesoreria - sin esto la sección aparece vacía
   // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('tesoreria');
+    renderBannerProposito('tesoreria', _tieneDatosTesoreria());
     renderSmart(_renderTodo, 'tesoreria');
   });
 
   // Render inicial si ya estamos en #tesoreria al cargar.
-  renderBannerProposito('tesoreria');
+  renderBannerProposito('tesoreria', _tieneDatosTesoreria());
   renderSmart(_renderTodo, 'tesoreria');
+}
+
+/** true si ya hay alguna cuenta o algún ingreso registrado. */
+function _tieneDatosTesoreria() {
+  return (S.cuentas ?? []).length > 0 || (S.ingresos ?? []).length > 0;
 }

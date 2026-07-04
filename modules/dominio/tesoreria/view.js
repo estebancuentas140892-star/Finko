@@ -102,8 +102,8 @@ function _renderEmptyState() {
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('cuentas')}</div>
-      <p class="empty-state__title">¿Dónde tienes tu dinero?</p>
-      <p class="empty-state__desc">Agrega tus cuentas bancarias, billeteras digitales o efectivo para ver tu saldo real en Inicio.</p>
+      <p class="empty-state__title">Agrega tu primera cuenta</p>
+      <p class="empty-state__desc">Bancaria, billetera digital o efectivo: verás tu saldo real en Inicio.</p>
       <button class="btn btn-primary" data-action="nueva-cuenta">+ Agregar cuenta</button>
       <p class="empty-state__tip">${icon('lightbulb')} Tip: Nequi, Daviplata y el efectivo también cuentan. Todo lo que tienes, en un solo lugar.</p>
     </div>`;

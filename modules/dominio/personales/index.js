@@ -152,19 +152,20 @@ export function initPersonales() {
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'personales') {
+      renderBannerProposito('personales', S.personales.length > 0);
       renderSmart(renderListaPersonales, 'personales');
     }
   });
 
   // Re-render en cada navegación a #personales (sigue patrón de calculadoras).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('personales');
+    renderBannerProposito('personales', S.personales.length > 0);
     renderSmart(renderListaPersonales, 'personales');
   });
 
   // Render inicial: si la sección está activa al bootstrap.
   // registrarRender garantiza que renderAll() lo dispare después del initRouter.
   registrarRender(() => renderSmart(renderListaPersonales, 'personales'));
-  renderBannerProposito('personales');
+  renderBannerProposito('personales', S.personales.length > 0);
   renderSmart(renderListaPersonales, 'personales');
 }

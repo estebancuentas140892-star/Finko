@@ -5,7 +5,7 @@
  * no tiene formulario. Se limita a re-renderizar cuando cualquier dato cambia.
  */
 
-import { EventBus } from '../../core/state.js';
+import { S, EventBus } from '../../core/state.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { renderAnalisis } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -22,6 +22,7 @@ export function initAnalisis() {
   // Re-renderizar cuando cambia cualquier sección relevante.
   EventBus.on('state:change', ({ section }) => {
     if (SECCIONES_OBSERVADAS.has(section)) {
+      renderBannerProposito('analisis', S.gastos.length > 0);
       renderSmart(renderAnalisis, 'analisis');
     }
   });
@@ -29,11 +30,11 @@ export function initAnalisis() {
   // Re-render al navegar a #analisis (sin esto la sección aparece vacía
   // hasta que cambien datos relevantes).
   window.addEventListener('hashchange', () => {
-    renderBannerProposito('analisis');
+    renderBannerProposito('analisis', S.gastos.length > 0);
     renderSmart(renderAnalisis, 'analisis');
   });
 
   // Render inicial si arrancamos directamente en #analisis.
-  renderBannerProposito('analisis');
+  renderBannerProposito('analisis', S.gastos.length > 0);
   renderSmart(renderAnalisis, 'analisis');
 }

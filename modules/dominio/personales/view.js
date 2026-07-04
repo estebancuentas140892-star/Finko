@@ -161,7 +161,7 @@ function _renderEmptyState() {
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('personales')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
-      <p class="empty-state__desc">Registra los préstamos que haces a familia y amigos para no olvidarte. Sin presión: solo es para ti.</p>
+      <p class="empty-state__desc">Registra tu primer préstamo a familia o amigos.</p>
       <button class="btn btn-primary" data-action="nuevo-personal">+ Agregar préstamo</button>
     </div>`;
 }
