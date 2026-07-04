@@ -278,10 +278,17 @@
   white-space: nowrap;
 }
 
+/* MC.8c: Necesidades y Ahorro en 2 columnas compactas; Estilo de vida (la
+   card alta, con los topes por categoría) en fila completa. En móvil,
+   responsive.css apila todo a 1 columna. */
 .grupos-resumen__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--fk-space-md);
+}
+
+.grupos-resumen__grid .grupo-card[data-grupo="estilo-de-vida"] {
+  grid-column: 1 / -1;
 }
 
 .grupos-resumen__nota {

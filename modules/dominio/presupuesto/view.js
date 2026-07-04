@@ -9,7 +9,6 @@ import { icon }               from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
   CATEGORIA_EMOJI,
-  GRUPOS_FINANCIEROS,
   LABEL_GRUPO_FINANCIERO,
 } from '../../core/constants.js';
 import {
@@ -96,7 +95,12 @@ function _renderResumenGrupos(anio, mes) {
   const alertasCategoria = alertasLimites(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
   const mensajes = generarMensajesLimites({ alertasCategoria, resumen, itemsNecesidades });
 
-  const cards = GRUPOS_FINANCIEROS
+  // MC.8c: Necesidades y Ahorro comparten la fila compacta de arriba; Estilo
+  // de vida (la card alta, con los topes por categoría) va en fila completa.
+  // El DOM sigue ese orden visual, que es también el del asistente de
+  // distribución (Necesidades → Ahorro → Estilo de vida).
+  const ordenCards = ['necesidades', 'ahorro', 'estilo-de-vida'];
+  const cards = ordenCards
     .map(g => _renderGrupoCard(g, resumen[g], desglosePorGrupo[g], _renderNudgesGrupo(mensajes, g)))
     .join('');
 
