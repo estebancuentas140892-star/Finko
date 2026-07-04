@@ -28,7 +28,7 @@
   --fk-text-primary:   #e9ebf3;
   --fk-text-secondary: #a3a9bd;
   --fk-text-muted:     #888fa6;   /* sube a contraste AA (>=4.5:1) sobre bg-base */
-  --fk-text-disabled:  #424858;
+  --fk-text-disabled:  #565d72;   /* legible con baja visión sin dejar de verse inactivo */
   --fk-text-on-accent: #08120d;
   --fk-text-accent:    #4bd99b;
   --fk-text-inverse:   #1a1d27;

@@ -23,7 +23,7 @@ body.light-theme {
   --fk-text-primary:   #1a1d27;
   --fk-text-secondary: #454c63;
   --fk-text-muted:     #5d6276;   /* sube a contraste AA sobre blanco */
-  --fk-text-disabled:  #b0b4c8;
+  --fk-text-disabled:  #8f94ac;   /* legible con baja visión sin dejar de verse inactivo */
   --fk-text-on-accent: #ffffff;
   --fk-text-accent:    #006b3d;
   --fk-text-inverse:   #e8eaf2;
@@ -40,9 +40,9 @@ body.light-theme {
   --fk-success-bg:   rgba(0, 107, 61, 0.1);
   --fk-success-text: #006b3d;
 
-  --fk-warning:      #a06800;
-  --fk-warning-bg:   rgba(160, 104, 0, 0.1);
-  --fk-warning-text: #a06800;
+  --fk-warning:      #8a5a00;   /* 5.5:1 sobre bg-base (AA texto normal) */
+  --fk-warning-bg:   rgba(138, 90, 0, 0.1);
+  --fk-warning-text: #8a5a00;
 
   --fk-danger:       #c0202f;
   --fk-danger-bg:    rgba(192, 32, 47, 0.1);
