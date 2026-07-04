@@ -422,13 +422,14 @@ function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
 function _renderEnvelope(presupuesto, gastos, anio, mes) {
   const { gastado, asignado, restante, porcentaje, estado } = calcularProgreso(presupuesto, gastos, anio, mes);
   const categoria = _esc(presupuesto.categoria);
+  const emoji = CATEGORIA_EMOJI[presupuesto.categoria] ?? '📦';
   const widthVisual = Math.min(porcentaje, 100);
   const estadoIcono = estado === 'excedido' ? '⚠️ ' : estado === 'alerta' ? '⏰ ' : '';
 
   return `
     <article class="envelope" data-id="${_esc(presupuesto.id)}" data-estado="${estado}">
       <div class="envelope__header">
-        <p class="envelope__title">${estadoIcono}${categoria}</p>
+        <p class="envelope__title">${estadoIcono}${emoji} ${categoria}</p>
         <p class="envelope__subtitle">${f(gastado)} / ${f(asignado)}</p>
       </div>
       <div class="progress" role="progressbar"
@@ -468,7 +469,7 @@ function _renderSinPresupuesto(presupuestos) {
       <ul class="envelope-huerfanas__list">
         ${huerfanas.map(h => `
           <li>
-            <span class="envelope-huerfanas__cat">${_esc(h.categoria)}</span>
+            <span class="envelope-huerfanas__cat">${CATEGORIA_EMOJI[h.categoria] ?? '📦'} ${_esc(h.categoria)}</span>
             <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>
           </li>
         `).join('')}
