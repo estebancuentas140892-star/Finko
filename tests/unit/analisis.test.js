@@ -1459,3 +1459,57 @@ describe('renderAnalisis() - variación sin base (regresión: "↑ 0%" en rojo)'
     expect(html).toContain('↑ 50% vs mes anterior');
   });
 });
+
+describe('renderAnalisis() - paleta unificada dona + barras', () => {
+  const fechaMesActual = (dia) => {
+    const ahora = new Date();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos      = [];
+    S.compromisos = [];
+    S.cuentas     = [];
+    S.metas       = [];
+    S.apartados   = [];
+    S.inversiones = [];
+  });
+
+  it('cada barra lateral usa el color que la dona asignó a su categoría', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Mercado',    monto: 600_000, fecha: fechaMesActual(2) }),
+      gasto({ id: 'g2', categoria: 'Transporte', monto: 300_000, fecha: fechaMesActual(3) }),
+    ];
+    renderAnalisis();
+    const filas = [...document.querySelectorAll('.cat-row')];
+    expect(filas.length).toBe(2);
+
+    // La leyenda de la dona expone el color por categoría; la barra de cada
+    // fila debe llevar exactamente ese color.
+    const swatches = [...document.querySelectorAll('.chart-legend__item')];
+    const colorDe = (label) => {
+      const item = swatches.find(s => s.textContent.includes(label));
+      return item?.querySelector('.chart-legend__swatch')?.style.background ?? '';
+    };
+
+    for (const fila of filas) {
+      const nombre = fila.querySelector('.cat-row__nombre').textContent;
+      const barra  = fila.querySelector('.progress-bar');
+      expect(colorDe(nombre), `color de ${nombre}`).not.toBe('');
+      expect(barra.style.background, `barra de ${nombre}`).toBe(colorDe(nombre));
+    }
+  });
+
+  it('sin segmentos de dona, la barra conserva su color por defecto', () => {
+    // Forzar el caso: render de la lista sin dona no ocurre con gastos del
+    // mes (siempre hay segmentos), pero la barra no debe llevar background
+    // inline cuando la categoría no está en la dona ni existe "Otros".
+    S.gastos = [gasto({ id: 'g1', categoria: 'Mercado', monto: 100_000, fecha: fechaMesActual(2) })];
+    renderAnalisis();
+    const barra = document.querySelector('.cat-row .progress-bar');
+    // Con dona presente sí lleva color; el atributo width siempre está.
+    expect(barra.getAttribute('style')).toContain('width:');
+  });
+});

@@ -354,13 +354,22 @@ function _renderPorCategoria(porCategoria, gastoMes, segmentosColoreados = []) {
       </section>`;
   }
 
+  // Paleta unificada dona + barras: cada barra usa el color que la dona le
+  // asignó a su categoría (misma fuente: colorearSegmentos). Las categorías
+  // agrupadas en "Otros" heredan el color de ese segmento, para que el color
+  // cuente la misma historia en toda la sección. Sin dona (sin segmentos),
+  // las barras conservan su color por defecto.
+  const colorPorCategoria = Object.fromEntries(segmentosColoreados.map(s => [s.label, s.color]));
+  const colorOtros = colorPorCategoria['Otros'] ?? '';
+
   const filas = entradas.map(([cat, total]) => {
     const pct = gastoMes > 0 ? Math.round((total / gastoMes) * 100) : 0;
+    const color = colorPorCategoria[cat] ?? colorOtros;
     return `
       <li class="cat-row">
         <span class="cat-row__nombre">${_esc(cat)}</span>
         <div class="progress cat-row__bar" role="presentation">
-          <div class="progress-bar" style="width:${pct}%"></div>
+          <div class="progress-bar" style="width:${pct}%${color ? `;background:${color}` : ''}"></div>
         </div>
         <span class="cat-row__pct">${pct}%</span>
         <span class="cat-row__monto">${f(total)}</span>
