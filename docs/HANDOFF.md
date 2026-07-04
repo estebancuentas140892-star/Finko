@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-04 (feat(ui): ID.4, espaciado y jerarquía en las tarjetas más densas)
+> Última actualización: 2026-07-04 (feat(ui): ID.2, familia Finko Icons en el resto de la UI estructural)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -40,6 +40,18 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### feat(ui): ID.2, familia Finko Icons en el resto de la UI estructural · 2026-07-04
+
+Tercera fase de la identidad visual ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). 8 símbolos existentes redibujados (saldo, recurring, lightbulb, alert, bolt, trophy, mountain, circle) + 5 nuevos (star, percent, trending-up, info, bar-chart); `i-cuentas` reutilizado para "Consolidar". Se retiran los emojis de utilería de la card "Estrategia de pago" (💡💪✨ℹ️🚨⚠️📊🤝🏦) y el tip de Inversión (💡), todos vía `icon()`. Nuevo `.icon--sm` (14px) para iconos junto a texto chico. Fuera de alcance a propósito: un `textContent` en Apartados (inyectar HTML ahí se vería crudo), emojis de categoría (ID.3) y usos de ⚠/📝 en otros archivos no relacionados. 2024/2024 unit; 128/128 E2E. SW v298 → v299.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 8 símbolos rediseñados + 5 nuevos. |
+| `modules/dominio/compromisos/views/estrategia.js` | 10 emojis de utilería → `icon()`. |
+| `styles/components/forms.css`, `styles/components/charts.css` | `.icon--sm` + tamaños en tarjetas de estrategia. |
+
+---
+
 ### feat(ui): ID.4, espaciado y jerarquía en las tarjetas más densas · 2026-07-04
 
 Segunda fase de la identidad visual ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). "¿Cómo distribuir?" (Mis cuentas) pasa de párrafos corridos a filas alineadas con separadores discretos y alertas con callout propio. De paso salió un bug real: el icono de "1 pendiente del mes" en Inicio era invisible (reutilizaba `.cal-dot--*`, fondo y color del mismo tono); ahora es un chip con fondo tenue e icono en el color completo del dominio. Nota del fondo (Ahorro) separada del dato con filete propio. Confetti de logros ya no se derrama sobre el bottom-nav en móvil. Fade del sidebar más alto y suave. 2024/2024 unit; 128/128 E2E. SW v297 → v298.
@@ -55,7 +67,7 @@ Segunda fase de la identidad visual ([ADR 023](DECISIONS/023-lenguaje-de-iconogr
 
 ### feat(ui): ID.1, lenguaje de iconografía propio con piloto en la navegación · 2026-07-04
 
-Nace la familia "Finko Icons" ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): línea grid 24, duotono (`fill-opacity=".15"` en el símbolo) y "punto de valor" sólido como firma. Los 14 símbolos de navegación quedaron redibujados (piloto); ids intactos, cero JS/CSS nuevo. Límites pasa de torta a velocímetro y Ahorro de cerdito a frasco. Fases siguientes en el tablero: ID.2 chrome, ID.3 categorías, ID.5 cifras. 2024/2024 unit; 128/128 E2E. SW v296 → v297.
+Nace la familia "Finko Icons" ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): línea grid 24, duotono (`fill-opacity=".15"` en el símbolo) y "punto de valor" sólido como firma. Los 14 símbolos de navegación quedaron redibujados (piloto); ids intactos, cero JS/CSS nuevo. Límites pasa de torta a velocímetro y Ahorro de cerdito a frasco. 2024/2024 unit; 128/128 E2E. SW v296 → v297.
 
 | Archivo | Cambio |
 |---|---|
@@ -83,19 +95,7 @@ Dos señales nuevas en el motor de pisos (ADR 013): el historial de gasto variab
 
 ---
 
-### feat(inversiones): E.5, IPC observado como constante anual · 2026-07-04
-
-`IPC_OBSERVADO_POR_ANIO` (DANE: 2024 5,20%, 2025 5,10%) + `ipcObservadoVigente()`. La rentabilidad real del portafolio descuenta la inflación observada; la meta de BanRep queda como referencia en el copy. Mantenimiento: agregar la entrada del año cada enero, junto a E.2. 2012/2012 unit (+4); 128/128 E2E. SW v293 → v294.
-
-| Archivo | Cambio |
-|---|---|
-| `modules/core/constants.js`, `modules/dominio/inversiones/view.js` | Constante + consumo en rentabilidad real. |
-
----
-
----
-
-> Para tareas anteriores (feat(gastos) TX.3 categorías Café y Gastos hormiga, feat(logros) LG.1b vitrina de logros en Ajustes ADR 022, feat(agenda) AP.4, MT.2 y AH.4 recordatorio de día de ingreso ADR 021, feat(ahorro) AH.3 y AUD.6 ADR 020 fondo como marcador de liquidez, feat(ahorro) AH.2 aporte recomendado del fondo explicado con datos reales, feat(personales) PE.1 tasa de interés opcional y reparto capital/interés, feat(tesoreria) MC.10 y MC.11 piso de ahorro y detección de déficit real, feat(compromisos) D.10 y D.13 categorías de relación para deuda personal y Fiado, feat(presupuesto) MC.8d pulido de Límites con iconos por categoría, test(rwd) RWD.1 verificación de reflow real a 320px en E2E, feat(presupuesto) MC.8c layout de dos columnas en Límites, feat(compromisos) D.12 aviso de tasa desconocida por deuda en la lista, feat(compromisos) D.11 la recomendación nombra la única deuda con interés, fix(ahorro) AH.1 hint del objetivo del fondo explicado, feat(logros) LG.1a toast de logros más legible, feat(personales) PE.2 a PE.5 estados de seguimiento humanizados en Me deben, style(a11y) COL.1 y COL.2 contraste de warning y texto deshabilitado, test(a11y) A11Y.5 pase axe sobre formularios dinámicos en E2E, feat(gastos) TX.6 y TX.7 el gasto hereda el ícono de su compromiso de origen, feat(ui) EP.7d divulgación progresiva Mis cuentas/Análisis/Me deben con la épica EP.7 completa, feat(ui) EP.7c divulgación progresiva Metas/Ahorro/Inversión, feat(ui) EP.7b divulgación progresiva Gastos/Deudas/Calendario/Límites, feat(ui) EP.7a banner con divulgación progresiva, docs(adr) ADR 016 revisado divulgación progresiva, chore(tesoreria) MC.12 renombrar "Ingreso" a "Ingresos fijos", fix(tesoreria) MC.7f pulido del asistente épica MC.7 completa, feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
+> Para tareas anteriores (feat(inversiones) E.5 IPC observado como constante anual, feat(gastos) TX.3 categorías Café y Gastos hormiga, feat(logros) LG.1b vitrina de logros en Ajustes ADR 022, feat(agenda) AP.4, MT.2 y AH.4 recordatorio de día de ingreso ADR 021, feat(ahorro) AH.3 y AUD.6 ADR 020 fondo como marcador de liquidez, feat(ahorro) AH.2 aporte recomendado del fondo explicado con datos reales, feat(personales) PE.1 tasa de interés opcional y reparto capital/interés, feat(tesoreria) MC.10 y MC.11 piso de ahorro y detección de déficit real, feat(compromisos) D.10 y D.13 categorías de relación para deuda personal y Fiado, feat(presupuesto) MC.8d pulido de Límites con iconos por categoría, test(rwd) RWD.1 verificación de reflow real a 320px en E2E, feat(presupuesto) MC.8c layout de dos columnas en Límites, feat(compromisos) D.12 aviso de tasa desconocida por deuda en la lista, feat(compromisos) D.11 la recomendación nombra la única deuda con interés, fix(ahorro) AH.1 hint del objetivo del fondo explicado, feat(logros) LG.1a toast de logros más legible, feat(personales) PE.2 a PE.5 estados de seguimiento humanizados en Me deben, style(a11y) COL.1 y COL.2 contraste de warning y texto deshabilitado, test(a11y) A11Y.5 pase axe sobre formularios dinámicos en E2E, feat(gastos) TX.6 y TX.7 el gasto hereda el ícono de su compromiso de origen, feat(ui) EP.7d divulgación progresiva Mis cuentas/Análisis/Me deben con la épica EP.7 completa, feat(ui) EP.7c divulgación progresiva Metas/Ahorro/Inversión, feat(ui) EP.7b divulgación progresiva Gastos/Deudas/Calendario/Límites, feat(ui) EP.7a banner con divulgación progresiva, docs(adr) ADR 016 revisado divulgación progresiva, chore(tesoreria) MC.12 renombrar "Ingreso" a "Ingresos fijos", fix(tesoreria) MC.7f pulido del asistente épica MC.7 completa, feat(tesoreria) MC.7e Paso 3 reparte entre cuentas, feat(tesoreria) MC.7d completo asistente paginado + R3, fix(tesoreria) BUG-007/BUG-008 copy cuota de manejo + validaciones Infinity, fix(compromisos) BUG-006 abono extra, fix(tesoreria) BUG-009 tope coordinado cuota+extra, docs(bugs) diseño BUG-009, fix(tesoreria) BUG-005 cuota de manejo, fix(tesoreria) BUG-003/BUG-004 checklist de Necesidades, feat(tesoreria) MC.7d slice 1 checklist de Necesidades, docs(revision) Mis cuentas, docs(adr) ADR 018 revisión, AG.4, AG.2, AG.7, AG.6, AG.5, MT.4, MT.5, MT.3, MT.1, IN.2, IN.1, IN.3, AUD.5, AUD.4, AUD.3, AUD.1, MC.8b, AUD.2, fix(presupuesto) Ahorro celebra en verde MC.8, MC.8a, docs(adr) ADR 019, MC.7c, MC.7b, MC.7a, docs(adr) ADR 018, MC.5e, MC.5b, MC.5d, MC.5c, feat(nav) Dashboard→Inicio/Agenda→Calendario, MC.5a, docs(adr) ADR 017, A11Y.4, A11Y.3, A11Y.2, A11Y.1, EP.4, EP.3, EP.2, EP.1, EP.0, MC.6b...), ver [`docs/CHANGELOG.md`](CHANGELOG.md) (o [`docs/changelog/2026-07.md`](changelog/2026-07.md) una vez julio se archive).
 
 ---
 

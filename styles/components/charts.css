@@ -504,6 +504,10 @@
   font-size: 1.75rem;
   line-height: 1;
 }
+.estrategia-card-pick__icono .icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
 .estrategia-card-pick__nombre {
   font-size: var(--fk-text-base);
   font-weight: 600;
@@ -894,6 +898,7 @@
 @media (max-width: 480px) {
   .estrategia-card-pick { padding: var(--fk-space-3); min-height: 84px; }
   .estrategia-card-pick__icono { font-size: 1.5rem; }
+  .estrategia-card-pick__icono .icon { width: 1.5rem; height: 1.5rem; }
   .estrategia-card__metrica-valor { font-size: var(--fk-text-base); }
 }
 

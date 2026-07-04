@@ -108,7 +108,7 @@ export function renderEstrategiaPago() {
     el.innerHTML = `
       <article class="estrategia-card">
         <header class="estrategia-card__header">
-          <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
+          <h2 class="estrategia-card__title">${icon('lightbulb')} Estrategia de pago</h2>
         </header>
         <p class="estrategia-card__placeholder">
           Tienes una sola deuda activa (<strong>${_esc(d.descripcion)}</strong>).
@@ -134,7 +134,7 @@ export function renderEstrategiaPago() {
   el.innerHTML = `
     <article class="estrategia-card">
       <header class="estrategia-card__header">
-        <h2 class="estrategia-card__title">💡 Estrategia de pago</h2>
+        <h2 class="estrategia-card__title">${icon('lightbulb')} Estrategia de pago</h2>
         <p class="estrategia-card__subtitle">
           Finko te ayuda a tomar mejores decisiones con tus deudas.
         </p>
@@ -188,7 +188,7 @@ function _renderBotonAlerta(abierto) {
             data-action="abrir-panel-alternativas"
             aria-expanded="${abierto ? 'true' : 'false'}"
             aria-controls="estrategia-panel-alternativas">
-      <span>🚨 ${texto}</span>
+      <span>${icon('alert')} ${texto}</span>
       <span class="estrategia-card__alerta-boton-chevron" aria-hidden="true">${abierto ? '▴' : '▾'}</span>
     </button>`;
 }
@@ -199,9 +199,9 @@ function _renderBotonAlerta(abierto) {
 // >= 2 deudas, pero se valida igual por defensividad y consistencia con
 // el guard propio de `renderConsolidar`).
 const _META_ALTERNATIVAS = [
-  { id: 'aumentar',   icono: '💪', nombre: 'Aumentar la cuota' },
-  { id: 'renegociar', icono: '🤝', nombre: 'Renegociar la tasa' },
-  { id: 'consolidar', icono: '🏦', nombre: 'Consolidar' },
+  { id: 'aumentar',   icono: icon('trending-up', 'icon icon--sm'), nombre: 'Aumentar la cuota' },
+  { id: 'renegociar', icono: icon('percent', 'icon icon--sm'),     nombre: 'Renegociar la tasa' },
+  { id: 'consolidar', icono: icon('cuentas', 'icon icon--sm'),     nombre: 'Consolidar' },
 ];
 
 function _alternativasDisponibles(deudas) {
@@ -261,7 +261,7 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
   const puedeAplicar = extraMensual > 0;
   return `
     <div class="estrategia-card__remedio">
-      <p class="estrategia-card__bloque-titulo">💪 Aumenta tu cuota</p>
+      <p class="estrategia-card__bloque-titulo">${icon('trending-up', 'icon icon--sm')} Aumenta tu cuota</p>
       <div class="form-group">
         <label for="estrategia-extra" class="label">Pago extra mensual</label>
         <input id="estrategia-extra" class="input" type="number"
@@ -299,7 +299,7 @@ function _renderDiagnosticoTexto(diagnostico) {
 
   return `
     <div class="estrategia-card__diagnostico">
-      <p class="estrategia-card__bloque-titulo">⚠️ Por qué tu plan no se sostiene</p>
+      <p class="estrategia-card__bloque-titulo">${icon('alert', 'icon icon--sm')} Por qué tu plan no se sostiene</p>
       ${listaCrecientes}
       ${sugerenciaExtra}
     </div>`;
@@ -322,7 +322,7 @@ const _RESUMEN_ESTRATEGIA = {
 
 /**
  * Renderiza una card seleccionable de estrategia. Si `recomendacion.estrategia`
- * coincide, muestra "✨ Recomendada para vos" como subtítulo interno.
+ * coincide, muestra "Recomendada para ti" (con icon('star')) como subtítulo interno.
  *
  * NOTA: la card NUNCA está `disabled`. Cuando una estrategia no aplica con
  * las deudas actuales (Avalancha sin deudas con interés), igual es clicable
@@ -337,7 +337,7 @@ function _renderCardEstrategia(tipo, activa, recomendacion, habilitada) {
   const claseActiva   = seleccionada ? ' estrategia-card-pick--activa' : '';
   const claseInactiva = habilitada   ? '' : ' estrategia-card-pick--inactiva';
   const subtituloHtml = recomendada
-    ? '<span class="estrategia-card-pick__sub">✨ Recomendada para ti</span>'
+    ? `<span class="estrategia-card-pick__sub">${icon('star', 'icon icon--sm')} Recomendada para ti</span>`
     : '<span class="estrategia-card-pick__sub estrategia-card-pick__sub--ghost" aria-hidden="true">&nbsp;</span>';
   return `
     <button type="button"
@@ -353,9 +353,9 @@ function _renderCardEstrategia(tipo, activa, recomendacion, habilitada) {
 
 /**
  * Muestra 2 bloques de la estrategia seleccionada:
- *   1. Resumen ("✨ Por qué te conviene" si es recomendada, "ℹ️ Cómo funciona" si no)
+ *   1. Resumen ("Por qué te conviene" si es recomendada, "Cómo funciona" si no)
  *      → integra razón (si recomendada) + mecanismo + ideal en 1 párrafo
- *   2. 📊 Tu impacto (métricas concretas en orden consistente entre estrategias)
+ *   2. Tu impacto (métricas concretas en orden consistente entre estrategias)
  *
  * Caso especial: si la estrategia elegida no aplica (Avalancha sin tasa > 0),
  * mostramos un mensaje educativo en lugar de los 2 bloques.
@@ -386,7 +386,7 @@ function _renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensua
     <div class="estrategia-card__detalle">
       ${resumenHtml}
       <div class="estrategia-card__bloque">
-        <p class="estrategia-card__bloque-titulo">📊 Tu impacto</p>
+        <p class="estrategia-card__bloque-titulo">${icon('bar-chart', 'icon icon--sm')} Tu impacto</p>
         ${impactoHtml}
       </div>
     </div>`;
@@ -398,7 +398,9 @@ function _renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensua
  * para la recomendada (vendiendo) vs "Cómo funciona" para la otra (explicando).
  */
 function _renderResumenEstrategia(tipo, esRecomendada, recomendacion) {
-  const titulo = esRecomendada ? '✨ Por qué te conviene' : 'ℹ️ Cómo funciona';
+  const titulo = esRecomendada
+    ? `${icon('star', 'icon icon--sm')} Por qué te conviene`
+    : `${icon('info', 'icon icon--sm')} Cómo funciona`;
   const razon  = esRecomendada && recomendacion.razon ? `${recomendacion.razon} ` : '';
   const cuerpo = `${razon}${_RESUMEN_ESTRATEGIA[tipo]}`;
   return `
@@ -438,7 +440,7 @@ function _renderNoAplica(estrategia) {
 function _renderAceleradorExtra(extraMensual, resumenHtml) {
   return `
     <details class="estrategia-card__acelerador"${extraMensual > 0 ? ' open' : ''}>
-      <summary class="estrategia-card__acelerador-summary">💪 ¿Puedes pagar más rápido?</summary>
+      <summary class="estrategia-card__acelerador-summary">${icon('trending-up')} ¿Puedes pagar más rápido?</summary>
       <div class="estrategia-card__acelerador-body">
         <div class="form-group">
           <label for="estrategia-extra" class="label">Pago extra mensual</label>

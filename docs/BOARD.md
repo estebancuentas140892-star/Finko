@@ -126,16 +126,7 @@ _(sin pendientes activos.)_
 
 ## Transversal (afecta varias secciones)
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1 (lenguaje + piloto de navegación, 2026-07-04) e ID.4 (espaciado y jerarquía, 2026-07-04) cerradas; estas son las fases restantes, en orden sugerido.
-
-#### ID.2 - Familia Finko Icons en el resto de la UI estructural
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : extender el lenguaje del ADR 023 a los símbolos aún estilo Lucide (saldo, recurring, lightbulb, alert, trophy, mountain, eye...) y retirar los emojis de utilería en títulos y nudges (💡, 💪, ✨) reemplazándolos por símbolos de la familia.
-- Secciones  : todas (chrome de UI)
-- Archivos   : `index.html` (sprite), vistas que interpolan emojis de utilería
-- Depende de : nada (el lenguaje ya está definido)
-- Modelo     : Sonnet 5 - Alto
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). ID.1 (lenguaje + piloto de navegación), ID.4 (espaciado y jerarquía) e ID.2 (resto de la UI estructural) cerradas, todas 2026-07-04; queda esta fase.
 
 #### ID.3 - Iconos de categorías con tinte por dominio
 - Prioridad  : media
@@ -143,13 +134,13 @@ _(sin pendientes activos.)_
 - Objetivo   : diseñar los ~40 iconos de categorías (gastos, ingresos, agenda, deudas, metas) en el lenguaje del ADR 023, teñidos con `--fk-dom-*`, y retirar los catálogos `CATEGORIA_*_EMOJI` de la UI estructural. Actualizar el guardarraíl TX.4. Decidir con el usuario el destino de los emojis de celebración (logros, confetti, tips).
 - Secciones  : Gastos, Calendario, Deudas, Metas, Límites, Análisis
 - Archivos   : `index.html` (sprite), `modules/core/constants.js`, vistas que consumen los catálogos, `tests/unit/constants.test.js`
-- Depende de : ID.2 (para no dejar la app a tres lenguajes)
+- Depende de : nada (ID.2 ya cerró)
 - Modelo     : Fable 5 - Alto
 
 #### ID.5 - Micropulido tipográfico de cifras
 - Prioridad  : baja
 - Estado     : opcional
-- Objetivo   : tracking levemente negativo y eje óptico de Inter en las cifras grandes (hero, patrimonio, bento values); solo si tras ID.2-ID.4 el detalle aún se nota.
+- Objetivo   : tracking levemente negativo y eje óptico de Inter en las cifras grandes (hero, patrimonio, bento values); solo si el detalle aún se nota tras las fases ya cerradas.
 - Secciones  : Inicio, Análisis, Ahorro
 - Archivos   : `styles/base.css`, `styles/tokens.css`
 - Depende de : nada (ID.4 ya cerró)

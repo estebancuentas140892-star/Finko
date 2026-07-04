@@ -32,6 +32,14 @@
   height: 1.125rem;
 }
 
+/* Íconos chicos: en línea con texto xs/sm (badges, subtítulos, selectores
+   de opción). El .icon base (20px) domina a esa escala de texto. */
+.icon--sm {
+  width: 0.875rem;
+  height: 0.875rem;
+  stroke-width: 2.25;
+}
+
 /* Íconos grandes: empty states, hero guide. */
 .icon--lg {
   width: 3rem;

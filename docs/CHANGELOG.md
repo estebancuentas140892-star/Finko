@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.2, familia Finko Icons en el resto de la UI estructural · 2026-07-04
+
+Tercera fase de la identidad visual ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)). Se redibujan 8 símbolos existentes con el lenguaje (duotono + punto de valor): `i-saldo`, `i-recurring`, `i-lightbulb`, `i-alert`, `i-bolt`, `i-trophy`, `i-mountain` y `i-circle` (reinterpretado como "bola de nieve": dos círculos, uno chico creciendo a uno grande). Se agregan 5 símbolos nuevos: `i-star`, `i-percent`, `i-trending-up`, `i-info`, `i-bar-chart`; y se reutiliza `i-cuentas` para "Consolidar deudas" (misma metáfora, sin dibujo nuevo).
+
+Se retiran los emojis de utilería concentrados en la card "Estrategia de pago" (💡, 💪, ✨, ℹ️, 🚨, ⚠️, 📊, 🤝, 🏦) y en el tip evergreen de Inversión (💡), reemplazados por `icon()`. Nuevo modificador `.icon--sm` (14px) para iconos junto a texto xs/sm.
+
+**Fuera de alcance a propósito:** un `hint.textContent` en Apartados que interpola 💡 (asignar HTML a `textContent` lo mostraría como texto crudo); los emojis de categoría (`CATEGORIA_*_EMOJI`, dominio de ID.3); el badge "📝 Pendiente" de Gastos y los usos sueltos de ⚠ en otros 8 archivos (fuera del cúmulo visual que motivó esta fase).
+
+2024/2024 unit; 128/128 E2E. Lint limpio. SW v298 → v299.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 8 símbolos rediseñados + 4 nuevos (star, percent, trending-up, info, bar-chart). |
+| `modules/dominio/compromisos/views/estrategia.js` | 10 emojis de utilería reemplazados por `icon()`. |
+| `modules/dominio/inversiones/view.js` | Tip evergreen con `icon('lightbulb')`. |
+| `styles/components/forms.css` | `.icon--sm`. |
+| `styles/components/charts.css` | Tamaño de icono en `estrategia-card-pick__icono` (desktop + mobile). |
+| `docs/DECISIONS/023-...md`, `docs/DESIGN_SYSTEM.md` | ID.2 documentada, `.icon--sm` referenciado. |
+| `service-worker.js` | v298 → v299. |
+
+---
+
 ### feat(ui): ID.4, espaciado y jerarquía en las tarjetas más densas · 2026-07-04
 
 Segunda fase de la iniciativa de identidad visual 2026-07 (revisión aprobada por el usuario). Cinco puntos de la auditoría visual quedan resueltos:

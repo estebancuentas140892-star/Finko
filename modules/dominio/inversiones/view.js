@@ -217,7 +217,7 @@ function _renderNudge(n) {
 function _renderTipHorizonte() {
   return `
     <p class="inversion-tip">
-      💡 Invertir da frutos a largo plazo: el interés compuesto necesita tiempo. Define un horizonte y evita retirar antes del plazo salvo una emergencia.
+      ${icon('lightbulb')} Invertir da frutos a largo plazo: el interés compuesto necesita tiempo. Define un horizonte y evita retirar antes del plazo salvo una emergencia.
     </p>`;
 }
 

@@ -3,7 +3,7 @@
 **Estado:** Aceptada
 **Fecha:** 2026-07-04
 **Autores:** Claude Fable 5 (análisis y decisión, revisión visual aprobada por Esteban)
-**Resuelve:** ID.1 (identidad visual: sistema de iconografía). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
+**Resuelve:** ID.1 e ID.2 (identidad visual: sistema de iconografía). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
 
 ---
 
@@ -36,10 +36,17 @@ Los 14 símbolos de la navegación se redibujan con el lenguaje: `i-home` (casa 
 
 Dos metáforas cambian a propósito: Límites de gasto pasa de torta a **velocímetro** (un límite es un tope, no una distribución) y Ahorro pasa de cerdito a **frasco con moneda** (el cerdito a trazo era ilegible a 22px; el frasco mantiene la metáfora de guardar y gana el punto de valor natural).
 
-### Fases siguientes (fuera de esta ADR)
+### ID.2 (2026-07-04): resto de la UI estructural
 
-- **ID.2:** extender la familia al resto de la UI estructural (símbolos de acciones y títulos; retirar emojis de utilería como 💡 y 🟨).
-- **ID.3:** iconos de categorías (gastos, ingresos, agenda, deudas, metas) con tinte por dominio; retirar los catálogos de emoji estructurales y actualizar el guardarraíl TX.4. El destino de los emojis de celebración (logros, confetti) se decide en ID.3 con el usuario.
+Se redibujan 8 símbolos existentes con el lenguaje (`i-saldo`, `i-recurring`, `i-lightbulb`, `i-alert`, `i-bolt`, `i-trophy`, `i-mountain`, `i-circle`, este último reinterpretado como "bola de nieve" con dos círculos, uno chico y uno grande, para la metáfora de crecimiento) y se agregan 5 símbolos nuevos: `i-star` (recomendación), `i-percent` (renegociar tasa; el propio glifo del % ya trae dos círculos, así que el "punto de valor" sale gratis de la forma), `i-trending-up` (aumentar pago/aporte), `i-info` (explicación neutra, hermano de `i-alert` con círculo en vez de triángulo) e `i-bar-chart` (bloque "Tu impacto": tres barras crecientes con punto en la más alta). `i-cuentas` (ya redibujado en ID.1) se reutiliza para "Consolidar deudas": mismo símbolo, misma metáfora (institución financiera), sin necesidad de un dibujo nuevo.
+
+Se retiran los emojis de utilería concentrados en la card "Estrategia de pago" (💡, 💪 ×3, ✨ ×2, ℹ️, 🚨, ⚠️, 📊, 🤝, 🏦) y en el tip evergreen de Inversión (💡), todos reemplazados por `icon()`. Se agrega el modificador `.icon--sm` (14px) para iconos en línea con texto xs/sm (subtítulos, badges, selectores de alternativa), evitando que un icono de 20px domine una etiqueta pequeña.
+
+**Quedan fuera de ID.2, deliberadamente:** un caso de `hint.textContent = ...` en `apartados/index.js` que interpola 💡 pero asigna a `textContent` (no `innerHTML`): inyectar un `<svg>` ahí se mostraría como texto crudo, no como icono. Cambiar esa asignación a `innerHTML` para ganar un icono no se justificó por el riesgo/beneficio de tocar una región `aria-live`. Tampoco se tocaron los emojis de categoría (`CATEGORIA_*_EMOJI` en `constants.js`, dominio de ID.3) ni el badge "📝 Pendiente" de Gastos ni los usos sueltos de ⚠ en otros 8 archivos: no forman parte del mismo cúmulo visual que motivó esta fase y su limpieza es un alcance propio, no una extensión mecánica de este cambio.
+
+### ID.3 (pendiente)
+
+Iconos de categorías (gastos, ingresos, agenda, deudas, metas) con tinte por dominio; retirar los catálogos de emoji estructurales y actualizar el guardarraíl TX.4. El destino de los emojis de celebración (logros, confetti) se decide en ID.3 con el usuario.
 
 ## Consecuencias
 
@@ -52,7 +59,7 @@ Dos metáforas cambian a propósito: Límites de gasto pasa de torta a **velocí
 
 ### Negativas / Restricciones
 
-- Durante ID.1-ID.2 conviven símbolos redibujados y símbolos estilo Lucide: la diferencia es sutil (mismo trazo) pero existe hasta cerrar ID.2.
+- Con ID.1 e ID.2 cerradas, todo símbolo de identidad (no utilitario) ya está en el lenguaje propio; los monolínea (edit, trash, x, chevron, search, eye, eye-off, check-circle, moon, sun) se quedan así para siempre por diseño (regla 4), no por migración pendiente.
 - Los emojis de categorías siguen en las listas hasta ID.3; la sección de Gastos mantendrá el contraste entre nav propia y categorías emoji durante la transición.
 - Redibujar iconos es trabajo de criterio visual: cada símbolo nuevo debe verificarse a 22px (nav), 16px (botones) y 48px (empty states) en ambos temas antes de entrar al sprite.
 - La decisión del icono de Gastos registrada en la memoria del proyecto (serie sobria, no unificar con Compromisos/Personales) queda superada por esta ADR en su parte de "emoji vs SVG es intencional"; la parte de sobriedad se conserva como principio.
