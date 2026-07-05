@@ -228,7 +228,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await expect(page.locator('#sec-metas.active')).toBeVisible();
   });
 
-  test('crear una meta con categoría "Boda" muestra 💍 junto al nombre en la lista', async ({ page }) => {
+  test('crear una meta con categoría "Boda" muestra el anillo del sprite junto al nombre (ID.3)', async ({ page }) => {
     await page.click('[data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
@@ -241,7 +241,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo).toContainText('💍');
+    await expect(titulo.locator('use[href="#c-anillo"]')).toHaveCount(1);
     await expect(titulo).toContainText('Fiesta de matrimonio');
   });
 
@@ -296,9 +296,9 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // El emoji guardado es el de Vivienda (🏠), no el 🎸 que quedó escrito.
+    // El ícono mostrado es la casa de Vivienda (sprite), no el 🎸 que quedó escrito.
     const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo).toContainText('🏠');
+    await expect(titulo.locator('use[href="#i-home"]')).toHaveCount(1);
     await expect(titulo).not.toContainText('🎸');
   });
 });
@@ -1141,13 +1141,13 @@ test.describe('Agenda - marca de color por tipo', () => {
   });
 });
 
-// ── Agenda - emoji de categoría como ícono principal (AG.2) ──────────────────
-// Un gasto fijo con categoría muestra el emoji de esa categoría como ícono
+// ── Agenda - teja de categoría como ícono principal (AG.2/ID.3) ──────────────
+// Un gasto fijo con categoría muestra la teja de esa categoría como ícono
 // principal (izquierda), no el genérico por tipo; sin categoría, cae al
 // ícono genérico.
 
-test.describe('Agenda - emoji de categoría como ícono principal', () => {
-  test('con categoría, el ícono principal es el emoji (sin <svg>)', async ({ page }) => {
+test.describe('Agenda - teja de categoría como ícono principal', () => {
+  test('con categoría, el ícono principal es la teja con el glifo del sprite', async ({ page }) => {
     const diaPago = 15;
 
     await page.addInitScript(({ diaPago }) => {
@@ -1173,8 +1173,8 @@ test.describe('Agenda - emoji de categoría como ícono principal', () => {
 
     const iconoEl = page.locator('.cal-detail__icon');
     await expect(iconoEl).toBeVisible({ timeout: 3_000 });
-    await expect(iconoEl.locator('svg')).toHaveCount(0);
-    await expect(iconoEl).toContainText('🌐');
+    await expect(iconoEl.locator('.cat-teja')).toHaveCount(1);
+    await expect(iconoEl.locator('use[href="#c-internet"]')).toHaveCount(1);
   });
 
   test('sin categoría, el ícono principal es el genérico del tipo (con <svg>)', async ({ page }) => {

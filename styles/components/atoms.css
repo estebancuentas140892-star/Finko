@@ -154,8 +154,10 @@
   color: var(--fk-success-text);
 }
 
-/* Cuando el icono contiene un bank-avatar, el wrapper no aporta bg propio */
-.list-item__icon:has(.bank-avatar) {
+/* Cuando el icono contiene una teja (de marca o de categoría), el wrapper
+   no aporta bg propio: la teja trae el suyo. */
+.list-item__icon:has(.bank-avatar),
+.list-item__icon:has(.cat-teja) {
   background: transparent;
 }
 
@@ -174,18 +176,41 @@
   border: 2px solid var(--fk-bg-surface);
 }
 
-/* Gastos: icono de categoría sobrio. En vez de un fondo de color por
-   categoría (saturaba y cansaba la vista), el emoji va grande sobre un
-   contenedor neutro discreto, delimitado por un borde sutil y una sombra
-   suave que le dan relieve y lo despegan de la card sin recargar el color.
-   Solo aplica a la lista de gastos. */
-.list-item__icon--cat {
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  box-shadow: var(--fk-shadow-sm);   /* relieve: lo despega de la card */
-  font-size: 1.5rem;                 /* emoji grande, protagonista */
+/* ════════════════════════════════════════════════════════════
+   CAT-TEJA - la teja de categoría (ID.3, ADR 025 D3): glifo
+   Finko Icons v2 sobre el tinte del dominio de su sección.
+   La genera infra/icons.js → tejaCategoria(). Misma geometría
+   que la teja de marca (.bank-avatar); el color vive acá:
+   currentColor es el color del dominio, así que la chispa de
+   los símbolos v2 cae a él sin declarar --fk-icon-dot.
+   ════════════════════════════════════════════════════════════ */
+
+.cat-teja {
+  --cat-dom: var(--fk-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-8);
+  height: var(--fk-space-8);
+  border-radius: var(--fk-radius-md);
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--cat-dom) 14%, transparent);
+  color: var(--cat-dom);
 }
+.cat-teja .icon {
+  width: 62%;
+  height: 62%;
+}
+.cat-teja[data-dom="ingresos"]    { --cat-dom: var(--fk-dom-ingresos); }
+.cat-teja[data-dom="gastos"]      { --cat-dom: var(--fk-dom-gastos); }
+.cat-teja[data-dom="compromisos"] { --cat-dom: var(--fk-dom-compromisos); }
+.cat-teja[data-dom="tesoreria"]   { --cat-dom: var(--fk-dom-tesoreria); }
+.cat-teja[data-dom="metas"]       { --cat-dom: var(--fk-dom-metas); }
+.cat-teja[data-dom="analisis"]    { --cat-dom: var(--fk-dom-analisis); }
+.cat-teja[data-dom="presupuesto"] { --cat-dom: var(--fk-dom-presupuesto); }
+.cat-teja[data-dom="personales"]  { --cat-dom: var(--fk-dom-personales); }
+.cat-teja[data-dom="ahorro"]      { --cat-dom: var(--fk-dom-ahorro); }
+.cat-teja[data-dom="inversion"]   { --cat-dom: var(--fk-dom-inversion); }
 
 /* ════════════════════════════════════════════════════════════
    EMPTY STATE

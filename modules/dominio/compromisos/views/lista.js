@@ -10,7 +10,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { icon, emptyArt } from '../../../infra/icons.js';
+import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import {
   compromisosActivos,
@@ -23,11 +23,11 @@ import {
   ICONO_TIPO,
 } from '../logic.js';
 import { getEstrategiaUI } from './estrategia.js';
-import { CATEGORIA_DEUDA_EMOJI, CATEGORIA_DEUDA_PERSONAL_EMOJI } from '../../../core/constants.js';
+import { CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO } from '../../../core/constants.js';
 
 // Lookup unificado: producto (entidad) + relación (personal). Sin colisiones:
-// el único label compartido ('Otro'/'Otra') difiere y ambos usan 📦.
-const _EMOJI_DEUDA = { ...CATEGORIA_DEUDA_EMOJI, ...CATEGORIA_DEUDA_PERSONAL_EMOJI };
+// el único label compartido ('Otro'/'Otra') difiere y ambos usan c-otros.
+const _ICONO_DEUDA = { ...CATEGORIA_DEUDA_ICONO, ...CATEGORIA_DEUDA_PERSONAL_ICONO };
 
 /**
  * Renderiza la lista de deudas en `#lista-compromisos`.
@@ -88,11 +88,16 @@ export function renderListaCompromisos() {
 function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
-  // MK.2 (ADR 025): si el nombre de la deuda menciona una marca o entidad
-  // conocida ("Tarjeta Bancolombia", "Crédito Nequi"), la teja de marca es
-  // el ícono de la card; sin match, el ícono genérico del tipo.
+  // MK.2/ID.3 (ADR 025): si el nombre de la deuda menciona una marca o
+  // entidad conocida ("Tarjeta Bancolombia", "Crédito Nequi"), la teja de
+  // marca es el ícono de la card; sin match, la teja de categoría (tipo de
+  // deuda o relación) teñida con el color de su dominio; sin categoría, el
+  // ícono genérico del tipo dentro de la misma teja.
+  const dominio  = tipo === 'deuda-personal' ? 'personales' : 'compromisos';
   const marca    = resolverMarca(compromiso.descripcion);
-  const icono    = marca ? tejaMarca(marca) : icon(ICONO_TIPO[tipo] ?? 'recurring');
+  const icono    = marca
+    ? tejaMarca(marca)
+    : tejaCategoria(_ICONO_DEUDA[compromiso.categoria] ?? `i-${ICONO_TIPO[tipo] ?? 'recurring'}`, dominio);
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
   const dias     = proximoVencimiento(compromiso);
@@ -137,9 +142,9 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const subtitle = cuota > 0
     ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
     : `${frec} · día ${compromiso.diaPago}`;
-  const catLabel = compromiso.categoria
-    ? `${_EMOJI_DEUDA[compromiso.categoria] ?? ''} ${_esc(compromiso.categoria)} · `
-    : '';
+  // La teja de la izquierda ya lleva el glifo de la categoría: acá basta
+  // el nombre en texto plano.
+  const catLabel = compromiso.categoria ? `${_esc(compromiso.categoria)} · ` : '';
   const contexto = `${catLabel}${label}${tasaMostrada ? ` · ${tasaMostrada}` : ''}`;
 
   const ordenBadge = ordenEstrategia

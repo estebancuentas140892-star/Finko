@@ -5,10 +5,10 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
+import { icon, emptyArt, iconoCategoria } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { CATEGORIAS_META, CATEGORIA_META_EMOJI } from '../../core/constants.js';
+import { CATEGORIAS_META, CATEGORIA_META_ICONO } from '../../core/constants.js';
 import {
   metasActivas, calcularProgreso, calcularAhorroPorPeriodo,
   frecuenciaPrincipalIngresos, diasHastaFecha,
@@ -40,7 +40,7 @@ export function renderListaMetas() {
  */
 function _renderMetaItem(meta, frecuenciaIngresos) {
   const nombre  = _esc(meta.nombre);
-  const icono   = _esc(meta.icono ?? '🎯');
+  const icono   = _iconoMeta(meta);
   const { porcentaje, faltante, completada } = calcularProgreso(meta);
   const ahorro  = calcularAhorroPorPeriodo(meta, frecuenciaIngresos);
   const dias    = diasHastaFecha(meta.fechaLimite);
@@ -163,7 +163,7 @@ export function renderFormMeta() {
           <option value="">Sin categoría</option>
           ${_renderOpcionesCategoria()}
         </select>
-        <p class="form-hint">Elige una categoría y Finko le pone el emoji automáticamente.</p>
+        <p class="form-hint">Elige una categoría y Finko le pone el ícono automáticamente.</p>
       </div>
       <!-- MT.3: el emoji ya no es un campo suelto para toda meta; solo con
            categoría "Otra" tiene sentido elegirlo a mano (el resto ya trae
@@ -184,12 +184,34 @@ export function renderFormMeta() {
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
- * Devuelve las `<option>` de CATEGORIAS_META con su emoji (MT.1), en el
- * orden del catálogo.
+ * Devuelve las `<option>` de CATEGORIAS_META en el orden del catálogo
+ * (texto plano: un <option> nativo no renderiza SVG, ADR 025).
  * @returns {string}
  */
 function _renderOpcionesCategoria() {
   return CATEGORIAS_META
-    .map(cat => `<option value="${_esc(cat)}">${CATEGORIA_META_EMOJI[cat]} ${_esc(cat)}</option>`)
+    .map(cat => `<option value="${_esc(cat)}">${_esc(cat)}</option>`)
     .join('');
+}
+
+/**
+ * Ícono inline del título de una meta (ID.3). Con categoría predefinida
+ * (cualquiera salvo 'Otra'), el glifo del sprite (icon--sm, en línea con
+ * el texto: el slot de ícono de la fila ya lo ocupa el anillo de
+ * progreso); las metas viejas guardaban el emoji de su categoría en
+ * `icono`, y como aquí la categoría manda, migran solas al sprite al
+ * re-renderizar. Con 'Otra' o sin categoría gana el emoji que el usuario
+ * eligió a mano (dato del usuario que se conserva, ID.3); sin nada, la
+ * caja c-otros o la diana i-metas.
+ *
+ * @param {import('../../core/state.js').Meta} meta
+ * @returns {string}
+ */
+function _iconoMeta(meta) {
+  if (meta.categoria && meta.categoria !== 'Otra') {
+    const simbolo = CATEGORIA_META_ICONO[meta.categoria];
+    if (simbolo) return iconoCategoria(simbolo, 'icon icon--sm');
+  }
+  if (meta.icono) return _esc(meta.icono);
+  return iconoCategoria(meta.categoria === 'Otra' ? 'c-otros' : 'i-metas', 'icon icon--sm');
 }

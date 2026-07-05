@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
-import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../modules/core/constants.js';
+import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -437,10 +437,10 @@ describe('eventosEnProximos', () => {
 // ── renderFormGastoFijo() - selector de categoría (Agenda) ────────
 
 describe('renderFormGastoFijo() - selector de categoría', () => {
-  it('incluye un <option> con emoji para cada categoría de CATEGORIAS_AGENDA', () => {
+  it('incluye un <option> en texto plano para cada categoría de CATEGORIAS_AGENDA (ID.3)', () => {
     const html = renderFormGastoFijo();
     for (const c of CATEGORIAS_AGENDA) {
-      expect(html).toContain(`${CATEGORIA_AGENDA_EMOJI[c]} ${c}`);
+      expect(html).toContain(`<option value="${c}">${c}</option>`);
     }
   });
 
@@ -481,16 +481,16 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     vi.useRealTimers();
   });
 
-  it('AG.2: con categoría, el emoji es el ícono principal (izquierda), no se repite en el subtítulo', () => {
+  it('AG.2/ID.3: con categoría, la teja de categoría es el ícono principal (izquierda)', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const item = document.querySelector('.cal-detail__item');
-    expect(item.querySelector('.cal-detail__icon').textContent).toContain('🌐');
+    const teja = item.querySelector('.cal-detail__icon .cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.innerHTML).toContain(`#${CATEGORIA_AGENDA_ICONO['Internet']}`);
     expect(item.querySelector('.cal-detail__sub').textContent).toContain('Internet');
-    // El subtítulo ya no repite el emoji: ya vive en el ícono principal.
-    expect(item.querySelector('.cal-detail__sub').textContent).not.toContain('🌐');
   });
 
   it('sin categoría no agrega nada después de la frecuencia en el detalle', () => {
@@ -541,14 +541,16 @@ describe('renderAgenda() - emoji de categoría como ícono principal', () => {
     expect(iconoEl.querySelector('svg')).not.toBeNull();
   });
 
-  it('con categoría, el ícono principal es el emoji de la categoría (sin <svg>)', () => {
+  it('con categoría, el ícono principal es la teja de categoría con el glifo del sprite (ID.3)', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const iconoEl = document.querySelector('.cal-detail__icon');
-    expect(iconoEl.querySelector('svg')).toBeNull();
-    expect(iconoEl.textContent.trim()).toBe(CATEGORIA_AGENDA_EMOJI['Internet']);
+    const teja = iconoEl.querySelector('.cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.getAttribute('data-dom')).toBe('presupuesto');
+    expect(teja.innerHTML).toContain(`#${CATEGORIA_AGENDA_ICONO['Internet']}`);
   });
 
   it('una deuda con entidad usa el ícono genérico del tipo, no hay campo categoría', () => {
@@ -580,7 +582,7 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
     vi.useRealTimers();
   });
 
-  it('con la marca en la nota (AG.4: categoría predefinida), la teja gana al emoji de categoría', () => {
+  it('con la marca en la nota (AG.4: categoría predefinida), la teja de marca gana a la de categoría', () => {
     S.compromisos = [compromisoBase({
       diaPago: 15, frecuencia: 'Mensual',
       descripcion: 'Streaming', categoria: 'Streaming', nota: 'Netflix',
@@ -591,7 +593,7 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
     const iconoEl = document.querySelector('.cal-detail__icon');
     expect(iconoEl.querySelector('.bank-avatar')).not.toBeNull();
     expect(iconoEl.innerHTML).toContain('#b-netflix');
-    expect(iconoEl.textContent).not.toContain(CATEGORIA_AGENDA_EMOJI['Streaming']);
+    expect(iconoEl.querySelector('.cat-teja')).toBeNull();
   });
 
   it('con la marca en la descripción (categoría "Otro"), también resuelve', () => {
@@ -618,14 +620,14 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
     expect(teja.getAttribute('style')).toContain('background:#FFC727');
   });
 
-  it('sin marca en el nombre, el fallback de AG.2 queda intacto (emoji o ícono del tipo)', () => {
+  it('sin marca en el nombre, el fallback de AG.2 queda intacto (teja de categoría o ícono del tipo)', () => {
     S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const iconoEl = document.querySelector('.cal-detail__icon');
     expect(iconoEl.querySelector('.bank-avatar')).toBeNull();
-    expect(iconoEl.textContent).toContain(CATEGORIA_AGENDA_EMOJI['Internet']);
+    expect(iconoEl.innerHTML).toContain(`#${CATEGORIA_AGENDA_ICONO['Internet']}`);
   });
 });
 

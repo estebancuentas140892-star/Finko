@@ -42,9 +42,9 @@ import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociac
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
 import { S } from '../../modules/core/state.js';
 import {
-  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI,
-  CATEGORIAS_DEUDA, CATEGORIA_DEUDA_EMOJI,
-  CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_EMOJI,
+  CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO,
+  CATEGORIAS_DEUDA, CATEGORIA_DEUDA_ICONO,
+  CATEGORIAS_DEUDA_PERSONAL, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../modules/core/constants.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ describe('catálogos exportados', () => {
   });
 });
 
-// ── CATEGORIAS_AGENDA / CATEGORIA_AGENDA_EMOJI (MC.9-Agenda) ──────
+// ── CATEGORIAS_AGENDA / CATEGORIA_AGENDA_ICONO (MC.9-Agenda) ──────
 
 describe('CATEGORIAS_AGENDA', () => {
   it('contiene 15 categorías predefinidas', () => {
@@ -113,22 +113,22 @@ describe('CATEGORIAS_AGENDA', () => {
   });
 });
 
-describe('CATEGORIA_AGENDA_EMOJI', () => {
-  it('tiene un emoji para cada categoría de CATEGORIAS_AGENDA', () => {
+describe('CATEGORIA_AGENDA_ICONO', () => {
+  it('tiene un ícono para cada categoría de CATEGORIAS_AGENDA', () => {
     for (const c of CATEGORIAS_AGENDA) {
-      expect(CATEGORIA_AGENDA_EMOJI[c]).toBeTruthy();
-      expect(typeof CATEGORIA_AGENDA_EMOJI[c]).toBe('string');
+      expect(CATEGORIA_AGENDA_ICONO[c]).toBeTruthy();
+      expect(typeof CATEGORIA_AGENDA_ICONO[c]).toBe('string');
     }
   });
 
   it('no tiene entradas huérfanas fuera del catálogo', () => {
-    for (const key of Object.keys(CATEGORIA_AGENDA_EMOJI)) {
+    for (const key of Object.keys(CATEGORIA_AGENDA_ICONO)) {
       expect(CATEGORIAS_AGENDA).toContain(key);
     }
   });
 });
 
-// ── CATEGORIAS_DEUDA / CATEGORIA_DEUDA_EMOJI ──────────────────────
+// ── CATEGORIAS_DEUDA / CATEGORIA_DEUDA_ICONO ──────────────────────
 
 describe('CATEGORIAS_DEUDA', () => {
   it('contiene 7 tipos de deuda predefinidos (curado en ADR 015)', () => {
@@ -143,16 +143,16 @@ describe('CATEGORIAS_DEUDA', () => {
   });
 });
 
-describe('CATEGORIA_DEUDA_EMOJI', () => {
-  it('tiene un emoji para cada categoría de CATEGORIAS_DEUDA', () => {
+describe('CATEGORIA_DEUDA_ICONO', () => {
+  it('tiene un ícono para cada categoría de CATEGORIAS_DEUDA', () => {
     for (const c of CATEGORIAS_DEUDA) {
-      expect(CATEGORIA_DEUDA_EMOJI[c]).toBeTruthy();
-      expect(typeof CATEGORIA_DEUDA_EMOJI[c]).toBe('string');
+      expect(CATEGORIA_DEUDA_ICONO[c]).toBeTruthy();
+      expect(typeof CATEGORIA_DEUDA_ICONO[c]).toBe('string');
     }
   });
 
   it('no tiene entradas huérfanas fuera del catálogo', () => {
-    for (const key of Object.keys(CATEGORIA_DEUDA_EMOJI)) {
+    for (const key of Object.keys(CATEGORIA_DEUDA_ICONO)) {
       expect(CATEGORIAS_DEUDA).toContain(key);
     }
   });
@@ -1707,20 +1707,20 @@ describe('renderFormAbono() - formulario', () => {
 // ── renderFormDeuda() - selector de tipo de obligación ────────────
 
 describe('renderFormDeuda() - selector de categoría', () => {
-  it('incluye un <option> con emoji para cada categoría de CATEGORIAS_DEUDA', () => {
+  it('incluye un <option> en texto plano para cada categoría de CATEGORIAS_DEUDA (ID.3)', () => {
     const html = renderFormDeuda('deuda-entidad');
     for (const c of CATEGORIAS_DEUDA) {
-      expect(html).toContain(`${CATEGORIA_DEUDA_EMOJI[c]} ${c}`);
+      expect(html).toContain(`<option value="${c}">${c}</option>`);
     }
   });
 
   it('D.10: entidad usa catálogo de producto, personal usa catálogo de relación', () => {
     const htmlEntidad  = renderFormDeuda('deuda-entidad');
     const htmlPersonal = renderFormDeuda('deuda-personal');
-    expect(htmlEntidad).toContain('💵 Libre inversión');
+    expect(htmlEntidad).toContain('Libre inversión');
     expect(htmlEntidad).not.toContain('Familiar');
     for (const c of CATEGORIAS_DEUDA_PERSONAL) {
-      expect(htmlPersonal).toContain(`${CATEGORIA_DEUDA_PERSONAL_EMOJI[c]} ${c}`);
+      expect(htmlPersonal).toContain(`<option value="${c}">${c}</option>`);
     }
     expect(htmlPersonal).not.toContain('Tarjeta de crédito');
   });
@@ -1819,11 +1819,11 @@ describe('CATEGORIAS_DEUDA_PERSONAL', () => {
     expect(CATEGORIAS_DEUDA_PERSONAL).toContain('Fiado');
   });
 
-  it('tiene un emoji para cada relación y ninguno huérfano', () => {
+  it('tiene un ícono para cada relación y ninguno huérfano', () => {
     for (const c of CATEGORIAS_DEUDA_PERSONAL) {
-      expect(CATEGORIA_DEUDA_PERSONAL_EMOJI[c]).toBeTruthy();
+      expect(CATEGORIA_DEUDA_PERSONAL_ICONO[c]).toBeTruthy();
     }
-    for (const key of Object.keys(CATEGORIA_DEUDA_PERSONAL_EMOJI)) {
+    for (const key of Object.keys(CATEGORIA_DEUDA_PERSONAL_ICONO)) {
       expect(CATEGORIAS_DEUDA_PERSONAL).toContain(key);
     }
   });
@@ -1837,7 +1837,7 @@ describe('renderListaCompromisos() - categoría en el contexto', () => {
     S.compromisos = [];
   });
 
-  it('muestra el emoji y el nombre de la categoría en la card de la deuda', () => {
+  it('muestra el nombre de la categoría en el contexto y su glifo en la teja (ID.3)', () => {
     S.compromisos = [{
       id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
       saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
@@ -1845,7 +1845,11 @@ describe('renderListaCompromisos() - categoría en el contexto', () => {
     }];
     renderListaCompromisos();
     const html = document.getElementById('lista-compromisos').innerHTML;
-    expect(html).toContain('💳 Tarjeta de crédito');
+    expect(html).toContain('Tarjeta de crédito · ');
+    const teja = document.querySelector('.list-item__icon .cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.getAttribute('data-dom')).toBe('compromisos');
+    expect(teja.innerHTML).toContain(`#${CATEGORIA_DEUDA_ICONO['Tarjeta de crédito']}`);
   });
 
   it('sin categoría no antepone nada al contexto (tipo · tasa)', () => {

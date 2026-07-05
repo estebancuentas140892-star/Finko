@@ -10,9 +10,9 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
+import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia } from './logic.js';
 
@@ -323,7 +323,7 @@ function _renderDetalleItemIngreso(ing) {
 
   return `
     <li class="cal-detail__item cal-detail__item--ingreso">
-      <span class="cal-detail__icon cal-detail__icon--ingreso cal-detail__icon--emoji" aria-hidden="true">💰</span>
+      <span class="cal-detail__icon cal-detail__icon--ingreso" aria-hidden="true">${tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos')}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">Ingreso${frec ? ` · ${frec}` : ''}</p>
@@ -348,12 +348,16 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // MK.2 (ADR 025): si el nombre menciona una marca conocida (Netflix, Claro,
   // Bancolombia...), la teja de marca es el ícono principal. Con categoría
   // predefinida el nombre que escribió el usuario vive en `nota` (AG.4), por
-  // eso se buscan ambos campos. Sin marca aplica AG.2: con categoría, el
-  // emoji es el ícono principal (izquierda), como en Gastos; sin categoría
-  // (o en deudas, campo exclusivo de tipo=fijo), el ícono genérico del tipo.
+  // eso se buscan ambos campos. Sin marca aplica AG.2/ID.3: con categoría,
+  // la teja de categoría es el ícono principal (izquierda), como en Gastos;
+  // sin categoría (o en deudas, campo exclusivo de tipo=fijo), el ícono
+  // genérico del tipo. El tinte de la teja de fijos es el amarillo de
+  // presupuesto: el color que el calendario ya usa para "fijo" (cal-dot).
   const marca = resolverMarca(`${c.descripcion ?? ''} ${c.nota ?? ''}`);
-  const emojiCategoria = (!marca && tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_EMOJI[c.categoria] : null;
-  const icono   = marca ? tejaMarca(marca) : (emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring'));
+  const simboloCategoria = (!marca && tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_ICONO[c.categoria] : null;
+  const icono   = marca ? tejaMarca(marca)
+    : simboloCategoria ? tejaCategoria(simboloCategoria, 'presupuesto')
+    : icon(ICONO_TIPO[tipo] ?? 'recurring');
   // AG.4: con categoría predefinida, el título (desc) ya ES la categoría
   // (normalizarCompromiso), así que repetirla aquí sería redundante. Solo se
   // muestra cuando difieren (p. ej. categoría "Otro" con nombre propio).
@@ -425,7 +429,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
 
   return `
     <li class="cal-detail__item cal-detail__item--${tipo}">
-      <span class="cal-detail__icon cal-detail__icon--${tipo}${emojiCategoria ? ' cal-detail__icon--emoji' : ''}" aria-hidden="true">${icono}</span>
+      <span class="cal-detail__icon cal-detail__icon--${tipo}" aria-hidden="true">${icono}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">${label}${frec ? ` · ${frec}` : ''}${catLabel}${notaLabel}</p>
@@ -460,7 +464,7 @@ export function renderFormGastoFijo() {
     .join('');
 
   const catOpts = CATEGORIAS_AGENDA
-    .map(c => `<option value="${_esc(c)}">${CATEGORIA_AGENDA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
   return `

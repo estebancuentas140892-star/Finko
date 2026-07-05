@@ -9,12 +9,12 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
+import { icon, emptyArt, iconoCategoria, tejaCategoria } from '../../infra/icons.js';
 import { bancoAvatar } from '../../infra/bancos.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import {
-  BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_EMOJI,
-  CATEGORIA_AGENDA_EMOJI, CATEGORIA_DEUDA_EMOJI, CATEGORIA_DEUDA_PERSONAL_EMOJI,
+  BANCOS_CO, FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO,
+  CATEGORIA_AGENDA_ICONO, CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../core/constants.js';
 import {
   cuentasActivas,
@@ -143,9 +143,7 @@ function _renderEmptyStateIngresos() {
 function _renderIngresoItem(ing) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
-  const catLabel = ing.categoria
-    ? ` · ${CATEGORIA_INGRESO_EMOJI[ing.categoria] ?? ''} ${_esc(ing.categoria)}`
-    : '';
+  const catLabel = ing.categoria ? ` · ${_esc(ing.categoria)}` : '';
 
   let diaHint = '';
   if (ing.diaPago) {
@@ -155,8 +153,13 @@ function _renderIngresoItem(ing) {
     diaHint = `<p class="list-item__hint">📅 ${_esc(diaStr)}</p>`;
   }
 
+  // ID.3: teja de categoría de ingreso como ícono de la fila (verde del
+  // dominio ingresos); sin categoría, la moneda genérica i-saldo.
+  const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
+
   return `
     <article class="list-item" data-id="${_esc(ing.id)}">
+      <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
         <p class="list-item__subtitle">${frec}${catLabel}</p>
@@ -189,7 +192,7 @@ export function renderFormIngreso(ingreso = null) {
     .join('');
 
   const catOpts = CATEGORIAS_INGRESO
-    .map(c => `<option value="${_esc(c)}"${ingreso?.categoria === c ? ' selected' : ''}>${CATEGORIA_INGRESO_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}"${ingreso?.categoria === c ? ' selected' : ''}>${_esc(c)}</option>`)
     .join('');
 
   const esSalarioMin = ingreso?.categoria === 'Salario mínimo';
@@ -288,14 +291,16 @@ function _nombreCuenta(cuentaId) {
  */
 function _renderIngresoPuntualItem(ing) {
   const desc = _esc(ing.descripcion);
-  const catLabel = ing.categoria
-    ? `${CATEGORIA_INGRESO_EMOJI[ing.categoria] ?? ''} ${_esc(ing.categoria)} · `
-    : '';
+  const catLabel = ing.categoria ? `${_esc(ing.categoria)} · ` : '';
   const cuentaNom = _nombreCuenta(ing.cuentaId);
   const cuentaStr = cuentaNom ? ` · ${_esc(cuentaNom)}` : '';
 
+  // ID.3: misma teja de categoría que los ingresos fijos.
+  const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
+
   return `
     <article class="list-item" data-id="${_esc(ing.id)}">
+      <div class="list-item__icon" aria-hidden="true">${teja}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}</p>
         <p class="list-item__subtitle">${catLabel}${_esc(_fechaCorta(ing.fecha))}${cuentaStr}</p>
@@ -332,7 +337,7 @@ export function renderFormIngresoPuntual() {
   }
 
   const catOpts = CATEGORIAS_INGRESO
-    .map(c => `<option value="${_esc(c)}">${CATEGORIA_INGRESO_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
   return `
@@ -558,12 +563,16 @@ function _filaDistribuir(d) {
         ${hint}`;
 }
 
-/** Emoji de una fila de Necesidades: por categoría si existe, si no un genérico por tipo. */
-function _emojiNecesidad(it) {
+/**
+ * Ícono inline de una fila de Necesidades: por categoría si existe, si no
+ * un genérico por tipo (calendario para fijos, tarjeta para deudas). Va en
+ * línea con el texto de la checklist, por eso icon--sm y no una teja.
+ */
+function _iconoNecesidad(it) {
   const porCategoria = it.tipo === 'fijo'
-    ? CATEGORIA_AGENDA_EMOJI[it.categoria]
-    : (CATEGORIA_DEUDA_EMOJI[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_EMOJI[it.categoria]);
-  return porCategoria ?? (it.tipo === 'fijo' ? '🏠' : '💳');
+    ? CATEGORIA_AGENDA_ICONO[it.categoria]
+    : (CATEGORIA_DEUDA_ICONO[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_ICONO[it.categoria]);
+  return iconoCategoria(porCategoria ?? (it.tipo === 'fijo' ? 'i-agenda' : 'i-deudas'), 'icon icon--sm');
 }
 
 /**
@@ -588,7 +597,7 @@ function _filaNecesidad(it) {
           <label class="checkbox-row distribuir__toggle">
             <input type="checkbox" data-nec-toggle data-nec-tipo="${_esc(it.tipo)}"
                    data-nec-id="${_esc(it.id)}" data-nec-monto="${it.monto}" ${checkedAttr} />
-            <span>${_emojiNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}</span>
+            <span>${_iconoNecesidad(it)} ${_esc(it.nombre)}${catSub}${diaSub}</span>
           </label>
           <span class="distribuir__nec-monto">${it.pagado ? 'Ya pagado' : f(it.monto)}</span>
         </div>`;

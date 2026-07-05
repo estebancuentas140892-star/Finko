@@ -3,8 +3,6 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIA_META_EMOJI } from '../../core/constants.js';
-
 // ── CONSTANTES DE RITMO DE AHORRO (MT.4) ──────────────────────────
 
 /**
@@ -205,12 +203,12 @@ export function validarAbono(monto) {
  * Convierte datos crudos del formulario al shape de S.metas.
  * Asume que los datos ya pasaron `validarMeta()`.
  *
- * Prioridad del ícono (MT.1): emoji escrito a mano > emoji de la categoría
- * elegida > 🎯 por defecto. Así una categoría predefinida (Viajes, Boda...)
- * ya trae su emoji sin que el usuario tenga que elegirlo. El form (MT.3)
- * solo deja escribir un emoji a mano con la categoría 'Otra', pero esta
- * función no depende de esa restricción de UI: sigue funcionando igual
- * si algún día otro flujo manda ambos campos.
+ * Ícono (MT.1, revisado en ID.3): `icono` solo guarda el emoji que el
+ * usuario escribe a mano (el form MT.3 lo ofrece con la categoría 'Otra');
+ * con categoría predefinida el ícono ya no se almacena, la vista lo
+ * resuelve desde CATEGORIA_META_ICONO al renderizar (así un cambio futuro
+ * del sprite no deja emojis viejos congelados en los datos). Sin emoji
+ * manual queda null y la vista cae a la diana i-metas.
  *
  * @param {Record<string, string>} datos
  */
@@ -222,7 +220,7 @@ export function normalizarMeta(datos) {
     montoActual:   0,
     fechaLimite:   datos.fechaLimite?.trim() || null,
     categoria,
-    icono:         datos.icono?.trim() || CATEGORIA_META_EMOJI[categoria] || '🎯',
+    icono:         datos.icono?.trim() || null,
     completada:    false,
   };
 }

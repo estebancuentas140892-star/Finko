@@ -19,6 +19,43 @@ export function icon(id, cls = 'icon') {
 }
 
 /**
+ * Como `icon()`, pero recibe el id COMPLETO del symbol, con prefijo
+ * ('c-mercado', 'i-home'...). Es la forma que guardan los catálogos
+ * CATEGORIA_*_ICONO de constants.js (ID.3): un glifo de categoría puede
+ * reusar un símbolo estructural i-* cuando la metáfora ya existe.
+ *
+ * @param {string} id  - id completo del symbol (ej: 'c-libro', 'i-deudas')
+ * @param {string} cls - clases CSS del svg (por defecto 'icon')
+ * @returns {string}
+ */
+export function iconoCategoria(id, cls = 'icon') {
+  return `<svg class="${cls}" aria-hidden="true"><use href="#${id}"/></svg>`;
+}
+
+/**
+ * Teja de categoría (ADR 025 D1/D3): el glifo de categoría dentro del
+ * contenedor redondeado teñido con el color del dominio (`--fk-dom-*` al
+ * 14% de fondo, glifo al 100%). Hermana de `tejaMarca()` (infra/marcas.js):
+ * marca = glifo sobre color corporativo, categoría = glifo sobre tinte de
+ * su sección; la geometría del contenedor es la misma.
+ *
+ * El color vive en CSS (.cat-teja[data-dom="..."], atoms.css): aquí solo se
+ * declara a qué dominio pertenece la superficie. Dentro de la teja
+ * currentColor ES el color del dominio, así que la chispa de los símbolos
+ * v2 cae a él sin declarar --fk-icon-dot.
+ *
+ * @param {string} id      - id completo del symbol (ej: 'c-mercado')
+ * @param {string} dominio - sufijo de token de dominio: 'gastos',
+ *                           'ingresos', 'presupuesto', 'compromisos',
+ *                           'personales', 'metas', 'tesoreria', 'ahorro',
+ *                           'inversion' o 'analisis'
+ * @returns {string} HTML del span `.cat-teja`.
+ */
+export function tejaCategoria(id, dominio) {
+  return `<span class="cat-teja" data-dom="${dominio}" aria-hidden="true">${iconoCategoria(id)}</span>`;
+}
+
+/**
  * Ilustración geométrica para empty states (rediseño 2026, F7).
  *
  * Composición: círculo de fondo sutil, órbita punteada, puntos

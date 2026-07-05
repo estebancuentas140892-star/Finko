@@ -14,9 +14,7 @@ import { f, esc as _esc } from '../../../infra/utils.js';
 import {
   FRECUENCIAS,
   CATEGORIAS_DEUDA,
-  CATEGORIA_DEUDA_EMOJI,
   CATEGORIAS_DEUDA_PERSONAL,
-  CATEGORIA_DEUDA_PERSONAL_EMOJI,
 } from '../../../core/constants.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 
@@ -180,12 +178,11 @@ export function renderFormDeuda(tipo, deuda = null) {
   // Entidad clasifica el producto (Tarjeta, Vivienda...); Personal, la relación
   // (Familiar, Amigo, Fiado...). Mismo campo `categoria` en el schema.
   const catalogo  = esEntidad ? CATEGORIAS_DEUDA : CATEGORIAS_DEUDA_PERSONAL;
-  const catEmojis = esEntidad ? CATEGORIA_DEUDA_EMOJI : CATEGORIA_DEUDA_PERSONAL_EMOJI;
   const catLabel  = esEntidad ? 'Tipo de deuda' : '¿Con quién es la deuda?';
   const catOpts = catalogo
     .map(c => {
       const selCat = modoEdit ? deuda.categoria : null;
-      return `<option value="${_esc(c)}"${c === selCat ? ' selected' : ''}>${catEmojis[c] ?? ''} ${_esc(c)}</option>`;
+      return `<option value="${_esc(c)}"${c === selCat ? ' selected' : ''}>${_esc(c)}</option>`;
     })
     .join('');
 

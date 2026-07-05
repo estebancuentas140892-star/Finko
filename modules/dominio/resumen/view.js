@@ -10,8 +10,8 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
-import { icon } from '../../infra/icons.js';
-import { CATEGORIA_EMOJI } from '../../core/constants.js';
+import { icon, iconoCategoria } from '../../infra/icons.js';
+import { CATEGORIA_ICONO } from '../../core/constants.js';
 import { resumenSemanal, hayResumen } from './logic.js';
 
 /**
@@ -68,7 +68,7 @@ export function renderPanelResumen() {
     ? `
       <div class="resumen-card__stat">
         <p class="resumen-card__label">Categoría con más gasto</p>
-        <p class="resumen-card__value resumen-card__value--sm">${CATEGORIA_EMOJI[r.top.categoria] ?? ''} ${_esc(r.top.categoria)}</p>
+        <p class="resumen-card__value resumen-card__value--sm">${iconoCategoria(CATEGORIA_ICONO[r.top.categoria] ?? 'c-otros', 'icon icon--sm')} ${_esc(r.top.categoria)}</p>
         <p class="resumen-card__sub">${f(r.top.total)}</p>
       </div>`
     : '';

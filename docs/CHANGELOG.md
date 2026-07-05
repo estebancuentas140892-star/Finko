@@ -10,6 +10,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.3, categorías Finko v2 en tejas por dominio · 2026-07-05
+
+Cierre de la iniciativa de identidad visual 2026-07 completa ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) sección ID.3, [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D3): los emojis de categoría salen de la UI estructural y entran 43 símbolos nuevos `c-*` en el lenguaje v2 ("trazo cálido con chispa": duotono 22 %, chispa `var(--fk-icon-dot, currentColor)`, redondez sistemática, vértices agudos solo donde la metáfora los exige: punta de `c-avion`, play de `c-streaming`, diamante de `c-anillo`, tablero de `c-birrete`).
+
+**Catálogos.** Los 6 `CATEGORIA_*_EMOJI` de `constants.js` se reemplazan por `CATEGORIA_*_ICONO` (categoría → id completo de `<symbol>`). Un glifo por metáfora, compartido entre catálogos cuando la etiqueta coincide (guardarraíl TX.4); 5 categorías reusan símbolos estructurales en vez de duplicar dibujo: Vivienda/Arriendo → `i-home`, Tarjeta de crédito/Cuota de manejo → `i-deudas`, Comisión → `i-percent`, Rendimientos → `i-trending-up`, interna Ahorro → `i-ahorro`. Vacaciones y Emprendimiento ganan metáfora propia (palmera y cohete): la reconciliación de emojis de MT.1 ya no las limita.
+
+**La teja de categoría.** `tejaCategoria(id, dominio)` en `infra/icons.js` (hermana de `tejaMarca`) + `.cat-teja` en atoms.css: contenedor de 32px con fondo `--fk-dom-*` al 14 % y glifo al 100 % del color del dominio; dentro de la teja `currentColor` ES el color del dominio, así que la chispa cae a él sin declarar variable. Superficies: Gastos (naranja, hereda el glifo del compromiso de origen vía `iconoPorOrigen`, antes `emojiPorOrigen`), Ingresos fijos y puntuales (verde; las filas ganan ícono que antes no tenían), Deudas (rojo entidad / rosa personal: la teja de categoría es ahora el fallback cuando no hay marca, completando el sistema del ADR 025), Calendario (amarillo presupuesto, el color que el calendario ya usaba para "fijo"; el ingreso del día también cambia 💰 por su teja). Los contextos inline densos (título de meta junto al anillo, envelopes y alertas de Límites, checklist de Necesidades, resumen semanal, desgloses de grupos) usan el glifo a `icon--sm` sin teja.
+
+**Selects y datos.** Los `<option>` quedan en texto plano (un `<option>` nativo no renderiza SVG, ADR 025). En Metas, `normalizarMeta` deja de almacenar el emoji de la categoría: la vista lo resuelve desde el catálogo al renderizar (las metas viejas migran solas al sprite) y el emoji manual del usuario (categoría "Otra") se conserva como dato (ADR 025 D3); las plantillas de Apartados no se tocan. TX.4 pasa a comparar ids de sprite y gana una aserción nueva: todo id referenciado existe como `<symbol>` en `index.html`.
+
+Verificación visual: los 43 glifos renderizados con Chromium a 20px y en teja de 32px, tema claro y oscuro (4 iteraciones de diseño: la lupa de Cuidado personal se leía como símbolo de género y pasó a gota con destello; Vecino se leía como ícono de "foto" y pasó a dos casas con volumen; taza de Café ampliada; hormiga re-alineada), más un render de filas reales (`list-item`, `cal-detail`) con el CSS de producción en ambos temas. 2097/2097 unit (+3); 147/147 E2E (3 asserts de smoke actualizados a teja/sprite). SW v309 → v310. Pendiente: validación del usuario en su celular.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 43 símbolos `c-*` nuevos; comentario del sprite actualizado (estado final de la migración). |
+| `modules/core/constants.js` | `CATEGORIA_*_ICONO` reemplazan a los 6 catálogos de emoji. |
+| `modules/infra/icons.js` | `iconoCategoria(id, cls)` (id completo) y `tejaCategoria(id, dominio)`. |
+| `modules/dominio/gastos/logic.js` | `emojiPorOrigen` → `iconoPorOrigen` (ids de sprite). |
+| `modules/dominio/gastos/view.js` | Teja en la lista; chips y `<option>` en texto plano; retirada la clase `--cat`. |
+| `modules/dominio/agenda/view.js` | Teja de categoría en el detalle del día (fijos e ingreso); `<option>` plano. |
+| `modules/dominio/tesoreria/view.js` | Teja en ingresos fijos/puntuales; checklist de Necesidades a `icon--sm`; selects planos. |
+| `modules/dominio/metas/view.js`, `logic.js` | `_iconoMeta` (sprite por categoría, emoji del usuario en "Otra"); `normalizarMeta` sin emoji derivado. |
+| `modules/dominio/compromisos/views/lista.js`, `formularios.js` | Teja de categoría como fallback sin marca; contexto y `<option>` planos. |
+| `modules/dominio/presupuesto/view.js`, `modules/dominio/resumen/view.js` | Glifos `icon--sm` en envelopes, huérfanas, alertas, desgloses y categoría top. |
+| `styles/components/atoms.css` | `.cat-teja` (tinte por dominio); `:has()` extendido; borrado el bloque `--cat` obsoleto. |
+| `styles/components/config.css` | `:has(.cat-teja)` en el detalle del calendario; retirada `.cal-detail__icon--emoji`. |
+| `tests/unit/*` (constants, gastos, agenda, compromisos, metas, tesoreria) | TX.4 con ids de sprite + guardarraíl de existencia; asserts a teja/sprite. |
+| `tests/e2e/smoke.test.js` | 3 asserts de Metas y Agenda actualizados a sprite/teja. |
+| `service-worker.js` | v309 → v310. |
+
+---
+
 ### feat(ui): ID.7, símbolos estructurales al lenguaje v2 · 2026-07-05
 
 Cierra la iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): última fase pendiente tras ID.6 (piloto de navegación). Los 13 símbolos redibujados en ID.2 (`saldo`, `recurring`, `lightbulb`, `alert`, `bolt`, `trophy`, `mountain`, `circle`, `star`, `percent`, `trending-up`, `info`, `bar-chart`) heredaban el trazo 2.35 global desde ID.6 pero conservaban la geometría v1 (duotono al 15 %, punto de valor en `currentColor` plano, sin la variable de la "chispa"). Ahora quedan al día con las reglas v2: `fill-opacity=".22"` y `var(--fk-icon-dot, currentColor)` en cada punto de valor.

@@ -16,7 +16,7 @@ import {
   filtrarGastos,
   esGastoPendiente,
   gastosPendientes,
-  emojiPorOrigen,
+  iconoPorOrigen,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../modules/core/constants.js';
@@ -667,9 +667,9 @@ describe('CATEGORIAS_TIPICAMENTE_FIJAS', () => {
   });
 });
 
-// ── EMOJI POR ORIGEN (TX.6 / TX.7) ───────────────────────────────
+// ── ÍCONO POR ORIGEN (TX.6 / TX.7, ids de sprite desde ID.3) ─────
 
-describe('emojiPorOrigen (TX.6/TX.7)', () => {
+describe('iconoPorOrigen (TX.6/TX.7)', () => {
   const compromisos = [
     { id: 'c-fijo',    tipo: 'fijo',           categoria: 'Arriendo' },
     { id: 'c-sin-cat', tipo: 'fijo',           categoria: null },
@@ -677,38 +677,38 @@ describe('emojiPorOrigen (TX.6/TX.7)', () => {
     { id: 'c-primo',   tipo: 'deuda-personal', categoria: 'Familiar' },
   ];
 
-  it('TX.6: un gasto nacido de un fijo hereda el emoji de su categoría de Agenda', () => {
+  it('TX.6: un gasto nacido de un fijo hereda el ícono de su categoría de Agenda', () => {
     const gasto = { id: 'g1', categoria: 'Otros', compromisoId: 'c-fijo' };
-    expect(emojiPorOrigen(gasto, compromisos)).toBe('🏠');
+    expect(iconoPorOrigen(gasto, compromisos)).toBe('i-home');
   });
 
-  it('TX.7: un abono a deuda con entidad muestra 🏦', () => {
+  it('TX.7: un abono a deuda con entidad muestra la institución (i-cuentas)', () => {
     const gasto = { id: 'g2', categoria: 'Deudas', compromisoId: 'c-banco' };
-    expect(emojiPorOrigen(gasto, compromisos)).toBe('🏦');
+    expect(iconoPorOrigen(gasto, compromisos)).toBe('i-cuentas');
   });
 
-  it('TX.7: un abono a deuda personal muestra 🤝', () => {
+  it('TX.7: un abono a deuda personal muestra la persona (i-personales)', () => {
     const gasto = { id: 'g3', categoria: 'Deudas', compromisoId: 'c-primo' };
-    expect(emojiPorOrigen(gasto, compromisos)).toBe('🤝');
+    expect(iconoPorOrigen(gasto, compromisos)).toBe('i-personales');
   });
 
   it('sin compromisoId devuelve null (el caller usa la categoría del gasto)', () => {
-    expect(emojiPorOrigen({ id: 'g4', categoria: 'Mercado' }, compromisos)).toBeNull();
+    expect(iconoPorOrigen({ id: 'g4', categoria: 'Mercado' }, compromisos)).toBeNull();
   });
 
   it('compromiso eliminado devuelve null (fallback del caller)', () => {
     const gasto = { id: 'g5', categoria: 'Deudas', compromisoId: 'no-existe' };
-    expect(emojiPorOrigen(gasto, compromisos)).toBeNull();
+    expect(iconoPorOrigen(gasto, compromisos)).toBeNull();
   });
 
   it('fijo sin categoría devuelve null (fallback del caller)', () => {
     const gasto = { id: 'g6', categoria: 'Otros', compromisoId: 'c-sin-cat' };
-    expect(emojiPorOrigen(gasto, compromisos)).toBeNull();
+    expect(iconoPorOrigen(gasto, compromisos)).toBeNull();
   });
 
   it('tolera lista de compromisos ausente', () => {
     const gasto = { id: 'g7', categoria: 'Otros', compromisoId: 'c-fijo' };
-    expect(emojiPorOrigen(gasto, undefined)).toBeNull();
-    expect(emojiPorOrigen(gasto, [])).toBeNull();
+    expect(iconoPorOrigen(gasto, undefined)).toBeNull();
+    expect(iconoPorOrigen(gasto, [])).toBeNull();
   });
 });

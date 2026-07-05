@@ -5,10 +5,10 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
-import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_EMOJI } from '../../core/constants.js';
+import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos, emojiPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ export function renderFiltrosGastos() {
                 data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
                 aria-label="Filtrar por ${_esc(cat)}">
-          ${CATEGORIA_EMOJI[cat] ?? ''} ${_esc(cat)}
+          ${_esc(cat)}
         </button>`;
     }).join('');
 
@@ -189,7 +189,7 @@ function _renderGastoItem(gasto) {
     : _esc(gasto.descripcion);
   const catKey = gasto.categoria ?? 'Otros';
   // El icono principal (izquierda) ya representa la categoría: en el subtítulo
-  // basta con el nombre, sin repetir el emoji.
+  // basta con el nombre, sin repetirla.
   const cat    = _esc(catKey);
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
   const badge = sinCompletar
@@ -197,13 +197,14 @@ function _renderGastoItem(gasto) {
     : '';
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
-  // ícono de su compromiso de origen (categoría de Agenda, o 🏦/🤝 por tipo
-  // de deuda); solo sin origen aplica el emoji de la categoría del gasto.
-  const emoji = emojiPorOrigen(gasto, S.compromisos) ?? CATEGORIA_EMOJI[catKey] ?? icon('gastos');
+  // ícono de su compromiso de origen (categoría de Agenda, o i-cuentas /
+  // i-personales por tipo de deuda); solo sin origen aplica el de la
+  // categoría del gasto. ID.3: el glifo va en la teja teñida del dominio.
+  const simbolo = iconoPorOrigen(gasto, S.compromisos) ?? CATEGORIA_ICONO[catKey] ?? 'i-gastos';
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
-      <div class="list-item__icon list-item__icon--cat" aria-hidden="true">${emoji}</div>
+      <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${badge}${desc}</p>
         <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>
@@ -346,7 +347,7 @@ export function renderFormGastoRapido() {
  */
 export function renderFormGasto() {
   const catOpts = CATEGORIAS_GASTO_USUARIO
-    .map(c => `<option value="${_esc(c)}">${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`)
+    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);

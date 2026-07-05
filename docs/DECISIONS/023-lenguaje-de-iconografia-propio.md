@@ -1,6 +1,6 @@
 # ADR 023 - Lenguaje de iconografía propio (duotono + punto de valor)
 
-**Estado:** Aceptada, revisada el 2026-07-04 (v2 "trazo cálido con chispa"); ID.7 (símbolos estructurales) cerrada el 2026-07-05, ver secciones finales
+**Estado:** Aceptada, revisada el 2026-07-04 (v2 "trazo cálido con chispa"); ID.7 (símbolos estructurales) e ID.3 (categorías en tejas) cerradas el 2026-07-05, ver secciones finales. Iniciativa completa.
 **Fecha:** 2026-07-04
 **Autores:** Claude Fable 5 (análisis y decisión, revisión visual aprobada por Esteban)
 **Resuelve:** ID.1 e ID.2 (identidad visual: sistema de iconografía) y su revisión ID.6 (lenguaje v2). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
@@ -90,6 +90,14 @@ El diagnóstico técnico del frío confirmó cuatro causas: (1) trazo 2 sobre gr
 ### Piloto ID.6 y fases
 
 Los 14 símbolos de navegación quedaron redibujados en v2. Un cambio de metáfora: Inversión pasa del zigzag con flecha a una **curva suave ascendente con la chispa en el extremo** (progreso calmado, "aquí vas hoy"); el zigzag transmitía volatilidad. En `i-mas`, el punto central es la chispa. Fases restantes: recalentar la geometría de los símbolos estructurales de ID.2 (que mientras tanto heredan el trazo 2.35) y las categorías con teja por dominio (ID.3).
+
+### ID.3 (2026-07-05): categorías Finko v2 en tejas por dominio
+
+Cierre de la última fase (re-cortada por el [ADR 025](025-logotipos-de-marca-y-tejas.md)). 43 símbolos nuevos `c-*` cubren las 71 claves de los 6 catálogos (`CATEGORIA_*_ICONO` en `constants.js`, que reemplazan a los `CATEGORIA_*_EMOJI`), compartiendo glifo cuando la etiqueta o la metáfora coinciden (casa, carro, libro, caja "Otro/Otra/Otros"...). Cinco categorías reusan símbolos estructurales existentes en vez de duplicar el dibujo: Vivienda/Arriendo → `i-home`, Tarjeta de crédito/Cuota de manejo → `i-deudas`, Comisión → `i-percent`, Rendimientos → `i-trending-up`, y la interna Ahorro → `i-ahorro`.
+
+Decisiones de metáfora que registrar: Transporte es **bus** y Vehículo es **carro** (moverse vs. el activo que se compra); con el paso al sprite, Vacaciones gana **palmera** y Emprendimiento gana **cohete** (la reconciliación de emojis de MT.1 ya no las limita); el triángulo de play de `c-streaming` ES la chispa (elemento sólido en `--fk-icon-dot`, vértices agudos por regla 5, igual que la punta de `c-avion`, el diamante de `c-anillo` y el tablero de `c-birrete`); la cabeza de `c-hormiga` es su chispa (mismo patrón de `i-mas`); en `c-edificio` la chispa es "una ventana encendida".
+
+La dirección C ("insignia por dominio") se materializa en `tejaCategoria()` (`infra/icons.js`) + `.cat-teja` (atoms.css): dentro de la teja `currentColor` ES el color del dominio, así que la chispa cae a él sin declarar `--fk-icon-dot`. Los `<select>` quedan con texto plano (un `<option>` nativo no renderiza SVG, ADR 025). El guardarraíl TX.4 compara ids de sprite y verifica que todo id exista como `<symbol>`; las plantillas de Apartados salen de TX.4 (su `icono` es emoji como dato del usuario). En Metas, `normalizarMeta` deja de almacenar el emoji de la categoría: la vista resuelve el glifo desde `CATEGORIA_META_ICONO` al renderizar (las metas viejas migran solas), y el emoji manual del usuario (categoría "Otra") se conserva como dato.
 
 ### ID.7 (2026-07-05): símbolos estructurales recalentados a v2
 

@@ -12,19 +12,20 @@ import {
   INFLACION_OBJETIVO,
   IPC_OBSERVADO_POR_ANIO,
   ipcObservadoVigente,
-  CATEGORIA_EMOJI,
-  CATEGORIA_AGENDA_EMOJI,
-  CATEGORIA_INGRESO_EMOJI,
-  CATEGORIA_DEUDA_EMOJI,
-  CATEGORIA_DEUDA_PERSONAL_EMOJI,
+  CATEGORIA_ICONO,
+  CATEGORIA_AGENDA_ICONO,
+  CATEGORIA_INGRESO_ICONO,
+  CATEGORIA_DEUDA_ICONO,
+  CATEGORIA_DEUDA_PERSONAL_ICONO,
   CATEGORIAS_META,
-  CATEGORIA_META_EMOJI,
+  CATEGORIA_META_ICONO,
   GRUPOS_FINANCIEROS,
   LABEL_GRUPO_FINANCIERO,
   GRUPO_POR_SECCION,
   clasificarSeccionEnGrupo,
 } from '../../modules/core/constants.js';
-import { PLANTILLAS_APARTADO } from '../../modules/dominio/apartados/logic.js';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // Fechas en hora local (mes 0-indexado) para evitar corrimientos de zona.
 const enAnio = (anio) => new Date(anio, 5, 15);
@@ -171,26 +172,26 @@ describe('TIPOS_CUENTA y TIPOS_POR_CLASE', () => {
   });
 });
 
-// ── CATEGORIAS_META / CATEGORIA_META_EMOJI (MT.1) ─────────────────
+// ── CATEGORIAS_META / CATEGORIA_META_ICONO (MT.1, sprite desde ID.3) ──
 
-describe('CATEGORIAS_META / CATEGORIA_META_EMOJI', () => {
-  it('toda categoría de CATEGORIAS_META tiene un emoji en CATEGORIA_META_EMOJI', () => {
+describe('CATEGORIAS_META / CATEGORIA_META_ICONO', () => {
+  it('toda categoría de CATEGORIAS_META tiene un ícono en CATEGORIA_META_ICONO', () => {
     for (const cat of CATEGORIAS_META) {
-      expect(CATEGORIA_META_EMOJI[cat]).toBeDefined();
-      expect(typeof CATEGORIA_META_EMOJI[cat]).toBe('string');
-      expect(CATEGORIA_META_EMOJI[cat].length).toBeGreaterThan(0);
+      expect(CATEGORIA_META_ICONO[cat]).toBeDefined();
+      expect(typeof CATEGORIA_META_ICONO[cat]).toBe('string');
+      expect(CATEGORIA_META_ICONO[cat].length).toBeGreaterThan(0);
     }
   });
 
-  it('CATEGORIA_META_EMOJI no tiene entradas huérfanas (todas están en CATEGORIAS_META)', () => {
-    for (const cat of Object.keys(CATEGORIA_META_EMOJI)) {
+  it('CATEGORIA_META_ICONO no tiene entradas huérfanas (todas están en CATEGORIAS_META)', () => {
+    for (const cat of Object.keys(CATEGORIA_META_ICONO)) {
       expect(CATEGORIAS_META).toContain(cat);
     }
   });
 
-  it('incluye la categoría de escape "Otra" con 📦', () => {
+  it('incluye la categoría de escape "Otra" con la caja c-otros', () => {
     expect(CATEGORIAS_META).toContain('Otra');
-    expect(CATEGORIA_META_EMOJI['Otra']).toBe('📦');
+    expect(CATEGORIA_META_ICONO['Otra']).toBe('c-otros');
   });
 
   it('sin categorías duplicadas', () => {
@@ -198,13 +199,17 @@ describe('CATEGORIAS_META / CATEGORIA_META_EMOJI', () => {
   });
 });
 
-// ── TX.4: guardarraíl de consistencia de emojis entre catálogos (ADR 014) ──
+// ── TX.4: guardarraíl de consistencia de íconos entre catálogos (ADR 014,
+//    ids de sprite desde ID.3) ──
 //
 // ADR 014 exige que toda etiqueta compartida entre catálogos use el mismo
-// emoji en todos los catálogos donde aparece. Este test falla si alguien
-// introduce un desajuste (ej. Mercado 🛒 en Gastos pero 🥕 en Agenda).
+// ícono en todos los catálogos donde aparece. Este test falla si alguien
+// introduce un desajuste (ej. Mercado c-mercado en Gastos pero otro id en
+// Agenda).
 //
-// Fuentes incluidas: Gastos, Agenda, Ingresos, Deudas, Metas + PLANTILLAS_APARTADO.
+// Fuentes incluidas: los 6 catálogos CATEGORIA_*_ICONO. Las plantillas de
+// Apartados quedaron fuera desde ID.3: su `icono` es un emoji que se guarda
+// como dato del usuario (ADR 025 D3), ya no comparte formato con el sprite.
 // Se ignoran etiquetas internas de Gastos (Deudas, Ahorro, Alimentación).
 // La comparación es por nombre exacto (case-sensitive): "Otro" ≠ "Otros".
 
@@ -240,43 +245,41 @@ describe('TX.3 - Café y Gastos hormiga en el catálogo de gastos', () => {
     expect(CATEGORIAS_GASTO_USUARIO).toContain('Gastos hormiga');
   });
 
-  it('cada una tiene su emoji propio', () => {
-    expect(CATEGORIA_EMOJI['Café']).toBe('☕');
-    expect(CATEGORIA_EMOJI['Gastos hormiga']).toBe('🐜');
+  it('cada una tiene su ícono propio', () => {
+    expect(CATEGORIA_ICONO['Café']).toBe('c-cafe');
+    expect(CATEGORIA_ICONO['Gastos hormiga']).toBe('c-hormiga');
   });
 
-  it('toda categoría de gasto tiene emoji (ninguna cae al fallback)', () => {
+  it('toda categoría de gasto tiene ícono (ninguna cae al fallback)', () => {
     for (const c of CATEGORIAS_GASTO) {
-      expect(typeof CATEGORIA_EMOJI[c], `emoji de ${c}`).toBe('string');
-      expect(CATEGORIA_EMOJI[c].length, `emoji de ${c}`).toBeGreaterThan(0);
+      expect(typeof CATEGORIA_ICONO[c], `ícono de ${c}`).toBe('string');
+      expect(CATEGORIA_ICONO[c].length, `ícono de ${c}`).toBeGreaterThan(0);
     }
   });
 });
 
-describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
-  // Pares (label, emoji, fuente) de todos los catálogos.
+describe('TX.4 - Consistencia de íconos entre catálogos (ADR 014, ids de sprite)', () => {
+  // Pares (label, icono, fuente) de todos los catálogos.
   const entradas = [
-    ...Object.entries(CATEGORIA_EMOJI)
+    ...Object.entries(CATEGORIA_ICONO)
       .filter(([k]) => !['Deudas', 'Ahorro', 'Alimentación'].includes(k))
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Gastos' })),
-    ...Object.entries(CATEGORIA_AGENDA_EMOJI)
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Agenda' })),
-    ...Object.entries(CATEGORIA_INGRESO_EMOJI)
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Ingresos' })),
-    ...Object.entries(CATEGORIA_DEUDA_EMOJI)
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas' })),
-    ...Object.entries(CATEGORIA_DEUDA_PERSONAL_EMOJI)
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Deudas personales' })),
-    ...Object.entries(CATEGORIA_META_EMOJI)
-      .map(([k, v]) => ({ label: k, emoji: v, fuente: 'Metas' })),
-    ...PLANTILLAS_APARTADO
-      .map(p => ({ label: p.nombre, emoji: p.icono, fuente: 'Apartados' })),
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Gastos' })),
+    ...Object.entries(CATEGORIA_AGENDA_ICONO)
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Agenda' })),
+    ...Object.entries(CATEGORIA_INGRESO_ICONO)
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Ingresos' })),
+    ...Object.entries(CATEGORIA_DEUDA_ICONO)
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Deudas' })),
+    ...Object.entries(CATEGORIA_DEUDA_PERSONAL_ICONO)
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Deudas personales' })),
+    ...Object.entries(CATEGORIA_META_ICONO)
+      .map(([k, v]) => ({ label: k, icono: v, fuente: 'Metas' })),
   ];
 
   // Agrupar por etiqueta.
   const porLabel = {};
-  for (const { label, emoji, fuente } of entradas) {
-    (porLabel[label] ??= []).push({ emoji, fuente });
+  for (const { label, icono, fuente } of entradas) {
+    (porLabel[label] ??= []).push({ icono, fuente });
   }
 
   // Solo las etiquetas que aparecen en más de un catálogo.
@@ -287,14 +290,26 @@ describe('TX.4 - Consistencia de emojis entre catálogos (ADR 014)', () => {
     expect(compartidas.length).toBeGreaterThan(0);
   });
 
-  it('toda etiqueta compartida usa el mismo emoji en todos los catálogos', () => {
+  it('toda etiqueta compartida usa el mismo ícono en todos los catálogos', () => {
     for (const [label, ocurrencias] of compartidas) {
-      const emojisDistintos = [...new Set(ocurrencias.map(o => o.emoji))];
+      const iconosDistintos = [...new Set(ocurrencias.map(o => o.icono))];
       expect(
-        emojisDistintos,
+        iconosDistintos,
         `"${label}" aparece en [${ocurrencias.map(o => o.fuente).join(', ')}] ` +
-        `con emojis distintos: ${emojisDistintos.join(' vs ')}`,
+        `con íconos distintos: ${iconosDistintos.join(' vs ')}`,
       ).toHaveLength(1);
+    }
+  });
+
+  it('todo id referenciado por un catálogo existe como <symbol> en el sprite de index.html', () => {
+    const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+    const ids = new Set([...indexHtml.matchAll(/<symbol id="([\w-]+)"/g)].map(m => m[1]));
+    for (const { label, icono, fuente } of entradas) {
+      expect(ids.has(icono), `"${label}" (${fuente}) apunta a "${icono}", que no está en el sprite`).toBe(true);
+    }
+    // Las claves internas de Gastos filtradas arriba también deben resolver.
+    for (const k of ['Deudas', 'Ahorro', 'Alimentación']) {
+      expect(ids.has(CATEGORIA_ICONO[k]), `interna "${k}"`).toBe(true);
     }
   });
 });

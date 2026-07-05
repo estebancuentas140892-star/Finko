@@ -130,16 +130,7 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6, MK.1, MK.2 e ID.7 cerradas (2026-07-05). Queda solo ID.3 (categorías Finko v2 en tejas). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma).
-
-#### ID.3 - Iconos de categorías Finko v2 en tejas por dominio (re-cortada por ADR 025)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : diseñar los ~40 iconos de categorías (gastos, ingresos, agenda, deudas, metas) en el lenguaje v2 del ADR 023 revisado, presentados en tejas teñidas con `--fk-dom-*` y chispa en el color del dominio ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D3). Retirar los catálogos `CATEGORIA_*_EMOJI` de la UI estructural (los selects quedan con texto plano; el emoji personalizado de Metas "Otra" y Apartados se conserva como dato del usuario). Actualizar el guardarraíl TX.4 para comparar ids de sprite en vez de emojis. Emojis de celebración: conservados, decisión sellada en ADR 025 D6.
-- Secciones  : Gastos, Calendario, Deudas, Metas, Límites, Análisis, Mis cuentas, Inicio
-- Archivos   : `index.html` (sprite), `modules/core/constants.js`, 10 archivos consumidores (`gastos/view+logic`, `agenda/view`, `tesoreria/view`, `metas/view+logic`, `compromisos/views/lista+formularios`, `resumen/view`, `presupuesto/view`), `tests/unit/constants.test.js`
-- Depende de : validación visual de ID.6 (los glifos son lenguaje v2; MK.1 ya cerró la teja)
-- Modelo     : Fable 5 - Alto
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)): **COMPLETA**. ID.1, ID.4, ID.2, ID.6, MK.1, MK.2, ID.7 e ID.3 cerradas (2026-07-05). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma). Nota de ID.3: agregar una categoría nueva a cualquier catálogo cuesta 1 entrada en `CATEGORIA_*_ICONO` (y 1 `<symbol>` `c-*` si el glifo no existe); TX.4 avisa si el id no está en el sprite.
 
 #### ID.5 - Micropulido tipográfico de cifras
 - Prioridad  : baja

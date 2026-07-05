@@ -5,10 +5,10 @@
 
 import { S }                  from '../../core/state.js';
 import { f, esc as _esc }     from '../../infra/utils.js';
-import { icon }               from '../../infra/icons.js';
+import { icon, iconoCategoria } from '../../infra/icons.js';
 import {
   CATEGORIAS_GASTO_USUARIO,
-  CATEGORIA_EMOJI,
+  CATEGORIA_ICONO,
   LABEL_GRUPO_FINANCIERO,
 } from '../../core/constants.js';
 import {
@@ -256,9 +256,12 @@ function _renderRefuerzoCombinado(mensajes) {
 
 // ── DESGLOSE POR ITEM (MC.5c, ADR 017) ───────────────────────────
 
-const _EMOJI_ITEM_NECESIDAD = { fijo: '🏠', deuda: '💳' };
+// Ícono por tipo de fila del desglose (ID.3): el símbolo estructural de la
+// sección donde vive cada cosa (fijos en Calendario, deudas en Deudas,
+// fondo en Ahorro...). Inline con el texto, por eso icon--sm y no teja.
+const _ICONO_ITEM_NECESIDAD = { fijo: 'i-agenda', deuda: 'i-deudas' };
 const _ETIQUETA_ESTADO_PAGO = { ninguno: 'Pendiente', parcial: 'Abono parcial', completo: 'Pagado' };
-const _EMOJI_ITEM_AHORRO    = { fondo: '🛟', meta: '🎯', apartado: '📦', inversion: '📈' };
+const _ICONO_ITEM_AHORRO    = { fondo: 'i-ahorro', meta: 'i-metas', apartado: 'i-apartados', inversion: 'i-inversion' };
 
 /**
  * Detalle colapsable de Necesidades: un item por gasto fijo o deuda activa,
@@ -272,14 +275,14 @@ function _renderDesgloseNecesidades(items) {
   }
 
   const filas = items.map(it => {
-    const emoji = _EMOJI_ITEM_NECESIDAD[it.tipo] ?? '📦';
+    const icono = iconoCategoria(_ICONO_ITEM_NECESIDAD[it.tipo] ?? 'c-otros', 'icon icon--sm');
     const sub   = it.estadoPago === 'ninguno'
       ? `Pendiente · ${f(it.montoReferencia)}`
       : `${_ETIQUETA_ESTADO_PAGO[it.estadoPago]} · ${f(it.ejecutado)}`;
 
     return `
       <li class="grupo-card__item" data-estado-pago="${it.estadoPago}">
-        <span class="grupo-card__item-nombre">${emoji} ${_esc(it.descripcion)}</span>
+        <span class="grupo-card__item-nombre">${icono} ${_esc(it.descripcion)}</span>
         <span class="grupo-card__item-sub">${sub}</span>
       </li>`;
   }).join('');
@@ -304,7 +307,7 @@ function _renderDesgloseAhorro(items) {
   }
 
   const filas = items.map(it => {
-    const emoji = _EMOJI_ITEM_AHORRO[it.tipo] ?? '📦';
+    const icono = iconoCategoria(_ICONO_ITEM_AHORRO[it.tipo] ?? 'c-otros', 'icon icon--sm');
     const sub   = it.tipo === 'fondo'
       ? `${f(it.aportadoEsteMes)} este mes · ${f(it.acumulado)} acumulado`
       : it.objetivo
@@ -313,7 +316,7 @@ function _renderDesgloseAhorro(items) {
 
     return `
       <li class="grupo-card__item">
-        <span class="grupo-card__item-nombre">${emoji} ${_esc(it.nombre)}</span>
+        <span class="grupo-card__item-nombre">${icono} ${_esc(it.nombre)}</span>
         <span class="grupo-card__item-sub">${sub}</span>
       </li>`;
   }).join('');
@@ -422,14 +425,14 @@ function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
 function _renderEnvelope(presupuesto, gastos, anio, mes) {
   const { gastado, asignado, restante, porcentaje, estado } = calcularProgreso(presupuesto, gastos, anio, mes);
   const categoria = _esc(presupuesto.categoria);
-  const emoji = CATEGORIA_EMOJI[presupuesto.categoria] ?? '📦';
+  const icono = iconoCategoria(CATEGORIA_ICONO[presupuesto.categoria] ?? 'c-otros', 'icon icon--sm');
   const widthVisual = Math.min(porcentaje, 100);
   const estadoIcono = estado === 'excedido' ? '⚠️ ' : estado === 'alerta' ? '⏰ ' : '';
 
   return `
     <article class="envelope" data-id="${_esc(presupuesto.id)}" data-estado="${estado}">
       <div class="envelope__header">
-        <p class="envelope__title">${estadoIcono}${emoji} ${categoria}</p>
+        <p class="envelope__title">${estadoIcono}${icono} ${categoria}</p>
         <p class="envelope__subtitle">${f(gastado)} / ${f(asignado)}</p>
       </div>
       <div class="progress" role="progressbar"
@@ -469,7 +472,7 @@ function _renderSinPresupuesto(presupuestos) {
       <ul class="envelope-huerfanas__list">
         ${huerfanas.map(h => `
           <li>
-            <span class="envelope-huerfanas__cat">${CATEGORIA_EMOJI[h.categoria] ?? '📦'} ${_esc(h.categoria)}</span>
+            <span class="envelope-huerfanas__cat">${iconoCategoria(CATEGORIA_ICONO[h.categoria] ?? 'c-otros', 'icon icon--sm')} ${_esc(h.categoria)}</span>
             <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>
           </li>
         `).join('')}
@@ -493,7 +496,7 @@ export function renderFormPresupuesto(actual = null) {
     .filter(c => editando ? true : !tienePresupuesto(c, S.presupuestos))
     .map(c => {
       const selected = editando && actual.categoria === c ? 'selected' : '';
-      return `<option value="${_esc(c)}" ${selected}>${CATEGORIA_EMOJI[c] ?? ''} ${_esc(c)}</option>`;
+      return `<option value="${_esc(c)}" ${selected}>${_esc(c)}</option>`;
     })
     .join('');
 
@@ -556,7 +559,7 @@ export function renderPanelLimites() {
   el.hidden = false;
 
   const items = alertas.map(a => {
-    const emoji    = CATEGORIA_EMOJI[a.categoria] ?? '📦';
+    const icono    = iconoCategoria(CATEGORIA_ICONO[a.categoria] ?? 'c-otros', 'icon icon--sm');
     const cls      = a.estado === 'excedido' ? 'excedido' : 'alerta';
     const badgeTxt = a.estado === 'excedido'
       ? `Superado ${a.porcentaje}%`
@@ -568,7 +571,7 @@ export function renderPanelLimites() {
     return `
       <li class="limites-card__item">
         <div class="limites-card__body">
-          <p class="limites-card__name">${emoji} ${_esc(a.categoria)}</p>
+          <p class="limites-card__name">${icono} ${_esc(a.categoria)}</p>
           <p class="limites-card__sub">${sub}</p>
         </div>
         <span class="limites-card__badge limites-card__badge--${cls}">${badgeTxt}</span>

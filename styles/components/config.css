@@ -816,18 +816,13 @@
   background: color-mix(in srgb, var(--fk-dom-personales) 14%, var(--fk-bg-surface));
 }
 
-/* AG.2: con emoji de categoría, un poco más grande para que se lea bien
-   como protagonista del ícono (mismo criterio que .list-item__icon--cat
-   de Gastos). */
-.cal-detail__icon--emoji {
-  font-size: 1.375rem;
-}
-
-/* MK.2 (ADR 025): con teja de marca dentro, el círculo tintado por tipo se
-   apaga: la teja trae su propio color de marca y su propio radio (mismo
-   patrón que .list-item__icon:has(.bank-avatar) de atoms.css). overflow
-   visible para que el radio de la teja no quede recortado al círculo. */
-.cal-detail__icon:has(.bank-avatar) {
+/* MK.2/ID.3 (ADR 025): con una teja dentro (de marca o de categoría), el
+   círculo tintado por tipo se apaga: la teja trae su propio color y su
+   propio radio (mismo patrón que .list-item__icon:has() de atoms.css).
+   overflow visible para que el radio de la teja no quede recortado al
+   círculo. */
+.cal-detail__icon:has(.bank-avatar),
+.cal-detail__icon:has(.cat-teja) {
   background: transparent;
   overflow: visible;
 }

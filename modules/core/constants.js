@@ -437,26 +437,31 @@ export const CATEGORIAS_TIPICAMENTE_FIJAS = new Set([
   'Educación',
 ]);
 
-/** Emoji visual por categoría de gasto. Usar solo en UI; nunca en el valor almacenado. */
-export const CATEGORIA_EMOJI = {
-  'Mercado':            '🛒',
-  'Restaurantes':       '🍽️',
-  'Café':               '☕',
-  'Transporte':         '🚗',
-  'Vivienda':           '🏠',
-  'Salud':              '💊',
-  'Educación':          '📚',
-  'Entretenimiento':    '🎉',
-  'Ropa':               '👕',
-  'Servicios públicos': '💡',
-  'Hogar':              '🏡',
-  'Mascotas':           '🐾',
-  'Cuidado personal':   '💅',
-  'Gastos hormiga':     '🐜',
-  'Deudas':             '💳',
-  'Ahorro':             '💰',
-  'Alimentación':       '🛒',
-  'Otros':              '📦',
+/**
+ * Ícono del sprite por categoría de gasto (ID.3, ADR 025 D3). El valor es el
+ * id completo de un `<symbol>` de index.html (`c-*` de categoría, o un `i-*`
+ * estructural cuando la metáfora ya existe). Usar solo en UI, dentro de la
+ * teja de categoría (`tejaCategoria`); nunca en el valor almacenado.
+ */
+export const CATEGORIA_ICONO = {
+  'Mercado':            'c-mercado',
+  'Restaurantes':       'c-restaurantes',
+  'Café':               'c-cafe',
+  'Transporte':         'c-bus',
+  'Vivienda':           'i-home',
+  'Salud':              'c-salud',
+  'Educación':          'c-libro',
+  'Entretenimiento':    'c-boleta',
+  'Ropa':               'c-ropa',
+  'Servicios públicos': 'c-servicios',
+  'Hogar':              'c-hogar',
+  'Mascotas':           'c-mascotas',
+  'Cuidado personal':   'c-cuidado',
+  'Gastos hormiga':     'c-hormiga',
+  'Deudas':             'i-deudas',
+  'Ahorro':             'i-ahorro',
+  'Alimentación':       'c-mercado',
+  'Otros':              'c-otros',
 };
 
 /**
@@ -479,20 +484,20 @@ export const CATEGORIAS_INGRESO = [
   'Otro',
 ];
 
-/** Emoji visual por categoría de ingreso. Usar solo en UI; nunca en el valor almacenado. */
-export const CATEGORIA_INGRESO_EMOJI = {
-  'Salario':         '💼',
-  'Salario mínimo':  '🏷️',
-  'Honorarios':      '💵',
-  'Comisión':        '🤝',
-  'Arriendo':        '🏠',
-  'Pensión':         '👴',
-  'Subsidio':        '🪙',
-  'Bonificación':    '🎁',
-  'Cuota':           '🧾',
-  'Venta':           '💰',
-  'Rendimientos':    '📈',
-  'Otro':            '📦',
+/** Ícono del sprite por categoría de ingreso. Solo UI; nunca en el valor almacenado. */
+export const CATEGORIA_INGRESO_ICONO = {
+  'Salario':         'c-maletin',
+  'Salario mínimo':  'c-etiqueta',
+  'Honorarios':      'c-billete',
+  'Comisión':        'i-percent',
+  'Arriendo':        'i-home',
+  'Pensión':         'c-paraguas',
+  'Subsidio':        'c-subsidio',
+  'Bonificación':    'c-regalo',
+  'Cuota':           'c-recibo',
+  'Venta':           'c-bolsa',
+  'Rendimientos':    'i-trending-up',
+  'Otro':            'c-otros',
 };
 
 /**
@@ -517,23 +522,23 @@ export const CATEGORIAS_AGENDA = [
   'Otro',
 ];
 
-/** Emoji visual por categoría de gasto fijo (Agenda). Usar solo en UI; nunca en el valor almacenado. */
-export const CATEGORIA_AGENDA_EMOJI = {
-  'Arriendo':           '🏠',
-  'Administración':     '🏢',
-  'Servicios públicos': '💡',
-  'Mercado':            '🛒',
-  'Internet':           '🌐',
-  'Telefonía':          '📱',
-  'Streaming':          '🎬',
-  'Suscripciones':      '🔔',
-  'Seguros':            '🛡️',
-  'Educación':          '📚',
-  'Gimnasio':           '🏋️',
-  'Cuota de manejo':    '💳',
-  'Transporte':         '🚗',
-  'Mascotas':           '🐾',
-  'Otro':               '📦',
+/** Ícono del sprite por categoría de gasto fijo (Agenda). Solo UI; nunca en el valor almacenado. */
+export const CATEGORIA_AGENDA_ICONO = {
+  'Arriendo':           'i-home',
+  'Administración':     'c-edificio',
+  'Servicios públicos': 'c-servicios',
+  'Mercado':            'c-mercado',
+  'Internet':           'c-internet',
+  'Telefonía':          'c-telefono',
+  'Streaming':          'c-streaming',
+  'Suscripciones':      'c-campana',
+  'Seguros':            'c-escudo',
+  'Educación':          'c-libro',
+  'Gimnasio':           'c-pesa',
+  'Cuota de manejo':    'i-deudas',
+  'Transporte':         'c-bus',
+  'Mascotas':           'c-mascotas',
+  'Otro':               'c-otros',
 };
 
 /**
@@ -554,15 +559,15 @@ export const CATEGORIAS_DEUDA = [
   'Otra',
 ];
 
-/** Emoji visual por tipo de deuda. Usar solo en UI; nunca en el valor almacenado. */
-export const CATEGORIA_DEUDA_EMOJI = {
-  'Tarjeta de crédito': '💳',
-  'Libre inversión':    '💵',
-  'Vivienda':           '🏠',
-  'Vehículo':           '🚗',
-  'Educativo':          '🎓',
-  'Compra a cuotas':    '🛍️',
-  'Otra':               '📦',
+/** Ícono del sprite por tipo de deuda. Solo UI; nunca en el valor almacenado. */
+export const CATEGORIA_DEUDA_ICONO = {
+  'Tarjeta de crédito': 'i-deudas',
+  'Libre inversión':    'c-billete',
+  'Vivienda':           'i-home',
+  'Vehículo':           'c-carro',
+  'Educativo':          'c-birrete',
+  'Compra a cuotas':    'c-compras',
+  'Otra':               'c-otros',
 };
 
 /**
@@ -582,15 +587,15 @@ export const CATEGORIAS_DEUDA_PERSONAL = [
   'Otro',
 ];
 
-/** Emoji visual por relación de deuda personal. Solo UI; nunca en el valor almacenado. */
-export const CATEGORIA_DEUDA_PERSONAL_EMOJI = {
-  'Familiar':               '👪',
-  'Amigo':                  '🤝',
-  'Vecino':                 '🏘️',
-  'Natillera':              '💰',
-  'Prestamista particular': '💼',
-  'Fiado':                  '🏪',
-  'Otro':                   '📦',
+/** Ícono del sprite por relación de deuda personal. Solo UI; nunca en el valor almacenado. */
+export const CATEGORIA_DEUDA_PERSONAL_ICONO = {
+  'Familiar':               'c-familia',
+  'Amigo':                  'c-amigos',
+  'Vecino':                 'c-vecino',
+  'Natillera':              'c-bolsa',
+  'Prestamista particular': 'c-maletin',
+  'Fiado':                  'c-tienda',
+  'Otro':                   'c-otros',
 };
 
 /**
@@ -615,25 +620,25 @@ export const CATEGORIAS_META = [
 ];
 
 /**
- * Emoji visual por categoría de meta. Usar solo en UI; nunca en el valor
- * almacenado. Dos reconciliaciones respecto de la lista original de la
- * tarjeta MT.1, para respetar el guardarraíl de consistencia entre
- * catálogos (ADR 014, TX.4): 'Educación' usa 📚 (no 🎓, ya en uso en Gastos
- * y Agenda) y 'Vacaciones' usa ✈️ (no 🏖️, ya en uso en Apartados).
+ * Ícono del sprite por categoría de meta. Solo UI; nunca en el valor
+ * almacenado (el campo `icono` de la meta guarda únicamente el emoji que el
+ * usuario elige a mano con la categoría 'Otra', MT.3/ID.3). Con el paso a
+ * sprite, 'Vacaciones' y 'Emprendimiento' ganan metáfora propia (palmera y
+ * cohete): la reconciliación de emojis de MT.1 ya no las limita.
  */
-export const CATEGORIA_META_EMOJI = {
-  'Viajes':         '✈️',
-  'Cumpleaños':     '🎂',
-  'Boda':           '💍',
-  'Vivienda':       '🏠',
-  'Vehículo':       '🚗',
-  'Computador':     '💻',
-  'Celular':        '📱',
-  'Educación':      '📚',
-  'Hijo(s)':        '👶',
-  'Vacaciones':     '✈️',
-  'Emprendimiento': '💼',
-  'Otra':           '📦',
+export const CATEGORIA_META_ICONO = {
+  'Viajes':         'c-avion',
+  'Cumpleaños':     'c-torta',
+  'Boda':           'c-anillo',
+  'Vivienda':       'i-home',
+  'Vehículo':       'c-carro',
+  'Computador':     'c-computador',
+  'Celular':        'c-telefono',
+  'Educación':      'c-libro',
+  'Hijo(s)':        'c-biberon',
+  'Vacaciones':     'c-palmera',
+  'Emprendimiento': 'c-cohete',
+  'Otra':           'c-otros',
 };
 
 /** Frecuencias soportadas en compromisos e ingresos recurrentes. */
