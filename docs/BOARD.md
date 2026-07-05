@@ -10,7 +10,11 @@
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1.)_
+#### Análisis conjunto: Inicio como centro de control (IN.4, IN.6, IN.7, CAL.1, TX.8)
+- Inicio     : 2026-07-05
+- Paso actual: análisis exhaustivo del código actual de Inicio (sin ficha de contexto todavía, `docs/contexto/inicio.md` "sin crear"), previo a cualquier propuesta de diseño o código, siguiendo CLAUDE.md 2.6. Elegido por ser el cluster de mayor impacto: 5 de las 15 tarjetas nuevas del BOARD convergen en la misma pantalla.
+- Alcance    : IN.4 (accesos personalizables), IN.6 (saludo dinámico + avatar), IN.7 (des-duplicar Pendientes del mes/Próximas prioridades), CAL.1 (mover aviso de ingreso a Inicio), TX.8 (apartado Movimientos + resumen financiero). **IN.5** (eliminar Gasto rápido) queda fuera de este análisis porque depende de TX.9 (rediseño del formulario de gasto, sección Gastos), no de Inicio.
+- Siguiente  : con el mapa del código en mano, escribir la ficha `docs/contexto/inicio.md` y una propuesta de arquitectura de información (candidata a ADR, dado que redefine el rol de Inicio) antes de tocar una sola línea de implementación. Ninguna subtarea se codifica todavía.
 
 ---
 
