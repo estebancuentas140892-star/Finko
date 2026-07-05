@@ -50,6 +50,8 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
+_(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 segundos el usuario debe saber qué debe hacer hoy, qué puede olvidar si no actúa, qué está haciendo bien, qué requiere atención y qué recomendaciones tiene Finko; toda la información debe orientarse a la acción y priorizarse por importancia, no solo mostrar datos. Esta filosofía atraviesa **IN.4** (accesos personalizables), **IN.5** a **IN.7** de abajo, y también **CAL.1** (aviso de ingreso) y **TX.8** (apartado Movimientos), todas pendientes de análisis conjunto por tocar el mismo espacio.)_
+
 #### IN.4 - Dashboard personalizable: accesos rápidos según prioridades del usuario
 - Prioridad  : sin definir (registrada para más adelante, no empezar aún)
 - Estado     : pendiente de análisis (no iniciar sin luz verde explícita del usuario)
@@ -64,6 +66,33 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 - Archivos   : sin explorar todavía; candidatos previsibles `modules/dominio/resumen/` (o donde viva hoy Inicio, confirmar en `docs/MAPA.md`), `modules/core/state.js` (nuevo campo + migración de schema), `modules/ui/shell.js` o similar (render de accesos rápidos), CSS de layout de Inicio
 - Depende de : nada. **No iniciar sin instrucción explícita**: el usuario pidió solo registrar la idea por ahora.
 - Modelo     : primer paso (análisis + ficha de contexto de Inicio si no existe + propuesta de diseño/ADR) con **Fable 5 - Alto** (feature multidominio con trade offs no obvios: personalización manual vs. sugerencia por uso, migración de schema, invariante "Inicio fijo" que no puede romperse); implementación posterior, ya con decisión tomada, puede bajar a Sonnet 5 - Alto por subtarea siguiendo el patrón de división de 2.1 (ej. IN.4a estructura de datos + reorder manual, IN.4b UI de arrastrar/soltar, IN.4c sugerencia por uso como fase opcional)
+
+#### IN.5 - Eliminar "Gasto rápido" (o transformarlo si aporta algo real)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : con las mejoras ya pensadas para el formulario de registrar gasto (categoría primero, categorías inteligentes, ver **TX.9**), el usuario considera que "Gasto rápido" dejó de tener utilidad: mantener dos flujos distintos para prácticamente lo mismo solo añade complejidad. Propone eliminarlo y concentrar todo en un único flujo. Pidió explícitamente analizar antes si existe un beneficio real en conservarlo o si puede transformarse en algo que aporte más valor, en vez de eliminarlo sin más.
+- Secciones  : Inicio (dashboard, de donde se accede a Gasto rápido hoy), Gastos (`gastos`)
+- Archivos   : sin explorar todavía; ubicar el acceso y el flujo de "Gasto rápido" en el código antes de decidir
+- Depende de : **TX.9** (rediseño del formulario de gasto): la decisión de eliminar Gasto rápido tiene más sentido una vez el formulario completo ya sea así de ágil; evaluarlas en el mismo momento, no por separado.
+- Modelo     : Sonnet 5 - Bajo (decisión acotada, una vez tomada es sobre todo remover una ruta/acceso y sus tests; el análisis de "vale la pena conservarlo" es la parte que requiere criterio, no volumen de código)
+
+#### IN.6 - Personalizar el Inicio: saludo dinámico + foto/avatar del usuario
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario quiere que Inicio se sienta más personal: nombre del usuario arriba con saludo dinámico según la hora ("Buenos días/tardes/noches, [nombre]"), y la posibilidad de personalizar el perfil con una fotografía, un avatar, un personaje ilustrado, una mascota virtual o cualquier elemento con el que el usuario se identifique, para generar conexión emocional con la app.
+- Secciones  : Inicio (dashboard)
+- Archivos   : sin explorar todavía; candidato previsible el encabezado de Inicio y el dato de nombre del usuario ya existente en `state.js` (revisar si ya hay algo de perfil, y si CFG.1 termina generando un bloque de "perfil" compartido con Ajustes)
+- Depende de : nada directo, pero revisar junto con **CFG.1** (perfil financiero en Ajustes) si ambas terminan tocando un mismo concepto de "perfil del usuario", para no duplicar dónde vive esa información.
+- Modelo     : Sonnet 5 - Medio (saludo dinámico es trivial; la selección de avatar/foto añade decisiones de UX y de almacenamiento, ej. cuánto pesa una foto en `localStorage`, pero sigue siendo un dominio acotado)
+
+#### IN.7 - Evitar información duplicada entre "Pendientes del mes" y "Próximas prioridades"
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario detectó que un mismo gasto fijo que vence hoy aparece a la vez en "Pendientes del mes" y en "Próximas prioridades", duplicando la información. Propone que cada bloque tenga una función claramente diferenciada: "Pendientes del mes" para obligaciones próximas a vencer (donde el usuario ya espera encontrarlas), y "Próximas prioridades" reservado para acciones que aún no son urgentes pero conviene preparar con anticipación (distribuir el ingreso cuando llegue la quincena, crear un límite donde se gasta mucho, aumentar el aporte al fondo de emergencia, revisar una meta atrasada, detectar un gasto hormiga, recomendaciones inteligentes de Finko).
+- Secciones  : Inicio (dashboard)
+- Archivos   : sin explorar todavía; candidato previsible el módulo que arma ambos bloques del Inicio (probablemente `modules/dominio/resumen/`), revisar el criterio actual de qué entra en cada uno
+- Depende de : nada directo, pero el rediseño de "Próximas prioridades" con recomendaciones inteligentes se solapa con **LIM.1** (sugerir límite por categoría), **TX.10** (categoría como eje de recomendaciones) y **CAL.1** (aviso de ingreso); revisar juntas al iniciar para no repetir el mismo criterio de "qué es una prioridad" en varios sitios.
+- Modelo     : Sonnet 5 - Medio (separar un criterio de pertenencia entre dos bloques ya existentes; sube a Alto si al implementarla se decide sumar ya las recomendaciones inteligentes de la lista de ejemplos, en vez de solo des-duplicar)
 
 ---
 
@@ -110,9 +139,10 @@ _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "
 - Prioridad  : sin definir
 - Estado     : pendiente de análisis (no iniciar)
 - Objetivo   : hoy Gastos mezcla sus propios registros con movimientos de otras secciones (deudas, ahorro, metas, apartados, calendario, ingresos), lo que dificulta encontrar lo que se busca. Propone que Gastos muestre únicamente los gastos registrados desde esa sección, y que todo lo demás (pagar una deuda, aportar a una meta, recibir un ingreso, aportar a un apartado, pagar un fijo, recuperar un préstamo, distribuir el ingreso) viva en un apartado nuevo del **Inicio** llamado "Movimientos": un historial cronológico general de toda la actividad de la app. El usuario pidió explícitamente evaluar si esta separación mejora la experiencia o si hay una alternativa más eficiente.
-- Secciones  : Gastos (`gastos`, se acota su lista), Inicio (nuevo apartado "Movimientos" que agrega actividad de todos los dominios)
+  **Detalle ampliado (brief de Inicio, 2026-07-05):** cada movimiento debe indicar tipo, fecha y hora, categoría, ícono asociado, monto, cuenta/entidad involucrada y si es ingreso o egreso; diferenciados visualmente con los colores e íconos ya definidos por sección para identificarse de un vistazo. Además, propone (a evaluar, no decidido) un pequeño resumen financiero junto al historial: total de ingresos, total de egresos, total ahorrado, total destinado a deudas, variación respecto al período anterior. El usuario pidió explícitamente analizar si ese resumen aporta valor en Inicio o si debería quedarse solo en Análisis, priorizando no sobrecargar la pantalla (posible solape con **ANL.1**).
+- Secciones  : Gastos (`gastos`, se acota su lista), Inicio (nuevo apartado "Movimientos" que agrega actividad de todos los dominios, con resumen financiero opcional a decidir)
 - Archivos   : sin explorar todavía; probablemente hoy Gastos ya lee/combina registros de varios dominios en su vista, revisar `modules/dominio/gastos/` (vista y lógica) y qué helper (si existe) ya consolida "todo lo que pasó" para no duplicar esa función
-- Depende de : relación directa con **IN.4** (dashboard personalizable) y **CAL.1** (aviso de distribución de ingreso a Inicio): las tres tocan qué vive en Inicio y podrían compartir el mismo bloque de "actividad reciente"; conviene revisarlas juntas para no diseñar tres mecanismos de tarjetas de Inicio por separado. Ningún dominio importa a otro (ADN 10): un historial cruzando todos los dominios necesita EventBus o agregación en un dominio propio (`resumen`, que ya centraliza el Inicio hoy).
+- Depende de : relación directa con **IN.4** (dashboard personalizable) y **CAL.1** (aviso de distribución de ingreso a Inicio): las tres tocan qué vive en Inicio y podrían compartir el mismo bloque de "actividad reciente"; conviene revisarlas juntas para no diseñar tres mecanismos de tarjetas de Inicio por separado. El resumen financiero se solapa con **ANL.1** (evitar decidir dos veces dónde vive cada indicador). Ningún dominio importa a otro (ADN 10): un historial cruzando todos los dominios necesita EventBus o agregación en un dominio propio (`resumen`, que ya centraliza el Inicio hoy).
 - Modelo     : Opus 4.8 - Alto (reorganizar de dónde vive la información entre dos secciones es una decisión de arquitectura de información con riesgo real de regresión si algún flujo hoy depende de ver esos movimientos mezclados en Gastos)
 
 #### TX.9 - Formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante
