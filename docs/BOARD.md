@@ -69,7 +69,25 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 ### Calendario (dominio `agenda`)
 
-_(sin pendientes activos. Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
+_(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
+
+#### CAL.1 - Mover el aviso de distribución del ingreso a Inicio (centro de prioridades)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario concluyó que el aviso de distribuir el ingreso (hoy en Calendario) no está en el lugar correcto: la distribución del ingreso es de las acciones más importantes de Finko y debería vivir en Inicio, que debe convertirse en un verdadero centro de prioridades y acciones inmediatas (no solo el aviso de ingreso, sino cualquier cosa que requiera atención: deuda que vence hoy/mañana, gasto fijo por vencer, cerca de superar un límite, aporte pendiente a meta/fondo, gastos rápidos por organizar, apartado próximo a vencer). Calendario, en cambio, pasa a enfocarse solo en la planificación temporal (cuándo ocurren los eventos), sin concentrar las alertas más importantes. El usuario pidió explícitamente evaluar si hay una forma más intuitiva de repartir responsabilidades entre Inicio y Calendario, y proponerla si existe.
+- Secciones  : Calendario (`agenda`, retira el aviso), Inicio (recibe el aviso y se convierte en centro de prioridades más amplio)
+- Archivos   : sin explorar todavía; candidatos previsibles el recordatorio de día de ingreso (ADR 021, `AP.4`/`MT.2`/`AH.4` en el historial) hoy renderizado en Calendario, y el módulo de Inicio que tendría que absorber esta y otras alertas
+- Depende de : relación directa con **IN.4** (dashboard personalizable): si Inicio pasa a mostrar múltiples tipos de aviso (ingreso, deudas, límites, metas, apartados), conviene decidir junto con IN.4 cómo conviven las alertas fijas de "centro de prioridades" con los accesos rápidos personalizables, para no diseñar dos sistemas de tarjetas de Inicio por separado
+- Modelo     : Opus 4.8 - Alto (mover una pieza central de la app entre dos secciones y redefinir el rol de Inicio como centro de prioridades es una decisión de arquitectura de información, no un cambio cosmético; conviene revisarla junto con IN.4)
+
+#### CAL.2 - Leyenda del calendario dinámica (solo tipos de evento que el usuario ya usa)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : la leyenda fija bajo el calendario (día de ingreso, gasto fijo, deuda con entidad, deuda personal...) muestra siempre todas las categorías aunque el usuario no tenga registros de varias de ellas, lo que ocupa espacio innecesario. Propone que la leyenda sea dinámica: solo listar los tipos de evento que el usuario ya registró y que aparecen en su calendario; si más adelante registra un tipo nuevo (deuda personal, meta, apartado), la leyenda se actualiza sola. Mantener color, ícono, estilo y nomenclatura oficiales de cada tipo (coherencia visual con el resto de Finko), sin inventar una presentación nueva.
+- Secciones  : Calendario (`agenda`)
+- Archivos   : sin explorar todavía; candidato previsible el componente de leyenda del calendario dentro del dominio `agenda` (vista) y la función que ya calcula `eventosDelMes` (mencionada en el historial como base para derivar qué tipos existen en el mes visible)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio (filtrar una leyenda existente contra los eventos ya calculados del mes, sin lógica financiera nueva ni decisión de UX mayor)
 
 ---
 
