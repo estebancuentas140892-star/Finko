@@ -130,16 +130,7 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6, MK.1 y MK.2 cerradas (2026-07-05). Quedan ID.3 (categorías Finko v2 en tejas) e ID.7 (estructurales a v2); ID.7 puede intercalarse. Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`.
-
-#### ID.7 - Símbolos estructurales al lenguaje v2
-- Prioridad  : media
-- Estado     : pendiente (espera validación del piloto ID.6 en el celular del usuario)
-- Objetivo   : recalentar la geometría de los ~20 símbolos estructurales (saldo, recurring, lightbulb, alert, bolt, trophy, mountain, circle, star, percent, trending-up, info, bar-chart) al lenguaje v2 del ADR 023 revisado: redondez sistemática, duotono al 22 % y chispa con `var(--fk-icon-dot, currentColor)`. Hoy heredan el trazo 2.35 global pero conservan geometría v1.
-- Secciones  : Transversal
-- Archivos   : `index.html` (sprite)
-- Depende de : validación visual de ID.6
-- Modelo     : Sonnet 5 - Alto
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6, MK.1, MK.2 e ID.7 cerradas (2026-07-05). Queda solo ID.3 (categorías Finko v2 en tejas). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma).
 
 #### ID.3 - Iconos de categorías Finko v2 en tejas por dominio (re-cortada por ADR 025)
 - Prioridad  : media

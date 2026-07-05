@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): ID.7, símbolos estructurales al lenguaje v2 · 2026-07-05
+
+Cierra la iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): última fase pendiente tras ID.6 (piloto de navegación). Los 13 símbolos redibujados en ID.2 (`saldo`, `recurring`, `lightbulb`, `alert`, `bolt`, `trophy`, `mountain`, `circle`, `star`, `percent`, `trending-up`, `info`, `bar-chart`) heredaban el trazo 2.35 global desde ID.6 pero conservaban la geometría v1 (duotono al 15 %, punto de valor en `currentColor` plano, sin la variable de la "chispa"). Ahora quedan al día con las reglas v2: `fill-opacity=".22"` y `var(--fk-icon-dot, currentColor)` en cada punto de valor.
+
+**Regla 5 "metáfora primero" aplicada explícitamente.** Tres símbolos mantienen vértices agudos a propósito: los picos de `i-mountain` (avalancha), la punta de `i-bolt` y las 5 puntas de `i-star`. La geometría puntiaguda ES la metáfora (un pico de montaña o una punta de estrella redondeados dejan de leerse como tales); mismo criterio que ya dejó agudo el vértice central de la porción de `i-analisis` en el piloto ID.6. Dos símbolos no llevan punto de valor adicional: `i-saldo` (el signo peso ya es la firma) e `i-star` (la estrella entera ya es el "punto"), evitando redundancia visual. `i-percent` enciende la chispa en sus **dos** círculos, ya que ambos juntos constituyen "el punto de valor" del glifo (razonamiento que ya había fijado ID.2). `i-info` mantiene su círculo exterior sin relleno duotono: distinción deliberada entre una alerta (pesada, con cuerpo) y una explicación neutra (más liviana, solo contorno).
+
+**Redondez sistemática** aplicada donde había una esquina incidental de contenedor, sin tocar la silueta de la metáfora: el triángulo de `i-alert` (radio de esquina 2 → 2.3), las asas de `i-trophy` (2.5 → 2.9, coincide con el piso "≥ 2.9" que fija la regla 2 del ADR) y las barras de `i-bar-chart` (rx 1 → 2, esquinas tipo cápsula: la mitad exacta del ancho de la barra, extremos en semicírculo). El resto de los símbolos (saldo, recurring, lightbulb, circle) ya tenía geometría curva sin vértices que rectificar.
+
+Verificación: los 13 símbolos se renderizaron aislados en el preview a 20px y 48px, en tema claro y oscuro, confirmando que ningún path quedó roto y que la lectura de cada metáfora se conserva. Guardarraíl nuevo en `tests/unit/icons.test.js`: ningún símbolo recalentado conserva `fill-opacity=".15"` (v1), todo punto de valor enciende la chispa salvo las dos excepciones documentadas, y `mountain`/`bolt`/`star` no usan comandos de arco en el path de su silueta principal (verificación mecánica de que la regla 5 no se rompe accidentalmente a futuro).
+
+2094/2094 unit (+6, suite nueva de guardarraíles del sprite); 147/147 E2E sin cambios (no hay lógica de dinero involucrada). SW v308 → v309.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | 13 símbolos `i-*` recalentados a v2 (duotono 22 %, chispa, radios de esquina); comentario del sprite actualizado con el estado de migración. |
+| `tests/unit/icons.test.js` | Suite nueva: duotono/chispa por símbolo, excepciones documentadas, vértices agudos preservados, cápsula de `bar-chart`. |
+| `docs/DECISIONS/023-lenguaje-de-iconografia-propio.md` | Sección "ID.7" con el razonamiento de cada decisión de geometría. |
+| `docs/BOARD.md` | Tarjeta ID.7 borrada; nota de la iniciativa actualizada (cerrada salvo ID.3). |
+| `service-worker.js` | v308 → v309. |
+
+---
+
 ### feat(ui): MK.2, detección de marca por nombre en fijos, suscripciones y deudas · 2026-07-05
 
 Segunda fase del [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (D4): la teja de marca llega a los nombres libres. Módulo nuevo `infra/marcas.js` con `resolverMarca(texto)`: normaliza el texto del usuario (minúsculas, sin tildes, signos a espacio) y lo compara contra aliases por **palabra o frase completa**, nunca substring ("Netflix Premium" resuelve a Netflix; "clarooscuro" NO resuelve a Claro). Busca primero en el catálogo nuevo `MARCAS` y después en `BANCOS_CO` (solo bancos y billeteras, con el id como alias implícito: una deuda "Tarjeta Bancolombia" hereda la identidad del banco; Efectivo y Otro quedan excluidos porque "otro" es palabra común). Sin match devuelve null y el consumidor cae a su ícono de categoría o de tipo: el fallback automático del ADR.

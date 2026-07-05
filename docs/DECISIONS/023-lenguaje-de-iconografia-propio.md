@@ -1,6 +1,6 @@
 # ADR 023 - Lenguaje de iconografía propio (duotono + punto de valor)
 
-**Estado:** Aceptada, revisada el 2026-07-04 (v2 "trazo cálido con chispa", ver sección final)
+**Estado:** Aceptada, revisada el 2026-07-04 (v2 "trazo cálido con chispa"); ID.7 (símbolos estructurales) cerrada el 2026-07-05, ver secciones finales
 **Fecha:** 2026-07-04
 **Autores:** Claude Fable 5 (análisis y decisión, revisión visual aprobada por Esteban)
 **Resuelve:** ID.1 e ID.2 (identidad visual: sistema de iconografía) y su revisión ID.6 (lenguaje v2). Revisa parcialmente la decisión de ARCHITECTURE.md sección 8.1 (iconografía híbrida emoji/SVG).
@@ -90,3 +90,7 @@ El diagnóstico técnico del frío confirmó cuatro causas: (1) trazo 2 sobre gr
 ### Piloto ID.6 y fases
 
 Los 14 símbolos de navegación quedaron redibujados en v2. Un cambio de metáfora: Inversión pasa del zigzag con flecha a una **curva suave ascendente con la chispa en el extremo** (progreso calmado, "aquí vas hoy"); el zigzag transmitía volatilidad. En `i-mas`, el punto central es la chispa. Fases restantes: recalentar la geometría de los símbolos estructurales de ID.2 (que mientras tanto heredan el trazo 2.35) y las categorías con teja por dominio (ID.3).
+
+### ID.7 (2026-07-05): símbolos estructurales recalentados a v2
+
+Los 13 símbolos de ID.2 (`saldo`, `recurring`, `lightbulb`, `alert`, `bolt`, `trophy`, `mountain`, `circle`, `star`, `percent`, `trending-up`, `info`, `bar-chart`) suben a duotono 22 % y chispa (`var(--fk-icon-dot, currentColor)`). Aplicación de la regla 5 "metáfora primero": los picos de `i-mountain` (avalancha), la punta de `i-bolt` y las 5 puntas de `i-star` se mantienen agudos a propósito, la geometría puntiaguda ES la metáfora, mismo criterio que ya dejó agudo el vértice central de la porción de `i-analisis` en el piloto ID.6. `i-saldo` y `i-star` no llevan punto de valor adicional: la propia forma (el signo peso, la estrella) ya es la firma, y sumar un punto competiría con la lectura (regla 5 también). `i-percent` enciende la chispa en sus dos círculos, ya que ambos juntos son "el punto de valor" de ese glifo (razonamiento de ID.2). `i-info` mantiene su círculo exterior sin relleno duotono, más liviano que `i-alert`: es la distinción deliberada entre una alerta (pesada) y una explicación neutra (calmada). Redondez sistemática aplicada donde había una esquina incidental de contenedor, sin tocar la silueta de la metáfora: radio de las esquinas del triángulo de `i-alert` (2 → 2.3), radio de las asas de `i-trophy` (2.5 → 2.9, coincide con el piso "≥ 2.9" de la regla 2), y esquinas de `i-bar-chart` de rx 1 a rx 2 (cápsula: la mitad exacta del ancho de la barra, extremos en semicírculo).
