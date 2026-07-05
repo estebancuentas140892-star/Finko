@@ -32,7 +32,7 @@ Este archivo traduce esa tabla y agrega, para cada dominio, qué archivo de lóg
 | Gastos | `gastos/` | `logic.js`, `view.js`, `index.js` | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen) | `gastos.test.js` |
 | Calendario | `agenda/` | `logic.js`, `view.js`, `index.js` | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
 | Deudas | `compromisos/` | `logic.js`, `index.js`, `view.js` + `views/` (`alertas.js`, `dashboard.js`, `estrategia.js`, `estrategia-impacto.js`, `formularios.js`, `lista.js`) | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
-| Mis cuentas | `tesoreria/` | `logic.js`, `view.js`, `index.js` | `domain.css` (ingresos-card, distribucion-rows/clasicos) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
+| Mis cuentas | `tesoreria/` | dividido por subsistema: `logic/`, `views/` y `acciones/` con `cuentas.js`, `ingresos.js` y `distribucion.js` cada una; `logic.js`/`view.js` son barrels e `index.js` el coordinador | `domain.css` (ingresos-card, distribucion-rows/clasicos) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
 | Apartados | `apartados/` | `logic.js`, `view.js`, `index.js` | `domain.css` (bloque APARTADOS línea 530, form rediseño línea 1305) | `apartados.test.js` |
 | Ahorro | `ahorro/` | `logic.js`, `view.js`, `index.js` | `domain.css` (consolidado de ahorro línea 1348), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `ahorro-inversion.test.js` (e2e) |
 | Presupuesto | `presupuesto/` | `logic.js`, `view.js`, `index.js` | `analysis.css` (D.5 envelope budgeting, MC.8b) | `presupuesto.test.js` |
@@ -99,7 +99,7 @@ Capas base (sin agrupar por widget, aplican a toda la app): `reset.css`, `base.c
 ## 6. Cómo agregar un dominio nuevo
 
 1. Crear `modules/dominio/<nombre>/` con `logic.js` (puro, sin DOM), `view.js` (HTML), `index.js` (wiring de acciones + registro de render + EventBus). Ver el patrón en cualquier dominio existente, ej. `gastos/`.
-2. Si la vista crece más de ~300 líneas, partirla en `views/` con barrel, como hizo `compromisos/`.
+2. Si la vista crece más de ~300 líneas, partirla en `views/` con barrel, como hizo `compromisos/`. Si el dominio entero crece, aplicar el corte por subsistema a las tres capas (`logic/`, `views/`, `acciones/` + barrels), como hizo `tesoreria/`; los archivos nuevos van al precache de `service-worker.js`.
 3. Agregar los estilos nuevos: si son exclusivos del dominio, en un bloque nuevo dentro del archivo de `styles/components/` que mejor encaje temáticamente (ver sección 4); si son un patrón reutilizable, considerar si ya existe algo similar antes de duplicar.
 4. Registrar el dominio en `ui/bootstrap.js` y la navegación en `index.html`.
 5. Crear `tests/unit/<nombre>.test.js`.

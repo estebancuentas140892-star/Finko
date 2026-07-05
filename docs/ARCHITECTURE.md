@@ -87,6 +87,20 @@ dominio/nombre/
   └─ index.js         → API pública: wiring de acciones, registro de render, EventBus.
 ```
 
+Cuando el dominio entero crece (caso `tesoreria/`, N.3 2026-07-05), el mismo corte se aplica a las tres capas, con un archivo por subsistema funcional:
+
+```
+dominio/nombre/
+  ├─ logic.js          → barrel: re-exporta la API pública de logic/*.js
+  ├─ view.js           → barrel: re-exporta views/*.js (+ render completo del dominio)
+  ├─ index.js          → coordinador: llama a los init de acciones/, EventBus, primer render
+  ├─ logic/<sub>.js    → funciones puras por subsistema
+  ├─ views/<sub>.js    → HTML por subsistema
+  └─ acciones/<sub>.js → handlers data-action por subsistema
+```
+
+Los barrels mantienen la API estable: tests y consumidores siguen importando de `logic.js`/`view.js` sin enterarse del corte. Los archivos nuevos deben agregarse al precache de `service-worker.js`.
+
 18 carpetas bajo `dominio/` (algunas sin `logic.js` porque son de solo lectura o coordinación):
 
 | Dominio | Área funcional | Notas |
@@ -106,7 +120,7 @@ dominio/nombre/
 | `personales/` | Préstamos que el usuario otorga a terceros ("Me deben") | |
 | `presupuesto/` | Límites de gasto (envelope budgeting) por categoría y por grupo financiero | |
 | `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
-| `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | |
+| `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | dividido por subsistema: `logic/`, `views/` y `acciones/` con `cuentas.js`, `ingresos.js` y `distribucion.js` cada una; `logic.js`/`view.js` son barrels |
 
 > Para ubicar rápido qué archivo tocar por sección visible, estilos y test, ver [`docs/MAPA.md`](MAPA.md).
 

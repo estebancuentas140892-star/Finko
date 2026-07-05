@@ -72,7 +72,14 @@ _(sin pendientes activos.)_
 
 ### Deudas (dominio `compromisos`, deuda)
 
-_(sin pendientes activos.)_
+#### N.4 - Partir compromisos/logic.js en submódulos
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : `compromisos/logic.js` tiene 1.517 líneas y mezcla fijos, deudas, estrategia de pago y agenda; partirlo por subsistema para depurar sin leer un archivo gigante. La vista ya está partida (`views/`); aplicar el mismo corte que tesorería en N.3 (barrel `logic.js` + `logic/<sub>.js`), sin tocar la API que consumen `views/`, `index.js` y `tests/unit/compromisos.test.js`.
+- Secciones  : Deudas, Calendario (comparten lógica de compromisos), Inicio (paneles de vencidos/prioridades)
+- Archivos   : `modules/dominio/compromisos/logic.js`, `service-worker.js` (precache + bump)
+- Depende de : nada (el patrón quedó documentado en ARCHITECTURE 2.4 con N.3)
+- Modelo     : Fable 5 - Alto (refactor grande con riesgo de regresión en lógica financiera; Opus 4.8 - Extra como alternativa)
 
 ---
 

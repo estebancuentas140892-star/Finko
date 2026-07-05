@@ -10,6 +10,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(tesoreria): N.3, dominio dividido en submódulos por subsistema · 2026-07-05
+
+Segunda tarea del plan de navegabilidad. Tesorería concentraba los 3 archivos más grandes del proyecto (`logic.js` 1.557 líneas, `index.js` 1.521, `view.js` 1.099: 4.177 líneas en 3 archivos) y depurar cualquier cosa ahí exigía leer archivos enormes que mezclaban tres subsistemas distintos.
+
+**Qué entró:**
+
+- **Corte por subsistema en las tres capas.** El dominio quedó dividido en `cuentas` (cuentas bancarias, cuota de manejo sincronizada como compromiso, GMF/4x1000, bank picker), `ingresos` (recurrentes y puntuales, salario mínimo, fechas de cobro, prima de servicios, nudge de próximo cobro) y `distribucion` (el asistente "Distribuir mi ingreso" completo: contexto, sugerencia, pasos, aplicar y deshacer). Cada subsistema tiene su archivo en `logic/`, `views/` y `acciones/`: 9 submódulos nuevos, ninguno supera las 900 líneas.
+- **API pública intacta vía barrels.** `logic.js` re-exporta los mismos 38 nombres de siempre y `view.js` las mismas 9 funciones de render: los tests (`tesoreria.test.js`, `flujos.test.js`) y `bootstrap.js` no cambiaron ni una línea de imports. `view.js` además expone `renderTesoreria()`, el `_renderTodo` histórico, para renderSmart y los handlers de cuentas.
+- **El estado delicado del asistente quedó encapsulado.** `_snapshotDistribucion` (deshacer atómico), `_distribucionPreacreditada` (modo "ya acreditado" de NAV.A2b) y el timer del snackbar viven ahora como estado privado de `acciones/distribucion.js`, compartido solo por las funciones que de verdad lo usan.
+- **Renombres mínimos** para compartir entre submódulos: `_FACTOR_MENSUAL` → `FACTOR_MENSUAL` e `_isoFecha` → `isoFecha` (internos de `logic/`, no re-exportados por el barrel), `_fechaCorta` → `fechaCorta` (entre views). Nada más cambió de nombre.
+- **Método:** el split se ejecutó con un script determinista que corta el original por rangos de línea exactos (cero retranscripción manual de código). El orden de registro de acciones, listeners delegados e inyección del formulario se preservó uno a uno.
+- **Patrón documentado** en `ARCHITECTURE.md` sección 2.4 y en `MAPA.md`: cuando un dominio entero crece, se corta por subsistema en las tres capas detrás de los barrels.
+
+**Validación:** 2097/2097 unit, 147/147 E2E (incluido el flujo `distribuir:abrir` desde Calendario hasta el asistente en Mis cuentas), lint limpio. **Pendiente: validación del usuario en su celular** (sección Mis cuentas: crear/editar cuenta, ingreso puntual con oferta de distribución, asistente completo con deshacer).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/logic/{cuentas,ingresos,distribucion}.js` | Nuevos: lógica pura por subsistema (307/387/883 líneas). |
+| `modules/dominio/tesoreria/views/{cuentas,ingresos,distribucion}.js` | Nuevos: HTML por subsistema (265/321/538 líneas). |
+| `modules/dominio/tesoreria/acciones/{cuentas,ingresos,distribucion}.js` | Nuevos: handlers por subsistema (477/362/671 líneas). |
+| `modules/dominio/tesoreria/logic.js` | Reescrito como barrel (1.557 → 63 líneas). |
+| `modules/dominio/tesoreria/view.js` | Reescrito como barrel + `renderTesoreria()` (1.099 → 48 líneas). |
+| `modules/dominio/tesoreria/index.js` | Reescrito como coordinador (1.521 → 76 líneas). |
+| `service-worker.js` | 9 archivos nuevos al precache; v311 → v312. |
+| `docs/ARCHITECTURE.md`, `docs/MAPA.md` | Patrón de corte por subsistema. |
+| `docs/BOARD.md` | Tarjeta N.4 (partir `compromisos/logic.js`) registrada. |
+
+---
+
 ### docs(mapa): N.2, mapa de navegación del código · 2026-07-05
 
 Esteban pidió reestructurar el proyecto completo (carpetas `pages/` por sección, tipo aplicación multipágina). Se descartó por análisis de impacto: rompería la SPA, el service worker y los 47 archivos de test, sin aportar nada a lo que de verdad quería resolver (ubicarse rápido en el código). Traducido a un plan de navegabilidad de 4 tareas (N.1 a N.4); N.1 (partir `styles/components/domain.css` en un archivo por dominio) también se descartó tras comprobar que todos los CSS de `styles/components/` agrupan por widget/patrón visual a propósito, no por dominio, y que varios widgets (`banner-proposito`, `cuenta-picker/multi/sel`, `abono-btn`) son compartidos entre secciones: forzar el split habría duplicado reglas o quebrado la consistencia con los archivos hermanos.
