@@ -108,7 +108,7 @@ dominio/nombre/
 | `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
 | `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | |
 
-> **Nota de limpieza pendiente:** `modules/dominio/calculadoras/` y `modules/dominio/exports/` son carpetas **vacías**. La sección "Calculadoras" se retiró de la app en 2026-06-07 (sus fórmulas puras migraron a `infra/financiero.js`, usadas hoy por `inversiones/`); `exports/` nunca tuvo contenido (el dominio real es `export/`, singular). Ver [`docs/BOARD.md`](BOARD.md) para el borrado pendiente.
+> Para ubicar rápido qué archivo tocar por sección visible, estilos y test, ver [`docs/MAPA.md`](MAPA.md).
 
 ---
 

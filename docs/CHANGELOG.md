@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(mapa): N.2, mapa de navegación del código · 2026-07-05
+
+Esteban pidió reestructurar el proyecto completo (carpetas `pages/` por sección, tipo aplicación multipágina). Se descartó por análisis de impacto: rompería la SPA, el service worker y los 47 archivos de test, sin aportar nada a lo que de verdad quería resolver (ubicarse rápido en el código). Traducido a un plan de navegabilidad de 4 tareas (N.1 a N.4); N.1 (partir `styles/components/domain.css` en un archivo por dominio) también se descartó tras comprobar que todos los CSS de `styles/components/` agrupan por widget/patrón visual a propósito, no por dominio, y que varios widgets (`banner-proposito`, `cuenta-picker/multi/sel`, `abono-btn`) son compartidos entre secciones: forzar el split habría duplicado reglas o quebrado la consistencia con los archivos hermanos.
+
+En su lugar, esta tarea crea [`docs/MAPA.md`](MAPA.md) sin tocar ni una línea de código: tabla completa sección visible → carpeta de dominio → archivos clave (`logic.js`/`view.js`/`index.js`) → archivo de estilos → test unitario; explicación de por qué "Inicio" no tiene carpeta propia (es composición de widgets de otros dominios); índice de qué agrupa cada archivo `styles/components/*.css`; y una tabla síntoma → dónde mirar para depurar sin buscar a ciegas. De paso se corrigió una nota obsoleta en `ARCHITECTURE.md` que hablaba de dos carpetas de dominio (`calculadoras/`, `exports/`) que ya no existen. Sin cambios funcionales: no aplica bump de SW ni tests nuevos.
+
+**Validación pendiente:** ninguna en la app (documentación pura).
+
+| Archivo | Cambio |
+|---|---|
+| `docs/MAPA.md` | Nuevo: índice de navegación completo del código. |
+| `docs/ARCHITECTURE.md` | Nota obsoleta de carpetas vacías reemplazada por puntero a MAPA.md. |
+| `CLAUDE.md` | Sección 5 (lectura obligatoria antes de tocar código): agregado MAPA.md como paso 5. |
+| `docs/HANDOFF.md` | Entrada nueva al tope de "qué se hizo recientemente"; MK.2 rotó al bloque de tareas anteriores. |
+
+---
+
 ### feat(assets): BR.1, biblioteca oficial de recursos gráficos · 2026-07-05
 
 Arranque de la iniciativa Biblioteca de recursos gráficos ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban pasa a diseñar personalmente los SVG del sistema en Adobe Illustrator, y para eso nace `assets/svg/` como **fuente de verdad de diseño** con estándar propio. La app no cambia en runtime: el sprite inline de `index.html` sigue siendo el mecanismo de entrega (cero peticiones, offline, theming vía `<use>`), y por eso **no hay bump de SW**.

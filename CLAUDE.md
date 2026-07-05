@@ -190,9 +190,10 @@ pnpm run format
 2. [`docs/HANDOFF.md`](docs/HANDOFF.md) - qué se hizo recientemente, qué sigue, cómo trabajamos - 2 min.
 3. [`docs/BOARD.md`](docs/BOARD.md) - tarea en proceso hoy + pendientes por sección.
 4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - capas, flujo de datos, reglas - 10 min.
-5. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
-6. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
-7. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
+5. [`docs/MAPA.md`](docs/MAPA.md) - índice sección visible → carpeta → archivos clave → estilos → test, y tabla síntoma → dónde mirar. Consultar primero ante cualquier bug o duda de "¿dónde vive esto?".
+6. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
+7. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
+8. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
 
 ---
 
