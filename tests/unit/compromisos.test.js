@@ -1887,14 +1887,16 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
     expect(teja.innerHTML).toContain('#b-nequi');
   });
 
-  it('una deuda que nombra un banco sin glifo muestra sus iniciales sobre su color', () => {
-    // Davivienda sigue sin glifo propio: ejemplifica el fallback de iniciales.
-    S.compromisos = [deudaBase({ descripcion: 'Tarjeta Davivienda' })];
+  it('una deuda que nombra una marca sin glifo muestra sus iniciales sobre su color', () => {
+    // Con BR.3 completo, todo banco/billetera real del catálogo ya tiene
+    // glifo propio; ChatGPT (MARCAS) sigue sin símbolo y ejemplifica el
+    // fallback de iniciales.
+    S.compromisos = [deudaBase({ descripcion: 'Suscripción ChatGPT' })];
     renderListaCompromisos();
     const teja = document.querySelector('.list-item__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('DV');
-    expect(teja.getAttribute('style')).toContain('background:#E31837');
+    expect(teja.textContent).toBe('AI');
+    expect(teja.getAttribute('style')).toContain('background:#10A37F');
   });
 
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {

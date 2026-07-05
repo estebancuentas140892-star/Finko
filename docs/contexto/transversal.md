@@ -7,8 +7,8 @@
 ## Tejas de marca y biblioteca gráfica (logos de bancos y marcas)
 
 - **Objetivo**          : mostrar el logotipo oficial de cada banco/billetera/marca en una teja de color, con fallback de iniciales, en Mis cuentas, Gastos, Deudas, fijos y suscripciones. `assets/svg/` es la fuente de verdad de diseño (ADR 026); el sprite de `index.html` es artefacto generado.
-- **Estado actual**     : en evolución (tarjeta BR.3: 3 bancos a color cerrados, 8 con iniciales; BR.4 ADR pendiente). BR.5 (normalización automática de exports crudos) cerrada.
-- **Verificado contra** : commit (pendiente de commitear al cierre de BR.5, 2026-07-05).
+- **Estado actual**     : BR.3 completa (2026-07-05): los 11 bancos/billeteras reales de `BANCOS_CO` tienen glifo a color; solo "Otro" (no es una entidad real) sigue con iniciales. BR.5 (normalización automática de exports crudos) cerrada. Pendiente: BR.4 (formalizar el ADR de la excepción de logo a color).
+- **Verificado contra** : commit (pendiente de commitear al cierre de BR.3, 2026-07-05).
 
 **Dónde vive**
 
@@ -42,11 +42,12 @@
 - No editar a mano el bloque generado de `index.html`.
 - Todo cambio de assets en producción bumpea `CACHE_NAME` en `service-worker.js`.
 
-**Cambios pendientes**: resto de bancos con iniciales (BR.3); ADR de la excepción de logo a color (BR.4).
+**Cambios pendientes**: ADR de la excepción de logo a color (BR.4).
 
 **Cambios realizados**:
 
-- 2026-07-05: BR.5, el sync normaliza exports crudos de Illustrator antes de validar (declaración XML, `id="Capa_1"`, comentario, `xlink:href`, `<g>` bare, IDs de degradado genéricos) y reescribe el archivo limpio en `assets/svg/`.
+- 2026-07-05: BR.3 completa. 9 bancos/billeteras más a color de un tirón (Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, DaviPlata, Lulo Bank, Nubank, Banco de Occidente, AV Villas), todos con la misma imagen de calco incrustada de Illustrator retirada. DaviPlata/Davivienda con degradado en español (`Degradado_sin_nombre_N`, regex de BR.5 ampliado); Banco de Occidente con fondo de mosaico de polígonos (no rect plano). Color de teja para los 3 casos sin fondo plano elegido por coincidencia exacta en al menos 2 esquinas (verificado con muestreo de píxeles en canvas). 3 tests migrados de Davivienda (ya con glifo) a "Otro"/"ChatGPT" como nuevos ejemplos del fallback de iniciales.
+- 2026-07-05: BR.5, el sync normaliza exports crudos de Illustrator antes de validar (declaración XML, `id="Capa_1"`, comentario, `xlink:href`, `<g>` bare, IDs de degradado genéricos en inglés y español, `data-name`) y reescribe el archivo limpio en `assets/svg/`.
 - 2026-07-05 `0f143f9`: fix del contorno fantasma (stroke explícito + validador + guardarraíl + README 6b).
 - 2026-07-05 `2b5ae36`: Nequi a color (monograma) + limpieza de exports crudos.
 - 2026-07-05: Bancolombia y Banco de Bogotá a color (`data-fullcolor`), sync extendido a degradados.

@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): BR.3 completa, los 11 bancos/billeteras de BANCOS_CO a color · 2026-07-05
+
+Cierre de la iniciativa de biblioteca gráfica para banca CO. Esteban entregó, en el mismo lote, exports de Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, DaviPlata, Lulo Bank y Nubank, y minutos después (en vivo, mientras se integraban los anteriores) también Banco de Occidente y AV Villas: **9 bancos de un tirón**. Con Bancolombia, Banco de Bogotá y Nequi ya cerrados antes, **los 11 bancos/billeteras de `BANCOS_CO` quedan con glifo oficial a color**; el único sin símbolo es "Otro" (deliberado: no es una entidad real, es el fallback genérico).
+
+Los 9 nuevos llegaron como exports crudos de Illustrator, cada uno con su propia imagen de calco incrustada (mismo patrón ya visto en Banco de Bogotá): BR.5 (cerrada en el commit anterior) resolvió automáticamente la limpieza del envoltorio, y la imagen se retiró de los 9 con el mismo criterio ya aprobado (cero diferencia visual, solo cruft). Dos casos particulares: DaviPlata y Davivienda usan degradado (`Degradado_sin_nombre_N`, nombre en español de Illustrator, que BR.5 no contemplaba); se amplió el regex de renombrado de degradados de BR.5 para reconocer ese patrón además del inglés. Banco de Occidente construye su fondo con un mosaico de 5 polígonos en diagonal (no un rect plano) más una marca en degradado encima.
+
+**Color de teja para los casos sin fondo plano:** DaviPlata, Davivienda y Banco de Occidente no tienen un único color de fondo (degradado o mosaico); se eligió el tono que coincide exacto con al menos 2 de las 4 esquinas del glifo (verificado por muestreo de píxeles en canvas a 240×240), mismo criterio ya aceptado para Banco de Bogotá.
+
+**Ajuste de tests:** con el catálogo completo, ya no queda ningún banco/billetera real sin glifo para ejemplificar el fallback de iniciales (los 3 tests que usaban Davivienda como ejemplo apuntaban a un caso que dejó de existir). Se migraron a "Otro" (para el test que llama a `bancoAvatar()` directo, el único BANCOS_CO restante sin `simbolo`) y a "ChatGPT" de `MARCAS` (para los 2 tests de flujo completo vía `resolverMarca()`, que sigue sin glifo).
+
+**Validación:** 2104/2104 unit (3 fixtures migrados); 147/147 E2E; lint limpio; sync sin errores. Verificación visual: los 9 glifos renderizan completos (0% píxeles transparentes inesperados, muestreo en canvas) y los 3 casos de color aproximado calzan en al menos 2 esquinas exactas. SW v320 → v321.
+
+| Archivo | Cambio |
+|---|---|
+| `assets/svg/logos/bancos/{banco-popular,bbva,daviplata,davivienda,lulo-bank,nubank,scotiabank-colpatria,av-villas,banco-occidente}.svg` | 9 logos a color nuevos (imagen de calco retirada, `data-fullcolor`, fill/stroke explícitos). |
+| `scripts/sync-sprite.py` | Regex de degradados amplia a `Degradado_sin_nombre_N` (Illustrator en español); limpieza de `data-name`. |
+| `modules/core/constants.js` | 9 entradas de `BANCOS_CO`: `simbolo` nuevo + `color` actualizado al fondo real del logo. |
+| `index.html` | Sprite regenerado: 110 símbolos (9 nuevos). |
+| `tests/unit/{agenda,bancos,compromisos}.test.js` | 3 fixtures migrados de Davivienda (ya con glifo) a Otro/ChatGPT. |
+| `service-worker.js` | v320 → v321. |
+| `docs/BOARD.md` | Tarjeta BR.3 cerrada y borrada; BR.4 actualizada (ya no pendiente de bancos, solo del ADR). |
+| `docs/contexto/transversal.md` | Ficha actualizada: estado, riesgos y cambios realizados. |
+
+---
+
 ### feat(assets): BR.5, el sync normaliza exports crudos de Illustrator · 2026-07-05
 
 Cierra la fricción detrás de las dos limpiezas manuales que ya hicieron falta en BR.3 (Nequi, Banco de Bogotá): `scripts/sync-sprite.py` ahora normaliza el envoltorio típico de un export crudo de Adobe Illustrator **antes** de validar, y reescribe el archivo limpio de vuelta en `assets/svg/` (la biblioteca sigue siendo la fuente de verdad; el guardarraíl byte a byte de `sprite-sync.test.js` sigue válido porque compara contra el archivo ya normalizado en disco).

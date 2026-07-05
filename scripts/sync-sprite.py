@@ -97,12 +97,19 @@ RE_COMMENT = re.compile(r'<!--.*?-->', re.DOTALL)
 RE_XLINK_HREF = re.compile(r'\bxlink:href=')
 RE_XMLNS_XLINK = re.compile(r'\s+xmlns:xlink="[^"]*"')
 RE_SVG_OPEN = re.compile(r'^<svg\b([^>]*)>')
-# Nombres que Adobe Illustrator asigna por defecto a los degradados
-# (linear-gradient, linear-gradient1, radial-gradient2...): nunca son unicos
-# entre dos logos, a diferencia de un id ya prefijado a mano (ej. bbog-g0),
-# que la normalizacion deja intacto.
-RE_GRADIENT_ID_ILLUSTRATOR = re.compile(r'^(?:linear|radial)-gradient\d*$')
+# Nombres que Adobe Illustrator asigna por defecto a los degradados: en
+# ingles (linear-gradient, linear-gradient1, radial-gradient2...) o en
+# espanol si la app esta en ese idioma (Degradado_sin_nombre_120, con
+# espacios convertidos a guion bajo porque un id no admite espacios). Nunca
+# son unicos entre dos logos, a diferencia de un id ya prefijado a mano
+# (ej. bbog-g0), que la normalizacion deja intacto.
+RE_GRADIENT_ID_ILLUSTRATOR = re.compile(
+    r'^(?:(?:linear|radial)-gradient\d*|Degradado_sin_nombre_\d+)$', re.IGNORECASE
+)
 ATRIBUTOS_ILLUSTRATOR_A_QUITAR = ('id', 'version')
+# `data-name` es la etiqueta de capa de Illustrator (util solo dentro del
+# programa); no aporta nada al SVG final y no es un atributo de presentacion.
+RE_DATA_NAME = re.compile(r'\s+data-name="[^"]*"')
 
 
 class ErrorProduccion(Exception):
@@ -219,6 +226,9 @@ def normalizar_export_illustrator(stem: str, contenido: str, notas: list) -> str
         contenido = RE_XLINK_HREF.sub('href=', contenido)
         notas.append('xlink:href normalizado a href')
     contenido = RE_XMLNS_XLINK.sub('', contenido)
+    if RE_DATA_NAME.search(contenido):
+        contenido = RE_DATA_NAME.sub('', contenido)
+        notas.append('atributo(s) data-name (etiqueta de capa de Illustrator) removidos')
     contenido = contenido.strip()
 
     m_open = RE_SVG_OPEN.match(contenido)

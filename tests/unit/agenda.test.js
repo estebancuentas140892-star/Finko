@@ -606,19 +606,21 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
     expect(document.querySelector('.cal-detail__icon').innerHTML).toContain('#b-spotify');
   });
 
-  it('una deuda que nombra un banco muestra su teja con iniciales y color', () => {
-    // Davivienda sigue sin glifo propio: ejemplifica el fallback de iniciales.
+  it('un compromiso que nombra una marca sin glifo muestra su teja con iniciales y color', () => {
+    // Con BR.3 completo, todo banco/billetera real del catálogo ya tiene
+    // glifo propio; ChatGPT (MARCAS) sigue sin símbolo y ejemplifica el
+    // fallback de iniciales sobre el flujo completo de resolverMarca().
     S.compromisos = [compromisoBase({
       id: 'd1', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
-      descripcion: 'Tarjeta Davivienda', cuotaMensual: 200_000, saldoTotal: 2_000_000,
+      descripcion: 'Suscripción ChatGPT', cuotaMensual: 200_000, saldoTotal: 2_000_000,
     })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const teja = document.querySelector('.cal-detail__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('DV');
-    expect(teja.getAttribute('style')).toContain('background:#E31837');
+    expect(teja.textContent).toBe('AI');
+    expect(teja.getAttribute('style')).toContain('background:#10A37F');
   });
 
   it('sin marca en el nombre, el fallback de AG.2 queda intacto (teja de categoría o ícono del tipo)', () => {
