@@ -8,7 +8,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a** y **CAL.1** cerradas. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido, y fases TX.8a → TX.8b → IN.4a → IN.6b restantes en `BOARD.md`.
-- **Verificado contra** : (commit de CAL.1, 2026-07-05).
+- **Verificado contra** : `d3f7d35` (2026-07-05, CAL.1).
 
 **Dónde vive**
 
