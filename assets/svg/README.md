@@ -149,6 +149,28 @@ puerta como trazo desnudo, ventana como chispa.
   del propio usuario; si un titular objeta, se retira el archivo y su fila del
   catálogo y el fallback de iniciales absorbe.
 
+### 6b. Logos a color (`data-fullcolor="true"`, excepción al monocromo)
+
+Para marcas cuya identidad ES el color (Bancolombia, Banco de Bogotá, Nequi) el
+archivo es **autónomo**: trae su fondo, sus `fill` propios y sus `<defs>` con
+degradados. El sync lo conserva byte a byte (no convierte colores) y su teja de
+catálogo se pinta del color del propio fondo del logo. Reglas duras:
+
+- **Fidelidad absoluta al original:** cero contornos, bordes, sombras, brillos,
+  efectos o reinterpretaciones que no estén en el diseño oficial. Si el logo
+  necesita contraste con el fondo de la app, se ajusta el **contenedor** (color
+  de teja, espacio alrededor), nunca el logo.
+- **Todo elemento pintable declara `fill` Y `stroke` explícitos** (aunque sea
+  `stroke="none"`). Motivo: la clase CSS `.icon` pone `fill:none` y
+  `stroke:currentColor` en el `<svg>` anfitrión y esas propiedades se heredan
+  hacia adentro del `<use>`; un elemento sin `stroke` propio recibe un contorno
+  fantasma del color `texto` de la teja (así apareció el contorno blanco en
+  Banco de Bogotá y el morado que se comía el acento rosa de Nequi, 2026-07-05),
+  y uno sin `fill` propio desaparece. El atributo de presentación en el elemento
+  gana a la herencia. `sync-sprite.py` y `sprite-sync.test.js` lo verifican.
+- **IDs internos con prefijo del slug** (`bbog-g0`...): el sprite es un solo
+  documento y dos logos con el mismo id de gradiente se pisarían.
+
 ## 7. Exportar desde Adobe Illustrator
 
 **Configuración del documento:** mesa de trabajo de 24×24 px, unidades en px,
@@ -196,7 +218,13 @@ recurso real basta sobrescribir el archivo (el atributo desaparece con él).
 
 1. **Esteban diseña** el recurso en Illustrator sobre este estándar.
 2. **Exporta** con la configuración de la sección 7 y **sobrescribe** el archivo
-   en su carpeta (o crea uno nuevo si es un recurso nuevo).
+   en su carpeta (o crea uno nuevo si es un recurso nuevo). El SVG es siempre el
+   formato de entrega: es la fuente de verdad y va tal cual a la app.
+   *Opcional pero recomendado para logos a color o diseños con matices:* adjuntar
+   también un **PNG de referencia** (512×512, exportado desde Illustrator) que
+   muestre cómo debe verse el recurso. Ese PNG es la vara contra la que se
+   compara el render real de la app en la revisión; habría atrapado de inmediato
+   el contorno fantasma de 2026-07-05.
 3. **Revisión en pareja (Claude):** cada entrega se audita contra criterios
    fijos antes de entrar a la biblioteca:
    - Legibilidad: ¿se reconoce a 16px sin leer texto? ¿silueta única en la familia?

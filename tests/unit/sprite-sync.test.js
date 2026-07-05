@@ -120,4 +120,25 @@ describe('BR.2 - Sincronía biblioteca (assets/svg/) <-> sprite (index.html)', (
       expect(idsPublicados.has(simbolo), `"${id}": simbolo "${simbolo}" no tiene archivo en assets/svg/`).toBe(true);
     }
   });
+
+  // La clase CSS .icon pone fill:none / stroke:currentColor en el <svg>
+  // anfitrión y esas propiedades SE HEREDAN hacia adentro del <use>: un
+  // elemento pintable sin stroke propio recibe un contorno del color `texto`
+  // de la teja (el contorno blanco de Banco de Bogotá y el morado que se
+  // comía el acento rosa de Nequi, 2026-07-05), y uno sin fill desaparece.
+  // El atributo de presentación en el elemento gana a la herencia; por eso
+  // todo logo a color debe declarar ambos en cada elemento pintable.
+  it('todo elemento pintable de un logo a color (data-fullcolor) declara fill y stroke explícitos', () => {
+    const fullcolor = publicados.filter((a) =>
+      a.contenido.split('>', 1)[0].includes('data-fullcolor="true"'));
+    expect(fullcolor.length).toBeGreaterThan(0);
+    for (const { rel, contenido } of fullcolor) {
+      const cuerpo = cuerpoDe(contenido);
+      for (const m of cuerpo.matchAll(/<(path|circle|rect|line|polygon|polyline|ellipse)\b([^>]*)>/gi)) {
+        const [, etiqueta, attrs] = m;
+        expect(/\bfill\s*=/.test(attrs), `${rel}: <${etiqueta}> sin fill explícito`).toBe(true);
+        expect(/\bstroke\s*=/.test(attrs), `${rel}: <${etiqueta}> sin stroke explícito (heredaría el contorno de .icon)`).toBe(true);
+      }
+    }
+  });
 });

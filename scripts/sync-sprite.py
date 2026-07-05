@@ -172,6 +172,16 @@ def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
     Permite degradados (defs/linearGradient/stop) ademas de las primitivas, y
     conserva el cuerpo tal cual para que la biblioteca y el sprite queden
     identicos byte a byte (el guardarrail vigila esa igualdad).
+
+    Regla de autonomia total: todo elemento pintable debe declarar `fill` y
+    `stroke` explicitos. La clase CSS `.icon` de la app pone
+    `fill:none; stroke:currentColor; stroke-width:2.35` en el <svg> anfitrion
+    y esas propiedades SE HEREDAN hacia adentro del <use>: un elemento sin
+    `stroke` propio recibe un contorno del color `texto` de la teja (asi
+    aparecio el contorno blanco en Banco de Bogota y el morado que se comia
+    el acento rosa de Nequi, 2026-07-05), y uno sin `fill` propio desaparece.
+    El atributo de presentacion en el elemento gana a la herencia y neutraliza
+    el problema de raiz.
     """
     for etiqueta in RE_TAG.findall(cuerpo):
         nombre = etiqueta.lower()
@@ -180,6 +190,15 @@ def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
                 f'{id_symbol}: elemento <{etiqueta}> no permitido ni en logo a color '
                 f'(peligroso o no reproducible por <use>)'
             )
+    for m in re.finditer(r'<(path|circle|rect|line|polygon|polyline|ellipse)\b([^>]*)>', cuerpo, re.IGNORECASE):
+        etiqueta, attrs = m.group(1), m.group(2)
+        for atributo in ('fill', 'stroke'):
+            if not re.search(rf'\b{atributo}\s*=', attrs):
+                raise ErrorRecurso(
+                    f'{id_symbol}: <{etiqueta}> sin {atributo} explicito; en un logo a color todo '
+                    f'elemento pintable debe declarar fill y stroke (ej. stroke="none") o hereda '
+                    f'el contorno de la clase CSS .icon a traves del <use>'
+                )
     if 'transform=' in cuerpo:
         raise ErrorRecurso(f'{id_symbol}: transform no permitido (coordenadas deben venir "horneadas")')
     if re.search(r'\bclass\s*=', cuerpo) or re.search(r'\bstyle\s*=', cuerpo):
