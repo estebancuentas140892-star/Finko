@@ -164,17 +164,18 @@
     transform: scale(1.1);
   }
 }
-/* Ícono SVG de navegación (Parte 3C). La doble clase gana specificity
-   sobre los overrides de .nav-item__icon en responsive.css (que ponían
-   width:auto para el emoji, inservible en un <svg>). 22px da buena
-   legibilidad tanto en el sidebar como en el bottom-nav móvil.
+/* Ícono SVG de navegación (Parte 3C). 24px es el estándar de navegación
+   de Material 3 y Apple HIG: la ruta de orientación principal, legible
+   de un vistazo en sidebar y bottom-nav móvil. El tamaño viaja por
+   --fk-icon-size (leída por .icon en forms.css): esta capa (layout) es
+   inferior a components y un width directo aquí perdería la cascada
+   aunque el selector sea más específico.
    La chispa (Finko Icons v2, ADR 023 revisado) se enciende en acento:
    la variable atraviesa el <use> y colorea el punto sólido de cada
    símbolo aun con el item inactivo (gris + chispa verde). En el item
    activo el icono completo ya es acento y la chispa se funde con él. */
 .nav-item__icon.icon {
-  width: 22px;
-  height: 22px;
+  --fk-icon-size: var(--fk-icon-lg);
   --fk-icon-dot: var(--fk-accent);
 }
 .nav-item__label { flex: 1; }
@@ -467,11 +468,10 @@
   margin-bottom: var(--fk-space-2);
 }
 /* Ícono SVG del hero de saldo (Parte 3C, acento). Grande (32px) y tintado
-   con el acento para acompañar al valor en verde. La doble clase gana
-   specificity sobre cualquier override single-class. */
+   con el acento para acompañar al valor en verde. Tamaño vía
+   --fk-icon-size: ver nota de capas en .nav-item__icon.icon. */
 .bento__icon.icon {
-  width: 2rem;
-  height: 2rem;
+  --fk-icon-size: var(--fk-icon-2xl);
   color: var(--fk-text-accent);
 }
 .bento__footer {
@@ -611,9 +611,11 @@
   border-radius: var(--fk-radius-md);
   background: var(--fk-bg-surface);
 }
+/* 20px en caja de 32px: mismo ratio ~62% que las tejas de categoría,
+   para que los accesos no se vean más livianos que el resto de glifos.
+   Tamaño vía --fk-icon-size: ver nota de capas en .nav-item__icon.icon. */
 .acceso-item__icon .icon {
-  width: 18px;
-  height: 18px;
+  --fk-icon-size: var(--fk-icon-md);
   color: var(--fk-text-accent);
 }
 .acceso-item__label {

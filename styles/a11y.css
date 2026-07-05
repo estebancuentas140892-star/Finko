@@ -16,6 +16,18 @@
   }
 }
 
+/* ── MÁS CONTRASTE (prefers-contrast: more) ────────────────── */
+/* Iconos de línea: un paso más de grosor de trazo para usuarios con
+   baja visión o que piden más contraste en su sistema. Cada escala
+   sube proporcionalmente para conservar la jerarquía entre tamaños.
+   El duotono y la chispa (ADR 023) no se tocan: viven sobre el trazo
+   y no compiten con su lectura. */
+@media (prefers-contrast: more) {
+  .icon      { stroke-width: 2.6; }
+  .icon--sm  { stroke-width: 2.75; }
+  .icon--lg  { stroke-width: 2; }
+}
+
 /* ── ALTO CONTRASTE ────────────────────────────────────────── */
 @media (forced-colors: active) {
   /* Asegurar que los bordes y outlines sean visibles */

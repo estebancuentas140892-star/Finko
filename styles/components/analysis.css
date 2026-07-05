@@ -604,8 +604,7 @@
   color: var(--fk-dom-ahorro);
 }
 .fondo-hero__icon .icon {
-  width: 26px;
-  height: 26px;
+  --fk-icon-size: var(--fk-icon-xl);
 }
 
 .fondo-hero__title-wrap {
@@ -792,8 +791,7 @@
   color: var(--fk-dom-inversion);
 }
 .inversion-hero__icon .icon {
-  width: 26px;
-  height: 26px;
+  --fk-icon-size: var(--fk-icon-xl);
 }
 
 .inversion-hero__title-wrap {

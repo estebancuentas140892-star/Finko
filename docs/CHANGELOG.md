@@ -10,6 +10,40 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): escala de tokens de iconografía + fix de cascada @layer · 2026-07-05
+
+Revisión completa del sistema de iconografía pedida por el usuario: los iconos se percibían pequeños y difíciles de identificar de un vistazo, en móvil y en escritorio. La auditoría encontró dos problemas: (1) no existía una escala de tamaños (11 valores sueltos hardcodeados entre 14 y 56px repartidos en 9 archivos CSS, contra la regla "nunca hardcodear tamaños") y (2) **un bug de cascada preexistente**: `main.css` importa `layout.css` en una capa `@layer` inferior a `components`, y en capas CSS la capa gana sin importar la especificidad, así que los tamaños declarados en `layout.css` para la navegación (22px), el hero de saldo (32px) y los accesos rápidos (18px) llevaban tiempo perdiendo contra el `.icon` base: **los tres contextos renderizaban a 20px**. Eso explica directamente la percepción de iconos pequeños.
+
+**Qué entró:**
+
+- **Escala de tokens `--fk-icon-*`** en `tokens.css`: 7 pasos (16, 18, 20, 24, 28, 32, 48px) más 2 tamaños de teja (`--fk-teja-md` 32px, `--fk-teja-lg` 36px). Piso de 16px: por debajo, el trazo efectivo del sprite (2.35 × tamaño/24) baja de ~1.5px y pierde nitidez en pantallas 1x o de baja resolución. Documentada en `DESIGN_SYSTEM.md` con la tabla contexto → token.
+- **Patrón `--fk-icon-size`** (mismo mecanismo que la chispa `--fk-icon-dot` del ADR 023): `.icon` lee `var(--fk-icon-size, var(--fk-icon-md))` y cada contexto declara la variable en vez de `width`/`height` directos. Las variables atraviesan las capas de `main.css`, así que el fix de cascada queda resuelto de raíz y cualquier capa puede dimensionar iconos sin pelear la cascada. Un solo mecanismo en toda la app.
+- **Navegación 22 → 24px** (sidebar y bottom-nav): estándar de Material 3 y Apple HIG para navegación, el contexto más crítico en móvil. El override móvil `width: auto` de la era emoji quedó acotado al wrapper del FAB Registrar (único `<span>` del nav); antes pisaba el ancho de los SVG por la misma razón de capas.
+- **Tejas más grandes en listas:** en filas de lista (Gastos, Mis cuentas, Deudas, Metas: el contexto de reconocimiento primario) la teja de categoría/marca sube de 32 a 36px (glifo interno de ~20 a ~22px, ratio 62% constante). En superficies compactas (detalle del calendario, picker, hints) conserva 32px.
+- **Ajustes por contexto** (jerarquía, no aumento uniforme): `.icon--sm` 14 → 16px (piso de nitidez); cerrar modal 18 → 20px (acción de escape, separada de las acciones de fila que siguen en 18px); ojo del hero 22 → 24px; chips de vencidos y accesos rápidos 18 → 20px (ratio 62% en caja de 32px); heroes de Ahorro/Inversión 26 → 28px; nudges con SVG 20 → 24px (iguala la masa visual con el emoji de 22px); emoji suelto en filas 18 → 20px.
+- **Accesibilidad:** bajo `prefers-contrast: more` el trazo de toda la familia sube un paso (base 2.35 → 2.6, sm 2.75, lg 2) conservando la jerarquía entre escalas (bloque nuevo en `a11y.css`, que por vivir en capa superior le gana a components, esta vez a favor).
+- **Rendimiento:** cero costo. Solo cambian valores CSS; el sprite, el número de peticiones y el JS quedan intactos.
+
+**Validación:** 2103/2103 unit (incluye axe-core WCAG 2.1 AA); 147/147 E2E (incluye `reflow-320`); script de verificación de estilos computados en Chromium a 1280x800 y 390x844 (15 chequeos: nav 24px en ambos viewports, FAB 24px en círculo de 46px, teja 36px en lista y 32px suelta, glifo 22.3px, sin overflow del bottom-nav). Capturas desktop y móvil revisadas. SW v316 → v317.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/tokens.css` | Escala `--fk-icon-*` (7 pasos) + `--fk-teja-*` (2 tamaños). |
+| `styles/components/forms.css` | `.icon` lee `--fk-icon-size`; `.icon--sm` 16px; cerrar modal 20px. |
+| `styles/layout.css` | Nav 24px, hero saldo 32px y accesos 20px vía variable (antes perdían la cascada y quedaban en 20px). |
+| `styles/responsive.css` | FAB al patrón de variable; `width: auto` móvil acotado al wrapper del FAB. |
+| `styles/modals.css` | Menú Más, tejas de Registrar y volver al patrón de variable. |
+| `styles/components/atoms.css` | Teja 36px en filas de lista; emoji de fila a 20px; base de teja tokenizada. |
+| `styles/components/nudges.css` | Nudge con SVG a 24px; `bank-avatar` tokenizado. |
+| `styles/components/domain.css` | Ojo del hero 24px; chip de vencidos 20px. |
+| `styles/components/charts.css` | Chooser de estrategia tokenizado (28px, 24px móvil). |
+| `styles/components/analysis.css` | Heroes de Ahorro/Inversión 28px. |
+| `styles/a11y.css` | Bloque `prefers-contrast: more` para el trazo. |
+| `docs/DESIGN_SYSTEM.md` | Sección "Escala de tamaños" con la tabla contexto → token. |
+| `service-worker.js` | v316 → v317. |
+
+---
+
 ### feat(assets): logos de marca a color, primeros glifos propios (Bancolombia, Banco de Bogotá) · 2026-07-05
 
 Arranque del flujo de diseño en pareja (BR.3) con los primeros logos que Esteban dibujó en Illustrator. Trae una **decisión de diseño nueva**: algunas marcas cuya identidad **es** el color (Bancolombia: bandera roja/amarilla/azul sobre blanco; Banco de Bogotá: remolino con degradados sobre azul) no se pueden reducir a silueta monocroma sin perderlas. Se introduce el logo **a color** como excepción explícita a la regla de monocromo de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (pendiente de formalizar en un ADR).

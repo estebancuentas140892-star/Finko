@@ -169,7 +169,25 @@ En modo claro las sombras van tintadas hacia azul-tinta (`rgba(26,32,60,...)`) e
 - **Lenguaje:** línea sobre grid 24 (trazo 2, terminaciones redondeadas), **duotono** (la región "cuerpo" de la metáfora lleva `fill="currentColor" fill-opacity=".15"` como atributo del símbolo) y **punto de valor** (un círculo sólido r 1.2-1.6 integrado en la metáfora: la ventana de la casa, el día marcado, la moneda). Glifos utilitarios (x, chevron, edit, trash...) quedan monolínea sin duotono ni punto.
 - **Sprite:** inline en `index.html` (`<symbol id="i-*">`, `currentColor`), consumido vía `icon('i-*')` de `infra/icons.js`. Los atributos `fill` atraviesan `<use>` sin CSS adicional, así que el duotono se tiñe solo con el color del contexto (nav activa, tarjetas de dominio, empty states).
 - **Estado de migración:** navegación (ID.1) y resto de la UI estructural (ID.2) redibujadas; categorías con tinte por dominio quedan para ID.3 (ahí se retiran los catálogos de emoji y se actualiza el guardarraíl TX.4). Mientras tanto los **emojis** siguen en categorías de dominio, logros, celebraciones y tips, con su regla de consistencia vigente: la misma etiqueta compartida entre catálogos usa el mismo emoji en toda la app.
-- **Iconos chicos:** `.icon--sm` (14px) para iconos en línea con texto xs/sm (subtítulos, badges, selectores de opción), evita que el `.icon` base (20px) domine una etiqueta pequeña.
+- **Iconos chicos:** `.icon--sm` (16px) para iconos en línea con texto xs/sm (subtítulos, badges, selectores de opción), evita que el `.icon` base (20px) domine una etiqueta pequeña.
+
+### Escala de tamaños (tokens `--fk-icon-*`, 2026-07-05)
+
+Todos los tamaños de icono salen de esta escala (definida en `styles/tokens.css`); ningún componente declara un tamaño suelto. El trazo efectivo de un icono de línea es `stroke × (tamaño / 24)`: por eso el piso es 16px (bajo eso el trazo baja de ~1.5px y pierde nitidez en pantallas 1x o de baja resolución).
+
+| Token | Tamaño | Contexto |
+|---|---|---|
+| `--fk-icon-xs` | 16px | Inline con texto xs/sm: badges, hints, `.icon--sm`, volver de la hoja Registrar |
+| `--fk-icon-sm` | 18px | Acciones secundarias de fila: editar, borrar, chevron del quick-add |
+| `--fk-icon-md` | 20px | Base (`.icon`): filas, formularios, cerrar modal, accesos rápidos, chips de vencidos |
+| `--fk-icon-lg` | 24px | Navegación (sidebar y bottom-nav), FAB Registrar, ojo del hero, nudges SVG. Estándar Material 3 / Apple HIG |
+| `--fk-icon-xl` | 28px | Launchers y heroes de sección: menú Más, chooser de estrategia, heroes de Ahorro/Inversión |
+| `--fk-icon-2xl` | 32px | Tejas de la hoja Registrar, icono del hero de saldo |
+| `--fk-icon-3xl` | 48px | Empty states y guías (`.icon--lg`) |
+
+Tejas (contenedor redondeado del glifo de categoría o marca, glifo interno al ~62% del lado): `--fk-teja-md` 32px en superficies compactas (detalle del calendario, picker, hints) y `--fk-teja-lg` 36px en filas de lista, el contexto de reconocimiento primario.
+
+Accesibilidad: bajo `prefers-contrast: more` el trazo de toda la familia sube un paso (2.35 → 2.6 en base; ver `styles/a11y.css`) conservando la jerarquía entre escalas.
 
 ---
 

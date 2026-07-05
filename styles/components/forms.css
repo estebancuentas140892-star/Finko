@@ -14,8 +14,15 @@
    ════════════════════════════════════════════════════════════ */
 .icon {
   display: inline-block;
-  width: 1.25rem;
-  height: 1.25rem;
+  /* Tamaño por variable (mismo patrón que la chispa --fk-icon-dot,
+     ADR 023): el contexto declara --fk-icon-size con un paso de la
+     escala --fk-icon-* (tokens.css) y esta lectura lo aplica. Las
+     variables atraviesan las capas @layer de main.css; un width
+     directo declarado en una capa inferior (ej. layout) perdería
+     contra esta regla aunque su selector fuera más específico.
+     Sin variable declarada cae al paso base (20px). */
+  width: var(--fk-icon-size, var(--fk-icon-md));
+  height: var(--fk-icon-size, var(--fk-icon-md));
   fill: none;
   stroke: currentColor;
   stroke-width: 2.35;
@@ -25,28 +32,32 @@
   vertical-align: middle;
 }
 
-/* Íconos de acción dentro de botones (editar, borrar, cerrar) y el chevron
-   del quick-add: un paso más chicos que los de navegación, para jerarquía.
-   .modal__close vive en modals.css; el selector funciona igual (CSS global). */
+/* Íconos de acción dentro de botones (editar, borrar) y el chevron
+   del quick-add: un paso más chicos que los de navegación, para jerarquía. */
 .btn-icon .icon,
-.modal__close .icon,
 .quick-add__chevron .icon {
-  width: 1.125rem;
-  height: 1.125rem;
+  --fk-icon-size: var(--fk-icon-sm);
+}
+
+/* Cerrar modal: la acción de escape del diálogo merece un paso más de
+   presencia que las acciones de fila (editar/borrar), sin llegar al 24px
+   de navegación. El botón que lo contiene ya da el área táctil (40/44px).
+   .modal__close vive en modals.css; el selector funciona igual (CSS global). */
+.modal__close .icon {
+  --fk-icon-size: var(--fk-icon-md);
 }
 
 /* Íconos chicos: en línea con texto xs/sm (badges, subtítulos, selectores
-   de opción). El .icon base (20px) domina a esa escala de texto. */
+   de opción). El .icon base (20px) domina a esa escala de texto. 16px es
+   el piso de la escala: más abajo el trazo pierde nitidez (ver tokens.css). */
 .icon--sm {
-  width: 0.875rem;
-  height: 0.875rem;
+  --fk-icon-size: var(--fk-icon-xs);
   stroke-width: 2.5;
 }
 
 /* Íconos grandes: empty states, hero guide. */
 .icon--lg {
-  width: 3rem;
-  height: 3rem;
+  --fk-icon-size: var(--fk-icon-3xl);
   stroke-width: 1.8;
 }
 

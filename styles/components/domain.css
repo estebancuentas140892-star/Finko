@@ -798,11 +798,11 @@ button.chip:focus-visible {
    oculta junto con el valor cuando no hay cuentas registradas. */
 .hero-saldo__ojo[hidden] { display: none; }
 
-/* Un paso más grande que el .btn-icon .icon genérico (18px): convive
-   con el monto XL del hero y necesita presencia y área táctil. */
+/* Más grande que el .btn-icon .icon genérico (18px): convive con el
+   monto XL del hero y necesita presencia y área táctil. Usa el paso de
+   navegación (24px), el mismo peso que el resto de controles primarios. */
 .hero-saldo__ojo .icon {
-  width: 1.375rem;
-  height: 1.375rem;
+  --fk-icon-size: var(--fk-icon-lg);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -877,9 +877,9 @@ button.chip:focus-visible {
   border-radius: var(--fk-radius-md);
   flex-shrink: 0;
 }
+/* 20px en chip de 32px: mismo ratio ~62% que las tejas de categoría. */
 .vencidos-card__icon .icon {
-  width: 18px;
-  height: 18px;
+  --fk-icon-size: var(--fk-icon-md);
 }
 .vencidos-card__icon--fijo {
   background: color-mix(in srgb, var(--fk-dom-presupuesto) 14%, transparent);

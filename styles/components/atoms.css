@@ -82,7 +82,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 1.125rem;
+  /* Emoji directo (plantillas de Apartados, categoría "Otra" de Metas):
+     20px iguala su masa visual con el glifo de una teja de lista. */
+  font-size: 1.25rem;
 }
 /* body: bloque central que crece y permite truncado de texto */
 .list-item__body,
@@ -161,6 +163,16 @@
   background: transparent;
 }
 
+/* En filas de lista la teja sube al paso grande (36px): es el contexto
+   de reconocimiento primario (Gastos, Mis cuentas, Deudas, Metas) y el
+   wrapper de 40px le deja aire de sobra. En superficies compactas
+   (detalle del calendario, hints, picker) conserva su tamaño base. */
+.list-item__icon .cat-teja,
+.list-item__icon .bank-avatar {
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+}
+
 /* MK.2 (ADR 025): en la lista de deudas, el badge de orden de la estrategia
    ya no reemplaza al ícono: se superpone reducido en la esquina de la teja
    de marca o del ícono del tipo. El aro del color de la superficie lo
@@ -190,8 +202,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--fk-space-8);
-  height: var(--fk-space-8);
+  width: var(--fk-teja-md);
+  height: var(--fk-teja-md);
   border-radius: var(--fk-radius-md);
   flex-shrink: 0;
   background: color-mix(in srgb, var(--cat-dom) 14%, transparent);

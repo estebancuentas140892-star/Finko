@@ -38,6 +38,11 @@
   line-height: 1;
   padding-top: 2px;
 }
+/* Cuando el nudge trae icono SVG en vez de emoji: 24px iguala la masa
+   visual del trazo con la del emoji de 22px (el emoji es más denso). */
+.nudge__icon .icon {
+  --fk-icon-size: var(--fk-icon-lg);
+}
 
 .nudge__body {
   min-width: 0;
@@ -250,8 +255,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--fk-space-8);
-  height: var(--fk-space-8);
+  width: var(--fk-teja-md);
+  height: var(--fk-teja-md);
   border-radius: var(--fk-radius-md);
   font-size: 11px;
   font-weight: var(--fk-font-bold);

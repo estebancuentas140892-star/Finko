@@ -198,4 +198,24 @@
   --fk-space-md: var(--fk-space-4);  /* 16px */
   --fk-space-lg: var(--fk-space-6);  /* 24px */
   --fk-space-xl: var(--fk-space-8);  /* 32px */
+
+  /* ── ICONOGRAFÍA - escala de tamaños ─────────────────────────── */
+  /* Escala única para toda la app: cada contexto usa su paso, nunca
+     un tamaño suelto. Alineada a la retícula 24 del sprite (ADR 023).
+     El trazo efectivo de un icono de línea es stroke × (tamaño / 24):
+     por eso el piso de la escala es 16px, bajo eso el trazo baja de
+     ~1.5px y pierde nitidez en pantallas 1x o de baja resolución.
+     24px es el estándar de navegación de Material 3 y Apple HIG. */
+  --fk-icon-xs:  1rem;      /* 16px - inline con texto xs/sm (badges, hints) */
+  --fk-icon-sm:  1.125rem;  /* 18px - acciones secundarias (editar, borrar, chevron) */
+  --fk-icon-md:  1.25rem;   /* 20px - base: filas, formularios, texto base */
+  --fk-icon-lg:  1.5rem;    /* 24px - navegación, FAB, cerrar modal, nudges */
+  --fk-icon-xl:  1.75rem;   /* 28px - launchers y heroes de sección */
+  --fk-icon-2xl: 2rem;      /* 32px - tejas de registro, hero de saldo */
+  --fk-icon-3xl: 3rem;      /* 48px - empty states y guías */
+
+  /* Tejas (contenedor redondeado del glifo de categoría o marca).
+     El glifo interno ocupa ~62% del lado (ratio de avatar M3 40/24). */
+  --fk-teja-md: 2rem;       /* 32px - superficies compactas (agenda, picker) */
+  --fk-teja-lg: 2.25rem;    /* 36px - filas de lista: reconocimiento primario */
 }
