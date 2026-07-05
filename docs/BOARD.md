@@ -50,6 +50,21 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
+#### IN.4 - Dashboard personalizable: accesos rápidos según prioridades del usuario
+- Prioridad  : sin definir (registrada para más adelante, no empezar aún)
+- Estado     : pendiente de análisis (no iniciar sin luz verde explícita del usuario)
+- Objetivo   : el Inicio hoy impone 3 accesos rápidos fijos elegidos por diseño inicial; el usuario observó que la prioridad real varía por persona (quien paga deudas quiere Deudas primero, quien ahorra quiere Metas/Ahorro, quien registra gasto a diario quiere Gastos, quien administra negocio quiere Mis cuentas). Brief completo del usuario (verbatim, 2026-07-05):
+  1. **Inicio fijo, accesos personalizables**: la pantalla Inicio nunca se mueve ni se quita; solo los accesos rápidos (hoy 3 fijos) pasan a ser elegibles por el usuario.
+  2. **Personalización sencilla**: mantener presionado para reordenar, botón "Personalizar Inicio", arrastrar y soltar, elegir de una lista. Sin configuración compleja, análogo a organizar iconos de un teléfono.
+  3. **Priorizar según el uso (opcional, fase posterior)**: Finko podría detectar qué secciones abre más el usuario y sugerir agregarlas a accesos rápidos ("Hemos notado que consultas frecuentemente Deudas. ¿Quieres agregarla a tus accesos rápidos?"), pero la decisión final siempre es manual del usuario. Requiere trackear frecuencia de navegación, algo que hoy no existe en `state.js`.
+  4. **Consistencia**: la navegación general (bottom nav, rutas) no cambia; solo se personalizan accesos rápidos y algunos elementos del Dashboard.
+  5. **Escalabilidad**: el diseño debe soportar secciones/módulos nuevos a futuro sin rediseñar el mecanismo de personalización.
+  El usuario pidió explícitamente: analizar la mejor forma de implementarlo con buenas prácticas de UX/UI, sin aumentar la complejidad percibida, y proponer una solución mejor si existe una más efectiva que la descrita.
+- Secciones  : Inicio (dashboard), transversal (posible campo nuevo en `state.js` para preferencias de accesos rápidos y, si se hace la fase de aprendizaje, contadores de uso por sección)
+- Archivos   : sin explorar todavía; candidatos previsibles `modules/dominio/resumen/` (o donde viva hoy Inicio, confirmar en `docs/MAPA.md`), `modules/core/state.js` (nuevo campo + migración de schema), `modules/ui/shell.js` o similar (render de accesos rápidos), CSS de layout de Inicio
+- Depende de : nada. **No iniciar sin instrucción explícita**: el usuario pidió solo registrar la idea por ahora.
+- Modelo     : primer paso (análisis + ficha de contexto de Inicio si no existe + propuesta de diseño/ADR) con **Fable 5 - Alto** (feature multidominio con trade offs no obvios: personalización manual vs. sugerencia por uso, migración de schema, invariante "Inicio fijo" que no puede romperse); implementación posterior, ya con decisión tomada, puede bajar a Sonnet 5 - Alto por subtarea siguiendo el patrón de división de 2.1 (ej. IN.4a estructura de datos + reorder manual, IN.4b UI de arrastrar/soltar, IN.4c sugerencia por uso como fase opcional)
+
 ---
 
 ### Calendario (dominio `agenda`)
