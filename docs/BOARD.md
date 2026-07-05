@@ -142,7 +142,61 @@ _(sin pendientes activos.)_
 
 ### Configuración (dominio `config`)
 
-_(sin pendientes activos.)_
+_(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abajo (CFG.1 a CFG.6). **No iniciar ninguna sin instrucción explícita**: solo quedan anotadas para retomar más adelante. Cuando se trabajen, revisar primero si comparten piezas (ej. CFG.1 y CFG.2 tocan el mismo bloque de perfil del usuario en Ajustes; podrían consolidarse en una sola pasada de diseño aunque se implementen por separado, regla de "sin duplicados" de 2.1).)_
+
+#### CFG.1 - Perfil financiero en vez de mostrar el salario
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : hoy el encabezado de Ajustes muestra nombre + salario registrado; el usuario considera que el salario ahí no aporta valor. Propone reemplazar ese espacio por una configuración de perfil financiero vía preguntas (situación laboral, tipo de ingresos, frecuencia de pago, responsabilidades económicas, personas a cargo, objetivos financieros, nivel de conocimiento financiero, tolerancia al riesgo para inversiones, entre otras). Pidió explícitamente analizar qué información aporta valor real y evitar pedir datos innecesarios: no implementar la lista tal cual sin criba.
+- Secciones  : Configuración (Ajustes)
+- Archivos   : sin explorar; candidatos previsibles el módulo `config` (encabezado de perfil) y `modules/core/state.js` (campos nuevos + migración de schema)
+- Depende de : nada. Posible solape con CFG.2 (ambas tocan el bloque de perfil de Ajustes): revisar juntas al iniciar.
+- Modelo     : Opus 4.8 - Alto (decisión de qué preguntas aportan valor sin sobrecargar el onboarding; roza filosofía de producto, no es solo CRUD)
+
+#### CFG.2 - Perfil fiscal inteligente (detección automática de obligación de declarar renta)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : reemplazar la indicación manual de "debo declarar renta" por un análisis automático de los datos ya registrados en Finko (ingresos, patrimonio, consumos, movimientos, compras, transferencias) contra los topes vigentes (UVT, `constants.js`), mostrando un mensaje explicando el motivo concreto (tope de ingresos superado, tope de patrimonio, tope de consumos, u otro criterio aplicable) y actualizándose solo conforme cambian las finanzas del usuario.
+- Secciones  : Configuración (Ajustes), transversal (lee datos de varios dominios: tesorería, gastos, inversiones)
+- Archivos   : sin explorar; probablemente nueva lógica en un `logic.js` de `config` o `analisis`, constantes de topes de renta en `modules/core/constants.js` (revisar si ya existen o hay que agregarlas con fecha de revisión, regla ADN 12)
+- Depende de : nada. Ojo: ningún dominio importa a otro (ADN 10); si necesita datos de tesorería/gastos/inversiones tiene que ser vía EventBus o agregando en el propio dominio `config`, no importando directo.
+- Modelo     : Opus 4.8 - Alto (lógica financiera CO no trivial: topes de renta por UVT/ingresos/patrimonio, exactamente el tipo de caso que CLAUDE.md 2.3 reserva para Opus)
+
+#### CFG.3 - Notificaciones inteligentes anticipatorias
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : hoy el recordatorio existente solo avisa al abrir la app; el usuario quiere alertas que se anticipen a eventos (día de pago hoy, deuda vence mañana, pago con 2 días de atraso, cerca de superar presupuesto de una categoría, meta de ahorro alcanzada, aporte recomendado de la semana, apartado próximo a vencer). Pidió explícitamente que sean útiles y no invasivas: solo cuando realmente ayuden a decidir mejor.
+- Secciones  : Configuración (Ajustes, activación), transversal (agenda, presupuesto, metas, apartados, compromisos como fuentes de los eventos)
+- Archivos   : sin explorar; depende de si Finko ya usa alguna API de notificaciones del navegador/PWA (revisar `modules/infra/notificaciones.js` y el service worker) o si hay que incorporar Push API / Notification API, lo cual tiene restricciones de permisos y de plataforma (iOS Safari limita notificaciones push de PWA)
+- Depende de : nada. Riesgo técnico a evaluar primero: viabilidad real de notificaciones push offline-first sin servidor (ADN 2 y 3); puede requerir ADR si la solución técnica choca con "sin servidor".
+- Modelo     : Fable 5 - Alto (multidominio, con una restricción técnica de plataforma no trivial que hay que investigar antes de diseñar)
+
+#### CFG.4 - Respaldo y recuperación de la información
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar). **Toca potencialmente el ADN del proyecto** (reglas 2 y 3: offline-first, sin servidor): requiere ADR y discusión explícita antes de cualquier código, por instrucción directa de CLAUDE.md sección 3.
+- Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea. Pidió analizar alternativas (copias de seguridad automáticas, sincronización con cuenta de usuario, respaldo cifrado en la nube, restauración desde archivo, u otra) que sean seguras, sencillas y transparentes, sin comprometer la privacidad.
+- Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos en `localStorage`)
+- Archivos   : sin explorar; el punto de partida real es la decisión arquitectónica, no el código
+- Depende de : nada. Explícitamente en tensión con ADN 2/3 (sin servidor, offline-first): cualquier opción con nube o cuenta de usuario es un cambio de ADN y necesita ADR propio antes de tocar una sola línea; una opción como "exportar/restaurar archivo cifrado local" sí calzaría sin tocar el ADN.
+- Modelo     : Fable 5 - Extra (decisión arquitectónica que puede rozar el ADN del proyecto; exige el nivel de análisis más alto antes de proponer nada)
+
+#### CFG.5 - Seguridad de acceso a la app (PIN, patrón, contraseña, biometría)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : agregar un método de bloqueo elegible por el usuario (PIN numérico, patrón, contraseña, huella o reconocimiento facial si el dispositivo lo permite) para proteger la información financiera si el dispositivo se pierde o lo roban.
+- Secciones  : Configuración (Ajustes)
+- Archivos   : sin explorar; biometría real depende de WebAuthn/Credential Management API (soporte y UX varían por navegador/SO); un PIN/patrón simple se puede resolver 100% client side sin APIs nuevas
+- Depende de : nada. Viabilidad técnica de biometría en PWA (no app nativa) hay que verificarla antes de prometerla en el diseño.
+- Modelo     : Opus 4.8 - Alto (decisión de qué mecanismos son viables en PWA vs. cuáles prometer a futuro; UX de bloqueo con riesgo de dejar al usuario fuera de sus propios datos si algo falla)
+
+#### CFG.6 - Revisión general de la sección Ajustes
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada.
+- Secciones  : Configuración (Ajustes)
+- Archivos   : sin explorar
+- Depende de : CFG.1 a CFG.5 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes)
+- Modelo     : Sonnet 5 - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
 
 ---
 
