@@ -13,12 +13,12 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
-import { renderSmart, updSaldo } from '../../infra/render.js';
+import { renderSmart, registrarRender, updSaldo } from '../../infra/render.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { initAccionesCuentas, inyectarFormCuenta } from './acciones/cuentas.js';
 import { initAccionesIngresos } from './acciones/ingresos.js';
 import { initAccionesDistribucion, abrirAsistenteDistribucion } from './acciones/distribucion.js';
-import { renderTesoreria } from './view.js';
+import { renderTesoreria, renderNudgeDistribucionInicio } from './view.js';
 
 /**
  * Inicializa el dominio de tesoreria.
@@ -43,16 +43,22 @@ export function initTesoreria() {
     ) {
       renderBannerProposito('tesoreria', _tieneDatosTesoreria());
       renderSmart(renderTesoreria, 'tesoreria');
+      renderSmart(renderNudgeDistribucionInicio, 'dash');
       updSaldo();
     }
   });
 
-  // Re-render al navegar a #tesoreria - sin esto la sección aparece vacía
-  // cuando el usuario llega navegando desde otra (no hay state:change que la dispare).
+  // Re-render al navegar a #tesoreria o #dash - sin esto la sección aparece
+  // vacía cuando el usuario llega navegando desde otra (no hay state:change
+  // que la dispare).
   window.addEventListener('hashchange', () => {
     renderBannerProposito('tesoreria', _tieneDatosTesoreria());
     renderSmart(renderTesoreria, 'tesoreria');
+    renderSmart(renderNudgeDistribucionInicio, 'dash');
   });
+
+  // Para que renderAll() (bootstrap) también pinte el nudge de Inicio.
+  registrarRender(() => renderSmart(renderNudgeDistribucionInicio, 'dash'));
 
   // ADR 021 / NAV.A2b s2: piden abrir el asistente. Puede llegar desde otra
   // sección: se navega primero y el panel se abre tras el re-render del
@@ -65,9 +71,10 @@ export function initTesoreria() {
     setTimeout(() => abrirAsistenteDistribucion(payload), 0);
   });
 
-  // Render inicial si ya estamos en #tesoreria al cargar.
+  // Render inicial si ya estamos en #tesoreria o #dash al cargar.
   renderBannerProposito('tesoreria', _tieneDatosTesoreria());
   renderSmart(renderTesoreria, 'tesoreria');
+  renderSmart(renderNudgeDistribucionInicio, 'dash');
 }
 
 /** true si ya hay alguna cuenta o algún ingreso registrado. */

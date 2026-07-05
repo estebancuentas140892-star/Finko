@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): CAL.1, nudge de distribución del ingreso en Inicio · 2026-07-05
+
+Segunda fase del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): el bloque "Atención hoy" de Inicio ahora muestra un nudge cuando llegó el cobro del periodo y aún no se ha distribuido ("Hoy recibes tu ingreso" / "Recibiste tu ingreso el {fecha}"), con un botón "Distribuir ahora".
+
+Hallazgo clave durante la implementación: `modules/dominio/tesoreria/logic/distribucion.js` ya tenía `estadoDistribucion()`, la función que decide si el cobro del periodo ya llegó y si ya se distribuyó, y `S.config.ultimaDistribucionPeriodo` ya era el marcador de de-duplicación (lo usa el panel equivalente de Mis cuentas desde antes). El ADR 028 D4 anticipaba un "marcador anti-insistencia nuevo dentro del bump v23"; no hizo falta: el nudge de Inicio reutiliza el guard existente sin tocar el schema. El CTA emite el mismo `distribuir:abrir` que ya usa el recordatorio de día de ingreso del Calendario (ADR 021), así que el Calendario no perdió nada: sigue marcando visualmente el día y su tap sigue abriendo el asistente.
+
+Renderizado por **tesorería** (dueña del asistente y de `S.ingresos`), no por el dominio de Inicio: `renderNudgeDistribucionInicio()` nuevo en `views/distribucion.js`, registrado en `tesoreria/index.js` vía `registrarRender()` (mismo patrón que usan los paneles del dashboard de `compromisos`). Reutiliza el componente `.nudge`/`.nudge-info` ya existente en el sistema de diseño (cero CSS nuevo).
+
+**Validación:** 2119/2119 unit (7 tests nuevos: oculto sin ingresos datables, oculto con cobro pendiente, visible con "hoy", visible con fecha de atraso, oculto una vez distribuido, el CTA emite el evento correcto). E2E smoke 82/82 verde en un navegador real (Playwright), incluido el flujo "Distribuir abre el asistente en Mis cuentas". Preview de este entorno no disponible (mismo problema recurrente de sesiones anteriores). SW v323 → v324.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/tesoreria/views/distribucion.js` | `renderNudgeDistribucionInicio()` nuevo. |
+| `modules/dominio/tesoreria/acciones/distribucion.js` | `_distribuirDesdeInicio()` + acción `distribuir-desde-inicio`. |
+| `modules/dominio/tesoreria/view.js` | Re-export de `renderNudgeDistribucionInicio`. |
+| `modules/dominio/tesoreria/index.js` | Registro del render en `state:change`, `hashchange` y `registrarRender()`. |
+| `index.html` | `#panel-distribuir-inicio` en el bento de Inicio, antes de "Gastos por organizar". |
+| `tests/unit/tesoreria.test.js` | 7 tests nuevos para `renderNudgeDistribucionInicio()`. |
+| `docs/contexto/inicio.md` | CAL.1 cerrada; corrección del alcance del bump v23 (sin el marcador que anticipaba el ADR). |
+| `docs/BOARD.md` | Tarjeta CAL.1 cerrada y borrada. |
+| `service-worker.js` | v323 → v324. |
+
+---
+
 ### feat(resumen): IN.6a, saludo dinámico con nombre en Inicio · 2026-07-05
 
 Primera fase implementada del [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (aprobado el mismo día). "Buenos días / Buenas tardes / Buenas noches, {nombre}" según la hora local, bajo el título de Inicio. Usa `S.perfil.nombre` (existía desde el onboarding, ninguna vista lo leía); sin nombre, saluda sin él. Sin dato nuevo, sin migración de schema (D3 del ADR). Franjas: 5 a 11 días, 12 a 18 tardes, resto (19 a 23 y 0 a 4) noches.

@@ -34,6 +34,46 @@ import { fechaCorta } from './ingresos.js';
 // ── DISTRIBUCIÓN ADAPTATIVA ──────────────────────────────────────
 
 /**
+ * Nudge de "Distribuir mi ingreso" en Inicio (CAL.1, ADR 028 D4): visible en
+ * el bloque "Atención hoy" cuando ya llegó el cobro del periodo y aún no se
+ * distribuyó. Reutiliza `estadoDistribucion()`, el mismo guard de
+ * de-duplicación que ya usa el panel de Mis cuentas (`S.config.ultimaDistribucionPeriodo`):
+ * no hay marcador nuevo que mantener. El CTA emite el `distribuir:abrir`
+ * existente (ADR 021 / NAV.A2b), que navega a Mis cuentas y abre el asistente.
+ * No-op si el contenedor no existe.
+ */
+export function renderNudgeDistribucionInicio() {
+  const el = document.getElementById('panel-distribuir-inicio');
+  if (!el) return;
+
+  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+  if (estado.estado !== 'listo') {
+    el.innerHTML = '';
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+
+  const titulo = estado.esHoy
+    ? 'Hoy recibes tu ingreso'
+    : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}`;
+
+  // Mismo componente de nudge que el resto de la app (ver styles/components/nudges.css);
+  // nivel "info" porque es una invitación a actuar, no una mora ni un error.
+  el.innerHTML = `
+    <div class="nudge nudge-info" role="status">
+      <span class="nudge__icon" aria-hidden="true">${icon('bolt')}</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${titulo}</p>
+        <p class="nudge__desc">Distribúyelo antes de empezar a gastarlo.</p>
+      </div>
+      <button type="button" class="nudge__cta btn btn-primary btn-sm" data-action="distribuir-desde-inicio">
+        Distribuir ahora
+      </button>
+    </div>`;
+}
+
+/**
  * Renderiza la tarjeta de distribución sugerida en `#ingresos-distribucion`.
  * No-op si no hay ingresos mensuales registrados o el contenedor no existe.
  */

@@ -125,6 +125,16 @@ function _toggleDistribuirIngreso(el) {
 }
 
 /**
+ * CTA del nudge de Inicio (CAL.1, ADR 028 D4): emite el mismo `distribuir:abrir`
+ * que ya usa el recordatorio de día de ingreso del Calendario (ADR 021), sin
+ * payload (flujo normal, el asistente resuelve la cuenta). El listener de
+ * `tesoreria/index.js` navega a Mis cuentas y abre el asistente.
+ */
+function _distribuirDesdeInicio() {
+  EventBus.emit('distribuir:abrir');
+}
+
+/**
  * Abre el asistente (sin toggle) en el primer paso. Lo usan el recordatorio de
  * día de ingreso del Calendario (ADR 021, sin payload) y la oferta tras un
  * ingreso puntual (NAV.A2b s2, con `preacreditado`). No-op si el panel no
@@ -639,6 +649,7 @@ export function initAccionesDistribucion() {
   registrarAccion('distribuir-paso-atras',     _pasoDistribucionAtras);
   registrarAccion('confirmar-distribucion',    _confirmarDistribucion);
   registrarAccion('deshacer-distribucion',     _deshacerDistribucion);
+  registrarAccion('distribuir-desde-inicio',   _distribuirDesdeInicio);
 
   // Recalculo en vivo (sin re-render completo, igual que el extra mensual de
   // deudas en ADR 011 S1): el editor personalizado y el panel "Distribuir mi

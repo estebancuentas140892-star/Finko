@@ -23,7 +23,7 @@ import {
   renderFormIngresoPuntual,
   renderNudgeProximoIngreso,
 } from './views/ingresos.js';
-import { renderDistribucionIngreso } from './views/distribucion.js';
+import { renderDistribucionIngreso, renderNudgeDistribucionInicio } from './views/distribucion.js';
 
 export {
   renderListaCuentas,
@@ -35,6 +35,7 @@ export {
   renderFormIngresoPuntual,
   renderNudgeProximoIngreso,
   renderDistribucionIngreso,
+  renderNudgeDistribucionInicio,
 };
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */

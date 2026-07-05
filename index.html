@@ -434,6 +434,14 @@
             </div>
           </article>
 
+          <!-- DISTRIBUIR INGRESO: nudge de "Atención hoy" (CAL.1, ADR 028 D4).
+               Visible solo cuando llegó el cobro del periodo y aún no se
+               distribuyó (mismo guard que el panel de Mis cuentas). Primero
+               en el orden: es la acción más importante del día si aplica.
+               tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
+          <div id="panel-distribuir-inicio" class="bento__cell bento__cell--full"
+               role="region" aria-label="Distribuir tu ingreso" hidden></div>
+
           <!-- GASTOS POR ORGANIZAR: junto al hero (desktop, span 4) o bajo él
                (mobile, full). Vive como celda del bento para máxima visibilidad
                sin romper el patrón [hidden] (no ocupa columna si no hay nada).

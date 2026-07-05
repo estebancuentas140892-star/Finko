@@ -96,14 +96,7 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
 
-#### CAL.1 - Nudge de distribución del ingreso en Inicio (bloque "Atención hoy")
-- Prioridad  : alta dentro de la iniciativa ADR 028 (segunda fase, tras IN.6a)
-- Estado     : pendiente ([ADR 028](DECISIONS/028-inicio-centro-de-control.md) aprobado)
-- Objetivo   : nudge en Inicio renderizado por **tesorería** (dueña del asistente y de `S.ingresos`): si hoy es día de ingreso de una fuente activa (`diaPago`, `+15` para quincenal), "Hoy recibes {fuente}. Distribúyelo antes de empezar a gastarlo" con CTA que emite el `distribuir:abrir` existente (mecanismo de NAV.A2b reutilizado); copy de atraso si pasaron 1 a 3 días. Marcador anti-insistencia por ciclo (preferible dentro del bump v23). Reparto de roles decidido en el ADR: Inicio = cuándo actuar, Calendario = cuándo ocurre; el Calendario conserva la marca visual del día de ingreso (ADR 021 vigente) y su tap sigue abriendo el asistente.
-- Secciones  : Inicio (nudge nuevo), Mis cuentas (`tesoreria`, dueña de la lógica); Calendario no pierde nada visual
-- Archivos   : `modules/dominio/tesoreria/` (lógica de "hoy es día de ingreso" + render del nudge), `index.html` (contenedor del panel), `modules/core/state.js` si el marcador entra al schema
-- Depende de : recomendada después de IN.6a
-- Modelo     : Sonnet 5 - Alto
+_(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **TX.8a**.)_
 
 #### CAL.2 - Leyenda del calendario dinámica (solo tipos de evento que el usuario ya usa)
 - Prioridad  : sin definir

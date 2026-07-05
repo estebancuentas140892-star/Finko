@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   cuentasActivas,
   calcularTotalCuentas,
@@ -38,8 +38,10 @@ import {
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderListaIngresos } from '../../modules/dominio/tesoreria/view.js';
-import { S } from '../../modules/core/state.js';
+import { renderFormIngreso, renderListaIngresos, renderNudgeDistribucionInicio } from '../../modules/dominio/tesoreria/view.js';
+import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
+import { dispatch } from '../../modules/ui/actions.js';
+import { S, EventBus } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -1559,6 +1561,82 @@ describe('estadoDistribucion()', () => {
   it('ingreso inactivo no cuenta para el estado', () => {
     const ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: false, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
     expect(estadoDistribucion(ingresos, null, hoy).estado).toBe('sin-fecha');
+  });
+});
+
+// ── renderNudgeDistribucionInicio() (CAL.1, ADR 028 D4) ───────────
+
+describe('renderNudgeDistribucionInicio()', () => {
+  const elNudge = () => document.getElementById('panel-distribuir-inicio');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-distribuir-inicio" hidden></div>';
+    S.ingresos = [];
+    S.config   = { notificaciones: false };
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => renderNudgeDistribucionInicio()).not.toThrow();
+  });
+
+  it('oculto sin ingresos con día de pago (sin-fecha)', () => {
+    renderNudgeDistribucionInicio();
+    expect(elNudge().hidden).toBe(true);
+    expect(elNudge().innerHTML).toBe('');
+  });
+
+  it('oculto mientras el cobro del periodo aún no llega (pendiente)', () => {
+    vi.setSystemTime(new Date(2026, 6, 5)); // 5 jul
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-07-02T00:00:00.000Z' }];
+    renderNudgeDistribucionInicio();
+    expect(elNudge().hidden).toBe(true);
+  });
+
+  it('visible con "Hoy recibes tu ingreso" cuando el cobro es hoy', () => {
+    vi.setSystemTime(new Date(2026, 5, 30)); // 30 jun, coincide con diaPago
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    renderNudgeDistribucionInicio();
+    expect(elNudge().hidden).toBe(false);
+    expect(elNudge().innerHTML).toContain('Hoy recibes tu ingreso');
+    expect(elNudge().querySelector('[data-action="distribuir-desde-inicio"]')).not.toBeNull();
+  });
+
+  it('visible con la fecha del cobro cuando ya pasó (atrasado, sin distribuir)', () => {
+    vi.setSystemTime(new Date(2026, 6, 5)); // 5 jul; cobro mensual día 30 → 30 jun
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    renderNudgeDistribucionInicio();
+    expect(elNudge().hidden).toBe(false);
+    expect(elNudge().innerHTML).toContain('Recibiste tu ingreso el');
+    expect(elNudge().innerHTML).not.toContain('Hoy recibes');
+  });
+
+  it('oculto una vez distribuido el periodo (guard de-dup, mismo marcador que Mis cuentas)', () => {
+    vi.setSystemTime(new Date(2026, 6, 5));
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    S.config.ultimaDistribucionPeriodo = '2026-06-30';
+    renderNudgeDistribucionInicio();
+    expect(elNudge().hidden).toBe(true);
+  });
+
+  it('el CTA emite distribuir:abrir (mismo evento que el recordatorio del Calendario, ADR 021)', () => {
+    vi.setSystemTime(new Date(2026, 5, 30));
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', frecuencia: 'Mensual', activo: true, diaPago: 30, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    renderNudgeDistribucionInicio();
+
+    initAccionesDistribucion();
+    const spy = vi.fn();
+    EventBus.on('distribuir:abrir', spy);
+
+    const boton = elNudge().querySelector('[data-action="distribuir-desde-inicio"]');
+    dispatch(boton, new Event('click'));
+
+    expect(spy).toHaveBeenCalledTimes(1);
   });
 });
 
