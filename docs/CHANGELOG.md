@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): BR.2, script de sincronización biblioteca → sprite · 2026-07-05
+
+Segunda tarea de la iniciativa de biblioteca gráfica (tras BR.1). `scripts/sync-sprite.py` invierte la relación: `assets/svg/` manda y el sprite de `index.html` se regenera desde ahí, cerrando el ciclo "Esteban sobrescribe un .svg en Illustrator + corre el script = la app usa el dibujo nuevo" sin tocar código.
+
+**Qué entró:**
+
+- **El script** recorre `iconos/{secciones,simbolos,utilitarios,categorias}` (prefijos `i-`/`c-`) y `logos/**` en cualquier subcarpeta (prefijo `b-`), excluye plantillas `data-placeholder`, convierte los 3 colores centinela de Illustrator (sección 7 del README) a los roles finales y valida el estándar técnico (raíz limpia, solo `path`/`circle`/`rect`/`line`, sin `transform`/`class`/`style`). Reescribe el bloque entre dos marcadores nuevos en `index.html` preservando el orden histórico de los ids ya publicados, así que reemplazar un archivo produce el menor diff posible; los recursos nuevos se agregan al final.
+- **Dos niveles de error, a propósito:** un archivo que no cumple el estándar (`ErrorRecurso`) se excluye del sprite sin bloquear la corrida completa, exactamente como promete el README ("nada se rompe" mientras Esteban itera en Illustrator). El sync solo se detiene sin escribir nada (`ErrorProduccion`) cuando la regeneración borraría en silencio un símbolo que ya estaba publicado: ahí hay que arreglar el archivo o retirar la fila de catálogo primero.
+- **Normalización pendiente de BR.1 resuelta:** `b-googlegemini` → `b-gemini` (coincide con el archivo `gemini.svg`), 1 línea en `MARCAS`.
+- **Guardarraíl nuevo** (`tests/unit/sprite-sync.test.js`, hermano de TX.4): vigila que todo `<symbol>` del sprite tenga su archivo fuente y coincida byte a byte, que ninguna plantilla llegue al sprite, que no haya colisiones de id, y que todo campo `simbolo` de `MARCAS`/`BANCOS_CO` resuelva en ambos lados.
+- **Hallazgo en el camino:** `assets/svg/logos/bancos/bancolombia.svg` ya tenía un export de prueba (colores reales de la marca, sin pasar la limpieza del estándar). El sync lo excluyó automáticamente sin intervención manual; Bancolombia sigue con iniciales hasta que BR.3 defina el tratamiento de logos con más de un color (la bandera de Bancolombia no es una silueta monocroma).
+
+**Validación:** primera corrida produjo un sprite idéntico al anterior salvo el rename de Gemini. 2097 → 2103 unit (6 nuevos), 147/147 E2E, lint limpio. SW v313 → v314 (`index.html` y `constants.js` cambiaron).
+
+| Archivo | Cambio |
+|---|---|
+| `scripts/sync-sprite.py` | Nuevo: script de sincronización. |
+| `index.html` | Marcadores del bloque generado; 2 comentarios internos reubicados como documentación permanente; `b-googlegemini` → `b-gemini`. |
+| `modules/core/constants.js` | `MARCAS.gemini.simbolo` → `b-gemini`. |
+| `tests/unit/sprite-sync.test.js` | Nuevo: guardarraíl biblioteca ↔ sprite ↔ catálogos. |
+| `service-worker.js` | v313 → v314. |
+| `docs/BOARD.md` | Tarjeta BR.2 cerrada y borrada. |
+
+---
+
 ### refactor(compromisos): N.4, logic.js dividido en submódulos · 2026-07-05
 
 Cierre del plan de navegabilidad (N.1 descartada con razones, N.2 MAPA.md, N.3 tesorería, N.4 esta). `compromisos/logic.js` era, tras N.3, el último archivo gigante del proyecto: 1.517 líneas mezclando el modelo del compromiso, los detectores de alerta, todo el motor de estrategia de pago y la aritmética de abonos.

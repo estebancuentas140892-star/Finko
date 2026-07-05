@@ -130,24 +130,15 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` pasa a ser artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) cerrada el 2026-07-05.
-
-#### BR.2 - Script de sincronización biblioteca → sprite
-- Prioridad  : alta (sin esto, reemplazar un SVG de la biblioteca no llega a la app)
-- Estado     : pendiente
-- Objetivo   : `scripts/sync-sprite.py` regenera el bloque del sprite de `index.html` desde `assets/svg/` : valida el estándar (viewBox, primitivas permitidas, decimales, complejidad), convierte los colores centinela de Illustrator a los roles finales (trazo desnudo / duotono .22 / chispa), excluye los `data-placeholder`, detecta colisiones de id y normaliza `b-googlegemini` → `b-gemini` (1 línea en `MARCAS`). Incluye test guardarraíl de igualdad biblioteca ↔ sprite (hermano de TX.4). Primera corrida debe producir un sprite idéntico al actual (extracción fue byte a byte).
-- Secciones  : Transversal
-- Archivos   : `scripts/sync-sprite.py` (nuevo), `index.html` (marcadores del bloque generado), `modules/core/constants.js` (1 línea), `tests/unit/` (guardarraíl nuevo)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Alto
+> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) y BR.2 (`scripts/sync-sprite.py` + guardarraíl) cerradas el 2026-07-05. Nota de BR.2: `assets/svg/logos/bancos/bancolombia.svg` ya tiene un export de prueba de Esteban (colores reales de la bandera, sin limpiar el estándar); el sync lo excluye solo (Bancolombia sigue con iniciales) hasta que BR.3 defina el tratamiento de logos con más de un color.
 
 #### BR.3 - Primer lote de glifos propios (banca CO)
 - Prioridad  : media (marca el arranque del flujo de diseño en pareja)
-- Estado     : pendiente (espera los primeros SVG de Esteban)
+- Estado     : pendiente (Esteban ya empezó a probar tamaños con bancolombia.svg; falta definir si un logo multicolor como la bandera de Bancolombia rompe la regla de silueta monocroma del README sección 6, o si aplica como excepción documentada)
 - Objetivo   : recorrer el pipeline completo de punta a punta con los 10 bancos que hoy caen a iniciales: Esteban diseña y sobrescribe las plantillas de `assets/svg/logos/bancos/`, revisión en pareja según `assets/svg/README.md` sección 9 (render a 5 tamaños en ambos temas), sync, campo `simbolo: 'b-<slug>'` en cada fila de `BANCOS_CO`, bump de SW.
 - Secciones  : Mis cuentas, Deudas, Calendario (toda teja de marca)
 - Archivos   : `assets/svg/logos/bancos/*.svg`, `modules/core/constants.js`, `index.html` (vía sync), `service-worker.js`
-- Depende de : BR.2 + SVG de Esteban
+- Depende de : nada (BR.2 ya cerró); primer paso es decidir con Esteban el tratamiento de logos multicolor
 - Modelo     : Sonnet 5 - Medio (revisión visual + integración mecánica)
 
 ---

@@ -339,7 +339,7 @@ export const MARCAS = [
   { id: 'apple',       nombre: 'Apple',        aliases: ['apple'],                                   color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
   { id: 'claude',      nombre: 'Claude',       aliases: ['claude', 'anthropic'],                     color: '#D97757', texto: '#ffffff', iniciales: 'C',  simbolo: 'b-claude' },
   { id: 'chatgpt',     nombre: 'ChatGPT',      aliases: ['chatgpt', 'chat gpt', 'openai'],           color: '#10A37F', texto: '#ffffff', iniciales: 'AI' },
-  { id: 'gemini',      nombre: 'Gemini',       aliases: ['gemini'],                                  color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-googlegemini' },
+  { id: 'gemini',      nombre: 'Gemini',       aliases: ['gemini'],                                  color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-gemini' },
   { id: 'google',      nombre: 'Google',       aliases: ['google'],                                  color: '#4285F4', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-google' },
   // Pagos
   { id: 'paypal',      nombre: 'PayPal',       aliases: ['paypal', 'pay pal'],                       color: '#002991', texto: '#ffffff', iniciales: 'PP', simbolo: 'b-paypal' },
