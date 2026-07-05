@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(resumen): IN.7, Próximas prioridades ya no duplica lo que vence hoy · 2026-07-05
+
+El usuario reportó que un mismo gasto fijo con vencimiento hoy aparecía a la vez en "Pendientes del mes" y en "Próximas prioridades". Causa confirmada en el análisis de la ficha nueva `docs/contexto/inicio.md`: `detectarVencidosCompletos()` (panel Pendientes del mes) y `compromisosProximos()` (panel Próximas prioridades) tratan "vence hoy" como `diasAtraso = 0` y `diasRestantes = 0` respectivamente, sin exclusión mutua.
+
+Fix acotado a la vista: `renderPanelPrioridades()` filtra `diasRestantes > 0` sobre los compromisos antes de combinarlos con préstamos personales y apartados. No se tocó `compromisosProximos()` en `logic.js`: otros consumidores (`nivelAlertaMora`, el nudge de mora inminente) siguen necesitando el día 0. Los préstamos personales y apartados que vencen hoy sí siguen mostrándose en Próximas prioridades porque no tienen un panel de vencidos propio.
+
+Primer paso del análisis conjunto de Inicio (IN.4, IN.6, IN.7, CAL.1, TX.8, ver BOARD): quedó documentado en la ficha `docs/contexto/inicio.md`, nueva, con el mapa completo del dashboard actual. Un hallazgo relevante para el resto del cluster: hoy solo existe **1** acceso rápido (Gasto rápido), no 3 como describía el brief original de IN.4.
+
+**Validación:** 2 tests migrados de `DIA_HOY` a un nuevo `DIA_MANANA` (dejaron de aplicar al caso "vence hoy" tras el fix) + 2 tests de regresión nuevos (uno confirma que un compromiso de hoy ya no aparece en Próximas prioridades, otro confirma que un préstamo personal o apartado de hoy sigue apareciendo). 2106/2106 unit; verificación en preview no disponible en este entorno (servidor de otra sesión ocupando el puerto), verificación por render happy-dom del DOM real del panel. SW v321 → v322.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/views/dashboard.js` | `renderPanelPrioridades()` filtra `diasRestantes > 0` en la fuente de compromisos. |
+| `tests/unit/compromisos.test.js` | `DIA_MANANA` nuevo; 3 tests migrados de `DIA_HOY`; 2 tests de regresión nuevos. |
+| `docs/contexto/inicio.md` | Ficha nueva: mapa exhaustivo del dashboard actual, base del análisis conjunto IN.4/IN.6/CAL.1/TX.8. |
+| `docs/BOARD.md` | Tarjeta IN.7 cerrada y borrada; nota de alcance restante (recomendaciones anticipadas) enlazada a CAL.1/LIM.1/TX.10. |
+| `service-worker.js` | v321 → v322. |
+
+---
+
 ### docs(adr): BR.4, ADR 027 formaliza la excepción de logo a color · 2026-07-05
 
 Cierre de la iniciativa Biblioteca de recursos gráficos: registro formal, en un ADR nuevo, de una decisión que Esteban ya había tomado e implementado sin ADR (deuda de proceso señalada en BR.3). [ADR 027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md) amplía la sección D2 de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) ("glifos monocromos de un solo path") con la excepción `data-fullcolor`, ya vigente en los 11 bancos/billeteras reales de `BANCOS_CO`.

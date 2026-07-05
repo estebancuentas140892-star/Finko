@@ -10,11 +10,7 @@
 
 ## En proceso
 
-#### Análisis conjunto: Inicio como centro de control (IN.4, IN.6, IN.7, CAL.1, TX.8)
-- Inicio     : 2026-07-05
-- Paso actual: análisis exhaustivo del código actual de Inicio (sin ficha de contexto todavía, `docs/contexto/inicio.md` "sin crear"), previo a cualquier propuesta de diseño o código, siguiendo CLAUDE.md 2.6. Elegido por ser el cluster de mayor impacto: 5 de las 15 tarjetas nuevas del BOARD convergen en la misma pantalla.
-- Alcance    : IN.4 (accesos personalizables), IN.6 (saludo dinámico + avatar), IN.7 (des-duplicar Pendientes del mes/Próximas prioridades), CAL.1 (mover aviso de ingreso a Inicio), TX.8 (apartado Movimientos + resumen financiero). **IN.5** (eliminar Gasto rápido) queda fuera de este análisis porque depende de TX.9 (rediseño del formulario de gasto, sección Gastos), no de Inicio.
-- Siguiente  : con el mapa del código en mano, escribir la ficha `docs/contexto/inicio.md` y una propuesta de arquitectura de información (candidata a ADR, dado que redefine el rol de Inicio) antes de tocar una sola línea de implementación. Ninguna subtarea se codifica todavía.
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. IN.7 cerrada el 2026-07-05, ver CHANGELOG; el resto del análisis conjunto de Inicio (IN.4, IN.6, CAL.1, TX.8) sigue pendiente, ficha ya escrita en `docs/contexto/inicio.md`.)_
 
 ---
 
@@ -54,7 +50,7 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
-_(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 segundos el usuario debe saber qué debe hacer hoy, qué puede olvidar si no actúa, qué está haciendo bien, qué requiere atención y qué recomendaciones tiene Finko; toda la información debe orientarse a la acción y priorizarse por importancia, no solo mostrar datos. Esta filosofía atraviesa **IN.4** (accesos personalizables), **IN.5** a **IN.7** de abajo, y también **CAL.1** (aviso de ingreso) y **TX.8** (apartado Movimientos), todas pendientes de análisis conjunto por tocar el mismo espacio.)_
+_(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 segundos el usuario debe saber qué debe hacer hoy, qué puede olvidar si no actúa, qué está haciendo bien, qué requiere atención y qué recomendaciones tiene Finko; toda la información debe orientarse a la acción y priorizarse por importancia, no solo mostrar datos. Esta filosofía atraviesa **IN.4** (accesos personalizables), **IN.5** e **IN.6** de abajo, y también **CAL.1** (aviso de ingreso) y **TX.8** (apartado Movimientos), pendientes de análisis conjunto por tocar el mismo espacio. **IN.7** ya cerrada (des-duplicación puntual).)_
 
 #### IN.4 - Dashboard personalizable: accesos rápidos según prioridades del usuario
 - Prioridad  : sin definir (registrada para más adelante, no empezar aún)
@@ -89,14 +85,7 @@ _(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 seg
 - Depende de : nada directo, pero revisar junto con **CFG.1** (perfil financiero en Ajustes) si ambas terminan tocando un mismo concepto de "perfil del usuario", para no duplicar dónde vive esa información.
 - Modelo     : Sonnet 5 - Medio (saludo dinámico es trivial; la selección de avatar/foto añade decisiones de UX y de almacenamiento, ej. cuánto pesa una foto en `localStorage`, pero sigue siendo un dominio acotado)
 
-#### IN.7 - Evitar información duplicada entre "Pendientes del mes" y "Próximas prioridades"
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario detectó que un mismo gasto fijo que vence hoy aparece a la vez en "Pendientes del mes" y en "Próximas prioridades", duplicando la información. Propone que cada bloque tenga una función claramente diferenciada: "Pendientes del mes" para obligaciones próximas a vencer (donde el usuario ya espera encontrarlas), y "Próximas prioridades" reservado para acciones que aún no son urgentes pero conviene preparar con anticipación (distribuir el ingreso cuando llegue la quincena, crear un límite donde se gasta mucho, aumentar el aporte al fondo de emergencia, revisar una meta atrasada, detectar un gasto hormiga, recomendaciones inteligentes de Finko).
-- Secciones  : Inicio (dashboard)
-- Archivos   : sin explorar todavía; candidato previsible el módulo que arma ambos bloques del Inicio (probablemente `modules/dominio/resumen/`), revisar el criterio actual de qué entra en cada uno
-- Depende de : nada directo, pero el rediseño de "Próximas prioridades" con recomendaciones inteligentes se solapa con **LIM.1** (sugerir límite por categoría), **TX.10** (categoría como eje de recomendaciones) y **CAL.1** (aviso de ingreso); revisar juntas al iniciar para no repetir el mismo criterio de "qué es una prioridad" en varios sitios.
-- Modelo     : Sonnet 5 - Medio (separar un criterio de pertenencia entre dos bloques ya existentes; sube a Alto si al implementarla se decide sumar ya las recomendaciones inteligentes de la lista de ejemplos, en vez de solo des-duplicar)
+_(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **CAL.1**/**LIM.1**/**TX.10**, la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 
 ---
 

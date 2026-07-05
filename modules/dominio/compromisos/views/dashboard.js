@@ -107,7 +107,10 @@ export function renderPanelPrioridades() {
   const el = document.getElementById('panel-prioridades');
   if (!el) return;
 
-  const proxComp = compromisosProximos(S.compromisos, 7);
+  // Los que vencen hoy (diasRestantes === 0) ya se muestran en "Pendientes
+  // del mes" (panel-vencidos, vía detectarVencidosCompletos): sin este
+  // filtro, un mismo compromiso aparece duplicado el día que vence (IN.7).
+  const proxComp = compromisosProximos(S.compromisos, 7).filter(c => c.diasRestantes > 0);
   const proxPers = _personalesProximos(7);
   const proxApar = _apartadosProximos(7);
 

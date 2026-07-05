@@ -55,6 +55,7 @@ const DIA_HOY = hoy.getDate();
 // diaPago en 10 días desde hoy (siempre futuro, nunca igual a hoy en el cómputo).
 const DIA_FUTURO = ((DIA_HOY + 10 - 1) % 28) + 1; // 1-28, nunca pisa hoy
 const DIA_PASADO = ((DIA_HOY - 2 + 28 - 1) % 28) + 1; // 2 días antes, 1-28
+const DIA_MANANA = ((DIA_HOY + 1 - 1) % 28) + 1; // mañana, 1-28, nunca pisa hoy
 
 const compromisoBase = (overrides = {}) => ({
   id:          'c1',
@@ -1942,7 +1943,7 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     S.compromisos = [{
       id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
       saldoTotal: 5_800_000, cuotaMensual: 410_000, frecuencia: 'Mensual',
-      diaPago: DIA_HOY, activo: true, fechaCreacion: '2025-01-15T10:00:00Z',
+      diaPago: DIA_MANANA, activo: true, fechaCreacion: '2025-01-15T10:00:00Z',
     }];
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
@@ -1951,7 +1952,7 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
   });
 
   it('sigue mostrando el monto de los gastos fijos', () => {
-    S.compromisos = [compromisoBase({ diaPago: DIA_HOY })];
+    S.compromisos = [compromisoBase({ diaPago: DIA_MANANA })];
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
     expect(html).toContain('$1.500.000');
@@ -1959,10 +1960,10 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
 
   it('muestra el total de próximas prioridades al pie (IN.1)', () => {
     S.compromisos = [
-      compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, diaPago: DIA_HOY }),
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 1_500_000, diaPago: DIA_MANANA }),
       { id: 'd1', descripcion: 'Préstamo moto', tipo: 'deuda-entidad',
         saldoTotal: 5_800_000, cuotaMensual: 410_000, frecuencia: 'Mensual',
-        diaPago: DIA_HOY, activo: true, fechaCreacion: '2025-01-15T10:00:00Z' },
+        diaPago: DIA_MANANA, activo: true, fechaCreacion: '2025-01-15T10:00:00Z' },
     ];
     renderPanelPrioridades();
     const html = document.getElementById('panel-prioridades').innerHTML;
@@ -1976,6 +1977,23 @@ describe('renderPanelPrioridades() - monto por tipo (regresión: deudas sin cifr
     const html = document.getElementById('panel-prioridades').innerHTML;
     expect(html).toContain('Todo al día');
     expect(html).not.toContain('prioridades-card__total');
+  });
+
+  it('no duplica un compromiso que vence hoy: solo vive en Pendientes del mes (IN.7)', () => {
+    S.compromisos = [compromisoBase({ id: 'c1', descripcion: 'Arriendo', diaPago: DIA_HOY })];
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).not.toContain('Arriendo');
+    expect(html).toContain('Todo al día');
+  });
+
+  it('sí muestra un préstamo personal o apartado que vence hoy (no tienen panel de vencidos propio)', () => {
+    S.compromisos = [];
+    S.personales  = [{ id: 'p1', persona: 'Juan', monto: 100_000, pagado: 0, liquidado: false,
+      fechaLimite: new Date().toISOString().slice(0, 10) }];
+    renderPanelPrioridades();
+    const html = document.getElementById('panel-prioridades').innerHTML;
+    expect(html).toContain('Juan te debe');
   });
 });
 

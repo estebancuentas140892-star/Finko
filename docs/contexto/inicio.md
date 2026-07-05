@@ -7,8 +7,8 @@
 ## Estructura actual del Dashboard (bento grid)
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
-- **Estado actual**     : estable, en evolución (tarjetas **IN.4**, **IN.6**, **IN.7**, **CAL.1**, **TX.8** en `BOARD.md`, análisis en curso).
-- **Verificado contra** : `8734699` (2026-07-05).
+- **Estado actual**     : estable, en evolución (tarjetas **IN.4**, **IN.6**, **CAL.1**, **TX.8** en `BOARD.md`, análisis en curso). **IN.7** cerrada.
+- **Verificado contra** : (commit de IN.7, 2026-07-05).
 
 **Dónde vive**
 
@@ -47,14 +47,18 @@
 **Riesgos**:
 
 - **Discrepancia con el brief del usuario**: el usuario describe "3 accesos rápidos fijos" que el usuario podría reordenar (base de **IN.4**); el código real solo tiene **1** (Gasto rápido). Cualquier diseño de IN.4 debe partir de este hecho verificado, no del supuesto de 3.
-- **Overlap confirmado entre paneles** (base de **IN.7**): un compromiso con `diaPago = hoy` puede aparecer a la vez en "Pendientes del mes" (`renderPanelVencidos`, vía `detectarVencidosCompletos`) y en "Próximas prioridades" (`renderPanelPrioridades`, vía `compromisosProximos` con `diasRestantes = 0`). Confirma el caso real que reportó el usuario (dos fijos que vencen hoy, vistos dos veces).
+- ~~**Overlap confirmado entre paneles** (base de **IN.7**)~~: **resuelto**. Un compromiso con `diaPago = hoy` aparecía a la vez en "Pendientes del mes" (`renderPanelVencidos`, vía `detectarVencidosCompletos`) y en "Próximas prioridades" (`renderPanelPrioridades`, vía `compromisosProximos` con `diasRestantes = 0`). `renderPanelPrioridades()` ahora filtra `diasRestantes > 0` sobre los compromisos antes de combinarlos con personales/apartados: lo que vence hoy vive solo en Pendientes del mes. `compromisosProximos()` (logic) no se tocó: otros consumidores (nudge de mora, `nivelAlertaMora`) siguen necesitando el día 0.
 - **Categorías son catálogo cerrado**: `CATEGORIAS_GASTO`/`CATEGORIA_ICONO` no soportan categorías creadas por el usuario hoy. Relevante para **TX.9** (categoría personalizada) y **TX.10** (categoría como eje de automatización): requiere diseño de dato nuevo + migración de schema (ADN 6), no solo UI.
 - **Sin helper cross-dominio en `infra/`**: cualquier "Movimientos" (**TX.8**) que cruce todos los dominios debe decidir dónde vive esa agregación sin violar ADN 10 (ningún dominio importa a otro). El patrón existente (combinar arrays inline en la vista consumidora, ver `dashboard.js`) no escala bien a "todos los dominimos posibles"; probablemente conviene un dominio agregador (`resumen` ya cumple ese rol para el hero) o EventBus con un registro de "aportantes de movimientos".
 - **`S.config.ocultarSaldo` se agregó sin bump de versión de schema** (lectura defensiva con `?.`): mismo patrón sería tentador para `avatar`/`accesosPrioridad` (**IN.6**/**IN.4**), pero antes de repetirlo evaluar si conviene formalizarlo con schema version nuevo, dado que ya son varios campos opcionales acumulados sin migración.
 - **`S.perfil.nombre` ya existe** pero no se renderiza en Inicio: **IN.6** (saludo dinámico) puede consumirlo directo, no requiere dato nuevo para el nombre (sí para avatar/mascota).
 
-**Cambios pendientes**: ver tarjetas **IN.4**, **IN.6**, **IN.7**, **CAL.1**, **TX.8** en `BOARD.md` (análisis conjunto en curso); **IN.5** depende de **TX.9** (fuera de este análisis).
+**Cambios pendientes**: ver tarjetas **IN.4**, **IN.6**, **CAL.1**, **TX.8** en `BOARD.md` (análisis conjunto en curso); **IN.5** depende de **TX.9** (fuera de este análisis).
 
-**Cambios realizados**: ninguno todavía; esta ficha nace del primer análisis exhaustivo (2026-07-05), previo a cualquier propuesta de diseño o código.
+**Cambios realizados**:
+
+- 2026-07-05 (IN.7): `renderPanelPrioridades()` excluye `diasRestantes === 0` de los compromisos antes de combinarlos con personales/apartados. Un compromiso que vence hoy vive únicamente en "Pendientes del mes"; personales y apartados que vencen hoy sí siguen apareciendo en "Próximas prioridades" (no tienen panel de vencidos propio). 2 tests migrados de `DIA_HOY` a `DIA_MANANA` (ya no aplica el caso "vence hoy" para ese escenario) + 2 tests nuevos de regresión.
+
+Esta ficha nace del primer análisis exhaustivo de Inicio (2026-07-05), previo a cualquier propuesta de diseño o código para el resto del cluster.
 
 **Observaciones**: sin ADR propio todavía; el bento grid actual convive con reglas ya vigentes (IN.2 ojo/máscara del saldo, IN.3 resumen semanal). Cualquier ADR nuevo sobre "Inicio como centro de control" debería referenciarlas en vez de redefinirlas.
