@@ -31,3 +31,7 @@ npm-debug.log*
 # Playwright
 test-results/
 playwright-report/
+
+# Python (scripts de desarrollo: gen-icons, sync-sprite...)
+__pycache__/
+*.pyc

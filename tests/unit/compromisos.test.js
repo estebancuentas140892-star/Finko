@@ -1888,12 +1888,13 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
   });
 
   it('una deuda que nombra un banco sin glifo muestra sus iniciales sobre su color', () => {
-    S.compromisos = [deudaBase({ descripcion: 'Tarjeta Bancolombia' })];
+    // Davivienda sigue sin glifo propio: ejemplifica el fallback de iniciales.
+    S.compromisos = [deudaBase({ descripcion: 'Tarjeta Davivienda' })];
     renderListaCompromisos();
     const teja = document.querySelector('.list-item__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('BC');
-    expect(teja.getAttribute('style')).toContain('background:#FFC727');
+    expect(teja.textContent).toBe('DV');
+    expect(teja.getAttribute('style')).toContain('background:#E31837');
   });
 
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {

@@ -282,9 +282,9 @@ export const VIGENCIA_2026 = VIGENCIA;
  */
 export const BANCOS_CO = [
   { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff', clase: 'efectivo', simbolo: 'i-saldo'  },
-  { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a', clase: 'banco'     },
+  { id: 'Bancolombia',          iniciales: 'BC', color: '#ffffff', texto: '#1a1a1a', clase: 'banco',     simbolo: 'b-bancolombia' },
   { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff', clase: 'banco'     },
-  { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#003576', texto: '#ffffff', clase: 'banco',     simbolo: 'b-banco-bogota' },
   { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff', clase: 'banco',     aliases: ['bbva'] },
   { id: 'Banco Popular',        iniciales: 'BP', color: '#0B5394', texto: '#ffffff', clase: 'banco'     },
   { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco',     aliases: ['scotiabank', 'colpatria'] },

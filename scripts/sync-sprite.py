@@ -67,6 +67,13 @@ ETIQUETAS_PROHIBIDAS = {
     'foreignobject',
 }
 PRIMITIVAS_PERMITIDAS = {'path', 'circle', 'rect', 'line'}
+# Un logo a color (data-fullcolor) puede traer degradados: se permite el set
+# ampliado, pero se sigue bloqueando lo peligroso o no reproducible por <use>
+# (script, foreignObject, image, text, filtros, mascaras).
+ETIQUETAS_FULLCOLOR = {
+    'path', 'circle', 'rect', 'line', 'polygon', 'polyline', 'ellipse',
+    'g', 'defs', 'lineargradient', 'radialgradient', 'stop',
+}
 ATRIBUTOS_PROHIBIDOS_RAIZ = {'width', 'height', 'id', 'class', 'style'}
 
 RE_TAG = re.compile(r'<([a-zA-Z][\w-]*)')
@@ -159,6 +166,29 @@ def _convertir_centinela(id_symbol: str, cuerpo: str, es_logo: bool) -> str:
     return cuerpo
 
 
+def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
+    """Valida un logo a color (data-fullcolor) sin convertir sus colores.
+
+    Permite degradados (defs/linearGradient/stop) ademas de las primitivas, y
+    conserva el cuerpo tal cual para que la biblioteca y el sprite queden
+    identicos byte a byte (el guardarrail vigila esa igualdad).
+    """
+    for etiqueta in RE_TAG.findall(cuerpo):
+        nombre = etiqueta.lower()
+        if nombre not in ETIQUETAS_FULLCOLOR:
+            raise ErrorRecurso(
+                f'{id_symbol}: elemento <{etiqueta}> no permitido ni en logo a color '
+                f'(peligroso o no reproducible por <use>)'
+            )
+    if 'transform=' in cuerpo:
+        raise ErrorRecurso(f'{id_symbol}: transform no permitido (coordenadas deben venir "horneadas")')
+    if re.search(r'\bclass\s*=', cuerpo) or re.search(r'\bstyle\s*=', cuerpo):
+        raise ErrorRecurso(f'{id_symbol}: class/style no permitidos (usar atributos de presentacion, ej. stop-color)')
+    if RE_DECIMALES_LARGOS.search(cuerpo):
+        advertencias.append(f'{id_symbol}: coordenadas con mas de 2 decimales')
+    return cuerpo
+
+
 def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> str:
     m = RE_ROOT.match(contenido)
     if not m:
@@ -173,6 +203,17 @@ def validar_y_convertir(id_symbol: str, contenido: str, advertencias: list) -> s
         raise ErrorRecurso(f'{id_symbol}: atributo(s) prohibido(s) en la raiz: {", ".join(sorted(prohibidos))}')
     if '<!--' in cuerpo:
         raise ErrorRecurso(f'{id_symbol}: comentarios solo se permiten en plantillas (data-placeholder)')
+
+    # Logo de marca a color (data-fullcolor="true"): excepcion deliberada a la
+    # silueta monocroma de ADR 025 para marcas cuya identidad ES el color
+    # (ej. Bancolombia: bandera roja/amarilla/azul sobre blanco; Banco de
+    # Bogota: remolino con degradados sobre azul). El archivo es autonomo: trae
+    # sus propios fills, su fondo y sus <defs>/degradados, y su teja de catalogo
+    # se pinta del color de ese fondo. El sync lo conserva tal cual, sin
+    # convertir colores; valida forma con el set ampliado (permite degradados)
+    # y verifica que los IDs de gradiente sean unicos en todo el sprite.
+    if atributos.get('data-fullcolor') == 'true':
+        return _validar_fullcolor(id_symbol, cuerpo, advertencias)
 
     for etiqueta in RE_TAG.findall(cuerpo):
         nombre = etiqueta.lower()
@@ -258,6 +299,21 @@ def main():
 
     for id_symbol, rutas in sorted(colisiones.items()):
         errores.append(f'"{id_symbol}": colision de id entre {" vs ".join(str(r) for r in rutas)}')
+
+    # Los logos a color con degradados traen sus <defs id="..."> dentro del
+    # symbol. Como el sprite es un unico documento, esos IDs deben ser unicos en
+    # todo el sprite (dos logos con el mismo id de gradiente se pisarian). Se
+    # exige el prefijo del propio id de symbol como espacio de nombres.
+    ids_internos = {}
+    for id_symbol, cuerpo in cuerpos.items():
+        for interno in re.findall(r'\bid="([^"]+)"', cuerpo):
+            ids_internos.setdefault(interno, []).append(id_symbol)
+    for interno, duenos in sorted(ids_internos.items()):
+        if len(duenos) > 1:
+            errores.append(
+                f'id interno "{interno}" repetido en {", ".join(sorted(duenos))}: '
+                f'prefija cada uno con el slug de su symbol para evitar colisiones en el sprite'
+            )
 
     try:
         orden = orden_final(set(cuerpos), orden_previo)

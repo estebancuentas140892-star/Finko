@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): logos de marca a color, primeros glifos propios (Bancolombia, Banco de Bogotá) · 2026-07-05
+
+Arranque del flujo de diseño en pareja (BR.3) con los primeros logos que Esteban dibujó en Illustrator. Trae una **decisión de diseño nueva**: algunas marcas cuya identidad **es** el color (Bancolombia: bandera roja/amarilla/azul sobre blanco; Banco de Bogotá: remolino con degradados sobre azul) no se pueden reducir a silueta monocroma sin perderlas. Se introduce el logo **a color** como excepción explícita a la regla de monocromo de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (pendiente de formalizar en un ADR).
+
+**Qué entró:**
+
+- **Logo a color (`data-fullcolor="true"`):** un logo puede traer sus propios `fill`, su fondo y hasta `<defs>` con degradados. Su teja de catálogo se pinta del color de ese fondo (Bancolombia `#ffffff`, Banco de Bogotá `#003576`), no de un color corporativo con glifo monocromo encima. El archivo es autónomo y funciona igual en ambos temas.
+- **`sync-sprite.py` extendido:** detecta `data-fullcolor`, valida con un set ampliado que admite `linearGradient`/`radialGradient`/`stop`/`defs`, y **conserva el cuerpo tal cual** (sin convertir colores) para que biblioteca y sprite queden idénticos byte a byte. Verifica además que los **IDs internos de gradiente sean únicos en todo el sprite** (los de Banco de Bogotá van prefijados `bbog-*`). Un logo a color mal formado sigue cayendo en `ErrorRecurso` (se excluye sin romper la corrida).
+- **Degradados vía `<use>` verificados:** los `<defs>` viven dentro del `<symbol>` y renderizan correctamente al instanciarse con `<use>` (validado en el navegador a 16-72px, ambos temas).
+- **Nequi se probó y se descartó por ahora:** el export era el wordmark completo "nequi", ilegible por debajo de ~40px (las tejas van a 16-32px). Se mantiene su glifo monocromo actual; Esteban aplicará otro diseño más adelante.
+- **Tests guardarraíl:** el hermano de TX.4 (`sprite-sync.test.js`) ya cubría la igualdad biblioteca ↔ sprite; ahora valida también los dos logos a color con sus degradados. Tres fixtures que usaban Bancolombia como ejemplo de "banco sin glifo → iniciales" se migraron a Davivienda (sigue sin glifo).
+
+**Validación:** 2103/2103 unit; 147/147 E2E; lint limpio; sync idempotente; degradados renderizando desde el sprite. SW v314 → v316.
+
+| Archivo | Cambio |
+|---|---|
+| `assets/svg/logos/bancos/bancolombia.svg` | Logo a color: fondo blanco + bandera tricolor (data-fullcolor). |
+| `assets/svg/logos/bancos/banco-bogota.svg` | Logo a color: fondo azul + remolino con 5 degradados (IDs `bbog-*`). |
+| `scripts/sync-sprite.py` | Soporte `data-fullcolor` con degradados + chequeo de unicidad de IDs internos. |
+| `modules/core/constants.js` | Bancolombia teja `#ffffff` + `simbolo`; Banco de Bogotá teja `#003576` + `simbolo`. |
+| `index.html` | Sprite regenerado: `b-bancolombia`, `b-banco-bogota` (101 → 102 símbolos). |
+| `tests/unit/{bancos,agenda,compromisos}.test.js` | Fixture "sin glifo" migrado de Bancolombia a Davivienda. |
+| `.gitignore` | Ignora `__pycache__/` de los scripts Python. |
+| `service-worker.js` | v314 → v316. |
+
+---
+
 ### feat(assets): BR.2, script de sincronización biblioteca → sprite · 2026-07-05
 
 Segunda tarea de la iniciativa de biblioteca gráfica (tras BR.1). `scripts/sync-sprite.py` invierte la relación: `assets/svg/` manda y el sprite de `index.html` se regenera desde ahí, cerrando el ciclo "Esteban sobrescribe un .svg en Illustrator + corre el script = la app usa el dibujo nuevo" sin tocar código.

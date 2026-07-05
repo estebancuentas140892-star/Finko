@@ -607,17 +607,18 @@ describe('renderAgenda() - teja de marca como ícono principal', () => {
   });
 
   it('una deuda que nombra un banco muestra su teja con iniciales y color', () => {
+    // Davivienda sigue sin glifo propio: ejemplifica el fallback de iniciales.
     S.compromisos = [compromisoBase({
       id: 'd1', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
-      descripcion: 'Tarjeta Bancolombia', cuotaMensual: 200_000, saldoTotal: 2_000_000,
+      descripcion: 'Tarjeta Davivienda', cuotaMensual: 200_000, saldoTotal: 2_000_000,
     })];
     renderAgenda();
     mostrarDia(15);
     renderAgenda();
     const teja = document.querySelector('.cal-detail__icon .bank-avatar');
     expect(teja).not.toBeNull();
-    expect(teja.textContent).toBe('BC');
-    expect(teja.getAttribute('style')).toContain('background:#FFC727');
+    expect(teja.textContent).toBe('DV');
+    expect(teja.getAttribute('style')).toContain('background:#E31837');
   });
 
   it('sin marca en el nombre, el fallback de AG.2 queda intacto (teja de categoría o ícono del tipo)', () => {

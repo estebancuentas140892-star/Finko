@@ -132,14 +132,23 @@ _(sin pendientes activos.)_
 
 > Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) y BR.2 (`scripts/sync-sprite.py` + guardarraíl) cerradas el 2026-07-05. Nota de BR.2: `assets/svg/logos/bancos/bancolombia.svg` ya tiene un export de prueba de Esteban (colores reales de la bandera, sin limpiar el estándar); el sync lo excluye solo (Bancolombia sigue con iniciales) hasta que BR.3 defina el tratamiento de logos con más de un color.
 
-#### BR.3 - Primer lote de glifos propios (banca CO)
-- Prioridad  : media (marca el arranque del flujo de diseño en pareja)
-- Estado     : pendiente (Esteban ya empezó a probar tamaños con bancolombia.svg; falta definir si un logo multicolor como la bandera de Bancolombia rompe la regla de silueta monocroma del README sección 6, o si aplica como excepción documentada)
-- Objetivo   : recorrer el pipeline completo de punta a punta con los 10 bancos que hoy caen a iniciales: Esteban diseña y sobrescribe las plantillas de `assets/svg/logos/bancos/`, revisión en pareja según `assets/svg/README.md` sección 9 (render a 5 tamaños en ambos temas), sync, campo `simbolo: 'b-<slug>'` en cada fila de `BANCOS_CO`, bump de SW.
-- Secciones  : Mis cuentas, Deudas, Calendario (toda teja de marca)
+#### BR.3 - Lote de glifos propios (banca CO) - EN CURSO
+- Prioridad  : media (flujo de diseño en pareja, ya arrancó)
+- Estado     : en curso. Cerrados a color: **Bancolombia** (bandera tricolor sobre blanco) y **Banco de Bogotá** (remolino con degradados sobre azul). Decidido: los logos cuya identidad es el color van **a color** (`data-fullcolor`), no monocromo (excepción a ADR 025, pendiente de formalizar en ADR). Nequi se probó como wordmark completo y se descartó (ilegible < 40px): mantiene su monocromo hasta que Esteban aplique otro diseño.
+- Pendientes : Davivienda, DaviPlata, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, Lulo Bank (siguen con iniciales); + el diseño nuevo de Nequi que Esteban aplicará.
+- Objetivo   : por cada banco, Esteban diseña y sobrescribe la plantilla de `assets/svg/logos/bancos/`, revisión en pareja (render a 5 tamaños ambos temas), sync, `simbolo: 'b-<slug>'` (+ color de teja) en `BANCOS_CO`, bump de SW. Logo a color: teja del color de su fondo; monocromo: teja del color corporativo + glifo `currentColor`.
 - Archivos   : `assets/svg/logos/bancos/*.svg`, `modules/core/constants.js`, `index.html` (vía sync), `service-worker.js`
-- Depende de : nada (BR.2 ya cerró); primer paso es decidir con Esteban el tratamiento de logos multicolor
+- Depende de : nada; el pipeline ya soporta color plano y degradados.
 - Modelo     : Sonnet 5 - Medio (revisión visual + integración mecánica)
+
+#### BR.4 - ADR: logo de marca a color como excepción al monocromo
+- Prioridad  : media (deuda de proceso: se tocó una regla de ADR 025 sin ADR)
+- Estado     : pendiente
+- Objetivo   : formalizar en un ADR (o amendment de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)) la excepción de **logo a color** (`data-fullcolor`): cuándo aplica (marcas cuya identidad ES el color y se pierden en monocromo), cómo (teja del color del propio fondo, archivo autónomo con sus fills/degradados, IDs de gradiente prefijados), y su convivencia con la regla de fidelidad D5. Ya está implementado (Bancolombia, Banco de Bogotá); falta el registro de la decisión.
+- Secciones  : Transversal (identidad visual)
+- Archivos   : `docs/DECISIONS/`, `assets/svg/README.md` (sección 6)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo (redacción de decisión ya tomada)
 
 ---
 

@@ -29,8 +29,9 @@ describe('bancoAvatar - teja de marca (ADR 025)', () => {
   });
 
   it('banco sin simbolo cae a las iniciales (regla de fidelidad D5)', () => {
-    const html = bancoAvatar('Bancolombia');
-    expect(html).toContain('BC');
+    // Davivienda sigue sin glifo propio: ejemplifica el fallback de iniciales.
+    const html = bancoAvatar('Davivienda');
+    expect(html).toContain('DV');
     expect(html).not.toContain('<use');
   });
 
