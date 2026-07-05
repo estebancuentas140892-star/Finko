@@ -277,8 +277,10 @@ export const VIGENCIA_2026 = VIGENCIA;
  *               como alias implícito; ver resolverMarca() en infra/marcas.js.
  *
  * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
- * Nequi usa sus colores oficiales verificados (fondo berenjena #200020, isotipo
- * magenta #CA0080), corregidos en MK.1 desde el morado aproximado anterior.
+ * Nequi entró a color en BR.3 (excepción de logo a color, ver README de
+ * assets/svg sección 6): la teja se pinta del fondo blanco propio del glifo,
+ * no del berenjena/magenta corporativo anterior (`texto` queda sin efecto en
+ * un logo a color, el archivo trae sus propios fill).
  */
 export const BANCOS_CO = [
   { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff', clase: 'efectivo', simbolo: 'i-saldo'  },
@@ -290,7 +292,7 @@ export const BANCOS_CO = [
   { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco',     aliases: ['scotiabank', 'colpatria'] },
   { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff', clase: 'banco'     },
   { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff', clase: 'banco',     aliases: ['av villas'] },
-  { id: 'Nequi',                iniciales: 'Nq', color: '#200020', texto: '#CA0080', clase: 'billetera', simbolo: 'b-nequi'  },
+  { id: 'Nequi',                iniciales: 'Nq', color: '#ffffff', texto: '#1f0020', clase: 'billetera', simbolo: 'b-nequi'  },
   { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff', clase: 'billetera' },
   { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera', simbolo: 'b-nubank', aliases: ['nu'] },
   { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff', clase: 'billetera', aliases: ['lulo'] },

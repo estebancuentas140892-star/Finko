@@ -137,12 +137,14 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) y BR.2 (`scripts/sync-sprite.py` + guardarraíl) cerradas el 2026-07-05. Nota de BR.2: `assets/svg/logos/bancos/bancolombia.svg` ya tiene un export de prueba de Esteban (colores reales de la bandera, sin limpiar el estándar); el sync lo excluye solo (Bancolombia sigue con iniciales) hasta que BR.3 defina el tratamiento de logos con más de un color.
+> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) y BR.2 (`scripts/sync-sprite.py` + guardarraíl) cerradas el 2026-07-05.
+>
+> Regla nueva de fidelidad (2026-07-05): todo SVG que Esteban entrega es la versión oficial. Nunca simplificar, restilizar ni reemplazar el diseño (formas, colores, degradados, proporciones) sin que él lo pida explícitamente; solo se permite limpieza técnica (quitar envoltorio de Illustrator, capas de calco, elementos prohibidos) cuando el resultado es visualmente idéntico. Aplicada al integrar el rediseño de Nequi: el export de Banco de Bogotá traía una imagen PNG de calco tapada por completo por los paths vectoriales, se retiró por ser puramente técnica (cero diferencia visual).
 
 #### BR.3 - Lote de glifos propios (banca CO) - EN CURSO
 - Prioridad  : media (flujo de diseño en pareja, ya arrancó)
-- Estado     : en curso. Cerrados a color: **Bancolombia** (bandera tricolor sobre blanco) y **Banco de Bogotá** (remolino con degradados sobre azul). Decidido: los logos cuya identidad es el color van **a color** (`data-fullcolor`), no monocromo (excepción a ADR 025, pendiente de formalizar en ADR). Nequi se probó como wordmark completo y se descartó (ilegible < 40px): mantiene su monocromo hasta que Esteban aplique otro diseño.
-- Pendientes : Davivienda, DaviPlata, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, Lulo Bank (siguen con iniciales); + el diseño nuevo de Nequi que Esteban aplicará.
+- Estado     : en curso. Cerrados a color: **Bancolombia** (bandera tricolor sobre blanco), **Banco de Bogotá** (remolino con degradados sobre azul) y **Nequi** (monograma "N" morado con acento rosa sobre blanco, reemplazó el wordmark completo descartado por ilegible < 40px). Decidido: los logos cuya identidad es el color van **a color** (`data-fullcolor`), no monocromo (excepción a ADR 025, pendiente de formalizar en ADR).
+- Pendientes : Davivienda, DaviPlata, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, Lulo Bank (siguen con iniciales).
 - Objetivo   : por cada banco, Esteban diseña y sobrescribe la plantilla de `assets/svg/logos/bancos/`, revisión en pareja (render a 5 tamaños ambos temas), sync, `simbolo: 'b-<slug>'` (+ color de teja) en `BANCOS_CO`, bump de SW. Logo a color: teja del color de su fondo; monocromo: teja del color corporativo + glifo `currentColor`.
 - Archivos   : `assets/svg/logos/bancos/*.svg`, `modules/core/constants.js`, `index.html` (vía sync), `service-worker.js`
 - Depende de : nada; el pipeline ya soporta color plano y degradados.

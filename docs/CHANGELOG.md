@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): BR.3, rediseño de Nequi a color + limpieza de exports crudos · 2026-07-05
+
+Segunda entrega de BR.3: Esteban reemplazó el wordmark completo de Nequi (descartado por ilegible bajo 40px) por un monograma "N" morado con acento rosa sobre fondo blanco, mismo tratamiento a color que Bancolombia y Banco de Bogotá. De paso llegó un reexport ajustado de Banco de Bogotá.
+
+Ambos archivos llegaron como export crudo de Illustrator (declaración XML, `id="Capa_1"`, comentario del generador, sin `data-fullcolor`). El de Banco de Bogotá además traía una **imagen PNG en base64 incrustada** (una capa de calco/referencia que Illustrator no había ocultado antes de exportar), tapada por completo por los 5 paths vectoriales que sí dibujan el remolino completo: se retiró porque quitarla no cambia ni un píxel de lo renderizado y evita cargar un raster pesado en cada teja. Se estableció una regla nueva de fidelidad: todo SVG que Esteban entrega es la versión oficial, cero simplificación o restilizado sin pedirlo; solo limpieza técnica cuando el resultado es visualmente idéntico (ver nota en `BOARD.md`, transversal).
+
+**Qué entró:**
+
+- `nequi.svg` limpio: `data-fullcolor="true"`, fondo `#fff`, N en `#1f0020`, acento en `#fe0086`. Catálogo (`BANCOS_CO`) actualizado: la teja se pinta ahora del fondo blanco propio del glifo (antes berenjena/magenta corporativo).
+- `banco-bogota.svg` reexportado: mismos 5 paths con degradado, coordenadas afinadas, IDs de gradiente re-prefijados `bbog-g0` a `bbog-g4` (convención ya usada), sin la imagen de calco.
+- Verificado visualmente en el navegador: ambas tejas renderizan correctas en el picker de banco y en la lista de cuentas (36px), sin regresión.
+
+**Validación:** 2103/2103 unit (1 fixture de color de Nequi actualizado); 147/147 E2E; lint limpio; sync-sprite sin errores (diff de `index.html` limitado a los 2 símbolos tocados). SW v317 → v318.
+
+| Archivo | Cambio |
+|---|---|
+| `assets/svg/logos/bancos/nequi.svg` | Nuevo diseño a color (monograma N + acento), reemplaza el wordmark descartado. |
+| `assets/svg/logos/bancos/banco-bogota.svg` | Reexport limpio: gradientes re-prefijados, sin imagen de calco incrustada. |
+| `modules/core/constants.js` | Nequi: `color` pasa a `#ffffff` (fondo propio del logo a color). |
+| `index.html` | Sprite regenerado: `b-nequi` y `b-banco-bogota` actualizados. |
+| `tests/unit/bancos.test.js` | Fixture de colores de Nequi actualizado al nuevo fondo/glifo. |
+| `service-worker.js` | v317 → v318. |
+| `docs/BOARD.md` | Nota de BR.3 actualizada; regla de fidelidad de SVG registrada. |
+
+---
+
 ### docs(workflow): metodología de contexto técnico por funcionalidad · 2026-07-05
 
 Pedido del usuario: minimizar el tiempo que la IA gasta localizando información dentro del proyecto y maximizar el dedicado a diseñar, desarrollar y validar. Entra `docs/contexto/`: una ficha por sección de la app y, dentro, un bloque por funcionalidad con objetivo, estado, dónde vive (tabla archivo + ancla por función/export/clase CSS, con la línea como referencia orientativa), recursos gráficos, dependencias y relaciones, riesgos, cambios pendientes y realizados, y un campo `Verificado contra` (commit) para detectar cuándo un bloque quedó desactualizado.

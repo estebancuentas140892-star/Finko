@@ -37,8 +37,8 @@ describe('bancoAvatar - teja de marca (ADR 025)', () => {
 
   it('la teja lleva los colores corporativos como estilo inline', () => {
     const html = bancoAvatar('Nequi');
-    expect(html).toContain('background:#200020');
-    expect(html).toContain('color:#CA0080');
+    expect(html).toContain('background:#ffffff');
+    expect(html).toContain('color:#1f0020');
   });
 
   it('banco desconocido devuelve la teja generica con "?" y gris', () => {
