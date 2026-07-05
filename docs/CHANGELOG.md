@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): MK.1, teja de marca con glifos oficiales en Mis cuentas · 2026-07-04
+
+Primera implementación del [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (D1/D2). El avatar de banco evoluciona a **teja de marca**: `BANCOS_CO` gana el campo opcional `simbolo` (id de `<symbol>` del sprite) y `bancoAvatar()` renderiza el glifo oficial cuando existe, o las iniciales sobre el color corporativo como fallback. La clase `.bank-avatar` y la firma de la función se conservan, así que los tres consumidores (lista de cuentas de Mis cuentas, picker de cuentas, hints de formularios) reciben el cambio sin tocarse.
+
+**Glifos que entraron (regla de fidelidad ADR 025 D5: nunca inventar un logo de memoria):**
+
+- `b-nequi`: isotipo oficial verificado contra el vector real (cuadrado redondeado magenta). De paso se corrigieron los colores del catálogo a los oficiales: fondo berenjena `#200020` y glifo magenta `#CA0080` (antes un morado aproximado `#9C00FF`).
+- `b-nubank`: path oficial tomado de Simple Icons (CC0), verbatim.
+- Efectivo reusa el icono estructural `i-saldo` (no es una marca).
+- **Quedan con iniciales** (fallback previsto por el ADR): Bancolombia, Davivienda, DaviPlata, Banco de Bogotá y el resto. Motivo documentado: DaviPlata resultó ser solo wordmark (sin isotipo), y para Davivienda/Bancolombia no hubo referencia vectorial confiable en las fuentes consultadas. Cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo`.
+
+Detalles técnicos: los `b-*` son de relleno (`fill="currentColor" stroke="none"` en el path, que le gana al `fill:none` de `.icon`); el glifo ocupa ~62% de la teja; hairline `--fk-border-subtle` en la teja para que las marcas oscuras (Nequi) no se fundan con el tema oscuro. Guardarraíl nuevo en tests: todo `simbolo` declarado debe existir como `<symbol>` en `index.html`.
+
+2056/2056 unit (+13, suite nueva `bancos`); 147/147 E2E sin cambios. SW v306 → v307. Pendiente: validación del usuario en su celular (calidad visual de los glifos a tamaño real).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | Campo `simbolo` en `BANCOS_CO` (Nequi, Nubank, Efectivo) + colores oficiales de Nequi + JSDoc con la regla de fidelidad. |
+| `index.html` | Símbolos `b-nequi` y `b-nubank` en el sprite (prefijo `b-*` nuevo, ADR 025). |
+| `modules/infra/bancos.js` | `bancoAvatar()` renderiza glifo del sprite o iniciales (teja de marca). |
+| `styles/components/nudges.css` | `.bank-avatar__glifo` (~62%) + hairline; comentario actualizado. |
+| `modules/dominio/tesoreria/view.js` | Comentario del wrapper actualizado (teja, no "avatar circular"). |
+| `tests/unit/bancos.test.js` | Suite nueva (13 tests): glifo/fallback/colores/aria/guardarraíl del sprite. |
+| `service-worker.js` | v306 → v307. |
+
+---
+
 ### docs(adr): ADR 025, logotipos de marca y tejas unificadas · 2026-07-04
 
 Replanteo de la tarjeta ID.3 pedido por el usuario al arrancarla: siempre que un servicio o entidad tenga identidad visual reconocida (Netflix, Spotify, Nequi, Bancolombia, Claude...), mostrar su **logotipo oficial** en lugar de un icono genérico; las categorías sin marca siguen con iconos; un solo sistema visual, escalable por catálogo y con fallback automático. Pidió además el análisis fundamentado del paquete de iconos que mejor conviva con logotipos.

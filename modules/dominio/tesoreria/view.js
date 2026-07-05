@@ -1077,12 +1077,12 @@ function _renderNudgeGMF(nudge) {
 // ── HELPERS ──────────────────────────────────────────────────────
 
 /**
- * Devuelve el HTML de un avatar circular con las iniciales y el color
- * corporativo del banco. Si el banco no se encuentra en BANCOS_CO,
- * devuelve un avatar generico con "?" y color gris.
+ * Devuelve el HTML de la teja de marca del banco (glifo oficial o iniciales
+ * sobre el color corporativo, ADR 025). Si el banco no se encuentra en
+ * BANCOS_CO, devuelve una teja generica con "?" y color gris.
  *
  * @param {string} bancoId - valor guardado en cuenta.banco.
- * @returns {string} HTML span del avatar.
+ * @returns {string} HTML span de la teja.
  */
 function _bankAvatarHtml(bancoId) {
   return bancoAvatar(bancoId);

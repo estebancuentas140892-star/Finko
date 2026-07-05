@@ -130,7 +130,7 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2 e ID.6 cerradas (2026-07-04). El replanteo del usuario (logotipos oficiales de marca, ADR 025) re-cortó la antigua ID.3 en tres tarjetas: MK.1 (tejas + banca CO), MK.2 (marcas globales por alias) e ID.3 (categorías Finko v2). Orden sugerido: MK.1 → MK.2 → ID.3; ID.7 no cambia y puede intercalarse.
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6 y MK.1 cerradas (2026-07-04). Quedan MK.2 (marcas globales por alias), ID.3 (categorías Finko v2 en tejas) e ID.7 (estructurales a v2). Orden sugerido: MK.2 → ID.3; ID.7 puede intercalarse. Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`.
 
 #### ID.7 - Símbolos estructurales al lenguaje v2
 - Prioridad  : media
@@ -141,22 +141,13 @@ _(sin pendientes activos.)_
 - Depende de : validación visual de ID.6
 - Modelo     : Sonnet 5 - Alto
 
-#### MK.1 - Tejas + catálogo de marcas + banca CO en Mis cuentas
-- Prioridad  : alta (interés explícito del usuario, 2026-07-04)
-- Estado     : pendiente
-- Objetivo   : el contenedor "teja" (CSS + helper de render, [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D1), el catálogo `MARCAS` (`{id, nombre, aliases, color, texto, symbolId}`) y los glifos monocromos propios de la banca CO (Nequi, Daviplata, Bancolombia, Davivienda, Banco de Bogotá, BBVA, Nubank, Lulo Bank...) con prefijo `b-*` en el sprite. Upgrade de `bancoAvatar()`: de iniciales a glifo oficial; las iniciales quedan como fallback de marca sin glifo. Consumidores: Mis cuentas y el picker de cuentas.
-- Secciones  : Mis cuentas, Transversal (infra)
-- Archivos   : `index.html` (sprite), `modules/core/constants.js`, `modules/infra/bancos.js`, `styles/`, `modules/dominio/tesoreria/view.js`, `tests/`
-- Depende de : nada (los glifos de marca no son lenguaje v2; no espera la validación de ID.6)
-- Modelo     : Fable 5 - Alto
-
 #### MK.2 - Detección de marca por nombre en fijos, suscripciones y deudas
 - Prioridad  : media
 - Estado     : pendiente
 - Objetivo   : `resolverMarca(texto)` por aliases normalizados ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) + ~20 marcas globales de suscripciones y servicios (Netflix, Spotify, YouTube, Disney+, HBO Max, Prime Video, Claude, OpenAI, Gemini, PayPal, Mercado Pago, Movistar, Claro, Tigo...), glifos de Simple Icons (CC0, cobertura verificada en el ADR). Fallback automático a la teja de categoría cuando no hay match. Consumidores: Calendario (fijos/suscripciones) y Deudas.
 - Secciones  : Calendario, Deudas
 - Archivos   : `index.html` (sprite), `modules/core/constants.js`, `modules/infra/bancos.js` (generalizado o módulo `marcas.js` nuevo), `modules/dominio/agenda/view.js`, `modules/dominio/compromisos/views/lista.js`, `tests/`
-- Depende de : MK.1 (la teja y el catálogo)
+- Depende de : nada (MK.1 cerrada: la teja `.bank-avatar` y el campo `simbolo` ya existen)
 - Modelo     : Sonnet 5 - Alto
 
 #### ID.3 - Iconos de categorías Finko v2 en tejas por dominio (re-cortada por ADR 025)
@@ -165,7 +156,7 @@ _(sin pendientes activos.)_
 - Objetivo   : diseñar los ~40 iconos de categorías (gastos, ingresos, agenda, deudas, metas) en el lenguaje v2 del ADR 023 revisado, presentados en tejas teñidas con `--fk-dom-*` y chispa en el color del dominio ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D3). Retirar los catálogos `CATEGORIA_*_EMOJI` de la UI estructural (los selects quedan con texto plano; el emoji personalizado de Metas "Otra" y Apartados se conserva como dato del usuario). Actualizar el guardarraíl TX.4 para comparar ids de sprite en vez de emojis. Emojis de celebración: conservados, decisión sellada en ADR 025 D6.
 - Secciones  : Gastos, Calendario, Deudas, Metas, Límites, Análisis, Mis cuentas, Inicio
 - Archivos   : `index.html` (sprite), `modules/core/constants.js`, 10 archivos consumidores (`gastos/view+logic`, `agenda/view`, `tesoreria/view`, `metas/view+logic`, `compromisos/views/lista+formularios`, `resumen/view`, `presupuesto/view`), `tests/unit/constants.test.js`
-- Depende de : MK.1 (la teja) y validación visual de ID.6 (los glifos son lenguaje v2)
+- Depende de : validación visual de ID.6 (los glifos son lenguaje v2; MK.1 ya cerró la teja)
 - Modelo     : Fable 5 - Alto
 
 #### ID.5 - Micropulido tipográfico de cifras

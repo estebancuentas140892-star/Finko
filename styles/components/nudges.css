@@ -241,8 +241,9 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   BANK AVATAR - círculo con iniciales y color corporativo
-   Generado por tesoreria/view.js con estilos inline de color.
+   BANK AVATAR - la teja de marca (ADR 025): glifo oficial o
+   iniciales sobre el color corporativo de la entidad.
+   Generado por infra/bancos.js con estilos inline de color.
    ════════════════════════════════════════════════════════════ */
 
 .bank-avatar {
@@ -256,7 +257,19 @@
   font-weight: var(--fk-font-bold);
   letter-spacing: 0.02em;
   flex-shrink: 0;
+  /* Hairline para que las tejas de marca oscura (ej. Nequi berenjena) no se
+     fundan con las superficies del tema oscuro. */
+  border: 1px solid var(--fk-border-subtle);
   /* color y background vienen como style inline */
+}
+
+/* Glifo de marca dentro de la teja: ~62% del lado. Los b-* son de relleno
+   (su path trae fill="currentColor" stroke="none", que le gana al fill:none
+   de .icon); los i-* de trazo heredan el stroke 2.35 de .icon. Ambos toman
+   el color inline `texto` de la teja vía currentColor. */
+.bank-avatar .bank-avatar__glifo {
+  width: 62%;
+  height: 62%;
 }
 
 /* Avatar más pequeño dentro del trigger del picker */

@@ -260,17 +260,24 @@ export const VIGENCIA_2026 = VIGENCIA;
  *
  * Cada entrada tiene:
  *   id        - string que se guarda en localStorage (compatible con datos previos).
- *   iniciales - letras para el avatar visual (max 2 chars).
- *   color     - fondo del avatar (color corporativo aproximado).
- *   texto     - color del texto dentro del avatar (#ffffff o #1a1a1a).
+ *   iniciales - letras para la teja visual (max 2 chars); fallback cuando no hay glifo.
+ *   color     - fondo de la teja (color corporativo).
+ *   texto     - color del glifo o las iniciales encima (#ffffff o #1a1a1a según contraste).
  *   clase     - familia de la entidad: 'efectivo' | 'banco' | 'billetera' | 'otro'.
  *               Maneja qué campos muestra el formulario de cuenta (tipos de
  *               cuenta compatibles, 4x1000, cuota de manejo). Ver TIPOS_POR_CLASE.
+ *   simbolo   - opcional (ADR 025): id de un <symbol> del sprite de index.html con el
+ *               glifo de la marca (prefijo b-*) o un icono estructural (i-*). Sin este
+ *               campo, la teja muestra las iniciales. Regla de fidelidad (ADR 025 D5):
+ *               solo se agrega un glifo verificado contra el isotipo oficial; nunca se
+ *               inventa un logo de memoria.
  *
  * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
+ * Nequi usa sus colores oficiales verificados (fondo berenjena #200020, isotipo
+ * magenta #CA0080), corregidos en MK.1 desde el morado aproximado anterior.
  */
 export const BANCOS_CO = [
-  { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff', clase: 'efectivo'  },
+  { id: 'Efectivo',             iniciales: '💵', color: '#16a34a', texto: '#ffffff', clase: 'efectivo', simbolo: 'i-saldo'  },
   { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a', clase: 'banco'     },
   { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff', clase: 'banco'     },
   { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff', clase: 'banco'     },
@@ -279,9 +286,9 @@ export const BANCOS_CO = [
   { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco'     },
   { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff', clase: 'banco'     },
   { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff', clase: 'banco'     },
-  { id: 'Nequi',                iniciales: 'Nq', color: '#9C00FF', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Nequi',                iniciales: 'Nq', color: '#200020', texto: '#CA0080', clase: 'billetera', simbolo: 'b-nequi'  },
   { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff', clase: 'billetera' },
-  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera', simbolo: 'b-nubank' },
   { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff', clase: 'billetera' },
   { id: 'Otro',                 iniciales: '?',  color: '#6B7280', texto: '#ffffff', clase: 'otro'      },
 ];
