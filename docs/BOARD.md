@@ -106,7 +106,35 @@ _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "
 
 ### Gastos (dominio `gastos`)
 
-_(sin pendientes activos.)_
+#### TX.8 - Gastos muestra solo sus propios movimientos; nuevo "Movimientos" en Inicio
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : hoy Gastos mezcla sus propios registros con movimientos de otras secciones (deudas, ahorro, metas, apartados, calendario, ingresos), lo que dificulta encontrar lo que se busca. Propone que Gastos muestre únicamente los gastos registrados desde esa sección, y que todo lo demás (pagar una deuda, aportar a una meta, recibir un ingreso, aportar a un apartado, pagar un fijo, recuperar un préstamo, distribuir el ingreso) viva en un apartado nuevo del **Inicio** llamado "Movimientos": un historial cronológico general de toda la actividad de la app. El usuario pidió explícitamente evaluar si esta separación mejora la experiencia o si hay una alternativa más eficiente.
+- Secciones  : Gastos (`gastos`, se acota su lista), Inicio (nuevo apartado "Movimientos" que agrega actividad de todos los dominios)
+- Archivos   : sin explorar todavía; probablemente hoy Gastos ya lee/combina registros de varios dominios en su vista, revisar `modules/dominio/gastos/` (vista y lógica) y qué helper (si existe) ya consolida "todo lo que pasó" para no duplicar esa función
+- Depende de : relación directa con **IN.4** (dashboard personalizable) y **CAL.1** (aviso de distribución de ingreso a Inicio): las tres tocan qué vive en Inicio y podrían compartir el mismo bloque de "actividad reciente"; conviene revisarlas juntas para no diseñar tres mecanismos de tarjetas de Inicio por separado. Ningún dominio importa a otro (ADN 10): un historial cruzando todos los dominios necesita EventBus o agregación en un dominio propio (`resumen`, que ya centraliza el Inicio hoy).
+- Modelo     : Opus 4.8 - Alto (reorganizar de dónde vive la información entre dos secciones es una decisión de arquitectura de información con riesgo real de regresión si algún flujo hoy depende de ver esos movimientos mezclados en Gastos)
+
+#### TX.9 - Formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : rediseñar el formulario de registrar gasto para que sea más rápido e intuitivo. Brief completo del usuario (verbatim, 2026-07-05):
+  1. **Categoría primero**: hoy aparece después de otros campos; debería ser el primer dato, porque de ella depende el ícono, reglas específicas, detección de estilo de vida/gasto hormiga/gasto fantasma, y el resto del formulario debería adaptarse según la categoría elegida.
+  2. **Categorías personalizadas ("Otra categoría")**: al elegirla, aparecen un selector de ícono y un campo de nombre; una vez creada, se guarda para usos futuros y se comporta exactamente igual que una categoría nativa.
+  3. **Eliminar la descripción redundante**: si la categoría ya representa el concepto (ej. "Gimnasio" con descripción "Gimnasio"), pedir descripción duplica esfuerzo sin valor. Propone que la categoría sea el concepto principal y que exista un campo **Nota** opcional al final del formulario para detalle adicional (ej. categoría "Restaurante", nota opcional "Cena con mi familia").
+- Secciones  : Gastos (`gastos`)
+- Archivos   : sin explorar todavía; candidato previsible el formulario de registrar gasto en `modules/dominio/gastos/` (vista) y el catálogo `CATEGORIA_*_ICONO`/`CATEGORIA_*_EMOJI` en `modules/core/constants.js` para la categoría personalizada (nueva entrada por usuario, no solo del catálogo fijo: revisar si el modelo de datos soporta categorías creadas por el usuario o hay que agregarlo con migración de schema)
+- Depende de : nada. Las categorías personalizadas son dato nuevo del usuario (persistido en `localStorage`): requiere bump de schema (regla ADN 6, migraciones idempotentes) si no existe ya un slot para eso.
+- Modelo     : Sonnet 5 - Alto (rediseño de formulario acotado a un dominio, con una pieza de dato nuevo (categoría personalizada) que exige migración de schema cuidadosa, pero sin lógica financiera compleja)
+
+#### TX.10 - Categoría como eje de automatización (límites, gastos hormiga/fantasma, recomendaciones)
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario quiere que la categoría deje de ser solo organización visual y se convierta en la base de la que Finko deriva automatizaciones: clasificar el gasto, relacionarlo con Límites de gasto, detectar gastos hormiga/fantasma, alimentar Análisis, generar recomendaciones y sugerir acciones, integrándose con Dashboard, Calendario y el resto de módulos.
+- Secciones  : Gastos (`gastos`), transversal (toca Límites/`presupuesto`, Análisis/`analisis`, Inicio)
+- Archivos   : sin explorar todavía
+- Depende de : es más un principio transversal que una tarea única; se solapa fuerte con **LIM.1** (recomendaciones de límite por categoría) y **ANL.1** (recomendaciones accionables en Análisis). Al iniciar cualquiera de las tres, revisar juntas para no construir 3 motores de "sugerencia por categoría" distintos (regla de "sin duplicados" de 2.1); probablemente conviene resolver esta como una pieza de infraestructura compartida (ej. un helper en `infra` que analiza patrones de gasto por categoría) que las demás consumen.
+- Modelo     : Fable 5 - Alto (pieza de infraestructura transversal que varias iniciativas van a consumir; decidir mal el diseño aquí se replica en LIM.1, ANL.1 y futuras)
 
 ---
 
