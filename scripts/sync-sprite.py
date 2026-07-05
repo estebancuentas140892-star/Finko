@@ -6,6 +6,16 @@ biblioteca assets/svg/ (ADR 026, BR.2).
 assets/svg/ es la fuente de verdad de diseno; el sprite de index.html es
 un artefacto derivado. El script:
 
+  0. Normaliza el envoltorio tipico de un export crudo de Adobe Illustrator
+     ANTES de validar (BR.5): declaracion XML, id="Capa_1", version,
+     comentario del generador, xlink:href -> href, IDs de degradado
+     genericos (linear-gradient1...) y un <g> bare envolviendo los paths.
+     Si el archivo cambia, se reescribe de vuelta en assets/svg/ (la
+     biblioteca sigue siendo la fuente de verdad; el guardarrail byte a
+     byte de sprite-sync.test.js sigue valido porque compara contra el
+     archivo YA normalizado en disco). No toca fill/stroke/data-fullcolor
+     (decision humana, README 6b) ni una <image> incrustada (se rechaza
+     con ErrorRecurso explicito, nunca se borra en silencio).
   1. Recorre iconos/{secciones,simbolos,utilitarios} (prefijo i-),
      iconos/categorias (prefijo c-) y logos/** en cualquier subcarpeta
      (prefijo b-). identidad/ e ilustraciones/ son "futuro" (README
@@ -81,6 +91,19 @@ RE_ATTR = re.compile(r'([a-zA-Z_:][\w:.-]*)\s*=\s*"([^"]*)"')
 RE_ROOT = re.compile(r'^<svg\b([^>]*)>([\s\S]*)</svg>$')
 RE_DECIMALES_LARGOS = re.compile(r'\d+\.\d{3,}')
 
+# ── Normalizacion de exports crudos de Illustrator (BR.5) ──────────────────
+RE_XML_DECL = re.compile(r'^\s*<\?xml[^>]*\?>\s*')
+RE_COMMENT = re.compile(r'<!--.*?-->', re.DOTALL)
+RE_XLINK_HREF = re.compile(r'\bxlink:href=')
+RE_XMLNS_XLINK = re.compile(r'\s+xmlns:xlink="[^"]*"')
+RE_SVG_OPEN = re.compile(r'^<svg\b([^>]*)>')
+# Nombres que Adobe Illustrator asigna por defecto a los degradados
+# (linear-gradient, linear-gradient1, radial-gradient2...): nunca son unicos
+# entre dos logos, a diferencia de un id ya prefijado a mano (ej. bbog-g0),
+# que la normalizacion deja intacto.
+RE_GRADIENT_ID_ILLUSTRATOR = re.compile(r'^(?:linear|radial)-gradient\d*$')
+ATRIBUTOS_ILLUSTRATOR_A_QUITAR = ('id', 'version')
+
 
 class ErrorProduccion(Exception):
     """Borraria un simbolo ya publicado: el sync se detiene sin escribir nada."""
@@ -134,6 +157,89 @@ def descubrir_archivos():
     return candidatos, colisiones, n_plantillas
 
 
+def _normalizar_atributos_raiz(m: re.Match, notas: list) -> str:
+    attrs_str = m.group(1)
+    atributos = dict(RE_ATTR.findall(attrs_str))
+    quitados = [a for a in ATRIBUTOS_ILLUSTRATOR_A_QUITAR if a in atributos]
+    for a in quitados:
+        atributos.pop(a, None)
+    if quitados:
+        notas.append(f'atributo(s) de Illustrator removidos de la raiz: {", ".join(quitados)}')
+    nuevos_attrs = ''.join(f' {k}="{v}"' for k, v in atributos.items())
+    return f'<svg{nuevos_attrs}>'
+
+
+def _renombrar_gradientes_illustrator(stem: str, cuerpo: str, notas: list) -> str:
+    """IDs de degradado por defecto de Illustrator (linear-gradient,
+    linear-gradient1...) no son unicos entre logos: se reescriben con el
+    stem del propio archivo como espacio de nombres (linear-gradient1 ->
+    <stem>-g1). Determinista e idempotente: un id ya prefijado a mano
+    (ej. bbog-g0) no matchea el patron y queda intacto.
+    """
+    vistos = []
+    for id_actual in re.findall(r'<(?:linear|radial)Gradient\b[^>]*\bid="([^"]+)"', cuerpo, re.IGNORECASE):
+        if RE_GRADIENT_ID_ILLUSTRATOR.match(id_actual) and id_actual not in vistos:
+            vistos.append(id_actual)
+    if not vistos:
+        return cuerpo
+    for i, id_viejo in enumerate(vistos):
+        id_nuevo = f'{stem}-g{i}'
+        cuerpo = re.sub(rf'id="{re.escape(id_viejo)}"', f'id="{id_nuevo}"', cuerpo)
+        cuerpo = re.sub(rf'url\(#{re.escape(id_viejo)}\)', f'url(#{id_nuevo})', cuerpo)
+        cuerpo = re.sub(rf'href="#{re.escape(id_viejo)}"', f'href="#{id_nuevo}"', cuerpo)
+    notas.append(f'IDs de degradado genericos de Illustrator renombrados con el prefijo "{stem}-g*"')
+    return cuerpo
+
+
+def _desenvolver_g_final(cuerpo: str, notas: list) -> str:
+    """Un <g> bare (sin transform/class/style) envolviendo el bloque final de
+    elementos es habitual en un export crudo de Illustrator y no aporta nada
+    al symbol final (el patron ya establecido en la biblioteca son paths
+    sueltos). Se desenvuelve solo si no hay <g> anidados dentro."""
+    nuevo = re.sub(r'<g>((?:(?!<g[ >]).)*)</g>\s*$', r'\1', cuerpo, count=1, flags=re.DOTALL)
+    if nuevo != cuerpo:
+        notas.append('<g> envolvente sin atributos desenvuelto')
+    return nuevo
+
+
+def normalizar_export_illustrator(stem: str, contenido: str, notas: list) -> str:
+    """Limpia el envoltorio tipico de un export crudo de Adobe Illustrator
+    ANTES de validar contra el estandar (BR.5): declaracion XML, id="Capa_1",
+    version, comentario del generador, xlink:href, <g> envolvente e IDs de
+    degradado genericos. Deliberadamente NO toca fill/stroke/data-fullcolor
+    (decision humana, README 6b) ni una <image> incrustada (sigue siendo un
+    ErrorRecurso explicito en validar_y_convertir: una capa de calco
+    olvidada no se borra en silencio).
+    """
+    contenido = RE_XML_DECL.sub('', contenido, count=1)
+    if RE_COMMENT.search(contenido):
+        contenido = RE_COMMENT.sub('', contenido)
+        notas.append('comentario(s) de Illustrator removidos')
+    if RE_XLINK_HREF.search(contenido):
+        contenido = RE_XLINK_HREF.sub('href=', contenido)
+        notas.append('xlink:href normalizado a href')
+    contenido = RE_XMLNS_XLINK.sub('', contenido)
+    contenido = contenido.strip()
+
+    m_open = RE_SVG_OPEN.match(contenido)
+    if m_open:
+        nuevo_open = _normalizar_atributos_raiz(m_open, notas)
+        if nuevo_open != m_open.group(0):
+            contenido = contenido[:m_open.start()] + nuevo_open + contenido[m_open.end():]
+
+    m_root = RE_ROOT.match(contenido)
+    if m_root:
+        attrs_raiz, cuerpo = m_root.groups()
+        atributos = dict(RE_ATTR.findall(attrs_raiz))
+        if atributos.get('data-fullcolor') == 'true':
+            cuerpo_nuevo = _renombrar_gradientes_illustrator(stem, cuerpo, notas)
+            cuerpo_nuevo = _desenvolver_g_final(cuerpo_nuevo, notas)
+            if cuerpo_nuevo != cuerpo:
+                contenido = f'<svg{attrs_raiz}>{cuerpo_nuevo}</svg>'
+
+    return re.sub(r'>\s+<', '><', contenido).strip()
+
+
 def _convertir_centinela(id_symbol: str, cuerpo: str, es_logo: bool) -> str:
     if es_logo:
         # Silueta monocroma: cualquier fill autoral (menos none/currentColor)
@@ -183,6 +289,12 @@ def _validar_fullcolor(id_symbol: str, cuerpo: str, advertencias: list) -> str:
     El atributo de presentacion en el elemento gana a la herencia y neutraliza
     el problema de raiz.
     """
+    if re.search(r'<image\b', cuerpo, re.IGNORECASE):
+        raise ErrorRecurso(
+            f'{id_symbol}: <image> incrustada. Illustrator suele dejar una capa de calco/'
+            f'referencia sin ocultar antes de exportar: ocultala o borrala en el artboard y '
+            f'reexporta (una imagen rasterizada no es un logo vectorial reproducible por <use>)'
+        )
     for etiqueta in RE_TAG.findall(cuerpo):
         nombre = etiqueta.lower()
         if nombre not in ETIQUETAS_FULLCOLOR:
@@ -309,10 +421,16 @@ def main():
 
     errores = []
     advertencias = []
+    normalizaciones = []
     cuerpos = {}
     for id_symbol, (rel, contenido) in sorted(candidatos.items()):
+        notas = []
+        contenido_normalizado = normalizar_export_illustrator(rel.stem, contenido, notas)
+        if notas:
+            (SVG_ROOT / rel).write_text(contenido_normalizado, encoding='utf-8', newline='\n')
+            normalizaciones.append(f'{rel}: {"; ".join(notas)}')
         try:
-            cuerpos[id_symbol] = validar_y_convertir(id_symbol, contenido, advertencias)
+            cuerpos[id_symbol] = validar_y_convertir(id_symbol, contenido_normalizado, advertencias)
         except ErrorRecurso as e:
             errores.append(f'{rel}: {e}')
 
@@ -361,6 +479,10 @@ def main():
     print(f'Simbolos publicados: {len(orden)}')
     print(f'Plantillas excluidas: {n_plantillas}')
     print('index.html actualizado.' if cambio else 'index.html ya estaba sincronizado (sin cambios).')
+    if normalizaciones:
+        print(f'\nArchivos normalizados en assets/svg/ ({len(normalizaciones)}):')
+        for n in normalizaciones:
+            print(f'  - {n}')
     if errores:
         print(f'\nRecursos excluidos por error ({len(errores)}):')
         for e in errores:

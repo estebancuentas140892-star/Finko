@@ -150,15 +150,6 @@ _(sin pendientes activos.)_
 - Depende de : nada; el pipeline ya soporta color plano y degradados.
 - Modelo     : Sonnet 5 - Medio (revisión visual + integración mecánica)
 
-#### BR.5 - El sync normaliza exports crudos de Illustrator
-- Prioridad  : media-alta (reduce fricción del flujo de diseño en pareja en cada banco de BR.3)
-- Estado     : pendiente
-- Objetivo   : que Esteban pueda soltar el export de Illustrator tal cual (declaración XML, `id="Capa_1"`, comentario del generador, `version`, `xmlns:xlink`, `<g>` envolvente sin transform, `xlink:href` → `href`) y `sync-sprite.py` lo normalice de forma determinista antes de validar, en vez de limpiarlo a mano en cada entrega (ya pasó 2 veces: Nequi y Banco de Bogotá). Incluye: renombrar IDs de gradiente genéricos (`linear-gradient1`) al prefijo del slug, rechazar `<image>` incrustadas con mensaje claro, y agregar `stroke="none"`/`data-fullcolor` NO automáticamente (eso sigue siendo decisión humana). La normalización escribe el archivo limpio de vuelta a `assets/svg/` (la biblioteca sigue siendo la fuente de verdad y el guardarraíl byte a byte sigue válido).
-- Secciones  : Transversal (biblioteca gráfica)
-- Archivos   : `scripts/sync-sprite.py`, `tests/unit/sprite-sync.test.js`, `assets/svg/README.md` (sección 7)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio
-
 #### BR.4 - ADR: logo de marca a color como excepción al monocromo
 - Prioridad  : media (deuda de proceso: se tocó una regla de ADR 025 sin ADR)
 - Estado     : pendiente

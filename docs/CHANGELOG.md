@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): BR.5, el sync normaliza exports crudos de Illustrator · 2026-07-05
+
+Cierra la fricción detrás de las dos limpiezas manuales que ya hicieron falta en BR.3 (Nequi, Banco de Bogotá): `scripts/sync-sprite.py` ahora normaliza el envoltorio típico de un export crudo de Adobe Illustrator **antes** de validar, y reescribe el archivo limpio de vuelta en `assets/svg/` (la biblioteca sigue siendo la fuente de verdad; el guardarraíl byte a byte de `sprite-sync.test.js` sigue válido porque compara contra el archivo ya normalizado en disco).
+
+**Qué normaliza automáticamente** (`normalizar_export_illustrator()`):
+
+- Declaración XML, `id="Capa_1"`, `version`, comentario del generador: se quitan.
+- `xlink:href` → `href` (namespace `xlink` innecesario, se retira si quedó vacío).
+- IDs de degradado por defecto de Illustrator (`linear-gradient`, `linear-gradient1`...): se renombran con el nombre del propio archivo como prefijo (`banco-bogota-g0`, `banco-bogota-g1`...), reescribiendo también sus referencias (`url(#...)`, `href="#..."`). Un id ya prefijado a mano (`bbog-g0`) no matchea el patrón y queda intacto: idempotente.
+- `<g>` bare (sin `transform`/`class`/`style`) envolviendo el bloque final de paths: se desenvuelve.
+
+**Lo que deliberadamente NO automatiza** (sigue siendo decisión humana): `fill`/`stroke` explícitos por elemento y `data-fullcolor="true"` (el sync los exige, no los adivina); una `<image>` incrustada se **rechaza con un error explicando la causa probable** (capa de calco/referencia olvidada), nunca se borra en silencio.
+
+**Validación:** probado con exports sintéticos replicando los dos casos reales (Nequi, Banco de Bogotá) más un ícono simple, confirmando normalización correcta e idempotencia; corrida real contra la biblioteca ya limpia: `index.html ya estaba sincronizado (sin cambios)`, `bbog-g0` intacto. 2104/2104 unit; 147/147 E2E; lint limpio. SW v319 → v320.
+
+| Archivo | Cambio |
+|---|---|
+| `scripts/sync-sprite.py` | Paso 0 nuevo: `normalizar_export_illustrator()` + helpers; reescribe archivos normalizados en `assets/svg/`. |
+| `assets/svg/README.md` | Sección 7: qué normaliza el sync vs. qué sigue siendo checklist manual. |
+| `service-worker.js` | v319 → v320. |
+| `docs/BOARD.md` | Tarjeta BR.5 cerrada y borrada. |
+
+---
+
 ### fix(assets): contorno fantasma en logos a color por herencia CSS vía use · 2026-07-05
 
 Esteban reportó desde su celular dos alteraciones visuales que él no diseñó: contorno blanco alrededor del remolino de Banco de Bogotá y un borde morado en Nequi que hacía percibir el logo más morado que rosa. **Los archivos SVG estaban intactos**: la causa raíz es que la clase `.icon` ([forms.css](../styles/components/forms.css), `fill:none; stroke:currentColor; stroke-width:2.35`) aplica esas propiedades al `<svg>` anfitrión de la teja y **se heredan hacia adentro del `<use>`**: todo elemento del símbolo sin `stroke` propio recibe un contorno del color `texto` de la teja (blanco en BdB, morado `#1f0020` en Nequi, que a 2.35 de grosor devoraba el acento rosa de ~4 unidades). Bancolombia nunca lo sufrió porque sus paths sí llevan `stroke="none"` explícito: esa asimetría fue la pista.

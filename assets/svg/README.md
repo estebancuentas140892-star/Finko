@@ -195,15 +195,36 @@ mano con la tabla de la sección 5):
 - Decimales: **2**.
 - Reducido (minify): ✓. Adaptable (responsive): ✓ (elimina `width`/`height`).
 
-**Checklist después de exportar** (todo esto lo automatizará BR.2; hasta entonces
-se revisa a mano en un editor de texto):
+**Entrega el export tal cual sale de Illustrator, sin limpiarlo a mano** (BR.5):
+`scripts/sync-sprite.py` normaliza automáticamente antes de validar, y reescribe
+el archivo limpio de vuelta en `assets/svg/`:
 
-- [ ] Raíz: solo `xmlns` y `viewBox="0 0 24 24"`; sin `width`, `height`, `id`, `class`.
-- [ ] Sin `<g>` envolventes innecesarios, sin `transform`, sin `defs`/`clipPath`.
+- Declaración XML, `id="Capa_1"`, `version`, comentario del generador: se quitan.
+- `xlink:href` → `href` (namespace `xlink` innecesario).
+- `<g>` bare envolviendo los paths (sin `transform`/`class`/`style`): se desenvuelve.
+- IDs de degradado por defecto (`linear-gradient`, `linear-gradient1`...): se
+  renombran con el nombre del propio archivo como prefijo (`banco-bogota-g0`...).
+  Un id ya prefijado a mano queda intacto (idempotente).
+
+Lo que el sync **no** hace por ti, porque es una decisión de diseño:
+
+- **`fill`/`stroke` explícitos en cada elemento pintable** de un logo a color
+  (sección 6b): si falta, el sync excluye el recurso con el error puntual, no
+  lo adivina.
+- **`data-fullcolor="true"`**: marcarlo es tuyo (ver sección 6b vs. silueta
+  monocroma de la sección 6).
+- **Una `<image>` incrustada** (capa de calco/referencia olvidada): se rechaza
+  con un error explicando la causa probable; nunca se borra en silencio.
+
+**Checklist después de exportar** (lo de arriba ya lo resuelve el sync; solo
+revisa a mano lo que sigue siendo decisión de diseño):
+
 - [ ] Iconos: trazos desnudos (sin `stroke`, `stroke-width`, `fill="none"`);
       duotono y chispa con sus atributos exactos (sección 5).
-- [ ] Logos: todo `fill="currentColor" stroke="none"`.
-- [ ] Decimales ≤ 2, sin texto, sin imágenes incrustadas.
+- [ ] Logos monocromos: todo `fill="currentColor" stroke="none"`.
+- [ ] Logos a color: `data-fullcolor="true"` + `fill`/`stroke` explícitos en
+      cada elemento pintable (sección 6b).
+- [ ] Sin texto, sin imágenes incrustadas (capas de calco olvidadas).
 - [ ] Peso ≤ ~1 KB (los logos de Simple Icons pueden superarlo levemente).
 
 ## 8. Plantillas pendientes (`data-placeholder`)

@@ -7,8 +7,8 @@
 ## Tejas de marca y biblioteca gráfica (logos de bancos y marcas)
 
 - **Objetivo**          : mostrar el logotipo oficial de cada banco/billetera/marca en una teja de color, con fallback de iniciales, en Mis cuentas, Gastos, Deudas, fijos y suscripciones. `assets/svg/` es la fuente de verdad de diseño (ADR 026); el sprite de `index.html` es artefacto generado.
-- **Estado actual**     : en evolución (tarjeta BR.3: 3 bancos a color cerrados, 8 con iniciales; BR.4 ADR pendiente; BR.5 propuesta).
-- **Verificado contra** : commit `0f143f9` (2026-07-05).
+- **Estado actual**     : en evolución (tarjeta BR.3: 3 bancos a color cerrados, 8 con iniciales; BR.4 ADR pendiente). BR.5 (normalización automática de exports crudos) cerrada.
+- **Verificado contra** : commit (pendiente de commitear al cierre de BR.5, 2026-07-05).
 
 **Dónde vive**
 
@@ -20,7 +20,7 @@
 | Detección de marca en texto libre | `modules/infra/marcas.js` | `resolverMarca()`, `normalizarAlias()` | ~35 |
 | Avatar de banco (delega en tejaMarca) | `modules/infra/bancos.js` | `bancoAvatar()` | |
 | Sprite generado (símbolos `b-*`) | `index.html` | marcadores `INICIO/FIN bloque generado por scripts/sync-sprite.py` | |
-| Pipeline biblioteca → sprite | `scripts/sync-sprite.py` | `validar_y_convertir()`, `_validar_fullcolor()`, `orden_final()` | |
+| Pipeline biblioteca → sprite | `scripts/sync-sprite.py` | `normalizar_export_illustrator()` (paso 0, BR.5), `validar_y_convertir()`, `_validar_fullcolor()`, `orden_final()` | |
 | Archivos de diseño | `assets/svg/logos/**` | 1 archivo = 1 símbolo (`<slug>.svg` → `b-<slug>`) | |
 | Estándar técnico y flujo de trabajo | `assets/svg/README.md` | secciones 6, 6b (logos a color), 7 (export), 9 (flujo en pareja) | |
 | CSS de la teja | `styles/components/nudges.css` | `.bank-avatar`, `.bank-avatar__glifo` | ~275 |
@@ -37,13 +37,16 @@
 - IDs internos de gradiente deben ser únicos en todo el sprite (prefijo del slug, ej. `bbog-g0`); el sync lo verifica.
 - `BANCOS_CO[].id` se guarda en `localStorage` (datos del usuario): **nunca renombrar ids**. Renombrar un archivo `.svg` publicado rompe el campo `simbolo` (breaking change; ver `ID_ANTERIOR` en el sync para preservar posición).
 - El sync aborta sin escribir (`ErrorProduccion`) si un símbolo publicado perdería su archivo fuente; un archivo a medio pulir se excluye sin bloquear (`ErrorRecurso`).
+- El sync (BR.5) reescribe archivos de `assets/svg/` en el disco cuando normaliza un export crudo (declaración XML, `id="Capa_1"`, comentario, `xlink:href`, `<g>` bare, IDs de degradado genéricos): correrlo puede dejar cambios sin commitear en la biblioteca, revisar `git status` después.
+- Una `<image>` incrustada NUNCA se borra en silencio (ni en la normalización ni en la validación): se rechaza con error explicando la causa probable (capa de calco de Illustrator).
 - No editar a mano el bloque generado de `index.html`.
 - Todo cambio de assets en producción bumpea `CACHE_NAME` en `service-worker.js`.
 
-**Cambios pendientes**: resto de bancos con iniciales (BR.3); ADR de la excepción de logo a color (BR.4); normalización automática de exports crudos de Illustrator en el sync (BR.5, propuesta).
+**Cambios pendientes**: resto de bancos con iniciales (BR.3); ADR de la excepción de logo a color (BR.4).
 
 **Cambios realizados**:
 
+- 2026-07-05: BR.5, el sync normaliza exports crudos de Illustrator antes de validar (declaración XML, `id="Capa_1"`, comentario, `xlink:href`, `<g>` bare, IDs de degradado genéricos) y reescribe el archivo limpio en `assets/svg/`.
 - 2026-07-05 `0f143f9`: fix del contorno fantasma (stroke explícito + validador + guardarraíl + README 6b).
 - 2026-07-05 `2b5ae36`: Nequi a color (monograma) + limpieza de exports crudos.
 - 2026-07-05: Bancolombia y Banco de Bogotá a color (`data-fullcolor`), sync extendido a degradados.
