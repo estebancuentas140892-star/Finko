@@ -1860,6 +1860,46 @@ describe('renderListaCompromisos() - categoría en el contexto', () => {
   });
 });
 
+// ── renderListaCompromisos() - teja de marca (MK.2) ───────────────
+
+describe('renderListaCompromisos() - teja de marca en el ícono', () => {
+  const deudaBase = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+    diaPago: 5, categoria: null, tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+  });
+
+  it('una deuda que nombra una billetera con glifo muestra su teja de marca', () => {
+    S.compromisos = [deudaBase({ descripcion: 'Crédito Nequi' })];
+    renderListaCompromisos();
+    const teja = document.querySelector('.list-item__icon .bank-avatar');
+    expect(teja).not.toBeNull();
+    expect(teja.innerHTML).toContain('#b-nequi');
+  });
+
+  it('una deuda que nombra un banco sin glifo muestra sus iniciales sobre su color', () => {
+    S.compromisos = [deudaBase({ descripcion: 'Tarjeta Bancolombia' })];
+    renderListaCompromisos();
+    const teja = document.querySelector('.list-item__icon .bank-avatar');
+    expect(teja).not.toBeNull();
+    expect(teja.textContent).toBe('BC');
+    expect(teja.getAttribute('style')).toContain('background:#FFC727');
+  });
+
+  it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {
+    S.compromisos = [deudaBase({ descripcion: 'Tarjeta Visa' })];
+    renderListaCompromisos();
+    expect(document.querySelector('.list-item__icon .bank-avatar')).toBeNull();
+    expect(document.querySelector('.list-item__icon svg')).not.toBeNull();
+  });
+});
+
 // ── renderAlertaDeudasDurmiendo() ────────────────────────────────
 
 describe('renderAlertaDeudasDurmiendo() - saldo pendiente (regresión $NaN)', () => {

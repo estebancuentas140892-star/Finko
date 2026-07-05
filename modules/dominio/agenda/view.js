@@ -11,6 +11,7 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
+import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_EMOJI } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia } from './logic.js';
@@ -344,12 +345,15 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   const label = _esc(LABEL_TIPO[tipo] ?? tipo);
   const desc  = _esc(c.descripcion ?? '(sin descripción)');
   const frec  = _esc(c.frecuencia ?? '');
-  // AG.2: con categoría, el emoji pasa a ser el ícono principal (izquierda),
-  // como en Gastos; el subtítulo ya no repite el emoji, solo el nombre.
-  // Sin categoría (o en deudas, campo exclusivo de tipo=fijo), fallback al
-  // ícono genérico del tipo.
-  const emojiCategoria = (tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_EMOJI[c.categoria] : null;
-  const icono   = emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring');
+  // MK.2 (ADR 025): si el nombre menciona una marca conocida (Netflix, Claro,
+  // Bancolombia...), la teja de marca es el ícono principal. Con categoría
+  // predefinida el nombre que escribió el usuario vive en `nota` (AG.4), por
+  // eso se buscan ambos campos. Sin marca aplica AG.2: con categoría, el
+  // emoji es el ícono principal (izquierda), como en Gastos; sin categoría
+  // (o en deudas, campo exclusivo de tipo=fijo), el ícono genérico del tipo.
+  const marca = resolverMarca(`${c.descripcion ?? ''} ${c.nota ?? ''}`);
+  const emojiCategoria = (!marca && tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_EMOJI[c.categoria] : null;
+  const icono   = marca ? tejaMarca(marca) : (emojiCategoria ?? icon(ICONO_TIPO[tipo] ?? 'recurring'));
   // AG.4: con categoría predefinida, el título (desc) ya ES la categoría
   // (normalizarCompromiso), así que repetirla aquí sería redundante. Solo se
   // muestra cuando difieren (p. ej. categoría "Otro" con nombre propio).

@@ -564,6 +564,71 @@ describe('renderAgenda() - emoji de categoría como ícono principal', () => {
   });
 });
 
+// ── renderAgenda() - teja de marca como ícono principal (MK.2) ────
+
+describe('renderAgenda() - teja de marca como ícono principal', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con la marca en la nota (AG.4: categoría predefinida), la teja gana al emoji de categoría', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual',
+      descripcion: 'Streaming', categoria: 'Streaming', nota: 'Netflix',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const iconoEl = document.querySelector('.cal-detail__icon');
+    expect(iconoEl.querySelector('.bank-avatar')).not.toBeNull();
+    expect(iconoEl.innerHTML).toContain('#b-netflix');
+    expect(iconoEl.textContent).not.toContain(CATEGORIA_AGENDA_EMOJI['Streaming']);
+  });
+
+  it('con la marca en la descripción (categoría "Otro"), también resuelve', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', descripcion: 'Spotify familiar', categoria: 'Otro',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__icon').innerHTML).toContain('#b-spotify');
+  });
+
+  it('una deuda que nombra un banco muestra su teja con iniciales y color', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd1', diaPago: 15, frecuencia: 'Mensual', tipo: 'deuda-entidad',
+      descripcion: 'Tarjeta Bancolombia', cuotaMensual: 200_000, saldoTotal: 2_000_000,
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const teja = document.querySelector('.cal-detail__icon .bank-avatar');
+    expect(teja).not.toBeNull();
+    expect(teja.textContent).toBe('BC');
+    expect(teja.getAttribute('style')).toContain('background:#FFC727');
+  });
+
+  it('sin marca en el nombre, el fallback de AG.2 queda intacto (emoji o ícono del tipo)', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual', categoria: 'Internet' })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const iconoEl = document.querySelector('.cal-detail__icon');
+    expect(iconoEl.querySelector('.bank-avatar')).toBeNull();
+    expect(iconoEl.textContent).toContain(CATEGORIA_AGENDA_EMOJI['Internet']);
+  });
+});
+
 // ── renderAgenda() - nombre automático por categoría (AG.4) ───────
 
 describe('renderAgenda() - nombre automático por categoría', () => {

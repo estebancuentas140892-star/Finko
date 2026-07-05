@@ -823,6 +823,15 @@
   font-size: 1.375rem;
 }
 
+/* MK.2 (ADR 025): con teja de marca dentro, el círculo tintado por tipo se
+   apaga: la teja trae su propio color de marca y su propio radio (mismo
+   patrón que .list-item__icon:has(.bank-avatar) de atoms.css). overflow
+   visible para que el radio de la teja no quede recortado al círculo. */
+.cal-detail__icon:has(.bank-avatar) {
+  background: transparent;
+  overflow: visible;
+}
+
 .cal-detail__body {
   min-width: 0;
 }

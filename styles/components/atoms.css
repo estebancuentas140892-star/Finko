@@ -73,6 +73,7 @@
   }
 }
 .list-item__icon {
+  position: relative;  /* ancla del badge de orden superpuesto (MK.2) */
   width: var(--fk-space-10);
   height: var(--fk-space-10);
   border-radius: var(--fk-radius-md);
@@ -156,6 +157,21 @@
 /* Cuando el icono contiene un bank-avatar, el wrapper no aporta bg propio */
 .list-item__icon:has(.bank-avatar) {
   background: transparent;
+}
+
+/* MK.2 (ADR 025): en la lista de deudas, el badge de orden de la estrategia
+   ya no reemplaza al ícono: se superpone reducido en la esquina de la teja
+   de marca o del ícono del tipo. El aro del color de la superficie lo
+   despega de lo que tenga debajo. La base 2rem circular vive en charts.css
+   (la card de estrategia lo sigue usando a tamaño completo). */
+.list-item__icon .orden-badge {
+  position: absolute;
+  top: calc(-1 * var(--fk-space-1));
+  right: calc(-1 * var(--fk-space-1));
+  width: 18px;
+  height: 18px;
+  font-size: 0.625rem;
+  border: 2px solid var(--fk-bg-surface);
 }
 
 /* Gastos: icono de categoría sobrio. En vez de un fondo de color por

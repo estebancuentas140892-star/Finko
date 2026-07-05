@@ -11,6 +11,7 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
+import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import {
   compromisosActivos,
   proximoVencimiento,
@@ -87,7 +88,11 @@ export function renderListaCompromisos() {
 function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
-  const icono    = icon(ICONO_TIPO[tipo] ?? 'recurring');
+  // MK.2 (ADR 025): si el nombre de la deuda menciona una marca o entidad
+  // conocida ("Tarjeta Bancolombia", "Crédito Nequi"), la teja de marca es
+  // el ícono de la card; sin match, el ícono genérico del tipo.
+  const marca    = resolverMarca(compromiso.descripcion);
+  const icono    = marca ? tejaMarca(marca) : icon(ICONO_TIPO[tipo] ?? 'recurring');
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
   const dias     = proximoVencimiento(compromiso);
@@ -171,9 +176,12 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
                data-id="${_esc(compromiso.id)}"
                aria-label="Eliminar deuda ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`;
 
+  // MK.2: el badge de orden ya no reemplaza al ícono, se superpone en la
+  // esquina de la teja o del ícono del tipo (CSS .list-item__icon .orden-badge):
+  // así la identidad de marca y la posición en la estrategia conviven.
   return `
     <article class="list-item" data-id="${_esc(compromiso.id)}">
-      <div class="list-item__icon" aria-hidden="true">${ordenBadge || icono}</div>
+      <div class="list-item__icon" aria-hidden="true">${icono}${ordenBadge}</div>
       <div class="list-item__body">
         <p class="list-item__title">${desc}
           <span class="${chipClase}" aria-label="${diasLabel}">${diasLabel}</span>

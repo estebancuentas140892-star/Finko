@@ -271,6 +271,10 @@ export const VIGENCIA_2026 = VIGENCIA;
  *               campo, la teja muestra las iniciales. Regla de fidelidad (ADR 025 D5):
  *               solo se agrega un glifo verificado contra el isotipo oficial; nunca se
  *               inventa un logo de memoria.
+ *   aliases   - opcional (MK.2, ADR 025 D4): formas cortas con que el usuario nombra
+ *               la entidad en un texto libre ("bbva", "colpatria"), ya normalizadas
+ *               (minúsculas, sin tildes). El id completo normalizado siempre cuenta
+ *               como alias implícito; ver resolverMarca() en infra/marcas.js.
  *
  * Agregar un banco nuevo no rompe datos existentes: el id es el valor guardado.
  * Nequi usa sus colores oficiales verificados (fondo berenjena #200020, isotipo
@@ -281,16 +285,77 @@ export const BANCOS_CO = [
   { id: 'Bancolombia',          iniciales: 'BC', color: '#FFC727', texto: '#1a1a1a', clase: 'banco'     },
   { id: 'Davivienda',           iniciales: 'DV', color: '#E31837', texto: '#ffffff', clase: 'banco'     },
   { id: 'Banco de Bogotá',      iniciales: 'BB', color: '#00438C', texto: '#ffffff', clase: 'banco'     },
-  { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff', clase: 'banco'     },
+  { id: 'BBVA Colombia',        iniciales: 'BV', color: '#004A9C', texto: '#ffffff', clase: 'banco',     aliases: ['bbva'] },
   { id: 'Banco Popular',        iniciales: 'BP', color: '#0B5394', texto: '#ffffff', clase: 'banco'     },
-  { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Scotiabank Colpatria', iniciales: 'SC', color: '#EC111A', texto: '#ffffff', clase: 'banco',     aliases: ['scotiabank', 'colpatria'] },
   { id: 'Banco de Occidente',   iniciales: 'BO', color: '#005B8E', texto: '#ffffff', clase: 'banco'     },
-  { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff', clase: 'banco'     },
+  { id: 'Banco AV Villas',      iniciales: 'AV', color: '#E4002B', texto: '#ffffff', clase: 'banco',     aliases: ['av villas'] },
   { id: 'Nequi',                iniciales: 'Nq', color: '#200020', texto: '#CA0080', clase: 'billetera', simbolo: 'b-nequi'  },
   { id: 'Daviplata',            iniciales: 'Dp', color: '#FF8000', texto: '#ffffff', clase: 'billetera' },
-  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera', simbolo: 'b-nubank' },
-  { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff', clase: 'billetera' },
+  { id: 'Nubank',               iniciales: 'Nu', color: '#820AD1', texto: '#ffffff', clase: 'billetera', simbolo: 'b-nubank', aliases: ['nu'] },
+  { id: 'Lulo Bank',            iniciales: 'LB', color: '#FF5A1F', texto: '#ffffff', clase: 'billetera', aliases: ['lulo'] },
   { id: 'Otro',                 iniciales: '?',  color: '#6B7280', texto: '#ffffff', clase: 'otro'      },
+];
+
+/**
+ * Marcas globales de suscripciones y servicios (MK.2, ADR 025 D2/D4).
+ *
+ * Cada entrada tiene:
+ *   id        - slug estable de la marca (no se guarda en datos del usuario:
+ *               la resolución es siempre por texto libre vía aliases).
+ *   nombre    - nombre comercial para mostrar.
+ *   aliases   - palabras o frases normalizadas (minúsculas, sin tildes, sin
+ *               signos) con que el usuario suele escribir la marca. El match
+ *               es por palabra o frase completa, nunca substring: "clarooscuro"
+ *               NO resuelve a Claro. El orden del catálogo importa: gana la
+ *               primera entrada cuyo alias aparezca ("Google Gemini" resuelve
+ *               a Gemini porque Gemini está antes que Google).
+ *   color     - fondo de la teja (color oficial de la marca).
+ *   texto     - color del glifo o las iniciales encima.
+ *   iniciales - fallback visual cuando no hay glifo (ADR 025 D2).
+ *   simbolo   - opcional: id del <symbol> b-* del sprite de index.html.
+ *
+ * Regla de fidelidad (D5): los glifos provienen de Simple Icons 16.25.0 (CC0),
+ * verificados uno a uno el 2026-07-05. Disney+, Claro, Tigo y Rappi no están
+ * en Simple Icons y ChatGPT/OpenAI fue retirado de su versión vigente: esas
+ * marcas quedan con iniciales (fallback natural, D2) hasta tener referencia
+ * vectorial confiable. Colores: los de Simple Icons son oficiales; los de
+ * Disney+, ChatGPT, Claro, Tigo, Prime Video y el fondo de Platzi son
+ * aproximaciones documentadas (mismo tratamiento que tuvo Nequi antes de
+ * MK.1); Rappi (#FF441F) está verificado contra el theme-color de su sitio.
+ * Retirar una marca = borrar su fila: el consumidor cae al ícono de categoría.
+ */
+export const MARCAS = [
+  // Streaming y entretenimiento
+  { id: 'netflix',     nombre: 'Netflix',      aliases: ['netflix'],                                 color: '#E50914', texto: '#ffffff', iniciales: 'N',  simbolo: 'b-netflix' },
+  { id: 'spotify',     nombre: 'Spotify',      aliases: ['spotify'],                                 color: '#1ED760', texto: '#121212', iniciales: 'S',  simbolo: 'b-spotify' },
+  { id: 'youtube',     nombre: 'YouTube',      aliases: ['youtube'],                                 color: '#FF0000', texto: '#ffffff', iniciales: 'YT', simbolo: 'b-youtube' },
+  { id: 'disneyplus',  nombre: 'Disney+',      aliases: ['disney'],                                  color: '#113CCF', texto: '#ffffff', iniciales: 'D+' },
+  { id: 'hbomax',      nombre: 'HBO Max',      aliases: ['hbo'],                                     color: '#000000', texto: '#ffffff', iniciales: 'HB', simbolo: 'b-hbomax' },
+  { id: 'primevideo',  nombre: 'Prime Video',  aliases: ['prime video', 'amazon prime', 'amazon'],   color: '#00A8E1', texto: '#ffffff', iniciales: 'PV' },
+  { id: 'crunchyroll', nombre: 'Crunchyroll',  aliases: ['crunchyroll'],                             color: '#FF5E00', texto: '#ffffff', iniciales: 'CR', simbolo: 'b-crunchyroll' },
+  // Tecnología e IA
+  { id: 'icloud',      nombre: 'iCloud',       aliases: ['icloud'],                                  color: '#3693F3', texto: '#ffffff', iniciales: 'iC', simbolo: 'b-icloud' },
+  { id: 'apple',       nombre: 'Apple',        aliases: ['apple'],                                   color: '#000000', texto: '#ffffff', iniciales: 'A',  simbolo: 'b-apple' },
+  { id: 'claude',      nombre: 'Claude',       aliases: ['claude', 'anthropic'],                     color: '#D97757', texto: '#ffffff', iniciales: 'C',  simbolo: 'b-claude' },
+  { id: 'chatgpt',     nombre: 'ChatGPT',      aliases: ['chatgpt', 'chat gpt', 'openai'],           color: '#10A37F', texto: '#ffffff', iniciales: 'AI' },
+  { id: 'gemini',      nombre: 'Gemini',       aliases: ['gemini'],                                  color: '#8E75B2', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-googlegemini' },
+  { id: 'google',      nombre: 'Google',       aliases: ['google'],                                  color: '#4285F4', texto: '#ffffff', iniciales: 'G',  simbolo: 'b-google' },
+  // Pagos
+  { id: 'paypal',      nombre: 'PayPal',       aliases: ['paypal', 'pay pal'],                       color: '#002991', texto: '#ffffff', iniciales: 'PP', simbolo: 'b-paypal' },
+  { id: 'mercadopago', nombre: 'Mercado Pago', aliases: ['mercado pago', 'mercadopago'],             color: '#00B1EA', texto: '#ffffff', iniciales: 'MP', simbolo: 'b-mercadopago' },
+  // Telefonía e internet
+  { id: 'movistar',    nombre: 'Movistar',     aliases: ['movistar'],                                color: '#019DF4', texto: '#ffffff', iniciales: 'M',  simbolo: 'b-movistar' },
+  { id: 'claro',       nombre: 'Claro',        aliases: ['claro'],                                   color: '#DA291C', texto: '#ffffff', iniciales: 'CL' },
+  { id: 'tigo',        nombre: 'Tigo',         aliases: ['tigo'],                                    color: '#00377B', texto: '#ffffff', iniciales: 'TG' },
+  // Transporte y domicilios
+  { id: 'uber',        nombre: 'Uber',         aliases: ['uber'],                                    color: '#000000', texto: '#ffffff', iniciales: 'U',  simbolo: 'b-uber' },
+  { id: 'rappi',       nombre: 'Rappi',        aliases: ['rappi', 'rappipro'],                       color: '#FF441F', texto: '#ffffff', iniciales: 'R'  },
+  // Gaming y educación
+  { id: 'playstation', nombre: 'PlayStation',  aliases: ['playstation', 'play station', 'ps plus'],  color: '#0070D1', texto: '#ffffff', iniciales: 'PS', simbolo: 'b-playstation' },
+  { id: 'xbox',        nombre: 'Xbox',         aliases: ['xbox', 'game pass', 'gamepass'],           color: '#107C10', texto: '#ffffff', iniciales: 'XB' },
+  { id: 'duolingo',    nombre: 'Duolingo',     aliases: ['duolingo'],                                color: '#58CC02', texto: '#ffffff', iniciales: 'DU', simbolo: 'b-duolingo' },
+  { id: 'platzi',      nombre: 'Platzi',       aliases: ['platzi'],                                  color: '#121F3D', texto: '#98CA3F', iniciales: 'PL', simbolo: 'b-platzi' },
 ];
 
 /**

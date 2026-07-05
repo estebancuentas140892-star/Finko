@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): MK.2, detección de marca por nombre en fijos, suscripciones y deudas · 2026-07-05
+
+Segunda fase del [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (D4): la teja de marca llega a los nombres libres. Módulo nuevo `infra/marcas.js` con `resolverMarca(texto)`: normaliza el texto del usuario (minúsculas, sin tildes, signos a espacio) y lo compara contra aliases por **palabra o frase completa**, nunca substring ("Netflix Premium" resuelve a Netflix; "clarooscuro" NO resuelve a Claro). Busca primero en el catálogo nuevo `MARCAS` y después en `BANCOS_CO` (solo bancos y billeteras, con el id como alias implícito: una deuda "Tarjeta Bancolombia" hereda la identidad del banco; Efectivo y Otro quedan excluidos porque "otro" es palabra común). Sin match devuelve null y el consumidor cae a su ícono de categoría o de tipo: el fallback automático del ADR.
+
+**Catálogo `MARCAS` (24 marcas).** 17 con glifo oficial de **Simple Icons 16.25.0** (CC0), descargados de la versión fijada y copiados por script, sin transcripción manual (regla de fidelidad D5): Netflix, Spotify, YouTube, HBO Max, Crunchyroll, iCloud, Apple, Claude, Gemini, Google, PayPal, Mercado Pago, Movistar, Uber, PlayStation, Duolingo y Platzi. Hallazgo de cobertura: el CDN con `@latest` servía **caché vieja de la v15**; contra la versión vigente real, OpenAI, Amazon, Prime Video y Xbox ya **no están** en Simple Icons (retiros posteriores al análisis del ADR), y Disney+, Claro, Tigo y Rappi nunca estuvieron. Esas 7 entran con iniciales sobre su color (el fallback natural de D2): ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox. Rappi verificado en `#FF441F` contra el theme-color de su propio sitio; Disney+, ChatGPT, Claro, Tigo, Prime Video y el fondo de Platzi quedan como aproximaciones documentadas en el JSDoc (mismo tratamiento que tuvo Nequi antes de MK.1).
+
+**Consumidores.** Calendario (detalle del día): la teja de marca gana al emoji de categoría; con categoría predefinida el nombre del usuario vive en `nota` (AG.4), así que se buscan `descripcion` y `nota` juntas ("Streaming" + nota "Netflix" resuelve). Deudas (lista): la teja reemplaza al ícono genérico del tipo cuando el nombre menciona una marca o un banco. Cambio de convivencia necesario: el **badge de orden de la estrategia ya no reemplaza al ícono** (antes `badge || icono`, y como casi toda deuda activa es "pagable", la teja jamás se habría visto); ahora se superpone reducido (18px) en la esquina de la teja o del ícono, con aro del color de la superficie. La card de estrategia sigue usando el badge a tamaño completo.
+
+**Unificación de render.** `bancoAvatar()` de `infra/bancos.js` ahora delega en `tejaMarca()` de `marcas.js`: un solo render de teja en toda la app, mismo HTML (`.bank-avatar`, glifo al ~62% o iniciales, colores inline). `BANCOS_CO` gana el campo opcional `aliases` (bbva, scotiabank, colpatria, av villas, nu, lulo) para los nombres cortos con que el usuario escribe su banco.
+
+Guardarraíles nuevos en tests: todo alias debe venir ya normalizado, ningún alias puede repetirse entre marcas ni chocar con un banco, y todo `simbolo` declarado debe existir como `<symbol>` en el sprite. 2088/2088 unit (+32: suite nueva `marcas` con 25, +4 en `agenda`, +3 en `compromisos`); 147/147 E2E sin cambios. SW v307 → v308. Pendiente: validación del usuario en su celular (calidad visual de los glifos y del badge superpuesto).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | Catálogo `MARCAS` (24 entradas) + campo `aliases` en `BANCOS_CO`. |
+| `index.html` | 17 símbolos `b-*` nuevos en el sprite (Simple Icons 16.25.0, insertados por script). |
+| `modules/infra/marcas.js` | Módulo nuevo: `normalizarAlias`, `resolverMarca`, `tejaMarca`. |
+| `modules/infra/bancos.js` | `bancoAvatar()` delega en `tejaMarca()` (render único de teja). |
+| `modules/dominio/agenda/view.js` | Teja de marca como ícono principal del detalle del día (descripcion + nota). |
+| `modules/dominio/compromisos/views/lista.js` | Teja de marca en la card de deuda; badge de orden superpuesto, ya no excluyente. |
+| `styles/components/atoms.css` | Badge de orden reducido y superpuesto en la esquina del ícono. |
+| `styles/components/config.css` | `.cal-detail__icon:has(.bank-avatar)`: apaga el tinte del tipo bajo la teja. |
+| `tests/unit/marcas.test.js` | Suite nueva (25 tests): normalización, resolución, integridad del catálogo, teja. |
+| `tests/unit/agenda.test.js`, `tests/unit/compromisos.test.js` | Tests de integración de la teja en ambas vistas (+7). |
+| `service-worker.js` | Precache de `marcas.js`; v307 → v308. |
+
+---
+
 ### feat(ui): MK.1, teja de marca con glifos oficiales en Mis cuentas · 2026-07-04
 
 Primera implementación del [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) (D1/D2). El avatar de banco evoluciona a **teja de marca**: `BANCOS_CO` gana el campo opcional `simbolo` (id de `<symbol>` del sprite) y `bancoAvatar()` renderiza el glifo oficial cuando existe, o las iniciales sobre el color corporativo como fallback. La clase `.bank-avatar` y la firma de la función se conservan, así que los tres consumidores (lista de cuentas de Mis cuentas, picker de cuentas, hints de formularios) reciben el cambio sin tocarse.

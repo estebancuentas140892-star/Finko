@@ -3,7 +3,7 @@
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
-> Última actualización: 2026-07-04.
+> Última actualización: 2026-07-05.
 
 ---
 
@@ -130,7 +130,7 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6 y MK.1 cerradas (2026-07-04). Quedan MK.2 (marcas globales por alias), ID.3 (categorías Finko v2 en tejas) e ID.7 (estructurales a v2). Orden sugerido: MK.2 → ID.3; ID.7 puede intercalarse. Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`.
+> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)). ID.1, ID.4, ID.2, ID.6, MK.1 y MK.2 cerradas (2026-07-05). Quedan ID.3 (categorías Finko v2 en tejas) e ID.7 (estructurales a v2); ID.7 puede intercalarse. Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`.
 
 #### ID.7 - Símbolos estructurales al lenguaje v2
 - Prioridad  : media
@@ -139,15 +139,6 @@ _(sin pendientes activos.)_
 - Secciones  : Transversal
 - Archivos   : `index.html` (sprite)
 - Depende de : validación visual de ID.6
-- Modelo     : Sonnet 5 - Alto
-
-#### MK.2 - Detección de marca por nombre en fijos, suscripciones y deudas
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : `resolverMarca(texto)` por aliases normalizados ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D4) + ~20 marcas globales de suscripciones y servicios (Netflix, Spotify, YouTube, Disney+, HBO Max, Prime Video, Claude, OpenAI, Gemini, PayPal, Mercado Pago, Movistar, Claro, Tigo...), glifos de Simple Icons (CC0, cobertura verificada en el ADR). Fallback automático a la teja de categoría cuando no hay match. Consumidores: Calendario (fijos/suscripciones) y Deudas.
-- Secciones  : Calendario, Deudas
-- Archivos   : `index.html` (sprite), `modules/core/constants.js`, `modules/infra/bancos.js` (generalizado o módulo `marcas.js` nuevo), `modules/dominio/agenda/view.js`, `modules/dominio/compromisos/views/lista.js`, `tests/`
-- Depende de : nada (MK.1 cerrada: la teja `.bank-avatar` y el campo `simbolo` ya existen)
 - Modelo     : Sonnet 5 - Alto
 
 #### ID.3 - Iconos de categorías Finko v2 en tejas por dominio (re-cortada por ADR 025)

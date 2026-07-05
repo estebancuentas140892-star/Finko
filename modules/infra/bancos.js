@@ -10,6 +10,7 @@
  */
 
 import { BANCOS_CO } from '../core/constants.js';
+import { tejaMarca } from './marcas.js';
 
 /** Emoji por clase de entidad, para usar en contextos donde no cabe el avatar
  *  con color (ej. un <option> nativo de un <select>). */
@@ -33,17 +34,10 @@ const CLASE_EMOJI = {
  * @returns {string} HTML del span `.bank-avatar`.
  */
 export function bancoAvatar(bancoId) {
-  const banco = BANCOS_CO.find(b => b.id === bancoId);
-  const color = banco ? banco.color : '#6B7280';
-  const texto = banco ? banco.texto : '#ffffff';
-
-  const contenido = banco?.simbolo
-    ? `<svg class="icon bank-avatar__glifo"><use href="#${banco.simbolo}"/></svg>`
-    : (banco ? banco.iniciales : '?');
-
-  return `<span class="bank-avatar"
-               style="background:${color};color:${texto}"
-               aria-hidden="true">${contenido}</span>`;
+  const banco = BANCOS_CO.find(b => b.id === bancoId) ?? null;
+  // MK.2: el render de la teja vive en infra/marcas.js (una sola fuente);
+  // con banco desconocido, tejaMarca(null) devuelve la teja gris con "?".
+  return tejaMarca(banco);
 }
 
 /**
