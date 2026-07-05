@@ -8,7 +8,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución (tarjetas **IN.4**, **IN.6**, **CAL.1**, **TX.8** en `BOARD.md`, análisis en curso). **IN.7** cerrada.
-- **Verificado contra** : (commit de IN.7, 2026-07-05).
+- **Verificado contra** : `623a654` (2026-07-05, IN.7).
 
 **Dónde vive**
 
