@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): BR.4, ADR 027 formaliza la excepción de logo a color · 2026-07-05
+
+Cierre de la iniciativa Biblioteca de recursos gráficos: registro formal, en un ADR nuevo, de una decisión que Esteban ya había tomado e implementado sin ADR (deuda de proceso señalada en BR.3). [ADR 027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md) amplía la sección D2 de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) ("glifos monocromos de un solo path") con la excepción `data-fullcolor`, ya vigente en los 11 bancos/billeteras reales de `BANCOS_CO`.
+
+Contenido del ADR: cuándo aplica la excepción (D1, juicio humano: marcas cuya identidad ES el color), el marcado `data-fullcolor="true"` (D2), archivo autónomo conservado byte a byte sin conversión de colores (D3), color de teja igual al color del propio fondo del logo, con el criterio de esquinas para degradados/mosaicos ya usado en BR.3 (D4), el guardarraíl técnico de `fill`/`stroke` explícitos que previene el bug del contorno fantasma (`0f143f9`) en cualquier símbolo fullcolor futuro (D5), IDs de degradado prefijados por slug (D6) y su convivencia con la fidelidad D5 de ADR 025 (D7). También actualiza la línea "Estado" de ADR 025 para apuntar hacia el nuevo ADR.
+
+Con BR.4 cerrada, la iniciativa Biblioteca de recursos gráficos (ADR 026 + ADR 027) queda completa: BR.1, BR.2, BR.3, BR.4 y BR.5 sin pendientes. Solo documentación: cero cambios de código, app intacta, sin bump de SW.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md` | ADR nuevo: excepción de logo a color (`data-fullcolor`), D1 a D7. |
+| `docs/DECISIONS/025-logotipos-de-marca-y-tejas.md` | Línea "Estado" actualizada: referencia hacia ADR 027. |
+| `docs/contexto/transversal.md` | Ficha actualizada: BR.4 pasa de pendiente a cambio realizado, `Verificado contra` al día. |
+| `docs/BOARD.md` | Tarjeta BR.4 cerrada y borrada; iniciativa Biblioteca de recursos gráficos marcada **COMPLETA**. |
+
+---
+
 ### feat(assets): BR.3 completa, los 11 bancos/billeteras de BANCOS_CO a color · 2026-07-05
 
 Cierre de la iniciativa de biblioteca gráfica para banca CO. Esteban entregó, en el mismo lote, exports de Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, DaviPlata, Lulo Bank y Nubank, y minutos después (en vivo, mientras se integraban los anteriores) también Banco de Occidente y AV Villas: **9 bancos de un tirón**. Con Bancolombia, Banco de Bogotá y Nequi ya cerrados antes, **los 11 bancos/billeteras de `BANCOS_CO` quedan con glifo oficial a color**; el único sin símbolo es "Otro" (deliberado: no es una entidad real, es el fallback genérico).

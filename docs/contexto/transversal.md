@@ -7,8 +7,8 @@
 ## Tejas de marca y biblioteca gráfica (logos de bancos y marcas)
 
 - **Objetivo**          : mostrar el logotipo oficial de cada banco/billetera/marca en una teja de color, con fallback de iniciales, en Mis cuentas, Gastos, Deudas, fijos y suscripciones. `assets/svg/` es la fuente de verdad de diseño (ADR 026); el sprite de `index.html` es artefacto generado.
-- **Estado actual**     : BR.3 completa (2026-07-05): los 11 bancos/billeteras reales de `BANCOS_CO` tienen glifo a color; solo "Otro" (no es una entidad real) sigue con iniciales. BR.5 (normalización automática de exports crudos) cerrada. Pendiente: BR.4 (formalizar el ADR de la excepción de logo a color).
-- **Verificado contra** : commit (pendiente de commitear al cierre de BR.3, 2026-07-05).
+- **Estado actual**     : BR.3 completa (2026-07-05): los 11 bancos/billeteras reales de `BANCOS_CO` tienen glifo a color; solo "Otro" (no es una entidad real) sigue con iniciales. BR.5 (normalización automática de exports crudos) y BR.4 (ADR 027, excepción de logo a color) cerradas. Iniciativa Biblioteca de recursos gráficos completa.
+- **Verificado contra** : `92934a0` (BR.3) más el ADR 027 de este cierre (BR.4), 2026-07-05.
 
 **Dónde vive**
 
@@ -42,10 +42,11 @@
 - No editar a mano el bloque generado de `index.html`.
 - Todo cambio de assets en producción bumpea `CACHE_NAME` en `service-worker.js`.
 
-**Cambios pendientes**: ADR de la excepción de logo a color (BR.4).
+**Cambios pendientes**: ninguno activo (iniciativa Biblioteca de recursos gráficos completa).
 
 **Cambios realizados**:
 
+- 2026-07-05: BR.4, [ADR 027](../DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md) formaliza la excepción de logo a color (`data-fullcolor`): cuándo aplica (D1), archivo autónomo conservado byte a byte (D3), color de teja = color del propio fondo del logo (D4), guardarraíl de `fill`/`stroke` explícitos (D5), IDs de degradado prefijados (D6) y convivencia con la fidelidad de ADR 025 (D7). Amplía [ADR 025](../DECISIONS/025-logotipos-de-marca-y-tejas.md) D2. Solo doc, sin cambio de código ni bump de SW.
 - 2026-07-05: BR.3 completa. 9 bancos/billeteras más a color de un tirón (Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, DaviPlata, Lulo Bank, Nubank, Banco de Occidente, AV Villas), todos con la misma imagen de calco incrustada de Illustrator retirada. DaviPlata/Davivienda con degradado en español (`Degradado_sin_nombre_N`, regex de BR.5 ampliado); Banco de Occidente con fondo de mosaico de polígonos (no rect plano). Color de teja para los 3 casos sin fondo plano elegido por coincidencia exacta en al menos 2 esquinas (verificado con muestreo de píxeles en canvas). 3 tests migrados de Davivienda (ya con glifo) a "Otro"/"ChatGPT" como nuevos ejemplos del fallback de iniciales.
 - 2026-07-05: BR.5, el sync normaliza exports crudos de Illustrator antes de validar (declaración XML, `id="Capa_1"`, comentario, `xlink:href`, `<g>` bare, IDs de degradado genéricos en inglés y español, `data-name`) y reescribe el archivo limpio en `assets/svg/`.
 - 2026-07-05 `0f143f9`: fix del contorno fantasma (stroke explícito + validador + guardarraíl + README 6b).

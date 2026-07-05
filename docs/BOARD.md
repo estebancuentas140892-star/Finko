@@ -137,18 +137,9 @@ _(sin pendientes activos.)_
 
 ---
 
-> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas), BR.2 (`scripts/sync-sprite.py` + guardarraíl) y BR.3 (los 11 bancos/billeteras de `BANCOS_CO` a color: Bancolombia, Banco de Bogotá, Nequi, Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, DaviPlata, Lulo Bank, Nubank) cerradas el 2026-07-05. Único sin glifo: "Otro" (deliberado, no es un banco real). BR.5 (el sync normaliza exports crudos de Illustrator) también cerrada.
+> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md) + [ADR 027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)): **COMPLETA**. Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas), BR.2 (`scripts/sync-sprite.py` + guardarraíl), BR.3 (los 11 bancos/billeteras de `BANCOS_CO` a color: Bancolombia, Banco de Bogotá, Nequi, Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, DaviPlata, Lulo Bank, Nubank), BR.5 (el sync normaliza exports crudos de Illustrator) y BR.4 (ADR 027, registro formal de la excepción de logo a color `data-fullcolor`) cerradas el 2026-07-05. Único sin glifo: "Otro" (deliberado, no es un banco real).
 >
 > Regla de fidelidad absoluta (2026-07-05, ampliada el mismo día): todo SVG que Esteban entrega es la versión oficial. Nunca simplificar, restilizar ni reemplazar el diseño (formas, colores, degradados, proporciones) sin que él lo pida explícitamente; **cero elementos agregados** (contornos, bordes, sombras, brillos, efectos, marcos); si un logo necesita contraste con el fondo, se ajusta el **contenedor** (color de teja, espacio), nunca el logo. Solo se permite limpieza técnica (envoltorio de Illustrator, capas de calco, elementos prohibidos) cuando el resultado es visualmente idéntico. Formato de entrega: SVG siempre; PNG 512px de referencia opcional para logos a color (vara de la revisión en pareja). Detalle técnico clave en [`contexto/transversal.md`](contexto/transversal.md) y `assets/svg/README.md` sección 6b (la herencia de `stroke` de `.icon` a través de `<use>`: causa del contorno fantasma corregido en `0f143f9`).
-
-#### BR.4 - ADR: logo de marca a color como excepción al monocromo
-- Prioridad  : media (deuda de proceso: se tocó una regla de ADR 025 sin ADR)
-- Estado     : pendiente
-- Objetivo   : formalizar en un ADR (o amendment de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)) la excepción de **logo a color** (`data-fullcolor`): cuándo aplica (marcas cuya identidad ES el color y se pierden en monocromo), cómo (teja del color del propio fondo, archivo autónomo con sus fills/degradados/stroke explícitos, IDs de gradiente prefijados), y su convivencia con la regla de fidelidad D5. Ya está implementado en los 11 bancos/billeteras de BR.3 y documentado operativamente en `assets/svg/README.md` sección 6b; falta el registro formal de la decisión.
-- Secciones  : Transversal (identidad visual)
-- Archivos   : `docs/DECISIONS/`, `assets/svg/README.md` (sección 6b, ya escrita)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo (redacción de decisión ya tomada)
 
 ---
 

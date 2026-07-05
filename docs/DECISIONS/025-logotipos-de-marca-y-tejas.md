@@ -1,6 +1,6 @@
 # ADR 025 - Logotipos oficiales de marca y tejas unificadas
 
-**Estado:** Aceptada e implementada por completo: MK.1 y MK.2 cerradas el 2026-07-04/05, ID.3 (categorías en tejas) cerrada el 2026-07-05 (ver [ADR 023](023-lenguaje-de-iconografia-propio.md), sección ID.3).
+**Estado:** Aceptada e implementada por completo: MK.1 y MK.2 cerradas el 2026-07-04/05, ID.3 (categorías en tejas) cerrada el 2026-07-05 (ver [ADR 023](023-lenguaje-de-iconografia-propio.md), sección ID.3). La sección D2 (glifos monocromos) tiene una excepción formalizada en [ADR 027](027-logos-de-marca-a-color-excepcion-monocromo.md): logos donde el color es parte de la identidad se implementan a color completo (`data-fullcolor`), hoy los 11 bancos/billeteras reales de `BANCOS_CO`.
 **Fecha:** 2026-07-04
 **Autores:** Esteban (visión de producto), Claude Fable 5 (análisis y diseño)
 **Relación:** revisa el alcance de ID.3 definido en [ADR 023](023-lenguaje-de-iconografia-propio.md); el lenguaje Finko Icons v2 ("trazo cálido con chispa") y su dirección C ("insignia por dominio") siguen vigentes: esta ADR agrega la capa de marcas y define el contenedor común. Generaliza el patrón de identidad bancaria de `BANCOS_CO` (`modules/infra/bancos.js`). No toca los catálogos de categorías de ADR 014/015; el guardarraíl TX.4 se actualiza en ID.3.
