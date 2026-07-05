@@ -10,6 +10,17 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### style(ui): ID.5, tracking del patrimonio alineado con el hero · 2026-07-05
+
+Micropulido tipográfico opcional. El único desajuste real tras ID.4: `.patrimonio-hero__valor` (Análisis) usaba `letter-spacing: -0.02em` mientras el hero del dashboard (`.bento__value--xl`, mismo tamaño base `--fk-text-4xl`) ya usa `-0.03em` desde ID.4. Ambas son "la cifra más grande de su pantalla", así que quedan con el mismo tracking calibrado. El eje óptico de Inter Variable (`opsz`) ya se resuelve solo: `font-optical-sizing` es `auto` por defecto y no hay ninguna regla que lo desactive, así que no requirió cambio. Verificado con `preview_inspect` (24px × 0.03 = 0.72px, coincide). 2097/2097 unit (sin cambios, ningún test fija ese valor); no requiere E2E (CSS puro, sin lógica). SW v310 → v311.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/components/analysis.css` | `.patrimonio-hero__valor`: tracking -0.02em → -0.03em. |
+| `service-worker.js` | v310 → v311. |
+
+---
+
 ### feat(ui): ID.3, categorías Finko v2 en tejas por dominio · 2026-07-05
 
 Cierre de la iniciativa de identidad visual 2026-07 completa ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) sección ID.3, [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md) D3): los emojis de categoría salen de la UI estructural y entran 43 símbolos nuevos `c-*` en el lenguaje v2 ("trazo cálido con chispa": duotono 22 %, chispa `var(--fk-icon-dot, currentColor)`, redondez sistemática, vértices agudos solo donde la metáfora los exige: punta de `c-avion`, play de `c-streaming`, diamante de `c-anillo`, tablero de `c-birrete`).

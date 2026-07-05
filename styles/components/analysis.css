@@ -1226,7 +1226,10 @@
   font-size: var(--fk-text-4xl);
   font-weight: var(--fk-font-extrabold);
   line-height: 1;
-  letter-spacing: -0.02em;
+  /* Mismo tracking que el hero del dashboard (.bento__value--xl, ID.4/ID.5):
+     el patrimonio es la otra cifra "hero" de la app y debe sentirse calibrada
+     igual, no un peldaño más suelta. */
+  letter-spacing: -0.03em;
 }
 .patrimonio-hero__valor--positivo { color: var(--fk-text-accent); }
 .patrimonio-hero__valor--negativo { color: var(--fk-danger); }

@@ -132,15 +132,6 @@ _(sin pendientes activos.)_
 
 > Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)): **COMPLETA**. ID.1, ID.4, ID.2, ID.6, MK.1, MK.2, ID.7 e ID.3 cerradas (2026-07-05). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma). Nota de ID.3: agregar una categoría nueva a cualquier catálogo cuesta 1 entrada en `CATEGORIA_*_ICONO` (y 1 `<symbol>` `c-*` si el glifo no existe); TX.4 avisa si el id no está en el sprite.
 
-#### ID.5 - Micropulido tipográfico de cifras
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : tracking levemente negativo y eje óptico de Inter en las cifras grandes (hero, patrimonio, bento values); solo si el detalle aún se nota tras las fases ya cerradas.
-- Secciones  : Inicio, Análisis, Ahorro
-- Archivos   : `styles/base.css`, `styles/tokens.css`
-- Depende de : nada (ID.4 ya cerró)
-- Modelo     : Sonnet 5 - Bajo
-
 ---
 
 ## Mantenimiento
