@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(assets): BR.1, biblioteca oficial de recursos gráficos · 2026-07-05
+
+Arranque de la iniciativa Biblioteca de recursos gráficos ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban pasa a diseñar personalmente los SVG del sistema en Adobe Illustrator, y para eso nace `assets/svg/` como **fuente de verdad de diseño** con estándar propio. La app no cambia en runtime: el sprite inline de `index.html` sigue siendo el mecanismo de entrega (cero peticiones, offline, theming vía `<use>`), y por eso **no hay bump de SW**.
+
+**Qué entró:**
+
+- **Extracción fiel del sprite:** los 100 `<symbol>` convertidos a archivos SVG individuales, byte a byte (regenerar el sprite desde ellos da el mismo resultado). Organización: `iconos/secciones` (14), `iconos/simbolos` (13), `iconos/utilitarios` (11, monolínea exentos de rediseño por la regla 4 del ADR 023), `iconos/categorias` (43) y `logos/` (19 glifos en 8 subcarpetas por sector). La carpeta define el prefijo del symbol (`i-`, `c-`, `b-`); las subcarpetas de `logos/` son organización humana y no afectan el id.
+- **17 plantillas `data-placeholder="true"`** para todo lo que hoy cae a iniciales: 10 bancos CO (bancolombia, davivienda, banco-bogota, bbva, banco-popular, scotiabank-colpatria, banco-occidente, av-villas, daviplata, lulo-bank) + disneyplus, primevideo, chatgpt, xbox, claro, tigo y rappi. Son la cola de diseño; el sync futuro las excluye del sprite.
+- **El estándar maestro** en `assets/svg/README.md`: retícula 24 y área viva ~21×21, roles de color (trazo desnudo / duotono 22 % / chispa), reglas para logos (silueta monocroma, color en catálogo), nomenclatura (kebab ASCII, archivo = id de catálogo), checklist de exportación de Illustrator con colores centinela (#000 trazo, #00FFFF duotono, #FF00FF chispa), flujo de revisión en pareja y recetas para agregar recursos. Sin `catalog.json`: los metadatos siguen en `constants.js`, única verdad.
+- **Caso conocido documentado:** `logos/ia/gemini.svg` ↔ symbol `b-googlegemini`; BR.2 lo normaliza a `b-gemini` (1 línea en `MARCAS`).
+
+**Validación pendiente:** ninguna en la app (cero cambios de runtime). La biblioteca se vuelve operativa con BR.2 (`scripts/sync-sprite.py`); hasta entonces el sprite manda y la biblioteca es su espejo. 2097/2097 unit.
+
+| Archivo | Cambio |
+|---|---|
+| `assets/svg/**` | 117 SVG nuevos (100 extraídos + 17 plantillas) + README maestro + README de `ilustraciones/` e `identidad/`. |
+| `docs/DECISIONS/026-biblioteca-de-recursos-graficos.md` | ADR nuevo. |
+| `docs/ARCHITECTURE.md` | Sección 8.1 reescrita: describía la iconografía híbrida emoji/SVG, superada desde los ADR 023/025. |
+| `docs/BOARD.md` | Iniciativa nueva con tarjetas BR.2 y BR.3. |
+
+---
+
 ### style(ui): ID.5, tracking del patrimonio alineado con el hero · 2026-07-05
 
 Micropulido tipográfico opcional. El único desajuste real tras ID.4: `.patrimonio-hero__valor` (Análisis) usaba `letter-spacing: -0.02em` mientras el hero del dashboard (`.bento__value--xl`, mismo tamaño base `--fk-text-4xl`) ya usa `-0.03em` desde ID.4. Ambas son "la cifra más grande de su pantalla", así que quedan con el mismo tracking calibrado. El eje óptico de Inter Variable (`opsz`) ya se resuelve solo: `font-optical-sizing` es `auto` por defecto y no hay ninguna regla que lo desactive, así que no requirió cambio. Verificado con `preview_inspect` (24px × 0.03 = 0.72px, coincide). 2097/2097 unit (sin cambios, ningún test fija ese valor); no requiere E2E (CSS puro, sin lógica). SW v310 → v311.

@@ -253,12 +253,13 @@ document.addEventListener('click', e => {
 
 ### 8.1 Sistema de íconos SVG
 
-Iconografía **híbrida**: SVG para la UI chrome (navegación, botones estructurales), emojis para lo expresivo (categorías, logros, estados vacíos, tips). El tono cálido es ADN (regla 11), no se elimina.
+Lenguaje de iconografía **propio**, "Finko Icons v2: trazo cálido con chispa" ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md)): geometría de línea sobre retícula de 24, redondez sistemática, duotono al 22 % y un punto de valor ("chispa") que el contexto enciende vía `--fk-icon-dot`. Las marcas (bancos, suscripciones) usan su logotipo monocromo sobre teja de color corporativo ([ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)); las categorías, su glifo sobre teja teñida por dominio. Los emojis quedan solo en momentos expresivos (logros, celebración): el tono cálido es ADN (regla 11), no se elimina.
 
-- **Sprite inline:** un `<svg>` oculto al inicio de `<body>` en `index.html` define cada ícono como `<symbol id="i-*" viewBox="0 0 24 24">` (geometría estilo Lucide, licencia MIT). Se define una sola vez.
-- **Uso:** `icon('i-home')` en `infra/icons.js` genera `<svg class="icon"><use href="#i-home"/></svg>`. Funciona desde HTML estático y desde HTML generado en JS.
-- **Presentación:** la clase `.icon` (en `styles/components/forms.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2`. Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; menú "Más" tintado por dominio con `--fk-dom-*`).
-- **Regla:** los íconos nuevos de UI chrome se agregan como `<symbol>` al sprite; nunca se hardcodea `<path>` suelto ni se reintroduce emoji en navegación estructural.
+- **Fuente de verdad de diseño:** `assets/svg/` (biblioteca oficial, [ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): un archivo SVG por recurso, estándar completo en [`assets/svg/README.md`](../assets/svg/README.md). La carpeta define el prefijo del symbol (`iconos/*` → `i-`/`c-`, `logos/**` → `b-`).
+- **Entrega:** sprite inline, un `<svg>` oculto al inicio de `<body>` en `index.html` con cada recurso como `<symbol id="..." viewBox="0 0 24 24">`. Cero peticiones, offline atómico. (BR.2 automatizará biblioteca → sprite; hasta entonces el sprite se mantiene a mano y la biblioteca es su espejo.)
+- **Uso:** `icon('home')`, `iconoCategoria('c-mercado')`, `tejaCategoria()` (`infra/icons.js`) y `tejaMarca()` (`infra/marcas.js`) generan `<svg class="icon"><use href="#..."/></svg>` y sus tejas. Funciona desde HTML estático y desde HTML generado en JS.
+- **Presentación:** la clase `.icon` (en `styles/components/forms.css`) aplica `fill: none; stroke: currentColor; stroke-width: 2.35` (2.5 en `--sm`, 1.8 en `--lg`). Como usa `currentColor`, el ícono **hereda el color del contexto** (ej: nav activa = acento; tejas tintadas por dominio con `--fk-dom-*`).
+- **Regla:** todo recurso nuevo entra como archivo a `assets/svg/` + `<symbol>` al sprite + fila de catálogo si aplica (`MARCAS`, `BANCOS_CO`, `CATEGORIA_*_ICONO`); nunca se hardcodea `<path>` suelto ni se reintroduce emoji en UI estructural. El guardarraíl TX.4 verifica que todo id referenciado exista en el sprite.
 
 ### 8.2 Tipografía
 

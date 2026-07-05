@@ -130,6 +130,28 @@ _(sin pendientes activos.)_
 
 ---
 
+> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` pasa a ser artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) cerrada el 2026-07-05.
+
+#### BR.2 - Script de sincronización biblioteca → sprite
+- Prioridad  : alta (sin esto, reemplazar un SVG de la biblioteca no llega a la app)
+- Estado     : pendiente
+- Objetivo   : `scripts/sync-sprite.py` regenera el bloque del sprite de `index.html` desde `assets/svg/` : valida el estándar (viewBox, primitivas permitidas, decimales, complejidad), convierte los colores centinela de Illustrator a los roles finales (trazo desnudo / duotono .22 / chispa), excluye los `data-placeholder`, detecta colisiones de id y normaliza `b-googlegemini` → `b-gemini` (1 línea en `MARCAS`). Incluye test guardarraíl de igualdad biblioteca ↔ sprite (hermano de TX.4). Primera corrida debe producir un sprite idéntico al actual (extracción fue byte a byte).
+- Secciones  : Transversal
+- Archivos   : `scripts/sync-sprite.py` (nuevo), `index.html` (marcadores del bloque generado), `modules/core/constants.js` (1 línea), `tests/unit/` (guardarraíl nuevo)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Alto
+
+#### BR.3 - Primer lote de glifos propios (banca CO)
+- Prioridad  : media (marca el arranque del flujo de diseño en pareja)
+- Estado     : pendiente (espera los primeros SVG de Esteban)
+- Objetivo   : recorrer el pipeline completo de punta a punta con los 10 bancos que hoy caen a iniciales: Esteban diseña y sobrescribe las plantillas de `assets/svg/logos/bancos/`, revisión en pareja según `assets/svg/README.md` sección 9 (render a 5 tamaños en ambos temas), sync, campo `simbolo: 'b-<slug>'` en cada fila de `BANCOS_CO`, bump de SW.
+- Secciones  : Mis cuentas, Deudas, Calendario (toda teja de marca)
+- Archivos   : `assets/svg/logos/bancos/*.svg`, `modules/core/constants.js`, `index.html` (vía sync), `service-worker.js`
+- Depende de : BR.2 + SVG de Esteban
+- Modelo     : Sonnet 5 - Medio (revisión visual + integración mecánica)
+
+---
+
 > Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)): **COMPLETA**. ID.1, ID.4, ID.2, ID.6, MK.1, MK.2, ID.7 e ID.3 cerradas (2026-07-05). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma). Nota de ID.3: agregar una categoría nueva a cualquier catálogo cuesta 1 entrada en `CATEGORIA_*_ICONO` (y 1 `<symbol>` `c-*` si el glifo no existe); TX.4 avisa si el id no está en el sprite.
 
 ---
