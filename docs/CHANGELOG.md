@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(compromisos): N.4, logic.js dividido en submódulos · 2026-07-05
+
+Cierre del plan de navegabilidad (N.1 descartada con razones, N.2 MAPA.md, N.3 tesorería, N.4 esta). `compromisos/logic.js` era, tras N.3, el último archivo gigante del proyecto: 1.517 líneas mezclando el modelo del compromiso, los detectores de alerta, todo el motor de estrategia de pago y la aritmética de abonos.
+
+**Qué entró:**
+
+- **4 submódulos bajo `logic/`**, con cortes que resultaron perfectamente contiguos en el original: `modelo.js` (390 líneas: catálogos de tipos, tasas EA/mensual, consultas, validación y normalización del formulario), `alertas.js` (307: fijos sin pagar este mes, deudas durmiendo, vencidos del dashboard, agrupador de prioridades), `estrategia.js` (635: simulación mes a mes Avalancha/Bola de nieve, renegociación, consolidación, motor de recomendación D.11/D.8 y reparto del extra en cuotas D.9) y `abonos.js` (213: aritmética de saldo, validación de abono, estado de pago del mes, deltas por edición de gasto).
+- **Barrel con API idéntica (37 exports).** Este dominio es especial: además de sus `views/`, `index.js` y tests, lo importan `agenda/` (validar/normalizar, estado de pago), `analisis/` (totales) e `infra/notificaciones.js` (próximos vencimientos), una excepción preexistente y documentada al ADN #10. Ninguno de esos consumidores cambió ni una línea.
+- **Referencias cruzadas mínimas y en una sola dirección:** alertas, estrategia y abonos importan solo de `modelo.js` (`esDeuda`, `tasaEADe`, `compromisosActivos`, `TIPOS_COMPROMISO`). Sin renombres: los privados de cada bloque (`_tasaMensualDesdeEA`, `_RX_FECHA_COMP`, umbrales) ya vivían junto a sus únicos usuarios.
+- **Mismo método que N.3:** script determinista por rangos de línea, cero retranscripción manual.
+
+Con esto, el dominio queda simétrico a su propia vista (partida en `views/` desde antes) y el proyecto ya no tiene ningún archivo de más de 900 líneas en `modules/`.
+
+**Validación:** 2097/2097 unit, 147/147 E2E (incluida la suite `estrategia-pago` completa, 15 tests sobre la lógica financiera movida), lint limpio. **Pendiente: validación del usuario en su celular** (Deudas: crear deuda, abonar, pestaña Estrategia; sumada a la de Mis cuentas de N.3).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/compromisos/logic/{modelo,alertas,estrategia,abonos}.js` | Nuevos: lógica pura por subsistema (390/307/635/213 líneas). |
+| `modules/dominio/compromisos/logic.js` | Reescrito como barrel (1.517 → 66 líneas). |
+| `service-worker.js` | 4 archivos nuevos al precache; v312 → v313. |
+| `docs/ARCHITECTURE.md`, `docs/MAPA.md` | Fila de compromisos actualizada con el corte. |
+| `docs/BOARD.md` | Tarjeta N.4 cerrada y borrada. |
+
+---
+
 ### refactor(tesoreria): N.3, dominio dividido en submódulos por subsistema · 2026-07-05
 
 Segunda tarea del plan de navegabilidad. Tesorería concentraba los 3 archivos más grandes del proyecto (`logic.js` 1.557 líneas, `index.js` 1.521, `view.js` 1.099: 4.177 líneas en 3 archivos) y depurar cualquier cosa ahí exigía leer archivos enormes que mezclaban tres subsistemas distintos.

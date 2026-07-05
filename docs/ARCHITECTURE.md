@@ -109,7 +109,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | `ahorro/` | Fondo de emergencia + hábito de aportar | |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
 | `apartados/` | Sobres para gastos previsibles (SOAT, impuestos, etc.) | |
-| `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista) |
+| `compromisos/` | Gastos fijos + deudas (Avalancha/Bola de nieve) + agenda de pagos | `view.js` partido en `views/` (alertas, dashboard, estrategia, estrategia-impacto, formularios, lista); `logic.js` partido en `logic/` (modelo, alertas, estrategia, abonos), ambos con barrel |
 | `config/` | Ajustes, perfil, exportar/importar backup completo | sin `logic.js` propio |
 | `export/` | Serialización de gastos a CSV (`gastosACSV`) | solo `logic.js`, sin UI propia (se invoca desde `config`) |
 | `gastos/` | Gastos variables, categorías, detector de hormigas | |
