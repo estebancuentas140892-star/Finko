@@ -10,7 +10,7 @@
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. El análisis conjunto de Inicio quedó completo el 2026-07-05: IN.7 cerrada, ficha en [`contexto/inicio.md`](contexto/inicio.md) y propuesta de diseño en [ADR 028](DECISIONS/028-inicio-centro-de-control.md), **pendiente de aprobación de Esteban**; las fases re-cortadas (IN.6a, CAL.1, TX.8a, TX.8b, IN.4a, IN.6b) esperan en Pendientes.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. El [ADR 028](DECISIONS/028-inicio-centro-de-control.md) fue **aprobado por Esteban el 2026-07-05**: la siguiente tarjeta natural es **IN.6a** (saludo dinámico), primera fase del orden recomendado.)_
 
 ---
 
@@ -50,24 +50,24 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
-> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **propuesta pendiente de aprobación de Esteban**): análisis hecho el 2026-07-05 (ficha [`contexto/inicio.md`](contexto/inicio.md)); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b. **Ninguna fase se inicia hasta que Esteban apruebe el ADR.** Los briefs originales completos quedaron capturados en el contexto del ADR.
+> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **aprobada el 2026-07-05**): análisis en la ficha [`contexto/inicio.md`](contexto/inicio.md); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b, una fase por sesión, verificada y pusheada antes de la siguiente. Los briefs originales completos quedaron capturados en el contexto del ADR.
 
 #### IN.6a - Saludo dinámico con nombre en Inicio
 - Prioridad  : alta dentro de la iniciativa (primer quick win)
-- Estado     : esperando aprobación del ADR 028
+- Estado     : pendiente (ADR 028 aprobado)
 - Objetivo   : "Buenos días / Buenas tardes / Buenas noches, {nombre}" según hora local, usando `S.perfil.nombre` (ya existe desde el onboarding, hoy nadie lo lee en Inicio). Sin dato nuevo, sin migración. ADR 028 D3.
 - Secciones  : Inicio
 - Archivos   : encabezado de Inicio en `index.html` + render (probablemente `modules/infra/render.js` o `modules/dominio/resumen/view.js`)
-- Depende de : aprobación del ADR 028
+- Depende de : nada (ADR 028 aprobado)
 - Modelo     : Sonnet 5 - Bajo
 
 #### IN.4a - Accesos rápidos personalizables (catálogo + tiles + modal por lista)
 - Prioridad  : media dentro de la iniciativa (después de TX.8, cuando el set de paneles esté estable)
-- Estado     : esperando aprobación del ADR 028
+- Estado     : pendiente (ADR 028 aprobado)
 - Objetivo   : catálogo `ACCESOS_INICIO` en `constants.js`, `S.config.accesosInicio` (3 por defecto, bump de schema v23 con migración idempotente), fila de tiles data-driven bajo el hero, y modal "Personalizar" con selección por lista (sin drag & drop en v1, ADR 028 D2). Complementa el bottom nav: 1 tap a las secciones que hoy quedan detrás de "Más". Default exacto a confirmar con Esteban.
 - Secciones  : Inicio, `core` (schema v23)
 - Archivos   : `modules/core/constants.js`, `modules/core/state.js` + `storage.js` (migración), render de Inicio, CSS de tiles
-- Depende de : aprobación del ADR 028; idealmente después de TX.8a/TX.8b
+- Depende de : idealmente después de TX.8a/TX.8b
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.4b (opcional, pospuesta) - Sugerencia de accesos por frecuencia de uso
@@ -88,11 +88,11 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 #### IN.6b - Avatar ilustrado del usuario (teja de iniciales + set propio)
 - Prioridad  : baja dentro de la iniciativa (última fase)
-- Estado     : esperando aprobación del ADR 028 + diseños de Esteban
+- Estado     : pendiente (ADR 028 aprobado); bloqueada por diseños de Esteban
 - Objetivo   : teja de iniciales por defecto y set de avatares ilustrados propios como `<symbol>` del sprite (Esteban los diseña en Illustrator vía la biblioteca del ADR 026); `S.perfil.avatar` entra en el bump v23. Fotografía descartada en v1 (cupo de `localStorage` compartido con los datos financieros, ADR 028 D3); mascota virtual fuera de alcance. Revisar junto con **CFG.1** si ambas terminan tocando el mismo concepto de "perfil del usuario".
 - Secciones  : Inicio, `assets/svg/` (avatares nuevos)
 - Archivos   : encabezado de Inicio, `modules/core/state.js` (campo `perfil.avatar`), sprite
-- Depende de : aprobación del ADR 028; diseños de avatares entregados por Esteban
+- Depende de : diseños de avatares entregados por Esteban
 - Modelo     : Sonnet 5 - Medio
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **CAL.1**/**LIM.1**/**TX.10**, la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
@@ -105,11 +105,11 @@ _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "
 
 #### CAL.1 - Nudge de distribución del ingreso en Inicio (bloque "Atención hoy")
 - Prioridad  : alta dentro de la iniciativa ADR 028 (segunda fase, tras IN.6a)
-- Estado     : esperando aprobación del [ADR 028](DECISIONS/028-inicio-centro-de-control.md)
+- Estado     : pendiente ([ADR 028](DECISIONS/028-inicio-centro-de-control.md) aprobado)
 - Objetivo   : nudge en Inicio renderizado por **tesorería** (dueña del asistente y de `S.ingresos`): si hoy es día de ingreso de una fuente activa (`diaPago`, `+15` para quincenal), "Hoy recibes {fuente}. Distribúyelo antes de empezar a gastarlo" con CTA que emite el `distribuir:abrir` existente (mecanismo de NAV.A2b reutilizado); copy de atraso si pasaron 1 a 3 días. Marcador anti-insistencia por ciclo (preferible dentro del bump v23). Reparto de roles decidido en el ADR: Inicio = cuándo actuar, Calendario = cuándo ocurre; el Calendario conserva la marca visual del día de ingreso (ADR 021 vigente) y su tap sigue abriendo el asistente.
 - Secciones  : Inicio (nudge nuevo), Mis cuentas (`tesoreria`, dueña de la lógica); Calendario no pierde nada visual
 - Archivos   : `modules/dominio/tesoreria/` (lógica de "hoy es día de ingreso" + render del nudge), `index.html` (contenedor del panel), `modules/core/state.js` si el marcador entra al schema
-- Depende de : aprobación del ADR 028; recomendada después de IN.6a
+- Depende de : recomendada después de IN.6a
 - Modelo     : Sonnet 5 - Alto
 
 #### CAL.2 - Leyenda del calendario dinámica (solo tipos de evento que el usuario ya usa)
@@ -140,16 +140,16 @@ _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "
 
 #### TX.8a - Dominio `movimientos` + panel "Actividad reciente" en Inicio
 - Prioridad  : media dentro de la iniciativa [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (tercera fase)
-- Estado     : esperando aprobación del ADR 028
+- Estado     : pendiente (ADR 028 aprobado)
 - Objetivo   : historial general **derivado** de los registros existentes (decisión ADR 028 D5, sin log paralelo): `S.gastos` (los internos `'Deudas'`/`'Gastos fijos'` revelan su origen), `S.ingresosPuntuales` y `S.ahorro.aportes`, normalizados a un shape común por un dominio nuevo `modules/dominio/movimientos/` (`logic.js` puro, testeable; lee `S` sin importar otros dominios, ADN 10 intacto). En Inicio: panel "Actividad reciente" con los últimos 3 a 5 movimientos y enlace "Ver todos". Limitación aceptada v1: metas y apartados no aparecen (sin registros fechados, solo acumuladores); extensión posterior con schema propio. Test guardarraíl que inventaríe las fuentes (mitiga el riesgo de un flujo futuro que cree gastos automáticos sin categoría interna).
 - Secciones  : Inicio, dominio nuevo `movimientos`
 - Archivos   : `modules/dominio/movimientos/{logic,view,index}.js` (nuevos), `index.html` (contenedor), tests nuevos
-- Depende de : aprobación del ADR 028; recomendada después de CAL.1
+- Depende de : recomendada después de CAL.1
 - Modelo     : Sonnet 5 - Alto (subir a Opus 4.8 - Alto si al abrir aparecen más fuentes o casos borde que los inventariados en la ficha)
 
 #### TX.8b - Vista completa de Movimientos + Gastos deja de listar categorías internas
 - Prioridad  : media dentro de la iniciativa ADR 028 (cuarta fase)
-- Estado     : esperando aprobación del ADR 028
+- Estado     : pendiente (ADR 028 aprobado)
 - Objetivo   : vista completa del historial en ruta propia (cronológico, con tipo, fecha, ícono, monto, cuenta y dirección ingreso/egreso, colores por sección); `renderListaGastos()` deja de mostrar las categorías internas (`'Deudas'`, `'Gastos fijos'`) para que Gastos quede enfocada en gasto cotidiano (los registros no se tocan: Análisis y Límites siguen leyendo `S.gastos` igual). El resumen financiero (totales ingresos/egresos/variación) **no va en Inicio** (ADR 028 D5, Análisis es el dueño); un encabezado compacto del mes dentro de esta vista se decide aquí.
 - Secciones  : Inicio/Movimientos, Gastos
 - Archivos   : `modules/dominio/movimientos/` (vista completa + ruta), `modules/dominio/gastos/view.js` (filtro de internas), tests

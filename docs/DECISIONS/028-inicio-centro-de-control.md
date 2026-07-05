@@ -1,6 +1,6 @@
 # ADR 028 - Inicio como centro de control financiero (arquitectura de información)
 
-**Estado:** Propuesta. Pendiente de aprobación de Esteban antes de implementar cualquier fase. IN.7 (des-duplicación puntual entre paneles) ya se cerró como paso previo (`623a654`, 2026-07-05).
+**Estado:** Aceptada por Esteban el 2026-07-05, el mismo día de la propuesta. Fases pendientes de implementación en [BOARD.md](../BOARD.md) (orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b). IN.7 (des-duplicación puntual entre paneles) ya se cerró como paso previo (`623a654`, 2026-07-05).
 **Fecha:** 2026-07-05
 **Autores:** Esteban (visión de producto, briefs del 2026-07-05), Claude Fable 5 (análisis y diseño)
 **Relación:** continúa el [ADR 024](024-reorganizacion-navegacion-movil.md) (bottom nav de 5 con "Registrar" central): esta ADR no toca la navegación general, define los roles internos de la pantalla Inicio. Convive con IN.2 (ojo/máscara del saldo) e IN.3 (resumen semanal), que siguen vigentes. Se apoya en el [ADR 026](026-biblioteca-de-recursos-graficos.md) para los avatares ilustrados futuros. Base técnica verificada en [`docs/contexto/inicio.md`](../contexto/inicio.md).

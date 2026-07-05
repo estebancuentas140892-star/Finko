@@ -7,7 +7,7 @@
 ## Estructura actual del Dashboard (bento grid)
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
-- **Estado actual**     : estable, en evolución. **IN.7** cerrada. Propuesta de rediseño completa en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**pendiente de aprobación de Esteban**): un rol por bloque, orden vertical definido, y fases IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b en `BOARD.md`.
+- **Estado actual**     : estable, en evolución. **IN.7** cerrada. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido, y fases IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b en `BOARD.md`.
 - **Verificado contra** : `623a654` (2026-07-05, IN.7).
 
 **Dónde vive**

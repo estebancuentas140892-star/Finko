@@ -40,13 +40,13 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
-### docs(adr): ADR 028 propuesto, Inicio como centro de control · 2026-07-05
+### docs(adr): ADR 028, Inicio como centro de control (aprobado) · 2026-07-05
 
-Análisis conjunto del cluster de Inicio completado con Fable 5. [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (**propuesta, pendiente de aprobación de Esteban**) define un rol único por bloque y el orden vertical de la pantalla, y re-corta los briefs en 6 fases: IN.6a (saludo dinámico), CAL.1 (nudge de distribución en Inicio, renderizado por tesorería vía el `distribuir:abrir` existente), TX.8a (dominio `movimientos` derivado de los registros existentes + panel "Actividad reciente"), TX.8b (vista completa + Gastos deja de listar categorías internas), IN.4a (accesos rápidos personalizables por lista, schema v23) e IN.6b (avatar ilustrado propio; fotografía descartada por el cupo de `localStorage`). Decisión estructural clave: Movimientos se deriva, no se crea un log paralelo (los pagos de fijos y abonos ya viven en `S.gastos` con categorías internas `'Gastos fijos'`/`'Deudas'`, más `S.ingresosPuntuales` y `S.ahorro.aportes`); el resumen financiero queda fuera de Inicio (Análisis es el dueño, ANL.1). Solo docs, sin código ni bump de SW. **Siguiente acción: Esteban aprueba o ajusta el ADR; después se implementa IN.6a.**
+Análisis conjunto del cluster de Inicio completado con Fable 5 y [ADR 028](DECISIONS/028-inicio-centro-de-control.md) **aprobado por Esteban el mismo día**. Define un rol único por bloque y el orden vertical de la pantalla, y re-corta los briefs en 6 fases: IN.6a (saludo dinámico), CAL.1 (nudge de distribución en Inicio, renderizado por tesorería vía el `distribuir:abrir` existente), TX.8a (dominio `movimientos` derivado de los registros existentes + panel "Actividad reciente"), TX.8b (vista completa + Gastos deja de listar categorías internas), IN.4a (accesos rápidos personalizables por lista, schema v23) e IN.6b (avatar ilustrado propio; fotografía descartada por el cupo de `localStorage`). Decisión estructural clave: Movimientos se deriva, no se crea un log paralelo (los pagos de fijos y abonos ya viven en `S.gastos` con categorías internas `'Gastos fijos'`/`'Deudas'`, más `S.ingresosPuntuales` y `S.ahorro.aportes`); el resumen financiero queda fuera de Inicio (Análisis es el dueño, ANL.1). Solo docs, sin código ni bump de SW. **Siguiente tarea: IN.6a (saludo dinámico), primera fase del orden recomendado.**
 
 | Archivo | Cambio |
 |---|---|
-| `docs/DECISIONS/028-inicio-centro-de-control.md` | ADR nuevo (propuesta): D1 a D6. |
+| `docs/DECISIONS/028-inicio-centro-de-control.md` | ADR nuevo (aceptado): D1 a D6. |
 | `docs/BOARD.md` | Tarjetas re-cortadas en las 6 fases de la iniciativa. |
 | `docs/contexto/inicio.md` | Ficha al día con el ADR y los hallazgos de fuentes de movimientos. |
 
