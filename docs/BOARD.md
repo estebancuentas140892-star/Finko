@@ -139,7 +139,7 @@ _(sin pendientes activos.)_
 
 > Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md)): Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas) y BR.2 (`scripts/sync-sprite.py` + guardarraíl) cerradas el 2026-07-05.
 >
-> Regla nueva de fidelidad (2026-07-05): todo SVG que Esteban entrega es la versión oficial. Nunca simplificar, restilizar ni reemplazar el diseño (formas, colores, degradados, proporciones) sin que él lo pida explícitamente; solo se permite limpieza técnica (quitar envoltorio de Illustrator, capas de calco, elementos prohibidos) cuando el resultado es visualmente idéntico. Aplicada al integrar el rediseño de Nequi: el export de Banco de Bogotá traía una imagen PNG de calco tapada por completo por los paths vectoriales, se retiró por ser puramente técnica (cero diferencia visual).
+> Regla de fidelidad absoluta (2026-07-05, ampliada el mismo día): todo SVG que Esteban entrega es la versión oficial. Nunca simplificar, restilizar ni reemplazar el diseño (formas, colores, degradados, proporciones) sin que él lo pida explícitamente; **cero elementos agregados** (contornos, bordes, sombras, brillos, efectos, marcos); si un logo necesita contraste con el fondo, se ajusta el **contenedor** (color de teja, espacio), nunca el logo. Solo se permite limpieza técnica (envoltorio de Illustrator, capas de calco, elementos prohibidos) cuando el resultado es visualmente idéntico. Formato de entrega: SVG siempre; PNG 512px de referencia opcional para logos a color (vara de la revisión en pareja). Detalle técnico clave en [`contexto/transversal.md`](contexto/transversal.md) y `assets/svg/README.md` sección 6b (la herencia de `stroke` de `.icon` a través de `<use>`: causa del contorno fantasma corregido en `0f143f9`).
 
 #### BR.3 - Lote de glifos propios (banca CO) - EN CURSO
 - Prioridad  : media (flujo de diseño en pareja, ya arrancó)
@@ -150,12 +150,21 @@ _(sin pendientes activos.)_
 - Depende de : nada; el pipeline ya soporta color plano y degradados.
 - Modelo     : Sonnet 5 - Medio (revisión visual + integración mecánica)
 
+#### BR.5 - El sync normaliza exports crudos de Illustrator
+- Prioridad  : media-alta (reduce fricción del flujo de diseño en pareja en cada banco de BR.3)
+- Estado     : pendiente
+- Objetivo   : que Esteban pueda soltar el export de Illustrator tal cual (declaración XML, `id="Capa_1"`, comentario del generador, `version`, `xmlns:xlink`, `<g>` envolvente sin transform, `xlink:href` → `href`) y `sync-sprite.py` lo normalice de forma determinista antes de validar, en vez de limpiarlo a mano en cada entrega (ya pasó 2 veces: Nequi y Banco de Bogotá). Incluye: renombrar IDs de gradiente genéricos (`linear-gradient1`) al prefijo del slug, rechazar `<image>` incrustadas con mensaje claro, y agregar `stroke="none"`/`data-fullcolor` NO automáticamente (eso sigue siendo decisión humana). La normalización escribe el archivo limpio de vuelta a `assets/svg/` (la biblioteca sigue siendo la fuente de verdad y el guardarraíl byte a byte sigue válido).
+- Secciones  : Transversal (biblioteca gráfica)
+- Archivos   : `scripts/sync-sprite.py`, `tests/unit/sprite-sync.test.js`, `assets/svg/README.md` (sección 7)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio
+
 #### BR.4 - ADR: logo de marca a color como excepción al monocromo
 - Prioridad  : media (deuda de proceso: se tocó una regla de ADR 025 sin ADR)
 - Estado     : pendiente
-- Objetivo   : formalizar en un ADR (o amendment de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)) la excepción de **logo a color** (`data-fullcolor`): cuándo aplica (marcas cuya identidad ES el color y se pierden en monocromo), cómo (teja del color del propio fondo, archivo autónomo con sus fills/degradados, IDs de gradiente prefijados), y su convivencia con la regla de fidelidad D5. Ya está implementado (Bancolombia, Banco de Bogotá); falta el registro de la decisión.
+- Objetivo   : formalizar en un ADR (o amendment de [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)) la excepción de **logo a color** (`data-fullcolor`): cuándo aplica (marcas cuya identidad ES el color y se pierden en monocromo), cómo (teja del color del propio fondo, archivo autónomo con sus fills/degradados/stroke explícitos, IDs de gradiente prefijados), y su convivencia con la regla de fidelidad D5. Ya está implementado (Bancolombia, Banco de Bogotá, Nequi) y documentado operativamente en `assets/svg/README.md` sección 6b; falta el registro formal de la decisión.
 - Secciones  : Transversal (identidad visual)
-- Archivos   : `docs/DECISIONS/`, `assets/svg/README.md` (sección 6)
+- Archivos   : `docs/DECISIONS/`, `assets/svg/README.md` (sección 6b, ya escrita)
 - Depende de : nada
 - Modelo     : Sonnet 5 - Bajo (redacción de decisión ya tomada)
 

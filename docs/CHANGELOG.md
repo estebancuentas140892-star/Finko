@@ -10,6 +10,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(assets): contorno fantasma en logos a color por herencia CSS vía use · 2026-07-05
+
+Esteban reportó desde su celular dos alteraciones visuales que él no diseñó: contorno blanco alrededor del remolino de Banco de Bogotá y un borde morado en Nequi que hacía percibir el logo más morado que rosa. **Los archivos SVG estaban intactos**: la causa raíz es que la clase `.icon` ([forms.css](../styles/components/forms.css), `fill:none; stroke:currentColor; stroke-width:2.35`) aplica esas propiedades al `<svg>` anfitrión de la teja y **se heredan hacia adentro del `<use>`**: todo elemento del símbolo sin `stroke` propio recibe un contorno del color `texto` de la teja (blanco en BdB, morado `#1f0020` en Nequi, que a 2.35 de grosor devoraba el acento rosa de ~4 unidades). Bancolombia nunca lo sufrió porque sus paths sí llevan `stroke="none"` explícito: esa asimetría fue la pista.
+
+**Fix en tres capas** (el diseño de Esteban no se tocó: ni una coordenada, ni un color):
+
+- `stroke="none"` explícito en los 2 paths de `nequi.svg` y los 5 de `banco-bogota.svg` (el atributo de presentación del elemento gana a la herencia CSS).
+- `sync-sprite.py` (`_validar_fullcolor`): todo elemento pintable de un logo a color debe declarar `fill` Y `stroke` explícitos, o el recurso se excluye con mensaje explicando la herencia. Ningún logo futuro puede reintroducir el bug.
+- Guardarraíl nuevo en `sprite-sync.test.js` vigilando lo mismo sobre los archivos publicados.
+
+**Verificación objetiva** (render en canvas replicando la herencia del CSS, conteo de píxeles a 96px): contorno blanco de BdB 4.587 px → **0**; acento rosa de Nequi 30 px → **235** (su área real de diseño); la N volvió a su peso original (5.165 → 2.954 px de morado).
+
+**Reglas nuevas del usuario registradas** (BOARD transversal + memoria + `assets/svg/README.md` 6b): fidelidad absoluta a los logotipos oficiales, cero contornos/bordes/sombras/efectos agregados; si un logo necesita contraste se ajusta el contenedor, nunca el logo. Flujo de entrega: SVG siempre (fuente de verdad) + PNG 512px de referencia opcional para logos a color (vara de comparación en la revisión en pareja). Se creó además la **primera ficha de contexto** de la metodología nueva: [`contexto/transversal.md`](contexto/transversal.md) (tejas de marca y biblioteca gráfica).
+
+**Validación:** 2104/2104 unit (guardarraíl nuevo incluido); 147/147 E2E; lint limpio; sync idempotente (diff de `index.html` limitado a los 2 símbolos). SW v318 → v319.
+
+| Archivo | Cambio |
+|---|---|
+| `assets/svg/logos/bancos/{nequi,banco-bogota}.svg` | `stroke="none"` en cada path; diseño intacto. |
+| `scripts/sync-sprite.py` | Validador fullcolor exige fill/stroke explícitos en elementos pintables. |
+| `tests/unit/sprite-sync.test.js` | Test nuevo: logos a color con fill/stroke explícitos (2103 → 2104). |
+| `assets/svg/README.md` | Sección 6b (estándar del logo a color y el porqué) + PNG de referencia en el flujo (sección 9). |
+| `index.html` | Sprite regenerado: `b-nequi`, `b-banco-bogota`. |
+| `service-worker.js` | v318 → v319. |
+| `docs/contexto/{README,transversal}.md` | Primera ficha de contexto activa. |
+| `docs/BOARD.md` | Regla de fidelidad ampliada; tarjeta BR.5 nueva (normalización de exports crudos). |
+
+---
+
 ### feat(assets): BR.3, rediseño de Nequi a color + limpieza de exports crudos · 2026-07-05
 
 Segunda entrega de BR.3: Esteban reemplazó el wordmark completo de Nequi (descartado por ilegible bajo 40px) por un monograma "N" morado con acento rosa sobre fondo blanco, mismo tratamiento a color que Bancolombia y Banco de Bogotá. De paso llegó un reexport ajustado de Banco de Bogotá.
