@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(workflow): metodología de contexto técnico por funcionalidad · 2026-07-05
+
+Pedido del usuario: minimizar el tiempo que la IA gasta localizando información dentro del proyecto y maximizar el dedicado a diseñar, desarrollar y validar. Entra `docs/contexto/`: una ficha por sección de la app y, dentro, un bloque por funcionalidad con objetivo, estado, dónde vive (tabla archivo + ancla por función/export/clase CSS, con la línea como referencia orientativa), recursos gráficos, dependencias y relaciones, riesgos, cambios pendientes y realizados, y un campo `Verificado contra` (commit) para detectar cuándo un bloque quedó desactualizado.
+
+El workflow queda codificado en `CLAUDE.md`:
+
+- **Reutilización (2.6):** antes de analizar, consultar MAPA + la ficha de la sección; solo recorrer el proyecto desde cero si el bloque no existe o quedó viejo. El análisis inicial de una funcionalidad se hace una sola vez, en profundidad (modelo de mayor capacidad si se justifica); las iteraciones siguientes usan el modelo más eficiente que mantenga la calidad.
+- **Cierre (2.4):** actualizar la ficha es ahora el paso 1 de la secuencia de docs al cerrar una tarea.
+- **Unificar y dividir (2.1):** cero tarjetas duplicadas en el BOARD (la más completa absorbe a las demás); las tareas que tocan varios dominios o capas se parten en subtareas verificables de forma independiente.
+
+Las fichas nacen bajo demanda al trabajar cada funcionalidad por primera vez; no se pre-generan (envejecen mal y cuestan tokens sin retorno). Se auditó el BOARD en busca de duplicados: no hay (BR.3 y BR.4 son entregables distintos de una misma iniciativa, ya agrupados). Solo docs: cero cambios de código, app intacta, sin bump de SW.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/contexto/README.md` | Nuevo: reglas de uso, plantilla de bloque, índice de 14 fichas por sección. |
+| `CLAUDE.md` | Sección 2.6 nueva (contexto por funcionalidad); 2.1 ampliada (dividir/unificar); 2.4 con la ficha como paso 1; sección 0 y lectura previa (sección 5) enlazan `docs/contexto/`. |
+| `docs/BOARD.md` | Paso "consultar ficha" en el uso del tablero + reglas de tarjetas (sin duplicados, dividir lo grande). |
+| `docs/HANDOFF.md` | Entrada de cierre en "Qué se hizo recientemente". |
+
+---
+
 ### feat(ui): escala de tokens de iconografía + fix de cascada @layer · 2026-07-05
 
 Revisión completa del sistema de iconografía pedida por el usuario: los iconos se percibían pequeños y difíciles de identificar de un vistazo, en móvil y en escritorio. La auditoría encontró dos problemas: (1) no existía una escala de tamaños (11 valores sueltos hardcodeados entre 14 y 56px repartidos en 9 archivos CSS, contra la regla "nunca hardcodear tamaños") y (2) **un bug de cascada preexistente**: `main.css` importa `layout.css` en una capa `@layer` inferior a `components`, y en capas CSS la capa gana sin importar la especificidad, así que los tamaños declarados en `layout.css` para la navegación (22px), el hero de saldo (32px) y los accesos rápidos (18px) llevaban tiempo perdiendo contra el `.icon` base: **los tres contextos renderizaban a 20px**. Eso explica directamente la percepción de iconos pequeños.

@@ -3,6 +3,7 @@
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
+> Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
 > Última actualización: 2026-07-05.
 
 ---
@@ -16,9 +17,10 @@ _(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.m
 ## Cómo usar este tablero
 
 1. Elegir **una** tarjeta de "Pendientes" (o del backlog del usuario si hay una nueva).
-2. Moverla a "En proceso" con la fecha de inicio.
-3. Trabajarla en una sola sesión cuando sea posible; verificar en la app + tests verdes.
-4. Al cerrar: commit → **borrar la tarjeta de este archivo** → agregar entrada en [`CHANGELOG.md`](CHANGELOG.md) → actualizar [`HANDOFF.md`](HANDOFF.md) (últimas 5) → si cerró un error, borrarlo de [`BUGS.md`](BUGS.md).
+2. Abrir la ficha de su sección en [`contexto/`](contexto/README.md): si el bloque de la funcionalidad existe y está vigente, trabajar desde ahí sin re-explorar el proyecto; si no existe, el primer paso de la tarea es el análisis profundo + escribir el bloque (`/CLAUDE.md` sección 2.6).
+3. Moverla a "En proceso" con la fecha de inicio.
+4. Trabajarla en una sola sesión cuando sea posible; verificar en la app + tests verdes.
+5. Al cerrar: commit → actualizar la ficha de [`contexto/`](contexto/README.md) → **borrar la tarjeta de este archivo** → agregar entrada en [`CHANGELOG.md`](CHANGELOG.md) → actualizar [`HANDOFF.md`](HANDOFF.md) (últimas 5) → si cerró un error, borrarlo de [`BUGS.md`](BUGS.md).
 
 Campos de una tarjeta:
 
@@ -32,6 +34,11 @@ Campos de una tarjeta:
 - Depende de : otra tarjeta o "nada"
 - Modelo     : combinación sugerida (ver `/CLAUDE.md` sección 2.3)
 ```
+
+Reglas de las tarjetas (`/CLAUDE.md` sección 2.1):
+
+- **Sin duplicados:** antes de crear una tarjeta, buscar otras sobre la misma funcionalidad, sección o componente; si comparten objetivo o tocan la misma parte del sistema, consolidarlas en una sola (la más completa absorbe a las demás).
+- **Dividir lo grande:** una tarjeta que toque varios dominios o varias capas (lógica, vista, estilos, datos, accesibilidad, tests) se parte en subtareas verificables de forma independiente (sufijos `a`/`b` o slices), encadenadas con "Depende de".
 
 ---
 

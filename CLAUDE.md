@@ -1,7 +1,7 @@
 # CLAUDE.md - Finko Claude
 
 > **Este archivo es el punto de entrada para Claude Code (y cualquier asistente IA) al abrir esta carpeta.**
-> Última revisión: 2026-07-02
+> Última revisión: 2026-07-05
 
 ---
 
@@ -14,6 +14,7 @@
 Ver:
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) → qué se hizo en cada fase/tarea ya cerrada.
 - [`docs/BOARD.md`](docs/BOARD.md) → tablero Kanban: tarea en proceso + pendientes agrupados por sección de la app.
+- [`docs/contexto/`](docs/contexto/README.md) → fichas técnicas por sección: dónde vive cada funcionalidad, riesgos, estado, pendientes.
 - [`docs/BUGS.md`](docs/BUGS.md) → registro de errores conocidos, con archivo/función/línea exactos.
 
 ---
@@ -54,7 +55,8 @@ docs/                 → ARCHITECTURE, BOARD, BUGS, CHANGELOG, etc.
 ### 2.1 Una tarea/fase a la vez
 
 - No saltar al "siguiente paso" sin que la tarea activa esté **verificada en la app** y commiteada.
-- Si una tarea es muy grande, partirla y proponer el subset más pequeño que tenga sentido.
+- **Dividir lo grande:** si una tarea es muy grande o toca varios dominios o capas a la vez (lógica, vista, estilos, datos, accesibilidad, tests), partirla en subtareas que se puedan desarrollar y verificar de forma independiente. Cada subtarea es una tarjeta propia en el BOARD, encadenada con "Depende de", y se empieza por el subset más pequeño que tenga sentido.
+- **Unificar duplicados:** antes de crear una tarjeta en el BOARD, buscar tarjetas existentes sobre la misma funcionalidad, sección o componente. Si comparten objetivo o modifican la misma parte del sistema, consolidarlas en una sola tarjeta completa: la más completa absorbe a las demás, cero duplicados.
 
 ### 2.2 Reportar cambios para supervisar en la app
 
@@ -126,17 +128,27 @@ La optimización de tokens es el criterio de desempate, nunca el criterio princi
 
 Cuando una tarea/fase se completa, actualizar **en este orden**:
 
-1. **`docs/HANDOFF.md`** - sección "Qué se hizo recientemente": agregar la tarea cerrada al tope de la lista (mantener solo las últimas 5); actualizar "Qué sigue" si cambió el orden de prioridades. Este archivo es el punto de entrada para cualquier asistente o colaborador nuevo.
-2. **`docs/CHANGELOG.md`** - agregar la entrada bajo "Mes corriente" con fecha, archivos tocados y, si aplica, qué funcionalidades podría afectar y qué validación queda pendiente. Al cambiar de mes calendario: mover el mes recién cerrado a `docs/changelog/YYYY-MM.md` (crear el archivo con el mismo formato que los existentes) y agregarlo al índice "Meses anteriores".
-3. **`docs/BOARD.md`** - borrar la tarjeta de la tarea completada (de "En proceso" o de "Pendientes"). El tablero nunca conserva tarjetas cerradas.
-4. **`docs/BUGS.md`** - si la tarea solucionó un error registrado, borrar su entrada y referenciar el ID en el CHANGELOG.
-5. Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
+1. **`docs/contexto/<sección>.md`** - actualizar el bloque de la funcionalidad tocada: estado actual, cambios realizados/pendientes y `Verificado contra` con el commit nuevo. Si el bloque no existía, crearlo (ver sección 2.6).
+2. **`docs/HANDOFF.md`** - sección "Qué se hizo recientemente": agregar la tarea cerrada al tope de la lista (mantener solo las últimas 5); actualizar "Qué sigue" si cambió el orden de prioridades. Este archivo es el punto de entrada para cualquier asistente o colaborador nuevo.
+3. **`docs/CHANGELOG.md`** - agregar la entrada bajo "Mes corriente" con fecha, archivos tocados y, si aplica, qué funcionalidades podría afectar y qué validación queda pendiente. Al cambiar de mes calendario: mover el mes recién cerrado a `docs/changelog/YYYY-MM.md` (crear el archivo con el mismo formato que los existentes) y agregarlo al índice "Meses anteriores".
+4. **`docs/BOARD.md`** - borrar la tarjeta de la tarea completada (de "En proceso" o de "Pendientes"). El tablero nunca conserva tarjetas cerradas.
+5. **`docs/BUGS.md`** - si la tarea solucionó un error registrado, borrar su entrada y referenciar el ID en el CHANGELOG.
+6. Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
 
 **Regla:** BOARD.md siempre muestra solo lo **pendiente**, agrupado por sección de la app. CHANGELOG es la memoria histórica. HANDOFF.md es el contexto vivo para retomar trabajo rápido. BUGS.md solo contiene errores sin resolver.
 
 ### 2.5 Confirmar antes de cambios destructivos
 
 Eliminar archivos, force push, reescribir historial, borrar tests existentes → **siempre** confirmar con el usuario antes.
+
+### 2.6 Contexto técnico por funcionalidad (`docs/contexto/`)
+
+Objetivo: cada funcionalidad se analiza a fondo **una sola vez**; el resultado queda escrito y las sesiones futuras lo reutilizan. Reglas completas y plantilla en [`docs/contexto/README.md`](docs/contexto/README.md).
+
+- **Antes de analizar:** consultar [`docs/MAPA.md`](docs/MAPA.md) (ubicación gruesa por dominio) y la ficha de la sección en `docs/contexto/` (detalle por funcionalidad). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos listados).
+- **Primera vez sobre una funcionalidad:** análisis exhaustivo (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque en la ficha **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones siguientes, con ficha vigente, usan el modelo más eficiente que mantenga la calidad (sección 2.3).
+- **Localización:** el ancla primaria es el nombre de función/export/clase CSS/`data-action`; la línea es referencia orientativa, nunca dependencia absoluta.
+- **Al cerrar la tarea:** actualizar el bloque como paso 1 de la secuencia de la sección 2.4.
 
 ---
 
@@ -191,9 +203,10 @@ pnpm run format
 3. [`docs/BOARD.md`](docs/BOARD.md) - tarea en proceso hoy + pendientes por sección.
 4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - capas, flujo de datos, reglas - 10 min.
 5. [`docs/MAPA.md`](docs/MAPA.md) - índice sección visible → carpeta → archivos clave → estilos → test, y tabla síntoma → dónde mirar. Consultar primero ante cualquier bug o duda de "¿dónde vive esto?".
-6. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
-7. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
-8. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
+6. [`docs/contexto/`](docs/contexto/README.md) - ficha técnica de la sección a tocar (si existe): piezas exactas, riesgos, pendientes. Evita re-explorar lo ya analizado (sección 2.6).
+7. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
+8. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
+9. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
 
 ---
 
