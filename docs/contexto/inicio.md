@@ -7,7 +7,7 @@
 ## Estructura actual del Dashboard (bento grid)
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
-- **Estado actual**     : estable, en evolución (tarjetas **IN.4**, **IN.6**, **CAL.1**, **TX.8** en `BOARD.md`, análisis en curso). **IN.7** cerrada.
+- **Estado actual**     : estable, en evolución. **IN.7** cerrada. Propuesta de rediseño completa en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**pendiente de aprobación de Esteban**): un rol por bloque, orden vertical definido, y fases IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b en `BOARD.md`.
 - **Verificado contra** : `623a654` (2026-07-05, IN.7).
 
 **Dónde vive**
@@ -53,7 +53,7 @@
 - **`S.config.ocultarSaldo` se agregó sin bump de versión de schema** (lectura defensiva con `?.`): mismo patrón sería tentador para `avatar`/`accesosPrioridad` (**IN.6**/**IN.4**), pero antes de repetirlo evaluar si conviene formalizarlo con schema version nuevo, dado que ya son varios campos opcionales acumulados sin migración.
 - **`S.perfil.nombre` ya existe** pero no se renderiza en Inicio: **IN.6** (saludo dinámico) puede consumirlo directo, no requiere dato nuevo para el nombre (sí para avatar/mascota).
 
-**Cambios pendientes**: ver tarjetas **IN.4**, **IN.6**, **CAL.1**, **TX.8** en `BOARD.md` (análisis conjunto en curso); **IN.5** depende de **TX.9** (fuera de este análisis).
+**Cambios pendientes**: fases del [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) en `BOARD.md` (IN.6a, CAL.1, TX.8a, TX.8b, IN.4a, IN.6b), todas esperando la aprobación del ADR; **IN.5** depende de **TX.9** (fuera de esta iniciativa). Datos adicionales verificados para esas fases: los pagos de fijos crean gastos con categoría interna `'Gastos fijos'` (`agenda/index.js` ~274, `tesoreria/acciones/distribucion.js` ~452) y los abonos a deuda con `'Deudas'` (`compromisos/index.js` ~326 y ~743, `distribucion.js` ~465); `S.ingresosPuntuales` (v22) y `S.ahorro.aportes[]` son registros fechados; metas y apartados solo tienen `montoActual` (sin historial por aporte); la categoría interna `'Ahorro'` existe en `CATEGORIAS_GASTO` pero hoy ningún flujo crea gastos con ella (verificar de nuevo al implementar TX.8a); el asistente de distribución se invoca por `distribuir:abrir` con modo `preacreditado` (`tesoreria/acciones/ingresos.js` ~323).
 
 **Cambios realizados**:
 
@@ -61,4 +61,4 @@
 
 Esta ficha nace del primer análisis exhaustivo de Inicio (2026-07-05), previo a cualquier propuesta de diseño o código para el resto del cluster.
 
-**Observaciones**: sin ADR propio todavía; el bento grid actual convive con reglas ya vigentes (IN.2 ojo/máscara del saldo, IN.3 resumen semanal). Cualquier ADR nuevo sobre "Inicio como centro de control" debería referenciarlas en vez de redefinirlas.
+**Observaciones**: la propuesta de rediseño vive en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (un rol por bloque; movimientos derivados sin log paralelo; personalización por lista sin drag & drop en v1; foto de perfil descartada por el cupo de `localStorage`; resumen financiero fuera de Inicio porque Análisis es el dueño de la interpretación). IN.2 (ojo/máscara) e IN.3 (resumen semanal) siguen vigentes sin cambios. El bump de schema v23 concentrará los campos nuevos (`config.accesosInicio`, `perfil.avatar`, marcador de distribución) en vez de acumular más campos defensivos sin migración.

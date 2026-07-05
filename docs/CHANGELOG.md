@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): ADR 028 propuesto, Inicio como centro de control · 2026-07-05
+
+Cierre del análisis conjunto del cluster de Inicio. [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (estado: **propuesta, pendiente de aprobación de Esteban**) define la arquitectura de información de la pantalla: un rol único por bloque en orden vertical fijo (saludo, hero, accesos rápidos, atención hoy, próximas prioridades, actividad reciente, resumen semanal) y re-corta los briefs del usuario en 6 fases verificables por separado.
+
+Decisiones principales: accesos rápidos data-driven con catálogo + personalización por lista, sin drag & drop en v1 (D2); saludo dinámico ya, avatar ilustrado propio después, fotografía descartada por el cupo de `localStorage` (D3); el aviso de distribución del ingreso pasa a Inicio como nudge de tesorería reutilizando el `distribuir:abrir` existente, y el Calendario conserva la visualización temporal (D4); Movimientos se **deriva** de los registros existentes (`S.gastos` con categorías internas, `S.ingresosPuntuales`, `S.ahorro.aportes`) en un dominio nuevo `movimientos`, sin log paralelo, y Gastos deja de listar las categorías internas; el resumen financiero no va en Inicio (Análisis es el dueño, ANL.1) (D5). Un solo bump de schema (v23) concentrará los campos nuevos.
+
+Hechos verificados que sustentan el diseño (en la ficha [`contexto/inicio.md`](contexto/inicio.md)): los pagos de fijos y abonos a deuda ya crean gastos con categorías internas `'Gastos fijos'`/`'Deudas'` (la "mezcla" que reportó el usuario en Gastos es literal); metas y apartados no tienen registros fechados por aporte (limitación aceptada v1); en móvil, 8 secciones quedan a 2 taps detrás de "Más" (el hueco real que llenan los accesos personalizables).
+
+Solo docs: cero cambios de código, app intacta, sin bump de SW. **Ninguna fase se implementa hasta que Esteban apruebe el ADR.**
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/028-inicio-centro-de-control.md` | ADR nuevo (propuesta): D1 a D6. |
+| `docs/BOARD.md` | Tarjetas IN.4/IN.6/CAL.1/TX.8 re-cortadas en fases IN.6a, CAL.1, TX.8a, TX.8b, IN.4a, IN.6b (+ IN.4b pospuesta); briefs verbatim capturados por el ADR. |
+| `docs/contexto/inicio.md` | Estado, pendientes (con los hallazgos nuevos de fuentes de movimientos) y observaciones apuntando al ADR 028. |
+
+---
+
 ### fix(resumen): IN.7, Próximas prioridades ya no duplica lo que vence hoy · 2026-07-05
 
 El usuario reportó que un mismo gasto fijo con vencimiento hoy aparecía a la vez en "Pendientes del mes" y en "Próximas prioridades". Causa confirmada en el análisis de la ficha nueva `docs/contexto/inicio.md`: `detectarVencidosCompletos()` (panel Pendientes del mes) y `compromisosProximos()` (panel Próximas prioridades) tratan "vence hoy" como `diasAtraso = 0` y `diasRestantes = 0` respectivamente, sin exclusión mutua.

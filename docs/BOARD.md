@@ -10,7 +10,7 @@
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. IN.7 cerrada el 2026-07-05, ver CHANGELOG; el resto del análisis conjunto de Inicio (IN.4, IN.6, CAL.1, TX.8) sigue pendiente, ficha ya escrita en `docs/contexto/inicio.md`.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. El análisis conjunto de Inicio quedó completo el 2026-07-05: IN.7 cerrada, ficha en [`contexto/inicio.md`](contexto/inicio.md) y propuesta de diseño en [ADR 028](DECISIONS/028-inicio-centro-de-control.md), **pendiente de aprobación de Esteban**; las fases re-cortadas (IN.6a, CAL.1, TX.8a, TX.8b, IN.4a, IN.6b) esperan en Pendientes.)_
 
 ---
 
@@ -50,22 +50,32 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
-_(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 segundos el usuario debe saber qué debe hacer hoy, qué puede olvidar si no actúa, qué está haciendo bien, qué requiere atención y qué recomendaciones tiene Finko; toda la información debe orientarse a la acción y priorizarse por importancia, no solo mostrar datos. Esta filosofía atraviesa **IN.4** (accesos personalizables), **IN.5** e **IN.6** de abajo, y también **CAL.1** (aviso de ingreso) y **TX.8** (apartado Movimientos), pendientes de análisis conjunto por tocar el mismo espacio. **IN.7** ya cerrada (des-duplicación puntual).)_
+> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **propuesta pendiente de aprobación de Esteban**): análisis hecho el 2026-07-05 (ficha [`contexto/inicio.md`](contexto/inicio.md)); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b. **Ninguna fase se inicia hasta que Esteban apruebe el ADR.** Los briefs originales completos quedaron capturados en el contexto del ADR.
 
-#### IN.4 - Dashboard personalizable: accesos rápidos según prioridades del usuario
-- Prioridad  : sin definir (registrada para más adelante, no empezar aún)
-- Estado     : pendiente de análisis (no iniciar sin luz verde explícita del usuario)
-- Objetivo   : el Inicio hoy impone 3 accesos rápidos fijos elegidos por diseño inicial; el usuario observó que la prioridad real varía por persona (quien paga deudas quiere Deudas primero, quien ahorra quiere Metas/Ahorro, quien registra gasto a diario quiere Gastos, quien administra negocio quiere Mis cuentas). Brief completo del usuario (verbatim, 2026-07-05):
-  1. **Inicio fijo, accesos personalizables**: la pantalla Inicio nunca se mueve ni se quita; solo los accesos rápidos (hoy 3 fijos) pasan a ser elegibles por el usuario.
-  2. **Personalización sencilla**: mantener presionado para reordenar, botón "Personalizar Inicio", arrastrar y soltar, elegir de una lista. Sin configuración compleja, análogo a organizar iconos de un teléfono.
-  3. **Priorizar según el uso (opcional, fase posterior)**: Finko podría detectar qué secciones abre más el usuario y sugerir agregarlas a accesos rápidos ("Hemos notado que consultas frecuentemente Deudas. ¿Quieres agregarla a tus accesos rápidos?"), pero la decisión final siempre es manual del usuario. Requiere trackear frecuencia de navegación, algo que hoy no existe en `state.js`.
-  4. **Consistencia**: la navegación general (bottom nav, rutas) no cambia; solo se personalizan accesos rápidos y algunos elementos del Dashboard.
-  5. **Escalabilidad**: el diseño debe soportar secciones/módulos nuevos a futuro sin rediseñar el mecanismo de personalización.
-  El usuario pidió explícitamente: analizar la mejor forma de implementarlo con buenas prácticas de UX/UI, sin aumentar la complejidad percibida, y proponer una solución mejor si existe una más efectiva que la descrita.
-- Secciones  : Inicio (dashboard), transversal (posible campo nuevo en `state.js` para preferencias de accesos rápidos y, si se hace la fase de aprendizaje, contadores de uso por sección)
-- Archivos   : sin explorar todavía; candidatos previsibles `modules/dominio/resumen/` (o donde viva hoy Inicio, confirmar en `docs/MAPA.md`), `modules/core/state.js` (nuevo campo + migración de schema), `modules/ui/shell.js` o similar (render de accesos rápidos), CSS de layout de Inicio
-- Depende de : nada. **No iniciar sin instrucción explícita**: el usuario pidió solo registrar la idea por ahora.
-- Modelo     : primer paso (análisis + ficha de contexto de Inicio si no existe + propuesta de diseño/ADR) con **Fable 5 - Alto** (feature multidominio con trade offs no obvios: personalización manual vs. sugerencia por uso, migración de schema, invariante "Inicio fijo" que no puede romperse); implementación posterior, ya con decisión tomada, puede bajar a Sonnet 5 - Alto por subtarea siguiendo el patrón de división de 2.1 (ej. IN.4a estructura de datos + reorder manual, IN.4b UI de arrastrar/soltar, IN.4c sugerencia por uso como fase opcional)
+#### IN.6a - Saludo dinámico con nombre en Inicio
+- Prioridad  : alta dentro de la iniciativa (primer quick win)
+- Estado     : esperando aprobación del ADR 028
+- Objetivo   : "Buenos días / Buenas tardes / Buenas noches, {nombre}" según hora local, usando `S.perfil.nombre` (ya existe desde el onboarding, hoy nadie lo lee en Inicio). Sin dato nuevo, sin migración. ADR 028 D3.
+- Secciones  : Inicio
+- Archivos   : encabezado de Inicio en `index.html` + render (probablemente `modules/infra/render.js` o `modules/dominio/resumen/view.js`)
+- Depende de : aprobación del ADR 028
+- Modelo     : Sonnet 5 - Bajo
+
+#### IN.4a - Accesos rápidos personalizables (catálogo + tiles + modal por lista)
+- Prioridad  : media dentro de la iniciativa (después de TX.8, cuando el set de paneles esté estable)
+- Estado     : esperando aprobación del ADR 028
+- Objetivo   : catálogo `ACCESOS_INICIO` en `constants.js`, `S.config.accesosInicio` (3 por defecto, bump de schema v23 con migración idempotente), fila de tiles data-driven bajo el hero, y modal "Personalizar" con selección por lista (sin drag & drop en v1, ADR 028 D2). Complementa el bottom nav: 1 tap a las secciones que hoy quedan detrás de "Más". Default exacto a confirmar con Esteban.
+- Secciones  : Inicio, `core` (schema v23)
+- Archivos   : `modules/core/constants.js`, `modules/core/state.js` + `storage.js` (migración), render de Inicio, CSS de tiles
+- Depende de : aprobación del ADR 028; idealmente después de TX.8a/TX.8b
+- Modelo     : Sonnet 5 - Alto
+
+#### IN.4b (opcional, pospuesta) - Sugerencia de accesos por frecuencia de uso
+- Prioridad  : baja
+- Estado     : pospuesta por decisión del ADR 028 D2 (decidir tras convivir con la personalización manual)
+- Objetivo   : contadores locales de navegación por sección + sugerencia discreta de agregar una sección muy usada a los accesos. Todo local, sin telemetría (ADN 3).
+- Depende de : IN.4a en producción y feedback de Esteban
+- Modelo     : decidir al llegar
 
 #### IN.5 - Eliminar "Gasto rápido" (o transformarlo si aporta algo real)
 - Prioridad  : sin definir
@@ -76,14 +86,14 @@ _(Filosofía general del Inicio, brief del usuario 2026-07-05: en menos de 5 seg
 - Depende de : **TX.9** (rediseño del formulario de gasto): la decisión de eliminar Gasto rápido tiene más sentido una vez el formulario completo ya sea así de ágil; evaluarlas en el mismo momento, no por separado.
 - Modelo     : Sonnet 5 - Bajo (decisión acotada, una vez tomada es sobre todo remover una ruta/acceso y sus tests; el análisis de "vale la pena conservarlo" es la parte que requiere criterio, no volumen de código)
 
-#### IN.6 - Personalizar el Inicio: saludo dinámico + foto/avatar del usuario
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario quiere que Inicio se sienta más personal: nombre del usuario arriba con saludo dinámico según la hora ("Buenos días/tardes/noches, [nombre]"), y la posibilidad de personalizar el perfil con una fotografía, un avatar, un personaje ilustrado, una mascota virtual o cualquier elemento con el que el usuario se identifique, para generar conexión emocional con la app.
-- Secciones  : Inicio (dashboard)
-- Archivos   : sin explorar todavía; candidato previsible el encabezado de Inicio y el dato de nombre del usuario ya existente en `state.js` (revisar si ya hay algo de perfil, y si CFG.1 termina generando un bloque de "perfil" compartido con Ajustes)
-- Depende de : nada directo, pero revisar junto con **CFG.1** (perfil financiero en Ajustes) si ambas terminan tocando un mismo concepto de "perfil del usuario", para no duplicar dónde vive esa información.
-- Modelo     : Sonnet 5 - Medio (saludo dinámico es trivial; la selección de avatar/foto añade decisiones de UX y de almacenamiento, ej. cuánto pesa una foto en `localStorage`, pero sigue siendo un dominio acotado)
+#### IN.6b - Avatar ilustrado del usuario (teja de iniciales + set propio)
+- Prioridad  : baja dentro de la iniciativa (última fase)
+- Estado     : esperando aprobación del ADR 028 + diseños de Esteban
+- Objetivo   : teja de iniciales por defecto y set de avatares ilustrados propios como `<symbol>` del sprite (Esteban los diseña en Illustrator vía la biblioteca del ADR 026); `S.perfil.avatar` entra en el bump v23. Fotografía descartada en v1 (cupo de `localStorage` compartido con los datos financieros, ADR 028 D3); mascota virtual fuera de alcance. Revisar junto con **CFG.1** si ambas terminan tocando el mismo concepto de "perfil del usuario".
+- Secciones  : Inicio, `assets/svg/` (avatares nuevos)
+- Archivos   : encabezado de Inicio, `modules/core/state.js` (campo `perfil.avatar`), sprite
+- Depende de : aprobación del ADR 028; diseños de avatares entregados por Esteban
+- Modelo     : Sonnet 5 - Medio
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **CAL.1**/**LIM.1**/**TX.10**, la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 
@@ -93,14 +103,14 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
 
-#### CAL.1 - Mover el aviso de distribución del ingreso a Inicio (centro de prioridades)
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario concluyó que el aviso de distribuir el ingreso (hoy en Calendario) no está en el lugar correcto: la distribución del ingreso es de las acciones más importantes de Finko y debería vivir en Inicio, que debe convertirse en un verdadero centro de prioridades y acciones inmediatas (no solo el aviso de ingreso, sino cualquier cosa que requiera atención: deuda que vence hoy/mañana, gasto fijo por vencer, cerca de superar un límite, aporte pendiente a meta/fondo, gastos rápidos por organizar, apartado próximo a vencer). Calendario, en cambio, pasa a enfocarse solo en la planificación temporal (cuándo ocurren los eventos), sin concentrar las alertas más importantes. El usuario pidió explícitamente evaluar si hay una forma más intuitiva de repartir responsabilidades entre Inicio y Calendario, y proponerla si existe.
-- Secciones  : Calendario (`agenda`, retira el aviso), Inicio (recibe el aviso y se convierte en centro de prioridades más amplio)
-- Archivos   : sin explorar todavía; candidatos previsibles el recordatorio de día de ingreso (ADR 021, `AP.4`/`MT.2`/`AH.4` en el historial) hoy renderizado en Calendario, y el módulo de Inicio que tendría que absorber esta y otras alertas
-- Depende de : relación directa con **IN.4** (dashboard personalizable): si Inicio pasa a mostrar múltiples tipos de aviso (ingreso, deudas, límites, metas, apartados), conviene decidir junto con IN.4 cómo conviven las alertas fijas de "centro de prioridades" con los accesos rápidos personalizables, para no diseñar dos sistemas de tarjetas de Inicio por separado
-- Modelo     : Opus 4.8 - Alto (mover una pieza central de la app entre dos secciones y redefinir el rol de Inicio como centro de prioridades es una decisión de arquitectura de información, no un cambio cosmético; conviene revisarla junto con IN.4)
+#### CAL.1 - Nudge de distribución del ingreso en Inicio (bloque "Atención hoy")
+- Prioridad  : alta dentro de la iniciativa ADR 028 (segunda fase, tras IN.6a)
+- Estado     : esperando aprobación del [ADR 028](DECISIONS/028-inicio-centro-de-control.md)
+- Objetivo   : nudge en Inicio renderizado por **tesorería** (dueña del asistente y de `S.ingresos`): si hoy es día de ingreso de una fuente activa (`diaPago`, `+15` para quincenal), "Hoy recibes {fuente}. Distribúyelo antes de empezar a gastarlo" con CTA que emite el `distribuir:abrir` existente (mecanismo de NAV.A2b reutilizado); copy de atraso si pasaron 1 a 3 días. Marcador anti-insistencia por ciclo (preferible dentro del bump v23). Reparto de roles decidido en el ADR: Inicio = cuándo actuar, Calendario = cuándo ocurre; el Calendario conserva la marca visual del día de ingreso (ADR 021 vigente) y su tap sigue abriendo el asistente.
+- Secciones  : Inicio (nudge nuevo), Mis cuentas (`tesoreria`, dueña de la lógica); Calendario no pierde nada visual
+- Archivos   : `modules/dominio/tesoreria/` (lógica de "hoy es día de ingreso" + render del nudge), `index.html` (contenedor del panel), `modules/core/state.js` si el marcador entra al schema
+- Depende de : aprobación del ADR 028; recomendada después de IN.6a
+- Modelo     : Sonnet 5 - Alto
 
 #### CAL.2 - Leyenda del calendario dinámica (solo tipos de evento que el usuario ya usa)
 - Prioridad  : sin definir
@@ -128,15 +138,23 @@ _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "
 
 ### Gastos (dominio `gastos`)
 
-#### TX.8 - Gastos muestra solo sus propios movimientos; nuevo "Movimientos" en Inicio
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : hoy Gastos mezcla sus propios registros con movimientos de otras secciones (deudas, ahorro, metas, apartados, calendario, ingresos), lo que dificulta encontrar lo que se busca. Propone que Gastos muestre únicamente los gastos registrados desde esa sección, y que todo lo demás (pagar una deuda, aportar a una meta, recibir un ingreso, aportar a un apartado, pagar un fijo, recuperar un préstamo, distribuir el ingreso) viva en un apartado nuevo del **Inicio** llamado "Movimientos": un historial cronológico general de toda la actividad de la app. El usuario pidió explícitamente evaluar si esta separación mejora la experiencia o si hay una alternativa más eficiente.
-  **Detalle ampliado (brief de Inicio, 2026-07-05):** cada movimiento debe indicar tipo, fecha y hora, categoría, ícono asociado, monto, cuenta/entidad involucrada y si es ingreso o egreso; diferenciados visualmente con los colores e íconos ya definidos por sección para identificarse de un vistazo. Además, propone (a evaluar, no decidido) un pequeño resumen financiero junto al historial: total de ingresos, total de egresos, total ahorrado, total destinado a deudas, variación respecto al período anterior. El usuario pidió explícitamente analizar si ese resumen aporta valor en Inicio o si debería quedarse solo en Análisis, priorizando no sobrecargar la pantalla (posible solape con **ANL.1**).
-- Secciones  : Gastos (`gastos`, se acota su lista), Inicio (nuevo apartado "Movimientos" que agrega actividad de todos los dominios, con resumen financiero opcional a decidir)
-- Archivos   : sin explorar todavía; probablemente hoy Gastos ya lee/combina registros de varios dominios en su vista, revisar `modules/dominio/gastos/` (vista y lógica) y qué helper (si existe) ya consolida "todo lo que pasó" para no duplicar esa función
-- Depende de : relación directa con **IN.4** (dashboard personalizable) y **CAL.1** (aviso de distribución de ingreso a Inicio): las tres tocan qué vive en Inicio y podrían compartir el mismo bloque de "actividad reciente"; conviene revisarlas juntas para no diseñar tres mecanismos de tarjetas de Inicio por separado. El resumen financiero se solapa con **ANL.1** (evitar decidir dos veces dónde vive cada indicador). Ningún dominio importa a otro (ADN 10): un historial cruzando todos los dominios necesita EventBus o agregación en un dominio propio (`resumen`, que ya centraliza el Inicio hoy).
-- Modelo     : Opus 4.8 - Alto (reorganizar de dónde vive la información entre dos secciones es una decisión de arquitectura de información con riesgo real de regresión si algún flujo hoy depende de ver esos movimientos mezclados en Gastos)
+#### TX.8a - Dominio `movimientos` + panel "Actividad reciente" en Inicio
+- Prioridad  : media dentro de la iniciativa [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (tercera fase)
+- Estado     : esperando aprobación del ADR 028
+- Objetivo   : historial general **derivado** de los registros existentes (decisión ADR 028 D5, sin log paralelo): `S.gastos` (los internos `'Deudas'`/`'Gastos fijos'` revelan su origen), `S.ingresosPuntuales` y `S.ahorro.aportes`, normalizados a un shape común por un dominio nuevo `modules/dominio/movimientos/` (`logic.js` puro, testeable; lee `S` sin importar otros dominios, ADN 10 intacto). En Inicio: panel "Actividad reciente" con los últimos 3 a 5 movimientos y enlace "Ver todos". Limitación aceptada v1: metas y apartados no aparecen (sin registros fechados, solo acumuladores); extensión posterior con schema propio. Test guardarraíl que inventaríe las fuentes (mitiga el riesgo de un flujo futuro que cree gastos automáticos sin categoría interna).
+- Secciones  : Inicio, dominio nuevo `movimientos`
+- Archivos   : `modules/dominio/movimientos/{logic,view,index}.js` (nuevos), `index.html` (contenedor), tests nuevos
+- Depende de : aprobación del ADR 028; recomendada después de CAL.1
+- Modelo     : Sonnet 5 - Alto (subir a Opus 4.8 - Alto si al abrir aparecen más fuentes o casos borde que los inventariados en la ficha)
+
+#### TX.8b - Vista completa de Movimientos + Gastos deja de listar categorías internas
+- Prioridad  : media dentro de la iniciativa ADR 028 (cuarta fase)
+- Estado     : esperando aprobación del ADR 028
+- Objetivo   : vista completa del historial en ruta propia (cronológico, con tipo, fecha, ícono, monto, cuenta y dirección ingreso/egreso, colores por sección); `renderListaGastos()` deja de mostrar las categorías internas (`'Deudas'`, `'Gastos fijos'`) para que Gastos quede enfocada en gasto cotidiano (los registros no se tocan: Análisis y Límites siguen leyendo `S.gastos` igual). El resumen financiero (totales ingresos/egresos/variación) **no va en Inicio** (ADR 028 D5, Análisis es el dueño); un encabezado compacto del mes dentro de esta vista se decide aquí.
+- Secciones  : Inicio/Movimientos, Gastos
+- Archivos   : `modules/dominio/movimientos/` (vista completa + ruta), `modules/dominio/gastos/view.js` (filtro de internas), tests
+- Depende de : TX.8a
+- Modelo     : Sonnet 5 - Alto
 
 #### TX.9 - Formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante
 - Prioridad  : sin definir
