@@ -7,8 +7,8 @@
 ## Estructura actual del Dashboard (bento grid)
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
-- **Estado actual**     : estable, en evolución. **IN.7** cerrada. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido, y fases IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b en `BOARD.md`.
-- **Verificado contra** : `623a654` (2026-07-05, IN.7).
+- **Estado actual**     : estable, en evolución. **IN.7** e **IN.6a** cerradas. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido, y fases CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b restantes en `BOARD.md`.
+- **Verificado contra** : (commit de IN.6a, 2026-07-05).
 
 **Dónde vive**
 
@@ -18,6 +18,8 @@
 | Resumen semanal (datos) | `modules/dominio/resumen/logic.js` | `resumenSemanal(gastos, hoyISO)` | ~202 |
 | Resumen semanal (render) | `modules/dominio/resumen/view.js` | `renderPanelResumen()` | ~51 |
 | Hero de saldo (render + ojo/máscara) | `modules/infra/render.js` | `updSaldo()` | ~72 |
+| Saludo dinámico según hora (IN.6a) | `modules/infra/render.js` | `updSaludo()` | ~126 |
+| Elemento del saludo en el DOM | `index.html` | `#saludo-inicio` (bajo `#title-dash`) | ~377 |
 | Acceso rápido "Gasto rápido" (único hoy) | `index.html` | botón `.quick-add`, `data-action="gasto-rapido"` | ~382 |
 | Formulario de Gasto rápido | `modules/dominio/gastos/view.js` | `renderFormGastoRapido()` | ~298 |
 | Panel "Gastos por organizar" (sin descripción/categoría) | `modules/dominio/gastos/view.js` | `renderPendientesOrganizar()` | ~259 |
@@ -51,12 +53,13 @@
 - **Categorías son catálogo cerrado**: `CATEGORIAS_GASTO`/`CATEGORIA_ICONO` no soportan categorías creadas por el usuario hoy. Relevante para **TX.9** (categoría personalizada) y **TX.10** (categoría como eje de automatización): requiere diseño de dato nuevo + migración de schema (ADN 6), no solo UI.
 - **Sin helper cross-dominio en `infra/`**: cualquier "Movimientos" (**TX.8**) que cruce todos los dominios debe decidir dónde vive esa agregación sin violar ADN 10 (ningún dominio importa a otro). El patrón existente (combinar arrays inline en la vista consumidora, ver `dashboard.js`) no escala bien a "todos los dominimos posibles"; probablemente conviene un dominio agregador (`resumen` ya cumple ese rol para el hero) o EventBus con un registro de "aportantes de movimientos".
 - **`S.config.ocultarSaldo` se agregó sin bump de versión de schema** (lectura defensiva con `?.`): mismo patrón sería tentador para `avatar`/`accesosPrioridad` (**IN.6**/**IN.4**), pero antes de repetirlo evaluar si conviene formalizarlo con schema version nuevo, dado que ya son varios campos opcionales acumulados sin migración.
-- **`S.perfil.nombre` ya existe** pero no se renderiza en Inicio: **IN.6** (saludo dinámico) puede consumirlo directo, no requiere dato nuevo para el nombre (sí para avatar/mascota).
+- ~~**`S.perfil.nombre` ya existe pero no se renderiza en Inicio**~~: **resuelto (IN.6a)**. `updSaludo()` lo consume directo, sin dato nuevo.
 
-**Cambios pendientes**: fases del [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) en `BOARD.md` (IN.6a, CAL.1, TX.8a, TX.8b, IN.4a, IN.6b), todas esperando la aprobación del ADR; **IN.5** depende de **TX.9** (fuera de esta iniciativa). Datos adicionales verificados para esas fases: los pagos de fijos crean gastos con categoría interna `'Gastos fijos'` (`agenda/index.js` ~274, `tesoreria/acciones/distribucion.js` ~452) y los abonos a deuda con `'Deudas'` (`compromisos/index.js` ~326 y ~743, `distribucion.js` ~465); `S.ingresosPuntuales` (v22) y `S.ahorro.aportes[]` son registros fechados; metas y apartados solo tienen `montoActual` (sin historial por aporte); la categoría interna `'Ahorro'` existe en `CATEGORIAS_GASTO` pero hoy ningún flujo crea gastos con ella (verificar de nuevo al implementar TX.8a); el asistente de distribución se invoca por `distribuir:abrir` con modo `preacreditado` (`tesoreria/acciones/ingresos.js` ~323).
+**Cambios pendientes**: fases del [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) en `BOARD.md` (CAL.1, TX.8a, TX.8b, IN.4a, IN.6b); **IN.5** depende de **TX.9** (fuera de esta iniciativa). Datos adicionales verificados para esas fases: los pagos de fijos crean gastos con categoría interna `'Gastos fijos'` (`agenda/index.js` ~274, `tesoreria/acciones/distribucion.js` ~452) y los abonos a deuda con `'Deudas'` (`compromisos/index.js` ~326 y ~743, `distribucion.js` ~465); `S.ingresosPuntuales` (v22) y `S.ahorro.aportes[]` son registros fechados; metas y apartados solo tienen `montoActual` (sin historial por aporte); la categoría interna `'Ahorro'` existe en `CATEGORIAS_GASTO` pero hoy ningún flujo crea gastos con ella (verificar de nuevo al implementar TX.8a); el asistente de distribución se invoca por `distribuir:abrir` con modo `preacreditado` (`tesoreria/acciones/ingresos.js` ~323).
 
 **Cambios realizados**:
 
+- 2026-07-05 (IN.6a): saludo dinámico según hora local ("Buenos días/tardes/noches, {nombre}") con `S.perfil.nombre`, sin nombre si está vacío. `updSaludo()` nuevo en `render.js`, invocado desde `renderAll()`; elemento `#saludo-inicio` bajo el título de Inicio. Sin dato nuevo, sin migración (ADR 028 D3). 6 tests nuevos (franjas horarias con reloj falso, sin nombre, `S.perfil` ausente, contenedor ausente).
 - 2026-07-05 (IN.7): `renderPanelPrioridades()` excluye `diasRestantes === 0` de los compromisos antes de combinarlos con personales/apartados. Un compromiso que vence hoy vive únicamente en "Pendientes del mes"; personales y apartados que vencen hoy sí siguen apareciendo en "Próximas prioridades" (no tienen panel de vencidos propio). 2 tests migrados de `DIA_HOY` a `DIA_MANANA` (ya no aplica el caso "vence hoy" para ese escenario) + 2 tests nuevos de regresión.
 
 Esta ficha nace del primer análisis exhaustivo de Inicio (2026-07-05), previo a cualquier propuesta de diseño o código para el resto del cluster.

@@ -16,9 +16,9 @@
  * son síncronas y no dependen de requestAnimationFrame.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
-import { updSaldo, SALDO_MASCARA } from '../../modules/infra/render.js';
+import { updSaldo, updSaludo, SALDO_MASCARA } from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 
 // ── SETUP ────────────────────────────────────────────────────────────────────
@@ -173,5 +173,62 @@ describe('acción saldo-visibilidad', () => {
     dispatch(elOjo(), new Event('click'));
     expect(S.config.ocultarSaldo).toBe(true);
     expect(elSaldo().textContent).toBe(SALDO_MASCARA);
+  });
+});
+
+// ── updSaludo() - saludo dinámico (IN.6a, ADR 028 D3) ────────────────────────
+
+describe('updSaludo()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<p id="saludo-inicio"></p>';
+    S.perfil = { nombre: 'Esteban', smmlv: 0 };
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const elSaludo = () => document.getElementById('saludo-inicio');
+
+  it('saluda "Buenos días" entre las 5 y las 11', () => {
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    expect(elSaludo().textContent).toBe('Buenos días, Esteban');
+  });
+
+  it('saluda "Buenas tardes" entre las 12 y las 18', () => {
+    vi.setSystemTime(new Date(2026, 6, 5, 15, 0));
+    updSaludo();
+    expect(elSaludo().textContent).toBe('Buenas tardes, Esteban');
+  });
+
+  it('saluda "Buenas noches" de 19 a 23 y de 0 a 4', () => {
+    vi.setSystemTime(new Date(2026, 6, 5, 21, 0));
+    updSaludo();
+    expect(elSaludo().textContent).toBe('Buenas noches, Esteban');
+
+    vi.setSystemTime(new Date(2026, 6, 5, 3, 0));
+    updSaludo();
+    expect(elSaludo().textContent).toBe('Buenas noches, Esteban');
+  });
+
+  it('sin nombre en el perfil, saluda sin nombre', () => {
+    S.perfil = { nombre: '', smmlv: 0 };
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    expect(elSaludo().textContent).toBe('Buenos días');
+  });
+
+  it('S.perfil ausente no revienta y saluda sin nombre', () => {
+    S.perfil = undefined;
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    expect(() => updSaludo()).not.toThrow();
+    expect(elSaludo().textContent).toBe('Buenos días');
+  });
+
+  it('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => updSaludo()).not.toThrow();
   });
 });

@@ -373,7 +373,12 @@
       <!-- DASHBOARD -->
       <section class="section" id="sec-dash" tabindex="-1" aria-labelledby="title-dash">
         <header class="section__header">
-          <h1 class="section__title" id="title-dash">Tu resumen</h1>
+          <div>
+            <h1 class="section__title" id="title-dash">Tu resumen</h1>
+            <!-- Saludo dinámico según la hora (IN.6a, ADR 028 D3). render.js
+                 (updSaludo) lo llena; usa S.perfil.nombre si existe. -->
+            <p class="section__subtitle" id="saludo-inicio"></p>
+          </div>
         </header>
 
         <!-- Gasto rapido: card prominente para registrar un gasto en 3 toques.

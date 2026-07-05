@@ -52,14 +52,7 @@ _(Observación sin tarea formal: retroalimentación del usuario en el celular so
 
 > Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **aprobada el 2026-07-05**): análisis en la ficha [`contexto/inicio.md`](contexto/inicio.md); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b, una fase por sesión, verificada y pusheada antes de la siguiente. Los briefs originales completos quedaron capturados en el contexto del ADR.
 
-#### IN.6a - Saludo dinámico con nombre en Inicio
-- Prioridad  : alta dentro de la iniciativa (primer quick win)
-- Estado     : pendiente (ADR 028 aprobado)
-- Objetivo   : "Buenos días / Buenas tardes / Buenas noches, {nombre}" según hora local, usando `S.perfil.nombre` (ya existe desde el onboarding, hoy nadie lo lee en Inicio). Sin dato nuevo, sin migración. ADR 028 D3.
-- Secciones  : Inicio
-- Archivos   : encabezado de Inicio en `index.html` + render (probablemente `modules/infra/render.js` o `modules/dominio/resumen/view.js`)
-- Depende de : nada (ADR 028 aprobado)
-- Modelo     : Sonnet 5 - Bajo
+_(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **CAL.1**.)_
 
 #### IN.4a - Accesos rápidos personalizables (catálogo + tiles + modal por lista)
 - Prioridad  : media dentro de la iniciativa (después de TX.8, cuando el set de paneles esté estable)

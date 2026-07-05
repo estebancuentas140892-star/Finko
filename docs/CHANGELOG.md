@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(resumen): IN.6a, saludo dinámico con nombre en Inicio · 2026-07-05
+
+Primera fase implementada del [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (aprobado el mismo día). "Buenos días / Buenas tardes / Buenas noches, {nombre}" según la hora local, bajo el título de Inicio. Usa `S.perfil.nombre` (existía desde el onboarding, ninguna vista lo leía); sin nombre, saluda sin él. Sin dato nuevo, sin migración de schema (D3 del ADR). Franjas: 5 a 11 días, 12 a 18 tardes, resto (19 a 23 y 0 a 4) noches.
+
+`updSaludo()` nuevo en `modules/infra/render.js`, junto a `updSaldo()` (mismo patrón: lee `S` directo, actualiza un elemento del dashboard, se invoca desde `renderAll()`). Elemento `#saludo-inicio` agregado en `index.html` bajo `#title-dash`, reutilizando la clase `.section__subtitle` ya existente.
+
+**Validación:** 2112/2112 unit (6 tests nuevos con reloj falso para las 3 franjas horarias, sin nombre, `S.perfil` ausente y contenedor ausente). Preview no disponible en este entorno (mismo problema de sesiones anteriores, el servidor no llega a "running"); verificado por render happy-dom directo del DOM. SW v322 → v323.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/render.js` | `updSaludo()` nuevo, invocado desde `renderAll()`. |
+| `index.html` | `#saludo-inicio` bajo el título de Inicio. |
+| `tests/unit/render.test.js` | 6 tests nuevos para `updSaludo()`. |
+| `docs/contexto/inicio.md` | Ficha actualizada: IN.6a cerrada, riesgo del perfil resuelto. |
+| `docs/BOARD.md` | Tarjeta IN.6a cerrada y borrada. |
+| `service-worker.js` | v322 → v323. |
+
+---
+
 ### docs(adr): ADR 028 propuesto, Inicio como centro de control · 2026-07-05
 
 Cierre del análisis conjunto del cluster de Inicio. [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (**aprobado por Esteban el mismo día**) define la arquitectura de información de la pantalla: un rol único por bloque en orden vertical fijo (saludo, hero, accesos rápidos, atención hoy, próximas prioridades, actividad reciente, resumen semanal) y re-corta los briefs del usuario en 6 fases verificables por separado.

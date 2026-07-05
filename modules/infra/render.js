@@ -122,6 +122,24 @@ export function updSaldo() {
   }
 }
 
+/**
+ * Saludo dinámico del Inicio según la hora local (IN.6a, ADR 028 D3).
+ * Usa `S.perfil.nombre` (ya existe desde el onboarding); sin nombre, saluda
+ * sin él. Franjas: 5-11 días, 12-18 tardes, resto (19-23 y 0-4) noches.
+ */
+export function updSaludo() {
+  const el = document.getElementById('saludo-inicio');
+  if (!el) return;
+
+  const hora = new Date().getHours();
+  const momento = hora >= 5 && hora < 12  ? 'Buenos días'
+    :             hora >= 12 && hora < 19 ? 'Buenas tardes'
+    :                                       'Buenas noches';
+
+  const nombre = typeof S.perfil?.nombre === 'string' ? S.perfil.nombre.trim() : '';
+  el.textContent = nombre ? `${momento}, ${nombre}` : momento;
+}
+
 // ── ORQUESTADOR ──────────────────────────────────────────────────
 
 /**
@@ -130,6 +148,7 @@ export function updSaldo() {
  */
 export function renderAll() {
   updSaldo();
+  updSaludo();
   for (const fn of _renders) {
     try {
       fn();
