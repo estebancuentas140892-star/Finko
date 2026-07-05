@@ -124,7 +124,22 @@ _(sin pendientes activos.)_
 
 ### Límites de gasto (dominio `presupuesto`)
 
-_(sin pendientes activos. Nota: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.)_
+_(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + detección de déficit en Mis cuentas), el asignado por grupo de Límites mejora automáticamente sin tocar este código.)_
+
+#### LIM.1 - Límites solo para Estilo de vida + recomendaciones inteligentes + seguimiento motivador
+- Prioridad  : sin definir
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : el usuario concluyó, tras analizar la sección, que Necesidades y Ahorro no deberían tener límite de gasto (Necesidades son obligatorias, no tiene sentido limitarlas; Ahorro por encima de lo previsto es positivo y merece reconocimiento, no advertencia). Propone que Límites se enfoque solo en Estilo de vida. Brief completo del usuario (verbatim, 2026-07-05):
+  1. **Limitar únicamente Estilo de vida**: restaurantes, café, domicilios, streaming, compras impulsivas, ropa, tecnología, entretenimiento, viajes, salidas, transporte no esencial, belleza, hobbies y cualquier gasto no básico. Pidió explícitamente evaluar esta propuesta desde UX/UI y comportamiento financiero, y proponer alternativa si hay una mejor.
+  2. **Solo categorías que el usuario ya usa**: al crear un límite, mostrar únicamente categorías donde ya registró al menos un gasto (no las ~40 categorías del catálogo completo), para no aumentar la carga visual con opciones nunca usadas.
+  3. **Recomendaciones inteligentes proactivas**: si detecta gasto frecuente o creciente en una categoría de Estilo de vida sin límite (ej. varios gastos en restaurantes este mes), sugerir crear un límite ("Hemos notado que... ¿te gustaría crear un límite?").
+  4. **Integración con el Dashboard (Inicio)**: mostrar ahí mismo sugerencias discretas y oportunas (ej. "Aún no has definido un límite para restaurantes", "Este mes gastaste más de lo habitual en entretenimiento"); nunca invasivas ni constantes.
+  5. **Seguimiento y retroalimentación durante el mes**: porcentaje usado del límite, cuánto queda disponible, comparación con meses anteriores, si va bien o debería moderar; y mensajes positivos de refuerzo cuando el usuario se mantiene dentro del límite (no solo advertencias cuando se excede).
+  El usuario pidió explícitamente analizar si esta propuesta es la mejor solución de UX/UI y finanzas personales, con libertad de proponer una alternativa mejor y justificarla.
+- Secciones  : Límites de gasto (`presupuesto`), transversal (categorías con gasto real vienen de `gastos`; sugerencias en Dashboard tocan Inicio, posible relación con IN.4 si esa personalización de accesos ya existe cuando se trabaje esto)
+- Archivos   : sin explorar todavía; candidatos previsibles `modules/dominio/presupuesto/logic.js` (regla actual de qué grupos entran a Límites, hoy probablemente incluye Necesidades/Ahorro/Estilo de vida los 3) y el picker de categorías al crear un límite
+- Depende de : nada directo, pero conviene revisar junto con IN.4 (accesos personalizables del Dashboard) si ambas están activas a la vez, ya que las sugerencias de LIM.1 en Inicio comparten espacio con esa iniciativa (evitar diseñar dos mecanismos de "sugerencia en Dashboard" por separado)
+- Modelo     : primer paso (análisis de la propuesta de restringir a Estilo de vida + diseño del picker de categorías usadas + mecánica de sugerencias) con **Sonnet 5 - Alto** (cambio de alcance acotado a un dominio ya maduro, con patrón de recomendación ya usado en la app, ej. MC.6c "señales más ricas para la distribución automática"); el motor de detección proactiva (recomendación 3) y su integración con Inicio (recomendación 4), si resultan multidominio, podrían justificar subir a Opus 4.8 - Alto al iniciar, evaluar entonces
 
 ---
 
