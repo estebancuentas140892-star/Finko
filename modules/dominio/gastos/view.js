@@ -322,8 +322,8 @@ export function renderFormGastoRapido() {
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
-        <p class="form-empty__desc">Para registrar gastos, agrega al menos una cuenta o billetera en Mis Cuentas.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">${icon('cuentas')} Ir a Mis Cuentas</a>
+        <p class="form-empty__desc">Para registrar gastos necesitas al menos una cuenta o billetera. Créala aquí y sigues sin perder el hilo.</p>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
       </div>`;
   }
 
@@ -352,7 +352,7 @@ export function renderFormGastoRapido() {
  * Devuelve el HTML del formulario de nuevo gasto.
  *
  * Selección de cuenta:
- *   - 0 cuentas: empty state guiado con CTA "Ir a Mis cuentas".
+ *   - 0 cuentas: empty state guiado con CTA "Crear una cuenta".
  *   - Creación (`modoEdicion=false`): sin selector inline; la(s) cuenta(s) se
  *     se eligen al confirmar (reparto multi-cuenta).
  *
@@ -394,8 +394,8 @@ export function renderFormGasto() {
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
-        <p class="form-empty__desc">Para registrar un gasto, agrega al menos una cuenta o billetera en Mis cuentas. Así sabes de dónde sale el dinero.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-seccion">${icon('cuentas')} Ir a Mis cuentas</a>
+        <p class="form-empty__desc">Un gasto necesita una cuenta de donde salga el dinero. Créala aquí y sigues sin perder el hilo.</p>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
       </div>`;
   }
 

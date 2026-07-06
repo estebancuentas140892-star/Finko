@@ -662,11 +662,14 @@ describe('renderFormGasto() - selector de cuenta', () => {
     S.cuentas = [];
   });
 
-  it('sin cuentas: empty state guiado, sin form', () => {
+  it('sin cuentas: empty state guiado, sin form, CTA que crea la cuenta', () => {
     S.cuentas = [];
     const html = renderFormGasto();
     expect(html).not.toContain('form-gasto');
-    expect(html).toContain('Ir a Mis cuentas');
+    expect(html).toContain('Crear una cuenta');
+    // El CTA no debe limitarse a informar: lleva directo a crear la cuenta.
+    expect(html).toContain('data-action="ir-a-crear-cuenta"');
+    expect(html).not.toContain('data-action="modal-close"');
   });
 
   it('con varias cuentas: selector de tarjetas (radios name="cuentaId") con todas las activas', () => {

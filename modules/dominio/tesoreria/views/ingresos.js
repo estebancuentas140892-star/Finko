@@ -236,8 +236,8 @@ export function renderFormIngresoPuntual() {
       <div class="form-empty">
         <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
-        <p class="form-empty__desc">Un ingreso necesita una cuenta donde entre el dinero. Agrega al menos una cuenta o billetera en Mis cuentas.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="modal-close">${icon('cuentas')} Entendido</a>
+        <p class="form-empty__desc">Un ingreso necesita una cuenta donde entre el dinero. Créala aquí y sigues sin perder el hilo.</p>
+        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
       </div>`;
   }
 

@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ux): CTA unificado "necesitas una cuenta" lleva directo a crear la cuenta · 2026-07-06
+
+Reporte de Esteban sobre el onboarding: un usuario nuevo que pulsa el botón (+) → "Nuevo ingreso" sin haber creado ninguna cuenta veía el mensaje "Primero necesitas una cuenta", pero el botón "Entendido" solo cerraba el modal y lo dejaba buscando por su cuenta dónde crear la cuenta. Rompía la continuidad del onboarding. Se unificó el patrón de **todos** los bloqueos por "falta una cuenta" bajo un criterio único de UX: si falta un requisito, la app guía a resolverlo, no solo lo informa.
+
+Nueva acción reutilizable `ir-a-crear-cuenta` en `ui/actions.js`: cierra el modal actual, navega a Mis cuentas y emite `EventBus 'cuenta:crear'`. Tesorería lo escucha en `initAccionesCuentas()` (`EventBus.on('cuenta:crear', _nuevaCuenta)`) y abre el formulario de nueva cuenta. El shell no importa el dominio y `infra/cuenta-helper.js` emite el mismo evento tras navegar, sin invertir el layering infra→ui (ADN 10, comunicación por EventBus). Un solo copy, "Crear una cuenta", en los cinco puntos de entrada.
+
+Diagnóstico de la inconsistencia previa: cada surface hacía algo distinto. El **Nuevo ingreso** (`renderFormIngresoPuntual`) usaba `data-action="modal-close"` sobre un `<a href="#tesoreria">`, y como `dispatch()` hace `preventDefault()` para toda `data-action`, el href nunca navegaba: solo cerraba el modal (el bug reportado). Los dos empty states de **Gastos** ya usaban `ir-a-seccion` (navegaban, pero sin abrir el formulario). El **Abono a deuda** (`renderFormAbono`) era un callejón sin salida: solo un botón "Cerrar". El modal guiado `_mostrarGuiadoCero` de `cuenta-helper.js` (que heredan todos los flujos de un clic: Marcar pagado, confirmar gasto multi-cuenta, aportar a meta/apartado) navegaba pero tampoco abría el formulario.
+
+**Validación:** 2226/2226 unit (2 nuevos en `tesoreria.test.js`: el empty state del ingreso puntual expone el CTA `ir-a-crear-cuenta` y ya no `modal-close`/"Entendido"; el evento `cuenta:crear` abre `#modal-cuenta` en modo creación) + 151/151 E2E en navegador real a viewport móvil (2 nuevos en `registrar-sheet.test.js`: registro de ingreso y de gasto sin cuentas → el CTA cierra el modal, navega a `#tesoreria` y abre el form de nueva cuenta con título "Nueva cuenta"). `gastos.test.js` y `compromisos.test.js` actualizados al copy/acción nuevos. Preview de este entorno no disponible (mismo problema recurrente); cubierto por los E2E. SW v328 → v329.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/ui/actions.js` | Acción `ir-a-crear-cuenta` (cierra modal + `navigate('tesoreria')` + `EventBus.emit('cuenta:crear')`); import de `EventBus`. |
+| `modules/dominio/tesoreria/acciones/cuentas.js` | `EventBus.on('cuenta:crear', _nuevaCuenta)` en `initAccionesCuentas()`; import de `EventBus`. |
+| `modules/infra/cuenta-helper.js` | `_mostrarGuiadoCero`: botón "Crear una cuenta" que emite `cuenta:crear` tras navegar; import de `EventBus`. |
+| `modules/dominio/tesoreria/views/ingresos.js` | Empty state: CTA `ir-a-crear-cuenta` "Crear una cuenta" (era `modal-close` "Entendido", el bug). |
+| `modules/dominio/gastos/view.js` | Empty states de Gasto rápido y Gasto completo: CTA `ir-a-crear-cuenta` "Crear una cuenta" (eran `ir-a-seccion`). |
+| `modules/dominio/compromisos/views/formularios.js` | Empty state de Abono: agrega CTA "Crear una cuenta" junto a "Ahora no" (era solo "Cerrar"). |
+| `tests/unit/tesoreria.test.js` | 2 tests nuevos. |
+| `tests/unit/gastos.test.js`, `tests/unit/compromisos.test.js` | Aserciones actualizadas al copy/acción nuevos. |
+| `tests/e2e/registrar-sheet.test.js` | 2 tests E2E nuevos (registro sin cuentas). |
+| `docs/contexto/transversal.md` | Bloque nuevo del patrón CTA "necesitas una cuenta". |
+| `service-worker.js` | v328 → v329. |
+
+---
+
 ### feat(gastos): TX.9b, categorías personalizadas · 2026-07-05
 
 Segunda y última fase de TX.9 (brief de Esteban: categoría primero, categorías personalizadas, sin descripción redundante). Al elegir "+ Otra categoría" en el select del formulario de gasto, se revela un campo de nombre y una grilla de íconos, en el mismo formulario (sin modal anidado, reusando el patrón ya establecido de `hint-categoria-fija`).

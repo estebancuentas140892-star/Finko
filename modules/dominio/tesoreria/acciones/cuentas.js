@@ -7,7 +7,7 @@
  * - Coordina logic/ + views/ sin hacer calculos ni generar HTML aqui.
  */
 
-import { S } from '../../../core/state.js';
+import { S, EventBus } from '../../../core/state.js';
 import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../../ui/modales.js';
@@ -474,4 +474,10 @@ export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
+
+  // Cualquier flujo bloqueado por "falta una cuenta" (ingreso, gasto, abono...)
+  // emite 'cuenta:crear' para abrir directo el formulario de nueva cuenta, sin
+  // que el shell ni infra importen este dominio. Ver `ir-a-crear-cuenta` en
+  // ui/actions.js y `_mostrarGuiadoCero` en infra/cuenta-helper.js.
+  EventBus.on('cuenta:crear', _nuevaCuenta);
 }

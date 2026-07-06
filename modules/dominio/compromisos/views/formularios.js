@@ -37,9 +37,10 @@ export function renderFormAbono(deuda) {
   if (cuentas.length === 0) {
     return `
       <div class="empty-state">
-        <p class="empty-state__desc">Necesitas tener al menos una cuenta activa para registrar un abono.</p>
+        <p class="empty-state__desc">Un abono necesita una cuenta activa de donde salga el dinero. Créala aquí y sigues sin perder el hilo.</p>
         <div class="modal__footer">
-          <button type="button" class="btn btn-ghost" data-action="modal-close">Cerrar</button>
+          <button type="button" class="btn btn-ghost" data-action="modal-close">Ahora no</button>
+          <button type="button" class="btn btn-primary" data-action="ir-a-crear-cuenta">Crear una cuenta</button>
         </div>
       </div>`;
   }

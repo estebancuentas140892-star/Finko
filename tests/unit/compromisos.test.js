@@ -1682,11 +1682,14 @@ describe('renderFormAbono() - formulario', () => {
     S.cuentas = [];
   });
 
-  it('sin cuentas: estado vacío con instrucción, sin form', () => {
+  it('sin cuentas: estado vacío con CTA que lleva a crear la cuenta, sin form', () => {
     S.cuentas = [];
     const html = renderFormAbono(deuda);
     expect(html).not.toContain('form-abono');
-    expect(html).toContain('al menos una cuenta activa');
+    expect(html).toContain('cuenta activa');
+    // No se queda en informar: ofrece la acción directa para resolver el bloqueo.
+    expect(html).toContain('data-action="ir-a-crear-cuenta"');
+    expect(html).toContain('Crear una cuenta');
   });
 
   it('con cuentas: muestra el form (monto/fecha) con selector de tarjetas', () => {

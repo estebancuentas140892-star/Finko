@@ -55,3 +55,52 @@ test.describe('NAV.A2a - hoja Registrar', () => {
     await expect(page.locator('#form-gasto')).toHaveCount(1);
   });
 });
+
+test.describe('NAV.A2a - registro sin cuentas guía a crear la cuenta', () => {
+  test.beforeEach(async ({ page }) => {
+    // Usuario nuevo: onboarded pero sin ninguna cuenta creada.
+    await page.addInitScript(() => {
+      localStorage.setItem('fk_v1', JSON.stringify({
+        perfil: { nombre: 'Ana', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+      }));
+    });
+    await page.goto('/#dash');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+  });
+
+  test('Nuevo ingreso sin cuentas: el CTA abre directo el formulario de nueva cuenta', async ({ page }) => {
+    await page.click('.nav-item--registrar');
+    await page.click('.registrar__tile[data-kind="ingreso"]');
+
+    // Sin cuentas no hay form: aparece el estado guiado con el CTA de crear cuenta.
+    await expect(page.locator('#modal-ingreso-puntual[data-open]')).toHaveCount(1);
+    await expect(page.locator('#form-ingreso-puntual')).toHaveCount(0);
+    const cta = page.locator('#modal-ingreso-puntual [data-action="ir-a-crear-cuenta"]');
+    await expect(cta).toContainText('Crear una cuenta');
+
+    // El CTA cierra el modal, navega a Mis cuentas y abre el form de nueva cuenta.
+    await cta.click();
+    await expect(page.locator('#modal-ingreso-puntual[data-open]')).toHaveCount(0);
+    await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-cuenta .modal__title')).toHaveText('Nueva cuenta');
+    await expect(page).toHaveURL(/#tesoreria$/);
+  });
+
+  test('Nuevo gasto sin cuentas: mismo CTA "Crear una cuenta"', async ({ page }) => {
+    await page.click('.nav-item--registrar');
+    await page.click('.registrar__tile[data-kind="gasto"]');
+
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
+    await expect(page.locator('#form-gasto')).toHaveCount(0);
+    const cta = page.locator('#modal-gasto [data-action="ir-a-crear-cuenta"]');
+    await expect(cta).toContainText('Crear una cuenta');
+
+    await cta.click();
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(0);
+    await expect(page.locator('#modal-cuenta[data-open]')).toHaveCount(1);
+    await expect(page.locator('#modal-cuenta .modal__title')).toHaveText('Nueva cuenta');
+    await expect(page).toHaveURL(/#tesoreria$/);
+  });
+});

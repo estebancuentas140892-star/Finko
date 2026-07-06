@@ -38,8 +38,9 @@ import {
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderListaIngresos, renderNudgeDistribucionInicio } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
+import { initAccionesCuentas } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
 import { S, EventBus } from '../../modules/core/state.js';
 
@@ -2554,5 +2555,49 @@ describe('sugerirDistribucionIngreso - señales MC.6c', () => {
   it('construirContextoDistribucion expone gastoVariablePromedio', () => {
     const ctx = construirContextoDistribucion({ gastos: [] });
     expect(ctx.gastoVariablePromedio).toBe(0);
+  });
+});
+
+// ── CTA unificado "necesitas una cuenta" ─────────────────────────
+// Al intentar registrar un ingreso/gasto/abono sin ninguna cuenta, el mensaje
+// no debe limitarse a informar: lleva directo a crear la cuenta (ir-a-crear-cuenta
+// → EventBus 'cuenta:crear' → abre el formulario de nueva cuenta).
+describe('registro sin cuentas: el CTA lleva directo a crear la cuenta', () => {
+  afterEach(() => {
+    EventBus._listeners['cuenta:crear'] = [];
+    document.body.innerHTML = '';
+  });
+
+  it('renderFormIngresoPuntual() sin cuentas: empty state con CTA ir-a-crear-cuenta', () => {
+    S.cuentas = [];
+    const html = renderFormIngresoPuntual();
+    expect(html).toContain('form-empty');
+    expect(html).not.toContain('id="form-ingreso-puntual"');
+    expect(html).toContain('Crear una cuenta');
+    expect(html).toContain('data-action="ir-a-crear-cuenta"');
+    // El bug reportado: antes solo cerraba el modal y dejaba al usuario perdido.
+    expect(html).not.toContain('data-action="modal-close"');
+    expect(html).not.toContain('Entendido');
+  });
+
+  it('el evento cuenta:crear abre el formulario de nueva cuenta', () => {
+    document.body.innerHTML = `
+      <div class="app-shell"></div>
+      <div class="modal-overlay" id="modal-cuenta" aria-hidden="true">
+        <div class="modal">
+          <h2 class="modal__title">x</h2>
+          <form id="form-cuenta"></form>
+        </div>
+      </div>`;
+    initAccionesCuentas();
+
+    const overlay = document.getElementById('modal-cuenta');
+    expect(overlay.dataset.open).toBeUndefined();
+
+    EventBus.emit('cuenta:crear');
+
+    // _nuevaCuenta abrió el modal en modo creación.
+    expect(overlay.dataset.open).toBe('');
+    expect(overlay.querySelector('.modal__title').textContent).toBe('Nueva cuenta');
   });
 });

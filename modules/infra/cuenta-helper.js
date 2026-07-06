@@ -14,6 +14,7 @@
  *   - Sin imports de dominios: solo infra.
  */
 
+import { EventBus } from '../core/state.js';
 import { trapFocus, releaseFocus } from './a11y.js';
 import { esc as _esc, f } from './utils.js';
 import { navigate } from './router.js';
@@ -217,11 +218,11 @@ function _mostrarGuiadoCero(contexto) {
         <h2 id="cta-sin-cuentas-title" class="modal__title">Necesitas una cuenta primero</h2>
       </header>
       <div class="modal__body">
-        <p class="confirm__mensaje">Para ${_esc(contexto)}, primero agrega al menos una cuenta en Mis Cuentas. Solo te toma un momento.</p>
+        <p class="confirm__mensaje">Para ${_esc(contexto)}, primero necesitas una cuenta donde entre o de donde salga el dinero. Te llevamos directo al formulario para crearla.</p>
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-role="cancelar">Ahora no</button>
-        <button type="button" class="btn btn-primary" data-role="ir">Ir a Mis Cuentas</button>
+        <button type="button" class="btn btn-primary" data-role="ir">Crear una cuenta</button>
       </div>
     </div>`;
 
@@ -246,6 +247,9 @@ function _mostrarGuiadoCero(contexto) {
     if (btn?.dataset.role === 'ir') {
       _cerrar();
       navigate('tesoreria');
+      // Abre el formulario de nueva cuenta sin importar el dominio: tesoreria
+      // escucha este evento en initAccionesCuentas() (mismo CTA que el resto).
+      EventBus.emit('cuenta:crear');
     } else if (btn?.dataset.role === 'cancelar' || e.target === overlay) {
       _cerrar();
     }

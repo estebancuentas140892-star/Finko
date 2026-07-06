@@ -10,7 +10,7 @@
 import { toggleTheme, toggleSidebarCollapse } from './shell.js';
 import { abrirModal, cerrarModal } from './modales.js';
 import { navigate } from '../infra/router.js';
-import { S } from '../core/state.js';
+import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
 import { updSaldo } from '../infra/render.js';
 
@@ -86,6 +86,20 @@ export function initAcciones() {
     const destino = el.dataset.target
       || (el.getAttribute('href') || '').replace(/^#/, '');
     if (destino) navigate(destino);
+  });
+
+  // Falta una cuenta para completar una acción (registrar un ingreso o gasto,
+  // abonar a una deuda...). En vez de solo informar el requisito, cierra el
+  // modal actual, navega a Mis cuentas y abre de una vez el formulario de nueva
+  // cuenta: el usuario resuelve el bloqueo sin salir a buscar dónde. Emite por
+  // EventBus 'cuenta:crear' (tesoreria escucha y abre su modal), así el shell no
+  // importa el dominio (ADN 10). CTA único reutilizable por todo "necesitas una
+  // cuenta".
+  registrarAccion('ir-a-crear-cuenta', (el) => {
+    const overlay = el.closest('.modal-overlay');
+    if (overlay) cerrarModal(overlay);
+    navigate('tesoreria');
+    EventBus.emit('cuenta:crear');
   });
 
   // Hoja "Registrar" (NAV.A2, ADR 024): cada teja cierra la hoja y dispara su
