@@ -702,3 +702,42 @@ export const GRUPO_POR_SECCION = {
 export function clasificarSeccionEnGrupo(seccion) {
   return GRUPO_POR_SECCION[seccion] ?? null;
 }
+
+/**
+ * Catálogo de secciones elegibles como acceso rápido personalizable en Inicio
+ * (IN.4a, ADR 028 D2). Cubre lo que hoy vive detrás de "Más" (más Movimientos,
+ * que tampoco tiene ícono propio en la barra, TX.8b): 1 toque desde Inicio en
+ * vez de Inicio → Más → sección. `id` es independiente de `hash` a propósito
+ * (si una ruta cambia de nombre algún día, `S.config.accesosInicio` no se
+ * rompe: solo se actualiza el `hash` de esta entrada). `hash` también hace de
+ * clave de color de dominio (`data-section`/`data-dom`, `--fk-dom-*`): cadena
+ * vacía en las secciones sin color financiero propio (Ajustes; Movimientos
+ * combina varias fuentes y no tiene uno solo, igual que su ícono en Actividad
+ * reciente) cae al gris neutro por defecto, sin agregar una regla CSS nueva.
+ * Sección nueva futura = 1 fila más acá, sin tocar el resto del sistema.
+ *
+ * @typedef {Object} AccesoInicio
+ * @property {string} id
+ * @property {string} hash
+ * @property {string} nombre
+ * @property {string} icono  Id completo del símbolo del sprite (`i-*`).
+ */
+export const ACCESOS_INICIO = [
+  { id: 'tesoreria',   hash: 'tesoreria',   nombre: 'Mis cuentas',      icono: 'i-cuentas' },
+  { id: 'compromisos', hash: 'compromisos', nombre: 'Deudas',           icono: 'i-deudas' },
+  { id: 'ahorro',      hash: 'ahorro',      nombre: 'Ahorros',          icono: 'i-ahorro' },
+  { id: 'presupuesto', hash: 'presupuesto', nombre: 'Límites de gasto', icono: 'i-presupuesto' },
+  { id: 'personales',  hash: 'personales',  nombre: 'Me deben',         icono: 'i-personales' },
+  { id: 'analisis',    hash: 'analisis',    nombre: 'Análisis',         icono: 'i-analisis' },
+  { id: 'movimientos', hash: 'movimientos', nombre: 'Movimientos',      icono: 'i-recurring' },
+  { id: 'config',      hash: 'config',      nombre: 'Ajustes',          icono: 'i-ajustes' },
+];
+
+/**
+ * Accesos rápidos por defecto para un usuario nuevo (bump v23): Mis cuentas,
+ * Ahorros y Límites de gasto. Elegidos por frecuencia real de autoconsulta y
+ * porque complementan lo que Inicio no muestra hoy (el hero ya cubre el total
+ * disponible; el panel de límites solo avisa cuando algo se pasó, nunca en
+ * positivo). Ver análisis completo en `docs/contexto/inicio.md` (IN.4a).
+ */
+export const ACCESOS_INICIO_DEFAULT = ['tesoreria', 'ahorro', 'presupuesto'];

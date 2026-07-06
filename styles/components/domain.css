@@ -1067,6 +1067,23 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   ACCESOS-INICIO - tiles personalizables a secciones detrás de "Más"
+   (IN.4a, ADR 028 D2). Reusa .menu-mas__item/__icon/__label tal cual
+   (mismo lenguaje visual, ya coloreado por dominio vía [data-section]):
+   solo hace falta la grilla que los acomoda en una fila bajo el hero.
+   ════════════════════════════════════════════════════════════ */
+
+.accesos-inicio__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--fk-space-3);
+}
+
+.accesos-inicio__personalizar {
+  margin-top: var(--fk-space-2);
+}
+
+/* ════════════════════════════════════════════════════════════
    ACTIVIDAD-RECIENTE - historial derivado de movimientos (TX.8a,
    ADR 028 D5). Últimos gastos, ingresos puntuales y aportes al fondo,
    normalizados desde sus dominios de origen. Mismo patrón visual que

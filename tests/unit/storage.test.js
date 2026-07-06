@@ -969,6 +969,39 @@ describe('Migración v21 → v22 (ingresos puntuales, NAV.A1)', () => {
   });
 });
 
+describe('Migración v22 → v23 (accesos rápidos de Inicio, IN.4a)', () => {
+  it('un estado sin config.accesosInicio recibe el default (Mis cuentas, Ahorros, Límites)', () => {
+    const v22 = { ...createInitialState(), _version: 22 };
+    delete v22.config.accesosInicio;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v22));
+
+    loadData();
+
+    expect(S.config.accesosInicio).toEqual(['tesoreria', 'ahorro', 'presupuesto']);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('un estado v22 sin config en absoluto no revienta la migración', () => {
+    const v22 = { ...createInitialState(), _version: 22 };
+    delete v22.config;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v22));
+
+    loadData();
+
+    expect(S.config.accesosInicio).toEqual(['tesoreria', 'ahorro', 'presupuesto']);
+  });
+
+  it('es idempotente: no pisa una personalización ya guardada', () => {
+    const v23 = { ...createInitialState(), _version: 23 };
+    v23.config.accesosInicio = ['analisis', 'compromisos'];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v23));
+
+    loadData();
+
+    expect(S.config.accesosInicio).toEqual(['analisis', 'compromisos']);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

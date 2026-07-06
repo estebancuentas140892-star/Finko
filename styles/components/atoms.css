@@ -160,6 +160,23 @@
   color: var(--fk-success-text);
 }
 
+/* .list-item usado como <button> (accesos rápidos de Inicio, IN.4a): resetea
+   los estilos nativos del botón para que se vea igual que las filas <article>
+   del resto de la app. */
+.accesos-row {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.accesos-row[aria-pressed="true"] {
+  border-color: var(--fk-accent-border);
+  background: var(--fk-accent-subtle);
+}
+.accesos-row__check .icon {
+  color: var(--fk-success-text);
+}
+
 /* Cuando el icono contiene una teja (de marca o de categoría), el wrapper
    no aporta bg propio: la teja trae el suyo. */
 .list-item__icon:has(.bank-avatar),

@@ -434,6 +434,19 @@
             </div>
           </article>
 
+          <!-- ACCESOS RÁPIDOS: tiles personalizables a secciones que hoy quedan
+               detrás de "Más" (IN.4a, ADR 028 D2). accesos/view.js llena la
+               grilla data-driven contra S.config.accesosInicio; siempre visible
+               (incluso con 0 tiles) para que "Personalizar" quede a mano. -->
+          <div class="bento__cell bento__cell--full accesos-inicio" role="region" aria-label="Accesos rápidos">
+            <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
+            <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
+                    data-action="accesos-personalizar">
+              <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+              Personalizar
+            </button>
+          </div>
+
           <!-- DISTRIBUIR INGRESO: nudge de "Atención hoy" (CAL.1, ADR 028 D4).
                Visible solo cuando llegó el cobro del periodo y aún no se
                distribuyó (mismo guard que el panel de Mis cuentas). Primero
@@ -804,6 +817,25 @@
       </header>
       <div class="modal__body" id="modal-gasto-body">
         <!-- Fase 6 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Personalizar accesos rápidos de Inicio (IN.4a, ADR 028 D2) -->
+  <div class="modal-overlay" id="modal-personalizar-accesos"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-personalizar-accesos-title" aria-hidden="true">
+    <div class="modal modal--sm">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-personalizar-accesos-title">Personalizar accesos</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body">
+        <p class="form-hint form-hint--muted">Toca para agregar o quitar una sección de tus accesos rápidos en Inicio.</p>
+        <div id="modal-personalizar-accesos-body">
+          <!-- accesos/view.js: renderModalPersonalizarAccesos() -->
+        </div>
       </div>
     </div>
   </div>

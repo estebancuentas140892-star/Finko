@@ -10,6 +10,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(resumen): IN.4a, accesos rápidos personalizables en Inicio · 2026-07-05
+
+Última fase de la iniciativa "Inicio como centro de control" del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): fila de tiles bajo el hero de Inicio con 1 toque a secciones que hoy quedan detrás de "Más" (Mis cuentas, Deudas, Ahorros, Límites de gasto, Me deben, Análisis, Movimientos, Ajustes), más un botón "Personalizar" que abre un modal con la lista completa: tocar una fila la agrega o la quita, sin drag & drop (ADR 028 D2).
+
+Bump de schema v23: `S.config.accesosInicio` (array ordenado de ids, migración idempotente v22 → v23). El default de 3 secciones no se eligió por preferencia personal (Esteban lo pidió explícitamente objetivo): se evaluaron las 8 candidatas por frecuencia real de autoconsulta y por si ya tienen presencia en Inicio hoy. Resultado: **Mis cuentas, Ahorros, Límites de gasto**, el mismo patrón que usan Mint/YNAB/Fintonic como pantalla principal (cuentas + presupuesto + metas); Deudas queda cubierta parcialmente por "Pendientes del mes", Análisis por el Resumen semanal, y Me deben/Ajustes/Movimientos son nicho o ya están a 1 tap por otra vía.
+
+Dominio nuevo `modules/dominio/accesos/` (`logic.js` puro: `accesosVisibles()` resuelve ids contra el catálogo, `alternarAcceso()` agrega/quita de forma inmutable; `view.js`: `renderAccesosInicio()` y `renderModalPersonalizarAccesos()`; `index.js`: acciones `accesos-personalizar`/`accesos-toggle`). Reutilización máxima de componentes existentes: los tiles son `.menu-mas__item`/`__icon`/`__label` tal cual (mismo color por dominio que ya usa el menú "Más" vía `[data-section]`, cero CSS de color nuevo) y las filas del modal reusan `.list-item`/`tejaCategoria()` (mismo patrón que Movimientos/Gastos).
+
+Bug propio detectado durante el desarrollo: el texto instructivo del modal usaba la clase `.confirm__mensaje`, que los tests E2E ya trataban como el identificador único del mensaje del modal de confirmación activo (`smoke.test.js`); al vivir siempre en el DOM (el modal no se desmonta, solo se oculta), rompía ese selector con un "strict mode violation" de Playwright en un test de Metas sin relación funcional con esta tarea. Se corrigió reusando `.form-hint` (helper genérico ya existente en `forms.css`), sin tocar el contrato de `.confirm__mensaje`.
+
+**Validación:** 2188/2188 unit (20 tests nuevos: `accesos.test.js` con lógica pura, render de tiles/modal y toggle end-to-end vía `dispatch()`; 3 tests de migración v22→v23 en `storage.test.js`). 148/148 E2E verdes en navegador real (Playwright), incluida la corrección del test de Metas que la colisión de clase rompía. Preview de este entorno no disponible (mismo problema recurrente); verificado además con un flujo manual: tiles default en Dashboard → abrir Personalizar → quitar/agregar una sección → cierre y verificación de que el tile row se actualiza en vivo → navegar a otra sección y volver (persiste) → tocar un tile navega a la sección real. SW v326 → v327.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `ACCESOS_INICIO` (catálogo de 8 secciones), `ACCESOS_INICIO_DEFAULT`. |
+| `modules/core/state.js` | `S.config.accesosInicio` con el default. |
+| `modules/core/storage.js` | Migración v22 → v23; `SCHEMA_VERSION = 23`. |
+| `modules/dominio/accesos/logic.js` | Nuevo: `accesosVisibles()`, `alternarAcceso()`. |
+| `modules/dominio/accesos/view.js` | Nuevo: `renderAccesosInicio()`, `renderModalPersonalizarAccesos()`. |
+| `modules/dominio/accesos/index.js` | Nuevo: `initAccesos()`, acciones `accesos-personalizar`/`accesos-toggle`. |
+| `modules/ui/bootstrap.js` | Import + llamada a `initAccesos()`. |
+| `index.html` | Fila de tiles bajo el hero (`#accesos-inicio-grid`), modal `#modal-personalizar-accesos`. |
+| `styles/components/domain.css` | Bloque `ACCESOS-INICIO` (grilla auto-fit de tiles). |
+| `styles/components/atoms.css` | `.accesos-row*` (fila toggleable del modal). |
+| `tests/unit/accesos.test.js` | Nuevo: 17 tests. |
+| `tests/unit/storage.test.js` | 3 tests nuevos (migración v23). |
+| `docs/contexto/inicio.md`, `docs/MAPA.md` | IN.4a cerrada; dominio `accesos/` indexado. |
+| `docs/BOARD.md` | Tarjeta IN.4a cerrada y borrada; iniciativa del ADR 028 completa salvo IN.6b. |
+| `service-worker.js` | `accesos/` agregado a `CORE_ASSETS`; v326 → v327. |
+
+---
+
 ### feat(movimientos): TX.8b, vista completa + Gastos acota categorías internas · 2026-07-05
 
 Cuarta y última fase de la iniciativa TX.8 del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): vista completa del historial de Movimientos en ruta propia `#movimientos` (sin ícono fijo en la barra de navegación; se llega por el link "Ver todo" del panel compacto de Inicio, o por hash directo). Cronológica, agrupada por mes ("Julio 2026"), sin totales: el resumen financiero (ingresos/egresos/variación) sigue siendo dueño exclusivo de Análisis (ADR 028 D5).
