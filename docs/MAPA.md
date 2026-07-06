@@ -45,12 +45,13 @@ Este archivo traduce esa tabla y agrega, para cada dominio, qué archivo de lóg
 | *(sin sección propia)* | `import/` | `logic.js`, `view.js`, `index.js` | `charts.css` (bloque IMPORT CSV línea 154) | `import.test.js` |
 | *(toast, sin vista propia)* | `logros/` | `logic.js`, `index.js` | `nudges.css` (bloque LOGRO TOAST línea 127) | `logros.test.js` |
 | *(card en Inicio)* | `resumen/` | `logic.js`, `view.js`, `index.js` | `domain.css` (RESUMEN-CARD línea 1070) | `resumen.test.js` |
+| *(card en Inicio, "Actividad reciente")* | `movimientos/` | `logic.js`, `view.js`, `index.js` (TX.8a, ADR 028) | `domain.css` (ACTIVIDAD-RECIENTE, antes de RESUMEN-CARD) | `movimientos.test.js` |
 
 ---
 
 ## 3. "Inicio" no es un dominio
 
-El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una composición de widgets que sí pertenecen a otros dominios (`resumen/`, `logros/`, alertas de `presupuesto/`, vencidos de `compromisos/`+`agenda/`). Si algo se ve mal en Inicio, casi siempre hay que mirar el dominio dueño del dato, no un archivo "dash" que no existe.
+El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una composición de widgets que sí pertenecen a otros dominios (`resumen/`, `movimientos/`, `logros/`, alertas de `presupuesto/`, vencidos de `compromisos/`+`agenda/`, nudge de distribución de `tesoreria/`). Si algo se ve mal en Inicio, casi siempre hay que mirar el dominio dueño del dato, no un archivo "dash" que no existe.
 
 ---
 
@@ -64,7 +65,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `buttons.css` | Botones y cards genéricas |
 | `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
 | `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
-| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, ahorro consolidado, banner-propósito (compartido por las 10 secciones) |
+| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, ahorro consolidado, banner-propósito (compartido por las 10 secciones) |
 | `forms.css` | Sistema de íconos SVG de línea, inputs/formularios, quick add, quick toast |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |

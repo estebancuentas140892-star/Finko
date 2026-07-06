@@ -124,14 +124,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Gastos (dominio `gastos`)
 
-#### TX.8a - Dominio `movimientos` + panel "Actividad reciente" en Inicio
-- Prioridad  : media dentro de la iniciativa [ADR 028](DECISIONS/028-inicio-centro-de-control.md) (tercera fase)
-- Estado     : pendiente (ADR 028 aprobado)
-- Objetivo   : historial general **derivado** de los registros existentes (decisión ADR 028 D5, sin log paralelo): `S.gastos` (los internos `'Deudas'`/`'Gastos fijos'` revelan su origen), `S.ingresosPuntuales` y `S.ahorro.aportes`, normalizados a un shape común por un dominio nuevo `modules/dominio/movimientos/` (`logic.js` puro, testeable; lee `S` sin importar otros dominios, ADN 10 intacto). En Inicio: panel "Actividad reciente" con los últimos 3 a 5 movimientos y enlace "Ver todos". Limitación aceptada v1: metas y apartados no aparecen (sin registros fechados, solo acumuladores); extensión posterior con schema propio. Test guardarraíl que inventaríe las fuentes (mitiga el riesgo de un flujo futuro que cree gastos automáticos sin categoría interna).
-- Secciones  : Inicio, dominio nuevo `movimientos`
-- Archivos   : `modules/dominio/movimientos/{logic,view,index}.js` (nuevos), `index.html` (contenedor), tests nuevos
-- Depende de : recomendada después de CAL.1
-- Modelo     : Sonnet 5 - Alto (subir a Opus 4.8 - Alto si al abrir aparecen más fuentes o casos borde que los inventariados en la ficha)
+_(**TX.8a cerrada** el 2026-07-05: dominio `movimientos` + panel "Actividad reciente" en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **TX.8b**.)_
 
 #### TX.8b - Vista completa de Movimientos + Gastos deja de listar categorías internas
 - Prioridad  : media dentro de la iniciativa ADR 028 (cuarta fase)

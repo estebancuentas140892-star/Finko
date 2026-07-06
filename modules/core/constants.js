@@ -462,6 +462,7 @@ export const CATEGORIA_ICONO = {
   'Gastos hormiga':     'c-hormiga',
   'Deudas':             'i-deudas',
   'Ahorro':             'i-ahorro',
+  'Gastos fijos':       'i-recurring',
   'Alimentación':       'c-mercado',
   'Otros':              'c-otros',
 };

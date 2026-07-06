@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(movimientos): TX.8a, dominio nuevo + Actividad reciente en Inicio · 2026-07-05
+
+Tercera fase del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): Inicio muestra un panel "Actividad reciente" con los últimos 5 movimientos de la app, derivados sin log paralelo (D5 del ADR) desde `S.gastos`, `S.ingresosPuntuales` y `S.ahorro.aportes`.
+
+Dominio nuevo `modules/dominio/movimientos/` (`logic.js` puro, `view.js`, `index.js`). `logic.js` no lee `S` ni importa otros dominios (ADN 10): `view.js` extrae los arrays y se los pasa. Cada fuente se normaliza a un shape común `{ id, fecha, tipo, descripcion, monto, direccion, icono, cuentaId }`; se combinan y ordenan por fecha descendente, límite 5.
+
+Ajuste menor a `constants.js`: se agregó `CATEGORIA_ICONO['Gastos fijos'] = 'i-recurring'` (la categoría interna que crean los pagos de fijos no tenía ícono propio y caía al genérico `i-gastos`); `'Deudas'` y `'Ahorro'` ya tenían íconos, así que no hizo falta tocar más el catálogo ni importar `iconoPorOrigen()` de `gastos/logic.js` (habría violado ADN 10).
+
+CSS nuevo `.actividad-reciente*` en `domain.css`, siguiendo el mismo patrón visual que `vencidos-card`/`prioridades-card` (header + lista de ítems con ícono, descripción, "hace N días" vía `tiempoRelativo()` ya existente, y monto con signo `+`/`-` según dirección).
+
+**Validación:** 2145/2145 unit (26 tests nuevos en `movimientos.test.js`: normalización de las 3 fuentes, orden/límite, render oculto/visible/límite de 5 en el DOM). E2E smoke 82/82 verde en navegador real (Playwright), confirmando que el dominio nuevo carga sin errores. Preview de este entorno no disponible (mismo problema recurrente). SW v324 → v325.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/movimientos/logic.js` | Nuevo: `movimientosDesdeGastos()`, `movimientosDesdeIngresosPuntuales()`, `movimientosDesdeAportes()`, `movimientosRecientes()`. |
+| `modules/dominio/movimientos/view.js` | Nuevo: `renderActividadReciente()`. |
+| `modules/dominio/movimientos/index.js` | Nuevo: `initMovimientos()`, registro en `state:change`/`hashchange`/`registrarRender`. |
+| `modules/ui/bootstrap.js` | Import + llamada a `initMovimientos()`. |
+| `modules/core/constants.js` | `CATEGORIA_ICONO['Gastos fijos'] = 'i-recurring'`. |
+| `index.html` | `#panel-actividad-reciente` en el bento de Inicio, antes de "Resumen de la semana". |
+| `styles/components/domain.css` | Bloque `ACTIVIDAD-RECIENTE` nuevo. |
+| `tests/unit/movimientos.test.js` | Nuevo: 26 tests. |
+| `docs/contexto/inicio.md`, `docs/MAPA.md` | TX.8a cerrada; nuevo dominio indexado. |
+| `docs/BOARD.md` | Tarjeta TX.8a cerrada y borrada. |
+| `service-worker.js` | v324 → v325. |
+
+---
+
 ### feat(tesoreria): CAL.1, nudge de distribución del ingreso en Inicio · 2026-07-05
 
 Segunda fase del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): el bloque "Atención hoy" de Inicio ahora muestra un nudge cuando llegó el cobro del periodo y aún no se ha distribuido ("Hoy recibes tu ingreso" / "Recibiste tu ingreso el {fecha}"), con un botón "Distribuir ahora".

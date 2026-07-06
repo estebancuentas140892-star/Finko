@@ -1067,6 +1067,99 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   ACTIVIDAD-RECIENTE - historial derivado de movimientos (TX.8a,
+   ADR 028 D5). Últimos gastos, ingresos puntuales y aportes al fondo,
+   normalizados desde sus dominios de origen. Mismo patrón visual que
+   vencidos-card/prioridades-card: header + lista con scroll interno.
+   ════════════════════════════════════════════════════════════ */
+
+.actividad-reciente {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.actividad-reciente__header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--fk-border-subtle);
+}
+
+.actividad-reciente__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.actividad-reciente__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.actividad-reciente__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.actividad-reciente__icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fk-radius-md);
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--fk-text-muted) 14%, transparent);
+  color: var(--fk-text-secondary);
+}
+.actividad-reciente__icon .icon {
+  --fk-icon-size: var(--fk-icon-md);
+}
+
+.actividad-reciente__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.actividad-reciente__desc {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actividad-reciente__cuando {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  margin: 0.1rem 0 0;
+}
+
+.actividad-reciente__monto {
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  flex-shrink: 0;
+  color: var(--fk-text-primary);
+}
+
+.actividad-reciente__monto--ingreso {
+  color: var(--fk-success-text);
+}
+
+.actividad-reciente__monto--egreso {
+  color: var(--fk-text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════
    RESUMEN-CARD - resumen semanal del dashboard (F8 / ADR 008).
    Panel de solo lectura: gasto de 7 días + comparación + categoría
    top + días activos del mes. Tono de reflexión, sin castigo.
