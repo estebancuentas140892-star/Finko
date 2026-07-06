@@ -67,7 +67,7 @@ _(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CH
 - Objetivo   : con las mejoras ya pensadas para el formulario de registrar gasto (categoría primero, categorías inteligentes, ver **TX.9**), el usuario considera que "Gasto rápido" dejó de tener utilidad: mantener dos flujos distintos para prácticamente lo mismo solo añade complejidad. Propone eliminarlo y concentrar todo en un único flujo. Pidió explícitamente analizar antes si existe un beneficio real en conservarlo o si puede transformarse en algo que aporte más valor, en vez de eliminarlo sin más.
 - Secciones  : Inicio (dashboard, de donde se accede a Gasto rápido hoy), Gastos (`gastos`)
 - Archivos   : sin explorar todavía; ubicar el acceso y el flujo de "Gasto rápido" en el código antes de decidir
-- Depende de : **TX.9** (rediseño del formulario de gasto): la decisión de eliminar Gasto rápido tiene más sentido una vez el formulario completo ya sea así de ágil; evaluarlas en el mismo momento, no por separado.
+- Depende de : nada (TX.9 completa, el formulario completo ya tiene categoría primero + categorías personalizadas)
 - Modelo     : Sonnet 5 - Bajo (decisión acotada, una vez tomada es sobre todo remover una ruta/acceso y sus tests; el análisis de "vale la pena conservarlo" es la parte que requiere criterio, no volumen de código)
 
 #### IN.6b - Avatar ilustrado del usuario (teja de iniciales + set propio)
@@ -117,16 +117,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa.)_
 
-_(**TX.9a cerrada** el 2026-07-05: categoría primero + descripción deja de ser obligatoria, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md). Siguiente fase: **TX.9b**.)_
-
-#### TX.9b - Categorías personalizadas ("Otra categoría")
-- Prioridad  : sin definir
-- Estado     : pendiente
-- Objetivo   : al elegir "Otra categoría" en el selector, aparece un selector de ícono (del sprite, sin precedente de UI reusable hoy) y un campo de nombre; una vez creada, se guarda (`S.categoriasPersonalizadas` o similar, bump de schema con migración idempotente, ADN 6) y se comporta exactamente igual que una categoría nativa en el selector, en `CATEGORIA_ICONO` y en Movimientos (TX.8).
-- Secciones  : Gastos (`gastos`), transversal (Movimientos lee `CATEGORIA_ICONO` directo)
-- Archivos   : `modules/core/state.js` + `storage.js` (colección nueva + migración), `modules/core/constants.js` (resolución categoría nativa + personalizada), `modules/dominio/gastos/view.js` (selector de ícono nuevo), tests
-- Depende de : nada (TX.9a ya cerrada, el formulario ya está reordenado)
-- Modelo     : Sonnet 5 - Alto (primer selector de ícono de la app, sin componente reusable; migración de schema cuidadosa, pero sin lógica financiera compleja)
+_(**TX.9 completa** el 2026-07-05: TX.9a (categoría primero + descripción deja de ser obligatoria) y TX.9b (categorías personalizadas), ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md).)_
 
 #### TX.10 - Categoría como eje de automatización (límites, gastos hormiga/fantasma, recomendaciones)
 - Prioridad  : sin definir

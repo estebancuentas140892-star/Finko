@@ -22,10 +22,11 @@ import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
   deltasPorEdicionDeGasto, esGastoPendiente,
+  validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
-import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -57,9 +58,30 @@ async function _guardarGasto() {
 
   // La cuenta de origen viene del selector de tarjetas (radio name="cuentaId").
   const errores = validarGasto(datos);
+
+  // TX.9b: "+ Otra categoría" pide nombre + ícono en el mismo formulario;
+  // se valida junto con el resto para un solo paso de errores.
+  const esCategoriaNueva = datos.categoria === CATEGORIA_NUEVA_VALUE;
+  if (esCategoriaNueva) {
+    errores.push(...validarCategoriaPersonalizada(
+      { nombre: datos.categoriaNuevaNombre, icono: datos.categoriaNuevaIcono },
+      S.categoriasPersonalizadas,
+    ));
+  }
+
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
+  }
+
+  // Crear y persistir la categoría antes de normalizar el gasto: `datos.categoria`
+  // pasa a ser su nombre, exactamente como si el usuario hubiera elegido una nativa.
+  if (esCategoriaNueva) {
+    const nueva = guardar('categoriasPersonalizadas', {
+      nombre: datos.categoriaNuevaNombre.trim(),
+      icono:  datos.categoriaNuevaIcono,
+    });
+    datos.categoria = nueva.nombre;
   }
 
   if (idEdit) {
@@ -439,6 +461,30 @@ function _montarFormGasto() {
           `Si es recurrente, puedes <a href="#agenda" data-action="modal-close" ` +
           `class="link">registrarlo en Calendario</a> para llevarlo mejor.`;
       }
+    });
+  }
+
+  // TX.9b: "+ Otra categoría" revela nombre + selector de ícono en el mismo
+  // formulario (sin modal anidado). Se ocultan de nuevo si el usuario elige
+  // otra opción del select.
+  const camposNueva = form.querySelector('#categoria-nueva-fields');
+  if (catSelect && camposNueva) {
+    catSelect.addEventListener('change', () => {
+      camposNueva.hidden = catSelect.value !== CATEGORIA_NUEVA_VALUE;
+    });
+  }
+
+  // Selector de ícono: tocar uno lo marca (aria-pressed) y guarda su id en
+  // el input oculto que sí viaja con el FormData al enviar.
+  const iconoPicker = form.querySelector('#icono-picker');
+  const iconoInput  = form.querySelector('#categoria-nueva-icono');
+  if (iconoPicker && iconoInput) {
+    iconoPicker.addEventListener('click', (e) => {
+      const btn = e.target.closest('.icono-picker__btn');
+      if (!btn) return;
+      iconoPicker.querySelectorAll('.icono-picker__btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+      btn.setAttribute('aria-pressed', 'true');
+      iconoInput.value = btn.dataset.icon;
     });
   }
 }

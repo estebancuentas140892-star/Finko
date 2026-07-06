@@ -17,9 +17,10 @@ import {
   esGastoPendiente,
   gastosPendientes,
   iconoPorOrigen,
+  validarCategoriaPersonalizada,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos } from '../../modules/dominio/gastos/view.js';
-import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../modules/core/constants.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
+import { CATEGORIAS_TIPICAMENTE_FIJAS, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -287,6 +288,55 @@ describe('validarGasto()', () => {
   it('puede tener múltiples errores a la vez', () => {
     const errores = validarGasto({ descripcion: '', monto: '0', categoria: '', fecha: '', cuentaId: '' });
     expect(errores.length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+// ── validarCategoriaPersonalizada() (TX.9b) ───────────────────────
+
+describe('validarCategoriaPersonalizada()', () => {
+  it('acepta nombre e ícono válidos, sin duplicados', () => {
+    expect(validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-pesa' }, [])).toEqual([]);
+  });
+
+  it('reporta error si el nombre está vacío', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: '', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /nombre/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si el nombre es solo espacios', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: '   ', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /nombre/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si no se eligió ícono', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: '' }, []);
+    expect(errores.some(e => /ícono/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si el ícono no está en el catálogo curado (defensivo)', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-mercado' }, []);
+    expect(errores.some(e => /ícono/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si el nombre duplica una categoría nativa', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'Mercado', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+  });
+
+  it('la duplicación de nativa no distingue mayúsculas ni tildes', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: 'mercadó', icono: 'c-pesa' }, []);
+    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+  });
+
+  it('reporta error si el nombre duplica una categoría personalizada ya creada', () => {
+    const existentes = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
+    const errores = validarCategoriaPersonalizada({ nombre: 'Gimnasio', icono: 'c-carro' }, existentes);
+    expect(errores.some(e => /existe/i.test(e))).toBe(true);
+  });
+
+  it('puede tener múltiples errores a la vez', () => {
+    const errores = validarCategoriaPersonalizada({ nombre: '', icono: '' }, []);
+    expect(errores.length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -672,6 +722,42 @@ describe('renderFormGasto() - selector de cuenta', () => {
     const html = renderFormGasto();
     const inputNota = html.slice(html.indexOf('id="gasto-nota"'), html.indexOf('/>', html.indexOf('id="gasto-nota"')));
     expect(inputNota).not.toContain('required');
+  });
+
+  it('TX.9b: incluye la opción "+ Otra categoría…"', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    S.categoriasPersonalizadas = [];
+    const html = renderFormGasto();
+    expect(html).toContain(`value="${CATEGORIA_NUEVA_VALUE}"`);
+    expect(html).toContain('Otra categoría');
+  });
+
+  it('TX.9b: las categorías personalizadas ya creadas aparecen como opción normal', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    S.categoriasPersonalizadas = [{ id: 'cat1', nombre: 'Gimnasio', icono: 'c-pesa' }];
+    const html = renderFormGasto();
+    expect(html).toContain('<option value="Gimnasio">Gimnasio</option>');
+  });
+
+  it('TX.9b: sin personalizadas, no agrega el optgroup', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    S.categoriasPersonalizadas = [];
+    const html = renderFormGasto();
+    expect(html).not.toContain('optgroup');
+  });
+
+  it('TX.9b: los campos de categoría nueva empiezan ocultos', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    const bloque = html.slice(html.indexOf('id="categoria-nueva-fields"'), html.indexOf('id="categoria-nueva-fields"') + 60);
+    expect(bloque).toContain('hidden');
+  });
+
+  it('TX.9b: la grilla de íconos tiene un botón por ícono del catálogo curado', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    const botones = html.match(/icono-picker__btn/g) ?? [];
+    expect(botones).toHaveLength(ICONOS_CATEGORIA_PERSONALIZADA.length);
   });
 });
 

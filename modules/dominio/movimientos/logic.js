@@ -12,7 +12,7 @@
  * aporte (solo `montoActual`), así que no aparecen en el historial todavía.
  */
 
-import { CATEGORIA_ICONO, CATEGORIA_INGRESO_ICONO } from '../../core/constants.js';
+import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/constants.js';
 
 /**
  * @typedef {Object} Movimiento
@@ -43,12 +43,15 @@ const _CATEGORIAS_COMPROMISOS = new Set(['Deudas', 'Gastos fijos']);
  * vía `dominio: 'compromisos'` (colorea distinto de un gasto cotidiano). La
  * descripción ya no es obligatoria en el formulario de gasto (TX.9a): sin
  * ella, la categoría hace de descripción (mismo criterio que el título del
- * ítem en la lista de Gastos).
+ * ítem en la lista de Gastos). `iconoDeCategoriaGasto()` resuelve tanto
+ * categorías nativas como personalizadas por el usuario (TX.9b); no importa
+ * `gastos/logic.js` (ADN 10), el resolver vive en `core/constants.js`.
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {{ nombre: string, icono: string }[]} [categoriasPersonalizadas]
  * @returns {Movimiento[]}
  */
-export function movimientosDesdeGastos(gastos) {
+export function movimientosDesdeGastos(gastos, categoriasPersonalizadas = []) {
   if (!Array.isArray(gastos)) return [];
   return gastos.map(g => ({
     id:          g.id,
@@ -57,7 +60,7 @@ export function movimientosDesdeGastos(gastos) {
     descripcion: g.descripcion?.trim() || g.categoria || 'Gasto',
     monto:       g.monto,
     direccion:   'egreso',
-    icono:       CATEGORIA_ICONO[g.categoria] ?? 'i-gastos',
+    icono:       iconoDeCategoriaGasto(g.categoria, categoriasPersonalizadas),
     cuentaId:    g.cuentaId ?? null,
     dominio:     _CATEGORIAS_COMPROMISOS.has(g.categoria) ? 'compromisos' : 'gastos',
   }));
@@ -113,13 +116,13 @@ export function movimientosDesdeAportes(aportes) {
  * garantizado (no hay hora de creación en el dato de origen); dentro de un
  * mismo tipo se conserva el orden de inserción de su colección.
  *
- * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown }} fuentes
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, categoriasPersonalizadas?: unknown }} fuentes
  * @param {number} [limite=5]
  * @returns {Movimiento[]}
  */
-export function movimientosRecientes({ gastos, ingresosPuntuales, aportes } = {}, limite = 5) {
+export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, categoriasPersonalizadas } = {}, limite = 5) {
   const todos = [
-    ...movimientosDesdeGastos(gastos),
+    ...movimientosDesdeGastos(gastos, categoriasPersonalizadas),
     ...movimientosDesdeIngresosPuntuales(ingresosPuntuales),
     ...movimientosDesdeAportes(aportes),
   ];

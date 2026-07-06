@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 23;
+const SCHEMA_VERSION = 24;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -373,6 +373,15 @@ function _migrate(raw) {
     if (!data.config || typeof data.config !== 'object') data.config = {};
     if (!Array.isArray(data.config.accesosInicio)) {
       data.config.accesosInicio = [...ACCESOS_INICIO_DEFAULT];
+    }
+  }
+
+  // v23 → v24: categorías de gasto creadas por el usuario (TX.9b). El usuario
+  // existente arranca sin ninguna; se comportan igual que una nativa una vez
+  // creadas. Idempotente: si ya es un array, no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 24) {
+    if (!Array.isArray(data.categoriasPersonalizadas)) {
+      data.categoriasPersonalizadas = [];
     }
   }
 

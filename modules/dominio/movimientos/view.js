@@ -44,9 +44,10 @@ export function renderActividadReciente() {
   if (!el) return;
 
   const movs = movimientosRecientes({
-    gastos:            S.gastos,
-    ingresosPuntuales:  S.ingresosPuntuales,
-    aportes:            S.ahorro?.aportes,
+    gastos:                   S.gastos,
+    ingresosPuntuales:        S.ingresosPuntuales,
+    aportes:                  S.ahorro?.aportes,
+    categoriasPersonalizadas: S.categoriasPersonalizadas,
   }, LIMITE_RECIENTES);
 
   if (movs.length === 0) {
@@ -160,9 +161,10 @@ export function renderMovimientosCompletos() {
   if (!el) return;
 
   const movs = movimientosCompletos({
-    gastos:            S.gastos,
-    ingresosPuntuales: S.ingresosPuntuales,
-    aportes:           S.ahorro?.aportes,
+    gastos:                   S.gastos,
+    ingresosPuntuales:        S.ingresosPuntuales,
+    aportes:                  S.ahorro?.aportes,
+    categoriasPersonalizadas: S.categoriasPersonalizadas,
   });
 
   if (movs.length === 0) {

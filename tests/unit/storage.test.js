@@ -1002,6 +1002,29 @@ describe('Migración v22 → v23 (accesos rápidos de Inicio, IN.4a)', () => {
   });
 });
 
+describe('Migración v23 → v24 (categorías de gasto personalizadas, TX.9b)', () => {
+  it('un estado sin categoriasPersonalizadas recibe el array vacío', () => {
+    const v23 = { ...createInitialState(), _version: 23 };
+    delete v23.categoriasPersonalizadas;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v23));
+
+    loadData();
+
+    expect(S.categoriasPersonalizadas).toEqual([]);
+    expect(S._version).toBe(SCHEMA_VERSION);
+  });
+
+  it('es idempotente: no borra categorías personalizadas ya creadas', () => {
+    const existente = { id: 'cat1', nombre: 'Gimnasio', icono: 'c-pesa', fechaCreacion: '2026-07-05T10:00:00Z' };
+    const v24 = { ...createInitialState(), _version: 24, categoriasPersonalizadas: [existente] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v24));
+
+    loadData();
+
+    expect(S.categoriasPersonalizadas).toEqual([existente]);
+  });
+});
+
 describe('save() - debounce', () => {
   it('no escribe inmediatamente: requiere esperar al timer o forzar _flushNow', () => {
     vi.useFakeTimers();

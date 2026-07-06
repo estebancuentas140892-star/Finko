@@ -119,6 +119,37 @@ form:not(.config-form) .form-group:not(:first-child) {
 .form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
 .form-hint--info    { color: var(--fk-info-text); }
 
+/* Selector de ícono para categoría de gasto personalizada (TX.9b). */
+.icono-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+}
+.icono-picker__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.icono-picker__btn:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+}
+.icono-picker__btn[aria-pressed="true"] {
+  border-color: var(--fk-accent-border);
+  background: var(--fk-accent-subtle);
+  color: var(--fk-accent);
+}
+
 /* Empty-state que reemplaza al form cuando faltan prerrequisitos
    (ej: intentar crear un gasto sin tener cuentas creadas). */
 .form-empty {

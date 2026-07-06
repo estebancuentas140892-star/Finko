@@ -3,7 +3,7 @@
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { CATEGORIA_AGENDA_ICONO } from '../../core/constants.js';
+import { CATEGORIA_AGENDA_ICONO, CATEGORIAS_GASTO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 
 // ── FILTROS Y AGRUPACIÓN ─────────────────────────────────────────
 
@@ -168,6 +168,40 @@ export function validarGasto(datos) {
   }
   if (!datos.cuentaId?.trim()) {
     errores.push('Debes elegir de qué cuenta sale el dinero.');
+  }
+
+  return errores;
+}
+
+/**
+ * Valida una categoría de gasto personalizada nueva (TX.9b): nombre no
+ * vacío, sin duplicar (sin distinguir mayúsculas/tildes de más o de menos)
+ * ninguna categoría nativa ni una ya creada por el usuario, e ícono elegido
+ * del catálogo curado.
+ *
+ * @param {{ nombre: string, icono: string }} datos
+ * @param {{ nombre: string, icono: string }[]} existentes personalizadas ya guardadas
+ * @returns {string[]}
+ */
+export function validarCategoriaPersonalizada(datos, existentes = []) {
+  const errores = [];
+  const nombre = datos.nombre?.trim() ?? '';
+
+  if (!nombre) {
+    errores.push('Escribe un nombre para tu categoría.');
+  } else {
+    const normalizar = (s) => s.toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+    const normalizado = normalizar(nombre);
+    const nativas = CATEGORIAS_GASTO.map(normalizar);
+    const propias = existentes.map(c => normalizar(c.nombre));
+    if (nativas.includes(normalizado) || propias.includes(normalizado)) {
+      errores.push('Ya existe una categoría con ese nombre.');
+    }
+  }
+
+  const iconosValidos = new Set(ICONOS_CATEGORIA_PERSONALIZADA.map(i => i.icono));
+  if (!datos.icono || !iconosValidos.has(datos.icono)) {
+    errores.push('Elige un ícono para tu categoría.');
   }
 
   return errores;

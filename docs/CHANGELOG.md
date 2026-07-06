@@ -10,6 +10,42 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): TX.9b, categorías personalizadas · 2026-07-05
+
+Segunda y última fase de TX.9 (brief de Esteban: categoría primero, categorías personalizadas, sin descripción redundante). Al elegir "+ Otra categoría" en el select del formulario de gasto, se revela un campo de nombre y una grilla de íconos, en el mismo formulario (sin modal anidado, reusando el patrón ya establecido de `hint-categoria-fija`).
+
+`ICONOS_CATEGORIA_PERSONALIZADA` (29 entradas, `constants.js`) cura los símbolos `c-*` del sprite que ya existían pero no estaban asignados a ninguna categoría nativa en `CATEGORIA_ICONO`: se descubrió que el sprite tiene 43 símbolos `c-*` en total, repartidos entre 7 catálogos distintos (gastos, ingresos, agenda, deuda, deuda personal, deuda-personal-relación, metas), de los cuales solo ~18 estaban en uso dentro del catálogo de Gastos. Los 29 restantes son exactamente el pool que hacía falta, sin trabajo de diseño nuevo. Cada entrada trae una etiqueta en español (ej. "Gimnasio" para `c-pesa`) para el `aria-label` del botón.
+
+`validarCategoriaPersonalizada({ nombre, icono }, existentes)` exige nombre no vacío, sin duplicar (insensible a mayúsculas y tildes, vía `.normalize('NFD')` + `\p{Diacritic}`) ninguna categoría nativa de `CATEGORIAS_GASTO` ni una personalizada ya creada, más un ícono elegido del catálogo curado. Al enviar el formulario, la categoría se persiste primero (`guardar('categoriasPersonalizadas', { nombre, icono })`, bump de schema v23 → v24, migración idempotente) y su nombre pasa a ser la `categoria` del gasto: en usos futuros aparece como una opción normal del select, bajo `<optgroup label="Tus categorías">`, indistinguible de una nativa para el resto de la app.
+
+`iconoDeCategoriaGasto(categoria, personalizadas)` (nuevo, en `core/constants.js` en vez de `gastos/logic.js`, para que `movimientos/logic.js` también pueda importarlo sin violar ADN 10 "ningún dominio importa a otro") resuelve nativa primero, personalizada después, y el genérico `i-gastos` como último recurso. Se usa tanto en `_renderGastoItem()` (lista de Gastos) como en `movimientosDesdeGastos()` (Movimientos, TX.8): una categoría personalizada muestra su ícono correcto en ambos lugares, no solo donde se creó.
+
+Encontrado durante el desarrollo: el primer intento de `validarCategoriaPersonalizada()` solo comparaba en minúsculas (`toLocaleLowerCase()`), sin la insensibilidad a tildes que el propio docstring ya prometía; un test escrito con una tilde de más ("mercadó" vs "Mercado") lo detectó antes de cerrar la tarea. Se corrigió agregando `.normalize('NFD').replace(/\p{Diacritic}/gu, '')` a la comparación.
+
+**Validación:** 2224/2224 unit (32 tests nuevos: `constants.test.js` verifica que el catálogo curado no repite ningún ícono ya usado en `CATEGORIA_ICONO` y que cada uno existe en el sprite; `gastos.test.js` cubre validación y los elementos nuevos del formulario; `movimientos.test.js` cubre la resolución del ícono personalizado; `storage.test.js` cubre la migración v23→v24) + 149/149 E2E verdes en navegador real (Playwright), incluido 1 test nuevo de extremo a extremo: crear "Gimnasio" con ícono, verla en la lista, y reutilizarla en un segundo gasto sin que el select duplique la opción. Preview de este entorno no disponible (mismo problema recurrente).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` (29 íconos curados), `iconoDeCategoriaGasto()`. |
+| `modules/core/state.js` | `S.categoriasPersonalizadas` (default `[]`). |
+| `modules/core/storage.js` | Migración v23 → v24; `SCHEMA_VERSION = 24`. |
+| `modules/dominio/gastos/logic.js` | `validarCategoriaPersonalizada()` nuevo. |
+| `modules/dominio/gastos/view.js` | `renderFormGasto()`: optgroup de personalizadas + opción "+ Otra categoría" + selector de ícono inline; `CATEGORIA_NUEVA_VALUE` exportado; `_renderGastoItem()` usa `iconoDeCategoriaGasto()`. |
+| `modules/dominio/gastos/index.js` | Reveal/hide de los campos nuevos y click del selector de ícono en `_montarFormGasto()`; creación y persistencia de la categoría en `_guardarGasto()`. |
+| `modules/dominio/movimientos/logic.js` | `movimientosDesdeGastos()` recibe `categoriasPersonalizadas` y usa `iconoDeCategoriaGasto()`. |
+| `modules/dominio/movimientos/view.js` | Pasa `S.categoriasPersonalizadas` a `movimientosRecientes()`/`movimientosCompletos()`. |
+| `styles/components/forms.css` | Bloque `.icono-picker*` (primer selector de ícono de la app). |
+| `tests/unit/constants.test.js` | 8 tests nuevos (catálogo curado + resolver). |
+| `tests/unit/gastos.test.js` | 15 tests nuevos (validación + formulario). |
+| `tests/unit/movimientos.test.js` | 2 tests nuevos. |
+| `tests/unit/storage.test.js` | 2 tests nuevos (migración v24). |
+| `tests/e2e/smoke.test.js` | 1 test nuevo. |
+| `docs/contexto/gastos.md` | TX.9 completa (9a + 9b) cerrada. |
+| `docs/BOARD.md` | Tarjeta TX.9b cerrada y borrada. |
+| `service-worker.js` | v327 → v328. |
+
+---
+
 ### feat(gastos): TX.9a, categoría primero + descripción ya no obligatoria · 2026-07-05
 
 Primera de dos fases de TX.9 (brief de Esteban sobre el formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante). Primer análisis a fondo de la sección Gastos, documentado en [`docs/contexto/gastos.md`](contexto/gastos.md) (regla 2.6 de `/CLAUDE.md`); la tarjeta original se dividió en **TX.9a** (esta) y **TX.9b** (categorías personalizadas, siguiente fase) por tocar reordenamiento de formulario, redefinición de una señal existente y un modelo de dato nuevo sin precedente en la misma tarjeta.

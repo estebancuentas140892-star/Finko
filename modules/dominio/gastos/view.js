@@ -5,8 +5,8 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
-import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO } from '../../core/constants.js';
+import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, esGastoPendiente, totalGastos, iconoPorOrigen } from './logic.js';
 
@@ -16,6 +16,9 @@ const MONTHS = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
+
+/** Valor especial del `<select>` de categoría que revela los campos de "Otra categoría" (TX.9b). */
+export const CATEGORIA_NUEVA_VALUE = '__nueva__';
 
 /**
  * Categorías internas que el código asigna a pagos de deuda ('Deudas') y de
@@ -214,8 +217,9 @@ function _renderGastoItem(gasto) {
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
   // ícono de su compromiso de origen (categoría de Agenda, o i-cuentas /
   // i-personales por tipo de deuda); solo sin origen aplica el de la
-  // categoría del gasto. ID.3: el glifo va en la teja teñida del dominio.
-  const simbolo = iconoPorOrigen(gasto, S.compromisos) ?? CATEGORIA_ICONO[catKey] ?? 'i-gastos';
+  // categoría del gasto (nativa o personalizada, TX.9b). ID.3: el glifo va
+  // en la teja teñida del dominio.
+  const simbolo = iconoPorOrigen(gasto, S.compromisos) ?? iconoDeCategoriaGasto(catKey, S.categoriasPersonalizadas);
 
   return `
     <article class="list-item" data-id="${_esc(gasto.id)}">
@@ -365,6 +369,22 @@ export function renderFormGasto() {
     .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
     .join('');
 
+  // TX.9b: las categorías creadas por el usuario aparecen en su propio grupo,
+  // seguidas de la opción para crear una nueva. Se comportan igual que una
+  // nativa una vez elegidas (mismo <option>, mismo name="categoria").
+  const personalizadas = S.categoriasPersonalizadas ?? [];
+  const catPersonalizadasOpts = personalizadas.length > 0
+    ? `<optgroup label="Tus categorías">
+        ${personalizadas.map(c => `<option value="${_esc(c.nombre)}">${_esc(c.nombre)}</option>`).join('')}
+      </optgroup>`
+    : '';
+
+  const iconoBtns = ICONOS_CATEGORIA_PERSONALIZADA.map(({ icono, etiqueta }) => `
+    <button type="button" class="icono-picker__btn" data-icon="${icono}"
+            aria-pressed="false" aria-label="${_esc(etiqueta)}" title="${_esc(etiqueta)}">
+      ${iconoCategoria(icono)}
+    </button>`).join('');
+
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
@@ -386,8 +406,20 @@ export function renderFormGasto() {
         <select id="gasto-categoria" name="categoria" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
           ${catOpts}
+          ${catPersonalizadasOpts}
+          <option value="${CATEGORIA_NUEVA_VALUE}">+ Otra categoría…</option>
         </select>
         <p id="hint-categoria-fija" class="form-hint form-hint--info" hidden></p>
+      </div>
+      <div class="form-group" id="categoria-nueva-fields" hidden>
+        <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
+        <input id="categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
+               placeholder="Ej. Gimnasio" autocomplete="off" />
+        <span class="label">Ícono</span>
+        <div class="icono-picker" id="icono-picker" role="group" aria-label="Elige un ícono para tu categoría">
+          ${iconoBtns}
+        </div>
+        <input type="hidden" name="categoriaNuevaIcono" id="categoria-nueva-icono" />
       </div>
       <div class="form-group">
         <label for="gasto-monto" class="label">Monto (COP)</label>

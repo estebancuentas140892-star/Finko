@@ -96,7 +96,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Sección de la app | Ficha | Estado |
 |---|---|---|
 | Inicio | [`inicio.md`](inicio.md) | activa (estructura del dashboard, análisis conjunto IN.4/IN.6/IN.7/CAL.1/TX.8) |
-| Gastos | [`gastos.md`](gastos.md) | activa (TX.9a cerrada, formulario de gasto; TX.9b pendiente) |
+| Gastos | [`gastos.md`](gastos.md) | activa (TX.9 completa: formulario de gasto + categorías personalizadas) |
 | Calendario | `calendario.md` | sin crear |
 | Deudas | `deudas.md` | sin crear |
 | Mis cuentas | `mis-cuentas.md` | sin crear |

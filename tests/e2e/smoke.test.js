@@ -538,6 +538,50 @@ test.describe('Gastos - CRUD', () => {
       { timeout: 3_000 }
     );
   });
+
+  test('TX.9b: crear categoría personalizada, verla en la lista y reusarla en un segundo gasto', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 500000);
+    await expect(page.locator('#lista-tesoreria')).toContainText('Efectivo', { timeout: 3_000 });
+
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+
+    const form = page.locator('#modal-gasto-body form');
+    await form.locator('select[name="categoria"]').selectOption('__nueva__');
+    await expect(page.locator('#categoria-nueva-fields')).toBeVisible();
+
+    await form.locator('#categoria-nueva-nombre').fill('Gimnasio');
+    await page.click('.icono-picker__btn[data-icon="c-pesa"]');
+    await expect(page.locator('.icono-picker__btn[data-icon="c-pesa"]')).toHaveAttribute('aria-pressed', 'true');
+
+    await form.locator('[name="monto"]').fill('80000');
+    const hoy = hoyLocal();
+    await form.locator('[name="fecha"]').fill(hoy);
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+    await expect(page.locator('#lista-gastos .list-item__title')).toHaveText('Gimnasio', { timeout: 3_000 });
+
+    // Registrar un segundo gasto: "Gimnasio" ya aparece como opción normal del
+    // select (se comporta igual que una categoría nativa, sin duplicar el flujo).
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const form2 = page.locator('#modal-gasto-body form');
+    await expect(form2.locator('select[name="categoria"] option', { hasText: 'Gimnasio' })).toHaveCount(1);
+    await form2.locator('select[name="categoria"]').selectOption('Gimnasio');
+    await expect(page.locator('#categoria-nueva-fields')).toBeHidden();
+    await form2.locator('[name="monto"]').fill('30000');
+    await form2.locator('[name="fecha"]').fill(hoy);
+    await form2.locator('button[type="submit"]').click();
+
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+    const items = page.locator('#lista-gastos .list-item__title', { hasText: 'Gimnasio' });
+    await expect(items).toHaveCount(2);
+  });
 });
 
 // ── SUITE 6: Tesorería ──────────────────────────────────────────────────────

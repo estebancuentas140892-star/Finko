@@ -301,6 +301,15 @@ export function createInitialState() {
     /** Gastos variables. */
     gastos: [],
 
+    /**
+     * Categorías de gasto creadas por el usuario (TX.9b, schema v24). Se
+     * comportan igual que una categoría nativa de `CATEGORIAS_GASTO`: el
+     * nombre (no el `id` que le asigna `guardar()`) es la clave que se
+     * guarda en `Gasto.categoria`, igual que en `CATEGORIA_ICONO`.
+     * @type {{ id: string, nombre: string, icono: string, fechaCreacion: string }[]}
+     */
+    categoriasPersonalizadas: [],
+
     /** Compromisos: gastos fijos, deudas y agenda de pagos. */
     compromisos: [],
 

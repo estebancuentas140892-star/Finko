@@ -23,6 +23,8 @@ import {
   LABEL_GRUPO_FINANCIERO,
   GRUPO_POR_SECCION,
   clasificarSeccionEnGrupo,
+  ICONOS_CATEGORIA_PERSONALIZADA,
+  iconoDeCategoriaGasto,
 } from '../../modules/core/constants.js';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -311,6 +313,56 @@ describe('TX.4 - Consistencia de íconos entre catálogos (ADR 014, ids de sprit
     for (const k of ['Deudas', 'Ahorro', 'Alimentación']) {
       expect(ids.has(CATEGORIA_ICONO[k]), `interna "${k}"`).toBe(true);
     }
+  });
+});
+
+// ── TX.9b: catálogo de íconos para categorías personalizadas ─────
+
+describe('TX.9b - ICONOS_CATEGORIA_PERSONALIZADA', () => {
+  it('no repite ningún ícono ya asignado en CATEGORIA_ICONO (evita glifos duplicados en el mismo selector)', () => {
+    const usados = new Set(Object.values(CATEGORIA_ICONO));
+    for (const { icono, etiqueta } of ICONOS_CATEGORIA_PERSONALIZADA) {
+      expect(usados.has(icono), `"${etiqueta}" (${icono}) ya está asignado en CATEGORIA_ICONO`).toBe(false);
+    }
+  });
+
+  it('cada ícono existe como <symbol> en el sprite de index.html', () => {
+    const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+    const ids = new Set([...indexHtml.matchAll(/<symbol id="([\w-]+)"/g)].map(m => m[1]));
+    for (const { icono, etiqueta } of ICONOS_CATEGORIA_PERSONALIZADA) {
+      expect(ids.has(icono), `"${etiqueta}" apunta a "${icono}", que no está en el sprite`).toBe(true);
+    }
+  });
+
+  it('no tiene íconos ni etiquetas repetidas dentro del propio catálogo', () => {
+    const iconos = ICONOS_CATEGORIA_PERSONALIZADA.map(i => i.icono);
+    const etiquetas = ICONOS_CATEGORIA_PERSONALIZADA.map(i => i.etiqueta);
+    expect(new Set(iconos).size).toBe(iconos.length);
+    expect(new Set(etiquetas).size).toBe(etiquetas.length);
+  });
+});
+
+describe('iconoDeCategoriaGasto()', () => {
+  it('resuelve una categoría nativa desde CATEGORIA_ICONO', () => {
+    expect(iconoDeCategoriaGasto('Mercado')).toBe('c-mercado');
+  });
+
+  it('resuelve una categoría personalizada por nombre', () => {
+    const personalizadas = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
+    expect(iconoDeCategoriaGasto('Gimnasio', personalizadas)).toBe('c-pesa');
+  });
+
+  it('nativa tiene prioridad si por algún motivo coinciden los nombres', () => {
+    const personalizadas = [{ nombre: 'Mercado', icono: 'c-pesa' }];
+    expect(iconoDeCategoriaGasto('Mercado', personalizadas)).toBe('c-mercado');
+  });
+
+  it('cae al genérico i-gastos sin categoría nativa ni personalizada', () => {
+    expect(iconoDeCategoriaGasto('Categoría inexistente', [])).toBe('i-gastos');
+  });
+
+  it('tolera personalizadas ausente (default [])', () => {
+    expect(iconoDeCategoriaGasto('Categoría inexistente')).toBe('i-gastos');
   });
 });
 

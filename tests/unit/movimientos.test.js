@@ -79,6 +79,17 @@ describe('movimientosDesdeGastos()', () => {
     expect(m.icono).toBe('i-gastos');
   });
 
+  it('resuelve el ícono de una categoría personalizada (TX.9b)', () => {
+    const personalizadas = [{ nombre: 'Gimnasio', icono: 'c-pesa' }];
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Gimnasio' })], personalizadas);
+    expect(m.icono).toBe('c-pesa');
+  });
+
+  it('sin personalizadas (default []), una categoría desconocida sigue cayendo al genérico', () => {
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Gimnasio' })]);
+    expect(m.icono).toBe('i-gastos');
+  });
+
   it('sin cuentaId, cuentaId queda null', () => {
     const [m] = movimientosDesdeGastos([gasto({ cuentaId: undefined })]);
     expect(m.cuentaId).toBeNull();

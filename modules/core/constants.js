@@ -468,6 +468,63 @@ export const CATEGORIA_ICONO = {
 };
 
 /**
+ * Íconos elegibles para una categoría de gasto personalizada (TX.9b): los
+ * símbolos `c-*` de categoría del sprite que ya existen pero **no** están
+ * asignados en `CATEGORIA_ICONO` (evita dos entradas con el mismo glifo en
+ * el mismo selector). Reusan la metáfora ya usada por otros catálogos del
+ * proyecto (ingresos, agenda, metas) donde aplica: cruzar de dominio no
+ * confunde porque nunca aparecen lado a lado en el selector de Gastos.
+ * Etiqueta en español para el `aria-label` de cada botón del selector.
+ */
+export const ICONOS_CATEGORIA_PERSONALIZADA = [
+  { icono: 'c-carro',       etiqueta: 'Carro' },
+  { icono: 'c-computador',  etiqueta: 'Tecnología' },
+  { icono: 'c-telefono',    etiqueta: 'Celular' },
+  { icono: 'c-internet',    etiqueta: 'Internet' },
+  { icono: 'c-streaming',   etiqueta: 'Streaming' },
+  { icono: 'c-campana',     etiqueta: 'Suscripción' },
+  { icono: 'c-compras',     etiqueta: 'Compras' },
+  { icono: 'c-tienda',      etiqueta: 'Tienda' },
+  { icono: 'c-regalo',      etiqueta: 'Regalo' },
+  { icono: 'c-torta',       etiqueta: 'Celebración' },
+  { icono: 'c-avion',       etiqueta: 'Viaje' },
+  { icono: 'c-palmera',     etiqueta: 'Vacaciones' },
+  { icono: 'c-maletin',     etiqueta: 'Trabajo' },
+  { icono: 'c-edificio',    etiqueta: 'Vivienda' },
+  { icono: 'c-familia',     etiqueta: 'Familia' },
+  { icono: 'c-amigos',      etiqueta: 'Amigos' },
+  { icono: 'c-vecino',      etiqueta: 'Vecino' },
+  { icono: 'c-biberon',     etiqueta: 'Bebé' },
+  { icono: 'c-anillo',      etiqueta: 'Boda' },
+  { icono: 'c-birrete',     etiqueta: 'Educación' },
+  { icono: 'c-pesa',        etiqueta: 'Gimnasio' },
+  { icono: 'c-escudo',      etiqueta: 'Seguro' },
+  { icono: 'c-paraguas',    etiqueta: 'Protección' },
+  { icono: 'c-recibo',      etiqueta: 'Factura' },
+  { icono: 'c-billete',     etiqueta: 'Dinero' },
+  { icono: 'c-bolsa',       etiqueta: 'Ahorro' },
+  { icono: 'c-subsidio',    etiqueta: 'Subsidio' },
+  { icono: 'c-cohete',      etiqueta: 'Emprendimiento' },
+  { icono: 'c-etiqueta',    etiqueta: 'Otro' },
+];
+
+/**
+ * Resuelve el ícono de una categoría de gasto: nativa primero
+ * (`CATEGORIA_ICONO`), luego personalizada (creada por el usuario, TX.9b),
+ * y como último recurso el genérico `i-gastos`. Pura: recibe las
+ * personalizadas como parámetro (el caller, `view.js`, lee `S`).
+ *
+ * @param {string} categoria
+ * @param {{ nombre: string, icono: string }[]} [personalizadas]
+ * @returns {string}
+ */
+export function iconoDeCategoriaGasto(categoria, personalizadas = []) {
+  if (CATEGORIA_ICONO[categoria]) return CATEGORIA_ICONO[categoria];
+  const propia = personalizadas.find(c => c.nombre === categoria);
+  return propia?.icono ?? 'i-gastos';
+}
+
+/**
  * Categorías predefinidas para ingresos recurrentes.
  * El orden define el del selector en el formulario.
  * 'Salario mínimo' dispara la automatización de subsidio de transporte.
