@@ -155,6 +155,10 @@
 .list-item__value--in {
   color: var(--fk-success-text);
 }
+/* Igual que __value--in, pero para __amount (columna __meta, ej. Movimientos TX.8b). */
+.list-item__amount--ingreso {
+  color: var(--fk-success-text);
+}
 
 /* Cuando el icono contiene una teja (de marca o de categoría), el wrapper
    no aporta bg propio: la teja trae el suyo. */

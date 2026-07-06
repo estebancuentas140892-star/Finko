@@ -17,6 +17,20 @@ const MONTHS = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
+/**
+ * Categorías internas que el código asigna a pagos de deuda ('Deudas') y de
+ * fijos del Calendario ('Gastos fijos'), no gasto cotidiano (TX.8b, ADR 028).
+ * Gastos deja de listarlas para enfocarse en lo que el usuario sí decide
+ * gastar día a día; siguen viviendo en `S.gastos` sin cambios, así que
+ * Análisis y Límites (que leen todo el historial) no se ven afectados.
+ */
+const _CATEGORIAS_INTERNAS = new Set(['Deudas', 'Gastos fijos']);
+
+/** @param {import('../../core/state.js').Gasto[]} gastos */
+function _sinInternas(gastos) {
+  return gastos.filter(g => !_CATEGORIAS_INTERNAS.has(g.categoria));
+}
+
 // ── ESTADO LOCAL DE VISTA ────────────────────────────────────────
 
 /** Mes visualizado (0-indexed, igual que Date.getMonth()). `null` = mes actual. */
@@ -71,7 +85,7 @@ export function renderFiltrosGastos() {
 
   _ensureMes();
 
-  const delMes = gastosMes(S.gastos, _viewYear, _viewMonth + 1); // gastosMes usa mes 1-indexed
+  const delMes = _sinInternas(gastosMes(S.gastos, _viewYear, _viewMonth + 1)); // gastosMes usa mes 1-indexed
   const label  = `${MONTHS[_viewMonth]} ${_viewYear}`;
 
   // Chips: solo si hay gastos en el mes.
@@ -140,7 +154,7 @@ export function renderListaGastos() {
 
   _ensureMes();
 
-  const delMes = gastosMes(S.gastos, _viewYear, _viewMonth + 1); // 1-indexed
+  const delMes = _sinInternas(gastosMes(S.gastos, _viewYear, _viewMonth + 1)); // 1-indexed
 
   if (delMes.length === 0) {
     el.innerHTML = _renderEmptyState();

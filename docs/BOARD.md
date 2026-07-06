@@ -50,7 +50,7 @@ _(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el mont
 
 _(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
 
-> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **aprobada el 2026-07-05**): análisis en la ficha [`contexto/inicio.md`](contexto/inicio.md); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b, una fase por sesión, verificada y pusheada antes de la siguiente. Los briefs originales completos quedaron capturados en el contexto del ADR.
+> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **aprobada el 2026-07-05**): análisis en la ficha [`contexto/inicio.md`](contexto/inicio.md); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b, una fase por sesión, verificada y pusheada antes de la siguiente. IN.6a, CAL.1, TX.8a y TX.8b ya cerradas; quedan IN.4a e IN.6b. Los briefs originales completos quedaron capturados en el contexto del ADR.
 
 _(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **CAL.1**.)_
 
@@ -60,7 +60,7 @@ _(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CH
 - Objetivo   : catálogo `ACCESOS_INICIO` en `constants.js`, `S.config.accesosInicio` (3 por defecto, bump de schema v23 con migración idempotente), fila de tiles data-driven bajo el hero, y modal "Personalizar" con selección por lista (sin drag & drop en v1, ADR 028 D2). Complementa el bottom nav: 1 tap a las secciones que hoy quedan detrás de "Más". Default exacto a confirmar con Esteban.
 - Secciones  : Inicio, `core` (schema v23)
 - Archivos   : `modules/core/constants.js`, `modules/core/state.js` + `storage.js` (migración), render de Inicio, CSS de tiles
-- Depende de : idealmente después de TX.8a/TX.8b
+- Depende de : nada (TX.8a/TX.8b ya cerradas, el set de paneles de Inicio está estable)
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.4b (opcional, pospuesta) - Sugerencia de accesos por frecuencia de uso
@@ -124,16 +124,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Gastos (dominio `gastos`)
 
-_(**TX.8a cerrada** el 2026-07-05: dominio `movimientos` + panel "Actividad reciente" en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **TX.8b**.)_
-
-#### TX.8b - Vista completa de Movimientos + Gastos deja de listar categorías internas
-- Prioridad  : media dentro de la iniciativa ADR 028 (cuarta fase)
-- Estado     : pendiente (ADR 028 aprobado)
-- Objetivo   : vista completa del historial en ruta propia (cronológico, con tipo, fecha, ícono, monto, cuenta y dirección ingreso/egreso, colores por sección); `renderListaGastos()` deja de mostrar las categorías internas (`'Deudas'`, `'Gastos fijos'`) para que Gastos quede enfocada en gasto cotidiano (los registros no se tocan: Análisis y Límites siguen leyendo `S.gastos` igual). El resumen financiero (totales ingresos/egresos/variación) **no va en Inicio** (ADR 028 D5, Análisis es el dueño); un encabezado compacto del mes dentro de esta vista se decide aquí.
-- Secciones  : Inicio/Movimientos, Gastos
-- Archivos   : `modules/dominio/movimientos/` (vista completa + ruta), `modules/dominio/gastos/view.js` (filtro de internas), tests
-- Depende de : TX.8a
-- Modelo     : Sonnet 5 - Alto
+_(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa. Del orden recomendado del ADR 028 quedan pendientes IN.4a e IN.6b.)_
 
 #### TX.9 - Formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante
 - Prioridad  : sin definir

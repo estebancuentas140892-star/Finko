@@ -18,7 +18,7 @@ import {
   gastosPendientes,
   iconoPorOrigen,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -710,5 +710,72 @@ describe('iconoPorOrigen (TX.6/TX.7)', () => {
     const gasto = { id: 'g7', categoria: 'Otros', compromisoId: 'c-fijo' };
     expect(iconoPorOrigen(gasto, undefined)).toBeNull();
     expect(iconoPorOrigen(gasto, [])).toBeNull();
+  });
+});
+
+// ── renderListaGastos() / renderFiltrosGastos() - categorías internas (TX.8b) ──
+
+describe('Gastos deja de listar categorías internas (TX.8b)', () => {
+  /** Fecha dentro del mes que _ensureMes() usa por defecto (mes real actual). */
+  const mesActual = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+  });
+
+  it('un gasto con categoría "Deudas" no aparece en la lista', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Deudas', descripcion: 'Abono: Préstamo', fecha: mesActual() })];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').innerHTML).not.toContain('Abono: Préstamo');
+  });
+
+  it('un gasto con categoría "Gastos fijos" no aparece en la lista', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Gastos fijos', descripcion: 'Pago: Arriendo', fecha: mesActual() })];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').innerHTML).not.toContain('Pago: Arriendo');
+  });
+
+  it('si solo hay gastos internos ese mes, muestra el estado vacío normal', () => {
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Deudas', fecha: mesActual() })];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').querySelector('.empty-state')).not.toBeNull();
+  });
+
+  it('un gasto cotidiano sigue apareciendo junto a uno interno', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Deudas', fecha: mesActual() }),
+      gastoBase({ id: 'g2', categoria: 'Mercado', descripcion: 'Mercado semana', fecha: mesActual() }),
+    ];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').innerHTML).toContain('Mercado semana');
+  });
+
+  it('el total del resumen excluye los gastos internos', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Deudas', monto: 200_000, fecha: mesActual() }),
+      gastoBase({ id: 'g2', categoria: 'Mercado', monto: 15_000, fecha: mesActual() }),
+    ];
+    renderListaGastos();
+    const html = document.getElementById('lista-gastos').innerHTML;
+    expect(html).toContain('$15.000');
+    expect(html).not.toContain('$200.000');
+  });
+
+  it('los chips de categoría no ofrecen "Deudas" ni "Gastos fijos"', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Deudas', fecha: mesActual() }),
+      gastoBase({ id: 'g2', categoria: 'Mercado', fecha: mesActual() }),
+    ];
+    renderFiltrosGastos();
+    const html = document.getElementById('panel-filtros-gastos').innerHTML;
+    expect(html).not.toContain('data-cat="Deudas"');
+    expect(html).not.toContain('data-cat="Gastos fijos"');
+    expect(html).toContain('data-cat="Mercado"');
   });
 });

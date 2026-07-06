@@ -10,6 +10,37 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(movimientos): TX.8b, vista completa + Gastos acota categorías internas · 2026-07-05
+
+Cuarta y última fase de la iniciativa TX.8 del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): vista completa del historial de Movimientos en ruta propia `#movimientos` (sin ícono fijo en la barra de navegación; se llega por el link "Ver todo" del panel compacto de Inicio, o por hash directo). Cronológica, agrupada por mes ("Julio 2026"), sin totales: el resumen financiero (ingresos/egresos/variación) sigue siendo dueño exclusivo de Análisis (ADR 028 D5).
+
+Cada `Movimiento` (`movimientos/logic.js`) ahora lleva un campo `dominio` (`gastos`, `compromisos`, `ingresos` o `ahorro`, según el tipo y la categoría interna del gasto) que colorea la teja del ícono con `tejaCategoria()`, el mismo patrón que usan Gastos y Deudas. `movimientosCompletos()` es nuevo: reusa `movimientosRecientes()` con límite `Infinity`, sin duplicar la lógica de combinación/orden de las 3 fuentes.
+
+En paralelo, `renderListaGastos()` y `renderFiltrosGastos()` (`gastos/view.js`) dejan de mostrar las categorías internas ('Deudas' = abonos, 'Gastos fijos' = pagos del Calendario) vía el filtro `_sinInternas()`: Gastos queda enfocada en gasto cotidiano, incluido el total del resumen del mes. `S.gastos` no se toca, así que Análisis y Límites (que siguen leyendo todo el historial) no se ven afectados.
+
+Se corrigió de paso un hueco de TX.8a: `modules/dominio/movimientos/{logic,view,index}.js` no estaban en `CORE_ASSETS` del service worker (ausentes del precache offline desde que se creó el dominio).
+
+**Validación:** 2168/2168 unit (17 tests nuevos en `movimientos.test.js`: campo `dominio` por fuente, `movimientosCompletos()`, `renderMovimientosCompletos()` con lista completa/cuenta/agrupación por mes/teja por dominio/link "Ver todo"; 7 tests nuevos en `gastos.test.js` para la exclusión de internas en lista, chips y total). E2E smoke 82/82 y navegación 7/7 verdes en navegador real (Playwright), incluida una regresión nueva para la ruta sin ícono de nav (mismo patrón que las demás secciones en `navegacion-render.test.js`). Preview de este entorno no disponible (mismo problema recurrente); verificado además con un flujo manual Dashboard → "Ver todo" → Movimientos con datos reales (cuenta, mes, colores por dominio confirmados visualmente). SW v325 → v326.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/movimientos/logic.js` | Campo `dominio` en `movimientosDesdeGastos()`/`...IngresosPuntuales()`/`...Aportes()`; `movimientosCompletos()` nuevo. |
+| `modules/dominio/movimientos/view.js` | `renderMovimientosCompletos()`, `_agruparPorMes()`, `_renderMovimientoItem()`, link "Ver todo" en `renderActividadReciente()`. |
+| `modules/dominio/movimientos/index.js` | `_renderTodo()` wiring `renderSmart(..., 'movimientos')` además de `'dash'`. |
+| `modules/dominio/gastos/view.js` | `_CATEGORIAS_INTERNAS`, `_sinInternas()` aplicado en `renderListaGastos()`/`renderFiltrosGastos()`. |
+| `modules/infra/router.js` | `SECTIONS` suma `['movimientos', 'sec-movimientos']`. |
+| `index.html` | Sección `#sec-movimientos` nueva (sin ícono en `.nav-item`). |
+| `styles/components/domain.css` | Bloque `MOVIMIENTOS` (divisor de mes), `.actividad-reciente__ver-todo`. |
+| `styles/components/atoms.css` | `.list-item__amount--ingreso`. |
+| `tests/unit/movimientos.test.js` | 17 tests nuevos. |
+| `tests/unit/gastos.test.js` | 7 tests nuevos. |
+| `tests/e2e/navegacion-render.test.js` | 1 test nuevo. |
+| `docs/contexto/inicio.md`, `docs/MAPA.md` | TX.8b cerrada; dominio actualizado. |
+| `docs/BOARD.md` | Tarjeta TX.8b cerrada y borrada. |
+| `service-worker.js` | `movimientos/` agregado a `CORE_ASSETS`; v325 → v326. |
+
+---
+
 ### feat(movimientos): TX.8a, dominio nuevo + Actividad reciente en Inicio · 2026-07-05
 
 Tercera fase del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): Inicio muestra un panel "Actividad reciente" con los últimos 5 movimientos de la app, derivados sin log paralelo (D5 del ADR) desde `S.gastos`, `S.ingresosPuntuales` y `S.ahorro.aportes`.

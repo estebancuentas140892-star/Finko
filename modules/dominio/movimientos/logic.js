@@ -24,12 +24,23 @@ import { CATEGORIA_ICONO, CATEGORIA_INGRESO_ICONO } from '../../core/constants.j
  * @property {'ingreso'|'egreso'} direccion
  * @property {string} icono        Id de símbolo del sprite.
  * @property {string|null} cuentaId
+ * @property {'gastos'|'compromisos'|'ingresos'|'ahorro'} dominio  Sección dueña
+ *   del movimiento (TX.8b): colorea la teja del ícono en la vista completa
+ *   (`cat-teja[data-dom]`, ADR 025 D1/D3), igual que el resto de la app.
  */
+
+/**
+ * Categorías internas de `S.gastos` que en realidad son un pago de deuda o de
+ * un fijo del Calendario (ver `docs/MAPA.md`: "Deudas incluye también gastos
+ * fijos"), no gasto cotidiano. El dominio dueño es `compromisos`, no `gastos`.
+ */
+const _CATEGORIAS_COMPROMISOS = new Set(['Deudas', 'Gastos fijos']);
 
 /**
  * Normaliza `S.gastos` a Movimiento. Los gastos con categoría interna
  * ('Deudas', 'Gastos fijos') ya revelan su origen real vía el propio
- * catálogo de íconos (TX.6/TX.7 no hace falta: `CATEGORIA_ICONO` alcanza).
+ * catálogo de íconos (TX.6/TX.7 no hace falta: `CATEGORIA_ICONO` alcanza) y
+ * vía `dominio: 'compromisos'` (colorea distinto de un gasto cotidiano).
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @returns {Movimiento[]}
@@ -45,6 +56,7 @@ export function movimientosDesdeGastos(gastos) {
     direccion:   'egreso',
     icono:       CATEGORIA_ICONO[g.categoria] ?? 'i-gastos',
     cuentaId:    g.cuentaId ?? null,
+    dominio:     _CATEGORIAS_COMPROMISOS.has(g.categoria) ? 'compromisos' : 'gastos',
   }));
 }
 
@@ -65,6 +77,7 @@ export function movimientosDesdeIngresosPuntuales(ingresosPuntuales) {
     direccion:   'ingreso',
     icono:       CATEGORIA_INGRESO_ICONO[i.categoria] ?? 'i-saldo',
     cuentaId:    i.cuentaId ?? null,
+    dominio:     'ingresos',
   }));
 }
 
@@ -87,6 +100,7 @@ export function movimientosDesdeAportes(aportes) {
     direccion:   'egreso',
     icono:       'i-ahorro',
     cuentaId:    null,
+    dominio:     'ahorro',
   }));
 }
 
@@ -110,4 +124,15 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes } = {}
     .filter(m => typeof m.fecha === 'string' && m.fecha)
     .sort((a, b) => b.fecha.localeCompare(a.fecha))
     .slice(0, limite);
+}
+
+/**
+ * Historial completo (TX.8b): las 3 fuentes combinadas y ordenadas por fecha
+ * descendente, sin límite. Vista completa de Movimientos en ruta propia.
+ *
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown }} fuentes
+ * @returns {Movimiento[]}
+ */
+export function movimientosCompletos(fuentes = {}) {
+  return movimientosRecientes(fuentes, Infinity);
 }

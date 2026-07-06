@@ -9,26 +9,27 @@
 
 import { EventBus } from '../../core/state.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
-import { renderActividadReciente } from './view.js';
+import { renderActividadReciente, renderMovimientosCompletos } from './view.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
 const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro'];
 
+function _renderTodo() {
+  renderSmart(renderActividadReciente, 'dash');
+  renderSmart(renderMovimientosCompletos, 'movimientos');
+}
+
 export function initMovimientos() {
   EventBus.on('state:change', ({ section }) => {
-    if (_SECCIONES_FUENTE.includes(section)) {
-      renderSmart(renderActividadReciente, 'dash');
-    }
+    if (_SECCIONES_FUENTE.includes(section)) _renderTodo();
   });
 
-  // Re-render al navegar a #dash - sin esto el panel aparece vacío si el
-  // usuario llega navegando desde otra sección.
-  window.addEventListener('hashchange', () => {
-    renderSmart(renderActividadReciente, 'dash');
-  });
+  // Re-render al navegar a #dash o #movimientos - sin esto el panel/vista
+  // aparece vacío si el usuario llega navegando desde otra sección.
+  window.addEventListener('hashchange', _renderTodo);
 
-  // Para que renderAll() (bootstrap) también pinte el panel.
-  registrarRender(() => renderSmart(renderActividadReciente, 'dash'));
+  // Para que renderAll() (bootstrap) también pinte ambos.
+  registrarRender(_renderTodo);
 
-  renderSmart(renderActividadReciente, 'dash');
+  _renderTodo();
 }

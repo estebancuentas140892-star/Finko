@@ -15,9 +15,12 @@ import {
   movimientosDesdeIngresosPuntuales,
   movimientosDesdeAportes,
   movimientosRecientes,
+  movimientosCompletos,
 } from '../../modules/dominio/movimientos/logic.js';
-import { renderActividadReciente } from '../../modules/dominio/movimientos/view.js';
+import { renderActividadReciente, renderMovimientosCompletos } from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
+
+const cuenta = (id, nombre) => ({ id, nombre, saldo: 0, banco: 'Nequi', tipo: 'Ahorros', activa: true });
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 
@@ -56,6 +59,21 @@ describe('movimientosDesdeGastos()', () => {
     expect(m.icono).toBe('i-recurring');
   });
 
+  it('un gasto cotidiano tiene dominio "gastos"', () => {
+    const [m] = movimientosDesdeGastos([gasto()]);
+    expect(m.dominio).toBe('gastos');
+  });
+
+  it('categoría interna "Deudas" tiene dominio "compromisos" (TX.8b)', () => {
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Deudas' })]);
+    expect(m.dominio).toBe('compromisos');
+  });
+
+  it('categoría interna "Gastos fijos" tiene dominio "compromisos" (TX.8b)', () => {
+    const [m] = movimientosDesdeGastos([gasto({ categoria: 'Gastos fijos' })]);
+    expect(m.dominio).toBe('compromisos');
+  });
+
   it('categoría sin mapeo cae al ícono genérico i-gastos', () => {
     const [m] = movimientosDesdeGastos([gasto({ categoria: 'Categoría inexistente' })]);
     expect(m.icono).toBe('i-gastos');
@@ -86,6 +104,11 @@ describe('movimientosDesdeIngresosPuntuales()', () => {
   it('categoría sin mapeo cae al ícono genérico i-saldo', () => {
     const [m] = movimientosDesdeIngresosPuntuales([ingresoPuntual({ categoria: null })]);
     expect(m.icono).toBe('i-saldo');
+  });
+
+  it('tiene dominio "ingresos"', () => {
+    const [m] = movimientosDesdeIngresosPuntuales([ingresoPuntual()]);
+    expect(m.dominio).toBe('ingresos');
   });
 
   it('argumento no-array devuelve []', () => {
@@ -121,6 +144,11 @@ describe('movimientosDesdeAportes()', () => {
 
   it('argumento no-array devuelve []', () => {
     expect(movimientosDesdeAportes(undefined)).toEqual([]);
+  });
+
+  it('tiene dominio "ahorro"', () => {
+    const [m] = movimientosDesdeAportes([aporte()]);
+    expect(m.dominio).toBe('ahorro');
   });
 });
 
@@ -221,5 +249,103 @@ describe('renderActividadReciente()', () => {
     renderActividadReciente();
     expect(elPanel().hidden).toBe(true);
     expect(elPanel().innerHTML).toBe('');
+  });
+
+  it('incluye el link "Ver todo" hacia #movimientos cuando hay actividad', () => {
+    S.gastos = [gasto()];
+    renderActividadReciente();
+    const link = elPanel().querySelector('.actividad-reciente__ver-todo');
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('#movimientos');
+  });
+});
+
+// ── movimientosCompletos() ────────────────────────────────────────
+
+describe('movimientosCompletos()', () => {
+  it('devuelve todos los movimientos sin límite de 5', () => {
+    const gastos = Array.from({ length: 8 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
+    expect(movimientosCompletos({ gastos })).toHaveLength(8);
+  });
+
+  it('ordena por fecha descendente igual que movimientosRecientes', () => {
+    const r = movimientosCompletos({
+      gastos: [gasto({ fecha: '2026-07-01' })],
+      ingresosPuntuales: [ingresoPuntual({ fecha: '2026-07-05' })],
+      aportes: [aporte({ fecha: '2026-07-03' })],
+    });
+    expect(r.map(m => m.fecha)).toEqual(['2026-07-05', '2026-07-03', '2026-07-01']);
+  });
+
+  it('sin ninguna fuente devuelve []', () => {
+    expect(movimientosCompletos()).toEqual([]);
+    expect(movimientosCompletos({})).toEqual([]);
+  });
+});
+
+// ── renderMovimientosCompletos() ───────────────────────────────────
+
+describe('renderMovimientosCompletos()', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.cuentas = [];
+  });
+
+  it('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => renderMovimientosCompletos()).not.toThrow();
+  });
+
+  it('muestra el estado vacío sin ningún movimiento', () => {
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.empty-state')).not.toBeNull();
+  });
+
+  it('renderiza más de 5 movimientos (no aplica el límite del panel compacto)', () => {
+    S.gastos = Array.from({ length: 8 }, (_, i) => gasto({ id: `g${i}`, fecha: `2026-07-${String(i + 1).padStart(2, '0')}` }));
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(8);
+  });
+
+  it('muestra el nombre de la cuenta cuando existe', () => {
+    S.cuentas = [cuenta('c1', 'Nequi principal')];
+    S.gastos = [gasto({ cuentaId: 'c1' })];
+    renderMovimientosCompletos();
+    expect(elLista().innerHTML).toContain('Nequi principal');
+  });
+
+  it('sin cuenta asociada (aporte), no rompe ni muestra "null"', () => {
+    S.ahorro.aportes = [aporte()];
+    renderMovimientosCompletos();
+    expect(elLista().innerHTML).not.toContain('null');
+  });
+
+  it('un ingreso se muestra con signo + y clase de color de ingreso', () => {
+    S.ingresosPuntuales = [ingresoPuntual()];
+    renderMovimientosCompletos();
+    expect(elLista().innerHTML).toContain('+$300.000');
+    expect(elLista().querySelector('.list-item__amount--ingreso')).not.toBeNull();
+  });
+
+  it('agrupa movimientos de meses distintos bajo divisores separados', () => {
+    S.gastos = [
+      gasto({ id: 'g1', fecha: '2026-07-05' }),
+      gasto({ id: 'g2', fecha: '2026-06-20' }),
+    ];
+    renderMovimientosCompletos();
+    const divisores = elLista().querySelectorAll('.movimientos-mes');
+    expect(divisores).toHaveLength(2);
+    expect(divisores[0].textContent).toContain('2026');
+  });
+
+  it('la teja del ícono lleva el dominio correcto (colores por sección)', () => {
+    S.gastos = [gasto({ categoria: 'Deudas' })];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.cat-teja[data-dom="compromisos"]')).not.toBeNull();
   });
 });

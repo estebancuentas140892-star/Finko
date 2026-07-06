@@ -95,6 +95,18 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     ).toHaveText('Sin deudas registradas', { timeout: 3_000 });
   });
 
+  test('Movimientos muestra estado vacío al navegar directo por hash (TX.8b, sin ícono de nav)', async ({ page }) => {
+    await saltearOnboardingYIrADash(page);
+
+    // Sin ícono en la barra: se llega por hash directo (como el link "Ver todo").
+    await page.goto('/#movimientos');
+    await expect(page.locator('#sec-movimientos.active')).toBeVisible();
+
+    await expect(
+      page.locator('#lista-movimientos .empty-state__title')
+    ).toHaveText('Todavía no hay movimientos', { timeout: 3_000 });
+  });
+
   test('Navegar Tesorería → Metas → Tesorería conserva el render', async ({ page }) => {
     await saltearOnboardingYIrADash(page);
 

@@ -1159,6 +1159,39 @@ button.chip:focus-visible {
   color: var(--fk-text-primary);
 }
 
+.actividad-reciente__ver-todo {
+  display: block;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-accent);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* ════════════════════════════════════════════════════════════
+   MOVIMIENTOS - vista completa del historial (TX.8b, ruta #movimientos).
+   Reusa .list-item/.cat-teja (mismo componente que Gastos/Deudas): solo
+   agrega el divisor de mes, un encabezado compacto sin totales (el resumen
+   financiero es de Análisis, ADR 028 D5).
+   ════════════════════════════════════════════════════════════ */
+
+.movimientos-mes {
+  font-size: var(--fk-text-xs);
+  font-weight: 600;
+  color: var(--fk-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: var(--fk-space-4) var(--fk-space-1) var(--fk-space-2);
+}
+.movimientos-mes:first-child {
+  padding-top: 0;
+}
+
+#lista-movimientos .list-item {
+  margin-bottom: var(--fk-space-2);
+}
+
 /* ════════════════════════════════════════════════════════════
    RESUMEN-CARD - resumen semanal del dashboard (F8 / ADR 008).
    Panel de solo lectura: gasto de 7 días + comparación + categoría

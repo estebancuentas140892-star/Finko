@@ -45,7 +45,7 @@ Este archivo traduce esa tabla y agrega, para cada dominio, qué archivo de lóg
 | *(sin sección propia)* | `import/` | `logic.js`, `view.js`, `index.js` | `charts.css` (bloque IMPORT CSV línea 154) | `import.test.js` |
 | *(toast, sin vista propia)* | `logros/` | `logic.js`, `index.js` | `nudges.css` (bloque LOGRO TOAST línea 127) | `logros.test.js` |
 | *(card en Inicio)* | `resumen/` | `logic.js`, `view.js`, `index.js` | `domain.css` (RESUMEN-CARD línea 1070) | `resumen.test.js` |
-| *(card en Inicio, "Actividad reciente")* | `movimientos/` | `logic.js`, `view.js`, `index.js` (TX.8a, ADR 028) | `domain.css` (ACTIVIDAD-RECIENTE, antes de RESUMEN-CARD) | `movimientos.test.js` |
+| Movimientos (card "Actividad reciente" en Inicio + ruta `#movimientos` sin ícono de nav) | `movimientos/` | `logic.js`, `view.js`, `index.js` (TX.8a panel, TX.8b vista completa, ADR 028) | `domain.css` (ACTIVIDAD-RECIENTE, MOVIMIENTOS), `atoms.css` (`.list-item__amount--ingreso`) | `movimientos.test.js` |
 
 ---
 
