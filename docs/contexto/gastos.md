@@ -8,7 +8,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas).
-- **Verificado contra** : pendiente (se fija en el próximo commit de este archivo).
+- **Verificado contra** : `887d791` (2026-07-05, TX.9b).
 
 **Dónde vive**
 
