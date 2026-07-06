@@ -117,17 +117,16 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa.)_
 
-#### TX.9 - Formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante
+_(**TX.9a cerrada** el 2026-07-05: categoría primero + descripción deja de ser obligatoria, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md). Siguiente fase: **TX.9b**.)_
+
+#### TX.9b - Categorías personalizadas ("Otra categoría")
 - Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : rediseñar el formulario de registrar gasto para que sea más rápido e intuitivo. Brief completo del usuario (verbatim, 2026-07-05):
-  1. **Categoría primero**: hoy aparece después de otros campos; debería ser el primer dato, porque de ella depende el ícono, reglas específicas, detección de estilo de vida/gasto hormiga/gasto fantasma, y el resto del formulario debería adaptarse según la categoría elegida.
-  2. **Categorías personalizadas ("Otra categoría")**: al elegirla, aparecen un selector de ícono y un campo de nombre; una vez creada, se guarda para usos futuros y se comporta exactamente igual que una categoría nativa.
-  3. **Eliminar la descripción redundante**: si la categoría ya representa el concepto (ej. "Gimnasio" con descripción "Gimnasio"), pedir descripción duplica esfuerzo sin valor. Propone que la categoría sea el concepto principal y que exista un campo **Nota** opcional al final del formulario para detalle adicional (ej. categoría "Restaurante", nota opcional "Cena con mi familia").
-- Secciones  : Gastos (`gastos`)
-- Archivos   : sin explorar todavía; candidato previsible el formulario de registrar gasto en `modules/dominio/gastos/` (vista) y el catálogo `CATEGORIA_*_ICONO`/`CATEGORIA_*_EMOJI` en `modules/core/constants.js` para la categoría personalizada (nueva entrada por usuario, no solo del catálogo fijo: revisar si el modelo de datos soporta categorías creadas por el usuario o hay que agregarlo con migración de schema)
-- Depende de : nada. Las categorías personalizadas son dato nuevo del usuario (persistido en `localStorage`): requiere bump de schema (regla ADN 6, migraciones idempotentes) si no existe ya un slot para eso.
-- Modelo     : Sonnet 5 - Alto (rediseño de formulario acotado a un dominio, con una pieza de dato nuevo (categoría personalizada) que exige migración de schema cuidadosa, pero sin lógica financiera compleja)
+- Estado     : pendiente
+- Objetivo   : al elegir "Otra categoría" en el selector, aparece un selector de ícono (del sprite, sin precedente de UI reusable hoy) y un campo de nombre; una vez creada, se guarda (`S.categoriasPersonalizadas` o similar, bump de schema con migración idempotente, ADN 6) y se comporta exactamente igual que una categoría nativa en el selector, en `CATEGORIA_ICONO` y en Movimientos (TX.8).
+- Secciones  : Gastos (`gastos`), transversal (Movimientos lee `CATEGORIA_ICONO` directo)
+- Archivos   : `modules/core/state.js` + `storage.js` (colección nueva + migración), `modules/core/constants.js` (resolución categoría nativa + personalizada), `modules/dominio/gastos/view.js` (selector de ícono nuevo), tests
+- Depende de : nada (TX.9a ya cerrada, el formulario ya está reordenado)
+- Modelo     : Sonnet 5 - Alto (primer selector de ícono de la app, sin componente reusable; migración de schema cuidadosa, pero sin lógica financiera compleja)
 
 #### TX.10 - Categoría como eje de automatización (límites, gastos hormiga/fantasma, recomendaciones)
 - Prioridad  : sin definir

@@ -40,7 +40,10 @@ const _CATEGORIAS_COMPROMISOS = new Set(['Deudas', 'Gastos fijos']);
  * Normaliza `S.gastos` a Movimiento. Los gastos con categoría interna
  * ('Deudas', 'Gastos fijos') ya revelan su origen real vía el propio
  * catálogo de íconos (TX.6/TX.7 no hace falta: `CATEGORIA_ICONO` alcanza) y
- * vía `dominio: 'compromisos'` (colorea distinto de un gasto cotidiano).
+ * vía `dominio: 'compromisos'` (colorea distinto de un gasto cotidiano). La
+ * descripción ya no es obligatoria en el formulario de gasto (TX.9a): sin
+ * ella, la categoría hace de descripción (mismo criterio que el título del
+ * ítem en la lista de Gastos).
  *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @returns {Movimiento[]}
@@ -51,7 +54,7 @@ export function movimientosDesdeGastos(gastos) {
     id:          g.id,
     fecha:       g.fecha,
     tipo:        'gasto',
-    descripcion: g.descripcion,
+    descripcion: g.descripcion?.trim() || g.categoria || 'Gasto',
     monto:       g.monto,
     direccion:   'egreso',
     icono:       CATEGORIA_ICONO[g.categoria] ?? 'i-gastos',

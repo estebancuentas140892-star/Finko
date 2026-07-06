@@ -8,7 +8,7 @@ import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, CATEGORIA_ICONO } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, totalGastos, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, esGastoPendiente, totalGastos, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -192,22 +192,23 @@ function _renderResumen(gastos) {
     </div>`;
 }
 
-/** @param {import('../../core/state.js').Gasto} gasto */
+/**
+ * TX.9a: la categoría es el concepto principal del gasto (título del ítem),
+ * no la descripción libre (el formulario ya no la pide). Un gasto de "Gasto
+ * rápido" sin categorizar todavía (`esGastoPendiente()`) suma el badge
+ * "📝 Pendiente"; su categoría en ese caso es 'Otros', informativa por sí sola.
+ * @param {import('../../core/state.js').Gasto} gasto
+ */
 function _renderGastoItem(gasto) {
-  // Un gasto sin descripcion (o con flag pendienteCompletar) es uno que se
-  // registro con "Gasto rapido" y todavia no se completo. Muestra un placeholder
-  // y un badge para que el usuario sepa que esta pendiente de describir.
-  const sinCompletar = gasto.pendienteCompletar === true || !gasto.descripcion?.trim();
-  const desc = sinCompletar
-    ? '<span class="list-item__placeholder">Sin completar</span>'
-    : _esc(gasto.descripcion);
+  const pendiente = esGastoPendiente(gasto);
   const catKey = gasto.categoria ?? 'Otros';
-  // El icono principal (izquierda) ya representa la categoría: en el subtítulo
-  // basta con el nombre, sin repetirla.
   const cat    = _esc(catKey);
+  // Descripción legacy (gastos de antes de TX.9a que ya la tenían) + nota:
+  // ambas son detalle opcional, ahora en el subtítulo junto a la fecha.
+  const descripcionLegacy = gasto.descripcion?.trim() ? ` · ${_esc(gasto.descripcion.trim())}` : '';
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
-  const badge = sinCompletar
-    ? '<span class="badge badge--warn" title="Toca editar para completar este gasto">📝 Pendiente</span> '
+  const badge = pendiente
+    ? '<span class="badge badge--warn" title="Toca editar para elegir la categoría real">📝 Pendiente</span> '
     : '';
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
@@ -220,8 +221,8 @@ function _renderGastoItem(gasto) {
     <article class="list-item" data-id="${_esc(gasto.id)}">
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${badge}${desc}</p>
-        <p class="list-item__subtitle">${cat} · ${fechaLegible(gasto.fecha)}${nota}</p>
+        <p class="list-item__title">${badge}${cat}</p>
+        <p class="list-item__subtitle">${fechaLegible(gasto.fecha)}${descripcionLegacy}${nota}</p>
       </div>
       <div class="list-item__meta">
         <p class="list-item__amount">${f(gasto.monto)}</p>
@@ -264,11 +265,11 @@ function _renderEmptyFiltro() {
 
 /**
  * Renderiza en `#panel-gastos-pendientes` un recordatorio agregado de los
- * gastos registrados con "Gasto rápido" que aún no tienen descripción ni
- * categoría. Cuenta los pendientes de todos los meses (un gasto sin organizar
- * no debería perderse al cambiar de mes). Si no hay pendientes, deja el
- * contenedor vacío para no generar ruido visual. No-op si el contenedor no
- * existe (sección no montada).
+ * gastos registrados con "Gasto rápido" que todavía tienen la categoría
+ * genérica 'Otros' (TX.9a). Cuenta los pendientes de todos los meses (un
+ * gasto sin organizar no debería perderse al cambiar de mes). Si no hay
+ * pendientes, deja el contenedor vacío para no generar ruido visual. No-op
+ * si el contenedor no existe (sección no montada).
  */
 export function renderPendientesOrganizar() {
   const el = document.getElementById('panel-gastos-pendientes');
@@ -291,7 +292,7 @@ export function renderPendientesOrganizar() {
       <span class="nudge__icon" aria-hidden="true">📝</span>
       <div class="nudge__body">
         <p class="nudge__title">${_esc(titulo)}</p>
-        <p class="nudge__desc">Los anotaste rápido, sin describirlos. Agrégales descripción y categoría para ver bien en qué se va tu dinero.</p>
+        <p class="nudge__desc">Los anotaste rápido, sin categorizarlos. Elígeles la categoría real para ver bien en qué se va tu dinero.</p>
       </div>
       <a class="nudge__cta btn btn-sm btn-primary" href="#gast">Organizar</a>
     </div>`;
@@ -381,17 +382,6 @@ export function renderFormGasto() {
   return `
     <form id="form-gasto" novalidate>
       <div class="form-group">
-        <label for="gasto-descripcion" class="label">Descripción</label>
-        <input id="gasto-descripcion" name="descripcion" class="input" type="text"
-               placeholder="Ej. Almuerzo en restaurante" required aria-required="true" autocomplete="off" />
-      </div>
-      ${renderSelectorCuenta(cuentas)}
-      <div class="form-group">
-        <label for="gasto-monto" class="label">Monto (COP)</label>
-        <input id="gasto-monto" name="monto" class="input" type="number"
-               min="1" step="1000" placeholder="0" required aria-required="true" />
-      </div>
-      <div class="form-group">
         <label for="gasto-categoria" class="label">Categoría</label>
         <select id="gasto-categoria" name="categoria" class="input" required aria-required="true">
           <option value="">Seleccionar…</option>
@@ -400,6 +390,12 @@ export function renderFormGasto() {
         <p id="hint-categoria-fija" class="form-hint form-hint--info" hidden></p>
       </div>
       <div class="form-group">
+        <label for="gasto-monto" class="label">Monto (COP)</label>
+        <input id="gasto-monto" name="monto" class="input" type="number"
+               min="1" step="1000" placeholder="0" required aria-required="true" />
+      </div>
+      ${renderSelectorCuenta(cuentas)}
+      <div class="form-group">
         <label for="gasto-fecha" class="label">Fecha</label>
         <input id="gasto-fecha" name="fecha" class="input" type="date"
                required aria-required="true" />
@@ -407,7 +403,7 @@ export function renderFormGasto() {
       <div class="form-group">
         <label for="gasto-nota" class="label">Nota (opcional)</label>
         <input id="gasto-nota" name="nota" class="input" type="text"
-               placeholder="Detalle adicional" autocomplete="off" />
+               placeholder="Detalle adicional, ej. con quién fue" autocomplete="off" />
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

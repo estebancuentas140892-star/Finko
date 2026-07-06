@@ -245,10 +245,14 @@ describe('validarGasto()', () => {
     expect(validarGasto(datosFormValidos)).toEqual([]);
   });
 
-  it('reporta error si descripción está vacía', () => {
+  it('no reporta error si descripción está vacía (TX.9a: ya no es obligatoria)', () => {
     const errores = validarGasto({ ...datosFormValidos, descripcion: '' });
-    expect(errores).toHaveLength(1);
-    expect(errores[0]).toMatch(/descripci/i);
+    expect(errores).toEqual([]);
+  });
+
+  it('no reporta error sin campo descripcion en absoluto (el form ya no lo pide)', () => {
+    const { descripcion: _omitida, ...sinDescripcion } = datosFormValidos;
+    expect(validarGasto(sinDescripcion)).toEqual([]);
   });
 
   it('reporta error si monto es 0', () => {
@@ -540,39 +544,39 @@ describe('filtrarGastos()', () => {
 // ── PENDIENTES POR ORGANIZAR ─────────────────────────────────────
 
 describe('esGastoPendiente()', () => {
-  it('marca pendiente un gasto rápido (flag pendienteCompletar)', () => {
-    const g = gastoBase({ descripcion: '', pendienteCompletar: true });
+  it('marca pendiente un gasto rápido: flag + categoría todavía en Otros (TX.9a)', () => {
+    const g = gastoBase({ categoria: 'Otros', pendienteCompletar: true });
     expect(esGastoPendiente(g)).toBe(true);
   });
 
-  it('marca pendiente un gasto sin descripción aunque no tenga el flag', () => {
-    const g = gastoBase({ descripcion: '   ', pendienteCompletar: false });
-    expect(esGastoPendiente(g)).toBe(true);
-  });
-
-  it('no marca pendiente un gasto completo', () => {
-    const g = gastoBase({ descripcion: 'Almuerzo', pendienteCompletar: false });
+  it('no marca pendiente si ya se le eligió una categoría real, aunque el flag siga true', () => {
+    const g = gastoBase({ categoria: 'Transporte', pendienteCompletar: true });
     expect(esGastoPendiente(g)).toBe(false);
   });
 
-  it('no marca pendiente un gasto viejo sin el flag pero con descripción', () => {
-    const g = gastoBase({ descripcion: 'Mercado' });
+  it('no marca pendiente un gasto completo (sin el flag)', () => {
+    const g = gastoBase({ categoria: 'Otros', pendienteCompletar: false });
+    expect(esGastoPendiente(g)).toBe(false);
+  });
+
+  it('no marca pendiente un gasto viejo sin el flag, sin importar la categoría', () => {
+    const g = gastoBase({ categoria: 'Mercado' });
     delete g.pendienteCompletar;
     expect(esGastoPendiente(g)).toBe(false);
   });
 
-  it('es defensivo ante null/undefined', () => {
-    expect(esGastoPendiente(null)).toBe(true);
-    expect(esGastoPendiente(undefined)).toBe(true);
+  it('es defensivo ante null/undefined: sin gasto, no hay nada pendiente', () => {
+    expect(esGastoPendiente(null)).toBe(false);
+    expect(esGastoPendiente(undefined)).toBe(false);
   });
 });
 
 describe('gastosPendientes()', () => {
   it('filtra solo los gastos sin organizar, de cualquier mes', () => {
     const gastos = [
-      gastoBase({ id: 'g1', fecha: '2026-05-10', descripcion: '', pendienteCompletar: true }),
-      gastoBase({ id: 'g2', fecha: '2026-03-02', descripcion: 'Arriendo' }),
-      gastoBase({ id: 'g3', fecha: '2026-01-20', descripcion: '', pendienteCompletar: true }),
+      gastoBase({ id: 'g1', fecha: '2026-05-10', categoria: 'Otros', pendienteCompletar: true }),
+      gastoBase({ id: 'g2', fecha: '2026-03-02', categoria: 'Vivienda' }),
+      gastoBase({ id: 'g3', fecha: '2026-01-20', categoria: 'Otros', pendienteCompletar: true }),
     ];
     const r = gastosPendientes(gastos);
     expect(r).toHaveLength(2);
@@ -580,7 +584,7 @@ describe('gastosPendientes()', () => {
   });
 
   it('devuelve vacío cuando no hay pendientes', () => {
-    const gastos = [gastoBase({ descripcion: 'Café' })];
+    const gastos = [gastoBase({ categoria: 'Café' })];
     expect(gastosPendientes(gastos)).toEqual([]);
   });
 
@@ -646,6 +650,28 @@ describe('renderFormGasto() - selector de cuenta', () => {
     const html = renderFormGasto();
     expect(html).toContain('id="hint-categoria-fija"');
     expect(html).toContain('hidden');
+  });
+
+  it('TX.9a: categoría es el primer campo del formulario', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="monto"'));
+    expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="cuentaId"'));
+    expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="fecha"'));
+    expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="nota"'));
+  });
+
+  it('TX.9a: ya no pide descripción (la categoría es el concepto principal)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html).not.toContain('name="descripcion"');
+  });
+
+  it('TX.9a: Nota sigue siendo opcional, al final del formulario', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    const inputNota = html.slice(html.indexOf('id="gasto-nota"'), html.indexOf('/>', html.indexOf('id="gasto-nota"')));
+    expect(inputNota).not.toContain('required');
   });
 });
 
@@ -777,5 +803,60 @@ describe('Gastos deja de listar categorías internas (TX.8b)', () => {
     expect(html).not.toContain('data-cat="Deudas"');
     expect(html).not.toContain('data-cat="Gastos fijos"');
     expect(html).toContain('data-cat="Mercado"');
+  });
+});
+
+// ── renderListaGastos() - categoría como título del ítem (TX.9a) ──
+
+describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () => {
+  const mesActual = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-gastos"></div>';
+    S.gastos = [];
+  });
+
+  it('el título del ítem es la categoría, no la descripción', () => {
+    S.gastos = [gastoBase({ categoria: 'Transporte', descripcion: 'Uber al trabajo', fecha: mesActual() })];
+    renderListaGastos();
+    const titulo = document.querySelector('#lista-gastos .list-item__title').textContent;
+    expect(titulo).toContain('Transporte');
+  });
+
+  it('sin descripción (formulario nuevo, TX.9a), el título sigue siendo la categoría', () => {
+    S.gastos = [gastoBase({ categoria: 'Restaurantes', descripcion: undefined, fecha: mesActual() })];
+    renderListaGastos();
+    const item = document.querySelector('#lista-gastos .list-item');
+    expect(item.querySelector('.list-item__title').textContent).toContain('Restaurantes');
+    expect(item.innerHTML).not.toContain('undefined');
+  });
+
+  it('una descripción legacy (gastos de antes de TX.9a) se preserva en el subtítulo', () => {
+    S.gastos = [gastoBase({ categoria: 'Mercado', descripcion: 'Mercado de fin de mes', fecha: mesActual() })];
+    renderListaGastos();
+    const subtitulo = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
+    expect(subtitulo).toContain('Mercado de fin de mes');
+  });
+
+  it('la nota sigue apareciendo en el subtítulo', () => {
+    S.gastos = [gastoBase({ categoria: 'Salud', nota: 'Con receta médica', fecha: mesActual() })];
+    renderListaGastos();
+    const subtitulo = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
+    expect(subtitulo).toContain('Con receta médica');
+  });
+
+  it('un gasto de Gasto Rápido sin categorizar muestra el badge Pendiente', () => {
+    S.gastos = [gastoBase({ categoria: 'Otros', pendienteCompletar: true, descripcion: undefined, fecha: mesActual() })];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').innerHTML).toContain('Pendiente');
+  });
+
+  it('un gasto ya categorizado no muestra el badge Pendiente', () => {
+    S.gastos = [gastoBase({ categoria: 'Transporte', pendienteCompletar: false, fecha: mesActual() })];
+    renderListaGastos();
+    expect(document.getElementById('lista-gastos').innerHTML).not.toContain('Pendiente');
   });
 });

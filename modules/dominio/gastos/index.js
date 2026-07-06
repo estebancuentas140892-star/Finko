@@ -21,7 +21,7 @@ import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import {
   validarGasto, normalizarGasto,
   validarGastoRapido, normalizarGastoRapido,
-  deltasPorEdicionDeGasto,
+  deltasPorEdicionDeGasto, esGastoPendiente,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
@@ -145,7 +145,6 @@ function _editarGasto(el) {
   if (!form) return;
 
   form.dataset.id = id;
-  form.querySelector('[name="descripcion"]').value = gasto.descripcion ?? '';
   form.querySelector('[name="monto"]').value       = gasto.monto       ?? 0;
   form.querySelector('[name="categoria"]').value   = gasto.categoria   ?? 'Otros';
   form.querySelector('[name="fecha"]').value       = gasto.fecha       ?? hoy();
@@ -161,7 +160,7 @@ function _editarGasto(el) {
 
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) {
-    titulo.textContent = gasto.pendienteCompletar
+    titulo.textContent = esGastoPendiente(gasto)
       ? '📝 Completar gasto'
       : 'Editar gasto';
   }
@@ -339,9 +338,13 @@ async function _eliminarGasto(el) {
   const gasto = S.gastos.find(g => g.id === id);
   if (!gasto) return;
 
+  // TX.9a: la descripción ya no es obligatoria; sin ella, el nombre visible
+  // del gasto es su categoría (mismo criterio que el título de la lista).
+  const nombre = gasto.descripcion?.trim() || gasto.categoria || 'este gasto';
+
   const ok = await confirmar({
     titulo:         'Eliminar gasto',
-    mensaje:        `¿Quieres eliminar "${gasto.descripcion}"? Esta acción no se puede deshacer.`,
+    mensaje:        `¿Quieres eliminar "${nombre}"? Esta acción no se puede deshacer.`,
     confirmarTexto: 'Eliminar',
     peligroso:      true,
   });
@@ -356,7 +359,7 @@ async function _eliminarGasto(el) {
   eliminar('gastos', id);
   renderListaGastos();
   updSaldo();
-  announce(`Gasto "${gasto.descripcion}" eliminado.`);
+  announce(`Gasto "${nombre}" eliminado.`);
 }
 
 // ── HELPERS DE SALDO ─────────────────────────────────────────────

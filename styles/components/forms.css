@@ -682,13 +682,6 @@ form:not(.config-form) .form-group:not(:first-child) {
   border: 1px solid color-mix(in srgb, var(--fk-danger) 35%, transparent);
 }
 
-/* Placeholder de texto dentro de list-item (gasto sin completar). */
-.list-item__placeholder {
-  font-style: italic;
-  color: var(--fk-text-secondary);
-  font-weight: var(--fk-font-regular);
-}
-
 /* Input group (prefijo/sufijo) */
 .input-group {
   position: relative;

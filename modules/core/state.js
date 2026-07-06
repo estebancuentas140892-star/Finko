@@ -72,7 +72,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
 /**
  * @typedef {Object} Gasto
  * @property {string} id
- * @property {string} descripcion
+ * @property {string} [descripcion]   Legacy: el formulario ya no la pide (TX.9a,
+ *                                    la categoría es el concepto principal); se
+ *                                    preserva en gastos existentes que ya la tenían.
  * @property {number} monto           COP.
  * @property {string} categoria       Ver CATEGORIAS_GASTO.
  * @property {string} fecha           ISO 8601 (YYYY-MM-DD).

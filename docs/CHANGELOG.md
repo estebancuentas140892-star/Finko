@@ -10,6 +10,38 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): TX.9a, categoría primero + descripción ya no obligatoria · 2026-07-05
+
+Primera de dos fases de TX.9 (brief de Esteban sobre el formulario de gasto: categoría primero, categorías personalizadas, sin descripción redundante). Primer análisis a fondo de la sección Gastos, documentado en [`docs/contexto/gastos.md`](contexto/gastos.md) (regla 2.6 de `/CLAUDE.md`); la tarjeta original se dividió en **TX.9a** (esta) y **TX.9b** (categorías personalizadas, siguiente fase) por tocar reordenamiento de formulario, redefinición de una señal existente y un modelo de dato nuevo sin precedente en la misma tarjeta.
+
+Categoría pasa a ser el primer campo de `renderFormGasto()` (antes el 4° de 5). El campo Descripción se quitó del formulario: la categoría es ahora el concepto principal del gasto, y `validarGasto()` ya no la exige. El campo **Nota** opcional que pedía el brief ya existía desde antes (agregado en una fase previa sin tarjeta propia); esta tarea no tuvo que crearlo, solo reordenar alrededor de él.
+
+`normalizarGasto()` solo incluye la clave `descripcion` en el objeto devuelto si el caller la trae (ningún caller ya lo hace desde el formulario). Esto importa porque `editar()` hace un merge superficial vía `Object.assign`: si `normalizarGasto()` siempre incluyera `descripcion: ''`, cada edición de un gasto antiguo (aunque solo se cambiara el monto) borraría silenciosamente su descripción histórica.
+
+El título del ítem en la lista de Gastos pasa a ser la categoría; una descripción legacy (de gastos registrados antes de este cambio) y la nota se muestran en el subtítulo, junto a la fecha. `esGastoPendiente()`, el criterio que alimenta el panel "Gastos por organizar" de Inicio, se redefinió de "sin descripción" a `pendienteCompletar === true && categoria === 'Otros'` (el valor que Gasto Rápido ya le pone por defecto cuando el usuario no elige categoría real): preserva exactamente la misma función sin depender de un campo que deja de ser obligatorio.
+
+Durante la implementación se encontraron y corrigieron 2 bugs propios: el mensaje de confirmación de borrado y el anuncio de accesibilidad en `_eliminarGasto()` (`gastos/index.js`), y `movimientosDesdeGastos()` en Movimientos (deriva su descripción de la del gasto), leían `gasto.descripcion` sin fallback; con la descripción ahora opcional, ambos habrían mostrado literalmente "undefined" para cualquier gasto creado con el formulario nuevo. Ambos caen ahora a la categoría.
+
+Fuera de alcance de esta fase (documentado explícitamente para no repetir el error de mezclar cards): categorías personalizadas (**TX.9b**) y cualquier detección nueva de gasto hormiga/fantasma, que es tema de **TX.10**, no de TX.9 (la categoría-primero solo abre la puerta, no implementa el motor).
+
+**Validación:** 2198/2198 unit (tests de formulario reordenado, validación, `esGastoPendiente()`/`gastosPendientes()` con la nueva regla, título/subtítulo del ítem con descripción legacy y nota) + 148/148 E2E verdes en navegador real (Playwright); 4 tests de `smoke.test.js` (crear/editar/eliminar gasto) actualizados porque rellenaban un campo del formulario que ya no existe, y el de borrado ahora verifica explícitamente que el mensaje de confirmación no muestre "undefined". Preview de este entorno no disponible (mismo problema recurrente); verificado además con un flujo manual de creación completa (categoría, monto, cuenta, fecha, nota) y de Gasto Rápido (monto + cuenta, categoría 'Otros', badge Pendiente).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/gastos/view.js` | `renderFormGasto()` reordenado, sin campo descripción; `_renderGastoItem()` título = categoría, subtítulo con descripción legacy/nota; copy de `renderPendientesOrganizar()` actualizado. |
+| `modules/dominio/gastos/logic.js` | `validarGasto()` sin la validación de descripción; `normalizarGasto()` omite `descripcion` si no viene; `esGastoPendiente()` redefinida. |
+| `modules/dominio/gastos/index.js` | `_editarGasto()` sin pre-fill de descripción (el campo ya no existe); `_eliminarGasto()` con fallback a categoría; título del modal de edición usa `esGastoPendiente()`. |
+| `modules/dominio/movimientos/logic.js` | `movimientosDesdeGastos()` con fallback de descripción a categoría. |
+| `modules/core/state.js` | `Gasto.descripcion` documentado como opcional (`[descripcion]`). |
+| `styles/components/forms.css` | `.list-item__placeholder` eliminada (sin consumidores tras el cambio de título). |
+| `tests/unit/gastos.test.js` | Tests de `renderFormGasto()`, `validarGasto()`, `esGastoPendiente()`/`gastosPendientes()` y `renderListaGastos()` actualizados/nuevos. |
+| `tests/unit/movimientos.test.js` | 1 test actualizado (fallback de descripción). |
+| `tests/e2e/smoke.test.js` | 4 tests actualizados. |
+| `docs/contexto/gastos.md` | Ficha nueva (primer análisis de la sección); TX.9a cerrada. |
+| `docs/BOARD.md` | Tarjeta TX.9a cerrada y borrada; TX.9b es la siguiente fase. |
+
+---
+
 ### feat(resumen): IN.4a, accesos rápidos personalizables en Inicio · 2026-07-05
 
 Última fase de la iniciativa "Inicio como centro de control" del [ADR 028](DECISIONS/028-inicio-centro-de-control.md): fila de tiles bajo el hero de Inicio con 1 toque a secciones que hoy quedan detrás de "Más" (Mis cuentas, Deudas, Ahorros, Límites de gasto, Me deben, Análisis, Movimientos, Ajustes), más un botón "Personalizar" que abre un modal con la lista completa: tocar una fila la agrega o la quita, sin drag & drop (ADR 028 D2).

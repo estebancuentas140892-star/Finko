@@ -519,11 +519,12 @@ test.describe('Gastos - CRUD', () => {
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const form = page.locator('#modal-gasto-body form');
-    await form.locator('[name="descripcion"]').fill('Mercado prueba E2E');
+    // TX.9a: categoría es el primer campo y ya no se pide descripción; el
+    // título de la lista pasa a mostrar la categoría elegida (Mercado, la
+    // primera opción real del select).
+    await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     await form.locator('[name="monto"]').fill('150000');
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    // Seleccionar la primera opción real del select de categoría
-    await form.locator('select[name="categoria"]').selectOption({ index: 1 });
     // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
     const hoy = hoyLocal();
     await form.locator('[name="fecha"]').fill(hoy);
@@ -533,7 +534,7 @@ test.describe('Gastos - CRUD', () => {
       timeout: 3_000,
     });
     await expect(page.locator('#lista-gastos')).toContainText(
-      'Mercado prueba E2E',
+      'Mercado',
       { timeout: 3_000 }
     );
   });
@@ -629,9 +630,8 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('[name="descripcion"]').fill('Mercado gastos-cuenta');
-    await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('[name="monto"]').fill('100000');
 
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
 
@@ -639,9 +639,9 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
 
-    // Esperar cierre y que el gasto aparezca
+    // Esperar cierre y que el gasto aparezca (título = categoría, TX.9a)
     await expect(page.locator('#lista-gastos')).toContainText(
-      'Mercado gastos-cuenta',
+      'Mercado',
       { timeout: 3_000 }
     );
 
@@ -680,15 +680,14 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('[name="descripcion"]').fill('Gasto a editar');
-    await formGasto.locator('[name="monto"]').fill('100000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('[name="monto"]').fill('100000');
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
     const hoy = hoyLocal();
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(
-      'Gasto a editar',
+      'Mercado',
       { timeout: 3_000 }
     );
 
@@ -702,9 +701,10 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     // EDITAR: cambiar monto de 100000 a 150000 (total descuento 150000, saldo debe ser 350000)
     await page.goto('/#gast');
 
-    // Buscar el list-item que contiene "Gasto a editar" y clickear su botón de editar
+    // Único gasto en la lista: no hace falta filtrar por texto (TX.9a: el
+    // título ahora es la categoría, no un texto libre distintivo).
     const gastoList = page.locator('#lista-gastos');
-    const gastoItem = gastoList.locator('article').filter({ hasText: 'Gasto a editar' }).first();
+    const gastoItem = gastoList.locator('article').first();
     const editBtn = gastoItem.locator('[data-action="editar-gasto"]');
     await editBtn.click();
 
@@ -744,15 +744,14 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('[name="descripcion"]').fill('Gasto a eliminar');
-    await formGasto.locator('[name="monto"]').fill('200000');
     await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('[name="monto"]').fill('200000');
     // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
     const hoy = hoyLocal();
     await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(
-      'Gasto a eliminar',
+      'Mercado',
       { timeout: 3_000 }
     );
 
@@ -766,17 +765,22 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     // ELIMINAR gasto
     await page.goto('/#gast');
     const gastoList = page.locator('#lista-gastos');
-    const gastoItem = gastoList.locator('article').filter({ hasText: 'Gasto a eliminar' }).first();
+    const gastoItem = gastoList.locator('article').first();
     const deleteBtn = gastoItem.locator('[data-action="eliminar-gasto"]');
     await deleteBtn.click();
+
+    // TX.9a: sin descripción, el mensaje de confirmación cae a la categoría
+    // (no debe mostrar "undefined").
+    await expect(page.locator('.confirm__mensaje')).toContainText('Mercado');
+    await expect(page.locator('.confirm__mensaje')).not.toContainText('undefined');
 
     // Confirmar eliminación (modal de confirmación con data-role)
     const confirmBtn = page.locator('[data-role="confirmar"]');
     await confirmBtn.click();
 
-    // El gasto debe desaparecer de la lista
-    await expect(page.locator('#lista-gastos')).not.toContainText(
-      'Gasto a eliminar',
+    // El gasto debe desaparecer de la lista (vuelve al estado vacío)
+    await expect(page.locator('#lista-gastos .empty-state__title')).toHaveText(
+      'Sin gastos este mes',
       { timeout: 3_000 }
     );
 

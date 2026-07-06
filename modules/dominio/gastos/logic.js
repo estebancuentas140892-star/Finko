@@ -116,15 +116,21 @@ export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100
 
 /**
  * Indica si un gasto quedó sin organizar: se registró con "Gasto rápido"
- * (flag `pendienteCompletar`) o no tiene descripción. Misma regla que el
- * badge "📝 Pendiente" de la lista, para que el conteo del dashboard y la
- * marca por ítem siempre coincidan.
+ * y todavía tiene la categoría genérica que ese flujo le puso por defecto
+ * ('Otros'), sin que el usuario haya elegido la categoría real todavía.
+ * Misma regla que el badge "📝 Pendiente" de la lista (vía `_renderGastoItem`),
+ * para que el conteo del dashboard y la marca por ítem siempre coincidan.
+ *
+ * TX.9a: antes la señal era "sin descripción"; con la categoría como dato
+ * principal del formulario (descripción ya no se pide), `pendienteCompletar`
+ * + categoría sin elegir es la que sigue distinguiendo un gasto anotado
+ * rápido de uno ya categorizado.
  *
  * @param {import('../../core/state.js').Gasto} gasto
  * @returns {boolean}
  */
 export function esGastoPendiente(gasto) {
-  return gasto?.pendienteCompletar === true || !gasto?.descripcion?.trim();
+  return gasto?.pendienteCompletar === true && (gasto?.categoria ?? 'Otros') === 'Otros';
 }
 
 /**
@@ -141,16 +147,15 @@ export function gastosPendientes(gastos) {
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
- * Valida los datos del formulario de gasto.
+ * Valida los datos del formulario de gasto. La descripción ya no es
+ * obligatoria (TX.9a): la categoría es el concepto principal del gasto;
+ * quien quiera detalle adicional usa el campo Nota, opcional.
  * @param {Record<string, string>} datos
  * @returns {string[]}
  */
 export function validarGasto(datos) {
   const errores = [];
 
-  if (!datos.descripcion?.trim()) {
-    errores.push('La descripción del gasto es obligatoria.');
-  }
   const monto = Number(datos.monto);
   if (isNaN(monto) || monto <= 0) {
     errores.push('El monto debe ser un número mayor a 0.');
@@ -238,12 +243,15 @@ export function deltasPorEdicionDeGasto(antes, despues) {
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
 
 /**
- * Convierte datos crudos del formulario al shape de S.gastos.
+ * Convierte datos crudos del formulario al shape de S.gastos. El formulario
+ * ya no pide descripción (TX.9a): la clave `descripcion` solo se incluye si
+ * `datos` la trae (compatibilidad hacia atrás con algún caller externo). Al
+ * omitirla, `editar()` (merge superficial vía `Object.assign`) no borra la
+ * descripción de gastos existentes que ya la tenían.
  * @param {Record<string, string>} datos
  */
 export function normalizarGasto(datos) {
-  return {
-    descripcion: datos.descripcion.trim(),
+  const base = {
     monto: Number(datos.monto),
     categoria: datos.categoria,
     fecha: datos.fecha,
@@ -252,6 +260,8 @@ export function normalizarGasto(datos) {
     compromisoId: datos.compromisoId || null,
     pendienteCompletar: false,
   };
+  if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
+  return base;
 }
 
 /**
