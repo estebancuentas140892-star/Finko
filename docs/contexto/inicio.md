@@ -8,7 +8,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido; solo **IN.6b** queda pendiente (espera diseños de avatar de Esteban).
-- **Verificado contra** : PENDIENTE_HASH (2026-07-06, IN.5).
+- **Verificado contra** : `9c0caf1` (2026-07-06, IN.5).
 
 **Dónde vive**
 

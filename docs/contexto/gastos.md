@@ -8,7 +8,7 @@
 
 - **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto.
 - **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06): se eliminó "Gasto rápido" y su subsistema de "pendientes por organizar" (el formulario completo, con categoría primero y descripción opcional, ya cubre el registro veloz).
-- **Verificado contra** : PENDIENTE_HASH (2026-07-06, IN.5).
+- **Verificado contra** : `9c0caf1` (2026-07-06, IN.5).
 
 **Dónde vive**
 
