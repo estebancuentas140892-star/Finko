@@ -1513,3 +1513,88 @@ describe('renderAnalisis() - paleta unificada dona + barras', () => {
     expect(barra.getAttribute('style')).toContain('width:');
   });
 });
+
+// ── PERF.3: cómputo diferido del grupo "Más detalle de tus gastos" ──
+
+describe('renderAnalisis() - PERF.3 detalle de gastos diferido', () => {
+  const fechaMesActual = (dia) => {
+    const ahora = new Date();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+  const fechaMesAnterior = (dia) => {
+    const ahora = new Date();
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+  const detalle = () => document.querySelector('.analisis-grupo--detalle');
+  const abrir = (el) => { el.open = true; el.dispatchEvent(new Event('toggle')); };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+  });
+
+  it('con gasto este mes, muestra el grupo pero difiere su cuerpo hasta abrirlo', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesActual(3) }),
+      gasto({ id: 'g2', categoria: 'Transporte',   monto: 120_000, fecha: fechaMesActual(4) }),
+    ];
+    renderAnalisis();
+
+    const grupo = detalle();
+    expect(grupo, 'el grupo colapsable debe existir').not.toBeNull();
+    // Cuerpo diferido: sin marcar como cargado y sin la comparación pintada.
+    expect(grupo.dataset.cargado).toBeUndefined();
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
+    expect(grupo.innerHTML).not.toContain('Vs mes anterior');
+  });
+
+  it('al abrir el grupo por primera vez, calcula y pinta el detalle', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesActual(3) }),
+      gasto({ id: 'g2', categoria: 'Transporte',   monto: 120_000, fecha: fechaMesActual(4) }),
+    ];
+    renderAnalisis();
+    const grupo = detalle();
+    abrir(grupo);
+
+    expect(grupo.dataset.cargado).toBe('1');
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML).toContain('Vs mes anterior');
+  });
+
+  it('sin gasto este mes pero con historial, pinta el detalle sin esperar el toggle', () => {
+    // gastoMes === 0 → ruta ansiosa: el grupo se decide (y llena) en el render,
+    // porque la comparación con el mes anterior ("desapareció") sí tiene datos.
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesAnterior(10) }),
+      gasto({ id: 'g2', categoria: 'Transporte',   monto: 120_000, fecha: fechaMesAnterior(12) }),
+    ];
+    renderAnalisis();
+
+    const grupo = detalle();
+    expect(grupo, 'el grupo debe mostrarse con la comparación del mes anterior').not.toBeNull();
+    expect(grupo.dataset.cargado).toBe('1');
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML).toContain('Vs mes anterior');
+  });
+
+  it('sin gastos, no dibuja el grupo de detalle', () => {
+    renderAnalisis();
+    expect(detalle()).toBeNull();
+  });
+
+  it('cada render vuelve a diferir el cuerpo (el estado no persiste entre renders)', () => {
+    S.gastos = [gasto({ id: 'g1', categoria: 'Alimentación', monto: 200_000, fecha: fechaMesActual(3) })];
+    renderAnalisis();
+    abrir(detalle());
+    expect(detalle().dataset.cargado).toBe('1');
+
+    // Un segundo render recrea el <details> diferido desde cero.
+    renderAnalisis();
+    const grupo = detalle();
+    expect(grupo.dataset.cargado).toBeUndefined();
+    expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
+  });
+});

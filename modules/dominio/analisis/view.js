@@ -27,6 +27,10 @@ import {
  * arrays de origen cambió desde el último render (ej. `renderAll()` vuelve
  * a pintar el dashboard sin que `gastos`/`compromisos`/etc. se hayan tocado).
  *
+ * PERF.3: la comparación vs mes anterior y el patrón semanal ya no se calculan
+ * aquí. Alimentan solo el grupo colapsado "Más detalle de tus gastos", así que
+ * se difieren a cuando el usuario lo abre (ver `_calcularDetalleGastos`).
+ *
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @param {import('../../core/state.js').Compromiso[]} compromisos
  * @param {import('../../core/state.js').Cuenta[]} cuentas
@@ -35,9 +39,8 @@ import {
  * @param {import('../../core/state.js').Inversion[]} inversiones
  * @param {number} anio
  * @param {number} mes
- * @param {string} fechaHoy
  */
-function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, anio, mes, fechaHoy) {
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, anio, mes) {
   const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones);
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
@@ -45,17 +48,33 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
   const gastosDelMes = gastosMes(gastos, anio, mes);
   const segmentosCat = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
 
-  // G.2: comparación vs mes anterior y patrón semanal.
-  const comparacion   = calcularComparacionCategorias(gastos, anio, mes);
-  const patronSemanal = detectarPatronGastoSemanal(gastos, fechaHoy);
-
-  return { resumen, serieGastos, segmentosCat, comparacion, patronSemanal };
+  return { resumen, serieGastos, segmentosCat };
 }
 
 const _calcularDatosAnalisisMemo = memoizar(
   _calcularDatosAnalisis,
   ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones'],
 );
+
+/**
+ * PERF.3: cómputo diferido del grupo "Más detalle de tus gastos" (comparación
+ * de categorías vs mes anterior + patrón de gasto semanal). Ambos hacen su
+ * propio barrido de `gastos` y solo alimentan el grupo colapsable, así que se
+ * calculan bajo demanda (al abrir el `<details>`) en vez de en cada render.
+ * Las hormigas no entran aquí: ya vienen dentro de `generarResumen`.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes
+ * @param {string} fechaHoy  YYYY-MM-DD.
+ */
+function _calcularDetalleGastos(gastos, anio, mes, fechaHoy) {
+  const comparacion   = calcularComparacionCategorias(gastos, anio, mes);
+  const patronSemanal = detectarPatronGastoSemanal(gastos, fechaHoy);
+  return { comparacion, patronSemanal };
+}
+
+const _calcularDetalleGastosMemo = memoizar(_calcularDetalleGastos, ['gastos']);
 
 /**
  * Renderiza el análisis completo en `#panel-analisis`.
@@ -69,48 +88,90 @@ export function renderAnalisis() {
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
 
-  const { resumen, serieGastos, segmentosCat, comparacion, patronSemanal } = _calcularDatosAnalisisMemo(
-    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes, fechaHoy,
+  const { resumen, serieGastos, segmentosCat } = _calcularDatosAnalisisMemo(
+    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes,
   );
+
+  // PERF.3: el grupo "Más detalle de tus gastos" difiere su cuerpo al toggle.
+  // Con gasto este mes, la comparación siempre tiene contenido, así que ese
+  // chequeo barato basta para mostrar el grupo y dejar su cuerpo diferido
+  // (`null`). Sin gasto este mes (caso menos común), calculamos el detalle ya
+  // mismo para saber si el grupo tendría algo que mostrar (comparación con el
+  // mes anterior o patrón de los últimos 90 días); si queda vacío, no se dibuja.
+  let cuerpoDetalle  = null;
+  let mostrarDetalle = true;
+  if (resumen.gastoMes <= 0) {
+    cuerpoDetalle  = _renderDetalleGastos(resumen.hormigas, anio, mes, fechaHoy);
+    mostrarDetalle = cuerpoDetalle.trim() !== '';
+  }
 
   // Orden de lectura (F8): primero "cómo estoy" (salud + patrimonio), luego
   // "a dónde va mi dinero" (tendencia + categorías). El detalle fino de gastos
   // y lo fiscal quedan colapsados para no enterrar lo importante.
-  const detalleGastos = `
-    ${_renderComparacionCategorias(comparacion)}
-    ${_renderPatronSemanal(patronSemanal)}
-    ${_renderHormigas(resumen.hormigas)}
-  `;
-
   el.innerHTML = `
     ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen)}
     ${_renderTendencia(serieGastos)}
     ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
-    ${_renderGrupoColapsable('Más detalle de tus gastos', detalleGastos)}
+    ${mostrarDetalle ? _renderGrupoDetalle(cuerpoDetalle) : ''}
     ${_renderEstadoRenta(anio)}
   `;
+
+  // PERF.3: si el cuerpo quedó diferido, calcularlo la primera vez que el
+  // usuario abre el grupo. Cada render recrea el `<details>`, así que el
+  // listener se asocia al nodo nuevo (el anterior se descarta con su elemento,
+  // sin listeners duplicados). `data-cargado` evita recomputar en aperturas y
+  // cierres sucesivos sobre el mismo nodo.
+  const detalle = el.querySelector('.analisis-grupo--detalle');
+  if (detalle && detalle.dataset.cargado !== '1') {
+    detalle.addEventListener('toggle', () => {
+      if (!detalle.open || detalle.dataset.cargado === '1') return;
+      detalle.dataset.cargado = '1';
+      const cuerpo = detalle.querySelector('.analisis-grupo__body');
+      if (cuerpo) cuerpo.innerHTML = _renderDetalleGastos(resumen.hormigas, anio, mes, fechaHoy);
+    });
+  }
 }
 
-// ── HELPER: GRUPO COLAPSABLE ─────────────────────────────────────
+// ── HELPER: GRUPO COLAPSABLE DE DETALLE ──────────────────────────
 
 /**
- * Envuelve contenido en un `<details>` colapsable con un encabezado guía.
- * Devuelve '' si el contenido está vacío (todas las sub-cards sin datos), para
- * no mostrar un grupo vacío.
+ * Envuelve el detalle de gastos en un `<details>` colapsable. El cuerpo puede
+ * venir diferido (PERF.3): `null` deja el cuerpo vacío para que `renderAnalisis`
+ * lo calcule en el primer `toggle`; un string ya renderizado se inyecta de una
+ * vez y marca el grupo como cargado (`data-cargado`), evitando el recálculo.
  *
- * @param {string} titulo
- * @param {string} contenido  HTML ya renderizado de las sub-secciones.
- * @param {{ abierto?: boolean }} [opts]
+ * @param {string|null} cuerpo  HTML del cuerpo, o `null` si está diferido.
  * @returns {string}
  */
-function _renderGrupoColapsable(titulo, contenido, { abierto = false } = {}) {
-  if (!contenido || contenido.trim() === '') return '';
+function _renderGrupoDetalle(cuerpo) {
+  const diferido = cuerpo === null;
   return `
-    <details class="analisis-grupo"${abierto ? ' open' : ''}>
-      <summary class="analisis-grupo__summary">${_esc(titulo)}</summary>
-      <div class="analisis-grupo__body">${contenido}</div>
+    <details class="analisis-grupo analisis-grupo--detalle"${diferido ? '' : ' data-cargado="1"'}>
+      <summary class="analisis-grupo__summary">Más detalle de tus gastos</summary>
+      <div class="analisis-grupo__body">${diferido ? '' : cuerpo}</div>
     </details>`;
+}
+
+/**
+ * Renderiza el cuerpo del grupo colapsable: comparación vs mes anterior +
+ * patrón de gasto semanal (ambos diferidos, PERF.3) + hormigas (ya calculadas
+ * en `generarResumen`). Devuelve un HTML que queda vacío al hacerle `.trim()`
+ * si ninguna de las tres sub-cards tiene datos.
+ *
+ * @param {ReturnType<import('../gastos/logic.js').detectarHormigas>} hormigas
+ * @param {number} anio
+ * @param {number} mes
+ * @param {string} fechaHoy  YYYY-MM-DD.
+ * @returns {string}
+ */
+function _renderDetalleGastos(hormigas, anio, mes, fechaHoy) {
+  const { comparacion, patronSemanal } = _calcularDetalleGastosMemo(S.gastos, anio, mes, fechaHoy);
+  return `
+    ${_renderComparacionCategorias(comparacion)}
+    ${_renderPatronSemanal(patronSemanal)}
+    ${_renderHormigas(hormigas)}
+  `;
 }
 
 // ── SECCIONES INTERNAS ───────────────────────────────────────────

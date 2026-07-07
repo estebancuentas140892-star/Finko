@@ -10,6 +10,27 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(analisis): PERF.3, diferir el cómputo del grupo colapsado de Análisis · 2026-07-06
+
+Cierre de la auditoría de rendimiento (solo queda **PERF.5**/IndexedDB, diferida por el ADR 030). El grupo colapsable "Más detalle de tus gastos" de Análisis (un `<details>` cerrado por defecto) calculaba `calcularComparacionCategorias()` (recorre el mes actual y el anterior de `S.gastos`) y `detectarPatronGastoSemanal()` (recorre 90 días) en **cada** `renderAnalisis()`, aunque el usuario nunca lo abriera. Con PERF.2 esas dos derivaciones vivían dentro del bundle memoizado `_calcularDatosAnalisis()`, así que se recalculaban en cada `state:change` genuino de las secciones observadas mientras la pantalla estaba abierta.
+
+**Solución:** se sacaron esas dos derivaciones del bundle principal a `_calcularDetalleGastos()` (nuevo, memoizado con `['gastos']`) y se **difirió su render al evento `toggle`** del `<details>`. `renderAnalisis()` dibuja el grupo con el cuerpo vacío; la primera vez que el usuario lo abre, un listener calcula y pinta el cuerpo (comparación + patrón semanal + hormigas) y marca `data-cargado` para no recomputar. Las hormigas **no** se difirieron: ya vienen dentro de `generarResumen()`, que el resto del panel (score, patrimonio) necesita igual, así que rendirlas es gratis.
+
+**Cómo se preserva el comportamiento exacto:** la visibilidad del grupo se decide barato, sin pagar el cómputo caro en el caso común. Con gasto este mes (`resumen.gastoMes > 0`, dato que ya trae el resumen) la comparación **siempre** tiene contenido (invariante: `totalGastosMes > 0` implica al menos una categoría con gasto, y `calcularComparacionCategorias` no devuelve vacío en ese caso), así que basta ese chequeo para mostrar el grupo y diferir su cuerpo. Sin gasto este mes (caso menos común: inicio de mes, o usuario que dejó de registrar) se calcula el detalle en el mismo render para no dibujar un grupo que resultaría vacío, ya que la comparación con el mes anterior ("desapareció") o el patrón de los últimos 90 días podrían seguir teniendo datos. Cada `renderAnalisis()` reescribe `innerHTML` (comportamiento previo), así que el `<details>` se recrea y el listener se re-asocia al nodo nuevo, sin duplicados.
+
+**Validación:** 2233/2233 unit (5 nuevos en `tests/unit/analisis.test.js`: grupo mostrado con cuerpo diferido, llenado al primer `toggle`, ruta ansiosa sin gasto del mes, grupo oculto sin datos, y re-diferido en cada render) + 151/151 E2E verdes en Chromium real (Playwright). Medido con `pnpm perf`: Análisis frío baja de ~9,7/16,3 ms a ~7,4/11,1 ms (mediana, 5.000/10.000 gastos), sin regresión en la ruta caché (~3,5-4,4 ms, plana) ni en las demás columnas. SW v333 → v334.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/analisis/view.js` | `_calcularDetalleGastos()`/`_calcularDetalleGastosMemo`/`_renderDetalleGastos()` nuevos; `renderAnalisis()` difiere el cuerpo del grupo al `toggle`; `_renderGrupoColapsable()` reemplazado por `_renderGrupoDetalle()`. |
+| `tests/unit/analisis.test.js` | 5 tests nuevos del grupo de detalle diferido. |
+| `scripts/perf/BASELINE.md` | Sección PERF.3 (antes/después de la columna Análisis frío). |
+| `docs/contexto/analisis.md` | Ficha actualizada (piezas nuevas, riesgo del diferido, cambio realizado). |
+| `docs/BOARD.md` | PERF.3 cerrada; nota de la iniciativa actualizada. |
+| `service-worker.js` | v333 → v334. |
+
+---
+
 ### perf(storage): PERF.4, ADR 030 persistencia: salvaguarda de cuota + diferir el rewrite · 2026-07-06
 
 Cierre de la auditoría de rendimiento. PERF.4 se había planteado como "partir la persistencia por colección", pero el análisis con el harness PERF.0 mostró que **el costo de guardar es bajo**: `save()` está debounced 200 ms y `JSON.stringify(S)` son ~5 ms de mediana a 10.000 gastos (la escritura a disco real de un móvil no la mide happy-dom, así que queda estimada). El cuello no es la CPU: es el **techo de cuota de `localStorage` (~5 MB por origen)**, que es un riesgo de **pérdida de datos** a largo plazo, no de lentitud.

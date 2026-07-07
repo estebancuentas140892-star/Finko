@@ -262,16 +262,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ## Transversal (afecta varias secciones)
 
-> Auditoría de rendimiento 2026-07 (pedida por Esteban): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido), **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)) y **PERF.4** (persistencia: [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), salvaguarda de cuota, se difiere el rewrite) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban, y el costo de guardar es bajo (~5 ms debounced), así que no se reescribió la persistencia; solo queda **PERF.3** (mejora menor opcional) y la tarjeta futura de IndexedDB (disparadores en el ADR 030). Cada fase corre `pnpm perf` antes/después y compara contra BASELINE.md.
-
-#### PERF.3 - Diferir cómputo de gráficos y grupos colapsados en Análisis
-- Prioridad  : baja
-- Estado     : pendiente
-- Objetivo   : el grupo colapsable "Más detalle de tus gastos" (`_renderGrupoColapsable`) calcula comparación de categorías + patrón semanal + hormigas aunque el usuario nunca lo expanda. Diferir ese cómputo a cuando el `<details>` dispara `toggle`.
-- Secciones  : Análisis (`analisis`)
-- Archivos   : `modules/dominio/analisis/view.js` (`renderAnalisis()`, `_renderGrupoColapsable()`)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio (diferir un cómputo ya aislado detrás de un evento DOM existente)
+> Auditoría de rendimiento 2026-07 (pedida por Esteban): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido), **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)), **PERF.3** (cómputo del grupo colapsable de Análisis diferido al `toggle`) y **PERF.4** (persistencia: [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), salvaguarda de cuota, se difiere el rewrite) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban, y el costo de guardar es bajo (~5 ms debounced), así que no se reescribió la persistencia. Iniciativa cerrada salvo la tarjeta futura de IndexedDB (**PERF.5**, disparadores en el ADR 030). Cada fase corre `pnpm perf` antes/después y compara contra BASELINE.md.
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)

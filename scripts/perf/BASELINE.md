@@ -80,3 +80,21 @@ Verificado: 2209/2209 unit (8 tests nuevos de paginación) + 151/151 E2E en Chro
 3. **Movimientos** (`Movs 1er lote`/`Movs +1 lote`, no listados arriba por brevedad) también se beneficia un poco de la memoización de `movimientosCompletos()` (el residuo de crecimiento que PERF.1 dejó documentado se aplana), pero el harness no separa frío/caché para esas dos columnas: siguen midiendo el escenario "repetido sin cambios", consistente con cómo se reportaron en la sección de PERF.1.
 
 Verificado: 2219/2219 unit (10 tests nuevos de `infra/memo.js` en `tests/unit/memo.test.js`) + 151/151 E2E en Chromium real. SW v331 → v332.
+
+---
+
+## PERF.3 (2026-07-06): cómputo diferido del grupo colapsable de Análisis
+
+**Cambio:** el grupo colapsable "Más detalle de tus gastos" ([analisis/view.js](../../modules/dominio/analisis/view.js)) calculaba `calcularComparacionCategorias()` (recorre el mes actual + el anterior) y `detectarPatronGastoSemanal()` (recorre 90 días) en cada `renderAnalisis()`, aunque el usuario nunca abriera el `<details>`. Se sacaron esas dos derivaciones del bundle memoizado de PERF.2 a `_calcularDetalleGastos()` (nuevo, memoizado con `['gastos']`) y se difirió su render al evento `toggle`: `renderAnalisis()` dibuja el grupo con el cuerpo vacío y lo calcula la primera vez que el usuario lo abre. Las hormigas no se difirieron (ya vienen dentro de `generarResumen()`).
+
+| gastos | Análisis frío (PERF.2 → PERF.3) | Análisis caché (sin regresión) |
+|---|---|---|
+| 1.000  | 4.3 → **4.4** (ruido)        | 2.9 → 3.5 |
+| 5.000  | 9.7 → **7.4** (~24 % menos)  | 4.1 → 3.7 |
+| 10.000 | 16.3 → **11.1** (~31 % menos)| 4.6 → 4.4 |
+
+**Lectura:** el ahorro (median) crece con el volumen de historial, como se espera de saltarse ~3 barridos O(gastos) por render (2 de la comparación, 1 del patrón semanal). A 1.000 gastos el efecto queda dentro del ruido de medición; a 10.000 es una baja clara de ~31 %. La ruta "caché" (re-render redundante sin cambios) no regresa: sigue plana en ~3,5-4,4 ms. Las demás columnas (Inicio, Movimientos, stringify, save) no cambian.
+
+**Cómo se preserva el comportamiento:** con gasto este mes la comparación siempre tiene contenido (invariante `totalGastosMes > 0` ⇒ comparación no vacía), así que el grupo se muestra con el cuerpo diferido; sin gasto este mes (caso menos común) el detalle se calcula en el render para no dibujar un grupo que resultaría vacío. El escenario que mide el harness (semilla con gastos repartidos en 10 años, ~1/120 caen en el mes actual) toma la ruta diferida, que es la que baja.
+
+Verificado: 2233/2233 unit (5 tests nuevos del grupo diferido en `tests/unit/analisis.test.js`) + 151/151 E2E en Chromium real. SW v333 → v334.
