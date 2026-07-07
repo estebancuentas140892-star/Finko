@@ -8,7 +8,7 @@
 
 - **Objetivo**          : centro de configuración de Finko. Hoy agrupa: perfil (nombre + situación laboral), perfil fiscal (K.2), datos de renta manuales (K.4), apariencia (tema), instalar PWA, recordatorios (notificaciones), gestión de datos (export/import/reset + aviso de cuota ADR 030) y "Acerca de". Es un dominio de UI: lee `S`, muta directamente (sin EventBus para sus propios formularios) y re-renderiza el panel entero tras cada guardado.
 - **Estado actual**     : estable. **CFG.1a** (2026-07-06) reemplazó el campo SMMLV muerto del encabezado por la situación laboral (schema v25). Iniciativa fusionada CFG.1+CFG.2 en curso: siguen **CFG.2a** (auto-derivar ingresos brutos al monitor de renta) y **CFG.2b** (inferir el estado de declarante). Otras tarjetas del BOARD sin iniciar: CFG.3 (notificaciones anticipatorias), CFG.4 (respaldo, roza ADN), CFG.5 (seguridad de acceso), CFG.6 (auditoría de la sección).
-- **Verificado contra** : `PENDIENTE_CFG1A` (2026-07-06, CFG.1a).
+- **Verificado contra** : `88f1e95` (2026-07-06, CFG.1a).
 
 **Dónde vive**
 
