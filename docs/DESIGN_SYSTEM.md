@@ -178,7 +178,7 @@ Todos los tamaños de icono salen de esta escala (definida en `styles/tokens.css
 | Token | Tamaño | Contexto |
 |---|---|---|
 | `--fk-icon-xs` | 16px | Inline con texto xs/sm: badges, hints, `.icon--sm`, volver de la hoja Registrar |
-| `--fk-icon-sm` | 18px | Acciones secundarias de fila: editar, borrar, chevron del quick-add |
+| `--fk-icon-sm` | 18px | Acciones secundarias de fila: editar, borrar |
 | `--fk-icon-md` | 20px | Base (`.icon`): filas, formularios, cerrar modal, accesos rápidos, chips de vencidos |
 | `--fk-icon-lg` | 24px | Navegación (sidebar y bottom-nav), FAB Registrar, ojo del hero, nudges SVG. Estándar Material 3 / Apple HIG |
 | `--fk-icon-xl` | 28px | Launchers y heroes de sección: menú Más, chooser de estrategia, heroes de Ahorro/Inversión |

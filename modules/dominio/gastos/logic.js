@@ -112,38 +112,6 @@ export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100
     .sort((a, b) => b.total - a.total);
 }
 
-// ── PENDIENTES POR ORGANIZAR ─────────────────────────────────────
-
-/**
- * Indica si un gasto quedó sin organizar: se registró con "Gasto rápido"
- * y todavía tiene la categoría genérica que ese flujo le puso por defecto
- * ('Otros'), sin que el usuario haya elegido la categoría real todavía.
- * Misma regla que el badge "📝 Pendiente" de la lista (vía `_renderGastoItem`),
- * para que el conteo del dashboard y la marca por ítem siempre coincidan.
- *
- * TX.9a: antes la señal era "sin descripción"; con la categoría como dato
- * principal del formulario (descripción ya no se pide), `pendienteCompletar`
- * + categoría sin elegir es la que sigue distinguiendo un gasto anotado
- * rápido de uno ya categorizado.
- *
- * @param {import('../../core/state.js').Gasto} gasto
- * @returns {boolean}
- */
-export function esGastoPendiente(gasto) {
-  return gasto?.pendienteCompletar === true && (gasto?.categoria ?? 'Otros') === 'Otros';
-}
-
-/**
- * Filtra los gastos que aún están sin organizar (de cualquier mes).
- * El dashboard usa la cantidad para mostrar un recordatorio agregado.
- *
- * @param {import('../../core/state.js').Gasto[]} gastos
- * @returns {import('../../core/state.js').Gasto[]}
- */
-export function gastosPendientes(gastos) {
-  return (gastos ?? []).filter(esGastoPendiente);
-}
-
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**
@@ -292,54 +260,9 @@ export function normalizarGasto(datos) {
     cuentaId: datos.cuentaId || null,
     nota: datos.nota?.trim() || '',
     compromisoId: datos.compromisoId || null,
-    pendienteCompletar: false,
   };
   if (datos.descripcion?.trim()) base.descripcion = datos.descripcion.trim();
   return base;
-}
-
-/**
- * Normaliza un gasto rapido: solo el monto + cuenta de origen, defaults para lo demas.
- * - descripcion: '' (vacia, se completa despues)
- * - categoria: 'Otros'
- * - fecha: hoy
- * - pendienteCompletar: true (marca para completar descripcion/categoria despues)
- * - cuentaId: el id de la cuenta de origen (o null si no se proporcionó).
- *
- * @param {string|number} monto
- * @param {string} fechaHoy - YYYY-MM-DD (inyectada para testeabilidad).
- * @param {string|null} [cuentaId] - cuenta desde la que sale el dinero.
- */
-export function normalizarGastoRapido(monto, fechaHoy, cuentaId = null) {
-  return {
-    descripcion: '',
-    monto: Number(monto),
-    categoria: 'Otros',
-    fecha: fechaHoy,
-    cuentaId: cuentaId || null,
-    nota: '',
-    pendienteCompletar: true,
-  };
-}
-
-/**
- * Valida un gasto rapido.
- *
- * @param {string|number} monto
- * @param {string|null}   [cuentaId]       - cuenta elegida (null si no hay o no se seleccionó).
- * @param {boolean}       [requiereCuenta] - true cuando hay varias cuentas y el usuario debe elegir.
- * @returns {string[]}
- */
-export function validarGastoRapido(monto, cuentaId = null, requiereCuenta = false) {
-  const errores = [];
-  const m = Number(monto);
-  if (isNaN(m) || m <= 0) {
-    errores.push('El monto debe ser un número mayor a 0.');
-  }
-  if (requiereCuenta && !cuentaId?.trim?.()) {
-    errores.push('Elige desde qué cuenta sale el dinero.');
-  }
-  return errores;
 }
 
 // ── ÍCONO POR ORIGEN (TX.6 / TX.7, sprite desde ID.3) ────────────

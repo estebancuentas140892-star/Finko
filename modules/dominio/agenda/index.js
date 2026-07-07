@@ -279,7 +279,6 @@ async function _marcarPagadoGastoFijo(el) {
       cuentaId:           s.cuentaId || null,
       nota:               repartido ? 'Pago repartido entre varias cuentas' : '',
       compromisoId:       id,
-      pendienteCompletar: false,
     });
     const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
     if (cuenta) {

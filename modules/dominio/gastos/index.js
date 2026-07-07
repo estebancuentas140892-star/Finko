@@ -12,7 +12,7 @@ import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
-import { renderSmart, updSaldo, registrarRender } from '../../infra/render.js';
+import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
@@ -20,13 +20,12 @@ import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import {
   validarGasto, normalizarGasto,
-  validarGastoRapido, normalizarGastoRapido,
-  deltasPorEdicionDeGasto, esGastoPendiente,
+  deltasPorEdicionDeGasto,
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
-import { renderListaGastos, renderFormGasto, renderFormGastoRapido, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, renderPendientesOrganizar, CATEGORIA_NUEVA_VALUE } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -181,151 +180,9 @@ function _editarGasto(el) {
   }
 
   const titulo = overlay.querySelector('.modal__title');
-  if (titulo) {
-    titulo.textContent = esGastoPendiente(gasto)
-      ? '📝 Completar gasto'
-      : 'Editar gasto';
-  }
+  if (titulo) titulo.textContent = 'Editar gasto';
 
   abrirModal(overlay);
-}
-
-// ── GASTO RAPIDO ─────────────────────────────────────────────────
-
-/**
- * (Re)Inyecta el HTML del gasto rápido en el modal y adjunta el listener de submit.
- * Se llama en cada apertura para reflejar cambios en S.cuentas (puede haber
- * agregado o eliminado cuentas desde la última vez que se abrió el modal).
- */
-function _inyectarFormGastoRapido() {
-  const body = document.getElementById('modal-gasto-rapido-body');
-  if (!body) return;
-
-  body.innerHTML = renderFormGastoRapido();
-
-  const form = body.querySelector('#form-gasto-rapido');
-  if (!form) return; // empty state (0 cuentas): no hay form, no hay listener.
-
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    _guardarGastoRapido();
-  });
-}
-
-/** Abre el modal de gasto rapido con focus en el input de monto. */
-function _abrirGastoRapido() {
-  const overlay = document.getElementById('modal-gasto-rapido');
-  if (!overlay) return;
-
-  // Re-inyectar en cada apertura: S.cuentas puede haber cambiado desde la última vez.
-  _inyectarFormGastoRapido();
-
-  abrirModal(overlay);
-  // Focus en el input despues de la animacion de entrada.
-  setTimeout(() => {
-    overlay.querySelector('#gasto-rapido-monto')?.focus();
-  }, 200);
-}
-
-async function _guardarGastoRapido() {
-  const form = document.getElementById('form-gasto-rapido');
-  if (!form) return;
-
-  const monto    = form.querySelector('[name="monto"]')?.value ?? '';
-  const cuentaId = form.querySelector('input[name="cuentaId"]:checked')?.value || null;
-
-  const errores = validarGastoRapido(monto, cuentaId, true);
-  if (errores.length > 0) {
-    mostrarErroresForm(form, errores);
-    return;
-  }
-
-  // Usa la cuenta elegida; si no alcanza y hay más cuentas, abre el reparto.
-  const splits = await resolverPagoConPreferida(S.cuentas, Number(monto), cuentaId, 'registrar el gasto');
-  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
-
-  // Una sola cuenta que no alcanza: confirmar el sobregiro.
-  if (splits.length === 1) {
-    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
-    const saldoCuenta = c?.saldo ?? 0;
-    if (saldoCuenta < splits[0].monto) {
-      const ok = await confirmar({
-        titulo:         'Registrar gasto',
-        mensaje:        `${c?.nombre ?? 'La cuenta'} tiene ${f(saldoCuenta)} y el gasto es ${f(splits[0].monto)}: quedará en negativo. ¿Registrar de todas formas?`,
-        confirmarTexto: 'Registrar gasto',
-        peligroso:      true,
-      });
-      if (!ok) return;
-    }
-  }
-
-  for (const s of splits) {
-    guardar('gastos', normalizarGastoRapido(s.monto, hoy(), s.cuentaId));
-    _ajustarSaldoCuenta(s.cuentaId, -s.monto);
-  }
-
-  // Tomar el id del último gasto (crud.js lo asignó).
-  const ultimo = S.gastos[S.gastos.length - 1];
-
-  const overlay = document.getElementById('modal-gasto-rapido');
-  if (overlay) cerrarModal(overlay);
-
-  renderListaGastos();
-  updSaldo();
-
-  announce('Gasto rápido guardado. Lo puedes completar después en Gastos.');
-  _toastGastoRapido(ultimo);
-}
-
-/**
- * Muestra un toast con accion "Completar" para abrir el edit del gasto recien creado.
- * Auto-cierra a los 4s. Se elimina si el usuario navega o cierra manualmente.
- */
-function _toastGastoRapido(gasto) {
-  // Limpiar toast anterior si existe.
-  document.querySelector('.quick-toast')?.remove();
-
-  const toast = document.createElement('div');
-  toast.className = 'quick-toast';
-  toast.setAttribute('role', 'status');
-  toast.innerHTML = `
-    <span class="quick-toast__check" aria-hidden="true">✓</span>
-    <span class="quick-toast__body">
-      <span class="quick-toast__title">Gasto guardado</span>
-      <span class="quick-toast__amount">${_fmtMonto(gasto.monto)}</span>
-    </span>
-    <button type="button" class="quick-toast__action"
-            data-action="editar-gasto" data-id="${gasto.id}">
-      Completar
-    </button>
-    <button type="button" class="quick-toast__close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>`;
-
-  document.body.appendChild(toast);
-
-  const cerrar = () => {
-    toast.classList.add('fade');
-    setTimeout(() => toast.remove(), 300);
-  };
-  toast.querySelector('.quick-toast__close').addEventListener('click', cerrar);
-
-  // El boton "Completar" tiene data-action="editar-gasto" data-id="...".
-  // No registramos listener especifico aqui: actions.js delega el click
-  // al handler _editarGasto via burbujeo. Lo unico que hacemos es quitar
-  // el toast TRAS abrir el modal (microtask delay para que el modal
-  // termine de renderizarse).
-  toast.querySelector('.quick-toast__action').addEventListener('click', () => {
-    setTimeout(cerrar, 50);
-  });
-
-  // Auto-cerrar a los 4 segundos.
-  setTimeout(() => {
-    if (document.body.contains(toast)) cerrar();
-  }, 4000);
-}
-
-function _fmtMonto(n) {
-  const abs = Math.abs(Math.round(n));
-  return '$' + abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 // ── NAVEGACIÓN DE MES ────────────────────────────────────────────
@@ -493,26 +350,17 @@ export function initGastos() {
   registrarAccion('nuevo-gasto', _nuevoGasto);
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);
-  registrarAccion('gasto-rapido', _abrirGastoRapido);
   registrarAccion('gastos-prev-mes',    _prevMes);
   registrarAccion('gastos-next-mes',    _nextMes);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
 
   // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
-  // El form rápido también se monta on-demand desde _abrirGastoRapido.
-
-  // La card de pendientes vive en el dashboard, no en #gast, así que se
-  // registra en renderAll (boot + mutaciones globales) en lugar de gatearse
-  // por hash. Es idempotente y barata: escribe en un contenedor siempre
-  // presente, aunque la sección esté oculta.
-  registrarRender(renderPendientesOrganizar);
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'gastos') {
       renderBannerProposito('gast', S.gastos.length > 0);
       renderSmart(renderFiltrosGastos, 'gast');
       renderSmart(renderListaGastos, 'gast');
-      renderPendientesOrganizar();
       updSaldo();
     }
   });

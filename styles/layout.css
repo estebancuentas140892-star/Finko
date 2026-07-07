@@ -386,34 +386,6 @@
   font-size: clamp(2rem, 1rem + 4vw, 3.5rem);
 }
 
-/* Gastos por organizar: el nudge de pendientes vive como celda del bento,
-   junto al hero (desktop, span 4) o bajo él (mobile). La celda solo aporta
-   el tamaño del grid: el nudge interno conserva su tinte info y se estira a
-   la altura del hero, centrado en vertical para acompañarlo sin doble chrome. */
-#panel-gastos-pendientes {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  overflow: visible;
-}
-#panel-gastos-pendientes .nudge {
-  flex: 1;
-  margin: 0;
-  align-content: center;
-  border-radius: var(--fk-radius-xl);
-}
-
-/* Sin gastos por organizar, la tarjeta queda [hidden] y dejaría un hueco a la
-   derecha del hero (las 4 columnas que liberaron los accesos rápidos). Cuando
-   eso pasa, el hero se expande a todo el ancho y no queda aire muerto. Puro
-   CSS con :has() (mismo patrón que .list-item__icon:has(.bank-avatar)): el
-   layout reacciona al atributo [hidden] del panel sin que el dominio gastos
-   sepa nada del bento. En tablet (6 cols) y mobile (1 col), span 12 se recorta
-   a la fila completa, así que el hero sigue igual fuera de desktop. */
-.bento--dash:has(#panel-gastos-pendientes[hidden]) .bento__cell--hero {
-  grid-column: span 12;
-}
-
 /* Variantes visuales */
 .bento__cell--accent {
   border-color: var(--fk-accent-border);

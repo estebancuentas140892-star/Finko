@@ -8,14 +8,10 @@ import {
   detectarHormigas,
   validarGasto,
   normalizarGasto,
-  validarGastoRapido,
-  normalizarGastoRapido,
   aplicarGastoASaldo,
   revertirGastoDeSaldo,
   deltasPorEdicionDeGasto,
   filtrarGastos,
-  esGastoPendiente,
-  gastosPendientes,
   iconoPorOrigen,
   validarCategoriaPersonalizada,
 } from '../../modules/dominio/gastos/logic.js';
@@ -386,77 +382,6 @@ describe('normalizarGasto()', () => {
   it('no incluye id (lo asigna crud.js)', () => {
     expect(normalizarGasto(datosFormValidos)).not.toHaveProperty('id');
   });
-
-  it('pendienteCompletar es false por defecto en gasto normal', () => {
-    expect(normalizarGasto(datosFormValidos).pendienteCompletar).toBe(false);
-  });
-});
-
-// ── validarGastoRapido() ──────────────────────────────────────────
-
-describe('validarGastoRapido()', () => {
-  it('acepta un monto positivo', () => {
-    expect(validarGastoRapido(50000)).toEqual([]);
-    expect(validarGastoRapido('50000')).toEqual([]);
-  });
-  it('rechaza monto 0', () => {
-    expect(validarGastoRapido(0).length).toBeGreaterThan(0);
-  });
-  it('rechaza monto negativo', () => {
-    expect(validarGastoRapido(-100).length).toBeGreaterThan(0);
-  });
-  it('rechaza monto no numerico', () => {
-    expect(validarGastoRapido('abc').length).toBeGreaterThan(0);
-  });
-  it('rechaza string vacio', () => {
-    expect(validarGastoRapido('').length).toBeGreaterThan(0);
-  });
-  it('sin requiereCuenta (default), acepta cuentaId nulo o vacio', () => {
-    expect(validarGastoRapido(50000, null)).toEqual([]);
-    expect(validarGastoRapido(50000, '')).toEqual([]);
-  });
-  it('con requiereCuenta=true, rechaza cuentaId vacio o nulo', () => {
-    expect(validarGastoRapido(50000, null, true).length).toBeGreaterThan(0);
-    expect(validarGastoRapido(50000, '', true).length).toBeGreaterThan(0);
-  });
-  it('con requiereCuenta=true, acepta cuentaId valido', () => {
-    expect(validarGastoRapido(50000, 'cuenta-123', true)).toEqual([]);
-  });
-});
-
-// ── normalizarGastoRapido() ───────────────────────────────────────
-
-describe('normalizarGastoRapido()', () => {
-  it('crea un gasto con descripcion vacia y categoria Otros', () => {
-    const g = normalizarGastoRapido(50000, '2026-05-20');
-    expect(g.descripcion).toBe('');
-    expect(g.categoria).toBe('Otros');
-    expect(g.fecha).toBe('2026-05-20');
-    expect(g.monto).toBe(50000);
-    expect(g.pendienteCompletar).toBe(true);
-  });
-
-  it('convierte monto string a numero', () => {
-    const g = normalizarGastoRapido('75000', '2026-05-20');
-    expect(typeof g.monto).toBe('number');
-    expect(g.monto).toBe(75000);
-  });
-
-  it('sin cuentaId: queda en null y nota vacia', () => {
-    const g = normalizarGastoRapido(10000, '2026-05-20');
-    expect(g.cuentaId).toBeNull();
-    expect(g.nota).toBe('');
-  });
-
-  it('con cuentaId: lo guarda en el gasto', () => {
-    const g = normalizarGastoRapido(30000, '2026-06-01', 'cuenta-abc');
-    expect(g.cuentaId).toBe('cuenta-abc');
-  });
-
-  it('cuentaId vacio o nulo queda en null', () => {
-    expect(normalizarGastoRapido(10000, '2026-06-01', '').cuentaId).toBeNull();
-    expect(normalizarGastoRapido(10000, '2026-06-01', null).cuentaId).toBeNull();
-  });
 });
 
 // ── aplicarGastoASaldo() ─────────────────────────────────────────
@@ -588,66 +513,6 @@ describe('filtrarGastos()', () => {
 
   it('devuelve array vacío con input vacío', () => {
     expect(filtrarGastos([], 'Alimentación')).toEqual([]);
-  });
-});
-
-// ── PENDIENTES POR ORGANIZAR ─────────────────────────────────────
-
-describe('esGastoPendiente()', () => {
-  it('marca pendiente un gasto rápido: flag + categoría todavía en Otros (TX.9a)', () => {
-    const g = gastoBase({ categoria: 'Otros', pendienteCompletar: true });
-    expect(esGastoPendiente(g)).toBe(true);
-  });
-
-  it('no marca pendiente si ya se le eligió una categoría real, aunque el flag siga true', () => {
-    const g = gastoBase({ categoria: 'Transporte', pendienteCompletar: true });
-    expect(esGastoPendiente(g)).toBe(false);
-  });
-
-  it('no marca pendiente un gasto completo (sin el flag)', () => {
-    const g = gastoBase({ categoria: 'Otros', pendienteCompletar: false });
-    expect(esGastoPendiente(g)).toBe(false);
-  });
-
-  it('no marca pendiente un gasto viejo sin el flag, sin importar la categoría', () => {
-    const g = gastoBase({ categoria: 'Mercado' });
-    delete g.pendienteCompletar;
-    expect(esGastoPendiente(g)).toBe(false);
-  });
-
-  it('es defensivo ante null/undefined: sin gasto, no hay nada pendiente', () => {
-    expect(esGastoPendiente(null)).toBe(false);
-    expect(esGastoPendiente(undefined)).toBe(false);
-  });
-});
-
-describe('gastosPendientes()', () => {
-  it('filtra solo los gastos sin organizar, de cualquier mes', () => {
-    const gastos = [
-      gastoBase({ id: 'g1', fecha: '2026-05-10', categoria: 'Otros', pendienteCompletar: true }),
-      gastoBase({ id: 'g2', fecha: '2026-03-02', categoria: 'Vivienda' }),
-      gastoBase({ id: 'g3', fecha: '2026-01-20', categoria: 'Otros', pendienteCompletar: true }),
-    ];
-    const r = gastosPendientes(gastos);
-    expect(r).toHaveLength(2);
-    expect(r.map(g => g.id)).toEqual(['g1', 'g3']);
-  });
-
-  it('devuelve vacío cuando no hay pendientes', () => {
-    const gastos = [gastoBase({ categoria: 'Café' })];
-    expect(gastosPendientes(gastos)).toEqual([]);
-  });
-
-  it('es defensivo ante array vacío o nulo', () => {
-    expect(gastosPendientes([])).toEqual([]);
-    expect(gastosPendientes(undefined)).toEqual([]);
-  });
-
-  it('no muta el array original', () => {
-    const gastos = [gastoBase({ descripcion: '', pendienteCompletar: true })];
-    const copia = [...gastos];
-    gastosPendientes(gastos);
-    expect(gastos).toEqual(copia);
   });
 });
 
@@ -935,17 +800,5 @@ describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () =
     renderListaGastos();
     const subtitulo = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
     expect(subtitulo).toContain('Con receta médica');
-  });
-
-  it('un gasto de Gasto Rápido sin categorizar muestra el badge Pendiente', () => {
-    S.gastos = [gastoBase({ categoria: 'Otros', pendienteCompletar: true, descripcion: undefined, fecha: mesActual() })];
-    renderListaGastos();
-    expect(document.getElementById('lista-gastos').innerHTML).toContain('Pendiente');
-  });
-
-  it('un gasto ya categorizado no muestra el badge Pendiente', () => {
-    S.gastos = [gastoBase({ categoria: 'Transporte', pendienteCompletar: false, fecha: mesActual() })];
-    renderListaGastos();
-    expect(document.getElementById('lista-gastos').innerHTML).not.toContain('Pendiente');
   });
 });

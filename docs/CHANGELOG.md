@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(gastos): IN.5, eliminar "Gasto rápido" y el subsistema de pendientes · 2026-07-06
+
+Con TX.9 completa, el formulario completo de gasto registra en pocos toques (categoría + monto, con fecha y cuenta pre-rellenadas). "Gasto rápido" (anotar solo el monto y completar la categoría después) dejó de aportar valor sobre eso: mantener dos flujos para lo mismo solo sumaba complejidad, más una cola de "pendientes por organizar" que el usuario debía volver a completar. Esteban decidió eliminarlo. Se retiró la feature completa y todo su subsistema dependiente, verificando primero que ningún otro flujo lo necesitara.
+
+**Qué se eliminó.** El botón `.quick-add` del dashboard y el modal `#modal-gasto-rapido` (`index.html`); `renderFormGastoRapido()`, `renderPendientesOrganizar()` y el badge "📝 Pendiente" de `_renderGastoItem()` (`view.js`); `validarGastoRapido()`, `normalizarGastoRapido()`, `esGastoPendiente()`, `gastosPendientes()` (`logic.js`); los handlers `_inyectarFormGastoRapido`/`_abrirGastoRapido`/`_guardarGastoRapido`/`_toastGastoRapido`/`_fmtMonto` y la acción `gasto-rapido` (`index.js`); el contenedor `#panel-gastos-pendientes` del bento; los estilos `.quick-add*` y `.quick-toast*` (`forms.css`, keyframes `toastIn/toastOut` conservadas porque las usa el toast de logros).
+
+**Efecto en cadena.** El flag `pendienteCompletar` tenía un único lector (`esGastoPendiente`), ahora eliminado; se dejó de escribir en los 4 dominios que lo ponían (`gastos/logic.js`, `agenda/index.js`, `compromisos/index.js`, `tesoreria/acciones/distribucion.js`). El dato legacy que quede en `localStorage` (gastos viejos con `pendienteCompletar`) simplemente se ignora: no requiere migración porque nada lo lee. Al desaparecer el panel `#panel-gastos-pendientes` que acompañaba al hero, el hero del dashboard pasa a ancho completo (`bento__cell--full`) y se retiró la regla `:has()` que antes lo expandía condicionalmente (`layout.css`).
+
+**Validación.** 2201/2201 unit (25 tests del subsistema retirados de `gastos.test.js`) + 151/151 E2E; el test de reflow a 320px se repuntó del modal de gasto rápido (eliminado) al de ingreso puntual, que también usa `.input--big-amount`. El preview de este entorno funcionó esta vez: se verificó en la app el dashboard con el hero a ancho completo (sin la card ni huecos), la lista de Gastos sin badge, y cero errores en consola. SW v329 → v330.
+
+| Archivo | Cambio |
+|---|---|
+| `index.html` | Quita el botón `.quick-add`, el modal `#modal-gasto-rapido` y `#panel-gastos-pendientes`; hero a `bento__cell--full`. |
+| `modules/dominio/gastos/view.js` | Quita `renderFormGastoRapido`, `renderPendientesOrganizar`, el badge "📝 Pendiente" y el tip del empty state. |
+| `modules/dominio/gastos/logic.js` | Quita `validarGastoRapido`, `normalizarGastoRapido`, `esGastoPendiente`, `gastosPendientes`; `normalizarGasto` deja de escribir `pendienteCompletar`. |
+| `modules/dominio/gastos/index.js` | Quita los handlers de gasto rápido, la acción `gasto-rapido` y el render de pendientes; título de edición fijo ("Editar gasto"). |
+| `modules/dominio/agenda/index.js`, `modules/dominio/compromisos/index.js`, `modules/dominio/tesoreria/acciones/distribucion.js` | Dejan de escribir `pendienteCompletar: false` al crear gastos. |
+| `styles/components/forms.css` | Quita `.quick-add*` y `.quick-toast*`; el chevron sale de la regla de `--fk-icon-sm`. |
+| `styles/layout.css` | Quita `#panel-gastos-pendientes` y la regla `:has()` del hero. |
+| `styles/components.css`, `docs/DESIGN_SYSTEM.md` | Referencias a `.quick-add`/chevron retiradas. |
+| `tests/unit/gastos.test.js` | 25 tests del subsistema retirados. |
+| `tests/e2e/reflow-320.test.js` | Reflow repunteado al modal de ingreso puntual. |
+| `docs/contexto/gastos.md`, `docs/contexto/inicio.md`, `docs/BOARD.md` | IN.5 cerrada; fichas y tablero actualizados. |
+| `service-worker.js` | v329 → v330. |
+
+---
+
 ### feat(ux): CTA unificado "necesitas una cuenta" lleva directo a crear la cuenta · 2026-07-06
 
 Reporte de Esteban sobre el onboarding: un usuario nuevo que pulsa el botón (+) → "Nuevo ingreso" sin haber creado ninguna cuenta veía el mensaje "Primero necesitas una cuenta", pero el botón "Entendido" solo cerraba el modal y lo dejaba buscando por su cuenta dónde crear la cuenta. Rompía la continuidad del onboarding. Se unificó el patrón de **todos** los bloqueos por "falta una cuenta" bajo un criterio único de UX: si falta un requisito, la app guía a resolverlo, no solo lo informa.

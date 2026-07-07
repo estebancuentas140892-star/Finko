@@ -106,25 +106,27 @@ test.describe('Reflow a 320px (RWD.1, WCAG 1.4.10)', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(320);
   });
 
-  test('el modal de gasto rápido (.input--big-amount) cabe completo', async ({ page }) => {
+  test('el modal de ingreso puntual (.input--big-amount) cabe completo', async ({ page }) => {
     await seedDatos(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
-    await page.click('[data-action="gasto-rapido"]');
-    await page.waitForSelector('#modal-gasto-rapido[data-open]', { timeout: 5_000 });
+    // El ingreso puntual se abre desde la hoja "Registrar" del bottom nav.
+    await page.click('.nav-item--registrar');
+    await page.click('.registrar__tile[data-kind="ingreso"]');
+    await page.waitForSelector('#modal-ingreso-puntual[data-open]', { timeout: 5_000 });
 
-    const modal = page.locator('#modal-gasto-rapido .modal');
+    const modal = page.locator('#modal-ingreso-puntual .modal');
     const box = await modal.boundingBox();
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(320);
 
-    const input = page.locator('#modal-gasto-rapido .input--big-amount');
+    const input = page.locator('#modal-ingreso-puntual .input--big-amount');
     await expect(input).toBeVisible();
     const inputBox = await input.boundingBox();
     expect(inputBox.x + inputBox.width).toBeLessThanOrEqual(320);
 
-    await assertSinScrollHorizontal(page, 'Modal de gasto rápido');
+    await assertSinScrollHorizontal(page, 'Modal de ingreso puntual');
   });
 
   test('el asistente "Distribuir mi ingreso" cabe completo', async ({ page }) => {

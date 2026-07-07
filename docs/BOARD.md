@@ -61,15 +61,6 @@ _(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CH
 - Depende de : IN.4a en producción (cerrada el 2026-07-05) y feedback de Esteban tras usarla
 - Modelo     : decidir al llegar
 
-#### IN.5 - Eliminar "Gasto rápido" (o transformarlo si aporta algo real)
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : con las mejoras ya pensadas para el formulario de registrar gasto (categoría primero, categorías inteligentes, ver **TX.9**), el usuario considera que "Gasto rápido" dejó de tener utilidad: mantener dos flujos distintos para prácticamente lo mismo solo añade complejidad. Propone eliminarlo y concentrar todo en un único flujo. Pidió explícitamente analizar antes si existe un beneficio real en conservarlo o si puede transformarse en algo que aporte más valor, en vez de eliminarlo sin más.
-- Secciones  : Inicio (dashboard, de donde se accede a Gasto rápido hoy), Gastos (`gastos`)
-- Archivos   : sin explorar todavía; ubicar el acceso y el flujo de "Gasto rápido" en el código antes de decidir
-- Depende de : nada (TX.9 completa, el formulario completo ya tiene categoría primero + categorías personalizadas)
-- Modelo     : Sonnet 5 - Bajo (decisión acotada, una vez tomada es sobre todo remover una ruta/acceso y sus tests; el análisis de "vale la pena conservarlo" es la parte que requiere criterio, no volumen de código)
-
 #### IN.6b - Avatar ilustrado del usuario (teja de iniciales + set propio)
 - Prioridad  : baja dentro de la iniciativa (última fase)
 - Estado     : pendiente (ADR 028 aprobado); bloqueada por diseños de Esteban

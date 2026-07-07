@@ -467,7 +467,6 @@ function _aplicarNecesidad(item, cuentaId) {
       cuentaId,
       nota:               '',
       compromisoId:       item.id,
-      pendienteCompletar: false,
     });
     return;
   }
@@ -480,7 +479,6 @@ function _aplicarNecesidad(item, cuentaId) {
     cuentaId,
     nota:               '',
     compromisoId:       item.id,
-    pendienteCompletar: false,
   });
   const nuevoSaldo = Math.max(0, (Number(comp.saldoTotal) || 0) - item.monto);
   editar('compromisos', item.id, { saldoTotal: nuevoSaldo });

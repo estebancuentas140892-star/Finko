@@ -331,7 +331,6 @@ async function _guardarAbono() {
       cuentaId:           s.cuentaId || null,
       nota:               repartido ? [notaBase, 'Abono repartido entre varias cuentas'].filter(Boolean).join(' · ') : notaBase,
       compromisoId:       deudaId,
-      pendienteCompletar: false,
     });
     const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
     if (cuenta) {
@@ -748,7 +747,6 @@ export function initCompromisos() {
         cuentaId:           cuentaOrigenId,
         nota:               '',
         compromisoId:       it.id,
-        pendienteCompletar: false,
       });
       const nuevoSaldo = Math.max(0, (Number(deuda.saldoTotal) || 0) - it.monto);
       editar('compromisos', it.id, { saldoTotal: nuevoSaldo });

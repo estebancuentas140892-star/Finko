@@ -8,7 +8,7 @@ import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, gastosPendientes, esGastoPendiente, totalGastos, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, totalGastos, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -197,22 +197,16 @@ function _renderResumen(gastos) {
 
 /**
  * TX.9a: la categoría es el concepto principal del gasto (título del ítem),
- * no la descripción libre (el formulario ya no la pide). Un gasto de "Gasto
- * rápido" sin categorizar todavía (`esGastoPendiente()`) suma el badge
- * "📝 Pendiente"; su categoría en ese caso es 'Otros', informativa por sí sola.
+ * no la descripción libre (el formulario ya no la pide).
  * @param {import('../../core/state.js').Gasto} gasto
  */
 function _renderGastoItem(gasto) {
-  const pendiente = esGastoPendiente(gasto);
   const catKey = gasto.categoria ?? 'Otros';
   const cat    = _esc(catKey);
   // Descripción legacy (gastos de antes de TX.9a que ya la tenían) + nota:
   // ambas son detalle opcional, ahora en el subtítulo junto a la fecha.
   const descripcionLegacy = gasto.descripcion?.trim() ? ` · ${_esc(gasto.descripcion.trim())}` : '';
   const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
-  const badge = pendiente
-    ? '<span class="badge badge--warn" title="Toca editar para elegir la categoría real">📝 Pendiente</span> '
-    : '';
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
   // ícono de su compromiso de origen (categoría de Agenda, o i-cuentas /
@@ -225,7 +219,7 @@ function _renderGastoItem(gasto) {
     <article class="list-item" data-id="${_esc(gasto.id)}">
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${badge}${cat}</p>
+        <p class="list-item__title">${cat}</p>
         <p class="list-item__subtitle">${fechaLegible(gasto.fecha)}${descripcionLegacy}${nota}</p>
       </div>
       <div class="list-item__meta">
@@ -251,7 +245,6 @@ function _renderEmptyState() {
       <p class="empty-state__title">Sin gastos este mes</p>
       <p class="empty-state__desc">Anota tu primera compra o pago.</p>
       <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: desde Inicio, el botón "Gasto rápido" te permite apuntar el monto en segundos. Describes el gasto después con calma.</p>
     </div>`;
 }
 
@@ -263,87 +256,6 @@ function _renderEmptyFiltro() {
       <p class="empty-state__desc">No registraste gastos en esta categoría todavía.</p>
       <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
     </div>`;
-}
-
-// ── CARD DE PENDIENTES POR ORGANIZAR (dashboard) ─────────────────
-
-/**
- * Renderiza en `#panel-gastos-pendientes` un recordatorio agregado de los
- * gastos registrados con "Gasto rápido" que todavía tienen la categoría
- * genérica 'Otros' (TX.9a). Cuenta los pendientes de todos los meses (un
- * gasto sin organizar no debería perderse al cambiar de mes). Si no hay
- * pendientes, deja el contenedor vacío para no generar ruido visual. No-op
- * si el contenedor no existe (sección no montada).
- */
-export function renderPendientesOrganizar() {
-  const el = document.getElementById('panel-gastos-pendientes');
-  if (!el) return;
-
-  const n = gastosPendientes(S.gastos).length;
-  if (n === 0) {
-    el.innerHTML = '';
-    el.hidden = true;
-    return;
-  }
-  el.hidden = false;
-
-  const titulo = n === 1
-    ? 'Tienes 1 gasto por organizar'
-    : `Tienes ${n} gastos por organizar`;
-
-  el.innerHTML = `
-    <div class="nudge nudge-info" role="status">
-      <span class="nudge__icon" aria-hidden="true">📝</span>
-      <div class="nudge__body">
-        <p class="nudge__title">${_esc(titulo)}</p>
-        <p class="nudge__desc">Los anotaste rápido, sin categorizarlos. Elígeles la categoría real para ver bien en qué se va tu dinero.</p>
-      </div>
-      <a class="nudge__cta btn btn-sm btn-primary" href="#gast">Organizar</a>
-    </div>`;
-}
-
-// ── FORMULARIO DE GASTO RÁPIDO ───────────────────────────────────
-
-/**
- * Devuelve el HTML que se inyecta en `#modal-gasto-rapido-body` en cada apertura.
- *
- * Si no hay cuentas activas, muestra un empty state guiado. Si hay al menos una,
- * muestra el formulario con el selector de tarjetas de cuenta (mismo componente
- * que el gasto completo). Se re-inyecta en cada apertura para reflejar cambios
- * en S.cuentas.
- *
- * @returns {string}
- */
-export function renderFormGastoRapido() {
-  const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
-
-  if (cuentas.length === 0) {
-    return `
-      <div class="form-empty">
-        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
-        <p class="form-empty__title">Primero necesitas una cuenta</p>
-        <p class="form-empty__desc">Para registrar gastos necesitas al menos una cuenta o billetera. Créala aquí y sigues sin perder el hilo.</p>
-        <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
-      </div>`;
-  }
-
-  return `
-    <p class="quick-add__hint">Anótalo ahora. Lo puedes completar después con calma.</p>
-    <form id="form-gasto-rapido" novalidate>
-      <div class="form-group">
-        <label for="gasto-rapido-monto" class="label">¿Cuánto gastaste?</label>
-        <input id="gasto-rapido-monto" name="monto"
-               class="input input--big-amount"
-               type="number" inputmode="numeric" pattern="[0-9]*"
-               min="0" step="1000" placeholder="0"
-               autocomplete="off" />
-      </div>
-      ${renderSelectorCuenta(cuentas)}
-      <div class="modal__footer">
-        <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-      </div>
-    </form>`;
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────

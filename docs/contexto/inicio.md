@@ -6,9 +6,9 @@
 
 ## Estructura actual del Dashboard (bento grid)
 
-- **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo, un acceso rápido, paneles de vencidos/próximos y un resumen semanal.
-- **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido; solo **IN.6b** queda pendiente (espera diseños de avatar de Esteban).
-- **Verificado contra** : `6e05fac` (2026-07-05, IN.4a).
+- **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
+- **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido; solo **IN.6b** queda pendiente (espera diseños de avatar de Esteban).
+- **Verificado contra** : PENDIENTE_HASH (2026-07-06, IN.5).
 
 **Dónde vive**
 
@@ -20,10 +20,6 @@
 | Hero de saldo (render + ojo/máscara) | `modules/infra/render.js` | `updSaldo()` | ~72 |
 | Saludo dinámico según hora (IN.6a) | `modules/infra/render.js` | `updSaludo()` | ~126 |
 | Elemento del saludo en el DOM | `index.html` | `#saludo-inicio` (bajo `#title-dash`) | ~377 |
-| Acceso rápido "Gasto rápido" (único hoy) | `index.html` | botón `.quick-add`, `data-action="gasto-rapido"` | ~382 |
-| Formulario de Gasto rápido | `modules/dominio/gastos/view.js` | `renderFormGastoRapido()` | ~298 |
-| Panel "Gastos por organizar" (sin descripción/categoría) | `modules/dominio/gastos/view.js` | `renderPendientesOrganizar()` | ~259 |
-| Criterio de "por organizar" | `modules/dominio/gastos/view.js` | `pendienteCompletar === true \|\| !descripcion` | ~186 |
 | Panel "Pendientes del mes" (compromisos vencidos) | `modules/dominio/compromisos/views/dashboard.js` | `renderPanelVencidos()` | ~35 |
 | Fuente de vencidos | `modules/dominio/compromisos/logic.js` | `detectarVencidosCompletos(compromisos, hoyISO)` | |
 | Panel "Próximas prioridades" | `modules/dominio/compromisos/views/dashboard.js` | `renderPanelPrioridades()` | ~106 |
@@ -63,13 +59,13 @@
 | Modal "Personalizar" (lista completa, toggle instantáneo, sin drag & drop) | `modules/dominio/accesos/view.js` / `index.js` | `renderModalPersonalizarAccesos()` / acciones `accesos-personalizar`, `accesos-toggle` | |
 | Elemento de los tiles y el modal en el DOM | `index.html` | `#accesos-inicio-grid`, `#modal-personalizar-accesos` | ~437, ~824 |
 
-**Recursos**: sprite `i-saldo`/`bolt` para el hero y Gasto rápido; `CATEGORIA_ICONO` para los ítems de "Gastos por organizar"; tokens `--fk-*` del bento grid (no auditados en detalle en este pase).
+**Recursos**: sprite `i-saldo` para el hero; tokens `--fk-*` del bento grid (no auditados en detalle en este pase). El hero ocupa ancho completo (`bento__cell--full`) desde IN.5.
 
 **Dependencias y relaciones**: `resumen` y `movimientos` escuchan `EventBus` para re-renderizar al cambiar sus fuentes (ADN 10 respetado: ningún dominio importa a otro; `movimientos/logic.js` no lee `S` ni importa `gastos/`, `tesoreria/` o `ahorro/`, recibe los arrays ya extraídos de `view.js`). El aviso de distribución de ingreso puede nacer en `agenda` (Calendario, ADR 021) o directo desde el nudge de `tesoreria` en Inicio (CAL.1); ambos emiten el mismo `distribuir:abrir` y lo resuelve `tesoreria`, que registra su propio render del nudge vía `registrarRender()` (mismo patrón que `compromisos` y ahora `movimientos` usan para sus paneles del dashboard).
 
 **Riesgos**:
 
-- ~~**Discrepancia con el brief del usuario**~~: **resuelto (IN.4a)**. El código real solo tenía **1** acceso rápido fijo (Gasto rápido); el catálogo `ACCESOS_INICIO` y los 3 tiles personalizables (default: Mis cuentas, Ahorros, Límites de gasto, elegidos por análisis de frecuencia de autoconsulta, no por preferencia personal) parten de ese hecho verificado. "Gasto rápido" no se tocó (feature separada, IN.5 pendiente de TX.9).
+- ~~**Discrepancia con el brief del usuario**~~: **resuelto (IN.4a)**. El código real solo tenía **1** acceso rápido fijo (Gasto rápido); el catálogo `ACCESOS_INICIO` y los 3 tiles personalizables (default: Mis cuentas, Ahorros, Límites de gasto, elegidos por análisis de frecuencia de autoconsulta, no por preferencia personal) parten de ese hecho verificado. **Gasto rápido se eliminó después (IN.5, 2026-07-06)** junto con su panel "Gastos por organizar"; el hero pasó a ancho completo. Los accesos personalizables de IN.4a son ahora el único bloque de atajos del dashboard.
 - ~~**Overlap confirmado entre paneles** (base de **IN.7**)~~: **resuelto**. Un compromiso con `diaPago = hoy` aparecía a la vez en "Pendientes del mes" (`renderPanelVencidos`, vía `detectarVencidosCompletos`) y en "Próximas prioridades" (`renderPanelPrioridades`, vía `compromisosProximos` con `diasRestantes = 0`). `renderPanelPrioridades()` ahora filtra `diasRestantes > 0` sobre los compromisos antes de combinarlos con personales/apartados: lo que vence hoy vive solo en Pendientes del mes. `compromisosProximos()` (logic) no se tocó: otros consumidores (nudge de mora, `nivelAlertaMora`) siguen necesitando el día 0.
 - **Categorías son catálogo cerrado**: `CATEGORIAS_GASTO`/`CATEGORIA_ICONO` no soportan categorías creadas por el usuario hoy. Relevante para **TX.9** (categoría personalizada) y **TX.10** (categoría como eje de automatización): requiere diseño de dato nuevo + migración de schema (ADN 6), no solo UI.
 - ~~**Sin helper cross-dominio en `infra/`**~~: **resuelto (TX.8a)**. Se creó el dominio nuevo `movimientos/` como agregador (no un helper en `infra/`, que no puede leer `S`): su `logic.js` lee los arrays ya normalizados que le pasa `view.js` (que sí lee `S` directo), sin importar `gastos/`, `tesoreria/` ni `ahorro/`. Respeta ADN 10 igual que el patrón de `resumen/`.

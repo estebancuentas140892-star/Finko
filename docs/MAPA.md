@@ -67,7 +67,7 @@ Estos archivos **no están organizados por dominio**, sino por tipo de widget o 
 | `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
 | `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
 | `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, ahorro consolidado, banner-propósito (compartido por las 10 secciones) |
-| `forms.css` | Sistema de íconos SVG de línea, inputs/formularios, quick add, quick toast |
+| `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
 | `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
 | `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |
 
