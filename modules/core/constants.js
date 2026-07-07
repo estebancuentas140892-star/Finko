@@ -544,6 +544,21 @@ export const CATEGORIAS_INGRESO = [
   'Otro',
 ];
 
+/**
+ * Situaciones laborales del perfil del usuario (CFG.1, schema v25). Sirven para
+ * que Finko interprete los ingresos y enmarque el monitor de renta (CFG.2). El
+ * valor '' (o ausente) significa "sin especificar": el usuario puede dejarlo en
+ * blanco. Los `id` son estables (se guardan en `S.perfil.situacionLaboral`); la
+ * `label` es lo único que se muestra. El orden define el del selector.
+ */
+export const SITUACIONES_LABORALES = [
+  { id: 'empleado',      label: 'Empleado (con contrato)' },
+  { id: 'independiente', label: 'Independiente o freelance' },
+  { id: 'pensionado',    label: 'Pensionado' },
+  { id: 'mixto',         label: 'Mixto (empleado e independiente)' },
+  { id: 'otro',          label: 'Otro' },
+];
+
 /** Ícono del sprite por categoría de ingreso. Solo UI; nunca en el valor almacenado. */
 export const CATEGORIA_INGRESO_ICONO = {
   'Salario':         'c-maletin',

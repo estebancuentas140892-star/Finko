@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(config): CFG.1a, situación laboral en el perfil (quita el SMMLV muerto) · 2026-07-06
+
+Primera rebanada de la iniciativa **fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). Esteban eligió fusionar ambas tarjetas del BOARD porque la situación laboral (CFG.1) alimenta la interpretación del monitor de renta (CFG.2).
+
+**Análisis previo (regla 2.6, ficha nueva `docs/contexto/configuracion.md`):** el encabezado de Ajustes mostraba nombre + un campo "SMMLV configurado" editable, pero rastreando `S.perfil.smmlv` en todo el código **ningún cálculo financiero lo lee** (toda la lógica usa la constante legal `SMMLV` de `constants.js`): era dato muerto que confundía sin hacer nada. Criba de las 8 preguntas de perfil que propuso Esteban contra el criterio "no pedir datos innecesarios": solo **situación laboral** tiene consumidor real hoy y no es derivable; tipo de ingresos y frecuencia ya viven en `S.ingresos`; el resto (personas a cargo, objetivos, conocimiento financiero, tolerancia al riesgo) no lo consume nada todavía y se aplaza hasta que exista la feature que lo use (evita llenar `localStorage` con datos inertes, coherente con PERF.4/ADR 030). Hallazgo adicional para las siguientes rebanadas: el monitor de renta (K.3, `calcularEstadoRenta` en Análisis) **ya hace gran parte de CFG.2**.
+
+**CFG.1a:** se quitó el campo SMMLV del encabezado (`_renderPerfil`) y se agregó un selector de **situación laboral** (`SITUACIONES_LABORALES`: empleado, independiente, pensionado, mixto, otro; vacío = "sin especificar"), persistida en `perfil.situacionLaboral` (schema v24 → v25, migración idempotente que arranca a los usuarios existentes en ''). El handler de `#form-perfil` valida contra el catálogo (nunca guarda un valor libre). `perfil.smmlv` se conserva en el estado (marcado `@deprecated`) por compatibilidad con datos y seeds existentes; solo deja de mostrarse y editarse.
+
+**Validación:** 2252/2252 unit (9 nuevos: 5 de render en `tests/unit/config.test.js` nuevo, 4 de migración v25 en `storage.test.js`; `state.test.js` actualizado a la forma nueva de `perfil`, que ahora incluye `situacionLaboral`) + 155/155 E2E en Chromium real (2 nuevos en `smoke.test.js`: el encabezado del perfil ya no muestra el SMMLV; guardar la situación laboral la refleja en el resumen, la conserva en el selector y la persiste en `localStorage`). El E2E verifica la persistencia leyendo `localStorage` en vez de recargar, porque el `addInitScript` de `saltearOnboarding` resiembra `fk_v1` en cada carga. SW v335 → v336.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/core/constants.js` | `SITUACIONES_LABORALES` (catálogo de 5 situaciones, ids estables). |
+| `modules/core/state.js` | `perfil.situacionLaboral` nuevo; `perfil.smmlv` marcado `@deprecated`. |
+| `modules/core/storage.js` | `SCHEMA_VERSION` 24 → 25; migración v24 → v25 (situación laboral por defecto '', repone perfil corrupto). |
+| `modules/dominio/config/view.js` | `_renderPerfil` quita el SMMLV muerto y agrega el selector de situación laboral (resumen + `<select>`). |
+| `modules/dominio/config/index.js` | Handler de `#form-perfil` guarda la situación laboral validada contra el catálogo; ya no procesa el SMMLV. |
+| `tests/unit/config.test.js` | Nuevo: 5 tests de render del perfil (SMMLV ausente, selector, preselección, id corrupto). |
+| `tests/unit/storage.test.js` | 4 tests de la migración v24 → v25. |
+| `tests/unit/state.test.js` | Forma de `perfil` actualizada a `{ nombre, smmlv, situacionLaboral }`. |
+| `tests/e2e/smoke.test.js` | 2 tests E2E del perfil (situación laboral se guarda, refleja y persiste). |
+| `docs/contexto/configuracion.md` | Ficha nueva (primer análisis a fondo de la sección Ajustes). |
+| `docs/contexto/README.md` | Fila de Configuración pasa de "sin crear" a "activa". |
+| `docs/BOARD.md` | CFG.1 + CFG.2 fusionadas; CFG.1a cerrada; CFG.2a y CFG.2b como subtareas pendientes. |
+| `service-worker.js` | v335 → v336. |
+
+---
+
 ### feat(agenda): CAL.2, leyenda del calendario dinámica · 2026-07-06
 
 Primera tarea trabajada sobre la sección Calendario bajo la metodología de fichas de contexto (regla 2.6 de CLAUDE.md): no existía `docs/contexto/calendario.md`, así que el análisis a fondo del dominio `agenda` (piezas, relaciones, riesgos) quedó documentado en la ficha nueva antes de codificar.

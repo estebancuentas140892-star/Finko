@@ -875,6 +875,45 @@ test.describe('Tema claro/oscuro', () => {
   });
 });
 
+// ── SUITE 8b: Perfil - situación laboral (CFG.1) ─────────────────────────────
+// El encabezado del perfil en Ajustes reemplazó el SMMLV muerto por un selector
+// de situación laboral. Verifica que se guarda y persiste tras recarga.
+
+test.describe('Perfil - situación laboral', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+  });
+
+  test('el encabezado del perfil ya no muestra el campo SMMLV', async ({ page }) => {
+    await expect(page.locator('#config-situacion')).toBeVisible();
+    await expect(page.locator('#config-smmlv')).toHaveCount(0);
+  });
+
+  test('guarda la situación laboral, la refleja en el perfil y la persiste', async ({ page }) => {
+    // .config-info aparece dos veces (perfil y "Acerca de"): scopear a la de perfil.
+    const perfilInfo = page.locator('section[aria-labelledby="config-perfil-title"] .config-info');
+
+    await page.locator('#config-situacion').selectOption('independiente');
+    await page.locator('#form-perfil button[type="submit"]').click();
+
+    // Tras guardar, el panel se re-renderiza: el resumen muestra la etiqueta y el
+    // selector conserva el valor (aquí en Chromium real, no en happy-dom).
+    await expect(perfilInfo).toContainText('Independiente o freelance');
+    await expect(page.locator('#config-situacion')).toHaveValue('independiente');
+
+    // Persistencia real: el dato queda en localStorage (save debounced 200 ms).
+    // No se recarga porque el addInitScript de saltearOnboarding resembraría
+    // fk_v1 en cada carga; el chequeo del store es la prueba de persistencia.
+    await page.waitForFunction(() => {
+      try {
+        return JSON.parse(localStorage.getItem('fk_v1') || '{}')?.perfil?.situacionLaboral === 'independiente';
+      } catch { return false; }
+    });
+  });
+});
+
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
 // Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.

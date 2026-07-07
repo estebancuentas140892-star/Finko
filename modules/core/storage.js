@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 24;
+const SCHEMA_VERSION = 25;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -401,6 +401,17 @@ function _migrate(raw) {
   if ((typeof data._version === 'number' ? data._version : 1) < 24) {
     if (!Array.isArray(data.categoriasPersonalizadas)) {
       data.categoriasPersonalizadas = [];
+    }
+  }
+
+  // v24 → v25: situación laboral en el perfil (CFG.1). El usuario existente
+  // arranca "sin especificar" (''); alimenta el monitor de renta (CFG.2).
+  // Idempotente: solo asigna si el campo no es ya un string.
+  if ((typeof data._version === 'number' ? data._version : 1) < 25) {
+    if (!data.perfil || typeof data.perfil !== 'object' || Array.isArray(data.perfil)) {
+      data.perfil = createInitialState().perfil;
+    } else if (typeof data.perfil.situacionLaboral !== 'string') {
+      data.perfil.situacionLaboral = '';
     }
   }
 

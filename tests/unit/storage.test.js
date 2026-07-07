@@ -469,6 +469,59 @@ describe('Migración v9 → v10 (datos fiscales)', () => {
   });
 });
 
+describe('Migración v24 → v25 (situación laboral en el perfil, CFG.1)', () => {
+  it('agrega perfil.situacionLaboral = "" cuando falta (v24)', () => {
+    const v24 = { ...createInitialState(), _version: 24 };
+    delete v24.perfil.situacionLaboral;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v24));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.perfil.situacionLaboral).toBe('');
+  });
+
+  it('preserva una situación laboral ya registrada (idempotente)', () => {
+    const v25 = {
+      ...createInitialState(),
+      _version: 25,
+      perfil: { nombre: 'Ana', smmlv: 1_750_905, situacionLaboral: 'independiente' },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v25));
+
+    loadData();
+
+    expect(S.perfil.situacionLaboral).toBe('independiente');
+    expect(S.perfil.nombre).toBe('Ana');
+  });
+
+  it('preserva nombre y SMMLV al migrar de v24', () => {
+    const v24 = {
+      ...createInitialState(),
+      _version: 24,
+      perfil: { nombre: 'Carlos', smmlv: 1_500_000 },
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v24));
+
+    loadData();
+
+    expect(S.perfil.nombre).toBe('Carlos');
+    expect(S.perfil.smmlv).toBe(1_500_000);
+    expect(S.perfil.situacionLaboral).toBe('');
+  });
+
+  it('repone un perfil ausente o corrupto con el perfil por defecto', () => {
+    const v24 = { ...createInitialState(), _version: 24 };
+    delete v24.perfil;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v24));
+
+    loadData();
+
+    expect(S.perfil.nombre).toBe('');
+    expect(S.perfil.situacionLaboral).toBe('');
+  });
+});
+
 describe('Migración v10 → v11 (quitar tipo de cuenta Inversión)', () => {
   it('reasigna cuentas con tipo "Inversión" a "Otro"', () => {
     const v10 = {

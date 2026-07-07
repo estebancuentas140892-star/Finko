@@ -45,8 +45,8 @@ describe('S - schema v3 inicial', () => {
     expect(S.inversiones).toEqual([]);
   });
 
-  it('arranca con perfil semilla (nombre vacío + SMMLV vigente)', () => {
-    expect(S.perfil).toEqual({ nombre: '', smmlv: SMMLV });
+  it('arranca con perfil semilla (nombre vacío + SMMLV vigente + situación laboral sin especificar)', () => {
+    expect(S.perfil).toEqual({ nombre: '', smmlv: SMMLV, situacionLaboral: '' });
   });
 });
 

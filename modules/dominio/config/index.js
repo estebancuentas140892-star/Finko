@@ -13,6 +13,7 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { hoy } from '../../infra/utils.js';
+import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { renderPanelConfig } from './view.js';
@@ -140,12 +141,13 @@ function _inyectarPanel() {
   // Guardar perfil.
   panel.querySelector('#form-perfil')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    const datos = Object.fromEntries(new FormData(e.target));
+    const datos  = Object.fromEntries(new FormData(e.target));
     const nombre = datos.nombre?.trim();
-    const smmlv  = Number(datos.smmlv);
+    const sit    = String(datos.situacionLaboral ?? '');
 
     if (nombre) S.perfil.nombre = nombre;
-    if (!isNaN(smmlv) && smmlv > 0) S.perfil.smmlv = smmlv;
+    // Solo se acepta un id conocido o '' (sin especificar): nunca un valor libre.
+    S.perfil.situacionLaboral = SITUACIONES_LABORALES.some(s => s.id === sit) ? sit : '';
 
     save();
     renderPanelConfig();

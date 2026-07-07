@@ -246,7 +246,7 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @returns {{
  *   _version: number,
  *   onboarded: boolean,
- *   perfil: { nombre: string, smmlv: number },
+ *   perfil: { nombre: string, smmlv: number, situacionLaboral: string },
  *   config: Config,
  *   cuentas: Cuenta[],
  *   ingresos: Ingreso[],
@@ -273,7 +273,14 @@ export function createInitialState() {
     /** Perfil del usuario. */
     perfil: {
       nombre: '',
+      /**
+       * @deprecated (CFG.1) Ningún cálculo lo lee: la lógica usa la constante
+       * legal `SMMLV`, no este campo. Ya no se muestra ni se edita en Ajustes;
+       * se conserva en el estado por compatibilidad de datos existentes.
+       */
       smmlv: SMMLV,
+      /** Situación laboral (CFG.1, schema v25). '' = sin especificar. Ids en `SITUACIONES_LABORALES`. */
+      situacionLaboral: '',
     },
 
     /** Configuración del usuario (notificaciones, preferencias futuras). */

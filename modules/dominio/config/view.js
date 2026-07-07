@@ -8,7 +8,7 @@ import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
 import { estadoCuota } from '../../core/storage.js';
-import { legalVigente, estadoVigenciaLegal, SMMLV, APP_VERSION } from '../../core/constants.js';
+import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 
 /**
@@ -104,15 +104,20 @@ function _renderInstalarApp() {
 }
 
 function _renderPerfil() {
-  const nombre = _esc(S.perfil.nombre || 'Sin nombre');
-  const smmlv  = f(S.perfil.smmlv ?? 0);
+  const nombre   = _esc(S.perfil.nombre || 'Sin nombre');
+  const sitId    = typeof S.perfil.situacionLaboral === 'string' ? S.perfil.situacionLaboral : '';
+  const sitLabel = SITUACIONES_LABORALES.find(s => s.id === sitId)?.label ?? 'Sin especificar';
+
+  const opciones = SITUACIONES_LABORALES
+    .map(s => `<option value="${s.id}"${s.id === sitId ? ' selected' : ''}>${_esc(s.label)}</option>`)
+    .join('');
 
   return `
     <section class="config-section" aria-labelledby="config-perfil-title">
       <h2 class="config-section__title" id="config-perfil-title">👤 Tu perfil</h2>
       <dl class="config-info">
         <dt>Nombre</dt><dd>${nombre}</dd>
-        <dt>SMMLV configurado</dt><dd>${smmlv}</dd>
+        <dt>Situación laboral</dt><dd>${_esc(sitLabel)}</dd>
       </dl>
       <form id="form-perfil" class="config-form" novalidate>
         <div class="form-group">
@@ -122,11 +127,12 @@ function _renderPerfil() {
                  placeholder="Tu nombre" autocomplete="given-name" />
         </div>
         <div class="form-group">
-          <label for="config-smmlv" class="label">SMMLV (COP)</label>
-          <input id="config-smmlv" name="smmlv" class="input" type="number"
-                 min="1" step="1000" value="${S.perfil.smmlv ?? ''}"
-                 placeholder="${SMMLV}" />
-          <p class="form-hint">Usar SMMLV ${legalVigente().anio}: ${f(SMMLV)}. Se actualiza cada año.</p>
+          <label for="config-situacion" class="label">Situación laboral</label>
+          <select id="config-situacion" name="situacionLaboral" class="input">
+            <option value="">Sin especificar</option>
+            ${opciones}
+          </select>
+          <p class="form-hint">Ayuda a Finko a interpretar tus ingresos y tu perfil de renta. Opcional.</p>
         </div>
         <button type="submit" class="btn btn-primary">Guardar perfil</button>
       </form>

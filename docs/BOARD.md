@@ -193,25 +193,27 @@ _(sin pendientes activos.)_
 
 ### Configuración (dominio `config`)
 
-_(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abajo (CFG.1 a CFG.6). **No iniciar ninguna sin instrucción explícita**: solo quedan anotadas para retomar más adelante. Cuando se trabajen, revisar primero si comparten piezas (ej. CFG.1 y CFG.2 tocan el mismo bloque de perfil del usuario en Ajustes; podrían consolidarse en una sola pasada de diseño aunque se implementen por separado, regla de "sin duplicados" de 2.1).)_
+_(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abajo. **No iniciar ninguna sin instrucción explícita.** CFG.1 y CFG.2 se **fusionaron** (decisión de Esteban, 2026-07-06) en una sola iniciativa "Perfil fiscal/financiero en Ajustes", partida en subtareas verificables. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).)_
 
-#### CFG.1 - Perfil financiero en vez de mostrar el salario
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : hoy el encabezado de Ajustes muestra nombre + salario registrado; el usuario considera que el salario ahí no aporta valor. Propone reemplazar ese espacio por una configuración de perfil financiero vía preguntas (situación laboral, tipo de ingresos, frecuencia de pago, responsabilidades económicas, personas a cargo, objetivos financieros, nivel de conocimiento financiero, tolerancia al riesgo para inversiones, entre otras). Pidió explícitamente analizar qué información aporta valor real y evitar pedir datos innecesarios: no implementar la lista tal cual sin criba.
-- Secciones  : Configuración (Ajustes)
-- Archivos   : sin explorar; candidatos previsibles el módulo `config` (encabezado de perfil) y `modules/core/state.js` (campos nuevos + migración de schema)
-- Depende de : nada. Posible solape con CFG.2 (ambas tocan el bloque de perfil de Ajustes): revisar juntas al iniciar.
-- Modelo     : Opus 4.8 - Alto (decisión de qué preguntas aportan valor sin sobrecargar el onboarding; roza filosofía de producto, no es solo CRUD)
+> Iniciativa fusionada CFG.1 + CFG.2 ("Perfil fiscal/financiero en Ajustes", 2026-07-06). Criba de las 8 preguntas propuestas por Esteban: solo **situación laboral** tiene consumidor real y no es derivable; el resto Finko ya lo sabe (ingresos/frecuencia vía `S.ingresos`) o no lo consume nada (aplazadas). Hallazgo clave: el monitor de renta (K.3, `calcularEstadoRenta` en Análisis) **ya hace gran parte de CFG.2**; los huecos son auto-derivar `ingresosBrutos` (los otros 2 manuales no son derivables: no hay tipo de cuenta "tarjeta de crédito") e inferir el estado de declarante. **CFG.1a cerrada** el 2026-07-06 (quitar SMMLV muerto + situación laboral, schema v25). Quedan CFG.2a y CFG.2b.
 
-#### CFG.2 - Perfil fiscal inteligente (detección automática de obligación de declarar renta)
+#### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
 - Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : reemplazar la indicación manual de "debo declarar renta" por un análisis automático de los datos ya registrados en Finko (ingresos, patrimonio, consumos, movimientos, compras, transferencias) contra los topes vigentes (UVT, `constants.js`), mostrando un mensaje explicando el motivo concreto (tope de ingresos superado, tope de patrimonio, tope de consumos, u otro criterio aplicable) y actualizándose solo conforme cambian las finanzas del usuario.
-- Secciones  : Configuración (Ajustes), transversal (lee datos de varios dominios: tesorería, gastos, inversiones)
-- Archivos   : sin explorar; probablemente nueva lógica en un `logic.js` de `config` o `analisis`, constantes de topes de renta en `modules/core/constants.js` (revisar si ya existen o hay que agregarlas con fecha de revisión, regla ADN 12)
-- Depende de : nada. Ojo: ningún dominio importa a otro (ADN 10); si necesita datos de tesorería/gastos/inversiones tiene que ser vía EventBus o agregando en el propio dominio `config`, no importando directo.
-- Modelo     : Opus 4.8 - Alto (lógica financiera CO no trivial: topes de renta por UVT/ingresos/patrimonio, exactamente el tipo de caso que CLAUDE.md 2.3 reserva para Opus)
+- Estado     : pendiente (parte 2 de la iniciativa fusionada; depende de CFG.1a, cerrada)
+- Objetivo   : el criterio "Ingresos brutos" del monitor de renta (K.3) hoy exige que el usuario lo teclee a mano en Datos de renta. Anualizar `S.ingresos` (recurrentes, por `frecuencia`) + sumar `S.ingresosPuntuales` del año para estimarlo automáticamente, de modo que pase de "Sin datos" a medible sin captura manual. Mantener el override manual si el usuario prefiere. `consumosTC` y `consignaciones` siguen manuales (no derivables: no hay tipo de cuenta "tarjeta de crédito", ni movimientos bancarios crudos).
+- Secciones  : Configuración (Ajustes), Análisis (monitor de renta), transversal (lee ingresos)
+- Archivos   : `modules/dominio/analisis/logic.js` (`calcularEstadoRenta`, nueva `estimarIngresosBrutosAnio`), `modules/dominio/tesoreria/logic/ingresos.js` (helper de anualización si aplica)
+- Depende de : CFG.1a (cerrada)
+- Modelo     : Opus 4.8 - Alto (lógica financiera CO no trivial: anualización de ingresos + interpretación de "ingresos brutos" DIAN)
+
+#### CFG.2b - Inferir el estado de declarante + mensaje del motivo, con encuadre por situación laboral
+- Prioridad  : sin definir
+- Estado     : pendiente (parte 3 de la iniciativa fusionada; depende de CFG.2a). **Decisión de framing legal: consultar a Esteban al iniciar** (cuán fuerte se afirma la obligación; Finko orienta, no dictamina).
+- Objetivo   : reemplazar el checkbox manual "La DIAN me notificó como declarante" por un estado **inferido** de los 5 criterios (si alguno supera el tope, mostrar "podrías estar obligado por X, confirma con un contador"), usando `perfil.situacionLaboral` para el encuadre (empleado: tu empleador reporta; independiente: autorreporte). Nunca afirmar certeza legal.
+- Secciones  : Configuración (Ajustes), Análisis (monitor de renta)
+- Archivos   : `modules/dominio/analisis/logic.js` (`detectarNudgesRenta` y/o nueva lógica de inferencia), `modules/dominio/config/view.js` (perfil fiscal)
+- Depende de : CFG.2a
+- Modelo     : Opus 4.8 - Alto (producto + framing legal; roza filosofía de producto)
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
 - Prioridad  : sin definir
