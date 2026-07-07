@@ -24,6 +24,25 @@ const SCHEMA_VERSION = 24;
 let _saveTimer = null;
 
 /**
+ * Límite conservador de caracteres (UTF-16) que asumimos para localStorage
+ * (ADR 030). El cupo real por origen varía por navegador (típico ~5 MB) y la
+ * contabilidad exacta (bytes vs. code units) no está estandarizada, así que
+ * usamos un piso prudente y avisamos con margen: el costo de avisar de más es
+ * mínimo; el de no avisar es perder un guardado en silencio.
+ */
+const LIMITE_LOCALSTORAGE_CHARS = 4_500_000;
+
+/** Umbrales de uso (fracción del límite) para escalar el aviso. */
+const UMBRAL_AVISO   = 0.80;
+const UMBRAL_CRITICO = 0.95;
+
+/** true si el último intento de escribir a localStorage falló (cupo lleno u otro). */
+let _falloUltimoGuardado = false;
+
+/** Último nivel de cuota emitido, para no repetir el evento en cada guardado. */
+let _ultimoNivelCuota = 'ok';
+
+/**
  * Aplica un snapshot a S sin perder la referencia original.
  * Cualquier campo ausente en `snapshot` se restaura desde el estado inicial,
  * y cualquier campo ajeno al schema v1 se descarta silenciosamente.
@@ -429,14 +448,64 @@ export function save() {
   _saveTimer = setTimeout(_flush, DEBOUNCE_MS);
 }
 
+/**
+ * Clasifica el uso de almacenamiento en un nivel de aviso (ADR 030). Pura y
+ * testeable: no lee el DOM ni S.
+ *
+ * @param {number} usados  Caracteres (UTF-16) ocupados por el estado serializado.
+ * @param {number} [limite=LIMITE_LOCALSTORAGE_CHARS]
+ * @returns {{ usados: number, limite: number, ratio: number, nivel: 'ok'|'aviso'|'critico' }}
+ */
+export function evaluarCuota(usados, limite = LIMITE_LOCALSTORAGE_CHARS) {
+  const u = Number.isFinite(usados) && usados > 0 ? usados : 0;
+  const l = Number.isFinite(limite) && limite > 0 ? limite : LIMITE_LOCALSTORAGE_CHARS;
+  const ratio = u / l;
+  const nivel = ratio >= UMBRAL_CRITICO ? 'critico'
+    :           ratio >= UMBRAL_AVISO   ? 'aviso'
+    :                                      'ok';
+  return { usados: u, limite: l, ratio, nivel };
+}
+
+/**
+ * Estado de cuota actual, medido contra el tamaño en memoria de S (lo que se
+ * necesitaría escribir en el próximo guardado). Incluye `falloUltimoGuardado`
+ * para que la UI pueda avisar aunque el ratio estimado no llegue al tope:
+ * distintos navegadores rechazan la escritura a distintos umbrales, así que un
+ * fallo real manda sobre la estimación.
+ *
+ * @returns {{ usados: number, limite: number, ratio: number, nivel: 'ok'|'aviso'|'critico', falloUltimoGuardado: boolean }}
+ */
+export function estadoCuota() {
+  let usados = 0;
+  try { usados = JSON.stringify(S).length; } catch { usados = 0; }
+  return { ...evaluarCuota(usados), falloUltimoGuardado: _falloUltimoGuardado };
+}
+
 /** Escribe S a localStorage inmediatamente. Sólo se invoca desde el timer. */
 function _flush() {
   _saveTimer = null;
+  const serializado = JSON.stringify(S);
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(S));
+    localStorage.setItem(STORAGE_KEY, serializado);
+    _falloUltimoGuardado = false;
     EventBus.emit('state:save');
+
+    // Monitor de cuota (ADR 030): avisar antes de llenar localStorage. Solo se
+    // emite al CAMBIAR de nivel, no en cada guardado, para no saturar de eventos.
+    const { nivel } = evaluarCuota(serializado.length);
+    if (nivel !== _ultimoNivelCuota) {
+      _ultimoNivelCuota = nivel;
+      if (nivel !== 'ok') EventBus.emit('storage:cuota', estadoCuota());
+    }
   } catch (err) {
-    console.error('[storage] save() falló:', err);
+    // El cupo se llenó (o el navegador rechazó la escritura): el estado en
+    // memoria sigue vivo, pero NO se persistió. Antes esto moría en un
+    // console.error silencioso y el usuario perdía el cambio sin enterarse
+    // (ADR 030): ahora se marca y se emite un evento para avisarle.
+    _falloUltimoGuardado = true;
+    _ultimoNivelCuota = 'critico';
+    console.error('[storage] save() falló (posible cupo lleno):', err);
+    EventBus.emit('storage:error', estadoCuota());
   }
 }
 
@@ -467,4 +536,4 @@ export function initFlushOnHide() {
   window.addEventListener('pagehide', flushSiPendiente);
 }
 
-export { STORAGE_KEY, SCHEMA_VERSION };
+export { STORAGE_KEY, SCHEMA_VERSION, LIMITE_LOCALSTORAGE_CHARS };

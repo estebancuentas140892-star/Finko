@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(storage): PERF.4, ADR 030 persistencia: salvaguarda de cuota + diferir el rewrite · 2026-07-06
+
+Cierre de la auditoría de rendimiento. PERF.4 se había planteado como "partir la persistencia por colección", pero el análisis con el harness PERF.0 mostró que **el costo de guardar es bajo**: `save()` está debounced 200 ms y `JSON.stringify(S)` son ~5 ms de mediana a 10.000 gastos (la escritura a disco real de un móvil no la mide happy-dom, así que queda estimada). El cuello no es la CPU: es el **techo de cuota de `localStorage` (~5 MB por origen)**, que es un riesgo de **pérdida de datos** a largo plazo, no de lentitud.
+
+Decisión (delegada por Esteban), formalizada en el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md): **no reescribir la capa de persistencia** (sería el cambio de mayor riesgo del proyecto: `loadData()` pasaría a asíncrono → bootstrap async, más una migración de años de datos reales sin pérdida, más reescribir el sembrado de las 11 suites E2E que dependen de escribir la clave `fk_v1`, todo para ahorrar ~5 ms debounced). En su lugar se pone una salvaguarda barata sobre el riesgo real y se deja **IndexedDB** documentado como dirección futura con disparadores concretos (ADR 030 D4). Se **rechaza explícitamente** partir `localStorage` por clave: no sube la cuota (todas las claves comparten el límite por origen), solo suma complejidad. La regla 3 del ADN se **reafirma**, no se cambia.
+
+**Salvaguarda implementada (ADR 030 D2), dos partes:**
+
+1. **El guardado que falla deja de morir en silencio.** Antes, si `localStorage` estaba lleno, `_flush()` atrapaba el `QuotaExceededError` con solo un `console.error` y el usuario perdía el cambio sin enterarse. Ahora marca `_falloUltimoGuardado`, emite `storage:error`, y `config/` lo anuncia (a11y assertive) más un aviso persistente en la sección "💾 Tus datos" con CTA "Exportar respaldo".
+2. **Aviso anticipado.** `evaluarCuota()` y `estadoCuota()` (funciones puras en `core/storage.js`) clasifican el uso contra un límite conservador (`LIMITE_LOCALSTORAGE_CHARS` = 4.5 M chars, con margen porque la contabilidad exacta varía por navegador): `aviso` ≥ 80 %, `critico` ≥ 95 %. Al **cruzar de nivel** (no en cada guardado) se emite `storage:cuota` y Ajustes muestra el aviso. En operación normal, `_renderAvisoAlmacenamiento()` devuelve string vacío: no se ve nada.
+
+**Validación:** 2228/2228 unit (9 nuevos en `storage.test.js`: umbrales de `evaluarCuota`, `estadoCuota` reflejando el tamaño de S, y el guardado fallido emitiendo `storage:error` en vez de morir en silencio, simulando el cupo lleno con `vi.stubGlobal` porque happy-dom no expone `setItem` de forma espiable) + 151/151 E2E verdes en Chromium real (Playwright). SW v332 → v333.
+
+| Archivo | Cambio |
+|---|---|
+| `docs/DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md` | Nuevo: ADR de la decisión (diferir rewrite, salvaguarda de cuota, IndexedDB como futuro con disparadores). |
+| `modules/core/storage.js` | `evaluarCuota()`, `estadoCuota()`, `LIMITE_LOCALSTORAGE_CHARS`; `_flush()` marca fallo y emite `storage:error`/`storage:cuota` en vez de solo loguear; single-serialize. |
+| `modules/dominio/config/view.js` | `_renderAvisoAlmacenamiento()` en "💾 Tus datos" (aviso con CTA a exportar; vacío en operación normal). |
+| `modules/dominio/config/index.js` | Escucha `storage:error`/`storage:cuota`: anuncia (assertive) y re-renderiza el panel de Config. |
+| `tests/unit/storage.test.js` | 9 tests nuevos del monitor de cuota. |
+| `docs/BOARD.md` | PERF.4 cerrada; **PERF.5** (migración a IndexedDB) documentada como diferida con disparadores del ADR 030. |
+| `service-worker.js` | v332 → v333. |
+
+---
+
 ### perf(rendimiento): PERF.2, memoizar derivaciones pesadas de Inicio y Análisis · 2026-07-06
 
 Continuación de la auditoría de rendimiento (PERF.0/PERF.1). El harness `pnpm perf` confirmó el segundo cuello real: `resumenSemanal()`, `movimientosRecientes()`/`movimientosCompletos()` (Inicio) y el bundle de `renderAnalisis()` (~7 llamadas de primer nivel, cada una con sub-barridos propios: `serieGastosMensual` recorre 12 meses llamando `totalGastosMes` cada uno, `calcularComparacionCategorias` recorre el mes actual y el anterior, `detectarPatronGastoSemanal` recorre 90 días) recalculaban sobre todo el historial en cada `state:change` relevante, **incluso en re-renders redundantes**: `renderAll()` repintando el dashboard sin que esos datos hubieran cambiado, o dos listeners reaccionando a una misma acción del usuario (ej. editar un gasto-abono dispara `state:change` para `gastos` y para `compromisos` por separado, cada uno con su propio recálculo completo).

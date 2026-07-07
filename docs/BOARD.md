@@ -262,7 +262,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ## Transversal (afecta varias secciones)
 
-> Auditoría de rendimiento 2026-07 (pedida por Esteban, sin ADR): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido) y **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban; el único cuello real que queda es la persistencia completa en cada guardado (PERF.4, requiere ADR); PERF.3 es una mejora menor opcional. Cada fase corre `pnpm perf` antes/después y compara contra la tabla en BASELINE.md.
+> Auditoría de rendimiento 2026-07 (pedida por Esteban): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido), **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)) y **PERF.4** (persistencia: [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), salvaguarda de cuota, se difiere el rewrite) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban, y el costo de guardar es bajo (~5 ms debounced), así que no se reescribió la persistencia; solo queda **PERF.3** (mejora menor opcional) y la tarjeta futura de IndexedDB (disparadores en el ADR 030). Cada fase corre `pnpm perf` antes/después y compara contra BASELINE.md.
 
 #### PERF.3 - Diferir cómputo de gráficos y grupos colapsados en Análisis
 - Prioridad  : baja
@@ -273,14 +273,14 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 - Depende de : nada
 - Modelo     : Sonnet 5 - Medio (diferir un cómputo ya aislado detrás de un evento DOM existente)
 
-#### PERF.4 - Partir la persistencia por colección (requiere ADR)
-- Prioridad  : alta a largo plazo
-- Estado     : pendiente de análisis, **toca el ADN del proyecto** (regla 3: "sin servidor, solo `localStorage`"): requiere ADR y discusión explícita con Esteban antes de codificar
-- Objetivo   : hoy `save()` serializa `JSON.stringify(S)` completo en cada guardado (`core/storage.js`); con años de historial, cada mutación paga el costo de re-serializar TODO el estado. Evaluar partir la persistencia por colección (ej. `fk_v1_gastos`, `fk_v1_compromisos`... en `localStorage`, o IndexedDB si se quiere el salto real de escala) para que guardar un gasto no re-escriba 10 años de todo lo demás.
-- Secciones  : Transversal (`core/storage.js`, migraciones)
-- Archivos   : `modules/core/storage.js`; requiere una migración idempotente nueva (bump de schema) y revisar cada dominio que llama `save()`
-- Depende de : ADR aprobado por Esteban (impacto en ADN 3); PERF.0 para medir la ganancia real antes de comprometerse
-- Modelo     : Opus 4.8 - Extra (decisión arquitectural que toca el modelo de persistencia completo, con migración de datos reales de usuarios)
+#### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
+- Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
+- Estado     : diferida por decisión del ADR 030. **NO iniciar** sin uno de sus disparadores: jank de guardado medido en dispositivo real, usuarios reales acercándose a la cuota (el aviso de PERF.4 disparándose en la práctica), o una feature que necesite persistencia asíncrona / mayor cupo (ej. CFG.4).
+- Objetivo   : mover de la clave única `fk_v1` en `localStorage` a IndexedDB (cupo mucho mayor + escritura por registro), resolviendo cuota y costo de `JSON.stringify(S)` completo. El ADR 030 D3 rechaza explícitamente partir `localStorage` por clave (no sube la cuota).
+- Secciones  : Transversal (`core/storage.js`, `bootstrap.js` pasa a async, sembrado E2E)
+- Archivos   : `modules/core/storage.js` (motor async), `modules/ui/bootstrap.js` (loadData async), migración de datos localStorage → IDB sin pérdida, reescritura del sembrado de las 11 suites E2E
+- Depende de : un disparador del ADR 030 D4
+- Modelo     : Opus 4.8 - Extra o Fable 5 - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
 
 ---
 

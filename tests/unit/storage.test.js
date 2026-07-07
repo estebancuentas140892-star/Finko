@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { S, createInitialState } from '../../modules/core/state.js';
+import { S, EventBus, createInitialState } from '../../modules/core/state.js';
 import {
   loadData,
   save,
   _flushNow,
   STORAGE_KEY,
   SCHEMA_VERSION,
+  LIMITE_LOCALSTORAGE_CHARS,
+  evaluarCuota,
+  estadoCuota,
 } from '../../modules/core/storage.js';
 
 beforeEach(() => {
@@ -96,6 +99,95 @@ describe('round-trip save() + loadData()', () => {
     loadData();
 
     expect(S._version).toBe(SCHEMA_VERSION);
+  });
+});
+
+// ── MONITOR DE CUOTA (ADR 030) ────────────────────────────────────
+
+describe('evaluarCuota()', () => {
+  const LIM = 1000;
+
+  it('nivel ok por debajo del 80%', () => {
+    expect(evaluarCuota(700, LIM).nivel).toBe('ok');
+  });
+
+  it('nivel aviso a partir del 80%', () => {
+    expect(evaluarCuota(800, LIM).nivel).toBe('aviso');
+    expect(evaluarCuota(940, LIM).nivel).toBe('aviso');
+  });
+
+  it('nivel critico a partir del 95%', () => {
+    expect(evaluarCuota(950, LIM).nivel).toBe('critico');
+    expect(evaluarCuota(5000, LIM).nivel).toBe('critico');
+  });
+
+  it('calcula el ratio usados/limite', () => {
+    expect(evaluarCuota(500, LIM).ratio).toBe(0.5);
+  });
+
+  it('usa el límite por defecto cuando no se pasa uno', () => {
+    const r = evaluarCuota(0);
+    expect(r.limite).toBe(LIMITE_LOCALSTORAGE_CHARS);
+    expect(r.nivel).toBe('ok');
+  });
+
+  it('trata valores inválidos como 0 usados / límite por defecto', () => {
+    expect(evaluarCuota(-5, LIM).usados).toBe(0);
+    expect(evaluarCuota(NaN, LIM).usados).toBe(0);
+    expect(evaluarCuota(500, 0).limite).toBe(LIMITE_LOCALSTORAGE_CHARS);
+  });
+});
+
+describe('estadoCuota()', () => {
+  it('un estado inicial pequeño está en nivel ok, sin fallo', () => {
+    const e = estadoCuota();
+    expect(e.nivel).toBe('ok');
+    expect(e.falloUltimoGuardado).toBe(false);
+    expect(e.usados).toBeGreaterThan(0); // S serializado no es vacío
+  });
+
+  it('refleja el crecimiento de S en usados', () => {
+    const antes = estadoCuota().usados;
+    S.gastos = Array.from({ length: 500 }, (_, i) => ({
+      id: `g${i}`, monto: 1000, categoria: 'Mercado', fecha: '2026-07-01',
+    }));
+    expect(estadoCuota().usados).toBeGreaterThan(antes);
+  });
+});
+
+describe('_flush() - guardado que falla (cupo lleno, ADR 030)', () => {
+  it('emite storage:error y marca falloUltimoGuardado en vez de morir en silencio', () => {
+    // storage.js lee el global `localStorage` en cada llamada, así que se
+    // sustituye el global entero por un stub cuyo setItem simula el cupo lleno
+    // (más robusto que espiar el método interno de happy-dom).
+    vi.stubGlobal('localStorage', {
+      getItem:    () => null,
+      setItem:    () => { throw new DOMException('quota', 'QuotaExceededError'); },
+      removeItem: () => {},
+      clear:      () => {},
+    });
+
+    const errores = [];
+    const onError = (e) => errores.push(e);
+    EventBus.on('storage:error', onError);
+
+    try {
+      save();
+      _flushNow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+
+    expect(errores).toHaveLength(1);
+    expect(errores[0].falloUltimoGuardado).toBe(true);
+    expect(estadoCuota().falloUltimoGuardado).toBe(true);
+
+    EventBus.off('storage:error', onError);
+
+    // Tras un guardado exitoso, el fallo se limpia.
+    save();
+    _flushNow();
+    expect(estadoCuota().falloUltimoGuardado).toBe(false);
   });
 });
 

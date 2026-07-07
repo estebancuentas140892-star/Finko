@@ -221,6 +221,21 @@ export function initConfig() {
     renderSmart(_inyectarPanel, 'config');
   });
 
+  // Monitor de almacenamiento (ADR 030). Un guardado que falla (cupo lleno) o
+  // el espacio local acercándose al tope avisan al usuario para que exporte un
+  // respaldo. `storage:error` es urgente (assertive) y se anuncia siempre; el
+  // aviso persistente lo pinta el propio panel de Config al re-renderizar.
+  EventBus.on('storage:error', () => {
+    announce('No se pudo guardar: el almacenamiento del dispositivo está lleno. Exporta un respaldo desde Ajustes.', 'assertive');
+    renderSmart(_inyectarPanel, 'config');
+  });
+  EventBus.on('storage:cuota', ({ nivel }) => {
+    if (nivel === 'critico') {
+      announce('Tu almacenamiento local está casi lleno. Exporta un respaldo desde Ajustes.', 'assertive');
+    }
+    renderSmart(_inyectarPanel, 'config');
+  });
+
   // Resyncar el toggle de tema cuando el usuario lo cambia (desde aqui,
   // desde el sidebar o desde el modal Mas). El handler global `theme-toggle`
   // ya hace el trabajo de aplicar el tema; aqui solo refrescamos el checkbox

@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { icon } from '../../infra/icons.js';
 import { estadoPermiso } from '../../infra/notificaciones.js';
+import { estadoCuota } from '../../core/storage.js';
 import { legalVigente, estadoVigenciaLegal, SMMLV, APP_VERSION } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
 
@@ -278,10 +279,46 @@ function _renderDatosRenta() {
     </section>`;
 }
 
+/**
+ * Aviso de almacenamiento (ADR 030). Solo aparece si el espacio local se está
+ * agotando o si el último guardado falló: guía al usuario a exportar un
+ * respaldo antes de perder información. En operación normal no se muestra.
+ * @returns {string}
+ */
+function _renderAvisoAlmacenamiento() {
+  const { nivel, ratio, falloUltimoGuardado } = estadoCuota();
+  if (nivel === 'ok' && !falloUltimoGuardado) return '';
+
+  const critico = nivel === 'critico' || falloUltimoGuardado;
+  const clase   = critico ? 'nudge-critical' : 'nudge-medium';
+  const pct     = Math.min(100, Math.round(ratio * 100));
+
+  const titulo = falloUltimoGuardado
+    ? 'No se pudo guardar tu último cambio'
+    : critico
+      ? 'Tu almacenamiento está casi lleno'
+      : 'Tu almacenamiento se está llenando';
+
+  const desc = falloUltimoGuardado
+    ? 'El espacio de este dispositivo se llenó y tu último cambio no quedó guardado. Exporta un respaldo ahora y libera espacio para no perder información.'
+    : `Estás usando cerca del ${pct}% del espacio disponible en este dispositivo. Exporta un respaldo para no arriesgar tus datos si el espacio se agota.`;
+
+  return `
+    <div class="nudge ${clase}" role="${critico ? 'alert' : 'status'}">
+      <span class="nudge__icon" aria-hidden="true">⚠️</span>
+      <div class="nudge__body">
+        <p class="nudge__title">${titulo}</p>
+        <p class="nudge__desc">${desc}</p>
+        <button class="btn btn-primary nudge__cta" data-action="exportar-datos">Exportar respaldo (JSON)</button>
+      </div>
+    </div>`;
+}
+
 function _renderDatos() {
   return `
     <section class="config-section" aria-labelledby="config-datos-title">
       <h2 class="config-section__title" id="config-datos-title">💾 Tus datos</h2>
+      ${_renderAvisoAlmacenamiento()}
       <p class="config-section__desc">
         Todos tus datos se almacenan solo en este dispositivo.
         Expórtalos para hacer un respaldo o para moverlos a otro dispositivo.
