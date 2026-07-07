@@ -8,7 +8,7 @@
 
 - **Objetivo**          : dominio de solo lectura que agrega datos de todos los otros dominios para mostrar salud financiera, patrimonio, tendencia de gastos, distribución por categoría, comparación mes a mes, patrón semanal, hormigas y el monitor de topes de renta (K.3). Es la única capa que importa de múltiples dominios (`analisis/logic.js`), justamente para que ningún otro dominio tenga que importar a otro (ADN 10).
 - **Estado actual**     : estable. **PERF.2** (2026-07-06) consolidó y memoizó las derivaciones pesadas de `renderAnalisis()`. **PERF.3** (2026-07-06) difirió el cuerpo del grupo colapsable "Más detalle de tus gastos" (comparación de categorías + patrón semanal) a cuando el usuario lo abre. Sin cambios de HTML visible ni de comportamiento observable. **ANL.1** (pendiente, `docs/BOARD.md`) propone una revisión UX/UI completa de la sección; no iniciada.
-- **Verificado contra** : `PENDIENTE_PERF3` (2026-07-06, PERF.3).
+- **Verificado contra** : `e5ca155` (2026-07-06, PERF.3).
 
 **Dónde vive**
 
