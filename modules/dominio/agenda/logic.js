@@ -180,6 +180,31 @@ export function totalEventosDelMes(eventos) {
 }
 
 /**
+ * Tipos de evento (`ingreso`, `fijo`, `deuda-entidad`, `deuda-personal`) que
+ * aparecen en el mes visible, en el orden canónico de la leyenda (CAL.2). Un
+ * compromiso sin `tipo` cuenta como `fijo` (mismo criterio defensivo que
+ * `_renderDots` en la vista).
+ *
+ * @param {ReturnType<typeof eventosDelMes>} eventos
+ * @returns {string[]}
+ */
+export function tiposPresentesEnMes(eventos) {
+  const ORDEN = ['ingreso', 'fijo', 'deuda-entidad', 'deuda-personal'];
+  if (!eventos || typeof eventos !== 'object') return [];
+
+  const presentes = new Set();
+  for (const evs of Object.values(eventos)) {
+    if (!Array.isArray(evs)) continue;
+    for (const e of evs) {
+      if (!e || typeof e !== 'object') continue;
+      presentes.add(e.tipo ?? 'fijo');
+    }
+  }
+
+  return ORDEN.filter(t => presentes.has(t));
+}
+
+/**
  * Devuelve los compromisos que caen hoy según la lógica de frecuencia.
  *
  * @param {import('../../core/state.js').Compromiso[]} compromisos

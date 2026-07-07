@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): CAL.2, leyenda del calendario dinámica · 2026-07-06
+
+Primera tarea trabajada sobre la sección Calendario bajo la metodología de fichas de contexto (regla 2.6 de CLAUDE.md): no existía `docs/contexto/calendario.md`, así que el análisis a fondo del dominio `agenda` (piezas, relaciones, riesgos) quedó documentado en la ficha nueva antes de codificar.
+
+La leyenda bajo el calendario mostraba siempre las 4 entradas posibles (día de ingreso, gasto fijo, deuda con entidad, deuda personal) aunque el usuario no tuviera registros de varias de ellas en el mes visible, ocupando espacio sin aportar información útil.
+
+**Solución:** `tiposPresentesEnMes()` (nuevo, `agenda/logic.js`, función pura sin DOM ni `S`): recorre el mapa de eventos ya calculado del mes (el mismo que usa el grid de días) y devuelve solo los tipos que realmente aparecen, en el orden canónico de la leyenda. `_renderLeyenda()` (`agenda/view.js`) pasó a recibir ese mapa de eventos en vez de no recibir nada, y renderiza únicamente las entradas presentes; si ningún tipo aparece este mes (sin compromisos ni ingresos), la función devuelve `''` y no se dibuja el contenedor. Color, ícono y nomenclatura de cada tipo se conservan exactamente iguales (`cal-dot--*`, la misma paleta que ya usan los puntos del calendario): esta tarea solo decide qué entradas mostrar, no cómo se ven, cumpliendo el pedido explícito de no inventar una presentación nueva.
+
+**Validación:** 2243/2243 unit (10 nuevos en `tests/unit/agenda.test.js`: `tiposPresentesEnMes` con input inválido, vacío, un tipo, los cuatro tipos, sin duplicados, tipo faltante tratado como "fijo", y coincidencia con `eventosDelMes` real; más render dinámico de la leyenda con 0, 1 y varios tipos presentes) + 153/153 E2E en Chromium real (2 nuevos/reescritos en `smoke.test.js`: sin compromisos ni ingresos no dibuja la leyenda; con los tres tipos de compromiso presentes los muestra a los tres). Dos tests preexistentes que asumían la leyenda estática (con estado vacío esperaban ver "Gasto fijo"/"Deuda entidad"/"Deuda personal") se corrigieron para sembrar los tipos que ahora necesitan estar presentes para aparecer, reflejando el comportamiento nuevo. SW v334 → v335.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/agenda/logic.js` | `tiposPresentesEnMes()` nuevo: filtra el orden canónico de tipos contra los presentes en el mapa de eventos del mes. |
+| `modules/dominio/agenda/view.js` | `_renderLeyenda(eventos)` ahora recibe el mapa de eventos y filtra dinámicamente; `_LABEL_LEYENDA` nuevo (etiquetas por tipo, mismo copy que antes). |
+| `tests/unit/agenda.test.js` | 10 tests nuevos (`tiposPresentesEnMes` + render dinámico); 2 tests existentes de la leyenda corregidos al comportamiento dinámico. |
+| `tests/e2e/smoke.test.js` | 2 tests nuevos/reescritos de la leyenda dinámica (suite dedicada con seed propio, evita el problema de navegar dos veces al mismo hash sin recargar el SPA). |
+| `docs/contexto/calendario.md` | Ficha nueva (primer análisis a fondo del dominio `agenda`, regla 2.6). |
+| `docs/contexto/README.md` | Fila de Calendario pasa de "sin crear" a "activa". |
+| `docs/BOARD.md` | CAL.2 cerrada. |
+| `service-worker.js` | v334 → v335. |
+
+---
+
 ### perf(analisis): PERF.3, diferir el cómputo del grupo colapsado de Análisis · 2026-07-06
 
 Cierre de la auditoría de rendimiento (solo queda **PERF.5**/IndexedDB, diferida por el ADR 030). El grupo colapsable "Más detalle de tus gastos" de Análisis (un `<details>` cerrado por defecto) calculaba `calcularComparacionCategorias()` (recorre el mes actual y el anterior de `S.gastos`) y `detectarPatronGastoSemanal()` (recorre 90 días) en **cada** `renderAnalisis()`, aunque el usuario nunca lo abriera. Con PERF.2 esas dos derivaciones vivían dentro del bundle memoizado `_calcularDatosAnalisis()`, así que se recalculaban en cada `state:change` genuino de las secciones observadas mientras la pantalla estaba abierta.

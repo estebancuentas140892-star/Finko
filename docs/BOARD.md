@@ -78,16 +78,7 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 _(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
 
-_(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. Siguiente fase del orden recomendado: **TX.8a**.)_
-
-#### CAL.2 - Leyenda del calendario dinámica (solo tipos de evento que el usuario ya usa)
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : la leyenda fija bajo el calendario (día de ingreso, gasto fijo, deuda con entidad, deuda personal...) muestra siempre todas las categorías aunque el usuario no tenga registros de varias de ellas, lo que ocupa espacio innecesario. Propone que la leyenda sea dinámica: solo listar los tipos de evento que el usuario ya registró y que aparecen en su calendario; si más adelante registra un tipo nuevo (deuda personal, meta, apartado), la leyenda se actualiza sola. Mantener color, ícono, estilo y nomenclatura oficiales de cada tipo (coherencia visual con el resto de Finko), sin inventar una presentación nueva.
-- Secciones  : Calendario (`agenda`)
-- Archivos   : sin explorar todavía; candidato previsible el componente de leyenda del calendario dentro del dominio `agenda` (vista) y la función que ya calcula `eventosDelMes` (mencionada en el historial como base para derivar qué tipos existen en el mes visible)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio (filtrar una leyenda existente contra los eventos ya calculados del mes, sin lógica financiera nueva ni decisión de UX mayor)
+_(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. **CAL.2 cerrada** el 2026-07-06: leyenda del calendario dinámica, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md), primera ficha de esta sección.)_
 
 ---
 

@@ -14,7 +14,7 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO } from '../../core/constants.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -124,7 +124,7 @@ export function renderAgenda() {
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos)}
     </article>
-    ${_renderLeyenda()}
+    ${_renderLeyenda(eventos)}
     ${detalleHtml}`;
 }
 
@@ -241,27 +241,33 @@ function _renderDots(evs) {
   return `<div class="cal-day__dots">${dots}</div>`;
 }
 
+/** Etiqueta de leyenda por tipo de evento (color e ícono ya los da `cal-dot--*`, CSS). */
+const _LABEL_LEYENDA = {
+  'ingreso':        'Día de ingreso',
+  'fijo':           'Gasto fijo',
+  'deuda-entidad':  'Deuda entidad',
+  'deuda-personal': 'Deuda personal',
+};
+
 /**
- * Leyenda de tipos: una entrada por cada tipo de evento que el calendario
- * puede mostrar, con su color de dominio (--fk-dom-*). El evento de día de
- * ingreso (ADR 021) usa el verde de marca de ingresos.
+ * Leyenda de tipos (CAL.2): dinámica, solo lista los tipos de evento que
+ * realmente aparecen en el mes visible, en el orden canónico de
+ * `tiposPresentesEnMes`. Color, ícono y nomenclatura son los oficiales de
+ * cada tipo (`cal-dot--*`, ya usados en los puntos del calendario); esta
+ * función solo decide qué entradas mostrar, no cómo se ven.
+ *
+ * @param {ReturnType<import('./logic.js').eventosDelMes>} eventos
  */
-function _renderLeyenda() {
-  return `
-    <div class="cal-legend" aria-label="Leyenda de tipos">
+function _renderLeyenda(eventos) {
+  const tipos = tiposPresentesEnMes(eventos);
+  if (tipos.length === 0) return '';
+
+  const items = tipos.map(t => `
       <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--ingreso" aria-hidden="true"></span> Día de ingreso
-      </span>
-      <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--fijo" aria-hidden="true"></span> Gasto fijo
-      </span>
-      <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--deuda-entidad" aria-hidden="true"></span> Deuda entidad
-      </span>
-      <span class="cal-legend__item">
-        <span class="cal-dot cal-dot--deuda-personal" aria-hidden="true"></span> Deuda personal
-      </span>
-    </div>`;
+        <span class="cal-dot cal-dot--${t}" aria-hidden="true"></span> ${_LABEL_LEYENDA[t]}
+      </span>`).join('');
+
+  return `<div class="cal-legend" aria-label="Leyenda de tipos">${items}</div>`;
 }
 
 // ── DETALLE DEL DÍA ──────────────────────────────────────────────

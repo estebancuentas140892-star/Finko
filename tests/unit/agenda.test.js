@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos } from '../../modules/dominio/agenda/logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes } from '../../modules/dominio/agenda/logic.js';
 import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
@@ -270,6 +270,59 @@ describe('totalEventosDelMes', () => {
     const c2 = compromisoBase({ id: 'c2', frecuencia: 'Mensual',   diaPago: 15 });
     const r = eventosDelMes([c1, c2], 2026, 4);
     expect(totalEventosDelMes(r)).toBe(3); // 2 quincenal + 1 mensual
+  });
+});
+
+// ── LEYENDA DINÁMICA (CAL.2) ──────────────────────────────────────
+
+describe('tiposPresentesEnMes', () => {
+  it('devuelve [] con input vacío o inválido', () => {
+    expect(tiposPresentesEnMes({})).toEqual([]);
+    expect(tiposPresentesEnMes(null)).toEqual([]);
+    expect(tiposPresentesEnMes(undefined)).toEqual([]);
+  });
+
+  it('sin eventos en ningún día, devuelve []', () => {
+    expect(tiposPresentesEnMes({ 5: [], 15: [] })).toEqual([]);
+  });
+
+  it('devuelve solo los tipos presentes, en el orden canónico de la leyenda', () => {
+    const eventos = {
+      5:  [{ tipo: 'deuda-personal' }],
+      15: [{ tipo: 'fijo' }],
+    };
+    expect(tiposPresentesEnMes(eventos)).toEqual(['fijo', 'deuda-personal']);
+  });
+
+  it('con los cuatro tipos presentes, los devuelve todos en orden', () => {
+    const eventos = {
+      1: [{ tipo: 'ingreso' }, { tipo: 'fijo' }],
+      2: [{ tipo: 'deuda-entidad' }, { tipo: 'deuda-personal' }],
+    };
+    expect(tiposPresentesEnMes(eventos)).toEqual(['ingreso', 'fijo', 'deuda-entidad', 'deuda-personal']);
+  });
+
+  it('no duplica un tipo que aparece en varios días', () => {
+    const eventos = {
+      5:  [{ tipo: 'fijo' }],
+      10: [{ tipo: 'fijo' }],
+      20: [{ tipo: 'fijo' }],
+    };
+    expect(tiposPresentesEnMes(eventos)).toEqual(['fijo']);
+  });
+
+  it('un compromiso sin tipo cuenta como "fijo" (mismo criterio defensivo que _renderDots)', () => {
+    const eventos = { 5: [{ descripcion: 'Sin tipo explícito' }] };
+    expect(tiposPresentesEnMes(eventos)).toEqual(['fijo']);
+  });
+
+  it('coincide con lo que produce eventosDelMes + eventosIngresosDelMes reales', () => {
+    const compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo', diaPago: 5 }),
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 10 }),
+    ];
+    const eventos = eventosDelMes(compromisos, 2026, 4);
+    expect(tiposPresentesEnMes(eventos)).toEqual(['fijo', 'deuda-entidad']);
   });
 });
 
@@ -771,7 +824,12 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     vi.useRealTimers();
   });
 
-  it('la leyenda cubre los tres tipos actuales, cada uno con su dot de color', () => {
+  it('con los tres tipos presentes en el mes, la leyenda los muestra a todos con su dot de color', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo',           diaPago: 5 }),
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad',  diaPago: 10, cuotaMensual: 200_000 }),
+      compromisoBase({ id: 'd2', tipo: 'deuda-personal', diaPago: 20, cuotaMensual: 100_000 }),
+    ];
     renderAgenda();
     const leyenda = document.querySelector('.cal-legend');
     expect(leyenda).not.toBeNull();
@@ -791,6 +849,37 @@ describe('renderAgenda() - leyenda bajo el calendario', () => {
     expect(iLeyenda).toBeGreaterThan(-1);
     expect(iDetalle).toBeGreaterThan(-1);
     expect(iLeyenda).toBeLessThan(iDetalle);
+  });
+
+  // CAL.2: la leyenda es dinámica, solo lista los tipos que el usuario ya usa.
+
+  it('CAL.2: sin ningún compromiso ni ingreso este mes, no dibuja la leyenda', () => {
+    renderAgenda();
+    expect(document.querySelector('.cal-legend')).toBeNull();
+  });
+
+  it('CAL.2: con un solo tipo presente, la leyenda muestra solo esa entrada', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', diaPago: 5 })];
+    renderAgenda();
+    const leyenda = document.querySelector('.cal-legend');
+    expect(leyenda).not.toBeNull();
+    expect(leyenda.querySelectorAll('.cal-legend__item').length).toBe(1);
+    expect(leyenda.querySelector('.cal-dot--fijo')).not.toBeNull();
+    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).toBeNull();
+    expect(leyenda.querySelector('.cal-dot--deuda-personal')).toBeNull();
+    expect(leyenda.querySelector('.cal-dot--ingreso')).toBeNull();
+  });
+
+  it('CAL.2: si el usuario registra un tipo nuevo, la leyenda lo suma solo', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-legend').querySelectorAll('.cal-legend__item').length).toBe(1);
+
+    S.compromisos.push(compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 10, cuotaMensual: 200_000 }));
+    renderAgenda();
+    const leyenda = document.querySelector('.cal-legend');
+    expect(leyenda.querySelectorAll('.cal-legend__item').length).toBe(2);
+    expect(leyenda.querySelector('.cal-dot--deuda-entidad')).not.toBeNull();
   });
 });
 
@@ -971,7 +1060,8 @@ describe('renderAgenda() - día de ingreso (ADR 021)', () => {
     expect(items[0].classList.contains('cal-detail__item--ingreso')).toBe(true);
   });
 
-  it('la leyenda incluye la entrada de día de ingreso', () => {
+  it('la leyenda incluye la entrada de día de ingreso cuando hay un ingreso este mes', () => {
+    S.ingresos = [ingresoBase({ diaPago: 15 })];
     renderAgenda();
     expect(document.querySelector('.cal-legend').textContent).toContain('Día de ingreso');
   });

@@ -949,12 +949,11 @@ test.describe('Agenda', () => {
 
     // Grilla con al menos un día visible
     await expect(page.locator('[role="grid"]').first()).toBeVisible();
+  });
 
-    // Leyenda de tipos (Gasto fijo, Deuda entidad, Deuda personal)
-    await expect(page.locator('.cal-legend')).toBeVisible();
-    await expect(page.locator('.cal-legend')).toContainText('Gasto fijo');
-    await expect(page.locator('.cal-legend')).toContainText('Deuda entidad');
-    await expect(page.locator('.cal-legend')).toContainText('Deuda personal');
+  test('CAL.2: sin compromisos ni ingresos este mes, la leyenda no se dibuja', async ({ page }) => {
+    // El beforeEach siembra estado vacío: sin nada que explicar todavía.
+    await expect(page.locator('.cal-legend')).toHaveCount(0);
   });
 
   test('navega mes anterior con botón <', async ({ page }) => {
@@ -985,6 +984,44 @@ test.describe('Agenda', () => {
 
     // Debe cambiar el mes mostrado
     expect(mesBefore).not.toBe(mesAfter);
+  });
+});
+
+// ── SUITE 10b: Agenda - leyenda dinámica (CAL.2) ────────────────────────────
+// La leyenda bajo el calendario solo lista los tipos de evento que el usuario
+// ya usa este mes (no las 4 categorías fijas de siempre).
+
+test.describe('Agenda - leyenda dinámica con los tres tipos de compromiso', () => {
+  test('con un compromiso de cada tipo este mes, la leyenda los muestra a los tres', async ({ page }) => {
+    const hoy  = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+
+    await page.addInitScript(({ anio, mes }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          { id: 'f1', tipo: 'fijo',           descripcion: 'Arriendo', monto: 500000,        frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+          { id: 'd1', tipo: 'deuda-entidad',  descripcion: 'Crédito',  cuotaMensual: 200000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+          { id: 'd2', tipo: 'deuda-personal', descripcion: 'Préstamo',cuotaMensual: 100000,  frecuencia: 'Mensual', diaPago: 1, activo: true, fechaCreacion: `${anio}-${mes}-01T00:00:00Z` },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { anio, mes });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await expect(page.locator('.cal-legend')).toBeVisible();
+    await expect(page.locator('.cal-legend')).toContainText('Gasto fijo');
+    await expect(page.locator('.cal-legend')).toContainText('Deuda entidad');
+    await expect(page.locator('.cal-legend')).toContainText('Deuda personal');
   });
 });
 
