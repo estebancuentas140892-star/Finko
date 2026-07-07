@@ -8,7 +8,7 @@
 
 - **Objetivo**          : vista calendario mensual sobre `S.compromisos` y `S.ingresos` (no agrega datos nuevos): mapea cada compromiso activo y cada ingreso activo a los días del mes en que cae, respetando su frecuencia. No importa de otros dominios (ADN 10); duplica deliberadamente lo mínimo que necesita (ej. `totalDia`) en vez de importar `compromisos/logic.js`.
 - **Estado actual**     : estable. **CAL.2** (2026-07-06) hizo dinámica la leyenda de tipos bajo el calendario. **CAL.1** (nudge de distribución del ingreso en Inicio, cerrada 2026-07-05) vive en el dominio `resumen`, no en `agenda`.
-- **Verificado contra** : `PENDIENTE_CAL2` (2026-07-06, CAL.2).
+- **Verificado contra** : `1209ee0` (2026-07-06, CAL.2).
 
 **Dónde vive**
 
