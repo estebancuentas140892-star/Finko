@@ -10,6 +10,35 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(movimientos): PERF.1, paginar por lotes la vista completa de Movimientos · 2026-07-06
+
+Esteban pidió una auditoría de rendimiento completa (temor: que la app se vuelva lenta con años de datos, y que un cambio en una sección recalcule toda la app). **PERF.0** construyó primero el harness de medición: `pnpm perf` (`scripts/perf/seed.js` genera un estado determinista de hasta 10.000 gastos con un PRNG de semilla fija; `scripts/perf/bench.perf.js` mide en happy-dom el costo de los widgets de Inicio, Análisis, Movimientos y la persistencia; corre fuera de `pnpm test` vía `vitest.perf.config.js`). La auditoría en sí confirmó que el temor central estaba mayormente resuelto: `renderSmart()` ya corta el render por sección (hash-gate), así que editar un gasto no recalcula Metas/Inversiones/Análisis. El cuello real medido: la vista completa de Movimientos (`#movimientos`) construía **todos** los nodos del historial de una sola vez, ~3,9 s con 10 años de datos simulados.
+
+**PERF.1** resolvió ese cuello con windowing. `renderMovimientosCompletos()` pinta un primer lote de 50 movimientos (los divisores de mes no restan cupo al conteo, para que un mes con pocos registros no reduzca el tamaño efectivo del lote) y agrega el resto bajo demanda con `cargarMasMovimientos()` (nuevo, exportado), disparada por un botón accesible `data-action="movimientos-cargar-mas"` ("Cargar más movimientos", 100% operable por teclado/lector de pantalla) y, como mejora progresiva, por un `IntersectionObserver` sobre ese mismo botón (se descarta y recrea en cada lote; nunca hay más de uno vivo). El panel compacto de Inicio (`renderActividadReciente()`, límite fijo de 5) no cambia.
+
+**Resultado medido:** primer lote de 327,8 ms → 24,6 ms (1.000 gastos), 1.752,9 ms → 33,0 ms (5.000) y 3.875,2 ms → 47,6 ms (10.000): hasta **81x** más rápido, y el tamaño del primer lote queda plano en 50 nodos sin importar cuánto historial exista (antes crecía 1:1 con él). Nota honesta: el primer lote aún crece un poco con N porque `movimientosCompletos()` sigue derivando y ordenando todo el historial antes de paginar (el corte de PERF.1 es solo de construcción de DOM); ese residuo queda para una fase de memoización futura, sin tarjeta todavía.
+
+**Riesgo de medición encontrado y documentado:** el primer diseño del harness intentaba recorrer todos los lotes en un loop apretado para medir el costo "cargar todo"; eso creaba cientos de `IntersectionObserver` en segundos y saturaba la heap de happy-dom (`FATAL ERROR: JavaScript heap out of memory`, worker crash). Es un artefacto del entorno de test (en la app real nunca hay más de un observer vivo a la vez), no un bug de producción; el harness se ajustó para medir el costo de un lote adicional de forma aislada.
+
+**Validación:** 2209/2209 unit (8 tests nuevos de paginación en `movimientos.test.js`: primer lote acotado a 50, control "Cargar más" aparece/desaparece según haya historial pendiente, `cargarMasMovimientos()` no duplica ítems ni repite divisores de mes al cortar a mitad de mes, reiniciar el render no acumula lotes viejos) + 151/151 E2E verdes en Chromium real (Playwright). SW v330 → v331.
+
+| Archivo | Cambio |
+|---|---|
+| `scripts/perf/seed.js` | Nuevo: generador determinista de un `S` grande y realista (10 años de gastos, ingresos puntuales, aportes, compromisos, metas, apartados, inversiones). |
+| `scripts/perf/bench.perf.js` | Nuevo: harness de medición de hot paths (Inicio, Análisis, Movimientos, `JSON.stringify(S)`, `save()` real). |
+| `scripts/perf/BASELINE.md` | Nuevo: línea base PERF.0 + resultado de PERF.1, artefacto de referencia para las próximas fases. |
+| `vitest.perf.config.js` | Nuevo: config dedicada de Vitest para `pnpm perf`, no incluida en `pnpm test`. |
+| `package.json` | Script `perf` nuevo. |
+| `modules/dominio/movimientos/view.js` | `renderMovimientosCompletos()` paginado por lotes; `cargarMasMovimientos()`, `_agregarSiguienteLote()`, `_aplanarEntradas()`, `_renderControlCargarMas()`, `_observarControlCargarMas()` nuevos. |
+| `modules/dominio/movimientos/index.js` | Acción `movimientos-cargar-mas` registrada vía `registrarAccion()`. |
+| `styles/components/domain.css` | Bloque `.movimientos-cargar-mas` (control centrado). |
+| `tests/unit/movimientos.test.js` | 8 tests nuevos de paginación. |
+| `docs/contexto/inicio.md` | Bloque de Movimientos actualizado; nueva entrada de "Cambios realizados". |
+| `docs/HANDOFF.md` | PERF.1 al tope de "últimas 5"; `pnpm perf` en comandos rápidos. |
+| `service-worker.js` | v330 → v331. |
+
+---
+
 ### refactor(gastos): IN.5, eliminar "Gasto rápido" y el subsistema de pendientes · 2026-07-06
 
 Con TX.9 completa, el formulario completo de gasto registra en pocos toques (categoría + monto, con fecha y cuenta pre-rellenadas). "Gasto rápido" (anotar solo el monto y completar la categoría después) dejó de aportar valor sobre eso: mantener dos flujos para lo mismo solo sumaba complejidad, más una cola de "pendientes por organizar" que el usuario debía volver a completar. Esteban decidió eliminarlo. Se retiró la feature completa y todo su subsistema dependiente, verificando primero que ningún otro flujo lo necesitara.

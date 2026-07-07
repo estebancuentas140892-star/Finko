@@ -12,6 +12,15 @@ import { movimientosRecientes, movimientosCompletos } from './logic.js';
 /** Cuántos movimientos recientes se muestran en el panel de Inicio. */
 const LIMITE_RECIENTES = 5;
 
+/**
+ * Cuántas entradas (ítems + divisores de mes) se agregan al DOM por lote en
+ * la vista completa (PERF.1). Con años de historial, construir todos los
+ * nodos de una sola vez es el cuello de botella más caro de la app (~4s con
+ * 10 años de datos): en vez de eso, `renderMovimientosCompletos()` pinta solo
+ * el primer lote y el resto se agrega bajo demanda vía `cargarMasMovimientos()`.
+ */
+const TAMANO_LOTE = 50;
+
 /** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
 const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte' };
 
@@ -152,13 +161,125 @@ function _renderEmptyMovimientos() {
     </div>`;
 }
 
+// ── PAGINACIÓN DE LA VISTA COMPLETA (PERF.1) ─────────────────────
+
+/**
+ * Aplana los grupos por mes en una secuencia lineal de "entradas" (divisor de
+ * mes o ítem), en el mismo orden en que se pintan. Paginar sobre esta lista
+ * plana (en vez de sobre `grupos`) evita repetir o saltar un divisor cuando
+ * un lote corta a mitad de mes.
+ * @param {Array<{ label: string, items: import('./logic.js').Movimiento[] }>} grupos
+ * @returns {Array<{ tipo: 'divisor', label: string } | { tipo: 'item', mov: import('./logic.js').Movimiento }>}
+ */
+function _aplanarEntradas(grupos) {
+  const entradas = [];
+  for (const { label, items } of grupos) {
+    entradas.push({ tipo: 'divisor', label });
+    for (const mov of items) entradas.push({ tipo: 'item', mov });
+  }
+  return entradas;
+}
+
+function _renderEntrada(entrada) {
+  return entrada.tipo === 'divisor'
+    ? `<div class="movimientos-mes" role="presentation">${_esc(entrada.label)}</div>`
+    : _renderMovimientoItem(entrada.mov);
+}
+
+function _renderControlCargarMas() {
+  return `
+    <div class="movimientos-cargar-mas">
+      <button type="button" class="btn btn-ghost" id="movimientos-cargar-mas"
+              data-action="movimientos-cargar-mas">Cargar más movimientos</button>
+    </div>`;
+}
+
+/** Entradas pendientes de pintar (divisores + ítems) y cursor del próximo lote. */
+let _entradasPendientes = [];
+let _cursorLote = 0;
+
+/** Observer del control "Cargar más": lo dispara solo con que entre en viewport. */
+let _observerCargarMas = null;
+
+/** Desconecta el observer activo, si lo hay. Se llama en cada render nuevo. */
+function _detenerCargaAutomatica() {
+  _observerCargarMas?.disconnect();
+  _observerCargarMas = null;
+}
+
+/**
+ * Observa el control "Cargar más" recién insertado para disparar el
+ * siguiente lote automáticamente al hacer scroll hasta él (progresivo: el
+ * botón sigue siendo 100% operable con teclado/lector de pantalla sin esto).
+ * @param {HTMLElement} el - contenedor `#lista-movimientos`.
+ */
+function _observarControlCargarMas(el) {
+  if (typeof IntersectionObserver === 'undefined') return;
+  const boton = el.querySelector('#movimientos-cargar-mas');
+  if (!boton) return;
+  _observerCargarMas = new IntersectionObserver((entradas) => {
+    if (entradas.some((e) => e.isIntersecting)) cargarMasMovimientos();
+  });
+  _observerCargarMas.observe(boton);
+}
+
+/**
+ * Pinta el siguiente lote al final de `el`, y deja (o quita) el control
+ * "Cargar más" según si queda más por pintar.
+ *
+ * El lote se mide en `TAMANO_LOTE` ítems reales, no en entradas totales: un
+ * divisor de mes no cuenta contra el cupo, para que un mes con muy pocos
+ * movimientos no reduzca el tamaño efectivo del lote.
+ *
+ * @param {HTMLElement} el
+ */
+function _agregarSiguienteLote(el) {
+  _detenerCargaAutomatica();
+  el.querySelector('#movimientos-cargar-mas')?.closest('.movimientos-cargar-mas')?.remove();
+
+  let itemsEnLote = 0;
+  let fin = _cursorLote;
+  while (fin < _entradasPendientes.length && itemsEnLote < TAMANO_LOTE) {
+    if (_entradasPendientes[fin].tipo === 'item') itemsEnLote++;
+    fin++;
+  }
+
+  const html = _entradasPendientes.slice(_cursorLote, fin).map(_renderEntrada).join('');
+  el.insertAdjacentHTML('beforeend', html);
+  _cursorLote = fin;
+
+  if (_cursorLote < _entradasPendientes.length) {
+    el.insertAdjacentHTML('beforeend', _renderControlCargarMas());
+    _observarControlCargarMas(el);
+  }
+}
+
+/**
+ * Pinta el siguiente lote de la vista completa de Movimientos. Wired a la
+ * acción `movimientos-cargar-mas` (clic en el botón) y al `IntersectionObserver`
+ * del propio botón (scroll). No-op si ya no queda nada pendiente o el
+ * contenedor no existe (ej. el usuario navegó a otra sección).
+ */
+export function cargarMasMovimientos() {
+  const el = document.getElementById('lista-movimientos');
+  if (!el || _cursorLote >= _entradasPendientes.length) return;
+  _agregarSiguienteLote(el);
+}
+
 /**
  * Renderiza en `#lista-movimientos` el historial completo (TX.8b, ruta
  * `#movimientos`), agrupado por mes. No-op si el contenedor no existe.
+ *
+ * PERF.1: con años de historial, construir todos los nodos de una sola vez es
+ * el cuello de botella más caro de la app. Acá solo se pinta el primer lote
+ * (`TAMANO_LOTE` entradas); el resto se agrega bajo demanda con
+ * `cargarMasMovimientos()`, sin recalcular el historial ya derivado.
  */
 export function renderMovimientosCompletos() {
   const el = document.getElementById('lista-movimientos');
   if (!el) return;
+
+  _detenerCargaAutomatica();
 
   const movs = movimientosCompletos({
     gastos:                   S.gastos,
@@ -169,10 +290,13 @@ export function renderMovimientosCompletos() {
 
   if (movs.length === 0) {
     el.innerHTML = _renderEmptyMovimientos();
+    _entradasPendientes = [];
+    _cursorLote = 0;
     return;
   }
 
-  el.innerHTML = _agruparPorMes(movs).map(({ label, items }) => `
-    <div class="movimientos-mes" role="presentation">${_esc(label)}</div>
-    ${items.map(_renderMovimientoItem).join('')}`).join('');
+  _entradasPendientes = _aplanarEntradas(_agruparPorMes(movs));
+  _cursorLote = 0;
+  el.innerHTML = '';
+  _agregarSiguienteLote(el);
 }

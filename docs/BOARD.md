@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-05.
+> Última actualización: 2026-07-06.
 
 ---
 
@@ -261,6 +261,37 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 ---
 
 ## Transversal (afecta varias secciones)
+
+> Auditoría de rendimiento 2026-07 (pedida por Esteban, sin ADR): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)) y **PERF.1** (windowing de Movimientos, hasta 81x más rápido) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban; los cuellos reales que quedan son cómputo repetido sin memoria (PERF.2) y la persistencia completa en cada guardado (PERF.4, requiere ADR). Cada fase corre `pnpm perf` antes/después y compara contra la tabla en BASELINE.md.
+
+#### PERF.2 - Memoizar derivaciones pesadas de Inicio y Análisis
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : `movimientosRecientes()`/`movimientosCompletos()` (Inicio, Movimientos) y `generarResumen()`/series de Análisis recalculan sobre todo `S.gastos` en cada `state:change` relevante, sin caché. Agregar una capa de memoización simple (contador de versión por colección, cachear contra `(version, params)`) para que un cambio en `gastos` no repita ~15 barridos completos si nada relevante cambió desde el último render.
+- Secciones  : Inicio (`resumen`, `movimientos`), Análisis (`analisis`)
+- Archivos   : `modules/dominio/movimientos/logic.js`, `modules/dominio/analisis/logic.js`, `modules/dominio/resumen/logic.js`; candidato a un helper nuevo en `infra/` (ej. `infra/memo.js`) si el patrón se repite en los 3 dominios
+- Depende de : PERF.0 (harness ya existe, usarlo para medir antes/después)
+- Modelo     : Sonnet 5 - Alto (patrón de memoización nuevo, transversal a 3 dominios de solo lectura, sin lógica financiera nueva)
+
+#### PERF.3 - Diferir cómputo de gráficos y grupos colapsados en Análisis
+- Prioridad  : baja
+- Estado     : pendiente
+- Objetivo   : el grupo colapsable "Más detalle de tus gastos" (`_renderGrupoColapsable`) calcula comparación de categorías + patrón semanal + hormigas aunque el usuario nunca lo expanda. Diferir ese cómputo a cuando el `<details>` dispara `toggle`.
+- Secciones  : Análisis (`analisis`)
+- Archivos   : `modules/dominio/analisis/view.js` (`renderAnalisis()`, `_renderGrupoColapsable()`)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio (diferir un cómputo ya aislado detrás de un evento DOM existente)
+
+#### PERF.4 - Partir la persistencia por colección (requiere ADR)
+- Prioridad  : alta a largo plazo
+- Estado     : pendiente de análisis, **toca el ADN del proyecto** (regla 3: "sin servidor, solo `localStorage`"): requiere ADR y discusión explícita con Esteban antes de codificar
+- Objetivo   : hoy `save()` serializa `JSON.stringify(S)` completo en cada guardado (`core/storage.js`); con años de historial, cada mutación paga el costo de re-serializar TODO el estado. Evaluar partir la persistencia por colección (ej. `fk_v1_gastos`, `fk_v1_compromisos`... en `localStorage`, o IndexedDB si se quiere el salto real de escala) para que guardar un gasto no re-escriba 10 años de todo lo demás.
+- Secciones  : Transversal (`core/storage.js`, migraciones)
+- Archivos   : `modules/core/storage.js`; requiere una migración idempotente nueva (bump de schema) y revisar cada dominio que llama `save()`
+- Depende de : ADR aprobado por Esteban (impacto en ADN 3); PERF.0 para medir la ganancia real antes de comprometerse
+- Modelo     : Opus 4.8 - Extra (decisión arquitectural que toca el modelo de persistencia completo, con migración de datos reales de usuarios)
+
+---
 
 > Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B, NAV.A2b (slices 1 y 2) y NAV.C cerradas. Iniciativa completa, sin pendientes.
 

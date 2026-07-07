@@ -1204,6 +1204,12 @@ button.chip:focus-visible {
 .movimientos-mes:first-child {
   padding-top: 0;
 }
+/* PERF.1: control de paginación de la vista completa (carga por lotes). */
+.movimientos-cargar-mas {
+  display: flex;
+  justify-content: center;
+  padding: var(--fk-space-4) 0;
+}
 
 #lista-movimientos .list-item {
   margin-bottom: var(--fk-space-2);

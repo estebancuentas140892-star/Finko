@@ -8,8 +8,9 @@
  */
 
 import { EventBus } from '../../core/state.js';
+import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
-import { renderActividadReciente, renderMovimientosCompletos } from './view.js';
+import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from './view.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
 const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro'];
@@ -20,6 +21,8 @@ function _renderTodo() {
 }
 
 export function initMovimientos() {
+  registrarAccion('movimientos-cargar-mas', cargarMasMovimientos);
+
   EventBus.on('state:change', ({ section }) => {
     if (_SECCIONES_FUENTE.includes(section)) _renderTodo();
   });

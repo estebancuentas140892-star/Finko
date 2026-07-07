@@ -17,7 +17,7 @@ import {
   movimientosRecientes,
   movimientosCompletos,
 } from '../../modules/dominio/movimientos/logic.js';
-import { renderActividadReciente, renderMovimientosCompletos } from '../../modules/dominio/movimientos/view.js';
+import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
 
 const cuenta = (id, nombre) => ({ id, nombre, saldo: 0, banco: 'Nequi', tipo: 'Ahorros', activa: true });
@@ -358,5 +358,91 @@ describe('renderMovimientosCompletos()', () => {
     S.gastos = [gasto({ categoria: 'Deudas' })];
     renderMovimientosCompletos();
     expect(elLista().querySelector('.cat-teja[data-dom="compromisos"]')).not.toBeNull();
+  });
+});
+
+// ── PAGINACIÓN DE renderMovimientosCompletos() (PERF.1) ───────────
+//
+// Con años de historial, pintar todos los nodos de una sola vez es el cuello
+// de botella más caro de la app. Estos tests fijan el contrato de paginación:
+// el primer render solo pinta un lote (50 entradas), el resto se agrega bajo
+// demanda con cargarMasMovimientos() sin recalcular el historial derivado.
+
+describe('renderMovimientosCompletos() - paginación por lotes', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+  const gastosDelMismoMes = (n) => Array.from({ length: n }, (_, i) =>
+    gasto({ id: `g${i}`, fecha: `2026-07-${String((i % 28) + 1).padStart(2, '0')}` }));
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.cuentas = [];
+  });
+
+  it('con más de 50 movimientos, el primer render solo pinta el primer lote', () => {
+    S.gastos = gastosDelMismoMes(120);
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(50);
+  });
+
+  it('muestra el control "Cargar más" cuando queda historial pendiente', () => {
+    S.gastos = gastosDelMismoMes(120);
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('#movimientos-cargar-mas')).not.toBeNull();
+  });
+
+  it('no muestra el control "Cargar más" si el historial cabe en un solo lote', () => {
+    S.gastos = gastosDelMismoMes(8);
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('#movimientos-cargar-mas')).toBeNull();
+  });
+
+  it('cargarMasMovimientos() agrega el siguiente lote sin repetir los ya pintados', () => {
+    S.gastos = gastosDelMismoMes(120);
+    renderMovimientosCompletos();
+    cargarMasMovimientos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(100);
+    const ids = [...elLista().querySelectorAll('.list-item')].map((el) => el.dataset.id);
+    expect(new Set(ids).size).toBe(100);
+  });
+
+  it('cargarMasMovimientos() quita el control al agotar el historial', () => {
+    S.gastos = gastosDelMismoMes(120);
+    renderMovimientosCompletos();
+    cargarMasMovimientos(); // 50 → 100
+    cargarMasMovimientos(); // 100 → 120, se agota
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(120);
+    expect(elLista().querySelector('#movimientos-cargar-mas')).toBeNull();
+  });
+
+  it('cargarMasMovimientos() no hace nada si ya no queda historial pendiente', () => {
+    S.gastos = gastosDelMismoMes(30);
+    renderMovimientosCompletos();
+    expect(() => cargarMasMovimientos()).not.toThrow();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(30);
+  });
+
+  it('no duplica el divisor de mes cuando un lote corta a mitad de mes', () => {
+    // 60 gastos en julio (2 lotes dentro del mismo mes) + 1 en junio.
+    S.gastos = [
+      ...gastosDelMismoMes(60),
+      gasto({ id: 'g-junio', fecha: '2026-06-15' }),
+    ];
+    renderMovimientosCompletos();
+    cargarMasMovimientos();
+    const divisores = [...elLista().querySelectorAll('.movimientos-mes')].map((el) => el.textContent);
+    expect(divisores.filter((d) => d.includes('2026')).length).toBe(2); // julio + junio, sin repetir julio
+  });
+
+  it('volver a llamar renderMovimientosCompletos() reinicia la paginación (no acumula lotes viejos)', () => {
+    S.gastos = gastosDelMismoMes(120);
+    renderMovimientosCompletos();
+    cargarMasMovimientos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(100);
+
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(50);
   });
 });
