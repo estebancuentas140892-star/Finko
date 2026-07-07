@@ -8,7 +8,7 @@
 
 - **Objetivo**          : pantalla principal e inamovible de la app; hoy muestra saldo (hero a ancho completo), accesos rápidos personalizables, paneles de vencidos/próximos y un resumen semanal.
 - **Estado actual**     : estable, en evolución. **IN.7**, **IN.6a**, **CAL.1**, **TX.8a**, **TX.8b** e **IN.4a** cerradas; **IN.5** (2026-07-06) eliminó "Gasto rápido" y el panel "Gastos por organizar", dejando el hero a ancho completo. **PERF.1** (2026-07-06) paginó por lotes la vista completa de Movimientos (`#movimientos`). **PERF.2** (2026-07-06) memoizó `resumenSemanal()` y `movimientosRecientes()`/`movimientosCompletos()`; sin cambios de comportamiento visible en ninguno de los dos. Rediseño decidido en [ADR 028](../DECISIONS/028-inicio-centro-de-control.md) (**aprobado el 2026-07-05**): un rol por bloque, orden vertical definido; solo **IN.6b** queda pendiente (espera diseños de avatar de Esteban).
-- **Verificado contra** : `af5183e` (2026-07-06, PERF.1); resumen/movimientos actualizados en PERF.2, ver más abajo.
+- **Verificado contra** : `a89213d` (2026-07-06, PERF.2).
 
 **Dónde vive**
 
