@@ -106,7 +106,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Inversión | `inversion.md` | sin crear |
 | Límites de gasto | `limites.md` | sin crear |
 | Me deben | `me-deben.md` | sin crear |
-| Análisis | `analisis.md` | sin crear |
+| Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | `configuracion.md` | sin crear |
 | Transversal (navegación, iconografía, hoja Registrar, biblioteca gráfica) | [`transversal.md`](transversal.md) | activa (tejas de marca y biblioteca gráfica) |
 

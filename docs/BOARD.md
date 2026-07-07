@@ -262,16 +262,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ## Transversal (afecta varias secciones)
 
-> Auditoría de rendimiento 2026-07 (pedida por Esteban, sin ADR): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)) y **PERF.1** (windowing de Movimientos, hasta 81x más rápido) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban; los cuellos reales que quedan son cómputo repetido sin memoria (PERF.2) y la persistencia completa en cada guardado (PERF.4, requiere ADR). Cada fase corre `pnpm perf` antes/después y compara contra la tabla en BASELINE.md.
-
-#### PERF.2 - Memoizar derivaciones pesadas de Inicio y Análisis
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : `movimientosRecientes()`/`movimientosCompletos()` (Inicio, Movimientos) y `generarResumen()`/series de Análisis recalculan sobre todo `S.gastos` en cada `state:change` relevante, sin caché. Agregar una capa de memoización simple (contador de versión por colección, cachear contra `(version, params)`) para que un cambio en `gastos` no repita ~15 barridos completos si nada relevante cambió desde el último render.
-- Secciones  : Inicio (`resumen`, `movimientos`), Análisis (`analisis`)
-- Archivos   : `modules/dominio/movimientos/logic.js`, `modules/dominio/analisis/logic.js`, `modules/dominio/resumen/logic.js`; candidato a un helper nuevo en `infra/` (ej. `infra/memo.js`) si el patrón se repite en los 3 dominios
-- Depende de : PERF.0 (harness ya existe, usarlo para medir antes/después)
-- Modelo     : Sonnet 5 - Alto (patrón de memoización nuevo, transversal a 3 dominios de solo lectura, sin lógica financiera nueva)
+> Auditoría de rendimiento 2026-07 (pedida por Esteban, sin ADR): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido) y **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban; el único cuello real que queda es la persistencia completa en cada guardado (PERF.4, requiere ADR); PERF.3 es una mejora menor opcional. Cada fase corre `pnpm perf` antes/después y compara contra la tabla en BASELINE.md.
 
 #### PERF.3 - Diferir cómputo de gráficos y grupos colapsados en Análisis
 - Prioridad  : baja

@@ -27,10 +27,20 @@
  * satura la heap de happy-dom, un artefacto del entorno de test, no de la
  * app): mide el costo de un lote adicional de forma aislada, que es lo que
  * de verdad importa para PERF.1 (que el costo por lote no dependa de N).
+ *
+ * Nota sobre `medir()` y PERF.2 (memoización, `infra/memo.js`): llamar a la
+ * misma función N veces sin tocar `S` entre medidas convierte casi todas las
+ * repeticiones en cache hits del propio harness, lo cual mide un escenario
+ * real (re-render redundante, ej. `renderAll()` repintando una pantalla sin
+ * cambios) pero NO el costo de un recálculo genuino. Por eso cada hot path
+ * memoizado se mide dos veces: "frío" (`invalidar` fuerza un `state:change`
+ * antes de cada muestra, cache miss garantizado) y "caché" (sin invalidar,
+ * el beneficio real de PERF.2). Comparar contra la línea base de PERF.0/PERF.1
+ * es válido solo contra la columna "frío".
  */
 
 import { describe, it, expect } from 'vitest';
-import { S } from '../../modules/core/state.js';
+import { S, EventBus } from '../../modules/core/state.js';
 import { _flushNow } from '../../modules/core/storage.js';
 import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
 import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
@@ -41,16 +51,22 @@ import { construirEstadoGrande } from './seed.js';
 /** Tamaños de historial a medir (cantidad de gastos). */
 const TAMANOS = [1_000, 5_000, 10_000];
 
+/** Fuerza un cache miss en los memoizadores de PERF.2 antes de la próxima muestra. */
+function invalidar() {
+  EventBus.emit('state:change', { section: 'gastos' });
+}
+
 /**
  * Corre `fn` con calentamiento y devuelve la mediana y el p95 en ms.
  * @param {() => void} fn
- * @param {{ iteraciones?: number, warmup?: number }} [opts]
+ * @param {{ iteraciones?: number, warmup?: number, antesDeCadaMuestra?: () => void }} [opts]
  * @returns {{ mediana: number, p95: number }}
  */
-function medir(fn, { iteraciones = 20, warmup = 3 } = {}) {
-  for (let i = 0; i < warmup; i++) fn();
+function medir(fn, { iteraciones = 20, warmup = 3, antesDeCadaMuestra } = {}) {
+  for (let i = 0; i < warmup; i++) { antesDeCadaMuestra?.(); fn(); }
   const muestras = [];
   for (let i = 0; i < iteraciones; i++) {
+    antesDeCadaMuestra?.();
     const t0 = performance.now();
     fn();
     muestras.push(performance.now() - t0);
@@ -76,7 +92,7 @@ function montarContenedores() {
     <div id="lista-movimientos"></div>`;
 }
 
-describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing de Movimientos)', () => {
+describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing, PERF.2 memoización)', () => {
   it('mide render de hot paths + persistencia a varios tamaños', () => {
     const filas = [];
     let nodosPrimerLote = 0;
@@ -87,8 +103,17 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing de Movim
       Object.assign(S, construirEstadoGrande({ gastos: n }));
       montarContenedores();
 
-      const inicio    = medir(() => { renderPanelResumen(); renderActividadReciente(); });
-      const analisis  = medir(() => renderAnalisis());
+      // "Frío": cada muestra invalida la memoización antes de medir (cache
+      // miss garantizado) → costo de un recálculo genuino, comparable contra
+      // la línea base de PERF.0/PERF.1.
+      const inicioFrio    = medir(() => { renderPanelResumen(); renderActividadReciente(); }, { antesDeCadaMuestra: invalidar });
+      const analisisFrio  = medir(() => renderAnalisis(), { antesDeCadaMuestra: invalidar });
+      // "Caché": sin invalidar entre muestras → el beneficio real de PERF.2
+      // (re-render redundante sin cambios de datos, ej. renderAll() o dos
+      // listeners reaccionando a una misma acción).
+      const inicioCache   = medir(() => { renderPanelResumen(); renderActividadReciente(); });
+      const analisisCache = medir(() => renderAnalisis());
+
       const primerLote = medir(() => renderMovimientosCompletos(), { iteraciones: 12 });
       // Un lote adicional: render inicial + un solo cargarMasMovimientos() por
       // iteración (no un loop de cientos de lotes, ver nota arriba).
@@ -106,8 +131,10 @@ describe('Rendimiento - hot paths (PERF.0 línea base, PERF.1 windowing de Movim
 
       filas.push({
         'gastos':              n,
-        'Inicio ms':           fmt(inicio),
-        'Análisis ms':         fmt(analisis),
+        'Inicio frío ms':      fmt(inicioFrio),
+        'Inicio caché ms':     fmt(inicioCache),
+        'Análisis frío ms':    fmt(analisisFrio),
+        'Análisis caché ms':   fmt(analisisCache),
         'Movs 1er lote ms':    fmt(primerLote),
         'Movs +1 lote ms':     fmt(loteExtra),
         'stringify ms':        fmt(stringify),

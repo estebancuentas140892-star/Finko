@@ -7,10 +7,27 @@
 import { S } from '../../core/state.js';
 import { f, esc as _esc, tiempoRelativo, fechaLegible } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { memoizar } from '../../infra/memo.js';
 import { movimientosRecientes, movimientosCompletos } from './logic.js';
 
 /** Cuántos movimientos recientes se muestran en el panel de Inicio. */
 const LIMITE_RECIENTES = 5;
+
+/**
+ * PERF.2: ambas derivaciones concatenan y ordenan las 3 fuentes completas
+ * (gastos + ingresos puntuales + aportes) aunque `movimientosRecientes()`
+ * solo muestre 5 filas. El caller pasa un objeto envoltorio nuevo en cada
+ * llamada (`{ gastos, ... }`), así que `extraerClave` compara los arrays de
+ * adentro, no el envoltorio (que siempre sería una referencia distinta).
+ */
+const _extraerFuentes = (fuentes, limite) => [
+  fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes,
+  fuentes?.categoriasPersonalizadas, limite,
+];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'categoriasPersonalizadas'];
+
+const _movimientosRecientesMemo = memoizar(movimientosRecientes, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
+const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 
 /**
  * Cuántas entradas (ítems + divisores de mes) se agregan al DOM por lote en
@@ -52,7 +69,7 @@ export function renderActividadReciente() {
   const el = document.getElementById('panel-actividad-reciente');
   if (!el) return;
 
-  const movs = movimientosRecientes({
+  const movs = _movimientosRecientesMemo({
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
@@ -281,7 +298,7 @@ export function renderMovimientosCompletos() {
 
   _detenerCargaAutomatica();
 
-  const movs = movimientosCompletos({
+  const movs = _movimientosCompletosMemo({
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,

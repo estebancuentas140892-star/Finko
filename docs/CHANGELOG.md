@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(rendimiento): PERF.2, memoizar derivaciones pesadas de Inicio y Análisis · 2026-07-06
+
+Continuación de la auditoría de rendimiento (PERF.0/PERF.1). El harness `pnpm perf` confirmó el segundo cuello real: `resumenSemanal()`, `movimientosRecientes()`/`movimientosCompletos()` (Inicio) y el bundle de `renderAnalisis()` (~7 llamadas de primer nivel, cada una con sub-barridos propios: `serieGastosMensual` recorre 12 meses llamando `totalGastosMes` cada uno, `calcularComparacionCategorias` recorre el mes actual y el anterior, `detectarPatronGastoSemanal` recorre 90 días) recalculaban sobre todo el historial en cada `state:change` relevante, **incluso en re-renders redundantes**: `renderAll()` repintando el dashboard sin que esos datos hubieran cambiado, o dos listeners reaccionando a una misma acción del usuario (ej. editar un gasto-abono dispara `state:change` para `gastos` y para `compromisos` por separado, cada uno con su propio recálculo completo).
+
+**Solución:** `modules/infra/memo.js` (nuevo), con `memoizar()`: caché de 1 entrada que invalida contra dos señales, cualquiera de las dos basta para forzar el recálculo (nunca se sirve un resultado dudoso): identidad de referencia de los argumentos (cubre el caso de tests que reasignan `S.gastos = [...]` directo, sin pasar por `EventBus`) y un contador de revisión por sección, alimentado por el propio `EventBus` (`state:change`), que ya es la señal canónica de mutación en toda la app. Sin Proxies ni observers sobre `S` (ADN 4). Aplicado a `resumenSemanal()`, a `movimientosRecientes()`/`movimientosCompletos()` (con un `extraerClave` propio, porque esas dos funciones reciben un objeto envoltorio nuevo en cada llamada: `extraerClave` compara los arrays de adentro, no el envoltorio) y al bundle consolidado `_calcularDatosAnalisis()` (nuevo en `analisis/view.js`, junta las ~7 llamadas de `renderAnalisis()` en una sola unidad memoizable). Ninguna función deja de escribir el DOM en cada render: el cacheo es solo de cómputo, nunca de pintado, así que el HTML resultante es idéntico con o sin cache hit.
+
+**Riesgo de medición evitado y documentado:** el harness original medía llamando a la misma función N veces sin cambiar `S` entre medidas; tras esta fase eso convierte casi todas las repeticiones en cache hits, midiendo un escenario real (re-render redundante) pero no el costo de un recálculo genuino. `bench.perf.js` ahora separa ambos: "frío" (`invalidar()` fuerza un `state:change` antes de cada muestra, cache miss garantizado) y "caché" (sin invalidar). En frío, el costo no cambia respecto a la línea base de PERF.0/PERF.1 (sin regresión); en caché, Inicio pasa de 4,3-97,4 ms a 2,2-16,9 ms (1.000 a 10.000 gastos) y Análisis de 4,3-16,3 ms a 2,9-4,6 ms **planos**, ya no crece con el volumen de historial.
+
+Primer análisis a fondo del dominio Análisis documentado en `docs/contexto/analisis.md` (ficha nueva, regla 2.6): dónde vive cada pieza, riesgos conocidos (`_renderEstadoRenta()` queda fuera del bundle memoizado a propósito, es un solo barrido).
+
+**Validación:** 2219/2219 unit (10 tests nuevos en `tests/unit/memo.test.js`: cache hit/miss por referencia, por sección observada/no observada, `extraerClave` con envoltorio) + 151/151 E2E verdes en Chromium real (Playwright). SW v331 → v332.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/memo.js` | Nuevo: `memoizar()`, caché de 1 entrada por identidad de referencia + revisión de sección. |
+| `modules/dominio/resumen/view.js` | `resumenSemanal()` envuelta en `_resumenSemanalMemo`. |
+| `modules/dominio/movimientos/view.js` | `movimientosRecientes()`/`movimientosCompletos()` envueltas con `_extraerFuentes` propio. |
+| `modules/dominio/analisis/view.js` | `_calcularDatosAnalisis()` nuevo (consolida 7 llamadas en 1), envuelto en `_calcularDatosAnalisisMemo`. |
+| `scripts/perf/bench.perf.js` | Medición "frío"/"caché" separada (`invalidar()`, `antesDeCadaMuestra`) para no confundir cache hits del harness con una mejora real. |
+| `tests/unit/memo.test.js` | Nuevo: 10 tests del helper de memoización. |
+| `docs/contexto/analisis.md` | Nuevo: primer análisis a fondo del dominio Análisis. |
+| `docs/contexto/inicio.md`, `docs/contexto/README.md` | Bloques de Inicio/Movimientos/Resumen actualizados; índice de fichas. |
+| `docs/HANDOFF.md` | PERF.2 al tope de "últimas 5". |
+| `service-worker.js` | `infra/memo.js` agregado a `CORE_ASSETS`; v331 → v332. |
+
+---
+
 ### perf(movimientos): PERF.1, paginar por lotes la vista completa de Movimientos · 2026-07-06
 
 Esteban pidió una auditoría de rendimiento completa (temor: que la app se vuelva lenta con años de datos, y que un cambio en una sección recalcule toda la app). **PERF.0** construyó primero el harness de medición: `pnpm perf` (`scripts/perf/seed.js` genera un estado determinista de hasta 10.000 gastos con un PRNG de semilla fija; `scripts/perf/bench.perf.js` mide en happy-dom el costo de los widgets de Inicio, Análisis, Movimientos y la persistencia; corre fuera de `pnpm test` vía `vitest.perf.config.js`). La auditoría en sí confirmó que el temor central estaba mayormente resuelto: `renderSmart()` ya corta el render por sección (hash-gate), así que editar un gasto no recalcula Metas/Inversiones/Análisis. El cuello real medido: la vista completa de Movimientos (`#movimientos`) construía **todos** los nodos del historial de una sola vez, ~3,9 s con 10 años de datos simulados.

@@ -8,6 +8,7 @@ import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import { estadoVigenciaLegal } from '../../core/constants.js';
 import { sparkline, donut, colorearSegmentos, progressRing } from '../../infra/svg.js';
 import { icon } from '../../infra/icons.js';
+import { memoizar } from '../../infra/memo.js';
 import { gastosMes } from '../gastos/logic.js';
 import {
   generarResumen, serieGastosMensual, seriePorCategoria,
@@ -17,6 +18,44 @@ import {
 } from './logic.js';
 
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
+
+/**
+ * PERF.2: `renderAnalisis()` hacía ~7 barridos completos de `S.gastos` (cada
+ * uno con sub-barridos propios, ej. `serieGastosMensual` recorre 12 meses)
+ * en cada `state:change` de `SECCIONES_OBSERVADAS`. Consolidar todo en una
+ * sola función memoizada evita repetir el cómputo cuando ninguno de los
+ * arrays de origen cambió desde el último render (ej. `renderAll()` vuelve
+ * a pintar el dashboard sin que `gastos`/`compromisos`/etc. se hayan tocado).
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @param {import('../../core/state.js').Cuenta[]} cuentas
+ * @param {import('../../core/state.js').Meta[]} metas
+ * @param {import('../../core/state.js').Apartado[]} apartados
+ * @param {import('../../core/state.js').Inversion[]} inversiones
+ * @param {number} anio
+ * @param {number} mes
+ * @param {string} fechaHoy
+ */
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, anio, mes, fechaHoy) {
+  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones);
+
+  // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
+  const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
+  const gastosDelMes = gastosMes(gastos, anio, mes);
+  const segmentosCat = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
+
+  // G.2: comparación vs mes anterior y patrón semanal.
+  const comparacion   = calcularComparacionCategorias(gastos, anio, mes);
+  const patronSemanal = detectarPatronGastoSemanal(gastos, fechaHoy);
+
+  return { resumen, serieGastos, segmentosCat, comparacion, patronSemanal };
+}
+
+const _calcularDatosAnalisisMemo = memoizar(
+  _calcularDatosAnalisis,
+  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones'],
+);
 
 /**
  * Renderiza el análisis completo en `#panel-analisis`.
@@ -30,18 +69,9 @@ export function renderAnalisis() {
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
 
-  const resumen = generarResumen(
-    S.gastos, S.compromisos, S.cuentas, anio, mes, S.metas, S.apartados, S.inversiones
+  const { resumen, serieGastos, segmentosCat, comparacion, patronSemanal } = _calcularDatosAnalisisMemo(
+    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes, fechaHoy,
   );
-
-  // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
-  const serieGastos    = serieGastosMensual(S.gastos, anio, mes, 12);
-  const gastosDelMes   = gastosMes(S.gastos, anio, mes);
-  const segmentosCat   = colorearSegmentos(seriePorCategoria(gastosDelMes, 6));
-
-  // G.2: comparación vs mes anterior y patrón semanal.
-  const comparacion   = calcularComparacionCategorias(S.gastos, anio, mes);
-  const patronSemanal = detectarPatronGastoSemanal(S.gastos, fechaHoy);
 
   // Orden de lectura (F8): primero "cómo estoy" (salud + patrimonio), luego
   // "a dónde va mi dinero" (tendencia + categorías). El detalle fino de gastos

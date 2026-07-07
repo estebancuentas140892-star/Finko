@@ -12,7 +12,17 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
 import { CATEGORIA_ICONO } from '../../core/constants.js';
+import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal, hayResumen } from './logic.js';
+
+/**
+ * PERF.2: `resumenSemanal()` barre `S.gastos` varias veces (ventanas de 7 y
+ * 14 días, top de categoría, días activos del mes). `renderAll()` invoca este
+ * render en cada mutación relevante aunque el usuario esté en otra sección;
+ * memoizar evita repetir el barrido cuando `gastos` no cambió desde el último
+ * cálculo.
+ */
+const _resumenSemanalMemo = memoizar(resumenSemanal, ['gastos']);
 
 /**
  * Texto de la tendencia según la comparación con la semana previa.
@@ -62,7 +72,7 @@ export function renderPanelResumen() {
   }
   el.hidden = false;
 
-  const r = resumenSemanal(gastos, hoyISO);
+  const r = _resumenSemanalMemo(gastos, hoyISO);
 
   const statTop = r.top
     ? `
