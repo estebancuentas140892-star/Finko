@@ -115,4 +115,26 @@ Verificado: 2233/2233 unit (5 tests nuevos del grupo diferido en `tests/unit/ana
 
 Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de `fechaLegible` en `tests/unit/utils.test.js`) + 155/155 E2E en Chromium real + `pnpm perf`. SW v336 → v337.
 
-> Quedan de PERF.7: **7b** (folding de `calcularEstadoRenta`/`hayResumen` al bundle memoizado) y **7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). Ver [BOARD.md](../../docs/BOARD.md).
+---
+
+## PERF.7b (2026-07-07): fold de `hayResumen` en el bundle memoizado de resumen
+
+**Cambio:** `renderPanelResumen()` ([resumen/view.js](../../modules/dominio/resumen/view.js)) llamaba a `hayResumen(gastos, hoyISO)` (barrido propio de `S.gastos`, sin memoizar) para decidir si mostrar el panel, y **después** llamaba a `_resumenSemanalMemo()` (memoizada, PERF.2) para el contenido. `resumenSemanal()` ya calcula `registros` (gastos en los últimos 7 días) internamente: la condición de "sin actividad" se deriva de ese campo en vez de repetir el barrido. Se llama al bundle memoizado una sola vez.
+
+**Hallazgo de alcance (importante):** la otra mitad prevista de PERF.7b, memoizar `calcularEstadoRenta()` (Análisis, K.3), se descartó tras el análisis: depende de `S.config.datosFiscales`, que `config/index.js` **muta sin emitir `state:change`** (handler de `#form-datos-fiscales`, guarda directo + `save()` + `renderPanelConfig()`). Memoizarla contra `gastos`/`cuentas`/`inversiones` habría servido un resultado **obsoleto** tras editar "Datos de renta" y navegar a Análisis sin pasar por un `renderAll()` completo: un bug de datos, no solo una optimización perdida. Se deja sin memoizar; el arreglo correcto (emitir `state:change` en ese handler) es un cambio de comportamiento fuera del alcance de esta tarea de rendimiento.
+
+| gastos | Inicio frío (7a → 7b) | Inicio caché (7a → 7b) |
+|---|---|---|
+| 1.000  | 4.3 → **8.5** (regresión, ver lectura) | 2.1 → **0.7** |
+| 5.000  | 46.8 → **39.5** (~16 % menos) | 8.1 → **0.9** |
+| 10.000 | 93.5 → **79.8** (~15 % menos) | 15.2 → **0.8** |
+
+**Lectura (con la regresión reportada, no escondida):**
+
+1. **Ruta caché: mejora uniforme y grande a todos los volúmenes**, queda **plana en ~0,7-0,9 ms**. Es la ganancia principal: `hayResumen()` era la única llamada del panel que NO pasaba por el memo, así que corría un barrido completo de `S.gastos` en **cada** render sin importar si había cache hit. Esto es lo que se paga en cada `renderAll()` redundante (ej. registrar un gasto repinta Inicio, o cualquier `state:change` de otra sección que dispare el dashboard sin que `gastos` cambiara).
+2. **Ruta fría a 5.000/10.000: mejora ~15-16 %.** Antes: 1 barrido de `hayResumen` + 5 barridos de `resumenSemanal` (cuando había actividad esta semana que mostrar). Ahora: solo los 5 de `resumenSemanal`, siempre.
+3. **Ruta fría a 1.000: regresión real de ~4 ms** (4.3 → 8.5), no ruido de medición (reproducida en 2 corridas). Causa: con la semilla de 10 años y solo 1.000 gastos, la ventana de "últimos 7 días" muy seguido no tiene ningún gasto (dato disperso). Antes, `hayResumen()` (1 barrido barato) devolvía `false` y el panel se ocultaba **sin llegar a llamar** a `resumenSemanal()` (5 barridos). Ahora `resumenSemanal()` se llama siempre para leer `.registros`, así que ese camino "sin actividad" pasó de pagar 1 barrido a pagar 5. Se acepta el trade porque: (a) en frío solo se paga una vez por mutación real de `gastos`, no por cada render; (b) el costo absoluto es ~4 ms, imperceptible; (c) a medida que el historial crece (el escenario que le preocupa a Esteban, años de datos), la ventana semanal casi siempre tiene actividad, así que el caso "sin resumen" se vuelve raro y el patrón se invierte a mejora clara (5.000/10.000 ya lo muestran).
+
+**Validación:** 2261/2261 unit (4 tests nuevos de `renderPanelResumen()` en `tests/unit/resumen.test.js`: sin contenedor no revienta, oculta sin gastos en la ventana, oculta sin ningún gasto, muestra con actividad) + 155/155 E2E en Chromium real + `pnpm perf`. SW v337 → v338.
+
+> Queda **PERF.7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). `calcularEstadoRenta` queda fuera de PERF.7 (ver hallazgo de alcance arriba); si se retoma, primero hay que emitir `state:change` desde el handler de datos fiscales en `config/index.js`. Ver [BOARD.md](../../docs/BOARD.md).

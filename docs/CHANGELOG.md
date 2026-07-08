@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(rendimiento): PERF.7b, fold de hayResumen() en el bundle memoizado del resumen semanal · 2026-07-07
+
+Segunda rebanada de **PERF.7**. `renderPanelResumen()` ([resumen/view.js](../../modules/dominio/resumen/view.js)) llamaba a `hayResumen(gastos, hoyISO)` (barrido propio de `S.gastos`, **sin memoizar**) para decidir si mostrar el panel, y recién después llamaba a `_resumenSemanalMemo()` (memoizada desde PERF.2) para el contenido. `resumenSemanal()` ya calcula `registros` (gastos en los últimos 7 días) como parte de su resultado: la condición de "sin actividad" ahora se lee de ese campo, una sola llamada memoizada en vez de dos (una sin cachear).
+
+**Hallazgo de alcance importante:** la otra mitad prevista de esta tarjeta, memoizar `calcularEstadoRenta()` (Análisis, K.3), se descartó tras analizarla: depende de `S.config.datosFiscales`, y `config/index.js` **muta ese dato sin emitir `state:change`** (el handler de `#form-datos-fiscales` guarda directo + `save()` + `renderPanelConfig()`, sin pasar por el EventBus como el resto de la app). Memoizarla contra `gastos`/`cuentas`/`inversiones` habría servido un resultado **obsoleto** después de editar "Datos de renta" y navegar a Análisis sin pasar por un `renderAll()` completo: eso es un bug de datos, no una optimización perdida. Se registró como **PERF.7d** (arreglar la emisión de eventos primero, memoizar después) en vez de forzarla en esta tarjeta.
+
+**Medición (`pnpm perf`, columna "Inicio", que mide `renderPanelResumen` + `renderActividadReciente`):**
+
+| gastos | Inicio frío (7a → 7b) | Inicio caché (7a → 7b) |
+|---|---|---|
+| 1.000  | 4,3 → 8,5 ms (regresión, ver nota) | 2,1 → **0,7 ms** |
+| 5.000  | 46,8 → **39,5 ms** (~16 % menos) | 8,1 → **0,9 ms** |
+| 10.000 | 93,5 → **79,8 ms** (~15 % menos) | 15,2 → **0,8 ms** |
+
+La ruta **caché** (re-render de Inicio sin cambios en `gastos`, el caso más frecuente en uso real) queda plana en ~0,8 ms a cualquier volumen. La ruta **fría** mejora ~15-16 % a 5.000/10.000 gastos. A 1.000 gastos hay una **regresión real de ~4 ms** (no ruido, reproducida en 2 corridas): con la semilla de 10 años y poca densidad, la ventana de "últimos 7 días" seguido no tiene gasto; antes `hayResumen()` (1 barrido) devolvía `false` sin llegar a calcular el bundle completo (5 barridos), ahora `resumenSemanal()` se calcula siempre para leer `.registros`. Se acepta el trade porque el costo absoluto es imperceptible (~4 ms), solo se paga una vez por mutación real (no por render), y se invierte a mejora clara cuando el historial crece, que es el escenario que le preocupa a Esteban. Detalle completo, sin maquillar la regresión, en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
+
+**Validación:** 2261/2261 unit (4 tests nuevos de `renderPanelResumen()` en `tests/unit/resumen.test.js`) + 155/155 E2E en Chromium real + `pnpm perf`. SW v337 → v338.
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/resumen/view.js` | `renderPanelResumen()` deriva la condición de "sin actividad" de `r.registros` en vez de llamar a `hayResumen()` por separado. |
+| `tests/unit/resumen.test.js` | 4 tests nuevos de `renderPanelResumen()` (sin contenedor, oculta sin actividad/sin gastos, muestra con actividad). |
+| `scripts/perf/BASELINE.md` | Sección PERF.7b con la medición completa, incluida la regresión a 1.000 gastos. |
+| `docs/BOARD.md` | PERF.7b cerrada (parcial); PERF.7d nueva (arreglar emisión de eventos de datos fiscales, precondición para memoizar `calcularEstadoRenta`). |
+| `service-worker.js` | v337 → v338. |
+
+---
+
 ### perf(rendimiento): PERF.7a, Intl.DateTimeFormat cacheado en las vistas de lista · 2026-07-07
 
 Primera rebanada de **PERF.7**, salida de la segunda pasada de la auditoría de rendimiento (2026-07-07). Esa pasada confirmó que lo grueso ya estaba resuelto (eventos por sección, `renderSmart` hash-gate, `infra/memo.js`, windowing) y corrigió un hallazgo propio: el doble-render caro que motivaba PERF.6 **no ocurre**, porque `renderSmart` solo pinta la sección activa y Análisis (solo-lectura) nunca se muta desde sí mismo. Se reordenó la prioridad hacia PERF.7, que es una ganancia **medida e incondicional**.

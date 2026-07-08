@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   gastoUltimos7Dias,
   gastoSemanaPrevia,
@@ -9,6 +9,8 @@ import {
   resumenSemanal,
   hayResumen,
 } from '../../modules/dominio/resumen/logic.js';
+import { renderPanelResumen } from '../../modules/dominio/resumen/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
 //
@@ -210,5 +212,48 @@ describe('hayResumen()', () => {
   it('es false cuando no hubo gasto en los últimos 7 días', () => {
     expect(hayResumen([gasto({ fecha: '2026-06-01' })], HOY)).toBe(false);
     expect(hayResumen([], HOY)).toBe(false);
+  });
+});
+
+// ── renderPanelResumen() (PERF.7b) ──────────────────────────────────
+
+describe('renderPanelResumen()', () => {
+  const elPanel = () => document.getElementById('panel-resumen');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<section id="panel-resumen"></section>';
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 13)); // 2026-06-13, mismo HOY que el resto del archivo
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('no revienta si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    S.gastos = [gasto({ fecha: '2026-06-13' })];
+    expect(() => renderPanelResumen()).not.toThrow();
+  });
+
+  it('oculta el panel y lo vacía sin gastos en los últimos 7 días (PERF.7b: r.registros === 0 reemplaza a hayResumen)', () => {
+    S.gastos = [gasto({ fecha: '2026-06-01' })]; // fuera de la ventana de 7 días
+    renderPanelResumen();
+    expect(elPanel().hidden).toBe(true);
+    expect(elPanel().innerHTML).toBe('');
+  });
+
+  it('oculta el panel sin ningún gasto registrado', () => {
+    S.gastos = [];
+    renderPanelResumen();
+    expect(elPanel().hidden).toBe(true);
+  });
+
+  it('muestra el panel con al menos un gasto en los últimos 7 días', () => {
+    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
+    renderPanelResumen();
+    expect(elPanel().hidden).toBe(false);
+    expect(elPanel().innerHTML).toContain('Resumen de la semana');
+    expect(elPanel().innerHTML).toContain('$20.000');
   });
 });

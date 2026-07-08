@@ -13,7 +13,7 @@ import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, iconoCategoria } from '../../infra/icons.js';
 import { CATEGORIA_ICONO } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
-import { resumenSemanal, hayResumen } from './logic.js';
+import { resumenSemanal } from './logic.js';
 
 /**
  * PERF.2: `resumenSemanal()` barre `S.gastos` varias veces (ventanas de 7 y
@@ -57,6 +57,13 @@ function _tonoTendencia(direccion) {
 /**
  * Renderiza la card de resumen semanal. No-op si el contenedor no existe.
  * Oculta el panel cuando no hay actividad suficiente esta semana.
+ *
+ * PERF.7b: antes se llamaba a `hayResumen()` (barrido propio, sin memoizar)
+ * y luego a `_resumenSemanalMemo()`, duplicando el barrido de "registros de
+ * los últimos 7 días" que `resumenSemanal()` ya calcula. Se llama al bundle
+ * memoizado una sola vez y la condición de "sin actividad" se deriva de su
+ * campo `registros` (misma regla que `hayResumen`: al menos 1 gasto en los
+ * últimos 7 días).
  */
 export function renderPanelResumen() {
   const el = document.getElementById('panel-resumen');
@@ -64,15 +71,14 @@ export function renderPanelResumen() {
 
   const hoyISO = hoy();
   const gastos = S.gastos;
+  const r = _resumenSemanalMemo(gastos, hoyISO);
 
-  if (!hayResumen(gastos, hoyISO)) {
+  if (r.registros === 0) {
     el.innerHTML = '';
     el.hidden = true;
     return;
   }
   el.hidden = false;
-
-  const r = _resumenSemanalMemo(gastos, hoyISO);
 
   const statTop = r.top
     ? `

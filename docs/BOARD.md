@@ -281,12 +281,15 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 _(**PERF.7a cerrada** el 2026-07-07: `Intl.DateTimeFormat` cacheado por firma en `formateadorFecha()` (`infra/utils.js`), usado en `fechaLegible`, `_mesAnioLabel` y `fechaCorta`. Medido: "Movs 1er lote" pasa de 24-48 ms a **~8,2 ms planos**. Verificado: 2257 unit + 155 E2E + `pnpm perf`. Ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) y CHANGELOG.)_
 
-#### PERF.7b - Folding de `calcularEstadoRenta` y `hayResumen` al bundle memoizado
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : `calcularEstadoRenta()` (barrido O(gastos): patrimonio bruto + gastos del año) corre en cada `renderAnalisis()` fuera del bundle memoizado de PERF.2; `hayResumen()` barre gastos en cada `renderPanelResumen()` de Inicio antes del `resumenSemanal()` ya memoizado. Sumarlas a la memoización aplana la ruta caché (re-render de la sección sin cambios). Beneficio acotado: solo aplica cuando la sección ya está visible y se re-renderiza.
-- Secciones  : Transversal (`analisis/view.js`, `resumen/view.js`)
-- Depende de : nada.
+_(**PERF.7b cerrada** el 2026-07-07, solo la mitad segura: `renderPanelResumen()` llamaba a `hayResumen()` (barrido propio, sin memoizar) antes de `_resumenSemanalMemo()`; ahora se deriva la condición de "sin actividad" del campo `registros` que `resumenSemanal()` ya calcula, una sola llamada memoizada. Medido: ruta caché de "Inicio" queda plana en ~0,8 ms a cualquier volumen (antes 2,1-15,2 ms); ruta fría mejora ~15 % a 5.000/10.000 gastos, con una regresión aceptada de ~4 ms a 1.000 gastos (dato disperso: antes se ocultaba el panel sin llegar a calcular el bundle completo). Detalle honesto en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md). **La mitad de `calcularEstadoRenta` NO se hizo:** depende de `S.config.datosFiscales`, que `config/index.js` muta sin emitir `state:change` (handler de `#form-datos-fiscales`); memoizarla habría servido renta **obsoleta** tras editar Datos de renta y navegar a Análisis. Ver PERF.7d abajo.)_
+
+#### PERF.7d - Emitir `state:change` al guardar datos fiscales, y ENTONCES memoizar `calcularEstadoRenta`
+- Prioridad  : baja
+- Estado     : pendiente. Precondición para retomar la mitad descartada de PERF.7b.
+- Objetivo   : el handler de `#form-datos-fiscales` (`config/index.js`) muta `S.config.datosFiscales` + `save()` + `renderPanelConfig()` directo, sin pasar por `EventBus.emit('state:change', ...)` como el resto de la app (vía `crud.js` o emisión manual). Es una inconsistencia real (no solo de rendimiento): hoy, el "Estado de tu renta" de Análisis solo refleja un dato fiscal recién editado si el usuario navega away+back (hashchange fuerza un render fresco) o si algo más dispara un `renderAll()`; si el usuario ya estaba en `#analisis` en otra pestaña/vista con dos paneles, no se entera. Corregido eso (emitir `state:change` con `section: 'config'`, y sumar `'config'` a `SECCIONES_OBSERVADAS` de `analisis/index.js`), recién ahí es seguro memoizar `calcularEstadoRenta()` con `S.config.datosFiscales` como parte de la clave.
+- Secciones  : Transversal (`config/index.js`, `analisis/index.js`, `analisis/view.js`)
+- Archivos   : `modules/dominio/config/index.js` (handler `#form-datos-fiscales`), `modules/dominio/analisis/index.js` (`SECCIONES_OBSERVADAS`), `modules/dominio/analisis/view.js` (`calcularEstadoRenta` al memo)
+- Depende de : nada. Es un fix de consistencia de eventos con un beneficio de rendimiento secundario, no al revés.
 - Modelo     : Sonnet 5 - Alto
 
 #### PERF.7c - Warm-up de derivaciones pesadas en idle
