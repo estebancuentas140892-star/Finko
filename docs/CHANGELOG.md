@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr) + feat(ui): IV.1, fundación de tokens de identidad de color por sección · 2026-07-07
+
+Primera fase de la iniciativa "Identidad de color por sección" ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), aceptada por Esteban el mismo día). Brief: la app depende demasiado del verde y el negro; cada sección debería tener un color reconocible en toda la experiencia (tarjetas, botones, iconos, barras, gráficos, calendario). El análisis encontró que los tokens `--fk-dom-*` ya existían en `tokens.css` pero sub-desplegados (solo en tejas, dots y badges pequeños), **sin rampa de tema claro** (hueco WCAG real: varios dominios por debajo de 2:1 de contraste sobre blanco) y con `--fk-dom-compromisos` **idéntico** a `--fk-danger` (#ff4757 compartido entre "es una deuda" y "hubo un error").
+
+Las 5 decisiones abiertas del ADR (P1 a P5) se resolvieron todas con la opción recomendada: gastos/egresos se mantienen cálidos y neutros (el [ADR 019](DECISIONS/019-limites-por-rol.md) "gastar no es incumplir" sigue vigente, sin cambios); Deudas se separa del rojo de error; Límites se queda en amarillo; el hub Ahorros usa una familia de colores relacionados en vez de 4 matices sueltos que chocarían entre sí (Metas azul habría colisionado con Mis cuentas).
+
+**Cambios de tokens:** `--fk-dom-agenda` nuevo (índigo `#7d8cf0`, Calendario no tenía color propio); `--fk-dom-compromisos` de `#ff4757` a frambuesa `#ea5385`; `--fk-dom-analisis` a pizarra neutra `#8f9bb3` (Análisis interpreta a los demás dominios en vez de tener datos propios, así que se retira de la zona verde-turquesa saturada); `--fk-dom-inversion` hereda el turquesa `#2fd2bf` que Análisis deja libre. Los 11 dominios ganan `--fk-dom-X-bg` (`color-mix` al 12%, mismo valor en ambos temas) y `--fk-dom-X-text` (variante segura como texto/UI significativa, con override obligatorio en `body.light-theme` que corrige el hueco WCAG).
+
+**Hallazgo corregido antes de implementar, no a ojo:** la frambuesa que proponía el texto original del ADR (`#ef5777`) resultó, al calcular su HSL real, estar a solo 7° de matiz de `--fk-danger` — casi indistinguible con daltonismo protán pese a no ser el mismo hex. Se recalculó a `#ea5385`, separada 14-19° de matiz y con luminosidad propia (una separación robusta contra daltonismo no depende solo del matiz), verificando con la fórmula de contraste WCAG que los 11 dominios siguen pasando ≥4.98:1 sobre superficies oscuras y los 11 `-text` ≥4.5:1 sobre blanco y `#f6f7fa` en tema claro.
+
+**Verificado en el navegador, no solo en código:** con Chromium real vía preview, la teja de "Deudas" en el menú "Más" resuelve a `rgb(234,83,133)` (=`#ea5385`) exacto, "Análisis" a `rgb(143,155,179)` (=`#8f9bb3`) exacto, en ambos temas. La verificación también encontró (preexistente, no introducido por esta tarea) que algunos usos ya desplegados leen el token base directo como color de texto en vez de la variante `-text` (ej. `.inversion-hero__tipo-pct` de `analysis.css`, badges de `nudges.css`), fallando contraste en tema claro (`100%` de Inversión da 1.89:1 contra blanco). Es exactamente el hueco que la iniciativa se propuso cerrar; queda documentado con los archivos y selectores exactos para que IV.2 lo resuelva sin tener que volver a auditar.
+
+**Validación:** 2265/2265 unit (sin cambios de comportamiento JS, cero tests nuevos) + 155/155 E2E en Chromium real + verificación manual de contraste (axe-core no cubre la regla `color-contrast` en happy-dom, ver nota en `a11y.test.js`). SW v339 → v340.
+
+| Archivo | Cambio |
+|---|---|
+| `styles/tokens.css` | Recoloreo de compromisos/análisis/inversión; `--fk-dom-agenda` nuevo; rampa `-bg`/`-text` para los 11 dominios. |
+| `styles/themes.css` | Override de los 11 `--fk-dom-X-text` en `body.light-theme`. |
+| `docs/DESIGN_SYSTEM.md` | Tabla de dominios actualizada (valores oscuro/claro) + documentación de la rampa de 3 tokens. |
+| `docs/DECISIONS/031-identidad-de-color-por-seccion.md` | ADR aceptado; corrección del hex de compromisos tras el cálculo de contraste real. |
+| `docs/BOARD.md` | IV.1 cerrada con el hallazgo exacto para IV.2; IV.2/IV.3 desbloqueadas. |
+| `service-worker.js` | v339 → v340. |
+
+---
+
 ### perf(rendimiento): PERF.7d, calcularEstadoRenta memoizada sin tocar config/index.js · 2026-07-07
 
 Tercera rebanada de **PERF.7**, y cierre de la mitad de `calcularEstadoRenta()` que PERF.7b había descartado por riesgo de datos obsoletos. `_renderEstadoRenta(anio)` ([analisis/view.js](../../modules/dominio/analisis/view.js)) llamaba a `calcularEstadoRenta(S, anio)` (barrido de `patrimonioBruto` + `totalGastosAnio`) **sin memoizar**, en cada `renderAnalisis()`.

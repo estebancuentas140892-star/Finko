@@ -287,28 +287,22 @@ _(**PERF.7d cerrada** el 2026-07-07, con un alcance más chico que el planteado 
 
 > Iniciativa Identidad de color por sección 2026-07 ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), **aceptada por Esteban el 2026-07-07**): brief del 2026-07-07 (color característico por sección en toda la experiencia + números que comunican + replanteo de iconos). El análisis encontró que los tokens `--fk-dom-*` ya existen pero están sub-desplegados, sin rampa de tema claro (hueco WCAG real), con dominios faltantes (`agenda`, `apartados`) y con la colisión deudas = danger. Las 5 decisiones abiertas (P1 a P5) se resolvieron todas con la opción recomendada: gastos/egresos se quedan cálidos y neutros (ADR 019 sin cambios), Deudas se separa del danger en frambuesa, Límites se queda en amarillo, hub Ahorros en familia de colores (no 4 matices únicos). Iconografía dirigida DESPUÉS del color (no un 4.º redibujo global), condicionada a revisión visual tras IV.2.
 
-#### IV.1 - Fundación de tokens de identidad
-- Prioridad  : alta dentro de la iniciativa (bloquea a las demás)
-- Estado     : pendiente (ADR 031 aprobado, lista para empezar)
-- Objetivo   : `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` pasa de `#ff4757` a frambuesa `#ef5777` (se separa del danger); `--fk-dom-analisis` pasa a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf` que Análisis deja libre; rampa `-text`/`-bg` por dominio con overrides obligatorios en `body.light-theme` (hoy los valores oscuros se sirven sobre blanco y fallan AA); actualizar DESIGN_SYSTEM.md; verificación de contraste (4.5:1 texto, 3:1 UI, ambos temas) + simulador de daltonismo.
-- Secciones  : Transversal (`styles/tokens.css`, `styles/themes.css`, `docs/DESIGN_SYSTEM.md`)
-- Depende de : nada (ADR 031 aprobado)
-- Modelo     : Sonnet 5 - Alto (calibración de contraste con criterio, sin lógica)
+_(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` de `#ff4757` a frambuesa `#ea5385`; `--fk-dom-analisis` a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf`. Cada uno de los 11 dominios ganó `-bg` (`color-mix` 12%, mismo valor en ambos temas) y `-text` (variante segura como texto/UI, con override en `body.light-theme`). **Hallazgo corregido antes de implementar:** la frambuesa que proponía el ADR quedaba a solo 7° de matiz del rojo de `--fk-danger` (verificado con cálculo real de HSL, no a ojo) — casi indistinguible con daltonismo protán. Se ajustó a `#ea5385` (antes `#ef5777` en el texto del ADR), separada 14-19° de matiz Y con luminosidad propia, sin perder contraste (verificado con WCAG real: los 11 dominios pasan ≥4.98:1 en oscuro y los 11 `-text` pasan ≥4.5:1 en claro contra `#fff` y `#f6f7fa`, cálculo en `/tmp/summary.mjs` de la sesión, no reproducido en el repo). Verificado en el navegador: la teja de "Deudas" en el menú "Más" resuelve a `rgb(234,83,133)` (=`#ea5385`) exacto, "Análisis" a `rgb(143,155,179)` (=`#8f9bb3`) exacto. **Hueco real encontrado para IV.2 (no introducido por esta tarea, preexistente):** varios usos ya desplegados leen el token base `--fk-dom-X` directo como color de texto (ej. `.inversion-hero__tipo-pct` en `analysis.css`, badges en `nudges.css`) en vez de `-text`; en tema claro esto falla contraste (verificado: el "100%" de Inversión da 1.89:1 contra blanco). Es el gap que ya documentaba el ADR 031 (hallazgo 2); IV.2 debe auditar y migrar cada uso de `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`, empezando por `.inversion-hero__tipo-pct` y `.dom-badge--*`. Validado: 2265 unit + 155 E2E + verificación manual de contraste en Chromium real (axe-core no cubre `color-contrast` en happy-dom). SW v339 → v340.)_
 
 #### IV.2 - Despliegue del color por superficie
 - Prioridad  : alta dentro de la iniciativa
-- Estado     : bloqueada por IV.1
-- Objetivo   : encabezado de sección con teja + acento del dominio; nav activa teñida por sección; barras/anillos de progreso en el color del dominio; franja de modales de registro; `.cal-dot--fijo` de amarillo a índigo; completar tejas/badges en Inicio y Movimientos donde falten. Partir en sub-rebanadas verificables (IV.2a nav+encabezados, IV.2b progreso+modales, IV.2c calendario+inicio).
+- Estado     : pendiente (IV.1 cerrada, lista para empezar)
+- Objetivo   : encabezado de sección con teja + acento del dominio; nav activa teñida por sección; barras/anillos de progreso en el color del dominio; franja de modales de registro; `.cal-dot--fijo` de amarillo a índigo; completar tejas/badges en Inicio y Movimientos donde falten; **migrar `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`** en todo uso como texto/UI significativa (empezar por `.inversion-hero__tipo-pct` de `analysis.css` y `.dom-badge--*` de `nudges.css`, verificados con contraste real bajo AA en tema claro durante IV.1). Partir en sub-rebanadas verificables (IV.2a nav+encabezados, IV.2b progreso+modales, IV.2c calendario+inicio, IV.2d migración -text donde falte).
 - Secciones  : Transversal (todas las vistas, solo CSS + atributos `data-*` existentes)
-- Depende de : IV.1
+- Depende de : nada (IV.1 cerrada)
 - Modelo     : Sonnet 5 - Alto
 
 #### IV.3 - Números y estados (D5 del ADR 031)
 - Prioridad  : media
-- Estado     : bloqueada por IV.1
+- Estado     : pendiente (IV.1 cerrada, lista para empezar; conviene después de IV.2)
 - Objetivo   : documentar y completar el criterio de montos (dirección con signo, positivo en success, egresos neutros, estados con icono) en las superficies donde falte (stats del resumen semanal, comparaciones de Análisis). Mantiene ADR 019 sin cambios (confirmado por Esteban en P1+P5).
 - Secciones  : Inicio, Análisis, Movimientos
-- Depende de : IV.1
+- Depende de : nada (IV.1 cerrada)
 - Modelo     : Sonnet 5 - Medio
 
 #### IV.4 - Iconografía dirigida post-color

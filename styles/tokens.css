@@ -66,18 +66,79 @@
   --fk-text-on-bold: #fff;       /* sobre danger/accent/info saturados */
 
   /* ── DOMINIO - color por sección de la app ───────────────────── */
-  /* Permite reconocimiento visual inmediato de cada área */
+  /* Permite reconocimiento visual inmediato de cada área (ADR 031, IV.1). */
   /* Croma armonizado: ningún hue grita más que el resto sin razón. */
-  --fk-dom-ingresos:     #1fd194;   /* verde   - ingresos (= acento de marca) */
-  --fk-dom-gastos:       #ff8a5c;   /* naranja - gastos (suavizado: no es emergencia) */
-  --fk-dom-compromisos:  #ff4757;   /* rojo    - deudas/compromisos */
-  --fk-dom-tesoreria:    #5b95f0;   /* azul    - cuentas bancarias */
-  --fk-dom-metas:        #9d73eb;   /* púrpura - objetivos de ahorro */
-  --fk-dom-analisis:     #2fd2bf;   /* turquesa - análisis/KPIs (calmado) */
-  --fk-dom-presupuesto:  #f3b740;   /* amarillo - presupuesto/sobres */
-  --fk-dom-personales:   #f06fc2;   /* rosa    - préstamos personales (calmado) */
-  --fk-dom-ahorro:       #38c98c;   /* verde menta - colchón, fondo de emergencia */
-  --fk-dom-inversion:    #4db8d8;   /* azul cian - inversión, crecimiento del capital */
+  /*
+   * Cada dominio es una base + dos acompañantes:
+   *   --fk-dom-X       color crudo. Sirve de origen a -bg y -text, y se usa
+   *                    directo en acentos decorativos (bordes finos, franjas)
+   *                    que ya llevan icono/etiqueta al lado (SC 1.4.11 exento
+   *                    de umbral: la información no depende solo del color).
+   *   --fk-dom-X-bg    fondo de tinte (12%), mismo valor en ambos temas: a
+   *                    esa opacidad compone bien sobre superficie oscura y clara.
+   *   --fk-dom-X-text  variante segura como texto/UI significativa (glifos,
+   *                    badges, dots). En oscuro es igual a --fk-dom-X (ya
+   *                    cumple AA ahí, ≥4.98:1 contra bg-surface); en claro se
+   *                    sobreescribe en body.light-theme porque el valor crudo
+   *                    fallaba WCAG AA sobre blanco (algunos por debajo de
+   *                    2:1). Ver themes.css.
+   */
+  --fk-dom-ingresos:      #1fd194;   /* verde   - ingresos (= acento de marca) */
+  --fk-dom-ingresos-bg:   color-mix(in srgb, var(--fk-dom-ingresos) 12%, transparent);
+  --fk-dom-ingresos-text: var(--fk-dom-ingresos);
+
+  --fk-dom-gastos:        #ff8a5c;   /* naranja - gastos (suavizado: no es emergencia) */
+  --fk-dom-gastos-bg:     color-mix(in srgb, var(--fk-dom-gastos) 12%, transparent);
+  --fk-dom-gastos-text:   var(--fk-dom-gastos);
+
+  /* Frambuesa: separada del rojo de --fk-danger (antes idéntico, #ff4757) por
+     matiz Y luminosidad (H340 vs H355 del danger, ~15° de diferencia; L62%
+     vs L64%), no solo por saturación. Un delta de matiz menor a ~10° es
+     difícil de distinguir con daltonismo protán. */
+  --fk-dom-compromisos:      #ea5385;   /* frambuesa - deudas/compromisos (ADR 031, antes = --fk-danger) */
+  --fk-dom-compromisos-bg:   color-mix(in srgb, var(--fk-dom-compromisos) 12%, transparent);
+  --fk-dom-compromisos-text: var(--fk-dom-compromisos);
+
+  --fk-dom-tesoreria:      #5b95f0;   /* azul    - cuentas bancarias */
+  --fk-dom-tesoreria-bg:   color-mix(in srgb, var(--fk-dom-tesoreria) 12%, transparent);
+  --fk-dom-tesoreria-text: var(--fk-dom-tesoreria);
+
+  --fk-dom-metas:      #9d73eb;   /* púrpura - objetivos de ahorro */
+  --fk-dom-metas-bg:   color-mix(in srgb, var(--fk-dom-metas) 12%, transparent);
+  --fk-dom-metas-text: var(--fk-dom-metas);
+
+  /* Pizarra neutra (ADR 031, antes turquesa #2fd2bf): Análisis interpreta a
+     los demás dominios en vez de tener datos propios, así que se retira de
+     la zona verde-turquesa saturada (marca/ahorro/inversión) para no competir
+     con ellos. El turquesa que deja libre lo hereda Inversión. */
+  --fk-dom-analisis:      #8f9bb3;   /* pizarra - análisis/KPIs (ADR 031, antes turquesa) */
+  --fk-dom-analisis-bg:   color-mix(in srgb, var(--fk-dom-analisis) 12%, transparent);
+  --fk-dom-analisis-text: var(--fk-dom-analisis);
+
+  --fk-dom-presupuesto:      #f3b740;   /* amarillo - presupuesto/sobres */
+  --fk-dom-presupuesto-bg:   color-mix(in srgb, var(--fk-dom-presupuesto) 12%, transparent);
+  --fk-dom-presupuesto-text: var(--fk-dom-presupuesto);
+
+  --fk-dom-personales:      #f06fc2;   /* rosa    - préstamos personales (calmado) */
+  --fk-dom-personales-bg:   color-mix(in srgb, var(--fk-dom-personales) 12%, transparent);
+  --fk-dom-personales-text: var(--fk-dom-personales);
+
+  --fk-dom-ahorro:      #38c98c;   /* verde menta - colchón, fondo de emergencia */
+  --fk-dom-ahorro-bg:   color-mix(in srgb, var(--fk-dom-ahorro) 12%, transparent);
+  --fk-dom-ahorro-text: var(--fk-dom-ahorro);
+
+  /* Turquesa (ADR 031, antes azul cian #4db8d8): hereda el matiz que
+     Análisis deja libre al pasar a pizarra neutra. */
+  --fk-dom-inversion:      #2fd2bf;   /* turquesa - inversión, crecimiento del capital (ADR 031) */
+  --fk-dom-inversion-bg:   color-mix(in srgb, var(--fk-dom-inversion) 12%, transparent);
+  --fk-dom-inversion-text: var(--fk-dom-inversion);
+
+  /* Índigo (ADR 031, nuevo): Calendario no tenía color propio; los fijos
+     prestaban el amarillo de Límites (IV.2 corrige ese préstamo). Separado
+     de --fk-dom-tesoreria (azul) por matiz (~15°) y luminosidad (+7pt). */
+  --fk-dom-agenda:      #7d8cf0;   /* índigo - calendario/agenda (ADR 031, nuevo) */
+  --fk-dom-agenda-bg:   color-mix(in srgb, var(--fk-dom-agenda) 12%, transparent);
+  --fk-dom-agenda-text: var(--fk-dom-agenda);
 
   /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */

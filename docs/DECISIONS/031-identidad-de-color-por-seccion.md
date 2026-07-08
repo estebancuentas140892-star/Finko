@@ -1,6 +1,6 @@
 # ADR 031 - Identidad de color por sección (dos capas: identidad + semántica)
 
-**Estado:** Aceptada por Esteban el 2026-07-07. P1 a P5 resueltos, los 5 con la opción recomendada: (P1+P5) Gastos en coral, egresos neutros con signo, ADR 019 se mantiene sin cambios; (P2) Deudas separada del danger en frambuesa `#ef5777`; (P3) Límites se queda en amarillo; (P4) hub Ahorros en familia de colores (no 4 matices únicos). La paleta de la sección D2 queda definitiva tal como estaba redactada (columna "Propuesta").
+**Estado:** Aceptada por Esteban el 2026-07-07. P1 a P5 resueltos, los 5 con la opción recomendada: (P1+P5) Gastos en coral, egresos neutros con signo, ADR 019 se mantiene sin cambios; (P2) Deudas separada del danger en frambuesa; (P3) Límites se queda en amarillo; (P4) hub Ahorros en familia de colores (no 4 matices únicos). **Implementada en IV.1 (2026-07-07):** el hex de frambuesa se corrigió de `#ef5777` (texto original de este ADR) a `#ea5385` al calcular su matiz real en HSL y encontrarlo a solo 7° del rojo de `--fk-danger` — demasiado cerca para daltonismo protán. El valor final (`#ea5385`, separado 14-19° de matiz) es el que vive en `styles/tokens.css`; ver [BOARD.md](../BOARD.md) IV.1 para el detalle de la verificación.
 **Fecha:** 2026-07-07
 **Autores:** Esteban (visión de producto), Claude Fable 5 (análisis y diseño).
 **Relación:** evoluciona el [ADR 023](023-lenguaje-de-iconografia-propio.md) (Finko Icons v2, tejas por dominio) sin revertirlo; usa el pipeline del [ADR 026](026-biblioteca-de-recursos-graficos.md) (Esteban diseña SVG en Illustrator, `assets/svg/` fuente de verdad) para cualquier redibujo; **mantiene** el criterio semántico del ADR 019 + AUD.4 ("gastar no es incumplir"), confirmado por Esteban en P1+P5. Restricción de rendimiento heredada de la auditoría PERF (2026-07): cero efectos nuevos costosos.
@@ -39,7 +39,7 @@ Criterios: psicología del color aplicada a finanzas personales, mínima re-curv
 | Inicio | neutro + marca | **igual** | Integra todo; el color lo aportan las piezas de cada dominio (coincide con el brief). |
 | Ingresos (transversal) | esmeralda #1fd194 | **igual** | Verde = entrada de dinero, universal y ya es la marca. |
 | Gastos | coral #ff8a5c | **igual** | Cálido y con energía sin ser alarma. Rojo haría punitiva la sección más usada (contradice ADR 019). |
-| Deudas | rojo #ff4757 | **frambuesa #ef5777** | Conserva la seriedad del rojo pero deja de ser idéntico al danger. |
+| Deudas | rojo #ff4757 | **frambuesa #ea5385** | Conserva la seriedad del rojo pero deja de ser idéntico al danger. Separada 14° de matiz Y por luminosidad, no solo saturación (valor corregido en IV.1 tras calcular el HSL real; el borrador inicial, #ef5777, quedaba a 7° del danger). |
 | Mis cuentas | azul #5b95f0 | **igual** | Azul = banca, confianza; convención de todo el sector. |
 | Calendario | (sin token) | **índigo #7d8cf0** (nuevo `--fk-dom-agenda`) | Coincide con el brief. Índigo = tiempo/planificación; separado de cuentas por luminosidad y saturación. Los fijos (`.cal-dot--fijo`) pasan de amarillo a índigo: el amarillo queda solo para Límites (corrige hallazgo 3). |
 | Límites | amarillo #f3b740 | **igual** | Ámbar = precaución dosificada; metáfora natural de "tope". |
@@ -57,7 +57,7 @@ Criterios: psicología del color aplicada a finanzas personales, mínima re-curv
 **Decisiones de Esteban (2026-07-07), las 5 con la opción recomendada:**
 
 - **P1+P5. Gastos y egresos: cálido y neutro.** Gastos se queda en coral (no rojo); los egresos en toda la app se muestran con signo `−` en texto normal, sin teñir de alarma. El ADR 019 ("gastar no es incumplir") se mantiene sin cambios.
-- **P2. Deudas se separa del danger.** Pasa a frambuesa `#ef5777`, un rojo propio que conserva la seriedad sin ser idéntico al error del sistema.
+- **P2. Deudas se separa del danger.** Pasa a frambuesa `#ea5385` (valor corregido en IV.1, ver nota en el Estado arriba), un rojo propio que conserva la seriedad sin ser idéntico al error del sistema.
 - **P3. Límites se queda en amarillo.** Ya desplegado en barras y tejas; el rosa sigue siendo de Me deben.
 - **P4. Hub Ahorros en familia de colores.** Metas púrpura, Ahorro/Apartados menta, Inversión turquesa. Metas no pasa a azul (evita el choque con Mis cuentas).
 

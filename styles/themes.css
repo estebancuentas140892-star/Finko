@@ -52,6 +52,25 @@ body.light-theme {
   --fk-info-bg:      rgba(26, 95, 212, 0.1);
   --fk-info-text:    #1a5fd4;
 
+  /* ── DOMINIO - variante de texto para tema claro (ADR 031, IV.1) ──
+     El valor crudo de --fk-dom-* está calibrado para tema oscuro y falla
+     WCAG AA como texto sobre blanco (varios por debajo de 2:1). Cada
+     -text se oscurece manteniendo el matiz hasta pasar 4.5:1 contra
+     --fk-bg-surface (#fff) Y --fk-bg-base (#f6f7fa) de este tema, mismo
+     método que --fk-warning arriba (#ffb82e → #8a5a00). --fk-dom-*-bg no
+     necesita override: a 12% de opacidad compone bien en ambos temas. ── */
+  --fk-dom-ingresos-text:     #13815b;   /* vs #fff 4.86:1 */
+  --fk-dom-gastos-text:       #d13b00;   /* vs #fff 4.84:1 */
+  --fk-dom-compromisos-text:  #db1b5a;   /* vs #fff 4.87:1 */
+  --fk-dom-tesoreria-text:    #1a6bea;   /* vs #fff 4.84:1 */
+  --fk-dom-metas-text:        #844fe6;   /* vs #fff 4.95:1 */
+  --fk-dom-analisis-text:     #627291;   /* vs #fff 4.84:1 */
+  --fk-dom-presupuesto-text:  #98680a;   /* vs #fff 4.86:1 */
+  --fk-dom-personales-text:   #d41690;   /* vs #fff 4.86:1 */
+  --fk-dom-ahorro-text:       #238059;   /* vs #fff 4.88:1 */
+  --fk-dom-inversion-text:    #1c7f74;   /* vs #fff 4.84:1 */
+  --fk-dom-agenda-text:       #4f64eb;   /* vs #fff 4.82:1 */
+
   /* ── BOTÓN PRIMARIO ──────────────────────────────────────── */
   --fk-btn-primary-bg:    #006b3d;
   --fk-btn-primary-text:  #ffffff;

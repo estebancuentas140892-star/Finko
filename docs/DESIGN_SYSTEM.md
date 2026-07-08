@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-02 (DOC.D: sincronizado con `styles/tokens.css` y `styles/themes.css` reales, post rediseño visual 2026).
+> Última revisión: 2026-07-07 (IV.1, [ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md): rampa `-bg`/`-text` por dominio + recoloreo de Deudas/Análisis/Inversión + `--fk-dom-agenda` nuevo).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -80,20 +80,27 @@ Cada semántico tiene par `--fk-{nombre}-bg` y `--fk-{nombre}-text`.
 
 ### Colores por dominio (`--fk-dom-*`)
 
-Reconocimiento visual inmediato de cada sección. Croma armonizado: ningún hue grita más que el resto.
+Reconocimiento visual inmediato de cada sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md)). Croma armonizado: ningún hue grita más que el resto, y cada par vecino se separa por matiz **y** luminosidad (no solo saturación), para que siga siendo discriminable con daltonismo.
 
-| Token | Valor | Sección |
-|---|---|---|
-| `--fk-dom-ingresos` | `#1fd194` | Ingresos (= acento de marca) |
-| `--fk-dom-gastos` | `#ff8a5c` | Gastos |
-| `--fk-dom-compromisos` | `#ff4757` | Deudas |
-| `--fk-dom-tesoreria` | `#5b95f0` | Mis cuentas |
-| `--fk-dom-metas` | `#9d73eb` | Metas |
-| `--fk-dom-analisis` | `#2fd2bf` | Análisis |
-| `--fk-dom-presupuesto` | `#f3b740` | Límites de gasto |
-| `--fk-dom-personales` | `#f06fc2` | Me deben |
-| `--fk-dom-ahorro` | `#38c98c` | Ahorro |
-| `--fk-dom-inversion` | `#4db8d8` | Inversión |
+| Token | Oscuro (default) | Claro (`body.light-theme`, solo `-text`) | Sección |
+|---|---|---|---|
+| `--fk-dom-ingresos` | `#1fd194` | `-text: #13815b` | Ingresos (= acento de marca) |
+| `--fk-dom-gastos` | `#ff8a5c` | `-text: #d13b00` | Gastos |
+| `--fk-dom-compromisos` | `#ea5385` | `-text: #db1b5a` | Deudas (frambuesa; antes `#ff4757`, idéntico a `--fk-danger`) |
+| `--fk-dom-tesoreria` | `#5b95f0` | `-text: #1a6bea` | Mis cuentas |
+| `--fk-dom-metas` | `#9d73eb` | `-text: #844fe6` | Metas |
+| `--fk-dom-analisis` | `#8f9bb3` | `-text: #627291` | Análisis (pizarra neutra; antes `#2fd2bf` turquesa) |
+| `--fk-dom-presupuesto` | `#f3b740` | `-text: #98680a` | Límites de gasto |
+| `--fk-dom-personales` | `#f06fc2` | `-text: #d41690` | Me deben |
+| `--fk-dom-ahorro` | `#38c98c` | `-text: #238059` | Ahorro |
+| `--fk-dom-inversion` | `#2fd2bf` | `-text: #1c7f74` | Inversión (turquesa; hereda el matiz que Análisis dejó libre; antes `#4db8d8`) |
+| `--fk-dom-agenda` | `#7d8cf0` | `-text: #4f64eb` | Calendario (índigo, token nuevo) |
+
+**Rampa de cada dominio (2 acompañantes, IV.1):**
+
+- **`--fk-dom-X-bg`**: `color-mix(in srgb, var(--fk-dom-X) 12%, transparent)`. Mismo valor en ambos temas (a 12% compone bien sobre superficie oscura y clara). Fondo de tejas, badges, celdas.
+- **`--fk-dom-X-text`**: variante segura como texto o UI significativa (glifos, dots, badges). En oscuro es igual a `--fk-dom-X` (ya pasa AA ahí). En claro se sobreescribe en `body.light-theme`: el valor crudo fallaba WCAG AA sobre blanco (varios por debajo de 2:1, ver tabla arriba).
+- El token base `--fk-dom-X` se reserva para acentos decorativos (bordes finos, franjas) que ya van acompañados de icono/etiqueta y por eso quedan exentos del umbral de contraste no textual (SC 1.4.11).
 
 ### Nudges (5 niveles)
 
