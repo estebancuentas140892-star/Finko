@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-07.
+> Última actualización: 2026-07-08 (triaje del lote de 5 auditorías de Esteban, regla 2.7).
 
 ---
 
@@ -47,29 +47,18 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 ### Inicio (dashboard)
 
-_(Observación sin tarea formal: IN.2 cerró con el ojo solo en el hero, el monto más sensible. Si el usuario lo pide, extender la máscara a los demás montos de Inicio: totales de vencidos/prioridades y cifras del resumen semanal.)_
+> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), aprobada el 2026-07-05): IN.6a, CAL.1, TX.8a, TX.8b e IN.4a cerradas. **Superada parcialmente por la iniciativa "Inicio v2" de abajo** (triaje del 2026-07-08): el principio "rol único por bloque" sigue vigente; el orden vertical y varias decisiones puntuales entran en revisión formal.
 
-_(Observación sin tarea formal: retroalimentación del usuario en el celular sobre el resumen semanal puede sugerir ajustes de copy/orden de las stats, o sumar un guiño al progreso del fondo/metas. Esperar feedback antes de iterar.)_
+> **Iniciativa "Inicio v2" (auditoría UX/UI completa, brief de Esteban del 2026-07-08).** Requiere **revisión formal del ADR 028** antes de codificar, porque modifica decisiones aprobadas: (a) reordena la pantalla (alertas/prioridades primero; accesos rápidos fusionados con actividad reciente como ÚLTIMO bloque, con accesos arriba y movimientos debajo dentro del mismo componente); (b) reabre el avatar con fotografía, que el ADR 028 D3 **descartó** por el cupo de `localStorage` compartido con los datos financieros. **Absorbe** (fusión 2.7): la tarjeta IN.6b (avatar: teja de iniciales + set propio de Esteban vía ADR 026 + emoji; el punto abierto foto se decide en el ADR de revisión, recomendación vigente: sin foto mientras la persistencia sea `localStorage`, ver ADR 030/PERF.5), la tarjeta IN.4b (sugerencia de accesos por frecuencia, pospuesta por ADR 028 D2: se decide dentro del rediseño del bloque fusionado), la observación de extender la máscara del ojo a más montos (entra al análisis de "detalle por cuentas y privacidad" del hero) y la observación de iterar el resumen semanal (este brief ES ese feedback). Alcance completo del brief: perfil con avatar + nombre; hero sin el icono `$` decorativo y con el saldo como protagonista centrado; análisis UX de mostrar detalle por cuentas (solo total vs expandir vs preferencia de usuario, cruzado con privacidad/IN.2); ojo de ocultar saldo estable (hoy el icono se desplaza al alternar: fijar posición y que solo cambie el contenido); "Pendientes del mes" con jerarquía de prioridad real (la línea roja lateral comunica poco; resolver con los tokens del ADR 031, sin alarmismo); resumen semanal como el bloque más visual e interpretable (colores + iconos + indicadores + mensajes, coordinado con IV.3); redistribución general (jerarquía, aire, orden de lectura, ergonomía móvil, escaneo). **No incluye** (viven en sus fuentes únicas): iconografía+color de sección en Pendientes/Prioridades → IV.2; copy cercano de alertas de límites → LIM.1.
 
-> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), **aprobada el 2026-07-05**): análisis en la ficha [`contexto/inicio.md`](contexto/inicio.md); IN.7 cerrada como paso previo. El ADR define un rol único por bloque y el orden vertical (saludo, hero, accesos, atención hoy, próximas prioridades, actividad reciente, resumen semanal), y re-corta los briefs en las fases de abajo. Orden recomendado: IN.6a → CAL.1 → TX.8a → TX.8b → IN.4a → IN.6b, una fase por sesión, verificada y pusheada antes de la siguiente. IN.6a, CAL.1, TX.8a, TX.8b e IN.4a ya cerradas; solo queda **IN.6b**, bloqueada por diseños de Esteban. Los briefs originales completos quedaron capturados en el contexto del ADR.
-
-_(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CHANGELOG. **IN.4a cerrada** el 2026-07-05: accesos rápidos personalizables (catálogo + tiles + modal por lista), ver CHANGELOG. Cierra la iniciativa "Inicio como centro de control" del ADR 028 salvo **IN.6b**, bloqueada por diseños de Esteban.)_
-
-#### IN.4b (opcional, pospuesta) - Sugerencia de accesos por frecuencia de uso
-- Prioridad  : baja
-- Estado     : pospuesta por decisión del ADR 028 D2 (decidir tras convivir con la personalización manual)
-- Objetivo   : contadores locales de navegación por sección + sugerencia discreta de agregar una sección muy usada a los accesos. Todo local, sin telemetría (ADN 3).
-- Depende de : IN.4a en producción (cerrada el 2026-07-05) y feedback de Esteban tras usarla
-- Modelo     : decidir al llegar
-
-#### IN.6b - Avatar ilustrado del usuario (teja de iniciales + set propio)
-- Prioridad  : baja dentro de la iniciativa (última fase)
-- Estado     : pendiente (ADR 028 aprobado); bloqueada por diseños de Esteban
-- Objetivo   : teja de iniciales por defecto y set de avatares ilustrados propios como `<symbol>` del sprite (Esteban los diseña en Illustrator vía la biblioteca del ADR 026); `S.perfil.avatar` entra en el bump v23. Fotografía descartada en v1 (cupo de `localStorage` compartido con los datos financieros, ADR 028 D3); mascota virtual fuera de alcance. Revisar junto con **CFG.1** si ambas terminan tocando el mismo concepto de "perfil del usuario".
-- Secciones  : Inicio, `assets/svg/` (avatares nuevos)
-- Archivos   : encabezado de Inicio, `modules/core/state.js` (campo `perfil.avatar`), sprite
-- Depende de : diseños de avatares entregados por Esteban
-- Modelo     : Sonnet 5 - Medio
+#### IN.8 - Inicio v2: análisis UX + revisión del ADR 028 (primera fase de la iniciativa)
+- Prioridad  : alta
+- Estado     : pendiente de análisis. Recomendado NO iniciar antes de cerrar IV.2: la auditoría visual debe hacerse sobre la base de color ya desplegada, o se rediseña dos veces.
+- Objetivo   : producir la revisión del ADR 028 (orden nuevo, fusión accesos+actividad, decisión de avatar/foto, decisión de detalle por cuentas) y re-cortar la iniciativa en rebanadas verificables (IN.8a, IN.8b...) como hizo el ADR 028 original.
+- Secciones  : Inicio (`resumen`, `movimientos`, `accesos`, `render.js` hero)
+- Archivos   : ficha [`contexto/inicio.md`](contexto/inicio.md) como punto de partida
+- Depende de : IV.2 (recomendado); diseños de avatares de Esteban solo para la rebanada de avatar
+- Modelo     : Fable 5 - Alto (revisión de un ADR aprobado + rediseño de la pantalla principal, trade-offs de UX no obvios)
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (que absorbió TX.10; CAL.1 ya cerró su parte), la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 
@@ -77,7 +66,7 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 ### Calendario (dominio `agenda`)
 
-_(Posible ampliación futura sin tarea formal: con AG.4 cerrada, la categoría "Otro" podría ofrecer un ícono personalizado propio además del nombre libre; solo tiene sentido si el usuario lo pide, requeriría un campo `icono` nuevo en el compromiso fijo.)_
+_(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tienen fuente única y NO generan tarjeta propia aquí. (1) Color de sección en las tarjetas de evento con tinte de baja opacidad (Esteban pide 5-10%; el sistema usa 12% en `-bg`, calibrar en implementación con contraste medido) → vive en **IV.2c**. (2) Logos oficiales de marcas en eventos (Netflix, Nequi...) → ya existe la base (MK.2 detecta marca en fijos/suscripciones/deudas, `tejaMarca` en el detalle del día) y su evolución "seleccionar en vez de escribir" es el **[ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)**. (3) Picker de icono en "Otra categoría" de fijos + categorías personalizadas reutilizables en toda la app → iniciativa **CAT** en Transversal, que absorbió la observación que vivía aquí sobre ícono personalizado para la categoría "Otro" de AG.4.)_
 
 _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. **CAL.2 cerrada** el 2026-07-06: leyenda del calendario dinámica, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md), primera ficha de esta sección.)_
 
@@ -85,14 +74,24 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Mis cuentas (dominio `tesoreria`)
 
-#### MC.7g (opcional) - Fijos Quincenal/Semanal/Diario en la checklist de Necesidades
-- Prioridad  : baja
-- Estado     : opcional
-- Objetivo   : la checklist de Necesidades (MC.7d, slice 1) solo incluye fijos con frecuencia Mensual: un Quincenal/Semanal/Diario tiene más de una ocurrencia por periodo y una sola fila no puede representarlas sin pagar de más o de menos. Modelar sus vencimientos dentro del periodo (mismo problema que ya resolvió `eventosDelMes` de Agenda) para poder incluirlos.
+#### MC.13 - Distribución de ingresos contextual por fecha (brief 2026-07-08)
+- Prioridad  : alta
+- Estado     : pendiente de análisis (no iniciar sin diseñar primero el motor de vencimientos compartido, ver abajo)
+- Objetivo   : el asistente "Distribuir mi ingreso" (épica MC.7, cerrada) hoy muestra TODAS las necesidades/ahorros/obligaciones registradas; con muchos registros satura. Nueva lógica: al recibir un ingreso, Finko analiza la fecha del ingreso, la frecuencia de ingresos del usuario, las obligaciones vencidas, las que vencen en la ventana de ese ingreso y los aportes de ahorro (fondo/metas/apartados/inversión) programados para esa fecha, y solo sugiere lo que corresponde pagar/apartar en ese momento. Responde "¿qué debo hacer HOY con este dinero?", no "todo lo del mes". Reutilizar la lógica existente de recordatorio de día de ingreso (ADR 021, AP.4/MT.2/AH.4) para "qué toca aportar hoy".
+- **Absorbe MC.7g** (fijos Quincenal/Semanal/Diario en la checklist de Necesidades): modelar ocurrencias dentro del periodo es EL MISMO problema, y ambos se resuelven con la pieza compartida.
+- **Pieza de infraestructura compartida (regla de arquitecto 2.7):** un "motor de vencimientos" (qué obligaciones y aportes corresponden a una fecha/ventana dada) que consuman: este asistente, la checklist de Necesidades (ex MC.7g), y los pagos automáticos (PA.1, Transversal). `eventosDelMes` de Agenda ya resuelve la mitad (ocurrencias por frecuencia): evaluar extraerlo/generalizarlo a `infra/` en vez de construir 3 motores (mismo criterio que la fusión TX.10/LIM.1/ANL.1).
+- Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`), transversal por el motor
+- Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1
+- Modelo     : Opus 4.8 - Alto (lógica financiera de fechas/frecuencias no trivial + diseño de pieza compartida)
+
+#### MC.14 - Datos de transferencia por cuenta (llaves, alias, número)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : cada cuenta permite registrar, opcional, los datos que el usuario consulta cuando alguien le va a consignar: número de cuenta, tipo, llave de transferencia, alias y tipo de llave (celular, correo, documento, alfanumérico, otro). Finko como punto de consulta rápida, NO para ejecutar transferencias. Solo identificadores públicos: sin contraseñas, tokens ni credenciales (mismo trato de protección que el resto de los datos; refuerza el valor de CFG.5 bloqueo de app, sin dependencia dura). Bump de schema (campos opcionales en `Cuenta`) + UI en el form y el detalle de cuenta.
 - Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/logic.js` (`construirDesgloseNecesidades`)
-- Depende de : nada. Solo tiene sentido si el usuario lo pide: la mayoría de fijos recurrentes de uso diario (arriendo, servicios, suscripciones) ya son Mensuales.
-- Modelo     : sin definir
+- Archivos   : `modules/core/state.js` (typedef Cuenta), `modules/core/storage.js` (migración), `tesoreria` (form + detalle)
+- Depende de : nada. Independiente de MC.13.
+- Modelo     : Sonnet 5 - Medio
 
 ---
 
@@ -102,13 +101,24 @@ _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia 
 
 _(**TX.9 completa** el 2026-07-05: TX.9a (categoría primero + descripción deja de ser obligatoria) y TX.9b (categorías personalizadas), ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md).)_
 
+_(Triaje 2026-07-08, brief "Auditoría UX/UI Gastos": vive completo en la iniciativa **CAT** de Transversal (taxonomía Gastos↔Gastos fijos, categorías contextuales, deduplicación entre secciones, y el rediseño del picker de icono de "Otra categoría" que hoy llena la pantalla con el grid de TX.9b). No genera tarjeta en esta sección para no duplicar la fuente única.)_
+
 _(**TX.10 absorbida** el 2026-07-08 por el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) "Catálogo de marcas por categoría", que lo declara explícitamente en su encabezado: la pieza de infraestructura de datos que TX.10 pedía (categoría como eje del que Finko deriva automatizaciones: límites, hormiga/fantasma, recomendaciones) es la fundación de ese ADR. El ADR 029 sigue en estado **Propuesta**, pendiente de que Esteban valide la taxonomía de su sección D3: nada de esto se inicia sin esa validación. El solape con **LIM.1** (recomendaciones de límite por categoría) y **ANL.1** (recomendaciones accionables en Análisis) que la tarjeta original documentaba se conserva como regla: al iniciar cualquiera de las tres, diseñar UN solo motor de "sugerencia por categoría" compartido, nunca tres. Fusión hecha bajo la regla 2.7 de CLAUDE.md, primer caso aplicado.)_
 
 ---
 
 ### Deudas (dominio `compromisos`, deuda)
 
-_(sin pendientes activos.)_
+_(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descuentan de la cuenta" **ya existe** desde el ADR 002 y la regla de cuenta única: el abono pide cuenta de origen, descuenta el saldo, sincroniza `saldoTotal` del compromiso y registra el gasto-abono en el historial. No genera tarjeta; si Esteban detecta un caso donde NO ocurra, es un bug para BUGS.md, no una feature.)_
+
+#### D.14 - Registrar una deuda acredita la cuenta donde se recibió el dinero
+- Prioridad  : alta (pocos archivos, alto valor: refleja la vida real y evita el doble registro manual)
+- Estado     : pendiente
+- Objetivo   : al crear una deuda, preguntar "¿dónde recibiste este dinero?" (efectivo, cuenta, billetera; patrón 0/1/varias de la regla de cuenta única) y acreditar automáticamente el saldo de la cuenta elegida en el mismo registro. **Debe ser opcional con "No aplica"**: hay deudas que no entregan dinero al usuario (tarjeta de crédito ya consumida, deuda vieja que se registra a posteriori, crédito que paga directo a un tercero, ej. hipotecario al vendedor). El espejo exacto ya existe en la app: el ingreso puntual (NAV.A1) acredita cuenta; reutilizar ese flujo/copy.
+- Secciones  : Deudas (`compromisos`), Mis cuentas (`tesoreria` vía EventBus, sin import cruzado, ADN 10)
+- Archivos   : form de nueva deuda (`compromisos`), `infra/cuenta-helper.js` (selector ya existente)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio (patrón existente, un dominio y medio, tests nuevos)
 
 ---
 
@@ -150,6 +160,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
   4. **Integración con el Dashboard (Inicio)**: mostrar ahí mismo sugerencias discretas y oportunas (ej. "Aún no has definido un límite para restaurantes", "Este mes gastaste más de lo habitual en entretenimiento"); nunca invasivas ni constantes.
   5. **Seguimiento y retroalimentación durante el mes**: porcentaje usado del límite, cuánto queda disponible, comparación con meses anteriores, si va bien o debería moderar; y mensajes positivos de refuerzo cuando el usuario se mantiene dentro del límite (no solo advertencias cuando se excede).
   El usuario pidió explícitamente analizar si esta propuesta es la mejor solución de UX/UI y finanzas personales, con libertad de proponer una alternativa mejor y justificarla.
+  6. **(Integrado por triaje 2026-07-08, del brief de Inicio)** Copy de las alertas de límite cercano y orientado a la acción, no técnico: en vez de "Gastaste $150.000 de $100.000 ($50.000 extra)", algo como "Has gastado $50.000 más de lo que habías planeado para restaurantes. Si continúas a este ritmo podrías afectar el dinero destinado para otras prioridades". Finko como consejero, no solo informador. Aplica en la alerta del Dashboard y en la propia sección.
 - Secciones  : Límites de gasto (`presupuesto`), transversal (categorías con gasto real vienen de `gastos`; sugerencias en Dashboard tocan Inicio, posible relación con IN.4 si esa personalización de accesos ya existe cuando se trabaje esto)
 - Archivos   : sin explorar todavía; candidatos previsibles `modules/dominio/presupuesto/logic.js` (regla actual de qué grupos entran a Límites, hoy probablemente incluye Necesidades/Ahorro/Estilo de vida los 3) y el picker de categorías al crear un límite
 - Depende de : nada directo, pero conviene revisar junto con IN.4 (accesos personalizables del Dashboard) si ambas están activas a la vez, ya que las sugerencias de LIM.1 en Inicio comparten espacio con esa iniciativa (evitar diseñar dos mecanismos de "sugerencia en Dashboard" por separado)
@@ -176,7 +187,7 @@ _(sin pendientes activos.)_
   5. **Jerarquía visual**: info crítica primero (estado general, gastos más altos, progreso de ahorro, evolución de deudas, cumplimiento de presupuesto); análisis avanzados después o en desplegables.
   6. **Convertir datos en recomendaciones accionables**: no solo estadísticas, sino mensajes tipo "estás gastando demasiado en X", "tu fondo de emergencia cubre 2 meses", "vas atrasado en tu meta de viaje", "detectamos varios gastos hormiga", etc.
   7. **Reducir carga cognitiva**: tarjetas plegables, bloques expandibles, pestañas, filtros, resúmenes con "ver más detalle"; descubrimiento progresivo, no todo de una vez.
-  8. **Coherencia visual con el resto de Finko**: mismos colores por sección, iconos propios (Finko Icons v2), tipografía, espaciados, jerarquía, animaciones y componentes reutilizables (nada nuevo que rompa el sistema de diseño existente).
+  8. **Coherencia visual con el resto de Finko**: mismos colores por sección, iconos propios (Finko Icons v2), tipografía, espaciados, jerarquía, animaciones y componentes reutilizables (nada nuevo que rompa el sistema de diseño existente). _(Nota de triaje 2026-07-08: este punto lo resuelve la iniciativa de color del [ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md) (IV.1 cerrada, IV.2 pendiente); al iniciar ANL.1, consumir esos tokens, no diseñar un sistema paralelo.)_
   El usuario pidió explícitamente analizar la sección completa antes de implementar cualquier cambio, para decidir qué simplificar, reorganizar, unificar o eliminar, sin perder profundidad de análisis.
 - Secciones  : Análisis (dominio `analisis`); probable relación con Presupuesto (límites), Ahorro (fondo/metas), Compromisos (deudas) y Gastos, ya que las recomendaciones cruzan esos dominios (vía datos ya calculados, no importando entre dominios, ADN 10)
 - Archivos   : sin explorar todavía en profundidad; punto de partida `modules/dominio/analisis/` (lógica y vista) y estilos ya mencionados en memoria (paleta unificada dona/barras, `style(analisis)` en el historial); requiere ficha de contexto nueva en `docs/contexto/` si no existe
@@ -281,12 +292,13 @@ _(**PERF.7d cerrada** el 2026-07-07, con un alcance más chico que el planteado 
 
 > Iniciativa Identidad de color por sección 2026-07 ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), **aceptada por Esteban el 2026-07-07**): brief del 2026-07-07 (color característico por sección en toda la experiencia + números que comunican + replanteo de iconos). El análisis encontró que los tokens `--fk-dom-*` ya existen pero están sub-desplegados, sin rampa de tema claro (hueco WCAG real), con dominios faltantes (`agenda`, `apartados`) y con la colisión deudas = danger. Las 5 decisiones abiertas (P1 a P5) se resolvieron todas con la opción recomendada: gastos/egresos se quedan cálidos y neutros (ADR 019 sin cambios), Deudas se separa del danger en frambuesa, Límites se queda en amarillo, hub Ahorros en familia de colores (no 4 matices únicos). Iconografía dirigida DESPUÉS del color (no un 4.º redibujo global), condicionada a revisión visual tras IV.2.
 
-_(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` de `#ff4757` a frambuesa `#ea5385`; `--fk-dom-analisis` a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf`. Cada uno de los 11 dominios ganó `-bg` (`color-mix` 12%, mismo valor en ambos temas) y `-text` (variante segura como texto/UI, con override en `body.light-theme`). **Hallazgo corregido antes de implementar:** la frambuesa que proponía el ADR quedaba a solo 7° de matiz del rojo de `--fk-danger` (verificado con cálculo real de HSL, no a ojo) — casi indistinguible con daltonismo protán. Se ajustó a `#ea5385` (antes `#ef5777` en el texto del ADR), separada 14-19° de matiz Y con luminosidad propia, sin perder contraste (verificado con WCAG real: los 11 dominios pasan ≥4.98:1 en oscuro y los 11 `-text` pasan ≥4.5:1 en claro contra `#fff` y `#f6f7fa`, cálculo en `/tmp/summary.mjs` de la sesión, no reproducido en el repo). Verificado en el navegador: la teja de "Deudas" en el menú "Más" resuelve a `rgb(234,83,133)` (=`#ea5385`) exacto, "Análisis" a `rgb(143,155,179)` (=`#8f9bb3`) exacto. **Hueco real encontrado para IV.2 (no introducido por esta tarea, preexistente):** varios usos ya desplegados leen el token base `--fk-dom-X` directo como color de texto (ej. `.inversion-hero__tipo-pct` en `analysis.css`, badges en `nudges.css`) en vez de `-text`; en tema claro esto falla contraste (verificado: el "100%" de Inversión da 1.89:1 contra blanco). Es el gap que ya documentaba el ADR 031 (hallazgo 2); IV.2 debe auditar y migrar cada uso de `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`, empezando por `.inversion-hero__tipo-pct` y `.dom-badge--*`. Validado: 2265 unit + 155 E2E + verificación manual de contraste en Chromium real (axe-core no cubre `color-contrast` en happy-dom). SW v339 → v340.)_
+_(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` de `#ff4757` a frambuesa `#ea5385`; `--fk-dom-analisis` a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf`. Cada uno de los 11 dominios ganó `-bg` (`color-mix` 12%, mismo valor en ambos temas) y `-text` (variante segura como texto/UI, con override en `body.light-theme`). **Hallazgo corregido antes de implementar:** la frambuesa que proponía el ADR quedaba a solo 7° de matiz del rojo de `--fk-danger` (verificado con cálculo real de HSL, no a ojo): casi indistinguible con daltonismo protán. Se ajustó a `#ea5385` (antes `#ef5777` en el texto del ADR), separada 14-19° de matiz Y con luminosidad propia, sin perder contraste (verificado con WCAG real: los 11 dominios pasan ≥4.98:1 en oscuro y los 11 `-text` pasan ≥4.5:1 en claro contra `#fff` y `#f6f7fa`, cálculo en `/tmp/summary.mjs` de la sesión, no reproducido en el repo). Verificado en el navegador: la teja de "Deudas" en el menú "Más" resuelve a `rgb(234,83,133)` (=`#ea5385`) exacto, "Análisis" a `rgb(143,155,179)` (=`#8f9bb3`) exacto. **Hueco real encontrado para IV.2 (no introducido por esta tarea, preexistente):** varios usos ya desplegados leen el token base `--fk-dom-X` directo como color de texto (ej. `.inversion-hero__tipo-pct` en `analysis.css`, badges en `nudges.css`) en vez de `-text`; en tema claro esto falla contraste (verificado: el "100%" de Inversión da 1.89:1 contra blanco). Es el gap que ya documentaba el ADR 031 (hallazgo 2); IV.2 debe auditar y migrar cada uso de `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`, empezando por `.inversion-hero__tipo-pct` y `.dom-badge--*`. Validado: 2265 unit + 155 E2E + verificación manual de contraste en Chromium real (axe-core no cubre `color-contrast` en happy-dom). SW v339 → v340.)_
 
 #### IV.2 - Despliegue del color por superficie
-- Prioridad  : alta dentro de la iniciativa
+- Prioridad  : alta dentro de la iniciativa. **Es la tarjeta recomendada para iniciar ahora** (desbloquea las auditorías de Inicio y Calendario del lote 2026-07-08).
 - Estado     : pendiente (IV.1 cerrada, lista para empezar)
 - Objetivo   : encabezado de sección con teja + acento del dominio; nav activa teñida por sección; barras/anillos de progreso en el color del dominio; franja de modales de registro; `.cal-dot--fijo` de amarillo a índigo; completar tejas/badges en Inicio y Movimientos donde falten; **migrar `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`** en todo uso como texto/UI significativa (empezar por `.inversion-hero__tipo-pct` de `analysis.css` y `.dom-badge--*` de `nudges.css`, verificados con contraste real bajo AA en tema claro durante IV.1). Partir en sub-rebanadas verificables (IV.2a nav+encabezados, IV.2b progreso+modales, IV.2c calendario+inicio, IV.2d migración -text donde falte).
+- **Specs integradas por triaje 2026-07-08 (briefs de Inicio y Calendario):** (1) IV.2c: las tarjetas de evento del calendario abandonan la línea lateral de color y pasan a fondo teñido de baja opacidad del dominio del evento; Esteban pide 5-10%, el sistema define `-bg` al 12%: calibrar con contraste medido y elegir UNA opacidad para toda la app, no dos estándares. (2) IV.2c: en "Pendientes del mes" y "Próximas prioridades" de Inicio, cada ítem lleva el icono de su categoría + la teja/color de su sección de origen (Deudas, Calendario, Apartados, Metas, fijos), para reconocer el origen sin leer. Los logos de marca en eventos ya existen (MK.2/`tejaMarca`); su evolución es el ADR 029, no esta tarjeta.
 - Secciones  : Transversal (todas las vistas, solo CSS + atributos `data-*` existentes)
 - Depende de : nada (IV.1 cerrada)
 - Modelo     : Sonnet 5 - Alto
@@ -324,6 +336,47 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Secciones  : Transversal (`scripts/perf/bench.perf.js`, `styles/components/atoms.css`, `styles/layout.css`)
 - Depende de : nada.
 - Modelo     : Sonnet 5 - Medio
+
+---
+
+> **Iniciativa CAT: taxonomía de categorías Gastos↔Gastos fijos + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. Relación fuerte con el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md): la taxonomía D3 que ese ADR espera validar de Esteban debe decidirse JUNTO con CAT.1 (una sola clasificación de categorías, no dos).
+
+#### CAT.1 - Taxonomía: qué categoría vive en Gastos y cuál en Gastos fijos
+- Prioridad  : alta
+- Estado     : pendiente de análisis (no iniciar). Coordinar con la validación D3 del ADR 029.
+- Objetivo   : hoy hay categorías en Gastos que muestran el hint "normalmente pertenece a fijos" (`hint-categoria-fija`): el brief pide eliminarlas del catálogo de Gastos en vez de avisar (Finko decide, el usuario no corrige). Criterios acordados: **fijo** = recurrente con frecuencia definida, estable, parte de la rutina (arriendo, servicios, internet, plan móvil, suscripciones, gimnasio, seguros, cuotas); **gasto** = día a día sin fecha fija, variable, estilo de vida (restaurante, transporte, ropa, café, regalos). Las **contextuales** (ej. alimento de mascotas: fijo si se compra con periodicidad, gasto si es "cuando se acaba") tienen un default por comportamiento común + personalización del usuario. Deduplicar catálogos (`CATEGORIAS_GASTO` vs `CATEGORIAS_AGENDA` en `constants.js`): cada categoría con UNA ubicación predeterminada. Requiere migración idempotente si se mueven categorías con datos existentes.
+- Secciones  : Gastos, Calendario (fijos), transversal (`constants.js`, forms de ambos)
+- Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3)
+- Modelo     : Opus 4.8 - Extra si trae bump de schema con migración; el análisis de taxonomía previo, Fable 5 - Alto junto con ADR 029
+
+#### CAT.2 - Picker de icono compartido para "Otra categoría" (Gastos Y fijos)
+- Prioridad  : alta (los dos briefs lo piden por separado; es UN componente)
+- Estado     : pendiente
+- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por el form de Gastos y el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto). Cruce interno del lote detectado en el triaje: los briefs de Gastos y Calendario piden exactamente esta misma interacción; construirla una vez.
+- Secciones  : Gastos, Calendario, `ui/` (componente)
+- Archivos   : `gastos/view.js` (`icono-picker` actual), form de fijos en `agenda`/`compromisos`, modal nuevo
+- Depende de : nada (puede ir antes o después de CAT.1)
+- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 2 dominios)
+
+#### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : las categorías personalizadas de TX.9b existen solo para Gastos; el brief pide que una categoría creada por el usuario (nombre + icono) valga también para Gastos fijos y aparezca con su icono y el color de su sección en TODAS las superficies donde aparezca (Calendario, Inicio, Movimientos, Pendientes, Prioridades, Análisis, filtros, gráficos), con las mismas automatizaciones que una nativa. Decidir el modelo de datos: catálogo global vs por sección (probable bump de schema).
+- Secciones  : transversal
+- Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
+- Modelo     : Opus 4.8 - Alto (modelo de datos + propagación transversal)
+
+---
+
+> **Iniciativa PA: pagos automáticos (débito automático simulado)** (triaje 2026-07-08, brief "Integración Deudas/Cuentas/Pagos automáticos"). **Requiere ADR propio antes de una línea de código**, por dos decisiones de filosofía: (1) en una PWA offline sin servidor no existe "ejecutar a la fecha": el procesamiento sería catch-up al abrir la app (procesar débitos vencidos desde la última apertura), y hay que decidir cómo se comunica eso; (2) Finko registraría movimientos SIN confirmación del usuario, y el débito real en el banco puede fallar o diferir: riesgo de divergencia entre Finko y la realidad que hay que diseñar con cuidado (¿confirmación diferida?, ¿estado "registrado automáticamente, confírmalo"?). No toca el ADN (todo local), pero sí la filosofía "Finko refleja la realidad, no la inventa".
+
+#### PA.1 - ADR + diseño de pagos automáticos
+- Prioridad  : media-alta (caso muy común: suscripciones y cuotas con débito automático)
+- Estado     : pendiente de análisis (no iniciar sin el ADR)
+- Objetivo   : al registrar un gasto fijo, deuda o suscripción, pregunta opcional "¿este pago se descuenta automáticamente?" + cuenta de débito. Al llegar la fecha (catch-up al abrir): con saldo suficiente, descuenta, actualiza la obligación, registra el movimiento y lo saca de pendientes; sin saldo, NO simula el pago y genera una alerta clara y accionable ("No fue posible registrar el pago automático de Netflix: la cuenta Bancolombia no tiene saldo suficiente..."). Consume el **motor de vencimientos compartido de MC.13** (no construir un segundo motor) y sus alertas conectan con CFG.3 (notificaciones anticipatorias) cuando esa exista.
+- Secciones  : Deudas, Calendario (fijos), Mis cuentas, Inicio (alertas), transversal
+- Depende de : motor de vencimientos (MC.13, primera rebanada); ADR propio aprobado por Esteban
+- Modelo     : Fable 5 - Alto para el ADR (filosofía de producto con riesgo de confianza del usuario); implementación por rebanadas después
 
 ---
 
