@@ -285,6 +285,42 @@ _(**PERF.7b cerrada** el 2026-07-07, solo la mitad segura: `renderPanelResumen()
 
 _(**PERF.7d cerrada** el 2026-07-07, con un alcance más chico que el planteado originalmente (esa primera versión de la tarjeta decía que hacía falta tocar `config/index.js`; el análisis mostró que no). `_renderEstadoRenta()` llamaba a `calcularEstadoRenta(S, anio)` sin memoizar; ahora usa `_calcularEstadoRentaMemo` (`analisis/view.js`), memoizada contra `['gastos', 'cuentas', 'inversiones']` con un `extraerClave` que lee `state.config?.datosFiscales?.[anio]` directo. Es seguro sin tocar `config/index.js` porque el handler de "Datos de renta" siempre **reemplaza** esa entrada por un objeto nuevo (nunca la muta en el lugar): su identidad cambia en cada guardado real y la comparación por referencia de `memoizar()` la detecta sola. 4 tests nuevos en `analisis.test.js` prueban explícitamente que dos renders con un dato fiscal editado entre medio NO sirven el resultado obsoleto (con memoización ingenua, ese test habría fallado). Medido: el efecto en "Análisis caché" es pequeño, dentro del ruido (`calcularEstadoRenta` ya era barata frente al resto del bundle con los datos de este harness); el valor es de corrección de cobertura de caché, no de velocidad medible acá. Verificado: 2265 unit + 155 E2E + `pnpm perf`. SW v339. Detalle en [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).)_
 
+> Iniciativa Identidad de color por sección 2026-07 ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), **aceptada por Esteban el 2026-07-07**): brief del 2026-07-07 (color característico por sección en toda la experiencia + números que comunican + replanteo de iconos). El análisis encontró que los tokens `--fk-dom-*` ya existen pero están sub-desplegados, sin rampa de tema claro (hueco WCAG real), con dominios faltantes (`agenda`, `apartados`) y con la colisión deudas = danger. Las 5 decisiones abiertas (P1 a P5) se resolvieron todas con la opción recomendada: gastos/egresos se quedan cálidos y neutros (ADR 019 sin cambios), Deudas se separa del danger en frambuesa, Límites se queda en amarillo, hub Ahorros en familia de colores (no 4 matices únicos). Iconografía dirigida DESPUÉS del color (no un 4.º redibujo global), condicionada a revisión visual tras IV.2.
+
+#### IV.1 - Fundación de tokens de identidad
+- Prioridad  : alta dentro de la iniciativa (bloquea a las demás)
+- Estado     : pendiente (ADR 031 aprobado, lista para empezar)
+- Objetivo   : `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` pasa de `#ff4757` a frambuesa `#ef5777` (se separa del danger); `--fk-dom-analisis` pasa a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf` que Análisis deja libre; rampa `-text`/`-bg` por dominio con overrides obligatorios en `body.light-theme` (hoy los valores oscuros se sirven sobre blanco y fallan AA); actualizar DESIGN_SYSTEM.md; verificación de contraste (4.5:1 texto, 3:1 UI, ambos temas) + simulador de daltonismo.
+- Secciones  : Transversal (`styles/tokens.css`, `styles/themes.css`, `docs/DESIGN_SYSTEM.md`)
+- Depende de : nada (ADR 031 aprobado)
+- Modelo     : Sonnet 5 - Alto (calibración de contraste con criterio, sin lógica)
+
+#### IV.2 - Despliegue del color por superficie
+- Prioridad  : alta dentro de la iniciativa
+- Estado     : bloqueada por IV.1
+- Objetivo   : encabezado de sección con teja + acento del dominio; nav activa teñida por sección; barras/anillos de progreso en el color del dominio; franja de modales de registro; `.cal-dot--fijo` de amarillo a índigo; completar tejas/badges en Inicio y Movimientos donde falten. Partir en sub-rebanadas verificables (IV.2a nav+encabezados, IV.2b progreso+modales, IV.2c calendario+inicio).
+- Secciones  : Transversal (todas las vistas, solo CSS + atributos `data-*` existentes)
+- Depende de : IV.1
+- Modelo     : Sonnet 5 - Alto
+
+#### IV.3 - Números y estados (D5 del ADR 031)
+- Prioridad  : media
+- Estado     : bloqueada por IV.1
+- Objetivo   : documentar y completar el criterio de montos (dirección con signo, positivo en success, egresos neutros, estados con icono) en las superficies donde falte (stats del resumen semanal, comparaciones de Análisis). Mantiene ADR 019 sin cambios (confirmado por Esteban en P1+P5).
+- Secciones  : Inicio, Análisis, Movimientos
+- Depende de : IV.1
+- Modelo     : Sonnet 5 - Medio
+
+#### IV.4 - Iconografía dirigida post-color
+- Prioridad  : decidir tras IV.2
+- Estado     : bloqueada por revisión visual con capturas después de IV.2
+- Objetivo   : si tras el despliegue del color la app aún se percibe fría/genérica, definir la spec por dominio y redibujar en lotes dirigidos (Esteban en Illustrator, pipeline ADR 026 + `sync-sprite.py`, revisión de legibilidad 16/22/48px en ambos temas). NO es un redibujo global del sprite.
+- Secciones  : `assets/svg/`, sprite de `index.html`
+- Depende de : IV.2 en producción + revisión visual + diseños de Esteban
+- Modelo     : Sonnet 5 - Alto (revisión de assets contra spec; el diseño es de Esteban)
+
+---
+
 #### PERF.7c - Warm-up de derivaciones pesadas en idle
 - Prioridad  : media
 - Estado     : pendiente
