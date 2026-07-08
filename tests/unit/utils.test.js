@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { f, hoy, fechaLegible, tiempoRelativo } from '../../modules/infra/utils.js';
+import { f, hoy, fechaLegible, tiempoRelativo, formateadorFecha } from '../../modules/infra/utils.js';
 
 describe('f() - formato moneda COP', () => {
   it('formatea cero', () => {
@@ -66,6 +66,37 @@ describe('fechaLegible() - formato largo en español', () => {
     // Verifica que el día 12 aparezca en la salida.
     const result = fechaLegible('2026-05-12');
     expect(result).toContain('12');
+  });
+
+  it('produce el mismo texto que toLocaleDateString (PERF.7: sin cambio de comportamiento)', () => {
+    const opciones = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
+    const esperado = new Date('2026-05-12T12:00:00Z').toLocaleDateString('es-CO', opciones);
+    expect(fechaLegible('2026-05-12')).toBe(esperado);
+  });
+});
+
+describe('formateadorFecha() - Intl.DateTimeFormat cacheado (PERF.7)', () => {
+  it('devuelve un Intl.DateTimeFormat con format()', () => {
+    const fmt = formateadorFecha('es-CO', { year: 'numeric', timeZone: 'UTC' });
+    expect(typeof fmt.format).toBe('function');
+  });
+
+  it('reutiliza la misma instancia para la misma firma (locale + opciones)', () => {
+    const a = formateadorFecha('es-CO', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+    const b = formateadorFecha('es-CO', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+    expect(a).toBe(b);
+  });
+
+  it('devuelve instancias distintas para firmas distintas', () => {
+    const largo = formateadorFecha('es-CO', { month: 'long', timeZone: 'UTC' });
+    const corto = formateadorFecha('es-CO', { month: 'short', timeZone: 'UTC' });
+    expect(largo).not.toBe(corto);
+  });
+
+  it('su format() coincide con toLocaleDateString equivalente', () => {
+    const opciones = { day: 'numeric', month: 'short', timeZone: 'UTC' };
+    const d = new Date('2026-07-01T12:00:00Z');
+    expect(formateadorFecha('es-CO', opciones).format(d)).toBe(d.toLocaleDateString('es-CO', opciones));
   });
 });
 

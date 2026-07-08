@@ -82,6 +82,39 @@ export function tiempoRelativo(dias) {
 }
 
 /**
+ * Caché de instancias de `Intl.DateTimeFormat` por firma (locale + opciones).
+ *
+ * Construir un `Intl.DateTimeFormat` es caro (PERF.7): las vistas de lista lo
+ * hacían una vez por ítem (decenas de construcciones por render, cientos con
+ * años de historial en Movimientos). Cachear por firma reduce eso a una sola
+ * construcción por combinación durante toda la vida de la app. `format()`
+ * produce exactamente lo mismo que `Date.prototype.toLocaleDateString` con los
+ * mismos argumentos, así que el texto no cambia.
+ *
+ * @type {Map<string, Intl.DateTimeFormat>}
+ */
+const _cacheFormatoFecha = new Map();
+
+/**
+ * Devuelve un `Intl.DateTimeFormat` cacheado para `locale` + `opciones`.
+ * La firma de caché serializa las opciones: dos llamadas con el mismo locale y
+ * las mismas opciones (mismo orden de claves) comparten instancia.
+ *
+ * @param {string} locale
+ * @param {Intl.DateTimeFormatOptions} opciones
+ * @returns {Intl.DateTimeFormat}
+ */
+export function formateadorFecha(locale, opciones) {
+  const clave = `${locale}|${JSON.stringify(opciones)}`;
+  let fmt = _cacheFormatoFecha.get(clave);
+  if (fmt === undefined) {
+    fmt = new Intl.DateTimeFormat(locale, opciones);
+    _cacheFormatoFecha.set(clave, fmt);
+  }
+  return fmt;
+}
+
+/**
  * Dado un string `YYYY-MM-DD`, devuelve la representación legible en español.
  * Ej. `2026-05-12` → `12 de mayo de 2026`
  *
@@ -91,10 +124,10 @@ export function tiempoRelativo(dias) {
 export function fechaLegible(iso) {
   // Forzamos UTC mediodia para evitar off-by-one en zonas GMT-N.
   const d = new Date(`${iso}T12:00:00Z`);
-  return d.toLocaleDateString('es-CO', {
+  return formateadorFecha('es-CO', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
-  });
+  }).format(d);
 }

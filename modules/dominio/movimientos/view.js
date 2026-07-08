@@ -5,7 +5,7 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc, tiempoRelativo, fechaLegible } from '../../infra/utils.js';
+import { f, esc as _esc, tiempoRelativo, fechaLegible, formateadorFecha } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosRecientes, movimientosCompletos } from './logic.js';
@@ -124,7 +124,7 @@ function _nombreCuenta(cuentaId) {
 /** "Julio 2026" a partir de una fecha ISO, para el divisor de mes. */
 function _mesAnioLabel(fechaISO) {
   const d = new Date(`${fechaISO}T12:00:00Z`);
-  const label = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const label = formateadorFecha('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d);
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 

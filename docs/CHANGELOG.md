@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(rendimiento): PERF.7a, Intl.DateTimeFormat cacheado en las vistas de lista · 2026-07-07
+
+Primera rebanada de **PERF.7**, salida de la segunda pasada de la auditoría de rendimiento (2026-07-07). Esa pasada confirmó que lo grueso ya estaba resuelto (eventos por sección, `renderSmart` hash-gate, `infra/memo.js`, windowing) y corrigió un hallazgo propio: el doble-render caro que motivaba PERF.6 **no ocurre**, porque `renderSmart` solo pinta la sección activa y Análisis (solo-lectura) nunca se muta desde sí mismo. Se reordenó la prioridad hacia PERF.7, que es una ganancia **medida e incondicional**.
+
+**Hallazgo (PERF.7a):** `fechaLegible()` (`infra/utils.js`), `_mesAnioLabel()` (`movimientos/view.js`) y `fechaCorta()` (`tesoreria/views/ingresos.js`) construían un `Intl.DateTimeFormat` nuevo (vía `toLocaleDateString`) en **cada llamada**, o sea una vez por ítem de lista: 50 por lote en Movimientos, el mes completo en Gastos. Construir el formatter es la parte cara; formatear con uno ya construido es barato.
+
+**Cambio:** se agregó `formateadorFecha(locale, opciones)` en `utils.js`: cachea la instancia por firma (locale + `JSON.stringify(opciones)`) en un `Map`, de modo que cada combinación se construye una sola vez en toda la vida de la app. Los tres call sites la usan. `format()` produce texto idéntico a `toLocaleDateString` con los mismos argumentos, así que es cero cambio de comportamiento (hay un test de equivalencia explícito).
+
+**Medición (`pnpm perf`):** "Movs 1er lote" baja de 24,6 / 33,0 / 47,6 ms (línea base PERF.1, a 1.000 / 5.000 / 10.000 gastos) a **~8,2 ms planos**: deja de crecer con el volumen porque los 50 formatters por lote eran el residuo documentado en PERF.1. Las demás columnas no se mueven (Inicio frío 93,5 vs 97,4 previo, Análisis frío 10,5 vs 11,1: dentro del ruido; `stringify`/`save` iguales).
+
+**Validación:** 2257/2257 unit (5 nuevos en `tests/unit/utils.test.js`: `formateadorFecha` reutiliza instancia por firma, distingue firmas, su `format()` coincide con `toLocaleDateString`, y `fechaLegible` no cambió su salida) + 155/155 E2E en Chromium real + `pnpm perf`. SW v336 → v337. Quedan PERF.7b (folding de `calcularEstadoRenta`/`hayResumen` al memo) y PERF.7c (warm-up en idle).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/infra/utils.js` | `formateadorFecha()` nuevo (caché de `Intl.DateTimeFormat` por firma); `fechaLegible` lo usa. |
+| `modules/dominio/movimientos/view.js` | `_mesAnioLabel()` usa `formateadorFecha` en vez de `toLocaleDateString`. |
+| `modules/dominio/tesoreria/views/ingresos.js` | `fechaCorta()` usa `formateadorFecha`. |
+| `tests/unit/utils.test.js` | 5 tests nuevos (`formateadorFecha` + equivalencia de `fechaLegible`). |
+| `scripts/perf/BASELINE.md` | Sección PERF.7a (antes/después de "Movs 1er lote"). |
+| `docs/BOARD.md` | PERF.6/7/8 registradas; PERF.7a cerrada; PERF.7b y PERF.7c abiertas. |
+| `service-worker.js` | v336 → v337. |
+
+---
+
 ### feat(config): CFG.1a, situación laboral en el perfil (quita el SMMLV muerto) · 2026-07-06
 
 Primera rebanada de la iniciativa **fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). Esteban eligió fusionar ambas tarjetas del BOARD porque la situación laboral (CFG.1) alimenta la interpretación del monitor de renta (CFG.2).

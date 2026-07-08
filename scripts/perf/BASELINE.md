@@ -98,3 +98,21 @@ Verificado: 2219/2219 unit (10 tests nuevos de `infra/memo.js` en `tests/unit/me
 **Cómo se preserva el comportamiento:** con gasto este mes la comparación siempre tiene contenido (invariante `totalGastosMes > 0` ⇒ comparación no vacía), así que el grupo se muestra con el cuerpo diferido; sin gasto este mes (caso menos común) el detalle se calcula en el render para no dibujar un grupo que resultaría vacío. El escenario que mide el harness (semilla con gastos repartidos en 10 años, ~1/120 caen en el mes actual) toma la ruta diferida, que es la que baja.
 
 Verificado: 2233/2233 unit (5 tests nuevos del grupo diferido en `tests/unit/analisis.test.js`) + 151/151 E2E en Chromium real. SW v333 → v334.
+
+---
+
+## PERF.7a (2026-07-07): Intl.DateTimeFormat cacheado
+
+**Cambio:** `fechaLegible()` ([utils.js](../../modules/infra/utils.js)), `_mesAnioLabel()` ([movimientos/view.js](../../modules/dominio/movimientos/view.js)) y `fechaCorta()` ([tesoreria/views/ingresos.js](../../modules/dominio/tesoreria/views/ingresos.js)) construían un `Intl.DateTimeFormat` nuevo (vía `toLocaleDateString`) en cada llamada, o sea **una vez por ítem** de lista: 50 por lote en Movimientos, el mes entero en Gastos. Construir el formatter es la parte cara; formatear con uno ya construido es barato. Se agregó `formateadorFecha(locale, opciones)` (nuevo, en `utils.js`): cachea la instancia por firma (locale + opciones) en un `Map`, así toda la app construye cada combinación una sola vez. `format()` produce texto idéntico a `toLocaleDateString` con los mismos argumentos: cero cambio de comportamiento (test de equivalencia incluido).
+
+| gastos | Movs 1er lote (PERF.1 → PERF.7a) |
+|---|---|
+| 1.000  | 24.6 ms → **8.4 ms** |
+| 5.000  | 33.0 ms → **8.2 ms** |
+| 10.000 | 47.6 ms → **8.2 ms** |
+
+**Lectura:** el primer lote deja de crecer con el volumen (antes 24→48 ms, ahora **plano ~8,2 ms**). Los 50 formatters por lote eran el residuo que PERF.1 dejó documentado. Las demás columnas no cambian (Inicio frío 93.5 ms vs 97.4 previo, Análisis frío 10.5 vs 11.1: dentro del ruido; `stringify`/`save` iguales). Es una ganancia **incondicional**: toda lista con fechas la recibe, no depende de la sección activa.
+
+Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de `fechaLegible` en `tests/unit/utils.test.js`) + 155/155 E2E en Chromium real + `pnpm perf`. SW v336 → v337.
+
+> Quedan de PERF.7: **7b** (folding de `calcularEstadoRenta`/`hayResumen` al bundle memoizado) y **7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). Ver [BOARD.md](../../docs/BOARD.md).

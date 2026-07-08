@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-06.
+> Última actualización: 2026-07-07.
 
 ---
 
@@ -265,6 +265,45 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 - Archivos   : `modules/core/storage.js` (motor async), `modules/ui/bootstrap.js` (loadData async), migración de datos localStorage → IDB sin pérdida, reescritura del sembrado de las 11 suites E2E
 - Depende de : un disparador del ADR 030 D4
 - Modelo     : Opus 4.8 - Extra o Fable 5 - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
+
+---
+
+> Segunda pasada de la auditoría de rendimiento (2026-07-07, Fable 5): confirmó que lo grueso ya está resuelto (eventos por sección, `renderSmart` hash-gate, `infra/memo.js`, windowing). Hallazgos nuevos registrados abajo como PERF.6, PERF.7, PERF.8. Cada fase corre `pnpm perf` antes/después contra [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
+
+#### PERF.6 - Coalescer de renders por microtask (alcance revisado a la baja)
+- Prioridad  : baja
+- Estado     : pendiente de decisión. **Hallazgo del 2026-07-07:** `renderSmart()` corta por hash, así que una vista solo se pinta cuando es la sección activa. El doble-render caro que motivó la tarjeta (Análisis, 5 observadores, ~11 ms) NO ocurre en la práctica: Análisis es solo-lectura, no se muta desde ahí, y renderSmart bloquea su pintado desde cualquier otra sección. La exposición real queda en los paneles de Inicio (actividad reciente, resumen) que se repintan 2-3 veces durante una acción multi-sección lanzada desde Inicio (ej. distribución del ingreso): costo bajo.
+- Objetivo   : `programarRender(fn)` en `infra/render.js`, cola dedupada por identidad, vaciada en microtask; los listeners de `state:change` agendan en vez de pintar directo, colapsando repintados del mismo tick a uno. Renders directos (navegación, arranque, `renderAll`) siguen síncronos.
+- Riesgo     : cambia el timing de los renders reactivos de síncrono a microtask. Blast radius de tests medido chico (los tests de vista llaman la view directo, no vía bus; E2E auto-espera). Cerca del pipeline de render: si se hace, medir el doble-render real con un escenario nuevo del harness antes/después (disciplina ADR 030).
+- Secciones  : Transversal (`infra/render.js` + listeners `state:change` de los dominios multi-observador)
+- Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
+- Modelo     : Opus 4.8 - Alto (si se hace)
+
+_(**PERF.7a cerrada** el 2026-07-07: `Intl.DateTimeFormat` cacheado por firma en `formateadorFecha()` (`infra/utils.js`), usado en `fechaLegible`, `_mesAnioLabel` y `fechaCorta`. Medido: "Movs 1er lote" pasa de 24-48 ms a **~8,2 ms planos**. Verificado: 2257 unit + 155 E2E + `pnpm perf`. Ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md) y CHANGELOG.)_
+
+#### PERF.7b - Folding de `calcularEstadoRenta` y `hayResumen` al bundle memoizado
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : `calcularEstadoRenta()` (barrido O(gastos): patrimonio bruto + gastos del año) corre en cada `renderAnalisis()` fuera del bundle memoizado de PERF.2; `hayResumen()` barre gastos en cada `renderPanelResumen()` de Inicio antes del `resumenSemanal()` ya memoizado. Sumarlas a la memoización aplana la ruta caché (re-render de la sección sin cambios). Beneficio acotado: solo aplica cuando la sección ya está visible y se re-renderiza.
+- Secciones  : Transversal (`analisis/view.js`, `resumen/view.js`)
+- Depende de : nada.
+- Modelo     : Sonnet 5 - Alto
+
+#### PERF.7c - Warm-up de derivaciones pesadas en idle
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : tras el primer render, un `requestIdleCallback` (con fallback `setTimeout` para navegadores sin soporte) que precaliente el bundle memoizado de Análisis y `movimientosCompletos`, para que la primera navegación a esas secciones caiga en caché en vez de pagar el cómputo frío (11-48 ms a 10k). Es el "proceso en segundo plano" que pidió Esteban, sin Web Workers (clonar el estado costaría más que estos cómputos de milisegundos).
+- Secciones  : Transversal (`ui/bootstrap.js`, hooks de warm-up exportados por `analisis/view.js` y `movimientos/view.js`)
+- Depende de : conviene después de 7b (así el warm-up calienta el bundle ya completo).
+- Modelo     : Sonnet 5 - Alto
+
+#### PERF.8 - Columna "arranque" en el harness + limpieza de CSS muerto
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : (1) `pnpm perf` no mide `loadData()` (JSON.parse + migraciones + primer render), lo único que crece lineal con el estado total y no se puede memoizar bajo el ADN actual: es el muro real de largo plazo junto con la cuota. Agregar la columna "arranque" a `bench.perf.js` da el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 exige para disparar PERF.5 (IndexedDB) con evidencia y no con intuición. (2) Borrar CSS sin referencias: `.bento__cell--glass` (con su `backdrop-filter`), `.skeleton`, `.spinner` (verificado sin uso en index.html ni JS el 2026-07-07).
+- Secciones  : Transversal (`scripts/perf/bench.perf.js`, `styles/components/atoms.css`, `styles/layout.css`)
+- Depende de : nada.
+- Modelo     : Sonnet 5 - Medio
 
 ---
 

@@ -9,7 +9,7 @@
  */
 
 import { S } from '../../../core/state.js';
-import { f, esc as _esc } from '../../../infra/utils.js';
+import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO } from '../../../core/constants.js';
@@ -295,7 +295,7 @@ export function renderNudgeProximoIngreso() {
 /** Formatea una fecha ISO como texto corto en español: "30 jun", "1 jul". */
 export function fechaCorta(iso) {
   const d = new Date(`${iso}T12:00:00Z`);
-  return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return formateadorFecha('es-CO', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
 }
 
 /**
