@@ -35,10 +35,11 @@ Campos de una tarjeta:
 - Modelo     : combinación sugerida (ver `/CLAUDE.md` sección 2.3)
 ```
 
-Reglas de las tarjetas (`/CLAUDE.md` sección 2.1):
+Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 - **Sin duplicados:** antes de crear una tarjeta, buscar otras sobre la misma funcionalidad, sección o componente; si comparten objetivo o tocan la misma parte del sistema, consolidarlas en una sola (la más completa absorbe a las demás).
 - **Dividir lo grande:** una tarjeta que toque varios dominios o varias capas (lógica, vista, estilos, datos, accesibilidad, tests) se parte en subtareas verificables de forma independiente (sufijos `a`/`b` o slices), encadenadas con "Depende de".
+- **Triaje antes de ejecutar (2.7):** toda tarea nueva del usuario pasa primero por triaje contra este tablero, los ADRs y las fichas de contexto (¿existe parcial?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere?). La tarjeta "En proceso" no se abandona por ideas nuevas; cada funcionalidad tiene UNA sola entrada canónica (tarjeta o iniciativa) y las mejoras relacionadas se integran ahí.
 
 ---
 
@@ -70,7 +71,7 @@ _(**IN.6a cerrada** el 2026-07-05: saludo dinámico con nombre en Inicio, ver CH
 - Depende de : diseños de avatares entregados por Esteban
 - Modelo     : Sonnet 5 - Medio
 
-_(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **CAL.1**/**LIM.1**/**TX.10**, la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
+_(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (que absorbió TX.10; CAL.1 ya cerró su parte), la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 
 ---
 
@@ -101,14 +102,7 @@ _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia 
 
 _(**TX.9 completa** el 2026-07-05: TX.9a (categoría primero + descripción deja de ser obligatoria) y TX.9b (categorías personalizadas), ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md).)_
 
-#### TX.10 - Categoría como eje de automatización (límites, gastos hormiga/fantasma, recomendaciones)
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario quiere que la categoría deje de ser solo organización visual y se convierta en la base de la que Finko deriva automatizaciones: clasificar el gasto, relacionarlo con Límites de gasto, detectar gastos hormiga/fantasma, alimentar Análisis, generar recomendaciones y sugerir acciones, integrándose con Dashboard, Calendario y el resto de módulos.
-- Secciones  : Gastos (`gastos`), transversal (toca Límites/`presupuesto`, Análisis/`analisis`, Inicio)
-- Archivos   : sin explorar todavía
-- Depende de : es más un principio transversal que una tarea única; se solapa fuerte con **LIM.1** (recomendaciones de límite por categoría) y **ANL.1** (recomendaciones accionables en Análisis). Al iniciar cualquiera de las tres, revisar juntas para no construir 3 motores de "sugerencia por categoría" distintos (regla de "sin duplicados" de 2.1); probablemente conviene resolver esta como una pieza de infraestructura compartida (ej. un helper en `infra` que analiza patrones de gasto por categoría) que las demás consumen.
-- Modelo     : Fable 5 - Alto (pieza de infraestructura transversal que varias iniciativas van a consumir; decidir mal el diseño aquí se replica en LIM.1, ANL.1 y futuras)
+_(**TX.10 absorbida** el 2026-07-08 por el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) "Catálogo de marcas por categoría", que lo declara explícitamente en su encabezado: la pieza de infraestructura de datos que TX.10 pedía (categoría como eje del que Finko deriva automatizaciones: límites, hormiga/fantasma, recomendaciones) es la fundación de ese ADR. El ADR 029 sigue en estado **Propuesta**, pendiente de que Esteban valide la taxonomía de su sección D3: nada de esto se inicia sin esa validación. El solape con **LIM.1** (recomendaciones de límite por categoría) y **ANL.1** (recomendaciones accionables en Análisis) que la tarjeta original documentaba se conserva como regla: al iniciar cualquiera de las tres, diseñar UN solo motor de "sugerencia por categoría" compartido, nunca tres. Fusión hecha bajo la regla 2.7 de CLAUDE.md, primer caso aplicado.)_
 
 ---
 

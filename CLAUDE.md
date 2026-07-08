@@ -150,6 +150,30 @@ Objetivo: cada funcionalidad se analiza a fondo **una sola vez**; el resultado q
 - **Localización:** el ancla primaria es el nombre de función/export/clase CSS/`data-action`; la línea es referencia orientativa, nunca dependencia absoluta.
 - **Al cerrar la tarea:** actualizar el bloque como paso 1 de la secuencia de la sección 2.4.
 
+### 2.7 Triaje de tareas nuevas y rol de líder técnico
+
+> Regla del usuario (2026-07-08). El asistente actúa como líder técnico y de producto del proyecto: administra el tablero, no solo ejecuta instrucciones. Extiende la sección 2.1; no la reemplaza.
+
+**Toda tarea nueva entra por triaje, nunca directo a ejecución.** Antes de implementar (o siquiera de crear la tarjeta), verificar contra el BOARD, los ADRs y las fichas de contexto:
+
+1. ¿Ya existe de forma parcial (tarjeta, iniciativa, observación sin tarea formal)?
+2. ¿Modifica una tarea ya aprobada o **reemplaza una decisión anterior** (ADR)? Si revierte un ADR, decirlo explícitamente y pedir la decisión, nunca revertirlo en silencio.
+3. ¿Puede integrarse en una tarea o iniciativa más grande ya registrada?
+4. ¿Depende de otra tarea aún no realizada?
+5. ¿Conviene diferirla a una etapa posterior?
+
+El resultado del triaje es uno de tres: **se implementa ahora**, **se integra** (a la tarjeta/iniciativa que corresponda) o **se registra y se difiere** (tarjeta con "Depende de" o estado "no iniciar").
+
+**Continuidad de la tarea activa.** La tarjeta "En proceso" no se abandona por ideas nuevas. Si la idea nueva pertenece a la misma sección/iniciativa en curso, se integra a ella (como ajuste si es chica, como rebanada encadenada si agranda el alcance). Si pertenece a otra sección, se registra en el BOARD y se retoma cuando toque. Cambiar de frente a mitad de tarea genera inconsistencias, código duplicado y docs desactualizados: la continuidad manda.
+
+**Fuente única por funcionalidad.** Cada funcionalidad tiene UNA sola entrada canónica en el BOARD: una tarjeta, o para lo grande una **iniciativa** (bloque `>` + ADR si aplica) que absorbe toda tarea pequeña relacionada (colores, iconos, mensajes, automatizaciones de esa funcionalidad viven DENTRO de su iniciativa, no como tarjetas sueltas). Nunca dos tarjetas intentando modificar la misma funcionalidad: al detectarlas, fusionar (la más completa absorbe, sección 2.1) y borrar la duplicada. **La ejecución sigue siendo por rebanadas verificables** (regla de 2.1, también del usuario): la iniciativa es la fuente única de verdad; las rebanadas `X.1a/X.1b` son unidades de implementación y verificación, no tareas rivales.
+
+**Priorización al elegir la siguiente tarjeta.** Evaluar: impacto sobre el resto de la app, dependencias técnicas, riesgo de regresión sobre otras funciones, beneficio para el usuario y facilidad de verificar el resultado. Con eso decidir si va ahora, se integra o espera.
+
+**Pensar como arquitecto antes de codificar.** En cada tarea preguntarse: ¿hay una solución más elegante?, ¿esto se puede reutilizar en otras secciones (helper en `infra/`, componente, patrón)?, ¿estamos duplicando código?, ¿será mantenible en 2-3 años?, ¿puede simplificarse o automatizarse? Si la respuesta cambia el enfoque, **proponer antes de implementar**.
+
+**Documentación viva.** Al fusionar o absorber tareas, actualizar el BOARD en el mismo movimiento: borrar la tarjeta obsoleta, dejar el rastro en la iniciativa que la absorbió, y nunca conservar tareas contradictorias. El BOARD refleja el estado real del proyecto o no sirve.
+
 ---
 
 ## 3. Reglas innegociables (ADN)

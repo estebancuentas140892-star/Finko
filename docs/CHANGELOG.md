@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(workflow): sección 2.7, triaje de tareas nuevas y rol de líder técnico · 2026-07-08
+
+Regla nueva del usuario, codificada en [`/CLAUDE.md`](../CLAUDE.md) sección 2.7: toda tarea nueva entra por **triaje** (¿existe parcial?, ¿modifica algo aprobado o revierte un ADR?, ¿se integra a una iniciativa mayor?, ¿depende de algo?, ¿se difiere?) y el resultado es implementar ahora, integrar o registrar y diferir; la tarjeta "En proceso" no se abandona por ideas nuevas (continuidad primero); cada funcionalidad tiene **una sola entrada canónica** en el BOARD (tarjeta o iniciativa que absorbe las tareas pequeñas relacionadas), con la ejecución siempre por rebanadas verificables (la regla 2.1 se mantiene: fuente única ≠ tarea monolítica); priorización explícita al elegir tarjeta (impacto, dependencias, riesgo, beneficio, verificabilidad); y rol de arquitecto: proponer la solución más elegante/reutilizable **antes** de implementar, no después.
+
+**Primer caso aplicado en el mismo movimiento:** la tarjeta **TX.10** ("categoría como eje de automatización") seguía viva en el BOARD pese a que el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) declara absorberla desde el 2026-07-06. Se fusionó (nota de absorción con el solape LIM.1/ANL.1 preservado como regla de diseño), se corrigió la nota de IN.7 que la citaba como tarjeta viva (junto con CAL.1, ya cerrada), y el ADR 029 (que llevaba 2 días sin commitear siendo referenciado) entró al repo en su estado honesto de **Propuesta** (pendiente de que Esteban valide la taxonomía D3; nada de eso se inicia sin esa validación).
+
+| Archivo | Cambio |
+|---|---|
+| `CLAUDE.md` | Sección 2.7 nueva (triaje, continuidad, fuente única por funcionalidad, priorización, rol de arquitecto, documentación viva). |
+| `docs/BOARD.md` | Regla de triaje en el encabezado; TX.10 absorbida por el ADR 029; nota de IN.7 corregida. |
+| `docs/DECISIONS/029-catalogo-de-marcas-por-categoria.md` | Entra al repo (estado Propuesta, sin cambios de contenido). |
+
+---
+
 ### docs(adr) + feat(ui): IV.1, fundación de tokens de identidad de color por sección · 2026-07-07
 
 Primera fase de la iniciativa "Identidad de color por sección" ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), aceptada por Esteban el mismo día). Brief: la app depende demasiado del verde y el negro; cada sección debería tener un color reconocible en toda la experiencia (tarjetas, botones, iconos, barras, gráficos, calendario). El análisis encontró que los tokens `--fk-dom-*` ya existían en `tokens.css` pero sub-desplegados (solo en tejas, dots y badges pequeños), **sin rampa de tema claro** (hueco WCAG real: varios dominios por debajo de 2:1 de contraste sobre blanco) y con `--fk-dom-compromisos` **idéntico** a `--fk-danger` (#ff4757 compartido entre "es una deuda" y "hubo un error").
