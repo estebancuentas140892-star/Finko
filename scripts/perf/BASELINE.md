@@ -137,4 +137,18 @@ Verificado: 2257/2257 unit (5 tests nuevos: `formateadorFecha` + equivalencia de
 
 **Validación:** 2261/2261 unit (4 tests nuevos de `renderPanelResumen()` en `tests/unit/resumen.test.js`: sin contenedor no revienta, oculta sin gastos en la ventana, oculta sin ningún gasto, muestra con actividad) + 155/155 E2E en Chromium real + `pnpm perf`. SW v337 → v338.
 
-> Queda **PERF.7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). `calcularEstadoRenta` queda fuera de PERF.7 (ver hallazgo de alcance arriba); si se retoma, primero hay que emitir `state:change` desde el handler de datos fiscales en `config/index.js`. Ver [BOARD.md](../../docs/BOARD.md).
+---
+
+## PERF.7d (2026-07-07): memoizar `calcularEstadoRenta` sin necesidad de tocar `config/index.js`
+
+**Cambio:** `_renderEstadoRenta(anio)` ([analisis/view.js](../../modules/dominio/analisis/view.js)) llamaba a `calcularEstadoRenta(S, anio)` (barrido de `patrimonioBruto` + `totalGastosAnio`) **sin memoizar**, en cada `renderAnalisis()`. Se agregó `_calcularEstadoRentaMemo`, memoizada contra `['gastos', 'cuentas', 'inversiones']` con un `extraerClave` propio que además lee `state.config?.datosFiscales?.[anio]` directamente.
+
+**Por qué esto es seguro sin la mitad de PERF.7b que se había descartado** (emitir `state:change` desde `config/index.js`): el handler de "Datos de renta" (`#form-datos-fiscales`) siempre **reemplaza** `S.config.datosFiscales[anio]` con un objeto nuevo (`entrada = {}` en cada submit, o lo borra con `delete`), nunca lo muta en el lugar. Como `extraerClave` lee ese valor directo (no el objeto contenedor `datosFiscales`, que sí se muta en el lugar y no cambiaría de referencia), su identidad cambia en cada guardado real, y la comparación por referencia de `memoizar()` detecta el cambio sola. No hace falta tocar `config/index.js` ni sumar `'config'` a `SECCIONES_OBSERVADAS` de `analisis/index.js`: el arreglo queda contenido en `analisis/view.js`, con menos riesgo y menos superficie de cambio que lo planteado originalmente en la tarjeta.
+
+**Prueba de la corrección (no solo del rendimiento):** se agregaron 4 tests nuevos en `tests/unit/analisis.test.js` que renderizan Análisis dos veces seguidas con `S.config.datosFiscales` editado entre medio (simulando exactamente lo que hace el handler, sin pasar por `EventBus`), y verifican que el segundo render **no sirve el resultado obsoleto**. Con una memoización ingenua (clave por defecto, sin este `extraerClave`), el test "editar datosFiscales entre dos renders refleja el valor nuevo" habría fallado mostrando el badge "Sin datos en Finko" en vez del monto nuevo.
+
+**Medición (`pnpm perf`):** el efecto en "Análisis caché" es pequeño y está dentro del ruido de medición (3,4-4,6 ms antes → 3,4-3,9 ms ahora, a 1.000/5.000/10.000 gastos): `calcularEstadoRenta` ya era barata frente al resto del bundle memoizado de PERF.2 con los datos de la semilla de este harness (`patrimonioBruto` es chico, `totalGastosAnio` filtra por un solo año dentro de 10 de historial). El valor de esta tarea es principalmente de **corrección de cobertura de caché** (cierra el único barrido sin memoizar que quedaba en el render de Análisis) más que de velocidad medible en este escenario sintético; en un caso real con más cuentas/inversiones o un año con más actividad, el ahorro sería mayor.
+
+**Validación:** 2265/2265 unit (4 tests nuevos en `tests/unit/analisis.test.js`) + 155/155 E2E en Chromium real + `pnpm perf`. SW v338 → v339.
+
+> Queda **PERF.7c** (warm-up en `requestIdleCallback` del bundle de Análisis y `movimientosCompletos`). Con PERF.7d cerrada, PERF.7 queda completa salvo esa. Ver [BOARD.md](../../docs/BOARD.md).

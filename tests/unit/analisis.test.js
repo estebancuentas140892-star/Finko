@@ -1598,3 +1598,66 @@ describe('renderAnalisis() - PERF.3 detalle de gastos diferido', () => {
     expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
   });
 });
+
+// ── renderAnalisis() - PERF.7d: calcularEstadoRenta memoizada ──────
+
+describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar obsoleto', () => {
+  const anioActual = new Date().getFullYear();
+
+  // Los otros 4 criterios (patrimonio, consumos, consumosTC, consignaciones)
+  // no se tocan en este describe: acotar la búsqueda al artículo de "Ingresos
+  // brutos" evita falsos negativos/positivos por el badge "Sin datos en
+  // Finko" que consumosTC/consignaciones siguen mostrando siempre aquí.
+  const criterioIngresos = () => {
+    const articulos = [...document.querySelectorAll('.renta-criterio')];
+    return articulos.find(a => a.querySelector('.renta-criterio__label')?.textContent === 'Ingresos brutos');
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+    S.config = { datosFiscales: {} };
+  });
+
+  it('sin datos fiscales del año, el criterio de ingresos brutos aparece sin datos', () => {
+    renderAnalisis();
+    const art = criterioIngresos();
+    expect(art).not.toBeNull();
+    expect(art.querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+  });
+
+  it('editar datosFiscales entre dos renders refleja el valor nuevo (no sirve caché obsoleta)', () => {
+    // 1er render: sin datos fiscales, memoiza el resultado "sin-datos".
+    renderAnalisis();
+    expect(criterioIngresos().querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+
+    // Simula exactamente lo que hace config/index.js al guardar el formulario:
+    // reemplaza la entrada del año con un objeto NUEVO, sin pasar por EventBus.
+    S.config.datosFiscales[anioActual] = { ingresosBrutos: 50_000_000 };
+    renderAnalisis();
+
+    const art = criterioIngresos();
+    expect(art.querySelector('.renta-criterio__badge').textContent).not.toBe('Sin datos en Finko');
+    expect(art.querySelector('.renta-criterio__valor').textContent).toContain('$50.000.000');
+  });
+
+  it('borrar los datos fiscales del año también se refleja (vuelve a sin-datos)', () => {
+    S.config.datosFiscales[anioActual] = { ingresosBrutos: 30_000_000 };
+    renderAnalisis();
+    expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$30.000.000');
+
+    // Simula el handler cuando el usuario borra el campo y reenvía el form.
+    delete S.config.datosFiscales[anioActual];
+    renderAnalisis();
+
+    expect(criterioIngresos().querySelector('.renta-criterio__badge').textContent).toBe('Sin datos en Finko');
+  });
+
+  it('un segundo render sin ningún cambio no rompe (cache hit correcto)', () => {
+    S.config.datosFiscales[anioActual] = { ingresosBrutos: 10_000_000 };
+    renderAnalisis();
+    renderAnalisis();
+    expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$10.000.000');
+  });
+});

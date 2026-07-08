@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### perf(rendimiento): PERF.7d, calcularEstadoRenta memoizada sin tocar config/index.js · 2026-07-07
+
+Tercera rebanada de **PERF.7**, y cierre de la mitad de `calcularEstadoRenta()` que PERF.7b había descartado por riesgo de datos obsoletos. `_renderEstadoRenta(anio)` ([analisis/view.js](../../modules/dominio/analisis/view.js)) llamaba a `calcularEstadoRenta(S, anio)` (barrido de `patrimonioBruto` + `totalGastosAnio`) **sin memoizar**, en cada `renderAnalisis()`.
+
+**El plan original de esta tarjeta resultó más grande de lo necesario.** PERF.7b había planteado que primero había que corregir `config/index.js` para que emitiera `state:change` al guardar datos fiscales (hoy los muta directo, sin EventBus), y solo después memoizar. Al analizarlo a fondo: el handler de "Datos de renta" (`#form-datos-fiscales`) siempre **reemplaza** `S.config.datosFiscales[anio]` con un objeto nuevo (`entrada = {}` en cada submit, o lo borra con `delete`), nunca lo muta en el lugar. Eso significa que memoizar `calcularEstadoRenta` con un `extraerClave` que lea `state.config?.datosFiscales?.[anio]` **directamente** (en vez de pasar el estado completo, que nunca cambia de referencia) detecta el cambio solo por identidad, sin depender de ningún evento. Se agregó `_calcularEstadoRentaMemo`, memoizada contra `['gastos', 'cuentas', 'inversiones']` (que sí emiten `state:change` correctamente hoy) con ese `extraerClave` propio. `config/index.js` y `analisis/index.js` quedan sin tocar: menos riesgo y menos superficie de cambio que el plan original.
+
+**Prueba de la corrección, no solo del rendimiento:** se agregaron 4 tests en `tests/unit/analisis.test.js` que renderizan Análisis dos veces con `S.config.datosFiscales` editado entre medio (simulando exactamente el handler, sin pasar por EventBus) y verifican que el segundo render **no sirve el resultado obsoleto**. Con una memoización ingenua (clave por defecto), el test de "editar entre dos renders" habría fallado mostrando el badge "Sin datos en Finko" en vez del monto nuevo: la prueba habría detectado exactamente el bug que este diseño evita.
+
+**Medición honesta (`pnpm perf`):** el efecto en "Análisis caché" es pequeño, dentro del ruido de medición (3,4-4,6 ms antes → 3,4-3,9 ms ahora). `calcularEstadoRenta` ya era barata frente al resto del bundle memoizado de PERF.2 con los datos de la semilla de este harness. El valor de esta tarea es de **corrección de cobertura de caché** (cierra el único barrido sin memoizar que quedaba en el render de Análisis), no de velocidad medible en este escenario sintético.
+
+**Validación:** 2265/2265 unit (4 tests nuevos) + 155/155 E2E en Chromium real + `pnpm perf`. SW v338 → v339. Con esto, **PERF.7 queda completa salvo PERF.7c** (warm-up en idle).
+
+| Archivo | Cambio |
+|---|---|
+| `modules/dominio/analisis/view.js` | `_calcularEstadoRentaMemo` nuevo (memoiza `calcularEstadoRenta` con `extraerClave` propio); `_renderEstadoRenta` lo usa. |
+| `tests/unit/analisis.test.js` | 4 tests nuevos: sin datos, edición entre renders no queda obsoleta, borrado se refleja, cache hit correcto sin cambios. |
+| `scripts/perf/BASELINE.md` | Sección PERF.7d con la medición y la explicación de por qué es seguro. |
+| `docs/BOARD.md` | PERF.7d cerrada con el alcance revisado (más chico que el planteado en PERF.7b). |
+| `service-worker.js` | v338 → v339. |
+
+---
+
 ### perf(rendimiento): PERF.7b, fold de hayResumen() en el bundle memoizado del resumen semanal · 2026-07-07
 
 Segunda rebanada de **PERF.7**. `renderPanelResumen()` ([resumen/view.js](../../modules/dominio/resumen/view.js)) llamaba a `hayResumen(gastos, hoyISO)` (barrido propio de `S.gastos`, **sin memoizar**) para decidir si mostrar el panel, y recién después llamaba a `_resumenSemanalMemo()` (memoizada desde PERF.2) para el contenido. `resumenSemanal()` ya calcula `registros` (gastos en los últimos 7 días) como parte de su resultado: la condición de "sin actividad" ahora se lee de ese campo, una sola llamada memoizada en vez de dos (una sin cachear).

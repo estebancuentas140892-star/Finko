@@ -77,6 +77,29 @@ function _calcularDetalleGastos(gastos, anio, mes, fechaHoy) {
 const _calcularDetalleGastosMemo = memoizar(_calcularDetalleGastos, ['gastos']);
 
 /**
+ * PERF.7d: `calcularEstadoRenta()` (barrido de patrimonio bruto + gastos del
+ * año) se llamaba sin memoizar en cada `renderAnalisis()`. Memoizarla a ciegas
+ * contra `['gastos', 'cuentas', 'inversiones']` con la clave por defecto
+ * (pasando `S` entero, que nunca cambia de referencia) serviría un resultado
+ * obsoleto tras editar "Datos de renta" en Ajustes: `config/index.js` muta
+ * `S.config.datosFiscales` directo, sin pasar por `EventBus`.
+ *
+ * Por qué es seguro memoizarla igual, sin tocar `config/index.js`: el handler
+ * de "Datos de renta" siempre reemplaza `S.config.datosFiscales[anio]` con un
+ * objeto NUEVO (`entrada = {}` en cada submit, o lo borra con `delete`), nunca
+ * lo muta en el lugar. `extraerClave` lee ese valor directo, así que su
+ * identidad cambia en cada guardado real y la comparación por referencia
+ * detecta el cambio sola, sin depender de eventos. `cuentas`/`inversiones`/
+ * `gastos` siguen cubiertos por el mecanismo de revisión existente (igual que
+ * el resto de los memos de este archivo).
+ */
+const _calcularEstadoRentaMemo = memoizar(
+  calcularEstadoRenta,
+  ['gastos', 'cuentas', 'inversiones'],
+  (state, anio) => [state.cuentas, state.inversiones, state.gastos, state.config?.datosFiscales?.[anio] ?? null, anio],
+);
+
+/**
  * Renderiza el análisis completo en `#panel-analisis`.
  * No-op si el contenedor no existe.
  */
@@ -218,7 +241,7 @@ function _renderRecomendacionFiscal() {
  * dato real.
  */
 function _renderEstadoRenta(anio) {
-  const estado = calcularEstadoRenta(S, anio);
+  const estado = _calcularEstadoRentaMemo(S, anio);
   const pf     = (typeof S.config?.perfilFiscal === 'object' && S.config.perfilFiscal !== null)
     ? S.config.perfilFiscal : null;
   const nudges = detectarNudgesRenta(estado, pf);
