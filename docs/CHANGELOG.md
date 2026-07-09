@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 4.º lote (Ajustes, Análisis, Apartados, Metas) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
+
+Cuarto triaje del día, el más entrelazado: 4 briefs cruzados contra tablero, ADRs, fichas y los 3 lotes anteriores. Resultado en [`BOARD.md`](BOARD.md):
+
+- **Ajustes:** punto 1 (unificar lo fiscal) confirma la dirección de la iniciativa CFG.1+CFG.2 ya en curso y añade la decisión de ubicación → tarjeta nueva **CFG.2c** (asistente "Completar perfil fiscal" bajo demanda en Ajustes; interpretación consolidada en Análisis). Punto 2 (rediseño visual) → integrado a **CFG.6**. Punto 3 (transición de temas) → **CFG.7 con advertencia técnica**: la transición suave YA existe y fue deliberadamente restringida por lag en móvil (documentado en `themes.css`); la dirección recomendada es View Transitions API como mejora progresiva + verificar primero en el dispositivo real de Esteban (mismo criterio de evidencia del ADR 030).
+- **Análisis:** puntos 6-8 (lenguaje cercano, explicar gráficos, reorganización) se **integran a ANL.1**, que ya los registraba casi 1:1 desde el 2026-07-05 (se añaden los ejemplos de copy nuevos: "Estado de tu dinero", "Lo que tienes"/"Lo que debes"). Puntos 1-5 (logros) → iniciativa nueva **LG.2 "Logros v2, gamificación de hábitos"** (LG.2a), que requiere ADR revisando el ADR 022 (la vitrina se muda de Ajustes a Análisis + Inicio) e incluye como principio innegociable la **regla anti-gaming de Esteban**: premiar hábitos, nunca la omisión de información (prohibido "día sin gastos").
+- **Apartados:** iniciativa **"Apartados v2" (AP.5)** con la filosofía redefinida (colchón para gastos esporádicos olvidables, no objetivos grandes): form estándar, recurrencia como toggle post-creación, aporte sugerido prellenado. Las categorías que son Metas (Vacaciones, Computador...) → **CAT.1 ampliada** (la taxonomía Apartados↔Metas se decide en la MISMA pasada que Gastos↔Fijos); el selector de emojis del SO (Win+.) → **CAT.2**.
+- **Metas:** iniciativa **"Metas v2" (MT.6)**: subcategorías inteligentes (patrón compartido detectado: categoría→subcategoría es el mismo modelo de dos niveles que entidad→producto de MC.16/Deudas, se decide UNA vez en ADR 029 D3), cuota por frecuencia real del usuario, plan de aportes generado y recalculado automáticamente (si se ejecutara solo, pertenece al ADR de PA). La integración con "Distribuir mi ingreso" era exactamente el punto 21 de MC.13 (metas añadido como consumidor).
+- **Motor compartido de MC.13 renombrado** a "vencimientos y aportes recomendados": suma como consumidores el plan de MT.6 y el prellenado de AP.5 (ya eran consumidores el asistente, la checklist, PA.1 y la cuota por período). **CAT.2 sube a 6 consumidores.**
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): 3.er lote (Inicio, Calendario, Me deben) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Tercer triaje del día: 3 briefs. Resultado en [`BOARD.md`](BOARD.md):

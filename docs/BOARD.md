@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-08 (triaje del 3.er lote: Inicio, Calendario y Me deben v2, regla 2.7).
+> Última actualización: 2026-07-08 (triaje del 4.º lote: Ajustes, Análisis, Apartados y Metas, regla 2.7).
 
 ---
 
@@ -91,7 +91,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Objetivo   : el asistente "Distribuir mi ingreso" (épica MC.7, cerrada) hoy muestra TODAS las necesidades/ahorros/obligaciones registradas; con muchos registros satura. Nueva lógica: al recibir un ingreso, Finko analiza la fecha del ingreso, la frecuencia de ingresos del usuario, las obligaciones vencidas, las que vencen en la ventana de ese ingreso y los aportes de ahorro (fondo/metas/apartados/inversión) programados para esa fecha, y solo sugiere lo que corresponde pagar/apartar en ese momento. Responde "¿qué debo hacer HOY con este dinero?", no "todo lo del mes". Reutilizar la lógica existente de recordatorio de día de ingreso (ADR 021, AP.4/MT.2/AH.4) para "qué toca aportar hoy".
 - **Ampliación del brief 2026-07-08 (21 puntos + ingreso fijo→cuenta):** (9) rediseño en 2 pasos: primero recomendaciones visuales de cómo distribuyen los expertos (educación financiera con barras/gráficos/porcentajes; candidato a logro por distribución saludable sostenida), después la distribución personalizada por prioridad; (10) cada recomendación aparece SOLO en el paso de su categoría, no todas juntas al inicio; (11) quitar los accesos "Ver progreso del fondo / estrategias / límites" del asistente; (12) el aviso "recibiste tu ingreso" y el asistente son dos bloques visualmente independientes; (13) revisar el texto "Reparte hacia tus necesidades..."; (14) si el ingreso no alcanza, ofrecer completar con saldo disponible de otras cuentas (detección automática + pregunta explícita); (15) en cada fila de la distribución: logo de entidad o icono personalizado + nombre + nota (diferenciar dos "Arriendo" por icono/nota); (16) quitar "Abonar extra a deudas" del paso de ahorro (un abono es un pago, vive en Deudas); (17) navegación Atrás/Siguiente modernizada (coherente con IV); (18) el dinero restante exige decisión explícita (dejarlo en la cuenta, ahorro, meta) antes de finalizar; (21) metas/fondo/apartados muestran la **cuota del período** según la frecuencia del ingreso, no el objetivo total; **(integración ingreso fijo)** el ingreso fijo registra en qué cuenta se recibe, el asistente parte de esa cuenta, los pagos aprobados se descuentan de ahí, y el paso final "Estilo de vida" desaparece: lo no distribuido simplemente se queda en la cuenta (refleja la realidad; revisa el cierre del asistente MC.7e); **(7+19)** separación clara ingreso fijo (periódico, dispara distribución) vs ingreso esporádico (solo acredita y registra, SIN ofrecer distribución: conflicto (a) del bloque de arriba).
 - **Absorbe MC.7g** (fijos Quincenal/Semanal/Diario en la checklist de Necesidades): modelar ocurrencias dentro del periodo es EL MISMO problema, y ambos se resuelven con la pieza compartida.
-- **Pieza de infraestructura compartida (regla de arquitecto 2.7):** un "motor de vencimientos" (qué obligaciones y aportes corresponden a una fecha/ventana dada) que consuman: este asistente, la checklist de Necesidades (ex MC.7g), los pagos automáticos (PA.1, Transversal) y la cuota por período del punto 21. `eventosDelMes` de Agenda ya resuelve la mitad (ocurrencias por frecuencia): evaluar extraerlo/generalizarlo a `infra/` en vez de construir motores paralelos (mismo criterio que la fusión TX.10/LIM.1/ANL.1).
+- **Pieza de infraestructura compartida (regla de arquitecto 2.7):** un "motor de vencimientos y aportes recomendados" (qué obligaciones y aportes corresponden a una fecha/ventana dada, y cuánto tocaría aportar según frecuencia real de ingresos) que consuman: este asistente, la checklist de Necesidades (ex MC.7g), los pagos automáticos (PA.1, Transversal), la cuota por período del punto 21, el **plan de aportes de Metas v2** (MT.6, 4.º lote) y el **prellenado del botón Aportar de Apartados** (AP.5, 4.º lote; patrón que AH.2 ya cerró para el fondo). `eventosDelMes` de Agenda ya resuelve la mitad (ocurrencias por frecuencia): evaluar extraerlo/generalizarlo a `infra/` en vez de construir motores paralelos (mismo criterio que la fusión TX.10/LIM.1/ANL.1).
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `ingresos.js`), transversal por el motor
 - Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1 (conflicto (b)); decisión del conflicto (a) sobre NAV.A2b
 - Modelo     : Opus 4.8 - Extra para el análisis/re-corte (redefine el asistente completo + decisión que toca ADR 024); rebanadas después con el modelo que corresponda
@@ -162,13 +162,31 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 ### Apartados (dominio `apartados`)
 
-_(sin pendientes activos.)_
+> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). Filosofía redefinida por Esteban: Apartados NO es "ahorrar para objetivos grandes" (eso es Metas), es preparar los gastos esporádicos que se olvidan presupuestar (SOAT, regalos, Navidad, veterinario, mantenimientos, impuestos...) para que al llegar la fecha el dinero ya esté reservado. **Derivados a fuentes únicas:** las categorías que realmente son Metas (Vacaciones, Semestre, Computador, Viajes) → **CAT.1 ampliada** (la taxonomía Apartados↔Metas es la misma clase de decisión que Gastos↔Fijos, una sola pasada); el picker de icono (hoy depende del selector de emojis del SO, Win+.) → **CAT.2** (consumidor n.º 5; nota: el `icono` de apartados hoy es emoji como dato del usuario, exento de TX.4, y pasaría a símbolo del sprite: decidir la migración en CAT.3); "Otro" con nombre+icono → **CAT.3**.
+
+#### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle, aporte sugerido
+- Prioridad  : media
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar (dropdown "Seleccionar categoría..." que autocompleta, en vez de la parrilla de categorías visibles a la vez); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple); (6) al pulsar **Aportar**, prellenar el monto sugerido calculado con objetivo + fecha límite + frecuencia de ingresos del usuario (editable siempre; consume el motor de aportes/vencimientos de MC.13, mismo patrón que AH.2 ya cerró para el fondo). La regla general de Esteban ("todo aporte/abono/distribución sugiere un valor calculado") queda como principio del motor, no de esta tarjeta.
+- Secciones  : Apartados
+- Archivos   : `modules/dominio/apartados/` (form, view, logic), motor compartido en MC.13
+- Depende de : CAT.1 (categorías nuevas de la filosofía redefinida) para el catálogo; el prellenado depende del motor de MC.13; el toggle y el form pueden ir antes
+- Modelo     : Sonnet 5 - Alto (re-corte en rebanadas al iniciar)
 
 ---
 
 ### Metas (dominio `metas`)
 
-_(sin pendientes activos.)_
+> **Iniciativa "Metas v2: planificador inteligente de objetivos"** (brief de Esteban del 2026-07-08, 7 puntos). El usuario dice QUÉ quiere y PARA CUÁNDO; Finko calcula, genera y sincroniza. **Derivados a fuentes únicas:** orden del form → **CAT.4**; "Otro" con icono+nombre → **CAT.2/CAT.3** (consumidor n.º 6); el cálculo de cuota por frecuencia real integrado a "Distribuir mi ingreso" → **MC.13** (era exactamente su punto 21; metas añadido como consumidor explícito del motor); la sincronización total entre secciones (punto 7) ya es el ADN (EventBus + motores compartidos), principio, no tarea.
+
+#### MT.6 - Metas v2: subcategorías inteligentes + plan de aportes generado automáticamente
+- Prioridad  : media-alta
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : (2) **subcategorías por categoría** (Tecnología → Laptop/Celular/Tablet...; Vehículo → Carro/Moto/Bicicleta...; Vivienda, Educación, Viajes...): el usuario escribe lo mínimo y Finko reconoce el tipo de meta para automatizaciones/estadísticas. **Patrón compartido detectado en el triaje:** categoría→subcategoría es el MISMO patrón de dos niveles que entidad→producto (MC.16/Deudas v2): decidir la estructura de datos UNA vez en la validación D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md), no dos. (5) El cálculo de cuota usa la **frecuencia real de ingresos** del usuario registrada en Mis cuentas (diaria, semanal, quincenal, mensual, personalizada), nunca asume quincenal (la base ya existe: metas calcula cuota y el ADR 021 ya lee el día de ingreso). (6) **Generar automáticamente el plan de aportes** (un registro por fecha de ingreso hasta la fecha objetivo) y **recalcular todo el plan** si cambia la frecuencia del ingreso o la fecha/monto de la meta. Ojo: si esos aportes se ejecutaran solos serían movimientos automáticos → esa variante pertenece al ADR de PA; como plan visible/recordatorio no lo necesita.
+- Secciones  : Metas, Calendario (plan visible), transversal por el motor de MC.13
+- Archivos   : `modules/dominio/metas/logic.js` (cálculo existente), motor compartido de MC.13, `agenda` (visualización del plan)
+- Depende de : MC.13 (motor); validación D3 del ADR 029 para las subcategorías; coordinar con PA si el plan se automatiza
+- Modelo     : Opus 4.8 - Alto (modelo de datos de subcategorías + generación/recalculo del plan de aportes)
 
 ---
 
@@ -235,6 +253,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
   6. **Convertir datos en recomendaciones accionables**: no solo estadísticas, sino mensajes tipo "estás gastando demasiado en X", "tu fondo de emergencia cubre 2 meses", "vas atrasado en tu meta de viaje", "detectamos varios gastos hormiga", etc.
   7. **Reducir carga cognitiva**: tarjetas plegables, bloques expandibles, pestañas, filtros, resúmenes con "ver más detalle"; descubrimiento progresivo, no todo de una vez.
   8. **Coherencia visual con el resto de Finko**: mismos colores por sección, iconos propios (Finko Icons v2), tipografía, espaciados, jerarquía, animaciones y componentes reutilizables (nada nuevo que rompa el sistema de diseño existente). _(Nota de triaje 2026-07-08: este punto lo resuelve la iniciativa de color del [ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md) (IV.1 cerrada, IV.2 pendiente); al iniciar ANL.1, consumir esos tokens, no diseñar un sistema paralelo.)_
+  9. **(Integrado por triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 6-8, que refuerzan casi 1:1 los puntos 1-5 y 7 de arriba con ejemplos concretos de copy)**: "Estado de tu dinero" en vez de "Score financiero", "Dinero disponible" en vez de "Liquidez", "Lo que tienes" / "Lo que debes" en vez de "Activos" / "Pasivos" (término técnico como secundario o entre paréntesis); cada gráfico con título claro + explicación sencilla + interpretación automática + recomendación ("Este mes destinaste el 58% de tu dinero a necesidades. Vas por buen camino, aunque aún podrías aumentar un poco tu ahorro."); reorganización Bento en desktop y tarjetas secuenciales en móvil, con las conclusiones primero y el detalle después. El mismo brief también pidió recibir aquí toda la interpretación fiscal (ver CFG.2c) y albergar el progreso/logros (ver iniciativa LG.2 en Transversal): coordinar las tres al diseñar el layout.
   El usuario pidió explícitamente analizar la sección completa antes de implementar cualquier cambio, para decidir qué simplificar, reorganizar, unificar o eliminar, sin perder profundidad de análisis.
 - Secciones  : Análisis (dominio `analisis`); probable relación con Presupuesto (límites), Ahorro (fondo/metas), Compromisos (deudas) y Gastos, ya que las recomendaciones cruzan esos dominios (vía datos ya calculados, no importando entre dominios, ADN 10)
 - Archivos   : sin explorar todavía en profundidad; punto de partida `modules/dominio/analisis/` (lógica y vista) y estilos ya mencionados en memoria (paleta unificada dona/barras, `style(analisis)` en el historial); requiere ficha de contexto nueva en `docs/contexto/` si no existe
@@ -247,7 +266,16 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abajo. **No iniciar ninguna sin instrucción explícita.** CFG.1 y CFG.2 se **fusionaron** (decisión de Esteban, 2026-07-06) en una sola iniciativa "Perfil fiscal/financiero en Ajustes", partida en subtareas verificables. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).)_
 
-> Iniciativa fusionada CFG.1 + CFG.2 ("Perfil fiscal/financiero en Ajustes", 2026-07-06). Criba de las 8 preguntas propuestas por Esteban: solo **situación laboral** tiene consumidor real y no es derivable; el resto Finko ya lo sabe (ingresos/frecuencia vía `S.ingresos`) o no lo consume nada (aplazadas). Hallazgo clave: el monitor de renta (K.3, `calcularEstadoRenta` en Análisis) **ya hace gran parte de CFG.2**; los huecos son auto-derivar `ingresosBrutos` (los otros 2 manuales no son derivables: no hay tipo de cuenta "tarjeta de crédito") e inferir el estado de declarante. **CFG.1a cerrada** el 2026-07-06 (quitar SMMLV muerto + situación laboral, schema v25). Quedan CFG.2a y CFG.2b.
+> Iniciativa fusionada CFG.1 + CFG.2 ("Perfil fiscal/financiero en Ajustes", 2026-07-06). Criba de las 8 preguntas propuestas por Esteban: solo **situación laboral** tiene consumidor real y no es derivable; el resto Finko ya lo sabe (ingresos/frecuencia vía `S.ingresos`) o no lo consume nada (aplazadas). Hallazgo clave: el monitor de renta (K.3, `calcularEstadoRenta` en Análisis) **ya hace gran parte de CFG.2**; los huecos son auto-derivar `ingresosBrutos` (los otros 2 manuales no son derivables: no hay tipo de cuenta "tarjeta de crédito"; ver nota MC.16 en CFG.2a) e inferir el estado de declarante. **CFG.1a cerrada** el 2026-07-06 (quitar SMMLV muerto + situación laboral, schema v25). Quedan CFG.2a, CFG.2b y CFG.2c. **Ampliación del 4.º lote (2026-07-08, brief de Ajustes punto 1):** Esteban confirma la dirección de la iniciativa (Finko deduce automáticamente lo que ya sabe y solo pregunta lo indispensable) y añade la decisión de UBICACIÓN: los formularios fiscales dejan de vivir permanentes en Ajustes y pasan a un asistente tras un botón ("Completar perfil fiscal"); toda la interpretación y recomendaciones se consultan en **Análisis** (donde ya vive "Estado de tu renta"). Ajustes queda solo para configuración de la app. Nueva tarjeta CFG.2c abajo.
+
+#### CFG.2c - Reubicar lo fiscal: asistente bajo demanda en Ajustes + interpretación en Análisis
+- Prioridad  : sin definir
+- Estado     : pendiente (parte 4 de la iniciativa fusionada; conviene DESPUÉS de CFG.2a/2b, que reducen cuántas preguntas quedan en el asistente)
+- Objetivo   : los bloques "Perfil fiscal" y "Datos de renta" dejan de renderizarse permanentes en Ajustes; un botón "Completar perfil fiscal" abre un asistente (modal/pasos) solo con los datos no deducibles que queden tras CFG.2a/2b. "Estado de tu renta" y sus nudges se consolidan en Análisis como único lugar de interpretación (coordinar con el layout de ANL.1 punto 9).
+- Secciones  : Configuración (Ajustes), Análisis
+- Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
+- Depende de : CFG.2a y CFG.2b; coordinar con ANL.1
+- Modelo     : Sonnet 5 - Alto (reubicación de UX sin lógica fiscal nueva)
 
 #### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
 - Prioridad  : sin definir
@@ -297,11 +325,20 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
 - Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada.
+- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2).
 - Secciones  : Configuración (Ajustes)
-- Archivos   : sin explorar
+- Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
 - Depende de : CFG.1 a CFG.5 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes)
 - Modelo     : Sonnet 5 - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
+
+#### CFG.7 - Transición de tema claro/oscuro más fluida [con advertencia técnica]
+- Prioridad  : baja
+- Estado     : pendiente de análisis (no iniciar sin leer la advertencia)
+- Objetivo   : Esteban percibe el cambio de tema como brusco ("parece que la página recarga"). **Advertencia del triaje: la transición suave YA existe y su estado actual es una decisión deliberada de rendimiento**, documentada en `styles/themes.css`: la técnica `theme-transitioning` (280 ms) se restringió a ~30 contenedores porque animar `*` causaba lag perceptible en móvil (cientos de elementos × 5 propiedades), y bajo `prefers-reduced-motion` el cambio es instantáneo a propósito. Antes de tocar nada: (1) reproducir la brusquedad en el dispositivo real de Esteban y descartar que sea reduced-motion activo; (2) la dirección técnica recomendada NO es "más transiciones CSS" (ya se probó y se revirtió) sino la **View Transitions API** (`document.startViewTransition()`): el navegador compone un crossfade de snapshot en un solo paint, sin animar elementos individuales, como mejora progresiva (Chrome/Edge/Safari 18+; Firefox cae al comportamiento actual). Cumple la restricción de rendimiento del ADR 031 D6.
+- Secciones  : Transversal (shell/tema), visible desde Ajustes
+- Archivos   : `modules/ui/shell.js` (`toggleTheme`), `styles/themes.css`
+- Depende de : verificación en dispositivo real primero (mismo criterio de evidencia del ADR 030 D4)
+- Modelo     : Sonnet 5 - Alto (mejora progresiva acotada con verificación de rendimiento antes/después)
 
 ---
 
@@ -389,22 +426,22 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 
 > **Iniciativa CAT: taxonomía de categorías Gastos↔Gastos fijos + picker de icono compartido** (triaje 2026-07-08, briefs "Auditoría Gastos" y parte de "Auditoría Calendario"). Fuente única para todo lo de categorías entre secciones. Relación fuerte con el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md): la taxonomía D3 que ese ADR espera validar de Esteban debe decidirse JUNTO con CAT.1 (una sola clasificación de categorías, no dos).
 
-#### CAT.1 - Taxonomía: qué categoría vive en Gastos y cuál en Gastos fijos
+#### CAT.1 - Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas
 - Prioridad  : alta
 - Estado     : pendiente de análisis (no iniciar). Coordinar con la validación D3 del ADR 029.
-- Objetivo   : hoy hay categorías en Gastos que muestran el hint "normalmente pertenece a fijos" (`hint-categoria-fija`): el brief pide eliminarlas del catálogo de Gastos en vez de avisar (Finko decide, el usuario no corrige). Criterios acordados: **fijo** = recurrente con frecuencia definida, estable, parte de la rutina (arriendo, servicios, internet, plan móvil, suscripciones, gimnasio, seguros, cuotas); **gasto** = día a día sin fecha fija, variable, estilo de vida (restaurante, transporte, ropa, café, regalos). Las **contextuales** (ej. alimento de mascotas: fijo si se compra con periodicidad, gasto si es "cuando se acaba") tienen un default por comportamiento común + personalización del usuario. Deduplicar catálogos (`CATEGORIAS_GASTO` vs `CATEGORIAS_AGENDA` en `constants.js`): cada categoría con UNA ubicación predeterminada. Requiere migración idempotente si se mueven categorías con datos existentes.
-- Secciones  : Gastos, Calendario (fijos), transversal (`constants.js`, forms de ambos)
+- Objetivo   : hoy hay categorías en Gastos que muestran el hint "normalmente pertenece a fijos" (`hint-categoria-fija`): el brief pide eliminarlas del catálogo de Gastos en vez de avisar (Finko decide, el usuario no corrige). Criterios acordados: **fijo** = recurrente con frecuencia definida, estable, parte de la rutina (arriendo, servicios, internet, plan móvil, suscripciones, gimnasio, seguros, cuotas); **gasto** = día a día sin fecha fija, variable, estilo de vida (restaurante, transporte, ropa, café, regalos). Las **contextuales** (ej. alimento de mascotas: fijo si se compra con periodicidad, gasto si es "cuando se acaba") tienen un default por comportamiento común + personalización del usuario. Deduplicar catálogos (`CATEGORIAS_GASTO` vs `CATEGORIAS_AGENDA` en `constants.js`): cada categoría con UNA ubicación predeterminada. Requiere migración idempotente si se mueven categorías con datos existentes. **Ampliado por el 4.º lote (2026-07-08, brief de Apartados punto 5):** la MISMA pasada decide **Apartados↔Metas**: salen de Apartados las categorías que son objetivos grandes de largo plazo (Vacaciones, Semestre universitario, Computador, Viajes → Metas) y entra el catálogo de gastos esporádicos olvidables que definió Esteban (regalos y fechas especiales, SOAT/tecnomecánica/mantenimientos del vehículo, veterinario/alimento de mascotas, útiles y uniformes, impuestos, documentos, mantenimiento y seguro del hogar, reparaciones inesperadas, aseo personal). Una sola taxonomía global, validada con Esteban en el mismo movimiento que ADR 029 D3.
+- Secciones  : Gastos, Calendario (fijos), Apartados, Metas, transversal (`constants.js`, forms)
 - Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3)
 - Modelo     : Opus 4.8 - Extra si trae bump de schema con migración; el análisis de taxonomía previo, Fable 5 - Alto junto con ADR 029
 
-#### CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (4 consumidores)
-- Prioridad  : alta (cuatro briefs lo piden por separado; es UN componente)
+#### CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (6 consumidores)
+- Prioridad  : alta (seis briefs lo piden por separado; es UN componente)
 - Estado     : pendiente
-- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por: el form de Gastos, el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto), el form de Deudas ("Otro" en entidad/persona, brief 2026-07-08 punto 8) y el de Cuentas ("Otra entidad", brief Mis Cuentas punto 6). Cruce interno de los lotes detectado en el triaje: cuatro briefs pidieron esta misma interacción; construirla una vez.
-- Secciones  : Gastos, Calendario, Deudas, Mis cuentas, `ui/` (componente)
-- Archivos   : `gastos/view.js` (`icono-picker` actual), form de fijos en `agenda`/`compromisos`, form de deudas, form de cuentas, modal nuevo
+- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por: el form de Gastos, el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto), el de Deudas ("Otro" en entidad/persona), el de Cuentas ("Otra entidad"), el de **Apartados** (que hoy depende del selector de emojis del SO, Win+., nada intuitivo; 4.º lote) y el de **Metas** ("Otro" con icono opcional, recuadro vacío permitido; 4.º lote). Cruce interno de los lotes detectado en el triaje: seis briefs pidieron esta misma interacción; construirla una vez.
+- Secciones  : Gastos, Calendario, Deudas, Mis cuentas, Apartados, Metas, `ui/` (componente)
+- Archivos   : `gastos/view.js` (`icono-picker` actual), forms de fijos/deudas/cuentas/apartados/metas, modal nuevo
 - Depende de : nada (puede ir antes o después de CAT.1)
-- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 4 dominios)
+- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 6 dominios)
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -421,6 +458,19 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
 - Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15 para no tocar el mismo form dos veces
 - Modelo     : Sonnet 5 - Medio (una pasada por ~8 formularios con tests de ambas reglas)
+
+---
+
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **Requiere ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
+
+#### LG.2a - ADR de Logros v2 + diseño del catálogo de niveles
+- Prioridad  : media
+- Estado     : pendiente de análisis (no iniciar sin el ADR)
+- Objetivo   : escribir el ADR (revisión del 022: reubicación + niveles + anti-gaming + comportamiento) y diseñar el catálogo completo de logros/niveles con Esteban antes de codificar; re-cortar en rebanadas (modelo de datos de progresión, vitrina en Análisis, tarjeta en Inicio, detectores de comportamiento).
+- Secciones  : Transversal (`logros`, Análisis, Inicio, Ajustes)
+- Archivos   : `modules/dominio/logros/` (LOGROS, evaluadores), `analisis`, `resumen`
+- Depende de : coordina con ANL.1 (layout) e Inicio v2 (tarjeta en Inicio); los detectores del punto 5 pueden depender de derivaciones de ANL.1
+- Modelo     : Fable 5 - Alto (diseño de incentivos con riesgo real de incentivar comportamientos incorrectos; el punto 4 lo demuestra)
 
 ---
 
