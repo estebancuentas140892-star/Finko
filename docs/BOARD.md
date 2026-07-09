@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-08 (triaje del 6.º lote: brief General, con la decisión de ADN de CFG.4 señalada).
+> Última actualización: 2026-07-08 (triaje del 7.º lote: Centro Legal y cumplimiento, iniciativa LEG).
 
 ---
 
@@ -332,7 +332,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 - Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea. Pidió analizar alternativas (copias de seguridad automáticas, sincronización con cuenta de usuario, respaldo cifrado en la nube, restauración desde archivo, u otra) que sean seguras, sencillas y transparentes, sin comprometer la privacidad. **Ampliado por el 6.º lote (2026-07-08, brief General punto 2, FUSIONADO aquí):** Esteban plantea ahora la versión completa: crear cuenta, iniciar sesión desde cualquier dispositivo, sincronización automática, recuperación ante pérdida y "continuar donde quedó", con autenticación segura. **Lo que el ADR debe poner sobre la mesa, sin rodeos:** (a) esto redefine Finko: "Sin servidor. Sin cuenta. Sin sync." dejaría de ser cierto, y la promesa actual de privacidad del onboarding ("Tus datos se guardan solo en tu dispositivo. Sin cuentas. Sin servidores.") tendría que reescribirse; (b) implica backend u servicio gestionado, costos de operación recurrentes, modelo de amenazas nuevo y responsabilidad sobre datos financieros de terceros; (c) existen puntos intermedios que el ADR debe evaluar contra la versión completa: local-first con sync cifrado de extremo a extremo, respaldo cifrado automático a almacenamiento del propio usuario (Drive/iCloud/archivo), o export/import cifrado mejorado; (d) **PERF.5 (IndexedDB) es precondición práctica** de cualquier sync serio (persistencia async + más cupo), y CFG.5 (bloqueo local) se vuelve capa complementaria de la autenticación. El disparador D4 del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) ("una feature que necesite persistencia asíncrona o mayor cupo, ej. CFG.4") quedaría activado si esto se aprueba.
 - Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos y la identidad del producto)
 - Archivos   : el punto de partida es la decisión arquitectónica, no el código
-- Depende de : ADR de ADN aprobado por Esteban tras discusión explícita; PERF.5 como precondición técnica probable
+- Depende de : ADR de ADN aprobado por Esteban tras discusión explícita; PERF.5 como precondición técnica probable. **Su resultado reescribe el paquete legal de la iniciativa LEG** (privacidad/datos personales cambian por completo entre local-only y cuentas/sync): avisar a LEG al decidir.
 - Modelo     : Fable 5 - Extra para el ADR (decisión arquitectónica que redefine el producto; exige el análisis más alto: opciones, costos, privacidad, riesgos y plan de migración)
 
 #### CFG.5 - Seguridad de acceso a la app (PIN, patrón, biometría) + re-autenticación en acciones críticas
@@ -347,7 +347,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
 - Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2).
+- Objetivo   : el usuario pidió revisar si faltan configuraciones que deberían vivir en Ajustes, con el objetivo de que la sección se convierta en el centro de configuración de Finko (seguridad, personalización, notificaciones, respaldo y cualquier otra opción relevante), con interfaz clara y organizada. **Ampliado por triaje del 4.º lote (2026-07-08, brief de Ajustes punto 2):** rediseño visual de la sección con tarjetas de tamaño uniforme, Bento Grid donde aporte, bloques compactos y alineados, sin botones que ocupen todo el ancho en desktop (hoy: "Instalar aplicación", "Recordatorios"); misma sensación de orden que el resto de la app (coordina con IV.2). **7.º lote:** el layout debe reservar el bloque del **Centro Legal** (iniciativa LEG, Transversal).
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
 - Depende de : CFG.1 a CFG.5 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes)
@@ -501,6 +501,37 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Secciones  : Transversal (`ui/proposito.js`, empty states de todas las vistas)
 - Depende de : recomendado tras IV.2 + las primeras iniciativas v2; coordina con cada una
 - Modelo     : Sonnet 5 - Alto (auditoría de UX con criterio, sin lógica nueva)
+
+---
+
+> **Iniciativa LEG: Centro Legal y cumplimiento** (7.º lote, 2026-07-08, brief General de 9 puntos). **Hueco real hoy: la app está en producción sin ningún documento legal** (verificado: cero términos, privacidad o disclaimers formales; solo existen los avisos puntuales tipo "confirma con un contador" del monitor de renta). **Acoplamiento señalado con CFG.4:** el contenido del paquete depende de esa decisión de ADN. Con el modelo actual local-only, la política de privacidad es la fortaleza del producto ("tus datos se guardan solo en tu dispositivo, Finko no recolecta nada") y la Ley 1581/Habeas Data aplica de forma mínima; si CFG.4 aprueba cuentas/sync, el paquete se reescribe (responsable del tratamiento, canales de derechos, evidencia de consentimiento verificable). **Decisión de secuencia recomendada: redactar YA para el modelo local-only vigente** (cubre la producción actual) con cláusula de versionado, y revisar si CFG.4 cambia el ADN. **Gate final (punto 9 del brief): la revisión de todo el paquete por un abogado colombiano antes del lanzamiento oficial es trabajo profesional externo, no una tarea de código ni de IA**: las tarjetas de abajo producen borradores informados y el inventario de funciones sensibles PARA esa revisión (el mismo principio que Finko aplica a sus usuarios: orienta, no dictamina). Los documentos legales siguen el ADN 11: resumen en lenguaje claro por sección + texto formal.
+
+#### LEG.1 - Centro Legal en Ajustes + borradores de los documentos (modelo local-only)
+- Prioridad  : alta (la app está pública sin base legal)
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : apartado "Centro Legal" en Ajustes con: términos y condiciones, política de privacidad, tratamiento de datos personales (Ley 1581 de 2012 y Habeas Data, adaptada al modelo local-only), aviso de cookies (aclarando que no se usan cookies de rastreo ni analytics; `localStorage` es funcional), licencias de terceros, avisos legales, **descargo de responsabilidad** (puntos 3+4 del brief: Finko es herramienta de organización y guía, no asesoría financiera/tributaria/contable/jurídica; no garantiza resultados; decisiones y datos ingresados son responsabilidad del usuario; sin responsabilidad por pérdidas, sanciones, interrupciones o datos externos desactualizados), propiedad intelectual, **aviso de marcas de terceros** (punto 5: los logotipos de bancos, billeteras, streaming e IA pertenecen a sus propietarios, uso solo de identificación visual, sin afiliación salvo convenio informado; complementa los ADR 025/027/029), contacto para derechos de datos (requiere definir un correo real del responsable, hoy no publicado) e historial de cambios de las políticas (documentos versionados).
+- Secciones  : Configuración (Ajustes), `docs/legal/` como fuente de los textos
+- Archivos   : `modules/dominio/config/` (sección nueva), contenido en `docs/legal/` servido en la app
+- Depende de : la decisión CFG.4 puede obligar a reescribir (redactar local-only ahora, con esa cláusula); coordinar el bloque de Ajustes con CFG.6
+- Modelo     : Fable 5 - Alto para los borradores (redacción legal informada CO con matices de producto); la UI del centro, Sonnet 5 - Medio
+
+#### LEG.2 - Aceptación obligatoria versionada (onboarding + re-aceptación en cambios)
+- Prioridad  : alta (va de la mano de LEG.1)
+- Estado     : bloqueada por LEG.1 (no hay qué aceptar sin documentos)
+- Objetivo   : primera apertura: aceptación expresa de términos + privacidad + datos personales antes de usar la app (paso nuevo del onboarding); cambios importantes de políticas: re-aceptación antes de continuar (comparar versión aceptada vs vigente). Registro local de aceptación (versión + fecha, bump de schema en `S.config`). **Limitación honesta a documentar:** sin servidor, la "evidencia" de aceptación vive solo en el dispositivo del usuario; una evidencia verificable por Finko requiere CFG.4.
+- Secciones  : Onboarding, Configuración, `core/state.js`/`storage.js` (registro versionado)
+- Archivos   : `modules/ui/onboarding.js`, `modules/core/state.js`, `modules/core/storage.js`
+- Depende de : LEG.1
+- Modelo     : Sonnet 5 - Alto (flujo de onboarding + versionado persistido + migración)
+
+#### LEG.3 - Auditoría de avisos en funciones sensibles y transparencia de recomendaciones
+- Prioridad  : media
+- Estado     : pendiente (puede ir en paralelo a LEG.1)
+- Objetivo   : (puntos 7+8 del brief) inventario de las funciones sensibles (simulaciones de deuda, estrategias de pago, monitor/estimaciones de renta, proyecciones de inversión y patrimonio) y verificación de que cada una aclara que sus resultados son aproximaciones basadas en los datos del usuario, que cambian si los datos cambian, y que no constituyen instrucciones. **Mucho ya existe** (el monitor de renta dice "confirma con un contador" en 3 lugares, D.12 avisa de tasa desconocida, CFG.2b ya registra "Finko orienta, no dictamina"): esta tarjeta completa los huecos con el mismo tono, sin llenar la app de texto (criterio del punto 15 del brief de Deudas: pocos avisos, protagonismo a los que ayudan). El descargo general vive en LEG.1; aquí solo los avisos contextuales.
+- Secciones  : Deudas, Análisis, Inversión (transversal)
+- Archivos   : vistas de esas secciones; inventario como entregable para la revisión jurídica del gate
+- Depende de : nada duro; coordina el copy con LEG.1
+- Modelo     : Sonnet 5 - Medio (auditoría de copy con criterio, sin lógica)
 
 ---
 

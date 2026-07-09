@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 7.º lote (Centro Legal y cumplimiento) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
+
+Séptimo triaje del día: 1 brief de 9 puntos sobre el marco legal. Resultado en [`BOARD.md`](BOARD.md), iniciativa nueva **LEG**:
+
+- **Hueco real verificado:** la app está en producción sin ningún documento legal (cero términos, privacidad o disclaimers formales; solo los avisos puntuales "confirma con un contador" del monitor de renta).
+- **LEG.1** (Centro Legal en Ajustes + borradores de todos los documentos: términos, privacidad, Ley 1581/Habeas Data, cookies (aclarando que no se usan), licencias, descargo de responsabilidad con los puntos 3+4 del brief, propiedad intelectual, aviso de marcas de terceros que complementa los ADR 025/027/029, contacto para derechos e historial versionado). **LEG.2** (aceptación obligatoria versionada en onboarding + re-aceptación en cambios importantes, con la limitación honesta documentada: sin servidor, la evidencia vive solo en el dispositivo). **LEG.3** (auditoría de avisos en funciones sensibles: mucho ya existe; completar huecos con el mismo tono, sin llenar la app de texto).
+- **Acoplamiento señalado con CFG.4:** el contenido del paquete depende de esa decisión de ADN (local-only = "tus datos no salen de tu dispositivo" como fortaleza; cuentas/sync = paquete completamente distinto). Secuencia recomendada: redactar YA para el modelo vigente, con cláusula de versionado. Nota cruzada en ambas direcciones.
+- **Gate final explícito (punto 9):** la revisión del paquete por un abogado colombiano antes del lanzamiento oficial es trabajo profesional externo; las tarjetas producen borradores informados y el inventario de funciones sensibles PARA esa revisión, no la sustituyen (mismo principio que Finko aplica a sus usuarios).
+- CFG.6 reserva el bloque del Centro Legal en el layout de Ajustes.
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): 6.º lote (brief General) integrado al BOARD, con decisión de ADN señalada (regla 2.7, sin implementar) · 2026-07-08
 
 Sexto triaje del día: 1 brief de 8 puntos, el de mayor alcance. Resultado en [`BOARD.md`](BOARD.md):
