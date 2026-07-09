@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 2.º lote (Deudas y Mis Cuentas) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
+
+Segundo triaje del día: 2 briefs (Deudas, 15 puntos; Mis Cuentas, 21 puntos + integración del ingreso fijo con cuenta de destino). Resultado en [`BOARD.md`](BOARD.md):
+
+- **Iniciativa "Deudas v2: de registro a asesor" (D.15):** alerta roja solo en el encabezado con panel interior en calma (2 capas del ADR 031), Finko recomienda la estrategia principal según capacidad de pago, copy motivador en simulaciones/Avalancha/Bola de nieve, editar deuda (hoy solo se elimina; rebanada temprana candidata), tarjetas con jerarquía visual, "Aplicar" en el simulador de pago extra, menos hints de bajo valor conservando los útiles (D.12). D.14 queda como su primera rebanada. Derivados a fuentes externas: iconos Avalancha/Bola de nieve → IV.4 (spec añadida); "Otro" con icono → CAT.2; catálogo entidad→producto (Visa Platinum...) → ADR 029 D3, compartido con MC.16.
+- **BUG-011 registrado en [BUGS.md](BUGS.md):** el panel estratégico se cierra al cambiar de pestaña y deja la simulación aplicada sin "Aplicar estrategia" (reportado por Esteban con pasos de reproducción; corregible antes o dentro de Deudas v2).
+- **Iniciativa "Mis Cuentas v2" con 3 tarjetas:** **MC.13 ampliada** a "Distribución v2" (2 pasos: educación visual + distribución por prioridad; alertas por categoría en su paso; completar con saldo de otras cuentas; dinero restante con decisión explícita; cuota del período según frecuencia; el ingreso fijo registra cuenta de destino y el paso final "Estilo de vida" desaparece: lo no distribuido se queda en la cuenta); **MC.15** (UI: redundancias en tarjetas de cuenta e ingresos fijos, legibilidad de logos ajustando SOLO el contenedor por la regla de fidelidad, advertencia útil de cuota de manejo); **MC.16** (tarjeta de crédito como producto integrado cuentas↔deudas, requiere ADR: cupo+deuda, cuotas al pagar, recalculo por pago anticipado, nudges de costos bancarios; desbloquearía el `consumosTC` automático de CFG.2a, nota cruzada añadida).
+- **Dos conflictos con decisiones aprobadas, señalados sin revertir en silencio:** (a) "los ingresos esporádicos no ofrecen distribución" revierte parcialmente NAV.A2b slice 2 del ADR 024; (b) el abono automático del ingreso fijo a la fecha es un movimiento sin confirmación: se decide en el MISMO ADR de PA.1 (débitos y créditos automáticos, un solo criterio).
+- **CAT.2 pasa de 2 a 4 consumidores** (se suman los forms de Deudas y Cuentas) y nace **CAT.4** (orden categoría→descripción consistente en todos los formularios).
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): lote de 5 auditorías de Esteban integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Primer triaje formal bajo la sección 2.7 de CLAUDE.md: 5 briefs de Esteban (Inicio, Gastos, Calendario, Mis Cuentas, Deudas/pagos automáticos) cruzados contra el tablero, los 31 ADRs, las fichas y **entre sí**, sin implementar nada. Resultado en [`BOARD.md`](BOARD.md):

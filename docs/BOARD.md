@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-08 (triaje del lote de 5 auditorías de Esteban, regla 2.7).
+> Última actualización: 2026-07-08 (triaje del 2.º lote: Deudas v2 y Mis Cuentas v2, regla 2.7).
 
 ---
 
@@ -74,15 +74,34 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Mis cuentas (dominio `tesoreria`)
 
-#### MC.13 - Distribución de ingresos contextual por fecha (brief 2026-07-08)
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 3 tarjetas: **MC.13** (Distribución v2, ampliada abajo), **MC.15** (UI de cuentas e ingresos) y **MC.16** (tarjeta de crédito integrada, requiere ADR). MC.14 (llaves de transferencia) sigue vigente como rebanada independiente. **Dos conflictos con decisiones aprobadas, señalados explícitamente (regla 2.7):** (a) el punto "los ingresos esporádicos NO deben ofrecer distribución" **revierte parcialmente NAV.A2b slice 2 del ADR 024** (que hoy ofrece distribuir tras un ingreso puntual): decidirlo formalmente al iniciar MC.13, no revertirlo en silencio; (b) "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un **movimiento automático sin confirmación**, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos (un solo criterio para débitos y créditos automáticos), no por separado.
+
+#### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
 - Estado     : pendiente de análisis (no iniciar sin diseñar primero el motor de vencimientos compartido, ver abajo)
 - Objetivo   : el asistente "Distribuir mi ingreso" (épica MC.7, cerrada) hoy muestra TODAS las necesidades/ahorros/obligaciones registradas; con muchos registros satura. Nueva lógica: al recibir un ingreso, Finko analiza la fecha del ingreso, la frecuencia de ingresos del usuario, las obligaciones vencidas, las que vencen en la ventana de ese ingreso y los aportes de ahorro (fondo/metas/apartados/inversión) programados para esa fecha, y solo sugiere lo que corresponde pagar/apartar en ese momento. Responde "¿qué debo hacer HOY con este dinero?", no "todo lo del mes". Reutilizar la lógica existente de recordatorio de día de ingreso (ADR 021, AP.4/MT.2/AH.4) para "qué toca aportar hoy".
+- **Ampliación del brief 2026-07-08 (21 puntos + ingreso fijo→cuenta):** (9) rediseño en 2 pasos: primero recomendaciones visuales de cómo distribuyen los expertos (educación financiera con barras/gráficos/porcentajes; candidato a logro por distribución saludable sostenida), después la distribución personalizada por prioridad; (10) cada recomendación aparece SOLO en el paso de su categoría, no todas juntas al inicio; (11) quitar los accesos "Ver progreso del fondo / estrategias / límites" del asistente; (12) el aviso "recibiste tu ingreso" y el asistente son dos bloques visualmente independientes; (13) revisar el texto "Reparte hacia tus necesidades..."; (14) si el ingreso no alcanza, ofrecer completar con saldo disponible de otras cuentas (detección automática + pregunta explícita); (15) en cada fila de la distribución: logo de entidad o icono personalizado + nombre + nota (diferenciar dos "Arriendo" por icono/nota); (16) quitar "Abonar extra a deudas" del paso de ahorro (un abono es un pago, vive en Deudas); (17) navegación Atrás/Siguiente modernizada (coherente con IV); (18) el dinero restante exige decisión explícita (dejarlo en la cuenta, ahorro, meta) antes de finalizar; (21) metas/fondo/apartados muestran la **cuota del período** según la frecuencia del ingreso, no el objetivo total; **(integración ingreso fijo)** el ingreso fijo registra en qué cuenta se recibe, el asistente parte de esa cuenta, los pagos aprobados se descuentan de ahí, y el paso final "Estilo de vida" desaparece: lo no distribuido simplemente se queda en la cuenta (refleja la realidad; revisa el cierre del asistente MC.7e); **(7+19)** separación clara ingreso fijo (periódico, dispara distribución) vs ingreso esporádico (solo acredita y registra, SIN ofrecer distribución: conflicto (a) del bloque de arriba).
 - **Absorbe MC.7g** (fijos Quincenal/Semanal/Diario en la checklist de Necesidades): modelar ocurrencias dentro del periodo es EL MISMO problema, y ambos se resuelven con la pieza compartida.
-- **Pieza de infraestructura compartida (regla de arquitecto 2.7):** un "motor de vencimientos" (qué obligaciones y aportes corresponden a una fecha/ventana dada) que consuman: este asistente, la checklist de Necesidades (ex MC.7g), y los pagos automáticos (PA.1, Transversal). `eventosDelMes` de Agenda ya resuelve la mitad (ocurrencias por frecuencia): evaluar extraerlo/generalizarlo a `infra/` en vez de construir 3 motores (mismo criterio que la fusión TX.10/LIM.1/ANL.1).
-- Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`), transversal por el motor
-- Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1
-- Modelo     : Opus 4.8 - Alto (lógica financiera de fechas/frecuencias no trivial + diseño de pieza compartida)
+- **Pieza de infraestructura compartida (regla de arquitecto 2.7):** un "motor de vencimientos" (qué obligaciones y aportes corresponden a una fecha/ventana dada) que consuman: este asistente, la checklist de Necesidades (ex MC.7g), los pagos automáticos (PA.1, Transversal) y la cuota por período del punto 21. `eventosDelMes` de Agenda ya resuelve la mitad (ocurrencias por frecuencia): evaluar extraerlo/generalizarlo a `infra/` en vez de construir motores paralelos (mismo criterio que la fusión TX.10/LIM.1/ANL.1).
+- Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `ingresos.js`), transversal por el motor
+- Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1 (conflicto (b)); decisión del conflicto (a) sobre NAV.A2b
+- Modelo     : Opus 4.8 - Extra para el análisis/re-corte (redefine el asistente completo + decisión que toca ADR 024); rebanadas después con el modelo que corresponda
+
+#### MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : (1) eliminar la información duplicada en la tarjeta de cuenta ("Banco de Bogotá Ahorros" + "Banco de Bogotá · Ahorros"); (20) lo mismo en ingresos fijos ("Salario mínimo" + "Quincenal · Salario mínimo"); (2) revisar legibilidad de logos (Davivienda, BBVA, DaviPlata, Nubank) ajustando SOLO el contenedor (tamaño óptico, espacio, márgenes): la regla de fidelidad del ADR 026/027 prohíbe tocar los SVG oficiales; (4) advertencia útil al crear cuenta ("¿seguro que no cobra cuota de manejo, seguros u otros costos periódicos?", conecta con `cuotaManejo` v5 existente); (8) los formularios de esta sección adoptan el orden categoría→descripción (auditoría transversal en CAT.4).
+- Secciones  : Mis cuentas
+- Depende de : nada (independiente de MC.13/MC.16); coordina lo visual con IV.2
+- Modelo     : Sonnet 5 - Medio
+
+#### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
+- Prioridad  : alta (concepto nuevo de dominio)
+- Estado     : pendiente de análisis, **requiere ADR** (no iniciar)
+- Objetivo   : ampliar los tipos de cuenta (ahorros, corriente, tarjeta débito, **tarjeta crédito**, billetera digital, efectivo, otro) y modelar la tarjeta de crédito como lo que es: no es dinero disponible, es cupo+deuda. Al pagar con ella, preguntar "¿a cuántas cuotas?", crear automáticamente la deuda con su tasa registrada, calcular cuotas, actualizar calendario/análisis/pendientes; el pago anticipado recalcula cuotas restantes. Incluye los nudges educativos de costos bancarios (avances en efectivo, retiros en otras redes, pago mínimo: intervenir solo cuando previene un mal hábito, punto 5 del brief). **Cuidados del ADR:** el tipo de cuenta 'Inversión' se ELIMINÓ en la migración v11 justamente para separar dominios: reintroducir un tipo que cruza dominios (cuenta que genera deudas) necesita diseño explícito, no un valor más en el catálogo. **Desbloquea CFG.2a/K.3:** con TC modelada, `consumosTC` del monitor de renta deja de ser dato manual. **Comparte modelo de datos** con el nivel "producto por entidad" del brief de Deudas (Visa Platinum del Banco de Bogotá): decidir juntos en la validación D3 del ADR 029.
+- Secciones  : Mis cuentas, Deudas, Calendario, Análisis (transversal vía EventBus, ADN 10)
+- Depende de : ADR propio; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
+- Modelo     : Fable 5 - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
 
 #### MC.14 - Datos de transferencia por cuenta (llaves, alias, número)
 - Prioridad  : media
@@ -110,6 +129,16 @@ _(**TX.10 absorbida** el 2026-07-08 por el [ADR 029](DECISIONS/029-catalogo-de-m
 ### Deudas (dominio `compromisos`, deuda)
 
 _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descuentan de la cuenta" **ya existe** desde el ADR 002 y la regla de cuenta única: el abono pide cuenta de origen, descuenta el saldo, sincroniza `saldoTotal` del compromiso y registra el gasto-abono en el historial. No genera tarjeta; si Esteban detecta un caso donde NO ocurra, es un bug para BUGS.md, no una feature.)_
+
+> **Iniciativa "Deudas v2: de registro a asesor"** (brief de Esteban del 2026-07-08, 15 puntos). Fuente única de todo lo de esta sección. Alcance que absorbe: (1) alerta "tu plan no se sostiene" en rojo solo en el encabezado, panel interior en neutros y el beneficio de cada solución en positivo (aplica la arquitectura de 2 capas del ADR 031: la alarma señala, la solución calma); (2+3) intro breve a las 3 estrategias + **Finko recomienda la principal según la situación** (capacidad según ingresos → aumentar cuota; sin capacidad → renegociar; varias deudas costosas → consolidar), con pesos visuales distintos, no 3 botones iguales; (4+6) copy motivador y explicativo en simulaciones, Avalancha y Bola de nieve (qué beneficio, cuándo conviene, qué impacto), tono ADR 003/008; (5) simulaciones libres y comparables que NUNCA se aplican sin "Aplicar estrategia" (el comportamiento actual está registrado como **BUG-011** en [BUGS.md](BUGS.md), corregible antes o dentro de la iniciativa); (7) menos texto en el registro (quitar los hints de bajo valor tipo "si es una tienda que te fía..."), conservando y dando protagonismo a los que sí ayudan como el de tasa desconocida de D.12 (punto 15 del brief); (8) formulario reordenado: tipo de deuda primero, entidad/persona después; (9) copy de refuerzo psicológico en Abonar; (10) **editar deuda** (hoy solo se elimina: cuota, fecha, tasa, entidad, notas; candidata a rebanada temprana por valor/tamaño); (11) tarjeta de deuda con jerarquía visual (con quién, cuánto, cuándo, cuota, tipo, estado de un vistazo; coordina con IV.2); (12) botón "Aplicar" en el simulador de pago extra de Avalancha/Bola de nieve (convierte la simulación en cuota nueva sin editar a mano). **No incluye** (fuentes únicas externas): iconos nuevos de Avalancha/Bola de nieve → IV.4 (spec añadida); "Otro" con icono+nombre personalizado en el form → CAT.2/CAT.3; catálogo entidad → producto (Visa Platinum, etc.) con logos y automatizaciones → validación D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md), que este brief amplía con el nivel "producto" y que comparte modelo de datos con MC.16 (tarjeta de crédito). **D.14** (abajo) queda como primera rebanada ya triada de esta iniciativa.
+
+#### D.15 - Deudas v2: análisis + re-corte en rebanadas (primera fase de la iniciativa)
+- Prioridad  : alta
+- Estado     : pendiente de análisis (no iniciar antes de IV.2; la jerarquía visual nueva de las tarjetas depende de la base de color desplegada)
+- Objetivo   : análisis de la sección (ficha `contexto/` correspondiente) + diseño del motor de recomendación de estrategia (punto 3: reglas de capacidad según ingresos; lógica financiera CO) + re-corte del alcance de la iniciativa en rebanadas verificables (D.15a copy/alerta, D.15b editar deuda, D.15c tarjetas, D.15d recomendación inteligente, D.15e aplicar pago extra...), cada una con su verificación en la app.
+- Secciones  : Deudas (`compromisos`), Análisis (lee capacidad de ingresos vía datos, no imports, ADN 10)
+- Depende de : IV.2 (recomendado); BUG-011 puede corregirse antes, de forma independiente
+- Modelo     : Opus 4.8 - Alto (lógica financiera de recomendación + UX; sube a Fable 5 - Alto si el motor de recomendación resulta multidominio)
 
 #### D.14 - Registrar una deuda acredita la cuenta donde se recibió el dinero
 - Prioridad  : alta (pocos archivos, alto valor: refleja la vida real y evita el doble registro manual)
@@ -205,7 +234,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 #### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
 - Prioridad  : sin definir
 - Estado     : pendiente (parte 2 de la iniciativa fusionada; depende de CFG.1a, cerrada)
-- Objetivo   : el criterio "Ingresos brutos" del monitor de renta (K.3) hoy exige que el usuario lo teclee a mano en Datos de renta. Anualizar `S.ingresos` (recurrentes, por `frecuencia`) + sumar `S.ingresosPuntuales` del año para estimarlo automáticamente, de modo que pase de "Sin datos" a medible sin captura manual. Mantener el override manual si el usuario prefiere. `consumosTC` y `consignaciones` siguen manuales (no derivables: no hay tipo de cuenta "tarjeta de crédito", ni movimientos bancarios crudos).
+- Objetivo   : el criterio "Ingresos brutos" del monitor de renta (K.3) hoy exige que el usuario lo teclee a mano en Datos de renta. Anualizar `S.ingresos` (recurrentes, por `frecuencia`) + sumar `S.ingresosPuntuales` del año para estimarlo automáticamente, de modo que pase de "Sin datos" a medible sin captura manual. Mantener el override manual si el usuario prefiere. `consumosTC` y `consignaciones` siguen manuales (no derivables: no hay tipo de cuenta "tarjeta de crédito", ni movimientos bancarios crudos). _(Nota de triaje 2026-07-08: si **MC.16** (tarjeta de crédito como producto integrado) se implementa, `consumosTC` pasaría a ser derivable automáticamente; revisar esta tarjeta en ese momento.)_
 - Secciones  : Configuración (Ajustes), Análisis (monitor de renta), transversal (lee ingresos)
 - Archivos   : `modules/dominio/analisis/logic.js` (`calcularEstadoRenta`, nueva `estimarIngresosBrutosAnio`), `modules/dominio/tesoreria/logic/ingresos.js` (helper de anualización si aplica)
 - Depende de : CFG.1a (cerrada)
@@ -315,6 +344,7 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Prioridad  : decidir tras IV.2
 - Estado     : bloqueada por revisión visual con capturas después de IV.2
 - Objetivo   : si tras el despliegue del color la app aún se percibe fría/genérica, definir la spec por dominio y redibujar en lotes dirigidos (Esteban en Illustrator, pipeline ADR 026 + `sync-sprite.py`, revisión de legibilidad 16/22/48px en ambos temas). NO es un redibujo global del sprite.
+- **Spec integrada por triaje 2026-07-08 (brief de Deudas, punto 13):** los iconos de **Avalancha** y **Bola de nieve** no representan el concepto de cada estrategia; rediseñarlos con metáfora clara (regla 5 del ADR 023: metáfora primero) manteniendo el lenguaje v2. Nota: `i-mountain` conserva sus picos agudos a propósito (decisión de ID.7); el problema reportado es de metáfora, no de estilo. Primer lote candidato de esta tarjeta.
 - Secciones  : `assets/svg/`, sprite de `index.html`
 - Depende de : IV.2 en producción + revisión visual + diseños de Esteban
 - Modelo     : Sonnet 5 - Alto (revisión de assets contra spec; el diseño es de Esteban)
@@ -349,14 +379,14 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3)
 - Modelo     : Opus 4.8 - Extra si trae bump de schema con migración; el análisis de taxonomía previo, Fable 5 - Alto junto con ADR 029
 
-#### CAT.2 - Picker de icono compartido para "Otra categoría" (Gastos Y fijos)
-- Prioridad  : alta (los dos briefs lo piden por separado; es UN componente)
+#### CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (4 consumidores)
+- Prioridad  : alta (cuatro briefs lo piden por separado; es UN componente)
 - Estado     : pendiente
-- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por el form de Gastos y el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto). Cruce interno del lote detectado en el triaje: los briefs de Gastos y Calendario piden exactamente esta misma interacción; construirla una vez.
-- Secciones  : Gastos, Calendario, `ui/` (componente)
-- Archivos   : `gastos/view.js` (`icono-picker` actual), form de fijos en `agenda`/`compromisos`, modal nuevo
+- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por: el form de Gastos, el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto), el form de Deudas ("Otro" en entidad/persona, brief 2026-07-08 punto 8) y el de Cuentas ("Otra entidad", brief Mis Cuentas punto 6). Cruce interno de los lotes detectado en el triaje: cuatro briefs pidieron esta misma interacción; construirla una vez.
+- Secciones  : Gastos, Calendario, Deudas, Mis cuentas, `ui/` (componente)
+- Archivos   : `gastos/view.js` (`icono-picker` actual), form de fijos en `agenda`/`compromisos`, form de deudas, form de cuentas, modal nuevo
 - Depende de : nada (puede ir antes o después de CAT.1)
-- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 2 dominios)
+- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 4 dominios)
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -366,9 +396,17 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
 - Modelo     : Opus 4.8 - Alto (modelo de datos + propagación transversal)
 
+#### CAT.4 - Orden consistente de formularios: categoría primero, descripción después
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : regla transversal del brief de Mis Cuentas (punto 8): en TODOS los formularios de la app, la categoría/tipo va primero y la descripción después, nunca al contrario. Gastos ya lo cumple (TX.9a) y el form de Deudas lo adoptará en su reordenamiento (Deudas v2, punto 8 de ese brief: tipo primero, entidad después). Auditar los formularios restantes (ingresos, fijos, metas, apartados, inversiones, personales) y corregir los que estén al revés.
+- Secciones  : transversal (solo orden de campos en views, sin lógica)
+- Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15 para no tocar el mismo form dos veces
+- Modelo     : Sonnet 5 - Bajo por formulario; agrupar en una sola pasada
+
 ---
 
-> **Iniciativa PA: pagos automáticos (débito automático simulado)** (triaje 2026-07-08, brief "Integración Deudas/Cuentas/Pagos automáticos"). **Requiere ADR propio antes de una línea de código**, por dos decisiones de filosofía: (1) en una PWA offline sin servidor no existe "ejecutar a la fecha": el procesamiento sería catch-up al abrir la app (procesar débitos vencidos desde la última apertura), y hay que decidir cómo se comunica eso; (2) Finko registraría movimientos SIN confirmación del usuario, y el débito real en el banco puede fallar o diferir: riesgo de divergencia entre Finko y la realidad que hay que diseñar con cuidado (¿confirmación diferida?, ¿estado "registrado automáticamente, confírmalo"?). No toca el ADN (todo local), pero sí la filosofía "Finko refleja la realidad, no la inventa".
+> **Iniciativa PA: pagos automáticos (débito automático simulado)** (triaje 2026-07-08, brief "Integración Deudas/Cuentas/Pagos automáticos"). **Requiere ADR propio antes de una línea de código**, por dos decisiones de filosofía: (1) en una PWA offline sin servidor no existe "ejecutar a la fecha": el procesamiento sería catch-up al abrir la app (procesar débitos vencidos desde la última apertura), y hay que decidir cómo se comunica eso; (2) Finko registraría movimientos SIN confirmación del usuario, y el débito real en el banco puede fallar o diferir: riesgo de divergencia entre Finko y la realidad que hay que diseñar con cuidado (¿confirmación diferida?, ¿estado "registrado automáticamente, confírmalo"?). No toca el ADN (todo local), pero sí la filosofía "Finko refleja la realidad, no la inventa". **Ampliación del triaje del 2.º lote (2026-07-08):** el mismo ADR debe cubrir también el **crédito automático del ingreso fijo** (brief de Mis Cuentas: "al llegar la fecha de pago, el dinero se abona automáticamente a la cuenta de destino"): débitos y créditos automáticos son el mismo problema de filosofía y comparten el catch-up y el motor de vencimientos de MC.13. Un solo criterio, no dos.
 
 #### PA.1 - ADR + diseño de pagos automáticos
 - Prioridad  : media-alta (caso muy común: suscripciones y cuotas con débito automático)
