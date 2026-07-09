@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(logros): LG.2b fundación de progresión de logros (ADR 032 Aceptada) · 2026-07-09
+
+Esteban validó el [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) (catálogo D4 aprobado como está; nombres de niveles de usuario provisionales hasta que entregue los definitivos; reubicación en dos tiempos D6 aprobada) y la primera rebanada de implementación cerró el mismo día.
+
+**Archivos tocados:**
+
+- `modules/dominio/logros/logic.js`: campos `familia`/`nivel` en el catálogo (primer-gasto = registro N1, diez-gastos = registro N2, meta-lograda = metas N1; ids intactos, `S.logros` sigue siendo `string[]`, cero migración); `FAMILIAS` (metadata de nombre por familia); `agruparVitrina()` (puro: los singles pasan tal cual y cada familia colapsa a una entrada con el nivel más alto ganado, el siguiente pendiente como objetivo, y conteos); `NIVELES_USUARIO` + `nivelUsuario()` (nivel derivado del conteo de logros, umbrales del ADR 032 D5: 0/3/6/10/14/18; nombres provisionales en la constante, cambiarlos no toca datos).
+- `modules/dominio/logros/view.js`: encabezado con "Tu nivel: X" + render agrupado (`_renderFamiliaItem`: emoji del nivel más alto ganado, chip "Nivel X de Y", desc del nivel actual o hint del nivel 1, línea "Siguiente: ..." y barra de progreso del nivel pendiente si la expone). Cero CSS nuevo: reutiliza `.logro-item`, `.chip`, `.progress`.
+- `service-worker.js`: `CACHE_NAME` v341 → v342.
+- Tests: `tests/unit/logros.test.js` +17 (integridad familia/nivel consecutivos desde 1, `agruparVitrina` con todos los estados de familia, umbrales de `nivelUsuario` en los bordes, render agrupado con chip y objetivo); `tests/e2e/smoke.test.js` +1 (suite "Vitrina de logros (niveles)": nivel visible y familia colapsada sin listar sus niveles sueltos).
+
+**Verificación:** 2295/2295 unit + 159/159 E2E verdes (la vitrina se verifica con render real en happy-dom + Chromium E2E; el preview local de este entorno no es confiable). **Cómo verlo en la app:** Ajustes → card "🏆 Logros": encabezado con "Tu nivel:", la familia "Constancia de registro" como una sola tarjeta con chip de nivel y objetivo siguiente.
+
+**Qué sigue de la iniciativa:** LG.2c (mes completo de registro + rachas + familia deudas), LG.2d (mudanza a Análisis+Inicio, bloqueada por ANL.1/IN.8), LG.2e (comportamiento). **Podría afectar:** solo la vitrina de Ajustes y el toast (sin cambios de datos); los usuarios con logros existentes ven su progreso intacto agrupado por familia.
+
+---
+
 ### docs(adr): LG.2a ADR 032 Logros v2, niveles progresivos y regla anti-gaming (Propuesta) · 2026-07-09
 
 Primera fase de la iniciativa LG.2 (4.º lote de triaje). [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) escrito en estado **Propuesta**: revisión formal del ADR 022, como exige la iniciativa (no mover la vitrina en silencio). Cero código tocado; el catálogo y los nombres se validan con Esteban antes de codificar.

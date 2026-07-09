@@ -20,13 +20,29 @@
  *   hint: string,
  *   eval: (s: object) => boolean,
  *   progreso?: (s: object) => { actual: number, meta: number },
+ *   familia?: string,
+ *   nivel?: number,
  * }} Logro
  *
  * `desc` cuenta lo conseguido (se muestra al desbloquear); `hint` dice cómo
  * desbloquearlo en imperativo (se muestra mientras está pendiente, LG.1b).
  * `progreso` solo existe en logros de conteo con objetivo observable directo
  * de S (ADR 022): devuelve el avance parcial para la barra de la vitrina.
+ * `familia`/`nivel` (ADR 032 D1): un logro con niveles se modela como varios
+ * logros independientes que comparten `familia`; cada nivel tiene id propio
+ * en S.logros (sin bump de schema, la no-revocación aplica por nivel). La
+ * vitrina agrupa por familia y muestra una sola tarjeta (ver agruparVitrina).
  */
+
+/**
+ * Metadata de las familias de logros (ADR 032 D4). La tarjeta de la vitrina
+ * usa este nombre; los niveles salen del catálogo LOGROS (campo familia).
+ * Familias futuras (deudas en LG.2c, comportamiento en LG.2e) se agregan aquí.
+ */
+export const FAMILIAS = {
+  registro: { nombre: 'Constancia de registro' },
+  metas:    { nombre: 'Metas cumplidas' },
+};
 
 /** @type {Logro[]} */
 export const LOGROS = [
@@ -39,12 +55,14 @@ export const LOGROS = [
     eval:   s => s.onboarded === true,
   },
   {
-    id:     'primer-gasto',
-    nombre: 'Primer gasto',
-    emoji:  '💸',
-    desc:   'Registraste tu primer gasto.',
-    hint:   'Registra tu primer gasto en la sección Gastos.',
-    eval:   s => Array.isArray(s.gastos) && s.gastos.length > 0,
+    id:      'primer-gasto',
+    familia: 'registro',
+    nivel:   1,
+    nombre:  'Primer gasto',
+    emoji:   '💸',
+    desc:    'Registraste tu primer gasto.',
+    hint:    'Registra tu primer gasto en la sección Gastos.',
+    eval:    s => Array.isArray(s.gastos) && s.gastos.length > 0,
   },
   {
     id:     'primer-compromiso',
@@ -71,12 +89,14 @@ export const LOGROS = [
     eval:   s => Array.isArray(s.metas) && s.metas.length > 0,
   },
   {
-    id:     'meta-lograda',
-    nombre: 'Lo lograste',
-    emoji:  '⭐',
-    desc:   'Completaste tu primera meta de ahorro.',
-    hint:   'Completa una meta de ahorro: cada abono te acerca.',
-    eval:   s => Array.isArray(s.metas) && s.metas.some(m => m.completada === true),
+    id:      'meta-lograda',
+    familia: 'metas',
+    nivel:   1,
+    nombre:  'Lo lograste',
+    emoji:   '⭐',
+    desc:    'Completaste tu primera meta de ahorro.',
+    hint:    'Completa una meta de ahorro: cada abono te acerca.',
+    eval:    s => Array.isArray(s.metas) && s.metas.some(m => m.completada === true),
   },
   {
     id:     'planificador',
@@ -108,12 +128,14 @@ export const LOGROS = [
     eval:   s => Array.isArray(s.personales) && s.personales.length > 0,
   },
   {
-    id:     'diez-gastos',
-    nombre: 'Hábito registrado',
-    emoji:  '🔥',
-    desc:   'Llevas 10 o más gastos registrados.',
-    hint:   'Registra 10 gastos: el hábito es lo que cuenta.',
-    eval:   s => Array.isArray(s.gastos) && s.gastos.length >= 10,
+    id:      'diez-gastos',
+    familia: 'registro',
+    nivel:   2,
+    nombre:  'Hábito registrado',
+    emoji:   '🔥',
+    desc:    'Llevas 10 o más gastos registrados.',
+    hint:    'Registra 10 gastos: el hábito es lo que cuenta.',
+    eval:    s => Array.isArray(s.gastos) && s.gastos.length >= 10,
     progreso: s => ({
       actual: Math.min(Array.isArray(s.gastos) ? s.gastos.length : 0, 10),
       meta:   10,
@@ -166,6 +188,7 @@ export function evaluarLogros(s) {
  * @param {string[]} idsPersistidos  `S.logros`.
  * @returns {Array<{
  *   id: string, nombre: string, emoji: string, desc: string, hint: string,
+ *   familia: string | null, nivel: number | null,
  *   desbloqueado: boolean,
  *   progreso: { actual: number, meta: number } | null,
  * }>}
@@ -191,13 +214,101 @@ export function estadoLogros(s, idsPersistidos = []) {
     }
 
     return {
-      id:     l.id,
-      nombre: l.nombre,
-      emoji:  l.emoji,
-      desc:   l.desc,
-      hint:   l.hint,
+      id:      l.id,
+      nombre:  l.nombre,
+      emoji:   l.emoji,
+      desc:    l.desc,
+      hint:    l.hint,
+      familia: l.familia ?? null,
+      nivel:   l.nivel ?? null,
       desbloqueado,
       progreso,
     };
   });
+}
+
+// ── AGRUPACIÓN POR FAMILIA (LG.2b, ADR 032 D1) ───────────────────
+
+/**
+ * @typedef {ReturnType<typeof estadoLogros>[number]} EstadoLogro
+ */
+
+/**
+ * Agrupa el estado de la vitrina: los logros sin familia pasan tal cual
+ * (`tipo: 'logro'`) y cada familia colapsa a UNA entrada (`tipo: 'familia'`)
+ * con el nivel más alto desbloqueado y el siguiente nivel como objetivo.
+ * El orden de salida respeta el orden del catálogo (la familia aparece en
+ * la posición de su primer nivel).
+ *
+ * @param {EstadoLogro[]} estados  Salida de estadoLogros().
+ * @returns {Array<
+ *   { tipo: 'logro',   logro: EstadoLogro } |
+ *   { tipo: 'familia', familia: string, nombre: string,
+ *     actual: EstadoLogro | null, siguiente: EstadoLogro | null,
+ *     desbloqueados: number, totalNiveles: number }
+ * >}
+ */
+export function agruparVitrina(estados) {
+  const lista = Array.isArray(estados) ? estados : [];
+  const items = [];
+  const familiasVistas = new Set();
+
+  for (const e of lista) {
+    if (!e.familia) {
+      items.push({ tipo: 'logro', logro: e });
+      continue;
+    }
+    if (familiasVistas.has(e.familia)) continue;
+    familiasVistas.add(e.familia);
+
+    const niveles = lista
+      .filter(x => x.familia === e.familia)
+      .sort((a, b) => (a.nivel ?? 0) - (b.nivel ?? 0));
+    const ganados = niveles.filter(x => x.desbloqueado);
+    // Siguiente = el nivel pendiente más bajo (defensivo: aunque un nivel
+    // alto esté desbloqueado y uno bajo no, el objetivo es cerrar el hueco).
+    const siguiente = niveles.find(x => !x.desbloqueado) ?? null;
+
+    items.push({
+      tipo:          'familia',
+      familia:       e.familia,
+      nombre:        FAMILIAS[e.familia]?.nombre ?? e.familia,
+      actual:        ganados.length ? ganados[ganados.length - 1] : null,
+      siguiente,
+      desbloqueados: ganados.length,
+      totalNiveles:  niveles.length,
+    });
+  }
+  return items;
+}
+
+// ── NIVEL DE USUARIO (LG.2b, ADR 032 D5) ─────────────────────────
+
+/**
+ * Niveles de usuario derivados del conteo de logros desbloqueados.
+ * Sin puntos ni persistencia: el nivel se calcula siempre en vivo.
+ * NOMBRES PROVISIONALES (ADR 032 D5): Esteban define los definitivos;
+ * cambiar un nombre aquí no toca datos (nada de esto se persiste).
+ */
+export const NIVELES_USUARIO = [
+  { min: 0,  nombre: 'Semilla' },
+  { min: 3,  nombre: 'Brote' },
+  { min: 6,  nombre: 'Constante' },
+  { min: 10, nombre: 'Organizado' },
+  { min: 14, nombre: 'Estratega' },
+  { min: 18, nombre: 'Leyenda del ahorro' },
+];
+
+/**
+ * Nivel del usuario según cuántos logros tiene desbloqueados.
+ * @param {number} nDesbloqueados
+ * @returns {{ min: number, nombre: string }}
+ */
+export function nivelUsuario(nDesbloqueados) {
+  const n = Number.isFinite(nDesbloqueados) ? Math.max(0, nDesbloqueados) : 0;
+  let nivel = NIVELES_USUARIO[0];
+  for (const candidato of NIVELES_USUARIO) {
+    if (n >= candidato.min) nivel = candidato;
+  }
+  return nivel;
 }

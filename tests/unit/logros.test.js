@@ -7,9 +7,18 @@
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { evaluarLogros, estadoLogros, LOGROS } from '../../modules/dominio/logros/logic.js';
+import {
+  evaluarLogros, estadoLogros, LOGROS,
+  FAMILIAS, agruparVitrina, nivelUsuario, NIVELES_USUARIO,
+} from '../../modules/dominio/logros/logic.js';
 import { renderPanelLogros } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
+
+// Items visibles de la vitrina: los singles pasan tal cual y cada familia
+// colapsa a una tarjeta (LG.2b, ADR 032).
+const N_SINGLES  = LOGROS.filter(l => !l.familia).length;
+const N_FAMILIAS = new Set(LOGROS.filter(l => l.familia).map(l => l.familia)).size;
+const N_ITEMS_VITRINA = N_SINGLES + N_FAMILIAS;
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -276,6 +285,106 @@ describe('LOGROS - integridad de la tabla', () => {
     const conProgreso = LOGROS.filter(l => typeof l.progreso === 'function').map(l => l.id);
     expect(conProgreso.sort()).toEqual(['diez-gastos', 'diversificador']);
   });
+
+  test('toda familia declarada existe en FAMILIAS y sus niveles son 1..N sin huecos (ADR 032 D1)', () => {
+    const porFamilia = new Map();
+    for (const l of LOGROS) {
+      if (!l.familia) continue;
+      expect(FAMILIAS[l.familia], `familia "${l.familia}" de ${l.id} sin metadata`).toBeDefined();
+      expect(typeof l.nivel, `nivel de ${l.id}`).toBe('number');
+      if (!porFamilia.has(l.familia)) porFamilia.set(l.familia, []);
+      porFamilia.get(l.familia).push(l.nivel);
+    }
+    for (const [familia, niveles] of porFamilia) {
+      const ordenados = [...niveles].sort((a, b) => a - b);
+      expect(ordenados, `niveles de "${familia}" deben ser consecutivos desde 1`)
+        .toEqual(Array.from({ length: ordenados.length }, (_, i) => i + 1));
+    }
+  });
+});
+
+// ── agruparVitrina() (LG.2b, ADR 032 D1) ──────────────────────────
+
+describe('agruparVitrina()', () => {
+  test('colapsa cada familia a una entrada y deja los singles tal cual', () => {
+    const items = agruparVitrina(estadoLogros(estado(), []));
+    expect(items).toHaveLength(N_ITEMS_VITRINA);
+    expect(items.filter(i => i.tipo === 'familia')).toHaveLength(N_FAMILIAS);
+    expect(items.filter(i => i.tipo === 'logro')).toHaveLength(N_SINGLES);
+  });
+
+  test('la familia aparece en la posición de su primer nivel (orden de catálogo)', () => {
+    const items = agruparVitrina(estadoLogros(estado(), []));
+    // primer-gasto es el 2.º logro del catálogo: la familia registro va 2.ª.
+    expect(items[1].tipo).toBe('familia');
+    expect(items[1].familia).toBe('registro');
+  });
+
+  test('sin niveles desbloqueados: actual null y siguiente = nivel 1', () => {
+    const items = agruparVitrina(estadoLogros(estado(), []));
+    const reg = items.find(i => i.tipo === 'familia' && i.familia === 'registro');
+    expect(reg.actual).toBeNull();
+    expect(reg.siguiente.id).toBe('primer-gasto');
+    expect(reg.desbloqueados).toBe(0);
+    expect(reg.totalNiveles).toBe(2);
+  });
+
+  test('con nivel 1 ganado: actual = nivel 1 y siguiente = nivel 2 con su progreso', () => {
+    const s = estado({ gastos: Array.from({ length: 4 }, (_, i) => ({ id: String(i) })) });
+    const items = agruparVitrina(estadoLogros(s, []));
+    const reg = items.find(i => i.tipo === 'familia' && i.familia === 'registro');
+    expect(reg.actual.id).toBe('primer-gasto');
+    expect(reg.siguiente.id).toBe('diez-gastos');
+    expect(reg.siguiente.progreso).toEqual({ actual: 4, meta: 10 });
+    expect(reg.desbloqueados).toBe(1);
+  });
+
+  test('familia completa: siguiente es null', () => {
+    const items = agruparVitrina(estadoLogros(estado(), ['primer-gasto', 'diez-gastos']));
+    const reg = items.find(i => i.tipo === 'familia' && i.familia === 'registro');
+    expect(reg.actual.id).toBe('diez-gastos');
+    expect(reg.siguiente).toBeNull();
+    expect(reg.desbloqueados).toBe(2);
+  });
+
+  test('el nombre de la familia sale de FAMILIAS', () => {
+    const items = agruparVitrina(estadoLogros(estado(), []));
+    const reg = items.find(i => i.tipo === 'familia' && i.familia === 'registro');
+    expect(reg.nombre).toBe('Constancia de registro');
+  });
+
+  test('entrada inválida devuelve lista vacía', () => {
+    expect(agruparVitrina(null)).toEqual([]);
+  });
+});
+
+// ── nivelUsuario() (LG.2b, ADR 032 D5) ────────────────────────────
+
+describe('nivelUsuario()', () => {
+  test('0 logros: primer nivel del catálogo', () => {
+    expect(nivelUsuario(0).nombre).toBe(NIVELES_USUARIO[0].nombre);
+  });
+
+  test('los umbrales del ADR 032 D5 se respetan en los bordes', () => {
+    expect(nivelUsuario(2).min).toBe(0);
+    expect(nivelUsuario(3).min).toBe(3);
+    expect(nivelUsuario(5).min).toBe(3);
+    expect(nivelUsuario(6).min).toBe(6);
+    expect(nivelUsuario(10).min).toBe(10);
+    expect(nivelUsuario(14).min).toBe(14);
+    expect(nivelUsuario(18).min).toBe(18);
+    expect(nivelUsuario(50).min).toBe(18);
+  });
+
+  test('entrada inválida cae al primer nivel', () => {
+    expect(nivelUsuario(NaN).min).toBe(0);
+    expect(nivelUsuario(-3).min).toBe(0);
+  });
+
+  test('NIVELES_USUARIO está ordenado por min ascendente', () => {
+    const mins = NIVELES_USUARIO.map(n => n.min);
+    expect(mins).toEqual([...mins].sort((a, b) => a - b));
+  });
 });
 
 // ── estadoLogros() (LG.1b, ADR 022) ───────────────────────────────
@@ -337,13 +446,16 @@ describe('renderPanelLogros()', () => {
     for (const k of Object.keys(base)) S[k] = base[k];
   });
 
-  test('renderiza la card con el resumen y todos los logros', () => {
+  test('renderiza la card con el resumen, el nivel de usuario y los items agrupados', () => {
     S.logros = ['primer-paso', 'primer-gasto'];
     renderPanelLogros();
     const panel = document.getElementById('panel-logros');
     expect(panel.textContent).toContain('🏆 Logros');
+    expect(panel.textContent).toContain('Tu nivel:');
     expect(panel.textContent).toContain(`2 de ${LOGROS.length}`);
-    expect(panel.querySelectorAll('.logro-item')).toHaveLength(LOGROS.length);
+    // LG.2b: cada familia colapsa a una tarjeta; singles pasan tal cual.
+    expect(panel.querySelectorAll('.logro-item')).toHaveLength(N_ITEMS_VITRINA);
+    // primer-paso (single) + familia registro (tiene un nivel ganado) = 2 activas.
     expect(panel.querySelectorAll('.logro-item--on')).toHaveLength(2);
   });
 
@@ -353,6 +465,15 @@ describe('renderPanelLogros()', () => {
     const panel = document.getElementById('panel-logros');
     expect(panel.textContent).toContain('Registraste tu primer gasto.');
     expect(panel.textContent).toContain('Registra 10 gastos: el hábito es lo que cuenta.');
+  });
+
+  test('la familia con un nivel ganado muestra el chip de nivel y el siguiente objetivo', () => {
+    S.logros = ['primer-gasto'];
+    renderPanelLogros();
+    const panel = document.getElementById('panel-logros');
+    expect(panel.textContent).toContain('Constancia de registro');
+    expect(panel.textContent).toContain('Nivel 1 de 2');
+    expect(panel.textContent).toContain('Siguiente:');
   });
 
   test('los pendientes de conteo muestran barra y texto de progreso', () => {

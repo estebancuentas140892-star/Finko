@@ -124,19 +124,22 @@
 ## Sistema de logros (dominio `logros`)
 
 - **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y vitrina de solo lectura al final de Ajustes.
-- **Estado actual**     : estable en v1 (11 logros binarios planos). **En evolución**: [ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) (Propuesta, 2026-07-09) diseña Logros v2: familias con niveles, niveles de usuario derivados, regla anti-gaming y logros de comportamiento; pendiente de validación de Esteban (tarjeta LG.2a en BOARD).
-- **Verificado contra** : `2c3119f` (último commit que tocó el dominio) revisado el 2026-07-09 durante LG.2a.
+- **Estado actual**     : estable. **Logros v2 en curso** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b cerrada ese mismo día (familias con niveles + nivel de usuario derivado, SW v342); siguen LG.2c (rachas + familia deudas), LG.2d (mudanza, bloqueada por ANL.1/IN.8) y LG.2e (comportamiento), ver BOARD.
+- **Verificado contra** : commit de LG.2b (2026-07-09).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Catálogo (11 logros: id, emoji, desc, hint, eval, progreso?) | `modules/dominio/logros/logic.js` | `LOGROS` | ~32 |
-| Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~141 |
-| Estado render-ready de la vitrina | `modules/dominio/logros/logic.js` | `estadoLogros()` | ~173 |
+| Catálogo (11 logros; `familia`/`nivel` en primer-gasto, diez-gastos, meta-lograda) | `modules/dominio/logros/logic.js` | `LOGROS` | ~60 |
+| Metadata de familias (nombre por familia) | `modules/dominio/logros/logic.js` | `FAMILIAS` | ~48 |
+| Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~175 |
+| Estado render-ready de la vitrina (incluye familia/nivel) | `modules/dominio/logros/logic.js` | `estadoLogros()` | ~210 |
+| Agrupación por familia (una tarjeta por familia) | `modules/dominio/logros/logic.js` | `agruparVitrina()` | ~265 |
+| Nivel de usuario derivado del conteo (nombres provisionales) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~310 |
 | Detección + persistencia + toast (cola de a uno) | `modules/dominio/logros/index.js` | `_checkYMostrar()`, `_encolarToast()` | ~59, ~97 |
 | Confetti (24 piezas, ajuste mobile por bottom-nav) | `modules/dominio/logros/index.js` | `_lanzarConfetti()` | ~193 |
-| Vitrina en Ajustes | `modules/dominio/logros/view.js` | `renderPanelLogros()` → `#panel-logros` | ~18 |
+| Vitrina en Ajustes (agrupada + nivel en el encabezado) | `modules/dominio/logros/view.js` | `renderPanelLogros()`, `_renderFamiliaItem()` | ~24, ~62 |
 
 **Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
 
@@ -149,11 +152,12 @@
 - **3+ logros simultáneos** (import de respaldo/CSV) colapsan a un solo toast resumen; no romper ese guard al agregar logros.
 - **Ids del catálogo son valores persistidos**: nunca renombrarlos (mismo criterio que los ids de `MARCAS`).
 
-**Cambios pendientes**: la iniciativa LG.2 completa (ver BOARD, tarjeta LG.2a: ADR 032 escrito, esperando validación; rebanadas LG.2b-LG.2e definidas en el ADR).
+**Cambios pendientes**: LG.2c, LG.2d (bloqueada) y LG.2e en BOARD. Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
 
 **Cambios realizados**:
 
-- 2026-07-09 (LG.2a): ADR 032 escrito (Propuesta): familias con niveles sin bump de schema (cada nivel = id propio en `S.logros`), regla anti-gaming con test por PR, derivación "mes completo de registro", niveles de usuario derivados del conteo, reubicación en dos tiempos (Ajustes hoy, Análisis+Inicio tras ANL.1/IN.8). Cero código tocado.
+- 2026-07-09 (LG.2b): fundación de progresión (ADR 032 D1/D5): `familia`/`nivel` en el catálogo (primer-gasto y diez-gastos = familia registro; meta-lograda = familia metas), `FAMILIAS`, `agruparVitrina()` (una tarjeta por familia: nivel más alto ganado + siguiente objetivo con barra), `NIVELES_USUARIO` + `nivelUsuario()` y vitrina con "Tu nivel:" en el encabezado. Sin bump de schema. 17 tests unitarios nuevos + 1 E2E; SW v341 → v342.
+- 2026-07-09 (LG.2a): ADR 032 escrito y validado por Esteban el mismo día (Aceptada): familias con niveles sin bump de schema (cada nivel = id propio en `S.logros`), regla anti-gaming con test por PR, derivación "mes completo de registro", niveles de usuario derivados del conteo, reubicación en dos tiempos (Ajustes hoy, Análisis+Inicio tras ANL.1/IN.8).
 - 2026-07-04 (LG.1b, ADR 022): vitrina en Ajustes con hint y progreso parcial.
 - 2026-07-04 (LG.1a): toast más legible, cola de a uno, pausa por hover.
 

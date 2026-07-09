@@ -517,16 +517,32 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 
 ---
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **Requiere ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada (2026-07-09): LG.2a (ADR + catálogo) y LG.2b (fundación de progresión) cerradas; nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos.** Contexto original: **requería ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
 
-#### LG.2a - ADR de Logros v2 + diseño del catálogo de niveles
+#### LG.2c - Constancia de registro: "mes completo" + rachas + familia deudas
 - Prioridad  : media
-- Estado     : **ADR 032 escrito (Propuesta, 2026-07-09), esperando la validación de Esteban** en 3 puntos: (1) catálogo de familias y niveles (D4: registro 6 niveles, metas 3, deudas 2, comportamiento 3, singles intactos), (2) nombres de los niveles de usuario (D5: los propuestos son ejemplos), (3) reubicación en dos tiempos (D6: vitrina sigue en Ajustes; mudanza a Análisis+Inicio bloqueada por ANL.1/IN.8). Tras la validación: crear las tarjetas LG.2b (fundación de progresión, sin schema bump), LG.2c (mes completo de registro + rachas + familias registro/deudas), LG.2d (mudanza, bloqueada) y LG.2e (comportamiento, con test anti-gaming por PR), ya especificadas en el ADR.
-- Objetivo   : escrito en el [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md): revisión del 022 (reubicación diferida), niveles por familia con ids propios en `S.logros` (cero migración), regla anti-gaming como principio innegociable con test por PR, "mes completo de registro" como unidad de constancia, niveles de usuario derivados del conteo.
-- Secciones  : Transversal (`logros`, Análisis, Inicio, Ajustes)
-- Archivos   : `modules/dominio/logros/` (LOGROS, evaluadores), `analisis`, `resumen`; ficha del dominio creada en [`contexto/transversal.md`](contexto/transversal.md)
-- Depende de : validación de Esteban (esta tarjeta); LG.2d de ANL.1 + IN.8; `ahorro-creciente` (LG.2e) de la derivación canónica de ingreso mensual (probable entregable de ANL.1)
-- Modelo     : la validación es de Esteban (sin modelo); LG.2b/c tras validar: Sonnet 5 - Alto; LG.2e: Opus 4.8 - Alto (detectores con riesgo de gaming)
+- Estado     : pendiente (LG.2a y LG.2b cerradas el 2026-07-09; [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada)
+- Objetivo   : derivación pura "mes completo de registro" (gastos en 3+ semanas del mes, ADR 032 D3) y rachas hacia atrás desde el mes anterior, memoizadas con `infra/memo.js` (nunca O(historial) por `state:change`); niveles 3-6 de la familia registro (`mes-completo`, `tres-meses-seguidos`, `seis-meses-seguidos`, `doce-meses-seguidos`) y familia deudas (`primera-deuda-saldada`, `tres-deudas-saldadas`, excluyendo consolidaciones). Agregar las familias nuevas a `FAMILIAS`.
+- Secciones  : Transversal (`logros`)
+- Archivos   : `modules/dominio/logros/logic.js` (derivación + catálogo), tests de rachas con casos de borde (mes corriente nunca rompe racha, meses sin datos)
+- Depende de : nada (la fundación LG.2b ya está en producción)
+- Modelo     : Sonnet 5 - Alto (lógica de fechas/rachas con esquinas + disciplina de memoización)
+
+#### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
+- Prioridad  : baja (bloqueada)
+- Estado     : **bloqueada por ANL.1 e IN.8** (ADR 032 D6: no posicionar dos veces). La vitrina sigue en Ajustes (ADR 022 vigente operativamente) hasta que esas iniciativas definan sus pantallas.
+- Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo); al cerrar, marcar el ADR 022 como Superada.
+- Secciones  : Análisis, Inicio, Ajustes (`logros`)
+- Depende de : ANL.1 (layout de Análisis) + IN.8 (revisión ADR 028)
+- Modelo     : Sonnet 5 - Alto (reubicación cross-sección con coordinación de layouts)
+
+#### LG.2e - Familia comportamiento (interpretación de hábitos)
+- Prioridad  : baja
+- Estado     : pendiente; parcialmente bloqueada por datos
+- Objetivo   : logros `hormiga-a-raya` (implementable ya: categorías hormiga/café + guardia de mes completo de registro, ADR 032 D2.3), `ahorro-creciente` (**bloqueado**: necesita la derivación canónica de ingreso mensual, probable entregable de ANL.1) y `pagador-puntual` (verificar si el histórico de abonos por fecha alcanza). **Cada logro pasa el test anti-gaming del ADR 032 D2 explícitamente en su PR.**
+- Secciones  : Transversal (`logros`)
+- Depende de : LG.2c (usa "mes completo de registro" como guardia); `ahorro-creciente` además de ANL.1
+- Modelo     : Opus 4.8 - Alto (detectores de comportamiento con riesgo real de incentivos perversos)
 
 ---
 

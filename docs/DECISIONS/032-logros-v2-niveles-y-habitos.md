@@ -1,6 +1,6 @@
 # ADR 032 - Logros v2: niveles progresivos, niveles de usuario y regla anti-gaming
 
-**Estado:** Propuesta (2026-07-09). Pendiente de que Esteban valide: (1) el catálogo de familias y niveles de la sección D4, (2) los nombres de los niveles de usuario de D5 (los propuestos son ejemplos, igual que los del brief), (3) la decisión de reubicación en dos tiempos de D6. Nada se codifica antes de esa validación (regla de la tarjeta LG.2a).
+**Estado:** Aceptada (validada por Esteban el 2026-07-09): (1) catálogo D4 aprobado como está, (2) nombres de niveles de usuario de D5 quedan como **provisionales** hasta que Esteban entregue los definitivos (cambiarlos es editar la constante `NIVELES_USUARIO`, sin tocar datos), (3) reubicación en dos tiempos de D6 aprobada. **LG.2b implementada el mismo día** (fundación de progresión); siguen LG.2c, LG.2d (bloqueada por ANL.1/IN.8) y LG.2e.
 **Fecha:** 2026-07-09
 **Autores:** Esteban (visión de producto, brief de Análisis puntos 1-5 del 4.º lote), Claude Fable 5 (análisis y diseño)
 **Relación:** **revisa el [ADR 022](022-vitrina-de-logros-en-ajustes.md)** (vitrina en Ajustes: su decisión de ubicación se supera en dos tiempos, ver D6; su disciplina de evaluación barata y su modelo de persistencia se conservan y se refuerzan). Toca de lado el [ADR 028](028-inicio-centro-de-control.md) (una tarjeta nueva en Inicio pasa por la revisión de Inicio v2/IN.8, no por esta ADR). Conserva la decisión D6 del [ADR 025](025-logotipos-de-marca-y-tejas.md): los emojis de logros se quedan (momentos expresivos, no UI estructural).

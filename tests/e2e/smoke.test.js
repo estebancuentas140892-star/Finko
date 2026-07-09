@@ -956,6 +956,26 @@ test.describe('Centro Legal', () => {
   });
 });
 
+// ── SUITE 8d: Vitrina de logros con niveles (LG.2b, ADR 032) ─────────────────
+// La vitrina de Ajustes agrupa por familia y muestra el nivel de usuario
+// derivado del conteo. El seed trae onboarded=true (logro primer-paso vivo).
+
+test.describe('Vitrina de logros (niveles)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+  });
+
+  test('muestra el nivel de usuario y la familia agrupada sin listar sus niveles sueltos', async ({ page }) => {
+    const panel = page.locator('#panel-logros');
+    await expect(panel).toContainText('Tu nivel:');
+    await expect(panel).toContainText('Constancia de registro');
+    // La familia colapsa a una tarjeta: el nivel 2 no aparece como item propio.
+    await expect(panel).not.toContainText('Hábito registrado');
+  });
+});
+
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
 // Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.
