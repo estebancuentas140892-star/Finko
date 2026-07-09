@@ -10,6 +10,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 6.º lote (brief General) integrado al BOARD, con decisión de ADN señalada (regla 2.7, sin implementar) · 2026-07-08
+
+Sexto triaje del día: 1 brief de 8 puntos, el de mayor alcance. Resultado en [`BOARD.md`](BOARD.md):
+
+- **Punto 2 (cuentas de usuario + sincronización): TOCA EL ADN DE FRENTE** ("Sin servidor. Sin cuenta. Sin sync.", CLAUDE.md reglas 2/3, y la promesa de privacidad del onboarding). Se **fusionó con CFG.4**, que ya anticipaba la tensión, y la tarjeta ahora captura la versión completa del pedido + lo que el ADR debe poner sobre la mesa: redefinición del producto, backend/costos/modelo de amenazas, alternativas intermedias (local-first con cifrado E2E, respaldo a almacenamiento del propio usuario), y PERF.5 (IndexedDB) como precondición práctica (activaría el disparador D4 del ADR 030). **Nada se implementa sin ese ADR y la discusión explícita con Esteban.**
+- **Punto 3 (seguridad)** → integrado a **CFG.5**, ampliada con re-autenticación en acciones críticas (restablecer app, eliminar todo, exportar; hoy "Restablecer" solo pide confirmación de texto). La parte usuario/contraseña pertenece a CFG.4; el PIN/patrón local puede ir antes.
+- **Puntos 4+5 (guía por navegación + simplificar info inicial)** → iniciativa **GU.1** (fusión interna del lote: son la misma auditoría). Revisa formalmente el **ADR 016** (banner de propósito). Regla anti-doble-trabajo: GU.1 audita el sistema transversal; los rediseños internos viven en las iniciativas v2 de cada sección. Varios ejemplos del brief ya existen o ya están previstos (CTA de cuenta, CAL.1, "Gestionar"→Calendario, fondo→distribución).
+- **Puntos 6+7+8 (transferencias entre cuentas)** → **MC.17** nueva: transferencia con actualización automática de ambas cuentas, automatización por conteo (regla 0/1/varias), historial como tipo propio en Movimientos que jamás cuenta como ingreso/gasto (bump de schema), y la decisión GMF/4x1000 para el análisis (las cuentas ya modelan `aplica4x1000`).
+- **Punto 1 (actualizaciones)** → **UPD.1** nueva: aviso discreto al detectar versión nueva del SW + novedades mostradas una sola vez (`NOVEDADES_POR_VERSION` local, cero servidor).
+- **Hallazgo de archivo:** el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (taxonomía transversal, Propuesta desde junio) cubre el territorio de CAT.1: la sesión de taxonomía debe validar ADR 014 + ADR 029 D3 + CAT.1 como UNA decisión. Desambiguado el ID histórico "AP.5" del ADR 014 frente a la tarjeta AP.5 actual.
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): 5.º lote (Fondo de emergencia, Límites de gasto) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Quinto triaje del día: 2 briefs. Resultado en [`BOARD.md`](BOARD.md) y [BUGS.md](BUGS.md):

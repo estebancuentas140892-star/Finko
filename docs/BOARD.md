@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-08 (triaje del 5.º lote: Fondo de emergencia y Límites de gasto, regla 2.7).
+> Última actualización: 2026-07-08 (triaje del 6.º lote: brief General, con la decisión de ADN de CFG.4 señalada).
 
 ---
 
@@ -120,6 +120,15 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Archivos   : `modules/core/state.js` (typedef Cuenta), `modules/core/storage.js` (migración), `tesoreria` (form + detalle)
 - Depende de : nada. Independiente de MC.13.
 - Modelo     : Sonnet 5 - Medio
+
+#### MC.17 - Transferencias entre cuentas propias (con historial y automatización)
+- Prioridad  : alta (hoy mover dinero entre cuentas exige editar dos saldos a mano: propenso a error y sin rastro)
+- Estado     : pendiente de análisis (no iniciar)
+- Objetivo   : (6.º lote, brief General puntos 6-8) función "Transferir dinero": origen, destino, monto, nota opcional; ambas cuentas se actualizan solas. **Automatización por conteo de cuentas** (extensión natural de la regla de cuenta única 0/1/varias): con exactamente 2 cuentas activas se pregunta solo dirección y monto (o solo monto si el origen es evidente por contexto); con 3 o más, selector completo. **Historial:** cada transferencia queda registrada (fecha, origen, destino, monto, nota) y aparece en Movimientos como tipo propio "transferencia", **sin contar jamás como ingreso ni gasto** (es traslado interno): requiere colección/tipo nuevo en el schema (bump + migración) y sumar la fuente al ledger derivado de `movimientos/logic.js`. **Detalle financiero CO para el análisis:** las cuentas ya modelan `aplica4x1000`; decidir si la transferencia ofrece registrar el GMF del retiro cuando la cuenta origen no está exenta (costo real que hoy se perdería), sin complicar el flujo simple.
+- Secciones  : Mis cuentas (`tesoreria`), Movimientos (ledger), transversal por schema
+- Archivos   : `tesoreria` (acción + form), `modules/core/state.js`/`storage.js` (colección nueva), `modules/dominio/movimientos/logic.js` (fuente nueva), hoja "Registrar" (candidata a tile nuevo)
+- Depende de : nada duro; coordinar el tile de "Registrar" con la iniciativa Inicio v2 si coinciden en el tiempo
+- Modelo     : Opus 4.8 - Alto (schema + ledger + decisión GMF; la UI después puede bajar a Sonnet)
 
 ---
 
@@ -317,22 +326,22 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 - Depende de : nada. Riesgo técnico a evaluar primero: viabilidad real de notificaciones push offline-first sin servidor (ADN 2 y 3); puede requerir ADR si la solución técnica choca con "sin servidor".
 - Modelo     : Fable 5 - Alto (multidominio, con una restricción técnica de plataforma no trivial que hay que investigar antes de diseñar)
 
-#### CFG.4 - Respaldo y recuperación de la información
-- Prioridad  : sin definir
-- Estado     : pendiente de análisis (no iniciar). **Toca potencialmente el ADN del proyecto** (reglas 2 y 3: offline-first, sin servidor): requiere ADR y discusión explícita antes de cualquier código, por instrucción directa de CLAUDE.md sección 3.
-- Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea. Pidió analizar alternativas (copias de seguridad automáticas, sincronización con cuenta de usuario, respaldo cifrado en la nube, restauración desde archivo, u otra) que sean seguras, sencillas y transparentes, sin comprometer la privacidad.
-- Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos en `localStorage`)
-- Archivos   : sin explorar; el punto de partida real es la decisión arquitectónica, no el código
-- Depende de : nada. Explícitamente en tensión con ADN 2/3 (sin servidor, offline-first): cualquier opción con nube o cuenta de usuario es un cambio de ADN y necesita ADR propio antes de tocar una sola línea; una opción como "exportar/restaurar archivo cifrado local" sí calzaría sin tocar el ADN.
-- Modelo     : Fable 5 - Extra (decisión arquitectónica que puede rozar el ADN del proyecto; exige el nivel de análisis más alto antes de proponer nada)
+#### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
+- Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)
+- Estado     : pendiente de análisis (no iniciar). **Toca el ADN del proyecto de frente** (reglas 2 y 3: offline-first, sin servidor, sin cuenta, sin sync): requiere ADR y discusión explícita antes de cualquier código, por instrucción directa de CLAUDE.md sección 3. **Nada de este alcance se implementa por triaje: se registra y se difiere a esa decisión.**
+- Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea. Pidió analizar alternativas (copias de seguridad automáticas, sincronización con cuenta de usuario, respaldo cifrado en la nube, restauración desde archivo, u otra) que sean seguras, sencillas y transparentes, sin comprometer la privacidad. **Ampliado por el 6.º lote (2026-07-08, brief General punto 2, FUSIONADO aquí):** Esteban plantea ahora la versión completa: crear cuenta, iniciar sesión desde cualquier dispositivo, sincronización automática, recuperación ante pérdida y "continuar donde quedó", con autenticación segura. **Lo que el ADR debe poner sobre la mesa, sin rodeos:** (a) esto redefine Finko: "Sin servidor. Sin cuenta. Sin sync." dejaría de ser cierto, y la promesa actual de privacidad del onboarding ("Tus datos se guardan solo en tu dispositivo. Sin cuentas. Sin servidores.") tendría que reescribirse; (b) implica backend u servicio gestionado, costos de operación recurrentes, modelo de amenazas nuevo y responsabilidad sobre datos financieros de terceros; (c) existen puntos intermedios que el ADR debe evaluar contra la versión completa: local-first con sync cifrado de extremo a extremo, respaldo cifrado automático a almacenamiento del propio usuario (Drive/iCloud/archivo), o export/import cifrado mejorado; (d) **PERF.5 (IndexedDB) es precondición práctica** de cualquier sync serio (persistencia async + más cupo), y CFG.5 (bloqueo local) se vuelve capa complementaria de la autenticación. El disparador D4 del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) ("una feature que necesite persistencia asíncrona o mayor cupo, ej. CFG.4") quedaría activado si esto se aprueba.
+- Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos y la identidad del producto)
+- Archivos   : el punto de partida es la decisión arquitectónica, no el código
+- Depende de : ADR de ADN aprobado por Esteban tras discusión explícita; PERF.5 como precondición técnica probable
+- Modelo     : Fable 5 - Extra para el ADR (decisión arquitectónica que redefine el producto; exige el análisis más alto: opciones, costos, privacidad, riesgos y plan de migración)
 
-#### CFG.5 - Seguridad de acceso a la app (PIN, patrón, contraseña, biometría)
+#### CFG.5 - Seguridad de acceso a la app (PIN, patrón, biometría) + re-autenticación en acciones críticas
 - Prioridad  : sin definir
 - Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : agregar un método de bloqueo elegible por el usuario (PIN numérico, patrón, contraseña, huella o reconocimiento facial si el dispositivo lo permite) para proteger la información financiera si el dispositivo se pierde o lo roban.
-- Secciones  : Configuración (Ajustes)
+- Objetivo   : agregar un método de bloqueo elegible por el usuario (PIN numérico, patrón, contraseña, huella o reconocimiento facial si el dispositivo lo permite) para proteger la información financiera si el dispositivo se pierde o lo roban. **Ampliado por el 6.º lote (2026-07-08, brief General punto 3):** las **acciones críticas exigen re-autenticación** aunque la app ya esté desbloqueada: restablecer la aplicación (hoy solo pide un `confirmar()` de texto), eliminar toda la información, exportar datos sensibles y, si CFG.4 se aprueba, cerrar cuenta / cambiar contraseña. La parte "usuario y contraseña" del brief pertenece a CFG.4 (no hay cuenta que autenticar sin esa decisión); un PIN/patrón local NO la necesita y puede implementarse antes.
+- Secciones  : Configuración (Ajustes), transversal (el guard de re-autenticación envuelve acciones de varios lugares)
 - Archivos   : sin explorar; biometría real depende de WebAuthn/Credential Management API (soporte y UX varían por navegador/SO); un PIN/patrón simple se puede resolver 100% client side sin APIs nuevas
-- Depende de : nada. Viabilidad técnica de biometría en PWA (no app nativa) hay que verificarla antes de prometerla en el diseño.
+- Depende de : nada para PIN/patrón local + re-auth de acciones críticas; la credencial de cuenta depende de CFG.4. Viabilidad de biometría en PWA hay que verificarla antes de prometerla en el diseño.
 - Modelo     : Opus 4.8 - Alto (decisión de qué mecanismos son viables en PWA vs. cuáles prometer a futuro; UX de bloqueo con riesgo de dejar al usuario fuera de sus propios datos si algo falla)
 
 #### CFG.6 - Revisión general de la sección Ajustes
@@ -444,7 +453,7 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Estado     : pendiente de análisis (no iniciar). Coordinar con la validación D3 del ADR 029.
 - Objetivo   : hoy hay categorías en Gastos que muestran el hint "normalmente pertenece a fijos" (`hint-categoria-fija`): el brief pide eliminarlas del catálogo de Gastos en vez de avisar (Finko decide, el usuario no corrige). Criterios acordados: **fijo** = recurrente con frecuencia definida, estable, parte de la rutina (arriendo, servicios, internet, plan móvil, suscripciones, gimnasio, seguros, cuotas); **gasto** = día a día sin fecha fija, variable, estilo de vida (restaurante, transporte, ropa, café, regalos). Las **contextuales** (ej. alimento de mascotas: fijo si se compra con periodicidad, gasto si es "cuando se acaba") tienen un default por comportamiento común + personalización del usuario. Deduplicar catálogos (`CATEGORIAS_GASTO` vs `CATEGORIAS_AGENDA` en `constants.js`): cada categoría con UNA ubicación predeterminada. Requiere migración idempotente si se mueven categorías con datos existentes. **Ampliado por el 4.º lote (2026-07-08, brief de Apartados punto 5):** la MISMA pasada decide **Apartados↔Metas**: salen de Apartados las categorías que son objetivos grandes de largo plazo (Vacaciones, Semestre universitario, Computador, Viajes → Metas) y entra el catálogo de gastos esporádicos olvidables que definió Esteban (regalos y fechas especiales, SOAT/tecnomecánica/mantenimientos del vehículo, veterinario/alimento de mascotas, útiles y uniformes, impuestos, documentos, mantenimiento y seguro del hogar, reparaciones inesperadas, aseo personal). Una sola taxonomía global, validada con Esteban en el mismo movimiento que ADR 029 D3.
 - Secciones  : Gastos, Calendario (fijos), Apartados, Metas, transversal (`constants.js`, forms)
-- Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3)
+- Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3). **Hallazgo del triaje (2026-07-08): el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) "Taxonomía de categorías transversal" ya existe en estado Propuesta desde junio**, pendiente de validar la curación de catálogos con Esteban, y cubre exactamente esta pregunta ("qué va en cada sección y qué hacer cuando un concepto cabe en varias"). La sesión de taxonomía debe validar/actualizar ADR 014 + ADR 029 D3 + los criterios de CAT.1 como UNA sola decisión, no tres documentos rivales. (Desambiguación: el "AP.5" que el ADR 014 dice absorber es un ID histórico pre-BOARD, tarea distinta de la tarjeta AP.5 "Apartados v2" actual.)
 - Modelo     : Opus 4.8 - Extra si trae bump de schema con migración; el análisis de taxonomía previo, Fable 5 - Alto junto con ADR 029
 
 #### CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (6 consumidores)
@@ -471,6 +480,27 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
 - Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15 para no tocar el mismo form dos veces
 - Modelo     : Sonnet 5 - Medio (una pasada por ~8 formularios con tests de ambas reglas)
+
+#### UPD.1 - Aviso de actualización disponible + novedades mostradas una sola vez
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : (6.º lote, brief General punto 1) cuando el service worker detecte una versión nueva (`updatefound`), mostrar un aviso discreto ("Hay una nueva actualización disponible") con botón que aplica la actualización (skipWaiting + recarga controlada) en vez de esperar a la próxima recarga casual. Tras actualizar, mostrar **una única vez** un resumen breve de las novedades que le importan al usuario (no un changelog técnico): catálogo `NOVEDADES_POR_VERSION` en `constants.js`, comparando contra la última versión vista persistida. Los datos financieros no se tocan (las migraciones idempotentes ya garantizan eso, ADN 6); cero servidor: el SW ya versiona con `CACHE_NAME`.
+- Secciones  : Transversal (`infra/sw-register.js`, `service-worker.js`, aviso en shell)
+- Archivos   : `modules/infra/sw-register.js`, `service-worker.js`, `modules/core/constants.js`, `modules/ui/shell.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Alto (ciclo de vida del SW tiene esquinas: waiting/controllerchange/doble recarga)
+
+---
+
+> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5, fusionados: son la misma auditoría vista desde dos lados). **Revisa el [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)** (banner de propósito por sección, base de la divulgación progresiva EP.7): decirlo formalmente al iniciar. La filosofía pedida ya existe en varios puntos y se adopta como principio transversal: el CTA "necesitas una cuenta" lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, "Gestionar" llevará al Calendario (Inicio v2), el fondo recomendará su aporte en la distribución (AH.5/MC.13), Deudas ya enlaza a Estrategias. Alcance: (4) auditar TODOS los caminos de "sección conduce a la siguiente cuando hace falta" y completar los que falten (Gastos→Límites al detectar excesos ya está previsto en LIM.1 punto 4; Metas→Distribuir en MT.6); (5) auditoría de la información inicial de cada sección (banner de propósito + hints + empty states + botones "comenzar"): qué aporta, qué se repite, qué se elimina, qué se fusiona. **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners `renderBannerProposito`, hints); los rediseños internos de cada sección viven en sus iniciativas v2 (Inicio v2, Deudas v2, Mis Cuentas v2, Fondo v2, ANL.1...), que deben aplicar este principio, no duplicarlo.
+
+#### GU.1a - Auditoría del sistema de guía + revisión del ADR 016
+- Prioridad  : media
+- Estado     : pendiente de análisis (no iniciar; conviene DESPUÉS de que las iniciativas v2 grandes definan sus pantallas, o la auditoría se hace dos veces)
+- Objetivo   : inventario de todos los banners/hints/CTAs de arranque por sección; propuesta de qué se elimina, fusiona o convierte en guía contextual (nudge en el momento del error/necesidad, no texto permanente); revisión formal del ADR 016; re-corte en rebanadas por sección.
+- Secciones  : Transversal (`ui/proposito.js`, empty states de todas las vistas)
+- Depende de : recomendado tras IV.2 + las primeras iniciativas v2; coordina con cada una
+- Modelo     : Sonnet 5 - Alto (auditoría de UX con criterio, sin lógica nueva)
 
 ---
 
