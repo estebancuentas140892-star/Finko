@@ -524,15 +524,6 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 - Depende de : LEG.1
 - Modelo     : Sonnet 5 - Alto (flujo de onboarding + versionado persistido + migración)
 
-#### LEG.3 - Auditoría de avisos en funciones sensibles y transparencia de recomendaciones
-- Prioridad  : media
-- Estado     : pendiente (puede ir en paralelo a LEG.1)
-- Objetivo   : (puntos 7+8 del brief) inventario de las funciones sensibles (simulaciones de deuda, estrategias de pago, monitor/estimaciones de renta, proyecciones de inversión y patrimonio) y verificación de que cada una aclara que sus resultados son aproximaciones basadas en los datos del usuario, que cambian si los datos cambian, y que no constituyen instrucciones. **Mucho ya existe** (el monitor de renta dice "confirma con un contador" en 3 lugares, D.12 avisa de tasa desconocida, CFG.2b ya registra "Finko orienta, no dictamina"): esta tarjeta completa los huecos con el mismo tono, sin llenar la app de texto (criterio del punto 15 del brief de Deudas: pocos avisos, protagonismo a los que ayudan). El descargo general vive en LEG.1; aquí solo los avisos contextuales.
-- Secciones  : Deudas, Análisis, Inversión (transversal)
-- Archivos   : vistas de esas secciones; inventario como entregable para la revisión jurídica del gate
-- Depende de : nada duro; coordina el copy con LEG.1
-- Modelo     : Sonnet 5 - Medio (auditoría de copy con criterio, sin lógica)
-
 ---
 
 > **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **Requiere ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).

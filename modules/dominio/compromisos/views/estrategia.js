@@ -138,6 +138,9 @@ export function renderEstrategiaPago() {
         <p class="estrategia-card__subtitle">
           Finko te ayuda a tomar mejores decisiones con tus deudas.
         </p>
+        <p class="estrategia-card__subtitle">
+          Los plazos y ahorros son simulaciones con los datos que registraste; confírmalos con tu entidad antes de decidir.
+        </p>
       </header>
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">

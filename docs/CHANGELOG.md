@@ -10,6 +10,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(legal): LEG.3 auditoría de avisos en funciones sensibles y transparencia de recomendaciones · 2026-07-09
+
+Cierra la iniciativa LEG.3 (puntos 7+8 del brief del 7.º lote). Inventario de las funciones sensibles de la app y verificación de que cada una aclara que sus resultados son aproximaciones sobre los datos del usuario, no instrucciones ni garantías:
+
+- **Monitor de renta (Análisis):** ya cumplía. 3 avisos existentes verificados: "Confirma con un contador antes de declarar" (hint principal), "Consulta con un contador" (recomendación fiscal permanente K.2) y el aviso de vigencia de UVT ("toma estos topes como referencia provisional"). Sin cambios.
+- **Patrimonio neto (Análisis):** es una foto del presente (activos − pasivos con los datos de hoy), no una proyección. No aplica el mismo aviso; se deja fuera del alcance con esa justificación explícita.
+- **Estrategia de pago de deudas (`modules/dominio/compromisos/views/estrategia.js`): hueco cerrado.** La card (Avalancha/Bola de nieve, comparativa, renegociar tasa, consolidar) mostraba cifras concretas de ahorro y plazos sin ningún aviso de que son simulaciones. Se agregó una línea bajo el subtítulo de la card: "Los plazos y ahorros son simulaciones con los datos que registraste; confírmalos con tu entidad antes de decidir." Cubre las 4 herramientas de la card (estrategia base, aumentar cuota, renegociar, consolidar) con un solo aviso, sin repetirlo en cada bloque (criterio del punto 15 del brief de Deudas: pocos avisos).
+- **Proyección de inversión (`modules/dominio/inversiones/view.js`, sección "Proyección al vencimiento"): hueco cerrado.** Mostraba valor proyectado, ganancia esperada y rentabilidad real sin aviso. Se agregó: "Proyección estimada con la tasa y el plazo que registraste; no es garantía de rentabilidad, confírmala con tu entidad."
+
+**Verificación:** ambos avisos confirmados en el preview (deuda con 2 compromisos con tasa + inversión CDT de prueba), captura y snapshot de accesibilidad revisados, cero errores de consola. 2265/2265 tests unitarios verdes (sin tests nuevos: cambio de copy puro, sin lógica). El descargo general de responsabilidad vive en LEG.1 (`docs/legal/descargo-de-responsabilidad.md`); esta tarjeta solo cubre los avisos contextuales en el punto de uso.
+
+**Podría afectar:** nada funcional (2 líneas de copy nuevas en vistas existentes, sin cambio de estructura de datos ni de lógica).
+
+---
+
 ### docs(legal): LEG.1 rebanada de borradores, paquete legal completo para el modelo local-only en `docs/legal/` · 2026-07-09
 
 Primera rebanada de LEG.1 (la iniciativa LEG entró al BOARD el 2026-07-08, 7.º lote). Se ejecuta la secuencia recomendada en el triaje: redactar YA para el modelo local-only vigente (la app está pública sin base legal), con cláusula de versionado por si CFG.4 cambia el ADN.

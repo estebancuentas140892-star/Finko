@@ -152,6 +152,7 @@ function _renderProyeccion(inversiones) {
       ${realHtml}
       ${r72Html}
       ${notaNoProy}
+      <p class="inversion-proy__hint">Proyección estimada con la tasa y el plazo que registraste; no es garantía de rentabilidad, confírmala con tu entidad.</p>
     </section>`;
 }
 
