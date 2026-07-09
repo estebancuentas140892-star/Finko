@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 3.er lote (Inicio, Calendario, Me deben) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
+
+Tercer triaje del día: 3 briefs. Resultado en [`BOARD.md`](BOARD.md):
+
+- **Inicio:** los 2 puntos se integran a fuentes ya existentes, cero tarjetas nuevas. "Gestionar" de Pendientes del mes → Calendario (no Deudas) entra a la iniciativa **Inicio v2** como rebanada temprana candidata (cambio de una línea, no espera el ADR de revisión). La identificación visual de prioridades **amplía la spec que ya vivía en IV.2c**: además de icono + color de sección, cada ítem lleva etiqueta pequeña de tipo ("Deuda", "Gasto fijo", "Meta"...), cumpliendo "el color nunca viaja solo" (ADR 031 D1); los colores de los emojis del brief son ilustrativos, mandan los tokens aprobados.
+- **Calendario:** tarjeta nueva **CAL.3** (selección automática del día actual al entrar: si hoy tiene compromisos, el panel de detalle carga solo; navegación entre fechas sin cambios; incluye indicar claramente cuando un día no tiene registros, que hoy simplemente no muestra nada).
+- **Me deben:** iniciativa nueva **"Me deben v2: seguimiento inteligente" (PE.6)** sobre la base ya cerrada de PE.1 (tasa + reparto capital/interés) y PE.2-PE.5 (estados humanizados): total sugerido con intereses acumulados y desglose visible en "Me pagaron" (el usuario decide: cobrar todo, parte o perdonar), historial de abonos por préstamo (bump de schema; hoy solo existe el acumulado `pagado`), rendimiento del préstamo, estados visuales con los semánticos del ADR 031 y estadísticas de confianza por persona (historial informativo, no calificación). **Derivados:** recordatorios de vencimiento → **CFG.3** (personales añadido como fuente del motor único); fecha por defecto = hoy → **CAT.4**, que Esteban elevó a regla de toda la app (la tarjeta pasa a "auditoría de consistencia de formularios: orden + fecha default").
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): 2.º lote (Deudas y Mis Cuentas) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Segundo triaje del día: 2 briefs (Deudas, 15 puntos; Mis Cuentas, 21 puntos + integración del ingreso fijo con cuenta de destino). Resultado en [`BOARD.md`](BOARD.md):
