@@ -521,12 +521,12 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 
 #### LG.2a - ADR de Logros v2 + diseño del catálogo de niveles
 - Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar sin el ADR)
-- Objetivo   : escribir el ADR (revisión del 022: reubicación + niveles + anti-gaming + comportamiento) y diseñar el catálogo completo de logros/niveles con Esteban antes de codificar; re-cortar en rebanadas (modelo de datos de progresión, vitrina en Análisis, tarjeta en Inicio, detectores de comportamiento).
+- Estado     : **ADR 032 escrito (Propuesta, 2026-07-09), esperando la validación de Esteban** en 3 puntos: (1) catálogo de familias y niveles (D4: registro 6 niveles, metas 3, deudas 2, comportamiento 3, singles intactos), (2) nombres de los niveles de usuario (D5: los propuestos son ejemplos), (3) reubicación en dos tiempos (D6: vitrina sigue en Ajustes; mudanza a Análisis+Inicio bloqueada por ANL.1/IN.8). Tras la validación: crear las tarjetas LG.2b (fundación de progresión, sin schema bump), LG.2c (mes completo de registro + rachas + familias registro/deudas), LG.2d (mudanza, bloqueada) y LG.2e (comportamiento, con test anti-gaming por PR), ya especificadas en el ADR.
+- Objetivo   : escrito en el [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md): revisión del 022 (reubicación diferida), niveles por familia con ids propios en `S.logros` (cero migración), regla anti-gaming como principio innegociable con test por PR, "mes completo de registro" como unidad de constancia, niveles de usuario derivados del conteo.
 - Secciones  : Transversal (`logros`, Análisis, Inicio, Ajustes)
-- Archivos   : `modules/dominio/logros/` (LOGROS, evaluadores), `analisis`, `resumen`
-- Depende de : coordina con ANL.1 (layout) e Inicio v2 (tarjeta en Inicio); los detectores del punto 5 pueden depender de derivaciones de ANL.1
-- Modelo     : Fable 5 - Alto (diseño de incentivos con riesgo real de incentivar comportamientos incorrectos; el punto 4 lo demuestra)
+- Archivos   : `modules/dominio/logros/` (LOGROS, evaluadores), `analisis`, `resumen`; ficha del dominio creada en [`contexto/transversal.md`](contexto/transversal.md)
+- Depende de : validación de Esteban (esta tarjeta); LG.2d de ANL.1 + IN.8; `ahorro-creciente` (LG.2e) de la derivación canónica de ingreso mensual (probable entregable de ANL.1)
+- Modelo     : la validación es de Esteban (sin modelo); LG.2b/c tras validar: Sonnet 5 - Alto; LG.2e: Opus 4.8 - Alto (detectores con riesgo de gaming)
 
 ---
 

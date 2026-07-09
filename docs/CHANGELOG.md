@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): LG.2a ADR 032 Logros v2, niveles progresivos y regla anti-gaming (Propuesta) · 2026-07-09
+
+Primera fase de la iniciativa LG.2 (4.º lote de triaje). [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) escrito en estado **Propuesta**: revisión formal del ADR 022, como exige la iniciativa (no mover la vitrina en silencio). Cero código tocado; el catálogo y los nombres se validan con Esteban antes de codificar.
+
+**Decisiones de diseño del ADR:**
+
+- **D1, progresión sin bump de schema:** cada nivel de un "logro con niveles" es un logro independiente con id propio dentro de una familia (`familia` + `nivel` en el catálogo); `S.logros` sigue siendo `string[]` y los ids existentes se reutilizan como primeros niveles (`primer-gasto` = registro N1, `diez-gastos` = N2, `meta-lograda` = metas N1): cero migración, la regla "no revocación" aplica por nivel sin lógica nueva.
+- **D2, regla anti-gaming (principio innegociable):** prohibidos los logros que mejoren al omitir registro ("día sin gastos", "semana bajo X%"); test de gaming obligatorio por PR ("¿se consigue más fácil borrando datos?"); guardia: los logros de reducción de gasto solo evalúan meses completos de registro.
+- **D3, "mes completo de registro":** gastos en al menos 3 semanas del mes; un pase O(gastos del mes) memoizado (`infra/memo.js`); las rachas se calculan desde el mes anterior (el corriente nunca rompe una racha).
+- **D4, catálogo v2 (a validar):** de 11 a ~20 logros; familias registro (6 niveles), metas (3), deudas saldadas (2, excluye consolidaciones), comportamiento (hormiga-a-raya, ahorro-creciente, pagador-puntual); 8 singles intactos. "Deuda antes de lo previsto" diferido sin tarjeta (necesita snapshot del plan que no se persiste).
+- **D5, niveles de usuario derivados:** del conteo de logros, sin puntos/XP ni persistencia nueva; nombres propuestos como ejemplos a validar.
+- **D6, reubicación en dos tiempos:** principio aceptado (el lugar final es Análisis + tarjeta en Inicio) pero la mudanza queda como rebanada bloqueada por ANL.1 e IN.8 (no posicionar dos veces); el ADR 022 sigue vigente operativamente hasta entonces.
+- **D7, rendimiento:** evaluadores O(1) o memoizados, disciplina del ADR 022 reforzada; emojis conservados (ADR 025 D6).
+
+**Rebanadas especificadas** (se vuelven tarjetas tras la validación): LG.2b fundación de progresión, LG.2c constancia + deudas, LG.2d mudanza (bloqueada), LG.2e comportamiento. **Hechos verificados antes de diseñar:** deudas saldadas dejan rastro pero borrable; no existe derivación canónica de ingreso mensual (ingresos fijos son plan, no registro), por eso `ahorro-creciente` queda bloqueado hasta esa derivación (probable entregable de ANL.1).
+
+**Además:** bloque nuevo "Sistema de logros" en [`contexto/transversal.md`](contexto/transversal.md) (primer análisis a fondo del dominio, regla 2.6: catálogo, evaluación, toast/cola, vitrina, riesgos e invariantes).
+
+**Podría afectar:** nada (solo docs). **Validación pendiente:** los 3 puntos marcados en el estado del ADR.
+
+---
+
 ### feat(config): LEG.1 Centro Legal en Ajustes (rebanada de UI) · 2026-07-09
 
 Cierra LEG.1 por completo (la rebanada de borradores ya se había cerrado horas antes, mismo día). Apartado "⚖️ Centro Legal" en Ajustes con los 10 documentos de `docs/legal/`.

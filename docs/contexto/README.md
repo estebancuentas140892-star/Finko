@@ -108,6 +108,6 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Me deben | `me-deben.md` | sin crear |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | [`configuracion.md`](configuracion.md) | activa (panel de Ajustes, CFG.1a situación laboral) |
-| Transversal (navegación, iconografía, hoja Registrar, biblioteca gráfica, persistencia) | [`transversal.md`](transversal.md) | activa (tejas de marca, biblioteca gráfica, persistencia/cuota) |
+| Transversal (navegación, iconografía, hoja Registrar, biblioteca gráfica, persistencia, logros) | [`transversal.md`](transversal.md) | activa (tejas de marca, biblioteca gráfica, persistencia/cuota, sistema de logros) |
 
 Al crear una ficha: actualizar su fila a "activa" y ordenar los bloques dentro del archivo por importancia de la funcionalidad.
