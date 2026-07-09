@@ -2,7 +2,7 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-08 (BUG-011 registrado).
+> Última actualización: 2026-07-08 (BUG-011 y BUG-012 registrados).
 
 ---
 
@@ -36,3 +36,14 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Líneas    : sin ubicar
 - Secciones : Deudas
 - Nota      : el comportamiento correcto (simulaciones libres, comparables, que solo se materializan con "Aplicar estrategia") quedó especificado en la iniciativa "Deudas v2" del [BOARD](BOARD.md); este bug puede corregirse antes o dentro de esa iniciativa.
+
+### BUG-012 - Texto técnico "Empty State" visible en el Fondo de Emergencia
+- Estado    : pendiente
+- Prioridad : media (fix trivial, pero viola el ADN 11: lenguaje humano, jamás jerga técnica en la UI)
+- Problema  : reportado por Esteban (2026-07-08): al desactivar el Fondo de Emergencia y luego editarlo, aparece un mensaje con el texto literal "Empty State" en pantalla. Pasos: sección Ahorros → pestaña Fondo → desactivar el fondo → editar.
+- Causa     : sin investigar (probable placeholder o título de estado vacío que quedó con el nombre técnico en vez del copy en español)
+- Archivo   : modules/dominio/ahorro/view.js
+- Función   : render del estado vacío / edición del fondo desactivado
+- Líneas    : sin ubicar
+- Secciones : Ahorro (fondo de emergencia)
+- Nota      : hacer una pasada rápida de grep por otros literales técnicos visibles ("Empty State", "placeholder", "TODO", "null", "undefined") en todos los view.js al corregirlo, para cazar hermanos del mismo error de una vez.

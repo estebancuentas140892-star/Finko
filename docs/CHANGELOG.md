@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 5.º lote (Fondo de emergencia, Límites de gasto) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
+
+Quinto triaje del día: 2 briefs. Resultado en [`BOARD.md`](BOARD.md) y [BUGS.md](BUGS.md):
+
+- **Fondo de emergencia:** el punto 1 ("Empty State" literal visible al desactivar y editar el fondo) es un **bug de copy, BUG-012** (viola el ADN 11; incluye pasada de grep por otros literales técnicos en views al corregirlo). El rediseño UX educativo y la integración del aporte al flujo de distribución → iniciativa **"Fondo v2" (AH.5)**; la base ya existía (AH.2 calcula el aporte, ADR 021 recuerda el día de ingreso, MC.13 punto 21 ya contemplaba la cuota del fondo en la distribución). El registro manual de aportes se conserva como vía secundaria para aportes fuera de ciclo, no se elimina.
+- **Límites de gasto: FUSIÓN, no tarjeta nueva.** El brief se solapa casi 1:1 con LIM.1 (brief verbatim de Esteban del 2026-07-05): los puntos coincidentes se marcaron como reafirmados y solo los genuinamente nuevos entraron como puntos 7-10 de la tarjeta, que pasa a llamarse **"Límites v2"**: (7) base de cálculo sobre dinero realmente disponible y no solo ingresos fijos (con la advertencia de diseño: un saldo alto no siempre es gastable; conecta con MC.10/MC.11 y el motor de MC.13); (8) fijos no esenciales (streaming, IA) cuentan contra los límites, con la dimensión esencial/no-esencial decidida en CAT.1/ADR 029 D3; (9) hormiga y fantasma sobre suscripciones ("$120.000/mes en streaming, revisa cuáles usas"), alimentando el motor único de sugerencia por categoría (regla TX.10/LIM.1/ANL.1); (10) límites sugeridos y adaptativos. **Nota formal añadida:** sacar Necesidades y Ahorro de la sección revisa parcialmente el ADR 019 (roles por grupo), a decidir en el análisis, no en silencio. El modelo del análisis inicial sube a Opus 4.8 - Alto (la base de cálculo es lógica financiera con riesgo de recomendaciones erróneas).
+- Motor de MC.13: el aporte del fondo en la distribución (AH.5) queda explícito como consumidor n.º 7.
+
+Cero código tocado.
+
+---
+
 ### docs(triaje): 4.º lote (Ajustes, Análisis, Apartados, Metas) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Cuarto triaje del día, el más entrelazado: 4 briefs cruzados contra tablero, ADRs, fichas y los 3 lotes anteriores. Resultado en [`BOARD.md`](BOARD.md):
