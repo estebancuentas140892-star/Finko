@@ -10,6 +10,7 @@ import { estadoPermiso } from '../../infra/notificaciones.js';
 import { estadoCuota } from '../../core/storage.js';
 import { legalVigente, estadoVigenciaLegal, APP_VERSION, SITUACIONES_LABORALES } from '../../core/constants.js';
 import { estaInstalada } from '../../ui/install-prompt.js';
+import { DOCUMENTOS_LEGALES } from './legal.js';
 
 /**
  * Renderiza el panel de configuración completo en `#panel-config`.
@@ -28,6 +29,7 @@ export function renderPanelConfig() {
     ${_renderInstalarApp()}
     ${_renderNotificaciones()}
     ${_renderDatos()}
+    ${_renderLegal()}
     ${_renderAcercaDe()}
   `;
 }
@@ -354,6 +356,33 @@ function _renderDatos() {
           🗑 Resetear app
         </button>
       </div>
+    </section>`;
+}
+
+/**
+ * Centro Legal (LEG.1): lista los documentos de `docs/legal/`, cada uno se
+ * abre en un modal genérico (`modal-legal`) que trae el texto con `fetch`
+ * y lo convierte con `infra/markdown.js`. Ver `config/legal.js` y `index.js`.
+ */
+function _renderLegal() {
+  const items = DOCUMENTOS_LEGALES.map(doc => `
+    <li class="legal-lista__item">
+      <button type="button" class="legal-lista__link" data-action="abrir-legal" data-doc="${doc.id}">
+        <span>${_esc(doc.titulo)}</span>
+        <svg class="icon icon--sm" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+      </button>
+    </li>`).join('');
+
+  return `
+    <section class="config-section" aria-labelledby="config-legal-title">
+      <h2 class="config-section__title" id="config-legal-title">⚖️ Centro Legal</h2>
+      <p class="config-section__desc">
+        Términos, privacidad y demás documentos legales de Finko. Borradores en revisión;
+        aplican al modelo actual (tus datos solo en este dispositivo).
+      </p>
+      <ul class="legal-lista" role="list">
+        ${items}
+      </ul>
     </section>`;
 }
 

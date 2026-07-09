@@ -13,11 +13,14 @@ import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { hoy } from '../../infra/utils.js';
+import { mdToHtml } from '../../infra/markdown.js';
 import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
+import { abrirModal } from '../../ui/modales.js';
 import { renderPanelConfig } from './view.js';
 import { gastosACSV } from '../export/logic.js';
+import { documentoLegalPorId, cargarDocumentoLegal } from './legal.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -117,6 +120,44 @@ function _exportarGastosCSV() {
   }
 }
 
+/**
+ * Abre el modal genérico "Centro Legal" con el documento pedido (LEG.1).
+ * Muestra un estado de carga mientras `fetch` trae el `.md` (mismo origen;
+ * el service worker lo sirve desde cache si el dispositivo está offline),
+ * lo convierte con `mdToHtml` y lo pinta. Si falla, un mensaje corto invita
+ * a reintentar en vez de dejar el modal en blanco.
+ * @param {string} id - id del catálogo `DOCUMENTOS_LEGALES`.
+ */
+async function _mostrarDocumentoLegal(id) {
+  const doc = documentoLegalPorId(id);
+  const overlay = document.getElementById('modal-legal');
+  const body    = document.getElementById('modal-legal-body');
+  const titulo  = document.getElementById('modal-legal-title');
+  if (!doc || !overlay || !body) return;
+
+  titulo.textContent = doc.titulo;
+  body.innerHTML = '<p class="form-hint form-hint--muted">Cargando…</p>';
+  abrirModal(overlay);
+
+  try {
+    const md = await cargarDocumentoLegal(doc);
+    body.innerHTML = mdToHtml(md);
+  } catch (err) {
+    console.error('[config] cargarDocumentoLegal falló:', err);
+    body.innerHTML = '<p class="form-hint form-hint--muted">No se pudo cargar este documento. Intenta de nuevo.</p>';
+  }
+}
+
+/** Delegación de clicks dentro del visor: enlaces `[texto](otro.md)` cambian de documento sin cerrar el modal. */
+function _wireLegalLinks() {
+  document.getElementById('modal-legal-body')?.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-doc-link]');
+    if (!link) return;
+    e.preventDefault();
+    _mostrarDocumentoLegal(link.dataset.docLink);
+  });
+}
+
 async function _resetearApp() {
   const ok = await confirmar({
     titulo:         'Resetear app',
@@ -209,6 +250,8 @@ export function initConfig() {
   registrarAccion('resetear-app',           _resetearApp);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
   registrarAccion('toggle-notificaciones',  _toggleNotificaciones);
+  registrarAccion('abrir-legal', (el) => _mostrarDocumentoLegal(el.dataset.doc));
+  _wireLegalLinks();
 
   // El panel se inyecta la primera vez que la sección está activa.
   renderSmart(_inyectarPanel, 'config');

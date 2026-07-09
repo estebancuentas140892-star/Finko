@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderPanelConfig } from '../../modules/dominio/config/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
+import { DOCUMENTOS_LEGALES, documentoLegalPorId } from '../../modules/dominio/config/legal.js';
 
 // ── PERFIL: situación laboral (CFG.1) ────────────────────────────
 
@@ -52,5 +53,41 @@ describe('renderPanelConfig() - perfil con situación laboral (CFG.1)', () => {
     renderPanelConfig();
     const dd = [...document.querySelectorAll('.config-info dd')].map(d => d.textContent);
     expect(dd).toContain('Sin especificar');
+  });
+});
+
+// ── CENTRO LEGAL (LEG.1) ──────────────────────────────────────────
+
+describe('renderPanelConfig() - Centro Legal (LEG.1)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+    renderPanelConfig();
+  });
+
+  it('muestra la sección con un botón por cada documento del catálogo', () => {
+    const html = document.getElementById('panel-config').innerHTML;
+    expect(html).toContain('Centro Legal');
+
+    const botones = [...document.querySelectorAll('[data-action="abrir-legal"]')];
+    expect(botones).toHaveLength(DOCUMENTOS_LEGALES.length);
+  });
+
+  it('cada botón lleva el id correcto en data-doc y el título visible', () => {
+    for (const doc of DOCUMENTOS_LEGALES) {
+      const boton = document.querySelector(`[data-action="abrir-legal"][data-doc="${doc.id}"]`);
+      expect(boton, `falta el botón de "${doc.id}"`).not.toBeNull();
+      expect(boton.textContent).toContain(doc.titulo);
+    }
+  });
+});
+
+describe('documentoLegalPorId()', () => {
+  it('encuentra un documento existente', () => {
+    expect(documentoLegalPorId('politica-de-privacidad')?.archivo).toBe('politica-de-privacidad.md');
+  });
+
+  it('devuelve null para un id desconocido (defensivo ante un data-doc-link roto)', () => {
+    expect(documentoLegalPorId('no-existe')).toBeNull();
   });
 });

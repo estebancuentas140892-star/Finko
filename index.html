@@ -1076,6 +1076,24 @@
     </div>
   </div>
 
+  <!-- Modal: Centro Legal (LEG.1) - un solo modal genérico para los 10 documentos -->
+  <div class="modal-overlay" id="modal-legal"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-legal-title" aria-hidden="true">
+    <div class="modal modal--lg">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-legal-title">Documento legal</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body">
+        <div class="legal-doc" id="modal-legal-body">
+          <!-- config/legal.js + index.js: cargarDocumentoLegal() + mdToHtml() -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Onboarding (wizard de bienvenida) -->
   <div class="modal-overlay" id="onboarding"
        role="dialog" aria-modal="true"

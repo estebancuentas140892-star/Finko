@@ -22,14 +22,14 @@ Estos son los únicos recursos de terceros que llegan a tu dispositivo al instal
 - **Autor:** Rasmus Andersson.
 - **Licencia:** SIL Open Font License 1.1 (OFL-1.1).
 - **Uso en Finko:** tipografía principal de toda la interfaz, distribuida como archivo de fuente empaquetado con la app.
-- **Texto de la licencia:** `https://openfontlicense.org` (el texto completo se incluirá en el Centro Legal de la app).
+- **Texto de la licencia:** [openfontlicense.org](https://openfontlicense.org) (enlace directo desde el Centro Legal de la app; no se transcribe aquí para no bifurcar la fuente oficial del texto).
 
 ### 1.2. Fuente tipográfica DM Mono
 
 - **Autor:** Colophon Foundry (encargo de Google Fonts).
 - **Licencia:** SIL Open Font License 1.1 (OFL-1.1).
 - **Uso en Finko:** tipografía de cifras y contextos monoespaciados, distribuida como archivos de fuente empaquetados con la app.
-- **Texto de la licencia:** `https://openfontlicense.org` (el texto completo se incluirá en el Centro Legal de la app).
+- **Texto de la licencia:** [openfontlicense.org](https://openfontlicense.org) (enlace directo desde el Centro Legal de la app; no se transcribe aquí para no bifurcar la fuente oficial del texto).
 
 La OFL permite usar, empaquetar y redistribuir las fuentes con el software, prohíbe venderlas por separado y exige conservar sus avisos de autoría y licencia.
 

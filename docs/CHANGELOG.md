@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(config): LEG.1 Centro Legal en Ajustes (rebanada de UI) · 2026-07-09
+
+Cierra LEG.1 por completo (la rebanada de borradores ya se había cerrado horas antes, mismo día). Apartado "⚖️ Centro Legal" en Ajustes con los 10 documentos de `docs/legal/`.
+
+**Decisión de mecanismo (pendiente en la tarjeta original, resuelta al implementar):** fetch de los `.md` en tiempo de ejecución (mismo origen, `docs/legal/*.md` sumados a `CORE_ASSETS` del service worker → disponibles offline tras la primera visita, igual que el resto de la app) + conversión con un conversor Markdown propio nuevo, sin dependencias (ADN 1). Se descartó incrustar el contenido como datos JS duplicados: `docs/legal/` sigue siendo la única fuente de verdad de los textos, sin bifurcación.
+
+**Archivos nuevos:**
+- `modules/infra/markdown.js`: `mdToHtml()`, conversor puro y sin DOM. Cubre solo el subconjunto que usan estos 10 documentos (encabezados h1/h2, negrita, código en línea, enlaces, listas, tablas, citas `>`, separador `---`); no es un parser CommonMark completo. Escapa HTML antes de aplicar cualquier transformación (sin XSS). Los enlaces a otro `.md` reciben `data-doc-link` para que el visor cambie de documento sin salir del modal; los enlaces `https://` externos abren en pestaña nueva.
+- `modules/dominio/config/legal.js`: catálogo `DOCUMENTOS_LEGALES` (10 entradas, sin el README interno) + `cargarDocumentoLegal()` (fetch) + `documentoLegalPorId()`.
+
+**Archivos modificados:**
+- `index.html`: modal genérico `#modal-legal` (un solo modal para los 10 documentos, patrón `modal-open`/`data-doc` ya usado en el resto de la app).
+- `modules/dominio/config/view.js`: `_renderLegal()`, lista de documentos con `data-action="abrir-legal"`.
+- `modules/dominio/config/index.js`: `_mostrarDocumentoLegal()` (fetch + `mdToHtml` + pinta el modal, con estado de carga y mensaje de error si falla) y `_wireLegalLinks()` (delegación de clicks en enlaces internos).
+- `styles/components/config.css`: `.legal-lista` (lista de Ajustes) y `.legal-doc` (tipografía del visor: h3/h4, párrafos, listas, citas, tablas con scroll horizontal, código).
+- `service-worker.js`: `CACHE_NAME` v340 → v341; `markdown.js`, `config/legal.js` y los 10 `.md` sumados a `CORE_ASSETS`.
+- `eslint.config.js`: agregado el global `fetch` (usado por primera vez en el proyecto).
+
+**Tests:** 13 nuevos en `tests/unit/markdown.test.js` (encabezados, párrafos, `---`, negrita, código protegido de negrita, enlaces externos e internos, listas, tabla con fila separadora, escape de HTML, citas). 2 nuevos en `config.test.js` (un botón por documento del catálogo, id y título correctos) + 2 en `documentoLegalPorId()`. 3 E2E nuevos en `smoke.test.js` (lista completa + abrir un documento con contenido real vía fetch, navegar a otro documento por su enlace interno, cerrar el modal). El conversor se validó además contra los 10 `.md` reales con un script ad-hoc (sin errores, tablas y citas correctas). 2282/2282 unit + 158/158 E2E verdes.
+
+**Qué queda de la iniciativa LEG:** sin bloqueo de código. Falta contenido: el checklist de `docs/legal/README.md` (responsable, correo de contacto, decisión de licencia del código) y la revisión por un abogado colombiano antes de pasar de v0.1 a v1.0 (gate del punto 9 del brief). LEG.2 (aceptación obligatoria) queda pendiente de eso, no de UI. LEG.3 (auditoría de avisos en funciones sensibles) ya se había cerrado antes en la misma jornada.
+
+**Podría afectar:** nada del resto de la app (sección nueva, aislada, sin tocar `S` ni EventBus). **Validación pendiente:** contenido en v0.1 con marcadores `[PENDIENTE: ...]` visibles en el modal hasta que Esteban los resuelva.
+
+---
+
 ### fix(legal): LEG.3 auditoría de avisos en funciones sensibles y transparencia de recomendaciones · 2026-07-09
 
 Cierra la iniciativa LEG.3 (puntos 7+8 del brief del 7.º lote). Inventario de las funciones sensibles de la app y verificación de que cada una aclara que sus resultados son aproximaciones sobre los datos del usuario, no instrucciones ni garantías:

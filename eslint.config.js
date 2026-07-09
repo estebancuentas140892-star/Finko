@@ -52,6 +52,7 @@ export default [
         crypto: 'readonly',
         // APIs de formularios y fetch
         FormData:   'readonly',
+        fetch:      'readonly',
         // Blob, URL y FileReader - usados en config (exportar/importar)
         Blob:         'readonly',
         URL:          'readonly',

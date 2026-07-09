@@ -506,22 +506,13 @@ _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `
 
 > **Iniciativa LEG: Centro Legal y cumplimiento** (7.º lote, 2026-07-08, brief General de 9 puntos). **Hueco real hoy: la app está en producción sin ningún documento legal** (verificado: cero términos, privacidad o disclaimers formales; solo existen los avisos puntuales tipo "confirma con un contador" del monitor de renta). **Acoplamiento señalado con CFG.4:** el contenido del paquete depende de esa decisión de ADN. Con el modelo actual local-only, la política de privacidad es la fortaleza del producto ("tus datos se guardan solo en tu dispositivo, Finko no recolecta nada") y la Ley 1581/Habeas Data aplica de forma mínima; si CFG.4 aprueba cuentas/sync, el paquete se reescribe (responsable del tratamiento, canales de derechos, evidencia de consentimiento verificable). **Decisión de secuencia recomendada: redactar YA para el modelo local-only vigente** (cubre la producción actual) con cláusula de versionado, y revisar si CFG.4 cambia el ADN. **Gate final (punto 9 del brief): la revisión de todo el paquete por un abogado colombiano antes del lanzamiento oficial es trabajo profesional externo, no una tarea de código ni de IA**: las tarjetas de abajo producen borradores informados y el inventario de funciones sensibles PARA esa revisión (el mismo principio que Finko aplica a sus usuarios: orienta, no dictamina). Los documentos legales siguen el ADN 11: resumen en lenguaje claro por sección + texto formal.
 
-#### LEG.1 - Centro Legal en Ajustes (rebanada de UI; los borradores ya existen)
-- Prioridad  : alta (la app está pública sin base legal)
-- Estado     : pendiente. **Rebanada de borradores CERRADA (2026-07-09):** los 11 documentos del paquete viven en `docs/legal/` (v0.1, formato ADN 11: "En pocas palabras" + texto formal, cláusula CFG.4 en cada uno). Queda esta rebanada: la UI.
-- Objetivo   : apartado "Centro Legal" en Ajustes que muestre los documentos de `docs/legal/`: términos y condiciones, política de privacidad, tratamiento de datos personales (Ley 1581), aviso de cookies, descargo de responsabilidad, propiedad intelectual, aviso de marcas de terceros, licencias de terceros (incluir el texto completo de la OFL 1.1, comprometido en el borrador), aviso legal e historial de cambios. Decidir el mecanismo de servido compatible con offline-first (contenido precacheado por el SW). Antes de publicar en la app: resolver los marcadores `[PENDIENTE: ...]` (responsable, correo de contacto, licencia del código; checklist en `docs/legal/README.md`).
-- Secciones  : Configuración (Ajustes), `docs/legal/` como fuente de los textos
-- Archivos   : `modules/dominio/config/` (sección nueva), contenido de `docs/legal/` servido en la app
-- Depende de : la decisión CFG.4 puede obligar a reescribir los textos (ya cubierto con cláusula de versionado); coordinar el bloque de Ajustes con CFG.6; los datos `[PENDIENTE]` los define Esteban
-- Modelo     : Sonnet 5 - Medio (sección nueva de UI siguiendo el patrón existente de Ajustes)
-
 #### LEG.2 - Aceptación obligatoria versionada (onboarding + re-aceptación en cambios)
-- Prioridad  : alta (va de la mano de LEG.1)
-- Estado     : bloqueada por LEG.1 (los borradores ya existen en `docs/legal/`, pero falta el Centro Legal en la app y que los textos pasen a v1.0: sin documento publicado no hay qué aceptar). El criterio de re-aceptación (cambio importante vs menor) ya quedó definido en `docs/legal/historial-de-cambios.md`.
+- Prioridad  : alta
+- Estado     : pendiente. LEG.1 (Centro Legal, borradores + UI) ya está cerrada: el bloqueo real que queda es de **contenido**, no de código. Antes de pedirle al usuario que "acepte" estos documentos hace falta resolver el checklist de `docs/legal/README.md` (responsable, correo de contacto, licencia del código) y pasar el paquete de v0.1 a v1.0 (revisión por abogado colombiano, gate del punto 9 del brief). El criterio de re-aceptación (cambio importante vs menor) ya quedó definido en `docs/legal/historial-de-cambios.md`.
 - Objetivo   : primera apertura: aceptación expresa de términos + privacidad + datos personales antes de usar la app (paso nuevo del onboarding); cambios importantes de políticas: re-aceptación antes de continuar (comparar versión aceptada vs vigente). Registro local de aceptación (versión + fecha, bump de schema en `S.config`). **Limitación honesta a documentar:** sin servidor, la "evidencia" de aceptación vive solo en el dispositivo del usuario; una evidencia verificable por Finko requiere CFG.4.
 - Secciones  : Onboarding, Configuración, `core/state.js`/`storage.js` (registro versionado)
 - Archivos   : `modules/ui/onboarding.js`, `modules/core/state.js`, `modules/core/storage.js`
-- Depende de : LEG.1
+- Depende de : el checklist de `docs/legal/README.md` resuelto y el paquete en v1.0
 - Modelo     : Sonnet 5 - Alto (flujo de onboarding + versionado persistido + migración)
 
 ---

@@ -205,6 +205,145 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   CENTRO LEGAL (LEG.1)
+   Lista de documentos en Ajustes + tipografía del visor dentro
+   del modal genérico #modal-legal (contenido de docs/legal/*.md
+   convertido por infra/markdown.js).
+   ════════════════════════════════════════════════════════════ */
+
+.legal-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.legal-lista__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  width: 100%;
+  padding: var(--fk-space-3) var(--fk-space-4);
+  background: var(--fk-bg-elevated);
+  border: 1px solid transparent;
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-primary);
+  font: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+
+.legal-lista__link:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+}
+
+.legal-lista__link .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-text-muted);
+  flex-shrink: 0;
+}
+
+/* Visor de documento: tipografía legible para texto largo, sin depender
+   de ningún componente de otro dominio (el HTML lo genera markdown.js). */
+.legal-doc {
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-relaxed);
+  color: var(--fk-text-secondary);
+}
+
+.legal-doc h3 {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+
+.legal-doc h4 {
+  margin: var(--fk-space-5) 0 var(--fk-space-2);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.legal-doc p {
+  margin: 0 0 var(--fk-space-3);
+}
+
+.legal-doc strong {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+
+.legal-doc code {
+  font-family: var(--fk-font-mono);
+  font-size: 0.9em;
+  background: var(--fk-bg-elevated);
+  padding: 0.1em 0.35em;
+  border-radius: var(--fk-radius-sm);
+}
+
+.legal-doc a.link {
+  color: var(--fk-text-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.legal-doc ul {
+  margin: 0 0 var(--fk-space-3);
+  padding-left: var(--fk-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+
+.legal-doc blockquote {
+  margin: 0 0 var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-4);
+  border-left: 3px solid var(--fk-border-default);
+  color: var(--fk-text-muted);
+  font-size: var(--fk-text-xs);
+}
+.legal-doc blockquote p { margin: 0; }
+
+.legal-doc hr {
+  margin: var(--fk-space-5) 0;
+  border: none;
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+.legal-doc__tabla-wrap {
+  overflow-x: auto;
+  margin: 0 0 var(--fk-space-3);
+}
+
+.legal-doc table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fk-text-xs);
+}
+
+.legal-doc th,
+.legal-doc td {
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-bottom: 1px solid var(--fk-border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.legal-doc th {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+  white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════
    VITRINA DE LOGROS (LG.1b, ADR 022)
    Card "🏆 Logros" al final de Ajustes, renderizada por el dominio
    logros en #panel-logros. Los pendientes van atenuados y con el

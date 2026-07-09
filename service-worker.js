@@ -10,7 +10,7 @@
  *     o los usuarios seguirán viendo la versión vieja.
  */
 
-const CACHE_NAME = 'finko-v340';
+const CACHE_NAME = 'finko-v341';
 
 // ── Assets críticos - si falla uno, el install falla (correcto) ───────────
 const CORE_ASSETS = [
@@ -61,6 +61,7 @@ const CORE_ASSETS = [
   './modules/infra/notificaciones.js',
   './modules/infra/sw-register.js',
   './modules/infra/form-errors.js',
+  './modules/infra/markdown.js',
 
   // UI
   './modules/ui/actions.js',
@@ -130,6 +131,19 @@ const CORE_ASSETS = [
   './modules/infra/financiero.js',
   './modules/dominio/config/view.js',
   './modules/dominio/config/index.js',
+  './modules/dominio/config/legal.js',
+
+  // Centro Legal (LEG.1) - textos fuente, docs/legal/ es la fuente de verdad.
+  './docs/legal/terminos-y-condiciones.md',
+  './docs/legal/politica-de-privacidad.md',
+  './docs/legal/tratamiento-de-datos-personales.md',
+  './docs/legal/aviso-de-cookies.md',
+  './docs/legal/descargo-de-responsabilidad.md',
+  './docs/legal/propiedad-intelectual.md',
+  './docs/legal/marcas-de-terceros.md',
+  './docs/legal/licencias-de-terceros.md',
+  './docs/legal/aviso-legal.md',
+  './docs/legal/historial-de-cambios.md',
   './modules/dominio/import/logic.js',
   './modules/dominio/import/view.js',
   './modules/dominio/import/index.js',

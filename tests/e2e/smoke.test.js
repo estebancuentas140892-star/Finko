@@ -914,6 +914,48 @@ test.describe('Perfil - situación laboral', () => {
   });
 });
 
+// ── SUITE 8c: Centro Legal (LEG.1) ───────────────────────────────────────────
+// Fetch real de docs/legal/*.md (mismo origen, servido por el server de test)
+// + conversión con infra/markdown.js. Cubre: abrir un documento, navegar a
+// otro por su enlace interno (data-doc-link) y cerrar el modal.
+
+test.describe('Centro Legal', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+  });
+
+  test('lista los 10 documentos y abre uno con su contenido real', async ({ page }) => {
+    const botones = page.locator('[data-action="abrir-legal"]');
+    await expect(botones).toHaveCount(10);
+
+    await page.locator('[data-action="abrir-legal"][data-doc="politica-de-privacidad"]').click();
+    await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
+    await expect(page.locator('#modal-legal-title')).toHaveText('Política de privacidad');
+    await expect(page.locator('#modal-legal-body')).toContainText('localStorage');
+  });
+
+  test('un enlace interno (.md) cambia de documento sin cerrar el modal', async ({ page }) => {
+    await page.locator('[data-action="abrir-legal"][data-doc="politica-de-privacidad"]').click();
+    await expect(page.locator('#modal-legal-body')).toContainText('localStorage');
+
+    // politica-de-privacidad.md enlaza a tratamiento-de-datos-personales.md.
+    await page.locator('#modal-legal-body [data-doc-link="tratamiento-de-datos-personales"]').first().click();
+
+    await expect(page.locator('#modal-legal-title')).toHaveText('Tratamiento de datos personales');
+    await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
+  });
+
+  test('cierra el modal con el botón de cerrar', async ({ page }) => {
+    await page.locator('[data-action="abrir-legal"][data-doc="aviso-legal"]').click();
+    await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
+
+    await page.locator('#modal-legal [data-action="modal-close"]').click();
+    await expect(page.locator('#modal-legal')).not.toHaveAttribute('data-open', '');
+  });
+});
+
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
 // Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.
