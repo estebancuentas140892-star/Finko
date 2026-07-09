@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(legal): LEG.1 rebanada de borradores, paquete legal completo para el modelo local-only en `docs/legal/` · 2026-07-09
+
+Primera rebanada de LEG.1 (la iniciativa LEG entró al BOARD el 2026-07-08, 7.º lote). Se ejecuta la secuencia recomendada en el triaje: redactar YA para el modelo local-only vigente (la app está pública sin base legal), con cláusula de versionado por si CFG.4 cambia el ADN.
+
+**Archivos nuevos (11, todos en `docs/legal/`):**
+
+- `README.md`: índice del paquete, reglas de redacción y versionado (0.x borrador → 1.0 tras revisión jurídica), hechos verificados del producto y **checklist de pendientes que bloquean v1.0**: nombre del responsable, correo de contacto real, decisión de licencia del código (el repo público no tiene LICENSE: hoy rige "todos los derechos reservados") y revisión por abogado colombiano (gate del punto 9 del brief).
+- `terminos-y-condiciones.md`: naturaleza del servicio (herramienta gratuita de organización, no entidad financiera), consecuencias aceptadas del modelo local-only (respaldo propio, sin recuperación, un dispositivo), uso aceptable, menores, disponibilidad, re-aceptación versionada.
+- `politica-de-privacidad.md`: privacidad por diseño; lo único que viaja es la descarga de la app (datos técnicos del hosting Vercel, sin datos financieros); controles de Ajustes (export/import/borrar).
+- `tratamiento-de-datos-personales.md`: posición frente a la Ley 1581 de 2012 (tratamiento de ámbito personal/doméstico, excluido por el artículo 2 literal a; Finko no es responsable del tratamiento porque no recibe datos), principios adoptados por diseño, derechos habeas data con plazos de los artículos 14/15, SIC como autoridad, cláusula CFG.4 completa.
+- `aviso-de-cookies.md`: cero cookies de todo tipo (verificado); `localStorage` estrictamente funcional; caché del service worker; cómo borrar.
+- `descargo-de-responsabilidad.md`: puntos 3+4 del brief (organización y guía, no asesoría financiera/tributaria/contable/jurídica; aproximaciones sobre datos del usuario; constantes legales con fecha de revisión; sin garantías; limitación de responsabilidad).
+- `propiedad-intelectual.md`: titularidad del código/diseño/iconografía/textos; el repo público no otorga licencia implícita; los datos del usuario son del usuario.
+- `marcas-de-terceros.md`: punto 5 del brief, complementa los ADR 025 D5/027/029 (uso nominativo de identificación, sin afiliación salvo convenio informado, retiro a solicitud del titular con fallback a iniciales/categoría).
+- `licencias-de-terceros.md`: inventario verificado archivo por archivo: fuentes Inter y DM Mono (SIL OFL 1.1, empaquetadas en `assets/fonts/`), glifos Simple Icons (CC0, en el sprite); las devDependencies no se distribuyen; cero librerías en runtime.
+- `aviso-legal.md`: identificación del responsable (con marcadores pendientes), infraestructura, marco normativo CO, jurisdicción.
+- `historial-de-cambios.md`: registro versionado (primera fila: v0.1 del paquete) + criterio de cambio importante vs menor para la re-aceptación de LEG.2.
+
+**Convenciones:** todos los documentos siguen el ADN 11 (bloque "En pocas palabras" en lenguaje claro + texto formal numerado), tuteo, cero guion largo (verificado con grep). Marcadores `[PENDIENTE: ...]` uniformes para los datos que solo Esteban puede definir.
+
+**Qué queda de la iniciativa LEG:** LEG.1 rebanada de UI (Centro Legal en Ajustes que muestre estos textos, coordinar con CFG.6), LEG.2 (aceptación versionada, sigue bloqueada hasta tener el Centro Legal y textos estables) y LEG.3 (auditoría de avisos contextuales, puede ir en paralelo).
+
+**Podría afectar:** nada en la app (cero código tocado; docs solamente). **Validación pendiente:** los 4 puntos del checklist del README de `docs/legal/`.
+
+---
+
 ### docs(triaje): 7.º lote (Centro Legal y cumplimiento) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-08
 
 Séptimo triaje del día: 1 brief de 9 puntos sobre el marco legal. Resultado en [`BOARD.md`](BOARD.md), iniciativa nueva **LEG**:
