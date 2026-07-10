@@ -98,8 +98,9 @@ Reconocimiento visual inmediato de cada sección ([ADR 031](DECISIONS/031-identi
 
 **Rampa de cada dominio (2 acompañantes, IV.1):**
 
-- **`--fk-dom-X-bg`**: `color-mix(in srgb, var(--fk-dom-X) 12%, transparent)`. Mismo valor en ambos temas (a 12% compone bien sobre superficie oscura y clara). Fondo de tejas, badges, celdas.
+- **`--fk-dom-X-bg`**: `color-mix(in srgb, var(--fk-dom-X) 12%, transparent)`. Mismo valor en ambos temas (a 12% compone bien sobre superficie oscura y clara). Fondo de tejas y celdas, donde el contenido encima es icono/glifo (umbral 3:1, WCAG 1.4.11).
 - **`--fk-dom-X-text`**: variante segura como texto o UI significativa (glifos, dots, badges). En oscuro es igual a `--fk-dom-X` (ya pasa AA ahí). En claro se sobreescribe en `body.light-theme`: el valor crudo fallaba WCAG AA sobre blanco (varios por debajo de 2:1, ver tabla arriba).
+- **Opacidad del fondo cuando lleva texto real encima (hallazgo IV.2a):** 12% + `-text` cae a 4.22-4.46:1 en tema claro para varios dominios (por debajo del 4.5:1 de WCAG 1.4.3). `.dom-badge--*` (texto real, no solo icono) usa 6% en vez de 12% (peor caso medido: 4.54:1). Regla: contenido de texto → ~6%; glifo/icono decorativo → 12-14% está bien.
 - El token base `--fk-dom-X` se reserva para acentos decorativos (bordes finos, franjas) que ya van acompañados de icono/etiqueta y por eso quedan exentos del umbral de contraste no textual (SC 1.4.11).
 
 ### Nudges (5 niveles)

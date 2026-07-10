@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(ui): IV.2d migración de -text + cierre de la franja de modales (ADR 031) · 2026-07-10
+
+Tercera rebanada de IV.2 (identidad de color por sección). Corrige el hueco de contraste que IV.1 había detectado y documentado como pendiente: usos de `color: var(--fk-dom-X)` (token crudo) que fallan WCAG AA en tema claro, fuera de las superficies que ya tocó IV.2a. **Además cierra la mitad de IV.2b** ("franja de modales"): se encontró ya implementada, sin commitear, en el working tree (WIP de una sesión anterior); se verificó en el navegador (Chromium real, ambos temas) y se cierra en este mismo movimiento en vez de dejarla suelta.
+
+**Franja de modales (mitad de IV.2b, verificada y cerrada):** los 15 modales de registro con dominio propio (`#modal-gasto`, `#modal-compromiso`, `#modal-abono`...) llevan `data-dom="X"` + una franja superior de 3px en `--fk-dom-X` (crudo: es un acento decorativo, WCAG 1.4.11 exime este caso, no lleva texto). Los modales sin dominio (import, legal, registrar, más, personalizar accesos, instalar iOS, onboarding) quedan correctamente sin franja. Verificado con `getComputedStyle`: `#modal-gasto` resuelve `rgb(255,138,92)` (`--fk-dom-gastos`) y `#modal-inversion` `rgb(47,210,191)` (`--fk-dom-inversion`), ambos exactos en los dos temas. **Queda pendiente de IV.2b:** barras/anillos de progreso (`.progress-bar`/`.progress-ring-wrap` en `atoms.css`) siguen en colores genéricos, sin tinte de dominio.
+
+**Qué cambió:**
+
+- **Análisis:** iconos y textos de los héroes de Fondo e Inversión pasan a `-text` (`.fondo-hero__icon`, `.fondo-hero__sub--ok`, `.fondo-hero__banner`, `.ahorro-habito__compromiso strong`, `.inversion-hero__icon`, `.inversion-hero__tipo-pct`, `.inversion-item__tipo`). `.inversion-hero__tipo-pct` era el caso que IV.1 midió explícitamente en 1.89:1 sobre blanco.
+- **Modal Registrar:** los iconos de los tiles `gasto`/`abono`/`aporte` pasan a `-text` (`ingreso` ya usaba el semántico `--fk-success`, sin cambio).
+- **Nudges:** `.nudge-high .nudge__title` pasa a `-text` (usaba `--fk-dom-gastos` crudo como color de texto, aunque el resto de niveles de nudge ya usaban tokens `-text` semánticos). Los tokens `--fk-nudge-high-accent/-bg/-border` (border/acento, no texto) se dejaron intactos a propósito.
+- **`.dom-badge--*`** (chip reutilizable "Gastos", "Deudas"...): color a `-text` **y** fondo bajado de 12% a 6%, porque lleva texto real directamente sobre el tinte (mismo hallazgo de IV.2a: 12%+`-text` cae a 4.22-4.46:1 en tema claro; 6% mide 4.54:1 en el peor caso).
+
+**Fuera de alcance a propósito:** `.cal-dot--*`/`.cal-detail__icon--*` (Calendario), `.vencidos-card__icon--*` y `.prioridades-card__dot` (Inicio) tienen el mismo patrón de token crudo sin migrar, pero viven en el alcance de **IV.2c** (calendario/inicio), que probablemente rediseñe ese markup (teja + etiqueta de tipo); migrarlos ahora sería trabajo duplicado.
+
+**Archivos tocados:** `styles/components/analysis.css`, `styles/modals.css` (`-text` + franja de modales ya presente), `index.html` (`data-dom` en modales, ya presente), `styles/components/nudges.css`, `docs/DESIGN_SYSTEM.md` (documenta la distinción 6%/12% según texto vs. glifo).
+
+**Verificación:** 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: CSS puro, sin cambios de markup/JS). Verificado con `getComputedStyle` en Chromium real en tema claro: `.dom-badge--gastos` resuelve `color: rgb(209,59,0)` (`#d13b00` = `--fk-dom-gastos-text` exacto) sobre fondo al 6%; `.inversion-hero__tipo-pct` resuelve `rgb(28,127,116)` (`#1c7f74` = `--fk-dom-inversion-text` exacto); franja de `#modal-gasto`/`#modal-inversion` exacta en ambos temas. Ficha actualizada en [`contexto/transversal.md`](contexto/transversal.md).
+
+**Qué queda de IV.2:** IV.2b (solo barras/anillos de progreso) e IV.2c (calendario/inicio).
+
+**Podría afectar:** nada funcional (solo color computado en tema claro; tema oscuro sin cambio visual porque `-text` es alias directo del token crudo ahí).
+
+---
+
 ### feat(ui): IV.2a nav + encabezados de sección teñidos por dominio (ADR 031) · 2026-07-09
 
 Primera rebanada de IV.2 (identidad de color por sección). Cierra la parte de la tarjeta con mayor impacto visual inmediato: reconocer la sección activa por su color, sin leer el texto.

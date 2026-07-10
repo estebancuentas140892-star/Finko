@@ -601,7 +601,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--fk-dom-ahorro) 14%, transparent);
-  color: var(--fk-dom-ahorro);
+  color: var(--fk-dom-ahorro-text);
 }
 .fondo-hero__icon .icon {
   --fk-icon-size: var(--fk-icon-xl);
@@ -635,7 +635,7 @@
   color: var(--fk-text-muted);
 }
 .fondo-hero__sub--ok {
-  color: var(--fk-dom-ahorro);
+  color: var(--fk-dom-ahorro-text);
   font-weight: var(--fk-fw-semibold);
 }
 
@@ -685,7 +685,7 @@
   padding: var(--fk-space-sm) var(--fk-space-md);
   border-radius: var(--fk-radius-md);
   background: color-mix(in srgb, var(--fk-dom-ahorro) 10%, transparent);
-  color: var(--fk-dom-ahorro);
+  color: var(--fk-dom-ahorro-text);
   font-size: var(--fk-fs-sm);
   font-weight: var(--fk-fw-semibold);
 }
@@ -728,7 +728,7 @@
   color: var(--fk-text-secondary);
 }
 .ahorro-habito__compromiso strong {
-  color: var(--fk-dom-ahorro);
+  color: var(--fk-dom-ahorro-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -788,7 +788,7 @@
   place-items: center;
   border-radius: 50%;
   background: color-mix(in srgb, var(--fk-dom-inversion) 14%, transparent);
-  color: var(--fk-dom-inversion);
+  color: var(--fk-dom-inversion-text);
 }
 .inversion-hero__icon .icon {
   --fk-icon-size: var(--fk-icon-xl);
@@ -845,7 +845,7 @@
 }
 .inversion-hero__tipo-pct {
   font-weight: var(--fk-fw-semibold);
-  color: var(--fk-dom-inversion);
+  color: var(--fk-dom-inversion-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -882,7 +882,7 @@
 
 .inversion-item__tipo {
   font-weight: var(--fk-fw-semibold);
-  color: var(--fk-dom-inversion);
+  color: var(--fk-dom-inversion-text);
 }
 .inversion-item__chip {
   margin-left: var(--fk-space-2);

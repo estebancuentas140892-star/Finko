@@ -55,6 +55,35 @@
   transform: translateY(0) scale(1);
 }
 
+/* IV.2b (ADR 031): franja superior del color del dominio en los modales
+   de registro/edición (Nuevo gasto, Nueva deuda, Nueva cuenta...). Barra
+   decorativa (WCAG 1.4.11, 3:1 de sobra con el color crudo del dominio;
+   no es texto, no aplica el umbral de 4.5:1), mismo principio ya usado
+   en Inicio (`.bento__cell[data-dominio]::before`). Modales sin dominio
+   propio (import, legal, registrar, más, personalizar accesos, instalar
+   iOS) no llevan `data-dom` y quedan sin franja. */
+.modal-overlay[data-dom] .modal {
+  position: relative;
+}
+.modal-overlay[data-dom] .modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--fk-modal-accent, var(--fk-accent));
+}
+[data-dom="gastos"]      { --fk-modal-accent: var(--fk-dom-gastos); }
+[data-dom="compromisos"] { --fk-modal-accent: var(--fk-dom-compromisos); }
+[data-dom="agenda"]      { --fk-modal-accent: var(--fk-dom-agenda); }
+[data-dom="personales"]  { --fk-modal-accent: var(--fk-dom-personales); }
+[data-dom="tesoreria"]   { --fk-modal-accent: var(--fk-dom-tesoreria); }
+[data-dom="presupuesto"] { --fk-modal-accent: var(--fk-dom-presupuesto); }
+[data-dom="ahorro"]      { --fk-modal-accent: var(--fk-dom-ahorro); }
+[data-dom="inversion"]   { --fk-modal-accent: var(--fk-dom-inversion); }
+[data-dom="metas"]       { --fk-modal-accent: var(--fk-dom-metas); }
+
 /* Tamaños */
 .modal--sm  { max-width: 380px; }
 .modal--lg  { max-width: 680px; }
@@ -188,10 +217,10 @@
 .registrar__tile .menu-mas__icon.icon { --fk-icon-size: var(--fk-icon-2xl); }
 /* Color con propósito: gasto sale (naranja), ingreso entra (verde);
    abono a deuda y aporte a ahorro heredan el color de su sección. */
-.registrar__tile[data-kind="gasto"]   .icon { color: var(--fk-dom-gastos); }
+.registrar__tile[data-kind="gasto"]   .icon { color: var(--fk-dom-gastos-text); }
 .registrar__tile[data-kind="ingreso"] .icon { color: var(--fk-success); }
-.registrar__tile[data-kind="abono"]   .icon { color: var(--fk-dom-compromisos); }
-.registrar__tile[data-kind="aporte"]  .icon { color: var(--fk-dom-ahorro); }
+.registrar__tile[data-kind="abono"]   .icon { color: var(--fk-dom-compromisos-text); }
+.registrar__tile[data-kind="aporte"]  .icon { color: var(--fk-dom-ahorro-text); }
 
 /* Selector "¿a cuál?" (2+ destinos): lista vertical dentro de la misma hoja. */
 .registrar__destino-head {

@@ -165,11 +165,11 @@
 
 ---
 
-## Identidad de color por sección: nav + tejas de encabezado (IV.1/IV.2a, ADR 031)
+## Identidad de color por sección: nav + tejas de encabezado (IV.1/IV.2a/IV.2d, ADR 031)
 
 - **Objetivo**          : la sección activa se identifica por el color de SU dominio (nav sidebar/bottom-nav, pestañas del hub Ahorros) y cada encabezado de sección lleva una teja con el icono y el acento del dominio, para reconocer dónde se está sin leer el texto.
-- **Estado actual**     : IV.1 (tokens `--fk-dom-*`) cerrada 2026-07-07. **IV.2a cerrada 2026-07-09**: despliegue en nav + hub-tabs + encabezados. Siguen IV.2b (progreso/modales), IV.2c (calendario/inicio) e IV.2d (auditoría general de `-text`, ver BOARD).
-- **Verificado contra** : commit de IV.2a (2026-07-09).
+- **Estado actual**     : IV.1 (tokens `--fk-dom-*`) cerrada 2026-07-07. **IV.2a cerrada 2026-07-09**: despliegue en nav + hub-tabs + encabezados. **IV.2d cerrada 2026-07-10**: migración de `color: var(--fk-dom-X)` a `-text` en el resto de Análisis, el modal Registrar y los componentes `.nudge-high`/`.dom-badge--*`, más el cierre de la franja de modales (mitad de IV.2b). Siguen IV.2b (solo barras/anillos de progreso) e IV.2c (calendario/inicio, ver BOARD).
+- **Verificado contra** : commit de IV.2d (2026-07-10).
 
 **Dónde vive**
 
@@ -183,6 +183,12 @@
 | Iconos del menú "Más" con color correcto (`-text`) | `styles/modals.css` | `.menu-mas__item[data-section="X"] .icon` | ~144 |
 | Markup de los 11 encabezados con teja | `index.html` | `.section__title-group` + `.section__icon` por sección | ~490-777 |
 | Pestañas del hub con `data-section` | `index.html` | `.hub-tabs__tab[data-section="X"]` (4 copias, una por página del hub) | ~649-726 |
+| Iconos/textos de Análisis (fondo, inversión) con `-text` (IV.2d) | `styles/components/analysis.css` | `.fondo-hero__icon`, `.fondo-hero__sub--ok`, `.fondo-hero__banner`, `.ahorro-habito__compromiso strong`, `.inversion-hero__icon`, `.inversion-hero__tipo-pct`, `.inversion-item__tipo` | ~604-885 |
+| Iconos del tile de Registrar con `-text` (IV.2d) | `styles/modals.css` | `.registrar__tile[data-kind="X"] .icon` | ~220 |
+| Título de nudge alto con `-text` (IV.2d) | `styles/components/nudges.css` | `.nudge-high .nudge__title` | ~91 |
+| Badges de dominio: `-text` + fondo 6% en vez de 12% (IV.2d) | `styles/components/nudges.css` | `.dom-badge--*` | ~429 |
+| Franja superior de 3px por dominio en modales de registro (mitad de IV.2b, cerrada 2026-07-10) | `styles/modals.css` | `.modal-overlay[data-dom] .modal::before`, `[data-dom="X"] { --fk-modal-accent }` | ~58 |
+| `data-dom="X"` en los 15 modales de registro con dominio propio | `index.html` | `.modal-overlay#modal-*` | ~812-1084 |
 
 **Recursos**: tokens `--fk-dom-X`/`-bg`/`-text` de los 11 dominios (`tokens.css`, overrides de `-text` en `themes.css`). Apartados comparte la familia menta de Ahorro (`--fk-dom-ahorro`, ADR 031 P4); Inicio y Ajustes no son dominios financieros (ADR 025 D6) y quedan monocromos (acento genérico).
 
@@ -193,11 +199,15 @@
 - **Contraste texto vs. gráfico son estándares distintos** (hallazgo real de esta rebanada): un glifo (icono dentro de teja) es "graphical object" (WCAG 1.4.11, umbral 3:1); un nombre de sección en el nav es texto real (WCAG 1.4.3, umbral 4.5:1). Mezclarlos hace fácil pasar el umbral equivocado. La teja usa 14% de tinte (glifo, 3:1 de sobra); el nav activo usa **6%**, no el 12% de `--fk-dom-X-bg` (con 12%, el texto sobre su propio tinte caía a 4.22-4.46:1 en tema claro para varios dominios, verificado con la fórmula WCAG real, no a ojo: mismo método que IV.1). No reusar `--fk-dom-X-bg` para fondos que llevan el propio `-text` encima sin volver a medir.
 - **Nunca usar el token crudo `--fk-dom-X` como `color` de texto o glifo significativo**: falla contraste en tema claro (el hueco que IV.1 ya había detectado y esta rebanada corrigió en `.cat-teja` y `.menu-mas__item .icon`, preexistente a IV.2a). Usar siempre `-text`.
 - **`data-section="apartados"` mapea a `--fk-dom-ahorro`**, no a un token propio (no existe `--fk-dom-apartados`, decisión ADR 031 P4). Si se le da color propio en el futuro, es una decisión de producto, no un bug a "corregir".
+- **`.dom-badge--*` llevaba texto real sobre un tinte de 12%** (IV.2d): con `-text` encima, ese fondo caía a 4.22-4.46:1 en tema claro (mismo hallazgo que el nav de IV.2a). Se bajó a 6%, verificado en el navegador: `.dom-badge--gastos` en claro resuelve `color: rgb(209,59,0)` (`--fk-dom-gastos-text`) sobre fondo al 6%. Regla para toda superficie nueva: si el contenido encima del tinte es texto, 6%; si es solo un icono/glifo, 12-14% está bien.
+- **`--fk-nudge-high-accent`/`-bg`/`-border` (tokens.css) siguen apuntando al token crudo `--fk-dom-gastos`** a propósito (border/acento, no texto: 3:1 de sobra) y NO se tocaron en IV.2d; solo se corrigió `.nudge-high .nudge__title` (el único uso de ese color como texto). Si se agrega otro uso de `--fk-nudge-high-*` como `color` de texto, debe ir con `-text`, no con el token crudo.
+- **IV.2d excluyó a propósito Calendario e Inicio** (`.cal-dot--*`, `.cal-detail__icon--*` en `config.css`; `.vencidos-card__icon--*` en `domain.css`; `.prioridades-card__dot` en `compromisos/dashboard.js`, que reutiliza `cal-dot--*` para colorear su icono): esas superficies tienen el mismo patrón de token crudo sin migrar, pero viven en el alcance de **IV.2c** (calendario/inicio), que probablemente las rediseñe (teja + etiqueta de tipo). Migrarlas ahora sería trabajo duplicado si IV.2c cambia el markup.
 
-**Cambios pendientes**: IV.2b, IV.2c, IV.2d (ver BOARD). El teja de "Movimientos" (sub-vista de Inicio, sin dominio propio) y "Inicio"/"Ajustes" quedan deliberadamente sin teja/tinte.
+**Cambios pendientes**: IV.2b (solo barras/anillos de progreso: `.progress-bar`/`.progress-ring-wrap` de `atoms.css` siguen en `--fk-accent`/semánticos genéricos, sin tinte de dominio), IV.2c (ver BOARD). El teja de "Movimientos" (sub-vista de Inicio, sin dominio propio) y "Inicio"/"Ajustes" quedan deliberadamente sin teja/tinte.
 
 **Cambios realizados**:
 
+- 2026-07-10 (IV.2d + mitad de IV.2b): migración de `color: var(--fk-dom-X)` a `-text` en los usos restantes fuera de Calendario/Inicio: Análisis (`.fondo-hero__icon`, `.fondo-hero__sub--ok`, `.fondo-hero__banner`, `.ahorro-habito__compromiso strong`, `.inversion-hero__icon`, `.inversion-hero__tipo-pct`, `.inversion-item__tipo`), el modal Registrar (`.registrar__tile[data-kind] .icon`) y `.nudge-high .nudge__title`. `.dom-badge--*` migrado a `-text` + fondo bajado de 12% a 6% (texto real sobre el tinte, mismo hallazgo de IV.2a). Corrige el bug de contraste medido en IV.1 (el "100%" de Inversión daba 1.89:1 en tema claro). **Además se encontró y verificó la franja de modales** (mitad de IV.2b): estaba implementada sin commitear desde una sesión anterior (mecanismo `.modal-overlay[data-dom] .modal::before` + `data-dom="X"` en los 15 modales de registro); se confirmó en el navegador que resuelve el color crudo del dominio exacto en ambos temas (decorativo, sin texto encima: 3:1 de sobra, `--fk-dom-X` crudo es correcto ahí) y se cierra en este mismo movimiento. Sin bump de schema ni cambios de JS: CSS + atributos estáticos. Verificado con `getComputedStyle` en Chromium real en tema claro (color e.g. `rgb(28,127,116)` = `#1c7f74` = `--fk-dom-inversion-text` exacto) además de 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos, mismo criterio que IV.2a).
 - 2026-07-09 (IV.2a): nav sidebar/bottom-nav + pestañas del hub Ahorros teñidas por dominio; teja de icono+acento en los 11 encabezados de sección; corregido el hueco de contraste texto-vs-fondo-propio (6% en nav) y el bug preexistente de `.cat-teja`/`.menu-mas__item .icon` usando el token crudo en vez de `-text`. 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: cambio de CSS/markup puro, verificado con cálculo WCAG real + inspección visual en Chromium, mismo método que IV.1).
 - 2026-07-07 (IV.1, ADR 031): tokens `--fk-dom-*` con rampa `-bg`/`-text` para los 11 dominios.
 

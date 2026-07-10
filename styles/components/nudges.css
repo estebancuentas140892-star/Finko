@@ -88,7 +88,7 @@
   border-color: var(--fk-nudge-high-border);
   border-left: 3px solid var(--fk-nudge-high-accent);
 }
-.nudge-high .nudge__title { color: var(--fk-dom-gastos); }
+.nudge-high .nudge__title { color: var(--fk-dom-gastos-text); }
 
 /* ── Nivel 3: Medio (hormigas, predicciones, bolsillos olvidados) */
 .nudge-medium {
@@ -426,12 +426,12 @@
   letter-spacing: 0.03em;
 }
 
-.dom-badge--ingresos    { background: color-mix(in srgb, var(--fk-dom-ingresos)    12%, transparent); color: var(--fk-dom-ingresos); }
-.dom-badge--gastos      { background: color-mix(in srgb, var(--fk-dom-gastos)      12%, transparent); color: var(--fk-dom-gastos); }
-.dom-badge--compromisos { background: color-mix(in srgb, var(--fk-dom-compromisos) 12%, transparent); color: var(--fk-dom-compromisos); }
-.dom-badge--tesoreria   { background: color-mix(in srgb, var(--fk-dom-tesoreria)   12%, transparent); color: var(--fk-dom-tesoreria); }
-.dom-badge--metas       { background: color-mix(in srgb, var(--fk-dom-metas)       12%, transparent); color: var(--fk-dom-metas); }
-.dom-badge--analisis    { background: color-mix(in srgb, var(--fk-dom-analisis)    12%, transparent); color: var(--fk-dom-analisis); }
-.dom-badge--presupuesto { background: color-mix(in srgb, var(--fk-dom-presupuesto) 12%, transparent); color: var(--fk-dom-presupuesto); }
-.dom-badge--personales  { background: color-mix(in srgb, var(--fk-dom-personales)  12%, transparent); color: var(--fk-dom-personales); }
+.dom-badge--ingresos    { background: color-mix(in srgb, var(--fk-dom-ingresos)    6%, transparent); color: var(--fk-dom-ingresos-text); }
+.dom-badge--gastos      { background: color-mix(in srgb, var(--fk-dom-gastos)      6%, transparent); color: var(--fk-dom-gastos-text); }
+.dom-badge--compromisos { background: color-mix(in srgb, var(--fk-dom-compromisos) 6%, transparent); color: var(--fk-dom-compromisos-text); }
+.dom-badge--tesoreria   { background: color-mix(in srgb, var(--fk-dom-tesoreria)   6%, transparent); color: var(--fk-dom-tesoreria-text); }
+.dom-badge--metas       { background: color-mix(in srgb, var(--fk-dom-metas)       6%, transparent); color: var(--fk-dom-metas-text); }
+.dom-badge--analisis    { background: color-mix(in srgb, var(--fk-dom-analisis)    6%, transparent); color: var(--fk-dom-analisis-text); }
+.dom-badge--presupuesto { background: color-mix(in srgb, var(--fk-dom-presupuesto) 6%, transparent); color: var(--fk-dom-presupuesto-text); }
+.dom-badge--personales  { background: color-mix(in srgb, var(--fk-dom-personales)  6%, transparent); color: var(--fk-dom-personales-text); }
 
