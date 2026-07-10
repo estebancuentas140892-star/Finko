@@ -10,6 +10,21 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): 8.º lote (Nueva dirección de diseño premium) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-09
+
+Brief de dirección visual de Esteban + 2 imágenes de referencia (explícitamente inspiración de tono, no para copiar: identidad propia). Resultado en [`BOARD.md`](BOARD.md):
+
+- **Decisión de triaje central: NO se abre una iniciativa paralela.** El brief evoluciona la iniciativa de identidad visual existente ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md) + tarjetas IV.*) a "Dirección Visual premium". Una sola fuente de verdad; cero tarjetas duplicadas.
+- **Lo que el brief pide y YA existe o está decidido:** color con significado y distinto por sección (ADR 031, IV.1 cerrada con contraste WCAG verificado; los emojis del brief son ilustrativos, mandan los tokens); identificar la sección sin leer (es IV.2, que **sigue siendo la tarjeta recomendada para iniciar y NO espera al ADR nuevo**); iconografía protagonista con logos oficiales intactos (ADR 023 v2, 025, 026, 027, todos vigentes); diseño emocional al completar acciones (vive en LG.2/ADR 032 y el catálogo de celebraciones existente).
+- **Lo genuinamente nuevo → tarjeta DV.1** (el ADR de la dirección): sistema de superficie/elevación (cards con profundidad ligera, sombras sutiles en 2-3 niveles, aire), color secundario por dominio (extensión del ADR 031), riqueza visual (degradados tokenizados, formas orgánicas SVG estáticas, patrones discretos, ilustraciones como clase nueva de asset del pipeline ADR 026), catálogo de animaciones con propósito (150-250 ms, `prefers-reduced-motion`, coordinado con LG.2 y CFG.7).
+- **Tensión señalada para resolución formal en el ADR:** "una familia de iconos propia por sección" contradice el lenguaje único del ADR 023 (decisión de Esteban tras el rechazo del lenguaje genérico v1). Recomendación preliminar registrada: un solo lenguaje Finko Icons con acento de color y detalles por dominio, no 13 familias. Se decide en DV.1, no en silencio.
+- **Guardarraíles duros registrados en la tarjeta** (del propio brief + ADN): la apariencia nunca afecta la velocidad (Lighthouse 100 y `pnpm perf` sin regresión como criterio de cierre de cada rebanada), WCAG AA verificado con cálculo real (método de IV.1), ambos temas (las referencias son claras, Finko es oscuro por defecto), prohibidos backdrop-filter/blurs/transparencias costosas/animaciones permanentes. Nota: PERF.8 ya tiene pendiente borrar el único `backdrop-filter` muerto del CSS.
+- **Anti-doble-trabajo:** DV define el sistema transversal (tokens + componentes base); la jerarquía y la "riqueza" pantalla por pantalla se ejecutan en las iniciativas v2 ya registradas (Inicio v2/IN.8, ANL.1, Deudas v2, Mis Cuentas v2, GU.1...), que consumen el sistema. Las ilustraciones/formas definitivas son cola de diseño de Esteban en Illustrator (ADR 026), no bloquean el ADR.
+
+Cero código tocado.
+
+---
+
 ### feat(logros): LG.2b fundación de progresión de logros (ADR 032 Aceptada) · 2026-07-09
 
 Esteban validó el [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) (catálogo D4 aprobado como está; nombres de niveles de usuario provisionales hasta que entregue los definitivos; reubicación en dos tiempos D6 aprobada) y la primera rebanada de implementación cerró el mismo día.
