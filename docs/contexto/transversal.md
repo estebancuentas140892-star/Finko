@@ -162,3 +162,43 @@
 - 2026-07-04 (LG.1a): toast más legible, cola de a uno, pausa por hover.
 
 **Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Propuesta), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma.
+
+---
+
+## Identidad de color por sección: nav + tejas de encabezado (IV.1/IV.2a, ADR 031)
+
+- **Objetivo**          : la sección activa se identifica por el color de SU dominio (nav sidebar/bottom-nav, pestañas del hub Ahorros) y cada encabezado de sección lleva una teja con el icono y el acento del dominio, para reconocer dónde se está sin leer el texto.
+- **Estado actual**     : IV.1 (tokens `--fk-dom-*`) cerrada 2026-07-07. **IV.2a cerrada 2026-07-09**: despliegue en nav + hub-tabs + encabezados. Siguen IV.2b (progreso/modales), IV.2c (calendario/inicio) e IV.2d (auditoría general de `-text`, ver BOARD).
+- **Verificado contra** : commit de IV.2a (2026-07-09).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Mapeo `--fk-nav-bg`/`--fk-nav-text` por sección | `styles/layout.css` | bloque `[data-section="X"]` | ~198 |
+| Nav activo (sidebar + bottom-nav) teñido | `styles/layout.css` | `.nav-item.active`, `.nav-item[aria-current="page"]` | ~134 |
+| Pestañas del hub Ahorros teñidas | `styles/layout.css` | `.hub-tabs__tab[aria-current="page"]` | ~359 |
+| Teja de encabezado de sección (reusa `.cat-teja`) | `styles/components/atoms.css` | `.section__icon.cat-teja` | ~249 |
+| `.cat-teja` con color de texto correcto (`-text`) | `styles/components/atoms.css` | `.cat-teja`, `[data-dom="X"]` | ~221 |
+| Iconos del menú "Más" con color correcto (`-text`) | `styles/modals.css` | `.menu-mas__item[data-section="X"] .icon` | ~144 |
+| Markup de los 11 encabezados con teja | `index.html` | `.section__title-group` + `.section__icon` por sección | ~490-777 |
+| Pestañas del hub con `data-section` | `index.html` | `.hub-tabs__tab[data-section="X"]` (4 copias, una por página del hub) | ~649-726 |
+
+**Recursos**: tokens `--fk-dom-X`/`-bg`/`-text` de los 11 dominios (`tokens.css`, overrides de `-text` en `themes.css`). Apartados comparte la familia menta de Ahorro (`--fk-dom-ahorro`, ADR 031 P4); Inicio y Ajustes no son dominios financieros (ADR 025 D6) y quedan monocromos (acento genérico).
+
+**Dependencias y relaciones**: el mapeo de acento vive en selectores de atributo `[data-section="X"]` puros (sin acoplar a `.nav-item`), así que cualquier elemento futuro con ese atributo hereda el color automáticamente. `shell.js` (`markActiveNav`) sigue siendo el único que asigna `.active`/`aria-current`; esta funcionalidad es 100% CSS + markup estático, sin JS nuevo.
+
+**Riesgos**:
+
+- **Contraste texto vs. gráfico son estándares distintos** (hallazgo real de esta rebanada): un glifo (icono dentro de teja) es "graphical object" (WCAG 1.4.11, umbral 3:1); un nombre de sección en el nav es texto real (WCAG 1.4.3, umbral 4.5:1). Mezclarlos hace fácil pasar el umbral equivocado. La teja usa 14% de tinte (glifo, 3:1 de sobra); el nav activo usa **6%**, no el 12% de `--fk-dom-X-bg` (con 12%, el texto sobre su propio tinte caía a 4.22-4.46:1 en tema claro para varios dominios, verificado con la fórmula WCAG real, no a ojo: mismo método que IV.1). No reusar `--fk-dom-X-bg` para fondos que llevan el propio `-text` encima sin volver a medir.
+- **Nunca usar el token crudo `--fk-dom-X` como `color` de texto o glifo significativo**: falla contraste en tema claro (el hueco que IV.1 ya había detectado y esta rebanada corrigió en `.cat-teja` y `.menu-mas__item .icon`, preexistente a IV.2a). Usar siempre `-text`.
+- **`data-section="apartados"` mapea a `--fk-dom-ahorro`**, no a un token propio (no existe `--fk-dom-apartados`, decisión ADR 031 P4). Si se le da color propio en el futuro, es una decisión de producto, no un bug a "corregir".
+
+**Cambios pendientes**: IV.2b, IV.2c, IV.2d (ver BOARD). El teja de "Movimientos" (sub-vista de Inicio, sin dominio propio) y "Inicio"/"Ajustes" quedan deliberadamente sin teja/tinte.
+
+**Cambios realizados**:
+
+- 2026-07-09 (IV.2a): nav sidebar/bottom-nav + pestañas del hub Ahorros teñidas por dominio; teja de icono+acento en los 11 encabezados de sección; corregido el hueco de contraste texto-vs-fondo-propio (6% en nav) y el bug preexistente de `.cat-teja`/`.menu-mas__item .icon` usando el token crudo en vez de `-text`. 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: cambio de CSS/markup puro, verificado con cálculo WCAG real + inspección visual en Chromium, mismo método que IV.1).
+- 2026-07-07 (IV.1, ADR 031): tokens `--fk-dom-*` con rampa `-bg`/`-text` para los 11 dominios.
+
+**Observaciones**: ADR relacionado: [031](../DECISIONS/031-identidad-de-color-por-seccion.md). Metodología de verificación de contraste (heredada de IV.1, reforzada aquí): nunca aprobar un color "seguro" solo por inspección visual; calcular luminancia relativa y ratio WCAG real contra el fondo efectivo (incluyendo mezclas `color-mix`), y elegir el umbral correcto según si el contenido es texto (4.5:1) o gráfico (3:1).

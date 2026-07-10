@@ -488,7 +488,10 @@
       <!-- GASTOS -->
       <section class="section" id="sec-gast" tabindex="-1" aria-labelledby="title-gast">
         <header class="section__header">
-          <h1 class="section__title" id="title-gast">Gastos</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="gastos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
+            <h1 class="section__title" id="title-gast">Gastos</h1>
+          </div>
           <button class="btn btn-primary" data-action="nuevo-gasto"
                   aria-label="Registrar nuevo gasto">
             + Nuevo gasto
@@ -508,7 +511,10 @@
       <!-- COMPROMISOS (v6: solo deudas - los gastos fijos van en Agenda) -->
       <section class="section" id="sec-compromisos" tabindex="-1" aria-labelledby="title-compromisos">
         <header class="section__header">
-          <h1 class="section__title" id="title-compromisos">Deudas</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="compromisos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
+            <h1 class="section__title" id="title-compromisos">Deudas</h1>
+          </div>
           <button class="btn btn-primary" data-action="nuevo-compromiso"
                   aria-label="Registrar nueva deuda">
             + Nueva deuda
@@ -532,7 +538,10 @@
       <!-- CALENDARIO (dominio interno: agenda; vista calendario sobre compromisos + alta de gastos fijos) -->
       <section class="section" id="sec-agenda" tabindex="-1" aria-labelledby="title-agenda">
         <header class="section__header">
-          <h1 class="section__title" id="title-agenda">Calendario</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="agenda" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+            <h1 class="section__title" id="title-agenda">Calendario</h1>
+          </div>
           <button class="btn btn-primary" data-action="nuevo-gasto-fijo"
                   aria-label="Registrar nuevo gasto fijo">
             + Agregar gasto fijo
@@ -549,7 +558,10 @@
       <!-- PERSONALES (préstamos otorgados) -->
       <section class="section" id="sec-personales" tabindex="-1" aria-labelledby="title-personales">
         <header class="section__header">
-          <h1 class="section__title" id="title-personales">Me deben</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="personales" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>
+            <h1 class="section__title" id="title-personales">Me deben</h1>
+          </div>
           <button class="btn btn-primary" data-action="nuevo-personal"
                   aria-label="Registrar nuevo préstamo personal">
             + Préstamo
@@ -566,7 +578,10 @@
       <!-- TESORERÍA -->
       <section class="section" id="sec-tesoreria" tabindex="-1" aria-labelledby="title-tesoreria">
         <header class="section__header">
-          <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="tesoreria" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
+            <h1 class="section__title" id="title-tesoreria">Mis cuentas</h1>
+          </div>
           <button class="btn btn-primary" data-action="nueva-cuenta"
                   aria-label="Agregar nueva cuenta">
             + Cuenta
@@ -623,7 +638,8 @@
            (guardar dinero) vs límite de gasto (vigilar cuánto sale). -->
       <section class="section" id="sec-presupuesto" tabindex="-1" aria-labelledby="title-presupuesto">
         <header class="section__header">
-          <div>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="presupuesto" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-presupuesto"/></svg></span>
             <h1 class="section__title" id="title-presupuesto">Límites de gasto</h1>
           </div>
           <button class="btn btn-primary" data-action="nuevo-presupuesto"
@@ -646,16 +662,17 @@
              existentes presentados como tabs: cero cambios de router. Cada
              sección lleva su copia estática con su tab marcada aria-current. -->
         <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro" aria-current="page">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro" aria-current="page">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
         </nav>
         <!-- Consolidado (F6, ADR 009): cabecera común del hub. ahorro/view.js
              llena cada slot [data-hub-consolidado]; [hidden] si el total es 0. -->
         <div class="hub-consolidado" data-hub-consolidado="ahorro" hidden></div>
         <header class="section__header">
-          <div>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ahorro"/></svg></span>
             <h1 class="section__title" id="title-ahorro">Fondo de emergencia</h1>
           </div>
         </header>
@@ -671,14 +688,17 @@
       <section class="section" id="sec-inversion" tabindex="-1" aria-labelledby="title-inversion">
         <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
         <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion" aria-current="page">Inversión</a>
+          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion" data-section="inversion" aria-current="page">Inversión</a>
         </nav>
         <div class="hub-consolidado" data-hub-consolidado="inversion" hidden></div>
         <header class="section__header">
-          <h1 class="section__title" id="title-inversion">Inversión</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="inversion" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-inversion"/></svg></span>
+            <h1 class="section__title" id="title-inversion">Inversión</h1>
+          </div>
         </header>
         <div id="proposito-inversion">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
@@ -692,14 +712,15 @@
       <section class="section" id="sec-metas" tabindex="-1" aria-labelledby="title-metas">
         <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
         <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas" aria-current="page">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas" data-section="metas" aria-current="page">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados" data-section="apartados">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
         </nav>
         <div class="hub-consolidado" data-hub-consolidado="metas" hidden></div>
         <header class="section__header">
-          <div>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="metas" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-metas"/></svg></span>
             <h1 class="section__title" id="title-metas">Metas</h1>
           </div>
           <button class="btn btn-primary" data-action="nueva-meta"
@@ -720,14 +741,15 @@
       <section class="section" id="sec-apartados" tabindex="-1" aria-labelledby="title-apartados">
         <!-- HUB AHORROS (NAV.B, ADR 024 D4): ver nota en #sec-ahorro. -->
         <nav class="hub-tabs" aria-label="Ahorros">
-          <a class="hub-tabs__tab" href="#ahorro">Fondo</a>
-          <a class="hub-tabs__tab" href="#metas">Metas</a>
-          <a class="hub-tabs__tab" href="#apartados" aria-current="page">Apartados</a>
-          <a class="hub-tabs__tab" href="#inversion">Inversión</a>
+          <a class="hub-tabs__tab" href="#ahorro" data-section="ahorro">Fondo</a>
+          <a class="hub-tabs__tab" href="#metas" data-section="metas">Metas</a>
+          <a class="hub-tabs__tab" href="#apartados" data-section="apartados" aria-current="page">Apartados</a>
+          <a class="hub-tabs__tab" href="#inversion" data-section="inversion">Inversión</a>
         </nav>
         <div class="hub-consolidado" data-hub-consolidado="apartados" hidden></div>
         <header class="section__header">
-          <div>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="ahorro" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-apartados"/></svg></span>
             <h1 class="section__title" id="title-apartados">Apartados</h1>
           </div>
           <button class="btn btn-primary" data-action="nuevo-apartado"
@@ -750,7 +772,8 @@
       <!-- ANÁLISIS -->
       <section class="section" id="sec-analisis" tabindex="-1" aria-labelledby="title-analisis">
         <header class="section__header">
-          <div>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" data-dom="analisis" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-analisis"/></svg></span>
             <h1 class="section__title" id="title-analisis">Análisis</h1>
           </div>
         </header>

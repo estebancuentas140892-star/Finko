@@ -10,6 +10,32 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IV.2a nav + encabezados de sección teñidos por dominio (ADR 031) · 2026-07-09
+
+Primera rebanada de IV.2 (identidad de color por sección). Cierra la parte de la tarjeta con mayor impacto visual inmediato: reconocer la sección activa por su color, sin leer el texto.
+
+**Qué cambió:**
+
+- **Nav (sidebar + bottom-nav):** el item activo se tiñe con el color de SU dominio (`--fk-dom-X`), no con el acento genérico de marca. Inicio y Ajustes quedan monocromos (no son dominios financieros, ADR 025 D6).
+- **Pestañas del hub Ahorros** (Fondo/Metas/Apartados/Inversión): la pestaña activa se tiñe igual, con el mismo mecanismo.
+- **Encabezados de sección:** los 11 dominios ganaron una teja (icono + acento del dominio) junto al `<h1>`, reusando el componente `.cat-teja` que ya existía para categorías (ID.3/ADR 025 D3).
+- **Mecanismo:** un mapeo único `[data-section="X"] { --fk-nav-bg; --fk-nav-text }` en `styles/layout.css`, consumido por `.nav-item.active` y `.hub-tabs__tab[aria-current]`. Apartados comparte la familia menta de Ahorro (`--fk-dom-ahorro`, decisión ya tomada en ADR 031 P4, no una omisión). Cero JS nuevo: `shell.js` sigue siendo el único que asigna `.active`/`aria-current`.
+
+**Hallazgo real durante la implementación, corregido antes de cerrar (mismo método de IV.1: fórmula WCAG real, no inspección visual):**
+
+- El tinte de fondo estándar del sistema (`--fk-dom-X-bg`, 12%) usado detrás de texto en `-text` cae a **4.22-4.46:1** en tema claro para varios dominios (compromisos, agenda, tesoreria, metas, analisis...), por debajo del umbral AA de texto (4.5:1, WCAG 1.4.3). Se ajustó a **6%** específicamente donde el contenido sobre el tinte es texto real (nav activo); el peor caso mide 4.54:1. Se documentó la distinción para IV.2c (que necesita decidir la opacidad de las tarjetas de evento del calendario): texto encima del tinte → umbral 4.5:1 y ~6-8%; glifo/icono decorativo → umbral 3:1 (WCAG 1.4.11) y 12-14% sobra.
+- **Bug preexistente encontrado y corregido de paso** (no introducido hoy; era exactamente el hueco que IV.1 ya había señalado como pendiente para IV.2): `.cat-teja` (usado en categorías de gastos, listas, etc. en toda la app) y `.menu-mas__item .icon` (menú "Más") usaban el token crudo `--fk-dom-X` como color del glifo en vez de `-text`. Verificado: caía a ~1.9-2.5:1 en tema claro, muy por debajo incluso del umbral gráfico de 3:1. Corregido en ambos archivos (`atoms.css`, `modals.css`); en tema oscuro `-text` es idéntico a `-dom` (alias directo en `tokens.css`), cero cambio visual ahí.
+
+**Archivos tocados:** `styles/layout.css` (mapeo + reglas de nav/hub-tabs), `styles/components/atoms.css` (`.cat-teja` corregido + modificador `.section__icon`), `styles/modals.css` (`.menu-mas__item .icon` corregido), `index.html` (11 encabezados con teja + `data-section` en las 4 copias de `.hub-tabs`).
+
+**Verificación:** 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: cambio de CSS/markup puro sobre mecanismo ya cubierto por los tests existentes de render y E2E de navegación). Verificado visualmente en Chromium real: ambos temas, 320/375/1280px, computado de `background-color`/`color` inspeccionado por sección (frambuesa `#ea5385` en Deudas, menta `#38c98c` en Ahorro/Apartados, púrpura en Metas, pizarra en Análisis, todos exactos). Ficha nueva "Identidad de color por sección" en [`contexto/transversal.md`](contexto/transversal.md) (primer análisis a fondo de esta funcionalidad, regla 2.6).
+
+**Qué queda de IV.2:** IV.2b (progreso/modales), IV.2c (calendario/inicio, con la nota de opacidad ya resuelta arriba) e IV.2d (auditoría general de `-text`: quedan `.inversion-hero__tipo-pct` y `.dom-badge--*` sin migrar).
+
+**Podría afectar:** nada funcional (CSS + atributos `data-*` existentes; ningún dominio ni EventBus tocado).
+
+---
+
 ### docs(triaje): 8.º lote (Nueva dirección de diseño premium) integrado al BOARD (regla 2.7, sin implementar) · 2026-07-09
 
 Brief de dirección visual de Esteban + 2 imágenes de referencia (explícitamente inspiración de tono, no para copiar: identidad propia). Resultado en [`BOARD.md`](BOARD.md):

@@ -126,10 +126,20 @@
 .nav-item:active {
   transform: scale(0.97);
 }
+/* IV.2a (ADR 031): la sección activa se tiñe con el color de SU dominio,
+   no con el acento genérico de marca. `--fk-nav-bg`/`--fk-nav-text` los
+   declara el mapeo de abajo vía `[data-section="X"]` (compartido con
+   .hub-tabs__tab, misma convención); Inicio y Ajustes no son dominios
+   financieros (ADR 025 D6) y no los declaran, así que caen al acento
+   genérico. `-text` es la variante seleccionada para texto sobre fondo
+   claro (AA verificado, tokens.css/themes.css): el token crudo
+   `--fk-dom-X` aquí fallaba contraste (mismo hueco que IV.1 documentó
+   para IV.2, ver ADR 031). `-bg` NO se reusa para el fondo del nav
+   (ver nota completa junto al mapeo, más abajo en este archivo). */
 .nav-item.active,
 .nav-item[aria-current="page"] {
-  background: var(--fk-accent-subtle);
-  color: var(--fk-text-accent);
+  background: var(--fk-nav-bg, var(--fk-accent-subtle));
+  color: var(--fk-nav-text, var(--fk-text-accent));
   font-weight: var(--fk-font-semibold);
 }
 /* Indicador de sección activa (F7): barra de acento al borde izquierdo
@@ -144,7 +154,7 @@
   width: 3px;
   height: 0;
   border-radius: var(--fk-radius-full);
-  background: var(--fk-accent);
+  background: var(--fk-nav-text, var(--fk-accent));
   transition: height var(--fk-transition-base);
 }
 .nav-item.active::before,
@@ -178,6 +188,39 @@
   --fk-icon-size: var(--fk-icon-lg);
   --fk-icon-dot: var(--fk-accent);
 }
+/* Activo: la chispa se funde con el color del dominio (o el acento
+   genérico en Inicio/Ajustes), coherente con el body del icono. */
+.nav-item.active .nav-item__icon.icon,
+.nav-item[aria-current="page"] .nav-item__icon.icon {
+  --fk-icon-dot: var(--fk-nav-text, var(--fk-accent));
+}
+
+/* ── MAPEO DE ACENTO POR SECCIÓN (IV.2a, ADR 031) ──────────────
+   Declara --fk-nav-bg/--fk-nav-text en cualquier elemento con
+   data-section="X" (nav-item, hub-tabs__tab): un solo lugar para toda
+   la navegación. Apartados comparte la familia menta de Ahorro (ADR
+   031 P4, hub Ahorros); Inicio y Ajustes no son dominios financieros
+   y no aparecen aquí (caen al acento genérico por defecto).
+
+   --fk-nav-bg NO reusa --fk-dom-X-bg (12%, pensado para superficies
+   donde el texto encima NO es el propio -text del dominio, ej. badges
+   con --fk-text-primary). Aquí el texto SÍ es -text sobre el propio
+   tinte, y ambos se acercan al mismo matiz: medido con la fórmula WCAG
+   real (relative luminance) contra el fondo de sidebar (blanco en tema
+   claro), 12% deja a compromisos/agenda/tesoreria por debajo de 4.5:1
+   (4.22-4.33). 6% mide ≥4.5:1 en los 11 dominios (peor caso: compromisos
+   4.54); en oscuro no cambia nada perceptible (el tinte ya es sutil). */
+[data-section="gast"]        { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-gastos) 6%, transparent);      --fk-nav-text: var(--fk-dom-gastos-text); }
+[data-section="agenda"]      { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-agenda) 6%, transparent);      --fk-nav-text: var(--fk-dom-agenda-text); }
+[data-section="compromisos"] { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-compromisos) 6%, transparent); --fk-nav-text: var(--fk-dom-compromisos-text); }
+[data-section="tesoreria"]   { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-tesoreria) 6%, transparent);   --fk-nav-text: var(--fk-dom-tesoreria-text); }
+[data-section="personales"]  { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-personales) 6%, transparent);  --fk-nav-text: var(--fk-dom-personales-text); }
+[data-section="presupuesto"] { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-presupuesto) 6%, transparent); --fk-nav-text: var(--fk-dom-presupuesto-text); }
+[data-section="analisis"]    { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-analisis) 6%, transparent);    --fk-nav-text: var(--fk-dom-analisis-text); }
+[data-section="ahorro"]      { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);      --fk-nav-text: var(--fk-dom-ahorro-text); }
+[data-section="metas"]       { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-metas) 6%, transparent);       --fk-nav-text: var(--fk-dom-metas-text); }
+[data-section="apartados"]   { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-ahorro) 6%, transparent);      --fk-nav-text: var(--fk-dom-ahorro-text); }
+[data-section="inversion"]   { --fk-nav-bg: color-mix(in srgb, var(--fk-dom-inversion) 6%, transparent);   --fk-nav-text: var(--fk-dom-inversion-text); }
 .nav-item__label { flex: 1; }
 .nav-item__badge {
   font-size: var(--fk-text-xs);
@@ -256,6 +299,15 @@
   margin-bottom: var(--fk-space-6);
   flex-wrap: wrap;
 }
+/* IV.2a: agrupa la teja del dominio + el h1 (y su subtítulo si lo hay)
+   para que el botón de acción del header se separe del bloque completo,
+   no solo del texto. */
+.section__title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-width: 0;
+}
 .section__title {
   font-size: var(--fk-text-2xl);
   font-weight: var(--fk-font-extrabold);
@@ -310,9 +362,12 @@
 .hub-tabs__tab:hover {
   color: var(--fk-text-primary);
 }
+/* IV.2a: cada pestaña se tiñe con SU propio dominio (Fondo/Ahorro menta,
+   Metas púrpura, Apartados menta compartida, Inversión turquesa), vía el
+   mismo mapeo `--fk-nav-accent` de [data-section="X"] de arriba. */
 .hub-tabs__tab[aria-current="page"] {
-  color: var(--fk-text-accent);
-  border-bottom-color: var(--fk-text-accent);
+  color: var(--fk-nav-text, var(--fk-text-accent));
+  border-bottom-color: var(--fk-nav-text, var(--fk-text-accent));
 }
 .section__sub-header .section__subtitle {
   font-size: var(--fk-text-lg);

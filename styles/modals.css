@@ -141,13 +141,16 @@
 .menu-mas__icon.icon {
   --fk-icon-size: var(--fk-icon-xl);
 }
-.menu-mas__item[data-section="compromisos"] .icon { color: var(--fk-dom-compromisos); }
-.menu-mas__item[data-section="tesoreria"]   .icon { color: var(--fk-dom-tesoreria); }
-.menu-mas__item[data-section="personales"]  .icon { color: var(--fk-dom-personales); }
-.menu-mas__item[data-section="presupuesto"] .icon { color: var(--fk-dom-presupuesto); }
-.menu-mas__item[data-section="metas"]       .icon { color: var(--fk-dom-metas); }
-.menu-mas__item[data-section="ahorro"]      .icon { color: var(--fk-dom-ahorro); }
-.menu-mas__item[data-section="analisis"]    .icon { color: var(--fk-dom-analisis); }
+/* IV.2a: `-text`, no el token crudo (mismo hueco de contraste en tema
+   claro documentado por IV.1 para IV.2/ADR 031; ver nota extensa en
+   layout.css sobre --fk-nav-text). */
+.menu-mas__item[data-section="compromisos"] .icon { color: var(--fk-dom-compromisos-text); }
+.menu-mas__item[data-section="tesoreria"]   .icon { color: var(--fk-dom-tesoreria-text); }
+.menu-mas__item[data-section="personales"]  .icon { color: var(--fk-dom-personales-text); }
+.menu-mas__item[data-section="presupuesto"] .icon { color: var(--fk-dom-presupuesto-text); }
+.menu-mas__item[data-section="metas"]       .icon { color: var(--fk-dom-metas-text); }
+.menu-mas__item[data-section="ahorro"]      .icon { color: var(--fk-dom-ahorro-text); }
+.menu-mas__item[data-section="analisis"]    .icon { color: var(--fk-dom-analisis-text); }
 /* Ajustes (config) no es un dominio financiero: queda monocromo. */
 
 .menu-mas__label {

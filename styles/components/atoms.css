@@ -218,8 +218,15 @@
    los símbolos v2 cae a él sin declarar --fk-icon-dot.
    ════════════════════════════════════════════════════════════ */
 
+/* IV.2a: `color` (el glifo, vía currentColor) usa `--cat-dom-text`, no el
+   token crudo `--cat-dom` que solo alimenta el fondo. Usar el crudo como
+   texto fallaba contraste en tema claro (hueco documentado por IV.1 para
+   IV.2, ADR 031): con datos reales, el "100%" de Inversión daba 1.89:1
+   contra blanco. `-text` está calibrado ≥4.8:1 en themes.css; en oscuro
+   es idéntico a `--cat-dom` (mismo alias en tokens.css), cero cambio visual. */
 .cat-teja {
-  --cat-dom: var(--fk-text-secondary);
+  --cat-dom:      var(--fk-text-secondary);
+  --cat-dom-text: var(--fk-text-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -228,22 +235,30 @@
   border-radius: var(--fk-radius-md);
   flex-shrink: 0;
   background: color-mix(in srgb, var(--cat-dom) 14%, transparent);
-  color: var(--cat-dom);
+  color: var(--cat-dom-text);
 }
 .cat-teja .icon {
   width: 62%;
   height: 62%;
 }
-.cat-teja[data-dom="ingresos"]    { --cat-dom: var(--fk-dom-ingresos); }
-.cat-teja[data-dom="gastos"]      { --cat-dom: var(--fk-dom-gastos); }
-.cat-teja[data-dom="compromisos"] { --cat-dom: var(--fk-dom-compromisos); }
-.cat-teja[data-dom="tesoreria"]   { --cat-dom: var(--fk-dom-tesoreria); }
-.cat-teja[data-dom="metas"]       { --cat-dom: var(--fk-dom-metas); }
-.cat-teja[data-dom="analisis"]    { --cat-dom: var(--fk-dom-analisis); }
-.cat-teja[data-dom="presupuesto"] { --cat-dom: var(--fk-dom-presupuesto); }
-.cat-teja[data-dom="personales"]  { --cat-dom: var(--fk-dom-personales); }
-.cat-teja[data-dom="ahorro"]      { --cat-dom: var(--fk-dom-ahorro); }
-.cat-teja[data-dom="inversion"]   { --cat-dom: var(--fk-dom-inversion); }
+.cat-teja[data-dom="ingresos"]    { --cat-dom: var(--fk-dom-ingresos);    --cat-dom-text: var(--fk-dom-ingresos-text); }
+.cat-teja[data-dom="gastos"]      { --cat-dom: var(--fk-dom-gastos);      --cat-dom-text: var(--fk-dom-gastos-text); }
+.cat-teja[data-dom="compromisos"] { --cat-dom: var(--fk-dom-compromisos); --cat-dom-text: var(--fk-dom-compromisos-text); }
+.cat-teja[data-dom="tesoreria"]   { --cat-dom: var(--fk-dom-tesoreria);   --cat-dom-text: var(--fk-dom-tesoreria-text); }
+.cat-teja[data-dom="metas"]       { --cat-dom: var(--fk-dom-metas);       --cat-dom-text: var(--fk-dom-metas-text); }
+.cat-teja[data-dom="analisis"]    { --cat-dom: var(--fk-dom-analisis);    --cat-dom-text: var(--fk-dom-analisis-text); }
+.cat-teja[data-dom="presupuesto"] { --cat-dom: var(--fk-dom-presupuesto); --cat-dom-text: var(--fk-dom-presupuesto-text); }
+.cat-teja[data-dom="personales"]  { --cat-dom: var(--fk-dom-personales);  --cat-dom-text: var(--fk-dom-personales-text); }
+.cat-teja[data-dom="ahorro"]      { --cat-dom: var(--fk-dom-ahorro);      --cat-dom-text: var(--fk-dom-ahorro-text); }
+.cat-teja[data-dom="inversion"]   { --cat-dom: var(--fk-dom-inversion);   --cat-dom-text: var(--fk-dom-inversion-text); }
+.cat-teja[data-dom="agenda"]      { --cat-dom: var(--fk-dom-agenda);      --cat-dom-text: var(--fk-dom-agenda-text); }
+
+/* Teja de encabezado de sección (IV.2a): mismo componente, un paso más
+   grande (36px, --fk-teja-lg) para hacer pareja visual con el h1. */
+.section__icon.cat-teja {
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+}
 
 /* ════════════════════════════════════════════════════════════
    EMPTY STATE
