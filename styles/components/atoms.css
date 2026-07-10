@@ -430,9 +430,15 @@
   border-radius: var(--fk-radius-full);
   overflow: hidden;
 }
+/* IV.2b (ADR 031): el color por defecto de la barra es el acento de la
+   sección (`--fk-section-accent`, definido por un ancestro `[data-dom="X"]`,
+   ver modals.css); sin ancestro con dominio, cae al acento de marca. Los
+   modificadores de estado de abajo (near/complete/warn/danger) siguen
+   mandando por especificidad+orden: son la capa semántica (D1 del ADR),
+   nunca se mezclan con la identidad de sección. */
 .progress-bar {
   height: 100%;
-  background: var(--fk-accent);
+  background: var(--fk-section-accent, var(--fk-accent));
   border-radius: var(--fk-radius-full);
   transform-origin: left;
   animation: progress-fill var(--fk-transition-slow) both;
@@ -470,8 +476,13 @@
   font-weight: var(--fk-font-bold);
 }
 
-/* Color del arco via currentColor: una clase en el wrapper, sin inline styles */
-.progress-ring-wrap                { color: var(--fk-accent); }
+/* Color del arco via currentColor: una clase en el wrapper, sin inline styles.
+   IV.2b (ADR 031): el estado por defecto ("aún en progreso") se tiñe con el
+   acento de sección (`--fk-section-accent`, de un `[data-dom="X"]` ancestro);
+   sin ancestro con dominio, cae al acento de marca. `--near`/`--complete`
+   siguen siendo estado semántico (D1) y no se tocan: llegar a la meta se
+   celebra en verde sin importar la sección. */
+.progress-ring-wrap                { color: var(--fk-section-accent, var(--fk-accent)); }
 .progress-ring-wrap--near          { color: var(--fk-accent-hover); }
 .progress-ring-wrap--complete      { color: var(--fk-success); }
 .progress-ring-wrap--excelente     { color: var(--fk-accent); }

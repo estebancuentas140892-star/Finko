@@ -29,9 +29,36 @@ Tercera rebanada de IV.2 (identidad de color por sección). Corrige el hueco de 
 
 **Verificación:** 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: CSS puro, sin cambios de markup/JS). Verificado con `getComputedStyle` en Chromium real en tema claro: `.dom-badge--gastos` resuelve `color: rgb(209,59,0)` (`#d13b00` = `--fk-dom-gastos-text` exacto) sobre fondo al 6%; `.inversion-hero__tipo-pct` resuelve `rgb(28,127,116)` (`#1c7f74` = `--fk-dom-inversion-text` exacto); franja de `#modal-gasto`/`#modal-inversion` exacta en ambos temas. Ficha actualizada en [`contexto/transversal.md`](contexto/transversal.md).
 
-**Qué queda de IV.2:** IV.2b (solo barras/anillos de progreso) e IV.2c (calendario/inicio).
+**Qué queda de IV.2:** IV.2c (calendario/inicio).
 
 **Podría afectar:** nada funcional (solo color computado en tema claro; tema oscuro sin cambio visual porque `-text` es alias directo del token crudo ahí).
+
+---
+
+### feat(ui): IV.2b barras/anillos de progreso por dominio + franja de modales (ADR 031) · 2026-07-10
+
+Cierra IV.2b completa (el resto del objetivo de IV.2d, mismo día). Extiende `.progress-bar`/`.progress-ring-wrap` (única fuente de progreso lineal/circular de la app) para que su **estado por defecto** ("aún en progreso", sin completar ni cerca) se tiña con el color de la sección, en vez del verde genérico de marca.
+
+**Mecanismo:** una variable compartida `--fk-section-accent`, definida por los mismos bloques `[data-dom="X"]` que ya usaba la franja de modales (`styles/modals.css`), leída por `.progress-bar`/`.progress-ring-wrap` con fallback al acento de marca (`var(--fk-section-accent, var(--fk-accent))`). Los modificadores semánticos (`--near`, `--complete`, `--warn`, `--danger`) NO se tocaron: siguen mandando por especificidad/orden, así que "cerca de la meta" y "completado" se siguen viendo iguales (verde) sin importar la sección, por diseño (D1 del ADR: la capa semántica nunca se mezcla con la identidad).
+
+**Dónde se aplicó `data-dom` (mapeo sin ambigüedad):** anillo de Metas (`metas/view.js`) → `metas`; anillo de Apartados (`apartados/view.js`) y del fondo de emergencia (`ahorro/view.js`) → `ahorro` (comparten familia, ADR 031 P4); barra de Me deben, cobro y pago (`personales/view.js`, 2 lugares) → `personales`; factores Deuda/Liquidez/Ahorro del score de salud en Análisis (`analisis/view.js`) → `compromisos`/`tesoreria`/`ahorro` respectivamente (son composición multi-dominio, D3 punto 4 del ADR: "los gráficos multi-dominio de Análisis ya usan el color de cada dominio").
+
+**Fuera de alcance, con justificación:**
+
+- **Presupuesto/Límites** (`_renderGrupoCard`, grupos Necesidades/Ahorro/Estilo de vida): ya tiene un esquema de color deliberado por **ADR 019** (Necesidades = siempre neutro, nunca alarma; Ahorro = celebra en verde; Estilo de vida = alerta ámbar/rojo). Teñir la barra base con el ámbar de "Límites" habría roto la neutralidad a propósito de Necesidades. Se dejó intacta (sin `data-dom`, sigue en `--fk-accent`); queda como decisión pendiente, coincide con la revisión que **LIM.1** ya tiene planteada para esta sección.
+- **Factor "Control"** del score de Análisis: mide volatilidad del gasto (coeficiente de variación), no un dominio limpio de la app (no es "Límites"); se dejó sin teñir en vez de adivinar mal.
+
+**Hallazgo real corregido antes de cerrar (mismo método WCAG de IV.1/IV.2a):** la primera versión usaba el token crudo `--fk-dom-X` (igual que la franja de modales, que es decorativa). Pero el relleno de una barra/anillo de progreso **es la información**, no un acento: aplica el umbral no textual completo de WCAG 1.4.11 (3:1), y el crudo lo fallaba en tema claro para varios dominios medidos contra el fondo del track (ahorro 1.88:1, personales 2.39:1, tesorería 2.65:1, muy por debajo de 3:1). Se cambió `--fk-section-accent` a usar `-text` en vez del token crudo (afecta también la franja de modales: sin cambio en tema oscuro, más nítida en tema claro). Verificado: 4.28-4.38:1 en tema claro para los 5 dominios tocados, encima del umbral. En tema oscuro `-text` es idéntico al crudo, cero cambio visual.
+
+**De paso se corrigió un bug preexistente en la franja de modales de IV.2b (WIP de sesión anterior):** faltaba el mapeo `[data-dom="metas"]`, así que los modales de Metas (`modal-meta`, `modal-abono-meta`) no mostraban franja (caían al verde genérico). Corregido en el mismo movimiento.
+
+**Archivos tocados:** `styles/modals.css` (variable `--fk-section-accent` + mapeo `-text` + fix de metas), `styles/components/atoms.css` (`.progress-bar`, `.progress-ring-wrap`), `modules/dominio/metas/view.js`, `modules/dominio/apartados/view.js`, `modules/dominio/ahorro/view.js`, `modules/dominio/personales/view.js` (2 lugares), `modules/dominio/analisis/view.js` (3 factores), `service-worker.js` (v342 → v343).
+
+**Verificación:** 2295/2295 unit + 159/159 E2E verdes (sin tests nuevos: CSS + atributos estáticos, sin lógica nueva). Verificado con `getComputedStyle` en Chromium real: colores exactos por dominio en ambos temas, estados `--near`/`--complete` sin cambio, Presupuesto sin `data-dom` cae correctamente al acento de marca (sin regresión). Ficha actualizada en [`contexto/transversal.md`](contexto/transversal.md).
+
+**Cierra IV.2 salvo IV.2c** (calendario/inicio).
+
+**Podría afectar:** nada funcional (CSS + atributos `data-*`, sin JS de negocio ni cambios de estado).
 
 ---
 

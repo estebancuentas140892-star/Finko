@@ -57,11 +57,30 @@
 
 /* IV.2b (ADR 031): franja superior del color del dominio en los modales
    de registro/edición (Nuevo gasto, Nueva deuda, Nueva cuenta...). Barra
-   decorativa (WCAG 1.4.11, 3:1 de sobra con el color crudo del dominio;
-   no es texto, no aplica el umbral de 4.5:1), mismo principio ya usado
-   en Inicio (`.bento__cell[data-dominio]::before`). Modales sin dominio
+   decorativa (WCAG 1.4.11, 3:1 de sobra), mismo principio ya usado en
+   Inicio (`.bento__cell[data-dominio]::before`). Modales sin dominio
    propio (import, legal, registrar, más, personalizar accesos, instalar
-   iOS) no llevan `data-dom` y quedan sin franja. */
+   iOS) no llevan `data-dom` y quedan sin franja.
+   `--fk-section-accent` es genérica (no solo de modales): la reutilizan
+   las barras/anillos de progreso teñidos por dominio (IV.2b, atoms.css)
+   sobre cualquier elemento descendiente de un `[data-dom="X"]`.
+   Usa la variante `-text` (no el token crudo): en un anillo/barra de
+   progreso el color ES la información (no un acento decorativo como la
+   franja), así que aplica el umbral no textual de WCAG 1.4.11 (3:1) en
+   serio. Medido: el token crudo falla ese umbral en tema claro para
+   varios dominios (ahorro 1.88:1, personales 2.39:1, tesorería 2.65:1
+   contra el fondo del track); `-text` lo pasa de sobra (calibrado a
+   ≥4.5:1, ver DESIGN_SYSTEM.md). En oscuro `-text` es idéntico al token
+   crudo, así que la franja no cambia ahí. */
+[data-dom="gastos"]      { --fk-section-accent: var(--fk-dom-gastos-text); }
+[data-dom="compromisos"] { --fk-section-accent: var(--fk-dom-compromisos-text); }
+[data-dom="agenda"]      { --fk-section-accent: var(--fk-dom-agenda-text); }
+[data-dom="personales"]  { --fk-section-accent: var(--fk-dom-personales-text); }
+[data-dom="tesoreria"]   { --fk-section-accent: var(--fk-dom-tesoreria-text); }
+[data-dom="presupuesto"] { --fk-section-accent: var(--fk-dom-presupuesto-text); }
+[data-dom="ahorro"]      { --fk-section-accent: var(--fk-dom-ahorro-text); }
+[data-dom="inversion"]   { --fk-section-accent: var(--fk-dom-inversion-text); }
+[data-dom="metas"]       { --fk-section-accent: var(--fk-dom-metas-text); }
 .modal-overlay[data-dom] .modal {
   position: relative;
 }
@@ -72,16 +91,8 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: var(--fk-modal-accent, var(--fk-accent));
+  background: var(--fk-section-accent, var(--fk-accent));
 }
-[data-dom="gastos"]      { --fk-modal-accent: var(--fk-dom-gastos); }
-[data-dom="compromisos"] { --fk-modal-accent: var(--fk-dom-compromisos); }
-[data-dom="agenda"]      { --fk-modal-accent: var(--fk-dom-agenda); }
-[data-dom="personales"]  { --fk-modal-accent: var(--fk-dom-personales); }
-[data-dom="tesoreria"]   { --fk-modal-accent: var(--fk-dom-tesoreria); }
-[data-dom="presupuesto"] { --fk-modal-accent: var(--fk-dom-presupuesto); }
-[data-dom="ahorro"]      { --fk-modal-accent: var(--fk-dom-ahorro); }
-[data-dom="inversion"]   { --fk-modal-accent: var(--fk-dom-inversion); }
 [data-dom="metas"]       { --fk-modal-accent: var(--fk-dom-metas); }
 
 /* Tamaños */

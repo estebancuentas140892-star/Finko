@@ -370,14 +370,14 @@ function _renderScoreSalud(resumen) {
           <div class="score-factor">
             <p class="score-factor__label">${icon('deudas')} Deuda</p>
             <p class="score-factor__valor">${score.factors.deuda}</p>
-            <div class="progress score-factor__bar">
+            <div class="progress score-factor__bar" data-dom="compromisos">
               <div class="progress-bar" style="width:${score.factors.deuda}%"></div>
             </div>
           </div>
           <div class="score-factor">
             <p class="score-factor__label">${icon('saldo')} Liquidez</p>
             <p class="score-factor__valor">${score.factors.liquidez}</p>
-            <div class="progress score-factor__bar">
+            <div class="progress score-factor__bar" data-dom="tesoreria">
               <div class="progress-bar" style="width:${score.factors.liquidez}%"></div>
             </div>
           </div>
@@ -391,7 +391,7 @@ function _renderScoreSalud(resumen) {
           <div class="score-factor">
             <p class="score-factor__label">${icon('ahorro')} Ahorro</p>
             <p class="score-factor__valor">${score.factors.ahorro}</p>
-            <div class="progress score-factor__bar">
+            <div class="progress score-factor__bar" data-dom="ahorro">
               <div class="progress-bar" style="width:${score.factors.ahorro}%"></div>
             </div>
           </div>

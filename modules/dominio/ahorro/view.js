@@ -199,7 +199,7 @@ function _renderHero(fondo, gastosFijosMensuales, tasaAhorro, sugerencia = null)
   return `
     <article class="fondo-hero" aria-label="Fondo de emergencia">
       <header class="fondo-hero__header">
-        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" aria-hidden="true">
+        <div class="progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="ahorro" aria-hidden="true">
           ${progressRing(porcentaje, { size: 88, strokeWidth: 7, ariaLabel: `Fondo de emergencia: ${porcentaje}%` })}
         </div>
         <div class="fondo-hero__title-wrap">

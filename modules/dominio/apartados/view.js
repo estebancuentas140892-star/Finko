@@ -92,7 +92,7 @@ function _renderApartadoItem(apartado) {
 
   return `
     <article class="list-item${listo ? ' list-item--listo' : ''}" data-id="${_esc(apartado.id)}">
-      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" aria-hidden="true">
+      <div class="list-item__icon list-item__icon--ring progress-ring-wrap progress-ring-wrap--${claseAnillo}" data-dom="ahorro" aria-hidden="true">
         ${progressRing(porcentaje, { size: 56, strokeWidth: 5, ariaLabel: `Progreso de ${nombre}: ${porcentaje}%` })}
       </div>
       <div class="list-item__body">

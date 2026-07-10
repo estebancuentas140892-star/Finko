@@ -71,7 +71,7 @@ function _renderResumen(r) {
         </div>
       </div>
       <div class="personales-resumen__footer">
-        <div class="progress" role="progressbar"
+        <div class="progress" role="progressbar" data-dom="personales"
              aria-valuenow="${r.pctCobrado}" aria-valuemin="0" aria-valuemax="100"
              aria-label="${r.pctCobrado}% cobrado">
           <div class="progress-bar${barClass}" style="width:${r.pctCobrado}%"></div>
@@ -150,7 +150,7 @@ function _renderPersonalItem(prestamo, hoy) {
             ? `Pendiente: ${f(pendiente)} (capital ${f(calcularCapitalPendiente(prestamo))} + interés ${f(calcularInteresPendiente(prestamo, hoy))})`
             : `Pendiente: ${f(pendiente)} de ${f(prestamo.monto)}`
         }</p>
-        <div class="progress" role="progressbar"
+        <div class="progress" role="progressbar" data-dom="personales"
              aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
              aria-label="${pct}% pagado">
           <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
