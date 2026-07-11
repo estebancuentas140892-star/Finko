@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(ahorro): BUG-012 lenguaje humano al desactivar el fondo de emergencia · 2026-07-11
+
+Corrige y elimina **BUG-012** de `docs/BUGS.md` (prioridad media, reportado por Esteban el 2026-07-08): al desactivar el Fondo de Emergencia (Ahorro → editar el fondo → "Desactivar fondo"), el modal de confirmación mostraba el texto literal "...la sección vuelve a mostrar el **empty state**...", jerga técnica de desarrollo visible al usuario final. Viola el ADN 11 (lenguaje humano, jamás jerga técnica en la UI).
+
+**Qué cambió:** en `modules/dominio/ahorro/index.js`, `_desactivarFondo()` cambia el mensaje de `confirmar()` a "...la sección vuelve a mostrar la **pantalla inicial** para activarlo...", que comunica lo mismo (los datos se conservan, la sección vuelve a su estado de bienvenida) sin término técnico. La nota del reporte pedía además "una pasada rápida de grep por otros literales técnicos visibles (Empty State, placeholder, TODO, null, undefined) en todos los view.js al corregirlo, para cazar hermanos del mismo error": el grep (`mensaje:`/`titulo:` de `confirmar()` en todo `modules/`, y `empty state`/`placeholder`/`TODO`/`null`/`undefined` en todos los `view*.js`) confirmó que este era el único caso real; el resto de coincidencias eran comentarios de código (`// ── EMPTY STATE ──`), nombres de variable (`null` como valor de tipo) o atributos HTML legítimos (`placeholder` de un `<input>`).
+
+**Archivos tocados:** `modules/dominio/ahorro/index.js` (fix), `tests/unit/ahorro.test.js` (1 test nuevo), `service-worker.js` (v345 → v346), `docs/contexto/ahorro.md` (ficha nueva, primera de esta sección), `docs/BUGS.md` (entrada eliminada).
+
+**Verificación:** 2331/2331 unit verdes (1 nuevo: el mensaje de confirmación no contiene el literal "empty state" y sí "pantalla inicial"; falla sin el fix, verificado revirtiéndolo con stash). 164/164 E2E verdes (sin cambios de comportamiento observable en flujos automatizados). Lint verde.
+
+**Podría afectar:** nada funcional; cambio de copy en un solo mensaje de confirmación.
+
+---
+
 ### fix(compromisos): BUG-011 la simulación de estrategia ya no se presenta como aplicada · 2026-07-11
 
 Corrige y elimina **BUG-011** de `docs/BUGS.md` (prioridad alta, reportado por Esteban el 2026-07-08): en Deudas, con un plan de pago inviable, teclear un valor en "Aumenta tu cuota" (panel de alternativas) y luego pasar a la pestaña "Renegociar la tasa" cerraba el panel automáticamente y dejaba la card mostrando el plan como saneado, sin haber presionado "Aplicar este aumento".

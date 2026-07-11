@@ -102,7 +102,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Mis cuentas | [`mis-cuentas.md`](mis-cuentas.md) | activa (cuentas, MC.14 datos de transferencia) |
 | Apartados | `apartados.md` | sin crear |
 | Metas | `metas.md` | sin crear |
-| Ahorro | `ahorro.md` | sin crear |
+| Ahorro | [`ahorro.md`](ahorro.md) | activa (fondo de emergencia, BUG-012 lenguaje humano en confirmar()) |
 | Inversión | `inversion.md` | sin crear |
 | Límites de gasto | `limites.md` | sin crear |
 | Me deben | `me-deben.md` | sin crear |

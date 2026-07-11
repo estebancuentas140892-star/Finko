@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-11 (BUG-011 corregido: la simulación de estrategia ya no se presenta como aplicada; SW v345 propaga además IV.3/D.14/CAL.3/MC.14 a las PWAs instaladas).
+> Última actualización: 2026-07-11 (BUG-012 corregido: lenguaje humano al desactivar el fondo de emergencia).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). **BUG-011 corregido el 2026-07-11** (la simulación de estrategia de pago ya no se presenta como aplicada, ver CHANGELOG; su entrada se borró de BUGS.md). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; con IV.2 completa, **D.15** e **IN.8** ya no tienen bloqueo técnico y **BUG-012** (copy "Empty State" en el fondo) sigue siendo el pendiente chico inmediato.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). **BUG-011 corregido el 2026-07-11** (la simulación de estrategia de pago ya no se presenta como aplicada). **BUG-012 corregido el 2026-07-11** (lenguaje humano al desactivar el fondo de emergencia; BUGS.md queda vacío de pendientes). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; con IV.2 completa, **D.15** e **IN.8** ya no tienen bloqueo técnico.)_
 
 ---
 
@@ -174,7 +174,7 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)
 
-> **Iniciativa "Fondo de emergencia v2"** (brief de Esteban del 2026-07-08, 3 puntos). La base automatizada ya existe en gran parte: AH.2 (cerrada) calcula el aporte recomendado con datos reales, AH.4/ADR 021 recuerda el día de ingreso, y el punto 21 de MC.13 ya contempla que el fondo muestre su cuota del período en la distribución. **Derivados:** el punto 1 ("Empty State" literal visible en la UI al desactivar y editar el fondo) es un bug de copy, registrado como **BUG-012** en [BUGS.md](BUGS.md), corregible de inmediato; el cálculo e integración del aporte con "Distribuir mi ingreso" → **MC.13** (el fondo ya era consumidor del motor).
+> **Iniciativa "Fondo de emergencia v2"** (brief de Esteban del 2026-07-08, 3 puntos). La base automatizada ya existe en gran parte: AH.2 (cerrada) calcula el aporte recomendado con datos reales, AH.4/ADR 021 recuerda el día de ingreso, y el punto 21 de MC.13 ya contempla que el fondo muestre su cuota del período en la distribución. **Derivados:** el punto 1 ("Empty State" literal visible al desactivar el fondo) era un bug de copy, **corregido el 2026-07-11 (BUG-012, ver CHANGELOG)**; el cálculo e integración del aporte con "Distribuir mi ingreso" → **MC.13** (el fondo ya era consumidor del motor).
 
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media
@@ -182,7 +182,7 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 - Objetivo   : (2) rediseño de la experiencia de la sección: comunicar de inmediato qué es el fondo, por qué importa, cuándo usarlo y cómo protege (tranquilidad/seguridad/prevención, no solo números), aplicando el sistema visual vigente (jerarquía, tokens del ADR 031, Finko Icons v2, lenguaje ADR 003, accesibilidad). (3) El flujo de aporte principal pasa a ser la distribución del ingreso (el valor calculado por AH.2 aparece sugerido ahí vía el motor de MC.13); el bloque "Aportes al fondo → Registrar" de la sección **no se elimina del todo**: se conserva como vía secundaria para aportes fuera de ciclo (ej. apartar parte de un ingreso esporádico), decidir su peso visual en el análisis. Configuración del fondo con las preguntas necesarias en la creación/edición (meta en meses, compromiso por período según frecuencia real de ingresos).
 - Secciones  : Ahorro (fondo), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
-- Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2; BUG-012 es independiente y puede corregirse ya
+- Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya se corrigió el 2026-07-11, aparte)
 - Modelo     : Sonnet 5 - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
 
 ---

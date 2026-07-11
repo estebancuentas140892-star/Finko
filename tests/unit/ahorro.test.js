@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { S } from '../../modules/core/state.js';
+import { initAhorro } from '../../modules/dominio/ahorro/index.js';
+import { dispatch } from '../../modules/ui/actions.js';
 import {
   calcularObjetivoFondo,
   calcularProgresoFondo,
@@ -536,5 +539,22 @@ describe('calcularAporteSugerido (AH.2)', () => {
     expect(r.base).toBe('completo');
     const r2 = calcularAporteSugerido({ faltanteFondo: NaN, ingresosMensuales: 'abc' });
     expect(r2.base).toBe('completo');
+  });
+});
+
+// ── BUG-012: aviso de desactivar el fondo, sin jerga técnica ─────
+
+describe('BUG-012: desactivar el fondo no muestra jerga técnica', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 0 }, aportes: [] };
+    initAhorro();
+  });
+
+  it('el mensaje de confirmación no contiene el literal "empty state"', () => {
+    dispatch({ dataset: { action: 'ahorro-desactivar' } }, { preventDefault: () => {} });
+    const mensaje = document.querySelector('.confirm__mensaje')?.textContent ?? '';
+    expect(mensaje.toLowerCase()).not.toContain('empty state');
+    expect(mensaje).toContain('pantalla inicial');
   });
 });

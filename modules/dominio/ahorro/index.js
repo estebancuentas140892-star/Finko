@@ -295,7 +295,7 @@ function _guardarFondo(form) {
 async function _desactivarFondo() {
   const ok = await confirmar({
     titulo:         'Desactivar fondo de emergencia',
-    mensaje:        'Vas a quitar el fondo del seguimiento. Los datos se guardan, pero la sección vuelve a mostrar el empty state. ¿Continuar?',
+    mensaje:        'Vas a quitar el fondo del seguimiento. Los datos se guardan, pero la sección vuelve a mostrar la pantalla inicial para activarlo. ¿Continuar?',
     confirmarTexto: 'Desactivar',
     peligroso:      true,
   });
