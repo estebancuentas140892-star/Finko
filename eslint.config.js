@@ -28,6 +28,8 @@ export default [
         history: 'readonly',
         CustomEvent: 'readonly',
         MutationObserver: 'readonly',
+        IntersectionObserver: 'readonly',
+        DOMException: 'readonly',
         queueMicrotask: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',

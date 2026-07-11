@@ -1329,7 +1329,7 @@ test.describe('Agenda - marca de color por tipo', () => {
       const el = document.createElement('div');
       el.className = 'cal-detail__item';
       document.body.appendChild(el);
-      const c = getComputedStyle(el).backgroundColor;
+      const c = window.getComputedStyle(el).backgroundColor;
       el.remove();
       return c;
     });

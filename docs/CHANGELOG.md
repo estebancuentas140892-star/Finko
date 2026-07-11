@@ -10,6 +10,12 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### chore(lint): 3 errores no-undef corregidos, lint verde de nuevo · 2026-07-10
+
+Pasada de verificación post-IV.2: `pnpm run lint` fallaba con 3 errores `no-undef` que los cierres anteriores no detectaron (el gate de commit corría tests, no lint). Uno era de IV.2c (`getComputedStyle` sin `window.` en el E2E actualizado de `smoke.test.js`, corregido con el prefijo, convención del propio archivo); dos eran **preexistentes**: `IntersectionObserver` en `movimientos/view.js` (desde PERF.1, 2026-07-06) y `DOMException` en `storage.test.js` (desde PERF.4). La config usa lista blanca explícita de globals (no `env: browser`), así que ambos se agregaron a `eslint.config.js` siguiendo el patrón del archivo. Verificado: lint exit 0, 2295/2295 unit + 159/159 E2E verdes. Sin cambios de comportamiento (el código ya funcionaba; solo el linter no conocía esos globals).
+
+---
+
 ### feat(ui): IV.2c Calendario + Inicio, cierra IV.2 completa (ADR 031) · 2026-07-10
 
 Última rebanada de IV.2 (identidad de color por sección). Cierra la iniciativa completa (IV.1, IV.2a-d).

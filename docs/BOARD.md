@@ -10,7 +10,7 @@
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. El [ADR 028](DECISIONS/028-inicio-centro-de-control.md) fue **aprobado por Esteban el 2026-07-05**: la siguiente tarjeta natural es **IN.6a** (saludo dinámico), primera fase del orden recomendado.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. Con la iniciativa **IV.2 completa** (2026-07-10), la siguiente tarjeta natural es **DV.1** (ADR de Dirección Visual premium): prioridad alta, pedido directo de Esteban, y es la compuerta de las iniciativas v2 por sección (IN.8, D.15, ANL.1...), que consumen el sistema DV para no hacer doble trabajo.)_
 
 ---
 
