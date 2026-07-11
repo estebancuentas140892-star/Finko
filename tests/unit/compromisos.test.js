@@ -2721,6 +2721,65 @@ describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
   });
 });
 
+// ── renderEstrategiaPago: BUG-011 (el extra simulado no reestructura la card) ──
+
+describe('renderEstrategiaPago BUG-011: el extra simulado no reestructura la card', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, panelAlternativasAbierto: true, alternativaActiva: 'aumentar' });
+    // Plan inviable: la cuota de la deuda cara no cubre su interés mensual.
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('un extra que volvería viable el plan NO convierte la card al modo viable en un re-render', () => {
+    // 500.000/mes extra alcanza para que ambas estrategias completen el plan.
+    // Sin el fix, el re-render leía la simulación como estado real y
+    // reemplazaba el bloque inviable (botón + panel) por el acelerador.
+    setEstrategiaUI({ extraMensual: 500_000 });
+    renderEstrategiaPago();
+
+    expect(document.querySelector('.estrategia-card__acelerador')).toBeNull();
+    expect(document.querySelector('.estrategia-card__alerta-boton')).not.toBeNull();
+    expect(document.querySelector('#estrategia-panel-alternativas')).not.toBeNull();
+  });
+
+  it('cambiar a "Renegociar" con el extra tecleado conserva el panel abierto (repro del reporte)', () => {
+    setEstrategiaUI({ extraMensual: 500_000, alternativaActiva: 'renegociar' });
+    renderEstrategiaPago();
+
+    expect(document.querySelector('.estrategia-card__remedio--renegociar')).not.toBeNull();
+    expect(document.querySelector('.estrategia-card__acelerador')).toBeNull();
+  });
+
+  it('la simulación sigue viva dentro del remedio: input con el monto, resumen activo y Aplicar habilitado', () => {
+    setEstrategiaUI({ extraMensual: 500_000 });
+    renderEstrategiaPago();
+
+    const input = document.querySelector('#estrategia-extra');
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('500000');
+    expect(document.querySelector('.estrategia-card__resumen-extra--activo')).not.toBeNull();
+    expect(document.querySelector('[data-action="aplicar-aumento-cuota"]').disabled).toBe(false);
+  });
+
+  it('las cuotas registradas no cambian: la simulación nunca muta S', () => {
+    setEstrategiaUI({ extraMensual: 500_000, alternativaActiva: 'renegociar' });
+    renderEstrategiaPago();
+    expect(S.compromisos.map(c => c.cuotaMensual)).toEqual([50_000, 100_000]);
+  });
+
+  it('el detalle "Tu impacto" del plan inviable no adopta el extra simulado', () => {
+    setEstrategiaUI({ estrategia: 'avalancha', extraMensual: 500_000 });
+    renderEstrategiaPago();
+    // Con los datos registrados (sin extra) el plan no cierra: la métrica de
+    // intereses lo sigue diciendo, en vez del total finito de la simulación.
+    expect(document.getElementById('estrategia-pago').textContent).toContain('No se termina de pagar');
+  });
+});
+
 // ── simularPagoDeuda: bandera completo (D.3a) ────────────────────
 
 describe('simularPagoDeuda completo', () => {

@@ -457,6 +457,57 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
 
 });
 
+// ── SUITE: BUG-011 (la simulación de extra no reestructura la card) ───────────
+
+test.describe('BUG-011: el extra simulado no cierra el panel ni se aplica solo', () => {
+
+  test('teclear un extra que volvería viable el plan y cambiar de alternativa conserva el panel', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+    await abrirAlternativa(page, 'aumentar');
+
+    // Extra grande: la simulación SÍ completa el plan. Antes del fix, el
+    // siguiente re-render leía este valor como estado real y reemplazaba el
+    // panel de alternativas por el acelerador del plan viable.
+    await page.locator('#estrategia-extra').fill('500000');
+
+    // Cambiar a "Renegociar la tasa" re-renderiza la card completa.
+    await page.locator('[data-action="elegir-alternativa"][data-alternativa="renegociar"]').click();
+
+    // El panel sigue abierto mostrando la herramienta elegida; la card no
+    // presenta el plan como saneado.
+    await expect(page.locator('.estrategia-card__remedio--renegociar')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.estrategia-card__acelerador')).toHaveCount(0);
+
+    // Y las cuotas registradas no cambiaron: la simulación nunca se aplicó.
+    const cuotas = await page.evaluate(() => {
+      const s = JSON.parse(localStorage.getItem('fk_v1'));
+      return ['reneg-a', 'reneg-b'].map(id => s.compromisos.find(c => c.id === id)?.cuotaMensual);
+    });
+    expect(cuotas).toEqual([50_000, 100_000]);
+  });
+
+  test('volver a "Aumentar la cuota" conserva el monto simulado y su resumen', async ({ page }) => {
+    await inyectarPlanInviable(page);
+    await irACompromisos(page);
+    await abrirAlternativa(page, 'aumentar');
+
+    await page.locator('#estrategia-extra').fill('500000');
+    await page.locator('[data-action="elegir-alternativa"][data-alternativa="renegociar"]').click();
+    await page.locator('[data-action="elegir-alternativa"][data-alternativa="aumentar"]').click();
+
+    // La simulación sobrevive al ir y volver: monto en el input, resumen de
+    // impacto visible y el botón "Aplicar este aumento" habilitado.
+    const input = page.locator('#estrategia-extra');
+    await expect(input).toBeVisible({ timeout: 3_000 });
+    await expect(input).toHaveValue('500000');
+    await expect(page.locator('.estrategia-card__resumen-extra--activo')).toBeVisible();
+    await expect(page.locator('[data-action="aplicar-aumento-cuota"]')).toBeEnabled();
+  });
+
+});
+
 // ── SUITE: Aumentar la cuota (D.9) ────────────────────────────────────────────
 
 test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => {

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-11 (feat(tesoreria): MC.14 datos de transferencia por cuenta)
+> Última actualización: 2026-07-11 (fix(compromisos): BUG-011 la simulación de estrategia ya no se presenta como aplicada)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2325/2325 verdes |
-| Tests E2E | 162/162 verde. Suites: `smoke` 94 tests, `estrategia-pago` 15 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 7 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests unitarios + integración | 2330/2330 verdes |
+| Tests E2E | 164/164 verde. Suites: `smoke` 94 tests, `estrategia-pago` 17 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 7 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
 | Schema version (localStorage) | v25 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(compromisos): BUG-011 la simulación de estrategia ya no se presenta como aplicada · 2026-07-11
+
+Corrige BUG-011 (prioridad alta, reportado por Esteban el 2026-07-08). En Deudas con plan inviable, teclear un monto en "Aumenta tu cuota" y cambiar a "Renegociar la tasa" cerraba el panel de alternativas y la card mostraba el plan como saneado, sin haber presionado "Aplicar este aumento". La mutación NO era real (los tres botones "Aplicar" siguen detrás de `confirmar()`); era la variante visual: el input commitea cada tecla a `_uiEstrategia.extraMensual` (a propósito, para no perder el clic en Aplicar) y `renderEstrategiaPago()` usaba ese extra simulado para decidir la estructura de la card. Fix en `compromisos/views/estrategia.js`: la estructura (recomendación, detalle, bloque viable/inviable) se decide con `recomendarEstrategia(deudas, 0)`, datos registrados solamente; la simulación solo alimenta el resumen comparativo dentro de su bloque. 5 tests unitarios nuevos (4 fallan sin el fix, verificado revirtiéndolo con stash) + 2 E2E con el flujo real (fill + click de pestañas + localStorage intacto). 2330/2330 unit + 164/164 E2E verdes. **SW v344 → v345; hallazgo colateral:** IV.3, D.14, CAL.3 y MC.14 habían salido SIN bump de caché y el SW es cache-first puro, así que las PWAs instaladas seguían sirviendo v344: este bump las propaga todas. Ficha actualizada en [`contexto/deudas.md`](contexto/deudas.md) con la lección de diseño (estado UI simulado nunca decide estructura).
+
+---
 
 ### feat(tesoreria): MC.14 datos de transferencia por cuenta · 2026-07-11
 

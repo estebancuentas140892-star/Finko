@@ -2,7 +2,7 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-08 (BUG-011 y BUG-012 registrados).
+> Última actualización: 2026-07-11 (BUG-011 corregido y eliminado, ver CHANGELOG; queda BUG-012).
 
 ---
 
@@ -25,17 +25,6 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
-
-### BUG-011 - El panel de estrategia de pago cierra al cambiar de pestaña y deja la simulación aplicada
-- Estado    : pendiente
-- Prioridad : alta (una simulación nunca debe mutar estado sin confirmación explícita)
-- Problema  : reportado por Esteban (2026-07-08): en Deudas, al probar un valor en "Aumentar cuota" y luego pasar a "Renegociar la tasa", el panel se cierra automáticamente y la simulación queda aplicada, sin haber presionado "Aplicar estrategia". Pasos: abrir Deudas con una deuda con interés → panel Estrategia de pago → ingresar un valor en Aumentar cuota → cambiar a la pestaña Renegociar. Verificar primero si la mutación es real (estado persistido) o solo visual (el panel muestra el resultado simulado como si fuera aplicado): ambas variantes son bug, pero con severidad distinta.
-- Causa     : sin investigar
-- Archivo   : modules/dominio/compromisos/views/estrategia.js
-- Función   : manejo de cambio de alternativa/pestaña del panel estratégico
-- Líneas    : sin ubicar
-- Secciones : Deudas
-- Nota      : el comportamiento correcto (simulaciones libres, comparables, que solo se materializan con "Aplicar estrategia") quedó especificado en la iniciativa "Deudas v2" del [BOARD](BOARD.md); este bug puede corregirse antes o dentro de esa iniciativa.
 
 ### BUG-012 - Texto técnico "Empty State" visible en el Fondo de Emergencia
 - Estado    : pendiente

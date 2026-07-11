@@ -10,6 +10,24 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(compromisos): BUG-011 la simulación de estrategia ya no se presenta como aplicada · 2026-07-11
+
+Corrige y elimina **BUG-011** de `docs/BUGS.md` (prioridad alta, reportado por Esteban el 2026-07-08): en Deudas, con un plan de pago inviable, teclear un valor en "Aumenta tu cuota" (panel de alternativas) y luego pasar a la pestaña "Renegociar la tasa" cerraba el panel automáticamente y dejaba la card mostrando el plan como saneado, sin haber presionado "Aplicar este aumento".
+
+**Diagnóstico (la primera pregunta del reporte era si la mutación es real o visual):** es la variante **visual**. Los tres caminos que escriben en `S` (`_aplicarAumentoCuota`, `_aplicarRenegociacion`, `_aplicarConsolidacion` en `modules/dominio/compromisos/index.js`) están detrás de `confirmar()` y nunca se invocan al teclear ni al cambiar de pestaña; las cuotas registradas no cambiaban. La causa: el input del remedio (`cambiar-extra-remedio`) commitea cada tecla a `_uiEstrategia.extraMensual` (decisión deliberada de D.9, para que el clic en "Aplicar" no compita con un re-render por blur), y `renderEstrategiaPago()` calculaba `recomendarEstrategia(deudas, extraMensual)` **con ese extra simulado**. Si el monto tecleado volvía viable el plan, el siguiente re-render (cambiar de alternativa, abrir/cerrar el panel, cualquier `state:change`) reemplazaba el bloque inviable completo (botón de alerta + panel) por el acelerador del plan viable: la simulación quedaba presentada como estado real.
+
+**Qué cambió:** en `modules/dominio/compromisos/views/estrategia.js`, la estructura de la card (recomendación, detalle "Tu impacto" y la elección bloque viable/inviable) se decide ahora con `recomendarEstrategia(deudas, 0)`: solo datos registrados. El extra simulado alimenta únicamente el resumen comparativo (`renderResumenExtra`) dentro de su propio bloque, que ya cubría el caso "sin extra no cierra, con extra sí" con copy honesto. Con plan viable, el extra del acelerador sigue participando de la recomendación (exploración legítima ya documentada en `logic/estrategia.js`). Beneficio adicional: la simulación ahora **sobrevive** al ir y volver entre pestañas (monto en el input + resumen + botón habilitado), antes se perdía junto con el panel.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/estrategia.js` (fix), `tests/unit/compromisos.test.js` (5 tests nuevos), `tests/e2e/estrategia-pago.test.js` (2 tests nuevos), `service-worker.js` (v344 → v345), `docs/contexto/deudas.md` (lección de diseño: el estado UI simulado nunca decide estructura), `docs/BUGS.md` (entrada BUG-011 eliminada).
+
+**Verificación:** 2330/2330 unit verdes (5 nuevos; 4 de ellos fallan sin el fix, verificado revirtiéndolo temporalmente con stash). 164/164 E2E verdes (2 nuevos con el flujo exacto del reporte en Chromium real: fill del extra, click en la pestaña, panel conservado, `localStorage` sin cambios). Lint verde.
+
+**Hallazgo colateral (SW):** IV.3, D.14, CAL.3 y MC.14 salieron a producción **sin bump de `CACHE_NAME`** y el SW es cache-first puro, así que las PWAs ya instaladas seguían sirviendo los archivos de v344 (IV.2c): esos cuatro cambios podían no verse en el celular. El bump a v345 de este commit los propaga todos. Recordatorio de proceso: todo cambio de JS/CSS/HTML en producción necesita bump (regla ya escrita en el encabezado de `service-worker.js`); la tarjeta UPD.1 del BOARD (aviso de actualización) mitigará el costo de estos bumps para el usuario.
+
+**Podría afectar:** la card de estrategia con plan viable no cambia de comportamiento; con plan inviable, el detalle "Tu impacto" ya no adopta el extra simulado (vuelve a mostrar "No se termina de pagar" hasta que el aumento se aplique de verdad), que es el comportamiento honesto especificado en la iniciativa Deudas v2 (punto 5 del brief).
+
+---
+
 ### feat(tesoreria): MC.14 datos de transferencia por cuenta · 2026-07-11
 
 Cierra MC.14 (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), rebanada independiente que ya podía ejecutarse sin esperar el resto de la iniciativa (MC.13, MC.15, MC.16). Hoy, cuando alguien le pide al usuario sus datos para consignarle, tiene que salir de Finko a buscarlos en otra parte (banca en línea, mensajes viejos, memoria); la app no tenía ningún lugar para guardar esa información de referencia.

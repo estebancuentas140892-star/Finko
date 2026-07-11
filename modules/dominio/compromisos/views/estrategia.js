@@ -125,7 +125,21 @@ export function renderEstrategiaPago() {
   // a sus espaldas).
 
   const { extraMensual, estrategia } = _uiEstrategia;
-  const recomendacion = recomendarEstrategia(deudas, extraMensual);
+
+  // BUG-011: la estructura de la card (recomendación, detalle y el bloque
+  // viable/inviable) se decide SOLO con los datos registrados (extra = 0).
+  // El extra tecleado en "Aumenta tu cuota" es una simulación que se commitea
+  // por tecla (para no perder el clic en "Aplicar"): si entrara en esta
+  // decisión, un monto suficiente + cualquier re-render (cambiar de
+  // alternativa, abrir/cerrar el panel) reemplazaría el panel de alternativas
+  // por el acelerador del plan "saneado", como si el aumento se hubiera
+  // aplicado sin confirmar. La simulación solo alimenta el resumen comparativo
+  // dentro de su propio bloque (resumenExtraHtml). Con plan viable, el extra
+  // sí participa de la recomendación: ahí es la exploración del acelerador.
+  const base = recomendarEstrategia(deudas, 0);
+  const recomendacion = base.viable && extraMensual > 0
+    ? recomendarEstrategia(deudas, extraMensual)
+    : base;
 
   const resumenExtraHtml = extraMensual > 0
     ? renderResumenExtra(compararEstrategias(deudas, 0), compararEstrategias(deudas, extraMensual), extraMensual)
@@ -148,10 +162,10 @@ export function renderEstrategiaPago() {
         ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
       </div>
 
-      ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, extraMensual, hayTasaPositiva)}
-      ${recomendacion.viable
+      ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, base.viable ? extraMensual : 0, hayTasaPositiva)}
+      ${base.viable
         ? _renderAceleradorExtra(extraMensual, resumenExtraHtml)
-        : _renderBloqueInviable(recomendacion.diagnostico, extraMensual, resumenExtraHtml, deudas)}
+        : _renderBloqueInviable(base.diagnostico, extraMensual, resumenExtraHtml, deudas)}
     </article>`;
 }
 
