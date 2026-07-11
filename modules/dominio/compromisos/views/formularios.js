@@ -191,6 +191,22 @@ export function renderFormDeuda(tipo, deuda = null) {
     ? `<button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>`
     : `<button type="button" class="btn btn-ghost" data-action="comp-volver-chooser">← Volver</button>`;
 
+  // D.14: solo al crear (no al editar) y solo si hay cuentas activas donde
+  // acreditar. Checkbox apagado por defecto: muchas deudas no entregan dinero
+  // directo (tarjeta ya consumida, deuda vieja, crédito que paga a un tercero).
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const bloqueOrigen = (modoEdit || cuentasActivas.length === 0) ? '' : `
+      <div class="form-group form-group--checkbox">
+        <label class="checkbox-row">
+          <input type="checkbox" id="comp-recibio-dinero" name="recibioDinero" />
+          <span>Recibí este dinero en una de mis cuentas</span>
+        </label>
+        <p class="form-hint form-hint--muted">Actívalo si esta deuda te dio dinero disponible ahora, por ejemplo un préstamo o un giro. Si es una tarjeta ya usada, una deuda vieja o el dinero fue directo a otra persona, déjalo desactivado.</p>
+      </div>
+      <div id="grupo-comp-cuenta-origen" hidden>
+        ${renderSelectorCuenta(cuentasActivas, { label: '¿En qué cuenta entró el dinero?' })}
+      </div>`;
+
   return `
     <form id="form-compromiso" novalidate>
       <input type="hidden" name="tipo" value="${_esc(tipo)}" />
@@ -253,6 +269,8 @@ export function renderFormDeuda(tipo, deuda = null) {
                value="${vDia}" />
         ${esEntidad ? '' : '<p class="form-hint">Si acordaron una fecha, usa ese día; si no, uno que te sirva de recordatorio.</p>'}
       </div>
+
+      ${bloqueOrigen}
 
       <div class="modal__footer">
         ${volverBtn}

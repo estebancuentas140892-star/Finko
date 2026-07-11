@@ -121,6 +121,19 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                       desde la cuota de manejo de una cuenta (v5).
  *                                       Permite identificarlos sin ambigüedad
  *                                       para sincronizarlos cuando cambia la cuenta.
+ *
+ * @property {string|null} [cuentaOrigenId]  FK a Cuenta.id (D.14). Solo deudas:
+ *                                       la cuenta donde se acreditó el dinero
+ *                                       recibido al crear la deuda. null/undefined
+ *                                       si no aplica (tarjeta ya consumida, deuda
+ *                                       vieja registrada a posteriori, crédito que
+ *                                       pagó directo a un tercero). Se fija solo al
+ *                                       crear, nunca al editar.
+ * @property {number}  [montoAcreditado] COP (D.14). Copia inmutable de saldoTotal
+ *                                       en el momento de crear la deuda, para poder
+ *                                       revertir el crédito exacto si se elimina más
+ *                                       adelante sin que abonos posteriores lo afecten.
+ *                                       Solo presente junto con cuentaOrigenId.
  */
 
 /**

@@ -1756,6 +1756,53 @@ describe('renderFormDeuda() - selector de categoría', () => {
   });
 });
 
+// ── D.14: acreditar la cuenta de origen al crear una deuda ────────
+
+describe('renderFormDeuda() - bloque de cuenta de origen (D.14)', () => {
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+
+  beforeEach(() => {
+    S.cuentas = [];
+  });
+
+  it('sin cuentas activas: no ofrece el bloque (nada que acreditar)', () => {
+    S.cuentas = [];
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).not.toContain('comp-recibio-dinero');
+    expect(html).not.toContain('grupo-comp-cuenta-origen');
+  });
+
+  it('con cuentas activas: checkbox apagado por defecto y selector oculto', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia'), cuenta('c2', 'Nequi')];
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('id="comp-recibio-dinero"');
+    expect(html).not.toMatch(/id="comp-recibio-dinero"[^>]*checked/);
+    expect(html).toMatch(/id="grupo-comp-cuenta-origen"[^>]*hidden/);
+    expect(html).toContain('value="c1"');
+    expect(html).toContain('value="c2"');
+  });
+
+  it('solo se ofrece en modo creación, nunca al editar (no reacreditar dos veces)', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia')];
+    const deuda = {
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', activo: true,
+    };
+    const html = renderFormDeuda('deuda-entidad', deuda);
+    expect(html).not.toContain('comp-recibio-dinero');
+    expect(html).not.toContain('grupo-comp-cuenta-origen');
+  });
+
+  it('cuentas inactivas no cuentan para ofrecer el bloque', () => {
+    S.cuentas = [{ ...cuenta('c1', 'Cerrada'), activa: false }];
+    const html = renderFormDeuda('deuda-personal');
+    expect(html).not.toContain('comp-recibio-dinero');
+  });
+});
+
 // ── D.10/D.13 - deuda personal: relación y cuota opcional ─────────
 
 describe('D.10/D.13 - validación y normalización de deuda personal', () => {

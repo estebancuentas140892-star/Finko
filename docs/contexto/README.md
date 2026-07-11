@@ -98,7 +98,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Inicio | [`inicio.md`](inicio.md) | activa (estructura del dashboard, análisis conjunto IN.4/IN.6/IN.7/CAL.1/TX.8) |
 | Gastos | [`gastos.md`](gastos.md) | activa (TX.9 completa: formulario de gasto + categorías personalizadas) |
 | Calendario | [`calendario.md`](calendario.md) | activa (calendario mensual, CAL.2 leyenda dinámica) |
-| Deudas | `deudas.md` | sin crear |
+| Deudas | [`deudas.md`](deudas.md) | activa (registro de deudas, D.14 acreditar cuenta de origen) |
 | Mis cuentas | `mis-cuentas.md` | sin crear |
 | Apartados | `apartados.md` | sin crear |
 | Metas | `metas.md` | sin crear |

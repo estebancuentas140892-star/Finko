@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.14 registrar una deuda acredita la cuenta donde se recibió el dinero · 2026-07-10
+
+Cierra D.14, primera rebanada ya triada de la iniciativa "Deudas v2: de registro a asesor" (`docs/BOARD.md`). Hoy registrar una deuda no tiene ningún efecto sobre las cuentas del usuario: si el préstamo entregó dinero real (un giro, un préstamo personal), el usuario tenía que ir aparte a Mis cuentas y editar el saldo a mano, con el riesgo de olvidarlo o de duplicarlo si además registraba un ingreso puntual. El espejo exacto de este problema ya estaba resuelto para ingresos (NAV.A1, ingreso puntual): reutilizar ese mismo patrón para deudas.
+
+**Qué cambió:** en `modules/dominio/compromisos/views/formularios.js`, `renderFormDeuda()` agrega, solo en modo creación (nunca al editar) y solo si hay al menos una cuenta activa, un checkbox opcional "Recibí este dinero en una de mis cuentas" (apagado por defecto) que revela el selector de cuenta ya existente (`renderSelectorCuenta()` de `infra/cuenta-helper.js`, el mismo componente del ingreso puntual). En `modules/dominio/compromisos/index.js`: `_wireToggleOrigen()` conecta el checkbox al selector (espejo de `_wireToggleFiado`, D.13); `_ajustarSaldoCuenta()` (nuevo, espejo del helper de `tesoreria/acciones/ingresos.js`) suma el `saldoTotal` de la deuda a la cuenta elegida al guardar; `_guardarCompromiso()` guarda `cuentaOrigenId` y `montoAcreditado` (copia inmutable del monto acreditado en ese momento) en el compromiso; `_eliminarCompromiso()` revierte ese crédito exacto usando `montoAcreditado`, no `saldoTotal` actual (que puede haber bajado por abonos posteriores, que ya mueven su propia cuenta de origen por separado: usar `saldoTotal` habría revertido de menos). En `modules/core/state.js` se documentan los dos campos nuevos en el typedef `Compromiso`, opcionales y `undefined`-safe para registros existentes: **sin bump de `SCHEMA_VERSION`**, no hace falta backfill porque ningún código asume que siempre existen.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/formularios.js`, `modules/dominio/compromisos/index.js`, `modules/core/state.js`, `tests/unit/compromisos.test.js` (4 tests nuevos), `docs/contexto/deudas.md` (ficha nueva, primera de esta sección).
+
+**Verificación:** 2299/2299 unit verdes (4 nuevos sobre `renderFormDeuda()`: bloque ausente sin cuentas activas, checkbox apagado + selector oculto por defecto con cuentas, ausente en modo edición, cuentas inactivas no cuentan). Lint verde. **El preview local de este entorno no cargó** (limitación de infraestructura ya documentada en IV.3 y sesiones anteriores); verificado por trazado de código contra el patrón ya probado y en producción de NAV.A1 (ingreso puntual), en vez de captura en Chromium real.
+
+**Podría afectar:** ninguna otra sección lee `cuentaOrigenId`/`montoAcreditado` todavía (no hay UI que los muestre); el efecto observable es solo el saldo de la cuenta elegida al crear/eliminar una deuda con acreditación.
+
+---
+
 ### fix(analisis): IV.3 "Vs mes anterior" ya no tiñe de rojo la subida de gasto (D5, ADR 031) · 2026-07-10
 
 Cierra IV.3 (números y estados). Al retomar el criterio D5 del ADR 031 ("dirección con signo, egresos neutros, estados con icono"), se encontró que la card "Vs mes anterior" de Análisis (`_renderComparacionCategorias()`, G.2) seguía sin corregir: usaba `--fk-danger`/`--fk-danger-text` para el delta total, el fondo de fila (`.comparacion__row--sube`) y la columna de dirección (`.comparacion__dir`) cuando el gasto de una categoría o el total subían. Es exactamente la violación que el ADR 019/AUD.4 prohíbe ("gastar no es incumplir": las variaciones al alza van en neutro, nunca en rojo) y que el resumen semanal (F8, `resumen-card__trend--sube`) y `_renderTendencia()` (misma sección Análisis, comentario explícito en el código) ya habían corregido; esta card en particular se quedó fuera de esas pasadas anteriores.

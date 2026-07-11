@@ -55,6 +55,22 @@ function _renderTodo() {
   renderListaCompromisos();
 }
 
+/**
+ * Ajusta el saldo de una cuenta en `delta` (positivo suma, negativo descuenta).
+ * No-op si la cuenta no existe. Espejo del helper de ingresos puntuales
+ * (NAV.A1, `tesoreria/acciones/ingresos.js`): D.14 reutiliza el mismo patrón
+ * para acreditar/revertir la cuenta de origen de una deuda.
+ *
+ * @param {string} cuentaId
+ * @param {number} delta
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
+}
+
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
 function _nuevoCompromiso() {
@@ -96,7 +112,22 @@ async function _guardarCompromiso() {
   if (idEdit) {
     editar('compromisos', idEdit, normalizarCompromiso(datos));
   } else {
-    guardar('compromisos', normalizarCompromiso(datos));
+    const nuevo = normalizarCompromiso(datos);
+
+    // D.14: si el usuario indicó que recibió el dinero en una cuenta, se
+    // acredita el saldo total de la deuda a esa cuenta (espejo del ingreso
+    // puntual, NAV.A1). `montoAcreditado` congela el monto acreditado para
+    // poder revertirlo exacto si la deuda se elimina, sin depender de
+    // abonos posteriores que ya modificaron saldoTotal.
+    const cuentaOrigenId = (datos.recibioDinero === 'on' && datos.cuentaId) ? datos.cuentaId : null;
+    if (cuentaOrigenId) {
+      nuevo.cuentaOrigenId  = cuentaOrigenId;
+      nuevo.montoAcreditado = nuevo.saldoTotal;
+      _ajustarSaldoCuenta(cuentaOrigenId, nuevo.saldoTotal);
+      updSaldo();
+    }
+
+    guardar('compromisos', nuevo);
   }
 
   const overlay = document.getElementById('modal-compromiso');
@@ -170,6 +201,19 @@ function _wireToggleFiado(body) {
   aplicar(); // estado inicial (ej. edición de un fiado existente)
 }
 
+/**
+ * D.14: conecta el checkbox "Recibí este dinero en una de mis cuentas" con
+ * el selector de cuenta destino, que arranca oculto. No-op si el bloque no
+ * se renderizó (modo edición o sin cuentas activas, ver `renderFormDeuda`).
+ * @param {HTMLElement} body - contenedor del form ya inyectado.
+ */
+function _wireToggleOrigen(body) {
+  const cb    = body.querySelector('#comp-recibio-dinero');
+  const grupo = body.querySelector('#grupo-comp-cuenta-origen');
+  if (!cb || !grupo) return;
+  cb.addEventListener('change', () => { grupo.hidden = !cb.checked; });
+}
+
 /** @param {HTMLElement} el */
 async function _eliminarCompromiso(el) {
   const id = el.dataset.id;
@@ -185,6 +229,13 @@ async function _eliminarCompromiso(el) {
     peligroso:      true,
   });
   if (!ok) return;
+
+  // D.14: si esta deuda acreditó una cuenta al crearse, revertir ese crédito
+  // (espejo de eliminar un ingreso puntual, NAV.A1).
+  if (compromiso.cuentaOrigenId) {
+    _ajustarSaldoCuenta(compromiso.cuentaOrigenId, -(compromiso.montoAcreditado ?? 0));
+    updSaldo();
+  }
 
   eliminar('compromisos', id);
   _renderTodo();
@@ -230,6 +281,7 @@ function _elegirTipoDeuda(el) {
     _guardarCompromiso();
   });
   _wireToggleFiado(body);
+  _wireToggleOrigen(body);
 
   // Foco en el primer campo visible para accesibilidad.
   body.querySelector('input:not([type=hidden])')?.focus();
