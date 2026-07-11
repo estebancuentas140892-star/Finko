@@ -1227,6 +1227,101 @@ test.describe('Agenda - total a pagar por día', () => {
   });
 });
 
+// ── SUITE 12b: Agenda - CAL.3 selección automática del día actual ────────────
+// Al navegar HACIA Calendario desde otra sección, si hoy tiene compromisos,
+// el detalle se auto-abre sin que el usuario haga click. El fixture usa el
+// día real de hoy (calculado en el navegador) para que el test sea válido
+// sin importar qué día se ejecute. Cubre también que una carga directa en
+// #agenda (page.goto) NO auto-abre nada: el mecanismo solo arma con
+// hashchange, a propósito (ver agenda/index.js).
+
+test.describe('Agenda - CAL.3 selección automática del día actual', () => {
+  test('navegar desde otra sección auto-abre el detalle de hoy si hay compromisos', async ({ page }) => {
+    await page.addInitScript(() => {
+      const diaPago = new Date().getDate();
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          {
+            id: 'cal3-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 E2E',
+            monto: 45000, frecuencia: 'Mensual', diaPago,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    await page.click('.nav-item[href="#agenda"]');
+    await page.waitForSelector('#sec-agenda.active', { timeout: 10_000 });
+
+    const detalle = page.locator('.cal-detail');
+    await expect(detalle).toBeVisible({ timeout: 3_000 });
+    await expect(detalle.locator('.cal-detail__item')).toContainText('Suscripción CAL.3 E2E');
+  });
+
+  test('cargar la app directo en #agenda no auto-abre el detalle (solo aplica a navegar hacia la sección)', async ({ page }) => {
+    await page.addInitScript(() => {
+      const diaPago = new Date().getDate();
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [
+          {
+            id: 'cal3-boot-e2e', tipo: 'fijo', descripcion: 'Suscripción CAL.3 boot',
+            monto: 45000, frecuencia: 'Mensual', diaPago,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await expect(page.locator('.cal-detail')).toHaveCount(0);
+  });
+
+  test('seleccionar un día sin compromisos muestra un mensaje explícito', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    // Cualquier día del grid es clickeable ahora, tenga o no eventos.
+    await page.locator('[data-action="agenda-mostrar-dia"]').first().click();
+
+    const detalle = page.locator('.cal-detail');
+    await expect(detalle).toBeVisible({ timeout: 3_000 });
+    await expect(detalle.locator('.cal-detail__subtitle')).toHaveText('Sin compromisos ni ingresos este día');
+  });
+});
+
 // ── Agenda - leyenda sticky (AG.6) ───────────────────────────────────────────
 // La leyenda va justo debajo del calendario y es sticky: con un día cargado
 // de registros debe seguir dentro del viewport al desplazarse hasta el final

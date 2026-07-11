@@ -6,6 +6,9 @@
  *   _viewYear / _viewMonth identifican el mes actualmente visualizado.
  *   _diaSeleccionado     identifica el día con detalle expandido (o null).
  *   Mutado solo por navegarMes(), resetearVistaAlMesActual() y mostrarDia().
+ *   _entradaInicialPendiente (CAL.3) arma el auto-selección de "hoy" en el
+ *   próximo renderAgenda(); solo lo activa marcarEntradaSeccion(), llamada
+ *   por index.js al entrar a la sección (nunca por un renderAgenda() suelto).
  */
 
 import { S } from '../../core/state.js';
@@ -21,6 +24,7 @@ import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tip
 let _viewYear         = null;
 let _viewMonth        = null;
 let _diaSeleccionado  = null;
+let _entradaInicialPendiente = false;
 
 const MONTHS = [
   'Enero',     'Febrero', 'Marzo',   'Abril',
@@ -76,6 +80,23 @@ export function mostrarDia(dia) {
   _diaSeleccionado = (_diaSeleccionado === dia) ? null : dia;
 }
 
+/**
+ * CAL.3: marca que el usuario acaba de navegar hacia la sección desde otra
+ * (no una carga inicial de la app directo en #agenda: agenda/index.js solo
+ * la llama en el listener de `hashchange`, no en el render de arranque).
+ * El próximo `renderAgenda()` intenta auto-seleccionar el día de hoy si
+ * tiene compromisos/ingresos y no hay ningún día ya seleccionado; se
+ * consume una sola vez, así que navegar entre meses/días dentro de la
+ * sección o un re-render por cambio de datos no vuelve a forzar la
+ * selección.
+ * Debe llamarla el caller (agenda/index.js) antes de renderAgenda(), nunca
+ * el propio renderAgenda(): así los tests que llaman renderAgenda()
+ * directo no disparan el auto-select por accidente.
+ */
+export function marcarEntradaSeccion() {
+  _entradaInicialPendiente = true;
+}
+
 // ── RENDER PRINCIPAL ─────────────────────────────────────────────
 
 /**
@@ -104,15 +125,26 @@ export function renderAgenda() {
     eventos[d] = eventos[d] ? [...eventos[d], ...evs] : [...evs];
   }
 
-  // Si el día seleccionado se quedó sin eventos (ej. usuario eliminó el
-  // compromiso desde otra sección), cerramos el detalle para no mostrar
-  // un panel vacío.
-  if (_diaSeleccionado !== null && !(eventos[_diaSeleccionado]?.length > 0)) {
-    _diaSeleccionado = null;
+  // CAL.3: al entrar a la sección, si hoy tiene compromisos/ingresos y no
+  // hay ningún día ya seleccionado, cargar su detalle automáticamente. Solo
+  // se dispara si `marcarEntradaSeccion()` armó el flag (ver su doc); un
+  // renderAgenda() disparado por navegar meses/días o por state:change no
+  // lo activa, así que no pisa lo que el usuario ya tenía abierto.
+  if (_entradaInicialPendiente) {
+    _entradaInicialPendiente = false;
+    const hoy = new Date();
+    const esMesVisibleHoy = _viewYear === hoy.getFullYear() && _viewMonth === hoy.getMonth();
+    if (esMesVisibleHoy && _diaSeleccionado === null && eventos[hoy.getDate()]?.length > 0) {
+      _diaSeleccionado = hoy.getDate();
+    }
   }
 
+  // Si el día seleccionado se quedó sin eventos (ej. se eliminó el
+  // compromiso desde otra sección, o el usuario seleccionó a propósito un
+  // día vacío), `_renderDetalleDia` muestra un estado vacío explícito en
+  // vez de cerrarse solo (CAL.3).
   const detalleHtml = _diaSeleccionado !== null
-    ? _renderDetalleDia(eventos[_diaSeleccionado], _viewYear, _viewMonth, _diaSeleccionado)
+    ? _renderDetalleDia(eventos[_diaSeleccionado] ?? [], _viewYear, _viewMonth, _diaSeleccionado)
     : '';
 
   // AG.6: la leyenda va entre el calendario y el detalle del día (no al
@@ -190,7 +222,6 @@ function _renderGrid(year, month, eventos) {
       hayEvs   && 'cal-day--has-events',
       esSelecc && 'cal-day--selected',
       esPasado && !esHoy && 'cal-day--past',
-      !hayEvs  && 'cal-day--inactive',
     ].filter(Boolean).join(' ');
 
     // ADR 021: el aria-label distingue día de ingreso de compromisos a pagar.
@@ -203,17 +234,14 @@ function _renderGrid(year, month, eventos) {
       ? `Día ${d}, ${partes.join(', ')}`
       : `Día ${d}, sin compromisos`;
 
-    // Solo días con eventos son interactivos: tener data-action sólo en
-    // ellos evita "clicks muertos" cuando el día está vacío.
-    const actionAttrs = hayEvs
-      ? `data-action="agenda-mostrar-dia" data-day="${d}"`
-      : 'aria-disabled="true" tabindex="-1"';
-
+    // CAL.3: todos los días son interactivos, con o sin eventos. Un día
+    // vacío también se puede seleccionar; el detalle muestra "sin
+    // compromisos este día" en vez de no responder al click.
     html += `
       <button type="button" class="${cls}"
               role="gridcell"
               aria-label="${aria}"
-              ${actionAttrs}>
+              data-action="agenda-mostrar-dia" data-day="${d}">
         <span class="cal-day__num">${d}</span>
         ${hayEvs ? _renderDots(evs) : ''}
       </button>`;
@@ -276,6 +304,26 @@ function _renderDetalleDia(evs, year, month, dia) {
   const fecha   = new Date(year, month, dia);
   const dow     = DOW_LARGO[fecha.getDay()];
   const titulo  = `${dow} ${dia} de ${MONTHS[month]}`;
+
+  // CAL.3: día seleccionado sin compromisos ni ingresos (a propósito, o
+  // porque se eliminó el compromiso desde otra sección). En vez de no
+  // mostrar nada, decirlo explícito: mismo encabezado, sin total ni lista.
+  if (evs.length === 0) {
+    return `
+      <section class="cal-detail" aria-label="Compromisos del ${titulo}">
+        <header class="cal-detail__header">
+          <div class="cal-detail__title-wrap">
+            <h3 class="cal-detail__title">${titulo}</h3>
+            <p class="cal-detail__subtitle">Sin compromisos ni ingresos este día</p>
+          </div>
+          <button type="button" class="cal-detail__close"
+                  data-action="agenda-mostrar-dia"
+                  data-day="${dia}"
+                  aria-label="Cerrar detalle del día"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+        </header>
+      </section>`;
+  }
+
   // ADR 021: el resumen separa el día de ingreso de los compromisos a pagar.
   const nIng    = evs.filter(e => e?.tipo === 'ingreso').length;
   const nComp   = evs.length - nIng;

@@ -34,7 +34,7 @@ import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
-import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia } from './view.js';
+import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -335,9 +335,16 @@ export function initAgenda() {
     }
   });
 
-  // Re-render al navegar a #agenda.
+  // Re-render al navegar a #agenda. CAL.3: llegar desde OTRA sección arma
+  // el auto-select de "hoy" (marcarEntradaSeccion); un state:change con la
+  // sección ya abierta (arriba) no lo arma, para no pisar la selección del
+  // usuario. La carga inicial de la app directo en #agenda (recarga,
+  // deep-link) queda fuera a propósito: no es el caso de uso real que pidió
+  // la tarjeta (navegar hacia la sección desde otra), y evita el efecto
+  // extraño de auto-abrir el detalle en el primer pintado de la página.
   window.addEventListener('hashchange', () => {
     if ((location.hash.slice(1) || 'dash') === 'agenda') {
+      marcarEntradaSeccion();
       renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }

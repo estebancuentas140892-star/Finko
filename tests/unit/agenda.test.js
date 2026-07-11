@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual } from '../../modules/dominio/agenda/view.js';
+import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -1081,5 +1081,114 @@ describe('renderAgenda() - día de ingreso (ADR 021)', () => {
     const sub = document.querySelector('.cal-detail__subtitle');
     expect(sub.textContent).toContain('día de ingreso');
     expect(sub.textContent).toContain('1 compromiso');
+  });
+});
+
+// ── CAL.3 - selección automática del día actual al entrar ────────
+
+describe('CAL.3 - marcarEntradaSeccion() + renderAgenda() auto-selección', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026 = "hoy"
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con marcarEntradaSeccion() y compromisos hoy, auto-abre el detalle de hoy', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    const detalle = document.querySelector('.cal-detail');
+    expect(detalle).not.toBeNull();
+    expect(detalle.querySelector('.cal-detail__title').textContent).toContain('15');
+  });
+
+  it('sin marcarEntradaSeccion(), un renderAgenda() suelto no auto-selecciona nada', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual' })];
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('si hoy no tiene compromisos ni ingresos, no auto-abre nada', () => {
+    S.compromisos = [compromisoBase({ diaPago: 20, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+
+  it('no pisa un día ya seleccionado manualmente antes de entrar', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', diaPago: 15, frecuencia: 'Mensual' }),
+      compromisoBase({ id: 'c2', diaPago: 20, frecuencia: 'Mensual' }),
+    ];
+    renderAgenda();
+    mostrarDia(20);
+    marcarEntradaSeccion();
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__title').textContent).toContain('20');
+  });
+
+  it('se consume una sola vez: un segundo renderAgenda() no vuelve a forzar la selección', () => {
+    S.compromisos = [compromisoBase({ diaPago: 15, frecuencia: 'Mensual' })];
+    marcarEntradaSeccion();
+    renderAgenda();
+    mostrarDia(15); // el usuario cierra el detalle auto-abierto (toggle)
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+});
+
+describe('CAL.3 - seleccionar un día sin registros muestra estado vacío', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('un día sin eventos es clickeable en el grid (data-action presente)', () => {
+    S.compromisos = [compromisoBase({ diaPago: 5, frecuencia: 'Mensual' })];
+    renderAgenda();
+    const diaVacio = document.querySelector('[data-day="10"]');
+    expect(diaVacio).not.toBeNull();
+    expect(diaVacio.getAttribute('data-action')).toBe('agenda-mostrar-dia');
+    expect(diaVacio.hasAttribute('aria-disabled')).toBe(false);
+  });
+
+  it('seleccionar un día sin registros muestra un mensaje explícito, no cierra el detalle', () => {
+    S.compromisos = [];
+    renderAgenda();
+    mostrarDia(10);
+    renderAgenda();
+    const detalle = document.querySelector('.cal-detail');
+    expect(detalle).not.toBeNull();
+    expect(detalle.querySelector('.cal-detail__subtitle').textContent)
+      .toBe('Sin compromisos ni ingresos este día');
+    expect(detalle.querySelector('.cal-detail__total')).toBeNull();
+    expect(detalle.querySelector('.cal-detail__list')).toBeNull();
+  });
+
+  it('volver a hacer click en el mismo día vacío lo cierra (toggle intacto)', () => {
+    S.compromisos = [];
+    renderAgenda();
+    mostrarDia(10);
+    renderAgenda();
+    mostrarDia(10);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail')).toBeNull();
   });
 });

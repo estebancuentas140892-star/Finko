@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-10 (D.14 cerrada: registrar una deuda acredita la cuenta donde se recibió el dinero).
+> Última actualización: 2026-07-10 (CAL.3 cerrada: selección automática del día actual al entrar al Calendario).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **IV.3 cerrada el 2026-07-10** (números y estados, D5 del ADR 031). **D.14 cerrada el 2026-07-10** (acreditar cuenta de origen al crear una deuda). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; revisar `docs/BOARD.md` por la siguiente tarjeta independiente.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **IV.3 cerrada el 2026-07-10** (números y estados, D5 del ADR 031). **D.14 cerrada el 2026-07-10** (acreditar cuenta de origen al crear una deuda). **CAL.3 cerrada el 2026-07-10** (selección automática del día actual + mensaje explícito en día vacío). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; revisar `docs/BOARD.md` por la siguiente tarjeta independiente.)_
 
 ---
 
@@ -68,16 +68,7 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 _(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tienen fuente única y NO generan tarjeta propia aquí. (1) Color de sección en las tarjetas de evento con tinte de baja opacidad (Esteban pide 5-10%; el sistema usa 12% en `-bg`, calibrar en implementación con contraste medido) → vive en **IV.2c**. (2) Logos oficiales de marcas en eventos (Netflix, Nequi...) → ya existe la base (MK.2 detecta marca en fijos/suscripciones/deudas, `tejaMarca` en el detalle del día) y su evolución "seleccionar en vez de escribir" es el **[ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)**. (3) Picker de icono en "Otra categoría" de fijos + categorías personalizadas reutilizables en toda la app → iniciativa **CAT** en Transversal, que absorbió la observación que vivía aquí sobre ícono personalizado para la categoría "Otro" de AG.4.)_
 
-#### CAL.3 - Selección automática del día actual al entrar al Calendario
-- Prioridad  : media (bajo esfuerzo, mejora inmediata percibible)
-- Estado     : pendiente
-- Objetivo   : al entrar a la sección, si el día de hoy tiene compromisos, el panel de detalle inferior los carga automáticamente sin que el usuario pulse la fecha (brief 2026-07-08). Solo aplica al ingreso inicial: la navegación entre fechas conserva el comportamiento actual. Incluye el segundo pedido del brief: al seleccionar un día SIN registros, indicar claramente que no hay compromisos ese día (hoy el detalle simplemente no se muestra: `_diaSeleccionado` se anula si el día quedó sin eventos, ver `renderAgenda` en `agenda/view.js`).
-- Secciones  : Calendario (`agenda`)
-- Archivos   : `modules/dominio/agenda/view.js` (`_diaSeleccionado`, `_ensureFecha`, `renderAgenda`), ficha [`contexto/calendario.md`](contexto/calendario.md) vigente
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio (comportamiento nuevo con estado local de vista + tests de ambos caminos)
-
-_(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. **CAL.2 cerrada** el 2026-07-06: leyenda del calendario dinámica, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md), primera ficha de esta sección.)_
+_(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio, ver CHANGELOG. **CAL.2 cerrada** el 2026-07-06: leyenda del calendario dinámica, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md), primera ficha de esta sección. **CAL.3 cerrada** el 2026-07-10: selección automática del día actual al navegar hacia Calendario + mensaje explícito al seleccionar un día vacío, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md).)_
 
 ---
 

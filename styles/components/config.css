@@ -721,15 +721,6 @@
   font-weight: var(--fk-font-semibold);
 }
 
-.cal-day--inactive {
-  cursor: default;
-}
-
-.cal-day--inactive:hover {
-  background: var(--fk-bg-elevated);
-  border-color: transparent;
-}
-
 .cal-day--selected {
   border-color: var(--fk-text-primary);
   background: var(--fk-bg-hover);
