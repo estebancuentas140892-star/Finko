@@ -357,8 +357,10 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // eso se buscan ambos campos. Sin marca aplica AG.2/ID.3: con categoría,
   // la teja de categoría es el ícono principal (izquierda), como en Gastos;
   // sin categoría (o en deudas, campo exclusivo de tipo=fijo), el ícono
-  // genérico del tipo. El tinte de la teja de fijos es el amarillo de
-  // presupuesto: el color que el calendario ya usa para "fijo" (cal-dot).
+  // genérico del tipo. Con categoría, la teja usa el color de esa
+  // categoría (dominio "presupuesto", igual que en Gastos); sin ella, el
+  // círculo genérico de "fijo" usa el índigo propio del calendario
+  // (IV.2c, ADR 031): el color que .cal-dot--fijo ya usa para "fijo".
   const marca = resolverMarca(`${c.descripcion ?? ''} ${c.nota ?? ''}`);
   const simboloCategoria = (!marca && tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_ICONO[c.categoria] : null;
   const icono   = marca ? tejaMarca(marca)

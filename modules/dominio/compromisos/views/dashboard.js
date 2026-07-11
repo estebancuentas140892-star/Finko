@@ -18,7 +18,32 @@ import {
   agruparPorDiasRestantes,
   sumarMontos,
   ICONO_TIPO,
+  LABEL_TIPO,
 } from '../logic.js';
+
+// IV.2c (ADR 031): "el color nunca viaja solo" (D1) - cada ítem de
+// "Pendientes del mes" y "Próximas prioridades" lleva, además del icono y
+// el color de su sección de origen, una etiqueta de texto con el tipo
+// (`.dom-badge`, ya reutilizado en toda la app). `personal` (Me deben) y
+// `apartado` no están en LABEL_TIPO (son de otros dominios, no de
+// compromisos), por eso el mapeo vive local a este archivo.
+const _DOM_BADGE_POR_TIPO = {
+  'fijo':           'agenda',
+  'deuda-entidad':  'compromisos',
+  'deuda-personal': 'personales',
+  'personal':       'personales',
+  'apartado':       'ahorro',
+};
+const _LABEL_POR_TIPO = {
+  ...LABEL_TIPO,
+  'personal': 'Préstamo',
+  'apartado': 'Apartado',
+};
+function _tipoBadge(tipo) {
+  const dom = _DOM_BADGE_POR_TIPO[tipo] ?? 'agenda';
+  const label = _LABEL_POR_TIPO[tipo] ?? tipo;
+  return `<span class="dom-badge dom-badge--${dom}">${_esc(label)}</span>`;
+}
 
 // ── DASHBOARD: PANEL VENCIDOS ────────────────────────────────────
 
@@ -64,7 +89,7 @@ export function renderPanelVencidos() {
         <span class="vencidos-card__icon vencidos-card__icon--${tipo}" aria-hidden="true">${icono}</span>
         <div class="vencidos-card__body">
           <p class="vencidos-card__name">${desc}</p>
-          <p class="vencidos-card__sub">venció ${cuando}</p>
+          <p class="vencidos-card__sub">${_tipoBadge(tipo)} venció ${cuando}</p>
         </div>
         <p class="vencidos-card__amount">${monto}</p>
       </li>`;
@@ -140,8 +165,11 @@ export function renderPanelPrioridades() {
     bodyHtml = grupos.map(g => {
       const items = g.items.map(c => {
         const tipo     = c.tipo ?? 'fijo';
+        // dotTipo alimenta cal-dot--* (color): deuda-personal para 'personal'
+        // (Me deben comparte la familia rosa de personales), 'apartado' tiene
+        // su propio dot (IV.2c, antes prestaba 'fijo' por error: pintaba un
+        // apartado con el color de gasto fijo).
         const dotTipo  = tipo === 'personal' ? 'deuda-personal'
-          : tipo === 'apartado'  ? 'fijo'
           : tipo;
         const icono    = tipo === 'personal'  ? icon('personales')
           : tipo === 'apartado'  ? (c.icono ? _esc(c.icono) : icon('apartados'))
@@ -154,6 +182,7 @@ export function renderPanelPrioridades() {
         return `
           <li class="prioridades-card__item">
             <span class="prioridades-card__dot cal-dot--${dotTipo}" aria-hidden="true">${icono}</span>
+            ${_tipoBadge(tipo)}
             <span class="prioridades-card__name">${desc}</span>
             ${monto ? `<span class="prioridades-card__amount">${monto}</span>` : ''}
           </li>`;

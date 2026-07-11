@@ -7,8 +7,8 @@
 ## Calendario mensual de compromisos (dominio `agenda`)
 
 - **Objetivo**          : vista calendario mensual sobre `S.compromisos` y `S.ingresos` (no agrega datos nuevos): mapea cada compromiso activo y cada ingreso activo a los días del mes en que cae, respetando su frecuencia. No importa de otros dominios (ADN 10); duplica deliberadamente lo mínimo que necesita (ej. `totalDia`) en vez de importar `compromisos/logic.js`.
-- **Estado actual**     : estable. **CAL.2** (2026-07-06) hizo dinámica la leyenda de tipos bajo el calendario. **CAL.1** (nudge de distribución del ingreso en Inicio, cerrada 2026-07-05) vive en el dominio `resumen`, no en `agenda`.
-- **Verificado contra** : `1209ee0` (2026-07-06, CAL.2).
+- **Estado actual**     : estable. **CAL.2** (2026-07-06) hizo dinámica la leyenda de tipos bajo el calendario. **CAL.1** (nudge de distribución del ingreso en Inicio, cerrada 2026-07-05) vive en el dominio `resumen`, no en `agenda`. **IV.2c** (2026-07-10, ADR 031): "fijo" pasa de amarillo (prestado de Presupuesto) a índigo (`--fk-dom-agenda`, identidad propia del calendario); las tarjetas del detalle del día abandonan la franja lateral de 3px y pasan a fondo teñido de baja opacidad (8%) por tipo.
+- **Verificado contra** : commit de IV.2c (2026-07-10).
 
 **Dónde vive**
 
@@ -27,7 +27,7 @@
 | Formulario simplificado de gasto fijo | `modules/dominio/agenda/view.js` | `renderFormGastoFijo()` | ~461 |
 | Delegación de acciones (`agenda-*`) + re-render por `state:change` | `modules/dominio/agenda/index.js` | `initAgenda()` | |
 
-**Recursos**: estilos en `styles/components/config.css` (`.cal-*`, incluida la paleta `cal-dot--*` por tipo: `--fk-dom-ingresos`, `--fk-dom-presupuesto`, `--fk-dom-compromisos`, `--fk-dom-personales`); tejas de marca/categoría vía `infra/icons.js` y `infra/marcas.js` (MK.2, ID.3).
+**Recursos**: estilos en `styles/components/config.css` (`.cal-*`, incluida la paleta `cal-dot--*` por tipo: `--fk-dom-ingresos`, `--fk-dom-agenda` (fijo, IV.2c), `--fk-dom-compromisos`, `--fk-dom-personales`, más `.cal-dot--apartado` reutilizado fuera del calendario en Inicio); tejas de marca/categoría vía `infra/icons.js` y `infra/marcas.js` (MK.2, ID.3).
 
 **Dependencias y relaciones**: `agenda/logic.js` es puro (sin `S`, sin DOM), recibe `compromisos`/`ingresos` como argumentos. `agenda/view.js` lee `S.compromisos`, `S.ingresos`, `S.gastos` (para el badge de estado de pago) directo; importa `LABEL_TIPO`/`ICONO_TIPO`/`calcularAbonosDelMes`/`estadoPagoMes` de `compromisos/logic.js` (permitido: agenda es una vista de solo lectura sobre compromisos, no un dominio hermano que muta los mismos datos). `agenda/index.js` re-renderiza por `state:change` de `compromisos`/`ingresos`/`gastos` y al navegar a `#agenda`.
 
@@ -39,8 +39,9 @@
 - **`tiposPresentesEnMes` recorre el mapa `eventos` ya construido por `renderAgenda()`** (post-merge de `eventosComp` + `eventosIng`), no vuelve a leer `S` ni recalcula nada: es barato (un solo recorrido de arrays ya en memoria), no necesita memoización.
 - **Frecuencias largas (Bimestral/Trimestral/Semestral/Anual) sin `fechaCreacion`** caen siempre (fallback conservador, `_caeEnCiclo`): un compromiso así puede aparecer en la leyenda todos los meses aunque el usuario lo perciba como esporádico.
 
-**Cambios pendientes**: ninguno propio de CAL.2. Ampliación futura sin tarjeta formal (ver `docs/BOARD.md`, nota bajo "Calendario"): la categoría "Otro" podría llevar ícono personalizado propio.
+**Cambios pendientes**: ninguno. Ampliación futura sin tarjeta formal (ver `docs/BOARD.md`, nota bajo "Calendario"): la categoría "Otro" podría llevar ícono personalizado propio.
 
 **Cambios realizados**:
 
+- 2026-07-10 (IV.2c, ADR 031): `.cal-dot--fijo` (y `.cal-detail__icon--fijo`, `.vencidos-card__icon--fijo` en Inicio) pasan de `--fk-dom-presupuesto` a `--fk-dom-agenda`: resuelve la ambigüedad "amarillo = ¿fijo o límite?" que el ADR 031 diagnosticó (hallazgo 3), dejando el amarillo exclusivo de Límites. `.cal-detail__item--*` abandona `border-left` (franja de 3px, AG.7) y pasa a `background: color-mix(in srgb, var(--fk-dom-X) 8%, var(--fk-bg-elevated))`: el texto de la tarjeta es neutro (no del color del dominio), así que el 8% no compite con el hallazgo de IV.2a sobre texto coloreado (ese exige ~6%, este caso no aplica). Todos los `color:` de glifo en `.cal-dot--*`/`.cal-detail__icon--*` migraron a `-text` (mismo criterio de IV.2d: el crudo falla el umbral no textual 3:1 en tema claro para varios dominios). Nuevo `.cal-dot--apartado` (familia menta de Ahorro): antes `prioridades-card__dot` de un apartado en Inicio pedía prestado el color de "fijo" por error (bug real, corregido). E2E `smoke.test.js` "marca de color por tipo" actualizado de `borderLeftColor` a `backgroundColor`. Sin bump de schema. 2295/2295 unit + 159/159 E2E verdes. SW v343 → v344.
 - 2026-07-06 (CAL.2, leyenda dinámica): la leyenda bajo el calendario mostraba siempre las 4 entradas posibles (día de ingreso, gasto fijo, deuda entidad, deuda personal) aunque el usuario no tuviera registros de varias de ellas en el mes visible. Se agregó `tiposPresentesEnMes()` (nuevo, `agenda/logic.js`, puro): recorre el mapa de eventos del mes y devuelve solo los tipos presentes, en el orden canónico de la leyenda. `_renderLeyenda()` (`agenda/view.js`) pasó a recibir `eventos` y renderizar solo esas entradas (color, ícono y nomenclatura siguen siendo los oficiales `cal-dot--*`, sin presentación nueva); devuelve `''` si no hay ningún tipo presente (sin compromisos ni ingresos este mes, no se dibuja el contenedor). Primer análisis a fondo del dominio, ficha nueva. 10 tests nuevos en `tests/unit/agenda.test.js` (`tiposPresentesEnMes` + render dinámico de la leyenda) + 2 tests E2E nuevos/reescritos en `smoke.test.js` (con los 3 tipos presentes muestra los 3; sin nada, no dibuja la leyenda). 2243/2243 unit + 153/153 E2E verdes. SW v334 → v335.

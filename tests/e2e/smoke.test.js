@@ -1280,13 +1280,14 @@ test.describe('Agenda - leyenda sticky', () => {
   });
 });
 
-// ── Agenda - marca de color por tipo en el detalle (AG.7) ────────────────────
-// Cada registro del detalle del día lleva una franja lateral de color según
-// su tipo (mismos --fk-dom-* que los dots del calendario, AG.6), para
-// distinguir de un vistazo qué es qué en fechas cargadas.
+// ── Agenda - marca de color por tipo en el detalle (AG.7, IV.2c) ────────────
+// Cada registro del detalle del día lleva un fondo teñido de color según su
+// tipo (mismos --fk-dom-* que los dots del calendario, AG.6), para distinguir
+// de un vistazo qué es qué en fechas cargadas. Reemplaza la franja lateral
+// (IV.2c, ADR 031: "la línea comunica poco").
 
 test.describe('Agenda - marca de color por tipo', () => {
-  test('un fijo y una deuda entidad el mismo día llevan colores de franja distintos', async ({ page }) => {
+  test('un fijo y una deuda entidad el mismo día llevan fondos de color distintos', async ({ page }) => {
     const diaPago = 15;
 
     await page.addInitScript(({ diaPago }) => {
@@ -1318,12 +1319,23 @@ test.describe('Agenda - marca de color por tipo', () => {
     await expect(itemFijo).toBeVisible({ timeout: 3_000 });
     await expect(itemDeuda).toBeVisible({ timeout: 3_000 });
 
-    const colorFijo  = await itemFijo.evaluate(el => window.getComputedStyle(el).borderLeftColor);
-    const colorDeuda = await itemDeuda.evaluate(el => window.getComputedStyle(el).borderLeftColor);
+    const colorFijo  = await itemFijo.evaluate(el => window.getComputedStyle(el).backgroundColor);
+    const colorDeuda = await itemDeuda.evaluate(el => window.getComputedStyle(el).backgroundColor);
+    // sin modificador de tipo, .cal-detail__item queda en --fk-bg-elevated
+    // puro (sin tinte): compararlo (mismo elemento base, sin clase --tipo)
+    // confirma que fijo/deuda SÍ están teñidos, no solo que son distintos
+    // entre sí.
+    const colorSinTenir = await page.evaluate(() => {
+      const el = document.createElement('div');
+      el.className = 'cal-detail__item';
+      document.body.appendChild(el);
+      const c = getComputedStyle(el).backgroundColor;
+      el.remove();
+      return c;
+    });
     expect(colorFijo).not.toBe(colorDeuda);
-    // transparent se resuelve a rgba(0, 0, 0, 0); ninguna franja debe quedar sin color.
-    expect(colorFijo).not.toBe('rgba(0, 0, 0, 0)');
-    expect(colorDeuda).not.toBe('rgba(0, 0, 0, 0)');
+    expect(colorFijo).not.toBe(colorSinTenir);
+    expect(colorDeuda).not.toBe(colorSinTenir);
   });
 });
 

@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IV.2c Calendario + Inicio, cierra IV.2 completa (ADR 031) · 2026-07-10
+
+Última rebanada de IV.2 (identidad de color por sección). Cierra la iniciativa completa (IV.1, IV.2a-d).
+
+**Calendario:**
+
+- **"fijo" pasa del amarillo prestado de Presupuesto al índigo propio de Calendario** (`--fk-dom-agenda`) en `.cal-dot--fijo`, `.cal-detail__item--fijo`, `.cal-detail__icon--fijo` y `.vencidos-card__icon--fijo` (Inicio, ver abajo). Resuelve la ambigüedad "amarillo = ¿fijo o límite?" (hallazgo 3 del ADR 031) y, al aplicar el mismo cambio en las 4 superficies donde aparece "fijo", evita que Calendario e Inicio queden con dos colores distintos para el mismo concepto.
+- **Las tarjetas de evento del detalle del día abandonan la franja lateral de 3px (AG.7) y pasan a fondo teñido** (`background: color-mix(in srgb, var(--fk-dom-X) 8%, var(--fk-bg-elevated))`), pedido explícito de Esteban ("la línea comunica poco"). El texto de la tarjeta es neutro (no del color del dominio), así que el 8% no colisiona con el hallazgo de IV.2a sobre texto coloreado (ese exige ~6%; aquí no aplica).
+- Todos los `color:` de glifo en `.cal-dot--*`/`.cal-detail__icon--*` migraron a `-text` (mismo criterio de IV.2d).
+
+**Inicio:**
+
+- "Pendientes del mes" y "Próximas prioridades" ganan una **etiqueta de tipo** (`.dom-badge`, dos variantes nuevas `--agenda`/`--ahorro`) junto al icono+color de sección ya existentes, cumpliendo la regla "el color nunca viaja solo" (D1 del ADR).
+- **Bug real corregido de paso**: un apartado en "Próximas prioridades" pedía prestado el dot de tipo `fijo` (heredaba su color, antes amber/presupuesto, ahora habría heredado índigo/agenda) en vez de tener identidad propia. Nuevo `.cal-dot--apartado` (familia menta de Ahorro, ADR 031 P4).
+
+**Archivos tocados:** `styles/components/config.css` (`.cal-dot--*`, `.cal-detail__item--*`, `.cal-detail__icon--*`), `styles/components/domain.css` (`.vencidos-card__icon--*`), `styles/components/nudges.css` (`.dom-badge--agenda`/`--ahorro` nuevas), `modules/dominio/agenda/view.js` (comentario actualizado), `modules/dominio/compromisos/views/dashboard.js` (`_tipoBadge()`, fix del dot de apartado), `tests/e2e/smoke.test.js` (test de franja actualizado a fondo teñido), `service-worker.js` (v343 → v344).
+
+**Verificación:** 2295/2295 unit + 159/159 E2E verdes (1 test E2E actualizado: verificaba `borderLeftColor`, ahora verifica `backgroundColor` contra el mecanismo nuevo). Verificado con datos reales en Chromium: en tema oscuro, "Gasto fijo" resuelve `#7d8cf0` (agenda), "Apartado" resuelve `#38c98c` (ahorro); en tema claro, los mismos badges resuelven sus `-text` correspondientes (`#4f64eb`, `#238059`). **Lección de verificación documentada en `contexto/transversal.md`**: alternar `body.classList` para probar tema claro en caliente puede devolver un `color-mix()` stale (oklab de tema oscuro) incluso leyendo la variable CSS correcta; cargar la página con `localStorage.fk_theme='light'` ya puesto es el método confiable.
+
+**Podría afectar:** nada funcional (CSS + `data-*` + un mapeo local de labels; sin cambios de datos ni de EventBus).
+
+---
+
 ### fix(ui): IV.2d migración de -text + cierre de la franja de modales (ADR 031) · 2026-07-10
 
 Tercera rebanada de IV.2 (identidad de color por sección). Corrige el hueco de contraste que IV.1 había detectado y documentado como pendiente: usos de `color: var(--fk-dom-X)` (token crudo) que fallan WCAG AA en tema claro, fuera de las superficies que ya tocó IV.2a. **Además cierra la mitad de IV.2b** ("franja de modales"): se encontró ya implementada, sin commitear, en el working tree (WIP de una sesión anterior); se verificó en el navegador (Chromium real, ambos temas) y se cierra en este mismo movimiento en vez de dejarla suelta.

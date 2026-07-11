@@ -881,17 +881,24 @@ button.chip:focus-visible {
 .vencidos-card__icon .icon {
   --fk-icon-size: var(--fk-icon-md);
 }
+/* IV.2c (ADR 031): "fijo" usa el índigo de Calendario (--fk-dom-agenda),
+   no el amarillo de Presupuesto: mismo criterio que .cal-dot--fijo, para
+   que "fijo" signifique el mismo color en toda la app (si acá se quedara
+   en amarillo reintroduciría la ambigüedad "¿fijo o límite?" que el ADR
+   resolvió en el calendario). Color en `-text`, no crudo: es un icono
+   real con fondo propio, sujeto al umbral no textual (3:1) de todas
+   formas. */
 .vencidos-card__icon--fijo {
-  background: color-mix(in srgb, var(--fk-dom-presupuesto) 14%, transparent);
-  color: var(--fk-dom-presupuesto);
+  background: color-mix(in srgb, var(--fk-dom-agenda) 14%, transparent);
+  color: var(--fk-dom-agenda-text);
 }
 .vencidos-card__icon--deuda-entidad {
   background: color-mix(in srgb, var(--fk-dom-compromisos) 14%, transparent);
-  color: var(--fk-dom-compromisos);
+  color: var(--fk-dom-compromisos-text);
 }
 .vencidos-card__icon--deuda-personal {
   background: color-mix(in srgb, var(--fk-dom-personales) 14%, transparent);
-  color: var(--fk-dom-personales);
+  color: var(--fk-dom-personales-text);
 }
 
 .vencidos-card__body {

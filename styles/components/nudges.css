@@ -434,4 +434,8 @@
 .dom-badge--analisis    { background: color-mix(in srgb, var(--fk-dom-analisis)    6%, transparent); color: var(--fk-dom-analisis-text); }
 .dom-badge--presupuesto { background: color-mix(in srgb, var(--fk-dom-presupuesto) 6%, transparent); color: var(--fk-dom-presupuesto-text); }
 .dom-badge--personales  { background: color-mix(in srgb, var(--fk-dom-personales)  6%, transparent); color: var(--fk-dom-personales-text); }
+/* IV.2c: agenda y ahorro se agregan como consumidores (etiqueta de tipo
+   en "Pendientes del mes"/"Próximas prioridades" de Inicio). */
+.dom-badge--agenda      { background: color-mix(in srgb, var(--fk-dom-agenda)      6%, transparent); color: var(--fk-dom-agenda-text); }
+.dom-badge--ahorro      { background: color-mix(in srgb, var(--fk-dom-ahorro)      6%, transparent); color: var(--fk-dom-ahorro-text); }
 
