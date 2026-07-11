@@ -10,6 +10,25 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): DV.1 ADR 033 Dirección Visual premium escrito (Propuesta) · 2026-07-10
+
+Cierra DV.1 (8.º lote de triaje, pedido directo de Esteban): el entregable era el ADR, cero código tocado. [ADR 033](DECISIONS/033-direccion-visual-premium.md) escrito en estado **Propuesta**, con 5 preguntas (P1-P5, todas con recomendación) esperando la validación de Esteban. Construye SOBRE el ADR 031 sin revertirlo y ratifica los ADR 023/025/026/027.
+
+**Hallazgos del análisis del código que fundan las decisiones:**
+
+- Las cards reposan planas de verdad (`.card`, `.bento__cell`, `.list-item`: borde 1px sin sombra); los tokens `--fk-shadow-*` existen pero solo se usan en hover, dropdowns, modales y toasts. En tema oscuro la profundidad ya la dan los escalones de fondo (base → surface → elevated): la sombra en reposo rinde sobre todo en tema claro, y el ADR lo dice explícitamente para no perseguir en oscuro un efecto que la física del color no da.
+- No existe ningún token de degradado: toda la riqueza de color vive en tintes planos al 6-12%.
+- El catálogo de animaciones existe de facto (14 keyframes + `countUp`) pero sin doctrina, y contiene 2 bucles infinitos ambientales (`empty-orbit`/`empty-float` en empty states) que el propio brief veta.
+- `--fk-section-accent` (IV.2b) ya probó el mecanismo de parametrización por dominio: los degradados y la decoración se montan encima sin JS nuevo.
+
+**Decisiones (resumen):** D1 elevación en escala semántica de 4 niveles (lienzo/reposo/realce/flotante), cards con sombra en reposo y doble capa en claro; D2 el color secundario por dominio es rampa derivada del mismo matiz (no un 2.º hue: respeta el techo de ~8 identidades del ADR 031), materializada en `--fk-section-color` + `--fk-grad-identity` (máx 2 paradas, texto medido contra la parada fuerte); D3 riqueza con presupuesto: formas orgánicas `d-*` neutras compartidas teñidas por `currentColor` (máx 1 por pantalla, opacidad 4-8%), un patrón de puntos CSS tokenizado y las ilustraciones `il-*` como clase nueva de asset del pipeline ADR 026 (Esteban diseña, drafts de Claude como plantillas); D4 catálogo de movimiento CERRADO (150-250 ms micro, una sola vez, solo transform/opacity, retiro de los bucles infinitos, celebraciones siguen en LG.2 y el cambio de tema en CFG.7); D5 la tensión "familia de iconos por sección" se resuelve RATIFICANDO el lenguaje único del ADR 023 (la familia por sección ya existe como metáfora + color; IV.4 sigue siendo el vehículo de redibujos dirigidos); D6 guardarraíles duros por rebanada (ambos temas, AA con cálculo real método IV.1, Lighthouse 100, `pnpm perf` sin regresión, lista prohibida y tabla de presupuesto por regla).
+
+**Archivos tocados:** `docs/DECISIONS/033-direccion-visual-premium.md` (nuevo), `docs/BOARD.md` (DV.1 borrada; iniciativa actualizada; rebanadas DV.2a a DV.2d creadas, ninguna se inicia sin validación), `docs/HANDOFF.md`, `docs/contexto/transversal.md` (bloque de identidad visual apunta al ADR 033).
+
+**Qué sigue:** Esteban valida P1-P5; con el ADR Aceptado arranca DV.2a (tokens de superficie/elevación). Mientras tanto la tarjeta natural es IV.3 (números y estados), independiente de esta iniciativa. **Podría afectar:** nada (solo documentación).
+
+---
+
 ### chore(lint): 3 errores no-undef corregidos, lint verde de nuevo · 2026-07-10
 
 Pasada de verificación post-IV.2: `pnpm run lint` fallaba con 3 errores `no-undef` que los cierres anteriores no detectaron (el gate de commit corría tests, no lint). Uno era de IV.2c (`getComputedStyle` sin `window.` en el E2E actualizado de `smoke.test.js`, corregido con el prefijo, convención del propio archivo); dos eran **preexistentes**: `IntersectionObserver` en `movimientos/view.js` (desde PERF.1, 2026-07-06) y `DOMException` en `storage.test.js` (desde PERF.4). La config usa lista blanca explícita de globals (no `env: browser`), así que ambos se agregaron a `eslint.config.js` siguiendo el patrón del archivo. Verificado: lint exit 0, 2295/2295 unit + 159/159 E2E verdes. Sin cambios de comportamiento (el código ya funcionaba; solo el linter no conocía esos globals).
