@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-10 (DV.1 cerrada: ADR 033 escrito en Propuesta; rebanadas DV.2a-d creadas).
+> Última actualización: 2026-07-10 (IV.3 cerrada: card "Vs mes anterior" de Análisis ya no tiñe de rojo la subida de gasto).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. Mientras él lo valida, la siguiente tarjeta natural es **IV.3** (números y estados: independiente, chica y lista para empezar); tras la validación, **DV.2a** (tokens de superficie/elevación) abre la implementación de la dirección visual.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **IV.3 cerrada el 2026-07-10** (números y estados, D5 del ADR 031). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; revisar `docs/BOARD.md` por la siguiente tarjeta independiente.)_
 
 ---
 
@@ -437,14 +437,6 @@ _(**PERF.7d cerrada** el 2026-07-07, con un alcance más chico que el planteado 
 _(**IV.1 cerrada** el 2026-07-07: `--fk-dom-agenda` nuevo (índigo `#7d8cf0`); `--fk-dom-compromisos` de `#ff4757` a frambuesa `#ea5385`; `--fk-dom-analisis` a pizarra neutra `#8f9bb3`; `--fk-dom-inversion` hereda el turquesa `#2fd2bf`. Cada uno de los 11 dominios ganó `-bg` (`color-mix` 12%, mismo valor en ambos temas) y `-text` (variante segura como texto/UI, con override en `body.light-theme`). **Hallazgo corregido antes de implementar:** la frambuesa que proponía el ADR quedaba a solo 7° de matiz del rojo de `--fk-danger` (verificado con cálculo real de HSL, no a ojo): casi indistinguible con daltonismo protán. Se ajustó a `#ea5385` (antes `#ef5777` en el texto del ADR), separada 14-19° de matiz Y con luminosidad propia, sin perder contraste (verificado con WCAG real: los 11 dominios pasan ≥4.98:1 en oscuro y los 11 `-text` pasan ≥4.5:1 en claro contra `#fff` y `#f6f7fa`, cálculo en `/tmp/summary.mjs` de la sesión, no reproducido en el repo). Verificado en el navegador: la teja de "Deudas" en el menú "Más" resuelve a `rgb(234,83,133)` (=`#ea5385`) exacto, "Análisis" a `rgb(143,155,179)` (=`#8f9bb3`) exacto. **Hueco real encontrado para IV.2 (no introducido por esta tarea, preexistente):** varios usos ya desplegados leen el token base `--fk-dom-X` directo como color de texto (ej. `.inversion-hero__tipo-pct` en `analysis.css`, badges en `nudges.css`) en vez de `-text`; en tema claro esto falla contraste (verificado: el "100%" de Inversión da 1.89:1 contra blanco). Es el gap que ya documentaba el ADR 031 (hallazgo 2); IV.2 debe auditar y migrar cada uso de `color: var(--fk-dom-X)` a `var(--fk-dom-X-text)`, empezando por `.inversion-hero__tipo-pct` y `.dom-badge--*`. Validado: 2265 unit + 155 E2E + verificación manual de contraste en Chromium real (axe-core no cubre `color-contrast` en happy-dom). SW v339 → v340.)_
 
 _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-07-09); **IV.2b** (franja de modales + barras/anillos de progreso por dominio en Metas/Ahorro/Apartados/Me deben/3 factores del score de Análisis, vía `--fk-section-accent`; Presupuesto/Límites quedó fuera a propósito por su esquema de color ADR 019, coincide con LIM.1); **IV.2c** (Calendario: "fijo" de amarillo a índigo propio, tarjetas de evento con fondo teñido 8% en vez de franja lateral; Inicio: etiqueta de tipo `.dom-badge` en Pendientes/Prioridades + fix de un bug real donde un apartado heredaba el color de "fijo"); **IV.2d** (migración general `color: var(--fk-dom-X)` → `-text`). Detalle completo en CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md). SW v340 → v344.)_
-
-#### IV.3 - Números y estados (D5 del ADR 031)
-- Prioridad  : media
-- Estado     : pendiente (IV.1 cerrada, lista para empezar; conviene después de IV.2)
-- Objetivo   : documentar y completar el criterio de montos (dirección con signo, positivo en success, egresos neutros, estados con icono) en las superficies donde falte (stats del resumen semanal, comparaciones de Análisis). Mantiene ADR 019 sin cambios (confirmado por Esteban en P1+P5).
-- Secciones  : Inicio, Análisis, Movimientos
-- Depende de : nada (IV.1 cerrada)
-- Modelo     : Sonnet 5 - Medio
 
 #### IV.4 - Iconografía dirigida post-color
 - Prioridad  : decidir tras IV.2

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(analisis): IV.3 "Vs mes anterior" ya no tiñe de rojo la subida de gasto (D5, ADR 031) · 2026-07-10
+
+Cierra IV.3 (números y estados). Al retomar el criterio D5 del ADR 031 ("dirección con signo, egresos neutros, estados con icono"), se encontró que la card "Vs mes anterior" de Análisis (`_renderComparacionCategorias()`, G.2) seguía sin corregir: usaba `--fk-danger`/`--fk-danger-text` para el delta total, el fondo de fila (`.comparacion__row--sube`) y la columna de dirección (`.comparacion__dir`) cuando el gasto de una categoría o el total subían. Es exactamente la violación que el ADR 019/AUD.4 prohíbe ("gastar no es incumplir": las variaciones al alza van en neutro, nunca en rojo) y que el resumen semanal (F8, `resumen-card__trend--sube`) y `_renderTendencia()` (misma sección Análisis, comentario explícito en el código) ya habían corregido; esta card en particular se quedó fuera de esas pasadas anteriores.
+
+**Qué cambió:** en `styles/components/analysis.css`, `.comparacion__delta--sube` pasa de `--fk-danger-text` a `--fk-text-primary` (neutro); se elimina la regla de fondo `.comparacion__row--sube` (queda sin tinte, solo `--baja` conserva el fondo de éxito); se elimina la regla `.comparacion__row--sube .comparacion__dir` (cae al color por defecto, que hereda `--fk-text-primary` del `body` por cascada, verificado contra `styles/base.css`). Solo "bajar" el gasto sigue reforzándose en verde (`--fk-success`/`-text`). Los highlights ámbar (`.comparacion__highlight--alerta`, "empezaste a gastar en X") no se tocaron: no son rojo y funcionan como aviso informativo, coherente con el resto de la app.
+
+**Archivos tocados:** `styles/components/analysis.css` (3 reglas de color), `docs/contexto/analisis.md` (ficha actualizada con el hallazgo).
+
+**Verificación:** 2295/2295 unit verdes (CSS puro, sin lógica nueva que testear). **El preview local de este entorno no cargó** (limitación de infraestructura ya documentada en sesiones anteriores); la verificación se hizo por trazado manual de la cascada CSS contra el código fuente en vez de captura en Chromium real, diferencia explícita respecto al método habitual de IV.1/IV.2.
+
+**Podría afectar:** nada funcional (CSS puro; sin cambios de datos, JS ni EventBus).
+
+---
+
 ### docs(adr): DV.1 ADR 033 Dirección Visual premium escrito (Propuesta) · 2026-07-10
 
 Cierra DV.1 (8.º lote de triaje, pedido directo de Esteban): el entregable era el ADR, cero código tocado. [ADR 033](DECISIONS/033-direccion-visual-premium.md) escrito en estado **Propuesta**, con 5 preguntas (P1-P5, todas con recomendación) esperando la validación de Esteban. Construye SOBRE el ADR 031 sin revertirlo y ratifica los ADR 023/025/026/027.

@@ -1087,7 +1087,9 @@
   font-weight: var(--fk-font-semibold);
   margin: 0 0 var(--fk-space-3);
 }
-.comparacion__delta--sube { color: var(--fk-danger-text); }
+/* Gastar más no es incumplir (ADR 019 + D5 del ADR 031): la subida del
+   total queda en neutro, nunca en rojo. Solo bajar se celebra en verde. */
+.comparacion__delta--sube { color: var(--fk-text-primary); }
 .comparacion__delta--baja { color: var(--fk-success); }
 
 .comparacion__highlights {
@@ -1124,7 +1126,8 @@
   white-space: nowrap;
 }
 .comparacion__row { border-bottom: 1px solid var(--fk-border-subtle); }
-.comparacion__row--sube { background: color-mix(in srgb, var(--fk-danger) 5%, transparent); }
+/* "Subir" el gasto de una categoría no lleva tinte de alarma (ADR 019);
+   solo "bajar" se refuerza con fondo de éxito. */
 .comparacion__row--baja { background: color-mix(in srgb, var(--fk-success) 5%, transparent); }
 .comparacion__cat {
   padding: var(--fk-space-2);
@@ -1147,7 +1150,6 @@
   white-space: nowrap;
   font-weight: var(--fk-font-semibold);
 }
-.comparacion__row--sube .comparacion__dir { color: var(--fk-danger-text); }
 .comparacion__row--baja .comparacion__dir { color: var(--fk-success-text); }
 
 /* ── Patrón semanal (G.2) ────────────────────────────────── */
