@@ -8,6 +8,7 @@ import {
   estimarSalarioMensual,
   sugerirDistribucionPrima,
   parseCuotaManejo,
+  parseDatosTransferencia,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,
   calcularCostoGMF,
@@ -37,8 +38,8 @@ import {
   calcularSalarioMinimo,
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
-import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio } from '../../modules/dominio/tesoreria/view.js';
+import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
@@ -710,6 +711,157 @@ describe('normalizarCuenta() con cuota de manejo', () => {
       cuotaManejoDia:   '20',
     });
     expect(c.cuotaManejo).toEqual({ monto: 15_000, diaCobro: 20 });
+  });
+});
+
+// ── MC.14 - datos de transferencia ────────────────────────────────
+
+describe('validarCuenta() con datos de transferencia (MC.14)', () => {
+  const validBase = { ...datosFormValidos };
+
+  it('toggle apagado: no exige nada, sin errores', () => {
+    expect(validarCuenta(validBase)).toEqual([]);
+  });
+
+  it('toggle encendido sin ningún campo: sin errores (todo opcional)', () => {
+    expect(validarCuenta({ ...validBase, transferenciaActiva: 'on' })).toEqual([]);
+  });
+
+  it('toggle encendido con llave pero sin tipo de llave: error', () => {
+    const errs = validarCuenta({ ...validBase, transferenciaActiva: 'on', llave: '3001234567' });
+    expect(errs.some(e => /tipo de llave/i.test(e))).toBe(true);
+  });
+
+  it('toggle encendido con llave y tipo de llave: sin errores', () => {
+    const errs = validarCuenta({
+      ...validBase, transferenciaActiva: 'on', llave: '3001234567', tipoLlave: 'Celular',
+    });
+    expect(errs).toEqual([]);
+  });
+
+  it('tipo de llave fuera del catálogo: error', () => {
+    const errs = validarCuenta({
+      ...validBase, transferenciaActiva: 'on', llave: '3001234567', tipoLlave: 'Inventado',
+    });
+    expect(errs.some(e => /tipo de llave/i.test(e))).toBe(true);
+  });
+
+  it('numeroCuenta y alias solos, sin llave: sin errores (no exigen tipoLlave)', () => {
+    const errs = validarCuenta({
+      ...validBase, transferenciaActiva: 'on', numeroCuenta: '1234567890', alias: '@mi-alias',
+    });
+    expect(errs).toEqual([]);
+  });
+});
+
+describe('parseDatosTransferencia()', () => {
+  it('devuelve null si el toggle no está activo', () => {
+    expect(parseDatosTransferencia({})).toBeNull();
+    expect(parseDatosTransferencia({ transferenciaActiva: '' })).toBeNull();
+    expect(parseDatosTransferencia({ transferenciaActiva: 'false' })).toBeNull();
+  });
+
+  it('devuelve null si el toggle está activo pero no se llenó ningún campo', () => {
+    expect(parseDatosTransferencia({ transferenciaActiva: 'on' })).toBeNull();
+    expect(parseDatosTransferencia({ transferenciaActiva: 'on', numeroCuenta: '   ' })).toBeNull();
+  });
+
+  it('incluye solo los campos con contenido, recortando espacios', () => {
+    const dt = parseDatosTransferencia({
+      transferenciaActiva: 'on',
+      numeroCuenta: '  1234567890  ',
+      llave: '3001234567',
+      tipoLlave: 'Celular',
+      alias: '  @mi-alias  ',
+    });
+    expect(dt).toEqual({
+      numeroCuenta: '1234567890',
+      llave:        '3001234567',
+      tipoLlave:    'Celular',
+      alias:        '@mi-alias',
+    });
+  });
+
+  it('numeroCuenta solo, sin llave ni alias', () => {
+    const dt = parseDatosTransferencia({ transferenciaActiva: 'on', numeroCuenta: '1234567890' });
+    expect(dt).toEqual({ numeroCuenta: '1234567890' });
+  });
+
+  it('llave sin tipoLlave (caso defensivo, no debería llegar tras validarCuenta): tipoLlave queda null', () => {
+    const dt = parseDatosTransferencia({ transferenciaActiva: 'on', llave: '3001234567' });
+    expect(dt).toEqual({ llave: '3001234567', tipoLlave: null });
+  });
+
+  it('también acepta "true" o "1" como toggle activo', () => {
+    expect(parseDatosTransferencia({ transferenciaActiva: 'true', alias: '@x' })).toEqual({ alias: '@x' });
+    expect(parseDatosTransferencia({ transferenciaActiva: '1',    alias: '@x' })).toEqual({ alias: '@x' });
+  });
+});
+
+describe('normalizarCuenta() con datos de transferencia (MC.14)', () => {
+  it('datosTransferencia es null si el toggle no se marcó', () => {
+    const c = normalizarCuenta(datosFormValidos);
+    expect(c.datosTransferencia).toBeNull();
+  });
+
+  it('datosTransferencia se setea si el toggle está activo con contenido', () => {
+    const c = normalizarCuenta({
+      ...datosFormValidos,
+      transferenciaActiva: 'on',
+      numeroCuenta: '1234567890',
+      llave: 'correo@ejemplo.com',
+      tipoLlave: 'Correo',
+    });
+    expect(c.datosTransferencia).toEqual({
+      numeroCuenta: '1234567890',
+      llave:        'correo@ejemplo.com',
+      tipoLlave:    'Correo',
+    });
+  });
+});
+
+describe('renderFormCuenta() - bloque de datos de transferencia (MC.14)', () => {
+  it('incluye el toggle y el fieldset oculto por defecto', () => {
+    const html = renderFormCuenta();
+    expect(html).toContain('id="cuenta-transferencia-toggle"');
+    expect(html).toMatch(/id="cuenta-transferencia-fieldset"[^>]*hidden/);
+    expect(html).not.toMatch(/id="cuenta-transferencia-toggle"[^>]*checked/);
+  });
+
+  it('el selector de tipo de llave incluye todo TIPOS_LLAVE', () => {
+    const html = renderFormCuenta();
+    for (const t of TIPOS_LLAVE) {
+      expect(html).toContain(`<option value="${t}">${t}</option>`);
+    }
+  });
+});
+
+describe('renderListaCuentas() - hint de datos de transferencia (MC.14)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-tesoreria"></div>';
+  });
+
+  it('sin datosTransferencia, no muestra el hint', () => {
+    S.cuentas = [cuentaBase({ datosTransferencia: null })];
+    renderListaCuentas();
+    expect(document.getElementById('lista-tesoreria').innerHTML).not.toContain('🔑');
+  });
+
+  it('con datosTransferencia, combina número, llave y alias en un solo hint', () => {
+    S.cuentas = [cuentaBase({
+      datosTransferencia: {
+        numeroCuenta: '1234567890',
+        llave: '3001234567',
+        tipoLlave: 'Celular',
+        alias: '@mi-alias',
+      },
+    })];
+    renderListaCuentas();
+    const html = document.getElementById('lista-tesoreria').innerHTML;
+    expect(html).toContain('🔑');
+    expect(html).toContain('N.° 1234567890');
+    expect(html).toContain('Celular 3001234567');
+    expect(html).toContain('@mi-alias');
   });
 });
 

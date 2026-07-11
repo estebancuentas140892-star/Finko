@@ -17,6 +17,19 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  */
 
 /**
+ * @typedef {Object} DatosTransferencia
+ * Datos públicos que el usuario comparte cuando alguien le va a consignar a
+ * esta cuenta (MC.14). Solo identificadores públicos: nunca contraseñas,
+ * tokens ni credenciales. Todos los campos son opcionales entre sí; el
+ * objeto completo es `null` si el usuario no activó "guardar datos de
+ * transferencia" o los dejó todos vacíos.
+ * @property {string} [numeroCuenta]  Número de cuenta o de producto.
+ * @property {string} [llave]         Valor de la llave de transferencia.
+ * @property {string} [tipoLlave]     Ver TIPOS_LLAVE. Presente si `llave` lo está.
+ * @property {string} [alias]         Alias corto que el usuario reconoce (ej. "@mi-alias").
+ */
+
+/**
  * @typedef {Object} Cuenta
  * @property {string} id
  * @property {string} nombre
@@ -33,6 +46,9 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {boolean} [aplica4x1000]  Opcional. true si la cuenta está sujeta
  *                                     al GMF (4x1000). Siempre false para
  *                                     Efectivo. Ausente = no aplica.
+ * @property {DatosTransferencia|null} [datosTransferencia]  Opcional (MC.14).
+ *                                     Finko como punto de consulta rápida, no
+ *                                     para ejecutar transferencias.
  */
 
 /**

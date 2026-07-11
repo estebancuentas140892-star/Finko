@@ -185,6 +185,21 @@ function _editarCuenta(el) {
   if (cuotaDia)    cuotaDia.value      = tieneCuota ? cuenta.cuotaManejo.diaCobro : '';
   _toggleCuotaFieldset();
 
+  // 6. MC.14: pre-rellenar los datos de transferencia y actualizar el fieldset.
+  const transfToggle = form.querySelector('[data-transferencia-toggle]');
+  const numeroCuenta  = form.querySelector('[name="numeroCuenta"]');
+  const tipoLlave     = form.querySelector('[name="tipoLlave"]');
+  const llave         = form.querySelector('[name="llave"]');
+  const alias         = form.querySelector('[name="alias"]');
+  const dt            = cuenta.datosTransferencia;
+  const tieneTransf   = !!dt;
+  if (transfToggle)  transfToggle.checked = tieneTransf;
+  if (numeroCuenta)   numeroCuenta.value  = dt?.numeroCuenta ?? '';
+  if (tipoLlave)       tipoLlave.value    = dt?.tipoLlave ?? '';
+  if (llave)           llave.value        = dt?.llave ?? '';
+  if (alias)           alias.value        = dt?.alias ?? '';
+  _toggleTransferenciaFieldset();
+
   // Cambiar titulo del modal para que la persona sepa que esta editando.
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar cuenta';
@@ -258,6 +273,9 @@ export function inyectarFormCuenta() {
   // Toggle para mostrar/ocultar el fieldset de cuota de manejo.
   body.querySelector('[data-cuota-toggle]')?.addEventListener('change', _toggleCuotaFieldset);
 
+  // MC.14: toggle para mostrar/ocultar el fieldset de datos de transferencia.
+  body.querySelector('[data-transferencia-toggle]')?.addEventListener('change', _toggleTransferenciaFieldset);
+
   // Adaptar campos (tipo, 4x1000, cuota) según la clase de la entidad elegida.
   body.querySelector('[name="banco"]')?.addEventListener('change', _toggleCamposPorClase);
 
@@ -270,6 +288,14 @@ export function inyectarFormCuenta() {
 function _toggleCuotaFieldset() {
   const cb  = document.getElementById('cuenta-cuota-toggle');
   const set = document.getElementById('cuenta-cuota-fieldset');
+  if (!cb || !set) return;
+  set.hidden = !cb.checked;
+}
+
+/** MC.14: muestra u oculta el bloque de datos de transferencia según el checkbox. */
+function _toggleTransferenciaFieldset() {
+  const cb  = document.getElementById('cuenta-transferencia-toggle');
+  const set = document.getElementById('cuenta-transferencia-fieldset');
   if (!cb || !set) return;
   set.hidden = !cb.checked;
 }
@@ -331,6 +357,20 @@ function _toggleCamposPorClase() {
   } else {
     if (grupoCuota)     grupoCuota.hidden = false;
     _toggleCuotaFieldset(); // el fieldset lo controla el toggle, no la clase
+  }
+
+  // ── Datos de transferencia (MC.14) ────────────────────────────────
+  // El efectivo no tiene número de cuenta ni llave a la que consignar.
+  const toggleTransf   = document.getElementById('cuenta-transferencia-toggle');
+  const grupoTransf    = document.getElementById('form-group-transferencia');
+  const fieldsetTransf = document.getElementById('cuenta-transferencia-fieldset');
+  if (clase === 'efectivo') {
+    if (grupoTransf)    grupoTransf.hidden = true;
+    if (fieldsetTransf) fieldsetTransf.hidden = true;
+    if (toggleTransf)   toggleTransf.checked = false;
+  } else {
+    if (grupoTransf)    grupoTransf.hidden = false;
+    _toggleTransferenciaFieldset(); // el fieldset lo controla el toggle, no la clase
   }
 }
 

@@ -6,7 +6,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
-import { GMF, BANCOS_CO } from '../../../core/constants.js';
+import { GMF, BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
 
 /**
  * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
@@ -81,6 +81,21 @@ export function validarCuenta(datos) {
     }
   }
 
+  // MC.14: validar datos de transferencia solo si el toggle está activo.
+  // Todos los campos son opcionales entre sí, salvo que si hay llave, debe
+  // saberse de qué tipo es (celular, correo, documento...); sin eso el dato
+  // no sirve de mucho para quien lo va a leer.
+  if (_transferenciaActiva(datos)) {
+    const llave     = datos.llave?.trim();
+    const tipoLlave = datos.tipoLlave?.trim();
+    if (llave && !tipoLlave) {
+      errores.push('Debes indicar el tipo de llave.');
+    }
+    if (tipoLlave && !TIPOS_LLAVE.includes(tipoLlave)) {
+      errores.push('El tipo de llave seleccionado no es válido.');
+    }
+  }
+
   return errores;
 }
 
@@ -121,6 +136,44 @@ export function parseCuotaManejo(datos) {
   };
 }
 
+/**
+ * Indica si el form pidió activar los datos de transferencia (MC.14).
+ *
+ * @param {Record<string, string>} datos
+ * @returns {boolean}
+ */
+function _transferenciaActiva(datos) {
+  return _checkOn(datos?.transferenciaActiva);
+}
+
+/**
+ * Extrae los datos de transferencia del formulario (MC.14), o `null` si el
+ * toggle no está activo o el usuario lo activó sin llenar ningún campo.
+ * Asume que los datos ya pasaron `validarCuenta()`.
+ *
+ * @param {Record<string, string>} datos
+ * @returns {import('../../../core/state.js').DatosTransferencia | null}
+ */
+export function parseDatosTransferencia(datos) {
+  if (!_transferenciaActiva(datos)) return null;
+
+  const numeroCuenta = datos.numeroCuenta?.trim() || '';
+  const llave        = datos.llave?.trim() || '';
+  const tipoLlave     = datos.tipoLlave?.trim() || '';
+  const alias        = datos.alias?.trim() || '';
+
+  if (!numeroCuenta && !llave && !alias) return null;
+
+  const resultado = {};
+  if (numeroCuenta) resultado.numeroCuenta = numeroCuenta;
+  if (llave) {
+    resultado.llave     = llave;
+    resultado.tipoLlave = tipoLlave || null;
+  }
+  if (alias) resultado.alias = alias;
+  return resultado;
+}
+
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
 
 /**
@@ -155,6 +208,7 @@ export function normalizarCuenta(datos) {
     cuotaManejo: parseCuotaManejo(datos),
     // El efectivo nunca está sujeto al GMF (no hay movimiento financiero).
     aplica4x1000: banco !== 'Efectivo' && _checkOn(datos.aplica4x1000),
+    datosTransferencia: parseDatosTransferencia(datos),
   };
 }
 

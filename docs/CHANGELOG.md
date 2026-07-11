@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.14 datos de transferencia por cuenta · 2026-07-11
+
+Cierra MC.14 (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), rebanada independiente que ya podía ejecutarse sin esperar el resto de la iniciativa (MC.13, MC.15, MC.16). Hoy, cuando alguien le pide al usuario sus datos para consignarle, tiene que salir de Finko a buscarlos en otra parte (banca en línea, mensajes viejos, memoria); la app no tenía ningún lugar para guardar esa información de referencia.
+
+**Qué cambió:** en `modules/core/state.js` se agrega el typedef `DatosTransferencia` y el campo opcional `Cuenta.datosTransferencia`: número de cuenta, llave de transferencia con su tipo (`TIPOS_LLAVE`, nuevo catálogo en `core/constants.js`: Celular/Correo/Documento/Alfanumérico/Otro) y alias. En `modules/dominio/tesoreria/views/cuentas.js`, `renderFormCuenta()` agrega un bloque opcional detrás de un toggle "Guardar los datos que compartes cuando alguien te va a consignar" (mismo patrón de fieldset colapsable que ya usaba la cuota de manejo); `_renderCuentaItem()` muestra un hint compacto (🔑) cuando la cuenta tiene estos datos, igual que los hints existentes de cuota de manejo y GMF (no existe una vista de "detalle de cuenta" separada en esta sección, así que la tarjeta de lista sigue siendo el punto de consulta). En `modules/dominio/tesoreria/logic/cuentas.js`: `validarCuenta()` exige el tipo de llave cuando hay una llave (los demás campos son libres entre sí); `parseDatosTransferencia()` (nuevo) construye el objeto final o `null` si el toggle está apagado o quedó vacío tras recortar espacios. En `modules/dominio/tesoreria/acciones/cuentas.js`: wiring del toggle (`_toggleTransferenciaFieldset()`), pre-rellenado en modo edición, y el bloque se oculta para cuentas de clase `efectivo` (no tiene número de cuenta ni llave que aplique), igual que ya pasa con la cuota de manejo y el 4x1000.
+
+**Sin bump de `SCHEMA_VERSION`:** los campos son opcionales y `undefined`-safe en registros existentes, mismo precedente que `cuotaManejo`/`aplica4x1000` (tampoco tienen entrada en `_migrate()`, confirmado por grep antes de decidir).
+
+**Archivos tocados:** `modules/core/state.js`, `modules/core/constants.js`, `modules/dominio/tesoreria/logic/cuentas.js`, `modules/dominio/tesoreria/logic.js` (barrel), `modules/dominio/tesoreria/views/cuentas.js`, `modules/dominio/tesoreria/acciones/cuentas.js`, `tests/unit/tesoreria.test.js` (18 tests nuevos), `docs/contexto/mis-cuentas.md` (ficha nueva, primera de esta sección).
+
+**Verificación:** 2325/2325 unit verdes (18 nuevos: validación con/sin llave+tipo, parseo con todas las combinaciones de campos, normalización, render del toggle+fieldset+catálogo, render del hint combinado en la lista). 162/162 E2E verdes; una prueba de accesibilidad no relacionada (`#distribuir-ingreso-panel`) salió flaky en la corrida completa por contención de recursos, confirmada 3/3 al aislarla, sin relación con los archivos tocados. Lint verde.
+
+**Podría afectar:** nada funcional fuera de la tarjeta/formulario de cuenta; ningún otro dominio lee `datosTransferencia` todavía.
+
+---
+
 ### feat(agenda): CAL.3 selección automática del día actual al entrar al Calendario · 2026-07-10
 
 Cierra CAL.3 (`docs/BOARD.md`, sección Calendario). Antes, entrar a Calendario nunca mostraba nada del día de hoy hasta que el usuario tocaba la fecha manualmente, aunque tuviera compromisos vencidos ese mismo día; además, los días sin registros no respondían al click en absoluto (`aria-disabled`, sin `data-action`), así que si el usuario tocaba un día vacío por curiosidad, la app simplemente no hacía nada, sin explicar por qué.

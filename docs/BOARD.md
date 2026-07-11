@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-10 (CAL.3 cerrada: selección automática del día actual al entrar al Calendario).
+> Última actualización: 2026-07-11 (MC.14 cerrada: datos de transferencia por cuenta).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **IV.3 cerrada el 2026-07-10** (números y estados, D5 del ADR 031). **D.14 cerrada el 2026-07-10** (acreditar cuenta de origen al crear una deuda). **CAL.3 cerrada el 2026-07-10** (selección automática del día actual + mensaje explícito en día vacío). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; revisar `docs/BOARD.md` por la siguiente tarjeta independiente.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **IV.3 cerrada el 2026-07-10** (números y estados, D5 del ADR 031). **D.14 cerrada el 2026-07-10** (acreditar cuenta de origen al crear una deuda). **CAL.3 cerrada el 2026-07-10** (selección automática del día actual + mensaje explícito en día vacío). **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; revisar `docs/BOARD.md` por la siguiente tarjeta independiente.)_
 
 ---
 
@@ -74,7 +74,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 3 tarjetas: **MC.13** (Distribución v2, ampliada abajo), **MC.15** (UI de cuentas e ingresos) y **MC.16** (tarjeta de crédito integrada, requiere ADR). MC.14 (llaves de transferencia) sigue vigente como rebanada independiente. **Dos conflictos con decisiones aprobadas, señalados explícitamente (regla 2.7):** (a) el punto "los ingresos esporádicos NO deben ofrecer distribución" **revierte parcialmente NAV.A2b slice 2 del ADR 024** (que hoy ofrece distribuir tras un ingreso puntual): decidirlo formalmente al iniciar MC.13, no revertirlo en silencio; (b) "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un **movimiento automático sin confirmación**, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos (un solo criterio para débitos y créditos automáticos), no por separado.
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 3 tarjetas: **MC.13** (Distribución v2, ampliada abajo), **MC.15** (UI de cuentas e ingresos) y **MC.16** (tarjeta de crédito integrada, requiere ADR). **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): fue la rebanada independiente que ya podía ejecutarse sin esperar el resto de la iniciativa. **Dos conflictos con decisiones aprobadas, señalados explícitamente (regla 2.7):** (a) el punto "los ingresos esporádicos NO deben ofrecer distribución" **revierte parcialmente NAV.A2b slice 2 del ADR 024** (que hoy ofrece distribuir tras un ingreso puntual): decidirlo formalmente al iniciar MC.13, no revertirlo en silencio; (b) "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un **movimiento automático sin confirmación**, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos (un solo criterio para débitos y créditos automáticos), no por separado.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
@@ -102,15 +102,6 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Secciones  : Mis cuentas, Deudas, Calendario, Análisis (transversal vía EventBus, ADN 10)
 - Depende de : ADR propio; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
 - Modelo     : Fable 5 - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
-
-#### MC.14 - Datos de transferencia por cuenta (llaves, alias, número)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : cada cuenta permite registrar, opcional, los datos que el usuario consulta cuando alguien le va a consignar: número de cuenta, tipo, llave de transferencia, alias y tipo de llave (celular, correo, documento, alfanumérico, otro). Finko como punto de consulta rápida, NO para ejecutar transferencias. Solo identificadores públicos: sin contraseñas, tokens ni credenciales (mismo trato de protección que el resto de los datos; refuerza el valor de CFG.5 bloqueo de app, sin dependencia dura). Bump de schema (campos opcionales en `Cuenta`) + UI en el form y el detalle de cuenta.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/core/state.js` (typedef Cuenta), `modules/core/storage.js` (migración), `tesoreria` (form + detalle)
-- Depende de : nada. Independiente de MC.13.
-- Modelo     : Sonnet 5 - Medio
 
 #### MC.17 - Transferencias entre cuentas propias (con historial y automatización)
 - Prioridad  : alta (hoy mover dinero entre cuentas exige editar dos saldos a mano: propenso a error y sin rastro)

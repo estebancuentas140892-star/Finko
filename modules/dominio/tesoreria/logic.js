@@ -20,6 +20,7 @@ export {
   calcularTotalCuentas,
   validarCuenta,
   parseCuotaManejo,
+  parseDatosTransferencia,
   normalizarCuenta,
   compromisoDesdeCuotaManejo,
   compromisoCuotaManejoDeCuenta,

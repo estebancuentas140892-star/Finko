@@ -11,7 +11,7 @@ import { S } from '../../../core/state.js';
 import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
-import { BANCOS_CO } from '../../../core/constants.js';
+import { BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
 import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from '../logic/cuentas.js';
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
@@ -51,6 +51,10 @@ function _renderCuentaItem(cuenta) {
     ? `<p class="list-item__hint">💸 Aplica 4x1000 (GMF)</p>`
     : '';
 
+  // MC.14: datos de transferencia como punto de consulta rápida (no para
+  // ejecutar transferencias). Se combinan en un solo hint compacto.
+  const transferenciaHint = _formatDatosTransferencia(cuenta.datosTransferencia);
+
   return `
     <article class="list-item" data-id="${_esc(cuenta.id)}">
       <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
@@ -59,6 +63,7 @@ function _renderCuentaItem(cuenta) {
         <p class="list-item__subtitle">${subtitulo}</p>
         ${cuotaHint}
         ${gmfHint}
+        ${transferenciaHint}
       </div>
       <div class="list-item__meta">
         <p class="list-item__value">${f(cuenta.saldo)}</p>
@@ -74,6 +79,24 @@ function _renderCuentaItem(cuenta) {
                 aria-label="Eliminar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
       </div>
     </article>`;
+}
+
+/**
+ * Formatea los datos de transferencia de una cuenta (MC.14) en un solo hint
+ * compacto para la tarjeta de lista. Devuelve '' si la cuenta no tiene datos
+ * de transferencia guardados.
+ *
+ * @param {import('../../../core/state.js').DatosTransferencia|null|undefined} dt
+ * @returns {string}
+ */
+function _formatDatosTransferencia(dt) {
+  if (!dt) return '';
+  const partes = [];
+  if (dt.numeroCuenta) partes.push(`N.° ${_esc(dt.numeroCuenta)}`);
+  if (dt.llave)        partes.push(`${_esc(dt.tipoLlave ?? 'Llave')} ${_esc(dt.llave)}`);
+  if (dt.alias)        partes.push(_esc(dt.alias));
+  if (partes.length === 0) return '';
+  return `<p class="list-item__hint">🔑 ${partes.join(' · ')}</p>`;
 }
 
 function _renderEmptyState() {
@@ -196,6 +219,64 @@ export function renderFormCuenta() {
         </div>
         <p class="form-hint form-hint--muted">
           Finko crea un gasto fijo mensual con este monto y día. Lo verás en Calendario.
+        </p>
+      </fieldset>
+
+      <div class="form-group form-group--checkbox" id="form-group-transferencia">
+        <label class="checkbox-row">
+          <input type="checkbox"
+                 id="cuenta-transferencia-toggle"
+                 name="transferenciaActiva"
+                 data-transferencia-toggle />
+          <span>Guardar los datos que compartes cuando alguien te va a consignar</span>
+        </label>
+      </div>
+
+      <fieldset id="cuenta-transferencia-fieldset" class="cuota-fieldset" hidden>
+        <div class="form-group">
+          <label for="cuenta-numero" class="label">
+            Número de cuenta <span class="form-optional">opcional</span>
+          </label>
+          <input id="cuenta-numero"
+                 name="numeroCuenta"
+                 class="input"
+                 type="text"
+                 autocomplete="off"
+                 placeholder="Ej. 1234567890" />
+        </div>
+        <div class="form-group">
+          <label for="cuenta-tipo-llave" class="label">
+            Tipo de llave <span class="form-optional">opcional</span>
+          </label>
+          <select id="cuenta-tipo-llave" name="tipoLlave" class="input">
+            <option value="">Seleccionar…</option>
+            ${TIPOS_LLAVE.map(t => `<option value="${_esc(t)}">${_esc(t)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="cuenta-llave" class="label">
+            Llave de transferencia <span class="form-optional">opcional</span>
+          </label>
+          <input id="cuenta-llave"
+                 name="llave"
+                 class="input"
+                 type="text"
+                 autocomplete="off"
+                 placeholder="Ej. 300 123 4567, correo@ejemplo.com" />
+        </div>
+        <div class="form-group">
+          <label for="cuenta-alias" class="label">
+            Alias <span class="form-optional">opcional</span>
+          </label>
+          <input id="cuenta-alias"
+                 name="alias"
+                 class="input"
+                 type="text"
+                 autocomplete="off"
+                 placeholder="Ej. @mi-alias" />
+        </div>
+        <p class="form-hint form-hint--muted">
+          Finko solo guarda estos datos como referencia para que los consultes rápido. No ejecuta transferencias ni pide contraseñas o claves.
         </p>
       </fieldset>
 

@@ -392,6 +392,20 @@ export const TIPOS_POR_CLASE = {
 };
 
 /**
+ * Tipos de llave de transferencia reconocidos (MC.14, datos de consignación
+ * de una cuenta). Refleja las formas habituales en Colombia de identificar
+ * una cuenta para que alguien te consigne, sin ser una lista oficial de un
+ * sistema bancario específico.
+ */
+export const TIPOS_LLAVE = [
+  'Celular',
+  'Correo',
+  'Documento',
+  'Alfanumérico',
+  'Otro',
+];
+
+/**
  * Todas las categorías de gasto reconocidas por el sistema, incluyendo las
  * internas ("Deudas", "Ahorro") que el código usa al crear gastos-abono o
  * al calcular distribución de ingresos. No se deben eliminar: romperían la
