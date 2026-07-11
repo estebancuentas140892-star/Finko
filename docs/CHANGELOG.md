@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.15a menos redundancia en tarjetas de cuenta e ingreso fijo · 2026-07-11
+
+Cierra la primera rebanada de **MC.15** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"): la tarjeta se re-cortó en MC.15a/b/c/d (regla 2.1, la tarjeta original tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). Esta rebanada cierra los puntos 1 y 20 del brief.
+
+**Diagnóstico:** la tarjeta de una cuenta mostraba "Banco de Bogotá Ahorros" (título) seguido de "Banco de Bogotá · Ahorros" (subtítulo): pura repetición, porque el formulario de cuentas (`renderFormCuenta()`) nunca ofrece un campo para escribir un nombre propio, así que `cuenta.nombre` siempre sale de `_autoNombre(banco, tipo)` (`logic/cuentas.js`) y ya contiene ambos datos. La tarjeta de un ingreso fijo tenía el mismo problema cuando la descripción coincidía con la categoría elegida (ej. descripción "Salario mínimo" + categoría "Salario mínimo" → subtítulo "Quincenal · Salario mínimo").
+
+**Qué cambió:** en `modules/dominio/tesoreria/views/cuentas.js`, `_renderCuentaItem()` compara `cuenta.nombre` (normalizado: trim + minúsculas) contra el combinado `banco tipo`; si coinciden, omite el subtítulo por completo. Importante: no se asumió que el subtítulo sobra siempre. `normalizarCuenta()` (`logic/cuentas.js`) ya soporta un nombre explícito distinto si algún día el form lo expone (sus propios tests lo prueban: "respeta el nombre del usuario si lo provee"), así que en ese caso el subtítulo se conserva porque sí aportaría información nueva. En `modules/dominio/tesoreria/views/ingresos.js`, `_renderIngresoItem()` omite la categoría del subtítulo cuando coincide (normalizada) con la descripción, dejando solo la frecuencia; si difieren, conserva ambas como antes (el caso común y útil, ej. descripción "Sueldo Claro" + categoría "Salario mínimo").
+
+**Archivos tocados:** `modules/dominio/tesoreria/views/cuentas.js`, `modules/dominio/tesoreria/views/ingresos.js`, `tests/unit/tesoreria.test.js` (5 tests nuevos), `service-worker.js` (v346 → v347), `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2337/2337 unit verdes (5 nuevos: nombre autogenerado sin subtítulo, caso banco===tipo sin subtítulo, nombre explícito con subtítulo, descripción=categoría en ingresos omite categoría con match case-insensitive, descripción≠categoría conserva ambas). Lint verde.
+
+**Podría afectar:** ninguna cuenta o ingreso real pierde información: en cuentas, el 100% de las existentes tiene `nombre` autogenerado (ningún form ni migración histórica escribió uno distinto, confirmado por `git log -S` sobre el archivo del formulario), así que todas dejan de mostrar el subtítulo; en ingresos, solo se omite la categoría cuando es literalmente el mismo texto que la descripción.
+
+---
+
 ### fix(ahorro): BUG-012 lenguaje humano al desactivar el fondo de emergencia · 2026-07-11
 
 Corrige y elimina **BUG-012** de `docs/BUGS.md` (prioridad media, reportado por Esteban el 2026-07-08): al desactivar el Fondo de Emergencia (Ahorro → editar el fondo → "Desactivar fondo"), el modal de confirmación mostraba el texto literal "...la sección vuelve a mostrar el **empty state**...", jerga técnica de desarrollo visible al usuario final. Viola el ADN 11 (lenguaje humano, jamás jerga técnica en la UI).

@@ -48,7 +48,13 @@ function _renderEmptyStateIngresos() {
 function _renderIngresoItem(ing) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
-  const catLabel = ing.categoria ? ` · ${_esc(ing.categoria)}` : '';
+  // MC.15 (20): con "Salario mínimo" de categoría, es común que el usuario
+  // escriba la misma frase en la descripción ("Salario mínimo" + "Quincenal
+  // · Salario mínimo" se ve duplicado). Solo se omite cuando de verdad
+  // coinciden (a diferencia de cuentas, aquí sí pueden divergir: la
+  // descripción es texto libre real).
+  const mismoTexto = (ing.descripcion ?? '').trim().toLowerCase() === (ing.categoria ?? '').trim().toLowerCase();
+  const catLabel = (ing.categoria && !mismoTexto) ? ` · ${_esc(ing.categoria)}` : '';
 
   let diaHint = '';
   if (ing.diaPago) {

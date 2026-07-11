@@ -35,10 +35,22 @@ export function renderListaCuentas() {
  * @returns {string}
  */
 function _renderCuentaItem(cuenta) {
-  const nombre   = _esc(cuenta.nombre);
-  const banco    = _esc(cuenta.banco);
-  const tipo     = _esc(cuenta.tipo);
-  const subtitulo = banco === tipo ? banco : `${banco} · ${tipo}`;
+  const nombre = _esc(cuenta.nombre);
+  const banco  = cuenta.banco;
+  const tipo   = cuenta.tipo;
+
+  // MC.15 (1): el form actual no ofrece un campo para escribir un nombre
+  // propio, así que `nombre` sale siempre de `_autoNombre(banco, tipo)`
+  // (logic/cuentas.js) y ya contiene banco + tipo ("Banco de Bogotá
+  // Ahorros"). Mostrar además "Banco de Bogotá · Ahorros" debajo era ruido
+  // puro. `normalizarCuenta()` sí respeta un nombre explícito si algún día
+  // se habilita ese campo (ver sus tests): en ese caso el subtítulo vuelve
+  // a aportar información y se muestra.
+  const combinado = banco === tipo ? banco : `${banco} ${tipo}`;
+  const esAutoNombre = (cuenta.nombre ?? '').trim().toLowerCase() === combinado.trim().toLowerCase();
+  const subtituloHtml = esAutoNombre
+    ? ''
+    : `<p class="list-item__subtitle">${_esc(banco === tipo ? banco : `${banco} · ${tipo}`)}</p>`;
 
   // Si la cuenta tiene cuota de manejo, mostramos un hint adicional para que
   // el usuario sepa que hay un compromiso vinculado descontandose mes a mes.
@@ -60,7 +72,7 @@ function _renderCuentaItem(cuenta) {
       <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
       <div class="list-item__body">
         <p class="list-item__title">${nombre}</p>
-        <p class="list-item__subtitle">${subtitulo}</p>
+        ${subtituloHtml}
         ${cuotaHint}
         ${gmfHint}
         ${transferenciaHint}

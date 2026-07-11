@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-11 (BUG-012 corregido: lenguaje humano al desactivar el fondo de emergencia).
+> Última actualización: 2026-07-11 (MC.15a cerrada: menos redundancia en tarjetas de cuenta e ingreso fijo).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). **BUG-011 corregido el 2026-07-11** (la simulación de estrategia de pago ya no se presenta como aplicada). **BUG-012 corregido el 2026-07-11** (lenguaje humano al desactivar el fondo de emergencia; BUGS.md queda vacío de pendientes). Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; con IV.2 completa, **D.15** e **IN.8** ya no tienen bloqueo técnico.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). **BUG-011 y BUG-012 corregidos el 2026-07-11** (BUGS.md queda vacío de pendientes). **MC.15a cerrada el 2026-07-11** (menos redundancia en tarjetas de cuenta e ingreso fijo, primera rebanada de MC.15); quedan MC.15b/c/d abajo. Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; con IV.2 completa, **D.15** e **IN.8** ya no tienen bloqueo técnico.)_
 
 ---
 
@@ -87,13 +87,34 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1 (conflicto (b)); decisión del conflicto (a) sobre NAV.A2b
 - Modelo     : Opus 4.8 - Extra para el análisis/re-corte (redefine el asistente completo + decisión que toca ADR 024); rebanadas después con el modelo que corresponda
 
-#### MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles
+> **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). Quedan MC.15b, MC.15c y MC.15d abajo.
+
+#### MC.15b - Legibilidad de logos en la tarjeta de cuenta (solo contenedor)
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : (1) eliminar la información duplicada en la tarjeta de cuenta ("Banco de Bogotá Ahorros" + "Banco de Bogotá · Ahorros"); (20) lo mismo en ingresos fijos ("Salario mínimo" + "Quincenal · Salario mínimo"); (2) revisar legibilidad de logos (Davivienda, BBVA, DaviPlata, Nubank) ajustando SOLO el contenedor (tamaño óptico, espacio, márgenes): la regla de fidelidad del ADR 026/027 prohíbe tocar los SVG oficiales; (4) advertencia útil al crear cuenta ("¿seguro que no cobra cuota de manejo, seguros u otros costos periódicos?", conecta con `cuotaManejo` v5 existente); (8) los formularios de esta sección adoptan el orden categoría→descripción (auditoría transversal en CAT.4).
+- Objetivo   : (2) revisar legibilidad de los logos de Davivienda, BBVA, DaviPlata y Nubank en la teja de la lista de cuentas, ajustando SOLO el contenedor (tamaño óptico, espacio interno, márgenes): la regla de fidelidad del ADR 026/027 prohíbe tocar los SVG oficiales. Requiere capturas en ambos temas antes/después (el preview local de este entorno no siempre carga; usar E2E + captura en Chromium real cuando el navegador esté disponible).
 - Secciones  : Mis cuentas
-- Depende de : nada (independiente de MC.13/MC.16); coordina lo visual con IV.2
-- Modelo     : Sonnet 5 - Medio
+- Archivos   : `styles/components/*.css` (`.bank-avatar` y clases relacionadas), `modules/infra/bancos.js` (`bancoAvatar`, solo si el contenedor necesita una clase nueva, sin tocar los `<symbol>` del sprite)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo (CSS aislado con verificación visual)
+
+#### MC.15c - Aviso al crear cuenta: ¿seguro que no cobra costos periódicos?
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : (4) al crear una cuenta sin marcar "cobra cuota de manejo mensual", mostrar un hint breve invitando a confirmar ("¿Seguro que esta cuenta no cobra cuota de manejo, seguros u otros costos periódicos?"), conectando con el `cuotaManejo` ya existente (v5): no bloquea el guardado, solo reduce el olvido de un costo recurrente real.
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/views/cuentas.js` (`renderFormCuenta()`), posible wiring en `acciones/cuentas.js` si el hint reacciona al toggle
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+#### MC.15d - Orden categoría→descripción en el formulario de ingreso puntual
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : (8) `renderFormIngreso()` (ingresos fijos) ya cumple el orden categoría→descripción; `renderFormIngresoPuntual()` no (hoy: monto → cuenta → descripción → categoría → fecha). Reordenar para que categoría preceda a descripción, coordinando con la auditoría transversal **CAT.4** (mismo criterio, no dos pasadas del mismo formulario).
+- Secciones  : Mis cuentas
+- Archivos   : `modules/dominio/tesoreria/views/ingresos.js` (`renderFormIngresoPuntual()`)
+- Depende de : nada técnico; coordinar con CAT.4 para no tocar el mismo form dos veces
+- Modelo     : Sonnet 5 - Bajo
 
 #### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
 - Prioridad  : alta (concepto nuevo de dominio)
@@ -472,7 +493,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 - Estado     : pendiente
 - Objetivo   : dos reglas transversales de los briefs 2026-07-08 aplicadas en UNA pasada por todos los formularios. (1) **Orden** (brief Mis Cuentas punto 8): la categoría/tipo va primero y la descripción después, nunca al contrario; Gastos ya lo cumple (TX.9a) y el form de Deudas lo adoptará en su reordenamiento (Deudas v2). (2) **Fecha por defecto = hoy** (brief Me deben punto 1, elevado por Esteban a regla de toda la app): todo campo de fecha de un movimiento nuevo viene precargado con la fecha actual, editable; auditar cuáles forms ya lo hacen y corregir los que no (el de Me deben reportado explícitamente).
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
-- Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15 para no tocar el mismo form dos veces
+- Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15d para no tocar el mismo form dos veces
 - Modelo     : Sonnet 5 - Medio (una pasada por ~8 formularios con tests de ambas reglas)
 
 #### UPD.1 - Aviso de actualización disponible + novedades mostradas una sola vez

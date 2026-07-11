@@ -865,6 +865,37 @@ describe('renderListaCuentas() - hint de datos de transferencia (MC.14)', () => 
   });
 });
 
+// ── renderListaCuentas() - MC.15 (1): sin subtítulo redundante ───
+
+describe('renderListaCuentas() - MC.15 (1): subtítulo solo si aporta información', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-tesoreria"></div>';
+  });
+
+  it('con nombre autogenerado ("Banco Tipo"), no muestra el subtítulo', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Davivienda Ahorros', banco: 'Davivienda', tipo: 'Ahorros' })];
+    renderListaCuentas();
+    const el = document.getElementById('lista-tesoreria');
+    expect(el.querySelector('.list-item__title').textContent).toBe('Davivienda Ahorros');
+    expect(el.querySelector('.list-item__subtitle')).toBeNull();
+  });
+
+  it('con nombre autogenerado donde banco === tipo (billetera/efectivo), no muestra el subtítulo', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi' })];
+    renderListaCuentas();
+    const el = document.getElementById('lista-tesoreria');
+    expect(el.querySelector('.list-item__subtitle')).toBeNull();
+  });
+
+  it('con un nombre explícito que difiere de "banco tipo", sí muestra el subtítulo', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Nequi principal', banco: 'Nequi', tipo: 'Ahorros' })];
+    renderListaCuentas();
+    const el = document.getElementById('lista-tesoreria');
+    expect(el.querySelector('.list-item__title').textContent).toBe('Nequi principal');
+    expect(el.querySelector('.list-item__subtitle').textContent).toBe('Nequi · Ahorros');
+  });
+});
+
 // ── compromisoDesdeCuotaManejo() ─────────────────────────────────
 
 describe('compromisoDesdeCuotaManejo()', () => {
@@ -1462,6 +1493,42 @@ describe('renderListaIngresos() - iconografía de categorías (MC.9, teja en ID.
     const html = document.getElementById('lista-ingresos').innerHTML;
     expect(document.querySelector('.list-item__subtitle').textContent).not.toContain('·');
     expect(html).toContain('#i-saldo');
+  });
+});
+
+describe('renderListaIngresos() - MC.15 (20): sin subtítulo redundante', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-ingresos"></div>';
+    S.ingresos = [];
+  });
+
+  it('descripción igual a la categoría (mismo texto): el subtítulo omite la categoría', () => {
+    S.ingresos = [{
+      id: 'i3', descripcion: 'Salario mínimo', monto: 1_300_000,
+      frecuencia: 'Quincenal', categoria: 'Salario mínimo', activo: true,
+    }];
+    renderListaIngresos();
+    const el = document.getElementById('lista-ingresos');
+    expect(el.querySelector('.list-item__title').textContent).toBe('Salario mínimo');
+    expect(el.querySelector('.list-item__subtitle').textContent).toBe('Quincenal');
+  });
+
+  it('coincide ignorando mayúsculas/espacios: igual se omite', () => {
+    S.ingresos = [{
+      id: 'i4', descripcion: '  salario mínimo  ', monto: 1_300_000,
+      frecuencia: 'Mensual', categoria: 'Salario mínimo', activo: true,
+    }];
+    renderListaIngresos();
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Mensual');
+  });
+
+  it('descripción distinta de la categoría: el subtítulo conserva ambas', () => {
+    S.ingresos = [{
+      id: 'i5', descripcion: 'Sueldo Claro', monto: 1_300_000,
+      frecuencia: 'Quincenal', categoria: 'Salario mínimo', activo: true,
+    }];
+    renderListaIngresos();
+    expect(document.querySelector('.list-item__subtitle').textContent).toBe('Quincenal · Salario mínimo');
   });
 });
 
