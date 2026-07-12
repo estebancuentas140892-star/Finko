@@ -51,3 +51,16 @@ export function bancoClaseEmoji(bancoId) {
   const banco = BANCOS_CO.find(b => b.id === bancoId);
   return CLASE_EMOJI[banco?.clase] ?? CLASE_EMOJI.otro;
 }
+
+/**
+ * Clase de la entidad según el catálogo ('efectivo' | 'banco' | 'billetera'
+ * | 'otro'). Espejo en infra de `claseEntidad()` (tesoreria/logic/cuentas.js),
+ * para consumidores de infra que no pueden importar dominios (ADN 10), como
+ * el conteo "efectivo + N cuentas bancarias" del hero (IN.8c).
+ *
+ * @param {string} bancoId - valor guardado en cuenta.banco.
+ * @returns {string}
+ */
+export function bancoClase(bancoId) {
+  return BANCOS_CO.find(b => b.id === bancoId)?.clase ?? 'otro';
+}

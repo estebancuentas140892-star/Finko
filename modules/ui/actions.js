@@ -12,7 +12,7 @@ import { abrirModal, cerrarModal } from './modales.js';
 import { navigate } from '../infra/router.js';
 import { S, EventBus } from '../core/state.js';
 import { save } from '../core/storage.js';
-import { updSaldo } from '../infra/render.js';
+import { updSaldo, alternarDetalleCuentas } from '../infra/render.js';
 
 /** Mapa de acciones registradas: nombre → función handler. */
 const _acciones = new Map();
@@ -122,6 +122,12 @@ export function initAcciones() {
     S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
     save();
     updSaldo();
+  });
+
+  // Detalle por cuenta del hero (IN.8c, ADR 034 D4): expande/colapsa in situ.
+  // Estado solo de UI en memoria: sin save(), sin tocar S.config.
+  registrarAccion('saldo-detalle', () => {
+    alternarDetalleCuentas();
   });
 
   document.addEventListener('click', _handleClick);

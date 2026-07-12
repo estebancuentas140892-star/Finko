@@ -865,6 +865,97 @@ button.chip:focus-visible {
 .hero-inicio__ojo[hidden] { display: none; }
 .hero-inicio__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
+/* ── Detalle por cuenta (IN.8c, ADR 034 D4) ─────────────────────
+   Pill que expande in situ una fila por cuenta. El text-align:center del
+   hero centra el pill (inline-flex); las filas vuelven a alinear izquierda. */
+.hero-inicio__pill {
+  display: inline-flex;
+  align-items: center;
+  /* La celda es flex column con stretch: sin esto el pill ocupa todo el ancho. */
+  align-self: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-4);
+  border-radius: var(--fk-radius-full);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+}
+.hero-inicio__pill:hover {
+  background: var(--fk-bg-active);
+  color: var(--fk-text-primary);
+}
+.hero-inicio__pill[hidden] { display: none; }
+
+/* Miniatura de Mis cuentas dentro del pill: teja tesorería de 16px con
+   glifo de 12px. Deliberadamente bajo el piso de 16px de la escala de
+   iconos (ADR 023): es decoración dentro de un control de 12px de texto,
+   no un icono informativo suelto; el trazo se compensa en el sprite. */
+.hero-inicio__pill-icon {
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--fk-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fk-dom-tesoreria-bg);
+  color: var(--fk-dom-tesoreria-text);
+  flex-shrink: 0;
+}
+.hero-inicio__pill-icon .icon { --fk-icon-size: 0.75rem; }
+
+.hero-inicio__detalle {
+  list-style: none;
+  margin: var(--fk-space-2) 0 0;
+  padding: var(--fk-space-4) 0 0;
+  border-top: 1px solid var(--fk-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  text-align: left;
+}
+.hero-inicio__detalle[hidden] { display: none; }
+
+/* Entrada suave al expandir (ADR 033 D4: solo opacity + transform, nunca
+   height animado). prefers-reduced-motion la apaga. */
+.hero-inicio__cuenta {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  animation: hero-detalle-in 180ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes hero-detalle-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-inicio__cuenta { animation: none; }
+}
+
+.hero-inicio__cuenta-nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hero-inicio__cuenta-saldo {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* ════════════════════════════════════════════════════════════
    VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
    Se renderiza solo si hay items. Scroll vertical si >5 items

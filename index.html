@@ -406,6 +406,22 @@
             <!-- Estado normal: visible cuando hay cuentas registradas -->
             <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
             <p class="hero-inicio__valor" id="saldo-total">$0</p>
+            <!-- Detalle por cuenta (IN.8c, ADR 034 D4): expande in situ una
+                 fila por cuenta. Estado solo de UI en memoria (no persiste);
+                 colapsado por defecto. render.js (updSaldo) llena las filas y
+                 sincroniza pill, aria-expanded y la máscara de privacidad
+                 (el ojo enmascara total Y detalle juntos, extensión IN.2). -->
+            <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
+                    data-action="saldo-detalle" aria-expanded="false"
+                    aria-controls="saldo-detalle">
+              <span class="hero-inicio__pill-icon" aria-hidden="true">
+                <svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg>
+              </span>
+              <span id="saldo-detalle-label">Ver detalle por cuenta</span>
+            </button>
+            <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
+            <!-- Conteo visible solo con el detalle colapsado (expandido lo
+                 vuelve redundante); updSaldo() calcula el texto real. -->
             <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
             <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->

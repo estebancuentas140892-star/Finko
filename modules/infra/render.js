@@ -9,8 +9,9 @@
  */
 
 import { S } from '../core/state.js';
-import { f } from './utils.js';
+import { f, esc as _esc } from './utils.js';
 import { countUp, stopCount } from './animate.js';
+import { bancoAvatar, bancoClase } from './bancos.js';
 
 /**
  * Máscara del saldo cuando el usuario lo oculta (IN.2, estilo app bancaria).
@@ -18,11 +19,31 @@ import { countUp, stopCount } from './animate.js';
  */
 export const SALDO_MASCARA = '$••••••';
 
+/** Máscara por fila del detalle por cuenta (IN.8c): más corta que la del
+ *  total, igual que el mockup del ADR 034; tampoco revela magnitud. */
+export const SALDO_MASCARA_CUENTA = '••••';
+
 /** @type {Array<() => void>} Funciones de render registradas por los dominios. */
 const _renders = [];
 
 /** Último saldo mostrado: permite animar solo cuando el valor cambia. */
 let _prevSaldo = null;
+
+/**
+ * Detalle por cuenta del hero expandido o no (IN.8c, ADR 034 D4).
+ * Estado SOLO de UI en memoria: colapsado en cada apertura de la app,
+ * decisión explícita del ADR (no persistir hasta que el uso real lo pida).
+ */
+let _detalleCuentasAbierto = false;
+
+/**
+ * Alterna el detalle por cuenta del hero y re-renderiza el saldo.
+ * La invoca la acción `saldo-detalle` (actions.js).
+ */
+export function alternarDetalleCuentas() {
+  _detalleCuentasAbierto = !_detalleCuentasAbierto;
+  updSaldo();
+}
 
 /**
  * Registra una función de render de dominio para que `renderAll` la invoque.
@@ -119,6 +140,70 @@ export function updSaldo() {
     const use = ojo.querySelector('use');
     if (use) use.setAttribute('href', oculto ? '#i-eye-off' : '#i-eye');
   }
+
+  // Detalle por cuenta (IN.8c, ADR 034 D4): pill + filas. La máscara del ojo
+  // cubre total Y detalle juntos (extensión de IN.2): el saldo real de cada
+  // cuenta tampoco toca el DOM mientras está oculto.
+  const abierto = _detalleCuentasAbierto && !sinCuentas;
+  const pill    = document.getElementById('saldo-detalle-toggle');
+  const detalle = document.getElementById('saldo-detalle');
+  if (pill) {
+    pill.hidden = sinCuentas;
+    pill.setAttribute('aria-expanded', String(abierto));
+    const labelPill = document.getElementById('saldo-detalle-label');
+    if (labelPill) labelPill.textContent = abierto ? 'Ocultar detalle' : 'Ver detalle por cuenta';
+  }
+  if (detalle) {
+    if (!abierto) {
+      detalle.hidden = true;
+      detalle.innerHTML = '';
+    } else {
+      detalle.hidden = false;
+      detalle.innerHTML = cuentasActivas.map(c => {
+        // Cuentas viejas sin `banco` pero de efectivo caen a la teja Efectivo.
+        const bancoId = c.banco ?? (_esEfectivo(c) ? 'Efectivo' : undefined);
+        const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
+        return `
+          <li class="hero-inicio__cuenta">
+            ${bancoAvatar(bancoId)}
+            <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
+            <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
+          </li>`;
+      }).join('');
+    }
+  }
+
+  // "efectivo + N cuentas bancarias": solo colapsado (expandido es redundante).
+  if (desc && !sinCuentas) {
+    desc.hidden = abierto;
+    if (!abierto) desc.textContent = _descCuentas(cuentasActivas);
+  }
+}
+
+/**
+ * ¿La cuenta es de efectivo? Por catálogo (`banco` → clase) y, defensivo,
+ * por el tipo legacy cuando `banco` no existe en datos viejos.
+ * @param {import('../core/state.js').Cuenta} c
+ * @returns {boolean}
+ */
+function _esEfectivo(c) {
+  if (c.banco) return bancoClase(c.banco) === 'efectivo';
+  return /^efectivo$/i.test(c.tipo ?? '');
+}
+
+/**
+ * Texto del conteo bajo el saldo (IN.8c): describe la composición real en
+ * vez del "efectivo + cuentas bancarias" fijo de antes.
+ * @param {import('../core/state.js').Cuenta[]} cuentas - activas.
+ * @returns {string}
+ */
+function _descCuentas(cuentas) {
+  const efectivo  = cuentas.filter(_esEfectivo).length;
+  const bancarias = cuentas.length - efectivo;
+  const txtBancarias = bancarias === 1 ? '1 cuenta bancaria' : `${bancarias} cuentas bancarias`;
+  if (efectivo > 0 && bancarias > 0) return `efectivo + ${txtBancarias}`;
+  if (bancarias > 0) return txtBancarias;
+  return 'solo efectivo';
 }
 
 /**

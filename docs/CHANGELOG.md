@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IN.8c detalle por cuenta expandible en el hero + máscara extendida · 2026-07-12
+
+Cierra **IN.8c** (`docs/BOARD.md`, iniciativa "Inicio v2"), tercera rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D4, resuelve la decisión UX que IN.2 dejó abierta).
+
+**Qué cambió:** bajo el monto del hero aparece el pill `#saldo-detalle-toggle` ("Ver detalle por cuenta" ↔ "Ocultar detalle", con `aria-expanded`/`aria-controls`) que expande in situ una lista con una fila por cuenta activa: teja de marca del banco (`bancoAvatar()`, ADR 025), nombre (escapado) y saldo tabular; el efectivo es una fila más. Reglas del ADR implementadas tal cual: **colapsado por defecto** y **estado solo de UI en memoria** (`_detalleCuentasAbierto` en `render.js`; la acción nueva `saldo-detalle` no llama a `save()` ni toca `S.config`, verificado por test); **la máscara del ojo cubre total Y detalle juntos** (extensión de IN.2: filas con `SALDO_MASCARA_CUENTA` y ningún saldo real toca el DOM mientras está oculto); **el conteo "efectivo + N cuentas bancarias" solo colapsado** y ahora con datos reales (`_descCuentas()`: "efectivo + 2 cuentas bancarias", "1 cuenta bancaria", "solo efectivo"; antes era un texto fijo). Animación de entrada de 180 ms solo con `opacity` + `transform` (disciplina ADR 033 D4), apagada bajo `prefers-reduced-motion`. Helper nuevo `bancoClase()` en `infra/bancos.js`, espejo de `claseEntidad()` (tesorería) para consumidores de infra que no pueden importar dominios (ADN 10).
+
+**Archivos tocados:** `index.html` (pill + lista en el hero), `modules/infra/render.js` (estado, `alternarDetalleCuentas()`, filas, conteo real, `SALDO_MASCARA_CUENTA`), `modules/ui/actions.js` (acción `saldo-detalle`), `modules/infra/bancos.js` (`bancoClase()`), `styles/components/domain.css` (pill, tile en miniatura, filas, animación), `tests/unit/render.test.js` (fixture + 10 tests), `tests/e2e/smoke.test.js` (1 test), `service-worker.js` (v349 → v350), `docs/contexto/inicio.md`.
+
+**Verificación:** 2347/2347 unit (10 nuevos: default colapsado, conteos singular/plural/sin efectivo/solo efectivo, filas con tejas y montos, máscara total+detalle sin montos reales en el DOM, colapso limpia, sin cuentas oculta todo, escape de nombre, acción sin persistencia) + 166/166 E2E (1 nuevo en Chromium real: expandir, enmascarar, desenmascarar y recargar vuelve colapsado) + lint verdes. Capturas móvil en ambos temas (expandido y enmascarado) revisadas contra el mockup; fix visual encontrado en la revisión: el pill estiraba al ancho completo por el stretch del flex column, corregido con `align-self: center`.
+
+**Podría afectar:** nada persistido (cero cambios de schema). El texto del conteo bajo el saldo cambia de fijo a real: usuarios sin cuenta de efectivo dejan de leer "efectivo + ..." engañoso.
+
+---
+
 ### feat(ui): IN.8b hero con saldo protagonista + ojo estable + piloto visual ADR 033 · 2026-07-12
 
 Cierra **IN.8b** (`docs/BOARD.md`, iniciativa "Inicio v2"), segunda rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisiones D2 y D3) y estreno del piloto acotado del [ADR 033](DECISIONS/033-direccion-visual-premium.md) (D1 sombra en reposo + D2 degradado de identidad, solo en el hero de Inicio; DV.2a sigue pendiente).

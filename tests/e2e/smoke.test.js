@@ -258,6 +258,53 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     expect(despues.x).toBe(antes.x);
     expect(despues.y).toBe(antes.y);
   });
+
+  test('el detalle por cuenta expande, respeta la máscara y no persiste (IN.8c, ADR 034 D4)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [
+          { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 1450000, activa: true },
+          { id: 'c2', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo', saldo: 350000, activa: true },
+        ],
+        ingresos: [],
+        gastos: [],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // Colapsado por defecto: conteo real visible, sin filas.
+    await expect(page.locator('#saldo-detalle')).toBeHidden();
+    await expect(page.locator('#saldo-desc')).toHaveText('efectivo + 1 cuenta bancaria');
+
+    // Expandir: una fila por cuenta con su saldo; el conteo se oculta.
+    await page.click('#saldo-detalle-toggle');
+    await expect(page.locator('#saldo-detalle .hero-inicio__cuenta')).toHaveCount(2);
+    await expect(page.locator('#saldo-detalle')).toContainText('Bancolombia');
+    await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
+    await expect(page.locator('#saldo-desc')).toBeHidden();
+
+    // El ojo enmascara total Y detalle juntos (extensión IN.2).
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••');
+    await expect(page.locator('#saldo-detalle')).not.toContainText('1.450.000');
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-detalle')).toContainText('$1.450.000');
+
+    // Estado solo de UI: tras recargar vuelve colapsado (no se persiste).
+    await page.waitForTimeout(400);
+    await page.reload();
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#saldo-detalle')).toBeHidden();
+    await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-expanded', 'false');
+  });
 });
 
 // ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────

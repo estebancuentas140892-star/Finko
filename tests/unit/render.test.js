@@ -18,7 +18,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { S } from '../../modules/core/state.js';
-import { updSaldo, updSaludo, SALDO_MASCARA } from '../../modules/infra/render.js';
+import {
+  updSaldo, updSaludo, alternarDetalleCuentas,
+  SALDO_MASCARA, SALDO_MASCARA_CUENTA,
+} from '../../modules/infra/render.js';
 import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 
 // ── SETUP ────────────────────────────────────────────────────────────────────
@@ -36,6 +39,13 @@ function montarHero() {
       </button>
       <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
       <p class="hero-inicio__valor" id="saldo-total">$0</p>
+      <button class="hero-inicio__pill" type="button" id="saldo-detalle-toggle"
+              data-action="saldo-detalle" aria-expanded="false"
+              aria-controls="saldo-detalle">
+        <span class="hero-inicio__pill-icon"><svg class="icon"><use href="#i-cuentas"/></svg></span>
+        <span id="saldo-detalle-label">Ver detalle por cuenta</span>
+      </button>
+      <ul class="hero-inicio__detalle" id="saldo-detalle" role="list" hidden></ul>
       <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
       <div id="hero-guia-saldo" hidden></div>
     </article>`;
@@ -174,6 +184,115 @@ describe('acción saldo-visibilidad', () => {
     dispatch(elOjo(), new Event('click'));
     expect(S.config.ocultarSaldo).toBe(true);
     expect(elSaldo().textContent).toBe(SALDO_MASCARA);
+  });
+});
+
+// ── DETALLE POR CUENTA (IN.8c, ADR 034 D4) ───────────────────────────────────
+
+describe('updSaldo() - detalle por cuenta expandible', () => {
+  const elPill    = () => document.getElementById('saldo-detalle-toggle');
+  const elDetalle = () => document.getElementById('saldo-detalle');
+  const elDesc    = () => document.getElementById('saldo-desc');
+
+  /** Colapsa el detalle si un test anterior lo dejó abierto (estado de módulo). */
+  function normalizarColapsado() {
+    updSaldo();
+    if (elPill().getAttribute('aria-expanded') === 'true') alternarDetalleCuentas();
+  }
+
+  beforeEach(() => {
+    S.cuentas = [
+      cuenta(1_450_000, { id: 'c1', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros' }),
+      cuenta(685_000,   { id: 'c2', nombre: 'Nequi',       banco: 'Nequi',       tipo: 'Ahorros' }),
+      cuenta(350_000,   { id: 'c3', nombre: 'Efectivo',    banco: 'Efectivo',    tipo: 'Efectivo' }),
+    ];
+    normalizarColapsado();
+  });
+
+  it('colapsado por defecto: pill visible, detalle oculto, conteo visible', () => {
+    expect(elPill().hidden).toBe(false);
+    expect(elPill().getAttribute('aria-expanded')).toBe('false');
+    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Ver detalle por cuenta');
+    expect(elDetalle().hidden).toBe(true);
+    expect(elDetalle().innerHTML).toBe('');
+    expect(elDesc().hidden).toBe(false);
+  });
+
+  it('el conteo describe la composición real: efectivo + N cuentas bancarias', () => {
+    expect(elDesc().textContent).toBe('efectivo + 2 cuentas bancarias');
+  });
+
+  it('conteo sin efectivo: solo cuentas bancarias (singular con 1)', () => {
+    S.cuentas = [cuenta(100, { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros' })];
+    updSaldo();
+    expect(elDesc().textContent).toBe('1 cuenta bancaria');
+  });
+
+  it('conteo solo con efectivo', () => {
+    S.cuentas = [cuenta(100, { id: 'c1', nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
+    updSaldo();
+    expect(elDesc().textContent).toBe('solo efectivo');
+  });
+
+  it('expandir muestra una fila por cuenta (teja + nombre + saldo) y oculta el conteo', () => {
+    alternarDetalleCuentas();
+    expect(elPill().getAttribute('aria-expanded')).toBe('true');
+    expect(document.getElementById('saldo-detalle-label').textContent).toBe('Ocultar detalle');
+    expect(elDetalle().hidden).toBe(false);
+    expect(elDetalle().querySelectorAll('.hero-inicio__cuenta').length).toBe(3);
+    expect(elDetalle().innerHTML).toContain('Bancolombia');
+    expect(elDetalle().innerHTML).toContain('$1.450.000');
+    expect(elDetalle().innerHTML).toContain('$685.000');
+    expect(elDetalle().innerHTML).toContain('$350.000');
+    expect(elDetalle().querySelectorAll('.bank-avatar').length).toBe(3);
+    expect(elDesc().hidden).toBe(true);
+    alternarDetalleCuentas();
+  });
+
+  it('la máscara del ojo cubre total Y detalle: ningún saldo real toca el DOM', () => {
+    S.config.ocultarSaldo = true;
+    alternarDetalleCuentas();
+    expect(elSaldo().textContent).toBe(SALDO_MASCARA);
+    const saldos = [...elDetalle().querySelectorAll('.hero-inicio__cuenta-saldo')];
+    expect(saldos.length).toBe(3);
+    for (const s of saldos) expect(s.textContent).toBe(SALDO_MASCARA_CUENTA);
+    expect(document.body.innerHTML).not.toContain('1.450.000');
+    expect(document.body.innerHTML).not.toContain('685.000');
+    expect(document.body.innerHTML).not.toContain('350.000');
+    alternarDetalleCuentas();
+  });
+
+  it('colapsar limpia las filas y devuelve el conteo', () => {
+    alternarDetalleCuentas();
+    alternarDetalleCuentas();
+    expect(elDetalle().hidden).toBe(true);
+    expect(elDetalle().innerHTML).toBe('');
+    expect(elDesc().hidden).toBe(false);
+  });
+
+  it('sin cuentas: pill y detalle ocultos junto con el resto del hero', () => {
+    S.cuentas = [];
+    updSaldo();
+    expect(elPill().hidden).toBe(true);
+    expect(elDetalle().hidden).toBe(true);
+  });
+
+  it('el nombre de la cuenta se escapa (sin inyección de HTML)', () => {
+    S.cuentas = [cuenta(100, { id: 'c1', nombre: '<img src=x onerror=alert(1)>', banco: 'Nequi', tipo: 'Ahorros' })];
+    alternarDetalleCuentas();
+    expect(elDetalle().querySelector('img')).toBeNull();
+    expect(elDetalle().innerHTML).toContain('&lt;img');
+    alternarDetalleCuentas();
+  });
+
+  it('la acción saldo-detalle alterna sin persistir nada en S.config', () => {
+    initAcciones();
+    const antes = JSON.stringify(S.config);
+    dispatch(elPill(), new Event('click'));
+    expect(elPill().getAttribute('aria-expanded')).toBe('true');
+    expect(JSON.stringify(S.config)).toBe(antes);
+    dispatch(elPill(), new Event('click'));
+    expect(elPill().getAttribute('aria-expanded')).toBe('false');
   });
 });
 
