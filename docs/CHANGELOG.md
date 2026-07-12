@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): IN.8e Pendientes del mes sin línea roja + Gestionar → Calendario · 2026-07-12
+
+Cierra **IN.8e** (`docs/BOARD.md`, iniciativa "Inicio v2"), quinta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D5).
+
+**Qué cambió:** `renderPanelVencidos()` (`compromisos/views/dashboard.js`) deja el `border-left: 3px solid var(--fk-danger)` de `.vencidos-card` (ADR 019, "gastar no es incumplir"): la urgencia vive SOLO en un texto de estado por ítem, nunca en el borde/fondo de toda la tarjeta. Cada ítem gana una fila `.vencidos-card__meta` con **badge corto** ("Deuda"/"Gasto fijo", `_tipoBadgeCorto()` nuevo, propio de este panel; `_tipoBadge()` con las etiquetas largas sigue intacto para "Próximas prioridades") + **estado temporal semántico** ("Venció hace N días"/"Venció ayer" en `--fk-danger-text`, "Vence hoy" en `--fk-warning-text`, tokens ya validados AA en el resto de la app). El **título** deja de incluir el conteo ("2 pendientes del mes" → "Pendientes del mes"); el número pasa a un **badge circular** en el header (`.vencidos-card__counter`, `--fk-danger-bg`/`-text`). El monto de cada ítem sube a peso `--fk-font-bold` + `font-variant-numeric: tabular-nums` (el 15px del mockup no tiene token exacto en la escala; se conserva `--fk-text-sm`, mismo criterio de IN.8b). **"Gestionar" pasa de `#compromisos` a `#agenda`**: el Calendario es el centro de gestión de obligaciones por fecha (ampliación del 3.er lote del 2026-07-08, formalizada ahora en el ADR); `aria-label` actualizado a "Ir al calendario", igual que "Próximas prioridades".
+
+**Archivos tocados:** `modules/dominio/compromisos/views/dashboard.js` (`_tipoBadgeCorto()`, `renderPanelVencidos()`), `styles/components/domain.css` (`.vencidos-card` sin border-left, `__counter`, `__meta`, `__estado--danger/--warning`, `__name`/`__amount` con peso y tabular-nums), `tests/unit/compromisos.test.js` (7 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v351 → v352), `docs/contexto/inicio.md`.
+
+**Verificación:** 2356/2356 unit (7 nuevos: título sin conteo + badge circular, "Venció hace 2 días" en danger con badge "Deuda", "Vence hoy" en warning con badge "Gasto fijo", deuda personal también usa "Deuda", "Venció ayer", ausencia de clases de severidad viejas, link a `#agenda` con aria-label nuevo) + 167/167 E2E (1 nuevo en Chromium real: badge corto, colores semánticos por estado, click en "Gestionar" navega a `#sec-agenda`) + lint verdes.
+
+**Podría afectar:** nada persistido (cero cambios de schema). Un usuario que antes llegaba a la lista completa de Compromisos desde "Gestionar" ahora llega al Calendario; la lista de Compromisos sigue accesible por su propio ícono de navegación.
+
+---
+
 ### feat(ui): IN.8d header de perfil con avatar de iniciales + saludo en dos líneas · 2026-07-12
 
 Cierra **IN.8d** (`docs/BOARD.md`, iniciativa "Inicio v2"), cuarta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D8, cierra la absorción de IN.6b: iniciales, sin foto).

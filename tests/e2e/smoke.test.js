@@ -305,6 +305,59 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle')).toBeHidden();
     await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
+
+  test('Pendientes del mes sin línea roja, badge corto y "Gestionar" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const hoy = new Date();
+      const dia = hoy.getDate();
+      const diaPasado = ((dia - 2 + 28 - 1) % 28) + 1;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: [],
+        compromisos: [
+          { id: 'v1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', cuotaMensual: 180000, diaPago: diaPasado, activo: true, frecuencia: 'Mensual' },
+          { id: 'v2', descripcion: 'Netflix', tipo: 'fijo', monto: 44900, diaPago: dia, activo: true, frecuencia: 'Mensual' },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const panel = page.locator('#panel-vencidos');
+    await expect(panel).toBeVisible();
+
+    // Sin línea roja de alarma en toda la tarjeta (ADR 019: gastar no es incumplir).
+    await expect(panel.locator('.vencidos-card')).toHaveCSS('border-left-width', '1px');
+
+    // Título sin conteo embebido; el número vive en el badge circular.
+    await expect(panel.locator('.vencidos-card__title')).toHaveText('Pendientes del mes 2');
+    await expect(panel.locator('.vencidos-card__counter')).toHaveText('2');
+
+    // Ítem vencido: badge corto "Deuda" + estado en color danger, sin borde propio.
+    const item1 = panel.locator('.vencidos-card__item').first();
+    await expect(item1).toContainText('Deuda');
+    await expect(item1.locator('.vencidos-card__estado')).toHaveText('Venció hace 2 días');
+    await expect(item1.locator('.vencidos-card__estado')).toHaveClass(/--danger/);
+
+    // Ítem que vence hoy: badge corto "Gasto fijo" + estado en color warning.
+    const item2 = panel.locator('.vencidos-card__item').nth(1);
+    await expect(item2).toContainText('Gasto fijo');
+    await expect(item2.locator('.vencidos-card__estado')).toHaveText('Vence hoy');
+    await expect(item2.locator('.vencidos-card__estado')).toHaveClass(/--warning/);
+
+    // "Gestionar" lleva al Calendario, no a la lista de compromisos.
+    const gestionar = panel.locator('.vencidos-card__link');
+    await expect(gestionar).toHaveAttribute('href', '#agenda');
+    await gestionar.click();
+    await expect(page.locator('#sec-agenda.active')).toBeVisible();
+  });
 });
 
 // ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────

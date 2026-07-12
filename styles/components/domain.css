@@ -1032,10 +1032,13 @@ button.chip:focus-visible {
    para no inflar el dashboard.
    ════════════════════════════════════════════════════════════ */
 
+/* Sin border-left rojo de alarma (IN.8e, ADR 034 D5): "gastar no es
+   incumplir" (ADR 019); la urgencia vive solo en el texto de estado de
+   cada ítem (.vencidos-card__estado), nunca en el borde/fondo de la
+   tarjeta completa. */
 .vencidos-card {
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
-  border-left: 3px solid var(--fk-danger);
   border-radius: var(--fk-radius-lg);
   margin-bottom: 1rem;
   overflow: hidden;
@@ -1051,10 +1054,30 @@ button.chip:focus-visible {
 }
 
 .vencidos-card__title {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
   font-size: var(--fk-text-sm);
   font-weight: 600;
   color: var(--fk-text-primary);
   margin: 0;
+}
+
+/* Contador circular (D5): reemplaza al conteo dentro del título
+   ("2 pendientes del mes" → "Pendientes del mes" + badge "2"). */
+.vencidos-card__counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--fk-space-1);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-danger-bg);
+  color: var(--fk-danger-text);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
 }
 
 .vencidos-card__link {
@@ -1129,6 +1152,7 @@ button.chip:focus-visible {
 
 .vencidos-card__name {
   font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
   margin: 0;
   overflow: hidden;
@@ -1136,15 +1160,30 @@ button.chip:focus-visible {
   white-space: nowrap;
 }
 
-.vencidos-card__sub {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  margin: 0.1rem 0 0;
+/* Fila badge de tipo + estado temporal (D5): reemplaza a .vencidos-card__sub.
+   El badge da el dominio/tipo; el color de urgencia vive solo en el texto
+   de estado, nunca en toda la tarjeta. */
+.vencidos-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  margin-top: 0.1rem;
 }
 
+.vencidos-card__estado {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+}
+.vencidos-card__estado--warning { color: var(--fk-warning-text); }
+.vencidos-card__estado--danger  { color: var(--fk-danger-text); }
+
+/* 15px/700 del ADR 034 D5: sin token exacto de 15px en la escala, se
+   conserva --fk-text-sm (14px, mismo criterio que IN.8b) y se sube el
+   peso a bold + tabular-nums para el protagonismo pedido. */
 .vencidos-card__amount {
   font-size: var(--fk-text-sm);
-  font-weight: 600;
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
   color: var(--fk-text-primary);
   flex-shrink: 0;
 }

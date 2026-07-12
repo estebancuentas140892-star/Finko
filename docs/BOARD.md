@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8a a IN.8d cerradas, ver CHANGELOG; sigue IN.8e).
+> Última actualización: 2026-07-12 (IN.8a a IN.8e cerradas, ver CHANGELOG; sigue IN.8f).
 
 ---
 
 ## En proceso
 
-_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a a IN.8d cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual; detalle por cuenta expandible con máscara; header de perfil con iniciales, ver CHANGELOG); la siguiente rebanada es **IN.8e** (Pendientes del mes con jerarquía real). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
+_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a a IN.8e cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual; detalle por cuenta expandible con máscara; header de perfil con iniciales; Pendientes del mes sin línea roja + Gestionar → Calendario, ver CHANGELOG); la siguiente rebanada es **IN.8f** (resumen semanal visual). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
 
 ---
 
@@ -51,18 +51,9 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 > **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
 
-#### IN.8e - Inicio v2: Pendientes del mes con jerarquía real + Gestionar → Calendario
-- Prioridad  : alta
-- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
-- Objetivo   : ADR 034 D5: quitar el `border-left` rojo; jerarquía por teja de dominio + badge de tipo (`.dom-badge` de IV.2c) + estado temporal en color semántico solo en el texto ("Venció hace 2 días" danger suavizado, "Vence hoy" warning; el color nunca tiñe la tarjeta completa, ADR 019); monto 15px/700 tabular; contador en badge circular rojo suave en el header; **"Gestionar" pasa de `#compromisos` a `#agenda`** (ampliación 3.er lote; el mockup no dibuja el botón pero la función se conserva); "Próxima prioridad" como tarjeta única destacada cuando son pocas.
-- Secciones  : Inicio (render en dominio `compromisos`)
-- Archivos   : `modules/dominio/compromisos/views/dashboard.js` (`renderPanelVencidos()`, `renderPanelPrioridades()`), `styles/components/domain.css` (`vencidos-card*`, `prioridades-card*`), tests unitarios
-- Depende de : nada (IN.8a cerró el 2026-07-12)
-- Modelo     : Sonnet 5 - Alto
-
 #### IN.8f - Inicio v2: resumen semanal visual (serie diaria + barras + chip comparativo)
 - Prioridad  : alta
-- Estado     : pendiente
+- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
 - Objetivo   : ADR 034 D6: extender `resumenSemanal()` con la serie diaria de 7 totales (verificado 2026-07-12: hoy solo expone agregados; cálculo puro dentro del mismo bundle memoizado de PERF.2/7b, sin memo nueva); rediseñar `renderPanelResumen()`: monto 28px/800 + chip comparativo (verde si el gasto bajó, neutro/ámbar si subió, nunca rojo: ADR 019/IV.3) + barras de 7 días estáticas (pico al 100% de `--fk-accent`, resto ~28%) + fila de categoría top con teja, días activos y mensaje interpretativo.
 - Secciones  : Inicio (dominio `resumen`)
 - Archivos   : `modules/dominio/resumen/logic.js` (`resumenSemanal()` + serie diaria), `modules/dominio/resumen/view.js` (`renderPanelResumen()`), styles, tests unitarios

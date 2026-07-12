@@ -45,6 +45,16 @@ function _tipoBadge(tipo) {
   return `<span class="dom-badge dom-badge--${dom}">${_esc(label)}</span>`;
 }
 
+// "Pendientes del mes" (IN.8e, ADR 034 D5) usa un badge más corto que el
+// resto de la app ("Deuda" en vez de "Deuda con entidad"/"Deuda personal"):
+// decisión propia de este panel, `_tipoBadge()` (arriba) sigue intacto para
+// "Próximas prioridades", que no cambia con esta rebanada.
+function _tipoBadgeCorto(tipo) {
+  const dom = _DOM_BADGE_POR_TIPO[tipo] ?? 'agenda';
+  const label = tipo === 'fijo' ? 'Gasto fijo' : 'Deuda';
+  return `<span class="dom-badge dom-badge--${dom}">${label}</span>`;
+}
+
 // ── DASHBOARD: PANEL VENCIDOS ────────────────────────────────────
 
 /**
@@ -70,10 +80,10 @@ export function renderPanelVencidos() {
   }
   el.hidden = false;
 
-  const n      = vencidos.length;
-  const titulo = n === 1
-    ? '1 pendiente del mes'
-    : `${n} pendientes del mes`;
+  const n = vencidos.length;
+  // ADR 034 D5: el título deja de incluir el conteo ("2 pendientes del
+  // mes"); el número vive solo en el badge circular del header.
+  const contadorLabel = n === 1 ? '1 pendiente' : `${n} pendientes`;
 
   const items = vencidos.map(v => {
     const tipo  = v.tipo ?? 'fijo';
@@ -81,15 +91,23 @@ export function renderPanelVencidos() {
     const desc  = _esc(v.descripcion);
     const monto = f(v.monto);
     const dias  = v.diasAtraso;
-    const cuando = dias === 0 ? 'hoy'
-      : dias === 1            ? 'ayer'
-      :                         `hace ${dias} días`;
+    // Sin línea roja lateral (D5): la urgencia vive SOLO en este texto,
+    // nunca en el borde/fondo de la tarjeta (ADR 019, "gastar no es
+    // incumplir"). "Vence hoy" en warning; ya vencido, en danger.
+    const esHoy = dias === 0;
+    const estadoTexto = esHoy ? 'Vence hoy'
+      : dias === 1              ? 'Venció ayer'
+      :                           `Venció hace ${dias} días`;
+    const estadoClase = esHoy ? 'vencidos-card__estado--warning' : 'vencidos-card__estado--danger';
     return `
-      <li class="vencidos-card__item vencidos-card__item--${v.severidad}">
+      <li class="vencidos-card__item">
         <span class="vencidos-card__icon vencidos-card__icon--${tipo}" aria-hidden="true">${icono}</span>
         <div class="vencidos-card__body">
           <p class="vencidos-card__name">${desc}</p>
-          <p class="vencidos-card__sub">${_tipoBadge(tipo)} venció ${cuando}</p>
+          <div class="vencidos-card__meta">
+            ${_tipoBadgeCorto(tipo)}
+            <span class="vencidos-card__estado ${estadoClase}">${estadoTexto}</span>
+          </div>
         </div>
         <p class="vencidos-card__amount">${monto}</p>
       </li>`;
@@ -100,9 +118,12 @@ export function renderPanelVencidos() {
   el.innerHTML = `
     <section class="vencidos-card" aria-label="Compromisos vencidos">
       <header class="vencidos-card__header">
-        <h2 class="vencidos-card__title">${icon('alert')} ${titulo}</h2>
-        <a href="#compromisos" class="vencidos-card__link"
-           aria-label="Ir a compromisos">Gestionar</a>
+        <h2 class="vencidos-card__title">
+          Pendientes del mes
+          <span class="vencidos-card__counter" aria-label="${contadorLabel}">${n}</span>
+        </h2>
+        <a href="#agenda" class="vencidos-card__link"
+           aria-label="Ir al calendario">Gestionar</a>
       </header>
       <ul class="vencidos-card__list" role="list">
         ${items}

@@ -2075,6 +2075,86 @@ describe('renderPanelVencidos() - total al pie (IN.1)', () => {
   });
 });
 
+// ── renderPanelVencidos() - jerarquía sin línea roja (IN.8e, ADR 034 D5) ──
+
+describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 034 D5)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-vencidos"></div>';
+    S.compromisos = [];
+  });
+
+  it('el título ya no incluye el conteo; el número vive en el badge circular', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: DIA_PASADO }),
+      compromisoBase({ id: 'c2', descripcion: 'Netflix', tipo: 'fijo', diaPago: DIA_HOY }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('Pendientes del mes');
+    expect(html).not.toContain('2 pendientes del mes');
+    expect(html).toMatch(/vencidos-card__counter[^>]*>2</);
+  });
+
+  it('un ítem vencido hace 2 días muestra "Venció hace 2 días" en danger y badge corto "Deuda"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad', diaPago: DIA_PASADO }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('Venció hace 2 días');
+    expect(html).toContain('vencidos-card__estado--danger');
+    expect(html).toContain('>Deuda<');
+  });
+
+  it('un ítem que vence hoy muestra "Vence hoy" en warning y badge corto "Gasto fijo"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Netflix', tipo: 'fijo', diaPago: DIA_HOY }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('Vence hoy');
+    expect(html).toContain('vencidos-card__estado--warning');
+    expect(html).toContain('>Gasto fijo<');
+  });
+
+  it('una deuda personal también usa el badge corto "Deuda"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Préstamo primo', tipo: 'deuda-personal', diaPago: DIA_PASADO }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('>Deuda<');
+  });
+
+  it('vencido hace 1 día dice "Venció ayer"', () => {
+    const DIA_AYER = ((DIA_HOY - 1 + 28 - 1) % 28) + 1;
+    S.compromisos = [
+      compromisoBase({ id: 'c1', descripcion: 'Arriendo', tipo: 'fijo', diaPago: DIA_AYER }),
+    ];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('Venció ayer');
+  });
+
+  it('sin línea roja de alarma: la tarjeta no lleva border-left en su clase base', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_PASADO })];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).not.toContain('vencidos-card__item--leve');
+    expect(html).not.toContain('vencidos-card__item--moderada');
+    expect(html).not.toContain('vencidos-card__item--urgente');
+  });
+
+  it('"Gestionar" lleva a #agenda (Calendario), no a #compromisos', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_PASADO })];
+    renderPanelVencidos();
+    const html = document.getElementById('panel-vencidos').innerHTML;
+    expect(html).toContain('href="#agenda"');
+    expect(html).not.toContain('href="#compromisos"');
+    expect(html).toContain('aria-label="Ir al calendario"');
+  });
+});
+
 // ── deltasSaldoCompromisoPorEdicionGasto() ───────────────────────
 
 describe('deltasSaldoCompromisoPorEdicionGasto()', () => {
