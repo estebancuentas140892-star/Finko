@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IN.8b hero con saldo protagonista + ojo estable + piloto visual ADR 033 · 2026-07-12
+
+Cierra **IN.8b** (`docs/BOARD.md`, iniciativa "Inicio v2"), segunda rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisiones D2 y D3) y estreno del piloto acotado del [ADR 033](DECISIONS/033-direccion-visual-premium.md) (D1 sombra en reposo + D2 degradado de identidad, solo en el hero de Inicio; DV.2a sigue pendiente).
+
+**Qué cambió:** el hero (`index.html`, clase nueva `.hero-inicio` sobre la celda) queda centrado y sin el ícono decorativo `i-saldo` (`#hero-saldo-icon` eliminado del DOM y de `updSaldo()`): label "Tu dinero disponible hoy" en sentence case (14px, secundario), monto protagonista (objetivo 42px/800; `clamp()` solo protege pantallas < 390px de un saldo de 9 cifras; tabular-nums; letter-spacing -0.02em; color primario: la identidad la pone el degradado, no el número verde de antes), descripción 12px secundario. El **ojo de privacidad** (D3) pasa a `position:absolute` en la esquina superior derecha del hero, reescrito como botón propio (sin `.btn`: el min-height táctil de 44px que responsive.css impone a `.btn` deformaría los 40px del diseño; 40px cumple WCAG 2.5.8). Al alternar visible/oculto solo cambian el ícono y el contenido del monto: la posición del control queda estable al píxel. Fondo del piloto: `linear-gradient(160deg, color-mix(accent 14%, transparent), transparent 55%)` sobre `--fk-bg-surface`, borde `--fk-accent-border`, sombra `--fk-shadow-md`; ambos temas heredan por tokens sin tocar `themes.css`.
+
+**Contraste WCAG (método IV.1/IV.2, medido contra la parada fuerte del degradado):** oscuro (#193433 compuesto): primario 11.16:1, secundario 5.67:1 (AA texto pequeño); claro (#def4ec): primario 14.62:1, secundario 7.40:1. El texto muted queda excluido del hero (4.13:1 en oscuro, falla AA); las cifras viven como comentario en el propio CSS.
+
+**Archivos tocados:** `index.html` (marcado del hero), `modules/infra/render.js` (`updSaldo()` sin el ícono; contrato de `S.config.ocultarSaldo` intacto), `styles/components/domain.css` (bloque `.hero-inicio*` reemplaza a `.hero-saldo*`), `styles/responsive.css` (excepción de padding del hero en móvil), `tests/unit/render.test.js` (fixture al marcado nuevo), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v348 → v349), `docs/contexto/inicio.md`.
+
+**Verificación:** 2337/2337 unit + 165/165 E2E + lint verdes. E2E nuevo: la posición del ojo medida en reposo (`boundingBox`) es idéntica en visible → oculto → visible. Hallazgo del proceso: el corrimiento de 2px que apareció al medir era el lift de hover de `.bento__cell` (comportamiento preexistente por diseño, documentado en el test); el defecto real de IN.2 (el ojo saltaba con el ancho de la máscara) quedó corregido de raíz. Capturas móvil/desktop en ambos temas revisadas contra el mockup.
+
+**Podría afectar:** el monto pierde el verde acento (decisión del diseño hifi); el empty state del hero (`hero-guia`) no cambió. `bento__value--xl` y `bento__cell--accent` quedan sin consumidores en Inicio (la limpieza de CSS muerto vive en PERF.8).
+
+---
+
 ### feat(ui): IN.8a reorden del dashboard + labels de grupo + aire · 2026-07-12
 
 Cierra **IN.8a** (`docs/BOARD.md`, iniciativa "Inicio v2"), la primera rebanada de implementación del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D1: lo accionable sube, los atajos bajan).

@@ -783,27 +783,87 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
-   HERO-SALDO (IN.2) - fila del monto disponible + botón de ojo
-   que oculta/muestra el saldo (estilo app bancaria).
+   HERO-INICIO (IN.8b, ADR 034 D2/D3) - saldo centrado protagonista.
+   Piloto acotado del ADR 033: degradado de identidad (D2) + sombra en
+   reposo (D1) SOLO en este hero mientras DV.2a no se apruebe.
+
+   Contraste WCAG medido contra la parada fuerte del degradado (accent al
+   14% compuesto sobre surface, script en el cierre de IN.8b):
+     oscuro #193433 → primario 11.16:1, secundario 5.67:1 (AA texto pequeño)
+     claro  #def4ec → primario 14.62:1, secundario 7.40:1
+   El texto muted NO se usa dentro del hero: 4.13:1 en oscuro, falla AA.
    ════════════════════════════════════════════════════════════ */
 
-.hero-saldo {
+.hero-inicio {
+  position: relative;
+  text-align: center;
+  gap: var(--fk-space-3);
+  border-radius: var(--fk-radius-xl);
+  border-color: var(--fk-accent-border);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--fk-accent) 14%, transparent), transparent 55%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
+  padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
+}
+
+/* Label en sentence case (deja el uppercase de .bento__label): el monto es
+   el protagonista, el label solo presenta. */
+.hero-inicio__label {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* 42px objetivo (ADR 034 D2); el clamp solo protege pantallas < 390px para
+   que un saldo de 9 cifras no desborde la card. tabular-nums mantiene el
+   ancho estable entre monto real y máscara. */
+.hero-inicio__valor {
+  font-family: var(--fk-font-mono);
+  font-size: clamp(2.125rem, 1.5rem + 4.6vw, 2.625rem);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-inicio__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+/* Ojo de privacidad (IN.2 + ADR 034 D3): anclado a la esquina, fuera del
+   flujo del monto: su posición nunca cambia al alternar visible/oculto.
+   Botón propio (sin .btn): el min-height táctil de 44px que responsive.css
+   impone a .btn deformaría los 40px del diseño; 40px cumple el mínimo
+   táctil AA (WCAG 2.5.8, 24px) con margen. */
+.hero-inicio__ojo {
+  position: absolute;
+  top: var(--fk-space-4);
+  right: var(--fk-space-4);
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
   display: flex;
   align-items: center;
-  gap: var(--fk-space-2);
+  justify-content: center;
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+  z-index: 1;
 }
-
-/* .btn fija display:inline-flex, así que [hidden] necesita refuerzo
-   (mismo caso que .bento__cell[hidden] en layout.css). updSaldo() lo
-   oculta junto con el valor cuando no hay cuentas registradas. */
-.hero-saldo__ojo[hidden] { display: none; }
-
-/* Más grande que el .btn-icon .icon genérico (18px): convive con el
-   monto XL del hero y necesita presencia y área táctil. Usa el paso de
-   navegación (24px), el mismo peso que el resto de controles primarios. */
-.hero-saldo__ojo .icon {
-  --fk-icon-size: var(--fk-icon-lg);
+.hero-inicio__ojo:hover {
+  background: var(--fk-bg-active);
+  color: var(--fk-text-primary);
 }
+/* updSaldo() lo oculta junto con el valor cuando no hay cuentas. */
+.hero-inicio__ojo[hidden] { display: none; }
+.hero-inicio__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ════════════════════════════════════════════════════════════
    VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.

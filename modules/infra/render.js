@@ -97,17 +97,16 @@ export function updSaldo() {
   }
 
   // Con cuentas: muestra el saldo normal y oculta la guía de primeros pasos.
-  // Sin cuentas: oculta el ícono, label, valor y ojo para no confundir;
-  //              muestra la guía de onboarding con el CTA a Mis cuentas.
+  // Sin cuentas: oculta label, valor y ojo para no confundir; muestra la guía
+  //              de onboarding con el CTA a Mis cuentas. (El ícono decorativo
+  //              i-saldo del hero se eliminó en IN.8b, ADR 034 D2.)
   const guia  = document.getElementById('hero-guia-saldo');
   const desc  = document.getElementById('saldo-desc');
-  const icon  = document.getElementById('hero-saldo-icon');
   const label = document.getElementById('hero-saldo-label');
   const valor = document.getElementById('saldo-total');
 
   if (guia)  guia.hidden  = !sinCuentas;
   if (desc)  desc.hidden  =  sinCuentas;
-  if (icon)  icon.hidden  =  sinCuentas;
   if (label) label.hidden =  sinCuentas;
   if (valor) valor.hidden =  sinCuentas;
 

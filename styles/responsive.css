@@ -233,6 +233,10 @@
   .bento--dash         { gap: var(--fk-space-5); }
   .bento__group-cells  { grid-template-columns: 1fr; gap: var(--fk-space-3); }
 
+  /* El hero de Inicio (IN.8b) conserva su padding propio: la regla genérica
+     .bento__cell de arriba lo aplanaría a 20px uniforme. */
+  .hero-inicio         { padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5); }
+
   /* Hero metric del dashboard - fluid scaling:
      320px → 24px (mín legible)
      393px (Redmi Note 11/Pixel/iPhone moderno) → ~32px

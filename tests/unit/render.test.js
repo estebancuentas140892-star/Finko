@@ -23,21 +23,22 @@ import { initAcciones, dispatch } from '../../modules/ui/actions.js';
 
 // ── SETUP ────────────────────────────────────────────────────────────────────
 
-/** Réplica mínima del hero de index.html (ids reales que updSaldo consume). */
+/** Réplica mínima del hero de index.html (ids reales que updSaldo consume).
+ *  Marcado IN.8b (ADR 034 D2/D3): centrado, sin ícono decorativo, ojo
+ *  absoluto en la esquina del hero. */
 function montarHero() {
   document.body.innerHTML = `
-    <svg class="bento__icon icon" id="hero-saldo-icon"><use href="#i-saldo"/></svg>
-    <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
-    <div class="hero-saldo">
-      <p class="bento__value" id="saldo-total">$0</p>
-      <button class="btn btn-ghost btn-icon hero-saldo__ojo" type="button" id="saldo-ojo"
+    <article class="bento__cell bento__cell--full bento__cell--hero hero-inicio">
+      <button class="hero-inicio__ojo" type="button" id="saldo-ojo"
               data-action="saldo-visibilidad" aria-pressed="false"
               aria-label="Ocultar tu dinero disponible">
         <svg class="icon"><use href="#i-eye"/></svg>
       </button>
-    </div>
-    <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
-    <div id="hero-guia-saldo" hidden></div>`;
+      <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
+      <p class="hero-inicio__valor" id="saldo-total">$0</p>
+      <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
+      <div id="hero-guia-saldo" hidden></div>
+    </article>`;
 }
 
 const cuenta = (saldo, overrides = {}) => ({

@@ -215,6 +215,49 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-total')).toHaveText('$500.000');
     await expect(page.locator('#saldo-ojo')).toHaveAttribute('aria-pressed', 'false');
   });
+
+  test('la posición del ojo no cambia al alternar la máscara (IN.8b, ADR 034 D3)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{ id: 'c1', nombre: 'Efectivo', tipo: 'efectivo', saldo: 2485000, activa: true }],
+        ingresos: [],
+        gastos: [],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+    await expect(page.locator('#saldo-total')).toHaveText('$2.485.000');
+
+    // El hover de .bento__cell aplica un lift de -2px por diseño: se mide en
+    // reposo, con el mouse fuera de la card, en los tres estados.
+    const enReposo = async () => {
+      await page.mouse.move(5, 700);
+      await page.waitForTimeout(250);
+      return page.locator('#saldo-ojo').boundingBox();
+    };
+
+    const antes = await enReposo();
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••');
+    const oculto = await enReposo();
+    await page.click('#saldo-ojo');
+    await expect(page.locator('#saldo-total')).toHaveText('$2.485.000');
+    const despues = await enReposo();
+
+    // Antes de IN.8b el ojo vivía en flujo junto al monto y se desplazaba
+    // porque la máscara tiene otro ancho; ahora es absoluto al hero.
+    expect(oculto.x).toBe(antes.x);
+    expect(oculto.y).toBe(antes.y);
+    expect(despues.x).toBe(antes.x);
+    expect(despues.y).toBe(antes.y);
+  });
 });
 
 // ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────

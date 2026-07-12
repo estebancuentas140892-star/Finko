@@ -389,25 +389,24 @@
              completo (label incluido) vía :has() en layout.css. -->
         <div class="bento bento--dash">
 
-          <!-- HERO: saldo disponible (ancho completo).
+          <!-- HERO: saldo disponible, centrado y protagonista (IN.8b, ADR 034
+               D2/D3; piloto visual ADR 033 D1/D2 acotado a Inicio).
                render.js (updSaldo) controla el estado vacío vs. con cuentas. -->
-          <article class="bento__cell bento__cell--full bento__cell--accent bento__cell--hero">
-            <!-- Estado normal: visible cuando hay cuentas registradas -->
-            <svg class="bento__icon icon" id="hero-saldo-icon" aria-hidden="true"><use href="#i-saldo"/></svg>
-            <p class="bento__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
-            <!-- Fila saldo + ojo (IN.2): el botón alterna entre monto visible y
-                 enmascarado para usar la app en lugares públicos. render.js
-                 (updSaldo) sincroniza máscara, icono y aria-pressed leyendo
+          <article class="bento__cell bento__cell--full bento__cell--hero hero-inicio">
+            <!-- Ojo de privacidad (IN.2 + D3): posición absoluta estable en la
+                 esquina; al alternar solo cambian el icono y el contenido del
+                 monto, nunca la posición del control. render.js (updSaldo)
+                 sincroniza máscara, icono y aria-pressed leyendo
                  S.config.ocultarSaldo; la preferencia persiste entre sesiones. -->
-            <div class="hero-saldo">
-              <p class="bento__value bento__value--accent bento__value--xl" id="saldo-total">$0</p>
-              <button class="btn btn-ghost btn-icon hero-saldo__ojo" type="button" id="saldo-ojo"
-                      data-action="saldo-visibilidad" aria-pressed="false"
-                      aria-label="Ocultar tu dinero disponible">
-                <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
-              </button>
-            </div>
-            <p class="bento__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
+            <button class="hero-inicio__ojo" type="button" id="saldo-ojo"
+                    data-action="saldo-visibilidad" aria-pressed="false"
+                    aria-label="Ocultar tu dinero disponible">
+              <svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg>
+            </button>
+            <!-- Estado normal: visible cuando hay cuentas registradas -->
+            <p class="hero-inicio__label" id="hero-saldo-label">Tu dinero disponible hoy</p>
+            <p class="hero-inicio__valor" id="saldo-total">$0</p>
+            <p class="hero-inicio__desc" id="saldo-desc">efectivo + cuentas bancarias</p>
 
             <!-- Empty state: visible cuando no hay cuentas (render.js lo controla) -->
             <div class="hero-guia" id="hero-guia-saldo" hidden>

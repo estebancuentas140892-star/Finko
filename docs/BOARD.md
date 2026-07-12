@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8a cerrada: reorden del dashboard + labels de grupo + aire, ver CHANGELOG; sigue IN.8b).
+> Última actualización: 2026-07-12 (IN.8a e IN.8b cerradas, ver CHANGELOG; sigue IN.8c).
 
 ---
 
 ## En proceso
 
-_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a cerrada el 2026-07-12** (reorden del dashboard + labels de grupo + aire, ver CHANGELOG); la siguiente rebanada recomendada es **IN.8b** (hero protagonista + ojo estable + piloto visual ADR 033). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
+_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a e IN.8b cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual, ver CHANGELOG); la siguiente rebanada es **IN.8c** (detalle por cuenta expandible). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
 
 ---
 
@@ -51,22 +51,13 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 > **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
 
-#### IN.8b - Inicio v2: hero con saldo protagonista + ojo estable + piloto visual premium
-- Prioridad  : alta
-- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa; IN.8a cerró el 2026-07-12)
-- Objetivo   : ADR 034 D2/D3: quitar `#hero-saldo-icon`, centrar label + monto (42px/800, tabular-nums, letter-spacing -0.02em), ojo de privacidad con `position:absolute` en la esquina superior derecha (deja de desplazarse al alternar), fondo con degradado de identidad sobre `--fk-accent` + borde `--fk-accent-border` + `--fk-shadow-md` (piloto ADR 033 acotado al hero). Ambos temas con contraste WCAG calculado contra la parada fuerte del degradado (método IV.1/IV.2).
-- Secciones  : Inicio
-- Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo()`), `styles/layout.css` (`.bento__cell--hero`), `styles/components/domain.css` (`.hero-saldo`), `styles/themes.css`
-- Depende de : nada (IN.8a, su recomendada previa, cerró el 2026-07-12)
-- Modelo     : Sonnet 5 - Alto
-
 #### IN.8c - Inicio v2: detalle por cuenta expandible con máscara de privacidad
 - Prioridad  : alta
-- Estado     : pendiente
+- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
 - Objetivo   : ADR 034 D4: pill "Ver detalle por cuenta" ↔ "Ocultar detalle" bajo el monto; al expandir, una fila por cuenta (teja de banco + nombre + saldo, efectivo incluido); la máscara del ojo cubre total Y detalle (extensión IN.2); "efectivo + N cuentas" solo colapsado; estado de UI en memoria (no persistido, decisión del ADR); fade/slide 150-200 ms solo `opacity`+`transform`.
 - Secciones  : Inicio
 - Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo()` + render del detalle), acción `data-action` nueva, `modules/infra/bancos.js` (solo consumo de tejas), styles, tests unitarios
-- Depende de : IN.8b
+- Depende de : nada (IN.8b cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.8d - Inicio v2: header de perfil (avatar de iniciales + saludo en dos líneas + ajustes)
