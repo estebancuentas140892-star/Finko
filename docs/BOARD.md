@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-11 (MC.15a cerrada: menos redundancia en tarjetas de cuenta e ingreso fijo).
+> Última actualización: 2026-07-12 (IN.8 fase de análisis cerrada: ADR 034 escrito con el diseño hifi de Esteban; iniciativa Inicio v2 re-cortada en IN.8a a IN.8g).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **DV.1 cerrada el 2026-07-10**: el [ADR 033](DECISIONS/033-direccion-visual-premium.md) quedó escrito en estado Propuesta con 5 preguntas (P1-P5) para Esteban. **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta). **BUG-011 y BUG-012 corregidos el 2026-07-11** (BUGS.md queda vacío de pendientes). **MC.15a cerrada el 2026-07-11** (menos redundancia en tarjetas de cuenta e ingreso fijo, primera rebanada de MC.15); quedan MC.15b/c/d abajo. Mientras Esteban valida el ADR 033, **DV.2a** (tokens de superficie/elevación) queda bloqueada hasta esa validación; con IV.2 completa, **D.15** e **IN.8** ya no tienen bloqueo técnico.)_
+_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **IN.8 fase de análisis cerrada el 2026-07-12**: Esteban entregó el diseño hifi de Inicio v2 (`Iteración de specimen/design_handoff_inicio_v2/`) y el [ADR 034](DECISIONS/034-inicio-v2.md) formaliza la revisión del ADR 028; la iniciativa quedó re-cortada en las rebanadas IN.8a a IN.8g (sección "Inicio" abajo), con IN.8a como siguiente tarjeta recomendada. El [ADR 033](DECISIONS/033-direccion-visual-premium.md) pasó a "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11** (menos redundancia en tarjetas de cuenta e ingreso fijo); quedan MC.15b/c/d.)_
 
 ---
 
@@ -49,16 +49,70 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 > Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), aprobada el 2026-07-05): IN.6a, CAL.1, TX.8a, TX.8b e IN.4a cerradas. **Superada parcialmente por la iniciativa "Inicio v2" de abajo** (triaje del 2026-07-08): el principio "rol único por bloque" sigue vigente; el orden vertical y varias decisiones puntuales entran en revisión formal.
 
-> **Iniciativa "Inicio v2" (auditoría UX/UI completa, brief de Esteban del 2026-07-08).** Requiere **revisión formal del ADR 028** antes de codificar, porque modifica decisiones aprobadas: (a) reordena la pantalla (alertas/prioridades primero; accesos rápidos fusionados con actividad reciente como ÚLTIMO bloque, con accesos arriba y movimientos debajo dentro del mismo componente); (b) reabre el avatar con fotografía, que el ADR 028 D3 **descartó** por el cupo de `localStorage` compartido con los datos financieros. **Absorbe** (fusión 2.7): la tarjeta IN.6b (avatar: teja de iniciales + set propio de Esteban vía ADR 026 + emoji; el punto abierto foto se decide en el ADR de revisión, recomendación vigente: sin foto mientras la persistencia sea `localStorage`, ver ADR 030/PERF.5), la tarjeta IN.4b (sugerencia de accesos por frecuencia, pospuesta por ADR 028 D2: se decide dentro del rediseño del bloque fusionado), la observación de extender la máscara del ojo a más montos (entra al análisis de "detalle por cuentas y privacidad" del hero) y la observación de iterar el resumen semanal (este brief ES ese feedback). Alcance completo del brief: perfil con avatar + nombre; hero sin el icono `$` decorativo y con el saldo como protagonista centrado; análisis UX de mostrar detalle por cuentas (solo total vs expandir vs preferencia de usuario, cruzado con privacidad/IN.2); ojo de ocultar saldo estable (hoy el icono se desplaza al alternar: fijar posición y que solo cambie el contenido); "Pendientes del mes" con jerarquía de prioridad real (la línea roja lateral comunica poco; resolver con los tokens del ADR 031, sin alarmismo); resumen semanal como el bloque más visual e interpretable (colores + iconos + indicadores + mensajes, coordinado con IV.3); redistribución general (jerarquía, aire, orden de lectura, ergonomía móvil, escaneo). **No incluye** (viven en sus fuentes únicas): iconografía+color de sección en Pendientes/Prioridades → IV.2; copy cercano de alertas de límites → LIM.1. **Ampliación del 3.er lote (2026-07-08):** el botón "Gestionar" de Pendientes del mes deja de llevar a Deudas y lleva al **Calendario** (el centro de gestión de obligaciones por fecha, donde se ve TODO lo pendiente sin saltar entre secciones); es un cambio de una línea, candidato a rebanada temprana igual que editar-deuda en Deudas v2, sin esperar el ADR de revisión.
+> **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
 
-#### IN.8 - Inicio v2: análisis UX + revisión del ADR 028 (primera fase de la iniciativa)
+#### IN.8a - Inicio v2: reorden del dashboard + labels de grupo + aire
 - Prioridad  : alta
-- Estado     : pendiente de análisis. Recomendado NO iniciar antes de cerrar IV.2: la auditoría visual debe hacerse sobre la base de color ya desplegada, o se rediseña dos veces.
-- Objetivo   : producir la revisión del ADR 028 (orden nuevo, fusión accesos+actividad, decisión de avatar/foto, decisión de detalle por cuentas) y re-cortar la iniciativa en rebanadas verificables (IN.8a, IN.8b...) como hizo el ADR 028 original.
-- Secciones  : Inicio (`resumen`, `movimientos`, `accesos`, `render.js` hero)
-- Archivos   : ficha [`contexto/inicio.md`](contexto/inicio.md) como punto de partida
-- Depende de : IV.2 (recomendado); diseños de avatares de Esteban solo para la rebanada de avatar
-- Modelo     : Fable 5 - Alto (revisión de un ADR aprobado + rediseño de la pantalla principal, trade-offs de UX no obvios)
+- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
+- Objetivo   : aplicar el orden del ADR 034 D1 (hero → "Atención hoy": nudge + pendientes + prioridades + límites → "Resumen de la semana" → accesos+actividad al final), labels de grupo (12px/700 uppercase muted) y aire de 20px entre bloques / 12px dentro de "Atención hoy". Ningún dominio cambia su lógica; en escritorio se conserva el bento de columnas con el mismo orden de lectura.
+- Secciones  : Inicio
+- Archivos   : `index.html` (orden del `.bento--dash`), `styles/layout.css` / `styles/components/domain.css` (labels de grupo, gaps)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio
+
+#### IN.8b - Inicio v2: hero con saldo protagonista + ojo estable + piloto visual premium
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D2/D3: quitar `#hero-saldo-icon`, centrar label + monto (42px/800, tabular-nums, letter-spacing -0.02em), ojo de privacidad con `position:absolute` en la esquina superior derecha (deja de desplazarse al alternar), fondo con degradado de identidad sobre `--fk-accent` + borde `--fk-accent-border` + `--fk-shadow-md` (piloto ADR 033 acotado al hero). Ambos temas con contraste WCAG calculado contra la parada fuerte del degradado (método IV.1/IV.2).
+- Secciones  : Inicio
+- Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo()`), `styles/layout.css` (`.bento__cell--hero`), `styles/components/domain.css` (`.hero-saldo`), `styles/themes.css`
+- Depende de : IN.8a (recomendado, para verificar sobre el orden final)
+- Modelo     : Sonnet 5 - Alto
+
+#### IN.8c - Inicio v2: detalle por cuenta expandible con máscara de privacidad
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D4: pill "Ver detalle por cuenta" ↔ "Ocultar detalle" bajo el monto; al expandir, una fila por cuenta (teja de banco + nombre + saldo, efectivo incluido); la máscara del ojo cubre total Y detalle (extensión IN.2); "efectivo + N cuentas" solo colapsado; estado de UI en memoria (no persistido, decisión del ADR); fade/slide 150-200 ms solo `opacity`+`transform`.
+- Secciones  : Inicio
+- Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo()` + render del detalle), acción `data-action` nueva, `modules/infra/bancos.js` (solo consumo de tejas), styles, tests unitarios
+- Depende de : IN.8b
+- Modelo     : Sonnet 5 - Alto
+
+#### IN.8d - Inicio v2: header de perfil (avatar de iniciales + saludo en dos líneas + ajustes)
+- Prioridad  : media-alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D8: teja de iniciales 46px con gradiente del acento (patrón de tejas ADR 025); `updSaludo()` reubicado en dos líneas (franja horaria 13px arriba, nombre 19px/700 abajo, misma lógica de franjas); botón de ajustes 40px → `#config`; resolver el encabezado accesible de la sección sin perder la región para lectores de pantalla (`#title-dash`); definir fallback del avatar cuando no hay nombre (sin dato nuevo).
+- Secciones  : Inicio
+- Archivos   : `index.html` (header de `#sec-dash`), `modules/infra/render.js` (`updSaludo()`), styles
+- Depende de : IN.8a (recomendado)
+- Modelo     : Sonnet 5 - Medio
+
+#### IN.8e - Inicio v2: Pendientes del mes con jerarquía real + Gestionar → Calendario
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D5: quitar el `border-left` rojo; jerarquía por teja de dominio + badge de tipo (`.dom-badge` de IV.2c) + estado temporal en color semántico solo en el texto ("Venció hace 2 días" danger suavizado, "Vence hoy" warning; el color nunca tiñe la tarjeta completa, ADR 019); monto 15px/700 tabular; contador en badge circular rojo suave en el header; **"Gestionar" pasa de `#compromisos` a `#agenda`** (ampliación 3.er lote; el mockup no dibuja el botón pero la función se conserva); "Próxima prioridad" como tarjeta única destacada cuando son pocas.
+- Secciones  : Inicio (render en dominio `compromisos`)
+- Archivos   : `modules/dominio/compromisos/views/dashboard.js` (`renderPanelVencidos()`, `renderPanelPrioridades()`), `styles/components/domain.css` (`vencidos-card*`, `prioridades-card*`), tests unitarios
+- Depende de : IN.8a (recomendado)
+- Modelo     : Sonnet 5 - Alto
+
+#### IN.8f - Inicio v2: resumen semanal visual (serie diaria + barras + chip comparativo)
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D6: extender `resumenSemanal()` con la serie diaria de 7 totales (verificado 2026-07-12: hoy solo expone agregados; cálculo puro dentro del mismo bundle memoizado de PERF.2/7b, sin memo nueva); rediseñar `renderPanelResumen()`: monto 28px/800 + chip comparativo (verde si el gasto bajó, neutro/ámbar si subió, nunca rojo: ADR 019/IV.3) + barras de 7 días estáticas (pico al 100% de `--fk-accent`, resto ~28%) + fila de categoría top con teja, días activos y mensaje interpretativo.
+- Secciones  : Inicio (dominio `resumen`)
+- Archivos   : `modules/dominio/resumen/logic.js` (`resumenSemanal()` + serie diaria), `modules/dominio/resumen/view.js` (`renderPanelResumen()`), styles, tests unitarios
+- Depende de : IN.8a (recomendado)
+- Modelo     : Sonnet 5 - Alto
+
+#### IN.8g - Inicio v2: fusión accesos rápidos + actividad reciente
+- Prioridad  : media-alta
+- Estado     : pendiente
+- Objetivo   : ADR 034 D7: un solo `bento__cell` al final de la pantalla con dos secciones separadas por `border-top`: accesos arriba (label + "Personalizar" + grilla de 4 columnas, `accesosVisibles()` intacta) y actividad abajo (label + "Ver todo" + 5 movimientos, `movimientosRecientes()` intacta). Solo cambia contenedor/posición; cero cambios en los `logic.js` de ambos dominios.
+- Secciones  : Inicio (dominios `accesos` y `movimientos`, solo vista)
+- Archivos   : `index.html`, `modules/dominio/accesos/view.js`, `modules/dominio/movimientos/view.js`, styles
+- Depende de : IN.8a
+- Modelo     : Sonnet 5 - Medio
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (que absorbió TX.10; CAL.1 ya cerró su parte), la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 
@@ -546,9 +600,9 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
 - Prioridad  : baja (bloqueada)
 - Estado     : **bloqueada por ANL.1 e IN.8** (ADR 032 D6: no posicionar dos veces). La vitrina sigue en Ajustes (ADR 022 vigente operativamente) hasta que esas iniciativas definan sus pantallas.
-- Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo); al cerrar, marcar el ADR 022 como Superada.
+- Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo); al cerrar, marcar el ADR 022 como Superada. _(Nota 2026-07-12: la revisión del ADR 028 ya existe, es el [ADR 034](DECISIONS/034-inicio-v2.md); el layout de Inicio v2 no reserva bloque para logros, así que la tarjeta compacta debe proponerse cuando las rebanadas IN.8a-g estén en producción.)_
 - Secciones  : Análisis, Inicio, Ajustes (`logros`)
-- Depende de : ANL.1 (layout de Análisis) + IN.8 (revisión ADR 028)
+- Depende de : ANL.1 (layout de Análisis) + rebanadas IN.8a-g en producción
 - Modelo     : Sonnet 5 - Alto (reubicación cross-sección con coordinación de layouts)
 
 #### LG.2e - Familia comportamiento (interpretación de hábitos)

@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(adr): IN.8 fase de análisis, ADR 034 Inicio v2 escrito + iniciativa re-cortada en rebanadas · 2026-07-12
+
+Cierra la fase de análisis/ADR de la iniciativa **"Inicio v2" (IN.8)**, la tarjeta que exigía revisión formal del ADR 028 antes de codificar. Detonante: Esteban entregó el handoff de diseño de alta fidelidad (`Iteración de specimen/design_handoff_inicio_v2/`: mockup HTML interactivo construido con los tokens reales de `tokens.css`/`themes.css` + documento de decisiones D1 a D8) y dio la instrucción de implementar el diseño con sus opciones recomendadas.
+
+**Qué se decidió (nuevo [ADR 034](DECISIONS/034-inicio-v2.md), Aceptada):** orden vertical nuevo (perfil → hero → "Atención hoy" → "Resumen de la semana" → accesos+actividad fusionados al final; reemplaza el D1 del ADR 028 conservando "un rol por bloque"); hero con saldo centrado protagonista (42px/800 tabular, sin el ícono `i-saldo` decorativo) sobre degradado de identidad + `--fk-shadow-md`; ojo de privacidad con posición absoluta estable (corrige el desplazamiento al alternar); "Ver detalle por cuenta" expandible (colapsado por defecto, estado UI en memoria sin persistir, máscara del ojo extendida al detalle); "Pendientes del mes" sin línea roja (jerarquía por teja de dominio + `.dom-badge` + estado temporal semántico solo en el texto; "Gestionar" pasa de `#compromisos` a `#agenda`, ampliación del 3.er lote); resumen semanal como bloque más visual (monto grande + chip comparativo nunca rojo + barras de 7 días + categoría top); header de perfil con teja de iniciales (sin foto, ratifica ADR 028 D3/ADR 030; sin bump de schema, las iniciales se derivan de `S.perfil.nombre`, así que el bump v24 previsto para IN.6b ya no hace falta).
+
+**Verificaciones hechas contra el código en esta fase:** `resumenSemanal()` (`resumen/logic.js`) NO expone serie diaria, solo agregados (el gráfico de IN.8f requiere cálculo puro nuevo, dentro del bundle memoizado de PERF.2/7b); "Gestionar" apunta hoy a `#compromisos` (`renderPanelVencidos()`); los tokens `--fk-shadow-*` existen en ambos temas pero `--fk-grad-identity` no (lo estrena IN.8b sobre `--fk-accent`); el ojo del hero vive en flujo junto al monto (causa real del salto reportado).
+
+**Estado del [ADR 033](DECISIONS/033-direccion-visual-premium.md):** pasa de "Propuesta" a "Propuesta con estreno parcial autorizado": D1 (sombra en reposo) y D2 (degradado de identidad) se consumen acotados al dashboard de Inicio como piloto, en línea con las recomendaciones de P1/P5; P2, P3, P4 y el despliegue global (DV.2a a DV.2d) siguen pendientes de validación formal.
+
+**Archivos tocados:** `docs/DECISIONS/034-inicio-v2.md` (nuevo), `docs/DECISIONS/033-direccion-visual-premium.md` (estado), `docs/BOARD.md` (tarjeta IN.8 reemplazada por las rebanadas IN.8a a IN.8g, con dependencias y modelo por rebanada; notas de "En proceso" y LG.2d actualizadas), `docs/contexto/inicio.md`, `docs/HANDOFF.md`. Sin cambios de código, tests ni SW.
+
+**Podría afectar:** nada en producción (solo documentación). La implementación arranca con **IN.8a** (reorden del dashboard + labels de grupo + aire); cada rebanada saldrá con tests verdes, verificación en la app, bump de `CACHE_NAME` y push.
+
+---
+
 ### feat(tesoreria): MC.15a menos redundancia en tarjetas de cuenta e ingreso fijo · 2026-07-11
 
 Cierra la primera rebanada de **MC.15** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"): la tarjeta se re-cortó en MC.15a/b/c/d (regla 2.1, la tarjeta original tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). Esta rebanada cierra los puntos 1 y 20 del brief.
