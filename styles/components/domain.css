@@ -1556,15 +1556,146 @@ button.chip:focus-visible {
   margin: 0;
 }
 
-.resumen-card__trend {
+/* ════════════════════════════════════════════════════════════
+   RESUMEN-SEMANA (IN.8f, ADR 034 D6) - bloque visual dentro de
+   .resumen-card: monto + chip comparativo + barras de 7 días + categoría
+   top. Reemplaza al grid de stats plano; .resumen-card__grid/__stat/__label
+   /__value/--sm arriba siguen vivos para "Me deben" (personales-resumen),
+   por eso este bloque usa su propio namespace en vez de repurpose-arlos.
+   ════════════════════════════════════════════════════════════ */
+
+.resumen-semana {
+  display: flex;
+  flex-direction: column;
+  padding: var(--fk-space-5);
+}
+
+.resumen-semana__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+}
+
+.resumen-semana__label {
   font-size: var(--fk-text-sm);
-  font-weight: 600;
+  color: var(--fk-text-secondary);
   margin: 0;
 }
 
-.resumen-card__trend--baja   { color: var(--fk-text-accent); }
-.resumen-card__trend--sube   { color: var(--fk-text-secondary); }
-.resumen-card__trend--neutro { color: var(--fk-text-muted); }
+/* 28px del ADR sin token exacto: se toma --fk-text-3xl (30px), más cerca
+   que --fk-text-2xl (24px), mismo criterio de IN.8b/IN.8e. */
+.resumen-semana__monto {
+  font-size: var(--fk-text-3xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0.1rem 0 0;
+  line-height: 1.1;
+}
+
+.resumen-semana__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-full);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* Solo bajar el gasto se refuerza en verde (ADR 019: gastar no es
+   incumplir); subir/igual/sin-previa comparten el mismo tono neutro. */
+.resumen-semana__chip--positivo { background: var(--fk-success-bg); color: var(--fk-success-text); }
+.resumen-semana__chip--neutro   { background: var(--fk-bg-elevated); color: var(--fk-text-secondary); }
+
+.resumen-semana__chip-icon { --fk-icon-size: var(--fk-icon-sm); }
+.resumen-semana__chip-icon--invertido { transform: scaleY(-1); }
+
+/* Contenedor del gráfico: 80px (--fk-space-20), 2px más que los 78px del
+   diseño, imperceptible; evita un valor mágico fuera de la escala. Barras
+   al 72% de alto máximo (deja aire arriba, mismo criterio que el mockup). */
+.resumen-semana__barras {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  height: var(--fk-space-20);
+  margin: var(--fk-space-4) 0 var(--fk-space-1);
+}
+
+.resumen-semana__barra {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.resumen-semana__barra-fill {
+  width: 100%;
+  min-height: 2px;
+  border-radius: var(--fk-radius-sm) var(--fk-radius-sm) 2px 2px;
+  background: color-mix(in srgb, var(--fk-accent) 28%, transparent);
+}
+.resumen-semana__barra-fill--pico { background: var(--fk-accent); }
+
+.resumen-semana__dias {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+
+.resumen-semana__dia {
+  flex: 1;
+  text-align: center;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+}
+.resumen-semana__dia--pico { color: var(--fk-text-accent); }
+
+.resumen-semana__top {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-4);
+  padding-top: var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+/* 36px del ADR: --fk-teja-lg, misma medida que las filas de lista
+   (reconocimiento primario); .cat-teja por defecto es --fk-teja-md (32px). */
+.resumen-semana__top .cat-teja {
+  width: var(--fk-teja-lg);
+  height: var(--fk-teja-lg);
+}
+
+.resumen-semana__top-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.resumen-semana__top-titulo {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+
+.resumen-semana__top-sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: 0.05rem 0 0;
+}
+
+.resumen-semana__top-monto {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
 
 /* ════════════════════════════════════════════════════════════
    BALANCE-TIRA - resumen ingresos vs gastos del mes.

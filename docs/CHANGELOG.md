@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(resumen): IN.8f resumen semanal visual con serie diaria + barras + chip comparativo · 2026-07-12
+
+Cierra **IN.8f** (`docs/BOARD.md`, iniciativa "Inicio v2"), sexta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D6).
+
+**Qué cambió:** `resumenSemanal()` (`resumen/logic.js`) se extiende de forma aditiva (ningún campo existente cambia de forma ni de valor) con **`serie`** (7 días, ordenados de más antiguo a más reciente, `serieDiaria()` nuevo, cálculo puro dentro del mismo bundle memoizado de PERF.2/7b, sin memo nueva), **`diasActivosSemana`** (días de la ventana de 7 con gasto real, distinto de `diasActivos` mensual que se conserva sin cambios) y **`diaPico`** (nombre completo del día con más gasto, `null` si la semana no tuvo gasto). `renderPanelResumen()` reemplaza el grid plano de estadísticas por un bloque visual bespoke (`.resumen-semana__*`, namespace propio: `.resumen-card__grid/__stat/__label/__value` **no se tocan** porque "Me deben" (`personales-resumen`) los reutiliza): monto grande (`--fk-text-3xl`) + **chip comparativo** compacto ("12% menos" en verde `--fk-success-bg/-text` solo cuando el gasto bajó; "12% más"/"igual"/"sin previa" comparten un tono neutro, mismo criterio que IV.3 en Análisis: **nunca rojo**, ADR 019) + **mini gráfico de 7 barras** (`--fk-accent` al 100% en el día pico, ~28% de opacidad en el resto, alto proporcional con tope al 72% del contenedor) + etiquetas de día resaltadas en el pico + fila de **categoría top** con `tejaCategoria()` (36px) y mensaje interpretativo ("Mercado fue tu categoría top · 2 de 7 días activos · mayor gasto el sábado"). El label cambia a "Gastaste esta semana" (antes "Gastaste estos 7 días") para calzar con el copy del diseño hifi. El viejo stat "Constancia" (días activos del mes) se retira de este panel (Análisis cubre el detalle mensual); `.resumen-card__trend*` quedó sin consumidor tras el cambio y se eliminó como CSS muerto.
+
+**Archivos tocados:** `modules/dominio/resumen/logic.js` (`serieDiaria()`, `resumenSemanal()` extendido), `modules/dominio/resumen/view.js` (rediseño completo de `renderPanelResumen()`, chip/barras/categoría top), `styles/components/domain.css` (`.resumen-semana__*` nuevo, `.resumen-card__trend*` eliminado), `tests/unit/resumen.test.js` (11 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v352 → v353), `docs/contexto/inicio.md`.
+
+**Verificación:** 2366/2366 unit (serie diaria ordenada y sumada por ventana, campos nuevos de `resumenSemanal()`, `diaPico` null sin gasto, 7 barras en el DOM, chip verde al bajar, chip neutro al subir, categoría top con días activos y día pico, defensivo sin categoría top) + 168/168 E2E (1 nuevo en Chromium real: monto, chip, 7 barras con 1 pico, categoría top con teja y monto) + lint verdes.
+
+**Podría afectar:** nada persistido (cero cambios de schema). El stat "Constancia" (días activos del mes) ya no aparece en el panel de Inicio; ese detalle sigue disponible en Análisis.
+
+---
+
 ### feat(compromisos): IN.8e Pendientes del mes sin línea roja + Gestionar → Calendario · 2026-07-12
 
 Cierra **IN.8e** (`docs/BOARD.md`, iniciativa "Inicio v2"), quinta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D5).

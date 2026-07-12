@@ -162,6 +162,37 @@ export function categoriaTopSemana(gastos, hoyISO) {
   return topCat === null ? null : { categoria: topCat, total: topTotal };
 }
 
+// ── SERIE DIARIA (IN.8f, ADR 034 D6) ─────────────────────────────
+
+const _DIAS_ABREV     = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const _DIAS_COMPLETOS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/**
+ * Desglose diario del gasto de los últimos 7 días, para el mini gráfico de
+ * barras del resumen semanal. Ordenado de más antiguo a más reciente (hoy
+ * al final), como se lee de izquierda a derecha.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @returns {Array<{ dia: string, diaCompleto: string, total: number }>}
+ */
+export function serieDiaria(gastos, hoyISO) {
+  const hoyMs = _ms(hoyISO);
+  if (hoyMs === null) return [];
+
+  const totales = new Array(7).fill(0);
+  for (const g of gastos ?? []) {
+    const d = _diasAtras(g.fecha, hoyISO);
+    if (d === null || d < 0 || d > 6) continue;
+    totales[6 - d] += (g.monto ?? 0);
+  }
+
+  return totales.map((total, i) => {
+    const diaSemana = new Date(hoyMs - (6 - i) * 86_400_000).getDay();
+    return { dia: _DIAS_ABREV[diaSemana], diaCompleto: _DIAS_COMPLETOS[diaSemana], total };
+  });
+}
+
 /**
  * Días distintos del mes con al menos un gasto registrado.
  * Mide actividad financiera anotada, no aperturas de la app (ADR 008).
@@ -197,18 +228,31 @@ export function diasActivosMes(gastos, mesISO) {
  *   top: { categoria: string, total: number }|null,
  *   registros: number,
  *   diasActivos: number,
+ *   serie: Array<{ dia: string, diaCompleto: string, total: number }>,
+ *   diasActivosSemana: number,
+ *   diaPico: string|null,
  * }}
  */
 export function resumenSemanal(gastos, hoyISO) {
   const actual = gastoUltimos7Dias(gastos, hoyISO);
   const previa = gastoSemanaPrevia(gastos, hoyISO);
+  const serie  = serieDiaria(gastos, hoyISO);
+
+  // Día con más gasto de la serie (IN.8f, ADR 034 D6), para el mensaje
+  // interpretativo ("mayor gasto el sábado"). null si la semana no tuvo
+  // gasto (max === 0): "mayor gasto" no aplica sin gasto real que destacar.
+  const pico = serie.reduce((max, d) => (d.total > (max?.total ?? -1) ? d : max), null);
+
   return {
     actual,
     previa,
-    comparacion: compararSemanas(actual, previa),
-    top:         categoriaTopSemana(gastos, hoyISO),
-    registros:   registrosUltimos7Dias(gastos, hoyISO),
-    diasActivos: diasActivosMes(gastos, hoyISO),
+    comparacion:       compararSemanas(actual, previa),
+    top:               categoriaTopSemana(gastos, hoyISO),
+    registros:         registrosUltimos7Dias(gastos, hoyISO),
+    diasActivos:       diasActivosMes(gastos, hoyISO),
+    serie,
+    diasActivosSemana: serie.filter(d => d.total > 0).length,
+    diaPico:           pico && pico.total > 0 ? pico.diaCompleto : null,
   };
 }
 

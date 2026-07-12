@@ -10,7 +10,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
-import { iconoCategoria } from '../../infra/icons.js';
+import { icon, tejaCategoria } from '../../infra/icons.js';
 import { CATEGORIA_ICONO } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal } from './logic.js';
@@ -25,33 +25,43 @@ import { resumenSemanal } from './logic.js';
 const _resumenSemanalMemo = memoizar(resumenSemanal, ['gastos']);
 
 /**
- * Texto de la tendencia según la comparación con la semana previa.
- * Tono neutral, sin castigo: la subida no se presenta como alarma (ADR 008).
+ * Texto compacto del chip comparativo (IN.8f, ADR 034 D6).
+ * Tono neutral, sin castigo: la subida no se presenta como alarma (ADR 019,
+ * mismo criterio que IV.3 en Análisis: solo bajar se celebra, subir queda neutro).
  *
  * @param {{ direccion: string, pct: number|null }} comp
  * @returns {string}
  */
-function _textoTendencia(comp) {
+function _chipTexto(comp) {
   switch (comp.direccion) {
-    case 'subió': return `Gastaste ${comp.pct}% más que la semana pasada`;
-    case 'bajó':  return `Gastaste ${comp.pct}% menos que la semana pasada`;
-    case 'igual': return 'Casi igual que la semana pasada';
-    default:      return 'Sin gastos la semana pasada para comparar';
+    case 'subió': return `${comp.pct}% más`;
+    case 'bajó':  return `${comp.pct}% menos`;
+    case 'igual': return 'Igual que la semana pasada';
+    default:      return 'Sin semana previa para comparar';
   }
 }
 
 /**
- * Modificador de color de la tendencia.
- * Solo la bajada se refuerza en positivo (acento); la subida queda neutra
- * para no convertir el resumen en un regaño.
- *
+ * Modificador de color del chip. Solo bajar el gasto se refuerza en verde;
+ * subir/igual/sin-previa quedan en el mismo tono neutro (ADR 019).
  * @param {string} direccion
  * @returns {string}
  */
-function _tonoTendencia(direccion) {
-  if (direccion === 'bajó')  return 'resumen-card__trend--baja';
-  if (direccion === 'subió') return 'resumen-card__trend--sube';
-  return 'resumen-card__trend--neutro';
+function _chipClase(direccion) {
+  return direccion === 'bajó' ? 'resumen-semana__chip--positivo' : 'resumen-semana__chip--neutro';
+}
+
+/**
+ * Ícono de tendencia del chip: solo tiene sentido con un porcentaje real
+ * (subió/bajó). Invertido (apuntando abajo) cuando el gasto bajó, para leer
+ * "la línea de gasto va hacia abajo" como buena noticia.
+ * @param {string} direccion
+ * @returns {string}
+ */
+function _chipIcono(direccion) {
+  if (direccion === 'bajó')  return icon('trending-up', 'icon icon--sm resumen-semana__chip-icon resumen-semana__chip-icon--invertido');
+  if (direccion === 'subió') return icon('trending-up', 'icon icon--sm resumen-semana__chip-icon');
+  return '';
 }
 
 /**
@@ -80,39 +90,60 @@ export function renderPanelResumen() {
   }
   el.hidden = false;
 
-  const statTop = r.top
+  // Mini gráfico de barras (IN.8f, ADR 034 D6): alto proporcional al pico de
+  // la semana, tope al 72% del contenedor (deja aire arriba, mismo criterio
+  // del mockup); min-height en CSS evita una barra invisible en días sin gasto.
+  const maxDia = Math.max(0, ...r.serie.map(d => d.total));
+  const barrasHtml = r.serie.map(d => {
+    const esPico = maxDia > 0 && d.total === maxDia;
+    const pct = maxDia > 0 ? Math.round((d.total / maxDia) * 72) : 0;
+    return `
+      <div class="resumen-semana__barra">
+        <div class="resumen-semana__barra-fill${esPico ? ' resumen-semana__barra-fill--pico' : ''}" style="height:${pct}%"></div>
+      </div>`;
+  }).join('');
+  const diasHtml = r.serie.map(d => {
+    const esPico = maxDia > 0 && d.total === maxDia;
+    return `<span class="resumen-semana__dia${esPico ? ' resumen-semana__dia--pico' : ''}">${d.dia}</span>`;
+  }).join('');
+  const ariaBarras = `Gasto diario de los últimos 7 días, máximo ${f(maxDia)}`;
+
+  const diasActivosTxt = r.diasActivosSemana === 1
+    ? '1 de 7 días activos'
+    : `${r.diasActivosSemana} de 7 días activos`;
+  const picoTxt = r.diaPico ? ` · mayor gasto el ${r.diaPico}` : '';
+
+  const topHtml = r.top
     ? `
-      <div class="resumen-card__stat">
-        <p class="resumen-card__label">Categoría con más gasto</p>
-        <p class="resumen-card__value resumen-card__value--sm">${iconoCategoria(CATEGORIA_ICONO[r.top.categoria] ?? 'c-otros', 'icon icon--sm')} ${_esc(r.top.categoria)}</p>
-        <p class="resumen-card__sub">${f(r.top.total)}</p>
+      <div class="resumen-semana__top">
+        ${tejaCategoria(CATEGORIA_ICONO[r.top.categoria] ?? 'c-otros', 'gastos')}
+        <div class="resumen-semana__top-body">
+          <p class="resumen-semana__top-titulo">${_esc(r.top.categoria)} fue tu categoría top</p>
+          <p class="resumen-semana__top-sub">${diasActivosTxt}${picoTxt}</p>
+        </div>
+        <span class="resumen-semana__top-monto">${f(r.top.total)}</span>
       </div>`
     : '';
-
-  const registrosTxt = r.registros === 1
-    ? '1 registro esta semana'
-    : `${r.registros} registros esta semana`;
-
-  const diasTxt = r.diasActivos === 1
-    ? '1 día activo este mes'
-    : `${r.diasActivos} días activos este mes`;
 
   // IN.8a (ADR 034 D1): la card ya no repite el encabezado interno; el título
   // visible es el label del grupo "Resumen de la semana" en index.html.
   el.innerHTML = `
     <section class="resumen-card" aria-label="Resumen de la semana">
-      <div class="resumen-card__grid">
-        <div class="resumen-card__stat resumen-card__stat--primary">
-          <p class="resumen-card__label">Gastaste estos 7 días</p>
-          <p class="resumen-card__value">${f(r.actual)}</p>
-          <p class="resumen-card__trend ${_tonoTendencia(r.comparacion.direccion)}">${_textoTendencia(r.comparacion)}</p>
+      <div class="resumen-semana">
+        <div class="resumen-semana__header">
+          <div>
+            <p class="resumen-semana__label">Gastaste esta semana</p>
+            <p class="resumen-semana__monto">${f(r.actual)}</p>
+          </div>
+          <span class="resumen-semana__chip ${_chipClase(r.comparacion.direccion)}">
+            ${_chipIcono(r.comparacion.direccion)}${_chipTexto(r.comparacion)}
+          </span>
         </div>
-        ${statTop}
-        <div class="resumen-card__stat">
-          <p class="resumen-card__label">Constancia</p>
-          <p class="resumen-card__value resumen-card__value--sm">${diasTxt}</p>
-          <p class="resumen-card__sub">${registrosTxt}</p>
-        </div>
+
+        <div class="resumen-semana__barras" role="img" aria-label="${ariaBarras}">${barrasHtml}</div>
+        <div class="resumen-semana__dias" aria-hidden="true">${diasHtml}</div>
+
+        ${topHtml}
       </div>
     </section>`;
 }

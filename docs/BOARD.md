@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8a a IN.8e cerradas, ver CHANGELOG; sigue IN.8f).
+> Última actualización: 2026-07-12 (IN.8a a IN.8f cerradas, ver CHANGELOG; sigue IN.8g, última rebanada).
 
 ---
 
 ## En proceso
 
-_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a a IN.8e cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual; detalle por cuenta expandible con máscara; header de perfil con iniciales; Pendientes del mes sin línea roja + Gestionar → Calendario, ver CHANGELOG); la siguiente rebanada es **IN.8f** (resumen semanal visual). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
+_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a a IN.8f cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual; detalle por cuenta expandible con máscara; header de perfil con iniciales; Pendientes del mes sin línea roja + Gestionar → Calendario; resumen semanal visual con serie diaria + barras + chip comparativo, ver CHANGELOG); la siguiente y última rebanada es **IN.8g** (fusión accesos + actividad). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
 
 ---
 
@@ -51,18 +51,9 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 > **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
 
-#### IN.8f - Inicio v2: resumen semanal visual (serie diaria + barras + chip comparativo)
-- Prioridad  : alta
-- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
-- Objetivo   : ADR 034 D6: extender `resumenSemanal()` con la serie diaria de 7 totales (verificado 2026-07-12: hoy solo expone agregados; cálculo puro dentro del mismo bundle memoizado de PERF.2/7b, sin memo nueva); rediseñar `renderPanelResumen()`: monto 28px/800 + chip comparativo (verde si el gasto bajó, neutro/ámbar si subió, nunca rojo: ADR 019/IV.3) + barras de 7 días estáticas (pico al 100% de `--fk-accent`, resto ~28%) + fila de categoría top con teja, días activos y mensaje interpretativo.
-- Secciones  : Inicio (dominio `resumen`)
-- Archivos   : `modules/dominio/resumen/logic.js` (`resumenSemanal()` + serie diaria), `modules/dominio/resumen/view.js` (`renderPanelResumen()`), styles, tests unitarios
-- Depende de : nada (IN.8a cerró el 2026-07-12)
-- Modelo     : Sonnet 5 - Alto
-
 #### IN.8g - Inicio v2: fusión accesos rápidos + actividad reciente
 - Prioridad  : media-alta
-- Estado     : pendiente
+- Estado     : pendiente (siguiente y última rebanada de la iniciativa)
 - Objetivo   : ADR 034 D7: un solo `bento__cell` al final de la pantalla con dos secciones separadas por `border-top`: accesos arriba (label + "Personalizar" + grilla de 4 columnas, `accesosVisibles()` intacta) y actividad abajo (label + "Ver todo" + 5 movimientos, `movimientosRecientes()` intacta). Solo cambia contenedor/posición; cero cambios en los `logic.js` de ambos dominios.
 - Secciones  : Inicio (dominios `accesos` y `movimientos`, solo vista)
 - Archivos   : `index.html`, `modules/dominio/accesos/view.js`, `modules/dominio/movimientos/view.js`, styles

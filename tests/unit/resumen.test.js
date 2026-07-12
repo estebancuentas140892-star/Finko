@@ -6,6 +6,7 @@ import {
   compararSemanas,
   categoriaTopSemana,
   diasActivosMes,
+  serieDiaria,
   resumenSemanal,
   hayResumen,
 } from '../../modules/dominio/resumen/logic.js';
@@ -182,6 +183,37 @@ describe('diasActivosMes()', () => {
   });
 });
 
+// ── serieDiaria() (IN.8f, ADR 034 D6) ─────────────────────────────
+//
+// HOY = '2026-06-13' cae sábado (verificado con `new Date(2026,5,13).getDay()`).
+
+describe('serieDiaria()', () => {
+  it('devuelve 7 días ordenados de más antiguo a más reciente (hoy al final)', () => {
+    const r = serieDiaria([], HOY);
+    expect(r).toHaveLength(7);
+    expect(r[6]).toEqual({ dia: 'Sáb', diaCompleto: 'sábado', total: 0 });
+    expect(r[0].total).toBe(0);
+  });
+
+  it('suma el gasto de cada día dentro de la ventana de 7 días, ignora lo de afuera', () => {
+    const gastos = [
+      gasto({ fecha: '2026-06-13', monto: 5_000 }),  // hoy
+      gasto({ fecha: '2026-06-13', monto: 3_000 }),  // mismo día, suma
+      gasto({ fecha: '2026-06-07', monto: 9_000 }),  // hace 6 días, primer día de la ventana
+      gasto({ fecha: '2026-06-06', monto: 1_000 }),  // hace 7 días, fuera
+    ];
+    const r = serieDiaria(gastos, HOY);
+    expect(r[6].total).toBe(8_000);
+    expect(r[0].total).toBe(9_000);
+    expect(r.reduce((s, d) => s + d.total, 0)).toBe(17_000);
+  });
+
+  it('devuelve array vacío con hoyISO inválido', () => {
+    expect(serieDiaria([], '')).toEqual([]);
+    expect(serieDiaria([], undefined)).toEqual([]);
+  });
+});
+
 // ── resumenSemanal() ─────────────────────────────────────────────
 
 describe('resumenSemanal()', () => {
@@ -199,6 +231,23 @@ describe('resumenSemanal()', () => {
     expect(r.top).toEqual({ categoria: 'Transporte', total: 60_000 });
     expect(r.registros).toBe(2);
     expect(r.diasActivos).toBe(3);
+  });
+
+  it('incluye la serie diaria, días activos de la semana y el día pico (IN.8f)', () => {
+    const gastos = [
+      gasto({ fecha: '2026-06-13', monto: 60_000 }), // hoy = sábado, pico
+      gasto({ fecha: '2026-06-10', monto: 40_000 }),
+    ];
+    const r = resumenSemanal(gastos, HOY);
+    expect(r.serie).toHaveLength(7);
+    expect(r.diasActivosSemana).toBe(2);
+    expect(r.diaPico).toBe('sábado');
+  });
+
+  it('diaPico es null cuando no hubo gasto en la ventana', () => {
+    const r = resumenSemanal([gasto({ fecha: '2026-05-01', monto: 10_000 })], HOY);
+    expect(r.diaPico).toBeNull();
+    expect(r.diasActivosSemana).toBe(0);
   });
 });
 
@@ -255,5 +304,56 @@ describe('renderPanelResumen()', () => {
     expect(elPanel().hidden).toBe(false);
     expect(elPanel().innerHTML).toContain('Resumen de la semana');
     expect(elPanel().innerHTML).toContain('$20.000');
+  });
+
+  // ── IN.8f (ADR 034 D6): bloque visual con barras + chip + categoría top ──
+
+  it('dibuja 7 barras, una por día de la ventana', () => {
+    S.gastos = [gasto({ fecha: '2026-06-13', monto: 20_000 })];
+    renderPanelResumen();
+    const barras = elPanel().querySelectorAll('.resumen-semana__barra');
+    expect(barras).toHaveLength(7);
+  });
+
+  it('el chip dice "N% menos" en verde cuando el gasto bajó', () => {
+    S.gastos = [
+      gasto({ fecha: '2026-06-13', monto: 50_000 }),
+      gasto({ fecha: '2026-06-02', monto: 100_000 }), // semana previa
+    ];
+    renderPanelResumen();
+    const chip = elPanel().querySelector('.resumen-semana__chip');
+    expect(chip.textContent.trim()).toContain('50% menos');
+    expect(chip.className).toContain('resumen-semana__chip--positivo');
+  });
+
+  it('el chip dice "N% más" en tono neutro cuando el gasto subió (sin rojo, ADR 019)', () => {
+    S.gastos = [
+      gasto({ fecha: '2026-06-13', monto: 100_000 }),
+      gasto({ fecha: '2026-06-02', monto: 50_000 }), // semana previa
+    ];
+    renderPanelResumen();
+    const chip = elPanel().querySelector('.resumen-semana__chip');
+    expect(chip.textContent.trim()).toContain('100% más');
+    expect(chip.className).toContain('resumen-semana__chip--neutro');
+  });
+
+  it('muestra la categoría top con "N de 7 días activos" y el día pico', () => {
+    S.gastos = [
+      gasto({ fecha: '2026-06-13', categoria: 'Mercado', monto: 180_000 }), // hoy = sábado
+      gasto({ fecha: '2026-06-10', categoria: 'Transporte', monto: 20_000 }),
+    ];
+    renderPanelResumen();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('Mercado fue tu categoría top');
+    expect(html).toContain('2 de 7 días activos');
+    expect(html).toContain('mayor gasto el sábado');
+    expect(html).toContain('$180.000');
+  });
+
+  it('sin categoría top (imposible con registros > 0, pero defensivo) no rompe el render', () => {
+    S.gastos = [gasto({ fecha: '2026-06-13', categoria: 'Deudas', monto: 500_000, compromisoId: 'c1' })];
+    expect(() => renderPanelResumen()).not.toThrow();
+    // Sin top (categoriaTopSemana excluye compromisoId), no se dibuja la fila.
+    expect(elPanel().innerHTML).not.toContain('resumen-semana__top-titulo');
   });
 });

@@ -358,6 +358,55 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await gestionar.click();
     await expect(page.locator('#sec-agenda.active')).toBeVisible();
   });
+
+  test('Resumen de la semana visual: monto, chip, barras y categoría top (IN.8f, ADR 034 D6)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const hoy = new Date();
+      const iso = (d) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+      const haceNDias = (n) => {
+        const d = new Date(hoy);
+        d.setDate(d.getDate() - n);
+        return iso(d);
+      };
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: [
+          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 180000, fecha: iso(hoy), cuentaId: null, nota: '' },
+          { id: 'g2', descripcion: 'Bus', categoria: 'Transporte', monto: 20000, fecha: haceNDias(3), cuentaId: null, nota: '' },
+        ],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    const panel = page.locator('#panel-resumen');
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('.resumen-semana__label')).toHaveText('Gastaste esta semana');
+    await expect(panel.locator('.resumen-semana__monto')).toHaveText('$200.000');
+    // Sin semana previa con datos: el chip no alarma con rojo (ADR 019).
+    await expect(panel.locator('.resumen-semana__chip')).toContainText('Sin semana previa para comparar');
+    await expect(panel.locator('.resumen-semana__chip')).toHaveClass(/--neutro/);
+
+    await expect(panel.locator('.resumen-semana__barra')).toHaveCount(7);
+    await expect(panel.locator('.resumen-semana__barra-fill--pico')).toHaveCount(1);
+
+    await expect(panel.locator('.resumen-semana__top-titulo')).toHaveText('Mercado fue tu categoría top');
+    await expect(panel.locator('.resumen-semana__top-sub')).toContainText('2 de 7 días activos');
+    await expect(panel.locator('.resumen-semana__top-monto')).toHaveText('$180.000');
+  });
 });
 
 // ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────
