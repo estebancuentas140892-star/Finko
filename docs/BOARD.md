@@ -78,16 +78,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **MC.15c y MC.15d cerradas el 2026-07-12** (aviso de costos periódicos al crear cuenta + orden categoría→descripción en el ingreso puntual, ver CHANGELOG). **MC.15b absorbida por MC.18b** (el rediseño de la tarjeta de cuenta del ADR 035 rehace el contenedor de la teja; la verificación de legibilidad de Davivienda, BBVA, DaviPlata y Nubank es criterio de aceptación de esa rebanada). La iniciativa MC.15 queda cerrada como tarjeta propia.
 
-> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). Rebanadas restantes abajo, en orden.
-
-#### MC.18b - Tarjetas de cuenta con saldo prominente y chips de metadatos (D2, absorbe MC.15b)
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : cada cuenta pasa de `.list-item` con hints apilados (📅💸🔑) a tarjeta con teja 44px + nombre + tipo + saldo prominente (700, tabular) + chips compactos (icono SVG + texto) para cuota, 4x1000 y datos de transferencia; editar/eliminar como ghost icons 32px (eliminar vira a danger en hover). La máscara del ojo (D5) se extiende a los saldos por cuenta. Incluye la verificación de legibilidad de logos de la ex MC.15b (Davivienda, BBVA, DaviPlata, Nubank, solo contenedor, capturas en ambos temas).
-- Secciones  : Mis cuentas
-- Archivos   : `tesoreria/views/cuentas.js` (`_renderCuentaItem()`, `_formatDatosTransferencia()`), sprite (símbolos `i-key`, `i-percent` nuevos vía `assets/svg/` + `scripts/sync-sprite.py`, drafts del mockup como plantillas ADR 026), `styles/components/domain.css`
-- Depende de : MC.18a (hero ya en la pantalla, cerrada)
-- Modelo     : Sonnet 5 - Alto (patrón de UI nuevo + iconos de sprite + máscara)
+> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). **MC.18b cerrada el 2026-07-12** (tarjetas de cuenta con chips + teja 44px, absorbe MC.15b, ver CHANGELOG). Rebanadas restantes abajo, en orden.
 
 #### MC.18c - GMF como tarjeta insight integrada (D4)
 - Prioridad  : media

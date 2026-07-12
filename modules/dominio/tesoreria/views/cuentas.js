@@ -10,8 +10,8 @@
 import { S } from '../../../core/state.js';
 import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
-import { bancoAvatar } from '../../../infra/bancos.js';
-import { SALDO_MASCARA } from '../../../infra/render.js';
+import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
 import {
   cuentasActivas,
@@ -98,96 +98,122 @@ export function renderHeroTesoreria() {
 /**
  * Renderiza la lista de cuentas en `#lista-tesoreria`.
  * No-op si el contenedor no existe (sección no montada).
+ *
+ * MC.18b (ADR 035 D5): el ojo del hero enmascara también el saldo de cada
+ * tarjeta, mismo flag `S.config.ocultarSaldo` que el total y el saldo de Inicio.
  */
 export function renderListaCuentas() {
   const el = document.getElementById('lista-tesoreria');
   if (!el) return;
 
   const cuentas = cuentasActivas(S.cuentas);
+  const oculto  = S.config?.ocultarSaldo === true;
   el.innerHTML = cuentas.length === 0
     ? _renderEmptyState()
-    : cuentas.map(_renderCuentaItem).join('');
+    : cuentas.map(c => _renderCuentaItem(c, oculto)).join('');
+}
+
+/**
+ * Etiqueta descriptiva del tipo de cuenta para la tarjeta (MC.18b): a
+ * diferencia de `cuenta.tipo` (que para billeteras guarda el propio banco,
+ * ej. tipo="Nequi", y para efectivo guarda "Efectivo"), esta etiqueta
+ * siempre describe la CLASE de forma legible, sin duplicar el nombre que
+ * ya se muestra arriba.
+ *
+ * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @returns {string}
+ */
+function _tipoLabel(cuenta) {
+  const clase = bancoClase(cuenta.banco);
+  if (clase === 'billetera') return 'Billetera digital';
+  if (clase === 'efectivo')  return 'Dinero en efectivo';
+  return cuenta.tipo || 'Cuenta';
 }
 
 /**
  * @param {import('../../../core/state.js').Cuenta} cuenta
+ * @param {boolean} oculto - S.config.ocultarSaldo (MC.18b, ADR 035 D5).
  * @returns {string}
  */
-function _renderCuentaItem(cuenta) {
-  const nombre = _esc(cuenta.nombre);
-  const banco  = cuenta.banco;
-  const tipo   = cuenta.tipo;
+function _renderCuentaItem(cuenta, oculto) {
+  const banco = cuenta.banco;
+  const tipo  = cuenta.tipo;
 
-  // MC.15 (1): el form actual no ofrece un campo para escribir un nombre
+  // MC.15a: el form actual no ofrece un campo para escribir un nombre
   // propio, así que `nombre` sale siempre de `_autoNombre(banco, tipo)`
   // (logic/cuentas.js) y ya contiene banco + tipo ("Banco de Bogotá
-  // Ahorros"). Mostrar además "Banco de Bogotá · Ahorros" debajo era ruido
-  // puro. `normalizarCuenta()` sí respeta un nombre explícito si algún día
-  // se habilita ese campo (ver sus tests): en ese caso el subtítulo vuelve
-  // a aportar información y se muestra.
+  // Ahorros"). MC.18b separa la tarjeta en dos líneas (nombre arriba, tipo
+  // debajo): con nombre autogenerado, el nombre se reduce al banco solo
+  // ("Banco de Bogotá") y el tipo aporta la info real (`_tipoLabel()`), sin
+  // repetir palabras. `normalizarCuenta()` sí respeta un nombre explícito si
+  // algún día se habilita ese campo (ver sus tests): ahí el nombre completo
+  // se conserva y el subtítulo vuelve a ser "banco · tipo" (informa a qué
+  // cuenta real corresponde el nombre elegido).
   const combinado = banco === tipo ? banco : `${banco} ${tipo}`;
   const esAutoNombre = (cuenta.nombre ?? '').trim().toLowerCase() === combinado.trim().toLowerCase();
-  const subtituloHtml = esAutoNombre
-    ? ''
-    : `<p class="list-item__subtitle">${_esc(banco === tipo ? banco : `${banco} · ${tipo}`)}</p>`;
+  const nombre    = _esc(esAutoNombre ? banco : cuenta.nombre);
+  const subtitulo = esAutoNombre ? _tipoLabel(cuenta) : `${banco} · ${tipo}`;
 
-  // Si la cuenta tiene cuota de manejo, mostramos un hint adicional para que
-  // el usuario sepa que hay un compromiso vinculado descontandose mes a mes.
-  const cuotaHint = cuenta.cuotaManejo
-    ? `<p class="list-item__hint">📅 Cuota de manejo: ${f(cuenta.cuotaManejo.monto)} el día ${cuenta.cuotaManejo.diaCobro}</p>`
-    : '';
+  const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(cuenta.saldo);
 
-  // Hint informativo si la cuenta está sujeta al GMF (4x1000).
-  const gmfHint = cuenta.aplica4x1000
-    ? `<p class="list-item__hint">💸 Aplica 4x1000 (GMF)</p>`
-    : '';
-
-  // MC.14: datos de transferencia como punto de consulta rápida (no para
-  // ejecutar transferencias). Se combinan en un solo hint compacto.
-  const transferenciaHint = _formatDatosTransferencia(cuenta.datosTransferencia);
+  const chips = [];
+  if (cuenta.cuotaManejo) {
+    chips.push({ icon: 'i-agenda', label: `Cuota ${f(cuenta.cuotaManejo.monto)} · día ${cuenta.cuotaManejo.diaCobro}` });
+  }
+  if (cuenta.aplica4x1000) {
+    chips.push({ icon: 'i-percent', label: '4x1000' });
+  }
+  const transferenciaLabel = _labelDatosTransferencia(cuenta.datosTransferencia);
+  if (transferenciaLabel) {
+    chips.push({ icon: 'i-key', label: transferenciaLabel });
+  }
+  const chipsHtml = chips.map(ch => `
+          <span class="chip">
+            <svg class="icon icon--sm" aria-hidden="true"><use href="#${ch.icon}"/></svg>
+            ${ch.label}
+          </span>`).join('');
 
   return `
-    <article class="list-item" data-id="${_esc(cuenta.id)}">
-      <div class="list-item__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
-      <div class="list-item__body">
-        <p class="list-item__title">${nombre}</p>
-        ${subtituloHtml}
-        ${cuotaHint}
-        ${gmfHint}
-        ${transferenciaHint}
+    <article class="cuenta-card" data-id="${_esc(cuenta.id)}">
+      <div class="cuenta-card__top">
+        <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
+        <div class="cuenta-card__info">
+          <p class="cuenta-card__nombre">${nombre}</p>
+          <p class="cuenta-card__tipo">${_esc(subtitulo)}</p>
+        </div>
+        <span class="cuenta-card__saldo">${saldoTxt}</span>
       </div>
-      <div class="list-item__meta">
-        <p class="list-item__value">${f(cuenta.saldo)}</p>
-      </div>
-      <div class="list-item__action">
-        <button class="btn btn-ghost btn-icon"
-                data-action="editar-cuenta"
-                data-id="${_esc(cuenta.id)}"
-                aria-label="Editar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
-        <button class="btn btn-ghost btn-icon"
-                data-action="eliminar-cuenta"
-                data-id="${_esc(cuenta.id)}"
-                aria-label="Eliminar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+      <div class="cuenta-card__bottom">
+        <div class="cuenta-card__chips">${chipsHtml}</div>
+        <div class="cuenta-card__actions">
+          <button class="btn btn-ghost btn-icon btn-sm"
+                  data-action="editar-cuenta"
+                  data-id="${_esc(cuenta.id)}"
+                  aria-label="Editar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+          <button class="btn btn-ghost btn-icon btn-sm cuenta-card__eliminar"
+                  data-action="eliminar-cuenta"
+                  data-id="${_esc(cuenta.id)}"
+                  aria-label="Eliminar cuenta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
+        </div>
       </div>
     </article>`;
 }
 
 /**
- * Formatea los datos de transferencia de una cuenta (MC.14) en un solo hint
- * compacto para la tarjeta de lista. Devuelve '' si la cuenta no tiene datos
- * de transferencia guardados.
+ * Texto combinado de los datos de transferencia de una cuenta (MC.14, ahora
+ * chip en MC.18b): número, llave con su tipo y alias, unidos con "·".
+ * Devuelve '' si la cuenta no tiene datos de transferencia guardados.
  *
  * @param {import('../../../core/state.js').DatosTransferencia|null|undefined} dt
  * @returns {string}
  */
-function _formatDatosTransferencia(dt) {
+function _labelDatosTransferencia(dt) {
   if (!dt) return '';
   const partes = [];
   if (dt.numeroCuenta) partes.push(`N.° ${_esc(dt.numeroCuenta)}`);
   if (dt.llave)        partes.push(`${_esc(dt.tipoLlave ?? 'Llave')} ${_esc(dt.llave)}`);
   if (dt.alias)        partes.push(_esc(dt.alias));
-  if (partes.length === 0) return '';
-  return `<p class="list-item__hint">🔑 ${partes.join(' · ')}</p>`;
+  return partes.join(' · ');
 }
 
 function _renderEmptyState() {

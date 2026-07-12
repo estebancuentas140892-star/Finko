@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.18b tarjetas de cuenta con saldo prominente y chips de metadatos · 2026-07-12
+
+Cierra **MC.18b** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), segunda rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D2), y **absorbe MC.15b** (legibilidad de logos: Davivienda, BBVA, DaviPlata, Nubank).
+
+**Qué cambió:** cada cuenta pasa de `.list-item` con hints apilados de emoji (📅 cuota, 💸 4x1000, 🔑 transferencia) a `.cuenta-card`: teja de banco/billetera **44px** (antes 36px, mejora la legibilidad óptica de los logos densos sin tocar los SVG oficiales, ADR 026/027) + nombre + tipo + **saldo prominente** (700, tabular) en la misma fila + **chips** (icono SVG + texto) para cuota de manejo, 4x1000 y datos de transferencia + editar/eliminar como ghost icons de 32px (**eliminar vira a danger en hover**, patrón nuevo solo de esta tarjeta). **Nombre/tipo, generaliza MC.15a:** con nombre autogenerado, el título se reduce al banco solo ("Bancolombia") y el tipo va debajo con una etiqueta siempre legible (`_tipoLabel()` nuevo: "Ahorros"/"Corriente" para bancos, "Billetera digital" para billeteras, "Dinero en efectivo" para efectivo, nunca duplica el nombre); con un nombre explícito (soportado por `normalizarCuenta()`), el subtítulo vuelve a ser "banco · tipo" como antes. **Máscara (D5):** `renderListaCuentas()` extiende el flag `S.config.ocultarSaldo` a cada tarjeta (`SALDO_MASCARA_CUENTA`, mismo control que el hero de MC.18a). **Icono nuevo:** `assets/svg/iconos/simbolos/key.svg` (`i-key`) diseñado siguiendo el lenguaje v2 (trazo + chispa en el ojo) y publicado al sprite con `scripts/sync-sprite.py`; `i-percent` e `i-agenda` ya existían. Los chips reutilizan `.chip`/`.icon--sm`, cero componente nuevo.
+
+**Archivos tocados:** `assets/svg/iconos/simbolos/key.svg` (nuevo), `index.html` (sprite regenerado, símbolo `i-key`), `modules/dominio/tesoreria/views/cuentas.js` (`_renderCuentaItem()` reescrito, `_tipoLabel()` nuevo, `_formatDatosTransferencia()` → `_labelDatosTransferencia()`), `modules/infra/bancos.js` (uso de `bancoClase()` ya existente), `styles/components/domain.css` (`.cuenta-card__*`), `tests/unit/tesoreria.test.js` (8 tests nuevos + 3 reescritos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v357 → v358), `docs/DECISIONS/035-mis-cuentas-v2.md` (referencia), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2406/2406 unit (nombre/tipo en ambos casos auto/explícito, tipo label por clase, chips de cuota/GMF/transferencia con su icono, saldo enmascarado) + 172/172 E2E (1 nuevo en Chromium real: crear cuenta bancaria con cuota+GMF, verificar nombre/tipo/saldo/chips/botones, verificar máscara por tarjeta) + guardarraíl `sprite-sync.test.js` verde + lint. La legibilidad de los logos (ex MC.15b) se verificó por el cambio de contenedor (44px, cero bytes tocados en los SVG oficiales) y por el E2E en Chromium real; sin captura visual local (preview de este entorno no siempre carga, ver `docs/contexto/mis-cuentas.md` histórico de MC.15b).
+
+**Podría afectar:** nada persistido (cero cambios de schema). Cambia el marcado de la lista de cuentas (`.list-item` → `.cuenta-card`): cualquier selector CSS o test externo que dependiera de `.list-item` específicamente para `#lista-tesoreria` deja de aplicar (ninguno detectado fuera de este archivo).
+
+---
+
 ### feat(tesoreria): MC.18a hero con total en cuentas + ojo de privacidad + composición · 2026-07-12
 
 Cierra **MC.18a** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), primera rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisiones D1, D3 y D5 sobre el hero), el rediseño de pantalla aprobado por Esteban desde el handoff de Claude Design (mockup `Mis cuentas v2.dc.html`).

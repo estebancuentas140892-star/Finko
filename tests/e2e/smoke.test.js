@@ -875,6 +875,38 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await page.click('#tesoreria-saldo-ojo');
     await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$1.000.000');
   });
+
+  test('MC.18b: la tarjeta de cuenta muestra nombre, tipo, saldo, chips y se enmascara con el ojo', async ({ page }) => {
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    const form = page.locator('#modal-cuenta-body form');
+
+    await form.locator('.bank-picker__trigger').click();
+    await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+    await page.locator('#banco-list .bank-picker__item[data-value="Bancolombia"]').click();
+    await form.locator('#cuenta-tipo').selectOption('Ahorros');
+    await form.locator('#cuenta-saldo').fill('1450000');
+    await form.locator('#cuenta-4x1000').check();
+    await form.locator('#cuenta-cuota-toggle').check();
+    await form.locator('#cuenta-cuota-monto').fill('15000');
+    await form.locator('#cuenta-cuota-dia').fill('15');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+
+    const card = page.locator('.cuenta-card').first();
+    await expect(card.locator('.cuenta-card__nombre')).toHaveText('Bancolombia');
+    await expect(card.locator('.cuenta-card__tipo')).toHaveText('Ahorros');
+    await expect(card.locator('.cuenta-card__saldo')).toHaveText('$1.450.000');
+    await expect(card).toContainText('Cuota $15.000 · día 15');
+    await expect(card).toContainText('4x1000');
+    await expect(card.locator('[data-action="editar-cuenta"]')).toBeVisible();
+    await expect(card.locator('[data-action="eliminar-cuenta"]')).toBeVisible();
+
+    // El ojo del hero también enmascara el saldo de la tarjeta.
+    await page.click('#tesoreria-saldo-ojo');
+    await expect(card.locator('.cuenta-card__saldo')).toHaveText('••••');
+    await expect(card).not.toContainText('1.450.000');
+  });
 });
 
 // ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────

@@ -1105,6 +1105,98 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   CUENTA-CARD (MC.18b, ADR 035 D2) - tarjeta de cuenta con saldo
+   prominente y metadatos como chips (antes .list-item con hints
+   apilados + emoji). Absorbe MC.15b: la teja de banco/billetera
+   sube a 44px, el contenedor con más aire mejora la legibilidad
+   de los logos densos (Davivienda, BBVA, DaviPlata, Nubank) sin
+   tocar los SVG oficiales (ADR 026/027).
+   ════════════════════════════════════════════════════════════ */
+
+.cuenta-card {
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+.cuenta-card__top {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+}
+
+.cuenta-card__icon .bank-avatar {
+  width: 2.75rem;   /* 44px, mockup aprobado: paso por encima de --fk-teja-lg (36px) */
+  height: 2.75rem;
+  font-size: 15px;
+}
+
+.cuenta-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cuenta-card__nombre {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.cuenta-card__tipo {
+  margin: 1px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.cuenta-card__saldo {
+  flex-shrink: 0;
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cuenta-card__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+
+.cuenta-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  min-width: 0;
+}
+
+.cuenta-card__actions {
+  display: flex;
+  gap: var(--fk-space-1);
+  flex-shrink: 0;
+  /* Empuja las acciones a la derecha aunque no haya chips (justify-between
+     del padre ya lo hace; margin-left:auto cubre el caso sin chips donde
+     .cuenta-card__chips queda sin ancho y el gap no alcanza a separar). */
+  margin-left: auto;
+}
+
+/* Eliminar vira a danger en hover (mockup aprobado): patrón propio de esta
+   tarjeta, no un modificador global de .btn-icon (las demás listas de la
+   app mantienen el ghost hover neutro). */
+.cuenta-card__eliminar:hover:not(:disabled) {
+  background: var(--fk-danger-bg);
+  color: var(--fk-danger-text);
+}
+
+/* ════════════════════════════════════════════════════════════
    VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
    Se renderiza solo si hay items. Scroll vertical si >5 items
    para no inflar el dashboard.

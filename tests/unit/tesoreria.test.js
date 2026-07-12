@@ -872,18 +872,18 @@ describe('renderFormCuenta() - bloque de datos de transferencia (MC.14)', () => 
   });
 });
 
-describe('renderListaCuentas() - hint de datos de transferencia (MC.14)', () => {
+describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip desde MC.18b)', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-tesoreria"></div>';
   });
 
-  it('sin datosTransferencia, no muestra el hint', () => {
+  it('sin datosTransferencia, no muestra el chip de llave', () => {
     S.cuentas = [cuentaBase({ datosTransferencia: null })];
     renderListaCuentas();
-    expect(document.getElementById('lista-tesoreria').innerHTML).not.toContain('🔑');
+    expect(document.getElementById('lista-tesoreria').innerHTML).not.toContain('#i-key');
   });
 
-  it('con datosTransferencia, combina número, llave y alias en un solo hint', () => {
+  it('con datosTransferencia, combina número, llave y alias en un solo chip', () => {
     S.cuentas = [cuentaBase({
       datosTransferencia: {
         numeroCuenta: '1234567890',
@@ -894,41 +894,73 @@ describe('renderListaCuentas() - hint de datos de transferencia (MC.14)', () => 
     })];
     renderListaCuentas();
     const html = document.getElementById('lista-tesoreria').innerHTML;
-    expect(html).toContain('🔑');
+    expect(html).toContain('#i-key');
     expect(html).toContain('N.° 1234567890');
     expect(html).toContain('Celular 3001234567');
     expect(html).toContain('@mi-alias');
   });
 });
 
-// ── renderListaCuentas() - MC.15 (1): sin subtítulo redundante ───
+// ── renderListaCuentas() - MC.18b: tarjeta con chips (ADR 035 D2) ─
 
-describe('renderListaCuentas() - MC.15 (1): subtítulo solo si aporta información', () => {
+describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + chips', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-tesoreria"></div>';
   });
 
-  it('con nombre autogenerado ("Banco Tipo"), no muestra el subtítulo', () => {
+  it('con nombre autogenerado, el título se reduce al banco y el tipo va debajo (banco)', () => {
     S.cuentas = [cuentaBase({ nombre: 'Davivienda Ahorros', banco: 'Davivienda', tipo: 'Ahorros' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
-    expect(el.querySelector('.list-item__title').textContent).toBe('Davivienda Ahorros');
-    expect(el.querySelector('.list-item__subtitle')).toBeNull();
+    expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Davivienda');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Ahorros');
   });
 
-  it('con nombre autogenerado donde banco === tipo (billetera/efectivo), no muestra el subtítulo', () => {
+  it('con nombre autogenerado donde banco === tipo (billetera), el tipo muestra "Billetera digital"', () => {
     S.cuentas = [cuentaBase({ nombre: 'Nequi', banco: 'Nequi', tipo: 'Nequi' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
-    expect(el.querySelector('.list-item__subtitle')).toBeNull();
+    expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Nequi');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Billetera digital');
   });
 
-  it('con un nombre explícito que difiere de "banco tipo", sí muestra el subtítulo', () => {
+  it('con clase efectivo, el tipo muestra "Dinero en efectivo"', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
+    renderListaCuentas();
+    const el = document.getElementById('lista-tesoreria');
+    expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Efectivo');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Dinero en efectivo');
+  });
+
+  it('con un nombre explícito que difiere de "banco tipo", el subtítulo vuelve a ser "banco · tipo"', () => {
     S.cuentas = [cuentaBase({ nombre: 'Nequi principal', banco: 'Nequi', tipo: 'Ahorros' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
-    expect(el.querySelector('.list-item__title').textContent).toBe('Nequi principal');
-    expect(el.querySelector('.list-item__subtitle').textContent).toBe('Nequi · Ahorros');
+    expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Nequi principal');
+    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Nequi · Ahorros');
+  });
+
+  it('cuota de manejo y GMF se muestran como chips con su icono', () => {
+    S.cuentas = [cuentaBase({
+      cuotaManejo: { monto: 15_000, diaCobro: 15 },
+      aplica4x1000: true,
+    })];
+    renderListaCuentas();
+    const html = document.getElementById('lista-tesoreria').innerHTML;
+    expect(html).toContain('#i-agenda');
+    expect(html).toContain('Cuota $15.000 · día 15');
+    expect(html).toContain('#i-percent');
+    expect(html).toContain('4x1000');
+  });
+
+  it('el saldo se enmascara cuando S.config.ocultarSaldo es true', () => {
+    S.cuentas = [cuentaBase({ saldo: 500_000 })];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: true };
+    renderListaCuentas();
+    const el = document.getElementById('lista-tesoreria');
+    expect(el.querySelector('.cuenta-card__saldo').textContent).toBe('••••');
+    expect(el.innerHTML).not.toContain('500.000');
+    S.config.ocultarSaldo = false;
   });
 });
 
