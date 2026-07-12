@@ -119,3 +119,17 @@
 /* ── OPACIDAD ─────────────────────────────────────────────────── */
 .opacity-50  { opacity: 0.5; }
 .opacity-75  { opacity: 0.75; }
+
+/* ── CELDA PLANA DEL BENTO (IN.8a, ADR 034 D1) ────────────────────
+   El componente interno (nudge, vencidos-card, resumen-card...) pone su
+   propia superficie/borde; la celda solo reserva el lugar en la grilla.
+   Vive aquí (capa más alta) porque debe ganarle al padding responsive de
+   .bento__cell y al margin-bottom heredado de las cards internas, que
+   viven en capas superiores a layout. */
+.bento__cell--flat {
+  background: none;
+  border: none;
+  padding: 0;
+  overflow: visible;
+}
+.bento__cell--flat > :last-child { margin-bottom: 0; }

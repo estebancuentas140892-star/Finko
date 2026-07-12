@@ -164,6 +164,9 @@
   .bento__cell--half        { grid-column: span 3; }
   /* Accesos: full row en tablet ya que hero ocupa la fila anterior */
   .bento__cell--accesos     { grid-column: span 6; }
+  /* Grilla interna de los grupos del dashboard (IN.8a): espeja las
+     columnas del bento para que los spans de arriba sigan valiendo. */
+  .bento__group-cells       { grid-template-columns: repeat(6, 1fr); }
 
   /* ── TOUCH TARGETS - Apple HIG 44pt mínimo ─────────────────── */
   .btn         { min-height: 44px; }
@@ -224,6 +227,11 @@
   .bento__cell--half   { grid-column: span 1; }
   .bento__cell--tall,
   .bento__cell--taller { grid-row: span 1; }
+
+  /* Aire del dashboard en móvil (IN.8a, ADR 034 D1): 20px entre bloques
+     de primer nivel, 12px entre tarjetas dentro de un grupo. */
+  .bento--dash         { gap: var(--fk-space-5); }
+  .bento__group-cells  { grid-template-columns: 1fr; gap: var(--fk-space-3); }
 
   /* Hero metric del dashboard - fluid scaling:
      320px → 24px (mín legible)

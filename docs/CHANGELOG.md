@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IN.8a reorden del dashboard + labels de grupo + aire · 2026-07-12
+
+Cierra **IN.8a** (`docs/BOARD.md`, iniciativa "Inicio v2"), la primera rebanada de implementación del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D1: lo accionable sube, los atajos bajan).
+
+**Qué cambió:** el `.bento--dash` de `index.html` queda en el orden nuevo: hero → grupo "Atención hoy" (nudge de distribuir ingreso + Pendientes del mes + Próximas prioridades + alertas de límites) → grupo "Resumen de la semana" → accesos rápidos → actividad reciente al final. Los dos grupos usan un contenedor nuevo `.bento__group` (layout.css): label de grupo `.bento__group-label` (12px/700, uppercase, letter-spacing 0.07em, `--fk-text-muted`: pasa AA sobre bg-base, donde se apoya) + grilla interna `.bento__group-cells` que espeja las columnas del bento por breakpoint (12 desktop / 6 tablet / 1 móvil, responsive.css), así los spans `--full`/`--half` existentes siguen valiendo. Un grupo sin ninguna celda visible desaparece completo (label incluido) vía `:has()`, respetando el patrón `[hidden]` de los paneles dinámicos. Los 6 paneles dinámicos ganan `.bento__cell--flat` (utils.css, capa más alta a propósito: debe ganarle al padding móvil de `.bento__cell` en la capa responsive y al `margin-bottom` de las cards internas en la capa components): el componente interno pone su propia superficie/borde y desaparece el doble contenedor card-dentro-de-card que existía desde TX.8a. Aire en móvil: 20px entre bloques de primer nivel (`.bento--dash`), 12px entre tarjetas dentro de un grupo. `renderPanelResumen()` (`resumen/view.js`) deja de repetir el encabezado interno "Resumen de la semana": el label del grupo es el título (el rediseño completo de esa card llega en IN.8f).
+
+**Archivos tocados:** `index.html` (orden del `.bento--dash` + grupos), `styles/layout.css` (`.bento__group*`), `styles/utils.css` (`.bento__cell--flat`), `styles/responsive.css` (columnas espejo + aire móvil), `modules/dominio/resumen/view.js` (sin encabezado interno), `service-worker.js` (v347 → v348), `docs/contexto/inicio.md`.
+
+**Verificación:** 2337/2337 unit + 164/164 E2E + lint verdes (ningún dominio cambió su lógica: no hacían falta tests nuevos). Geometría medida en Chromium real con datos sembrados (script de captura + medición): label→cards 12px, card→card dentro del grupo 12px, bloque→bloque 20px, celdas planas sin padding fantasma. Capturas móvil/desktop en ambos temas revisadas.
+
+**Podría afectar:** cualquier flujo que dependa del orden visual del dashboard (los E2E de navegación pasan porque localizan por id/aria, no por posición). La línea roja de "Pendientes del mes" y el diseño interno de cada panel siguen igual: cambian en IN.8e/IN.8f.
+
+---
+
 ### docs(adr): IN.8 fase de análisis, ADR 034 Inicio v2 escrito + iniciativa re-cortada en rebanadas · 2026-07-12
 
 Cierra la fase de análisis/ADR de la iniciativa **"Inicio v2" (IN.8)**, la tarjeta que exigía revisión formal del ADR 028 antes de codificar. Detonante: Esteban entregó el handoff de diseño de alta fidelidad (`Iteración de specimen/design_handoff_inicio_v2/`: mockup HTML interactivo construido con los tokens reales de `tokens.css`/`themes.css` + documento de decisiones D1 a D8) y dio la instrucción de implementar el diseño con sus opciones recomendadas.

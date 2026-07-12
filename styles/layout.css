@@ -550,6 +550,41 @@
   letter-spacing: 0.01em;
 }
 
+/* ── GRUPOS DEL DASHBOARD (IN.8a, ADR 034 D1) ──────────────
+   "Atención hoy" y "Resumen de la semana" agrupan sus paneles bajo un
+   label de sección. El grupo ocupa el ancho completo del bento y sus
+   celdas viven en una grilla interna que espeja las columnas del bento
+   (12 desktop / 6 tablet / 1 móvil, ver responsive.css). */
+.bento__group {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  min-width: 0;
+}
+.bento__group-label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  /* muted pasa AA aquí: el label se apoya sobre bg-base, no sobre surface
+     (ver nota de .bento__label: sobre surface haría falta secondary). */
+  color: var(--fk-text-muted);
+  padding-left: 2px;
+  margin: 0;
+}
+.bento__group-cells {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--fk-space-4);
+}
+/* Un grupo sin ninguna celda visible desaparece completo (label incluido):
+   los paneles arrancan [hidden] y cada dominio los activa cuando hay datos. */
+.bento__group:not(:has(.bento__cell:not([hidden]))) { display: none; }
+
+/* La celda plana (.bento__cell--flat) que acompaña a estos grupos vive en
+   utils.css: necesita la capa más alta para ganar al padding responsive. */
+
 /* ── ACENTO POR DOMINIO ────────────────────────────────────
    Cada cell con [data-dominio="X"] recibe un acento visual sutil:
    un borde superior del color del dominio + icono coloreado.

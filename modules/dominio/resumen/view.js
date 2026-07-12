@@ -10,7 +10,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, hoy } from '../../infra/utils.js';
-import { icon, iconoCategoria } from '../../infra/icons.js';
+import { iconoCategoria } from '../../infra/icons.js';
 import { CATEGORIA_ICONO } from '../../core/constants.js';
 import { memoizar } from '../../infra/memo.js';
 import { resumenSemanal } from './logic.js';
@@ -97,11 +97,10 @@ export function renderPanelResumen() {
     ? '1 día activo este mes'
     : `${r.diasActivos} días activos este mes`;
 
+  // IN.8a (ADR 034 D1): la card ya no repite el encabezado interno; el título
+  // visible es el label del grupo "Resumen de la semana" en index.html.
   el.innerHTML = `
     <section class="resumen-card" aria-label="Resumen de la semana">
-      <header class="resumen-card__header">
-        <h2 class="resumen-card__title">${icon('analisis')} Resumen de la semana</h2>
-      </header>
       <div class="resumen-card__grid">
         <div class="resumen-card__stat resumen-card__stat--primary">
           <p class="resumen-card__label">Gastaste estos 7 días</p>

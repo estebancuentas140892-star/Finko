@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8 fase de análisis cerrada: ADR 034 escrito con el diseño hifi de Esteban; iniciativa Inicio v2 re-cortada en IN.8a a IN.8g).
+> Última actualización: 2026-07-12 (IN.8a cerrada: reorden del dashboard + labels de grupo + aire, ver CHANGELOG; sigue IN.8b).
 
 ---
 
 ## En proceso
 
-_(sin tarea activa. Máximo 1 tarjeta aquí a la vez, regla de oro de `/CLAUDE.md` sección 2.1. **IN.8 fase de análisis cerrada el 2026-07-12**: Esteban entregó el diseño hifi de Inicio v2 (`Iteración de specimen/design_handoff_inicio_v2/`) y el [ADR 034](DECISIONS/034-inicio-v2.md) formaliza la revisión del ADR 028; la iniciativa quedó re-cortada en las rebanadas IN.8a a IN.8g (sección "Inicio" abajo), con IN.8a como siguiente tarjeta recomendada. El [ADR 033](DECISIONS/033-direccion-visual-premium.md) pasó a "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11** (menos redundancia en tarjetas de cuenta e ingreso fijo); quedan MC.15b/c/d.)_
+_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a cerrada el 2026-07-12** (reorden del dashboard + labels de grupo + aire, ver CHANGELOG); la siguiente rebanada recomendada es **IN.8b** (hero protagonista + ojo estable + piloto visual ADR 033). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
 
 ---
 
@@ -51,22 +51,13 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 > **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
 
-#### IN.8a - Inicio v2: reorden del dashboard + labels de grupo + aire
-- Prioridad  : alta
-- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa)
-- Objetivo   : aplicar el orden del ADR 034 D1 (hero → "Atención hoy": nudge + pendientes + prioridades + límites → "Resumen de la semana" → accesos+actividad al final), labels de grupo (12px/700 uppercase muted) y aire de 20px entre bloques / 12px dentro de "Atención hoy". Ningún dominio cambia su lógica; en escritorio se conserva el bento de columnas con el mismo orden de lectura.
-- Secciones  : Inicio
-- Archivos   : `index.html` (orden del `.bento--dash`), `styles/layout.css` / `styles/components/domain.css` (labels de grupo, gaps)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio
-
 #### IN.8b - Inicio v2: hero con saldo protagonista + ojo estable + piloto visual premium
 - Prioridad  : alta
-- Estado     : pendiente
+- Estado     : pendiente (siguiente rebanada recomendada de la iniciativa; IN.8a cerró el 2026-07-12)
 - Objetivo   : ADR 034 D2/D3: quitar `#hero-saldo-icon`, centrar label + monto (42px/800, tabular-nums, letter-spacing -0.02em), ojo de privacidad con `position:absolute` en la esquina superior derecha (deja de desplazarse al alternar), fondo con degradado de identidad sobre `--fk-accent` + borde `--fk-accent-border` + `--fk-shadow-md` (piloto ADR 033 acotado al hero). Ambos temas con contraste WCAG calculado contra la parada fuerte del degradado (método IV.1/IV.2).
 - Secciones  : Inicio
 - Archivos   : `index.html`, `modules/infra/render.js` (`updSaldo()`), `styles/layout.css` (`.bento__cell--hero`), `styles/components/domain.css` (`.hero-saldo`), `styles/themes.css`
-- Depende de : IN.8a (recomendado, para verificar sobre el orden final)
+- Depende de : nada (IN.8a, su recomendada previa, cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.8c - Inicio v2: detalle por cuenta expandible con máscara de privacidad
@@ -84,7 +75,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 - Objetivo   : ADR 034 D8: teja de iniciales 46px con gradiente del acento (patrón de tejas ADR 025); `updSaludo()` reubicado en dos líneas (franja horaria 13px arriba, nombre 19px/700 abajo, misma lógica de franjas); botón de ajustes 40px → `#config`; resolver el encabezado accesible de la sección sin perder la región para lectores de pantalla (`#title-dash`); definir fallback del avatar cuando no hay nombre (sin dato nuevo).
 - Secciones  : Inicio
 - Archivos   : `index.html` (header de `#sec-dash`), `modules/infra/render.js` (`updSaludo()`), styles
-- Depende de : IN.8a (recomendado)
+- Depende de : nada (IN.8a cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Medio
 
 #### IN.8e - Inicio v2: Pendientes del mes con jerarquía real + Gestionar → Calendario
@@ -93,7 +84,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 - Objetivo   : ADR 034 D5: quitar el `border-left` rojo; jerarquía por teja de dominio + badge de tipo (`.dom-badge` de IV.2c) + estado temporal en color semántico solo en el texto ("Venció hace 2 días" danger suavizado, "Vence hoy" warning; el color nunca tiñe la tarjeta completa, ADR 019); monto 15px/700 tabular; contador en badge circular rojo suave en el header; **"Gestionar" pasa de `#compromisos` a `#agenda`** (ampliación 3.er lote; el mockup no dibuja el botón pero la función se conserva); "Próxima prioridad" como tarjeta única destacada cuando son pocas.
 - Secciones  : Inicio (render en dominio `compromisos`)
 - Archivos   : `modules/dominio/compromisos/views/dashboard.js` (`renderPanelVencidos()`, `renderPanelPrioridades()`), `styles/components/domain.css` (`vencidos-card*`, `prioridades-card*`), tests unitarios
-- Depende de : IN.8a (recomendado)
+- Depende de : nada (IN.8a cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.8f - Inicio v2: resumen semanal visual (serie diaria + barras + chip comparativo)
@@ -102,7 +93,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 - Objetivo   : ADR 034 D6: extender `resumenSemanal()` con la serie diaria de 7 totales (verificado 2026-07-12: hoy solo expone agregados; cálculo puro dentro del mismo bundle memoizado de PERF.2/7b, sin memo nueva); rediseñar `renderPanelResumen()`: monto 28px/800 + chip comparativo (verde si el gasto bajó, neutro/ámbar si subió, nunca rojo: ADR 019/IV.3) + barras de 7 días estáticas (pico al 100% de `--fk-accent`, resto ~28%) + fila de categoría top con teja, días activos y mensaje interpretativo.
 - Secciones  : Inicio (dominio `resumen`)
 - Archivos   : `modules/dominio/resumen/logic.js` (`resumenSemanal()` + serie diaria), `modules/dominio/resumen/view.js` (`renderPanelResumen()`), styles, tests unitarios
-- Depende de : IN.8a (recomendado)
+- Depende de : nada (IN.8a cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Alto
 
 #### IN.8g - Inicio v2: fusión accesos rápidos + actividad reciente
@@ -111,7 +102,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 - Objetivo   : ADR 034 D7: un solo `bento__cell` al final de la pantalla con dos secciones separadas por `border-top`: accesos arriba (label + "Personalizar" + grilla de 4 columnas, `accesosVisibles()` intacta) y actividad abajo (label + "Ver todo" + 5 movimientos, `movimientosRecientes()` intacta). Solo cambia contenedor/posición; cero cambios en los `logic.js` de ambos dominios.
 - Secciones  : Inicio (dominios `accesos` y `movimientos`, solo vista)
 - Archivos   : `index.html`, `modules/dominio/accesos/view.js`, `modules/dominio/movimientos/view.js`, styles
-- Depende de : IN.8a
+- Depende de : nada (IN.8a cerró el 2026-07-12)
 - Modelo     : Sonnet 5 - Medio
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (que absorbió TX.10; CAL.1 ya cerró su parte), la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_

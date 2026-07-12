@@ -381,9 +381,12 @@
           </div>
         </header>
 
-        <!-- BENTO GRID del dashboard: hero + accesos + paneles dinámicos.
-             Los paneles dinámicos arrancan con [hidden]; dashboard.js los
-             activa cuando hay datos. Esto evita celdas vacías en el grid. -->
+        <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →
+             "Atención hoy" (nudge + pendientes + prioridades + límites) →
+             "Resumen de la semana" → accesos + actividad al final.
+             Los paneles dinámicos arrancan con [hidden]; cada dominio los
+             activa cuando hay datos. Un grupo sin celdas visibles desaparece
+             completo (label incluido) vía :has() en layout.css. -->
         <div class="bento bento--dash">
 
           <!-- HERO: saldo disponible (ancho completo).
@@ -421,10 +424,53 @@
             </div>
           </article>
 
-          <!-- ACCESOS RÁPIDOS: tiles personalizables a secciones que hoy quedan
-               detrás de "Más" (IN.4a, ADR 028 D2). accesos/view.js llena la
-               grilla data-driven contra S.config.accesosInicio; siempre visible
-               (incluso con 0 tiles) para que "Personalizar" quede a mano. -->
+          <!-- ATENCIÓN HOY (IN.8a, ADR 034 D1): lo accionable del día, justo
+               debajo del hero. Cada panel se aplana (bento__cell--flat): el
+               componente interno pone su propia superficie, sin doble card. -->
+          <div class="bento__group">
+            <h2 class="bento__group-label" id="label-atencion-hoy">Atención hoy</h2>
+            <div class="bento__group-cells">
+
+              <!-- DISTRIBUIR INGRESO: nudge (CAL.1, ADR 028 D4). Visible solo
+                   cuando llegó el cobro del periodo y aún no se distribuyó.
+                   tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
+              <div id="panel-distribuir-inicio" class="bento__cell bento__cell--flat bento__cell--full"
+                   role="region" aria-label="Distribuir tu ingreso" hidden></div>
+
+              <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
+                   dashboard.js lo llena; [hidden] hasta que haya datos. -->
+              <div id="panel-vencidos" class="bento__cell bento__cell--flat bento__cell--half"
+                   role="region" aria-label="Deudas y pagos vencidos" hidden></div>
+
+              <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
+                   dashboard.js lo llena; [hidden] hasta que haya datos. -->
+              <div id="panel-prioridades" class="bento__cell bento__cell--flat bento__cell--half"
+                   role="region" aria-label="Próximas prioridades" hidden></div>
+
+              <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido
+                   (>100%). Sin rediseño propio en Inicio v2 (su copy vive en LIM.1).
+                   presupuesto/view.js lo llena; [hidden] si todos están en 'ok'. -->
+              <div id="panel-limites" class="bento__cell bento__cell--flat bento__cell--full"
+                   role="region" aria-label="Alertas de límites de gasto" hidden></div>
+
+            </div>
+          </div>
+
+          <!-- RESUMEN DE LA SEMANA (IN.8a): sube desde el final; el label de
+               grupo es el título (la card ya no repite encabezado interno).
+               resumen/view.js lo llena; [hidden] hasta que haya actividad. -->
+          <div class="bento__group">
+            <h2 class="bento__group-label" id="label-resumen-semana">Resumen de la semana</h2>
+            <div class="bento__group-cells">
+              <div id="panel-resumen" class="bento__cell bento__cell--flat bento__cell--full"
+                   role="region" aria-label="Resumen de la semana" hidden></div>
+            </div>
+          </div>
+
+          <!-- ACCESOS RÁPIDOS: tiles personalizables (IN.4a, ADR 028 D2), al
+               final del orden de lectura (IN.8a: los atajos bajan, lo urgente
+               sube). accesos/view.js llena la grilla contra S.config.accesosInicio;
+               siempre visible para que "Personalizar" quede a mano. -->
           <div class="bento__cell bento__cell--full accesos-inicio" role="region" aria-label="Accesos rápidos">
             <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
             <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
@@ -434,40 +480,11 @@
             </button>
           </div>
 
-          <!-- DISTRIBUIR INGRESO: nudge de "Atención hoy" (CAL.1, ADR 028 D4).
-               Visible solo cuando llegó el cobro del periodo y aún no se
-               distribuyó (mismo guard que el panel de Mis cuentas). Primero
-               en el orden: es la acción más importante del día si aplica.
-               tesoreria/views/distribucion.js lo llena; [hidden] si no aplica. -->
-          <div id="panel-distribuir-inicio" class="bento__cell bento__cell--full"
-               role="region" aria-label="Distribuir tu ingreso" hidden></div>
-
-          <!-- PENDIENTES / VENCIDOS: compromisos cuyo día de pago ya pasó.
-               dashboard.js lo llena; [hidden] hasta que haya datos. -->
-          <div id="panel-vencidos" class="bento__cell bento__cell--half"
-               role="region" aria-label="Deudas y pagos vencidos" hidden></div>
-
-          <!-- PRÓXIMAS PRIORIDADES: próximos 7 días, agrupado por día.
-               dashboard.js lo llena; [hidden] hasta que haya datos. -->
-          <div id="panel-prioridades" class="bento__cell bento__cell--half"
-               role="region" aria-label="Próximas prioridades" hidden></div>
-
-          <!-- ALERTAS DE LÍMITES: envelopes en estado alerta (>=75%) o excedido (>100%).
-               presupuesto/view.js lo llena; [hidden] si todos los límites están en 'ok'. -->
-          <div id="panel-limites" class="bento__cell bento__cell--full"
-               role="region" aria-label="Alertas de límites de gasto" hidden></div>
-
-          <!-- ACTIVIDAD RECIENTE: últimos movimientos derivados de gastos,
-               ingresos puntuales y aportes al fondo (TX.8a, ADR 028 D5).
-               movimientos/view.js lo llena; [hidden] si no hay movimientos. -->
-          <div id="panel-actividad-reciente" class="bento__cell bento__cell--full"
+          <!-- ACTIVIDAD RECIENTE: últimos movimientos derivados (TX.8a, ADR 028
+               D5), cierre de la pantalla. movimientos/view.js lo llena; [hidden]
+               si no hay movimientos. -->
+          <div id="panel-actividad-reciente" class="bento__cell bento__cell--flat bento__cell--full"
                role="region" aria-label="Actividad reciente" hidden></div>
-
-          <!-- RESUMEN DE LA SEMANA: gasto de 7 días, comparación, categoría top
-               y días activos del mes (F8 / ADR 008). resumen/view.js lo llena;
-               [hidden] hasta que haya actividad esta semana. -->
-          <div id="panel-resumen" class="bento__cell bento__cell--full"
-               role="region" aria-label="Resumen de la semana" hidden></div>
 
         </div><!-- /.bento -->
       </section>
