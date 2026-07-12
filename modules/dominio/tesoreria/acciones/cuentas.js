@@ -284,12 +284,21 @@ export function inyectarFormCuenta() {
   if (picker) _initBankPicker(picker);
 }
 
-/** Muestra u oculta el bloque de campos de cuota según el checkbox. */
+/**
+ * Muestra u oculta el bloque de campos de cuota según el checkbox (MC.14) y
+ * el aviso de confirmación cuando NO está marcado (MC.15c): invita a
+ * verificar que la cuenta de verdad no cobra cuota de manejo, sin bloquear
+ * el guardado. El aviso vive dentro del mismo `.form-group--checkbox` que el
+ * toggle, así que el caso "efectivo" de `_toggleCamposPorClase()` ya lo
+ * oculta al ocultar todo el grupo, sin wiring adicional.
+ */
 function _toggleCuotaFieldset() {
-  const cb  = document.getElementById('cuenta-cuota-toggle');
-  const set = document.getElementById('cuenta-cuota-fieldset');
+  const cb   = document.getElementById('cuenta-cuota-toggle');
+  const set  = document.getElementById('cuenta-cuota-fieldset');
+  const hint = document.getElementById('cuenta-cuota-hint');
   if (!cb || !set) return;
   set.hidden = !cb.checked;
+  if (hint) hint.hidden = cb.checked;
 }
 
 /** MC.14: muestra u oculta el bloque de datos de transferencia según el checkbox. */

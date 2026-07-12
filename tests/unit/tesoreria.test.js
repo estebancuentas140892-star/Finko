@@ -41,7 +41,7 @@ import {
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
 import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
-import { initAccionesCuentas } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
+import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
 import { S, EventBus } from '../../modules/core/state.js';
 
@@ -817,6 +817,40 @@ describe('normalizarCuenta() con datos de transferencia (MC.14)', () => {
       llave:        'correo@ejemplo.com',
       tipoLlave:    'Correo',
     });
+  });
+});
+
+describe('renderFormCuenta() - aviso de cuota de manejo (MC.15c)', () => {
+  it('incluye el aviso de confirmación, visible por defecto (checkbox sin marcar)', () => {
+    const html = renderFormCuenta();
+    expect(html).toContain('id="cuenta-cuota-hint"');
+    expect(html).toContain('¿Seguro que esta cuenta no cobra cuota de manejo');
+    expect(html).not.toMatch(/id="cuenta-cuota-hint"[^>]*hidden/);
+  });
+
+  it('marcar el toggle oculta el aviso; desmarcarlo lo vuelve a mostrar', () => {
+    document.body.innerHTML = `
+      <div class="app-shell"></div>
+      <div class="modal-overlay" id="modal-cuenta" aria-hidden="true">
+        <div class="modal">
+          <h2 class="modal__title">x</h2>
+          <div id="modal-cuenta-body"></div>
+        </div>
+      </div>`;
+    initAccionesCuentas();
+    inyectarFormCuenta();
+
+    const toggle = document.getElementById('cuenta-cuota-toggle');
+    const hint   = document.getElementById('cuenta-cuota-hint');
+    expect(hint.hidden).toBe(false);
+
+    toggle.checked = true;
+    toggle.dispatchEvent(new Event('change'));
+    expect(hint.hidden).toBe(true);
+
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event('change'));
+    expect(hint.hidden).toBe(false);
   });
 });
 
@@ -2797,6 +2831,16 @@ describe('registro sin cuentas: el CTA lleva directo a crear la cuenta', () => {
     // El bug reportado: antes solo cerraba el modal y dejaba al usuario perdido.
     expect(html).not.toContain('data-action="modal-close"');
     expect(html).not.toContain('Entendido');
+  });
+
+  it('MC.15d: categoría precede a descripción (mismo orden que renderFormIngreso)', () => {
+    S.cuentas = [{ id: 'c1', nombre: 'Efectivo', activa: true }];
+    const html = renderFormIngresoPuntual();
+    const idxCat  = html.indexOf('id="ingreso-p-cat"');
+    const idxDesc = html.indexOf('id="ingreso-p-desc"');
+    expect(idxCat).toBeGreaterThan(-1);
+    expect(idxDesc).toBeGreaterThan(-1);
+    expect(idxCat).toBeLessThan(idxDesc);
   });
 
   it('el evento cuenta:crear abre el formulario de nueva cuenta', () => {

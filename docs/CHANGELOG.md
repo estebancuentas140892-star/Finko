@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.15c aviso de cuota de manejo + MC.15d orden categoría→descripción · 2026-07-12
+
+Cierra **MC.15c** y **MC.15d** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2", tarjeta MC.15). Con esto y la absorción de MC.15b por MC.18b (ADR 035), la tarjeta MC.15 queda cerrada.
+
+**Qué cambió:** (MC.15c) al crear o editar una cuenta, el formulario muestra un hint bajo el toggle de cuota de manejo ("¿Seguro que esta cuenta no cobra cuota de manejo, seguros u otros costos periódicos?") mientras el toggle está SIN marcar; al marcarlo, el hint desaparece y aparece el fieldset de monto/día como siempre. No bloquea el guardado: solo reduce el olvido de un costo recurrente real. El hint vive dentro del mismo `.form-group--checkbox` del toggle, así que el caso "efectivo" de `_toggleCamposPorClase()` ya lo oculta sin wiring adicional. (MC.15d) `renderFormIngresoPuntual()` reordena sus campos a monto → cuenta → categoría → descripción → fecha, el mismo orden que ya cumplía `renderFormIngreso()` (fijos).
+
+**Archivos tocados:** `modules/dominio/tesoreria/views/cuentas.js` (hint en `renderFormCuenta()`), `modules/dominio/tesoreria/acciones/cuentas.js` (`_toggleCuotaFieldset()` sincroniza el hint), `modules/dominio/tesoreria/views/ingresos.js` (orden de campos), `tests/unit/tesoreria.test.js` (3 tests nuevos), `service-worker.js` (v355 → v356), `docs/contexto/mis-cuentas.md`, `docs/BOARD.md`.
+
+**Verificación:** 2394/2394 unit (hint presente y visible por defecto, toggle lo oculta/restaura, orden categoría antes que descripción) + lint verdes.
+
+**Podría afectar:** nada persistido (cero cambios de schema ni de lógica de guardado). **CAT.4** (auditoría transversal de formularios) debe saber que el form de ingreso puntual ya cumple el orden categoría→descripción.
+
+---
+
 ### feat(logros): LG.2c constancia de registro + familia deudas saldadas · 2026-07-12
 
 Cierra **LG.2c** (`docs/BOARD.md`, iniciativa "Logros v2"), tercera rebanada del [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) (decisiones D3 y D4).

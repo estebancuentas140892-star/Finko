@@ -261,16 +261,16 @@ export function renderFormIngresoPuntual() {
       </div>
       ${renderSelectorCuenta(cuentas, { label: '¿En qué cuenta entró el dinero?' })}
       <div class="form-group">
-        <label for="ingreso-p-desc" class="label">Descripción (opcional)</label>
-        <input id="ingreso-p-desc" name="descripcion" class="input" type="text"
-               placeholder="Ej. Venta de la bici, Freelance, Regalo" autocomplete="off" />
-      </div>
-      <div class="form-group">
         <label for="ingreso-p-cat" class="label">Categoría (opcional)</label>
         <select id="ingreso-p-cat" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
+      </div>
+      <div class="form-group">
+        <label for="ingreso-p-desc" class="label">Descripción (opcional)</label>
+        <input id="ingreso-p-desc" name="descripcion" class="input" type="text"
+               placeholder="Ej. Venta de la bici, Freelance, Regalo" autocomplete="off" />
       </div>
       <div class="form-group">
         <label for="ingreso-p-fecha" class="label">Fecha</label>

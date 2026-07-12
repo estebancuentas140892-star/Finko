@@ -205,6 +205,9 @@ export function renderFormCuenta() {
                  data-cuota-toggle />
           <span>Esta cuenta cobra cuota de manejo mensual</span>
         </label>
+        <p class="form-hint form-hint--muted" id="cuenta-cuota-hint">
+          ¿Seguro que esta cuenta no cobra cuota de manejo, seguros u otros costos periódicos?
+        </p>
       </div>
 
       <fieldset id="cuenta-cuota-fieldset" class="cuota-fieldset" hidden>

@@ -76,34 +76,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Depende de : diseño del motor de vencimientos (primera rebanada de esta misma tarjeta); coordinar con PA.1 (conflicto (b)); decisión del conflicto (a) sobre NAV.A2b
 - Modelo     : Opus 4.8 - Extra para el análisis/re-corte (redefine el asistente completo + decisión que toca ADR 024); rebanadas después con el modelo que corresponda
 
-> **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). Quedan MC.15b, MC.15c y MC.15d abajo.
-
-#### MC.15b - Legibilidad de logos en la tarjeta de cuenta (solo contenedor)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : (2) revisar legibilidad de los logos de Davivienda, BBVA, DaviPlata y Nubank en la teja de la lista de cuentas, ajustando SOLO el contenedor (tamaño óptico, espacio interno, márgenes): la regla de fidelidad del ADR 026/027 prohíbe tocar los SVG oficiales. Requiere capturas en ambos temas antes/después (el preview local de este entorno no siempre carga; usar E2E + captura en Chromium real cuando el navegador esté disponible).
-- Secciones  : Mis cuentas
-- Archivos   : `styles/components/*.css` (`.bank-avatar` y clases relacionadas), `modules/infra/bancos.js` (`bancoAvatar`, solo si el contenedor necesita una clase nueva, sin tocar los `<symbol>` del sprite)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo (CSS aislado con verificación visual)
-
-#### MC.15c - Aviso al crear cuenta: ¿seguro que no cobra costos periódicos?
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : (4) al crear una cuenta sin marcar "cobra cuota de manejo mensual", mostrar un hint breve invitando a confirmar ("¿Seguro que esta cuenta no cobra cuota de manejo, seguros u otros costos periódicos?"), conectando con el `cuotaManejo` ya existente (v5): no bloquea el guardado, solo reduce el olvido de un costo recurrente real.
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/views/cuentas.js` (`renderFormCuenta()`), posible wiring en `acciones/cuentas.js` si el hint reacciona al toggle
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
-
-#### MC.15d - Orden categoría→descripción en el formulario de ingreso puntual
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : (8) `renderFormIngreso()` (ingresos fijos) ya cumple el orden categoría→descripción; `renderFormIngresoPuntual()` no (hoy: monto → cuenta → descripción → categoría → fecha). Reordenar para que categoría preceda a descripción, coordinando con la auditoría transversal **CAT.4** (mismo criterio, no dos pasadas del mismo formulario).
-- Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/views/ingresos.js` (`renderFormIngresoPuntual()`)
-- Depende de : nada técnico; coordinar con CAT.4 para no tocar el mismo form dos veces
-- Modelo     : Sonnet 5 - Bajo
+> **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **MC.15c y MC.15d cerradas el 2026-07-12** (aviso de costos periódicos al crear cuenta + orden categoría→descripción en el ingreso puntual, ver CHANGELOG). **MC.15b absorbida por MC.18b** (el rediseño de la tarjeta de cuenta del ADR 035 rehace el contenedor de la teja; la verificación de legibilidad de Davivienda, BBVA, DaviPlata y Nubank es criterio de aceptación de esa rebanada). La iniciativa MC.15 queda cerrada como tarjeta propia.
 
 #### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
 - Prioridad  : alta (concepto nuevo de dominio)
