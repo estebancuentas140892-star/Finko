@@ -41,6 +41,47 @@ export function calcularTotalCuentas(cuentas) {
   return cuentasActivas(cuentas).reduce((acc, c) => acc + (c.saldo ?? 0), 0);
 }
 
+/**
+ * Composición del total por cuenta para la barra del hero (MC.18a, ADR 035 D3).
+ * Solo cuentas activas con saldo mayor a 0, ordenadas de mayor a menor saldo.
+ * `pct` es la porción del total (0 a 100, sin redondear: la vista formatea).
+ * Devuelve [] cuando no hay saldo positivo que repartir (la barra no se pinta).
+ *
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @returns {{ id: string, pct: number }[]}
+ */
+export function composicionCuentas(cuentas) {
+  const conSaldo = cuentasActivas(cuentas).filter(c => (c.saldo ?? 0) > 0);
+  const total = conSaldo.reduce((acc, c) => acc + c.saldo, 0);
+  if (total <= 0) return [];
+  return conSaldo
+    .slice()
+    .sort((a, b) => b.saldo - a.saldo)
+    .map(c => ({ id: c.id, pct: (c.saldo / total) * 100 }));
+}
+
+/**
+ * Resumen en texto de la composición para el hero (MC.18a, ADR 035 D3):
+ * conteo total de cuentas + desglose de billeteras + presencia de efectivo,
+ * ej. "3 cuentas · 1 billetera · efectivo". Acompaña a la barra para que el
+ * color nunca viaje solo (SC 1.4.11). Devuelve '' sin cuentas activas.
+ *
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @returns {string}
+ */
+export function resumenCuentas(cuentas) {
+  const activas = cuentasActivas(cuentas);
+  if (activas.length === 0) return '';
+
+  const partes = [`${activas.length} ${activas.length === 1 ? 'cuenta' : 'cuentas'}`];
+  const billeteras = activas.filter(c => _claseBanco(c.banco) === 'billetera').length;
+  if (billeteras > 0) {
+    partes.push(`${billeteras} ${billeteras === 1 ? 'billetera' : 'billeteras'}`);
+  }
+  if (activas.some(c => _claseBanco(c.banco) === 'efectivo')) partes.push('efectivo');
+  return partes.join(' · ');
+}
+
 // ── VALIDACIÓN CUENTAS ───────────────────────────────────────────
 
 /**

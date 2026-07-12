@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.18a hero con total en cuentas + ojo de privacidad + composición · 2026-07-12
+
+Cierra **MC.18a** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), primera rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisiones D1, D3 y D5 sobre el hero), el rediseño de pantalla aprobado por Esteban desde el handoff de Claude Design (mockup `Mis cuentas v2.dc.html`).
+
+**Qué cambió:** la pantalla "Mis cuentas" gana un hero al tope (antes el total de cuentas solo existía en Inicio): label "Tu dinero en cuentas" + total protagonista (mono, extrabold, tabular) + **ojo de privacidad** anclado a la esquina (posición estable, solo cambia el contenido) + **barra de composición** (un segmento por cuenta con saldo positivo, ancho proporcional, tintes de `--fk-dom-tesoreria` por peso: mayor saldo = más opaco) + resumen en texto ("3 cuentas · 1 billetera · efectivo", para que el color nunca viaje solo). El ojo comparte `S.config.ocultarSaldo` con el de Inicio (IN.2): un solo control de privacidad en toda la app, enmascarar aquí enmascara allá y viceversa. Sin cuentas: "Aún no tienes cuentas" + $0, sin ojo ni barra. Superficie con degradado de identidad tesorería (16%) + borde (30%) + sombra en reposo: segundo consumidor del piloto ADR 033, contraste WCAG medido contra la parada fuerte (oscuro: primario 11.36:1, secundario 5.78:1; claro: 14.39:1 y 7.28:1); el resumen usa texto secundario, no muted (lección de IN.8b).
+
+**Archivos tocados:** `index.html` (contenedor `#tesoreria-hero`), `modules/dominio/tesoreria/logic/cuentas.js` (`composicionCuentas()`, `resumenCuentas()` puras nuevas), `modules/dominio/tesoreria/views/cuentas.js` (`renderHeroTesoreria()`), `modules/dominio/tesoreria/view.js` (barrel + `renderTesoreria()`), `modules/dominio/tesoreria/logic.js` (barrel), `modules/dominio/tesoreria/acciones/cuentas.js` (acción `tesoreria-saldo-visibilidad`), `styles/components/domain.css` (`.hero-tesoreria__*`; el ojo comparte reglas con `.hero-inicio__ojo`), `tests/unit/tesoreria.test.js` (8 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v356 → v357), `docs/DECISIONS/035-mis-cuentas-v2.md` (nuevo), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2403/2403 unit (composición ordenada por peso y pct, exclusión de inactivas/saldo 0, resumen singular/plural/billetera/efectivo, hero con total y aria-pressed, máscara sin monto real en el DOM, estado vacío sin ojo, acción que alterna y re-renderiza) + 171/171 E2E (1 nuevo en Chromium real: estado vacío, total tras crear cuenta, máscara compartida con el saldo de Inicio, destape) + lint verdes.
+
+**Podría afectar:** nada persistido (reutiliza `S.config.ocultarSaldo`, cero cambios de schema). El ojo de Inicio ahora tiene un segundo punto de control del mismo flag: al volver a Inicio, `updSaldo()` ya refleja el cambio hecho desde Mis cuentas (cubierto por el E2E).
+
+---
+
 ### feat(tesoreria): MC.15c aviso de cuota de manejo + MC.15d orden categoría→descripción · 2026-07-12
 
 Cierra **MC.15c** y **MC.15d** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2", tarjeta MC.15). Con esto y la absorción de MC.15b por MC.18b (ADR 035), la tarjeta MC.15 queda cerrada.

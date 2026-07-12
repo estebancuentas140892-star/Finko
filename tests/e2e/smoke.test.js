@@ -845,6 +845,36 @@ test.describe('Tesorería - cuenta y saldo', () => {
       timeout: 3_000,
     });
   });
+
+  test('MC.18a: el hero muestra el total en cuentas y el ojo lo enmascara', async ({ page }) => {
+    // Sin cuentas: hero en estado vacío, sin ojo.
+    await expect(page.locator('#tesoreria-hero')).toContainText('Aún no tienes cuentas');
+    await expect(page.locator('#tesoreria-saldo-ojo')).toHaveCount(0);
+
+    await crearCuentaEfectivo(page, 1000000);
+
+    // Con cuenta: label, total y resumen de composición.
+    const hero = page.locator('#tesoreria-hero');
+    await expect(hero).toContainText('Tu dinero en cuentas', { timeout: 3_000 });
+    await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$1.000.000');
+    await expect(hero).toContainText('1 cuenta · efectivo');
+    await expect(hero.locator('.hero-tesoreria__compo-seg')).toHaveCount(1);
+
+    // El ojo enmascara el total y queda presionado; el monto real no viaja al DOM.
+    await page.click('#tesoreria-saldo-ojo');
+    await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$••••••');
+    await expect(page.locator('#tesoreria-saldo-ojo')).toHaveAttribute('aria-pressed', 'true');
+
+    // Es el mismo flag de Inicio (IN.2): el saldo del dashboard también queda oculto.
+    await page.click('a[href="#dash"]');
+    await expect(page.locator('#saldo-total')).toHaveText('$••••••', { timeout: 3_000 });
+
+    // Volver y destapar: el total regresa.
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('#tesoreria-saldo-ojo');
+    await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$1.000.000');
+  });
 });
 
 // ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────

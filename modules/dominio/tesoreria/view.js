@@ -15,7 +15,12 @@
  * logic/); pueden leer S, no mutarlo. Cero imports cross-dominio.
  */
 
-import { renderListaCuentas, renderFormCuenta, renderGMFIndicador } from './views/cuentas.js';
+import {
+  renderHeroTesoreria,
+  renderListaCuentas,
+  renderFormCuenta,
+  renderGMFIndicador,
+} from './views/cuentas.js';
 import {
   renderListaIngresos,
   renderFormIngreso,
@@ -26,6 +31,7 @@ import {
 import { renderDistribucionIngreso, renderNudgeDistribucionInicio } from './views/distribucion.js';
 
 export {
+  renderHeroTesoreria,
   renderListaCuentas,
   renderFormCuenta,
   renderGMFIndicador,
@@ -40,6 +46,7 @@ export {
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */
 export function renderTesoreria() {
+  renderHeroTesoreria();
   renderListaCuentas();
   renderGMFIndicador();
   renderNudgeProximoIngreso();

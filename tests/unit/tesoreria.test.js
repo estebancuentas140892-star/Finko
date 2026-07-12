@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   cuentasActivas,
   calcularTotalCuentas,
+  composicionCuentas,
+  resumenCuentas,
   validarCuenta,
   normalizarCuenta,
   diasParaPrimaSemestral,
@@ -39,7 +41,7 @@ import {
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
@@ -927,6 +929,152 @@ describe('renderListaCuentas() - MC.15 (1): subtítulo solo si aporta informaci�
     const el = document.getElementById('lista-tesoreria');
     expect(el.querySelector('.list-item__title').textContent).toBe('Nequi principal');
     expect(el.querySelector('.list-item__subtitle').textContent).toBe('Nequi · Ahorros');
+  });
+});
+
+// ── composicionCuentas() y resumenCuentas() (MC.18a, ADR 035 D3) ─
+
+describe('composicionCuentas()', () => {
+  it('ordena por saldo descendente con la porción del total en pct', () => {
+    const cuentas = [
+      cuentaBase({ id: 'chica',  saldo: 100_000 }),
+      cuentaBase({ id: 'grande', saldo: 600_000 }),
+      cuentaBase({ id: 'media',  saldo: 300_000 }),
+    ];
+    const compo = composicionCuentas(cuentas);
+    expect(compo.map(c => c.id)).toEqual(['grande', 'media', 'chica']);
+    expect(compo.map(c => c.pct)).toEqual([60, 30, 10]);
+  });
+
+  it('excluye cuentas inactivas y con saldo 0; [] si no hay saldo que repartir', () => {
+    const cuentas = [
+      cuentaBase({ id: 'activa',   saldo: 200_000 }),
+      cuentaBase({ id: 'inactiva', saldo: 800_000, activa: false }),
+      cuentaBase({ id: 'vacia',    saldo: 0 }),
+    ];
+    const compo = composicionCuentas(cuentas);
+    expect(compo).toHaveLength(1);
+    expect(compo[0]).toEqual({ id: 'activa', pct: 100 });
+
+    expect(composicionCuentas([])).toEqual([]);
+    expect(composicionCuentas([cuentaBase({ saldo: 0 })])).toEqual([]);
+  });
+});
+
+describe('resumenCuentas()', () => {
+  it('devuelve "" sin cuentas activas y singular con una sola cuenta', () => {
+    expect(resumenCuentas([])).toBe('');
+    expect(resumenCuentas([cuentaBase({ activa: false })])).toBe('');
+    expect(resumenCuentas([cuentaBase({ banco: 'Bancolombia' })])).toBe('1 cuenta');
+  });
+
+  it('cuenta el total y desglosa billeteras y efectivo', () => {
+    const cuentas = [
+      cuentaBase({ id: 'c1', banco: 'Bancolombia' }),
+      cuentaBase({ id: 'c2', banco: 'Nequi' }),
+      cuentaBase({ id: 'c3', banco: 'Efectivo' }),
+    ];
+    expect(resumenCuentas(cuentas)).toBe('3 cuentas · 1 billetera · efectivo');
+  });
+});
+
+// ── renderHeroTesoreria() (MC.18a, ADR 035 D1+D3+D5) ─────────────
+
+describe('renderHeroTesoreria()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="tesoreria-hero"></div>';
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+  });
+
+  it('con cuentas: label, total formateado, ojo con aria-pressed=false y resumen', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', banco: 'Bancolombia', saldo: 1_450_000 }),
+      cuentaBase({ id: 'c2', banco: 'Nequi',       saldo: 685_000 }),
+    ];
+    renderHeroTesoreria();
+    const el = document.getElementById('tesoreria-hero');
+    expect(el.querySelector('.hero-tesoreria__label').textContent).toBe('Tu dinero en cuentas');
+    expect(el.querySelector('.hero-tesoreria__valor').textContent).toBe('$2.135.000');
+    const ojo = el.querySelector('#tesoreria-saldo-ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('false');
+    expect(ojo.innerHTML).toContain('#i-eye');
+    expect(ojo.innerHTML).not.toContain('#i-eye-off');
+    expect(el.querySelector('.hero-tesoreria__resumen').textContent).toBe('2 cuentas · 1 billetera');
+  });
+
+  it('la barra de composición pinta un segmento por cuenta con saldo, con ancho y opacidad por peso', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', saldo: 600_000 }),
+      cuentaBase({ id: 'c2', saldo: 300_000 }),
+      cuentaBase({ id: 'c3', saldo: 100_000 }),
+      cuentaBase({ id: 'c4', saldo: 0 }),
+    ];
+    renderHeroTesoreria();
+    const segs = document.querySelectorAll('.hero-tesoreria__compo-seg');
+    expect(segs).toHaveLength(3);
+    expect(segs[0].style.width).toBe('60.00%');
+    expect(segs[1].style.width).toBe('30.00%');
+    expect(segs[2].style.width).toBe('10.00%');
+    expect(segs[0].style.opacity).toBe('1');
+    expect(segs[1].style.opacity).toBe('0.62');
+    expect(segs[2].style.opacity).toBe('0.34');
+  });
+
+  it('con el saldo oculto: máscara en el total, aria-pressed=true e icono de ojo tachado', () => {
+    S.cuentas = [cuentaBase({ saldo: 500_000 })];
+    S.config.ocultarSaldo = true;
+    renderHeroTesoreria();
+    const el = document.getElementById('tesoreria-hero');
+    expect(el.querySelector('.hero-tesoreria__valor').textContent).toBe('$••••••');
+    expect(el.innerHTML).not.toContain('500.000');
+    const ojo = el.querySelector('#tesoreria-saldo-ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('true');
+    expect(ojo.innerHTML).toContain('#i-eye-off');
+    // La barra sigue: muestra proporciones, no montos.
+    expect(el.querySelector('.hero-tesoreria__compo')).not.toBeNull();
+  });
+
+  it('sin cuentas: label de vacío, $0, sin ojo, sin barra y sin resumen', () => {
+    S.cuentas = [cuentaBase({ activa: false })];
+    renderHeroTesoreria();
+    const el = document.getElementById('tesoreria-hero');
+    expect(el.querySelector('.hero-tesoreria__label').textContent).toBe('Aún no tienes cuentas');
+    expect(el.querySelector('.hero-tesoreria__valor').textContent).toBe('$0');
+    expect(el.querySelector('#tesoreria-saldo-ojo')).toBeNull();
+    expect(el.querySelector('.hero-tesoreria__compo')).toBeNull();
+    expect(el.querySelector('.hero-tesoreria__resumen')).toBeNull();
+  });
+});
+
+describe('acción tesoreria-saldo-visibilidad (MC.18a, ADR 035 D5)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="tesoreria-hero"></div>';
+    S.cuentas = [cuentaBase({ saldo: 500_000 })];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    window.location.hash = '#tesoreria';
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+    window.location.hash = '';
+  });
+
+  it('alterna S.config.ocultarSaldo y re-renderiza el hero enmascarado', () => {
+    initAccionesCuentas();
+    renderHeroTesoreria();
+    const ojo = document.getElementById('tesoreria-saldo-ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('false');
+
+    dispatch(ojo, new Event('click'));
+
+    expect(S.config.ocultarSaldo).toBe(true);
+    const el = document.getElementById('tesoreria-hero');
+    expect(el.querySelector('.hero-tesoreria__valor').textContent).toBe('$••••••');
+    expect(el.querySelector('#tesoreria-saldo-ojo').getAttribute('aria-pressed')).toBe('true');
   });
 });
 

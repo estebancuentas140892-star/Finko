@@ -11,8 +11,87 @@ import { S } from '../../../core/state.js';
 import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
+import { SALDO_MASCARA } from '../../../infra/render.js';
 import { BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
-import { cuentasActivas, calcularCostoGMF, detectarNudgeGMF } from '../logic/cuentas.js';
+import {
+  cuentasActivas,
+  calcularTotalCuentas,
+  composicionCuentas,
+  resumenCuentas,
+  calcularCostoGMF,
+  detectarNudgeGMF,
+} from '../logic/cuentas.js';
+
+// ── HERO: TOTAL EN CUENTAS (MC.18a, ADR 035 D1+D3+D5) ────────────
+
+/**
+ * Opacidad de los segmentos de la barra de composición, por peso
+ * (mayor saldo = más opaco; valores del mockup aprobado). A partir
+ * de la cuarta cuenta todos comparten el tinte más suave.
+ */
+const _COMPO_OPACIDAD = [1, 0.62, 0.34];
+
+/**
+ * Renderiza el hero con el total en cuentas en `#tesoreria-hero`.
+ * No-op si el contenedor no existe (sección no montada).
+ *
+ * - Total protagonista con `calcularTotalCuentas()`; enmascarado con
+ *   `SALDO_MASCARA` cuando `S.config.ocultarSaldo` es true (mismo flag
+ *   que el ojo de Inicio, IN.2: un solo control de privacidad).
+ * - Ojo de privacidad anclado a la esquina (posición estable, solo cambia
+ *   el contenido). Sin cuentas no se pinta: no hay nada que enmascarar
+ *   (misma disciplina que updSaldo() en el hero de Inicio).
+ * - Barra de composición (D3): un segmento por cuenta con saldo positivo,
+ *   ancho proporcional; el resumen en texto la acompaña (SC 1.4.11).
+ */
+export function renderHeroTesoreria() {
+  const el = document.getElementById('tesoreria-hero');
+  if (!el) return;
+
+  const activas    = cuentasActivas(S.cuentas);
+  const sinCuentas = activas.length === 0;
+  const oculto     = S.config?.ocultarSaldo === true;
+
+  const label    = sinCuentas ? 'Aún no tienes cuentas' : 'Tu dinero en cuentas';
+  const totalTxt = sinCuentas ? f(0)
+                 : oculto     ? SALDO_MASCARA
+                 :              f(calcularTotalCuentas(S.cuentas));
+
+  const ojoHtml = sinCuentas ? '' : `
+      <button class="hero-tesoreria__ojo" type="button" id="tesoreria-saldo-ojo"
+              data-action="tesoreria-saldo-visibilidad"
+              aria-pressed="${oculto}"
+              aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+        <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+      </button>`;
+
+  const compo = sinCuentas ? [] : composicionCuentas(S.cuentas);
+  const compoHtml = compo.length === 0 ? '' : `
+      <div class="hero-tesoreria__compo" aria-hidden="true">
+        ${compo.map(() => '<div class="hero-tesoreria__compo-seg"></div>').join('')}
+      </div>`;
+
+  const resumen     = sinCuentas ? '' : resumenCuentas(S.cuentas);
+  const resumenHtml = resumen
+    ? `<p class="hero-tesoreria__resumen">${_esc(resumen)}</p>`
+    : '';
+
+  el.innerHTML = `
+    <div class="hero-tesoreria">
+      ${ojoHtml}
+      <p class="hero-tesoreria__label">${label}</p>
+      <p class="hero-tesoreria__valor">${totalTxt}</p>
+      ${compoHtml}
+      ${resumenHtml}
+    </div>`;
+
+  // Ancho y opacidad por peso van como propiedad JS tras el innerHTML
+  // (cero style="" en el HTML generado, regla del proyecto).
+  el.querySelectorAll('.hero-tesoreria__compo-seg').forEach((seg, i) => {
+    seg.style.width   = `${compo[i].pct.toFixed(2)}%`;
+    seg.style.opacity = String(_COMPO_OPACIDAD[i] ?? 0.2);
+  });
+}
 
 // ── LISTA DE CUENTAS ─────────────────────────────────────────────
 

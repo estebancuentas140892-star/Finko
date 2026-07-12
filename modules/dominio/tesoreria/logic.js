@@ -18,6 +18,8 @@
 export {
   cuentasActivas,
   calcularTotalCuentas,
+  composicionCuentas,
+  resumenCuentas,
   validarCuenta,
   parseCuotaManejo,
   parseDatosTransferencia,

@@ -63,7 +63,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 3 tarjetas: **MC.13** (Distribución v2, ampliada abajo), **MC.15** (UI de cuentas e ingresos) y **MC.16** (tarjeta de crédito integrada, requiere ADR). **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): fue la rebanada independiente que ya podía ejecutarse sin esperar el resto de la iniciativa. **Dos conflictos con decisiones aprobadas, señalados explícitamente (regla 2.7):** (a) el punto "los ingresos esporádicos NO deben ofrecer distribución" **revierte parcialmente NAV.A2b slice 2 del ADR 024** (que hoy ofrece distribuir tras un ingreso puntual): decidirlo formalmente al iniciar MC.13, no revertirlo en silencio; (b) "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un **movimiento automático sin confirmación**, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos (un solo criterio para débitos y créditos automáticos), no por separado.
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 4 frentes: **MC.13** (Distribución v2, ampliada abajo), **MC.16** (tarjeta de crédito integrada, requiere ADR), **MC.17** (transferencias entre cuentas) y **MC.18** (rediseño visual de la pantalla, [ADR 035](DECISIONS/035-mis-cuentas-v2.md), rebanadas abajo). **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): fue la rebanada independiente que ya podía ejecutarse sin esperar el resto de la iniciativa. **Dos conflictos con decisiones aprobadas, señalados explícitamente (regla 2.7):** (a) el punto "los ingresos esporádicos NO deben ofrecer distribución" **revierte parcialmente NAV.A2b slice 2 del ADR 024** (que hoy ofrece distribuir tras un ingreso puntual): decidirlo formalmente al iniciar MC.13, no revertirlo en silencio; (b) "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un **movimiento automático sin confirmación**, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos (un solo criterio para débitos y créditos automáticos), no por separado.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
@@ -77,6 +77,44 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Modelo     : Opus 4.8 - Extra para el análisis/re-corte (redefine el asistente completo + decisión que toca ADR 024); rebanadas después con el modelo que corresponda
 
 > **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **MC.15c y MC.15d cerradas el 2026-07-12** (aviso de costos periódicos al crear cuenta + orden categoría→descripción en el ingreso puntual, ver CHANGELOG). **MC.15b absorbida por MC.18b** (el rediseño de la tarjeta de cuenta del ADR 035 rehace el contenedor de la teja; la verificación de legibilidad de Davivienda, BBVA, DaviPlata y Nubank es criterio de aceptación de esa rebanada). La iniciativa MC.15 queda cerrada como tarjeta propia.
+
+> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). Rebanadas restantes abajo, en orden.
+
+#### MC.18b - Tarjetas de cuenta con saldo prominente y chips de metadatos (D2, absorbe MC.15b)
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : cada cuenta pasa de `.list-item` con hints apilados (📅💸🔑) a tarjeta con teja 44px + nombre + tipo + saldo prominente (700, tabular) + chips compactos (icono SVG + texto) para cuota, 4x1000 y datos de transferencia; editar/eliminar como ghost icons 32px (eliminar vira a danger en hover). La máscara del ojo (D5) se extiende a los saldos por cuenta. Incluye la verificación de legibilidad de logos de la ex MC.15b (Davivienda, BBVA, DaviPlata, Nubank, solo contenedor, capturas en ambos temas).
+- Secciones  : Mis cuentas
+- Archivos   : `tesoreria/views/cuentas.js` (`_renderCuentaItem()`, `_formatDatosTransferencia()`), sprite (símbolos `i-key`, `i-percent` nuevos vía `assets/svg/` + `scripts/sync-sprite.py`, drafts del mockup como plantillas ADR 026), `styles/components/domain.css`
+- Depende de : MC.18a (hero ya en la pantalla, cerrada)
+- Modelo     : Sonnet 5 - Alto (patrón de UI nuevo + iconos de sprite + máscara)
+
+#### MC.18c - GMF como tarjeta insight integrada (D4)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : el indicador 4x1000 (K.1) deja el formato nudge suelto y pasa a tarjeta insight compacta (tinte tesorería, icono `%`, título con el costo + detalle) pegada bajo la lista de cuentas. Copy y cálculo intactos (`calcularCostoGMF`, `detectarNudgeGMF`).
+- Secciones  : Mis cuentas
+- Archivos   : `tesoreria/views/cuentas.js` (`renderGMFIndicador()`), `styles/components/domain.css`
+- Depende de : MC.18b (comparte lenguaje visual de tarjetas)
+- Modelo     : Sonnet 5 - Bajo
+
+#### MC.18d - Fuentes de ingreso agrupadas (D7)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : un solo encabezado "Fuentes de ingreso" + acción "Agregar" cubre recurrentes y puntuales; tarjetas compactas con teja verde `--fk-dom-ingresos`; los puntuales conservan su `+monto` verde. La máscara del ojo (D5) se extiende a los montos de ingresos. Revisar cómo conviven los dos CTA actuales ("+ Ingreso fijo" / "+ Ingreso") bajo un solo "Agregar".
+- Secciones  : Mis cuentas
+- Archivos   : `index.html` (sub-headers de `#sec-tesoreria`), `tesoreria/views/ingresos.js` (`renderListaIngresos()`, `renderListaIngresosPuntuales()`), `styles/components/domain.css`
+- Depende de : MC.18b
+- Modelo     : Sonnet 5 - Medio
+
+#### MC.18e - Distribuir como tarjeta de entrada que lanza el asistente (D6)
+- Prioridad  : media
+- Estado     : pendiente
+- Objetivo   : `renderDistribucionIngreso()` deja de pintar el asistente inline siempre abierto; en su lugar, tarjeta compacta "¿Cómo distribuir $X?" con barra 50/30/20 + leyenda (Necesidades / Estilo de vida / Ahorro) + botón que lanza el asistente por pasos. Motor y pasos MC.7 intactos: solo cambia el punto de entrada (aprobado por Esteban 2026-07-12).
+- Secciones  : Mis cuentas
+- Archivos   : `tesoreria/views/distribucion.js` (`renderDistribucionIngreso()`, `_renderPanelDistribuir()`), `tesoreria/acciones/distribucion.js` (apertura), `styles/components/domain.css`
+- Depende de : MC.18a; coordinar con MC.13 (que rediseñará el CONTENIDO del asistente; esta rebanada no lo toca)
+- Modelo     : Sonnet 5 - Alto (cambia el flujo de entrada de un asistente existente sin regresiones)
 
 #### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
 - Prioridad  : alta (concepto nuevo de dominio)

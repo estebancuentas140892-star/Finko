@@ -12,7 +12,8 @@ import { guardar, editar, eliminar } from '../../../infra/crud.js';
 import { registrarAccion } from '../../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../../ui/modales.js';
 import { confirmar } from '../../../ui/confirm.js';
-import { updSaldo } from '../../../infra/render.js';
+import { updSaldo, renderSmart } from '../../../infra/render.js';
+import { save } from '../../../core/storage.js';
 import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { esc as _esc } from '../../../infra/utils.js';
@@ -523,6 +524,20 @@ export function initAccionesCuentas() {
   registrarAccion('nueva-cuenta', _nuevaCuenta);
   registrarAccion('editar-cuenta', _editarCuenta);
   registrarAccion('eliminar-cuenta', _eliminarCuenta);
+
+  // MC.18a (ADR 035 D5): el ojo del hero de la sección comparte el flag
+  // S.config.ocultarSaldo con el ojo de Inicio (IN.2): un solo control de
+  // privacidad en toda la app. El flip con `!== true` es defensivo, igual
+  // que en 'saldo-visibilidad' (ui/actions.js). updSaldo() mantiene el hero
+  // de Inicio en sincronía; el re-render de la sección enmascara el total
+  // (y, cuando MC.18b/18d extiendan la máscara, los saldos por cuenta y
+  // los montos de ingresos).
+  registrarAccion('tesoreria-saldo-visibilidad', () => {
+    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    save();
+    updSaldo();
+    renderSmart(renderTesoreria, 'tesoreria');
+  });
 
   // Cualquier flujo bloqueado por "falta una cuenta" (ingreso, gasto, abono...)
   // emite 'cuenta:crear' para abrir directo el formulario de nueva cuenta, sin

@@ -907,8 +907,11 @@ button.chip:focus-visible {
    flujo del monto: su posición nunca cambia al alternar visible/oculto.
    Botón propio (sin .btn): el min-height táctil de 44px que responsive.css
    impone a .btn deformaría los 40px del diseño; 40px cumple el mínimo
-   táctil AA (WCAG 2.5.8, 24px) con margen. */
-.hero-inicio__ojo {
+   táctil AA (WCAG 2.5.8, 24px) con margen.
+   El ojo del hero de Mis cuentas (MC.18a, ADR 035 D5) comparte estas
+   reglas: mismo control, misma disciplina de posición estable. */
+.hero-inicio__ojo,
+.hero-tesoreria__ojo {
   position: absolute;
   top: var(--fk-space-4);
   right: var(--fk-space-4);
@@ -927,13 +930,15 @@ button.chip:focus-visible {
     color var(--fk-transition-fast);
   z-index: 1;
 }
-.hero-inicio__ojo:hover {
+.hero-inicio__ojo:hover,
+.hero-tesoreria__ojo:hover {
   background: var(--fk-bg-active);
   color: var(--fk-text-primary);
 }
 /* updSaldo() lo oculta junto con el valor cuando no hay cuentas. */
 .hero-inicio__ojo[hidden] { display: none; }
-.hero-inicio__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
+.hero-inicio__ojo .icon,
+.hero-tesoreria__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ── Detalle por cuenta (IN.8c, ADR 034 D4) ─────────────────────
    Pill que expande in situ una fila por cuenta. El text-align:center del
@@ -1024,6 +1029,79 @@ button.chip:focus-visible {
   color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════
+   HERO-TESORERIA (MC.18a, ADR 035 D1/D3/D5) - total en cuentas.
+   Segundo consumidor del piloto ADR 033 (degradado de identidad +
+   sombra en reposo), con el color de sección de tesorería y texto
+   alineado a la izquierda (a diferencia del hero centrado de Inicio).
+
+   Contraste WCAG medido contra la parada fuerte del degradado
+   (tesorería al 16% compuesto sobre surface, cálculo en el cierre
+   de MC.18a):
+     oscuro #232f44 → primario 11.36:1, secundario 5.78:1 (AA)
+     claro  #e5eefd → primario 14.39:1, secundario 7.28:1
+   El texto muted NO se usa dentro del hero (lección medida de IN.8b):
+   el resumen usa secundario aunque el mockup lo pintaba muted.
+   ════════════════════════════════════════════════════════════ */
+
+.hero-tesoreria {
+  position: relative;
+  margin-block-end: var(--fk-space-6);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-tesoreria) 30%, transparent);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-tesoreria) 16%, transparent), transparent 55%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
+  padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
+}
+
+.hero-tesoreria__label {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* 38px objetivo (mockup aprobado); el clamp solo protege pantallas
+   angostas de un total de 9 cifras. tabular-nums mantiene el ancho
+   estable entre monto real y máscara (disciplina IN.2/ADR 034 D3). */
+.hero-tesoreria__valor {
+  margin: 0;
+  font-family: var(--fk-font-mono);
+  font-size: clamp(2rem, 1.45rem + 4.2vw, 2.375rem);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra de composición (D3): un segmento por cuenta con saldo positivo,
+   ancho y opacidad por peso los fija la vista como propiedad JS.
+   Decorativa (aria-hidden): el resumen en texto y las tarjetas de cuenta
+   portan la información real (SC 1.4.11). */
+.hero-tesoreria__compo {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-top: var(--fk-space-4);
+  border-radius: var(--fk-radius-sm);
+  overflow: hidden;
+}
+
+.hero-tesoreria__compo-seg {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--fk-dom-tesoreria);
+}
+
+.hero-tesoreria__resumen {
+  margin: var(--fk-space-3) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
 }
 
 /* ════════════════════════════════════════════════════════════
