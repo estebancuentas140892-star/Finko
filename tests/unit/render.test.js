@@ -299,8 +299,18 @@ describe('updSaldo() - detalle por cuenta expandible', () => {
 // ── updSaludo() - saludo dinámico (IN.6a, ADR 028 D3) ────────────────────────
 
 describe('updSaludo()', () => {
+  /** Réplica del header de perfil de index.html (IN.8d, ADR 034 D8). */
   beforeEach(() => {
-    document.body.innerHTML = '<p id="saludo-inicio"></p>';
+    document.body.innerHTML = `
+      <header class="section__header perfil-inicio">
+        <h1 class="sr-only" id="title-dash">Tu resumen</h1>
+        <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
+        <div class="perfil-inicio__saludo">
+          <p class="perfil-inicio__franja" id="saludo-franja"></p>
+          <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
+        </div>
+        <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes"></a>
+      </header>`;
     S.perfil = { nombre: 'Esteban', smmlv: 0 };
     vi.useFakeTimers();
   });
@@ -309,45 +319,67 @@ describe('updSaludo()', () => {
     vi.useRealTimers();
   });
 
-  const elSaludo = () => document.getElementById('saludo-inicio');
+  const elFranja = () => document.getElementById('saludo-franja');
+  const elNombre = () => document.getElementById('saludo-inicio');
+  const elAvatar = () => document.getElementById('perfil-avatar');
 
-  it('saluda "Buenos días" entre las 5 y las 11', () => {
+  it('saluda "Buenos días," entre las 5 y las 11, con el nombre en la línea 2', () => {
     vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
     updSaludo();
-    expect(elSaludo().textContent).toBe('Buenos días, Esteban');
+    expect(elFranja().textContent).toBe('Buenos días,');
+    expect(elNombre().textContent).toBe('Esteban');
+    expect(elNombre().hidden).toBe(false);
   });
 
-  it('saluda "Buenas tardes" entre las 12 y las 18', () => {
+  it('saluda "Buenas tardes," entre las 12 y las 18', () => {
     vi.setSystemTime(new Date(2026, 6, 5, 15, 0));
     updSaludo();
-    expect(elSaludo().textContent).toBe('Buenas tardes, Esteban');
+    expect(elFranja().textContent).toBe('Buenas tardes,');
+    expect(elNombre().textContent).toBe('Esteban');
   });
 
-  it('saluda "Buenas noches" de 19 a 23 y de 0 a 4', () => {
+  it('saluda "Buenas noches," de 19 a 23 y de 0 a 4', () => {
     vi.setSystemTime(new Date(2026, 6, 5, 21, 0));
     updSaludo();
-    expect(elSaludo().textContent).toBe('Buenas noches, Esteban');
+    expect(elFranja().textContent).toBe('Buenas noches,');
 
     vi.setSystemTime(new Date(2026, 6, 5, 3, 0));
     updSaludo();
-    expect(elSaludo().textContent).toBe('Buenas noches, Esteban');
+    expect(elFranja().textContent).toBe('Buenas noches,');
   });
 
-  it('sin nombre en el perfil, saluda sin nombre', () => {
+  it('el avatar muestra las iniciales del nombre (1 palabra → 1 letra)', () => {
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    expect(elAvatar().hidden).toBe(false);
+    expect(elAvatar().textContent).toBe('E');
+  });
+
+  it('con dos o más palabras toma las iniciales de las dos primeras', () => {
+    S.perfil = { nombre: 'juan pérez gómez', smmlv: 0 };
+    vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
+    updSaludo();
+    expect(elAvatar().textContent).toBe('JP');
+  });
+
+  it('sin nombre: la franja saluda sola (sin coma) y nombre y avatar se ocultan', () => {
     S.perfil = { nombre: '', smmlv: 0 };
     vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
     updSaludo();
-    expect(elSaludo().textContent).toBe('Buenos días');
+    expect(elFranja().textContent).toBe('Buenos días');
+    expect(elNombre().hidden).toBe(true);
+    expect(elAvatar().hidden).toBe(true);
+    expect(elAvatar().textContent).toBe('');
   });
 
   it('S.perfil ausente no revienta y saluda sin nombre', () => {
     S.perfil = undefined;
     vi.setSystemTime(new Date(2026, 6, 5, 8, 0));
     expect(() => updSaludo()).not.toThrow();
-    expect(elSaludo().textContent).toBe('Buenos días');
+    expect(elFranja().textContent).toBe('Buenos días');
   });
 
-  it('no-op si el contenedor no existe', () => {
+  it('no-op si los contenedores no existen', () => {
     document.body.innerHTML = '';
     expect(() => updSaludo()).not.toThrow();
   });

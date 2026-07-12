@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IN.8d header de perfil con avatar de iniciales + saludo en dos líneas · 2026-07-12
+
+Cierra **IN.8d** (`docs/BOARD.md`, iniciativa "Inicio v2"), cuarta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D8, cierra la absorción de IN.6b: iniciales, sin foto).
+
+**Qué cambió:** el header de `#sec-dash` deja el título "Tu resumen" + subtítulo y pasa a un header de perfil (`.perfil-inicio`): **teja de iniciales** 46×46px/radio 14px con gradiente del acento y tinta oscura (tokens nuevos `--fk-avatar-grad-a/-grad-b/-ink` en `tokens.css`, colores FIJOS en ambos temas por el criterio de tejas de marca del ADR 025; contraste 9.6:1 sobre la parada más clara del gradiente), **saludo en dos líneas** (`#saludo-franja` "Buenas tardes," 14px secundario arriba; `#saludo-inicio` con el nombre 20px/700 abajo, ahora título visual de la pantalla; medidas ajustadas a la escala de tokens, mismo criterio que IN.8b) y **enlace de ajustes** 40×40px a `#config` (`.perfil-inicio__ajustes`, reusa el símbolo `i-ajustes`). `updSaludo()` (`render.js`) reparte franja/nombre/iniciales; `_iniciales()` nuevo toma la primera letra de las dos primeras palabras del nombre con spread (no parte caracteres de dos unidades de código). **Fallback sin nombre** (decisión que el ADR delegaba a la rebanada): la franja saluda sola (sin coma) y nombre y avatar se ocultan; sin dato nuevo ni bump de schema. **Encabezado accesible resuelto:** el h1 "Tu resumen" queda `sr-only` y la sección conserva su nombre de región vía `aria-labelledby` (pase axe WCAG 2.1 AA del suite unitario verde con el marcado nuevo). La lógica de franjas horarias (IN.6a) no cambió.
+
+**Archivos tocados:** `index.html` (header de `#sec-dash`), `modules/infra/render.js` (`updSaludo()` + `_iniciales()`), `styles/components/domain.css` (`.perfil-inicio*`), `styles/tokens.css` (`--fk-avatar-*`), `tests/unit/render.test.js` (fixture réplica del header + tests de iniciales y fallbacks), `service-worker.js` (v350 → v351), `docs/contexto/inicio.md`.
+
+**Verificación:** 2349/2349 unit (2 netos nuevos: iniciales con 1 y 2+ palabras, franja sin coma y avatar oculto sin nombre, más el fixture del header nuevo en toda la suite de `updSaludo()`) + 166/166 E2E en Chromium real + lint verdes. El pase axe sobre `index.html` (violaciones críticas/graves, ARIA, IDs duplicados) corre dentro del suite unitario y pasó con el marcado nuevo.
+
+**Podría afectar:** nada persistido (cero cambios de schema ni de datos). Lectores de pantalla siguen anunciando la región como "Tu resumen"; visualmente el título de Inicio ahora es el nombre del usuario (o el saludo genérico si no hay nombre).
+
+---
+
 ### feat(ui): IN.8c detalle por cuenta expandible en el hero + máscara extendida · 2026-07-12
 
 Cierra **IN.8c** (`docs/BOARD.md`, iniciativa "Inicio v2"), tercera rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D4, resuelve la decisión UX que IN.2 dejó abierta).

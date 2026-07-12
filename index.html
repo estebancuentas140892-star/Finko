@@ -372,13 +372,22 @@
 
       <!-- DASHBOARD -->
       <section class="section" id="sec-dash" tabindex="-1" aria-labelledby="title-dash">
-        <header class="section__header">
-          <div>
-            <h1 class="section__title" id="title-dash">Tu resumen</h1>
-            <!-- Saludo dinámico según la hora (IN.6a, ADR 028 D3). render.js
-                 (updSaludo) lo llena; usa S.perfil.nombre si existe. -->
-            <p class="section__subtitle" id="saludo-inicio"></p>
+        <!-- Header de perfil (IN.8d, ADR 034 D8): avatar de iniciales + saludo
+             en dos líneas + acceso a Ajustes. El h1 "Tu resumen" deja de ser
+             el título visual pero conserva el nombre de la región para
+             lectores de pantalla (sr-only). render.js (updSaludo) llena
+             franja, nombre e iniciales desde S.perfil.nombre; sin nombre, la
+             franja saluda sola y el avatar se oculta (sin dato nuevo). -->
+        <header class="section__header perfil-inicio">
+          <h1 class="sr-only" id="title-dash">Tu resumen</h1>
+          <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
+          <div class="perfil-inicio__saludo">
+            <p class="perfil-inicio__franja" id="saludo-franja"></p>
+            <p class="perfil-inicio__nombre" id="saludo-inicio" hidden></p>
           </div>
+          <a class="perfil-inicio__ajustes" href="#config" aria-label="Ir a Ajustes">
+            <svg class="icon" aria-hidden="true"><use href="#i-ajustes"/></svg>
+          </a>
         </header>
 
         <!-- BENTO GRID del dashboard (orden IN.8a, ADR 034 D1): hero →

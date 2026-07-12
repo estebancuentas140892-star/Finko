@@ -783,6 +783,76 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   PERFIL-INICIO (IN.8d, ADR 034 D8) - header de perfil del dashboard:
+   avatar de iniciales + saludo en dos líneas + acceso a Ajustes.
+   El h1 real ("Tu resumen") queda sr-only: el nombre es el título visual.
+   ════════════════════════════════════════════════════════════ */
+
+.perfil-inicio {
+  flex-wrap: nowrap;
+  gap: var(--fk-space-3);
+}
+
+/* Teja de iniciales 46px / radio 14px (medidas literales del ADR 034 D8).
+   Colores fijos en ambos temas vía tokens --fk-avatar-* (criterio de teja
+   de marca, ADR 025: la identidad no cambia con el tema). */
+.perfil-inicio__avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-avatar-ink);
+  background: linear-gradient(150deg, var(--fk-avatar-grad-a), var(--fk-avatar-grad-b));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--fk-avatar-grad-b) 28%, transparent);
+  flex-shrink: 0;
+}
+.perfil-inicio__avatar[hidden] { display: none; }
+
+.perfil-inicio__saludo {
+  flex: 1;
+  min-width: 0;
+}
+.perfil-inicio__franja {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.perfil-inicio__nombre {
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: var(--fk-leading-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.perfil-inicio__nombre[hidden] { display: none; }
+
+.perfil-inicio__ajustes {
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition:
+    background var(--fk-transition-fast),
+    color var(--fk-transition-fast);
+}
+.perfil-inicio__ajustes:hover {
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+}
+.perfil-inicio__ajustes .icon { --fk-icon-size: var(--fk-icon-md); }
+
+/* ════════════════════════════════════════════════════════════
    HERO-INICIO (IN.8b, ADR 034 D2/D3) - saldo centrado protagonista.
    Piloto acotado del ADR 033: degradado de identidad (D2) + sombra en
    reposo (D1) SOLO en este hero mientras DV.2a no se apruebe.

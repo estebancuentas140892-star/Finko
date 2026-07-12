@@ -207,13 +207,18 @@ function _descCuentas(cuentas) {
 }
 
 /**
- * Saludo dinámico del Inicio según la hora local (IN.6a, ADR 028 D3).
- * Usa `S.perfil.nombre` (ya existe desde el onboarding); sin nombre, saluda
- * sin él. Franjas: 5-11 días, 12-18 tardes, resto (19-23 y 0-4) noches.
+ * Saludo dinámico del Inicio según la hora local (IN.6a, ADR 028 D3),
+ * en dos líneas desde IN.8d (ADR 034 D8): franja horaria arriba
+ * ("Buenas tardes,") y nombre abajo, junto al avatar de iniciales.
+ * Usa `S.perfil.nombre` (ya existe desde el onboarding); sin nombre, la
+ * franja saluda sola (sin coma) y nombre y avatar se ocultan.
+ * Franjas: 5-11 días, 12-18 tardes, resto (19-23 y 0-4) noches.
  */
 export function updSaludo() {
-  const el = document.getElementById('saludo-inicio');
-  if (!el) return;
+  const elFranja = document.getElementById('saludo-franja');
+  const elNombre = document.getElementById('saludo-inicio');
+  const avatar   = document.getElementById('perfil-avatar');
+  if (!elFranja && !elNombre) return;
 
   const hora = new Date().getHours();
   const momento = hora >= 5 && hora < 12  ? 'Buenos días'
@@ -221,7 +226,33 @@ export function updSaludo() {
     :                                       'Buenas noches';
 
   const nombre = typeof S.perfil?.nombre === 'string' ? S.perfil.nombre.trim() : '';
-  el.textContent = nombre ? `${momento}, ${nombre}` : momento;
+
+  if (elFranja) elFranja.textContent = nombre ? `${momento},` : momento;
+  if (elNombre) {
+    elNombre.textContent = nombre;
+    elNombre.hidden = !nombre;
+  }
+  if (avatar) {
+    avatar.hidden = !nombre;
+    avatar.textContent = nombre ? _iniciales(nombre) : '';
+  }
+}
+
+/**
+ * Iniciales para la teja de perfil (IN.8d): primera letra de las dos
+ * primeras palabras del nombre, en mayúsculas ("Esteban" → "E",
+ * "Juan Pérez" → "JP"). Spread para no partir caracteres de dos unidades.
+ *
+ * @param {string} nombre - ya validado no vacío.
+ * @returns {string}
+ */
+function _iniciales(nombre) {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => [...p][0].toUpperCase())
+    .join('');
 }
 
 // ── ORQUESTADOR ──────────────────────────────────────────────────

@@ -140,6 +140,15 @@
   --fk-dom-agenda-bg:   color-mix(in srgb, var(--fk-dom-agenda) 12%, transparent);
   --fk-dom-agenda-text: var(--fk-dom-agenda);
 
+  /* ── AVATAR DE PERFIL (IN.8d, ADR 034 D8) ────────────────────── */
+  /* Teja de identidad del usuario en el header de Inicio. Colores FIJOS
+     en ambos temas (mismo criterio que las tejas de marca del ADR 025:
+     una teja no cambia con el tema). Tinta oscura sobre el degradado
+     menta: 9.6:1 contra la parada más clara, AA en cualquier fondo. */
+  --fk-avatar-grad-a: #38dca6;
+  --fk-avatar-grad-b: #1fd194;
+  --fk-avatar-ink:    #08120d;
+
   /* ── NUDGES - tokens por nivel de urgencia ───────────────────── */
   /* Sistema de 5 niveles: crítico / alto / medio / info / logro   */
   --fk-nudge-critical-bg:     color-mix(in srgb, var(--fk-danger) 8%, transparent);
