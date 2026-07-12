@@ -98,14 +98,17 @@ export function renderActividadReciente() {
       </li>`;
   }).join('');
 
+  // IN.8g (ADR 034 D7): el panel ya no es su propia card; vive fusionado con
+  // "Accesos rápidos" en un solo bento__cell (index.html), separado por
+  // border-top (`.accesos-actividad__seccion--actividad`). Header
+  // simplificado a label + "Ver todo" en la misma fila (antes: encabezado
+  // con ícono propio arriba y el link como pie de página abajo).
   el.innerHTML = `
-    <section class="actividad-reciente" aria-label="Actividad reciente">
-      <header class="actividad-reciente__header">
-        <h2 class="actividad-reciente__title">${icon('recurring')} Actividad reciente</h2>
-      </header>
-      <ul class="actividad-reciente__list" role="list">${items}</ul>
+    <div class="accesos-actividad__header">
+      <span class="accesos-actividad__label">Actividad reciente</span>
       <a class="actividad-reciente__ver-todo" href="#movimientos">Ver todo</a>
-    </section>`;
+    </div>
+    <ul class="actividad-reciente__list" role="list">${items}</ul>`;
 }
 
 // ── VISTA COMPLETA (TX.8b, ruta propia #movimientos) ────────────

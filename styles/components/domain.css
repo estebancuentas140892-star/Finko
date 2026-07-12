@@ -1334,6 +1334,49 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   ACCESOS-ACTIVIDAD (IN.8g, ADR 034 D7) - fusión de "Accesos rápidos" +
+   "Actividad reciente" en un solo bento__cell, último bloque de Inicio.
+   Dos secciones separadas por border-top; cada una conserva su propio
+   role="region" (accesibilidad sin cambios, solo cambia el contenedor
+   visual). La superficie de card (antes en el bento__cell de accesos y
+   en .actividad-reciente como su propia card) vive ahora acá.
+   ════════════════════════════════════════════════════════════ */
+
+.accesos-actividad {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-lg);
+  overflow: hidden;
+}
+
+.accesos-actividad__seccion {
+  padding: var(--fk-space-5);
+}
+/* Separador entre accesos y actividad; desaparece solo si el panel de
+   actividad está [hidden] (sin movimientos), sin lógica extra. */
+.accesos-actividad__seccion--actividad {
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+.accesos-actividad__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-3);
+}
+
+/* muted falla AA sobre bg-surface (mismo criterio documentado en
+   .bento__group-label, que sí vive sobre bg-base): secondary en su lugar. */
+.accesos-actividad__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fk-text-secondary);
+}
+
+/* ════════════════════════════════════════════════════════════
    ACCESOS-INICIO - tiles personalizables a secciones detrás de "Más"
    (IN.4a, ADR 028 D2). Reusa .menu-mas__item/__icon/__label tal cual
    (mismo lenguaje visual, ya coloreado por dominio vía [data-section]):
@@ -1346,39 +1389,13 @@ button.chip:focus-visible {
   gap: var(--fk-space-3);
 }
 
-.accesos-inicio__personalizar {
-  margin-top: var(--fk-space-2);
-}
-
 /* ════════════════════════════════════════════════════════════
    ACTIVIDAD-RECIENTE - historial derivado de movimientos (TX.8a,
    ADR 028 D5). Últimos gastos, ingresos puntuales y aportes al fondo,
-   normalizados desde sus dominios de origen. Mismo patrón visual que
-   vencidos-card/prioridades-card: header + lista con scroll interno.
+   normalizados desde sus dominios de origen. Vive dentro de
+   .accesos-actividad__seccion--actividad desde IN.8g (ya no es su
+   propia card ni tiene encabezado con ícono propio).
    ════════════════════════════════════════════════════════════ */
-
-.actividad-reciente {
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  margin-bottom: 1rem;
-  overflow: hidden;
-}
-
-.actividad-reciente__header {
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--fk-border-subtle);
-}
-
-.actividad-reciente__title {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: var(--fk-text-sm);
-  font-weight: 600;
-  color: var(--fk-text-primary);
-  margin: 0;
-}
 
 .actividad-reciente__list {
   list-style: none;
@@ -1443,14 +1460,19 @@ button.chip:focus-visible {
   color: var(--fk-text-primary);
 }
 
+/* IN.8g: pasa de pie de página a link inline junto al label del header
+   (mismo patrón que .vencidos-card__link/.prioridades-card__link). */
 .actividad-reciente__ver-todo {
-  display: block;
-  text-align: center;
-  padding: 0.6rem 1rem;
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-xs);
   font-weight: 600;
-  color: var(--fk-accent);
-  border-top: 1px solid var(--fk-border-subtle);
+  color: var(--fk-text-accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.actividad-reciente__ver-todo:hover,
+.actividad-reciente__ver-todo:focus-visible {
+  text-decoration: underline;
 }
 
 /* ════════════════════════════════════════════════════════════

@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8a a IN.8f cerradas, ver CHANGELOG; sigue IN.8g, última rebanada).
+> Última actualización: 2026-07-12 (IN.8g cierra la iniciativa "Inicio v2" completa, IN.8a a IN.8g, ver CHANGELOG).
 
 ---
 
@@ -47,18 +47,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 ### Inicio (dashboard)
 
-> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), aprobada el 2026-07-05): IN.6a, CAL.1, TX.8a, TX.8b e IN.4a cerradas. **Superada parcialmente por la iniciativa "Inicio v2" de abajo** (triaje del 2026-07-08): el principio "rol único por bloque" sigue vigente; el orden vertical y varias decisiones puntuales entran en revisión formal.
-
-> **Iniciativa "Inicio v2"** (brief de Esteban del 2026-07-08 + diseño hifi entregado el 2026-07-12). **Fase de análisis/ADR cerrada el 2026-07-12:** la revisión formal del ADR 028 quedó escrita y aceptada en el **[ADR 034](DECISIONS/034-inicio-v2.md)** (orden nuevo con alertas primero, hero centrado con ojo estable y detalle por cuenta expandible colapsado por defecto, Pendientes del mes sin línea roja + "Gestionar" → Calendario, resumen semanal visual con serie diaria nueva, fusión accesos+actividad como último bloque, avatar de iniciales sin foto). Consume el ADR 033 D1/D2 como **piloto acotado a Inicio** (estreno parcial autorizado; el despliegue global sigue siendo DV.2a). El bundle de diseño (mockup interactivo + decisiones) vive en `Iteración de specimen/design_handoff_inicio_v2/`. Absorbió IN.6b (resuelta: iniciales, set ilustrado opcional a futuro) e IN.4b (sigue pospuesta: se decide tras convivir con el bloque fusionado). **No incluye** (fuentes únicas externas): copy de alertas de límites → LIM.1 (el panel `#panel-limites` se conserva dentro de "Atención hoy" sin rediseño). Implementación por las rebanadas de abajo: cada una se verifica en la app, commitea, pushea y bumpea el SW por separado.
-
-#### IN.8g - Inicio v2: fusión accesos rápidos + actividad reciente
-- Prioridad  : media-alta
-- Estado     : pendiente (siguiente y última rebanada de la iniciativa)
-- Objetivo   : ADR 034 D7: un solo `bento__cell` al final de la pantalla con dos secciones separadas por `border-top`: accesos arriba (label + "Personalizar" + grilla de 4 columnas, `accesosVisibles()` intacta) y actividad abajo (label + "Ver todo" + 5 movimientos, `movimientosRecientes()` intacta). Solo cambia contenedor/posición; cero cambios en los `logic.js` de ambos dominios.
-- Secciones  : Inicio (dominios `accesos` y `movimientos`, solo vista)
-- Archivos   : `index.html`, `modules/dominio/accesos/view.js`, `modules/dominio/movimientos/view.js`, styles
-- Depende de : nada (IN.8a cerró el 2026-07-12)
-- Modelo     : Sonnet 5 - Medio
+> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), aprobada el 2026-07-05): IN.6a, CAL.1, TX.8a, TX.8b e IN.4a cerradas. **Superada por la iniciativa "Inicio v2"** (triaje del 2026-07-08): su revisión formal, el [ADR 034](DECISIONS/034-inicio-v2.md), quedó completamente implementada el 2026-07-12 (rebanadas IN.8a a IN.8g, ver CHANGELOG). Sin tarjetas pendientes en esta sección.
 
 _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuario, un compromiso que vence hoy apareciendo a la vez en "Pendientes del mes" y en "Próximas prioridades", está resuelta, ver CHANGELOG. Queda pendiente, sin tarjeta propia porque ya vive dentro de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (que absorbió TX.10; CAL.1 ya cerró su parte), la parte más grande de la idea original: reservar "Próximas prioridades" para recomendaciones anticipadas (distribuir ingreso, crear límite, aportar a fondo/meta, gasto hormiga) en vez de solo vencimientos cercanos.)_
 

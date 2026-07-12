@@ -407,6 +407,51 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(panel.locator('.resumen-semana__top-sub')).toContainText('2 de 7 días activos');
     await expect(panel.locator('.resumen-semana__top-monto')).toHaveText('$180.000');
   });
+
+  test('Accesos rápidos + Actividad reciente fusionados en un solo bloque (IN.8g, ADR 034 D7)', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem('fk_v1')) return;
+      const hoy = new Date();
+      const iso = (d) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: [
+          { id: 'g1', descripcion: 'Mercado semanal', categoria: 'Mercado', monto: 50000, fecha: iso(hoy), cuentaId: null, nota: '' },
+        ],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/');
+    await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
+
+    // Un solo contenedor visual: ambas secciones son hijas directas del
+    // mismo .accesos-actividad, no dos bento__cell separados.
+    const contenedor = page.locator('.accesos-actividad');
+    await expect(contenedor).toBeVisible();
+    await expect(contenedor.locator('.accesos-actividad__label').first()).toHaveText('Accesos rápidos');
+    await expect(contenedor.locator('[data-action="accesos-personalizar"]')).toBeVisible();
+    await expect(page.locator('#accesos-inicio-grid .menu-mas__item').first()).toBeVisible();
+
+    const actividad = page.locator('#panel-actividad-reciente');
+    await expect(actividad).toBeVisible();
+    await expect(actividad.locator('.accesos-actividad__label')).toHaveText('Actividad reciente');
+    await expect(actividad.locator('.actividad-reciente__ver-todo')).toHaveAttribute('href', '#movimientos');
+    await expect(actividad).toContainText('Mercado semanal');
+
+    // El separador vive en la sección de actividad, no en toda la tarjeta.
+    await expect(actividad).toHaveClass(/accesos-actividad__seccion--actividad/);
+  });
 });
 
 // ── SUITE 1c: Metas - categorías con emoji (MT.1 + MT.3) ─────────────────────

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): IN.8g fusión accesos rápidos + actividad reciente, cierra "Inicio v2" · 2026-07-12
+
+Cierra **IN.8g** (`docs/BOARD.md`), séptima y última rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D7). **Con esta rebanada, la iniciativa "Inicio v2" queda completa.**
+
+**Qué cambió:** "Accesos rápidos" y "Actividad reciente" (antes dos bloques independientes, cada uno su propio `bento__cell`/card) quedan fusionados en un solo contenedor (`.accesos-actividad`), cierre de la pantalla de Inicio. **Arriba:** header con label "Accesos rápidos" + botón "Personalizar" en la misma fila (antes el botón vivía debajo de la grilla, sin label visible) + grilla de tiles sin cambios (`renderAccesosInicio()`/`accesosVisibles()` intactos). **Abajo**, separado por `border-top` (`.accesos-actividad__seccion--actividad`, que desaparece junto con el panel cuando no hay movimientos, sin lógica nueva): header con label "Actividad reciente" + link "Ver todo" en la misma fila (antes: encabezado con ícono propio arriba, "Ver todo" como pie de página al final de la lista) + lista de movimientos sin cambios (`movimientosRecientes()` intacto, mismo signo +/- por dirección). **Cero cambios en `accesos/logic.js` y `movimientos/logic.js`** (regla explícita del ADR: solo contenedor/posición).
+
+**Archivos tocados:** `index.html` (marcado fusionado del bloque final), `modules/dominio/movimientos/view.js` (`renderActividadReciente()`: header simplificado, ya no genera su propia `<section>`/`<header>` con ícono), `styles/components/domain.css` (`.accesos-actividad*` nuevo toma la superficie de card que antes tenían por separado ambos bloques; `.actividad-reciente__ver-todo` pasa de pie de página a link inline), `tests/unit/movimientos.test.js` (2 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v353 → v354), `docs/contexto/inicio.md`.
+
+**Verificación:** 2367/2367 unit (label "Actividad reciente" en el header compartido sin su propia card/ícono, ausencia de las clases retiradas) + 169/169 E2E (1 nuevo en Chromium real: un solo contenedor visual, ambos labels, botón Personalizar visible, grilla de accesos, link "Ver todo" con href correcto, separador en la sección de actividad) + lint verdes.
+
+**Podría afectar:** nada persistido ni de comportamiento (cero cambios de schema, cero cambios de lógica). Visualmente el botón "Personalizar" y el link "Ver todo" cambian de posición (ahora junto a sus labels respectivos, no como pie de página).
+
+---
+
 ### feat(resumen): IN.8f resumen semanal visual con serie diaria + barras + chip comparativo · 2026-07-12
 
 Cierra **IN.8f** (`docs/BOARD.md`, iniciativa "Inicio v2"), sexta rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D6).

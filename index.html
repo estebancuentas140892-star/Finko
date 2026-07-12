@@ -491,24 +491,29 @@
             </div>
           </div>
 
-          <!-- ACCESOS RÁPIDOS: tiles personalizables (IN.4a, ADR 028 D2), al
-               final del orden de lectura (IN.8a: los atajos bajan, lo urgente
-               sube). accesos/view.js llena la grilla contra S.config.accesosInicio;
-               siempre visible para que "Personalizar" quede a mano. -->
-          <div class="bento__cell bento__cell--full accesos-inicio" role="region" aria-label="Accesos rápidos">
-            <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
-            <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
-                    data-action="accesos-personalizar">
-              <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
-              Personalizar
-            </button>
+          <!-- ACCESOS RÁPIDOS + ACTIVIDAD RECIENTE (IN.8g, ADR 034 D7): un
+               solo bento__cell, cierre de la pantalla. Accesos arriba
+               (IN.4a, ADR 028 D2; accesos/view.js llena la grilla contra
+               S.config.accesosInicio, siempre visible para que
+               "Personalizar" quede a mano); actividad abajo (TX.8a, ADR 028
+               D5; movimientos/view.js lo llena, [hidden] si no hay
+               movimientos). Solo cambia contenedor/posición: ninguno de los
+               dos logic.js cambió. -->
+          <div class="bento__cell bento__cell--full bento__cell--flat accesos-actividad">
+            <div class="accesos-actividad__seccion" role="region" aria-label="Accesos rápidos">
+              <div class="accesos-actividad__header">
+                <span class="accesos-actividad__label">Accesos rápidos</span>
+                <button class="accesos-inicio__personalizar btn btn-ghost btn-sm" type="button"
+                        data-action="accesos-personalizar">
+                  <svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg>
+                  Personalizar
+                </button>
+              </div>
+              <div class="accesos-inicio__grid" id="accesos-inicio-grid"></div>
+            </div>
+            <div id="panel-actividad-reciente" class="accesos-actividad__seccion accesos-actividad__seccion--actividad"
+                 role="region" aria-label="Actividad reciente" hidden></div>
           </div>
-
-          <!-- ACTIVIDAD RECIENTE: últimos movimientos derivados (TX.8a, ADR 028
-               D5), cierre de la pantalla. movimientos/view.js lo llena; [hidden]
-               si no hay movimientos. -->
-          <div id="panel-actividad-reciente" class="bento__cell bento__cell--flat bento__cell--full"
-               role="region" aria-label="Actividad reciente" hidden></div>
 
         </div><!-- /.bento -->
       </section>

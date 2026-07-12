@@ -269,6 +269,18 @@ describe('renderActividadReciente()', () => {
     expect(link).not.toBeNull();
     expect(link.getAttribute('href')).toBe('#movimientos');
   });
+
+  // ── IN.8g (ADR 034 D7): fusión con Accesos rápidos, header simplificado ──
+
+  it('el label "Actividad reciente" vive en el header compartido, sin su propia card/ícono', () => {
+    S.gastos = [gasto()];
+    renderActividadReciente();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('accesos-actividad__label');
+    expect(html).toContain('Actividad reciente');
+    expect(html).not.toContain('class="actividad-reciente"');
+    expect(html).not.toContain('actividad-reciente__title');
+  });
 });
 
 // ── movimientosCompletos() ────────────────────────────────────────
