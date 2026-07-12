@@ -647,14 +647,24 @@
           <!-- K.1 (MC.18c, ADR 035 D4): renderGMFIndicador() pinta la tarjeta insight del 4x1000 -->
         </div>
 
-        <!-- M.3: Fuentes de ingreso recurrentes -->
+        <!-- M.3 + NAV.A1, agrupados (MC.18d, ADR 035 D7): fijos (recurrentes)
+             y puntuales (una sola vez) bajo un solo encabezado. Los puntuales
+             suben el saldo de la cuenta destino al registrarse; no cambian
+             Análisis ni el resumen semanal (v8.8: sin flujo de ingreso). -->
         <div class="section__sub-header">
-          <h2 class="section__subtitle">Mis ingresos fijos</h2>
-          <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso"
-                  aria-label="Agregar fuente de ingreso fijo">
-            + Ingreso fijo
-          </button>
+          <h2 class="section__subtitle">Fuentes de ingreso</h2>
+          <div class="section__sub-actions">
+            <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso"
+                    aria-label="Agregar fuente de ingreso fijo">
+              + Fijo
+            </button>
+            <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso-puntual"
+                    aria-label="Registrar un ingreso puntual">
+              + Puntual
+            </button>
+          </div>
         </div>
+        <p class="section__sub-hint">Fijos que se repiten cada período y dinero que entra una sola vez, todo junto.</p>
         <div id="ingresos-nudge-proximo">
           <!-- Fase 2: renderNudgeProximoIngreso() - alerta de próximo cobro -->
         </div>
@@ -664,18 +674,6 @@
         <div id="lista-ingresos">
           <!-- M.3: tesoreria/view.js renderiza aquí -->
         </div>
-
-        <!-- NAV.A1 (ADR 024): ingresos puntuales (dinero que entra una sola vez).
-             Suben el saldo de la cuenta destino al registrarse; no cambian
-             Análisis ni el resumen semanal (v8.8: sin flujo de ingreso). -->
-        <div class="section__sub-header">
-          <h2 class="section__subtitle">Otros ingresos</h2>
-          <button class="btn btn-sm btn-primary" data-action="nuevo-ingreso-puntual"
-                  aria-label="Registrar un ingreso puntual">
-            + Ingreso
-          </button>
-        </div>
-        <p class="section__sub-hint">Dinero que llega una sola vez: un trabajo, una venta, un regalo. Se suma a tu cuenta al registrarlo.</p>
         <div id="lista-ingresos-puntuales">
           <!-- NAV.A1: tesoreria/view.js renderiza aquí -->
         </div>

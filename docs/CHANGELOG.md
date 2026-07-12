@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.18d fuentes de ingreso agrupadas · 2026-07-12
+
+Cierra **MC.18d** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), cuarta rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D7).
+
+**Qué cambió:** los dos sub-encabezados independientes ("Mis ingresos fijos" con "+ Ingreso fijo", "Otros ingresos" con "+ Ingreso") se fusionan en un solo `.section__sub-header` "Fuentes de ingreso", con las dos acciones ("+ Fijo" / "+ Puntual") lado a lado en `.section__sub-actions` (nuevo, envoltorio genérico reutilizable para agrupar acciones cortas en un sub-header). **Resolución del CTA único del mockup:** en vez de un selector nuevo (menú/popover) para elegir entre fijo y puntual, se mantienen los dos botones existentes, ahora compactos y unidos bajo un solo encabezado; no se inventó una pieza de interacción nueva para dos formularios que ya son deliberadamente distintos (uno recurrente, uno de una sola vez). Ambas listas (`#lista-ingresos`, `#lista-ingresos-puntuales`) quedan una tras otra sin sub-header propio entre ellas, con el lenguaje visual de `.cuenta-card` (radio `lg` + sombra en reposo, tercer y último consumidor del piloto ADR 033 en esta pantalla), sin tocar la `.list-item` base que usan las demás secciones (selector CSS scoped por contenedor). **Máscara (D5):** `renderListaIngresos()` y `renderListaIngresosPuntuales()` extienden `S.config.ocultarSaldo` a cada monto (`SALDO_MASCARA_CUENTA`), el puntual conserva su prefijo `+` incluso enmascarado (`+••••`).
+
+**Archivos tocados:** `index.html` (headers de `#sec-tesoreria` fusionados), `modules/dominio/tesoreria/views/ingresos.js` (`_renderIngresoItem()`, `_renderIngresoPuntualItem()`, `renderListaIngresos()`, `renderListaIngresosPuntuales()`), `styles/layout.css` (`.section__sub-actions`), `styles/components/domain.css` (radio + sombra scoped a `#lista-ingresos`/`#lista-ingresos-puntuales`), `tests/unit/tesoreria.test.js` (2 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v359 → v360), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2410/2410 unit (montos reales vs enmascarados en ambas listas) + 174/174 E2E (1 nuevo en Chromium real: un solo sub-header con las dos acciones, ingreso fijo y puntual creados y visibles, máscara compartida) + lint verdes.
+
+**Podría afectar:** nada persistido (cero cambios de schema ni de lógica de guardado/eliminado, `acciones/ingresos.js` intacto). El aria-label de los botones de agregar no cambió (mismo texto descriptivo), solo su texto visible pasa de "+ Ingreso fijo"/"+ Ingreso" a "+ Fijo"/"+ Puntual".
+
+---
+
 ### feat(tesoreria): MC.18c GMF como tarjeta insight integrada · 2026-07-12
 
 Cierra **MC.18c** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), tercera rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D4).

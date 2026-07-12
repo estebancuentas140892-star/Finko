@@ -12,6 +12,7 @@ import { S } from '../../../core/state.js';
 import { f, esc as _esc, formateadorFecha } from '../../../infra/utils.js';
 import { icon, tejaCategoria } from '../../../infra/icons.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
+import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { FRECUENCIAS, CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO } from '../../../core/constants.js';
 import { FRECUENCIAS_CON_DIA, calcularSalarioMinimo, detectarNudgeProximoIngreso } from '../logic/ingresos.js';
 
@@ -20,6 +21,10 @@ import { FRECUENCIAS_CON_DIA, calcularSalarioMinimo, detectarNudgeProximoIngreso
 /**
  * Renderiza la lista de ingresos activos en `#lista-ingresos`.
  * No-op si el contenedor no existe.
+ *
+ * MC.18d (ADR 035 D5): el ojo del hero enmascara también los montos de
+ * ingreso, mismo flag `S.config.ocultarSaldo` que el total y los saldos
+ * de cuenta.
  */
 export function renderListaIngresos() {
   const el = document.getElementById('lista-ingresos');
@@ -28,10 +33,11 @@ export function renderListaIngresos() {
   const ingresos = Array.isArray(S.ingresos)
     ? S.ingresos.filter(i => i.activo !== false)
     : [];
+  const oculto = S.config?.ocultarSaldo === true;
 
   el.innerHTML = ingresos.length === 0
     ? _renderEmptyStateIngresos()
-    : ingresos.map(_renderIngresoItem).join('');
+    : ingresos.map(i => _renderIngresoItem(i, oculto)).join('');
 }
 
 function _renderEmptyStateIngresos() {
@@ -43,9 +49,10 @@ function _renderEmptyStateIngresos() {
 
 /**
  * @param {import('../../../core/state.js').Ingreso} ing
+ * @param {boolean} oculto - S.config.ocultarSaldo (MC.18d, ADR 035 D5).
  * @returns {string}
  */
-function _renderIngresoItem(ing) {
+function _renderIngresoItem(ing, oculto) {
   const desc = _esc(ing.descripcion);
   const frec = _esc(ing.frecuencia);
   // MC.15 (20): con "Salario mínimo" de categoría, es común que el usuario
@@ -77,7 +84,7 @@ function _renderIngresoItem(ing) {
         ${diaHint}
       </div>
       <div class="list-item__meta">
-        <p class="list-item__value">${f(ing.monto)}</p>
+        <p class="list-item__value">${oculto ? SALDO_MASCARA_CUENTA : f(ing.monto)}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
@@ -170,6 +177,8 @@ export function renderFormIngreso(ingreso = null) {
 /**
  * Renderiza la lista de ingresos puntuales en `#lista-ingresos-puntuales`,
  * más recientes primero. No-op si el contenedor no existe.
+ *
+ * MC.18d (ADR 035 D5): mismo enmascarado que `renderListaIngresos()`.
  */
 export function renderListaIngresosPuntuales() {
   const el = document.getElementById('lista-ingresos-puntuales');
@@ -177,10 +186,11 @@ export function renderListaIngresosPuntuales() {
 
   const lista = Array.isArray(S.ingresosPuntuales) ? [...S.ingresosPuntuales] : [];
   lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  const oculto = S.config?.ocultarSaldo === true;
 
   el.innerHTML = lista.length === 0
     ? _renderEmptyStateIngresosPuntuales()
-    : lista.map(_renderIngresoPuntualItem).join('');
+    : lista.map(i => _renderIngresoPuntualItem(i, oculto)).join('');
 }
 
 function _renderEmptyStateIngresosPuntuales() {
@@ -198,13 +208,15 @@ function _nombreCuenta(cuentaId) {
 
 /**
  * @param {import('../../../core/state.js').IngresoPuntual} ing
+ * @param {boolean} oculto - S.config.ocultarSaldo (MC.18d, ADR 035 D5).
  * @returns {string}
  */
-function _renderIngresoPuntualItem(ing) {
+function _renderIngresoPuntualItem(ing, oculto) {
   const desc = _esc(ing.descripcion);
   const catLabel = ing.categoria ? `${_esc(ing.categoria)} · ` : '';
   const cuentaNom = _nombreCuenta(ing.cuentaId);
   const cuentaStr = cuentaNom ? ` · ${_esc(cuentaNom)}` : '';
+  const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(ing.monto);
 
   // ID.3: misma teja de categoría que los ingresos fijos.
   const teja = tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos');
@@ -217,7 +229,7 @@ function _renderIngresoPuntualItem(ing) {
         <p class="list-item__subtitle">${catLabel}${_esc(fechaCorta(ing.fecha))}${cuentaStr}</p>
       </div>
       <div class="list-item__meta">
-        <p class="list-item__value list-item__value--in">+${f(ing.monto)}</p>
+        <p class="list-item__value list-item__value--in">+${montoTxt}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"

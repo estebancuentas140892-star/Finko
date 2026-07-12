@@ -947,6 +947,56 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await expect(insight).toContainText('4x1000 estimado este mes: $2.000');
     await expect(insight).toContainText('1 cuenta');
   });
+
+  test('MC.18d: fuentes de ingreso fijas y puntuales agrupadas bajo un solo encabezado', async ({ page }) => {
+    await crearCuentaEfectivo(page, 500000);
+
+    // Un solo encabezado con las dos acciones.
+    const subHeader = page.locator('.section__sub-header', { hasText: 'Fuentes de ingreso' });
+    await expect(subHeader).toBeVisible();
+    await expect(subHeader.locator('[data-action="nuevo-ingreso"]')).toBeVisible();
+    await expect(subHeader.locator('[data-action="nuevo-ingreso-puntual"]')).toBeVisible();
+
+    // Crear un ingreso fijo.
+    await subHeader.locator('[data-action="nuevo-ingreso"]').click();
+    await page.waitForSelector('#modal-ingreso[data-open]');
+    const formFijo = page.locator('#modal-ingreso-body form');
+    await formFijo.locator('#ingreso-cat').selectOption({ index: 1 });
+    await formFijo.locator('#ingreso-desc').fill('Salario empresa');
+    await formFijo.locator('#ingreso-monto').fill('1850000');
+    await formFijo.locator('#ingreso-frec').selectOption('Mensual');
+    await formFijo.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-ingreso'), { timeout: 5_000 });
+    await expect(page.locator('#lista-ingresos')).toContainText('Salario empresa');
+
+    // Crear un ingreso puntual.
+    await subHeader.locator('[data-action="nuevo-ingreso-puntual"]').click();
+    await page.waitForSelector('#modal-ingreso-puntual[data-open]');
+    const formPuntual = page.locator('#modal-ingreso-puntual-body form');
+    await formPuntual.locator('#ingreso-p-monto').fill('450000');
+    await formPuntual.locator('#ingreso-p-desc').fill('Venta de la bici');
+    await formPuntual.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-ingreso-puntual'), { timeout: 5_000 });
+    await expect(page.locator('#lista-ingresos-puntuales')).toContainText('Venta de la bici');
+
+    // NAV.A2b s2: con un ingreso fijo ya registrado, el asistente existe y
+    // el ingreso puntual ofrece distribuirlo. No es el foco de este test.
+    const confirmDistribuir = page.locator('[role="dialog"][aria-labelledby="confirm-title"]');
+    if (await confirmDistribuir.isVisible().catch(() => false)) {
+      await confirmDistribuir.locator('[data-role="cancelar"]').click();
+    }
+
+    // Ambas listas viven una tras otra bajo el mismo encabezado, sin
+    // sub-header propio entre ellas (solo el de "Fuentes de ingreso").
+    await expect(page.locator('.section__sub-header')).toHaveCount(1);
+
+    // El ojo del hero también enmascara los montos de ambas listas (D5).
+    await expect(page.locator('#lista-ingresos .list-item__value')).toHaveText('$1.850.000');
+    await expect(page.locator('#lista-ingresos-puntuales .list-item__value')).toHaveText('+$450.000');
+    await page.click('#tesoreria-saldo-ojo');
+    await expect(page.locator('#lista-ingresos .list-item__value')).toHaveText('••••');
+    await expect(page.locator('#lista-ingresos-puntuales .list-item__value')).toHaveText('+••••');
+  });
 });
 
 // ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────

@@ -1248,6 +1248,18 @@ button.chip:focus-visible {
   line-height: 1.4;
 }
 
+/* Fuentes de ingreso agrupadas (MC.18d, ADR 035 D7): mismo lenguaje de
+   tarjeta que .cuenta-card (radio lg + sombra en reposo, tercer y último
+   consumidor del piloto ADR 033 en esta pantalla), sin tocar la base
+   .list-item que usan las demás secciones de la app. `renderListaIngresos()`
+   y `renderListaIngresosPuntuales()` siguen pintando .list-item normal;
+   el estilo se aplica por contenedor. */
+#lista-ingresos .list-item,
+#lista-ingresos-puntuales .list-item {
+  border-radius: var(--fk-radius-lg);
+  box-shadow: var(--fk-shadow-sm);
+}
+
 /* ════════════════════════════════════════════════════════════
    VENCIDOS-CARD - lista de compromisos cuyo día de pago ya pasó.
    Se renderiza solo si hay items. Scroll vertical si >5 items

@@ -41,7 +41,7 @@ import {
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
@@ -1773,6 +1773,45 @@ describe('renderListaIngresos() - MC.15 (20): sin subtítulo redundante', () => 
     }];
     renderListaIngresos();
     expect(document.querySelector('.list-item__subtitle').textContent).toBe('Quincenal · Salario mínimo');
+  });
+});
+
+// ── renderListaIngresos()/renderListaIngresosPuntuales() - MC.18d: ──
+// ── máscara de privacidad compartida (ADR 035 D5) ────────────────
+
+describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del ojo (MC.18d, ADR 035 D5)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-ingresos"></div><div id="lista-ingresos-puntuales"></div>';
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario empresa', monto: 1_850_000,
+      frecuencia: 'Mensual', categoria: null, activo: true,
+    }];
+    S.ingresosPuntuales = [{
+      id: 'p1', descripcion: 'Venta de la bici', monto: 450_000,
+      fecha: '2026-07-05', categoria: null, cuentaId: null,
+    }];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+  });
+
+  it('con el saldo visible, muestra los montos reales', () => {
+    renderListaIngresos();
+    renderListaIngresosPuntuales();
+    expect(document.querySelector('#lista-ingresos .list-item__value').textContent).toBe('$1.850.000');
+    expect(document.querySelector('#lista-ingresos-puntuales .list-item__value').textContent).toBe('+$450.000');
+  });
+
+  it('con S.config.ocultarSaldo, enmascara ambos montos sin exponer la cifra real', () => {
+    S.config.ocultarSaldo = true;
+    renderListaIngresos();
+    renderListaIngresosPuntuales();
+    expect(document.querySelector('#lista-ingresos .list-item__value').textContent).toBe('••••');
+    expect(document.querySelector('#lista-ingresos-puntuales .list-item__value').textContent).toBe('+••••');
+    expect(document.getElementById('lista-ingresos').innerHTML).not.toContain('1.850.000');
+    expect(document.getElementById('lista-ingresos-puntuales').innerHTML).not.toContain('450.000');
   });
 });
 

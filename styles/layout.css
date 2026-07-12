@@ -330,6 +330,15 @@
   border-top: 1px solid var(--fk-border-subtle);
 }
 
+/* Agrupa dos acciones cortas dentro de un .section__sub-header (MC.18d,
+   ADR 035 D7: "+ Fijo" / "+ Puntual" bajo un solo encabezado "Fuentes de
+   ingreso", en vez de dos sub-headers con su propio CTA cada uno). */
+.section__sub-actions {
+  display: flex;
+  gap: var(--fk-space-2);
+  flex-shrink: 0;
+}
+
 /* ── HUB AHORROS (NAV.B, ADR 024 D4) ─────────────────────────
    Franja de pestañas compartida por Fondo/Metas/Apartados/Inversión.
    Son enlaces entre secciones (no tabs ARIA): la actual se marca con
