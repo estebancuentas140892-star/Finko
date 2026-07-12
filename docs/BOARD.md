@@ -78,16 +78,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **MC.15c y MC.15d cerradas el 2026-07-12** (aviso de costos periódicos al crear cuenta + orden categoría→descripción en el ingreso puntual, ver CHANGELOG). **MC.15b absorbida por MC.18b** (el rediseño de la tarjeta de cuenta del ADR 035 rehace el contenedor de la teja; la verificación de legibilidad de Davivienda, BBVA, DaviPlata y Nubank es criterio de aceptación de esa rebanada). La iniciativa MC.15 queda cerrada como tarjeta propia.
 
-> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). **MC.18b cerrada el 2026-07-12** (tarjetas de cuenta con chips + teja 44px, absorbe MC.15b, ver CHANGELOG). Rebanadas restantes abajo, en orden.
-
-#### MC.18c - GMF como tarjeta insight integrada (D4)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : el indicador 4x1000 (K.1) deja el formato nudge suelto y pasa a tarjeta insight compacta (tinte tesorería, icono `%`, título con el costo + detalle) pegada bajo la lista de cuentas. Copy y cálculo intactos (`calcularCostoGMF`, `detectarNudgeGMF`).
-- Secciones  : Mis cuentas
-- Archivos   : `tesoreria/views/cuentas.js` (`renderGMFIndicador()`), `styles/components/domain.css`
-- Depende de : MC.18b (comparte lenguaje visual de tarjetas)
-- Modelo     : Sonnet 5 - Bajo
+> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). **MC.18b cerrada el 2026-07-12** (tarjetas de cuenta con chips + teja 44px, absorbe MC.15b, ver CHANGELOG). **MC.18c cerrada el 2026-07-12** (GMF como tarjeta insight integrada, ver CHANGELOG). Rebanadas restantes abajo, en orden.
 
 #### MC.18d - Fuentes de ingreso agrupadas (D7)
 - Prioridad  : media

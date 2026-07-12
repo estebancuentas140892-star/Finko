@@ -907,6 +907,46 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await expect(card.locator('.cuenta-card__saldo')).toHaveText('••••');
     await expect(card).not.toContainText('1.450.000');
   });
+
+  test('MC.18c: la tarjeta insight del GMF aparece bajo las cuentas cuando hay costo este mes', async ({ page }) => {
+    // Sin gastos aún: el contenedor de GMF no pinta nada.
+    await expect(page.locator('#tesoreria-gmf')).toBeEmpty();
+
+    // Cuenta con 4x1000 activo.
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+    const form = page.locator('#modal-cuenta-body form');
+    await form.locator('.bank-picker__trigger').click();
+    await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+    await page.locator('#banco-list .bank-picker__item[data-value="Bancolombia"]').click();
+    await form.locator('#cuenta-tipo').selectOption('Ahorros');
+    await form.locator('#cuenta-saldo').fill('1000000');
+    await form.locator('#cuenta-4x1000').check();
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+
+    // Sin gastos aún, la tarjeta insight sigue vacía.
+    await expect(page.locator('#tesoreria-gmf')).toBeEmpty();
+
+    // Un gasto este mes desde esa cuenta genera el costo del gravamen.
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const formGasto = page.locator('#modal-gasto-body form');
+    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await formGasto.locator('[name="monto"]').fill('500000');
+    await formGasto.locator('[name="fecha"]').fill(hoyLocal());
+    await formGasto.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-gasto'), { timeout: 3_000 });
+
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    const insight = page.locator('.gmf-insight');
+    await expect(insight).toContainText('4x1000 estimado este mes: $2.000');
+    await expect(insight).toContainText('1 cuenta');
+  });
 });
 
 // ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────

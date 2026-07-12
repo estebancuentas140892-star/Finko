@@ -41,7 +41,7 @@ import {
   montoSalarioMinimoPorPeriodo,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { dispatch } from '../../modules/ui/actions.js';
@@ -1312,6 +1312,36 @@ describe('detectarNudgeGMF()', () => {
     expect(n.costoGMF).toBe(4_000);
     expect(n.gastosGravados).toBe(1_000_000);
     expect(n.cantidadCuentasGMF).toBe(2);
+  });
+});
+
+// ── renderGMFIndicador() - MC.18c: tarjeta insight (ADR 035 D4) ──
+
+describe('renderGMFIndicador() - tarjeta insight del 4x1000', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="tesoreria-gmf"></div>';
+  });
+
+  it('sin costo GMF este mes, el contenedor queda vacío', () => {
+    S.cuentas = [cuentaBase({ aplica4x1000: false })];
+    S.gastos = [];
+    renderGMFIndicador();
+    expect(document.getElementById('tesoreria-gmf').innerHTML).toBe('');
+  });
+
+  it('con costo GMF este mes, pinta la tarjeta con icono, monto y detalle', () => {
+    const d = new Date();
+    const fechaHoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    S.cuentas = [cuentaBase({ id: 'c1', aplica4x1000: true })];
+    S.gastos = [
+      { id: 'g1', cuentaId: 'c1', monto: 500_000, fecha: fechaHoy, categoria: 'Mercado' },
+    ];
+    renderGMFIndicador();
+    const el = document.getElementById('tesoreria-gmf');
+    expect(el.querySelector('.gmf-insight')).not.toBeNull();
+    expect(el.innerHTML).toContain('#i-percent');
+    expect(el.querySelector('.gmf-insight__title').textContent).toContain('4x1000 estimado este mes');
+    expect(el.querySelector('.gmf-insight__desc').textContent).toContain('1 cuenta');
   });
 });
 

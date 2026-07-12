@@ -411,10 +411,10 @@ export function renderFormCuenta() {
     </form>`;
 }
 
-// ── INDICADOR GMF (K.1) ──────────────────────────────────────────
+// ── INDICADOR GMF (K.1, tarjeta insight desde MC.18c) ─────────────
 
 /**
- * Renderiza el nudge de costo del GMF en `#tesoreria-gmf`.
+ * Renderiza la tarjeta insight de costo del GMF en `#tesoreria-gmf`.
  * Muestra el costo estimado del 4x1000 para el mes actual basado en
  * los gastos registrados desde cuentas con GMF. No-op si el contenedor
  * no existe o si no hay costo que reportar este mes.
@@ -430,22 +430,28 @@ export function renderGMFIndicador() {
   const gmfData = calcularCostoGMF(S.gastos, S.cuentas, anio, mes);
   const nudge   = detectarNudgeGMF(gmfData);
 
-  el.innerHTML = nudge ? _renderNudgeGMF(nudge) : '';
+  el.innerHTML = nudge ? _renderGMFInsight(nudge) : '';
 }
 
 /**
+ * MC.18c (ADR 035 D4): antes nudge suelto (`.nudge nudge-info`), ahora
+ * tarjeta insight compacta con tinte tesorería, pegada bajo la lista de
+ * cuentas que generan el gravamen. Copy y cálculo sin cambios.
+ *
  * @param {{ icono: string, nivel: string, cantidadCuentasGMF: number,
  *           gastosGravados: number, costoGMF: number }} nudge
  * @returns {string}
  */
-function _renderNudgeGMF(nudge) {
+function _renderGMFInsight(nudge) {
   const n = nudge.cantidadCuentasGMF === 1 ? '1 cuenta' : `${nudge.cantidadCuentasGMF} cuentas`;
   return `
-    <div class="nudge nudge-info" role="status">
-      <span class="nudge__icon" aria-hidden="true">${icon(nudge.icono)}</span>
-      <div class="nudge__body">
-        <p class="nudge__title">4x1000 estimado este mes: ${f(nudge.costoGMF)}</p>
-        <p class="nudge__desc">Calculado desde ${f(nudge.gastosGravados)} en gastos registrados desde ${_esc(n)} con GMF. Las cuentas de nómina y AFC están exentas: consulta con tu banco si aplica.</p>
+    <div class="gmf-insight" role="status">
+      <span class="gmf-insight__icon" aria-hidden="true">
+        <svg class="icon" aria-hidden="true"><use href="#i-percent"/></svg>
+      </span>
+      <div class="gmf-insight__body">
+        <p class="gmf-insight__title">4x1000 estimado este mes: ${f(nudge.costoGMF)}</p>
+        <p class="gmf-insight__desc">Calculado desde ${f(nudge.gastosGravados)} en gastos registrados desde ${_esc(n)} con GMF. Las cuentas de nómina y AFC están exentas: consulta con tu banco si aplica.</p>
       </div>
     </div>`;
 }

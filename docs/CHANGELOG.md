@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.18c GMF como tarjeta insight integrada · 2026-07-12
+
+Cierra **MC.18c** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), tercera rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D4).
+
+**Qué cambió:** el indicador del 4x1000 (K.1) deja el formato de nudge suelto (`.nudge nudge-info`, con `border-left` de acento) y pasa a **tarjeta insight** propia (`.gmf-insight`): teja de 30px con icono `%` (`i-percent`, fijo, ya no depende del campo `icono` de `detectarNudgeGMF()`) + título con el costo estimado + detalle, tinte tesorería (7% fondo / 22% borde), pegada justo bajo la lista de cuentas (posición sin cambios, ya estaba ahí desde antes de MC.18). Copy y cálculo intactos (`calcularCostoGMF()`, `detectarNudgeGMF()` sin tocar). Contraste WCAG medido en ambos temas: título/detalle 13.14:1/6.68:1 (oscuro) y 15.72:1/7.96:1 (claro); glifo contra su teja 4.59:1 (oscuro) y 4.19:1 (claro), ambos sobre el umbral de 3:1 para elementos gráficos.
+
+**Archivos tocados:** `index.html` (comentario del contenedor `#tesoreria-gmf`), `modules/dominio/tesoreria/views/cuentas.js` (`_renderNudgeGMF()` → `_renderGMFInsight()`), `styles/components/domain.css` (`.gmf-insight__*`), `tests/unit/tesoreria.test.js` (2 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v358 → v359), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2408/2408 unit (contenedor vacío sin costo, tarjeta con icono/monto/detalle con costo) + 173/173 E2E (1 nuevo en Chromium real: sin gastos no aparece, con un gasto del mes desde una cuenta con GMF aparece con el monto correcto) + lint verdes.
+
+**Podría afectar:** nada persistido ni de cálculo (cero cambios en `logic/cuentas.js`). El campo `icono` que devuelve `detectarNudgeGMF()` (`'gastos'`) ya no lo consume ningún render; se conserva en la función pura porque no hay motivo para romper su contrato de datos por un cambio puramente visual.
+
+---
+
 ### feat(tesoreria): MC.18b tarjetas de cuenta con saldo prominente y chips de metadatos · 2026-07-12
 
 Cierra **MC.18b** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), segunda rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D2), y **absorbe MC.15b** (legibilidad de logos: Davivienda, BBVA, DaviPlata, Nubank).
