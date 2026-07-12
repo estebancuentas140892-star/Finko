@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (IN.8g cierra la iniciativa "Inicio v2" completa, IN.8a a IN.8g, ver CHANGELOG).
+> Última actualización: 2026-07-12 (MC.17 analizada y re-cortada en rebanadas MC.17a-e, diseño de schema/ledger de transferencias cerrado; MC.18e cerró antes el mismo día).
 
 ---
 
 ## En proceso
 
-_(**Iniciativa Inicio v2 en implementación** (una rebanada a la vez, regla de oro de `/CLAUDE.md` sección 2.1). **IN.8a a IN.8f cerradas el 2026-07-12** (reorden + labels de grupo + aire; hero protagonista con ojo estable y piloto visual; detalle por cuenta expandible con máscara; header de perfil con iniciales; Pendientes del mes sin línea roja + Gestionar → Calendario; resumen semanal visual con serie diaria + barras + chip comparativo, ver CHANGELOG); la siguiente y última rebanada es **IN.8g** (fusión accesos + actividad). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2 acotados a Inicio); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. **MC.15a cerrada el 2026-07-11**; quedan MC.15b/c/d.)_
+_(Sin tarjeta activa: la iniciativa "Inicio v2" (IN.8a a IN.8g) y el rediseño visual "Mis cuentas v2" (MC.18a a MC.18e, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) cerraron completas el 2026-07-12. El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, ahora con dos consumidores: Inicio y Mis cuentas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. Siguiente tarjeta a elegir de "Pendientes por sección" abajo.)_
 
 ---
 
@@ -78,16 +78,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.15 - UI de cuentas e ingresos: menos redundancia, logos legibles, avisos útiles** (re-cortada en rebanadas verificables, regla 2.1: tocaba texto duplicado, CSS de logos, un aviso nuevo y orden de formulario, cuatro concerns independientes). **MC.15a cerrada el 2026-07-11** (puntos 1+20: sin subtítulo redundante en la tarjeta de cuenta ni en la de ingreso fijo, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **MC.15c y MC.15d cerradas el 2026-07-12** (aviso de costos periódicos al crear cuenta + orden categoría→descripción en el ingreso puntual, ver CHANGELOG). **MC.15b absorbida por MC.18b** (el rediseño de la tarjeta de cuenta del ADR 035 rehace el contenedor de la teja; la verificación de legibilidad de Davivienda, BBVA, DaviPlata y Nubank es criterio de aceptación de esa rebanada). La iniciativa MC.15 queda cerrada como tarjeta propia.
 
-> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md))**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden nuevo de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. **MC.18a cerrada el 2026-07-12** (hero con total + ojo + composición, ver CHANGELOG). **MC.18b cerrada el 2026-07-12** (tarjetas de cuenta con chips + teja 44px, absorbe MC.15b, ver CHANGELOG). **MC.18c cerrada el 2026-07-12** (GMF como tarjeta insight integrada, ver CHANGELOG). **MC.18d cerrada el 2026-07-12** (fuentes de ingreso agrupadas bajo un solo encabezado, ver CHANGELOG). Rebanadas restantes abajo, en orden.
-
-#### MC.18e - Distribuir como tarjeta de entrada que lanza el asistente (D6)
-- Prioridad  : media
-- Estado     : pendiente
-- Objetivo   : `renderDistribucionIngreso()` deja de pintar el asistente inline siempre abierto; en su lugar, tarjeta compacta "¿Cómo distribuir $X?" con barra 50/30/20 + leyenda (Necesidades / Estilo de vida / Ahorro) + botón que lanza el asistente por pasos. Motor y pasos MC.7 intactos: solo cambia el punto de entrada (aprobado por Esteban 2026-07-12).
-- Secciones  : Mis cuentas
-- Archivos   : `tesoreria/views/distribucion.js` (`renderDistribucionIngreso()`, `_renderPanelDistribuir()`), `tesoreria/acciones/distribucion.js` (apertura), `styles/components/domain.css`
-- Depende de : MC.18a; coordinar con MC.13 (que rediseñará el CONTENIDO del asistente; esta rebanada no lo toca)
-- Modelo     : Sonnet 5 - Alto (cambia el flujo de entrada de un asistente existente sin regresiones)
+> **MC.18 - Rediseño de la pantalla "Mis cuentas" ([ADR 035](DECISIONS/035-mis-cuentas-v2.md)), CERRADA COMPLETA el 2026-07-12**: handoff de Claude Design del 2026-07-12 (mockup `Mis cuentas v2.dc.html` + doc `SCREENS/mis-cuentas-v2.md`), aprobado por Esteban tal cual (incluye D6 tarjeta que lanza el asistente y D3 barra de composición). Orden final de la pantalla: hero total → tarjetas de cuenta → insight GMF → fuentes de ingreso → tarjeta Distribuir. Las 5 rebanadas cerradas: **MC.18a** (hero con total + ojo + composición), **MC.18b** (tarjetas de cuenta con chips + teja 44px, absorbe MC.15b), **MC.18c** (GMF como tarjeta insight integrada), **MC.18d** (fuentes de ingreso agrupadas bajo un solo encabezado), **MC.18e** (distribuir como tarjeta de entrada que lanza el asistente como modal), todas ver CHANGELOG. Las piezas funcionales de la iniciativa "Mis Cuentas v2" (contenido/lógica, no visual) siguen abiertas: MC.13, MC.16, MC.17 abajo.
 
 #### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
 - Prioridad  : alta (concepto nuevo de dominio)
@@ -97,14 +88,60 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 - Depende de : ADR propio; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
 - Modelo     : Fable 5 - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
 
-#### MC.17 - Transferencias entre cuentas propias (con historial y automatización)
-- Prioridad  : alta (hoy mover dinero entre cuentas exige editar dos saldos a mano: propenso a error y sin rastro)
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : (6.º lote, brief General puntos 6-8) función "Transferir dinero": origen, destino, monto, nota opcional; ambas cuentas se actualizan solas. **Automatización por conteo de cuentas** (extensión natural de la regla de cuenta única 0/1/varias): con exactamente 2 cuentas activas se pregunta solo dirección y monto (o solo monto si el origen es evidente por contexto); con 3 o más, selector completo. **Historial:** cada transferencia queda registrada (fecha, origen, destino, monto, nota) y aparece en Movimientos como tipo propio "transferencia", **sin contar jamás como ingreso ni gasto** (es traslado interno): requiere colección/tipo nuevo en el schema (bump + migración) y sumar la fuente al ledger derivado de `movimientos/logic.js`. **Detalle financiero CO para el análisis:** las cuentas ya modelan `aplica4x1000`; decidir si la transferencia ofrece registrar el GMF del retiro cuando la cuenta origen no está exenta (costo real que hoy se perdería), sin complicar el flujo simple.
-- Secciones  : Mis cuentas (`tesoreria`), Movimientos (ledger), transversal por schema
-- Archivos   : `tesoreria` (acción + form), `modules/core/state.js`/`storage.js` (colección nueva), `modules/dominio/movimientos/logic.js` (fuente nueva), hoja "Registrar" (candidata a tile nuevo)
-- Depende de : nada duro; coordinar el tile de "Registrar" con la iniciativa Inicio v2 si coinciden en el tiempo
-- Modelo     : Opus 4.8 - Alto (schema + ledger + decisión GMF; la UI después puede bajar a Sonnet)
+> **MC.17 - Transferencias entre cuentas propias (6.º lote, brief General puntos 6-8)**: función "Transferir dinero" (origen, destino, monto, nota; ambas cuentas se actualizan solas y queda rastro). **Análisis y diseño hechos el 2026-07-12** (Opus 4.8): re-cortada en 5 rebanadas verificables (abajo). Decisiones de diseño fijadas:
+> - **Invariante crítico:** una transferencia NO es ingreso ni gasto, es traslado interno. El patrimonio neto (Σ saldos − Σ deudas) no cambia. No entra a `S.gastos` (Análisis, Límites, resumen semanal y monitor de renta no la ven, correcto). En el ledger de Movimientos aparece como tipo propio `transferencia` con dirección **neutra** (ni `+` verde ni `−` rojo), una sola fila "Origen → Destino".
+> - **Colección nueva `transferencias`** (no derivar de colecciones existentes: una transferencia no encaja en gastos ni ingresos puntuales). Precedente exacto: `ingresosPuntuales` (NAV.A1, v22). Schema `Transferencia`: `{ id, cuentaOrigenId, cuentaDestinoId, monto, fecha, nota?, fechaCreacion }`. Bump v25→v26, migración idempotente (`transferencias: []` para usuarios existentes) + campo en `createInitialState()` (doble red de seguridad vía `_applyToS`).
+> - **Apply atómico:** validar ANTES de tocar saldos (ambas cuentas existen y activas, origen ≠ destino, monto > 0, saldo origen suficiente o confirmar). Luego débito origen + crédito destino en el mismo flush (`editar('cuentas', ...)` ×2, síncrono en memoria).
+> - **Automatización por conteo (0/1/2/varias, extiende la regla de cuenta única):** 0/1 cuenta activa → transferir imposible, la entrada no aparece (o guía a crear cuenta). Exactamente 2 → se muestra "De A a B" con botón para invertir + solo monto/nota. 3+ → selector de origen y destino (destino excluye la origen elegida).
+> - **GMF del retiro (decisión del brief):** se **DIFIERE a MC.17d** para mantener simple el subset mínimo. Recomendación a ratificar al iniciar MC.17d: el 4x1000 se descuenta del saldo origen (`monto + GMF` sale, `monto` entra → el neto baja el GMF, que es la única parte real-mundo de una transferencia) y se guarda como campo opcional `costoGMF` de la Transferencia, **NO** como un `Gasto` separado (evita ensuciar Análisis/Límites con una micro-comisión mecánica; queda trazado en el detalle "incluye $X de 4x1000"). Agregar `costoGMF` luego NO requiere migración (campo opcional `undefined`-safe, mismo precedente que `cuotaManejo`/`datosTransferencia`/`aplica4x1000`).
+> - **Historial = el ledger, no una lista nueva:** la vista completa de Movimientos (`#movimientos`) ES el historial canónico de transferencias (MC.17c). No se crea una lista de transferencias aparte en Mis cuentas (cero duplicación).
+> - **Forward-compat MC.16:** cuando exista la tarjeta de crédito, "pagar la tarjeta" es un abono a deuda, NO una transferencia; las cuentas TC no serán endpoints de transferencia. MC.17 v1 solo opera cuentas de dinero real (ahorros/corriente/billetera/efectivo). No es dependencia, solo nota.
+> - **Ficha:** bloque "Transferencias (diseño)" en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
+
+#### MC.17a - Fundación de datos + lógica pura (schema + validar/normalizar + apply atómico)
+- Prioridad  : alta
+- Estado     : lista para implementar (diseño cerrado arriba)
+- Objetivo   : colección `transferencias` + typedef `Transferencia` en `state.js`; bump v25→v26 + migración idempotente en `storage.js`; `logic/transferencias.js` nuevo con `validarTransferencia()` (origen ≠ destino, monto > 0, ambas cuentas activas/existentes, fecha válida) y `normalizarTransferencia()`; helper de apply atómico (débito + crédito), reutilizable por la acción de MC.17b. Sin UI. Verificable por tests unitarios (la capa `logic/` tiene precedente de verificación solo-unit): invariante de patrimonio neto sin cambio, no negativo salvo confirmación, idempotencia de la migración.
+- Secciones  : Mis cuentas (`tesoreria`), core (schema)
+- Archivos   : `modules/core/state.js`, `modules/core/storage.js`, `modules/dominio/tesoreria/logic/transferencias.js` (nuevo), `tests/unit/tesoreria.test.js` (o `storage.test.js` para la migración)
+- Depende de : nada
+- Modelo     : Opus 4.8 - Extra (bump de schema con migración + lógica de apply atómico)
+
+#### MC.17b - Formulario + acción de transferir (patrón 0/1/2/varias)
+- Prioridad  : alta
+- Estado     : pendiente (depende de MC.17a)
+- Objetivo   : modal "Transferir dinero" con la automatización por conteo de cuentas (2 → dirección + monto con botón invertir; 3+ → selectores origen/destino); la acción aplica el traslado atómico de MC.17a, actualiza ambos saldos, `updSaldo()`, cierra y anuncia. Verificable en la app: con 2 cuentas, transferir mueve ambos saldos y el patrimonio neto no cambia.
+- Secciones  : Mis cuentas (`tesoreria`)
+- Archivos   : `tesoreria/views/` (form nuevo), `tesoreria/acciones/` (handler nuevo), `index.html` (modal `#modal-transferencia`), `styles/components/domain.css`
+- Depende de : MC.17a
+- Modelo     : Sonnet 5 - Alto (UI sobre lógica ya cerrada)
+
+#### MC.17c - Transferencia en el ledger de Movimientos (tipo neutro)
+- Prioridad  : media-alta
+- Estado     : pendiente (depende de MC.17a)
+- Objetivo   : `movimientosDesdeTransferencias(transferencias, cuentas)` en `movimientos/logic.js`; extender el typedef `Movimiento` con `direccion: 'neutro'` y `tipo: 'transferencia'`, `dominio: 'tesoreria'`; una sola fila "Origen → Destino" sin signo (ni `+` ni `−`), color neutro. Ajustar los 2 sitios de render (`renderActividadReciente`, `_renderMovimientoItem`) que hoy asumen `esIngreso ? '+' : '-'`, y sumar `'transferencias'` a `_SECCIONES_MOVIMIENTOS` (memo) y al guard de `state:change` de `tesoreria/index.js`. **Necesita símbolo de sprite nuevo** (no existe `i-transfer`/`i-swap`): draft vía `scripts/sync-sprite.py` (BR.2), Esteban puede sobrescribirlo (ADR 026). Verificable en la app: la transferencia aparece en `#movimientos` sin signo, no altera Análisis.
+- Secciones  : Movimientos (ledger), Mis cuentas
+- Archivos   : `modules/dominio/movimientos/logic.js`, `modules/dominio/movimientos/view.js`, `assets/svg/iconos/simbolos/` (símbolo nuevo), `tests/unit/movimientos.test.js`
+- Depende de : MC.17a
+- Modelo     : Sonnet 5 - Alto (ledger + render neutro)
+
+#### MC.17d - GMF del retiro (opcional, decisión financiera CO)
+- Prioridad  : media
+- Estado     : pendiente (depende de MC.17b; **ratificar la decisión GMF-como-campo-no-gasto al iniciar**)
+- Objetivo   : cuando la cuenta origen no está exenta (`aplica4x1000`), ofrecer registrar el 4x1000 del retiro: descontar `monto + GMF` del origen, guardar `costoGMF` en la Transferencia (campo opcional, sin migración), mostrarlo en el detalle. Pregunta explícita, no automática, sin complicar el flujo cuando la cuenta está exenta. Verificable en la app + unit: saldo origen baja `monto+GMF`, destino sube `monto`, patrimonio neto baja exactamente el GMF.
+- Secciones  : Mis cuentas (`tesoreria`)
+- Archivos   : `tesoreria/logic/transferencias.js`, `tesoreria/acciones/`, `tesoreria/views/`
+- Depende de : MC.17b; reutiliza `GMF` y el patrón de `calcularCostoGMF` de `logic/cuentas.js`
+- Modelo     : Opus 4.8 - Alto (lógica financiera CO + decisión de qué cuenta como gasto)
+
+#### MC.17e - Punto de entrada en la hoja "Registrar"
+- Prioridad  : baja
+- Estado     : pendiente (depende de MC.17b)
+- Objetivo   : teja "Transferir" en la hoja "Registrar" (NAV.A2), visible solo con 2+ cuentas activas (patrón 0/1/varias de `registrar.js`); abre el modal de MC.17b. Verificable en la app.
+- Secciones  : Mis cuentas, hoja Registrar (`ui/registrar.js`)
+- Archivos   : `modules/ui/registrar.js`, `index.html` (teja)
+- Depende de : MC.17b
+- Modelo     : Sonnet 5 - Bajo (teja + ruteo, patrón ya existente)
 
 ---
 
