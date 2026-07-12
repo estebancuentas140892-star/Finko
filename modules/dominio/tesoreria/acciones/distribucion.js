@@ -15,6 +15,7 @@ import { updSaldo } from '../../../infra/render.js';
 import { announce } from '../../../infra/a11y.js';
 import { f, hoy } from '../../../infra/utils.js';
 import { resolverCuenta } from '../../../infra/cuenta-helper.js';
+import { abrirModal, cerrarModal } from '../../../ui/modales.js';
 import {
   esDistribucionPersonalizadaValida,
   resumirPlanDistribucion,
@@ -22,7 +23,18 @@ import {
   estadoDistribucion,
   topeAbonoExtraDeuda,
 } from '../logic/distribucion.js';
-import { renderDistribucionIngreso } from '../view.js';
+import { renderDistribucionIngreso, renderAsistenteDistribucion } from '../view.js';
+
+/**
+ * Refresca la tarjeta de entrada compacta y, si el asistente está abierto en
+ * el modal (ADR 035 D6), también su contenido: cambiar de preset o guardar
+ * una distribución personalizada actualiza el split que ambos muestran.
+ */
+function _refrescarDistribucion() {
+  renderDistribucionIngreso();
+  const overlay = document.getElementById('modal-distribuir');
+  if (overlay && 'open' in overlay.dataset) renderAsistenteDistribucion();
+}
 
 /** @param {HTMLElement} el */
 function _cambiarPreset(el) {
@@ -31,7 +43,7 @@ function _cambiarPreset(el) {
   if (!S.config) S.config = {};
   S.config.presetDistribucion = presetId;
   save();
-  renderDistribucionIngreso();
+  _refrescarDistribucion();
 }
 
 // ── DISTRIBUCIÓN PERSONALIZADA (porcentajes propios) ────────────
@@ -84,7 +96,7 @@ function _guardarDistribucionPersonalizada() {
   S.config.distribucionPersonalizada = valores;
   S.config.presetDistribucion = 'personalizado';
   save();
-  renderDistribucionIngreso();
+  _refrescarDistribucion();
   announce(`Distribución personalizada guardada: ${valores.n}% necesidades, ${valores.e}% estilo de vida, ${valores.a}% ahorro.`);
 }
 
@@ -106,24 +118,6 @@ let _distribucionPreacreditada = null;
 // pagos reales; sin esta slice en el snapshot, "Deshacer" dejaría esos gastos huérfanos.
 const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
 
-/** Abre/cierra el panel sin re-renderizar el nudge (igual que el editor personalizado). */
-function _toggleDistribuirIngreso(el) {
-  const panel = document.getElementById('distribuir-ingreso-panel');
-  if (!panel) return;
-  // Abrir/cerrar a mano es siempre el flujo normal (el cobro recurrente aún no
-  // entró): descarta cualquier modo "ya acreditado" que quedara de una oferta.
-  _distribucionPreacreditada = null;
-  panel.hidden = !panel.hidden;
-  el.setAttribute('aria-expanded', String(!panel.hidden));
-  if (!panel.hidden) {
-    // El asistente siempre arranca en el primer paso (MC.7d, shell paginado).
-    // `moverFoco: false` porque el foco real de apertura es el monto a
-    // distribuir (línea siguiente), no el contenedor del paso (MC.7f).
-    _irAPasoDistribucion(panel, 0, { moverFoco: false });
-    document.getElementById('distribuir-monto')?.focus();
-  }
-}
-
 /**
  * CTA del nudge de Inicio (CAL.1, ADR 028 D4): emite el mismo `distribuir:abrir`
  * que ya usa el recordatorio de día de ingreso del Calendario (ADR 021), sin
@@ -135,35 +129,30 @@ function _distribuirDesdeInicio() {
 }
 
 /**
- * Abre el asistente (sin toggle) en el primer paso. Lo usan el recordatorio de
- * día de ingreso del Calendario (ADR 021, sin payload) y la oferta tras un
- * ingreso puntual (NAV.A2b s2, con `preacreditado`). No-op si el panel no
- * existe. Sincroniza aria-expanded del botón y trae el panel a la vista.
+ * Único punto de entrada al asistente (ADR 035 D6: lanzado como modal, ya no
+ * inline). Lo usan por igual el botón "Distribuir mi ingreso" de la tarjeta
+ * compacta (sin payload), el recordatorio de día de ingreso del Calendario
+ * (ADR 021, sin payload) y la oferta tras un ingreso puntual (NAV.A2b s2, con
+ * `preacreditado`). Inyecta contenido fresco en `#modal-distribuir-body`
+ * (`renderAsistenteDistribucion`, con el monto precargado si viene
+ * preacreditado) y recién entonces abre el modal; si no hay nada que
+ * distribuir es no-op, sin abrir un modal vacío.
  *
  * @param {{ preacreditado?: { cuentaId: string, monto: number } | null }} [opts]
  */
 export function abrirAsistenteDistribucion({ preacreditado = null } = {}) {
-  const panel = document.getElementById('distribuir-ingreso-panel');
-  if (!panel) return;
+  const overlay = document.getElementById('modal-distribuir');
+  if (!overlay) return;
 
   // Fijar el modo antes de recalcular: el resumen y el apply lo consultan.
   _distribucionPreacreditada = preacreditado;
 
-  // Con un monto ya conocido (el ingreso recién acreditado), pre-cargarlo para
-  // que el asistente reparta esa cifra en vez del estimado del salario mensual.
-  if (preacreditado) {
-    const inputMonto = document.getElementById('distribuir-monto');
-    if (inputMonto) inputMonto.value = String(preacreditado.monto);
-  }
+  if (!renderAsistenteDistribucion(preacreditado)) return;
 
-  if (panel.hidden) {
-    panel.hidden = false;
-    document.querySelector('[data-action="toggle-distribuir-ingreso"]')
-      ?.setAttribute('aria-expanded', 'true');
-  }
+  abrirModal(overlay);
+  const panel = document.getElementById('distribuir-ingreso-panel');
   // Ir al paso 0 recalcula el resumen con el monto (y el modo) recién fijados.
-  _irAPasoDistribucion(panel, 0, { moverFoco: false });
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (panel) _irAPasoDistribucion(panel, 0, { moverFoco: false });
   document.getElementById('distribuir-monto')?.focus({ preventScroll: true });
 }
 
@@ -597,6 +586,12 @@ async function _confirmarDistribucion() {
 
   updSaldo();
   announce(`Distribuiste ${f(asignado)} de tu ingreso.`);
+
+  // Confirmar cierra el modal (ADR 035 D6): ya no queda nada por hacer en el
+  // asistente. El snackbar "Deshacer" vive en <body>, sobrevive el cierre.
+  const overlay = document.getElementById('modal-distribuir');
+  if (overlay) cerrarModal(overlay);
+
   _mostrarSnackbarDeshacer();
 }
 
@@ -642,7 +637,10 @@ export function initAccionesDistribucion() {
   registrarAccion('cambiar-preset-distribucion', _cambiarPreset);
   registrarAccion('toggle-distribucion-personalizada', _toggleDistribucionPersonalizada);
   registrarAccion('guardar-distribucion-personalizada', _guardarDistribucionPersonalizada);
-  registrarAccion('toggle-distribuir-ingreso', _toggleDistribuirIngreso);
+  // Nombre heredado de cuando el panel era un toggle inline; ahora abre el
+  // modal (ADR 035 D6), pero se conserva para no repintar cada test/caller
+  // que ya lo usa como "el botón que lanza el asistente".
+  registrarAccion('toggle-distribuir-ingreso', () => abrirAsistenteDistribucion());
   registrarAccion('distribuir-paso-siguiente', _pasoDistribucionSiguiente);
   registrarAccion('distribuir-paso-atras',     _pasoDistribucionAtras);
   registrarAccion('confirmar-distribucion',    _confirmarDistribucion);

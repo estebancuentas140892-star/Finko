@@ -668,14 +668,18 @@
         <div id="ingresos-nudge-proximo">
           <!-- Fase 2: renderNudgeProximoIngreso() - alerta de próximo cobro -->
         </div>
-        <div id="ingresos-distribucion">
-          <!-- Fase 3: renderDistribucionIngreso() - distribución adaptativa -->
-        </div>
         <div id="lista-ingresos">
           <!-- M.3: tesoreria/view.js renderiza aquí -->
         </div>
         <div id="lista-ingresos-puntuales">
           <!-- NAV.A1: tesoreria/view.js renderiza aquí -->
+        </div>
+
+        <!-- MC.18e (ADR 035 D6): tarjeta de entrada compacta, al final de la
+             pantalla. El asistente por pasos ya no vive aquí inline, lo lanza
+             el botón de esta tarjeta como modal (#modal-distribuir). -->
+        <div id="ingresos-distribucion">
+          <!-- Fase 3 / MC.18e: renderDistribucionIngreso() - tarjeta "¿Cómo distribuir $X?" -->
         </div>
 
       </section>
@@ -1015,6 +1019,23 @@
       </header>
       <div class="modal__body" id="modal-ingreso-puntual-body">
         <!-- NAV.A1: tesoreria/index.js inyecta el form aquí al abrir -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: asistente "Distribuir mi ingreso" (MC.18e, ADR 035 D6): la
+       tarjeta de entrada de #sec-tesoreria lo lanza; ya no vive inline. -->
+  <div class="modal-overlay" id="modal-distribuir" data-dom="tesoreria"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-distribuir-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-distribuir-title">Distribuir mi ingreso</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-distribuir-body">
+        <!-- MC.18e: acciones/distribucion.js inyecta el asistente aquí al abrir -->
       </div>
     </div>
   </div>

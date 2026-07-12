@@ -425,42 +425,6 @@ button.chip:focus-visible {
   line-height: var(--fk-leading-relaxed);
 }
 
-/* Cada fila (Necesidades/Estilo de vida/Ahorro): icono, etiqueta y cifras
-   alineados en columnas en vez de un párrafo corrido, separadas por un
-   filete discreto para que el ojo distinga una fila de la siguiente. */
-.distribucion-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: baseline;
-  gap: var(--fk-space-2);
-  padding: var(--fk-space-2) var(--fk-space-1);
-}
-.distribucion-row + .distribucion-row {
-  border-top: 1px solid var(--fk-border-subtle);
-}
-.distribucion-row__icon {
-  font-size: 1rem;
-  line-height: 1;
-  align-self: center;
-}
-.distribucion-row__label {
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-primary);
-}
-.distribucion-row__pct {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-.distribucion-row__monto {
-  font-size: var(--fk-text-sm);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-primary);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
 /* Advertencia (ej. "fondo aún no está completo"): callout con tinte de
    warning para que no se confunda con una fila de dato ni con la razón. */
 .distribucion-alerta {
@@ -481,6 +445,128 @@ button.chip:focus-visible {
   flex-wrap: wrap;
   gap: var(--fk-space-2);
   margin-top: var(--fk-space-3);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DISTRIBUIR-CARD (MC.18e, ADR 035 D6) - tarjeta de entrada compacta
+   "¿Cómo distribuir $X?": reemplaza al bloque siempre desplegado
+   (chips de preset, desglose, asistente inline); el botón lanza el
+   asistente como modal (#modal-distribuir). Mismo lenguaje de tinte
+   de dominio que .gmf-insight, pero con más contenido (barra + leyenda).
+   Los 3 colores fijos (Necesidades/Estilo de vida/Ahorro) reutilizan
+   tokens de dominio ya existentes, coinciden con la paleta del handoff.
+   ════════════════════════════════════════════════════════════ */
+
+.distribuir-card {
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  background: color-mix(in srgb, var(--fk-dom-tesoreria) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-tesoreria) 22%, transparent);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+.distribuir-card__top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+}
+
+.distribuir-card__icon {
+  width: 2.125rem;   /* 34px, mockup aprobado */
+  height: 2.125rem;
+  flex-shrink: 0;
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-tesoreria) 15%, transparent);
+  color: var(--fk-dom-tesoreria-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.distribuir-card__icon .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+.distribuir-card__body { min-width: 0; }
+
+.distribuir-card__title {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+
+.distribuir-card__sub {
+  margin: 3px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-snug);
+}
+
+/* Barra 50/30/20: decorativa (aria-hidden), la leyenda de abajo da la
+   información real en texto (SC 1.4.11, mismo patrón que .hero-tesoreria__compo).
+   Ancho de cada segmento va como propiedad JS tras el innerHTML. */
+.distribuir-card__barra {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+  border-radius: var(--fk-radius-sm);
+  overflow: hidden;
+  margin: var(--fk-space-4) 0 var(--fk-space-3);
+}
+.distribuir-card__seg {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.distribuir-card__leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.distribuir-card__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+.distribuir-card__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.distribuir-card__label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+}
+.distribuir-card__pct {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.distribuir-card__monto {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 4.875rem;
+  text-align: right;
+}
+
+/* Necesidades = tesorería (azul), Estilo de vida = presupuesto (ámbar),
+   Ahorro = ahorro (verde menta): reutilizados por la barra y la leyenda. */
+.dist-color-necesidades  { background: var(--fk-dom-tesoreria); }
+.dist-color-estilo-vida  { background: var(--fk-dom-presupuesto); }
+.dist-color-ahorro       { background: var(--fk-dom-ahorro); }
+
+.distribuir-card__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  width: 100%;
+  margin-top: var(--fk-space-4);
 }
 
 /* ════════════════════════════════════════════════════════════

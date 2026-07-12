@@ -987,8 +987,10 @@ test.describe('Tesorería - cuenta y saldo', () => {
     }
 
     // Ambas listas viven una tras otra bajo el mismo encabezado, sin
-    // sub-header propio entre ellas (solo el de "Fuentes de ingreso").
-    await expect(page.locator('.section__sub-header')).toHaveCount(1);
+    // sub-header propio entre ellas (solo el de "Fuentes de ingreso"; la
+    // tarjeta "Distribuir mi ingreso" de MC.18e agrega un segundo sub-header
+    // legítimo y distinto al final de la sección, fuera del alcance de este check).
+    await expect(page.locator('.section__sub-header', { hasText: 'Fuentes de ingreso' })).toHaveCount(1);
 
     // El ojo del hero también enmascara los montos de ambas listas (D5).
     await expect(page.locator('#lista-ingresos .list-item__value')).toHaveText('$1.850.000');

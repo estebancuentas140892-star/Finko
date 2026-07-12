@@ -28,7 +28,11 @@ import {
   renderFormIngresoPuntual,
   renderNudgeProximoIngreso,
 } from './views/ingresos.js';
-import { renderDistribucionIngreso, renderNudgeDistribucionInicio } from './views/distribucion.js';
+import {
+  renderDistribucionIngreso,
+  renderNudgeDistribucionInicio,
+  renderAsistenteDistribucion,
+} from './views/distribucion.js';
 
 export {
   renderHeroTesoreria,
@@ -42,6 +46,7 @@ export {
   renderNudgeProximoIngreso,
   renderDistribucionIngreso,
   renderNudgeDistribucionInicio,
+  renderAsistenteDistribucion,
 };
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */
@@ -50,7 +55,9 @@ export function renderTesoreria() {
   renderListaCuentas();
   renderGMFIndicador();
   renderNudgeProximoIngreso();
-  renderDistribucionIngreso();
   renderListaIngresos();
   renderListaIngresosPuntuales();
+  // Al final (ADR 035): la tarjeta de "Distribuir mi ingreso" cierra la
+  // pantalla, después de las fuentes de ingreso que resume.
+  renderDistribucionIngreso();
 }

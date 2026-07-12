@@ -74,22 +74,29 @@ export function renderNudgeDistribucionInicio() {
 }
 
 /**
- * Renderiza la tarjeta de distribución sugerida en `#ingresos-distribucion`.
- * No-op si no hay ingresos mensuales registrados o el contenedor no existe.
+ * Reúne todo lo que necesitan tanto la tarjeta de entrada compacta (D6) como
+ * el asistente por pasos: el contexto (la "realidad registrada", compartido
+ * con Límites de gasto MC.5), la sugerencia de reparto y cada destino
+ * fondeable. `null` si no hay ingreso mensual estimable o nada que sugerir.
+ *
+ * @returns {null | {
+ *   dist: ReturnType<typeof sugerirDistribucionIngreso>,
+ *   presetId: string,
+ *   distribucionPersonalizada: {n:number,e:number,a:number}|null,
+ *   estado: ReturnType<typeof estadoDistribucion>,
+ *   hayDestinos: boolean,
+ *   distribuir: object,
+ * }}
  */
-export function renderDistribucionIngreso() {
-  const el = document.getElementById('ingresos-distribucion');
-  if (!el) return;
-
+function _construirDatosDistribucion() {
   const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
-  if (!ingresoMensual) { el.innerHTML = ''; return; }
+  if (!ingresoMensual) return null;
 
-  // El contexto de la distribución (la "realidad registrada") lo centraliza
-  // `construirContextoDistribucion`, compartido con Límites de gasto (MC.5).
   const contexto = construirContextoDistribucion(S);
   const { presetId, distribucionPersonalizada } = contexto;
 
   const dist = sugerirDistribucionIngreso(ingresoMensual, contexto);
+  if (!dist) return null;
 
   // Checklist accionable de Necesidades (Paso 1 del asistente, MC.7d, ADR 018
   // revisión 2026-07-02): el usuario marca cuáles cubre con este ingreso; al
@@ -148,21 +155,76 @@ export function renderDistribucionIngreso() {
     S.config?.ultimaDistribucionPeriodo ?? null,
   );
 
-  el.innerHTML = dist
-    ? _renderDistribucion(dist, presetId, distribucionPersonalizada, {
-        montoIngreso:    ingresoMensual,
-        ahorroPct:       dist.split.ahorro.pct,
-        estiloVidaPct:   dist.split.estiloVida.pct,
-        ahorroBudget:    presupuestos.ahorro,
-        evBudget:        presupuestos.estiloVida,
-        destinosAhorro,
-        destinosDeudas,
-        destinosInversiones,
-        destinosCuentas,
-        itemsNecesidades,
-        estado:          estadoDist,
-      })
-    : '';
+  const hayDestinos = itemsNecesidades.length > 0 || destinosAhorro.length > 0
+    || destinosDeudas.length > 0 || destinosInversiones.length > 0 || destinosCuentas.length > 0;
+
+  return {
+    dist, presetId, distribucionPersonalizada, estado: estadoDist, hayDestinos,
+    distribuir: {
+      montoIngreso:    ingresoMensual,
+      ahorroPct:       dist.split.ahorro.pct,
+      estiloVidaPct:   dist.split.estiloVida.pct,
+      ahorroBudget:    presupuestos.ahorro,
+      evBudget:        presupuestos.estiloVida,
+      destinosAhorro,
+      destinosDeudas,
+      destinosInversiones,
+      destinosCuentas,
+      itemsNecesidades,
+      estado:          estadoDist,
+    },
+  };
+}
+
+/**
+ * Renderiza la tarjeta de entrada compacta en `#ingresos-distribucion` (ADR
+ * 035 D6): "¿Cómo distribuir $X?" con barra 50/30/20 + leyenda. El asistente
+ * por pasos ya no vive inline aquí, lo lanza el botón de la tarjeta (ver
+ * `abrirAsistenteDistribucion` en acciones/distribucion.js). No-op si no hay
+ * ingresos mensuales registrados o el contenedor no existe.
+ */
+export function renderDistribucionIngreso() {
+  const el = document.getElementById('ingresos-distribucion');
+  if (!el) return;
+
+  const datos = _construirDatosDistribucion();
+  if (!datos) { el.innerHTML = ''; return; }
+
+  el.innerHTML = _renderTarjetaDistribuir(datos);
+
+  // Ancho de los 3 segmentos de la barra como propiedad JS tras el innerHTML
+  // (cero style="" en el HTML generado, regla del proyecto, mismo patrón que
+  // la barra de composición del hero, MC.18a).
+  const { necesidades, estiloVida, ahorro } = datos.dist.split;
+  const pcts = [necesidades.pct, estiloVida.pct, ahorro.pct];
+  el.querySelectorAll('.distribuir-card__seg').forEach((seg, i) => {
+    seg.style.width = `${pcts[i]}%`;
+  });
+}
+
+/**
+ * Inyecta el contenido del asistente por pasos en `#modal-distribuir-body`
+ * (ADR 035 D6: el asistente se lanza como modal, ya no vive inline). Llamada
+ * por `abrirAsistenteDistribucion()` cada vez que se abre, para partir
+ * siempre de datos frescos. Con `preacreditado` (NAV.A2b s2), precarga su
+ * monto en vez del estimado del salario mensual.
+ *
+ * @param {{ cuentaId: string, monto: number } | null} [preacreditado]
+ * @returns {boolean} `false` si no hay nada que distribuir (no-op para el caller).
+ */
+export function renderAsistenteDistribucion(preacreditado = null) {
+  const body = document.getElementById('modal-distribuir-body');
+  if (!body) return false;
+
+  const datos = _construirDatosDistribucion();
+  if (!datos) { body.innerHTML = ''; return false; }
+
+  const distribuir = preacreditado
+    ? { ...datos.distribuir, montoIngreso: preacreditado.monto }
+    : datos.distribuir;
+
+  body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, distribuir);
+  return true;
 }
 
 /** Sección a la que enlaza el hint de "sin fecha", según el tipo de objetivo. */
@@ -260,10 +322,13 @@ function _filaNecesidad(it) {
 }
 
 /**
- * Botón "Distribuir mi ingreso" + asistente inline por pasos (ADR 012,
- * MC.4a/b/d/e; ADR 018, MC.7d: shell paginado con confirmación única al final;
- * MC.7e: Paso 3 accionable con 2+ cuentas). El panel arranca oculto; el botón
- * lo despliega ya en el primer paso. Solo se crean los pasos con contenido:
+ * Asistente por pasos (ADR 012, MC.4a/b/d/e; ADR 018, MC.7d: shell paginado
+ * con confirmación única al final; MC.7e: Paso 3 accionable con 2+ cuentas).
+ * Desde ADR 035 D6 vive dentro de `#modal-distribuir-body`, inyectado por
+ * `renderAsistenteDistribucion()` cada vez que se abre el modal (ya no es un
+ * panel inline con su propio botón de apertura: eso lo resuelve ahora la
+ * tarjeta de entrada, `_renderTarjetaDistribuir`). Solo se crean los pasos
+ * con contenido:
  *
  *   1. Necesidades (R1): checklist accionable; cada marca registra al confirmar
  *      el mismo pago que su flujo individual.
@@ -283,10 +348,12 @@ function _filaNecesidad(it) {
  * repartir Estilo de vida (MC.7e: con 2+ cuentas el reparto es accionable
  * aunque no haya Necesidades/Ahorro/Deudas/Inversiones que mostrar).
  *
- * Gating por fecha (MC.4d): la acción solo aparece cuando el cobro del periodo
- * ya llegó y aún no se distribuyó ('listo') o cuando no hay fecha datable
- * ('sin-fecha', se mantiene disponible). Si ya se distribuyó este periodo
- * ('distribuido') o el cobro aún no llega ('pendiente'), se informa sin botón.
+ * Guard defensivo por fecha (MC.4d): en el flujo normal la tarjeta de entrada
+ * ya solo ofrece el botón que abre este asistente cuando el estado es 'listo'
+ * o 'sin-fecha' (ver `_renderTarjetaDistribuir`); este chequeo se conserva
+ * aquí para los callers externos que abren el asistente sin pasar por ese
+ * botón (recordatorio de Calendario ADR 021, oferta tras ingreso puntual
+ * NAV.A2b s2).
  *
  * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array, destinosInversiones:Array, destinosCuentas?:Array, itemsNecesidades?:Array, estado:{estado:string, periodoISO:string|null, esHoy:boolean}}} d
  * @returns {string}
@@ -302,7 +369,7 @@ function _renderPanelDistribuir(d) {
 
   const est = d.estado?.estado ?? 'sin-fecha';
 
-  // Ya distribuido este periodo: confirmación, sin reabrir el panel (guard MC.4d).
+  // Ya distribuido este periodo: confirmación, sin pasos que mostrar (guard MC.4d).
   if (est === 'distribuido') {
     return `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`;
   }
@@ -310,14 +377,6 @@ function _renderPanelDistribuir(d) {
   if (est === 'pendiente') {
     return `<p class="distribuir__pendiente form-hint form-hint--muted">💸 Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`;
   }
-
-  // 'listo' (o 'sin-fecha' como fallback): la acción está disponible. En 'listo'
-  // antecede un nudge con la invitación a distribuir el cobro recién recibido.
-  const cta = est === 'listo'
-    ? `<p class="distribuir__cta" role="status">💸 ${d.estado.esHoy
-        ? 'Hoy recibes tu ingreso.'
-        : `Recibiste tu ingreso el ${fechaCorta(d.estado.periodoISO)}.`} ¿Deseas distribuirlo ahora?</p>`
-    : '';
 
   // Paso 1 (R1): checklist de Necesidades, marcadas por defecto salvo las ya
   // pagadas este periodo (checkbox deshabilitado, "Ya pagado"). Al confirmar,
@@ -412,13 +471,7 @@ function _renderPanelDistribuir(d) {
   const indicadorPaso = esUnicoPaso ? '' : `
           <p class="form-hint distribuir__paso-indicador" data-dist-paso-indicador role="status">Paso 1 de ${pasos.length}: ${pasos[0].titulo}</p>`;
   return `
-        ${cta}
-        <button type="button" class="btn btn-primary btn-sm distribuir__abrir"
-                data-action="toggle-distribuir-ingreso"
-                aria-expanded="false" aria-controls="distribuir-ingreso-panel">
-          💸 Distribuir mi ingreso
-        </button>
-        <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso" hidden
+        <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso"
                   data-ahorro-pct="${ahorroPct}" data-estilo-vida-pct="${estiloVidaPct}">
           <legend>Reparte hacia tus necesidades, ahorros, deudas e inversiones. El resto queda disponible en tu cuenta.</legend>
           <div class="form-group">
@@ -443,12 +496,100 @@ function _renderPanelDistribuir(d) {
 }
 
 /**
+ * Tarjeta de entrada compacta en `#ingresos-distribucion` (ADR 035 D6): "¿Cómo
+ * distribuir $X?" con barra 50/30/20 + leyenda (Necesidades / Estilo de vida /
+ * Ahorro). Reemplaza al bloque completo que antes vivía siempre desplegado
+ * (chips de preset, desglose fila por fila, editor personalizado y el
+ * asistente por pasos): ese contenido se mudó dentro de
+ * `#modal-distribuir-body` (`_renderContenidoAsistente`), que el botón de esta
+ * tarjeta lanza vía `abrirAsistenteDistribucion()`. Alertas y CTAs cruzados
+ * (MC.5e, ADR 017) se conservan aquí, visibles siempre, no solo al abrir el
+ * asistente. Los colores de la barra/leyenda reutilizan tokens de dominio ya
+ * existentes que casualmente coinciden con la paleta aprobada del handoff:
+ * Necesidades = tesorería (azul), Estilo de vida = presupuesto (ámbar),
+ * Ahorro = ahorro (verde menta).
+ *
+ * @param {ReturnType<typeof _construirDatosDistribucion>} datos
+ * @returns {string}
+ */
+function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
+  const { ingresoMensual, split, alertas, ctas } = dist;
+  const { necesidades, estiloVida, ahorro } = split;
+  const est = estado?.estado ?? 'sin-fecha';
+
+  const subtitulo = est === 'listo'
+    ? (estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`)
+    : 'Reparte tu ingreso entre necesidades, estilo de vida y ahorro.';
+
+  const pie = est === 'distribuido'
+    ? `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`
+    : est === 'pendiente'
+      ? `<p class="distribuir__pendiente form-hint form-hint--muted">💸 Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`
+      : hayDestinos
+        ? `<button type="button" class="btn btn-primary distribuir-card__cta" data-action="toggle-distribuir-ingreso">
+            Distribuir mi ingreso
+            ${icon('chevron-right')}
+          </button>`
+        : '';
+
+  const alertasHtml = alertas.map(a =>
+    `<p class="distribucion-alerta">⚠ <span>${_esc(a)}</span></p>`
+  ).join('');
+
+  const ctasHtml = ctas.length > 0
+    ? `<div class="distribucion-ctas">${ctas.map(c =>
+        `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
+      ).join('')}</div>`
+    : '';
+
+  const filaLeyenda = (tono, s) => `
+      <div class="distribuir-card__item">
+        <span class="distribuir-card__dot dist-color-${tono}" aria-hidden="true"></span>
+        <span class="distribuir-card__label">${_esc(s.label)}</span>
+        <span class="distribuir-card__pct">${s.pct}%</span>
+        <span class="distribuir-card__monto">${f(s.monto)}</span>
+      </div>`;
+
+  return `
+    <div class="section__sub-header"><h2 class="section__subtitle">Distribuir mi ingreso</h2></div>
+    <div class="distribuir-card">
+      <div class="distribuir-card__top">
+        <span class="distribuir-card__icon" aria-hidden="true">${icon('lightbulb')}</span>
+        <div class="distribuir-card__body">
+          <p class="distribuir-card__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
+          <p class="distribuir-card__sub">${_esc(subtitulo)}</p>
+        </div>
+      </div>
+      <div class="distribuir-card__barra" aria-hidden="true">
+        <div class="distribuir-card__seg dist-color-necesidades"></div>
+        <div class="distribuir-card__seg dist-color-estilo-vida"></div>
+        <div class="distribuir-card__seg dist-color-ahorro"></div>
+      </div>
+      <div class="distribuir-card__leyenda">
+        ${filaLeyenda('necesidades', necesidades)}
+        ${filaLeyenda('estilo-vida', estiloVida)}
+        ${filaLeyenda('ahorro', ahorro)}
+      </div>
+      ${alertasHtml}
+      ${ctasHtml}
+      ${pie}
+    </div>`;
+}
+
+/**
+ * Contenido de `#modal-distribuir-body` (ADR 035 D6): configuración de la
+ * distribución sugerida (chips de preset, métodos clásicos, editor
+ * personalizado, la razón detrás del cálculo) seguida del asistente por pasos
+ * (`_renderPanelDistribuir`). Nada de este contenido cambió de lógica, solo de
+ * casa: antes vivía siempre desplegado en `#ingresos-distribucion`, ahora se
+ * inyecta aquí cada vez que `renderAsistenteDistribucion()` abre el modal.
+ *
  * @param {ReturnType<typeof sugerirDistribucionIngreso>} dist
  * @param {string} presetActivo
  * @param {{n:number, e:number, a:number}|null} distribucionPersonalizada
  * @param {{montoIngreso:number, ahorroPct:number, estiloVidaPct:number, ahorroBudget:number, evBudget:number, destinosAhorro:Array, destinosDeudas:Array}} distribuir
  */
-function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, presetActivo, distribucionPersonalizada, distribuir) {
+function _renderContenidoAsistente({ razon, split }, presetActivo, distribucionPersonalizada, distribuir) {
   const { necesidades, estiloVida, ahorro } = split;
 
   const autoActivo = presetActivo === 'auto';
@@ -526,53 +667,21 @@ function _renderDistribucion({ ingresoMensual, split, razon, alertas, ctas }, pr
       </button>
     </fieldset>`;
 
-  const rowsHtml = [
-    { icn: '📦', ...necesidades },
-    { icn: '🎯', ...estiloVida },
-    { icn: '💰', ...ahorro },
-  ].map(({ icn, label, pct, monto }) => `
-          <div class="distribucion-row">
-            <span class="distribucion-row__icon" aria-hidden="true">${icn}</span>
-            <span class="distribucion-row__label">${_esc(label)}</span>
-            <span class="distribucion-row__pct">${pct}%</span>
-            <span class="distribucion-row__monto">${f(monto)}</span>
-          </div>`
-  ).join('');
-
-  const alertasHtml = alertas.map(a =>
-    `<p class="distribucion-alerta">⚠ <span>${_esc(a)}</span></p>`
-  ).join('');
-
-  const ctasHtml = ctas.length > 0
-    ? `<div class="distribucion-ctas">${ctas.map(c =>
-        `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
-      ).join('')}</div>`
-    : '';
-
   return `
-    <div class="nudge nudge-info" role="region" aria-label="Distribución sugerida del ingreso">
-      <span class="nudge__icon" aria-hidden="true">${icon('lightbulb')}</span>
-      <div class="nudge__body">
-        <p class="nudge__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
-        <div class="filtros-bar" role="group" aria-label="Preset de distribución">
-          ${autoChip}
-          ${personalizadaChip}
-        </div>
-        <details class="distribucion-clasicos"${clasicosActivo ? ' open' : ''}>
-          <summary class="distribucion-clasicos__toggle">Métodos clásicos</summary>
-          <div class="filtros-bar" role="group" aria-label="Métodos clásicos de distribución">
-            ${clasicosChips}
-          </div>
-          <p class="form-hint form-hint--muted">Porcentajes fijos. No consideran tus gastos reales.</p>
-        </details>
-        ${editorPersonalizada}
-        <div class="distribucion-rows">
-          <p class="distribucion-rows__razon">${_esc(razon)}</p>
-          ${rowsHtml}
-          ${alertasHtml}
-          ${ctasHtml}
-        </div>
-        ${_renderPanelDistribuir(distribuir)}
+    <div class="filtros-bar" role="group" aria-label="Preset de distribución">
+      ${autoChip}
+      ${personalizadaChip}
+    </div>
+    <details class="distribucion-clasicos"${clasicosActivo ? ' open' : ''}>
+      <summary class="distribucion-clasicos__toggle">Métodos clásicos</summary>
+      <div class="filtros-bar" role="group" aria-label="Métodos clásicos de distribución">
+        ${clasicosChips}
       </div>
-    </div>`;
+      <p class="form-hint form-hint--muted">Porcentajes fijos. No consideran tus gastos reales.</p>
+    </details>
+    ${editorPersonalizada}
+    <div class="distribucion-rows">
+      <p class="distribucion-rows__razon">${_esc(razon)}</p>
+    </div>
+    ${_renderPanelDistribuir(distribuir)}`;
 }
