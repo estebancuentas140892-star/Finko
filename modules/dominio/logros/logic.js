@@ -6,8 +6,13 @@
  * una funcion `eval(S)` que retorna true cuando el logro se cumple.
  *
  * Regla: esta función solo opera sobre el singleton S, sin importar
- * lógica de otros dominios (regla 10: no cross-domain imports).
+ * lógica de otros dominios (regla 10: no cross-domain imports). Los tipos
+ * de deuda ('deuda-entidad'/'deuda-personal') se comparan como literales en
+ * vez de importar `esDeuda()` de compromisos/logic.js por esa misma regla.
  */
+
+import { hoy } from '../../infra/utils.js';
+import { memoizar } from '../../infra/memo.js';
 
 // ── TABLA DE LOGROS ──────────────────────────────────────────────
 
@@ -42,7 +47,104 @@
 export const FAMILIAS = {
   registro: { nombre: 'Constancia de registro' },
   metas:    { nombre: 'Metas cumplidas' },
+  deudas:   { nombre: 'Deudas saldadas' },
 };
+
+// ── DERIVACIONES DE CONSTANCIA (LG.2c, ADR 032 D3) ───────────────
+
+/**
+ * Cuántas semanas distintas de cada mes tienen al menos un gasto registrado.
+ * Semana = bloque de 7 días desde el día 1 (el bloque final corto del mes
+ * cuenta como semana propia). Un solo pase O(gastos), reutilizado tanto por
+ * `mesCompleto()` como por `rachaMesesCompletos()` para no recorrer el
+ * historial una vez por mes consultado.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @returns {Map<string, number>} mesISO ('YYYY-MM') → nº de semanas distintas
+ */
+function _semanasPorMes(gastos) {
+  const semanas = new Map();
+  for (const g of gastos ?? []) {
+    if (typeof g?.fecha !== 'string' || g.fecha.length < 10) continue;
+    const mesISO = g.fecha.slice(0, 7);
+    const dd = Number(g.fecha.slice(8, 10));
+    if (!Number.isFinite(dd) || dd < 1 || dd > 31) continue;
+    const bloque = Math.ceil(dd / 7);
+    let set = semanas.get(mesISO);
+    if (!set) { set = new Set(); semanas.set(mesISO, set); }
+    set.add(bloque);
+  }
+  const resultado = new Map();
+  for (const [mes, set] of semanas) resultado.set(mes, set.size);
+  return resultado;
+}
+
+/**
+ * ¿El mes `mesISO` es "completo de registro" (D3, ADR 032)? Al menos 3
+ * semanas distintas de ese mes con gasto registrado (de ~4.4 semanas):
+ * deliberadamente laxo, premia el hábito sin castigar una semana de vacaciones.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} mesISO - `YYYY-MM` (o un ISO completo, se usa el prefijo).
+ * @returns {boolean}
+ */
+export function mesCompleto(gastos, mesISO) {
+  if (typeof mesISO !== 'string' || mesISO.length < 7) return false;
+  return (_semanasPorMes(gastos).get(mesISO.slice(0, 7)) ?? 0) >= 3;
+}
+
+/**
+ * Racha de meses completos consecutivos, contada hacia atrás desde el mes
+ * ANTERIOR a hoy (el mes en curso nunca cuenta: todavía no terminó, D3).
+ * Corta en el primer mes que no sea completo.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO - `YYYY-MM-DD`.
+ * @returns {number}
+ */
+export function rachaMesesCompletos(gastos, hoyISO) {
+  if (typeof hoyISO !== 'string' || hoyISO.length < 10) return 0;
+  const semanasPorMes = _semanasPorMes(gastos);
+
+  let [anio, mes] = hoyISO.slice(0, 7).split('-').map(Number);
+  if (!Number.isFinite(anio) || !Number.isFinite(mes)) return 0;
+  mes -= 1;
+  if (mes < 1) { mes = 12; anio -= 1; }
+
+  let racha = 0;
+  // Tope defensivo (20 años) por si llegan datos corruptos: nunca bucle infinito.
+  for (let i = 0; i < 240; i++) {
+    const mesISO = `${anio}-${String(mes).padStart(2, '0')}`;
+    if ((semanasPorMes.get(mesISO) ?? 0) < 3) break;
+    racha++;
+    mes -= 1;
+    if (mes < 1) { mes = 12; anio -= 1; }
+  }
+  return racha;
+}
+
+/** PERF.2: evita recorrer `S.gastos` una vez por cada nivel de la familia
+ * "registro" (3-6) dentro de una misma pasada de `evaluarLogros()`. */
+const _rachaMesesCompletosMemo = memoizar(rachaMesesCompletos, ['gastos']);
+
+/**
+ * Cuántas deudas (entidad o personal) llegaron a saldo 0. Excluye las
+ * consolidadas: `_aplicarConsolidacion()` (compromisos/index.js) archiva la
+ * deuda vieja (`activo:false`) pero NUNCA toca su `saldoTotal`, así que una
+ * deuda transformada en un crédito nuevo no cuenta como "saldada" (ADR 032
+ * D4: "la deuda no se pagó, se transformó"). Una deuda archivada manualmente
+ * DESPUÉS de llegar a saldo 0 sigue contando: sí se pagó.
+ *
+ * @param {import('../../core/state.js').Compromiso[]} compromisos
+ * @returns {number}
+ */
+export function deudasSaldadas(compromisos) {
+  if (!Array.isArray(compromisos)) return 0;
+  return compromisos.filter(c =>
+    (c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal') &&
+    Number(c.saldoTotal) === 0
+  ).length;
+}
 
 /** @type {Logro[]} */
 export const LOGROS = [
@@ -140,6 +242,70 @@ export const LOGROS = [
       actual: Math.min(Array.isArray(s.gastos) ? s.gastos.length : 0, 10),
       meta:   10,
     }),
+  },
+  {
+    id:      'mes-completo',
+    familia: 'registro',
+    nivel:   3,
+    nombre:  'Un mes completo',
+    emoji:   '📆',
+    desc:    'Registraste gastos en al menos 3 semanas distintas de un mismo mes.',
+    hint:    'Registra gastos en al menos 3 semanas distintas de un mismo mes.',
+    eval:    s => _rachaMesesCompletosMemo(s.gastos, hoy()) >= 1,
+  },
+  {
+    id:      'tres-meses-seguidos',
+    familia: 'registro',
+    nivel:   4,
+    nombre:  'Tres meses seguidos',
+    emoji:   '🌟',
+    desc:    'Llevas 3 meses seguidos con registro constante.',
+    hint:    'Completa 3 meses seguidos con gastos en al menos 3 semanas cada uno.',
+    eval:    s => _rachaMesesCompletosMemo(s.gastos, hoy()) >= 3,
+    progreso: s => ({ actual: Math.min(_rachaMesesCompletosMemo(s.gastos, hoy()), 3), meta: 3 }),
+  },
+  {
+    id:      'seis-meses-seguidos',
+    familia: 'registro',
+    nivel:   5,
+    nombre:  'Medio año de constancia',
+    emoji:   '💎',
+    desc:    'Llevas 6 meses seguidos con registro constante.',
+    hint:    'Completa 6 meses seguidos con gastos en al menos 3 semanas cada uno.',
+    eval:    s => _rachaMesesCompletosMemo(s.gastos, hoy()) >= 6,
+    progreso: s => ({ actual: Math.min(_rachaMesesCompletosMemo(s.gastos, hoy()), 6), meta: 6 }),
+  },
+  {
+    id:      'doce-meses-seguidos',
+    familia: 'registro',
+    nivel:   6,
+    nombre:  'Un año contigo',
+    emoji:   '👑',
+    desc:    'Llevas 12 meses seguidos con registro constante.',
+    hint:    'Completa 12 meses seguidos con gastos en al menos 3 semanas cada uno.',
+    eval:    s => _rachaMesesCompletosMemo(s.gastos, hoy()) >= 12,
+    progreso: s => ({ actual: Math.min(_rachaMesesCompletosMemo(s.gastos, hoy()), 12), meta: 12 }),
+  },
+  {
+    id:      'primera-deuda-saldada',
+    familia: 'deudas',
+    nivel:   1,
+    nombre:  'Una deuda menos',
+    emoji:   '🎉',
+    desc:    'Saldaste una deuda por completo.',
+    hint:    'Abona a una deuda hasta llevar su saldo a cero.',
+    eval:    s => deudasSaldadas(s.compromisos) >= 1,
+  },
+  {
+    id:      'tres-deudas-saldadas',
+    familia: 'deudas',
+    nivel:   2,
+    nombre:  'Rompedeudas',
+    emoji:   '🏆',
+    desc:    'Saldaste 3 deudas por completo.',
+    hint:    'Sigue abonando: saldar 3 deudas te desbloquea este logro.',
+    eval:    s => deudasSaldadas(s.compromisos) >= 3,
+    progreso: s => ({ actual: Math.min(deudasSaldadas(s.compromisos), 3), meta: 3 }),
   },
   {
     id:     'fondo-emergencia',

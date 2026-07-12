@@ -6,10 +6,11 @@
  * manualmente en la app; la vitrina se prueba con happy-dom.
  */
 
-import { describe, test, expect, beforeEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   evaluarLogros, estadoLogros, LOGROS,
   FAMILIAS, agruparVitrina, nivelUsuario, NIVELES_USUARIO,
+  mesCompleto, rachaMesesCompletos, deudasSaldadas,
 } from '../../modules/dominio/logros/logic.js';
 import { renderPanelLogros } from '../../modules/dominio/logros/view.js';
 import { S, createInitialState } from '../../modules/core/state.js';
@@ -283,7 +284,10 @@ describe('LOGROS - integridad de la tabla', () => {
 
   test('progreso solo existe en los logros de conteo (ADR 022)', () => {
     const conProgreso = LOGROS.filter(l => typeof l.progreso === 'function').map(l => l.id);
-    expect(conProgreso.sort()).toEqual(['diez-gastos', 'diversificador']);
+    expect(conProgreso.sort()).toEqual([
+      'diez-gastos', 'diversificador', 'doce-meses-seguidos',
+      'seis-meses-seguidos', 'tres-deudas-saldadas', 'tres-meses-seguidos',
+    ]);
   });
 
   test('toda familia declarada existe en FAMILIAS y sus niveles son 1..N sin huecos (ADR 032 D1)', () => {
@@ -326,7 +330,7 @@ describe('agruparVitrina()', () => {
     expect(reg.actual).toBeNull();
     expect(reg.siguiente.id).toBe('primer-gasto');
     expect(reg.desbloqueados).toBe(0);
-    expect(reg.totalNiveles).toBe(2);
+    expect(reg.totalNiveles).toBe(6);
   });
 
   test('con nivel 1 ganado: actual = nivel 1 y siguiente = nivel 2 con su progreso', () => {
@@ -340,11 +344,15 @@ describe('agruparVitrina()', () => {
   });
 
   test('familia completa: siguiente es null', () => {
-    const items = agruparVitrina(estadoLogros(estado(), ['primer-gasto', 'diez-gastos']));
+    const idsRegistro = [
+      'primer-gasto', 'diez-gastos', 'mes-completo',
+      'tres-meses-seguidos', 'seis-meses-seguidos', 'doce-meses-seguidos',
+    ];
+    const items = agruparVitrina(estadoLogros(estado(), idsRegistro));
     const reg = items.find(i => i.tipo === 'familia' && i.familia === 'registro');
-    expect(reg.actual.id).toBe('diez-gastos');
+    expect(reg.actual.id).toBe('doce-meses-seguidos');
     expect(reg.siguiente).toBeNull();
-    expect(reg.desbloqueados).toBe(2);
+    expect(reg.desbloqueados).toBe(6);
   });
 
   test('el nombre de la familia sale de FAMILIAS', () => {
@@ -472,7 +480,7 @@ describe('renderPanelLogros()', () => {
     renderPanelLogros();
     const panel = document.getElementById('panel-logros');
     expect(panel.textContent).toContain('Constancia de registro');
-    expect(panel.textContent).toContain('Nivel 1 de 2');
+    expect(panel.textContent).toContain('Nivel 1 de 6');
     expect(panel.textContent).toContain('Siguiente:');
   });
 
@@ -488,5 +496,235 @@ describe('renderPanelLogros()', () => {
   test('no-op si el contenedor no existe', () => {
     document.body.innerHTML = '';
     expect(() => renderPanelLogros()).not.toThrow();
+  });
+});
+
+// ── mesCompleto() (LG.2c, ADR 032 D3) ─────────────────────────────
+
+describe('mesCompleto()', () => {
+  test('true con gasto en 3 semanas distintas del mes', () => {
+    const gastos = [
+      { fecha: '2026-06-03', monto: 1 }, // bloque 1 (días 1-7)
+      { fecha: '2026-06-10', monto: 1 }, // bloque 2 (días 8-14)
+      { fecha: '2026-06-17', monto: 1 }, // bloque 3 (días 15-21)
+    ];
+    expect(mesCompleto(gastos, '2026-06')).toBe(true);
+  });
+
+  test('false con gasto en solo 2 semanas', () => {
+    const gastos = [
+      { fecha: '2026-06-03', monto: 1 },
+      { fecha: '2026-06-10', monto: 1 },
+    ];
+    expect(mesCompleto(gastos, '2026-06')).toBe(false);
+  });
+
+  test('varios gastos en la misma semana cuentan como una sola', () => {
+    const gastos = [
+      { fecha: '2026-06-01', monto: 1 },
+      { fecha: '2026-06-02', monto: 1 },
+      { fecha: '2026-06-03', monto: 1 },
+    ];
+    expect(mesCompleto(gastos, '2026-06')).toBe(false);
+  });
+
+  test('el bloque final corto (días 29-31) cuenta como semana propia', () => {
+    const gastos = [
+      { fecha: '2026-01-03', monto: 1 }, // bloque 1
+      { fecha: '2026-01-10', monto: 1 }, // bloque 2
+      { fecha: '2026-01-31', monto: 1 }, // bloque 5 (29-31)
+    ];
+    expect(mesCompleto(gastos, '2026-01')).toBe(true);
+  });
+
+  test('ignora gastos de otros meses', () => {
+    const gastos = [
+      { fecha: '2026-05-03', monto: 1 },
+      { fecha: '2026-05-10', monto: 1 },
+      { fecha: '2026-05-17', monto: 1 },
+    ];
+    expect(mesCompleto(gastos, '2026-06')).toBe(false);
+  });
+
+  test('acepta un ISO completo como mesISO y usa solo el prefijo', () => {
+    const gastos = [
+      { fecha: '2026-06-03', monto: 1 },
+      { fecha: '2026-06-10', monto: 1 },
+      { fecha: '2026-06-17', monto: 1 },
+    ];
+    expect(mesCompleto(gastos, '2026-06-15')).toBe(true);
+  });
+
+  test('false con lista vacía, nula o mesISO inválido', () => {
+    expect(mesCompleto([], '2026-06')).toBe(false);
+    expect(mesCompleto(undefined, '2026-06')).toBe(false);
+    expect(mesCompleto([{ fecha: '2026-06-03' }], '')).toBe(false);
+    expect(mesCompleto([{ fecha: '2026-06-03' }], undefined)).toBe(false);
+  });
+});
+
+// ── rachaMesesCompletos() (LG.2c, ADR 032 D3) ─────────────────────
+
+describe('rachaMesesCompletos()', () => {
+  /** 3 gastos en 3 semanas distintas del mes `mesISO` ('YYYY-MM'). */
+  const mesCompletoFixture = (mesISO) => ([
+    { fecha: `${mesISO}-03`, monto: 1 },
+    { fecha: `${mesISO}-10`, monto: 1 },
+    { fecha: `${mesISO}-17`, monto: 1 },
+  ]);
+
+  test('cuenta 3 meses completos consecutivos y corta en el primero incompleto', () => {
+    const gastos = [
+      ...mesCompletoFixture('2026-05'),
+      ...mesCompletoFixture('2026-04'),
+      ...mesCompletoFixture('2026-03'),
+      { fecha: '2026-02-03', monto: 1 }, // solo 1 semana: rompe la racha
+    ];
+    expect(rachaMesesCompletos(gastos, '2026-06-15')).toBe(3);
+  });
+
+  test('el mes en curso nunca cuenta, aunque sea completo', () => {
+    const gastos = [
+      ...mesCompletoFixture('2026-06'), // mes en curso: no cuenta
+      ...mesCompletoFixture('2026-05'),
+    ];
+    expect(rachaMesesCompletos(gastos, '2026-06-15')).toBe(1);
+  });
+
+  test('0 si el mes anterior no fue completo', () => {
+    const gastos = mesCompletoFixture('2026-04'); // no es el mes anterior a junio
+    expect(rachaMesesCompletos(gastos, '2026-06-15')).toBe(0);
+  });
+
+  test('la racha cruza el cambio de año sin romperse', () => {
+    const gastos = [
+      ...mesCompletoFixture('2025-12'),
+      ...mesCompletoFixture('2025-11'),
+    ];
+    expect(rachaMesesCompletos(gastos, '2026-01-15')).toBe(2);
+  });
+
+  test('0 con lista vacía o hoyISO inválido', () => {
+    expect(rachaMesesCompletos([], '2026-06-15')).toBe(0);
+    expect(rachaMesesCompletos(mesCompletoFixture('2026-05'), '')).toBe(0);
+    expect(rachaMesesCompletos(mesCompletoFixture('2026-05'), undefined)).toBe(0);
+  });
+});
+
+// ── deudasSaldadas() (LG.2c, ADR 032 D4) ──────────────────────────
+
+describe('deudasSaldadas()', () => {
+  test('cuenta deudas de entidad y personales con saldoTotal 0', () => {
+    const compromisos = [
+      { tipo: 'deuda-entidad', saldoTotal: 0 },
+      { tipo: 'deuda-personal', saldoTotal: 0 },
+      { tipo: 'deuda-entidad', saldoTotal: 50000 },
+    ];
+    expect(deudasSaldadas(compromisos)).toBe(2);
+  });
+
+  test('ignora compromisos que no son deuda (fijo)', () => {
+    const compromisos = [{ tipo: 'fijo', saldoTotal: 0 }];
+    expect(deudasSaldadas(compromisos)).toBe(0);
+  });
+
+  test('excluye deudas consolidadas: activo:false pero saldoTotal > 0 (se transformó, no se pagó)', () => {
+    const compromisos = [{ tipo: 'deuda-entidad', saldoTotal: 300000, activo: false }];
+    expect(deudasSaldadas(compromisos)).toBe(0);
+  });
+
+  test('una deuda archivada DESPUÉS de llegar a 0 sigue contando: sí se pagó', () => {
+    const compromisos = [{ tipo: 'deuda-entidad', saldoTotal: 0, activo: false }];
+    expect(deudasSaldadas(compromisos)).toBe(1);
+  });
+
+  test('0 con lista vacía o no array', () => {
+    expect(deudasSaldadas([])).toBe(0);
+    expect(deudasSaldadas(undefined)).toBe(0);
+    expect(deudasSaldadas(null)).toBe(0);
+  });
+});
+
+// ── Catálogo v2: familia "registro" niveles 3-6 (LG.2c, integración) ──
+
+describe('evaluarLogros() - familia registro, niveles 3-6 (LG.2c)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 2026-06-15
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const mesCompletoFixture = (mesISO) => ([
+    { fecha: `${mesISO}-03`, monto: 1 },
+    { fecha: `${mesISO}-10`, monto: 1 },
+    { fecha: `${mesISO}-17`, monto: 1 },
+  ]);
+
+  test('mes-completo se desbloquea con 1 mes anterior completo', () => {
+    const s = estado({ gastos: mesCompletoFixture('2026-05') });
+    expect(evaluarLogros(s)).toContain('mes-completo');
+    expect(evaluarLogros(s)).not.toContain('tres-meses-seguidos');
+  });
+
+  test('sin ningún mes completo, no desbloquea ni siquiera el nivel 3', () => {
+    const s = estado({ gastos: [{ fecha: '2026-05-03', monto: 1 }] });
+    expect(evaluarLogros(s)).not.toContain('mes-completo');
+  });
+
+  test('tres-meses-seguidos se desbloquea con 3 meses consecutivos completos', () => {
+    const s = estado({
+      gastos: [
+        ...mesCompletoFixture('2026-05'),
+        ...mesCompletoFixture('2026-04'),
+        ...mesCompletoFixture('2026-03'),
+      ],
+    });
+    const cumplidos = evaluarLogros(s);
+    expect(cumplidos).toContain('mes-completo');
+    expect(cumplidos).toContain('tres-meses-seguidos');
+    expect(cumplidos).not.toContain('seis-meses-seguidos');
+  });
+
+  test('doce-meses-seguidos exige los 12 meses completos', () => {
+    let gastos = [];
+    let anio = 2026, mes = 5; // empieza en mayo (mes anterior a junio)
+    for (let i = 0; i < 12; i++) {
+      const mesISO = `${anio}-${String(mes).padStart(2, '0')}`;
+      gastos = gastos.concat(mesCompletoFixture(mesISO));
+      mes -= 1;
+      if (mes < 1) { mes = 12; anio -= 1; }
+    }
+    const s = estado({ gastos });
+    const cumplidos = evaluarLogros(s);
+    expect(cumplidos).toContain('doce-meses-seguidos');
+  });
+});
+
+// ── Catálogo v2: familia "deudas" (LG.2c, integración) ────────────
+
+describe('evaluarLogros() - familia deudas (LG.2c)', () => {
+  test('primera-deuda-saldada se desbloquea con 1 deuda en saldo 0', () => {
+    const s = estado({ compromisos: [{ tipo: 'deuda-entidad', saldoTotal: 0 }] });
+    expect(evaluarLogros(s)).toContain('primera-deuda-saldada');
+    expect(evaluarLogros(s)).not.toContain('tres-deudas-saldadas');
+  });
+
+  test('tres-deudas-saldadas exige 3 deudas en saldo 0', () => {
+    const s = estado({
+      compromisos: [
+        { tipo: 'deuda-entidad', saldoTotal: 0 },
+        { tipo: 'deuda-personal', saldoTotal: 0 },
+        { tipo: 'deuda-entidad', saldoTotal: 0 },
+      ],
+    });
+    expect(evaluarLogros(s)).toContain('tres-deudas-saldadas');
+  });
+
+  test('una deuda consolidada (activo:false, saldo > 0) no cuenta para el logro', () => {
+    const s = estado({ compromisos: [{ tipo: 'deuda-entidad', saldoTotal: 200000, activo: false }] });
+    expect(evaluarLogros(s)).not.toContain('primera-deuda-saldada');
   });
 });

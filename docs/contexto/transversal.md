@@ -124,44 +124,50 @@
 ## Sistema de logros (dominio `logros`)
 
 - **Objetivo**          : gamificación ligera de hábitos: catálogo de logros con evaluación automática, toast con confetti al desbloquear y vitrina de solo lectura al final de Ajustes.
-- **Estado actual**     : estable. **Logros v2 en curso** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b cerrada ese mismo día (familias con niveles + nivel de usuario derivado, SW v342); siguen LG.2c (rachas + familia deudas), LG.2d (mudanza, bloqueada por ANL.1/IN.8) y LG.2e (comportamiento), ver BOARD.
-- **Verificado contra** : commit de LG.2b (2026-07-09).
+- **Estado actual**     : estable. **Logros v2 en curso** ([ADR 032](../DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada el 2026-07-09): LG.2b (2026-07-09) y **LG.2c cerrada el 2026-07-12** (rachas de constancia + familia deudas saldadas, SW v354); siguen LG.2d (mudanza a Análisis+Inicio; su bloqueo por IN.8 ya se levantó el 2026-07-12, sigue esperando solo a ANL.1) y LG.2e (comportamiento), ver BOARD. Catálogo: 17 logros (antes 11).
+- **Verificado contra** : commit de LG.2c (2026-07-12).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Catálogo (11 logros; `familia`/`nivel` en primer-gasto, diez-gastos, meta-lograda) | `modules/dominio/logros/logic.js` | `LOGROS` | ~60 |
-| Metadata de familias (nombre por familia) | `modules/dominio/logros/logic.js` | `FAMILIAS` | ~48 |
-| Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~175 |
-| Estado render-ready de la vitrina (incluye familia/nivel) | `modules/dominio/logros/logic.js` | `estadoLogros()` | ~210 |
-| Agrupación por familia (una tarjeta por familia) | `modules/dominio/logros/logic.js` | `agruparVitrina()` | ~265 |
-| Nivel de usuario derivado del conteo (nombres provisionales) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~310 |
+| Catálogo (17 logros; familias `registro` 6 niveles, `metas` 1, `deudas` 2) | `modules/dominio/logros/logic.js` | `LOGROS` | ~150 |
+| Metadata de familias (nombre por familia) | `modules/dominio/logros/logic.js` | `FAMILIAS` | ~47 |
+| Derivación "mes completo de registro" (D3, ≥3 semanas del mes) | `modules/dominio/logros/logic.js` | `mesCompleto()`, helper interno `_semanasPorMes()` | ~91 |
+| Racha de meses completos consecutivos (memoizada por gastos) | `modules/dominio/logros/logic.js` | `rachaMesesCompletos()`, `_rachaMesesCompletosMemo` | ~105, ~128 |
+| Conteo de deudas saldadas (excluye consolidadas) | `modules/dominio/logros/logic.js` | `deudasSaldadas()` | ~141 |
+| Evaluación (ids cumplidos ahora, try/catch por logro) | `modules/dominio/logros/logic.js` | `evaluarLogros()` | ~329 |
+| Estado render-ready de la vitrina (incluye familia/nivel) | `modules/dominio/logros/logic.js` | `estadoLogros()` | ~362 |
+| Agrupación por familia (una tarjeta por familia) | `modules/dominio/logros/logic.js` | `agruparVitrina()` | ~417 |
+| Nivel de usuario derivado del conteo (nombres provisionales) | `modules/dominio/logros/logic.js` | `nivelUsuario()`, `NIVELES_USUARIO` | ~473 |
 | Detección + persistencia + toast (cola de a uno) | `modules/dominio/logros/index.js` | `_checkYMostrar()`, `_encolarToast()` | ~59, ~97 |
 | Confetti (24 piezas, ajuste mobile por bottom-nav) | `modules/dominio/logros/index.js` | `_lanzarConfetti()` | ~193 |
 | Vitrina en Ajustes (agrupada + nivel en el encabezado) | `modules/dominio/logros/view.js` | `renderPanelLogros()`, `_renderFamiliaItem()` | ~24, ~62 |
 
 **Recursos**: emojis por logro (se conservan por ADR 025 D6). CSS: `.logro-toast*`, `.confetti-piece` (nudges.css/base.css), `.logros-lista`, `.logro-item*` (config.css). Estado: `S.logros` (`string[]` de ids, orden de inserción = orden de desbloqueo).
 
-**Dependencias y relaciones**: escucha `state:change` (re-evalúa y re-renderiza) y `onboarding:completado` (toast retrasado 4 s, NAV.C/ADR 024 D6). El shell expone `#panel-logros` junto a `#panel-config` porque `config` no puede importar `logros` (ADN 10, ver ADR 022 punto 4). No emite eventos propios. Sin imports de otros dominios: los `eval` leen `S` directo.
+**Dependencias y relaciones**: escucha `state:change` (re-evalúa y re-renderiza) y `onboarding:completado` (toast retrasado 4 s, NAV.C/ADR 024 D6). El shell expone `#panel-logros` junto a `#panel-config` porque `config` no puede importar `logros` (ADN 10, ver ADR 022 punto 4). No emite eventos propios. Sin imports de otros dominios: los `eval` leen `S` directo; los evaluadores de la familia "registro" (LG.2c) importan `hoy()` de `infra/utils.js` (infra, no dominio, permitido) para obtener la fecha actual, y los de "deudas" comparan `c.tipo === 'deuda-entidad' || 'deuda-personal'` como literales en vez de importar `esDeuda()` de `compromisos/logic.js`.
 
 **Riesgos**:
 
 - **La persistencia manda sobre la evaluación**: un logro en `S.logros` no se revoca aunque el estado retroceda (borrar gastos, etc.). Cualquier lógica nueva debe respetarlo.
-- **Los `eval` corren en cada `state:change`**: mantenerlos O(1) o memoizados (disciplina del ADR 022, reforzada en ADR 032 D7); un evaluador O(historial) sin memo degrada toda la app.
+- **Los `eval` corren en cada `state:change`**: mantenerlos O(1) o memoizados (disciplina del ADR 022, reforzada en ADR 032 D7); un evaluador O(historial) sin memo degrada toda la app. `rachaMesesCompletos()` se memoiza (`_rachaMesesCompletosMemo`, PERF.2) porque los 4 niveles de la familia registro (mes-completo a doce-meses-seguidos) la llaman con los mismos argumentos dentro de una sola pasada de `evaluarLogros()`.
 - **3+ logros simultáneos** (import de respaldo/CSV) colapsan a un solo toast resumen; no romper ese guard al agregar logros.
 - **Ids del catálogo son valores persistidos**: nunca renombrarlos (mismo criterio que los ids de `MARCAS`).
+- **`NIVELES_USUARIO` (D5) se calibró para ~20 logros**; con 17 (LG.2e/comportamiento aún no implementada), el tramo superior "Leyenda del ahorro" (min 18) queda temporalmente inalcanzable. No se tocó en LG.2c (fuera de su alcance declarado); recalibrar si molesta antes de que LG.2e agregue los que faltan.
+- **`rachaMesesCompletos()` se ancla en "el mes anterior a hoy"**: solo detecta una racha activa si el usuario sigue usando la app (dispara `state:change`) mientras la racha está vigente. Una racha pasada y luego abandonada ya quedó persistida en `S.logros` si se evaluó en su momento (no se revoca); el riesgo real es solo si el usuario NUNCA vuelve a abrir la app durante el mes en que la racha era detectable, caso de borde aceptado (mismo patrón que otros logros de conteo simple).
 
-**Cambios pendientes**: LG.2c, LG.2d (bloqueada) y LG.2e en BOARD. Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
+**Cambios pendientes**: LG.2e (familia comportamiento: hormiga-a-raya, ahorro-creciente, pagador-puntual) en BOARD. Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
 
 **Cambios realizados**:
 
+- 2026-07-12 (LG.2c, ADR 032 D3/D4): constancia de registro + deudas saldadas. `mesCompleto(gastos, mesISO)` (≥3 semanas distintas del mes, bloque de 7 días desde el día 1, el bloque final corto cuenta) y `rachaMesesCompletos(gastos, hoyISO)` (racha hacia atrás desde el mes anterior a hoy, el mes en curso nunca cuenta) nuevos, ambos puros con `hoyISO` inyectado para testeo sin mocks de fecha; internamente comparten `_semanasPorMes()` (un solo pase O(gastos)). 4 niveles nuevos de la familia "registro" (`mes-completo`, `tres-meses-seguidos`, `seis-meses-seguidos`, `doce-meses-seguidos`), cada `eval` llama a la racha memoizada (`_rachaMesesCompletosMemo`) con `hoy()` real. Familia "deudas" nueva (`FAMILIAS.deudas`): `deudasSaldadas(compromisos)` cuenta deudas con `saldoTotal === 0`, excluyendo explícitamente las consolidadas (`activo:false` pero `saldoTotal` sin tocar, verificado contra `_aplicarConsolidacion()` en `compromisos/index.js`); una deuda archivada manualmente DESPUÉS de llegar a 0 sigue contando. Catálogo pasa de 11 a 17 logros; 4 tests existentes ajustados (totalNiveles de la familia registro pasa de 2 a 6). 24 tests unitarios nuevos + 1 E2E. 2391/2391 unit + 170/170 E2E + lint verdes. SW v354 → v355.
 - 2026-07-09 (LG.2b): fundación de progresión (ADR 032 D1/D5): `familia`/`nivel` en el catálogo (primer-gasto y diez-gastos = familia registro; meta-lograda = familia metas), `FAMILIAS`, `agruparVitrina()` (una tarjeta por familia: nivel más alto ganado + siguiente objetivo con barra), `NIVELES_USUARIO` + `nivelUsuario()` y vitrina con "Tu nivel:" en el encabezado. Sin bump de schema. 17 tests unitarios nuevos + 1 E2E; SW v341 → v342.
 - 2026-07-09 (LG.2a): ADR 032 escrito y validado por Esteban el mismo día (Aceptada): familias con niveles sin bump de schema (cada nivel = id propio en `S.logros`), regla anti-gaming con test por PR, derivación "mes completo de registro", niveles de usuario derivados del conteo, reubicación en dos tiempos (Ajustes hoy, Análisis+Inicio tras ANL.1/IN.8).
 - 2026-07-04 (LG.1b, ADR 022): vitrina en Ajustes con hint y progreso parcial.
 - 2026-07-04 (LG.1a): toast más legible, cola de a uno, pausa por hover.
 
-**Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Propuesta), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma.
+**Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí exigirá LG.2e para los logros de reducción de gasto (hormiga-a-raya).
 
 ---
 

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(logros): LG.2c constancia de registro + familia deudas saldadas · 2026-07-12
+
+Cierra **LG.2c** (`docs/BOARD.md`, iniciativa "Logros v2"), tercera rebanada del [ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) (decisiones D3 y D4).
+
+**Qué cambió:** dos derivaciones puras nuevas en `logros/logic.js`: `mesCompleto(gastos, mesISO)` (¿el mes tuvo gasto en al menos 3 de sus ~4.4 semanas? bloque de 7 días desde el día 1, el bloque final corto cuenta como semana propia) y `rachaMesesCompletos(gastos, hoyISO)` (racha de meses completos consecutivos, contada hacia atrás desde el mes ANTERIOR a hoy: el mes en curso nunca cuenta porque todavía no terminó). Ambas reciben `hoyISO`/`mesISO` inyectado (mismo patrón que el resto del código: testeables sin mockear `Date`) y comparten un solo pase O(gastos) (`_semanasPorMes()`) para no recorrer el historial una vez por mes consultado. **4 niveles nuevos de la familia "registro"** (`mes-completo`, `tres-meses-seguidos`, `seis-meses-seguidos`, `doce-meses-seguidos`), cada `eval` del catálogo llama a la racha memoizada (`_rachaMesesCompletosMemo`, PERF.2: evita recorrer `S.gastos` 4 veces en una misma pasada de `evaluarLogros()`) con `hoy()` real. **Familia "deudas" nueva**: `deudasSaldadas(compromisos)` cuenta deudas (entidad o personal) con `saldoTotal === 0`, **excluyendo explícitamente las consolidadas** (`_aplicarConsolidacion()` en `compromisos/index.js` archiva la deuda vieja con `activo:false` pero nunca toca su `saldoTotal`: transformarse en un crédito nuevo no es "pagarla", tal como pide el ADR); una deuda archivada manualmente después de llegar a 0 sigue contando. 2 logros nuevos: `primera-deuda-saldada` y `tres-deudas-saldadas`.
+
+**Archivos tocados:** `modules/dominio/logros/logic.js` (`mesCompleto()`, `rachaMesesCompletos()`, `deudasSaldadas()`, 6 entradas nuevas en `LOGROS`, `FAMILIAS.deudas`), `tests/unit/logros.test.js` (24 tests nuevos + 4 ajustados por el crecimiento de la familia registro de 2 a 6 niveles), `tests/e2e/smoke.test.js` (1 E2E nuevo), `service-worker.js` (v354 → v355), `docs/contexto/transversal.md`, `docs/BOARD.md` (LG.2d: su bloqueo por IN.8 se levanta, ya solo espera a ANL.1).
+
+**Verificación:** 2391/2391 unit (semanas por mes, mes completo con bloque final corto, racha que cruza el cambio de año, racha que corta en el primer mes incompleto, deudas saldadas excluyendo consolidadas, integración catálogo↔evaluarLogros con fake timers para los 4 niveles nuevos) + 170/170 E2E (1 nuevo en Chromium real: familia "Deudas saldadas" agrupada en la vitrina) + lint verdes.
+
+**Podría afectar:** nada persistido más allá de lo ya vigente (`S.logros` sigue siendo `string[]`, sin bump de schema, tal como diseña el ADR). El catálogo pasa de 11 a 17 logros; con 17 (no los ~20 previstos para cuando LG.2e agregue la familia comportamiento), el tramo superior de `NIVELES_USUARIO` ("Leyenda del ahorro", min 18) queda temporalmente inalcanzable, fuera del alcance declarado de esta rebanada.
+
+---
+
 ### feat(ui): IN.8g fusión accesos rápidos + actividad reciente, cierra "Inicio v2" · 2026-07-12
 
 Cierra **IN.8g** (`docs/BOARD.md`), séptima y última rebanada del [ADR 034](DECISIONS/034-inicio-v2.md) (decisión D7). **Con esta rebanada, la iniciativa "Inicio v2" queda completa.**

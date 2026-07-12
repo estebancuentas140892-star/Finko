@@ -1213,6 +1213,39 @@ test.describe('Vitrina de logros (niveles)', () => {
   });
 });
 
+// ── SUITE 8e: Familia "deudas saldadas" en la vitrina (LG.2c, ADR 032) ───────
+
+test.describe('Vitrina de logros - familia deudas (LG.2c)', () => {
+  test('saldar una deuda desbloquea "Una deuda menos" agrupado en la familia', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: [],
+        compromisos: [
+          { id: 'd1', descripcion: 'Tarjeta pagada', tipo: 'deuda-entidad', saldoTotal: 0, cuotaMensual: 50000, diaPago: 5, activo: true },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.goto('/#config');
+    await page.waitForSelector('#sec-config.active', { timeout: 10_000 });
+
+    const panel = page.locator('#panel-logros');
+    await expect(panel).toContainText('Deudas saldadas');
+    await expect(panel).toContainText('Nivel 1 de 2');
+    await expect(panel).toContainText('Saldaste una deuda por completo.');
+    await expect(panel).toContainText('Siguiente:');
+    // La familia colapsa a una tarjeta: el nombre del nivel 2 ("Rompedeudas")
+    // no aparece suelto, solo el nombre de la familia y los textos de estado.
+    await expect(panel).not.toContainText('Rompedeudas');
+  });
+});
+
 // ── SUITE 8: Sidebar colapsable ──────────────────────────────────────────────
 // Solo aplica en desktop (viewport >= 1024px). El viewport por defecto de
 // Playwright Chromium es 1280x720, suficiente para activar el sidebar lateral.
