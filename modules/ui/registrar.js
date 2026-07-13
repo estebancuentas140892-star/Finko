@@ -83,6 +83,18 @@ export function destinosAporte(ahorro, metas, apartados) {
   return destinos;
 }
 
+/**
+ * Cuántas cuentas activas hay disponibles para transferir entre ellas
+ * (espejo local de `cuentasActivas()` de tesoreria/logic/cuentas.js, sin
+ * importar el dominio: solo hace falta el conteo, no la lista completa).
+ *
+ * @param {Array} cuentas - S.cuentas
+ * @returns {number}
+ */
+export function cuentasActivasParaTransferir(cuentas) {
+  return (Array.isArray(cuentas) ? cuentas : []).filter(c => c && c.activa !== false).length;
+}
+
 // ── RENDER (impuro: toca el DOM) ─────────────────────────────────
 
 const _raizEl    = () => document.getElementById('registrar-vista-raiz');
@@ -129,6 +141,13 @@ function _construirTejasDinamicas() {
     html += _teja(
       `data-action="registrar-elegir-destino" data-picker="abono"`,
       'i-deudas', 'Abono a deuda', 'Elige a cuál', 'abono',
+    );
+  }
+
+  if (cuentasActivasParaTransferir(S.cuentas) >= 2) {
+    html += _teja(
+      `data-action="registrar-abrir" data-target-action="abrir-transferencia"`,
+      'i-transferencia', 'Transferir', 'Entre tus cuentas', 'transferir',
     );
   }
 

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(ui): MC.17e teja "Transferir" en la hoja Registrar, cierra MC.17 completa · 2026-07-12
+
+Cierra **MC.17e** (`docs/BOARD.md`), última rebanada de MC.17 (transferencias entre cuentas propias). La iniciativa completa (MC.17a fundación de datos, MC.17b formulario/acción, MC.17c ledger de Movimientos, MC.17d GMF del retiro) queda cerrada con este punto de entrada.
+
+**Qué cambió:** nueva teja "Transferir" en la hoja "Registrar" (NAV.A2), visible solo con 2+ cuentas activas (mismo patrón 0/1/varias que ya usan Abono a deuda y Aporte a ahorro en ese mismo archivo). `cuentasActivasParaTransferir(cuentas)` (nueva, pura) cuenta las cuentas activas sin importar el dominio `tesoreria` (regla ADN #10, ya documentada en la cabecera del archivo: la hoja lee `S` directamente y reusa acciones ya registradas por nombre en vez de importar lógica de dominio). La teja usa `data-action="registrar-abrir" data-target-action="abrir-transferencia"`, reutilizando la acción `abrir-transferencia` que MC.17b ya registró en `acciones/transferencias.js`: cero lógica nueva de apertura de modal.
+
+**Archivos tocados:** `modules/ui/registrar.js` (`cuentasActivasParaTransferir()` nueva + teja en `_construirTejasDinamicas()`), `tests/unit/registrar.test.js` (2 tests nuevos), `service-worker.js` (v365→v366), `docs/BOARD.md`, `docs/HANDOFF.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2479/2479 unit verdes (conteo de cuentas activas, tolerancia a entrada vacía/no-array). Verificación funcional vía DOM en el Browser pane (el screenshot visual no respondió esta sesión, mismo patrón intermitente de sesiones anteriores): con 2 cuentas activas la teja aparece en `#registrar-grid` y su clic abre `#modal-transferencia` (`data-open` presente); con 1 sola cuenta activa la teja no se inyecta.
+
+**Podría afectar:** nada fuera de la hoja Registrar; la acción `abrir-transferencia` y el modal no cambiaron (ya cubiertos por los tests de MC.17b/d).
+
+---
+
 ### feat(tesoreria): MC.17d GMF del retiro en la transferencia, opcional · 2026-07-12
 
 Cierra **MC.17d** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), cuarta rebanada de MC.17. Añade el 4x1000 (GMF) real que un banco cobra al sacar dinero de una cuenta no exenta.

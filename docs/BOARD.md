@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (MC.17d cierra el GMF del retiro; MC.17a/b/c y MC.18e cerraron antes el mismo día).
+> Última actualización: 2026-07-12 (MC.17e cierra MC.17 completa; MC.17a/b/c/d y MC.18e cerraron antes el mismo día).
 
 ---
 
@@ -106,14 +106,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.17d cerrada el 2026-07-12** (GMF del retiro, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): decisión ratificada (campo `costoGMF` en la Transferencia, no un Gasto; checkbox marcado por defecto). Checkbox del 4x1000 en el modal cuando el origen no está exento (`renderSeccionGMF`, reactivo al origen); `costoGMFRetiro`/`origenSujetoAGMF` puros; `calcularTransferencia` descuenta `monto + costoGMF` del origen (Σ deltas = −costoGMF); rastro "incluye $X de 4x1000" en el subtítulo del ledger. 21 tests unitarios + 1 E2E nuevos, SW v365.
 
-#### MC.17e - Punto de entrada en la hoja "Registrar"
-- Prioridad  : baja
-- Estado     : pendiente (depende de MC.17b)
-- Objetivo   : teja "Transferir" en la hoja "Registrar" (NAV.A2), visible solo con 2+ cuentas activas (patrón 0/1/varias de `registrar.js`); abre el modal de MC.17b. Verificable en la app.
-- Secciones  : Mis cuentas, hoja Registrar (`ui/registrar.js`)
-- Archivos   : `modules/ui/registrar.js`, `index.html` (teja)
-- Depende de : MC.17b
-- Modelo     : Sonnet 5 - Bajo (teja + ruteo, patrón ya existente)
+> **MC.17e cerrada el 2026-07-12** (teja "Transferir" en la hoja Registrar, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): cierra **MC.17 completa**. Teja visible solo con 2+ cuentas activas (patrón 0/1/varias ya usado por Abono a deuda y Aporte a ahorro en `registrar.js`), reutiliza la acción `abrir-transferencia` de MC.17b. 2 tests unitarios nuevos, SW v366.
 
 ---
 

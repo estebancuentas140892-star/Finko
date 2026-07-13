@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { destinosAbono, destinosAporte } from '../../modules/ui/registrar.js';
+import { destinosAbono, destinosAporte, cuentasActivasParaTransferir } from '../../modules/ui/registrar.js';
 
 describe('destinosAbono', () => {
   it('incluye solo deudas activas con saldo pendiente', () => {
@@ -65,5 +65,22 @@ describe('destinosAporte', () => {
   it('tolera slices ausentes', () => {
     expect(destinosAporte(undefined, undefined, undefined)).toEqual([]);
     expect(destinosAporte(null, null, null)).toEqual([]);
+  });
+});
+
+describe('cuentasActivasParaTransferir', () => {
+  it('cuenta solo las cuentas activas (MC.17e)', () => {
+    const cuentas = [
+      { id: 'c1', activa: true },
+      { id: 'c2' },                    // sin campo activa = activa
+      { id: 'c3', activa: false },     // archivada, no cuenta
+    ];
+    expect(cuentasActivasParaTransferir(cuentas)).toBe(2);
+  });
+
+  it('devuelve 0 con entrada vacía o no-array', () => {
+    expect(cuentasActivasParaTransferir([])).toBe(0);
+    expect(cuentasActivasParaTransferir(undefined)).toBe(0);
+    expect(cuentasActivasParaTransferir(null)).toBe(0);
   });
 });
