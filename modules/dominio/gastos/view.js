@@ -316,7 +316,6 @@ export function renderFormGasto() {
           ${catPersonalizadasOpts}
           <option value="${CATEGORIA_NUEVA_VALUE}">+ Otra categoría…</option>
         </select>
-        <p id="hint-categoria-fija" class="form-hint form-hint--info" hidden></p>
       </div>
       <div class="form-group" id="categoria-nueva-fields" hidden>
         <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>

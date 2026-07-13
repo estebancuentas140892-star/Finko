@@ -16,7 +16,7 @@ import {
   validarCategoriaPersonalizada,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
-import { CATEGORIAS_TIPICAMENTE_FIJAS, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
+import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -563,11 +563,17 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('checked');
   });
 
-  it('incluye hint-categoria-fija oculto por defecto', () => {
+  it('CAT.1a: el hint "normalmente pertenece a fijos" ya no existe (retirado, ADR 014)', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     const html = renderFormGasto();
-    expect(html).toContain('id="hint-categoria-fija"');
-    expect(html).toContain('hidden');
+    expect(html).not.toContain('hint-categoria-fija');
+  });
+
+  it('CAT.1a: el formulario ya no ofrece Vivienda ni Servicios públicos como opción', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html).not.toContain('value="Vivienda"');
+    expect(html).not.toContain('value="Servicios públicos"');
   });
 
   it('TX.9a: categoría es el primer campo del formulario', () => {
@@ -638,21 +644,24 @@ describe('renderFormGasto() - selector de cuenta', () => {
   });
 });
 
-// ── CATEGORIAS_TIPICAMENTE_FIJAS ────────────────────────────────
+// ── CAT.1a: taxonomía Gastos↔Fijos (2026-07-13) ─────────────────
 
-describe('CATEGORIAS_TIPICAMENTE_FIJAS', () => {
-  it('marca Vivienda, Servicios públicos y Educación como fijas', () => {
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Vivienda')).toBe(true);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Servicios públicos')).toBe(true);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Educación')).toBe(true);
+describe('CATEGORIAS_GASTO_USUARIO (taxonomía CAT.1a)', () => {
+  it('excluye Vivienda y Servicios públicos: son exclusivos de Gastos fijos', () => {
+    expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Vivienda');
+    expect(CATEGORIAS_GASTO_USUARIO).not.toContain('Servicios públicos');
   });
 
-  it('no marca categorías variables como fijas', () => {
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Mercado')).toBe(false);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Restaurantes')).toBe(false);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Transporte')).toBe(false);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Entretenimiento')).toBe(false);
-    expect(CATEGORIAS_TIPICAMENTE_FIJAS.has('Otros')).toBe(false);
+  it('conserva Educación, Mercado, Transporte y Mascotas: doble cara real entre Gastos y Fijos', () => {
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Educación');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Mercado');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Transporte');
+    expect(CATEGORIAS_GASTO_USUARIO).toContain('Mascotas');
+  });
+
+  it('CATEGORIAS_GASTO (catálogo base) conserva Vivienda y Servicios públicos para registros existentes', () => {
+    expect(CATEGORIAS_GASTO).toContain('Vivienda');
+    expect(CATEGORIAS_GASTO).toContain('Servicios públicos');
   });
 });
 

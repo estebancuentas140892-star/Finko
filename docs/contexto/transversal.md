@@ -7,27 +7,28 @@
 ## Taxonomía global de categorías (CAT.1, iniciativa transversal)
 
 - **Objetivo**          : una sola clasificación de categorías entre secciones (Gastos↔Fijos y Apartados↔Metas), decidida una vez y consumida por los catálogos de cada sección, los límites (LIM.1 punto 8) y el catálogo de marcas (ADR 029 D3). Criterios: **fijo** = recurrente con frecuencia definida, parte de la rutina; **gasto** = día a día variable; **apartado** = gasto esporádico previsible que se olvida presupuestar; **meta** = objetivo grande de mediano/largo plazo.
-- **Estado actual**     : **decisión VALIDADA con Esteban (2026-07-13); implementación pendiente** (rebanadas CAT.1a a CAT.1c en el BOARD). Registro completo en el [ADR 014](../DECISIONS/014-taxonomia-categorias-transversal.md), sección "Validación 2026-07-13". Resumen: Vivienda y Servicios públicos salen del form de Gastos y el hint `hint-categoria-fija`/`CATEGORIAS_TIPICAMENTE_FIJAS` se retira por completo (revisa la decisión 4 del ADR 014, ratificado por Esteban); Educación queda en ambas secciones sin hint; Mercado, Transporte y Mascotas quedan duales (la sección desambigua). Apartados: sale Vacaciones, "Matrícula o semestre" pasa a "Matrícula escolar" (el semestre universitario es Meta), entran Veterinario, Mantenimiento del hogar, Seguro del hogar y Reparaciones inesperadas, y "Útiles escolares" se amplía a "Útiles y uniformes". Metas: sale Cumpleaños y Vacaciones/Viajes se fusionan en "Viajes". Fijos no esenciales = **Streaming y Suscripciones** (Gimnasio y Telefonía esenciales, decisión explícita). ADR 029 D3 validada tal cual (su Fase 0 queda desbloqueada). **Sin bump de schema**: precedente "Alimentación" v15 (filtrar del form conservando la entrada de ícono para registros viejos).
-- **Verificado contra** : commit de la validación CAT.1 (2026-07-13).
+- **Estado actual**     : decisión VALIDADA con Esteban (2026-07-13, ADR 014 sección "Validación 2026-07-13"). **CAT.1a CERRADA el 2026-07-13** (Gastos↔Fijos implementado): `CATEGORIAS_GASTO_USUARIO` ya no ofrece Vivienda ni Servicios públicos, y el hint `#hint-categoria-fija`/`CATEGORIAS_TIPICAMENTE_FIJAS` se retiró por completo (revisa la decisión 4 del ADR 014, ratificado por Esteban). Educación queda en ambas secciones sin hint; Mercado, Transporte y Mascotas quedan duales (la sección desambigua). **Pendientes CAT.1b/CAT.1c**: Apartados (sale Vacaciones, "Matrícula o semestre" pasa a "Matrícula escolar", entran Veterinario/Mantenimiento del hogar/Seguro del hogar/Reparaciones inesperadas, "Útiles escolares" se amplía a "Útiles y uniformes") y Metas (sale Cumpleaños, Vacaciones/Viajes se fusionan en "Viajes"). Fijos no esenciales (para LIM.1 punto 8) = **Streaming y Suscripciones** (Gimnasio y Telefonía esenciales, decisión explícita). ADR 029 D3 validada tal cual (su Fase 0 queda desbloqueada). **Sin bump de schema**: precedente "Alimentación" v15 (filtrar del form conservando la entrada de ícono para registros viejos); CAT.1a ya lo confirmó en código.
+- **Verificado contra** : commit de CAT.1a (2026-07-13).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
-| Catálogo de Gastos + filtro del formulario | `modules/core/constants.js` | `CATEGORIAS_GASTO`, `CATEGORIAS_GASTO_USUARIO` | ~414 |
-| Hint a retirar (CAT.1a) | `modules/core/constants.js`, `modules/dominio/gastos/view.js`, `modules/dominio/gastos/index.js` | `CATEGORIAS_TIPICAMENTE_FIJAS`, `#hint-categoria-fija`, listener de `change` en `_montarFormGasto` | ~450 / ~319 / ~311 |
+| Catálogo de Gastos + filtro del formulario (CAT.1a cerrada) | `modules/core/constants.js` | `CATEGORIAS_GASTO`, `CATEGORIAS_GASTO_USUARIO` | ~414 |
 | Catálogo de gastos fijos | `modules/core/constants.js` | `CATEGORIAS_AGENDA`, `CATEGORIA_AGENDA_ICONO` | ~596 |
-| Plantillas de Apartados (CAT.1b) | `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` | ~54 |
-| Catálogo de Metas (CAT.1c) | `modules/core/constants.js` | `CATEGORIAS_META`, `CATEGORIA_META_ICONO` | ~696 |
+| Plantillas de Apartados (CAT.1b, pendiente) | `modules/dominio/apartados/logic.js` | `PLANTILLAS_APARTADO` | ~54 |
+| Catálogo de Metas (CAT.1c, pendiente) | `modules/core/constants.js` | `CATEGORIAS_META`, `CATEGORIA_META_ICONO` | ~696 |
 
 **Dependencias y relaciones**: la decisión desbloquea CAT.3 (a qué sección pertenece una categoría personalizada), AP.5 (catálogo de la filosofía redefinida de Apartados), LIM.1 punto 8 (fijos no esenciales) y la Fase 0 del ADR 029 (etiquetado del catálogo de marcas).
 
 **Riesgos**:
 
-- **Registros viejos con categorías retiradas**: gastos con "Vivienda"/"Servicios públicos", metas con "Cumpleaños"/"Vacaciones" y apartados creados desde la plantilla "Matrícula o semestre" siguen existiendo en `localStorage`. La regla es filtrar solo el FORMULARIO y conservar las entradas de ícono (`CATEGORIA_ICONO`, `CATEGORIA_META_ICONO`); nunca borrar la entrada del mapa de íconos al retirar una categoría del catálogo visible.
+- **Registros viejos con categorías retiradas**: gastos con "Vivienda"/"Servicios públicos" (CAT.1a ya resuelto: siguen mostrando su ícono vía `CATEGORIA_ICONO`, que conserva la entrada aunque el formulario ya no la ofrezca), y cuando se implementen CAT.1b/c, metas con "Cumpleaños"/"Vacaciones" y apartados de la plantilla "Matrícula o semestre" también deben conservar su entrada de ícono. La regla es filtrar solo el FORMULARIO, nunca borrar la entrada del mapa de íconos al retirar una categoría del catálogo visible.
 - **El guardarraíl de consistencia de TX.4** (misma etiqueta ⇒ mismo emoji entre catálogos) debe seguir verde tras cada rebanada: al renombrar o retirar, revisar que no queden etiquetas compartidas divergentes.
 
-**Cambios pendientes**: rebanadas CAT.1a (Gastos + hint), CAT.1b (plantillas de Apartados) y CAT.1c (catálogo de Metas), tarjeta CAT.1 del BOARD.
+**Cambios pendientes**: rebanadas CAT.1b (plantillas de Apartados) y CAT.1c (catálogo de Metas), tarjeta CAT.1 del BOARD.
+
+**Cambios realizados (CAT.1a, 2026-07-13)**: `CATEGORIAS_GASTO_USUARIO` excluye Vivienda y Servicios públicos (además de Deudas/Ahorro/Alimentación, ya excluidas); `CATEGORIAS_GASTO` (catálogo base) las conserva para `CATEGORIA_ICONO` y la validación de límites existentes. `CATEGORIAS_TIPICAMENTE_FIJAS` eliminada de `constants.js`; `#hint-categoria-fija` eliminado de `renderFormGasto()`; su listener de `change` eliminado de `_montarFormGasto()`. Sin bump de schema.
 
 ---
 

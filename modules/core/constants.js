@@ -434,24 +434,18 @@ export const CATEGORIAS_GASTO = [
 
 /**
  * Categorías visibles en el formulario de gasto. Excluye las internas
- * ("Deudas" para abonos, "Ahorro" para aportes) y la legacy
- * ("Alimentación", reemplazada por Mercado/Restaurantes en v15).
+ * ("Deudas" para abonos, "Ahorro" para aportes), la legacy ("Alimentación",
+ * reemplazada por Mercado/Restaurantes en v15) y las que la taxonomía
+ * CAT.1 (2026-07-13) reclasificó como exclusivas de Gastos fijos
+ * ("Vivienda", "Servicios públicos": siempre recurrentes con fecha, viven
+ * en Agenda). Se mantienen en `CATEGORIAS_GASTO` (no aquí) para que
+ * `CATEGORIA_ICONO` y la validación de gastos/límites existentes sigan
+ * resolviendo bien los registros ya guardados con esas categorías.
  */
 export const CATEGORIAS_GASTO_USUARIO = CATEGORIAS_GASTO.filter(
-  c => c !== 'Deudas' && c !== 'Ahorro' && c !== 'Alimentación',
+  c => c !== 'Deudas' && c !== 'Ahorro' && c !== 'Alimentación'
+    && c !== 'Vivienda' && c !== 'Servicios públicos',
 );
-
-/**
- * Categorías que suelen corresponder a gastos fijos mensuales (recurrentes).
- * Al elegir una de estas en el formulario de gasto, se muestra un hint no
- * bloqueante que orienta al usuario a registrarlo como gasto fijo en Agenda
- * si es recurrente. No limita la decisión: puede registrarlo como ocasional.
- */
-export const CATEGORIAS_TIPICAMENTE_FIJAS = new Set([
-  'Vivienda',
-  'Servicios públicos',
-  'Educación',
-]);
 
 /**
  * Ícono del sprite por categoría de gasto (ID.3, ADR 025 D3). El valor es el

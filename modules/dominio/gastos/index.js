@@ -25,7 +25,6 @@ import {
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { CATEGORIAS_TIPICAMENTE_FIJAS } from '../../core/constants.js';
 import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
@@ -308,19 +307,6 @@ function _montarFormGasto() {
   });
 
   const catSelect = form.querySelector('[name="categoria"]');
-  const hintFija  = form.querySelector('#hint-categoria-fija');
-  if (catSelect && hintFija) {
-    catSelect.addEventListener('change', () => {
-      const esFija = CATEGORIAS_TIPICAMENTE_FIJAS.has(catSelect.value);
-      hintFija.hidden = !esFija;
-      if (esFija) {
-        hintFija.innerHTML =
-          `Esta categoría suele ser un gasto fijo mensual. ` +
-          `Si es recurrente, puedes <a href="#agenda" data-action="modal-close" ` +
-          `class="link">registrarlo en Calendario</a> para llevarlo mejor.`;
-      }
-    });
-  }
 
   // TX.9b: "+ Otra categoría" revela nombre + selector de ícono en el mismo
   // formulario (sin modal anidado). Se ocultan de nuevo si el usuario elige

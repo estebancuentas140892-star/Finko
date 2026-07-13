@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): CAT.1a Gastos ya no ofrece Vivienda ni Servicios públicos, hint retirado · 2026-07-13
+
+Primera rebanada de implementación de **CAT.1** (`docs/BOARD.md`), tras la validación de taxonomía de la misma sesión. Gastos↔Fijos: Vivienda y Servicios públicos salen del formulario de Gastos (siempre recurrentes con fecha fija, viven solo en Agenda) y el hint no bloqueante "esta categoría suele ser un gasto fijo" se retira por completo, revisando la decisión 4 del ADR 014 ("nudge, no muro"): Finko decide en vez de avisar.
+
+**Qué cambió:** (1) `modules/core/constants.js`: `CATEGORIAS_GASTO_USUARIO` (filtro del formulario) excluye ahora también 'Vivienda' y 'Servicios públicos', sumándose a las ya excluidas (Deudas, Ahorro, Alimentación). `CATEGORIAS_GASTO` (catálogo base) las conserva intactas: `CATEGORIA_ICONO` y la validación de categorías de `presupuesto/logic.js` siguen resolviendo bien los gastos y límites ya guardados con esas categorías (mismo precedente que "Alimentación" v15, sin bump de schema). `CATEGORIAS_TIPICAMENTE_FIJAS` (el Set que impulsaba el hint) se elimina. (2) `modules/dominio/gastos/view.js`: `renderFormGasto()` ya no renderiza `<p id="hint-categoria-fija">`. (3) `modules/dominio/gastos/index.js`: `_montarFormGasto()` ya no adjunta el listener de `change` que mostraba/ocultaba el hint; import muerto retirado.
+
+**Archivos tocados:** `modules/core/constants.js`, `modules/dominio/gastos/view.js`, `modules/dominio/gastos/index.js`, `tests/unit/gastos.test.js` (2 tests viejos que afirmaban lo contrario del hint se reescriben, 4 tests nuevos), `service-worker.js` (v380→v381).
+
+**Verificación:** 2600/2600 unit + 192/192 E2E completos + lint verdes.
+
+**Podría afectar:** solo el formulario de nuevo gasto/edición de gasto. Gastos existentes con categoría "Vivienda" o "Servicios públicos" (incluidos los generados al pagar un fijo, TX.6/TX.7) siguen mostrando su ícono y su nombre sin cambios; solo dejan de ofrecerse como opción nueva. Los límites de gasto (`presupuesto`) que ya referencian esas categorías no se ven afectados (`CATEGORIAS_GASTO` intacto).
+
+---
+
 ### docs(taxonomia): CAT.1 taxonomía global validada con Esteban, ADR 014 aceptado y ADR 029 D3 confirmada · 2026-07-13
 
 Primer paso de **CAT.1** (`docs/BOARD.md`): sesión de validación de taxonomía con Esteban, una sola decisión para los tres documentos que cubrían la misma pregunta (ADR 014 en Propuesta desde junio, ADR 029 sección D3, criterios de la tarjeta CAT.1), como exigía el hallazgo del triaje del 2026-07-08. Solo documentación, sin código.
