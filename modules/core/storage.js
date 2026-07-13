@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 25;
+const SCHEMA_VERSION = 26;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -412,6 +412,16 @@ function _migrate(raw) {
       data.perfil = createInitialState().perfil;
     } else if (typeof data.perfil.situacionLaboral !== 'string') {
       data.perfil.situacionLaboral = '';
+    }
+  }
+
+  // v25 → v26: nueva colección de transferencias entre cuentas propias (MC.17).
+  // Un traslado interno de dinero (no ingreso ni gasto). El usuario existente
+  // arranca sin transferencias; el resto del estado no cambia. Idempotente: si
+  // ya es un array, no se toca.
+  if ((typeof data._version === 'number' ? data._version : 1) < 26) {
+    if (!Array.isArray(data.transferencias)) {
+      data.transferencias = [];
     }
   }
 

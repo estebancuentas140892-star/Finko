@@ -624,11 +624,11 @@ describe('C.3 - Migración schema v1 → v2 (envelope budgeting)', () => {
     // _applyToS itera sobre Object.keys(createInitialState()) y descarta el resto
     loadFixture({
       ...BASE_V1,
-      transferencias: [{ id: 't1', monto: 100_000 }],
+      campoInventado: [{ id: 'x1', monto: 100_000 }],
       campoBasura:    'valor_legacy',
     });
 
-    expect(S).not.toHaveProperty('transferencias');
+    expect(S).not.toHaveProperty('campoInventado');
     expect(S).not.toHaveProperty('campoBasura');
     expect(S._version).toBe(SCHEMA_VERSION);
     // Datos válidos siguen intactos

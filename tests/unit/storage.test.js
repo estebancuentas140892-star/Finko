@@ -522,6 +522,52 @@ describe('Migración v24 → v25 (situación laboral en el perfil, CFG.1)', () =
   });
 });
 
+describe('Migración v25 → v26 (colección de transferencias, MC.17)', () => {
+  it('agrega transferencias = [] cuando falta (v25)', () => {
+    const v25 = { ...createInitialState(), _version: 25 };
+    delete v25.transferencias;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v25));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(Array.isArray(S.transferencias)).toBe(true);
+    expect(S.transferencias).toHaveLength(0);
+  });
+
+  it('preserva transferencias ya existentes (idempotente)', () => {
+    const previa = {
+      id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2',
+      monto: 100_000, fecha: '2026-07-10', fechaCreacion: '2026-07-10T09:00:00Z',
+    };
+    const v26 = { ...createInitialState(), _version: 26, transferencias: [previa] };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v26));
+
+    loadData();
+
+    expect(S.transferencias).toHaveLength(1);
+    expect(S.transferencias[0]).toMatchObject(previa);
+  });
+
+  it('no toca el resto del estado al migrar de v25', () => {
+    const v25 = {
+      ...createInitialState(),
+      _version: 25,
+      cuentas: [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true }],
+      gastos:  [{ id: 'g1', monto: 50_000, categoria: 'Mercado', fecha: '2026-07-01' }],
+    };
+    delete v25.transferencias;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v25));
+
+    loadData();
+
+    expect(S.cuentas).toHaveLength(1);
+    expect(S.cuentas[0].saldo).toBe(300_000);
+    expect(S.gastos).toHaveLength(1);
+    expect(S.transferencias).toEqual([]);
+  });
+});
+
 describe('Migración v10 → v11 (quitar tipo de cuenta Inversión)', () => {
   it('reasigna cuentas con tipo "Inversión" a "Otro"', () => {
     const v10 = {

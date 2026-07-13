@@ -39,6 +39,10 @@ import {
   estadoDistribucion,
   calcularSalarioMinimo,
   montoSalarioMinimoPorPeriodo,
+  validarTransferencia,
+  saldoSuficiente,
+  normalizarTransferencia,
+  calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
 import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador } from '../../modules/dominio/tesoreria/view.js';
@@ -3111,5 +3115,180 @@ describe('registro sin cuentas: el CTA lleva directo a crear la cuenta', () => {
     // _nuevaCuenta abrió el modal en modo creación.
     expect(overlay.dataset.open).toBe('');
     expect(overlay.querySelector('.modal__title').textContent).toBe('Nueva cuenta');
+  });
+});
+
+// ── TRANSFERENCIAS ENTRE CUENTAS (MC.17a) ────────────────────────
+
+describe('validarTransferencia', () => {
+  const cuentas = [
+    cuentaBase({ id: 'c1', saldo: 300_000 }),
+    cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 50_000 }),
+    cuentaBase({ id: 'c3', nombre: 'Vieja', activa: false, saldo: 900_000 }),
+  ];
+  const datosValidos = () => ({
+    cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '100000', fecha: '2026-07-12',
+  });
+
+  it('acepta una transferencia bien formada entre dos cuentas activas distintas', () => {
+    expect(validarTransferencia(datosValidos(), cuentas)).toEqual([]);
+  });
+
+  it('exige cuenta de origen', () => {
+    const errores = validarTransferencia({ ...datosValidos(), cuentaOrigenId: '' }, cuentas);
+    expect(errores).toContain('Debes elegir la cuenta de origen.');
+  });
+
+  it('exige cuenta de destino', () => {
+    const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: '  ' }, cuentas);
+    expect(errores).toContain('Debes elegir la cuenta de destino.');
+  });
+
+  it('rechaza origen y destino iguales', () => {
+    const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: 'c1' }, cuentas);
+    expect(errores).toContain('El origen y el destino deben ser cuentas distintas.');
+  });
+
+  it('rechaza una cuenta inactiva como origen', () => {
+    const errores = validarTransferencia({ ...datosValidos(), cuentaOrigenId: 'c3' }, cuentas);
+    expect(errores).toContain('La cuenta de origen no existe o no está activa.');
+  });
+
+  it('rechaza una cuenta inexistente como destino', () => {
+    const errores = validarTransferencia({ ...datosValidos(), cuentaDestinoId: 'zzz' }, cuentas);
+    expect(errores).toContain('La cuenta de destino no existe o no está activa.');
+  });
+
+  it('rechaza monto no positivo o no numérico', () => {
+    expect(validarTransferencia({ ...datosValidos(), monto: '0' }, cuentas))
+      .toContain('El monto debe ser un número mayor a 0.');
+    expect(validarTransferencia({ ...datosValidos(), monto: '-5' }, cuentas))
+      .toContain('El monto debe ser un número mayor a 0.');
+    expect(validarTransferencia({ ...datosValidos(), monto: 'abc' }, cuentas))
+      .toContain('El monto debe ser un número mayor a 0.');
+  });
+
+  it('exige una fecha con formato ISO', () => {
+    expect(validarTransferencia({ ...datosValidos(), fecha: '' }, cuentas))
+      .toContain('La fecha es obligatoria.');
+    expect(validarTransferencia({ ...datosValidos(), fecha: '12/07/2026' }, cuentas))
+      .toContain('La fecha es obligatoria.');
+  });
+
+  it('el saldo insuficiente NO es un error de validación (lo resuelve la confirmación de la UI)', () => {
+    // c2 tiene 50.000; transferir 100.000 desde c2 supera el saldo, pero valida.
+    const errores = validarTransferencia({
+      cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: '100000', fecha: '2026-07-12',
+    }, cuentas);
+    expect(errores).toEqual([]);
+  });
+
+  it('no duplica el error de "distintas" cuando falta una cuenta', () => {
+    const errores = validarTransferencia({
+      cuentaOrigenId: 'c1', cuentaDestinoId: '', monto: '100000', fecha: '2026-07-12',
+    }, cuentas);
+    expect(errores).not.toContain('El origen y el destino deben ser cuentas distintas.');
+  });
+});
+
+describe('saldoSuficiente', () => {
+  const cuentas = [cuentaBase({ id: 'c1', saldo: 300_000 })];
+
+  it('true cuando el saldo cubre el monto', () => {
+    expect(saldoSuficiente(cuentas, 'c1', 300_000)).toBe(true);
+    expect(saldoSuficiente(cuentas, 'c1', 100_000)).toBe(true);
+  });
+
+  it('false cuando el monto supera el saldo', () => {
+    expect(saldoSuficiente(cuentas, 'c1', 300_001)).toBe(false);
+  });
+
+  it('false cuando la cuenta no existe', () => {
+    expect(saldoSuficiente(cuentas, 'zzz', 1)).toBe(false);
+  });
+});
+
+describe('normalizarTransferencia', () => {
+  it('convierte los datos crudos al shape del schema', () => {
+    const t = normalizarTransferencia({
+      cuentaOrigenId: ' c1 ', cuentaDestinoId: ' c2 ', monto: '150000', fecha: '2026-07-12', nota: ' arriendo ',
+    });
+    expect(t).toEqual({
+      cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 150_000, fecha: '2026-07-12', nota: 'arriendo',
+    });
+  });
+
+  it('omite la nota cuando viene vacía tras recortar', () => {
+    const t = normalizarTransferencia({
+      cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '150000', fecha: '2026-07-12', nota: '   ',
+    });
+    expect(t).not.toHaveProperty('nota');
+  });
+
+  it('omite la nota cuando no viene', () => {
+    const t = normalizarTransferencia({
+      cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '150000', fecha: '2026-07-12',
+    });
+    expect(t).not.toHaveProperty('nota');
+  });
+});
+
+describe('calcularTransferencia', () => {
+  const cuentas = () => [
+    cuentaBase({ id: 'c1', saldo: 300_000 }),
+    cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 50_000 }),
+  ];
+
+  it('debita el origen y acredita el destino por el monto', () => {
+    const plan = calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 100_000 }, cuentas());
+    expect(plan.actualizaciones).toEqual([
+      { cuentaId: 'c1', saldo: 200_000 },
+      { cuentaId: 'c2', saldo: 150_000 },
+    ]);
+  });
+
+  it('invariante: la suma de los deltas es 0 (patrimonio neto sin cambio)', () => {
+    const plan = calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 137_500 }, cuentas());
+    const suma = plan.deltas.reduce((s, d) => s + d.delta, 0);
+    expect(suma).toBe(0);
+    expect(plan.deltas).toEqual([
+      { cuentaId: 'c1', delta: -137_500 },
+      { cuentaId: 'c2', delta:  137_500 },
+    ]);
+  });
+
+  it('permite dejar el origen en negativo (sobregiro): el guard es solo estructural', () => {
+    const plan = calcularTransferencia({ cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: 80_000 }, cuentas());
+    expect(plan.actualizaciones).toEqual([
+      { cuentaId: 'c2', saldo: -30_000 },
+      { cuentaId: 'c1', saldo: 380_000 },
+    ]);
+  });
+
+  it('devuelve null si el origen no existe o está inactivo', () => {
+    expect(calcularTransferencia({ cuentaOrigenId: 'zzz', cuentaDestinoId: 'c2', monto: 100_000 }, cuentas())).toBeNull();
+    const conInactiva = [...cuentas(), cuentaBase({ id: 'c3', activa: false, saldo: 900_000 })];
+    expect(calcularTransferencia({ cuentaOrigenId: 'c3', cuentaDestinoId: 'c2', monto: 100_000 }, conInactiva)).toBeNull();
+  });
+
+  it('devuelve null si origen y destino son la misma cuenta', () => {
+    expect(calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c1', monto: 100_000 }, cuentas())).toBeNull();
+  });
+
+  it('devuelve null si el monto no es positivo', () => {
+    expect(calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 0 }, cuentas())).toBeNull();
+    expect(calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: -1 }, cuentas())).toBeNull();
+  });
+
+  it('trata un saldo ausente como 0', () => {
+    const sinSaldo = [
+      { id: 'c1', nombre: 'A', banco: 'Nequi', tipo: 'Ahorros', activa: true },
+      cuentaBase({ id: 'c2', saldo: 50_000 }),
+    ];
+    const plan = calcularTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 20_000 }, sinSaldo);
+    expect(plan.actualizaciones).toEqual([
+      { cuentaId: 'c1', saldo: -20_000 },
+      { cuentaId: 'c2', saldo:  70_000 },
+    ]);
   });
 });

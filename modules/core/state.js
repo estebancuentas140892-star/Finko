@@ -86,6 +86,25 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  */
 
 /**
+ * Transferencia entre dos cuentas propias del usuario (MC.17). Un traslado
+ * interno de dinero: NO es ingreso ni gasto, así que el patrimonio neto
+ * (Σ saldos − Σ deudas) no cambia. Vive en su propia colección porque no
+ * encaja en `gastos` ni en `ingresosPuntuales`; el ledger de Movimientos la
+ * deriva como un tipo propio con dirección neutra (MC.17c). A diferencia de
+ * `Cuenta.datosTransferencia` (solo un punto de consulta), aquí Finko sí
+ * ejecuta el traslado: mueve ambos saldos.
+ *
+ * @typedef {Object} Transferencia
+ * @property {string} id
+ * @property {string} cuentaOrigenId    FK a Cuenta.id: de dónde sale el dinero.
+ * @property {string} cuentaDestinoId   FK a Cuenta.id: a dónde llega. Distinta del origen.
+ * @property {number} monto             COP trasladados (lo que llega al destino).
+ * @property {string} fecha             ISO 8601 (YYYY-MM-DD): día del traslado.
+ * @property {string} [nota]            Nota opcional del usuario.
+ * @property {string} fechaCreacion     ISO 8601 timestamp.
+ */
+
+/**
  * @typedef {Object} Gasto
  * @property {string} id
  * @property {string} [descripcion]   Legacy: el formulario ya no la pide (TX.9a,
@@ -280,6 +299,7 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *   cuentas: Cuenta[],
  *   ingresos: Ingreso[],
  *   ingresosPuntuales: IngresoPuntual[],
+ *   transferencias: Transferencia[],
  *   gastos: Gasto[],
  *   compromisos: Compromiso[],
  *   metas: Meta[],
@@ -333,6 +353,9 @@ export function createInitialState() {
 
     /** Ingresos puntuales: dinero que entra una sola vez, con fecha y cuenta destino (NAV.A1, v22). */
     ingresosPuntuales: [],
+
+    /** Transferencias entre cuentas propias: traslado interno, no ingreso ni gasto (MC.17, v26). */
+    transferencias: [],
 
     /** Gastos variables. */
     gastos: [],

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.17a fundación de datos + lógica pura de transferencias · 2026-07-12
+
+Cierra **MC.17a** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), primera rebanada de MC.17 (transferencias entre cuentas propias). Solo fundación de datos + lógica pura, sin UI (verificación solo-unit, precedente de la capa `logic/`).
+
+**Qué cambió:** colección nueva `S.transferencias` con el typedef `Transferencia` (`{ id, cuentaOrigenId, cuentaDestinoId, monto, fecha, nota?, fechaCreacion }`) en `state.js`; bump `SCHEMA_VERSION` v25→v26 con migración idempotente en `storage.js` (`transferencias: []` para usuarios existentes, no toca el resto del estado) + el campo en `createInitialState()` (segunda red vía `_applyToS`). Módulo puro nuevo `logic/transferencias.js` con: `validarTransferencia(datos, cuentas)` (origen/destino existen y activos, distintos, monto > 0, fecha ISO; el saldo insuficiente NO es error de validación, es decisión de UI); `saldoSuficiente(cuentas, origenId, monto)` (para que MC.17b decida si confirma sobregiro); `normalizarTransferencia(datos)` (crudo → schema, omite nota vacía); `calcularTransferencia(transferencia, cuentas)` (apply atómico PURO: devuelve las 2 actualizaciones de saldo + los deltas, o `null` como guard estructural si corrompería saldos). **Invariante clave verificado en tests:** la suma de los deltas es 0 (traslado interno, el patrimonio neto no cambia). El GMF sigue diferido a MC.17d (la función es monto-based; MC.17d le suma un parámetro opcional sin romper la firma).
+
+**Archivos tocados:** `modules/core/state.js` (typedef + colección), `modules/core/storage.js` (SCHEMA_VERSION 26 + migración v25→v26), `modules/dominio/tesoreria/logic/transferencias.js` (nuevo), `modules/dominio/tesoreria/logic.js` (barrel: 4 exports nuevos), `service-worker.js` (v361→v362 + `logic/transferencias.js` en `CORE_ASSETS`), `tests/unit/storage.test.js` (3 tests de migración), `tests/unit/tesoreria.test.js` (23 tests de las 4 funciones puras), `tests/integration/flujos.test.js` (1 test ajustado: usaba `transferencias` como ejemplo de campo desconocido, ahora es legítimo → renombrado a `campoInventado`), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2436/2436 unit (26 nuevos: migración idempotente + preservación de datos + invariante de patrimonio neto + guards estructurales del apply) + 174/174 E2E (boot real con schema v26, `logic/transferencias.js` cargado sin error) + lint verdes.
+
+**Podría afectar:** el bump de schema corre en todo cliente al abrir la app (migración idempotente y aditiva, no toca datos existentes). Ningún código escribe aún en `S.transferencias` (eso es MC.17b): la colección arranca `[]` y el apply es una función pura no invocada todavía por la app.
+
+---
+
 ### feat(tesoreria): MC.18e distribuir como tarjeta de entrada que lanza el asistente · 2026-07-12
 
 Cierra **MC.18e** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), quinta y última rebanada del [ADR 035](DECISIONS/035-mis-cuentas-v2.md) (decisión D6). Cierra la iniciativa MC.18 (rediseño visual de "Mis cuentas") completa.

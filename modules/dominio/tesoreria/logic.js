@@ -6,10 +6,11 @@
  * para view.js, acciones/, index.js y los tests.
  *
  * Sub-modulos:
- *   - logic/cuentas.js      -> cuentas, cuota de manejo, GMF (4x1000)
- *   - logic/ingresos.js     -> ingresos recurrentes y puntuales, salario minimo,
- *                              fechas de cobro, prima de servicios
- *   - logic/distribucion.js -> asistente "Distribuir mi ingreso" completo
+ *   - logic/cuentas.js         -> cuentas, cuota de manejo, GMF (4x1000)
+ *   - logic/ingresos.js        -> ingresos recurrentes y puntuales, salario minimo,
+ *                                 fechas de cobro, prima de servicios
+ *   - logic/distribucion.js    -> asistente "Distribuir mi ingreso" completo
+ *   - logic/transferencias.js  -> transferencias entre cuentas propias (MC.17)
  *
  * Regla: los sub-modulos siguen siendo puros (sin DOM, sin S directo),
  * testeables en Node/Vitest sin mocks de navegador.
@@ -64,3 +65,10 @@ export {
   construirPlanInversiones,
   construirFilasTransferenciaCuentas,
 } from './logic/distribucion.js';
+
+export {
+  validarTransferencia,
+  saldoSuficiente,
+  normalizarTransferencia,
+  calcularTransferencia,
+} from './logic/transferencias.js';

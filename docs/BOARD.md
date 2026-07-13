@@ -98,18 +98,11 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 > - **Forward-compat MC.16:** cuando exista la tarjeta de crédito, "pagar la tarjeta" es un abono a deuda, NO una transferencia; las cuentas TC no serán endpoints de transferencia. MC.17 v1 solo opera cuentas de dinero real (ahorros/corriente/billetera/efectivo). No es dependencia, solo nota.
 > - **Ficha:** bloque "Transferencias (diseño)" en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 
-#### MC.17a - Fundación de datos + lógica pura (schema + validar/normalizar + apply atómico)
-- Prioridad  : alta
-- Estado     : lista para implementar (diseño cerrado arriba)
-- Objetivo   : colección `transferencias` + typedef `Transferencia` en `state.js`; bump v25→v26 + migración idempotente en `storage.js`; `logic/transferencias.js` nuevo con `validarTransferencia()` (origen ≠ destino, monto > 0, ambas cuentas activas/existentes, fecha válida) y `normalizarTransferencia()`; helper de apply atómico (débito + crédito), reutilizable por la acción de MC.17b. Sin UI. Verificable por tests unitarios (la capa `logic/` tiene precedente de verificación solo-unit): invariante de patrimonio neto sin cambio, no negativo salvo confirmación, idempotencia de la migración.
-- Secciones  : Mis cuentas (`tesoreria`), core (schema)
-- Archivos   : `modules/core/state.js`, `modules/core/storage.js`, `modules/dominio/tesoreria/logic/transferencias.js` (nuevo), `tests/unit/tesoreria.test.js` (o `storage.test.js` para la migración)
-- Depende de : nada
-- Modelo     : Opus 4.8 - Extra (bump de schema con migración + lógica de apply atómico)
+> **MC.17a cerrada el 2026-07-12** (fundación de datos + lógica pura, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): colección `transferencias` + typedef, bump v25→v26 + migración, `logic/transferencias.js` (`validarTransferencia`, `saldoSuficiente`, `normalizarTransferencia`, `calcularTransferencia` apply atómico puro con invariante de patrimonio neto). 26 tests unitarios nuevos, SW v362. Ningún código escribe aún en la colección (eso es MC.17b).
 
 #### MC.17b - Formulario + acción de transferir (patrón 0/1/2/varias)
 - Prioridad  : alta
-- Estado     : pendiente (depende de MC.17a)
+- Estado     : lista para implementar (MC.17a cerrada)
 - Objetivo   : modal "Transferir dinero" con la automatización por conteo de cuentas (2 → dirección + monto con botón invertir; 3+ → selectores origen/destino); la acción aplica el traslado atómico de MC.17a, actualiza ambos saldos, `updSaldo()`, cierra y anuncia. Verificable en la app: con 2 cuentas, transferir mueve ambos saldos y el patrimonio neto no cambia.
 - Secciones  : Mis cuentas (`tesoreria`)
 - Archivos   : `tesoreria/views/` (form nuevo), `tesoreria/acciones/` (handler nuevo), `index.html` (modal `#modal-transferencia`), `styles/components/domain.css`
