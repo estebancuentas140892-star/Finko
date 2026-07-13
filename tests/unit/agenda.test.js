@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderAgenda, mostrarDia, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes } from '../../modules/dominio/agenda/logic.js';
+import { renderFormGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -1226,5 +1226,187 @@ describe('CAL.3 - seleccionar un día sin registros muestra estado vacío', () =
     mostrarDia(10);
     renderAgenda();
     expect(document.querySelector('.cal-detail')).toBeNull();
+  });
+});
+
+// ── CAL.4a (ADR 037 D1) - totalesDelMes ──────────────────────────
+
+describe('totalesDelMes - agregador del hero del mes', () => {
+  const PREFIJO = '2026-06';
+
+  it('devuelve {0,0} con eventos inválidos o vacíos', () => {
+    expect(totalesDelMes(null, [], PREFIJO)).toEqual({ total: 0, pagado: 0 });
+    expect(totalesDelMes(undefined, [], PREFIJO)).toEqual({ total: 0, pagado: 0 });
+    expect(totalesDelMes({}, [], PREFIJO)).toEqual({ total: 0, pagado: 0 });
+  });
+
+  it('suma monto de fijos y cuotaMensual de deudas; excluye ingresos', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', cuotaMensual: 450_000, monto: undefined, diaPago: 10 }),
+    ], 2026, 5);
+    eventos[15] = [...(eventos[15] ?? []), { id: 'i1', tipo: 'ingreso', monto: 2_000_000, dia: 15 }];
+    const r = totalesDelMes(eventos, [], PREFIJO);
+    expect(r.total).toBe(750_000);
+    expect(r.pagado).toBe(0);
+  });
+
+  it('un quincenal cuenta dos veces en el total del mes', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 100_000, frecuencia: 'Quincenal', diaPago: 5 }),
+    ], 2026, 5); // junio: cae el 5 y el 20
+    const r = totalesDelMes(eventos, [], PREFIJO);
+    expect(r.total).toBe(200_000);
+  });
+
+  it('una deuda sin cuota fija (fiado, D.13) no suma al total', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'd1', tipo: 'deuda-personal', cuotaMensual: null, monto: undefined, diaPago: 10 }),
+    ], 2026, 5);
+    expect(totalesDelMes(eventos, [], PREFIJO).total).toBe(0);
+  });
+
+  it('un gasto vinculado en el mes suma al pagado (criterio calcularAbonosDelMes)', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+    ], 2026, 5);
+    const gastos = [{ compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }];
+    expect(totalesDelMes(eventos, gastos, PREFIJO)).toEqual({ total: 300_000, pagado: 300_000 });
+  });
+
+  it('un abono parcial de deuda cuenta lo abonado, no la cuota completa', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', cuotaMensual: 450_000, monto: undefined, diaPago: 10 }),
+    ], 2026, 5);
+    const gastos = [{ compromisoId: 'd1', fecha: '2026-06-10', monto: 100_000 }];
+    expect(totalesDelMes(eventos, gastos, PREFIJO).pagado).toBe(100_000);
+  });
+
+  it('pagar de más no infla el progreso: el pagado se topa en lo adeudado', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', cuotaMensual: 300_000, monto: undefined, diaPago: 10 }),
+    ], 2026, 5);
+    const gastos = [{ compromisoId: 'd1', fecha: '2026-06-10', monto: 500_000 }];
+    expect(totalesDelMes(eventos, gastos, PREFIJO).pagado).toBe(300_000);
+  });
+
+  it('ignora gastos de otro mes, sin compromisoId o de compromisos fuera del mes', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+    ], 2026, 5);
+    const gastos = [
+      { compromisoId: 'f1', fecha: '2026-05-05', monto: 300_000 }, // mes anterior
+      { fecha: '2026-06-05', monto: 300_000 },                     // sin vínculo
+      { compromisoId: 'zzz', fecha: '2026-06-05', monto: 300_000 }, // otro compromiso
+    ];
+    expect(totalesDelMes(eventos, gastos, PREFIJO).pagado).toBe(0);
+  });
+
+  it('con gastos inválidos o prefijo inválido devuelve pagado 0 sin romper', () => {
+    const eventos = eventosDelMes([
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+    ], 2026, 5);
+    expect(totalesDelMes(eventos, null, PREFIJO).pagado).toBe(0);
+    expect(totalesDelMes(eventos, [{ compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }], '').pagado).toBe(0);
+  });
+});
+
+// ── CAL.4a (ADR 037 D1/D7) - hero del mes en renderAgenda() ─────
+
+describe('renderAgenda() - hero del mes (CAL.4a)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.config.ocultarSaldo = false;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+    vi.useRealTimers();
+  });
+
+  it('con compromisos muestra el total del mes y el progreso pagado/falta', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 }),
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', cuotaMensual: 200_000, monto: undefined, diaPago: 10 }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }];
+    renderAgenda();
+
+    const hero = document.querySelector('.hero-agenda');
+    expect(hero).not.toBeNull();
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Compromisos de junio');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toContain('500.000');
+    expect(hero.querySelector('.hero-agenda__pagado').textContent).toContain('300.000');
+    expect(hero.querySelector('.hero-agenda__falta').textContent).toContain('200.000');
+    expect(hero.querySelector('.hero-agenda__barra-fill').style.width).toBe('60%');
+  });
+
+  it('sin pagos programados muestra la variante de guía, sin cifra ni ojo', () => {
+    renderAgenda();
+    const hero = document.querySelector('.hero-agenda');
+    expect(hero).not.toBeNull();
+    expect(hero.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
+    expect(hero.querySelector('.hero-agenda__label').textContent).toBe('Junio 2026');
+    expect(hero.querySelector('.hero-agenda__valor')).toBeNull();
+    expect(hero.querySelector('.hero-agenda__ojo')).toBeNull();
+    expect(hero.querySelector('.hero-agenda__barra')).toBeNull();
+  });
+
+  it('un mes solo con ingresos también es "sin pagos programados" (sin ojo)', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
+    expect(document.querySelector('.hero-agenda__ojo')).toBeNull();
+  });
+
+  it('con ocultarSaldo enmascara total, pagado y falta (IN.2/ADR 037 D7)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    S.config.ocultarSaldo = true;
+    renderAgenda();
+    const hero = document.querySelector('.hero-agenda');
+    expect(hero.querySelector('.hero-agenda__valor').textContent).toBe('$••••••');
+    expect(hero.querySelector('.hero-agenda__pagado').textContent).toBe('Pagado ••••');
+    expect(hero.querySelector('.hero-agenda__falta').textContent).toBe('Falta ••••');
+    expect(hero.textContent).not.toContain('300.000');
+    const ojo = hero.querySelector('.hero-agenda__ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('true');
+    expect(ojo.innerHTML).toContain('#i-eye-off');
+  });
+
+  it('el ojo visible expone la acción agenda-saldo-visibilidad con aria-pressed=false', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    renderAgenda();
+    const ojo = document.querySelector('.hero-agenda__ojo');
+    expect(ojo.getAttribute('data-action')).toBe('agenda-saldo-visibilidad');
+    expect(ojo.getAttribute('aria-pressed')).toBe('false');
+    expect(ojo.innerHTML).toContain('#i-eye');
+  });
+
+  it('la barra queda al 100% cuando todo el mes está pagado y el caption no queda en negativo', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-05', monto: 300_000 }];
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__barra-fill').style.width).toBe('100%');
+    expect(document.querySelector('.hero-agenda__falta').textContent).toContain('$');
+  });
+
+  it('el hero sigue al mes visible: navegar de mes recalcula el label y el total', () => {
+    S.compromisos = [compromisoBase({
+      id: 'f1', tipo: 'fijo', monto: 300_000, diaPago: 5,
+      frecuencia: 'Única vez', fechaCreacion: '2026-06-01',
+    })];
+    renderAgenda();
+    expect(document.querySelector('.hero-agenda__label').textContent).toBe('Compromisos de junio');
+    navegarMes(+1);
+    renderAgenda();
+    // Julio no tiene ese pago único: variante sin pagos programados.
+    expect(document.querySelector('.hero-agenda__titulo').textContent).toBe('Sin pagos programados');
+    expect(document.querySelector('.hero-agenda__label').textContent).toBe('Julio 2026');
   });
 });

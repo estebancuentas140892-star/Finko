@@ -241,6 +241,67 @@ export function totalDia(evs) {
 }
 
 /**
+ * Totales financieros del mes visible para el hero (CAL.4a, ADR 037 D1).
+ *
+ * - `total`: suma de cada aparición de compromiso en el mes (`monto` para
+ *   fijos, `cuotaMensual` para deudas, mismo criterio que `totalDia`): un
+ *   quincenal cuenta dos veces. Los días de ingreso no son dinero a pagar
+ *   (ADR 021) y las apariciones sin monto positivo (ej. fiado sin cuota
+ *   fija, D.13) no suman.
+ * - `pagado`: cruza `gastos` por `compromisoId` + prefijo de mes (mismo
+ *   criterio que `calcularAbonosDelMes` de compromisos/logic.js; duplicado
+ *   intencional y no una importación cruzada, ADN #10, misma nota que
+ *   `totalDia`), con tope en lo adeudado por compromiso: pagar de más no
+ *   infla el progreso del mes.
+ *
+ * @param {ReturnType<typeof eventosDelMes>} eventos  Mapa día → eventos del
+ *   mes visible, ya mergeado (compromisos + ingresos) por la vista.
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @returns {{ total:number, pagado:number }} Montos en COP.
+ */
+export function totalesDelMes(eventos, gastos, prefijoMes) {
+  const out = { total: 0, pagado: 0 };
+  if (!eventos || typeof eventos !== 'object') return out;
+
+  /** @type {Record<string, number>} Adeudado del mes por compromiso. */
+  const adeudado = {};
+  for (const evs of Object.values(eventos)) {
+    if (!Array.isArray(evs)) continue;
+    for (const c of evs) {
+      if (!c || typeof c !== 'object') continue;
+      if (c.tipo === 'ingreso') continue;
+      const raw = c.tipo === 'fijo' ? c.monto : c.cuotaMensual;
+      const n = Number(raw);
+      if (!Number.isFinite(n) || n <= 0) continue;
+      out.total += n;
+      if (c.id) adeudado[c.id] = (adeudado[c.id] ?? 0) + n;
+    }
+  }
+
+  if (out.total === 0 || !Array.isArray(gastos) ||
+      typeof prefijoMes !== 'string' || prefijoMes === '') {
+    return out;
+  }
+
+  /** @type {Record<string, number>} Abonado en el mes por compromiso. */
+  const abonos = {};
+  for (const g of gastos) {
+    if (!g || typeof g !== 'object') continue;
+    const id = g.compromisoId;
+    if (!id || !(id in adeudado)) continue;
+    if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijoMes)) continue;
+    const n = Number(g.monto);
+    if (Number.isFinite(n) && n > 0) abonos[id] = (abonos[id] ?? 0) + n;
+  }
+
+  for (const [id, deuda] of Object.entries(adeudado)) {
+    out.pagado += Math.min(abonos[id] ?? 0, deuda);
+  }
+  return out;
+}
+
+/**
  * Busca el primer día con compromisos dentro de los próximos `diasMax` días
  * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
  * no tiene eventos.

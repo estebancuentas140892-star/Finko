@@ -589,6 +589,115 @@
    Estado y lógica en modules/dominio/agenda/.
    ────────────────────────────────────────────────────────────── */
 
+/* ════════════════════════════════════════════════════════════
+   HERO-AGENDA (CAL.4a, ADR 037 D1/D7) - compromisos del mes.
+   Cuarto consumidor del piloto ADR 033 (degradado de identidad +
+   sombra en reposo), con el índigo de sección de agenda y la
+   misma anatomía que los heroes de Mis cuentas y Deudas: label +
+   valor + progreso pagado/falta.
+
+   Contraste WCAG medido contra la parada fuerte del degradado
+   (agenda al 16% compuesto sobre surface, cálculo en el cierre
+   de CAL.4a):
+     oscuro #282d44 → primario 11.39:1, secundario 5.79:1,
+                      texto acento 7.55:1 (AA)
+     claro  #eaedfd → primario 14.44:1, secundario 7.31:1,
+                      texto acento 5.69:1
+   El texto muted NO se usa dentro del hero (lección medida de
+   IN.8b). Reglas del ojo compartidas en domain.css.
+   ════════════════════════════════════════════════════════════ */
+
+.hero-agenda {
+  position: relative;
+  margin-block-end: var(--fk-space-5);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-agenda) 30%, transparent);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-agenda) 16%, transparent), transparent 55%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
+  padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
+}
+
+.hero-agenda__label {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* 38px objetivo (mockup: 36px/800); mismo clamp defensivo y tabular-nums
+   de los heroes de Mis cuentas y Deudas (ancho estable entre monto real
+   y máscara, disciplina IN.2/ADR 034 D3). */
+.hero-agenda__valor {
+  margin: 0;
+  font-family: var(--fk-font-mono);
+  font-size: clamp(2rem, 1.45rem + 4.2vw, 2.375rem);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Barra de progreso pagado/falta (D1). Decorativa (aria-hidden): los
+   montos en texto portan la información (SC 1.4.11). Relleno en el
+   acento verde: pagar es avance, no identidad de sección (ADR 037);
+   el ancho lo fija la vista como propiedad JS (mismo criterio que
+   .hero-tesoreria__compo-seg). */
+.hero-agenda__barra {
+  height: 8px;
+  margin-top: var(--fk-space-4);
+  border-radius: var(--fk-radius-sm);
+  background: color-mix(in srgb, var(--fk-text-primary) 10%, transparent);
+  overflow: hidden;
+}
+
+.hero-agenda__barra-fill {
+  height: 100%;
+  border-radius: var(--fk-radius-sm);
+  background: linear-gradient(90deg, var(--fk-accent), var(--fk-accent-hover));
+}
+
+.hero-agenda__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+
+.hero-agenda__pagado {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-agenda__falta {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Variante "sin pagos programados" (mes sin compromisos con monto):
+   guía sin cifra, sin barra y sin ojo (nada que enmascarar). */
+.hero-agenda__titulo {
+  margin: 0;
+  font-size: var(--fk-text-xl);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  line-height: 1.2;
+}
+
+.hero-agenda__guia {
+  margin: var(--fk-space-3) 0 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
 .cal-card {
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);

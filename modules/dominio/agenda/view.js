@@ -17,8 +17,9 @@ import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -151,7 +152,12 @@ export function renderAgenda() {
   // AG.6: la leyenda va entre el calendario y el detalle del día (no al
   // final), y es sticky vía CSS: con un día cargado de registros sigue
   // visible mientras se recorre la lista.
+  // CAL.4a (ADR 037 D1): el hero del mes encabeza la sección con el total a
+  // pagar y el progreso pagado/falta del mes visible.
+  const prefijoMes = `${_viewYear}-${String(_viewMonth + 1).padStart(2, '0')}`;
+
   el.innerHTML = `
+    ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventosComp)}
       ${_renderDiasSemana()}
@@ -162,6 +168,67 @@ export function renderAgenda() {
 }
 
 // ── PARTES ───────────────────────────────────────────────────────
+
+/**
+ * Hero del mes (CAL.4a, ADR 037 D1/D7): total a pagar del mes visible +
+ * barra de progreso pagado/falta + ojo de privacidad. Cuarto consumidor del
+ * estreno parcial del ADR 033 (degradado de identidad + sombra en reposo),
+ * espejo de renderHeroCompromisos() (D.16a).
+ *
+ * - Enmascarado con `SALDO_MASCARA`/`SALDO_MASCARA_CUENTA` cuando
+ *   `S.config.ocultarSaldo` es true (mismo flag que el ojo de Inicio, Mis
+ *   cuentas y Deudas: un solo control, IN.2).
+ * - Mes sin pagos programados (puede tener ingresos): variante de guía sin
+ *   cifra, sin barra y sin ojo (nada que enmascarar, disciplina ADR 034/035).
+ * - La barra es decorativa (`aria-hidden`); los montos en texto portan la
+ *   información (SC 1.4.11).
+ *
+ * @param {Record<number, any[]>} eventos Mapa día → eventos ya mergeado.
+ * @param {number} year
+ * @param {number} month 0-indexed.
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @returns {string}
+ */
+function _renderHeroMes(eventos, year, month, prefijoMes) {
+  const gastos = Array.isArray(S.gastos) ? S.gastos : [];
+  const { total, pagado } = totalesDelMes(eventos, gastos, prefijoMes);
+  const oculto = S.config?.ocultarSaldo === true;
+
+  if (total <= 0) {
+    return `
+      <div class="hero-agenda">
+        <p class="hero-agenda__label">${MONTHS[month]} ${year}</p>
+        <p class="hero-agenda__titulo">Sin pagos programados</p>
+        <p class="hero-agenda__guia">Cuando agregues un gasto fijo o una deuda con fecha, aparecerán aquí y en el mes.</p>
+      </div>`;
+  }
+
+  const falta = Math.max(0, total - pagado);
+  const pct   = Math.max(0, Math.min(100, Math.round((pagado / total) * 100)));
+
+  const totalTxt  = oculto ? SALDO_MASCARA : f(total);
+  const pagadoTxt = oculto ? SALDO_MASCARA_CUENTA : f(pagado);
+  const faltaTxt  = oculto ? SALDO_MASCARA_CUENTA : f(falta);
+
+  return `
+    <div class="hero-agenda">
+      <button class="hero-agenda__ojo" type="button" id="agenda-saldo-ojo"
+              data-action="agenda-saldo-visibilidad"
+              aria-pressed="${oculto}"
+              aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+        <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+      </button>
+      <p class="hero-agenda__label">Compromisos de ${MONTHS[month].toLowerCase()}</p>
+      <p class="hero-agenda__valor">${totalTxt}</p>
+      <div class="hero-agenda__barra" aria-hidden="true">
+        <div class="hero-agenda__barra-fill" style="width:${pct}%"></div>
+      </div>
+      <div class="hero-agenda__meta">
+        <span class="hero-agenda__pagado">Pagado ${pagadoTxt}</span>
+        <span class="hero-agenda__falta">Falta ${faltaTxt}</span>
+      </div>
+    </div>`;
+}
 
 function _renderCabecera(year, month, eventos) {
   const total    = totalEventosDelMes(eventos);

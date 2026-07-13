@@ -22,6 +22,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
+import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
@@ -342,12 +343,28 @@ export function initAgenda() {
   registrarAccion('agenda-marcar-pagado-fijo', _marcarPagadoGastoFijo);
   registrarAccion('agenda-distribuir-ingreso', _distribuirDesdeAgenda);
 
+  // CAL.4a (ADR 037 D7): el ojo del hero del mes comparte el flag
+  // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas (MC.18a) y Deudas
+  // (D.16a): un solo control de privacidad en toda la app. El flip con
+  // `!== true` es defensivo, igual que en 'saldo-visibilidad' (ui/actions.js).
+  // updSaldo() mantiene el hero de Inicio en sincronía.
+  registrarAccion('agenda-saldo-visibilidad', () => {
+    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    save();
+    updSaldo();
+    renderSmart(renderAgenda, 'agenda');
+  });
+
   _inyectarFormGastoFijo();
 
   // ADR 021: el calendario también muestra los días de ingreso, así que un
   // cambio en S.ingresos (alta, edición de diaPago, baja) debe re-renderizar.
+  // CAL.4a: el hero (pagado del mes) y los badges de estado de pago leen
+  // S.gastos, así que un abono o pago registrado/eliminado desde otra
+  // sección también refresca (renderSmart solo pinta si la sección está
+  // visible; con el calendario cerrado no cuesta nada).
   EventBus.on('state:change', ({ section }) => {
-    if (section === 'compromisos' || section === 'ingresos') {
+    if (section === 'compromisos' || section === 'ingresos' || section === 'gastos') {
       renderBannerProposito('agenda', S.compromisos.length > 0);
       renderSmart(renderAgenda, 'agenda');
     }

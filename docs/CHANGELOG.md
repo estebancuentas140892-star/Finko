@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): CAL.4a hero del mes con total + progreso pagado + ojo de privacidad · 2026-07-13
+
+Primera rebanada de la iniciativa **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado en esta misma sesión tras el triaje del handoff de Claude Design "Iteración de specimen" enviado por Esteban). El mes ahora responde de un vistazo "¿cuánto me sale y cuánto llevo pagado?": hero al tope de `#panel-agenda`, cuarto consumidor del estreno parcial del ADR 033 (degradado de identidad índigo + sombra en reposo), con la misma anatomía que los heroes de Mis cuentas (MC.18a) y Deudas (D.16a).
+
+**Qué cambió:** (1) `modules/dominio/agenda/logic.js`: `totalesDelMes(eventos, gastos, prefijoMes)` nuevo (puro): `total` suma cada aparición de compromiso del mes (`monto` fijos / `cuotaMensual` deudas, criterio de `totalDia`: un quincenal cuenta dos veces, los ingresos no son dinero a pagar, montos no positivos no suman); `pagado` cruza gastos por `compromisoId` + prefijo del mes (criterio de `calcularAbonosDelMes`, duplicado intencional ADN #10) con tope en lo adeudado por compromiso (pagar de más no infla el progreso). (2) `modules/dominio/agenda/view.js`: `_renderHeroMes()` con variante poblada (label "Compromisos de <mes>", total 38px tabular, barra de progreso decorativa `aria-hidden` con relleno acento verde: pagar es avance, no identidad de sección; caption "Pagado $X / Falta $Y") y variante "Sin pagos programados" (mes sin compromisos con monto, aunque tenga ingresos: guía sin cifra, sin barra y sin ojo, disciplina ADR 034/035). (3) `modules/dominio/agenda/index.js`: acción `agenda-saldo-visibilidad` (flip de `S.config.ocultarSaldo` + `save()` + `updSaldo()`, mismo flag de toda la app IN.2) y el listener de `state:change` ahora incluye `gastos` (el pagado del hero y los badges del detalle lo leen; antes la ficha lo daba por hecho pero el listener no lo incluía). (4) `styles/components/config.css`: bloque `.hero-agenda*` (contraste WCAG medido contra la parada fuerte del degradado: oscuro #282d44 → primario 11.39:1, secundario 5.79:1, acento 7.55:1; claro #eaedfd → 14.44:1, 7.31:1, 5.69:1). (5) `styles/components/domain.css`: `.hero-agenda__ojo` sumado a la lista compartida de ojos de hero.
+
+**Archivos tocados:** `modules/dominio/agenda/logic.js`, `modules/dominio/agenda/view.js`, `modules/dominio/agenda/index.js`, `styles/components/config.css`, `styles/components/domain.css`, `tests/unit/agenda.test.js` (16 nuevos: 9 de `totalesDelMes`, 7 del hero), `tests/e2e/smoke.test.js` (3 nuevos: total/progreso, ojo con persistencia del flag vía `expect.poll` por el debounce de `save()`, variante sin pagos), `service-worker.js` (v382→v383).
+
+**Verificación:** 2620/2620 unit + 195/195 E2E completos + lint verdes.
+
+**Podría afectar:** el tope de la sección Calendario (bloque nuevo, el resto del panel no cambia de estructura) y la frecuencia de re-render de agenda (ahora también con `state:change` de `gastos`; `renderSmart` solo pinta con la sección visible). El ojo comparte flag con Inicio/Mis cuentas/Deudas: ocultar en Calendario oculta en toda la app (comportamiento buscado, IN.2).
+
+---
+
 ### feat(apartados): CAT.1b plantillas de Apartados curadas según la taxonomía Apartados↔Metas · 2026-07-13
 
 Segunda rebanada de implementación de **CAT.1** (`docs/BOARD.md`), Apartados↔Metas. `PLANTILLAS_APARTADO` pasa de 17 a 20 plantillas.

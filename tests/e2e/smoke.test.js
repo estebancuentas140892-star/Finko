@@ -1661,6 +1661,118 @@ test.describe('Agenda - total a pagar por día', () => {
   });
 });
 
+// ── SUITE 12c: Agenda - hero del mes (CAL.4a, ADR 037 D1/D7) ─────────────────
+// El hero al tope de la sección muestra el total a pagar del mes visible y el
+// progreso pagado/falta cruzando S.gastos por compromisoId; el ojo comparte
+// S.config.ocultarSaldo con el resto de la app y enmascara los tres montos.
+
+test.describe('Agenda - hero del mes (CAL.4a)', () => {
+  test('muestra el total del mes y el progreso pagado/falta', async ({ page }) => {
+    const hoy  = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+
+    await page.addInitScript(({ anio, mes }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos: [{
+          id: 'gasto-hero-e2e', compromisoId: 'fijo-hero-e2e',
+          descripcion: 'Pago: Arriendo Hero E2E', monto: 900000,
+          categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-05`,
+        }],
+        compromisos: [
+          {
+            id: 'fijo-hero-e2e', tipo: 'fijo', descripcion: 'Arriendo Hero E2E',
+            monto: 900000, frecuencia: 'Mensual', diaPago: 5,
+          },
+          {
+            id: 'deuda-hero-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta Hero E2E',
+            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+            frecuencia: 'Mensual', diaPago: 20,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { anio, mes });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const hero = page.locator('.hero-agenda');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.hero-agenda__valor')).toHaveText('$1.050.000');
+    await expect(hero.locator('.hero-agenda__pagado')).toContainText('$900.000');
+    await expect(hero.locator('.hero-agenda__falta')).toContainText('$150.000');
+  });
+
+  test('el ojo enmascara los montos del hero y persiste el flag compartido', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [{
+          id: 'fijo-ojo-e2e', tipo: 'fijo', descripcion: 'Arriendo Ojo E2E',
+          monto: 900000, frecuencia: 'Mensual', diaPago: 5,
+        }],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator('[data-action="agenda-saldo-visibilidad"]').click();
+
+    const hero = page.locator('.hero-agenda');
+    await expect(hero.locator('.hero-agenda__valor')).toHaveText('$••••••');
+    await expect(hero.locator('.hero-agenda__pagado')).toHaveText('Pagado ••••');
+    await expect(hero.locator('[data-action="agenda-saldo-visibilidad"]'))
+      .toHaveAttribute('aria-pressed', 'true');
+
+    // El flag es el mismo de toda la app (IN.2): queda persistido en fk_v1.
+    // save() es debounced 200ms (ADN 5), así que se espera con poll.
+    await expect.poll(
+      () => page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')).config?.ocultarSaldo),
+      { timeout: 3_000 },
+    ).toBe(true);
+  });
+
+  test('mes sin pagos programados muestra la variante de guía sin ojo', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const hero = page.locator('.hero-agenda');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.hero-agenda__titulo')).toHaveText('Sin pagos programados');
+    await expect(hero.locator('.hero-agenda__ojo')).toHaveCount(0);
+    await expect(hero.locator('.hero-agenda__valor')).toHaveCount(0);
+  });
+});
+
 // ── SUITE 12b: Agenda - CAL.3 selección automática del día actual ────────────
 // Al navegar HACIA Calendario desde otra sección, si hoy tiene compromisos,
 // el detalle se auto-abre sin que el usuario haga click. El fixture usa el

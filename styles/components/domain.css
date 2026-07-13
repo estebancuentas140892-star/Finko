@@ -992,12 +992,14 @@ button.chip:focus-visible {
    Botón propio (sin .btn): el min-height táctil de 44px que responsive.css
    impone a .btn deformaría los 40px del diseño; 40px cumple el mínimo
    táctil AA (WCAG 2.5.8, 24px) con margen.
-   El ojo del hero de Mis cuentas (MC.18a, ADR 035 D5) y el del hero de
-   Deudas (D.16a, ADR 036 D7) comparten estas reglas: mismo control,
-   misma disciplina de posición estable. */
+   Los ojos del hero de Mis cuentas (MC.18a, ADR 035 D5), del hero de
+   Deudas (D.16a, ADR 036 D7) y del hero del mes en Calendario (CAL.4a,
+   ADR 037 D7) comparten estas reglas: mismo control, misma disciplina
+   de posición estable. */
 .hero-inicio__ojo,
 .hero-tesoreria__ojo,
-.hero-compromisos__ojo {
+.hero-compromisos__ojo,
+.hero-agenda__ojo {
   position: absolute;
   top: var(--fk-space-4);
   right: var(--fk-space-4);
@@ -1018,7 +1020,8 @@ button.chip:focus-visible {
 }
 .hero-inicio__ojo:hover,
 .hero-tesoreria__ojo:hover,
-.hero-compromisos__ojo:hover {
+.hero-compromisos__ojo:hover,
+.hero-agenda__ojo:hover {
   background: var(--fk-bg-active);
   color: var(--fk-text-primary);
 }
@@ -1026,7 +1029,8 @@ button.chip:focus-visible {
 .hero-inicio__ojo[hidden] { display: none; }
 .hero-inicio__ojo .icon,
 .hero-tesoreria__ojo .icon,
-.hero-compromisos__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
+.hero-compromisos__ojo .icon,
+.hero-agenda__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ── Detalle por cuenta (IN.8c, ADR 034 D4) ─────────────────────
    Pill que expande in situ una fila por cuenta. El text-align:center del
