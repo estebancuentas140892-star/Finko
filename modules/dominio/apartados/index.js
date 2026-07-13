@@ -17,7 +17,8 @@ import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
-import { f, hoy } from '../../infra/utils.js';
+import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
+import { f, hoy, esc as _esc } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
   calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
@@ -110,6 +111,10 @@ function _reiniciarApartado(el) {
 
 /**
  * Rellena nombre e icono del form con una plantilla rápida (SOAT, etc.).
+ * El ícono de una plantilla es un emoji curado propio de `PLANTILLAS_APARTADO`
+ * (no vive en el catálogo genérico del picker compartido, CAT.2c): se fija
+ * directo con `setIconoPickerValor` en vez de pasar por la grilla, igual que
+ * un ícono elegido a mano se fijaría con un clic.
  * @param {HTMLElement} el
  */
 function _aplicarPlantilla(el) {
@@ -118,9 +123,8 @@ function _aplicarPlantilla(el) {
   const nombre = el.dataset.nombre ?? '';
   const icono  = el.dataset.icono ?? '';
   const nombreInput = form.querySelector('[name="nombre"]');
-  const iconoInput  = form.querySelector('[name="icono"]');
   if (nombreInput) nombreInput.value = nombre;
-  if (iconoInput)  iconoInput.value  = icono;
+  setIconoPickerValor(form.querySelector('[data-icono-picker="apartado-icono"]'), icono, _esc(icono));
   form.querySelector('[name="montoObjetivo"]')?.focus();
 }
 
@@ -291,6 +295,12 @@ function _inyectarFormApartado() {
   // Mostrar/ocultar el periodo de recurrencia según el checkbox "Se repite".
   const checkRecurrente = form.querySelector('#apartado-recurrente');
   checkRecurrente?.addEventListener('change', () => _togglePeriodoRecurrencia(checkRecurrente.checked));
+
+  // CAT.2c: selector compacto de ícono. El form se re-renderiza completo en
+  // cada apertura (arriba en esta misma función), así que basta wirearlo aquí:
+  // no hace falta resetIconoPicker (a diferencia de Metas, que reusa un form
+  // singleton entre aperturas).
+  wireIconoPicker(form.querySelector('[data-icono-picker="apartado-icono"]'));
 }
 
 /** Muestra u oculta el campo "¿cada cuánto se repite?" según el checkbox. */

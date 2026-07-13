@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.2b: selector de ícono en Metas, segundo consumidor del componente compartido).
+> Última actualización: 2026-07-13 (CAT.2c: selector de ícono en Apartados, tercer consumidor; primera cobertura E2E de la sección).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.2b cerrada** el 2026-07-13 (Metas migrada como segundo consumidor del picker compartido; ver Transversal abajo). De paso se corrigió un bug real: el E2E de Gastos usaba un locator sin acotar que se volvió ambiguo al convivir 2 instancias del componente en el DOM. Quedan **CAT.2c** a **CAT.2f** en Deudas/Cuentas/Apartados/Fijo. Siguiente tarjeta sugerida: **CAT.2c** (Apartados), lista para iniciar sin dependencias; **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
+_(Sin tarjeta activa: **CAT.2c cerrada** el 2026-07-13 (Apartados migrado como tercer consumidor del picker compartido; ver Transversal abajo). Las plantillas rápidas de Apartados conservan su propio catálogo de emojis curados vía el nuevo `setIconoPickerValor`, en vez de migrar al catálogo genérico. De paso se sumó la primera cobertura E2E de Apartados (no tenía ninguna). Quedan **CAT.2d** a **CAT.2f** en Deudas/Cuentas/Fijo. Siguiente tarjeta sugerida: **CAT.2d** (Deudas) o **CAT.2e** (Cuentas), ambas de prioridad media pero agregan una capacidad nueva (hoy "Otro" cae a un ícono fijo, no elegible); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
 
 ---
 
@@ -444,13 +444,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 > **CAT.2b CERRADA el 2026-07-13** (Metas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): el `<input type="text" maxlength="4">` de la categoría "Otra" se reemplaza por `renderIconoPicker`/`wireIconoPicker`; `_iconoMeta()` distingue sprite-id de emoji crudo legado (`/^[a-z]-/`, sin bump de schema). Componente ganó `resetIconoPicker()` (el form de Metas es un singleton reusado, no se re-renderiza como el de Gastos) e `id` propio en el input oculto. **Bug real encontrado y corregido**: el E2E de Gastos usaba un locator Playwright sin acotar, ambiguo en cuanto Metas sumó su propio picker a la página (2 instancias del componente conviven en el DOM). 5 tests unitarios nuevos (`icon-picker.test.js`) + 2 en `metas.test.js`; 2 E2E de `smoke.test.js` reescritos + 1 corregido en Gastos. 2548/2548 unit + 183/183 E2E completos + lint verdes. SW v375→v376.
 
-#### CAT.2c - Picker de icono en Apartados (nombre del apartado)
-- Prioridad  : alta
-- Estado     : pendiente (independiente)
-- Objetivo   : mismo retrofit que CAT.2b pero en `apartados/view.js` (`<input type="text" maxlength="4" placeholder="📦">` del nombre del apartado). El `icono` de apartados hoy es emoji como dato del usuario (exento de TX.4); decidir si migra a símbolo del sprite (como el resto de CAT.2) o si queda como excepción por ser más reciente (coordinar con la nota ya existente en la iniciativa Apartados v2 sobre esta migración).
-- Secciones  : Apartados (`apartados/view.js`, `apartados/index.js`)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Bajo
+> **CAT.2c CERRADA el 2026-07-13** (Apartados, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): el `<input type="text" maxlength="4">` del nombre del apartado se reemplaza por `renderIconoPicker(..., { label: '' })` en la misma columna angosta del layout existente (el panel pasa a popover flotante, CSS nuevo en `domain.css`). Las 17 **plantillas rápidas** (SOAT, Regalos...) conservan su propio catálogo curado de emojis (más específico que el genérico de 29 íconos del picker) vía **`setIconoPickerValor`**, nuevo en el componente compartido para fijar un valor externo sin pasar por la grilla. `_iconoApartado()` distingue sprite-id de emoji crudo (mismo patrón que Metas). **Primera cobertura E2E de Apartados** (no tenía ninguna): 3 tests nuevos. 9 tests unitarios nuevos (`icon-picker.test.js`) + 6 en `apartados.test.js`. 2563/2563 unit + 186/186 E2E completos + lint verdes. SW v376→v377.
 
 #### CAT.2d - Picker de icono en Deudas (categoría "Otra"/"Otro")
 - Prioridad  : media

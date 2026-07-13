@@ -5,9 +5,11 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt } from '../../infra/icons.js';
+import { icon, iconoCategoria, emptyArt } from '../../infra/icons.js';
 import { progressRing } from '../../infra/svg.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { renderIconoPicker } from '../../infra/icon-picker.js';
+import { ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import {
   apartadosActivos,
   estaListoParaReiniciar,
@@ -40,10 +42,28 @@ export function renderListaApartados() {
     : activos.map(_renderApartadoItem).join('');
 }
 
+/**
+ * Ícono de un apartado (CAT.2c): `apartado.icono` puede tener dos formatos,
+ * sin bump de schema. Un id de símbolo del sprite (elegido con el picker
+ * compartido desde esta rebanada, ej. 'c-carro') o un emoji crudo (plantillas
+ * rápidas de `PLANTILLAS_APARTADO`, que conservan su propio catálogo curado
+ * de emojis por ser más específicas que el catálogo genérico del picker; o
+ * apartados viejos creados con el campo de texto libre anterior a CAT.2c).
+ * Se distingue por el patrón `letra-` que ningún emoji real produce (mismo
+ * criterio que `_iconoMeta()` en metas/view.js, CAT.2b).
+ *
+ * @param {import('../../core/state.js').Apartado} apartado
+ * @returns {string}
+ */
+function _iconoApartado(apartado) {
+  const valor = apartado.icono ?? ICONO_APARTADO_DEFAULT;
+  return /^[a-z]-/.test(valor) ? iconoCategoria(valor) : _esc(valor);
+}
+
 /** @param {import('../../core/state.js').Apartado} apartado */
 function _renderApartadoItem(apartado) {
   const nombre = _esc(apartado.nombre);
-  const icono  = _esc(apartado.icono ?? ICONO_APARTADO_DEFAULT);
+  const icono  = _iconoApartado(apartado);
   const { porcentaje, faltante, completado } = calcularProgreso(apartado);
   const listo  = estaListoParaReiniciar(apartado);
   const sugerido = listo ? null : calcularAporteSugerido(apartado, hoy());
@@ -148,7 +168,7 @@ function _renderNudgeProximos(proximos) {
   const principal = proximos[0];
   const otros     = proximos.length - 1;
   const nombre    = _esc(principal.nombre);
-  const icono     = _esc(principal.icono ?? ICONO_APARTADO_DEFAULT);
+  const icono     = _iconoApartado(principal);
 
   const dias      = diasHastaFecha(principal.fechaObjetivo, hoy()) ?? 0;
   const cuandoStr = dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${dias} días`;
@@ -209,8 +229,7 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
       <div class="form-group">
         <label for="apartado-nombre" class="label">Nombre del apartado</label>
         <div class="apartado-nombre-row">
-          <input id="apartado-icono" name="icono" class="input apartado-nombre-row__emoji" type="text"
-                 maxlength="4" placeholder="📦" autocomplete="off" aria-label="Emoji" />
+          ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', nombreCampo: 'icono', label: '' })}
           <input id="apartado-nombre" name="nombre" class="input apartado-nombre-row__nombre" type="text"
                  placeholder="Ej. SOAT, Productos personales" required aria-required="true" autocomplete="off" />
         </div>

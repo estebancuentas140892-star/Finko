@@ -26,6 +26,8 @@ import { esc as _esc } from './utils.js';
  *
  * @param {Array<{icono: string, etiqueta: string}>} iconos - catálogo a mostrar.
  * @param {{ id?: string, nombreCampo?: string, valorActual?: string|null, label?: string }} [opts]
+ *   `label` vacío ('') omite el `<span>` de etiqueta (uso compacto, ej. junto
+ *   a un campo de nombre que ya trae su propia etiqueta, CAT.2c).
  * @returns {string}
  */
 export function renderIconoPicker(iconos, {
@@ -45,16 +47,19 @@ export function renderIconoPicker(iconos, {
     ? iconoCategoria(valorActual)
     : '<span class="icono-picker__vacio" aria-hidden="true">+</span>';
 
+  const labelHtml   = label ? `<span class="label">${_esc(label)}</span>` : '';
+  const labelPanel  = label || 'Elegir ícono';
+
   return `
     <div class="icono-picker-field" data-icono-picker="${_esc(id)}">
-      <span class="label">${_esc(label)}</span>
+      ${labelHtml}
       <button type="button" class="icono-picker__recuadro" id="${_esc(id)}-recuadro"
               aria-expanded="false" aria-controls="${_esc(id)}-panel"
               aria-label="Elegir ícono">
         ${previewHtml}
       </button>
       <div class="icono-picker__panel" id="${_esc(id)}-panel"
-           role="group" aria-label="${_esc(label)}" hidden>
+           role="group" aria-label="${_esc(labelPanel)}" hidden>
         ${botones}
       </div>
       <input type="hidden" name="${_esc(nombreCampo)}" id="${_esc(id)}" value="${_esc(valorActual ?? '')}" />
@@ -115,6 +120,34 @@ export function resetIconoPicker(container) {
   input.value = '';
   recuadro.innerHTML = '<span class="icono-picker__vacio" aria-hidden="true">+</span>';
   panel.querySelectorAll('.icono-picker__btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  panel.hidden = true;
+  recuadro.setAttribute('aria-expanded', 'false');
+}
+
+/**
+ * Fija un valor externo al picker (ej. una plantilla rápida que no vive en
+ * la grilla del catálogo, como las plantillas de Apartados con emoji propio).
+ * A diferencia de elegir un ícono de la grilla, `valor` puede no coincidir
+ * con ningún `data-icon` del catálogo: en ese caso ningún botón queda
+ * marcado (correcto, ya que ninguno representa la elección real), pero el
+ * recuadro y el input oculto sí reflejan el valor externo.
+ *
+ * @param {HTMLElement|null} container - el nodo `[data-icono-picker]` de `renderIconoPicker`.
+ * @param {string} valor - el valor a guardar en el input oculto (id de sprite o, como en
+ *   este caso, un emoji crudo que la vista sabrá distinguir al renderizar).
+ * @param {string} previewHtml - el HTML a mostrar en el recuadro (ej. el emoji tal cual).
+ */
+export function setIconoPickerValor(container, valor, previewHtml) {
+  if (!container) return;
+  const recuadro = container.querySelector('.icono-picker__recuadro');
+  const panel    = container.querySelector('.icono-picker__panel');
+  const input    = container.querySelector('input[type="hidden"]');
+  if (!recuadro || !panel || !input) return;
+
+  input.value = valor ?? '';
+  recuadro.innerHTML = previewHtml || '<span class="icono-picker__vacio" aria-hidden="true">+</span>';
+  panel.querySelectorAll('.icono-picker__btn').forEach(b =>
+    b.setAttribute('aria-pressed', b.dataset.icon === valor ? 'true' : 'false'));
   panel.hidden = true;
   recuadro.setAttribute('aria-expanded', 'false');
 }

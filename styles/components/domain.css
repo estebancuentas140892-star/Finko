@@ -2509,6 +2509,27 @@ button.chip:focus-visible {
   padding-right: 0;
 }
 
+/* CAT.2c: el selector de ícono ocupa la misma columna angosta (3.5rem) que
+   antes el input de emoji. El recuadro (44px) cabe sin cambios; el panel de
+   la grilla, en cambio, necesita más ancho del que da esa columna, así que
+   se vuelve un popover flotante (no reflowa el resto del formulario). */
+.apartado-nombre-row .icono-picker-field {
+  position: relative;
+}
+.apartado-nombre-row .icono-picker__panel {
+  position: absolute;
+  top: calc(100% + var(--fk-space-1));
+  left: 0;
+  z-index: 5;
+  width: max-content;
+  max-width: min(280px, 90vw);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-md);
+  padding: var(--fk-space-2);
+  box-shadow: var(--fk-shadow-md);
+}
+
 .form-details {
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-md);

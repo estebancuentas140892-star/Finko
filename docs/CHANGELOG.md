@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(transversal): CAT.2c selector de ícono en Apartados, tercer consumidor + primera cobertura E2E de la sección · 2026-07-13
+
+Cierra **CAT.2c** (`docs/BOARD.md`), tercera rebanada del picker de ícono compartido: **Apartados** migrado (nombre del apartado).
+
+**Qué cambió:** (1) El `<input type="text" maxlength="4" placeholder="📦">` para pegar un emoji a mano se reemplaza por `renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'apartado-icono', label: '' })` en `apartados/view.js`, dentro de la misma columna angosta (`.apartado-nombre-row`, 3.5rem) que antes ocupaba el input. (2) `renderIconoPicker` gana la opción `label: ''` para omitir el `<span>` de etiqueta en usos compactos (el `aria-label` del panel cae a "Elegir ícono" cuando el label está vacío, sin perder accesibilidad). (3) `_iconoApartado()` nueva distingue sprite-id de emoji crudo (mismo patrón `/^[a-z]-/` que `_iconoMeta()`). (4) Las **17 plantillas rápidas** de Apartados (SOAT 🚗, Regalos 🎁, Arena para gatos 🐱...) conservan su propio catálogo curado de emojis, más específico que el genérico de 29 íconos del picker: se fijan con **`setIconoPickerValor(container, valor, previewHtml)`**, nuevo en el componente compartido, que actualiza el recuadro/input sin pasar por los botones de la grilla (ningún botón queda marcado si el valor no coincide con el catálogo). (5) El panel, al no caber en la columna angosta, pasa a **popover flotante** (`position: absolute`, CSS nuevo en `domain.css`) para no romper el layout de 2 columnas al desplegarse. (6) El form se re-renderiza completo en cada apertura (como Gastos, no como Metas): no hace falta `resetIconoPicker`. (7) **Primera cobertura E2E de la sección Apartados** (no tenía ninguna): 3 tests nuevos cubren plantilla, ícono manual del picker, y plantilla seguida de cambio manual.
+
+**Archivos tocados:** `modules/infra/icon-picker.js` (+`setIconoPickerValor`, `label` opcional), `modules/dominio/apartados/view.js` (`renderFormApartado`, `_iconoApartado`), `modules/dominio/apartados/index.js` (`_inyectarFormApartado`, `_aplicarPlantilla`), `styles/components/domain.css` (popover flotante del panel en `.apartado-nombre-row`), `tests/unit/icon-picker.test.js` (9 tests nuevos), `tests/unit/apartados.test.js` (6 tests nuevos), `tests/e2e/smoke.test.js` (3 tests nuevos), `service-worker.js` (v376→v377).
+
+**Verificación:** 2563/2563 unit + **186/186 E2E completos** + lint verdes.
+
+**Podría afectar:** solo la UI de Apartados al crear/editar un apartado. Las plantillas rápidas siguen mostrando su emoji curado tal cual (no migran al catálogo genérico); `apartado.icono` admite id de sprite o emoji crudo sin bump de schema, igual que `meta.icono` desde CAT.2b.
+
+---
+
 ### feat(transversal): CAT.2b selector de ícono en Metas, segundo consumidor + fix de locator ambiguo · 2026-07-13
 
 Cierra **CAT.2b** (`docs/BOARD.md`), segunda rebanada del picker de ícono compartido: **Metas** migrada (categoría "Otra").

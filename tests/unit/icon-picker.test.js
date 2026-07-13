@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderIconoPicker, wireIconoPicker, resetIconoPicker } from '../../modules/infra/icon-picker.js';
+import { renderIconoPicker, wireIconoPicker, resetIconoPicker, setIconoPickerValor } from '../../modules/infra/icon-picker.js';
 
 const ICONOS = [
   { icono: 'c-pesa',   etiqueta: 'Gimnasio' },
@@ -65,6 +65,28 @@ describe('renderIconoPicker()', () => {
     div.innerHTML = html;
     expect(div.querySelector('#meta-icono')).not.toBeNull();
     expect(div.querySelector('#meta-icono').type).toBe('hidden');
+  });
+
+  it('CAT.2c: label vacío omite el <span> de etiqueta (uso compacto)', () => {
+    const html = renderIconoPicker(ICONOS, { label: '' });
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('.icono-picker-field > .label')).toBeNull();
+  });
+
+  it('CAT.2c: label vacío igual deja un aria-label útil en el panel (no queda vacío)', () => {
+    const html = renderIconoPicker(ICONOS, { label: '' });
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const panelAriaLabel = div.querySelector('.icono-picker__panel').getAttribute('aria-label');
+    expect(panelAriaLabel).toBeTruthy();
+  });
+
+  it('con label, sí renderiza el <span> de etiqueta', () => {
+    const html = renderIconoPicker(ICONOS, { label: 'Ícono' });
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('.icono-picker-field > .label').textContent).toBe('Ícono');
   });
 });
 
@@ -175,5 +197,52 @@ describe('resetIconoPicker()', () => {
     container.querySelector('.icono-picker__recuadro').click();
     container.querySelector('[data-icon="c-pesa"]').click();
     expect(container.querySelector('input[type="hidden"]').value).toBe('c-pesa');
+  });
+});
+
+describe('setIconoPickerValor() (CAT.2c, valores externos como plantillas)', () => {
+  let container;
+
+  beforeEach(() => {
+    document.body.innerHTML = renderIconoPicker(ICONOS, { id: 'plantilla-picker' });
+    container = document.querySelector('[data-icono-picker="plantilla-picker"]');
+    wireIconoPicker(container);
+  });
+
+  it('fija el input oculto y el recuadro con un valor ajeno al catálogo (ej. un emoji)', () => {
+    setIconoPickerValor(container, '🚗', '🚗');
+    const input    = container.querySelector('input[type="hidden"]');
+    const recuadro = container.querySelector('.icono-picker__recuadro');
+    expect(input.value).toBe('🚗');
+    expect(recuadro.innerHTML).toBe('🚗');
+  });
+
+  it('ningún botón de la grilla queda marcado cuando el valor no está en el catálogo', () => {
+    setIconoPickerValor(container, '🚗', '🚗');
+    const marcados = container.querySelectorAll('.icono-picker__btn[aria-pressed="true"]');
+    expect(marcados.length).toBe(0);
+  });
+
+  it('si el valor SÍ coincide con un ícono del catálogo, ese botón queda marcado', () => {
+    setIconoPickerValor(container, 'c-avion', '<svg></svg>');
+    expect(container.querySelector('[data-icon="c-avion"]').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('colapsa el panel y dispara aria-expanded false', () => {
+    container.querySelector('.icono-picker__recuadro').click(); // abrir
+    setIconoPickerValor(container, '🚗', '🚗');
+    expect(container.querySelector('.icono-picker__panel').hidden).toBe(true);
+    expect(container.querySelector('.icono-picker__recuadro').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('el picker sigue interactivo después: elegir de la grilla reemplaza el valor externo', () => {
+    setIconoPickerValor(container, '🚗', '🚗');
+    container.querySelector('.icono-picker__recuadro').click();
+    container.querySelector('[data-icon="c-pesa"]').click();
+    expect(container.querySelector('input[type="hidden"]').value).toBe('c-pesa');
+  });
+
+  it('sin container, no lanza error (guard)', () => {
+    expect(() => setIconoPickerValor(null, 'x', 'x')).not.toThrow();
   });
 });

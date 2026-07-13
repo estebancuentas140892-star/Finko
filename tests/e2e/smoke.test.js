@@ -3255,3 +3255,76 @@ test.describe('Agenda - día de ingreso (ADR 021)', () => {
     await expect(panel).toBeVisible({ timeout: 3_000 });
   });
 });
+
+// ── SUITE: Apartados - selector de ícono compacto (CAT.2c) ───────────────────
+
+test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
+
+  test('crear un apartado con una plantilla rápida conserva su emoji propio', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#apartados');
+    await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-apartado"]');
+    await page.waitForSelector('#modal-apartado[data-open]');
+
+    const form = page.locator('#modal-apartado-body form');
+    // La plantilla SOAT (🚗) rellena nombre + ícono sin pasar por la grilla
+    // del picker: el emoji curado de la plantilla se conserva tal cual.
+    await form.locator('[data-action="apartado-plantilla"][data-nombre="SOAT"]').click();
+    await expect(form.locator('#apartado-nombre')).toHaveValue('SOAT');
+    await form.locator('#apartado-objetivo').fill('300000');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-apartados .list-item__title');
+    await expect(titulo).toContainText('SOAT');
+    await expect(titulo).toContainText('🚗');
+  });
+
+  test('crear un apartado con nombre propio y un ícono elegido en el picker', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#apartados');
+    await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-apartado"]');
+    await page.waitForSelector('#modal-apartado[data-open]');
+
+    const form = page.locator('#modal-apartado-body form');
+    await form.locator('#apartado-nombre').fill('Repuestos del carro');
+    // El selector nace como recuadro colapsado (CAT.2): tocarlo despliega la
+    // grilla; elegir un ícono la cierra de nuevo.
+    await form.locator('[data-icono-picker="apartado-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="apartado-icono"] [data-icon="c-carro"]').click();
+    await expect(form.locator('[data-icono-picker="apartado-icono"] .icono-picker__panel')).toBeHidden();
+    await form.locator('#apartado-objetivo').fill('500000');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-apartados .list-item__title');
+    await expect(titulo).toContainText('Repuestos del carro');
+    await expect(titulo.locator('use[href="#c-carro"]')).toHaveCount(1);
+  });
+
+  test('elegir una plantilla y luego cambiar el ícono a mano reemplaza el emoji de la plantilla', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#apartados');
+    await page.waitForSelector('#sec-apartados.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-apartado"]');
+    await page.waitForSelector('#modal-apartado[data-open]');
+
+    const form = page.locator('#modal-apartado-body form');
+    await form.locator('[data-action="apartado-plantilla"][data-nombre="Regalos"]').click();
+    // El usuario se arrepiente del emoji de la plantilla y elige uno propio.
+    await form.locator('[data-icono-picker="apartado-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="apartado-icono"] [data-icon="c-torta"]').click();
+    await form.locator('#apartado-objetivo').fill('200000');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-apartados .list-item__title');
+    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(1);
+  });
+
+});

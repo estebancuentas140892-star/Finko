@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   apartadosActivos,
   estaListoParaReiniciar,
@@ -20,7 +20,7 @@ import {
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from '../../modules/dominio/apartados/logic.js';
-import { renderFormAporteApartado } from '../../modules/dominio/apartados/view.js';
+import { renderFormAporteApartado, renderFormApartado, renderListaApartados } from '../../modules/dominio/apartados/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -615,5 +615,59 @@ describe('renderFormAporteApartado() - selector de cuenta', () => {
     S.cuentas = [cuenta('c1', 'Bancolombia', 600_000), cuenta('c2', 'Nequi', 400_000)];
     const html = renderFormAporteApartado(apartadoBase());
     expect(html).not.toContain('id="aporte-apartado-cuenta"');
+  });
+});
+
+// ── renderFormApartado() - selector de ícono (CAT.2c) ─────────────
+
+describe('renderFormApartado() - selector de ícono compacto (CAT.2c)', () => {
+  it('usa el selector compartido en vez del input de texto libre anterior', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('data-icono-picker="apartado-icono"');
+    expect(html).toContain('icono-picker__recuadro');
+    expect(html).not.toContain('placeholder="📦"');
+    expect(html).not.toContain('maxlength="4"');
+  });
+
+  it('el picker nace sin etiqueta propia (uso compacto junto al nombre)', () => {
+    const html = renderFormApartado();
+    const inicio = html.indexOf('data-icono-picker="apartado-icono"');
+    const bloque = html.slice(inicio, inicio + 400);
+    expect(bloque).not.toContain('class="label"');
+  });
+
+  it('el input oculto conserva el name="icono" para el FormData', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('name="icono"');
+  });
+});
+
+// ── renderListaApartados() - ícono con dos formatos (CAT.2c) ──────
+
+describe('renderListaApartados() - ícono con dos formatos (CAT.2c)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+  });
+
+  it('un apartado con emoji crudo (plantilla o dato viejo) lo muestra tal cual', () => {
+    S.apartados = [apartadoBase({ icono: '🚗' })];
+    renderListaApartados();
+    const titulo = document.querySelector('.list-item__title');
+    expect(titulo.textContent).toContain('🚗');
+  });
+
+  it('un apartado con id de sprite (elegido con el picker) renderiza el glifo, no texto crudo', () => {
+    S.apartados = [apartadoBase({ icono: 'c-carro' })];
+    renderListaApartados();
+    const titulo = document.querySelector('.list-item__title');
+    expect(titulo.innerHTML).toContain('#c-carro');
+    expect(titulo.textContent).not.toContain('c-carro');
+  });
+
+  it('sin icono, cae al default (emoji de caja) sin romper', () => {
+    S.apartados = [{ ...apartadoBase(), icono: undefined }];
+    renderListaApartados();
+    const titulo = document.querySelector('.list-item__title');
+    expect(titulo.textContent).toContain(ICONO_APARTADO_DEFAULT);
   });
 });
