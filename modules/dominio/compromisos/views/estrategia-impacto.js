@@ -9,6 +9,7 @@
  */
 
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { icon } from '../../../infra/icons.js';
 import { simularRenegociacion, simularConsolidacion, tasaMensualToEA } from '../logic.js';
 
 /**
@@ -199,8 +200,8 @@ function _renderComparativa(resultado, extraMensual) {
       <div class="estrategia-card__decidir">
         <p class="estrategia-card__decidir-titulo">¿Cómo elegir?</p>
         <ul class="estrategia-card__decidir-lista">
-          <li class="estrategia-card__decidir-item">💰 <strong>Avalancha</strong>: ${partes.join(' y ')}. Te conviene si tu prioridad es pagar lo menos posible.</li>
-          <li class="estrategia-card__decidir-item">🏆 <strong>Bola de nieve</strong>: cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes. Te conviene si necesitas un avance temprano que te motive a seguir.</li>
+          <li class="estrategia-card__decidir-item">${icon('trending-down', 'icon icon--sm text-success')} <strong>Avalancha</strong>: ${partes.join(' y ')}. Te conviene si tu prioridad es pagar lo menos posible.</li>
+          <li class="estrategia-card__decidir-item">${icon('star', 'icon icon--sm text-info')} <strong>Bola de nieve</strong>: cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes. Te conviene si necesitas un avance temprano que te motive a seguir.</li>
         </ul>
       </div>`;
   }
@@ -212,7 +213,7 @@ function _renderComparativa(resultado, extraMensual) {
     if (hayAhorroTiempo)    partes.push(`<strong>${formatearDuracion(ahorroMeses)}</strong>`);
     return `
       <p class="estrategia-card__ahorro">
-        💰 Con Avalancha te ahorrarías ${partes.join(' y ')} frente a Bola de nieve.
+        ${icon('trending-down', 'icon icon--sm')} Con Avalancha te ahorrarías ${partes.join(' y ')} frente a Bola de nieve.
       </p>`;
   }
 
@@ -220,7 +221,7 @@ function _renderComparativa(resultado, extraMensual) {
   if (ventajaBolaNieve) {
     return `
       <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
-        🏆 Avalancha y Bola de nieve te cuestan lo mismo, pero con Bola de nieve cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes: elígela para ver avances más rápido.
+        ${icon('star', 'icon icon--sm')} Avalancha y Bola de nieve te cuestan lo mismo, pero con Bola de nieve cierras tu primera deuda <strong>${formatearDuracion(ventajaMesesBN)}</strong> antes: elígela para ver avances más rápido.
       </p>`;
   }
 
@@ -228,13 +229,13 @@ function _renderComparativa(resultado, extraMensual) {
   if (extraMensual > 0) {
     return `
       <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
-        ℹ️ Con este pago extra, ambas estrategias terminan en el mismo costo. Puedes elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve).
+        ${icon('info', 'icon icon--sm')} Con este pago extra, ambas estrategias terminan en el mismo costo. Puedes elegir por preferencia: orden financiero (Avalancha) o impulso psicológico (Bola de nieve).
       </p>`;
   }
 
   return `
     <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
-      ℹ️ Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Prueba agregar un pago extra mensual en "¿Puedes pagar más rápido?" para ver dónde empieza a aparecer el ahorro con Avalancha.
+      ${icon('info', 'icon icon--sm')} Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Prueba agregar un pago extra mensual en "¿Puedes pagar más rápido?" para ver dónde empieza a aparecer el ahorro con Avalancha.
     </p>`;
 }
 

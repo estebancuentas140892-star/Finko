@@ -108,7 +108,10 @@ export function renderEstrategiaPago() {
     el.innerHTML = `
       <article class="estrategia-card">
         <header class="estrategia-card__header">
-          <h2 class="estrategia-card__title">${icon('lightbulb')} Estrategia de pago</h2>
+          <span class="estrategia-card__header-teja" aria-hidden="true">${icon('lightbulb')}</span>
+          <div class="estrategia-card__header-texto">
+            <h2 class="estrategia-card__title">Estrategia de pago</h2>
+          </div>
         </header>
         <p class="estrategia-card__placeholder">
           Tienes una sola deuda activa (<strong>${_esc(d.descripcion)}</strong>).
@@ -146,15 +149,16 @@ export function renderEstrategiaPago() {
     : renderResumenExtra(null, null, 0);
 
   el.innerHTML = `
+    <p class="grupo-eyebrow">Estrategia de pago</p>
     <article class="estrategia-card">
       <header class="estrategia-card__header">
-        <h2 class="estrategia-card__title">${icon('lightbulb')} Estrategia de pago</h2>
-        <p class="estrategia-card__subtitle">
-          Finko te ayuda a tomar mejores decisiones con tus deudas.
-        </p>
-        <p class="estrategia-card__subtitle">
-          Los plazos y ahorros son simulaciones con los datos que registraste; confírmalos con tu entidad antes de decidir.
-        </p>
+        <span class="estrategia-card__header-teja" aria-hidden="true">${icon('lightbulb')}</span>
+        <div class="estrategia-card__header-texto">
+          <h2 class="estrategia-card__title">¿Cómo salir más rápido?</h2>
+          <p class="estrategia-card__subtitle">
+            Los plazos y ahorros son simulaciones con los datos que registraste; confírmalos con tu entidad antes de decidir.
+          </p>
+        </div>
       </header>
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
@@ -325,9 +329,12 @@ function _renderDiagnosticoTexto(diagnostico) {
 // El aviso de tasa desconocida vive ahora en la lista, por deuda (D.12):
 // ver `_renderCompromisoItem` en lista.js.
 
+// D.16b (ADR 036 D2): Bola de nieve estrena su símbolo propio `i-snowball`
+// (antes el círculo genérico). La metáfora definitiva de ambos íconos sigue
+// siendo el mandato de IV.4 (diseño dirigido de Esteban, ADR 026).
 const _META_ESTRATEGIA = {
-  avalancha: { icono: icon('mountain'), nombre: 'Avalancha' },
-  bolaNieve: { icono: icon('circle'),   nombre: 'Bola de nieve' },
+  avalancha: { icono: icon('mountain'),  nombre: 'Avalancha' },
+  bolaNieve: { icono: icon('snowball'),  nombre: 'Bola de nieve' },
 };
 
 // Resúmenes integrados (mecanismo + ideal en 1 párrafo). La razón de

@@ -552,3 +552,37 @@
   outline-offset: 2px;
 }
 
+
+/* ── Eyebrow de grupo dentro de una sección (D.16b, ADR 036) ──────
+   Mini-título en mayúsculas que separa bloques dentro de una sección
+   (ej. "Estrategia de pago" / "Tus deudas" en Deudas). Vive sobre
+   bg-base, igual que .bento__group-label del dashboard: muted pasa AA
+   ahí (sobre surface haría falta secondary). `.grupo-eyebrow-fila`
+   permite un indicador a la derecha (ej. "Orden Avalancha"). */
+.grupo-eyebrow {
+  margin: 0 0 var(--fk-space-3);
+  padding-left: 2px;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fk-text-muted);
+}
+.grupo-eyebrow-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  margin-bottom: var(--fk-space-3);
+}
+.grupo-eyebrow-fila > .grupo-eyebrow { margin-bottom: 0; }
+.grupo-eyebrow-fila__extra {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-dom-compromisos-text);
+  white-space: nowrap;
+}
+.grupo-eyebrow-fila__extra .icon { --fk-icon-size: 0.8125rem; }

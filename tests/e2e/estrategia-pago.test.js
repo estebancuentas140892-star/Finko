@@ -145,8 +145,10 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
 
     const card = page.locator('#estrategia-pago .estrategia-card');
     await expect(card).toBeVisible({ timeout: 5_000 });
-    // Titulo actual (v7+): "Estrategia de pago" (sin "de deudas")
-    await expect(card).toContainText('Estrategia de pago');
+    // Titulo actual (D.16b, ADR 036): "¿Cómo salir más rápido?"; el eyebrow
+    // "Estrategia de pago" queda arriba de la card, fuera de ella.
+    await expect(card).toContainText('¿Cómo salir más rápido?');
+    await expect(page.locator('#estrategia-pago .grupo-eyebrow')).toContainText('Estrategia de pago');
   });
 
   // ── Test 2: orden Avalancha (mayor tasa primero) ─────────────────────────

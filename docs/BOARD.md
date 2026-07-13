@@ -10,7 +10,7 @@
 
 ## En proceso
 
-**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas: **D.16a cerrada el 2026-07-12** (hero con total de deuda, ver CHANGELOG); sigue D.16b (tarjetas en la sección Deudas abajo).
+**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas: **D.16a y D.16b cerradas el 2026-07-12** (hero + picker/comparativa, ver CHANGELOG); sigue D.16c (tarjetas en la sección Deudas abajo).
 
 _(El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, con D.16 como tercer consumidor: Inicio, Mis cuentas y ahora Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5.)_
 
@@ -134,17 +134,11 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 > **D.16a cerrada el 2026-07-12** (hero con total de deuda + ojo de privacidad, ver CHANGELOG y [`contexto/deudas.md`](contexto/deudas.md)): `resumenDeudas()` pura + `renderHeroCompromisos()` + acción `compromisos-saldo-visibilidad` + `.hero-compromisos` con contraste medido. 9 tests unitarios nuevos, SW v367.
 
-#### D.16b - Deudas v2 visual: picker de estrategia + comparativa tintada
-- Prioridad  : alta
-- Estado     : en proceso (2026-07-12)
-- Objetivo   : (ADR 036 D2) header "¿Cómo salir más rápido?" con teja tintada; picker con íconos nuevos (`i-snowball` reemplaza el círculo genérico) + badge "Recomendada"; comparativa y mensajes con callouts tintados + íconos de sprite en vez de emojis 💰🏆ℹ️🎯. Drafts `i-snowball`/`i-handshake`/`i-trending-down` vía sync-sprite (IV.4 sigue abierta).
-- Secciones  : Deudas (`views/estrategia.js`, `views/estrategia-impacto.js`, `styles/components/charts.css`, sprite)
-- Depende de : D.16a (familia visual del hero ya en pantalla)
-- Modelo     : Sonnet 5 - Alto (restyle con disciplina de tokens y WCAG)
+> **D.16b cerrada el 2026-07-12** (picker con identidad de sección + comparativa como callout, ver CHANGELOG): card a superficie con sombra en reposo, header con teja + "¿Cómo salir más rápido?", eyebrow genérico `.grupo-eyebrow`, picker activo en frambuesa, `i-snowball`/`i-handshake`/`i-trending-down` publicados como drafts (IV.4 sigue abierta), comparativa sin emojis. 3 tests unitarios nuevos, SW v368.
 
 #### D.16c - Deudas v2 visual: acelerador + panel inviable re-estilados
 - Prioridad  : alta
-- Estado     : pendiente
+- Estado     : en proceso (2026-07-12)
 - Objetivo   : (ADR 036 D3+D4) acelerador como sub-card con callout de impacto; alerta en danger solo en el encabezado + panel interior en neutros con selector de alternativas como tiles (materializa la capa visual de D.15a punto 1). Sin cambios de lógica.
 - Secciones  : Deudas (`views/estrategia.js`, `views/estrategia-impacto.js`, `styles/components/charts.css`)
 - Depende de : D.16b (misma card, mismo lenguaje)

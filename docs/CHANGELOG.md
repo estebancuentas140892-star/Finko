@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.16b picker de estrategia con identidad de sección + comparativa como callout (ADR 036 D2) · 2026-07-12
+
+Cierra **D.16b** (`docs/BOARD.md`), segunda rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)).
+
+**Qué cambió:** (1) la card de estrategia pasa a superficie con sombra en reposo y radio XL (familia visual del hero); los paneles interiores (picker, métricas, placeholder) bajan a `bg-base` como "inset". (2) Header nuevo: teja tintada de compromisos + título "¿Cómo salir más rápido?" + un solo subtítulo (la línea de honestidad del motor); el eyebrow "Estrategia de pago" queda arriba de la card (clase genérica nueva `.grupo-eyebrow` en `atoms.css`, reutilizable por D.16d para "Tus deudas"). (3) El picker viste la identidad de la sección: card activa con borde/fondo/teja en frambuesa `--fk-dom-compromisos` (antes el accent verde global). (4) Bola de nieve estrena su símbolo propio `i-snowball` (antes el círculo genérico); drafts nuevos `i-snowball`, `i-handshake` y `i-trending-down` publicados vía `scripts/sync-sprite.py` (plantillas que Esteban puede sobrescribir, ADR 026; el rediseño de metáfora de Avalancha/Bola sigue en IV.4). (5) La comparativa Avalancha vs Bola de nieve deja los emojis 💰🏆ℹ️ y pasa a callouts tintados con borde completo + ícono de sprite (verde = ahorro, azul = impulso; ícono + texto, SC 1.4.11). Cero cambios de lógica.
+
+**Archivos tocados:** `assets/svg/iconos/simbolos/{snowball,handshake,trending-down}.svg` (nuevos), `index.html` (sprite, 3 símbolos), `modules/dominio/compromisos/views/estrategia.js` (header + eyebrow + ícono del picker), `views/estrategia-impacto.js` (comparativa con íconos), `styles/components/charts.css`, `styles/components/atoms.css` (`.grupo-eyebrow`), `tests/unit/compromisos.test.js` (3 tests nuevos), `tests/e2e/estrategia-pago.test.js` (aserción del título actualizada al rediseño), `service-worker.js` (v367→v368).
+
+**Verificación:** 2491/2491 unit + 17/17 E2E `estrategia-pago` + lint verdes (incluye las suites de regresión BUG-011 sin tocar su intención).
+
+**Podría afectar:** nada de lógica; el título de la card cambió de copy (la aserción E2E se actualizó en el mismo commit).
+
+---
+
 ### feat(compromisos): D.16a hero con el total de deuda + ojo de privacidad (ADR 036 D1/D7) · 2026-07-12
 
 Cierra **D.16a** (`docs/BOARD.md`), primera rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md), handoff de Claude Design `Deudas v2.dc.html` enviado por Esteban). La pantalla de Deudas gana lo que no tenía: la magnitud total del problema de un vistazo.

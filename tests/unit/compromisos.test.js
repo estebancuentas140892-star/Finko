@@ -2697,6 +2697,45 @@ describe('renderEstrategiaPago jerarquía D.2a', () => {
   });
 });
 
+// ── renderEstrategiaPago: D.16b (ADR 036 D2, picker y comparativa visuales) ──
+
+describe('renderEstrategiaPago D.16b: header, picker e íconos', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0 });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda A', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.28, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.12, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('eyebrow "Estrategia de pago" arriba de la card + header con teja y título nuevo', () => {
+    renderEstrategiaPago();
+    const el = document.getElementById('estrategia-pago');
+    expect(el.querySelector('.grupo-eyebrow').textContent.trim()).toBe('Estrategia de pago');
+    expect(el.querySelector('.estrategia-card__header-teja')).not.toBeNull();
+    expect(el.querySelector('.estrategia-card__title').textContent.trim()).toBe('¿Cómo salir más rápido?');
+  });
+
+  it('Bola de nieve usa su símbolo propio i-snowball (ya no el círculo genérico)', () => {
+    renderEstrategiaPago();
+    const pickBola = document.querySelector('[data-estrategia="bolaNieve"]');
+    expect(pickBola.innerHTML).toContain('#i-snowball');
+    expect(pickBola.innerHTML).not.toContain('#i-circle');
+  });
+
+  it('la comparativa usa íconos de sprite en vez de emojis (💰🏆ℹ️ fuera)', () => {
+    const deudas = filtrarDeudasPagables(S.compromisos);
+    const conVentaja = compararEstrategias(deudas, 100_000);
+    const htmlDecidir = renderImpactoAvalancha(conVentaja, 100_000);
+    const sinExtra = compararEstrategias(deudas, 0);
+    const htmlBase = renderImpactoAvalancha(sinExtra, 0);
+    for (const html of [htmlDecidir, htmlBase]) {
+      expect(html).not.toMatch(/💰|🏆|ℹ️/u);
+    }
+  });
+});
+
 // ── renderEstrategiaPago: D.8 (plan inviable: botón único → panel con selector) ──
 
 describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
