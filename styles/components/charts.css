@@ -662,15 +662,18 @@
 }
 
 /* Panel de plan inviable: ninguna estrategia cierra con el pago actual.
-   Tono danger (más grave que "no aplica"). Desde D.7/D.8 solo se renderiza
-   cuando el usuario abre el botón de alerta (ver más abajo). */
+   D.16c (ADR 036 D4, arquitectura de 2 capas del ADR 031): la alarma vive
+   SOLO en el botón de alerta; el panel interior va en neutros (fondo base,
+   borde danger sutil) y únicamente el título del diagnóstico conserva el
+   danger. Las soluciones calman, no gritan. Desde D.7/D.8 solo se
+   renderiza cuando el usuario abre el botón de alerta (ver más abajo). */
 .estrategia-card__alerta {
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-3);
-  padding: var(--fk-space-3);
-  background: var(--fk-danger-bg);
-  border: 1px solid color-mix(in srgb, var(--fk-danger-text) 40%, transparent);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-base);
+  border: 1px solid color-mix(in srgb, var(--fk-danger) 22%, transparent);
   border-radius: var(--fk-radius-md);
   margin-top: var(--fk-space-3);
 }
@@ -679,7 +682,7 @@
   flex-direction: column;
   gap: var(--fk-space-1);
 }
-.estrategia-card__alerta .estrategia-card__bloque-titulo {
+.estrategia-card__diagnostico .estrategia-card__bloque-titulo {
   color: var(--fk-danger-text);
 }
 .estrategia-card__alerta-lista {
@@ -720,33 +723,44 @@
   flex-shrink: 0;
 }
 
-/* D.8: selector de 3 alternativas dentro del panel (una visible a la vez). */
+/* D.8: selector de 3 alternativas dentro del panel (una visible a la vez).
+   D.16c (ADR 036 D4): tiles verticales (ícono arriba + nombre abajo) y la
+   activa viste la identidad de la sección (frambuesa), no el accent global. */
 .estrategia-card__selector {
   display: flex;
   gap: var(--fk-space-2);
-  flex-wrap: wrap;
 }
 .estrategia-card__selector-opcion {
-  flex: 1 1 auto;
-  padding: var(--fk-space-2) var(--fk-space-3);
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-2) var(--fk-space-1);
   border-radius: var(--fk-radius-md);
   border: 1.5px solid var(--fk-border-default);
   background: var(--fk-bg-surface);
   color: var(--fk-text-secondary);
-  font-size: var(--fk-text-sm);
+  font-size: var(--fk-text-xs);
   font-weight: 600;
   text-align: center;
-  white-space: nowrap;
   cursor: pointer;
   transition: border-color var(--fk-transition-fast), background-color var(--fk-transition-fast), color var(--fk-transition-fast);
+}
+.estrategia-card__selector-nombre {
+  line-height: 1.2;
 }
 .estrategia-card__selector-opcion:hover {
   border-color: var(--fk-border-strong);
 }
 .estrategia-card__selector-opcion--activa {
-  border-color: var(--fk-accent);
-  background: color-mix(in srgb, var(--fk-accent) 12%, var(--fk-bg-surface));
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 50%, transparent);
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 12%, var(--fk-bg-surface));
   color: var(--fk-text-primary);
+}
+.estrategia-card__selector-opcion--activa .estrategia-card__selector-icono {
+  color: var(--fk-dom-compromisos-text);
 }
 
 .estrategia-card__metrica-tip {
@@ -765,12 +779,18 @@
   line-height: 1.4;
 }
 
-/* D.2a (ADR 011 rev): acelerador plegable de pago extra. */
+/* D.2a (ADR 011 rev): acelerador plegable de pago extra.
+   D.16c (ADR 036 D3): sub-card "inset" (bg-base) con el ícono del summary
+   en verde (invita a explorar; el impacto es la recompensa). */
 .estrategia-card__acelerador {
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   margin-top: var(--fk-space-4);
   overflow: hidden;
+  background: var(--fk-bg-base);
+}
+.estrategia-card__acelerador-summary .icon {
+  color: var(--fk-success-text);
 }
 .estrategia-card__acelerador-summary {
   padding: var(--fk-space-3) var(--fk-space-4);
@@ -803,16 +823,24 @@
   background: var(--fk-bg-elevated);
   margin-top: var(--fk-space-3);
 }
+/* D.16c: el impacto activo usa el mismo lenguaje de callout que la
+   comparativa (fondo tintado + borde completo + ícono verde). */
 .estrategia-card__resumen-extra--activo {
-  background: var(--fk-nudge-success-bg);
-  border: 1px solid var(--fk-nudge-success-border);
+  background: color-mix(in srgb, var(--fk-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 26%, transparent);
 }
-/* D.2b: remedio "Aumenta tu cuota" dentro del bloque inviable. */
+.estrategia-card__resumen-extra--activo .icon {
+  color: var(--fk-success-text);
+  vertical-align: -0.2em;
+}
+/* D.2b: remedio "Aumenta tu cuota" dentro del bloque inviable.
+   D.16c: en neutros (2 capas): panel base, sin fondo elevated propio. */
 .estrategia-card__remedio {
   margin-top: var(--fk-space-4);
   padding: var(--fk-space-4);
   border-radius: var(--fk-radius-md);
-  background: var(--fk-bg-elevated);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
 }
 /* D.3a/D.3b: herramientas "Renegociar la tasa" y "Consolidar". */
 .estrategia-card__renegociar-comparativa,

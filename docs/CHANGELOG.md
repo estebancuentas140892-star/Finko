@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.16c acelerador + panel inviable en 2 capas (ADR 036 D3/D4) · 2026-07-12
+
+Cierra **D.16c** (`docs/BOARD.md`), tercera rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Materializa la capa visual que pedía D.15a punto 1 (arquitectura de 2 capas del ADR 031: la alarma señala, la solución calma).
+
+**Qué cambió:** (1) **acelerador** "¿Puedes pagar más rápido?" como sub-card inset (`bg-base`) con el ícono del summary en verde; el impacto del extra pasa a callout de éxito con ícono (mismo lenguaje que la comparativa de D.16b). (2) **Plan inviable en 2 capas:** el danger vive SOLO en el botón de alerta; el panel interior pasa de fondo danger a neutros (fondo base + borde danger sutil) y únicamente el título del diagnóstico conserva el rojo (la regla CSS que teñía TODOS los títulos del panel se acotó al diagnóstico). (3) **Selector de alternativas como tiles verticales** (ícono arriba + nombre abajo), activa en frambuesa de sección; Renegociar estrena `i-handshake`. (4) **Emojis fuera** de todo el bloque: 🎯→`i-trending-down`/`i-check-circle`, 🤝→`i-handshake`, 🏦→`i-cuentas`, 🔒→`i-alert` (SC 1.4.11: ícono + texto). (5) **Fix visual real encontrado en la pasada:** los botones "Aplicar nueva tasa" y "Consolidar" usaban la clase inexistente `btn--primary` (doble guion) y se pintaban como botones sin estilo; ahora `btn-primary`. Cero cambios de lógica; las suites BUG-011 quedan intactas.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/estrategia.js` (tiles del selector + handshake + no-aplica sin candado), `views/estrategia-impacto.js` (íconos en títulos y mensajes ok, fix `btn-primary`), `styles/components/charts.css`, `tests/unit/compromisos.test.js` (4 tests nuevos + 2 aserciones de emoji actualizadas al criterio real), `service-worker.js` (v368→v369).
+
+**Verificación:** 2495/2495 unit + 17/17 E2E `estrategia-pago` + lint verdes.
+
+**Podría afectar:** solo presentación del panel de estrategia; los `data-action` y el flujo de alternativas no cambiaron.
+
+---
+
 ### feat(compromisos): D.16b picker de estrategia con identidad de sección + comparativa como callout (ADR 036 D2) · 2026-07-12
 
 Cierra **D.16b** (`docs/BOARD.md`), segunda rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)).

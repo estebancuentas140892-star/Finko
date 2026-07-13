@@ -2736,6 +2736,56 @@ describe('renderEstrategiaPago D.16b: header, picker e íconos', () => {
   });
 });
 
+// ── renderEstrategiaPago: D.16c (ADR 036 D3/D4, acelerador + panel en 2 capas) ──
+
+describe('renderEstrategiaPago D.16c: tiles del selector e íconos sin emoji', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, panelAlternativasAbierto: true, alternativaActiva: 'renegociar' });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda cara', saldoTotal: 10_000_000, cuotaMensual: 50_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda barata', saldoTotal: 500_000, cuotaMensual: 100_000, tasa: 0.10, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('cada opción del selector es un tile con ícono arriba y nombre abajo', () => {
+    renderEstrategiaPago();
+    const opciones = document.querySelectorAll('.estrategia-card__selector-opcion');
+    expect(opciones.length).toBe(3);
+    for (const op of opciones) {
+      expect(op.querySelector('.estrategia-card__selector-icono')).not.toBeNull();
+      expect(op.querySelector('.estrategia-card__selector-nombre')).not.toBeNull();
+    }
+  });
+
+  it('Renegociar usa i-handshake en el selector y en el título de la herramienta', () => {
+    renderEstrategiaPago();
+    const tile = document.querySelector('[data-alternativa="renegociar"]');
+    expect(tile.innerHTML).toContain('#i-handshake');
+    const tool = document.querySelector('.estrategia-card__remedio--renegociar');
+    expect(tool.innerHTML).toContain('#i-handshake');
+    expect(tool.innerHTML).not.toContain('🤝');
+  });
+
+  it('los botones Aplicar de renegociar/consolidar usan btn-primary (la clase btn--primary no existe)', () => {
+    renderEstrategiaPago();
+    const btnRenegociar = document.querySelector('.estrategia-card__renegociar-aplicar');
+    expect(btnRenegociar.className).toContain('btn-primary');
+    expect(btnRenegociar.className).not.toContain('btn--primary');
+    setEstrategiaUI({ alternativaActiva: 'consolidar' });
+    renderEstrategiaPago();
+    const btnConsolidar = document.querySelector('.estrategia-card__consolidar-aplicar');
+    expect(btnConsolidar.className).toContain('btn-primary');
+    expect(btnConsolidar.className).not.toContain('btn--primary');
+  });
+
+  it('el bloque inviable completo no contiene emojis (🤝🏦🎯 fuera, D.16c)', () => {
+    renderEstrategiaPago();
+    const html = document.getElementById('estrategia-pago').innerHTML;
+    expect(html).not.toMatch(/🤝|🏦|🎯|🔒/u);
+  });
+});
+
 // ── renderEstrategiaPago: D.8 (plan inviable: botón único → panel con selector) ──
 
 describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
@@ -2972,10 +3022,11 @@ describe('renderComparativaRenegociacion', () => {
     expect(renderComparativaRenegociacion(null, 0, 'EA')).toContain('Escribe la tasa');
   });
 
-  it('mejora con ahorro: muestra "menos" y el plazo nuevo', () => {
+  it('mejora con ahorro: mensaje ok con "menos" y el plazo nuevo (ícono, sin emoji, D.16c)', () => {
     const sim = simularRenegociacion({ saldo: 5_000_000, tasaEA: 0.40, cuota: 300_000 }, 0.20);
     const html = renderComparativaRenegociacion(sim, 20, 'EA');
-    expect(html).toContain('🎯');
+    expect(html).toContain('estrategia-card__renegociar-msg--ok');
+    expect(html).not.toContain('🎯');
     expect(html).toContain('menos');
   });
 
@@ -3095,10 +3146,11 @@ describe('renderComparativaConsolidacion', () => {
     expect(renderComparativaConsolidacion(null)).toContain('Ingresa la tasa');
   });
 
-  it('mejora: muestra el ahorro en intereses', () => {
+  it('mejora: mensaje ok con el ahorro en intereses (ícono, sin emoji, D.16c)', () => {
     const sim = simularConsolidacion(viables(), { tasaEA: 0.15, cuota: 300_000 });
     const html = renderComparativaConsolidacion(sim);
-    expect(html).toContain('🎯');
+    expect(html).toContain('estrategia-card__renegociar-msg--ok');
+    expect(html).not.toContain('🎯');
     expect(html).toContain('ahorras');
     expect(html).toContain('en intereses');
   });

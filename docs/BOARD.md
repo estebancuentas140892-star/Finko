@@ -10,7 +10,7 @@
 
 ## En proceso
 
-**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas: **D.16a y D.16b cerradas el 2026-07-12** (hero + picker/comparativa, ver CHANGELOG); sigue D.16c (tarjetas en la sección Deudas abajo).
+**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas: **D.16a, D.16b y D.16c cerradas el 2026-07-12** (hero + picker/comparativa + acelerador/panel inviable, ver CHANGELOG); sigue D.16d, la última (tarjeta en la sección Deudas abajo).
 
 _(El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, con D.16 como tercer consumidor: Inicio, Mis cuentas y ahora Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5.)_
 
@@ -136,17 +136,11 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 > **D.16b cerrada el 2026-07-12** (picker con identidad de sección + comparativa como callout, ver CHANGELOG): card a superficie con sombra en reposo, header con teja + "¿Cómo salir más rápido?", eyebrow genérico `.grupo-eyebrow`, picker activo en frambuesa, `i-snowball`/`i-handshake`/`i-trending-down` publicados como drafts (IV.4 sigue abierta), comparativa sin emojis. 3 tests unitarios nuevos, SW v368.
 
-#### D.16c - Deudas v2 visual: acelerador + panel inviable re-estilados
-- Prioridad  : alta
-- Estado     : en proceso (2026-07-12)
-- Objetivo   : (ADR 036 D3+D4) acelerador como sub-card con callout de impacto; alerta en danger solo en el encabezado + panel interior en neutros con selector de alternativas como tiles (materializa la capa visual de D.15a punto 1). Sin cambios de lógica.
-- Secciones  : Deudas (`views/estrategia.js`, `views/estrategia-impacto.js`, `styles/components/charts.css`)
-- Depende de : D.16b (misma card, mismo lenguaje)
-- Modelo     : Sonnet 5 - Alto
+> **D.16c cerrada el 2026-07-12** (acelerador + panel inviable en 2 capas, ver CHANGELOG): danger solo en el botón de alerta, panel interior en neutros, selector de alternativas como tiles con ícono, emojis fuera (🎯🤝🏦🔒), y fix del `btn--primary` inexistente en los botones Aplicar. 4 tests unitarios nuevos, SW v369.
 
 #### D.16d - Deudas v2 visual: tarjeta de deuda con chips + máscara + empty state
 - Prioridad  : alta
-- Estado     : pendiente (absorbe D.15c)
+- Estado     : en proceso (2026-07-12; absorbe D.15c)
 - Objetivo   : (ADR 036 D5+D6+D7) `.list-item` → tarjeta de deuda: teja 44px con badge de orden en la esquina + chip de urgencia + saldo prominente + chips de categoría/tasa + aviso de tasa como callout ámbar + Abonar con tinte compromisos + eliminar ghost→danger. Máscara del ojo extendida a los saldos. Encabezado "Tus deudas · Orden X". Empty state alineado al mockup.
 - Secciones  : Deudas (`views/lista.js`, `styles/components/domain.css`)
 - Depende de : D.16a (comparte la máscara del ojo)

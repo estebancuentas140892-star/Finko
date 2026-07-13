@@ -277,7 +277,7 @@ export function renderResumenExtra(sinExtra, conExtra, extraMensual) {
   if (!base.completo) {
     return `
       <div class="estrategia-card__resumen-extra estrategia-card__resumen-extra--activo" role="status">
-        <p class="estrategia-card__bloque-titulo">🎯 Impacto de tu pago extra</p>
+        <p class="estrategia-card__bloque-titulo">${icon('trending-down', 'icon icon--sm')} Impacto de tu pago extra</p>
         <p class="estrategia-card__bloque-body">
           Sin este pago extra, tus cuotas no alcanzan a cubrir los intereses y la deuda no se termina de pagar. Con <strong>${f(extraMensual)}/mes adicional</strong> sí logras saldarla en <strong>${formatearDuracion(extra.meses)}</strong>.
         </p>
@@ -303,7 +303,7 @@ export function renderResumenExtra(sinExtra, conExtra, extraMensual) {
 
   return `
     <div class="estrategia-card__resumen-extra estrategia-card__resumen-extra--activo" role="status">
-      <p class="estrategia-card__bloque-titulo">🎯 Impacto de tu pago extra</p>
+      <p class="estrategia-card__bloque-titulo">${icon('trending-down', 'icon icon--sm')} Impacto de tu pago extra</p>
       <p class="estrategia-card__bloque-body">
         Con ${f(extraMensual)}/mes adicional terminas ${partes.join(' y ')}.
       </p>
@@ -365,7 +365,7 @@ export function renderRenegociar(deudas, ui) {
 
   return `
     <div class="estrategia-card__remedio estrategia-card__remedio--renegociar">
-      <p class="estrategia-card__bloque-titulo">🤝 Renegociar la tasa</p>
+      <p class="estrategia-card__bloque-titulo">${icon('handshake', 'icon icon--sm')} Renegociar la tasa</p>
       <p class="estrategia-card__bloque-body">
         Si tu entidad te baja la tasa, cada cuota abona más a lo que debes y la deuda cierra antes.
       </p>
@@ -383,7 +383,7 @@ export function renderRenegociar(deudas, ui) {
       <div class="estrategia-card__renegociar-comparativa">
         ${renderComparativaRenegociacion(sim, nuevaPct, sufijo)}
       </div>
-      <button type="button" class="btn btn--primary estrategia-card__renegociar-aplicar"
+      <button type="button" class="btn btn-primary estrategia-card__renegociar-aplicar"
               data-action="aplicar-renegociacion" data-deuda="${selId}" data-unidad="${sufijo}"
               ${puedeAplicar ? '' : 'disabled'}>
         Aplicar nueva tasa
@@ -419,7 +419,7 @@ export function renderConsolidar(deudas, ui) {
 
   return `
     <div class="estrategia-card__remedio estrategia-card__remedio--consolidar">
-      <p class="estrategia-card__bloque-titulo">🏦 Consolidar tus deudas</p>
+      <p class="estrategia-card__bloque-titulo">${icon('cuentas', 'icon icon--sm')} Consolidar tus deudas</p>
       <p class="estrategia-card__bloque-body">
         Junta tus <strong>${deudas.length}</strong> deudas en un solo crédito nuevo. Si consigues una tasa
         más baja que la mezcla actual, pagas menos intereses y manejas una sola cuota.
@@ -444,7 +444,7 @@ export function renderConsolidar(deudas, ui) {
       <div class="estrategia-card__consolidar-comparativa">
         ${renderComparativaConsolidacion(sim)}
       </div>
-      <button type="button" class="btn btn--primary estrategia-card__consolidar-aplicar"
+      <button type="button" class="btn btn-primary estrategia-card__consolidar-aplicar"
               data-action="aplicar-consolidacion" ${puedeAplicar ? '' : 'disabled'}>
         Consolidar en un crédito nuevo
       </button>
@@ -479,7 +479,7 @@ export function renderComparativaConsolidacion(sim) {
   if (!sim.actual.completo) {
     return `
       <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
-        🎯 Hoy tu plan no se sostiene. Consolidando, saldas todo en <strong>${formatearDuracion(sim.consolidado.meses)}</strong> con una cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
+        ${icon('check-circle', 'icon icon--sm')} Hoy tu plan no se sostiene. Consolidando, saldas todo en <strong>${formatearDuracion(sim.consolidado.meses)}</strong> con una cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
       </p>`;
   }
 
@@ -502,7 +502,7 @@ export function renderComparativaConsolidacion(sim) {
       : '';
   return `
     <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
-      🎯 Consolidando ahorras <strong>${f(sim.ahorroIntereses)} en intereses</strong>${tiempo}. Pagarías una sola cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
+      ${icon('check-circle', 'icon icon--sm')} Consolidando ahorras <strong>${f(sim.ahorroIntereses)} en intereses</strong>${tiempo}. Pagarías una sola cuota de <strong>${f(sim.consolidado.cuotaMensual)}/mes</strong>.
     </p>`;
 }
 
@@ -538,7 +538,7 @@ export function renderComparativaRenegociacion(sim, nuevaPct, unidad) {
   if (!sim.actual.completo) {
     return `
       <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
-        🎯 Con la tasa actual esta deuda no se termina de pagar. Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> sí la saldas en <strong>${formatearDuracion(sim.nueva.meses)}</strong>.
+        ${icon('check-circle', 'icon icon--sm')} Con la tasa actual esta deuda no se termina de pagar. Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> sí la saldas en <strong>${formatearDuracion(sim.nueva.meses)}</strong>.
       </p>`;
   }
 
@@ -556,7 +556,7 @@ export function renderComparativaRenegociacion(sim, nuevaPct, unidad) {
 
   return `
     <p class="estrategia-card__bloque-body estrategia-card__renegociar-msg--ok">
-      🎯 Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> pagas esta deuda en <strong>${formatearDuracion(sim.nueva.meses)}</strong>: ${partes.join(' y ')} frente a la tasa actual.
+      ${icon('check-circle', 'icon icon--sm')} Con <strong>${_fmtPct(nuevaPct)} ${sufijo}</strong> pagas esta deuda en <strong>${formatearDuracion(sim.nueva.meses)}</strong>: ${partes.join(' y ')} frente a la tasa actual.
     </p>`;
 }
 

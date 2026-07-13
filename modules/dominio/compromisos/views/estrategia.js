@@ -219,9 +219,11 @@ function _renderBotonAlerta(abierto) {
 // >= 2 deudas pagables (ya garantizado: el bloque inviable solo aparece con
 // >= 2 deudas, pero se valida igual por defensividad y consistencia con
 // el guard propio de `renderConsolidar`).
+// D.16c (ADR 036 D4): renegociar usa el símbolo de apretón de manos
+// (draft `i-handshake`, mismo lenguaje que la deuda personal).
 const _META_ALTERNATIVAS = [
   { id: 'aumentar',   icono: icon('trending-up', 'icon icon--sm'), nombre: 'Aumentar la cuota' },
-  { id: 'renegociar', icono: icon('percent', 'icon icon--sm'),     nombre: 'Renegociar la tasa' },
+  { id: 'renegociar', icono: icon('handshake', 'icon icon--sm'),   nombre: 'Renegociar la tasa' },
   { id: 'consolidar', icono: icon('cuentas', 'icon icon--sm'),     nombre: 'Consolidar' },
 ];
 
@@ -255,7 +257,8 @@ function _renderPanelAlternativas(diagnostico, extraMensual, resumenExtraHtml, d
                   data-action="elegir-alternativa"
                   data-alternativa="${a.id}"
                   aria-pressed="${activa === a.id ? 'true' : 'false'}">
-            <span aria-hidden="true">${a.icono}</span> ${a.nombre}
+            <span class="estrategia-card__selector-icono" aria-hidden="true">${a.icono}</span>
+            <span class="estrategia-card__selector-nombre">${a.nombre}</span>
           </button>`).join('')}
       </div>
 
@@ -443,7 +446,7 @@ function _renderNoAplica(estrategia) {
   if (estrategia === 'avalancha') {
     return `
       <div class="estrategia-card__no-aplica" role="status">
-        <p class="estrategia-card__bloque-titulo">🔒 No aplica con tus deudas actuales</p>
+        <p class="estrategia-card__bloque-titulo">${icon('alert', 'icon icon--sm')} No aplica con tus deudas actuales</p>
         <p class="estrategia-card__bloque-body">
           Avalancha solo tiene sentido si hay al menos una deuda con tasa de interés mayor a 0.
           Actualmente todas tus deudas son sin interés, así que cualquier orden de pago da el mismo resultado.
