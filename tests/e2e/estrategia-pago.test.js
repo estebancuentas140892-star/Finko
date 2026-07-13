@@ -194,30 +194,22 @@ test.describe('Estrategia de pago de deudas (F.4)', () => {
 
   // ── Test 5: extra mensual redibuja la card ───────────────────────────────
 
-  test('ingresar extra mensual actualiza el total de intereses', async ({ page }) => {
+  test('la palanca "Aumentar la cuota" muestra el impacto del pago extra (D.15d-2)', async ({ page }) => {
     await inyectarDosDeudas(page);
     await irACompromisos(page);
 
-    // Seleccionar Avalancha para ver las métricas (--danger = total intereses)
-    await page.locator('[data-action="elegir-estrategia"][data-estrategia="avalancha"]').click();
-    await page.waitForSelector('.estrategia-card__metrica-valor--danger', { timeout: 3_000 });
-
-    // Capturar total de intereses sin extra
-    const interesesLabel = page.locator('.estrategia-card__metrica-valor--danger').first();
-    const sinExtra = await interesesLabel.textContent();
-
-    // El input de extra vive en un <details> colapsado (D.2a): abrirlo primero.
-    await page.locator('.estrategia-card__acelerador-summary').click();
+    // La sección de palancas es siempre visible; elegir "Aumentar la cuota".
+    await elegirPalanca(page, 'aumentar');
     await page.waitForSelector('#estrategia-extra', { state: 'visible', timeout: 3_000 });
 
-    // Ingresar $500 000 de extra: el input dispara cambiar-extra-estrategia
-    const inputExtra = page.locator('#estrategia-extra');
-    await inputExtra.fill('500000');
-    await inputExtra.blur();
+    // Sin extra, no hay resumen de impacto activo (solo la invitación a escribir).
+    await expect(page.locator('.estrategia-card__resumen-extra--activo')).toHaveCount(0);
 
-    // La card se redibuja: con extra, los intereses totales deben bajar
-    const conExtra = await interesesLabel.textContent();
-    expect(conExtra).not.toBe(sinExtra);
+    // Ingresar $500 000 de extra: el resumen de impacto aparece con el ahorro.
+    await page.locator('#estrategia-extra').fill('500000');
+    const resumen = page.locator('.estrategia-card__resumen-extra--activo');
+    await expect(resumen).toBeVisible({ timeout: 3_000 });
+    await expect(resumen).toContainText('menos');
   });
 
   // ── Test 6: intereses totales se muestran ───────────────────────────────
@@ -302,44 +294,49 @@ async function inyectarPlanInviable(page) {
   });
 }
 
-/** Activa el botón de alerta y elige una alternativa en el selector (D.8). */
-async function abrirAlternativa(page, alternativa) {
-  await page.locator('[data-action="abrir-panel-alternativas"]').click();
-  await page.waitForSelector('.estrategia-card__selector', { timeout: 3_000 });
-  if (alternativa !== 'aumentar') {
-    await page.locator(`[data-action="elegir-alternativa"][data-alternativa="${alternativa}"]`).click();
-  }
+/**
+ * Elige una palanca en la sección siempre visible (D.15d-2). Ya no hay que abrir
+ * un panel: los 3 tiles están a primer plano. Clica el tile y espera a que quede
+ * activo (su herramienta se muestra).
+ */
+async function elegirPalanca(page, palanca) {
+  await page.waitForSelector('.estrategia-card__palancas', { timeout: 5_000 });
+  await page.locator(`[data-action="elegir-alternativa"][data-alternativa="${palanca}"]`).click();
+  await page.waitForSelector(
+    `.estrategia-card__selector-opcion--activa[data-alternativa="${palanca}"]`,
+    { timeout: 3_000 },
+  );
 }
 
 // ── SUITE: Panel de alternativas (D.8) ────────────────────────────────────────
 
-test.describe('Panel de alternativas del plan inviable (D.8)', () => {
+test.describe('Plan inviable: alarma (diagnóstico) + palancas siempre visibles (D.15d-2)', () => {
 
-  test('el plan inviable muestra un botón único; el panel está cerrado por defecto', async ({ page }) => {
+  test('el plan inviable muestra el botón de alerta y las 3 palancas a primer plano', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
 
     const boton = page.locator('[data-action="abrir-panel-alternativas"]');
     await expect(boton).toBeVisible({ timeout: 5_000 });
     await expect(boton).toHaveAttribute('aria-expanded', 'false');
-
-    // Ningún remedio se muestra a la vez mientras el panel está cerrado.
-    await expect(page.locator('.estrategia-card__remedio')).toHaveCount(0);
-    await expect(page.locator('.estrategia-card__selector')).toHaveCount(0);
+    // El diagnóstico (danger) arranca cerrado...
+    await expect(page.locator('.estrategia-card__alerta')).toHaveCount(0);
+    // ...pero la sección de palancas (la solución) es siempre visible, con los 3 tiles.
+    await expect(page.locator('.estrategia-card__palancas')).toBeVisible();
+    await expect(page.locator('.estrategia-card__selector-opcion')).toHaveCount(3);
   });
 
-  test('activar el botón abre el panel con "Aumentar la cuota" por defecto', async ({ page }) => {
+  test('activar el botón abre el diagnóstico (el porqué); las palancas siguen visibles', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
 
-    await abrirAlternativa(page, 'aumentar');
+    await page.locator('[data-action="abrir-panel-alternativas"]').click();
 
     await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.estrategia-card__selector-opcion')).toHaveCount(3);
-    await expect(page.locator('#estrategia-extra')).toBeVisible();
-    // Las otras dos alternativas no se muestran a la vez.
-    await expect(page.locator('.estrategia-card__remedio--renegociar')).toHaveCount(0);
-    await expect(page.locator('.estrategia-card__remedio--consolidar')).toHaveCount(0);
+    await expect(page.locator('.estrategia-card__alerta')).toContainText('Por qué tu plan no se sostiene');
+    // El selector NO está dentro del diagnóstico: vive en las palancas, siempre visible.
+    await expect(page.locator('.estrategia-card__alerta .estrategia-card__selector')).toHaveCount(0);
+    await expect(page.locator('.estrategia-card__palancas .estrategia-card__selector-opcion')).toHaveCount(3);
   });
 
 });
@@ -349,7 +346,7 @@ test.describe('Renegociar la tasa (D.3a) dentro del panel de alternativas (D.8)'
   test('la herramienta aparece al elegirla en el selector y compara en vivo', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'renegociar');
+    await elegirPalanca(page, 'renegociar');
 
     const tool = page.locator('.estrategia-card__remedio--renegociar');
     await expect(tool).toBeVisible({ timeout: 5_000 });
@@ -371,7 +368,7 @@ test.describe('Renegociar la tasa (D.3a) dentro del panel de alternativas (D.8)'
   test('aplicar la nueva tasa la escribe en la deuda y vuelve viable el plan', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'renegociar');
+    await elegirPalanca(page, 'renegociar');
 
     // Una tasa muy baja vuelve pagable la deuda grande → todo el plan viable.
     await page.locator('#renegociar-tasa').fill('1');
@@ -403,7 +400,7 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
   test('la herramienta aparece al elegirla en el selector y compara en vivo', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'consolidar');
+    await elegirPalanca(page, 'consolidar');
 
     const tool = page.locator('.estrategia-card__remedio--consolidar');
     await expect(tool).toBeVisible({ timeout: 5_000 });
@@ -424,7 +421,7 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
   test('consolidar crea el crédito nuevo y archiva las deudas previas', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'consolidar');
+    await elegirPalanca(page, 'consolidar');
 
     await page.locator('#consolidar-tasa').fill('8');
     await page.locator('#consolidar-cuota').fill('400000');
@@ -461,25 +458,25 @@ test.describe('Consolidar deudas (D.3b) dentro del panel de alternativas (D.8)',
 
 // ── SUITE: BUG-011 (la simulación de extra no reestructura la card) ───────────
 
-test.describe('BUG-011: el extra simulado no cierra el panel ni se aplica solo', () => {
+test.describe('BUG-011: el extra simulado no reestructura la card ni se aplica solo', () => {
 
-  test('teclear un extra que volvería viable el plan y cambiar de alternativa conserva el panel', async ({ page }) => {
+  test('teclear un extra que volvería viable el plan y cambiar de palanca no lo presenta como saneado', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'aumentar');
+    await elegirPalanca(page, 'aumentar');
 
-    // Extra grande: la simulación SÍ completa el plan. Antes del fix, el
-    // siguiente re-render leía este valor como estado real y reemplazaba el
-    // panel de alternativas por el acelerador del plan viable.
+    // Extra grande: la simulación SÍ completaría el plan. Antes del fix, el
+    // siguiente re-render leía este valor como estado real y presentaba el plan
+    // como saneado.
     await page.locator('#estrategia-extra').fill('500000');
 
     // Cambiar a "Renegociar la tasa" re-renderiza la card completa.
     await page.locator('[data-action="elegir-alternativa"][data-alternativa="renegociar"]').click();
 
-    // El panel sigue abierto mostrando la herramienta elegida; la card no
-    // presenta el plan como saneado.
+    // La herramienta elegida se muestra y el plan SIGUE señalado como inviable
+    // (el botón de alerta persiste): la simulación no restructuró la card.
     await expect(page.locator('.estrategia-card__remedio--renegociar')).toBeVisible({ timeout: 3_000 });
-    await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('[data-action="abrir-panel-alternativas"]')).toBeVisible();
     await expect(page.locator('.estrategia-card__acelerador')).toHaveCount(0);
 
     // Y las cuotas registradas no cambiaron: la simulación nunca se aplicó.
@@ -493,7 +490,7 @@ test.describe('BUG-011: el extra simulado no cierra el panel ni se aplica solo',
   test('volver a "Aumentar la cuota" conserva el monto simulado y su resumen', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'aumentar');
+    await elegirPalanca(page, 'aumentar');
 
     await page.locator('#estrategia-extra').fill('500000');
     await page.locator('[data-action="elegir-alternativa"][data-alternativa="renegociar"]').click();
@@ -517,7 +514,7 @@ test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => 
   test('aplicar el aumento sube la cuotaMensual de la deuda que crece', async ({ page }) => {
     await inyectarPlanInviable(page);
     await irACompromisos(page);
-    await abrirAlternativa(page, 'aumentar');
+    await elegirPalanca(page, 'aumentar');
 
     // Sin extra, el botón "Aplicar este aumento" está deshabilitado.
     const aplicar = page.locator('[data-action="aplicar-aumento-cuota"]');

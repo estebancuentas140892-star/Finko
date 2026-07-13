@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.15d-2 las 3 palancas a primer plano en la vista, absorbe D.15e · 2026-07-13
+
+Cierra **D.15d-2** (`docs/BOARD.md`), segunda rebanada de D.15d: conecta el motor puro `recomendarPalanca` (D.15d-1) a la card de estrategia. **El corazón de la iniciativa Deudas v2 se vuelve visible.**
+
+**Qué cambió:** la card de estrategia pasa a **2 niveles ortogonales**. (1) **Nivel orden** (Avalancha/Bola de nieve): sin cambio, pero su detalle se **decopla del extra simulado** (usa siempre extra=0; la exploración del pago extra se mudó a la palanca). (2) **Nivel palanca (nuevo, siempre visible)**: las 3 macro-acciones (Aumentar la cuota / Renegociar la tasa / Consolidar), antes enterradas en el panel "plan inviable" que solo veía un usuario con plan inviable, ahora son una sección permanente bajo el detalle de orden: intro "¿Qué acción te conviene?" + la razón de la palanca recomendada + 3 tiles ordenados por relevancia (`palanca.orden`), con la principal marcada "Recomendada" (`--recomendada`) y preseleccionada, y la herramienta de la palanca activa (una a la vez). La vista calcula la capacidad: `estimarSalarioMensual(S.ingresos)` (infra, D.15d-1) para el ingreso + **`calcularFijosMensuales(S.compromisos)`** (nueva en `modelo.js`, suma tipo 'fijo') para los fijos. (3) **Absorbe D.15e:** el acelerador `<details>` "¿Puedes pagar más rápido?" (solo ofrecía subir la cuota, sin "Aplicar") se retiró; su input vive ahora en la palanca "Aumentar la cuota", que ya trae el botón "Aplicar este aumento". (4) **Panel inviable en 2 capas puras (ADR 031):** el botón de alerta (danger) abre SOLO el diagnóstico; el selector de palancas ya no vive ahí (es la sección neutra siempre visible). **BUG-011 intacto:** la estructura de la card se sigue decidiendo con datos registrados (`recomendarEstrategia(deudas, 0)`); el extra simulado nunca decide estructura. `_uiEstrategia.alternativaActiva` default `null` ("sin elección" → principal); `setEstrategiaUI` admite reset a null.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/estrategia.js` (2 niveles + `_renderPalancas`/`_renderPalancaTile`; retira `_renderAceleradorExtra`), `modules/dominio/compromisos/views/estrategia-impacto.js` (copy del acelerador retirado), `modules/dominio/compromisos/logic/modelo.js` (+`calcularFijosMensuales`), `modules/dominio/compromisos/logic.js` (export), `modules/dominio/compromisos/index.js` (retira el wiring muerto `cambiar-extra-estrategia`/`_cambiarExtraEstrategia`), `styles/components/charts.css` (`.estrategia-card__palancas`/`-intro`/`-razon` + `.estrategia-card__selector-sub`/`--recomendada`), `tests/unit/compromisos.test.js` (bloque de la vista reescrito + `describe D.15d-2`), `tests/e2e/estrategia-pago.test.js` (helper `elegirPalanca`, palancas siempre visibles), `service-worker.js` (v371→v372).
+
+**Verificación:** 2520/2520 unit + **179/179 E2E** (suite `estrategia-pago` reescrita al nuevo modelo, corrida en Chromium real) + lint verdes.
+
+**Podría afectar:** solo la sección Deudas. Los `data-action` de las herramientas (aumentar/renegociar/consolidar) y sus handlers no cambiaron; el acelerador `.estrategia-card__acelerador` y la acción `cambiar-extra-estrategia` ya no existen (cualquier consumidor externo debía ser interno a esta card, no se encontró otro).
+
+---
+
 ### feat(compromisos): D.15d-1 motor puro recomendarPalanca + estimarSalarioMensual a infra · 2026-07-13
 
 Primera de las dos rebanadas en que se re-cortó **D.15d** (motor de recomendación de palanca de Deudas v2) al triarla: toca infra + lógica pura + vista, así que se parte en **D.15d-1** (esta, lógica sin UI, verificable por tests) y **D.15d-2** (la vista que consume el motor). Precedente aplicado: **MC.17a** (lógica pura aterriza antes que su consumidor).

@@ -132,6 +132,22 @@ export function calcularTotalCompromisos(compromisos) {
 }
 
 /**
+ * Suma la proyección mensual de los compromisos tipo 'fijo' activos (arriendo,
+ * servicios, suscripciones): los gastos recurrentes que NO son deuda. Es el
+ * `fijosMensuales` que consume el motor de palanca (D.15d): la capacidad de
+ * pago resta estos fijos aparte de las cuotas de deuda, para no doble-contar
+ * (las cuotas de deuda las resta `recomendarPalanca` desde el array de deudas).
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @returns {number} Total mensual en COP de los compromisos fijos.
+ */
+export function calcularFijosMensuales(compromisos) {
+  return compromisosActivos(compromisos)
+    .filter(c => !esDeuda(c.tipo))
+    .reduce((acc, c) => acc + calcularCompromisoMensual(c), 0);
+}
+
+/**
  * Resumen agregado de las deudas activas para el hero de la sección
  * (D.16a, ADR 036 D1). Solo deudas (entidad + personal): los gastos fijos
  * del mismo dominio (tipo 'fijo', viven en Calendario) no entran, porque

@@ -18,10 +18,13 @@
 import { S } from '../../../core/state.js';
 import { esc as _esc, f } from '../../../infra/utils.js';
 import { icon } from '../../../infra/icons.js';
+import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   filtrarDeudasPagables,
   compararEstrategias,
   recomendarEstrategia,
+  recomendarPalanca,
+  calcularFijosMensuales,
 } from '../logic.js';
 import {
   renderImpactoAvalancha,
@@ -41,8 +44,11 @@ const _uiEstrategia = {
   renegociarTasaPct:  0,     // nueva tasa escrita, en la unidad nativa de la deuda
   consolidarTasaPct:  0,     // tasa EA del crédito de consolidación
   consolidarCuota:    0,     // cuota mensual del crédito de consolidación
-  panelAlternativasAbierto: false,   // D.8: panel de alternativas (plan inviable) abierto/cerrado
-  alternativaActiva:  'aumentar',    // D.8: 'aumentar' | 'renegociar' | 'consolidar'
+  panelAlternativasAbierto: false,   // D.8: diagnóstico del plan inviable abierto/cerrado
+  // D.15d-2: palanca elegida en la sección siempre visible. null = "sin elegir":
+  // se muestra la palanca principal que recomienda el motor. Al tocar un tile
+  // se fija aquí y respeta la elección del usuario.
+  alternativaActiva:  null,          // null | 'aumentar' | 'renegociar' | 'consolidar'
 };
 
 /**
@@ -74,8 +80,12 @@ export function setEstrategiaUI(patch) {
   if (patch.panelAlternativasAbierto !== undefined) {
     _uiEstrategia.panelAlternativasAbierto = !!patch.panelAlternativasAbierto;
   }
-  if (patch.alternativaActiva === 'aumentar' || patch.alternativaActiva === 'renegociar' || patch.alternativaActiva === 'consolidar') {
-    _uiEstrategia.alternativaActiva = patch.alternativaActiva;
+  // alternativaActiva admite null explícito ("sin elección" → se usa la palanca
+  // principal). Un valor no reconocido también cae a null; `undefined` no la toca.
+  if (patch.alternativaActiva !== undefined) {
+    const v = patch.alternativaActiva;
+    _uiEstrategia.alternativaActiva =
+      (v === 'aumentar' || v === 'renegociar' || v === 'consolidar') ? v : null;
   }
 }
 
@@ -129,20 +139,23 @@ export function renderEstrategiaPago() {
 
   const { extraMensual, estrategia } = _uiEstrategia;
 
-  // BUG-011: la estructura de la card (recomendación, detalle y el bloque
-  // viable/inviable) se decide SOLO con los datos registrados (extra = 0).
-  // El extra tecleado en "Aumenta tu cuota" es una simulación que se commitea
-  // por tecla (para no perder el clic en "Aplicar"): si entrara en esta
-  // decisión, un monto suficiente + cualquier re-render (cambiar de
-  // alternativa, abrir/cerrar el panel) reemplazaría el panel de alternativas
-  // por el acelerador del plan "saneado", como si el aumento se hubiera
-  // aplicado sin confirmar. La simulación solo alimenta el resumen comparativo
-  // dentro de su propio bloque (resumenExtraHtml). Con plan viable, el extra
-  // sí participa de la recomendación: ahí es la exploración del acelerador.
+  // BUG-011: la ESTRUCTURA de la card (recomendación de orden, detalle y el
+  // bloque viable/inviable) se decide SOLO con los datos registrados (extra = 0).
+  // El extra tecleado en la palanca "Aumentar la cuota" es una simulación que se
+  // commitea por tecla (para no perder el clic en "Aplicar"): nunca decide
+  // estructura. Solo alimenta el resumen comparativo dentro de su propio bloque
+  // (resumenExtraHtml). El detalle de la estrategia de orden también usa extra=0:
+  // la exploración del pago extra vive en la palanca, no en el detalle de orden.
   const base = recomendarEstrategia(deudas, 0);
-  const recomendacion = base.viable && extraMensual > 0
-    ? recomendarEstrategia(deudas, extraMensual)
-    : base;
+
+  // Nivel PALANCA (D.15d-2): qué ACCIÓN tomar sobre el plan (Aumentar / Renegociar
+  // / Consolidar), ortogonal al orden Avalancha/Bola. La recomendación sale de
+  // datos registrados (ingreso, fijos, Σ cuotas), no del extra simulado: BUG-011
+  // vale también aquí. `estimarSalarioMensual` vive en infra (D.15d-1, ADN #10);
+  // los fijos mensuales los suma el propio dominio con `calcularFijosMensuales`.
+  const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
+  const fijosMensuales = calcularFijosMensuales(S.compromisos ?? []);
+  const palanca = recomendarPalanca(deudas, { ingresoMensual, fijosMensuales });
 
   const resumenExtraHtml = extraMensual > 0
     ? renderResumenExtra(compararEstrategias(deudas, 0), compararEstrategias(deudas, extraMensual), extraMensual)
@@ -162,48 +175,47 @@ export function renderEstrategiaPago() {
       </header>
 
       <div class="estrategia-cards" role="group" aria-label="Elige una estrategia">
-        ${_renderCardEstrategia('avalancha', estrategia, recomendacion, hayTasaPositiva)}
-        ${_renderCardEstrategia('bolaNieve', estrategia, recomendacion, true)}
+        ${_renderCardEstrategia('avalancha', estrategia, base, hayTasaPositiva)}
+        ${_renderCardEstrategia('bolaNieve', estrategia, base, true)}
       </div>
 
-      ${_renderDetalleEstrategia(estrategia, recomendacion, deudas, base.viable ? extraMensual : 0, hayTasaPositiva)}
-      ${base.viable
-        ? _renderAceleradorExtra(extraMensual, resumenExtraHtml)
-        : _renderBloqueInviable(base.diagnostico, extraMensual, resumenExtraHtml, deudas)}
+      ${_renderDetalleEstrategia(estrategia, base, deudas, 0, hayTasaPositiva)}
+      ${base.viable ? '' : _renderBloqueInviable(base.diagnostico)}
+      ${_renderPalancas(deudas, palanca, extraMensual, resumenExtraHtml)}
     </article>`;
 }
 
 /**
- * Bloque inviable (Revisión D.7, ADR 011). Aparece cuando ninguna estrategia
- * logra cerrar el plan con el pago actual, debajo del detalle de la
- * estrategia elegida (mismo lugar que el acelerador en un plan viable).
- *
- * Mientras está cerrado, se resume en un solo botón de alerta (sin saturar
- * la card con los 3 remedios a la vez). Al activarlo, despliega un panel con
- * el diagnóstico y un selector que muestra una alternativa a la vez.
+ * Bloque inviable (Revisión D.7, ADR 011; arquitectura de 2 capas del ADR 031,
+ * D.16c). Aparece cuando ninguna estrategia cierra el plan con el pago actual,
+ * debajo del detalle de la estrategia de orden. Es la CAPA DE ALARMA: un botón
+ * de alerta (danger) que, al abrirse, muestra SOLO el diagnóstico (qué deudas
+ * crecen y el extra mínimo). Las soluciones (las 3 palancas) viven en su propia
+ * sección siempre visible más abajo (`_renderPalancas`): la alarma señala, la
+ * solución calma.
  *
  * @param {{ deudasCrecientes: Array<{ id, descripcion, deficitMensual }>, extraMinimo: number|null }} diagnostico
- * @param {number} extraMensual
- * @param {string} resumenExtraHtml
- * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
  */
-function _renderBloqueInviable(diagnostico, extraMensual, resumenExtraHtml, deudas) {
+function _renderBloqueInviable(diagnostico) {
   if (!diagnostico) return '';
   const abierto = _uiEstrategia.panelAlternativasAbierto;
   return `
     ${_renderBotonAlerta(abierto)}
-    ${abierto ? _renderPanelAlternativas(diagnostico, extraMensual, resumenExtraHtml, deudas) : ''}`;
+    ${abierto ? `
+      <div id="estrategia-panel-alternativas" class="estrategia-card__alerta" role="region" aria-label="Por qué tu plan no se sostiene">
+        ${_renderDiagnosticoTexto(diagnostico)}
+      </div>` : ''}`;
 }
 
 /**
- * Botón único que resume el estado inviable y alterna el panel de alternativas.
- * Cambia de copy entre cerrado (alerta + invitación a actuar) y abierto
- * (encabezado corto, el panel ya explica el detalle).
+ * Botón único que resume el estado inviable y alterna el diagnóstico. Cambia de
+ * copy entre cerrado (alerta + invitación a entender) y abierto (encabezado
+ * corto, el panel ya explica el detalle).
  */
 function _renderBotonAlerta(abierto) {
   const texto = abierto
     ? 'Tu plan de pago no se sostiene'
-    : 'Cuidado: tu plan de pago no se sostiene. Veamos cómo resolverlo';
+    : 'Cuidado: tu plan de pago no se sostiene. Veamos por qué';
   return `
     <button type="button" class="estrategia-card__alerta-boton"
             data-action="abrir-panel-alternativas"
@@ -214,58 +226,79 @@ function _renderBotonAlerta(abierto) {
     </button>`;
 }
 
-// Las 3 alternativas que ofrece el panel. "aumentar" siempre aplica;
-// "renegociar" exige al menos una deuda con tasa > 0; "consolidar" exige
-// >= 2 deudas pagables (ya garantizado: el bloque inviable solo aparece con
-// >= 2 deudas, pero se valida igual por defensividad y consistencia con
-// el guard propio de `renderConsolidar`).
-// D.16c (ADR 036 D4): renegociar usa el símbolo de apretón de manos
-// (draft `i-handshake`, mismo lenguaje que la deuda personal).
-const _META_ALTERNATIVAS = [
-  { id: 'aumentar',   icono: icon('trending-up', 'icon icon--sm'), nombre: 'Aumentar la cuota' },
-  { id: 'renegociar', icono: icon('handshake', 'icon icon--sm'),   nombre: 'Renegociar la tasa' },
-  { id: 'consolidar', icono: icon('cuentas', 'icon icon--sm'),     nombre: 'Consolidar' },
-];
-
-function _alternativasDisponibles(deudas) {
-  const tieneRenegociar = deudas.some(d => d.tasaEA > 0);
-  const tieneConsolidar = deudas.length >= 2;
-  return _META_ALTERNATIVAS.filter(a =>
-    a.id === 'aumentar' ||
-    (a.id === 'renegociar' && tieneRenegociar) ||
-    (a.id === 'consolidar' && tieneConsolidar));
-}
+// Meta (ícono + nombre) de las 3 palancas (D.15d-2). El motor `recomendarPalanca`
+// decide cuáles aplican y en qué orden (`palanca.orden`) y cuál es la principal;
+// aquí solo vive su presentación. D.16c (ADR 036 D4): renegociar usa el símbolo
+// de apretón de manos (mismo lenguaje que la deuda personal).
+const _META_ALTERNATIVAS = {
+  aumentar:   { icono: icon('trending-up', 'icon icon--sm'), nombre: 'Aumentar la cuota' },
+  renegociar: { icono: icon('handshake', 'icon icon--sm'),   nombre: 'Renegociar la tasa' },
+  consolidar: { icono: icon('cuentas', 'icon icon--sm'),     nombre: 'Consolidar' },
+};
 
 /**
- * Panel desplegado por el botón de alerta: diagnóstico + selector de
- * alternativas + el contenido de la alternativa elegida (solo esa).
+ * Sección de PALANCAS (D.15d-2), siempre visible bajo el detalle de orden. Saca
+ * las 3 macro-acciones a primer plano (antes enterradas en el panel inviable):
+ * intro con la razón de la palanca recomendada + tiles con pesos visuales según
+ * `palanca.orden` (la principal marcada "Recomendada" y preseleccionada) + la
+ * herramienta de la palanca activa (una a la vez). No decide estructura: BUG-011
+ * se respeta porque `palanca` sale de datos registrados, no del extra simulado.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {ReturnType<import('../logic.js').recomendarPalanca>} palanca
+ * @param {number} extraMensual
+ * @param {string} resumenExtraHtml
  */
-function _renderPanelAlternativas(diagnostico, extraMensual, resumenExtraHtml, deudas) {
-  const disponibles = _alternativasDisponibles(deudas);
-  const activa = disponibles.some(a => a.id === _uiEstrategia.alternativaActiva)
+function _renderPalancas(deudas, palanca, extraMensual, resumenExtraHtml) {
+  const orden = palanca.orden || [];
+  if (orden.length === 0) return '';
+
+  // Palanca activa: la que el usuario tocó (si sigue disponible) o, sin elección,
+  // la principal que recomienda el motor.
+  const activa = (_uiEstrategia.alternativaActiva && orden.includes(_uiEstrategia.alternativaActiva))
     ? _uiEstrategia.alternativaActiva
-    : disponibles[0].id;
+    : palanca.principal;
 
   return `
-    <div id="estrategia-panel-alternativas" class="estrategia-card__alerta" role="region" aria-label="Alternativas para tu plan de pago">
-      ${_renderDiagnosticoTexto(diagnostico)}
-
-      <div class="estrategia-card__selector" role="group" aria-label="Elige una alternativa">
-        ${disponibles.map(a => `
-          <button type="button"
-                  class="estrategia-card__selector-opcion${activa === a.id ? ' estrategia-card__selector-opcion--activa' : ''}"
-                  data-action="elegir-alternativa"
-                  data-alternativa="${a.id}"
-                  aria-pressed="${activa === a.id ? 'true' : 'false'}">
-            <span class="estrategia-card__selector-icono" aria-hidden="true">${a.icono}</span>
-            <span class="estrategia-card__selector-nombre">${a.nombre}</span>
-          </button>`).join('')}
+    <div class="estrategia-card__palancas">
+      <div class="estrategia-card__palancas-intro">
+        <p class="estrategia-card__bloque-titulo">${icon('lightbulb', 'icon icon--sm')} ¿Qué acción te conviene?</p>
+        ${palanca.razon
+          ? `<p class="estrategia-card__palancas-razon">${_esc(palanca.razon)}</p>`
+          : ''}
       </div>
-
+      <div class="estrategia-card__selector" role="group" aria-label="Elige una acción sobre tu plan">
+        ${orden.map(id => _renderPalancaTile(id, activa, palanca.principal)).join('')}
+      </div>
       <div class="estrategia-card__alternativa-contenido">
         ${_renderContenidoAlternativa(activa, extraMensual, resumenExtraHtml, deudas)}
       </div>
     </div>`;
+}
+
+/**
+ * Un tile de palanca. La principal recomendada muestra el subtítulo "Recomendada"
+ * (mismo lenguaje que el picker de estrategia); la activa (elegida o principal)
+ * viste la identidad de la sección. Las no principales reservan la altura del
+ * subtítulo con un ghost para que la fila quede pareja.
+ */
+function _renderPalancaTile(id, activa, principal) {
+  const meta = _META_ALTERNATIVAS[id];
+  const esActiva    = activa === id;
+  const esPrincipal = principal === id;
+  const sub = esPrincipal
+    ? `<span class="estrategia-card__selector-sub">${icon('star', 'icon icon--sm')} Recomendada</span>`
+    : '<span class="estrategia-card__selector-sub estrategia-card__selector-sub--ghost" aria-hidden="true">&nbsp;</span>';
+  return `
+    <button type="button"
+            class="estrategia-card__selector-opcion${esActiva ? ' estrategia-card__selector-opcion--activa' : ''}${esPrincipal ? ' estrategia-card__selector-opcion--recomendada' : ''}"
+            data-action="elegir-alternativa"
+            data-alternativa="${id}"
+            aria-pressed="${esActiva ? 'true' : 'false'}">
+      <span class="estrategia-card__selector-icono" aria-hidden="true">${meta.icono}</span>
+      <span class="estrategia-card__selector-nombre">${meta.nombre}</span>
+      ${sub}
+    </button>`;
 }
 
 /** Despacha al contenido de la alternativa elegida (una sola a la vez). */
@@ -292,7 +325,7 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
                min="0" step="10000" value="${extraMensual || ''}"
                placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
                data-action="cambiar-extra-remedio" />
-        <p class="form-hint">Escribe un monto y mira si tu plan se vuelve viable.</p>
+        <p class="form-hint">Escribe cuánto extra puedes pagar al mes y mira el impacto en tu plan.</p>
       </div>
       ${resumenExtraHtml}
       <button type="button" class="btn btn-primary estrategia-card__aumentar-aplicar"
@@ -459,25 +492,7 @@ function _renderNoAplica(estrategia) {
   return '';
 }
 
-/**
- * Acelerador plegable: envuelve el input de extra mensual + resumen de impacto
- * en un `<details>` colapsado bajo el detalle de la estrategia (Revisión D.2
- * de ADR 011). Se abre automáticamente si el usuario ya escribió un monto.
- */
-function _renderAceleradorExtra(extraMensual, resumenHtml) {
-  return `
-    <details class="estrategia-card__acelerador"${extraMensual > 0 ? ' open' : ''}>
-      <summary class="estrategia-card__acelerador-summary">${icon('trending-up')} ¿Puedes pagar más rápido?</summary>
-      <div class="estrategia-card__acelerador-body">
-        <div class="form-group">
-          <label for="estrategia-extra" class="label">Pago extra mensual</label>
-          <input id="estrategia-extra" class="input" type="number"
-                 min="0" step="10000" value="${extraMensual || ''}"
-                 placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
-                 data-action="cambiar-extra-estrategia" />
-          <p class="form-hint">Cualquier monto adicional acelera el cierre y ahorra intereses.</p>
-        </div>
-        ${resumenHtml}
-      </div>
-    </details>`;
-}
+// D.15d-2: el acelerador plegable "¿Puedes pagar más rápido?" (un `<details>`
+// que solo ofrecía subir la cuota) se retiró. Su función es ahora la palanca
+// "Aumentar la cuota" de la sección de palancas (`_renderRemedioExtra`), siempre
+// visible y con botón "Aplicar" (absorbe D.15e). El input de extra vive ahí.

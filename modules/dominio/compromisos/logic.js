@@ -27,6 +27,7 @@ export {
   compromisosActivos,
   calcularCompromisoMensual,
   calcularTotalCompromisos,
+  calcularFijosMensuales,
   resumenDeudas,
   proximoVencimiento,
   urgencia,

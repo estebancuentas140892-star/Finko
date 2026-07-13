@@ -472,11 +472,6 @@ function _elegirEstrategia(el) {
   renderListaCompromisos();
 }
 
-function _cambiarExtraEstrategia(el) {
-  setEstrategiaUI({ extraMensual: el.value });
-  renderEstrategiaPago();
-}
-
 function _actualizarResumenEnVivo(el) {
   const extra = Number(el.value) || 0;
   const resumen = document.querySelector('.estrategia-card__resumen-extra');
@@ -492,9 +487,9 @@ function _actualizarResumenEnVivo(el) {
   const nuevo = tmp.firstElementChild;
   if (nuevo) resumen.replaceWith(nuevo);
 
-  // D.9: en el bloque inviable hay un botón "Aplicar este aumento". Se habilita
-  // con cualquier extra > 0 (subir la cuota siempre ayuda). En el acelerador del
-  // plan viable este botón no existe, así que el query devuelve null y no pasa nada.
+  // D.9/D.15d-2: el botón "Aplicar este aumento" vive en la palanca "Aumentar la
+  // cuota", siempre visible. Se habilita con cualquier extra > 0 (subir la cuota
+  // siempre ayuda). Solo actúa si el input de la palanca está en pantalla.
   const btn = document.querySelector('[data-action="aplicar-aumento-cuota"]');
   if (btn) btn.disabled = !(extra > 0);
 }
@@ -756,27 +751,25 @@ export function initCompromisos() {
 
   _inyectarForm();
 
-  // El extra mensual y la tasa de renegociación reaccionan en vivo al escribir:
-  //   - extra (acelerador del plan viable): `input` actualiza el resumen sin
-  //     re-render; `change` (blur) re-renderiza la card completa.
-  //   - extra (remedio del plan inviable, D.9): `input` commitea el valor y
-  //     actualiza resumen + botón, sin re-render, para no perder el clic en
-  //     "Aplicar este aumento" (no tiene handler de `change`).
-  //   - renegociar tasa: `input` actualiza la comparación y commitea el valor
-  //     a estado (sin re-render) para no perder el clic en "Aplicar".
+  // El extra mensual y la tasa/cuota de las palancas reaccionan en vivo al
+  // escribir. Todos commitean su valor a estado en el `input` y actualizan su
+  // bloque SIN re-render, para no perder el clic en su botón "Aplicar" (que el
+  // blur dispararía, reemplazando el botón a mitad de clic):
+  //   - extra (palanca "Aumentar la cuota", D.9/D.15d-2): resumen + botón.
+  //   - renegociar tasa: comparación + botón.
+  //   - consolidar: comparación + botón (lee tasa y cuota).
+  // El único `change` que re-renderiza es el selector de deuda a renegociar
+  // (un <select> sin botón "Aplicar" en juego mientras se abre).
   document.addEventListener('input', (e) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) return;
-    if (t.dataset.action === 'cambiar-extra-estrategia')     _actualizarResumenEnVivo(t);
-    else if (t.dataset.action === 'cambiar-extra-remedio')   _actualizarRemedioExtraEnVivo(t);
+    if (t.dataset.action === 'cambiar-extra-remedio')        _actualizarRemedioExtraEnVivo(t);
     else if (t.dataset.action === 'cambiar-renegociar-tasa') _actualizarRenegociacionEnVivo(t);
     else if (t.dataset.action === 'cambiar-consolidar')      _actualizarConsolidacionEnVivo();
   });
   document.addEventListener('change', (e) => {
     const t = e.target;
-    if (t instanceof HTMLInputElement && t.dataset.action === 'cambiar-extra-estrategia') {
-      _cambiarExtraEstrategia(t);
-    } else if (t instanceof HTMLSelectElement && t.dataset.action === 'cambiar-renegociar-deuda') {
+    if (t instanceof HTMLSelectElement && t.dataset.action === 'cambiar-renegociar-deuda') {
       _cambiarRenegociarDeuda(t);
     }
   });

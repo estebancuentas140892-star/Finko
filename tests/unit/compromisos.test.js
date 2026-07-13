@@ -2780,7 +2780,7 @@ describe('comparativa Avalancha vs Bola de nieve (D.4)', () => {
     expect(html).not.toContain('¿Cómo elegir?');
   });
 
-  it('empate sin extra: invita a probar un pago extra, sin bloque de decisión', () => {
+  it('empate sin extra: invita a probar la palanca "Aumentar la cuota", sin bloque de decisión', () => {
     const deudas = filtrarDeudasPagables([
       deudaBase({ id: 'a', descripcion: 'A', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
       deudaBase({ id: 'b', descripcion: 'B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.20, tasaUnidad: 'EA' }),
@@ -2788,56 +2788,61 @@ describe('comparativa Avalancha vs Bola de nieve (D.4)', () => {
     const resultado = compararEstrategias(deudas, 0);
     const html = renderImpactoAvalancha(resultado, 0);
 
-    expect(html).toContain('Prueba agregar un pago extra');
+    expect(html).toContain('Aumentar la cuota');
     expect(html).not.toContain('¿Cómo elegir?');
   });
 });
 
-// ── renderEstrategiaPago: jerarquía D.2a (picker arriba, acelerador plegable) ──
+// ── renderEstrategiaPago: jerarquía D.15d-2 (orden arriba, palancas abajo) ──
 
-describe('renderEstrategiaPago jerarquía D.2a', () => {
+describe('renderEstrategiaPago jerarquía: nivel orden arriba, palancas abajo', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="estrategia-pago"></div>';
-    setEstrategiaUI({ extraMensual: 0 });
+    setEstrategiaUI({ extraMensual: 0, alternativaActiva: null });
+    S.ingresos = [];
     S.compromisos = [
       deudaBase({ id: 'd1', descripcion: 'Deuda A', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.28, tasaUnidad: 'EA' }),
       deudaBase({ id: 'd2', descripcion: 'Deuda B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.12, tasaUnidad: 'EA' }),
     ];
   });
 
-  it('el picker aparece antes del acelerador en el DOM', () => {
+  it('el picker de orden aparece antes de la sección de palancas en el DOM', () => {
     renderEstrategiaPago();
     const el = document.getElementById('estrategia-pago');
     const picker = el.querySelector('.estrategia-cards');
-    const acelerador = el.querySelector('.estrategia-card__acelerador');
+    const palancas = el.querySelector('.estrategia-card__palancas');
     expect(picker).not.toBeNull();
-    expect(acelerador).not.toBeNull();
-    expect(picker.compareDocumentPosition(acelerador) & 4).toBeTruthy();
+    expect(palancas).not.toBeNull();
+    expect(picker.compareDocumentPosition(palancas) & 4).toBeTruthy();
   });
 
-  it('el acelerador es un <details> colapsado por defecto (extra=0)', () => {
+  it('la sección de palancas es siempre visible (ya no un <details> acelerador)', () => {
     renderEstrategiaPago();
-    const details = document.querySelector('.estrategia-card__acelerador');
-    expect(details.tagName).toBe('DETAILS');
-    expect(details.hasAttribute('open')).toBe(false);
+    expect(document.querySelector('.estrategia-card__acelerador')).toBeNull();
+    const palancas = document.querySelector('.estrategia-card__palancas');
+    expect(palancas).not.toBeNull();
+    expect(palancas.querySelector('.estrategia-card__selector')).not.toBeNull();
   });
 
-  it('el acelerador se abre cuando el extra es > 0', () => {
-    setEstrategiaUI({ extraMensual: 50_000 });
+  it('el input de extra vive en la palanca "Aumentar la cuota", no arriba de la card', () => {
+    setEstrategiaUI({ alternativaActiva: 'aumentar' });
     renderEstrategiaPago();
-    const details = document.querySelector('.estrategia-card__acelerador');
-    expect(details.hasAttribute('open')).toBe(true);
-  });
-
-  it('el input de extra vive dentro del acelerador, no arriba de la card', () => {
-    renderEstrategiaPago();
-    const acelerador = document.querySelector('.estrategia-card__acelerador');
-    const input = acelerador.querySelector('#estrategia-extra');
+    const remedio = document.querySelector('.estrategia-card__palancas .estrategia-card__remedio');
+    const input = remedio.querySelector('#estrategia-extra');
     expect(input).not.toBeNull();
     const header = document.querySelector('.estrategia-card__header');
-    const inputGlobal = document.getElementById('estrategia-extra');
-    expect(header.compareDocumentPosition(inputGlobal) & 4).toBeTruthy();
-    expect(acelerador.contains(inputGlobal)).toBe(true);
+    expect(header.compareDocumentPosition(input) & 4).toBeTruthy();
+  });
+
+  it('el botón "Aplicar este aumento" está siempre en la palanca Aumentar (absorbe D.15e)', () => {
+    setEstrategiaUI({ alternativaActiva: 'aumentar', extraMensual: 0 });
+    renderEstrategiaPago();
+    const btn = document.querySelector('[data-action="aplicar-aumento-cuota"]');
+    expect(btn).not.toBeNull();
+    expect(btn.disabled).toBe(true);
+    setEstrategiaUI({ extraMensual: 50_000 });
+    renderEstrategiaPago();
+    expect(document.querySelector('[data-action="aplicar-aumento-cuota"]').disabled).toBe(false);
   });
 });
 
@@ -2930,9 +2935,9 @@ describe('renderEstrategiaPago D.16c: tiles del selector e íconos sin emoji', (
   });
 });
 
-// ── renderEstrategiaPago: D.8 (plan inviable: botón único → panel con selector) ──
+// ── renderEstrategiaPago: plan inviable (D.8 + D.15d-2: alarma vs palancas) ──
 
-describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
+describe('renderEstrategiaPago plan inviable: botón de alerta + palancas', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="estrategia-pago"></div>';
     setEstrategiaUI({ extraMensual: 0, panelAlternativasAbierto: false, alternativaActiva: 'aumentar' });
@@ -2948,16 +2953,19 @@ describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
     expect(acelerador).toBeNull();
   });
 
-  it('con el panel cerrado, solo se ve el botón de alerta (sin remedios abiertos)', () => {
+  it('con el diagnóstico cerrado, se ve el botón de alerta pero no el panel; las palancas sí están', () => {
     renderEstrategiaPago();
     const boton = document.querySelector('.estrategia-card__alerta-boton');
     expect(boton).not.toBeNull();
     expect(boton.getAttribute('aria-expanded')).toBe('false');
+    // El diagnóstico (danger) está cerrado...
     expect(document.querySelector('.estrategia-card__alerta')).toBeNull();
-    expect(document.querySelector('.estrategia-card__remedio')).toBeNull();
+    // ...pero la sección de palancas (la solución) es siempre visible.
+    expect(document.querySelector('.estrategia-card__palancas')).not.toBeNull();
+    expect(document.querySelector('.estrategia-card__remedio')).not.toBeNull();
   });
 
-  it('activar el botón abre el panel con el diagnóstico y el selector', () => {
+  it('activar el botón abre el diagnóstico (solo el porqué); el selector vive en las palancas, siempre visible', () => {
     setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
     const boton = document.querySelector('.estrategia-card__alerta-boton');
@@ -2965,12 +2973,15 @@ describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
     const panel = document.querySelector('.estrategia-card__alerta');
     expect(panel).not.toBeNull();
     expect(panel.textContent).toContain('Por qué tu plan no se sostiene');
-    const selector = panel.querySelector('.estrategia-card__selector');
+    // El selector NO está dentro del diagnóstico (danger): vive en la sección de
+    // palancas (la solución), separada y siempre visible.
+    expect(panel.querySelector('.estrategia-card__selector')).toBeNull();
+    const selector = document.querySelector('.estrategia-card__palancas .estrategia-card__selector');
     expect(selector).not.toBeNull();
     expect(selector.querySelectorAll('.estrategia-card__selector-opcion').length).toBe(3);
   });
 
-  it('por defecto, la alternativa activa es "Aumentar la cuota"', () => {
+  it('con la palanca Aumentar activa, se muestra solo su herramienta', () => {
     setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
     const remedio = document.querySelector('.estrategia-card__remedio');
@@ -2983,13 +2994,13 @@ describe('renderEstrategiaPago D.8 plan inviable: botón único', () => {
     expect(document.querySelector('.estrategia-card__remedio--consolidar')).toBeNull();
   });
 
-  it('el remedio de aumentar cuota está dentro del panel de alternativas', () => {
+  it('el remedio de aumentar cuota vive en la sección de palancas, no en el diagnóstico', () => {
     setEstrategiaUI({ panelAlternativasAbierto: true });
     renderEstrategiaPago();
-    const panel = document.querySelector('.estrategia-card__alerta');
-    const remedio = panel.querySelector('.estrategia-card__remedio');
+    const palancas = document.querySelector('.estrategia-card__palancas');
+    const remedio = palancas.querySelector('.estrategia-card__remedio');
     expect(remedio).not.toBeNull();
-    expect(panel.textContent).toContain('Aumenta tu cuota');
+    expect(remedio.textContent).toContain('Aumenta tu cuota');
   });
 
   it('el resumen de impacto se muestra dentro del remedio activo', () => {
@@ -3092,6 +3103,76 @@ describe('renderEstrategiaPago BUG-011: el extra simulado no reestructura la car
     // Con los datos registrados (sin extra) el plan no cierra: la métrica de
     // intereses lo sigue diciendo, en vez del total finito de la simulación.
     expect(document.getElementById('estrategia-pago').textContent).toContain('No se termina de pagar');
+  });
+});
+
+// ── renderEstrategiaPago: D.15d-2 (sección de palancas siempre visible) ──
+
+describe('renderEstrategiaPago D.15d-2: sección de palancas', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, alternativaActiva: null });
+    S.ingresos = [];
+    // Plan viable (ambas cuotas cubren su interés), sin ingresos → sin margen.
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Tarjeta',  saldoTotal: 3_000_000, cuotaMensual: 200_000, tasa: 0.30, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Libranza', saldoTotal: 2_000_000, cuotaMensual: 150_000, tasa: 0.12, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('la sección de palancas aparece con un plan viable (antes solo estaba el acelerador)', () => {
+    renderEstrategiaPago();
+    const palancas = document.querySelector('.estrategia-card__palancas');
+    expect(palancas).not.toBeNull();
+    // Plan viable: no hay botón de alerta.
+    expect(document.querySelector('.estrategia-card__alerta-boton')).toBeNull();
+    // Las 3 palancas están a primer plano.
+    expect(palancas.querySelectorAll('.estrategia-card__selector-opcion').length).toBe(3);
+  });
+
+  it('sin margen + una tasa alta: la principal recomendada es Renegociar', () => {
+    renderEstrategiaPago();
+    const reco = document.querySelector('.estrategia-card__selector-opcion--recomendada');
+    expect(reco).not.toBeNull();
+    expect(reco.dataset.alternativa).toBe('renegociar');
+    expect(reco.querySelector('.estrategia-card__selector-sub').textContent).toContain('Recomendada');
+    // Solo una palanca es la recomendada (pesos visuales distintos).
+    expect(document.querySelectorAll('.estrategia-card__selector-opcion--recomendada').length).toBe(1);
+  });
+
+  it('muestra la razón de la palanca recomendada', () => {
+    renderEstrategiaPago();
+    const razon = document.querySelector('.estrategia-card__palancas-razon');
+    expect(razon).not.toBeNull();
+    expect(razon.textContent).toMatch(/tasa/i);
+  });
+
+  it('sin elección del usuario, la palanca activa es la principal y se muestra su herramienta', () => {
+    renderEstrategiaPago();
+    const activa = document.querySelector('.estrategia-card__selector-opcion--activa');
+    expect(activa.dataset.alternativa).toBe('renegociar');
+    expect(document.querySelector('.estrategia-card__remedio--renegociar')).not.toBeNull();
+  });
+
+  it('con margen libre, la principal es Aumentar la cuota y encabeza los tiles', () => {
+    S.ingresos = [{ descripcion: 'Sueldo', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    renderEstrategiaPago();
+    const reco = document.querySelector('.estrategia-card__selector-opcion--recomendada');
+    expect(reco.dataset.alternativa).toBe('aumentar');
+    // Mayor peso visual: es el primer tile del selector.
+    const primero = document.querySelector('.estrategia-card__palancas .estrategia-card__selector-opcion');
+    expect(primero.dataset.alternativa).toBe('aumentar');
+  });
+
+  it('la elección del usuario manda sobre la principal (pero la Recomendada no se mueve)', () => {
+    setEstrategiaUI({ alternativaActiva: 'consolidar' });
+    renderEstrategiaPago();
+    const activa = document.querySelector('.estrategia-card__selector-opcion--activa');
+    expect(activa.dataset.alternativa).toBe('consolidar');
+    expect(document.querySelector('.estrategia-card__remedio--consolidar')).not.toBeNull();
+    // La marca "Recomendada" sigue en la principal (renegociar), no en la activa.
+    const reco = document.querySelector('.estrategia-card__selector-opcion--recomendada');
+    expect(reco.dataset.alternativa).toBe('renegociar');
   });
 });
 

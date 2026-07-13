@@ -762,6 +762,57 @@
 .estrategia-card__selector-opcion--activa .estrategia-card__selector-icono {
   color: var(--fk-dom-compromisos-text);
 }
+/* D.15d-2: sub-label "Recomendada" en el tile de la palanca principal (mismo
+   lenguaje que el picker de estrategia). Los no principales reservan la altura
+   con un ghost para que la fila de tiles quede pareja. */
+.estrategia-card__selector-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: var(--fk-text-xs);
+  font-weight: 600;
+  color: var(--fk-success-text);
+  line-height: 1.1;
+}
+.estrategia-card__selector-sub .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+}
+.estrategia-card__selector-sub--ghost {
+  visibility: hidden;
+}
+/* La palanca recomendada conserva un halo sutil aunque el usuario tenga otra
+   elegida: peso visual distinto (no 3 tiles iguales) sin gritar. */
+.estrategia-card__selector-opcion--recomendada:not(.estrategia-card__selector-opcion--activa) {
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 35%, transparent);
+}
+
+/* D.15d-2: sección de palancas siempre visible ("¿qué acción tomar?"). Neutra:
+   es la capa de SOLUCIÓN, separada del nivel de orden por un divisor sutil. Saca
+   a primer plano las 3 macro-acciones (antes enterradas en el panel inviable). */
+.estrategia-card__palancas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-4);
+  padding-top: var(--fk-space-4);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+.estrategia-card__palancas-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-1);
+}
+.estrategia-card__palancas-razon {
+  margin: 0;
+  padding: var(--fk-space-3);
+  background: var(--fk-bg-base);
+  border-left: 3px solid color-mix(in srgb, var(--fk-dom-compromisos) 60%, transparent);
+  border-radius: var(--fk-radius-md);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-primary);
+  line-height: 1.4;
+}
 
 .estrategia-card__metrica-tip {
   font-size: var(--fk-text-xs);

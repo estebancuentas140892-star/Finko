@@ -235,7 +235,7 @@ function _renderComparativa(resultado, extraMensual) {
 
   return `
     <p class="estrategia-card__ahorro estrategia-card__ahorro--info">
-      ${icon('info', 'icon icon--sm')} Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Prueba agregar un pago extra mensual en "¿Puedes pagar más rápido?" para ver dónde empieza a aparecer el ahorro con Avalancha.
+      ${icon('info', 'icon icon--sm')} Con tus deudas actuales, Avalancha y Bola de nieve dan el mismo costo. Prueba la palanca "Aumentar la cuota" más abajo para ver dónde empieza a aparecer el ahorro con Avalancha.
     </p>`;
 }
 
