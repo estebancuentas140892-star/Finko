@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.15d-1 motor puro recomendarPalanca + estimarSalarioMensual a infra · 2026-07-13
+
+Primera de las dos rebanadas en que se re-cortó **D.15d** (motor de recomendación de palanca de Deudas v2) al triarla: toca infra + lógica pura + vista, así que se parte en **D.15d-1** (esta, lógica sin UI, verificable por tests) y **D.15d-2** (la vista que consume el motor). Precedente aplicado: **MC.17a** (lógica pura aterriza antes que su consumidor).
+
+**Qué cambió:** (1) **Extracción a infra.** `estimarSalarioMensual` sale de `tesoreria/logic/ingresos.js` y pasa a `infra/financiero.js` (con su tabla privada `FACTOR_MENSUAL_INGRESO`): con presupuesto y compromisos como consumidores además de tesorería, su hogar único sin dueño de dominio es infra (mantiene ADN #10 limpio). El barrel `tesoreria/logic.js` la **re-exporta** desde infra (consumidores del barrel y tests intactos); `presupuesto/view.js` la importa directo de infra (un import cruzado de dominio menos); `tesoreria/acciones/ingresos.js` y `tesoreria/views/distribucion.js` repuntados a infra. `FACTOR_MENSUAL` de tesorería queda donde está (aún lo usan `montoSalarioMinimoPorPeriodo` y `distribucion.js`). (2) **Motor puro `recomendarPalanca(deudas, { ingresoMensual, fijosMensuales })`** en `compromisos/logic/estrategia.js`: decide la palanca principal por **margen libre real** (`capacidad = ingreso - fijos - Σ cuotas de deuda`) y devuelve el orden de relevancia de las 3 (Aumentar/Renegociar/Consolidar) + la razón en tono ADR 003/008. Con margen → Aumentar; sin margen + ≥2 deudas caras → Consolidar; sin margen + 1 cara → Renegociar; sin margen + sin tasas altas → Aumentar (cuando se libere margen). No lee S ni importa tesorería (recibe la capacidad como parámetro; la vista la calculará en D.15d-2). Umbrales: tasa alta 25% EA (heurística, NO la usura del ADR 004) y capacidad mínima 20.000/mes. **Nadie consume el motor todavía** (eso es D.15d-2).
+
+**Archivos tocados:** `modules/infra/financiero.js` (+`estimarSalarioMensual` + tabla), `modules/dominio/tesoreria/logic/ingresos.js` (−`estimarSalarioMensual`), `modules/dominio/tesoreria/logic.js` (re-export desde infra), `modules/dominio/tesoreria/acciones/ingresos.js` y `modules/dominio/tesoreria/views/distribucion.js` (import a infra), `modules/dominio/presupuesto/view.js` (import a infra), `modules/dominio/compromisos/logic/estrategia.js` (+`recomendarPalanca` + helpers `_ordenarPalancas`/`_razonPalanca`), `modules/dominio/compromisos/logic.js` (export), `tests/unit/compromisos.test.js` (12 tests nuevos), `service-worker.js` (v370→v371).
+
+**Verificación:** 2514/2514 unit + lint verdes. Sin verificación en navegador porque no hay UI nueva (el motor aún no se consume): es lógica pura probada, mismo criterio que MC.17a.
+
+**Podría afectar:** cualquier consumidor futuro de `estimarSalarioMensual` debe importarla de `infra/financiero.js` (o del barrel de tesorería, que la re-exporta). El comportamiento de la función es idéntico (mismos tests verdes).
+
+---
+
 ### feat(compromisos): D.16d tarjeta de deuda con chips + máscara + empty state, cierra D.16 completa (ADR 036 D5/D6/D7) · 2026-07-12
 
 Cierra **D.16d** (`docs/BOARD.md`), última rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)): la iniciativa D.16 completa queda en producción el mismo día del handoff. Absorbe formalmente **D.15c** (tarjeta con jerarquía visual).

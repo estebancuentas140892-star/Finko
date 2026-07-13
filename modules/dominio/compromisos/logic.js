@@ -53,6 +53,7 @@ export {
   simularEstrategiaPago,
   compararEstrategias,
   recomendarEstrategia,
+  recomendarPalanca,
   repartirExtraEnCuotas,
 } from './logic/estrategia.js';
 

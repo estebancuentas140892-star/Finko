@@ -18,6 +18,7 @@ import {
   repartirExtraEnCuotas,
   compararEstrategias,
   recomendarEstrategia,
+  recomendarPalanca,
   detectarFijosSinPagarEsteMes,
   detectarDeudasDurmiendo,
   detectarVencidosCompletos,
@@ -1041,6 +1042,146 @@ describe('recomendarEstrategia', () => {
       dp({ id: 'b', tasaEA: 0.10, saldo: 1_000_000, cuota: 30_000 }),
     ], 0);
     if (r.estrategia !== null) expect(r.viable).toBe(true);
+  });
+});
+
+// ── recomendarPalanca() (D.15d) ────────────────────────────────────
+
+describe('recomendarPalanca', () => {
+  // Helper: deuda pagable (shape de filtrarDeudasPagables).
+  const dp = (o = {}) => ({
+    id: 'd', descripcion: 'Deuda', saldo: 1_000_000, tasaEA: 0.10, cuota: 100_000, ...o,
+  });
+  const dos = (a = {}, b = {}) => [
+    dp({ id: 'a', cuota: 100_000, ...a }),
+    dp({ id: 'b', cuota: 100_000, ...b }),
+  ];
+
+  it('lista vacía o inválida: sin recomendación', () => {
+    for (const entrada of [[], null, undefined]) {
+      const r = recomendarPalanca(entrada, { ingresoMensual: 3_000_000, fijosMensuales: 0 });
+      expect(r.principal).toBeNull();
+      expect(r.orden).toEqual([]);
+      expect(r.capacidad).toBe(0);
+      expect(r.tieneCapacidad).toBe(false);
+      expect(r.razon).toBe('');
+    }
+  });
+
+  it('capacidad = ingreso - fijos - Σ cuotas de deuda (margen libre real)', () => {
+    const r = recomendarPalanca(dos(), { ingresoMensual: 3_000_000, fijosMensuales: 1_000_000 });
+    // 3.000.000 - 1.000.000 - (100.000 + 100.000) = 1.800.000
+    expect(r.capacidad).toBe(1_800_000);
+    expect(r.tieneCapacidad).toBe(true);
+  });
+
+  it('con margen libre → principal Aumentar, aunque las tasas sean altas', () => {
+    const r = recomendarPalanca(
+      dos({ tasaEA: 0.30 }, { tasaEA: 0.30 }),
+      { ingresoMensual: 3_000_000, fijosMensuales: 1_000_000 },
+    );
+    expect(r.principal).toBe('aumentar');
+    expect(r.orden[0]).toBe('aumentar');
+    // varias costosas: aumentar primero, consolidar segundo, renegociar tercero.
+    expect(r.orden).toEqual(['aumentar', 'consolidar', 'renegociar']);
+    expect(r.razon).toMatch(/dinero libre/i);
+  });
+
+  it('sin margen + varias deudas caras → principal Consolidar', () => {
+    const r = recomendarPalanca(
+      dos({ tasaEA: 0.30 }, { tasaEA: 0.30 }),
+      { ingresoMensual: 500_000, fijosMensuales: 300_000 }, // capacidad 0
+    );
+    expect(r.tieneCapacidad).toBe(false);
+    expect(r.principal).toBe('consolidar');
+    expect(r.orden).toEqual(['consolidar', 'renegociar', 'aumentar']);
+    expect(r.razon).toMatch(/un solo cr[eé]dito|consolid|unir/i);
+  });
+
+  it('sin margen + una sola deuda cara → principal Renegociar', () => {
+    const r = recomendarPalanca(
+      dos({ tasaEA: 0.30 }, { tasaEA: 0.10 }), // solo una supera el umbral
+      { ingresoMensual: 500_000, fijosMensuales: 300_000 },
+    );
+    expect(r.principal).toBe('renegociar');
+    expect(r.orden).toEqual(['renegociar', 'consolidar', 'aumentar']);
+    expect(r.razon).toMatch(/tasa/i);
+  });
+
+  it('sin margen + sin tasas altas → principal Aumentar, con razón distinta', () => {
+    const r = recomendarPalanca(
+      dos({ tasaEA: 0 }, { tasaEA: 0 }),
+      { ingresoMensual: 300_000, fijosMensuales: 200_000 }, // capacidad negativa
+    );
+    expect(r.principal).toBe('aumentar');
+    // renegociar no está disponible con todas las tasas en 0%.
+    expect(r.orden).toEqual(['aumentar', 'consolidar']);
+    expect(r.razon).toMatch(/no cobran tasas altas/i);
+  });
+
+  it('capacidad negativa cuando ingreso < fijos + cuotas', () => {
+    const r = recomendarPalanca(dos(), { ingresoMensual: 100_000, fijosMensuales: 200_000 });
+    expect(r.capacidad).toBe(100_000 - 200_000 - 200_000); // -300.000
+    expect(r.tieneCapacidad).toBe(false);
+  });
+
+  it('sin contexto: capacidad = -Σ cuotas, sin margen', () => {
+    const r = recomendarPalanca(dos());
+    expect(r.capacidad).toBe(-200_000);
+    expect(r.tieneCapacidad).toBe(false);
+  });
+
+  it('disponibilidad: renegociar exige tasa > 0; consolidar exige ≥ 2 deudas', () => {
+    // Una sola deuda: consolidar no aplica.
+    const una = recomendarPalanca([dp({ tasaEA: 0.30 })], { ingresoMensual: 0, fijosMensuales: 0 });
+    expect(una.orden).not.toContain('consolidar');
+    expect(una.orden).toContain('aumentar');
+
+    // Todas en 0%: renegociar no aplica.
+    const cero = recomendarPalanca(dos({ tasaEA: 0 }, { tasaEA: 0 }), { ingresoMensual: 0, fijosMensuales: 0 });
+    expect(cero.orden).not.toContain('renegociar');
+  });
+
+  it('umbral de capacidad: 20.000 exactos ya cuentan como margen', () => {
+    // 2 cuotas de 100.000, fijos 0. ingreso 220.000 → capacidad 20.000 (umbral).
+    const enUmbral = recomendarPalanca(dos({ tasaEA: 0 }, { tasaEA: 0 }), { ingresoMensual: 220_000, fijosMensuales: 0 });
+    expect(enUmbral.capacidad).toBe(20_000);
+    expect(enUmbral.tieneCapacidad).toBe(true);
+    expect(enUmbral.razon).toMatch(/dinero libre/i);
+
+    // Un peso menos ya no alcanza el umbral: cambia la razón.
+    const bajoUmbral = recomendarPalanca(dos({ tasaEA: 0 }, { tasaEA: 0 }), { ingresoMensual: 219_999, fijosMensuales: 0 });
+    expect(bajoUmbral.tieneCapacidad).toBe(false);
+    expect(bajoUmbral.razon).toMatch(/no cobran tasas altas/i);
+  });
+
+  it('umbral de tasa alta: 25% EA cuenta como cara; 24% no', () => {
+    const alta = recomendarPalanca(
+      dos({ tasaEA: 0.25 }, { tasaEA: 0.10 }),
+      { ingresoMensual: 500_000, fijosMensuales: 300_000 },
+    );
+    expect(alta.principal).toBe('renegociar'); // hay una deuda cara
+
+    const noAlta = recomendarPalanca(
+      dos({ tasaEA: 0.24 }, { tasaEA: 0.10 }),
+      { ingresoMensual: 500_000, fijosMensuales: 300_000 },
+    );
+    expect(noAlta.principal).toBe('aumentar'); // ninguna supera el umbral
+  });
+
+  it('invariante: principal es siempre orden[0] y el orden solo trae palancas disponibles', () => {
+    const escenarios = [
+      recomendarPalanca(dos({ tasaEA: 0.30 }, { tasaEA: 0.30 }), { ingresoMensual: 3_000_000, fijosMensuales: 0 }),
+      recomendarPalanca(dos({ tasaEA: 0.30 }, { tasaEA: 0.05 }), { ingresoMensual: 400_000, fijosMensuales: 300_000 }),
+      recomendarPalanca(dos({ tasaEA: 0 }, { tasaEA: 0 }), { ingresoMensual: 0, fijosMensuales: 0 }),
+    ];
+    for (const r of escenarios) {
+      expect(r.principal).toBe(r.orden[0]);
+      const permitidas = ['aumentar', 'renegociar', 'consolidar'];
+      for (const id of r.orden) expect(permitidas).toContain(id);
+      // sin duplicados
+      expect(new Set(r.orden).size).toBe(r.orden.length);
+    }
   });
 });
 

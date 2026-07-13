@@ -57,19 +57,10 @@ export function diasParaPrimaSemestral(hoy = new Date()) {
 
 // ── PRIMA DE SERVICIOS - distribución (G.3.F8) ──────────────────
 
-/**
- * Suma todos los ingresos activos proyectados a unidad mensual.
- * Usa FACTOR_MENSUAL para convertir frecuencias distintas a Mensual.
- * Frecuencias no listadas (Bimestral, Anual, etc.) se excluyen del cómputo.
- *
- * @param {import('../../../core/state.js').Ingreso[]} ingresos
- * @returns {number} COP/mes equivalente (0 si no hay ingresos con frecuencia reconocida).
- */
-export function estimarSalarioMensual(ingresos) {
-  return ingresos
-    .filter(i => i.activo !== false)
-    .reduce((acc, i) => acc + (i.monto ?? 0) * (FACTOR_MENSUAL[i.frecuencia] ?? 0), 0);
-}
+// `estimarSalarioMensual` se movió a infra/financiero.js (D.15d): con
+// presupuesto y compromisos como consumidores además de tesorería, su hogar
+// único sin dueño de dominio es infra. El barrel tesoreria/logic.js la
+// re-exporta desde ahí para no romper a los consumidores existentes.
 
 /**
  * Calcula la prima semestral estimada y sugiere su distribución.

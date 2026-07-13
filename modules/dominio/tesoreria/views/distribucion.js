@@ -15,7 +15,7 @@ import {
   CATEGORIA_AGENDA_ICONO, CATEGORIA_DEUDA_ICONO, CATEGORIA_DEUDA_PERSONAL_ICONO,
 } from '../../../core/constants.js';
 import { cuentasActivas } from '../logic/cuentas.js';
-import { estimarSalarioMensual } from '../logic/ingresos.js';
+import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   construirContextoDistribucion,
   sugerirDistribucionIngreso,

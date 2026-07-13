@@ -31,8 +31,12 @@ export {
   detectarNudgeGMF,
 } from './logic/cuentas.js';
 
+// estimarSalarioMensual vive en infra/financiero.js (D.15d, hogar único sin
+// dueño de dominio). Se re-exporta aquí para no romper a los consumidores que
+// la importan del barrel (tests, presupuesto vía este barrel históricamente).
+export { estimarSalarioMensual } from '../../infra/financiero.js';
+
 export {
-  estimarSalarioMensual,
   diasParaPrimaSemestral,
   sugerirDistribucionPrima,
   diasParaProximoPago,

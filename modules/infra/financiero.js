@@ -6,7 +6,8 @@
  * dominio pueda importarlo sin violar la regla "ningún dominio importa a otro".
  *
  * Fórmulas disponibles: CDT, crédito (sistema francés), interés compuesto,
- * regla del 72, rentabilidad real (Fisher), validarCampos.
+ * regla del 72, rentabilidad real (Fisher), proyección de ingreso mensual,
+ * validarCampos.
  * Las fórmulas laborales (prima, PILA, aportes, cesantías) se eliminaron
  * en L.1 junto con el simulador laboral (2026-06-07).
  */
@@ -191,6 +192,44 @@ export function calcularRentabilidadReal(capital, tasaPct, inflacionPct) {
     gananciaReal:     Math.round(gananciaReal),
     perdidaInflacion: Math.round(perdidaInflacion),
   };
+}
+
+// ── PROYECCIÓN DE INGRESO MENSUAL ─────────────────────────────────
+
+/**
+ * Tabla de proyección a base mensual: cuántas veces ocurre cada frecuencia de
+ * pago en un mes promedio. Las frecuencias de baja periodicidad (Bimestral,
+ * Trimestral, Semestral, Anual, 'Única vez') se excluyen a propósito: no
+ * representan flujo mensual recurrente.
+ *
+ * Vive aquí (infra, sin dueño de dominio) porque `estimarSalarioMensual` lo es
+ * de cualquier dominio que necesite proyectar el ingreso (tesorería, presupuesto,
+ * compromisos). Los dominios que solo la usan para sus propios cálculos mantienen
+ * su copia local por la regla ADN #10 (compromisos/logic/modelo.js, ahorro/index.js).
+ */
+const FACTOR_MENSUAL_INGRESO = {
+  'Diario':    30,
+  'Semanal':   4.33,
+  'Quincenal': 2,
+  'Mensual':   1,
+};
+
+/**
+ * Suma todos los ingresos activos proyectados a unidad mensual.
+ * Usa FACTOR_MENSUAL_INGRESO para convertir frecuencias distintas a Mensual.
+ * Frecuencias no listadas (Bimestral, Anual, etc.) se excluyen del cómputo.
+ *
+ * Movida desde tesoreria/logic/ingresos.js (D.15d): con presupuesto y compromisos
+ * como consumidores además de tesorería, su hogar único sin dueño de dominio es
+ * infra (mantiene ADN #10 limpio: ningún dominio importa a otro para estimar ingreso).
+ *
+ * @param {import('../core/state.js').Ingreso[]} ingresos
+ * @returns {number} COP/mes equivalente (0 si no hay ingresos con frecuencia reconocida).
+ */
+export function estimarSalarioMensual(ingresos) {
+  return (ingresos ?? [])
+    .filter(i => i.activo !== false)
+    .reduce((acc, i) => acc + (i.monto ?? 0) * (FACTOR_MENSUAL_INGRESO[i.frecuencia] ?? 0), 0);
 }
 
 // ── VALIDADORES ───────────────────────────────────────────────────

@@ -21,10 +21,10 @@ import {
   normalizarIngreso,
   validarIngresoPuntual,
   normalizarIngresoPuntual,
-  estimarSalarioMensual,
   montoSalarioMinimoPorPeriodo,
   FRECUENCIAS_CON_DIA,
 } from '../logic/ingresos.js';
+import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   renderFormIngreso,
   renderListaIngresos,

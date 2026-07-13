@@ -633,3 +633,143 @@ export function repartirExtraEnCuotas(deudas, extra) {
     totalRepartido: incrementos.reduce((a, t) => a + t.incremento, 0),
   };
 }
+
+// ── RECOMENDACIÓN DE PALANCA (D.15d) ─────────────────────────────
+
+/**
+ * Umbral de tasa efectiva anual a partir del cual una deuda se considera "cara"
+ * para la recomendación de palanca. Es una heurística de producto, NO una
+ * constante legal: la tasa de usura se eliminó del proyecto a propósito (ADR 004)
+ * por su costo de mantenimiento. 25% EA separa con holgura la deuda bancaria de
+ * consumo típica de la deuda claramente costosa (tarjetas al límite, crédito
+ * informal) donde renegociar o consolidar rinde de verdad.
+ */
+const TASA_ALTA_EA = 0.25;
+
+/**
+ * Margen libre mensual mínimo (COP) para recomendar "Aumentar la cuota" como
+ * palanca principal. Por debajo, sugerir pagar más sería sordo a la realidad:
+ * no hay dinero que sumar. 20.000 ≈ dos "pasos" del reparto
+ * (`repartirExtraEnCuotas` usa incrementos de 10.000): lo mínimo para que
+ * aumentar haga algo concreto.
+ */
+const UMBRAL_CAPACIDAD_MINIMA = 20_000;
+
+/**
+ * Motor de recomendación de PALANCA (D.15d): qué ACCIÓN tomar sobre el plan de
+ * deudas (Aumentar la cuota / Renegociar la tasa / Consolidar), ortogonal al
+ * motor de ORDEN (`recomendarEstrategia`, Avalancha/Bola de nieve). Las 3
+ * palancas ya existen como simulaciones; este motor decide cuál es la principal
+ * según la situación y en qué orden de relevancia mostrarlas (pesos visuales
+ * distintos, no 3 botones iguales).
+ *
+ * Función pura: NO lee S ni importa tesorería. Recibe la capacidad de pago como
+ * parámetros; la vista los calcula (ingreso vía
+ * `infra/financiero.estimarSalarioMensual`, fijos vía la suma de compromisos
+ * tipo 'fijo').
+ *
+ * Capacidad = margen libre real = `ingresoMensual - fijosMensuales - Σ cuotas de
+ * deuda`. Es el dinero realmente disponible para más pago, no el ingreso bruto.
+ * `fijosMensuales` NO incluye las cuotas de deuda (se restan aparte vía `deudas`):
+ * el llamador pasa solo los compromisos tipo 'fijo'.
+ *
+ * Decisión de la principal (honesta con la situación):
+ *  - Con margen libre (`capacidad ≥ UMBRAL`) → Aumentar: la vía más simple y
+ *    barata (sin negociar, sin crédito nuevo) de salir antes.
+ *  - Sin margen + ≥ 2 deudas caras → Consolidar: unificar a menor tasa baja el
+ *    costo sin exigir más flujo mensual.
+ *  - Sin margen + 1 deuda cara → Renegociar: bajar esa tasa sin más flujo.
+ *  - Sin margen + sin tasas altas → Aumentar (cuando se libere margen):
+ *    renegociar/consolidar no ayudan a una deuda barata o al 0%; la única palanca
+ *    real ahí es sumar a la cuota.
+ *
+ * @param {ReturnType<typeof filtrarDeudasPagables>} deudas
+ * @param {{ ingresoMensual?: number, fijosMensuales?: number }} [contexto]
+ * @returns {{
+ *   principal: 'aumentar' | 'renegociar' | 'consolidar' | null,
+ *   orden: Array<'aumentar' | 'renegociar' | 'consolidar'>,
+ *   capacidad: number,
+ *   tieneCapacidad: boolean,
+ *   razon: string,
+ * }}
+ */
+export function recomendarPalanca(deudas, contexto = {}) {
+  const lista = Array.isArray(deudas) ? deudas : [];
+  if (lista.length === 0) {
+    return { principal: null, orden: [], capacidad: 0, tieneCapacidad: false, razon: '' };
+  }
+
+  const ingresoMensual = Number(contexto.ingresoMensual) || 0;
+  const fijosMensuales = Number(contexto.fijosMensuales) || 0;
+  const sumaCuotas     = lista.reduce((acc, d) => acc + (Number(d.cuota) || 0), 0);
+  const capacidad      = ingresoMensual - fijosMensuales - sumaCuotas;
+  const tieneCapacidad = capacidad >= UMBRAL_CAPACIDAD_MINIMA;
+
+  const costosas       = lista.filter(d => (Number(d.tasaEA) || 0) >= TASA_ALTA_EA);
+  const hayTasaAlta    = costosas.length >= 1;
+  const variasCostosas = costosas.length >= 2;
+
+  // Disponibilidad de cada palanca (misma regla que ofrece la vista):
+  //  - aumentar: siempre (hay al menos una deuda con cuota que subir).
+  //  - renegociar: exige al menos una deuda con tasa > 0 (no se negocia el 0%).
+  //  - consolidar: exige >= 2 deudas (no se consolida una sola).
+  const disponibles = {
+    aumentar:   true,
+    renegociar: lista.some(d => (Number(d.tasaEA) || 0) > 0),
+    consolidar: lista.length >= 2,
+  };
+
+  const orden = _ordenarPalancas({ tieneCapacidad, hayTasaAlta, variasCostosas })
+    .filter(id => disponibles[id]);
+  const principal = orden[0] ?? 'aumentar';
+
+  return {
+    principal,
+    orden,
+    capacidad,
+    tieneCapacidad,
+    razon: _razonPalanca(principal, tieneCapacidad),
+  };
+}
+
+/**
+ * Orden de relevancia de las 3 palancas según la situación (principal primero).
+ * Devuelve siempre las 3; el llamador filtra las no disponibles. Declarativo a
+ * propósito: la decisión financiera debe leerse de un vistazo y ser determinista.
+ *
+ * @param {{ tieneCapacidad: boolean, hayTasaAlta: boolean, variasCostosas: boolean }} sit
+ * @returns {Array<'aumentar' | 'renegociar' | 'consolidar'>}
+ */
+function _ordenarPalancas({ tieneCapacidad, hayTasaAlta, variasCostosas }) {
+  if (tieneCapacidad) {
+    if (variasCostosas) return ['aumentar', 'consolidar', 'renegociar'];
+    if (hayTasaAlta)    return ['aumentar', 'renegociar', 'consolidar'];
+    return ['aumentar', 'consolidar', 'renegociar'];
+  }
+  if (variasCostosas) return ['consolidar', 'renegociar', 'aumentar'];
+  if (hayTasaAlta)    return ['renegociar', 'consolidar', 'aumentar'];
+  return ['aumentar', 'consolidar', 'renegociar'];
+}
+
+/**
+ * Explicación de por qué la palanca principal, en tono cercano (ADR 003/008).
+ * `tieneCapacidad` desambigua los dos casos en que la principal es 'aumentar'
+ * (con margen real vs. sin tasas altas que renegociar).
+ *
+ * @param {'aumentar' | 'renegociar' | 'consolidar'} principal
+ * @param {boolean} tieneCapacidad
+ * @returns {string}
+ */
+function _razonPalanca(principal, tieneCapacidad) {
+  if (principal === 'aumentar' && tieneCapacidad) {
+    return 'Después de cubrir tus gastos fijos y las cuotas de tus deudas, todavía te queda dinero libre cada mes. Súmalo a tus cuotas: es la forma más simple y barata de salir de deudas antes, sin pedir nada nuevo.';
+  }
+  if (principal === 'consolidar') {
+    return 'Tienes varias deudas con tasas altas y tu presupuesto ya está ajustado. Unirlas en un solo crédito de menor tasa puede bajar lo que pagas en intereses y dejarte una sola cuota, sin exigirte más dinero cada mes.';
+  }
+  if (principal === 'renegociar') {
+    return 'Tu presupuesto ya está ajustado, pero una de tus deudas cobra una tasa alta. Negociar una tasa más baja reduce lo que pagas en intereses sin pedirte más dinero cada mes.';
+  }
+  // 'aumentar' sin capacidad: sin tasas altas que renegociar o consolidar.
+  return 'Tus deudas no cobran tasas altas que valga la pena renegociar, así que la vía para salir antes es aumentar la cuota. Cuando liberes algo de margen en tu presupuesto, súmalo aquí.';
+}

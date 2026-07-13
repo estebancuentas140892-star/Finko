@@ -24,8 +24,8 @@ import {
   generarMensajesLimites,
   coberturaLimitesEstiloVida,
 } from './logic.js';
+import { estimarSalarioMensual } from '../../infra/financiero.js';
 import {
-  estimarSalarioMensual,
   construirContextoDistribucion,
   sugerirDistribucionIngreso,
 } from '../tesoreria/logic.js';
