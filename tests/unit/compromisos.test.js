@@ -1882,38 +1882,41 @@ describe('CATEGORIAS_DEUDA_PERSONAL', () => {
   });
 });
 
-// ── renderListaCompromisos() - categoría en el contexto ───────────
+// ── renderListaCompromisos() - categoría como chip (ID.3, D.16d) ──
 
-describe('renderListaCompromisos() - categoría en el contexto', () => {
+describe('renderListaCompromisos() - categoría como chip', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-compromisos"></div>';
     S.compromisos = [];
   });
 
-  it('muestra el nombre de la categoría en el contexto y su glifo en la teja (ID.3)', () => {
+  it('muestra la categoría como chip tintado y su glifo en la teja (ID.3/D.16d)', () => {
     S.compromisos = [{
       id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
       saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
       diaPago: 5, categoria: 'Tarjeta de crédito', tasa: 0.28, tasaUnidad: 'EA', activo: true,
     }];
     renderListaCompromisos();
-    const html = document.getElementById('lista-compromisos').innerHTML;
-    expect(html).toContain('Tarjeta de crédito · ');
-    const teja = document.querySelector('.list-item__icon .cat-teja');
+    const chipCat = document.querySelector('.deuda-card__chip--entidad');
+    expect(chipCat).not.toBeNull();
+    expect(chipCat.textContent).toContain('Tarjeta de crédito');
+    const teja = document.querySelector('.deuda-card__icon .cat-teja');
     expect(teja).not.toBeNull();
     expect(teja.getAttribute('data-dom')).toBe('compromisos');
     expect(teja.innerHTML).toContain(`#${CATEGORIA_DEUDA_ICONO['Tarjeta de crédito']}`);
   });
 
-  it('sin categoría no antepone nada al contexto (tipo · tasa)', () => {
+  it('sin categoría, el chip muestra el tipo y la tasa va en su propio chip', () => {
     S.compromisos = [{
       id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
       saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
       diaPago: 5, categoria: null, tasa: 0.28, tasaUnidad: 'EA', activo: true,
     }];
     renderListaCompromisos();
-    const html = document.getElementById('lista-compromisos').innerHTML;
-    expect(html).toContain('Deuda con entidad · 28%');
+    const chipCat = document.querySelector('.deuda-card__chip--entidad');
+    expect(chipCat.textContent).toContain('Deuda con entidad');
+    const chips = document.querySelectorAll('.deuda-card__chips .chip');
+    expect([...chips].some(c => c.textContent.includes('28% EA'))).toBe(true);
   });
 });
 
@@ -1935,7 +1938,7 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
   it('una deuda que nombra una billetera con glifo muestra su teja de marca', () => {
     S.compromisos = [deudaBase({ descripcion: 'Crédito Nequi' })];
     renderListaCompromisos();
-    const teja = document.querySelector('.list-item__icon .bank-avatar');
+    const teja = document.querySelector('.deuda-card__icon .bank-avatar');
     expect(teja).not.toBeNull();
     expect(teja.innerHTML).toContain('#b-nequi');
   });
@@ -1946,7 +1949,7 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
     // fallback de iniciales.
     S.compromisos = [deudaBase({ descripcion: 'Suscripción ChatGPT' })];
     renderListaCompromisos();
-    const teja = document.querySelector('.list-item__icon .bank-avatar');
+    const teja = document.querySelector('.deuda-card__icon .bank-avatar');
     expect(teja).not.toBeNull();
     expect(teja.textContent).toBe('AI');
     expect(teja.getAttribute('style')).toContain('background:#10A37F');
@@ -1955,8 +1958,8 @@ describe('renderListaCompromisos() - teja de marca en el ícono', () => {
   it('sin marca reconocida en el nombre, conserva el ícono genérico del tipo', () => {
     S.compromisos = [deudaBase({ descripcion: 'Tarjeta Visa' })];
     renderListaCompromisos();
-    expect(document.querySelector('.list-item__icon .bank-avatar')).toBeNull();
-    expect(document.querySelector('.list-item__icon svg')).not.toBeNull();
+    expect(document.querySelector('.deuda-card__icon .bank-avatar')).toBeNull();
+    expect(document.querySelector('.deuda-card__icon svg')).not.toBeNull();
   });
 });
 
@@ -3416,5 +3419,105 @@ describe('renderHeroCompromisos()', () => {
     const el = document.getElementById('compromisos-hero');
     expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 1 deuda');
     expect(el.querySelector('.hero-compromisos__chip')).toBeNull();
+  });
+});
+
+// ── renderListaCompromisos() - tarjeta de deuda (D.16d, ADR 036 D5/D6/D7) ──
+
+describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
+  const deudaCard = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_400_000, cuotaMensual: 220_000, frecuencia: 'Mensual',
+    diaPago: 5, categoria: 'Tarjeta de crédito', tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-compromisos"></div>';
+    S.compromisos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+  });
+
+  it('pinta la tarjeta con saldo prominente, botón Abonar tintado y eliminar ghost', () => {
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card).not.toBeNull();
+    expect(card.querySelector('.deuda-card__saldo').textContent).toBe('$2.400.000');
+    const abonar = card.querySelector('.deuda-card__abonar');
+    expect(abonar.getAttribute('data-action')).toBe('abrir-abono');
+    expect(abonar.textContent).toContain('Abonar');
+    expect(card.querySelector('.deuda-card__eliminar')).not.toBeNull();
+  });
+
+  it('encabezado "Tus deudas" siempre; el indicador de orden solo con estrategia elegida', () => {
+    S.compromisos = [
+      deudaCard({ id: 'd1' }),
+      deudaCard({ id: 'd2', descripcion: 'Crédito Nu', saldoTotal: 1_500_000, tasa: 0.12 }),
+    ];
+    setEstrategiaUI({ estrategia: 'bolaNieve' });
+    renderListaCompromisos();
+    const el = document.getElementById('lista-compromisos');
+    expect(el.querySelector('.grupo-eyebrow').textContent.trim()).toBe('Tus deudas');
+    const extra = el.querySelector('.grupo-eyebrow-fila__extra');
+    expect(extra.textContent).toContain('Orden Bola de nieve');
+    expect(extra.innerHTML).toContain('#i-snowball');
+  });
+
+  it('el aviso de tasa desconocida es un callout ámbar con ícono, sin emoji ⚠️', () => {
+    S.compromisos = [deudaCard({ tasa: null, categoria: null })];
+    renderListaCompromisos();
+    const aviso = document.querySelector('.deuda-card__aviso');
+    expect(aviso).not.toBeNull();
+    expect(aviso.textContent).toContain('Tasa por confirmar');
+    expect(aviso.innerHTML).toContain('#i-alert');
+    expect(document.getElementById('lista-compromisos').innerHTML).not.toContain('⚠️');
+    const chipWarn = document.querySelector('.deuda-card__chip--warn');
+    expect(chipWarn.textContent).toContain('Tasa por confirmar');
+  });
+
+  it('con el ojo activado, el saldo de la tarjeta se enmascara (ADR 036 D7)', () => {
+    S.compromisos = [deudaCard()];
+    S.config.ocultarSaldo = true;
+    renderListaCompromisos();
+    const saldo = document.querySelector('.deuda-card__saldo');
+    expect(saldo.textContent).toBe('••••');
+    expect(document.getElementById('lista-compromisos').innerHTML).not.toContain('2.400.000');
+  });
+
+  it('deuda personal: chip de categoría con tinte personales', () => {
+    S.compromisos = [deudaCard({ tipo: 'deuda-personal', categoria: 'Familiar', tasa: 0 })];
+    renderListaCompromisos();
+    const chip = document.querySelector('.deuda-card__chip--personal');
+    expect(chip).not.toBeNull();
+    expect(chip.textContent).toContain('Familiar');
+    const chips = document.querySelectorAll('.deuda-card__chips .chip');
+    expect([...chips].some(c => c.textContent.includes('Sin interés'))).toBe(true);
+  });
+
+  it('deuda saldada: chip "Saldada" + Archivar, sin Abonar ni saldo', () => {
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.querySelector('.abono-saldada')).not.toBeNull();
+    expect(card.querySelector('.deuda-card__abonar')).toBeNull();
+    expect(card.querySelector('.deuda-card__saldo')).toBeNull();
+    expect(card.querySelector('[data-action="archivar-compromiso"]')).not.toBeNull();
+  });
+
+  it('el badge de orden se superpone en la teja de la tarjeta', () => {
+    S.compromisos = [
+      deudaCard({ id: 'd1' }),
+      deudaCard({ id: 'd2', descripcion: 'Crédito Nu', saldoTotal: 1_500_000, tasa: 0.12 }),
+    ];
+    setEstrategiaUI({ estrategia: 'avalancha' });
+    renderListaCompromisos();
+    const badge = document.querySelector('.deuda-card__icon .orden-badge');
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toBe('1°');
   });
 });

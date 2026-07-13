@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.16d tarjeta de deuda con chips + máscara + empty state, cierra D.16 completa (ADR 036 D5/D6/D7) · 2026-07-12
+
+Cierra **D.16d** (`docs/BOARD.md`), última rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)): la iniciativa D.16 completa queda en producción el mismo día del handoff. Absorbe formalmente **D.15c** (tarjeta con jerarquía visual).
+
+**Qué cambió:** cada deuda pasa de `.list-item` con hints apilados a **tarjeta** `.deuda-card`: teja de marca/categoría a 44px con el **badge de orden estratégico superpuesto en la esquina** (el badge conserva el accent: blanco sobre frambuesa mide ~3.2:1 y no pasa AA a 10px), nombre + chip de urgencia, **saldo prominente** (tabular/bold, enmascarable), cuota como subtítulo, **chips de categoría** (tinte compromisos o personales según el tipo) **y de tasa** ("28% EA" / "Sin interés" con check / "Tasa por confirmar" en ámbar), el aviso de tasa desconocida (D.12) ascendido de línea con ⚠️ a **callout ámbar con ícono**, y acciones nuevas: **Abonar con tinte de compromisos** (botón propio, no verde: un abono no es un ingreso, ADR 002 sin cambios de flujo) + eliminar ghost que vira a danger en hover. Encabezado de grupo "Tus deudas" con el indicador "Orden Avalancha/Bola de nieve" a la derecha (solo cuando el usuario ya eligió estrategia). **Máscara del ojo (D7) extendida al saldo por deuda** (mismo flag del hero). Empty state alineado al mockup ("...y Finko arma tu estrategia de salida"). La clase muerta `.abono-btn` se retiró (su único consumidor era esta lista).
+
+**Archivos tocados:** `modules/dominio/compromisos/views/lista.js` (tarjeta + encabezado + máscara + empty state), `styles/components/domain.css` (bloque DEUDA-CARD + retiro de `.abono-btn`), `styles/components/atoms.css` (badge de orden en `.deuda-card__icon`), `tests/unit/compromisos.test.js` (7 tests nuevos + 5 actualizados al markup nuevo), `service-worker.js` (v369→v370).
+
+**Verificación:** 2502/2502 unit + **179/179 E2E completos** + lint verdes (gate final de toda la serie D.16a-d).
+
+**Podría afectar:** los flujos de abono/archivar/eliminar usan los mismos `data-action` e ids (cero cambios de wiring); cualquier CSS externo que apuntara a `.list-item` dentro de `#lista-compromisos` ya no aplica (no se encontró ninguno fuera de los estilos retirados).
+
+---
+
 ### feat(compromisos): D.16c acelerador + panel inviable en 2 capas (ADR 036 D3/D4) · 2026-07-12
 
 Cierra **D.16c** (`docs/BOARD.md`), tercera rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Materializa la capa visual que pedía D.15a punto 1 (arquitectura de 2 capas del ADR 031: la alarma señala, la solución calma).

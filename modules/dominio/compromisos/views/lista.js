@@ -11,6 +11,7 @@
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../../infra/icons.js';
+import { SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
 import { resolverMarca, tejaMarca } from '../../../infra/marcas.js';
 import {
   compromisosActivos,
@@ -57,15 +58,14 @@ export function renderListaCompromisos() {
   // pagables, las priorizamos según ese orden (1°, 2°, 3°…). El resto va al final
   // por urgencia.
   const pagables = filtrarDeudasPagables(S.compromisos);
+  const { estrategia } = getEstrategiaUI();
   let ordenEstrategia = null;
   if (pagables.length >= 1) {
-    const { extraMensual, estrategia } = getEstrategiaUI();
     const sortFn = estrategia === 'bolaNieve'
       ? (a, b) => a.saldo - b.saldo
       : (a, b) => b.tasaEA - a.tasaEA;
     const ordenadas = [...pagables].sort(sortFn);
     ordenEstrategia = new Map(ordenadas.map((d, i) => [d.id, i + 1]));
-    void extraMensual; // referenciado para que ESLint no se queje si quedara unused
   }
 
   const ordenados = [...activos].sort((a, b) => {
@@ -75,17 +75,42 @@ export function renderListaCompromisos() {
     return proximoVencimiento(a) - proximoVencimiento(b);
   });
 
-  el.innerHTML = ordenados.map((c) => {
+  // D.16d (ADR 036 D5): encabezado de grupo con el indicador de la estrategia
+  // activa a la derecha (solo cuando el usuario ya eligió una: el orden por
+  // defecto no se anuncia como decisión).
+  const extraHtml = (ordenEstrategia && estrategia)
+    ? `<span class="grupo-eyebrow-fila__extra">
+         ${icon(estrategia === 'bolaNieve' ? 'snowball' : 'mountain')}
+         Orden ${estrategia === 'bolaNieve' ? 'Bola de nieve' : 'Avalancha'}
+       </span>`
+    : '';
+  const headerHtml = `
+    <div class="grupo-eyebrow-fila">
+      <p class="grupo-eyebrow">Tus deudas</p>
+      ${extraHtml}
+    </div>`;
+
+  // D.16d (ADR 036 D7): el ojo del hero enmascara también el saldo por deuda.
+  const oculto = S.config?.ocultarSaldo === true;
+
+  el.innerHTML = headerHtml + ordenados.map((c) => {
     const orden = ordenEstrategia?.get(c.id) ?? null;
-    return _renderCompromisoItem(c, orden);
+    return _renderCompromisoItem(c, orden, oculto);
   }).join('');
 }
 
 /**
+ * Tarjeta de deuda (D.16d, ADR 036 D5/D6): teja de marca/categoría 44px con
+ * el badge de orden superpuesto, chip de urgencia junto al nombre, saldo
+ * prominente, chips de categoría y tasa, aviso de tasa desconocida como
+ * callout ámbar, y acciones (Abonar con tinte de la sección + eliminar
+ * ghost). Reemplaza al `.list-item` con hints apilados.
+ *
  * @param {import('../../../core/state.js').Compromiso} compromiso
  * @param {number | null} ordenEstrategia 1-based: posición en la estrategia activa.
+ * @param {boolean} oculto `S.config.ocultarSaldo`: enmascara el saldo (ADR 036 D7).
  */
-function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
+function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = false) {
   const desc     = _esc(compromiso.descripcion);
   const tipo     = compromiso.tipo;
   // MK.2/ID.3 (ADR 025): si el nombre de la deuda menciona una marca o
@@ -124,28 +149,15 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
     : `Vence en ${dias} días`;
 
   // Tasa mostrada en la unidad original para que coincida con la entrada.
-  // En entidad, tasa null = desconocida (el usuario no la registró): el aviso
-  // por deuda de más abajo lo explica, en vez de afirmar "sin interés" aquí.
+  // En entidad, tasa null = desconocida (el usuario no la registró): el chip
+  // dice "Tasa por confirmar" y el callout de abajo lo explica, en vez de
+  // afirmar "Sin interés".
   const tasaDesconocida  = compromiso.tasa === null || compromiso.tasa === undefined;
   const entidadSinTasa   = tasaDesconocida && tipo === 'deuda-entidad';
-  const tasaMostrada = compromiso.tasa > 0
-    ? (compromiso.tasaUnidad === 'mensual'
-        ? `${Math.round(compromiso.tasa * 100)}% mensual`
-        : `${Math.round(tasaEA)}%`)
-    : entidadSinTasa
-      ? null
-      : 'sin interés';
 
-  // Jerarquía de la card: nombre (título) > saldo (monto, ancla a la derecha)
-  // > cuota + día de pago (subtítulo accionable) > tipo + tasa (contexto).
-  // Se elimina la línea "Saldo: …" redundante con el monto de la columna meta.
   const subtitle = cuota > 0
     ? `Cuota ${f(cuota)}/mes · día ${compromiso.diaPago}`
     : `${frec} · día ${compromiso.diaPago}`;
-  // La teja de la izquierda ya lleva el glifo de la categoría: acá basta
-  // el nombre en texto plano.
-  const catLabel = compromiso.categoria ? `${_esc(compromiso.categoria)} · ` : '';
-  const contexto = `${catLabel}${label}${tasaMostrada ? ` · ${tasaMostrada}` : ''}`;
 
   const ordenBadge = ordenEstrategia
     ? `<span class="orden-badge" aria-label="Orden ${ordenEstrategia} en la estrategia">${ordenEstrategia}°</span>`
@@ -154,52 +166,81 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null) {
   const esTipoDeuda = esDeuda(tipo);
   const saldada     = esTipoDeuda && saldo <= 0;
 
-  // D.12: aviso de tasa desconocida por deuda (antes era un banner único al
-  // tope de la card de estrategia y no se sabía a cuál deuda se refería).
+  // Chips de contexto (D.16d): categoría (o el tipo, si no hay categoría)
+  // con el tinte de su dominio, y la tasa como chip propio. El color nunca
+  // viaja solo: cada chip lleva ícono + texto (SC 1.4.11).
+  const catChipLabel = compromiso.categoria ? _esc(compromiso.categoria) : label;
+  const catChipMod   = tipo === 'deuda-personal' ? 'deuda-card__chip--personal' : 'deuda-card__chip--entidad';
+  const catChipIcono = _ICONO_DEUDA[compromiso.categoria]
+    ? `<svg class="icon" aria-hidden="true"><use href="#${_ICONO_DEUDA[compromiso.categoria]}"/></svg>`
+    : icon(ICONO_TIPO[tipo] ?? 'recurring');
+
+  let tasaChip;
+  if (entidadSinTasa) {
+    tasaChip = `<span class="chip deuda-card__chip--warn">${icon('percent')} Tasa por confirmar</span>`;
+  } else if (compromiso.tasa > 0) {
+    const tasaLabel = compromiso.tasaUnidad === 'mensual'
+      ? `${Math.round(compromiso.tasa * 100)}% mensual`
+      : `${Math.round(tasaEA)}% EA`;
+    tasaChip = `<span class="chip">${icon('percent')} ${tasaLabel}</span>`;
+  } else {
+    tasaChip = `<span class="chip">${icon('check-circle')} Sin interés</span>`;
+  }
+
+  // D.12: aviso de tasa desconocida por deuda. D.16d lo asciende de línea de
+  // texto con emoji a callout ámbar con ícono.
   const avisoTasa = (entidadSinTasa && !saldada)
-    ? `<p class="list-item__hint text-warning" role="note">⚠️ Tasa por confirmar: la calculamos como 0% y eso subestima los intereses. Confírmala con tu banco.</p>`
+    ? `<div class="deuda-card__aviso" role="note">
+         ${icon('alert', 'icon icon--sm')}
+         <p>Tasa por confirmar: la calculamos como 0% y eso subestima los intereses. Confírmala con tu banco.</p>
+       </div>`
     : '';
 
+  // ADR 036 D7: el saldo respeta el ojo de privacidad del hero.
+  const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(saldo);
   const metaHtml = saldada
     ? `<span class="chip chip-success abono-saldada" role="status">Saldada</span>`
-    : `<p class="list-item__amount">${f(saldo)}</p>
-       ${esTipoDeuda
-         ? `<button class="btn btn-primary btn-sm abono-btn"
-                    data-action="abrir-abono"
-                    data-id="${_esc(compromiso.id)}"
-                    aria-label="Abonar a ${desc}">Abonar</button>`
-         : ''}`;
+    : `<p class="deuda-card__saldo">${saldoTxt}</p>`;
 
-  const accionHtml = saldada
+  // ADR 002 sin cambios de flujo: Abonar abre el mismo modal; solo cambia el
+  // vestido (tinte de compromisos, no verde: un abono no es un ingreso).
+  const accionesHtml = saldada
     ? `<button class="btn btn-ghost btn-icon"
                data-action="archivar-compromiso"
                data-id="${_esc(compromiso.id)}"
                title="Archivar"
                aria-label="Archivar deuda saldada ${desc}">✓</button>`
-    : `<button class="btn btn-ghost btn-icon"
+    : `<button class="deuda-card__abonar"
+               data-action="abrir-abono"
+               data-id="${_esc(compromiso.id)}"
+               aria-label="Abonar a ${desc}">${icon('plus', 'icon icon--sm')} Abonar</button>
+       <button class="btn btn-ghost btn-icon deuda-card__eliminar"
                data-action="eliminar-compromiso"
                data-id="${_esc(compromiso.id)}"
                aria-label="Eliminar deuda ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`;
 
-  // MK.2: el badge de orden ya no reemplaza al ícono, se superpone en la
-  // esquina de la teja o del ícono del tipo (CSS .list-item__icon .orden-badge):
-  // así la identidad de marca y la posición en la estrategia conviven.
+  // MK.2: el badge de orden no reemplaza al ícono, se superpone en la esquina
+  // de la teja (CSS .deuda-card__icon .orden-badge): identidad de marca y
+  // posición en la estrategia conviven.
   return `
-    <article class="list-item" data-id="${_esc(compromiso.id)}">
-      <div class="list-item__icon" aria-hidden="true">${icono}${ordenBadge}</div>
-      <div class="list-item__body">
-        <p class="list-item__title">${desc}
-          <span class="${chipClase}" aria-label="${diasLabel}">${diasLabel}</span>
-        </p>
-        <p class="list-item__subtitle">${subtitle}</p>
-        <p class="list-item__hint">${contexto}</p>
-        ${avisoTasa}
-      </div>
-      <div class="list-item__meta">
+    <article class="deuda-card" data-id="${_esc(compromiso.id)}">
+      <div class="deuda-card__top">
+        <div class="deuda-card__icon" aria-hidden="true">${icono}${ordenBadge}</div>
+        <div class="deuda-card__info">
+          <p class="deuda-card__nombre">${desc}
+            <span class="${chipClase}" aria-label="${diasLabel}">${diasLabel}</span>
+          </p>
+          <p class="deuda-card__cuota">${subtitle}</p>
+        </div>
         ${metaHtml}
       </div>
-      <div class="list-item__action">
-        ${accionHtml}
+      <div class="deuda-card__chips">
+        <span class="chip ${catChipMod}">${catChipIcono} ${catChipLabel}</span>
+        ${tasaChip}
+      </div>
+      ${avisoTasa}
+      <div class="deuda-card__acciones">
+        ${accionesHtml}
       </div>
     </article>`;
 }
@@ -209,8 +250,8 @@ function _renderEmptyState() {
     <div class="empty-state">
       <div class="empty-state__icon" aria-hidden="true">${emptyArt('deudas')}</div>
       <p class="empty-state__title">Sin deudas registradas</p>
-      <p class="empty-state__desc">Agrega tu primer crédito con entidad (banco, tarjeta) o personal (familiar, gota a gota).</p>
+      <p class="empty-state__desc">Agrega tu primer crédito con entidad (banco, tarjeta) o personal (familiar, gota a gota) y Finko arma tu estrategia de salida.</p>
       <button class="btn btn-primary" data-action="nuevo-compromiso">+ Agregar deuda</button>
-      <p class="empty-state__tip">${icon('lightbulb')} Tip: los gastos fijos recurrentes (arriendo, servicios) se agregan desde la sección Calendario.</p>
+      <p class="empty-state__tip">${icon('lightbulb')} Los gastos fijos (arriendo, servicios) se agregan desde Calendario.</p>
     </div>`;
 }

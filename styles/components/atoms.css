@@ -199,7 +199,8 @@
    de marca o del ícono del tipo. El aro del color de la superficie lo
    despega de lo que tenga debajo. La base 2rem circular vive en charts.css
    (la card de estrategia lo sigue usando a tamaño completo). */
-.list-item__icon .orden-badge {
+.list-item__icon .orden-badge,
+.deuda-card__icon .orden-badge {
   position: absolute;
   top: calc(-1 * var(--fk-space-1));
   right: calc(-1 * var(--fk-space-1));

@@ -653,10 +653,8 @@ button.chip:focus-visible {
    (compromisos) y badge "Ya abonaste" (agenda).
    ════════════════════════════════════════════════════════════ */
 
-.abono-btn {
-  margin-top: var(--fk-space-2);
-  width: 100%;
-}
+/* .abono-btn se retiró en D.16d: el botón Abonar de la tarjeta de deuda
+   es ahora .deuda-card__abonar (ver bloque DEUDA-CARD). */
 
 .abono-saldada {
   display: block;
@@ -1274,6 +1272,162 @@ button.chip:focus-visible {
 .hero-compromisos__meta-txt {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DEUDA-CARD (D.16d, ADR 036 D5/D6) - tarjeta de deuda con badge
+   de orden sobre la teja, saldo prominente, chips de categoría/
+   tasa, callout de tasa desconocida y Abonar con el tinte de la
+   sección (no verde: un abono no es un ingreso). Reemplaza al
+   .list-item con hints apilados. El badge de orden conserva el
+   accent (patrón vigente): blanco sobre frambuesa no pasa AA
+   para texto de 10px (medido ~3.2:1).
+   ════════════════════════════════════════════════════════════ */
+
+.deuda-card {
+  border-radius: var(--fk-radius-lg);
+  padding: var(--fk-space-4);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  box-shadow: var(--fk-shadow-sm);
+}
+.deuda-card + .deuda-card { margin-top: var(--fk-space-3); }
+
+.deuda-card__top {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+}
+
+.deuda-card__icon {
+  position: relative;
+  flex-shrink: 0;
+}
+/* Teja a 44px (paso por encima de --fk-teja-lg, mismo criterio que
+   .cuenta-card__icon en MC.18b: más aire para logos densos). */
+.deuda-card__icon .cat-teja,
+.deuda-card__icon .bank-avatar {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 15px;
+}
+
+.deuda-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.deuda-card__nombre {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.deuda-card__nombre .chip {
+  margin-left: var(--fk-space-1);
+  vertical-align: middle;
+}
+
+.deuda-card__cuota {
+  margin: 2px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.deuda-card__saldo {
+  margin: 0;
+  flex-shrink: 0;
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.deuda-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+.deuda-card__chips .chip .icon { --fk-icon-size: 0.75rem; }
+.deuda-card__chip--entidad {
+  background: var(--fk-dom-compromisos-bg);
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 26%, transparent);
+  color: var(--fk-dom-compromisos-text);
+}
+.deuda-card__chip--personal {
+  background: var(--fk-dom-personales-bg);
+  border-color: color-mix(in srgb, var(--fk-dom-personales) 26%, transparent);
+  color: var(--fk-dom-personales-text);
+}
+.deuda-card__chip--warn {
+  background: var(--fk-warning-bg);
+  border-color: color-mix(in srgb, var(--fk-warning) 26%, transparent);
+  color: var(--fk-warning-text);
+}
+
+/* D.12 como callout (antes línea de texto con ⚠️). */
+.deuda-card__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-warning-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-warning) 26%, transparent);
+}
+.deuda-card__aviso .icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--fk-warning-text);
+}
+.deuda-card__aviso p {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-warning-text);
+  line-height: 1.45;
+}
+
+.deuda-card__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+
+/* Abonar con la identidad de la sección. Botón propio (no .btn-primary):
+   el verde del accent diría "ingreso" y esto es un pago (ADR 036 D6). */
+.deuda-card__abonar {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-1);
+  min-height: 2.375rem;   /* 38px, hit target AA con margen */
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-compromisos) 40%, transparent);
+  background: var(--fk-dom-compromisos-bg);
+  color: var(--fk-dom-compromisos-text);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.deuda-card__abonar:hover {
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 60%, transparent);
+}
+
+/* Eliminar vira a danger en hover (mismo patrón que .cuenta-card__eliminar). */
+.deuda-card__eliminar:hover:not(:disabled) {
+  background: var(--fk-danger-bg);
+  color: var(--fk-danger-text);
 }
 
 /* ════════════════════════════════════════════════════════════
