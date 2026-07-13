@@ -4,13 +4,15 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.1b: plantillas de Apartados curadas según la taxonomía; 20 plantillas, Vacaciones sale, Matrícula escolar y Útiles y uniformes renombradas, Veterinario/Mantenimiento del hogar/Seguro del hogar/Reparaciones inesperadas entran).
+> Última actualización: 2026-07-13 (triaje del handoff Calendario v2: [ADR 037](DECISIONS/037-calendario-v2-visual.md) + rebanadas CAL.4a-c bajo Calendario).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.1b cerrada** el 2026-07-13 (plantillas de Apartados curadas según la taxonomía; ver Transversal abajo). Queda **CAT.1c** (Metas) como siguiente rebanada de la taxonomía, y después **CAT.3** (categorías personalizadas globales), ya desbloqueada.)_
+**CAL.4a - Hero del mes (Calendario v2)** - iniciada 2026-07-13, primera rebanada del [ADR 037](DECISIONS/037-calendario-v2-visual.md) (ver tarjeta bajo Calendario). Siguen CAL.4b y CAL.4c encadenadas.
+
+_(CAT.1b cerrada el 2026-07-13; quedan **CAT.1c** (Metas) y **CAT.3** (categorías personalizadas globales) en Transversal.)_
 
 ---
 
@@ -54,6 +56,35 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 ---
 
 ### Calendario (dominio `agenda`)
+
+> **Iniciativa "Calendario v2: mes con peso financiero"** ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar). Cuarta pantalla de la familia visual v2 (tras Inicio, Mis cuentas y Deudas): hero del mes con total + progreso pagado/falta, grilla legible con selección índigo, detalle del día accionable con CTA por tipo y estado de pago explícito, empty state del mes. Cero cambios de lógica de calendario (CAL.3 y frecuencias intactas); único cálculo nuevo: agregador puro `totalesDelMes`. Fuente única del rediseño visual de esta sección.
+
+#### CAL.4a - Hero del mes: total + progreso pagado + ojo de privacidad (ADR 037 D1/D7)
+- Prioridad  : alta (primera rebanada de la iniciativa)
+- Estado     : pendiente
+- Objetivo   : el mes responde de un vistazo "¿cuánto me sale y cuánto llevo pagado?"; cuarto consumidor del estreno parcial del ADR 033
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/logic.js` (`totalesDelMes` puro), `modules/dominio/agenda/view.js`, `modules/dominio/agenda/index.js` (acción `agenda-saldo-visibilidad` + escuchar `gastos`), `styles/components/config.css`, `styles/components/domain.css` (ojo compartido), tests
+- Depende de : nada
+- Modelo     : Fable 5 - Alto
+
+#### CAL.4b - Grilla legible + selección índigo + empty state del mes (ADR 037 D2/D3/D6)
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : celdas cuadradas centradas con fondo transparente, seleccionado en índigo de sección (hoy sigue verde), mes vacío guía a la acción
+- Secciones  : Calendario
+- Archivos   : `styles/components/config.css`, `modules/dominio/agenda/view.js` (subtítulo compromisos·ingresos + bloque `.cal-empty`), tests
+- Depende de : CAL.4a
+- Modelo     : Sonnet 5 - Alto
+
+#### CAL.4c - Detalle del día accionable: CTA por tipo + estado de pago + máscara (ADR 037 D4/D5/D7)
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : la acción del día salta a la vista (Abonar frambuesa, Marcar pagado índigo, Distribuir verde), badge de pago como pill (parcial preservado), el ojo enmascara también los montos del detalle
+- Secciones  : Calendario
+- Archivos   : `modules/dominio/agenda/view.js`, `styles/components/config.css`, tests
+- Depende de : CAL.4b
+- Modelo     : Sonnet 5 - Alto
 
 _(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tienen fuente única y NO generan tarjeta propia aquí. (1) Color de sección en las tarjetas de evento con tinte de baja opacidad (Esteban pide 5-10%; el sistema usa 12% en `-bg`, calibrar en implementación con contraste medido) → vive en **IV.2c**. (2) Logos oficiales de marcas en eventos (Netflix, Nequi...) → ya existe la base (MK.2 detecta marca en fijos/suscripciones/deudas, `tejaMarca` en el detalle del día) y su evolución "seleccionar en vez de escribir" es el **[ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)**. (3) Picker de icono en "Otra categoría" de fijos + categorías personalizadas reutilizables en toda la app → iniciativa **CAT** en Transversal, que absorbió la observación que vivía aquí sobre ícono personalizado para la categoría "Otro" de AG.4.)_
 
