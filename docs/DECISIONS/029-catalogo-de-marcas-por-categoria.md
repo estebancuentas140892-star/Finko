@@ -1,6 +1,6 @@
 # ADR 029 - Catálogo de marcas por categoría (seleccionar en vez de escribir)
 
-**Estado:** Propuesta (2026-07-06). Pendiente de que Esteban valide la taxonomía de la sección D3 antes de construir el catálogo. Decisiones de dirección ya tomadas por Esteban: (1) arrancar por la fundación (ADR + catálogo de datos + resolver, sin UI); (2) `resolverMarca` por texto se **conserva como fallback**, no se elimina.
+**Estado:** Aceptada. La taxonomía de la sección D3 fue validada por Esteban el 2026-07-13 (sesión de taxonomía CAT.1, junto con el [ADR 014](014-taxonomia-categorias-transversal.md)): la tabla de tags queda tal cual; la Fase 0 puede iniciar. Decisiones de dirección ya tomadas por Esteban: (1) arrancar por la fundación (ADR + catálogo de datos + resolver, sin UI); (2) `resolverMarca` por texto se **conserva como fallback**, no se elimina.
 **Fecha:** 2026-07-06
 **Autores:** Esteban (visión de producto), Claude Opus 4.8 (análisis y diseño)
 **Relación:** evoluciona la capa de marcas de [ADR 025](025-logotipos-de-marca-y-tejas.md) (catálogo `MARCAS`/`BANCOS_CO`, teja, `resolverMarca`) y la biblioteca gráfica de [ADR 026](026-biblioteca-de-recursos-graficos.md) (Esteban diseña los SVG; `assets/svg/` es la fuente de verdad). **Absorbe la tarjeta TX.10** del BOARD ("categoría como eje de automatización"): esta es su pieza de infraestructura de datos. Reusa las categorías personalizadas de TX.9b (`S.categoriasPersonalizadas`, `ICONOS_CATEGORIA_PERSONALIZADA`).
@@ -38,9 +38,9 @@ Una base de datos rompe ADN §3 (sin servidor). `.json` cargado en runtime rompe
 - `marcaPorId(id)` → la marca cuyo `id` coincide (para pintar el logo desde el `marcaId` guardado).
 - `resolverMarca(texto)` **se conserva sin cambios** como fallback: registros viejos e importaciones CSV que no traen `marcaId` siguen mostrando su logo por texto.
 
-### D3. Taxonomía de categorías con marcas (PENDIENTE DE VALIDACIÓN)
+### D3. Taxonomía de categorías con marcas (VALIDADA 2026-07-13)
 
-Tags de categoría, vocabulario normalizado y agnóstico de dominio. Propuesta inicial, a confirmar por Esteban:
+Tags de categoría, vocabulario normalizado y agnóstico de dominio. Validada por Esteban tal cual el 2026-07-13 (sesión CAT.1):
 
 | Tag | Marcas hoy en catálogo | Marcas a sumar (con iniciales hasta tener glifo) |
 |---|---|---|

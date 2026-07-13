@@ -10,6 +10,18 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(taxonomia): CAT.1 taxonomía global validada con Esteban, ADR 014 aceptado y ADR 029 D3 confirmada · 2026-07-13
+
+Primer paso de **CAT.1** (`docs/BOARD.md`): sesión de validación de taxonomía con Esteban, una sola decisión para los tres documentos que cubrían la misma pregunta (ADR 014 en Propuesta desde junio, ADR 029 sección D3, criterios de la tarjeta CAT.1), como exigía el hallazgo del triaje del 2026-07-08. Solo documentación, sin código.
+
+**Decisiones validadas:** (1) **Gastos↔Fijos**: Vivienda y Servicios públicos salen del formulario de Gastos y el hint "normalmente pertenece a fijos" (`CATEGORIAS_TIPICAMENTE_FIJAS` + `#hint-categoria-fija`) se retira por completo; esto **revisa la decisión 4 del ADR 014** ("nudge, no muro"), conflicto señalado explícitamente y ratificado por Esteban (regla 2.7). Educación queda en ambas secciones sin hint (doble cara real); Mercado, Transporte y Mascotas quedan duales. (2) **Apartados↔Metas**: sale Vacaciones (ya vive en Metas); "Matrícula o semestre" se divide (la plantilla queda como "Matrícula escolar", el semestre universitario se planea como Meta); entran Veterinario, Mantenimiento del hogar, Seguro del hogar y Reparaciones inesperadas; "Útiles escolares" se amplía a "Útiles y uniformes". (3) **Metas**: sale "Cumpleaños" y "Vacaciones"/"Viajes" se fusionan en "Viajes". (4) **Fijos no esenciales** (para LIM.1 punto 8): solo Streaming y Suscripciones; Gimnasio y Telefonía quedan esenciales (ajuste de Esteban sobre la propuesta). (5) **ADR 029 D3**: la tabla de 13 tags validada tal cual; la Fase 0 de ese ADR queda desbloqueada. **Hallazgo de la sesión:** no hace falta bump de schema (precedente "Alimentación" v15: filtrar del formulario conservando la entrada de ícono), lo que baja el modelo de implementación de Opus 4.8 - Extra a Sonnet 5 - Medio por rebanada.
+
+**Archivos tocados:** `docs/DECISIONS/014-taxonomia-categorias-transversal.md` (Estado → Aceptada + sección "Validación 2026-07-13"), `docs/DECISIONS/029-catalogo-de-marcas-por-categoria.md` (Estado → Aceptada, D3 validada), `docs/contexto/transversal.md` (bloque nuevo "Taxonomía global de categorías"), `docs/BOARD.md` (CAT.1 re-cortada en CAT.1a-c; nota del punto 8 de LIM.1 actualizada), `docs/HANDOFF.md`.
+
+**Podría afectar:** nada en runtime. Define el catálogo que CAT.1a-c implementarán y desbloquea CAT.3, el catálogo de AP.5, el punto 8 de LIM.1 y la Fase 0 del ADR 029.
+
+---
+
 ### feat(transversal): CAT.2f selector de ícono en Gasto fijo/Calendario, sexto consumidor, cierra CAT.2 completa · 2026-07-13
 
 Cierra **CAT.2f** (`docs/BOARD.md`), sexta y última rebanada del picker de ícono compartido: **Gasto fijo/Calendario** migrado (categoría "Otro"). Con esta rebanada **la iniciativa CAT.2 queda completa** (CAT.2a-f).

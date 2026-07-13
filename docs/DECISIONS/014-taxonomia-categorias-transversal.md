@@ -1,7 +1,7 @@
 # ADR 014 - Taxonomía de categorías transversal (identidad por sección + categoría por contexto)
 
-**Estado:** Propuesta (diseño). Pendiente de validar la curación de catálogos con el usuario antes de codear slices.
-**Fecha:** 2026-06-29
+**Estado:** Aceptada. Validado con Esteban el 2026-07-13 (sesión de taxonomía CAT.1, junto con la sección D3 del ADR 029). La validación **revisa la decisión 4**: el hint se retira en favor de la curación (ver sección "Validación 2026-07-13").
+**Fecha:** 2026-06-29 (propuesta) · 2026-07-13 (aceptado con revisión)
 **Autores:** Esteban (producto), Claude Opus 4.8 (diseño)
 **Absorbe:** AP.5 (taxonomía de categorías de toda la app) y AG.3 (categorías de Agenda). Las tres se unifican en este ADR.
 
@@ -125,6 +125,41 @@ Ajustes mínimos para alinear los catálogos con la identidad de cada sección y
 - **Metas:** se mantiene **texto libre** (los objetivos son demasiado diversos para una lista cerrada); a lo sumo, chips de arranque sugeridos (Viaje, Casa, Carro, Negocio) sin cerrar la entrada.
 
 Estos ajustes se confirman con el usuario antes de codear (qué agregar, qué dejar igual).
+
+> Nota 2026-07-13: esta curación ya se implementó entre junio y julio (TX.1, TX.2, TX.3: Mercado y Suscripciones en Agenda, Cumpleaños y Navidad en Apartados, Café y Gastos hormiga en Gastos). La validación final quedó registrada en la sección siguiente.
+
+---
+
+## Validación 2026-07-13 (sesión CAT.1)
+
+Esteban validó la taxonomía global en una sola pasada (tarjeta CAT.1 del BOARD, junto con la sección D3 del [ADR 029](029-catalogo-de-marcas-por-categoria.md)). Resultado por punto:
+
+### Gastos↔Fijos: el hint se retira, la curación decide (revisa la decisión 4)
+
+El brief de julio ("Auditoría Gastos") pidió que Finko decida en vez de avisar; el conflicto con la decisión 4 original ("el puente entre secciones es un nudge, no un muro") se señaló explícitamente (regla 2.7) y Esteban ratificó el cambio:
+
+- **Vivienda** sale del formulario de Gastos: Arriendo y Administración ya viven en fijos, y lo variable del hogar lo cubre "Hogar".
+- **Servicios públicos** sale del formulario de Gastos: siempre es una factura periódica con fecha, vive solo en fijos.
+- **Educación** se queda en ambas secciones, sin hint: doble cara real (la mensualidad o matrícula es fija; un libro o curso suelto es gasto del día a día).
+- **Mercado, Transporte y Mascotas** se quedan en ambas: doble cara canónica de la decisión 2, la sección desambigua.
+- El mecanismo del hint (`CATEGORIAS_TIPICAMENTE_FIJAS` en `constants.js` + `#hint-categoria-fija` en el form de Gastos) **se retira por completo**.
+
+Sin migración de datos: el precedente exacto es "Alimentación" (v15). La categoría se filtra de `CATEGORIAS_GASTO_USUARIO` pero conserva su entrada en `CATEGORIA_ICONO`, así los registros viejos se siguen renderizando bien. Cero bump de schema.
+
+### Apartados↔Metas (ampliación del 4.º lote, brief de Apartados punto 5)
+
+- **Vacaciones** sale de `PLANTILLAS_APARTADO` (ya existe en Metas).
+- **"Matrícula o semestre" se divide**: la plantilla queda como **"Matrícula escolar"** (colegio anual o semestral, gasto esporádico que se olvida presupuestar) y el semestre universitario se planea como Meta (la categoría Educación ya existe en `CATEGORIAS_META`).
+- **Entran a Apartados** (faltantes del catálogo de esporádicos olvidables de Esteban): Veterinario, Mantenimiento del hogar, Seguro del hogar, Reparaciones inesperadas; "Útiles escolares" se amplía a "Útiles y uniformes".
+- **Limpieza en Metas**: sale "Cumpleaños" (esporádico anual, vive en Apartados) y "Vacaciones"/"Viajes" se fusionan en "Viajes". Render legado seguro: `CATEGORIA_META_ICONO` conserva las entradas retiradas para metas ya guardadas.
+
+### Fijos esenciales vs no esenciales (la consume LIM.1 punto 8)
+
+No esenciales (estilo de vida, cuentan contra límites): **Streaming** y **Suscripciones**, nada más. Decisión explícita de Esteban: **Gimnasio y Telefonía quedan como esenciales** (se le propuso Gimnasio como no esencial y lo descartó). La implementación de esta dimensión vive en LIM.1, no aquí.
+
+### ADR 029 D3
+
+La tabla de 13 tags se valida tal cual está propuesta en ese ADR; su Fase 0 queda desbloqueada. El mapeo "Suscripciones → unión de tags" se resuelve en la Fase 1 de UI de ese ADR, como ya estaba previsto (D4).
 
 ---
 
