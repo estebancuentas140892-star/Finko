@@ -325,7 +325,7 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
                min="0" step="10000" value="${extraMensual || ''}"
                placeholder="Ej. 50000" autocomplete="off" inputmode="numeric"
                data-action="cambiar-extra-remedio" />
-        <p class="form-hint">Escribe cuánto extra puedes pagar al mes y mira el impacto en tu plan.</p>
+        <p class="form-hint">Escribe cuánto extra puedes pagar al mes y mira el impacto en tu plan. Es una simulación libre: nada cambia hasta que confirmes.</p>
       </div>
       ${resumenExtraHtml}
       <button type="button" class="btn btn-primary estrategia-card__aumentar-aplicar"
@@ -376,8 +376,8 @@ const _META_ESTRATEGIA = {
 // Resúmenes integrados (mecanismo + ideal en 1 párrafo). La razón de
 // recomendación se prepende solo cuando la estrategia es la recomendada.
 const _RESUMEN_ESTRATEGIA = {
-  avalancha: 'Atacas primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorras más dinero.',
-  bolaNieve: 'Atacas primero la deuda más chica; cuando la terminas, esa cuota se suma a la siguiente, generando un efecto acumulativo (la "bola" que crece). Ideal si necesitas ver progreso rápido para mantener el impulso.',
+  avalancha: 'Atacas primero la deuda con la tasa más alta, así cada peso va más al capital y menos a intereses. Puede que la primera deuda tarde un poco más en cerrarse, pero a la larga ahorras más dinero. Te conviene si tu prioridad es pagar lo menos posible.',
+  bolaNieve: 'Atacas primero la deuda más chica; cuando la terminas, esa cuota se suma a la siguiente, generando un efecto acumulativo (la "bola" que crece). Te conviene si necesitas ver progreso rápido para mantener el impulso.',
 };
 
 /**

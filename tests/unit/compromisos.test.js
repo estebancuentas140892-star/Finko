@@ -1849,6 +1849,16 @@ describe('renderFormAbono() - formulario', () => {
     expect(html).toContain('value="c1"');
     expect(html).toContain('value="c2"');
   });
+
+  it('D.15a: incluye el refuerzo psicológico antes de los botones del modal', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia', 1_000_000)];
+    const html = renderFormAbono(deuda);
+    expect(html).toContain('un paso real hacia quedar libre de esta deuda');
+    const posRefuerzo = html.indexOf('paso real hacia quedar libre');
+    const posFooter   = html.indexOf('modal__footer');
+    expect(posRefuerzo).toBeGreaterThan(-1);
+    expect(posRefuerzo).toBeLessThan(posFooter);
+  });
 });
 
 // ── renderFormDeuda() - selector de tipo de obligación ────────────
@@ -3198,6 +3208,31 @@ describe('renderEstrategiaPago D.15d-2: sección de palancas', () => {
     // La marca "Recomendada" sigue en la principal (renegociar), no en la activa.
     const reco = document.querySelector('.estrategia-card__selector-opcion--recomendada');
     expect(reco.dataset.alternativa).toBe('renegociar');
+  });
+});
+
+// ── renderEstrategiaPago: D.15a (copy motivador y "cuándo conviene") ──
+
+describe('renderEstrategiaPago D.15a: copy de las simulaciones', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="estrategia-pago"></div>';
+    setEstrategiaUI({ extraMensual: 0, estrategia: null });
+    S.compromisos = [
+      deudaBase({ id: 'd1', descripcion: 'Deuda A', saldoTotal: 5_000_000, cuotaMensual: 200_000, tasa: 0.28, tasaUnidad: 'EA' }),
+      deudaBase({ id: 'd2', descripcion: 'Deuda B', saldoTotal: 1_000_000, cuotaMensual: 100_000, tasa: 0.12, tasaUnidad: 'EA' }),
+    ];
+  });
+
+  it('Avalancha explica "cuándo conviene" en paralelo a Bola de nieve', () => {
+    setEstrategiaUI({ estrategia: 'avalancha' });
+    renderEstrategiaPago();
+    expect(document.getElementById('estrategia-pago').textContent).toMatch(/conviene si tu prioridad es pagar lo menos posible/i);
+  });
+
+  it('Bola de nieve explica "cuándo conviene" (impulso/progreso rápido)', () => {
+    setEstrategiaUI({ estrategia: 'bolaNieve' });
+    renderEstrategiaPago();
+    expect(document.getElementById('estrategia-pago').textContent).toMatch(/conviene si necesitas ver progreso rápido/i);
   });
 });
 

@@ -540,3 +540,83 @@ test.describe('Aumentar la cuota (D.9) dentro del panel de alternativas', () => 
   });
 
 });
+
+// ── SUITE: Refuerzo psicológico en Abonar (D.15a) ─────────────────────────────
+
+/** Inyecta una deuda con cuota fija + una cuenta activa, para abrir el modal de abono. */
+async function inyectarDeudaParaAbono(page) {
+  await page.addInitScript(() => {
+    const estado = {
+      _version: 26,
+      perfil: { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas: [
+        { id: 'cta-abono', nombre: 'Bancolombia', saldo: 5_000_000, banco: 'Bancolombia', tipo: 'Ahorros', activa: true },
+      ],
+      ingresos: [], gastos: [], metas: [], prestamos: [], presupuestos: [], apartados: [], config: {},
+      compromisos: [
+        {
+          id: 'abono-e2e', descripcion: 'Tarjeta E2E',
+          frecuencia: 'Mensual', diaPago: 10,
+          tipo: 'deuda-entidad', activo: true,
+          saldoTotal: 500_000, cuotaMensual: 100_000,
+          tasa: 0.28, tasaUnidad: 'EA', categoria: null,
+        },
+      ],
+    };
+    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  });
+}
+
+/** Abre el modal de abono de la única deuda inyectada. */
+async function abrirModalAbono(page) {
+  await page.locator('[data-action="abrir-abono"]').click();
+  await page.waitForSelector('#form-abono', { timeout: 5_000 });
+}
+
+test.describe('Refuerzo psicológico en Abonar (D.15a)', () => {
+
+  test('el refuerzo estático siempre aparece en el modal, antes de los botones', async ({ page }) => {
+    await inyectarDeudaParaAbono(page);
+    await irACompromisos(page);
+    await abrirModalAbono(page);
+
+    await expect(page.locator('#form-abono')).toContainText('un paso real hacia quedar libre de esta deuda');
+  });
+
+  test('un abono que adelanta meses muestra "termina X antes" (comportamiento previo, sin regresión)', async ({ page }) => {
+    await inyectarDeudaParaAbono(page);
+    await irACompromisos(page);
+    await abrirModalAbono(page);
+
+    // Cuota 100.000, saldo 500.000 → 5 cuotas. Un abono de 200.000 (2 cuotas)
+    // adelanta el cierre; no salda toda la deuda.
+    await page.locator('#abono-monto').fill('200000');
+    const tip = page.locator('#abono-tip-proyeccion');
+    await expect(tip).toContainText('antes', { timeout: 3_000 });
+    await expect(tip).not.toContainText('por completo');
+  });
+
+  test('un abono que salda toda la deuda muestra el mensaje más fuerte', async ({ page }) => {
+    await inyectarDeudaParaAbono(page);
+    await irACompromisos(page);
+    await abrirModalAbono(page);
+
+    await page.locator('#abono-monto').fill('500000');
+    const tip = page.locator('#abono-tip-proyeccion');
+    await expect(tip).toContainText('saldas esta deuda por completo', { timeout: 3_000 });
+  });
+
+  test('un abono chico que no adelanta un mes completo nunca deja el tip vacío', async ({ page }) => {
+    await inyectarDeudaParaAbono(page);
+    await irACompromisos(page);
+    await abrirModalAbono(page);
+
+    // 1.000 no alcanza a adelantar ni un mes con cuota de 100.000: cae al
+    // refuerzo genérico en vez de quedar en blanco.
+    await page.locator('#abono-monto').fill('1000');
+    const tip = page.locator('#abono-tip-proyeccion');
+    await expect(tip).toContainText('reduce lo que debes', { timeout: 3_000 });
+  });
+
+});

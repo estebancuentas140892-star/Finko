@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.15a copy de simulaciones + refuerzo en Abonar, cierra Deudas v2 completa · 2026-07-13
+
+Cierra **D.15a** (`docs/BOARD.md`), última rebanada de la iniciativa "Deudas v2: de registro a asesor" (brief 2026-07-08). **Con esta pieza la iniciativa queda completa** (D.15a-e + rediseño visual D.16a-d). Puntos 4, 5-copy, 6 y 9 del brief; sin cambios de lógica ni schema.
+
+**Qué cambió:** (1) **Nivel orden (Avalancha/Bola de nieve):** `_RESUMEN_ESTRATEGIA.avalancha` gana la frase "Te conviene si tu prioridad es pagar lo menos posible", en paralelo a Bola de nieve, que ya explicaba cuándo conviene ("Ideal si necesitas ver progreso rápido..." → reformulado a "Te conviene si..." para mantener el paralelismo). (2) **Las 3 palancas** (`_renderRemedioExtra`, `renderRenegociar`, `renderConsolidar`): cada una suma "Explora libremente: nada cambia hasta que confirmes", el refuerzo de copy que corresponde a la iniciativa sobre la garantía que BUG-011 ya blindó en lógica (ninguna simulación se aplica sin el botón "Aplicar"). (3) **Refuerzo psicológico en Abonar** (punto 9): `renderFormAbono` suma una línea estática antes del footer del modal ("Cada abono, grande o pequeño, es un paso real hacia quedar libre de esta deuda", `form-hint--info`). El tip en vivo bajo el monto (`_actualizarTipProyeccion` en `index.js`) se reescribió para nunca dejar el campo vacío mientras el monto sea válido, con 3 mensajes por prioridad: el abono salda la deuda por completo ("¡Con este abono saldas esta deuda por completo!", el más fuerte) → hay cuota registrada y el abono adelanta al menos un mes (comportamiento previo intacto, "Con este abono terminas X antes") → refuerzo genérico ("Cada abono reduce lo que debes, sin importar el monto") para deudas sin cuota fija (Fiado, D.13) o abonos que no adelantan un mes completo. Tono ADR 003/008 en todo: afirma progreso real, nunca presiona ni compara con otros usuarios ni usa cuenta regresiva.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/estrategia.js` (resumen de Avalancha + hint de la palanca Aumentar), `modules/dominio/compromisos/views/estrategia-impacto.js` (hint de Renegociar y Consolidar), `modules/dominio/compromisos/views/formularios.js` (línea de refuerzo en `renderFormAbono`), `modules/dominio/compromisos/index.js` (`_actualizarTipProyeccion` reescrita), `tests/unit/compromisos.test.js` (3 tests nuevos), `tests/e2e/estrategia-pago.test.js` (4 tests nuevos, suite "Refuerzo psicológico en Abonar"), `service-worker.js` (v373→v374).
+
+**Verificación:** 2528/2528 unit + 21/21 E2E `estrategia-pago` (suite completa corrida en Chromium real, incluyendo la nueva) + lint verdes.
+
+**Podría afectar:** solo copy de la sección Deudas; ningún `data-action`, handler ni cálculo cambió de comportamiento (el tip en vivo antes quedaba en blanco en algunos casos, ahora siempre muestra un mensaje; el resto de su lógica original, meses antes con cuota, es idéntica).
+
+---
+
 ### feat(compromisos): D.15b editar deuda + reorden del form, cierra Deudas v2 salvo D.15a · 2026-07-13
 
 Cierra **D.15b** (`docs/BOARD.md`), tercera pieza independiente de la iniciativa Deudas v2 (puntos 7, 8 y 10 del brief).

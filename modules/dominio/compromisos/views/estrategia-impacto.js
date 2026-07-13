@@ -368,6 +368,7 @@ export function renderRenegociar(deudas, ui) {
       <p class="estrategia-card__bloque-titulo">${icon('handshake', 'icon icon--sm')} Renegociar la tasa</p>
       <p class="estrategia-card__bloque-body">
         Si tu entidad te baja la tasa, cada cuota abona más a lo que debes y la deuda cierra antes.
+        Explora libremente: nada cambia hasta que confirmes.
       </p>
       ${selectorHtml}
       <p class="estrategia-card__bloque-body">
@@ -423,6 +424,7 @@ export function renderConsolidar(deudas, ui) {
       <p class="estrategia-card__bloque-body">
         Junta tus <strong>${deudas.length}</strong> deudas en un solo crédito nuevo. Si consigues una tasa
         más baja que la mezcla actual, pagas menos intereses y manejas una sola cuota.
+        Explora libremente: nada cambia hasta que confirmes.
       </p>
       <p class="estrategia-card__bloque-body">
         Hoy debes en total <strong>${f(saldoTotal)}</strong> y pagas <strong>${f(cuotaTotal)}/mes</strong>.

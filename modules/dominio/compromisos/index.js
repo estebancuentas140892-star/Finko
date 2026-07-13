@@ -431,6 +431,16 @@ async function _archivarCompromiso(el) {
   announce(`Deuda "${compromiso.descripcion}" archivada.`);
 }
 
+/**
+ * D.15a: refuerzo psicológico siempre presente mientras el monto sea válido,
+ * en vez de quedar en blanco cuando no hay una proyección de meses que mostrar
+ * (deudas sin cuota fija, Fiado/D.13, o un abono chico que no adelanta un mes
+ * completo). Prioridad de mensajes (el primero que aplique):
+ *   1. El abono salda la deuda por completo → la reafirmación más fuerte.
+ *   2. Hay cuota registrada y el abono adelanta al menos un mes → cuánto antes.
+ *   3. Cualquier otro abono válido → refuerzo genérico, nunca deja el campo vacío.
+ * Tono ADR 003/008: afirma el progreso real, sin presión ni comparación.
+ */
 function _actualizarTipProyeccion() {
   const montoInput = document.getElementById('abono-monto');
   const tipEl      = document.getElementById('abono-tip-proyeccion');
@@ -441,23 +451,34 @@ function _actualizarTipProyeccion() {
   const cuota = Number(form.dataset.cuota);
   const saldo = Number(form.dataset.saldo);
 
-  if (!cuota || cuota <= 0 || saldo <= 0 || !Number.isFinite(monto) || monto <= 0) {
+  if (saldo <= 0 || !Number.isFinite(monto) || monto <= 0) {
     tipEl.textContent = '';
+    tipEl.classList.remove('form-hint--info');
+    tipEl.classList.add('form-hint--muted');
     return;
   }
 
   const montoEfectivo = Math.min(monto, saldo);
-  const mesesAntes    = Math.ceil(saldo / cuota);
-  const mesesDespues  = Math.ceil((saldo - montoEfectivo) / cuota);
-  const mesesMenos    = mesesAntes - mesesDespues;
+  tipEl.classList.remove('form-hint--muted');
+  tipEl.classList.add('form-hint--info');
 
-  if (mesesMenos <= 0) {
-    tipEl.textContent = '';
+  if (montoEfectivo >= saldo) {
+    tipEl.textContent = '¡Con este abono saldas esta deuda por completo!';
     return;
   }
 
-  const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
-  tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
+  if (cuota > 0) {
+    const mesesAntes   = Math.ceil(saldo / cuota);
+    const mesesDespues = Math.ceil((saldo - montoEfectivo) / cuota);
+    const mesesMenos   = mesesAntes - mesesDespues;
+    if (mesesMenos > 0) {
+      const etiqueta = mesesMenos === 1 ? '1 mes antes' : `${mesesMenos} meses antes`;
+      tipEl.textContent = `Con este abono terminas ${etiqueta}.`;
+      return;
+    }
+  }
+
+  tipEl.textContent = 'Cada abono reduce lo que debes, sin importar el monto.';
 }
 
 // ── HANDLERS ESTRATEGIA ──────────────────────────────────────────

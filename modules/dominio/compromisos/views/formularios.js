@@ -85,6 +85,10 @@ export function renderFormAbono(deuda) {
                placeholder="Ej. Cuota extra de mayo" autocomplete="off" />
       </div>
 
+      <p class="form-hint form-hint--info">
+        Cada abono, grande o pequeño, es un paso real hacia quedar libre de esta deuda.
+      </p>
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar abono</button>
