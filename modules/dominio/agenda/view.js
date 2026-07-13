@@ -156,15 +156,23 @@ export function renderAgenda() {
   // pagar y el progreso pagado/falta del mes visible.
   const prefijoMes = `${_viewYear}-${String(_viewMonth + 1).padStart(2, '0')}`;
 
+  // CAL.4b (ADR 037 D6): mes sin ningún evento → card de guía a la acción
+  // bajo el calendario. La grilla sigue visible (se puede navegar) y los
+  // días vacíos siguen clickeables (CAL.3 intacta).
+  const emptyMesHtml = totalEventosDelMes(eventos) === 0
+    ? _renderEmptyMes(_viewMonth)
+    : '';
+
   el.innerHTML = `
     ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
     <article class="cal-card">
-      ${_renderCabecera(_viewYear, _viewMonth, eventosComp)}
+      ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng)}
       ${_renderDiasSemana()}
       ${_renderGrid(_viewYear, _viewMonth, eventos)}
     </article>
     ${_renderLeyenda(eventos)}
-    ${detalleHtml}`;
+    ${detalleHtml}
+    ${emptyMesHtml}`;
 }
 
 // ── PARTES ───────────────────────────────────────────────────────
@@ -230,13 +238,20 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
     </div>`;
 }
 
-function _renderCabecera(year, month, eventos) {
-  const total    = totalEventosDelMes(eventos);
-  const subtitle = total === 0
-    ? 'Sin compromisos este mes'
-    : total === 1
-    ? '1 compromiso este mes'
-    : `${total} compromisos este mes`;
+function _renderCabecera(year, month, eventos, eventosIng = {}) {
+  const total = totalEventosDelMes(eventos);
+  // CAL.4b (ADR 037 D2): el subtítulo separa compromisos de ingresos; el
+  // día de ingreso no es un pago y no debe contarse como tal (ADR 021).
+  const nIng  = totalEventosDelMes(eventosIng);
+  const partes = [
+    total === 0
+      ? 'Sin compromisos este mes'
+      : total === 1
+      ? '1 compromiso este mes'
+      : `${total} compromisos este mes`,
+  ];
+  if (nIng > 0) partes.push(nIng === 1 ? '1 ingreso' : `${nIng} ingresos`);
+  const subtitle = partes.join(' · ');
 
   return `
     <header class="cal-card__header">
@@ -305,13 +320,16 @@ function _renderGrid(year, month, eventos) {
     // CAL.3: todos los días son interactivos, con o sin eventos. Un día
     // vacío también se puede seleccionar; el detalle muestra "sin
     // compromisos este día" en vez de no responder al click.
+    // CAL.4b: la fila de dots se pinta siempre (vacía si no hay eventos)
+    // para que el número quede a la misma altura en todas las celdas del
+    // grid centrado.
     html += `
       <button type="button" class="${cls}"
               role="gridcell"
               aria-label="${aria}"
               data-action="agenda-mostrar-dia" data-day="${d}">
         <span class="cal-day__num">${d}</span>
-        ${hayEvs ? _renderDots(evs) : ''}
+        ${hayEvs ? _renderDots(evs) : '<div class="cal-day__dots" aria-hidden="true"></div>'}
       </button>`;
   }
 
@@ -364,6 +382,26 @@ function _renderLeyenda(eventos) {
       </span>`).join('');
 
   return `<div class="cal-legend" aria-label="Leyenda de tipos">${items}</div>`;
+}
+
+/**
+ * Empty state del mes (CAL.4b, ADR 037 D6): mes visible sin ningún evento.
+ * Guía a la acción en vez de dejar la pantalla vacía: teja índigo de la
+ * sección + CTA que abre el modal de gasto fijo (acción existente).
+ *
+ * @param {number} month 0-indexed.
+ * @returns {string}
+ */
+function _renderEmptyMes(month) {
+  return `
+    <div class="cal-empty">
+      <span class="cal-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+      <p class="cal-empty__title">${MONTHS[month]} está despejado</p>
+      <p class="cal-empty__desc">Programa tus gastos fijos y deudas para no perder ningún pago.</p>
+      <button type="button" class="btn btn-primary" data-action="nuevo-gasto-fijo">
+        + Agregar gasto fijo
+      </button>
+    </div>`;
 }
 
 // ── DETALLE DEL DÍA ──────────────────────────────────────────────

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): CAL.4b grilla legible + selección índigo + empty state del mes · 2026-07-13
+
+Segunda rebanada de **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md) D2/D3/D6).
+
+**Qué cambió:** (1) `styles/components/config.css`: `.cal-day` pasa a celda cuadrada con contenido centrado (`aspect-ratio: 1`, piso táctil 44px AA, techo 72px para que el grid no crezca desmedido en desktop) y **fondo transparente en reposo** (antes cada celda llevaba `--fk-bg-elevated`; la card ya es la superficie, la celda solo se pinta en hover y en los estados hoy/seleccionado); `.cal-day--selected` cambia de borde neutro `--fk-text-primary` (se confundía con "hoy") a **anillo índigo de sección** (`--fk-dom-agenda-text` + tinte `--fk-dom-agenda` al 16%; variante `-text` porque el token crudo falla el umbral no textual 3:1 en tema claro, mismo criterio que `cal-dot--*` en IV.2c); días pasados bajan de opacidad 0.55 a 0.5; `.cal-card` gana `--fk-shadow-sm` (sombra en reposo, ADR 033); bloque `.cal-empty*` nuevo (borde punteado, teja índigo de 48px con `i-agenda`); la media query móvil de `.cal-day` queda solo con la tipografía (el piso táctil ya vive en la regla base). (2) `modules/dominio/agenda/view.js`: `_renderGrid()` pinta la fila `.cal-day__dots` **siempre** (vacía y `aria-hidden` si el día no tiene eventos, `min-height: 6px`) para que el número quede a la misma altura en todas las celdas del grid centrado; `_renderCabecera()` gana el parámetro `eventosIng` y el subtítulo separa compromisos de ingresos ("2 compromisos este mes · 1 ingreso"; el día de ingreso no es un pago, ADR 021); `_renderEmptyMes()` nuevo (ADR 037 D6), renderizado al final del panel cuando `totalEventosDelMes(eventos) === 0`: "<Mes> está despejado" + "Programa tus gastos fijos y deudas para no perder ningún pago" + CTA `+ Agregar gasto fijo` (`data-action="nuevo-gasto-fijo"` existente). La grilla sigue visible en mes vacío y los días vacíos siguen clickeables (CAL.3 intacta: el empty state convive con el detalle "Sin compromisos ni ingresos este día").
+
+**Archivos tocados:** `styles/components/config.css`, `modules/dominio/agenda/view.js`, `tests/unit/agenda.test.js` (6 nuevos: subtítulo con/sin ingresos, empty state con CTA, sin empty state con un solo ingreso, convivencia con CAL.3, fila de dots en todas las celdas), `tests/e2e/smoke.test.js` (1 nuevo: mes vacío muestra la card y el CTA abre el modal de gasto fijo), `service-worker.js` (v383→v384).
+
+**Verificación:** 2626/2626 unit + 196/196 E2E completos + lint verdes.
+
+**Podría afectar:** solo presentación del grid del calendario y el bloque nuevo de mes vacío. El test E2E de reflow a 320px y las suites de Agenda pasan sin cambios; los `data-action` y clases `cal-day--*` que consumen los E2E existentes no cambiaron de nombre.
+
+---
+
 ### feat(agenda): CAL.4a hero del mes con total + progreso pagado + ojo de privacidad · 2026-07-13
 
 Primera rebanada de la iniciativa **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado en esta misma sesión tras el triaje del handoff de Claude Design "Iteración de specimen" enviado por Esteban). El mes ahora responde de un vistazo "¿cuánto me sale y cuánto llevo pagado?": hero al tope de `#panel-agenda`, cuarto consumidor del estreno parcial del ADR 033 (degradado de identidad índigo + sombra en reposo), con la misma anatomía que los heroes de Mis cuentas (MC.18a) y Deudas (D.16a).

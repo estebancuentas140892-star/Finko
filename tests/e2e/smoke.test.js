@@ -1773,6 +1773,40 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
   });
 });
 
+// ── SUITE 12d: Agenda - empty state del mes (CAL.4b, ADR 037 D6) ─────────────
+// Un mes sin ningún evento muestra la card de guía bajo el calendario y su
+// CTA abre el modal de gasto fijo (misma acción del header, nuevo-gasto-fijo).
+
+test.describe('Agenda - empty state del mes (CAL.4b)', () => {
+  test('mes vacío muestra "está despejado" y el CTA abre el modal de gasto fijo', async ({ page }) => {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos:    [],
+        compromisos: [],
+        metas:     [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const empty = page.locator('.cal-empty');
+    await expect(empty).toBeVisible();
+    await expect(empty.locator('.cal-empty__title')).toContainText('está despejado');
+
+    await empty.locator('[data-action="nuevo-gasto-fijo"]').click();
+    const modal = page.locator('#modal-gasto-fijo');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+    await expect(modal.locator('.modal__title')).toHaveText('Nuevo gasto fijo');
+  });
+});
+
 // ── SUITE 12b: Agenda - CAL.3 selección automática del día actual ────────────
 // Al navegar HACIA Calendario desde otra sección, si hoy tiene compromisos,
 // el detalle se auto-abre sin que el usuario haga click. El fixture usa el

@@ -698,11 +698,14 @@
   max-width: 34ch;
 }
 
+/* CAL.4b (ADR 037 D2): sombra en reposo del ADR 033, como el resto de
+   las cards de la familia v2. */
 .cal-card {
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-lg);
   padding: var(--fk-space-4);
+  box-shadow: var(--fk-shadow-sm);
 }
 
 .cal-card__header {
@@ -778,15 +781,23 @@
   padding: var(--fk-space-1) 0;
 }
 
+/* CAL.4b (ADR 037 D2): celda cuadrada con contenido centrado y fondo
+   transparente en reposo (la card ya es la superficie; la celda solo se
+   pinta en hover y en los estados hoy/seleccionado). aspect-ratio da la
+   celda cuadrada del mockup en móvil; min/max-height protegen el toque
+   (>= 44px AA) y evitan celdas gigantes en desktop. */
 .cal-day {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 56px;
-  padding: var(--fk-space-2) 0;
-  background: var(--fk-bg-elevated);
+  justify-content: center;
+  gap: var(--fk-space-1);
+  aspect-ratio: 1;
+  min-height: 44px;
+  max-height: 72px;
+  padding: 0;
+  background: transparent;
   border: 1px solid transparent;
   border-radius: var(--fk-radius-md);
   color: var(--fk-text-primary);
@@ -823,18 +834,23 @@
 }
 
 .cal-day--past:not(.cal-day--today) {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .cal-day--has-events {
   font-weight: var(--fk-font-semibold);
 }
 
+/* CAL.4b (ADR 037 D3): el día seleccionado usa el índigo de la sección
+   (antes borde neutro --fk-text-primary, que se confundía con "hoy").
+   Variante -text y no el token crudo: el crudo falla el umbral no
+   textual 3:1 en tema claro (mismo criterio que cal-dot--* en IV.2c).
+   Hoy y seleccionado se distinguen por color: verde acento vs índigo. */
 .cal-day--selected {
-  border-color: var(--fk-text-primary);
-  background: var(--fk-bg-hover);
+  border-color: var(--fk-dom-agenda-text);
+  background: color-mix(in srgb, var(--fk-dom-agenda) 16%, transparent);
   font-weight: var(--fk-font-bold);
-  box-shadow: 0 0 0 1px var(--fk-text-primary);
+  box-shadow: 0 0 0 1px var(--fk-dom-agenda-text);
 }
 
 .cal-day--selected.cal-day--today {
@@ -845,9 +861,11 @@
 .cal-day__num {
   display: inline-block;
   line-height: 1;
-  margin-bottom: var(--fk-space-1);
 }
 
+/* min-height reserva la fila aunque el día no tenga eventos (la vista la
+   pinta siempre, CAL.4b): el número queda a la misma altura en todas las
+   celdas del grid centrado. */
 .cal-day__dots {
   display: inline-flex;
   align-items: center;
@@ -855,6 +873,7 @@
   flex-wrap: wrap;
   justify-content: center;
   max-width: 100%;
+  min-height: 6px;
 }
 
 .cal-dot {
@@ -1099,6 +1118,49 @@
   white-space: nowrap;
 }
 
+/* Empty state del mes (CAL.4b, ADR 037 D6): mes visible sin ningún
+   evento. Borde punteado (es una invitación, no una card de contenido),
+   teja índigo de la sección y CTA de gasto fijo. */
+.cal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: var(--fk-space-3);
+  padding: var(--fk-space-6) var(--fk-space-5);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+  border: 1px dashed var(--fk-border-strong);
+}
+
+.cal-empty__teja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  margin-bottom: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-dom-agenda-bg);
+  color: var(--fk-dom-agenda-text);
+}
+.cal-empty__teja .icon { --fk-icon-size: var(--fk-icon-xl); }
+
+.cal-empty__title {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+
+.cal-empty__desc {
+  margin: 0 0 var(--fk-space-4);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
 /* En mobile, celdas mas compactas pero todavia tappables (>= 44px). */
 @media (max-width: 640px) {
   .cal-card {
@@ -1107,9 +1169,9 @@
   .cal-grid {
     gap: var(--fk-space-1);
   }
+  /* La celda base ya es cuadrada con piso táctil de 44px (CAL.4b); en
+     móvil solo se compacta la tipografía del número. */
   .cal-day {
-    min-height: var(--fk-space-12);
-    padding: var(--fk-space-1) 0;
     font-size: var(--fk-text-xs);
   }
   .cal-dot {

@@ -1410,3 +1410,73 @@ describe('renderAgenda() - hero del mes (CAL.4a)', () => {
     expect(document.querySelector('.hero-agenda__label').textContent).toBe('Julio 2026');
   });
 });
+
+// ── CAL.4b (ADR 037 D2/D6) - subtítulo del mes + empty state ─────
+
+describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('el subtítulo separa compromisos de ingresos (el ingreso no es un pago)', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', diaPago: 5 }),
+      compromisoBase({ id: 'f2', diaPago: 20 }),
+    ];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    expect(document.querySelector('.cal-card__subtitle').textContent)
+      .toBe('2 compromisos este mes · 1 ingreso');
+  });
+
+  it('sin ingresos el subtítulo no agrega la parte de ingresos', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-card__subtitle').textContent)
+      .toBe('1 compromiso este mes');
+  });
+
+  it('mes sin ningún evento muestra la card de empty state con el CTA de gasto fijo', () => {
+    renderAgenda();
+    const empty = document.querySelector('.cal-empty');
+    expect(empty).not.toBeNull();
+    expect(empty.querySelector('.cal-empty__title').textContent).toBe('Junio está despejado');
+    expect(empty.querySelector('[data-action="nuevo-gasto-fijo"]')).not.toBeNull();
+    // La grilla sigue visible: el mes se puede navegar (CAL.3 intacta).
+    expect(document.querySelector('.cal-grid[role="grid"]')).not.toBeNull();
+  });
+
+  it('con cualquier evento (aunque sea solo un ingreso) no hay empty state', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    renderAgenda();
+    expect(document.querySelector('.cal-empty')).toBeNull();
+  });
+
+  it('el empty state convive con el detalle de un día vacío seleccionado (CAL.3)', () => {
+    renderAgenda();
+    mostrarDia(10);
+    renderAgenda();
+    expect(document.querySelector('.cal-empty')).not.toBeNull();
+    expect(document.querySelector('.cal-detail__subtitle').textContent)
+      .toBe('Sin compromisos ni ingresos este día');
+  });
+
+  it('todas las celdas de día pintan la fila de dots (alineación del número)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 5 })];
+    renderAgenda();
+    const dias = document.querySelectorAll('.cal-day:not(.cal-day--empty)');
+    const filas = document.querySelectorAll('.cal-day .cal-day__dots');
+    expect(dias.length).toBe(30); // junio 2026
+    expect(filas.length).toBe(30);
+  });
+});
