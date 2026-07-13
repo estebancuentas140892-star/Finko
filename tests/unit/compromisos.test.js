@@ -1897,6 +1897,31 @@ describe('renderFormDeuda() - selector de categoría', () => {
     expect(cuotaEntidad).toContain('required');
     expect(cuotaPersonal).not.toContain('required');
   });
+
+  // ── D.15b: reorden del form (categoría/tipo antes que descripción) ──
+
+  it('D.15b: el campo de categoría aparece antes que la descripción (mismo patrón que TX.9a)', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    const posCategoria   = html.indexOf('id="comp-categoria"');
+    const posDescripcion = html.indexOf('id="comp-descripcion"');
+    expect(posCategoria).toBeGreaterThan(-1);
+    expect(posDescripcion).toBeGreaterThan(-1);
+    expect(posCategoria).toBeLessThan(posDescripcion);
+  });
+
+  it('D.15b: el hint de bajo valor "si es una tienda que te fía" se retiró del form personal', () => {
+    const html = renderFormDeuda('deuda-personal');
+    expect(html).not.toContain('tienda que te fía');
+    // El campo de categoría personal ya lista "Fiado" como opción: no hace
+    // falta un hint aparte que lo repita.
+    expect(html).toContain('Fiado');
+  });
+
+  it('D.15b: el hint de tasa desconocida (D.12) se conserva íntegro', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('¿No conoces tu tasa?');
+    expect(html).toContain('comp-tasa-hint');
+  });
 });
 
 // ── D.14: acreditar la cuenta de origen al crear una deuda ────────
@@ -3741,5 +3766,24 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     const badge = document.querySelector('.deuda-card__icon .orden-badge');
     expect(badge).not.toBeNull();
     expect(badge.textContent).toBe('1°');
+  });
+
+  // ── D.15b: trigger de editar en la tarjeta ──────────────────────
+
+  it('D.15b: la deuda activa tiene un botón de editar con el id correcto (i-edit)', () => {
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    const editar = document.querySelector('[data-action="editar-compromiso"]');
+    expect(editar).not.toBeNull();
+    expect(editar.dataset.id).toBe('d1');
+    expect(editar.innerHTML).toContain('#i-edit');
+  });
+
+  it('D.15b: la deuda saldada también tiene botón de editar, junto a Archivar', () => {
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.querySelector('[data-action="editar-compromiso"]')).not.toBeNull();
+    expect(card.querySelector('[data-action="archivar-compromiso"]')).not.toBeNull();
   });
 });

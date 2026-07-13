@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (D.15d-2 cierra la vista de palancas y absorbe D.15e; D.15d completa. Quedan D.15a copy y D.15b editar en Deudas v2).
+> Última actualización: 2026-07-13 (D.15b editar deuda + reorden del form; Deudas v2 completa salvo D.15a).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **D.15d completa** el 2026-07-13 (D.15d-1 motor puro + extracción a infra; **D.15d-2** conecta el motor a la vista: la card de estrategia pasa a 2 niveles y las 3 palancas Aumentar/Renegociar/Consolidar quedan a primer plano siempre, con la principal recomendada; **absorbe D.15e**, el "Aplicar" del acelerador). El rediseño visual "Deudas v2" (**D.16a a D.16d**, [ADR 036](DECISIONS/036-deudas-v2-visual.md)) cerró el 2026-07-12. El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, tres consumidores: Inicio, Mis cuentas y Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. Siguiente tarjeta sugerida: **D.15a** (copy de simulaciones + refuerzo en Abonar) o **D.15b** (editar deuda + reorden del form), ambas en Deudas.)_
+_(Sin tarjeta activa: **D.15b cerrada** el 2026-07-13 (botón de editar en la `.deuda-card` + formulario reordenado + hint de bajo valor retirado). Con D.15d completa (D.15d-1 motor puro + extracción; D.15d-2 vista de palancas, absorbe D.15e) y D.15c/D.15e absorbidas, **la iniciativa "Deudas v2" queda completa salvo D.15a** (copy de simulaciones + refuerzo en Abonar). El rediseño visual "Deudas v2" (**D.16a a D.16d**, [ADR 036](DECISIONS/036-deudas-v2-visual.md)) cerró el 2026-07-12. El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, tres consumidores: Inicio, Mis cuentas y Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. Siguiente tarjeta sugerida: **D.15a** (copy de simulaciones + refuerzo en Abonar, Deudas), la última pieza de la iniciativa.)_
 
 ---
 
@@ -152,15 +152,9 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 - Depende de : conviene tras D.16b/D.16c (el copy nuevo se escribe sobre los bloques ya re-estilados)
 - Modelo     : Sonnet 5 - Alto (copy con criterio de tono + disciplina de color del ADR 031)
 
-#### D.15b - Deudas v2: editar deuda + reorden del formulario
-- Prioridad  : media
-- Estado     : pendiente (independiente; el flujo de edición ya existe)
-- Objetivo   : (puntos 7, 8, 10) botón de editar en la tarjeta de deuda (el flujo `_editarCompromiso` + `renderFormDeuda(tipo, deuda)` ya existe y prellena; solo falta el trigger visible en la sección Deudas); formulario reordenado (tipo de deuda primero, entidad/persona después); quitar los hints de bajo valor ("si es una tienda que te fía...") conservando y dando protagonismo al de tasa desconocida de D.12.
-- Secciones  : Deudas (`compromisos/views/lista.js` para el botón, `views/formularios.js` para el orden y los hints, `index.js` si hace falta wiring)
-- Depende de : nada; coordina con D.16d (la tarjeta rediseñada del ADR 036 aloja el trigger de editar)
-- Modelo     : Sonnet 5 - Medio (form + trigger, patrón ya existente)
+> **D.15b CERRADA el 2026-07-13** (editar deuda + reorden del formulario, ver CHANGELOG y [`contexto/deudas.md`](contexto/deudas.md)): botón de editar (`i-edit`) en la `.deuda-card` (activa y saldada), usa la acción `editar-compromiso` ya registrada. Formulario reordenado: categoría/tipo antes que descripción (mismo patrón que TX.9a, regla CAT.4). Hint de bajo valor "si es una tienda que te fía" retirado; el de tasa desconocida (D.12) se conserva íntegro. 5 tests unitarios nuevos. 2525/2525 unit + 17/17 E2E `estrategia-pago` + lint verdes. SW v372→v373.
 
-_(**D.15c absorbida por D.16d** en el triaje del 2026-07-12: la tarjeta de deuda con jerarquía visual es el D5 del handoff/[ADR 036](DECISIONS/036-deudas-v2-visual.md). La coordinación con D.15b se conserva: la tarjeta nueva de D.16d es la que alojará el trigger de editar cuando D.15b se implemente.)_
+_(**D.15c absorbida por D.16d** en el triaje del 2026-07-12: la tarjeta de deuda con jerarquía visual es el D5 del handoff/[ADR 036](DECISIONS/036-deudas-v2-visual.md). Esa misma tarjeta alojó el trigger de editar que D.15b agregó el 2026-07-13.)_
 
 _(**D.15e absorbida y cerrada por D.15d-2** el 2026-07-13: pedía el botón "Aplicar" en el acelerador del plan viable; al unificar el acelerador `<details>` con la palanca "Aumentar la cuota" (siempre visible), esa palanca ya trae el botón "Aplicar este aumento" que reusa `repartirExtraEnCuotas()`. El acelerador dejó de existir, así que la tarjeta pierde su objeto.)_
 

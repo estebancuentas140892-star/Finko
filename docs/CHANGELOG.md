@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.15b editar deuda + reorden del form, cierra Deudas v2 salvo D.15a · 2026-07-13
+
+Cierra **D.15b** (`docs/BOARD.md`), tercera pieza independiente de la iniciativa Deudas v2 (puntos 7, 8 y 10 del brief).
+
+**Qué cambió:** (1) **Editar deuda**: el flujo `_editarCompromiso` + `renderFormDeuda(tipo, deuda)` ya existía y prellenaba el formulario completo, pero la `.deuda-card` no tenía ningún trigger visible (solo Abonar/Eliminar/Archivar); el único acceso era desde Calendario, para fijos. Se agregó un botón de editar (`i-edit`, `.btn-icon`, mismo patrón visual que Eliminar) a `_renderCompromisoItem` en `views/lista.js`, disponible tanto en deuda activa (junto a Abonar y Eliminar) como saldada (junto a Archivar); usa la acción `editar-compromiso` ya registrada en `index.js`, cero wiring nuevo. (2) **Formulario reordenado**: el campo de categoría/tipo de deuda ("Tipo de deuda" en entidad, "¿Con quién es la deuda?" en personal) pasa a ir ANTES que la descripción libre, el mismo patrón que TX.9a adoptó en Gastos (y que CAT.4 documenta como regla transversal: "la categoría/tipo va primero, la descripción después, nunca al contrario"). (3) **Hint de bajo valor retirado**: "Si es una tienda o comercio que te fía, elige Fiado" desaparece del campo de categoría personal (Fiado ya está listado como una opción más del propio selector, el hint solo repetía información visible); el hint de tasa desconocida (D.12, `comp-tasa-hint`, "¿No conoces tu tasa?...") se conserva íntegro y sigue siendo el contenido principal de ese campo.
+
+**Archivos tocados:** `modules/dominio/compromisos/views/lista.js` (botón de editar), `modules/dominio/compromisos/views/formularios.js` (reorden de campos + hint retirado), `tests/unit/compromisos.test.js` (5 tests nuevos: 2 del botón de editar en `lista.js`, 3 del form en `formularios.js`), `service-worker.js` (v372→v373).
+
+**Verificación:** 2525/2525 unit + 17/17 E2E `estrategia-pago` (corrida en Chromium real: confirma que la tarjeta con el botón nuevo sigue interactuando bien con Abonar/Eliminar/estrategia) + lint verdes.
+
+**Podría afectar:** solo la sección Deudas. Sin cambios de lógica de negocio, schema ni de los `data-action`/handlers existentes (`editar-compromiso` ya estaba registrado desde antes, solo le faltaba un trigger). Con esto, **la iniciativa "Deudas v2" queda completa salvo D.15a** (copy de simulaciones + refuerzo en Abonar, pendiente e independiente).
+
+---
+
 ### feat(compromisos): D.15d-2 las 3 palancas a primer plano en la vista, absorbe D.15e · 2026-07-13
 
 Cierra **D.15d-2** (`docs/BOARD.md`), segunda rebanada de D.15d: conecta el motor puro `recomendarPalanca` (D.15d-1) a la card de estrategia. **El corazón de la iniciativa Deudas v2 se vuelve visible.**

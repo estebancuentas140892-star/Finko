@@ -202,10 +202,19 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
     ? `<span class="chip chip-success abono-saldada" role="status">Saldada</span>`
     : `<p class="deuda-card__saldo">${saldoTxt}</p>`;
 
+  // D.15b: botón de editar disponible siempre (activa o saldada). El flujo
+  // `_editarCompromiso` + `renderFormDeuda(tipo, deuda)` ya existía (prellena
+  // el form); solo faltaba este trigger visible en la tarjeta.
+  const editarBtn = `<button class="btn btn-ghost btn-icon"
+               data-action="editar-compromiso"
+               data-id="${_esc(compromiso.id)}"
+               aria-label="Editar deuda ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>`;
+
   // ADR 002 sin cambios de flujo: Abonar abre el mismo modal; solo cambia el
   // vestido (tinte de compromisos, no verde: un abono no es un ingreso).
   const accionesHtml = saldada
-    ? `<button class="btn btn-ghost btn-icon"
+    ? `${editarBtn}
+       <button class="btn btn-ghost btn-icon"
                data-action="archivar-compromiso"
                data-id="${_esc(compromiso.id)}"
                title="Archivar"
@@ -214,6 +223,7 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
                data-action="abrir-abono"
                data-id="${_esc(compromiso.id)}"
                aria-label="Abonar a ${desc}">${icon('plus', 'icon icon--sm')} Abonar</button>
+       ${editarBtn}
        <button class="btn btn-ghost btn-icon deuda-card__eliminar"
                data-action="eliminar-compromiso"
                data-id="${_esc(compromiso.id)}"

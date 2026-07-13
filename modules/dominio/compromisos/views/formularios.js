@@ -212,19 +212,18 @@ export function renderFormDeuda(tipo, deuda = null) {
       <input type="hidden" name="tipo" value="${_esc(tipo)}" />
 
       <div class="form-group">
-        <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
-        <input id="comp-descripcion" name="descripcion" class="input" type="text"
-               placeholder="${_esc(descPlaceholder)}" required aria-required="true"
-               autocomplete="off" value="${vDesc}" />
-      </div>
-
-      <div class="form-group">
         <label for="comp-categoria" class="label">${_esc(catLabel)}</label>
         <select id="comp-categoria" name="categoria" class="input">
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
-        ${esEntidad ? '' : '<p class="form-hint">Si es una tienda o comercio que te fía, elige Fiado.</p>'}
+      </div>
+
+      <div class="form-group">
+        <label for="comp-descripcion" class="label">¿Cuál es la deuda?</label>
+        <input id="comp-descripcion" name="descripcion" class="input" type="text"
+               placeholder="${_esc(descPlaceholder)}" required aria-required="true"
+               autocomplete="off" value="${vDesc}" />
       </div>
 
       <div class="form-group">
