@@ -7,9 +7,10 @@
  * del dominio que usan renderSmart y los handlers de cuentas.
  *
  * Sub-modulos:
- *   - views/cuentas.js      -> lista de cuentas, form del modal, indicador GMF
- *   - views/ingresos.js     -> listas y forms de ingresos, nudge proximo cobro
- *   - views/distribucion.js -> tarjeta de distribucion y asistente por pasos
+ *   - views/cuentas.js         -> lista de cuentas, form del modal, indicador GMF
+ *   - views/ingresos.js        -> listas y forms de ingresos, nudge proximo cobro
+ *   - views/distribucion.js    -> tarjeta de distribucion y asistente por pasos
+ *   - views/transferencias.js  -> entrada y form de "Transferir dinero" (MC.17b)
  *
  * Regla: ninguno de los sub-modulos contiene logica de negocio (toda en
  * logic/); pueden leer S, no mutarlo. Cero imports cross-dominio.
@@ -33,6 +34,11 @@ import {
   renderNudgeDistribucionInicio,
   renderAsistenteDistribucion,
 } from './views/distribucion.js';
+import {
+  renderBotonTransferir,
+  renderFormTransferencia,
+  renderParTransferencia,
+} from './views/transferencias.js';
 
 export {
   renderHeroTesoreria,
@@ -47,12 +53,16 @@ export {
   renderDistribucionIngreso,
   renderNudgeDistribucionInicio,
   renderAsistenteDistribucion,
+  renderBotonTransferir,
+  renderFormTransferencia,
+  renderParTransferencia,
 };
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */
 export function renderTesoreria() {
   renderHeroTesoreria();
   renderListaCuentas();
+  renderBotonTransferir();
   renderGMFIndicador();
   renderNudgeProximoIngreso();
   renderListaIngresos();

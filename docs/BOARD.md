@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (MC.17 analizada y re-cortada en rebanadas MC.17a-e, diseño de schema/ledger de transferencias cerrado; MC.18e cerró antes el mismo día).
+> Última actualización: 2026-07-12 (MC.17b cierra formulario + acción de transferir; MC.17a y MC.18e cerraron antes el mismo día).
 
 ---
 
@@ -100,14 +100,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.17a cerrada el 2026-07-12** (fundación de datos + lógica pura, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): colección `transferencias` + typedef, bump v25→v26 + migración, `logic/transferencias.js` (`validarTransferencia`, `saldoSuficiente`, `normalizarTransferencia`, `calcularTransferencia` apply atómico puro con invariante de patrimonio neto). 26 tests unitarios nuevos, SW v362. Ningún código escribe aún en la colección (eso es MC.17b).
 
-#### MC.17b - Formulario + acción de transferir (patrón 0/1/2/varias)
-- Prioridad  : alta
-- Estado     : lista para implementar (MC.17a cerrada)
-- Objetivo   : modal "Transferir dinero" con la automatización por conteo de cuentas (2 → dirección + monto con botón invertir; 3+ → selectores origen/destino); la acción aplica el traslado atómico de MC.17a, actualiza ambos saldos, `updSaldo()`, cierra y anuncia. Verificable en la app: con 2 cuentas, transferir mueve ambos saldos y el patrimonio neto no cambia.
-- Secciones  : Mis cuentas (`tesoreria`)
-- Archivos   : `tesoreria/views/` (form nuevo), `tesoreria/acciones/` (handler nuevo), `index.html` (modal `#modal-transferencia`), `styles/components/domain.css`
-- Depende de : MC.17a
-- Modelo     : Sonnet 5 - Alto (UI sobre lógica ya cerrada)
+> **MC.17b cerrada el 2026-07-12** (formulario + acción de transferir, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): botón de entrada "Transferir entre cuentas" (`#tesoreria-transferir`, visible solo con 2+ cuentas activas) + modal `#modal-transferencia` con automatización por conteo (2 cuentas → widget "De A a B" con botón invertir; 3+ → dos selectores independientes origen/destino). La acción aplica el traslado atómico de MC.17a, confirma sobregiro si el saldo no alcanza (mismo patrón "Registrar igual" que ya usa Deudas), guarda el historial en `S.transferencias` y cierra el modal. 13 tests unitarios + 4 E2E nuevos, SW v363.
 
 #### MC.17c - Transferencia en el ledger de Movimientos (tipo neutro)
 - Prioridad  : media-alta

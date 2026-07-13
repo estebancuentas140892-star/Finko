@@ -18,6 +18,7 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 import { initAccionesCuentas, inyectarFormCuenta } from './acciones/cuentas.js';
 import { initAccionesIngresos } from './acciones/ingresos.js';
 import { initAccionesDistribucion, abrirAsistenteDistribucion } from './acciones/distribucion.js';
+import { initAccionesTransferencias } from './acciones/transferencias.js';
 import { renderTesoreria, renderNudgeDistribucionInicio } from './view.js';
 
 /**
@@ -28,6 +29,7 @@ export function initTesoreria() {
   initAccionesCuentas();
   initAccionesIngresos();
   initAccionesDistribucion();
+  initAccionesTransferencias();
 
   inyectarFormCuenta();
 

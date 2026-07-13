@@ -643,6 +643,9 @@
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
+        <div id="tesoreria-transferir">
+          <!-- MC.17b: renderBotonTransferir() - "Transferir entre cuentas", solo con 2+ cuentas activas -->
+        </div>
         <div id="tesoreria-gmf">
           <!-- K.1 (MC.18c, ADR 035 D4): renderGMFIndicador() pinta la tarjeta insight del 4x1000 -->
         </div>
@@ -1019,6 +1022,22 @@
       </header>
       <div class="modal__body" id="modal-ingreso-puntual-body">
         <!-- NAV.A1: tesoreria/index.js inyecta el form aquí al abrir -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Transferir dinero entre cuentas propias (MC.17b) -->
+  <div class="modal-overlay" id="modal-transferencia" data-dom="tesoreria"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-transferencia-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <h2 class="modal__title" id="modal-transferencia-title">Transferir dinero</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-transferencia-body">
+        <!-- MC.17b: acciones/transferencias.js inyecta el form aquí al abrir -->
       </div>
     </div>
   </div>

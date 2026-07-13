@@ -26,15 +26,17 @@ import { distribuirPago } from './distribuir-pago.js';
 /**
  * Renderiza un selector de cuenta en-formulario: una tarjeta seleccionable por
  * cuenta activa, con su avatar de entidad, nombre y saldo. El valor elegido se
- * lee del radio `name="cuentaId"`. Pre-selecciona `selectedId` si se indica, o
- * la cuenta de mayor saldo. Devuelve '' si no hay cuentas activas (el caller
- * muestra su propio estado vacío).
+ * lee del radio `name` (por defecto `"cuentaId"`; MC.17b pasa `"cuentaOrigenId"`/
+ * `"cuentaDestinoId"` para renderizar dos selectores independientes en el mismo
+ * formulario). Pre-selecciona `selectedId` si se indica, o la cuenta de mayor
+ * saldo. Devuelve '' si no hay cuentas activas (el caller muestra su propio
+ * estado vacío).
  *
  * @param {import('../core/state.js').Cuenta[]} cuentas
- * @param {{ selectedId?: string|null, label?: string }} [opts]
+ * @param {{ selectedId?: string|null, label?: string, name?: string }} [opts]
  * @returns {string}
  */
-export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?' } = {}) {
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId' } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) return '';
 
@@ -44,7 +46,7 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
 
   const filas = activas.map(c => `
       <label class="cuenta-sel__row">
-        <input type="radio" name="cuentaId" class="cuenta-sel__radio"
+        <input type="radio" name="${_esc(name)}" class="cuenta-sel__radio"
                value="${_esc(c.id)}" ${c.id === sel ? 'checked' : ''} />
         <span class="cuenta-picker__main">
           ${bancoAvatar(c.banco)}

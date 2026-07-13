@@ -1283,6 +1283,70 @@ button.chip:focus-visible {
 }
 
 /* ════════════════════════════════════════════════════════════
+   TRANSFERIR-ENTRADA + TRANSFERIR-PAR (MC.17b) - botón de entrada
+   bajo la lista de cuentas (patrón 0/1/2/varias: solo aparece con
+   2+ cuentas activas) y el widget "De A a B" del modal cuando hay
+   exactamente 2 cuentas, con botón para invertir la dirección.
+   ════════════════════════════════════════════════════════════ */
+
+.transferir-entrada {
+  margin-top: var(--fk-space-3);
+}
+
+.transferir-par {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+}
+
+.transferir-par__cuenta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+}
+
+.transferir-par__info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.transferir-par__nombre {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.transferir-par__saldo {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.transferir-par__swap {
+  flex-shrink: 0;
+  width: 2.25rem;   /* 36px, hit target consistente con .btn-icon */
+  height: 2.25rem;
+  border-radius: var(--fk-radius-full);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-secondary);
+  font-size: var(--fk-text-lg);
+  cursor: pointer;
+}
+.transferir-par__swap:hover {
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-primary);
+}
+
+/* ════════════════════════════════════════════════════════════
    GMF-INSIGHT (MC.18c, ADR 035 D4) - costo estimado del 4x1000,
    antes nudge suelto (.nudge nudge-info), ahora tarjeta con tinte
    tesorería pegada bajo la lista de cuentas que lo generan.

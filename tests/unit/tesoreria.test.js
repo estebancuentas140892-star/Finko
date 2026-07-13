@@ -45,9 +45,10 @@ import {
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
+import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
 import { dispatch } from '../../modules/ui/actions.js';
 import { S, EventBus } from '../../modules/core/state.js';
 
@@ -3290,5 +3291,179 @@ describe('calcularTransferencia', () => {
       { cuentaId: 'c1', saldo: -20_000 },
       { cuentaId: 'c2', saldo:  70_000 },
     ]);
+  });
+});
+
+// ── TRANSFERENCIAS: VISTA + ACCIONES (MC.17b) ────────────────────
+
+describe('renderBotonTransferir()', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="tesoreria-transferir"></div>';
+  });
+
+  it('sin cuentas: contenedor vacío', () => {
+    S.cuentas = [];
+    renderBotonTransferir();
+    expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
+  });
+
+  it('con 1 cuenta activa: contenedor vacío (no hay dos endpoints)', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' })];
+    renderBotonTransferir();
+    expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
+  });
+
+  it('con 2+ cuentas activas: botón visible con su data-action', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
+    renderBotonTransferir();
+    const boton = document.querySelector('[data-action="abrir-transferencia"]');
+    expect(boton).not.toBeNull();
+    expect(boton.textContent.trim()).toBe('Transferir entre cuentas');
+  });
+
+  it('una cuenta inactiva no cuenta para el umbral de 2', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', activa: false })];
+    renderBotonTransferir();
+    expect(document.getElementById('tesoreria-transferir').innerHTML).toBe('');
+  });
+});
+
+describe('renderFormTransferencia()', () => {
+  it('con menos de 2 cuentas activas: string vacío', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' })];
+    expect(renderFormTransferencia()).toBe('');
+  });
+
+  it('con exactamente 2 cuentas: usa el widget de par (botón invertir, sin radiogroup)', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', saldo: 300_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
+    ];
+    const html = renderFormTransferencia();
+    expect(html).toContain('transferir-par');
+    expect(html).toContain('data-action="invertir-transferencia"');
+    expect(html).not.toContain('role="radiogroup"');
+    // Origen por defecto = cuenta de mayor saldo (c2).
+    expect(html).toContain('name="cuentaOrigenId" value="c2"');
+    expect(html).toContain('name="cuentaDestinoId" value="c1"');
+  });
+
+  it('con 3+ cuentas: dos selectores independientes origen/destino', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1' }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' }),
+      cuentaBase({ id: 'c3', nombre: 'Nu', banco: 'Nu' }),
+    ];
+    const html = renderFormTransferencia();
+    expect(html).not.toContain('transferir-par');
+    expect(html).toContain('name="cuentaOrigenId"');
+    expect(html).toContain('name="cuentaDestinoId"');
+    expect((html.match(/role="radiogroup"/g) ?? []).length).toBe(2);
+  });
+
+  it('incluye monto, fecha y nota opcional', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
+    const html = renderFormTransferencia();
+    expect(html).toContain('id="transferencia-monto"');
+    expect(html).toContain('id="transferencia-fecha"');
+    expect(html).toContain('id="transferencia-nota"');
+  });
+});
+
+describe('renderParTransferencia()', () => {
+  it('pinta nombre + saldo de cada cuenta y los inputs hidden con sus ids', () => {
+    const origen  = cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 300_000 });
+    const destino = cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 });
+    const html = renderParTransferencia(origen, destino);
+    expect(html).toContain('Nequi');
+    expect(html).toContain('Bancolombia');
+    expect(html).toContain('$300.000');
+    expect(html).toContain('$900.000');
+    expect(html).toContain('name="cuentaOrigenId" value="c1"');
+    expect(html).toContain('name="cuentaDestinoId" value="c2"');
+  });
+});
+
+describe('acciones de transferencias (MC.17b)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div class="app-shell"></div>
+      <div id="tesoreria-transferir"></div>
+      <div class="modal-overlay" id="modal-transferencia" aria-hidden="true">
+        <div class="modal">
+          <div class="modal__body" id="modal-transferencia-body"></div>
+        </div>
+      </div>`;
+    S.cuentas = [
+      cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 300_000 }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000 }),
+    ];
+    S.transferencias = [];
+    initAccionesTransferencias();
+    renderBotonTransferir();
+  });
+
+  it('abrir-transferencia inyecta el form y abre el modal con la fecha precargada', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+
+    const overlay = document.getElementById('modal-transferencia');
+    expect(overlay.dataset.open).toBe('');
+    expect(document.getElementById('form-transferencia')).not.toBeNull();
+    expect(document.getElementById('transferencia-fecha').value).not.toBe('');
+  });
+
+  it('invertir-transferencia intercambia origen y destino (2 cuentas)', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+
+    const wrapAntes    = document.getElementById('transferencia-par-wrap');
+    const origenAntes  = wrapAntes.querySelector('input[name="cuentaOrigenId"]').value;
+    const destinoAntes = wrapAntes.querySelector('input[name="cuentaDestinoId"]').value;
+
+    dispatch(document.querySelector('[data-action="invertir-transferencia"]'), new Event('click'));
+
+    const wrapDespues = document.getElementById('transferencia-par-wrap');
+    expect(wrapDespues.querySelector('input[name="cuentaOrigenId"]').value).toBe(destinoAntes);
+    expect(wrapDespues.querySelector('input[name="cuentaDestinoId"]').value).toBe(origenAntes);
+  });
+
+  it('confirmar con saldo suficiente: descuenta origen, acredita destino, guarda historial y cierra el modal', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+
+    const wrap      = document.getElementById('transferencia-par-wrap');
+    const origenId  = wrap.querySelector('input[name="cuentaOrigenId"]').value;  // c2, mayor saldo
+    const destinoId = wrap.querySelector('input[name="cuentaDestinoId"]').value; // c1
+
+    document.getElementById('transferencia-monto').value = '100000';
+
+    const form = document.getElementById('form-transferencia');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+
+    const cOrigen  = S.cuentas.find(c => c.id === origenId);
+    const cDestino = S.cuentas.find(c => c.id === destinoId);
+    expect(cOrigen.saldo).toBe(800_000);   // 900.000 - 100.000
+    expect(cDestino.saldo).toBe(400_000);  // 300.000 + 100.000
+
+    expect(S.transferencias).toHaveLength(1);
+    expect(S.transferencias[0]).toMatchObject({
+      cuentaOrigenId:  origenId,
+      cuentaDestinoId: destinoId,
+      monto:           100_000,
+    });
+
+    const overlay = document.getElementById('modal-transferencia');
+    expect(overlay.dataset.open).toBeUndefined();
+  });
+
+  it('errores de validación se muestran y no tocan S (monto inválido)', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+
+    document.getElementById('transferencia-monto').value = '0';
+    const form = document.getElementById('form-transferencia');
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+
+    expect(S.transferencias).toHaveLength(0);
+    expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000);
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(900_000);
+    expect(document.querySelector('.form-errors')).not.toBeNull();
   });
 });

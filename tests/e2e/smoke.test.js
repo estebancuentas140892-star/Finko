@@ -2252,6 +2252,116 @@ test.describe('Límites de gasto - resumen por grupo', () => {
   });
 });
 
+// ── Mis cuentas: Transferir entre cuentas propias (MC.17b) ───────────────────
+
+test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
+  test('con menos de 2 cuentas activas, la entrada no aparece', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [{ id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await expect(page.locator('#tesoreria-transferir')).toBeEmpty();
+  });
+
+  test('con exactamente 2 cuentas: el widget de par transfiere y actualiza ambos saldos', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="abrir-transferencia"]');
+    await page.waitForSelector('#modal-transferencia[data-open]', { timeout: 5_000 });
+
+    // Origen por defecto = mayor saldo (Bancolombia, $900.000).
+    const wrap = page.locator('#transferencia-par-wrap');
+    await expect(wrap).toContainText('Bancolombia');
+    await expect(wrap).toContainText('Nequi');
+
+    await page.fill('#transferencia-monto', '100000');
+    await page.click('#form-transferencia button[type="submit"]');
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+
+    await page.waitForTimeout(400); // save() debounced (ADN #5)
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(800_000); // origen: 900.000 - 100.000
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(400_000); // destino: 300.000 + 100.000
+    expect(st.transferencias).toHaveLength(1);
+    expect(st.transferencias[0]).toMatchObject({ cuentaOrigenId: 'c2', cuentaDestinoId: 'c1', monto: 100_000 });
+
+    // El traslado es interno: el patrimonio total en cuentas no cambia.
+    const cardBancolombia = page.locator('.cuenta-card', { hasText: 'Bancolombia' });
+    const cardNequi       = page.locator('.cuenta-card', { hasText: 'Nequi' });
+    await expect(cardBancolombia.locator('.cuenta-card__saldo')).toHaveText('$800.000');
+    await expect(cardNequi.locator('.cuenta-card__saldo')).toHaveText('$400.000');
+  });
+
+  test('invertir el par cambia cuál cuenta es el origen', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="abrir-transferencia"]');
+    await page.waitForSelector('#modal-transferencia[data-open]', { timeout: 5_000 });
+
+    const origenAntes = await page.locator('#transferencia-par-wrap input[name="cuentaOrigenId"]').inputValue();
+    await page.click('[data-action="invertir-transferencia"]');
+    const origenDespues = await page.locator('#transferencia-par-wrap input[name="cuentaOrigenId"]').inputValue();
+
+    expect(origenDespues).not.toBe(origenAntes);
+  });
+
+  test('con 3+ cuentas: dos selectores independientes, la transferencia mueve el saldo correcto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true },
+        { id: 'c3', nombre: 'Daviplata', banco: 'Daviplata', tipo: 'Ahorros', saldo: 50_000, activa: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="abrir-transferencia"]');
+    await page.waitForSelector('#modal-transferencia[data-open]', { timeout: 5_000 });
+
+    await expect(page.locator('#transferencia-par-wrap')).toHaveCount(0);
+    await page.locator('input[name="cuentaOrigenId"][value="c2"]').check();
+    await page.locator('input[name="cuentaDestinoId"][value="c3"]').check();
+    await page.fill('#transferencia-monto', '50000');
+    await page.click('#form-transferencia button[type="submit"]');
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+
+    await page.waitForTimeout(400);
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(850_000);
+    expect(st.cuentas.find(c => c.id === 'c3').saldo).toBe(100_000);
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000); // sin tocar
+  });
+});
+
 // ── Mis cuentas: CTA cruzado a Límites de gasto (MC.5e, ADR 017) ─────────────
 
 test.describe('Mis cuentas - CTA cruzado a Límites de gasto', () => {

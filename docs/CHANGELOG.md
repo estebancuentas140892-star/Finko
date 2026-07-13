@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.17b formulario + acción de transferir entre cuentas · 2026-07-12
+
+Cierra **MC.17b** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), segunda rebanada de MC.17. UI sobre la lógica ya cerrada en MC.17a.
+
+**Qué cambió:** botón de entrada "Transferir entre cuentas" en `#tesoreria-transferir` (nuevo `renderBotonTransferir()`, `views/transferencias.js`), visible solo con 2+ cuentas activas (patrón 0/1/2/varias: con menos, no hay dos endpoints posibles). Modal `#modal-transferencia` nuevo con automatización por conteo: con **exactamente 2 cuentas**, `renderParTransferencia()` pinta un widget fijo "De A a B" (origen por defecto = mayor saldo) con botón `⇄` que invierte la dirección sin re-renderizar el resto del form; con **3+ cuentas**, `renderFormTransferencia()` usa dos `renderSelectorCuenta()` independientes (mismo componente de tarjetas que ya usan ingreso puntual y abono a deuda), extendido con un parámetro `name` nuevo (opcional, retrocompatible) para poder renderizar dos radiogroups (`cuentaOrigenId`/`cuentaDestinoId`) en el mismo formulario sin colisión. `_guardarTransferencia()` (`acciones/transferencias.js`) valida con `validarTransferencia()`, confirma el sobregiro con el usuario si `!saldoSuficiente()` (mismo patrón "Registrar igual" que ya usa el formulario de deuda), aplica el traslado con `calcularTransferencia()` de MC.17a vía `editar('cuentas', ...)` ×2, guarda el registro en `S.transferencias` (historial, MC.17c lo mostrará en el ledger) y cierra el modal.
+
+**Archivos tocados:** `modules/dominio/tesoreria/views/transferencias.js` (nuevo), `modules/dominio/tesoreria/acciones/transferencias.js` (nuevo), `modules/dominio/tesoreria/view.js` (barrel: 3 exports nuevos + `renderBotonTransferir()` en `renderTesoreria()`), `modules/dominio/tesoreria/index.js` (`initAccionesTransferencias()`), `modules/infra/cuenta-helper.js` (`renderSelectorCuenta()` gana el parámetro opcional `name`), `index.html` (`#tesoreria-transferir` + modal `#modal-transferencia`), `styles/components/domain.css` (`.transferir-entrada`, `.transferir-par*`), `service-worker.js` (v362→v363 + los 2 módulos nuevos en `CORE_ASSETS`), `tests/unit/tesoreria.test.js` (13 tests nuevos), `tests/e2e/smoke.test.js` (4 E2E nuevos), `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2449/2449 unit (gating 0/1/2/varias, ambas ramas del form, widget de par, wiring de invertir, camino feliz con descuento/crédito/historial, camino de error sin tocar S) + 178/178 E2E (4 nuevos en Chromium real: entrada oculta con 1 cuenta, transferencia con 2 cuentas actualiza ambos saldos en las tarjetas y en localStorage, invertir cambia el origen, transferencia con 3+ cuentas vía selectores) + lint verdes. **Nota de verificación:** el Browser pane interactivo no estuvo disponible esta sesión (clasificador de seguridad temporalmente caído); la verificación visual se apoyó en los E2E de Playwright sobre Chromium real (incluyen aserciones de texto visible como `$800.000`/`$400.000` en las tarjetas de cuenta), no en una revisión manual de estilos/espaciado del widget nuevo.
+
+**Podría afectar:** `renderSelectorCuenta()` (`infra/cuenta-helper.js`) gana un parámetro opcional con default retrocompatible; sus 5 callers existentes (apartados, compromisos ×2, gastos, ingresos) siguen sin cambios. El patrimonio total en cuentas no cambia con una transferencia (invariante de MC.17a, verificado en la app): solo se mueve entre dos cuentas propias.
+
+---
+
 ### feat(tesoreria): MC.17a fundación de datos + lógica pura de transferencias · 2026-07-12
 
 Cierra **MC.17a** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), primera rebanada de MC.17 (transferencias entre cuentas propias). Solo fundación de datos + lógica pura, sin UI (verificación solo-unit, precedente de la capa `logic/`).
