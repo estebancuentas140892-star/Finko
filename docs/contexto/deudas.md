@@ -7,8 +7,8 @@
 ## Registro de deudas (dominio `compromisos`, tipo `deuda-entidad`/`deuda-personal`)
 
 - **Objetivo**          : registrar deudas con entidad (banco, tarjeta) o personales (familia, fiado, gota a gota), simular estrategias de pago (Avalancha, Bola de nieve, cuota fija), registrar abonos que descuentan `saldoTotal` y sincronizan la cuenta de origen del pago, y detectar cuándo una cuota no alcanza a cubrir el interés mensual. Comparte el dominio `compromisos` con "Fijos" (tipo `fijo`, vive en Calendario): mismo schema `Compromiso`, tres tipos posibles (`fijo`, `deuda-entidad`, `deuda-personal`).
-- **Estado actual**     : estable. **D.14** (2026-07-10) agrega la acreditación opcional de la cuenta de origen al crear una deuda: si el dinero prestado entró a una cuenta del usuario, esa cuenta se acredita automáticamente en el mismo registro (espejo de NAV.A1, ingreso puntual). **BUG-011 corregido** (2026-07-11): el extra tecleado en "Aumenta tu cuota" ya no reestructura la card de estrategia en el siguiente re-render (ver riesgo "estado UI simulado" abajo). **Iniciativa "Deudas v2: de registro a asesor"** (brief 2026-07-08, `docs/BOARD.md`) queda pendiente de análisis en **D.15**; IV.2 ya cerró, así que su bloqueo por la base de color quedó levantado.
-- **Verificado contra** : commit del fix de BUG-011 (2026-07-11). Primera ficha de esta sección (D.14, 2026-07-10).
+- **Estado actual**     : estable. **D.14** (2026-07-10) agrega la acreditación opcional de la cuenta de origen al crear una deuda: si el dinero prestado entró a una cuenta del usuario, esa cuenta se acredita automáticamente en el mismo registro (espejo de NAV.A1, ingreso puntual). **BUG-011 corregido** (2026-07-11): el extra tecleado en "Aumenta tu cuota" ya no reestructura la card de estrategia en el siguiente re-render (ver riesgo "estado UI simulado" abajo). **Iniciativa "Deudas v2: de registro a asesor"** (brief 2026-07-08, `docs/BOARD.md`): **D.15 (análisis + re-corte) hecho el 2026-07-12** (ver bloque "Deudas v2 (D.15, diseño)" abajo), re-cortado en 5 rebanadas verificables (D.15a copy/alerta, D.15b editar deuda, D.15c tarjeta, D.15d motor de recomendación de palanca, D.15e aplicar en acelerador viable); ninguna implementada aún. Esteban arranca por D.15d.
+- **Verificado contra** : commit del análisis D.15 (2026-07-12). Antes: fix de BUG-011 (2026-07-11), primera ficha (D.14, 2026-07-10).
 
 **Dónde vive**
 
@@ -44,7 +44,26 @@
 - **Migración**: `cuentaOrigenId`/`montoAcreditado` son campos opcionales nuevos, sin bump de `SCHEMA_VERSION`: los registros existentes simplemente no los tienen (`undefined`), equivalente semánticamente a "no aplica". No requieren backfill porque ningún código lee esos campos asumiendo que siempre existen (siempre se comprueba con `if (compromiso.cuentaOrigenId)`).
 - **Estado UI simulado vs estructura de la card (lección de BUG-011)**: los inputs de simulación del panel de estrategia (`cambiar-extra-remedio`, `cambiar-renegociar-tasa`, `cambiar-consolidar`) commitean su valor a `_uiEstrategia` en cada tecla A PROPÓSITO (para que el clic en "Aplicar" no compita con un re-render por blur). La contrapartida obligatoria: `renderEstrategiaPago()` decide la ESTRUCTURA de la card (recomendación, detalle, bloque viable/inviable) solo con los datos registrados (`recomendarEstrategia(deudas, 0)`); el extra simulado alimenta únicamente el resumen comparativo dentro de su bloque. Si una futura refactorización (D.15) vuelve a pasar el extra simulado a la decisión estructural, el panel de alternativas desaparecerá al cambiar de pestaña y la card presentará la simulación como aplicada. Tests de regresión: describe "BUG-011" en `tests/unit/compromisos.test.js` + suite "BUG-011" en `tests/e2e/estrategia-pago.test.js`.
 
-**Cambios pendientes**: **D.15** (análisis + re-corte de la iniciativa "Deudas v2", `docs/BOARD.md`); su bloqueo por IV.2 ya quedó levantado. Dentro de esa iniciativa: alerta de 2 capas, recomendación de estrategia según capacidad de ingresos, copy motivador en simulaciones, editar deuda completa, jerarquía visual de la tarjeta, botón "Aplicar" en el simulador de pago extra.
+**Cambios pendientes**: iniciativa "Deudas v2" re-cortada por D.15 en 5 rebanadas (ver `docs/BOARD.md` y el bloque de diseño abajo): **D.15a** (copy + alerta 2 capas), **D.15b** (editar deuda + reorden del form), **D.15c** (tarjeta con jerarquía visual), **D.15d** (motor de recomendación de palanca, la siguiente a implementar), **D.15e** (botón "Aplicar" en el acelerador del plan viable). Ninguna implementada aún.
+
+---
+
+## Deudas v2 (D.15, diseño 2026-07-12)
+
+> Bloque escrito en la fase de análisis (Opus 4.8), **antes de codificar** (regla 2.6). Documenta el estado real de la sección y el diseño del motor de recomendación de palanca. Las 5 rebanadas (D.15a-e) viven en `docs/BOARD.md`.
+
+**Hallazgo central: dos motores ortogonales, no uno.** La tarjeta de estrategia tiene (o tendrá) dos niveles independientes:
+- **Nivel orden** (`recomendarEstrategia`, ya existe y probado): en qué ORDEN pagar las deudas, Avalancha (tasa↓) vs Bola de nieve (saldo↑). No se rehace.
+- **Nivel palanca** (D.15d, nuevo): qué ACCIÓN tomar sobre el plan, Aumentar la cuota / Renegociar la tasa / Consolidar. Las 3 simulaciones ya existen (`repartirExtraEnCuotas`, `simularRenegociacion`, `simularConsolidacion`) pero hoy solo se ven dentro del panel "plan inviable" (`_renderPanelAlternativas` en `views/estrategia.js`): un usuario con plan viable nunca las descubre. D.15d las saca a primer plano SIEMPRE y recomienda la principal.
+
+**Motor de recomendación de palanca (D.15d), diseño:**
+- Firma pura: `recomendarPalanca(deudas, { ingresoMensual, fijosMensuales })` en `logic/estrategia.js`. NO lee `S` ni importa `tesoreria`: recibe la capacidad como parámetro (la vista la calcula).
+- **Capacidad = margen libre real** (decisión de Esteban, 2026-07-12): `capacidad = ingresoMensual − fijosMensuales − Σ cuotas de deuda actuales`. Es el dinero realmente disponible para más pago, no el ingreso bruto.
+- Reglas: margen positivo → principal = **Aumentar la cuota** (aprovecha capacidad, conecta con `repartirExtraEnCuotas`); sin margen + al menos una tasa alta → **Renegociar** (baja el costo sin exigir más flujo); varias deudas costosas (≥2 con interés material) → **Consolidar**. Las 3 se muestran siempre, ordenadas por relevancia con pesos visuales distintos (no 3 botones iguales, punto 2 del brief).
+
+**Fuente de la capacidad de ingresos (arquitectura, decisión de Esteban):** `estimarSalarioMensual` hoy vive en `tesoreria/logic/ingresos.js`; `presupuesto/view.js` ya lo importa cruzando dominio (roza ADN 10). Con `compromisos` como 3.º consumidor, D.15d **extrae la función a `infra/financiero.js`** (hogar único sin dueño de dominio) y actualiza los imports de `tesoreria` y `presupuesto`. El barrel `tesoreria/logic.js` puede re-exportarla para no romper consumidores. Esto mantiene el motor puro y ADN 10 limpio.
+
+**Qué NO toca ninguna rebanada** (fuentes únicas externas, ya en el BOARD): iconos de Avalancha/Bola → IV.4; "Otro" con icono+nombre → CAT.2/CAT.3; catálogo entidad→producto → validación D3 del ADR 029. Ninguna rebanada revisa el ADR 019 (esa nota del triaje era para LIM.1, no para Deudas).
 
 **Cambios realizados**:
 

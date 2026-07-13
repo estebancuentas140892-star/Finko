@@ -128,13 +128,48 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 > **Iniciativa "Deudas v2: de registro a asesor"** (brief de Esteban del 2026-07-08, 15 puntos). Fuente única de todo lo de esta sección. Alcance que absorbe: (1) alerta "tu plan no se sostiene" en rojo solo en el encabezado, panel interior en neutros y el beneficio de cada solución en positivo (aplica la arquitectura de 2 capas del ADR 031: la alarma señala, la solución calma); (2+3) intro breve a las 3 estrategias + **Finko recomienda la principal según la situación** (capacidad según ingresos → aumentar cuota; sin capacidad → renegociar; varias deudas costosas → consolidar), con pesos visuales distintos, no 3 botones iguales; (4+6) copy motivador y explicativo en simulaciones, Avalancha y Bola de nieve (qué beneficio, cuándo conviene, qué impacto), tono ADR 003/008; (5) simulaciones libres y comparables que NUNCA se aplican sin "Aplicar estrategia" (**BUG-011 corregido el 2026-07-11**, ver CHANGELOG: la card ya no presenta la simulación como aplicada y la ficha [`contexto/deudas.md`](contexto/deudas.md) documenta la regla "el estado UI simulado nunca decide estructura"; a esta iniciativa le queda solo la capa de copy/UX de las simulaciones); (7) menos texto en el registro (quitar los hints de bajo valor tipo "si es una tienda que te fía..."), conservando y dando protagonismo a los que sí ayudan como el de tasa desconocida de D.12 (punto 15 del brief); (8) formulario reordenado: tipo de deuda primero, entidad/persona después; (9) copy de refuerzo psicológico en Abonar; (10) **editar deuda** (hoy solo se elimina: cuota, fecha, tasa, entidad, notas; candidata a rebanada temprana por valor/tamaño); (11) tarjeta de deuda con jerarquía visual (con quién, cuánto, cuándo, cuota, tipo, estado de un vistazo; coordina con IV.2); (12) botón "Aplicar" en el simulador de pago extra de Avalancha/Bola de nieve (convierte la simulación en cuota nueva sin editar a mano). **No incluye** (fuentes únicas externas): iconos nuevos de Avalancha/Bola de nieve → IV.4 (spec añadida); "Otro" con icono+nombre personalizado en el form → CAT.2/CAT.3; catálogo entidad → producto (Visa Platinum, etc.) con logos y automatizaciones → validación D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md), que este brief amplía con el nivel "producto" y que comparte modelo de datos con MC.16 (tarjeta de crédito). **D.14 cerrada el 2026-07-10** (acreditar la cuenta de origen al crear una deuda, ver CHANGELOG y [`contexto/deudas.md`](contexto/deudas.md)): fue la primera rebanada ya triada de esta iniciativa.
 
-#### D.15 - Deudas v2: análisis + re-corte en rebanadas (primera fase de la iniciativa)
-- Prioridad  : alta
-- Estado     : pendiente de análisis. Su bloqueo por IV.2 quedó levantado (IV.2 completa el 2026-07-10): ya puede iniciarse.
-- Objetivo   : análisis de la sección (ficha `contexto/` correspondiente) + diseño del motor de recomendación de estrategia (punto 3: reglas de capacidad según ingresos; lógica financiera CO) + re-corte del alcance de la iniciativa en rebanadas verificables (D.15a copy/alerta, D.15b editar deuda, D.15c tarjetas, D.15d recomendación inteligente, D.15e aplicar pago extra...), cada una con su verificación en la app.
-- Secciones  : Deudas (`compromisos`), Análisis (lee capacidad de ingresos vía datos, no imports, ADN 10)
-- Depende de : nada (IV.2 cerró el 2026-07-10; BUG-011 se corrigió aparte el 2026-07-11)
-- Modelo     : Opus 4.8 - Alto (lógica financiera de recomendación + UX; sube a Fable 5 - Alto si el motor de recomendación resulta multidominio)
+> **D.15 - Análisis + re-corte hechos el 2026-07-12** (Opus 4.8, ver bloque de diseño en [`contexto/deudas.md`](contexto/deudas.md)). Hallazgos clave: (a) el **motor de orden de pago** (Avalancha vs Bola, `recomendarEstrategia`) ya existe y está probado, no se rehace; (b) las **3 macro-acciones** (Aumentar/Renegociar/Consolidar) ya están implementadas pero **enterradas** en el panel "plan inviable": el usuario con plan viable nunca las ve; (c) **editar deuda** el flujo existe (`_editarCompromiso` + `renderFormDeuda(tipo, deuda)`) pero **la tarjeta de deuda no tiene botón de editar** (solo abonar/archivar/eliminar); el único acceso hoy es desde Calendario, para fijos; (d) **"Aplicar aumento"** ya existe en el panel inviable pero **no en el acelerador del plan viable**. El brief pide una **capa nueva de recomendación de palanca** ortogonal al motor de orden: la tarjeta pasa a 2 niveles (orden Avalancha/Bola, sin cambio; palanca Aumentar/Renegociar/Consolidar, sacada a primer plano + principal recomendada). **Decisiones de Esteban (2026-07-12):** capacidad de pago = **margen libre real** (`ingresoMensual − fijosMensuales − Σ cuotas de deuda`); si el margen es positivo → recomienda Aumentar; sin margen + tasa alta → Renegociar; varias deudas costosas → Consolidar. **Fuente de la capacidad (arquitectura):** extraer `estimarSalarioMensual` a `infra/financiero.js` (hoy vive en `tesoreria/logic/ingresos.js`; `presupuesto/view.js` ya lo importa cruzando dominio; con `compromisos` sería el 3.º consumidor → hogar único en `infra/`, ADN 10 limpio). El motor queda **puro**: recibe `ingresoMensual`/`fijosMensuales` como parámetros. Ninguna rebanada revisa el ADR 019 (esa nota era para LIM.1). Re-corte en 5 rebanadas abajo. **Arranca D.15d** (decisión de Esteban).
+
+#### D.15d - Deudas v2: motor de recomendación de palanca (Aumentar/Renegociar/Consolidar)
+- Prioridad  : alta (corazón de la iniciativa)
+- Estado     : lista para iniciar (rebanada elegida por Esteban como primera)
+- Objetivo   : (puntos 2+3 del brief) motor puro `recomendarPalanca(deudas, {ingresoMensual, fijosMensuales})` en `logic/estrategia.js` que decide la palanca principal por margen libre real (capacidad positiva → Aumentar; sin capacidad + tasa alta → Renegociar; varias deudas costosas → Consolidar) + sacar las 3 macro-acciones (hoy solo visibles en plan inviable) a primer plano SIEMPRE, con intro breve y pesos visuales distintos (no 3 botones iguales). Extraer `estimarSalarioMensual` a `infra/financiero.js` como paso previo (actualiza los imports de `tesoreria` y `presupuesto`). El motor no lee `S` ni importa `tesoreria`: recibe la capacidad como parámetro; la vista (`views/estrategia.js`) la calcula.
+- Secciones  : Deudas (`compromisos/logic/estrategia.js`, `views/estrategia.js`, `views/estrategia-impacto.js`), infra (`financiero.js`), y ajuste de imports en `tesoreria`/`presupuesto`
+- Archivos   : `modules/dominio/compromisos/logic/estrategia.js`, `modules/dominio/compromisos/views/estrategia.js`, `modules/infra/financiero.js`, `modules/dominio/tesoreria/logic/ingresos.js` (mover) + `logic.js` barrel, `modules/dominio/presupuesto/view.js` (import), tests
+- Depende de : la extracción a `infra/` es el primer paso de la propia rebanada; coordina la presentación con D.15c
+- Modelo     : Opus 4.8 - Alto (lógica financiera de recomendación + reubicación transversal de la capacidad)
+
+#### D.15a - Deudas v2: copy + alerta de 2 capas
+- Prioridad  : media
+- Estado     : pendiente (independiente, puede ir en cualquier orden)
+- Objetivo   : (puntos 1, 4, 5-copy, 6, 9) alerta "tu plan no se sostiene" en rojo solo en el encabezado, panel interior en neutros y beneficio de cada solución en positivo (arquitectura de 2 capas del [ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md)); copy motivador y explicativo en las simulaciones (Avalancha, Bola de nieve: qué beneficio, cuándo conviene, qué impacto) y en Abonar; tono ADR 003/008. Sin lógica nueva.
+- Secciones  : Deudas (`compromisos/views/estrategia.js`, `estrategia-impacto.js`, `views/formularios.js` para el copy de Abonar)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Alto (copy con criterio de tono + disciplina de color del ADR 031)
+
+#### D.15b - Deudas v2: editar deuda + reorden del formulario
+- Prioridad  : media
+- Estado     : pendiente (independiente; el flujo de edición ya existe)
+- Objetivo   : (puntos 7, 8, 10) botón de editar en la tarjeta de deuda (el flujo `_editarCompromiso` + `renderFormDeuda(tipo, deuda)` ya existe y prellena; solo falta el trigger visible en la sección Deudas); formulario reordenado (tipo de deuda primero, entidad/persona después); quitar los hints de bajo valor ("si es una tienda que te fía...") conservando y dando protagonismo al de tasa desconocida de D.12.
+- Secciones  : Deudas (`compromisos/views/lista.js` para el botón, `views/formularios.js` para el orden y los hints, `index.js` si hace falta wiring)
+- Depende de : nada; coordina con D.15c (la tarjeta rediseñada aloja el trigger de editar)
+- Modelo     : Sonnet 5 - Medio (form + trigger, patrón ya existente)
+
+#### D.15c - Deudas v2: tarjeta de deuda con jerarquía visual
+- Prioridad  : media
+- Estado     : pendiente (independiente; IV.2 ya cerró, tokens disponibles)
+- Objetivo   : (punto 11) tarjeta que muestre con quién, cuánto, cuándo, cuota, tipo y estado de un vistazo, consumiendo los tokens de color por dominio del [ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md) (IV.2 cerrado). Coordina con D.15b (aloja el botón de editar) y con la familia visual del ADR 033.
+- Secciones  : Deudas (`compromisos/views/lista.js`, `styles/components/charts.css`/`domain.css`)
+- Depende de : nada duro; coordinar con D.15b por el trigger de editar
+- Modelo     : Sonnet 5 - Alto (jerarquía visual + tokens de dominio)
+
+#### D.15e - Deudas v2: botón "Aplicar" en el acelerador del plan viable
+- Prioridad  : baja
+- Estado     : pendiente (independiente)
+- Objetivo   : (punto 12) botón "Aplicar" en el acelerador "¿Puedes pagar más rápido?" del plan viable (hoy tiene input sin Aplicar; el panel inviable ya lo tiene). Reusa `repartirExtraEnCuotas()` (ya probado) para convertir el extra simulado en cuotas nuevas con confirmación, sin editar a mano.
+- Secciones  : Deudas (`compromisos/views/estrategia.js` `_renderAceleradorExtra`, `index.js` `aplicar-aumento-cuota`)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo (botón + reuso de lógica existente)
 
 ---
 
