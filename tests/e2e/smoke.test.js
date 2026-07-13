@@ -792,8 +792,12 @@ test.describe('Gastos - CRUD', () => {
     await expect(page.locator('#categoria-nueva-fields')).toBeVisible();
 
     await form.locator('#categoria-nueva-nombre').fill('Gimnasio');
+    // CAT.2: el selector de ícono nace como recuadro colapsado; hay que
+    // tocarlo primero para desplegar la grilla antes de elegir un ícono.
+    await page.click('.icono-picker__recuadro');
     await page.click('.icono-picker__btn[data-icon="c-pesa"]');
-    await expect(page.locator('.icono-picker__btn[data-icon="c-pesa"]')).toHaveAttribute('aria-pressed', 'true');
+    // Elegir un ícono colapsa el panel de nuevo (el recuadro ya muestra el elegido).
+    await expect(page.locator('.icono-picker__panel')).toBeHidden();
 
     await form.locator('[name="monto"]').fill('80000');
     const hoy = hoyLocal();

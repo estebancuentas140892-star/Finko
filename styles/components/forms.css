@@ -118,8 +118,41 @@ form:not(.config-form) .form-group:not(:first-child) {
 .form-hint--danger  { color: var(--fk-danger-text); font-weight: var(--fk-font-medium); }
 .form-hint--info    { color: var(--fk-info-text); }
 
-/* Selector de ícono para categoría de gasto personalizada (TX.9b). */
-.icono-picker {
+/* Selector compacto de ícono (CAT.2): recuadro + panel colapsable con la
+   grilla de íconos. Reemplaza la grilla siempre-visible de TX.9b (invasiva:
+   llena la pantalla) por un patrón reutilizable en varios dominios. */
+.icono-picker-field {
+  margin-top: var(--fk-space-2);
+}
+.icono-picker__recuadro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin-top: var(--fk-space-1);
+  background: var(--fk-bg-elevated);
+  border: 1.5px dashed var(--fk-border-default);
+  border-radius: var(--fk-radius-md);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.icono-picker__recuadro:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-accent-border);
+}
+.icono-picker__recuadro[aria-expanded="true"] {
+  border-style: solid;
+  border-color: var(--fk-accent-border);
+}
+.icono-picker__vacio {
+  font-size: var(--fk-text-lg);
+  line-height: 1;
+  color: var(--fk-text-muted);
+}
+.icono-picker__panel {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
   gap: var(--fk-space-2);

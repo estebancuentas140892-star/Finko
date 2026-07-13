@@ -627,6 +627,15 @@ describe('renderFormGasto() - selector de cuenta', () => {
     const botones = html.match(/icono-picker__btn/g) ?? [];
     expect(botones).toHaveLength(ICONOS_CATEGORIA_PERSONALIZADA.length);
   });
+
+  it('CAT.2: el selector de ícono nace como recuadro colapsado, no como grilla siempre visible', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('icono-picker__recuadro');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('.icono-picker__panel').hidden).toBe(true);
+  });
 });
 
 // ── CATEGORIAS_TIPICAMENTE_FIJAS ────────────────────────────────

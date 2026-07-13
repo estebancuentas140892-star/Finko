@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (D.15a cierra Deudas v2 completa: copy de simulaciones + refuerzo en Abonar).
+> Última actualización: 2026-07-13 (CAT.2a: componente compartido de selector de ícono + primer consumidor Gastos; CAT.2 re-cortada en 6 rebanadas por dominio).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **D.15a cierra la iniciativa "Deudas v2" completa** el 2026-07-13 (copy de simulaciones + refuerzo en Abonar, sumado al rediseño visual D.16a-d del 2026-07-12 y al motor de palanca D.15d-1/D.15d-2). El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, tres consumidores: Inicio, Mis cuentas y Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5. Siguiente tarjeta sugerida: **CAT.2** (picker de icono compartido, sección Transversal), lista para iniciar sin dependencias y pedida por 6 dominios; alternativa: **CAT.1** (taxonomía global de categorías), de mayor prioridad pero requiere primero validar la clasificación con Esteban.)_
+_(Sin tarjeta activa: **CAT.2a cerrada** el 2026-07-13 (componente compartido `infra/icon-picker.js` + Gastos como primer consumidor; ver Transversal abajo). El análisis reveló que los 6 consumidores no parten del mismo punto (algunos solo necesitan compactar UI, otros agregar la capacidad completa de ícono elegible): CAT.2 quedó re-cortada en **CAT.2b** a **CAT.2f**, cada una independiente y verificable por separado. Siguiente tarjeta sugerida: **CAT.2b** (Metas) o **CAT.2c** (Apartados), ambas listas para iniciar sin dependencias y de menor esfuerzo (retrofit directo del patrón ya probado); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
 
 ---
 
@@ -438,14 +438,49 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 - Depende de : nada técnico; validación de taxonomía con Esteban como primer paso (mismo movimiento que ADR 029 D3). **Hallazgo del triaje (2026-07-08): el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) "Taxonomía de categorías transversal" ya existe en estado Propuesta desde junio**, pendiente de validar la curación de catálogos con Esteban, y cubre exactamente esta pregunta ("qué va en cada sección y qué hacer cuando un concepto cabe en varias"). La sesión de taxonomía debe validar/actualizar ADR 014 + ADR 029 D3 + los criterios de CAT.1 como UNA sola decisión, no tres documentos rivales. (Desambiguación: el "AP.5" que el ADR 014 dice absorber es un ID histórico pre-BOARD, tarea distinta de la tarjeta AP.5 "Apartados v2" actual.)
 - Modelo     : Opus 4.8 - Extra si trae bump de schema con migración; el análisis de taxonomía previo, Fable 5 - Alto junto con ADR 029
 
-#### CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (6 consumidores)
-- Prioridad  : alta (seis briefs lo piden por separado; es UN componente)
-- Estado     : pendiente
-- Objetivo   : reemplazar el grid de iconos de TX.9b (invasivo: llena la pantalla) por la interacción nueva: al elegir "+ Otra categoría" aparecen solo un recuadro de icono (vacío) + campo de nombre; tocar el recuadro abre un selector (modal/panel) y el icono elegido queda en el recuadro. **Un solo componente reutilizable en `ui/` o `infra/`** consumido por: el form de Gastos, el de Gasto fijo (que hoy ni siquiera ofrece icono en "Otra": solo texto), el de Deudas ("Otro" en entidad/persona), el de Cuentas ("Otra entidad"), el de **Apartados** (que hoy depende del selector de emojis del SO, Win+., nada intuitivo; 4.º lote) y el de **Metas** ("Otro" con icono opcional, recuadro vacío permitido; 4.º lote). Cruce interno de los lotes detectado en el triaje: seis briefs pidieron esta misma interacción; construirla una vez.
-- Secciones  : Gastos, Calendario, Deudas, Mis cuentas, Apartados, Metas, `ui/` (componente)
-- Archivos   : `gastos/view.js` (`icono-picker` actual), forms de fijos/deudas/cuentas/apartados/metas, modal nuevo
-- Depende de : nada (puede ir antes o después de CAT.1)
-- Modelo     : Sonnet 5 - Alto (componente de UI nuevo consumido por 6 dominios)
+> **CAT.2 - Picker de icono compartido para "Otra categoría / Otra entidad" (6 consumidores).** Análisis hecho el 2026-07-13 (ver ficha [`contexto/transversal.md`](contexto/transversal.md), primera vez que se documenta esta funcionalidad). Hallazgo clave: los 6 consumidores NO están en el mismo punto de partida. Gastos (TX.9b) ya tenía categoría personalizada + grilla de íconos siempre visible (solo había que compactarla); Deudas y Cuentas tienen "Otro" con ícono FIJO, sin elección del usuario (agregar la capacidad, no solo cambiar la UI); Apartados y Metas usan un `<input>` de texto para pegar un emoji a mano (sin estructura real); Fijo/Calendario no tiene ni siquiera creación de categoría personalizada. Re-cortado en 6 rebanadas por consumidor, regla 2.1 (multi-dominio + algunas necesitan más que solo el picker).
+
+> **CAT.2a CERRADA el 2026-07-13** (componente compartido + Gastos, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): `infra/icon-picker.js` nuevo (`renderIconoPicker`/`wireIconoPicker`, recuadro + panel colapsable, sin modal anidado a propósito). Gastos (TX.9b) migrado: la grilla de 29 íconos ya no se muestra siempre, solo al tocar el recuadro. 8 tests unitarios nuevos (`icon-picker.test.js`) + 1 en `gastos.test.js`; E2E `smoke.test.js` (TX.9b) actualizado. 2541/2541 unit + 183/183 E2E + lint verdes. SW v374→v375.
+
+#### CAT.2b - Picker de icono en Metas ("Otra" categoría)
+- Prioridad  : alta
+- Estado     : pendiente (independiente de las demás rebanadas de CAT.2)
+- Objetivo   : reemplazar el `<input type="text" maxlength="4" placeholder="🎯">` de la categoría "Otra" (comentario MT.3 en `metas/view.js`, hoy depende de que el usuario pegue un emoji a mano, Win+.) por `renderIconoPicker`/`wireIconoPicker`. Sin cambios al campo `icono` del schema (sigue guardando el id del ícono elegido, mismo tipo de dato). Definir el catálogo de íconos a pasar (reusar `ICONOS_CATEGORIA_PERSONALIZADA` o uno propio de Metas, a decidir en la implementación).
+- Secciones  : Metas (`metas/view.js`, `metas/index.js` para el wiring)
+- Depende de : nada (CAT.2a ya entrega el componente)
+- Modelo     : Sonnet 5 - Bajo (retrofit directo, patrón ya probado en CAT.2a)
+
+#### CAT.2c - Picker de icono en Apartados (nombre del apartado)
+- Prioridad  : alta
+- Estado     : pendiente (independiente)
+- Objetivo   : mismo retrofit que CAT.2b pero en `apartados/view.js` (`<input type="text" maxlength="4" placeholder="📦">` del nombre del apartado). El `icono` de apartados hoy es emoji como dato del usuario (exento de TX.4); decidir si migra a símbolo del sprite (como el resto de CAT.2) o si queda como excepción por ser más reciente (coordinar con la nota ya existente en la iniciativa Apartados v2 sobre esta migración).
+- Secciones  : Apartados (`apartados/view.js`, `apartados/index.js`)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Bajo
+
+#### CAT.2d - Picker de icono en Deudas (categoría "Otra"/"Otro")
+- Prioridad  : media
+- Estado     : pendiente (independiente)
+- Objetivo   : hoy `CATEGORIA_DEUDA_ICONO['Otra']` y `CATEGORIA_DEUDA_PERSONAL_ICONO['Otro']` son un ícono FIJO (`c-otros`), sin elección del usuario. Esta rebanada AGREGA la capacidad de elegir (no solo cambia una UI existente): al elegir "Otra"/"Otro" en el selector de categoría del form de deuda, ofrecer `renderIconoPicker` y persistir el ícono elegido (requiere decidir dónde vive ese dato en el schema `Compromiso`, probablemente un campo opcional nuevo sin bump, mismo patrón que `cuentaOrigenId`/`montoAcreditado` de D.14).
+- Secciones  : Deudas (`compromisos/views/formularios.js`, `compromisos/logic/modelo.js` para normalizar el campo nuevo)
+- Depende de : nada; coordina con la validación D3 del ADR 029 (catálogo entidad→producto) si se decide ahí un modelo de datos más amplio
+- Modelo     : Sonnet 5 - Alto (agrega campo nuevo al schema, no solo UI)
+
+#### CAT.2e - Picker de icono en Cuentas (banco "Otro")
+- Prioridad  : media
+- Estado     : pendiente (independiente)
+- Objetivo   : mismo tipo de trabajo que CAT.2d pero en Mis cuentas: hoy el banco "Otro" en `BANCOS_CO` cae al fallback de iniciales "?" vía `tejaMarca()`, sin ícono elegible por el usuario. Agregar la capacidad (campo nuevo en `Cuenta`, probablemente opcional sin bump) + ofrecer el picker cuando se elige "Otro" en el selector de banco.
+- Secciones  : Mis cuentas (`tesoreria/views/cuentas.js`, `tesoreria/logic/cuentas.js`)
+- Depende de : nada
+- Modelo     : Sonnet 5 - Alto
+
+#### CAT.2f - Picker de icono en Gasto fijo / Calendario (requiere análisis previo)
+- Prioridad  : media
+- Estado     : pendiente de análisis (no iniciar). La más grande de las 6: a diferencia de los demás consumidores, `renderFormGastoFijo()` (`agenda/view.js`) NO tiene ningún mecanismo de categoría personalizada (usa el catálogo fijo `CATEGORIAS_AGENDA`; "Otro" hoy es solo texto libre en la descripción, sin ícono).
+- Objetivo   : decidir PRIMERO si Fijo adopta categorías personalizadas completas (como Gastos, TX.9b) o si el picker se limita a un ícono para "Otro" sin nombre personalizado. Esta decisión se cruza directamente con **CAT.1** (taxonomía Gastos↔Fijos): si CAT.1 cambia qué categorías existen en cada catálogo, el diseño de "categoría personalizada en Fijo" debería esperar esa validación para no rehacer trabajo.
+- Secciones  : Calendario (`agenda/view.js`, `agenda/index.js`)
+- Depende de : validación de taxonomía con Esteban (misma sesión que CAT.1, ver esa tarjeta)
+- Modelo     : Opus 4.8 - Alto para el análisis/diseño (decisión de alcance + posible schema nuevo); implementación después con el modelo que corresponda
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media

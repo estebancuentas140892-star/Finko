@@ -5,9 +5,10 @@
 
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
-import { icon, iconoCategoria, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { gastosMes, filtrarGastos, ordenarRecientesPrimero, totalGastos, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
@@ -291,12 +292,6 @@ export function renderFormGasto() {
       </optgroup>`
     : '';
 
-  const iconoBtns = ICONOS_CATEGORIA_PERSONALIZADA.map(({ icono, etiqueta }) => `
-    <button type="button" class="icono-picker__btn" data-icon="${icono}"
-            aria-pressed="false" aria-label="${_esc(etiqueta)}" title="${_esc(etiqueta)}">
-      ${iconoCategoria(icono)}
-    </button>`).join('');
-
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
@@ -327,11 +322,7 @@ export function renderFormGasto() {
         <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
         <input id="categoria-nueva-nombre" name="categoriaNuevaNombre" class="input" type="text"
                placeholder="Ej. Gimnasio" autocomplete="off" />
-        <span class="label">Ícono</span>
-        <div class="icono-picker" id="icono-picker" role="group" aria-label="Elige un ícono para tu categoría">
-          ${iconoBtns}
-        </div>
-        <input type="hidden" name="categoriaNuevaIcono" id="categoria-nueva-icono" />
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
       <div class="form-group">
         <label for="gasto-monto" class="label">Monto (COP)</label>

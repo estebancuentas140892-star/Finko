@@ -4,6 +4,47 @@
 
 ---
 
+## Selector compacto de ícono (CAT.2, iniciativa transversal)
+
+- **Objetivo**          : un solo componente reutilizable para elegir un ícono de categoría/entidad personalizada en cualquier formulario de la app: un recuadro (ícono elegido o placeholder vacío) que, al tocarlo, despliega una grilla colapsable de íconos; elegir uno cierra la grilla y actualiza el recuadro. Reemplaza el patrón de TX.9b (Gastos), que mostraba la grilla completa (29 íconos) SIEMPRE visible en cuanto se elegía "+ Otra categoría", invasivo en pantalla (punto del brief CAT.2). Seis consumidores identificados en el triaje: Gastos (ya tenía selección propia, TX.9b), Gasto fijo/Calendario (hoy sin ícono en "Otro", solo texto libre), Deudas (categoría "Otra"/"Otro" con ícono fijo `c-otros`, sin elección del usuario), Mis cuentas (banco "Otro" con fallback de iniciales "?", sin ícono elegible), Apartados y Metas (ambos con un `<input type="text" maxlength="4">` para pegar un emoji a mano, dependiente del selector de emojis del sistema operativo, Win+.).
+- **Estado actual**     : **CAT.2a CERRADA (2026-07-13)**: componente compartido `infra/icon-picker.js` (`renderIconoPicker`/`wireIconoPicker`) construido y migrado como primer consumidor en **Gastos** (TX.9b), reemplazando la grilla siempre-visible por el recuadro colapsable. Sin modal anidado a propósito (mismo criterio que TX.9b ya declaraba en su comentario original): un panel dentro del mismo formulario, no un overlay nuevo (evita además el bug latente de foco anidado que ya existe en los pickers dinámicos de `cuenta-helper.js`, cuyo `trapFocus`/`releaseFocus` es singleton, no una pila). **Pendientes** (rebanadas futuras, cada una con su propio análisis porque varias necesitan MÁS que solo el picker, ver "Cambios pendientes" abajo): CAT.2b (Metas), CAT.2c (Apartados), CAT.2d (Deudas), CAT.2e (Cuentas), CAT.2f (Fijo/Calendario, la más grande: hoy no tiene ni creación de categoría personalizada).
+- **Verificado contra** : commit de CAT.2a (2026-07-13).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Componente compartido: render puro (recuadro + panel + input oculto) | `modules/infra/icon-picker.js` | `renderIconoPicker(iconos, opts)` | |
+| Componente compartido: wiring (abrir/cerrar panel, elegir ícono) | `modules/infra/icon-picker.js` | `wireIconoPicker(container, opts)` | |
+| Consumidor 1: form de gasto con categoría nueva | `modules/dominio/gastos/view.js` | `renderFormGasto()` (usa `renderIconoPicker`) | |
+| Consumidor 1: wiring en el modal de gasto | `modules/dominio/gastos/index.js` | `_montarFormGasto()` (usa `wireIconoPicker`) | |
+| Catálogo de íconos para categoría personalizada (compartido; 29 íconos) | `modules/core/constants.js` | `ICONOS_CATEGORIA_PERSONALIZADA` | ~493 |
+| CSS del recuadro + panel colapsable + botones de la grilla | `styles/components/forms.css` | `.icono-picker-field`, `.icono-picker__recuadro`, `.icono-picker__vacio`, `.icono-picker__panel`, `.icono-picker__btn` | ~121 |
+
+**Recursos**: reusa `iconoCategoria()` de `infra/icons.js` para pintar cada ícono (recuadro y botones de la grilla); ningún asset gráfico nuevo.
+
+**Dependencias y relaciones**: `infra/icon-picker.js` no importa de ningún dominio ni lee `S` (recibe el catálogo de íconos y el valor actual por parámetro, mismo patrón que `cuenta-helper.js`/`renderSelectorCuenta`). Cada dominio consumidor pasa su propio catálogo de íconos (Gastos usa `ICONOS_CATEGORIA_PERSONALIZADA`; futuros consumidores podrían pasar catálogos propios o el mismo, a decidir por rebanada).
+
+**Riesgos**:
+
+- **El panel colapsable NO es un modal**: es un `<div hidden>` dentro del mismo formulario, alternado con `hidden`/`aria-expanded`. Decisión deliberada (ver Objetivo): un modal anidado reutilizaría `trapFocus`/`releaseFocus` de `infra/a11y.js`, que son **singleton** (una sola `_trapEl`/`_prevFocus` a la vez, no una pila). Los pickers dinámicos de `cuenta-helper.js` (`_mostrarPickerCuenta`, `_mostrarPickerMultiCuenta`) YA abren un modal anidado sobre un modal de registro abierto (ej. abono) y esto deja el trap de foco del modal exterior huérfano al cerrar el interior (el listener de `keydown` del panel exterior nunca se remueve porque `releaseFocus()` solo limpia el `_trapEl` más reciente): riesgo preexistente documentado aquí para no repetirlo, no corregido en esta rebanada (fuera de alcance de CAT.2).
+- **`wireIconoPicker` debe llamarse en cada apertura del formulario** (mismo patrón que el resto de wiring de `_montarFormGasto`): el HTML se re-inyecta cada vez que se abre el modal (`resetModal` + `renderFormGasto()`), así que los listeners deben re-adjuntarse. No hay estado persistente en el módulo (a diferencia de `_uiEstrategia` en compromisos): cada instancia del picker vive y muere con su nodo DOM.
+- **El catálogo de íconos es responsabilidad del consumidor**: `renderIconoPicker` no valida que el catálogo tenga sentido para el dominio (ej. Deudas necesitaría su propio catálogo de íconos de categoría, no necesariamente `ICONOS_CATEGORIA_PERSONALIZADA`); cada rebanada futura decide su catálogo al integrar.
+
+**Cambios pendientes**:
+
+- **CAT.2b (Metas)**: reemplazar el `<input type="text" maxlength="4" placeholder="🎯">` de "Otra" (comentario MT.3 en `metas/view.js`) por el picker. Sin lógica nueva (el campo `icono` del schema no cambia de forma, solo de UI).
+- **CAT.2c (Apartados)**: reemplazar el `<input type="text" maxlength="4" placeholder="📦">` del nombre del apartado (`apartados/view.js`) por el picker. Mismo alcance que CAT.2b.
+- **CAT.2d (Deudas)**: hoy "Otra"/"Otro" (`CATEGORIAS_DEUDA`/`CATEGORIAS_DEUDA_PERSONAL`) mapea a un ícono FIJO `c-otros` (`CATEGORIA_DEUDA_ICONO`/`CATEGORIA_DEUDA_PERSONAL_ICONO`), sin elección del usuario: esta rebanada agrega la elección, no solo cambia la UI de una que ya existía.
+- **CAT.2e (Cuentas)**: el banco "Otro" en `BANCOS_CO` cae al fallback de iniciales "?" (`tejaMarca`), sin ícono elegible. Igual que Deudas, agrega una capacidad nueva, no solo cambia la UI.
+- **CAT.2f (Fijo/Calendario)**: la más grande. `renderFormGastoFijo()` (`agenda/view.js`) usa un catálogo fijo (`CATEGORIAS_AGENDA`) sin ningún mecanismo de categoría personalizada (a diferencia de Gastos, TX.9b): "Otro" hoy es solo texto libre en el campo de descripción, sin ícono. Antes de picker, esta rebanada necesita decidir SI Fijo adopta categorías personalizadas (coordina con **CAT.1**, taxonomía Gastos↔Fijos, que puede cambiar qué categorías existen en cada catálogo) o si el picker se ofrece solo para el ícono de "Otro" sin nombre personalizado. Requiere análisis propio antes de codificar.
+
+**Cambios realizados**:
+
+- 2026-07-13 (CAT.2a): componente compartido `infra/icon-picker.js` nuevo (`renderIconoPicker`, `wireIconoPicker`); Gastos (TX.9b) migrado como primer consumidor: `gastos/view.js` reemplaza la grilla inline por `renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, ...)`; `gastos/index.js` reemplaza el listener manual por `wireIconoPicker(...)`. CSS: `.icono-picker` (grilla, siempre visible) se re-arquitecturó en `.icono-picker-field` (wrapper) + `.icono-picker__recuadro` (swatch, borde punteado cuando vacío) + `.icono-picker__vacio` (placeholder "+") + `.icono-picker__panel` (la grilla, ahora colapsable) + `.icono-picker__btn` (sin cambios, mismo nombre de clase para no romper la cuenta de botones en tests). E2E `smoke.test.js` (TX.9b) actualizado: toca el recuadro antes de elegir un ícono. Sin cambios de schema ni de lógica de negocio (`validarCategoriaPersonalizada` intacta). 8 tests unitarios nuevos (`icon-picker.test.js`) + 1 nuevo en `gastos.test.js`. 2541/2541 unit + E2E `smoke.test.js` (TX.9b) verde + lint verdes. SW v374→v375.
+
+---
+
 ## Persistencia y salvaguarda de cuota (localStorage)
 
 - **Objetivo**          : todo el estado vive en `localStorage` bajo la clave única `fk_v1` (ADN 3). `save()` está debounced 200 ms; `_flush()` serializa `S` entero y escribe. Una salvaguarda avisa antes de llenar la cuota y evita que un guardado fallido se pierda en silencio (ADR 030).

@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { wireIconoPicker } from '../../infra/icon-picker.js';
 import {
   validarGasto, normalizarGasto,
   deltasPorEdicionDeGasto,
@@ -331,19 +332,8 @@ function _montarFormGasto() {
     });
   }
 
-  // Selector de ícono: tocar uno lo marca (aria-pressed) y guarda su id en
-  // el input oculto que sí viaja con el FormData al enviar.
-  const iconoPicker = form.querySelector('#icono-picker');
-  const iconoInput  = form.querySelector('#categoria-nueva-icono');
-  if (iconoPicker && iconoInput) {
-    iconoPicker.addEventListener('click', (e) => {
-      const btn = e.target.closest('.icono-picker__btn');
-      if (!btn) return;
-      iconoPicker.querySelectorAll('.icono-picker__btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
-      btn.setAttribute('aria-pressed', 'true');
-      iconoInput.value = btn.dataset.icon;
-    });
-  }
+  // CAT.2: selector compacto de ícono (recuadro + panel colapsable).
+  wireIconoPicker(form.querySelector('[data-icono-picker="categoria-nueva-icono"]'));
 }
 
 export function initGastos() {
