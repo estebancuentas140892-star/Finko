@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderIconoPicker, wireIconoPicker } from '../../modules/infra/icon-picker.js';
+import { renderIconoPicker, wireIconoPicker, resetIconoPicker } from '../../modules/infra/icon-picker.js';
 
 const ICONOS = [
   { icono: 'c-pesa',   etiqueta: 'Gimnasio' },
@@ -57,6 +57,14 @@ describe('renderIconoPicker()', () => {
     const div = document.createElement('div');
     div.innerHTML = html;
     expect(div.querySelector('input[type="hidden"]').value).toBe('');
+  });
+
+  it('CAT.2b: el input oculto expone su propio id (= el id del picker), para consumidores que necesitan resetearlo directo', () => {
+    const html = renderIconoPicker(ICONOS, { id: 'meta-icono' });
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('#meta-icono')).not.toBeNull();
+    expect(div.querySelector('#meta-icono').type).toBe('hidden');
   });
 });
 
@@ -126,5 +134,46 @@ describe('wireIconoPicker()', () => {
     const input = container.querySelector('input[type="hidden"]');
     panel.click(); // clic en el propio contenedor, no en un botón
     expect(input.value).toBe('');
+  });
+});
+
+describe('resetIconoPicker()', () => {
+  let container;
+
+  beforeEach(() => {
+    document.body.innerHTML = renderIconoPicker(ICONOS, { id: 'reset-picker', valorActual: 'c-avion' });
+    container = document.querySelector('[data-icono-picker="reset-picker"]');
+    wireIconoPicker(container);
+  });
+
+  it('vacía el input oculto y devuelve el recuadro al placeholder', () => {
+    resetIconoPicker(container);
+    const input    = container.querySelector('input[type="hidden"]');
+    const recuadro = container.querySelector('.icono-picker__recuadro');
+    expect(input.value).toBe('');
+    expect(recuadro.querySelector('.icono-picker__vacio')).not.toBeNull();
+  });
+
+  it('desmarca cualquier botón previamente elegido y colapsa el panel', () => {
+    const panel = container.querySelector('.icono-picker__panel');
+    panel.querySelector('[data-icon="c-avion"]').setAttribute('aria-pressed', 'true');
+    panel.hidden = false; // simula que quedó abierto
+
+    resetIconoPicker(container);
+
+    expect(panel.querySelector('[data-icon="c-avion"]').getAttribute('aria-pressed')).toBe('false');
+    expect(panel.hidden).toBe(true);
+    expect(container.querySelector('.icono-picker__recuadro').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('sin container, no lanza error (guard)', () => {
+    expect(() => resetIconoPicker(null)).not.toThrow();
+  });
+
+  it('después de resetear, elegir un ícono nuevo sigue funcionando (wiring intacto)', () => {
+    resetIconoPicker(container);
+    container.querySelector('.icono-picker__recuadro').click();
+    container.querySelector('[data-icon="c-pesa"]').click();
+    expect(container.querySelector('input[type="hidden"]').value).toBe('c-pesa');
   });
 });

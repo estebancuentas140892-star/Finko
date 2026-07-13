@@ -428,6 +428,13 @@ describe('renderFormMeta() - selector de categoría', () => {
     expect(html).toContain('name="icono"');
     expect(html).toMatch(/<div class="form-group" id="form-group-meta-icono" hidden>/);
   });
+
+  it('CAT.2b: el campo de ícono usa el selector compacto compartido, no un input de texto libre', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('data-icono-picker="meta-icono"');
+    expect(html).toContain('icono-picker__recuadro');
+    expect(html).not.toContain('placeholder="🎯"');
+  });
 });
 
 // ── renderListaMetas() - ícono de categoría en la lista (MT.1/ID.3) ──
@@ -486,6 +493,17 @@ describe('renderListaMetas() - ícono de categoría en la lista', () => {
     }];
     renderListaMetas();
     expect(document.querySelector('.list-item__title').innerHTML).toContain('#i-metas');
+  });
+
+  it('CAT.2b: categoría "Otra" con ícono elegido del picker (id de sprite) renderiza el glifo, no texto crudo', () => {
+    S.metas = [{
+      ...normalizarMeta({ ...datosFormValidos, nombre: 'Bicicleta', categoria: 'Otra', icono: 'c-carro' }),
+      id: 'm1',
+    }];
+    renderListaMetas();
+    const titulo = document.querySelector('.list-item__title');
+    expect(titulo.innerHTML).toContain('#c-carro');
+    expect(titulo.textContent).not.toContain('c-carro');
   });
 });
 

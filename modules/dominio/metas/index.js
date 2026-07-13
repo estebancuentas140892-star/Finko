@@ -18,6 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { f } from '../../infra/utils.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { wireIconoPicker, resetIconoPicker } from '../../infra/icon-picker.js';
 import { validarMeta, normalizarMeta, validarAbono, calcularProgreso } from './logic.js';
 import { renderListaMetas, renderFormMeta, renderFormAbonoMeta } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
@@ -25,24 +26,24 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
 /**
- * Alterna el campo de emoji libre (MT.3): solo tiene sentido con la
- * categoría "Otra" (las demás ya traen su emoji, ver `normalizarMeta`).
- * Al ocultarlo limpia su valor para que un emoji tecleado con "Otra" no
- * sobreviva un cambio posterior a otra categoría (`FormData` sigue
- * enviando los campos ocultos, y `normalizarMeta` prioriza el emoji
- * explícito sobre el de la categoría).
+ * Alterna el selector de ícono (CAT.2b, ex MT.3 con campo de emoji libre):
+ * solo tiene sentido con la categoría "Otra" (las demás ya traen su ícono,
+ * ver `normalizarMeta`). Al ocultarlo resetea el picker (`resetIconoPicker`)
+ * para que un ícono elegido con "Otra" no sobreviva un cambio posterior a
+ * otra categoría (`FormData` sigue enviando los campos ocultos, y
+ * `normalizarMeta` prioriza el ícono explícito sobre el de la categoría).
  *
  * @param {HTMLFormElement} form
  */
 function _syncCategoriaMeta(form) {
   const selCategoria = form.querySelector('#meta-categoria');
   const grupoIcono   = form.querySelector('#form-group-meta-icono');
-  const inputIcono   = form.querySelector('#meta-icono');
-  if (!selCategoria || !grupoIcono || !inputIcono) return;
+  const pickerIcono  = form.querySelector('[data-icono-picker="meta-icono"]');
+  if (!selCategoria || !grupoIcono || !pickerIcono) return;
 
   const esOtra = selCategoria.value === 'Otra';
   grupoIcono.hidden = !esOtra;
-  if (!esOtra) inputIcono.value = '';
+  if (!esOtra) resetIconoPicker(pickerIcono);
 }
 
 function _nuevaMeta() {
@@ -50,6 +51,12 @@ function _nuevaMeta() {
   if (!overlay) return;
   resetModal(overlay);
   const form = overlay.querySelector('#form-meta');
+  // resetModal() limpia el valor del input oculto pero no el estado visual
+  // del picker (recuadro/panel/botones): este form es un singleton reusado
+  // entre aperturas (no se re-renderiza como el de Gastos), así que hay que
+  // resetearlo explícitamente para no arrastrar el ícono de la meta anterior.
+  const pickerIcono = form?.querySelector('[data-icono-picker="meta-icono"]');
+  if (pickerIcono) resetIconoPicker(pickerIcono);
   if (form) _syncCategoriaMeta(form);
   abrirModal(overlay);
 }
@@ -221,6 +228,7 @@ function _inyectarForm() {
     _guardarMeta();
   });
   form?.querySelector('#meta-categoria')?.addEventListener('change', () => _syncCategoriaMeta(form));
+  wireIconoPicker(form?.querySelector('[data-icono-picker="meta-icono"]'));
 }
 
 export function initMetas() {

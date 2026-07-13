@@ -57,7 +57,7 @@ export function renderIconoPicker(iconos, {
            role="group" aria-label="${_esc(label)}" hidden>
         ${botones}
       </div>
-      <input type="hidden" name="${_esc(nombreCampo)}" value="${_esc(valorActual ?? '')}" />
+      <input type="hidden" name="${_esc(nombreCampo)}" id="${_esc(id)}" value="${_esc(valorActual ?? '')}" />
     </div>`;
 }
 
@@ -94,4 +94,27 @@ export function wireIconoPicker(container, { onSeleccionar } = {}) {
     recuadro.setAttribute('aria-expanded', 'false');
     onSeleccionar?.(btn.dataset.icon);
   });
+}
+
+/**
+ * Limpia la selección: vacía el input oculto, devuelve el recuadro al
+ * placeholder, desmarca todos los botones y colapsa el panel. Para
+ * consumidores donde el picker solo tiene sentido con una condición externa
+ * (ej. Metas: el emoji manual solo aplica con categoría "Otra") y necesitan
+ * resetearlo cuando esa condición deja de cumplirse.
+ *
+ * @param {HTMLElement|null} container - el nodo `[data-icono-picker]` de `renderIconoPicker`.
+ */
+export function resetIconoPicker(container) {
+  if (!container) return;
+  const recuadro = container.querySelector('.icono-picker__recuadro');
+  const panel    = container.querySelector('.icono-picker__panel');
+  const input    = container.querySelector('input[type="hidden"]');
+  if (!recuadro || !panel || !input) return;
+
+  input.value = '';
+  recuadro.innerHTML = '<span class="icono-picker__vacio" aria-hidden="true">+</span>';
+  panel.querySelectorAll('.icono-picker__btn').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  panel.hidden = true;
+  recuadro.setAttribute('aria-expanded', 'false');
 }

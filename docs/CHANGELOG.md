@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(transversal): CAT.2b selector de ícono en Metas, segundo consumidor + fix de locator ambiguo · 2026-07-13
+
+Cierra **CAT.2b** (`docs/BOARD.md`), segunda rebanada del picker de ícono compartido: **Metas** migrada (categoría "Otra").
+
+**Qué cambió:** (1) El `<input type="text" maxlength="4" placeholder="🎯">` de MT.3 (pegar un emoji a mano) se reemplaza por `renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', ... })` en `metas/view.js`. (2) `_iconoMeta()` ahora distingue dos formatos posibles de `meta.icono` (sin bump de schema): un id de símbolo del sprite (`c-pesa`, elegido con el picker) o un emoji crudo (metas viejas, creadas antes de CAT.2b), usando el patrón `/^[a-z]-/` que ningún emoji real produce. (3) El componente compartido gana **`resetIconoPicker(container)`** (limpia input + recuadro + panel + `aria-pressed`) y el input oculto ahora expone su propio `id` (igual al `id` del picker): necesarios porque el form de Metas, a diferencia del de Gastos, es un **singleton reusado entre aperturas** (`_inyectarForm()` corre una sola vez en `initMetas()`), así que `resetModal()` limpia el `.value` de los campos pero no el estado VISUAL del picker; `metas/index.js` llama `resetIconoPicker` tanto en `_syncCategoriaMeta()` (al ocultar el grupo por cambio de categoría) como en `_nuevaMeta()` (al reabrir el modal). (4) **Bug real encontrado y corregido**: el E2E de Gastos (TX.9b) usaba `page.locator('.icono-picker__panel')` sin acotar al formulario; con Metas también migrado, hay 2 instancias del componente en el DOM al mismo tiempo (ambos modales se inyectan al arrancar la app, estén abiertos o no), así que el locator se volvió ambiguo y el test empezó a fallar. Corregido a `form.locator(...)`.
+
+**Archivos tocados:** `modules/infra/icon-picker.js` (+`resetIconoPicker`, `id` en el input oculto), `modules/dominio/metas/view.js` (`renderFormMeta`, `_iconoMeta`), `modules/dominio/metas/index.js` (`_inyectarForm`, `_syncCategoriaMeta`, `_nuevaMeta`), `tests/unit/icon-picker.test.js` (5 tests nuevos), `tests/unit/metas.test.js` (2 tests nuevos), `tests/e2e/smoke.test.js` (2 tests reescritos al nuevo flujo + 1 corregido en Gastos por el locator ambiguo), `service-worker.js` (v375→v376).
+
+**Verificación:** 2548/2548 unit + **183/183 E2E completos** (suite entera en Chromium real, incluyendo la regresión de Gastos que este mismo cambio expuso) + lint verdes.
+
+**Podría afectar:** solo la UI de Metas al elegir "Otra" categoría; metas existentes con emoji crudo en `icono` siguen renderizando igual (backward-compat verificada con test dedicado). Cualquier E2E futuro que use un locator global `.icono-picker__*` sin acotar al formulario correspondiente será ambiguo en cuanto un tercer dominio (CAT.2c-f) sume su propio picker a la página; los tests ya migrados usan locators acotados.
+
+---
+
 ### feat(transversal): CAT.2a selector compacto de ícono + migración de Gastos (TX.9b) · 2026-07-13
 
 Primera rebanada de **CAT.2** (`docs/BOARD.md`): picker de ícono compartido para "Otra categoría/entidad" personalizada, pedido por 6 briefs distintos (2026-07-08). Primer análisis a fondo de esta funcionalidad transversal (ficha nueva en `docs/contexto/transversal.md`, regla 2.6): los 6 consumidores identificados NO parten del mismo punto. Gastos (TX.9b) ya tenía categoría personalizada con una grilla de 29 íconos SIEMPRE visible al elegir "+ Otra categoría" (invasiva en pantalla); Deudas y Cuentas tienen "Otro" con un ícono FIJO (`c-otros`, fallback de iniciales), sin que el usuario pueda elegir; Apartados y Metas usan un `<input type="text" maxlength="4">` para pegar un emoji a mano (dependiente del selector de emojis del sistema operativo); Fijo/Calendario no tiene ni siquiera creación de categoría personalizada. Re-cortado en **CAT.2a-f**, una rebanada por consumidor (regla 2.1: multi-dominio, y varias necesitan más que solo el picker).

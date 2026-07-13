@@ -498,7 +498,7 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await expect(form.locator('#form-group-meta-icono')).toBeVisible();
   });
 
-  test('MT.3: con categoría "Otra" el emoji escrito a mano queda en la lista', async ({ page }) => {
+  test('CAT.2b: con categoría "Otra" el ícono elegido en el picker queda en la lista', async ({ page }) => {
     await page.click('[data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
@@ -506,17 +506,19 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await form.locator('#meta-nombre').fill('Estudio de grabación');
     await form.locator('#meta-objetivo').fill('3000000');
     await form.locator('#meta-categoria').selectOption('Otra');
-    await form.locator('#meta-icono').fill('🎸');
+    // El selector compacto (CAT.2b) reemplazó al input de emoji libre: tocar
+    // el recuadro despliega la grilla, elegir un ícono la cierra.
+    await form.locator('[data-icono-picker="meta-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="meta-icono"] [data-icon="c-torta"]').click();
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
     const titulo = page.locator('#lista-metas .list-item__title');
-    await expect(titulo).toContainText('🎸');
-    await expect(titulo).not.toContainText('📦');
+    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(1);
   });
 
-  test('MT.3: volver de "Otra" a otra categoría limpia el emoji manual', async ({ page }) => {
+  test('CAT.2b: volver de "Otra" a otra categoría limpia el ícono elegido a mano', async ({ page }) => {
     await page.click('[data-action="nueva-meta"]');
     await page.waitForSelector('#modal-meta[data-open]');
 
@@ -524,19 +526,20 @@ test.describe('Metas - categorías con emoji (MT.1)', () => {
     await form.locator('#meta-nombre').fill('Reforma de la casa');
     await form.locator('#meta-objetivo').fill('4000000');
 
-    // El usuario prueba "Otra" y escribe un emoji, pero se arrepiente y
-    // vuelve a una categoría predefinida antes de guardar.
+    // El usuario prueba "Otra" y elige un ícono, pero se arrepiente y vuelve
+    // a una categoría predefinida antes de guardar.
     await form.locator('#meta-categoria').selectOption('Otra');
-    await form.locator('#meta-icono').fill('🎸');
+    await form.locator('[data-icono-picker="meta-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="meta-icono"] [data-icon="c-torta"]').click();
     await form.locator('#meta-categoria').selectOption('Vivienda');
     await form.locator('button[type="submit"]').click();
 
     await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
 
-    // El ícono mostrado es la casa de Vivienda (sprite), no el 🎸 que quedó escrito.
+    // El ícono mostrado es la casa de Vivienda (sprite), no el elegido con "Otra".
     const titulo = page.locator('#lista-metas .list-item__title');
     await expect(titulo.locator('use[href="#i-home"]')).toHaveCount(1);
-    await expect(titulo).not.toContainText('🎸');
+    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(0);
   });
 });
 
@@ -794,10 +797,13 @@ test.describe('Gastos - CRUD', () => {
     await form.locator('#categoria-nueva-nombre').fill('Gimnasio');
     // CAT.2: el selector de ícono nace como recuadro colapsado; hay que
     // tocarlo primero para desplegar la grilla antes de elegir un ícono.
-    await page.click('.icono-picker__recuadro');
-    await page.click('.icono-picker__btn[data-icon="c-pesa"]');
+    // Acotado a `form`: con CAT.2b (Metas) el picker vive en más de un
+    // formulario inyectado en la página a la vez (aunque el otro modal esté
+    // cerrado), así que un locator global sería ambiguo.
+    await form.locator('.icono-picker__recuadro').click();
+    await form.locator('.icono-picker__btn[data-icon="c-pesa"]').click();
     // Elegir un ícono colapsa el panel de nuevo (el recuadro ya muestra el elegido).
-    await expect(page.locator('.icono-picker__panel')).toBeHidden();
+    await expect(form.locator('.icono-picker__panel')).toBeHidden();
 
     await form.locator('[name="monto"]').fill('80000');
     const hoy = hoyLocal();

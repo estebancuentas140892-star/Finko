@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.2a: componente compartido de selector de ícono + primer consumidor Gastos; CAT.2 re-cortada en 6 rebanadas por dominio).
+> Última actualización: 2026-07-13 (CAT.2b: selector de ícono en Metas, segundo consumidor del componente compartido).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.2a cerrada** el 2026-07-13 (componente compartido `infra/icon-picker.js` + Gastos como primer consumidor; ver Transversal abajo). El análisis reveló que los 6 consumidores no parten del mismo punto (algunos solo necesitan compactar UI, otros agregar la capacidad completa de ícono elegible): CAT.2 quedó re-cortada en **CAT.2b** a **CAT.2f**, cada una independiente y verificable por separado. Siguiente tarjeta sugerida: **CAT.2b** (Metas) o **CAT.2c** (Apartados), ambas listas para iniciar sin dependencias y de menor esfuerzo (retrofit directo del patrón ya probado); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
+_(Sin tarjeta activa: **CAT.2b cerrada** el 2026-07-13 (Metas migrada como segundo consumidor del picker compartido; ver Transversal abajo). De paso se corrigió un bug real: el E2E de Gastos usaba un locator sin acotar que se volvió ambiguo al convivir 2 instancias del componente en el DOM. Quedan **CAT.2c** a **CAT.2f** en Deudas/Cuentas/Apartados/Fijo. Siguiente tarjeta sugerida: **CAT.2c** (Apartados), lista para iniciar sin dependencias; **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
 
 ---
 
@@ -442,13 +442,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 > **CAT.2a CERRADA el 2026-07-13** (componente compartido + Gastos, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): `infra/icon-picker.js` nuevo (`renderIconoPicker`/`wireIconoPicker`, recuadro + panel colapsable, sin modal anidado a propósito). Gastos (TX.9b) migrado: la grilla de 29 íconos ya no se muestra siempre, solo al tocar el recuadro. 8 tests unitarios nuevos (`icon-picker.test.js`) + 1 en `gastos.test.js`; E2E `smoke.test.js` (TX.9b) actualizado. 2541/2541 unit + 183/183 E2E + lint verdes. SW v374→v375.
 
-#### CAT.2b - Picker de icono en Metas ("Otra" categoría)
-- Prioridad  : alta
-- Estado     : pendiente (independiente de las demás rebanadas de CAT.2)
-- Objetivo   : reemplazar el `<input type="text" maxlength="4" placeholder="🎯">` de la categoría "Otra" (comentario MT.3 en `metas/view.js`, hoy depende de que el usuario pegue un emoji a mano, Win+.) por `renderIconoPicker`/`wireIconoPicker`. Sin cambios al campo `icono` del schema (sigue guardando el id del ícono elegido, mismo tipo de dato). Definir el catálogo de íconos a pasar (reusar `ICONOS_CATEGORIA_PERSONALIZADA` o uno propio de Metas, a decidir en la implementación).
-- Secciones  : Metas (`metas/view.js`, `metas/index.js` para el wiring)
-- Depende de : nada (CAT.2a ya entrega el componente)
-- Modelo     : Sonnet 5 - Bajo (retrofit directo, patrón ya probado en CAT.2a)
+> **CAT.2b CERRADA el 2026-07-13** (Metas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): el `<input type="text" maxlength="4">` de la categoría "Otra" se reemplaza por `renderIconoPicker`/`wireIconoPicker`; `_iconoMeta()` distingue sprite-id de emoji crudo legado (`/^[a-z]-/`, sin bump de schema). Componente ganó `resetIconoPicker()` (el form de Metas es un singleton reusado, no se re-renderiza como el de Gastos) e `id` propio en el input oculto. **Bug real encontrado y corregido**: el E2E de Gastos usaba un locator Playwright sin acotar, ambiguo en cuanto Metas sumó su propio picker a la página (2 instancias del componente conviven en el DOM). 5 tests unitarios nuevos (`icon-picker.test.js`) + 2 en `metas.test.js`; 2 E2E de `smoke.test.js` reescritos + 1 corregido en Gastos. 2548/2548 unit + 183/183 E2E completos + lint verdes. SW v375→v376.
 
 #### CAT.2c - Picker de icono en Apartados (nombre del apartado)
 - Prioridad  : alta
