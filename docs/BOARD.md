@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.2e: selector de ícono en Mis cuentas, quinto consumidor).
+> Última actualización: 2026-07-13 (CAT.2f: análisis cerrado, decisión de alcance mínimo tomada con Esteban, lista para implementar).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.2e cerrada** el 2026-07-13 (Mis cuentas migrada como quinto consumidor del picker compartido, banco "Otro"; ver Transversal abajo). Hallazgo real de esta rebanada: `cuenta.icono` ya existía en el schema pero era dato muerto (nada lo leía); se redefinió y `bancoAvatar()` ahora lo lee de verdad, con guarda de forma contra el emoji legado. Queda solo **CAT.2f** (Fijo/Calendario), la más grande de la iniciativa: requiere análisis previo (decidir si Fijo adopta categorías personalizadas completas o solo un ícono para "Otro") y coordina con **CAT.1** (taxonomía Gastos↔Fijos).)_
+_(Sin tarjeta activa: **fase de análisis de CAT.2f cerrada** el 2026-07-13. Pregunta directa a Esteban (triaje 2.7): ¿CAT.2f agrega solo ícono para "Otro" en Fijo (patrón de CAT.2d/2e) o categorías personalizadas completas (como Gastos)? Decisión: **alcance mínimo**, sin esperar la validación de taxonomía de CAT.1 (las categorías nombradas nuevas quedan para CAT.3). Diseño completo por archivo/función ya escrito en la tarjeta CAT.2f abajo, incluyendo que `tesoreria/logic/distribucion.js` no necesita ningún cambio (ya generalizado desde CAT.2d). Siguiente paso: implementar CAT.2f, que cierra la iniciativa CAT.2 completa.)_
 
 ---
 
@@ -450,13 +450,18 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 > **CAT.2e CERRADA el 2026-07-13** (Mis cuentas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): banco "Otro". Hallazgo real: `cuenta.icono` YA EXISTÍA en el schema pero era dato muerto (`_iconoPorBanco()` asignaba un emoji que ningún render leía). Se retiró esa función y se redefinió el campo (id de sprite del catálogo compartido, solo con `banco==='Otro'`, siempre explícito). `bancoAvatar(bancoId, icono)` gana el segundo parámetro con una guarda de forma (`/^[a-z]-[a-z0-9-]+$/`) para no romperse con el emoji legado de cuentas viejas; los 6 call sites de la app pasan `cuenta.icono`. Form singleton (como Metas): `wireIconoPicker` una vez, `_toggleCamposPorClase()` alterna visibilidad, `_editarCuenta()` prellena con `setIconoPickerValor`. 12 tests unitarios nuevos (`tesoreria.test.js` + `bancos.test.js`) + 2 E2E nuevos. 2589/2589 unit + 190/190 E2E completos + lint verdes. SW v378→v379. **Cierra la iniciativa CAT.2 salvo CAT.2f** (Fijo/Calendario, requiere análisis previo, ver abajo).
 
-#### CAT.2f - Picker de icono en Gasto fijo / Calendario (requiere análisis previo)
+#### CAT.2f - Picker de icono en Gasto fijo / Calendario, categoría "Otro"
 - Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar). La más grande de las 6: a diferencia de los demás consumidores, `renderFormGastoFijo()` (`agenda/view.js`) NO tiene ningún mecanismo de categoría personalizada (usa el catálogo fijo `CATEGORIAS_AGENDA`; "Otro" hoy es solo texto libre en la descripción, sin ícono).
-- Objetivo   : decidir PRIMERO si Fijo adopta categorías personalizadas completas (como Gastos, TX.9b) o si el picker se limita a un ícono para "Otro" sin nombre personalizado. Esta decisión se cruza directamente con **CAT.1** (taxonomía Gastos↔Fijos): si CAT.1 cambia qué categorías existen en cada catálogo, el diseño de "categoría personalizada en Fijo" debería esperar esa validación para no rehacer trabajo.
-- Secciones  : Calendario (`agenda/view.js`, `agenda/index.js`)
-- Depende de : validación de taxonomía con Esteban (misma sesión que CAT.1, ver esa tarjeta)
-- Modelo     : Opus 4.8 - Alto para el análisis/diseño (decisión de alcance + posible schema nuevo); implementación después con el modelo que corresponda
+- Estado     : **análisis cerrado el 2026-07-13, lista para implementar** (decisión de Esteban: alcance mínimo, ver abajo). YA NO depende de CAT.1.
+- Objetivo   : hoy `renderFormGastoFijo()` (`agenda/view.js`) usa el catálogo fijo `CATEGORIAS_AGENDA` sin ningún ícono para "Otro" (solo texto libre en la descripción). Decisión tomada (triaje 2.7, pregunta directa a Esteban): **alcance mínimo**, el mismo patrón que CAT.2d (Deudas) y CAT.2e (Cuentas): agregar SOLO la elección de ícono cuando la categoría es "Otro", sin tocar el catálogo `CATEGORIAS_AGENDA` ni crear categorías nombradas nuevas. Eso queda para **CAT.3** (categorías personalizadas globales), que sí depende de CAT.1. Diseño concreto (verificado contra el código, 2026-07-13):
+  1. **`agenda/view.js`**: `renderFormGastoFijo()` agrega el grupo del picker (oculto por defecto, igual que `#grupo-comp-icono` de Deudas); `_renderDetalleItem()` resuelve `c.icono` ANTES que `CATEGORIA_AGENDA_ICONO[c.categoria]` (mismo patrón que `simboloCategoria` ahí, línea ~413).
+  2. **`agenda/index.js`**: el form se re-renderiza completo en cada apertura (`_inyectarFormGastoFijo()`, como Gastos/Deudas/Apartados: no hace falta `resetIconoPicker`). Extender `_syncCategoriaGastoFijo()` (ya es el listener de `change` en el select de categoría) para además alternar `hidden` del grupo del ícono; llamar `wireIconoPicker` en `_inyectarFormGastoFijo()`; en modo edición, prellenar con `setIconoPickerValor` si `compromiso.icono` existe (el prefill de este form ya es manual campo-por-campo, no vía parámetro del render).
+  3. **`compromisos/logic/modelo.js`**: `normalizarCompromiso()`, rama `tipo==='fijo'` (hoy NO setea `icono` en absoluto): agregar `base.icono` solo si `categoria==='Otro'` Y el valor está en `ICONOS_CATEGORIA_PERSONALIZADA`, siempre explícito `null`/id válido (mismo patrón que la rama de deuda).
+  4. **`gastos/logic.js`**: `iconoPorOrigen()` (TX.6/TX.7, línea ~293) — un gasto generado al pagar un fijo hereda su ícono: cambiar `CATEGORIA_AGENDA_ICONO[comp.categoria] ?? null` por `comp.icono ?? CATEGORIA_AGENDA_ICONO[comp.categoria] ?? null`.
+  5. **`tesoreria/logic/distribucion.js` / `views/distribucion.js`**: YA NO necesitan cambios. `construirDesgloseNecesidades()` (CAT.2d) ya propaga `icono: c.icono ?? null` para CUALQUIER tipo de compromiso, y `_iconoNecesidad()` ya revisa `it.icono` primero, sin distinguir fijo/deuda: el checklist de "Distribuir mi ingreso" queda cubierto gratis en cuanto `normalizarCompromiso()` empiece a poblar `icono` para fijos.
+- Secciones  : Calendario (`agenda/view.js`, `agenda/index.js`), Compromisos (`compromisos/logic/modelo.js`), Gastos (`gastos/logic.js`, herencia de ícono TX.6/TX.7)
+- Depende de : nada (desbloqueada; la creación de categorías nombradas nuevas para Fijo es CAT.3, no esta tarjeta)
+- Modelo     : Sonnet 5 - Medio (patrón ya probado 5 veces, diseño ya cerrado en esta ficha; sin decisiones de arquitectura pendientes)
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
