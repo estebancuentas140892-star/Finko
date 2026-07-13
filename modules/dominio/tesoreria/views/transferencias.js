@@ -74,6 +74,37 @@ export function renderParTransferencia(origen, destino) {
 }
 
 /**
+ * Sección opcional del 4x1000 (GMF, MC.17d). Solo se muestra cuando la cuenta
+ * de origen NO está exenta (`aplica4x1000 === true`): un checkbox marcado por
+ * defecto (refleja lo que el banco cobrará: el saldo queda exacto sin que el
+ * usuario haga nada) que el usuario puede desmarcar si tiene el cupo exento del
+ * mes disponible. Devuelve '' cuando el origen es exento o no hay origen, para
+ * no complicar el flujo (mismo criterio "no molestar cuando no aplica" que el
+ * hint de cuota de manejo). El monto del gravamen se calcula en vivo en la
+ * acción (`_actualizarHintGMF`) a medida que el usuario escribe el monto.
+ *
+ * Va dentro de `#transferencia-gmf-slot` (contenedor estable): la acción lo
+ * re-renderiza cuando cambia el origen (botón invertir o selector), sin tocar
+ * el resto del formulario.
+ *
+ * @param {import('../../../core/state.js').Cuenta} [origen]
+ * @returns {string}
+ */
+export function renderSeccionGMF(origen) {
+  if (!origen || origen.aplica4x1000 !== true) return '';
+  return `
+    <div class="form-group form-group--checkbox" id="transferencia-gmf">
+      <label class="checkbox-row">
+        <input type="checkbox" name="aplicarGMF" checked />
+        <span>Descontar el 4x1000 (GMF) de este retiro</span>
+      </label>
+      <p class="form-hint form-hint--muted" id="transferencia-gmf-hint">
+        ${_esc(origen.nombre)} no está exenta del gravamen. Escribe el monto para ver el costo.
+      </p>
+    </div>`;
+}
+
+/**
  * Formulario completo del modal "Transferir dinero" (MC.17b). Automatización
  * por conteo de cuentas activas:
  *   - 2 cuentas: `renderParTransferencia()`, par fijo con botón invertir.
@@ -91,10 +122,15 @@ export function renderFormTransferencia() {
   const activas = cuentasActivas(S.cuentas ?? []);
   if (activas.length < 2) return '';
 
+  // El origen inicial es la cuenta de mayor saldo, tanto en el widget de par
+  // (par ordenado desc → origen = primera) como en los selectores 3+
+  // (renderSelectorCuenta pre-selecciona la de mayor saldo). Con eso se decide
+  // si la sección de GMF aparece de entrada.
+  const ordenadas     = [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0));
+  const origenInicial = ordenadas[0];
+
   const seccionCuentas = activas.length === 2
-    ? renderParTransferencia(
-        ...[...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0)),
-      )
+    ? renderParTransferencia(...ordenadas)
     : `
       ${renderSelectorCuenta(activas, { label: '¿De qué cuenta sale el dinero?', name: 'cuentaOrigenId' })}
       ${renderSelectorCuenta(activas, { label: '¿A qué cuenta entra el dinero?', name: 'cuentaDestinoId' })}`;
@@ -107,6 +143,7 @@ export function renderFormTransferencia() {
         <input id="transferencia-monto" name="monto" type="number" class="input"
                min="0" step="10000" inputmode="numeric" required />
       </div>
+      <div id="transferencia-gmf-slot">${renderSeccionGMF(origenInicial)}</div>
       <div class="form-group">
         <label for="transferencia-fecha" class="label">Fecha</label>
         <input id="transferencia-fecha" name="fecha" type="date" class="input" required />

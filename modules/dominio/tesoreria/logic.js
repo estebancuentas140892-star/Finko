@@ -69,6 +69,8 @@ export {
 export {
   validarTransferencia,
   saldoSuficiente,
+  costoGMFRetiro,
+  origenSujetoAGMF,
   normalizarTransferencia,
   calcularTransferencia,
 } from './logic/transferencias.js';

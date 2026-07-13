@@ -101,6 +101,12 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {number} monto             COP trasladados (lo que llega al destino).
  * @property {string} fecha             ISO 8601 (YYYY-MM-DD): día del traslado.
  * @property {string} [nota]            Nota opcional del usuario.
+ * @property {number} [costoGMF]        Opcional (MC.17d). 4x1000 del retiro cuando
+ *                                      la cuenta de origen no está exenta y el
+ *                                      usuario opta por descontarlo: sale
+ *                                      `monto + costoGMF` del origen, entra `monto`
+ *                                      al destino (el neto baja el GMF). Ausente = 0
+ *                                      (origen exento o el usuario no lo descontó).
  * @property {string} fechaCreacion     ISO 8601 timestamp.
  */
 

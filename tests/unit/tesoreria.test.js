@@ -41,11 +41,13 @@ import {
   montoSalarioMinimoPorPeriodo,
   validarTransferencia,
   saldoSuficiente,
+  costoGMFRetiro,
+  origenSujetoAGMF,
   normalizarTransferencia,
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -3232,6 +3234,54 @@ describe('normalizarTransferencia', () => {
     });
     expect(t).not.toHaveProperty('nota');
   });
+
+  // ── GMF (MC.17d) ──────────────────────────────────────────────
+  it('agrega costoGMF cuando es positivo', () => {
+    const t = normalizarTransferencia({
+      cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '200000', fecha: '2026-07-12',
+    }, 800);
+    expect(t.costoGMF).toBe(800);
+  });
+
+  it('omite costoGMF cuando es 0 o no se pasa (campo opcional, sin migración)', () => {
+    const sinGmf = normalizarTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '200000', fecha: '2026-07-12' });
+    expect(sinGmf).not.toHaveProperty('costoGMF');
+    const cero = normalizarTransferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: '200000', fecha: '2026-07-12' }, 0);
+    expect(cero).not.toHaveProperty('costoGMF');
+  });
+});
+
+describe('costoGMFRetiro (MC.17d)', () => {
+  it('calcula el 4x1000 del monto, redondeado al peso', () => {
+    expect(costoGMFRetiro(200_000)).toBe(800);
+    expect(costoGMFRetiro(137_500)).toBe(550);
+    expect(costoGMFRetiro(12_345)).toBe(49); // 49.38 → 49
+  });
+
+  it('monto no positivo o inválido devuelve 0', () => {
+    expect(costoGMFRetiro(0)).toBe(0);
+    expect(costoGMFRetiro(-100)).toBe(0);
+    expect(costoGMFRetiro('abc')).toBe(0);
+    expect(costoGMFRetiro(undefined)).toBe(0);
+  });
+});
+
+describe('origenSujetoAGMF (MC.17d)', () => {
+  const cuentas = [
+    cuentaBase({ id: 'c1', aplica4x1000: true }),
+    cuentaBase({ id: 'c2', aplica4x1000: false }),
+    cuentaBase({ id: 'c3' }), // sin el campo
+  ];
+
+  it('true solo cuando la cuenta tiene aplica4x1000 === true', () => {
+    expect(origenSujetoAGMF(cuentas, 'c1')).toBe(true);
+  });
+
+  it('false cuando la cuenta está exenta, no tiene el campo, o no existe', () => {
+    expect(origenSujetoAGMF(cuentas, 'c2')).toBe(false);
+    expect(origenSujetoAGMF(cuentas, 'c3')).toBe(false);
+    expect(origenSujetoAGMF(cuentas, 'zzz')).toBe(false);
+  });
 });
 
 describe('calcularTransferencia', () => {
@@ -3291,6 +3341,36 @@ describe('calcularTransferencia', () => {
       { cuentaId: 'c1', saldo: -20_000 },
       { cuentaId: 'c2', saldo:  70_000 },
     ]);
+  });
+
+  // ── GMF del retiro (MC.17d) ───────────────────────────────────
+  it('con costoGMF: del origen sale monto + GMF, al destino entra solo el monto', () => {
+    const plan = calcularTransferencia(
+      { cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 200_000, costoGMF: 800 }, cuentas(),
+    );
+    expect(plan.actualizaciones).toEqual([
+      { cuentaId: 'c1', saldo: 99_200 },   // 300.000 - 200.000 - 800
+      { cuentaId: 'c2', saldo: 250_000 },  // 50.000 + 200.000
+    ]);
+  });
+
+  it('con costoGMF: el patrimonio neto baja exactamente el GMF (Σ deltas = -costoGMF)', () => {
+    const plan = calcularTransferencia(
+      { cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 200_000, costoGMF: 800 }, cuentas(),
+    );
+    const suma = plan.deltas.reduce((s, d) => s + d.delta, 0);
+    expect(suma).toBe(-800);
+    expect(plan.deltas).toEqual([
+      { cuentaId: 'c1', delta: -200_800 },
+      { cuentaId: 'c2', delta:  200_000 },
+    ]);
+  });
+
+  it('costoGMF ausente o 0 se comporta como MC.17a (Σ deltas = 0)', () => {
+    const plan = calcularTransferencia(
+      { cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 100_000, costoGMF: 0 }, cuentas(),
+    );
+    expect(plan.deltas.reduce((s, d) => s + d.delta, 0)).toBe(0);
   });
 });
 
@@ -3367,6 +3447,47 @@ describe('renderFormTransferencia()', () => {
     expect(html).toContain('id="transferencia-monto"');
     expect(html).toContain('id="transferencia-fecha"');
     expect(html).toContain('id="transferencia-nota"');
+  });
+
+  // ── GMF (MC.17d) ──────────────────────────────────────────────
+  it('siempre incluye el slot del GMF (contenedor estable)', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
+    expect(renderFormTransferencia()).toContain('id="transferencia-gmf-slot"');
+  });
+
+  it('con origen inicial (mayor saldo) NO exento: el checkbox del 4x1000 aparece marcado', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', saldo: 300_000, aplica4x1000: false }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000, aplica4x1000: true }),
+    ];
+    const html = renderFormTransferencia();
+    expect(html).toContain('name="aplicarGMF"');
+    expect(html).toContain('id="transferencia-gmf"');
+  });
+
+  it('con origen inicial exento: no aparece la sección del 4x1000', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', saldo: 300_000, aplica4x1000: true }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000, aplica4x1000: false }),
+    ];
+    // Origen inicial = mayor saldo = c2 (exento) → sin checkbox.
+    expect(renderFormTransferencia()).not.toContain('name="aplicarGMF"');
+  });
+});
+
+describe('renderSeccionGMF() (MC.17d)', () => {
+  it('cuenta no exenta: checkbox marcado + hint', () => {
+    const html = renderSeccionGMF(cuentaBase({ id: 'c1', nombre: 'Nequi', aplica4x1000: true }));
+    expect(html).toContain('name="aplicarGMF"');
+    expect(html).toContain('checked');
+    expect(html).toContain('id="transferencia-gmf-hint"');
+    expect(html).toContain('Nequi');
+  });
+
+  it('cuenta exenta, sin el campo, o sin origen: string vacío', () => {
+    expect(renderSeccionGMF(cuentaBase({ id: 'c1', aplica4x1000: false }))).toBe('');
+    expect(renderSeccionGMF(cuentaBase({ id: 'c1' }))).toBe('');
+    expect(renderSeccionGMF(undefined)).toBe('');
   });
 });
 
@@ -3465,5 +3586,58 @@ describe('acciones de transferencias (MC.17b)', () => {
     expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000);
     expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(900_000);
     expect(document.querySelector('.form-errors')).not.toBeNull();
+  });
+});
+
+describe('acciones de transferencias: GMF del retiro (MC.17d)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div class="app-shell"></div>
+      <div id="tesoreria-transferir"></div>
+      <div class="modal-overlay" id="modal-transferencia" aria-hidden="true">
+        <div class="modal">
+          <div class="modal__body" id="modal-transferencia-body"></div>
+        </div>
+      </div>`;
+    // Origen por defecto = mayor saldo = c2 (Bancolombia), NO exento del 4x1000.
+    S.cuentas = [
+      cuentaBase({ id: 'c1', nombre: 'Nequi', saldo: 300_000, aplica4x1000: false }),
+      cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', saldo: 900_000, aplica4x1000: true }),
+    ];
+    S.transferencias = [];
+    initAccionesTransferencias();
+    renderBotonTransferir();
+  });
+
+  it('con el checkbox marcado: del origen sale monto + GMF, al destino entra el monto, y guarda costoGMF', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+    expect(document.querySelector('input[name="aplicarGMF"]').checked).toBe(true);
+
+    document.getElementById('transferencia-monto').value = '200000';
+    document.getElementById('form-transferencia').dispatchEvent(new Event('submit', { cancelable: true }));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(699_200); // 900.000 - 200.000 - 800
+    expect(S.cuentas.find(c => c.id === 'c1').saldo).toBe(500_000); // 300.000 + 200.000
+    expect(S.transferencias[0].costoGMF).toBe(800);
+  });
+
+  it('desmarcando el checkbox: no descuenta el 4x1000 ni lo guarda', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+    document.querySelector('input[name="aplicarGMF"]').checked = false;
+
+    document.getElementById('transferencia-monto').value = '200000';
+    document.getElementById('form-transferencia').dispatchEvent(new Event('submit', { cancelable: true }));
+
+    expect(S.cuentas.find(c => c.id === 'c2').saldo).toBe(700_000); // 900.000 - 200.000, sin GMF
+    expect(S.transferencias[0]).not.toHaveProperty('costoGMF');
+  });
+
+  it('invertir hacia un origen exento: la sección del 4x1000 desaparece', () => {
+    dispatch(document.querySelector('[data-action="abrir-transferencia"]'), new Event('click'));
+    expect(document.querySelector('input[name="aplicarGMF"]')).not.toBeNull(); // origen c2 no exento
+
+    dispatch(document.querySelector('[data-action="invertir-transferencia"]'), new Event('click'));
+    // Ahora el origen es c1 (exento): sin checkbox.
+    expect(document.querySelector('input[name="aplicarGMF"]')).toBeNull();
   });
 });

@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (MC.17c cierra transferencia en el ledger de Movimientos; MC.17a/b y MC.18e cerraron antes el mismo día).
+> Última actualización: 2026-07-12 (MC.17d cierra el GMF del retiro; MC.17a/b/c y MC.18e cerraron antes el mismo día).
 
 ---
 
@@ -93,7 +93,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 > - **Colección nueva `transferencias`** (no derivar de colecciones existentes: una transferencia no encaja en gastos ni ingresos puntuales). Precedente exacto: `ingresosPuntuales` (NAV.A1, v22). Schema `Transferencia`: `{ id, cuentaOrigenId, cuentaDestinoId, monto, fecha, nota?, fechaCreacion }`. Bump v25→v26, migración idempotente (`transferencias: []` para usuarios existentes) + campo en `createInitialState()` (doble red de seguridad vía `_applyToS`).
 > - **Apply atómico:** validar ANTES de tocar saldos (ambas cuentas existen y activas, origen ≠ destino, monto > 0, saldo origen suficiente o confirmar). Luego débito origen + crédito destino en el mismo flush (`editar('cuentas', ...)` ×2, síncrono en memoria).
 > - **Automatización por conteo (0/1/2/varias, extiende la regla de cuenta única):** 0/1 cuenta activa → transferir imposible, la entrada no aparece (o guía a crear cuenta). Exactamente 2 → se muestra "De A a B" con botón para invertir + solo monto/nota. 3+ → selector de origen y destino (destino excluye la origen elegida).
-> - **GMF del retiro (decisión del brief):** se **DIFIERE a MC.17d** para mantener simple el subset mínimo. Recomendación a ratificar al iniciar MC.17d: el 4x1000 se descuenta del saldo origen (`monto + GMF` sale, `monto` entra → el neto baja el GMF, que es la única parte real-mundo de una transferencia) y se guarda como campo opcional `costoGMF` de la Transferencia, **NO** como un `Gasto` separado (evita ensuciar Análisis/Límites con una micro-comisión mecánica; queda trazado en el detalle "incluye $X de 4x1000"). Agregar `costoGMF` luego NO requiere migración (campo opcional `undefined`-safe, mismo precedente que `cuotaManejo`/`datosTransferencia`/`aplica4x1000`).
+> - **GMF del retiro (decisión del brief):** **implementado en MC.17d** (cerrada 2026-07-12, decisión ratificada). El 4x1000 se descuenta del saldo origen (`monto + costoGMF` sale, `monto` entra → el neto baja el GMF, única parte real-mundo de una transferencia) y se guarda como campo opcional `costoGMF` de la Transferencia, **NO** como un `Gasto` separado (no ensucia Análisis/Límites con una micro-comisión mecánica; queda trazado en el subtítulo del ledger "incluye $X de 4x1000"). Campo opcional `undefined`-safe, sin migración (mismo precedente que `cuotaManejo`/`datosTransferencia`/`aplica4x1000`). El checkbox del formulario viene marcado por defecto (refleja lo que el banco cobrará).
 > - **Historial = el ledger, no una lista nueva:** la vista completa de Movimientos (`#movimientos`) ES el historial canónico de transferencias (MC.17c). No se crea una lista de transferencias aparte en Mis cuentas (cero duplicación).
 > - **Forward-compat MC.16:** cuando exista la tarjeta de crédito, "pagar la tarjeta" es un abono a deuda, NO una transferencia; las cuentas TC no serán endpoints de transferencia. MC.17 v1 solo opera cuentas de dinero real (ahorros/corriente/billetera/efectivo). No es dependencia, solo nota.
 > - **Ficha:** bloque "Transferencias (diseño)" en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
@@ -104,14 +104,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.17c cerrada el 2026-07-12** (transferencia en el ledger de Movimientos, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): `movimientosDesdeTransferencias()` nuevo en `movimientos/logic.js`, fila neutra "Origen → Destino" sin signo ni color en `renderActividadReciente()` y `_renderMovimientoItem()`, símbolo de sprite nuevo `i-transferencia`. 12 tests unitarios nuevos, SW v364.
 
-#### MC.17d - GMF del retiro (opcional, decisión financiera CO)
-- Prioridad  : media
-- Estado     : pendiente (depende de MC.17b; **ratificar la decisión GMF-como-campo-no-gasto al iniciar**)
-- Objetivo   : cuando la cuenta origen no está exenta (`aplica4x1000`), ofrecer registrar el 4x1000 del retiro: descontar `monto + GMF` del origen, guardar `costoGMF` en la Transferencia (campo opcional, sin migración), mostrarlo en el detalle. Pregunta explícita, no automática, sin complicar el flujo cuando la cuenta está exenta. Verificable en la app + unit: saldo origen baja `monto+GMF`, destino sube `monto`, patrimonio neto baja exactamente el GMF.
-- Secciones  : Mis cuentas (`tesoreria`)
-- Archivos   : `tesoreria/logic/transferencias.js`, `tesoreria/acciones/`, `tesoreria/views/`
-- Depende de : MC.17b; reutiliza `GMF` y el patrón de `calcularCostoGMF` de `logic/cuentas.js`
-- Modelo     : Opus 4.8 - Alto (lógica financiera CO + decisión de qué cuenta como gasto)
+> **MC.17d cerrada el 2026-07-12** (GMF del retiro, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): decisión ratificada (campo `costoGMF` en la Transferencia, no un Gasto; checkbox marcado por defecto). Checkbox del 4x1000 en el modal cuando el origen no está exento (`renderSeccionGMF`, reactivo al origen); `costoGMFRetiro`/`origenSujetoAGMF` puros; `calcularTransferencia` descuenta `monto + costoGMF` del origen (Σ deltas = −costoGMF); rastro "incluye $X de 4x1000" en el subtítulo del ledger. 21 tests unitarios + 1 E2E nuevos, SW v365.
 
 #### MC.17e - Punto de entrada en la hoja "Registrar"
 - Prioridad  : baja

@@ -38,6 +38,7 @@ import {
   renderBotonTransferir,
   renderFormTransferencia,
   renderParTransferencia,
+  renderSeccionGMF,
 } from './views/transferencias.js';
 
 export {
@@ -56,6 +57,7 @@ export {
   renderBotonTransferir,
   renderFormTransferencia,
   renderParTransferencia,
+  renderSeccionGMF,
 };
 
 /** Re-renderiza la vista completa del dominio (el `_renderTodo` historico). */

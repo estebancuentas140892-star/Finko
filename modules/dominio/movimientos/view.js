@@ -172,7 +172,12 @@ function _renderMovimientoItem(m) {
   const signo         = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
   const claseMonto    = esIngreso ? 'list-item__amount--ingreso' : '';
   const cuenta        = _nombreCuenta(m.cuentaId);
-  const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, fechaLegible(m.fecha), cuenta]
+  // MC.17d: una transferencia con 4x1000 traza el gravamen en el subtítulo, sin
+  // sumarlo al monto de la fila (que es lo que llegó al destino).
+  const gmfNota       = m.tipo === 'transferencia' && m.costoGMF > 0
+    ? `incluye ${f(m.costoGMF)} de 4x1000`
+    : null;
+  const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, fechaLegible(m.fecha), cuenta, gmfNota]
     .filter(Boolean).map(_esc).join(' · ');
 
   return `

@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.17d GMF del retiro en la transferencia, opcional · 2026-07-12
+
+Cierra **MC.17d** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), cuarta rebanada de MC.17. Añade el 4x1000 (GMF) real que un banco cobra al sacar dinero de una cuenta no exenta.
+
+**Decisión ratificada con Esteban antes de codificar** (ambas opciones = la recomendación del análisis de Opus del 2026-07-12): (1) el costo del 4x1000 se guarda como campo opcional `costoGMF` en la Transferencia, NO como un `Gasto` separado (no ensucia Análisis, Límites de gasto ni el monitor de renta con una micro-comisión bancaria mecánica); (2) el checkbox del formulario viene marcado por defecto, porque refleja lo que el banco realmente cobrará (el saldo queda exacto sin que el usuario haga nada; puede desmarcarlo si tiene el cupo exento del mes disponible).
+
+**Qué cambió:** cuando la cuenta de origen no está exenta (`aplica4x1000 === true`), el modal de transferencia muestra una sección nueva (`renderSeccionGMF()`, `views/transferencias.js`) con un checkbox "Descontar el 4x1000 (GMF)" marcado + un hint que calcula el costo en vivo a medida que se escribe el monto. Al aplicar: sale `monto + costoGMF` del origen y entra `monto` al destino → el patrimonio neto baja EXACTAMENTE el GMF (la única parte real-mundo de una transferencia, un costo que se lleva el banco). Lógica pura nueva en `logic/transferencias.js`: `costoGMFRetiro(monto)` (monto × 0.004 redondeado al peso, 0 si el monto no es positivo, mismo redondeo que `calcularCostoGMF`) y `origenSujetoAGMF(cuentas, id)` (salvaguarda dura: solo `aplica4x1000 === true`); `calcularTransferencia()` ahora descuenta el `costoGMF` del origen (Σ deltas = −costoGMF) y `normalizarTransferencia(datos, costoGMF)` lo guarda solo si es > 0 (campo opcional, sin migración). La sección reacciona al origen en vivo: aparece/desaparece al invertir el par o cambiar el selector de 3+ (`_refrescarSeccionGMF()`), con el hint recalculado por `_actualizarHintGMF()`. El chequeo de sobregiro y su mensaje de confirmación usan `monto + costoGMF`. El ledger (extiende MC.17c) traza "incluye $X de 4x1000" en el subtítulo de la fila, sin sumarlo al monto mostrado (que es lo que llegó al destino).
+
+**Archivos tocados:** `modules/dominio/tesoreria/logic/transferencias.js`, `modules/dominio/tesoreria/logic.js` (barrel: 2 exports nuevos), `modules/dominio/tesoreria/views/transferencias.js`, `modules/dominio/tesoreria/view.js` (barrel), `modules/dominio/tesoreria/acciones/transferencias.js`, `modules/core/state.js` (campo opcional `costoGMF` en `Transferencia`), `modules/dominio/movimientos/logic.js` (`costoGMF` en el `Movimiento`), `modules/dominio/movimientos/view.js` (subtítulo del GMF), `service-worker.js` (v364→v365), `tests/unit/tesoreria.test.js` + `tests/unit/movimientos.test.js` (21 tests nuevos), `tests/e2e/smoke.test.js` (1 E2E nuevo), `docs/BOARD.md`, `docs/HANDOFF.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2477/2477 unit (helpers puros del GMF, apply que descuenta el gravamen con Σ deltas = −costoGMF, render condicional del checkbox por exención, acción que descuenta/omite según checkbox, subtítulo del ledger) + 179/179 E2E (1 nuevo en Chromium real: origen no exento → checkbox marcado → transferencia descuenta `monto + 800` del origen, `monto` al destino, `costoGMF` guardado, y el ledger muestra "incluye $800 de 4x1000") + lint verdes. El Browser pane interactivo siguió inestable esta sesión; la verificación se apoyó en el E2E de Playwright sobre Chromium real y en la suite unitaria sobre el `render.js`/DOM de producción.
+
+**Podría afectar:** una transferencia con GMF baja el patrimonio total (a diferencia de MC.17a-c, donde el traslado era neutro): es correcto, el GMF es dinero que sale del sistema hacia el banco. El GMF NO es un `Gasto`, así que Análisis/Límites/resumen semanal/monitor de renta siguen sin verlo. El campo `costoGMF` es opcional y `undefined`-safe: transferencias existentes (sin él) siguen válidas sin migración.
+
+---
+
 ### feat(movimientos): MC.17c transferencia en el ledger de Movimientos, tipo neutro · 2026-07-12
 
 Cierra **MC.17c** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), tercera rebanada de MC.17. Sobre la lógica y la UI ya cerradas en MC.17a/b: ahora una transferencia queda visible en el historial.

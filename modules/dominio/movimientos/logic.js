@@ -27,6 +27,9 @@ import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/const
  * @property {string|null} cuentaId
  * @property {string} [cuentaOrigenId]   Solo en tipo 'transferencia' (MC.17c).
  * @property {string} [cuentaDestinoId]  Solo en tipo 'transferencia' (MC.17c).
+ * @property {number} [costoGMF]         Solo en tipo 'transferencia' (MC.17d): 4x1000
+ *   del retiro, 0 si el origen es exento o no se descontó. La vista lo muestra en
+ *   el subtítulo ("incluye $X de 4x1000") sin sumarlo al monto de la fila.
  * @property {'gastos'|'compromisos'|'ingresos'|'ahorro'|'tesoreria'} dominio  Sección
  *   dueña del movimiento (TX.8b): colorea la teja del ícono en la vista completa
  *   (`cat-teja[data-dom]`, ADR 025 D1/D3), igual que el resto de la app.
@@ -138,6 +141,7 @@ export function movimientosDesdeTransferencias(transferencias) {
     cuentaId:        null,
     cuentaOrigenId:  t.cuentaOrigenId,
     cuentaDestinoId: t.cuentaDestinoId,
+    costoGMF:        t.costoGMF ?? 0,
     dominio:         'tesoreria',
   }));
 }

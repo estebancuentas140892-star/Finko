@@ -181,6 +181,16 @@ describe('movimientosDesdeTransferencias()', () => {
     });
   });
 
+  it('sin costoGMF, el movimiento lo expone como 0 (MC.17d)', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia()]);
+    expect(m.costoGMF).toBe(0);
+  });
+
+  it('con costoGMF, lo propaga al movimiento (MC.17d)', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia({ costoGMF: 800 })]);
+    expect(m.costoGMF).toBe(800);
+  });
+
   it('tiene dominio "tesoreria"', () => {
     const [m] = movimientosDesdeTransferencias([transferencia()]);
     expect(m.dominio).toBe('tesoreria');
@@ -441,6 +451,22 @@ describe('renderMovimientosCompletos()', () => {
     S.transferencias = [transferencia()];
     renderMovimientosCompletos();
     expect(elLista().querySelector('.list-item__subtitle').textContent).toContain('Transferencia');
+  });
+
+  it('una transferencia con 4x1000 traza el GMF en el subtítulo, sin sumarlo al monto (MC.17d)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.transferencias = [transferencia({ costoGMF: 800 })];
+    renderMovimientosCompletos();
+    const html = elLista().innerHTML;
+    expect(elLista().querySelector('.list-item__subtitle').textContent).toContain('incluye $800 de 4x1000');
+    expect(html).toContain('$200.000'); // el monto de la fila sigue siendo lo que llegó al destino
+  });
+
+  it('una transferencia sin GMF no muestra la nota del 4x1000 (MC.17d)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.transferencias = [transferencia()];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.list-item__subtitle').textContent).not.toContain('4x1000');
   });
 });
 

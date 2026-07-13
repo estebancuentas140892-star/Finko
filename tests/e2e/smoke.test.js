@@ -2360,6 +2360,43 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
     expect(st.cuentas.find(c => c.id === 'c3').saldo).toBe(100_000);
     expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(300_000); // sin tocar
   });
+
+  test('GMF (MC.17d): origen no exento descuenta monto + 4x1000 y lo traza en el ledger', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [
+        { id: 'c1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 300_000, activa: true, aplica4x1000: false },
+        { id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia', tipo: 'Ahorros', saldo: 900_000, activa: true, aplica4x1000: true },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+
+    await page.click('[data-action="abrir-transferencia"]');
+    await page.waitForSelector('#modal-transferencia[data-open]', { timeout: 5_000 });
+
+    // Origen por defecto = mayor saldo = Bancolombia (no exenta): el checkbox aparece marcado.
+    const gmf = page.locator('input[name="aplicarGMF"]');
+    await expect(gmf).toBeChecked();
+
+    await page.fill('#transferencia-monto', '200000');
+    await page.click('#form-transferencia button[type="submit"]');
+    await page.waitForSelector(modalCerrado('modal-transferencia'), { timeout: 5_000 });
+
+    await page.waitForTimeout(400); // save() debounced (ADN #5)
+    const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+    expect(st.cuentas.find(c => c.id === 'c2').saldo).toBe(699_200); // 900.000 - 200.000 - 800
+    expect(st.cuentas.find(c => c.id === 'c1').saldo).toBe(500_000); // 300.000 + 200.000
+    expect(st.transferencias[0].costoGMF).toBe(800);
+
+    // El ledger de Movimientos traza el gravamen en el subtítulo de la fila.
+    await page.goto('/#movimientos');
+    await page.waitForSelector('#lista-movimientos', { timeout: 10_000 });
+    const fila = page.locator('.list-item', { hasText: 'Nequi' }).first();
+    await expect(fila.locator('.list-item__subtitle')).toContainText('incluye $800 de 4x1000');
+  });
 });
 
 // ── Mis cuentas: CTA cruzado a Límites de gasto (MC.5e, ADR 017) ─────────────

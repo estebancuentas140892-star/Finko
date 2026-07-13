@@ -8,11 +8,15 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  *
  * Invariante de dominio: una transferencia es un traslado interno, NO un
- * ingreso ni un gasto. La suma de los deltas de saldo es 0, así que el
+ * ingreso ni un gasto. Sin GMF, la suma de los deltas de saldo es 0, así que el
  * patrimonio neto (Σ saldos − Σ deudas) no cambia. El GMF del retiro (MC.17d)
- * será la única parte real-mundo de una transferencia: cuando exista, el neto
- * bajará exactamente ese costo. Aquí (MC.17a) el traslado es solo `monto`.
+ * es la única parte real-mundo de una transferencia: cuando la cuenta de origen
+ * no está exenta y el usuario opta por descontarlo, sale `monto + costoGMF` del
+ * origen, entra `monto` al destino, y el neto baja EXACTAMENTE ese costo (se lo
+ * lleva el banco). Sin GMF (`costoGMF` ausente o 0), el traslado es solo `monto`.
  */
+
+import { GMF } from '../../../core/constants.js';
 
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
@@ -83,18 +87,52 @@ export function saldoSuficiente(cuentas, cuentaOrigenId, monto) {
   return (Number(origen.saldo) || 0) >= (Number(monto) || 0);
 }
 
+// ── GMF DEL RETIRO (4x1000, MC.17d) ──────────────────────────────
+
+/**
+ * Costo del 4x1000 (GMF) de un retiro por `monto`, redondeado al peso. Puro y
+ * monto-based (mismo criterio de redondeo que `calcularCostoGMF` de
+ * `logic/cuentas.js`). El caller decide SI aplica: solo cuando la cuenta de
+ * origen no está exenta (`aplica4x1000`) y el usuario opta por descontarlo.
+ *
+ * @param {number} monto
+ * @returns {number}
+ */
+export function costoGMFRetiro(monto) {
+  const m = Number(monto) || 0;
+  return m > 0 ? Math.round(m * GMF) : 0;
+}
+
+/**
+ * Indica si una cuenta está sujeta al GMF (no exenta del 4x1000). El efectivo y
+ * las cuentas exentas devuelven `false`; solo `aplica4x1000 === true` cuenta.
+ * Lo usa la UI (MC.17d) para decidir si ofrece descontar el gravamen del retiro.
+ *
+ * @param {import('../../../core/state.js').Cuenta[]} cuentas
+ * @param {string} cuentaOrigenId
+ * @returns {boolean}
+ */
+export function origenSujetoAGMF(cuentas, cuentaOrigenId) {
+  const origen = (Array.isArray(cuentas) ? cuentas : []).find(c => c?.id === cuentaOrigenId);
+  return origen?.aplica4x1000 === true;
+}
+
 // ── TRANSFORMACIÓN ───────────────────────────────────────────────
 
 /**
  * Convierte los datos crudos del formulario al shape de `S.transferencias[]`.
  * Asume que los datos ya pasaron `validarTransferencia()`. La nota se omite si
  * viene vacía tras recortar espacios (no guardar `nota: ''` inútil, mismo
- * criterio que `parseDatosTransferencia`).
+ * criterio que `parseDatosTransferencia`). `costoGMF` se agrega solo cuando es
+ * positivo (campo opcional `undefined`-safe, sin migración): el caller lo
+ * calcula con `costoGMFRetiro()` cuando el origen no está exento y el usuario
+ * eligió descontarlo, y pasa 0 en cualquier otro caso.
  *
  * @param {Record<string, string>} datos
+ * @param {number} [costoGMF=0]
  * @returns {Omit<import('../../../core/state.js').Transferencia, 'id' | 'fechaCreacion'>}
  */
-export function normalizarTransferencia(datos) {
+export function normalizarTransferencia(datos, costoGMF = 0) {
   const transferencia = {
     cuentaOrigenId:  datos.cuentaOrigenId.trim(),
     cuentaDestinoId: datos.cuentaDestinoId.trim(),
@@ -103,6 +141,8 @@ export function normalizarTransferencia(datos) {
   };
   const nota = datos.nota?.trim();
   if (nota) transferencia.nota = nota;
+  const gmf = Math.max(0, Number(costoGMF) || 0);
+  if (gmf > 0) transferencia.costoGMF = gmf;
   return transferencia;
 }
 
@@ -119,28 +159,32 @@ export function normalizarTransferencia(datos) {
  * positivo). No reemplaza a `validarTransferencia` (que da mensajes para el
  * formulario); es el guard final antes de tocar el dinero.
  *
- * La suma de `deltas` es 0 (MC.17a, sin GMF): el patrimonio neto no cambia.
+ * Con GMF (`transferencia.costoGMF > 0`), del origen sale `monto + costoGMF` y
+ * al destino entra `monto`: la suma de `deltas` es `-costoGMF` (el patrimonio
+ * neto baja exactamente el gravamen que se lleva el banco, MC.17d). Sin GMF, la
+ * suma es 0 (MC.17a: el traslado interno no cambia el patrimonio).
  *
- * @param {{cuentaOrigenId: string, cuentaDestinoId: string, monto: number}} transferencia
+ * @param {{cuentaOrigenId: string, cuentaDestinoId: string, monto: number, costoGMF?: number}} transferencia
  * @param {import('../../../core/state.js').Cuenta[]} cuentas
  * @returns {{ actualizaciones: Array<{cuentaId: string, saldo: number}>,
  *             deltas: Array<{cuentaId: string, delta: number}> } | null}
  */
 export function calcularTransferencia(transferencia, cuentas) {
-  const lista   = Array.isArray(cuentas) ? cuentas : [];
-  const origen  = lista.find(c => c?.id === transferencia?.cuentaOrigenId  && c?.activa !== false);
-  const destino = lista.find(c => c?.id === transferencia?.cuentaDestinoId && c?.activa !== false);
-  const monto   = Number(transferencia?.monto) || 0;
+  const lista    = Array.isArray(cuentas) ? cuentas : [];
+  const origen   = lista.find(c => c?.id === transferencia?.cuentaOrigenId  && c?.activa !== false);
+  const destino  = lista.find(c => c?.id === transferencia?.cuentaDestinoId && c?.activa !== false);
+  const monto    = Number(transferencia?.monto) || 0;
+  const costoGMF = Math.max(0, Number(transferencia?.costoGMF) || 0);
 
   if (!origen || !destino || origen.id === destino.id || monto <= 0) return null;
 
   return {
     actualizaciones: [
-      { cuentaId: origen.id,  saldo: (Number(origen.saldo)  || 0) - monto },
+      { cuentaId: origen.id,  saldo: (Number(origen.saldo)  || 0) - monto - costoGMF },
       { cuentaId: destino.id, saldo: (Number(destino.saldo) || 0) + monto },
     ],
     deltas: [
-      { cuentaId: origen.id,  delta: -monto },
+      { cuentaId: origen.id,  delta: -(monto + costoGMF) },
       { cuentaId: destino.id, delta:  monto },
     ],
   };
