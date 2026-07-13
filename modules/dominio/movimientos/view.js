@@ -21,10 +21,10 @@ const LIMITE_RECIENTES = 5;
  * adentro, no el envoltorio (que siempre sería una referencia distinta).
  */
 const _extraerFuentes = (fuentes, limite) => [
-  fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes,
+  fuentes?.gastos, fuentes?.ingresosPuntuales, fuentes?.aportes, fuentes?.transferencias,
   fuentes?.categoriasPersonalizadas, limite,
 ];
-const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'categoriasPersonalizadas'];
+const _SECCIONES_MOVIMIENTOS = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias', 'categoriasPersonalizadas'];
 
 const _movimientosRecientesMemo = memoizar(movimientosRecientes, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
 const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVIMIENTOS, _extraerFuentes);
@@ -39,7 +39,7 @@ const _movimientosCompletosMemo = memoizar(movimientosCompletos, _SECCIONES_MOVI
 const TAMANO_LOTE = 50;
 
 /** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
-const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte' };
+const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia' };
 
 /**
  * Días transcurridos desde una fecha ISO (YYYY-MM-DD) hasta hoy, en hora
@@ -73,6 +73,7 @@ export function renderActividadReciente() {
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
+    transferencias:           S.transferencias,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
   }, LIMITE_RECIENTES);
 
@@ -84,14 +85,14 @@ export function renderActividadReciente() {
   el.hidden = false;
 
   const items = movs.map(m => {
-    const esIngreso = m.direccion === 'ingreso';
-    const signo      = esIngreso ? '+' : '-';
+    const esIngreso  = m.direccion === 'ingreso';
+    const signo      = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
     const claseMonto = esIngreso ? 'actividad-reciente__monto--ingreso' : 'actividad-reciente__monto--egreso';
     return `
       <li class="actividad-reciente__item">
         <span class="actividad-reciente__icon" aria-hidden="true">${icon(m.icono)}</span>
         <div class="actividad-reciente__body">
-          <p class="actividad-reciente__desc">${_esc(m.descripcion)}</p>
+          <p class="actividad-reciente__desc">${_esc(_descripcionMovimiento(m))}</p>
           <p class="actividad-reciente__cuando">${tiempoRelativo(_diasDesde(m.fecha))}</p>
         </div>
         <p class="actividad-reciente__monto ${claseMonto}">${signo}${f(m.monto)}</p>
@@ -124,6 +125,21 @@ function _nombreCuenta(cuentaId) {
   return S.cuentas?.find(c => c.id === cuentaId)?.nombre ?? null;
 }
 
+/**
+ * Descripción a mostrar para un movimiento. Una transferencia (MC.17c) no
+ * trae descripción propia: se arma acá con los nombres de cuenta vigentes
+ * ("Origen → Destino"), en vivo, igual que `_nombreCuenta` resuelve el
+ * subtítulo de las demás fuentes.
+ * @param {import('./logic.js').Movimiento} m
+ * @returns {string}
+ */
+function _descripcionMovimiento(m) {
+  if (m.tipo !== 'transferencia') return m.descripcion;
+  const origen  = _nombreCuenta(m.cuentaOrigenId)  ?? 'Cuenta eliminada';
+  const destino = _nombreCuenta(m.cuentaDestinoId) ?? 'Cuenta eliminada';
+  return `${origen} → ${destino}`;
+}
+
 /** "Julio 2026" a partir de una fecha ISO, para el divisor de mes. */
 function _mesAnioLabel(fechaISO) {
   const d = new Date(`${fechaISO}T12:00:00Z`);
@@ -153,7 +169,7 @@ function _agruparPorMes(movs) {
 
 function _renderMovimientoItem(m) {
   const esIngreso     = m.direccion === 'ingreso';
-  const signo         = esIngreso ? '+' : '-';
+  const signo         = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
   const claseMonto    = esIngreso ? 'list-item__amount--ingreso' : '';
   const cuenta        = _nombreCuenta(m.cuentaId);
   const subtitulo     = [_TIPO_LABEL[m.tipo] ?? m.tipo, fechaLegible(m.fecha), cuenta]
@@ -163,7 +179,7 @@ function _renderMovimientoItem(m) {
     <article class="list-item" data-id="${_esc(m.id)}">
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(m.icono, m.dominio)}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${_esc(m.descripcion)}</p>
+        <p class="list-item__title">${_esc(_descripcionMovimiento(m))}</p>
         <p class="list-item__subtitle">${subtitulo}</p>
       </div>
       <div class="list-item__meta">
@@ -305,6 +321,7 @@ export function renderMovimientosCompletos() {
     gastos:                   S.gastos,
     ingresosPuntuales:        S.ingresosPuntuales,
     aportes:                  S.ahorro?.aportes,
+    transferencias:           S.transferencias,
     categoriasPersonalizadas: S.categoriasPersonalizadas,
   });
 

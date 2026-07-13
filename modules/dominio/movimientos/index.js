@@ -13,7 +13,7 @@ import { renderSmart, registrarRender } from '../../infra/render.js';
 import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from './view.js';
 
 /** Secciones cuyos cambios pueden alterar el historial de movimientos. */
-const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro'];
+const _SECCIONES_FUENTE = ['gastos', 'ingresosPuntuales', 'ahorro', 'transferencias'];
 
 function _renderTodo() {
   renderSmart(renderActividadReciente, 'dash');

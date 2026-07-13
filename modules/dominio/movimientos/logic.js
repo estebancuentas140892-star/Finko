@@ -18,14 +18,17 @@ import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/const
  * @typedef {Object} Movimiento
  * @property {string} id
  * @property {string} fecha        ISO 8601 (YYYY-MM-DD).
- * @property {'gasto'|'ingreso'|'aporte'} tipo
+ * @property {'gasto'|'ingreso'|'aporte'|'transferencia'} tipo
  * @property {string} descripcion
  * @property {number} monto
- * @property {'ingreso'|'egreso'} direccion
+ * @property {'ingreso'|'egreso'|'neutro'} direccion  'neutro' (MC.17c) es un
+ *   traslado interno: no suma ni resta, se pinta sin signo ni color.
  * @property {string} icono        Id de símbolo del sprite.
  * @property {string|null} cuentaId
- * @property {'gastos'|'compromisos'|'ingresos'|'ahorro'} dominio  Sección dueña
- *   del movimiento (TX.8b): colorea la teja del ícono en la vista completa
+ * @property {string} [cuentaOrigenId]   Solo en tipo 'transferencia' (MC.17c).
+ * @property {string} [cuentaDestinoId]  Solo en tipo 'transferencia' (MC.17c).
+ * @property {'gastos'|'compromisos'|'ingresos'|'ahorro'|'tesoreria'} dominio  Sección
+ *   dueña del movimiento (TX.8b): colorea la teja del ícono en la vista completa
  *   (`cat-teja[data-dom]`, ADR 025 D1/D3), igual que el resto de la app.
  */
 
@@ -111,20 +114,50 @@ export function movimientosDesdeAportes(aportes) {
 }
 
 /**
- * Combina y ordena (más reciente primero) los movimientos de las 3 fuentes.
+ * Normaliza `S.transferencias` a Movimiento (MC.17c). Una transferencia es un
+ * traslado interno, no un ingreso ni un gasto (invariante de MC.17, ver
+ * `contexto/mis-cuentas.md`): dirección 'neutro' (sin signo, sin color), una
+ * sola fila por transferencia. La descripción "Origen → Destino" se arma en
+ * la vista (`view.js`), no acá: los nombres de cuenta pueden cambiar sin que
+ * eso invalide este historial derivado (mismo criterio que `cuentaId` en las
+ * otras fuentes, resuelto en vivo con `_nombreCuenta`).
+ *
+ * @param {import('../../core/state.js').Transferencia[]} transferencias
+ * @returns {Movimiento[]}
+ */
+export function movimientosDesdeTransferencias(transferencias) {
+  if (!Array.isArray(transferencias)) return [];
+  return transferencias.map(t => ({
+    id:              t.id,
+    fecha:           t.fecha,
+    tipo:            'transferencia',
+    descripcion:     '',
+    monto:           t.monto,
+    direccion:       'neutro',
+    icono:           'i-transferencia',
+    cuentaId:        null,
+    cuentaOrigenId:  t.cuentaOrigenId,
+    cuentaDestinoId: t.cuentaDestinoId,
+    dominio:         'tesoreria',
+  }));
+}
+
+/**
+ * Combina y ordena (más reciente primero) los movimientos de las 4 fuentes.
  * A igualdad de fecha, el orden entre movimientos de tipos distintos no está
  * garantizado (no hay hora de creación en el dato de origen); dentro de un
  * mismo tipo se conserva el orden de inserción de su colección.
  *
- * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, categoriasPersonalizadas?: unknown }} fuentes
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown, categoriasPersonalizadas?: unknown }} fuentes
  * @param {number} [limite=5]
  * @returns {Movimiento[]}
  */
-export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, categoriasPersonalizadas } = {}, limite = 5) {
+export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, transferencias, categoriasPersonalizadas } = {}, limite = 5) {
   const todos = [
     ...movimientosDesdeGastos(gastos, categoriasPersonalizadas),
     ...movimientosDesdeIngresosPuntuales(ingresosPuntuales),
     ...movimientosDesdeAportes(aportes),
+    ...movimientosDesdeTransferencias(transferencias),
   ];
   return todos
     .filter(m => typeof m.fecha === 'string' && m.fecha)
@@ -133,10 +166,10 @@ export function movimientosRecientes({ gastos, ingresosPuntuales, aportes, categ
 }
 
 /**
- * Historial completo (TX.8b): las 3 fuentes combinadas y ordenadas por fecha
+ * Historial completo (TX.8b): las 4 fuentes combinadas y ordenadas por fecha
  * descendente, sin límite. Vista completa de Movimientos en ruta propia.
  *
- * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown }} fuentes
+ * @param {{ gastos?: unknown, ingresosPuntuales?: unknown, aportes?: unknown, transferencias?: unknown }} fuentes
  * @returns {Movimiento[]}
  */
 export function movimientosCompletos(fuentes = {}) {

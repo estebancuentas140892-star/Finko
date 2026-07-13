@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(movimientos): MC.17c transferencia en el ledger de Movimientos, tipo neutro · 2026-07-12
+
+Cierra **MC.17c** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), tercera rebanada de MC.17. Sobre la lógica y la UI ya cerradas en MC.17a/b: ahora una transferencia queda visible en el historial.
+
+**Qué cambió:** `movimientosDesdeTransferencias(transferencias)` (nuevo, `modules/dominio/movimientos/logic.js`) normaliza `S.transferencias` a `Movimiento` con `direccion: 'neutro'` (sin signo, sin color), `tipo: 'transferencia'`, `dominio: 'tesoreria'`, ícono `i-transferencia`, y guarda `cuentaOrigenId`/`cuentaDestinoId` en el objeto en vez de una descripción ya armada, porque esta función pura recibe solo `transferencias` (no `cuentas`). El typedef `Movimiento` se extiende con esos 3 valores nuevos. `movimientosRecientes()`/`movimientosCompletos()` combinan ahora 4 fuentes en vez de 3. En `view.js`, `_descripcionMovimiento()` (nuevo) arma "Origen → Destino" en vivo con `_nombreCuenta()` (mismo criterio que el resto del historial: el nombre de cuenta no se congela en el momento de la derivación). `renderActividadReciente()` y `_renderMovimientoItem()` (los 2 sitios de render, panel de Inicio y vista completa `#movimientos`) dejan de asumir el signo binario `esIngreso ? '+' : '-'`: con `direccion === 'neutro'` el signo es `''`, reutilizando la clase de color de egreso (ya neutra por defecto, sin CSS nuevo). `_TIPO_LABEL` suma `transferencia: 'Transferencia'` para el subtítulo. `'transferencias'` se agregó a `_SECCIONES_MOVIMIENTOS` (memo, `view.js`) y a `_SECCIONES_FUENTE` (guard de `state:change`, `movimientos/index.js`): guardar una transferencia (MC.17b) re-pinta ambas vistas solo. Símbolo de sprite nuevo `i-transferencia` (doble flecha, trazo): draft en `assets/svg/iconos/simbolos/transferencia.svg`, publicado con `scripts/sync-sprite.py` (BR.2).
+
+**Archivos tocados:** `modules/dominio/movimientos/logic.js`, `modules/dominio/movimientos/view.js`, `modules/dominio/movimientos/index.js`, `assets/svg/iconos/simbolos/transferencia.svg` (nuevo), `index.html` (sprite regenerado, símbolo `i-transferencia`), `service-worker.js` (v363→v364), `tests/unit/movimientos.test.js` (12 tests nuevos), `docs/BOARD.md`, `docs/HANDOFF.md`, `docs/contexto/mis-cuentas.md`.
+
+**Verificación:** 2456/2456 unit verdes (normalización de la fuente nueva, combinación de las 4 fuentes, render sin signo/color en ambos sitios, dominio "tesoreria" en la teja, subtítulo "Transferencia"). **Nota de proceso:** el Browser pane interactivo no respondió de forma estable esta sesión (mismo patrón intermitente de sesiones anteriores); la verificación se apoyó en la suite unitaria sobre happy-dom, que ejercita el mismo `render.js`/DOM real de producción, sin revisión visual manual en Chromium.
+
+**Podría afectar:** nada fuera del ledger; la transferencia sigue sin tocar `S.gastos` (invariante de MC.17 verificado desde MC.17a), así que Análisis, Límites de gasto, resumen semanal y monitor de renta no la ven, como se diseñó.
+
+---
+
 ### feat(tesoreria): MC.17b formulario + acción de transferir entre cuentas · 2026-07-12
 
 Cierra **MC.17b** (`docs/BOARD.md`, iniciativa "Mis Cuentas v2"), segunda rebanada de MC.17. UI sobre la lógica ya cerrada en MC.17a.

@@ -14,6 +14,7 @@ import {
   movimientosDesdeGastos,
   movimientosDesdeIngresosPuntuales,
   movimientosDesdeAportes,
+  movimientosDesdeTransferencias,
   movimientosRecientes,
   movimientosCompletos,
 } from '../../modules/dominio/movimientos/logic.js';
@@ -36,6 +37,11 @@ const ingresoPuntual = (overrides = {}) => ({
 
 const aporte = (overrides = {}) => ({
   id: 'a1', monto: 100_000, fecha: '2026-07-02', ...overrides,
+});
+
+const transferencia = (overrides = {}) => ({
+  id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', monto: 200_000,
+  fecha: '2026-07-06', ...overrides,
 });
 
 // ── movimientosDesdeGastos() ──────────────────────────────────────
@@ -163,16 +169,40 @@ describe('movimientosDesdeAportes()', () => {
   });
 });
 
+// ── movimientosDesdeTransferencias() (MC.17c) ─────────────────────
+
+describe('movimientosDesdeTransferencias()', () => {
+  it('normaliza una transferencia a movimiento neutro, sin descripción propia', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia()]);
+    expect(m).toMatchObject({
+      id: 't1', tipo: 'transferencia', monto: 200_000, direccion: 'neutro',
+      icono: 'i-transferencia', cuentaId: null,
+      cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', fecha: '2026-07-06',
+    });
+  });
+
+  it('tiene dominio "tesoreria"', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia()]);
+    expect(m.dominio).toBe('tesoreria');
+  });
+
+  it('argumento no-array devuelve []', () => {
+    expect(movimientosDesdeTransferencias(null)).toEqual([]);
+    expect(movimientosDesdeTransferencias(undefined)).toEqual([]);
+  });
+});
+
 // ── movimientosRecientes() ────────────────────────────────────────
 
 describe('movimientosRecientes()', () => {
-  it('combina las 3 fuentes ordenadas por fecha descendente', () => {
+  it('combina las 4 fuentes ordenadas por fecha descendente', () => {
     const r = movimientosRecientes({
       gastos: [gasto({ fecha: '2026-07-01' })],
       ingresosPuntuales: [ingresoPuntual({ fecha: '2026-07-05' })],
       aportes: [aporte({ fecha: '2026-07-03' })],
+      transferencias: [transferencia({ fecha: '2026-07-06' })],
     });
-    expect(r.map(m => m.fecha)).toEqual(['2026-07-05', '2026-07-03', '2026-07-01']);
+    expect(r.map(m => m.fecha)).toEqual(['2026-07-06', '2026-07-05', '2026-07-03', '2026-07-01']);
   });
 
   it('respeta el límite pasado', () => {
@@ -209,6 +239,8 @@ describe('renderActividadReciente()', () => {
     S.gastos = [];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
   });
 
   it('no-op si el contenedor no existe', () => {
@@ -242,6 +274,16 @@ describe('renderActividadReciente()', () => {
     renderActividadReciente();
     expect(elPanel().innerHTML).toContain('Aporte al fondo de emergencia');
     expect(elPanel().innerHTML).toContain('-$100.000');
+  });
+
+  it('visible con una transferencia (MC.17c): "Origen → Destino" sin signo', () => {
+    S.transferencias = [transferencia()];
+    renderActividadReciente();
+    const html = elPanel().innerHTML;
+    expect(html).toContain('Nequi → Bancolombia');
+    expect(html).toContain('$200.000');
+    expect(html).not.toContain('+$200.000');
+    expect(html).not.toContain('-$200.000');
   });
 
   it('muestra como máximo 5 movimientos aunque haya más', () => {
@@ -316,6 +358,7 @@ describe('renderMovimientosCompletos()', () => {
     S.gastos = [];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
     S.cuentas = [];
   });
 
@@ -371,6 +414,34 @@ describe('renderMovimientosCompletos()', () => {
     renderMovimientosCompletos();
     expect(elLista().querySelector('.cat-teja[data-dom="compromisos"]')).not.toBeNull();
   });
+
+  // ── MC.17c: transferencia como fila neutra ──────────────────────
+
+  it('una transferencia se muestra como "Origen → Destino", sin signo ni clase de ingreso', () => {
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.transferencias = [transferencia()];
+    renderMovimientosCompletos();
+    const html = elLista().innerHTML;
+    expect(html).toContain('Nequi → Bancolombia');
+    expect(html).toContain('$200.000');
+    expect(html).not.toContain('+$200.000');
+    expect(html).not.toContain('-$200.000');
+    expect(elLista().querySelector('.list-item__amount--ingreso')).toBeNull();
+  });
+
+  it('la teja de una transferencia lleva el dominio "tesoreria"', () => {
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.transferencias = [transferencia()];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.cat-teja[data-dom="tesoreria"]')).not.toBeNull();
+  });
+
+  it('el subtítulo de una transferencia dice "Transferencia" (sin cuenta redundante)', () => {
+    S.cuentas = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+    S.transferencias = [transferencia()];
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.list-item__subtitle').textContent).toContain('Transferencia');
+  });
 });
 
 // ── PAGINACIÓN DE renderMovimientosCompletos() (PERF.1) ───────────
@@ -390,6 +461,7 @@ describe('renderMovimientosCompletos() - paginación por lotes', () => {
     S.gastos = [];
     S.ingresosPuntuales = [];
     S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
     S.cuentas = [];
   });
 

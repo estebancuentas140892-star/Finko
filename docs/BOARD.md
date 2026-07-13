@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-12 (MC.17b cierra formulario + acción de transferir; MC.17a y MC.18e cerraron antes el mismo día).
+> Última actualización: 2026-07-12 (MC.17c cierra transferencia en el ledger de Movimientos; MC.17a/b y MC.18e cerraron antes el mismo día).
 
 ---
 
@@ -102,14 +102,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > **MC.17b cerrada el 2026-07-12** (formulario + acción de transferir, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): botón de entrada "Transferir entre cuentas" (`#tesoreria-transferir`, visible solo con 2+ cuentas activas) + modal `#modal-transferencia` con automatización por conteo (2 cuentas → widget "De A a B" con botón invertir; 3+ → dos selectores independientes origen/destino). La acción aplica el traslado atómico de MC.17a, confirma sobregiro si el saldo no alcanza (mismo patrón "Registrar igual" que ya usa Deudas), guarda el historial en `S.transferencias` y cierra el modal. 13 tests unitarios + 4 E2E nuevos, SW v363.
 
-#### MC.17c - Transferencia en el ledger de Movimientos (tipo neutro)
-- Prioridad  : media-alta
-- Estado     : pendiente (depende de MC.17a)
-- Objetivo   : `movimientosDesdeTransferencias(transferencias, cuentas)` en `movimientos/logic.js`; extender el typedef `Movimiento` con `direccion: 'neutro'` y `tipo: 'transferencia'`, `dominio: 'tesoreria'`; una sola fila "Origen → Destino" sin signo (ni `+` ni `−`), color neutro. Ajustar los 2 sitios de render (`renderActividadReciente`, `_renderMovimientoItem`) que hoy asumen `esIngreso ? '+' : '-'`, y sumar `'transferencias'` a `_SECCIONES_MOVIMIENTOS` (memo) y al guard de `state:change` de `tesoreria/index.js`. **Necesita símbolo de sprite nuevo** (no existe `i-transfer`/`i-swap`): draft vía `scripts/sync-sprite.py` (BR.2), Esteban puede sobrescribirlo (ADR 026). Verificable en la app: la transferencia aparece en `#movimientos` sin signo, no altera Análisis.
-- Secciones  : Movimientos (ledger), Mis cuentas
-- Archivos   : `modules/dominio/movimientos/logic.js`, `modules/dominio/movimientos/view.js`, `assets/svg/iconos/simbolos/` (símbolo nuevo), `tests/unit/movimientos.test.js`
-- Depende de : MC.17a
-- Modelo     : Sonnet 5 - Alto (ledger + render neutro)
+> **MC.17c cerrada el 2026-07-12** (transferencia en el ledger de Movimientos, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)): `movimientosDesdeTransferencias()` nuevo en `movimientos/logic.js`, fila neutra "Origen → Destino" sin signo ni color en `renderActividadReciente()` y `_renderMovimientoItem()`, símbolo de sprite nuevo `i-transferencia`. 12 tests unitarios nuevos, SW v364.
 
 #### MC.17d - GMF del retiro (opcional, decisión financiera CO)
 - Prioridad  : media
