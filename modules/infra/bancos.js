@@ -31,13 +31,21 @@ const CLASE_EMOJI = {
  * evolucionado): todos los consumidores y el CSS existentes siguen válidos.
  *
  * @param {string} bancoId - valor guardado en cuenta.banco.
+ * @param {string|null} [icono] - CAT.2e: `cuenta.icono` elegido con el picker
+ *   compartido para el banco "Otro" (que no tiene `simbolo` propio en
+ *   `BANCOS_CO`). Solo se aplica cuando `bancoId === 'Otro'` Y el valor tiene
+ *   forma de id de sprite (`c-avion`, nunca un emoji): datos viejos de antes
+ *   de CAT.2e guardaban aquí un emoji que nadie leía (`_iconoPorBanco()`,
+ *   retirado), y un `<use href="#💚">` roto no debe colarse por ese dato huérfano.
  * @returns {string} HTML del span `.bank-avatar`.
  */
-export function bancoAvatar(bancoId) {
+export function bancoAvatar(bancoId, icono = null) {
   const banco = BANCOS_CO.find(b => b.id === bancoId) ?? null;
+  const esSpriteId = typeof icono === 'string' && /^[a-z]-[a-z0-9-]+$/.test(icono);
+  const marca = (banco?.id === 'Otro' && esSpriteId) ? { ...banco, simbolo: icono } : banco;
   // MK.2: el render de la teja vive en infra/marcas.js (una sola fuente);
   // con banco desconocido, tejaMarca(null) devuelve la teja gris con "?".
-  return tejaMarca(banco);
+  return tejaMarca(marca);
 }
 
 /**

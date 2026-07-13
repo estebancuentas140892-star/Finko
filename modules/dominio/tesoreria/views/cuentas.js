@@ -12,7 +12,8 @@ import { f, hoy, esc as _esc } from '../../../infra/utils.js';
 import { icon, emptyArt } from '../../../infra/icons.js';
 import { bancoAvatar, bancoClase } from '../../../infra/bancos.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../../infra/render.js';
-import { BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
+import { BANCOS_CO, TIPOS_LLAVE, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
+import { renderIconoPicker } from '../../../infra/icon-picker.js';
 import {
   cuentasActivas,
   calcularTotalCuentas,
@@ -176,7 +177,7 @@ function _renderCuentaItem(cuenta, oculto) {
   return `
     <article class="cuenta-card" data-id="${_esc(cuenta.id)}">
       <div class="cuenta-card__top">
-        <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco)}</div>
+        <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco, cuenta.icono)}</div>
         <div class="cuenta-card__info">
           <p class="cuenta-card__nombre">${nombre}</p>
           <p class="cuenta-card__tipo">${_esc(subtitulo)}</p>
@@ -279,6 +280,10 @@ export function renderFormCuenta() {
             ${bancoItems}
           </ul>
         </div>
+      </div>
+
+      <div class="form-group" id="form-group-icono" hidden>
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'cuenta-icono', label: 'Ícono' })}
       </div>
 
       <div class="form-group" id="form-group-tipo" hidden>
@@ -464,9 +469,10 @@ function _renderGMFInsight(nudge) {
  * BANCOS_CO, devuelve una teja generica con "?" y color gris.
  *
  * @param {string} bancoId - valor guardado en cuenta.banco.
+ * @param {string|null} [icono] - `cuenta.icono` elegido para el banco "Otro" (CAT.2e).
  * @returns {string} HTML span de la teja.
  */
-function _bankAvatarHtml(bancoId) {
-  return bancoAvatar(bancoId);
+function _bankAvatarHtml(bancoId, icono = null) {
+  return bancoAvatar(bancoId, icono);
 }
 

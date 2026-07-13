@@ -37,7 +37,7 @@ export function renderBotonTransferir() {
 function _filaParCuenta(cuenta) {
   return `
       <div class="transferir-par__cuenta">
-        ${bancoAvatar(cuenta.banco)}
+        ${bancoAvatar(cuenta.banco, cuenta.icono)}
         <div class="transferir-par__info">
           <span class="transferir-par__nombre">${_esc(cuenta.nombre)}</span>
           <span class="transferir-par__saldo">${f(cuenta.saldo ?? 0)}</span>

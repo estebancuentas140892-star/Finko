@@ -56,6 +56,45 @@ describe('bancoAvatar - teja de marca (ADR 025)', () => {
   });
 });
 
+// ── CAT.2e: ícono elegido por el usuario para el banco "Otro" ────
+
+describe('bancoAvatar - ícono elegido para "Otro" (CAT.2e)', () => {
+  it('con banco "Otro" y un ícono, renderiza el glifo elegido en vez de las iniciales', () => {
+    const html = bancoAvatar('Otro', 'c-avion');
+    expect(html).toContain('<use href="#c-avion"/>');
+    expect(html).not.toContain('>?<');
+  });
+
+  it('con banco "Otro" sin ícono, conserva el fallback de iniciales "?"', () => {
+    const html = bancoAvatar('Otro', null);
+    expect(html).toContain('?');
+    expect(html).not.toContain('<use');
+  });
+
+  it('un banco con glifo oficial (no "Otro") ignora el ícono aunque se pase uno', () => {
+    // Nequi ya tiene su propio simbolo (b-nequi); un `icono` legado no debe
+    // pisarlo (protege contra datos viejos del campo `cuenta.icono`).
+    const html = bancoAvatar('Nequi', 'c-avion');
+    expect(html).toContain('<use href="#b-nequi"/>');
+    expect(html).not.toContain('c-avion');
+  });
+
+  it('banco desconocido con ícono no aplica el ícono (solo "Otro" lo admite)', () => {
+    const html = bancoAvatar('Banco Inventado', 'c-avion');
+    expect(html).toContain('?');
+    expect(html).not.toContain('c-avion');
+  });
+
+  it('un emoji legado en "Otro" (dato de antes de CAT.2e) no se trata como símbolo, cae a "?"', () => {
+    // _iconoPorBanco() (retirado) guardaba un emoji en cuenta.icono para
+    // TODOS los bancos; para 'Otro' devolvía el fallback '🏦'. Ese dato viejo
+    // no tiene forma de id de sprite y no debe romper un <use href="#🏦">.
+    const html = bancoAvatar('Otro', '🏦');
+    expect(html).not.toContain('<use');
+    expect(html).toContain('?');
+  });
+});
+
 describe('BANCOS_CO - integridad del campo simbolo', () => {
   it('todo simbolo declarado apunta a un symbol del sprite (prefijo b- o i-)', () => {
     for (const b of BANCOS_CO) {

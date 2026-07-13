@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.2d: selector de ícono en Deudas, cuarto consumidor).
+> Última actualización: 2026-07-13 (CAT.2e: selector de ícono en Mis cuentas, quinto consumidor).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.2d cerrada** el 2026-07-13 (Deudas migrada como cuarto consumidor del picker compartido, categoría "Otra"/"Otro"; ver Transversal abajo). A diferencia de Gastos/Metas/Apartados, esta rebanada agregó una capacidad nueva (`compromiso.icono`), no solo cambió la UI de un campo que ya existía; propagado también al checklist de "Distribuir mi ingreso" para no mostrar un ícono distinto al de la lista de Deudas. Quedan **CAT.2e** (Cuentas) y **CAT.2f** (Fijo/Calendario). Siguiente tarjeta sugerida: **CAT.2e** (Cuentas), misma naturaleza que CAT.2d acaba de resolver (agrega elección de ícono al banco "Otro"); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
+_(Sin tarjeta activa: **CAT.2e cerrada** el 2026-07-13 (Mis cuentas migrada como quinto consumidor del picker compartido, banco "Otro"; ver Transversal abajo). Hallazgo real de esta rebanada: `cuenta.icono` ya existía en el schema pero era dato muerto (nada lo leía); se redefinió y `bancoAvatar()` ahora lo lee de verdad, con guarda de forma contra el emoji legado. Queda solo **CAT.2f** (Fijo/Calendario), la más grande de la iniciativa: requiere análisis previo (decidir si Fijo adopta categorías personalizadas completas o solo un ícono para "Otro") y coordina con **CAT.1** (taxonomía Gastos↔Fijos).)_
 
 ---
 
@@ -448,13 +448,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 > **CAT.2d CERRADA el 2026-07-13** (Deudas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): a diferencia de Gastos/Metas/Apartados, esta rebanada AGREGÓ una capacidad nueva en vez de reemplazar un campo de ícono existente: hoy "Otra" (entidad) / "Otro" (personal) caía al ícono fijo `c-otros`. `compromiso.icono` nuevo, campo opcional sin bump de schema, siempre explícito (`null` o id del sprite) para sobrevivir el merge shallow de `editar()`. `renderFormDeuda()` agrega el grupo del picker, oculto salvo categoría "otra"; `_wireIconoOtraCategoria()` (nueva en `index.js`) alterna la visibilidad. `lista.js` resuelve `compromiso.icono` antes que el ícono fijo por categoría. Propagado también al checklist de "Distribuir mi ingreso" (`tesoreria/logic/distribucion.js`, `views/distribucion.js`) para consistencia visual entre secciones. 14 tests unitarios nuevos (`compromisos.test.js`) + 2 en `tesoreria.test.js` + 2 E2E nuevos. 2577/2577 unit + 188/188 E2E completos + lint verdes. SW v377→v378.
 
-#### CAT.2e - Picker de icono en Cuentas (banco "Otro")
-- Prioridad  : media
-- Estado     : pendiente (independiente)
-- Objetivo   : mismo tipo de trabajo que CAT.2d pero en Mis cuentas: hoy el banco "Otro" en `BANCOS_CO` cae al fallback de iniciales "?" vía `tejaMarca()`, sin ícono elegible por el usuario. Agregar la capacidad (campo nuevo en `Cuenta`, probablemente opcional sin bump) + ofrecer el picker cuando se elige "Otro" en el selector de banco.
-- Secciones  : Mis cuentas (`tesoreria/views/cuentas.js`, `tesoreria/logic/cuentas.js`)
-- Depende de : nada
-- Modelo     : Sonnet 5 - Alto
+> **CAT.2e CERRADA el 2026-07-13** (Mis cuentas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): banco "Otro". Hallazgo real: `cuenta.icono` YA EXISTÍA en el schema pero era dato muerto (`_iconoPorBanco()` asignaba un emoji que ningún render leía). Se retiró esa función y se redefinió el campo (id de sprite del catálogo compartido, solo con `banco==='Otro'`, siempre explícito). `bancoAvatar(bancoId, icono)` gana el segundo parámetro con una guarda de forma (`/^[a-z]-[a-z0-9-]+$/`) para no romperse con el emoji legado de cuentas viejas; los 6 call sites de la app pasan `cuenta.icono`. Form singleton (como Metas): `wireIconoPicker` una vez, `_toggleCamposPorClase()` alterna visibilidad, `_editarCuenta()` prellena con `setIconoPickerValor`. 12 tests unitarios nuevos (`tesoreria.test.js` + `bancos.test.js`) + 2 E2E nuevos. 2589/2589 unit + 190/190 E2E completos + lint verdes. SW v378→v379. **Cierra la iniciativa CAT.2 salvo CAT.2f** (Fijo/Calendario, requiere análisis previo, ver abajo).
 
 #### CAT.2f - Picker de icono en Gasto fijo / Calendario (requiere análisis previo)
 - Prioridad  : media

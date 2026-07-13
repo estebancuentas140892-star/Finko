@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(transversal): CAT.2e selector de ícono en Mis cuentas, quinto consumidor · 2026-07-13
+
+Cierra **CAT.2e** (`docs/BOARD.md`), quinta y última rebanada nueva del picker de ícono compartido: **Mis cuentas** migrada (banco "Otro"). Misma naturaleza que CAT.2d (agrega elección de ícono, no reemplaza un campo existente), con un hallazgo adicional real: `cuenta.icono` ya existía en el schema, pero era **dato muerto**: `_iconoPorBanco()` asignaba un emoji a toda cuenta nueva (no solo "Otro"), y ningún render lo leía (`bancoAvatar()`/`tejaMarca()` resolvían la teja únicamente desde `BANCOS_CO`).
+
+**Qué cambió:** (1) `_iconoPorBanco()` retirada; `normalizarCuenta()` ahora guarda `cuenta.icono` solo cuando `banco==='Otro'` y el valor elegido está en `ICONOS_CATEGORIA_PERSONALIZADA` (protege contra manipulación del DOM), siempre explícito (`null` si no aplica, nunca ausente, mismo patrón que `compromiso.icono` de CAT.2d para sobrevivir el merge shallow de `editar()`). (2) `infra/bancos.js`: `bancoAvatar(bancoId, icono)` gana el segundo parámetro; solo lo aplica como `simbolo` de la teja cuando `bancoId==='Otro'` Y el valor tiene forma de id de sprite (`/^[a-z]-[a-z0-9-]+$/`). Esta guarda es necesaria porque **cuentas ya guardadas antes de esta rebanada tienen un emoji en `icono`** (dato legado de `_iconoPorBanco()`), y sin validarlo se generaría un `<use href="#💚">` roto. (3) Los **6 call sites** de `bancoAvatar` en la app (`infra/cuenta-helper.js` ×3, `infra/render.js`, `tesoreria/views/transferencias.js`, `tesoreria/views/cuentas.js`) pasan `cuenta.icono`. (4) `tesoreria/views/cuentas.js`: `renderFormCuenta()` agrega el grupo `#form-group-icono` con el picker, oculto por defecto. (5) `tesoreria/acciones/cuentas.js`: el form de cuenta es un **singleton reusado** (como Metas, no como Gastos/Deudas/Apartados): `wireIconoPicker` se llama una sola vez en `inyectarFormCuenta()`; `_toggleCamposPorClase()` alterna la visibilidad del grupo según la clase del banco elegido (`clase==='otro'`); `_resetBankPicker()` llama `resetIconoPicker`; `_editarCuenta()` usa `setIconoPickerValor` para prellenar el ícono guardado.
+
+**Archivos tocados:** `modules/infra/bancos.js` (`bancoAvatar`), `modules/infra/cuenta-helper.js` (3 call sites), `modules/infra/render.js` (1 call site), `modules/dominio/tesoreria/logic/cuentas.js` (`normalizarCuenta`, retira `_iconoPorBanco`), `modules/dominio/tesoreria/views/cuentas.js` (`renderFormCuenta`, `_renderCuentaItem`, `_bankAvatarHtml`), `modules/dominio/tesoreria/views/transferencias.js` (1 call site), `modules/dominio/tesoreria/acciones/cuentas.js` (`_toggleCamposPorClase`, `inyectarFormCuenta`, `_resetBankPicker`, `_editarCuenta`), `modules/core/state.js` (docstring `Cuenta.icono`), `tests/unit/tesoreria.test.js` (12 tests nuevos, 2 actualizados), `tests/unit/bancos.test.js` (5 tests nuevos), `tests/e2e/smoke.test.js` (2 tests nuevos), `service-worker.js` (v378→v379).
+
+**Verificación:** 2589/2589 unit + **190/190 E2E completos** + lint verdes.
+
+**Podría afectar:** solo la UI de Mis cuentas al elegir banco "Otro". Cuentas existentes con banco "Otro" y un emoji legado en `icono` (de antes de esta rebanada) siguen mostrando el fallback de iniciales "?", sin romperse ni mostrar un glifo inválido (guard de forma en `bancoAvatar`). Cuentas de cualquier otro banco no cambian de teja.
+
+---
+
 ### feat(transversal): CAT.2d selector de ícono en Deudas, cuarto consumidor · 2026-07-13
 
 Cierra **CAT.2d** (`docs/BOARD.md`), cuarta rebanada del picker de ícono compartido: **Deudas** migrada (categoría "Otra"/"Otro"). A diferencia de los 3 consumidores previos (Gastos, Metas, Apartados), esta rebanada AGREGA una capacidad nueva en vez de reemplazar un campo de ícono existente: hoy "Otra" (entidad) / "Otro" (personal) cae al ícono fijo `c-otros`, sin elección del usuario.

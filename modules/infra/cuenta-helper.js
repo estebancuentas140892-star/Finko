@@ -49,7 +49,7 @@ export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De
         <input type="radio" name="${_esc(name)}" class="cuenta-sel__radio"
                value="${_esc(c.id)}" ${c.id === sel ? 'checked' : ''} />
         <span class="cuenta-picker__main">
-          ${bancoAvatar(c.banco)}
+          ${bancoAvatar(c.banco, c.icono)}
           <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
         </span>
         <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
@@ -284,7 +284,7 @@ function _mostrarPickerCuenta(activas, contexto) {
               data-cuenta-id="${_esc(c.id)}"
               aria-label="Usar cuenta ${_esc(c.nombre)}, saldo ${f(c.saldo ?? 0)}">
         <span class="cuenta-picker__main">
-          ${bancoAvatar(c.banco)}
+          ${bancoAvatar(c.banco, c.icono)}
           <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
         </span>
         <span class="cuenta-picker__saldo">${f(c.saldo ?? 0)}</span>
@@ -471,7 +471,7 @@ function _mostrarPickerMultiCuenta(activas, monto, contexto, preferidaId = null,
         <input type="checkbox" class="cuenta-multi__check"
                data-cuenta-id="${_esc(c.id)}" ${preSel.has(c.id) ? 'checked' : ''} />
         <span class="cuenta-picker__main">
-          ${bancoAvatar(c.banco)}
+          ${bancoAvatar(c.banco, c.icono)}
           <span class="cuenta-picker__nombre">${_esc(c.nombre)}</span>
         </span>
         <span class="cuenta-multi__cifras">

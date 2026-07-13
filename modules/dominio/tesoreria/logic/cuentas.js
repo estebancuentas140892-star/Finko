@@ -6,7 +6,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
-import { GMF, BANCOS_CO, TIPOS_LLAVE } from '../../../core/constants.js';
+import { GMF, BANCOS_CO, TIPOS_LLAVE, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 
 /**
  * Devuelve la clase de una entidad bancaria ('banco' | 'billetera' | 'efectivo' | 'otro').
@@ -239,12 +239,19 @@ export function normalizarCuenta(datos) {
   // Para el banco "Efectivo" + tipo "Efectivo" evitamos duplicar.
   const nombreUsuario = datos.nombre?.trim();
   const nombre = nombreUsuario || _autoNombre(banco, tipo);
+  // CAT.2e: 'Otro' no tiene glifo propio en BANCOS_CO; el usuario puede elegir
+  // uno del picker compartido. Siempre explícito (null si no aplica), nunca
+  // ausente, para que sobreviva el merge shallow de `editar()` (mismo patrón
+  // que `compromiso.icono`, CAT.2d). Valida contra el catálogo por si el DOM
+  // fue manipulado.
+  const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);
+  const icono = (banco === 'Otro' && iconoValido) ? datos.icono : null;
   return {
     nombre,
     banco,
     tipo,
     saldo: Number(datos.saldo) || 0,
-    icono: datos.icono?.trim() || _iconoPorBanco(banco),
+    icono,
     activa: true,
     cuotaManejo: parseCuotaManejo(datos),
     // El efectivo nunca está sujeto al GMF (no hay movimiento financiero).
@@ -308,24 +315,6 @@ function _autoNombre(banco, tipo) {
   // Evitar redundancia "Efectivo Efectivo".
   if (banco.toLowerCase() === tipo.toLowerCase()) return banco;
   return `${banco} ${tipo}`;
-}
-
-/**
- * Devuelve un emoji representativo según el banco/billetera.
- * Fallback general: '🏦'.
- *
- * @param {string} banco
- * @returns {string}
- */
-function _iconoPorBanco(banco) {
-  const mapa = {
-    Nequi: '💚',
-    Daviplata: '🟡',
-    Nubank: '💜',
-    'Lulo Bank': '🟠',
-    Efectivo: '💵',
-  };
-  return mapa[banco] ?? '🏦';
 }
 
 // ── GMF / 4x1000 ─────────────────────────────────────────────────

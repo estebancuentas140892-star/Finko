@@ -233,14 +233,29 @@ describe('normalizarCuenta()', () => {
     expect(normalizarCuenta(datosFormValidos).activa).toBe(true);
   });
 
-  it('asigna emoji según banco si no viene icono', () => {
-    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Nequi' });
-    expect(result.icono).toBe('💚');
+  it('CAT.2e: un banco con glifo propio (no "Otro") nunca guarda ícono, aunque venga en los datos', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Nequi', icono: 'c-avion' });
+    expect(result.icono).toBeNull();
   });
 
-  it('usa emoji genérico para banco no mapeado', () => {
-    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Bancolombia' });
-    expect(result.icono).toBe('🏦');
+  it('CAT.2e: banco "Bancolombia" tampoco guarda ícono (ya tiene su glifo oficial)', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Bancolombia', icono: 'c-avion' });
+    expect(result.icono).toBeNull();
+  });
+
+  it('CAT.2e: banco "Otro" con un ícono válido del catálogo lo guarda', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Otro', icono: 'c-avion' });
+    expect(result.icono).toBe('c-avion');
+  });
+
+  it('CAT.2e: banco "Otro" sin ícono elegido queda null (no obligatorio)', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Otro' });
+    expect(result.icono).toBeNull();
+  });
+
+  it('CAT.2e: banco "Otro" con un valor fuera del catálogo (manipulación del DOM) se ignora', () => {
+    const result = normalizarCuenta({ ...datosFormValidos, banco: 'Otro', icono: 'algo-inventado' });
+    expect(result.icono).toBeNull();
   });
 
   it('no incluye id ni fechaCreacion (los asigna crud.js)', () => {
@@ -873,6 +888,41 @@ describe('renderFormCuenta() - aviso de cuota de manejo (MC.15c)', () => {
   });
 });
 
+// ── CAT.2e: picker de ícono para el banco "Otro" ──────────────────
+
+describe('renderFormCuenta() - picker de ícono para "Otro" (CAT.2e)', () => {
+  it('incluye el grupo del picker, oculto por defecto', () => {
+    const html = renderFormCuenta();
+    expect(html).toMatch(/id="form-group-icono"[^>]*hidden/);
+    expect(html).toContain('data-icono-picker="cuenta-icono"');
+  });
+
+  it('elegir "Otro" en el bank-picker revela el grupo del ícono; volver a un banco con glifo lo oculta', () => {
+    document.body.innerHTML = `
+      <div class="app-shell"></div>
+      <div class="modal-overlay" id="modal-cuenta" aria-hidden="true">
+        <div class="modal">
+          <h2 class="modal__title">x</h2>
+          <div id="modal-cuenta-body"></div>
+        </div>
+      </div>`;
+    initAccionesCuentas();
+    inyectarFormCuenta();
+
+    const bancoInput = document.querySelector('#form-cuenta [name="banco"]');
+    const grupoIcono = document.getElementById('form-group-icono');
+    expect(grupoIcono.hidden).toBe(true);
+
+    bancoInput.value = 'Otro';
+    bancoInput.dispatchEvent(new Event('change'));
+    expect(grupoIcono.hidden).toBe(false);
+
+    bancoInput.value = 'Nequi';
+    bancoInput.dispatchEvent(new Event('change'));
+    expect(grupoIcono.hidden).toBe(true);
+  });
+});
+
 describe('renderFormCuenta() - bloque de datos de transferencia (MC.14)', () => {
   it('incluye el toggle y el fieldset oculto por defecto', () => {
     const html = renderFormCuenta();
@@ -978,6 +1028,20 @@ describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + c
     expect(el.querySelector('.cuenta-card__saldo').textContent).toBe('••••');
     expect(el.innerHTML).not.toContain('500.000');
     S.config.ocultarSaldo = false;
+  });
+
+  it('CAT.2e: banco "Otro" con ícono elegido lo muestra en la teja en vez de "?"', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Mi cuenta rara', banco: 'Otro', tipo: 'Otro', icono: 'c-avion' })];
+    renderListaCuentas();
+    const teja = document.getElementById('lista-tesoreria').querySelector('.cuenta-card__icon .bank-avatar');
+    expect(teja.innerHTML).toContain('#c-avion');
+  });
+
+  it('CAT.2e: banco "Otro" sin ícono elegido conserva el fallback de iniciales "?"', () => {
+    S.cuentas = [cuentaBase({ nombre: 'Mi cuenta rara', banco: 'Otro', tipo: 'Otro', icono: null })];
+    renderListaCuentas();
+    const teja = document.getElementById('lista-tesoreria').querySelector('.cuenta-card__icon .bank-avatar');
+    expect(teja.textContent).toBe('?');
   });
 });
 

@@ -36,7 +36,11 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  * @property {string} banco
  * @property {string} tipo            Tipo de cuenta (ver TIPOS_CUENTA).
  * @property {number} saldo           Saldo actual en COP.
- * @property {string} [icono]
+ * @property {string|null} [icono]    Opcional (CAT.2e). Id de símbolo del catálogo
+ *                                    compartido (`ICONOS_CATEGORIA_PERSONALIZADA`),
+ *                                    elegido con el picker solo cuando `banco==='Otro'`
+ *                                    (que no tiene glifo propio). `null` en cualquier
+ *                                    otro caso, nunca ausente.
  * @property {boolean} activa
  * @property {string} fechaCreacion   ISO 8601.
  * @property {CuotaManejo|null} [cuotaManejo]  Opcional (v5). Si está, el

@@ -3379,3 +3379,56 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
   });
 
 });
+
+// ── SUITE: Mis cuentas - picker de ícono para banco "Otro" (CAT.2e) ──────────
+
+test.describe('Mis cuentas - picker de ícono para banco "Otro" (CAT.2e)', () => {
+
+  test('crear una cuenta con banco "Otro" y un ícono elegido queda en la teja de la lista', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+
+    const form = page.locator('#modal-cuenta-body form');
+    await form.locator('.bank-picker__trigger').click();
+    await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+    await page.locator('#banco-list .bank-picker__item[data-value="Otro"]').click();
+
+    await expect(form.locator('#form-group-icono')).toBeVisible();
+    await form.locator('[data-icono-picker="cuenta-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="cuenta-icono"] [data-icon="c-avion"]').click();
+
+    await form.locator('#cuenta-tipo').selectOption('Ahorros');
+    await form.locator('[name="saldo"]').fill('100000');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-cuenta'), { timeout: 5_000 });
+
+    const teja = page.locator('#lista-tesoreria .cuenta-card__icon .bank-avatar');
+    await expect(teja.locator('use[href="#c-avion"]')).toHaveCount(1);
+  });
+
+  test('sin elegir "Otro", el picker de ícono permanece oculto; volver a un banco con glifo lo oculta de nuevo', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await page.click('[data-action="nueva-cuenta"]');
+    await page.waitForSelector('#modal-cuenta[data-open]');
+
+    const form = page.locator('#modal-cuenta-body form');
+    await expect(form.locator('#form-group-icono')).toBeHidden();
+
+    await form.locator('.bank-picker__trigger').click();
+    await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+    await page.locator('#banco-list .bank-picker__item[data-value="Otro"]').click();
+    await expect(form.locator('#form-group-icono')).toBeVisible();
+
+    await form.locator('.bank-picker__trigger').click();
+    await page.waitForSelector('#banco-list:not([hidden])', { timeout: 5_000 });
+    await page.locator('#banco-list .bank-picker__item[data-value="Nequi"]').click();
+    await expect(form.locator('#form-group-icono')).toBeHidden();
+  });
+
+});

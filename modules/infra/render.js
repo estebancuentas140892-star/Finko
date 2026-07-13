@@ -165,7 +165,7 @@ export function updSaldo() {
         const saldoTxt = oculto ? SALDO_MASCARA_CUENTA : f(c.saldo ?? 0);
         return `
           <li class="hero-inicio__cuenta">
-            ${bancoAvatar(bancoId)}
+            ${bancoAvatar(bancoId, c.icono)}
             <span class="hero-inicio__cuenta-nombre">${_esc(c.nombre ?? '')}</span>
             <span class="hero-inicio__cuenta-saldo">${saldoTxt}</span>
           </li>`;

@@ -18,6 +18,8 @@ import { announce } from '../../../infra/a11y.js';
 import { mostrarErroresForm } from '../../../infra/form-errors.js';
 import { esc as _esc } from '../../../infra/utils.js';
 import { BANCOS_CO, TIPOS_POR_CLASE } from '../../../core/constants.js';
+import { wireIconoPicker, resetIconoPicker, setIconoPickerValor } from '../../../infra/icon-picker.js';
+import { iconoCategoria } from '../../../infra/icons.js';
 import {
   validarCuenta,
   normalizarCuenta,
@@ -67,6 +69,10 @@ function _resetBankPicker() {
   document.querySelectorAll('#banco-list [role="option"]').forEach(item => {
     item.setAttribute('aria-selected', 'false');
   });
+  // CAT.2e: el form de cuenta es un singleton reusado (como Metas, no como
+  // Gastos/Deudas/Apartados): resetModal() limpia el input oculto pero no el
+  // estado VISUAL del picker, hay que resetearlo aparte.
+  resetIconoPicker(document.querySelector('#modal-cuenta [data-icono-picker="cuenta-icono"]'));
 }
 
 /** Lee el formulario, valida, guarda (o edita) y actualiza el DOM. */
@@ -167,6 +173,16 @@ function _editarCuenta(el) {
 
   // 2. Adaptar campos según la clase de la entidad (y poblar el select de tipos).
   _toggleCamposPorClase();
+
+  // CAT.2e: pre-rellenar el ícono elegido si el banco es "Otro" y la cuenta
+  // ya tiene uno guardado (`_resetBankPicker()` ya limpió el picker arriba).
+  if (cuenta.banco === 'Otro' && cuenta.icono) {
+    setIconoPickerValor(
+      form.querySelector('[data-icono-picker="cuenta-icono"]'),
+      cuenta.icono,
+      iconoCategoria(cuenta.icono),
+    );
+  }
 
   // 3. Pre-rellenar saldo y tipo DESPUÉS del toggle (el select ya tiene las opciones).
   form.querySelector('[name="saldo"]').value = cuenta.saldo ?? 0;
@@ -283,6 +299,10 @@ export function inyectarFormCuenta() {
   // Inicializar el custom bank picker.
   const picker = body.querySelector('.bank-picker');
   if (picker) _initBankPicker(picker);
+
+  // CAT.2e: picker de ícono para el banco "Otro". Form singleton (como
+  // Metas): se wirea una sola vez aquí, no en cada apertura del modal.
+  wireIconoPicker(body.querySelector('[data-icono-picker="cuenta-icono"]'));
 }
 
 /**
@@ -325,6 +345,13 @@ function _toggleCamposPorClase() {
   const entrada = BANCOS_CO.find(b => b.id === bancoId);
   // null = sin banco elegido → ocultamos tipo, mostramos el resto (comportamiento seguro).
   const clase   = entrada?.clase ?? null;
+
+  // ── Ícono para "Otro" (CAT.2e) ────────────────────────────────────
+  // 'Otro' no tiene glifo propio en BANCOS_CO (fallback "?" gris); el picker
+  // solo tiene sentido con esa clase exacta, no con billetera/banco/efectivo
+  // (que ya traen su glifo oficial) ni sin selección.
+  const grupoIcono = document.getElementById('form-group-icono');
+  if (grupoIcono) grupoIcono.hidden = clase !== 'otro';
 
   // ── Tipo de cuenta ───────────────────────────────────────────────
   const tiposDisponibles = clase ? (TIPOS_POR_CLASE[clase] ?? []) : [];
