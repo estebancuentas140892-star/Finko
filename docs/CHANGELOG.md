@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(apartados): CAT.1b plantillas de Apartados curadas según la taxonomía Apartados↔Metas · 2026-07-13
+
+Segunda rebanada de implementación de **CAT.1** (`docs/BOARD.md`), Apartados↔Metas. `PLANTILLAS_APARTADO` pasa de 17 a 20 plantillas.
+
+**Qué cambió (`modules/dominio/apartados/logic.js`):** sale **Vacaciones** ✈️ (ya vive en `CATEGORIAS_META`). "Matrícula o semestre" se divide: la plantilla queda como **"Matrícula escolar"** 🎓 (colegio anual o semestral, gasto esporádico); el semestre universitario se planea como Meta (categoría Educación ya existe ahí). "Útiles escolares" se amplía a **"Útiles y uniformes"** 🎒. Entran **Veterinario** 🩺, **Mantenimiento del hogar** 🛠️, **Seguro del hogar** 🛡️ y **Reparaciones inesperadas** 🧰 (catálogo de esporádicos olvidables definido por Esteban).
+
+**Hallazgo de la rebanada:** a diferencia de `CATEGORIA_ICONO` (Gastos), un apartado ya creado no referencia `PLANTILLAS_APARTADO` en su render: `_aplicarPlantilla()` copia `nombre`/`icono` una sola vez al crear el apartado. Retirar o renombrar una plantilla es seguro para los apartados existentes (conservan su nombre/ícono guardado); la plantilla retirada solo deja de ofrecerse para apartados nuevos. Ningún cambio en `_aplicarPlantilla()` ni `renderFormApartado()` (agnósticos al contenido del catálogo).
+
+**Archivos tocados:** `modules/dominio/apartados/logic.js` (`PLANTILLAS_APARTADO`), `tests/unit/apartados.test.js` (6 tests actualizados/nuevos: conteo 17→20, exclusión de Vacaciones/Matrícula o semestre/Útiles escolares, presencia de las 4 nuevas), `service-worker.js` (v381→v382).
+
+**Verificación:** 2604/2604 unit + 192/192 E2E completos + lint verdes.
+
+**Podría afectar:** solo las plantillas rápidas ofrecidas al crear un apartado nuevo. Apartados existentes creados desde cualquier plantilla (incluidas las retiradas o renombradas) no cambian de nombre ni ícono.
+
+---
+
 ### feat(gastos): CAT.1a Gastos ya no ofrece Vivienda ni Servicios públicos, hint retirado · 2026-07-13
 
 Primera rebanada de implementación de **CAT.1** (`docs/BOARD.md`), tras la validación de taxonomía de la misma sesión. Gastos↔Fijos: Vivienda y Servicios públicos salen del formulario de Gastos (siempre recurrentes con fecha fija, viven solo en Agenda) y el hint no bloqueante "esta categoría suele ser un gasto fijo" se retira por completo, revisando la decisión 4 del ADR 014 ("nudge, no muro"): Finko decide en vez de avisar.

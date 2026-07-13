@@ -49,7 +49,13 @@ const DIAS_POR_PERIODO = {
 /**
  * Plantillas de gastos previsibles frecuentes en Colombia, para que el usuario
  * cree un apartado de un toque sin escribir el nombre. El fondo de emergencia
- * se omite a propósito: ya vive en el dominio Ahorro.
+ * se omite a propósito: ya vive en el dominio Ahorro. Curado por la taxonomía
+ * CAT.1 (validada 2026-07-13, ver ADR 014): "Vacaciones" sale (objetivo grande
+ * de largo plazo, vive en `CATEGORIAS_META`); "Matrícula o semestre" se divide
+ * en "Matrícula escolar" (colegio, esporádico) y el semestre universitario,
+ * que se planea como Meta; entran Veterinario, Mantenimiento del hogar, Seguro
+ * del hogar y Reparaciones inesperadas; "Útiles escolares" se amplía a
+ * "Útiles y uniformes".
  */
 export const PLANTILLAS_APARTADO = [
   { nombre: 'SOAT',                        icono: '🚗' },
@@ -61,14 +67,17 @@ export const PLANTILLAS_APARTADO = [
   { nombre: 'Mercado',                     icono: '🛒' },
   { nombre: 'Alimento para mascotas',      icono: '🐾' },
   { nombre: 'Arena para gatos',            icono: '🐱' },
+  { nombre: 'Veterinario',                 icono: '🩺' },
   { nombre: 'Productos personales',        icono: '🧴' },
-  { nombre: 'Útiles escolares',            icono: '📚' },
-  { nombre: 'Matrícula o semestre',        icono: '🎓' },
+  { nombre: 'Útiles y uniformes',          icono: '🎒' },
+  { nombre: 'Matrícula escolar',           icono: '🎓' },
+  { nombre: 'Mantenimiento del hogar',     icono: '🛠️' },
+  { nombre: 'Seguro del hogar',            icono: '🛡️' },
+  { nombre: 'Reparaciones inesperadas',    icono: '🧰' },
   { nombre: 'Renovación de documentos',    icono: '🪪' },
   { nombre: 'Regalos',                     icono: '🎁' },
   { nombre: 'Cumpleaños',                  icono: '🎂' },
   { nombre: 'Navidad',                     icono: '🎄' },
-  { nombre: 'Vacaciones',                  icono: '✈️' },
 ];
 
 /** Icono por defecto cuando el usuario no elige uno. */

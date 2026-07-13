@@ -550,8 +550,8 @@ describe('catálogos', () => {
     expect(PLANTILLAS_APARTADO.some(p => /emergencia/i.test(p.nombre))).toBe(false);
   });
 
-  it('PLANTILLAS_APARTADO trae 17 plantillas sin nombres duplicados (AP.2 + TX.2)', () => {
-    expect(PLANTILLAS_APARTADO).toHaveLength(17);
+  it('PLANTILLAS_APARTADO trae 20 plantillas sin nombres duplicados (AP.2 + TX.2 + CAT.1b)', () => {
+    expect(PLANTILLAS_APARTADO).toHaveLength(20);
     const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
     expect(new Set(nombres).size).toBe(nombres.length);
   });
@@ -561,10 +561,36 @@ describe('catálogos', () => {
     expect(nombres).toEqual(expect.arrayContaining([
       'Revisión técnico-mecánica',
       'Impuesto predial',
-      'Matrícula o semestre',
       'Renovación de documentos',
       'Alimento para mascotas',
       'Arena para gatos',
+    ]));
+  });
+
+  it('CAT.1b (taxonomía Apartados↔Metas, 2026-07-13): Vacaciones sale, ya vive en Metas', () => {
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(nombres).not.toContain('Vacaciones');
+  });
+
+  it('CAT.1b: "Matrícula o semestre" se divide, el semestre universitario es Meta', () => {
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(nombres).not.toContain('Matrícula o semestre');
+    expect(nombres).toContain('Matrícula escolar');
+  });
+
+  it('CAT.1b: "Útiles escolares" se amplía a "Útiles y uniformes"', () => {
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(nombres).not.toContain('Útiles escolares');
+    expect(nombres).toContain('Útiles y uniformes');
+  });
+
+  it('CAT.1b: entran Veterinario, Mantenimiento del hogar, Seguro del hogar y Reparaciones inesperadas', () => {
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    expect(nombres).toEqual(expect.arrayContaining([
+      'Veterinario',
+      'Mantenimiento del hogar',
+      'Seguro del hogar',
+      'Reparaciones inesperadas',
     ]));
   });
 
