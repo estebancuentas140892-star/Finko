@@ -132,6 +132,24 @@ export function calcularTotalCompromisos(compromisos) {
 }
 
 /**
+ * Resumen agregado de las deudas activas para el hero de la sección
+ * (D.16a, ADR 036 D1). Solo deudas (entidad + personal): los gastos fijos
+ * del mismo dominio (tipo 'fijo', viven en Calendario) no entran, porque
+ * el hero habla de "lo que debes", no de pagos recurrentes.
+ *
+ * @param {import('../../../core/state.js').Compromiso[]} compromisos
+ * @returns {{ saldoTotal: number, cuotaMensual: number, cantidad: number }}
+ */
+export function resumenDeudas(compromisos) {
+  const deudas = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo));
+  return {
+    saldoTotal:   deudas.reduce((acc, c) => acc + (Number(c.saldoTotal) || 0), 0),
+    cuotaMensual: deudas.reduce((acc, c) => acc + calcularCompromisoMensual(c), 0),
+    cantidad:     deudas.length,
+  };
+}
+
+/**
  * Cuántos días faltan para el próximo vencimiento de un compromiso.
  * Si `diaPago` es hoy o en el futuro dentro del mes → días restantes en el mes actual.
  * Si ya pasó → días hasta el mismo día del mes siguiente.

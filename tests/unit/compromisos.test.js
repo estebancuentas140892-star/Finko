@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   compromisosActivos,
   calcularCompromisoMensual,
   calcularTotalCompromisos,
+  resumenDeudas,
   proximoVencimiento,
   urgencia,
   compromisosProximos,
@@ -40,6 +41,7 @@ import { renderAlertaDeudasDurmiendo } from '../../modules/dominio/compromisos/v
 import { renderPanelPrioridades, renderPanelVencidos } from '../../modules/dominio/compromisos/views/dashboard.js';
 import { renderResumenExtra, renderImpactoAvalancha, renderComparativaRenegociacion, renderComparativaConsolidacion } from '../../modules/dominio/compromisos/views/estrategia-impacto.js';
 import { renderEstrategiaPago, setEstrategiaUI } from '../../modules/dominio/compromisos/views/estrategia.js';
+import { renderHeroCompromisos } from '../../modules/dominio/compromisos/views/hero.js';
 import { S } from '../../modules/core/state.js';
 import {
   CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO,
@@ -3202,5 +3204,126 @@ describe('repartirExtraEnCuotas', () => {
     for (const i of incrementos) {
       expect(i.cuotaNueva).toBe(i.cuotaActual + i.incremento);
     }
+  });
+});
+
+// ── resumenDeudas() (D.16a, ADR 036 D1) ───────────────────────────
+
+describe('resumenDeudas()', () => {
+  const deudaHero = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_400_000, cuotaMensual: 220_000, frecuencia: 'Mensual',
+    diaPago: 5, tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    ...overrides,
+  });
+
+  it('suma saldo y cuota de las deudas activas y las cuenta', () => {
+    const r = resumenDeudas([
+      deudaHero({ id: 'd1' }),
+      deudaHero({ id: 'd2', tipo: 'deuda-personal', saldoTotal: 400_000, cuotaMensual: 200_000, tasa: 0 }),
+      deudaHero({ id: 'd3', saldoTotal: 1_500_000, cuotaMensual: 180_000, activo: false }),
+    ]);
+    expect(r.saldoTotal).toBe(2_800_000);
+    expect(r.cuotaMensual).toBe(420_000);
+    expect(r.cantidad).toBe(2);
+  });
+
+  it('excluye los gastos fijos del mismo dominio (el hero habla de deudas)', () => {
+    const r = resumenDeudas([
+      deudaHero(),
+      { id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_500_000, frecuencia: 'Mensual', diaPago: 1, activo: true },
+    ]);
+    expect(r.cantidad).toBe(1);
+    expect(r.saldoTotal).toBe(2_400_000);
+    expect(r.cuotaMensual).toBe(220_000);
+  });
+
+  it('sin deudas devuelve ceros', () => {
+    expect(resumenDeudas([])).toEqual({ saldoTotal: 0, cuotaMensual: 0, cantidad: 0 });
+  });
+
+  it('tolera cuotaMensual ausente (fiado sin cuota, D.13)', () => {
+    const r = resumenDeudas([deudaHero({ saldoTotal: 300_000, cuotaMensual: undefined })]);
+    expect(r.saldoTotal).toBe(300_000);
+    expect(r.cuotaMensual).toBe(0);
+    expect(r.cantidad).toBe(1);
+  });
+});
+
+// ── renderHeroCompromisos() (D.16a, ADR 036 D1/D7) ────────────────
+
+describe('renderHeroCompromisos()', () => {
+  const deudaHero = (overrides = {}) => ({
+    id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+    saldoTotal: 2_400_000, cuotaMensual: 220_000, frecuencia: 'Mensual',
+    diaPago: 5, tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="compromisos-hero"></div>';
+    S.compromisos = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+  });
+
+  it('con deudas: label, total, chip de cuota, "en N deudas" y ojo con aria-pressed=false', () => {
+    S.compromisos = [
+      deudaHero({ id: 'd1' }),
+      deudaHero({ id: 'd2', tipo: 'deuda-personal', saldoTotal: 400_000, cuotaMensual: 200_000, tasa: 0 }),
+    ];
+    renderHeroCompromisos();
+    const el = document.getElementById('compromisos-hero');
+    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('Lo que debes en total');
+    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$2.800.000');
+    expect(el.querySelector('.hero-compromisos__chip').textContent).toContain('$420.000/mes');
+    expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 2 deudas');
+    const ojo = el.querySelector('#compromisos-saldo-ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('false');
+    expect(ojo.innerHTML).toContain('#i-eye');
+    expect(ojo.innerHTML).not.toContain('#i-eye-off');
+  });
+
+  it('con el saldo oculto: máscara en total y en el chip, ojo tachado', () => {
+    S.compromisos = [deudaHero()];
+    S.config.ocultarSaldo = true;
+    renderHeroCompromisos();
+    const el = document.getElementById('compromisos-hero');
+    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$••••••');
+    expect(el.innerHTML).not.toContain('2.400.000');
+    expect(el.innerHTML).not.toContain('220.000');
+    const ojo = el.querySelector('#compromisos-saldo-ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('true');
+    expect(ojo.innerHTML).toContain('#i-eye-off');
+  });
+
+  it('sin deudas: "$0" con label de vacío, sin ojo ni fila de metadatos', () => {
+    renderHeroCompromisos();
+    const el = document.getElementById('compromisos-hero');
+    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('No tienes deudas registradas');
+    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$0');
+    expect(el.querySelector('#compromisos-saldo-ojo')).toBeNull();
+    expect(el.querySelector('.hero-compromisos__meta')).toBeNull();
+  });
+
+  it('los gastos fijos no cuentan para el hero', () => {
+    S.compromisos = [
+      { id: 'f1', descripcion: 'Arriendo', tipo: 'fijo', monto: 1_500_000, frecuencia: 'Mensual', diaPago: 1, activo: true },
+    ];
+    renderHeroCompromisos();
+    const el = document.getElementById('compromisos-hero');
+    expect(el.querySelector('.hero-compromisos__label').textContent).toBe('No tienes deudas registradas');
+    expect(el.querySelector('.hero-compromisos__valor').textContent).toBe('$0');
+  });
+
+  it('una sola deuda: "en 1 deuda" en singular y sin chip si no tiene cuota', () => {
+    S.compromisos = [deudaHero({ cuotaMensual: 0 })];
+    renderHeroCompromisos();
+    const el = document.getElementById('compromisos-hero');
+    expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 1 deuda');
+    expect(el.querySelector('.hero-compromisos__chip')).toBeNull();
   });
 });

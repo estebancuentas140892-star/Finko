@@ -9,6 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
+import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal } from '../../ui/modales.js';
@@ -21,6 +22,7 @@ import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, esDeuda } from './logic.js';
 import {
+  renderHeroCompromisos,
   renderListaCompromisos,
   renderChooserCompromiso,
   renderFormDeuda,
@@ -49,7 +51,9 @@ function _renderDashboardPanels() {
  * el estado UI de la estrategia (extra mensual, toggle).
  */
 function _renderTodo() {
-  // En v6 la card de estrategia va ARRIBA (define el orden de pago).
+  // D.16a: el hero con el total de deuda encabeza la sección (ADR 036 D1).
+  renderHeroCompromisos();
+  // En v6 la card de estrategia va ARRIBA de la lista (define el orden de pago).
   renderEstrategiaPago();
   renderAlertaDeudasDurmiendo();
   renderListaCompromisos();
@@ -735,6 +739,20 @@ export function initCompromisos() {
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
   registrarAccion('comp-volver-chooser',     _volverChooser);
+
+  // D.16a (ADR 036 D7): el ojo del hero de Deudas comparte el flag
+  // S.config.ocultarSaldo con el ojo de Inicio (IN.2) y el de Mis cuentas
+  // (MC.18a): un solo control de privacidad en toda la app. El flip con
+  // `!== true` es defensivo, igual que en 'saldo-visibilidad' (ui/actions.js).
+  // updSaldo() mantiene el hero de Inicio en sincronía; el re-render de la
+  // sección enmascara el total (y, cuando D.16d extienda la máscara, los
+  // saldos por deuda).
+  registrarAccion('compromisos-saldo-visibilidad', () => {
+    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    save();
+    updSaldo();
+    renderSmart(_renderTodo, 'compromisos');
+  });
 
   _inyectarForm();
 

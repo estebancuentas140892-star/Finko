@@ -10,7 +10,7 @@
 
 ## En proceso
 
-**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas D.16a a D.16d (tarjetas en la sección Deudas abajo), empezando por D.16a (hero).
+**D.16 - Rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md))**: handoff de Claude Design del 2026-07-12 (mockup `Deudas v2.dc.html` + doc `SCREENS/deudas-v2.md`, bundle "Iteración de specimen"), enviado por Esteban con instrucción de implementar. En ejecución por rebanadas: **D.16a cerrada el 2026-07-12** (hero con total de deuda, ver CHANGELOG); sigue D.16b (tarjetas en la sección Deudas abajo).
 
 _(El [ADR 033](DECISIONS/033-direccion-visual-premium.md) sigue en "Propuesta con estreno parcial autorizado" (D1/D2, con D.16 como tercer consumidor: Inicio, Mis cuentas y ahora Deudas); **DV.2a** (despliegue global) sigue bloqueada hasta la validación completa de P1-P5.)_
 
@@ -132,18 +132,11 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 
 > **D.16 - Rediseño visual de la sección ([ADR 036](DECISIONS/036-deudas-v2-visual.md), triaje 2026-07-12):** el handoff de Claude Design (mockup `Deudas v2.dc.html` + `SCREENS/deudas-v2.md`) es la cara visual de esta iniciativa, mismo rol que MC.18/ADR 035 tuvo en Mis cuentas. **Absorbe D.15c** (la tarjeta de deuda con jerarquía visual ES el D5 del handoff, tarjeta borrada) y la mitad visual de D.15a (alerta de 2 capas; D.15a re-cortada abajo a solo copy). No pisa D.15d: el motor de palanca sigue siendo la siguiente rebanada funcional y construirá sobre los componentes nuevos. Rebanadas D.16a a D.16d abajo; cero cambios de lógica (BUG-011 intacto).
 
-#### D.16a - Deudas v2 visual: hero total de deuda + ojo de privacidad
-- Prioridad  : alta (en proceso, 2026-07-12)
-- Estado     : en proceso
-- Objetivo   : (ADR 036 D1+D7) hero al tope de `#sec-compromisos`: "Lo que debes en total" + saldo total protagonista + chip "$X/mes · en N deudas" + ojo de privacidad estable (`S.config.ocultarSaldo`). Degradado de identidad compromisos (estreno parcial ADR 033). Helper puro `resumenDeudas()` nuevo.
-- Secciones  : Deudas
-- Archivos   : `index.html` (contenedor), `modules/dominio/compromisos/logic/modelo.js`, vista nueva `views/hero.js`, `index.js` (wiring + acción), `styles/components/domain.css`, tests
-- Depende de : nada
-- Modelo     : Sonnet 5 - Medio (patrón MC.18a ya probado)
+> **D.16a cerrada el 2026-07-12** (hero con total de deuda + ojo de privacidad, ver CHANGELOG y [`contexto/deudas.md`](contexto/deudas.md)): `resumenDeudas()` pura + `renderHeroCompromisos()` + acción `compromisos-saldo-visibilidad` + `.hero-compromisos` con contraste medido. 9 tests unitarios nuevos, SW v367.
 
 #### D.16b - Deudas v2 visual: picker de estrategia + comparativa tintada
 - Prioridad  : alta
-- Estado     : pendiente
+- Estado     : en proceso (2026-07-12)
 - Objetivo   : (ADR 036 D2) header "¿Cómo salir más rápido?" con teja tintada; picker con íconos nuevos (`i-snowball` reemplaza el círculo genérico) + badge "Recomendada"; comparativa y mensajes con callouts tintados + íconos de sprite en vez de emojis 💰🏆ℹ️🎯. Drafts `i-snowball`/`i-handshake`/`i-trending-down` vía sync-sprite (IV.4 sigue abierta).
 - Secciones  : Deudas (`views/estrategia.js`, `views/estrategia-impacto.js`, `styles/components/charts.css`, sprite)
 - Depende de : D.16a (familia visual del hero ya en pantalla)

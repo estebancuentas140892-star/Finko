@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(compromisos): D.16a hero con el total de deuda + ojo de privacidad (ADR 036 D1/D7) · 2026-07-12
+
+Cierra **D.16a** (`docs/BOARD.md`), primera rebanada del rediseño visual de Deudas ([ADR 036](DECISIONS/036-deudas-v2-visual.md), handoff de Claude Design `Deudas v2.dc.html` enviado por Esteban). La pantalla de Deudas gana lo que no tenía: la magnitud total del problema de un vistazo.
+
+**Qué cambió:** hero nuevo al tope de `#sec-compromisos` con "Lo que debes en total" + saldo total de las deudas activas (cifra protagonista, tabular/extrabold) + chip "cuota/mes" con ícono + texto "en N deudas" + ojo de privacidad anclado a la esquina (posición estable, `S.config.ocultarSaldo`, mismo flag de Inicio y Mis cuentas: un solo control de privacidad en toda la app). Degradado de identidad de compromisos (frambuesa ADR 031) como tercer consumidor del estreno parcial del ADR 033. Agregado puro `resumenDeudas(compromisos)` nuevo en `logic/modelo.js`: suma `saldoTotal` y cuota mensual SOLO de deudas activas (los gastos fijos del mismo dominio no entran: el hero habla de "lo que debes"). Sin deudas: "$0" + "No tienes deudas registradas", sin ojo ni chip (un control que no enmascara nada confunde). Contraste WCAG medido contra la parada fuerte del degradado (método IV.1): oscuro `#3a2433` → primario 11.92:1, secundario 6.06:1; claro `#fce3eb` → primario 13.87:1, secundario 7.02:1.
+
+**Archivos tocados:** `index.html` (contenedor `#compromisos-hero`), `modules/dominio/compromisos/logic/modelo.js` (`resumenDeudas()`), `logic.js` + `view.js` (barrels), `views/hero.js` (nuevo), `index.js` (wiring en `_renderTodo()` + acción `compromisos-saldo-visibilidad`), `styles/components/domain.css` (`.hero-compromisos` + ojo compartido), `tests/unit/compromisos.test.js` (9 tests nuevos), `service-worker.js` (v366→v367).
+
+**Verificación:** 2488/2488 unit + 17/17 E2E `estrategia-pago` + lint verdes.
+
+**Podría afectar:** nada fuera de la sección Deudas; la máscara de los saldos por deuda en la lista llega en D.16d (hoy el ojo enmascara el total y el chip del hero).
+
+---
+
 ### feat(ui): MC.17e teja "Transferir" en la hoja Registrar, cierra MC.17 completa · 2026-07-12
 
 Cierra **MC.17e** (`docs/BOARD.md`), última rebanada de MC.17 (transferencias entre cuentas propias). La iniciativa completa (MC.17a fundación de datos, MC.17b formulario/acción, MC.17c ledger de Movimientos, MC.17d GMF del retiro) queda cerrada con este punto de entrada.

@@ -994,10 +994,12 @@ button.chip:focus-visible {
    Botón propio (sin .btn): el min-height táctil de 44px que responsive.css
    impone a .btn deformaría los 40px del diseño; 40px cumple el mínimo
    táctil AA (WCAG 2.5.8, 24px) con margen.
-   El ojo del hero de Mis cuentas (MC.18a, ADR 035 D5) comparte estas
-   reglas: mismo control, misma disciplina de posición estable. */
+   El ojo del hero de Mis cuentas (MC.18a, ADR 035 D5) y el del hero de
+   Deudas (D.16a, ADR 036 D7) comparten estas reglas: mismo control,
+   misma disciplina de posición estable. */
 .hero-inicio__ojo,
-.hero-tesoreria__ojo {
+.hero-tesoreria__ojo,
+.hero-compromisos__ojo {
   position: absolute;
   top: var(--fk-space-4);
   right: var(--fk-space-4);
@@ -1017,14 +1019,16 @@ button.chip:focus-visible {
   z-index: 1;
 }
 .hero-inicio__ojo:hover,
-.hero-tesoreria__ojo:hover {
+.hero-tesoreria__ojo:hover,
+.hero-compromisos__ojo:hover {
   background: var(--fk-bg-active);
   color: var(--fk-text-primary);
 }
 /* updSaldo() lo oculta junto con el valor cuando no hay cuentas. */
 .hero-inicio__ojo[hidden] { display: none; }
 .hero-inicio__ojo .icon,
-.hero-tesoreria__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
+.hero-tesoreria__ojo .icon,
+.hero-compromisos__ojo .icon { --fk-icon-size: var(--fk-icon-md); }
 
 /* ── Detalle por cuenta (IN.8c, ADR 034 D4) ─────────────────────
    Pill que expande in situ una fila por cuenta. El text-align:center del
@@ -1186,6 +1190,88 @@ button.chip:focus-visible {
 
 .hero-tesoreria__resumen {
   margin: var(--fk-space-3) 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+/* ════════════════════════════════════════════════════════════
+   HERO-COMPROMISOS (D.16a, ADR 036 D1/D7) - total de deuda.
+   Tercer consumidor del piloto ADR 033 (degradado de identidad +
+   sombra en reposo), con el color de sección de compromisos
+   (frambuesa ADR 031) y la misma anatomía que el hero de Mis
+   cuentas: label + valor + fila de metadatos.
+
+   Contraste WCAG medido contra la parada fuerte del degradado
+   (compromisos al 16% compuesto sobre surface, cálculo en el
+   cierre de D.16a):
+     oscuro #3a2433 → primario 11.92:1, secundario 6.06:1 (AA)
+     claro  #fce3eb → primario 13.87:1, secundario 7.02:1
+   El texto muted NO se usa dentro del hero (lección medida de IN.8b).
+   ════════════════════════════════════════════════════════════ */
+
+.hero-compromisos {
+  position: relative;
+  margin-block-end: var(--fk-space-6);
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-compromisos) 30%, transparent);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--fk-dom-compromisos) 16%, transparent), transparent 55%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
+  padding: var(--fk-space-6) var(--fk-space-5) var(--fk-space-5);
+}
+
+.hero-compromisos__label {
+  margin: 0 0 var(--fk-space-3);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  letter-spacing: 0.01em;
+}
+
+/* 38px objetivo (mockup aprobado); mismo clamp defensivo y tabular-nums
+   del hero de Mis cuentas (ancho estable entre monto real y máscara). */
+.hero-compromisos__valor {
+  margin: 0;
+  font-family: var(--fk-font-mono);
+  font-size: clamp(2rem, 1.45rem + 4.2vw, 2.375rem);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fila de metadatos: chip "cuota/mes" + "en N deudas". El chip lleva
+   ícono + texto (el color nunca viaja solo, SC 1.4.11). */
+.hero-compromisos__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-4);
+}
+
+.hero-compromisos__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-hover);
+  border: 1px solid var(--fk-border-default);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hero-compromisos__chip .icon {
+  --fk-icon-size: 0.8125rem;   /* 13px, mockup: acento chico junto a la cifra */
+  color: var(--fk-dom-compromisos-text);
+}
+
+.hero-compromisos__meta-txt {
   font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
 }
