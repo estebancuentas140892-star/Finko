@@ -34,6 +34,8 @@ import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
+import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
+import { iconoCategoria } from '../../infra/icons.js';
 import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
@@ -125,10 +127,22 @@ function _inyectarFormGastoFijo(compromiso = null) {
     if (f_frec) f_frec.value = compromiso.frecuencia ?? 'Mensual';
     if (f_dia) f_dia.value = compromiso.diaPago ?? '';
     if (f_btn) f_btn.textContent = 'Actualizar gasto fijo';
+
+    // CAT.2f: prellenar el ícono elegido si la categoría es "Otro" y ya
+    // tiene uno guardado (el form nace limpio en cada render, no hace falta
+    // resetear antes).
+    if (categoria === 'Otro' && compromiso.icono) {
+      setIconoPickerValor(
+        form.querySelector('[data-icono-picker="gfijo-icono"]'),
+        compromiso.icono,
+        iconoCategoria(compromiso.icono),
+      );
+    }
   }
 
   _syncCategoriaGastoFijo(form);
   form.querySelector('[name="categoria"]')?.addEventListener('change', () => _syncCategoriaGastoFijo(form));
+  wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -163,6 +177,10 @@ function _syncCategoriaGastoFijo(form) {
     nombre.required      = true;
     nombre.setAttribute('aria-required', 'true');
   }
+
+  // CAT.2f: el picker de ícono solo tiene sentido con la categoría "Otro".
+  const grupoIcono = form.querySelector('#form-group-gfijo-icono');
+  if (grupoIcono) grupoIcono.hidden = categoria !== 'Otro';
 }
 
 function _guardarGastoFijo() {

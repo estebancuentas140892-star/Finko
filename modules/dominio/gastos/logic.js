@@ -273,7 +273,8 @@ export function normalizarGasto(datos) {
  * "marcar pagado") o de un abono a deuda; su ícono debe salir del
  * compromiso de origen, no de la categoría genérica del gasto:
  *
- * - Fijo → ícono de su categoría de Agenda (CATEGORIA_AGENDA_ICONO).
+ * - Fijo → `comp.icono` si el usuario eligió uno para la categoría "Otro"
+ *   (CAT.2f), si no el ícono de su categoría de Agenda (CATEGORIA_AGENDA_ICONO).
  * - Deuda con entidad → i-cuentas (institución financiera).
  *   Deuda personal → i-personales (persona), como en la lista de Deudas.
  *
@@ -290,6 +291,6 @@ export function iconoPorOrigen(gasto, compromisos) {
   if (!comp) return null;
   if (comp.tipo === 'deuda-entidad')  return 'i-cuentas';
   if (comp.tipo === 'deuda-personal') return 'i-personales';
-  if (comp.tipo === 'fijo')           return CATEGORIA_AGENDA_ICONO[comp.categoria] ?? null;
+  if (comp.tipo === 'fijo')           return comp.icono || CATEGORIA_AGENDA_ICONO[comp.categoria] || null;
   return null;
 }

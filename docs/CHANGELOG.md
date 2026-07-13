@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(transversal): CAT.2f selector de ícono en Gasto fijo/Calendario, sexto consumidor, cierra CAT.2 completa · 2026-07-13
+
+Cierra **CAT.2f** (`docs/BOARD.md`), sexta y última rebanada del picker de ícono compartido: **Gasto fijo/Calendario** migrado (categoría "Otro"). Con esta rebanada **la iniciativa CAT.2 queda completa** (CAT.2a-f).
+
+**Análisis previo (misma sesión, triaje 2.7):** la tarjeta señalaba una decisión bloqueante (alcance mínimo vs. categorías personalizadas completas, cruzada con la taxonomía de CAT.1 aún sin validar). Pregunta directa a Esteban: **alcance mínimo**, mismo patrón que CAT.2d/2e, sin esperar CAT.1. Las categorías nombradas nuevas (no solo el ícono de "Otro") quedan para CAT.3.
+
+**Qué cambió:** (1) `agenda/view.js`: `renderFormGastoFijo()` agrega el grupo `#form-group-gfijo-icono` con `renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono' })`, oculto por defecto; `_renderDetalleItem()` resuelve `c.icono` antes que `CATEGORIA_AGENDA_ICONO[c.categoria]` (mismo patrón que la teja de Deudas, CAT.2d). (2) `agenda/index.js`: el form se re-renderiza completo en cada apertura (`_inyectarFormGastoFijo()`, como Gastos/Deudas/Apartados: no hace falta `resetIconoPicker`); `_syncCategoriaGastoFijo()` (ya era el listener de `change` del selector de categoría, AG.4) se extiende para alternar también `hidden` del grupo del ícono; `wireIconoPicker` se llama en cada `_inyectarFormGastoFijo()`; en modo edición, `setIconoPickerValor` prellena el ícono guardado. (3) `compromisos/logic/modelo.js`: `normalizarCompromiso()` gana `base.icono` en la rama `tipo==='fijo'` (antes solo existía en la rama de deuda desde CAT.2d): guarda el ícono solo si `categoria==='Otro'` Y el valor está en el catálogo, siempre explícito `null`/id válido. (4) `gastos/logic.js`: `iconoPorOrigen()` (TX.6/TX.7, herencia de ícono cuando un gasto nace de pagar un fijo) resuelve `comp.icono` antes que `CATEGORIA_AGENDA_ICONO[comp.categoria]`. (5) El checklist de "Distribuir mi ingreso" **no necesitó ningún cambio**: `construirDesgloseNecesidades()`/`_iconoNecesidad()` ya generalizaban por `it.icono` sin distinguir tipo desde CAT.2d.
+
+**Archivos tocados:** `modules/dominio/agenda/view.js` (`renderFormGastoFijo`, `_renderDetalleItem`), `modules/dominio/agenda/index.js` (`_syncCategoriaGastoFijo`, `_inyectarFormGastoFijo`), `modules/dominio/compromisos/logic/modelo.js` (`normalizarCompromiso`), `modules/dominio/gastos/logic.js` (`iconoPorOrigen`), `tests/unit/compromisos.test.js` (5 tests nuevos), `tests/unit/agenda.test.js` (4 tests nuevos), `tests/unit/gastos.test.js` (1 test nuevo), `tests/e2e/smoke.test.js` (2 tests nuevos), `service-worker.js` (v379→v380).
+
+**Verificación:** 2598/2598 unit + **192/192 E2E completos** + lint verdes.
+
+**Podría afectar:** solo la UI de Agenda/Calendario al crear/editar un gasto fijo con categoría "Otro", y los gastos generados al pagarlo (heredan el ícono elegido en vez del genérico). Gastos fijos existentes con categoría "Otro" y sin ícono siguen mostrando el fijo `c-otros`, sin cambios visibles.
+
+---
+
 ### feat(transversal): CAT.2e selector de ícono en Mis cuentas, quinto consumidor · 2026-07-13
 
 Cierra **CAT.2e** (`docs/BOARD.md`), quinta y última rebanada nueva del picker de ícono compartido: **Mis cuentas** migrada (banco "Otro"). Misma naturaleza que CAT.2d (agrega elección de ícono, no reemplaza un campo existente), con un hallazgo adicional real: `cuenta.icono` ya existía en el schema, pero era **dato muerto**: `_iconoPorBanco()` asignaba un emoji a toda cuenta nueva (no solo "Otro"), y ningún render lo leía (`bancoAvatar()`/`tejaMarca()` resolvían la teja únicamente desde `BANCOS_CO`).

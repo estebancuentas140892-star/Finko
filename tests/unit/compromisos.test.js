@@ -528,6 +528,41 @@ describe('normalizarCompromiso()', () => {
     expect(result.nota).toBe('');
   });
 
+  // ── CAT.2f: ícono elegido para la categoría "Otro" en Fijo ────────
+
+  it('CAT.2f: con categoría "Otro" y un ícono válido del catálogo, lo guarda', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox', icono: 'c-cohete',
+    });
+    expect(result.icono).toBe('c-cohete');
+  });
+
+  it('CAT.2f: con una categoría distinta de "Otro", el ícono queda null aunque venga en los datos', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Mercado', icono: 'c-cohete',
+    });
+    expect(result.icono).toBeNull();
+  });
+
+  it('CAT.2f: sin categoría, el ícono queda null aunque venga en los datos', () => {
+    const result = normalizarCompromiso({ ...datosFormValidos, tipo: 'fijo', icono: 'c-cohete' });
+    expect(result.icono).toBeNull();
+  });
+
+  it('CAT.2f: con categoría "Otro" pero sin ícono elegido, queda null (no obligatorio)', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox',
+    });
+    expect(result.icono).toBeNull();
+  });
+
+  it('CAT.2f: un valor de ícono fuera del catálogo (manipulación del DOM) se ignora', () => {
+    const result = normalizarCompromiso({
+      ...datosFormValidos, tipo: 'fijo', categoria: 'Otro', descripcion: 'Suscripción Xbox', icono: 'algo-inventado',
+    });
+    expect(result.icono).toBeNull();
+  });
+
   it('para deudas guarda la categoría válida del catálogo del tipo (D.10)', () => {
     const entidad = {
       ...datosFormValidos, tipo: 'deuda-entidad',

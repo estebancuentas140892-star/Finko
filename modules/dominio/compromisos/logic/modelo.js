@@ -364,20 +364,22 @@ export function detectarDeudaCreciente(datos) {
  * Asume que los datos ya pasaron `validarCompromiso()`.
  *
  * v6:
- * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null, nota } (categoria desde v17,
+ * - 'fijo'           → { monto, frecuencia, diaPago, categoria|null, nota, icono|null } (categoria desde v17,
  *                       CATEGORIAS_AGENDA; nota desde AG.4). Con categoría predefinida (no 'Otro'),
  *                       descripcion es la propia categoría y lo que llega en el campo de texto se
  *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
- *                       nombre que escribió el usuario y nota queda ''.
+ *                       nombre que escribió el usuario y nota queda ''. `icono` (CAT.2f): mismo
+ *                       patrón que la rama de deuda, solo con categoría 'Otro'.
  * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
  * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad?, icono|null }
  *                       (sin tasa = 0: el form dice "si no cobra interés, deja en blanco")
- *                       `icono` (CAT.2d): solo con categoría 'Otra'/'Otro' y un ícono elegido del
- *                       picker compartido (`ICONOS_CATEGORIA_PERSONALIZADA`); siempre explícito
- *                       (null si no aplica) para que `editar()` (Object.assign shallow) lo limpie
- *                       si el usuario cambia de categoría al editar, en vez de dejarlo huérfano.
+ *                       `icono` (CAT.2d, extendido a 'fijo' en CAT.2f): solo con categoría
+ *                       'Otra'/'Otro' y un ícono elegido del picker compartido
+ *                       (`ICONOS_CATEGORIA_PERSONALIZADA`); siempre explícito (null si no aplica)
+ *                       para que `editar()` (Object.assign shallow) lo limpie si el usuario cambia
+ *                       de categoría al editar, en vez de dejarlo huérfano.
  *
  * @param {Record<string, string>} datos
  */
@@ -400,6 +402,9 @@ export function normalizarCompromiso(datos) {
     base.categoria = categoria;
     base.descripcion = nombreAuto ? categoria : datos.descripcion.trim();
     base.nota = nombreAuto ? datos.descripcion.trim() : '';
+    // CAT.2f: mismo patrón que la rama de deuda, solo con categoría "Otro".
+    const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);
+    base.icono = (categoria === 'Otro' && iconoValido) ? datos.icono : null;
     return base;
   }
 

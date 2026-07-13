@@ -15,7 +15,8 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO } from '../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
+import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes } from './logic.js';
 
@@ -410,7 +411,11 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // círculo genérico de "fijo" usa el índigo propio del calendario
   // (IV.2c, ADR 031): el color que .cal-dot--fijo ya usa para "fijo".
   const marca = resolverMarca(`${c.descripcion ?? ''} ${c.nota ?? ''}`);
-  const simboloCategoria = (!marca && tipo === 'fijo' && c.categoria) ? CATEGORIA_AGENDA_ICONO[c.categoria] : null;
+  // CAT.2f: categoría "Otro" con ícono elegido por el usuario prevalece
+  // sobre el fijo por categoría (mismo patrón que Deudas, CAT.2d).
+  const simboloCategoria = (!marca && tipo === 'fijo')
+    ? (c.icono || (c.categoria ? CATEGORIA_AGENDA_ICONO[c.categoria] : null))
+    : null;
   const icono   = marca ? tejaMarca(marca)
     : simboloCategoria ? tejaCategoria(simboloCategoria, 'presupuesto')
     : icon(ICONO_TIPO[tipo] ?? 'recurring');
@@ -533,6 +538,10 @@ export function renderFormGastoFijo() {
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
+      </div>
+
+      <div class="form-group" id="form-group-gfijo-icono" hidden>
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'gfijo-icono', label: 'Ícono' })}
       </div>
 
       <div class="form-group">

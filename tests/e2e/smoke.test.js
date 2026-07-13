@@ -2000,6 +2000,46 @@ test.describe('Agenda - nombre automático según la categoría', () => {
   });
 });
 
+// ── Agenda - picker de ícono para "Otro" (CAT.2f) ────────────────────────────
+
+test.describe('Agenda - picker de ícono para "Otro" (CAT.2f)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-gasto-fijo"]');
+    await expect(page.locator('#form-gasto-fijo')).toBeVisible({ timeout: 3_000 });
+  });
+
+  test('elegir "Otro" revela el picker de ícono; una categoría predefinida lo oculta de nuevo', async ({ page }) => {
+    const grupoIcono = page.locator('#form-group-gfijo-icono');
+    await expect(grupoIcono).toBeHidden();
+
+    await page.selectOption('#gfijo-categoria', 'Otro');
+    await expect(grupoIcono).toBeVisible();
+
+    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await expect(grupoIcono).toBeHidden();
+  });
+
+  test('crear un gasto fijo con categoría "Otro" y un ícono elegido queda en el detalle del día', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
+    await page.selectOption('#gfijo-categoria', 'Otro');
+    await form.locator('[data-icono-picker="gfijo-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="gfijo-icono"] [data-icon="c-cohete"]').click();
+    await form.locator('#gfijo-descripcion').fill('Suscripción rara');
+    await form.locator('#gfijo-monto').fill('50000');
+    await form.locator('#gfijo-dia').fill('12');
+    await form.locator('button[type="submit"]').click();
+
+    await expect(page.locator('#modal-gasto-fijo')).not.toHaveAttribute('data-open');
+    await page.click('[data-action="agenda-mostrar-dia"][data-day="12"]');
+
+    const item = page.locator('.cal-detail__item').first();
+    await expect(item.locator('.cal-detail__icon .cat-teja use[href="#c-cohete"]')).toHaveCount(1);
+  });
+});
+
 // ── Límites de gasto: resumen por grupo (MC.5b, ADR 017) ─────────────────────
 
 test.describe('Límites de gasto - resumen por grupo', () => {

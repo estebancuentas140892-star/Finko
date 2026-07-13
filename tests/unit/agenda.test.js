@@ -518,6 +518,16 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
   });
 });
 
+// ── renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f) ──
+
+describe('renderFormGastoFijo() - picker de ícono para "Otro" (CAT.2f)', () => {
+  it('incluye el grupo del picker, oculto por defecto', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toMatch(/id="form-group-gfijo-icono"[^>]*hidden/);
+    expect(html).toContain('data-icono-picker="gfijo-icono"');
+  });
+});
+
 // ── renderAgenda() - categoría en el detalle del día ──────────────
 
 describe('renderAgenda() - categoría en el detalle del día', () => {
@@ -566,6 +576,32 @@ describe('renderAgenda() - categoría en el detalle del día', () => {
     const html = document.getElementById('panel-agenda').innerHTML;
     expect(html).not.toContain('🌐');
     expect(html).not.toContain('Internet');
+  });
+
+  it('CAT.2f: categoría "Otro" con ícono elegido por el usuario prevalece sobre el ícono genérico', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', categoria: 'Otro', icono: 'c-cohete', descripcion: 'Suscripción rara',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    const teja = item.querySelector('.cal-detail__icon .cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.innerHTML).toContain('#c-cohete');
+  });
+
+  it('CAT.2f: categoría "Otro" sin ícono elegido conserva el ícono fijo del catálogo (c-otros)', () => {
+    S.compromisos = [compromisoBase({
+      diaPago: 15, frecuencia: 'Mensual', categoria: 'Otro', descripcion: 'Suscripción rara',
+    })];
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+    const item = document.querySelector('.cal-detail__item');
+    const teja = item.querySelector('.cal-detail__icon .cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.innerHTML).toContain(`#${CATEGORIA_AGENDA_ICONO['Otro']}`);
   });
 });
 

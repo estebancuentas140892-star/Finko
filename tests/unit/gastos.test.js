@@ -664,6 +664,7 @@ describe('iconoPorOrigen (TX.6/TX.7)', () => {
     { id: 'c-sin-cat', tipo: 'fijo',           categoria: null },
     { id: 'c-banco',   tipo: 'deuda-entidad',  categoria: 'Tarjeta de crédito' },
     { id: 'c-primo',   tipo: 'deuda-personal', categoria: 'Familiar' },
+    { id: 'c-otro-ic', tipo: 'fijo',           categoria: 'Otro', icono: 'c-cohete' },
   ];
 
   it('TX.6: un gasto nacido de un fijo hereda el ícono de su categoría de Agenda', () => {
@@ -699,6 +700,11 @@ describe('iconoPorOrigen (TX.6/TX.7)', () => {
     const gasto = { id: 'g7', categoria: 'Otros', compromisoId: 'c-fijo' };
     expect(iconoPorOrigen(gasto, undefined)).toBeNull();
     expect(iconoPorOrigen(gasto, [])).toBeNull();
+  });
+
+  it('CAT.2f: un fijo con categoría "Otro" e ícono elegido hereda ese ícono en vez del genérico', () => {
+    const gasto = { id: 'g8', categoria: 'Otros', compromisoId: 'c-otro-ic' };
+    expect(iconoPorOrigen(gasto, compromisos)).toBe('c-cohete');
   });
 });
 
