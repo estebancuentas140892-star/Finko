@@ -1480,3 +1480,131 @@ describe('renderAgenda() - subtítulo y empty state del mes (CAL.4b)', () => {
     expect(filas.length).toBe(30);
   });
 });
+
+// ── CAL.4c (ADR 037 D4/D5/D7) - detalle del día accionable ───────
+
+describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos = [];
+    S.ingresos = [];
+    S.config.ocultarSaldo = false;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    S.config.ocultarSaldo = false;
+    vi.useRealTimers();
+  });
+
+  const abrirDia15 = () => {
+    renderAgenda();
+    mostrarDia(15);
+    renderAgenda();
+  };
+
+  it('con pagos pendientes el total dice "Total a pagar" en neutro', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    abrirDia15();
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toContain('Total a pagar');
+    expect(total.classList.contains('cal-detail__total--pagado')).toBe(false);
+  });
+
+  it('con todos los compromisos del día cubiertos el total pasa a "Pagado este día" (D5)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-15', monto: 300_000 }];
+    abrirDia15();
+    const total = document.querySelector('.cal-detail__total');
+    expect(total.textContent).toContain('Pagado este día');
+    expect(total.classList.contains('cal-detail__total--pagado')).toBe(true);
+  });
+
+  it('un día mixto (pagado + pendiente) sigue diciendo "Total a pagar"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 }),
+      compromisoBase({ id: 'f2', diaPago: 15, monto: 100_000, descripcion: 'Internet' }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-15', monto: 300_000 }];
+    abrirDia15();
+    expect(document.querySelector('.cal-detail__total').textContent).toContain('Total a pagar');
+  });
+
+  it('el badge de pagado es una pill con ícono y oculta el CTA (D5)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-06-15', monto: 300_000 }];
+    abrirDia15();
+    const badge = document.querySelector('.cal-detail__badge-abono');
+    expect(badge.textContent).toContain('Ya pagaste este mes');
+    expect(badge.querySelector('use').getAttribute('href')).toBe('#i-check-circle');
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+  });
+
+  it('el estado parcial se preserva: "Abonado $X de $Y este mes" (D5)', () => {
+    S.compromisos = [compromisoBase({
+      id: 'd1', tipo: 'deuda-entidad', diaPago: 15,
+      cuotaMensual: 300_000, saldoTotal: 2_000_000, monto: undefined,
+    })];
+    S.gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-10', monto: 100_000 }];
+    abrirDia15();
+    const badge = document.querySelector('.cal-detail__badge-abono--parcial');
+    expect(badge).not.toBeNull();
+    expect(badge.textContent).toContain('Abonado');
+    expect(badge.textContent).toContain('100.000');
+    expect(badge.textContent).toContain('300.000');
+    // Parcial no es completo: el CTA Abonar sigue disponible.
+    expect(document.querySelector('[data-action="abrir-abono"]')).not.toBeNull();
+  });
+
+  it('el CTA lleva la identidad del tipo: Marcar pagado índigo, Abonar frambuesa/rosa (D4)', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 }),
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 15, cuotaMensual: 200_000, saldoTotal: 1_000_000, monto: undefined, descripcion: 'Visa' }),
+      compromisoBase({ id: 'd2', tipo: 'deuda-personal', diaPago: 15, cuotaMensual: 100_000, saldoTotal: 500_000, monto: undefined, descripcion: 'Préstamo' }),
+    ];
+    abrirDia15();
+    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(pagar.className).toContain('cal-detail__cta--fijo');
+    const abonos = [...document.querySelectorAll('[data-action="abrir-abono"]')];
+    expect(abonos[0].className).toContain('cal-detail__cta--deuda-entidad');
+    expect(abonos[1].className).toContain('cal-detail__cta--deuda-personal');
+    // Editar y Eliminar siguen presentes como acciones ghost (intactas).
+    expect(document.querySelector('[data-action="agenda-editar-fijo"]')).not.toBeNull();
+    expect(document.querySelector('[data-action="agenda-eliminar-fijo"]')).not.toBeNull();
+    expect(document.querySelector('[data-action="editar-compromiso"]')).not.toBeNull();
+    expect(document.querySelector('[data-action="eliminar-compromiso"]')).not.toBeNull();
+  });
+
+  it('el recordatorio del día de ingreso es un callout con ícono y conserva Distribuir (D4)', () => {
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    abrirDia15();
+    const callout = document.querySelector('.cal-detail__callout-ingreso');
+    expect(callout).not.toBeNull();
+    expect(callout.textContent).toContain('Hoy llega tu dinero');
+    expect(callout.querySelector('use').getAttribute('href')).toBe('#i-lightbulb');
+    expect(document.querySelector('[data-action="agenda-distribuir-ingreso"]')).not.toBeNull();
+  });
+
+  it('el ojo enmascara total del día, montos por item y el badge parcial (D7)', () => {
+    S.config.ocultarSaldo = true;
+    S.compromisos = [compromisoBase({
+      id: 'd1', tipo: 'deuda-entidad', diaPago: 15,
+      cuotaMensual: 300_000, saldoTotal: 2_000_000, monto: undefined,
+    })];
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 15, activo: true }];
+    S.gastos = [{ id: 'g1', compromisoId: 'd1', fecha: '2026-06-10', monto: 100_000 }];
+    abrirDia15();
+    const detalle = document.querySelector('.cal-detail');
+    expect(detalle.querySelector('.cal-detail__total').textContent).toContain('$••••••');
+    const montos = [...detalle.querySelectorAll('.cal-detail__amount')].map(e => e.textContent);
+    expect(montos).toContain('••••');
+    expect(montos).toContain('+••••');
+    expect(detalle.querySelector('.cal-detail__badge-abono--parcial').textContent)
+      .toBe('Abonado •••• de •••• este mes');
+    expect(detalle.textContent).not.toContain('300.000');
+    expect(detalle.textContent).not.toContain('2.000.000');
+  });
+});

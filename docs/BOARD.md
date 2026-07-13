@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (triaje del handoff Calendario v2: [ADR 037](DECISIONS/037-calendario-v2-visual.md) + rebanadas CAL.4a-c bajo Calendario).
+> Última actualización: 2026-07-13 (Calendario v2 COMPLETO: rebanadas CAL.4a-c del [ADR 037](DECISIONS/037-calendario-v2-visual.md) cerradas en la misma sesión del triaje del handoff).
 
 ---
 
 ## En proceso
 
-**CAL.4c - Detalle del día accionable (Calendario v2)** - iniciada 2026-07-13, tercera y última rebanada del [ADR 037](DECISIONS/037-calendario-v2-visual.md) (ver tarjeta bajo Calendario). **CAL.4a y CAL.4b cerradas** el 2026-07-13 (hero del mes; grilla + selección índigo + empty state, ver CHANGELOG).
+_(Sin tarjeta activa: **Calendario v2 completo** el 2026-07-13, rebanadas CAL.4a-c del [ADR 037](DECISIONS/037-calendario-v2-visual.md) cerradas, ver CHANGELOG. Candidatas siguientes: **CAT.1c** (Metas, última rebanada de la taxonomía) o **CAT.3** (categorías personalizadas globales), ambas en Transversal.)_
 
 _(CAT.1b cerrada el 2026-07-13; quedan **CAT.1c** (Metas) y **CAT.3** (categorías personalizadas globales) en Transversal.)_
 
@@ -57,16 +57,7 @@ _(**IN.7 cerrada** el 2026-07-05: la duplicación puntual que reportó el usuari
 
 ### Calendario (dominio `agenda`)
 
-> **Iniciativa "Calendario v2: mes con peso financiero"** ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar). Cuarta pantalla de la familia visual v2 (tras Inicio, Mis cuentas y Deudas): hero del mes con total + progreso pagado/falta, grilla legible con selección índigo, detalle del día accionable con CTA por tipo y estado de pago explícito, empty state del mes. Cero cambios de lógica de calendario (CAL.3 y frecuencias intactas); único cálculo nuevo: agregador puro `totalesDelMes`. Fuente única del rediseño visual de esta sección.
-
-#### CAL.4c - Detalle del día accionable: CTA por tipo + estado de pago + máscara (ADR 037 D4/D5/D7)
-- Prioridad  : alta
-- Estado     : en proceso (2026-07-13)
-- Objetivo   : la acción del día salta a la vista (Abonar frambuesa, Marcar pagado índigo, Distribuir verde), badge de pago como pill (parcial preservado), el ojo enmascara también los montos del detalle
-- Secciones  : Calendario
-- Archivos   : `modules/dominio/agenda/view.js`, `styles/components/config.css`, tests
-- Depende de : CAL.4b (cerrada 2026-07-13)
-- Modelo     : Sonnet 5 - Alto
+> Iniciativa "Calendario v2: mes con peso financiero" ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar): **completamente implementada el 2026-07-13** (rebanadas CAL.4a a CAL.4c, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md)). Cuarta pantalla de la familia visual v2 (tras Inicio, Mis cuentas y Deudas). Sin tarjetas pendientes en esta sección.
 
 _(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tienen fuente única y NO generan tarjeta propia aquí. (1) Color de sección en las tarjetas de evento con tinte de baja opacidad (Esteban pide 5-10%; el sistema usa 12% en `-bg`, calibrar en implementación con contraste medido) → vive en **IV.2c**. (2) Logos oficiales de marcas en eventos (Netflix, Nequi...) → ya existe la base (MK.2 detecta marca en fijos/suscripciones/deudas, `tejaMarca` en el detalle del día) y su evolución "seleccionar en vez de escribir" es el **[ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)**. (3) Picker de icono en "Otra categoría" de fijos + categorías personalizadas reutilizables en toda la app → iniciativa **CAT** en Transversal, que absorbió la observación que vivía aquí sobre ícono personalizado para la categoría "Otro" de AG.4.)_
 

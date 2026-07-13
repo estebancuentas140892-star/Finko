@@ -662,29 +662,8 @@ button.chip:focus-visible {
   text-align: center;
 }
 
-.cal-detail__badge-abono {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-success-text);
-  margin-top: var(--fk-space-1);
-  /* Pop de confirmación al marcar pagado (keyframes en forms.css) */
-  animation: check-pop var(--fk-transition-base) both;
-  transform-origin: left center;
-}
-
-.cal-detail__badge-abono--parcial {
-  color: var(--fk-warning-text);
-}
-
-/* Fila de acciones de gasto fijo (Editar / Eliminar / Marcar pagado). */
-.cal-detail__actions {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-  margin-top: var(--fk-space-2);
-  padding-top: var(--fk-space-2);
-  border-top: 1px solid var(--fk-border-subtle);
-}
+/* CAL.4c: .cal-detail__badge-abono y .cal-detail__actions viven ahora en
+   config.css, junto al resto de la familia .cal-detail__*. */
 
 /* Picker de cuenta (helper.js - varias cuentas). */
 .cuenta-picker__lista {

@@ -1034,6 +1034,7 @@
   gap: var(--fk-space-3);
   padding: var(--fk-space-3);
   background: var(--fk-bg-elevated);
+  border: 1px solid transparent;
   border-radius: var(--fk-radius-md);
 }
 
@@ -1042,11 +1043,25 @@
    8%: el texto de la tarjeta (nombre/sub) es neutro (--fk-text-primary),
    no del color del dominio, así que no aplica el hallazgo de IV.2a sobre
    texto coloreado encima de su propio tinte (ese caso exige ~6%); acá el
-   límite real es que el tinte siga siendo "de fondo", no protagonista. */
-.cal-detail__item--ingreso        { background: color-mix(in srgb, var(--fk-dom-ingresos)    8%, var(--fk-bg-elevated)); }
-.cal-detail__item--fijo           { background: color-mix(in srgb, var(--fk-dom-agenda)       8%, var(--fk-bg-elevated)); }
-.cal-detail__item--deuda-entidad  { background: color-mix(in srgb, var(--fk-dom-compromisos)  8%, var(--fk-bg-elevated)); }
-.cal-detail__item--deuda-personal { background: color-mix(in srgb, var(--fk-dom-personales)   8%, var(--fk-bg-elevated)); }
+   límite real es que el tinte siga siendo "de fondo", no protagonista.
+   CAL.4c (ADR 037 D4): borde del color del tipo al 20%, decorativo (el
+   tipo lo porta el texto "Tipo · Frecuencia", SC 1.4.11). */
+.cal-detail__item--ingreso {
+  background: color-mix(in srgb, var(--fk-dom-ingresos) 8%, var(--fk-bg-elevated));
+  border-color: color-mix(in srgb, var(--fk-dom-ingresos) 20%, transparent);
+}
+.cal-detail__item--fijo {
+  background: color-mix(in srgb, var(--fk-dom-agenda) 8%, var(--fk-bg-elevated));
+  border-color: color-mix(in srgb, var(--fk-dom-agenda) 20%, transparent);
+}
+.cal-detail__item--deuda-entidad {
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 8%, var(--fk-bg-elevated));
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 20%, transparent);
+}
+.cal-detail__item--deuda-personal {
+  background: color-mix(in srgb, var(--fk-dom-personales) 8%, var(--fk-bg-elevated));
+  border-color: color-mix(in srgb, var(--fk-dom-personales) 20%, transparent);
+}
 
 .cal-detail__icon {
   display: inline-flex;
@@ -1116,6 +1131,132 @@
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-primary);
   white-space: nowrap;
+}
+
+/* CAL.4c (ADR 037 D5): con todos los compromisos del día cubiertos, el
+   total pasa a verde ("Pagado este día": refuerzo positivo, ADR 019). */
+.cal-detail__total--pagado {
+  color: var(--fk-success-text);
+}
+
+/* Estado de pago del item (CAL.4c, ADR 037 D5): pagado como pill verde
+   con ícono; parcial como pill neutra con montos tabulares (preservado,
+   mandato del doc de diseño). Antes vivían en domain.css como línea de
+   texto suelta. Pop de confirmación al marcar pagado (keyframes en
+   forms.css). */
+.cal-detail__badge-abono {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  margin-top: var(--fk-space-2);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-success-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 26%, transparent);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-success-text);
+  animation: check-pop var(--fk-transition-base) both;
+  transform-origin: left center;
+}
+.cal-detail__badge-abono .icon {
+  --fk-icon-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.cal-detail__badge-abono--parcial {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recordatorio del día de ingreso (ADR 021) como callout verde con ícono
+   (CAL.4c, ADR 037 D4); ocupa el ancho completo de la tarjeta. */
+.cal-detail__callout-ingreso {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-success-bg);
+  border: 1px solid color-mix(in srgb, var(--fk-success) 26%, transparent);
+}
+.cal-detail__callout-ingreso .icon {
+  --fk-icon-size: 0.9375rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--fk-success-text);
+}
+.cal-detail__callout-ingreso p {
+  margin: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-success-text);
+  line-height: 1.45;
+}
+
+/* Fila de acciones (Editar / Eliminar / CTA por tipo). Antes en
+   domain.css; vive junto al resto de la familia .cal-detail__*. */
+.cal-detail__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-2);
+  padding-top: var(--fk-space-2);
+  border-top: 1px solid var(--fk-border-subtle);
+}
+
+/* CTA principal del item con la identidad de su tipo (CAL.4c, ADR 037
+   D4). Botón propio (no .btn-primary): el verde del accent diría
+   "ingreso" y esto es un pago; mismo criterio y anatomía que
+   .deuda-card__abonar (ADR 036 D5). */
+.cal-detail__cta {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-1);
+  min-height: 2.375rem;   /* 38px, hit target AA con margen */
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid transparent;
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+
+.cal-detail__cta--fijo {
+  background: var(--fk-dom-agenda-bg);
+  border-color: color-mix(in srgb, var(--fk-dom-agenda) 40%, transparent);
+  color: var(--fk-dom-agenda-text);
+}
+.cal-detail__cta--fijo:hover {
+  background: color-mix(in srgb, var(--fk-dom-agenda) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-agenda) 60%, transparent);
+}
+
+.cal-detail__cta--deuda-entidad {
+  background: var(--fk-dom-compromisos-bg);
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 40%, transparent);
+  color: var(--fk-dom-compromisos-text);
+}
+.cal-detail__cta--deuda-entidad:hover {
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 60%, transparent);
+}
+
+.cal-detail__cta--deuda-personal {
+  background: var(--fk-dom-personales-bg);
+  border-color: color-mix(in srgb, var(--fk-dom-personales) 40%, transparent);
+  color: var(--fk-dom-personales-text);
+}
+.cal-detail__cta--deuda-personal:hover {
+  background: color-mix(in srgb, var(--fk-dom-personales) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-personales) 60%, transparent);
 }
 
 /* Empty state del mes (CAL.4b, ADR 037 D6): mes visible sin ningún

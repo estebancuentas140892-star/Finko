@@ -439,9 +439,21 @@ function _renderDetalleDia(evs, year, month, dia) {
   const resumen = partes.join(' · ');
   // AG.5: total a pagar ese día, visible de inmediato junto al título (no
   // hay que desplazarse por la lista de items para verlo).
-  const sumaDia = totalDia(evs);
+  // CAL.4c (ADR 037 D5): cuando todos los compromisos del día están
+  // completos, el label cambia a "Pagado este día" (verde): refuerzo en
+  // positivo, no alarma (ADR 019).
+  // CAL.4c (ADR 037 D7): el ojo del hero también enmascara este total.
+  const prefijo = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const gastos  = Array.isArray(S.gastos) ? S.gastos : [];
+  const oculto  = S.config?.ocultarSaldo === true;
+  const comps   = evs.filter(e => e?.tipo !== 'ingreso');
+  const todoPagado = comps.length > 0 &&
+    comps.every(c => estadoPagoMes(gastos, c, prefijo) === 'completo');
+
+  const sumaDia  = totalDia(evs);
+  const totalTxt = oculto ? SALDO_MASCARA : f(sumaDia);
   const totalPagarHtml = sumaDia > 0
-    ? `<p class="cal-detail__total">Total a pagar: <strong>${f(sumaDia)}</strong></p>`
+    ? `<p class="cal-detail__total${todoPagado ? ' cal-detail__total--pagado' : ''}">${todoPagado ? 'Pagado este día' : 'Total a pagar'}: <strong>${totalTxt}</strong></p>`
     : '';
 
   const items = evs.map(c => c?.tipo === 'ingreso'
@@ -480,16 +492,25 @@ function _renderDetalleItemIngreso(ing) {
   const desc  = _esc(ing.descripcion ?? 'Ingreso');
   const frec  = _esc(ing.frecuencia ?? '');
   const monto = Number(ing.monto) || 0;
+  // CAL.4c (ADR 037 D7): el ojo del hero también enmascara el monto.
+  const oculto   = S.config?.ocultarSaldo === true;
+  const montoTxt = oculto ? SALDO_MASCARA_CUENTA : f(monto);
 
+  // CAL.4c (ADR 037 D4): el recordatorio de apartar (ADR 021) pasa de línea
+  // de texto a callout verde con ícono, fuera del cuerpo para ocupar el
+  // ancho completo de la tarjeta.
   return `
     <li class="cal-detail__item cal-detail__item--ingreso">
       <span class="cal-detail__icon cal-detail__icon--ingreso" aria-hidden="true">${tejaCategoria(CATEGORIA_INGRESO_ICONO[ing.categoria] ?? 'i-saldo', 'ingresos')}</span>
       <div class="cal-detail__body">
         <p class="cal-detail__name">${desc}</p>
         <p class="cal-detail__sub">Ingreso${frec ? ` · ${frec}` : ''}</p>
-        <p class="cal-detail__badge-abono" role="status">Hoy llega tu dinero: recuerda apartar para tus objetivos antes de gastarlo.</p>
       </div>
-      ${monto > 0 ? `<p class="cal-detail__amount text-success">+${f(monto)}</p>` : ''}
+      ${monto > 0 ? `<p class="cal-detail__amount text-success">+${montoTxt}</p>` : ''}
+      <div class="cal-detail__callout-ingreso" role="status">
+        <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
+        <p>Hoy llega tu dinero: recuerda apartar para tus objetivos antes de gastarlo.</p>
+      </div>
       <div class="cal-detail__actions">
         <button type="button" class="btn btn-sm btn-primary"
                 data-action="agenda-distribuir-ingreso"
@@ -531,31 +552,42 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
     ? ` · ${_esc(c.categoria)}`
     : '';
   const notaLabel = (tipo === 'fijo' && c.nota) ? ` · ${_esc(c.nota)}` : '';
+  // CAL.4c (ADR 037 D7): el ojo del hero también enmascara los montos del
+  // detalle, con la máscara corta por item (mismo criterio que el hero de
+  // Inicio, IN.8c).
+  const oculto = S.config?.ocultarSaldo === true;
   // Una deuda sin cuota fija (ej. fiado, D.13) no muestra "$0": se abona libre.
   const montoRaw = tipo === 'fijo' ? c.monto : c.cuotaMensual;
-  const monto = Number.isFinite(Number(montoRaw)) && Number(montoRaw) > 0 ? f(Number(montoRaw)) : '';
+  const monto = Number.isFinite(Number(montoRaw)) && Number(montoRaw) > 0
+    ? (oculto ? SALDO_MASCARA_CUENTA : f(Number(montoRaw)))
+    : '';
   const idEsc = _esc(c.id ?? '');
 
   // Badge de estado de pago: distingue cuota cubierta, abono parcial y sin pago.
   // Para deudas se compara el total abonado contra cuotaMensual; para fijos
   // basta con que exista cualquier gasto vinculado ese mes.
+  // CAL.4c (ADR 037 D5): pagado como pill verde con ícono; el estado parcial
+  // se preserva como pill neutra (mandato explícito del doc de diseño).
   const prefijo    = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
   const gastos     = Array.isArray(S.gastos) ? S.gastos : [];
   const estadoPago = estadoPagoMes(gastos, c, prefijo);
 
   let badgeHtml = '';
   if (estadoPago === 'completo') {
-    badgeHtml = `<p class="cal-detail__badge-abono" role="status">✓ Ya pagaste este mes</p>`;
+    badgeHtml = `<p class="cal-detail__badge-abono" role="status"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Ya pagaste este mes</p>`;
   } else if (estadoPago === 'parcial') {
-    const totalAbonado = calcularAbonosDelMes(gastos, c.id, prefijo);
-    const cuota = Number(c.cuotaMensual) || 0;
-    badgeHtml = `<p class="cal-detail__badge-abono cal-detail__badge-abono--parcial" role="status">Abonado ${f(totalAbonado)} de ${f(cuota)} este mes</p>`;
+    const abonadoTxt = oculto ? SALDO_MASCARA_CUENTA : f(calcularAbonosDelMes(gastos, c.id, prefijo));
+    const cuotaTxt   = oculto ? SALDO_MASCARA_CUENTA : f(Number(c.cuotaMensual) || 0);
+    badgeHtml = `<p class="cal-detail__badge-abono cal-detail__badge-abono--parcial" role="status">Abonado ${abonadoTxt} de ${cuotaTxt} este mes</p>`;
   }
 
+  // CAL.4c (ADR 037 D4): el CTA principal lleva la identidad del tipo
+  // (mismo criterio que .deuda-card__abonar, ADR 036 D5: un abono no es un
+  // ingreso, no va en verde; "Marcar pagado" usa el índigo de la sección).
   let accionesHtml = '';
   if (tipo === 'fijo') {
     const btnPagar = estadoPago !== 'completo' ? `
-      <button type="button" class="btn btn-sm btn-primary"
+      <button type="button" class="cal-detail__cta cal-detail__cta--fijo"
               data-action="agenda-marcar-pagado-fijo" data-id="${idEsc}"
               aria-label="Marcar como pagado este mes: ${desc}">
         Marcar pagado
@@ -574,7 +606,7 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
       </div>`;
   } else if (tipo === 'deuda-entidad' || tipo === 'deuda-personal') {
     const btnAbonar = estadoPago !== 'completo' ? `
-      <button type="button" class="btn btn-sm btn-primary"
+      <button type="button" class="cal-detail__cta cal-detail__cta--${tipo}"
               data-action="abrir-abono" data-id="${idEsc}"
               aria-label="Registrar abono a ${desc}">
         Abonar

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): CAL.4c detalle del día accionable, cierra Calendario v2 completo · 2026-07-13
+
+Tercera y última rebanada de **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md) D4/D5/D7). **La iniciativa queda completa** (CAL.4a-c cerradas el mismo día): Calendario es la cuarta pantalla de la familia visual v2 tras Inicio (ADR 034), Mis cuentas (ADR 035) y Deudas (ADR 036).
+
+**Qué cambió:** (1) `modules/dominio/agenda/view.js`: `_renderDetalleDia()` calcula si todos los compromisos del día están completos (`estadoPagoMes`) y el label del total cambia "Total a pagar" (neutro) → **"Pagado este día"** (verde, `.cal-detail__total--pagado`; refuerzo positivo, ADR 019); un día mixto sigue en "Total a pagar". `_renderDetalleItem()`: el badge de pagado pasa de línea de texto "✓ ..." a **pill verde con `i-check-circle`**; el estado **parcial se preserva** ("Abonado $X de $Y este mes") como pill neutra tabular (mandato explícito del doc de diseño); los CTA dejan `.btn-primary` (verde genérico) por `.cal-detail__cta--<tipo>` con la identidad del tipo: **Marcar pagado** índigo agenda, **Abonar** frambuesa (entidad) / rosa (personal), mismo criterio que `.deuda-card__abonar` (ADR 036 D5: un abono no es un ingreso); Editar y Eliminar quedan intactos (mismas acciones ghost). `_renderDetalleItemIngreso()`: el recordatorio de apartar (ADR 021) pasa de línea de texto a **callout verde `.cal-detail__callout-ingreso`** con `i-lightbulb`, a ancho completo de la tarjeta; el CTA Distribuir sigue `btn-primary` (verde correcto: es dinero que entra). (2) **Máscara D7**: el ojo del hero enmascara ahora también el total del día (`SALDO_MASCARA`), los montos por item, el monto del ingreso y el badge parcial (`SALDO_MASCARA_CUENTA`, mismo criterio que IN.8c). (3) `styles/components/config.css`: pills de estado, callout de ingreso, `.cal-detail__cta*` (38px de alto, hit AA) y borde por tipo al 20% en `.cal-detail__item--*` (decorativo: el tipo lo porta el texto, SC 1.4.11); **`.cal-detail__badge-abono` y `.cal-detail__actions` migraron de `domain.css` a `config.css`**, junto al resto de la familia `.cal-detail__*` (navegabilidad; la animación `check-pop` sigue en forms.css).
+
+**Archivos tocados:** `modules/dominio/agenda/view.js`, `styles/components/config.css`, `styles/components/domain.css` (bloques retirados con nota), `tests/unit/agenda.test.js` (8 nuevos: label neutro/pagado/mixto, pill con ícono y sin CTA, parcial preservado con CTA, clases de CTA por tipo + Editar/Eliminar intactos, callout de ingreso, máscara integral del detalle), `tests/e2e/smoke.test.js` (1 nuevo: día pagado muestra "Pagado este día" + pill; día pendiente muestra Abonar con la clase de su tipo), `service-worker.js` (v384→v385).
+
+**Verificación:** 2634/2634 unit + 197/197 E2E completos + lint verdes.
+
+**Podría afectar:** solo presentación del detalle del día; los `data-action` (`agenda-marcar-pagado-fijo`, `abrir-abono`, `agenda-distribuir-ingreso`, editar/eliminar) no cambiaron. Quien tenga el ojo de privacidad activo ahora ve enmascarados también los montos del detalle del calendario (antes quedaban visibles: era una fuga del control de privacidad IN.2).
+
+---
+
 ### feat(agenda): CAL.4b grilla legible + selección índigo + empty state del mes · 2026-07-13
 
 Segunda rebanada de **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md) D2/D3/D6).

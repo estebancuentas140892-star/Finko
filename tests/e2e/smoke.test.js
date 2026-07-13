@@ -1773,6 +1773,64 @@ test.describe('Agenda - hero del mes (CAL.4a)', () => {
   });
 });
 
+// ── SUITE 12e: Agenda - detalle del día accionable (CAL.4c, ADR 037 D4/D5) ───
+// Con todos los compromisos del día cubiertos, el total del detalle pasa a
+// "Pagado este día"; los CTA llevan la identidad de su tipo (Marcar pagado
+// índigo, Abonar frambuesa) en vez del verde genérico.
+
+test.describe('Agenda - detalle del día accionable (CAL.4c)', () => {
+  test('día pagado muestra "Pagado este día" y el CTA Abonar lleva la clase de su tipo', async ({ page }) => {
+    const hoy  = new Date();
+    const anio = hoy.getFullYear();
+    const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+
+    await page.addInitScript(({ anio, mes }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [],
+        ingresos:  [],
+        gastos: [{
+          id: 'gasto-cal4c-e2e', compromisoId: 'fijo-cal4c-e2e',
+          descripcion: 'Pago: Arriendo CAL4c', monto: 900000,
+          categoria: 'Gastos fijos', cuentaId: null, fecha: `${anio}-${mes}-15`,
+        }],
+        compromisos: [
+          {
+            id: 'fijo-cal4c-e2e', tipo: 'fijo', descripcion: 'Arriendo CAL4c',
+            monto: 900000, frecuencia: 'Mensual', diaPago: 15,
+          },
+          {
+            id: 'deuda-cal4c-e2e', tipo: 'deuda-entidad', descripcion: 'Tarjeta CAL4c',
+            saldoTotal: 3000000, cuotaMensual: 150000, tasa: 24, tasaUnidad: 'EA',
+            frecuencia: 'Mensual', diaPago: 20,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { anio, mes });
+
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    // Día 15: el fijo está pagado → total en verde + pill con ícono, sin CTA.
+    await page.locator('[data-action="agenda-mostrar-dia"][data-day="15"]').click();
+    const total = page.locator('.cal-detail__total');
+    await expect(total).toContainText('Pagado este día');
+    await expect(page.locator('.cal-detail__badge-abono')).toContainText('Ya pagaste este mes');
+    await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
+
+    // Día 20: la deuda está pendiente → CTA Abonar con la identidad del tipo.
+    await page.locator('[data-action="agenda-mostrar-dia"][data-day="20"]').click();
+    const abonar = page.locator('[data-action="abrir-abono"]');
+    await expect(abonar).toBeVisible();
+    await expect(abonar).toHaveClass(/cal-detail__cta--deuda-entidad/);
+    await expect(page.locator('.cal-detail__total')).toContainText('Total a pagar');
+  });
+});
+
 // ── SUITE 12d: Agenda - empty state del mes (CAL.4b, ADR 037 D6) ─────────────
 // Un mes sin ningún evento muestra la card de guía bajo el calendario y su
 // CTA abre el modal de gasto fijo (misma acción del header, nuevo-gasto-fijo).
