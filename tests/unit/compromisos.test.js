@@ -556,6 +556,48 @@ describe('normalizarCompromiso()', () => {
     };
     expect(normalizarCompromiso(datos).categoria).toBeNull();
   });
+
+  // ── CAT.2d: ícono elegido para la categoría 'Otra'/'Otro' ─────────
+
+  it('CAT.2d: con categoría "Otra" (entidad) y un ícono válido del catálogo, lo guarda', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Otra', icono: 'c-avion',
+    };
+    expect(normalizarCompromiso(datos).icono).toBe('c-avion');
+  });
+
+  it('CAT.2d: con categoría "Otro" (personal) y un ícono válido del catálogo, lo guarda', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-personal',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Otro', icono: 'c-pesa',
+    };
+    expect(normalizarCompromiso(datos).icono).toBe('c-pesa');
+  });
+
+  it('CAT.2d: con una categoría distinta de "Otra"/"Otro", el ícono queda null aunque venga en los datos', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Vivienda', icono: 'c-avion',
+    };
+    expect(normalizarCompromiso(datos).icono).toBeNull();
+  });
+
+  it('CAT.2d: con categoría "Otra" pero sin ícono elegido, queda null (no obligatorio)', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Otra',
+    };
+    expect(normalizarCompromiso(datos).icono).toBeNull();
+  });
+
+  it('CAT.2d: un valor de ícono fuera del catálogo (manipulación del DOM) se ignora', () => {
+    const datos = {
+      ...datosFormValidos, tipo: 'deuda-entidad',
+      saldoTotal: '500000', cuotaMensual: '50000', categoria: 'Otra', icono: 'algo-inventado',
+    };
+    expect(normalizarCompromiso(datos).icono).toBeNull();
+  });
 });
 
 // ── validarCompromiso() - reglas de deuda ─────────────────────────
@@ -1934,6 +1976,55 @@ describe('renderFormDeuda() - selector de categoría', () => {
   });
 });
 
+// ── CAT.2d: picker de ícono para la categoría 'Otra'/'Otro' ───────
+
+describe('renderFormDeuda() - picker de ícono (CAT.2d)', () => {
+  it('en modo creación, el grupo del picker viene oculto (ninguna categoría elegida aún)', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    const grupo = html.match(/<div class="form-group"[^>]*id="grupo-comp-icono"[^>]*>/)[0];
+    expect(grupo).toContain('hidden');
+  });
+
+  it('en modo edición con categoría "Otra" (entidad), el grupo viene visible y con el ícono guardado', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Deuda rara', tipo: 'deuda-entidad',
+      saldoTotal: 500_000, cuotaMensual: 50_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Otra', icono: 'c-avion', activo: true,
+    };
+    const html = renderFormDeuda('deuda-entidad', deuda);
+    const grupo = html.match(/<div class="form-group"[^>]*id="grupo-comp-icono"[^>]*>/)[0];
+    expect(grupo).not.toContain('hidden');
+    expect(html).toContain('aria-pressed="true"');
+  });
+
+  it('en modo edición con categoría "Otro" (personal), el grupo viene visible', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Préstamo raro', tipo: 'deuda-personal',
+      saldoTotal: 500_000, cuotaMensual: 50_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Otro', icono: 'c-pesa', activo: true,
+    };
+    const html = renderFormDeuda('deuda-personal', deuda);
+    const grupo = html.match(/<div class="form-group"[^>]*id="grupo-comp-icono"[^>]*>/)[0];
+    expect(grupo).not.toContain('hidden');
+  });
+
+  it('en modo edición con una categoría fija (no "Otra"), el grupo del picker queda oculto', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 500_000, cuotaMensual: 50_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', activo: true,
+    };
+    const html = renderFormDeuda('deuda-entidad', deuda);
+    const grupo = html.match(/<div class="form-group"[^>]*id="grupo-comp-icono"[^>]*>/)[0];
+    expect(grupo).toContain('hidden');
+  });
+
+  it('el picker usa el catálogo compartido ICONOS_CATEGORIA_PERSONALIZADA (mismo id que Gastos/Metas/Apartados)', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('data-icono-picker="comp-icono"');
+  });
+});
+
 // ── D.14: acreditar la cuenta de origen al crear una deuda ────────
 
 describe('renderFormDeuda() - bloque de cuenta de origen (D.14)', () => {
@@ -2080,6 +2171,31 @@ describe('renderListaCompromisos() - categoría como chip', () => {
     expect(teja).not.toBeNull();
     expect(teja.getAttribute('data-dom')).toBe('compromisos');
     expect(teja.innerHTML).toContain(`#${CATEGORIA_DEUDA_ICONO['Tarjeta de crédito']}`);
+  });
+
+  it('CAT.2d: categoría "Otra" con ícono elegido por el usuario prevalece sobre el fijo c-otros', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Deuda de viaje', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Otra', icono: 'c-avion', tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    }];
+    renderListaCompromisos();
+    const teja = document.querySelector('.deuda-card__icon .cat-teja');
+    expect(teja.innerHTML).toContain('#c-avion');
+    expect(teja.innerHTML).not.toContain('#c-otros');
+    const chipCat = document.querySelector('.deuda-card__chip--entidad');
+    expect(chipCat.innerHTML).toContain('#c-avion');
+  });
+
+  it('CAT.2d: categoría "Otra" sin ícono elegido conserva el fijo c-otros del catálogo', () => {
+    S.compromisos = [{
+      id: 'd1', descripcion: 'Deuda sin ícono', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Otra', tasa: 0.28, tasaUnidad: 'EA', activo: true,
+    }];
+    renderListaCompromisos();
+    const teja = document.querySelector('.deuda-card__icon .cat-teja');
+    expect(teja.innerHTML).toContain(`#${CATEGORIA_DEUDA_ICONO['Otra']}`);
   });
 
   it('sin categoría, el chip muestra el tipo y la tasa va en su propio chip', () => {

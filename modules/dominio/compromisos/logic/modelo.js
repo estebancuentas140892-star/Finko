@@ -6,7 +6,7 @@
  * - Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
  */
 
-import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL } from '../../../core/constants.js';
+import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIAS_DEUDA, CATEGORIAS_DEUDA_PERSONAL, ICONOS_CATEGORIA_PERSONALIZADA } from '../../../core/constants.js';
 
 // ── CATÁLOGOS LOCALES ────────────────────────────────────────────
 
@@ -369,11 +369,15 @@ export function detectarDeudaCreciente(datos) {
  *                       descripcion es la propia categoría y lo que llega en el campo de texto se
  *                       guarda como nota opcional; sin categoría (o con 'Otro'), descripcion es el
  *                       nombre que escribió el usuario y nota queda ''.
- * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA' }
+ * - 'deuda-entidad'  → { saldoTotal, cuotaMensual, categoria|null, tasa|null, tasaUnidad='EA', icono|null }
  *                       (tasa null = desconocida; 0 significaría "sin interés",
  *                       que en una entidad casi nunca es cierto; categoria desde v18, CATEGORIAS_DEUDA)
- * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad? }
+ * - 'deuda-personal' → { saldoTotal, cuotaMensual, categoria|null, tasa?, tasaUnidad?, icono|null }
  *                       (sin tasa = 0: el form dice "si no cobra interés, deja en blanco")
+ *                       `icono` (CAT.2d): solo con categoría 'Otra'/'Otro' y un ícono elegido del
+ *                       picker compartido (`ICONOS_CATEGORIA_PERSONALIZADA`); siempre explícito
+ *                       (null si no aplica) para que `editar()` (Object.assign shallow) lo limpie
+ *                       si el usuario cambia de categoría al editar, en vez de dejarlo huérfano.
  *
  * @param {Record<string, string>} datos
  */
@@ -408,6 +412,12 @@ export function normalizarCompromiso(datos) {
     base.categoria    = datos.categoria && catalogoCat.includes(datos.categoria)
       ? datos.categoria
       : null;
+    // CAT.2d: 'Otra' (entidad) / 'Otro' (personal) admite elegir un ícono del
+    // picker compartido en vez del fijo c-otros. Siempre explícito (null si no
+    // aplica), nunca ausente: ver nota de icono en el docstring de la función.
+    const categoriaOtra = datos.tipo === 'deuda-personal' ? 'Otro' : 'Otra';
+    const iconoValido = ICONOS_CATEGORIA_PERSONALIZADA.some(i => i.icono === datos.icono);
+    base.icono = (base.categoria === categoriaOtra && iconoValido) ? datos.icono : null;
     const tasaPct = Number(datos.tasa);
     const tieneTasa = datos.tasa !== '' && datos.tasa !== undefined && datos.tasa !== null
       && !isNaN(tasaPct) && tasaPct >= 0;

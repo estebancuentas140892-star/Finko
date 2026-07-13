@@ -287,9 +287,12 @@ function _filaDistribuir(d) {
  * línea con el texto de la checklist, por eso icon--sm y no una teja.
  */
 function _iconoNecesidad(it) {
-  const porCategoria = it.tipo === 'fijo'
+  // CAT.2d: ícono elegido por el usuario para la categoría 'Otra'/'Otro' de
+  // una deuda prevalece sobre el fijo del catálogo (mismo campo que ya
+  // resuelve el ícono en la lista de Deudas, `compromiso.icono`).
+  const porCategoria = it.icono || (it.tipo === 'fijo'
     ? CATEGORIA_AGENDA_ICONO[it.categoria]
-    : (CATEGORIA_DEUDA_ICONO[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_ICONO[it.categoria]);
+    : (CATEGORIA_DEUDA_ICONO[it.categoria] ?? CATEGORIA_DEUDA_PERSONAL_ICONO[it.categoria]));
   return iconoCategoria(porCategoria ?? (it.tipo === 'fijo' ? 'i-agenda' : 'i-deudas'), 'icon icon--sm');
 }
 

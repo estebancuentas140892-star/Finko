@@ -79,7 +79,7 @@ function _pagadoEstePeriodo(gastos, compromisoId, prefijoMes, cuotaDeuda) {
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
  * @param {import('../../../core/state.js').Gasto[]} [gastos]
  * @param {Date} [hoy]
- * @returns {Array<{id:string, nombre:string, categoria:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}>}
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}>}
  *   Los no pagados primero (de mayor a menor monto), luego los ya pagados.
  */
 export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date()) {
@@ -103,6 +103,9 @@ export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy 
         id:        c.id,
         nombre:    c.descripcion ?? '',
         categoria: c.categoria ?? null,
+        // CAT.2d: ícono elegido para la categoría 'Otra'/'Otro' de una deuda
+        // (mismo campo que ya resuelve el ícono en la lista de Deudas).
+        icono:     c.icono ?? null,
         tipo:      esDeuda ? 'deuda' : 'fijo',
         monto,
         diaPago:   Number.isInteger(diaPagoNum) ? diaPagoNum : null,

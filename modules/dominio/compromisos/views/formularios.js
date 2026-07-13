@@ -15,8 +15,10 @@ import {
   FRECUENCIAS,
   CATEGORIAS_DEUDA,
   CATEGORIAS_DEUDA_PERSONAL,
+  ICONOS_CATEGORIA_PERSONALIZADA,
 } from '../../../core/constants.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
+import { renderIconoPicker } from '../../../infra/icon-picker.js';
 
 // ── FORMULARIO MODAL: ABONAR A DEUDA (ADR 002) ───────────────────
 
@@ -191,6 +193,13 @@ export function renderFormDeuda(tipo, deuda = null) {
     })
     .join('');
 
+  // CAT.2d: con 'Otra' (entidad) / 'Otro' (personal), el usuario puede elegir
+  // un ícono del picker compartido en vez del fijo c-otros. Grupo oculto salvo
+  // que la categoría guardada ya sea la de "otro" (modo edición).
+  const categoriaOtra = esEntidad ? 'Otra' : 'Otro';
+  const iconoOculto = !(modoEdit && deuda.categoria === categoriaOtra);
+  const vIcono = modoEdit ? (deuda.icono ?? null) : null;
+
   const volverBtn = modoEdit
     ? `<button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>`
     : `<button type="button" class="btn btn-ghost" data-action="comp-volver-chooser">← Volver</button>`;
@@ -221,6 +230,10 @@ export function renderFormDeuda(tipo, deuda = null) {
           <option value="">Seleccionar…</option>
           ${catOpts}
         </select>
+      </div>
+
+      <div class="form-group"${iconoOculto ? ' hidden' : ''} id="grupo-comp-icono">
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'comp-icono', valorActual: vIcono, label: 'Ícono' })}
       </div>
 
       <div class="form-group">

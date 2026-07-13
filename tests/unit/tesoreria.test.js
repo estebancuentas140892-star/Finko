@@ -430,7 +430,7 @@ describe('construirDesgloseNecesidades()', () => {
   it('un fijo mensual aparece con su monto tal cual, tipo "fijo", con día de pago y sin pagar', () => {
     const comps = [compFijoBase({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000, diaPago: 5 })];
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([
-      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', tipo: 'fijo', monto: 800_000, diaPago: 5, pagado: false },
+      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 5, pagado: false },
     ]);
   });
 
@@ -448,6 +448,16 @@ describe('construirDesgloseNecesidades()', () => {
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0]).toMatchObject(
       { id: 'd1', nombre: 'Tarjeta Bancolombia', categoria: 'Tarjeta de crédito', tipo: 'deuda', monto: 250_000 },
     );
+  });
+
+  it('CAT.2d: propaga el ícono elegido para la categoría "Otra" de una deuda', () => {
+    const comps = [compDeudaBase({ categoria: 'Otra', icono: 'c-avion' })];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].icono).toBe('c-avion');
+  });
+
+  it('una deuda sin ícono propio queda con icono=null', () => {
+    const comps = [compDeudaBase()];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].icono).toBeNull();
   });
 
   it('deuda-personal también cuenta como Necesidad', () => {

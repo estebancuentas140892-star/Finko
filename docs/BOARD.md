@@ -4,13 +4,13 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (CAT.2c: selector de ícono en Apartados, tercer consumidor; primera cobertura E2E de la sección).
+> Última actualización: 2026-07-13 (CAT.2d: selector de ícono en Deudas, cuarto consumidor).
 
 ---
 
 ## En proceso
 
-_(Sin tarjeta activa: **CAT.2c cerrada** el 2026-07-13 (Apartados migrado como tercer consumidor del picker compartido; ver Transversal abajo). Las plantillas rápidas de Apartados conservan su propio catálogo de emojis curados vía el nuevo `setIconoPickerValor`, en vez de migrar al catálogo genérico. De paso se sumó la primera cobertura E2E de Apartados (no tenía ninguna). Quedan **CAT.2d** a **CAT.2f** en Deudas/Cuentas/Fijo. Siguiente tarjeta sugerida: **CAT.2d** (Deudas) o **CAT.2e** (Cuentas), ambas de prioridad media pero agregan una capacidad nueva (hoy "Otro" cae a un ícono fijo, no elegible); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
+_(Sin tarjeta activa: **CAT.2d cerrada** el 2026-07-13 (Deudas migrada como cuarto consumidor del picker compartido, categoría "Otra"/"Otro"; ver Transversal abajo). A diferencia de Gastos/Metas/Apartados, esta rebanada agregó una capacidad nueva (`compromiso.icono`), no solo cambió la UI de un campo que ya existía; propagado también al checklist de "Distribuir mi ingreso" para no mostrar un ícono distinto al de la lista de Deudas. Quedan **CAT.2e** (Cuentas) y **CAT.2f** (Fijo/Calendario). Siguiente tarjeta sugerida: **CAT.2e** (Cuentas), misma naturaleza que CAT.2d acaba de resolver (agrega elección de ícono al banco "Otro"); **CAT.2f** (Fijo/Calendario) requiere análisis previo y coordina con CAT.1.)_
 
 ---
 
@@ -446,13 +446,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 > **CAT.2c CERRADA el 2026-07-13** (Apartados, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): el `<input type="text" maxlength="4">` del nombre del apartado se reemplaza por `renderIconoPicker(..., { label: '' })` en la misma columna angosta del layout existente (el panel pasa a popover flotante, CSS nuevo en `domain.css`). Las 17 **plantillas rápidas** (SOAT, Regalos...) conservan su propio catálogo curado de emojis (más específico que el genérico de 29 íconos del picker) vía **`setIconoPickerValor`**, nuevo en el componente compartido para fijar un valor externo sin pasar por la grilla. `_iconoApartado()` distingue sprite-id de emoji crudo (mismo patrón que Metas). **Primera cobertura E2E de Apartados** (no tenía ninguna): 3 tests nuevos. 9 tests unitarios nuevos (`icon-picker.test.js`) + 6 en `apartados.test.js`. 2563/2563 unit + 186/186 E2E completos + lint verdes. SW v376→v377.
 
-#### CAT.2d - Picker de icono en Deudas (categoría "Otra"/"Otro")
-- Prioridad  : media
-- Estado     : pendiente (independiente)
-- Objetivo   : hoy `CATEGORIA_DEUDA_ICONO['Otra']` y `CATEGORIA_DEUDA_PERSONAL_ICONO['Otro']` son un ícono FIJO (`c-otros`), sin elección del usuario. Esta rebanada AGREGA la capacidad de elegir (no solo cambia una UI existente): al elegir "Otra"/"Otro" en el selector de categoría del form de deuda, ofrecer `renderIconoPicker` y persistir el ícono elegido (requiere decidir dónde vive ese dato en el schema `Compromiso`, probablemente un campo opcional nuevo sin bump, mismo patrón que `cuentaOrigenId`/`montoAcreditado` de D.14).
-- Secciones  : Deudas (`compromisos/views/formularios.js`, `compromisos/logic/modelo.js` para normalizar el campo nuevo)
-- Depende de : nada; coordina con la validación D3 del ADR 029 (catálogo entidad→producto) si se decide ahí un modelo de datos más amplio
-- Modelo     : Sonnet 5 - Alto (agrega campo nuevo al schema, no solo UI)
+> **CAT.2d CERRADA el 2026-07-13** (Deudas, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)): a diferencia de Gastos/Metas/Apartados, esta rebanada AGREGÓ una capacidad nueva en vez de reemplazar un campo de ícono existente: hoy "Otra" (entidad) / "Otro" (personal) caía al ícono fijo `c-otros`. `compromiso.icono` nuevo, campo opcional sin bump de schema, siempre explícito (`null` o id del sprite) para sobrevivir el merge shallow de `editar()`. `renderFormDeuda()` agrega el grupo del picker, oculto salvo categoría "otra"; `_wireIconoOtraCategoria()` (nueva en `index.js`) alterna la visibilidad. `lista.js` resuelve `compromiso.icono` antes que el ícono fijo por categoría. Propagado también al checklist de "Distribuir mi ingreso" (`tesoreria/logic/distribucion.js`, `views/distribucion.js`) para consistencia visual entre secciones. 14 tests unitarios nuevos (`compromisos.test.js`) + 2 en `tesoreria.test.js` + 2 E2E nuevos. 2577/2577 unit + 188/188 E2E completos + lint verdes. SW v377→v378.
 
 #### CAT.2e - Picker de icono en Cuentas (banco "Otro")
 - Prioridad  : media

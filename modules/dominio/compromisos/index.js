@@ -19,6 +19,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { f, hoy } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
+import { wireIconoPicker } from '../../infra/icon-picker.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbono, detectarDeudaCreciente, filtrarDeudasPagables, compararEstrategias, simularRenegociacion, simularConsolidacion, repartirExtraEnCuotas, tasaMensualToEA, esDeuda } from './logic.js';
 import {
@@ -169,6 +170,7 @@ function _editarCompromiso(el) {
     });
   }
   _wireToggleFiado(body);
+  _wireIconoOtraCategoria(body);
 
   abrirModal(overlay);
 }
@@ -203,6 +205,29 @@ function _wireToggleFiado(body) {
   };
   sel.addEventListener('change', aplicar);
   aplicar(); // estado inicial (ej. edición de un fiado existente)
+}
+
+/**
+ * CAT.2d: el picker de ícono solo tiene sentido con la categoría 'Otra'
+ * (entidad) / 'Otro' (personal); se revela/oculta el grupo al cambiar el
+ * selector. El form se re-renderiza completo en cada apertura (como Gastos
+ * y Apartados, no como Metas): no hace falta `resetIconoPicker`.
+ * @param {HTMLElement} body - contenedor del form ya inyectado.
+ */
+function _wireIconoOtraCategoria(body) {
+  const form   = body.querySelector('#form-compromiso');
+  const sel    = body.querySelector('#comp-categoria');
+  const grupo  = body.querySelector('#grupo-comp-icono');
+  const picker = body.querySelector('[data-icono-picker="comp-icono"]');
+  if (!form || !sel || !grupo || !picker) return;
+
+  const esEntidad    = form.querySelector('input[name="tipo"]')?.value === 'deuda-entidad';
+  const categoriaOtra = esEntidad ? 'Otra' : 'Otro';
+
+  const aplicar = () => { grupo.hidden = sel.value !== categoriaOtra; };
+  sel.addEventListener('change', aplicar);
+  aplicar(); // estado inicial (ej. edición de una deuda ya guardada como 'Otra')
+  wireIconoPicker(picker);
 }
 
 /**
@@ -286,6 +311,7 @@ function _elegirTipoDeuda(el) {
   });
   _wireToggleFiado(body);
   _wireToggleOrigen(body);
+  _wireIconoOtraCategoria(body);
 
   // Foco en el primer campo visible para accesibilidad.
   body.querySelector('input:not([type=hidden])')?.focus();

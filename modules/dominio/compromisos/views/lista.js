@@ -120,9 +120,13 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
   // ícono genérico del tipo dentro de la misma teja.
   const dominio  = tipo === 'deuda-personal' ? 'personales' : 'compromisos';
   const marca    = resolverMarca(compromiso.descripcion);
+  // CAT.2d: categoría 'Otra'/'Otro' con ícono elegido por el usuario prevalece
+  // sobre el fijo `c-otros` del catálogo (`_ICONO_DEUDA` no tiene entrada para
+  // ese ícono libre, así que va primero en la cadena de fallback).
+  const iconoCat = compromiso.icono || _ICONO_DEUDA[compromiso.categoria];
   const icono    = marca
     ? tejaMarca(marca)
-    : tejaCategoria(_ICONO_DEUDA[compromiso.categoria] ?? `i-${ICONO_TIPO[tipo] ?? 'recurring'}`, dominio);
+    : tejaCategoria(iconoCat ?? `i-${ICONO_TIPO[tipo] ?? 'recurring'}`, dominio);
   const label    = _esc(LABEL_TIPO[tipo] ?? tipo);
   const frec     = _esc(compromiso.frecuencia);
   const dias     = proximoVencimiento(compromiso);
@@ -171,8 +175,8 @@ function _renderCompromisoItem(compromiso, ordenEstrategia = null, oculto = fals
   // viaja solo: cada chip lleva ícono + texto (SC 1.4.11).
   const catChipLabel = compromiso.categoria ? _esc(compromiso.categoria) : label;
   const catChipMod   = tipo === 'deuda-personal' ? 'deuda-card__chip--personal' : 'deuda-card__chip--entidad';
-  const catChipIcono = _ICONO_DEUDA[compromiso.categoria]
-    ? `<svg class="icon" aria-hidden="true"><use href="#${_ICONO_DEUDA[compromiso.categoria]}"/></svg>`
+  const catChipIcono = iconoCat
+    ? `<svg class="icon" aria-hidden="true"><use href="#${iconoCat}"/></svg>`
     : icon(ICONO_TIPO[tipo] ?? 'recurring');
 
   let tasaChip;

@@ -3328,3 +3328,54 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
   });
 
 });
+
+// ── SUITE: Deudas - selector de ícono para categoría "Otra"/"Otro" (CAT.2d) ──
+
+test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', () => {
+
+  test('crear una deuda con entidad y categoría "Otra" con ícono elegido queda en la lista', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-compromiso"]');
+    await page.waitForSelector('#modal-compromiso[data-open]');
+
+    await page.click('[data-action="comp-elegir-tipo"][data-tipo="deuda-entidad"]');
+
+    const form = page.locator('#modal-compromiso-body form');
+    await form.locator('#comp-categoria').selectOption('Otra');
+    // El picker (oculto salvo con "Otra") se despliega al tocar el recuadro.
+    await expect(form.locator('#grupo-comp-icono')).toBeVisible();
+    await form.locator('[data-icono-picker="comp-icono"] .icono-picker__recuadro').click();
+    await form.locator('[data-icono-picker="comp-icono"] [data-icon="c-avion"]').click();
+    await form.locator('#comp-descripcion').fill('Crédito de viaje');
+    await form.locator('#comp-saldo').fill('2000000');
+    await form.locator('#comp-cuota').fill('200000');
+    await form.locator('#comp-dia').fill('10');
+    await form.locator('button[type="submit"]').click();
+
+    await page.waitForSelector(modalCerrado('modal-compromiso'), { timeout: 5_000 });
+
+    const card = page.locator('.deuda-card', { hasText: 'Crédito de viaje' });
+    await expect(card.locator('.deuda-card__icon .cat-teja use[href="#c-avion"]')).toHaveCount(1);
+    await expect(card.locator('.deuda-card__chip--entidad use[href="#c-avion"]')).toHaveCount(1);
+  });
+
+  test('sin elegir "Otra", el picker de ícono permanece oculto', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#compromisos');
+    await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
+    await page.click('[data-action="nuevo-compromiso"]');
+    await page.waitForSelector('#modal-compromiso[data-open]');
+
+    await page.click('[data-action="comp-elegir-tipo"][data-tipo="deuda-personal"]');
+
+    const form = page.locator('#modal-compromiso-body form');
+    await expect(form.locator('#grupo-comp-icono')).toBeHidden();
+    await form.locator('#comp-categoria').selectOption('Familiar');
+    await expect(form.locator('#grupo-comp-icono')).toBeHidden();
+    await form.locator('#comp-categoria').selectOption('Otro');
+    await expect(form.locator('#grupo-comp-icono')).toBeVisible();
+  });
+
+});

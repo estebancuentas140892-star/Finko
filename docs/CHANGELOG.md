@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(transversal): CAT.2d selector de ícono en Deudas, cuarto consumidor · 2026-07-13
+
+Cierra **CAT.2d** (`docs/BOARD.md`), cuarta rebanada del picker de ícono compartido: **Deudas** migrada (categoría "Otra"/"Otro"). A diferencia de los 3 consumidores previos (Gastos, Metas, Apartados), esta rebanada AGREGA una capacidad nueva en vez de reemplazar un campo de ícono existente: hoy "Otra" (entidad) / "Otro" (personal) cae al ícono fijo `c-otros`, sin elección del usuario.
+
+**Qué cambió:** (1) `compromiso.icono` nuevo, campo opcional sin bump de schema, guardado solo cuando la categoría es "Otra"/"Otro" y el valor elegido está en `ICONOS_CATEGORIA_PERSONALIZADA` (protege contra manipulación del DOM). Siempre explícito (`null` o el id del sprite), nunca ausente: `editar('compromisos', id, cambios)` hace un merge shallow (`Object.assign`, `infra/crud.js`), así que si el usuario cambia de categoría al editar, el ícono viejo debe limpiarse explícitamente en vez de quedar huérfano (mismo patrón ya usado ahí para `tasa`). (2) `formularios.js`: `renderFormDeuda()` agrega el grupo `#grupo-comp-icono` con `renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'comp-icono' })`, oculto salvo que la categoría (guardada, en edición) ya sea la de "otra". (3) `index.js`: `_wireIconoOtraCategoria()` nueva alterna la visibilidad del grupo al cambiar el `<select>` de categoría y llama `wireIconoPicker` (el form se re-renderiza completo en cada apertura, como Gastos/Apartados: no hace falta `resetIconoPicker`). (4) `lista.js`: `compromiso.icono` antes que `_ICONO_DEUDA[categoria]` en la teja y en el chip de categoría. (5) **Consistencia de paso**: el checklist de "Distribuir mi ingreso" (`tesoreria/logic/distribucion.js` `construirDesgloseNecesidades`, `views/distribucion.js` `_iconoNecesidad`) propaga el mismo campo `icono`, para que una deuda con ícono elegido se vea igual ahí que en la lista de Deudas.
+
+**Archivos tocados:** `modules/dominio/compromisos/logic/modelo.js` (`normalizarCompromiso`), `modules/dominio/compromisos/views/formularios.js` (`renderFormDeuda`), `modules/dominio/compromisos/index.js` (`_wireIconoOtraCategoria`, wiring en `_elegirTipoDeuda`/`_editarCompromiso`), `modules/dominio/compromisos/views/lista.js` (`_renderCompromisoItem`), `modules/dominio/tesoreria/logic/distribucion.js` (`construirDesgloseNecesidades`), `modules/dominio/tesoreria/views/distribucion.js` (`_iconoNecesidad`), `tests/unit/compromisos.test.js` (14 tests nuevos), `tests/unit/tesoreria.test.js` (2 tests nuevos + 1 actualizado), `tests/e2e/smoke.test.js` (2 tests nuevos), `service-worker.js` (v377→v378).
+
+**Verificación:** 2577/2577 unit + **188/188 E2E completos** + lint verdes.
+
+**Podría afectar:** solo la UI de Deudas al elegir "Otra"/"Otro" y el checklist de "Distribuir mi ingreso" (ambos ahora pueden mostrar un ícono personalizado en vez del fijo `c-otros`). Deudas existentes sin `icono` siguen mostrando el ícono fijo por categoría, sin cambios visibles.
+
+---
+
 ### feat(transversal): CAT.2c selector de ícono en Apartados, tercer consumidor + primera cobertura E2E de la sección · 2026-07-13
 
 Cierra **CAT.2c** (`docs/BOARD.md`), tercera rebanada del picker de ícono compartido: **Apartados** migrado (nombre del apartado).
