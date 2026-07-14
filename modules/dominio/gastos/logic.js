@@ -81,6 +81,31 @@ export function gastosPorCategoria(gastos) {
   }, {});
 }
 
+/**
+ * Variación del gasto de un mes contra el anterior, para el chip del hero
+ * (GAS.1a, ADR 039 D2). Aquí solo se calculan dirección y magnitud; el
+ * criterio de color es del caller (IV.3/ADR 038 D4: verde solo al bajar,
+ * neutro al subir, nunca alarmante).
+ *
+ * Devuelve null cuando no hay base de comparación (mes anterior sin gasto):
+ * un porcentaje contra cero no significa nada (mismo criterio que la
+ * tendencia de Análisis). Una diferencia que redondea a 0% se reporta como
+ * 'igual' (decir "0% menos" confunde).
+ *
+ * @param {number} totalActual   total del mes visible.
+ * @param {number} totalAnterior total del mes anterior.
+ * @returns {{ direccion: 'menos'|'mas'|'igual', pct: number }|null}
+ */
+export function variacionMensualGasto(totalActual, totalAnterior) {
+  const actual   = Number(totalActual)   || 0;
+  const anterior = Number(totalAnterior) || 0;
+  if (anterior <= 0) return null;
+
+  const pct = Math.round((Math.abs(actual - anterior) / anterior) * 100);
+  if (pct === 0) return { direccion: 'igual', pct: 0 };
+  return { direccion: actual < anterior ? 'menos' : 'mas', pct };
+}
+
 // ── DETECTOR DE HORMIGAS ─────────────────────────────────────────
 
 /**

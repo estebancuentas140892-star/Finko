@@ -9,6 +9,7 @@
  */
 
 import { S, EventBus } from '../../core/state.js';
+import { save } from '../../core/storage.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
@@ -329,6 +330,19 @@ export function initGastos() {
   registrarAccion('gastos-prev-mes',    _prevMes);
   registrarAccion('gastos-next-mes',    _nextMes);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
+
+  // GAS.1a (ADR 039 D9): el ojo del hero del mes comparte el flag
+  // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas, Deudas,
+  // Calendario y Análisis: un solo control de privacidad en toda la app.
+  // El flip con `!== true` es defensivo, igual que en 'saldo-visibilidad'
+  // (ui/actions.js). updSaldo() mantiene el hero de Inicio en sincronía.
+  registrarAccion('gastos-saldo-visibilidad', () => {
+    S.config.ocultarSaldo = S.config.ocultarSaldo !== true;
+    save();
+    updSaldo();
+    renderSmart(renderFiltrosGastos, 'gast');
+    renderSmart(renderListaGastos, 'gast');
+  });
 
   // El form completo se monta on-demand desde _nuevoGasto/_editarGasto.
 

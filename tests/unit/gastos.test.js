@@ -14,8 +14,9 @@ import {
   filtrarGastos,
   iconoPorOrigen,
   validarCategoriaPersonalizada,
+  variacionMensualGasto,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -824,5 +825,159 @@ describe('renderListaGastos() - categoría como título del ítem (TX.9a)', () =
     renderListaGastos();
     const subtitulo = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
     expect(subtitulo).toContain('Con receta médica');
+  });
+});
+
+// ── variacionMensualGasto() (GAS.1a, ADR 039 D2) ─────────────────
+
+describe('variacionMensualGasto()', () => {
+  it('devuelve null sin base de comparación (mes anterior en 0)', () => {
+    expect(variacionMensualGasto(100_000, 0)).toBeNull();
+  });
+
+  it('detecta bajada con porcentaje redondeado', () => {
+    expect(variacionMensualGasto(92_000, 100_000)).toEqual({ direccion: 'menos', pct: 8 });
+  });
+
+  it('detecta subida con porcentaje redondeado', () => {
+    expect(variacionMensualGasto(115_000, 100_000)).toEqual({ direccion: 'mas', pct: 15 });
+  });
+
+  it('sin cambio reporta igual', () => {
+    expect(variacionMensualGasto(100_000, 100_000)).toEqual({ direccion: 'igual', pct: 0 });
+  });
+
+  it('una diferencia que redondea a 0% se reporta como igual (no "0% menos")', () => {
+    expect(variacionMensualGasto(100_300, 100_000)).toEqual({ direccion: 'igual', pct: 0 });
+  });
+
+  it('devuelve null con ambos meses en 0', () => {
+    expect(variacionMensualGasto(0, 0)).toBeNull();
+  });
+
+  it('trata entradas no numéricas como 0 (defensivo)', () => {
+    expect(variacionMensualGasto(undefined, undefined)).toBeNull();
+    expect(variacionMensualGasto(undefined, 100_000)).toEqual({ direccion: 'menos', pct: 100 });
+  });
+});
+
+// ── renderFiltrosGastos() - hero del mes (GAS.1a, ADR 039 D1/D2/D9) ──
+
+describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
+  /** Fecha 'YYYY-MM-15' desplazada `offsetMeses` desde el mes actual. */
+  const fechaEnMes = (offsetMeses) => {
+    const d = new Date();
+    d.setDate(15);
+    d.setMonth(d.getMonth() + offsetMeses);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('muestra el total del mes como protagonista con su label', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Mercado', monto: 85_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', categoria: 'Transporte', monto: 15_000, fecha: fechaEnMes(0) }),
+    ];
+    renderFiltrosGastos();
+    const el = document.getElementById('panel-filtros-gastos');
+    expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$100.000');
+    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe('Gastaste este mes');
+  });
+
+  it('la navegación de mes vive dentro del hero', () => {
+    renderFiltrosGastos();
+    const hero = document.querySelector('.hero-gastos');
+    expect(hero.querySelector('[data-action="gastos-prev-mes"]')).not.toBeNull();
+    expect(hero.querySelector('[data-action="gastos-next-mes"]')).not.toBeNull();
+  });
+
+  it('con filtro activo el label nombra la categoría y el total es lo visible', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Mercado', monto: 85_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', categoria: 'Transporte', monto: 15_000, fecha: fechaEnMes(0) }),
+    ];
+    setFiltroCategoria('Mercado');
+    renderFiltrosGastos();
+    const el = document.getElementById('panel-filtros-gastos');
+    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe('Gastaste en Mercado');
+    expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$85.000');
+  });
+
+  it('comparativo verde con ícono al gastar menos que el mes anterior', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', monto: 92_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', monto: 100_000, fecha: fechaEnMes(-1) }),
+    ];
+    renderFiltrosGastos();
+    const comp = document.querySelector('.hero-gastos__comp .chip');
+    expect(comp.className).toContain('chip-success');
+    expect(comp.textContent).toContain('8% menos que');
+    expect(comp.innerHTML).toContain('#i-trending-down');
+  });
+
+  it('comparativo neutro (nunca alarmante) al gastar más, criterio IV.3/ADR 038 D4', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', monto: 115_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', monto: 100_000, fecha: fechaEnMes(-1) }),
+    ];
+    renderFiltrosGastos();
+    const comp = document.querySelector('.hero-gastos__comp .chip');
+    expect(comp.className).not.toContain('chip-success');
+    expect(comp.className).not.toContain('chip-warning');
+    expect(comp.className).not.toContain('chip-danger');
+    expect(comp.textContent).toContain('15% más que');
+    expect(comp.innerHTML).toContain('#i-trending-up');
+  });
+
+  it('los gastos internos no cuentan en la base de comparación (TX.8b)', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', monto: 92_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', categoria: 'Deudas', monto: 500_000, fecha: fechaEnMes(-1) }),
+    ];
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__comp')).toBeNull();
+  });
+
+  it('sin base de comparación (mes anterior en 0) no hay chip', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 92_000, fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__comp')).toBeNull();
+  });
+
+  it('con filtro activo el comparativo se oculta', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Mercado', monto: 92_000, fecha: fechaEnMes(0) }),
+      gastoBase({ id: 'g2', categoria: 'Mercado', monto: 100_000, fecha: fechaEnMes(-1) }),
+    ];
+    setFiltroCategoria('Mercado');
+    renderFiltrosGastos();
+    expect(document.querySelector('.hero-gastos__comp')).toBeNull();
+  });
+
+  it('el ojo enmascara el total (flag único S.config.ocultarSaldo)', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 85_000, fecha: fechaEnMes(0) })];
+    S.config.ocultarSaldo = true;
+    renderFiltrosGastos();
+    const el = document.getElementById('panel-filtros-gastos');
+    expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$••••••');
+    const ojo = el.querySelector('[data-action="gastos-saldo-visibilidad"]');
+    expect(ojo.getAttribute('aria-pressed')).toBe('true');
+    expect(ojo.innerHTML).toContain('#i-eye-off');
+  });
+
+  it('mes vacío: hero con $0, sin comparativo y sin chips', () => {
+    renderFiltrosGastos();
+    const el = document.getElementById('panel-filtros-gastos');
+    expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$0');
+    expect(el.querySelector('.hero-gastos__comp')).toBeNull();
+    expect(el.querySelector('.filtros-bar')).toBeNull();
   });
 });

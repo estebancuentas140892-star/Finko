@@ -779,6 +779,39 @@ test.describe('Gastos - CRUD', () => {
     );
   });
 
+  test('GAS.1a: el hero del mes muestra el total protagonista y el ojo lo enmascara', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 500000);
+    await expect(page.locator('#lista-tesoreria')).toContainText('Efectivo', { timeout: 3_000 });
+
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    // Registrar un gasto de $150.000 (categoría = primera opción real).
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const form = page.locator('#modal-gasto-body form');
+    await form.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await form.locator('[name="monto"]').fill('150000');
+    await form.locator('[name="fecha"]').fill(hoyLocal());
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+
+    // El hero (ADR 039 D1) muestra el total protagonista, su label y la
+    // navegación de mes integrada.
+    const hero = page.locator('.hero-gastos');
+    await expect(hero.locator('.hero-gastos__label')).toHaveText('Gastaste este mes', { timeout: 3_000 });
+    await expect(hero.locator('.hero-gastos__valor')).toHaveText('$150.000');
+    await expect(hero.locator('[data-action="gastos-prev-mes"]')).toBeVisible();
+
+    // El ojo enmascara y desenmascara el total (flag único IN.2, D9).
+    await page.click('[data-action="gastos-saldo-visibilidad"]');
+    await expect(hero.locator('.hero-gastos__valor')).toHaveText('$••••••');
+    await page.click('[data-action="gastos-saldo-visibilidad"]');
+    await expect(hero.locator('.hero-gastos__valor')).toHaveText('$150.000');
+  });
+
   test('TX.9b: crear categoría personalizada, verla en la lista y reusarla en un segundo gasto', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });

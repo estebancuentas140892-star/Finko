@@ -6,10 +6,11 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { SALDO_MASCARA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, totalGastos, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, totalGastos, variacionMensualGasto, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -75,13 +76,17 @@ export function setFiltroCategoria(cat) {
   _filtroCategoria = cat || null;
 }
 
-// ── BARRA DE FILTROS ─────────────────────────────────────────────
+// ── HERO DEL MES + BARRA DE FILTROS ──────────────────────────────
 
 /**
- * Renderiza el selector de mes + chips de categoría en `#panel-filtros-gastos`.
- * El encabezado muestra "« Mes Año »" con botones de navegación.
- * Los chips filtran por categoría dentro del mes seleccionado.
- * Auto-resetea `_filtroCategoria` si la categoría activa ya no existe en el mes.
+ * Renderiza el hero del mes + chips de categoría en `#panel-filtros-gastos`
+ * (GAS.1a, ADR 039 D1/D2/D9). El hero integra la navegación de mes
+ * (‹ Mes Año ›), el label contextual ("Gastaste este mes", o "Gastaste en
+ * {categoría}" con un filtro activo), el total protagonista de lo visible
+ * (regla existente: el total describe lo visible) y el chip comparativo
+ * contra el mes anterior. Los chips filtran por categoría dentro del mes
+ * seleccionado. Auto-resetea `_filtroCategoria` si la categoría activa ya
+ * no existe en el mes.
  */
 export function renderFiltrosGastos() {
   const el = document.getElementById('panel-filtros-gastos');
@@ -90,9 +95,9 @@ export function renderFiltrosGastos() {
   _ensureMes();
 
   const delMes = _sinInternas(gastosMes(S.gastos, _viewYear, _viewMonth + 1)); // gastosMes usa mes 1-indexed
-  const label  = `${MONTHS[_viewMonth]} ${_viewYear}`;
 
-  // Chips: solo si hay gastos en el mes.
+  // Chips primero (solo si hay gastos en el mes): normalizan el filtro
+  // activo antes de que el hero calcule el total de lo visible.
   let chipsHtml = '';
   if (delMes.length > 0) {
     const cats = [...new Set(delMes.map(g => g.categoria ?? 'Otros'))].sort();
@@ -132,17 +137,92 @@ export function renderFiltrosGastos() {
     _filtroCategoria = null;
   }
 
-  el.innerHTML = `
-    <div class="mes-nav" role="group" aria-label="Seleccionar mes">
-      <button type="button" class="mes-nav__btn"
-              data-action="gastos-prev-mes"
-              aria-label="Mes anterior">‹</button>
-      <span class="mes-nav__label">${_esc(label)}</span>
-      <button type="button" class="mes-nav__btn"
-              data-action="gastos-next-mes"
-              aria-label="Mes siguiente">›</button>
-    </div>
-    ${chipsHtml}`;
+  el.innerHTML = _renderHeroGastos(delMes) + chipsHtml;
+}
+
+/**
+ * Hero del mes (GAS.1a, ADR 039 D1/D2/D9): navegación de mes integrada +
+ * total protagonista de lo visible + comparativo contra el mes anterior.
+ * Sexto consumidor del estreno parcial del ADR 033 (degradado de identidad
+ * + sombra en reposo), espejo de _renderHeroMes() de Calendario (CAL.4a).
+ *
+ * - Total enmascarado con `SALDO_MASCARA` cuando `S.config.ocultarSaldo`
+ *   es true (mismo flag que el ojo de Inicio, Mis cuentas, Deudas,
+ *   Calendario y Análisis: un solo control, IN.2).
+ * - Con filtro de categoría activo, el label pasa a "Gastaste en {cat}" y
+ *   el comparativo se oculta (comparar una categoría contra el mes completo
+ *   confundiría).
+ *
+ * @param {import('../../core/state.js').Gasto[]} delMes gastos del mes visible, sin internas.
+ * @returns {string}
+ */
+function _renderHeroGastos(delMes) {
+  const visibles = filtrarGastos(delMes, _filtroCategoria);
+  const total    = totalGastos(visibles);
+  const oculto   = S.config?.ocultarSaldo === true;
+  const totalTxt = oculto ? SALDO_MASCARA : f(total);
+  const label    = _filtroCategoria
+    ? `Gastaste en ${_esc(_filtroCategoria)}`
+    : 'Gastaste este mes';
+
+  return `
+    <div class="hero-gastos">
+      <div class="hero-gastos__top">
+        <div class="hero-gastos__mes" role="group" aria-label="Seleccionar mes">
+          <button type="button" class="hero-gastos__mes-btn"
+                  data-action="gastos-prev-mes"
+                  aria-label="Mes anterior">‹</button>
+          <span class="hero-gastos__mes-label">${MONTHS[_viewMonth]} ${_viewYear}</span>
+          <button type="button" class="hero-gastos__mes-btn"
+                  data-action="gastos-next-mes"
+                  aria-label="Mes siguiente">›</button>
+        </div>
+        <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
+                data-action="gastos-saldo-visibilidad"
+                aria-pressed="${oculto}"
+                aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+          <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+        </button>
+      </div>
+      <p class="hero-gastos__label">${label}</p>
+      <p class="hero-gastos__valor">${totalTxt}</p>
+      ${_renderComparativo(delMes)}
+    </div>`;
+}
+
+/**
+ * Chip comparativo del hero (GAS.1a, ADR 039 D2), con el criterio único
+ * IV.3/ADR 038 D4: verde solo cuando el gasto baja, neutro al subir o sin
+ * cambio, nunca alarmante. Ícono + texto siempre que hay dirección
+ * (SC 1.4.1). No se muestra con filtro activo, con el mes visible vacío,
+ * ni sin base de comparación (mes anterior en cero).
+ *
+ * @param {import('../../core/state.js').Gasto[]} delMes gastos del mes visible, sin internas.
+ * @returns {string}
+ */
+function _renderComparativo(delMes) {
+  if (_filtroCategoria || delMes.length === 0) return '';
+
+  const prevMonth = _viewMonth === 0 ? 11 : _viewMonth - 1;
+  const prevYear  = _viewMonth === 0 ? _viewYear - 1 : _viewYear;
+  const totalPrev = totalGastos(_sinInternas(gastosMes(S.gastos, prevYear, prevMonth + 1)));
+
+  const v = variacionMensualGasto(totalGastos(delMes), totalPrev);
+  if (v === null) return '';
+
+  const mesPrev = MONTHS[prevMonth].toLowerCase();
+  const baja    = v.direccion === 'menos';
+  const icono   = v.direccion === 'igual'
+    ? ''
+    : icon(baja ? 'trending-down' : 'trending-up', 'icon');
+  const texto   = v.direccion === 'igual'
+    ? `Igual que ${mesPrev}`
+    : `${v.pct}% ${baja ? 'menos' : 'más'} que ${mesPrev}`;
+
+  return `
+    <p class="hero-gastos__comp">
+      <span class="chip${baja ? ' chip-success' : ''}">${icono}${texto}</span>
+    </p>`;
 }
 
 // ── LISTA DE GASTOS ──────────────────────────────────────────────
@@ -173,27 +253,10 @@ export function renderListaGastos() {
   }
 
   // Más recientes primero: el último gasto registrado queda al tope, visible
-  // sin desplazarse. El total del resumen es independiente del orden.
+  // sin desplazarse. El total de lo visible vive en el hero (GAS.1a, ADR 039
+  // D1): la franja de resumen que lo duplicaba desapareció.
   const ordenados = ordenarRecientesPrimero(filtrados);
-  el.innerHTML = _renderResumen(ordenados) + ordenados.map(_renderGastoItem).join('');
-}
-
-/**
- * Barra de total al tope de la lista. Describe siempre lo que está visible:
- * sin filtro es el total del mes; con una categoría activa es el total de esa
- * categoría (el chip activo lo desambigua). Solo se renderiza cuando hay ítems.
- * @param {import('../../core/state.js').Gasto[]} gastos visibles
- */
-function _renderResumen(gastos) {
-  const n     = gastos.length;
-  const conteo = n === 1 ? '1 gasto' : `${n} gastos`;
-  const total = totalGastos(gastos);
-  return `
-    <div class="gastos-resumen" role="status"
-         aria-label="${conteo}, total ${f(total)}">
-      <span class="gastos-resumen__count">${conteo}</span>
-      <span class="gastos-resumen__total">${f(total)}</span>
-    </div>`;
+  el.innerHTML = ordenados.map(_renderGastoItem).join('');
 }
 
 /**
