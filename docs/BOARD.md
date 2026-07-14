@@ -14,7 +14,7 @@
 - Prioridad  : alta
 - Estado     : en proceso (2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar)
 - Objetivo   : quinta pantalla de la familia visual v2 (tras Inicio, Mis cuentas, Deudas y Calendario). Score de salud como héroe con anillo + wash del color de banda, patrimonio como card-héroe con barra de composición + ojo de privacidad, "A dónde va tu dinero" agrupado (tendencia con chip de variación + categorías rankeadas desde la dona), colapsables como filas limpias con badge contador, empty state único. Cero cambios de lógica financiera; PERF.2/PERF.3 intactos. Detalle completo en [ADR 038](DECISIONS/038-analisis-v2-visual.md). **Relación declarada con ANL.1** (no la absorbe): avanza sus puntos visuales 4/5/7/8; la interpretación (1/2/3/6/9) sigue en ANL.1.
-- Rebanadas  : **ANL.2a CERRADA 2026-07-13** (score hero + chip de mes, D1+D6) → **ANL.2b CERRADA 2026-07-13** (patrimonio card-héroe + composición + ojo, D2) → **ANL.2c** "A dónde va tu dinero" (D3+D4) → **ANL.2d** colapsables + empty state (D5+D7). Ver CHANGELOG.
+- Rebanadas  : **ANL.2a CERRADA 2026-07-13** (score hero + chip de mes, D1+D6) → **ANL.2b CERRADA 2026-07-13** (patrimonio card-héroe + composición + ojo, D2) → **ANL.2c CERRADA 2026-07-13** ("A dónde va tu dinero": chip de variación + categorías rankeadas, D3+D4) → **ANL.2d** colapsables + empty state (D5+D7). Ver CHANGELOG.
 - Secciones  : Análisis
 - Archivos   : `modules/dominio/analisis/view.js`, `modules/dominio/analisis/index.js`, `styles/components/analysis.css`, `index.html` (chip del header), tests
 - Depende de : nada

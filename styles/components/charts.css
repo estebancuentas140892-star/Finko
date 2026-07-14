@@ -7,25 +7,22 @@
    GRÁFICOS - Sparkline + Donut (D.3)
    ───────────────────────────────────────────────────────────────── */
 
-/* Sparkline - tendencia de gastos */
+/* Sparkline - tendencia de gastos.
+   ANL.2c (ADR 038 D3): el wrap pierde su chrome de card propio; la
+   .tend-card (analysis.css) ya es la superficie. */
 .chart-sparkline-wrap {
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-1);
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  padding: var(--fk-space-3);
+  margin-top: var(--fk-space-3);
 }
 .chart-sparkline__svg {
   width: 100%;
-  color: var(--fk-text-accent);
 }
 .sparkline {
   display: block;
   width: 100%;
   height: 80px;
-  color: var(--fk-text-accent);
 }
 .chart-axis {
   display: flex;
@@ -44,103 +41,14 @@
   visibility: hidden;
 }
 
-/* Stats acompañantes del sparkline */
-.chart-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--fk-space-2);
-  margin-top: var(--fk-space-3);
-}
-.chart-stat {
-  background: var(--fk-bg-elevated);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  padding: var(--fk-space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-1);
-}
-.chart-stat__label {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: var(--fk-font-semibold);
-}
-.chart-stat__valor {
-  font-family: var(--fk-font-mono);
-  font-size: var(--fk-text-base);
-  font-weight: var(--fk-font-bold);
-  color: var(--fk-text-primary);
-}
-.chart-stat--positivo .chart-stat__valor { color: var(--fk-text-accent); }
-
-/* Donut - distribución por categoría */
-.analisis__cat-layout {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--fk-space-4);
-  align-items: start;
-}
-@media (min-width: 768px) {
-  .analisis__cat-layout {
-    grid-template-columns: auto 1fr;
-  }
-}
-.chart-donut-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--fk-space-3);
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-md);
-  min-width: 200px;
-}
-.chart-donut__svg {
-  width: 160px;
-  height: 160px;
-}
+/* Donut - distribución por categoría.
+   ANL.2c (ADR 038 D3): la card, el centro con el top y las filas rankeadas
+   viven en analysis.css (.catg-card*); aquí solo el primitivo del SVG.
+   Los .chart-stats/.chart-legend viejos se retiraron con la card nueva. */
 .donut {
   display: block;
   width: 100%;
   height: auto;
-}
-.chart-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-1);
-  width: 100%;
-}
-.chart-legend__item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--fk-space-2);
-  font-size: var(--fk-text-sm);
-}
-.chart-legend__swatch {
-  display: inline-block;
-  width: var(--fk-space-3);
-  height: var(--fk-space-3);
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-.chart-legend__label {
-  color: var(--fk-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.chart-legend__pct {
-  font-family: var(--fk-font-mono);
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  font-weight: var(--fk-font-semibold);
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -1054,38 +1054,211 @@
   border-radius: var(--fk-radius-md);
 }
 
-/* ── Gastos por categoría ────────────────────────────────── */
-.cat-list {
-  list-style: none;
+/* ── ANL.2c: grupo "A dónde va tu dinero" (ADR 038 D3/D4) ──
+   Un rótulo agrupa las cards de tendencia y categorías (antes dos h2
+   sueltos). Las cards comparten superficie neutra + sombra en reposo. */
+.analisis__group {
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-8);
 }
-.cat-row {
-  display: grid;
-  grid-template-columns: 120px 1fr 40px 100px;
-  align-items: center;
-  gap: var(--fk-space-3);
-  font-size: var(--fk-text-sm);
+.analisis__group-label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  /* muted pasa AA aquí: el rótulo se apoya sobre bg-base, mismo criterio
+     que .bento__group-label del dashboard. */
+  color: var(--fk-text-muted);
+  padding-left: 2px;
+  margin: 0;
 }
-.cat-row__nombre {
+.analisis__group .analisis__section { margin-bottom: 0; }
+
+.tend-card,
+.catg-card {
+  background: var(--fk-bg-surface);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-xl);
+  padding: var(--fk-space-4);
+  box-shadow: var(--fk-shadow-sm);
+}
+
+/* Tendencia: título + chip de variación (verde solo al bajar, ADR 019). */
+.tend-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  flex-wrap: wrap;
+}
+.tend-card__title {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.tend-card__sub {
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
-  font-weight: var(--fk-font-medium);
-  white-space: nowrap;
+  margin: var(--fk-space-1) 0 0;
+}
+.tend-card__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1) var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--fk-text-primary) 4%, transparent);
+  border: 1px solid var(--fk-border-default);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-secondary);
+  flex-shrink: 0;
+}
+.tend-card__chip--baja {
+  background: color-mix(in srgb, var(--fk-success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--fk-success) 28%, transparent);
+  color: var(--fk-success-text);
+}
+.tend-card__chip-icon { --fk-icon-size: var(--fk-icon-sm); }
+
+.tend-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-2);
+  margin-top: var(--fk-space-3);
+}
+.tend-card__stat {
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-text-primary) 4%, transparent);
+  border: 1px solid var(--fk-border-subtle);
+  min-width: 0;
+}
+.tend-card__stat-label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+.tend-card__stat-valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: var(--fk-space-1) 0 0;
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cat-row__bar { flex: 1; }
-.cat-row__pct {
-  color: var(--fk-text-muted);
-  text-align: right;
+
+/* Por categoría: dona con el top al centro + filas rankeadas. */
+.catg-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+}
+.catg-card__title {
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: 0;
+}
+.catg-card__total {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
   font-variant-numeric: tabular-nums;
 }
-.cat-row__monto {
-  font-family: var(--fk-font-mono);
-  font-weight: var(--fk-font-medium);
+.catg-card__layout {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-4);
+  margin-top: var(--fk-space-3);
+}
+.catg-card__donut {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  flex-shrink: 0;
+}
+.catg-card__donut .donut {
+  width: 100%;
+  height: 100%;
+}
+.catg-card__centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+.catg-card__centro-label,
+.catg-card__centro-pct {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+.catg-card__centro-cat {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catg-card__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+.catg-card__row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+}
+.catg-card__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.catg-card__nombre {
+  flex: 1;
+  min-width: 0;
+  color: var(--fk-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catg-card__pct {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.catg-card__monto {
+  font-family: var(--fk-font-mono);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+  white-space: nowrap;
+  min-width: 64px;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── Hormigas ────────────────────────────────────────────── */

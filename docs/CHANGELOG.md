@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(analisis): ANL.2c "A dónde va tu dinero", tendencia con chip + categorías rankeadas · 2026-07-13
+
+Tercera rebanada de **Análisis v2** ([ADR 038](DECISIONS/038-analisis-v2-visual.md) D3/D4).
+
+**Qué cambió:** (1) `modules/dominio/analisis/view.js`: tendencia y categorías dejan de ser dos secciones sueltas con `h2` propios y pasan a **dos cards bajo el rótulo "A dónde va tu dinero"** (`.analisis__group-label`, patrón `.bento__group-label` de Inicio v2). (2) `_renderTendencia()`: la variación sale de la grilla de stats y pasa a **chip** en la cabecera de la card, con ícono `i-trending-up/down` + texto; **verde solo cuando el gasto baja** (`↓ 25% vs mes anterior`), neutro si sube, neutro sin ícono sin base de comparación o sin cambio (D4, re-declara ADR 019/IV.3 explícitamente en el markup). El sparkline pasa del verde acento al **pizarra de sección** (`--fk-dom-analisis-text`: la serie es contexto, el color con significado lo aporta el dato); las stats quedan en 3 tiles (Este mes / Máximo / Mínimo). (3) `_renderPorCategoria()` (firma nueva `(gastoMes, segmentos)`): dona de 120 con **el top al centro** ("Top · Mercado · 67%") + **filas rankeadas construidas desde los mismos segmentos coloreados de la dona** (color·nombre·%·monto); la leyenda y la lista completa de barras eran dos representaciones paralelas de lo mismo y se unifican en una sola lista (la paleta unificada dona↔filas queda garantizada por construcción); el total del mes ancla la cabecera. (4) CSS: `.analisis__group*`, `.tend-card*`, `.catg-card*` nuevos en `analysis.css`; `charts.css` conserva solo los primitivos (`.sparkline`, `.chart-axis*`, `.donut`; el wrap del sparkline pierde su chrome de card: la tend-card ya es la superficie); `.chart-stats/.chart-stat*/.chart-legend*/.chart-donut-wrap/.analisis__cat-layout/.cat-row*/.cat-list` retirados (solo Análisis los usaba, verificado); referencias migradas en `base.css` (tabular-nums) y `responsive.css` (reglas móviles de `.chart-stats`/`.cat-row` retiradas).
+
+**Archivos tocados:** `modules/dominio/analisis/view.js`, `styles/components/analysis.css`, `styles/components/charts.css`, `styles/base.css`, `styles/responsive.css`, `tests/unit/analisis.test.js` (5 nuevos: rótulo del grupo, chip verde al bajar con ícono, chip neutro al subir, 3 stats, total + top al centro; el describe de paleta unificada se reescribió a la estructura nueva: fila i = color del arco i), `tests/e2e/smoke.test.js` (1 nuevo), `service-worker.js` (v387→v388).
+
+**Verificación:** 2649/2649 unit + 200/200 E2E completos + lint verdes.
+
+**Podría afectar:** solo presentación de tendencia y categorías (la lógica `serieGastosMensual`/`seriePorCategoria`/`colorearSegmentos` no cambió). La lista de categorías ahora muestra los 6 segmentos de la dona (top 5 + "Otros") en vez de todas las categorías con barras: el detalle completo por categoría sigue en "Más detalle de tus gastos" (comparación vs mes anterior).
+
+---
+
 ### feat(analisis): ANL.2b patrimonio neto como card-héroe con composición + ojo de privacidad · 2026-07-13
 
 Segunda rebanada de **Análisis v2** ([ADR 038](DECISIONS/038-analisis-v2-visual.md) D2).

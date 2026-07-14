@@ -145,13 +145,17 @@ export function renderAnalisis() {
   }
 
   // Orden de lectura (F8): primero "cómo estoy" (salud + patrimonio), luego
-  // "a dónde va mi dinero" (tendencia + categorías). El detalle fino de gastos
-  // y lo fiscal quedan colapsados para no enterrar lo importante.
+  // "a dónde va mi dinero" (tendencia + categorías, agrupadas bajo un rótulo,
+  // ANL.2c / ADR 038 D3). El detalle fino de gastos y lo fiscal quedan
+  // colapsados para no enterrar lo importante.
   el.innerHTML = `
     ${_renderScoreSalud(resumen)}
     ${_renderPatrimonio(resumen)}
-    ${_renderTendencia(serieGastos)}
-    ${_renderPorCategoria(resumen.porCategoria, resumen.gastoMes, segmentosCat)}
+    <div class="analisis__group">
+      <p class="analisis__group-label">A dónde va tu dinero</p>
+      ${_renderTendencia(serieGastos)}
+      ${_renderPorCategoria(resumen.gastoMes, segmentosCat)}
+    </div>
     ${mostrarDetalle ? _renderGrupoDetalle(cuerpoDetalle) : ''}
     ${_renderEstadoRenta(anio)}
   `;
@@ -546,64 +550,54 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
     </section>`;
 }
 
-function _renderPorCategoria(porCategoria, gastoMes, segmentosColoreados = []) {
-  const entradas = Object.entries(porCategoria)
-    .sort(([, a], [, b]) => b - a);
-
-  if (entradas.length === 0) {
+/**
+ * Card "Por categoría" (ANL.2c, ADR 038 D3): dona con el top al centro +
+ * filas rankeadas construidas desde LOS MISMOS segmentos coloreados de la
+ * dona (una sola lista cuenta la historia; antes leyenda + barras eran dos
+ * representaciones paralelas de lo mismo). La paleta unificada dona↔filas
+ * se conserva por construcción: cada fila lleva el color de su segmento.
+ *
+ * @param {number} gastoMes Total del mes (ancla del encabezado).
+ * @param {ReturnType<import('../../infra/svg.js').colorearSegmentos>} segmentos
+ */
+function _renderPorCategoria(gastoMes, segmentos = []) {
+  if (segmentos.length === 0) {
     return `
-      <section class="analisis__section" aria-labelledby="analisis-cat-title">
-        <h2 class="analisis__section-title" id="analisis-cat-title">Gastos por categoría</h2>
+      <section class="analisis__section" aria-label="Gastos por categoría">
         <p class="analisis__empty">Sin gastos registrados este mes.</p>
       </section>`;
   }
 
-  // Paleta unificada dona + barras: cada barra usa el color que la dona le
-  // asignó a su categoría (misma fuente: colorearSegmentos). Las categorías
-  // agrupadas en "Otros" heredan el color de ese segmento, para que el color
-  // cuente la misma historia en toda la sección. Sin dona (sin segmentos),
-  // las barras conservan su color por defecto.
-  const colorPorCategoria = Object.fromEntries(segmentosColoreados.map(s => [s.label, s.color]));
-  const colorOtros = colorPorCategoria['Otros'] ?? '';
+  // seriePorCategoria ordena desc y agrega "Otros" al final: el primer
+  // segmento siempre es la categoría real con más gasto.
+  const top = segmentos[0];
 
-  const filas = entradas.map(([cat, total]) => {
-    const pct = gastoMes > 0 ? Math.round((total / gastoMes) * 100) : 0;
-    const color = colorPorCategoria[cat] ?? colorOtros;
-    return `
-      <li class="cat-row">
-        <span class="cat-row__nombre">${_esc(cat)}</span>
-        <div class="progress cat-row__bar" role="presentation">
-          <div class="progress-bar" style="width:${pct}%${color ? `;background:${color}` : ''}"></div>
-        </div>
-        <span class="cat-row__pct">${pct}%</span>
-        <span class="cat-row__monto">${f(total)}</span>
-      </li>`;
-  }).join('');
-
-  // Donut + leyenda, solo si recibimos segmentos coloreados.
-  const donutSvg = segmentosColoreados.length > 0
-    ? donut(segmentosColoreados, { size: 160, strokeWidth: 22, ariaLabel: 'Distribución de gastos por categoría' })
-    : '';
-  const leyenda = segmentosColoreados.map(s => `
-    <li class="chart-legend__item">
-      <span class="chart-legend__swatch" style="background:${s.color}" aria-hidden="true"></span>
-      <span class="chart-legend__label">${_esc(s.label)}</span>
-      <span class="chart-legend__pct">${s.pct}%</span>
+  const filas = segmentos.map(s => `
+    <li class="catg-card__row">
+      <span class="catg-card__dot" style="background:${s.color}" aria-hidden="true"></span>
+      <span class="catg-card__nombre">${_esc(s.label)}</span>
+      <span class="catg-card__pct">${s.pct}%</span>
+      <span class="catg-card__monto">${f(s.valor)}</span>
     </li>`).join('');
-
-  const bloqueDonut = donutSvg
-    ? `<div class="chart-donut-wrap">
-        <div class="chart-donut__svg">${donutSvg}</div>
-        <ul class="chart-legend" aria-label="Leyenda de categorías">${leyenda}</ul>
-      </div>`
-    : '';
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-cat-title">
-      <h2 class="analisis__section-title" id="analisis-cat-title">Gastos por categoría</h2>
-      <div class="analisis__cat-layout">
-        ${bloqueDonut}
-        <ul class="cat-list" aria-label="Desglose de gastos por categoría">${filas}</ul>
+      <div class="catg-card">
+        <div class="catg-card__head">
+          <h2 class="catg-card__title" id="analisis-cat-title">Por categoría</h2>
+          <span class="catg-card__total">${f(gastoMes)}</span>
+        </div>
+        <div class="catg-card__layout">
+          <div class="catg-card__donut">
+            ${donut(segmentos, { size: 120, strokeWidth: 18, ariaLabel: 'Distribución de gastos por categoría' })}
+            <div class="catg-card__centro" aria-hidden="true">
+              <span class="catg-card__centro-label">Top</span>
+              <span class="catg-card__centro-cat">${_esc(top.label)}</span>
+              <span class="catg-card__centro-pct">${top.pct}%</span>
+            </div>
+          </div>
+          <ul class="catg-card__list" aria-label="Desglose de gastos por categoría">${filas}</ul>
+        </div>
       </div>
     </section>`;
 }
@@ -616,8 +610,7 @@ function _renderTendencia(serie) {
 
   if (!hayDatos) {
     return `
-      <section class="analisis__section" aria-labelledby="analisis-tendencia-title">
-        <h2 class="analisis__section-title" id="analisis-tendencia-title">Tendencia de gastos</h2>
+      <section class="analisis__section" aria-label="Tendencia de gastos">
         <p class="analisis__empty">El análisis aparece cuando tengas gastos registrados. ¡Todo empieza con el primer apunte!</p>
       </section>`;
   }
@@ -632,20 +625,25 @@ function _renderTendencia(serie) {
   const sinBase  = anterior === 0 && delta > 0;
   const deltaPct = anterior > 0 ? Math.round((delta / anterior) * 100) : 0;
 
-  // Gastar más no es incumplir (ADR 019): solo bajar el gasto se celebra
-  // en verde; subir queda en el color neutro por defecto de chart-stat__valor.
-  const tendenciaClase = sinBase ? ''
-    : delta < 0 ? 'chart-stat--positivo'
-    :             '';
-  const tendenciaIcono = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
-  const tendenciaTexto = sinBase
+  // ANL.2c (ADR 038 D4, re-declara ADR 019/IV.3): la variación vive en un
+  // chip; verde SOLO cuando el gasto baja, neutro si sube (nunca rojo),
+  // neutro sin ícono cuando no hay base o no cambió. Ícono + texto siempre
+  // que hay dirección (SC 1.4.1).
+  const bajo      = !sinBase && delta < 0;
+  const chipClase = bajo ? ' tend-card__chip--baja' : '';
+  const chipIcono = (sinBase || delta === 0)
+    ? ''
+    : icon(delta < 0 ? 'trending-down' : 'trending-up', 'icon tend-card__chip-icon');
+  const chipTexto = sinBase
     ? 'Sin gastos el mes anterior para comparar'
     : delta === 0
       ? 'Igual que el mes pasado'
-      : `${tendenciaIcono} ${Math.abs(deltaPct)}% vs mes anterior`;
+      : `${delta > 0 ? '↑' : '↓'} ${Math.abs(deltaPct)}% vs mes anterior`;
 
+  // La serie es contexto, no dato semántico: pizarra de sección (ADR 038 D3),
+  // variante -text para pasar el umbral no textual en tema claro.
   const svg = sparkline(valores, {
-    width: 600, height: 80, color: 'var(--fk-accent, #00dc82)',
+    width: 600, height: 80, color: 'var(--fk-dom-analisis-text, #8f9bb3)',
     padding: 6, area: true,
     ariaLabel: `Gastos mensuales últimos ${serie.length} meses, máximo ${f(max)}, actual ${f(actual)}`,
   });
@@ -656,33 +654,33 @@ function _renderTendencia(serie) {
     return `<span class="chart-axis__label${visible ? '' : ' chart-axis__label--hidden'}">${p.label}</span>`;
   }).join('');
 
+  const stats = [
+    { label: 'Este mes', valor: f(actual) },
+    { label: 'Máximo',   valor: f(max) },
+    { label: 'Mínimo',   valor: f(min) },
+  ].map(s => `
+    <div class="tend-card__stat">
+      <p class="tend-card__stat-label">${s.label}</p>
+      <p class="tend-card__stat-valor">${s.valor}</p>
+    </div>`).join('');
+
   return `
     <section class="analisis__section" aria-labelledby="analisis-tendencia-title">
-      <h2 class="analisis__section-title" id="analisis-tendencia-title">Tendencia de gastos</h2>
-      <p class="analisis__desc">Últimos ${serie.length} meses.</p>
+      <div class="tend-card">
+        <div class="tend-card__head">
+          <div class="tend-card__head-texto">
+            <h2 class="tend-card__title" id="analisis-tendencia-title">Tendencia de gastos</h2>
+            <p class="tend-card__sub">Últimos ${serie.length} meses</p>
+          </div>
+          <span class="tend-card__chip${chipClase}">${chipIcono}<span>${chipTexto}</span></span>
+        </div>
 
-      <div class="chart-sparkline-wrap">
-        <div class="chart-sparkline__svg" aria-hidden="false">${svg}</div>
-        <div class="chart-axis" aria-hidden="true">${ejeX}</div>
-      </div>
+        <div class="chart-sparkline-wrap">
+          <div class="chart-sparkline__svg" aria-hidden="false">${svg}</div>
+          <div class="chart-axis" aria-hidden="true">${ejeX}</div>
+        </div>
 
-      <div class="chart-stats">
-        <div class="chart-stat">
-          <p class="chart-stat__label">Este mes</p>
-          <p class="chart-stat__valor">${f(actual)}</p>
-        </div>
-        <div class="chart-stat ${tendenciaClase}">
-          <p class="chart-stat__label">Variación</p>
-          <p class="chart-stat__valor">${tendenciaTexto}</p>
-        </div>
-        <div class="chart-stat">
-          <p class="chart-stat__label">Máximo</p>
-          <p class="chart-stat__valor">${f(max)}</p>
-        </div>
-        <div class="chart-stat">
-          <p class="chart-stat__label">Mínimo</p>
-          <p class="chart-stat__valor">${f(min)}</p>
-        </div>
+        <div class="tend-card__stats">${stats}</div>
       </div>
     </section>`;
 }

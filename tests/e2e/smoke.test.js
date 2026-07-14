@@ -3730,4 +3730,32 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(card.locator('.patri-card__valor')).toHaveText('$800.000');
   });
 
+  test('"A dónde va tu dinero" agrupa tendencia (chip de variación) y categorías (top al centro) (ANL.2c)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      const d = new Date();
+      const fecha = (offset, dia) => {
+        const x = new Date(d.getFullYear(), d.getMonth() + offset, dia);
+        return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+      };
+      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
+      st.gastos = [
+        { id: 'g1', descripcion: 'Mercado', monto: 400_000, categoria: 'Mercado', fecha: fecha(-1, 2), cuentaId: 'cu1' },
+        { id: 'g2', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: fecha(0, 2), cuentaId: 'cu1' },
+      ];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    const grupo = page.locator('.analisis__group');
+    await expect(grupo.locator('.analisis__group-label')).toHaveText('A dónde va tu dinero');
+    // Bajó el gasto → chip verde con la variación (ADR 019: solo bajar se celebra).
+    await expect(grupo.locator('.tend-card__chip')).toContainText('↓ 25% vs mes anterior');
+    await expect(grupo.locator('.tend-card__stat')).toHaveCount(3);
+    await expect(grupo.locator('.catg-card__centro-cat')).toHaveText('Mercado');
+    await expect(grupo.locator('.catg-card__total')).toHaveText('$300.000');
+  });
+
 });

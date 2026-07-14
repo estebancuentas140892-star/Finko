@@ -1460,7 +1460,7 @@ describe('renderAnalisis() - variación sin base (regresión: "↑ 0%" en rojo)'
   });
 });
 
-describe('renderAnalisis() - paleta unificada dona + barras', () => {
+describe('renderAnalisis() - ANL.2c paleta unificada: las filas nacen de los segmentos de la dona', () => {
   const fechaMesActual = (dia) => {
     const ahora = new Date();
     const mm = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -1477,40 +1477,30 @@ describe('renderAnalisis() - paleta unificada dona + barras', () => {
     S.inversiones = [];
   });
 
-  it('cada barra lateral usa el color que la dona asignó a su categoría', () => {
+  it('cada fila lleva el color del segmento de la dona en el mismo orden', () => {
     S.gastos = [
       gasto({ id: 'g1', categoria: 'Mercado',    monto: 600_000, fecha: fechaMesActual(2) }),
       gasto({ id: 'g2', categoria: 'Transporte', monto: 300_000, fecha: fechaMesActual(3) }),
     ];
     renderAnalisis();
-    const filas = [...document.querySelectorAll('.cat-row')];
+
+    const filas = [...document.querySelectorAll('.catg-card__row')];
     expect(filas.length).toBe(2);
+    const arcos = [...document.querySelectorAll('.catg-card__donut .donut circle')];
+    expect(arcos.length).toBe(2);
 
-    // La leyenda de la dona expone el color por categoría; la barra de cada
-    // fila debe llevar exactamente ese color.
-    const swatches = [...document.querySelectorAll('.chart-legend__item')];
-    const colorDe = (label) => {
-      const item = swatches.find(s => s.textContent.includes(label));
-      return item?.querySelector('.chart-legend__swatch')?.style.background ?? '';
-    };
+    filas.forEach((fila, i) => {
+      const dot = fila.querySelector('.catg-card__dot');
+      expect(dot.style.background, `fila ${i}`).not.toBe('');
+      // El color inline del dot es exactamente el stroke del arco i.
+      expect(arcos[i].getAttribute('stroke')).toBeTruthy();
+      expect(dot.getAttribute('style')).toContain(arcos[i].getAttribute('stroke'));
+    });
 
-    for (const fila of filas) {
-      const nombre = fila.querySelector('.cat-row__nombre').textContent;
-      const barra  = fila.querySelector('.progress-bar');
-      expect(colorDe(nombre), `color de ${nombre}`).not.toBe('');
-      expect(barra.style.background, `barra de ${nombre}`).toBe(colorDe(nombre));
-    }
-  });
-
-  it('sin segmentos de dona, la barra conserva su color por defecto', () => {
-    // Forzar el caso: render de la lista sin dona no ocurre con gastos del
-    // mes (siempre hay segmentos), pero la barra no debe llevar background
-    // inline cuando la categoría no está en la dona ni existe "Otros".
-    S.gastos = [gasto({ id: 'g1', categoria: 'Mercado', monto: 100_000, fecha: fechaMesActual(2) })];
-    renderAnalisis();
-    const barra = document.querySelector('.cat-row .progress-bar');
-    // Con dona presente sí lleva color; el atributo width siempre está.
-    expect(barra.getAttribute('style')).toContain('width:');
+    // Mayor gasto primero: Mercado encabeza la lista y el centro de la dona.
+    expect(filas[0].querySelector('.catg-card__nombre').textContent).toBe('Mercado');
+    expect(filas[0].querySelector('.catg-card__monto').textContent).toBe('$600.000');
+    expect(filas[0].querySelector('.catg-card__pct').textContent).toBe('67%');
   });
 });
 
@@ -1833,5 +1823,90 @@ describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
     expect(card.querySelector('.patri-card__col-desc').textContent).toContain('Cuentas 100%');
 
     S.config.ocultarSaldo = false;
+  });
+});
+
+// ── renderAnalisis() - ANL.2c: "A dónde va tu dinero" (ADR 038 D3/D4) ──
+
+describe('renderAnalisis() - ANL.2c tendencia con chip + categorías agrupadas', () => {
+  /** Fecha YYYY-MM-DD del día `dia` del mes actual + offset de meses. */
+  const fechaMes = (offset, dia) => {
+    const ahora = new Date();
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() + offset, dia);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+  });
+
+  it('tendencia y categorías viven bajo el rótulo "A dónde va tu dinero"', () => {
+    S.gastos = [gasto({ fecha: fechaMes(0, 2), monto: 100_000 })];
+    renderAnalisis();
+
+    const grupo = document.querySelector('.analisis__group');
+    expect(grupo).not.toBeNull();
+    expect(grupo.querySelector('.analisis__group-label').textContent).toBe('A dónde va tu dinero');
+    expect(grupo.querySelector('.tend-card')).not.toBeNull();
+    expect(grupo.querySelector('.catg-card')).not.toBeNull();
+  });
+
+  it('el gasto que baja se celebra en verde con ícono de bajada (ADR 019)', () => {
+    S.gastos = [
+      gasto({ id: 'g1', fecha: fechaMes(-1, 2), monto: 400_000 }),
+      gasto({ id: 'g2', fecha: fechaMes(0, 2),  monto: 300_000 }),
+    ];
+    renderAnalisis();
+
+    const chip = document.querySelector('.tend-card__chip');
+    expect(chip.classList.contains('tend-card__chip--baja')).toBe(true);
+    expect(chip.textContent).toContain('↓ 25% vs mes anterior');
+    expect(chip.querySelector('use').getAttribute('href')).toBe('#i-trending-down');
+  });
+
+  it('el gasto que sube queda neutro, nunca en rojo', () => {
+    S.gastos = [
+      gasto({ id: 'g1', fecha: fechaMes(-1, 2), monto: 200_000 }),
+      gasto({ id: 'g2', fecha: fechaMes(0, 2),  monto: 300_000 }),
+    ];
+    renderAnalisis();
+
+    const chip = document.querySelector('.tend-card__chip');
+    expect(chip.classList.contains('tend-card__chip--baja')).toBe(false);
+    expect(chip.textContent).toContain('↑ 50% vs mes anterior');
+    expect(chip.querySelector('use').getAttribute('href')).toBe('#i-trending-up');
+  });
+
+  it('las 3 stats acompañan al sparkline: Este mes, Máximo y Mínimo', () => {
+    S.gastos = [
+      gasto({ id: 'g1', fecha: fechaMes(-1, 2), monto: 400_000 }),
+      gasto({ id: 'g2', fecha: fechaMes(0, 2),  monto: 300_000 }),
+    ];
+    renderAnalisis();
+
+    const stats = [...document.querySelectorAll('.tend-card__stat')];
+    expect(stats.length).toBe(3);
+    expect(stats.map(s => s.querySelector('.tend-card__stat-label').textContent))
+      .toEqual(['Este mes', 'Máximo', 'Mínimo']);
+    expect(stats[0].querySelector('.tend-card__stat-valor').textContent).toBe('$300.000');
+    expect(stats[1].querySelector('.tend-card__stat-valor').textContent).toBe('$400.000');
+    expect(stats[2].querySelector('.tend-card__stat-valor').textContent).toBe('$0');
+  });
+
+  it('la card de categorías ancla el total del mes y el top vive al centro de la dona', () => {
+    S.gastos = [
+      gasto({ id: 'g1', categoria: 'Mercado',    monto: 600_000, fecha: fechaMes(0, 2) }),
+      gasto({ id: 'g2', categoria: 'Transporte', monto: 300_000, fecha: fechaMes(0, 3) }),
+    ];
+    renderAnalisis();
+
+    const card = document.querySelector('.catg-card');
+    expect(card.querySelector('.catg-card__total').textContent).toBe('$900.000');
+    expect(card.querySelector('.catg-card__centro-label').textContent).toBe('Top');
+    expect(card.querySelector('.catg-card__centro-cat').textContent).toBe('Mercado');
+    expect(card.querySelector('.catg-card__centro-pct').textContent).toBe('67%');
   });
 });

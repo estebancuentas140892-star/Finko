@@ -58,10 +58,11 @@ p {
 .patri-card__col-valor,
 .proyeccion-card__valor,
 .renta-criterio__valor,
-.cat-row__monto,
+.catg-card__monto,
+.catg-card__total,
 .comparacion__monto,
 .patron__factor,
-.chart-stat__valor,
+.tend-card__stat-valor,
 .chart-axis__label,
 .gastos-resumen__total,
 .sidebar__saldo-value {

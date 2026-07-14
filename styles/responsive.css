@@ -275,20 +275,6 @@
   .import-resumen {
     grid-template-columns: repeat(2, 1fr);
   }
-  .chart-stats {
-    grid-template-columns: 1fr;
-  }
-
-  /* Cat-row: columnas adaptadas a móvil */
-  .cat-row {
-    grid-template-columns: 1fr 40px auto;
-    gap: var(--fk-space-2);
-  }
-  .cat-row__bar {
-    grid-column: 1 / -1;
-    margin-top: -4px;
-  }
-
   /* Modal header padding más compacto */
   .modal__header {
     padding: var(--fk-space-4) var(--fk-space-5);
