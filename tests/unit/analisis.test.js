@@ -1748,3 +1748,90 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
     expect(document.getElementById('analisis-chip-mes-label').textContent).toBe(esperado);
   });
 });
+
+// ── renderAnalisis() - ANL.2b: patrimonio card-héroe (ADR 038 D2) ──
+
+describe('renderAnalisis() - ANL.2b patrimonio con composición y ojo', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+    S.config.ocultarSaldo = false;
+  });
+
+  it('neto positivo: cifra grande en positivo + columnas Activos/Pasivos con sus montos', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+
+    const card = document.querySelector('.patri-card');
+    expect(card).not.toBeNull();
+    const valor = card.querySelector('.patri-card__valor');
+    expect(valor.classList.contains('patri-card__valor--positivo')).toBe(true);
+    expect(valor.textContent.trim()).toBe('$500.000');
+
+    const cols = [...card.querySelectorAll('.patri-card__col')];
+    expect(cols.length).toBe(2);
+    expect(cols[0].querySelector('.patri-card__col-valor').textContent).toBe('$500.000');
+    expect(cols[1].querySelector('.patri-card__col-valor').textContent).toBe('$0');
+    expect(cols[1].querySelector('.patri-card__col-desc').textContent).toContain('Sin deudas registradas');
+  });
+
+  it('neto negativo: signo − y clase negativa', () => {
+    S.cuentas     = [cuenta({ saldo: 500_000 })];
+    S.compromisos = [deuda({ saldoTotal: 12_000_000 })];
+    renderAnalisis();
+
+    const valor = document.querySelector('.patri-card__valor');
+    expect(valor.classList.contains('patri-card__valor--negativo')).toBe(true);
+    expect(valor.textContent.trim()).toBe('−$11.500.000');
+  });
+
+  it('barra de composición: un segmento por bucket > 0 y porcentajes en texto (SC 1.4.11)', () => {
+    S.cuentas     = [cuenta({ saldo: 500_000 })];
+    S.metas       = [meta({ montoActual: 1_000_000 })];
+    S.inversiones = [inversion({ monto: 2_000_000 })];
+    renderAnalisis();
+
+    const segs = [...document.querySelectorAll('.patri-card__seg')];
+    expect(segs.length).toBe(3);
+    expect(segs[0].className).toContain('patri-card__seg--cuentas');
+    expect(segs[0].getAttribute('style')).toContain('width:14%');
+    expect(segs[1].className).toContain('patri-card__seg--metas');
+    expect(segs[1].getAttribute('style')).toContain('width:29%');
+    expect(segs[2].className).toContain('patri-card__seg--inversion');
+    expect(segs[2].getAttribute('style')).toContain('width:57%');
+
+    const desc = document.querySelector('.patri-card__col-desc').textContent;
+    expect(desc).toContain('Cuentas 14%');
+    expect(desc).toContain('Metas 29%');
+    expect(desc).toContain('Inversión 57%');
+  });
+
+  it('sin activos no dibuja la barra y lo dice en texto', () => {
+    S.compromisos = [deuda({ saldoTotal: 1_000_000 })];
+    renderAnalisis();
+    expect(document.querySelector('.patri-card__comp')).toBeNull();
+    expect(document.querySelector('.patri-card__col-desc').textContent).toContain('Sin activos registrados');
+  });
+
+  it('el ojo enmascara neto, activos y pasivos; los porcentajes de composición siguen visibles', () => {
+    S.cuentas     = [cuenta({ saldo: 500_000 })];
+    S.compromisos = [deuda({ saldoTotal: 200_000 })];
+    S.config.ocultarSaldo = true;
+    renderAnalisis();
+
+    const card = document.querySelector('.patri-card');
+    expect(card.querySelector('.patri-card__valor').textContent.trim()).toBe('$••••••');
+    const cols = [...card.querySelectorAll('.patri-card__col-valor')];
+    expect(cols[0].textContent).toBe('••••');
+    expect(cols[1].textContent).toBe('••••');
+
+    const ojo = card.querySelector('.patri-card__ojo');
+    expect(ojo.getAttribute('aria-pressed')).toBe('true');
+    expect(ojo.querySelector('use').getAttribute('href')).toBe('#i-eye-off');
+    // La proporción no revela montos: no se enmascara.
+    expect(card.querySelector('.patri-card__col-desc').textContent).toContain('Cuentas 100%');
+
+    S.config.ocultarSaldo = false;
+  });
+});

@@ -3708,4 +3708,26 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(page.locator('#analisis-chip-mes-label')).toHaveText(MESES[new Date().getMonth()]);
   });
 
+  test('el ojo del patrimonio enmascara neto, activos y pasivos (ANL.2b)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 800_000, activa: true }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    const card = page.locator('.patri-card');
+    await expect(card.locator('.patri-card__valor')).toHaveText('$800.000');
+
+    await page.click('[data-action="analisis-saldo-visibilidad"]');
+    await expect(card.locator('.patri-card__valor')).toHaveText('$••••••');
+    await expect(card.locator('.patri-card__col-valor').first()).toHaveText('••••');
+    await expect(page.locator('#analisis-saldo-ojo')).toHaveAttribute('aria-pressed', 'true');
+
+    await page.click('[data-action="analisis-saldo-visibilidad"]');
+    await expect(card.locator('.patri-card__valor')).toHaveText('$800.000');
+  });
+
 });

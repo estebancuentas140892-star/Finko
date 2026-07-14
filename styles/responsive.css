@@ -243,7 +243,7 @@
      600px → max ~36px */
   .bento__value,
   .card__value,
-  .patrimonio-hero__valor {
+  .patri-card__valor {
     font-size: clamp(1.5rem, 0.25rem + 7vw, 2.25rem);
   }
 
@@ -272,9 +272,6 @@
   .grupos-resumen__grid {
     grid-template-columns: 1fr;
   }
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
   .import-resumen {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -290,11 +287,6 @@
   .cat-row__bar {
     grid-column: 1 / -1;
     margin-top: -4px;
-  }
-
-  /* Patrimonio hero más compacto */
-  .patrimonio-hero {
-    padding: var(--fk-space-5);
   }
 
   /* Modal header padding más compacto */

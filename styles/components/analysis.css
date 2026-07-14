@@ -84,43 +84,6 @@
   margin-bottom: 0;
 }
 
-/* ── Métricas del mes ────────────────────────────────────── */
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--fk-space-3);
-}
-.metric-card {
-  background: var(--fk-bg-surface);
-  border: 1px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
-  padding: var(--fk-space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-1);
-}
-.metric-card__label {
-  font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.metric-card__value {
-  font-family: var(--fk-font-mono);
-  font-size: var(--fk-text-2xl);
-  font-weight: var(--fk-font-bold);
-  color: var(--fk-text-primary);
-  line-height: 1.1;
-}
-.metric-card__desc {
-  font-size: var(--fk-text-xs);
-  color: var(--fk-text-muted);
-  margin-top: var(--fk-space-1);
-}
-.metric-card--positive .metric-card__value { color: var(--fk-text-accent); }
-.metric-card--negative .metric-card__value { color: var(--fk-danger); }
-
 /* ── Salud financiera ────────────────────────────────────── */
 .salud-card {
   background: var(--fk-bg-surface);
@@ -1261,50 +1224,119 @@
   margin: 0;
 }
 
-/* ── Patrimonio neto ─────────────────────────────────────── */
-.patrimonio-hero {
+/* ── ANL.2b: Patrimonio neto como card-héroe (ADR 038 D2) ──
+   Una sola card reemplaza al hero + 2 metric-cards: cifra grande, barra de
+   composición de activos por color de dominio (decorativa: los porcentajes
+   en texto portan el dato, SC 1.4.11) y dos columnas Activos / Pasivos.
+   La superficie es neutra (la identidad semántica vive en el signo del
+   neto); sombra en reposo de la familia v2 (ADR 033). */
+.patri-card {
+  position: relative; /* ancla del ojo de privacidad (posición estable) */
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
   border-radius: var(--fk-radius-xl);
-  padding: var(--fk-space-6);
+  padding: var(--fk-space-5);
+  box-shadow: var(--fk-shadow-sm);
+}
+.patri-card__head {
   display: flex;
-  flex-direction: column;
-  gap: var(--fk-space-2);
-  margin-bottom: var(--fk-space-4);
-  text-align: center;
   align-items: center;
+  gap: var(--fk-space-2);
 }
-.patrimonio-hero--positivo {
-  border-color: var(--fk-accent-border);
-  background: linear-gradient(145deg, var(--fk-bg-surface) 0%, color-mix(in srgb, var(--fk-accent) 5%, transparent) 100%);
+.patri-card__teja {
+  width: var(--fk-space-8);
+  height: var(--fk-space-8);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-dom-analisis-bg);
+  color: var(--fk-dom-analisis-text);
 }
-.patrimonio-hero--negativo {
-  border-color: var(--fk-danger);
-  background: linear-gradient(145deg, var(--fk-bg-surface) 0%, color-mix(in srgb, var(--fk-danger) 5%, transparent) 100%);
-}
-.patrimonio-hero__label {
+.patri-card__teja-icon { --fk-icon-size: var(--fk-icon-sm); }
+.patri-card__kicker {
   font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-secondary);
+  font-weight: var(--fk-font-bold);
   text-transform: uppercase;
   letter-spacing: 0.07em;
+  color: var(--fk-text-secondary);
+  margin: 0;
 }
-.patrimonio-hero__valor {
+.patri-card__valor {
   font-family: var(--fk-font-mono);
   font-size: var(--fk-text-4xl);
   font-weight: var(--fk-font-extrabold);
   line-height: 1;
+  margin: var(--fk-space-3) 0 0;
+  font-variant-numeric: tabular-nums;
   /* Mismo tracking que el hero del dashboard (.bento__value--xl, ID.4/ID.5):
      el patrimonio es la otra cifra "hero" de la app y debe sentirse calibrada
      igual, no un peldaño más suelta. */
   letter-spacing: -0.03em;
 }
-.patrimonio-hero__valor--positivo { color: var(--fk-text-accent); }
-.patrimonio-hero__valor--negativo { color: var(--fk-danger); }
-.patrimonio-hero__hint {
+.patri-card__valor--positivo { color: var(--fk-text-accent); }
+.patri-card__valor--negativo { color: var(--fk-danger-text); }
+.patri-card__hint {
   font-size: var(--fk-text-sm);
   color: var(--fk-text-muted);
+  margin: var(--fk-space-2) 0 0;
 }
+
+/* Barra de composición: un segmento por bucket de activos > 0, cada uno
+   con el color crudo de su dominio (superficie decorativa, ADR 031). */
+.patri-card__comp {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-top: var(--fk-space-4);
+}
+.patri-card__seg {
+  height: 100%;
+  border-radius: 2px;
+  min-width: 4px; /* un bucket chico sigue siendo visible */
+}
+.patri-card__seg--cuentas   { background: var(--fk-dom-tesoreria); }
+.patri-card__seg--metas     { background: var(--fk-dom-metas); }
+.patri-card__seg--apartados { background: var(--fk-dom-ahorro); }
+.patri-card__seg--inversion { background: var(--fk-dom-inversion); }
+
+.patri-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-3);
+  margin-top: var(--fk-space-4);
+}
+.patri-card__col {
+  padding: var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-text-primary) 4%, transparent);
+  border: 1px solid var(--fk-border-subtle);
+}
+.patri-card__col-label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+.patri-card__col-valor {
+  font-family: var(--fk-font-mono);
+  font-size: var(--fk-text-lg);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  margin: var(--fk-space-1) 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.patri-card__col-valor--pasivo { color: var(--fk-danger-text); }
+.patri-card__col-desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  margin: var(--fk-space-1) 0 0;
+  line-height: 1.4;
+}
+/* La sección envuelve la card + el hint de deudas sin saldo. */
+.patri-card + .analisis__hint { margin-top: var(--fk-space-3); }
 
 /* ── Proyección ──────────────────────────────────────────── */
 .proyeccion-grid {

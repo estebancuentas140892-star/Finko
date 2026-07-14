@@ -5,6 +5,7 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { estadoVigenciaLegal } from '../../core/constants.js';
 import { sparkline, donut, colorearSegmentos, progressRing } from '../../infra/svg.js';
 import { icon } from '../../infra/icons.js';
@@ -452,12 +453,48 @@ function _renderScoreSalud(resumen) {
     </section>`;
 }
 
+/**
+ * Buckets de la barra de composición de activos (ANL.2b, ADR 038 D2).
+ * Cada bucket > 0 pinta un segmento con el color de su dominio (ADR 031).
+ */
+const _BUCKETS_ACTIVOS = [
+  { key: 'totalCuentas',     label: 'Cuentas',   mod: 'cuentas' },
+  { key: 'totalMetas',       label: 'Metas',     mod: 'metas' },
+  { key: 'totalApartados',   label: 'Apartados', mod: 'apartados' },
+  { key: 'totalInversiones', label: 'Inversión', mod: 'inversion' },
+];
+
 function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
-  const esPositivo  = patrimonioNeto >= 0;
-  const heroClase   = esPositivo ? 'patrimonio-hero--positivo' : 'patrimonio-hero--negativo';
-  const valorClase  = esPositivo ? 'patrimonio-hero__valor--positivo' : 'patrimonio-hero__valor--negativo';
-  const signo       = esPositivo ? '' : '−';
-  const valorAbs    = Math.abs(patrimonioNeto);
+  const esPositivo = patrimonioNeto >= 0;
+  const valorClase = esPositivo ? 'patri-card__valor--positivo' : 'patri-card__valor--negativo';
+  const signo      = esPositivo ? '' : '−';
+  const valorAbs   = Math.abs(patrimonioNeto);
+
+  // Ojo de privacidad (D2 + IN.2): mismo flag único de toda la app, máscara
+  // larga para el neto y corta para las dos columnas (criterio ADR 034 D3).
+  const oculto    = S.config?.ocultarSaldo === true;
+  const netoTxt   = oculto ? SALDO_MASCARA : `${signo}${f(valorAbs)}`;
+  const activosTxt = oculto ? SALDO_MASCARA_CUENTA : f(activos.total);
+  const pasivosTxt = oculto ? SALDO_MASCARA_CUENTA : f(pasivos.total);
+
+  // Composición de activos: deriva del desglose que calcularActivos ya
+  // expone, sin cálculo nuevo. La barra es decorativa (aria-hidden); los
+  // porcentajes en texto portan la información (SC 1.4.11) y no revelan
+  // montos, así que no se enmascaran (igual que la barra del hero de agenda).
+  const buckets = activos.total > 0
+    ? _BUCKETS_ACTIVOS
+        .map(b => ({ ...b, valor: activos[b.key] }))
+        .filter(b => b.valor > 0)
+        .map(b => ({ ...b, pct: Math.round((b.valor / activos.total) * 100) }))
+    : [];
+  const compBarra = buckets.length > 0
+    ? `<div class="patri-card__comp" aria-hidden="true">
+        ${buckets.map(b => `<div class="patri-card__seg patri-card__seg--${b.mod}" style="width:${b.pct}%"></div>`).join('')}
+      </div>`
+    : '';
+  const activosDesc = buckets.length > 0
+    ? buckets.map(b => `${b.label} ${b.pct}%`).join(' · ')
+    : 'Sin activos registrados';
 
   // CTA si hay deudas sin saldo registrado.
   const ctaDeudas = pasivos.deudasSinSaldo > 0
@@ -471,36 +508,40 @@ function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {
 
   return `
     <section class="analisis__section" aria-labelledby="analisis-patrimonio-title">
-      <h2 class="analisis__section-title" id="analisis-patrimonio-title">Patrimonio neto</h2>
-
-      <div class="patrimonio-hero ${heroClase}">
-        <p class="patrimonio-hero__label">Tu patrimonio neto hoy</p>
-        <p class="patrimonio-hero__valor ${valorClase}" aria-label="Patrimonio neto: ${signo}${f(valorAbs)}">
-          ${signo}${f(valorAbs)}
-        </p>
-        <p class="patrimonio-hero__hint">activos − pasivos</p>
+      <div class="patri-card">
+        <button class="patri-card__ojo" type="button" id="analisis-saldo-ojo"
+                data-action="analisis-saldo-visibilidad"
+                aria-pressed="${oculto}"
+                aria-label="${oculto ? 'Mostrar tus saldos' : 'Ocultar tus saldos'}">
+          <svg class="icon" aria-hidden="true"><use href="#i-eye${oculto ? '-off' : ''}"/></svg>
+        </button>
+        <div class="patri-card__head">
+          <span class="patri-card__teja" aria-hidden="true">
+            ${icon('saldo', 'icon patri-card__teja-icon')}
+          </span>
+          <h2 class="patri-card__kicker" id="analisis-patrimonio-title">Patrimonio neto</h2>
+        </div>
+        <p class="patri-card__valor ${valorClase}">${netoTxt}</p>
+        <p class="patri-card__hint">activos − pasivos</p>
+        ${compBarra}
+        <div class="patri-card__grid">
+          <article class="patri-card__col">
+            <p class="patri-card__col-label">Activos</p>
+            <p class="patri-card__col-valor">${activosTxt}</p>
+            <p class="patri-card__col-desc">${activosDesc}</p>
+          </article>
+          <article class="patri-card__col">
+            <p class="patri-card__col-label">Pasivos</p>
+            <p class="patri-card__col-valor ${pasivos.total > 0 ? 'patri-card__col-valor--pasivo' : ''}">${pasivosTxt}</p>
+            <p class="patri-card__col-desc">
+              ${pasivos.cantidadDeudas === 0
+                ? 'Sin deudas registradas'
+                : `${pasivos.cantidadDeudas} deuda${pasivos.cantidadDeudas > 1 ? 's' : ''} · ${pasivos.deudasSinSaldo > 0 ? `${pasivos.deudasSinSaldo} sin saldo` : 'todas con saldo'}`
+              }
+            </p>
+          </article>
+        </div>
       </div>
-
-      <div class="metric-grid">
-        <article class="metric-card">
-          <p class="metric-card__label">Activos totales</p>
-          <p class="metric-card__value">${f(activos.total)}</p>
-          <p class="metric-card__desc">
-            Cuentas ${f(activos.totalCuentas)}${activos.totalMetas > 0 ? ` · Metas ${f(activos.totalMetas)}` : ''}${activos.totalApartados > 0 ? ` · Apartados ${f(activos.totalApartados)}` : ''}${activos.totalInversiones > 0 ? ` · Inversión ${f(activos.totalInversiones)}` : ''}
-          </p>
-        </article>
-        <article class="metric-card">
-          <p class="metric-card__label">Pasivos (deudas)</p>
-          <p class="metric-card__value ${pasivos.total > 0 ? 'metric-card--negative' : ''}">${f(pasivos.total)}</p>
-          <p class="metric-card__desc">
-            ${pasivos.cantidadDeudas === 0
-              ? 'Sin deudas registradas'
-              : `${pasivos.cantidadDeudas} deuda${pasivos.cantidadDeudas > 1 ? 's' : ''} · ${pasivos.deudasSinSaldo > 0 ? `${pasivos.deudasSinSaldo} sin saldo` : 'todas con saldo'}`
-            }
-          </p>
-        </article>
-      </div>
-
       ${ctaDeudas}
     </section>`;
 }

@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(analisis): ANL.2b patrimonio neto como card-héroe con composición + ojo de privacidad · 2026-07-13
+
+Segunda rebanada de **Análisis v2** ([ADR 038](DECISIONS/038-analisis-v2-visual.md) D2).
+
+**Qué cambió:** (1) `modules/dominio/analisis/view.js`: `_renderPatrimonio()` reescrita: la pila "hero + 2 metric-cards" pasa a **una sola card** (`.patri-card`) con teja pizarra (`i-saldo`) + kicker, cifra grande del neto (verde si ≥ 0 con `--fk-text-accent`, rojo `--fk-danger-text` si < 0; deber más de lo que se tiene sí es una alerta real, no viola ADR 019), leyenda "activos − pasivos", **barra de composición de activos** (`_BUCKETS_ACTIVOS`: Cuentas/Metas/Apartados/Inversión, solo buckets > 0, cada segmento con el color crudo de su dominio ADR 031; decorativa `aria-hidden`) y dos columnas compactas Activos / Pasivos. Los **porcentajes de composición van en texto** en la columna de Activos ("Cuentas 61% · Metas 12% · Inversión 27%"): la barra nunca es la única portadora del dato (SC 1.4.11); reemplazan a los montos por bucket que mostraba la card vieja (cada monto exacto vive en su propia sección). El aviso de deudas sin saldo se conserva. (2) **Ojo de privacidad** (IN.2): quinto consumidor del flag único `S.config.ocultarSaldo`; máscara larga para el neto (`SALDO_MASCARA`), corta para Activos/Pasivos (`SALDO_MASCARA_CUENTA`); los porcentajes no se enmascaran (proporción no revela montos, mismo criterio que la barra del hero de agenda). Acción nueva `analisis-saldo-visibilidad` en `analisis/index.js` (espejo de `agenda-saldo-visibilidad`; nota de cabecera del módulo actualizada: sigue sin mutar datos financieros). (3) `styles/components/analysis.css`: bloque `.patri-card*` reemplaza a `.patrimonio-hero*` y `.metric-*` (solo Análisis los usaba, verificado); superficie neutra + `--fk-shadow-sm` (la identidad semántica vive en el signo del neto). `styles/components/domain.css`: `.patri-card__ojo` se suma al grupo compartido de ojos (posición estable, ADR 034 D3). `styles/base.css`/`styles/responsive.css`: referencias `metric-card__value`/`patrimonio-hero__valor` migradas a las clases nuevas; las reglas móviles de `.metric-grid`/`.patrimonio-hero` se retiran (la card nueva es 2 columnas fijas y padding único).
+
+**Archivos tocados:** `modules/dominio/analisis/view.js`, `modules/dominio/analisis/index.js`, `styles/components/analysis.css`, `styles/components/domain.css`, `styles/base.css`, `styles/responsive.css`, `tests/unit/analisis.test.js` (5 nuevos: positivo con columnas, negativo con signo, composición con porcentajes en texto, sin activos sin barra, máscara integral + porcentajes visibles), `tests/e2e/smoke.test.js` (1 nuevo: toggle del ojo enmascara y desenmascara), `service-worker.js` (v386→v387).
+
+**Verificación:** 2645/2645 unit + 199/199 E2E completos + lint verdes.
+
+**Podría afectar:** solo presentación del patrimonio (la lógica `calcularActivos`/`calcularPasivos`/`calcularPatrimonioNeto` no cambió). Quien tenga el ojo activo ahora ve enmascarado también el patrimonio de Análisis (antes quedaba visible: era una fuga del control de privacidad IN.2, la misma clase de hueco que CAL.4c cerró en Calendario). Los montos por bucket de activos dejan de mostrarse en esta card (los reemplaza el porcentaje; el monto exacto vive en su sección).
+
+---
+
 ### feat(analisis): ANL.2a score de salud como héroe + chip de mes, abre Análisis v2 · 2026-07-13
 
 Triaje del handoff de Claude Design "Análisis v2" (bundle "Iteración de specimen", enviado por Esteban con instrucción de implementar) → **[ADR 038](DECISIONS/038-analisis-v2-visual.md)** aceptado + iniciativa "Análisis v2" con rebanadas ANL.2a-d en el BOARD, quinta pantalla de la familia visual v2. El ADR declara la relación con ANL.1 (avanza sus puntos visuales 4/5/7/8; la interpretación sigue allá) y conserva PERF.2/PERF.3 intactos. Primera rebanada implementada (D1+D6).
