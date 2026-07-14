@@ -2835,3 +2835,104 @@ button.chip--gastos.chip--active {
   border-radius: var(--fk-radius-lg);
   box-shadow: var(--fk-shadow-sm);
 }
+
+/* ── Insight de gastos hormiga (GAS.1c, ADR 039 D4) ─────────────
+   Anatomía de .gmf-insight (MC.18c) con el tinte de gastos: pone en
+   pantalla detectarHormigas() (logic.js), que existía sin vista.
+   Informativo, no alarmante (ADR 019). Glifo -text sobre teja 15%
+   compuesta sobre el fondo de página: ~3.9:1 oscuro / ~4.1:1 claro
+   (≥ 3:1, umbral de glifo). */
+.gastos-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fk-space-3);
+  margin-bottom: var(--fk-space-4);
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: color-mix(in srgb, var(--fk-dom-gastos) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fk-dom-gastos) 22%, transparent);
+}
+
+.gastos-insight__icon {
+  width: 1.875rem;   /* 30px, mismo cuerpo que .gmf-insight__icon */
+  height: 1.875rem;
+  flex-shrink: 0;
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-dom-gastos) 15%, transparent);
+  color: var(--fk-dom-gastos-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.gastos-insight__icon .icon { --fk-icon-size: var(--fk-icon-sm); }
+
+.gastos-insight__body { min-width: 0; }
+
+.gastos-insight__title {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.gastos-insight__desc {
+  margin: 3px 0 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  line-height: 1.4;
+}
+
+.gastos-insight__desc strong {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Empty states v2 (GAS.1c, ADR 039 D7) ───────────────────────
+   Misma anatomía que .cal-empty (CAL.4b): card con borde punteado de
+   invitación, teja de dominio + título + descripción + CTA. La teja
+   neutra distingue "filtro sin resultados" (no es un vacío de datos,
+   es una búsqueda sin coincidencias). */
+.gastos-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--fk-space-6) var(--fk-space-5);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-surface);
+  border: 1px dashed var(--fk-border-strong);
+}
+
+.gastos-empty__teja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  margin-bottom: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-dom-gastos-bg);
+  color: var(--fk-dom-gastos-text);
+}
+.gastos-empty__teja .icon { --fk-icon-size: var(--fk-icon-xl); }
+
+.gastos-empty__teja--neutra {
+  background: var(--fk-bg-hover);
+  color: var(--fk-text-secondary);
+}
+
+.gastos-empty__title {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+
+.gastos-empty__desc {
+  margin: 0 0 var(--fk-space-4);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+  max-width: 34ch;
+}

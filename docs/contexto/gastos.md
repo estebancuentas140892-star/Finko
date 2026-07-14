@@ -7,8 +7,8 @@
 ## Pantalla Gastos v2 (GAS.1, ADR 039)
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
-- **Estado actual**     : **GAS.1a y GAS.1b cerradas** (2026-07-14). GAS.1c en el BOARD.
-- **Verificado contra** : GAS.1b (2026-07-14).
+- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2.
+- **Verificado contra** : GAS.1c (2026-07-14).
 
 **Dónde vive**
 
@@ -25,6 +25,9 @@
 | Ítem de la lista (máscara D9, subtítulo sin fecha) | `modules/dominio/gastos/view.js` | `_renderGastoItem(gasto, oculto)` | firma con `oculto` explícito: NO pasarla directa a `.map()` (el índice caería en `oculto`) |
 | Chips con identidad de sección | `styles/components/domain.css` | `button.chip--gastos.chip--active` | patrón D.16b: tinte 12% + borde 50% + anillo, texto primario (medición en ADR 039 D5) |
 | Estilos de grupos por día | `styles/components/domain.css` | `.gastos-dia*` | `.list-item` gana radio lg + sombra por contenedor (criterio MC.18d) |
+| Insight de gastos hormiga | `modules/dominio/gastos/view.js` | `_renderInsightHormigas(delMes, oculto)` | consume `detectarHormigas()` (logic.js); solo vista "Todos", monto respeta el ojo |
+| Empty states v2 | `modules/dominio/gastos/view.js` | `_renderEmptyState()`, `_renderEmptyFiltro()` | anatomía `.cal-empty`; clases `.gastos-empty*` (el genérico `.empty-state` ya no se usa aquí) |
+| Estilos del insight y los empty | `styles/components/domain.css` | `.gastos-insight*`, `.gastos-empty*` | contraste del glifo documentado en el comentario del bloque |
 
 **Decisiones de triaje que NO están en el mockup tal cual** (detalle en el ADR 039): FAB descartado (duplicaría el botón central "Registrar" del ADR 024), búsqueda del header fuera de alcance, comparativo neutro al subir (criterio IV.3/ADR 038 D4, el mockup pedía ámbar), comparación tangible del insight hormiga diferida al motor de interpretación (ANL.1).
 
@@ -38,6 +41,7 @@
 
 **Cambios realizados**:
 
+- 2026-07-14 (GAS.1c): insight de gastos hormiga (por fin en pantalla `detectarHormigas()`) + empty states v2; cierra la iniciativa. Nota E2E: sembrar estado en un test cuya página ya arrancó exige `addInitScript` + `reload` (un `goto` a la misma URL con hash es same-document y no re-arranca la app; un `evaluate` directo lo pisa el initScript de `saltearOnboarding` al recargar). Ver [CHANGELOG](../CHANGELOG.md).
 - 2026-07-14 (GAS.1b): lista agrupada por día (Hoy/Ayer/"Vie 11 jul" + total del día), chips con identidad de sección, máscara de montos de la lista, subtítulo sin fecha. Ver [CHANGELOG](../CHANGELOG.md).
 - 2026-07-14 (GAS.1a): hero del mes con total protagonista + comparativo + ojo. Ver [CHANGELOG](../CHANGELOG.md).
 

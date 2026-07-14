@@ -5,12 +5,12 @@
 
 import { S } from '../../core/state.js';
 import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
-import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { icon, tejaCategoria } from '../../infra/icons.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -260,12 +260,46 @@ export function renderListaGastos() {
   // Más recientes primero: el último gasto registrado queda al tope, visible
   // sin desplazarse. El total de lo visible vive en el hero (GAS.1a, ADR 039
   // D1); el ojo de privacidad enmascara también los montos de la lista (D9:
-  // dejarlos visibles reconstruiría el total oculto sumándolos).
+  // dejarlos visibles reconstruiría el total oculto sumándolos). El insight
+  // de hormigas solo aparece en la vista "Todos" (GAS.1c, D4).
   const oculto    = S.config?.ocultarSaldo === true;
+  const insight   = _filtroCategoria ? '' : _renderInsightHormigas(delMes, oculto);
   const ordenados = ordenarRecientesPrimero(filtrados);
-  el.innerHTML = agruparPorDia(ordenados)
+  el.innerHTML = insight + agruparPorDia(ordenados)
     .map(grupo => _renderGrupoDia(grupo, oculto))
     .join('');
+}
+
+/**
+ * Tarjeta insight de gastos hormiga (GAS.1c, ADR 039 D4): pone por fin en
+ * pantalla `detectarHormigas()` (existía en logic.js sin ninguna vista).
+ * Toma la categoría con mayor total hormiga del mes visible. Solo se pide
+ * en la vista "Todos" (el caller la omite con filtro activo). Tono
+ * informativo, no alarmante (ADR 019); la comparación tangible del mockup
+ * ("más que tu recibo de luz") quedó fuera (pendiente 1 del ADR 039:
+ * pertenece al motor de interpretación de ANL.1).
+ *
+ * @param {import('../../core/state.js').Gasto[]} delMes gastos del mes visible, sin internas.
+ * @param {boolean} oculto flag de privacidad ya leído por el caller (D9).
+ * @returns {string}
+ */
+function _renderInsightHormigas(delMes, oculto) {
+  const hormigas = detectarHormigas(delMes);
+  if (hormigas.length === 0) return '';
+
+  const top      = hormigas[0];
+  const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(top.total);
+
+  return `
+    <div class="gastos-insight" role="note">
+      <span class="gastos-insight__icon" aria-hidden="true">
+        <svg class="icon" aria-hidden="true"><use href="#i-lightbulb"/></svg>
+      </span>
+      <div class="gastos-insight__body">
+        <p class="gastos-insight__title">Gastos hormiga: ${_esc(top.categoria)}</p>
+        <p class="gastos-insight__desc">${top.cantidad} gastos pequeños suman <strong>${totalTxt}</strong> este mes. Pequeños, pero se acumulan.</p>
+      </div>
+    </div>`;
 }
 
 /**
@@ -374,23 +408,28 @@ function _renderGastoItem(gasto, oculto) {
     </article>`;
 }
 
+/**
+ * Empty states v2 (GAS.1c, ADR 039 D7): misma anatomía que `.cal-empty`
+ * (CAL.4b): card con teja de dominio + título + descripción + CTA. Los dos
+ * estados de siempre, sin cambio de lógica.
+ */
 function _renderEmptyState() {
   return `
-    <div class="empty-state">
-      <div class="empty-state__icon">${emptyArt('gastos')}</div>
-      <p class="empty-state__title">Sin gastos este mes</p>
-      <p class="empty-state__desc">Anota tu primera compra o pago.</p>
-      <button class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
+    <div class="gastos-empty">
+      <span class="gastos-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
+      <p class="gastos-empty__title">Sin gastos este mes</p>
+      <p class="gastos-empty__desc">Anota tu primera compra o pago y verás aquí a dónde se va tu dinero.</p>
+      <button type="button" class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
     </div>`;
 }
 
 function _renderEmptyFiltro() {
   return `
-    <div class="empty-state">
-      <div class="empty-state__icon">${emptyArt('search')}</div>
-      <p class="empty-state__title">Nada acá este mes</p>
-      <p class="empty-state__desc">No registraste gastos en esta categoría todavía.</p>
-      <button class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
+    <div class="gastos-empty">
+      <span class="gastos-empty__teja gastos-empty__teja--neutra" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
+      <p class="gastos-empty__title">Nada acá este mes</p>
+      <p class="gastos-empty__desc">No registraste gastos en esta categoría todavía.</p>
+      <button type="button" class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
     </div>`;
 }
 

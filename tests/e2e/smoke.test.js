@@ -844,6 +844,44 @@ test.describe('Gastos - CRUD', () => {
     await expect(grupo.locator('.list-item__amount').first()).toHaveText('••••');
   });
 
+  test('GAS.1c: el insight de gastos hormiga aparece en la vista "Todos" y se oculta al filtrar', async ({ page }) => {
+    // Sembrar 6 domicilios pequeños de hoy (≤ $20.000 c/u, suman $108.000):
+    // exactamente el patrón que detectarHormigas() reporta. Vía initScript
+    // (se registra DESPUÉS del de saltearOnboarding, así que gana al re-boot)
+    // + reload (un goto a la misma URL con hash es navegación same-document:
+    // no re-ejecuta init scripts ni re-arranca la app).
+    await page.addInitScript(() => {
+      const d = new Date();
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const estado = {
+        version: 1,
+        perfil: { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [],
+        ingresos: [],
+        gastos: Array.from({ length: 6 }, (_, i) => ({
+          id: `h${i}`, categoria: 'Domicilios', monto: 18000, fecha: iso, cuentaId: null, nota: '',
+        })),
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+    await page.reload();
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    const insight = page.locator('#lista-gastos .gastos-insight');
+    await expect(insight).toBeVisible();
+    await expect(insight.locator('.gastos-insight__title')).toHaveText('Gastos hormiga: Domicilios');
+    await expect(insight.locator('.gastos-insight__desc')).toContainText('6 gastos pequeños suman');
+    await expect(insight.locator('.gastos-insight__desc')).toContainText('$108.000');
+
+    // Con un filtro de categoría activo el insight se oculta (solo "Todos").
+    await page.click('.filtros-bar [data-cat="Domicilios"]');
+    await expect(page.locator('#lista-gastos .gastos-insight')).toHaveCount(0);
+    await expect(page.locator('#lista-gastos .list-item')).toHaveCount(6);
+  });
+
   test('TX.9b: crear categoría personalizada, verla en la lista y reusarla en un segundo gasto', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
@@ -1289,7 +1327,7 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await confirmBtn.click();
 
     // El gasto debe desaparecer de la lista (vuelve al estado vacío)
-    await expect(page.locator('#lista-gastos .empty-state__title')).toHaveText(
+    await expect(page.locator('#lista-gastos .gastos-empty__title')).toHaveText(
       'Sin gastos este mes',
       { timeout: 3_000 }
     );

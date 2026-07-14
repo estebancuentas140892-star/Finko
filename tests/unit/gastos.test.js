@@ -750,7 +750,7 @@ describe('Gastos deja de listar categorías internas (TX.8b)', () => {
   it('si solo hay gastos internos ese mes, muestra el estado vacío normal', () => {
     S.gastos = [gastoBase({ id: 'g1', categoria: 'Deudas', fecha: mesActual() })];
     renderListaGastos();
-    expect(document.getElementById('lista-gastos').querySelector('.empty-state')).not.toBeNull();
+    expect(document.getElementById('lista-gastos').querySelector('.gastos-empty')).not.toBeNull();
   });
 
   it('un gasto cotidiano sigue apareciendo junto a uno interno', () => {
@@ -1123,5 +1123,98 @@ describe('renderListaGastos() - lista agrupada por día (GAS.1b)', () => {
     const todos = document.querySelector('.filtros-bar [data-cat=""]');
     expect(todos.className).toContain('chip--gastos');
     expect(todos.className).not.toContain('chip--active');
+  });
+});
+
+// ── Insight de gastos hormiga + empty states v2 (GAS.1c, ADR 039 D4/D7) ──
+
+describe('renderListaGastos() - insight de gastos hormiga (GAS.1c)', () => {
+  const hoyIso = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  /** 6 domicilios de $18.000 (≤ $20.000 c/u, suman $108.000 ≥ $100.000). */
+  const hormigasDomicilios = () => Array.from({ length: 6 }, (_, i) =>
+    gastoBase({ id: `h${i}`, categoria: 'Domicilios', descripcion: undefined, monto: 18_000, fecha: hoyIso() })
+  );
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('muestra la tarjeta con la categoría top, el conteo y el total hormiga', () => {
+    S.gastos = hormigasDomicilios();
+    renderListaGastos();
+    const insight = document.querySelector('#lista-gastos .gastos-insight');
+    expect(insight).not.toBeNull();
+    expect(insight.querySelector('.gastos-insight__title').textContent).toBe('Gastos hormiga: Domicilios');
+    expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('6 gastos pequeños suman');
+    expect(insight.querySelector('.gastos-insight__desc').textContent).toContain('$108.000');
+  });
+
+  it('sin gastos hormiga no hay tarjeta', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 250_000, fecha: hoyIso() })];
+    renderListaGastos();
+    expect(document.querySelector('#lista-gastos .gastos-insight')).toBeNull();
+  });
+
+  it('con filtro de categoría activo la tarjeta se oculta (solo vista "Todos")', () => {
+    S.gastos = hormigasDomicilios();
+    setFiltroCategoria('Domicilios');
+    renderListaGastos();
+    expect(document.querySelector('#lista-gastos .gastos-insight')).toBeNull();
+  });
+
+  it('el ojo enmascara el total hormiga (D9)', () => {
+    S.gastos = hormigasDomicilios();
+    S.config.ocultarSaldo = true;
+    renderListaGastos();
+    const desc = document.querySelector('#lista-gastos .gastos-insight__desc').textContent;
+    expect(desc).toContain('••••');
+    expect(desc).not.toContain('$108.000');
+  });
+});
+
+describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('mes vacío: card v2 con teja de dominio, copy cálido y CTA de registro', () => {
+    renderListaGastos();
+    const empty = document.querySelector('#lista-gastos .gastos-empty');
+    expect(empty).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__teja svg use').getAttribute('href')).toBe('#i-gastos');
+    expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Sin gastos este mes');
+    expect(empty.querySelector('.gastos-empty__desc').textContent).toContain('a dónde se va tu dinero');
+    expect(empty.querySelector('[data-action="nuevo-gasto"]')).not.toBeNull();
+  });
+
+  it('filtro sin resultados: teja neutra de búsqueda y CTA "Ver todos"', () => {
+    const d = new Date();
+    const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
+    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', fecha })];
+    // Filtro por una categoría presente en otro momento pero no este mes:
+    // se fuerza directo (setFiltroCategoria no valida contra el mes).
+    setFiltroCategoria('Transporte');
+    renderListaGastos();
+    const empty = document.querySelector('#lista-gastos .gastos-empty');
+    expect(empty).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__teja--neutra')).not.toBeNull();
+    expect(empty.querySelector('.gastos-empty__teja svg use').getAttribute('href')).toBe('#i-search');
+    expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Nada acá este mes');
+    const cta = empty.querySelector('[data-action="gastos-filtrar-cat"]');
+    expect(cta.dataset.cat).toBe('');
+    expect(cta.textContent.trim()).toBe('Ver todos');
   });
 });

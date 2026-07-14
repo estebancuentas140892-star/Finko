@@ -80,7 +80,7 @@ test.describe('Render tras navegación (regresión hashchange)', () => {
     await expect(page.locator('#sec-gast.active')).toBeVisible();
 
     await expect(
-      page.locator('#lista-gastos .empty-state__title')
+      page.locator('#lista-gastos .gastos-empty__title')
     ).toHaveText('Sin gastos este mes', { timeout: 3_000 });
   });
 

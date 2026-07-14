@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): GAS.1c insight de gastos hormiga + empty states v2, cierra Gastos v2 completo · 2026-07-14
+
+Tercera y última rebanada de **Gastos v2** ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D4/D7). **La iniciativa queda completa** (GAS.1a-c cerradas el mismo día): Gastos es la sexta pantalla de la familia visual v2 tras Inicio (ADR 034), Mis cuentas (ADR 035), Deudas (ADR 036), Calendario (ADR 037) y Análisis (ADR 038).
+
+**Qué cambió:** (1) `modules/dominio/gastos/view.js`: **insight de gastos hormiga** (`_renderInsightHormigas()`): pone por fin en pantalla `detectarHormigas()` (existía en `logic.js` desde TX.3 sin ninguna vista). Tarjeta con la anatomía de `.gmf-insight` (MC.18c) en tinte gastos: teja `i-lightbulb` + "Gastos hormiga: {categoría top}" + "N gastos pequeños suman $X este mes. Pequeños, pero se acumulan." Solo en la vista "Todos" (con filtro activo se oculta), solo con mes poblado; el monto respeta el ojo (D9). La comparación tangible del mockup ("más que tu recibo de luz") quedó fuera por decisión del ADR (pendiente 1: pertenece al motor de interpretación de ANL.1). (2) **Empty states v2** (D7): los dos estados pasan de `.empty-state` genérico a `.gastos-empty` con la anatomía de `.cal-empty` (CAL.4b): mes vacío → teja naranja `i-gastos` + copy ampliado del mockup ("...y verás aquí a dónde se va tu dinero") + CTA primario; filtro sin resultados → teja neutra `i-search` + CTA ghost "Ver todos" (acciones existentes, cero lógica nueva). (3) `styles/components/domain.css`: bloques `.gastos-insight*` (glifo `-text` sobre teja 15%: ~3.9:1 oscuro / ~4.1:1 claro, ≥ 3:1 umbral de glifo) y `.gastos-empty*` nuevos; `emptyArt` deja de usarse en Gastos.
+
+**Archivos tocados:** `modules/dominio/gastos/view.js`, `styles/components/domain.css`, `tests/unit/gastos.test.js` (6 nuevos: insight con categoría top/conteo/total, sin hormigas sin tarjeta, filtro la oculta, máscara del ojo, empty de mes con teja+CTA, empty de filtro con teja neutra+Ver todos), `tests/e2e/smoke.test.js` (1 nuevo: 6 domicilios pequeños sembrados → insight visible y se oculta al filtrar; nota del test: el seed va por `addInitScript` + `reload`, un `goto` a la misma URL con hash es navegación same-document y no re-arranca la app), `tests/e2e/navegacion-render.test.js` (selector del empty state migrado a `.gastos-empty__title`), `service-worker.js` (v391→v392).
+
+**Verificación:** 2689/2689 unit + 204/204 E2E completos + lint verdes.
+
+**Podría afectar:** usuarios con muchos gastos pequeños de una misma categoría (≤ $20.000 c/u que suman ≥ $100.000 al mes) ven ahora una tarjeta informativa al tope de la lista que antes no existía; no altera filtros, totales ni CRUD. Los dos empty states cambian solo de presentación.
+
+---
+
 ### feat(gastos): GAS.1b lista agrupada por día + chips con identidad + máscara de montos · 2026-07-14
 
 Segunda rebanada de **Gastos v2** ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D3/D5/D9).
