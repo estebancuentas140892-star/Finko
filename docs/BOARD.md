@@ -4,15 +4,20 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (ANL.2d cerrada → iniciativa "Análisis v2" COMPLETA, tarjeta retirada; ver [ADR 038](DECISIONS/038-analisis-v2-visual.md) y CHANGELOG).
+> Última actualización: 2026-07-14 (triaje del handoff "Gastos v2" → [ADR 039](DECISIONS/039-gastos-v2-visual.md) aceptado, iniciativa con rebanadas GAS.1a-c; GAS.1a en proceso).
 
 ---
 
 ## En proceso
 
-_(vacío: elegir la siguiente tarjeta de "Pendientes")_
-
-_(ANL.2 "Análisis v2" cerrada completa el 2026-07-13, rebanadas ANL.2a-d; CAT.1b cerrada el 2026-07-13; quedan **CAT.1c** (Metas) y **CAT.3** (categorías personalizadas globales) en Transversal.)_
+### GAS.1a - Gastos v2: hero del mes con navegación integrada + comparativo + ojo
+- Prioridad  : alta
+- Estado     : en proceso (2026-07-14)
+- Objetivo   : el total del mes deja la franja fina y pasa a hero de familia v2 ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D1+D2+D9): navegación de mes integrada, "Gastaste este mes" + total protagonista, chip comparativo vs mes anterior (verde al bajar, neutro al subir, criterio IV.3/ADR 038 D4; oculto con filtro activo o sin base) y ojo de privacidad (sexto consumidor de `S.config.ocultarSaldo`, acción `gastos-saldo-visibilidad`).
+- Secciones  : Gastos
+- Archivos   : `modules/dominio/gastos/view.js` (`renderFiltrosGastos`), `logic.js` (`variacionMensualGasto` pura), `index.js` (acción del ojo), `styles/components/domain.css` (`.hero-gastos*`), tests
+- Depende de : nada
+- Modelo     : Fable 5 - Alto (sesión de la iniciativa completa; ver ADR 039)
 
 ---
 
@@ -115,6 +120,26 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 ---
 
 ### Gastos (dominio `gastos`)
+
+> **Iniciativa "Gastos v2: total protagonista, lista por día y gastos hormiga" ([ADR 039](DECISIONS/039-gastos-v2-visual.md), aceptado 2026-07-14; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar).** Sexta pantalla de la familia visual v2 (tras Inicio, Mis cuentas, Deudas, Calendario y Análisis). Rebanadas: **GAS.1a** (hero del mes, en proceso arriba), **GAS.1b** y **GAS.1c** (abajo). Decisiones de triaje del ADR: el **FAB del mockup NO se implementa** (duplicaría el botón central "Registrar" del ADR 024; si Esteban lo prefiere, la decisión formal es suya), la **búsqueda** del header queda fuera (funcionalidad nueva sin decisión de diseño; tarjeta propia si se pide), el comparativo usa el criterio IV.3/ADR 038 D4 (neutro al subir, no ámbar) y la comparación tangible del insight hormiga ("más que tu recibo de luz") se difiere al motor de interpretación (ANL.1).
+
+#### GAS.1b - Gastos v2: lista agrupada por día + chips con identidad + máscara
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : la lista plana pasa a grupos por día (Hoy / Ayer / "Vie 11 jul") con total del día ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D3); el chip activo viste la identidad gastos con el patrón tinte+ink de D.16b (D5); el ojo enmascara totales por día y montos de ítems (D9, cierra la fuga que ANL.2b cerró en Análisis). Los `.list-item` no cambian su base compartida.
+- Secciones  : Gastos
+- Archivos   : `modules/dominio/gastos/logic.js` (`agruparPorDia` pura), `view.js` (`renderListaGastos`), `styles/components/domain.css`, tests
+- Depende de : GAS.1a
+- Modelo     : Fable 5 - Alto (misma sesión de la iniciativa)
+
+#### GAS.1c - Gastos v2: insight de gastos hormiga + empty states v2
+- Prioridad  : alta
+- Estado     : pendiente
+- Objetivo   : `detectarHormigas()` (hoy sin pantalla) se muestra como tarjeta insight con tinte gastos al tope de la lista, solo en vista "Todos" ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D4, anatomía `.gmf-insight`); los dos empty states pasan a la anatomía de familia (teja de dominio + copy cálido + CTA, D7). Cierra la iniciativa.
+- Secciones  : Gastos
+- Archivos   : `modules/dominio/gastos/view.js`, `styles/components/domain.css`, tests
+- Depende de : GAS.1b
+- Modelo     : Fable 5 - Alto (misma sesión de la iniciativa)
 
 _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa.)_
 
