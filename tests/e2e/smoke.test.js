@@ -3676,3 +3676,36 @@ test.describe('Mis cuentas - picker de ícono para banco "Otro" (CAT.2e)', () =>
   });
 
 });
+
+// ── SUITE: Análisis v2 - score hero + chip de mes (ANL.2a, ADR 038) ──────────
+
+test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
+
+  test('el score se presenta como hero con anillo, pill de banda y 4 factores; el chip del header muestra el mes', async ({ page }) => {
+    await saltearOnboarding(page);
+    // Una cuenta con saldo + un gasto del mes: datos suficientes para que el
+    // panel calcule un score real (banda distinta de "sin datos").
+    await page.addInitScript(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      const d = new Date();
+      const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      st.cuentas = [{ id: 'cu1', nombre: 'Nequi', banco: 'Nequi', tipo: 'Ahorros', saldo: 2_000_000, activa: true }];
+      st.gastos  = [{ id: 'g1', descripcion: 'Mercado', monto: 300_000, categoria: 'Mercado', fecha: hoy, cuentaId: 'cu1' }];
+      localStorage.setItem('fk_v1', JSON.stringify(st));
+    });
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    const hero = page.locator('.score-hero');
+    await expect(hero).toBeVisible();
+    await expect(hero.locator('.progress-ring')).toBeVisible();
+    await expect(hero.locator('.score-hero__num')).toHaveText(/^\d+$/);
+    await expect(hero.locator('.score-hero__pill')).toHaveText(/Excelente|Buena|Ajustada|Crítica/);
+    await expect(hero.locator('.score-hero__factor')).toHaveCount(4);
+
+    const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    await expect(page.locator('#analisis-chip-mes-label')).toHaveText(MESES[new Date().getMonth()]);
+  });
+
+});

@@ -838,6 +838,13 @@
             <span class="cat-teja section__icon" data-dom="analisis" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-analisis"/></svg></span>
             <h1 class="section__title" id="title-analisis">Análisis</h1>
           </div>
+          <!-- ANL.2a (ADR 038 D6): Análisis no crea nada (solo lectura), su
+               header no lleva botón primario; el chip ancla el mes analizado.
+               analisis/view.js escribe el nombre del mes en cada render. -->
+          <span class="section__chip" id="analisis-chip-mes">
+            <svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg>
+            <span id="analisis-chip-mes-label"></span>
+          </span>
         </header>
         <div id="proposito-analisis">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->

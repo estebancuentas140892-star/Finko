@@ -319,6 +319,23 @@
   color: var(--fk-text-muted);
   margin-top: var(--fk-space-1);
 }
+/* ANL.2a (ADR 038 D6): chip ghost de contexto en el header de sección
+   (ej. el mes analizado en Análisis). Ocupa el lugar del botón primario
+   en secciones de solo lectura que no crean nada. */
+.section__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border-subtle);
+  background: var(--fk-bg-surface);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  white-space: nowrap;
+}
+.section__chip .icon { --fk-icon-size: var(--fk-icon-sm); }
 .section__sub-header {
   display: flex;
   align-items: center;

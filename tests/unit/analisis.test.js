@@ -1661,3 +1661,90 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
     expect(criterioIngresos().querySelector('.renta-criterio__valor').textContent).toContain('$10.000.000');
   });
 });
+
+// ── renderAnalisis() - ANL.2a: score hero + chip de mes (ADR 038 D1/D6) ──
+
+describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
+  const fechaMesActual = (dia) => {
+    const ahora = new Date();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+    S.ahorro = { fondoEmergencia: { activo: false, completado: false } };
+  });
+
+  it('renderiza el hero con la clase de su banda y el pill con texto + ícono', () => {
+    // Todo vacío: score 20 (solo control aporta) → banda crítica.
+    renderAnalisis();
+    const hero = document.querySelector('.score-hero');
+    expect(hero).not.toBeNull();
+    expect(hero.classList.contains('score-hero--critica')).toBe(true);
+
+    const pill = hero.querySelector('.score-hero__pill');
+    expect(pill.textContent).toContain('Crítica');
+    expect(pill.querySelector('svg use').getAttribute('href')).toBe('#i-alert');
+  });
+
+  it('muestra el score dentro del anillo con la escala "de 100"', () => {
+    renderAnalisis();
+    const hero = document.querySelector('.score-hero');
+    expect(hero.querySelector('.score-hero__num').textContent).toBe('20');
+    expect(hero.querySelector('.score-hero__de').textContent).toBe('de 100');
+    expect(hero.querySelector('.progress-ring')).not.toBeNull();
+  });
+
+  it('pinta los 4 factores en tiles con valor numérico junto a la barra (SC 1.4.11)', () => {
+    renderAnalisis();
+    const factores = [...document.querySelectorAll('.score-hero__factor')];
+    expect(factores.length).toBe(4);
+    const labels = factores.map(fct => fct.querySelector('.score-hero__factor-label').textContent);
+    expect(labels).toEqual(['Deuda', 'Liquidez', 'Control', 'Ahorro']);
+    for (const fct of factores) {
+      const valor = fct.querySelector('.score-hero__factor-valor').textContent;
+      expect(valor).toMatch(/^\d+$/);
+      expect(fct.querySelector('.progress-bar').getAttribute('style')).toContain(`width:${valor}%`);
+    }
+  });
+
+  it('la explicación nombra el factor más débil real, no una frase fija de banda', () => {
+    // Sin deudas (deuda 100), saldo bajo frente al gasto (liquidez baja),
+    // fondo activo (ahorro 50): el más débil es liquidez, banda ajustada.
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    S.gastos  = [gasto({ fecha: fechaMesActual(2), monto: 1_000_000 })];
+    S.ahorro  = { fondoEmergencia: { activo: true, completado: false } };
+    renderAnalisis();
+
+    const frase = document.querySelector('.score-hero__explicacion').textContent;
+    expect(frase).toContain('Atención a tu liquidez');
+    // El desglose técnico "Deuda 80/100 • ..." ya no se imprime.
+    expect(document.querySelector('.score-hero').textContent).not.toContain('•');
+  });
+
+  it('en banda excelente la frase es de refuerzo, sin señalar factor', () => {
+    S.cuentas = [cuenta({ saldo: 6_000_000 })];
+    S.gastos  = [gasto({ fecha: fechaMesActual(2), monto: 1_000_000 })];
+    S.ahorro  = { fondoEmergencia: { activo: true, completado: true } };
+    renderAnalisis();
+
+    const hero = document.querySelector('.score-hero');
+    expect(hero.classList.contains('score-hero--excelente')).toBe(true);
+    expect(hero.querySelector('.score-hero__explicacion').textContent).toContain('Vas muy bien');
+  });
+
+  it('escribe el mes actual en el chip del header (D6)', () => {
+    document.body.innerHTML = `
+      <span id="analisis-chip-mes"><span id="analisis-chip-mes-label"></span></span>
+      <div id="panel-analisis"></div>`;
+    renderAnalisis();
+
+    const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const esperado = MESES[new Date().getMonth()];
+    expect(document.getElementById('analisis-chip-mes-label').textContent).toBe(esperado);
+  });
+});

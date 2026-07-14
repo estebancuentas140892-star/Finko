@@ -158,98 +158,166 @@
 .progress-bar--salud-ajustada  { background: var(--fk-warning); }
 .progress-bar--salud-critica   { background: var(--fk-danger); }
 
-/* ── F.3: Score de Salud Financiera ────────────────────── */
-.score-card {
-  background: var(--fk-bg-surface);
-  border: 2px solid var(--fk-border-subtle);
-  border-radius: var(--fk-radius-lg);
+/* ── F.3 · ANL.2a: Score de Salud como héroe (ADR 038 D1) ──
+   El wash, el borde, el anillo y las mini-barras toman el COLOR DE LA BANDA
+   (no el pizarra de sección): el color es el dato, no la identidad.
+   `--score-banda` pinta superficies (wash/borde, sin exigencia de contraste
+   de texto); `--score-banda-ink` pinta trazos y texto (anillo, pill, barras)
+   con la variante -text segura en tema claro (mismo criterio IV.2d). */
+.score-hero--excelente { --score-banda: var(--fk-accent);  --score-banda-ink: var(--fk-text-accent); }
+.score-hero--buena     { --score-banda: var(--fk-success); --score-banda-ink: var(--fk-success-text); }
+.score-hero--ajustada  { --score-banda: var(--fk-warning); --score-banda-ink: var(--fk-warning-text); }
+.score-hero--critica   { --score-banda: var(--fk-danger);  --score-banda-ink: var(--fk-danger-text); }
+
+.score-hero {
+  border-radius: var(--fk-radius-xl);
+  border: 1px solid color-mix(in srgb, var(--score-banda) 30%, transparent);
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--score-banda) 14%, transparent), transparent 55%),
+    var(--fk-bg-surface);
+  box-shadow: var(--fk-shadow-md);
   padding: var(--fk-space-5);
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-4);
 }
-.score-card--excelente { border-color: var(--fk-accent-border); }
-.score-card--buena     { border-color: var(--fk-success); }
-.score-card--ajustada  { border-color: var(--fk-warning); }
-.score-card--critica   { border-color: var(--fk-danger); }
 
-.score-card__hero {
+.score-hero__top {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-5);
+}
+
+.score-hero__ring {
+  position: relative;
+  flex-shrink: 0;
+  color: var(--score-banda-ink); /* el arco del anillo usa currentColor */
+}
+.score-hero__ring-label {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--fk-space-2);
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-elevated);
-  border-radius: var(--fk-radius-md);
+  justify-content: center;
 }
-.score-card__numero {
-  font-size: clamp(2.5rem, 8vw, 3.5rem);
-  font-weight: var(--fk-font-bold);
+.score-hero__num {
+  font-size: var(--fk-text-4xl);
+  font-weight: var(--fk-font-extrabold);
+  color: var(--fk-text-primary);
   line-height: 1;
-  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
-.score-card__sobre {
-  font-size: var(--fk-text-sm);
+.score-hero__de {
+  font-size: var(--fk-text-xs);
   color: var(--fk-text-secondary);
-}
-.score-card__label {
-  font-size: var(--fk-text-lg);
-  font-weight: var(--fk-font-semibold);
-  color: var(--fk-text-primary);
+  margin-top: var(--fk-space-1);
 }
 
-.score-card__bar {
-  height: var(--fk-space-3);
-  border-radius: var(--fk-radius-full);
+.score-hero__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--fk-space-2);
 }
+.score-hero__kicker {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  /* secondary, no muted: el kicker vive sobre el wash (lección IN.8b). */
+  color: var(--fk-text-secondary);
+  margin: 0;
+}
+.score-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  padding: var(--fk-space-1) var(--fk-space-3);
+  border-radius: var(--fk-radius-full);
+  background: color-mix(in srgb, var(--score-banda) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--score-banda) 30%, transparent);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  /* Texto en primary, no en el color de banda: el tinte del pill APILADO
+     sobre el wash deja al ink por debajo de 4.5:1 en varias bandas (medido:
+     crítica oscuro 3.70, ajustada claro 4.05). La banda la portan el ícono,
+     el tinte y el borde; el texto siempre legible (lección IN.8b). */
+  color: var(--fk-text-primary);
+}
+.score-hero__pill-icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--score-banda-ink);
+}
+.score-hero__explicacion {
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0;
+}
+
+/* Reutilizado por el score (mini-barras vía --score-banda-ink) y por los
+   criterios de renta (K.3), que conservan estos modificadores por estado. */
 .progress-bar--score-excelente { background: var(--fk-accent); }
 .progress-bar--score-buena     { background: var(--fk-success); }
 .progress-bar--score-ajustada  { background: var(--fk-warning); }
 .progress-bar--score-critica   { background: var(--fk-danger); }
 
-.score-card__factors {
+.score-hero__factors {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: var(--fk-space-3);
 }
-@media (max-width: 640px) {
-  .score-card__factors {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
-.score-factor {
+.score-hero__factor {
+  padding: var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  background: color-mix(in srgb, var(--fk-text-primary) 5%, transparent);
+  border: 1px solid var(--fk-border-subtle);
   display: flex;
   flex-direction: column;
   gap: var(--fk-space-2);
-  padding: var(--fk-space-3);
-  background: var(--fk-bg-elevated);
-  border-radius: var(--fk-radius-md);
 }
-.score-factor__label {
-  font-size: var(--fk-text-xs);
-  font-weight: var(--fk-font-semibold);
+.score-hero__factor-head {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  min-width: 0;
+}
+.score-hero__factor-icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  flex-shrink: 0;
   color: var(--fk-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
-.score-factor__valor {
-  font-size: clamp(1.5rem, 5vw, 2rem);
+.score-hero__factor-label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.score-hero__factor-valor {
+  font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-bold);
   color: var(--fk-text-primary);
-  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
-.score-factor__bar {
+.score-hero__factor-bar {
   height: 6px;
 }
+.score-hero__factor-bar .progress-bar {
+  background: var(--score-banda-ink);
+}
 
-.score-card__explicacion {
-  font-size: var(--fk-text-sm);
-  color: var(--fk-text-secondary);
-  text-align: center;
-  padding: var(--fk-space-2);
-  background: var(--fk-bg-elevated);
-  border-radius: var(--fk-radius-md);
+/* score-factor__bar sobrevive como alto de barra de los criterios de
+   renta (K.3), que siguen usándola. */
+.score-factor__bar {
+  height: 6px;
 }
 
 /* ── MC.5b: Resumen de los 3 grupos financieros (centro de control) ── */

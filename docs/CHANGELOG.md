@@ -10,6 +10,22 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(analisis): ANL.2a score de salud como héroe + chip de mes, abre Análisis v2 · 2026-07-13
+
+Triaje del handoff de Claude Design "Análisis v2" (bundle "Iteración de specimen", enviado por Esteban con instrucción de implementar) → **[ADR 038](DECISIONS/038-analisis-v2-visual.md)** aceptado + iniciativa "Análisis v2" con rebanadas ANL.2a-d en el BOARD, quinta pantalla de la familia visual v2. El ADR declara la relación con ANL.1 (avanza sus puntos visuales 4/5/7/8; la interpretación sigue allá) y conserva PERF.2/PERF.3 intactos. Primera rebanada implementada (D1+D6).
+
+**Qué cambió:** (1) `modules/dominio/analisis/view.js`: `_renderScoreSalud()` reescrita como **hero** con wash del color de la banda (no del pizarra de sección: el color es el dato): anillo `progressRing` de 132px con el score y "de 100" en overlay HTML, pill de banda (ícono + texto), factores 2×2 (`_FACTORES_SCORE`) con mini-barras en el color de banda (dentro del hero el dato semántico manda; las barras por dominio de IV.2b siguen fuera de él), y **frase humana** vía `_fraseScore()` que nombra el factor más débil real ("Atención a tu liquidez: es lo que más está frenando tu score."), reemplazando el desglose técnico "Deuda 80/100 • ..." redundante con las barras; las frases fijas por banda del mockup se descartaron por ser datos demo (podían ser falsas para el usuario concreto, ADR 038). (2) **Chip de mes** (D6): Análisis es de solo lectura y su header no lleva botón `+`; el chip ghost (`#analisis-chip-mes`, `i-agenda`) ancla el mes analizado; `renderAnalisis()` escribe el nombre (`_MESES` local, duplicación deliberada por ADN 10). (3) `styles/components/analysis.css`: `.score-hero*` reemplaza `.score-card*` (wash `color-mix` banda 14% sobre surface + borde 30% + sombra en reposo, quinto consumidor del estreno parcial del ADR 033); `--score-banda` pinta superficies y `--score-banda-ink` (variantes `-text`) pinta trazos; el texto del pill va en `--fk-text-primary` porque el ink apilado sobre el wash cae bajo AA (medido: crítica oscuro 3.70, ajustada claro 4.05); `progress-bar--score-*` y `.score-factor__bar` sobreviven (los usan los criterios de renta K.3). (4) `styles/layout.css`: `.section__chip` nuevo (genérico para secciones de solo lectura).
+
+**Contraste (método IV.1):** primary/secondary sobre la parada fuerte del wash ≥ 5.49 en ambos temas y las 4 bandas; arco del anillo y mini-barras vs wash ≥ 4.43 (supera el 3:1 no textual), con el valor numérico siempre al lado (SC 1.4.11).
+
+**Archivos tocados:** `modules/dominio/analisis/view.js`, `index.html` (chip del header), `styles/components/analysis.css`, `styles/layout.css`, `tests/unit/analisis.test.js` (6 nuevos: banda + pill con ícono, score en el anillo, 4 factores con valor junto a la barra, frase del factor más débil, refuerzo en excelente, chip de mes), `tests/e2e/smoke.test.js` (1 nuevo: hero + anillo + pill + 4 factores + chip con datos sembrados), `service-worker.js` (v385→v386).
+
+**Verificación:** 2640/2640 unit + 198/198 E2E completos + lint verdes.
+
+**Podría afectar:** solo presentación del score (la lógica `calcularScoreSalud`/`clasificarScore` no cambió). Quien lea el texto de explicación del score verá la frase humana nueva en vez del desglose técnico.
+
+---
+
 ### feat(agenda): CAL.4c detalle del día accionable, cierra Calendario v2 completo · 2026-07-13
 
 Tercera y última rebanada de **Calendario v2** ([ADR 037](DECISIONS/037-calendario-v2-visual.md) D4/D5/D7). **La iniciativa queda completa** (CAL.4a-c cerradas el mismo día): Calendario es la cuarta pantalla de la familia visual v2 tras Inicio (ADR 034), Mis cuentas (ADR 035) y Deudas (ADR 036).

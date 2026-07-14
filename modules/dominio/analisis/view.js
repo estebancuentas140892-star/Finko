@@ -20,6 +20,16 @@ import {
 // ── PANEL PRINCIPAL ──────────────────────────────────────────────
 
 /**
+ * Nombres de mes para el chip del header (ANL.2a, ADR 038 D6). Copia local
+ * mínima: `MONTHS` de agenda/view.js no se importa (ningún dominio importa
+ * a otro, ADN 10; misma duplicación deliberada que documenta ese módulo).
+ */
+const _MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+/**
  * PERF.2: `renderAnalisis()` hacía ~7 barridos completos de `S.gastos` (cada
  * uno con sub-barridos propios, ej. `serieGastosMensual` recorre 12 meses)
  * en cada `state:change` de `SECCIONES_OBSERVADAS`. Consolidar todo en una
@@ -110,6 +120,11 @@ export function renderAnalisis() {
   const fechaHoy = hoy();
   const anio = Number(fechaHoy.slice(0, 4));
   const mes  = Number(fechaHoy.slice(5, 7));
+
+  // ANL.2a (ADR 038 D6): el chip del header ancla el periodo del análisis.
+  // Vive en el shell estático (index.html); aquí solo se escribe el mes.
+  const chipMes = document.getElementById('analisis-chip-mes-label');
+  if (chipMes) chipMes.textContent = _MESES[mes - 1] ?? '';
 
   const { resumen, serieGastos, segmentosCat } = _calcularDatosAnalisisMemo(
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes,
@@ -332,6 +347,41 @@ function _renderNudgeRenta(n) {
     </div>`;
 }
 
+/**
+ * Metadatos de los 4 factores del score (J.1c). El orden es el de lectura
+ * de la grilla 2×2 y también el desempate del "factor más débil" (ANL.2a):
+ * a igual valor gana el primero de la lista.
+ */
+const _FACTORES_SCORE = [
+  { key: 'deuda',    label: 'Deuda',    icono: 'deudas',   frase: 'nivel de deuda' },
+  { key: 'liquidez', label: 'Liquidez', icono: 'saldo',    frase: 'liquidez' },
+  { key: 'control',  label: 'Control',  icono: 'analisis', frase: 'control de gastos' },
+  { key: 'ahorro',   label: 'Ahorro',   icono: 'ahorro',   frase: 'fondo de ahorro' },
+];
+
+/**
+ * Frase humana del hero (ANL.2a, ADR 038 D1): reemplaza el desglose técnico
+ * "Deuda 80/100 • ..." (redundante con las barras visibles) por una línea
+ * derivada de los datos reales. Nombra el factor más débil como siguiente
+ * paso; en banda excelente, refuerzo sin señalar factor. Las frases fijas
+ * por banda del mockup se descartaron a propósito (datos demo: podían ser
+ * falsas para el usuario concreto, ver ADR 038 "Alternativas rechazadas").
+ *
+ * @param {string} banda
+ * @param {{deuda:number, liquidez:number, control:number, ahorro:number}} factors
+ * @returns {string}
+ */
+function _fraseScore(banda, factors) {
+  if (banda === 'excelente') return 'Vas muy bien: tu base financiera es sólida. Mantén el ritmo.';
+  const peor = _FACTORES_SCORE.reduce(
+    (min, m) => (factors[m.key] < factors[min.key] ? m : min),
+    _FACTORES_SCORE[0],
+  );
+  if (banda === 'buena')    return `Base saludable. Tu ${peor.frase} es lo que más puede mejorar.`;
+  if (banda === 'ajustada') return `Atención a tu ${peor.frase}: es lo que más está frenando tu score.`;
+  return `Tu base financiera está expuesta. Prioriza mejorar tu ${peor.frase}.`;
+}
+
 function _renderScoreSalud(resumen) {
   // Lee el estado del fondo para el 4to factor (J.1c).
   const fondo      = S.ahorro?.fondoEmergencia;
@@ -357,47 +407,46 @@ function _renderScoreSalud(resumen) {
       </p>`
     : '';
 
+  // ANL.2a (ADR 038 D1): las mini-barras toman el color de la banda (dentro
+  // del hero el dato semántico manda; las barras por dominio de IV.2b siguen
+  // vigentes fuera de él). El número acompaña siempre a la barra (SC 1.4.11).
+  const factoresHtml = _FACTORES_SCORE.map(m => `
+    <div class="score-hero__factor">
+      <div class="score-hero__factor-head">
+        ${icon(m.icono, 'icon score-hero__factor-icon')}
+        <span class="score-hero__factor-label">${m.label}</span>
+        <span class="score-hero__factor-valor">${score.factors[m.key]}</span>
+      </div>
+      <div class="progress score-hero__factor-bar"
+           role="progressbar"
+           aria-valuenow="${score.factors[m.key]}"
+           aria-valuemin="0" aria-valuemax="100"
+           aria-label="${m.label}: ${score.factors[m.key]} de 100">
+        <div class="progress-bar" style="width:${score.factors[m.key]}%"></div>
+      </div>
+    </div>`).join('');
+
   return `
     <section class="analisis__section" aria-labelledby="analisis-score-title">
-      <h2 class="analisis__section-title" id="analisis-score-title">Score de salud</h2>
-      <div class="score-card score-card--${banda}">
-        <div class="score-card__hero">
-          ${progressRing(score.score, { size: 120, strokeWidth: 8, etiqueta: score.score, ariaLabel: `Score de salud: ${score.score} de 100` })}
-          <p class="score-card__label">${icon(iconoBanda)} ${label}</p>
-        </div>
-
-        <div class="score-card__factors">
-          <div class="score-factor">
-            <p class="score-factor__label">${icon('deudas')} Deuda</p>
-            <p class="score-factor__valor">${score.factors.deuda}</p>
-            <div class="progress score-factor__bar" data-dom="compromisos">
-              <div class="progress-bar" style="width:${score.factors.deuda}%"></div>
+      <div class="score-hero score-hero--${banda}">
+        <div class="score-hero__top">
+          <div class="score-hero__ring">
+            ${progressRing(score.score, { size: 132, strokeWidth: 11, conLabel: false, ariaLabel: `Score de salud: ${score.score} de 100` })}
+            <div class="score-hero__ring-label" aria-hidden="true">
+              <span class="score-hero__num">${score.score}</span>
+              <span class="score-hero__de">de 100</span>
             </div>
           </div>
-          <div class="score-factor">
-            <p class="score-factor__label">${icon('saldo')} Liquidez</p>
-            <p class="score-factor__valor">${score.factors.liquidez}</p>
-            <div class="progress score-factor__bar" data-dom="tesoreria">
-              <div class="progress-bar" style="width:${score.factors.liquidez}%"></div>
-            </div>
-          </div>
-          <div class="score-factor">
-            <p class="score-factor__label">${icon('analisis')} Control</p>
-            <p class="score-factor__valor">${score.factors.control}</p>
-            <div class="progress score-factor__bar">
-              <div class="progress-bar" style="width:${score.factors.control}%"></div>
-            </div>
-          </div>
-          <div class="score-factor">
-            <p class="score-factor__label">${icon('ahorro')} Ahorro</p>
-            <p class="score-factor__valor">${score.factors.ahorro}</p>
-            <div class="progress score-factor__bar" data-dom="ahorro">
-              <div class="progress-bar" style="width:${score.factors.ahorro}%"></div>
-            </div>
+          <div class="score-hero__info">
+            <h2 class="score-hero__kicker" id="analisis-score-title">Score de salud</h2>
+            <span class="score-hero__pill">
+              ${icon(iconoBanda, 'icon score-hero__pill-icon')}
+              ${label}
+            </span>
+            <p class="score-hero__explicacion">${_esc(_fraseScore(banda, score.factors))}</p>
           </div>
         </div>
-
-        <p class="score-card__explicacion">${_esc(score.explicacion)}</p>
+        <div class="score-hero__factors">${factoresHtml}</div>
       </div>
       ${nudgeFondo}
     </section>`;
