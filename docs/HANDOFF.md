@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-13 (feat(analisis): ANL.2c "A dónde va tu dinero", tendencia con chip + categorías rankeadas, ADR 038)
+> Última actualización: 2026-07-13 (feat(analisis): ANL.2d filas colapsables + empty state único, cierra Análisis v2 completo, ADR 038)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2649/2649 verdes |
-| Tests E2E | 200/200 verde. Suites: `smoke` 122 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 7 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests unitarios + integración | 2655/2655 verdes |
+| Tests E2E | 201/201 verde. Suites: `smoke` 123 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 7 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
 | Schema version (localStorage) | v26 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |

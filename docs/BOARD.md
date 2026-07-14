@@ -4,23 +4,15 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-13 (triaje del handoff "Análisis v2" de Claude Design → [ADR 038](DECISIONS/038-analisis-v2-visual.md) + iniciativa ANL.2 en proceso, rebanadas ANL.2a-d).
+> Última actualización: 2026-07-13 (ANL.2d cerrada → iniciativa "Análisis v2" COMPLETA, tarjeta retirada; ver [ADR 038](DECISIONS/038-analisis-v2-visual.md) y CHANGELOG).
 
 ---
 
 ## En proceso
 
-### ANL.2 - Análisis v2: rediseño visual de la sección (iniciativa, ADR 038)
-- Prioridad  : alta
-- Estado     : en proceso (2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar)
-- Objetivo   : quinta pantalla de la familia visual v2 (tras Inicio, Mis cuentas, Deudas y Calendario). Score de salud como héroe con anillo + wash del color de banda, patrimonio como card-héroe con barra de composición + ojo de privacidad, "A dónde va tu dinero" agrupado (tendencia con chip de variación + categorías rankeadas desde la dona), colapsables como filas limpias con badge contador, empty state único. Cero cambios de lógica financiera; PERF.2/PERF.3 intactos. Detalle completo en [ADR 038](DECISIONS/038-analisis-v2-visual.md). **Relación declarada con ANL.1** (no la absorbe): avanza sus puntos visuales 4/5/7/8; la interpretación (1/2/3/6/9) sigue en ANL.1.
-- Rebanadas  : **ANL.2a CERRADA 2026-07-13** (score hero + chip de mes, D1+D6) → **ANL.2b CERRADA 2026-07-13** (patrimonio card-héroe + composición + ojo, D2) → **ANL.2c CERRADA 2026-07-13** ("A dónde va tu dinero": chip de variación + categorías rankeadas, D3+D4) → **ANL.2d** colapsables + empty state (D5+D7). Ver CHANGELOG.
-- Secciones  : Análisis
-- Archivos   : `modules/dominio/analisis/view.js`, `modules/dominio/analisis/index.js`, `styles/components/analysis.css`, `index.html` (chip del header), tests
-- Depende de : nada
-- Modelo     : Fable 5 - Alto (sesión del triaje; las rebanadas siguen el patrón ya probado 4 veces en la familia v2)
+_(vacío: elegir la siguiente tarjeta de "Pendientes")_
 
-_(CAT.1b cerrada el 2026-07-13; quedan **CAT.1c** (Metas) y **CAT.3** (categorías personalizadas globales) en Transversal.)_
+_(ANL.2 "Análisis v2" cerrada completa el 2026-07-13, rebanadas ANL.2a-d; CAT.1b cerrada el 2026-07-13; quedan **CAT.1c** (Metas) y **CAT.3** (categorías personalizadas globales) en Transversal.)_
 
 ---
 
@@ -236,7 +228,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Análisis (dominio `analisis`)
 
-> Iniciativa "Análisis v2: rediseño visual" ([ADR 038](DECISIONS/038-analisis-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen"): tarjeta activa en "En proceso" (rebanadas ANL.2a-d). Avanza los puntos 4, 5, 7 y 8 del brief de ANL.1 (reorganización, jerarquía, carga cognitiva, coherencia visual); los puntos de interpretación (1, 2, 3, 6, 9) siguen en ANL.1, que hereda el lienzo v2 ya montado: cuando se inicie, escribe copy y recomendaciones sobre estas cards, no rediseña de cero.
+> Iniciativa "Análisis v2: rediseño visual" ([ADR 038](DECISIONS/038-analisis-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen"): **COMPLETA el 2026-07-13** (rebanadas ANL.2a-d, ver CHANGELOG). Avanzó los puntos 4, 5, 7 y 8 del brief de ANL.1 (reorganización, jerarquía, carga cognitiva, coherencia visual); los puntos de interpretación (1, 2, 3, 6, 9) siguen en ANL.1, que hereda el lienzo v2 ya montado: cuando se inicie, escribe copy y recomendaciones sobre estas cards, no rediseña de cero.
 
 #### ANL.1 - Análisis como centro de interpretación financiera (no solo panel de estadísticas)
 - Prioridad  : sin definir

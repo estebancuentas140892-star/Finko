@@ -131,6 +131,26 @@ export function renderAnalisis() {
     S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes,
   );
 
+  // ANL.2d (ADR 038 D7): sin gastos registrados, sin activos y sin deudas no
+  // hay nada que analizar: un único empty state reemplaza la pila de secciones
+  // vacías. Con datos parciales (ej. cuentas con saldo pero sin gastos) el
+  // panel se muestra completo y cada card conserva su vacío puntual. Los datos
+  // fiscales manuales (Ajustes → Datos de renta) y el perfil fiscal también
+  // cuentan como datos: el monitor de renta (K.3) tiene contenido real para
+  // ese usuario y no debe esconderse tras un "sin datos".
+  const df = S.config?.datosFiscales?.[anio];
+  const pf = S.config?.perfilFiscal;
+  const tieneSenalFiscal = (df != null && Object.keys(df).length > 0)
+    || (pf != null && (pf.ivaResponsable === true || pf.obligadoContabilidad === true || pf.declaranteObligado === true));
+  const sinDatos = S.gastos.length === 0
+    && resumen.activos.total === 0
+    && resumen.pasivos.cantidadDeudas === 0
+    && !tieneSenalFiscal;
+  if (sinDatos) {
+    el.innerHTML = _renderEmptyAnalisis();
+    return;
+  }
+
   // PERF.3: el grupo "Más detalle de tus gastos" difiere su cuerpo al toggle.
   // Con gasto este mes, la comparación siempre tiene contenido, así que ese
   // chequeo barato basta para mostrar el grupo y dejar su cuerpo diferido
@@ -184,16 +204,44 @@ export function renderAnalisis() {
  * lo calcule en el primer `toggle`; un string ya renderizado se inyecta de una
  * vez y marca el grupo como cargado (`data-cargado`), evitando el recálculo.
  *
+ * ANL.2d (ADR 038 D5): el summary es una fila limpia (teja pizarra + título +
+ * subtítulo con el contenido + chevron). El cuerpo interno no se rediseña.
+ *
  * @param {string|null} cuerpo  HTML del cuerpo, o `null` si está diferido.
  * @returns {string}
  */
 function _renderGrupoDetalle(cuerpo) {
   const diferido = cuerpo === null;
   return `
-    <details class="analisis-grupo analisis-grupo--detalle"${diferido ? '' : ' data-cargado="1"'}>
-      <summary class="analisis-grupo__summary">Más detalle de tus gastos</summary>
+    <details class="analisis-grupo analisis-grupo--fila analisis-grupo--detalle"${diferido ? '' : ' data-cargado="1"'}>
+      <summary class="analisis-grupo__summary">
+        <span class="analisis-grupo__teja" aria-hidden="true">${icon('bar-chart')}</span>
+        <span class="analisis-grupo__texto">
+          <span class="analisis-grupo__title">Más detalle de tus gastos</span>
+          <span class="analisis-grupo__sub">Vs mes anterior · patrón semanal · hormigas</span>
+        </span>
+      </summary>
       <div class="analisis-grupo__body">${diferido ? '' : cuerpo}</div>
     </details>`;
+}
+
+/**
+ * ANL.2d (ADR 038 D7): empty state único del panel. Reemplaza la pila de
+ * secciones vacías cuando no hay nada que analizar. El CTA reutiliza la
+ * acción global `nuevo-gasto` (el modal de gasto es global).
+ *
+ * @returns {string}
+ */
+function _renderEmptyAnalisis() {
+  return `
+    <div class="analisis-empty">
+      <span class="analisis-empty__teja" aria-hidden="true">${icon('analisis')}</span>
+      <p class="analisis-empty__title">Aún no hay suficientes datos</p>
+      <p class="analisis-empty__desc">Registra gastos y agrega tus cuentas: tu score de salud, patrimonio y tendencias aparecen automáticamente.</p>
+      <button type="button" class="btn btn-primary" data-action="nuevo-gasto">
+        + Registrar un gasto
+      </button>
+    </div>`;
 }
 
 /**
@@ -291,9 +339,24 @@ function _renderEstadoRenta(anio) {
   const recomFiscal = _renderRecomendacionFiscal();
   const abierto     = tieneAlerta || recomFiscal !== '';
 
+  // ANL.2d (ADR 038 D5): badge contador ámbar con los criterios en alerta
+  // (cerca + supera), para que lo colapsado no esconda lo urgente.
+  const criteriosAlerta = estado.criterios
+    .filter(c => c.estado === 'cerca' || c.estado === 'supera').length;
+  const badgeAlerta = criteriosAlerta > 0
+    ? `<span class="analisis-grupo__badge">${criteriosAlerta}<span class="sr-only"> ${criteriosAlerta === 1 ? 'criterio' : 'criterios'} cerca o sobre un tope</span></span>`
+    : '';
+
   return `
-    <details class="analisis-grupo"${abierto ? ' open' : ''}>
-      <summary class="analisis-grupo__summary">📋 Estado de tu renta (${anio})</summary>
+    <details class="analisis-grupo analisis-grupo--fila"${abierto ? ' open' : ''}>
+      <summary class="analisis-grupo__summary">
+        <span class="analisis-grupo__teja" aria-hidden="true">${icon('percent')}</span>
+        <span class="analisis-grupo__texto">
+          <span class="analisis-grupo__title">Estado de tu renta (${anio})</span>
+          <span class="analisis-grupo__sub">${estado.criterios.length} criterios DIAN · topes por UVT</span>
+        </span>
+        ${badgeAlerta}
+      </summary>
       <div class="analisis-grupo__body">
         ${recomFiscal}
         <p class="analisis__hint">

@@ -84,6 +84,104 @@
   margin-bottom: 0;
 }
 
+/* ── ANL.2d: filas colapsables limpias (ADR 038 D5) ──────────
+   Modificador --fila: solo los dos grupos del panel de Análisis (detalle de
+   gastos + renta) toman la superficie v2; la base .analisis-grupo queda
+   intacta porque el desglose de Límites (.grupo-card__desglose) la reutiliza.
+   El summary es teja pizarra + título + subtítulo + chevron (el ::after
+   existente); toque garantizado >= 44px por la teja de 40px + padding. */
+.analisis-grupo--fila {
+  background: var(--fk-bg-surface);
+  border-radius: var(--fk-radius-xl);
+  box-shadow: var(--fk-shadow-sm);
+}
+.analisis-grupo--fila > .analisis-grupo__summary {
+  gap: var(--fk-space-3);
+}
+.analisis-grupo__teja {
+  width: var(--fk-space-10);
+  height: var(--fk-space-10);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-dom-analisis-bg);
+  color: var(--fk-dom-analisis-text);
+}
+.analisis-grupo__teja .icon { --fk-icon-size: var(--fk-icon-md); }
+.analisis-grupo__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.analisis-grupo__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.analisis-grupo__sub {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-regular);
+  color: var(--fk-text-secondary);
+}
+/* Contador ámbar de criterios en alerta (mismo par warning-bg/warning-text
+   que .comparacion__highlight--alerta, ya validado por COL.1). */
+.analisis-grupo__badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--fk-space-2);
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-warning-bg);
+  color: var(--fk-warning-text);
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── ANL.2d: empty state único del panel (ADR 038 D7) ────────
+   Mismo lenguaje que .cal-empty (CAL.4b): borde punteado (es una invitación,
+   no una card de contenido), teja pizarra de la sección y CTA global. */
+.analisis-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--fk-space-8) var(--fk-space-5);
+  border-radius: var(--fk-radius-xl);
+  background: var(--fk-bg-surface);
+  border: 1px dashed var(--fk-border-strong);
+}
+.analisis-empty__teja {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--fk-space-12);
+  height: var(--fk-space-12);
+  margin-bottom: var(--fk-space-4);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-dom-analisis-bg);
+  color: var(--fk-dom-analisis-text);
+}
+.analisis-empty__teja .icon { --fk-icon-size: var(--fk-icon-xl); }
+.analisis-empty__title {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+.analisis-empty__desc {
+  margin: 0 0 var(--fk-space-4);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+  max-width: 36ch;
+}
+
 /* ── Salud financiera ────────────────────────────────────── */
 .salud-card {
   background: var(--fk-bg-surface);

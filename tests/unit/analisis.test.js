@@ -1537,9 +1537,11 @@ describe('renderAnalisis() - PERF.3 detalle de gastos diferido', () => {
     const grupo = detalle();
     expect(grupo, 'el grupo colapsable debe existir').not.toBeNull();
     // Cuerpo diferido: sin marcar como cargado y sin la comparación pintada.
+    // (ANL.2d: "Vs mes anterior" ahora aparece en el subtítulo del summary,
+    // así que el marcador de "comparación pintada" es su tabla, no el texto.)
     expect(grupo.dataset.cargado).toBeUndefined();
     expect(grupo.querySelector('.analisis-grupo__body').innerHTML.trim()).toBe('');
-    expect(grupo.innerHTML).not.toContain('Vs mes anterior');
+    expect(grupo.innerHTML).not.toContain('comparacion__tabla');
   });
 
   it('al abrir el grupo por primera vez, calcula y pinta el detalle', () => {
@@ -1605,7 +1607,10 @@ describe('renderAnalisis() - PERF.7d Estado de tu renta memoizado, sin quedar ob
 
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
-    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    // Una cuenta con saldo: dato mínimo para que ANL.2d no corto-circuite el
+    // panel al empty state. No toca el criterio consultado (Ingresos brutos
+    // es manual) y su identidad es estable dentro de cada test (memo intacta).
+    S.gastos = []; S.compromisos = []; S.cuentas = [cuenta({ saldo: 500_000 })];
     S.metas = []; S.apartados = []; S.inversiones = [];
     S.config = { datosFiscales: {} };
   });
@@ -1661,15 +1666,29 @@ describe('renderAnalisis() - ANL.2a score de salud como héroe', () => {
     return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
   };
 
+  /** Fecha YYYY-MM-DD de hace 6 meses: escapa del empty state de ANL.2d sin
+   *  tocar el score (gastoMes sigue en 0: mismos factores que "todo vacío"). */
+  const fechaAntigua = () => {
+    const ahora = new Date();
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - 6, 2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   beforeEach(() => {
     document.body.innerHTML = '<div id="panel-analisis"></div>';
-    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    // Un gasto viejo como dato mínimo (ANL.2d corto-circuita el panel entero
+    // si no hay gastos, activos ni deudas); sin gasto ESTE mes, los factores
+    // del score son los mismos del estado vacío: 20, banda crítica.
+    S.gastos = [gasto({ fecha: fechaAntigua() })];
+    S.compromisos = []; S.cuentas = [];
     S.metas = []; S.apartados = []; S.inversiones = [];
     S.ahorro = { fondoEmergencia: { activo: false, completado: false } };
   });
 
   it('renderiza el hero con la clase de su banda y el pill con texto + ícono', () => {
-    // Todo vacío: score 20 (solo control aporta) → banda crítica.
+    // Sin gasto del mes, sin activos, sin deudas: score 20 (solo control
+    // aporta) → banda crítica.
     renderAnalisis();
     const hero = document.querySelector('.score-hero');
     expect(hero).not.toBeNull();
@@ -1908,5 +1927,82 @@ describe('renderAnalisis() - ANL.2c tendencia con chip + categorías agrupadas',
     expect(card.querySelector('.catg-card__centro-label').textContent).toBe('Top');
     expect(card.querySelector('.catg-card__centro-cat').textContent).toBe('Mercado');
     expect(card.querySelector('.catg-card__centro-pct').textContent).toBe('67%');
+  });
+});
+
+// ── renderAnalisis() - ANL.2d: filas colapsables + empty state (ADR 038 D5/D7) ──
+
+describe('renderAnalisis() - ANL.2d filas colapsables limpias + empty state único', () => {
+  const anioActual = new Date().getFullYear();
+  const fechaMesActual = (dia) => {
+    const ahora = new Date();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    return `${ahora.getFullYear()}-${mm}-${String(dia).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-analisis"></div>';
+    S.gastos = []; S.compromisos = []; S.cuentas = [];
+    S.metas = []; S.apartados = []; S.inversiones = [];
+    S.config = {};
+  });
+
+  it('sin gastos, activos ni deudas, el panel corto-circuita a un único empty state con CTA', () => {
+    renderAnalisis();
+    const panel = document.getElementById('panel-analisis');
+    const empty = panel.querySelector('.analisis-empty');
+    expect(empty).not.toBeNull();
+    expect(empty.querySelector('.analisis-empty__title').textContent).toBe('Aún no hay suficientes datos');
+    expect(empty.querySelector('[data-action="nuevo-gasto"]')).not.toBeNull();
+    expect(empty.querySelector('use').getAttribute('href')).toBe('#i-analisis');
+    // Nada más se dibuja: ni hero, ni patrimonio, ni colapsables.
+    expect(panel.querySelector('.score-hero')).toBeNull();
+    expect(panel.querySelector('.patri-card')).toBeNull();
+    expect(panel.querySelector('.analisis-grupo')).toBeNull();
+  });
+
+  it('con datos parciales (una cuenta con saldo) el panel completo se muestra', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    expect(document.querySelector('.analisis-empty')).toBeNull();
+    expect(document.querySelector('.score-hero')).not.toBeNull();
+    expect(document.querySelector('.patri-card')).not.toBeNull();
+  });
+
+  it('los datos fiscales manuales también cuentan como datos: el monitor de renta no se esconde', () => {
+    S.config = { datosFiscales: { [anioActual]: { ingresosBrutos: 10_000_000 } } };
+    renderAnalisis();
+    expect(document.querySelector('.analisis-empty')).toBeNull();
+    expect(document.querySelector('.renta-criterios')).not.toBeNull();
+  });
+
+  it('el summary del detalle de gastos es una fila con teja, título y subtítulo (D5)', () => {
+    S.gastos = [gasto({ fecha: fechaMesActual(2) })];
+    renderAnalisis();
+    const summary = document.querySelector('.analisis-grupo--detalle .analisis-grupo__summary');
+    expect(summary.querySelector('.analisis-grupo__teja use').getAttribute('href')).toBe('#i-bar-chart');
+    expect(summary.querySelector('.analisis-grupo__title').textContent).toBe('Más detalle de tus gastos');
+    expect(summary.querySelector('.analisis-grupo__sub').textContent).toBe('Vs mes anterior · patrón semanal · hormigas');
+  });
+
+  it('el summary de renta lleva teja y conteo de criterios, sin badge cuando no hay alertas', () => {
+    S.cuentas = [cuenta({ saldo: 500_000 })];
+    renderAnalisis();
+    const grupos = [...document.querySelectorAll('.analisis-grupo--fila')];
+    const renta = grupos.find(g => g.querySelector('.analisis-grupo__title')?.textContent.startsWith('Estado de tu renta'));
+    expect(renta).not.toBeUndefined();
+    expect(renta.querySelector('.analisis-grupo__teja use').getAttribute('href')).toBe('#i-percent');
+    expect(renta.querySelector('.analisis-grupo__sub').textContent).toBe('5 criterios DIAN · topes por UVT');
+    expect(renta.querySelector('.analisis-grupo__badge')).toBeNull();
+  });
+
+  it('con un criterio cerca del tope, el badge ámbar cuenta las alertas', () => {
+    // Patrimonio bruto al 85% del tope (4500 UVT) → estado "cerca" → badge 1.
+    const tope = TOPES_RENTA_UVT.patrimonioBruto * UVT;
+    S.cuentas = [cuenta({ saldo: Math.round(tope * 0.85) })];
+    renderAnalisis();
+    const badge = document.querySelector('.analisis-grupo__badge');
+    expect(badge).not.toBeNull();
+    expect(badge.textContent.trim()).toMatch(/^1/);
   });
 });

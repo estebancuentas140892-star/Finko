@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(analisis): ANL.2d filas colapsables limpias + empty state único, cierra Análisis v2 completo · 2026-07-13
+
+Cuarta y última rebanada de **Análisis v2** ([ADR 038](DECISIONS/038-analisis-v2-visual.md) D5/D7). **La iniciativa queda completa** (ANL.2a-d cerradas el mismo día): Análisis es la quinta pantalla de la familia visual v2 tras Inicio (ADR 034), Mis cuentas (ADR 035), Deudas (ADR 036) y Calendario (ADR 037).
+
+**Qué cambió:** (1) `modules/dominio/analisis/view.js`: los `summary` de los dos colapsables ("Más detalle de tus gastos" y "Estado de tu renta") pasan de encabezado con emoji a **fila limpia**: teja pizarra con ícono existente (`i-bar-chart` / `i-percent`, cero íconos nuevos por el criterio del ADR 037), título, **subtítulo con el contenido** ("Vs mes anterior · patrón semanal · hormigas" / "5 criterios DIAN · topes por UVT") y el chevron `::after` que ya existía. Renta suma un **badge contador ámbar** con los criterios en alerta (`cerca` + `supera`) + texto `sr-only`, para que lo colapsado no esconda lo urgente; la apertura automática cuando hay alerta se conserva, y el **cuerpo interno de los colapsables no se rediseña** (decisión D5 del doc de diseño). (2) **Empty state único** (D7): sin gastos registrados, sin activos, sin deudas **y sin señal fiscal**, `renderAnalisis()` corto-circuita a `_renderEmptyAnalisis()`: teja pizarra `i-analisis`, "Aún no hay suficientes datos", explicación y CTA "+ Registrar un gasto" (acción global `nuevo-gasto`). Los datos de renta manuales (Ajustes → Datos de renta) y los flags del perfil fiscal cuentan como datos: el monitor K.3 tiene contenido real para ese usuario y no se esconde tras un "sin datos" (refinamiento dentro del espíritu del D7: "con datos parciales, el panel se muestra"). (3) `styles/components/analysis.css`: modificador `.analisis-grupo--fila` (superficie v2 + sombra en reposo) + `.analisis-grupo__teja/__texto/__title/__sub/__badge` nuevos; la base `.analisis-grupo` quedó **intacta** porque el desglose de Límites (`.grupo-card__desglose`) la reutiliza. `.analisis-empty*` con el mismo lenguaje de `.cal-empty` (CAL.4b): borde punteado de invitación, teja de sección. PERF.2/PERF.3 intactos (el diferimiento por `toggle` y su listener no cambiaron).
+
+**Archivos tocados:** `modules/dominio/analisis/view.js`, `styles/components/analysis.css`, `tests/unit/analisis.test.js` (6 nuevos: empty state con CTA y sin cards, datos parciales muestran el panel, señal fiscal evita el empty, fila del detalle con teja/título/subtítulo, fila de renta sin badge sin alertas, badge con criterio cerca del tope; la aserción de PERF.3 que usaba "Vs mes anterior" como marcador de cuerpo pintado pasó a `comparacion__tabla` porque ese texto ahora vive en el subtítulo del summary, misma intención; fixtures "todo vacío" de ANL.2a y PERF.7d ajustados con el dato mínimo para escapar del empty state sin alterar lo que verifican), `tests/e2e/smoke.test.js` (1 nuevo: usuario sin datos ve un único empty state y el CTA abre el modal de gasto), `service-worker.js` (v388→v389).
+
+**Verificación:** 2655/2655 unit + 201/201 E2E completos + lint verdes.
+
+**Podría afectar:** usuarios recién llegados a Análisis sin ningún dato ven ahora una sola invitación en vez de la pila de secciones con vacíos parciales (score crítico "vacío", patrimonio en ceros). El monitor de renta ya no es visible con la app totalmente vacía (antes se dibujaba con sus 5 criterios "Sin datos en Finko"); reaparece con cualquier dato real o señal fiscal manual.
+
+---
+
 ### feat(analisis): ANL.2c "A dónde va tu dinero", tendencia con chip + categorías rankeadas · 2026-07-13
 
 Tercera rebanada de **Análisis v2** ([ADR 038](DECISIONS/038-analisis-v2-visual.md) D3/D4).

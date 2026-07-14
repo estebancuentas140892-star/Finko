@@ -3758,4 +3758,22 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
     await expect(grupo.locator('.catg-card__total')).toHaveText('$300.000');
   });
 
+  test('sin ningún dato, Análisis muestra un único empty state y su CTA abre el registro de gasto (ANL.2d)', async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    // Un solo empty state: sin hero de score, sin patrimonio, sin colapsables.
+    const empty = page.locator('.analisis-empty');
+    await expect(empty).toBeVisible();
+    await expect(empty.locator('.analisis-empty__title')).toHaveText('Aún no hay suficientes datos');
+    await expect(page.locator('.score-hero')).toHaveCount(0);
+    await expect(page.locator('.patri-card')).toHaveCount(0);
+    await expect(page.locator('#panel-analisis .analisis-grupo')).toHaveCount(0);
+
+    // El CTA reutiliza la acción global de gasto: abre el modal.
+    await empty.locator('[data-action="nuevo-gasto"]').click();
+    await page.waitForSelector('#modal-gasto[data-open]');
+  });
+
 });
