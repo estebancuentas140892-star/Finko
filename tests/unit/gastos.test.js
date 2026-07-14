@@ -15,6 +15,7 @@ import {
   iconoPorOrigen,
   validarCategoriaPersonalizada,
   variacionMensualGasto,
+  agruparPorDia,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -979,5 +980,148 @@ describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
     expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$0');
     expect(el.querySelector('.hero-gastos__comp')).toBeNull();
     expect(el.querySelector('.filtros-bar')).toBeNull();
+  });
+});
+
+// ── agruparPorDia() (GAS.1b, ADR 039 D3) ─────────────────────────
+
+describe('agruparPorDia()', () => {
+  it('agrupa por fecha exacta conservando el orden recibido', () => {
+    const gastos = [
+      gastoBase({ id: 'g1', fecha: '2026-05-20' }),
+      gastoBase({ id: 'g2', fecha: '2026-05-20' }),
+      gastoBase({ id: 'g3', fecha: '2026-05-11' }),
+    ];
+    const grupos = agruparPorDia(gastos);
+    expect(grupos).toHaveLength(2);
+    expect(grupos[0].fecha).toBe('2026-05-20');
+    expect(grupos[0].items.map(g => g.id)).toEqual(['g1', 'g2']);
+    expect(grupos[1].fecha).toBe('2026-05-11');
+    expect(grupos[1].items.map(g => g.id)).toEqual(['g3']);
+  });
+
+  it('suma el total por día', () => {
+    const gastos = [
+      gastoBase({ id: 'g1', monto: 85_000, fecha: '2026-05-20' }),
+      gastoBase({ id: 'g2', monto: 32_000, fecha: '2026-05-20' }),
+      gastoBase({ id: 'g3', monto: 12_000, fecha: '2026-05-11' }),
+    ];
+    const grupos = agruparPorDia(gastos);
+    expect(grupos[0].total).toBe(117_000);
+    expect(grupos[1].total).toBe(12_000);
+  });
+
+  it('monto undefined cuenta como 0 en el total del día', () => {
+    const { monto: _, ...sinMonto } = gastoBase({ fecha: '2026-05-20' });
+    const grupos = agruparPorDia([sinMonto, gastoBase({ id: 'g2', monto: 5_000, fecha: '2026-05-20' })]);
+    expect(grupos[0].total).toBe(5_000);
+  });
+
+  it('fecha undefined cae en un grupo propio (defensivo)', () => {
+    const { fecha: _, ...sinFecha } = gastoBase();
+    const grupos = agruparPorDia([sinFecha]);
+    expect(grupos).toHaveLength(1);
+    expect(grupos[0].fecha).toBe('');
+  });
+
+  it('devuelve vacío con array vacío', () => {
+    expect(agruparPorDia([])).toEqual([]);
+  });
+});
+
+// ── renderListaGastos() - lista agrupada por día (GAS.1b, ADR 039) ──
+
+describe('renderListaGastos() - lista agrupada por día (GAS.1b)', () => {
+  const hoyIso = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  /** Día del mes actual garantizado distinto de hoy y de ayer. */
+  const otroDiaDelMes = () => {
+    const d = new Date();
+    const dia = d.getDate() <= 14 ? 25 : 3;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="panel-filtros-gastos"></div>
+      <div id="lista-gastos"></div>`;
+    S.gastos = [];
+    S.config.ocultarSaldo = false;
+    setFiltroCategoria(null);
+  });
+
+  it('agrupa los gastos de hoy bajo el encabezado "Hoy" con el total del día', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', monto: 85_000, fecha: hoyIso() }),
+      gastoBase({ id: 'g2', monto: 32_000, fecha: hoyIso() }),
+    ];
+    renderListaGastos();
+    const grupo = document.querySelector('#lista-gastos .gastos-dia');
+    expect(grupo.querySelector('.gastos-dia__label').textContent).toBe('Hoy');
+    expect(grupo.querySelector('.gastos-dia__total').textContent).toBe('$117.000');
+    expect(grupo.querySelectorAll('.list-item')).toHaveLength(2);
+  });
+
+  it('días distintos generan grupos distintos, más reciente primero', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', monto: 10_000, fecha: otroDiaDelMes() }),
+      gastoBase({ id: 'g2', monto: 20_000, fecha: hoyIso() }),
+    ];
+    renderListaGastos();
+    const grupos = document.querySelectorAll('#lista-gastos .gastos-dia');
+    expect(grupos).toHaveLength(2);
+    const labels = [...grupos].map(g => g.querySelector('.gastos-dia__label').textContent);
+    const idx = labels.indexOf('Hoy');
+    expect(idx).toBeGreaterThanOrEqual(0);
+    // Un día que no es hoy ni ayer usa el formato humano corto, no el ISO.
+    const otro = labels.find(l => l !== 'Hoy');
+    expect(otro).not.toContain('-');
+    expect(otro).toMatch(/\d{1,2}/);
+    expect(otro.charAt(0)).toBe(otro.charAt(0).toUpperCase());
+    // Si hoy es posterior al otro día, "Hoy" va primero (recientes primero);
+    // si el otro día es futuro dentro del mes, va él primero. Ambos válidos:
+    // el orden lo fija la fecha descendente.
+    const fechas = [hoyIso(), otroDiaDelMes()].sort().reverse();
+    expect(labels[0]).toBe(fechas[0] === hoyIso() ? 'Hoy' : otro);
+  });
+
+  it('el ojo enmascara el total del día y los montos de los ítems (D9)', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 85_000, fecha: hoyIso() })];
+    S.config.ocultarSaldo = true;
+    renderListaGastos();
+    const el = document.getElementById('lista-gastos');
+    expect(el.querySelector('.gastos-dia__total').textContent).toBe('••••');
+    expect(el.querySelector('.list-item__amount').textContent).toBe('••••');
+    expect(el.innerHTML).not.toContain('$85.000');
+  });
+
+  it('el subtítulo del ítem ya no repite la fecha (vive en el encabezado del día)', () => {
+    S.gastos = [gastoBase({ id: 'g1', descripcion: undefined, nota: 'Con receta médica', fecha: hoyIso() })];
+    renderListaGastos();
+    const sub = document.querySelector('#lista-gastos .list-item__subtitle').textContent;
+    expect(sub).toBe('Con receta médica');
+  });
+
+  it('sin nota ni descripción, el ítem no pinta subtítulo vacío', () => {
+    S.gastos = [gastoBase({ id: 'g1', descripcion: undefined, nota: '', fecha: hoyIso() })];
+    renderListaGastos();
+    expect(document.querySelector('#lista-gastos .list-item__subtitle')).toBeNull();
+  });
+
+  it('los chips llevan la identidad de la sección (chip--gastos) y el activo el modificador', () => {
+    S.gastos = [
+      gastoBase({ id: 'g1', categoria: 'Mercado', fecha: hoyIso() }),
+      gastoBase({ id: 'g2', categoria: 'Transporte', fecha: hoyIso() }),
+    ];
+    setFiltroCategoria('Mercado');
+    renderFiltrosGastos();
+    const activo = document.querySelector('.filtros-bar .chip--active');
+    expect(activo.className).toContain('chip--gastos');
+    expect(activo.textContent.trim()).toBe('Mercado');
+    const todos = document.querySelector('.filtros-bar [data-cat=""]');
+    expect(todos.className).toContain('chip--gastos');
+    expect(todos.className).not.toContain('chip--active');
   });
 });

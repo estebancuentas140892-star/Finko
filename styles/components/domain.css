@@ -2782,3 +2782,56 @@ button.chip:focus-visible {
 .hero-gastos__comp .icon {
   --fk-icon-size: var(--fk-icon-sm);
 }
+
+/* ── Chips de Gastos (GAS.1b, ADR 039 D5) ───────────────────────
+   El chip activo viste la identidad de la sección con el patrón de la
+   card activa del picker de estrategia (D.16b, ADR 036): tinte 12%
+   sobre surface + borde 50% + anillo interior; el texto queda primario
+   (el -text naranja sobre el tinte mide 4.39:1 en claro, bajo AA; el
+   primario mide 11.9:1 oscuro / 15.2:1 claro). El estado activo lo
+   comunican también aria-pressed y el anillo (SC 1.4.1). */
+button.chip--gastos.chip--active {
+  background: color-mix(in srgb, var(--fk-dom-gastos) 12%, var(--fk-bg-surface));
+  border-color: color-mix(in srgb, var(--fk-dom-gastos) 50%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--fk-dom-gastos) 50%, transparent) inset;
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-semibold);
+}
+
+/* ── Grupos por día de la lista (GAS.1b, ADR 039 D3) ────────────
+   Encabezado "Hoy / Ayer / Vie 11 jul" + total del día; los ítems son
+   .list-item estándar (la base compartida de atoms no cambia, mismo
+   criterio por contenedor que #lista-ingresos en MC.18d). */
+.gastos-dia {
+  margin-bottom: var(--fk-space-4);
+}
+
+.gastos-dia__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fk-space-2);
+  margin: 0 0 var(--fk-space-2);
+  padding: 0 var(--fk-space-1);
+}
+
+.gastos-dia__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fk-text-secondary);
+}
+
+.gastos-dia__total {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.gastos-dia .list-item {
+  margin-bottom: var(--fk-space-2);
+  border-radius: var(--fk-radius-lg);
+  box-shadow: var(--fk-shadow-sm);
+}

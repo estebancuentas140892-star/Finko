@@ -41,7 +41,7 @@ Tarjeta insight con tinte gastos (anatomía `.gmf-insight` de MC.18c: teja + tí
 
 ### D5. Chips de categoría con identidad de sección
 
-La fila de chips se conserva (scroll horizontal, "Todos" + categorías del mes); el chip activo deja el acento verde global y viste la **identidad gastos con el patrón ya aprobado en D.16b** (tinte 12% sobre surface + borde 50% + texto `--fk-dom-gastos-text`), no el relleno sólido del mockup: el sólido #ff8a5c exigiría un token nuevo de tinta oscura válido en ambos temas, mientras el patrón tinte+ink ya está calibrado AA por IV.1 en toda la familia. Modificador `chip--gastos` por contenedor; los chips de otras secciones no cambian.
+La fila de chips se conserva (scroll horizontal, "Todos" + categorías del mes); el chip activo deja el acento verde global y viste la **identidad gastos con el patrón ya aprobado en D.16b** (tinte 12% sobre surface + borde 50% + anillo interior, texto primario), no el relleno sólido del mockup: el sólido #ff8a5c exigiría un token nuevo de tinta oscura válido en ambos temas. Medición (método IV.1) que fija el texto primario: el ink `--fk-dom-gastos-text` sobre el tinte da 4.39:1 en tema claro (bajo AA para el texto xs del chip); el primario da 11.9:1 oscuro / 15.2:1 claro. Es exactamente lo que hace la card activa del picker de estrategia: la identidad va en superficie/borde, el texto queda primario. Modificador `chip--gastos` por contenedor; los chips de otras secciones no cambian.
 
 ### D6. FAB de registro rápido: NO se implementa (choca con ADR 024)
 

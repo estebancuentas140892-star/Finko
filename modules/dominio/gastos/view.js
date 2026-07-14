@@ -4,13 +4,13 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
+import { f, hoy, formateadorFecha, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
-import { SALDO_MASCARA } from '../../infra/render.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, totalGastos, variacionMensualGasto, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, iconoPorOrigen } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -107,12 +107,15 @@ export function renderFiltrosGastos() {
       _filtroCategoria = null;
     }
 
+    // D5 (ADR 039): el chip activo viste la identidad de la sección
+    // (modificador chip--gastos, patrón tinte+ink de D.16b); los chips de
+    // otras secciones no cambian.
     const todosActivo = _filtroCategoria === null;
     const chips = cats.map(cat => {
       const activo = _filtroCategoria === cat;
       return `
         <button type="button"
-                class="chip${activo ? ' chip--active' : ''}"
+                class="chip chip--gastos${activo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat="${_esc(cat)}"
                 aria-pressed="${activo}"
@@ -124,7 +127,7 @@ export function renderFiltrosGastos() {
     chipsHtml = `
       <div class="filtros-bar" role="group" aria-label="Filtrar gastos por categoría">
         <button type="button"
-                class="chip${todosActivo ? ' chip--active' : ''}"
+                class="chip chip--gastos${todosActivo ? ' chip--active' : ''}"
                 data-action="gastos-filtrar-cat"
                 data-cat=""
                 aria-pressed="${todosActivo}"
@@ -230,7 +233,9 @@ function _renderComparativo(delMes) {
 /**
  * Renderiza la lista de gastos en `#lista-gastos`, aplicando el mes
  * seleccionado (`_viewYear`/`_viewMonth`) y el filtro de categoría activo.
- * No-op si el contenedor no existe.
+ * Desde GAS.1b (ADR 039 D3) la lista va agrupada por día: encabezado
+ * "Hoy / Ayer / Vie 11 jul" + total del día, ítems en su orden de siempre
+ * (`ordenarRecientesPrimero`). No-op si el contenedor no existe.
  */
 export function renderListaGastos() {
   const el = document.getElementById('lista-gastos');
@@ -254,23 +259,90 @@ export function renderListaGastos() {
 
   // Más recientes primero: el último gasto registrado queda al tope, visible
   // sin desplazarse. El total de lo visible vive en el hero (GAS.1a, ADR 039
-  // D1): la franja de resumen que lo duplicaba desapareció.
+  // D1); el ojo de privacidad enmascara también los montos de la lista (D9:
+  // dejarlos visibles reconstruiría el total oculto sumándolos).
+  const oculto    = S.config?.ocultarSaldo === true;
   const ordenados = ordenarRecientesPrimero(filtrados);
-  el.innerHTML = ordenados.map(_renderGastoItem).join('');
+  el.innerHTML = agruparPorDia(ordenados)
+    .map(grupo => _renderGrupoDia(grupo, oculto))
+    .join('');
+}
+
+/**
+ * Grupo de un día de la lista (GAS.1b, ADR 039 D3): encabezado con el label
+ * humano del día + total del día, y los ítems `.list-item` de siempre.
+ *
+ * @param {{ fecha: string, items: import('../../core/state.js').Gasto[], total: number }} grupo
+ * @param {boolean} oculto flag de privacidad ya leído por el caller.
+ * @returns {string}
+ */
+function _renderGrupoDia(grupo, oculto) {
+  const label    = _labelDia(grupo.fecha);
+  const totalTxt = oculto ? SALDO_MASCARA_CUENTA : f(grupo.total);
+
+  return `
+    <section class="gastos-dia" aria-label="${_esc(label)}, total ${_esc(totalTxt)}">
+      <div class="gastos-dia__header" aria-hidden="true">
+        <span class="gastos-dia__label">${_esc(label)}</span>
+        <span class="gastos-dia__total">${totalTxt}</span>
+      </div>
+      ${grupo.items.map(g => _renderGastoItem(g, oculto)).join('')}
+    </section>`;
+}
+
+/** Fecha local de ayer en formato ISO 'YYYY-MM-DD' (mismos getters locales que hoy()). */
+function _ayerIso() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Label humano del encabezado de día (GAS.1b, ADR 039 D3): "Hoy", "Ayer",
+ * o "Vie 11 jul" (+ año solo si no es el año en curso). Formateador
+ * cacheado (PERF.7a); UTC mediodía para evitar off-by-one en GMT-N (mismo
+ * criterio que fechaLegible).
+ *
+ * @param {string} iso 'YYYY-MM-DD'
+ * @returns {string}
+ */
+function _labelDia(iso) {
+  const hoyIso = hoy();
+  if (iso === hoyIso) return 'Hoy';
+  if (iso === _ayerIso()) return 'Ayer';
+
+  const opciones = { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' };
+  if (iso?.slice(0, 4) !== hoyIso.slice(0, 4)) opciones.year = 'numeric';
+
+  const d   = new Date(`${iso}T12:00:00Z`);
+  const txt = formateadorFecha('es-CO', opciones).format(d).replace(/[.,]/g, '');
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
 /**
  * TX.9a: la categoría es el concepto principal del gasto (título del ítem),
- * no la descripción libre (el formulario ya no la pide).
+ * no la descripción libre (el formulario ya no la pide). Desde GAS.1b la
+ * fecha vive en el encabezado del grupo del día, no en el subtítulo: ahí
+ * quedan solo la descripción legacy y la nota (línea omitida si no hay
+ * ninguna).
+ *
  * @param {import('../../core/state.js').Gasto} gasto
+ * @param {boolean} oculto flag de privacidad ya leído por el caller (D9).
  */
-function _renderGastoItem(gasto) {
+function _renderGastoItem(gasto, oculto) {
   const catKey = gasto.categoria ?? 'Otros';
   const cat    = _esc(catKey);
   // Descripción legacy (gastos de antes de TX.9a que ya la tenían) + nota:
-  // ambas son detalle opcional, ahora en el subtítulo junto a la fecha.
-  const descripcionLegacy = gasto.descripcion?.trim() ? ` · ${_esc(gasto.descripcion.trim())}` : '';
-  const nota = gasto.nota ? ` · ${_esc(gasto.nota)}` : '';
+  // ambas son detalle opcional del subtítulo.
+  const detalle = [gasto.descripcion?.trim(), gasto.nota]
+    .filter(Boolean)
+    .map(_esc)
+    .join(' · ');
+  const subtitulo = detalle ? `<p class="list-item__subtitle">${detalle}</p>` : '';
+  const montoTxt  = oculto ? SALDO_MASCARA_CUENTA : f(gasto.monto);
 
   // TX.6/TX.7: un gasto nacido de un fijo o de un abono a deuda hereda el
   // ícono de su compromiso de origen (categoría de Agenda, o i-cuentas /
@@ -284,10 +356,10 @@ function _renderGastoItem(gasto) {
       <div class="list-item__icon" aria-hidden="true">${tejaCategoria(simbolo, 'gastos')}</div>
       <div class="list-item__body">
         <p class="list-item__title">${cat}</p>
-        <p class="list-item__subtitle">${fechaLegible(gasto.fecha)}${descripcionLegacy}${nota}</p>
+        ${subtitulo}
       </div>
       <div class="list-item__meta">
-        <p class="list-item__amount">${f(gasto.monto)}</p>
+        <p class="list-item__amount">${montoTxt}</p>
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"

@@ -50,6 +50,33 @@ export function ordenarRecientesPrimero(gastos) {
 }
 
 /**
+ * Agrupa gastos por fecha exacta conservando el orden recibido (GAS.1b,
+ * ADR 039 D3). El caller entrega los gastos ya ordenados
+ * (`ordenarRecientesPrimero`), así que los grupos salen del más reciente al
+ * más antiguo y los ítems conservan su orden dentro de cada día. El total
+ * por grupo alimenta el encabezado del día en la lista.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @returns {Array<{ fecha: string, items: import('../../core/state.js').Gasto[], total: number }>}
+ */
+export function agruparPorDia(gastos) {
+  const grupos = [];
+  const porFecha = new Map();
+  for (const g of gastos) {
+    const fecha = g.fecha ?? '';
+    let grupo = porFecha.get(fecha);
+    if (!grupo) {
+      grupo = { fecha, items: [], total: 0 };
+      porFecha.set(fecha, grupo);
+      grupos.push(grupo);
+    }
+    grupo.items.push(g);
+    grupo.total += g.monto ?? 0;
+  }
+  return grupos;
+}
+
+/**
  * Suma los montos de un array de gastos.
  * @param {import('../../core/state.js').Gasto[]} gastos
  * @returns {number} Total en COP.

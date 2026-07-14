@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): GAS.1b lista agrupada por día + chips con identidad + máscara de montos · 2026-07-14
+
+Segunda rebanada de **Gastos v2** ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D3/D5/D9).
+
+**Qué cambió:** (1) `modules/dominio/gastos/logic.js`: `agruparPorDia()` pura nueva: agrupa por fecha exacta conservando el orden recibido (el caller entrega `ordenarRecientesPrimero`, así que los grupos salen del más reciente al más antiguo) con total por grupo. (2) `modules/dominio/gastos/view.js`: `renderListaGastos()` pinta **grupos por día** (`_renderGrupoDia`): encabezado con label humano (`_labelDia`: "Hoy" / "Ayer" / "Vie 11 jul", + año solo si no es el año en curso; `formateadorFecha` cacheado PERF.7a, UTC mediodía como `fechaLegible`) + **total del día** a la derecha. El subtítulo del ítem ya no repite la fecha (vive en el encabezado del grupo): quedan la descripción legacy y la nota, y la línea se omite si no hay ninguna. (3) **Máscara de la lista** (D9): con el ojo activo, el total del día y los montos de los ítems van en `SALDO_MASCARA_CUENTA`; se cierra la fuga que GAS.1a dejaba señalada (sumar los montos visibles reconstruía el total oculto del hero, la misma clase de hueco que ANL.2b cerró en Análisis). (4) **Chips con identidad** (D5): modificador `chip--gastos`; el activo deja el acento verde global y viste el patrón de la card activa del picker de estrategia (D.16b): tinte gastos 12% sobre surface + borde 50% + anillo interior + **texto primario** (el ink naranja sobre el tinte mide 4.39:1 en claro, bajo AA; el primario 11.9:1 oscuro / 15.2:1 claro; medición en el ADR, cuyo D5 se corrigió para reflejarla). (5) `styles/components/domain.css`: `.gastos-dia*` nuevos; los `.list-item` del grupo ganan radio lg + sombra en reposo **por contenedor** (mismo criterio que `#lista-ingresos` en MC.18d: la base compartida de atoms no cambia).
+
+**Archivos tocados:** `modules/dominio/gastos/logic.js`, `modules/dominio/gastos/view.js`, `styles/components/domain.css`, `docs/DECISIONS/039-gastos-v2-visual.md` (D5 corregido con la medición), `tests/unit/gastos.test.js` (11 nuevos: 5 de `agruparPorDia`, 6 de la vista: grupo "Hoy" con total, dos días dos grupos con formato humano, máscara de día e ítems, subtítulo sin fecha, sin subtítulo vacío, chips con identidad), `tests/e2e/smoke.test.js` (1 nuevo: dos gastos de hoy → grupo "Hoy" con total $117.000 y máscara del ojo), `service-worker.js` (v390→v391).
+
+**Verificación:** 2683/2683 unit + 203/203 E2E completos + lint verdes.
+
+**Podría afectar:** el subtítulo de los ítems de Gastos ya no muestra la fecha (la porta el encabezado del día); un gasto sin nota ni descripción legacy muestra solo la categoría. Los montos de la lista ahora respetan el ojo de privacidad. La vista completa de Movimientos (TX.8b) no cambió: sigue plana con su propio formato.
+
+---
+
 ### feat(gastos): GAS.1a hero del mes con total protagonista + comparativo + ojo, abre Gastos v2 · 2026-07-14
 
 Triaje del handoff de Claude Design "Gastos v2" (bundle "Iteración de specimen", enviado por Esteban con instrucción de implementar) → **[ADR 039](DECISIONS/039-gastos-v2-visual.md)** aceptado + iniciativa "Gastos v2" con rebanadas GAS.1a-c en el BOARD, sexta pantalla de la familia visual v2. Decisiones de triaje del ADR: el **FAB del mockup no se implementa** (duplicaría el botón central "Registrar" del ADR 024, que el artboard del mockup no tiene; si Esteban lo prefiere, la decisión formal es suya), la búsqueda del header queda fuera (funcionalidad nueva sin decisión de diseño) y el comparativo usa el criterio único IV.3/ADR 038 D4 en vez del ámbar del mockup. Primera rebanada implementada (D1+D2+D9-hero).

@@ -4,19 +4,19 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-14 (GAS.1a cerrada, ver CHANGELOG; GAS.1b en proceso).
+> Última actualización: 2026-07-14 (GAS.1b cerrada, ver CHANGELOG; GAS.1c en proceso, última rebanada de Gastos v2).
 
 ---
 
 ## En proceso
 
-### GAS.1b - Gastos v2: lista agrupada por día + chips con identidad + máscara
+### GAS.1c - Gastos v2: insight de gastos hormiga + empty states v2
 - Prioridad  : alta
 - Estado     : en proceso (2026-07-14)
-- Objetivo   : la lista plana pasa a grupos por día (Hoy / Ayer / "Vie 11 jul") con total del día ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D3); el chip activo viste la identidad gastos con el patrón tinte+ink de D.16b (D5); el ojo enmascara totales por día y montos de ítems (D9, cierra la fuga que ANL.2b cerró en Análisis). Los `.list-item` no cambian su base compartida.
+- Objetivo   : `detectarHormigas()` (hoy sin pantalla) se muestra como tarjeta insight con tinte gastos al tope de la lista, solo en vista "Todos" ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D4, anatomía `.gmf-insight`); los dos empty states pasan a la anatomía de familia (teja de dominio + copy cálido + CTA, D7). Cierra la iniciativa.
 - Secciones  : Gastos
-- Archivos   : `modules/dominio/gastos/logic.js` (`agruparPorDia` pura), `view.js` (`renderListaGastos`), `styles/components/domain.css`, tests
-- Depende de : GAS.1a (cerrada 2026-07-14)
+- Archivos   : `modules/dominio/gastos/view.js`, `styles/components/domain.css`, tests
+- Depende de : GAS.1b (cerrada 2026-07-14)
 - Modelo     : Fable 5 - Alto (misma sesión de la iniciativa)
 
 ---
@@ -121,16 +121,7 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 ### Gastos (dominio `gastos`)
 
-> **Iniciativa "Gastos v2: total protagonista, lista por día y gastos hormiga" ([ADR 039](DECISIONS/039-gastos-v2-visual.md), aceptado 2026-07-14; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar).** Sexta pantalla de la familia visual v2 (tras Inicio, Mis cuentas, Deudas, Calendario y Análisis). Rebanadas: **GAS.1a cerrada el 2026-07-14** (hero del mes con total protagonista + comparativo + ojo, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md)), **GAS.1b** (en proceso arriba) y **GAS.1c** (abajo). Decisiones de triaje del ADR: el **FAB del mockup NO se implementa** (duplicaría el botón central "Registrar" del ADR 024; si Esteban lo prefiere, la decisión formal es suya), la **búsqueda** del header queda fuera (funcionalidad nueva sin decisión de diseño; tarjeta propia si se pide), el comparativo usa el criterio IV.3/ADR 038 D4 (neutro al subir, no ámbar) y la comparación tangible del insight hormiga ("más que tu recibo de luz") se difiere al motor de interpretación (ANL.1).
-
-#### GAS.1c - Gastos v2: insight de gastos hormiga + empty states v2
-- Prioridad  : alta
-- Estado     : pendiente
-- Objetivo   : `detectarHormigas()` (hoy sin pantalla) se muestra como tarjeta insight con tinte gastos al tope de la lista, solo en vista "Todos" ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D4, anatomía `.gmf-insight`); los dos empty states pasan a la anatomía de familia (teja de dominio + copy cálido + CTA, D7). Cierra la iniciativa.
-- Secciones  : Gastos
-- Archivos   : `modules/dominio/gastos/view.js`, `styles/components/domain.css`, tests
-- Depende de : GAS.1b
-- Modelo     : Fable 5 - Alto (misma sesión de la iniciativa)
+> **Iniciativa "Gastos v2: total protagonista, lista por día y gastos hormiga" ([ADR 039](DECISIONS/039-gastos-v2-visual.md), aceptado 2026-07-14; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar).** Sexta pantalla de la familia visual v2 (tras Inicio, Mis cuentas, Deudas, Calendario y Análisis). Rebanadas: **GAS.1a y GAS.1b cerradas el 2026-07-14** (hero del mes con total protagonista + comparativo + ojo; lista agrupada por día + chips con identidad + máscara, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md)); **GAS.1c** en proceso arriba (última). Decisiones de triaje del ADR: el **FAB del mockup NO se implementa** (duplicaría el botón central "Registrar" del ADR 024; si Esteban lo prefiere, la decisión formal es suya), la **búsqueda** del header queda fuera (funcionalidad nueva sin decisión de diseño; tarjeta propia si se pide), el comparativo usa el criterio IV.3/ADR 038 D4 (neutro al subir, no ámbar) y la comparación tangible del insight hormiga ("más que tu recibo de luz") se difiere al motor de interpretación (ANL.1).
 
 _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa.)_
 

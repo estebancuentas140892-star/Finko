@@ -812,6 +812,38 @@ test.describe('Gastos - CRUD', () => {
     await expect(hero.locator('.hero-gastos__valor')).toHaveText('$150.000');
   });
 
+  test('GAS.1b: la lista agrupa por día bajo "Hoy" con total, y el ojo enmascara los montos', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 500000);
+    await expect(page.locator('#lista-tesoreria')).toContainText('Efectivo', { timeout: 3_000 });
+
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    // Dos gastos de hoy → un solo grupo "Hoy" con el total del día.
+    for (const monto of ['85000', '32000']) {
+      await page.click('[data-action="nuevo-gasto"]');
+      await page.waitForSelector('#modal-gasto[data-open]');
+      const form = page.locator('#modal-gasto-body form');
+      await form.locator('select[name="categoria"]').selectOption({ index: 1 });
+      await form.locator('[name="monto"]').fill(monto);
+      await form.locator('[name="fecha"]').fill(hoyLocal());
+      await form.locator('button[type="submit"]').click();
+      await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+    }
+
+    const grupo = page.locator('#lista-gastos .gastos-dia').first();
+    await expect(grupo.locator('.gastos-dia__label')).toHaveText('Hoy', { timeout: 3_000 });
+    await expect(grupo.locator('.gastos-dia__total')).toHaveText('$117.000');
+    await expect(grupo.locator('.list-item')).toHaveCount(2);
+
+    // El ojo enmascara el total del día y los montos de los ítems (D9).
+    await page.click('[data-action="gastos-saldo-visibilidad"]');
+    await expect(grupo.locator('.gastos-dia__total')).toHaveText('••••');
+    await expect(grupo.locator('.list-item__amount').first()).toHaveText('••••');
+  });
+
   test('TX.9b: crear categoría personalizada, verla en la lista y reusarla en un segundo gasto', async ({ page }) => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
