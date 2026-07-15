@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(infra): MC.13b motor de vencimientos mitad B + Metas y Apartados borran sus copias · 2026-07-14
+
+Segunda rebanada de **MC.13** (Distribución v2, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1 mitad B): **el motor compartido queda completo**. La mitad B responde "cada cuánto entra dinero y cuánto toca aportar por período", que es lo que estaba **duplicado carácter por carácter** en `metas/logic.js` y `apartados/logic.js`. La duplicación no era descuido: ADN #10 impide que un dominio importe a otro, y cada archivo lo comentaba como "duplicado intencional". Infra sí la pueden importar los dos, así que la copia única vive ahí.
+
+**Archivos tocados**
+
+- `modules/infra/vencimientos.js`: mitad B nueva. `FRECUENCIAS_APORTE` (la lista que era `FRECUENCIAS_AHORRO` en Metas y `FRECUENCIAS_APORTE` en Apartados), `normalizarFrecuenciaAporte` (los mapas `MAPA_FRECUENCIA_A_*`: lo más largo que un mes se planifica al mes), `diasPorPeriodo` (los `DIAS_POR_PERIODO*`: 1/7/15/30), `etiquetaPeriodo`, `frecuenciaPrincipalIngresos` y `aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoyISO)`, el reparto del faltante entre períodos reales con `hoyISO` inyectable.
+- `modules/dominio/metas/logic.js`: borra sus copias. `calcularAhorroPorPeriodo` queda como envoltorio del motor; `FRECUENCIAS_AHORRO` y `etiquetaPeriodoAhorro` pasan a ser alias re-exportados (la vista y sus tests no cambian una línea). Conserva su `diasHastaFecha`, que la vista usa aparte.
+- `modules/dominio/apartados/logic.js`: igual. `calcularAporteSugerido` queda como envoltorio; `FRECUENCIAS_APORTE`, `etiquetaPeriodo` y `frecuenciaPrincipalIngresos` se re-exportan.
+- `tests/unit/vencimientos.test.js`: 26 tests nuevos de la mitad B (59 en total).
+- `service-worker.js`: `CACHE_NAME` v396 → v397.
+
+**Efecto colateral bueno, y uno que conviene saber:** el motor valida lo que las copias no validaban (mismo criterio que la validación de `diaPago` de MC.13a). Una fecha que no existe ya no desborda a otro mes ('2026-02-30' devuelve `null` en vez de calcular sobre el 1 de marzo) y un faltante no finito devuelve `null`; antes Metas propagaba `NaN` hasta la vista si le llegaba una fecha basura. En el camino normal el comportamiento es idéntico.
+
+**Verificación:** refactor sin cambio de comportamiento, así que la prueba es que **no se tocó ni un test existente**: los 86 de `metas.test.js` y los 87 de `apartados.test.js` pasan intactos contra el motor compartido, igual que los 139 de `agenda.test.js` para la mitad A. 2754/2754 unit + 205/205 E2E + lint verdes.
+
+**Qué desbloquea:** MC.13c (`obligacionesYAportesDelCobro`) ya tiene sus dos mitades. Los consumidores previstos (cuota del período del asistente, punto 21; prellenar Aportar de Apartados en AP.5; fondo de emergencia en AH.5; plan de aportes de Metas v2 en MT.6) importan de un solo sitio en vez de copiar por tercera vez.
+
+---
+
 ### feat(infra): MC.13a motor de vencimientos mitad A + Agenda lo consume · 2026-07-14
 
 Primera rebanada de **MC.13** (Distribución v2, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1 mitad A). Nace el motor compartido de vencimientos: la regla de "en qué días cae una obligación según su frecuencia", que vivía duplicable en Agenda, pasa a una sola fuente de verdad en `infra/` que la Distribución v2 (MC.13c), los pagos automáticos (PA.1) y Agenda comparten.

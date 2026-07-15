@@ -1,17 +1,30 @@
 /**
- * vencimientos.test.js - motor compartido de vencimientos (MC.13a, ADR 041).
+ * vencimientos.test.js - motor compartido de vencimientos (ADR 041).
  *
- * Cubre la mitad A:
+ * Mitad A (MC.13a):
  * - ocurrenciasEnMes: regla de frecuencias (extraída de agenda), validación.
  * - ocurrenciasEnRango: ventana arbitraria que puede cruzar meses.
  * - ventanaDelCobro: ventana de un cobro por frecuencia.
  *
- * Las regresiones de Agenda quedan cubiertas por agenda.test.js (139 tests
- * sobre eventosDelMes, que ahora delega aquí): este archivo prueba la unidad.
+ * Mitad B (MC.13b):
+ * - frecuenciaPrincipalIngresos: cada cuánto cobra realmente el usuario.
+ * - diasPorPeriodo / etiquetaPeriodo / normalizarFrecuenciaAporte.
+ * - aportePorPeriodo: el faltante repartido entre períodos reales.
+ *
+ * Las regresiones de los consumidores quedan cubiertas por sus propias suites
+ * (agenda.test.js sobre eventosDelMes, metas.test.js sobre
+ * calcularAhorroPorPeriodo y apartados.test.js sobre calcularAporteSugerido,
+ * los tres ahora envoltorios de este motor): este archivo prueba la unidad.
  */
 
 import { describe, it, expect } from 'vitest';
 import {
+  FRECUENCIAS_APORTE,
+  aportePorPeriodo,
+  diasPorPeriodo,
+  etiquetaPeriodo,
+  frecuenciaPrincipalIngresos,
+  normalizarFrecuenciaAporte,
   ocurrenciasEnMes,
   ocurrenciasEnRango,
   ventanaDelCobro,
@@ -218,5 +231,188 @@ describe('integración: ventana de un cobro + obligaciones que caen en ella', ()
     const ventana = ventanaDelCobro('Quincenal', '2026-07-01');
     const fijoMensual = item({ frecuencia: 'Mensual', diaPago: 20 }); // cae el 20, fuera de la ventana
     expect(ocurrenciasEnRango(fijoMensual, ventana.inicioISO, ventana.finISO)).toEqual([]);
+  });
+});
+
+// ══ MITAD B: APORTES POR PERÍODO (MC.13b) ════════════════════════
+
+const ingreso = (frecuencia, overrides = {}) => ({ frecuencia, ...overrides });
+
+// ── frecuenciaPrincipalIngresos ──────────────────────────────────
+
+describe('frecuenciaPrincipalIngresos', () => {
+  it('sin ingresos asume Mensual (el supuesto más seguro)', () => {
+    expect(frecuenciaPrincipalIngresos([])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos(null)).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos(undefined)).toBe('Mensual');
+  });
+
+  it('con un solo ingreso devuelve su frecuencia', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Quincenal')])).toBe('Quincenal');
+    expect(frecuenciaPrincipalIngresos([ingreso('Semanal')])).toBe('Semanal');
+    expect(frecuenciaPrincipalIngresos([ingreso('Diario')])).toBe('Diario');
+  });
+
+  it('devuelve la frecuencia más común entre los activos', () => {
+    const lista = [ingreso('Quincenal'), ingreso('Quincenal'), ingreso('Mensual')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+
+  it('ignora los ingresos inactivos', () => {
+    const lista = [ingreso('Mensual', { activo: false }), ingreso('Semanal')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Semanal');
+  });
+
+  it('las frecuencias largas se planifican como Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Trimestral')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso('Anual')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso('Bimestral')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso('Semestral')])).toBe('Mensual');
+  });
+
+  it('una frecuencia desconocida cae a Mensual', () => {
+    expect(frecuenciaPrincipalIngresos([ingreso('Variable')])).toBe('Mensual');
+    expect(frecuenciaPrincipalIngresos([ingreso(undefined)])).toBe('Mensual');
+  });
+
+  it('en empate gana la de mayor granularidad', () => {
+    // Un ingreso quincenal y uno mensual: manda la quincenal (índice menor).
+    const lista = [ingreso('Mensual'), ingreso('Quincenal')];
+    expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+});
+
+// ── normalizarFrecuenciaAporte / diasPorPeriodo / etiquetaPeriodo ─
+
+describe('normalizarFrecuenciaAporte', () => {
+  it('deja intactas las cuatro frecuencias de aporte', () => {
+    for (const f of FRECUENCIAS_APORTE) expect(normalizarFrecuenciaAporte(f)).toBe(f);
+  });
+
+  it('las largas y las desconocidas caen a Mensual', () => {
+    expect(normalizarFrecuenciaAporte('Anual')).toBe('Mensual');
+    expect(normalizarFrecuenciaAporte('Única vez')).toBe('Mensual');
+    expect(normalizarFrecuenciaAporte(undefined)).toBe('Mensual');
+  });
+});
+
+describe('diasPorPeriodo', () => {
+  it('devuelve los días de cada período', () => {
+    expect(diasPorPeriodo('Diario')).toBe(1);
+    expect(diasPorPeriodo('Semanal')).toBe(7);
+    expect(diasPorPeriodo('Quincenal')).toBe(15);
+    expect(diasPorPeriodo('Mensual')).toBe(30);
+  });
+
+  it('lo desconocido cae al mes', () => {
+    expect(diasPorPeriodo('Anual')).toBe(30);
+    expect(diasPorPeriodo(undefined)).toBe(30);
+  });
+});
+
+describe('etiquetaPeriodo', () => {
+  it('traduce cada frecuencia a lenguaje humano', () => {
+    expect(etiquetaPeriodo('Diario')).toBe('por día');
+    expect(etiquetaPeriodo('Semanal')).toBe('por semana');
+    expect(etiquetaPeriodo('Quincenal')).toBe('por quincena');
+    expect(etiquetaPeriodo('Mensual')).toBe('al mes');
+  });
+
+  it('lo desconocido cae a "al mes"', () => {
+    expect(etiquetaPeriodo('Anual')).toBe('al mes');
+    expect(etiquetaPeriodo(undefined)).toBe('al mes');
+  });
+});
+
+// ── aportePorPeriodo ─────────────────────────────────────────────
+
+describe('aportePorPeriodo - cuándo no hay nada que sugerir', () => {
+  it('devuelve null si no falta nada', () => {
+    expect(aportePorPeriodo(0, '2026-12-31', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(-5000, '2026-12-31', 'Mensual', '2026-07-14')).toBeNull();
+  });
+
+  it('devuelve null sin fecha objetivo (sin plazo no hay ritmo)', () => {
+    expect(aportePorPeriodo(100_000, null, 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, undefined, 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, '', 'Mensual', '2026-07-14')).toBeNull();
+  });
+
+  it('devuelve null si el plazo ya venció o vence hoy', () => {
+    expect(aportePorPeriodo(100_000, '2026-07-13', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, '2026-07-14', 'Mensual', '2026-07-14')).toBeNull();
+  });
+
+  it('devuelve null con fechas que no existen (sin desbordar a otro mes)', () => {
+    expect(aportePorPeriodo(100_000, '2026-13-45', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, '2026-02-30', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, 'mañana', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(100_000, '2026-12-31', 'Mensual', 'hoy')).toBeNull();
+  });
+
+  it('devuelve null con un faltante que no es un número usable', () => {
+    expect(aportePorPeriodo(NaN, '2026-12-31', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(Infinity, '2026-12-31', 'Mensual', '2026-07-14')).toBeNull();
+    expect(aportePorPeriodo(undefined, '2026-12-31', 'Mensual', '2026-07-14')).toBeNull();
+  });
+});
+
+describe('aportePorPeriodo - reparto por frecuencia real', () => {
+  it('reparte entre quincenas, no entre días', () => {
+    // 90 días / 15 = 6 quincenas.
+    const r = aportePorPeriodo(600_000, '2026-10-12', 'Quincenal', '2026-07-14');
+    expect(r.numPeriodos).toBe(6);
+    expect(r.montoPorPeriodo).toBe(100_000);
+    expect(r.frecuencia).toBe('Quincenal');
+    expect(r.etiqueta).toBe('por quincena');
+    expect(r.dias).toBe(90);
+  });
+
+  it('la misma meta cambia de cuota según cada cuánto cobre el usuario', () => {
+    const quincenal = aportePorPeriodo(600_000, '2026-10-12', 'Quincenal', '2026-07-14');
+    const mensual   = aportePorPeriodo(600_000, '2026-10-12', 'Mensual',   '2026-07-14');
+    const semanal   = aportePorPeriodo(600_000, '2026-10-12', 'Semanal',   '2026-07-14');
+
+    expect(mensual.numPeriodos).toBe(3);          // 90 / 30
+    expect(mensual.montoPorPeriodo).toBe(200_000);
+    expect(semanal.numPeriodos).toBe(13);         // ceil(90 / 7)
+    expect(quincenal.montoPorPeriodo).toBeLessThan(mensual.montoPorPeriodo);
+  });
+
+  it('el aporte diario reparte entre días', () => {
+    const r = aportePorPeriodo(300_000, '2026-07-24', 'Diario', '2026-07-14');
+    expect(r.numPeriodos).toBe(10);
+    expect(r.montoPorPeriodo).toBe(30_000);
+    expect(r.etiqueta).toBe('por día');
+  });
+
+  it('redondea hacia arriba: los períodos siempre cubren el faltante', () => {
+    const r = aportePorPeriodo(100_000, '2026-08-13', 'Semanal', '2026-07-14');
+    expect(r.montoPorPeriodo * r.numPeriodos).toBeGreaterThanOrEqual(100_000);
+    expect(Number.isInteger(r.montoPorPeriodo)).toBe(true);
+  });
+
+  it('garantiza al menos un período cuando la fecha es mañana', () => {
+    const r = aportePorPeriodo(100_000, '2026-07-15', 'Mensual', '2026-07-14');
+    expect(r.numPeriodos).toBe(1);
+    expect(r.montoPorPeriodo).toBe(100_000);
+    expect(r.dias).toBe(1);
+  });
+
+  it('una frecuencia no soportada cae a Mensual (lectura defensiva)', () => {
+    const r = aportePorPeriodo(300_000, '2026-10-12', 'Trimestral', '2026-07-14');
+    expect(r.frecuencia).toBe('Mensual');
+    expect(r.numPeriodos).toBe(3);
+  });
+
+  it('cuenta los días correctamente cruzando el fin de año', () => {
+    const r = aportePorPeriodo(310_000, '2027-01-13', 'Mensual', '2026-12-14');
+    expect(r.dias).toBe(30);
+    expect(r.numPeriodos).toBe(1);
+  });
+
+  it('cuenta los días correctamente cruzando el 29 de febrero de un bisiesto', () => {
+    const r = aportePorPeriodo(100_000, '2028-03-01', 'Diario', '2028-02-28');
+    expect(r.dias).toBe(2); // 28 feb → 29 feb → 1 mar
   });
 });

@@ -11,40 +11,24 @@
  * periodo ("aparta $30.000 por quincena").
  *
  * Sin DOM. Sin S directo. Testeable en Node/Vitest sin mocks de navegador.
+ *
+ * El ritmo de aporte (cada cuánto cobra el usuario y cuánto le toca por
+ * período) ya no vive aquí: es del motor compartido `infra/vencimientos.js`
+ * (MC.13b, ADR 041). Antes estaba duplicado carácter por carácter en
+ * `metas/logic.js`, porque ADN #10 impide que un dominio importe a otro; la
+ * copia única vive en infra, que sí pueden importar los dos.
  */
+
+import {
+  FRECUENCIAS_APORTE,
+  aportePorPeriodo,
+  etiquetaPeriodo,
+  frecuenciaPrincipalIngresos,
+} from '../../infra/vencimientos.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
-/**
- * Frecuencias de aporte soportadas, alineadas a la frecuencia con la que el
- * usuario recibe ingresos. Subconjunto de FRECUENCIAS (core/constants.js): solo
- * las que tienen sentido como "cada cuánto aparto" para un gasto cercano.
- */
-export const FRECUENCIAS_APORTE = ['Diario', 'Semanal', 'Quincenal', 'Mensual'];
-
-/**
- * Mapeo de FRECUENCIAS (core) → FRECUENCIAS_APORTE.
- * Las frecuencias más largas (Bimestral, Trimestral, etc.) se asimilan a
- * 'Mensual', que es la frecuencia de planificación más cercana.
- */
-const MAPA_FRECUENCIA_A_APORTE = {
-  Diario:    'Diario',
-  Semanal:   'Semanal',
-  Quincenal: 'Quincenal',
-  Mensual:   'Mensual',
-  Bimestral: 'Mensual',
-  Trimestral:'Mensual',
-  Semestral: 'Mensual',
-  Anual:     'Mensual',
-};
-
-/** Días calendario que dura cada periodo de aporte (promedio). */
-const DIAS_POR_PERIODO = {
-  Diario:    1,
-  Semanal:   7,
-  Quincenal: 15,
-  Mensual:   30,
-};
+export { FRECUENCIAS_APORTE, etiquetaPeriodo, frecuenciaPrincipalIngresos };
 
 /**
  * Plantillas de gastos previsibles frecuentes en Colombia, para que el usuario
@@ -123,32 +107,6 @@ export function estaListoParaReiniciar(apartado) {
 }
 
 /**
- * Devuelve la frecuencia de aporte recomendada a partir de los ingresos del
- * usuario. Busca la frecuencia más común entre los ingresos activos, mapeada a
- * una de FRECUENCIAS_APORTE. Si no hay ingresos activos, devuelve 'Mensual'.
- *
- * Se inyecta `ingresos` (no importa tesorería) para respetar ADN #10.
- *
- * @param {import('../../core/state.js').Ingreso[]} ingresos
- * @returns {string} Una de FRECUENCIAS_APORTE.
- */
-export function frecuenciaPrincipalIngresos(ingresos) {
-  const activos = (ingresos ?? []).filter(i => i.activo !== false);
-  if (activos.length === 0) return 'Mensual';
-
-  const conteo = {};
-  for (const i of activos) {
-    const f = MAPA_FRECUENCIA_A_APORTE[i.frecuencia] ?? 'Mensual';
-    conteo[f] = (conteo[f] ?? 0) + 1;
-  }
-
-  // Más frecuente primero; en empate, la de mayor granularidad (índice menor).
-  return Object.entries(conteo)
-    .sort((a, b) => b[1] - a[1] || FRECUENCIAS_APORTE.indexOf(a[0]) - FRECUENCIAS_APORTE.indexOf(b[0]))
-    .at(0)?.[0] ?? 'Mensual';
-}
-
-/**
  * Devuelve los apartados activos cuya fecha objetivo vence dentro de
  * `diasUmbral` días (inclusive). Excluye los ya completados o listos para
  * reiniciar (que ya tienen el dinero). Ordena de más urgente a menos.
@@ -215,6 +173,10 @@ export function diasHastaFecha(fechaObjetivo, hoyISO) {
  * Calcula cuánto debería apartar el usuario por periodo para reunir el faltante
  * antes de la fecha objetivo, según su frecuencia de aporte.
  *
+ * Envoltorio del motor (`aportePorPeriodo`, MC.13b) con el vocabulario de este
+ * dominio: aporta el faltante del apartado y su fecha objetivo, y devuelve el
+ * resultado con los nombres que ya usan la vista y los mensajes.
+ *
  * Devuelve `null` cuando no hay nada que sugerir:
  *   - el apartado ya está completo (faltante <= 0), o
  *   - no hay fecha objetivo (sin plazo no hay ritmo), o
@@ -232,41 +194,16 @@ export function diasHastaFecha(fechaObjetivo, hoyISO) {
  */
 export function calcularAporteSugerido(apartado, hoyISO) {
   const { faltante } = calcularProgreso(apartado);
-  if (faltante <= 0) return null;
-
-  const dias = diasHastaFecha(apartado?.fechaObjetivo, hoyISO);
-  if (dias === null || dias <= 0) return null;
-
-  const frecuencia = FRECUENCIAS_APORTE.includes(apartado?.frecuenciaAporte)
-    ? apartado.frecuenciaAporte
-    : 'Mensual';
-  const diasPorPeriodo = DIAS_POR_PERIODO[frecuencia];
-
-  const numPeriodos      = Math.max(1, Math.ceil(dias / diasPorPeriodo));
-  const aportePorPeriodo = Math.ceil(faltante / numPeriodos);
+  const r = aportePorPeriodo(faltante, apartado?.fechaObjetivo, apartado?.frecuenciaAporte, hoyISO);
+  if (!r) return null;
 
   return {
-    aportePorPeriodo,
-    numPeriodos,
-    frecuencia,
-    etiquetaPeriodo: etiquetaPeriodo(frecuencia),
-    dias,
+    aportePorPeriodo: r.montoPorPeriodo,
+    numPeriodos:      r.numPeriodos,
+    frecuencia:       r.frecuencia,
+    etiquetaPeriodo:  r.etiqueta,
+    dias:             r.dias,
   };
-}
-
-/**
- * Etiqueta legible del periodo de aporte para usar en mensajes.
- * @param {string} frecuencia - una de FRECUENCIAS_APORTE.
- * @returns {string} ej. "por quincena", "al mes".
- */
-export function etiquetaPeriodo(frecuencia) {
-  switch (frecuencia) {
-    case 'Diario':    return 'por día';
-    case 'Semanal':   return 'por semana';
-    case 'Quincenal': return 'por quincena';
-    case 'Mensual':   return 'al mes';
-    default:          return 'al mes';
-  }
 }
 
 /**
