@@ -578,13 +578,46 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).not.toContain('value="Servicios públicos"');
   });
 
-  it('TX.9a: categoría es el primer campo del formulario', () => {
+  it('FORM.1a: el monto es el primer campo (hero) y la categoría va antes de cuenta, fecha y nota', () => {
+    // ADR 042 D2 revisa el orden de TX.9a: el monto pasa al frente ("el
+    // monto es el protagonista", decisión del mockup de Esteban); la
+    // categoría sigue antes que el resto de campos.
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     const html = renderFormGasto();
-    expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="monto"'));
+    expect(html.indexOf('name="monto"')).toBeLessThan(html.indexOf('name="categoria"'));
     expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="cuentaId"'));
     expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="fecha"'));
     expect(html.indexOf('name="categoria"')).toBeLessThan(html.indexOf('name="nota"'));
+  });
+
+  it('FORM.1a: la categoría son chips con radios reales, uno por categoría visible + "Otra categoría"', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    S.categoriasPersonalizadas = [];
+    const html = renderFormGasto();
+    expect(html).toContain('chips-cat');
+    expect(html).not.toContain('<select');
+    const radios = html.match(/name="categoria"/g) ?? [];
+    expect(radios).toHaveLength(CATEGORIAS_GASTO_USUARIO.length + 1);
+  });
+
+  it('FORM.1a: el monto vive en el hero con el input grande centrado', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    expect(html).toContain('monto-hero__box');
+    expect(html).toContain('input--big-amount');
+  });
+
+  it('FORM.1a: la fecha ofrece atajos Hoy/Ayer/Otra fecha con Hoy por defecto y el date oculto', () => {
+    S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
+    const html = renderFormGasto();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const hoyRadio = div.querySelector('input[name="fechaOpcion"][value="hoy"]');
+    expect(hoyRadio?.checked).toBe(true);
+    expect(div.querySelectorAll('input[name="fechaOpcion"]')).toHaveLength(3);
+    expect(div.querySelector('#gasto-fecha-otra')?.hidden).toBe(true);
+    // El input date real ya trae la fecha de hoy (regla CAT.4 en este form).
+    expect(div.querySelector('#gasto-fecha')?.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 
   it('TX.9a: ya no pide descripción (la categoría es el concepto principal)', () => {
@@ -608,18 +641,21 @@ describe('renderFormGasto() - selector de cuenta', () => {
     expect(html).toContain('Otra categoría');
   });
 
-  it('TX.9b: las categorías personalizadas ya creadas aparecen como opción normal', () => {
+  it('TX.9b: las categorías personalizadas ya creadas aparecen como chip normal, con su ícono', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     S.categoriasPersonalizadas = [{ id: 'cat1', nombre: 'Gimnasio', icono: 'c-pesa' }];
     const html = renderFormGasto();
-    expect(html).toContain('<option value="Gimnasio">Gimnasio</option>');
+    expect(html).toContain('value="Gimnasio"');
+    expect(html).toContain('#c-pesa');
   });
 
-  it('TX.9b: sin personalizadas, no agrega el optgroup', () => {
+  it('TX.9b: sin personalizadas, solo las nativas + "Otra categoría"', () => {
     S.cuentas = [cuenta('c1', 'Nequi', 500_000)];
     S.categoriasPersonalizadas = [];
     const html = renderFormGasto();
-    expect(html).not.toContain('optgroup');
+    expect(html).not.toContain('value="Gimnasio"');
+    const radios = html.match(/name="categoria"/g) ?? [];
+    expect(radios).toHaveLength(CATEGORIAS_GASTO_USUARIO.length + 1);
   });
 
   it('TX.9b: los campos de categoría nueva empiezan ocultos', () => {

@@ -63,6 +63,23 @@ function hoyLocal() {
 }
 
 /**
+ * Elige una categoría en el form de gasto v2 (FORM.1a, ADR 042): la
+ * categoría son chips con radios ocultos, así que se toca el chip (label)
+ * que contiene el radio con ese value. Sin `value`, toca el primer chip
+ * (Mercado, la primera categoría del catálogo). La fecha ya no se rellena
+ * en estos flujos: el chip "Hoy" viene seleccionado por defecto.
+ *
+ * @param {import('@playwright/test').Locator} form
+ * @param {string} [value] - value del radio (nombre de la categoría o '__nueva__')
+ */
+async function elegirCategoriaGasto(form, value) {
+  const chip = value
+    ? form.locator(`.chip-cat:has(input[value="${value}"])`)
+    : form.locator('.chip-cat').first();
+  await chip.click();
+}
+
+/**
  * Avanza el asistente "Distribuir mi ingreso" (MC.7d, shell paginado) hasta
  * que `selector` sea visible, o hasta el último paso si no se pasa selector
  * (donde vive el botón "Distribuir"). El panel debe estar ya abierto.
@@ -759,15 +776,11 @@ test.describe('Gastos - CRUD', () => {
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const form = page.locator('#modal-gasto-body form');
-    // TX.9a: categoría es el primer campo y ya no se pide descripción; el
-    // título de la lista pasa a mostrar la categoría elegida (Mercado, la
-    // primera opción real del select).
-    await form.locator('select[name="categoria"]').selectOption({ index: 1 });
+    // FORM.1a: la categoría se elige con chips (el título de la lista pasa a
+    // mostrar la elegida: Mercado, primer chip del catálogo) y la fecha queda
+    // en "Hoy" por defecto, sin rellenar nada.
+    await elegirCategoriaGasto(form);
     await form.locator('[name="monto"]').fill('150000');
-    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    // Fecha (pre-rellenada por hoy() en el index.js; rellenar por si acaso)
-    const hoy = hoyLocal();
-    await form.locator('[name="fecha"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({
@@ -788,13 +801,12 @@ test.describe('Gastos - CRUD', () => {
     await page.goto('/#gast');
     await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
 
-    // Registrar un gasto de $150.000 (categoría = primera opción real).
+    // Registrar un gasto de $150.000 (categoría = primer chip, fecha = Hoy).
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const form = page.locator('#modal-gasto-body form');
-    await form.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await elegirCategoriaGasto(form);
     await form.locator('[name="monto"]').fill('150000');
-    await form.locator('[name="fecha"]').fill(hoyLocal());
     await form.locator('button[type="submit"]').click();
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
 
@@ -826,9 +838,8 @@ test.describe('Gastos - CRUD', () => {
       await page.click('[data-action="nuevo-gasto"]');
       await page.waitForSelector('#modal-gasto[data-open]');
       const form = page.locator('#modal-gasto-body form');
-      await form.locator('select[name="categoria"]').selectOption({ index: 1 });
+      await elegirCategoriaGasto(form);
       await form.locator('[name="monto"]').fill(monto);
-      await form.locator('[name="fecha"]').fill(hoyLocal());
       await form.locator('button[type="submit"]').click();
       await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
     }
@@ -894,7 +905,7 @@ test.describe('Gastos - CRUD', () => {
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const form = page.locator('#modal-gasto-body form');
-    await form.locator('select[name="categoria"]').selectOption('__nueva__');
+    await elegirCategoriaGasto(form, '__nueva__');
     await expect(page.locator('#categoria-nueva-fields')).toBeVisible();
 
     await form.locator('#categoria-nueva-nombre').fill('Gimnasio');
@@ -909,23 +920,20 @@ test.describe('Gastos - CRUD', () => {
     await expect(form.locator('.icono-picker__panel')).toBeHidden();
 
     await form.locator('[name="monto"]').fill('80000');
-    const hoy = hoyLocal();
-    await form.locator('[name="fecha"]').fill(hoy);
     await form.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
     await expect(page.locator('#lista-gastos .list-item__title')).toHaveText('Gimnasio', { timeout: 3_000 });
 
-    // Registrar un segundo gasto: "Gimnasio" ya aparece como opción normal del
-    // select (se comporta igual que una categoría nativa, sin duplicar el flujo).
+    // Registrar un segundo gasto: "Gimnasio" ya aparece como chip normal
+    // (se comporta igual que una categoría nativa, sin duplicar el flujo).
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const form2 = page.locator('#modal-gasto-body form');
-    await expect(form2.locator('select[name="categoria"] option', { hasText: 'Gimnasio' })).toHaveCount(1);
-    await form2.locator('select[name="categoria"]').selectOption('Gimnasio');
+    await expect(form2.locator('input[name="categoria"][value="Gimnasio"]')).toHaveCount(1);
+    await elegirCategoriaGasto(form2, 'Gimnasio');
     await expect(page.locator('#categoria-nueva-fields')).toBeHidden();
     await form2.locator('[name="monto"]').fill('30000');
-    await form2.locator('[name="fecha"]').fill(hoy);
     await form2.locator('button[type="submit"]').click();
 
     await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
@@ -1047,9 +1055,8 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await elegirCategoriaGasto(formGasto);
     await formGasto.locator('[name="monto"]').fill('500000');
-    await formGasto.locator('[name="fecha"]').fill(hoyLocal());
     await formGasto.locator('button[type="submit"]').click();
     await page.waitForSelector(modalCerrado('modal-gasto'), { timeout: 3_000 });
 
@@ -1210,13 +1217,8 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.waitForSelector('#modal-gasto[data-open]');
 
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await elegirCategoriaGasto(formGasto);
     await formGasto.locator('[name="monto"]').fill('100000');
-
-    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-
-    const hoy = hoyLocal();
-    await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
 
     // Esperar cierre y que el gasto aparezca (título = categoría, TX.9a)
@@ -1260,11 +1262,8 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await elegirCategoriaGasto(formGasto);
     await formGasto.locator('[name="monto"]').fill('100000');
-    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    const hoy = hoyLocal();
-    await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(
       'Mercado',
@@ -1324,11 +1323,8 @@ test.describe('Gastos-Cuenta (integrado)', () => {
     await page.click('[data-action="nuevo-gasto"]');
     await page.waitForSelector('#modal-gasto[data-open]');
     const formGasto = page.locator('#modal-gasto-body form');
-    await formGasto.locator('select[name="categoria"]').selectOption({ index: 1 });
+    await elegirCategoriaGasto(formGasto);
     await formGasto.locator('[name="monto"]').fill('200000');
-    // Con una sola cuenta activa la cuenta se asume (hidden, sin selector).
-    const hoy = hoyLocal();
-    await formGasto.locator('[name="fecha"]').fill(hoy);
     await formGasto.locator('button[type="submit"]').click();
     await expect(page.locator('#lista-gastos')).toContainText(
       'Mercado',

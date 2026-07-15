@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-14 (MC.13c-2 cerrada → la checklist consume el motor y **MC.7g queda cerrado**; de MC.13 sólo falta el asistente v2 UI, MC.13e+; ver [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) y CHANGELOG).
+> Última actualización: 2026-07-15 (FORM.1a cerrada → nace el lenguaje de Formularios v2 con Registrar gasto como flagship, [ADR 042](DECISIONS/042-formularios-v2-visual.md); quedan FORM.1b y FORM.1c en Transversal. MC.13: sólo falta el asistente v2 UI, MC.13e+, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)).
 
 ---
 
@@ -159,7 +159,7 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 #### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle, aporte sugerido
 - Prioridad  : media
 - Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar (dropdown "Seleccionar categoría..." que autocompleta, en vez de la parrilla de categorías visibles a la vez); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple); (6) al pulsar **Aportar**, prellenar el monto sugerido calculado con objetivo + fecha límite + frecuencia de ingresos del usuario (editable siempre; consume el motor de aportes/vencimientos de MC.13, mismo patrón que AH.2 ya cerró para el fondo). La regla general de Esteban ("todo aporte/abono/distribución sugiere un valor calculado") queda como principio del motor, no de esta tarjeta.
+- Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar de captura. **Ojo (triaje 2026-07-15):** el brief pedía dropdown "Seleccionar categoría..." que autocompleta, pero el [ADR 042](DECISIONS/042-formularios-v2-visual.md) (Formularios v2, D9) fijó después los **chips de ícono** como lenguaje de la app; decidir con Esteban al iniciar (recomendación: chips, por consistencia); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple); (6) al pulsar **Aportar**, prellenar el monto sugerido calculado con objetivo + fecha límite + frecuencia de ingresos del usuario (editable siempre; consume el motor de aportes/vencimientos de MC.13, mismo patrón que AH.2 ya cerró para el fondo). La regla general de Esteban ("todo aporte/abono/distribución sugiere un valor calculado") queda como principio del motor, no de esta tarjeta.
 - Secciones  : Apartados
 - Archivos   : `modules/dominio/apartados/` (form, view, logic), motor compartido en MC.13
 - Depende de : CAT.1 (categorías nuevas de la filosofía redefinida) para el catálogo; el prellenado depende del motor de MC.13; el toggle y el form pueden ir antes
@@ -489,9 +489,29 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 - Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
 - Modelo     : Opus 4.8 - Alto (modelo de datos + propagación transversal)
 
-#### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
+> **Iniciativa FORM: Formularios v2, lenguaje de captura compartido** ([ADR 042](DECISIONS/042-formularios-v2-visual.md), aceptado 2026-07-15; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar). Octava entrega de la familia visual v2 y fuente única del lenguaje de formularios: monto hero protagonista, categoría con chips de ícono (nunca un select nuevo), fecha con atajos Hoy/Ayer/Otra fecha, teja de dominio en el header del modal, footer con primario a lo ancho. **FORM.1a CERRADA el 2026-07-15** (fundación CSS en `forms.css` + Registrar gasto flagship, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)); revisó el orden de TX.9a (monto primero, decisión del mockup) y corrigió de paso el hueco móvil de `responsive.css` sobre `.input--big-amount`. Los demás formularios de la app migran cuando su iniciativa los toque (ADR 042 D6), NO aquí. **Conflicto señalado (D9):** AP.5 pedía dropdown de categoría; la decisión es de Esteban al iniciar esa tarjeta.
+
+#### FORM.1b - Nueva deuda con el lenguaje v2
+- Prioridad  : media-alta
+- Estado     : pendiente
+- Objetivo   : ADR 042 D4: segmented Entidad/Personal inline (reemplaza el chooser de dos pasos, mismo contrato `tipo`), categorías en chips de 2 columnas (`.chips-cat--2col`, catálogos D.10 por tipo, conserva el picker de ícono CAT.2d en "Otra/Otro"), saldo total como monto hero, cuota con prefijo `$`, "Condiciones del crédito" colapsable (tasa + frecuencia + día, hoy siempre visibles) y el bloque D.14 "Recibí este dinero" como toggle. Cero lógica nueva: re-vestido del form existente.
+- Secciones  : Deudas (`compromisos`)
+- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `modules/dominio/compromisos/index.js`, `styles/components/forms.css` (colapsable + toggle si faltan), `index.html` (teja del modal), tests
+- Depende de : nada (la fundación FORM.1a ya está en producción)
+- Modelo     : Sonnet 5 - Alto (form largo con estados: entidad/personal, edición, colapsable, toggle D.14, E2E de deudas a adaptar)
+
+#### FORM.1c - Nuevo gasto fijo con el lenguaje v2
 - Prioridad  : media
 - Estado     : pendiente
+- Objetivo   : ADR 042 D5: categoría en chips 3col (las 15 de `CATEGORIAS_AGENDA`, conserva el picker CAT.2f en "Otro"), descripción, monto hero índigo, frecuencia + día en fila, y banner informativo dinámico "Aparecerá cada {frecuencia} en tu calendario el día {N}" (lee los campos elegidos). Cierra la iniciativa FORM.
+- Secciones  : Calendario (`agenda`)
+- Archivos   : `modules/dominio/agenda/view.js` (`renderFormGastoFijo`), `modules/dominio/agenda/index.js`, `index.html` (teja del modal), tests (E2E usan `#gfijo-categoria` como select: adaptar)
+- Depende de : nada (conviene tras FORM.1b para reusar sus piezas de CSS si aparecen)
+- Modelo     : Sonnet 5 - Medio (mismo patrón ya estrenado por FORM.1a, un solo dominio)
+
+#### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
+- Prioridad  : media
+- Estado     : pendiente. **Nota FORM.1a (2026-07-15):** los formularios que migren al lenguaje v2 cumplen "fecha por defecto = hoy" por diseño (chip "Hoy" preseleccionado); Registrar gasto ya quedó cubierto. La auditoría sigue vigente para los formularios no migrados.
 - Objetivo   : dos reglas transversales de los briefs 2026-07-08 aplicadas en UNA pasada por todos los formularios. (1) **Orden** (brief Mis Cuentas punto 8): la categoría/tipo va primero y la descripción después, nunca al contrario; Gastos ya lo cumple (TX.9a) y el form de Deudas lo adoptará en su reordenamiento (Deudas v2). (2) **Fecha por defecto = hoy** (brief Me deben punto 1, elevado por Esteban a regla de toda la app): todo campo de fecha de un movimiento nuevo viene precargado con la fecha actual, editable; auditar cuáles forms ya lo hacen y corregir los que no (el de Me deben reportado explícitamente).
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
 - Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15d para no tocar el mismo form dos veces

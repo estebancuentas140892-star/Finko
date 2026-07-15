@@ -47,11 +47,23 @@
 
 ---
 
-## Formulario de gasto (TX.9)
+## Formulario de gasto (TX.9 + FORM.1a)
 
-- **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto.
-- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06): se eliminó "Gasto rápido" y su subsistema de "pendientes por organizar" (el formulario completo, con categoría primero y descripción opcional, ya cubre el registro veloz).
-- **Verificado contra** : `9c0caf1` (2026-07-06, IN.5).
+- **Objetivo**          : rediseñar el formulario de registrar gasto para que la categoría sea el dato principal (no la descripción), soporte categorías creadas por el usuario, y no pida una descripción redundante cuando la categoría ya representa el concepto. Desde FORM.1a ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)) es además el flagship del lenguaje de formularios v2: monto hero al frente, categoría con chips de ícono (sin select), fecha con atajos Hoy/Ayer/Otra fecha.
+- **Estado actual**     : **TX.9 completa** (TX.9a: categoría primero, descripción ya no obligatoria; TX.9b: categorías personalizadas). **IN.5 cerrada** (2026-07-06). **FORM.1a cerrada** (2026-07-15): form v2 completo; **el orden de TX.9a quedó revisado por el ADR 042 D2** (monto primero; la categoría sigue antes de cuenta/fecha/nota).
+- **Verificado contra** : FORM.1a (2026-07-15).
+
+**Dónde vive (FORM.1a)**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Form v2 completo (monto hero + chips + fecha con atajos) | `modules/dominio/gastos/view.js` | `renderFormGasto()` | radios reales `name="categoria"` y `name="fechaOpcion"`; el date real `#gasto-fecha` vive oculto en `#gasto-fecha-otra` |
+| Wiring de chips y atajos de fecha | `modules/dominio/gastos/index.js` | `_montarFormGasto()` | listener delegado de `change` en el form (categoría revela `#categoria-nueva-fields`; hoy/ayer escriben el date, "otra" lo revela) |
+| Edición: marcar chip de categoría y de fecha | `modules/dominio/gastos/index.js` | `_editarGasto()` | categoría legacy fuera de catálogo → ningún chip marcado, se re-elige (mismo comportamiento que tenía el select) |
+| Ayer en ISO local | `modules/dominio/gastos/view.js` | `ayerIso()` | exportada desde FORM.1a (antes `_ayerIso` privada) |
+| Componentes CSS del lenguaje | `styles/components/forms.css` | bloque "FORMULARIOS V2" | ver ficha [`transversal.md`](transversal.md), sección "Lenguaje de formularios v2" |
+| Teja del header del modal | `index.html` | `#modal-gasto .modal__teja` | tinte por `--fk-section-accent` del `data-dom="gastos"` |
+| Helper E2E de los chips | `tests/e2e/smoke.test.js` | `elegirCategoriaGasto(form, value?)` | clickea el label del chip (el radio está oculto); sin `value` toca el primero (Mercado) |
 
 **Dónde vive**
 
@@ -88,9 +100,17 @@
 - ~~**Relaciona con IN.5** (eliminar/transformar "Gasto rápido")~~: **cerrada (2026-07-06)**. Se eliminó "Gasto rápido" por completo (botón, modal, form, toast) junto con su subsistema de "pendientes por organizar" (`esGastoPendiente`/`gastosPendientes`/`renderPendientesOrganizar`, el badge "📝 Pendiente" y el flag `pendienteCompletar` en los 4 dominios que lo escribían). Dato de usuario legacy (`pendienteCompletar` en gastos guardados) queda ignorado, sin migración: no lo lee nadie. Ver registro de cambios.
 - **Sin gestión de categorías personalizadas** (editar nombre/ícono, eliminar, ver cuántos gastos las usan): fuera de alcance de TX.9b, que solo cubre crear + usar. Si Esteban lo pide, es una tarjeta nueva (ej. TX.9c), probablemente en Ajustes.
 
-**Cambios pendientes**: ninguno conocido para TX.9. Posible extensión futura: gestión de categorías personalizadas (ver Riesgos).
+**Riesgos nuevos (FORM.1a)**:
+
+- **La regla móvil anti-zoom de iOS pisa los inputs por capas:** `responsive.css` declara `.input { font-size: 16px }` en móvil y su capa le gana por ORDEN a `components`, aunque la especificidad diga lo contrario. La excepción de `.input--big-amount` (2.25rem) vive en `responsive.css`, dentro de la misma media query: cualquier componente futuro que necesite un input distinto en móvil debe poner su excepción AHÍ, no en `forms.css`.
+- **Los chips son labels con el radio oculto:** en E2E no sirve `check()` sobre el input (no visible); se clickea el label (`elegirCategoriaGasto`). En unit, el estado seleccionado se lee por `input.checked`, no por clases.
+- **`form.querySelector('[name="categoria"]').value` ya no sirve para leer/escribir la categoría** (devuelve el primer radio): leer vía FormData (como siempre hizo `_guardarGasto`) o iterar radios (como `_editarGasto`).
+
+**Cambios pendientes**: ninguno conocido para TX.9. Posible extensión futura: gestión de categorías personalizadas (ver Riesgos). El resto de la iniciativa Formularios v2 (FORM.1b deuda, FORM.1c gasto fijo) vive en el BOARD.
 
 **Cambios realizados**:
+
+- 2026-07-15 (FORM.1a): form v2 completo (monto hero, chips de categoría, atajos de fecha, teja del header, footer principal) + fix del hueco preexistente de `responsive.css` que achicaba `.input--big-amount` en móvil. Ver [CHANGELOG](../CHANGELOG.md) y [ADR 042](../DECISIONS/042-formularios-v2-visual.md).
 
 - 2026-07-06 (IN.5): se eliminó "Gasto rápido". Con TX.9 completa, el formulario completo ya registra un gasto en pocos toques (categoría + monto, con fecha y cuenta pre-rellenadas), así que mantener un segundo flujo paralelo solo sumaba complejidad y una cola de "pendientes por organizar" que el usuario tenía que volver a completar. Se retiró: el botón `.quick-add` y el modal `#modal-gasto-rapido` (`index.html`), `renderFormGastoRapido()`/`renderPendientesOrganizar()` (`view.js`), `validarGastoRapido()`/`normalizarGastoRapido()`/`esGastoPendiente()`/`gastosPendientes()` (`logic.js`), los handlers `_abrirGastoRapido`/`_guardarGastoRapido`/`_toastGastoRapido` y la acción `gasto-rapido` (`index.js`), el badge "📝 Pendiente" del ítem, el contenedor `#panel-gastos-pendientes` del bento y sus estilos, y los estilos `.quick-add*`/`.quick-toast*` (`forms.css`). El hero del dashboard pasa a ancho completo (`--full`) al desaparecer el panel que lo acompañaba. El flag `pendienteCompletar` se dejó de escribir en los 4 dominios que lo ponían (`gastos`, `agenda`, `compromisos`, `tesoreria/distribucion`); las keyframes `toastIn/toastOut` se conservan (las usa el toast de logros). 25 tests unit retirados (los del subsistema), reflow E2E repunteado al modal de ingreso puntual (mismo `.input--big-amount`). 2201/2201 unit + 151/151 E2E verdes; verificado además en la app (dashboard sin la card, sin huecos; lista de gastos sin badge). SW v329 → v330.
 - 2026-07-05 (TX.9b): categorías personalizadas. Al elegir "+ Otra categoría" en el select, se revela (sin modal anidado, mismo patrón que `hint-categoria-fija`) un campo de nombre y una grilla de 29 íconos (`ICONOS_CATEGORIA_PERSONALIZADA`, símbolos `c-*` del sprite que ya existían pero no estaban asignados en `CATEGORIA_ICONO`, evitando dos entradas con el mismo glifo en el mismo selector). `validarCategoriaPersonalizada()` valida nombre no vacío y sin duplicar (insensible a mayúsculas y tildes) ninguna categoría nativa ni personalizada ya creada, más ícono elegido del catálogo curado. Al enviar el formulario, la categoría se persiste primero (`guardar('categoriasPersonalizadas', {...})`, bump de schema v24) y luego se usa su nombre como `categoria` del gasto, exactamente igual que si fuera nativa; en usos futuros aparece como una opción normal del select (`<optgroup label="Tus categorías">`). `iconoDeCategoriaGasto()` (nuevo en `core/constants.js`) resuelve nativa → personalizada → genérico, usado tanto en `_renderGastoItem()` como en `movimientosDesdeGastos()` (Movimientos también muestra el ícono correcto para una categoría personalizada). 32 tests nuevos (`constants.test.js`: catálogo de íconos sin duplicar nativos + resolver; `gastos.test.js`: validación + formulario; `movimientos.test.js`: resolución de ícono personalizado; `storage.test.js`: migración v23→v24) + 1 test E2E nuevo (creación completa, reutilización en un segundo gasto, verificación de que no se duplica la opción en el select). 2224/2224 unit + 149/149 E2E verdes en navegador real (Playwright). SW v327 → v328.

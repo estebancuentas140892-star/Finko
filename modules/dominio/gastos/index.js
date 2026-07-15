@@ -26,7 +26,7 @@ import {
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, CATEGORIA_NUEVA_VALUE } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -167,9 +167,26 @@ function _editarGasto(el) {
   if (!form) return;
 
   form.dataset.id = id;
-  form.querySelector('[name="monto"]').value       = gasto.monto       ?? 0;
-  form.querySelector('[name="categoria"]').value   = gasto.categoria   ?? 'Otros';
-  form.querySelector('[name="fecha"]').value       = gasto.fecha       ?? hoy();
+  form.querySelector('[name="monto"]').value = gasto.monto ?? 0;
+
+  // FORM.1a: la categoría son radios-chip; se marca el chip del gasto. Si la
+  // categoría ya no está en el catálogo (legacy, ej. 'Vivienda' tras CAT.1a),
+  // ningún chip queda marcado y el usuario re-elige (mismo comportamiento que
+  // tenía el select cuando la opción ya no existía).
+  const cat = gasto.categoria ?? 'Otros';
+  const radioCat = [...form.querySelectorAll('input[name="categoria"]')].find(r => r.value === cat);
+  if (radioCat) radioCat.checked = true;
+
+  // Chips de fecha: hoy/ayer se marcan como atajo; cualquier otra fecha
+  // marca "Otra fecha" y revela el input date con el valor del gasto.
+  const fecha = gasto.fecha ?? hoy();
+  form.querySelector('[name="fecha"]').value = fecha;
+  const opcion = fecha === hoy() ? 'hoy' : (fecha === ayerIso() ? 'ayer' : 'otra');
+  const radioFecha = form.querySelector(`input[name="fechaOpcion"][value="${opcion}"]`);
+  if (radioFecha) radioFecha.checked = true;
+  const fechaOtra = form.querySelector('#gasto-fecha-otra');
+  if (fechaOtra) fechaOtra.hidden = opcion !== 'otra';
+
   const notaEl = form.querySelector('[name="nota"]');
   if (notaEl) notaEl.value = gasto.nota ?? '';
 
@@ -307,17 +324,30 @@ function _montarFormGasto() {
     _guardarGasto();
   });
 
-  const catSelect = form.querySelector('[name="categoria"]');
-
-  // TX.9b: "+ Otra categoría" revela nombre + selector de ícono en el mismo
-  // formulario (sin modal anidado). Se ocultan de nuevo si el usuario elige
-  // otra opción del select.
+  // FORM.1a (ADR 042): la categoría son radios-chip; un listener delegado de
+  // `change` cubre tanto la categoría como los atajos de fecha (el evento
+  // change de un radio burbujea hasta el form).
   const camposNueva = form.querySelector('#categoria-nueva-fields');
-  if (catSelect && camposNueva) {
-    catSelect.addEventListener('change', () => {
-      camposNueva.hidden = catSelect.value !== CATEGORIA_NUEVA_VALUE;
-    });
-  }
+  const fechaInput  = form.querySelector('#gasto-fecha');
+  const fechaOtra   = form.querySelector('#gasto-fecha-otra');
+  form.addEventListener('change', (e) => {
+    const t = e.target;
+    // TX.9b: el chip "Otra categoría" revela nombre + selector de ícono en el
+    // mismo formulario (sin modal anidado); elegir otro chip los oculta.
+    if (t.name === 'categoria' && camposNueva) {
+      camposNueva.hidden = t.value !== CATEGORIA_NUEVA_VALUE;
+    }
+    // Atajos de fecha (ADR 042 D1): Hoy/Ayer escriben el input date real y lo
+    // mantienen oculto; "Otra fecha" lo revela para elegir el día exacto.
+    if (t.name === 'fechaOpcion' && fechaInput && fechaOtra) {
+      if (t.value === 'otra') {
+        fechaOtra.hidden = false;
+      } else {
+        fechaInput.value = t.value === 'ayer' ? ayerIso() : hoy();
+        fechaOtra.hidden = true;
+      }
+    }
+  });
 
   // CAT.2: selector compacto de ícono (recuadro + panel colapsable).
   wireIconoPicker(form.querySelector('[data-icono-picker="categoria-nueva-icono"]'));

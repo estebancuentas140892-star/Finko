@@ -186,6 +186,13 @@
     font-size: 16px;
     min-height: 44px;
   }
+  /* El input gigante de monto (ingreso puntual, monto hero FORM.1a) no debe
+     achicarse a 16px: esta capa (responsive) le gana por orden a components,
+     así que la excepción vive aquí. Sigue muy por encima del umbral de 16px
+     que evita el zoom de iOS. */
+  .input.input--big-amount {
+    font-size: 2.25rem;
+  }
 
   /* ── NAV-ITEM en sidebar móvil: min touch height ya cubierto por height:60px del sidebar */
 }

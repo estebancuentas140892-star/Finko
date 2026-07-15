@@ -4,6 +4,37 @@
 
 ---
 
+## Lenguaje de formularios v2 (FORM.1, [ADR 042](../DECISIONS/042-formularios-v2-visual.md))
+
+- **Objetivo**          : un mismo lenguaje de captura para los formularios de la app (handoff "Formularios v2" de Claude Design): monto hero protagonista, categoría con chips de ícono (nunca un select nuevo), fecha con atajos Hoy/Ayer/Otra fecha, teja de dominio junto al título del modal y footer con el primario a lo ancho.
+- **Estado actual**     : **FORM.1a CERRADA** (2026-07-15): fundación CSS + Registrar gasto (flagship). Pendientes **FORM.1b** (Nueva deuda) y **FORM.1c** (Nuevo gasto fijo), tarjetas en el BOARD. Los demás formularios migran cuando su iniciativa los toque (ADR 042 D6); regla vigente: ningún formulario nuevo introduce un select de categoría.
+- **Verificado contra** : FORM.1a (2026-07-15).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Nota |
+|---|---|---|---|
+| Componentes del lenguaje | `styles/components/forms.css` | bloque "FORMULARIOS V2" (`.modal__teja`, `.monto-hero*`, `.chips-cat`/`.chip-cat*`, `.fecha-chips`/`.chip-fecha`, `.modal__footer--principal`, `.form-empty__teja`) | tinte por `--fk-section-accent` (variante `-text`, declarada por `[data-dom]` en `modals.css`, mecanismo IV.2b): el componente se tiñe solo según el modal que lo aloja |
+| Excepción móvil del input gigante | `styles/responsive.css` | `.input.input--big-amount` dentro de la media query de inputs | la capa `responsive` le gana por ORDEN a `components`: toda excepción móvil de inputs vive ahí, no en `forms.css` |
+| Primer consumidor (flagship) | `modules/dominio/gastos/view.js` | `renderFormGasto()` | detalle en la ficha [`gastos.md`](gastos.md), bloque "Formulario de gasto" |
+| Estado seleccionado de chips | `styles/components/forms.css` | `.chip-cat:has(.chip-cat__radio:checked)` | patrón calibrado D.16b (tinte 12% + borde 50% + texto primario); radio oculto DENTRO del label, foco vía `:has(:focus-visible)` |
+| Bloque de errores | `modules/infra/form-errors.js` | `mostrarErroresForm()` | sin cambios: su `.form-errors` ya coincide con la anatomía del mockup; la grilla de chips se marca vía `.chips-cat:has(.field-invalid)` |
+
+**Dependencias y relaciones**: consume `--fk-section-accent` (IV.2b/ADR 031) y el patrón de selección D.16b; convive con el selector de cuenta (`renderSelectorCuenta`, conservado a propósito, ADR 042 D3) y el picker de ícono CAT.2. **Conflicto abierto (ADR 042 D9):** AP.5 pedía dropdown de categoría para Apartados; decidir con Esteban al iniciarla.
+
+**Riesgos**:
+
+- **Radios ocultos**: los chips son labels; `element.value` sobre `[name="categoria"]` devuelve el primer radio. Leer siempre vía FormData o iterando radios. En E2E se clickea el label, no `check()` del input.
+- **Transiciones vs lecturas síncronas**: `.chip-cat` transiciona background/border; una lectura de `getComputedStyle` inmediata tras cambiar `checked` (o en un tab en segundo plano) devuelve el valor inicial. Verificar estados con E2E o con `transition: none` temporal.
+
+**Cambios pendientes**: FORM.1b (deuda), FORM.1c (gasto fijo).
+
+**Cambios realizados**:
+
+- **FORM.1a (2026-07-15)**: fundación CSS + Registrar gasto v2 + fix del hueco preexistente de `responsive.css` (el 16px anti-zoom achicaba `.input--big-amount` en móvil, también en el ingreso puntual). Ver [CHANGELOG](../CHANGELOG.md).
+
+---
+
 ## Taxonomía global de categorías (CAT.1, iniciativa transversal)
 
 - **Objetivo**          : una sola clasificación de categorías entre secciones (Gastos↔Fijos y Apartados↔Metas), decidida una vez y consumida por los catálogos de cada sección, los límites (LIM.1 punto 8) y el catálogo de marcas (ADR 029 D3). Criterios: **fijo** = recurrente con frecuencia definida, parte de la rutina; **gasto** = día a día variable; **apartado** = gasto esporádico previsible que se olvida presupuestar; **meta** = objetivo grande de mediano/largo plazo.

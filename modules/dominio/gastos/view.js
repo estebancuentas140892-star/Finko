@@ -324,8 +324,12 @@ function _renderGrupoDia(grupo, oculto) {
     </section>`;
 }
 
-/** Fecha local de ayer en formato ISO 'YYYY-MM-DD' (mismos getters locales que hoy()). */
-function _ayerIso() {
+/**
+ * Fecha local de ayer en formato ISO 'YYYY-MM-DD' (mismos getters locales
+ * que hoy()). Exportada desde FORM.1a: el wiring del form (index.js) la usa
+ * para el atajo "Ayer" de los chips de fecha (ADR 042 D1).
+ */
+export function ayerIso() {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   const yyyy = d.getFullYear();
@@ -346,7 +350,7 @@ function _ayerIso() {
 function _labelDia(iso) {
   const hoyIso = hoy();
   if (iso === hoyIso) return 'Hoy';
-  if (iso === _ayerIso()) return 'Ayer';
+  if (iso === ayerIso()) return 'Ayer';
 
   const opciones = { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' };
   if (iso?.slice(0, 4) !== hoyIso.slice(0, 4)) opciones.year = 'numeric';
@@ -452,20 +456,6 @@ function _renderEmptyFiltro() {
  * @returns {string}
  */
 export function renderFormGasto() {
-  const catOpts = CATEGORIAS_GASTO_USUARIO
-    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
-    .join('');
-
-  // TX.9b: las categorías creadas por el usuario aparecen en su propio grupo,
-  // seguidas de la opción para crear una nueva. Se comportan igual que una
-  // nativa una vez elegidas (mismo <option>, mismo name="categoria").
-  const personalizadas = S.categoriasPersonalizadas ?? [];
-  const catPersonalizadasOpts = personalizadas.length > 0
-    ? `<optgroup label="Tus categorías">
-        ${personalizadas.map(c => `<option value="${_esc(c.nombre)}">${_esc(c.nombre)}</option>`).join('')}
-      </optgroup>`
-    : '';
-
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
@@ -473,23 +463,57 @@ export function renderFormGasto() {
   if (cuentas.length === 0) {
     return `
       <div class="form-empty">
-        <p class="form-empty__icon" aria-hidden="true">${icon('cuentas', 'icon icon--lg')}</p>
+        <span class="form-empty__teja" aria-hidden="true">${icon('cuentas')}</span>
         <p class="form-empty__title">Primero necesitas una cuenta</p>
         <p class="form-empty__desc">Un gasto necesita una cuenta de donde salga el dinero. Créala aquí y sigues sin perder el hilo.</p>
         <a class="btn btn-primary btn-lg" href="#tesoreria" data-action="ir-a-crear-cuenta">${icon('cuentas')} Crear una cuenta</a>
       </div>`;
   }
 
+  // FORM.1a (ADR 042 D2/D3): la categoría se elige con chips de ícono, no
+  // con un desplegable. Radios reales name="categoria" dentro del label:
+  // el contrato FormData y validarGasto() no cambian. Catálogo completo
+  // visible (nativas + personalizadas TX.9b) y "Otra categoría" al final
+  // revela los campos de categoría nueva, igual que antes.
+  const personalizadas = S.categoriasPersonalizadas ?? [];
+  const chipCat = (valor, etiqueta, simbolo) => `
+        <label class="chip-cat">
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}" />
+          <svg class="icon" aria-hidden="true"><use href="#${_esc(simbolo)}"/></svg>
+          <span class="chip-cat__label">${_esc(etiqueta)}</span>
+        </label>`;
+  const chipsCategoria = [
+    ...CATEGORIAS_GASTO_USUARIO.map(c => chipCat(c, c, iconoDeCategoriaGasto(c, personalizadas))),
+    ...personalizadas.map(c => chipCat(c.nombre, c.nombre, iconoDeCategoriaGasto(c.nombre, personalizadas))),
+    chipCat(CATEGORIA_NUEVA_VALUE, 'Otra categoría', 'i-plus'),
+  ].join('');
+
+  // ADR 042 D1: atajos de fecha. Radios de presentación (name="fechaOpcion");
+  // el input date real (name="fecha") queda oculto y sincronizado por
+  // _montarFormGasto(); "Otra fecha" lo revela. Hoy por defecto (CAT.4).
+  const chipFecha = (valor, etiqueta, checked) => `
+        <label class="chip-fecha">
+          <input type="radio" name="fechaOpcion" class="chip-cat__radio" value="${valor}"${checked ? ' checked' : ''} />
+          ${etiqueta}
+        </label>`;
+
   return `
     <form id="form-gasto" novalidate>
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="gasto-monto">Monto del gasto</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="gasto-monto" name="monto" class="input input--big-amount" type="number"
+                 min="1" step="1000" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" />
+        </div>
+        <span class="monto-hero__hint">COP</span>
+      </div>
       <div class="form-group">
-        <label for="gasto-categoria" class="label">Categoría</label>
-        <select id="gasto-categoria" name="categoria" class="input" required aria-required="true">
-          <option value="">Seleccionar…</option>
-          ${catOpts}
-          ${catPersonalizadasOpts}
-          <option value="${CATEGORIA_NUEVA_VALUE}">+ Otra categoría…</option>
-        </select>
+        <span class="label" id="gasto-categoria-label">Categoría</span>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-categoria-label">
+          ${chipsCategoria}
+        </div>
       </div>
       <div class="form-group" id="categoria-nueva-fields" hidden>
         <label for="categoria-nueva-nombre" class="label">Nombre de tu categoría</label>
@@ -497,25 +521,28 @@ export function renderFormGasto() {
                placeholder="Ej. Gimnasio" autocomplete="off" />
         ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'categoria-nueva-icono', nombreCampo: 'categoriaNuevaIcono' })}
       </div>
-      <div class="form-group">
-        <label for="gasto-monto" class="label">Monto (COP)</label>
-        <input id="gasto-monto" name="monto" class="input" type="number"
-               min="1" step="1000" placeholder="0" required aria-required="true" />
-      </div>
       ${renderSelectorCuenta(cuentas)}
       <div class="form-group">
-        <label for="gasto-fecha" class="label">Fecha</label>
-        <input id="gasto-fecha" name="fecha" class="input" type="date"
-               required aria-required="true" />
+        <span class="label" id="gasto-fecha-label">Fecha</span>
+        <div class="fecha-chips" role="radiogroup" aria-labelledby="gasto-fecha-label">
+          ${chipFecha('hoy', 'Hoy', true)}
+          ${chipFecha('ayer', 'Ayer', false)}
+          ${chipFecha('otra', 'Otra fecha', false)}
+        </div>
+        <div class="fecha-otra" id="gasto-fecha-otra" hidden>
+          <label for="gasto-fecha" class="sr-only">Fecha exacta</label>
+          <input id="gasto-fecha" name="fecha" class="input" type="date"
+                 value="${hoy()}" required aria-required="true" />
+        </div>
       </div>
       <div class="form-group">
-        <label for="gasto-nota" class="label">Nota (opcional)</label>
+        <label for="gasto-nota" class="label">Nota <span class="form-optional">opcional</span></label>
         <input id="gasto-nota" name="nota" class="input" type="text"
                placeholder="Detalle adicional, ej. con quién fue" autocomplete="off" />
       </div>
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar gasto</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} Guardar gasto</button>
       </div>
     </form>`;
 }

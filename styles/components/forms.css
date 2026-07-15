@@ -625,3 +625,205 @@ textarea.input {
 .input--error   { border-color: var(--fk-danger); }
 .input--success { border-color: var(--fk-success); }
 
+
+/* ════════════════════════════════════════════════════════════
+   FORMULARIOS V2 (FORM.1, ADR 042): lenguaje compartido de captura.
+   Componentes: teja de dominio junto al título del modal, monto hero,
+   chips de categoría con ícono (radios reales), chips de fecha con
+   atajos y footer con el primario a lo ancho. El tinte del dominio
+   entra por --fk-section-accent (variante -text, ya declarada por
+   [data-dom] en modals.css): mismo mecanismo que la franja IV.2b,
+   así que el componente se tiñe solo según el modal que lo aloja.
+   ════════════════════════════════════════════════════════════ */
+
+/* Teja del dominio en el header del modal (anatomía de la familia v2). */
+.modal__teja {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--fk-radius-md);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 14%, transparent);
+  color: var(--fk-section-accent, var(--fk-accent));
+}
+.modal__teja .icon { --fk-icon-size: var(--fk-icon-md); }
+/* Con teja presente, el título ocupa el espacio y el cerrar queda al borde. */
+.modal__title { flex: 1; min-width: 0; }
+
+/* ── Monto hero: el monto es el protagonista del formulario ── */
+.monto-hero { text-align: center; }
+.monto-hero__label {
+  display: block;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fk-text-muted);
+  margin-bottom: var(--fk-space-2);
+}
+.monto-hero__box {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-lg);
+  border: 1.5px solid color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 35%, transparent);
+  background: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 6%, transparent);
+}
+.monto-hero__box:focus-within {
+  border-color: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 60%, transparent);
+}
+.monto-hero__prefijo {
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* El input hereda el tamaño de .input--big-amount pero vive desnudo dentro
+   de la caja tintada (la caja es el borde; el input no duplica el suyo). */
+.monto-hero__box .input.input--big-amount {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: var(--fk-space-2);
+  min-width: 0;
+}
+.monto-hero__box .input.input--big-amount:focus {
+  outline: none;
+  box-shadow: none;
+}
+.monto-hero__hint {
+  display: inline-block;
+  margin-top: var(--fk-space-2);
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+
+/* ── Chips de categoría: radios reales vestidos de teja con ícono ──
+   El radio va oculto dentro del label (el contrato FormData no cambia);
+   el estado del contenedor se resuelve con :has(), mismo patrón que
+   .cuenta-sel__row. Selección con el lenguaje calibrado D.16b:
+   tinte 12% + borde 50% + texto primario. */
+.chips-cat {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fk-space-2);
+}
+.chips-cat--2col { grid-template-columns: repeat(2, 1fr); }
+.chip-cat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  min-height: 68px;
+  padding: var(--fk-space-3) var(--fk-space-2);
+  border-radius: var(--fk-radius-lg);
+  background: var(--fk-bg-elevated);
+  border: 1.5px solid var(--fk-border-subtle);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.chip-cat:hover { background: var(--fk-bg-hover); }
+.chip-cat__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.chip-cat .icon {
+  --fk-icon-size: var(--fk-icon-md);
+  color: var(--fk-text-secondary);
+}
+.chip-cat__label {
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+  line-height: 1.15;
+}
+.chip-cat:has(.chip-cat__radio:checked) {
+  background: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 12%, transparent);
+  border-color: color-mix(in srgb, var(--fk-section-accent, var(--fk-accent)) 50%, transparent);
+}
+.chip-cat:has(.chip-cat__radio:checked) .icon {
+  color: var(--fk-section-accent, var(--fk-accent));
+}
+.chip-cat:has(.chip-cat__radio:checked) .chip-cat__label {
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+}
+.chip-cat:has(.chip-cat__radio:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+/* Validación: form-errors.js marca el primer radio con .field-invalid;
+   la grilla entera lo señala (un solo radio marcado no se ve: está oculto). */
+.chips-cat:has(.field-invalid) .chip-cat {
+  border-color: color-mix(in srgb, var(--fk-danger) 45%, transparent);
+}
+
+/* ── Chips de fecha: atajos Hoy / Ayer / Otra fecha (énfasis neutro) ── */
+.fecha-chips {
+  display: flex;
+  gap: var(--fk-space-2);
+}
+.chip-fecha {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--fk-space-2) var(--fk-space-1);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  border: 1.5px solid var(--fk-border-subtle);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+.chip-fecha:hover { background: var(--fk-bg-hover); }
+.chip-fecha:has(:checked) {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-text-muted);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+}
+.chip-fecha:has(:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+/* Campo de fecha exacta revelado por "Otra fecha". */
+.fecha-otra { margin-top: var(--fk-space-2); }
+
+/* ── Footer v2: primario a lo ancho con glifo de confirmación ── */
+.modal__footer--principal .btn-primary {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+}
+
+/* ── Empty state v2 (sin cuentas): teja grande de tesorería ── */
+.form-empty__teja {
+  width: 66px;
+  height: 66px;
+  border-radius: var(--fk-radius-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--fk-dom-tesoreria-text) 12%, transparent);
+  color: var(--fk-dom-tesoreria-text);
+  margin-bottom: var(--fk-space-2);
+}
+.form-empty__teja .icon { --fk-icon-size: var(--fk-icon-2xl); }

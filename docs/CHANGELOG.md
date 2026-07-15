@@ -10,6 +10,28 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(forms): FORM.1a lenguaje de formularios v2 + Registrar gasto con monto hero y chips · 2026-07-15
+
+Primera rebanada de la iniciativa **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md), octava entrega de la familia visual v2; handoff de Claude Design "Iteración de specimen" enviado por Esteban con instrucción de implementar). Nace el **lenguaje compartido de captura** en `forms.css` y lo estrena el formulario flagship, Registrar gasto: monto hero tintado del dominio al frente, categoría con **chips de ícono en vez de select** (radios reales: el contrato FormData y `validarGasto()` no cambian en nada), fecha con atajos **Hoy / Ayer / Otra fecha** (Hoy por defecto, la regla de CAT.4 aplicada a este form), teja de dominio junto al título del modal y footer con el primario a lo ancho (`i-check-circle`).
+
+**Decisiones de traducción del mockup** (detalle en el ADR): el orden del form pone el **monto primero y revisa TX.9a** (decisión del propio mockup, "el monto es el protagonista"; la categoría sigue antes de cuenta/fecha/nota); la grilla muestra **todo** el catálogo (13 nativas + personalizadas + "Otra categoría"), no solo 6, porque esconder categorías recrearía el problema del desplegable; el selector de cuenta existente se conserva (ya es el patrón de tarjetas, 8 consumidores); DM Mono del mockup → Inter `tabular-nums` (decisión vigente del redesign); cero íconos nuevos en el sprite. **Conflicto señalado sin resolver (ADR 042 D9):** AP.5 pedía "dropdown que autocompleta" para Apartados; la palabra la tiene Esteban al iniciar esa tarjeta.
+
+**Archivos tocados**
+
+- `styles/components/forms.css`: bloque nuevo "Formularios v2" (`.modal__teja`, `.monto-hero*`, `.chips-cat`/`.chip-cat*`, `.fecha-chips`/`.chip-fecha`, `.modal__footer--principal`, `.form-empty__teja`). Todo por `--fk-section-accent` (mecanismo IV.2b): los componentes se tiñen solos según el `data-dom` del modal.
+- `styles/responsive.css`: **hueco preexistente corregido**: la regla móvil `.input { font-size: 16px }` (anti-zoom iOS) le ganaba por orden de capas a `.input--big-amount`, achicando el monto grande también en el modal de ingreso puntual. Excepción `2.25rem` en la misma media query (sigue ≥16px, el umbral del zoom).
+- `modules/dominio/gastos/view.js`: `renderFormGasto()` v2 completo; `ayerIso()` se exporta (la usa el wiring); empty state "sin cuentas" con teja v2 y el mismo copy.
+- `modules/dominio/gastos/index.js`: `_montarFormGasto()` pasa a un listener delegado de `change` (chips de categoría revelan "Otra categoría"; los atajos de fecha escriben el input date real y "Otra fecha" lo revela); `_editarGasto()` marca el chip de la categoría del gasto (si es legacy fuera de catálogo, se re-elige, igual que hacía el select) y el chip de fecha (hoy/ayer/otra).
+- `index.html`: teja `i-gastos` en el header de `#modal-gasto`.
+- `tests/unit/gastos.test.js`: 4 tests nuevos FORM.1a + 3 reescritos (el de orden documenta la revisión de TX.9a). `tests/e2e/smoke.test.js`: helper `elegirCategoriaGasto()` + 9 flujos adaptados (los `fill` de fecha desaparecen: Hoy es el default).
+- `service-worker.js`: `CACHE_NAME` v400 → v401.
+
+**Verificación:** 2816/2816 unit + 206/206 E2E + lint verdes (los E2E cubren en Chromium real: chips → guardar, "Otra categoría" revela el picker CAT.2a, edición, a11y-forms con axe sobre el form nuevo). Nota del entorno: el Browser pane quedó en `visibilityState: hidden` (transiciones congeladas), así que la verificación visual fina la dan los E2E + la validación de Esteban en su celular tras el deploy.
+
+**Podría afectar:** cualquier flujo que registre gastos (hoja Registrar, CTA de empty states); la validación pendiente es de Esteban en producción (móvil real, tema claro y oscuro).
+
+---
+
 ### feat(tesoreria): MC.13c-2 la checklist de Necesidades consume el motor, cierra MC.7g · 2026-07-14
 
 Quinta rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2/D3). El asistente deja de mostrar "todos los fijos mensuales del mes" y pasa a mostrar **lo que vence antes de tu próximo cobro**, con todas las frecuencias. **Cierra MC.7g**, abierto desde MC.7d.
