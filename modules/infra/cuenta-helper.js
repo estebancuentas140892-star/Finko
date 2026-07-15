@@ -32,17 +32,23 @@ import { distribuirPago } from './distribuir-pago.js';
  * saldo. Devuelve '' si no hay cuentas activas (el caller muestra su propio
  * estado vacío).
  *
+ * `preseleccionar: false` deja el grupo sin ninguna opción marcada, para los
+ * casos en que adivinar sería inventar un dato en vez de ahorrar un clic: en un
+ * pago, la cuenta de mayor saldo es un default razonable; en "¿en qué cuenta
+ * recibes este ingreso?" (MC.13d) no hay default posible, y un valor no elegido
+ * se guardaría como un hecho del usuario. El caller debe tolerar que no venga.
+ *
  * @param {import('../core/state.js').Cuenta[]} cuentas
- * @param {{ selectedId?: string|null, label?: string, name?: string }} [opts]
+ * @param {{ selectedId?: string|null, label?: string, name?: string, preseleccionar?: boolean }} [opts]
  * @returns {string}
  */
-export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId' } = {}) {
+export function renderSelectorCuenta(cuentas, { selectedId = null, label = '¿De qué cuenta sale el dinero?', name = 'cuentaId', preseleccionar = true } = {}) {
   const activas = (cuentas ?? []).filter(c => c.activa !== false);
   if (activas.length === 0) return '';
 
-  const sel = (selectedId && activas.some(c => c.id === selectedId))
-    ? selectedId
-    : [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id;
+  const elegida = (selectedId && activas.some(c => c.id === selectedId)) ? selectedId : null;
+  const sel = elegida
+    ?? (preseleccionar ? [...activas].sort((a, b) => (b.saldo ?? 0) - (a.saldo ?? 0))[0].id : null);
 
   const filas = activas.map(c => `
       <label class="cuenta-sel__row">

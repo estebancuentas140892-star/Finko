@@ -1248,3 +1248,71 @@ describe('save() - debounce', () => {
     vi.useRealTimers();
   });
 });
+
+describe('Migración v26 → v27 (cuenta de destino del ingreso fijo, MC.13d)', () => {
+  it('sube la versión sin tocar los ingresos existentes (migración no-op)', () => {
+    const v26 = {
+      ...createInitialState(),
+      _version: 26,
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', categoria: null, diaPago: 30, activo: true, fechaCreacion: '2026-01-01' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v26));
+
+    loadData();
+
+    expect(S._version).toBe(SCHEMA_VERSION);
+    expect(S.ingresos).toHaveLength(1);
+    expect(S.ingresos[0].descripcion).toBe('Salario');
+    expect(S.ingresos[0].monto).toBe(3_500_000);
+  });
+
+  it('NO inventa la cuenta de un ingreso viejo: cuentaId queda ausente', () => {
+    // Sin backfill a propósito: adivinar la cuenta de mayor saldo guardaría un
+    // dato del usuario que nadie confirmó, y dirigiría mal al asistente.
+    const v26 = {
+      ...createInitialState(),
+      _version: 26,
+      cuentas:  [{ id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true }],
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', categoria: null, diaPago: 30, activo: true, fechaCreacion: '2026-01-01' }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v26));
+
+    loadData();
+
+    expect(S.ingresos[0].cuentaId).toBeUndefined();
+  });
+
+  it('preserva un cuentaId ya elegido (idempotente)', () => {
+    const v27 = {
+      ...createInitialState(),
+      _version: 27,
+      cuentas:  [{ id: 'c1', nombre: 'Nequi', saldo: 100_000, activa: true }],
+      ingresos: [{ id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', categoria: null, diaPago: 30, activo: true, fechaCreacion: '2026-01-01', cuentaId: 'c1' }],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v27));
+
+    loadData();
+
+    expect(S.ingresos[0].cuentaId).toBe('c1');
+  });
+
+  it('un ingreso sin cuenta y otro con cuenta conviven tras migrar', () => {
+    const v26 = {
+      ...createInitialState(),
+      _version: 26,
+      cuentas:  [{ id: 'c1', nombre: 'Nequi', saldo: 100_000, activa: true }],
+      ingresos: [
+        { id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', categoria: null, diaPago: 30, activo: true, fechaCreacion: '2026-01-01' },
+        { id: 'i2', descripcion: 'Arriendo', monto: 800_000, frecuencia: 'Mensual', categoria: null, diaPago: 5, activo: true, fechaCreacion: '2026-01-01', cuentaId: 'c1' },
+      ],
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(v26));
+
+    loadData();
+
+    expect(S.ingresos[0].cuentaId).toBeUndefined();
+    expect(S.ingresos[1].cuentaId).toBe('c1');
+  });
+});

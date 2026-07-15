@@ -274,6 +274,11 @@ export function validarIngreso(datos) {
  * Convierte los datos crudos del formulario al shape de S.ingresos[].
  * Asume que los datos ya pasaron `validarIngreso()`.
  *
+ * `cuentaId` (v27, MC.13d) solo se incluye si viene con valor: omitirlo cuando
+ * está vacío es lo que permite que `editar()` (Object.assign) conserve la
+ * cuenta ya guardada, y que un ingreso sin cuenta elegida quede sin el campo en
+ * vez de con un `undefined` explícito. Mismo patrón que `costoGMF` en MC.17d.
+ *
  * @param {Record<string, string>} datos
  * @returns {Omit<import('../../../core/state.js').Ingreso, 'id' | 'fechaCreacion'>}
  */
@@ -285,6 +290,7 @@ export function normalizarIngreso(datos) {
   const categoria = datos.categoria && CATEGORIAS_INGRESO.includes(datos.categoria)
     ? datos.categoria
     : null;
+  const cuentaId = typeof datos.cuentaId === 'string' ? datos.cuentaId.trim() : '';
   return {
     descripcion: datos.descripcion.trim(),
     monto:       Number(datos.monto),
@@ -292,6 +298,7 @@ export function normalizarIngreso(datos) {
     categoria,
     activo:      true,
     diaPago,
+    ...(cuentaId ? { cuentaId } : {}),
   };
 }
 

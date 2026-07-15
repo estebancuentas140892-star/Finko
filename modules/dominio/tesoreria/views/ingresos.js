@@ -100,6 +100,46 @@ function _renderIngresoItem(ing, oculto) {
 }
 
 /**
+ * Bloque "¿en qué cuenta recibes este ingreso?" del formulario de ingreso fijo
+ * (MC.13d, ADR 041 D5). Aplica el patrón 0/1/varias de la regla de cuenta única:
+ *
+ *   - 0 cuentas activas: nada. El campo es opcional y el ingreso puede existir
+ *     antes que la cuenta; se elegirá al editarlo.
+ *   - 1 cuenta activa: no se pregunta lo que tiene una sola respuesta posible.
+ *     Se informa dónde caerá y el id viaja en un hidden (transparente, no
+ *     silencioso).
+ *   - 2+ cuentas: selector **sin preseleccionar**. Aquí no hay default honesto:
+ *     a diferencia de un pago (donde la cuenta de mayor saldo es razonable),
+ *     adivinar dónde le entra el sueldo al usuario guardaría un dato inventado
+ *     que luego dirige mal el asistente. Dejarlo en blanco es válido.
+ *
+ * @param {import('../../../core/state.js').Ingreso|null} ingreso
+ * @returns {string}
+ */
+function _renderGrupoCuentaIngreso(ingreso) {
+  const activas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  if (activas.length === 0) return '';
+
+  if (activas.length === 1) {
+    const c = activas[0];
+    return `
+      <div class="form-group">
+        <span class="label">¿Dónde recibes este dinero?</span>
+        <p class="form-hint form-hint--muted">Lo recibes en <strong>${_esc(c.nombre)}</strong>, tu única cuenta activa.</p>
+        <input type="hidden" name="cuentaId" value="${_esc(c.id)}" />
+      </div>`;
+  }
+
+  return `
+    ${renderSelectorCuenta(activas, {
+      label:          '¿En qué cuenta recibes este ingreso?',
+      selectedId:     ingreso?.cuentaId ?? null,
+      preseleccionar: false,
+    })}
+    <p class="form-hint form-hint--muted">Opcional. Si lo indicas, al distribuir tu ingreso Finko parte de esa cuenta.</p>`;
+}
+
+/**
  * Devuelve el HTML del formulario de nuevo/editar ingreso.
  * @param {import('../../../core/state.js').Ingreso|null} [ingreso]
  * @returns {string}
@@ -165,6 +205,7 @@ export function renderFormIngreso(ingreso = null) {
                inputmode="numeric" />
         <p class="form-hint form-hint--muted">Opcional. ¿Qué día sueles recibir este pago?</p>
       </div>
+      ${_renderGrupoCuentaIngreso(ingreso)}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">${ingreso ? 'Actualizar' : 'Guardar'}</button>

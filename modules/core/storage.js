@@ -18,7 +18,7 @@ const STORAGE_KEY = 'fk_v1';
 const DEBOUNCE_MS = 200;
 
 /** Versión esperada del schema en memoria. */
-const SCHEMA_VERSION = 26;
+const SCHEMA_VERSION = 27;
 
 /** Timer interno del debounce. Variable de módulo - nunca en window. */
 let _saveTimer = null;
@@ -424,6 +424,15 @@ function _migrate(raw) {
       data.transferencias = [];
     }
   }
+
+  // v26 → v27: cuenta de destino opcional del ingreso fijo (MC.13d, ADR 041 D5).
+  // No requiere mutar datos existentes: los ingresos viejos no tienen cuentaId
+  // (undefined → el asistente cae al patrón de cuenta única / pregunta, que es
+  // el comportamiento actual). Sin backfill a propósito: asignar la cuenta de
+  // mayor saldo sería inventar un dato del usuario, y un dato inventado dirige
+  // mal el asistente. El campo se llena solo cuando el usuario lo elige en el
+  // formulario, o solo si tiene una única cuenta (ahí no hay nada que adivinar).
+  // Migración intencionalmente no-op: solo bump de versión (precedente v4 → v5).
 
   if (typeof data._version !== 'number' || data._version < SCHEMA_VERSION) {
     data._version = SCHEMA_VERSION;

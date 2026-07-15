@@ -169,7 +169,7 @@ El **motor (MC.13a-b) no depende de los conflictos** y puede arrancar apenas Est
 | **MC.13b** | `infra/vencimientos.js` mitad B (`frecuenciaPrincipalIngresos`, `diasPorPeriodo`, `aportePorPeriodo`) + Metas y Apartados **borran sus copias** y re-importan. Refactor sin cambio de comportamiento, verificado con sus tests. | MC.13a | Opus 4.8 - Alto |
 | **MC.13c-1** | `obligacionesYAportesDelCobro` (D2) puro + 40 tests. **Cerrada 2026-07-14.** Sin consumidores todavía. | MC.13b | Opus 4.8 - Alto |
 | **MC.13c-2** | La checklist de Necesidades y el desglose de ahorro pasan a consumirlo (absorbe MC.7g). **Bloqueada**: 3 decisiones de producto + generalizar `ultimoPagoHasta` (ver la corrección en D2). | MC.13c-1 + decisiones de Esteban | Opus 4.8 - Alto |
-| **MC.13d** | Schema: `cuentaId` en `Ingreso` (D5), bump v26→v27 + migración + el form de ingreso fijo captura la cuenta. Solo-datos + form. | nada dura; independiente | Opus 4.8 - Extra (bump con migración) |
+| **MC.13d** | Schema: `cuentaId` en `Ingreso` (D5), bump v26→v27 + migración + el form de ingreso fijo captura la cuenta. **Cerrada 2026-07-14**: migración intencionalmente no-op (no hay nada que migrar sin backfill), form con patrón 0/1/varias y selector sin preseleccionar. | nada dura; independiente | Opus 4.8 - Extra (bump con migración) |
 | **MC.13e+** | Asistente v2 UI (puntos 9-20): paso educativo, recomendaciones por categoría, excedente explícito, filas con logo, navegación v2. Varias rebanadas de UI. | MC.13c, MC.13d; **decisión (a)** para el flujo esporádico | Sonnet 5 - Alto por rebanada |
 
 Cada rebanada se verifica en la app (desktop + móvil) con tests verdes antes de commit, según el workflow de [`/CLAUDE.md`](../../CLAUDE.md).

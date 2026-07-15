@@ -3715,3 +3715,86 @@ describe('acciones de transferencias: GMF del retiro (MC.17d)', () => {
     expect(document.querySelector('input[name="aplicarGMF"]')).toBeNull();
   });
 });
+
+// ── cuentaId del ingreso fijo (MC.13d) ────────────────────────────
+
+describe('normalizarIngreso() - cuentaId (MC.13d)', () => {
+  const base = { descripcion: 'Salario', monto: '3500000', frecuencia: 'Mensual' };
+
+  it('guarda la cuenta elegida', () => {
+    expect(normalizarIngreso({ ...base, cuentaId: 'c1' }).cuentaId).toBe('c1');
+  });
+
+  it('recorta espacios de la cuenta', () => {
+    expect(normalizarIngreso({ ...base, cuentaId: '  c1  ' }).cuentaId).toBe('c1');
+  });
+
+  it('omite el campo cuando no se eligió cuenta (no lo pone en undefined)', () => {
+    // Omitirlo es lo que permite que editar() conserve la cuenta ya guardada.
+    expect('cuentaId' in normalizarIngreso({ ...base })).toBe(false);
+    expect('cuentaId' in normalizarIngreso({ ...base, cuentaId: '' })).toBe(false);
+    expect('cuentaId' in normalizarIngreso({ ...base, cuentaId: '   ' })).toBe(false);
+  });
+
+  it('el resto del ingreso no cambia por llevar cuenta', () => {
+    const r = normalizarIngreso({ ...base, diaPago: '30', cuentaId: 'c1' });
+    expect(r).toMatchObject({ descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', activo: true, diaPago: 30 });
+  });
+});
+
+describe('renderFormIngreso() - bloque de cuenta (MC.13d)', () => {
+  afterEach(() => { S.cuentas = []; });
+
+  it('sin cuentas activas no pregunta nada (el ingreso puede existir antes que la cuenta)', () => {
+    S.cuentas = [];
+    const html = renderFormIngreso();
+    expect(html).not.toContain('name="cuentaId"');
+    expect(html).not.toContain('¿Dónde recibes este dinero?');
+  });
+
+  it('con una sola cuenta no pregunta: informa y manda el id en un hidden', () => {
+    S.cuentas = [{ id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true }];
+    const html = renderFormIngreso();
+    expect(html).toContain('¿Dónde recibes este dinero?');
+    expect(html).toContain('Bancolombia');
+    expect(html).toContain('<input type="hidden" name="cuentaId" value="c1"');
+  });
+
+  it('ignora las cuentas inactivas al contar', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true },
+      { id: 'c2', nombre: 'Vieja', saldo: 0, activa: false },
+    ];
+    expect(renderFormIngreso()).toContain('<input type="hidden" name="cuentaId" value="c1"');
+  });
+
+  it('con varias cuentas muestra el selector y NO preselecciona ninguna', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true },
+      { id: 'c2', nombre: 'Nequi', saldo: 100_000, activa: true },
+    ];
+    const html = renderFormIngreso();
+    expect(html).toContain('¿En qué cuenta recibes este ingreso?');
+    expect(html).toContain('name="cuentaId"');
+    // Adivinar dónde entra el sueldo guardaría un dato inventado: sin checked.
+    expect(html).not.toContain('checked');
+  });
+
+  it('al editar, preselecciona la cuenta ya guardada', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true },
+      { id: 'c2', nombre: 'Nequi', saldo: 100_000, activa: true },
+    ];
+    const ingreso = { id: 'i1', descripcion: 'Salario', monto: 3_500_000, frecuencia: 'Mensual', diaPago: 30, cuentaId: 'c2' };
+    const html = renderFormIngreso(ingreso);
+    expect(html).toContain('value="c2" checked');
+  });
+
+  it('el bloque es opcional y lo dice', () => {
+    S.cuentas = [
+      { id: 'c1', nombre: 'Bancolombia', saldo: 900_000, activa: true },
+      { id: 'c2', nombre: 'Nequi', saldo: 100_000, activa: true },
+    ];
+    expect(renderFormIngreso()).toContain('Opcional.');
+  });
+});

@@ -1112,6 +1112,38 @@ test.describe('Tesorería - cuenta y saldo', () => {
     await expect(page.locator('#lista-ingresos .list-item__value')).toHaveText('••••');
     await expect(page.locator('#lista-ingresos-puntuales .list-item__value')).toHaveText('+••••');
   });
+
+  test('MC.13d: el ingreso fijo registra en qué cuenta se recibe', async ({ page }) => {
+    await crearCuentaEfectivo(page, 500000);
+
+    // Con una sola cuenta activa no se pregunta (regla de cuenta única): el form
+    // informa dónde cae el dinero y manda el id en un hidden.
+    await page.locator('[data-action="nuevo-ingreso"]').first().click();
+    await page.waitForSelector('#modal-ingreso[data-open]');
+    const form = page.locator('#modal-ingreso-body form');
+    await expect(form).toContainText('¿Dónde recibes este dinero?');
+    await expect(form.locator('input[type="hidden"][name="cuentaId"]')).toHaveCount(1);
+
+    await form.locator('#ingreso-desc').fill('Salario empresa');
+    await form.locator('#ingreso-monto').fill('1850000');
+    await form.locator('#ingreso-frec').selectOption('Mensual');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-ingreso'), { timeout: 5_000 });
+
+    // El recorrido completo: el id elegido llega hasta localStorage y apunta a
+    // una cuenta real (es lo que el asistente leerá en MC.13e). Se consulta con
+    // reintento porque `save()` es debounced 200ms (ADN #5): leer de una sola
+    // vez justo tras cerrar el modal gana la carrera y ve el estado anterior.
+    await expect.poll(async () => page.evaluate(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
+      const ing = (st.ingresos ?? []).find(i => i.descripcion === 'Salario empresa');
+      if (!ing) return null;
+      return {
+        version:      st._version,
+        cuentaExiste: (st.cuentas ?? []).some(c => c.id === ing.cuentaId),
+      };
+    }), { timeout: 5_000 }).toEqual({ version: 27, cuentaExiste: true });
+  });
 });
 
 // ── SUITE 6b: Fondo inerte con modal abierto (A11Y.4) ───────────────────────

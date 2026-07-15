@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.13d el ingreso fijo registra en qué cuenta se recibe (schema v27) · 2026-07-14
+
+Cuarta rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D5). El ingreso fijo gana un campo opcional `cuentaId`: con él, el asistente de distribución podrá partir de esa cuenta y descontar de ahí (MC.13e). **Es solo un dato**: registrar la cuenta NO implica que Finko abone el dinero solo, eso es el conflicto (b) y materia de PA.1.
+
+**Archivos tocados**
+
+- `modules/core/state.js`: `@property {string} [cuentaId]` opcional en el typedef `Ingreso`.
+- `modules/core/storage.js`: `SCHEMA_VERSION` 26 → 27 con **migración intencionalmente no-op** (precedente v4 → v5, `cuotaManejo`). Los ingresos existentes no tienen `cuentaId` (undefined → el asistente cae al comportamiento actual). **Sin backfill a propósito:** asignar la cuenta de mayor saldo sería inventar un dato del usuario, y un dato inventado dirige mal el asistente.
+- `modules/dominio/tesoreria/logic/ingresos.js`: `normalizarIngreso` incluye `cuentaId` **solo si viene con valor** (mismo patrón condicional que `costoGMF` en MC.17d). Omitirlo es lo que permite que `editar()` (Object.assign) conserve la cuenta ya guardada.
+- `modules/dominio/tesoreria/views/ingresos.js`: `_renderGrupoCuentaIngreso` aplica el patrón 0/1/varias de la regla de cuenta única.
+- `modules/infra/cuenta-helper.js`: `renderSelectorCuenta` acepta `preseleccionar: false`. Default `true`, así que los 8 consumidores existentes no cambian.
+- `tests/unit/storage.test.js` (4 nuevos), `tests/unit/tesoreria.test.js` (11 nuevos), `tests/e2e/smoke.test.js` (1 nuevo).
+- `service-worker.js`: `CACHE_NAME` v398 → v399.
+
+**Por qué el selector no preselecciona con varias cuentas.** En un pago, la cuenta de mayor saldo es un default razonable que ahorra un clic. En "¿en qué cuenta recibes este ingreso?" no hay default honesto: adivinar guardaría como hecho del usuario algo que nadie confirmó, y ese dato luego dirige el asistente. Es el mismo principio con el que el ADR rechaza el backfill, aplicado al formulario. Con **una sola** cuenta no se pregunta (no hay nada que adivinar): se informa dónde cae el dinero y el id viaja en un hidden. Sin cuentas, el bloque no aparece: el ingreso puede existir antes que la cuenta.
+
+**Verificación:** el E2E nuevo cubre el recorrido completo (formulario → `FormData` → `normalizarIngreso` → `localStorage`), que los unit tests no podían cubrir por separado: comprueba que el `cuentaId` guardado apunta a una cuenta real y que el estado queda en v27. 2807/2807 unit + 206/206 E2E + lint verdes.
+
+---
+
 ### feat(infra): MC.13c-1 obligacionesYAportesDelCobro, la composición "qué toca con este cobro" · 2026-07-14
 
 Tercera rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2). Sobre las dos mitades del motor, una función compone la pregunta que el asistente debe responder: **qué toca con ESTE cobro**, en vez de "cómo reparto todo lo del mes".

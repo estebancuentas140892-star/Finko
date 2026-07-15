@@ -67,6 +67,14 @@ import { SMMLV, ACCESOS_INICIO_DEFAULT } from './constants.js';
  *                                          es diaPago + 15. null si no se capturó.
  * @property {boolean}     activo
  * @property {string}      fechaCreacion   ISO 8601.
+ * @property {string}      [cuentaId]      Opcional (v27, MC.13d). FK a Cuenta.id:
+ *                                          cuenta donde se recibe este ingreso.
+ *                                          Ausente = no se capturó (los ingresos
+ *                                          anteriores a v27 y los creados sin
+ *                                          cuentas): el asistente cae al patrón
+ *                                          de cuenta única / pregunta, como antes.
+ *                                          Es solo un dato: NO implica que Finko
+ *                                          abone el dinero solo (eso es PA.1).
  */
 
 /**
