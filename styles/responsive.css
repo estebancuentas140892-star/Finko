@@ -103,7 +103,9 @@
   }
   .nav-item.active::before,
   .nav-item[aria-current="page"]::before {
-    width: 44%;
+    /* Ancho fijo (NAV2.1c, ADR 040 D5): el 44% anterior crecía con el
+       viewport sin razón; el mockup lo dibuja constante. */
+    width: 22px;
     height: 3px;
   }
 
@@ -128,16 +130,19 @@
      acción, no una sección: no muestra el indicador activo. */
   .nav-item--registrar { justify-content: flex-start; padding-top: var(--fk-space-1); }
   .nav-item--registrar::before { content: none; }
+  /* Pastilla con degradado de acento (NAV2.1c, ADR 040 D5): reemplaza el
+     círculo; más área táctil horizontal y sombra teñida de marca (mismo
+     degradado que la marca "F" del sidebar). */
   .nav-item__fab {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
-    background: var(--fk-btn-primary-bg);
+    width: 50px;
+    height: 38px;
+    border-radius: var(--fk-radius-lg);
+    background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent));
     color: var(--fk-text-on-accent);
-    box-shadow: 0 2px 8px rgba(4, 6, 12, 0.35);
+    box-shadow: 0 6px 16px var(--fk-accent-border);
     margin-top: -6px;
   }
   .nav-item__fab .icon { --fk-icon-size: var(--fk-icon-lg); stroke-width: 2.6; }

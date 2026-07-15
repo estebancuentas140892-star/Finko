@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV2.1c pastilla "Registrar" con degradado + indicador fijo, cierra Navegación v2 completa · 2026-07-14
+
+Tercera y última rebanada de **Navegación v2** ([ADR 040](DECISIONS/040-navegacion-v2-visual.md) D5): **la iniciativa queda completa** (NAV2.1a-c en un día, séptima pantalla de la familia visual v2). Quedan registradas en el ADR las decisiones diferidas: **badges de notificación** (decidir qué cuenta el badge es de Esteban; el CSS `.nav-item__badge` ya existe sin consumidores) y el tooltip estilizado de la sidebar colapsada (se conservó el `title` nativo).
+
+**Qué cambió:** `styles/responsive.css`: (1) el botón central "Registrar" del bottom nav pasa de círculo 46px con fondo plano a **pastilla 50x38** (radio lg) con el degradado de acento (el mismo de la marca "F" de NAV2.1b) y sombra teñida con `--fk-accent-border` (reemplaza un rgba hardcodeado heredado). (2) El **indicador de sección activa** pasa de `width: 44%` (crecía con el viewport) a **22px fijos**.
+
+**Archivos tocados:** `styles/responsive.css`, `service-worker.js` (v394→v395).
+
+**Verificación:** 2695/2695 unit + 205/205 E2E completos + lint verdes (CSS puro, sin tests nuevos: los E2E de navegación y reflow-320 cubren la barra). Visual con Playwright/Chromium a 390x844.
+
+**Podría afectar:** solo presentación de la barra inferior móvil; la acción `registrar-abrir-hoja` y la hoja "Registrar" no cambian.
+
+---
+
 ### feat(nav): NAV2.1b marca "F" con degradado en el sidebar + grupo diario sin rótulo · 2026-07-14
 
 Segunda rebanada de **Navegación v2** ([ADR 040](DECISIONS/040-navegacion-v2-visual.md) D4).

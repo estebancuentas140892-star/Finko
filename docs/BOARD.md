@@ -10,15 +10,9 @@
 
 ## En proceso
 
-### NAV2.1 - Navegación v2: sheet "Más" agrupado, marca "F" y pastilla "Registrar" ([ADR 040](DECISIONS/040-navegacion-v2-visual.md))
-- Inicio      : 2026-07-14
-- Objetivo    : handoff de Claude Design "Iteración de specimen" (mockup `Navegación v2.dc.html`, séptima pantalla de la familia v2). La estructura ya existe (ADR 024 + IV.2a); el delta: menú "Más" pasa a bottom sheet agrupado (Gestión del dinero / Ahorros / Ajustes+tema, **revisa ADR 024 D5**: vuelven rótulos y las 4 secciones de ahorro recuperan entrada directa; el hub NAV.B queda intacto), marca "F" con degradado reemplaza el 💚 del sidebar, pastilla "Registrar" con degradado en la barra inferior. Badges de notificación **diferidos** (decisión de producto pendiente de Esteban, ver ADR 040 D6).
-- Rebanadas   : **NAV2.1a cerrada 2026-07-14** (sheet agrupado + tejas de dominio + toggle de tema) y **NAV2.1b cerrada 2026-07-14** (marca "F" + grupo diario sin rótulo), ver CHANGELOG → queda **NAV2.1c** pastilla "Registrar" + indicador fijo
-- Secciones   : Transversal (shell / navegación)
-- Archivos    : `index.html` (#modal-mas, sidebar), `styles/modals.css`, `styles/layout.css`, `styles/responsive.css`, `modules/ui/shell.js`, `tests/e2e/hub-ahorros.test.js`
-- Modelo      : Fable 5 - Alto (triaje + rebanada core); NAV2.1b/c pueden bajar a Sonnet 5 - Bajo
+_(vacío: elegir la siguiente tarjeta de "Pendientes")_
 
-_(GAS.1 "Gastos v2" cerrada completa el 2026-07-14, rebanadas GAS.1a-c; sexta pantalla de la familia visual v2.)_
+_(NAV2.1 "Navegación v2" cerrada completa el 2026-07-14, rebanadas NAV2.1a-c, [ADR 040](DECISIONS/040-navegacion-v2-visual.md); séptima pantalla de la familia visual v2. Diferido registrado en el ADR: badges de notificación del nav, pendiente de que Esteban decida qué cuenta el badge. GAS.1 "Gastos v2" cerrada completa el mismo día, rebanadas GAS.1a-c.)_
 
 ---
 
@@ -555,7 +549,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 
 ---
 
-> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B, NAV.A2b (slices 1 y 2) y NAV.C cerradas. Iniciativa completa, sin pendientes. Su D5 (menú "Más" plano de 7 tarjetas) fue **revisada el 2026-07-14 por el [ADR 040](DECISIONS/040-navegacion-v2-visual.md)** "Navegación v2" (tarjeta NAV2.1, En proceso).
+> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B, NAV.A2b (slices 1 y 2) y NAV.C cerradas. Iniciativa completa, sin pendientes. Su D5 (menú "Más" plano de 7 tarjetas) fue **revisada por el [ADR 040](DECISIONS/040-navegacion-v2-visual.md)** "Navegación v2" (NAV2.1a-c, COMPLETA el 2026-07-14: menú "Más" como hoja agrupada, marca "F", pastilla "Registrar"). Diferido del ADR 040: badges de notificación del nav (decisión de producto de Esteban; al retomarse, es una tarjeta nueva de esta sección).
 
 ---
 

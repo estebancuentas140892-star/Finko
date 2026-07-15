@@ -274,8 +274,8 @@
 ## Navegación v2: menú "Más" como hoja agrupada (NAV2.1, ADR 040)
 
 - **Objetivo**          : el menú "Más" del bottom nav móvil pasa de modal centrado con 7 tarjetas planas (ADR 024 D5) a hoja inferior agrupada: "Gestión del dinero" (Deudas, Mis cuentas, Me deben, Límites de gasto, Análisis), "Ahorros" (Fondo de emergencia, Metas, Apartados, Inversión) y fila final Ajustes + botón de tema. Tiles horizontales con teja de icono teñida por dominio; el tile de la sección activa se resalta con su tinte y borde. Séptima pantalla de la familia visual v2.
-- **Estado actual**     : **NAV2.1a cerrada 2026-07-14** (hoja agrupada + tejas + tile activo + toggle de tema). **NAV2.1b cerrada 2026-07-14** (marca "F" con degradado de acento reemplaza el 💚, último emoji decorativo de la UI estructural; el grupo de uso diario pierde el rótulo visible "Diario" y conserva `aria-label="Uso diario"`). Pendiente NAV2.1c (pastilla "Registrar" + indicador fijo). Badges de notificación diferidos (ADR 040 D6, decisión de producto pendiente de Esteban).
-- **Verificado contra** : commit de NAV2.1b (2026-07-14).
+- **Estado actual**     : **iniciativa COMPLETA el 2026-07-14** (las 3 rebanadas el mismo día). NAV2.1a: hoja agrupada + tejas + tile activo + toggle de tema. NAV2.1b: marca "F" con degradado de acento reemplaza el 💚 (último emoji decorativo de la UI estructural) y el grupo de uso diario pierde el rótulo visible "Diario" (conserva `aria-label="Uso diario"`). NAV2.1c: el botón central "Registrar" pasa de círculo 46px a pastilla 50x38 con el degradado de acento, y el indicador activo del bottom nav pasa de 44% a 22px fijos. Badges de notificación diferidos (ADR 040 D6, decisión de producto pendiente de Esteban).
+- **Verificado contra** : commit de NAV2.1c (2026-07-14).
 
 **Dónde vive**
 
@@ -289,6 +289,8 @@
 | Sincronización de TODOS los toggles de tema | `modules/ui/shell.js` | `_syncThemeButton()` (`querySelectorAll`, swap `#i-moon`/`#i-sun`) | ~58 |
 | Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
 | Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` | ~18 |
+| Marca "F" del sidebar (NAV2.1b) | `styles/layout.css` + `index.html` | `.sidebar__logo-mark` | ~41 |
+| Pastilla "Registrar" + indicador fijo del bottom nav (NAV2.1c) | `styles/responsive.css` | `.nav-item__fab`, `.nav-item.active::before` (bloque móvil) | ~104, ~136 |
 
 **Dependencias y relaciones**: los tiles heredan `--fk-nav-text` del mapeo global `[data-section]` de `layout.css` (IV.2a): cero mapeo nuevo. Las clases `.menu-mas__*` NO se tocaron: siguen siendo el launcher vertical de la hoja "Registrar" (NAV.A2) y de los accesos de Inicio (IN.4a). `.modal-overlay--sheet`/`.modal--sheet` nacen reutilizables para futuros sheets.
 
@@ -300,6 +302,7 @@
 
 **Cambios realizados**:
 
+- 2026-07-14 (NAV2.1c): `.nav-item__fab` pasa a pastilla 50x38 (radio lg) con el degradado `--fk-accent-hover`→`--fk-accent` y sombra `--fk-accent-border` (reemplaza el rgba hardcodeado); indicador activo del bottom nav a 22px fijos. CSS puro. Verificación visual Playwright a 390x844. SW v394 → v395. **Cierra la iniciativa NAV2.1 completa.**
 - 2026-07-14 (NAV2.1b): marca `.sidebar__logo-mark` (34px, degradado `--fk-accent-hover`→`--fk-accent`, tinta `--fk-text-on-accent`, sombra `--fk-accent-border`) en `layout.css` + markup del logo; rótulo "Diario" retirado (`aria-label` en el `role="group"`). E2E del sidebar desktop actualizado (grupos = Seguimiento/Ahorros + grupo diario por aria-label + marca "F"). Verificación visual Playwright en expandida y colapsada. SW v393 → v394.
 - 2026-07-14 (NAV2.1a): hoja agrupada completa. 6 tests unitarios nuevos (`tests/unit/shell-nav.test.js`: markActiveNav con tiles + botón Más, sync de tema multi-toggle) + E2E de `hub-ahorros` reescritos (grupos/labels) + 1 E2E nuevo (tile activo + tema alterna sin cerrar). Verificación visual con Playwright/Chromium en ambos temas (el preview embebido congela transiciones: ver riesgo del entorno en el bloque de color). SW v392 → v393.
 
