@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV2.1b marca "F" con degradado en el sidebar + grupo diario sin rótulo · 2026-07-14
+
+Segunda rebanada de **Navegación v2** ([ADR 040](DECISIONS/040-navegacion-v2-visual.md) D4).
+
+**Qué cambió:** (1) `index.html`: el logo del sidebar cambia el emoji 💚 por la **marca "F"** (`.sidebar__logo-mark`); cierra el último emoji decorativo de la UI estructural (pendiente del ADR 023) y sobrevive al modo colapsado como marca mínima. El rótulo visible "Diario" del primer grupo desaparece (el mockup abre directo con los items); el nombre queda para lectores de pantalla vía `aria-label="Uso diario"` en el `role="group"`. (2) `styles/layout.css`: `.sidebar__logo-mark` (34px, radio md, degradado `--fk-accent-hover`→`--fk-accent`, tinta `--fk-text-on-accent`, sombra con `--fk-accent-border`); solo tokens, ambos temas.
+
+**Archivos tocados:** `index.html`, `styles/layout.css`, `tests/e2e/hub-ahorros.test.js` (test del sidebar desktop actualizado: rótulos visibles = Seguimiento/Ahorros, grupo diario localizado por aria-label, marca "F" presente), `service-worker.js` (v393→v394).
+
+**Verificación:** 2695/2695 unit (incluye el pase axe sobre `index.html`) + 205/205 E2E completos + lint verdes. Visual con Playwright/Chromium a 1280x800 en sidebar expandida y colapsada.
+
+**Podría afectar:** solo presentación del sidebar desktop; navegación, colapso persistido y tooltips nativos intactos.
+
+---
+
 ### feat(nav): NAV2.1a menú "Más" como hoja agrupada con tejas de dominio + toggle de tema, abre Navegación v2 · 2026-07-14
 
 Triaje del handoff de Claude Design "Navegación v2" (bundle "Iteración de specimen", enviado por Esteban con instrucción de implementar) → **[ADR 040](DECISIONS/040-navegacion-v2-visual.md)** aceptado + iniciativa NAV2.1 con rebanadas NAV2.1a-c en el BOARD, séptima pantalla de la familia visual v2. Hallazgo del triaje: la estructura del mockup ya existe (sidebar con grupos + colapsar del ADR 024 D6, barra de 5 slots con "Registrar" central del D1, tinte por dominio de IV.2a); el delta real es el menú "Más" y dos pulidos. Decisiones: **revisa explícitamente el ADR 024 D5** (vuelven los rótulos de grupo y las 4 secciones de ahorro recuperan entrada directa; el hub NAV.B con pestañas + consolidado queda intacto), **badges de notificación diferidos** (exige decidir qué cuenta el badge; decisión de producto de Esteban), tooltip nativo de la colapsada se conserva (el estilizado del mockup se recortaría por el scroll del nav), y el sheet conserva un cierre accesible que el mockup omite.

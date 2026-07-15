@@ -274,8 +274,8 @@
 ## Navegación v2: menú "Más" como hoja agrupada (NAV2.1, ADR 040)
 
 - **Objetivo**          : el menú "Más" del bottom nav móvil pasa de modal centrado con 7 tarjetas planas (ADR 024 D5) a hoja inferior agrupada: "Gestión del dinero" (Deudas, Mis cuentas, Me deben, Límites de gasto, Análisis), "Ahorros" (Fondo de emergencia, Metas, Apartados, Inversión) y fila final Ajustes + botón de tema. Tiles horizontales con teja de icono teñida por dominio; el tile de la sección activa se resalta con su tinte y borde. Séptima pantalla de la familia visual v2.
-- **Estado actual**     : **NAV2.1a cerrada 2026-07-14** (hoja agrupada + tejas + tile activo + toggle de tema). Pendientes NAV2.1b (marca "F" del sidebar + grupo diario sin rótulo) y NAV2.1c (pastilla "Registrar" + indicador fijo). Badges de notificación diferidos (ADR 040 D6, decisión de producto pendiente de Esteban).
-- **Verificado contra** : commit de NAV2.1a (2026-07-14).
+- **Estado actual**     : **NAV2.1a cerrada 2026-07-14** (hoja agrupada + tejas + tile activo + toggle de tema). **NAV2.1b cerrada 2026-07-14** (marca "F" con degradado de acento reemplaza el 💚, último emoji decorativo de la UI estructural; el grupo de uso diario pierde el rótulo visible "Diario" y conserva `aria-label="Uso diario"`). Pendiente NAV2.1c (pastilla "Registrar" + indicador fijo). Badges de notificación diferidos (ADR 040 D6, decisión de producto pendiente de Esteban).
+- **Verificado contra** : commit de NAV2.1b (2026-07-14).
 
 **Dónde vive**
 
@@ -300,6 +300,7 @@
 
 **Cambios realizados**:
 
+- 2026-07-14 (NAV2.1b): marca `.sidebar__logo-mark` (34px, degradado `--fk-accent-hover`→`--fk-accent`, tinta `--fk-text-on-accent`, sombra `--fk-accent-border`) en `layout.css` + markup del logo; rótulo "Diario" retirado (`aria-label` en el `role="group"`). E2E del sidebar desktop actualizado (grupos = Seguimiento/Ahorros + grupo diario por aria-label + marca "F"). Verificación visual Playwright en expandida y colapsada. SW v393 → v394.
 - 2026-07-14 (NAV2.1a): hoja agrupada completa. 6 tests unitarios nuevos (`tests/unit/shell-nav.test.js`: markActiveNav con tiles + botón Más, sync de tema multi-toggle) + E2E de `hub-ahorros` reescritos (grupos/labels) + 1 E2E nuevo (tile activo + tema alterna sin cerrar). Verificación visual con Playwright/Chromium en ambos temas (el preview embebido congela transiciones: ver riesgo del entorno en el bloque de color). SW v392 → v393.
 
 **Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md) (el hub Ahorros NAV.B queda intacto: pestañas y consolidado siguen en las secciones).

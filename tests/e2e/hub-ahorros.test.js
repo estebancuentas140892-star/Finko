@@ -178,14 +178,21 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
 test.describe('NAV.B - sidebar desktop', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
-  test('grupos: Diario, Seguimiento (con Análisis) y Ahorros; sin "Herramientas"', async ({ page }) => {
+  test('grupos: diario sin rótulo (NAV2.1b), Seguimiento (con Análisis) y Ahorros; sin "Herramientas"', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
 
+    // El grupo de uso diario ya no lleva rótulo visible (ADR 040 D4); su
+    // nombre queda para lectores de pantalla vía aria-label.
     const grupos = await page.$$eval('#sidebar .nav-group__label', els =>
       els.map(e => e.textContent.trim()));
-    expect(grupos).toEqual(['Diario', 'Seguimiento', 'Ahorros']);
+    expect(grupos).toEqual(['Seguimiento', 'Ahorros']);
+    await expect(page.locator('#sidebar [role="group"][aria-label="Uso diario"] a[href="#dash"]'))
+      .toHaveCount(1);
+
+    // La marca "F" reemplaza al emoji del logo (ADR 040 D4).
+    await expect(page.locator('#sidebar .sidebar__logo-mark')).toHaveText('F');
 
     // Análisis vive dentro del grupo Seguimiento (Herramientas se disolvió).
     const gestion = page.locator('.nav-group', { has: page.locator('#nav-label-gestion') });
