@@ -1,10 +1,11 @@
 /**
- * menu-mas.js - manejo del modal "Mas opciones" del bottom nav mobile.
+ * menu-mas.js - manejo del menu "Mas opciones" del bottom nav mobile.
  *
- * Responsabilidad: cerrar el modal automaticamente cuando el usuario hace
- * click en un item con href (navegacion). Desde NAV.B el modal es una sola
- * cuadricula de 7 tarjetas de navegacion, sin grupos ni botones de estado
- * (el toggle de tema que vivia aqui se retiro en una fase anterior).
+ * Responsabilidad: cerrar la hoja automaticamente cuando el usuario hace
+ * click en un item con href (navegacion). Desde NAV2.1a (ADR 040) es una
+ * hoja inferior agrupada (Gestion del dinero / Ahorros / Ajustes + tema);
+ * el boton de tema es un <button> sin href, asi que alternar el tema NO
+ * cierra la hoja (a proposito: es un ajuste, no una navegacion).
  */
 
 import { cerrarModal } from './modales.js';

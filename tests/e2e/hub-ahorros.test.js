@@ -2,7 +2,8 @@
  * hub-ahorros.test.js - NAV.B: hub "Ahorros" (ADR 024, D4/D5/D6).
  *
  * Cubre:
- * - Modal "Más" plano: 7 tarjetas sin grupos, tarjeta única "Ahorros".
+ * - Menú "Más" v2 (NAV2.1a, ADR 040): hoja agrupada (Gestión del dinero /
+ *   Ahorros / Ajustes + tema), tile activo por dominio, toggle de tema.
  * - Franja de pestañas Fondo/Metas/Apartados/Inversión compartida por las
  *   4 secciones (enlaces, cero cambios de router).
  * - Consolidado de ahorro (ADR 009) como cabecera común del hub.
@@ -51,7 +52,7 @@ async function seedConAhorros(page) {
 test.describe('NAV.B - hub Ahorros (móvil)', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test('el modal Más muestra 7 tarjetas planas con la entrada única "Ahorros"', async ({ page }) => {
+  test('el menú Más es una hoja agrupada: Gestión del dinero + Ahorros + Ajustes (NAV2.1a, ADR 040 D1)', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -59,18 +60,22 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
     await page.click('.nav-item[data-modal="modal-mas"]');
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(1);
 
-    // Sin rótulos de grupo (Gestión/Crecer/Herramientas desaparecen).
-    await expect(page.locator('#modal-mas .menu-mas__group-label')).toHaveCount(0);
+    // Dos grupos rotulados (revisa el "sin grupos" del ADR 024 D5).
+    const grupos = await page.$$eval('#modal-mas .mas-sheet__group-label', els =>
+      els.map(e => e.textContent.trim()));
+    expect(grupos).toEqual(['Gestión del dinero', 'Ahorros']);
 
-    const labels = await page.$$eval('#modal-mas .menu-mas__label', els =>
+    // 10 tiles: las 4 secciones de ahorro recuperan entrada directa.
+    const labels = await page.$$eval('#modal-mas .mas-tile__label', els =>
       els.map(e => e.textContent.trim()));
     expect(labels).toEqual([
-      'Deudas', 'Mis cuentas', 'Ahorros', 'Límites de gasto',
-      'Me deben', 'Análisis', 'Ajustes',
+      'Deudas', 'Mis cuentas', 'Me deben', 'Límites de gasto', 'Análisis',
+      'Fondo de emergencia', 'Metas', 'Apartados', 'Inversión',
+      'Ajustes',
     ]);
   });
 
-  test('la tarjeta "Ahorros" navega al hub (#ahorro) y cierra el modal', async ({ page }) => {
+  test('el tile "Fondo de emergencia" navega al hub (#ahorro) y cierra la hoja', async ({ page }) => {
     await seedVacio(page);
     await page.goto('/#dash');
     await page.waitForSelector('#sec-dash.active', { timeout: 10_000 });
@@ -81,6 +86,28 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
     await expect(page.locator('#modal-mas[data-open]')).toHaveCount(0);
     await expect(page.locator('#sec-ahorro.active')).toBeVisible();
     await expect(page.locator('#title-ahorro')).toHaveText('Fondo de emergencia');
+  });
+
+  test('la hoja marca la sección activa y el botón de tema alterna sin cerrarla (NAV2.1a, ADR 040 D2/D3)', async ({ page }) => {
+    await seedVacio(page);
+    await page.goto('/#analisis');
+    await page.waitForSelector('#sec-analisis.active', { timeout: 10_000 });
+
+    await page.click('.nav-item[data-modal="modal-mas"]');
+
+    // El tile de la sección actual queda resaltado con aria-current.
+    await expect(page.locator('#modal-mas .mas-tile[aria-current="page"] .mas-tile__label'))
+      .toHaveText('Análisis');
+
+    // El botón de tema alterna a claro, refleja el estado y NO cierra la hoja.
+    await page.click('#modal-mas .mas-sheet__theme');
+    await expect(page.locator('body')).toHaveClass(/light-theme/);
+    await expect(page.locator('#modal-mas .mas-sheet__theme')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#modal-mas[data-open]')).toHaveCount(1);
+
+    // Vuelta a oscuro para no filtrar estado a otros tests.
+    await page.click('#modal-mas .mas-sheet__theme');
+    await expect(page.locator('body')).not.toHaveClass(/light-theme/);
   });
 
   test('la franja de pestañas navega entre las 4 secciones y marca la actual', async ({ page }) => {

@@ -56,17 +56,19 @@ function applyTheme(light) {
 }
 
 function _syncThemeButton(light) {
-  const el = document.querySelector('[data-action="theme-toggle"]');
-  if (!el) return;
-  if (el.type === 'checkbox') {
-    setTimeout(() => { el.checked = light; }, 0);
-    return;
-  }
-  const icon  = el.querySelector('.nav-item__icon');
-  const label = el.querySelector('.nav-item__label');
-  if (icon)  icon.textContent  = light ? '☀️' : '🌙';
-  if (label) label.textContent = light ? 'Modo claro' : 'Modo oscuro';
-  el.setAttribute('aria-pressed', String(light));
+  // Puede haber más de un toggle a la vez: el checkbox de "Apariencia" en
+  // Ajustes y el botón de icono del menú "Más" (NAV2.1a, ADR 040 D3).
+  document.querySelectorAll('[data-action="theme-toggle"]').forEach((el) => {
+    if (el.type === 'checkbox') {
+      setTimeout(() => { el.checked = light; }, 0);
+      return;
+    }
+    // Botón de icono: el glifo refleja el tema vigente (luna en oscuro,
+    // sol en claro), misma convención que la sección Apariencia.
+    const use = el.querySelector('.icon use');
+    if (use) use.setAttribute('href', light ? '#i-sun' : '#i-moon');
+    el.setAttribute('aria-pressed', String(light));
+  });
 }
 
 export function toggleTheme() {
@@ -76,7 +78,10 @@ export function toggleTheme() {
 // ── ACTIVE NAV ──────────────────────────────────────────────────
 
 export function markActiveNav(hash) {
-  document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+  // .nav-item: sidebar + barra inferior. .mas-tile: tiles del menú "Más"
+  // v2 (NAV2.1a, ADR 040 D2), que resaltan la sección activa con el
+  // tinte de su dominio igual que el nav.
+  document.querySelectorAll('.nav-item[data-section], .mas-tile[data-section]').forEach(item => {
     const active = item.dataset.section === hash;
     item.classList.toggle('active', active);
     item.setAttribute('aria-current', active ? 'page' : 'false');

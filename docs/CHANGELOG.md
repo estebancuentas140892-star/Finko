@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(nav): NAV2.1a menú "Más" como hoja agrupada con tejas de dominio + toggle de tema, abre Navegación v2 · 2026-07-14
+
+Triaje del handoff de Claude Design "Navegación v2" (bundle "Iteración de specimen", enviado por Esteban con instrucción de implementar) → **[ADR 040](DECISIONS/040-navegacion-v2-visual.md)** aceptado + iniciativa NAV2.1 con rebanadas NAV2.1a-c en el BOARD, séptima pantalla de la familia visual v2. Hallazgo del triaje: la estructura del mockup ya existe (sidebar con grupos + colapsar del ADR 024 D6, barra de 5 slots con "Registrar" central del D1, tinte por dominio de IV.2a); el delta real es el menú "Más" y dos pulidos. Decisiones: **revisa explícitamente el ADR 024 D5** (vuelven los rótulos de grupo y las 4 secciones de ahorro recuperan entrada directa; el hub NAV.B con pestañas + consolidado queda intacto), **badges de notificación diferidos** (exige decidir qué cuenta el badge; decisión de producto de Esteban), tooltip nativo de la colapsada se conserva (el estilizado del mockup se recortaría por el scroll del nav), y el sheet conserva un cierre accesible que el mockup omite.
+
+**Qué cambió:** (1) `index.html`: `#modal-mas` reescrito como **hoja inferior**: asa, cierre discreto, grupos "Gestión del dinero" (Deudas, Mis cuentas, Me deben, Límites de gasto, Análisis) y "Ahorros" (Fondo de emergencia, Metas, Apartados, Inversión), fila final Ajustes + **botón de tema** (regresa al menú tras retirarse en una fase anterior; alterna sin cerrar la hoja, la sección Apariencia de Ajustes no cambia). (2) `styles/modals.css`: presentación de hoja reutilizable (`.modal-overlay--sheet`/`.modal--sheet`, ancla inferior + entrada deslizada; a ≤480px el bottom-sheet global existente la gobierna a propósito) + tiles horizontales `.mas-tile` con **teja teñida por el dominio** vía el mapeo `[data-section]` de IV.2a (cero mapeo nuevo; `-text` para glifos, regla IV.1) y **tile activo** con tinte 10% + borde 45%; las clases `.menu-mas__*` quedan intactas para Registrar y accesos de Inicio. (3) `modules/ui/shell.js`: `markActiveNav()` marca también `.mas-tile[data-section]` (clase + `aria-current`); `_syncThemeButton()` pasa de un solo elemento a **todos** los toggles (checkbox de Ajustes + botón del sheet con swap de glifo `#i-moon`/`#i-sun` y `aria-pressed`). (4) `modules/ui/menu-mas.js`: solo doc (cierra al navegar; el botón de tema no cierra por ser `<button>` sin href).
+
+**Archivos tocados:** `index.html`, `styles/modals.css`, `modules/ui/shell.js`, `modules/ui/menu-mas.js`, `tests/unit/shell-nav.test.js` (nuevo, 6 tests: markActiveNav con tiles y botón "Más", sync multi-toggle con glifo y checkbox), `tests/e2e/hub-ahorros.test.js` (2 reescritos a la estructura nueva + 1 nuevo: tile activo resaltado y tema alterna sin cerrar la hoja), `service-worker.js` (v392→v393), `docs/DECISIONS/040-navegacion-v2-visual.md` (nuevo), BOARD/HANDOFF/contexto.
+
+**Verificación:** 2695/2695 unit + 205/205 E2E completos + lint verdes. Visual con Playwright/Chromium en 390x844, ambos temas (glifo sol/luna correcto; el preview embebido congela transiciones y no sirve para screenshots: verificado el mecanismo con estilos computados y las capturas con Chromium real).
+
+**Podría afectar:** en móvil, el menú "Más" cambia de presentación (hoja inferior) y las 4 secciones de ahorro se alcanzan con un toque directo (antes: tarjeta "Ahorros" → pestañas). El resaltado del botón "Más" (`MAS_SECTIONS`) y los deep links no cambian.
+
+---
+
 ### feat(gastos): GAS.1c insight de gastos hormiga + empty states v2, cierra Gastos v2 completo · 2026-07-14
 
 Tercera y última rebanada de **Gastos v2** ([ADR 039](DECISIONS/039-gastos-v2-visual.md) D4/D7). **La iniciativa queda completa** (GAS.1a-c cerradas el mismo día): Gastos es la sexta pantalla de la familia visual v2 tras Inicio (ADR 034), Mis cuentas (ADR 035), Deudas (ADR 036), Calendario (ADR 037) y Análisis (ADR 038).

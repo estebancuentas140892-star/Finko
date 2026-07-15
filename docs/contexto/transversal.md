@@ -271,6 +271,41 @@
 
 ---
 
+## Navegación v2: menú "Más" como hoja agrupada (NAV2.1, ADR 040)
+
+- **Objetivo**          : el menú "Más" del bottom nav móvil pasa de modal centrado con 7 tarjetas planas (ADR 024 D5) a hoja inferior agrupada: "Gestión del dinero" (Deudas, Mis cuentas, Me deben, Límites de gasto, Análisis), "Ahorros" (Fondo de emergencia, Metas, Apartados, Inversión) y fila final Ajustes + botón de tema. Tiles horizontales con teja de icono teñida por dominio; el tile de la sección activa se resalta con su tinte y borde. Séptima pantalla de la familia visual v2.
+- **Estado actual**     : **NAV2.1a cerrada 2026-07-14** (hoja agrupada + tejas + tile activo + toggle de tema). Pendientes NAV2.1b (marca "F" del sidebar + grupo diario sin rótulo) y NAV2.1c (pastilla "Registrar" + indicador fijo). Badges de notificación diferidos (ADR 040 D6, decisión de producto pendiente de Esteban).
+- **Verificado contra** : commit de NAV2.1a (2026-07-14).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla | Línea |
+|---|---|---|---|
+| Markup de la hoja (grupos, tiles, tema) | `index.html` | `#modal-mas`, `.mas-sheet`, `.mas-tile` | ~1290 |
+| Presentación de hoja inferior (reutilizable) | `styles/modals.css` | `.modal-overlay--sheet`, `.modal--sheet` | ~207 |
+| Tiles con teja por dominio + estado activo | `styles/modals.css` | `.mas-tile`, `.mas-tile__teja`, `.mas-tile.active` | ~270 |
+| Botón de tema de la hoja | `styles/modals.css` + `index.html` | `.mas-sheet__theme` (acción `theme-toggle`) | ~330 |
+| Marcado del tile activo | `modules/ui/shell.js` | `markActiveNav()` (selector `.nav-item, .mas-tile`) | ~85 |
+| Sincronización de TODOS los toggles de tema | `modules/ui/shell.js` | `_syncThemeButton()` (`querySelectorAll`, swap `#i-moon`/`#i-sun`) | ~58 |
+| Cierre al navegar (el botón de tema NO cierra) | `modules/ui/menu-mas.js` | `initMenuMas()` (click en `a[href]`) | ~20 |
+| Resaltado del botón "Más" por sección | `modules/ui/shell.js` | `MAS_SECTIONS` | ~18 |
+
+**Dependencias y relaciones**: los tiles heredan `--fk-nav-text` del mapeo global `[data-section]` de `layout.css` (IV.2a): cero mapeo nuevo. Las clases `.menu-mas__*` NO se tocaron: siguen siendo el launcher vertical de la hoja "Registrar" (NAV.A2) y de los accesos de Inicio (IN.4a). `.modal-overlay--sheet`/`.modal--sheet` nacen reutilizables para futuros sheets.
+
+**Riesgos**:
+
+- **El bloque "MODAL EN MÓVIL: BOTTOM SHEET" de `modals.css` (≤480px) ya convertía TODOS los modales en hoja**: a ese ancho sus reglas (max-width 100%, translateY(100%) de entrada) pisan por orden a las de `.modal--sheet` en empate de especificidad, lo cual es deseado (full width y slide completo en teléfonos). Las reglas propias de `.modal--sheet` gobiernan de 481px hacia arriba. Si se ajusta una, revisar la otra.
+- **El tinte del tile activo lleva texto en `--fk-text-primary`**, no el `-text` del dominio: sin riesgo AA por diseño (el color es decorativo). Si algún día el label activo se tiñe con el dominio, medir contraste contra el tinte (regla del 6% del bloque de abajo).
+- `_syncThemeButton` sincroniza por `querySelectorAll`: cualquier toggle futuro debe ser checkbox o botón con `<use>` interno para que el swap de glifo funcione.
+
+**Cambios realizados**:
+
+- 2026-07-14 (NAV2.1a): hoja agrupada completa. 6 tests unitarios nuevos (`tests/unit/shell-nav.test.js`: markActiveNav con tiles + botón Más, sync de tema multi-toggle) + E2E de `hub-ahorros` reescritos (grupos/labels) + 1 E2E nuevo (tile activo + tema alterna sin cerrar). Verificación visual con Playwright/Chromium en ambos temas (el preview embebido congela transiciones: ver riesgo del entorno en el bloque de color). SW v392 → v393.
+
+**Observaciones**: ADR [040](../DECISIONS/040-navegacion-v2-visual.md); revisa el D5 del [ADR 024](../DECISIONS/024-reorganizacion-navegacion-movil.md) (el hub Ahorros NAV.B queda intacto: pestañas y consolidado siguen en las secciones).
+
+---
+
 ## Identidad de color por sección: nav + tejas de encabezado (IV.1/IV.2a/IV.2d, ADR 031)
 
 - **Objetivo**          : la sección activa se identifica por el color de SU dominio (nav sidebar/bottom-nav, pestañas del hub Ahorros) y cada encabezado de sección lleva una teja con el icono y el acento del dominio, para reconocer dónde se está sin leer el texto.
@@ -286,7 +321,7 @@
 | Pestañas del hub Ahorros teñidas | `styles/layout.css` | `.hub-tabs__tab[aria-current="page"]` | ~359 |
 | Teja de encabezado de sección (reusa `.cat-teja`) | `styles/components/atoms.css` | `.section__icon.cat-teja` | ~249 |
 | `.cat-teja` con color de texto correcto (`-text`) | `styles/components/atoms.css` | `.cat-teja`, `[data-dom="X"]` | ~221 |
-| Iconos del menú "Más" con color correcto (`-text`) | `styles/modals.css` | `.menu-mas__item[data-section="X"] .icon` | ~144 |
+| Iconos del launcher `.menu-mas__*` con color correcto (`-text`; desde NAV2.1a lo usan Registrar y accesos de Inicio, ya no el menú "Más") | `styles/modals.css` | `.menu-mas__item[data-section="X"] .icon` | ~144 |
 | Markup de los 11 encabezados con teja | `index.html` | `.section__title-group` + `.section__icon` por sección | ~490-777 |
 | Pestañas del hub con `data-section` | `index.html` | `.hub-tabs__tab[data-section="X"]` (4 copias, una por página del hub) | ~649-726 |
 | Iconos/textos de Análisis (fondo, inversión) con `-text` (IV.2d) | `styles/components/analysis.css` | `.fondo-hero__icon`, `.fondo-hero__sub--ok`, `.fondo-hero__banner`, `.ahorro-habito__compromiso strong`, `.inversion-hero__icon`, `.inversion-hero__tipo-pct`, `.inversion-item__tipo` | ~604-885 |

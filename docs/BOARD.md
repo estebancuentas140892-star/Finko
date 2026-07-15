@@ -13,7 +13,7 @@
 ### NAV2.1 - Navegación v2: sheet "Más" agrupado, marca "F" y pastilla "Registrar" ([ADR 040](DECISIONS/040-navegacion-v2-visual.md))
 - Inicio      : 2026-07-14
 - Objetivo    : handoff de Claude Design "Iteración de specimen" (mockup `Navegación v2.dc.html`, séptima pantalla de la familia v2). La estructura ya existe (ADR 024 + IV.2a); el delta: menú "Más" pasa a bottom sheet agrupado (Gestión del dinero / Ahorros / Ajustes+tema, **revisa ADR 024 D5**: vuelven rótulos y las 4 secciones de ahorro recuperan entrada directa; el hub NAV.B queda intacto), marca "F" con degradado reemplaza el 💚 del sidebar, pastilla "Registrar" con degradado en la barra inferior. Badges de notificación **diferidos** (decisión de producto pendiente de Esteban, ver ADR 040 D6).
-- Rebanadas   : **NAV2.1a** sheet agrupado + tejas de dominio + toggle de tema → **NAV2.1b** marca "F" + grupo diario sin rótulo → **NAV2.1c** pastilla "Registrar" + indicador fijo
+- Rebanadas   : **NAV2.1a cerrada 2026-07-14** (sheet agrupado + tejas de dominio + toggle de tema, ver CHANGELOG) → **NAV2.1b** marca "F" + grupo diario sin rótulo → **NAV2.1c** pastilla "Registrar" + indicador fijo
 - Secciones   : Transversal (shell / navegación)
 - Archivos    : `index.html` (#modal-mas, sidebar), `styles/modals.css`, `styles/layout.css`, `styles/responsive.css`, `modules/ui/shell.js`, `tests/e2e/hub-ahorros.test.js`
 - Modelo      : Fable 5 - Alto (triaje + rebanada core); NAV2.1b/c pueden bajar a Sonnet 5 - Bajo
