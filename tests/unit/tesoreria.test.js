@@ -416,7 +416,7 @@ describe('calcularGastosFijosMensuales()', () => {
   });
 });
 
-// ── construirDesgloseNecesidades() (MC.7d, ADR 018 revisión 2026-07-02) ──
+// ── construirDesgloseNecesidades() (MC.7d, ADR 018 rev. 2026-07-02; MC.13c-2: pasa a consumir el motor de ADR 041) ──
 
 const compDeudaBase = (overrides = {}) => ({
   id: 'd1',
@@ -425,15 +425,20 @@ const compDeudaBase = (overrides = {}) => ({
   categoria: 'Tarjeta de crédito',
   cuotaMensual: 250_000,
   saldoTotal: 500_000, // mayor que la cuota: el tope de BUG-004 no interfiere por defecto
+  diaPago: 20,
   activo: true,
   ...overrides,
 });
 
-// Fecha fija para que 'pagado' sea determinista sin depender del reloj real.
+// Escenario: cobro mensual el 15 de junio de 2026 (el default de la función
+// cuando no se le pasa cobro es "el cobro es hoy").
+//   ventana del cobro = [2026-06-15, 2026-07-14]
+// Un fijo del día 20 cae dentro; el gasto que lo paga tiene que caer ahí también.
 const HOY_TEST = new Date(2026, 5, 15); // 15 jun 2026
-const gastoDelMes = (overrides = {}) => ({
+const fijoNec = (overrides = {}) => compFijoBase({ diaPago: 20, ...overrides });
+const gastoEnVentana = (overrides = {}) => ({
   id: 'g1', descripcion: 'Pago', monto: 800_000, categoria: 'Gastos fijos',
-  fecha: '2026-06-10', ...overrides,
+  fecha: '2026-06-20', ...overrides,
 });
 
 describe('construirDesgloseNecesidades()', () => {
@@ -443,19 +448,43 @@ describe('construirDesgloseNecesidades()', () => {
   });
 
   it('un fijo mensual aparece con su monto tal cual, tipo "fijo", con día de pago y sin pagar', () => {
-    const comps = [compFijoBase({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000, diaPago: 5 })];
+    const comps = [fijoNec({ id: 'cf1', descripcion: 'Arriendo', categoria: 'Arriendo', monto: 800_000 })];
     expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([
-      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 5, pagado: false },
+      { id: 'cf1', nombre: 'Arriendo', categoria: 'Arriendo', icono: null, tipo: 'fijo', monto: 800_000, diaPago: 20, pagado: false, ocurrencias: 1 },
     ]);
   });
 
-  it('un fijo Quincenal/Semanal/Diario no aparece: una fila no puede representar sus varias ocurrencias del periodo', () => {
-    const comps = [
-      compFijoBase({ id: 'q1', frecuencia: 'Quincenal', monto: 150_000 }),
-      compFijoBase({ id: 's1', frecuencia: 'Semanal', monto: 50_000 }),
-      compFijoBase({ id: 'dd1', frecuencia: 'Diario', monto: 10_000 }),
-    ];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+  // MC.7g, cerrado por MC.13c-2: antes estos NO aparecían porque una fila no
+  // sabía cuántas ocurrencias del periodo representaba. El motor las cuenta.
+  it('MC.7g: un fijo quincenal aparece y cobra por las dos veces que cae en la ventana', () => {
+    // Quincenal día 5 → junio [5, 20], julio [5, 20]; en [15 jun, 14 jul]: 20 jun y 5 jul.
+    const comps = [fijoNec({ id: 'q1', frecuencia: 'Quincenal', diaPago: 5, monto: 150_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST);
+    expect(r).toHaveLength(1);
+    expect(r[0].ocurrencias).toBe(2);
+    expect(r[0].monto).toBe(300_000);
+  });
+
+  it('MC.7g: un fijo semanal cobra por cada semana de la ventana', () => {
+    // Semanal día 3 → junio 17 y 24; julio 3 y 10 (el 17 de julio ya sale de la ventana).
+    const comps = [fijoNec({ id: 's1', frecuencia: 'Semanal', diaPago: 3, monto: 50_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST);
+    expect(r[0].ocurrencias).toBe(4);
+    expect(r[0].monto).toBe(200_000);
+  });
+
+  it('MC.7g: un fijo diario cobra por todos los días de la ventana', () => {
+    const comps = [fijoNec({ id: 'dd1', frecuencia: 'Diario', diaPago: 1, monto: 10_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST);
+    expect(r[0].ocurrencias).toBe(30); // 16 de junio + 14 de julio
+    expect(r[0].monto).toBe(300_000);
+  });
+
+  it('un fijo de baja periodicidad aparece sólo cuando su ciclo cae en la ventana', () => {
+    const enCiclo  = fijoNec({ id: 'a1', frecuencia: 'Anual', monto: 1_200_000, fechaCreacion: '2026-06-01' });
+    const fuera    = fijoNec({ id: 'a2', frecuencia: 'Anual', monto: 900_000,   fechaCreacion: '2026-01-01' });
+    expect(construirDesgloseNecesidades([enCiclo], [], HOY_TEST).map(it => it.id)).toEqual(['a1']);
+    expect(construirDesgloseNecesidades([fuera], [], HOY_TEST)).toEqual([]);
   });
 
   it('una deuda usa cuotaMensual, tipo "deuda"', () => {
@@ -477,99 +506,136 @@ describe('construirDesgloseNecesidades()', () => {
 
   it('deuda-personal también cuenta como Necesidad', () => {
     const comps = [compDeudaBase({ tipo: 'deuda-personal' })];
-    expect(construirDesgloseNecesidades(comps)[0].tipo).toBe('deuda');
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].tipo).toBe('deuda');
   });
 
   it('excluye compromisos inactivos', () => {
-    const comps = [compFijoBase({ activo: false }), compDeudaBase({ activo: false })];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+    const comps = [fijoNec({ activo: false }), compDeudaBase({ activo: false })];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([]);
   });
 
   it('excluye compromisos que no son fijo ni deuda (ej. otro tipo futuro)', () => {
-    const comps = [{ id: 'x1', tipo: 'otro-tipo', descripcion: 'X', monto: 100_000, activo: true }];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
-  });
-
-  it('excluye un fijo con frecuencia de baja periodicidad (no representa flujo mensual)', () => {
-    const comps = [compFijoBase({ frecuencia: 'Anual', monto: 1_200_000 })];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+    const comps = [{ id: 'x1', tipo: 'otro-tipo', descripcion: 'X', monto: 100_000, diaPago: 20, activo: true }];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([]);
   });
 
   it('excluye una deuda sin cuotaMensual (0 o ausente)', () => {
     const comps = [compDeudaBase({ cuotaMensual: 0 }), compDeudaBase({ id: 'd2', cuotaMensual: undefined })];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([]);
   });
 
   it('BUG-004: topa la cuota de una deuda al saldo pendiente cuando la cuota lo supera', () => {
     const comps = [compDeudaBase({ cuotaMensual: 200_000, saldoTotal: 50_000 })];
-    expect(construirDesgloseNecesidades(comps)[0].monto).toBe(50_000);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].monto).toBe(50_000);
   });
 
   it('BUG-004: la cuota no se topa cuando el saldo pendiente la cubre de sobra', () => {
     const comps = [compDeudaBase({ cuotaMensual: 200_000, saldoTotal: 1_000_000 })];
-    expect(construirDesgloseNecesidades(comps)[0].monto).toBe(200_000);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].monto).toBe(200_000);
+  });
+
+  it('BUG-004: el tope aguanta aunque la deuda caiga varias veces en la ventana', () => {
+    // Quincenal: 2 ocurrencias × 100.000 = 200.000, pero sólo se deben 150.000.
+    const comps = [compDeudaBase({ frecuencia: 'Quincenal', diaPago: 5, cuotaMensual: 100_000, saldoTotal: 150_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST);
+    expect(r[0].ocurrencias).toBe(2);
+    expect(r[0].monto).toBe(150_000);
   });
 
   it('BUG-004: excluye una deuda ya saldada (saldoTotal 0) aunque siga activa y con cuotaMensual', () => {
     const comps = [compDeudaBase({ saldoTotal: 0 })];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([]);
   });
 
   it('BUG-004: excluye una deuda con saldoTotal negativo', () => {
     const comps = [compDeudaBase({ saldoTotal: -100 })];
-    expect(construirDesgloseNecesidades(comps)).toEqual([]);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)).toEqual([]);
   });
 
   it('ordena los no pagados de mayor a menor monto, mezclando fijos y deudas', () => {
     const comps = [
-      compFijoBase({ id: 'cf1', descripcion: 'Internet', monto: 100_000 }),
-      compDeudaBase({ id: 'd1', descripcion: 'Tarjeta', cuotaMensual: 400_000 }),
-      compFijoBase({ id: 'cf2', descripcion: 'Arriendo', monto: 800_000 }),
+      fijoNec({ id: 'cf1', descripcion: 'Internet', monto: 100_000 }),
+      compDeudaBase({ id: 'd1', descripcion: 'Tarjeta', cuotaMensual: 400_000, saldoTotal: 1_000_000 }),
+      fijoNec({ id: 'cf2', descripcion: 'Arriendo', monto: 800_000 }),
     ];
-    expect(construirDesgloseNecesidades(comps).map(it => it.id)).toEqual(['cf2', 'd1', 'cf1']);
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST).map(it => it.id)).toEqual(['cf2', 'd1', 'cf1']);
   });
 
   it('categoria null cuando el compromiso no tiene categoría asignada', () => {
-    const comps = [compFijoBase({ categoria: undefined })];
-    expect(construirDesgloseNecesidades(comps)[0].categoria).toBeNull();
+    const comps = [fijoNec({ categoria: undefined })];
+    expect(construirDesgloseNecesidades(comps, [], HOY_TEST)[0].categoria).toBeNull();
   });
 
-  it('diaPago null cuando el compromiso no tiene un día de pago válido', () => {
-    const comps = [compFijoBase({ diaPago: undefined })];
-    expect(construirDesgloseNecesidades(comps)[0].diaPago).toBeNull();
+  // Contrato nuevo (MC.13c-2): sin un día de pago válido no hay forma de ubicar
+  // el compromiso en la ventana, así que no entra. Es el mismo criterio con el
+  // que Agenda no lo pinta en el calendario (`ocurrenciasEnMes` → []). El
+  // formulario de compromiso exige diaPago, así que en datos reales no ocurre.
+  it('un compromiso sin día de pago válido no se puede ubicar en la ventana y no aparece', () => {
+    expect(construirDesgloseNecesidades([fijoNec({ diaPago: undefined })], [], HOY_TEST)).toEqual([]);
+    expect(construirDesgloseNecesidades([fijoNec({ diaPago: 0 })], [], HOY_TEST)).toEqual([]);
+    expect(construirDesgloseNecesidades([fijoNec({ diaPago: 99 })], [], HOY_TEST)).toEqual([]);
   });
 
-  it('un fijo con un gasto vinculado este periodo queda pagado=true, sin importar el monto del gasto', () => {
-    const comps = [compFijoBase({ id: 'cf1', monto: 800_000 })];
-    const gastos = [gastoDelMes({ compromisoId: 'cf1', monto: 1 })];
+  it('un fijo con un gasto vinculado en la ventana queda pagado=true, sin importar el monto del gasto', () => {
+    const comps  = [fijoNec({ id: 'cf1', monto: 800_000 })];
+    const gastos = [gastoEnVentana({ compromisoId: 'cf1', monto: 800_000 })];
     expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST)[0].pagado).toBe(true);
   });
 
-  it('un fijo con un gasto vinculado de otro mes sigue pagado=false', () => {
-    const comps = [compFijoBase({ id: 'cf1', monto: 800_000 })];
-    const gastos = [gastoDelMes({ compromisoId: 'cf1', fecha: '2026-05-10' })];
+  it('un fijo con un gasto vinculado de otro periodo sigue pagado=false', () => {
+    const comps  = [fijoNec({ id: 'cf1', monto: 800_000 })];
+    const gastos = [gastoEnVentana({ compromisoId: 'cf1', fecha: '2026-05-10' })];
     expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST)[0].pagado).toBe(false);
   });
 
-  it('una deuda con abonos del periodo que cubren la cuota queda pagado=true', () => {
-    const comps = [compDeudaBase({ cuotaMensual: 250_000 })];
-    const gastos = [gastoDelMes({ compromisoId: 'd1', monto: 250_000, categoria: 'Deudas' })];
+  // El cambio de semántica de MC.13c-2: "ya pagado" es por la ventana del
+  // cobro, no por el mes del calendario. Un pago del 10 de junio es del mismo
+  // mes, pero lo cubrió el cobro anterior: no cuenta para este.
+  it('un gasto del mismo mes pero anterior a la ventana no cuenta como pagado', () => {
+    const comps  = [fijoNec({ id: 'cf1', monto: 800_000 })];
+    const gastos = [gastoEnVentana({ compromisoId: 'cf1', fecha: '2026-06-10' })];
+    expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST)[0].pagado).toBe(false);
+  });
+
+  it('una deuda con abonos de la ventana que cubren la cuota queda pagado=true', () => {
+    const comps  = [compDeudaBase({ cuotaMensual: 250_000 })];
+    const gastos = [gastoEnVentana({ compromisoId: 'd1', monto: 250_000, categoria: 'Deudas' })];
     expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST)[0].pagado).toBe(true);
   });
 
-  it('una deuda con abono parcial del periodo sigue pagado=false', () => {
-    const comps = [compDeudaBase({ cuotaMensual: 250_000 })];
-    const gastos = [gastoDelMes({ compromisoId: 'd1', monto: 100_000, categoria: 'Deudas' })];
+  it('una deuda con abono parcial de la ventana sigue pagado=false', () => {
+    const comps  = [compDeudaBase({ cuotaMensual: 250_000 })];
+    const gastos = [gastoEnVentana({ compromisoId: 'd1', monto: 100_000, categoria: 'Deudas' })];
     expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST)[0].pagado).toBe(false);
   });
 
   it('las ya pagadas quedan al final, incluso si su monto es mayor', () => {
     const comps = [
-      compFijoBase({ id: 'cf1', descripcion: 'Arriendo', monto: 900_000 }),
-      compFijoBase({ id: 'cf2', descripcion: 'Internet', monto: 100_000 }),
+      fijoNec({ id: 'cf1', descripcion: 'Arriendo', monto: 900_000 }),
+      fijoNec({ id: 'cf2', descripcion: 'Internet', monto: 100_000 }),
     ];
-    const gastos = [gastoDelMes({ compromisoId: 'cf1' })];
+    const gastos = [gastoEnVentana({ compromisoId: 'cf1', monto: 900_000 })];
     expect(construirDesgloseNecesidades(comps, gastos, HOY_TEST).map(it => it.id)).toEqual(['cf2', 'cf1']);
+  });
+
+  it('la frecuencia del cobro acorta la ventana: un cobro quincenal pide menos', () => {
+    // Ventana quincenal [15 jun, 29 jun]: el fijo quincenal del día 5 sólo cae el 20.
+    const comps = [fijoNec({ id: 'q1', frecuencia: 'Quincenal', diaPago: 5, monto: 150_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST, { frecuencia: 'Quincenal', fechaISO: '2026-06-15' });
+    expect(r[0].ocurrencias).toBe(1);
+    expect(r[0].monto).toBe(150_000);
+  });
+
+  // Lo vencido lo calcula el motor pero NO entra en esta checklist: sumarlo
+  // diría "debes dos arriendos" a quien no lleve el registro de pagos al día.
+  // Tiene su propio copy en el asistente v2 (MC.13e).
+  it('lo que ya venció no infla la fila: sólo se cobra lo que vence en la ventana', () => {
+    // Fijo del día 5: el 5 de junio ya pasó sin pagarse (vencido) y el 5 de
+    // julio cae en la ventana. La fila vale UN arriendo, no dos.
+    const comps = [fijoNec({ id: 'cf1', diaPago: 5, monto: 800_000 })];
+    const r = construirDesgloseNecesidades(comps, [], HOY_TEST);
+    expect(r[0].ocurrencias).toBe(1);
+    expect(r[0].monto).toBe(800_000);
   });
 });
 

@@ -29,6 +29,7 @@ import {
   construirFilasTransferenciaCuentas,
   estadoDistribucion,
 } from '../logic/distribucion.js';
+import { frecuenciaPrincipalIngresos } from '../../../infra/vencimientos.js';
 import { fechaCorta } from './ingresos.js';
 
 // ── DISTRIBUCIÓN ADAPTATIVA ──────────────────────────────────────
@@ -98,10 +99,30 @@ function _construirDatosDistribucion() {
   const dist = sugerirDistribucionIngreso(ingresoMensual, contexto);
   if (!dist) return null;
 
+  // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
+  // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
+  const estadoDist = estadoDistribucion(
+    S.ingresos ?? [],
+    S.config?.ultimaDistribucionPeriodo ?? null,
+  );
+
+  // El cobro que se está repartiendo (MC.13c-2): su fecha la data
+  // `estadoDistribucion` (sólo Mensual/Quincenal; sin ella el motor asume hoy,
+  // que es cuando el usuario está repartiendo) y su frecuencia sale de la
+  // frecuencia real de cobro del usuario (motor mitad B, punto 21 del brief).
+  const cobro = {
+    frecuencia: frecuenciaPrincipalIngresos(S.ingresos ?? []),
+    fechaISO:   estadoDist.periodoISO ?? null,
+  };
+
   // Checklist accionable de Necesidades (Paso 1 del asistente, MC.7d, ADR 018
   // revisión 2026-07-02): el usuario marca cuáles cubre con este ingreso; al
   // confirmar, cada marca registra el mismo pago que su flujo individual.
-  const itemsNecesidades = construirDesgloseNecesidades(S.compromisos ?? [], S.gastos ?? []);
+  // Desde MC.13c-2 muestra lo que toca con ESTE cobro (todas las frecuencias),
+  // no todos los fijos mensuales del mes.
+  const itemsNecesidades = construirDesgloseNecesidades(
+    S.compromisos ?? [], S.gastos ?? [], new Date(), cobro,
+  );
 
   // Presupuestos sobre el remanente real (R3): el punto de partida asume el
   // estado inicial del checklist (todo lo no pagado llega marcado); acciones/distribucion.js
@@ -147,13 +168,6 @@ function _construirDatosDistribucion() {
   const destinosCuentas = cuentasParaTransferir.length > 1
     ? construirFilasTransferenciaCuentas(cuentasParaTransferir)
     : [];
-
-  // Estado de "Distribuir mi ingreso" (MC.4d): la acción se habilita solo cuando
-  // llega el cobro del periodo y aún no se distribuyó (guard de de-duplicación).
-  const estadoDist = estadoDistribucion(
-    S.ingresos ?? [],
-    S.config?.ultimaDistribucionPeriodo ?? null,
-  );
 
   const hayDestinos = itemsNecesidades.length > 0 || destinosAhorro.length > 0
     || destinosDeudas.length > 0 || destinosInversiones.length > 0 || destinosCuentas.length > 0;

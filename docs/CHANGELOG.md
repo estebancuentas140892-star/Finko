@@ -10,6 +10,33 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.13c-2 la checklist de Necesidades consume el motor, cierra MC.7g · 2026-07-14
+
+Quinta rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2/D3). El asistente deja de mostrar "todos los fijos mensuales del mes" y pasa a mostrar **lo que vence antes de tu próximo cobro**, con todas las frecuencias. **Cierra MC.7g**, abierto desde MC.7d.
+
+**Las tres decisiones de producto, resueltas con Esteban antes de codificar** (regla 2.7):
+
+1. **"Ya pagado" es por la ventana del cobro**, no por el mes calendario. La regla vieja marcaba pagadas TODAS las ocurrencias de un fijo quincenal en cuanto había un solo gasto vinculado en el mes: era un error real que impedía cerrar MC.7g.
+2. **Marcar una fila registra un `Gasto` por el total.** Un fijo quincenal cubierto por un cobro mensual son 2 vencimientos: se registra uno de $120.000 con fecha de hoy, no dos de $60.000 con fecha futura. Finko registra lo que pasó, no lo que va a pasar. `_aplicarNecesidad` ya lo hacía así: cero cambios ahí.
+3. **Tests adaptados**, no borrados: cada caso vigente (topes de deuda BUG-004, orden, saldadas, íconos CAT.2d, categorías) sigue cubierto.
+
+**Archivos tocados**
+
+- `modules/dominio/tesoreria/logic/distribucion.js`: `construirDesgloseNecesidades` delega en `obligacionesYAportesDelCobro` y acepta un 4.º parámetro `cobro`. Se borran `_prefijoMes` y `_pagadoEstePeriodo` (la regla por mes calendario, que era una copia declarada del criterio de Compromisos).
+- `modules/dominio/tesoreria/views/distribucion.js`: arma el cobro (`frecuenciaPrincipalIngresos` + `estadoDistribucion().periodoISO`) y se lo pasa a la checklist.
+- `tests/unit/tesoreria.test.js`: bloque reescrito (24 tests, 6 nuevos). `tests/e2e/smoke.test.js`: el E2E que fijaba "excluye un fijo Quincenal" ahora verifica lo contrario en Chromium real.
+- `service-worker.js`: `CACHE_NAME` v399 → v400.
+
+**Error de diseño detectado durante la implementación, y corregido.** El primer intento sumaba `vencidas` + `enVentana` en la misma fila. Los tests lo destaparon: a un usuario mensual con el arriendo impago del mes anterior la checklist le habría dicho que debe **dos** arriendos. Como Finko solo sabe que algo está pagado si el usuario registró el gasto, a quien no lleve el registro al día se le inflaría la cuenta. La checklist muestra **solo `enVentana`**; lo vencido lo sigue calculando el motor y tendrá su propio copy en MC.13e, que es justo lo que el ADR fijaba ("vencidas separadas de por-vencer").
+
+**Contrato nuevo:** un compromiso sin `diaPago` válido no aparece, porque sin fecha no hay forma de ubicarlo en la ventana. Es el mismo criterio con el que Agenda no lo pinta en el calendario, y el formulario de compromiso exige `diaPago`, así que en datos reales no ocurre.
+
+**Fuera de alcance, y por qué:** generalizar `ultimoPagoHasta` a todas las frecuencias **no se hizo**. No hace falta para esto (sin fecha datable, el motor asume que el cobro es hoy, que es cuando el usuario está repartiendo) y tocarlo cambiaría la clave de de-duplicación del asistente a cambio de poco. Ver la tarjeta MC.13c-3 en el BOARD.
+
+**Verificación:** 2813/2813 unit + 206/206 E2E + lint verdes.
+
+---
+
 ### feat(tesoreria): MC.13d el ingreso fijo registra en qué cuenta se recibe (schema v27) · 2026-07-14
 
 Cuarta rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D5). El ingreso fijo gana un campo opcional `cuentaId`: con él, el asistente de distribución podrá partir de esa cuenta y descontar de ahí (MC.13e). **Es solo un dato**: registrar la cuenta NO implica que Finko abone el dinero solo, eso es el conflicto (b) y materia de PA.1.

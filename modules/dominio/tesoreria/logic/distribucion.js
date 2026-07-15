@@ -7,6 +7,7 @@
  * - Testeable en Node/Vitest sin ningun mock de navegador.
  */
 
+import { obligacionesYAportesDelCobro } from '../../../infra/vencimientos.js';
 import { FACTOR_MENSUAL, isoFecha, ultimoPagoHasta } from './ingresos.js';
 
 /**
@@ -23,97 +24,83 @@ export function calcularGastosFijosMensuales(compromisos) {
     .reduce((acc, c) => acc + (c.monto ?? 0) * (FACTOR_MENSUAL[c.frecuencia] ?? 0), 0);
 }
 
-/** 'YYYY-MM' del mes de `hoy`. Local para comparar contra `gasto.fecha` (ADN #10, sin importar Agenda). */
-function _prefijoMes(hoy) {
-  const yyyy = hoy.getFullYear();
-  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-  return `${yyyy}-${mm}`;
-}
-
-/**
- * Si un compromiso ya tiene un pago registrado este periodo. Duplica el
- * criterio de `estadoPagoMes` de compromisos/logic.js (mismo guard que usa el
- * badge "Ya pagaste este mes" de Agenda): un fijo cuenta como pagado con
- * cualquier gasto vinculado; una deuda, cuando la suma de abonos del periodo
- * cubre `cuotaDeuda`. Duplicado intencional, no importación cruzada: tesorería
- * no puede importar de Compromisos (ADN #10).
- *
- * @param {import('../../../core/state.js').Gasto[]} gastos
- * @param {string} compromisoId
- * @param {string} prefijoMes 'YYYY-MM'
- * @param {number|null} cuotaDeuda Cuota mensual si es deuda; `null` si es fijo.
- * @returns {boolean}
- */
-function _pagadoEstePeriodo(gastos, compromisoId, prefijoMes, cuotaDeuda) {
-  if (!Array.isArray(gastos) || !compromisoId) return false;
-  const totalAbonado = gastos
-    .filter(g => g.compromisoId === compromisoId && g.fecha?.startsWith(prefijoMes))
-    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
-  if (totalAbonado <= 0) return false;
-  if (cuotaDeuda == null) return true; // fijo: cualquier gasto vinculado = pagado
-  return totalAbonado >= cuotaDeuda;
-}
-
 /**
  * Desglose itemizado y accionable de Necesidades para el Paso 1 del asistente
  * "Distribuir mi ingreso" (MC.7d, ADR 018 revisión 2026-07-02, R1): una fila
- * por gasto fijo mensual y por deuda activos, con nombre, categoría, la cuota
- * real del periodo (nunca un equivalente mensual normalizado), el día de pago
- * y si ya se registró un pago este periodo. El usuario marca cuáles cubre con
- * este ingreso; al confirmar, cada marca genera el mismo registro que su flujo
- * individual existente (pago de fijo o abono de deuda), ver `_aplicarNecesidad`
- * en tesoreria/acciones/distribucion.js.
+ * por gasto fijo y por deuda que toque cubrir con ESTE cobro, con nombre,
+ * categoría, lo que hay que pagar, el día de pago y si ya se pagó. El usuario
+ * marca cuáles cubre; al confirmar, cada marca genera el mismo registro que su
+ * flujo individual existente (pago de fijo o abono de deuda), ver
+ * `_aplicarNecesidad` en tesoreria/acciones/distribucion.js.
  *
- * Solo incluye fijos con frecuencia 'Mensual': un fijo Quincenal/Semanal/Diario
- * tiene más de una ocurrencia dentro del periodo y esta checklist modela una
- * fila = un pago completo del periodo; marcarla pagaría de menos o de más.
- * Modelar sus múltiples vencimientos (como ya hace `eventosDelMes` de Agenda)
- * queda para una tarea futura. Para deudas, la cuota se topa al saldo
- * pendiente (`min(cuotaMensual, saldoTotal)`, BUG-004): sin el tope, una
- * cuota mayor al saldo restante pagaría de más. Las deudas ya saldadas
- * (`saldoTotal <= 0`) quedan excluidas, mismo criterio que rechaza el
- * formulario de abono individual ("Esta deuda ya está saldada").
+ * Desde MC.13c-2 (ADR 041) delega en el motor compartido
+ * `obligacionesYAportesDelCobro`, con dos consecuencias decididas con Esteban:
  *
- * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10).
+ *  1. **Todas las frecuencias** (cierra MC.7g). Antes solo entraban fijos
+ *     'Mensual', porque uno Quincenal/Semanal/Diario tiene varias ocurrencias
+ *     por periodo y la fila no sabía cuántas cubría. El motor las cuenta: la
+ *     fila vale `monto unitario × ocurrencias en el rango`.
+ *  2. **"Ya pagado" es por la ventana del cobro**, no por el mes calendario.
+ *     La regla vieja marcaba pagadas TODAS las ocurrencias de un quincenal en
+ *     cuanto había un solo gasto vinculado en el mes.
+ *
+ * Muestra `enVentana`: lo que vence entre hoy y el próximo cobro, que es lo que
+ * este dinero tiene que cubrir. **Lo `vencido` NO entra aquí** aunque el motor
+ * lo calcule: mezclarlo sumaría dos periodos en la misma fila (el arriendo
+ * impago del mes pasado más el del que viene = "debes $1.600.000"), y como
+ * Finko sólo sabe que algo está pagado si el usuario registró el gasto, a quien
+ * no lleve el registro al día le inflaría la checklist. Lo vencido tiene su
+ * propio copy en el asistente v2 (MC.13e, puntos 9-10 del brief), separado de
+ * lo por vencer, tal como fija el ADR.
+ *
+ * Una fila por compromiso: `monto` = unitario × ocurrencias en la ventana, así
+ * una marca sigue siendo un `Gasto` por el total (lo que hace
+ * `_aplicarNecesidad`) y el id de la fila sigue siendo único en el DOM. El
+ * motor ya topa la deuda al saldo (BUG-004) y excluye las saldadas.
+ *
+ * Pura: no lee `S` ni el DOM, no importa otros dominios (ADN #10: el motor es
+ * infra, no un dominio).
  *
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
  * @param {import('../../../core/state.js').Gasto[]} [gastos]
  * @param {Date} [hoy]
- * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean}>}
+ * @param {{frecuencia?:string, fechaISO?:string}|null} [cobro] El cobro que se
+ *   está distribuyendo. Sin fecha datable (`estadoDistribucion` sólo data
+ *   Mensual/Quincenal) se asume que el cobro es hoy: la ventana arranca hoy,
+ *   que es exactamente lo que el usuario está repartiendo.
+ * @returns {Array<{id:string, nombre:string, categoria:string|null, icono:string|null, tipo:'fijo'|'deuda', monto:number, diaPago:number|null, pagado:boolean, ocurrencias:number}>}
  *   Los no pagados primero (de mayor a menor monto), luego los ya pagados.
  */
-export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date()) {
-  const prefijoMes = _prefijoMes(hoy);
+export function construirDesgloseNecesidades(compromisos = [], gastos = [], hoy = new Date(), cobro = null) {
+  const hoyISO = isoFecha(new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()));
 
-  return compromisos
-    .filter(c => c.activo !== false
-      && ((c.tipo === 'fijo' && c.frecuencia === 'Mensual')
-        || ((c.tipo === 'deuda-entidad' || c.tipo === 'deuda-personal') && (Number(c.saldoTotal) || 0) > 0)))
-    .map(c => {
-      const esDeuda = c.tipo !== 'fijo';
-      // Para deudas, la cuota nunca puede superar el saldo pendiente: pagar
-      // más de lo que se debe registraría un gasto real por dinero que no
-      // salió a cubrir la deuda (BUG-004). El abono individual y los abonos
-      // extra del mismo panel (`_leerItemsDistribucion`) ya aplican este tope.
-      const monto = esDeuda
-        ? Math.min(Number(c.cuotaMensual) || 0, Number(c.saldoTotal) || 0)
-        : Number(c.monto) || 0;
-      const diaPagoNum = Number(c.diaPago);
-      return {
-        id:        c.id,
-        nombre:    c.descripcion ?? '',
-        categoria: c.categoria ?? null,
-        // CAT.2d: ícono elegido para la categoría 'Otra'/'Otro' de una deuda
-        // (mismo campo que ya resuelve el ícono en la lista de Deudas).
-        icono:     c.icono ?? null,
-        tipo:      esDeuda ? 'deuda' : 'fijo',
-        monto,
-        diaPago:   Number.isInteger(diaPagoNum) ? diaPagoNum : null,
-        pagado:    _pagadoEstePeriodo(gastos, c.id, prefijoMes, esDeuda ? monto : null),
-      };
-    })
-    .filter(it => it.monto > 0)
-    .sort((a, b) => (a.pagado !== b.pagado ? (a.pagado ? 1 : -1) : b.monto - a.monto));
+  const r = obligacionesYAportesDelCobro({
+    cobro: {
+      frecuencia: cobro?.frecuencia ?? 'Mensual',
+      fechaISO:   cobro?.fechaISO   ?? hoyISO,
+    },
+    compromisos,
+    gastos,
+    hoyISO,
+  });
+  if (!r) return [];
+
+  return r.enVentana.map(o => {
+    const diaPagoNum = Number(compromisos.find(c => c.id === o.id)?.diaPago);
+    return {
+      id:        o.id,
+      nombre:    o.nombre,
+      categoria: o.categoria,
+      // CAT.2d: ícono elegido para la categoría 'Otra'/'Otro' de una deuda
+      // (mismo campo que ya resuelve el ícono en la lista de Deudas).
+      icono:       o.icono,
+      tipo:        o.tipo,
+      monto:       o.monto,
+      diaPago:     Number.isInteger(diaPagoNum) ? diaPagoNum : null,
+      pagado:      o.pagado,
+      ocurrencias: o.ocurrencias.length,
+    };
+  });
 }
 
 /**

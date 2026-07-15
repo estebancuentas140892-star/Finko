@@ -2870,7 +2870,7 @@ test.describe('Mis cuentas - Distribuir mi ingreso: aporte por objetivo', () => 
 // ── Mis cuentas: checklist accionable de Necesidades (MC.7d, ADR 018 revisión 2026-07-02) ──
 
 test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', () => {
-  test('lista fijos mensuales y deudas, marcadas por defecto, con día de pago; excluye un fijo Quincenal', async ({ page }) => {
+  test('lista lo que vence antes del próximo cobro: fijos de cualquier frecuencia y deudas, marcadas por defecto (MC.7g)', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {
       const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
@@ -2888,15 +2888,23 @@ test.describe('Mis cuentas - Distribuir mi ingreso: checklist de Necesidades', (
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
     await page.click('[data-action="toggle-distribuir-ingreso"]');
 
-    await expect(page.locator('[data-nec-toggle]')).toHaveCount(2); // cf1 + d1; cf2 (Quincenal) queda fuera
+    // MC.13c-2 cierra MC.7g: el fijo Quincenal ya no queda fuera. La ventana de
+    // un cobro mensual dura un mes, así que el mensual y la deuda caen una vez
+    // cada uno y el quincenal (días 1 y 16) cae dos: su fila cobra por las dos.
+    // Los conteos no dependen del día en que corra el test: en una ventana de un
+    // mes siempre cae 1 ocurrencia de un mensual y 2 de un quincenal.
+    await expect(page.locator('[data-nec-toggle]')).toHaveCount(3);
     await expect(page.locator('[data-nec-id="cf1"]')).toBeChecked();
     await expect(page.locator('[data-nec-id="d1"]')).toBeChecked();
-    await expect(page.locator('[data-nec-id="cf2"]')).toHaveCount(0);
+    await expect(page.locator('[data-nec-id="cf2"]')).toBeChecked();
 
     const panel = page.locator('#distribuir-ingreso-panel');
     await expect(panel).toContainText('Arriendo');
     await expect(panel).toContainText('día 5');
     await expect(panel).toContainText('Tarjeta Bancolombia');
+    await expect(panel).toContainText('Mercado');
+    // 2 × $150.000: el quincenal cobra por sus dos vencimientos de la ventana.
+    await expect(page.locator('[data-nec-id="cf2"]')).toHaveAttribute('data-nec-monto', '300000');
   });
 
   test('una Necesidad ya pagada este periodo aparece marcada, deshabilitada, con "Ya pagado"', async ({ page }) => {
