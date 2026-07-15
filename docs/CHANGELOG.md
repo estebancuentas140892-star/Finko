@@ -10,6 +10,20 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(infra): MC.13a motor de vencimientos mitad A + Agenda lo consume · 2026-07-14
+
+Primera rebanada de **MC.13** (Distribución v2, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1 mitad A). Nace el motor compartido de vencimientos: la regla de "en qué días cae una obligación según su frecuencia", que vivía duplicable en Agenda, pasa a una sola fuente de verdad en `infra/` que la Distribución v2 (MC.13c), los pagos automáticos (PA.1) y Agenda comparten.
+
+**Qué cambió:** (1) `modules/infra/vencimientos.js` (nuevo, puro, sin dominio, ADN #10): `ocurrenciasEnMes(item, year, month)` (extrae la regla de frecuencias de `_diasParaCompromiso` de Agenda: Mensual/Quincenal/Semanal/Diario/Bimestral/Trimestral/Semestral/Anual/Única vez, con validación de `diaPago` incorporada), `ocurrenciasEnRango(item, inicioISO, finISO)` (generaliza a una ventana arbitraria que puede cruzar meses: la base de la ventana de cobro de MC.13c) y `ventanaDelCobro(frecuencia, fechaCobroISO)` (ventana del cobro para TODAS las frecuencias; a diferencia de `ultimoPagoHasta`, que sólo cubre Mensual/Quincenal; Mensual usa el mes calendario con clamp de fin de mes, el resto su longitud en días/meses). (2) `modules/dominio/agenda/logic.js`: `eventosDelMes` y `eventosIngresosDelMes` pasan a **consumir** `ocurrenciasEnMes`; se eliminan los helpers `_diasParaCompromiso`, `_caeEnCiclo`, `_diasDelMes` y `_parseFechaISO` (ya no duplicados). Comportamiento idéntico (la validación de `diaPago` ahora vive dentro de `ocurrenciasEnMes`, que devuelve `[]` si es inválido). (3) `service-worker.js`: `infra/vencimientos.js` en `CORE_ASSETS`, v395→v396.
+
+**Archivos tocados:** `modules/infra/vencimientos.js` (nuevo), `modules/dominio/agenda/logic.js`, `tests/unit/vencimientos.test.js` (nuevo, 33 tests: frecuencias, validación, rango cruzando meses, ventana por frecuencia, coherencia ventana↔ocurrencias), `service-worker.js`.
+
+**Verificación:** 2728/2728 unit (incluye los 139 de `agenda.test.js`, la red de regresión del refactor) + 205/205 E2E completos + lint verdes.
+
+**Podría afectar:** nada visible al usuario. Es refactor puro: Agenda calcula lo mismo desde una fuente compartida. El Calendario (grilla, dots, detalle del día) queda idéntico (verificado por los E2E de Calendario y los 139 unit de Agenda).
+
+---
+
 ### feat(nav): NAV2.1c pastilla "Registrar" con degradado + indicador fijo, cierra Navegación v2 completa · 2026-07-14
 
 Tercera y última rebanada de **Navegación v2** ([ADR 040](DECISIONS/040-navegacion-v2-visual.md) D5): **la iniciativa queda completa** (NAV2.1a-c en un día, séptima pantalla de la familia visual v2). Quedan registradas en el ADR las decisiones diferidas: **badges de notificación** (decidir qué cuenta el badge es de Esteban; el CSS `.nav-item__badge` ya existe sin consumidores) y el tooltip estilizado de la sidebar colapsada (se conservó el `title` nativo).

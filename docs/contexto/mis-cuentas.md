@@ -94,11 +94,20 @@
 - **Consumidores** (un motor, no cuatro): asistente v2, checklist de Necesidades (ex MC.7g), Metas (`calcularAhorroPorPeriodo` → `aportePorPeriodo`, MT.6), Apartados (prellenar Aportar, AP.5), fondo en la distribución (AH.5), pagos automáticos (PA.1, `vencidas` en catch-up).
 - **Schema (D5)**: campo opcional `cuentaId` en `@typedef Ingreso` (hoy NO lo tiene; `IngresoPuntual` sí). Bump v26→v27, migración aditiva idempotente (ausente → comportamiento actual; sin backfill: adivinar la cuenta sería inventar el dato). Registrar la cuenta NO implica crédito automático (eso es el conflicto (b), materia de PA.1).
 - **Decisiones pendientes de Esteban (regla 2.7)**: (a) quitar la oferta automática de distribución tras un ingreso esporádico revierte NAV.A2b s2 del ADR 024 (`_ofrecerDistribucion` en `tesoreria/acciones/ingresos.js`); recomendación del análisis: quitar la oferta automática, conservar el asistente accesible manualmente. (b) crédito automático del ingreso fijo = PA.1, fuera de este ADR.
-- **Rebanadas**: MC.13a (motor mitad A + Agenda consume) → MC.13b (motor mitad B + Metas/Apartados borran copias) → MC.13c (`obligacionesYAportesDelCobro` + checklist) → MC.13d (schema `cuentaId` + form, independiente) → MC.13e+ (asistente v2 UI, puntos 9-20; depende de la decisión (a)). Detalle en `docs/BOARD.md` y el ADR 041.
+- **Rebanadas**: **MC.13a cerrada 2026-07-14** (motor mitad A + Agenda consume, ver abajo) → MC.13b (motor mitad B + Metas/Apartados borran copias) → MC.13c (`obligacionesYAportesDelCobro` + checklist) → MC.13d (schema `cuentaId` + form, independiente) → MC.13e+ (asistente v2 UI, puntos 9-20; depende de la decisión (a)). Detalle en `docs/BOARD.md` y el ADR 041.
+
+**Dónde vive (MC.13a)**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| Motor mitad A (ocurrencias + ventana) | `modules/infra/vencimientos.js` | `ocurrenciasEnMes`, `ocurrenciasEnRango`, `ventanaDelCobro` |
+| Agenda consume el motor | `modules/dominio/agenda/logic.js` | `eventosDelMes`, `eventosIngresosDelMes` (import de `ocurrenciasEnMes`) |
 
 ---
 
 **Cambios realizados**:
+
+- 2026-07-14 (MC.13a, primera rebanada de Distribución v2): `modules/infra/vencimientos.js` nuevo (puro, sin dominio, ADN #10, hogar de infra igual que `estimarSalarioMensual`): `ocurrenciasEnMes` extrae la regla de frecuencias que estaba en `_diasParaCompromiso` de Agenda (con la validación de `diaPago` incorporada: devuelve `[]` si es inválido), `ocurrenciasEnRango` la generaliza a una ventana arbitraria que cruza meses, `ventanaDelCobro` da la ventana del cobro para TODAS las frecuencias (Mensual usa el mes calendario con clamp; a diferencia de `ultimoPagoHasta`, sólo Mensual/Quincenal). `agenda/logic.js`: `eventosDelMes`/`eventosIngresosDelMes` pasan a consumir `ocurrenciasEnMes` y se borran los helpers duplicados (`_diasParaCompromiso`, `_caeEnCiclo`, `_diasDelMes`, `_parseFechaISO`); comportamiento idéntico. 33 tests unitarios nuevos (`vencimientos.test.js`); los 139 de `agenda.test.js` son la red de regresión. 2728/2728 unit + 205/205 E2E + lint verdes. SW v395→v396.
 
 - 2026-07-12 (MC.17e, cierra MC.17 completa): quinta y última rebanada de transferencias, segundo punto de entrada. `modules/ui/registrar.js`: `cuentasActivasParaTransferir(cuentas)` (nueva, pura, cuenta cuentas con `activa !== false` sin importar el dominio `tesoreria`, mismo patrón local que `_TIPOS_DEUDA` en el mismo archivo, regla ADN #10) + teja "Transferir" en `_construirTejasDinamicas()` (visible solo con 2+ cuentas activas, mismo patrón 0/1/varias que Abono a deuda y Aporte a ahorro), `data-action="registrar-abrir" data-target-action="abrir-transferencia"` reutiliza la acción ya registrada por MC.17b: cero lógica nueva de apertura de modal. 2 tests unitarios nuevos (`registrar.test.js`). Verificación funcional vía DOM en el Browser pane (el screenshot no respondió esta sesión): con 2 cuentas activas la teja aparece y su clic abre `#modal-transferencia`; con 1 cuenta, no se inyecta. 2479/2479 unit verdes. SW v365 → v366.
 
