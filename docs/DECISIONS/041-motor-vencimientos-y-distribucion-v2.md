@@ -67,6 +67,16 @@ obligacionesYAportesDelCobro({ cobro:{frecuencia, fechaISO}, compromisos, gastos
 - **Solo lo del cobro, no todo el mes**: `enVentana` filtra por la ventana de D1, no por el mes completo. Responde la pregunta real del usuario.
 - **Vencidas separadas de por-vencer**: hoy `construirDesgloseNecesidades` mezcla todo; separarlas permite el copy "esto ya venció" vs "esto vence antes de tu próximo cobro" (puntos 9-10: cada recomendación en el paso de su categoría, no todas juntas).
 - **Absorbe MC.7g**: al usar `ocurrenciasEnRango` (todas las frecuencias), un fijo Quincenal/Semanal/Diario aparece en su ventana correcta. El hueco de "solo Mensual" desaparece sin código especial.
+
+> **Corrección de la implementación (MC.13c-1, 2026-07-14).** La frase "sin código especial" de arriba resultó **inexacta** y se deja escrita para no reescribir la historia. El motor sí resuelve las frecuencias, pero la checklist no puede consumirlo sin decidir antes tres cosas que **no son técnicas**, y por eso MC.13c se partió en MC.13c-1 (la función, cerrada) y MC.13c-2 (el wiring, bloqueado):
+>
+> 1. **Qué significa "ya lo pagaste"**: `_pagadoEstePeriodo` cuenta el **mes calendario**; el motor cuenta la **ventana del cobro**. Con un fijo Quincenal la regla actual está mal (un pago marcaría las dos ocurrencias), pero cambiarla altera lo que hoy ve bien un usuario mensual.
+> 2. **Qué registra marcar una fila de varias ocurrencias**: `_aplicarNecesidad` escribe UN `Gasto`. ¿Un gasto de $120.000 o dos de $60.000? Cambia Movimientos y Análisis.
+> 3. **Reescribir ~20 tests vigentes** de `construirDesgloseNecesidades` (regla 2.5).
+>
+> Además hay una **dependencia técnica no prevista**: `ultimoPagoHasta` sigue devolviendo `null` para todo lo que no sea Mensual/Quincenal, así que datar el cobro de un usuario Semanal o Diario es una rebanada previa. `ventanaDelCobro` cubre las frecuencias, pero **datar el último cobro** no se generalizó.
+>
+> Dos decisiones de diseño que MC.13c-1 sí tomó, por ser técnicas: **una fila por compromiso, no por ocurrencia** (un `Gasto` no dice a qué ocurrencia pertenece: atribuirlo sería inventar el dato) y **un mismo compromiso puede estar en `vencidas` y en `enVentana`** con ocurrencias distintas (son deudas reales distintas; los tramos son disjuntos).
 - **Aportes por período** (no total ni mensual): consume `aportePorPeriodo` (punto 21).
 
 ### D3. Consumidores del motor (un motor, no cuatro)
@@ -157,7 +167,8 @@ El **motor (MC.13a-b) no depende de los conflictos** y puede arrancar apenas Est
 |---|---|---|---|
 | **MC.13a** | `infra/vencimientos.js` mitad A (`ocurrenciasEnRango`, `ventanaDelCobro`) + Agenda pasa a consumirla (su `eventosDelMes` queda como envoltorio). Solo-unit + E2E de Calendario intactos. | ADR aprobado | Opus 4.8 - Alto (lógica de fechas/frecuencias, riesgo de regresión en Calendario) |
 | **MC.13b** | `infra/vencimientos.js` mitad B (`frecuenciaPrincipalIngresos`, `diasPorPeriodo`, `aportePorPeriodo`) + Metas y Apartados **borran sus copias** y re-importan. Refactor sin cambio de comportamiento, verificado con sus tests. | MC.13a | Opus 4.8 - Alto |
-| **MC.13c** | `obligacionesYAportesDelCobro` (D2) puro + tests. La checklist de Necesidades y el desglose de ahorro del asistente pasan a consumirlo (absorbe MC.7g). | MC.13b | Opus 4.8 - Alto |
+| **MC.13c-1** | `obligacionesYAportesDelCobro` (D2) puro + 40 tests. **Cerrada 2026-07-14.** Sin consumidores todavía. | MC.13b | Opus 4.8 - Alto |
+| **MC.13c-2** | La checklist de Necesidades y el desglose de ahorro pasan a consumirlo (absorbe MC.7g). **Bloqueada**: 3 decisiones de producto + generalizar `ultimoPagoHasta` (ver la corrección en D2). | MC.13c-1 + decisiones de Esteban | Opus 4.8 - Alto |
 | **MC.13d** | Schema: `cuentaId` en `Ingreso` (D5), bump v26→v27 + migración + el form de ingreso fijo captura la cuenta. Solo-datos + form. | nada dura; independiente | Opus 4.8 - Extra (bump con migración) |
 | **MC.13e+** | Asistente v2 UI (puntos 9-20): paso educativo, recomendaciones por categoría, excedente explícito, filas con logo, navegación v2. Varias rebanadas de UI. | MC.13c, MC.13d; **decisión (a)** para el flujo esporádico | Sonnet 5 - Alto por rebanada |
 

@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(infra): MC.13c-1 obligacionesYAportesDelCobro, la composición "qué toca con este cobro" · 2026-07-14
+
+Tercera rebanada de **MC.13** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D2). Sobre las dos mitades del motor, una función compone la pregunta que el asistente debe responder: **qué toca con ESTE cobro**, en vez de "cómo reparto todo lo del mes".
+
+**Archivos tocados**
+
+- `modules/infra/vencimientos.js`: `obligacionesYAportesDelCobro({cobro, compromisos, gastos, metas, apartados, fondo, hoyISO})` → `{ventana, vencidas, enVentana, aportes}`. `vencidas` mira un período hacia atrás (desde el cobro anterior hasta ayer): lo que este dinero puede cubrir y el cobro pasado no cubrió. `enVentana` va de hoy hasta el próximo cobro. `aportes` (fondo, metas, apartados) trae la **cuota del período según la frecuencia real del cobro**, que es el punto 21 del brief. Pura: recibe los datos inyectados, no lee `S` ni importa dominios.
+- `tests/unit/vencimientos.test.js`: 40 tests nuevos (98 en total).
+- `service-worker.js`: `CACHE_NAME` v397 → v398.
+
+**Dos decisiones de diseño que tomó esta rebanada**
+
+- **Una fila por compromiso, no por ocurrencia.** Si un fijo Semanal cae tres veces en la ventana, es una fila de monto × 3, no tres filas. Un `Gasto` solo guarda `compromisoId`, `fecha` y `monto`: no dice a qué ocurrencia corresponde, así que atribuir pagos a ocurrencias concretas sería inventar el dato. Comparar el total del rango contra lo esperado del rango es la lectura honesta, y es la regla que las deudas ya usaban.
+- **Un mismo compromiso puede estar vencido y volver a vencer en la ventana.** El arriendo del día 5 sin pagar en julio está vencido, y el del 5 de agosto vuelve a caer antes del próximo cobro: son dos deudas reales, no una repetida. Los dos tramos son disjuntos, así que ninguna ocurrencia se cuenta dos veces.
+
+**Nada la consume todavía** (mismo patrón que MC.13a, cuyas `ocurrenciasEnRango`/`ventanaDelCobro` también aterrizaron antes que su consumidor): la verificación es unitaria. Wiring en **MC.13c-2**, que quedó bloqueada por tres decisiones de producto, ver BOARD.
+
+**Corrección al ADR 041:** el ADR afirma que MC.7g se cierra "sin código especial". El motor sí resuelve las frecuencias, pero la checklist no puede consumirlo sin decidir antes qué significa "ya lo pagaste" (mes calendario vs ventana del cobro) y qué registra marcar una fila de varias ocurrencias. Detalle en la tarjeta MC.13c-2.
+
+**Verificación:** 2793/2793 unit + 205/205 E2E + lint verdes.
+
+---
+
 ### refactor(infra): MC.13b motor de vencimientos mitad B + Metas y Apartados borran sus copias · 2026-07-14
 
 Segunda rebanada de **MC.13** (Distribución v2, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) D1 mitad B): **el motor compartido queda completo**. La mitad B responde "cada cuánto entra dinero y cuánto toca aportar por período", que es lo que estaba **duplicado carácter por carácter** en `metas/logic.js` y `apartados/logic.js`. La duplicación no era descuido: ADN #10 impide que un dominio importe a otro, y cada archivo lo comentaba como "duplicado intencional". Infra sí la pueden importar los dos, así que la copia única vive ahí.

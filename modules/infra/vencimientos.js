@@ -383,3 +383,235 @@ export function aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoyISO)
     dias,
   };
 }
+
+// ── COMPOSICIÓN: QUÉ TOCA CON ESTE COBRO (MC.13c, ADR 041 D2) ────
+
+/** Día anterior a una fecha ISO. null si no es una fecha real. */
+function _ayer(fechaISO) {
+  const d = _fechaDesdeISO(fechaISO);
+  return d ? _iso(_addDias(d, -1)) : null;
+}
+
+/**
+ * Retrocede un período completo de la frecuencia dada. Es el espejo de la
+ * longitud de ventana de `ventanaDelCobro`: sirve para situar el cobro
+ * anterior y, con él, el tramo en que algo pudo vencer sin pagarse.
+ */
+function _retrocederUnPeriodo(frecuencia, fechaISO) {
+  const d = _fechaDesdeISO(fechaISO);
+  if (!d) return null;
+  switch (frecuencia) {
+    case 'Diario':     return _iso(_addDias(d, -1));
+    case 'Semanal':    return _iso(_addDias(d, -7));
+    case 'Quincenal':  return _iso(_addDias(d, -15));
+    case 'Bimestral':  return _iso(_addMeses(d, -2));
+    case 'Trimestral': return _iso(_addMeses(d, -3));
+    case 'Semestral':  return _iso(_addMeses(d, -6));
+    case 'Anual':      return _iso(_addMeses(d, -12));
+    default:           return _iso(_addMeses(d, -1)); // Mensual y desconocidas
+  }
+}
+
+/** true si el compromiso es una deuda (cualquiera de sus dos tipos). */
+function _esDeuda(c) {
+  return c?.tipo === 'deuda-entidad' || c?.tipo === 'deuda-personal';
+}
+
+/**
+ * Total pagado de un compromiso dentro de un rango de fechas. Las fechas ISO
+ * se comparan como texto: 'YYYY-MM-DD' ordena igual lexicográfica que
+ * cronológicamente, así que no hace falta parsear cada gasto.
+ */
+function _pagadoEnRango(gastos, compromisoId, inicioISO, finISO) {
+  if (!Array.isArray(gastos) || !compromisoId) return 0;
+  return gastos
+    .filter(g => g?.compromisoId === compromisoId
+      && typeof g.fecha === 'string'
+      && g.fecha >= inicioISO && g.fecha <= finISO)
+    .reduce((acc, g) => acc + (Number(g.monto) || 0), 0);
+}
+
+/**
+ * Obligaciones activas que caen en un rango, con lo que toca pagar de cada una
+ * y cuánto lleva pagado.
+ *
+ * **Una fila por compromiso, no por ocurrencia**: si un fijo Semanal cae tres
+ * veces en la ventana, es UNA fila de monto × 3, no tres filas. Un gasto
+ * registrado no dice a qué ocurrencia corresponde (`Gasto` sólo tiene
+ * `compromisoId`, `fecha` y `monto`), así que atribuir pagos a ocurrencias
+ * concretas sería inventar el dato; comparar el total del rango contra lo
+ * esperado del rango es la lectura honesta, y es la misma regla que ya usan
+ * las deudas ("los abonos del período cubren la cuota").
+ */
+function _obligacionesEnRango(compromisos, gastos, inicioISO, finISO) {
+  if (!Array.isArray(compromisos) || inicioISO > finISO) return [];
+
+  const out = [];
+  for (const c of compromisos) {
+    if (!c || c.activo === false) continue;
+
+    const esDeuda = _esDeuda(c);
+    if (!esDeuda && c.tipo !== 'fijo') continue;
+
+    const saldo = Number(c.saldoTotal) || 0;
+    // Deuda saldada: fuera, mismo criterio que rechaza el abono individual.
+    if (esDeuda && saldo <= 0) continue;
+
+    const ocurrencias = ocurrenciasEnRango(c, inicioISO, finISO);
+    if (ocurrencias.length === 0) continue;
+
+    const unitario = esDeuda ? (Number(c.cuotaMensual) || 0) : (Number(c.monto) || 0);
+    if (unitario <= 0) continue;
+
+    // La deuda nunca pide más de lo que se debe (BUG-004): el tope se aplica
+    // sobre el total del rango, no sobre cada cuota suelta.
+    const bruto = unitario * ocurrencias.length;
+    const monto = esDeuda ? Math.min(bruto, saldo) : bruto;
+
+    const montoPagado = _pagadoEnRango(gastos, c.id, inicioISO, finISO);
+
+    out.push({
+      id:          c.id,
+      nombre:      c.descripcion ?? '',
+      categoria:   c.categoria ?? null,
+      icono:       c.icono ?? null,
+      tipo:        esDeuda ? 'deuda' : 'fijo',
+      montoUnitario: unitario,
+      ocurrencias,
+      monto,
+      montoPagado,
+      pagado:      montoPagado >= monto,
+    });
+  }
+
+  // No pagadas primero, de mayor a menor monto: el mismo orden que ya usa la
+  // checklist de Necesidades.
+  return out.sort((a, b) => (a.pagado !== b.pagado ? (a.pagado ? 1 : -1) : b.monto - a.monto));
+}
+
+/** Una fila de aporte sugerido, con la cuota del período ya calculada. */
+function _aporteItem(tipo, id, nombre, faltante, fechaObjetivoISO, frecuencia, hoyISO) {
+  const r = fechaObjetivoISO
+    ? aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoyISO)
+    : null;
+
+  return {
+    tipo,
+    id,
+    nombre: nombre ?? '',
+    faltante,
+    fechaObjetivoISO: fechaObjetivoISO ?? null,
+    // Sin plazo no hay ritmo que calcular: el asistente decide qué ofrecer
+    // (por eso `sinFecha` viaja aparte de `montoPeriodo === null`, que también
+    // ocurre si el plazo ya venció).
+    sinFecha:     !fechaObjetivoISO,
+    montoPeriodo: r ? r.montoPorPeriodo : null,
+    numPeriodos:  r ? r.numPeriodos : null,
+  };
+}
+
+/**
+ * Qué toca hacer con ESTE cobro: la pregunta que el asistente "Distribuir mi
+ * ingreso" debe responder, en vez de "cómo reparto todo lo del mes" (ADR 041
+ * D2; el asistente actual satura porque muestra el mes completo).
+ *
+ * Compone las dos mitades del motor sobre los datos que le inyecta el caller
+ * (es infra: no lee `S`, no importa dominios, ADN #10 intacto):
+ *
+ *   - `ventana`:   hasta cuándo tiene que durar este dinero (mitad A).
+ *   - `vencidas`:  lo que venció desde el cobro anterior y sigue sin pagarse.
+ *   - `enVentana`: lo que vence entre hoy y el próximo cobro.
+ *   - `aportes`:   lo que toca apartar, con la cuota del período según la
+ *                  frecuencia real del cobro (mitad B, punto 21 del brief).
+ *
+ * `vencidas` mira un período hacia atrás (desde el cobro anterior hasta ayer):
+ * es el tramo que este dinero puede cubrir y que el cobro pasado no cubrió.
+ * Separarlas de `enVentana` es lo que permite el copy "esto ya venció" frente
+ * a "esto vence antes de tu próximo cobro" (puntos 9-10 del brief).
+ *
+ * Los dos tramos son disjuntos ([...ayer] y [hoy...]), así que ninguna
+ * ocurrencia se cuenta dos veces. Un mismo compromiso sí puede aparecer en
+ * ambas listas con ocurrencias distintas, y es lo correcto: el arriendo del
+ * día 5 que quedó sin pagar en julio está vencido, y el del 5 de agosto vuelve
+ * a caer antes del próximo cobro. Son dos deudas reales, no una repetida.
+ *
+ * **Todas las frecuencias**, no sólo Mensual: al apoyarse en
+ * `ocurrenciasEnRango`, un fijo Quincenal/Semanal/Diario aparece con las veces
+ * que realmente cae dentro de la ventana (cierra el hueco de MC.7g).
+ *
+ * @param {object}   params
+ * @param {{frecuencia?:string, fechaISO?:string}} params.cobro El cobro que se está distribuyendo.
+ * @param {Array}    [params.compromisos] `S.compromisos` (fijos y deudas).
+ * @param {Array}    [params.gastos]      `S.gastos` (para saber qué ya se pagó).
+ * @param {Array}    [params.metas]       `S.metas`.
+ * @param {Array}    [params.apartados]   `S.apartados`.
+ * @param {{activo?:boolean, nombre?:string, faltante:number, fechaObjetivoISO?:string|null}|null} [params.fondo]
+ *   El fondo de emergencia **ya normalizado**: su objetivo no es un campo
+ *   guardado (se deriva de los gastos mensuales, AH.2), así que el caller
+ *   aporta el `faltante` y aquí sólo se le calcula el ritmo.
+ * @param {string}   params.hoyISO        'YYYY-MM-DD' de referencia (inyectable).
+ * @returns {{
+ *   ventana: {inicioISO:string, finISO:string},
+ *   vencidas: Array<object>,
+ *   enVentana: Array<object>,
+ *   aportes: Array<object>,
+ * } | null} null si el cobro o `hoyISO` no son datables.
+ */
+export function obligacionesYAportesDelCobro({
+  cobro,
+  compromisos = [],
+  gastos = [],
+  metas = [],
+  apartados = [],
+  fondo = null,
+  hoyISO,
+} = {}) {
+  const ventana = ventanaDelCobro(cobro?.frecuencia, cobro?.fechaISO);
+  if (!ventana || !_fechaDesdeISO(hoyISO)) return null;
+
+  // Lo que vence a partir de hoy: si el asistente se abre días después del
+  // cobro, lo que venció entre medias pertenece a `vencidas`, no aquí.
+  const inicioEnVentana = hoyISO > ventana.inicioISO ? hoyISO : ventana.inicioISO;
+
+  // Un período hacia atrás desde el cobro, hasta ayer.
+  const inicioVencidas = _retrocederUnPeriodo(cobro?.frecuencia, ventana.inicioISO);
+  const finVencidas    = _ayer(hoyISO);
+
+  const vencidas = _obligacionesEnRango(compromisos, gastos, inicioVencidas, finVencidas)
+    .filter(o => !o.pagado); // lo ya pagado no venció: no se le pide dos veces
+
+  const enVentana = _obligacionesEnRango(compromisos, gastos, inicioEnVentana, ventana.finISO);
+
+  const frecAporte = normalizarFrecuenciaAporte(cobro?.frecuencia);
+  const aportes = [];
+
+  if (fondo && fondo.activo !== false) {
+    const faltante = Number(fondo.faltante) || 0;
+    if (faltante > 0) {
+      aportes.push(_aporteItem(
+        'fondo', fondo.id ?? 'fondo-emergencia', fondo.nombre ?? 'Fondo de emergencia',
+        faltante, fondo.fechaObjetivoISO ?? null, frecAporte, hoyISO,
+      ));
+    }
+  }
+
+  for (const m of Array.isArray(metas) ? metas : []) {
+    if (!m || m.completada === true) continue;
+    const faltante = Math.max(0, (Number(m.montoObjetivo) || 0) - (Number(m.montoActual) || 0));
+    if (faltante <= 0) continue;
+    aportes.push(_aporteItem('meta', m.id, m.nombre, faltante, m.fechaLimite ?? null, frecAporte, hoyISO));
+  }
+
+  for (const a of Array.isArray(apartados) ? apartados : []) {
+    if (!a || a.completado === true) continue;
+    const faltante = Math.max(0, (Number(a.montoObjetivo) || 0) - (Number(a.montoActual) || 0));
+    if (faltante <= 0) continue;
+    // La cuota se calcula con la frecuencia del COBRO, no con la
+    // `frecuenciaAporte` propia del apartado: el asistente responde "de ESTE
+    // dinero, cuánto va acá" (punto 21). La preferencia del apartado sigue
+    // mandando en su propia sección.
+    aportes.push(_aporteItem('apartado', a.id, a.nombre, faltante, a.fechaObjetivo ?? null, frecAporte, hoyISO));
+  }
+
+  return { ventana, vencidas, enVentana, aportes };
+}
