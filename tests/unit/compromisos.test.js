@@ -1941,10 +1941,15 @@ describe('renderFormAbono() - formulario', () => {
 // ── renderFormDeuda() - selector de tipo de obligación ────────────
 
 describe('renderFormDeuda() - selector de categoría', () => {
-  it('incluye un <option> en texto plano para cada categoría de CATEGORIAS_DEUDA (ID.3)', () => {
+  // FORM.1b (ADR 042 D4): la categoría son chips de ícono (radios reales
+  // name="categoria"), no un <select>. El contrato de datos no cambia.
+
+  it('incluye un chip (radio + ícono) por cada categoría de CATEGORIAS_DEUDA (ID.3)', () => {
     const html = renderFormDeuda('deuda-entidad');
+    expect(html).not.toContain('<select id="comp-categoria"');
     for (const c of CATEGORIAS_DEUDA) {
-      expect(html).toContain(`<option value="${c}">${c}</option>`);
+      expect(html).toContain(`value="${c}"`);
+      expect(html).toContain(`>${c}</span>`);
     }
   });
 
@@ -1954,26 +1959,27 @@ describe('renderFormDeuda() - selector de categoría', () => {
     expect(htmlEntidad).toContain('Libre inversión');
     expect(htmlEntidad).not.toContain('Familiar');
     for (const c of CATEGORIAS_DEUDA_PERSONAL) {
-      expect(htmlPersonal).toContain(`<option value="${c}">${c}</option>`);
+      expect(htmlPersonal).toContain(`value="${c}"`);
     }
     expect(htmlPersonal).not.toContain('Tarjeta de crédito');
   });
 
-  it('en modo edición preselecciona la categoría guardada', () => {
+  it('en modo edición marca el chip de la categoría guardada', () => {
     const deuda = {
       id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
       saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
       diaPago: 5, categoria: 'Tarjeta de crédito', activo: true,
     };
     const html = renderFormDeuda('deuda-entidad', deuda);
-    expect(html).toContain('value="Tarjeta de crédito" selected');
+    expect(html).toMatch(/value="Tarjeta de crédito"[^>]*checked/);
   });
 
-  it('en modo creación ninguna categoría viene preseleccionada', () => {
+  it('en modo creación ningún chip de categoría viene marcado', () => {
     const html = renderFormDeuda('deuda-personal');
-    const selectMatch = html.match(/<select id="comp-categoria"[\s\S]*?<\/select>/);
-    expect(selectMatch).not.toBeNull();
-    expect(selectMatch[0]).not.toContain('selected');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const marcados = div.querySelectorAll('input[name="categoria"]:checked');
+    expect(marcados).toHaveLength(0);
   });
 
   it('D.13: la cuota es opcional (sin required) solo en el form personal', () => {
@@ -1989,11 +1995,29 @@ describe('renderFormDeuda() - selector de categoría', () => {
 
   it('D.15b: el campo de categoría aparece antes que la descripción (mismo patrón que TX.9a)', () => {
     const html = renderFormDeuda('deuda-entidad');
-    const posCategoria   = html.indexOf('id="comp-categoria"');
+    const posCategoria   = html.indexOf('chips-cat');
     const posDescripcion = html.indexOf('id="comp-descripcion"');
     expect(posCategoria).toBeGreaterThan(-1);
     expect(posDescripcion).toBeGreaterThan(-1);
     expect(posCategoria).toBeLessThan(posDescripcion);
+  });
+
+  it('FORM.1a/D2 se aplica también aquí: el saldo total vive en un monto hero', () => {
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('monto-hero__box');
+    expect(html).toContain('input--big-amount');
+  });
+
+  it('FORM.1b: el segmented Entidad/Personal solo aparece al crear, no al editar', () => {
+    const deuda = {
+      id: 'd1', descripcion: 'Tarjeta Visa', tipo: 'deuda-entidad',
+      saldoTotal: 2_000_000, cuotaMensual: 200_000, frecuencia: 'Mensual',
+      diaPago: 5, categoria: 'Tarjeta de crédito', activo: true,
+    };
+    const htmlCrear = renderFormDeuda('deuda-entidad');
+    const htmlEditar = renderFormDeuda('deuda-entidad', deuda);
+    expect(htmlCrear).toContain('tipo-segmented');
+    expect(htmlEditar).not.toContain('tipo-segmented');
   });
 
   it('D.15b: el hint de bajo valor "si es una tienda que te fía" se retiró del form personal', () => {

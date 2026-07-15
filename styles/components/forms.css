@@ -827,3 +827,165 @@ textarea.input {
   margin-bottom: var(--fk-space-2);
 }
 .form-empty__teja .icon { --fk-icon-size: var(--fk-icon-2xl); }
+
+/* ════════════════════════════════════════════════════════════
+   FORMULARIOS V2 · FORM.1b (ADR 042 D4): piezas propias del form
+   de deuda. Segmented Entidad/Personal, disclosure "Condiciones
+   del crédito" y el toggle switch de "Recibí este dinero".
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Segmented Entidad/Personal (reemplaza el chooser de 2 pasos) ── */
+.tipo-segmented {
+  display: flex;
+  gap: var(--fk-space-1);
+  padding: var(--fk-space-1);
+  border-radius: var(--fk-radius-md);
+  background: var(--fk-bg-elevated);
+  border: 1px solid var(--fk-border-subtle);
+  margin-bottom: var(--fk-space-1);
+}
+.tipo-segmented__btn {
+  flex: 1;
+  min-height: 40px;
+  padding: var(--fk-space-2);
+  border-radius: var(--fk-radius-sm);
+  border: none;
+  background: transparent;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  font-family: inherit;
+  color: var(--fk-text-muted);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), color var(--fk-transition-fast);
+}
+.tipo-segmented__btn.active {
+  background: var(--fk-bg-surface);
+  color: var(--fk-text-primary);
+  font-weight: var(--fk-font-bold);
+  box-shadow: var(--fk-shadow-sm);
+}
+.tipo-segmented__btn:focus-visible {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+
+/* ── Disclosure genérico: sección plegable con trigger + panel ──
+   Un solo consumidor hoy ("Condiciones del crédito"), pero el
+   componente es agnóstico al contenido: reusable para el próximo
+   colapsable que haga falta. */
+.form-disclosure {
+  border-radius: var(--fk-radius-lg);
+  background: color-mix(in srgb, var(--fk-text-primary) 2.5%, transparent);
+  border: 1px solid var(--fk-border-subtle);
+  overflow: hidden;
+}
+.form-disclosure__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--fk-space-3);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.form-disclosure__trigger .icon:first-child { color: var(--fk-text-secondary); }
+.form-disclosure__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.form-disclosure__title {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.form-disclosure__desc {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+}
+.form-disclosure__chevron {
+  color: var(--fk-text-muted);
+  transition: transform var(--fk-transition-fast);
+}
+.form-disclosure__trigger[aria-expanded="true"] .form-disclosure__chevron {
+  transform: rotate(90deg);
+}
+.form-disclosure__panel {
+  padding: 0 var(--fk-space-3) var(--fk-space-3);
+}
+
+/* ── Toggle switch (D.14 "Recibí este dinero en una cuenta") ──
+   El checkbox real vive DENTRO de .toggle-switch (misma técnica que
+   los chips: input accesible, opacity 0, cubre todo el track para que
+   el área de toque sea el track completo). */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  cursor: pointer;
+}
+.toggle-switch {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-border-default);
+  flex-shrink: 0;
+  transition: background-color var(--fk-transition-fast);
+}
+.toggle-switch__input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.toggle-switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--fk-radius-full);
+  background: var(--fk-text-muted);
+  box-shadow: var(--fk-shadow-sm);
+  pointer-events: none;
+  transition: transform var(--fk-transition-fast), background-color var(--fk-transition-fast);
+}
+.toggle-switch:has(.toggle-switch__input:checked) {
+  background: var(--fk-section-accent, var(--fk-accent));
+}
+/* Apagado: perilla neutra sobre el track gris. Encendido: la perilla pasa a
+   contrastar contra el acento del dominio, el mismo par de tokens que usa
+   `.toggle` de atoms.css (en claro es blanco, en oscuro casi negro). */
+.toggle-switch:has(.toggle-switch__input:checked) .toggle-switch__knob {
+  background: var(--fk-text-on-accent);
+  transform: translateX(18px);
+}
+.toggle-switch:has(.toggle-switch__input:focus-visible) {
+  outline: 2px solid var(--fk-border-focus);
+  outline-offset: 2px;
+}
+.toggle-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.toggle-row__label {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+.toggle-row__hint {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  line-height: 1.4;
+}

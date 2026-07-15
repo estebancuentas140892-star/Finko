@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-15 (FORM.1a cerrada → nace el lenguaje de Formularios v2 con Registrar gasto como flagship, [ADR 042](DECISIONS/042-formularios-v2-visual.md); quedan FORM.1b y FORM.1c en Transversal. MC.13: sólo falta el asistente v2 UI, MC.13e+, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)).
+> Última actualización: 2026-07-15 (FORM.1b cerrada → Nueva deuda adopta el lenguaje de Formularios v2 y el chooser de dos pasos desaparece, [ADR 042](DECISIONS/042-formularios-v2-visual.md); solo queda FORM.1c para cerrar la iniciativa. Nace TX.11 en Transversal, hallazgo de la verificación: la app tiene tres switches para el mismo control. MC.13: sólo falta el asistente v2 UI, MC.13e+, [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)).
 
 ---
 
@@ -489,16 +489,7 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 - Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
 - Modelo     : Opus 4.8 - Alto (modelo de datos + propagación transversal)
 
-> **Iniciativa FORM: Formularios v2, lenguaje de captura compartido** ([ADR 042](DECISIONS/042-formularios-v2-visual.md), aceptado 2026-07-15; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar). Octava entrega de la familia visual v2 y fuente única del lenguaje de formularios: monto hero protagonista, categoría con chips de ícono (nunca un select nuevo), fecha con atajos Hoy/Ayer/Otra fecha, teja de dominio en el header del modal, footer con primario a lo ancho. **FORM.1a CERRADA el 2026-07-15** (fundación CSS en `forms.css` + Registrar gasto flagship, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)); revisó el orden de TX.9a (monto primero, decisión del mockup) y corrigió de paso el hueco móvil de `responsive.css` sobre `.input--big-amount`. Los demás formularios de la app migran cuando su iniciativa los toque (ADR 042 D6), NO aquí. **Conflicto señalado (D9):** AP.5 pedía dropdown de categoría; la decisión es de Esteban al iniciar esa tarjeta.
-
-#### FORM.1b - Nueva deuda con el lenguaje v2
-- Prioridad  : media-alta
-- Estado     : pendiente
-- Objetivo   : ADR 042 D4: segmented Entidad/Personal inline (reemplaza el chooser de dos pasos, mismo contrato `tipo`), categorías en chips de 2 columnas (`.chips-cat--2col`, catálogos D.10 por tipo, conserva el picker de ícono CAT.2d en "Otra/Otro"), saldo total como monto hero, cuota con prefijo `$`, "Condiciones del crédito" colapsable (tasa + frecuencia + día, hoy siempre visibles) y el bloque D.14 "Recibí este dinero" como toggle. Cero lógica nueva: re-vestido del form existente.
-- Secciones  : Deudas (`compromisos`)
-- Archivos   : `modules/dominio/compromisos/views/formularios.js`, `modules/dominio/compromisos/index.js`, `styles/components/forms.css` (colapsable + toggle si faltan), `index.html` (teja del modal), tests
-- Depende de : nada (la fundación FORM.1a ya está en producción)
-- Modelo     : Sonnet 5 - Alto (form largo con estados: entidad/personal, edición, colapsable, toggle D.14, E2E de deudas a adaptar)
+> **Iniciativa FORM: Formularios v2, lenguaje de captura compartido** ([ADR 042](DECISIONS/042-formularios-v2-visual.md), aceptado 2026-07-15; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar). Octava entrega de la familia visual v2 y fuente única del lenguaje de formularios: monto hero protagonista, categoría con chips de ícono (nunca un select nuevo), fecha con atajos Hoy/Ayer/Otra fecha, teja de dominio en el header del modal, footer con primario a lo ancho. **FORM.1a CERRADA el 2026-07-15** (fundación CSS en `forms.css` + Registrar gasto flagship, ver CHANGELOG y [`contexto/transversal.md`](contexto/transversal.md)); revisó el orden de TX.9a (monto primero, decisión del mockup) y corrigió de paso el hueco móvil de `responsive.css` sobre `.input--big-amount`. Los demás formularios de la app migran cuando su iniciativa los toque (ADR 042 D6), NO aquí. **Conflicto señalado (D9):** AP.5 pedía dropdown de categoría; la decisión es de Esteban al iniciar esa tarjeta. **FORM.1b CERRADA el 2026-07-15** (Nueva deuda: segmented inline, chips 2col, monto hero, disclosure de tasa, toggle D.14, y retiro completo del chooser de dos pasos; ver CHANGELOG y [`contexto/deudas.md`](contexto/deudas.md)). Dos desvíos del plan de la tarjeta, ambos documentados en la ficha: solo la **tasa** quedó dentro del colapsable (frecuencia y día son obligatorios y esconderlos generaba errores silenciosos), y el toggle de D.14 **destapó que la app ya tenía dos switches** (ver TX.11). Solo queda FORM.1c para cerrar la iniciativa.
 
 #### FORM.1c - Nuevo gasto fijo con el lenguaje v2
 - Prioridad  : media
@@ -508,6 +499,16 @@ _(**IV.2 completa** (2026-07-09 a 2026-07-10): **IV.2a** (nav+encabezados, 2026-
 - Archivos   : `modules/dominio/agenda/view.js` (`renderFormGastoFijo`), `modules/dominio/agenda/index.js`, `index.html` (teja del modal), tests (E2E usan `#gfijo-categoria` como select: adaptar)
 - Depende de : nada (conviene tras FORM.1b para reusar sus piezas de CSS si aparecen)
 - Modelo     : Sonnet 5 - Medio (mismo patrón ya estrenado por FORM.1a, un solo dominio)
+
+#### TX.11 - Un solo switch: consolidar los tres toggles de la app
+- Prioridad  : media-baja
+- Estado     : pendiente. **Hallazgo de FORM.1b (2026-07-15)**, no un brief del usuario: el toggle de D.14 se construyó como componente "nuevo" y la verificación destapó que ya existían dos.
+- Objetivo   : la app tiene **tres** switches para el mismo control. (1) `.toggle` en `styles/components/atoms.css` (encabezado "TOGGLE (switch)", genérico, 44x24, perilla vía `::after`, acento `--fk-accent`): **no lo usa ni un solo módulo, es CSS muerto**. (2) `.config-toggle` en `styles/components/config.css`: el único vivo hasta ahora, en Ajustes (tema y notificaciones, `config/view.js`). (3) `.toggle-switch`/`.toggle-row` en `styles/components/forms.css` (FORM.1b): 44x26, perilla como `<span>` real, y la única diferencia funcional real, tiñe por dominio con `--fk-section-accent`. Consolidar en uno solo. **Recomendación:** conservar `.toggle` de `atoms.css` (es el sitio correcto para un átomo compartido y hoy no tiene consumidores, así que cambiarlo es de riesgo cero), darle `var(--fk-section-accent, var(--fk-accent))` para que herede el tinte del dominio dentro de un `[data-dom]` y siga neutro fuera, conservar `.toggle-row` (el layout label + hint no es duplicado, es complemento) y borrar `.config-toggle` y `.toggle-switch` migrando sus dos consumidores.
+- **Ojo al hacerla**: `.config-toggle` está vivo en Ajustes, así que su migración sí tiene riesgo de regresión visual (y toca `config/index.js:295`, que busca `.config-toggle__label` desde `parentElement`). El de `forms.css` no: su único consumidor es el form de deuda.
+- Secciones  : Transversal (Ajustes, Deudas; cualquier futuro toggle)
+- Archivos   : `styles/components/atoms.css` (`.toggle`), `styles/components/config.css` (`.config-toggle`), `styles/components/forms.css` (`.toggle-switch`), `modules/dominio/config/view.js` + `index.js`, `modules/dominio/compromisos/views/formularios.js`
+- Depende de : nada
+- Modelo     : Sonnet 5 - Medio (consolidación de CSS con un consumidor vivo a migrar y verificación visual en dos temas)
 
 #### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
 - Prioridad  : media

@@ -7,15 +7,17 @@
 ## Registro de deudas (dominio `compromisos`, tipo `deuda-entidad`/`deuda-personal`)
 
 - **Objetivo**          : registrar deudas con entidad (banco, tarjeta) o personales (familia, fiado, gota a gota), simular estrategias de pago (Avalancha, Bola de nieve, cuota fija), registrar abonos que descuentan `saldoTotal` y sincronizan la cuenta de origen del pago, y detectar cuándo una cuota no alcanza a cubrir el interés mensual. Comparte el dominio `compromisos` con "Fijos" (tipo `fijo`, vive en Calendario): mismo schema `Compromiso`, tres tipos posibles (`fijo`, `deuda-entidad`, `deuda-personal`).
-- **Estado actual**     : estable. **Iniciativa "Deudas v2: de registro a asesor" (brief 2026-07-08) CERRADA COMPLETA el 2026-07-13** (todas sus rebanadas D.15a-e y el rediseño visual D.16a-d). **D.14** (2026-07-10) agrega la acreditación opcional de la cuenta de origen al crear una deuda. **BUG-011 corregido** (2026-07-11): el extra tecleado en "Aumenta tu cuota" ya no reestructura la card de estrategia en el siguiente re-render (ver riesgo "estado UI simulado" abajo). **Rediseño visual D.16 ([ADR 036](../DECISIONS/036-deudas-v2-visual.md)) CERRADO el 2026-07-12** (hero, picker/comparativa, acelerador/panel en 2 capas, tarjeta de deuda). **D.15d (motor + vista de palancas) y D.15b (editar deuda + reorden del form) CERRADAS el 2026-07-13** (ver "Deudas v2 (D.15, diseño)" abajo para el detalle del motor). **D.15a CERRADA (2026-07-13, última pieza)**: copy motivador en las simulaciones de orden (Avalancha explicita "cuándo conviene", en paralelo a Bola de nieve, que ya lo tenía) + reafirmación "explora libremente, nada cambia hasta que confirmes" en las 3 palancas (Aumentar/Renegociar/Consolidar) + refuerzo psicológico en Abonar: línea estática ("cada abono es un paso real hacia quedar libre de esta deuda") y el tip en vivo nunca queda vacío (mensaje reforzado cuando el abono salda la deuda por completo, genérico cuando no hay proyección de meses que mostrar). Tono ADR 003/008: afirma progreso real, sin presión ni comparación. Sin cambios de lógica de negocio.
-- **Verificado contra** : commit de D.15a (2026-07-13, cierra Deudas v2 completa). Antes: D.15b (2026-07-13), D.15d-2 (2026-07-13), D.15d-1 (2026-07-13), cierre de D.16d/D.16 (2026-07-12), análisis D.15 (2026-07-12), fix de BUG-011 (2026-07-11), primera ficha (D.14, 2026-07-10).
+- **Estado actual**     : estable. **FORM.1b CERRADA (2026-07-15)**: el form de deuda adopta el lenguaje de Formularios v2 ([ADR 042](../DECISIONS/042-formularios-v2-visual.md)); ver bloque "Formulario de deuda (FORM.1b)" abajo, cierra la iniciativa FORM.1. **Iniciativa "Deudas v2: de registro a asesor" (brief 2026-07-08) CERRADA COMPLETA el 2026-07-13** (todas sus rebanadas D.15a-e y el rediseño visual D.16a-d). **D.14** (2026-07-10) agrega la acreditación opcional de la cuenta de origen al crear una deuda. **BUG-011 corregido** (2026-07-11): el extra tecleado en "Aumenta tu cuota" ya no reestructura la card de estrategia en el siguiente re-render (ver riesgo "estado UI simulado" abajo). **Rediseño visual D.16 ([ADR 036](../DECISIONS/036-deudas-v2-visual.md)) CERRADO el 2026-07-12** (hero, picker/comparativa, acelerador/panel en 2 capas, tarjeta de deuda). **D.15d (motor + vista de palancas) y D.15b (editar deuda + reorden del form) CERRADAS el 2026-07-13** (ver "Deudas v2 (D.15, diseño)" abajo para el detalle del motor). **D.15a CERRADA (2026-07-13)**: copy motivador en las simulaciones de orden (Avalancha explicita "cuándo conviene", en paralelo a Bola de nieve, que ya lo tenía) + reafirmación "explora libremente, nada cambia hasta que confirmes" en las 3 palancas (Aumentar/Renegociar/Consolidar) + refuerzo psicológico en Abonar: línea estática ("cada abono es un paso real hacia quedar libre de esta deuda") y el tip en vivo nunca queda vacío (mensaje reforzado cuando el abono salda la deuda por completo, genérico cuando no hay proyección de meses que mostrar). Tono ADR 003/008: afirma progreso real, sin presión ni comparación. Sin cambios de lógica de negocio.
+- **Verificado contra** : FORM.1b (2026-07-15). Antes: D.15a (2026-07-13, cierra Deudas v2 completa), D.15b (2026-07-13), D.15d-2 (2026-07-13), D.15d-1 (2026-07-13), cierre de D.16d/D.16 (2026-07-12), análisis D.15 (2026-07-12), fix de BUG-011 (2026-07-11), primera ficha (D.14, 2026-07-10).
 
 **Dónde vive**
 
-| Pieza | Archivo | Ancla | Línea |
+| Pieza | Archivo | Ancla | Nota |
 |---|---|---|---|
-| API pública, handlers de acción, wiring de formularios | `modules/dominio/compromisos/index.js` | `_guardarCompromiso()`, `_editarCompromiso()`, `_eliminarCompromiso()`, `_elegirTipoDeuda()`, `_mostrarChooser()` | ~85, ~141, ~218, ~247, ~236 |
-| Toggle Fiado (D.13, oculta cuota/tasa/frecuencia) | `modules/dominio/compromisos/index.js` | `_wireToggleFiado()` | ~180 |
+| API pública, handlers de acción, wiring de formularios | `modules/dominio/compromisos/index.js` | `_guardarCompromiso()`, `_editarCompromiso()`, `_nuevoCompromiso()`, `_mostrarFormDeuda()`, `_elegirTipoDeuda()` | `_mostrarFormDeuda()` (FORM.1b) es el único punto de montaje del form: lo llaman crear, cambiar de tipo (segmented) y editar |
+| Toggle Fiado (D.13, oculta cuota/tasa/frecuencia) | `modules/dominio/compromisos/index.js` | `_wireToggleFiado()` | escucha `change` delegado en el form (chips de categoría, no un `<select>`) |
+| Ícono "Otra"/"Otro" (CAT.2d) | `modules/dominio/compromisos/index.js` | `_wireIconoOtraCategoria()` | ídem, delegado |
+| Disclosure "Condiciones del crédito" (FORM.1b) | `modules/dominio/compromisos/index.js` | `_wireCondicionesColapsable()` | toggle local de `aria-expanded` + `panel.hidden`, sin action global |
 | Toggle cuenta de origen (D.14) | `modules/dominio/compromisos/index.js` | `_wireToggleOrigen()` | ~210 |
 | Tip en vivo de refuerzo psicológico en Abonar (D.15a) | `modules/dominio/compromisos/index.js` | `_actualizarTipProyeccion()` | ~434 |
 | Acreditar/revertir saldo de cuenta (D.14, espejo de `tesoreria/acciones/ingresos.js`) | `modules/dominio/compromisos/index.js` | `_ajustarSaldoCuenta()` | ~67 |
@@ -28,9 +30,8 @@
 | Sección de palancas en la vista (D.15d-2, siempre visible: intro + tiles + herramienta) | `modules/dominio/compromisos/views/estrategia.js` | `_renderPalancas()`, `_renderPalancaTile()`, `_renderContenidoAlternativa()`, `_renderRemedioExtra()` | |
 | Estimación de ingreso mensual (capacidad de pago; D.15d la sacó de `tesoreria`) | `modules/infra/financiero.js` | `estimarSalarioMensual()` | |
 | Fijos mensuales para la capacidad (suma compromisos tipo 'fijo') | `modules/dominio/compromisos/logic/modelo.js` | `calcularFijosMensuales()` | |
-| Form tailored entidad/personal (paso 2 del modal) | `modules/dominio/compromisos/views/formularios.js` | `renderFormDeuda(tipo, deuda)` | ~148 |
+| Form de deuda v2, segmented inline + chips + monto hero + disclosure (FORM.1b) | `modules/dominio/compromisos/views/formularios.js` | `renderFormDeuda(tipo, deuda)` | el chooser de dos pasos se retiró: el segmented vive dentro de este mismo render, solo al crear |
 | Form de abono | `modules/dominio/compromisos/views/formularios.js` | `renderFormAbono()` | |
-| Chooser de tipo (paso 1 del modal) | `modules/dominio/compromisos/views/formularios.js` | `renderChooserCompromiso()` | |
 | Hero con el total de deuda (D.16a, ADR 036) | `modules/dominio/compromisos/views/hero.js` | `renderHeroCompromisos()`, agregado puro `resumenDeudas()` en `logic/modelo.js` | |
 | Lista de deudas activas + trigger de editar (D.15b) | `modules/dominio/compromisos/views/lista.js` | `renderListaCompromisos()`, `_renderCompromisoItem()` | |
 | Panel de estrategia de pago (arriba, define orden de pago) | `modules/dominio/compromisos/views/estrategia.js` | `renderEstrategiaPago()` | |
@@ -51,6 +52,33 @@
 - **Estado UI simulado vs estructura de la card (lección de BUG-011)**: los inputs de simulación del panel de estrategia (`cambiar-extra-remedio`, `cambiar-renegociar-tasa`, `cambiar-consolidar`) commitean su valor a `_uiEstrategia` en cada tecla A PROPÓSITO (para que el clic en "Aplicar" no compita con un re-render por blur). La contrapartida obligatoria: `renderEstrategiaPago()` decide la ESTRUCTURA de la card (recomendación, detalle, bloque viable/inviable) solo con los datos registrados (`recomendarEstrategia(deudas, 0)`); el extra simulado alimenta únicamente el resumen comparativo dentro de su bloque. Si una futura refactorización (D.15) vuelve a pasar el extra simulado a la decisión estructural, el panel de alternativas desaparecerá al cambiar de pestaña y la card presentará la simulación como aplicada. Tests de regresión: describe "BUG-011" en `tests/unit/compromisos.test.js` + suite "BUG-011" en `tests/e2e/estrategia-pago.test.js`.
 
 **Cambios pendientes**: ninguno. La iniciativa "Deudas v2: de registro a asesor" (brief 2026-07-08) quedó **completa el 2026-07-13**: D.15a (copy, última pieza), D.15b (editar + reorden), D.15c (absorbida por D.16d), D.15d-1/D.15d-2 (motor + vista de palancas) y D.15e (absorbida por D.15d-2), sumadas al rediseño visual D.16a-d (2026-07-12).
+
+---
+
+## Formulario de deuda (FORM.1b, [ADR 042](../DECISIONS/042-formularios-v2-visual.md))
+
+- **Objetivo**          : segunda rebanada de Formularios v2, el form de deuda adopta el lenguaje compartido de FORM.1a: segmented Entidad/Personal inline (reemplaza el chooser de dos pasos), categoría en chips 2col, saldo total como monto hero, cuota con prefijo `$`, tasa dentro de un disclosure colapsable, y el bloque D.14 como toggle switch.
+- **Estado actual**     : **FORM.1b CERRADA (2026-07-15)**. Cierra la iniciativa FORM.1 completa (FORM.1a gasto, FORM.1c gasto fijo).
+- **Verificado contra** : FORM.1b (2026-07-15).
+
+**Decisiones de traducción del mockup (ADR 042 D4, resueltas al codificar)**:
+
+- **Solo la tasa vive dentro del disclosure "Condiciones del crédito"**, no frecuencia+día como agrupaba el mockup: ambos son obligatorios (`validarCompromiso` los exige siempre) y el día de pago no tiene un valor por defecto seguro para esconder (a diferencia de frecuencia, que ya trae 'Mensual' preseleccionado). Esconder un campo obligatorio sin default detrás de un colapsable cerrado habría generado errores de validación silenciosos. El disclosure abre por defecto al editar una deuda que ya tiene tasa guardada.
+- **El segmented reemplaza el chooser de dos pasos por completo**: `renderChooserCompromiso()`, `_mostrarChooser()`, `_volverChooser()` y la acción `comp-volver-chooser` se eliminaron (cero código muerto); el CSS `.comp-chooser*` (89 líneas en `charts.css`) también. `_inyectarForm()` (pre-inyectaba el chooser al arrancar) también se retiró: como en Gastos, el form se monta on-demand en cada apertura del modal.
+- **El segmented solo aparece al crear**: editar una deuda nunca permitió cambiar Entidad↔Personal (ni con el chooser viejo); se conserva la regla, solo cambia cómo se expresa (ausencia del bloque, no un paso saltado).
+- **Toggle switch (`.toggle-switch`/`.toggle-row` en `forms.css`)**: checkbox real oculto dentro del track (mismo criterio que los chips), con el track teñido por `--fk-section-accent` y la perilla en el par `--fk-text-muted` (apagado) / `--fk-text-on-accent` (encendido). **Ojo: NO es el único switch de la app**, aunque una versión anterior de esta ficha lo afirmara. Ya existían dos: `.toggle` ("TOGGLE (switch)" en `atoms.css`, genérico, 44x24, sin ningún consumidor en JS: **CSS muerto**) y `.config-toggle` (`config.css`, vivo en Ajustes para tema y notificaciones). El de FORM.1b es el tercero y se diferencia solo en que tiñe por dominio (`--fk-section-accent`) y trae el layout `.toggle-row` (label + hint); esa diferencia no justifica tres componentes. Consolidarlos es la tarjeta **TX.11** del BOARD (recomendación: `.toggle` de `atoms.css` como único switch, con el acento de sección como fallback, y borrar los otros dos).
+- **`.form-disclosure` es un componente genérico**, no específico de tasa: trigger + panel con `aria-expanded`/`hidden`, reusable para futuros colapsables.
+
+**Wiring (todo delegado, sin `id` único en los radios de categoría)**: `_mostrarFormDeuda(overlay, tipo, deuda)` es el único punto de montaje (lo llaman `_nuevoCompromiso`, `_elegirTipoDeuda` y `_editarCompromiso`); `_wireToggleFiado`/`_wireIconoOtraCategoria` escuchan `change` delegado en el `<form>` filtrando `e.target.name === 'categoria'` (antes escuchaban un único `<select id="comp-categoria">`, que ya no existe).
+
+**Riesgos nuevos**:
+
+- **Ningún `id="comp-categoria"` existe más**: cualquier código o test que lo busque directamente falla en silencio (`querySelector` devuelve `null`). Usar `form.querySelector('input[name="categoria"]:checked')` para leer, o `elegirChip(form, valor)` en E2E (helper en `smoke.test.js`, compartido con FORM.1a).
+- **`#grupo-comp-tasa` ahora envuelve el disclosure completo** (trigger + panel), no solo el input: `_wireToggleFiado` lo sigue ocultando entero para Fiado, comportamiento intacto pero la superficie ocultada creció (ya no es solo un `form-group`).
+
+**Cambios realizados**:
+
+- 2026-07-15 (FORM.1b): form v2 completo (segmented, chips, monto hero, disclosure de tasa, toggle D.14, teja del header) + retiro completo del chooser de dos pasos (JS y CSS muertos). Ver [CHANGELOG](../CHANGELOG.md).
 
 ---
 

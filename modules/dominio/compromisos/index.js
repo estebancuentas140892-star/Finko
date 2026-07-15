@@ -25,7 +25,6 @@ import { validarCompromiso, normalizarCompromiso, validarAbono, ajustarMontoAbon
 import {
   renderHeroCompromisos,
   renderListaCompromisos,
-  renderChooserCompromiso,
   renderFormDeuda,
   renderFormAbono,
   renderEstrategiaPago,
@@ -78,12 +77,46 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
+/**
+ * FORM.1b (ADR 042 D4): monta el form de deuda en el modal y cablea sus
+ * listeners locales. Único punto de entrada para las tres formas de llegar
+ * al form (crear con el tipo por defecto, cambiar de tipo con el segmented,
+ * editar): evita triplicar el wiring.
+ * @param {HTMLElement} overlay - el modal-overlay ya resuelto.
+ * @param {'deuda-entidad'|'deuda-personal'} tipo
+ * @param {import('../../core/state.js').Compromiso|null} [deuda] - modo edición si se pasa.
+ */
+function _mostrarFormDeuda(overlay, tipo, deuda = null) {
+  const body = overlay.querySelector('.modal__body');
+  if (!body) return;
+
+  body.innerHTML = renderFormDeuda(tipo, deuda);
+
+  body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    _guardarCompromiso();
+  });
+  _wireToggleFiado(body);
+  _wireIconoOtraCategoria(body);
+  _wireCondicionesColapsable(body);
+
+  // El segmented y el foco inicial en descripción solo aplican al crear:
+  // editar no permite cambiar el tipo (ver renderFormDeuda) ni necesita
+  // acreditar cuenta de origen otra vez.
+  if (!deuda) {
+    _wireToggleOrigen(body);
+    body.querySelector('#comp-descripcion')?.focus();
+  }
+}
+
 function _nuevoCompromiso() {
   const overlay = document.getElementById('modal-compromiso');
   if (!overlay) return;
-  // Volvemos al chooser (paso 1) y reseteamos el título. Así si el usuario
-  // cerró habiendo llegado al form (paso 2) y vuelve a abrir, ve el chooser.
-  _mostrarChooser(overlay);
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nueva deuda';
+  // FORM.1b: arranca directo en el form (Entidad por defecto); el segmented
+  // inline reemplaza el chooser de dos pasos.
+  _mostrarFormDeuda(overlay, 'deuda-entidad');
   abrirModal(overlay);
 }
 
@@ -156,21 +189,10 @@ function _editarCompromiso(el) {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar deuda';
 
-  const body = document.getElementById('modal-compromiso-body');
-  if (!body) return;
+  _mostrarFormDeuda(overlay, comp.tipo, comp);
 
-  body.innerHTML = renderFormDeuda(comp.tipo, comp);
-
-  const formEl = body.querySelector('#form-compromiso');
-  if (formEl) {
-    formEl.dataset.id = id;
-    formEl.addEventListener('submit', (e) => {
-      e.preventDefault();
-      _guardarCompromiso();
-    });
-  }
-  _wireToggleFiado(body);
-  _wireIconoOtraCategoria(body);
+  const formEl = overlay.querySelector('#form-compromiso');
+  if (formEl) formEl.dataset.id = id;
 
   abrirModal(overlay);
 }
@@ -178,23 +200,22 @@ function _editarCompromiso(el) {
 /**
  * D.13: interfaz adaptada para Fiado. Un fiado (tienda de barrio, vendedor)
  * no tiene cuota fija, ni tasa, ni frecuencia: se abona libre. Al elegir
- * Fiado en el selector de relación se ocultan esos campos (y se limpian sus
+ * Fiado en los chips de categoría se ocultan esos campos (y se limpian sus
  * valores); el día de pago queda como recordatorio de la fecha acordada.
- * Solo aplica a deuda personal: en entidad el selector es de producto.
+ * Solo aplica a deuda personal: en entidad el chip es de producto.
  * @param {HTMLElement} body - contenedor del form ya inyectado.
  */
 function _wireToggleFiado(body) {
   const form = body.querySelector('#form-compromiso');
-  const sel  = body.querySelector('#comp-categoria');
-  if (!form || !sel) return;
+  if (!form) return;
   if (form.querySelector('input[name="tipo"]')?.value !== 'deuda-personal') return;
 
   const grupos = ['#grupo-comp-cuota', '#grupo-comp-tasa', '#grupo-comp-frecuencia']
     .map(s => body.querySelector(s))
     .filter(Boolean);
 
-  const aplicar = () => {
-    const esFiado = sel.value === 'Fiado';
+  const aplicar = (valor) => {
+    const esFiado = valor === 'Fiado';
     for (const g of grupos) g.hidden = esFiado;
     if (esFiado) {
       const cuota = form.querySelector('#comp-cuota');
@@ -203,31 +224,52 @@ function _wireToggleFiado(body) {
       if (tasa)  tasa.value  = '';
     }
   };
-  sel.addEventListener('change', aplicar);
-  aplicar(); // estado inicial (ej. edición de un fiado existente)
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria') aplicar(e.target.value);
+  });
+  aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de un fiado existente)
 }
 
 /**
  * CAT.2d: el picker de ícono solo tiene sentido con la categoría 'Otra'
  * (entidad) / 'Otro' (personal); se revela/oculta el grupo al cambiar el
- * selector. El form se re-renderiza completo en cada apertura (como Gastos
- * y Apartados, no como Metas): no hace falta `resetIconoPicker`.
+ * chip elegido. El form se re-renderiza completo en cada apertura (como
+ * Gastos y Apartados, no como Metas): no hace falta `resetIconoPicker`.
  * @param {HTMLElement} body - contenedor del form ya inyectado.
  */
 function _wireIconoOtraCategoria(body) {
   const form   = body.querySelector('#form-compromiso');
-  const sel    = body.querySelector('#comp-categoria');
   const grupo  = body.querySelector('#grupo-comp-icono');
   const picker = body.querySelector('[data-icono-picker="comp-icono"]');
-  if (!form || !sel || !grupo || !picker) return;
+  if (!form || !grupo || !picker) return;
 
-  const esEntidad    = form.querySelector('input[name="tipo"]')?.value === 'deuda-entidad';
+  const esEntidad     = form.querySelector('input[name="tipo"]')?.value === 'deuda-entidad';
   const categoriaOtra = esEntidad ? 'Otra' : 'Otro';
 
-  const aplicar = () => { grupo.hidden = sel.value !== categoriaOtra; };
-  sel.addEventListener('change', aplicar);
-  aplicar(); // estado inicial (ej. edición de una deuda ya guardada como 'Otra')
+  const aplicar = (valor) => { grupo.hidden = valor !== categoriaOtra; };
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria') aplicar(e.target.value);
+  });
+  aplicar(form.querySelector('input[name="categoria"]:checked')?.value ?? null); // estado inicial (ej. edición de una deuda ya guardada como 'Otra')
   wireIconoPicker(picker);
+}
+
+/**
+ * FORM.1b (ADR 042 D4): despliega/colapsa "Condiciones del crédito" (tasa).
+ * Frecuencia y día de pago quedan fuera del colapsable a propósito (ver
+ * renderFormDeuda): son obligatorios y el día no tiene un valor por defecto
+ * seguro para ocultar.
+ * @param {HTMLElement} body - contenedor del form ya inyectado.
+ */
+function _wireCondicionesColapsable(body) {
+  const trigger = body.querySelector('.form-disclosure__trigger');
+  const panel   = body.querySelector('.form-disclosure__panel');
+  if (!trigger || !panel) return;
+  trigger.addEventListener('click', () => {
+    const abierto = trigger.getAttribute('aria-expanded') === 'true';
+    trigger.setAttribute('aria-expanded', String(!abierto));
+    panel.hidden = abierto;
+  });
 }
 
 /**
@@ -271,21 +313,12 @@ async function _eliminarCompromiso(el) {
   announce(`Compromiso "${compromiso.descripcion}" eliminado.`);
 }
 
-// ── HANDLERS DEL MODAL: FLUJO DE 2 PASOS ────────────────────────
+// ── HANDLER DEL SEGMENTED ENTIDAD/PERSONAL (FORM.1b) ─────────────
 
 /**
- * Pone el modal en el paso 1 (chooser). Reinyecta el HTML limpio y resetea el título.
- * @param {HTMLElement} overlay - el modal-overlay
- */
-function _mostrarChooser(overlay) {
-  const body = overlay.querySelector('.modal__body');
-  const titulo = overlay.querySelector('.modal__title');
-  if (body)   body.innerHTML = renderChooserCompromiso();
-  if (titulo) titulo.textContent = 'Nueva deuda';
-}
-
-/**
- * Cuando el usuario elige el tipo (entidad | personal), pasamos al paso 2.
+ * Cambia el tipo de deuda (Entidad/Personal) sin cerrar el modal: el
+ * segmented vive inline al tope del form (ADR 042 D4), ya no hay un paso
+ * de chooser aparte. Solo aparece al crear (ver renderFormDeuda).
  * @param {HTMLElement} el - botón con data-tipo
  */
 function _elegirTipoDeuda(el) {
@@ -295,35 +328,7 @@ function _elegirTipoDeuda(el) {
   const overlay = document.getElementById('modal-compromiso');
   if (!overlay) return;
 
-  const body   = overlay.querySelector('.modal__body');
-  const titulo = overlay.querySelector('.modal__title');
-  if (!body) return;
-
-  body.innerHTML = renderFormDeuda(tipo);
-
-  const tituloTexto = tipo === 'deuda-entidad' ? 'Deuda con entidad' : 'Deuda personal';
-  if (titulo) titulo.textContent = tituloTexto;
-
-  // Adjuntar submit handler al nuevo form.
-  body.querySelector('#form-compromiso')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    _guardarCompromiso();
-  });
-  _wireToggleFiado(body);
-  _wireToggleOrigen(body);
-  _wireIconoOtraCategoria(body);
-
-  // Foco en el primer campo visible para accesibilidad.
-  body.querySelector('input:not([type=hidden])')?.focus();
-}
-
-/**
- * Vuelve al chooser (paso 1) desde el form (paso 2).
- */
-function _volverChooser() {
-  const overlay = document.getElementById('modal-compromiso');
-  if (!overlay) return;
-  _mostrarChooser(overlay);
+  _mostrarFormDeuda(overlay, tipo);
 }
 
 // ── HANDLERS ABONO A DEUDAS (ADR 002) ───────────────────────────
@@ -760,13 +765,6 @@ async function _aplicarConsolidacion() {
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
-function _inyectarForm() {
-  // Paso 1: al arrancar inyectamos el chooser en el modal.
-  // El form (paso 2) se inyecta dinámicamente cuando el usuario elige tipo.
-  const overlay = document.getElementById('modal-compromiso');
-  if (overlay) _mostrarChooser(overlay);
-}
-
 export function initCompromisos() {
   registrarAccion('nuevo-compromiso',        _nuevoCompromiso);
   registrarAccion('editar-compromiso',       _editarCompromiso);
@@ -780,7 +778,6 @@ export function initCompromisos() {
   registrarAccion('aplicar-renegociacion',   _aplicarRenegociacion);
   registrarAccion('aplicar-consolidacion',   _aplicarConsolidacion);
   registrarAccion('comp-elegir-tipo',        _elegirTipoDeuda);
-  registrarAccion('comp-volver-chooser',     _volverChooser);
 
   // D.16a (ADR 036 D7): el ojo del hero de Deudas comparte el flag
   // S.config.ocultarSaldo con el ojo de Inicio (IN.2) y el de Mis cuentas
@@ -795,8 +792,6 @@ export function initCompromisos() {
     updSaldo();
     renderSmart(_renderTodo, 'compromisos');
   });
-
-  _inyectarForm();
 
   // El extra mensual y la tasa/cuota de las palancas reaccionan en vivo al
   // escribir. Todos commitean su valor a estado en el `input` y actualizan su

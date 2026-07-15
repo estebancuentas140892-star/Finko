@@ -63,20 +63,30 @@ function hoyLocal() {
 }
 
 /**
- * Elige una categoría en el form de gasto v2 (FORM.1a, ADR 042): la
- * categoría son chips con radios ocultos, así que se toca el chip (label)
- * que contiene el radio con ese value. Sin `value`, toca el primer chip
- * (Mercado, la primera categoría del catálogo). La fecha ya no se rellena
- * en estos flujos: el chip "Hoy" viene seleccionado por defecto.
+ * Toca un chip de categoría del lenguaje de formularios v2 (FORM.1, ADR 042):
+ * la categoría son chips con radios ocultos, así que se clickea el label
+ * (`.chip-cat`) que contiene el radio con ese value, no el input directo
+ * (no es visible). Sin `value`, toca el primer chip del catálogo.
  *
  * @param {import('@playwright/test').Locator} form
  * @param {string} [value] - value del radio (nombre de la categoría o '__nueva__')
  */
-async function elegirCategoriaGasto(form, value) {
+async function elegirChip(form, value) {
   const chip = value
     ? form.locator(`.chip-cat:has(input[value="${value}"])`)
     : form.locator('.chip-cat').first();
   await chip.click();
+}
+
+/**
+ * Elige una categoría en el form de gasto v2 (FORM.1a): sin `value`, toca el
+ * primer chip (Mercado, la primera categoría del catálogo). La fecha ya no
+ * se rellena en estos flujos: el chip "Hoy" viene seleccionado por defecto.
+ * @param {import('@playwright/test').Locator} form
+ * @param {string} [value]
+ */
+async function elegirCategoriaGasto(form, value) {
+  await elegirChip(form, value);
 }
 
 /**
@@ -3723,10 +3733,10 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await page.click('[data-action="nuevo-compromiso"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
-    await page.click('[data-action="comp-elegir-tipo"][data-tipo="deuda-entidad"]');
-
+    // FORM.1b (ADR 042): el form arranca directo en Entidad (segmented
+    // inline, sin chooser de dos pasos); no hace falta tocar el segmented.
     const form = page.locator('#modal-compromiso-body form');
-    await form.locator('#comp-categoria').selectOption('Otra');
+    await elegirChip(form, 'Otra');
     // El picker (oculto salvo con "Otra") se despliega al tocar el recuadro.
     await expect(form.locator('#grupo-comp-icono')).toBeVisible();
     await form.locator('[data-icono-picker="comp-icono"] .icono-picker__recuadro').click();
@@ -3744,20 +3754,21 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await expect(card.locator('.deuda-card__chip--entidad use[href="#c-avion"]')).toHaveCount(1);
   });
 
-  test('sin elegir "Otra", el picker de ícono permanece oculto', async ({ page }) => {
+  test('sin elegir "Otro", el picker de ícono permanece oculto', async ({ page }) => {
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
     await page.click('[data-action="nuevo-compromiso"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
+    // El segmented arranca en Entidad; se toca "Personal" para este flujo.
     await page.click('[data-action="comp-elegir-tipo"][data-tipo="deuda-personal"]');
 
     const form = page.locator('#modal-compromiso-body form');
     await expect(form.locator('#grupo-comp-icono')).toBeHidden();
-    await form.locator('#comp-categoria').selectOption('Familiar');
+    await elegirChip(form, 'Familiar');
     await expect(form.locator('#grupo-comp-icono')).toBeHidden();
-    await form.locator('#comp-categoria').selectOption('Otro');
+    await elegirChip(form, 'Otro');
     await expect(form.locator('#grupo-comp-icono')).toBeVisible();
   });
 

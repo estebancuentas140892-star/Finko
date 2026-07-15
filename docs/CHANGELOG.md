@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(forms): FORM.1b Nueva deuda con el lenguaje v2 + el chooser de dos pasos desaparece · 2026-07-15
+
+Segunda rebanada de **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md) D4): el form de deuda adopta el lenguaje que estrenó FORM.1a. El **segmented Entidad/Personal vive inline** al tope del form y **reemplaza el chooser de dos pasos** (mismo contrato `tipo` en un hidden, un paso menos para el usuario): `renderChooserCompromiso()`, `_mostrarChooser()`, `_volverChooser()`, la acción `comp-volver-chooser` y las 89 líneas de `.comp-chooser*` en `charts.css` se borran completas, cero código muerto. Además: categorías en **chips de 2 columnas** (catálogos D.10 por tipo, con el picker de ícono CAT.2d intacto en "Otra/Otro"), saldo total como **monto hero** frambuesa, cuota con prefijo `$`, tasa dentro del disclosure **"Condiciones del crédito"** y el bloque D.14 como **toggle**. Cero lógica nueva: `validarCompromiso`/`normalizarCompromiso` y el contrato FormData no se tocan.
+
+**Decisiones de traducción del mockup** (detalle en [`contexto/deudas.md`](contexto/deudas.md)): **solo la tasa** entró al colapsable, no frecuencia+día como agrupaba el mockup, porque ambos son obligatorios y el día no tiene default seguro: esconderlos habría producido errores de validación silenciosos (el disclosure abre solo al editar una deuda que ya tiene tasa). El **segmented solo aparece al crear**: editar nunca permitió cambiar Entidad↔Personal, y la regla se conserva. `_mostrarFormDeuda()` queda como **único punto de montaje** del form (lo llaman crear, cambiar de tipo y editar), en vez de triplicar el wiring; `_inyectarForm()` se retira y el form se monta on-demand, como en Gastos.
+
+**Dos hallazgos de la verificación** (ninguno venía en el plan de la tarjeta):
+
+- **Corregido aquí:** la perilla del toggle nuevo tenía `background: #fff` hardcodeado, el **único color hardcodeado de todo `styles/`** (viola CLAUDE.md 6 y el guardarraíl 4 del ADR 042). No era solo la regla: el par de tokens del sistema para esto es `--fk-text-muted` (apagado) / `--fk-text-on-accent` (encendido), y `--fk-text-on-accent` es `#ffffff` en claro pero **`#08120d` en oscuro**, así que el blanco fijo contradecía el tema oscuro. Ahora usa el mismo par que `.toggle` de `atoms.css`.
+- **Registrado como TX.11:** el toggle se documentó como componente nuevo porque "no existía ningún patrón de switch en la app". Es falso: ya existían `.toggle` (`atoms.css`, genérico, **sin un solo consumidor: CSS muerto**) y `.config-toggle` (`config.css`, vivo en Ajustes). El de FORM.1b es el tercero y solo se diferencia en que tiñe por dominio. Se deja como está para no ampliar el alcance de esta rebanada (regla 2.1) y la consolidación va a su propia tarjeta con recomendación; la ficha ya no afirma lo contrario.
+
+**Archivos tocados**
+
+- `modules/dominio/compromisos/views/formularios.js`: `renderFormDeuda()` v2 (segmented, chips 2col con `CATEGORIA_DEUDA_ICONO`/`CATEGORIA_DEUDA_PERSONAL_ICONO`, monto hero, `input-prefix` en la cuota, disclosure de tasa, toggle D.14, footer con `i-check-circle`); `renderChooserCompromiso()` eliminada.
+- `modules/dominio/compromisos/index.js`: `_mostrarFormDeuda()` nueva (único montaje + wiring); `_wireCondicionesColapsable()` nueva; `_wireToggleFiado`/`_wireIconoOtraCategoria` pasan a `change` **delegado** en el form filtrando `e.target.name === 'categoria'` (ya no existe `#comp-categoria`); `_mostrarChooser`/`_volverChooser`/`_inyectarForm` y la acción `comp-volver-chooser` eliminadas.
+- `modules/dominio/compromisos/view.js`: deja de re-exportar `renderChooserCompromiso`.
+- `styles/components/forms.css`: `.tipo-segmented*`, `.form-disclosure*` (genérico, no específico de tasa) y `.toggle-switch`/`.toggle-row`. `styles/components/charts.css`: `.comp-chooser*` borrado (89 líneas).
+- `index.html`: teja `i-deudas` en el header de `#modal-compromiso`.
+- `tests/unit/compromisos.test.js` (chips en vez de `<option>`, 4 tests nuevos) + `tests/e2e/smoke.test.js` (los flujos de deuda ya no pasan por el chooser). Tests **adaptados, no borrados**.
+- `service-worker.js`: `CACHE_NAME` v401 → v402.
+
+**Verificación:** 2818/2818 unit + 206/206 E2E + lint verdes. Nota del entorno: el pase `a11y-forms` sobre "Nueva deuda" salió **flaky** (axe reportó contraste en `.tipo-segmented__btn` y `.monto-hero__label`, y pasó al reintentar). Investigado: es una **carrera del test, no un defecto de CSS**. `waitForSelector('[data-open]')` devuelve mientras el modal aún hace su `transition: opacity`, así que axe mide un color mezclado; con opacidad 1 ambos pares cumplen AA (`#888fa6` sobre `#20242f` = 4.7:1 en oscuro; `#5d6276` sobre `#eef1f8` = 5.3:1 en claro) y 6 repeticiones del test pasaron 6/6. La carrera es **preexistente** (afecta a cualquier modal con fade) y se registra como BUG-013, no se parchea dentro de esta rebanada.
+
+---
+
 ### feat(forms): FORM.1a lenguaje de formularios v2 + Registrar gasto con monto hero y chips · 2026-07-15
 
 Primera rebanada de la iniciativa **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md), octava entrega de la familia visual v2; handoff de Claude Design "Iteración de specimen" enviado por Esteban con instrucción de implementar). Nace el **lenguaje compartido de captura** en `forms.css` y lo estrena el formulario flagship, Registrar gasto: monto hero tintado del dominio al frente, categoría con **chips de ícono en vez de select** (radios reales: el contrato FormData y `validarGasto()` no cambian en nada), fecha con atajos **Hoy / Ayer / Otra fecha** (Hoy por defecto, la regla de CAT.4 aplicada a este form), teja de dominio junto al título del modal y footer con el primario a lo ancho (`i-check-circle`).
