@@ -59,7 +59,7 @@
 - **La regla `llave` requiere `tipoLlave`, pero `numeroCuenta`/`alias` no exigen nada entre sí**: si se agrega un campo nuevo a `DatosTransferencia` en el futuro, decidir explícitamente si necesita esa misma clase de validación cruzada o si es independiente, no asumir.
 - **`#distribuir-ingreso-panel` (MC.18e) ya no existe en el DOM desde el primer render**: solo se inyecta dentro de `#modal-distribuir-body` cuando `abrirAsistenteDistribucion()` lo abre. Cualquier código nuevo que asuma que ese elemento está siempre presente (como sí lo estaba antes de MC.18e, con `hidden`) fallará; usar siempre `abrirAsistenteDistribucion()` como punto de entrada, nunca `document.getElementById('distribuir-ingreso-panel')` directo sin haber abierto el modal primero.
 
-**Cambios pendientes**: **MC.13** (Distribución v2, rediseña el CONTENIDO del asistente: presets, pasos, checklist) y **MC.16** (tarjeta de crédito integrada, requiere ADR) siguen pendientes en `docs/BOARD.md`, dentro de la iniciativa "Mis Cuentas v2". El rediseño visual (ADR 035, MC.18a a MC.18e) y las transferencias entre cuentas (MC.17a a MC.17e) están completos.
+**Cambios pendientes**: **MC.13** (Distribución v2) tiene **análisis y diseño hechos el 2026-07-14** ([ADR 041](../DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), Propuesta; ver el bloque "Distribución v2 y motor de vencimientos" abajo): re-cortada en MC.13a-e, pendiente de aprobación del ADR y de dos decisiones de Esteban. **MC.16** (tarjeta de crédito integrada, requiere ADR) sigue pendiente en `docs/BOARD.md`, dentro de la iniciativa "Mis Cuentas v2". El rediseño visual (ADR 035, MC.18a a MC.18e) y las transferencias entre cuentas (MC.17a a MC.17e) están completos.
 
 ---
 
@@ -78,6 +78,23 @@
 - **Punto de entrada**: dos accesos, ambos cerrados. **MC.17b**: botón "Transferir entre cuentas" en Mis cuentas, bajo la lista de cuentas. **MC.17e**: teja "Transferir" en la hoja "Registrar" (accesible desde cualquier sección), visible solo con 2+ cuentas (patrón 0/1/varias de `registrar.js`), reutiliza la misma acción `abrir-transferencia`.
 - **Forward-compat MC.16**: cuando exista la tarjeta de crédito, "pagar la tarjeta" es un abono a deuda, NO una transferencia; las cuentas TC no serán endpoints. MC.17 v1 solo opera cuentas de dinero real. No es dependencia, solo aviso para no modelar la transferencia de forma que estorbe a MC.16.
 - **Rebanadas**: MC.17a (schema + lógica pura + apply, solo-unit) → MC.17b (form + acción, patrón 0/1/2/varias) → MC.17c (ledger neutro) → MC.17d (GMF) → MC.17e (teja en Registrar). Las 5 cerradas el 2026-07-12. Detalle en `docs/BOARD.md`.
+
+---
+
+## Distribución v2 y motor de vencimientos (MC.13, diseño 2026-07-14)
+
+> Bloque de diseño escrito en la fase de análisis (Opus 4.8), **antes de codificar** (regla 2.6). Fuente formal: **[ADR 041](../DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)** (estado Propuesta). Nada se implementa sin la aprobación del ADR; dos decisiones son de Esteban (ver abajo).
+
+- **Objetivo**: el asistente "Distribuir mi ingreso" (MC.7) muestra hoy TODAS las obligaciones/aportes del mes y satura. Distribución v2 responde "¿qué toca con ESTE cobro?" usando una ventana derivada de la fecha y frecuencia del ingreso.
+- **Hallazgo del análisis (la razón del motor compartido)**: la lógica de "ocurrencias por frecuencia" y "aporte por período" ya existe FRAGMENTADA y DUPLICADA. `_diasParaCompromiso`/`eventosDelMes` (`agenda/logic.js`) resuelven ocurrencias por MES (no por ventana). `construirDesgloseNecesidades` (`tesoreria/logic/distribucion.js`) solo incluye fijos `Mensual` (hueco MC.7g). `ultimoPagoHasta`/`estadoDistribucion` (`ingresos.js`) solo datan Mensual/Quincenal. Y `frecuenciaPrincipalIngresos` + `DIAS_POR_PERIODO` + `calcularAhorroPorPeriodo` están **duplicados** en `metas/logic.js` y `apartados/logic.js` (cada uno se comenta como "duplicado intencional"). Construir un cuarto motor sería el anti-patrón de la regla 2.7.
+- **Decisión (ADR 041)**: motor único `modules/infra/vencimientos.js` (puro, sin dominio, ADN #10 intacto, mismo hogar que `estimarSalarioMensual` en `infra/financiero.js`). Dos mitades:
+  - **A - vencimientos**: `ocurrenciasEnRango(item, inicioISO, finISO)` (generaliza `_diasParaCompromiso` de mes a ventana; Agenda pasa a consumirla), `ventanaDelCobro(frecuencia, fechaCobroISO)` (ventana del cobro para TODAS las frecuencias).
+  - **B - aportes**: `frecuenciaPrincipalIngresos`, `diasPorPeriodo`, `etiquetaPeriodo`, `aportePorPeriodo(faltante, fechaObjetivoISO, frecuencia, hoy)` (una sola copia; Metas y Apartados borran las suyas y re-importan).
+  - **Composición**: `obligacionesYAportesDelCobro({cobro, compromisos, gastos, metas, apartados, fondo, hoy})` → `{ ventana, vencidas, enVentana, aportes }`. Solo lo del cobro, con vencidas separadas de por-vencer (copy de los puntos 9-10). Absorbe MC.7g (todas las frecuencias).
+- **Consumidores** (un motor, no cuatro): asistente v2, checklist de Necesidades (ex MC.7g), Metas (`calcularAhorroPorPeriodo` → `aportePorPeriodo`, MT.6), Apartados (prellenar Aportar, AP.5), fondo en la distribución (AH.5), pagos automáticos (PA.1, `vencidas` en catch-up).
+- **Schema (D5)**: campo opcional `cuentaId` en `@typedef Ingreso` (hoy NO lo tiene; `IngresoPuntual` sí). Bump v26→v27, migración aditiva idempotente (ausente → comportamiento actual; sin backfill: adivinar la cuenta sería inventar el dato). Registrar la cuenta NO implica crédito automático (eso es el conflicto (b), materia de PA.1).
+- **Decisiones pendientes de Esteban (regla 2.7)**: (a) quitar la oferta automática de distribución tras un ingreso esporádico revierte NAV.A2b s2 del ADR 024 (`_ofrecerDistribucion` en `tesoreria/acciones/ingresos.js`); recomendación del análisis: quitar la oferta automática, conservar el asistente accesible manualmente. (b) crédito automático del ingreso fijo = PA.1, fuera de este ADR.
+- **Rebanadas**: MC.13a (motor mitad A + Agenda consume) → MC.13b (motor mitad B + Metas/Apartados borran copias) → MC.13c (`obligacionesYAportesDelCobro` + checklist) → MC.13d (schema `cuentaId` + form, independiente) → MC.13e+ (asistente v2 UI, puntos 9-20; depende de la decisión (a)). Detalle en `docs/BOARD.md` y el ADR 041.
 
 ---
 
