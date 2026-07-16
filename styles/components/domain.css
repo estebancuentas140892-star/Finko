@@ -403,13 +403,6 @@ button.chip:focus-visible {
   line-height: var(--fk-leading-snug);
 }
 
-.distribucion-ctas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--fk-space-2);
-  margin-top: var(--fk-space-3);
-}
-
 /* ════════════════════════════════════════════════════════════
    DISTRIBUIR-CARD (MC.18e, ADR 035 D6) - tarjeta de entrada compacta
    "¿Cómo distribuir $X?": reemplaza al bloque siempre desplegado
@@ -419,6 +412,15 @@ button.chip:focus-visible {
    Los 3 colores fijos (Necesidades/Estilo de vida/Ahorro) reutilizan
    tokens de dominio ya existentes, coinciden con la paleta del handoff.
    ════════════════════════════════════════════════════════════ */
+
+/* Aviso "recibiste tu ingreso" (MC.13e-2a, punto 12): bloque propio antes
+   de la tarjeta, no un subtítulo mezclado con el resto de su contenido. */
+.distribuir-aviso {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-dom-tesoreria-text);
+}
 
 .distribuir-card {
   border-radius: var(--fk-radius-lg);

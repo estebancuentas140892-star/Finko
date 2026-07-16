@@ -47,7 +47,7 @@ import {
   calcularTransferencia,
 } from '../../modules/dominio/tesoreria/logic.js';
 import { CATEGORIAS_INGRESO, CATEGORIA_INGRESO_ICONO, SMMLV, AUXILIO_TRANSPORTE, TIPOS_LLAVE } from '../../modules/core/constants.js';
-import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
+import { renderFormIngreso, renderFormIngresoPuntual, renderListaIngresos, renderListaIngresosPuntuales, renderNudgeDistribucionInicio, renderDistribucionIngreso, renderFormCuenta, renderListaCuentas, renderHeroTesoreria, renderGMFIndicador, renderBotonTransferir, renderFormTransferencia, renderParTransferencia, renderSeccionGMF } from '../../modules/dominio/tesoreria/view.js';
 import { initAccionesDistribucion } from '../../modules/dominio/tesoreria/acciones/distribucion.js';
 import { initAccionesCuentas, inyectarFormCuenta } from '../../modules/dominio/tesoreria/acciones/cuentas.js';
 import { initAccionesTransferencias } from '../../modules/dominio/tesoreria/acciones/transferencias.js';
@@ -2287,6 +2287,51 @@ describe('renderNudgeDistribucionInicio()', () => {
     dispatch(boton, new Event('click'));
 
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ── renderDistribucionIngreso() - tarjeta de Mis cuentas (MC.13e-2a) ──
+
+describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)', () => {
+  const elCard = () => document.getElementById('ingresos-distribucion');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="ingresos-distribucion"></div>';
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true }];
+    S.cuentas  = [];
+    S.metas = []; S.apartados = []; S.compromisos = []; S.inversiones = [];
+    S.ahorro = { fondoEmergencia: { activo: false } };
+    S.config = { ...S.config };
+  });
+
+  it('no renderiza ningún acceso cruzado ("Ver progreso del fondo", "Ver tu seguimiento en Límites de gasto"...)', () => {
+    renderDistribucionIngreso();
+    expect(elCard().querySelector('.distribucion-ctas')).toBeNull();
+    expect(elCard().innerHTML).not.toContain('Ver tu seguimiento en Límites de gasto');
+    expect(elCard().innerHTML).not.toContain('href="#presupuesto"');
+  });
+
+  it('el aviso "recibiste tu ingreso" es un bloque aparte de la tarjeta (punto 12)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 10));
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    renderDistribucionIngreso();
+
+    const aviso = elCard().querySelector('.distribuir-aviso');
+    expect(aviso).not.toBeNull();
+    expect(aviso.textContent).toContain('Recibiste tu ingreso el');
+    // El aviso no vive dentro de .distribuir-card: son dos bloques separados.
+    expect(elCard().querySelector('.distribuir-card .distribuir-aviso')).toBeNull();
+    // La tarjeta mantiene su invitación genérica, no la duplica.
+    expect(elCard().querySelector('.distribuir-card__sub').textContent)
+      .toBe('Reparte tu ingreso entre necesidades, estilo de vida y ahorro.');
+    vi.useRealTimers();
+  });
+
+  it('sin fecha datable, no hay aviso pero la tarjeta sigue mostrándose', () => {
+    renderDistribucionIngreso();
+    expect(elCard().querySelector('.distribuir-aviso')).toBeNull();
+    expect(elCard().querySelector('.distribuir-card')).not.toBeNull();
   });
 });
 

@@ -2814,10 +2814,16 @@ test.describe('Mis cuentas - Transferir entre cuentas propias (MC.17b)', () => {
   });
 });
 
-// ── Mis cuentas: CTA cruzado a Límites de gasto (MC.5e, ADR 017) ─────────────
+// ── Mis cuentas: sin accesos cruzados en la tarjeta (MC.13e-2a, punto 11) ────
+// Los accesos cruzados ("Ver progreso del fondo", "Ver tu seguimiento en
+// Límites de gasto"...) dejaron de renderizarse en la tarjeta de "Distribuir
+// mi ingreso" (antes MC.5e/ADR 017 los mostraba siempre ahí). La lógica que
+// los calcula (`sugerirDistribucionIngreso().ctas`) sigue intacta y cubierta
+// por sus propios tests unitarios; MC.13e-2g decidirá si reaparecen,
+// contextuales a cada paso del asistente rediseñado.
 
-test.describe('Mis cuentas - CTA cruzado a Límites de gasto', () => {
-  test('la distribución sugerida siempre enlaza a Límites de gasto', async ({ page }) => {
+test.describe('Mis cuentas - la tarjeta de distribución ya no muestra accesos cruzados', () => {
+  test('sin enlace a Límites de gasto ni a ninguna otra sección', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript(() => {
       const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
@@ -2827,9 +2833,8 @@ test.describe('Mis cuentas - CTA cruzado a Límites de gasto', () => {
     await page.goto('/#tesoreria');
     await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
 
-    const cta = page.locator('#ingresos-distribucion a[href="#presupuesto"]');
-    await expect(cta).toBeVisible({ timeout: 3_000 });
-    await expect(cta).toContainText('Ver tu seguimiento en Límites de gasto');
+    await expect(page.locator('#ingresos-distribucion a[href="#presupuesto"]')).toHaveCount(0);
+    await expect(page.locator('.distribucion-ctas')).toHaveCount(0);
   });
 });
 

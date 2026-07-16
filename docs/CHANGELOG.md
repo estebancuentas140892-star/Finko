@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(tesoreria): MC.13e-2a copy, accesos cruzados y navegación del asistente · 2026-07-15
+
+Primera de las 7 rebanadas de **MC.13e-2** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md)): agrupa 4 puntos de bajo riesgo del brief (11, 12, 13, 17), sin tocar ninguna lógica financiera.
+
+- **(11) Accesos cruzados fuera del asistente.** El array `ctas` de `sugerirDistribucionIngreso()` ("Ver progreso del fondo", "Explorar/Aportar a inversiones", "Ver estrategia de deudas", "Ver tu seguimiento en Límites de gasto") deja de renderizarse en `_renderTarjetaDistribuir()` (`tesoreria/views/distribucion.js`). La función que los calcula no se toca: sigue siendo lógica pura, cubierta por sus propios tests, porque **MC.13e-2g decidirá si reaparecen** dentro del asistente rediseñado, contextuales a cada paso (punto 10), en vez de vivir siempre visibles antes de abrir el asistente.
+- **(12) El aviso "recibiste tu ingreso" es un bloque aparte.** Antes vivía como subtítulo dinámico dentro de `.distribuir-card` (`"Hoy recibes tu ingreso."` / `"Recibiste tu ingreso el X."` / la invitación genérica, según el estado del cobro). Ahora es un párrafo propio (`.distribuir-aviso`), hermano de la tarjeta, que solo aparece cuando hay algo que anunciar (`estado === 'listo'`); la tarjeta en sí siempre abre con la misma frase, "Reparte tu ingreso entre necesidades, estilo de vida y ahorro.".
+- **(13) Copy del `<legend>` del panel.** "Reparte hacia tus necesidades, ahorros, deudas e inversiones. El resto queda disponible en tu cuenta." → "Reparte tu ingreso entre tus necesidades, ahorro, deudas e inversiones. Lo que no distribuyas queda disponible en tu cuenta." (gramática más natural; "lo que no distribuyas" no promete todavía la decisión explícita del remanente que trae MC.13e-2f).
+- **(17) Navegación modernizada.** Los botones Atrás/Siguiente/Distribuir dejan las flechas de texto plano (`← Atrás`, `Siguiente →`) por el ícono del sprite: `i-chevron-right` (rotado 180° para "Atrás", ya que el sprite no tiene una variante izquierda propia — ADR 023/037 prohíbe símbolos nuevos) y `i-check-circle` en "Distribuir", mismo lenguaje visual que el resto de la app (FORM.1, etc.).
+
+**Archivos tocados**
+
+- `modules/dominio/tesoreria/views/distribucion.js`: `_renderTarjetaDistribuir()` (quita `ctasHtml`, separa `avisoHtml`, subtítulo fijo), `_renderPanelDistribuir()` (legend + botones con íconos).
+- `styles/components/domain.css`: `.distribuir-aviso` nuevo; `.distribucion-ctas` eliminado (sin consumidor).
+- `styles/components/forms.css`: `.distribuir__nav-icon--atras` nuevo (rotación del chevron).
+- `tests/e2e/smoke.test.js`: el test "CTA cruzado a Límites de gasto" se reescribió para verificar su ausencia (antes verificaba su presencia).
+- `tests/unit/tesoreria.test.js`: 3 tests nuevos para `renderDistribucionIngreso()` (sin accesos cruzados, aviso separado, subtítulo fijo).
+- `service-worker.js`: `CACHE_NAME` v405 → v406.
+- `docs/BOARD.md`, `docs/contexto/mis-cuentas.md`: MC.13e-2a marcada cerrada.
+
+**Verificación:** 2832/2832 unit + 207/207 E2E + lint verdes.
+
+---
+
 ### docs(triaje): MC.13e-2 análisis y re-corte del rediseño del asistente · 2026-07-15
 
 Solo docs, cero código. El brief de MC.13 (puntos 9-21, rediseño del asistente "Distribuir mi ingreso") venía como un bloque único ("MC.13e+") demasiado grande para ejecutar de una sola vez (regla 2.1). Análisis del código actual (`tesoreria/views/distribucion.js` + `acciones/distribucion.js`: tarjeta compacta, contenido del modal con chips de preset, y el panel paginado de hasta 3 pasos) para re-cortarlo en **7 rebanadas verificables de forma independiente**: **MC.13e-2a** (copy, accesos cruzados `ctas` y navegación, sin riesgo financiero), **MC.13e-2b** (quitar "Abonar extra a deudas" del asistente, punto 16), **MC.13e-2c** (logo/ícono + nota por fila, punto 15), **MC.13e-2d** (cuota del período en vez del objetivo total, punto 21), **MC.13e-2e** (completar con saldo de otra cuenta si no alcanza, punto 14, lógica financiera nueva), **MC.13e-2f** (integración con la cuenta del ingreso fijo + decisión explícita del remanente, puntos 18 + integración; **necesita decisión de UX de Esteban antes de codificar**) y **MC.13e-2g** (rediseño en 2 pasos con educación financiera, puntos 9-10; **necesita decidir si pasa por un handoff de diseño de Claude Design**, mismo patrón que las 8 pantallas v2 anteriores, o se diseña sin mockup). Orden recomendado: 2a → 2b → 2d → 2c → 2e → 2f → 2g (las últimas dos reestructuran o simplifican lo que las anteriores tocan). Detalle completo de cada rebanada en `docs/BOARD.md`.

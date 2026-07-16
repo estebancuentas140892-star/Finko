@@ -374,6 +374,12 @@ form:not(.config-form) .form-group:not(:first-child) {
 .distribuir__nav-atras {
   margin-right: auto;
 }
+/* MC.13e-2a (punto 17): mismo glifo i-chevron-right que "Siguiente", solo
+   que rotado (el sprite no tiene una variante "izquierda" propia, ADR
+   023/037: cero íconos nuevos). */
+.distribuir__nav-icon--atras {
+  transform: rotate(180deg);
+}
 /* El paso enfocable (MC.7f, a11y) no necesita el anillo de foco por defecto:
    el usuario ya ve el cambio de contenido, y el anillo alrededor de todo el
    bloque sería ruido visual sin aportar nada nuevo. Los controles internos

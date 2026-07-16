@@ -484,7 +484,7 @@ function _renderPanelDistribuir(d) {
   return `
         <fieldset id="distribuir-ingreso-panel" class="distribuir-ingreso"
                   data-ahorro-pct="${ahorroPct}" data-estilo-vida-pct="${estiloVidaPct}">
-          <legend>Reparte hacia tus necesidades, ahorros, deudas e inversiones. El resto queda disponible en tu cuenta.</legend>
+          <legend>Reparte tu ingreso entre tus necesidades, ahorro, deudas e inversiones. Lo que no distribuyas queda disponible en tu cuenta.</legend>
           <div class="form-group">
             <label for="distribuir-monto" class="label">Monto a distribuir (COP)</label>
             <input id="distribuir-monto" type="number" class="input"
@@ -496,11 +496,15 @@ function _renderPanelDistribuir(d) {
           <p id="distribuir-resumen" class="form-hint" role="status"></p>
           <div class="distribuir__nav">
             <button type="button" class="btn btn-ghost btn-sm distribuir__nav-atras"
-                    data-action="distribuir-paso-atras" hidden>← Atrás</button>
+                    data-action="distribuir-paso-atras" hidden>
+              ${icon('chevron-right', 'icon icon--sm distribuir__nav-icon--atras')} Atrás
+            </button>
             <button type="button" class="btn btn-primary btn-sm"
-                    data-action="distribuir-paso-siguiente"${esUnicoPaso ? ' hidden' : ''}>Siguiente →</button>
+                    data-action="distribuir-paso-siguiente"${esUnicoPaso ? ' hidden' : ''}>
+              Siguiente ${icon('chevron-right', 'icon icon--sm')}
+            </button>
             <button type="button" class="btn btn-primary btn-sm" data-action="confirmar-distribucion"${esUnicoPaso ? '' : ' hidden'}>
-              Distribuir
+              ${icon('check-circle', 'icon icon--sm')} Distribuir
             </button>
           </div>
         </fieldset>`;
@@ -513,24 +517,34 @@ function _renderPanelDistribuir(d) {
  * (chips de preset, desglose fila por fila, editor personalizado y el
  * asistente por pasos): ese contenido se mudó dentro de
  * `#modal-distribuir-body` (`_renderContenidoAsistente`), que el botón de esta
- * tarjeta lanza vía `abrirAsistenteDistribucion()`. Alertas y CTAs cruzados
- * (MC.5e, ADR 017) se conservan aquí, visibles siempre, no solo al abrir el
- * asistente. Los colores de la barra/leyenda reutilizan tokens de dominio ya
- * existentes que casualmente coinciden con la paleta aprobada del handoff:
- * Necesidades = tesorería (azul), Estilo de vida = presupuesto (ámbar),
- * Ahorro = ahorro (verde menta).
+ * tarjeta lanza vía `abrirAsistenteDistribucion()`. Los colores de la
+ * barra/leyenda reutilizan tokens de dominio ya existentes que casualmente
+ * coinciden con la paleta aprobada del handoff: Necesidades = tesorería
+ * (azul), Estilo de vida = presupuesto (ámbar), Ahorro = ahorro (verde menta).
+ *
+ * MC.13e-2a (punto 12 del brief): el aviso "recibiste tu ingreso" es un
+ * bloque aparte (`avisoHtml`), antes de la tarjeta, en vez de vivir mezclado
+ * en el subtítulo; la tarjeta en sí siempre abre con la misma invitación
+ * genérica, tenga o no un cobro reciente que anunciar.
+ *
+ * MC.13e-2a (punto 11 del brief): los accesos cruzados (`dist.ctas`: "Ver
+ * progreso del fondo", "Ver estrategia de deudas", "Ver tu seguimiento en
+ * Límites de gasto"...) dejan de renderizarse aquí. `sugerirDistribucionIngreso()`
+ * los sigue calculando (lógica intacta, sus tests no cambian): MC.13e-2g los
+ * reintroduce, pero contextuales a su paso correspondiente (punto 10), no
+ * todos juntos antes de abrir el asistente.
  *
  * @param {ReturnType<typeof _construirDatosDistribucion>} datos
  * @returns {string}
  */
 function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
-  const { ingresoMensual, split, alertas, ctas } = dist;
+  const { ingresoMensual, split, alertas } = dist;
   const { necesidades, estiloVida, ahorro } = split;
   const est = estado?.estado ?? 'sin-fecha';
 
-  const subtitulo = est === 'listo'
-    ? (estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`)
-    : 'Reparte tu ingreso entre necesidades, estilo de vida y ahorro.';
+  const avisoHtml = est === 'listo'
+    ? `<p class="distribuir-aviso" role="status">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`}</p>`
+    : '';
 
   const pie = est === 'distribuido'
     ? `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`
@@ -547,12 +561,6 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
     `<p class="distribucion-alerta">⚠ <span>${_esc(a)}</span></p>`
   ).join('');
 
-  const ctasHtml = ctas.length > 0
-    ? `<div class="distribucion-ctas">${ctas.map(c =>
-        `<a href="#${_esc(c.seccion)}" class="btn btn-ghost btn-sm">${_esc(c.label)} →</a>`
-      ).join('')}</div>`
-    : '';
-
   const filaLeyenda = (tono, s) => `
       <div class="distribuir-card__item">
         <span class="distribuir-card__dot dist-color-${tono}" aria-hidden="true"></span>
@@ -563,12 +571,13 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
 
   return `
     <div class="section__sub-header"><h2 class="section__subtitle">Distribuir mi ingreso</h2></div>
+    ${avisoHtml}
     <div class="distribuir-card">
       <div class="distribuir-card__top">
         <span class="distribuir-card__icon" aria-hidden="true">${icon('lightbulb')}</span>
         <div class="distribuir-card__body">
           <p class="distribuir-card__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
-          <p class="distribuir-card__sub">${_esc(subtitulo)}</p>
+          <p class="distribuir-card__sub">Reparte tu ingreso entre necesidades, estilo de vida y ahorro.</p>
         </div>
       </div>
       <div class="distribuir-card__barra" aria-hidden="true">
@@ -582,7 +591,6 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
         ${filaLeyenda('ahorro', ahorro)}
       </div>
       ${alertasHtml}
-      ${ctasHtml}
       ${pie}
     </div>`;
 }
