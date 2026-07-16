@@ -10,6 +10,12 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(triaje): MC.13e-2 análisis y re-corte del rediseño del asistente · 2026-07-15
+
+Solo docs, cero código. El brief de MC.13 (puntos 9-21, rediseño del asistente "Distribuir mi ingreso") venía como un bloque único ("MC.13e+") demasiado grande para ejecutar de una sola vez (regla 2.1). Análisis del código actual (`tesoreria/views/distribucion.js` + `acciones/distribucion.js`: tarjeta compacta, contenido del modal con chips de preset, y el panel paginado de hasta 3 pasos) para re-cortarlo en **7 rebanadas verificables de forma independiente**: **MC.13e-2a** (copy, accesos cruzados `ctas` y navegación, sin riesgo financiero), **MC.13e-2b** (quitar "Abonar extra a deudas" del asistente, punto 16), **MC.13e-2c** (logo/ícono + nota por fila, punto 15), **MC.13e-2d** (cuota del período en vez del objetivo total, punto 21), **MC.13e-2e** (completar con saldo de otra cuenta si no alcanza, punto 14, lógica financiera nueva), **MC.13e-2f** (integración con la cuenta del ingreso fijo + decisión explícita del remanente, puntos 18 + integración; **necesita decisión de UX de Esteban antes de codificar**) y **MC.13e-2g** (rediseño en 2 pasos con educación financiera, puntos 9-10; **necesita decidir si pasa por un handoff de diseño de Claude Design**, mismo patrón que las 8 pantallas v2 anteriores, o se diseña sin mockup). Orden recomendado: 2a → 2b → 2d → 2c → 2e → 2f → 2g (las últimas dos reestructuran o simplifican lo que las anteriores tocan). Detalle completo de cada rebanada en `docs/BOARD.md`.
+
+---
+
 ### refactor(tesoreria): MC.13e-1 un ingreso esporádico ya no ofrece distribuirlo · 2026-07-15
 
 Decisión (a) del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) (Distribución v2), confirmada explícitamente por Esteban antes de codificar (regla 2.7 del workflow: un ADR aprobado no se revierte en silencio, se decide formalmente). El brief de MC.13 (puntos 7+19) pedía separar ingreso fijo (periódico, dispara distribución) de ingreso esporádico (solo acredita y registra, sin ofrecer distribución); eso **revertía parcialmente NAV.A2b slice 2 del ADR 024**, que ofrecía automáticamente el asistente tras registrar un ingreso puntual.
