@@ -502,7 +502,14 @@
 }
 
 /* ════════════════════════════════════════════════════════════
-   TOGGLE (switch)
+   TOGGLE (switch) - único switch de la app (TX.11, 2026-07-15).
+   Antes había tres: este (atoms, sin consumidores), `.config-toggle`
+   (config.css, Ajustes) y `.toggle-switch` (forms.css, D.14). Ambos
+   consumidores migraron aquí; los otros dos ya no estilizan el switch,
+   solo el layout que lo envuelve (`.config-toggle` sigue siendo el
+   contenedor "pill" de Ajustes, `.toggle-row` el layout label+hint de
+   formularios). Markup: <label class="toggle"><input type="checkbox">
+   <span class="toggle__track" aria-hidden="true"></span></label>.
    ════════════════════════════════════════════════════════════ */
 
 .toggle {
@@ -541,8 +548,11 @@
   transition: transform var(--fk-transition-fast), background-color var(--fk-transition-fast);
 }
 .toggle input:checked + .toggle__track {
-  background: var(--fk-accent);
-  border-color: var(--fk-accent);
+  /* TX.11: hereda el tinte de sección dentro de un [data-dom] (ej. el
+     toggle "Recibí este dinero" de Deudas, en frambuesa); fuera de un
+     dominio (Ajustes) cae al acento neutro, mismo comportamiento que antes. */
+  background: var(--fk-section-accent, var(--fk-accent));
+  border-color: var(--fk-section-accent, var(--fk-accent));
 }
 .toggle input:checked + .toggle__track::after {
   background: var(--fk-text-on-accent);

@@ -95,7 +95,11 @@
   min-width: 160px;
 }
 
-/* Toggle pill iOS-style envuelto en label */
+/* Fila "pill" que envuelve el switch de Ajustes (tema, notificaciones).
+   TX.11 (2026-07-15): ya no estiliza el switch en sí (migrado a `.toggle`
+   de atoms.css, único componente de switch de la app); esto es solo el
+   contenedor con fondo, padding y hover, distinto de `.toggle-row`
+   (forms.css, sin chrome propio). */
 .config-toggle {
   display: flex;
   align-items: center;
@@ -110,52 +114,6 @@
 
 .config-toggle:hover {
   background: var(--fk-bg-hover);
-}
-
-.config-toggle input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 44px;
-  height: 24px;
-  background: var(--fk-bg-base);
-  border: 1.5px solid var(--fk-border-default);
-  border-radius: var(--fk-radius-full);
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  margin: 0;
-  transition:
-    background-color var(--fk-transition-fast),
-    border-color var(--fk-transition-fast);
-}
-
-.config-toggle input[type="checkbox"]::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--fk-text-muted);
-  top: 2px;
-  left: 2px;
-  transition:
-    transform var(--fk-transition-fast),
-    background-color var(--fk-transition-fast);
-}
-
-.config-toggle input[type="checkbox"]:checked {
-  background: var(--fk-accent);
-  border-color: var(--fk-accent);
-}
-
-.config-toggle input[type="checkbox"]:checked::after {
-  background: var(--fk-text-on-accent);
-  transform: translateX(20px);
-}
-
-.config-toggle input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--fk-border-focus);
-  outline-offset: 2px;
 }
 
 .config-toggle__label {

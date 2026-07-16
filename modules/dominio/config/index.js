@@ -292,7 +292,10 @@ export function initConfig() {
       const toggle = document.getElementById('toggle-tema');
       if (!toggle) return;
       toggle.checked = light;
-      const labelEl = toggle.parentElement?.querySelector('.config-toggle__label');
+      // TX.11: el input vive dentro de un `.toggle` anidado (atoms.css), un
+      // nivel más profundo que antes; `closest('.config-toggle')` sube hasta
+      // la etiqueta contenedora sin importar cuántos envoltorios haya.
+      const labelEl = toggle.closest('.config-toggle')?.querySelector('.config-toggle__label');
       if (labelEl) {
         labelEl.textContent = light ? '☀️ Tema claro activo' : '🌙 Tema oscuro activo';
       }

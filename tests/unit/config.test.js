@@ -82,6 +82,32 @@ describe('renderPanelConfig() - Centro Legal (LEG.1)', () => {
   });
 });
 
+// ── Toggle de tema: único switch de la app (TX.11) ────────────────
+
+describe('renderPanelConfig() - toggle de tema con el switch único (TX.11)', () => {
+  beforeEach(() => {
+    Object.assign(S, createInitialState());
+    document.body.innerHTML = '<div id="panel-config"></div>';
+    renderPanelConfig();
+  });
+
+  it('usa el componente .toggle de atoms.css, no un checkbox estilizado a mano', () => {
+    const label = document.querySelector('.config-toggle');
+    expect(label).not.toBeNull();
+    expect(label.querySelector('.toggle')).not.toBeNull();
+    expect(label.querySelector('.toggle__track')).not.toBeNull();
+    // Ya no queda ningún resto de los otros dos switches que existían.
+    expect(label.querySelector('.toggle-switch')).toBeNull();
+  });
+
+  it('el input real sigue siendo #toggle-tema con su data-action intacto', () => {
+    const input = document.getElementById('toggle-tema');
+    expect(input).not.toBeNull();
+    expect(input.closest('.toggle')).not.toBeNull();
+    expect(input.dataset.action).toBe('theme-toggle');
+  });
+});
+
 describe('documentoLegalPorId()', () => {
   it('encuentra un documento existente', () => {
     expect(documentoLegalPorId('politica-de-privacidad')?.archivo).toBe('politica-de-privacidad.md');

@@ -10,6 +10,37 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(ui): TX.11 un solo switch para toda la app · 2026-07-15
+
+Hallazgo de la verificación de FORM.1b (no un brief del usuario): la app tenía **tres** componentes de switch para el mismo control visual. (1) `.toggle` en `styles/components/atoms.css` ("TOGGLE (switch)", genérico, 44x24, perilla vía `::after`): **sin un solo consumidor en JS, CSS muerto**. (2) `.config-toggle` en `styles/components/config.css`: el único vivo hasta ahora, en Ajustes (tema y notificaciones, `config/view.js`). (3) `.toggle-switch`/`.toggle-row` en `styles/components/forms.css` (FORM.1b, D.14 "Recibí este dinero en una cuenta"): 44x26, perilla como `<span>` real, tiñe por dominio con `--fk-section-accent`.
+
+**Consolidados en uno solo**, siguiendo la recomendación de la tarjeta: `.toggle` de `atoms.css` (el que no tenía consumidores, así que migrarlo era riesgo cero), con `background: var(--fk-section-accent, var(--fk-accent))` agregado a su estado marcado para heredar el tinte de dominio dentro de un `[data-dom]` (Deudas, frambuesa) y caer al acento neutro fuera de uno (Ajustes, sin `[data-dom]`, cero cambio visual). `.config-toggle` y `.toggle-row` **se conservan**, pero ya no estilizan el switch: son los layouts que lo envuelven (la "pill" con padding/fondo/hover de Ajustes, y la fila label+hint de formularios), tal como identificaba la tarjeta ("esa diferencia no justifica tres componentes" se refería al switch, no a sus envoltorios).
+
+**Migración de los dos consumidores vivos:**
+
+- **Ajustes** (`config/view.js`): `_renderTema()` y `_renderNotificaciones()` anidan `<span class="toggle"><input/><span class="toggle__track"></span></span>` dentro del `<label class="config-toggle">` existente, en vez de que el propio `<input type="checkbox">` lleve `appearance:none` con su propio `::after`. `config/index.js`: el listener de `theme:change` (resincroniza el checkbox tras un cambio de tema externo, ej. desde el sidebar) buscaba el label de texto con `toggle.parentElement?.querySelector('.config-toggle__label')`; con el input ahora un nivel más adentro (dentro de `.toggle`), pasa a `toggle.closest('.config-toggle')?.querySelector(...)`, que sube hasta la etiqueta contenedora sin importar cuántos envoltorios haya.
+- **Deudas** (D.14, `compromisos/views/formularios.js`): el bloque "Recibí este dinero en una cuenta" cambia `<span class="toggle-switch"><input class="toggle-switch__input"/><span class="toggle-switch__knob"></span></span>` por `<span class="toggle"><input/><span class="toggle__track"></span></span>`, dentro del mismo `<label class="toggle-row">` (layout label+hint intacto). Wiring sin cambios: `_wireToggleOrigen()` sigue enganchando por `id="comp-recibio-dinero"`, ajeno a la clase del switch.
+
+**CSS eliminado por completo:** `.config-toggle input[type="checkbox"]` y sus reglas `::after`/`:checked`/`:focus-visible` (config.css); `.toggle-switch`, `.toggle-switch__input`, `.toggle-switch__knob` y sus reglas `:has()` (forms.css).
+
+**E2E ajustado:** el input de `#toggle-tema` queda visualmente oculto dentro de `.toggle` (mismo patrón que los chips de FORM.1/1a: `opacity:0; width:0; height:0`), así que un click de Playwright directo sobre el input ya no es "actionable". El test de tema (`smoke.test.js`) pasa a clickear `label[for="toggle-tema"]` (la etiqueta reenvía el click al control anidado), consistente con el helper `elegirChip()` que ya usan los demás formularios v2.
+
+**Archivos tocados**
+
+- `styles/components/atoms.css`: `.toggle input:checked + .toggle__track` gana el fallback `--fk-section-accent`; comentario de cabecera actualizado (único switch de la app).
+- `styles/components/config.css`: `.config-toggle input[type="checkbox"]*` eliminado; `.config-toggle`/`.config-toggle__label` quedan como el contenedor "pill".
+- `styles/components/forms.css`: `.toggle-switch*` eliminado; `.toggle-row*` intacto.
+- `modules/dominio/config/view.js`: `_renderTema()`/`_renderNotificaciones()` anidan `.toggle`.
+- `modules/dominio/config/index.js`: `toggle.parentElement` → `toggle.closest('.config-toggle')`.
+- `modules/dominio/compromisos/views/formularios.js`: bloque D.14 usa `.toggle`.
+- `tests/unit/config.test.js` (2 tests nuevos) + `tests/unit/compromisos.test.js` (1 test nuevo) + `tests/e2e/smoke.test.js` (test de tema adaptado a `label[for="toggle-tema"]`).
+- `service-worker.js`: `CACHE_NAME` v403 → v404.
+- `docs/contexto/configuracion.md` y `docs/contexto/deudas.md`: bloques actualizados.
+
+**Verificación:** 2829/2829 unit + 207/207 E2E + lint verdes.
+
+---
+
 ### feat(forms): FORM.1c Nuevo gasto fijo con el lenguaje v2, cierra la iniciativa Formularios v2 · 2026-07-15
 
 Tercera y última rebanada de **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md) D5): cierra la iniciativa completa (FORM.1a Registrar gasto, FORM.1b Nueva deuda, FORM.1c Nuevo gasto fijo). El form de gasto fijo adopta el lenguaje compartido que ya usan los otros dos: la categoría deja el `<select>` por **chips de ícono** (grilla de 3 columnas por defecto, las 15 de `CATEGORIAS_AGENDA`, mismo picker CAT.2f para "Otro"), el monto pasa a **`.monto-hero`** con el tinte índigo de agenda (`--fk-section-accent`, ya declarado por `data-dom="agenda"` en el modal), frecuencia y día de pago comparten una **fila nueva** (`.form-row`, agregado a `forms.css`: los dos `.form-group` internos no llevan el margen vertical que normalmente separa campos, para no desalinear la fila), y un **banner informativo dinámico** nuevo que lee ambos campos: "Aparecerá cada mes en tu calendario el día 5."

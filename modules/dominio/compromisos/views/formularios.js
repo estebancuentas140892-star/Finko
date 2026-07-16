@@ -184,9 +184,9 @@ export function renderFormDeuda(tipo, deuda = null) {
   const bloqueOrigen = (modoEdit || cuentasActivas.length === 0) ? '' : `
       <div class="form-group">
         <label class="toggle-row">
-          <span class="toggle-switch">
-            <input type="checkbox" id="comp-recibio-dinero" name="recibioDinero" class="toggle-switch__input" />
-            <span class="toggle-switch__knob" aria-hidden="true"></span>
+          <span class="toggle">
+            <input type="checkbox" id="comp-recibio-dinero" name="recibioDinero" />
+            <span class="toggle__track" aria-hidden="true"></span>
           </span>
           <span class="toggle-row__text">
             <span class="toggle-row__label">Recibí este dinero en una cuenta</span>

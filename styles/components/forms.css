@@ -931,58 +931,15 @@ form:not(.config-form) .form-row:not(:first-child) { margin-top: var(--fk-space-
   padding: 0 var(--fk-space-3) var(--fk-space-3);
 }
 
-/* ── Toggle switch (D.14 "Recibí este dinero en una cuenta") ──
-   El checkbox real vive DENTRO de .toggle-switch (misma técnica que
-   los chips: input accesible, opacity 0, cubre todo el track para que
-   el área de toque sea el track completo). */
+/* ── Fila label+hint que envuelve un switch (D.14 "Recibí este dinero
+   en una cuenta"). El switch en sí es `.toggle` de atoms.css (TX.11,
+   2026-07-15: único componente de switch de la app); esto solo da el
+   layout fila + el texto secundario. */
 .toggle-row {
   display: flex;
   align-items: center;
   gap: var(--fk-space-3);
   cursor: pointer;
-}
-.toggle-switch {
-  position: relative;
-  display: inline-flex;
-  width: 44px;
-  height: 26px;
-  border-radius: var(--fk-radius-full);
-  background: var(--fk-border-default);
-  flex-shrink: 0;
-  transition: background-color var(--fk-transition-fast);
-}
-.toggle-switch__input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.toggle-switch__knob {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 20px;
-  height: 20px;
-  border-radius: var(--fk-radius-full);
-  background: var(--fk-text-muted);
-  box-shadow: var(--fk-shadow-sm);
-  pointer-events: none;
-  transition: transform var(--fk-transition-fast), background-color var(--fk-transition-fast);
-}
-.toggle-switch:has(.toggle-switch__input:checked) {
-  background: var(--fk-section-accent, var(--fk-accent));
-}
-/* Apagado: perilla neutra sobre el track gris. Encendido: la perilla pasa a
-   contrastar contra el acento del dominio, el mismo par de tokens que usa
-   `.toggle` de atoms.css (en claro es blanco, en oscuro casi negro). */
-.toggle-switch:has(.toggle-switch__input:checked) .toggle-switch__knob {
-  background: var(--fk-text-on-accent);
-  transform: translateX(18px);
-}
-.toggle-switch:has(.toggle-switch__input:focus-visible) {
-  outline: 2px solid var(--fk-border-focus);
-  outline-offset: 2px;
 }
 .toggle-row__text {
   flex: 1;

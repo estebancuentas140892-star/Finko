@@ -1381,7 +1381,10 @@ test.describe('Gastos-Cuenta (integrado)', () => {
 
 // ── SUITE 8: Tema ────────────────────────────────────────────────────────────
 // El toggle de tema vive solo en la sección Ajustes (#config), visible en
-// todos los tamaños de pantalla. Es un <input type="checkbox">.
+// todos los tamaños de pantalla. TX.11 (2026-07-15): el <input type="checkbox">
+// real queda visualmente oculto dentro de `.toggle` (mismo componente que
+// D.14/Deudas y los chips de otros formularios); se clickea la etiqueta
+// visible (`label[for="toggle-tema"]`), que reenvía el click al input anidado.
 
 test.describe('Tema claro/oscuro', () => {
   test.beforeEach(async ({ page }) => {
@@ -1391,22 +1394,22 @@ test.describe('Tema claro/oscuro', () => {
   });
 
   test('toggle cambia la clase light-theme en el body', async ({ page }) => {
-    const checkbox = page.locator('#toggle-tema');
+    const label = page.locator('label[for="toggle-tema"]');
 
     // Estado inicial: oscuro (body sin light-theme)
     await expect(page.locator('body')).not.toHaveClass(/light-theme/);
 
     // Toggle → claro
-    await checkbox.click();
+    await label.click();
     await expect(page.locator('body')).toHaveClass(/light-theme/);
 
     // Doble toggle → oscuro de nuevo
-    await checkbox.click();
+    await label.click();
     await expect(page.locator('body')).not.toHaveClass(/light-theme/);
   });
 
   test('el tema persiste tras recarga', async ({ page }) => {
-    await page.locator('#toggle-tema').click();
+    await page.locator('label[for="toggle-tema"]').click();
     await expect(page.locator('body')).toHaveClass(/light-theme/);
 
     await page.reload();

@@ -2112,6 +2112,14 @@ describe('renderFormDeuda() - bloque de cuenta de origen (D.14)', () => {
     expect(html).toContain('value="c2"');
   });
 
+  it('TX.11: el switch usa el componente único .toggle de atoms.css, no .toggle-switch', () => {
+    S.cuentas = [cuenta('c1', 'Bancolombia')];
+    const html = renderFormDeuda('deuda-entidad');
+    expect(html).toContain('class="toggle"');
+    expect(html).toContain('toggle__track');
+    expect(html).not.toContain('toggle-switch');
+  });
+
   it('solo se ofrece en modo creación, nunca al editar (no reacreditar dos veces)', () => {
     S.cuentas = [cuenta('c1', 'Bancolombia')];
     const deuda = {

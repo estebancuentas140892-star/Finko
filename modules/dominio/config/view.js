@@ -66,13 +66,16 @@ function _renderTema() {
         en este dispositivo.
       </p>
       <label class="config-toggle" for="toggle-tema">
-        <input
-          id="toggle-tema"
-          type="checkbox"
-          data-action="theme-toggle"
-          ${light ? 'checked' : ''}
-          aria-label="Cambiar entre tema oscuro y claro"
-        />
+        <span class="toggle">
+          <input
+            id="toggle-tema"
+            type="checkbox"
+            data-action="theme-toggle"
+            ${light ? 'checked' : ''}
+            aria-label="Cambiar entre tema oscuro y claro"
+          />
+          <span class="toggle__track" aria-hidden="true"></span>
+        </span>
         <span class="config-toggle__label">${icono} ${label}</span>
       </label>
     </section>`;
@@ -191,13 +194,16 @@ function _renderNotificaciones() {
         Activa o desactiva el recordatorio de compromisos próximos.
       </p>
       <label class="config-toggle" for="toggle-notif">
-        <input
-          id="toggle-notif"
-          type="checkbox"
-          data-action="toggle-notificaciones"
-          ${habilitado ? 'checked' : ''}
-          aria-label="Recordatorios de compromisos"
-        />
+        <span class="toggle">
+          <input
+            id="toggle-notif"
+            type="checkbox"
+            data-action="toggle-notificaciones"
+            ${habilitado ? 'checked' : ''}
+            aria-label="Recordatorios de compromisos"
+          />
+          <span class="toggle__track" aria-hidden="true"></span>
+        </span>
         <span class="config-toggle__label">
           ${habilitado ? 'Recordatorios activos ✅' : 'Recordatorios desactivados'}
         </span>
