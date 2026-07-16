@@ -62,15 +62,15 @@ export function initTesoreria() {
   // Para que renderAll() (bootstrap) también pinte el nudge de Inicio.
   registrarRender(() => renderSmart(renderNudgeDistribucionInicio, 'dash'));
 
-  // ADR 021 / NAV.A2b s2: piden abrir el asistente. Puede llegar desde otra
-  // sección: se navega primero y el panel se abre tras el re-render del
-  // hashchange (por eso el setTimeout, que además fija el monto ya renderizado).
-  // El payload opcional lleva `preacreditado` cuando el ingreso ya subió el saldo.
-  EventBus.on('distribuir:abrir', (payload = {}) => {
+  // ADR 021 (recordatorio de día de ingreso) y el nudge de Inicio (CAL.1) piden
+  // abrir el asistente. Puede llegar desde otra sección: se navega primero y el
+  // panel se abre tras el re-render del hashchange (por eso el setTimeout, que
+  // además fija el monto ya renderizado).
+  EventBus.on('distribuir:abrir', () => {
     if ((location.hash.slice(1) || 'dash') !== 'tesoreria') {
       location.hash = '#tesoreria';
     }
-    setTimeout(() => abrirAsistenteDistribucion(payload), 0);
+    setTimeout(() => abrirAsistenteDistribucion(), 0);
   });
 
   // Render inicial si ya estamos en #tesoreria o #dash al cargar.

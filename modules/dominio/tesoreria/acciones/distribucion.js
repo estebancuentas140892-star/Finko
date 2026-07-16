@@ -105,15 +105,6 @@ function _guardarDistribucionPersonalizada() {
 /** Snapshot de las slices afectadas por la última distribución, para "Deshacer". */
 let _snapshotDistribucion = null;
 let _snackbarTimer = null;
-/**
- * Modo "ya acreditado" (NAV.A2b s2, ADR 024 D3). Cuando un ingreso puntual ya
- * subió el saldo de su cuenta y el usuario opta por distribuirlo, el asistente
- * corre en este modo: NO re-acredita la cuenta (`+ monto`), usa la cuenta del
- * ingreso como origen y no marca el periodo del ingreso recurrente. `null` = el
- * flujo normal (el cobro recurrente aún no entró, el asistente lo acredita).
- * @type {null | { cuentaId: string, monto: number }}
- */
-let _distribucionPreacreditada = null;
 // 'gastos' (ADR 018 revisión 2026-07-02, R4): el Paso 1 de Necesidades registra
 // pagos reales; sin esta slice en el snapshot, "Deshacer" dejaría esos gastos huérfanos.
 const _SLICES_DISTRIBUCION = ['cuentas', 'gastos', 'ahorro', 'metas', 'apartados', 'compromisos', 'inversiones', 'logros', 'config'];
@@ -131,23 +122,19 @@ function _distribuirDesdeInicio() {
 /**
  * Único punto de entrada al asistente (ADR 035 D6: lanzado como modal, ya no
  * inline). Lo usan por igual el botón "Distribuir mi ingreso" de la tarjeta
- * compacta (sin payload), el recordatorio de día de ingreso del Calendario
- * (ADR 021, sin payload) y la oferta tras un ingreso puntual (NAV.A2b s2, con
- * `preacreditado`). Inyecta contenido fresco en `#modal-distribuir-body`
- * (`renderAsistenteDistribucion`, con el monto precargado si viene
- * preacreditado) y recién entonces abre el modal; si no hay nada que
- * distribuir es no-op, sin abrir un modal vacío.
- *
- * @param {{ preacreditado?: { cuentaId: string, monto: number } | null }} [opts]
+ * compacta y el recordatorio de día de ingreso del Calendario (ADR 021).
+ * MC.13e-1: un ingreso esporádico ya NO ofrece abrirlo automáticamente
+ * (revierte NAV.A2b s2, ver `tesoreria/acciones/ingresos.js`); este sigue
+ * siendo el único punto de entrada manual. Inyecta contenido fresco en
+ * `#modal-distribuir-body` (`renderAsistenteDistribucion`) y recién entonces
+ * abre el modal; si no hay nada que distribuir es no-op, sin abrir un modal
+ * vacío.
  */
-export function abrirAsistenteDistribucion({ preacreditado = null } = {}) {
+export function abrirAsistenteDistribucion() {
   const overlay = document.getElementById('modal-distribuir');
   if (!overlay) return;
 
-  // Fijar el modo antes de recalcular: el resumen y el apply lo consultan.
-  _distribucionPreacreditada = preacreditado;
-
-  if (!renderAsistenteDistribucion(preacreditado)) return;
+  if (!renderAsistenteDistribucion()) return;
 
   abrirModal(overlay);
   const panel = document.getElementById('distribuir-ingreso-panel');
@@ -530,30 +517,17 @@ async function _confirmarDistribucion() {
   // (MC.7e) por sí sola ya es una acción válida, aunque nada más esté marcado.
   if (monto <= 0 || (asignado <= 0 && transferido <= 0) || excede || excedeTransferencia) return;
 
-  // Modo "ya acreditado" (NAV.A2b s2): si el ingreso puntual ya subió el saldo,
-  // la cuenta de origen es la suya (no se vuelve a preguntar) y no se re-acredita.
-  // Si esa cuenta ya no existe (se borró entre registrar y distribuir), se cae al
-  // flujo normal (resolver cuenta + acreditar), para no perder el reparto.
-  const pre = _distribucionPreacreditada;
-  const yaAcreditado = !!pre && (S.cuentas ?? []).some(c => c.id === pre.cuentaId && c.activa !== false);
-
-  const cuentaId = yaAcreditado
-    ? pre.cuentaId
-    : await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
+  const cuentaId = await resolverCuenta(S.cuentas ?? [], 'distribuir tu ingreso');
   if (!cuentaId) return; // 0 cuentas (guía) o el usuario canceló.
 
   // Snapshot antes de tocar nada, para un "Deshacer" atómico.
   _snapshotDistribucion = _clonarSlices(_SLICES_DISTRIBUCION);
 
-  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d). Solo en
-  // el flujo normal: el guard es del ingreso recurrente del mes; un ingreso
-  // puntual ya acreditado es un evento aparte y no debe consumir ese periodo.
-  if (!yaAcreditado) {
-    const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
-    if (estado.periodoISO) {
-      if (!S.config) S.config = {};
-      S.config.ultimaDistribucionPeriodo = estado.periodoISO;
-    }
+  // Marcar el periodo como distribuido (guard de de-duplicación, MC.4d).
+  const estado = estadoDistribucion(S.ingresos ?? [], S.config?.ultimaDistribucionPeriodo ?? null);
+  if (estado.periodoISO) {
+    if (!S.config) S.config = {};
+    S.config.ultimaDistribucionPeriodo = estado.periodoISO;
   }
 
   // Transferir primero (MC.7e): mueve saldo hacia las otras cuentas y devuelve
@@ -561,17 +535,14 @@ async function _confirmarDistribucion() {
   // origen), para descontarlo junto con lo demás que sale de esa cuenta.
   const totalTransferido = _aplicarTransferenciasCuentas(transferencias, cuentaId);
 
-  // Descontar lo que sale de la cuenta (no el fondo, ADR 009) y lo transferido a
-  // otras cuentas: ambos dejan la cuenta de origen. El ingreso solo se acredita
-  // en el flujo normal; en modo "ya acreditado" el dinero ya está en la cuenta,
-  // así que sumar `monto` otra vez sería un doble abono (ADR 024 D3).
-  const creditoIngreso = yaAcreditado ? 0 : monto;
+  // Descontar lo que sale de la cuenta (no el fondo, ADR 009) y lo transferido
+  // a otras cuentas: ambos dejan la cuenta de origen. El ingreso se acredita.
   const descontable = todos
     .filter(i => i.tipo !== 'fondo')
     .reduce((s, i) => s + i.monto, 0);
   const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
   if (cuenta) {
-    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + creditoIngreso - descontable - totalTransferido });
+    editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + monto - descontable - totalTransferido });
   }
 
   // Necesidades (Paso 1, R1): tesorería aplica directo el pago real.
@@ -580,9 +551,6 @@ async function _confirmarDistribucion() {
   // Ahorro, abonos extra a deudas e inversiones: cada dominio aplica su
   // porción con su propia lógica por EventBus (ADN #10).
   EventBus.emit('distribucion:aplicar', { items, cuentaOrigenId: cuentaId });
-
-  // El modo "ya acreditado" es de un solo uso: consumido, se vuelve al normal.
-  _distribucionPreacreditada = null;
 
   updSaldo();
   announce(`Distribuiste ${f(asignado)} de tu ingreso.`);

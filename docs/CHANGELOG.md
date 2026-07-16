@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### refactor(tesoreria): MC.13e-1 un ingreso esporádico ya no ofrece distribuirlo · 2026-07-15
+
+Decisión (a) del [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) (Distribución v2), confirmada explícitamente por Esteban antes de codificar (regla 2.7 del workflow: un ADR aprobado no se revierte en silencio, se decide formalmente). El brief de MC.13 (puntos 7+19) pedía separar ingreso fijo (periódico, dispara distribución) de ingreso esporádico (solo acredita y registra, sin ofrecer distribución); eso **revertía parcialmente NAV.A2b slice 2 del ADR 024**, que ofrecía automáticamente el asistente tras registrar un ingreso puntual.
+
+**Cambio de comportamiento:** al registrar un ingreso esporádico, la app ya no muestra el diálogo "Sumaste $X a tu cuenta. ¿Quieres repartirlo ahora...?". El ingreso se acredita y se registra en silencio, igual que antes en todo lo demás. El asistente "Distribuir mi ingreso" sigue disponible, pero únicamente como acceso manual desde la tarjeta de Mis cuentas (MC.18e), nunca como oferta automática.
+
+**El modo "ya acreditado" del asistente se eliminó por completo, no solo su disparador.** Antes, cuando el usuario aceptaba la oferta, el asistente arrancaba en un modo especial (`_distribucionPreacreditada` en `acciones/distribucion.js`) que: usaba la cuenta del ingreso puntual sin preguntar (saltaba `resolverCuenta`), no volvía a sumar el monto a la cuenta (ya estaba acreditado, sumarlo de nuevo habría sido un doble abono) y no marcaba el período del ingreso recurrente como distribuido (un ingreso puntual es un evento aparte). Al quitar la única llamada que activaba este modo, todo ese código quedó **100% inalcanzable**: se retiró en la misma rebanada, porque dejarlo ahí habría sido código muerto disfrazado de "por si acaso" (el mismo criterio que ya aplicaron FORM.1b al borrar el chooser de dos pasos y otras rebanadas de este mes).
+
+**Archivos tocados**
+
+- `modules/dominio/tesoreria/acciones/ingresos.js`: `_guardarIngresoPuntual()` deja de llamar a `_ofrecerDistribucion()`; esa función y `_hayAsistenteDistribucion()` se eliminan enteras (sin otro caller); import muerto de `estimarSalarioMensual` retirado; la función deja de ser `async` (ya no tiene ningún `await`).
+- `modules/dominio/tesoreria/acciones/distribucion.js`: `_distribucionPreacreditada` (variable de módulo) eliminada; `abrirAsistenteDistribucion()` pierde el parámetro `preacreditado`; `_confirmarDistribucion()` simplifica su rama `yaAcreditado`/`pre` a un único flujo (siempre resuelve cuenta, siempre acredita el monto, siempre marca el período distribuido).
+- `modules/dominio/tesoreria/views/distribucion.js`: `renderAsistenteDistribucion()` pierde el parámetro `preacreditado` y usa siempre `datos.distribuir` sin override.
+- `modules/dominio/tesoreria/index.js`: el listener de `distribuir:abrir` deja de reenviar un payload (ya no hay nada que reenviar).
+- `tests/e2e/registrar-distribucion.test.js`: reescrito completo. Los 3 tests que verificaban el modo "ya acreditado" (comportamiento eliminado) se reemplazan por 3 tests que verifican el invariante inverso: ningún ingreso puntual abre el asistente (con o sin ingreso recurrente registrado), y el acceso manual desde Mis cuentas sigue funcionando con el flujo normal.
+- `service-worker.js`: `CACHE_NAME` v404 → v405.
+- `docs/contexto/mis-cuentas.md`: bloque MC.13 actualizado (decisión (a) resuelta, MC.13e re-cortada en MC.13e-1 cerrada + MC.13e-2+ pendiente).
+
+**Verificación:** 2829/2829 unit + 207/207 E2E (mismo total: 3 tests reemplazados 1:1) + lint verdes.
+
+**Queda pendiente:** MC.13e-2+, el rediseño del asistente en sí (puntos 9-21 del brief: paso educativo, banner dinámico, completar con saldo de otras cuentas, logo+nombre+nota por fila, quitar "Abonar extra a deudas", navegación modernizada, decisión explícita del remanente, cuota del período, integración con la cuenta del ingreso fijo). Sin re-cortar todavía en rebanadas verificables; ese es el primer paso al retomarla (regla 2.1).
+
+---
+
 ### refactor(ui): TX.11 un solo switch para toda la app · 2026-07-15
 
 Hallazgo de la verificación de FORM.1b (no un brief del usuario): la app tenía **tres** componentes de switch para el mismo control visual. (1) `.toggle` en `styles/components/atoms.css` ("TOGGLE (switch)", genérico, 44x24, perilla vía `::after`): **sin un solo consumidor en JS, CSS muerto**. (2) `.config-toggle` en `styles/components/config.css`: el único vivo hasta ahora, en Ajustes (tema y notificaciones, `config/view.js`). (3) `.toggle-switch`/`.toggle-row` en `styles/components/forms.css` (FORM.1b, D.14 "Recibí este dinero en una cuenta"): 44x26, perilla como `<span>` real, tiñe por dominio con `--fk-section-accent`.

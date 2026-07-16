@@ -220,24 +220,18 @@ export function renderDistribucionIngreso() {
  * Inyecta el contenido del asistente por pasos en `#modal-distribuir-body`
  * (ADR 035 D6: el asistente se lanza como modal, ya no vive inline). Llamada
  * por `abrirAsistenteDistribucion()` cada vez que se abre, para partir
- * siempre de datos frescos. Con `preacreditado` (NAV.A2b s2), precarga su
- * monto en vez del estimado del salario mensual.
+ * siempre de datos frescos.
  *
- * @param {{ cuentaId: string, monto: number } | null} [preacreditado]
  * @returns {boolean} `false` si no hay nada que distribuir (no-op para el caller).
  */
-export function renderAsistenteDistribucion(preacreditado = null) {
+export function renderAsistenteDistribucion() {
   const body = document.getElementById('modal-distribuir-body');
   if (!body) return false;
 
   const datos = _construirDatosDistribucion();
   if (!datos) { body.innerHTML = ''; return false; }
 
-  const distribuir = preacreditado
-    ? { ...datos.distribuir, montoIngreso: preacreditado.monto }
-    : datos.distribuir;
-
-  body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, distribuir);
+  body.innerHTML = _renderContenidoAsistente(datos.dist, datos.presetId, datos.distribucionPersonalizada, datos.distribuir);
   return true;
 }
 

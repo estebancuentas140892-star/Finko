@@ -24,7 +24,6 @@ import {
   montoSalarioMinimoPorPeriodo,
   FRECUENCIAS_CON_DIA,
 } from '../logic/ingresos.js';
-import { estimarSalarioMensual } from '../../../infra/financiero.js';
 import {
   renderFormIngreso,
   renderListaIngresos,
@@ -262,8 +261,14 @@ function _nuevoIngresoPuntual() {
  * puntual. Acreditar el saldo es el efecto principal (el registro solo lo hace
  * trazable). No toca Análisis ni el resumen semanal (v8.8: la app no rastrea
  * ingresos como flujo, solo su efecto vía patrimonio).
+ *
+ * MC.13e-1 (ADR 041, decisión (a) confirmada 2026-07-15): un ingreso
+ * esporádico ya NO ofrece distribuirlo (revierte NAV.A2b s2 del ADR 024).
+ * Solo acredita y registra; el asistente "Distribuir mi ingreso" sigue
+ * disponible, pero como acceso manual desde Mis cuentas (MC.18e), nunca
+ * como oferta automática tras este formulario.
  */
-async function _guardarIngresoPuntual() {
+function _guardarIngresoPuntual() {
   const form = document.getElementById('form-ingreso-puntual');
   if (!form) return;
 
@@ -286,43 +291,6 @@ async function _guardarIngresoPuntual() {
   updSaldo();
   renderListaIngresosPuntuales();
   announce(`Ingreso de ${f(ingreso.monto)} registrado.`);
-
-  // NAV.A2b s2: ofrecer repartir el ingreso recién acreditado (modo "ya
-  // acreditado" del asistente). Tras cerrar el modal para no apilar diálogos.
-  await _ofrecerDistribucion(ingreso);
-}
-
-/**
- * true si el asistente "Distribuir mi ingreso" está disponible. El panel solo se
- * renderiza con un ingreso recurrente registrado (estimarSalarioMensual > 0):
- * sin él no hay a dónde abrir la oferta.
- */
-function _hayAsistenteDistribucion() {
-  return estimarSalarioMensual(S.ingresos ?? []) > 0;
-}
-
-/**
- * Tras registrar un ingreso puntual (ya acreditado), ofrece repartirlo con el
- * asistente en modo "ya acreditado" (NAV.A2b s2, ADR 024 D3). Solo si el
- * asistente existe; si el usuario acepta, `distribuir:abrir` navega a Mis
- * cuentas y lo abre con el monto y la cuenta del ingreso.
- *
- * @param {{ cuentaId: string, monto: number }} ingreso
- */
-async function _ofrecerDistribucion(ingreso) {
-  if (!_hayAsistenteDistribucion()) return;
-
-  const ok = await confirmar({
-    titulo:         'Ingreso registrado',
-    mensaje:        `Sumaste ${f(ingreso.monto)} a tu cuenta. ¿Quieres repartirlo ahora entre tus necesidades, ahorros, deudas y demás?`,
-    confirmarTexto: 'Distribuir',
-    cancelarTexto:  'Ahora no',
-  });
-  if (!ok) return;
-
-  EventBus.emit('distribuir:abrir', {
-    preacreditado: { cuentaId: ingreso.cuentaId, monto: ingreso.monto },
-  });
 }
 
 /** @param {HTMLElement} el */
