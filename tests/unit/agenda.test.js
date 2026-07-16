@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
+import { renderFormGastoFijo, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -488,25 +488,33 @@ describe('eventosEnProximos', () => {
 });
 
 // ── renderFormGastoFijo() - selector de categoría (Agenda) ────────
+// FORM.1c (ADR 042 D5): la categoría son chips de ícono (radios reales
+// name="categoria"), no un <select>; mismo lenguaje que Registrar gasto
+// (FORM.1a) y Nueva deuda (FORM.1b).
 
 describe('renderFormGastoFijo() - selector de categoría', () => {
-  it('incluye un <option> en texto plano para cada categoría de CATEGORIAS_AGENDA (ID.3)', () => {
+  it('incluye un chip de radio para cada categoría de CATEGORIAS_AGENDA (ID.3)', () => {
     const html = renderFormGastoFijo();
+    expect(html).toContain('chips-cat');
+    expect(html).not.toContain('<select id="gfijo-categoria"');
+    const radios = html.match(/name="categoria"/g) ?? [];
+    expect(radios).toHaveLength(CATEGORIAS_AGENDA.length);
     for (const c of CATEGORIAS_AGENDA) {
-      expect(html).toContain(`<option value="${c}">${c}</option>`);
+      expect(html).toContain(`value="${c}"`);
+      expect(html).toContain(`<use href="#${CATEGORIA_AGENDA_ICONO[c]}"/>`);
     }
   });
 
-  it('la categoría es opcional: el select no es required', () => {
+  it('la categoría es opcional: ningún chip nace marcado', () => {
     const html = renderFormGastoFijo();
-    const selectMatch = html.match(/<select id="gfijo-categoria"[^>]*>/);
-    expect(selectMatch).not.toBeNull();
-    expect(selectMatch[0]).not.toContain('required');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    expect(div.querySelector('input[name="categoria"]:checked')).toBeNull();
   });
 
   it('AG.4: la categoría va antes que el campo de nombre en el DOM', () => {
     const html = renderFormGastoFijo();
-    expect(html.indexOf('id="gfijo-categoria"')).toBeLessThan(html.indexOf('id="gfijo-descripcion"'));
+    expect(html.indexOf('id="gfijo-categoria-label"')).toBeLessThan(html.indexOf('id="gfijo-descripcion"'));
   });
 
   it('AG.4: en el estado por defecto (sin categoría), el campo nace requerido con label "Descripción"', () => {
@@ -515,6 +523,62 @@ describe('renderFormGastoFijo() - selector de categoría', () => {
     const inputMatch = html.match(/<input id="gfijo-descripcion"[^>]*>/);
     expect(inputMatch).not.toBeNull();
     expect(inputMatch[0]).toContain('required');
+  });
+});
+
+// ── renderFormGastoFijo() - lenguaje v2 (FORM.1c, ADR 042 D5) ─────
+
+describe('renderFormGastoFijo() - lenguaje de formularios v2', () => {
+  it('el monto vive en el hero con el input grande centrado', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('monto-hero__box');
+    expect(html).toContain('input--big-amount');
+  });
+
+  it('frecuencia y día de pago comparten una fila', () => {
+    const html = renderFormGastoFijo();
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    const fila = div.querySelector('.form-row');
+    expect(fila).not.toBeNull();
+    expect(fila.querySelector('[name="frecuencia"]')).not.toBeNull();
+    expect(fila.querySelector('[name="diaPago"]')).not.toBeNull();
+  });
+
+  it('el pie usa el botón primario a lo ancho con el glifo de confirmación', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('modal__footer--principal');
+    expect(html).toContain('#i-check-circle');
+  });
+
+  it('el banner informativo nace con el texto de Mensual sin día (valor por defecto del form)', () => {
+    const html = renderFormGastoFijo();
+    expect(html).toContain('id="gfijo-banner"');
+    expect(html).toContain(textoBannerGastoFijo('Mensual', ''));
+  });
+});
+
+// ── textoBannerGastoFijo() (FORM.1c, ADR 042 D5) ──────────────────
+
+describe('textoBannerGastoFijo()', () => {
+  it('arma la frase con la frecuencia y el día elegidos', () => {
+    expect(textoBannerGastoFijo('Mensual', 5)).toBe('Aparecerá cada mes en tu calendario el día 5.');
+    expect(textoBannerGastoFijo('Quincenal', '20')).toBe('Aparecerá cada quincena en tu calendario el día 20.');
+    expect(textoBannerGastoFijo('Anual', 15)).toBe('Aparecerá cada año en tu calendario el día 15.');
+  });
+
+  it('"Única vez" no repite "cada"', () => {
+    expect(textoBannerGastoFijo('Única vez', 3)).toBe('Aparecerá una vez en tu calendario el día 3.');
+  });
+
+  it('sin día válido, cierra con un texto neutro en vez de inventar una fecha', () => {
+    expect(textoBannerGastoFijo('Mensual', '')).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+    expect(textoBannerGastoFijo('Mensual', 0)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+    expect(textoBannerGastoFijo('Mensual', 32)).toBe('Aparecerá cada mes en tu calendario el día que elijas.');
+  });
+
+  it('frecuencia desconocida cae al mismo criterio de "Mensual"', () => {
+    expect(textoBannerGastoFijo('', 10)).toBe('Aparecerá cada mes en tu calendario el día 10.');
   });
 });
 

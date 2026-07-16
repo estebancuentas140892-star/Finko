@@ -2294,30 +2294,33 @@ test.describe('Agenda - nombre automático según la categoría', () => {
   });
 
   test('al elegir una categoría predefinida, el campo pasa a "Nota (opcional)" y deja de ser obligatorio', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
     const label = page.locator('#gfijo-descripcion-label');
     const input = page.locator('#gfijo-descripcion');
     await expect(label).toHaveText('Descripción');
 
-    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await elegirChip(form, 'Mercado');
 
     await expect(label).toHaveText('Nota (opcional)');
     await expect(input).not.toHaveAttribute('aria-required', 'true');
   });
 
   test('al volver a "Otro", el campo vuelve a ser "Descripción" obligatoria', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
     const label = page.locator('#gfijo-descripcion-label');
     const input = page.locator('#gfijo-descripcion');
 
-    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await elegirChip(form, 'Mercado');
     await expect(label).toHaveText('Nota (opcional)');
 
-    await page.selectOption('#gfijo-categoria', 'Otro');
+    await elegirChip(form, 'Otro');
     await expect(label).toHaveText('Descripción');
     await expect(input).toHaveAttribute('aria-required', 'true');
   });
 
   test('guardar con categoría predefinida y sin texto: el registro usa la categoría como nombre', async ({ page }) => {
-    await page.selectOption('#gfijo-categoria', 'Mercado');
+    const form = page.locator('#form-gasto-fijo');
+    await elegirChip(form, 'Mercado');
     await page.fill('#gfijo-monto', '150000');
     await page.fill('#gfijo-dia', '10');
     await page.click('#form-gasto-fijo button[type="submit"]');
@@ -2330,7 +2333,8 @@ test.describe('Agenda - nombre automático según la categoría', () => {
   });
 
   test('guardar con categoría predefinida y una nota: la nota queda en el subtítulo, el nombre es la categoría', async ({ page }) => {
-    await page.selectOption('#gfijo-categoria', 'Mercado');
+    const form = page.locator('#form-gasto-fijo');
+    await elegirChip(form, 'Mercado');
     await page.fill('#gfijo-descripcion', 'Éxito de la esquina');
     await page.fill('#gfijo-monto', '150000');
     await page.fill('#gfijo-dia', '11');
@@ -2342,6 +2346,18 @@ test.describe('Agenda - nombre automático según la categoría', () => {
     const item = page.locator('.cal-detail__item').first();
     await expect(item.locator('.cal-detail__name')).toHaveText('Mercado');
     await expect(item.locator('.cal-detail__sub')).toContainText('Éxito de la esquina');
+  });
+
+  test('FORM.1c: el banner informativo refleja la frecuencia y el día elegidos', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
+    const banner = page.locator('#gfijo-banner');
+    await expect(banner).toHaveText('Aparecerá cada mes en tu calendario el día que elijas.');
+
+    await page.fill('#gfijo-dia', '20');
+    await expect(banner).toHaveText('Aparecerá cada mes en tu calendario el día 20.');
+
+    await form.locator('#gfijo-frecuencia').selectOption('Quincenal');
+    await expect(banner).toHaveText('Aparecerá cada quincena en tu calendario el día 20.');
   });
 });
 
@@ -2357,19 +2373,20 @@ test.describe('Agenda - picker de ícono para "Otro" (CAT.2f)', () => {
   });
 
   test('elegir "Otro" revela el picker de ícono; una categoría predefinida lo oculta de nuevo', async ({ page }) => {
+    const form = page.locator('#form-gasto-fijo');
     const grupoIcono = page.locator('#form-group-gfijo-icono');
     await expect(grupoIcono).toBeHidden();
 
-    await page.selectOption('#gfijo-categoria', 'Otro');
+    await elegirChip(form, 'Otro');
     await expect(grupoIcono).toBeVisible();
 
-    await page.selectOption('#gfijo-categoria', 'Mercado');
+    await elegirChip(form, 'Mercado');
     await expect(grupoIcono).toBeHidden();
   });
 
   test('crear un gasto fijo con categoría "Otro" y un ícono elegido queda en el detalle del día', async ({ page }) => {
     const form = page.locator('#form-gasto-fijo');
-    await page.selectOption('#gfijo-categoria', 'Otro');
+    await elegirChip(form, 'Otro');
     await form.locator('[data-icono-picker="gfijo-icono"] .icono-picker__recuadro').click();
     await form.locator('[data-icono-picker="gfijo-icono"] [data-icon="c-cohete"]').click();
     await form.locator('#gfijo-descripcion').fill('Suscripción rara');

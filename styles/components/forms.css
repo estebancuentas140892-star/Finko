@@ -805,6 +805,18 @@ textarea.input {
 /* Campo de fecha exacta revelado por "Otra fecha". */
 .fecha-otra { margin-top: var(--fk-space-2); }
 
+/* ── Fila de dos campos lado a lado (FORM.1c, ADR 042 D5): frecuencia + día
+   de pago en un gasto fijo. El wrapper toma el margen entre grupos que
+   normalmente pone el .form-group directo (ver regla arriba); los dos
+   .form-group internos quedan sin margen propio para no desalinear la fila. */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fk-space-3);
+}
+form:not(.config-form) .form-row:not(:first-child) { margin-top: var(--fk-space-5); }
+.form-row .form-group:not(:first-child) { margin-top: 0; }
+
 /* ── Footer v2: primario a lo ancho con glifo de confirmación ── */
 .modal__footer--principal .btn-primary {
   flex: 1;

@@ -656,25 +656,66 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
  *
  * @returns {string}
  */
+/**
+ * Frase "cada X" (o "una vez") de cada frecuencia, para el banner dinámico
+ * del gasto fijo (ver `textoBannerGastoFijo`). Cubre las 9 FRECUENCIAS;
+ * "Única vez" es la única sin ritmo de repetición.
+ */
+const _FRASE_FRECUENCIA = {
+  'Diario':     'cada día',
+  'Semanal':    'cada semana',
+  'Quincenal':  'cada quincena',
+  'Mensual':    'cada mes',
+  'Bimestral':  'cada dos meses',
+  'Trimestral': 'cada tres meses',
+  'Semestral':  'cada seis meses',
+  'Anual':      'cada año',
+  'Única vez':  'una vez',
+};
+
+/**
+ * Texto del banner informativo del form de gasto fijo (FORM.1c, ADR 042 D5):
+ * lee la frecuencia y el día de pago elegidos y arma "Aparecerá cada mes en
+ * tu calendario el día 5." Sin día válido (campo vacío o fuera de 1-31),
+ * usa un cierre neutro en vez de inventar una fecha.
+ * @param {string} frecuencia
+ * @param {string|number} diaPago
+ * @returns {string}
+ */
+export function textoBannerGastoFijo(frecuencia, diaPago) {
+  const frase = _FRASE_FRECUENCIA[frecuencia] ?? 'cada mes';
+  const dia = Number(diaPago);
+  const diaTexto = Number.isInteger(dia) && dia >= 1 && dia <= 31
+    ? `el día ${dia}`
+    : 'el día que elijas';
+  return `Aparecerá ${frase} en tu calendario ${diaTexto}.`;
+}
+
 export function renderFormGastoFijo() {
   const frecOpts = FRECUENCIAS
     .map(fr => `<option value="${_esc(fr)}"${fr === 'Mensual' ? ' selected' : ''}>${_esc(fr)}</option>`)
     .join('');
 
-  const catOpts = CATEGORIAS_AGENDA
-    .map(c => `<option value="${_esc(c)}">${_esc(c)}</option>`)
-    .join('');
+  // FORM.1c (ADR 042 D5): la categoría son chips de ícono en grilla de 3
+  // columnas (mismo lenguaje que Registrar gasto y Nueva deuda), no un
+  // desplegable. Radios reales name="categoria" dentro del label: el
+  // contrato FormData y validarCompromiso() no cambian.
+  const chipsCategoria = CATEGORIAS_AGENDA.map(c => `
+        <label class="chip-cat">
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(c)}" />
+          <svg class="icon" aria-hidden="true"><use href="#${_esc(CATEGORIA_AGENDA_ICONO[c])}"/></svg>
+          <span class="chip-cat__label">${_esc(c)}</span>
+        </label>`).join('');
 
   return `
     <form id="form-gasto-fijo" novalidate>
       <input type="hidden" name="tipo" value="fijo" />
 
       <div class="form-group">
-        <label for="gfijo-categoria" class="label">Categoría</label>
-        <select id="gfijo-categoria" name="categoria" class="input">
-          <option value="">Seleccionar…</option>
-          ${catOpts}
-        </select>
+        <span class="label" id="gfijo-categoria-label">Categoría</span>
+        <div class="chips-cat" role="radiogroup" aria-labelledby="gfijo-categoria-label">
+          ${chipsCategoria}
+        </div>
       </div>
 
       <div class="form-group" id="form-group-gfijo-icono" hidden>
@@ -688,29 +729,36 @@ export function renderFormGastoFijo() {
                autocomplete="off" />
       </div>
 
-      <div class="form-group">
-        <label for="gfijo-monto" class="label">Monto (COP)</label>
-        <input id="gfijo-monto" name="monto" class="input" type="number"
-               min="1" step="1000" placeholder="0" required aria-required="true"
-               autocomplete="off" />
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="gfijo-monto">Monto (COP)</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="gfijo-monto" name="monto" class="input input--big-amount" type="number"
+                 min="1" step="1000" placeholder="0" required aria-required="true"
+                 autocomplete="off" inputmode="numeric" />
+        </div>
+        <span class="monto-hero__hint">COP</span>
       </div>
 
-      <div class="form-group">
-        <label for="gfijo-frecuencia" class="label">Frecuencia</label>
-        <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
-          ${frecOpts}
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="gfijo-frecuencia" class="label">Frecuencia</label>
+          <select id="gfijo-frecuencia" name="frecuencia" class="input" required aria-required="true">
+            ${frecOpts}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
+          <input id="gfijo-dia" name="diaPago" class="input" type="number"
+                 min="1" max="31" step="1" placeholder="1" required aria-required="true" />
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="gfijo-dia" class="label">Día de pago (1-31)</label>
-        <input id="gfijo-dia" name="diaPago" class="input" type="number"
-               min="1" max="31" step="1" placeholder="1" required aria-required="true" />
-      </div>
+      <p class="form-hint form-hint--info" id="gfijo-banner" aria-live="polite">${textoBannerGastoFijo('Mensual', '')}</p>
 
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar gasto fijo</button>
+        <button type="submit" class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>Guardar gasto fijo</button>
       </div>
     </form>`;
 }

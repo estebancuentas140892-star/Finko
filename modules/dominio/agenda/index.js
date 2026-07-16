@@ -37,7 +37,7 @@ import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
-import { renderAgenda, renderFormGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
+import { renderAgenda, renderFormGastoFijo, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -113,14 +113,17 @@ function _inyectarFormGastoFijo(compromiso = null) {
   if (compromiso) {
     form.dataset.id = compromiso.id;
     const f_desc = form.querySelector('[name="descripcion"]');
-    const f_cat = form.querySelector('[name="categoria"]');
     const f_monto = form.querySelector('[name="monto"]');
     const f_frec = form.querySelector('[name="frecuencia"]');
     const f_dia = form.querySelector('[name="diaPago"]');
     const f_btn = form.querySelector('[type="submit"]');
     const categoria = compromiso.categoria ?? '';
     const nombreAuto = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
-    if (f_cat) f_cat.value = categoria;
+    // FORM.1c: la categoría es un chip de radio, no un select; se marca el
+    // que corresponda (si `categoria` no está en el catálogo, ninguno queda
+    // marcado, igual que antes con un <select> sin esa opción).
+    const f_cat = form.querySelector(`[name="categoria"][value="${CSS.escape(categoria)}"]`);
+    if (f_cat) f_cat.checked = true;
     // AG.4: con categoría de nombre automático, el campo de texto muestra la
     // nota (no la descripción, que ya es la categoría); si no, la descripción.
     if (f_desc) f_desc.value = nombreAuto ? (compromiso.nota ?? '') : (compromiso.descripcion ?? '');
@@ -142,13 +145,34 @@ function _inyectarFormGastoFijo(compromiso = null) {
   }
 
   _syncCategoriaGastoFijo(form);
-  form.querySelector('[name="categoria"]')?.addEventListener('change', () => _syncCategoriaGastoFijo(form));
+  _actualizarBannerGastoFijo(form);
+  // FORM.1c: la categoría son chips-radio; un listener delegado de `change`
+  // en el form cubre cualquiera de ellos (mismo patrón de Gastos/Deuda,
+  // ADR 042). El banner se recalcula con cualquier `input` del form (tipeo
+  // del día, cambio de frecuencia): más barato que filtrar por campo.
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'categoria') _syncCategoriaGastoFijo(form);
+  });
+  form.addEventListener('input', () => _actualizarBannerGastoFijo(form));
   wireIconoPicker(form.querySelector('[data-icono-picker="gfijo-icono"]'));
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarGastoFijo();
   });
+}
+
+/**
+ * FORM.1c (ADR 042 D5): recalcula el banner "Aparecerá cada X en tu
+ * calendario el día N" leyendo la frecuencia y el día actuales del form.
+ * @param {HTMLFormElement} form
+ */
+function _actualizarBannerGastoFijo(form) {
+  const banner = form.querySelector('#gfijo-banner');
+  if (!banner) return;
+  const frecuencia = form.querySelector('[name="frecuencia"]')?.value ?? 'Mensual';
+  const diaPago = form.querySelector('[name="diaPago"]')?.value ?? '';
+  banner.textContent = textoBannerGastoFijo(frecuencia, diaPago);
 }
 
 /**
@@ -159,12 +183,13 @@ function _inyectarFormGastoFijo(compromiso = null) {
  * @param {HTMLFormElement} form
  */
 function _syncCategoriaGastoFijo(form) {
-  const catSel   = form.querySelector('[name="categoria"]');
   const nombre   = form.querySelector('[name="descripcion"]');
   const etiqueta = form.querySelector('#gfijo-descripcion-label');
-  if (!catSel || !nombre || !etiqueta) return;
+  if (!nombre || !etiqueta) return;
 
-  const categoria   = catSel.value;
+  // FORM.1c: la categoría son chips-radio; ninguno marcado equivale al
+  // `<select>` vacío de antes.
+  const categoria   = form.querySelector('[name="categoria"]:checked')?.value ?? '';
   const nombreAuto  = categoria && CATEGORIAS_AGENDA.includes(categoria) && categoria !== 'Otro';
 
   if (nombreAuto) {

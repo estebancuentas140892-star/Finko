@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(forms): FORM.1c Nuevo gasto fijo con el lenguaje v2, cierra la iniciativa Formularios v2 · 2026-07-15
+
+Tercera y última rebanada de **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md) D5): cierra la iniciativa completa (FORM.1a Registrar gasto, FORM.1b Nueva deuda, FORM.1c Nuevo gasto fijo). El form de gasto fijo adopta el lenguaje compartido que ya usan los otros dos: la categoría deja el `<select>` por **chips de ícono** (grilla de 3 columnas por defecto, las 15 de `CATEGORIAS_AGENDA`, mismo picker CAT.2f para "Otro"), el monto pasa a **`.monto-hero`** con el tinte índigo de agenda (`--fk-section-accent`, ya declarado por `data-dom="agenda"` en el modal), frecuencia y día de pago comparten una **fila nueva** (`.form-row`, agregado a `forms.css`: los dos `.form-group` internos no llevan el margen vertical que normalmente separa campos, para no desalinear la fila), y un **banner informativo dinámico** nuevo que lee ambos campos: "Aparecerá cada mes en tu calendario el día 5."
+
+**El banner** (`textoBannerGastoFijo(frecuencia, diaPago)`, pura en `agenda/view.js`) cubre las 9 `FRECUENCIAS`: "cada X" para las que se repiten (día/semana/quincena/mes/dos meses/tres meses/seis meses/año) y "una vez" para "Única vez" (no repite "cada"). Sin día válido (vacío o fuera de 1-31) cierra con "el día que elijas" en vez de inventar una fecha. Se recalcula en cada `input` del form (barato: solo escribe `textContent`, no filtra por campo) y también al pre-rellenar en modo edición.
+
+**Cero cambios de lógica:** `validarCompromiso`/`normalizarCompromiso` y el contrato FormData (`name="categoria"`, `name="frecuencia"`, `name="diaPago"`) no se tocan. El modal ganó su **`.modal__teja`** (glifo `i-agenda`), que le faltaba a diferencia de los otros dos modales del lenguaje v2 (Registrar gasto, Nueva deuda).
+
+**Wiring adaptado en `index.js`:** como la categoría deja de ser un único `<select>` (`form.querySelector('[name="categoria"]')` ya no identifica la selección), `_syncCategoriaGastoFijo()` pasa a leer `[name="categoria"]:checked` y el listener de sincronización queda **delegado en el `change` del form** (mismo patrón que FORM.1a/1b), en vez de colgar del select directo. El prellenado en modo edición marca el radio (`.checked = true`) que corresponde a la categoría guardada, en vez de asignar `.value`.
+
+**Archivos tocados**
+
+- `modules/dominio/agenda/view.js`: `renderFormGastoFijo()` v2 (chips de categoría, monto hero, fila frecuencia+día, banner); `textoBannerGastoFijo()` nueva (pura, exportada) + el mapa interno `_FRASE_FRECUENCIA`.
+- `modules/dominio/agenda/index.js`: `_syncCategoriaGastoFijo()` lee el radio marcado; `_actualizarBannerGastoFijo()` nueva; el prellenado en modo edición marca el radio en vez de asignar `.value`; listener de categoría delegado en `change` del form.
+- `styles/components/forms.css`: `.form-row` nuevo (grid de 2 columnas + reset del margen vertical de sus `.form-group` internos).
+- `index.html`: `.modal__teja` (`i-agenda`) agregado al header de `#modal-gasto-fijo`.
+- `tests/unit/agenda.test.js` (chips en vez de `<option>`, 6 tests nuevos de lenguaje v2 + 5 de `textoBannerGastoFijo()`) + `tests/e2e/smoke.test.js` (4 flujos migrados de `page.selectOption('#gfijo-categoria', ...)` al helper `elegirChip()` ya existente de FORM.1a/1b, 1 E2E nuevo del banner). Tests **adaptados, no borrados**.
+- `service-worker.js`: `CACHE_NAME` v402 → v403.
+- `docs/contexto/calendario.md`: bloque actualizado (nuevas anclas, estado, `Verificado contra`).
+
+**Verificación:** 2826/2826 unit + 207/207 E2E + lint verdes.
+
+---
+
 ### feat(forms): FORM.1b Nueva deuda con el lenguaje v2 + el chooser de dos pasos desaparece · 2026-07-15
 
 Segunda rebanada de **Formularios v2** ([ADR 042](DECISIONS/042-formularios-v2-visual.md) D4): el form de deuda adopta el lenguaje que estrenó FORM.1a. El **segmented Entidad/Personal vive inline** al tope del form y **reemplaza el chooser de dos pasos** (mismo contrato `tipo` en un hidden, un paso menos para el usuario): `renderChooserCompromiso()`, `_mostrarChooser()`, `_volverChooser()`, la acción `comp-volver-chooser` y las 89 líneas de `.comp-chooser*` en `charts.css` se borran completas, cero código muerto. Además: categorías en **chips de 2 columnas** (catálogos D.10 por tipo, con el picker de ícono CAT.2d intacto en "Otra/Otro"), saldo total como **monto hero** frambuesa, cuota con prefijo `$`, tasa dentro del disclosure **"Condiciones del crédito"** y el bloque D.14 como **toggle**. Cero lógica nueva: `validarCompromiso`/`normalizarCompromiso` y el contrato FormData no se tocan.
