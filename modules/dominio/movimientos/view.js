@@ -8,7 +8,7 @@ import { S } from '../../core/state.js';
 import { f, esc as _esc, tiempoRelativo, fechaLegible, formateadorFecha } from '../../infra/utils.js';
 import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
-import { movimientosRecientes, movimientosCompletos } from './logic.js';
+import { movimientosRecientes, movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
 
 /** Cuántos movimientos recientes se muestran en el panel de Inicio. */
 const LIMITE_RECIENTES = 5;
@@ -40,6 +40,49 @@ const TAMANO_LOTE = 50;
 
 /** Etiqueta legible por tipo de movimiento, usada en el subtítulo de la vista completa. */
 const _TIPO_LABEL = { gasto: 'Gasto', ingreso: 'Ingreso', aporte: 'Aporte', transferencia: 'Transferencia' };
+
+// ── FILTROS DE LA VISTA COMPLETA (MOV.2) ─────────────────────────
+
+/**
+ * Etiqueta legible por `Movimiento.dominio`, usada en los chips de filtro.
+ * Distinto de `_TIPO_LABEL`: un gasto de categoría "Gastos fijos" es
+ * `tipo: 'gasto'` pero `dominio: 'compromisos'` (colorea como Deudas). Filtrar
+ * por dominio es lo que deja al usuario aislar "solo lo de Deudas" de "solo
+ * gasto cotidiano", algo que `tipo` no distingue (ver Riesgos de la ficha).
+ */
+const _DOMINIO_LABEL = {
+  gastos:      'Gastos',
+  compromisos: 'Deudas',
+  ingresos:    'Ingresos',
+  ahorro:      'Ahorro',
+  tesoreria:   'Transferencias',
+};
+
+/** Estado de los filtros de la vista completa. Vive acá (UI), no en `S`. */
+let _filtroTexto      = '';
+let _filtroDominio     = null;
+let _filtroFechaDesde  = '';
+let _filtroFechaHasta  = '';
+
+/** @param {string} texto */
+export function setFiltroTexto(texto) { _filtroTexto = texto || ''; }
+
+/** @param {string|null} dominio Un valor de `Movimiento.dominio`, o null/'' = todos. */
+export function setFiltroDominio(dominio) { _filtroDominio = dominio || null; }
+
+/** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el piso. */
+export function setFiltroFechaDesde(fecha) { _filtroFechaDesde = fecha || ''; }
+
+/** @param {string} fecha 'YYYY-MM-DD', o '' para quitar el techo. */
+export function setFiltroFechaHasta(fecha) { _filtroFechaHasta = fecha || ''; }
+
+/** Vuelve los 4 filtros a "sin filtro". Llamado por "Limpiar filtros". */
+export function limpiarFiltrosMovimientos() {
+  _filtroTexto = '';
+  _filtroDominio = null;
+  _filtroFechaDesde = '';
+  _filtroFechaHasta = '';
+}
 
 /**
  * Días transcurridos desde una fecha ISO (YYYY-MM-DD) hasta hoy, en hora
@@ -114,6 +157,102 @@ export function renderActividadReciente() {
 
 // ── VISTA COMPLETA (TX.8b, ruta propia #movimientos) ────────────
 
+/** Historial completo derivado y memoizado, sin aplicar los filtros de MOV.2. */
+function _todosLosMovimientos() {
+  return _movimientosCompletosMemo({
+    gastos:                   S.gastos,
+    ingresosPuntuales:        S.ingresosPuntuales,
+    aportes:                  S.ahorro?.aportes,
+    transferencias:           S.transferencias,
+    categoriasPersonalizadas: S.categoriasPersonalizadas,
+  });
+}
+
+/**
+ * Renderiza la barra de filtros de la vista completa (MOV.2) en
+ * `#movimientos-filtros`: búsqueda por texto, chips por dominio (reusa el
+ * lenguaje `.chip`/`.filtros-bar` de Gastos, ningún componente nuevo) y rango
+ * de fechas. No-op si el contenedor no existe. Vacío (sin filtros) si no hay
+ * ningún movimiento: no tiene sentido filtrar una lista que no existe.
+ *
+ * Auto-resetea el filtro de dominio si su valor ya no aparece en los datos
+ * (mismo criterio que `_filtroCategoria` en Gastos).
+ */
+export function renderFiltrosMovimientos() {
+  const el = document.getElementById('movimientos-filtros');
+  if (!el) return;
+
+  const todos = _todosLosMovimientos();
+  if (todos.length === 0) {
+    el.innerHTML = '';
+    return;
+  }
+
+  const dominios = [...new Set(todos.map(m => m.dominio))]
+    .filter(d => _DOMINIO_LABEL[d])
+    .sort((a, b) => _DOMINIO_LABEL[a].localeCompare(_DOMINIO_LABEL[b]));
+
+  if (_filtroDominio !== null && !dominios.includes(_filtroDominio)) {
+    _filtroDominio = null;
+  }
+
+  const todosActivo = _filtroDominio === null;
+  const chipsDominio = dominios.map(dom => {
+    const activo = _filtroDominio === dom;
+    return `
+        <button type="button" class="chip${activo ? ' chip--active' : ''}"
+                data-action="movimientos-filtrar-dominio" data-dominio="${_esc(dom)}"
+                aria-pressed="${activo}" aria-label="Filtrar por ${_esc(_DOMINIO_LABEL[dom])}">
+          ${_esc(_DOMINIO_LABEL[dom])}
+        </button>`;
+  }).join('');
+
+  el.innerHTML = `
+    <input type="search" id="movimientos-buscar" class="input movimientos-filtros__busqueda"
+           placeholder="Buscar por descripción..." value="${_esc(_filtroTexto)}"
+           aria-label="Buscar movimientos por descripción" />
+    <div class="filtros-bar" role="group" aria-label="Filtrar movimientos por tipo">
+      <button type="button" class="chip${todosActivo ? ' chip--active' : ''}"
+              data-action="movimientos-filtrar-dominio" data-dominio=""
+              aria-pressed="${todosActivo}" aria-label="Ver todos los movimientos">
+        Todos
+      </button>
+      ${chipsDominio}
+    </div>
+    <div class="movimientos-filtros__fechas">
+      <label class="label" for="movimientos-desde">Desde</label>
+      <input type="date" id="movimientos-desde" class="input" value="${_esc(_filtroFechaDesde)}" />
+      <label class="label" for="movimientos-hasta">Hasta</label>
+      <input type="date" id="movimientos-hasta" class="input" value="${_esc(_filtroFechaHasta)}" />
+      <span id="movimientos-limpiar-slot">${_limpiarFiltrosHtml()}</span>
+    </div>`;
+}
+
+/**
+ * HTML del botón "Limpiar filtros", o '' si ningún filtro está activo.
+ * Extraído para poder actualizarlo solo (ver `actualizarBotonLimpiarFiltros`),
+ * sin recrear el resto de la barra.
+ */
+function _limpiarFiltrosHtml() {
+  const hayFiltroActivo = Boolean(_filtroTexto || _filtroDominio || _filtroFechaDesde || _filtroFechaHasta);
+  return hayFiltroActivo
+    ? `<button type="button" class="btn btn-ghost btn-sm" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>`
+    : '';
+}
+
+/**
+ * Actualiza SOLO el botón "Limpiar filtros" (MOV.2), sin tocar el resto de la
+ * barra de filtros. Los handlers de texto y fecha (`index.js`) llaman a esto
+ * en vez de `renderFiltrosMovimientos()` completo: repintar el contenedor
+ * entero mientras el usuario escribe le haría perder el foco y el cursor a
+ * mitad de palabra. No-op si el slot no existe (la barra está vacía porque
+ * no hay movimientos).
+ */
+export function actualizarBotonLimpiarFiltros() {
+  const slot = document.getElementById('movimientos-limpiar-slot');
+  if (slot) slot.innerHTML = _limpiarFiltrosHtml();
+}
+
 /**
  * Nombre de la cuenta para mostrar en el subtítulo del movimiento, o `null`
  * si el movimiento no tiene cuenta asociada (aportes) o la cuenta ya no existe.
@@ -126,18 +265,13 @@ function _nombreCuenta(cuentaId) {
 }
 
 /**
- * Descripción a mostrar para un movimiento. Una transferencia (MC.17c) no
- * trae descripción propia: se arma acá con los nombres de cuenta vigentes
- * ("Origen → Destino"), en vivo, igual que `_nombreCuenta` resuelve el
- * subtítulo de las demás fuentes.
+ * Descripción a mostrar para un movimiento (delega en `logic.js`, MOV.2: el
+ * mismo join cuenta→nombre que usa el filtro de texto, sin duplicarlo).
  * @param {import('./logic.js').Movimiento} m
  * @returns {string}
  */
 function _descripcionMovimiento(m) {
-  if (m.tipo !== 'transferencia') return m.descripcion;
-  const origen  = _nombreCuenta(m.cuentaOrigenId)  ?? 'Cuenta eliminada';
-  const destino = _nombreCuenta(m.cuentaDestinoId) ?? 'Cuenta eliminada';
-  return `${origen} → ${destino}`;
+  return descripcionMovimiento(m, S.cuentas);
 }
 
 /** "Julio 2026" a partir de una fecha ISO, para el divisor de mes. */
@@ -253,6 +387,21 @@ function _renderEmptyMovimientos() {
       <div class="empty-state__icon">${emptyArt('recurring')}</div>
       <p class="empty-state__title">Todavía no hay movimientos</p>
       <p class="empty-state__desc">Tus gastos, ingresos y aportes al fondo aparecerán aquí, ordenados por fecha.</p>
+    </div>`;
+}
+
+/**
+ * Empty state cuando SÍ hay movimientos pero ninguno pasa los filtros activos
+ * (MOV.2). Distinto del vacío real: acá el CTA es quitar el filtro, no crear
+ * un registro nuevo.
+ */
+function _renderEmptySinResultados() {
+  return `
+    <div class="empty-state">
+      <div class="empty-state__icon">${emptyArt('recurring')}</div>
+      <p class="empty-state__title">Nada coincide con esos filtros</p>
+      <p class="empty-state__desc">Prueba con otra búsqueda o quita algún filtro.</p>
+      <button type="button" class="btn btn-ghost" data-action="movimientos-limpiar-filtros">Limpiar filtros</button>
     </div>`;
 }
 
@@ -376,16 +525,28 @@ export function renderMovimientosCompletos() {
 
   _detenerCargaAutomatica();
 
-  const movs = _movimientosCompletosMemo({
-    gastos:                   S.gastos,
-    ingresosPuntuales:        S.ingresosPuntuales,
-    aportes:                  S.ahorro?.aportes,
-    transferencias:           S.transferencias,
-    categoriasPersonalizadas: S.categoriasPersonalizadas,
+  const todos = _todosLosMovimientos();
+
+  if (todos.length === 0) {
+    el.innerHTML = _renderEmptyMovimientos();
+    _entradasPendientes = [];
+    _cursorLote = 0;
+    return;
+  }
+
+  // MOV.2: filtrar sobre la fuente ya derivada, ANTES de agrupar/paginar.
+  // Nunca sobre el DOM ya pintado: con años de historial PERF.1 ni siquiera
+  // llegó a pintar todos los nodos.
+  const movs = filtrarMovimientos(todos, {
+    texto:   _filtroTexto,
+    dominio: _filtroDominio,
+    desde:   _filtroFechaDesde,
+    hasta:   _filtroFechaHasta,
+    cuentas: S.cuentas,
   });
 
   if (movs.length === 0) {
-    el.innerHTML = _renderEmptyMovimientos();
+    el.innerHTML = _renderEmptySinResultados();
     _entradasPendientes = [];
     _cursorLote = 0;
     return;

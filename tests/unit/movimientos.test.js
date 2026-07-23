@@ -9,7 +9,7 @@
  *   dirección correctos, límite de 5 en el DOM.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   movimientosDesdeGastos,
   movimientosDesdeIngresosPuntuales,
@@ -17,8 +17,15 @@ import {
   movimientosDesdeTransferencias,
   movimientosRecientes,
   movimientosCompletos,
+  descripcionMovimiento,
+  filtrarMovimientos,
 } from '../../modules/dominio/movimientos/logic.js';
-import { renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos } from '../../modules/dominio/movimientos/view.js';
+import {
+  renderActividadReciente, renderMovimientosCompletos, cargarMasMovimientos,
+  renderFiltrosMovimientos, setFiltroTexto, setFiltroDominio,
+  setFiltroFechaDesde, setFiltroFechaHasta, limpiarFiltrosMovimientos,
+  actualizarBotonLimpiarFiltros,
+} from '../../modules/dominio/movimientos/view.js';
 import { S } from '../../modules/core/state.js';
 
 const cuenta = (id, nombre) => ({ id, nombre, saldo: 0, banco: 'Nequi', tipo: 'Ahorros', activa: true });
@@ -199,6 +206,105 @@ describe('movimientosDesdeTransferencias()', () => {
   it('argumento no-array devuelve []', () => {
     expect(movimientosDesdeTransferencias(null)).toEqual([]);
     expect(movimientosDesdeTransferencias(undefined)).toEqual([]);
+  });
+});
+
+// ── descripcionMovimiento() (MOV.2) ───────────────────────────────
+
+describe('descripcionMovimiento()', () => {
+  const cuentasFixture = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+
+  it('un movimiento normal devuelve su propia descripcion', () => {
+    const [m] = movimientosDesdeGastos([gasto({ descripcion: 'Mercado' })]);
+    expect(descripcionMovimiento(m, cuentasFixture)).toBe('Mercado');
+  });
+
+  it('una transferencia arma "Origen → Destino" con los nombres vigentes', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c2' })]);
+    expect(descripcionMovimiento(m, cuentasFixture)).toBe('Nequi → Bancolombia');
+  });
+
+  it('una cuenta ya eliminada cae a "Cuenta eliminada", sin romper', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia({ cuentaOrigenId: 'c1', cuentaDestinoId: 'c-borrada' })]);
+    expect(descripcionMovimiento(m, cuentasFixture)).toBe('Nequi → Cuenta eliminada');
+  });
+
+  it('sin cuentas (o undefined) no rompe', () => {
+    const [m] = movimientosDesdeTransferencias([transferencia()]);
+    expect(descripcionMovimiento(m, [])).toBe('Cuenta eliminada → Cuenta eliminada');
+    expect(descripcionMovimiento(m)).toBe('Cuenta eliminada → Cuenta eliminada');
+  });
+});
+
+// ── filtrarMovimientos() (MOV.2) ───────────────────────────────────
+
+describe('filtrarMovimientos()', () => {
+  const set = () => [
+    ...movimientosDesdeGastos([gasto({ id: 'g1', descripcion: 'Mercado', fecha: '2026-07-04' })]),
+    ...movimientosDesdeGastos([gasto({ id: 'g2', descripcion: 'Abono: Préstamo', categoria: 'Deudas', fecha: '2026-07-10' })]),
+    ...movimientosDesdeIngresosPuntuales([ingresoPuntual({ id: 'ip1', descripcion: 'Venta bici', fecha: '2026-07-03' })]),
+    ...movimientosDesdeAportes([aporte({ id: 'a1', fecha: '2026-07-02' })]),
+    ...movimientosDesdeTransferencias([transferencia({ id: 't1', cuentaOrigenId: 'c1', cuentaDestinoId: 'c2', fecha: '2026-07-06' })]),
+  ];
+  const cuentasFixture = [cuenta('c1', 'Nequi'), cuenta('c2', 'Bancolombia')];
+
+  it('sin filtros devuelve todo intacto', () => {
+    expect(filtrarMovimientos(set())).toHaveLength(5);
+    expect(filtrarMovimientos(set(), {})).toHaveLength(5);
+  });
+
+  it('filtra por texto en la descripcion, sin distinguir mayúsculas', () => {
+    const r = filtrarMovimientos(set(), { texto: 'mercado' });
+    expect(r.map(m => m.id)).toEqual(['g1']);
+  });
+
+  it('el texto tambien busca contra la descripcion resuelta de una transferencia', () => {
+    const r = filtrarMovimientos(set(), { texto: 'bancolombia', cuentas: cuentasFixture });
+    expect(r.map(m => m.id)).toEqual(['t1']);
+  });
+
+  it('texto vacío o solo espacios no filtra nada', () => {
+    expect(filtrarMovimientos(set(), { texto: '' })).toHaveLength(5);
+    expect(filtrarMovimientos(set(), { texto: '   ' })).toHaveLength(5);
+  });
+
+  it('filtra por dominio exacto', () => {
+    const r = filtrarMovimientos(set(), { dominio: 'compromisos' });
+    expect(r.map(m => m.id)).toEqual(['g2']);
+  });
+
+  it('dominio null o vacío no filtra nada', () => {
+    expect(filtrarMovimientos(set(), { dominio: null })).toHaveLength(5);
+    expect(filtrarMovimientos(set(), { dominio: '' })).toHaveLength(5);
+  });
+
+  it('filtra por rango de fechas inclusive', () => {
+    const r = filtrarMovimientos(set(), { desde: '2026-07-04', hasta: '2026-07-06' });
+    expect(r.map(m => m.id).sort()).toEqual(['g1', 't1']);
+  });
+
+  it('solo "desde" filtra sin techo', () => {
+    const r = filtrarMovimientos(set(), { desde: '2026-07-06' });
+    expect(r.map(m => m.id).sort()).toEqual(['g2', 't1']);
+  });
+
+  it('solo "hasta" filtra sin piso', () => {
+    const r = filtrarMovimientos(set(), { hasta: '2026-07-03' });
+    expect(r.map(m => m.id).sort()).toEqual(['a1', 'ip1']);
+  });
+
+  it('combina texto + dominio + fechas con AND', () => {
+    const r = filtrarMovimientos(set(), { dominio: 'gastos', desde: '2026-07-01', hasta: '2026-07-05' });
+    expect(r.map(m => m.id)).toEqual(['g1']);
+  });
+
+  it('sin coincidencias devuelve []', () => {
+    expect(filtrarMovimientos(set(), { texto: 'no existe esto' })).toEqual([]);
+  });
+
+  it('entrada no-array no rompe', () => {
+    expect(filtrarMovimientos(null)).toEqual([]);
+    expect(filtrarMovimientos(undefined, { texto: 'x' })).toEqual([]);
   });
 });
 
@@ -467,6 +573,250 @@ describe('renderMovimientosCompletos()', () => {
     S.transferencias = [transferencia()];
     renderMovimientosCompletos();
     expect(elLista().querySelector('.list-item__subtitle').textContent).not.toContain('4x1000');
+  });
+});
+
+// ── renderFiltrosMovimientos() (MOV.2) ─────────────────────────────
+
+describe('renderFiltrosMovimientos()', () => {
+  const elFiltros = () => document.getElementById('movimientos-filtros');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(() => limpiarFiltrosMovimientos());
+
+  it('no-op si el contenedor no existe', () => {
+    document.body.innerHTML = '';
+    expect(() => renderFiltrosMovimientos()).not.toThrow();
+  });
+
+  it('sin ningún movimiento, no pinta ningún filtro (nada que filtrar)', () => {
+    renderFiltrosMovimientos();
+    expect(elFiltros().innerHTML.trim()).toBe('');
+  });
+
+  it('con movimientos, pinta el buscador y el chip "Todos" activo por defecto', () => {
+    S.gastos = [gasto()];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('#movimientos-buscar')).not.toBeNull();
+    const todos = elFiltros().querySelector('[data-action="movimientos-filtrar-dominio"][data-dominio=""]');
+    expect(todos.classList.contains('chip--active')).toBe(true);
+  });
+
+  it('un chip por cada dominio presente, con su etiqueta amigable', () => {
+    S.gastos = [gasto({ id: 'g1' }), gasto({ id: 'g2', categoria: 'Deudas' })];
+    S.ahorro.aportes = [aporte()];
+    renderFiltrosMovimientos();
+    const labels = [...elFiltros().querySelectorAll('.filtros-bar [data-dominio]:not([data-dominio=""])')]
+      .map(b => b.textContent.trim());
+    expect(labels.sort()).toEqual(['Ahorro', 'Deudas', 'Gastos']);
+  });
+
+  it('no repite chip por dominio aunque haya varios movimientos del mismo', () => {
+    S.gastos = [gasto({ id: 'g1' }), gasto({ id: 'g2', descripcion: 'Otro' })];
+    renderFiltrosMovimientos();
+    const chipsGastos = elFiltros().querySelectorAll('[data-dominio="gastos"]');
+    expect(chipsGastos).toHaveLength(1);
+  });
+
+  it('con un filtro de dominio activo, ese chip queda marcado y "Todos" no', () => {
+    S.gastos = [gasto()];
+    setFiltroDominio('gastos');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-dominio="gastos"]').classList.contains('chip--active')).toBe(true);
+    expect(elFiltros().querySelector('[data-dominio=""]').classList.contains('chip--active')).toBe(false);
+  });
+
+  it('si el dominio activo ya no existe en los datos, se auto-resetea a "Todos"', () => {
+    setFiltroDominio('ahorro');
+    S.gastos = [gasto()]; // sin ningún aporte: 'ahorro' desapareció
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-dominio=""]').classList.contains('chip--active')).toBe(true);
+  });
+
+  it('sin ningún filtro activo, no muestra "Limpiar filtros"', () => {
+    S.gastos = [gasto()];
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
+  });
+
+  it('con un filtro de texto activo, sí muestra "Limpiar filtros"', () => {
+    S.gastos = [gasto()];
+    setFiltroTexto('mercado');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('con un rango de fechas activo, sí muestra "Limpiar filtros"', () => {
+    S.gastos = [gasto()];
+    setFiltroFechaDesde('2026-07-01');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('el buscador conserva el texto ya escrito como value', () => {
+    S.gastos = [gasto()];
+    setFiltroTexto('mercado');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('#movimientos-buscar').value).toBe('mercado');
+  });
+
+  it('los inputs de fecha conservan sus valores actuales', () => {
+    S.gastos = [gasto()];
+    setFiltroFechaDesde('2026-07-01');
+    setFiltroFechaHasta('2026-07-31');
+    renderFiltrosMovimientos();
+    expect(elFiltros().querySelector('#movimientos-desde').value).toBe('2026-07-01');
+    expect(elFiltros().querySelector('#movimientos-hasta').value).toBe('2026-07-31');
+  });
+});
+
+// ── actualizarBotonLimpiarFiltros() (MOV.2) ────────────────────────
+//
+// Un filtro de texto o de fecha se aplica escribiendo (índice.js llama solo a
+// renderMovimientosCompletos(), NO a renderFiltrosMovimientos(), para no
+// perder el foco a mitad de palabra). Sin este helper, "Limpiar filtros"
+// se quedaría sin aparecer hasta el próximo repintado completo de la barra
+// (ej. al cambiar de dominio): un bug real, detectado al verificar en la app.
+
+describe('actualizarBotonLimpiarFiltros()', () => {
+  const elFiltros = () => document.getElementById('movimientos-filtros');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div><div id="lista-movimientos"></div>';
+    S.gastos = [gasto()];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+    renderFiltrosMovimientos(); // deja el slot #movimientos-limpiar-slot en el DOM
+  });
+
+  afterEach(() => limpiarFiltrosMovimientos());
+
+  it('no-op si el slot no existe (barra vacía, sin movimientos)', () => {
+    document.body.innerHTML = '<div id="movimientos-filtros"></div>';
+    expect(() => actualizarBotonLimpiarFiltros()).not.toThrow();
+  });
+
+  it('activar un filtro de TEXTO hace aparecer el botón sin recrear el buscador', () => {
+    const buscadorAntes = elFiltros().querySelector('#movimientos-buscar');
+    setFiltroTexto('mercado');
+    actualizarBotonLimpiarFiltros();
+
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+    // Mismo nodo: no se repintó el contenedor completo (no se perdió el foco).
+    expect(elFiltros().querySelector('#movimientos-buscar')).toBe(buscadorAntes);
+  });
+
+  it('activar un filtro de FECHA hace aparecer el botón', () => {
+    setFiltroFechaDesde('2026-07-01');
+    actualizarBotonLimpiarFiltros();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('sin ningún filtro activo, el botón no aparece', () => {
+    actualizarBotonLimpiarFiltros();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
+  });
+
+  it('quitar el filtro de texto hace desaparecer el botón de nuevo', () => {
+    setFiltroTexto('mercado');
+    actualizarBotonLimpiarFiltros();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+
+    setFiltroTexto('');
+    actualizarBotonLimpiarFiltros();
+    expect(elFiltros().querySelector('[data-action="movimientos-limpiar-filtros"]')).toBeNull();
+  });
+});
+
+// ── renderMovimientosCompletos() con filtros (MOV.2) ───────────────
+
+describe('renderMovimientosCompletos() - filtros aplicados (MOV.2)', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [
+      gasto({ id: 'g1', descripcion: 'Mercado', fecha: '2026-07-04' }),
+      gasto({ id: 'g2', descripcion: 'Abono: Préstamo', categoria: 'Deudas', fecha: '2026-07-10' }),
+    ];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [];
+    limpiarFiltrosMovimientos();
+  });
+
+  afterEach(() => limpiarFiltrosMovimientos());
+
+  it('sin filtros, pinta ambas filas', () => {
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(2);
+  });
+
+  it('filtra por texto: solo la fila que coincide con la descripción', () => {
+    setFiltroTexto('mercado');
+    renderMovimientosCompletos();
+    const filas = elLista().querySelectorAll('.list-item');
+    expect(filas).toHaveLength(1);
+    expect(filas[0].dataset.id).toBe('g1');
+  });
+
+  it('filtra por dominio: aísla lo de Deudas del gasto cotidiano', () => {
+    setFiltroDominio('compromisos');
+    renderMovimientosCompletos();
+    const filas = elLista().querySelectorAll('.list-item');
+    expect(filas).toHaveLength(1);
+    expect(filas[0].dataset.id).toBe('g2');
+  });
+
+  it('filtra por rango de fechas', () => {
+    setFiltroFechaDesde('2026-07-05');
+    renderMovimientosCompletos();
+    const filas = elLista().querySelectorAll('.list-item');
+    expect(filas).toHaveLength(1);
+    expect(filas[0].dataset.id).toBe('g2');
+  });
+
+  it('con filtros que no dejan ningún resultado, muestra el empty "sin resultados", no el vacío real', () => {
+    setFiltroTexto('esto no existe en ningún lado');
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.empty-state__title').textContent).toBe('Nada coincide con esos filtros');
+    expect(elLista().querySelector('.empty-state__title').textContent).not.toBe('Todavía no hay movimientos');
+  });
+
+  it('el empty "sin resultados" trae un botón para limpiar los filtros', () => {
+    setFiltroTexto('esto no existe en ningún lado');
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('[data-action="movimientos-limpiar-filtros"]')).not.toBeNull();
+  });
+
+  it('limpiar filtros vuelve a mostrar todo', () => {
+    setFiltroDominio('compromisos');
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(1);
+
+    limpiarFiltrosMovimientos();
+    renderMovimientosCompletos();
+    expect(elLista().querySelectorAll('.list-item')).toHaveLength(2);
+  });
+
+  it('sin ningún gasto/ingreso/aporte/transferencia (vacío real), muestra el empty original aunque haya filtros seteados', () => {
+    S.gastos = [];
+    setFiltroTexto('mercado');
+    renderMovimientosCompletos();
+    expect(elLista().querySelector('.empty-state__title').textContent).toBe('Todavía no hay movimientos');
   });
 });
 

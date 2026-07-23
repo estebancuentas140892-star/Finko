@@ -147,6 +147,58 @@ export function movimientosDesdeTransferencias(transferencias) {
 }
 
 /**
+ * Descripción visible de un movimiento. Una transferencia (MC.17c) no trae
+ * descripción propia: se arma con los nombres VIGENTES de sus cuentas
+ * ("Origen → Destino"), resueltos en vivo (si el usuario renombra una cuenta
+ * después, el historial ya derivado no queda desactualizado). Pura: recibe
+ * `cuentas` como parámetro, no lee `S` (ADN 10, mismo criterio que
+ * `categoriasPersonalizadas` en `movimientosDesdeGastos`).
+ *
+ * Extraída de `view.js` (MOV.2) para que el filtro de texto pueda buscar
+ * sobre el mismo texto que ve el usuario en la fila, sin duplicar el join
+ * cuenta→nombre en dos archivos.
+ *
+ * @param {Movimiento} m
+ * @param {import('../../core/state.js').Cuenta[]} [cuentas]
+ * @returns {string}
+ */
+export function descripcionMovimiento(m, cuentas = []) {
+  if (m.tipo !== 'transferencia') return m.descripcion;
+  const nombre = (id) => (cuentas ?? []).find(c => c.id === id)?.nombre ?? 'Cuenta eliminada';
+  return `${nombre(m.cuentaOrigenId)} → ${nombre(m.cuentaDestinoId)}`;
+}
+
+/**
+ * Filtra movimientos ya derivados por texto, dominio y rango de fechas
+ * (MOV.2). Pura y barata (barrido lineal): se aplica sobre la fuente ya
+ * combinada, ANTES de agrupar por mes y paginar (PERF.1): nunca sobre el DOM
+ * ya pintado, que con años de historial ni siquiera tiene todos los nodos.
+ *
+ * @param {Movimiento[]} movimientos
+ * @param {{
+ *   texto?: string|null,     Substring, sin distinguir mayúsculas, contra la
+ *                            descripción visible (incluida la de una transferencia).
+ *   dominio?: string|null,   Un valor de `Movimiento.dominio` exacto, o null/'' = todos.
+ *   desde?: string,          'YYYY-MM-DD' inclusive. '' = sin piso.
+ *   hasta?: string,          'YYYY-MM-DD' inclusive. '' = sin techo.
+ *   cuentas?: import('../../core/state.js').Cuenta[],  Para resolver el texto de una transferencia.
+ * }} [filtros]
+ * @returns {Movimiento[]}
+ */
+export function filtrarMovimientos(movimientos, { texto, dominio, desde, hasta, cuentas } = {}) {
+  const lista = Array.isArray(movimientos) ? movimientos : [];
+  const q = texto?.trim().toLowerCase() || null;
+
+  return lista.filter(m => {
+    if (dominio && m.dominio !== dominio) return false;
+    if (desde && m.fecha < desde) return false;
+    if (hasta && m.fecha > hasta) return false;
+    if (q && !descripcionMovimiento(m, cuentas).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+/**
  * Combina y ordena (más reciente primero) los movimientos de las 4 fuentes.
  * A igualdad de fecha, el orden entre movimientos de tipos distintos no está
  * garantizado (no hay hora de creación en el dato de origen); dentro de un

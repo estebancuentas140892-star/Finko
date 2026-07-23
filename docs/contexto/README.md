@@ -106,7 +106,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Inversión | `inversion.md` | sin crear |
 | Límites de gasto | `limites.md` | sin crear |
 | Me deben | [`me-deben.md`](me-deben.md) | activa (préstamos conectados a cuentas y patrimonio, PE.7) |
-| Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado y accionable, MOV.1) |
+| Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado, accionable y con búsqueda/filtros, MOV.1/MOV.2) |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | [`configuracion.md`](configuracion.md) | activa (panel de Ajustes, CFG.1a situación laboral) |
 | Transversal (navegación, iconografía, hoja Registrar, biblioteca gráfica, persistencia, logros) | [`transversal.md`](transversal.md) | activa (tejas de marca, biblioteca gráfica, persistencia/cuota, sistema de logros) |

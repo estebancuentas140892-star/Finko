@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-22 (feat(movimientos): MOV.1, la fila del ledger ofrece las acciones de su dominio dueño; cierra el patrón P4 de la auditoría, con aprobación explícita para ampliar TX.8b)
+> Última actualización: 2026-07-22 (feat(movimientos): MOV.2, búsqueda y filtros por texto/dominio/fechas en el ledger; cierra el patrón P4 de la auditoría por completo)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2877/2877 verdes |
-| Tests E2E | 217/217 verde. Suites: `smoke` 138 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests unitarios + integración | 2918/2918 verdes |
+| Tests E2E | 223/223 verde. Suites: `smoke` 144 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(movimientos): MOV.2 búsqueda y filtros en el ledger · 2026-07-22
+
+Cierra el patrón **P4** de la auditoría de UX/producto por completo (junto con MOV.1, cerrada el mismo día). Encontrar "ese pago de hace 4 meses" era scroll ciego, agravado porque PERF.1 pagina por lotes. `logic.js` gana `descripcionMovimiento(m, cuentas)` (extraída de `view.js`, resuelve "Origen → Destino" de una transferencia) y `filtrarMovimientos()` puro; `view.js` pinta el buscador + chips por **dominio** (no `tipo`: acá el dominio SÍ es el filtro correcto porque el usuario quiere aislar "solo Deudas" de "solo gasto cotidiano") + rango de fechas, reusando `.filtros-bar`/`.chip` de Gastos, cero componente nuevo. El filtro se aplica sobre la fuente derivada ANTES de agrupar/paginar (nunca sobre el DOM de PERF.1). **Bug real detectado al verificar en la app y corregido en la misma rebanada:** los handlers de texto/fecha no repintan la barra completa (perderían el foco a mitad de palabra), así que "Limpiar filtros" se quedaba sin aparecer con esos dos filtros; se resolvió con un slot dedicado (`actualizarBotonLimpiarFiltros()`). 41 unit + 6 E2E nuevos. 2918/2918 unit + 223/223 E2E + lint verdes. SW v411→v412. Verificado en la app real: buscar, filtrar por dominio, rango de fechas y limpiar, todo funcionando sin perder foco ni errores de consola.
+
+---
 
 ### feat(movimientos): MOV.1 el ledger deja de ser solo lectura · 2026-07-22
 
@@ -64,17 +70,7 @@ Solo docs, cero código. Cierra el trabajo sobre la **auditoría de UX/producto*
 
 ---
 
-### fix(agenda): BUG-015 "Marcar pagado" registra el pago en el mes visible · 2026-07-21
-
-Segundo hallazgo de la **auditoría de UX/producto**. En el detalle de un gasto fijo del Calendario, "Marcar pagado" aparecía en cualquier mes navegado que no estuviera pagado (la vista decide con el mes visible), pero el handler validaba el duplicado contra el **mes actual** y grababa `fecha: hoy()`. Navegar a un mes pasado y marcarlo creaba un pago fechado en el mes en curso: el badge del mes visible no viraba, el botón seguía invitando a re-clickear (doble registro posible) y el gasto quedaba en el mes equivocado, contaminando Movimientos y Análisis. **Decisión de Esteban: pasado y presente sí, futuro no** (ponerse al día con un mes olvidado es un caso real; pagar por adelantado lo que no ha vencido contradice "Finko registra lo que pasó", el precedente de MC.13c-2). `view.js`: el CTA viaja con `data-mes` (el handler no puede leer `_viewYear`/`_viewMonth`, privados de la vista) y no se renderiza en meses futuros; editar/eliminar siguen ahí. `index.js`: `_fechaPagoDelMes()` nuevo decide la fecha (mes en curso → hoy; mes pasado → la ocurrencia del compromiso en ESE mes vía `ocurrenciasEnMes`; futuro → aborta), y el guard de duplicado pasa al mes visible. **Nota deliberada, documentada en el JSDoc**: el descuento de la cuenta sigue ocurriendo ahora aunque el gasto quede fechado en un mes pasado, porque un saldo es un valor "de hoy" y registrar un pago olvidado pone a Finko al día con el banco. 4 tests unitarios + 2 E2E nuevos. 2845/2845 unit + 209/209 E2E + lint verdes. SW v407→v408. **Con esto quedan cerrados los dos bugs confirmados por la auditoría**; el resto de sus hallazgos se trió al BOARD el mismo día (entrada de arriba).
-
----
-
-### fix(tesoreria): BUG-014 la distribución reparte el cobro del período, no el mes · 2026-07-21
-
-Hallazgo de la **auditoría de UX/producto**. El asistente "Distribuir mi ingreso" proponía repartir el **mensual-equivalente** (`estimarSalarioMensual`, que multiplica un ingreso quincenal × 2) en vez de lo recibido en ESTE cobro. Con un quincenal de $1.000.000, el input "Monto a distribuir" arrancaba en $2.000.000 y, al confirmar sin corregir, `_confirmarDistribucion` **acreditaba $1.000.000 de más** a la cuenta (`saldo + monto - descontable`, `acciones/distribucion.js:545`) y sobre-asignaba ahorro/necesidades. Afectaba a la mayoría de asalariados colombianos (nómina quincenal) y contradecía el propósito del ADR 041 ("qué hacer con ESTE dinero, hoy"). **Fix quirúrgico**: helper puro nuevo `montoCobroPrincipal(ingresos)` en `infra/vencimientos.js` (suma el `monto` por período de los ingresos de la frecuencia principal; `Ingreso.monto` ya es por período). `_construirDatosDistribucion` conserva `estimarSalarioMensual` **solo** para el split de porcentajes (`sugerirDistribucionIngreso` razona en cifras mensuales) y usa el monto por cobro para el presupuesto del remanente y para el `montoIngreso` por defecto; la tarjeta compacta también muestra el cobro (comparte nombre y botón con el asistente). Para un asalariado **mensual** el valor no cambia (montoCobro === estimarSalarioMensual): cero regresión, confirmado por los E2E que usan ingresos mensuales. **Sin cambio de schema** y sin tocar `ocurrenciasEnMes`/`estadoDistribucion` (la nota transversal del Quincenal con `diaPago > 16` sigue pendiente aparte). Verificado en la app real (quincenal $1.000.000 → tarjeta y asistente en $1.000.000). 10 tests unitarios nuevos. 2841/2841 unit + E2E de distribución 3/3 + lint verdes. SW v406→v407. **Queda pendiente BUG-015** (Calendario: "Marcar pagado" de un gasto fijo usa la fecha de hoy en cualquier mes visible), registrado en `docs/BUGS.md`, siguiente en la fila.
-
----
+> Para tareas anteriores (fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

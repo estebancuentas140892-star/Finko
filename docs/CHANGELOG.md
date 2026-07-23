@@ -10,6 +10,34 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(movimientos): MOV.2 búsqueda y filtros en el ledger · 2026-07-22
+
+Cierra por completo el patrón **P4** de la auditoría de UX/producto (junto con MOV.1, la mitad anterior de la misma iniciativa el mismo día). La vista completa de Movimientos no tenía búsqueda ni filtros: encontrar "ese pago de hace 4 meses" era scroll ciego, agravado porque PERF.1 pagina por lotes (lo viejo ni siquiera está en el DOM hasta pedirlo).
+
+- **Búsqueda por texto.** Filtra contra la descripción visible de cada fila, incluida la de una transferencia ("Origen → Destino"), resuelta en vivo con los nombres actuales de cuenta. `descripcionMovimiento(m, cuentas)` se extrajo de `view.js` a `logic.js` (pura) para que la búsqueda y el render compartan exactamente el mismo texto, sin duplicar el join cuenta→nombre.
+- **Chips por dominio, no por tipo.** La barra reusa el lenguaje `.filtros-bar`/`.chip`/`.chip--active` de Gastos, cero componente nuevo. La decisión de filtrar por `m.dominio` (Gastos, Deudas, Ingresos, Ahorro, Transferencias) en vez de `m.tipo` es a propósito: para las ACCIONES de MOV.1 enrutar por dominio era un bug (mandaba al handler equivocado), pero para un FILTRO es lo correcto, porque el usuario quiere poder aislar "solo lo de Deudas" de "solo gasto cotidiano", algo que `tipo` no distingue (ambos son `'gasto'`).
+- **Rango de fechas** con dos `<input type="date">` (Desde/Hasta), inclusive en ambos extremos, comparando directamente los strings ISO (`m.fecha`).
+- **Ojo de rendimiento respetado**: `filtrarMovimientos()` (puro, en `logic.js`) se aplica sobre la fuente ya derivada, ANTES de `_agruparPorMes`/paginar. Nunca sobre el DOM: con años de historial, PERF.1 ni siquiera pintó todos los nodos.
+- **El texto y las fechas no repintan la barra completa, a propósito**: si `#movimientos-buscar` se recreara en cada tecla, el usuario perdería el foco y el cursor a mitad de palabra. Esos handlers (`index.js`) solo llaman a `renderMovimientosCompletos()` (la lista).
+
+**Bug real, detectado al verificar en la app y corregido en la misma rebanada.** Como consecuencia directa de la decisión anterior, el botón "Limpiar filtros" vivía en el mismo `innerHTML` que esos handlers se saltan: con un filtro de solo texto o solo fecha activo, el botón se quedaba sin aparecer hasta que algo más forzara un repintado completo de la barra (ej. cambiar de dominio). Se resolvió extrayéndolo a un slot dedicado (`#movimientos-limpiar-slot` + `actualizarBotonLimpiarFiltros()`), que los 3 handlers (buscar, desde, hasta) sí actualizan sin tocar el resto de la barra.
+
+**Archivos tocados**
+
+- `modules/dominio/movimientos/logic.js`: `descripcionMovimiento()` y `filtrarMovimientos()` nuevos, puros.
+- `modules/dominio/movimientos/view.js`: `renderFiltrosMovimientos()`, `_DOMINIO_LABEL`, setters de filtro, `actualizarBotonLimpiarFiltros()`; `renderMovimientosCompletos()` filtra antes de agrupar; empty state nuevo "Nada coincide con esos filtros".
+- `modules/dominio/movimientos/index.js`: `_wireFiltrosMovimientos()`, `_filtrarDominio()`, `_limpiarFiltrosMovimientos()`.
+- `index.html`: contenedor `#movimientos-filtros` nuevo.
+- `styles/components/domain.css`: `.movimientos-filtros*`.
+- `tests/unit/movimientos.test.js`: 41 tests nuevos.
+- `tests/e2e/smoke.test.js`: 6 tests nuevos (Chromium real: escribir, click de chip, rango de fechas, limpiar, y el caso del bug del botón).
+- `service-worker.js`: `CACHE_NAME` v411 → v412.
+- `docs/contexto/movimientos.md`, `docs/BOARD.md`: MOV.2 cerrada, patrón P4 cerrado por completo.
+
+**Verificación.** 2918/2918 unit + 223/223 E2E + lint verdes. Verificado en la app real con 6 movimientos de 4 fuentes distintas (gastos, ingreso puntual, aporte, transferencia): buscar "mercado" aísla 1 fila sin perder el foco del input; el chip "Deudas" aísla el gasto de categoría interna del gasto cotidiano; el rango de fechas filtra inclusive; "Limpiar filtros" restaura las 6 filas y vacía los 4 campos; sin errores de consola.
+
+---
+
 ### feat(movimientos): MOV.1 el ledger deja de ser solo lectura · 2026-07-22
 
 Cierra el patrón **P4** de la auditoría de UX/producto (el ledger es solo de lectura) y la mitad de **P3** que le corresponde. Movimientos es la vista canónica del historial, pero no permitía tocar ninguna fila: para corregir un dato había que recordar de qué sección salió, navegar allá y volver a buscarlo.

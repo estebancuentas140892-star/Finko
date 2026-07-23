@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-22 (**MOV.1 cerrada**: la fila del ledger ofrece las acciones de su dominio dueño, cerrando el patrón P4 con aprobación explícita de Esteban para ampliar TX.8b. Antes el mismo día: **PE.7** (patrón P5) y **AP.5a/AH.5a** (patrón P1). Triaje de la auditoría hecho el 2026-07-21, con sus 2 bugs ya corregidos (BUG-014, BUG-015). Tarjetas pendientes de ese triaje: MOV.2, CAL.5, TX.12, EDIT.1, MC.17f, ARQ.1, ARQ.2. BUG-016 (voseo) en BUGS.md).
+> Última actualización: 2026-07-22 (**MOV.2 cerrada**: búsqueda y filtros por texto/dominio/fechas en el ledger, cerrando el patrón P4 por completo. Antes el mismo día: **MOV.1** (accionable), **PE.7** (patrón P5) y **AP.5a/AH.5a** (patrón P1). Triaje de la auditoría hecho el 2026-07-21, con sus 2 bugs ya corregidos (BUG-014, BUG-015). Tarjetas pendientes de ese triaje: CAL.5, TX.12, EDIT.1, MC.17f, ARQ.1, ARQ.2. BUG-016 (voseo) en BUGS.md).
 
 ---
 
@@ -52,7 +52,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 > - **P1 Datos que la app ya tiene y vuelve a pedir.** **AP.5a y AH.5a ya cerradas** (2026-07-22: "Aportar" en Apartados y "Registrar aporte" en el Fondo prellenan el monto sugerido). Sigue abierto en LIM.1 (p.10), CFG.2a y MC.13e-2f.
 > - **P2 Trabajo manual uno por uno, sin lote.** Tarjetas nuevas **CAL.5** (pagar lo que vence hoy) y **TX.12** (gastos frecuentes).
 > - **P3 No se puede editar: corregir obliga a destruir.** Sigue abierto en **EDIT.1** (Metas, Apartados, Inversión, Me deben) y **MC.17f** (transferencias). MOV.1 ya cerró su otra mitad: lo que el dueño sabe editar, se edita desde el ledger.
-> - **P4 El ledger es solo de lectura.** **MOV.1 cerrada** (2026-07-22): la fila ofrece las acciones de su dominio dueño. Queda **MOV.2** (búsqueda y filtros).
+> - **P4 El ledger es solo de lectura.** **MOV.1 y MOV.2 cerradas** (2026-07-22): la fila ofrece las acciones de su dominio dueño, y la vista completa se puede buscar y filtrar por texto/dominio/fechas. Patrón cerrado por completo.
 > - **P5 Módulos que no comparten datos con el saldo ni el patrimonio.** **PE.7 cerrada** (2026-07-22): "Me deben" ya descuenta al prestar, acredita al cobrar y aporta el activo "Por cobrar" al patrimonio. Era el único módulo con este problema.
 > - **P6 Se informa pero no se acciona.** Ya cubierto por el motor único de sugerencia por categoría (regla de la fusión TX.10 / LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)): la auditoría lo refuerza y pide anclar el primer corte en las cards de hormigas que YA existen en Análisis.
 > - **P7 Un concepto, cuatro implementaciones** (fondo, metas, apartados, inversión). Tarjetas nuevas **ARQ.1** y **ARQ.2**.
@@ -247,14 +247,7 @@ _(**TX.10 absorbida** el 2026-07-08 por el [ADR 029](DECISIONS/029-catalogo-de-m
 
 > **MOV.1 CERRADA el 2026-07-22** (ledger accionable, ver CHANGELOG y la ficha nueva [`contexto/movimientos.md`](contexto/movimientos.md)). **Esteban aprobó explícitamente ampliar el alcance de TX.8b**, que había entregado el ledger como solo-lectura a propósito: queda registrado acá y en el CHANGELOG, no revertido en silencio (regla 2.7). Cada fila de `#movimientos` ofrece ahora las acciones que su dominio dueño **ya sabía hacer**, vía los mismos `data-action` que ese dominio registra: gasto edita y borra, ingreso puntual borra, aporte borra, transferencia todavía nada. **El ledger no reimplementa nada y por eso hereda gratis las reversas** (borrar un gasto devuelve el monto a la cuenta y revierte el abono de la deuda si era un gasto-abono). **Dos correcciones al plan original de la tarjeta:** (1) enrutar por **`m.tipo`**, no por `m.dominio` como decía la tarjeta, porque `dominio` es una etiqueta visual (un gasto "Gastos fijos" la lleva en `compromisos` pero vive en `S.gastos`) y habría mandado la acción al dominio equivocado; (2) el alcance honesto es **exponer capacidades existentes, no inventarlas**: los huecos siguen siendo de **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde no existe), y cuando cierren basta sumar su entrada en `_ACCIONES_POR_TIPO`. Cero cambios en `logic.js`, `index.js` y CSS.
 
-#### MOV.2 - Búsqueda y filtros en el ledger
-- Prioridad  : media
-- Estado     : pendiente. Hallazgo de la auditoría de UX/producto (2026-07-21).
-- Objetivo   : la vista completa de Movimientos no tiene búsqueda ni filtros, así que encontrar "ese pago de hace 4 meses" es scroll ciego (agravado porque PERF.1 pagina por lotes: lo viejo ni siquiera está en el DOM). Agregar búsqueda por texto y filtros por tipo/dominio/rango de fechas, **reutilizando el lenguaje de chips que Gastos ya usa**, sin inventar un componente nuevo. Ojo de rendimiento: filtrar debe ocurrir sobre la fuente derivada antes del windowing, no sobre el DOM ya pintado.
-- Secciones  : Movimientos
-- Archivos   : `modules/dominio/movimientos/view.js` (windowing de PERF.1), `movimientos/logic.js` (filtrado puro)
-- Depende de : nada; conviene después de MOV.1 para no tocar la misma vista dos veces
-- Modelo     : Sonnet 5 - Alto (UI + filtrado puro con cuidado de no romper el windowing de PERF.1)
+> **MOV.2 CERRADA el 2026-07-22** (búsqueda y filtros en el ledger, ver CHANGELOG y la ficha [`contexto/movimientos.md`](contexto/movimientos.md)). Búsqueda por texto (contra la descripción resuelta, incluida la de una transferencia), chips por **dominio** (no por `tipo`: acá sí es el filtro correcto, porque el usuario quiere aislar "solo Deudas" de "solo gasto cotidiano", algo que `tipo` no distingue) y rango de fechas, reusando `.filtros-bar`/`.chip` de Gastos (cero componente nuevo). El filtro se aplica sobre la fuente derivada ANTES de agrupar/paginar (`filtrarMovimientos()` puro en `logic.js`), nunca sobre el DOM de PERF.1. **Bug real detectado al verificar en la app y corregido en la misma rebanada**: los handlers de texto/fecha no repintan la barra completa (perderían el foco a mitad de palabra), así que el botón "Limpiar filtros" se quedaba sin aparecer con esos dos filtros; se resolvió con un slot dedicado (`actualizarBotonLimpiarFiltros()`) que sí se actualiza en cada tecla/cambio.
 
 ---
 

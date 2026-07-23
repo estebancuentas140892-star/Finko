@@ -2203,6 +2203,84 @@ test.describe('Movimientos - ledger accionable (MOV.1)', () => {
   });
 });
 
+// ── SUITE 12i: Movimientos - búsqueda y filtros (MOV.2) ──────────────────────
+// Escribir en el buscador y clickear un chip son interacciones cableadas a
+// mano en index.js (no data-action de clic los dos), que los unit tests de
+// view.js no alcanzan: esto prueba el wiring real en un navegador.
+
+test.describe('Movimientos - búsqueda y filtros (MOV.2)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fk_v1', JSON.stringify({
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [{ id: 'c-mov2', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
+        gastos: [
+          { id: 'g-mov2a', descripcion: 'Mercado', monto: 80000, categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov2' },
+          { id: 'g-mov2b', descripcion: 'Abono: Préstamo moto', monto: 150000, categoria: 'Deudas', fecha: '2026-07-15', cuentaId: 'c-mov2' },
+        ],
+        ingresos: [], ingresosPuntuales: [], compromisos: [], metas: [],
+        apartados: [], inversiones: [], personales: [], transferencias: [],
+      }));
+    });
+    await page.goto('/#movimientos');
+    await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
+  });
+
+  test('escribir en el buscador filtra la lista en vivo, sin perder el foco', async ({ page }) => {
+    const buscador = page.locator('#movimientos-buscar');
+    await buscador.fill('mercado');
+
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2a"]')).toHaveCount(1);
+    // El input sigue siendo el mismo nodo enfocado: renderFiltrosMovimientos()
+    // no se repintó al escribir (si lo hiciera, perdería foco a mitad de palabra).
+    await expect(buscador).toBeFocused();
+  });
+
+  test('un filtro de solo texto (sin tocar el dominio) también muestra "Limpiar filtros"', async ({ page }) => {
+    // Bug real detectado al verificar en la app: el handler de texto solo
+    // repinta la lista (para no perder el foco), así que sin un slot dedicado
+    // para el botón, "Limpiar filtros" se quedaba sin aparecer hasta que algo
+    // más forzara un repintado completo de la barra (ej. cambiar de dominio).
+    await page.locator('#movimientos-buscar').fill('mercado');
+    await expect(page.locator('[data-action="movimientos-limpiar-filtros"]')).toHaveCount(1);
+  });
+
+  test('clickear el chip de un dominio aísla ese grupo y lo marca activo', async ({ page }) => {
+    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]').click();
+
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
+    await expect(page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]')).toHaveClass(/chip--active/);
+  });
+
+  test('volver a "Todos" quita el filtro de dominio', async ({ page }) => {
+    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio="compromisos"]').click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+
+    await page.locator('[data-action="movimientos-filtrar-dominio"][data-dominio=""]').click();
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+  });
+
+  test('el rango de fechas filtra la lista', async ({ page }) => {
+    await page.fill('#movimientos-desde', '2026-07-10');
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(1);
+    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov2b"]')).toHaveCount(1);
+  });
+
+  test('sin resultados muestra el empty de "sin resultados" con boton para limpiar, y limpiar restaura todo', async ({ page }) => {
+    await page.locator('#movimientos-buscar').fill('esto no existe');
+
+    await expect(page.locator('#lista-movimientos .empty-state__title')).toHaveText('Nada coincide con esos filtros');
+    await page.locator('#lista-movimientos [data-action="movimientos-limpiar-filtros"]').click();
+
+    await expect(page.locator('#lista-movimientos .list-item')).toHaveCount(2);
+    await expect(page.locator('#movimientos-buscar')).toHaveValue('');
+  });
+});
+
 // ── SUITE 12d: Agenda - empty state del mes (CAL.4b, ADR 037 D6) ─────────────
 // Un mes sin ningún evento muestra la card de guía bajo el calendario y su
 // CTA abre el modal de gasto fijo (misma acción del header, nuevo-gasto-fijo).
