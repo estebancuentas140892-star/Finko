@@ -4451,3 +4451,136 @@ test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
     await expect(page.locator('.cuenta-card__saldo').first()).toHaveText('$480.000', { timeout: 5_000 });
   });
 });
+
+// ── SUITE 1f: Metas - editar sin destruir (EDIT.1a) ──────────────────────────
+// Antes, corregir un nombre o un objetivo mal escrito obligaba a eliminar y
+// recrear la meta, perdiendo el progreso acumulado. Ahora "Editar" reusa el
+// mismo formulario, prellenado, y conserva montoActual tal cual.
+
+test.describe('Metas - editar sin destruir (EDIT.1a)', () => {
+  test.beforeEach(async ({ page }) => {
+    await saltearOnboarding(page);
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+  });
+
+  test('editar prellena los campos actuales y actualiza nombre/objetivo/fecha', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Viaje a la costa');
+    await form.locator('#meta-objetivo').fill('2000000');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await page.click('[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    await expect(page.locator('#modal-meta-title')).toHaveText('Editar meta');
+
+    const formEdit = page.locator('#modal-meta-body form');
+    await expect(formEdit.locator('#meta-nombre')).toHaveValue('Viaje a la costa');
+    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('2000000');
+    await expect(formEdit.locator('button[type="submit"]')).toHaveText('Actualizar meta');
+
+    await formEdit.locator('#meta-nombre').fill('Viaje a Cartagena');
+    await formEdit.locator('#meta-objetivo').fill('2500000');
+    await formEdit.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    const item = page.locator('#lista-metas .list-item');
+    await expect(item.locator('.list-item__title')).toContainText('Viaje a Cartagena');
+    await expect(item).toContainText('$0 / $2.500.000');
+  });
+
+  test('editar conserva el progreso ya aportado: no lo resetea a 0', async ({ page }) => {
+    await page.goto('/#tesoreria');
+    await page.waitForSelector('#sec-tesoreria.active', { timeout: 10_000 });
+    await crearCuentaEfectivo(page, 1_000_000);
+
+    await page.goto('/#metas');
+    await expect(page.locator('#sec-metas.active')).toBeVisible();
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Laptop nueva');
+    await form.locator('#meta-objetivo').fill('3000000');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    // Un abono real antes de editar: esto es lo que NO se debe perder.
+    await page.click('[data-action="abonar-meta"]');
+    await page.waitForSelector('#modal-abono-meta[data-open]');
+    await page.locator('#abono-meta-monto').fill('500000');
+    await page.locator('#form-abono-meta button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+    await expect(page.locator('#lista-metas')).toContainText('$500.000 / $3.000.000');
+
+    // Editar solo el nombre (corregir un typo): el progreso debe seguir intacto.
+    await page.click('[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const formEdit = page.locator('#modal-meta-body form');
+    await expect(formEdit.locator('#meta-objetivo')).toHaveValue('3000000');
+    await formEdit.locator('#meta-nombre').fill('Laptop nueva (corregido)');
+    await formEdit.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await expect(page.locator('#lista-metas')).toContainText('Laptop nueva (corregido)');
+    await expect(page.locator('#lista-metas')).toContainText('$500.000 / $3.000.000');
+
+    // El saldo de la cuenta tampoco se tocó al editar (solo el abono lo movió).
+    await page.goto('/#tesoreria');
+    await expect(page.locator('.cuenta-card__saldo').first()).toHaveText('$500.000', { timeout: 3_000 });
+  });
+
+  test('bajar el objetivo por debajo de lo ya aportado marca la meta como completada', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Fondo cámara');
+    await form.locator('#meta-objetivo').fill('2000000');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await page.click('[data-action="abonar-meta"]');
+    await page.waitForSelector('#modal-abono-meta[data-open]');
+    await page.locator('#abono-meta-monto').fill('1500000');
+    await page.locator('#form-abono-meta button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-abono-meta'), { timeout: 5_000 });
+
+    // Bajar el objetivo a 1.000.000: el aporte de 1.500.000 ya lo supera.
+    await page.click('[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const formEdit = page.locator('#modal-meta-body form');
+    await formEdit.locator('#meta-objetivo').fill('1000000');
+    await formEdit.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    // Meta completada: sale de la lista de metas activas y no ofrece "Abonar".
+    await expect(page.locator('#lista-metas')).not.toContainText('Fondo cámara');
+  });
+
+  test('editar preserva la categoría e ícono elegidos', async ({ page }) => {
+    await page.click('[data-action="nueva-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const form = page.locator('#modal-meta-body form');
+    await form.locator('#meta-nombre').fill('Boda de mi hermana');
+    await form.locator('#meta-objetivo').fill('4000000');
+    await form.locator('#meta-categoria').selectOption('Boda');
+    await form.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    await page.click('[data-action="editar-meta"]');
+    await page.waitForSelector('#modal-meta[data-open]');
+    const formEdit = page.locator('#modal-meta-body form');
+    await expect(formEdit.locator('#meta-categoria')).toHaveValue('Boda');
+    // El grupo de ícono sigue oculto: "Boda" ya trae su propio glifo.
+    await expect(formEdit.locator('#form-group-meta-icono')).toBeHidden();
+
+    await formEdit.locator('#meta-objetivo').fill('4500000');
+    await formEdit.locator('button[type="submit"]').click();
+    await page.waitForSelector(modalCerrado('modal-meta'), { timeout: 5_000 });
+
+    const titulo = page.locator('#lista-metas .list-item__title');
+    await expect(titulo.locator('use[href="#c-anillo"]')).toHaveCount(1);
+  });
+});

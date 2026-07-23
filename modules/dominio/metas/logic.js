@@ -165,17 +165,30 @@ export function validarAbono(monto) {
  * del sprite no deja emojis viejos congelados en los datos). Sin emoji
  * manual queda null y la vista cae a la diana i-metas.
  *
+ * EDIT.1: `metaExistente` (opcional) distingue crear de editar. Al crear,
+ * `montoActual` arranca en 0 (nada aportado todavía). Al editar, el
+ * histórico de aportes **se conserva tal cual** (recomendación explícita
+ * de la auditoría, patrón P3: corregir un dato no debe borrar progreso ya
+ * hecho); `completada` sí se recalcula, porque cambiar el objetivo puede
+ * cruzar el umbral de cumplimiento en cualquier dirección con el mismo
+ * `montoActual` de siempre.
+ *
  * @param {Record<string, string>} datos
+ * @param {import('../../core/state.js').Meta|null} [metaExistente] modo edición si se pasa.
  */
-export function normalizarMeta(datos) {
-  const categoria = datos.categoria?.trim() || null;
+export function normalizarMeta(datos, metaExistente = null) {
+  const categoria     = datos.categoria?.trim() || null;
+  const montoObjetivo = Number(datos.montoObjetivo);
+  const montoActual   = metaExistente ? (metaExistente.montoActual ?? 0) : 0;
+  const { completada } = calcularProgreso({ montoObjetivo, montoActual });
+
   return {
     nombre:        datos.nombre.trim(),
-    montoObjetivo: Number(datos.montoObjetivo),
-    montoActual:   0,
+    montoObjetivo,
+    montoActual,
     fechaLimite:   datos.fechaLimite?.trim() || null,
     categoria,
     icono:         datos.icono?.trim() || null,
-    completada:    false,
+    completada,
   };
 }

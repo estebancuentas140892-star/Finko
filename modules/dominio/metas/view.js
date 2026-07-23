@@ -75,6 +75,10 @@ function _renderMetaItem(meta, frecuenciaIngresos) {
                 data-id="${_esc(meta.id)}"
                 aria-label="Abonar a ${nombre}">+ Abonar</button>` : ''}
         <button class="btn btn-ghost btn-icon"
+                data-action="editar-meta"
+                data-id="${_esc(meta.id)}"
+                aria-label="Editar meta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-meta"
                 data-id="${_esc(meta.id)}"
                 aria-label="Eliminar meta ${nombre}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>
@@ -136,33 +140,50 @@ export function renderFormAbonoMeta(meta) {
 }
 
 /**
- * Devuelve el HTML del formulario de nueva meta.
+ * Devuelve el HTML del formulario de meta: nueva si `meta` es null, edición
+ * (EDIT.1) prellenada si se pasa una meta existente. `metas/index.js`
+ * reinyecta este HTML en cada apertura del modal (crear o editar), así que
+ * no hace falta resetear el form a mano entre una y otra: el DOM nace
+ * limpio cada vez.
+ *
+ * **`montoActual` y el histórico de aportes no viven en este formulario a
+ * propósito**: se editan el nombre, el objetivo, la fecha y la categoría,
+ * nunca lo ya aportado (eso es lo que `normalizarMeta(datos, metaExistente)`
+ * preserva al guardar).
+ *
+ * @param {import('../../core/state.js').Meta|null} [meta] modo edición si se pasa.
  * @returns {string}
  */
-export function renderFormMeta() {
+export function renderFormMeta(meta = null) {
+  const categoriaActual = meta?.categoria ?? '';
+  const esOtra          = categoriaActual === 'Otra';
+  const botonTexto      = meta ? 'Actualizar meta' : 'Guardar meta';
+
   return `
     <form id="form-meta" novalidate>
       <p class="modal__intro">Escribe lo que quieres lograr. Con una fecha límite, Finko calcula cuánto guardar cada día para llegar a tiempo.</p>
       <div class="form-group">
         <label for="meta-nombre" class="label">Nombre de la meta</label>
         <input id="meta-nombre" name="nombre" class="input" type="text"
-               placeholder="Ej. Viaje a la playa, laptop nueva, boda" required aria-required="true" autocomplete="off" />
+               placeholder="Ej. Viaje a la playa, laptop nueva, boda" required aria-required="true" autocomplete="off"
+               value="${_esc(meta?.nombre ?? '')}" />
       </div>
       <div class="form-group">
         <label for="meta-objetivo" class="label">Monto objetivo (COP)</label>
         <input id="meta-objetivo" name="montoObjetivo" class="input" type="number"
-               min="1" step="10000" placeholder="0" required aria-required="true" />
+               min="1" step="10000" placeholder="0" required aria-required="true"
+               value="${meta ? Number(meta.montoObjetivo) || '' : ''}" />
       </div>
       <div class="form-group">
         <label for="meta-fecha" class="label">Fecha límite (opcional)</label>
-        <input id="meta-fecha" name="fechaLimite" class="input" type="date" />
+        <input id="meta-fecha" name="fechaLimite" class="input" type="date" value="${_esc(meta?.fechaLimite ?? '')}" />
         <p class="form-hint">Sin fecha, la meta queda abierta. Con fecha, Finko muestra cuánto guardar por día para llegar a tiempo.</p>
       </div>
       <div class="form-group">
         <label for="meta-categoria" class="label">Categoría (opcional)</label>
         <select id="meta-categoria" name="categoria" class="input">
           <option value="">Sin categoría</option>
-          ${_renderOpcionesCategoria()}
+          ${_renderOpcionesCategoria(categoriaActual)}
         </select>
         <p class="form-hint">Elige una categoría y Finko le pone el ícono automáticamente.</p>
       </div>
@@ -170,12 +191,12 @@ export function renderFormMeta() {
            categoría "Otra" tiene sentido elegirlo (el resto ya trae el ícono
            de su categoría). index.js (_syncCategoriaMeta) alterna [hidden] al
            cambiar la categoría y resetea el picker al ocultarlo. -->
-      <div class="form-group" id="form-group-meta-icono" hidden>
-        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta' })}
+      <div class="form-group" id="form-group-meta-icono" ${esOtra ? '' : 'hidden'}>
+        ${renderIconoPicker(ICONOS_CATEGORIA_PERSONALIZADA, { id: 'meta-icono', nombreCampo: 'icono', label: 'Elige un ícono para tu meta', valorActual: _valorIconoEditable(meta) })}
       </div>
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar meta</button>
+        <button type="submit" class="btn btn-primary">${botonTexto}</button>
       </div>
     </form>`;
 }
@@ -185,12 +206,28 @@ export function renderFormMeta() {
 /**
  * Devuelve las `<option>` de CATEGORIAS_META en el orden del catálogo
  * (texto plano: un <option> nativo no renderiza SVG, ADR 025).
+ * @param {string} [seleccionada] categoría a marcar `selected` (edición).
  * @returns {string}
  */
-function _renderOpcionesCategoria() {
+function _renderOpcionesCategoria(seleccionada = '') {
   return CATEGORIAS_META
-    .map(cat => `<option value="${_esc(cat)}">${_esc(cat)}</option>`)
+    .map(cat => `<option value="${_esc(cat)}"${cat === seleccionada ? ' selected' : ''}>${_esc(cat)}</option>`)
     .join('');
+}
+
+/**
+ * Valor a prellenar en el selector de ícono al editar. Las metas viejas
+ * (MT.3, antes de CAT.2b) guardan a veces un emoji crudo en `icono` en vez
+ * de un id de símbolo del sprite (mismo criterio de `_iconoMeta` para
+ * distinguirlos): un emoji no es un `data-icon` válido del catálogo, así
+ * que el picker arrancaría con el recuadro vacío en vez de romperse
+ * intentando resolverlo como símbolo.
+ * @param {import('../../core/state.js').Meta|null} meta
+ * @returns {string|null}
+ */
+function _valorIconoEditable(meta) {
+  if (!meta?.icono) return null;
+  return /^[a-z]-/.test(meta.icono) ? meta.icono : null;
 }
 
 /**

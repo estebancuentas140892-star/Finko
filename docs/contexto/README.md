@@ -101,7 +101,7 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Deudas | [`deudas.md`](deudas.md) | activa (registro de deudas, D.14 acreditar cuenta de origen) |
 | Mis cuentas | [`mis-cuentas.md`](mis-cuentas.md) | activa (cuentas, MC.14 datos de transferencia) |
 | Apartados | [`apartados.md`](apartados.md) | activa (aportar a un apartado, AP.5a monto prellenado) |
-| Metas | `metas.md` | sin crear |
+| Metas | [`metas.md`](metas.md) | activa (metas de ahorro, EDIT.1a editar sin destruir el progreso) |
 | Ahorro | [`ahorro.md`](ahorro.md) | activa (fondo de emergencia, AH.5a monto prellenado en Registrar aporte) |
 | Inversión | `inversion.md` | sin crear |
 | Límites de gasto | `limites.md` | sin crear |

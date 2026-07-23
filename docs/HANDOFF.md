@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-23 (feat(gastos): TX.12, gastos frecuentes y "Repetir"; cierra el patrón P2 de la auditoría por completo junto con CAL.5a, la misma tarde)
+> Última actualización: 2026-07-23 (feat(metas): EDIT.1a, editar sin destruir el progreso; primera de cuatro rebanadas del patrón P3 de la auditoría)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2965/2965 verdes |
-| Tests E2E | 227/227 verde. Suites: `smoke` 148 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests unitarios + integración | 2981/2981 verdes |
+| Tests E2E | 231/231 verde. Suites: `smoke` 152 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(metas): EDIT.1a editar sin destruir el progreso · 2026-07-23
+
+Primera de cuatro rebanadas del patrón **P3** de la auditoría (no se puede editar, corregir obliga a destruir). Metas solo permitía crear, abonar y eliminar; corregir un nombre o un objetivo mal escrito obligaba a eliminar y recrear la meta, perdiendo el progreso acumulado. Apartados, Inversión y Me deben quedan como las tres rebanadas siguientes en **EDIT.1**. Botón "Editar" junto a Abonar/Eliminar, mismo formulario prellenado. **El punto financiero:** `normalizarMeta(datos, metaExistente = null)` conserva `montoActual` tal cual al editar (no se resetea ni se toca el histórico de aportes) y recalcula `completada` contra el nuevo objetivo, porque cambiarlo puede cruzar el umbral de cumplimiento en cualquier dirección. De paso, el formulario dejó de ser un singleton reusado (necesitaba resetear el picker de ícono a mano) y pasó a reinyectarse completo en cada apertura, mismo patrón que Gastos/Agenda/Compromisos. Ficha de contexto nueva `docs/contexto/metas.md` (primera vez que se analiza la sección a fondo). 16 unit + 4 E2E nuevos. 2981/2981 unit + 231/231 E2E + lint verdes. SW v414→v415.
+
+---
 
 ### feat(gastos): TX.12 gastos frecuentes y "Repetir" · 2026-07-23
 
@@ -64,13 +70,7 @@ Cierra el patrón **P4** de la auditoría de UX/producto y la mitad de P3 que le
 
 ---
 
-### feat(personales,analisis): PE.7 "Me deben" conectado a cuentas y patrimonio · 2026-07-22
-
-Cierra el patrón **P5** de la auditoría de UX/producto, y era el único módulo que lo sufría: "Me deben" vivía en paralelo, prestar no descontaba ninguna cuenta, cobrar no acreditaba y el capital pendiente no contaba como activo, así que el usuario registraba un gasto "espejo" a mano para cuadrar el saldo. Ahora `Personal` tiene `cuentaId` opcional (patrón 0/1/varias del selector compartido; con 0 cuentas el préstamo se registra igual como seguimiento), prestar descuenta, cobrar acredita `desglose.aplicado` (escribir de más no infla el saldo) y `calcularActivos` suma el bucket **"Por cobrar"**. **Invariante clave, verificado en la app: prestar NO mueve el patrimonio neto** (la cuenta baja $X, "Por cobrar" sube $X), porque prestar convierte efectivo en un derecho de cobro. **Decisión financiera del corte:** solo cuentan los préstamos **con `cuentaId`**; los que no movieron saldo siguen contados dentro de `cuentas` y sumarlos los duplicaría, exactamente el criterio que ya excluye al fondo de emergencia (por lo mismo, no hay backfill). El interés pendiente no entra (no se ha ganado ni cobrado). Borrar un préstamo no revierte movimientos, divergencia deliberada de D.14 explicada en la ficha, a reevaluar con PE.6b. **Dos defectos corregidos de paso:** el form se inyectaba una sola vez en el init (crear una cuenta después dejaba el selector invisible hasta recargar) y `resetModal()` borraba la cuenta preseleccionada y la fecha del préstamo. **Ficha nueva `docs/contexto/me-deben.md`** (la sección no tenía). 14 unit + 4 E2E nuevos (la sección no tenía cobertura E2E). 2869/2869 unit + 213/213 E2E + lint verdes. SW v409→v410.
-
----
-
-> Para tareas anteriores (feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

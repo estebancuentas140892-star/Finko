@@ -3,7 +3,7 @@
  *
  * Responsabilidades:
  * - Registrar acciones data-action propias del dominio.
- * - Inyectar el formulario en el modal en el arranque.
+ * - Inyectar el formulario en el modal cada vez que se abre (crear o editar).
  * - Suscribirse a EventBus para re-renderizar cuando el estado cambia.
  * - Coordinar logic.js + view.js sin hacer cálculos ni generar HTML aquí.
  */
@@ -11,7 +11,7 @@
 import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, updSaldo } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
@@ -49,15 +49,35 @@ function _syncCategoriaMeta(form) {
 function _nuevaMeta() {
   const overlay = document.getElementById('modal-meta');
   if (!overlay) return;
-  resetModal(overlay);
-  const form = overlay.querySelector('#form-meta');
-  // resetModal() limpia el valor del input oculto pero no el estado visual
-  // del picker (recuadro/panel/botones): este form es un singleton reusado
-  // entre aperturas (no se re-renderiza como el de Gastos), así que hay que
-  // resetearlo explícitamente para no arrastrar el ícono de la meta anterior.
-  const pickerIcono = form?.querySelector('[data-icono-picker="meta-icono"]');
-  if (pickerIcono) resetIconoPicker(pickerIcono);
-  if (form) _syncCategoriaMeta(form);
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Nueva meta de ahorro';
+
+  _inyectarFormMeta();
+  abrirModal(overlay);
+}
+
+/**
+ * Abre el modal de meta en modo edición (EDIT.1) con los datos actuales
+ * prellenados. **No toca `montoActual` ni el histórico de aportes**: solo
+ * nombre, objetivo, fecha y categoría son editables aquí; lo ya aportado se
+ * conserva tal cual (ver `normalizarMeta`, `logic.js`).
+ * @param {HTMLElement} el - botón con data-id de la meta.
+ */
+function _editarMeta(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+
+  const meta = S.metas.find(m => m.id === id);
+  if (!meta) return;
+
+  const overlay = document.getElementById('modal-meta');
+  if (!overlay) return;
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Editar meta';
+
+  _inyectarFormMeta(meta);
   abrirModal(overlay);
 }
 
@@ -73,13 +93,20 @@ function _guardarMeta() {
     return;
   }
 
-  guardar('metas', normalizarMeta(datos));
+  const idEdit = form.dataset.id || null;
+
+  if (idEdit) {
+    const existente = S.metas.find(m => m.id === idEdit);
+    editar('metas', idEdit, normalizarMeta(datos, existente));
+  } else {
+    guardar('metas', normalizarMeta(datos));
+  }
 
   const overlay = document.getElementById('modal-meta');
   if (overlay) cerrarModal(overlay);
 
   renderListaMetas();
-  announce('Meta creada correctamente.');
+  announce(idEdit ? 'Meta actualizada.' : 'Meta creada correctamente.');
 }
 
 /** @param {HTMLElement} el */
@@ -216,27 +243,40 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
 
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
-function _inyectarForm() {
+/**
+ * (Re)Inyecta el HTML del formulario de meta en el modal y cablea sus
+ * listeners locales. Único punto de entrada para crear (`meta` null) y
+ * editar (EDIT.1, `meta` presente): se llama en cada apertura, así que el
+ * DOM nace limpio cada vez y no hace falta resetear campos ni el picker de
+ * ícono a mano entre una apertura y otra (antes el form era un singleton
+ * reusado; con el picker de ícono ya no alcanza con limpiar valores, hay
+ * que reflejar también la meta que se está editando).
+ * @param {import('../../core/state.js').Meta|null} [meta] modo edición si se pasa.
+ */
+function _inyectarFormMeta(meta = null) {
   const body = document.getElementById('modal-meta-body');
   if (!body) return;
 
-  body.innerHTML = renderFormMeta();
+  body.innerHTML = renderFormMeta(meta);
 
   const form = body.querySelector('#form-meta');
-  form?.addEventListener('submit', (e) => {
+  if (!form) return;
+
+  if (meta) form.dataset.id = meta.id;
+
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
     _guardarMeta();
   });
-  form?.querySelector('#meta-categoria')?.addEventListener('change', () => _syncCategoriaMeta(form));
-  wireIconoPicker(form?.querySelector('[data-icono-picker="meta-icono"]'));
+  form.querySelector('#meta-categoria')?.addEventListener('change', () => _syncCategoriaMeta(form));
+  wireIconoPicker(form.querySelector('[data-icono-picker="meta-icono"]'));
 }
 
 export function initMetas() {
   registrarAccion('nueva-meta',    _nuevaMeta);
+  registrarAccion('editar-meta',   _editarMeta);
   registrarAccion('eliminar-meta', _eliminarMeta);
   registrarAccion('abonar-meta',   _abrirAbonoMeta);
-
-  _inyectarForm();
 
   EventBus.on('state:change', ({ section }) => {
     if (section === 'metas') {

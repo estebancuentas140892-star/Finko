@@ -10,6 +10,29 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(metas): EDIT.1a editar sin destruir el progreso · 2026-07-23
+
+Primera de cuatro rebanadas del patrón **P3** de la auditoría de UX/producto (no se puede editar, corregir obliga a destruir). Metas solo permitía crear, abonar y eliminar: corregir un nombre mal escrito o un objetivo obligaba a eliminar y recrear la meta, perdiendo el progreso acumulado en el camino. Apartados, Inversión y Me deben quedan como las tres rebanadas siguientes en **EDIT.1**.
+
+- **Botón "Editar" en cada fila**, junto a Abonar/Eliminar, que abre el mismo formulario de "Nueva meta" prellenado con nombre, monto objetivo, fecha límite y categoría (incluido el ícono si la categoría es "Otra").
+- **El punto financiero: `montoActual` se conserva tal cual.** `normalizarMeta(datos, metaExistente = null)` es la única función que construye el shape completo de una meta; con `metaExistente` conserva el histórico de aportes intacto y recalcula `completada` contra el nuevo objetivo, porque cambiar el objetivo puede cruzar el umbral de cumplimiento en cualquier dirección con el mismo monto ya aportado (bajar el objetivo por debajo de lo aportado completa la meta; subirlo por encima la reabre).
+- **Refactor de mantenimiento incluido**: el formulario dejó de ser un singleton reusado entre aperturas (que necesitaba resetear el picker de ícono a mano) y pasó a reinyectarse completo en cada apertura, el mismo patrón que ya usan Gastos, Agenda y Compromisos. Simplifica el código y es lo que permite prellenar una meta existente sin arrastrar estado de la apertura anterior.
+- **Ficha de contexto nueva `docs/contexto/metas.md`** (la sección no tenía ninguna, primera vez que se analiza a fondo, regla 2.6).
+
+**Archivos tocados**
+
+- `modules/dominio/metas/logic.js`: `normalizarMeta()` gana el parámetro opcional `metaExistente`.
+- `modules/dominio/metas/view.js`: `renderFormMeta()` gana el parámetro opcional `meta`; botón "Editar" en `_renderMetaItem()`.
+- `modules/dominio/metas/index.js`: `_inyectarFormMeta()` (reemplaza al singleton `_inyectarForm()`), `_editarMeta()` nuevo; `_guardarMeta()` ramifica crear/editar.
+- `tests/unit/metas.test.js`: 16 tests nuevos.
+- `tests/e2e/smoke.test.js`: 4 tests nuevos.
+- `service-worker.js`: `CACHE_NAME` v414 → v415.
+- `docs/contexto/metas.md` (nueva), `docs/contexto/README.md`, `docs/BOARD.md`, `docs/HANDOFF.md`.
+
+**Verificación.** 2981/2981 unit + 231/231 E2E + lint verdes. Verificado con la suite E2E en Chromium real: prefill correcto de los 4 campos, edición conserva un abono ya registrado ($500.000 de $3.000.000 intactos tras corregir solo el nombre, saldo de cuenta sin tocar), bajar el objetivo por debajo de lo aportado completa la meta y la saca de la lista activa, y la categoría/ícono sobreviven la edición.
+
+---
+
 ### feat(gastos): TX.12 gastos frecuentes y "Repetir" · 2026-07-23
 
 Segunda pieza del patrón **P2** de la auditoría de UX/producto (la primera fue CAL.5a, el mismo día). El gasto cotidiano (almuerzo, café, Uber) es el registro más repetido de la app y se tecleaba entero cada vez: categoría, monto, cuenta. Dos entradas al mismo problema, sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a: puro reuso del historial ya registrado).

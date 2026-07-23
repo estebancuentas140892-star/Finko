@@ -662,3 +662,135 @@ describe('renderFormAbonoMeta() - selector de cuenta', () => {
     expect(html).not.toContain('<select');
   });
 });
+
+// ── normalizarMeta(datos, metaExistente) - EDIT.1 ─────────────────
+
+describe('normalizarMeta() - modo edición (EDIT.1)', () => {
+  it('sin metaExistente, se comporta igual que antes: montoActual 0, completada false', () => {
+    const r = normalizarMeta(datosFormValidos);
+    expect(r.montoActual).toBe(0);
+    expect(r.completada).toBe(false);
+  });
+
+  it('con metaExistente, conserva montoActual tal cual (no lo resetea a 0)', () => {
+    const existente = metaBase({ montoActual: 2_000_000 });
+    const r = normalizarMeta(datosFormValidos, existente);
+    expect(r.montoActual).toBe(2_000_000);
+  });
+
+  it('recalcula completada al bajar el objetivo por debajo de lo ya aportado', () => {
+    const existente = metaBase({ montoActual: 2_000_000, completada: false });
+    const r = normalizarMeta({ ...datosFormValidos, montoObjetivo: '1000000' }, existente);
+    expect(r.montoActual).toBe(2_000_000);
+    expect(r.completada).toBe(true);
+  });
+
+  it('recalcula completada al subir el objetivo por encima de lo ya aportado', () => {
+    const existente = metaBase({ montoActual: 5_000_000, montoObjetivo: 5_000_000, completada: true });
+    const r = normalizarMeta({ ...datosFormValidos, montoObjetivo: '10000000' }, existente);
+    expect(r.montoActual).toBe(5_000_000);
+    expect(r.completada).toBe(false);
+  });
+
+  it('actualiza nombre, fecha y categoría normalmente', () => {
+    const existente = metaBase({ montoActual: 500_000 });
+    const r = normalizarMeta(
+      { ...datosFormValidos, nombre: 'Viaje renombrado', fechaLimite: '2027-01-15', categoria: 'Viajes', icono: '' },
+      existente,
+    );
+    expect(r.nombre).toBe('Viaje renombrado');
+    expect(r.fechaLimite).toBe('2027-01-15');
+    expect(r.categoria).toBe('Viajes');
+    expect(r.montoActual).toBe(500_000);
+  });
+
+  it('metaExistente sin montoActual (defensivo) trata el histórico como 0', () => {
+    const existente = { id: 'm1', nombre: 'X', montoObjetivo: 100 };
+    const r = normalizarMeta(datosFormValidos, existente);
+    expect(r.montoActual).toBe(0);
+  });
+});
+
+// ── renderFormMeta(meta) - modo edición (EDIT.1) ──────────────────
+
+describe('renderFormMeta() - modo edición (EDIT.1)', () => {
+  it('sin meta, arranca en modo creación: botón "Guardar meta", campos vacíos', () => {
+    const html = renderFormMeta();
+    expect(html).toContain('>Guardar meta<');
+    expect(html).not.toContain('>Actualizar meta<');
+    expect(html).toMatch(/id="meta-nombre"[^>]*value=""/);
+  });
+
+  it('con una meta, prellena nombre, objetivo y fecha límite', () => {
+    const meta = metaBase({ nombre: 'Viaje a Cartagena', montoObjetivo: 3_000_000, fechaLimite: '2026-12-01' });
+    const html = renderFormMeta(meta);
+    expect(html).toMatch(/id="meta-nombre"[^>]*value="Viaje a Cartagena"/);
+    expect(html).toMatch(/id="meta-objetivo"[^>]*value="3000000"/);
+    expect(html).toMatch(/id="meta-fecha"[^>]*value="2026-12-01"/);
+  });
+
+  it('con una meta, el botón dice "Actualizar meta"', () => {
+    const html = renderFormMeta(metaBase());
+    expect(html).toContain('>Actualizar meta<');
+    expect(html).not.toContain('>Guardar meta<');
+  });
+
+  it('marca la categoría actual como seleccionada en el <select>', () => {
+    const meta = metaBase({ categoria: 'Boda' });
+    const html = renderFormMeta(meta);
+    expect(html).toContain(`<option value="Boda" selected>Boda</option>`);
+  });
+
+  it('con categoría "Otra", el grupo de ícono NO viene oculto', () => {
+    const meta = metaBase({ categoria: 'Otra', icono: 'c-otros' });
+    const html = renderFormMeta(meta);
+    expect(html).toMatch(/<div class="form-group" id="form-group-meta-icono" >/);
+  });
+
+  it('con categoría "Otra" y un ícono de sprite válido (del catálogo), lo prellena en el picker', () => {
+    const meta = metaBase({ categoria: 'Otra', icono: 'c-avion' });
+    const html = renderFormMeta(meta);
+    expect(html).toContain('value="c-avion"');
+    expect(html).toContain('aria-pressed="true"');
+  });
+
+  it('con un emoji legacy (no id de sprite), el picker NO intenta usarlo como valor', () => {
+    const meta = metaBase({ categoria: 'Otra', icono: '🎉' });
+    const html = renderFormMeta(meta);
+    // El input oculto del picker queda vacío: ningún botón coincide con un emoji.
+    expect(html).toContain('id="meta-icono" value=""');
+  });
+
+  it('sin categoría "Otra", el grupo de ícono sigue oculto aunque haya meta', () => {
+    const meta = metaBase({ categoria: 'Viajes' });
+    const html = renderFormMeta(meta);
+    expect(html).toMatch(/<div class="form-group" id="form-group-meta-icono" hidden>/);
+  });
+});
+
+// ── renderListaMetas() - botón "Editar" (EDIT.1) ──────────────────
+
+describe('renderListaMetas() - botón Editar (EDIT.1)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-metas"></div>';
+  });
+
+  it('cada meta trae un botón "editar-meta" con su id', () => {
+    S.metas = [metaBase({ id: 'm1', nombre: 'Viaje' })];
+    renderListaMetas();
+    const btn = document.querySelector('[data-action="editar-meta"]');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.id).toBe('m1');
+    expect(btn.getAttribute('aria-label')).toBe('Editar meta Viaje');
+  });
+
+  it('con varias metas, cada botón de editar lleva el id de SU propia meta', () => {
+    S.metas = [
+      metaBase({ id: 'm1', nombre: 'Viaje' }),
+      metaBase({ id: 'm2', nombre: 'Laptop' }),
+    ];
+    renderListaMetas();
+    const ids = [...document.querySelectorAll('[data-action="editar-meta"]')].map(b => b.dataset.id);
+    expect(ids).toEqual(['m1', 'm2']);
+  });
+});
