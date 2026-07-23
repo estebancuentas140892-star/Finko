@@ -32,6 +32,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
+import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
@@ -264,11 +265,22 @@ async function _eliminarGastoFijo(el) {
 // ── HANDLER: MARCAR PAGADO ESTE MES ─────────────────────────────
 
 /**
- * Registra el pago del mes actual de un gasto fijo.
+ * Registra el pago de un gasto fijo en el mes que el usuario está viendo en el
+ * calendario (BUG-015), que no siempre es el actual: el botón trae ese mes en
+ * `data-mes` y `_fechaPagoDelMes` decide la fecha del gasto.
+ *
  * Usa resolverPagoConSelector: con varias cuentas pide elegir la cuenta
  * preferida (selector de tarjetas) y solo reparte si esa cuenta no alcanza,
  * sin dejar ninguna en negativo. Con una sola cuenta no pregunta.
- * @param {HTMLElement} el - botón con data-id del compromiso.
+ *
+ * **El descuento de la cuenta siempre ocurre ahora, aunque el gasto quede
+ * fechado en un mes pasado, y es lo correcto**: el saldo de una cuenta es un
+ * valor "de hoy". Si el usuario pagó el arriendo en marzo y no lo registró, el
+ * saldo que Finko muestra está inflado; registrarlo ahora lo pone al día con la
+ * realidad del banco. No "corregir" esto descontando en la fecha del gasto: los
+ * saldos no son históricos.
+ *
+ * @param {HTMLElement} el - botón con data-id del compromiso y data-mes del mes visible.
  */
 async function _marcarPagadoGastoFijo(el) {
   const id = el.dataset.id;
@@ -277,8 +289,16 @@ async function _marcarPagadoGastoFijo(el) {
   const comp = S.compromisos.find(c => c.id === id);
   if (!comp || comp.tipo !== 'fijo') return;
 
-  // Verificar que no esté pagado ya este mes (defensa ante doble clic).
-  const prefijo = _prefijoMesActual();
+  // BUG-015: el pago pertenece al mes VISIBLE del calendario (el botón lo trae
+  // en `data-mes`), no al mes actual. Antes se validaba y se fechaba siempre
+  // contra hoy: marcar un mes pasado creaba un gasto de ESTE mes, el badge del
+  // mes visible no viraba y el botón seguía invitando a re-clickear.
+  const prefijo = el.dataset.mes || _prefijoMesActual();
+
+  const fechaPago = _fechaPagoDelMes(comp, prefijo);
+  if (!fechaPago) return; // mes futuro o prefijo inválido: no hay nada que pagar
+
+  // Verificar que no esté pagado ya ese mes (defensa ante doble clic).
   const yaPagado = Array.isArray(S.gastos) &&
     S.gastos.some(g => g.compromisoId === id && g.fecha?.startsWith(prefijo));
   if (yaPagado) {
@@ -319,7 +339,7 @@ async function _marcarPagadoGastoFijo(el) {
       descripcion:        `Pago: ${comp.descripcion}`,
       monto:              s.monto,
       categoria:          'Gastos fijos',
-      fecha:              hoy(),
+      fecha:              fechaPago,
       cuentaId:           s.cuentaId || null,
       nota:               repartido ? 'Pago repartido entre varias cuentas' : '',
       compromisoId:       id,
@@ -354,6 +374,45 @@ function _prefijoMesActual() {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${yyyy}-${mm}`;
+}
+
+/**
+ * Fecha con la que se registra el pago de un gasto fijo del mes `prefijoMes`
+ * ('YYYY-MM'), que es el mes VISIBLE en el calendario, no necesariamente el
+ * actual (BUG-015).
+ *
+ * - Mes en curso: se fecha con hoy (el pago acaba de ocurrir).
+ * - Mes pasado: se fecha con el vencimiento del compromiso en ESE mes (la
+ *   última ocurrencia si el fijo cae varias veces); el pago ocurrió entonces,
+ *   no hoy. Sin ocurrencia resoluble cae al último día del mes.
+ * - Mes futuro: `null`. No se paga lo que aún no vence (Finko registra lo que
+ *   pasó, mismo criterio que MC.13c-2); la vista ya oculta el botón y esto es
+ *   la defensa en profundidad.
+ *
+ * @param {import('../../core/state.js').Compromiso} comp
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {string|null} 'YYYY-MM-DD' o null si el mes es futuro/inválido.
+ */
+function _fechaPagoDelMes(comp, prefijoMes) {
+  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  if (!m) return null;
+
+  const anio = Number(m[1]);
+  const mes  = Number(m[2]) - 1; // 0-indexed
+  if (mes < 0 || mes > 11) return null;
+
+  const d       = new Date();
+  const anioHoy = d.getFullYear();
+  const mesHoy  = d.getMonth();
+
+  if (anio === anioHoy && mes === mesHoy) return hoy();
+  if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return null;
+
+  const dias = ocurrenciasEnMes(comp, anio, mes);
+  const dia  = dias.length > 0
+    ? dias[dias.length - 1]
+    : new Date(anio, mes + 1, 0).getDate();
+  return `${prefijoMes}-${String(dia).padStart(2, '0')}`;
 }
 
 // ── INIT ─────────────────────────────────────────────────────────

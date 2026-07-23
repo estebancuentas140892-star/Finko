@@ -586,9 +586,18 @@ function _renderDetalleItem(c, viewYear, viewMonth) {
   // ingreso, no va en verde; "Marcar pagado" usa el índigo de la sección).
   let accionesHtml = '';
   if (tipo === 'fijo') {
-    const btnPagar = estadoPago !== 'completo' ? `
+    // BUG-015: el pago pertenece al mes VISIBLE, no al actual, así que el botón
+    // viaja con `data-mes` (el handler no conoce _viewYear/_viewMonth). Un mes
+    // futuro no se puede pagar: aún no ha vencido y Finko registra lo que pasó
+    // (mismo criterio que MC.13c-2, que rechazó gastos con fecha futura).
+    const hoyD = new Date();
+    const esMesFuturo = viewYear > hoyD.getFullYear()
+      || (viewYear === hoyD.getFullYear() && viewMonth > hoyD.getMonth());
+
+    const btnPagar = (estadoPago !== 'completo' && !esMesFuturo) ? `
       <button type="button" class="cal-detail__cta cal-detail__cta--fijo"
               data-action="agenda-marcar-pagado-fijo" data-id="${idEsc}"
+              data-mes="${prefijo}"
               aria-label="Marcar como pagado este mes: ${desc}">
         Marcar pagado
       </button>` : '';

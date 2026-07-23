@@ -1623,6 +1623,61 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
     expect(document.querySelector('[data-action="abrir-abono"]')).not.toBeNull();
   });
 
+  // ── BUG-015: el pago pertenece al mes visible, no al actual ──────
+
+  it('el CTA "Marcar pagado" viaja con el mes visible en data-mes (BUG-015)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    abrirDia15();
+    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(pagar.dataset.mes).toBe('2026-06');
+  });
+
+  it('en un mes futuro no se ofrece marcar pagado: aún no vence (BUG-015)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    renderAgenda();
+    navegarMes(1); // julio 2026, con hoy = 15 jun
+    mostrarDia(15);
+    renderAgenda();
+
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+    // Solo se bloquea el pago: editar y eliminar siguen disponibles.
+    expect(document.querySelector('[data-action="agenda-editar-fijo"]')).not.toBeNull();
+    expect(document.querySelector('[data-action="agenda-eliminar-fijo"]')).not.toBeNull();
+  });
+
+  it('en un mes pasado sí se puede marcar pagado, con SU mes en data-mes (BUG-015)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    renderAgenda();
+    navegarMes(-1); // mayo 2026: venció y quedó sin registrar (ponerse al día)
+    mostrarDia(15);
+    renderAgenda();
+
+    const pagar = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(pagar).not.toBeNull();
+    expect(pagar.dataset.mes).toBe('2026-05');
+  });
+
+  it('un gasto de un mes pasado marca pagado ESE mes, no el actual (BUG-015)', () => {
+    S.compromisos = [compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 })];
+    // El pago de mayo ya está registrado con fecha de mayo.
+    S.gastos = [{ id: 'g1', compromisoId: 'f1', fecha: '2026-05-15', monto: 300_000 }];
+
+    renderAgenda();
+    navegarMes(-1); // mayo: pagado → badge, sin CTA
+    mostrarDia(15);
+    renderAgenda();
+    expect(document.querySelector('.cal-detail__badge-abono').textContent).toContain('Ya pagaste este mes');
+    expect(document.querySelector('[data-action="agenda-marcar-pagado-fijo"]')).toBeNull();
+
+    // Junio (mes actual) sigue pendiente: el pago de mayo no lo cubre.
+    navegarMes(1);
+    mostrarDia(15);
+    renderAgenda();
+    const pagarJunio = document.querySelector('[data-action="agenda-marcar-pagado-fijo"]');
+    expect(pagarJunio).not.toBeNull();
+    expect(pagarJunio.dataset.mes).toBe('2026-06');
+  });
+
   it('el CTA lleva la identidad del tipo: Marcar pagado índigo, Abonar frambuesa/rosa (D4)', () => {
     S.compromisos = [
       compromisoBase({ id: 'f1', diaPago: 15, monto: 300_000 }),
