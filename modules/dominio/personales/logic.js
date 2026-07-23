@@ -24,6 +24,8 @@
  * @property {number} [capitalPagado]    Parte de `pagado` que fue a capital (solo con tasa).
  * @property {number} [interesPagado]    Parte de `pagado` que fue a interés (solo con tasa).
  * @property {number} [interesPendiente] Interés devengado no cobrado al último evento (solo con tasa).
+ * @property {string} [cuentaId]         Cuenta de la que salió el dinero (PE.7). Ausente = el
+ *                                       préstamo no movió ningún saldo y no cuenta como activo.
  * @property {boolean} liquidado         true cuando no queda capital ni interés pendiente.
  * @property {string} fechaCreacion      ISO 8601 timestamp.
  */
@@ -230,6 +232,33 @@ export function labelEstado(estado) {
 // ── AGREGADOS ────────────────────────────────────────────────────
 
 /**
+ * Capital pendiente que cuenta como ACTIVO en el patrimonio (PE.7): la suma del
+ * capital aún no devuelto, contando **solo los préstamos con `cuentaId`**.
+ *
+ * Por qué solo esos, y por qué esto no es un descuido:
+ *   La regla del patrimonio (ver `calcularActivos` en analisis/logic.js) es que
+ *   un bucket se suma aparte únicamente si su dinero YA SALIÓ de `cuentas`. Un
+ *   préstamo con `cuentaId` descontó esa cuenta al registrarse, así que su
+ *   capital pendiente es dinero que ya no está en `cuentas`: sumarlo no duplica,
+ *   y de hecho es necesario (prestar convierte efectivo en un derecho de cobro,
+ *   no destruye riqueza). Un préstamo SIN `cuentaId` (registro anterior a PE.7,
+ *   o efectivo que Finko nunca vio) no movió ninguna cuenta: su dinero sigue
+ *   contado dentro de `cuentas` y sumarlo aquí lo contaría DOS VECES.
+ *   Es el mismo criterio que excluye al fondo de emergencia de los activos.
+ *
+ * El interés pendiente se excluye a propósito: no se ha ganado ni cobrado, y
+ * el usuario puede perdonarlo. Solo capital.
+ *
+ * @param {Personal[]} personales
+ * @returns {number} COP de capital por cobrar que ya salió de una cuenta (≥ 0).
+ */
+export function calcularTotalPorCobrar(personales) {
+  return (Array.isArray(personales) ? personales : [])
+    .filter(p => p && p.cuentaId)
+    .reduce((acc, p) => acc + calcularCapitalPendiente(p), 0);
+}
+
+/**
  * Resume el estado total de los préstamos.
  *
  * Con préstamos a interés (PE.1): `totalCobrado` incluye el interés recibido,
@@ -366,6 +395,14 @@ export function normalizarPersonal(datos) {
   };
   if (motivo)      item.motivo      = motivo;
   if (fechaLimite) item.fechaLimite = fechaLimite;
+
+  // PE.7: cuenta de la que salió el dinero. Se incluye SOLO si viene con valor
+  // (patrón condicional de MC.13d): omitirlo es lo que permite que `editar()`
+  // (Object.assign) conserve la cuenta ya guardada, y que un préstamo sin
+  // cuenta vinculada quede sin el campo en vez de con un `undefined` explícito.
+  // Sin cuenta, el préstamo vale como seguimiento y no toca ningún saldo.
+  const cuentaId = typeof datos.cuentaId === 'string' ? datos.cuentaId.trim() : '';
+  if (cuentaId) item.cuentaId = cuentaId;
 
   // Tasa de interés mensual opcional (PE.1). Con tasa arrancan los
   // acumuladores capital/interés: lo pagado al crear se asume capital.

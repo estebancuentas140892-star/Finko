@@ -15,6 +15,7 @@ import { calcularTotalCuentas }                         from '../tesoreria/logic
 import { metasActivas }                                 from '../metas/logic.js';
 import { apartadosActivos }                             from '../apartados/logic.js';
 import { calcularTotalInvertido }                       from '../inversiones/logic.js';
+import { calcularTotalPorCobrar }                       from '../personales/logic.js';
 import { UVT, TOPES_RENTA_UVT, UMBRAL_ALERTA_RENTA }    from '../../core/constants.js';
 
 // Regex reutilizada en funciones de deteccion.
@@ -34,6 +35,13 @@ const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
  *   - El fondo de emergencia se excluye a propósito: su aporte NO descuenta la
  *     cuenta (es un tracker paralelo), por lo que ese dinero ya está contado
  *     dentro de `cuentas`. Sumarlo lo contaría dos veces.
+ *   - "Por cobrar" (PE.7) suma el capital pendiente de los préstamos que SÍ
+ *     descontaron una cuenta al registrarse (los que tienen `cuentaId`). Misma
+ *     regla: prestar sacó el dinero de `cuentas`, así que sumarlo no duplica y
+ *     es necesario, porque prestar convierte efectivo en un derecho de cobro,
+ *     no destruye riqueza. Los préstamos sin `cuentaId` quedan fuera por la
+ *     razón inversa: nunca movieron un saldo, su dinero sigue dentro de
+ *     `cuentas`. El filtro vive en `calcularTotalPorCobrar`.
  *
  * Las metas/apartados se cuentan como activo porque, contablemente, ese dinero
  * pertenece al usuario aunque esté "comprometido" para un objetivo específico.
@@ -42,21 +50,24 @@ const _RX_FECHA_ANA = /^(\d{4})-(\d{2})-(\d{2})/;
  * @param {import('../../core/state.js').Meta[]}      metas
  * @param {import('../../core/state.js').Apartado[]}  [apartados=[]]
  * @param {import('../../core/state.js').Inversion[]} [inversiones=[]]
- * @returns {{ totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, total: number }}
+ * @param {import('../personales/logic.js').Personal[]} [personales=[]]
+ * @returns {{ totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, total: number }}
  */
-export function calcularActivos(cuentas, metas, apartados = [], inversiones = []) {
+export function calcularActivos(cuentas, metas, apartados = [], inversiones = [], personales = []) {
   const totalCuentas = calcularTotalCuentas(cuentas);
   const totalMetas   = metasActivas(metas)
     .reduce((acc, m) => acc + (m.montoActual ?? 0), 0);
   const totalApartados = apartadosActivos(apartados)
     .reduce((acc, a) => acc + (Number(a.montoActual) || 0), 0);
   const totalInversiones = calcularTotalInvertido(inversiones);
+  const totalPorCobrar   = calcularTotalPorCobrar(personales);
   return {
     totalCuentas,
     totalMetas,
     totalApartados,
     totalInversiones,
-    total: totalCuentas + totalMetas + totalApartados + totalInversiones,
+    totalPorCobrar,
+    total: totalCuentas + totalMetas + totalApartados + totalInversiones + totalPorCobrar,
   };
 }
 
@@ -166,13 +177,13 @@ export function proyeccionMultiHorizonte(patrimonioActual, ahorroMensual) {
  *   egresos: number,
  *   porCategoria: Record<string, number>,
  *   hormigas: Array<{categoria:string, total:number, cantidad:number, promedio:number}>,
- *   activos: { totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, total: number },
+ *   activos: { totalCuentas: number, totalMetas: number, totalApartados: number, totalInversiones: number, totalPorCobrar: number, total: number },
  *   pasivos: { total: number, cantidadDeudas: number, deudasSinSaldo: number },
  *   patrimonioNeto: number,
  *   volatilidad: number,
  * }}
  */
-export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = []) {
+export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = [], apartados = [], inversiones = [], personales = []) {
   const gastoMes          = totalGastosMes(gastos, anio, mes);
   const compromisoMensual = calcularTotalCompromisos(compromisos);
   const saldoCuentas      = calcularTotalCuentas(cuentas);
@@ -181,7 +192,7 @@ export function generarResumen(gastos, compromisos, cuentas, anio, mes, metas = 
   const porCategoria      = gastosPorCategoria(gastosMesActual);
   const hormigas          = detectarHormigas(gastosMesActual);
 
-  const activos        = calcularActivos(cuentas, metas, apartados, inversiones);
+  const activos        = calcularActivos(cuentas, metas, apartados, inversiones, personales);
   const pasivos        = calcularPasivos(compromisos);
   const patrimonioNeto = calcularPatrimonioNeto(activos.total, pasivos.total);
 

@@ -15,6 +15,7 @@ import {
   aplicarPago,
   desglosarPago,
   tieneInteres,
+  calcularTotalPorCobrar,
 } from '../../modules/dominio/personales/logic.js';
 
 // ── calcularPendiente() ───────────────────────────────────────────
@@ -37,6 +38,62 @@ describe('calcularPendiente()', () => {
     expect(calcularPendiente(null)).toBe(0);
     expect(calcularPendiente({})).toBe(0);
     expect(calcularPendiente({ monto: 50_000 })).toBe(50_000);
+  });
+});
+
+// ── calcularTotalPorCobrar() - activo del patrimonio (PE.7) ───────
+
+describe('calcularTotalPorCobrar()', () => {
+  it('suma el capital pendiente de los préstamos con cuenta vinculada', () => {
+    const lista = [
+      { monto: 500_000, pagado: 0,       cuentaId: 'c1' },
+      { monto: 300_000, pagado: 100_000, cuentaId: 'c1' },
+    ];
+    expect(calcularTotalPorCobrar(lista)).toBe(700_000);
+  });
+
+  it('EXCLUYE los préstamos sin cuentaId: su dinero nunca salió de cuentas y contarlo lo duplicaría', () => {
+    // Es el invariante central de PE.7. Un préstamo sin cuenta vinculada
+    // (registro anterior, o efectivo que Finko nunca vio) sigue contado dentro
+    // de `cuentas`: sumarlo aquí inflaría el patrimonio.
+    const lista = [
+      { monto: 500_000, pagado: 0, cuentaId: 'c1' },
+      { monto: 900_000, pagado: 0 },
+      { monto: 400_000, pagado: 0, cuentaId: '' },
+      { monto: 700_000, pagado: 0, cuentaId: null },
+    ];
+    expect(calcularTotalPorCobrar(lista)).toBe(500_000);
+  });
+
+  it('un préstamo ya cobrado por completo no aporta nada', () => {
+    const lista = [{ monto: 500_000, pagado: 500_000, cuentaId: 'c1' }];
+    expect(calcularTotalPorCobrar(lista)).toBe(0);
+  });
+
+  it('con tasa cuenta SOLO el capital, nunca el interés devengado', () => {
+    // El interés no se ha ganado ni cobrado y el usuario puede perdonarlo:
+    // contarlo inflaría el patrimonio con dinero incierto.
+    const prestamo = {
+      monto: 1_000_000, pagado: 0, cuentaId: 'c1',
+      tasa: 5, capitalPagado: 0, interesPagado: 0, interesPendiente: 250_000,
+      fecha: '2020-01-01',
+    };
+    expect(calcularTotalPorCobrar([prestamo])).toBe(1_000_000);
+  });
+
+  it('con tasa y abonos usa capitalPagado, no el total pagado (el interés cobrado no baja capital)', () => {
+    const prestamo = {
+      monto: 1_000_000, pagado: 300_000, cuentaId: 'c1',
+      tasa: 2, capitalPagado: 200_000, interesPagado: 100_000, interesPendiente: 0,
+    };
+    expect(calcularTotalPorCobrar([prestamo])).toBe(800_000);
+  });
+
+  it('tolera entradas vacías o inválidas', () => {
+    expect(calcularTotalPorCobrar([])).toBe(0);
+    expect(calcularTotalPorCobrar(null)).toBe(0);
+    expect(calcularTotalPorCobrar(undefined)).toBe(0);
+    expect(calcularTotalPorCobrar([null, undefined])).toBe(0);
   });
 });
 
@@ -682,5 +739,26 @@ describe('normalizarPersonal() con tasa (PE.1)', () => {
     expect(r2.tasa).toBeUndefined();
     const r3 = normalizarPersonal({ persona: 'X', monto: '100', tasa: '0' });
     expect(r3.tasa).toBeUndefined();
+  });
+});
+
+// ── normalizarPersonal() con cuenta (PE.7) ────────────────────────
+
+describe('normalizarPersonal() con cuenta de origen (PE.7)', () => {
+  it('guarda cuentaId cuando el form la trae', () => {
+    const r = normalizarPersonal({ persona: 'X', monto: '100000', cuentaId: 'c1' });
+    expect(r.cuentaId).toBe('c1');
+  });
+
+  it('OMITE la clave por completo cuando no hay cuenta, no la pone en undefined', () => {
+    // Omitirla es lo que permite que `editar()` (Object.assign) conserve una
+    // cuenta ya guardada, y distingue "sin cuenta" de "cuenta borrada".
+    const r = normalizarPersonal({ persona: 'X', monto: '100000' });
+    expect('cuentaId' in r).toBe(false);
+  });
+
+  it('trata cadena vacía o solo espacios como sin cuenta', () => {
+    expect('cuentaId' in normalizarPersonal({ persona: 'X', monto: '1', cuentaId: '' })).toBe(false);
+    expect('cuentaId' in normalizarPersonal({ persona: 'X', monto: '1', cuentaId: '   ' })).toBe(false);
   });
 });

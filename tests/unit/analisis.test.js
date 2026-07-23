@@ -210,7 +210,8 @@ describe('calcularActivos()', () => {
   it('devuelve ceros con arrays vacíos', () => {
     const r = calcularActivos([], []);
     expect(r).toEqual({
-      totalCuentas: 0, totalMetas: 0, totalApartados: 0, totalInversiones: 0, total: 0,
+      totalCuentas: 0, totalMetas: 0, totalApartados: 0, totalInversiones: 0,
+      totalPorCobrar: 0, total: 0,
     });
   });
 
@@ -271,6 +272,48 @@ describe('calcularActivos()', () => {
     ];
     const r = calcularActivos(cuentas, metas);
     expect(r.total).toBe(3_800_000);
+  });
+
+  // ── "Por cobrar" (PE.7) ──
+
+  it('suma como activo el capital pendiente de préstamos con cuenta vinculada', () => {
+    const personales = [{ monto: 400_000, pagado: 0, cuentaId: 'cu1' }];
+    const r = calcularActivos([], [], [], [], personales);
+    expect(r.totalPorCobrar).toBe(400_000);
+    expect(r.total).toBe(400_000);
+  });
+
+  it('prestar NO mueve el patrimonio: la cuenta baja y "por cobrar" sube lo mismo', () => {
+    // Invariante central de PE.7. Prestar convierte efectivo en un derecho de
+    // cobro; no destruye riqueza. Si esta identidad se rompe, el patrimonio
+    // del usuario cae (o sube) solo por registrar un préstamo.
+    const antes = calcularActivos([cuenta({ saldo: 1_000_000 })], []);
+
+    // Presta 400.000 desde esa cuenta: el saldo baja y nace el préstamo.
+    const despues = calcularActivos(
+      [cuenta({ saldo: 600_000 })], [], [], [],
+      [{ monto: 400_000, pagado: 0, cuentaId: 'cu1' }],
+    );
+
+    expect(antes.total).toBe(1_000_000);
+    expect(despues.total).toBe(1_000_000);
+  });
+
+  it('un préstamo SIN cuenta vinculada no suma: su dinero sigue dentro de cuentas', () => {
+    // Misma razón por la que se excluye el fondo de emergencia. Sumarlo aquí
+    // contaría dos veces el mismo dinero.
+    const r = calcularActivos(
+      [cuenta({ saldo: 1_000_000 })], [], [], [],
+      [{ monto: 400_000, pagado: 0 }],
+    );
+    expect(r.totalPorCobrar).toBe(0);
+    expect(r.total).toBe(1_000_000);
+  });
+
+  it('sin préstamos el bucket queda en 0 y no altera el total', () => {
+    const r = calcularActivos([cuenta()], [meta()], [apartado()], [inversion()]);
+    expect(r.totalPorCobrar).toBe(0);
+    expect(r.total).toBe(3_700_000);
   });
 });
 

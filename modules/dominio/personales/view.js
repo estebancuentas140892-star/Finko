@@ -6,6 +6,7 @@
 import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
+import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import {
   calcularPendiente,
   calcularCapitalPendiente,
@@ -187,10 +188,23 @@ function _renderEmptyState() {
 
 /**
  * Devuelve el HTML del formulario de nuevo/editar préstamo.
+ *
+ * PE.7: incluye el selector de la cuenta de la que sale el dinero. Con 0
+ * cuentas activas no se muestra (patrón 0/1/varias) y el préstamo se registra
+ * igual, como seguimiento puro que no mueve ningún saldo.
+ *
  * @returns {string}
  */
 export function renderFormPersonal() {
   const hoy = _hoyISO();
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
+    label: '¿De qué cuenta sale el dinero?',
+  });
+  const notaCuenta = cuentaHtml
+    ? `<p class="form-hint">Se descontará de esa cuenta, porque el dinero deja de estar disponible. Cuando te paguen, vuelve a entrar.</p>`
+    : '';
+
   return `
     <form id="form-personal" novalidate>
       <div class="form-group">
@@ -228,6 +242,9 @@ export function renderFormPersonal() {
         <p class="form-hint">Si pasa esta fecha, el préstamo se marca como vencido.</p>
       </div>
 
+      ${cuentaHtml}
+      ${notaCuenta}
+
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Guardar préstamo</button>
@@ -239,6 +256,12 @@ export function renderFormPersonal() {
 
 /**
  * Devuelve el HTML del modal para registrar un pago parcial.
+ *
+ * PE.7: incluye el selector de la cuenta donde entra el dinero cobrado,
+ * preseleccionando la cuenta de la que salió el préstamo (lo más probable es
+ * que vuelva al mismo sitio). Con 0 cuentas activas no se muestra y el cobro
+ * se registra igual, sin tocar saldos.
+ *
  * @param {import('./logic.js').Personal} prestamo
  * @returns {string}
  */
@@ -256,6 +279,14 @@ export function renderFormPagoPersonal(prestamo) {
     ? ' El pago cubre primero el interés acumulado y el resto baja el capital.'
     : '';
 
+  // PE.7: la cuenta del préstamo viene preseleccionada si sigue activa; si no
+  // (o si el préstamo no tenía cuenta), cae al criterio normal del selector.
+  const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
+  const cuentaHtml = renderSelectorCuenta(cuentasActivas, {
+    label:      '¿En qué cuenta entró el dinero?',
+    selectedId: prestamo.cuentaId ?? null,
+  });
+
   return `
     <form id="form-pago-personal" novalidate data-id="${_esc(prestamo.id)}">
       <p class="modal__intro">
@@ -269,6 +300,7 @@ export function renderFormPagoPersonal(prestamo) {
                value="${pendiente}" required aria-required="true" />
         <p class="form-hint">El valor que aparece es todo lo que falta por cobrar. Si solo te pagaron una parte, puedes cambiarlo.${hintInteres}</p>
       </div>
+      ${cuentaHtml}
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
         <button type="submit" class="btn btn-primary">Registrar pago</button>

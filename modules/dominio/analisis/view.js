@@ -51,8 +51,8 @@ const _MESES = [
  * @param {number} anio
  * @param {number} mes
  */
-function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, anio, mes) {
-  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones);
+function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, inversiones, personales, anio, mes) {
+  const resumen = generarResumen(gastos, compromisos, cuentas, anio, mes, metas, apartados, inversiones, personales);
 
   // Series para gráficos (D.3). Se calculan aquí para no inflar generarResumen.
   const serieGastos  = serieGastosMensual(gastos, anio, mes, 12);
@@ -62,9 +62,12 @@ function _calcularDatosAnalisis(gastos, compromisos, cuentas, metas, apartados, 
   return { resumen, serieGastos, segmentosCat };
 }
 
+// PE.7: `personales` entra a las claves de invalidación porque ahora alimenta
+// el activo "Por cobrar" del patrimonio. Sin esta clave, prestar o cobrar no
+// repintaría el patrimonio hasta que cambiara otra slice.
 const _calcularDatosAnalisisMemo = memoizar(
   _calcularDatosAnalisis,
-  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones'],
+  ['gastos', 'compromisos', 'cuentas', 'metas', 'apartados', 'inversiones', 'personales'],
 );
 
 /**
@@ -128,7 +131,7 @@ export function renderAnalisis() {
   if (chipMes) chipMes.textContent = _MESES[mes - 1] ?? '';
 
   const { resumen, serieGastos, segmentosCat } = _calcularDatosAnalisisMemo(
-    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, anio, mes,
+    S.gastos, S.compromisos, S.cuentas, S.metas, S.apartados, S.inversiones, S.personales, anio, mes,
   );
 
   // ANL.2d (ADR 038 D7): sin gastos registrados, sin activos y sin deudas no
@@ -525,10 +528,12 @@ function _renderScoreSalud(resumen) {
  * Cada bucket > 0 pinta un segmento con el color de su dominio (ADR 031).
  */
 const _BUCKETS_ACTIVOS = [
-  { key: 'totalCuentas',     label: 'Cuentas',   mod: 'cuentas' },
-  { key: 'totalMetas',       label: 'Metas',     mod: 'metas' },
-  { key: 'totalApartados',   label: 'Apartados', mod: 'apartados' },
-  { key: 'totalInversiones', label: 'Inversión', mod: 'inversion' },
+  { key: 'totalCuentas',     label: 'Cuentas',    mod: 'cuentas' },
+  { key: 'totalMetas',       label: 'Metas',      mod: 'metas' },
+  { key: 'totalApartados',   label: 'Apartados',  mod: 'apartados' },
+  { key: 'totalInversiones', label: 'Inversión',  mod: 'inversion' },
+  // PE.7: capital prestado que ya salió de una cuenta y está por volver.
+  { key: 'totalPorCobrar',   label: 'Por cobrar', mod: 'porcobrar' },
 ];
 
 function _renderPatrimonio({ activos, pasivos, patrimonioNeto }) {

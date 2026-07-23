@@ -1570,6 +1570,9 @@
 .patri-card__seg--metas     { background: var(--fk-dom-metas); }
 .patri-card__seg--apartados { background: var(--fk-dom-ahorro); }
 .patri-card__seg--inversion { background: var(--fk-dom-inversion); }
+/* PE.7: "Por cobrar" hereda la identidad de Me deben (rosa), como cada bucket
+   toma la de su sección de origen. */
+.patri-card__seg--porcobrar { background: var(--fk-dom-personales); }
 
 .patri-card__grid {
   display: grid;

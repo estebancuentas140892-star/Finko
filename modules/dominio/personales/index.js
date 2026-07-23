@@ -11,7 +11,7 @@
 import { S, EventBus } from '../../core/state.js';
 import { guardar, editar, eliminar } from '../../infra/crud.js';
 import { registrarAccion } from '../../ui/actions.js';
-import { abrirModal, cerrarModal, resetModal } from '../../ui/modales.js';
+import { abrirModal, cerrarModal } from '../../ui/modales.js';
 import { renderSmart, registrarRender } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
 import { mostrarErroresForm } from '../../infra/form-errors.js';
@@ -25,15 +25,41 @@ import {
   tieneInteres,
 } from './logic.js';
 import { f } from '../../infra/utils.js';
+import { updSaldo } from '../../infra/render.js';
 import { renderListaPersonales, renderFormPersonal, renderFormPagoPersonal } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
+
+/**
+ * Ajusta el saldo de una cuenta en `delta` (positivo suma, negativo descuenta).
+ * No-op si no hay cuenta o no existe. Mismo helper que usan Compromisos (D.14)
+ * y Apartados: `personales` no puede importar de otro dominio (ADN 10), así que
+ * la copia es intencional (candidata a unificarse en ARQ.2).
+ *
+ * @param {string|null|undefined} cuentaId
+ * @param {number} delta
+ */
+function _ajustarSaldoCuenta(cuentaId, delta) {
+  if (!cuentaId || delta === 0) return;
+  const cuenta = (S.cuentas ?? []).find(c => c.id === cuentaId);
+  if (!cuenta) return;
+  editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
+}
 
 // ── HANDLERS NUEVO / GUARDAR ─────────────────────────────────────
 
 function _nuevoPersonal() {
   const overlay = document.getElementById('modal-personal');
   if (!overlay) return;
-  resetModal(overlay);
+  // PE.7: re-inyectar en cada apertura, no solo al arrancar. El form ahora
+  // depende de `S.cuentas` (selector de cuenta de origen): si se inyectara una
+  // sola vez en el init, crear una cuenta después dejaría el selector invisible
+  // hasta recargar la app. Mismo patrón que `_nuevoApartado`.
+  //
+  // Re-inyectar YA deja el form pristino, así que `resetModal()` sobra y además
+  // estorbaba: pone `checked = false` en todos los radios (borraría la cuenta
+  // preseleccionada) y vacía los `value` del HTML (dejaba en blanco la fecha
+  // del préstamo, que el propio form rellena con hoy).
+  _inyectarForm();
   abrirModal(overlay);
 }
 
@@ -49,13 +75,26 @@ function _guardarPersonal() {
     return;
   }
 
-  guardar('personales', normalizarPersonal(datos));
+  const nuevo = normalizarPersonal(datos);
+  guardar('personales', nuevo);
+
+  // PE.7: prestar saca el dinero de la cuenta elegida. No destruye riqueza (el
+  // capital pendiente entra al patrimonio como "Por cobrar", ver
+  // `calcularTotalPorCobrar`): convierte efectivo en un derecho de cobro.
+  // Sin cuenta vinculada, el préstamo vale como seguimiento y no toca saldos.
+  if (nuevo.cuentaId) {
+    _ajustarSaldoCuenta(nuevo.cuentaId, -nuevo.monto);
+    updSaldo();
+  }
 
   const overlay = document.getElementById('modal-personal');
   if (overlay) cerrarModal(overlay);
 
   renderListaPersonales();
-  announce('Préstamo guardado correctamente.');
+  announce(nuevo.cuentaId
+    ? `Préstamo guardado. Se descontaron ${f(nuevo.monto)} de tu cuenta.`
+    : 'Préstamo guardado correctamente.'
+  );
 }
 
 // ── HANDLERS PAGAR ───────────────────────────────────────────────
@@ -83,8 +122,10 @@ function _confirmarPagoPersonal() {
   const form = document.getElementById('form-pago-personal');
   if (!form) return;
 
+  const datosForm = new FormData(form);
   const id    = form.dataset.id;
-  const monto = Number(new FormData(form).get('monto'));
+  const monto = Number(datosForm.get('monto'));
+  const cuentaDestinoId = String(datosForm.get('cuentaId') ?? '').trim() || null;
 
   const prestamo = S.personales.find(p => p.id === id);
   if (!prestamo) return;
@@ -114,6 +155,14 @@ function _confirmarPagoPersonal() {
   }
   editar('personales', id, patch);
 
+  // PE.7: el dinero cobrado vuelve a entrar a la cuenta elegida. Se acredita
+  // `desglose.aplicado` (ya recortado al pendiente por `desglosarPago`), no el
+  // monto tecleado: si el usuario escribe de más, no se infla el saldo.
+  if (cuentaDestinoId && desglose.aplicado > 0) {
+    _ajustarSaldoCuenta(cuentaDestinoId, desglose.aplicado);
+    updSaldo();
+  }
+
   const overlay = document.getElementById('modal-pago-personal');
   if (overlay) cerrarModal(overlay);
 
@@ -139,9 +188,19 @@ async function _eliminarPersonal(el) {
   const prestamo = S.personales.find(p => p.id === id);
   if (!prestamo) return;
 
+  // PE.7: borrar NO revierte los movimientos de cuenta, a diferencia de una
+  // deuda (D.14, que acredita una sola vez al crearse y por eso puede revertir
+  // exacto). Un préstamo es un flujo: desembolso más N abonos, posiblemente a
+  // cuentas distintas; revertir solo el desembolso sobre-acreditaría en cuanto
+  // hubiera un abono, y revertir el neto con fiabilidad necesita el historial
+  // de abonos que planea PE.6b (hoy solo existe el acumulador `pagado`).
+  // El copy lo dice explícitamente para que no sorprenda.
+  const avisoSaldo = prestamo.cuentaId
+    ? ' Los movimientos que ya hiciste en tus cuentas se quedan como están.'
+    : '';
   const ok = await confirmar({
     titulo:         'Borrar préstamo',
-    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve el dinero, solo limpia el registro.`,
+    mensaje:        `¿Borrar el préstamo a ${prestamo.persona}? Esto no devuelve el dinero, solo limpia el registro.${avisoSaldo}`,
     confirmarTexto: 'Borrar',
     peligroso:      true,
   });
