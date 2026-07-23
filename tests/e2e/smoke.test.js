@@ -4258,3 +4258,88 @@ test.describe('Análisis v2 - score hero + chip de mes (ANL.2a)', () => {
   });
 
 });
+
+// ── SUITE 12f: Agenda - pagar en lote lo vencido (CAL.5a) ────────────────────
+// La tarjeta bajo el hero aparece con dos o más gastos fijos vencidos sin
+// registrar; el modal los lista todos marcados y, al confirmar, se registran
+// juntos resolviendo la cuenta una sola vez (con una sola cuenta ni se
+// pregunta: regla de cuenta única del helper).
+
+test.describe('Agenda - pago en lote (CAL.5a)', () => {
+  /** Siembra dos fijos vencidos (día 1, siempre <= hoy) y una cuenta con saldo. */
+  async function sembrarLote(page) {
+    await page.addInitScript(() => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{
+          id: 'cta-lote-e2e', nombre: 'Ahorros E2E', tipo: 'ahorros',
+          banco: 'Bancolombia', saldo: 500000, activa: true,
+        }],
+        ingresos: [],
+        gastos:   [],
+        compromisos: [
+          {
+            id: 'lote-a-e2e', tipo: 'fijo', descripcion: 'Arriendo Lote E2E',
+            monto: 100000, frecuencia: 'Mensual', diaPago: 1,
+          },
+          {
+            id: 'lote-b-e2e', tipo: 'fijo', descripcion: 'Internet Lote E2E',
+            monto: 50000, frecuencia: 'Mensual', diaPago: 1,
+          },
+        ],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    });
+  }
+
+  test('registra los dos pagos juntos y la tarjeta desaparece', async ({ page }) => {
+    await sembrarLote(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const lote = page.locator('.cal-lote');
+    await expect(lote).toBeVisible({ timeout: 3_000 });
+    await expect(lote.locator('.cal-lote__title')).toHaveText('2 pagos ya vencieron');
+
+    await lote.locator('[data-action="agenda-pagar-lote"]').click();
+
+    const modal = page.locator('#modal-pago-lote');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+    await expect(modal.locator('.lote-row')).toHaveCount(2);
+    await expect(modal.locator('[data-role="lote-total"]')).toContainText('$150.000');
+
+    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+
+    // Una sola cuenta con saldo suficiente: sin picker ni confirmación.
+    await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.hero-agenda__pagado')).toContainText('$150.000');
+
+    // El saldo de la cuenta bajó por el total del lote (500.000 - 150.000).
+    await page.locator('.nav-item[href="#tesoreria"]').first().click();
+    await expect(page.locator('.cuenta-card__saldo').first())
+      .toHaveText('$350.000', { timeout: 5_000 });
+  });
+
+  test('desmarcar un pendiente recalcula el total y el texto del botón', async ({ page }) => {
+    await sembrarLote(page);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator('[data-action="agenda-pagar-lote"]').click();
+    const modal = page.locator('#modal-pago-lote');
+    await expect(modal).toBeVisible({ timeout: 3_000 });
+
+    await modal.locator('.lote-row__check').first().uncheck();
+    await expect(modal.locator('[data-role="lote-total"]')).toContainText('$50.000');
+    await expect(modal.locator('[data-role="lote-cta-texto"]')).toHaveText('Registrar 1 pago');
+
+    await modal.locator('[data-action="agenda-confirmar-lote"]').click();
+
+    // Queda uno solo pendiente: la tarjeta del lote ya no tiene sentido.
+    await expect(page.locator('.cal-lote')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('.hero-agenda__pagado')).toContainText('$50.000');
+  });
+});

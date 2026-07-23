@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { distribuirPago } from '../../modules/infra/distribuir-pago.js';
+import { distribuirPago, asignarSplitsPorItem } from '../../modules/infra/distribuir-pago.js';
 
 const cta = (id, saldo) => ({ id, saldo });
 
@@ -100,5 +100,72 @@ describe('distribuirPago()', () => {
   it('con prioridadId que cubre por sí sola: solo usa esa cuenta', () => {
     const r = distribuirPago([cta('pref', 900_000), cta('otra', 800_000)], 300_000, 'pref');
     expect(r.splits).toEqual([{ cuentaId: 'pref', monto: 300_000 }]);
+  });
+});
+
+// ── CAL.5a: reparto de los splits entre los items del lote ───────
+
+describe('asignarSplitsPorItem (CAL.5a)', () => {
+  const item = (id, monto) => ({ id, monto });
+
+  it('una sola cuenta: cada item recibe una parte por su monto exacto', () => {
+    const r = asignarSplitsPorItem(
+      [item('a', 100_000), item('b', 250_000)],
+      [{ cuentaId: 'c1', monto: 350_000 }],
+    );
+    expect(r).toEqual([
+      { id: 'a', partes: [{ cuentaId: 'c1', monto: 100_000 }], faltante: 0 },
+      { id: 'b', partes: [{ cuentaId: 'c1', monto: 250_000 }], faltante: 0 },
+    ]);
+  });
+
+  it('consume las cuentas en orden: la primera se agota antes de tocar la siguiente', () => {
+    const r = asignarSplitsPorItem(
+      [item('a', 100_000), item('b', 100_000), item('c', 100_000)],
+      [{ cuentaId: 'c1', monto: 150_000 }, { cuentaId: 'c2', monto: 150_000 }],
+    );
+    expect(r[0].partes).toEqual([{ cuentaId: 'c1', monto: 100_000 }]);
+    // El item del medio queda a caballo entre las dos cuentas: dos movimientos.
+    expect(r[1].partes).toEqual([
+      { cuentaId: 'c1', monto: 50_000 },
+      { cuentaId: 'c2', monto: 50_000 },
+    ]);
+    expect(r[2].partes).toEqual([{ cuentaId: 'c2', monto: 100_000 }]);
+    expect(r.every(x => x.faltante === 0)).toBe(true);
+  });
+
+  it('la suma repartida es exactamente la suma de los splits', () => {
+    const items  = [item('a', 33_333), item('b', 66_667), item('c', 100_000)];
+    const splits = [{ cuentaId: 'c1', monto: 120_000 }, { cuentaId: 'c2', monto: 80_000 }];
+    const total = asignarSplitsPorItem(items, splits)
+      .flatMap(x => x.partes)
+      .reduce((acc, p) => acc + p.monto, 0);
+    expect(total).toBe(200_000);
+  });
+
+  it('si los splits no alcanzan, los últimos items quedan con faltante', () => {
+    const r = asignarSplitsPorItem(
+      [item('a', 100_000), item('b', 100_000)],
+      [{ cuentaId: 'c1', monto: 120_000 }],
+    );
+    expect(r[0].faltante).toBe(0);
+    expect(r[1].partes).toEqual([{ cuentaId: 'c1', monto: 20_000 }]);
+    expect(r[1].faltante).toBe(80_000);
+  });
+
+  it('no genera partes de monto 0 ni items sin id revientan', () => {
+    const r = asignarSplitsPorItem(
+      [{ monto: 0 }, item('b', 50_000)],
+      [{ cuentaId: 'c1', monto: 50_000 }],
+    );
+    expect(r[0]).toEqual({ id: null, partes: [], faltante: 0 });
+    expect(r[1].partes).toEqual([{ cuentaId: 'c1', monto: 50_000 }]);
+  });
+
+  it('tolera entradas inválidas', () => {
+    expect(asignarSplitsPorItem(null, null)).toEqual([]);
+    expect(asignarSplitsPorItem([item('a', 10)], null)).toEqual([
+      { id: 'a', partes: [], faltante: 10 },
+    ]);
   });
 });

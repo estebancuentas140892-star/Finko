@@ -219,6 +219,99 @@ export function totalesDelMes(eventos, gastos, prefijoMes) {
 }
 
 /**
+ * Gastos fijos del mes visible que ya vencieron y siguen sin pagar (CAL.5a):
+ * la lista que alimenta el pago en lote.
+ *
+ * Aplica la MISMA regla temporal que "Marcar pagado" individual (BUG-015), para
+ * que el lote no pueda registrar nada que el botón de a uno no registraría:
+ *
+ * - Mes en curso: solo los que caen hoy o antes (lo que aún no vence no se paga).
+ * - Mes pasado: todos los pendientes (todos están vencidos).
+ * - Mes futuro: ninguno. Finko registra lo que pasó, no lo que va a pasar.
+ *
+ * Alcance de la rebanada: **solo `tipo === 'fijo'`**. Una deuda se abona contra
+ * su `saldoTotal` (aritmética distinta, y de otro dominio), así que el lote de
+ * deudas es su propia tarjeta (CAL.5b), no un caso más de este bucle.
+ *
+ * Un fijo aparece **una sola vez** aunque caiga varias veces en el mes (un
+ * quincenal): el estado de pago de un fijo es por mes, no por ocurrencia (lo
+ * fija `estadoPagoMes`), así que pagarlo dos veces en el mismo lote registraría
+ * un doble cobro. Se conserva la ocurrencia más antigua, que es la vencida.
+ *
+ * El cruce "ya pagado este mes" se hace aquí y no vía `estadoPagoMes` de
+ * Compromisos: `agenda/logic.js` no importa de otro dominio (ADN #10), mismo
+ * duplicado intencional y por la misma razón que `totalesDelMes` y `totalDia`.
+ * Para un fijo el criterio es idéntico: cualquier gasto vinculado ese mes.
+ *
+ * @param {ReturnType<typeof eventosDelMes>} eventos Mapa día → eventos del mes
+ *   visible (sirve el ya mergeado con ingresos: se filtran por tipo).
+ * @param {Array<{compromisoId?:string, fecha?:string, monto?:number}>} gastos
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible.
+ * @param {string} hoyISO 'YYYY-MM-DD'.
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number}>}
+ *   Ordenados por día ascendente (lo más vencido primero).
+ */
+export function pendientesDePagoDelMes(eventos, gastos, prefijoMes, hoyISO) {
+  if (!eventos || typeof eventos !== 'object') return [];
+
+  const mp = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  const mh = /^(\d{4})-(\d{2})-(\d{2})/.exec(hoyISO ?? '');
+  if (!mp || !mh) return [];
+
+  const anio = +mp[1], mes = +mp[2];
+  if (mes < 1 || mes > 12) return [];
+  const anioHoy = +mh[1], mesHoy = +mh[2], diaHoy = +mh[3];
+
+  // Mes futuro: nada que pagar todavía.
+  if (anio > anioHoy || (anio === anioHoy && mes > mesHoy)) return [];
+  const esMesEnCurso = anio === anioHoy && mes === mesHoy;
+
+  /** @type {Map<string, {id:string, descripcion:string, monto:number, dia:number}>} */
+  const porId = new Map();
+
+  for (const [diaStr, evs] of Object.entries(eventos)) {
+    const dia = Number(diaStr);
+    if (!Number.isInteger(dia)) continue;
+    if (esMesEnCurso && dia > diaHoy) continue; // aún no vence
+    if (!Array.isArray(evs)) continue;
+
+    for (const c of evs) {
+      if (!c || typeof c !== 'object') continue;
+      if ((c.tipo ?? 'fijo') !== 'fijo') continue;
+      if (!c.id) continue;
+      const monto = Number(c.monto);
+      if (!Number.isFinite(monto) || monto <= 0) continue;
+
+      const previo = porId.get(c.id);
+      if (!previo) {
+        porId.set(c.id, {
+          id:          c.id,
+          descripcion: c.descripcion ?? '',
+          monto,
+          dia,
+        });
+      } else if (dia < previo.dia) {
+        previo.dia = dia;
+      }
+    }
+  }
+
+  if (porId.size === 0) return [];
+
+  const pagados = new Set();
+  for (const g of (Array.isArray(gastos) ? gastos : [])) {
+    if (!g || typeof g !== 'object') continue;
+    if (!g.compromisoId || !porId.has(g.compromisoId)) continue;
+    if (typeof g.fecha !== 'string' || !g.fecha.startsWith(prefijoMes)) continue;
+    if ((Number(g.monto) || 0) > 0) pagados.add(g.compromisoId);
+  }
+
+  return [...porId.values()]
+    .filter(p => !pagados.has(p.id))
+    .sort((a, b) => a.dia - b.dia || a.descripcion.localeCompare(b.descripcion, 'es'));
+}
+
+/**
  * Busca el primer día con compromisos dentro de los próximos `diasMax` días
  * (sin incluir hoy). Útil para el mensaje "próximo vencimiento" cuando hoy
  * no tiene eventos.

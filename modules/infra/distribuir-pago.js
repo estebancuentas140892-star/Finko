@@ -61,3 +61,59 @@ export function distribuirPago(cuentas, monto, prioridadId = null) {
     faltante: Math.max(0, restante),
   };
 }
+
+/**
+ * Reparte los splits de un pago en LOTE (CAL.5a) entre los items que lo
+ * componen, para que cada item quede con su(s) propio(s) movimiento(s).
+ *
+ * El problema que resuelve: `distribuirPago` (y todo el helper de cuentas)
+ * razona sobre un monto único, pero un lote paga N compromisos y cada uno
+ * necesita su propio gasto vinculado (`compromisoId`) para que el badge "Ya
+ * pagaste este mes" y el progreso del hero funcionen. Con una sola cuenta la
+ * asignación es trivial; con reparto entre varias hay que decidir de cuál sale
+ * cada item, y un item puede quedar a caballo entre dos cuentas (entonces
+ * genera dos movimientos, igual que el pago individual repartido).
+ *
+ * Criterio: se consumen las cuentas **en el orden en que vienen** (el helper ya
+ * las ordena con la preferida del usuario primero) y los items en el orden en
+ * que se listan. Así el dinero de la cuenta elegida se agota antes de tocar las
+ * demás, que es lo que el usuario espera al haberla elegido.
+ *
+ * No valida que los splits cubran el total: si faltara, los últimos items
+ * quedan con `faltante > 0` y el caller decide (hoy no puede pasar, el picker
+ * solo confirma cuando cubre).
+ *
+ * @param {Array<{id?:string, monto?:number}>} items - qué se paga, en orden.
+ * @param {Array<{cuentaId:string, monto:number}>} splits - de dónde sale, en orden.
+ * @returns {Array<{
+ *   id: string|null,
+ *   partes: Array<{cuentaId:string, monto:number}>,  // solo > 0
+ *   faltante: number,                                 // 0 cuando quedó cubierto
+ * }>}
+ */
+export function asignarSplitsPorItem(items, splits) {
+  const bolsas = (Array.isArray(splits) ? splits : [])
+    .filter(s => s && s.cuentaId != null)
+    .map(s => ({ cuentaId: s.cuentaId, restante: Math.max(0, Math.round(Number(s.monto) || 0)) }));
+
+  let i = 0;
+  const out = [];
+
+  for (const it of (Array.isArray(items) ? items : [])) {
+    let falta = Math.max(0, Math.round(Number(it?.monto) || 0));
+    const partes = [];
+
+    while (falta > 0 && i < bolsas.length) {
+      const bolsa = bolsas[i];
+      if (bolsa.restante <= 0) { i += 1; continue; }
+      const toma = Math.min(falta, bolsa.restante);
+      partes.push({ cuentaId: bolsa.cuentaId, monto: toma });
+      bolsa.restante -= toma;
+      falta          -= toma;
+    }
+
+    out.push({ id: it?.id ?? null, partes, faltante: falta });
+  }
+
+  return out;
+}

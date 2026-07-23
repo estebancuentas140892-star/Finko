@@ -10,6 +10,37 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(agenda): CAL.5a pagar en lote lo que ya venció · 2026-07-23
+
+Primera pieza del patrón **P2** de la auditoría de UX/producto (trabajo manual uno por uno, sin lote). Pagar 6 gastos fijos eran ~30 toques: cada uno pedía la cuenta por separado. Ahora el Calendario ofrece registrarlos juntos **eligiendo la cuenta una sola vez**.
+
+**Decisión de secuencia (regla 2.7).** La tarjeta estaba bloqueada esperando la palabra de Esteban sobre si el lote manual iba antes que **PA.1** (pagos automáticos). Al pedirla como tarea siguiente, esa es la decisión: el lote va primero. No revierte ningún ADR, y de hecho evita tener que tocar la filosofía "Finko refleja la realidad, no la inventa": acá el usuario sigue confirmando cada pago, solo deja de repetir la misma pregunta N veces. PA.1 conserva su tarjeta y ahora podrá llegar con evidencia real de uso.
+
+**Rebanada `a` (regla 2.1).** Solo gastos **fijos**, y solo desde el Calendario. Las deudas se abonan contra su `saldoTotal` (aritmética distinta y de otro dominio) y el punto de entrada desde el bloque de vencidos de Inicio es otra pantalla: ambos quedan como **CAL.5b** en el BOARD.
+
+- **Qué se ofrece pagar.** `pendientesDePagoDelMes()` (nuevo, `agenda/logic.js`, puro): fijos del mes visible, con monto positivo y sin gasto vinculado ese mes. Aplica la **misma regla temporal que el botón individual** (BUG-015), para que el lote no pueda registrar nada que "Marcar pagado" no registraría: mes en curso solo hasta hoy inclusive, mes pasado todo (ya venció), mes futuro nada. Un fijo quincenal aparece **una sola vez**: el estado de pago de un fijo es por mes y no por ocurrencia, así que listarlo dos veces sería un doble cobro.
+- **Dónde aparece.** Tarjeta bajo el hero del mes, **solo con dos o más pendientes**: con uno solo el CTA "Marcar pagado" del detalle del día ya lo resuelve y la tarjeta sería ruido compitiendo con el hero. El modal lista todo marcado (la tarjeta prometió "los N": desmarcar es la excepción) con el total en vivo.
+- **El punto financiero: una cuenta para el grupo, un movimiento por compromiso.** La cuenta se resuelve con el mismo `resolverPagoConSelector` del pago individual (selector de tarjetas, reparto-fallback sin dejar negativos), y **`asignarSplitsPorItem()`** (nuevo en `infra/distribuir-pago.js`, puro) reparte esos splits entre los items consumiendo las cuentas en orden, con la elegida primero. Cada compromiso conserva así **su propio gasto vinculado**, que es lo que hace funcionar el badge "Ya pagaste este mes" y el progreso del hero; un item puede quedar a caballo entre dos cuentas y entonces genera dos gastos, exactamente como un pago individual repartido.
+- **No agrega una cuarta copia de la aritmética de pago.** El BOARD advertía que CAL.5 escribiría una cuarta copia de "gasto vinculado + descuento de cuenta" (ARQ.2 punto 2). En vez de eso, `_registrarPagosFijos()` es la **única copia dentro de Agenda**, compartida por el pago individual y el lote: el proyecto sigue con tres, no cuatro, y la extracción cross-dominio sigue siendo ARQ.2 (las otras dos copias también mueven el `saldoTotal` de una deuda, así que unificarlas es otro trabajo). El descuento se acumula por cuenta y se aplica una sola vez, para no emitir N `state:change` por cuenta en un lote.
+- **La fuente de verdad es `S`, no el DOM.** Al confirmar se releen los pendientes desde el estado y se intersectan con lo marcado: entre abrir el modal y confirmar, el usuario pudo pagar uno desde el detalle del día o eliminar el compromiso.
+
+**Archivos tocados**
+
+- `modules/dominio/agenda/logic.js`: `pendientesDePagoDelMes()` nueva, pura.
+- `modules/dominio/agenda/view.js`: `_renderLoteCard()` y `renderFormPagoLote()` nuevas; `renderAgenda()` pinta la tarjeta bajo el hero.
+- `modules/dominio/agenda/index.js`: `_pagarLote()`, `_actualizarTotalLote()`, `_confirmarLote()`, `_pendientesDelMes()` y `_registrarPagosFijos()` (esta última absorbe el final de `_marcarPagadoGastoFijo`, sin cambio de comportamiento).
+- `modules/infra/distribuir-pago.js`: `asignarSplitsPorItem()` nueva, pura.
+- `index.html`: modal `#modal-pago-lote`.
+- `styles/components/config.css`: `.cal-lote*` (familia warning: ya venció, no es un error del usuario) y `.lote-*` del modal.
+- `tests/unit/agenda.test.js`: 18 tests nuevos. `tests/unit/distribuir-pago.test.js`: 6 nuevos.
+- `tests/e2e/smoke.test.js`: 2 tests nuevos (registrar el lote completo con una cuenta y ver bajar el saldo; desmarcar y ver recalcular).
+- `service-worker.js`: `CACHE_NAME` v412 → v413.
+- `docs/contexto/calendario.md`, `docs/BOARD.md`, `docs/HANDOFF.md`.
+
+**Verificación.** 2942/2942 unit + 225/225 E2E + lint verdes. Verificado en la app real (4 gastos fijos, 2 cuentas): la tarjeta ofrece los 3 vencidos por $1.064.900; el reparto sale $900.000 de Bancolombia (que queda en 0) y $164.900 de Nequi ($300.000 → $135.100); los tres gastos quedan con su `compromisoId`; el hero pasa a "Pagado $1.064.900 / Falta $89.000" (el Gimnasio del 28 aún no vence, correcto); la tarjeta desaparece y el detalle del día 5 muestra "Ya pagaste este mes" sin CTA. El pago individual, refactorizado a la función compartida, sigue funcionando igual. Sin errores de consola.
+
+---
+
 ### feat(movimientos): MOV.2 búsqueda y filtros en el ledger · 2026-07-22
 
 Cierra por completo el patrón **P4** de la auditoría de UX/producto (junto con MOV.1, la mitad anterior de la misma iniciativa el mismo día). La vista completa de Movimientos no tenía búsqueda ni filtros: encontrar "ese pago de hace 4 meses" era scroll ciego, agravado porque PERF.1 pagina por lotes (lo viejo ni siquiera está en el DOM hasta pedirlo).

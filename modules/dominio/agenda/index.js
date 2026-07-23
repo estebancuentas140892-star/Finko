@@ -32,13 +32,15 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { hoy, f } from '../../infra/utils.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConSelector } from '../../infra/cuenta-helper.js';
+import { asignarSplitsPorItem } from '../../infra/distribuir-pago.js';
 import { ocurrenciasEnMes } from '../../infra/vencimientos.js';
 import { validarCompromiso, normalizarCompromiso } from '../compromisos/logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 import { CATEGORIAS_AGENDA } from '../../core/constants.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
 import { iconoCategoria } from '../../infra/icons.js';
-import { renderAgenda, renderFormGastoFijo, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
+import { eventosDelMes, pendientesDePagoDelMes } from './logic.js';
+import { renderAgenda, renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, navegarMes, mostrarDia, marcarEntradaSeccion } from './view.js';
 
 // ── HANDLERS DE NAVEGACIÓN ───────────────────────────────────────
 
@@ -332,27 +334,222 @@ async function _marcarPagadoGastoFijo(el) {
     }
   }
 
-  // Aplicar cada split: un gasto vinculado + descuento de su cuenta.
-  const repartido = splits.length > 1;
-  for (const s of splits) {
-    guardar('gastos', {
-      descripcion:        `Pago: ${comp.descripcion}`,
-      monto:              s.monto,
-      categoria:          'Gastos fijos',
-      fecha:              fechaPago,
-      cuentaId:           s.cuentaId || null,
-      nota:               repartido ? 'Pago repartido entre varias cuentas' : '',
-      compromisoId:       id,
-    });
-    const cuenta = S.cuentas.find(x => x.id === s.cuentaId);
-    if (cuenta) {
-      editar('cuentas', s.cuentaId, { saldo: (cuenta.saldo ?? 0) - s.monto });
-    }
-  }
+  _registrarPagosFijos([{ comp, fecha: fechaPago, partes: splits }]);
 
   renderAgenda();
   updSaldo();
   announce(`Pago de ${f(monto)} registrado para "${comp.descripcion}".`);
+}
+
+/**
+ * Escribe uno o varios pagos de gastos fijos: un gasto vinculado por cada
+ * cuenta usada + el descuento del saldo de esas cuentas.
+ *
+ * Única copia de esta aritmética dentro de Agenda: la comparten el pago
+ * individual ("Marcar pagado") y el pago en lote (CAL.5a). Deliberadamente NO
+ * se extrajo todavía a `infra/`: las otras dos copias del proyecto
+ * (`compromisos/_guardarAbono` y el apply de `tesoreria/acciones/distribucion.js`)
+ * también mueven el `saldoTotal` de una deuda, así que unificarlas es un
+ * refactor cross-dominio con su propia tarjeta (**ARQ.2** punto 2). Lo que
+ * esta función sí garantiza es que el lote no agregue una cuarta copia.
+ *
+ * El descuento se acumula por cuenta y se aplica **una sola vez** al final: en
+ * un lote la misma cuenta paga varios items, y hacer un `editar` por item
+ * leería el saldo ya mutado en cada vuelta (funciona, pero emite N eventos
+ * `state:change` por cuenta y re-renderiza toda la app en cada uno).
+ *
+ * @param {Array<{
+ *   comp: import('../../core/state.js').Compromiso,
+ *   fecha: string,
+ *   partes: Array<{cuentaId:string, monto:number}>,
+ * }>} pagos
+ */
+function _registrarPagosFijos(pagos) {
+  /** @type {Map<string, number>} Total a descontar por cuenta. */
+  const porCuenta = new Map();
+
+  for (const { comp, fecha, partes } of pagos) {
+    const repartido = partes.length > 1;
+    for (const p of partes) {
+      guardar('gastos', {
+        descripcion:  `Pago: ${comp.descripcion}`,
+        monto:        p.monto,
+        categoria:    'Gastos fijos',
+        fecha,
+        cuentaId:     p.cuentaId || null,
+        nota:         repartido ? 'Pago repartido entre varias cuentas' : '',
+        compromisoId: comp.id,
+      });
+      if (p.cuentaId) {
+        porCuenta.set(p.cuentaId, (porCuenta.get(p.cuentaId) ?? 0) + p.monto);
+      }
+    }
+  }
+
+  for (const [cuentaId, total] of porCuenta) {
+    const cuenta = S.cuentas.find(x => x.id === cuentaId);
+    if (cuenta) editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) - total });
+  }
+}
+
+// ── HANDLERS: PAGO EN LOTE (CAL.5a) ─────────────────────────────
+
+/**
+ * Gastos fijos vencidos y sin pagar del mes `prefijoMes`, leídos de S.
+ * Se recalcula en cada paso del flujo (abrir el modal, confirmar) en vez de
+ * confiar en lo que el DOM traía: entre una cosa y otra el usuario pudo pagar
+ * uno desde el detalle del día, o eliminar el compromiso.
+ *
+ * @param {string} prefijoMes 'YYYY-MM'
+ * @returns {Array<{id:string, descripcion:string, monto:number, dia:number}>}
+ */
+function _pendientesDelMes(prefijoMes) {
+  const m = /^(\d{4})-(\d{2})$/.exec(prefijoMes ?? '');
+  if (!m) return [];
+  const eventos = eventosDelMes(S.compromisos ?? [], +m[1], +m[2] - 1);
+  return pendientesDePagoDelMes(eventos, S.gastos ?? [], prefijoMes, hoy());
+}
+
+/**
+ * Abre el modal del lote con todos los pendientes marcados.
+ * @param {HTMLElement} el - CTA con data-mes del mes visible.
+ */
+function _pagarLote(el) {
+  const prefijo    = el?.dataset?.mes || _prefijoMesActual();
+  const pendientes = _pendientesDelMes(prefijo);
+
+  if (pendientes.length === 0) {
+    // El estado cambió desde otra pestaña/sección: repintar y no abrir nada.
+    announce('No quedan pagos vencidos sin registrar.');
+    renderAgenda();
+    return;
+  }
+
+  const overlay = document.getElementById('modal-pago-lote');
+  const body    = document.getElementById('modal-pago-lote-body');
+  if (!overlay || !body) return;
+
+  body.innerHTML   = renderFormPagoLote(pendientes);
+  body.dataset.mes = prefijo;
+  _actualizarTotalLote();
+  abrirModal(overlay);
+}
+
+/**
+ * Recalcula el total y el texto del botón según lo que quede marcado.
+ * Solo toca los nodos del resumen: repintar el cuerpo entero desmarcaría las
+ * casillas del usuario (mismo motivo por el que MOV.2 usa un slot dedicado
+ * para su botón de limpiar filtros).
+ */
+function _actualizarTotalLote() {
+  const body = document.getElementById('modal-pago-lote-body');
+  if (!body) return;
+
+  const marcados = [...body.querySelectorAll('.lote-row__check:checked')];
+  const total    = marcados.reduce((acc, ch) => acc + (Number(ch.dataset.loteMonto) || 0), 0);
+
+  const totalEl = body.querySelector('[data-role="lote-total"]');
+  if (totalEl) {
+    totalEl.textContent = marcados.length === 0
+      ? 'Selecciona al menos un pago.'
+      : `Total a registrar: ${f(total)}`;
+    totalEl.classList.toggle('lote-total--vacio', marcados.length === 0);
+  }
+
+  const textoEl = body.querySelector('[data-role="lote-cta-texto"]');
+  if (textoEl) {
+    textoEl.textContent = marcados.length === 1
+      ? 'Registrar 1 pago'
+      : `Registrar ${marcados.length} pagos`;
+  }
+
+  const btn = body.querySelector('[data-action="agenda-confirmar-lote"]');
+  if (btn) btn.disabled = marcados.length === 0;
+}
+
+/**
+ * Registra en un solo movimiento los pagos marcados en el modal.
+ *
+ * Resuelve la cuenta **una sola vez para el grupo** (ese es el punto de la
+ * tarjeta: hoy son ~5 toques por gasto) usando el mismo
+ * `resolverPagoConSelector` del pago individual, y después reparte esos splits
+ * entre los items con `asignarSplitsPorItem`: cada compromiso conserva su
+ * propio gasto vinculado, que es lo que hace funcionar el badge "Ya pagaste
+ * este mes" y el progreso del hero. Un item puede quedar a caballo entre dos
+ * cuentas; entonces genera dos gastos, igual que un pago individual repartido.
+ *
+ * La fecha de cada pago sigue la regla de BUG-015 (`_fechaPagoDelMes`): mes en
+ * curso → hoy; mes pasado → la ocurrencia de ese mes. El descuento de las
+ * cuentas ocurre ahora en ambos casos (ver la nota de `_marcarPagadoGastoFijo`).
+ *
+ * El modal se cierra ANTES de pedir la cuenta: el selector es otro overlay con
+ * su propio `trapFocus`, y apilarlos dejaría el foco atrapado en el de abajo al
+ * cerrarse el de arriba. Si el usuario cancela ahí, vuelve al calendario con la
+ * tarjeta del lote intacta (un toque para reintentar).
+ */
+async function _confirmarLote() {
+  const body = document.getElementById('modal-pago-lote-body');
+  if (!body) return;
+
+  const prefijo = body.dataset.mes || _prefijoMesActual();
+  const ids = [...body.querySelectorAll('.lote-row__check:checked')]
+    .map(ch => ch.dataset.loteId)
+    .filter(Boolean);
+  if (ids.length === 0) return;
+
+  const overlay = document.getElementById('modal-pago-lote');
+  if (overlay) cerrarModal(overlay);
+
+  // La fuente de verdad es S, no el DOM que se pintó al abrir el modal.
+  const pendientes = _pendientesDelMes(prefijo).filter(p => ids.includes(p.id));
+  if (pendientes.length === 0) {
+    announce('No quedan pagos vencidos sin registrar.');
+    renderAgenda();
+    return;
+  }
+
+  const total = pendientes.reduce((acc, p) => acc + p.monto, 0);
+  const splits = await resolverPagoConSelector(
+    S.cuentas,
+    total,
+    `registrar ${pendientes.length} pagos vencidos`,
+  );
+  if (splits === null) return; // canceló o fue redirigido a Mis Cuentas
+
+  // Una sola cuenta: puede quedar en negativo (no hay con qué repartir).
+  // Mismo criterio y mismo texto que el pago individual.
+  if (splits.length === 1) {
+    const c = S.cuentas.find(x => x.id === splits[0].cuentaId);
+    const saldoCuenta = c?.saldo ?? 0;
+    if (saldoCuenta < splits[0].monto) {
+      const ok = await confirmar({
+        titulo:         'Registrar pagos',
+        mensaje:        `¿Registrar ${pendientes.length} pagos por ${f(total)} desde ${c?.nombre ?? 'la cuenta'}? El saldo disponible es ${f(saldoCuenta)}: quedará en negativo.`,
+        confirmarTexto: 'Registrar pagos',
+        peligroso:      true,
+      });
+      if (!ok) return;
+    }
+  }
+
+  const pagos = [];
+  for (const asignado of asignarSplitsPorItem(pendientes, splits)) {
+    if (asignado.partes.length === 0) continue;
+    const comp = S.compromisos.find(c => c.id === asignado.id);
+    if (!comp) continue;
+    const fecha = _fechaPagoDelMes(comp, prefijo);
+    if (!fecha) continue; // mes futuro: defensa en profundidad (BUG-015)
+    pagos.push({ comp, fecha, partes: asignado.partes });
+  }
+  if (pagos.length === 0) return;
+
+  _registrarPagosFijos(pagos);
+
+  renderAgenda();
+  updSaldo();
+  announce(pagos.length === 1
+    ? `1 pago registrado por ${f(total)}.`
+    : `${pagos.length} pagos registrados por ${f(total)}.`);
 }
 
 // ── HANDLER: DISTRIBUIR DESDE EL DÍA DE INGRESO (ADR 021) ───────
@@ -426,6 +623,16 @@ export function initAgenda() {
   registrarAccion('agenda-eliminar-fijo',     _eliminarGastoFijo);
   registrarAccion('agenda-marcar-pagado-fijo', _marcarPagadoGastoFijo);
   registrarAccion('agenda-distribuir-ingreso', _distribuirDesdeAgenda);
+  registrarAccion('agenda-pagar-lote',        _pagarLote);
+  registrarAccion('agenda-confirmar-lote',    _confirmarLote);
+
+  // CAL.5a: el cuerpo del modal se re-inyecta en cada apertura, pero el
+  // contenedor persiste; por eso el listener del total cuelga de él una sola
+  // vez aquí (colgarlo dentro de `_pagarLote` acumularía uno por apertura).
+  document.getElementById('modal-pago-lote-body')
+    ?.addEventListener('change', (e) => {
+      if (e.target.classList?.contains('lote-row__check')) _actualizarTotalLote();
+    });
 
   // CAL.4a (ADR 037 D7): el ojo del hero del mes comparte el flag
   // S.config.ocultarSaldo con Inicio (IN.2), Mis cuentas (MC.18a) y Deudas

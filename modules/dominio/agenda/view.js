@@ -12,14 +12,14 @@
  */
 
 import { S } from '../../core/state.js';
-import { f, esc as _esc } from '../../infra/utils.js';
+import { f, esc as _esc, hoy } from '../../infra/utils.js';
 import { icon, tejaCategoria } from '../../infra/icons.js';
 import { resolverMarca, tejaMarca } from '../../infra/marcas.js';
 import { FRECUENCIAS, CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO, CATEGORIA_INGRESO_ICONO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../core/constants.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
 import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { LABEL_TIPO, ICONO_TIPO, calcularAbonosDelMes, estadoPagoMes } from '../compromisos/logic.js';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes } from './logic.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from './logic.js';
 
 // ── ESTADO LOCAL ─────────────────────────────────────────────────
 
@@ -163,8 +163,14 @@ export function renderAgenda() {
     ? _renderEmptyMes(_viewMonth)
     : '';
 
+  // CAL.5a: gastos fijos ya vencidos y sin pagar del mes visible. Con dos o
+  // más, se ofrece pagarlos en un solo movimiento (ver `_renderLoteCard`).
+  const gastosS   = Array.isArray(S.gastos) ? S.gastos : [];
+  const pendientes = pendientesDePagoDelMes(eventos, gastosS, prefijoMes, hoy());
+
   el.innerHTML = `
     ${_renderHeroMes(eventos, _viewYear, _viewMonth, prefijoMes)}
+    ${_renderLoteCard(pendientes, prefijoMes)}
     <article class="cal-card">
       ${_renderCabecera(_viewYear, _viewMonth, eventosComp, eventosIng)}
       ${_renderDiasSemana()}
@@ -235,6 +241,84 @@ function _renderHeroMes(eventos, year, month, prefijoMes) {
         <span class="hero-agenda__pagado">Pagado ${pagadoTxt}</span>
         <span class="hero-agenda__falta">Falta ${faltaTxt}</span>
       </div>
+    </div>`;
+}
+
+// ── PAGO EN LOTE (CAL.5a) ────────────────────────────────────────
+
+/**
+ * Tarjeta "paga de una vez lo que ya venció" bajo el hero del mes.
+ *
+ * Solo aparece con **dos o más** pendientes: con uno solo el lote no ahorra
+ * nada (el CTA "Marcar pagado" del detalle del día ya resuelve ese caso) y la
+ * tarjeta sería ruido que compite con el hero.
+ *
+ * No se enmascara con el ojo de privacidad porque no muestra ningún saldo ni
+ * total: solo cuántos pagos quedan pendientes. El monto aparece dentro del
+ * modal, ya en contexto de "voy a pagar esto".
+ *
+ * @param {Array<{id:string, descripcion:string, monto:number, dia:number}>} pendientes
+ * @param {string} prefijoMes 'YYYY-MM' del mes visible (viaja al handler, que
+ *   no conoce `_viewYear`/`_viewMonth`, mismo patrón que BUG-015).
+ * @returns {string}
+ */
+function _renderLoteCard(pendientes, prefijoMes) {
+  if (!Array.isArray(pendientes) || pendientes.length < 2) return '';
+
+  const n       = pendientes.length;
+  const nombres = pendientes.slice(0, 2).map(p => _esc(p.descripcion || 'Sin nombre'));
+  const resto   = n - nombres.length;
+  const lista   = resto > 0
+    ? `${nombres.join(', ')} y ${resto} más`
+    : nombres.join(' y ');
+
+  return `
+    <section class="cal-lote" aria-label="Pagos pendientes del mes">
+      <div class="cal-lote__body">
+        <p class="cal-lote__title">${n} pagos ya vencieron</p>
+        <p class="cal-lote__desc">${lista}. Regístralos juntos eligiendo la cuenta una sola vez.</p>
+      </div>
+      <button type="button" class="cal-lote__cta"
+              data-action="agenda-pagar-lote" data-mes="${_esc(prefijoMes)}"
+              aria-label="Pagar juntos los ${n} gastos fijos vencidos">
+        Pagar los ${n}
+      </button>
+    </section>`;
+}
+
+/**
+ * Cuerpo del modal de pago en lote: una fila por pendiente, todas marcadas
+ * (la tarjeta prometió "los N"; desmarcar es la excepción, no la regla) y el
+ * total en vivo que el handler recalcula al desmarcar.
+ *
+ * Los montos SÍ se muestran aunque el ojo esté activo: el usuario está por
+ * mover ese dinero y ocultarle cuánto sería peligroso, no privado. El mismo
+ * criterio con que los formularios de gasto nunca enmascaran lo que se escribe.
+ *
+ * @param {Array<{id:string, descripcion:string, monto:number, dia:number}>} pendientes
+ * @returns {string}
+ */
+export function renderFormPagoLote(pendientes) {
+  const items = (pendientes ?? []).map(p => `
+    <label class="lote-row">
+      <input type="checkbox" class="lote-row__check" checked
+             data-lote-id="${_esc(p.id)}" data-lote-monto="${Number(p.monto) || 0}" />
+      <span class="lote-row__body">
+        <span class="lote-row__name">${_esc(p.descripcion || 'Sin nombre')}</span>
+        <span class="lote-row__sub">Vencía el ${p.dia}</span>
+      </span>
+      <span class="lote-row__amount">${f(Number(p.monto) || 0)}</span>
+    </label>`).join('');
+
+  return `
+    <p class="lote-intro">Estos gastos fijos ya vencieron y no están registrados. Desmarca los que aún no hayas pagado.</p>
+    <div class="lote-lista">${items}</div>
+    <p class="lote-total" data-role="lote-total" aria-live="polite"></p>
+    <div class="modal__footer modal__footer--principal">
+      <button type="button" class="btn btn-primary" data-action="agenda-confirmar-lote">
+        <svg class="icon" aria-hidden="true"><use href="#i-check-circle"/></svg>
+        <span data-role="lote-cta-texto">Registrar pagos</span>
+      </button>
     </div>`;
 }
 

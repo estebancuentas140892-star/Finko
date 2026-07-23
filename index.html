@@ -971,6 +971,23 @@
     </div>
   </div>
 
+  <!-- Modal: Pagar en lote lo vencido del mes (CAL.5a) -->
+  <div class="modal-overlay" id="modal-pago-lote" data-dom="agenda"
+       role="dialog" aria-modal="true"
+       aria-labelledby="modal-pago-lote-title" aria-hidden="true">
+    <div class="modal">
+      <header class="modal__header">
+        <span class="modal__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-agenda"/></svg></span>
+        <h2 class="modal__title" id="modal-pago-lote-title">Pagar lo vencido</h2>
+        <button class="modal__close btn btn-icon btn-ghost"
+                data-action="modal-close" aria-label="Cerrar"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button>
+      </header>
+      <div class="modal__body" id="modal-pago-lote-body">
+        <!-- CAL.5a: agenda/index.js inyecta la lista aquí -->
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Nuevo préstamo personal (F.2) -->
   <div class="modal-overlay" id="modal-personal" data-dom="personales"
        role="dialog" aria-modal="true"

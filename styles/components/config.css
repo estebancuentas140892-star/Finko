@@ -1260,6 +1260,135 @@
   max-width: 34ch;
 }
 
+/* ── CAL.5a: pago en lote de lo vencido ──────────────────────── */
+
+/* Tarjeta bajo el hero. Usa la familia warning (no danger): son pagos que ya
+   vencieron, no un error del usuario, y el refuerzo va en positivo (ADR 019). */
+.cal-lote {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-4);
+  flex-wrap: wrap;
+  margin-block-end: var(--fk-space-5);
+  padding: var(--fk-space-4) var(--fk-space-5);
+  border-radius: var(--fk-radius-lg);
+  border: 1px solid var(--fk-nudge-medium-border);
+  background: var(--fk-warning-bg);
+}
+
+.cal-lote__body { flex: 1 1 16rem; }
+
+.cal-lote__title {
+  margin: 0 0 var(--fk-space-1);
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+}
+
+.cal-lote__desc {
+  margin: 0;
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+}
+
+/* Mismo criterio que .cal-detail__cta--fijo: el indigo de la seccion, no el
+   verde de "entra dinero" (ADR 036 D5). Piso tactil 44px. */
+.cal-lote__cta {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 var(--fk-space-5);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-agenda) 40%, transparent);
+  background: var(--fk-dom-agenda-bg);
+  color: var(--fk-dom-agenda-text);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  cursor: pointer;
+}
+
+.cal-lote__cta:hover {
+  background: color-mix(in srgb, var(--fk-dom-agenda) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-agenda) 60%, transparent);
+}
+
+/* Cuerpo del modal. */
+.lote-intro {
+  margin: 0 0 var(--fk-space-4);
+  font-size: var(--fk-text-sm);
+  color: var(--fk-text-secondary);
+  line-height: 1.5;
+}
+
+.lote-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-2);
+}
+
+.lote-row {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  min-height: 44px;
+  padding: var(--fk-space-3);
+  border-radius: var(--fk-radius-md);
+  border: 1px solid var(--fk-border);
+  background: var(--fk-bg-elevated);
+  cursor: pointer;
+}
+
+.lote-row:hover,
+.lote-row:focus-within { border-color: var(--fk-dom-agenda); }
+
+.lote-row__check {
+  flex: 0 0 auto;
+  width: var(--fk-space-5);
+  height: var(--fk-space-5);
+  accent-color: var(--fk-dom-agenda);
+}
+
+.lote-row__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lote-row__name {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-text-primary);
+}
+
+.lote-row__sub {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+}
+
+.lote-row__amount {
+  flex: 0 0 auto;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lote-total {
+  margin: var(--fk-space-4) 0 0;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-bold);
+  color: var(--fk-text-primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.lote-total--vacio {
+  font-weight: var(--fk-font-medium);
+  color: var(--fk-danger-text);
+}
+
 /* En mobile, celdas mas compactas pero todavia tappables (>= 44px). */
 @media (max-width: 640px) {
   .cal-card {

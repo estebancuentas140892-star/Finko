@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes } from '../../modules/dominio/agenda/logic.js';
-import { renderFormGastoFijo, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
+import { eventosDelMes, eventosIngresosDelMes, totalEventosDelMes, totalDia, eventosDeHoy, eventosEnProximos, tiposPresentesEnMes, totalesDelMes, pendientesDePagoDelMes } from '../../modules/dominio/agenda/logic.js';
+import { renderFormGastoFijo, renderFormPagoLote, textoBannerGastoFijo, renderAgenda, mostrarDia, navegarMes, resetearVistaAlMesActual, marcarEntradaSeccion } from '../../modules/dominio/agenda/view.js';
 import { S } from '../../modules/core/state.js';
 import { CATEGORIAS_AGENDA, CATEGORIA_AGENDA_ICONO } from '../../modules/core/constants.js';
 
@@ -1725,5 +1725,197 @@ describe('renderAgenda() - detalle del día accionable (CAL.4c)', () => {
       .toBe('Abonado •••• de •••• este mes');
     expect(detalle.textContent).not.toContain('300.000');
     expect(detalle.textContent).not.toContain('2.000.000');
+  });
+});
+
+// ── CAL.5a: PENDIENTES DE PAGO DEL MES (LOTE) ────────────────────
+
+describe('pendientesDePagoDelMes (CAL.5a)', () => {
+  it('devuelve los fijos ya vencidos del mes en curso, ordenados por día', () => {
+    const comps = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5,  monto: 900_000 }),
+      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto:  40_000 }),
+    ];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a', 'b']);
+    expect(r[0]).toMatchObject({ descripcion: 'Arriendo', monto: 900_000, dia: 5 });
+  });
+
+  it('excluye lo que aún no vence en el mes en curso', () => {
+    const comps = [
+      compromisoBase({ id: 'a', diaPago: 5 }),
+      compromisoBase({ id: 'b', diaPago: 25 }),
+    ];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a']);
+  });
+
+  it('incluye el que vence HOY (el borde es inclusivo)', () => {
+    const comps = [compromisoBase({ id: 'a', diaPago: 15 })];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a']);
+  });
+
+  it('en un mes pasado incluye todos los pendientes, sin filtro de día', () => {
+    const comps = [compromisoBase({ id: 'a', diaPago: 28 })];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 4), [], '2026-05', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a']);
+  });
+
+  it('en un mes futuro no devuelve nada (BUG-015: no se paga lo que no venció)', () => {
+    const comps = [compromisoBase({ id: 'a', diaPago: 5 })];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 6), [], '2026-07', '2026-06-15');
+    expect(r).toEqual([]);
+  });
+
+  it('excluye los que ya tienen un gasto vinculado ese mes', () => {
+    const comps = [
+      compromisoBase({ id: 'a', diaPago: 5 }),
+      compromisoBase({ id: 'b', diaPago: 6 }),
+    ];
+    const gastos = [{ id: 'g1', compromisoId: 'a', fecha: '2026-06-05', monto: 900_000 }];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), gastos, '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['b']);
+  });
+
+  it('un gasto vinculado de OTRO mes no lo marca como pagado', () => {
+    const comps  = [compromisoBase({ id: 'a', diaPago: 5 })];
+    const gastos = [{ id: 'g1', compromisoId: 'a', fecha: '2026-05-05', monto: 900_000 }];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), gastos, '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a']);
+  });
+
+  it('un fijo quincenal aparece UNA sola vez, con su ocurrencia más antigua', () => {
+    const comps = [compromisoBase({ id: 'a', diaPago: 15, frecuencia: 'Quincenal' })];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-30');
+    expect(r).toHaveLength(1);
+    expect(r[0].dia).toBe(15);
+  });
+
+  it('ignora deudas e ingresos: la rebanada solo paga gastos fijos', () => {
+    const comps = [
+      compromisoBase({ id: 'd1', tipo: 'deuda-entidad', diaPago: 5, cuotaMensual: 300_000, monto: undefined }),
+      compromisoBase({ id: 'a',  diaPago: 5 }),
+    ];
+    const eventos = eventosDelMes(comps, 2026, 5);
+    const ing = eventosIngresosDelMes(
+      [{ id: 'i1', descripcion: 'Salario', monto: 2_000_000, frecuencia: 'Mensual', diaPago: 5, activo: true }],
+      2026, 5,
+    );
+    for (const [d, evs] of Object.entries(ing)) eventos[d] = [...(eventos[d] ?? []), ...evs];
+
+    const r = pendientesDePagoDelMes(eventos, [], '2026-06', '2026-06-15');
+    expect(r.map(p => p.id)).toEqual(['a']);
+  });
+
+  it('ignora fijos sin monto positivo (no hay nada que registrar)', () => {
+    const comps = [
+      compromisoBase({ id: 'a', diaPago: 5, monto: 0 }),
+      compromisoBase({ id: 'b', diaPago: 5, monto: -100 }),
+    ];
+    const r = pendientesDePagoDelMes(eventosDelMes(comps, 2026, 5), [], '2026-06', '2026-06-15');
+    expect(r).toEqual([]);
+  });
+
+  it('tolera entradas inválidas', () => {
+    expect(pendientesDePagoDelMes(null, [], '2026-06', '2026-06-15')).toEqual([]);
+    expect(pendientesDePagoDelMes({}, [], 'basura', '2026-06-15')).toEqual([]);
+    expect(pendientesDePagoDelMes({}, [], '2026-06', 'basura')).toEqual([]);
+    expect(pendientesDePagoDelMes({}, [], '2026-13', '2026-06-15')).toEqual([]);
+  });
+});
+
+// ── CAL.5a: TARJETA DEL LOTE EN EL CALENDARIO ────────────────────
+
+describe('renderAgenda() - tarjeta de pago en lote (CAL.5a)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-agenda"></div>';
+    S.compromisos = [];
+    S.gastos      = [];
+    S.ingresos    = [];
+    S.config      = { ...S.config, ocultarSaldo: false };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15)); // 15 jun 2026
+    resetearVistaAlMesActual();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con 2 o más vencidos muestra la tarjeta con el conteo y el CTA', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5 }),
+      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 12, monto: 40_000 }),
+    ];
+    renderAgenda();
+    const lote = document.querySelector('.cal-lote');
+    expect(lote).not.toBeNull();
+    expect(lote.querySelector('.cal-lote__title').textContent).toBe('2 pagos ya vencieron');
+    expect(lote.querySelector('.cal-lote__desc').textContent).toContain('Arriendo y Netflix');
+    const cta = lote.querySelector('[data-action="agenda-pagar-lote"]');
+    expect(cta.dataset.mes).toBe('2026-06');
+  });
+
+  it('con más de dos vencidos resume la lista con "y N más"', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', descripcion: 'Arriendo', diaPago: 5 }),
+      compromisoBase({ id: 'b', descripcion: 'Netflix',  diaPago: 6, monto: 40_000 }),
+      compromisoBase({ id: 'c', descripcion: 'Agua',     diaPago: 7, monto: 60_000 }),
+    ];
+    renderAgenda();
+    expect(document.querySelector('.cal-lote__desc').textContent)
+      .toContain('Arriendo, Netflix y 1 más');
+  });
+
+  it('con un solo vencido NO muestra la tarjeta (el CTA del día ya lo cubre)', () => {
+    S.compromisos = [compromisoBase({ id: 'a', diaPago: 5 })];
+    renderAgenda();
+    expect(document.querySelector('.cal-lote')).toBeNull();
+  });
+
+  it('no muestra la tarjeta en un mes futuro', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', diaPago: 5 }),
+      compromisoBase({ id: 'b', diaPago: 6, monto: 40_000 }),
+    ];
+    navegarMes(+1);
+    renderAgenda();
+    expect(document.querySelector('.cal-lote')).toBeNull();
+  });
+
+  it('deja de mostrarse cuando ya solo queda uno sin pagar', () => {
+    S.compromisos = [
+      compromisoBase({ id: 'a', diaPago: 5 }),
+      compromisoBase({ id: 'b', diaPago: 6, monto: 40_000 }),
+    ];
+    S.gastos = [{ id: 'g1', compromisoId: 'a', fecha: '2026-06-05', monto: 1_500_000 }];
+    renderAgenda();
+    expect(document.querySelector('.cal-lote')).toBeNull();
+  });
+});
+
+// ── CAL.5a: CUERPO DEL MODAL DEL LOTE ────────────────────────────
+
+describe('renderFormPagoLote (CAL.5a)', () => {
+  it('pinta una fila por pendiente, todas marcadas, con su monto y día', () => {
+    document.body.innerHTML = renderFormPagoLote([
+      { id: 'a', descripcion: 'Arriendo', monto: 900_000, dia: 5 },
+      { id: 'b', descripcion: 'Netflix',  monto:  40_000, dia: 12 },
+    ]);
+    const filas = document.querySelectorAll('.lote-row');
+    expect(filas).toHaveLength(2);
+    expect([...document.querySelectorAll('.lote-row__check')].every(c => c.checked)).toBe(true);
+    expect(filas[0].querySelector('.lote-row__check').dataset.loteId).toBe('a');
+    expect(filas[0].querySelector('.lote-row__check').dataset.loteMonto).toBe('900000');
+    expect(filas[0].querySelector('.lote-row__amount').textContent).toContain('900.000');
+    expect(filas[1].querySelector('.lote-row__sub').textContent).toBe('Vencía el 12');
+  });
+
+  it('el botón de confirmar lleva la acción del lote y los slots vivos', () => {
+    document.body.innerHTML = renderFormPagoLote([{ id: 'a', descripcion: 'X', monto: 1, dia: 1 }]);
+    expect(document.querySelector('[data-action="agenda-confirmar-lote"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="lote-cta-texto"]')).not.toBeNull();
+    expect(document.querySelector('[data-role="lote-total"]')).not.toBeNull();
   });
 });
