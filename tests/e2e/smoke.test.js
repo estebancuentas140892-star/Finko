@@ -1975,6 +1975,234 @@ test.describe('Agenda - detalle del día accionable (CAL.4c)', () => {
   });
 });
 
+// ── SUITE 12f: Agenda - el pago se registra en el mes visible (BUG-015) ──────
+// Antes, "Marcar pagado" en cualquier mes navegado creaba un gasto fechado HOY:
+// el badge del mes visible no viraba y el pago quedaba en el mes equivocado.
+// Ahora el pago pertenece al mes visible; un mes futuro no se puede pagar.
+
+test.describe('Agenda - marcar pagado usa el mes visible (BUG-015)', () => {
+  const estadoBug015 = () => {
+    const estado = {
+      version:   1,
+      perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+      onboarded: true,
+      cuentas:   [{ id: 'c-bug015', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 5000000, activa: true }],
+      ingresos:  [],
+      gastos:    [],
+      compromisos: [{
+        id: 'fijo-bug015', tipo: 'fijo', descripcion: 'Arriendo BUG015',
+        monto: 900000, frecuencia: 'Mensual', diaPago: 15, activo: true, categoria: null,
+      }],
+      metas: [],
+    };
+    localStorage.setItem('fk_v1', JSON.stringify(estado));
+  };
+
+  test('marcar pagado en el mes anterior fecha el gasto en ESE mes, no hoy', async ({ page }) => {
+    await page.addInitScript(estadoBug015);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    const hoy       = new Date();
+    const anterior  = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const prefijoAnt = `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}`;
+
+    await page.locator('[data-action="agenda-prev-mes"]').click();
+    await page.locator('[data-action="agenda-mostrar-dia"][data-day="15"]').click();
+
+    const pagar = page.locator('[data-action="agenda-marcar-pagado-fijo"]');
+    await expect(pagar).toBeVisible();
+    await expect(pagar).toHaveAttribute('data-mes', prefijoAnt);
+
+    await pagar.click();
+
+    // El gasto queda fechado en el mes anterior (save() es debounced 200ms).
+    await expect.poll(async () => {
+      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+      const g = (st.gastos || []).find(x => x.compromisoId === 'fijo-bug015');
+      return g ? g.fecha.slice(0, 7) : null;
+    }, { timeout: 5_000 }).toBe(prefijoAnt);
+
+    // El badge del mes visible vira y el CTA desaparece: no invita a re-pagar.
+    await expect(page.locator('.cal-detail__badge-abono')).toContainText('Ya pagaste este mes');
+    await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
+  });
+
+  test('el mes siguiente no ofrece marcar pagado: aún no vence', async ({ page }) => {
+    await page.addInitScript(estadoBug015);
+    await page.goto('/#agenda');
+    await page.waitForSelector('#panel-agenda', { timeout: 10_000 });
+
+    await page.locator('[data-action="agenda-next-mes"]').click();
+    await page.locator('[data-action="agenda-mostrar-dia"][data-day="15"]').click();
+
+    await expect(page.locator('[data-action="agenda-marcar-pagado-fijo"]')).toHaveCount(0);
+    // Solo se bloquea el pago: editar sigue disponible en el mes futuro.
+    await expect(page.locator('[data-action="agenda-editar-fijo"]')).toBeVisible();
+  });
+});
+
+// ── SUITE 12g: Me deben conectado a cuentas y patrimonio (PE.7) ──────────────
+// Prestar saca el dinero de la cuenta elegida y cobrar lo devuelve. El capital
+// pendiente entra al patrimonio como "Por cobrar", de modo que prestar NO mueve
+// el patrimonio neto: convierte efectivo en un derecho de cobro.
+
+test.describe('Me deben conectado a cuentas y patrimonio (PE.7)', () => {
+  const saldoDe = (page, id) => page.evaluate((cuentaId) => {
+    const st = JSON.parse(localStorage.getItem('fk_v1'));
+    return st.cuentas.find(c => c.id === cuentaId).saldo;
+  }, id);
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fk_v1', JSON.stringify({
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [{ id: 'c-pe7', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1000000, activa: true }],
+        ingresos: [], gastos: [], compromisos: [], metas: [],
+        apartados: [], inversiones: [], personales: [], transferencias: [],
+      }));
+    });
+    await page.goto('/#personales');
+    await page.waitForSelector('#sec-personales', { timeout: 10_000 });
+  });
+
+  test('prestar descuenta la cuenta elegida', async ({ page }) => {
+    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#pers-persona').fill('Tía Marta');
+    await page.locator('#pers-monto').fill('400000');
+
+    // El selector de cuenta aparece y viene preseleccionado (una sola cuenta).
+    await expect(page.locator('#form-personal input[name="cuentaId"]')).toBeChecked();
+    await page.locator('#form-personal button[type="submit"]').click();
+
+    await expect.poll(() => saldoDe(page, 'c-pe7'), { timeout: 5_000 }).toBe(600_000);
+  });
+
+  test('cobrar devuelve el dinero a la cuenta', async ({ page }) => {
+    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#pers-persona').fill('Tía Marta');
+    await page.locator('#pers-monto').fill('400000');
+    await page.locator('#form-personal button[type="submit"]').click();
+    await expect.poll(() => saldoDe(page, 'c-pe7'), { timeout: 5_000 }).toBe(600_000);
+
+    // Cobra la mitad: el saldo sube esa mitad, no el total del préstamo.
+    await page.locator('[data-action="pagar-personal"]').first().click();
+    await page.locator('#pago-monto').fill('150000');
+    await page.locator('#form-pago-personal button[type="submit"]').click();
+
+    await expect.poll(() => saldoDe(page, 'c-pe7'), { timeout: 5_000 }).toBe(750_000);
+  });
+
+  test('prestar no mueve el patrimonio neto: la cuenta baja y "Por cobrar" sube igual', async ({ page }) => {
+    const netoDelPanel = async () => {
+      await page.goto('/#analisis');
+      await page.waitForSelector('.patri-card', { timeout: 10_000 });
+      return (await page.locator('.patri-card__valor').first().textContent())?.trim();
+    };
+
+    const netoAntes = await netoDelPanel();
+
+    await page.goto('/#personales');
+    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#pers-persona').fill('Tía Marta');
+    await page.locator('#pers-monto').fill('400000');
+    await page.locator('#form-personal button[type="submit"]').click();
+    await expect.poll(() => saldoDe(page, 'c-pe7'), { timeout: 5_000 }).toBe(600_000);
+
+    expect(await netoDelPanel()).toBe(netoAntes);
+    // Y el bucket "Por cobrar" aparece en la composición de activos.
+    await expect(page.locator('.patri-card__seg--porcobrar')).toHaveCount(1);
+  });
+
+  test('sin cuenta vinculada el préstamo se registra igual y no toca ningún saldo', async ({ page }) => {
+    // Se desmarca el radio para simular "no quiero vincular cuenta".
+    await page.locator('#sec-personales .section__header [data-action="nuevo-personal"]').click();
+    await page.locator('#pers-persona').fill('Vecino');
+    await page.locator('#pers-monto').fill('200000');
+    await page.evaluate(() => {
+      document.querySelectorAll('#form-personal input[name="cuentaId"]').forEach(r => { r.checked = false; });
+    });
+    await page.locator('#form-personal button[type="submit"]').click();
+
+    await expect.poll(async () => {
+      const st = await page.evaluate(() => JSON.parse(localStorage.getItem('fk_v1')));
+      return st.personales.length;
+    }, { timeout: 5_000 }).toBe(1);
+    expect(await saldoDe(page, 'c-pe7')).toBe(1_000_000);
+  });
+});
+
+// ── SUITE 12h: Movimientos - ledger accionable (MOV.1) ───────────────────────
+// La fila del ledger delega en el dominio dueño: borrar desde acá aplica las
+// MISMAS reversas que borrar desde la sección de origen (devolver el monto a
+// la cuenta), y el ledger se repinta solo por el `state:change` de la fuente.
+
+test.describe('Movimientos - ledger accionable (MOV.1)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('fk_v1', JSON.stringify({
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas:   [{ id: 'c-mov1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 500000, activa: true }],
+        gastos: [{
+          id: 'g-mov1', descripcion: 'Mercado MOV1', monto: 80000,
+          categoria: 'Mercado', fecha: '2026-07-04', cuentaId: 'c-mov1',
+        }],
+        ingresosPuntuales: [{
+          id: 'ip-mov1', descripcion: 'Venta bici', monto: 300000,
+          categoria: 'Otros', fecha: '2026-07-03', cuentaId: 'c-mov1',
+        }],
+        ingresos: [], compromisos: [], metas: [],
+        apartados: [], inversiones: [], personales: [], transferencias: [],
+      }));
+    });
+    await page.goto('/#movimientos');
+    await page.waitForSelector('#lista-movimientos .list-item', { timeout: 10_000 });
+  });
+
+  test('la fila de un gasto ofrece editar y eliminar', async ({ page }) => {
+    const fila = page.locator('#lista-movimientos .list-item[data-id="g-mov1"]');
+    await expect(fila.locator('[data-action="editar-gasto"]')).toHaveCount(1);
+    await expect(fila.locator('[data-action="eliminar-gasto"]')).toHaveCount(1);
+  });
+
+  test('borrar desde el ledger devuelve el monto a la cuenta y quita la fila', async ({ page }) => {
+    await page.locator('#lista-movimientos [data-action="eliminar-gasto"]').click();
+    await page.locator('[data-role="confirmar"]').click();
+
+    // La reversa la aplica el handler de Gastos, no el ledger: 500.000 + 80.000.
+    await expect.poll(async () => page.evaluate(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1'));
+      return st.cuentas.find(c => c.id === 'c-mov1').saldo;
+    }), { timeout: 5_000 }).toBe(580_000);
+
+    // Y el ledger se repinta solo (state:change de 'gastos').
+    await expect(page.locator('#lista-movimientos .list-item[data-id="g-mov1"]')).toHaveCount(0);
+  });
+
+  test('editar desde el ledger abre el formulario de Gastos con el dato cargado', async ({ page }) => {
+    await page.locator('#lista-movimientos [data-action="editar-gasto"]').click();
+    await expect(page.locator('#modal-gasto[data-open]')).toHaveCount(1);
+    await expect(page.locator('#form-gasto [name="monto"]')).toHaveValue('80000');
+  });
+
+  test('borrar un ingreso puntual desde el ledger revierte su crédito', async ({ page }) => {
+    // Otra fuente, otra reversa: un ingreso puntual acreditó la cuenta al
+    // registrarse, así que borrarlo desde el ledger se la vuelve a quitar.
+    await page.locator('#lista-movimientos .list-item[data-id="ip-mov1"] [data-action="eliminar-ingreso-puntual"]').click();
+    await page.locator('[data-role="confirmar"]').click();
+
+    await expect.poll(async () => page.evaluate(() => {
+      const st = JSON.parse(localStorage.getItem('fk_v1'));
+      return st.cuentas.find(c => c.id === 'c-mov1').saldo;
+    }), { timeout: 5_000 }).toBe(200_000);
+    await expect(page.locator('#lista-movimientos .list-item[data-id="ip-mov1"]')).toHaveCount(0);
+  });
+});
+
 // ── SUITE 12d: Agenda - empty state del mes (CAL.4b, ADR 037 D6) ─────────────
 // Un mes sin ningún evento muestra la card de guía bajo el calendario y su
 // CTA abre el modal de gasto fijo (misma acción del header, nuevo-gasto-fijo).

@@ -100,12 +100,13 @@ Una ficha por sección de la app (mismo agrupamiento que [`BOARD.md`](../BOARD.m
 | Calendario | [`calendario.md`](calendario.md) | activa (calendario mensual, CAL.2 leyenda dinámica) |
 | Deudas | [`deudas.md`](deudas.md) | activa (registro de deudas, D.14 acreditar cuenta de origen) |
 | Mis cuentas | [`mis-cuentas.md`](mis-cuentas.md) | activa (cuentas, MC.14 datos de transferencia) |
-| Apartados | `apartados.md` | sin crear |
+| Apartados | [`apartados.md`](apartados.md) | activa (aportar a un apartado, AP.5a monto prellenado) |
 | Metas | `metas.md` | sin crear |
-| Ahorro | [`ahorro.md`](ahorro.md) | activa (fondo de emergencia, BUG-012 lenguaje humano en confirmar()) |
+| Ahorro | [`ahorro.md`](ahorro.md) | activa (fondo de emergencia, AH.5a monto prellenado en Registrar aporte) |
 | Inversión | `inversion.md` | sin crear |
 | Límites de gasto | `limites.md` | sin crear |
-| Me deben | `me-deben.md` | sin crear |
+| Me deben | [`me-deben.md`](me-deben.md) | activa (préstamos conectados a cuentas y patrimonio, PE.7) |
+| Movimientos | [`movimientos.md`](movimientos.md) | activa (ledger unificado y accionable, MOV.1) |
 | Análisis | [`analisis.md`](analisis.md) | activa (panel de análisis, PERF.2) |
 | Configuración | [`configuracion.md`](configuracion.md) | activa (panel de Ajustes, CFG.1a situación laboral) |
 | Transversal (navegación, iconografía, hoja Registrar, biblioteca gráfica, persistencia, logros) | [`transversal.md`](transversal.md) | activa (tejas de marca, biblioteca gráfica, persistencia/cuota, sistema de logros) |

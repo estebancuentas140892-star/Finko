@@ -2,7 +2,7 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-15 (BUG-013 registrado: carrera del pase a11y sobre modales con fade, hallazgo de FORM.1b).
+> Última actualización: 2026-07-21 (BUG-014 y BUG-015 solucionados el mismo día, ambos hallazgos de la auditoría de UX/producto; ver CHANGELOG. Queda solo BUG-013).
 
 ---
 
@@ -25,6 +25,17 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 ---
 
 ## Pendientes
+
+### BUG-016 - Cuatro mensajes en voseo rompen el tuteo del ADN 11
+- Estado    : pendiente
+- Prioridad : media (no rompe funcionalidad, pero contradice una regla innegociable del ADN y se nota: el resto de la app tutea)
+- Problema  : cuatro cadenas visibles al usuario usan voseo rioplatense ("Intentá", "Habilitá", "Importá") en vez del tuteo que fija el ADN 11 y el [ADR 003](DECISIONS/003-tono-neutral-profesional.md). Tres son anuncios a lector de pantalla (`announce`) y una es texto visible en la pantalla de Importar.
+- Causa     : copy heredado, nunca revisado contra la regla de tono. No hay lint de estilo que lo detecte.
+- Archivo   : `modules/dominio/config/index.js` y `modules/dominio/import/view.js`
+- Función   : `config/index.js` handlers de exportar (×2) y de permiso de notificaciones; `import/view.js` copy del encabezado
+- Líneas    : `config/index.js` 41 ("Intentá de nuevo"), 85 ("Habilitá el permiso"), 119 ("Intentá de nuevo") · `import/view.js` 23 ("Importá tus gastos")
+- Secciones : Ajustes (exportar, notificaciones), Importar
+- **Arreglo sugerido**: "Intentá de nuevo" → "Intenta de nuevo"; "Habilitá el permiso" → "Habilita el permiso"; "Importá tus gastos" → "Importa tus gastos". Fix de copy aislado, sin lógica. Al hacerlo, considerar una pasada `grep` por otras terminaciones de voseo (`-á`/`-é` en imperativo) para cerrar el hueco de una vez.
 
 ### BUG-013 - El pase de accesibilidad mide el contraste mientras el modal aún se está abriendo
 - Estado    : pendiente
