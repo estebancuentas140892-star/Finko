@@ -2333,6 +2333,22 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
     expect(elCard().querySelector('.distribuir-aviso')).toBeNull();
     expect(elCard().querySelector('.distribuir-card')).not.toBeNull();
   });
+
+  it('un ingreso quincenal muestra UNA quincena, no el mes (BUG-2)', () => {
+    // `monto` es por período: la quincena vale 1.000.000; el mes-equivalente son
+    // 2.000.000. La tarjeta y el asistente reparten el cobro, no el mes.
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 1_000_000, frecuencia: 'Quincenal', activo: true }];
+    renderDistribucionIngreso();
+
+    const titulo = elCard().querySelector('.distribuir-card__title').textContent;
+    expect(titulo).toContain('$1.000.000');
+    expect(titulo).not.toContain('$2.000.000');
+    // La leyenda también se lee sobre el cobro: ningún monto puede superarlo.
+    elCard().querySelectorAll('.distribuir-card__monto').forEach(el => {
+      const valor = Number(el.textContent.replace(/[^\d]/g, ''));
+      expect(valor).toBeLessThanOrEqual(1_000_000);
+    });
+  });
 });
 
 // ── construirContextoDistribucion() (MC.5b, ADR 017) ──────────────

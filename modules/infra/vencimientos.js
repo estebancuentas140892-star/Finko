@@ -339,6 +339,34 @@ export function frecuenciaPrincipalIngresos(ingresos) {
 }
 
 /**
+ * Cuánto recibe el usuario en UN cobro de su frecuencia principal: lo que el
+ * asistente de Distribución reparte HOY, no el mensual-equivalente.
+ *
+ * `Ingreso.monto` ya es el valor por período (una quincena guarda la quincena,
+ * no el mes; ver `montoSalarioMinimoPorPeriodo` en tesoreria/logic/ingresos.js),
+ * así que basta con sumar el `monto` de los ingresos activos cuya frecuencia
+ * coincide con la principal. No usa factor: `estimarSalarioMensual` es quien
+ * proyecta a mes (y alimenta el split de porcentajes, que sí razona en cifras
+ * mensuales); esto es la otra cara: el dinero real de este cobro.
+ *
+ * Para un asalariado mensual coincide con `estimarSalarioMensual`; para uno
+ * quincenal es una quincena (la mitad); para uno semanal, una semana. Sin
+ * ingresos activos devuelve 0.
+ *
+ * @param {{monto?:number, frecuencia?:string, activo?:boolean}[]} ingresos
+ * @returns {number} COP recibidos en el cobro de la frecuencia principal.
+ */
+export function montoCobroPrincipal(ingresos) {
+  const activos = (ingresos ?? []).filter(i => i.activo !== false);
+  if (activos.length === 0) return 0;
+
+  const principal = frecuenciaPrincipalIngresos(activos);
+  return activos
+    .filter(i => normalizarFrecuenciaAporte(i.frecuencia) === principal)
+    .reduce((acc, i) => acc + (Number(i.monto) || 0), 0);
+}
+
+/**
  * Cuánto aportar por período para reunir `faltante` antes de `fechaObjetivoISO`,
  * repartido entre los períodos de la frecuencia con la que el usuario cobra (no
  * entre días sueltos ni entre meses): "aparta $30.000 por quincena".

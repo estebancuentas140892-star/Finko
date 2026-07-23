@@ -29,7 +29,7 @@ import {
   construirFilasTransferenciaCuentas,
   estadoDistribucion,
 } from '../logic/distribucion.js';
-import { frecuenciaPrincipalIngresos } from '../../../infra/vencimientos.js';
+import { frecuenciaPrincipalIngresos, montoCobroPrincipal } from '../../../infra/vencimientos.js';
 import { fechaCorta } from './ingresos.js';
 
 // ── DISTRIBUCIÓN ADAPTATIVA ──────────────────────────────────────
@@ -93,6 +93,14 @@ function _construirDatosDistribucion() {
   const ingresoMensual = estimarSalarioMensual(S.ingresos ?? []);
   if (!ingresoMensual) return null;
 
+  // Dos cifras distintas, a propósito (BUG-2): el mensual-equivalente alimenta
+  // el split de porcentajes (`sugerirDistribucionIngreso` compara contra fijos,
+  // cuotas y aportes mensuales: con la cifra por cobro los % se dispararían).
+  // El monto que se reparte HOY y se acredita a la cuenta es lo recibido en
+  // ESTE cobro: un quincenal reparte una quincena, no dos. `|| ingresoMensual`
+  // es una red defensiva (datos válidos siempre dan > 0).
+  const montoCobro = montoCobroPrincipal(S.ingresos ?? []) || ingresoMensual;
+
   const contexto = construirContextoDistribucion(S);
   const { presetId, distribucionPersonalizada } = contexto;
 
@@ -130,8 +138,11 @@ function _construirDatosDistribucion() {
   const necesidadesIniciales = itemsNecesidades
     .filter(it => !it.pagado)
     .reduce((s, it) => s + it.monto, 0);
+  // Remanente sobre el monto del cobro (BUG-2), consistente con Necesidades:
+  // ambos son de ESTE cobro (la checklist ya usa la ventana del cobro), no del
+  // mes. Con el mensual el remanente quedaba inflado y sobre-sugería ahorro/EV.
   const presupuestos = presupuestosSobreRemanente(
-    ingresoMensual, necesidadesIniciales, dist.split.ahorro.pct, dist.split.estiloVida.pct,
+    montoCobro, necesidadesIniciales, dist.split.ahorro.pct, dist.split.estiloVida.pct,
   );
 
   // Destinos fondeables del grupo Ahorro para "Distribuir mi ingreso" (MC.4a):
@@ -175,7 +186,7 @@ function _construirDatosDistribucion() {
   return {
     dist, presetId, distribucionPersonalizada, estado: estadoDist, hayDestinos,
     distribuir: {
-      montoIngreso:    ingresoMensual,
+      montoIngreso:    montoCobro,
       ahorroPct:       dist.split.ahorro.pct,
       estiloVidaPct:   dist.split.estiloVida.pct,
       ahorroBudget:    presupuestos.ahorro,
@@ -537,9 +548,15 @@ function _renderPanelDistribuir(d) {
  * @param {ReturnType<typeof _construirDatosDistribucion>} datos
  * @returns {string}
  */
-function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
-  const { ingresoMensual, split, alertas } = dist;
+function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
+  const { split, alertas } = dist;
   const { necesidades, estiloVida, ahorro } = split;
+  // Monto de ESTE cobro (BUG-2), el mismo que arranca el asistente: la tarjeta
+  // y el asistente comparten nombre y botón, no pueden mostrar cifras distintas.
+  // Los % del split no cambian con la frecuencia; solo la base sobre la que se
+  // leen (un quincenal reparte una quincena, no el mes). Cae al mensual si por
+  // algún motivo no llega `distribuir` (mismo valor para un asalariado mensual).
+  const montoCobro = distribuir?.montoIngreso ?? dist.ingresoMensual;
   const est = estado?.estado ?? 'sin-fecha';
 
   const avisoHtml = est === 'listo'
@@ -566,7 +583,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
         <span class="distribuir-card__dot dist-color-${tono}" aria-hidden="true"></span>
         <span class="distribuir-card__label">${_esc(s.label)}</span>
         <span class="distribuir-card__pct">${s.pct}%</span>
-        <span class="distribuir-card__monto">${f(s.monto)}</span>
+        <span class="distribuir-card__monto">${f(Math.round(montoCobro * s.pct / 100))}</span>
       </div>`;
 
   return `
@@ -576,7 +593,7 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos }) {
       <div class="distribuir-card__top">
         <span class="distribuir-card__icon" aria-hidden="true">${icon('lightbulb')}</span>
         <div class="distribuir-card__body">
-          <p class="distribuir-card__title">¿Cómo distribuir ${f(ingresoMensual)}?</p>
+          <p class="distribuir-card__title">¿Cómo distribuir ${f(montoCobro)}?</p>
           <p class="distribuir-card__sub">Reparte tu ingreso entre necesidades, estilo de vida y ahorro.</p>
         </div>
       </div>

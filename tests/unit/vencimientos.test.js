@@ -24,6 +24,7 @@ import {
   diasPorPeriodo,
   etiquetaPeriodo,
   frecuenciaPrincipalIngresos,
+  montoCobroPrincipal,
   normalizarFrecuenciaAporte,
   obligacionesYAportesDelCobro,
   ocurrenciasEnMes,
@@ -280,6 +281,58 @@ describe('frecuenciaPrincipalIngresos', () => {
     // Un ingreso quincenal y uno mensual: manda la quincenal (índice menor).
     const lista = [ingreso('Mensual'), ingreso('Quincenal')];
     expect(frecuenciaPrincipalIngresos(lista)).toBe('Quincenal');
+  });
+});
+
+// ── montoCobroPrincipal (BUG-2) ──────────────────────────────────
+
+describe('montoCobroPrincipal', () => {
+  it('sin ingresos activos devuelve 0', () => {
+    expect(montoCobroPrincipal([])).toBe(0);
+    expect(montoCobroPrincipal(null)).toBe(0);
+    expect(montoCobroPrincipal(undefined)).toBe(0);
+  });
+
+  it('un asalariado mensual: su cobro es el mes (= estimarSalarioMensual)', () => {
+    expect(montoCobroPrincipal([ingreso('Mensual', { monto: 3_000_000 })])).toBe(3_000_000);
+  });
+
+  it('un asalariado quincenal reparte UNA quincena, no el mes (el corazón de BUG-2)', () => {
+    // `monto` ya es por período: la quincena vale 1.000.000; el mes serían 2.000.000.
+    expect(montoCobroPrincipal([ingreso('Quincenal', { monto: 1_000_000 })])).toBe(1_000_000);
+  });
+
+  it('semanal y diario: el monto de un cobro, sin proyectar al mes', () => {
+    expect(montoCobroPrincipal([ingreso('Semanal', { monto: 250_000 })])).toBe(250_000);
+    expect(montoCobroPrincipal([ingreso('Diario',  { monto:  60_000 })])).toBe(60_000);
+  });
+
+  it('suma los ingresos que comparten la frecuencia principal', () => {
+    const lista = [ingreso('Quincenal', { monto: 1_000_000 }), ingreso('Quincenal', { monto: 300_000 })];
+    expect(montoCobroPrincipal(lista)).toBe(1_300_000);
+  });
+
+  it('con frecuencias mixtas solo cuenta el cobro de la principal', () => {
+    // Dos quincenales fijan la principal (Quincenal); el mensual no llega en ESTE cobro.
+    const lista = [
+      ingreso('Quincenal', { monto: 1_000_000 }),
+      ingreso('Quincenal', { monto:   200_000 }),
+      ingreso('Mensual',   { monto: 5_000_000 }),
+    ];
+    expect(montoCobroPrincipal(lista)).toBe(1_200_000);
+  });
+
+  it('ignora los ingresos inactivos', () => {
+    const lista = [
+      ingreso('Quincenal', { monto: 1_000_000, activo: false }),
+      ingreso('Quincenal', { monto:   800_000 }),
+    ];
+    expect(montoCobroPrincipal(lista)).toBe(800_000);
+  });
+
+  it('montos no numéricos cuentan como 0', () => {
+    const lista = [ingreso('Mensual', { monto: undefined }), ingreso('Mensual', { monto: 2_000_000 })];
+    expect(montoCobroPrincipal(lista)).toBe(2_000_000);
   });
 });
 
