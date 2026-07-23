@@ -556,3 +556,80 @@ describe('renderMovimientosCompletos() - paginación por lotes', () => {
     expect(elLista().querySelectorAll('.list-item')).toHaveLength(50);
   });
 });
+
+// ── MOV.1: acciones por fila del ledger ───────────────────────────
+
+describe('renderMovimientosCompletos() - acciones por fila (MOV.1)', () => {
+  const elLista = () => document.getElementById('lista-movimientos');
+  const accionesDe = (id) => [...elLista()
+    .querySelector(`.list-item[data-id="${id}"]`)
+    .querySelectorAll('[data-action]')]
+    .map(b => b.dataset.action);
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-movimientos"></div>';
+    S.gastos = [];
+    S.ingresosPuntuales = [];
+    S.ahorro = { fondoEmergencia: { activo: false, metaMeses: 3, montoActual: 0 }, aportes: [], compromisoMensual: 0 };
+    S.transferencias = [];
+    S.cuentas = [];
+  });
+
+  it('un gasto ofrece editar y eliminar, delegando en las acciones del dominio Gastos', () => {
+    S.gastos = [gasto({ id: 'g1' })];
+    renderMovimientosCompletos();
+    expect(accionesDe('g1')).toEqual(['editar-gasto', 'eliminar-gasto']);
+  });
+
+  it('los botones llevan el id del registro, que es lo que el handler dueño lee', () => {
+    S.gastos = [gasto({ id: 'g-abc' })];
+    renderMovimientosCompletos();
+    const botones = elLista().querySelectorAll('.list-item[data-id="g-abc"] [data-action]');
+    for (const b of botones) expect(b.dataset.id).toBe('g-abc');
+  });
+
+  it('un ingreso puntual solo ofrece eliminar (su dominio aún no sabe editarlo)', () => {
+    S.ingresosPuntuales = [ingresoPuntual({ id: 'ip1' })];
+    renderMovimientosCompletos();
+    expect(accionesDe('ip1')).toEqual(['eliminar-ingreso-puntual']);
+  });
+
+  it('un aporte al fondo solo ofrece eliminar', () => {
+    S.ahorro.aportes = [aporte({ id: 'a1' })];
+    renderMovimientosCompletos();
+    expect(accionesDe('a1')).toEqual(['ahorro-eliminar-aporte']);
+  });
+
+  it('una transferencia no ofrece ninguna acción todavía (es MC.17f) y no deja el contenedor vacío', () => {
+    S.transferencias = [transferencia({ id: 't1' })];
+    renderMovimientosCompletos();
+    const fila = elLista().querySelector('.list-item[data-id="t1"]');
+    expect(fila.querySelectorAll('[data-action]')).toHaveLength(0);
+    expect(fila.querySelector('.list-item__action')).toBeNull();
+  });
+
+  it('un gasto de categoría interna se enruta por TIPO, no por su dominio visual', () => {
+    // Trampa real: un gasto "Gastos fijos" lleva `dominio: 'compromisos'` para
+    // colorear su teja, pero su registro vive en S.gastos. Enrutar por dominio
+    // mandaría la acción a compromisos, que no administra ese registro.
+    S.gastos = [gasto({ id: 'g-fijo', categoria: 'Gastos fijos', descripcion: 'Pago: Arriendo' })];
+    renderMovimientosCompletos();
+    expect(accionesDe('g-fijo')).toEqual(['editar-gasto', 'eliminar-gasto']);
+  });
+
+  it('el aria-label nombra el movimiento concreto, no solo la acción', () => {
+    S.gastos = [gasto({ id: 'g1', descripcion: 'Mercado' })];
+    renderMovimientosCompletos();
+    const editar = elLista().querySelector('[data-action="editar-gasto"]');
+    expect(editar.getAttribute('aria-label')).toContain('Mercado');
+  });
+
+  it('las acciones NO aparecen en el panel compacto de Inicio', () => {
+    // Son dos renderizadores distintos a propósito: Inicio es un resumen.
+    document.body.innerHTML = '<div id="panel-actividad-reciente"></div>';
+    S.gastos = [gasto({ id: 'g1' })];
+    renderActividadReciente();
+    const panel = document.getElementById('panel-actividad-reciente');
+    expect(panel.querySelectorAll('[data-action]')).toHaveLength(0);
+  });
+});

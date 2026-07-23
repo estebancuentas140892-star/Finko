@@ -167,6 +167,59 @@ function _agruparPorMes(movs) {
   return grupos;
 }
 
+/**
+ * MOV.1: acciones que ofrece cada fila del ledger, por `tipo` de movimiento.
+ *
+ * **El enrutador es `m.tipo`, NO `m.dominio`.** `m.dominio` es una etiqueta
+ * visual (un gasto de categoría "Deudas" o "Gastos fijos" lleva
+ * `dominio: 'compromisos'` para colorear su teja, pero su registro vive en
+ * `S.gastos`); enrutar por ahí mandaría la acción al dominio equivocado.
+ * `tipo` sí mapea 1:1 con la colección de origen.
+ *
+ * Solo routing/UI, cero lógica: son los mismos `data-action` que cada dominio
+ * dueño YA registra para su propia lista, así que el ledger no reimplementa
+ * nada y hereda gratis sus reversas (borrar un gasto devuelve el monto a la
+ * cuenta y revierte el abono de la deuda; borrar un ingreso puntual revierte
+ * su crédito). Mismo criterio que `_VEHICULO_META` en `ahorro/view.js`.
+ *
+ * Un tipo sin entrada (o sin una de las dos claves) simplemente no ofrece esa
+ * acción: hoy `transferencia` no aparece porque su dominio aún no sabe
+ * deshacerla (MC.17f), y `ingreso`/`aporte` no se editan (EDIT.1). Cuando esas
+ * tarjetas cierren, basta sumar la entrada acá.
+ */
+const _ACCIONES_POR_TIPO = {
+  gasto:   { editar: 'editar-gasto', eliminar: 'eliminar-gasto', nombre: 'gasto' },
+  ingreso: { eliminar: 'eliminar-ingreso-puntual',               nombre: 'ingreso' },
+  aporte:  { eliminar: 'ahorro-eliminar-aporte',                 nombre: 'aporte al fondo' },
+};
+
+/**
+ * Botonera de la fila. Devuelve '' cuando el tipo no ofrece ninguna acción,
+ * para no dejar un contenedor vacío ocupando espacio.
+ * @param {import('./logic.js').Movimiento} m
+ * @returns {string}
+ */
+function _renderAccionesMovimiento(m) {
+  const acciones = _ACCIONES_POR_TIPO[m.tipo];
+  if (!acciones) return '';
+
+  const idEsc = _esc(m.id);
+  // El aria-label nombra el movimiento concreto: en una lista larga, "Editar"
+  // a secas no dice cuál (mismo criterio que la lista de Gastos y de aportes).
+  const desc = _esc(_descripcionMovimiento(m));
+
+  const btnEditar = acciones.editar
+    ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.editar}" data-id="${idEsc}"
+               aria-label="Editar ${acciones.nombre}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>`
+    : '';
+  const btnEliminar = acciones.eliminar
+    ? `<button class="btn btn-ghost btn-icon" data-action="${acciones.eliminar}" data-id="${idEsc}"
+               aria-label="Eliminar ${acciones.nombre}: ${desc}"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button>`
+    : '';
+
+  return `<div class="list-item__action">${btnEditar}${btnEliminar}</div>`;
+}
+
 function _renderMovimientoItem(m) {
   const esIngreso     = m.direccion === 'ingreso';
   const signo         = esIngreso ? '+' : (m.direccion === 'neutro' ? '' : '-');
@@ -190,6 +243,7 @@ function _renderMovimientoItem(m) {
       <div class="list-item__meta">
         <p class="list-item__amount ${claseMonto}">${signo}${f(m.monto)}</p>
       </div>
+      ${_renderAccionesMovimiento(m)}
     </article>`;
 }
 
