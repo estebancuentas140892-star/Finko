@@ -29,6 +29,7 @@ import {
   calcularAporteSugerido,
   HORIZONTE_FONDO_MESES,
 } from '../../modules/dominio/ahorro/logic.js';
+import { renderFormAporte } from '../../modules/dominio/ahorro/view.js';
 
 // ── calcularObjetivoFondo ────────────────────────────────────────
 
@@ -556,5 +557,68 @@ describe('BUG-012: desactivar el fondo no muestra jerga técnica', () => {
     const mensaje = document.querySelector('.confirm__mensaje')?.textContent ?? '';
     expect(mensaje.toLowerCase()).not.toContain('empty state');
     expect(mensaje).toContain('pantalla inicial');
+  });
+});
+
+// ── renderFormAporte() - monto prellenado (AH.5a) ────────────────
+
+describe('renderFormAporte() - monto prellenado con el aporte sugerido', () => {
+  it('sin sugerencia el campo queda vacío, como antes', () => {
+    const html = renderFormAporte({ fecha: '2026-07-21', sugerencia: null });
+    expect(html).not.toMatch(/id="aporte-monto"[^>]*value=/);
+    expect(html).not.toContain('Prellenado con lo que te conviene apartar');
+  });
+
+  it('con sugerencia > 0 prellena el value del campo, editable', () => {
+    const html = renderFormAporte({ fecha: '2026-07-21', sugerencia: { monto: 150_000, base: 'meta' } });
+    expect(html).toMatch(/id="aporte-monto"[^>]*value="150000"/);
+    expect(html).not.toContain('readonly');
+    expect(html).not.toContain('disabled');
+    expect(html).toContain('Prellenado con lo que te conviene apartar este mes');
+    expect(html).toContain('Puedes cambiarlo');
+  });
+
+  it('sigue explicando que el aporte no descuenta cuentas, prellenado o no', () => {
+    const conSugerencia = renderFormAporte({ fecha: '2026-07-21', sugerencia: { monto: 150_000, base: 'meta' } });
+    const sinSugerencia = renderFormAporte({ fecha: '2026-07-21', sugerencia: null });
+    expect(conSugerencia).toContain('no descuenta tus cuentas');
+    expect(sinSugerencia).toContain('no descuenta tus cuentas');
+  });
+
+  it('sugerencia con monto 0 (fondo completo o déficit) no prellena ni muestra el hint', () => {
+    const html = renderFormAporte({ fecha: '2026-07-21', sugerencia: { monto: 0, base: 'completo' } });
+    expect(html).not.toMatch(/id="aporte-monto"[^>]*value=/);
+    expect(html).not.toContain('Prellenado con lo que te conviene apartar');
+  });
+});
+
+// ── AH.5a: el handler real llega prellenado (fondo activo con gastos fijos) ─
+
+describe('AH.5a: "Registrar aporte" abre el form ya prellenado', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div class="modal-overlay" id="modal-ahorro">
+        <h2 class="modal__title"></h2>
+        <div class="modal__body" id="modal-ahorro-body"></div>
+      </div>`;
+    S.compromisos = [{ id: 'f1', tipo: 'fijo', activo: true, monto: 500_000, frecuencia: 'Mensual' }];
+    S.ingresos = [];
+    S.gastos = [];
+    S.ahorro = { fondoEmergencia: { activo: true, metaMeses: 3, montoActual: 0 }, aportes: [] };
+    initAhorro();
+  });
+
+  it('con el fondo activo y gastos fijos registrados, el campo de monto no llega vacío', () => {
+    dispatch({ dataset: { action: 'ahorro-nuevo-aporte' } }, { preventDefault: () => {} });
+    const input = document.getElementById('aporte-monto');
+    expect(input).not.toBeNull();
+    expect(Number(input.value)).toBeGreaterThan(0);
+  });
+
+  it('el monto prellenado sigue siendo editable', () => {
+    dispatch({ dataset: { action: 'ahorro-nuevo-aporte' } }, { preventDefault: () => {} });
+    const input = document.getElementById('aporte-monto');
+    expect(input.readOnly).toBe(false);
+    expect(input.disabled).toBe(false);
   });
 });

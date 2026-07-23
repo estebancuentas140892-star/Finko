@@ -178,9 +178,14 @@ function _abrirAporte(el) {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = `Aportar: ${apartado.nombre}`;
 
+  // AP.5a: mismo cálculo que el hint en vivo del formulario de creación
+  // (`_actualizarSugerenciaLive`), aplicado aquí al apartado ya guardado para
+  // prellenar el monto en vez de dejarlo en blanco.
+  const sugerencia = calcularAporteSugerido(apartado, hoy());
+
   const body = overlay.querySelector('.modal__body');
   if (body) {
-    body.innerHTML = renderFormAporteApartado(apartado);
+    body.innerHTML = renderFormAporteApartado(apartado, sugerencia);
     body.querySelector('#form-aporte-apartado')?.addEventListener('submit', (e) => {
       e.preventDefault();
       _guardarAporte();

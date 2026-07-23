@@ -7,15 +7,15 @@
 ## Fondo de emergencia (dominio `ahorro`, J.1)
 
 - **Objetivo**          : activar/editar un fondo de emergencia con meta en meses de gastos fijos, registrar aportes, definir un compromiso mensual ("págate primero") con sugerencia calculada (AH.2), y mostrar la tasa de ahorro del mes con un nudge según el rango. Alimenta además el consolidado de ahorro del hub (F6, junto con Metas/Apartados/Inversión).
-- **Estado actual**     : estable. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **Iniciativa "Fondo de emergencia v2"** (brief 2026-07-08, `docs/BOARD.md`) queda pendiente de análisis en **AH.5**.
-- **Verificado contra** : commit del fix de BUG-012 (2026-07-11). Primera ficha de esta sección.
+- **Estado actual**     : estable. **BUG-012 corregido** (2026-07-11): el mensaje de confirmación al desactivar el fondo ya no usa el literal técnico "empty state" (ADN 11: lenguaje humano). **AH.5a cerrada** (2026-07-22): "Registrar aporte" prellena el monto con la sugerencia de AH.2. El resto de la iniciativa "Fondo de emergencia v2" (brief 2026-07-08, `docs/BOARD.md`) sigue pendiente de análisis en **AH.5**.
+- **Verificado contra** : commit de AH.5a (2026-07-22).
 
 **Dónde vive**
 
 | Pieza | Archivo | Ancla | Línea |
 |---|---|---|---|
 | API pública, acciones, coordinación logic+view | `modules/dominio/ahorro/index.js` | `initAhorro()`, `_activarFondo()`, `_editarFondo()`, `_desactivarFondo()` | ~495, ~258, ~262, ~295 |
-| Aportes (registrar/eliminar) | `modules/dominio/ahorro/index.js` | `_nuevoAporte()`, `_eliminarAporte()` | ~320 |
+| Aportes (registrar/eliminar; monto prellenado AH.5a) | `modules/dominio/ahorro/index.js` / `view.js` | `_nuevoAporte()`, `_eliminarAporte()`, `renderFormAporte({fecha, sugerencia})` | ~320 |
 | Compromiso mensual + sugerencia (AH.2) | `modules/dominio/ahorro/index.js` | `_editarCompromisoMensual()`, `_usarAporteSugerido()` | |
 | Cálculos puros (objetivo, progreso, colchón, tasa, sugerencia) | `modules/dominio/ahorro/logic.js` | `calcularObjetivoFondo()`, `calcularProgresoFondo()`, `mesesDeColchon()`, `calcularTasaAhorro()`, `calcularAporteSugerido()` | |
 | Consolidado de ahorro (hub, F6, ADR 024 D4) | `modules/dominio/ahorro/logic.js` / `view.js` | `consolidarAhorro()`, `renderResumenAhorroConsolidado()` | |
@@ -33,9 +33,11 @@
 - **El aporte al fondo no descuenta saldo de cuenta** (decisión ADR 009, distinta de Metas/Apartados que sí descuentan): el texto `fondo-hero__nota` lo explica en la UI. Cualquier cambio futuro que iguale el comportamiento con Metas/Apartados requiere revisar ese ADR primero.
 - **`_desactivarFondo()` conserva los datos** (`activo: false`, no borra `montoActual`/`aportes`): al reactivar, `renderFormFondo` precarga los valores previos. El mensaje de confirmación (corregido en BUG-012) debe seguir comunicando esto sin usar jerga técnica.
 - **Lenguaje humano (ADN 11) en mensajes de `confirmar()`**: a diferencia del HTML de las vistas (revisado en cada PR), los textos de `confirmar({ mensaje: ... })` no pasan por ningún linter de copy; un grep periódico de literales técnicos (`empty state`, `placeholder`, `null`, `undefined`, `TODO`) en `index.js`/`acciones/*.js` de todos los dominios es la única red de seguridad hoy (ver Nota de BUGS.md).
+- **AH.5a solo alcanza a "Registrar aporte"**: el compromiso mensual sigue con su propio botón "Usar este monto" (`ahorro-usar-sugerido`) en vez de prellenado directo; son dos formularios con propósito distinto (uno es un recordatorio, el otro un movimiento real) y no se fusionaron a propósito.
 
-**Cambios pendientes**: **AH.5** (rediseño UX educativo del fondo + integración del aporte con "Distribuir mi ingreso" vía el motor de MC.13, `docs/BOARD.md`).
+**Cambios pendientes**: el resto de **AH.5** (rediseño UX educativo del fondo; la integración del aporte con "Distribuir mi ingreso" ya existe vía `EventBus.on('distribucion:aplicar', ...)`, `docs/BOARD.md`).
 
 **Cambios realizados**:
 
+- 2026-07-22 (**AH.5a**, quick win de la auditoría de UX/producto, patrón P1, mismo movimiento que AP.5a en Apartados): `_nuevoAporte()` calcula `_construirSugerenciaAporte()` (el mismo cálculo AH.2 que ya alimentaba la caja de sugerencia del compromiso mensual) y lo pasa a `renderFormAporte({ fecha, sugerencia })`, que prellena `value` del campo de monto cuando `sugerencia.monto > 0` y cambia el hint para explicar el prellenado, sin perder la explicación de que el aporte no descuenta cuentas (ADR 009). Sin sugerencia (fondo sin gastos fijos registrados, `objetivo <= 0`) el campo queda vacío como antes. 6 tests unitarios nuevos (`ahorro.test.js`: 4 sobre `renderFormAporte()` puro + 2 de integración vía `dispatch()` con el fondo activo). Verificado en la app real: fondo con $800.000/mes en fijos mostró $184.000 prellenado (sin ingresos registrados, base `sin-ingreso` de AH.2) con el hint correcto, campo editable. Ver también AP.5a (Apartados) en la misma rebanada, CHANGELOG.
 - 2026-07-11 (BUG-012): el mensaje de confirmación de `_desactivarFondo()` decía "...la sección vuelve a mostrar el empty state..." (jerga técnica visible al usuario, violaba ADN 11). Cambiado a "...la sección vuelve a mostrar la pantalla inicial para activarlo...". Grep de literales técnicos (`empty state`, `placeholder`, `TODO`, `null`, `undefined`) sobre mensajes/títulos de `confirmar()` en todo `modules/`: este era el único caso real, el resto de coincidencias eran comentarios de código o nombres de variable (`null` como valor de tipo, `placeholder` como atributo HTML legítimo). 1 test unitario nuevo en `tests/unit/ahorro.test.js` (falla sin el fix, verificado con stash). SW v345 → v346.

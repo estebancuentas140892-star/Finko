@@ -324,7 +324,9 @@ function _nuevoAporte() {
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Registrar aporte';
 
-  _setBody(renderFormAporte({ fecha: hoy() }));
+  // AH.5a: mismo cálculo (AH.2) que ya se sugiere para el compromiso mensual,
+  // aplicado aquí para prellenar el aporte real en vez de dejarlo en blanco.
+  _setBody(renderFormAporte({ fecha: hoy(), sugerencia: _construirSugerenciaAporte() }));
 
   const form = document.getElementById('form-aporte');
   if (form) {

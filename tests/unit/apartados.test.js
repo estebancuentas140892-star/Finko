@@ -644,6 +644,44 @@ describe('renderFormAporteApartado() - selector de cuenta', () => {
   });
 });
 
+// ── renderFormAporteApartado() - monto prellenado (AP.5a) ─────────
+
+describe('renderFormAporteApartado() - monto prellenado con el aporte sugerido', () => {
+  it('sin sugerencia (apartado sin fecha objetivo, el default de apartadoBase) el campo queda vacío, como antes', () => {
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*value=/);
+    expect(html).not.toContain('Prellenado con lo que te toca aportar');
+  });
+
+  it('con sugerencia > 0 prellena el value del campo, editable (no readonly/disabled)', () => {
+    const sugerencia = { aportePorPeriodo: 60_000, numPeriodos: 6, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 90 };
+    const html = renderFormAporteApartado(apartadoBase(), sugerencia);
+    expect(html).toMatch(/id="aporte-apartado-monto"[^>]*value="60000"/);
+    expect(html).not.toContain('readonly');
+    expect(html).not.toContain('disabled');
+  });
+
+  it('muestra el hint de prellenado con la etiqueta del período, no un texto genérico', () => {
+    const sugerencia = { aportePorPeriodo: 60_000, numPeriodos: 6, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 90 };
+    const html = renderFormAporteApartado(apartadoBase(), sugerencia);
+    expect(html).toContain('Prellenado con lo que te toca aportar por quincena para llegar a tiempo');
+    expect(html).toContain('Puedes cambiarlo');
+  });
+
+  it('sugerencia con monto 0 (ya cubierto) no prellena ni muestra el hint', () => {
+    const sugerencia = { aportePorPeriodo: 0, numPeriodos: 0, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 0 };
+    const html = renderFormAporteApartado(apartadoBase(), sugerencia);
+    expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*value=/);
+    expect(html).not.toContain('Prellenado con lo que te toca aportar');
+  });
+
+  it('sugerencia null (mismo default que sin argumento) no rompe', () => {
+    const html = renderFormAporteApartado(apartadoBase(), null);
+    expect(html).toContain('form-aporte-apartado');
+    expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*value=/);
+  });
+});
+
 // ── renderFormApartado() - selector de ícono (CAT.2c) ─────────────
 
 describe('renderFormApartado() - selector de ícono compacto (CAT.2c)', () => {

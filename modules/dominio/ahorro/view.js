@@ -380,18 +380,28 @@ export function renderFormFondo({ editando, metaMeses, montoActual, gastosFijosM
 /**
  * HTML del formulario para registrar un nuevo aporte al fondo.
  *
- * @param {{ fecha: string }} opts  fecha en YYYY-MM-DD (default: hoy).
+ * @param {{ fecha: string, sugerencia?: {monto:number, base:string}|null }} opts
+ *   `fecha` en YYYY-MM-DD (default: hoy). `sugerencia` (AH.5a) es la salida de
+ *   `calcularAporteSugerido()` (AH.2): con un monto > 0 prellena el campo en
+ *   vez de dejarlo en blanco (el mismo número que ya se sugiere para el
+ *   compromiso mensual). Sigue siendo editable.
  * @returns {string}
  */
-export function renderFormAporte({ fecha }) {
+export function renderFormAporte({ fecha, sugerencia = null }) {
+  const montoSugerido = sugerencia?.monto > 0 ? sugerencia.monto : null;
+  const valorHtml   = montoSugerido ? ` value="${montoSugerido}"` : '';
+  const hintPrefill = montoSugerido
+    ? 'Prellenado con lo que te conviene apartar este mes, según tus ingresos y gastos. Puedes cambiarlo. Registrarlo no descuenta tus cuentas: el dinero sigue ahí, solo queda marcado como reservado.'
+    : '¿Cuánto apartaste para el fondo? Registrarlo no descuenta tus cuentas: el dinero sigue ahí, solo queda marcado como reservado.';
+
   return `
     <form id="form-aporte" novalidate>
       <div class="form-group">
         <label for="aporte-monto" class="label">Monto del aporte (COP)</label>
         <input id="aporte-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="100000"
+               min="1" step="10000" placeholder="100000"${valorHtml}
                required aria-required="true" inputmode="numeric" autofocus />
-        <p class="form-hint">¿Cuánto apartaste para el fondo? Registrarlo no descuenta tus cuentas: el dinero sigue ahí, solo queda marcado como reservado.</p>
+        <p class="form-hint">${hintPrefill}</p>
       </div>
 
       <div class="form-group">

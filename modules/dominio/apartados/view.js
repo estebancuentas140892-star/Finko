@@ -287,10 +287,16 @@ export function renderFormApartado(frecuenciaPreferida = 'Mensual') {
 /**
  * Devuelve el HTML del formulario para aportar dinero a un apartado existente.
  * Reusa el patrón 0/1/varias cuentas: con una sola cuenta activa la asume.
+ *
  * @param {import('../../core/state.js').Apartado} apartado
+ * @param {{aportePorPeriodo:number, etiquetaPeriodo:string}|null} [sugerencia]
+ *   Salida de `calcularAporteSugerido()` (AP.5a): con fecha objetivo y
+ *   frecuencia, el monto ya calculado prellena el campo en vez de dejarlo en
+ *   blanco (el usuario ya vio este número en el hint del propio apartado; no
+ *   tiene sentido pedirle que lo vuelva a escribir). Sigue siendo editable.
  * @returns {string}
  */
-export function renderFormAporteApartado(apartado) {
+export function renderFormAporteApartado(apartado, sugerencia = null) {
   const { porcentaje, faltante } = calcularProgreso(apartado);
   const faltanteHtml = faltante > 0
     ? ` · Faltan: <strong>${f(faltante)}</strong>`
@@ -298,6 +304,12 @@ export function renderFormAporteApartado(apartado) {
 
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
   const cuentaHtml     = renderSelectorCuenta(cuentasActivas, { label: '¿De qué cuenta sale el aporte?' });
+
+  const montoSugerido = sugerencia?.aportePorPeriodo > 0 ? sugerencia.aportePorPeriodo : null;
+  const valorHtml   = montoSugerido ? ` value="${montoSugerido}"` : '';
+  const hintPrefill = montoSugerido
+    ? `<p class="form-hint">Prellenado con lo que te toca aportar ${_esc(sugerencia.etiquetaPeriodo)} para llegar a tiempo. Puedes cambiarlo.</p>`
+    : '';
 
   return `
     <form id="form-aporte-apartado" novalidate>
@@ -309,9 +321,10 @@ export function renderFormAporteApartado(apartado) {
       <div class="form-group">
         <label for="aporte-apartado-monto" class="label">Monto del aporte (COP)</label>
         <input id="aporte-apartado-monto" name="monto" class="input" type="number"
-               min="1" step="10000" placeholder="0"
+               min="1" step="10000" placeholder="0"${valorHtml}
                required aria-required="true"
                autocomplete="off" inputmode="numeric" />
+        ${hintPrefill}
       </div>
       ${cuentaHtml}
       <div class="modal__footer">
