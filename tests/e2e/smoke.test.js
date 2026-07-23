@@ -4343,3 +4343,111 @@ test.describe('Agenda - pago en lote (CAL.5a)', () => {
     await expect(page.locator('.hero-agenda__pagado')).toContainText('$50.000');
   });
 });
+
+// ── SUITE 12g: Gastos - gastos frecuentes y "Repetir" (TX.12) ────────────────
+// El gasto cotidiano (almuerzo, café, Uber) se repite; el formulario ofrece
+// chips derivados del historial que prellenan todo, y cada fila de la lista
+// ofrece "Repetir" para una fila puntual. Ninguno pide un dato nuevo.
+
+test.describe('Gastos - gastos frecuentes y Repetir (TX.12)', () => {
+  /** ISO 'YYYY-MM-DD' de hace N días, con el reloj real del entorno. */
+  function isoHaceNDias(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  async function sembrar(page, fechas) {
+    await page.addInitScript(({ fechas }) => {
+      const estado = {
+        version:   1,
+        perfil:    { nombre: 'TestUser', smmlv: 1750905 },
+        onboarded: true,
+        cuentas: [{
+          id: 'cta-tx12-e2e', nombre: 'Bancolombia', tipo: 'ahorros',
+          banco: 'Bancolombia', saldo: 500000, activa: true,
+        }],
+        ingresos: [],
+        gastos: [
+          // 3 repeticiones de "Mercado" $15.000: dispara el chip de frecuentes.
+          { id: 'f1', categoria: 'Mercado', monto: 15000, fecha: fechas[0], cuentaId: 'cta-tx12-e2e', nota: '' },
+          { id: 'f2', categoria: 'Mercado', monto: 15000, fecha: fechas[1], cuentaId: 'cta-tx12-e2e', nota: '' },
+          { id: 'f3', categoria: 'Mercado', monto: 15000, fecha: fechas[2], cuentaId: 'cta-tx12-e2e', nota: '' },
+          // 1 gasto puntual distinto, para probar "Repetir" desde su fila.
+          { id: 'g1', categoria: 'Transporte', monto: 20000, fecha: fechas[3], cuentaId: 'cta-tx12-e2e', nota: 'Uber al trabajo' },
+        ],
+        compromisos: [],
+        metas: [],
+      };
+      localStorage.setItem('fk_v1', JSON.stringify(estado));
+    }, { fechas });
+  }
+
+  test('chip de gasto frecuente prellena monto, categoría y cuenta', async ({ page }) => {
+    await sembrar(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    await page.click('[data-action="nuevo-gasto"]');
+    await page.waitForSelector('#modal-gasto[data-open]');
+    const form = page.locator('#modal-gasto-body form');
+
+    const chip = form.locator('.gastos-frecuentes__chip');
+    await expect(chip).toHaveCount(1);
+    await expect(chip).toContainText('Mercado');
+    await expect(chip).toContainText('$15.000');
+
+    await chip.click();
+
+    await expect(form.locator('[name="monto"]')).toHaveValue('15000');
+    await expect(form.locator('input[name="categoria"][value="Mercado"]')).toBeChecked();
+    await expect(form.locator('input[name="cuentaId"][value="cta-tx12-e2e"]')).toBeChecked();
+
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+
+    // 4 sembrados (3 Mercado + 1 Transporte) + el Mercado nuevo repetido.
+    await expect(page.locator('#lista-gastos [data-action="repetir-gasto"]')).toHaveCount(5, { timeout: 3_000 });
+
+    await page.goto('/#tesoreria');
+    await expect(page.locator('.cuenta-card__saldo').first()).toHaveText('$485.000', { timeout: 5_000 });
+  });
+
+  test('"Repetir" desde una fila abre el modal en modo creación, prellenado y sin chips de frecuentes', async ({ page }) => {
+    await sembrar(page, [isoHaceNDias(10), isoHaceNDias(8), isoHaceNDias(6), isoHaceNDias(4)]);
+    await page.goto('/#gast');
+    await page.waitForSelector('#sec-gast.active', { timeout: 10_000 });
+
+    const filaTransporte = page.locator('#lista-gastos article', { hasText: 'Transporte' });
+    await filaTransporte.locator('[data-action="repetir-gasto"]').click();
+
+    await page.waitForSelector('#modal-gasto[data-open]');
+    await expect(page.locator('#modal-gasto .modal__title')).toHaveText('Repetir gasto');
+
+    const form = page.locator('#modal-gasto-body form');
+    // Sin sugerencias en este flujo: el usuario ya eligió qué repetir, aunque
+    // el historial sí tenga un patrón frecuente ("Mercado").
+    await expect(form.locator('.gastos-frecuentes__chip')).toHaveCount(0);
+
+    await expect(form.locator('[name="monto"]')).toHaveValue('20000');
+    await expect(form.locator('input[name="categoria"][value="Transporte"]')).toBeChecked();
+    await expect(form.locator('[name="nota"]')).toHaveValue('Uber al trabajo');
+    // Fecha HOY, no la del gasto original (es un registro nuevo).
+    const hoyIso = isoHaceNDias(0);
+    await expect(form.locator('#gasto-fecha')).toHaveValue(hoyIso);
+
+    await form.locator('button[type="submit"]').click();
+    await expect(page.locator(modalCerrado('modal-gasto'))).toBeAttached({ timeout: 3_000 });
+
+    // 2 filas de "Transporte" ahora: la original + la repetida.
+    await expect(page.locator('#lista-gastos article', { hasText: 'Transporte' })).toHaveCount(2, { timeout: 3_000 });
+
+    await page.goto('/#tesoreria');
+    // 500.000 - 20.000 (repetida) = 480.000 (el gasto original ya estaba
+    // sembrado sin descontar saldo, mismo criterio que otros fixtures del suite).
+    await expect(page.locator('.cuenta-card__saldo').first()).toHaveText('$480.000', { timeout: 5_000 });
+  });
+});

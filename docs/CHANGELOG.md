@@ -10,6 +10,30 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### feat(gastos): TX.12 gastos frecuentes y "Repetir" · 2026-07-23
+
+Segunda pieza del patrón **P2** de la auditoría de UX/producto (la primera fue CAL.5a, el mismo día). El gasto cotidiano (almuerzo, café, Uber) es el registro más repetido de la app y se tecleaba entero cada vez: categoría, monto, cuenta. Dos entradas al mismo problema, sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a: puro reuso del historial ya registrado).
+
+- **Chips de un toque en "Nuevo gasto".** `gastosFrecuentes()` (nuevo, `gastos/logic.js`, pura) agrupa `S.gastos` por categoría + monto redondeado a $1.000 + descripción normalizada, y devuelve los grupos que se repiten 3 o más veces en los últimos 60 días. Solo aparecen al **crear** (nunca al editar: repetir un patrón no tiene sentido corrigiendo un registro puntual). Un click prellena monto, categoría y la cuenta más reciente usada para ese patrón, y deja el foco en "Guardar": el usuario solo confirma.
+- **"Repetir" en cada fila de la lista.** Abre el modal en modo creación (nunca edición) con los datos de esa fila exacta, incluida su nota, fechado con **hoy** (no la fecha del original: es un registro nuevo). Sin chips de frecuentes en este flujo: el usuario ya eligió qué repetir.
+- **Excluye gastos con `compromisoId`** (pagos de un fijo del Calendario o abonos de deuda): esos los repite su propio dominio dueño (Agenda/Compromisos); ofrecerlos aquí invitaría a duplicar un pago que ya tiene su mecanismo.
+- **Una sola función de prefill.** `_prellenarCamposGasto()` (`gastos/index.js`) la comparten el chip de frecuente y "Repetir" de fila, con una diferencia deliberada: el chip sintetiza una plantilla de varios registros (nota ambigua entre instancias, se omite); "Repetir" apunta a una fila concreta (la nota sí se copia, sin ambigüedad posible).
+
+**Archivos tocados**
+
+- `modules/dominio/gastos/logic.js`: `gastosFrecuentes()` nueva, pura.
+- `modules/dominio/gastos/view.js`: `_renderChipsFrecuentes()` nueva; `renderFormGasto()` gana el parámetro `{ sugerencias }`; `_renderGastoItem()` suma el botón "Repetir".
+- `modules/dominio/gastos/index.js`: `_prellenarCamposGasto()`, `_repetirFrecuente()`, `_repetirGasto()` nuevas; `_montarFormGasto()` reenvía `sugerencias`; `_editarGasto()` la pasa en `false`.
+- `styles/components/domain.css`: `.gastos-frecuentes__*`.
+- `tests/unit/gastos.test.js`: 23 tests nuevos.
+- `tests/e2e/smoke.test.js`: 2 tests nuevos.
+- `service-worker.js`: `CACHE_NAME` v413 → v414.
+- `docs/contexto/gastos.md`, `docs/BOARD.md`, `docs/HANDOFF.md`.
+
+**Verificación.** 2965/2965 unit + 227/227 E2E + lint verdes. Verificado además contra un caso real vía la suite E2E en Chromium: 3 repeticiones de "Mercado" ($15.000) disparan el chip, que al click y confirmar registra un 4° gasto y descuenta el saldo; "Repetir" sobre una fila de "Transporte" abre el modal titulado "Repetir gasto" sin chips de frecuentes, con monto/categoría/nota prellenados y la fecha de hoy (no la del original).
+
+---
+
 ### feat(agenda): CAL.5a pagar en lote lo que ya venció · 2026-07-23
 
 Primera pieza del patrón **P2** de la auditoría de UX/producto (trabajo manual uno por uno, sin lote). Pagar 6 gastos fijos eran ~30 toques: cada uno pedía la cuenta por separado. Ahora el Calendario ofrece registrarlos juntos **eligiendo la cuenta una sola vez**.

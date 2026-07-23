@@ -117,3 +117,37 @@
 - 2026-07-05 (TX.9a): categoría pasa a ser el primer campo del formulario completo de gasto (antes era el 4°); el campo Descripción se quitó del formulario (ya no se pide); descripción deja de ser obligatoria en `validarGasto()`. `normalizarGasto()` solo incluye la clave `descripcion` si el caller la trae (ningún caller ya lo hace desde el form), para que `editar()` (merge superficial vía `Object.assign`) no borre la descripción de gastos existentes que ya la tenían al editar otro campo. El título del ítem en la lista pasa a ser la categoría; una descripción legacy (gastos de antes de este cambio) y la nota se muestran en el subtítulo junto a la fecha. `esGastoPendiente()` redefinida: `pendienteCompletar === true && categoria === 'Otros'` (antes: `pendienteCompletar === true || !descripcion`), preservando la función del panel "Gastos por organizar" sin depender de un campo ya no obligatorio. Encontrados y corregidos 2 bugs de "undefined" en consumidores de `gasto.descripcion` sin fallback (mensaje de confirmación de borrado y `movimientosDesdeGastos()`). 24 tests nuevos/actualizados + 4 tests E2E actualizados. 2198/2198 unit + 148/148 E2E verdes.
 
 **Observaciones**: el campo **Nota** que pedía el brief de Esteban ya existía en el formulario antes de esta tarea (agregado en una fase anterior sin tarjeta propia); TX.9a no tuvo que crearlo, solo reordenar alrededor de él. El brief completo (categoría primero, categorías personalizadas, sin descripción redundante) está capturado en `BOARD.md`.
+
+---
+
+## Gastos frecuentes y "Repetir" (TX.12)
+
+- **Objetivo**          : el gasto cotidiano (almuerzo, café, Uber) es el registro más repetido de la app y se tecleaba entero cada vez. Dos entradas al mismo problema, patrón P2 de la auditoría de UX/producto: (1) chips derivados del historial en el formulario de "Nuevo gasto", que prellenan monto/categoría/cuenta y dejan solo confirmar; (2) botón "Repetir" en cada fila de la lista, que abre el formulario en modo creación prellenado con esa fila exacta (incluida su nota) y fecha de hoy.
+- **Estado actual**     : cerrado el 2026-07-23. Sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a): todo sale de `S.gastos` ya existente.
+- **Verificado contra** : TX.12 (2026-07-23).
+
+**Dónde vive**
+
+| Pieza | Archivo | Ancla |
+|---|---|---|
+| Derivación pura de patrones repetidos | `modules/dominio/gastos/logic.js` | `gastosFrecuentes(gastos, hoyISO, opciones)` |
+| Chips de un toque en el form (solo al crear) | `modules/dominio/gastos/view.js` | `_renderChipsFrecuentes()`, consumida por `renderFormGasto({ sugerencias })` |
+| Botón "Repetir" en cada fila de la lista | `modules/dominio/gastos/view.js` | `_renderGastoItem()`, botón `data-action="repetir-gasto"` |
+| Prefill compartido (chip de frecuente y "Repetir" de fila) | `modules/dominio/gastos/index.js` | `_prellenarCamposGasto(form, datos)` |
+| Handlers | `modules/dominio/gastos/index.js` | `_repetirFrecuente()`, `_repetirGasto()` |
+| Estilos de los chips | `styles/components/domain.css` | `.gastos-frecuentes__*` |
+
+**Criterio de agrupación** (`gastosFrecuentes`): categoría + monto redondeado a $1.000 (mismo `step` del campo monto, absorbe variaciones menores sin fusionar montos distintos) + descripción normalizada (sin tildes/mayúsculas). Se repite 3 o más veces (`minRepeticiones`) dentro de los últimos 60 días (`diasVentana`), máximo 4 resultados (`maxResultados`), ordenados por más repetido y, en empate, por más reciente. **Excluye gastos con `compromisoId`** (pagos de fijo del Calendario o abonos de deuda, categorías internas 'Gastos fijos'/'Deudas' de TX.8b): los repite su propio dominio dueño; ofrecerlos aquí invitaría a duplicar un pago que ya tiene su mecanismo.
+
+**Decisión de diseño: la nota NO se prellena desde el chip de frecuente, pero SÍ desde "Repetir" de una fila.** El chip sintetiza una plantilla a partir de varios registros del historial; su nota (si alguno la tuviera) sería ambigua entre instancias del grupo, así que se omite. "Repetir" en cambio apunta a una fila concreta y conocida: su nota se copia tal cual, junto con monto/categoría/cuenta, porque no hay ambigüedad posible.
+
+**Riesgos**:
+
+- **`renderFormGasto({ sugerencias })` cambia de firma**: acepta un objeto de opciones en vez de ningún argumento. Todos los call-sites existentes (incluidos los de los tests) seguían funcionando sin cambios porque el parámetro tiene default vacío; cualquier caller nuevo que quiera ocultar los chips (modo edición, "Repetir") debe pasar `sugerencias: false` explícitamente.
+- **El botón "Repetir" vive en Gastos, no en Movimientos**: MOV.1 delega `editar-gasto`/`eliminar-gasto` desde el ledger al dominio dueño, pero `repetir-gasto` no se sumó ahí (fuera de alcance de esta tarjeta). Si se pide "repetir" también desde el ledger, es una entrada más en `_ACCIONES_POR_TIPO` de `movimientos/logic.js`, sin lógica nueva.
+
+**Cambios pendientes**: ninguno conocido.
+
+**Cambios realizados**:
+
+- 2026-07-23 (TX.12, patrón P2 de la auditoría de UX/producto): ver detalle arriba. 23 tests unitarios nuevos (`gastosFrecuentes`: agrupación, ventana de días, redondeo, exclusión de `compromisoId`, orden; chips del form; botón "Repetir" en la fila) más 2 E2E nuevos (chip prellena y registra; "Repetir" abre en modo creación sin chips de frecuentes, con nota copiada y fecha de hoy). 2965/2965 unit + 227/227 E2E + lint verdes. SW v413 a v414.

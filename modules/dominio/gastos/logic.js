@@ -164,6 +164,111 @@ export function detectarHormigas(gastos, umbralMonto = 20_000, umbralTotal = 100
     .sort((a, b) => b.total - a.total);
 }
 
+// ── GASTOS FRECUENTES (TX.12) ────────────────────────────────────
+
+const _RX_FECHA_GASTO = /^(\d{4})-(\d{2})-(\d{2})/;
+
+/** ms UTC de medianoche para una fecha 'YYYY-MM-DD', o null si no parsea. */
+function _msFechaGasto(iso) {
+  const m = _RX_FECHA_GASTO.exec(iso ?? '');
+  if (!m) return null;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+}
+
+/** Normaliza texto para comparar sin distinguir mayúsculas ni tildes (mismo criterio que `validarCategoriaPersonalizada`). */
+function _normalizarTexto(s) {
+  return (s ?? '').trim().toLocaleLowerCase('es').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+}
+
+/**
+ * Deriva "gastos frecuentes" del propio historial (TX.12, patrón P2 de la
+ * auditoría de UX/producto): el gasto cotidiano (almuerzo, café, Uber) es el
+ * registro más repetido de la app y hoy se teclea entero cada vez. Esta
+ * función agrupa `gastos` por categoría + monto redondeado a la unidad de
+ * $1.000 (el mismo `step` del campo monto: absorbe variaciones menores sin
+ * fusionar montos genuinamente distintos) + descripción normalizada (sin
+ * tildes/mayúsculas), y devuelve los grupos que se repiten al menos
+ * `minRepeticiones` veces dentro de los últimos `diasVentana` días.
+ *
+ * Sin dato nuevo ni schema (mismo patrón que AP.5a/AH.5a: puro reuso de lo ya
+ * registrado). El caller decide qué prellenar con el resultado; esta función
+ * solo identifica el patrón.
+ *
+ * **Excluye gastos con `compromisoId`**: son pagos de un fijo del Calendario o
+ * abonos a una deuda (categorías internas 'Gastos fijos'/'Deudas', TX.8b),
+ * generados y repetidos por su propio dominio dueño (Agenda/Compromisos);
+ * ofrecerlos como "gasto frecuente" invitaría a duplicar un pago que ya tiene
+ * su mecanismo de repetición.
+ *
+ * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {string} hoyISO 'YYYY-MM-DD'
+ * @param {{diasVentana?:number, minRepeticiones?:number, maxResultados?:number}} [opciones]
+ * @returns {Array<{
+ *   categoria: string, monto: number, descripcion: string,
+ *   cuentaId: string|null, veces: number, ultimaFecha: string,
+ * }>} Ordenados por más repetido primero (empate: más reciente primero).
+ */
+export function gastosFrecuentes(gastos, hoyISO, opciones = {}) {
+  if (!Array.isArray(gastos) || typeof hoyISO !== 'string') return [];
+
+  const hoyMs = _msFechaGasto(hoyISO);
+  if (hoyMs === null) return [];
+
+  const cfg = typeof opciones === 'object' && opciones ? opciones : {};
+  const diasVentana = Number.isFinite(+cfg.diasVentana) && +cfg.diasVentana > 0
+    ? Math.floor(+cfg.diasVentana) : 60;
+  const minRepeticiones = Number.isFinite(+cfg.minRepeticiones) && +cfg.minRepeticiones >= 2
+    ? Math.floor(+cfg.minRepeticiones) : 3;
+  const maxResultados = Number.isFinite(+cfg.maxResultados) && +cfg.maxResultados > 0
+    ? Math.floor(+cfg.maxResultados) : 4;
+
+  const desdeMs = hoyMs - diasVentana * 86_400_000;
+
+  /** @type {Map<string, {categoria:string, monto:number, descripcion:string, cuentaId:string|null, veces:number, ultimaFecha:string}>} */
+  const grupos = new Map();
+
+  for (const g of gastos) {
+    if (!g || typeof g !== 'object') continue;
+    if (g.compromisoId) continue; // pago de fijo/abono: lo repite su propio dominio
+
+    const monto = Number(g.monto);
+    if (!Number.isFinite(monto) || monto <= 0) continue;
+    if (!g.categoria) continue;
+
+    const gMs = _msFechaGasto(g.fecha);
+    if (gMs === null || gMs < desdeMs || gMs > hoyMs) continue;
+
+    const montoRedondeado = Math.round(monto / 1000) * 1000;
+    const descNorm = _normalizarTexto(g.descripcion);
+    const key = `${g.categoria}|||${montoRedondeado}|||${descNorm}`;
+
+    let grupo = grupos.get(key);
+    if (!grupo) {
+      grupo = {
+        categoria:   g.categoria,
+        monto:       montoRedondeado,
+        descripcion: g.descripcion?.trim() || '',
+        cuentaId:    g.cuentaId ?? null,
+        veces:       0,
+        ultimaFecha: g.fecha,
+      };
+      grupos.set(key, grupo);
+    }
+    grupo.veces += 1;
+    // Conserva la cuenta y la fecha del registro MÁS reciente del grupo: es
+    // la mejor apuesta de "desde dónde paga esto normalmente" hoy.
+    if (g.fecha >= grupo.ultimaFecha) {
+      grupo.ultimaFecha = g.fecha;
+      grupo.cuentaId    = g.cuentaId ?? null;
+    }
+  }
+
+  return [...grupos.values()]
+    .filter(gr => gr.veces >= minRepeticiones)
+    .sort((a, b) => b.veces - a.veces || b.ultimaFecha.localeCompare(a.ultimaFecha))
+    .slice(0, maxResultados);
+}
+
 // ── VALIDACIÓN ───────────────────────────────────────────────────
 
 /**

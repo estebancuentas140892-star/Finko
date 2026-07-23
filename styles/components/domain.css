@@ -2968,3 +2968,52 @@ button.chip--gastos.chip--active {
   line-height: 1.5;
   max-width: 34ch;
 }
+
+/* ── TX.12: gastos frecuentes (chips de un toque en el formulario) ── */
+
+.gastos-frecuentes__lista {
+  display: flex;
+  gap: var(--fk-space-2);
+  overflow-x: auto;
+  padding-block-end: var(--fk-space-1); /* espacio para el anillo de foco */
+  -webkit-overflow-scrolling: touch;
+}
+
+.gastos-frecuentes__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-2);
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: var(--fk-space-2) var(--fk-space-3);
+  border-radius: var(--fk-radius-full);
+  border: 1px solid var(--fk-border-default);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gastos-frecuentes__chip:hover,
+.gastos-frecuentes__chip:focus-visible {
+  border-color: var(--fk-dom-gastos);
+  background: var(--fk-dom-gastos-bg);
+  outline: none;
+}
+
+.gastos-frecuentes__chip .icon {
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-dom-gastos-text);
+}
+
+.gastos-frecuentes__nombre {
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-medium);
+}
+
+.gastos-frecuentes__monto {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-secondary);
+  font-variant-numeric: tabular-nums;
+}

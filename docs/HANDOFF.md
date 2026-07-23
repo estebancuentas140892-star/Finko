@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-23 (feat(agenda): CAL.5a, pago en lote de los gastos fijos vencidos desde el Calendario; primera pieza del patrón P2 de la auditoría)
+> Última actualización: 2026-07-23 (feat(gastos): TX.12, gastos frecuentes y "Repetir"; cierra el patrón P2 de la auditoría por completo junto con CAL.5a, la misma tarde)
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2942/2942 verdes |
-| Tests E2E | 225/225 verde. Suites: `smoke` 146 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests unitarios + integración | 2965/2965 verdes |
+| Tests E2E | 227/227 verde. Suites: `smoke` 148 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### feat(gastos): TX.12 gastos frecuentes y "Repetir" · 2026-07-23
+
+Segunda pieza del patrón **P2** de la auditoría (la primera fue CAL.5a, la misma tarde): cierra el patrón por completo. El gasto cotidiano (almuerzo, café, Uber) se teclea entero cada vez; ahora dos atajos, sin dato nuevo. **Chips de un toque en "Nuevo gasto":** `gastosFrecuentes()` (nueva, pura, `gastos/logic.js`) agrupa el historial por categoría + monto redondeado a $1.000 + descripción normalizada, y ofrece los patrones que se repiten 3+ veces en 60 días; un click prellena monto/categoría/cuenta y deja el foco en "Guardar". Solo al crear, nunca al editar. **"Repetir" en cada fila de la lista:** abre el modal en modo creación con los datos de esa fila exacta (incluida la nota), fechado hoy. **Excluye gastos con `compromisoId`** (pagos de fijo/abono): esos los repite su propio dominio dueño. **Decisión de diseño:** el chip de frecuente NO prellena la nota (sintetiza de varios registros, sería ambigua); "Repetir" de una fila SÍ (apunta a un registro concreto y conocido). Ambos comparten `_prellenarCamposGasto()` en `gastos/index.js`. 23 unit + 2 E2E nuevos. 2965/2965 unit + 227/227 E2E + lint verdes. SW v413→v414.
+
+---
 
 ### feat(agenda): CAL.5a pagar en lote lo que ya venció · 2026-07-23
 
@@ -64,14 +70,7 @@ Cierra el patrón **P5** de la auditoría de UX/producto, y era el único módul
 
 ---
 
-### feat(apartados,ahorro): AP.5a + AH.5a el monto de un aporte llega prellenado · 2026-07-22
-
-El quick win de mejor relación impacto/esfuerzo de la **auditoría de UX/producto** (patrón P1). En Apartados y en el Fondo de emergencia, la app ya calculaba y mostraba cuánto convenía aportar, pero al pulsar el botón de aportar el campo se abría vacío y pedía volver a teclear ese mismo número. `_abrirAporte()` (Apartados) y `_nuevoAporte()` (Ahorro) ahora calculan la sugerencia con los mismos motores que ya existían (`calcularAporteSugerido` de AP y `_construirSugerenciaAporte`/AH.2 del fondo) y la pasan a la vista, que prellena el `value` del campo (siempre editable, nunca readonly) con un hint explicando el prellenado. Sin fecha objetivo, apartado ya cubierto, o fondo sin gastos fijos registrados, el campo sigue vacío como antes: sin regresión. **Ficha de contexto nueva `docs/contexto/apartados.md`** (la sección no tenía ninguna, regla 2.6). 11 tests unitarios nuevos. 2856/2856 unit + lint verdes. SW v408→v409. Verificado en la app real (SOAT con $300.000 faltantes → $50.000/quincena prellenado; fondo con $800.000/mes en fijos → $184.000 prellenado).
-
----
----
-
-> Para tareas anteriores (fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

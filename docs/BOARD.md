@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-23 (**CAL.5a cerrada**: pago en lote de los gastos fijos vencidos, primera pieza del patrón P2; Esteban decidió que el lote manual va antes que PA.1. El 2026-07-22: **MOV.2** y **MOV.1** (patrón P4 completo), **PE.7** (P5) y **AP.5a/AH.5a** (P1). Triaje de la auditoría hecho el 2026-07-21, con sus 2 bugs ya corregidos (BUG-014, BUG-015). Tarjetas pendientes de ese triaje: CAL.5b, TX.12, EDIT.1, MC.17f, ARQ.1, ARQ.2. BUG-016 (voseo) en BUGS.md).
+> Última actualización: 2026-07-23 (**TX.12 cerrada**: gastos frecuentes y "Repetir" en Gastos, cerrando el patrón P2 por completo junto con **CAL.5a** (pago en lote de los gastos fijos vencidos, la misma tarde), donde Esteban decidió que el lote manual va antes que PA.1. El 2026-07-22: **MOV.2** y **MOV.1** (patrón P4 completo), **PE.7** (P5) y **AP.5a/AH.5a** (P1). Triaje de la auditoría hecho el 2026-07-21, con sus 2 bugs ya corregidos (BUG-014, BUG-015). Tarjetas pendientes de ese triaje: CAL.5b, EDIT.1, MC.17f, ARQ.1, ARQ.2. BUG-016 (voseo) en BUGS.md).
 
 ---
 
@@ -50,7 +50,7 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 > **Triaje de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real, con foco en reprocesos, captura repetida, navegación de más y oportunidades de automatización. Sus **2 bugs confirmados ya se corrigieron el mismo día** (BUG-014 distribución del cobro vs el mes, BUG-015 "Marcar pagado" y el mes visible; ver CHANGELOG). El resto se tria aquí. Sus **7 patrones transversales** son la lente que explica casi todas las tarjetas nuevas, y quedan registrados como criterio, no como tareas:
 >
 > - **P1 Datos que la app ya tiene y vuelve a pedir.** **AP.5a y AH.5a ya cerradas** (2026-07-22: "Aportar" en Apartados y "Registrar aporte" en el Fondo prellenan el monto sugerido). Sigue abierto en LIM.1 (p.10), CFG.2a y MC.13e-2f.
-> - **P2 Trabajo manual uno por uno, sin lote.** ~~CAL.5a~~ (**cerrada el 2026-07-23**: los fijos vencidos se pagan juntos desde el Calendario) más **CAL.5b** (deudas y entrada desde Inicio) y **TX.12** (gastos frecuentes).
+> - **P2 Trabajo manual uno por uno, sin lote: CERRADO el 2026-07-23.** ~~CAL.5a~~ (los fijos vencidos se pagan juntos desde el Calendario) y ~~TX.12~~ (gastos frecuentes + "Repetir"). Queda **CAL.5b** (deudas y entrada desde Inicio) como ampliación del mismo patrón, no como pendiente del patrón original.
 > - **P3 No se puede editar: corregir obliga a destruir.** Sigue abierto en **EDIT.1** (Metas, Apartados, Inversión, Me deben) y **MC.17f** (transferencias). MOV.1 ya cerró su otra mitad: lo que el dueño sabe editar, se edita desde el ledger.
 > - **P4 El ledger es solo de lectura.** **MOV.1 y MOV.2 cerradas** (2026-07-22): la fila ofrece las acciones de su dominio dueño, y la vista completa se puede buscar y filtrar por texto/dominio/fechas. Patrón cerrado por completo.
 > - **P5 Módulos que no comparten datos con el saldo ni el patrimonio.** **PE.7 cerrada** (2026-07-22): "Me deben" ya descuenta al prestar, acredita al cobrar y aporta el activo "Por cobrar" al patrimonio. Era el único módulo con este problema.
@@ -222,18 +222,11 @@ _(**CAL.1 cerrada** el 2026-07-05: nudge de distribución del ingreso en Inicio,
 
 > Iniciativa "Gastos v2: total protagonista, lista por día y gastos hormiga" ([ADR 039](DECISIONS/039-gastos-v2-visual.md), aceptado 2026-07-14; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar): **COMPLETA el 2026-07-14** (rebanadas GAS.1a-c, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md)). Sexta pantalla de la familia visual v2. **Decisiones de triaje pendientes de la palabra de Esteban** (detalle en el ADR): el **FAB del mockup NO se implementó** (duplicaría el botón central "Registrar" del ADR 024; si lo prefiere, la decisión formal es suya y la implementación es pequeña), la **búsqueda** del header quedó fuera (funcionalidad nueva sin decisión de diseño; tarjeta propia si se pide), y la **comparación tangible del insight hormiga** ("más que tu recibo de luz") se difirió al motor de interpretación (ANL.1). Sin tarjetas pendientes en esta sección.
 
-#### TX.12 - Gastos frecuentes: repetir con un toque en vez de teclear de cero
-- Prioridad  : media
-- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto (2026-07-21), patrón P2.
-- Objetivo   : el gasto cotidiano (almuerzo, café, Uber, panadería) es el registro **más repetido de la app** y hoy se teclea entero cada vez: categoría, monto, descripción, fecha. Derivar "gastos frecuentes" del propio historial (agrupar `S.gastos` por categoría + monto redondeado + descripción, quedarse con los más repetidos del último mes o dos) y ofrecerlos como chips de un toque en el formulario de Registrar gasto, que prellenan todo y dejan al usuario solo confirmar. Incluye "repetir" desde una fila de la lista de Gastos. **Sin dato nuevo ni schema:** todo sale de lo ya registrado, es puro reuso (mismo patrón que ya cerraron AP.5a/AH.5a: prellenar en vez de pedir de nuevo). **Ojo de diseño:** no convertirlo en un catálogo que el usuario deba mantener; si deja de usarse, el chip debe desaparecer solo.
-- Secciones  : Gastos (formulario + lista), hoja "Registrar"
-- Archivos   : `modules/dominio/gastos/logic.js` (derivación pura de frecuentes), `gastos/view.js` (chips en el form, lenguaje FORM.1a ya vigente), `modules/ui/registrar.js` si se expone también ahí
-- Depende de : nada duro; el lenguaje de chips ya existe desde FORM.1a/CAT.2a (no inventar un componente nuevo)
-- Modelo     : Sonnet 5 - Alto (derivación + UI sobre patrones ya establecidos, sin lógica financiera nueva)
-
 _(**TX.8b cerrada** el 2026-07-05: vista completa de Movimientos en ruta propia + Gastos deja de listar categorías internas, ver CHANGELOG. Cierra la iniciativa TX.8 completa. **Su decisión de "ledger solo-lectura" quedó formalmente superada el 2026-07-22 por MOV.1**, con aprobación explícita de Esteban: la fila ahora ofrece las acciones de su dominio dueño. Ver la sección Movimientos.)_
 
 _(**TX.9 completa** el 2026-07-05: TX.9a (categoría primero + descripción deja de ser obligatoria) y TX.9b (categorías personalizadas), ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md).)_
+
+_(**TX.12 cerrada** el 2026-07-23 (patrón P2, segunda pieza junto con CAL.5a el mismo día): gastos frecuentes derivados del historial como chips de un toque en "Nuevo gasto", más "Repetir" desde cada fila de la lista, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md). **Alcance honesto:** la exposición opcional en la hoja "Registrar" (`modules/ui/registrar.js`) que la tarjeta dejaba condicionada ("si se expone también ahí") no se implementó; el patrón ya cubre el caso de uso principal desde Gastos y la hoja "Registrar" queda fuera a propósito, sin tarjeta nueva salvo que Esteban lo pida explícitamente.)_
 
 _(Triaje 2026-07-08, brief "Auditoría UX/UI Gastos": vive completo en la iniciativa **CAT** de Transversal (taxonomía Gastos↔Gastos fijos, categorías contextuales, deduplicación entre secciones, y el rediseño del picker de icono de "Otra categoría" que hoy llena la pantalla con el grid de TX.9b). No genera tarjeta en esta sección para no duplicar la fuente única.)_
 

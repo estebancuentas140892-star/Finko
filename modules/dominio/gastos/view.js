@@ -10,7 +10,7 @@ import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import { CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA, iconoDeCategoriaGasto } from '../../core/constants.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
 import { renderIconoPicker } from '../../infra/icon-picker.js';
-import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen } from './logic.js';
+import { gastosMes, filtrarGastos, ordenarRecientesPrimero, agruparPorDia, totalGastos, variacionMensualGasto, detectarHormigas, iconoPorOrigen, gastosFrecuentes } from './logic.js';
 
 // ── CONSTANTES ───────────────────────────────────────────────────
 
@@ -401,6 +401,10 @@ function _renderGastoItem(gasto, oculto) {
       </div>
       <div class="list-item__action">
         <button class="btn btn-ghost btn-icon"
+                data-action="repetir-gasto"
+                data-id="${_esc(gasto.id)}"
+                aria-label="Repetir este gasto"><svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg></button>
+        <button class="btn btn-ghost btn-icon"
                 data-action="editar-gasto"
                 data-id="${_esc(gasto.id)}"
                 aria-label="Editar gasto"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
@@ -437,6 +441,46 @@ function _renderEmptyFiltro() {
     </div>`;
 }
 
+// ── GASTOS FRECUENTES (TX.12) ────────────────────────────────────
+
+/**
+ * Chips de un toque con los gastos frecuentes del historial (TX.12): cada
+ * chip trae el monto/categoría/cuenta ya calculados en `data-*`, que
+ * `gastos/index.js` lee para prellenar el formulario sin volver a derivar
+ * nada (la vista no repite el cálculo de `gastosFrecuentes`, solo lo pinta).
+ * Solo se ofrecen al crear (`_montarFormGasto` no la pide en modo edición):
+ * repetir un patrón no tiene sentido mientras se edita un registro puntual.
+ *
+ * @returns {string} '' si no hay ningún patrón repetido en el historial.
+ */
+function _renderChipsFrecuentes() {
+  const frecuentes = gastosFrecuentes(S.gastos ?? [], hoy());
+  if (frecuentes.length === 0) return '';
+
+  const chips = frecuentes.map(gr => {
+    const nombre = gr.descripcion || gr.categoria;
+    return `
+      <button type="button" class="gastos-frecuentes__chip"
+              data-action="gastos-repetir-frecuente"
+              data-categoria="${_esc(gr.categoria)}"
+              data-monto="${gr.monto}"
+              data-cuenta-id="${_esc(gr.cuentaId ?? '')}"
+              aria-label="Repetir ${_esc(nombre)} de ${f(gr.monto)}">
+        <svg class="icon" aria-hidden="true"><use href="#i-recurring"/></svg>
+        <span class="gastos-frecuentes__nombre">${_esc(nombre)}</span>
+        <span class="gastos-frecuentes__monto">${f(gr.monto)}</span>
+      </button>`;
+  }).join('');
+
+  return `
+    <div class="form-group">
+      <span class="label" id="gasto-frecuentes-label">Repetir un gasto frecuente</span>
+      <div class="gastos-frecuentes__lista" role="group" aria-labelledby="gasto-frecuentes-label">
+        ${chips}
+      </div>
+    </div>`;
+}
+
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
@@ -453,9 +497,11 @@ function _renderEmptyFiltro() {
  * en edición el registro sigue siendo de una sola cuenta. La pre-selección la
  * ajusta el caller (`_editarGasto`) en modo edición.
  *
+ * @param {{ sugerencias?: boolean }} [opciones] `sugerencias: false` omite los
+ *   chips de gastos frecuentes (TX.12): el caller la pasa en modo edición.
  * @returns {string}
  */
-export function renderFormGasto() {
+export function renderFormGasto({ sugerencias = true } = {}) {
   const cuentas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Si no hay cuentas activas, mostramos un estado vacío en lugar del form.
@@ -499,6 +545,7 @@ export function renderFormGasto() {
 
   return `
     <form id="form-gasto" novalidate>
+      ${sugerencias ? _renderChipsFrecuentes() : ''}
       <div class="monto-hero">
         <label class="monto-hero__label" for="gasto-monto">Monto del gasto</label>
         <div class="monto-hero__box">

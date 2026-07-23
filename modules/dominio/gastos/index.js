@@ -37,6 +37,7 @@ function _nuevoGasto() {
 
   // Re-inyectar el form cada vez: las tarjetas del selector de cuenta
   // dependen de S.cuentas, que puede haber cambiado desde la última apertura.
+  // Sugerencias (TX.12) sí se muestran: es el caso de uso que las motiva.
   _montarFormGasto();
 
   // Pre-rellenar la fecha con hoy para mejor UX.
@@ -161,7 +162,9 @@ function _editarGasto(el) {
   if (!overlay) return;
 
   resetModal(overlay);
-  _montarFormGasto();
+  // TX.12: sin sugerencias en modo edición, repetir un patrón no tiene
+  // sentido mientras se edita un registro puntual ya existente.
+  _montarFormGasto({ sugerencias: false });
 
   const form = document.getElementById('form-gasto');
   if (!form) return;
@@ -199,6 +202,102 @@ function _editarGasto(el) {
 
   const titulo = overlay.querySelector('.modal__title');
   if (titulo) titulo.textContent = 'Editar gasto';
+
+  abrirModal(overlay);
+}
+
+// ── HANDLERS: GASTOS FRECUENTES (TX.12) ─────────────────────────
+
+/**
+ * Aplica una "plantilla" de gasto (monto/categoría/cuenta y, si se conoce,
+ * nota) sobre un formulario recién montado, y deja el foco en el botón de
+ * guardar: el usuario solo confirma (mismo espíritu de prellenado que
+ * AP.5a/AH.5a). La comparten el chip de gasto frecuente (plantilla
+ * sintetizada desde varios registros, sin nota: sería ambigua entre
+ * instancias del grupo) y "Repetir" de una fila puntual de la lista (una
+ * instancia concreta y conocida, la nota sí se copia).
+ *
+ * @param {HTMLFormElement} form
+ * @param {{ monto:number, categoria:string, cuentaId?:string, nota?:string }} datos
+ */
+function _prellenarCamposGasto(form, datos) {
+  const montoEl = form.querySelector('[name="monto"]');
+  if (montoEl) montoEl.value = datos.monto || '';
+
+  const radioCat = form.querySelector(`input[name="categoria"][value="${CSS.escape(datos.categoria ?? '')}"]`);
+  if (radioCat) {
+    radioCat.checked = true;
+    // Dispara el listener delegado de _montarFormGasto (oculta/revela los
+    // campos de "Otra categoría"): una plantilla nunca es __nueva__, pero
+    // mantiene el form coherente si venía abierto en ese estado.
+    radioCat.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  if (datos.cuentaId) {
+    const radioCuenta = form.querySelector(`input[name="cuentaId"][value="${CSS.escape(datos.cuentaId)}"]`);
+    if (radioCuenta) radioCuenta.checked = true;
+  }
+
+  if (datos.nota) {
+    const notaEl = form.querySelector('[name="nota"]');
+    if (notaEl) notaEl.value = datos.nota;
+  }
+
+  form.querySelector('button[type="submit"]')?.focus();
+}
+
+/**
+ * Chip de gasto frecuente: prellena el formulario ya abierto con la
+ * plantilla que trae en sus `data-*` (calculada por `gastosFrecuentes()` al
+ * pintar el form; el handler no vuelve a derivarla).
+ * @param {HTMLElement} el
+ */
+function _repetirFrecuente(el) {
+  const form = document.getElementById('form-gasto');
+  if (!form) return;
+
+  const categoria = el.dataset.categoria || '';
+  const monto     = Number(el.dataset.monto) || 0;
+
+  _prellenarCamposGasto(form, { monto, categoria, cuentaId: el.dataset.cuentaId || '' });
+  announce(`${categoria} de ${f(monto)} prellenado. Confirma el monto y guarda.`);
+}
+
+/**
+ * "Repetir" desde una fila de la lista de Gastos (TX.12): abre el modal en
+ * modo CREACIÓN (no edición: no lleva `form.dataset.id`) prellenado con los
+ * datos del gasto elegido, fechado HOY (es un registro nuevo, no una
+ * corrección del original). Sin sugerencias de frecuentes: el usuario ya
+ * eligió qué repetir.
+ * @param {HTMLElement} el - botón con data-id del gasto a repetir.
+ */
+function _repetirGasto(el) {
+  const id = el.dataset.id;
+  if (!id) return;
+  const gasto = S.gastos.find(g => g.id === id);
+  if (!gasto) return;
+
+  const overlay = document.getElementById('modal-gasto');
+  if (!overlay) return;
+
+  resetModal(overlay);
+  _montarFormGasto({ sugerencias: false });
+
+  const form = document.getElementById('form-gasto');
+  if (!form) return;
+
+  const fechaInput = form.querySelector('#gasto-fecha');
+  if (fechaInput) fechaInput.value = hoy();
+
+  _prellenarCamposGasto(form, {
+    monto:     gasto.monto,
+    categoria: gasto.categoria ?? '',
+    cuentaId:  gasto.cuentaId ?? '',
+    nota:      gasto.nota ?? '',
+  });
+
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = 'Repetir gasto';
 
   abrirModal(overlay);
 }
@@ -306,15 +405,17 @@ function _ajustarSaldoDeuda(compromisoId, delta) {
 
 /**
  * (Re)Inyecta el HTML del formulario de gasto en el modal y attacha el
- * listener de submit. Se llama desde `_nuevoGasto()` y `_editarGasto()` cada
- * vez que el modal se abre, porque las tarjetas del selector de cuenta
- * dependen de `S.cuentas`, que puede cambiar entre aperturas.
+ * listener de submit. Se llama desde `_nuevoGasto()`, `_editarGasto()` y
+ * `_repetirGasto()` cada vez que el modal se abre, porque las tarjetas del
+ * selector de cuenta dependen de `S.cuentas`, que puede cambiar entre
+ * aperturas.
+ * @param {{ sugerencias?: boolean }} [opciones] reenviado a `renderFormGasto`.
  */
-function _montarFormGasto() {
+function _montarFormGasto(opciones = {}) {
   const body = document.getElementById('modal-gasto-body');
   if (!body) return;
 
-  body.innerHTML = renderFormGasto();
+  body.innerHTML = renderFormGasto(opciones);
 
   const form = body.querySelector('#form-gasto');
   if (!form) return;  // empty state (sin cuentas): no hay form, no hay listeners.
@@ -357,6 +458,8 @@ export function initGastos() {
   registrarAccion('nuevo-gasto', _nuevoGasto);
   registrarAccion('editar-gasto', _editarGasto);
   registrarAccion('eliminar-gasto', _eliminarGasto);
+  registrarAccion('repetir-gasto', _repetirGasto);
+  registrarAccion('gastos-repetir-frecuente', _repetirFrecuente);
   registrarAccion('gastos-prev-mes',    _prevMes);
   registrarAccion('gastos-next-mes',    _nextMes);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);

@@ -16,6 +16,7 @@ import {
   validarCategoriaPersonalizada,
   variacionMensualGasto,
   agruparPorDia,
+  gastosFrecuentes,
 } from '../../modules/dominio/gastos/logic.js';
 import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
@@ -1252,5 +1253,251 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
     const cta = empty.querySelector('[data-action="gastos-filtrar-cat"]');
     expect(cta.dataset.cat).toBe('');
     expect(cta.textContent.trim()).toBe('Ver todos');
+  });
+});
+
+// ── gastosFrecuentes (TX.12) ──────────────────────────────────────
+
+describe('gastosFrecuentes', () => {
+  const g = (overrides = {}) => ({
+    id: 'x', monto: 15_000, categoria: 'Alimentación', fecha: '2026-06-10',
+    cuentaId: 'c1', descripcion: '', compromisoId: null,
+    ...overrides,
+  });
+
+  it('devuelve [] con historial vacío o inválido', () => {
+    expect(gastosFrecuentes([], '2026-06-15')).toEqual([]);
+    expect(gastosFrecuentes(null, '2026-06-15')).toEqual([]);
+    expect(gastosFrecuentes([g()], 'basura')).toEqual([]);
+  });
+
+  it('agrupa por categoría + monto y respeta minRepeticiones (default 3)', () => {
+    const gastos = [
+      g({ id: 'a', fecha: '2026-06-01' }),
+      g({ id: 'b', fecha: '2026-06-05' }),
+      g({ id: 'c', fecha: '2026-06-10' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ categoria: 'Alimentación', monto: 15_000, veces: 3 });
+  });
+
+  it('con menos repeticiones que el mínimo, no aparece', () => {
+    const gastos = [g({ id: 'a' }), g({ id: 'b' })];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('minRepeticiones configurable', () => {
+    const gastos = [g({ id: 'a' }), g({ id: 'b' })];
+    const r = gastosFrecuentes(gastos, '2026-06-15', { minRepeticiones: 2 });
+    expect(r).toHaveLength(1);
+    expect(r[0].veces).toBe(2);
+  });
+
+  it('excluye gastos con compromisoId (pagos de fijo/abono)', () => {
+    const gastos = [
+      g({ id: 'a', compromisoId: 'f1' }),
+      g({ id: 'b', compromisoId: 'f1' }),
+      g({ id: 'c', compromisoId: 'f1' }),
+    ];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('excluye montos no positivos o no numéricos', () => {
+    const gastos = [g({ id: 'a', monto: 0 }), g({ id: 'b', monto: -100 }), g({ id: 'c', monto: NaN })];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('excluye gastos sin categoría', () => {
+    const gastos = [g({ id: 'a', categoria: null }), g({ id: 'b', categoria: null }), g({ id: 'c', categoria: null })];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('respeta la ventana de días (default 60): fuera de rango no cuenta', () => {
+    const gastos = [
+      g({ id: 'a', fecha: '2026-01-01' }),
+      g({ id: 'b', fecha: '2026-01-02' }),
+      g({ id: 'c', fecha: '2026-06-10' }),
+    ];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('diasVentana configurable', () => {
+    const gastos = [
+      g({ id: 'a', fecha: '2026-01-01' }),
+      g({ id: 'b', fecha: '2026-01-02' }),
+      g({ id: 'c', fecha: '2026-01-03' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15', { diasVentana: 365 });
+    expect(r).toHaveLength(1);
+  });
+
+  it('no cuenta gastos con fecha futura respecto a hoyISO', () => {
+    const gastos = [
+      g({ id: 'a', fecha: '2026-06-20' }),
+      g({ id: 'b', fecha: '2026-06-21' }),
+      g({ id: 'c', fecha: '2026-06-22' }),
+    ];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toEqual([]);
+  });
+
+  it('redondea el monto a la unidad de $1.000 para agrupar (absorbe variaciones menores)', () => {
+    const gastos = [
+      g({ id: 'a', monto: 14_600 }),
+      g({ id: 'b', monto: 15_200 }),
+      g({ id: 'c', monto: 14_900 }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r).toHaveLength(1);
+    expect(r[0].veces).toBe(3);
+  });
+
+  it('distingue montos genuinamente distintos dentro de la misma categoría', () => {
+    const gastos = [
+      g({ id: 'a', monto: 15_000 }),
+      g({ id: 'b', monto: 15_000 }),
+      g({ id: 'c', monto: 15_000 }),
+      g({ id: 'd', monto: 80_000 }),
+      g({ id: 'e', monto: 80_000 }),
+      g({ id: 'f', monto: 80_000 }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r.map(x => x.monto).sort((a, b) => a - b)).toEqual([15_000, 80_000]);
+  });
+
+  it('distingue descripciones distintas dentro de la misma categoría+monto', () => {
+    const gastos = [
+      g({ id: 'a', descripcion: 'Uber' }),
+      g({ id: 'b', descripcion: 'Uber' }),
+      g({ id: 'c', descripcion: 'Uber' }),
+      g({ id: 'd', descripcion: 'Taxi' }),
+      g({ id: 'e', descripcion: 'Taxi' }),
+      g({ id: 'f', descripcion: 'Taxi' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r.map(x => x.descripcion).sort()).toEqual(['Taxi', 'Uber']);
+  });
+
+  it('descripción sin distinguir tildes ni mayúsculas cae en el mismo grupo', () => {
+    const gastos = [
+      g({ id: 'a', descripcion: 'Café' }),
+      g({ id: 'b', descripcion: 'CAFE' }),
+      g({ id: 'c', descripcion: 'cafe' }),
+    ];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toHaveLength(1);
+  });
+
+  it('conserva la cuenta y la fecha del registro MÁS reciente del grupo', () => {
+    const gastos = [
+      g({ id: 'a', fecha: '2026-06-01', cuentaId: 'vieja' }),
+      g({ id: 'b', fecha: '2026-06-10', cuentaId: 'nueva' }),
+      g({ id: 'c', fecha: '2026-06-05', cuentaId: 'media' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r[0]).toMatchObject({ cuentaId: 'nueva', ultimaFecha: '2026-06-10' });
+  });
+
+  it('ordena por más repetido primero; empate por más reciente', () => {
+    const gastos = [
+      // Café: 3 veces, última el 01.
+      g({ id: 'a', categoria: 'Café', monto: 4_000, fecha: '2026-06-01' }),
+      g({ id: 'b', categoria: 'Café', monto: 4_000, fecha: '2026-06-02' }),
+      g({ id: 'c', categoria: 'Café', monto: 4_000, fecha: '2026-06-03' }),
+      // Uber: 3 veces, última el 12 (más reciente que Café).
+      g({ id: 'd', categoria: 'Uber', monto: 18_000, fecha: '2026-06-10' }),
+      g({ id: 'e', categoria: 'Uber', monto: 18_000, fecha: '2026-06-11' }),
+      g({ id: 'f', categoria: 'Uber', monto: 18_000, fecha: '2026-06-12' }),
+    ];
+    const r = gastosFrecuentes(gastos, '2026-06-15');
+    expect(r.map(x => x.categoria)).toEqual(['Uber', 'Café']);
+  });
+
+  it('maxResultados limita la cantidad devuelta', () => {
+    const gastos = [];
+    for (const cat of ['A', 'B', 'C']) {
+      for (let i = 0; i < 3; i++) {
+        gastos.push(g({ id: `${cat}${i}`, categoria: cat, monto: 10_000, fecha: `2026-06-0${i + 1}` }));
+      }
+    }
+    const r = gastosFrecuentes(gastos, '2026-06-15', { maxResultados: 2 });
+    expect(r).toHaveLength(2);
+  });
+
+  it('tolera entradas malformadas dentro del array', () => {
+    const gastos = [null, undefined, 'x', g({ id: 'a' }), g({ id: 'b' }), g({ id: 'c' })];
+    expect(gastosFrecuentes(gastos, '2026-06-15')).toHaveLength(1);
+  });
+});
+
+// ── renderFormGasto() - chips de gastos frecuentes (TX.12) ───────
+
+describe('renderFormGasto() - chips de gastos frecuentes (TX.12)', () => {
+  const cuenta = (id, nombre, saldo = 500_000) => ({
+    id, nombre, saldo, banco: 'Nequi', tipo: 'Ahorros', activa: true,
+  });
+  const g = (overrides = {}) => ({
+    id: 'x', monto: 15_000, categoria: 'Alimentación', fecha: '2026-06-10',
+    cuentaId: 'c1', descripcion: '', compromisoId: null,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    S.cuentas = [cuenta('c1', 'Bancolombia')];
+    S.gastos  = [];
+  });
+
+  it('sin patrones repetidos, no muestra la sección de frecuentes', () => {
+    S.gastos = [g({ id: 'a' }), g({ id: 'b' })]; // solo 2, bajo el mínimo
+    const html = renderFormGasto();
+    expect(html).not.toContain('gastos-frecuentes__chip');
+  });
+
+  it('con un patrón repetido, pinta un chip con nombre y monto', () => {
+    S.gastos = [g({ id: 'a' }), g({ id: 'b' }), g({ id: 'c' })];
+    const html = renderFormGasto();
+    expect(html).toContain('gastos-frecuentes__chip');
+    expect(html).toContain('data-action="gastos-repetir-frecuente"');
+    expect(html).toContain('data-categoria="Alimentación"');
+    expect(html).toContain('data-monto="15000"');
+    expect(html).toContain('data-cuenta-id="c1"');
+  });
+
+  it('sugerencias: false omite los chips aunque haya patrones', () => {
+    S.gastos = [g({ id: 'a' }), g({ id: 'b' }), g({ id: 'c' })];
+    const html = renderFormGasto({ sugerencias: false });
+    expect(html).not.toContain('gastos-frecuentes__chip');
+  });
+
+  it('usa la descripción como nombre del chip cuando existe', () => {
+    S.gastos = [
+      g({ id: 'a', descripcion: 'Uber' }),
+      g({ id: 'b', descripcion: 'Uber' }),
+      g({ id: 'c', descripcion: 'Uber' }),
+    ];
+    const html = renderFormGasto();
+    expect(html).toContain('>Uber<');
+  });
+});
+
+// ── _renderGastoItem() - botón "Repetir" (TX.12) ─────────────────
+
+describe('renderListaGastos() - botón Repetir en cada fila (TX.12)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-gastos"></div>';
+    const d = new Date();
+    const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-10`;
+    S.gastos = [gastoBase({ id: 'g1', fecha })];
+    S.compromisos = [];
+    S.categoriasPersonalizadas = [];
+    S.config = { ...S.config, ocultarSaldo: false };
+    setFiltroCategoria(null); // un test anterior en este archivo puede dejar un filtro activo
+  });
+
+  it('cada fila trae un botón "Repetir este gasto" con el id del gasto', () => {
+    renderListaGastos();
+    const btn = document.querySelector('[data-action="repetir-gasto"]');
+    expect(btn).not.toBeNull();
+    expect(btn.dataset.id).toBe('g1');
+    expect(btn.getAttribute('aria-label')).toBe('Repetir este gasto');
   });
 });
