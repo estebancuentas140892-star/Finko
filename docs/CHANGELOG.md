@@ -10,6 +10,23 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(workflow): matriz de decisión de modelo integrada en §2.3 · 2026-07-23
+
+El usuario propuso un "Selector inteligente de modelo y nivel de esfuerzo" con matriz de puntuación (0-55) y modo "Ultracode" multiagente. Triaje (regla 2.7): pisaba la decisión ya existente de `CLAUDE.md` §2.3, así que se fusionó en vez de duplicar (fuente única). Se reconciliaron los conflictos con las restricciones reales del proyecto y del CLI.
+
+- **Matriz de desempate** (11 criterios × 5 = 55) agregada a §2.3, con umbrales mapeados a las combinaciones válidas ya vigentes. Se usa **solo en tareas no triviales o ambiguas**; el bloque `Próximo paso` liviano sigue siendo el default (evita el overhead de puntuar 11 criterios en cada respuesta).
+- **Conflictos resueltos:** `Max` sigue reservado a Fable 5 (la propuesta lo daba también a Opus). "Ultracode" no existe como modo nativo del CLI: se traduce a reparto en **subagentes** (tool `Agent`), y solo cuando Paralelización ≥ 4, Agentes ≥ 4 y el usuario lo pide de forma explícita.
+- **Restricción real documentada:** el modelo del turno lo fija el usuario al lanzar; el asistente no se auto-cambia de modelo a mitad de respuesta. La matriz alimenta la recomendación del `Próximo paso`, la modulación de esfuerzo dentro del turno y la elección de modelo por subagente.
+
+**Archivos tocados**
+
+- `CLAUDE.md`: nueva subsección "Matriz de decisión" dentro de §2.3; fecha de revisión 2026-07-05 → 2026-07-23.
+- `docs/CHANGELOG.md`: esta entrada.
+
+Sin impacto en código ni tests (cambio de protocolo de trabajo). Verificación: cero em dash en el texto nuevo (regla §7.1).
+
+---
+
 ### feat(metas): EDIT.1a editar sin destruir el progreso · 2026-07-23
 
 Primera de cuatro rebanadas del patrón **P3** de la auditoría de UX/producto (no se puede editar, corregir obliga a destruir). Metas solo permitía crear, abonar y eliminar: corregir un nombre mal escrito o un objetivo obligaba a eliminar y recrear la meta, perdiendo el progreso acumulado en el camino. Apartados, Inversión y Me deben quedan como las tres rebanadas siguientes en **EDIT.1**.

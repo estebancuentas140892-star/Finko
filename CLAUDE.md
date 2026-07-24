@@ -1,7 +1,7 @@
 # CLAUDE.md - Finko Claude
 
 > **Este archivo es el punto de entrada para Claude Code (y cualquier asistente IA) al abrir esta carpeta.**
-> Última revisión: 2026-07-05
+> Última revisión: 2026-07-23
 
 ---
 
@@ -121,6 +121,22 @@ La optimización de tokens es el criterio de desempate, nunca el criterio princi
 | **Fable 5 - Max**     | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).     |
 
 **Regla práctica de escalado:** empezar con el modelo más sencillo que pueda resolver la tarea. Si falta profundidad, subir primero el **nivel de esfuerzo** dentro del mismo modelo; solo cuando el alcance supere al modelo, saltar al siguiente (Haiku → Sonnet → Opus → Fable).
+
+**Matriz de decisión (desempate, solo para tareas no triviales o ambiguas).** Cuando las tablas de arriba no dejen clara la combinación, puntuar de 0 (no aplica) a 5 (muy alto) cada criterio y sumar: tamaño del trabajo, archivos involucrados, complejidad técnica, complejidad del razonamiento, riesgo de introducir errores, necesidad de planificación, dependencias entre módulos, decisiones críticas, contexto prolongado, paralelización conveniente, agentes especializados (11 criterios, máximo 55).
+
+| Total | Modelo + nivel (respetando siempre las combinaciones válidas de arriba)                         |
+|---    |---                                                                                              |
+| 0-10  | Haiku 4.5                                                                                        |
+| 11-22 | Sonnet 5 - Bajo/Medio                                                                            |
+| 23-34 | Sonnet 5 - Alto (Opus 4.8 - Alto si toca lógica financiera CO o una decisión crítica)           |
+| 35-45 | Opus 4.8 - Extra                                                                                 |
+| 46-55 | Fable 5 - Alto/Extra/Max (Max solo si el razonamiento es crítico y equivocarse cuesta caro)      |
+
+El puntaje es una guía, no un veredicto: si el "Orden de prioridad" pide subir por calidad, se sube. **Max sigue reservado a Fable 5**, nunca a Opus.
+
+**Paralelización con subagentes (lo que aquí reemplaza a "Ultracode").** Este CLI no tiene un modo nativo multiagente. Solo si Paralelización ≥ 4 **y** Agentes ≥ 4 **y** el usuario lo pide de forma explícita, se reparte el trabajo en subagentes (tool `Agent`, con el modelo de cada uno elegido por esta misma matriz) y se consolida con revisión cruzada. Sin pedido explícito no se lanzan subagentes.
+
+**Cómo se aplica (restricción real).** El modelo del turno en curso lo fija el usuario al lanzar: el asistente no se cambia de modelo a mitad de respuesta. La matriz alimenta tres cosas: (a) la recomendación del bloque `Próximo paso` para el siguiente turno, (b) cuánto razonamiento/esfuerzo se aplica dentro del turno actual, (c) el modelo de cada subagente cuando el usuario pide paralelizar. No imprimir la matriz en tareas obvias: el `Próximo paso` liviano es el default; la matriz es solo para desempatar.
 
 **Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después de verificar y commitear lo actual**, no qué se hace **ahora**. Si el usuario pide encadenar tareas, recordar esta regla y proponer hacer la primera, verificar en la app, y recién después la segunda.
 
