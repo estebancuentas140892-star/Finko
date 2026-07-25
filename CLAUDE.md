@@ -264,38 +264,41 @@ pnpm run format
 
 > Estas reglas aplican a **todo texto** generado en el proyecto: respuestas en chat, commits, comentarios de código, documentación (`.md`), microcopy de UI, mensajes de error, alertas, nudges, tests, scripts.
 
-### 7.1 Prohibido el guion largo `-` (em dash, U+2014)
+### 7.1 Prohibidos el guion largo (U+2014) y el guion medio (U+2013)
 
-**Nunca** usar el carácter `-` en ningún texto del proyecto. Tampoco usar `-` (en dash, U+2013) ni variantes Unicode similares.
+**Nunca** usar esos dos caracteres, ni variantes Unicode similares, en ningún texto del proyecto. Se nombran por codepoint a propósito: escribirlos aquí para prohibirlos haría que este mismo archivo los contuviera y la regla dejaría de poder verificarse.
 
-**Por qué:** confunde lectores, no se escribe con teclado estándar en español/inglés, no copia/pega bien entre editores y terminales, y rompe el tono natural del proyecto.
+**Por qué:** confunden al lector, no se escriben con teclado estándar en español, no copian bien entre editores y terminales, y rompen el tono natural del proyecto.
 
 **Qué usar en su lugar** (en orden de preferencia):
 
-| En vez de `-` | Usar | Ejemplo |
+| Para | Usar | Ejemplo |
 |---|---|---|
-| Pausa o aclaración | `:` (dos puntos) | "Resumen: 702 tests verdes." |
+| Pausa o aclaración | `:` (dos puntos) | "Resumen: 2981 tests verdes." |
 | Apertura de explicación | `.` (punto y aparte) | "App estable. Modo mantenimiento." |
 | Inciso corto | `(...)` (paréntesis) | "El SMMLV (vigente 2026) es $1.750.905." |
-| Conector de continuación | `-` (guion simple) | "Sonnet 4.6 - Alto." |
+| Conector de continuación | `-` (guion simple) | "Fase 2 - purga del tablero." |
 | Rango numérico | `-` (guion simple) o "a" | "30-90 min" / "30 a 90 min" |
 | Separador visual | `,` (coma) | "Calidad primero, ahorro segundo." |
 
 ### 7.2 Cómo verificarlo
 
-Antes de commitear cualquier texto nuevo, buscar `-` en los archivos modificados:
+Antes de commitear texto nuevo, en Git Bash:
 
 ```bash
-grep -rn "-" archivo.md       # debe devolver 0 líneas
-grep -rn $'-' archivo.md # alternativa explícita
+git ls-files -z '*.md' '*.js' '*.css' '*.html' | LC_ALL=C.UTF-8 xargs -0 grep -nP '[\x{2013}\x{2014}]'
 ```
 
-En VS Code: `Ctrl+F` con el carácter `-` pegado al campo de búsqueda.
+**Salida vacía significa cero guiones largos.** Tres detalles que hacen que el comando funcione, y que se aprendieron rompiéndolo:
+
+- `LC_ALL=C.UTF-8` va **sobre el `xargs`**, no al principio de la línea: sin él `grep -P` falla con "supports only unibyte and UTF-8 locales", y puesto antes del `git` no llega al `grep`.
+- `git ls-files` limita la búsqueda a los archivos **trackeados**: recorrer el árbol con `grep -r` tarda minutos por `node_modules/` y da falsos positivos en `coverage/`, que es artefacto generado.
+- La herramienta `Grep` de Claude Code acepta el mismo patrón `[\x{2013}\x{2014}]` sin forzar el locale.
 
 ### 7.3 Excepción única
 
-Los `-` que aparezcan en datos de usuario provenientes de copy/paste externo (por ejemplo, un import CSV con notas que contienen guiones largos) **se preservan tal cual**. La regla aplica a texto que escribimos nosotros, no a contenido del usuario.
+Los guiones largos que aparezcan en datos del usuario provenientes de copy/paste externo (por ejemplo, un import CSV con notas que los contienen) **se preservan tal cual**. La regla aplica al texto que escribimos nosotros, no al contenido del usuario.
 
-### 7.4 Limpieza progresiva
+### 7.4 Estado de la limpieza
 
-Los archivos existentes (`HANDOFF.md`, `CHANGELOG.md`, `CLAUDE.md`, etc.) tienen `-` heredados. **No es obligatorio limpiarlos de golpe**: cuando se toque un archivo `.md` por otra razón, aprovechar para reemplazar los `-` por la alternativa correcta. En texto nuevo, la regla es estricta: cero `-`.
+**Terminada.** El repo tiene cero U+2014 y cero U+2013, contados por codepoint el 2026-07-24 con el comando de 7.2. Ya no es una limpieza progresiva pendiente: es un invariante que se verifica al cerrar cada tarea.

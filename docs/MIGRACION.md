@@ -312,13 +312,13 @@ Techos de los archivos vivos:
 for f in CLAUDE.md README.md docs/HANDOFF.md docs/BOARD.md docs/BUGS.md docs/CHANGELOG.md docs/ARCHITECTURE.md docs/CONTRIBUTING.md docs/DESIGN_SYSTEM.md docs/SECURITY.md docs/OPERACION.md; do printf '%6s KB  %s\n' "$(( ($(wc -c < "$f") + 1023) / 1024 ))" "$f"; done
 ```
 
-Guiones largos. La versión de CLAUDE.md §7.2 no puede pasar nunca porque busca un guion simple, y `grep -P` a secas falla en este entorno (`-P supports only unibyte and UTF-8 locales`). Esta funciona, probada contra un archivo de control con U+2014 y U+2013:
+Guiones largos, ya corregido en CLAUDE.md §7.2 (Fase 2.4). La versión anterior no podía pasar nunca porque buscaba un guion simple. Esta se probó contra un archivo de control con U+2014 y U+2013:
 
 ```bash
-LC_ALL=C.UTF-8 grep -rnP '[\x{2013}\x{2014}]' --include='*.md' --include='*.js' --include='*.css' --include='*.html' . | grep -v node_modules
+git ls-files -z '*.md' '*.js' '*.css' '*.html' | LC_ALL=C.UTF-8 xargs -0 grep -nP '[\x{2013}\x{2014}]'
 ```
 
-Salida vacía significa cero guiones largos. La herramienta `Grep` de Claude Code acepta el mismo patrón `[\x{2013}\x{2014}]` sin necesidad de forzar el locale.
+Salida vacía significa cero guiones largos. Tres detalles que costaron tres intentos: `LC_ALL` va sobre el `xargs` (antes del `git` no llega al `grep`, y sin él `grep -P` falla por locale); `git ls-files` evita recorrer `node_modules/` (minutos) y los falsos positivos de `coverage/`, que es generado; y la herramienta `Grep` de Claude Code acepta el mismo patrón sin forzar locale.
 
 Enlaces internos vivos (Fase 5): extraer los destinos `.md` de todos los enlaces y comprobar que el archivo existe.
 
