@@ -20,7 +20,7 @@ _(vacío: elegir la siguiente tarjeta de "Pendientes")_
 2. Abrir la ficha de su sección en [`contexto/`](contexto/README.md): si el bloque de la funcionalidad existe y está vigente, trabajar desde ahí sin re-explorar el proyecto; si no existe, el primer paso de la tarea es el análisis profundo + escribir el bloque (`/CLAUDE.md` sección 3).
 3. Moverla a "En proceso" con la fecha de inicio.
 4. Trabajarla en una sola sesión cuando sea posible; verificar en la app + tests verdes.
-5. Al cerrar: commit → actualizar la ficha de [`contexto/`](contexto/README.md) → **borrar la tarjeta de este archivo** → agregar entrada en [`CHANGELOG.md`](CHANGELOG.md) → actualizar [`HANDOFF.md`](HANDOFF.md) (últimas 5) → si cerró un error, borrarlo de [`BUGS.md`](BUGS.md).
+5. Al cerrar: ejecutar la skill `cerrar-tarea`, que es dueña de la secuencia completa (compuertas, orden de documentos, techos). De esa secuencia, lo que toca a este archivo es **borrar la tarjeta**.
 
 Campos de una tarjeta:
 
@@ -35,11 +35,7 @@ Campos de una tarjeta:
 - Modelo     : capacidad + nivel sugeridos (ver la skill `elegir-modelo`)
 ```
 
-Reglas de las tarjetas (ver la skill `triaje-tarea`):
-
-- **Sin duplicados:** antes de crear una tarjeta, buscar otras sobre la misma funcionalidad, sección o componente; si comparten objetivo o tocan la misma parte del sistema, consolidarlas en una sola (la más completa absorbe a las demás).
-- **Dividir lo grande:** una tarjeta que toque varios dominios o varias capas (lógica, vista, estilos, datos, accesibilidad, tests) se parte en subtareas verificables de forma independiente (sufijos `a`/`b` o slices), encadenadas con "Depende de".
-- **Triaje antes de ejecutar:** toda tarea nueva del usuario pasa primero por triaje contra este tablero, los ADRs y las fichas de contexto (¿existe parcial?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere?). La tarjeta "En proceso" no se abandona por ideas nuevas; cada funcionalidad tiene UNA sola entrada canónica (tarjeta o iniciativa) y las mejoras relacionadas se integran ahí.
+Antes de crear una tarjeta nueva: skill `triaje-tarea`, dueña de las reglas (sin duplicados, dividir lo grande, fuente única por funcionalidad, continuidad de la tarea activa).
 
 ---
 
@@ -138,7 +134,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
 - Modelo     : cada rebanada MC.13e-2 lleva el suyo (ver abajo)
 
-> **Análisis de MC.13e-2 (2026-07-15): mapa del asistente actual antes de re-cortar.** El asistente vive en `tesoreria/views/distribucion.js` (`_renderTarjetaDistribuir` = tarjeta compacta de entrada; `_renderContenidoAsistente` = contenido del modal: chips de preset + editor personalizado + `_renderPanelDistribuir`) y `acciones/distribucion.js` (apertura, navegación entre pasos, recálculo en vivo, `_confirmarDistribucion` = apply). Hoy tiene hasta 3 pasos dinámicos (Necesidades → Ahorro/deudas/inversiones → Estilo de vida, solo se crean los que tienen contenido). Los "accesos cruzados" del punto 11 son el array `ctas` de `sugerirDistribucionIngreso()` (`logic/distribucion.js` líneas 699-718: "Activar/Ver progreso del fondo", "Explorar/Aportar a inversiones", "Ver estrategia de deudas", "Ver tu seguimiento en Límites de gasto"), hoy renderizado solo en la tarjeta compacta (`_renderTarjetaDistribuir`), no dentro del modal. Re-cortado en 7 rebanadas por riesgo e independencia (regla 2.1):
+> **Rebanadas de MC.13e-2**, re-cortadas por riesgo e independencia (regla 2.1). El mapa del asistente (qué función vive en qué archivo, con líneas) es la tabla de anclas de [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md): leerla antes de iniciar cualquiera de estas rebanadas.
 
 #### MC.13e-2b - Quitar "Abonar extra a deudas" del asistente
 - Prioridad  : media
@@ -228,7 +224,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Apartados (dominio `apartados`)
 
-> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). Filosofía redefinida por Esteban: Apartados NO es "ahorrar para objetivos grandes" (eso es Metas), es preparar los gastos esporádicos que se olvidan presupuestar (SOAT, regalos, Navidad, veterinario, mantenimientos, impuestos...) para que al llegar la fecha el dinero ya esté reservado. **Derivados a fuentes únicas:** las categorías que realmente son Metas (Vacaciones, Semestre, Computador, Viajes) → **CAT.1 ampliada** (la taxonomía Apartados↔Metas es la misma clase de decisión que Gastos↔Fijos, una sola pasada); el picker de icono (hoy depende del selector de emojis del SO, Win+.) → **CAT.2** (consumidor n.º 5; nota: el `icono` de apartados hoy es emoji como dato del usuario, exento de TX.4, y pasaría a símbolo del sprite: decidir la migración en CAT.3); "Otro" con nombre+icono → **CAT.3**.
+> **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). El criterio Apartados vs Metas (un apartado es una obligación previsible, una meta es un deseo) es del [ADR 007](DECISIONS/007-dominio-apartados.md); su aplicación al catálogo, del [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md). **Derivados a fuentes únicas:** categorías que en realidad son Metas → **CAT.1**; picker de icono → **CAT.2** (nota: el `icono` de apartados hoy es emoji como dato del usuario, exento de TX.4, y pasaría a símbolo del sprite: decidir la migración en CAT.3); "Otro" con nombre+icono → **CAT.3**.
 
 #### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle
 - Prioridad  : media
@@ -258,7 +254,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)
 
-> **Iniciativa "Fondo de emergencia v2"** (brief de Esteban del 2026-07-08, 3 puntos). La base automatizada ya existe en gran parte: AH.2 (cerrada) calcula el aporte recomendado con datos reales, AH.4/ADR 021 recuerda el día de ingreso, y el punto 21 de MC.13 ya contempla que el fondo muestre su cuota del período en la distribución. **Derivados:** el punto 1 ("Empty State" literal visible al desactivar el fondo) era un bug de copy, **corregido el 2026-07-11 (BUG-012, ver CHANGELOG)**; el cálculo e integración del aporte con "Distribuir mi ingreso" → **MC.13** (el fondo ya era consumidor del motor).
+> **Iniciativa "Fondo de emergencia v2"** (brief de Esteban del 2026-07-08, 3 puntos). La base automatizada ya existe: AH.2 calcula el aporte recomendado y AH.4/[ADR 021](DECISIONS/021-recordatorio-dia-de-ingreso.md) recuerda el día de ingreso. **Derivados a fuente única:** el cálculo e integración del aporte con "Distribuir mi ingreso" → **MC.13** (el fondo ya es consumidor del motor). Queda solo AH.5, abajo.
 
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media
@@ -289,7 +285,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Me deben (dominio `personales`)
 
-> **Iniciativa "Me deben v2: seguimiento inteligente"** (brief de Esteban del 2026-07-08, 8 puntos). Fuente única de la sección. La base ya existe: PE.1 (cerrada) introdujo la tasa opcional y el reparto capital/interés (`tasa`, `capitalPagado`, `interesPagado`, `interesPendiente`, schema v21); PE.2 a PE.5 (cerradas) los estados humanizados. Esta iniciativa los evoluciona. **Derivados a fuentes externas:** los recordatorios de vencimiento ("mañana vence el préstamo de Juan") → **CFG.3** (motor único de notificaciones anticipatorias; `personales` añadido como fuente); la fecha por defecto = hoy en el form → **CAT.4** (auditoría transversal de formularios, ampliada con defaults de fecha para toda la app).
+> **Iniciativa "Me deben v2: seguimiento inteligente"** (brief de Esteban del 2026-07-08, 8 puntos). Fuente única de la sección. PE.1 a PE.5 cerradas dejaron la base sobre la que PE.6 construye: tasa opcional con reparto capital/interés (schema v21) y estados humanizados. **Derivados a fuentes externas:** recordatorios de vencimiento → **CFG.3** (motor único de notificaciones; `personales` añadido como fuente); fecha por defecto = hoy en el form → **CAT.4**.
 
 #### PE.6 - Me deben v2: intereses acumulados, historial de abonos, rendimiento y confianza
 - Prioridad  : media-alta
@@ -420,7 +416,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
 - Modelo     : Opus 4.8 - Alto (si se hace)
 
-> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), estado **Propuesta**), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **Nada de esto se implementa sin la validación de Esteban:** el ADR espera 5 respuestas (P1 alcance del degradado, P2 formas compartidas vs por sección, P3 ratificar el lenguaje único de iconos, P4 lote inicial de ilustraciones, P5 sombra en reposo en ambos temas), todas con recomendación escrita. Las rebanadas DV.2a-d están abajo.
+> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), estado **Propuesta**), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **Nada de esto se implementa sin la validación de Esteban:** el ADR espera 5 respuestas (sección "Preguntas abiertas P1 a P5", cada una con su recomendación escrita). Las rebanadas DV.2a-d están abajo.
 
 #### DV.2a - Tokens de superficie/elevación + degradado de identidad (D1+D2 del ADR 033)
 - Prioridad  : alta (primera rebanada de la dirección visual; DV.2b/c/d y las iniciativas v2 construyen encima)
@@ -547,7 +543,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5, fusionados: son la misma auditoría vista desde dos lados). **Revisa el [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)** (banner de propósito por sección, base de la divulgación progresiva EP.7): decirlo formalmente al iniciar. La filosofía pedida ya existe en varios puntos y se adopta como principio transversal: el CTA "necesitas una cuenta" lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, "Gestionar" llevará al Calendario (Inicio v2), el fondo recomendará su aporte en la distribución (AH.5/MC.13), Deudas ya enlaza a Estrategias. Alcance: (4) auditar TODOS los caminos de "sección conduce a la siguiente cuando hace falta" y completar los que falten (Gastos→Límites al detectar excesos ya está previsto en LIM.1 punto 4; Metas→Distribuir en MT.6); (5) auditoría de la información inicial de cada sección (banner de propósito + hints + empty states + botones "comenzar"): qué aporta, qué se repite, qué se elimina, qué se fusiona. **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners `renderBannerProposito`, hints); los rediseños internos de cada sección viven en sus iniciativas v2 (Inicio v2, Deudas v2, Mis Cuentas v2, Fondo v2, ANL.1...), que deben aplicar este principio, no duplicarlo.
+> **Iniciativa GU.1: guía por navegación (aprender usando, no leyendo)** (6.º lote, 2026-07-08, brief General puntos 4+5). **Revisa el [ADR 016](DECISIONS/016-banner-proposito-de-seccion.md)** (banner de propósito por sección): decirlo formalmente al iniciar, no desmontarlo en silencio. El principio ya se aplica en varios puntos (el CTA de cuenta lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, el fondo recomienda su aporte en la distribución) y se adopta como transversal. **Regla anti-doble-trabajo:** GU.1 define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus iniciativas v2, que aplican este principio en vez de duplicarlo.
 
 #### GU.1a - Auditoría del sistema de guía + revisión del ADR 016
 - Prioridad  : media
@@ -559,7 +555,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa LEG: Centro Legal y cumplimiento** (7.º lote, 2026-07-08, brief General de 9 puntos). **Hueco real hoy: la app está en producción sin ningún documento legal** (verificado: cero términos, privacidad o disclaimers formales; solo existen los avisos puntuales tipo "confirma con un contador" del monitor de renta). **Acoplamiento señalado con CFG.4:** el contenido del paquete depende de esa decisión de ADN. Con el modelo actual local-only, la política de privacidad es la fortaleza del producto ("tus datos se guardan solo en tu dispositivo, Finko no recolecta nada") y la Ley 1581/Habeas Data aplica de forma mínima; si CFG.4 aprueba cuentas/sync, el paquete se reescribe (responsable del tratamiento, canales de derechos, evidencia de consentimiento verificable). **Decisión de secuencia recomendada: redactar YA para el modelo local-only vigente** (cubre la producción actual) con cláusula de versionado, y revisar si CFG.4 cambia el ADN. **Gate final (punto 9 del brief): la revisión de todo el paquete por un abogado colombiano antes del lanzamiento oficial es trabajo profesional externo, no una tarea de código ni de IA**: las tarjetas de abajo producen borradores informados y el inventario de funciones sensibles PARA esa revisión (el mismo principio que Finko aplica a sus usuarios: orienta, no dictamina). Los documentos legales siguen el ADN 11: resumen en lenguaje claro por sección + texto formal.
+> **Iniciativa LEG: Centro Legal y cumplimiento.** El paquete, su estado por documento, el checklist de datos pendientes y el gate de revisión por abogado colombiano viven en [`legal/README.md`](legal/README.md), su dueño. **Decisión de secuencia vigente: redactar para el modelo local-only actual** con cláusula de versionado, sin esperar a CFG.4; si el [ADR 043](DECISIONS/043-sincronizacion-multidispositivo-y-cuentas.md) aprueba cuentas o sync, el paquete se reescribe. La revisión del abogado es trabajo profesional externo, no una tarea de código: las tarjetas de acá producen borradores e inventario **para** esa revisión.
 
 #### LEG.2 - Aceptación obligatoria versionada (onboarding + re-aceptación en cambios)
 - Prioridad  : alta
@@ -572,7 +568,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada: LG.2a, LG.2b y LG.2c cerradas** (ver [CHANGELOG](CHANGELOG.md)); nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos. Contexto original: **requería ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos.** Alcance completo, regla anti-gaming (D2) y catálogo: **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada), su dueño. LG.2a, LG.2b y LG.2c cerradas (ver [CHANGELOG](CHANGELOG.md)); quedan LG.2d y LG.2e, abajo. **Dos cosas vigentes que el ADR no cierra:** los nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos, y al cerrar LG.2d hay que marcar el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) como Superada (la vitrina se muda de Ajustes: decirlo formalmente, no moverla en silencio). Disciplina de rendimiento del ADR 022 que se mantiene: evaluadores O(1), evaluación barata por `state:change`.
 
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
 - Prioridad  : baja (bloqueada)
