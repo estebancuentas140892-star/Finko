@@ -78,6 +78,28 @@ Cascada:
 
 Este archivo la contiene (sección 6), con los 89 archivos y las columnas pedidas: archivo actual → nuevo destino → acción → motivo.
 
+### Ajuste 7 (final): `CLAUDE_DESIGNS_PROMPT.md` se archiva, no se elimina
+
+Motivo del usuario: aunque no debe formar parte del contexto activo, conserva valor como exploración de diseño y referencia futura.
+
+Cascada:
+- Pasa a `docs/archive/CLAUDE_DESIGNS_PROMPT.md` con nota de archivado en la cabecera, misma convención que `REDESIGN_2026.md`: *"Documento archivado por no representar la dirección actual del sistema de diseño."*
+- Deja de ser un borrado, así que entra en la **Fase 2** (consolidación) en vez de la Fase 4 y ya no necesita confirmación previa.
+- **Ya no hace falta rescatar un párrafo en el ADR 031**: se conserva el documento completo, que es más fiel que un resumen. El ADR 031 queda intacto (principio 7).
+- Se trackea en git al archivarlo: hoy son 16,7 KB de contenido fuera de control de versiones.
+- Es el primer caso de uso nuevo de `archive/`, la carpeta que el ajuste 4 salvó, y valida su contrato: aquí viven documentos completos superados, no cronología.
+
+### Ajuste 8 (final): la escala de modelos se vuelve independiente de versiones
+
+Motivo del usuario: no dejar nombres de versiones que queden obsoletos rápido, y que la skill pueda actualizar la tabla sin modificar CLAUDE.md.
+
+Cascada:
+- **CLAUDE.md v2 no nombra ningún modelo.** Habla de tres niveles de capacidad: **máxima capacidad** (decisiones arquitectónicas complejas, lógica financiera CO, debugging sin pista), **equilibrado** (implementación normal siguiendo patrones existentes), **ligero** (tareas mecánicas, verificaciones, renombres).
+- El bloque `Próximo paso` cambia una línea de formato: `Modelo sugerido : <capacidad> (<modelo vigente>) - <nivel>`. La capacidad y el formato los fija CLAUDE.md; el nombre concreto sale de la skill.
+- La equivalencia capacidad → modelo vigente vive **solo** en `elegir-modelo`. Va en el `description` de su frontmatter, que ya está siempre en contexto (~60 tokens): el nombre vigente está disponible en cada respuesta sin cargar el cuerpo de la skill, y actualizarlo es editar un archivo que no es CLAUDE.md, exactamente lo pedido.
+- La matriz de 11 criterios y la tabla de casos se reescriben en términos de capacidad + nivel, sin nombres de versión.
+- **Consecuencia pendiente para la Fase 4:** el campo `Modelo` de las ~40 tarjetas del tablero hoy dice "Opus 4.8 - Alto", "Fable 5 - Extra" y similares. Migra a capacidad cuando cada tarjeta se toque por otra razón (mismo criterio progresivo de la sección 7.4 de CLAUDE.md), no en un barrido aparte.
+
 ---
 
 ## 2. Decisión de nombres: inglés vs español
@@ -241,7 +263,7 @@ Formato: **propósito** (la única pregunta que responde) · **no entra** (lo qu
 | `auditor-finko` | auditoría integral simulando un usuario colombiano real | metodología de 5 fases, escenario, **una** lista de 7 perspectivas, formato del informe | "cuándo usar este skill" (peso muerto: se lee después de invocarla), los 4 bloques de preguntas repetidos | existe; 452 → ~250 líneas |
 | `cerrar-tarea` | verificar, commitear y actualizar docs al cerrar | las 4 compuertas ejecutables, rotación del changelog si cambió el mes, secuencia de 4 archivos + 2 condicionales, chequeo de techos, sello `Revisado:`, plantilla del reporte de supervisión | matriz de modelos, triaje | CLAUDE.md §2.4 + CONTRIBUTING + contexto/README §2.2 |
 | `triaje-tarea` | decidir si una tarea nueva se ejecuta, se integra o se difiere | las 5 preguntas, los 3 resultados, criterios de priorización, "pensar como arquitecto", plantilla de tarjeta, regla de fusión de duplicadas | cierre, matriz de modelos | CLAUDE.md §2.7 + parte de §2.1 |
-| `elegir-modelo` | desempatar modelo + nivel en tareas no obvias | escala de modelos, tabla de combinaciones, matriz de 11 criterios, política de subagentes | el formato del bloque `Próximo paso` (queda en CLAUDE.md: aplica en cada respuesta) | CLAUDE.md §2.3 |
+| `elegir-modelo` | desempatar capacidad + nivel en tareas no obvias | los 3 niveles de capacidad con sus casos, matriz de 11 criterios, política de subagentes, y **la única equivalencia capacidad → modelo vigente del proyecto**, publicada en el `description` del frontmatter (ajuste 8) | el formato del bloque `Próximo paso` (queda en CLAUDE.md: aplica en cada respuesta) | CLAUDE.md §2.3 |
 
 ### CLAUDE.md v2: esqueleto
 
@@ -251,7 +273,7 @@ Formato: **propósito** (la única pregunta que responde) · **no entra** (lo qu
 |---|---|
 | 0. Identidad y estado | Finko en 4 líneas + versión. El árbol de carpetas se va a ARCHITECTURE |
 | 1. Mapa de documentos | tabla única "documento / cuándo leerlo / qué NO buscar ahí" (funde las secciones 0 y 5 actuales, sin el enlace muerto a `FINANCIAL_LOGIC_CO.md`, con DESIGN_SYSTEM que hoy falta) |
-| 2. Workflow núcleo | una tarea a la vez; reporte de cierre (4 puntos); formato exacto del `Próximo paso` + 1 línea de combinaciones válidas + "si hay duda, skill `elegir-modelo`"; cierre → skill `cerrar-tarea`; tarea nueva → 3 reglas siempre activas (continuidad, fuente única, nunca revertir un ADR en silencio) + skill `triaje-tarea`; confirmar destructivos |
+| 2. Workflow núcleo | una tarea a la vez; reporte de cierre (4 puntos); formato exacto del `Próximo paso` + los 3 niveles de capacidad sin nombres de versión (ajuste 8) + "si hay duda, skill `elegir-modelo`"; cierre → skill `cerrar-tarea`; tarea nueva → 3 reglas siempre activas (continuidad, fuente única, nunca revertir un ADR en silencio) + skill `triaje-tarea`; confirmar destructivos |
 | 3. Contexto por funcionalidad | 3 líneas + enlace a `contexto/README.md` (hoy duplica esa ficha casi frase por frase) |
 | 4. Reglas ADN | las 12 íntegras, sin tocar. Máximo retorno por token del archivo |
 | 5. Convenciones | las 5 actuales + commit y push autónomos con verde previo (hoy solo vive en la memoria del asistente) |
@@ -330,7 +352,7 @@ Cobertura completa. Las filas agrupadas indican cuántos archivos abarcan, con l
 | `BOARD.md` | `BOARD.md` | Purgar el 32,4% de narrativa cerrada; agregar índice tabular en las primeras 40 líneas; mover los 9 briefs de iniciativa a ADRs y los patrones P1 a P7 a ADR o ficha `transversal` | Es el 68% del costo de arranque y un tercio es historia, violando su propia regla de oro. Nombre conservado (56 refs vivas, 113 en historia congelada) |
 | `BUGS.md` | `BUGS.md` | **Mantener separado** (ajuste 1); techo 6 KB; corregir la línea 5 ("queda solo BUG-013" cuando lista BUG-016 y BUG-013) | Estado y deuda son conceptos distintos; el archivo de estado debe quedar pequeño |
 | `CHANGELOG.md` | `CHANGELOG.md` | **Mantener nombre** (ajuste 4). Mes corriente + índice; formato de 1 fila por tarea desde 2026-08; rotar a `changelog/2026-07.md` al cerrar julio | Convención reconocida. El problema es tamaño (618 KB en 23 días) y cuádruple escritura, no el nombre |
-| `CLAUDE_DESIGNS_PROMPT.md` | (borrado) | **Eliminar** tras confirmación; si la paleta tiene valor, un párrafo de "alternativa explorada y por qué no se adoptó" al ADR 031 | Huérfano confirmado (0 referencias), sin trackear, se declara "no implementada" y contradice el ADR 031. Un prompt para otra herramienta no es documentación del proyecto |
+| `CLAUDE_DESIGNS_PROMPT.md` | `docs/archive/CLAUDE_DESIGNS_PROMPT.md` | **Mover y archivar** con nota de archivado (ajuste 7) + trackear | Huérfano (0 referencias) y no representa la dirección vigente, pero es una exploración de diseño real (paleta de 12 colores de dominio, 9 tipografías comparadas) que conserva valor como referencia. Archivar preserva más que resumir |
 | `CONTRIBUTING.md` | `CONTRIBUTING.md` | **Mantener separado** (ajuste 2), reducir 9 → 5 KB: colaboración, flujo de cambios, 4 compuertas pre-commit. Lo técnico va a ARCHITECTURE, el protocolo anual a OPERACION | Gobernanza de trabajo no se mezcla con arquitectura técnica. GitHub lo reconoce en `docs/` |
 | `DESIGN_SYSTEM.md` | igual | Adelgazar: quitar los valores de tokens copiados de `styles/tokens.css`, dejar el criterio y el enlace | Copiar valores garantiza desincronización. Resuelve además que DESIGN_SYSTEM y `svg/README` se declaren ambos "fuente de verdad" |
 | `HANDOFF.md` | `HANDOFF.md` | Reescribir a 6 KB con línea de contrato: métricas + últimas 5 tareas en 1 a 3 líneas + qué sigue. Quitar identidad, comandos, runbooks y estructura de carpetas. Corregir "cero deuda técnica" (hay 2 bugs), el dominio fantasma `calculadoras`, la ausencia de `accesos` y la cifra E2E | Duplica 4 documentos. Nombre conservado (16 refs vivas, 21 en historia); el contrato en cabecera logra el efecto del renombre sin romper enlaces |
@@ -345,6 +367,7 @@ Cobertura completa. Las filas agrupadas indican cuántos archivos abarcan, con l
 | `changelog/2026-05.md` | igual | Congelar | La historia no se reescribe (principio 7). Reescribir 1,1 MB que nadie lee es trabajo sin retorno |
 | `changelog/2026-06.md` | igual | Congelar | Idem |
 | `archive/REDESIGN_2026.md` | igual | **Mantener la carpeta** (cambio por ajuste 4) | Con CHANGELOG conservado, `changelog/` queda reservado a la cronología mensual: un plan maestro superado rompería su nombrado. Contrato: `changelog/` = meses, `archive/` = documentos superados. Cero migración |
+| (entra `CLAUDE_DESIGNS_PROMPT.md`) | `archive/` | Recibir (ajuste 7) | Segundo documento superado de la carpeta; confirma que el contrato de `archive/` era necesario |
 
 ### `docs/contexto/` (14)
 
@@ -361,7 +384,7 @@ Cobertura completa. Las filas agrupadas indican cuántos archivos abarcan, con l
 |---|---|---|---|
 | 40 ADRs sin excepción | igual | Mantener intactos | Un ADR aceptado no se reescribe ni se fusiona: si cambia la decisión, se escribe uno nuevo que lo supersede |
 | `002-abono-deudas.md` | igual | Corregir **solo** el campo `Estado`: "Propuesta (pendiente de aprobación)" → aceptada e implementada | La feature está implementada hace meses y se cita como decisión asentada en 7 documentos. Es un campo que nunca se actualizó |
-| `031-identidad-de-color-por-seccion.md` | igual | Agregar un párrafo de "alternativa explorada" **solo si** se decide rescatar la paleta de `CLAUDE_DESIGNS_PROMPT.md` | Es donde alguien buscaría esa exploración. Condicionado a la decisión 2 de la sección 9 |
+| `031-identidad-de-color-por-seccion.md` | igual | **Sin cambios** (ajuste 7) | Ya no hace falta el párrafo de "alternativa explorada": la exploración se conserva completa en `docs/archive/`. El ADR queda intacto, como manda el principio 7 |
 
 ### `docs/legal/` (11)
 
@@ -396,12 +419,13 @@ Adicionales por migración de contenido: `docs/changelog/2026-07.md` (rotación 
 
 | Acción | Archivos |
 |---|---|
-| Mantener intacto | 54 (40 ADRs, 11 legal, changelog x2, archive, BASELINE) |
-| Mantener con edición | 25 |
+| Mantener intacto | 56 (41 ADRs, 11 legales, 2 meses de changelog, `REDESIGN_2026`, `BASELINE`) |
+| Mantener con edición | 28 (incluye partir `transversal` en dos) |
 | Fusionar y eliminar | 4 (`MAPA`, `SETUP_DOMINIO`, 2 READMEs de `svg`) |
-| Eliminar | 1 (`CLAUDE_DESIGNS_PROMPT`, previa confirmación) |
-| Partir | 1 (`transversal`) |
-| Renombrar o mover | **0** (decisión de la sección 2) |
+| Mover y archivar | 1 (`CLAUDE_DESIGNS_PROMPT` → `archive/`, ajuste 7) |
+| Eliminar sin destino | **0** |
+| Renombrar | **0** (decisión de la sección 2) |
+| **Suma** | **89** |
 | Crear | 5 base (+1 rotación, +hasta 9 ADRs) |
 
 ---
@@ -410,12 +434,13 @@ Adicionales por migración de contenido: `docs/changelog/2026-07.md` (rotación 
 
 Cada fase es uno o varios commits verificables por separado (regla 2.1 de CLAUDE.md). Nada se ejecuta sin aprobación.
 
-**Fase 1: inventario.** Cerrada con la auditoría y con este archivo. Flecos: correr `pnpm run test:e2e` para la cifra real (HANDOFF dice 231, su propio desglose suma 227, el conteo de archivos da menos) y las 3 decisiones abiertas de la sección 9.
+**Fase 1: inventario.** Cerrada: auditoría, este archivo, las 5 decisiones de la sección 9 y la cifra real de E2E verificada ejecutando la suite. Sin flecos.
 
-**Fase 2: consolidación** (correcciones sin mover nada; el mayor retorno por esfuerzo de todo el plan).
+**Fase 2: consolidación** (correcciones y archivado, sin fusiones; el mayor retorno por esfuerzo de todo el plan).
 1. `AGENTS.md` a stub trackeado + trackear `.claude/skills/`.
-2. Purga del 32,4% cerrado de `BOARD.md`: 148 → ~100 KB, ~15.300 tokens menos por lectura, media hora mecánica. Commit dedicado solo a borrar, para que el diff sea legible y reversible.
-3. Correcciones de veracidad: dominios (18), `calculadoras`/`accesos`, "cero deuda técnica", cifra E2E, estado del ADR 002, rutas muertas de SECURITY y README, "16 dominios" del README, `ui:navigate`, y la sección 7.4 de CLAUDE.md (la limpieza de guiones largos ya está terminada: cero U+2014 en el repo).
+2. `CLAUDE_DESIGNS_PROMPT.md` a `docs/archive/` con nota de archivado + trackear (ajuste 7).
+3. Purga del 32,4% cerrado de `BOARD.md`: 148 → ~100 KB, ~15.300 tokens menos por lectura. Commit dedicado solo a borrar, para que el diff sea legible y reversible.
+4. Correcciones de veracidad: dominios (18), `calculadoras`/`accesos`, "cero deuda técnica", desglose E2E, estado del ADR 002, rutas muertas de SECURITY y README, "16 dominios" del README, `ui:navigate`, y la sección 7.4 de CLAUDE.md (la limpieza de guiones largos ya está terminada: cero U+2014 en el repo).
 
 **Fase 3: nueva estructura** (crear sin borrar). Las 3 skills nuevas + adelgazar `auditor-finko`; `OPERACION.md`; `CLAUDE.md` v2 (con la tabla de trazabilidad regla por regla hecha **antes** de recortar).
 
@@ -453,12 +478,16 @@ Si se quiere empezar por lo de mayor impacto: purga del BOARD (Fase 2.2) → CLA
 
 ---
 
-## 9. Decisiones abiertas
+## 9. Decisiones tomadas
 
-| # | Decisión | Recomendación |
+No quedan decisiones abiertas: la Fase 2 puede ejecutarse completa.
+
+| # | Decisión | Resultado |
 |---|---|---|
-| 1 | Arquitectura final de este documento: aprobada o con ajustes | - |
-| 2 | Destino de `CLAUDE_DESIGNS_PROMPT.md`: borrar, o rescatar la paleta como alternativa en el ADR 031 antes de borrar | Borrar tras rescatar un párrafo en el ADR 031, si la exploración tiene valor |
-| 3 | La escala de modelos de CLAUDE.md §2.3 (revisada 2026-07-02) nombra Opus 4.8; ya existe Opus 5. ¿Se actualiza al migrarla a la skill `elegir-modelo`? | Actualizar en la migración: es el momento natural, y la matriz es regla del usuario |
+| 1 | Arquitectura documental | **Aprobada** el 2026-07-24, con 8 ajustes incorporados (secciones 1 y 2) |
+| 2 | Renombres al español | **Descartados** para los archivos existentes; solo los nuevos nacen en español |
+| 3 | Destino de `CLAUDE_DESIGNS_PROMPT.md` | **Archivar** en `docs/archive/`, no borrar (ajuste 7) |
+| 4 | Escala de modelos | **Independiente de versiones**: 3 niveles de capacidad en CLAUDE.md, equivalencia solo en la skill (ajuste 8) |
+| 5 | Cifra real de E2E | **231/231 verificada** ejecutando `pnpm run test:e2e` el 2026-07-24 (231 passed, 3,4 min, exit 0). La cifra de HANDOFF era **correcta**: lo que no cuadra es su desglose por suite, que suma 227. El informe del Agente 6 la cuestionó sin ejecutar la suite completa |
 
 Los 7 informes completos de la auditoría quedaron en el scratchpad de la sesión `37f7934c` (`agente-1-conocimiento.md` a `agente-7-mantenimiento.md`).
