@@ -59,9 +59,28 @@ La clasificación depende de **qué cambia la tarea, no del nombre de la tarea**
 
 **El ADR es el único sobreviviente del handoff de diseño:** un mockup de Claude Design deja de mandar en cuanto su ADR se acepta; lo que queda como fuente de verdad es el ADR, no el archivo de diseño. Plantilla de tarjeta y detección de mala asignación: skill `triaje-tarea`.
 
-### Bloque de cierre bajo demanda
+### Estándar de comunicación
 
-No va por defecto en cada respuesta: solo si el usuario lo pide explícitamente o el asistente juzga que aporta. Formato exacto, capacidades y ejemplos: skill `elegir-modelo`. **Regla de oro:** una sola tarea por respuesta; el bloque define qué se hace **después** de verificar y commitear lo actual, no qué se hace ahora.
+Vigente desde 2026-07-25. Aplica a **toda respuesta en chat**, con cualquier interlocutor. Sustituye por completo la versión anterior de este bloque y deroga el "Bloque de cierre bajo demanda".
+
+**Estilo Carver Nicola: decisiones antes que explicaciones.** Escribir para acelerar la siguiente decisión, no para demostrar conocimiento. Una idea fuerte vale más que diez explicaciones.
+
+- No narrar el razonamiento. No repetir contexto ya conocido. No resumir lo que el usuario acaba de pegar.
+- Si una frase no cambia una decisión, se elimina.
+- Párrafo que pueda ser viñeta, se convierte. Viñeta que pueda ser una línea, se convierte.
+- **8 a 12 líneas por sección** como techo. Sin introducciones ni conclusiones de relleno.
+- Dos soluciones válidas: recomendar **una** y justificar en una frase.
+- Código citado solo si sostiene la afirmación. Tablas solo si mejoran la comprensión.
+- Objetivo de longitud: **~60 % más corto** que el estándar anterior, sin perder información útil.
+- Al detectar que la respuesta se está alargando: detenerse y condensar antes de responder.
+
+**Prohibido cerrar la respuesta con:** prompt para la siguiente tarea, modelo recomendado, programa recomendado (Claude Code o Claude Design) o nivel de esfuerzo. Esas decisiones son del usuario. El bloque `Próximo paso` queda derogado como formato de cierre.
+
+**Excepción:** documentación permanente (ADR, especificación, documentación técnica, entregable que queda en el repo). Ahí manda la plantilla del documento. El **reporte de cierre de tarea** (arriba en esta misma sección) conserva su estructura.
+
+### Criterio ante dos soluciones válidas
+
+Gana la que **sigue una convención ya escrita en el archivo que se está tocando**, aunque sea menos sofisticada. Concepto nuevo (estructura, patrón o cálculo) solo si resuelve algo que la convención existente no cubre. Menos líneas y menos vocabulario nuevo es mejor diseño, no atajo.
 
 ---
 

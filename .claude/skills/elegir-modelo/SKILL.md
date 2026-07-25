@@ -1,6 +1,6 @@
 ---
 name: elegir-modelo
-description: Desempata qué capacidad de modelo y qué nivel de esfuerzo corresponde a una tarea de Finko, y traduce esa capacidad al nombre del modelo vigente. Usar al escribir el bloque Próximo paso cuando la elección no sea obvia, cuando el usuario pregunte con qué modelo lanzar algo, o antes de repartir trabajo en subagentes.
+description: Desempata qué capacidad de modelo y qué nivel de esfuerzo corresponde a una tarea de Finko, y traduce esa capacidad al nombre del modelo vigente. Usar solo cuando el usuario pregunte con qué modelo lanzar algo, al llenar el campo Modelo de una tarjeta del tablero, o antes de repartir trabajo en subagentes. Nunca para cerrar una respuesta con recomendaciones: eso está prohibido por CLAUDE.md seccion 2.
 ---
 
 # Elegir capacidad y nivel en Finko
