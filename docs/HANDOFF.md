@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-24 (correcciones de veracidad de la Fase 2 de la reorganización documental, ver [`MIGRACION.md`](MIGRACION.md)). Última tarea cerrada: EDIT.1a, editar una meta sin destruir el progreso.
+> Última actualización: 2026-07-24. Última tarea cerrada: Fases 1 y 2 de la reorganización documental (ver [`MIGRACION.md`](MIGRACION.md) para el contrato y la tarjeta DOC.1 del tablero para lo que falta).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -40,6 +40,14 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### docs(reorg): Fases 1 y 2 de la reorganización documental · 2026-07-24
+
+Auditoría de los 89 `.md` con 7 subagentes y ejecución de la consolidación: tablero purgado de narrativa cerrada (**-32,2 %**, con las 49 tarjetas vivas verificadas una por una), `AGENTS.md` reducido a stub trackeado, `CLAUDE_DESIGNS_PROMPT.md` archivado, y 11 correcciones de veracidad (deuda técnica, conteo de dominios, 9 eventos del EventBus, ADR 002, rutas muertas, sección 7 de CLAUDE.md que era inverificable). Contrato y fases 3 a 5 en [`MIGRACION.md`](MIGRACION.md) y en la tarjeta DOC.1 del tablero. Sin tocar `modules/`.
+
+_(Entrada escrita ya con la disciplina nueva: 3 líneas, no 15. El detalle vive en el CHANGELOG y el porqué en MIGRACION.md.)_
+
+---
+
 ### feat(metas): EDIT.1a editar sin destruir el progreso · 2026-07-23
 
 Primera de cuatro rebanadas del patrón **P3** de la auditoría (no se puede editar, corregir obliga a destruir). Metas solo permitía crear, abonar y eliminar; corregir un nombre o un objetivo mal escrito obligaba a eliminar y recrear la meta, perdiendo el progreso acumulado. Apartados, Inversión y Me deben quedan como las tres rebanadas siguientes en **EDIT.1**. Botón "Editar" junto a Abonar/Eliminar, mismo formulario prellenado. **El punto financiero:** `normalizarMeta(datos, metaExistente = null)` conserva `montoActual` tal cual al editar (no se resetea ni se toca el histórico de aportes) y recalcula `completada` contra el nuevo objetivo, porque cambiarlo puede cruzar el umbral de cumplimiento en cualquier dirección. De paso, el formulario dejó de ser un singleton reusado (necesitaba resetear el picker de ícono a mano) y pasó a reinyectarse completo en cada apertura, mismo patrón que Gastos/Agenda/Compromisos. Ficha de contexto nueva `docs/contexto/metas.md` (primera vez que se analiza la sección a fondo). 16 unit + 4 E2E nuevos. 2981/2981 unit + 231/231 E2E + lint verdes. SW v414→v415.
@@ -64,13 +72,8 @@ Cierra el patrón **P4** de la auditoría de UX/producto por completo (junto con
 
 ---
 
-### feat(movimientos): MOV.1 el ledger deja de ser solo lectura · 2026-07-22
 
-Cierra el patrón **P4** de la auditoría de UX/producto y la mitad de P3 que le toca. **Amplía deliberadamente la decisión de TX.8b** (ledger solo-lectura), con aprobación explícita de Esteban tras señalárselo: registrado en BOARD y CHANGELOG, no revertido en silencio (regla 2.7). Cada fila de `#movimientos` ofrece ahora los mismos `data-action` que su dominio dueño **ya registraba** (`editar-gasto`/`eliminar-gasto`, `eliminar-ingreso-puntual`, `ahorro-eliminar-aporte`). **Ese es el punto financiero del diseño:** al delegar en vez de reimplementar, borrar un gasto desde el ledger devuelve el monto a la cuenta y revierte el abono de la deuda, porque lo ejecuta el handler de Gastos; reimplementarlo habría perdido esas reversas en silencio. **Alcance honesto:** expone capacidades existentes, no las inventa (transferencia todavía no ofrece nada: es MC.17f; editar donde el dueño no sabe es EDIT.1; al cerrarse, basta sumar su entrada en `_ACCIONES_POR_TIPO`). **Corrección al plan de la tarjeta:** el enrutador es **`m.tipo`**, no `m.dominio` como proponía el BOARD, porque `dominio` es una etiqueta visual (un gasto "Gastos fijos" la lleva en `compromisos` pero vive en `S.gastos`) y habría mandado la acción al dominio equivocado; hay test dedicado. **Cero infraestructura nueva:** no cambió `logic.js`, `index.js` ni CSS. **Ficha nueva `docs/contexto/movimientos.md`.** 8 unit + 3 E2E nuevos. 2877/2877 unit + 216/216 E2E + lint verdes. SW v410→v411.
-
----
-
-> Para tareas anteriores (feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas dos), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

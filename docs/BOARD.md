@@ -590,6 +590,15 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 ---
 ## Mantenimiento
 
+#### DOC.1 - Reorganización documental, fases 3 a 5
+- Prioridad  : media
+- Estado     : Fases 1 y 2 cerradas el 2026-07-24. El contrato completo (arquitectura final, 11 principios con techos, trazabilidad de los 89 archivos, plan por fases) vive en [`MIGRACION.md`](MIGRACION.md), que se borra al cerrar la Fase 5.
+- Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información. **Fase 3** (crear sin borrar): las 3 skills nuevas `cerrar-tarea`, `triaje-tarea` y `elegir-modelo`, adelgazar `auditor-finko`, crear `OPERACION.md` y reescribir CLAUDE.md a ~8 KB con tabla de trazabilidad regla por regla hecha antes de recortar. **Fase 4** (mover y fusionar): MAPA a ARCHITECTURE, SETUP_DOMINIO a OPERACION, los 2 READMEs hijos a `assets/svg/README.md`, reescritura de HANDOFF, índice tabular del tablero, briefs de iniciativa a ADRs, partir `contexto/transversal.md`, purga de `settings.local.json`. **Fase 5**: validación completa y borrado de MIGRACION.md.
+- Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
+- Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno
+- Depende de : nada. Cada fase es commiteable y verificable por separado; el orden 3 → 4 → 5 importa porque la tabla de documentos de CLAUDE.md debe apuntar a la estructura ya migrada
+- Modelo     : la Fase 3 pide criterio de redacción y arquitectura de información (comprimir sin perder reglas); la Fase 4 es mecánica pero con validación de destino en cada borrado
+
 #### A.5 - Dominio custom en Vercel
 - Prioridad  : baja
 - Estado     : pendiente (espera a que el usuario registre un dominio)

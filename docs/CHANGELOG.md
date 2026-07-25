@@ -10,6 +10,31 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### docs(reorg): Fases 1 y 2 de la reorganización documental · 2026-07-24
+
+Auditoría documental completa de los 89 archivos `.md` con 7 subagentes (pedido explícito de Esteban), consolidada en una propuesta que él aprobó con 8 ajustes. Diagnóstico raíz, al que llegaron por caminos independientes 4 de los 7 agentes: **la historia de cada tarea se escribía 4 veces** (CHANGELOG, HANDOFF, ficha y tablero) con detalle que no decrecía de capa en capa, y **ningún archivo vivo tenía techo**. Arrancar una tarea costaba ~69.400 tokens antes de abrir el primer archivo de código.
+
+- **Contrato de migración** en `docs/MIGRACION.md` (temporal, se borra al cerrar la Fase 5): arquitectura final, 11 principios con techos verificables por comando, trazabilidad de los 89 archivos (destino, acción, motivo) y plan de 5 fases.
+- **Decisiones de Esteban que cambiaron la propuesta original:** BUGS.md y CONTRIBUTING.md siguen separados; CHANGELOG conserva nombre y mecanismo (cae la carpeta `historia/`, se conserva `archive/`); **el renombrado masivo al español se descarta** tras medir su costo (renombrar `BOARD.md` implicaba 56 referencias vivas y 113 enlaces muertos en historia que por principio no se reescribe); la escala de modelos pasa a hablar de capacidad y no de versiones.
+- **Tablero purgado: 150.879 → 102.239 bytes (-32,2 %)**, 751 → 619 líneas, con las 49 tarjetas vivas verificadas una por una. Los 61 IDs cerrados que salieron se comprobaron antes con `grep` contra CHANGELOG y fichas: todos tenían destino.
+- **`AGENTS.md` a stub trackeado.** Era una copia de CLAUDE.md con 18 días de atraso; el diff previo dio 20 líneas distintas de ~290, casi todas por el bloque de matriz que le faltaba. Se commiteó intacto antes de reducirlo, así que la reducción es reversible.
+- **`CLAUDE_DESIGNS_PROMPT.md` archivado** en `docs/archive/` con nota de archivado, no eliminado (decisión de Esteban): conserva valor como exploración de diseño.
+- **Correcciones de veracidad:** "cero deuda técnica" convivía con 2 bugs abiertos; el árbol de dominios listaba `calculadoras` (retirada) y omitía `accesos`; ARCHITECTURE decía 18 dominios y listaba 16; su tabla del EventBus tenía 5 de los 9 eventos reales; CONTRIBUTING citaba el evento `ui:navigate`, que no existe; el ADR 002 seguía en "Propuesta" con la feature implementada hace meses; rutas muertas `Desktop/Finko_Claude` en SECURITY y README.
+- **La sección 7 de CLAUDE.md era inverificable** y se arregló: su tabla decía "en vez de guion simple usa guion simple" (se rompió al aplicarse a sí misma), y su comando de verificación no podía pasar nunca. El reemplazo se probó contra un archivo de control con U+2014 y U+2013.
+- **Cifra de E2E verificada ejecutando la suite:** 231 passed, exit 0. El total de HANDOFF era correcto; lo que no cuadraba era su desglose por suite, que sumaba 227. Se retira el desglose en vez de mantener 11 números a mano.
+
+**Archivos tocados**
+
+- `docs/MIGRACION.md`: nuevo, contrato de la migración.
+- `docs/BOARD.md`: purga de narrativa cerrada + tabla de secciones sin pendientes + tarjeta DOC.1.
+- `AGENTS.md`: 285 → 5 líneas. `docs/archive/CLAUDE_DESIGNS_PROMPT.md`: movido y trackeado.
+- `CLAUDE.md`: sección 7 reescrita. `docs/HANDOFF.md`, `docs/BUGS.md`, `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`, `docs/SECURITY.md`, `README.md`, `docs/DECISIONS/002-abono-deudas.md`: correcciones de veracidad.
+- `.claude/skills/auditor-finko/SKILL.md`: trackeado por primera vez.
+
+Sin impacto en código, tests ni datos: ningún archivo de `modules/` fue tocado. Verificación: 231/231 E2E verdes, cero enlaces `.md` rotos, cero U+2014 y U+2013 en archivos trackeados. Fases 3 a 5 pendientes en la tarjeta **DOC.1** del tablero.
+
+---
+
 ### docs(workflow): matriz de decisión de modelo integrada en §2.3 · 2026-07-23
 
 El usuario propuso un "Selector inteligente de modelo y nivel de esfuerzo" con matriz de puntuación (0-55) y modo "Ultracode" multiagente. Triaje (regla 2.7): pisaba la decisión ya existente de `CLAUDE.md` §2.3, así que se fusionó en vez de duplicar (fuente única). Se reconciliaron los conflictos con las restricciones reales del proyecto y del CLI.

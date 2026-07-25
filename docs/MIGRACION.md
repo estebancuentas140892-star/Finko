@@ -2,7 +2,7 @@
 
 > **Archivo temporal de trabajo.** Nace con la auditoría documental del 2026-07-24 (7 agentes) y **se borra al cerrar la Fase 5**. No cuenta para los techos de tamaño: no es documentación del proyecto, es el contrato de una migración.
 >
-> **Estado:** dirección general aprobada por Esteban el 2026-07-24, con 6 ajustes incorporados en este archivo. **Fase 2 no iniciada.** Ningún archivo ha sido borrado, movido ni fusionado todavía.
+> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1 y 2 cerradas el 2026-07-24** (8 commits). Siguen las Fases 3, 4 y 5, registradas en la tarjeta **DOC.1** de [`BOARD.md`](BOARD.md). Ninguna fusión ni renombre se ha ejecutado todavía: eso es Fase 4.
 
 ## Índice
 
@@ -436,11 +436,11 @@ Cada fase es uno o varios commits verificables por separado (regla 2.1 de CLAUDE
 
 **Fase 1: inventario.** Cerrada: auditoría, este archivo, las 5 decisiones de la sección 9 y la cifra real de E2E verificada ejecutando la suite. Sin flecos.
 
-**Fase 2: consolidación** (correcciones y archivado, sin fusiones; el mayor retorno por esfuerzo de todo el plan).
-1. `AGENTS.md` a stub trackeado + trackear `.claude/skills/`.
-2. `CLAUDE_DESIGNS_PROMPT.md` a `docs/archive/` con nota de archivado + trackear (ajuste 7).
-3. Purga del 32,4% cerrado de `BOARD.md`: 148 → ~100 KB, ~15.300 tokens menos por lectura. Commit dedicado solo a borrar, para que el diff sea legible y reversible.
-4. Correcciones de veracidad: dominios (18), `calculadoras`/`accesos`, "cero deuda técnica", desglose E2E, estado del ADR 002, rutas muertas de SECURITY y README, "16 dominios" del README, `ui:navigate`, y la sección 7.4 de CLAUDE.md (la limpieza de guiones largos ya está terminada: cero U+2014 en el repo).
+**Fase 2: consolidación. CERRADA el 2026-07-24**, en 8 commits pequeños.
+1. ✅ `AGENTS.md` y `.claude/skills/` trackeados intactos (`966fb53`), y después `AGENTS.md` reducido a stub de 5 líneas (`5e3900f`). Dos commits a propósito: el original queda en la historia, así que la reducción es reversible. El diff previo contra CLAUDE.md dio 20 líneas distintas de ~290.
+2. ✅ `CLAUDE_DESIGNS_PROMPT.md` archivado en `docs/archive/` con nota de archivado y enlaces relativos corregidos (`7bdf08b`).
+3. ✅ Purga de `BOARD.md`: **150.879 → 102.239 bytes (-32,2%)**, 751 → 619 líneas, en dos commits (borrado mecánico `dfa6962`, compresión de bloques mixtos `a9e407a`). Las 49 tarjetas vivas verificadas una por una por ID; los 61 IDs cerrados verificados con `grep` contra CHANGELOG y fichas antes de borrarlos.
+4. ✅ Correcciones de veracidad en 3 commits: estado del proyecto (`91a18f2`), inventarios técnicos y rutas muertas (`4585395`), sección 7 de CLAUDE.md (`83b71ea`). Ver el detalle en la entrada del CHANGELOG del 2026-07-24.
 
 **Fase 3: nueva estructura** (crear sin borrar). Las 3 skills nuevas + adelgazar `auditor-finko`; `OPERACION.md`; `CLAUDE.md` v2 (con la tabla de trazabilidad regla por regla hecha **antes** de recortar).
 
@@ -454,6 +454,7 @@ Cada fase es uno o varios commits verificables por separado (regla 2.1 de CLAUDE
 7. `assets/svg/README.md` con los 2 hijos absorbidos.
 8. Borrar `CLAUDE_DESIGNS_PROMPT.md` (si se confirmó).
 9. Purga de `settings.local.json`: 14 rutas muertas, 29 fragmentos de pipe, puerto 8080 vs 8081, y decisión consciente sobre los comodines amplios.
+10. Comentario de `modules/core/state.js:432`: su ejemplo de nomenclatura de eventos cita `ui:navigate`, que no existe en el código. No se tocó en la Fase 2 para no mezclar limpieza documental con cambios en archivos de código (regla de Esteban); es una línea de comentario, sin efecto funcional.
 
 **Fase 5: validación.** Enlaces `.md` existentes; tamaños contra techos; `pnpm test` + `pnpm run lint` verdes; cero U+2014 por codepoint; sellos `Revisado:` puestos; `contexto/README.md` actualizado con los 11 principios; medición real de la ruta de arranque en una sesión de prueba; **borrar este archivo**.
 
