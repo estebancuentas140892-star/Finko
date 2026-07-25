@@ -112,4 +112,4 @@ Reglas del reporte:
 
 - **Alcance honesto.** Si algo del alcance original quedó fuera, decirlo con su razón, no omitirlo. Si se encontró un defecto preexistente, decirlo aunque no se haya arreglado.
 - **Si se corrigió el plan de la tarjeta**, explicarlo: el usuario aprobó ese plan y merece saber por qué cambió.
-- Cerrar con el bloque `Próximo paso` con el formato exacto de `CLAUDE.md`. Si la elección de capacidad y nivel no es obvia, resolverla con la skill `elegir-modelo`.
+- El bloque `Próximo paso` no es obligatorio: incluirlo solo si el usuario lo pide o aporta valor real, con el formato exacto de `CLAUDE.md`. Si se incluye y la elección de capacidad y nivel no es obvia, resolverla con la skill `elegir-modelo`.
