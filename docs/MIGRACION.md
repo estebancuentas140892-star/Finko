@@ -377,8 +377,8 @@ Cobertura completa. Las filas agrupadas indican cuántos archivos abarcan, con l
 |---|---|---|---|
 | `README.md` | igual | Actualizar con los 11 principios, los techos y el formato nuevo de "Cambios realizados" | Es el manual del sistema de fichas: si no lo dice, la regla no existe |
 | 11 fichas sin excepción: `ahorro`, `analisis`, `apartados`, `calendario`, `configuracion`, `deudas`, `gastos`, `inicio`, `me-deben`, `metas`, `movimientos` | igual | Mantener. "Cambios realizados" pasa a índice de 1 línea por hito cuando se toque cada una por otra razón | Es el activo más valioso del proyecto y está verificado fresco. Ahí nació la tercera copia de la historia, y se corrige sin barrido masivo |
-| `mis-cuentas.md` (56,8 KB) | igual | Adelgazar **sin partir** | Es una sección real y compleja (tesorería). Su exceso son párrafos en "Cambios realizados", no falta de cohesión |
-| `transversal.md` (75,7 KB) | `transversal.md` + `contexto/sistema-visual.md` | **Partir por eje real** | 9 bloques heterogéneos. Visual (formularios v2, iconografía, color por sección, tejas, navegación) a `sistema-visual`; el resto (persistencia y cuota, taxonomía, logros, CTA de cuenta) se queda |
+| `mis-cuentas.md` (58,1 KB) | igual | **Ejecutado.** Adelgazado sin partir: `Cambios realizados` comprimido a 1 línea/hito (era 53% del archivo) y las 21 entradas reasignadas a su bloque real (Cuentas/Transferencias/Distribución, vivían todas bajo el último). Cierra en 31,3 KB | Confirma la hipótesis: el exceso era el campo de historia, no falta de cohesión |
+| `transversal.md` (77,6 KB) | `transversal.md` + `contexto/sistema-visual.md` + `contexto/captura.md` | **Ejecutado, en TRES, no en dos.** Corrección de esta misma sección, ver 11.4 | 9 bloques heterogéneos, corte por eje real ejecutado con medición en bytes en vez de líneas |
 
 ### `docs/DECISIONS/` (42)
 
@@ -668,15 +668,17 @@ Los otros 8 (MC.13, LIM.1, ANL.1, PE.6, MT.6, AH.5, AP.5, CAT.1) son **briefs ya
 
 **CFG.4 es una decisión de fondo sin tomar todavía**, marcada en su propia tarjeta como "DECISIÓN DE ADN": sincronización multidispositivo, la más grande del proyecto (redefine "sin servidor, sin cuenta, sin sync"). Escribir su ADR **no es mover texto**: es el vehículo donde Esteban decide. Fase 4 puede crear el **esqueleto** del ADR (contexto, opciones descritas en la tarjeta, lo que el ADR debe poner sobre la mesa) para que la decisión sea más fácil de tomar, pero el ADR queda en estado "Propuesta" hasta que él elija una opción. No se cierra como parte de la reorganización documental.
 
-### 11.4 transversal.md, límites exactos del corte
+### 11.4 transversal.md, ejecutado en TRES fichas (corrección de esta sección)
 
-Verificado con los encabezados reales del archivo (9 bloques, líneas exactas):
+**Ejecutado el 2026-07-25.** Esta sección preveía partir en dos (`transversal.md` + `sistema-visual.md`) y afirmaba que "ninguno de los dos roza el techo de 40 KB". Esa estimación se hizo **por líneas, no por bytes**, y era incorrecta: la mitad visual sola pesaba 43.819 B, por encima del techo. Al medir antes de ejecutar, la partición se corrigió a **tres** fichas. Es la misma clase de corrección que 11.7.3 hizo con el techo de `ARCHITECTURE.md`: el plan se ajusta a la medición, no al revés.
 
-| Bloque | Líneas | Destino |
+Encabezados reales del archivo (9 bloques, líneas exactas antes de tocarlo):
+
+| Bloque | Líneas | Destino ejecutado |
 |---|---|---|
-| Lenguaje de formularios v2 (FORM.1, ADR 042) | 7-37 | `sistema-visual.md` |
+| Lenguaje de formularios v2 (FORM.1, ADR 042) | 7-37 | `captura.md` |
 | Taxonomía global de categorías (CAT.1) | 38-69 | `transversal.md` (se queda) |
-| Selector compacto de ícono (CAT.2) | 70-137 | `sistema-visual.md` |
+| Selector compacto de ícono (CAT.2) | 70-137 | `captura.md` |
 | Persistencia y salvaguarda de cuota | 138-162 | `transversal.md` (se queda) |
 | CTA "necesitas una cuenta" | 163-199 | `transversal.md` (se queda) |
 | Tejas de marca y biblioteca gráfica | 200-254 | `sistema-visual.md` |
@@ -684,9 +686,11 @@ Verificado con los encabezados reales del archivo (9 bloques, líneas exactas):
 | Navegación v2 (NAV2.1, ADR 040) | 305-343 | `sistema-visual.md` |
 | Identidad de color por sección (IV.1/IV.2a/IV.2d, ADR 031) | 344-403 | `sistema-visual.md` |
 
-Resultado: `transversal.md` baja de 403 a ~163 líneas (4 bloques); `sistema-visual.md` nace con ~240 líneas (5 bloques). Ninguno de los dos roza el techo de 40 KB. El eje de corte es el mismo que ya proponía la auditoría original: visual/sistema de diseño vs. datos/lógica transversal.
+El eje real no era uno (visual vs. no visual) sino dos: **cómo se captura** (formularios + selector de ícono, un mismo widget compartido) y **cómo se identifica** (color, tejas de marca, navegación). Forzarlos juntos en `sistema-visual.md` es lo que rompía el techo.
 
-Ambos archivos necesitan su propia entrada en `docs/contexto/README.md`, sección "Índice de fichas" (hoy solo lista `transversal.md`).
+Resultado medido: `transversal.md` 77.554 → 18.272 B (4 bloques). `sistema-visual.md` nuevo, 23.674 B (3 bloques). `captura.md` nuevo, 20.680 B (2 bloques). Las tres muy por debajo del techo de 40 KB y del objetivo de 25 KB.
+
+Trazabilidad de la partición: las 190 líneas de los 5 bloques movidos se verificaron presentes de forma textual en su destino **antes** de borrar el origen (protocolo 11.6 punto 4). Cero enlaces rotos nuevos: el único enlace vivo externo a una sección movida (`contexto/gastos.md` → "Lenguaje de formularios v2") se redirigió a `captura.md`. `docs/contexto/README.md`, sección "Índice de fichas", ya tiene sus 3 filas (antes 1).
 
 ### 11.5 Movimientos seguros vs. de riesgo alto
 
