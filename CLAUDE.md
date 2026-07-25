@@ -23,8 +23,7 @@ Leer solo lo que la tarea pide. La columna de la derecha evita el error más car
 | [`docs/HANDOFF.md`](docs/HANDOFF.md) | siempre, al arrancar: dónde estamos hoy, métricas, últimas 5 tareas | historia, workflow, comandos, runbooks |
 | [`docs/BOARD.md`](docs/BOARD.md) | al elegir en qué trabajar | tareas cerradas: se borran al cerrar |
 | [`docs/contexto/`](docs/contexto/README.md) | **antes de tocar una sección**: qué piezas la componen, riesgos, pendientes | prioridades, cronología |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | capas, flujo de datos, EventBus, convenciones técnicas | el inventario archivo por archivo: eso lo responde `ls` |
-| [`docs/MAPA.md`](docs/MAPA.md) | tabla sección visible → carpeta → archivos clave, y síntoma → dónde mirar. **Temporal: se fusiona dentro de ARCHITECTURE.md en la Fase 4** de [`MIGRACION.md`](docs/MIGRACION.md) | inventario completo: solo lo que un síntoma concreto necesita |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | secciones 1 a 12: capas, flujo de datos, EventBus, convenciones técnicas. **Sección 13 (mapa operativo):** sección visible → carpeta → archivos clave, índice de estilos y síntoma → dónde mirar | el inventario archivo por archivo: eso lo responde `ls` |
 | [`docs/BUGS.md`](docs/BUGS.md) | errores abiertos, verificados contra el código | sospechas sin verificar: esas son tarjetas |
 | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | qué cambió y cuándo (mes corriente; meses cerrados en `docs/changelog/`) | por qué se decidió algo |
 | [`docs/DECISIONS/`](docs/DECISIONS/) | **por qué** se decidió algo, con alternativas rechazadas | estado de avance |
@@ -84,7 +83,7 @@ Modelo sugerido : Fable 5 - Extra
 
 ## 3. Antes de explorar el proyecto
 
-Consultar [`docs/MAPA.md`](docs/MAPA.md) (ubicación gruesa por dominio y tabla síntoma → dónde mirar) y la ficha de la sección en [`docs/contexto/`](docs/contexto/README.md). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos que lista).
+Consultar la **sección 13** de [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (ubicación gruesa por dominio y tabla síntoma → dónde mirar) y la ficha de la sección en [`docs/contexto/`](docs/contexto/README.md). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos que lista).
 
 Si no existe, el primer paso de la tarea es el análisis profundo y **escribir el bloque antes de codificar**. Cada funcionalidad se analiza a fondo una sola vez.
 

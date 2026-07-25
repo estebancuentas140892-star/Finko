@@ -11,7 +11,7 @@
 
 | Pregunta | Documento |
 |---|---|
-| ¿En qué carpeta/archivo vive cada sección? ¿Dónde miro ante un síntoma? | [`MAPA.md`](../MAPA.md) (índice grueso, por dominio) |
+| ¿En qué carpeta/archivo vive cada sección? ¿Dónde miro ante un síntoma? | [`ARCHITECTURE.md`](../ARCHITECTURE.md) sección 13, el mapa operativo (índice grueso, por dominio) |
 | ¿Qué piezas exactas componen ESTA funcionalidad, qué riesgos tiene, qué le falta? | La ficha de su sección en esta carpeta |
 | ¿Qué está pendiente y con qué prioridad? | [`BOARD.md`](../BOARD.md) |
 | ¿Qué se hizo y cuándo? | [`CHANGELOG.md`](../CHANGELOG.md) |
@@ -41,7 +41,7 @@ Actualizar el bloque tocado como **paso 1** de la secuencia de cierre de docs (v
 
 - Historia detallada de cada cambio (vive en CHANGELOG; la ficha lista 1 línea por hito).
 - Tarjetas de trabajo con prioridad (viven en BOARD; "Cambios pendientes" es para cabos técnicos sueltos; si uno crece, se promueve a tarjeta).
-- Ubicación gruesa por dominio (vive en MAPA).
+- Ubicación gruesa por dominio (vive en el mapa operativo, `ARCHITECTURE.md` sección 13).
 - Contenido especulativo: **las fichas nacen bajo demanda**, la primera vez que se trabaja una funcionalidad. No se pre-generan fichas de secciones que nadie está tocando: envejecen mal y cuestan tokens sin retorno.
 
 ### 2.4 Anclas de localización

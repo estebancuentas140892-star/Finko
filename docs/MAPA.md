@@ -1,5 +1,7 @@
 # Mapa del código - Finko Claude
 
+> **Superado el 2026-07-24: este contenido vive ahora en [`ARCHITECTURE.md`](ARCHITECTURE.md) sección 13 (mapa operativo)**, con las 6 secciones íntegras y las referencias internas renumeradas. Todas las referencias vivas ya apuntan allá. Este archivo se borra en cuanto se resuelva el techo de ARCHITECTURE.md (ver [`MIGRACION.md`](MIGRACION.md) sección 11.7); mientras exista, la fuente de verdad es ARCHITECTURE.md.
+
 > Índice de navegación rápida: sección visible → carpeta real → archivos clave → estilos → tests.
 > Objetivo: que cualquiera (incluido el propio Esteban) ubique en segundos dónde vive algo o dónde mirar ante un error, sin depender de memoria.
 > Documento vivo. Actualizar cuando se cree un dominio nuevo o se mueva un archivo de estilos.

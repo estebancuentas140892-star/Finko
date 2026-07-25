@@ -2,7 +2,7 @@
 
 > **Archivo temporal de trabajo.** Nace con la auditoría documental del 2026-07-24 (7 agentes) y **se borra al cerrar la Fase 5**. No cuenta para los techos de tamaño: no es documentación del proyecto, es el contrato de una migración.
 >
-> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4 en preparación, sin ejecutar**: este archivo tiene su plan detallado (sección 11), pendiente de autorización explícita para las fusiones y borrados.
+> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4B.1 (MAPA a ARCHITECTURE) integrada y verificada el 2026-07-24, con el borrado del origen bloqueado por el techo de ARCHITECTURE.md**: ver la trazabilidad y el hallazgo en la sección 11.7. El resto de la Fase 4 sigue sin ejecutar.
 
 ## Índice
 
@@ -18,7 +18,7 @@
 | 8 | Riesgos y validaciones |
 | 9 | Decisiones tomadas |
 | 10 | Fase 3: trazabilidad bloque por bloque y CLAUDE.md v2 aplicado |
-| 11 | Fase 4: plan de ejecución detallado (sin ejecutar) |
+| 11 | Fase 4: plan de ejecución detallado (11.7: bloque 4B.1 ejecutado y verificado) |
 
 ---
 
@@ -714,6 +714,61 @@ Ambos archivos necesitan su propia entrada en `docs/contexto/README.md`, secció
 
    Ninguno más: `transversal.md` no desaparece, se parte en dos; `BOARD.md` no desaparece, se reestructura in place.
 4. **Nada se borra en el mismo commit que lo crea.** Cada fusión es al menos 2 commits: uno que crea el destino con el contenido íntegro, otro (después de verificar) que borra el origen.
+
+### 11.7 Bloque 4B.1 ejecutado: MAPA.md a ARCHITECTURE.md
+
+Autorizado por Esteban el 2026-07-24, con la condición explícita de demostrar la trazabilidad **antes** de borrar el origen. Integración hecha y verificada; **el borrado de `docs/MAPA.md` quedó bloqueado** por la compuerta de techo que el propio encargo fijó (ver 11.7.3).
+
+#### 11.7.1 Trazabilidad: los 6 bloques de MAPA y su ubicación exacta
+
+| Bloque de `MAPA.md` | Contenido | Destino en `ARCHITECTURE.md` | Estado |
+|---|---|---|---|
+| Cabecera | Contrato del documento + disparador de actualización | Cabecera (líneas 3-6), con la mitad "cómo está construido / dónde está cada cosa" declarada | Integrado. El disparador "o se mueva un archivo de estilos" se había perdido en la primera pasada y **se restauró** |
+| §1 Por qué este archivo existe | Tabla sección visible → carpeta real (6 filas) | **13.1** | 6/6 filas, textuales salvo la referencia interna renumerada |
+| §2 Tabla principal | Sección → carpeta → archivos → estilos → test (19 filas) | **13.3** | 19/19 filas. Columnas "Estilos" y "Test" idénticas carácter por carácter |
+| §3 "Inicio" no es un dominio | Párrafo sobre `#dash` como composición | **13.2** | Textual |
+| §4 Índice de estilos por widget | Tabla de 8 archivos CSS + capas base + nota `.calc-*` | **13.4** | 8/8 filas textuales; la nota de código muerto sobrevive íntegra |
+| §5 Síntoma → dónde mirar | Tabla de 13 síntomas | **13.5** | 13/13 filas, 2 enriquecidas (renumeración interna y puntero al runbook 3 de OPERACION) |
+| §6 Cómo agregar un dominio nuevo | Procedimiento de 6 pasos | **13.6** | 6/6 pasos. Pasos 1 y 2 comprimidos a punteros a la sección 2.4, que ya decía lo mismo |
+
+**Transformaciones deliberadas, ninguna es pérdida:**
+
+1. **Columna "Archivos clave"**: `logic.js, view.js, index.js` (repetido en 13 filas) pasa a "los 3 estándar", con la convención declarada arriba de la tabla. Ahorra 13 repeticiones del mismo dato.
+2. **Detalle del corte de `compromisos/` y `tesoreria/`**: estaba duplicado carácter por carácter entre la tabla de dominios (2.4) y la tabla operativa (13.3). Queda **solo en 2.4**, que es su dueño por la separación conceptual del encargo (2.4 responde "cómo está partido", 13.3 responde "qué abro primero"). 13.3 conserva el puntero.
+3. **Referencias internas renumeradas**: "ver sección 3" a "ver 13.2", "la tabla de la sección 4" a "la tabla de 13.4", y el paso 6 del procedimiento reescrito para apuntar a 2.4 + 13.3 + 13.4 en lugar de "este archivo y ARCHITECTURE.md".
+
+#### 11.7.2 Referencias actualizadas
+
+| Archivo | Referencia vieja | Nueva |
+|---|---|---|
+| `CLAUDE.md` §1 | fila propia de `MAPA.md` en el mapa de documentos | fusionada dentro de la fila de `ARCHITECTURE.md`, que ahora declara sus dos mitades |
+| `CLAUDE.md` §3 | "Consultar `docs/MAPA.md`" | "Consultar la sección 13 de `docs/ARCHITECTURE.md`" |
+| `docs/contexto/README.md` §1 | `MAPA.md` en la tabla de "qué documento responde qué" | `ARCHITECTURE.md` sección 13 |
+| `docs/contexto/README.md` §2.3 | "Ubicación gruesa por dominio (vive en MAPA)" | "(vive en el mapa operativo, `ARCHITECTURE.md` sección 13)" |
+| `docs/ARCHITECTURE.md` §2.4 | puntero a `MAPA.md` | puntero a la sección 13 del mismo documento |
+| `modules/dominio/movimientos/logic.js:40` | comentario que cita `docs/MAPA.md` | `docs/ARCHITECTURE.md` sección 13.1. **Commit propio**: es archivo de código, no documentación |
+
+**No se tocan** (principio 7, historia congelada): las 10 menciones en `docs/CHANGELOG.md` y la de `docs/changelog/2026-06.md`. Describen el estado del repo en el momento de cada tarea. Tampoco `docs/BOARD.md` línea 596, que describe el plan de la reorganización, no enlaza al archivo.
+
+Falsos positivos del `grep`, sin relación con el documento: la constante `MAPA_FRECUENCIA_A_APORTE` en `modules/infra/vencimientos.js`, `docs/DECISIONS/041` y `docs/contexto/mis-cuentas.md`.
+
+#### 11.7.3 Hallazgo que bloquea el borrado: el techo de 20 KB es aritméticamente imposible
+
+La compuerta pedida ("comprobar que ARCHITECTURE.md no supera su techo definido") **no pasa**, y el faltante no se cierra podando:
+
+| Componente | Bytes | KB |
+|---|---|---|
+| `ARCHITECTURE.md` secciones 1 a 12, antes de la fusión | 19.570 | 19,1 |
+| Sección 13 (ex `MAPA.md`, ya de-duplicada) | 9.626 | 9,4 |
+| **Total tras la fusión** | **29.196** | **28,5** |
+| Techo vigente (sección 4 y principio 4) | 20.480 | 20,0 |
+| **Exceso** | **8.716** | **8,5** |
+
+El techo nunca fue alcanzable: `ARCHITECTURE.md` ya pesaba 19,1 KB por sí solo, a 0,9 KB del techo, y el contrato le manda absorber un documento de 9,7 KB. La de-duplicación real entre ambos era de apenas 156 bytes, porque sus contenidos son casi disjuntos: la fusión suma, no comprime. Peor: la misma fila de la sección 6 le manda absorber **también** las convenciones técnicas de `CONTRIBUTING.md` (~4 KB), lo que llevaría el archivo a ~33 KB contra un techo de 20.
+
+Ni el borrado completo de los inventarios archivo por archivo de 2.2 (`infra/`, 15 filas) y 2.3 (`ui/`, 9 filas), que el propio contrato ordena y suman 2,7 KB, cierra la brecha: dejaría el archivo en 26,5 KB, todavía 6,5 KB por encima.
+
+**Conclusión:** el techo de 20 KB se fijó sin medir el tamaño real del destino. Corregirlo es una decisión de Esteban, no una interpretación: por eso el archivo `docs/MAPA.md` **no se borró**, quedó con banner de "superado" (mismo precedente que `SETUP_DOMINIO.md` en la Fase 3) y todas sus referencias vivas ya apuntan al destino.
 
 ---
 

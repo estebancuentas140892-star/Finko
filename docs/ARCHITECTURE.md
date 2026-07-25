@@ -1,7 +1,9 @@
 # Arquitectura - Finko Claude
 
-> Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio o se introduce un patrón nuevo.
-> Última revisión: 2026-07-02 (DOC.C, reescrito al estado real del proyecto).
+> Documento vivo. Se actualiza cuando cambia una capa, se agrega un dominio, se mueve un archivo de estilos o se introduce un patrón nuevo.
+> Última revisión: 2026-07-24 (absorbe el mapa operativo del ex `MAPA.md` como sección 13).
+>
+> **Dos preguntas distintas, dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema (capas, dominios, eventos, reglas técnicas). La sección 13 responde **dónde está cada cosa y cómo localizarla** (sección visible → carpeta, índice de estilos, síntoma → dónde mirar). Si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
 ---
 
@@ -124,7 +126,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
 | `tesoreria/` | Cuentas bancarias, ingresos, "Distribuir mi ingreso" (sección visible "Mis cuentas") | dividido por subsistema: `logic/`, `views/` y `acciones/` con `cuentas.js`, `ingresos.js` y `distribucion.js` cada una; `logic.js`/`view.js` son barrels |
 
-> Para ubicar rápido qué archivo tocar por sección visible, estilos y test, ver [`docs/MAPA.md`](MAPA.md).
+> Para ubicar rápido qué archivo tocar por sección visible, estilos y test, ver la **sección 13 (mapa operativo)** de este mismo documento.
 
 ---
 
@@ -347,3 +349,99 @@ dominio/*/index.js  ← logic.js, view.js, EventBus
 ```
 
 **Regla:** ningún `dominio/X` importa de `dominio/Y`. La comunicación cross-dominio va por `EventBus` (ver sección 6).
+
+---
+
+## 13. Mapa operativo: dónde vive cada cosa
+
+Índice de navegación rápida. Mientras las secciones 1 a 12 explican **cómo está construido** el sistema, esta responde **dónde está** y **qué mirar primero**, sin depender de memoria. Absorbe el ex `docs/MAPA.md` (fusionado el 2026-07-24).
+
+### 13.1 Sección visible → carpeta real
+
+En la app, el nombre visible de una sección casi nunca coincide con el nombre de su carpeta:
+
+| Ves en la app | Carpeta real |
+|---|---|
+| Inicio | `dash` (no tiene dominio propio, ver 13.2) |
+| Gastos | `gastos` |
+| Calendario | `agenda` |
+| Deudas | `compromisos` (incluye también gastos fijos, no solo deudas) |
+| Mis cuentas | `tesoreria` |
+| Me deben | `personales` |
+
+### 13.2 "Inicio" no es un dominio
+
+El dashboard (`#dash`) no tiene carpeta propia en `modules/dominio/`: es una composición de widgets que sí pertenecen a otros dominios (`resumen/`, `movimientos/`, `accesos/`, `logros/`, alertas de `presupuesto/`, vencidos de `compromisos/` + `agenda/`, nudge de distribución de `tesoreria/`). Si algo se ve mal en Inicio, casi siempre hay que mirar el dominio dueño del dato, no un archivo "dash" que no existe.
+
+### 13.3 Dónde tocar por sección: archivos, estilos y test
+
+**Convención de la columna "Archivos clave":** "los 3 estándar" significa `logic.js`, `view.js` e `index.js`, el patrón universal descrito en la sección 2.4. Solo se detalla cuando el dominio se aparta de ese patrón, y el detalle del corte (qué archivo hay dentro de cada carpeta) vive en la tabla de dominios de la 2.4, no acá: esta columna dice **qué abrir primero**, no cómo está partido.
+
+| Sección visible | Carpeta (`modules/dominio/`) | Archivos clave | Estilos (`styles/components/`) | Test unitario |
+|---|---|---|---|---|
+| Inicio | *(sin carpeta propia, ver 13.2)* | `ui/bootstrap.js`, `infra/render.js` | `domain.css` (hero-saldo, vencidos-card, prioridades-card, resumen-card, balance-tira, limites-card) | `resumen.test.js`, `render.test.js` |
+| Gastos | `gastos/` | los 3 estándar | `domain.css` (mes-nav, filtros-bar/chip, gastos-resumen) | `gastos.test.js` |
+| Calendario | `agenda/` | los 3 estándar | `config.css` (bloque AGENDA, línea 449) | `agenda.test.js` |
+| Deudas | `compromisos/` | entrar por `logic/` o `views/` según el corte de la 2.4; `index.js` es el wiring | `charts.css` (chooser entidad/personal, estrategia de pago), `domain.css` (abono-btn, cal-detail) | `compromisos.test.js`, `estrategia-pago.test.js` (e2e) |
+| Mis cuentas | `tesoreria/` | entrar por `logic/`, `views/` o `acciones/` según el subsistema (ver 2.4); `index.js` es el coordinador | `domain.css` (ingresos-card, distribucion-rows/clasicos) | `tesoreria.test.js`, `cuenta-helper.test.js`, `distribuir-pago.test.js` |
+| Apartados | `apartados/` | los 3 estándar | `domain.css` (bloque APARTADOS línea 530, form rediseño línea 1305) | `apartados.test.js` |
+| Ahorro | `ahorro/` | los 3 estándar | `domain.css` (consolidado de ahorro línea 1348), `analysis.css` (bloque J.1/J.1b) | `ahorro.test.js`, `ahorro-inversion.test.js` (e2e) |
+| Presupuesto | `presupuesto/` | los 3 estándar | `analysis.css` (D.5 envelope budgeting, MC.8b) | `presupuesto.test.js` |
+| Metas | `metas/` | los 3 estándar | `analysis.css` | `metas.test.js` |
+| Me deben | `personales/` | los 3 estándar | `domain.css` (personales-resumen) | `personales.test.js` |
+| Inversiones | `inversiones/` | los 3 estándar | `analysis.css` (bloque J.2a/J.2b/J.2c) | `inversiones.test.js` |
+| Análisis | `analisis/` | los 3 estándar | `analysis.css` (panel completo: bento, métricas, salud, patrimonio, proyección) | `analisis.test.js` |
+| Configuración | `config/` | `index.js`, `view.js` (sin `logic.js` propio) | `config.css` (bloque CONFIGURACION línea 7) | *(sin test unitario dedicado, ver `import.test.js`/`export.test.js`)* |
+| *(sin sección propia)* | `export/` | `logic.js` (invocado desde `config`) | | `export.test.js` |
+| *(sin sección propia)* | `import/` | los 3 estándar | `charts.css` (bloque IMPORT CSV línea 154) | `import.test.js` |
+| *(toast, sin vista propia)* | `logros/` | `logic.js`, `index.js` | `nudges.css` (bloque LOGRO TOAST línea 127) | `logros.test.js` |
+| *(card en Inicio)* | `resumen/` | los 3 estándar | `domain.css` (RESUMEN-CARD línea 1070) | `resumen.test.js` |
+| Movimientos (card "Actividad reciente" en Inicio + ruta `#movimientos` sin ícono de nav) | `movimientos/` | los 3 estándar (TX.8a panel, TX.8b vista completa, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACTIVIDAD-RECIENTE, MOVIMIENTOS), `atoms.css` (`.list-item__amount--ingreso`) | `movimientos.test.js` |
+| Accesos rápidos (tiles bajo el hero de Inicio + modal "Personalizar") | `accesos/` | los 3 estándar (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md)) | `domain.css` (ACCESOS-INICIO), `atoms.css` (`.accesos-row*`) | `accesos.test.js` |
+
+### 13.4 Índice de estilos por widget (`styles/components/`)
+
+Estos archivos **no están organizados por dominio**, sino por tipo de widget o patrón visual, y varios widgets se comparten entre secciones a propósito (evita duplicar CSS). Antes de buscar a ciegas, revisar esta tabla:
+
+| Archivo | Qué agrupa |
+|---|---|
+| `atoms.css` | Chips, badges, list items, empty state, spinner, divisor, progress bar, toggle, teja de categoría (`cat-teja`, ID.3) |
+| `buttons.css` | Botones y cards genéricas |
+| `charts.css` | Sparkline + donut, modal de importar CSV, chooser entidad/personal, estrategia de pago de deudas |
+| `config.css` | Configuración (perfil, notificaciones, datos, acerca de), install PWA, Agenda/Calendario |
+| `domain.css` | Grupo grande y heterogéneo: calculadoras (posible código muerto, ver nota abajo), herramienta-inline, ingresos-card, mes-nav, filtros-bar/chip, distribución de ingreso, gastos-resumen, apartados, abono a deudas, cuenta-picker/multi/sel (compartido por Gastos/Deudas/Apartados/Metas), widgets de Inicio (hero-saldo, vencidos-card, prioridades-card, actividad-reciente, resumen-card, balance-tira, limites-card), personales-resumen, form de apartados, ahorro consolidado, banner-propósito (compartido por las 10 secciones) |
+| `forms.css` | Sistema de íconos SVG de línea, inputs/formularios |
+| `nudges.css` | Sistema de nudges (5 niveles), logro toast, bank avatar/picker, badges de dominio |
+| `analysis.css` | Todo el panel de Análisis: bento, métricas, salud financiera, presupuesto, ahorro, inversión, gastos, patrimonio |
+
+Capas base (sin agrupar por widget, aplican a toda la app): `reset.css`, `base.css`, `tokens.css`, `layout.css`, `modals.css`, `themes.css`, `a11y.css`, `responsive.css`, `utils.css`. Ver el orden de cascada en [`styles/main.css`](../styles/main.css) y la tabla de `@layer` en la sección 8.
+
+**Nota:** `.calc-*` (calculadoras) en `domain.css` líneas 7-190 puede ser código muerto: la sección "Calculadoras" se retiró de la app en 2026-06-07 y sus fórmulas migraron a `infra/financiero.js`. Verificar uso real antes de tocar o borrar.
+
+### 13.5 Síntoma → dónde mirar
+
+| Síntoma | Mirar primero |
+|---|---|
+| Un dato no se guarda o desaparece al recargar | `core/storage.js` (persistencia + migraciones), `core/state.js` (singleton `S`) |
+| Un botón no responde al clic | `ui/actions.js` (único lugar con `data-action` delegado) |
+| Un modal no abre, no cierra, o el foco se pierde | `ui/modales.js`, `infra/a11y.js` (`trapFocus`/`releaseFocus`) |
+| La navegación entre secciones no cambia la vista | `infra/router.js` |
+| Un cálculo financiero da un número raro | `infra/financiero.js` (fórmulas puras: CDT, crédito, interés compuesto, regla 72) o `logic.js` del dominio afectado |
+| El selector de cuenta no aparece o elige mal | `infra/cuenta-helper.js` (patrón 0/1/varias cuentas, usado por Gastos/Deudas/Apartados/Metas) |
+| Un pago se reparte mal entre cuentas | `infra/distribuir-pago.js` |
+| Falta un ícono o aparece el símbolo genérico | `infra/icons.js`, sprite SVG inline en `index.html` |
+| El banco no se detecta o el logo no aparece | `infra/bancos.js`, `infra/marcas.js` |
+| Un formulario no valida o no muestra el error | `infra/form-errors.js` |
+| Falta una notificación de compromiso próximo | `infra/notificaciones.js` |
+| El CSV de gastos no importa/exporta bien | `infra/csv.js`, `dominio/import/`, `dominio/export/` |
+| Algo se ve mal visualmente | usar la tabla de 13.4 para ubicar el archivo CSS, luego buscar la clase por nombre (`grep -n "\.clase-buscada" styles/components/*.css`) |
+| El Service Worker sirve una versión vieja | `service-worker.js`, revisar el número de versión de cache (runbook 3 de [`OPERACION.md`](OPERACION.md)) |
+
+### 13.6 Cómo agregar un dominio nuevo
+
+1. Crear `modules/dominio/<nombre>/` con los 3 archivos del patrón estándar de la sección 2.4. Ver un dominio existente como referencia, ej. `gastos/`.
+2. Si la vista supera ~300 líneas, o si el dominio entero crece, aplicar el corte que describe la sección 2.4 (`views/` con barrel, o las tres capas por subsistema) y sumar los archivos nuevos al precache de `service-worker.js`.
+3. Agregar los estilos nuevos: si son exclusivos del dominio, en un bloque nuevo dentro del archivo de `styles/components/` que mejor encaje temáticamente (ver 13.4); si son un patrón reutilizable, considerar si ya existe algo similar antes de duplicar.
+4. Registrar el dominio en `ui/bootstrap.js` y la navegación en `index.html`.
+5. Crear `tests/unit/<nombre>.test.js`.
+6. Actualizar la tabla de dominios de la sección 2.4 y las tablas 13.3 y 13.4 de este documento.
