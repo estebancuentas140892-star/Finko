@@ -2,7 +2,8 @@
 
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
-> Última actualización: 2026-07-21 (BUG-014 y BUG-015 solucionados el mismo día, ambos hallazgos de la auditoría de UX/producto; ver CHANGELOG. Queda solo BUG-013).
+> Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
+> Última actualización: 2026-07-24. **2 errores abiertos:** BUG-016 (cuatro mensajes en voseo) y BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal). Ninguno afecta el uso diario de la app.
 
 ---
 

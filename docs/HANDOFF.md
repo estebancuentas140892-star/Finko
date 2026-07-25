@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-23 (feat(metas): EDIT.1a, editar sin destruir el progreso; primera de cuatro rebanadas del patrón P3 de la auditoría)
+> Última actualización: 2026-07-24 (correcciones de veracidad de la Fase 2 de la reorganización documental, ver [`MIGRACION.md`](MIGRACION.md)). Última tarea cerrada: EDIT.1a, editar una meta sin destruir el progreso.
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -15,7 +15,7 @@
 PWA offline-first de gestión financiera personal para Colombia.
 Vanilla JS puro + ES6 modules. Sin framework, sin build step, sin servidor, sin cuenta.
 Todo vive en `localStorage` (clave `fk_v1`). Pensada para personas con poco conocimiento
-financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GMF).
+financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 **Versión actual:** `v1.0.0` - todas las 14 fases originales completadas y cerradas.
 **Rama principal:** `main`.
@@ -27,7 +27,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, tasa de usura, GM
 | Métrica | Valor |
 |---|---|
 | Tests unitarios + integración | 2981/2981 verdes |
-| Tests E2E | 231/231 verde. Suites: `smoke` 152 tests, `estrategia-pago` 21 tests, `ahorro-inversion` 9 tests, `hub-ahorros` 8 tests, `navegacion-render` 7 tests, `registrar-destinos` 6 tests, `install-prompt` 6 tests, `a11y-forms` 6 tests, `registrar-sheet` 5 tests, `reflow-320` 4 tests, `registrar-distribucion` 3 tests. |
+| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-24 corriendo `pnpm run test:e2e`). El desglose por suite no se transcribe acá: lo reporta la propia corrida, y el que estaba escrito sumaba 227. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -76,7 +76,7 @@ Cierra el patrón **P4** de la auditoría de UX/producto y la mitad de P3 que le
 
 ## 4. Mantenimiento y producción
 
-**App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100, cero deuda técnica conocida).
+**App en producción estable:** https://finko-brown.vercel.app (Lighthouse 99-100). **Deuda técnica conocida: 2 errores abiertos**, ninguno con impacto en el uso diario (uno de copy, uno de la propia suite E2E): ver [`docs/BUGS.md`](BUGS.md).
 
 La lista completa y vigente de tareas de mantenimiento y features opcionales vive en [`docs/BOARD.md`](BOARD.md) (secciones "Mantenimiento" y por sección de la app). Esta sección solo guarda el procedimiento detallado de la tarea recurrente más delicada.
 
@@ -123,7 +123,7 @@ Workflow completo (una tarea a la vez, cierre de conversación, selección de mo
 core/        → state.js (singleton S), storage.js (save debounced), constants.js (CO legales)
 infra/       → utils, render, a11y, crud, router, csv, svg, notificaciones
 ui/          → bootstrap (entry point), shell, actions (delegación data-action), modales, onboarding
-dominio/     → agenda, ahorro, analisis, apartados, calculadoras, compromisos,
+dominio/     → accesos, agenda, ahorro, analisis, apartados, compromisos,
                config, export, gastos, import, inversiones, logros, metas,
                movimientos, personales, presupuesto, resumen, tesoreria
 ```

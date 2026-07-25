@@ -1,6 +1,6 @@
 # ADR 002 - Abono de deudas con selector de cuenta
 
-**Estado:** Propuesta (pendiente de aprobación del usuario antes de implementar)
+**Estado:** Aceptada e implementada (el campo quedó sin actualizar al cerrar la feature; corregido el 2026-07-24 sin tocar el resto del ADR)
 **Fecha:** 2026-05-27
 **Autores:** Esteban (producto), Claude Opus 4.7 (arquitectura)
 
