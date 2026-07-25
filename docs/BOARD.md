@@ -129,8 +129,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
 - Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2b a MC.13e-2g**, abajo.
-- Objetivo   : el asistente "Distribuir mi ingreso" (épica MC.7, cerrada) hoy muestra TODAS las necesidades/ahorros/obligaciones registradas; con muchos registros satura. Nueva lógica: al recibir un ingreso, Finko analiza la fecha del ingreso, la frecuencia de ingresos del usuario, las obligaciones vencidas, las que vencen en la ventana de ese ingreso y los aportes de ahorro (fondo/metas/apartados/inversión) programados para esa fecha, y solo sugiere lo que corresponde pagar/apartar en ese momento. Responde "¿qué debo hacer HOY con este dinero?", no "todo lo del mes". Reutilizar la lógica existente de recordatorio de día de ingreso (ADR 021, AP.4/MT.2/AH.4) para "qué toca aportar hoy".
-- **Regla vigente que dejó el motor:** `modules/infra/vencimientos.js` es la única tabla de frecuencias y el único reparto por período del proyecto; ningún dominio vuelve a escribir la suya. Lo consumen Agenda, Metas, Apartados y el prellenado de aportes de AP.5a/AH.5a; lo consumirán PA.1 y el plan de aportes de **MT.6**, importando en vez de copiar.
+- Objetivo   : responder "¿qué debo hacer HOY con este dinero?" en vez de mostrar todo el mes. Diseño completo y regla vigente del motor (`infra/vencimientos.js`, única tabla de frecuencias del proyecto) en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md), sección "Distribución v2".
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js`)
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
 - Modelo     : cada rebanada MC.13e-2 lleva el suyo (ver abajo)
@@ -140,26 +139,22 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 #### MC.13e-2b - Quitar "Abonar extra a deudas" del asistente
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : punto 16 del brief: un abono es un pago, vive en Deudas, no en el asistente de distribución. Quitar la sección `seccionDeudas` de `_renderPanelDistribuir`, la fila `destinosDeudas`/`construirPlanDeudas` de `_construirDatosDistribucion`, y la parte de `_confirmarDistribucion`/`distribucion:aplicar` que hoy aplica abonos a deuda (`compromisos` escucha ese evento por EventBus, ADN 10: revisar su handler para no dejar código muerto del lado de compromisos también).
-- **Ojo al hacerla**: `destinosDeudas` también entra en `descontable` (el cálculo de cuánto sale de la cuenta) y en `hayDestinos` (si mostrar el botón "Distribuir mi ingreso" en la tarjeta); quitarlo sin ajustar esas dos cuentas rompería el balance o escondería el botón de más.
+- Objetivo   : un abono es un pago, vive en Deudas, no en el asistente de distribución: quitar `seccionDeudas`/`destinosDeudas` del asistente y del apply. Archivos, funciones y la trampa de `descontable`/`hayDestinos` en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 - Secciones  : Mis cuentas, Deudas (el consumidor de `distribucion:aplicar` para abonos)
-- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`construirPlanDeudas`, uso en `_construirDatosDistribucion`), `views/distribucion.js` (`seccionDeudas`), `acciones/distribucion.js` (`_confirmarDistribucion`), `modules/dominio/compromisos/index.js` (handler de `distribucion:aplicar`)
 - Depende de : conviene antes de MC.13e-2f (simplifica el paso final que esa rebanada rediseña)
 - Modelo     : Equilibrado - Alto (toca apply + un consumidor por EventBus en otro dominio)
 
 #### MC.13e-2c - Identidad visual por fila: logo/ícono + nombre + nota
 - Prioridad  : media
-- Objetivo   : punto 15 del brief: cada fila de destino (`_filaDistribuir`/`_filaNecesidad`) gana el logo de la entidad (`bancoAvatar`, ya usado en Mis cuentas) o el ícono personalizado de la categoría/marca (`tejaCategoria`/`resolverMarca`, ya usados en Agenda y Deudas), más un campo "nota" opcional para diferenciar dos destinos con el mismo nombre (ej. dos "Arriendo": apartamento vs local). Reutiliza infraestructura ya construida (BR.1-BR.5, MK.1-MK.2, CAT.2), no crea íconos nuevos.
+- Objetivo   : cada fila del asistente gana logo/ícono de marca + campo "nota" opcional, reusando infraestructura ya construida (BR/MK/CAT.2), no crea íconos nuevos. Detalle y verificación de `nota` pendiente en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 - Secciones  : Mis cuentas
-- Archivos   : `modules/dominio/tesoreria/views/distribucion.js` (`_filaDistribuir`, `_filaNecesidad`, `_iconoNecesidad`), posible campo `nota` en compromisos/metas/apartados si no existe ya
-- Depende de : verificar en el análisis de la rebanada si `compromiso.nota`/`meta.nota`/`apartado.nota` ya existen (AG.4 ya usa `nota` en gastos fijos) o hace falta agregarlos
+- Depende de : verificar en el análisis si `compromiso.nota`/`meta.nota`/`apartado.nota` ya existen o hace falta agregarlos
 - Modelo     : Equilibrado - Alto (reuso de infra existente en varias filas, revisar shape de datos por tipo)
 
 #### MC.13e-2d - Cuota del período en las filas de ahorro, no el objetivo total
 - Prioridad  : media
-- Objetivo   : punto 21 del brief: las filas de metas/fondo/apartados en el asistente (`destinosAhorro`) deben mostrar cuánto aportar EN ESTE período según la frecuencia real de ingresos (motor `aportePorPeriodo`, MC.13b, ya calcula esto para Metas y Apartados), no el objetivo total de la meta/fondo. Verificar si `construirDesgloseAhorroPorObjetivo` ya usa el motor (parcialmente sí, vía AH.2/MT.2/AP.4) o todavía mezcla el total; si ya lo usa, esto puede ser solo una rebanada de verificación + copy (mostrar la etiqueta del período junto al monto).
+- Objetivo   : las filas de ahorro del asistente muestran la cuota del período (motor `aportePorPeriodo`, MC.13b), no el objetivo total. Verificar si `construirDesgloseAhorroPorObjetivo` ya usa el motor: detalle en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 - Secciones  : Mis cuentas, transversal por el motor (`infra/vencimientos.js`)
-- Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`construirDesgloseAhorroPorObjetivo`), `views/distribucion.js` (`_filaDistribuir`)
 - Depende de : nada (el motor ya existe, MC.13b)
 - Modelo     : Equilibrado - Alto (verificar el dato correcto antes de tocar la vista)
 
@@ -195,11 +190,8 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 #### MC.13c-3 - Datar el cobro de todas las frecuencias (`ultimoPagoHasta`)
 - Prioridad  : baja
 - Estado     : pendiente, **no bloquea nada** (separada de MC.13c-2 al cerrarla, que descubrió que no la necesitaba).
-- Objetivo   : `ultimoPagoHasta` (`tesoreria/logic/ingresos.js:199`) devuelve `null` para todo lo que no sea Mensual o Quincenal, así que un usuario con ingreso Bimestral/Trimestral/Semestral/Anual no tiene cobro datable: `estadoDistribucion` le da 'sin-fecha' y se queda sin el guard de de-duplicación ("ya distribuiste este periodo"). El asistente igual le funciona.
-- **Por qué NO se hizo en MC.13c-2:** la checklist no lo necesita (sin fecha datable el motor asume que el cobro es hoy, que es exactamente cuando el usuario está repartiendo), y `ultimoPagoHasta` alimenta `periodoISO`, la **clave de de-duplicación** del asistente: tocarla es riesgo de regresión sobre su guard central a cambio de un beneficio pequeño y para un caso poco común. Mejor su propia rebanada, con su propia verificación.
-- **Ojo al hacerla (dos trampas encontradas):** (1) Diario y Semanal **no tienen `diaPago`** (`FRECUENCIAS_CON_DIA` no los incluye: el form nunca lo captura), así que no se pueden datar por esta vía; Diario podría resolverse como "el último cobro es hoy", pero Semanal necesitaría capturar el día de la semana, que es una feature aparte. (2) El modelo Quincenal del motor pierde el segundo cobro cuando `diaPago > 16`: ver **[BUG-017](BUGS.md)**, decidirlo aparte.
+- Objetivo   : `ultimoPagoHasta` no data frecuencias largas (Bimestral/Trimestral/Semestral/Anual), que quedan sin guard de de-duplicación. No bloquea nada; el asistente igual funciona. Por qué no se hizo antes y las 2 trampas (Diario/Semanal sin `diaPago`; Quincenal ver **[BUG-017](BUGS.md)**) en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 - Secciones  : Mis cuentas (asistente), Calendario (si se corrige el modelo quincenal)
-- Archivos   : `tesoreria/logic/ingresos.js` (`ultimoPagoHasta`), `modules/infra/vencimientos.js` (`ocurrenciasEnMes`, caso Quincenal)
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
 
@@ -216,9 +208,8 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
 - Prioridad  : media
 - Estado     : pendiente de análisis. **Revisa el cierre de MC.17 como "completa"** (regla 2.7: decirlo, no corregirlo en silencio). Hallazgo de la auditoría de UX/producto.
-- Objetivo   : una transferencia mueve dinero real entre dos cuentas y, desde MC.17d, puede además cobrar el 4x1000, pero **no se puede editar ni revertir**: si el usuario se equivoca de cuenta o de monto, no tiene salida dentro de la app y los dos saldos quedan mal. Es el mismo patrón P3 del resto de la auditoría, agravado porque aquí el error descuadra dos cuentas a la vez. Diseñar la reversa (recomendado: "deshacer" que aplica el movimiento inverso y deja rastro, en vez de borrado silencioso, coherente con el ledger de MC.17c) y decidir si la edición se permite o se resuelve como deshacer + volver a crear. **Ojo:** revertir debe devolver también el `costoGMF` cobrado, o el patrimonio queda mal por el gravamen.
+- Objetivo   : una transferencia no se puede editar ni revertir hoy; un error de cuenta o monto descuadra dos saldos a la vez sin salida dentro de la app (patrón P3, agravado). Diseño recomendado (deshacer con rastro, no borrado silencioso) y el cuidado del GMF en [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md).
 - Secciones  : Mis cuentas, Movimientos (rastro)
-- Archivos   : `modules/dominio/tesoreria/logic/transferencias.js` (`calcularTransferencia` ya es apply atómico puro: la reversa es su espejo), `acciones/transferencias.js`, `modules/dominio/movimientos/`
 - Depende de : coordinar con **MOV.1** (si el ledger gana acciones por fila, "deshacer transferencia" es una de ellas y no necesita UI propia en Mis cuentas)
 - Modelo     : Alta capacidad - Alto (dinero en dos cuentas + GMF; una reversa mal hecha descuadra el patrimonio)
 
@@ -387,9 +378,8 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Prioridad  : baja
 - Área       : design (mejora visual; la advertencia técnica es de rendimiento, no de lógica de negocio)
 - Estado     : pendiente de análisis (no iniciar sin leer la advertencia)
-- Objetivo   : Esteban percibe el cambio de tema como brusco ("parece que la página recarga"). **Advertencia del triaje: la transición suave YA existe y su estado actual es una decisión deliberada de rendimiento**, documentada en `styles/themes.css`: la técnica `theme-transitioning` (280 ms) se restringió a ~30 contenedores porque animar `*` causaba lag perceptible en móvil (cientos de elementos × 5 propiedades), y bajo `prefers-reduced-motion` el cambio es instantáneo a propósito. Antes de tocar nada: (1) reproducir la brusquedad en el dispositivo real de Esteban y descartar que sea reduced-motion activo; (2) la dirección técnica recomendada NO es "más transiciones CSS" (ya se probó y se revirtió) sino la **View Transitions API** (`document.startViewTransition()`): el navegador compone un crossfade de snapshot en un solo paint, sin animar elementos individuales, como mejora progresiva (Chrome/Edge/Safari 18+; Firefox cae al comportamiento actual). Cumple la restricción de rendimiento del ADR 031 D6.
+- Objetivo   : el cambio de tema se percibe brusco. **Advertencia: la transición suave ya existe y su alcance actual es rendimiento deliberado**, no un olvido. Detalle e investigación ya hecha en [`contexto/sistema-visual.md`](contexto/sistema-visual.md).
 - Secciones  : Transversal (shell/tema), visible desde Ajustes
-- Archivos   : `modules/ui/shell.js` (`toggleTheme`), `styles/themes.css`
 - Depende de : verificación en dispositivo real primero (mismo criterio de evidencia del ADR 030 D4)
 - Modelo     : Equilibrado - Alto (mejora progresiva acotada con verificación de rendimiento antes/después)
 
@@ -500,15 +490,15 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : las categorías personalizadas de TX.9b existen solo para Gastos; el brief pide que una categoría creada por el usuario (nombre + icono) valga también para Gastos fijos y aparezca con su icono y el color de su sección en TODAS las superficies donde aparezca (Calendario, Inicio, Movimientos, Pendientes, Prioridades, Análisis, filtros, gráficos), con las mismas automatizaciones que una nativa. Decidir el modelo de datos: catálogo global vs por sección (probable bump de schema).
+- Objetivo   : las categorías personalizadas valen hoy solo para Gastos; extenderlas a Gastos fijos y a TODAS las superficies con el mismo estatus que las nativas. Detalle y modelo de datos a decidir en [`contexto/transversal.md`](contexto/transversal.md).
 - Secciones  : transversal
 - Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
 - Modelo     : Alta capacidad - Alto (modelo de datos + propagación transversal)
 
 #### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
 - Prioridad  : media
-- Estado     : pendiente. **Nota FORM.1a (2026-07-15):** los formularios que migren al lenguaje v2 cumplen "fecha por defecto = hoy" por diseño (chip "Hoy" preseleccionado); Registrar gasto ya quedó cubierto. La auditoría sigue vigente para los formularios no migrados.
-- Objetivo   : dos reglas transversales de los briefs 2026-07-08 aplicadas en UNA pasada por todos los formularios. (1) **Orden** (brief Mis Cuentas punto 8): la categoría/tipo va primero y la descripción después, nunca al contrario; Gastos ya lo cumple (TX.9a) y el form de Deudas lo adoptará en su reordenamiento (Deudas v2). (2) **Fecha por defecto = hoy** (brief Me deben punto 1, elevado por Esteban a regla de toda la app): todo campo de fecha de un movimiento nuevo viene precargado con la fecha actual, editable; auditar cuáles forms ya lo hacen y corregir los que no (el de Me deben reportado explícitamente).
+- Estado     : pendiente. Los formularios ya migrados al lenguaje v2 cumplen "fecha por defecto = hoy" por diseño; la auditoría sigue vigente para los no migrados. Detalle en [`contexto/transversal.md`](contexto/transversal.md).
+- Objetivo   : dos reglas transversales en una pasada por todos los formularios: orden categoría/tipo antes que descripción, y fecha por defecto = hoy en todo campo de fecha nuevo.
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
 - Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15d para no tocar el mismo form dos veces
 - Modelo     : Equilibrado - Medio (una pasada por ~8 formularios con tests de ambas reglas)
@@ -524,28 +514,25 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### ARQ.1 - `infra/bolsas.js`: un solo modelo para las cuatro bolsas
 - Prioridad  : baja
-- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.**
-- Objetivo   : fondo de emergencia, metas, apartados e inversión son cuatro implementaciones del mismo concepto ("una bolsa con objetivo, acumulado, progreso y aportes"). La auditoría midió la duplicación: `calcularProgreso` escrito 3 veces, `diasHastaFecha` 2 veces **con redondeos distintos**, y los handlers de "aportar" copiados casi carácter por carácter entre Metas y Apartados (incluido `_ajustarSaldoCuenta`). Extraer a `infra/` las funciones puras compartidas (progreso, días hasta fecha) y el handler común de "aportar a una bolsa que descuenta cuenta", más un componente de fila de progreso. **Precedente exacto y reciente: `infra/vencimientos.js`** (MC.13a/b), que hizo esto mismo con las frecuencias que Metas y Apartados duplicaban "intencionalmente". Mantiene ADN 10 intacto: ningún dominio importa a otro, todos importan infra. **Recomendación de la auditoría, importante: NO fusionar las pantallas.** Las cuatro secciones responden a mentalidades distintas del usuario y su separación es útil; lo que se unifica es la infraestructura, no la UX.
+- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.** Duplicación medida y detalle en [`contexto/transversal.md`](contexto/transversal.md).
+- Objetivo   : fondo de emergencia, metas, apartados e inversión son 4 implementaciones del mismo concepto (bolsa con objetivo, acumulado, progreso y aportes). Unificar la infraestructura compartida en `infra/`, sin fusionar las pantallas.
 - Secciones  : Transversal (`infra/`), consumidores en Ahorro, Metas, Apartados, Inversión
-- Archivos   : `modules/infra/` (módulo nuevo), `modules/dominio/metas/logic.js`, `apartados/logic.js`, `ahorro/logic.js`, `inversiones/logic.js`
-- Depende de : nada. **EDIT.1a (cerrada) demostró que el temor de "escribir cuatro editores y luego unificarlos" era menor al esperado**: el formulario de edición es específico de cada dominio, así que ARQ.1 no bloquea las 3 rebanadas de EDIT.1 que faltan. Sigue conviniendo antes de que las iniciativas v2 rehagan sus vistas, para no duplicar el cálculo en el nuevo diseño
+- Depende de : nada. EDIT.1a (cerrada) ya demostró que unificar después de escribir los 4 editores es viable
 - Modelo     : Alta capacidad - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
 
 #### ARQ.2 - Consolidar los cálculos duplicados que quedan
 - Prioridad  : baja
-- Estado     : pendiente. Hallazgo de la auditoría de UX/producto, patrón P7.
-- Objetivo   : tres duplicaciones concretas, cada una con una copia ya identificada. (1) **`FACTOR_MENSUAL` vive en más de un archivo** (`infra/financiero.js` como `FACTOR_MENSUAL_INGRESO`, `tesoreria/logic/ingresos.js` como `FACTOR_MENSUAL`): una sola tabla, o el próximo cambio de frecuencias sale mal en una de las dos. (2) **Helper "registrar pago de compromiso"**: la aritmética "registrar gasto-abono + bajar saldo + descontar cuenta" está escrita tres veces (`compromisos/_guardarAbono`, el apply de `acciones/distribucion.js`, `agenda/_marcarPagadoGastoFijo`); centralizarla reduce la superficie donde vuelven a aparecer bugs como BUG-015. (3) Totales de Agenda que recalculan lo que el motor de vencimientos ya da. **Disciplina obligatoria:** refactor sin cambio de comportamiento, con las suites existentes como red de regresión, mismo criterio con que MC.13b movió las frecuencias sin tocar un solo test.
+- Estado     : pendiente. Hallazgo de la auditoría de UX/producto, patrón P7. Detalle de las 3 duplicaciones en [`contexto/transversal.md`](contexto/transversal.md).
+- Objetivo   : consolidar 3 duplicaciones concretas (`FACTOR_MENSUAL`, el helper de "registrar pago de compromiso", totales de Agenda), sin cambio de comportamiento.
 - Secciones  : Transversal (`infra/`), Compromisos, Agenda, Tesorería
-- Archivos   : `modules/infra/financiero.js`, `modules/dominio/tesoreria/logic/ingresos.js`, `modules/dominio/compromisos/logic/abonos.js`, `modules/dominio/agenda/index.js`, `modules/dominio/tesoreria/acciones/distribucion.js`
-- Depende de : nada; el helper de pago (2) conviene **antes** de **CAL.5b**, que suma deudas al lote y ahí sí necesita mover `saldoTotal`. CAL.5a (cerrada) evitó la cuarta copia sin este refactor: comparte una única función privada dentro de Agenda entre el pago individual y el lote
+- Depende de : nada; conviene **antes** de CAL.5b, que suma deudas al lote
 - Modelo     : Equilibrado - Alto (refactor mecánico con tests existentes como red; sin decisiones de producto)
 
 #### UPD.1 - Aviso de actualización disponible + novedades mostradas una sola vez
 - Prioridad  : media
 - Estado     : pendiente
-- Objetivo   : (6.º lote, brief General punto 1) cuando el service worker detecte una versión nueva (`updatefound`), mostrar un aviso discreto ("Hay una nueva actualización disponible") con botón que aplica la actualización (skipWaiting + recarga controlada) en vez de esperar a la próxima recarga casual. Tras actualizar, mostrar **una única vez** un resumen breve de las novedades que le importan al usuario (no un changelog técnico): catálogo `NOVEDADES_POR_VERSION` en `constants.js`, comparando contra la última versión vista persistida. Los datos financieros no se tocan (las migraciones idempotentes ya garantizan eso, ADN 6); cero servidor: el SW ya versiona con `CACHE_NAME`.
+- Objetivo   : aviso discreto cuando el SW detecta versión nueva, con aplicación al toque; tras actualizar, resumen de novedades una única vez. Detalle en [`contexto/transversal.md`](contexto/transversal.md).
 - Secciones  : Transversal (`infra/sw-register.js`, `service-worker.js`, aviso en shell)
-- Archivos   : `modules/infra/sw-register.js`, `service-worker.js`, `modules/core/constants.js`, `modules/ui/shell.js`
 - Depende de : nada
 - Modelo     : Equilibrado - Alto (ciclo de vida del SW tiene esquinas: waiting/controllerchange/doble recarga)
 
@@ -557,7 +544,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Prioridad  : media
 - Área       : design (auditoría de UX; puede derivar en tarjetas `code` al re-cortarse)
 - Estado     : pendiente de análisis (no iniciar; conviene DESPUÉS de que las iniciativas v2 grandes definan sus pantallas, o la auditoría se hace dos veces)
-- Objetivo   : inventario de todos los banners/hints/CTAs de arranque por sección; propuesta de qué se elimina, fusiona o convierte en guía contextual (nudge en el momento del error/necesidad, no texto permanente); revisión formal del ADR 016; re-corte en rebanadas por sección.
+- Objetivo   : inventario de banners/hints/CTAs de arranque por sección, propuesta de qué se elimina o convierte en guía contextual, revisión formal del ADR 016. Detalle en [`contexto/transversal.md`](contexto/transversal.md).
 - Secciones  : Transversal (`ui/proposito.js`, empty states de todas las vistas)
 - Depende de : recomendado tras IV.2 + las primeras iniciativas v2; coordina con cada una
 - Modelo     : Equilibrado - Alto (auditoría de UX con criterio, sin lógica nueva)
@@ -590,7 +577,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 #### LG.2e - Familia comportamiento (interpretación de hábitos)
 - Prioridad  : baja
 - Estado     : pendiente; parcialmente bloqueada por datos
-- Objetivo   : logros `hormiga-a-raya` (implementable ya: categorías hormiga/café + guardia de mes completo de registro, ADR 032 D2.3), `ahorro-creciente` (**bloqueado**: necesita la derivación canónica de ingreso mensual, probable entregable de ANL.1) y `pagador-puntual` (verificar si el histórico de abonos por fecha alcanza). **Cada logro pasa el test anti-gaming del ADR 032 D2 explícitamente en su PR.**
+- Objetivo   : 3 logros de comportamiento (`hormiga-a-raya` implementable ya, `ahorro-creciente` bloqueado por falta de derivación de ingreso mensual, `pagador-puntual` a verificar). Detalle en [`contexto/transversal.md`](contexto/transversal.md), sección Logros.
 - Secciones  : Transversal (`logros`)
 - Depende de : LG.2c (usa "mes completo de registro" como guardia); `ahorro-creciente` además de ANL.1
 - Modelo     : Alta capacidad - Alto (detectores de comportamiento con riesgo real de incentivos perversos)
