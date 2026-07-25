@@ -37,8 +37,9 @@ import { CATEGORIA_INGRESO_ICONO, iconoDeCategoriaGasto } from '../../core/const
 
 /**
  * Categorías internas de `S.gastos` que en realidad son un pago de deuda o de
- * un fijo del Calendario (ver `docs/MAPA.md`: "Deudas incluye también gastos
- * fijos"), no gasto cotidiano. El dominio dueño es `compromisos`, no `gastos`.
+ * un fijo del Calendario (ver `docs/ARCHITECTURE.md` 13.1: "Deudas incluye
+ * también gastos fijos"), no gasto cotidiano. El dominio dueño es
+ * `compromisos`, no `gastos`.
  */
 const _CATEGORIAS_COMPROMISOS = new Set(['Deudas', 'Gastos fijos']);
 
