@@ -429,7 +429,7 @@ export const S = createInitialState();
 
 /**
  * EventBus pub/sub. Desacopla dominios entre sí.
- * Convención de nombres: `dominio:acción` (ej: `state:change`, `ui:navigate`).
+ * Convención de nombres: `dominio:acción` (ej: `state:change`, `distribucion:aplicar`).
  */
 export const EventBus = {
   /** @type {Record<string, Array<(data: unknown) => void>>} */
