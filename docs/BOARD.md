@@ -43,6 +43,65 @@ Reglas de las tarjetas (ver la skill `triaje-tarea`):
 
 ---
 
+## Índice de pendientes
+
+Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo completo (principio 9). "Depende de" va acortado a la referencia clave; el texto completo vive en la tarjeta, más abajo por sección.
+
+| ID | Título | Sección | Prioridad | Depende de |
+|---|---|---|---|---|
+| CAL.5b | El lote también cubre deudas, y se ofrece desde Inicio | Calendario | media | ARQ.2 (deudas); Inicio no depende de nada |
+| MC.13 | Distribución v2: contextual por fecha, guiada y con origen real | Mis cuentas | alta | nada |
+| MC.13e-2b | Quitar "Abonar extra a deudas" del asistente | Mis cuentas | media | conviene antes de MC.13e-2f |
+| MC.13e-2c | Identidad visual por fila: logo/ícono + nombre + nota | Mis cuentas | media | verificar notas ya existentes en el análisis |
+| MC.13e-2d | Cuota del período en las filas de ahorro, no el objetivo total | Mis cuentas | media | nada (el motor ya existe) |
+| MC.13e-2e | Completar con saldo de otras cuentas si el ingreso no alcanza | Mis cuentas | media-alta | conviene después de MC.13e-2b |
+| MC.13e-2f | Integración con la cuenta del ingreso fijo + decisión del remanente | Mis cuentas | alta | conviene después de MC.13e-2b; bloqueada por UX |
+| MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
+| MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
+| MC.16 | Tarjeta de crédito como producto integrado [requiere ADR] | Mis cuentas | alta | ADR propio; coordinar ADR 029 D3 |
+| MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
+| AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | CAT.1 (catálogo) |
+| MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
+| AH.5 | Fondo v2: rediseño UX educativo + aportes por distribución | Ahorro | media | motor de MC.13; rediseño conviene tras IV.2 |
+| LIM.1 | Límites v2: asistente preventivo de estilo de vida | Límites | sin definir | ADR 045 (base de cálculo); ADR 044 (sugerencias) |
+| PE.6 | Me deben v2: intereses, historial de abonos y confianza | Me deben | media-alta | nada duro |
+| ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
+| CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a y CFG.2b |
+| CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
+| CFG.2b | Inferir el estado de declarante, con encuadre laboral | Configuración | sin definir | CFG.2a |
+| CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
+| CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
+| CFG.5 | Seguridad de acceso: PIN, patrón, biometría | Configuración | sin definir | nada para PIN local; cuenta depende de CFG.4 |
+| CFG.6 | Revisión general de la sección Ajustes | Configuración | sin definir | CFG.1 a CFG.5 |
+| CFG.7 | Transición de tema claro/oscuro más fluida | Configuración | baja | verificación en dispositivo real primero |
+| PERF.5 | Migrar la persistencia a IndexedDB (futura, no iniciar) | Transversal | sin definir | un disparador del ADR 030 D4 |
+| PERF.6 | Coalescer de renders por microtask | Transversal | baja | decidir si el beneficio lo justifica |
+| DV.2a | Tokens de superficie/elevación + degradado de identidad | Transversal | alta | ADR 033 aprobado |
+| DV.2b | Riqueza visual piloto: formas orgánicas + patrón | Transversal | media-alta | DV.2a |
+| DV.2c | Catálogo de movimiento con propósito | Transversal | media-alta | ADR 033 aprobado |
+| DV.2d | Ilustraciones como clase nueva de asset | Transversal | media | DV.2b; diseños o drafts aprobados |
+| IV.4 | Iconografía dirigida post-color | Transversal | tras IV.2 | IV.2 en producción + revisión visual |
+| PERF.7c | Warm-up de derivaciones pesadas en idle | Transversal | media | conviene después de PERF.7b |
+| PERF.8 | Columna "arranque" en el harness + limpieza de CSS muerto | Transversal | media | nada |
+| CAT.1 | Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas | Transversal | alta | nada (validación ya hecha) |
+| CAT.3 | Categorías personalizadas globales | Transversal | media | CAT.1 y CAT.2 |
+| CAT.4 | Auditoría de consistencia de formularios | Transversal | media | nada; coordinar con Deudas v2 y MC.15d |
+| EDIT.1 | Editar sin destruir: Apartados, Inversión y Me deben | Transversal | media-alta | nada duro; coordina con ARQ.1 |
+| ARQ.1 | `infra/bolsas.js`: un solo modelo para las cuatro bolsas | Transversal | baja | nada |
+| ARQ.2 | Consolidar los cálculos duplicados que quedan | Transversal | baja | nada; conviene antes de CAL.5b |
+| UPD.1 | Aviso de actualización disponible + novedades | Transversal | media | nada |
+| GU.1a | Auditoría del sistema de guía + revisión del ADR 016 | Transversal | media | recomendado tras IV.2 + las v2 grandes |
+| LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
+| LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
+| LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
+| PA.1 | ADR + diseño de pagos automáticos | Transversal | media-alta | motor de MC.13; ADR propio |
+| DOC.1 | Reorganización documental, fases 3 a 5 | Mantenimiento | media | nada |
+| A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
+| E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
+| E.3 | Verificar GMF y otras tasas si hay reforma tributaria | Mantenimiento | baja | que ocurra una reforma |
+
+---
+
 ## Pendientes por sección
 
 > **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a, MC.13e-2f), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1, ARQ.2).
@@ -430,12 +489,11 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 #### CAT.1 - Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas
 - Prioridad  : alta
-- Estado     : **taxonomía VALIDADA con Esteban el 2026-07-13** (sesión única para ADR 014 + ADR 029 D3 + criterios de esta tarjeta, como pedía el triaje); implementación pendiente por rebanadas (abajo). Decisión registrada en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (pasa a Aceptada, sección "Validación 2026-07-13") y el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) (D3 validada tal cual, su Fase 0 queda desbloqueada). Ficha: bloque "Taxonomía global de categorías" en [`contexto/transversal.md`](contexto/transversal.md).
-- Decisiones : (1) **Gastos↔Fijos**: Vivienda y Servicios públicos salen del form de Gastos; el hint completo se retira (`CATEGORIAS_TIPICAMENTE_FIJAS` + `#hint-categoria-fija`; revisa la decisión 4 del ADR 014, señalado explícitamente y ratificado). Educación queda en AMBAS secciones sin hint; Mercado, Transporte y Mascotas quedan duales. (2) **Apartados↔Metas**: sale Vacaciones; "Matrícula o semestre" pasa a "Matrícula escolar" (el semestre universitario es Meta); entran Veterinario, Mantenimiento del hogar, Seguro del hogar y Reparaciones inesperadas; "Útiles escolares" pasa a "Útiles y uniformes". (3) **Metas**: sale Cumpleaños; Vacaciones y Viajes se fusionan en "Viajes". (4) **Fijos no esenciales** = Streaming y Suscripciones (Gimnasio y Telefonía esenciales; lo consume LIM.1 punto 8). **Sin bump de schema**: precedente "Alimentación" v15 (filtrar del form, conservar las entradas de ícono para registros viejos).
-- Rebanadas  : **CAT.1a CERRADA el 2026-07-13** (Gastos: quitó Vivienda y Servicios públicos del form + retiró el hint completo). **CAT.1b CERRADA el 2026-07-13** (Apartados: plantillas curadas). Queda **CAT.1c** Metas (sale Cumpleaños + fusión Vacaciones/Viajes; render legado seguro vía `CATEGORIA_META_ICONO`; tests).
-- Secciones  : Gastos, Calendario (fijos), Apartados, Metas, transversal (`constants.js`, forms)
+- Estado     : taxonomía **validada y decidida**, registrada íntegra en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (Aceptada, sección "Validación 2026-07-13") y el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) D3. Solo queda pendiente **CAT.1c** (Metas: sale Cumpleaños, fusión Vacaciones/Viajes, render legado vía `CATEGORIA_META_ICONO`, tests); CAT.1a y CAT.1b ya cerradas, ver [CHANGELOG](CHANGELOG.md). Ficha: bloque "Taxonomía global de categorías" en [`contexto/transversal.md`](contexto/transversal.md).
+- Objetivo   : implementar CAT.1c con las decisiones ya registradas en el ADR 014, sin reabrir ninguna.
+- Secciones  : Metas
 - Depende de : nada (la validación ya está hecha)
-- Modelo     : Sonnet 5 - Medio por rebanada (curación de constantes + tests, sin schema ni migración)
+- Modelo     : Sonnet 5 - Medio (curación de constantes + tests, sin schema ni migración)
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -516,7 +574,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ---
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada (2026-07-09): LG.2a (ADR + catálogo), LG.2b (fundación de progresión) y LG.2c (rachas de constancia + familia deudas, cerrada 2026-07-12, ver CHANGELOG) cerradas; nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos. Catálogo: 17 logros (era 11).** Contexto original: **requería ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos** (triaje del 4.º lote, 2026-07-08, brief de Análisis puntos 1-5). **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md) Aceptada: LG.2a, LG.2b y LG.2c cerradas** (ver [CHANGELOG](CHANGELOG.md)); nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos. Contexto original: **requería ADR que revise el ADR 022** (la vitrina vive en Ajustes por decisión aprobada; el brief la muda a Análisis + resumen en Inicio: decirlo formalmente, no moverla en silencio). Alcance: (1) reubicación (apartado de progreso en Análisis + tarjeta de logros recientes/próximos en Inicio, coordinada con Inicio v2 y ANL.1); (2) logros con **niveles progresivos** (primer gasto → primer mes completo → 3 meses consecutivos → 6 meses...); (3) **niveles de usuario** que evolucionan con los hábitos (nombres por definir con Esteban; los del brief son ejemplos); (4) **regla de oro anti-gaming, al ADR como principio innegociable:** los logros premian hábitos saludables (constancia de registro, plan de ahorro cumplido, fondo completado, deudas pagadas a tiempo, equilibrio entre grupos), NUNCA la omisión de información (prohibidos "día sin gastos" o "semana gastando menos de X%": incentivarían dejar de registrar, contra el propósito de Finko); (5) logros por **interpretación de comportamiento** (mejoró su % de ahorro varios meses, redujo hormiga, terminó una deuda antes de lo previsto), que dependen de derivaciones de Análisis ya existentes (hormigas, resumen) y futuras. La base actual es simple a propósito (11 logros planos en `logros/logic.js`, evaluadores O(1); mantener esa disciplina de rendimiento: evaluación barata por `state:change`, ADR 022).
 
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
 - Prioridad  : baja (bloqueada)
