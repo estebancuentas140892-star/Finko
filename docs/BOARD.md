@@ -116,7 +116,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 - Secciones  : Calendario, Inicio (vencidos), Deudas, Mis cuentas (descuento)
 - Archivos   : `modules/dominio/agenda/logic.js` + `index.js`, `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/distribuir-pago.js`
 - Depende de : **ARQ.2** punto 2 para la parte de deudas (la parte de Inicio no depende de nada)
-- Modelo     : Opus 4.8 - Alto (el abono a deuda mueve saldo y patrimonio: el borde de "abono parcial dentro de un lote" hay que decidirlo explícitamente)
+- Modelo     : Alta capacidad - Alto (el abono a deuda mueve saldo y patrimonio: el borde de "abono parcial dentro de un lote" hay que decidirlo explícitamente)
 
 _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
 
@@ -145,7 +145,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas, Deudas (el consumidor de `distribucion:aplicar` para abonos)
 - Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`construirPlanDeudas`, uso en `_construirDatosDistribucion`), `views/distribucion.js` (`seccionDeudas`), `acciones/distribucion.js` (`_confirmarDistribucion`), `modules/dominio/compromisos/index.js` (handler de `distribucion:aplicar`)
 - Depende de : conviene antes de MC.13e-2f (simplifica el paso final que esa rebanada rediseña)
-- Modelo     : Sonnet 5 - Alto (toca apply + un consumidor por EventBus en otro dominio)
+- Modelo     : Equilibrado - Alto (toca apply + un consumidor por EventBus en otro dominio)
 
 #### MC.13e-2c - Identidad visual por fila: logo/ícono + nombre + nota
 - Prioridad  : media
@@ -153,7 +153,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/views/distribucion.js` (`_filaDistribuir`, `_filaNecesidad`, `_iconoNecesidad`), posible campo `nota` en compromisos/metas/apartados si no existe ya
 - Depende de : verificar en el análisis de la rebanada si `compromiso.nota`/`meta.nota`/`apartado.nota` ya existen (AG.4 ya usa `nota` en gastos fijos) o hace falta agregarlos
-- Modelo     : Sonnet 5 - Alto (reuso de infra existente en varias filas, revisar shape de datos por tipo)
+- Modelo     : Equilibrado - Alto (reuso de infra existente en varias filas, revisar shape de datos por tipo)
 
 #### MC.13e-2d - Cuota del período en las filas de ahorro, no el objetivo total
 - Prioridad  : media
@@ -161,7 +161,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas, transversal por el motor (`infra/vencimientos.js`)
 - Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`construirDesgloseAhorroPorObjetivo`), `views/distribucion.js` (`_filaDistribuir`)
 - Depende de : nada (el motor ya existe, MC.13b)
-- Modelo     : Sonnet 5 - Alto (verificar el dato correcto antes de tocar la vista)
+- Modelo     : Equilibrado - Alto (verificar el dato correcto antes de tocar la vista)
 
 #### MC.13e-2e - Completar con saldo de otras cuentas si el ingreso no alcanza
 - Prioridad  : media-alta
@@ -169,7 +169,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas
 - Archivos   : `modules/dominio/tesoreria/logic/distribucion.js` (`resumirPlanDistribucion`), `acciones/distribucion.js` (`_confirmarDistribucion`), `views/distribucion.js` (mensaje de déficit)
 - Depende de : conviene después de MC.13e-2b (menos destinos que balancear)
-- Modelo     : Opus 4.8 - Alto (lógica financiera nueva con casos borde: qué cuenta, cuánto, no dejar ninguna en negativo sin confirmar)
+- Modelo     : Alta capacidad - Alto (lógica financiera nueva con casos borde: qué cuenta, cuánto, no dejar ninguna en negativo sin confirmar)
 
 #### MC.13e-2f - Integración con la cuenta del ingreso fijo + decisión explícita del remanente
 - Prioridad  : alta
@@ -179,7 +179,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Archivos   : `modules/dominio/tesoreria/acciones/distribucion.js` (`_confirmarDistribucion`, resolución de cuenta), `views/distribucion.js` (`seccionInfo`, paso "Estilo de vida")
 - **Desbloqueo parcial propuesto por el triaje de la auditoría (2026-07-21), patrón P1:** esta tarjeta mezcla dos cosas de dificultad muy distinta, y la mitad fácil está presa de la difícil. Usar `Ingreso.cuentaId` (MC.13d) como punto de partida en vez de llamar siempre a `resolverCuenta()` **no necesita diseño nuevo**: el dato ya se captura desde MC.13d y hoy se ignora, así que el usuario vuelve a elegir la misma cuenta cada quincena. La decisión explícita del remanente (punto 18) sí necesita la palabra de Esteban. Recomendación: partir en **MC.13e-2f-1** (usar el `cuentaId` del ingreso, desbloqueada, ejecutable ya) y **MC.13e-2f-2** (decisión del remanente, sigue bloqueada).
 - Depende de : conviene después de MC.13e-2b (menos ruido en el paso final); **bloqueada por la decisión de UX de Esteban** (solo la mitad del remanente, ver desbloqueo parcial arriba)
-- Modelo     : Opus 4.8 - Alto (lógica financiera + decisión de producto no trivial); la mitad del `cuentaId` baja a Sonnet 5 - Alto
+- Modelo     : Alta capacidad - Alto (lógica financiera + decisión de producto no trivial); la mitad del `cuentaId` baja a Equilibrado - Alto
 
 #### MC.13e-2g - Rediseño en 2 pasos con educación financiera
 - Prioridad  : media
@@ -190,7 +190,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Archivos   : `modules/dominio/tesoreria/views/distribucion.js` (reestructura mayor de `_renderContenidoAsistente`/`_renderPanelDistribuir`), CSS nuevo si hay mockup
 - **Tensión señalada por el triaje de la auditoría (2026-07-21), pendiente de la decisión de Esteban:** esta rebanada quiere **más** pasos (educación financiera antes de repartir), mientras que la auditoría propone lo contrario para el mismo asistente: una **propuesta pre-armada de un toque** (todo calculado y marcado por defecto, el usuario solo confirma) para bajar la fricción del flujo más repetido de la app. No son necesariamente incompatibles (la educación puede ser opcional, colapsable o de primera vez), pero el orden importa y decide el diseño: **¿la educación va al frente o detrás de la acción?** Resolverlo antes de encargar el handoff, o el mockup fijará la respuesta sin que nadie la haya decidido.
 - Depende de : conviene última (reestructura el contenedor donde viven las demás rebanadas); depende de la decisión de handoff de diseño y de la tensión de arriba
-- Modelo     : si hay handoff, Sonnet 5 - Alto (implementación de mockup, mismo patrón que FORM.1/CAL.4/GAS.1); si no, Opus 4.8 - Alto (diseño + implementación sin mockup)
+- Modelo     : si hay handoff, Equilibrado - Alto (implementación de mockup, mismo patrón que FORM.1/CAL.4/GAS.1); si no, Alta capacidad - Alto (diseño + implementación sin mockup)
 
 #### MC.13c-3 - Datar el cobro de todas las frecuencias (`ultimoPagoHasta`)
 - Prioridad  : baja
@@ -201,7 +201,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas (asistente), Calendario (si se corrige el modelo quincenal)
 - Archivos   : `tesoreria/logic/ingresos.js` (`ultimoPagoHasta`), `modules/infra/vencimientos.js` (`ocurrenciasEnMes`, caso Quincenal)
 - Depende de : nada
-- Modelo     : Opus 4.8 - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
+- Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
 
 > **Nota transversal (hallazgo de MC.13c-2, 2026-07-14): el modelo Quincenal cae una sola vez al mes si `diaPago > 16`.** `ocurrenciasEnMes` resuelve Quincenal como `[diaPago, diaPago + 15]` **dentro del mismo mes** y descarta el segundo si no cabe. Con `diaPago = 20`, el segundo sería el 35 → se descarta, así que un compromiso o ingreso quincenal del día 20 aparece **una vez al mes** en el Calendario, en la checklist y en el motor. Lo correcto sería que el segundo cobro pase al mes siguiente (día 5). Es **preexistente**: viene de `_diasParaCompromiso` de Agenda y MC.13a lo extrajo tal cual (sus 139 tests lo fijan). Afecta a Calendario y a todo consumidor del motor. Requiere decisión de Esteban antes de tocarlo, porque cambia lo que hoy ve el Calendario.
 
@@ -211,7 +211,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Objetivo   : ampliar los tipos de cuenta (ahorros, corriente, tarjeta débito, **tarjeta crédito**, billetera digital, efectivo, otro) y modelar la tarjeta de crédito como lo que es: no es dinero disponible, es cupo+deuda. Al pagar con ella, preguntar "¿a cuántas cuotas?", crear automáticamente la deuda con su tasa registrada, calcular cuotas, actualizar calendario/análisis/pendientes; el pago anticipado recalcula cuotas restantes. Incluye los nudges educativos de costos bancarios (avances en efectivo, retiros en otras redes, pago mínimo: intervenir solo cuando previene un mal hábito, punto 5 del brief). **Cuidados del ADR:** el tipo de cuenta 'Inversión' se ELIMINÓ en la migración v11 justamente para separar dominios: reintroducir un tipo que cruza dominios (cuenta que genera deudas) necesita diseño explícito, no un valor más en el catálogo. **Desbloquea CFG.2a/K.3:** con TC modelada, `consumosTC` del monitor de renta deja de ser dato manual. **Comparte modelo de datos** con el nivel "producto por entidad" del brief de Deudas (Visa Platinum del Banco de Bogotá): decidir juntos en la validación D3 del ADR 029.
 - Secciones  : Mis cuentas, Deudas, Calendario, Análisis (transversal vía EventBus, ADN 10)
 - Depende de : ADR propio; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
-- Modelo     : Fable 5 - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
+- Modelo     : Máxima capacidad - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
 
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
 - Prioridad  : media
@@ -220,7 +220,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Mis cuentas, Movimientos (rastro)
 - Archivos   : `modules/dominio/tesoreria/logic/transferencias.js` (`calcularTransferencia` ya es apply atómico puro: la reversa es su espejo), `acciones/transferencias.js`, `modules/dominio/movimientos/`
 - Depende de : coordinar con **MOV.1** (si el ledger gana acciones por fila, "deshacer transferencia" es una de ellas y no necesita UI propia en Mis cuentas)
-- Modelo     : Opus 4.8 - Alto (dinero en dos cuentas + GMF; una reversa mal hecha descuadra el patrimonio)
+- Modelo     : Alta capacidad - Alto (dinero en dos cuentas + GMF; una reversa mal hecha descuadra el patrimonio)
 
 ---
 
@@ -235,7 +235,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Apartados
 - Archivos   : `modules/dominio/apartados/` (form, view, logic)
 - Depende de : CAT.1 (categorías nuevas de la filosofía redefinida) para el catálogo; el toggle y el form pueden ir antes
-- Modelo     : Sonnet 5 - Alto (re-corte en rebanadas al iniciar)
+- Modelo     : Equilibrado - Alto (re-corte en rebanadas al iniciar)
 
 ---
 
@@ -250,7 +250,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Metas, Calendario (plan visible), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/metas/logic.js` (cálculo existente), motor compartido de MC.13, `agenda` (visualización del plan)
 - Depende de : MC.13 (motor); validación D3 del ADR 029 para las subcategorías; coordinar con PA si el plan se automatiza
-- Modelo     : Opus 4.8 - Alto (modelo de datos de subcategorías + generación/recalculo del plan de aportes)
+- Modelo     : Alta capacidad - Alto (modelo de datos de subcategorías + generación/recalculo del plan de aportes)
 
 ---
 
@@ -265,7 +265,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Secciones  : Ahorro (fondo), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
 - Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya se corrigió el 2026-07-11, aparte)
-- Modelo     : Sonnet 5 - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
+- Modelo     : Equilibrado - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
 
 ---
 
@@ -296,7 +296,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Me deben (`personales`), transversal solo por CFG.3/CAT.4 ya derivados
 - Archivos   : `modules/dominio/personales/logic.js` (acumulación de intereses, ya tiene la base de PE.1), `state.js`/`storage.js` (historial, bump), `personales/view.js`
 - Depende de : nada duro; el punto 7 conviene tras IV.2; re-cortar en rebanadas al iniciar (PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza)
-- Modelo     : Opus 4.8 - Alto (lógica financiera de intereses acumulados con pagos parciales; el resto de rebanadas puede bajar de modelo)
+- Modelo     : Alta capacidad - Alto (lógica financiera de intereses acumulados con pagos parciales; el resto de rebanadas puede bajar de modelo)
 
 ---
 
@@ -327,7 +327,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes), Análisis
 - Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
 - Depende de : CFG.2a y CFG.2b; coordinar con ANL.1
-- Modelo     : Sonnet 5 - Alto (reubicación de UX sin lógica fiscal nueva)
+- Modelo     : Equilibrado - Alto (reubicación de UX sin lógica fiscal nueva)
 
 #### CFG.2a - Auto-derivar ingresos brutos del año al monitor de renta
 - Prioridad  : sin definir
@@ -336,7 +336,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes), Análisis (monitor de renta), transversal (lee ingresos)
 - Archivos   : `modules/dominio/analisis/logic.js` (`calcularEstadoRenta`, nueva `estimarIngresosBrutosAnio`), `modules/dominio/tesoreria/logic/ingresos.js` (helper de anualización si aplica)
 - Depende de : CFG.1a (cerrada)
-- Modelo     : Opus 4.8 - Alto (lógica financiera CO no trivial: anualización de ingresos + interpretación de "ingresos brutos" DIAN)
+- Modelo     : Alta capacidad - Alto (lógica financiera CO no trivial: anualización de ingresos + interpretación de "ingresos brutos" DIAN)
 
 #### CFG.2b - Inferir el estado de declarante + mensaje del motivo, con encuadre por situación laboral
 - Prioridad  : sin definir
@@ -345,7 +345,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes), Análisis (monitor de renta)
 - Archivos   : `modules/dominio/analisis/logic.js` (`detectarNudgesRenta` y/o nueva lógica de inferencia), `modules/dominio/config/view.js` (perfil fiscal)
 - Depende de : CFG.2a
-- Modelo     : Opus 4.8 - Alto (producto + framing legal; roza filosofía de producto)
+- Modelo     : Alta capacidad - Alto (producto + framing legal; roza filosofía de producto)
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
 - Prioridad  : sin definir
@@ -354,7 +354,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes, activación), transversal (agenda, presupuesto, metas, apartados, compromisos, personales como fuentes de los eventos)
 - Archivos   : sin explorar; depende de si Finko ya usa alguna API de notificaciones del navegador/PWA (revisar `modules/infra/notificaciones.js` y el service worker) o si hay que incorporar Push API / Notification API, lo cual tiene restricciones de permisos y de plataforma (iOS Safari limita notificaciones push de PWA)
 - Depende de : nada. Riesgo técnico a evaluar primero: viabilidad real de notificaciones push offline-first sin servidor (ADN 2 y 3); puede requerir ADR si la solución técnica choca con "sin servidor".
-- Modelo     : Fable 5 - Alto (multidominio, con una restricción técnica de plataforma no trivial que hay que investigar antes de diseñar)
+- Modelo     : Máxima capacidad - Alto (multidominio, con una restricción técnica de plataforma no trivial que hay que investigar antes de diseñar)
 
 #### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
 - Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)
@@ -372,7 +372,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes), transversal (el guard de re-autenticación envuelve acciones de varios lugares)
 - Archivos   : sin explorar; biometría real depende de WebAuthn/Credential Management API (soporte y UX varían por navegador/SO); un PIN/patrón simple se puede resolver 100% client side sin APIs nuevas
 - Depende de : nada para PIN/patrón local + re-auth de acciones críticas; la credencial de cuenta depende de CFG.4. Viabilidad de biometría en PWA hay que verificarla antes de prometerla en el diseño.
-- Modelo     : Opus 4.8 - Alto (decisión de qué mecanismos son viables en PWA vs. cuáles prometer a futuro; UX de bloqueo con riesgo de dejar al usuario fuera de sus propios datos si algo falla)
+- Modelo     : Alta capacidad - Alto (decisión de qué mecanismos son viables en PWA vs. cuáles prometer a futuro; UX de bloqueo con riesgo de dejar al usuario fuera de sus propios datos si algo falla)
 
 #### CFG.6 - Revisión general de la sección Ajustes
 - Prioridad  : sin definir
@@ -382,7 +382,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Configuración (Ajustes)
 - Archivos   : `modules/dominio/config/view.js`, `styles/components/config.css`
 - Depende de : CFG.1 a CFG.5 (esta es la pasada de auditoría/orden final, tiene sentido hacerla después o junto con las demás, no antes)
-- Modelo     : Sonnet 5 - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
+- Modelo     : Equilibrado - Alto (auditoría de una sección existente con criterio de UX, sin lógica financiera nueva)
 
 #### CFG.7 - Transición de tema claro/oscuro más fluida [con advertencia técnica]
 - Prioridad  : baja
@@ -392,7 +392,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Transversal (shell/tema), visible desde Ajustes
 - Archivos   : `modules/ui/shell.js` (`toggleTheme`), `styles/themes.css`
 - Depende de : verificación en dispositivo real primero (mismo criterio de evidencia del ADR 030 D4)
-- Modelo     : Sonnet 5 - Alto (mejora progresiva acotada con verificación de rendimiento antes/después)
+- Modelo     : Equilibrado - Alto (mejora progresiva acotada con verificación de rendimiento antes/después)
 
 ---
 
@@ -407,7 +407,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Transversal (`core/storage.js`, `bootstrap.js` pasa a async, sembrado E2E)
 - Archivos   : `modules/core/storage.js` (motor async), `modules/ui/bootstrap.js` (loadData async), migración de datos localStorage → IDB sin pérdida, reescritura del sembrado de las 11 suites E2E
 - Depende de : un disparador del ADR 030 D4
-- Modelo     : Opus 4.8 - Extra o Fable 5 - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
+- Modelo     : Alta capacidad - Extra o Máxima capacidad - Alto (cambio de mayor riesgo del proyecto: ruta de arranque async + migración de datos reales de años)
 
 ---
 
@@ -418,7 +418,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Riesgo     : cambia el timing de los renders reactivos de síncrono a microtask. Blast radius de tests medido chico (los tests de vista llaman la view directo, no vía bus; E2E auto-espera). Cerca del pipeline de render: si se hace, medir el doble-render real con un escenario nuevo del harness antes/después (disciplina ADR 030).
 - Secciones  : Transversal (`infra/render.js` + listeners `state:change` de los dominios multi-observador)
 - Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
-- Modelo     : Opus 4.8 - Alto (si se hace)
+- Modelo     : Alta capacidad - Alto (si se hace)
 
 > **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), estado **Propuesta**), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **Nada de esto se implementa sin la validación de Esteban:** el ADR espera 5 respuestas (sección "Preguntas abiertas P1 a P5", cada una con su recomendación escrita). Las rebanadas DV.2a-d están abajo.
 
@@ -429,7 +429,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : escala de elevación de 4 niveles: `.card`/`.bento__cell`/`.list-item` ganan sombra en reposo (`--fk-shadow-sm`), sombras de doble capa tintadas en tema claro (`themes.css`), y regla de aire entre bloques (space-6 móvil / space-8 escritorio) documentada para las v2. Variable nueva `--fk-section-color` (token crudo) en el mapeo `[data-dom]`/`[data-section]` + token `--fk-grad-identity` (degradado de identidad, 2 paradas), con piloto en los heroes existentes (Inicio, Fondo, Inversión). DESIGN_SYSTEM.md gana la sección "Elevación" y actualiza "Sombras". Verificación: capturas ambos temas, contraste medido contra la parada fuerte del degradado (método IV.1), Lighthouse 100, `pnpm perf` sin regresión.
 - Secciones  : Transversal (`styles/tokens.css`, `styles/themes.css`, `styles/components/buttons.css` `.card`, `styles/layout.css` `.bento__cell` + mapeo, `styles/components/atoms.css` `.list-item`)
 - Depende de : ADR 033 aprobado
-- Modelo     : Sonnet 5 - Alto (cambio transversal de CSS con verificación de contraste y perf en cada tema)
+- Modelo     : Equilibrado - Alto (cambio transversal de CSS con verificación de contraste y perf en cada tema)
 
 #### DV.2b - Riqueza visual piloto: formas orgánicas + patrón (D3 del ADR 033)
 - Prioridad  : media-alta
@@ -438,7 +438,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : extensión de `scripts/sync-sprite.py` a la carpeta `assets/svg/decoracion/` (prefijo `d-*`, validación propia: no aplican las reglas de icono 24px); clase `.decor` (posición absoluta en esquinas, `aria-hidden`, `pointer-events: none`, opacidad 4-8%); 3-5 formas neutras draft (plantillas que Esteban sobrescribe en Illustrator, ADR 026) teñidas por dominio vía `currentColor`; patrón de puntos CSS tokenizado (`--fk-pattern-dots`, solo empty states/onboarding). Piloto acotado: 2 heroes + 2 empty states. Presupuesto D3/D6 del ADR (máx 1 forma por pantalla, texto nunca sobre decoración sin re-medir contraste).
 - Secciones  : Transversal (sprite, `styles/components/atoms.css`, heroes piloto)
 - Depende de : DV.2a (usa `--fk-section-color`)
-- Modelo     : Sonnet 5 - Alto (pipeline + criterio visual con guardarraíles medibles)
+- Modelo     : Equilibrado - Alto (pipeline + criterio visual con guardarraíles medibles)
 
 #### DV.2c - Catálogo de movimiento con propósito (D4 del ADR 033)
 - Prioridad  : media-alta
@@ -447,7 +447,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : (1) cascada acotada en listas (`cardIn` escalonado solo en los primeros 6 items, paso 35 ms); (2) resaltado de fila recién guardada vía pseudo-elemento con `--fk-dom-X-bg` desvaneciendo por `opacity` (no se anima `background-color`); (3) **retiro de `empty-orbit`/`empty-float`** (bucles infinitos, contra el veto del brief) + auditoría de `animation-iteration-count: infinite` en todo `styles/`; (4) doctrina del catálogo cerrado escrita en DESIGN_SYSTEM.md (toda animación nueva se registra ahí con su propósito). No toca celebraciones (LG.2/ADR 032) ni el cambio de tema (CFG.7). Verificación en móvil real o E2E de timing + `pnpm perf`.
 - Secciones  : Transversal (`styles/base.css`, `styles/components/atoms.css`, `docs/DESIGN_SYSTEM.md`; JS solo si un helper entra a `infra/animate.js`)
 - Depende de : ADR 033 aprobado; independiente de DV.2a/b
-- Modelo     : Sonnet 5 - Alto (timing/stagger con disciplina de rendimiento)
+- Modelo     : Equilibrado - Alto (timing/stagger con disciplina de rendimiento)
 
 #### DV.2d - Ilustraciones como clase nueva de asset (D3 del ADR 033)
 - Prioridad  : media
@@ -456,7 +456,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : carpeta `assets/svg/ilustraciones/` (prefijo `il-*`) + spec (retícula 120, trazo del lenguaje v2 escalado, paleta limitada a tokens, ambos temas) + extensión del sync; los empty states del lote P4 (recomendado: las 6 superficies más visitadas) reemplazan el arte geométrico de `emptyArt()`. Presupuesto de sprite ≤ ~25 KB fuente por lote; Lighthouse 100 como gate.
 - Secciones  : Transversal (sprite, `infra/icons.js` `emptyArt()`, empty states de las vistas del lote)
 - Depende de : DV.2b (pipeline de decoración ya extendido); diseños o drafts aprobados
-- Modelo     : Sonnet 5 - Alto (spec + integración; el diseño es de Esteban)
+- Modelo     : Equilibrado - Alto (spec + integración; el diseño es de Esteban)
 
 #### IV.4 - Iconografía dirigida post-color
 - Prioridad  : decidir tras IV.2
@@ -466,7 +466,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - **Spec integrada por triaje 2026-07-08 (brief de Deudas, punto 13):** los iconos de **Avalancha** y **Bola de nieve** no representan el concepto de cada estrategia; rediseñarlos con metáfora clara (regla 5 del ADR 023: metáfora primero) manteniendo el lenguaje v2. Nota: `i-mountain` conserva sus picos agudos a propósito (decisión de ID.7); el problema reportado es de metáfora, no de estilo. Primer lote candidato de esta tarjeta.
 - Secciones  : `assets/svg/`, sprite de `index.html`
 - Depende de : IV.2 en producción + revisión visual + diseños de Esteban
-- Modelo     : Sonnet 5 - Alto (revisión de assets contra spec; el diseño es de Esteban)
+- Modelo     : Equilibrado - Alto (revisión de assets contra spec; el diseño es de Esteban)
 
 ---
 
@@ -476,7 +476,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : tras el primer render, un `requestIdleCallback` (con fallback `setTimeout` para navegadores sin soporte) que precaliente el bundle memoizado de Análisis y `movimientosCompletos`, para que la primera navegación a esas secciones caiga en caché en vez de pagar el cómputo frío (11-48 ms a 10k). Es el "proceso en segundo plano" que pidió Esteban, sin Web Workers (clonar el estado costaría más que estos cómputos de milisegundos).
 - Secciones  : Transversal (`ui/bootstrap.js`, hooks de warm-up exportados por `analisis/view.js` y `movimientos/view.js`)
 - Depende de : conviene después de 7b (así el warm-up calienta el bundle ya completo).
-- Modelo     : Sonnet 5 - Alto
+- Modelo     : Equilibrado - Alto
 
 #### PERF.8 - Columna "arranque" en el harness + limpieza de CSS muerto
 - Prioridad  : media
@@ -484,7 +484,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : (1) `pnpm perf` no mide `loadData()` (JSON.parse + migraciones + primer render), lo único que crece lineal con el estado total y no se puede memoizar bajo el ADN actual: es el muro real de largo plazo junto con la cuota. Agregar la columna "arranque" a `bench.perf.js` da el dato que el [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4 exige para disparar PERF.5 (IndexedDB) con evidencia y no con intuición. (2) Borrar CSS sin referencias: `.bento__cell--glass` (con su `backdrop-filter`), `.skeleton`, `.spinner` (verificado sin uso en index.html ni JS el 2026-07-07).
 - Secciones  : Transversal (`scripts/perf/bench.perf.js`, `styles/components/atoms.css`, `styles/layout.css`)
 - Depende de : nada.
-- Modelo     : Sonnet 5 - Medio
+- Modelo     : Equilibrado - Medio
 
 ---
 
@@ -496,7 +496,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : implementar CAT.1c con las decisiones ya registradas en el ADR 014, sin reabrir ninguna.
 - Secciones  : Metas
 - Depende de : nada (la validación ya está hecha)
-- Modelo     : Sonnet 5 - Medio (curación de constantes + tests, sin schema ni migración)
+- Modelo     : Equilibrado - Medio (curación de constantes + tests, sin schema ni migración)
 
 #### CAT.3 - Categorías personalizadas globales (mismo estatus que las nativas, en toda la app)
 - Prioridad  : media
@@ -504,7 +504,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : las categorías personalizadas de TX.9b existen solo para Gastos; el brief pide que una categoría creada por el usuario (nombre + icono) valga también para Gastos fijos y aparezca con su icono y el color de su sección en TODAS las superficies donde aparezca (Calendario, Inicio, Movimientos, Pendientes, Prioridades, Análisis, filtros, gráficos), con las mismas automatizaciones que una nativa. Decidir el modelo de datos: catálogo global vs por sección (probable bump de schema).
 - Secciones  : transversal
 - Depende de : CAT.1 (la taxonomía define a qué sección pertenece una personalizada) y CAT.2 (el picker es cómo se crea)
-- Modelo     : Opus 4.8 - Alto (modelo de datos + propagación transversal)
+- Modelo     : Alta capacidad - Alto (modelo de datos + propagación transversal)
 
 #### CAT.4 - Auditoría de consistencia de formularios: orden de campos + fecha por defecto
 - Prioridad  : media
@@ -512,7 +512,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : dos reglas transversales de los briefs 2026-07-08 aplicadas en UNA pasada por todos los formularios. (1) **Orden** (brief Mis Cuentas punto 8): la categoría/tipo va primero y la descripción después, nunca al contrario; Gastos ya lo cumple (TX.9a) y el form de Deudas lo adoptará en su reordenamiento (Deudas v2). (2) **Fecha por defecto = hoy** (brief Me deben punto 1, elevado por Esteban a regla de toda la app): todo campo de fecha de un movimiento nuevo viene precargado con la fecha actual, editable; auditar cuáles forms ya lo hacen y corregir los que no (el de Me deben reportado explícitamente).
 - Secciones  : transversal (solo views de formularios, sin lógica de negocio)
 - Depende de : nada; coordinar con los reordenamientos ya previstos en Deudas v2 y MC.15d para no tocar el mismo form dos veces
-- Modelo     : Sonnet 5 - Medio (una pasada por ~8 formularios con tests de ambas reglas)
+- Modelo     : Equilibrado - Medio (una pasada por ~8 formularios con tests de ambas reglas)
 
 #### EDIT.1 - Editar sin destruir: Apartados, Inversión y Me deben
 - Prioridad  : media-alta
@@ -521,7 +521,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Apartados, Inversión, Me deben
 - Archivos   : `apartados/`, `inversiones/`, `personales/` (form + acciones de cada uno), patrón de referencia ahora en `metas/` (EDIT.1a) y en `compromisos` (D.15b, para Deudas)
 - Depende de : nada duro. Coordina con **ARQ.1** (si las 4 bolsas comparten componente, el formulario de edición se simplifica): decidir si conviene antes de las 3 rebanadas que faltan, aunque EDIT.1a ya demostró que escribir la rebanada de un dominio no es tan costoso como se temía (Metas no comparte prácticamente nada de formulario con Apartados/Inversión/Personales, los campos difieren)
-- Modelo     : Sonnet 5 - Alto por rebanada (patrón ya probado en D.15b y EDIT.1a; sin lógica financiera nueva salvo la decisión de progreso, ya resuelta)
+- Modelo     : Equilibrado - Alto por rebanada (patrón ya probado en D.15b y EDIT.1a; sin lógica financiera nueva salvo la decisión de progreso, ya resuelta)
 
 #### ARQ.1 - `infra/bolsas.js`: un solo modelo para las cuatro bolsas
 - Prioridad  : baja
@@ -530,7 +530,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Transversal (`infra/`), consumidores en Ahorro, Metas, Apartados, Inversión
 - Archivos   : `modules/infra/` (módulo nuevo), `modules/dominio/metas/logic.js`, `apartados/logic.js`, `ahorro/logic.js`, `inversiones/logic.js`
 - Depende de : nada. **EDIT.1a (Metas, cerrada el 2026-07-23) demostró que el temor de "escribir cuatro editores y luego unificarlos" era menor al esperado**: el formulario de edición es específico de cada dominio (campos distintos), así que ARQ.1 no bloquea las 3 rebanadas de EDIT.1 que faltan. Sigue conviniendo antes de que las iniciativas v2 de esas secciones rehagan sus vistas, para no duplicar el cálculo compartido en el nuevo diseño
-- Modelo     : Opus 4.8 - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
+- Modelo     : Alta capacidad - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
 
 #### ARQ.2 - Consolidar los cálculos duplicados que quedan
 - Prioridad  : baja
@@ -539,7 +539,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Transversal (`infra/`), Compromisos, Agenda, Tesorería
 - Archivos   : `modules/infra/financiero.js`, `modules/dominio/tesoreria/logic/ingresos.js`, `modules/dominio/compromisos/logic/abonos.js`, `modules/dominio/agenda/index.js`, `modules/dominio/tesoreria/acciones/distribucion.js`
 - Depende de : nada; el helper de pago (2) conviene **antes** de **CAL.5b**, que suma deudas al lote y ahí sí necesita mover `saldoTotal`. CAL.5a (cerrada) evitó la cuarta copia sin este refactor: comparte una única función privada dentro de Agenda entre el pago individual y el lote
-- Modelo     : Sonnet 5 - Alto (refactor mecánico con tests existentes como red; sin decisiones de producto)
+- Modelo     : Equilibrado - Alto (refactor mecánico con tests existentes como red; sin decisiones de producto)
 
 #### UPD.1 - Aviso de actualización disponible + novedades mostradas una sola vez
 - Prioridad  : media
@@ -548,7 +548,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Transversal (`infra/sw-register.js`, `service-worker.js`, aviso en shell)
 - Archivos   : `modules/infra/sw-register.js`, `service-worker.js`, `modules/core/constants.js`, `modules/ui/shell.js`
 - Depende de : nada
-- Modelo     : Sonnet 5 - Alto (ciclo de vida del SW tiene esquinas: waiting/controllerchange/doble recarga)
+- Modelo     : Equilibrado - Alto (ciclo de vida del SW tiene esquinas: waiting/controllerchange/doble recarga)
 
 ---
 
@@ -561,7 +561,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : inventario de todos los banners/hints/CTAs de arranque por sección; propuesta de qué se elimina, fusiona o convierte en guía contextual (nudge en el momento del error/necesidad, no texto permanente); revisión formal del ADR 016; re-corte en rebanadas por sección.
 - Secciones  : Transversal (`ui/proposito.js`, empty states de todas las vistas)
 - Depende de : recomendado tras IV.2 + las primeras iniciativas v2; coordina con cada una
-- Modelo     : Sonnet 5 - Alto (auditoría de UX con criterio, sin lógica nueva)
+- Modelo     : Equilibrado - Alto (auditoría de UX con criterio, sin lógica nueva)
 
 ---
 
@@ -574,7 +574,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Onboarding, Configuración, `core/state.js`/`storage.js` (registro versionado)
 - Archivos   : `modules/ui/onboarding.js`, `modules/core/state.js`, `modules/core/storage.js`
 - Depende de : el checklist de `docs/legal/README.md` resuelto y el paquete en v1.0
-- Modelo     : Sonnet 5 - Alto (flujo de onboarding + versionado persistido + migración)
+- Modelo     : Equilibrado - Alto (flujo de onboarding + versionado persistido + migración)
 
 ---
 
@@ -586,7 +586,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo, ubicación a definir dentro del bento de Inicio v2); al cerrar, marcar el ADR 022 como Superada.
 - Secciones  : Análisis, Inicio, Ajustes (`logros`)
 - Depende de : ANL.1 (layout de Análisis)
-- Modelo     : Sonnet 5 - Alto (reubicación cross-sección con coordinación de layouts)
+- Modelo     : Equilibrado - Alto (reubicación cross-sección con coordinación de layouts)
 
 #### LG.2e - Familia comportamiento (interpretación de hábitos)
 - Prioridad  : baja
@@ -594,7 +594,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Objetivo   : logros `hormiga-a-raya` (implementable ya: categorías hormiga/café + guardia de mes completo de registro, ADR 032 D2.3), `ahorro-creciente` (**bloqueado**: necesita la derivación canónica de ingreso mensual, probable entregable de ANL.1) y `pagador-puntual` (verificar si el histórico de abonos por fecha alcanza). **Cada logro pasa el test anti-gaming del ADR 032 D2 explícitamente en su PR.**
 - Secciones  : Transversal (`logros`)
 - Depende de : LG.2c (usa "mes completo de registro" como guardia); `ahorro-creciente` además de ANL.1
-- Modelo     : Opus 4.8 - Alto (detectores de comportamiento con riesgo real de incentivos perversos)
+- Modelo     : Alta capacidad - Alto (detectores de comportamiento con riesgo real de incentivos perversos)
 
 ---
 
@@ -607,7 +607,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 - Secciones  : Deudas, Calendario (fijos), Mis cuentas, Inicio (alertas), transversal
 - **Secuencia ya decidida (2026-07-23):** primero el lote manual. **CAL.5a está cerrada** y esta tarjeta sigue viva, no absorbida. El lote captura buena parte del valor percibido de "que se pague solo" con una fracción del riesgo, porque el usuario sigue confirmando y no se toca la filosofía "Finko refleja la realidad, no la inventa". Sirve además de puente: cuando se retome PA.1, su ADR puede llegar con evidencia real de uso del lote en vez de intuición, y con `asignarSplitsPorItem` ya escrito y probado (un pago automático de varios compromisos tiene el mismo problema de reparto).
 - Depende de : motor de vencimientos (MC.13, primera rebanada); ADR propio aprobado por Esteban
-- Modelo     : Fable 5 - Alto para el ADR (filosofía de producto con riesgo de confianza del usuario); implementación por rebanadas después
+- Modelo     : Máxima capacidad - Alto para el ADR (filosofía de producto con riesgo de confianza del usuario); implementación por rebanadas después
 
 ---
 
@@ -656,7 +656,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 - Secciones  : Transversal (constantes legales)
 - Archivos   : `modules/core/constants.js`
 - Depende de : publicación oficial de los decretos/resoluciones 2027
-- Modelo     : Haiku 4.5
+- Modelo     : Ligero
 
 #### E.3 - Verificar GMF y otras tasas si hay reforma tributaria
 - Prioridad  : baja
@@ -665,6 +665,6 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 - Secciones  : Transversal (constantes legales)
 - Archivos   : `modules/core/constants.js`
 - Depende de : que ocurra una reforma
-- Modelo     : Haiku 4.5
+- Modelo     : Ligero
 
 _(Nota de mantenimiento anual: junto con E.2, cada enero agregar también la entrada del año en `IPC_OBSERVADO_POR_ANIO` con el cierre del DANE, ver E.5 en el CHANGELOG de 2026-07.)_
