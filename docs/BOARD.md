@@ -111,7 +111,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 
 #### CAL.5b - El lote también cubre deudas, y se ofrece desde Inicio
 - Prioridad  : media
-- Estado     : pendiente. Continúa **CAL.5a** (cerrada el 2026-07-23, ver CHANGELOG), que dejó funcionando el lote de gastos fijos desde el Calendario. La secuencia "lote manual antes que PA.1" ya está decidida por Esteban.
+- Estado     : pendiente. Continúa **CAL.5a** (cerrada, ver CHANGELOG). Secuencia "lote manual antes que PA.1" ya decidida por Esteban.
 - Objetivo   : dos ampliaciones del mismo flujo, no un mecanismo nuevo. (1) **Deudas en el lote**: hoy `pendientesDePagoDelMes()` filtra `tipo === 'fijo'` a propósito, porque abonar a una deuda además baja su `saldoTotal` y esa aritmética vive en Compromisos. Sumarlas implica que Agenda deje de poder escribir el pago por su cuenta: es el caso que justifica el helper compartido de **ARQ.2** punto 2, así que conviene hacerlo después o junto con él. (2) **Punto de entrada desde Inicio**: el bloque "N pendientes del mes" (`#panel-vencidos`, `compromisos/views/dashboard.js`) muestra exactamente los mismos vencidos y hoy solo enlaza al Calendario; debería poder disparar el lote sin navegar. Reusa `renderFormPagoLote()` y los handlers ya registrados; el modal `#modal-pago-lote` ya existe.
 - Secciones  : Calendario, Inicio (vencidos), Deudas, Mis cuentas (descuento)
 - Archivos   : `modules/dominio/agenda/logic.js` + `index.js`, `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/distribuir-pago.js`
@@ -194,7 +194,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### MC.13c-3 - Datar el cobro de todas las frecuencias (`ultimoPagoHasta`)
 - Prioridad  : baja
-- Estado     : pendiente, **no bloquea nada**. Se separó al cerrar MC.13c-2, que descubrió que no la necesitaba.
+- Estado     : pendiente, **no bloquea nada** (separada de MC.13c-2 al cerrarla, que descubrió que no la necesitaba).
 - Objetivo   : `ultimoPagoHasta` (`tesoreria/logic/ingresos.js:199`) devuelve `null` para todo lo que no sea Mensual o Quincenal, así que un usuario con ingreso Bimestral/Trimestral/Semestral/Anual no tiene cobro datable: `estadoDistribucion` le da 'sin-fecha' y se queda sin el guard de de-duplicación ("ya distribuiste este periodo"). El asistente igual le funciona.
 - **Por qué NO se hizo en MC.13c-2:** la checklist no lo necesita (sin fecha datable el motor asume que el cobro es hoy, que es exactamente cuando el usuario está repartiendo), y `ultimoPagoHasta` alimenta `periodoISO`, la **clave de de-duplicación** del asistente: tocarla es riesgo de regresión sobre su guard central a cambio de un beneficio pequeño y para un caso poco común. Mejor su propia rebanada, con su propia verificación.
 - **Ojo al hacerla (dos trampas encontradas):** (1) Diario y Semanal **no tienen `diaPago`** (`FRECUENCIAS_CON_DIA` no los incluye: el form nunca lo captura), así que no se pueden datar por esta vía; Diario podría resolverse como "el último cobro es hoy", pero Semanal necesitaría capturar el día de la semana, que es una feature aparte. (2) El modelo Quincenal del motor (`diaPago` y `diaPago + 15` dentro del MISMO mes) **pierde el segundo cobro cuando `diaPago > 16`**: un quincenal del día 20 cae una sola vez al mes. Es un error heredado de Agenda (`_diasParaCompromiso`, hoy `ocurrenciasEnMes`) que afecta también al Calendario, y merece decidirse aparte: ver la nota de abajo.
@@ -215,7 +215,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
 - Prioridad  : media
-- Estado     : pendiente de análisis. **Revisa el cierre de MC.17 como "completa"** (regla 2.7: decirlo, no corregirlo en silencio). Hallazgo de la auditoría de UX/producto (2026-07-21).
+- Estado     : pendiente de análisis. **Revisa el cierre de MC.17 como "completa"** (regla 2.7: decirlo, no corregirlo en silencio). Hallazgo de la auditoría de UX/producto.
 - Objetivo   : una transferencia mueve dinero real entre dos cuentas y, desde MC.17d, puede además cobrar el 4x1000, pero **no se puede editar ni revertir**: si el usuario se equivoca de cuenta o de monto, no tiene salida dentro de la app y los dos saldos quedan mal. Es el mismo patrón P3 del resto de la auditoría, agravado porque aquí el error descuadra dos cuentas a la vez. Diseñar la reversa (recomendado: "deshacer" que aplica el movimiento inverso y deja rastro, en vez de borrado silencioso, coherente con el ledger de MC.17c) y decidir si la edición se permite o se resuelve como deshacer + volver a crear. **Ojo:** revertir debe devolver también el `costoGMF` cobrado, o el patrimonio queda mal por el gravamen.
 - Secciones  : Mis cuentas, Movimientos (rastro)
 - Archivos   : `modules/dominio/tesoreria/logic/transferencias.js` (`calcularTransferencia` ya es apply atómico puro: la reversa es su espejo), `acciones/transferencias.js`, `modules/dominio/movimientos/`
@@ -230,7 +230,7 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### AP.5 - Apartados v2: formulario consistente, recurrencia como toggle
 - Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar). **AP.5a cerrada el 2026-07-22** (ver abajo): el punto (6) del alcance original ya no es parte de esta tarjeta.
+- Estado     : pendiente de análisis (no iniciar). **AP.5a cerrada** (ver CHANGELOG): el punto (6) del alcance original ya no es parte de esta tarjeta.
 - Objetivo   : (1) el form de nuevo apartado adopta el patrón estándar de captura. **Ojo (triaje 2026-07-15):** el brief pedía dropdown "Seleccionar categoría..." que autocompleta, pero el [ADR 042](DECISIONS/042-formularios-v2-visual.md) (Formularios v2, D9) fijó después los **chips de ícono** como lenguaje de la app; decidir con Esteban al iniciar (recomendación: chips, por consistencia); (4) la pregunta "¿este gasto se repite?" sale del registro inicial y pasa a ser un **toggle "Recurrente"** en el apartado ya creado (activa/desactiva la recurrencia v14 existente; el form inicial queda más simple).
 - Secciones  : Apartados
 - Archivos   : `modules/dominio/apartados/` (form, view, logic)
@@ -260,11 +260,11 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar). **AH.5a cerrada el 2026-07-22** (ver abajo): la mitad de prellenado ya no es parte del alcance restante.
+- Estado     : pendiente de análisis (no iniciar). **AH.5a cerrada** (ver CHANGELOG): la mitad de prellenado ya no es parte del alcance restante.
 - Objetivo   : (2) rediseño de la experiencia de la sección: comunicar de inmediato qué es el fondo, por qué importa, cuándo usarlo y cómo protege (tranquilidad/seguridad/prevención, no solo números), aplicando el sistema visual vigente (jerarquía, tokens del ADR 031, Finko Icons v2, lenguaje ADR 003, accesibilidad). (3) El flujo de aporte principal pasa a ser la distribución del ingreso (el valor calculado por AH.2 aparece sugerido ahí vía el motor de MC.13); el bloque "Aportes al fondo → Registrar" de la sección **no se elimina del todo**: se conserva como vía secundaria para aportes fuera de ciclo (ej. apartar parte de un ingreso esporádico), decidir su peso visual en el análisis. Configuración del fondo con las preguntas necesarias en la creación/edición (meta en meses, compromiso por período según frecuencia real de ingresos).
 - Secciones  : Ahorro (fondo), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
-- Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya se corrigió el 2026-07-11, aparte)
+- Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya corregido, aparte)
 - Modelo     : Equilibrado - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
 
 ---
@@ -492,7 +492,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### CAT.1 - Taxonomía global de categorías: Gastos↔Fijos y Apartados↔Metas
 - Prioridad  : alta
-- Estado     : taxonomía **validada y decidida**, registrada íntegra en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (Aceptada, sección "Validación 2026-07-13") y el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) D3. Solo queda pendiente **CAT.1c** (Metas: sale Cumpleaños, fusión Vacaciones/Viajes, render legado vía `CATEGORIA_META_ICONO`, tests); CAT.1a y CAT.1b ya cerradas, ver [CHANGELOG](CHANGELOG.md). Ficha: bloque "Taxonomía global de categorías" en [`contexto/transversal.md`](contexto/transversal.md).
+- Estado     : taxonomía **validada y decidida**, registrada íntegra en el [ADR 014](DECISIONS/014-taxonomia-categorias-transversal.md) (Aceptada) y el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) D3. Solo queda pendiente **CAT.1c** (Metas: sale Cumpleaños, fusión Vacaciones/Viajes, render legado vía `CATEGORIA_META_ICONO`, tests); CAT.1a y CAT.1b ya cerradas, ver [CHANGELOG](CHANGELOG.md). Ficha: bloque "Taxonomía global de categorías" en [`contexto/transversal.md`](contexto/transversal.md).
 - Objetivo   : implementar CAT.1c con las decisiones ya registradas en el ADR 014, sin reabrir ninguna.
 - Secciones  : Metas
 - Depende de : nada (la validación ya está hecha)
@@ -525,16 +525,16 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### ARQ.1 - `infra/bolsas.js`: un solo modelo para las cuatro bolsas
 - Prioridad  : baja
-- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto (2026-07-21), patrón P7. **No es un rediseño de pantallas.**
+- Estado     : pendiente de análisis. Hallazgo de la auditoría de UX/producto, patrón P7. **No es un rediseño de pantallas.**
 - Objetivo   : fondo de emergencia, metas, apartados e inversión son cuatro implementaciones del mismo concepto ("una bolsa con objetivo, acumulado, progreso y aportes"). La auditoría midió la duplicación: `calcularProgreso` escrito 3 veces, `diasHastaFecha` 2 veces **con redondeos distintos**, y los handlers de "aportar" copiados casi carácter por carácter entre Metas y Apartados (incluido `_ajustarSaldoCuenta`). Extraer a `infra/` las funciones puras compartidas (progreso, días hasta fecha) y el handler común de "aportar a una bolsa que descuenta cuenta", más un componente de fila de progreso. **Precedente exacto y reciente: `infra/vencimientos.js`** (MC.13a/b), que hizo esto mismo con las frecuencias que Metas y Apartados duplicaban "intencionalmente". Mantiene ADN 10 intacto: ningún dominio importa a otro, todos importan infra. **Recomendación de la auditoría, importante: NO fusionar las pantallas.** Las cuatro secciones responden a mentalidades distintas del usuario y su separación es útil; lo que se unifica es la infraestructura, no la UX.
 - Secciones  : Transversal (`infra/`), consumidores en Ahorro, Metas, Apartados, Inversión
 - Archivos   : `modules/infra/` (módulo nuevo), `modules/dominio/metas/logic.js`, `apartados/logic.js`, `ahorro/logic.js`, `inversiones/logic.js`
-- Depende de : nada. **EDIT.1a (Metas, cerrada el 2026-07-23) demostró que el temor de "escribir cuatro editores y luego unificarlos" era menor al esperado**: el formulario de edición es específico de cada dominio (campos distintos), así que ARQ.1 no bloquea las 3 rebanadas de EDIT.1 que faltan. Sigue conviniendo antes de que las iniciativas v2 de esas secciones rehagan sus vistas, para no duplicar el cálculo compartido en el nuevo diseño
+- Depende de : nada. **EDIT.1a (cerrada) demostró que el temor de "escribir cuatro editores y luego unificarlos" era menor al esperado**: el formulario de edición es específico de cada dominio, así que ARQ.1 no bloquea las 3 rebanadas de EDIT.1 que faltan. Sigue conviniendo antes de que las iniciativas v2 rehagan sus vistas, para no duplicar el cálculo en el nuevo diseño
 - Modelo     : Alta capacidad - Extra (refactor cross-dominio con red de regresión en 4 suites; el riesgo real es el redondeo distinto de `diasHastaFecha`, que hoy da resultados diferentes por sección)
 
 #### ARQ.2 - Consolidar los cálculos duplicados que quedan
 - Prioridad  : baja
-- Estado     : pendiente. Hallazgo de la auditoría de UX/producto (2026-07-21), patrón P7.
+- Estado     : pendiente. Hallazgo de la auditoría de UX/producto, patrón P7.
 - Objetivo   : tres duplicaciones concretas, cada una con una copia ya identificada. (1) **`FACTOR_MENSUAL` vive en más de un archivo** (`infra/financiero.js` como `FACTOR_MENSUAL_INGRESO`, `tesoreria/logic/ingresos.js` como `FACTOR_MENSUAL`): una sola tabla, o el próximo cambio de frecuencias sale mal en una de las dos. (2) **Helper "registrar pago de compromiso"**: la aritmética "registrar gasto-abono + bajar saldo + descontar cuenta" está escrita tres veces (`compromisos/_guardarAbono`, el apply de `acciones/distribucion.js`, `agenda/_marcarPagadoGastoFijo`); centralizarla reduce la superficie donde vuelven a aparecer bugs como BUG-015. (3) Totales de Agenda que recalculan lo que el motor de vencimientos ya da. **Disciplina obligatoria:** refactor sin cambio de comportamiento, con las suites existentes como red de regresión, mismo criterio con que MC.13b movió las frecuencias sin tocar un solo test.
 - Secciones  : Transversal (`infra/`), Compromisos, Agenda, Tesorería
 - Archivos   : `modules/infra/financiero.js`, `modules/dominio/tesoreria/logic/ingresos.js`, `modules/dominio/compromisos/logic/abonos.js`, `modules/dominio/agenda/index.js`, `modules/dominio/tesoreria/acciones/distribucion.js`
@@ -582,7 +582,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
 - Prioridad  : baja (bloqueada)
-- Estado     : **bloqueada por ANL.1** (ADR 032 D6: no posicionar dos veces). Su otro bloqueo, IN.8, se levantó el 2026-07-12: la iniciativa "Inicio v2" (IN.8a-g) ya está completa en producción, pero el layout de Inicio v2 (ADR 034) no reservó ningún bloque para logros; la tarjeta compacta de Inicio que pide esta tarjeta es una decisión de diseño nueva a proponer cuando se inicie LG.2d, no algo que IN.8 ya haya resuelto. La vitrina sigue en Ajustes (ADR 022 vigente operativamente) hasta que ANL.1 defina el layout de Análisis.
+- Estado     : **bloqueada por ANL.1** (ADR 032 D6: no posicionar dos veces). El otro bloqueo (IN.8) ya se levantó: "Inicio v2" está completa en producción, pero su layout (ADR 034) no reservó bloque para logros, así que la tarjeta compacta de Inicio es diseño nuevo a proponer al iniciar LG.2d. La vitrina sigue en Ajustes (ADR 022 vigente) hasta que ANL.1 defina el layout de Análisis.
 - Objetivo   : mover la vitrina a un apartado "Tu progreso" en Análisis y agregar la tarjeta compacta en Inicio (nivel actual + último logro + próximo objetivo, ubicación a definir dentro del bento de Inicio v2); al cerrar, marcar el ADR 022 como Superada.
 - Secciones  : Análisis, Inicio, Ajustes (`logros`)
 - Depende de : ANL.1 (layout de Análisis)
