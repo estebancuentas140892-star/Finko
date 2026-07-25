@@ -29,7 +29,7 @@
 - **`PLANTILLAS_APARTADO` no tiene esta trampa (hallazgo de CAT.1b)**: a diferencia de `CATEGORIA_ICONO`, un apartado ya creado NO referencia el catálogo de plantillas en su render; guarda su propio `nombre`/`icono` en el momento de crearlo (`_aplicarPlantilla()` copia el valor una sola vez). Retirar o renombrar una plantilla (Vacaciones, Matrícula o semestre, Útiles escolares) es seguro: los apartados existentes creados desde esas plantillas conservan su nombre e ícono guardados sin cambios, y la plantilla retirada simplemente deja de ofrecerse para apartados nuevos.
 - **El guardarraíl de consistencia de TX.4** (misma etiqueta ⇒ mismo emoji entre catálogos) debe seguir verde tras cada rebanada: al renombrar o retirar, revisar que no queden etiquetas compartidas divergentes.
 
-**Cambios pendientes**: rebanada CAT.1c (catálogo de Metas), tarjeta CAT.1 del BOARD.
+**Cambios pendientes**: rebanada CAT.1c (catálogo de Metas), tarjeta CAT.1 del BOARD. **CAT.3** (categorías personalizadas globales): las personalizadas de TX.9b existen solo para Gastos; extenderlas a Gastos fijos con el mismo ícono/color en TODAS las superficies (Calendario, Inicio, Movimientos, Pendientes, Prioridades, Análisis, filtros, gráficos) exige decidir el modelo de datos (catálogo global vs. por sección, probable bump de schema); depende de esta taxonomía y de CAT.2 (el picker). **CAT.4** (auditoría de consistencia de formularios): dos reglas transversales en una pasada por ~8 formularios, categoría/tipo antes que descripción (Gastos ya cumple) y fecha por defecto = hoy en todo campo de fecha de un movimiento nuevo (los formularios migrados al lenguaje v2 ya lo cumplen por diseño; auditar los que no).
 
 **Cambios realizados**:
 
@@ -142,7 +142,7 @@
 - **`NIVELES_USUARIO` (D5) se calibró para ~20 logros**; con 17 (LG.2e/comportamiento aún no implementada), el tramo superior "Leyenda del ahorro" (min 18) queda temporalmente inalcanzable. No se tocó en LG.2c (fuera de su alcance declarado); recalibrar si molesta antes de que LG.2e agregue los que faltan.
 - **`rachaMesesCompletos()` se ancla en "el mes anterior a hoy"**: solo detecta una racha activa si el usuario sigue usando la app (dispara `state:change`) mientras la racha está vigente. Una racha pasada y luego abandonada ya quedó persistida en `S.logros` si se evaluó en su momento (no se revoca); el riesgo real es solo si el usuario NUNCA vuelve a abrir la app durante el mes en que la racha era detectable, caso de borde aceptado (mismo patrón que otros logros de conteo simple).
 
-**Cambios pendientes**: LG.2e (familia comportamiento: hormiga-a-raya, ahorro-creciente, pagador-puntual) en BOARD. Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
+**Cambios pendientes**: **LG.2e** (familia comportamiento): `hormiga-a-raya` implementable ya (categorías hormiga/café + guardia de mes completo de registro, ADR 032 D2.3); `ahorro-creciente` **bloqueado** hasta que exista la derivación canónica de ingreso mensual (probable entregable de ANL.1); `pagador-puntual` pendiente de verificar si el histórico de abonos por fecha alcanza. Cada logro pasa el test anti-gaming del ADR 032 D2 explícitamente en su PR. Los nombres de `NIVELES_USUARIO` son provisionales: cuando Esteban entregue los definitivos, se cambia la constante (sin tocar datos, nada se persiste).
 
 **Cambios realizados**:
 
@@ -155,3 +155,34 @@
 **Observaciones**: ADRs relacionados: 022 (vitrina en Ajustes, vigente operativamente hasta la rebanada LG.2d), 032 (v2, Aceptada), 025 D6 (emojis se conservan). La regla anti-gaming del ADR 032 D2 es principio innegociable: logros que premien la omisión de registro ("día sin gastos") no entran al catálogo bajo ninguna forma; las familias "registro" y "deudas" de LG.2c son ambas ADITIVAS (más registro = más progreso), así que no necesitan la guardia de "mes completo" que sí exigirá LG.2e para los logros de reducción de gasto (hormiga-a-raya).
 
 ---
+
+---
+
+## Refactors transversales pendientes (infra compartida)
+
+- **Objetivo**          : dos consolidaciones de código duplicado entre dominios, sin lógica de producto nueva. Hallazgo de la auditoría de UX/producto (2026-07-21), patrón P7.
+- **Estado actual**     : pendientes de análisis, ninguna iniciada. Tarjetas **ARQ.1** y **ARQ.2** en `docs/BOARD.md`.
+
+**ARQ.1 - un solo modelo para las cuatro bolsas** (`infra/bolsas.js`): fondo de emergencia, metas, apartados e inversión son 4 implementaciones del mismo concepto (bolsa con objetivo, acumulado, progreso y aportes). Duplicación medida: `calcularProgreso` escrito 3 veces, `diasHastaFecha` 2 veces **con redondeos distintos** (el riesgo real del refactor), handlers de "aportar" casi carácter por carácter entre Metas y Apartados. Extraer a `infra/` las funciones puras compartidas + un componente de fila de progreso; precedente exacto `infra/vencimientos.js` (MC.13a/b). **No fusiona las pantallas**: las 4 secciones responden a mentalidades distintas del usuario, se unifica la infraestructura, no la UX. Archivos: `modules/infra/` (nuevo), `metas/logic.js`, `apartados/logic.js`, `ahorro/logic.js`, `inversiones/logic.js`.
+
+**ARQ.2 - consolidar los cálculos duplicados que quedan**: (1) `FACTOR_MENSUAL` vive en 2 archivos (`infra/financiero.js` como `FACTOR_MENSUAL_INGRESO`, `tesoreria/logic/ingresos.js` como `FACTOR_MENSUAL`). (2) el helper "registrar pago de compromiso" (gasto-abono + bajar saldo + descontar cuenta) escrito 3 veces (`compromisos/_guardarAbono`, apply de `acciones/distribucion.js`, `agenda/_marcarPagadoGastoFijo`); centralizarlo reduce la superficie de bugs como BUG-015. (3) totales de Agenda que recalculan lo que el motor de vencimientos ya da. Conviene **antes** de CAL.5b (que suma deudas al lote y ahí sí necesita mover `saldoTotal`); refactor sin cambio de comportamiento, con las suites existentes como red de regresión.
+
+---
+
+## Aviso de actualización del Service Worker (UPD.1, pendiente)
+
+- **Objetivo**          : cuando el SW detecte una versión nueva (`updatefound`), mostrar un aviso discreto con botón que aplica la actualización (`skipWaiting` + recarga controlada) en vez de esperar a la próxima recarga casual. Tras actualizar, mostrar una única vez un resumen breve de las novedades relevantes (catálogo `NOVEDADES_POR_VERSION` en `constants.js`, comparado contra la última versión vista persistida).
+- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **UPD.1** en `docs/BOARD.md`. Sin cambio de datos financieros (las migraciones idempotentes ya garantizan eso, ADN 6); cero servidor, el SW ya versiona con `CACHE_NAME`.
+
+**Archivos**: `modules/infra/sw-register.js`, `service-worker.js`, `modules/core/constants.js`, `modules/ui/shell.js`.
+
+**Riesgo**: el ciclo de vida del SW tiene esquinas (waiting/controllerchange/doble recarga); verificar con cuidado antes de dar por cerrado.
+
+---
+
+## Sistema de guía por navegación (GU.1, auditoría pendiente)
+
+- **Objetivo**          : principio "aprender usando, no leyendo": el usuario descubre la app guiado en el momento de necesidad, no leyendo texto permanente. Ya se aplica en varios puntos (CTA de cuenta lleva a crearla, CAL.1 ofrece distribuir al llegar el ingreso, el fondo recomienda su aporte en la distribución) y se adopta como principio transversal.
+- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **GU.1a** en `docs/BOARD.md`: inventario de todos los banners/hints/CTAs de arranque por sección, propuesta de qué se elimina/fusiona/convierte en guía contextual, revisión formal del [ADR 016](../DECISIONS/016-banner-proposito-de-seccion.md), re-corte en rebanadas por sección. Conviene DESPUÉS de que las iniciativas v2 grandes definan sus pantallas, o la auditoría se hace dos veces.
+
+**Regla anti-doble-trabajo**: esta tarjeta define el principio y audita el sistema transversal (banners, hints); los rediseños internos de cada sección viven en sus propias iniciativas v2, que aplican el principio en vez de duplicarlo.

@@ -59,7 +59,7 @@
 - **La regla `llave` requiere `tipoLlave`, pero `numeroCuenta`/`alias` no exigen nada entre sí**: si se agrega un campo nuevo a `DatosTransferencia` en el futuro, decidir explícitamente si necesita esa misma clase de validación cruzada o si es independiente, no asumir.
 - **`#distribuir-ingreso-panel` (MC.18e) ya no existe en el DOM desde el primer render**: solo se inyecta dentro de `#modal-distribuir-body` cuando `abrirAsistenteDistribucion()` lo abre. Cualquier código nuevo que asuma que ese elemento está siempre presente (como sí lo estaba antes de MC.18e, con `hidden`) fallará; usar siempre `abrirAsistenteDistribucion()` como punto de entrada, nunca `document.getElementById('distribuir-ingreso-panel')` directo sin haber abierto el modal primero.
 
-**Cambios pendientes**: **MC.13** (Distribución v2) tiene el motor completo en producción, la decisión (a) resuelta (**MC.13e-1**) y la primera rebanada del rediseño del asistente cerrada (**MC.13e-2a**, 2026-07-15). Siguen **MC.13e-2b a MC.13e-2g** (ver `docs/BOARD.md` para el detalle completo); dos de ellas (2f: decisión explícita del remanente + cuenta del ingreso fijo; 2g: rediseño en 2 pasos con educación financiera) necesitan la palabra de Esteban antes de codificar. La decisión (b) sigue abierta, coordinar con PA.1. **MC.16** (tarjeta de crédito integrada, requiere ADR) sigue pendiente en `docs/BOARD.md`, dentro de la iniciativa "Mis Cuentas v2". El rediseño visual (ADR 035, MC.18a a MC.18e) y las transferencias entre cuentas (MC.17a a MC.17e) están completos.
+**Cambios pendientes**: ninguno propio de este subsistema (rediseño visual ADR 035 completo). Ver "Transferencias" y "Distribución v2" abajo, y **MC.16** (tarjeta de crédito integrada) en `docs/BOARD.md`, dueño [ADR 051](../DECISIONS/051-tarjeta-de-credito-producto-integrado.md).
 
 **Cambios realizados**:
 
@@ -88,6 +88,8 @@
 - **Punto de entrada**: dos accesos, ambos cerrados. **MC.17b**: botón "Transferir entre cuentas" en Mis cuentas, bajo la lista de cuentas. **MC.17e**: teja "Transferir" en la hoja "Registrar" (accesible desde cualquier sección), visible solo con 2+ cuentas (patrón 0/1/varias de `registrar.js`), reutiliza la misma acción `abrir-transferencia`.
 - **Forward-compat MC.16**: cuando exista la tarjeta de crédito, "pagar la tarjeta" es un abono a deuda, NO una transferencia; las cuentas TC no serán endpoints. MC.17 v1 solo opera cuentas de dinero real. No es dependencia, solo aviso para no modelar la transferencia de forma que estorbe a MC.16.
 - **Rebanadas**: MC.17a (schema + lógica pura + apply, solo-unit) → MC.17b (form + acción, patrón 0/1/2/varias) → MC.17c (ledger neutro) → MC.17d (GMF) → MC.17e (teja en Registrar). Las 5 cerradas el 2026-07-12. Detalle en `docs/BOARD.md`.
+
+**Cambios pendientes**: **MC.17f** (deshacer o editar una transferencia): hoy no se puede revertir ni editar, y un error de cuenta o monto descuadra dos saldos a la vez sin salida dentro de la app. Diseño recomendado: "deshacer" que aplica el movimiento inverso y deja rastro (coherente con el ledger), no borrado silencioso; decidir si además se permite editar o solo deshacer + recrear. `calcularTransferencia()` ya es apply atómico puro, la reversa es su espejo. Ojo: revertir debe devolver también el `costoGMF` cobrado, o el patrimonio queda mal por el gravamen. Coordina con MOV.1 (si el ledger gana acciones por fila, la reversa podría vivir ahí sin UI propia acá). Detalle en `docs/BOARD.md`.
 
 **Cambios realizados**:
 
@@ -131,6 +133,8 @@
 **Trampa para el futuro**: el motor habla un vocabulario neutro (`montoPorPeriodo`, `etiqueta`) y cada dominio conserva el suyo en la frontera (Metas: `montoPorPeriodo`/`etiqueta`; Apartados: `aportePorPeriodo`/`etiquetaPeriodo` + `dias`). Los envoltorios existen para traducir esos nombres, no por ceremonia: si se borran, cambia la API pública que ya consumen las vistas y sus tests.
 
 ---
+
+**Cambios pendientes**: rediseño del asistente (MC.13e-2+, puntos 9-21 del brief), rebanadas re-cortadas por riesgo. **MC.13e-2b** (quitar "Abonar extra a deudas": `seccionDeudas`/`construirPlanDeudas` sale de `_construirDatosDistribucion`, `_renderPanelDistribuir` y el apply; ojo con `descontable` y `hayDestinos`, que también leen `destinosDeudas`). **MC.13e-2c** (logo/ícono + nota por fila en `_filaDistribuir`/`_filaNecesidad`, reusa `bancoAvatar`/`tejaCategoria`/`resolverMarca` ya construidos; verificar si `compromiso.nota`/`meta.nota`/`apartado.nota` ya existen). **MC.13e-2d** (`destinosAhorro` debe mostrar la cuota del período, no el objetivo total; verificar si `construirDesgloseAhorroPorObjetivo` ya usa `aportePorPeriodo` o falta enchufarlo). **MC.13e-2e** (si lo marcado excede el monto a distribuir, ofrecer completar con saldo de otra cuenta activa, pregunta explícita no automática; toca `excede`/`asignado` en `resumirPlanDistribucion` y el apply). **MC.13e-2f y MC.13e-2g necesitan la palabra de Esteban antes de codificar** (ver `docs/BOARD.md`, no se resumen acá). **MC.13c-3** (datar el cobro de frecuencias largas vía `ultimoPagoHasta`, hoy solo Mensual/Quincenal; Diario/Semanal no tienen `diaPago` para datarse; no bloquea nada, baja prioridad; el defecto del modelo Quincenal que también toca es **BUG-017**). Orden recomendado y detalle completo en `docs/BOARD.md`.
 
 **Cambios realizados**:
 

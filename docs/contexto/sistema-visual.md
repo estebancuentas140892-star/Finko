@@ -164,3 +164,14 @@
 - 2026-07-07 (IV.1, ADR 031): tokens `--fk-dom-*` con rampa `-bg`/`-text` para los 11 dominios.
 
 **Observaciones**: ADR relacionado: [031](../DECISIONS/031-identidad-de-color-por-seccion.md). Metodología de verificación de contraste (heredada de IV.1, reforzada aquí): nunca aprobar un color "seguro" solo por inspección visual; calcular luminancia relativa y ratio WCAG real contra el fondo efectivo (incluyendo mezclas `color-mix`), y elegir el umbral correcto según si el contenido es texto (4.5:1) o gráfico (3:1).
+
+---
+
+## Transición de tema claro/oscuro (CFG.7, pendiente, con advertencia técnica)
+
+- **Objetivo**          : Esteban percibe el cambio de tema como brusco ("parece que la página recarga"). Investigación ya hecha (no repetir): la transición suave YA existe (`theme-transitioning`, 280 ms, `styles/themes.css`) y su alcance actual (~30 contenedores, no `*`) es una decisión deliberada de rendimiento: animar `*` causaba lag perceptible en móvil (cientos de elementos x 5 propiedades) y se revirtió. Bajo `prefers-reduced-motion` el cambio es instantáneo a propósito.
+- **Estado actual**     : pendiente de análisis, no iniciada. Tarjeta **CFG.7** en `docs/BOARD.md`. Antes de tocar nada: (1) reproducir la brusquedad en el dispositivo real de Esteban y descartar `reduced-motion` activo; (2) la dirección recomendada NO es "más transiciones CSS" (ya probado y revertido) sino la **View Transitions API** (`document.startViewTransition()`): el navegador compone un crossfade de snapshot en un solo paint, como mejora progresiva (Chrome/Edge/Safari 18+, Firefox cae al comportamiento actual). Cumple la restricción de rendimiento del ADR 031 D6.
+
+**Archivos**: `modules/ui/shell.js` (`toggleTheme`), `styles/themes.css`.
+
+**Depende de**: verificación en dispositivo real primero (mismo criterio de evidencia del ADR 030 D4).
