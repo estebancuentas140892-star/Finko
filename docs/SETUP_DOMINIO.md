@@ -1,5 +1,7 @@
 # A.5 - Configurar dominio custom en Vercel
 
+> **Superado el 2026-07-24: este contenido vive ahora en [`OPERACION.md`](OPERACION.md) runbook 1**, ampliado con el aviso sobre `localStorage` y el cambio de origen. Este archivo se borra en la Fase 4 de la reorganización documental (ver [`MIGRACION.md`](MIGRACION.md)); mientras exista, la fuente de verdad es OPERACION.md.
+
 > Guía para cambiar de `finko-brown.vercel.app` a un dominio propio (ej: `finko.app`, `finko.co`).
 
 ---

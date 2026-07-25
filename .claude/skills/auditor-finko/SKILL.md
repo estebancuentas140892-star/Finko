@@ -1,453 +1,112 @@
 ---
 name: auditor-finko
-description: Realiza una auditoría integral de Finko para detectar reprocesos, oportunidades de automatización, problemas de UX, rendimiento y arquitectura.
+description: Auditoría integral de Finko simulando un usuario colombiano real, para detectar reprocesos, trabajo manual evitable, oportunidades de automatización, fricción de UX, cuellos de botella de rendimiento, duplicación de datos y problemas de arquitectura o persistencia. Usar al auditar la app o una sección, al buscar qué simplificar antes de agregar funcionalidad nueva, o al revisar flujos completos de principio a fin.
 ---
 
 # Auditor Finko
 
-Este Skill se utiliza para realizar auditorías completas sobre la aplicación Finko.
+Auditoría integral de la aplicación. El objetivo no es solo encontrar errores: es **cuestionar cada flujo para reducir al máximo el trabajo manual del usuario**.
 
-Su objetivo es encontrar oportunidades para reducir el trabajo manual del usuario, optimizar los flujos y mejorar el rendimiento de la aplicación.
+Documentos que consulta antes de empezar: `docs/BOARD.md` (qué está ya registrado como pendiente, para no proponerlo como hallazgo nuevo), las fichas de `docs/contexto/` (cómo funciona hoy cada funcionalidad, sin recorrer el código de cero) y `docs/DECISIONS/` (qué ya se decidió y por qué; un hallazgo que contradice un ADR se reporta como tal, no como error).
 
-## Cuándo usar este Skill
+---
 
-Utiliza este Skill cuando la tarea implique cualquiera de los siguientes objetivos:
+## Principios
 
-- Auditar la aplicación Finko.
-- Analizar la experiencia de usuario (UX).
-- Buscar oportunidades de automatización.
-- Detectar reprocesos o tareas repetitivas.
-- Optimizar flujos de trabajo.
-- Revisar el rendimiento de la aplicación.
-- Evaluar la arquitectura del proyecto.
-- Analizar la exportación e importación de datos.
-- Simular el comportamiento de usuarios reales.
-- Buscar mejoras antes de implementar nuevas funcionalidades.
-
-No utilices este Skill para responder preguntas generales o tareas que no estén relacionadas con Finko.
-
-## Filosofía del Skill
-
-Este Skill no busca únicamente encontrar errores.
-
-Su propósito principal es cuestionar todos los flujos de la aplicación para reducir al máximo el trabajo manual del usuario.
-
-Cada análisis debe partir de los siguientes principios:
-
-- El usuario debe realizar la menor cantidad posible de clics.
+- El usuario debe hacer la menor cantidad posible de clics.
 - La información solo debe registrarse una vez.
-- Cada dato debe tener una única fuente de verdad.
-- La aplicación debe automatizar cualquier tarea repetitiva que no requiera una decisión del usuario.
-- Siempre que sea posible, una sola acción debe producir múltiples resultados.
-- La simplicidad es más importante que agregar nuevas funcionalidades.
+- Cada dato tiene una única fuente de verdad.
+- La app automatiza cualquier tarea repetitiva que no requiera una decisión del usuario.
+- Siempre que sea posible, una sola acción produce múltiples resultados.
+- La simplicidad importa más que agregar funcionalidad.
 - El rendimiento y la experiencia del usuario tienen prioridad sobre la complejidad técnica.
 - No asumir que la implementación actual es la mejor solución.
-- Cuestionar cada flujo antes de proponer nuevas funcionalidades.
+- Cuestionar cada flujo antes de proponer algo nuevo.
 
-La prioridad siempre será:
-
-1. Eliminar trabajo manual.
-2. Eliminar reprocesos.
-3. Reducir la cantidad de pantallas.
-4. Reducir la cantidad de formularios.
-5. Reducir la cantidad de clics.
-6. Automatizar procesos repetitivos.
-7. Mantener el control del usuario sobre sus finanzas.
-
-## Metodología de trabajo
-
-Antes de proponer cualquier mejora, este Skill debe comprender completamente el funcionamiento actual de la aplicación.
-
-Siempre deberá seguir este orden:
-
-### Fase 1. Comprender
-
-Antes de modificar cualquier flujo debe:
-
-- Leer el código relacionado.
-- Comprender el objetivo de la funcionalidad.
-- Entender cómo interactúa con el resto de la aplicación.
-- Identificar la intención original del diseño.
-
-No debe proponer cambios sin comprender primero el contexto.
+Orden de prioridad de las mejoras: **1)** eliminar trabajo manual, **2)** eliminar reprocesos, **3)** reducir pantallas, **4)** reducir formularios, **5)** reducir clics, **6)** automatizar procesos repetitivos, **7)** mantener el control del usuario sobre sus finanzas.
 
 ---
 
-### Fase 2. Simular
+## Metodología: cinco fases en orden
 
-Después de comprender la funcionalidad debe utilizarla como si fuera un usuario real.
+Ninguna recomendación se emite antes de completar las cinco.
 
-Debe intentar resolver tareas comunes exactamente igual que lo haría una persona.
+**Fase 1. Comprender.** Leer el código relacionado, entender el objetivo de la funcionalidad, cómo interactúa con el resto de la app y cuál era la intención original del diseño. No proponer cambios sin comprender el contexto.
 
----
+**Fase 2. Simular.** Usar la funcionalidad como un usuario real, resolviendo tareas comunes exactamente como lo haría una persona.
 
-### Fase 3. Detectar fricción
+**Fase 3. Detectar fricción.** Durante la simulación, identificar trabajo repetitivo, clics innecesarios, formularios largos, navegación de más, información duplicada, esperas, procesos lentos y funcionalidades difíciles de descubrir.
 
-Durante la simulación debe identificar:
+**Fase 4. Buscar automatización.** Ante cada tarea manual: ¿puede automatizarse?, ¿puede deducirse?, ¿puede evitarse por completo?, ¿puede integrarse dentro de otro flujo que ya existe?
 
-- Trabajo repetitivo.
-- Clics innecesarios.
-- Formularios largos.
-- Navegación innecesaria.
-- Información duplicada.
-- Esperas innecesarias.
-- Procesos lentos.
-- Funcionalidades difíciles de descubrir.
+**Fase 5. Validar la propuesta.** Antes de recomendar: beneficio para el usuario, impacto técnico, complejidad de implementación, riesgos y compatibilidad con la filosofía de Finko.
 
 ---
 
-### Fase 4. Buscar automatización
+## Las nueve perspectivas y sus preguntas obligatorias
 
-Cada vez que encuentre una tarea manual debe preguntarse:
+Para cada funcionalidad, pantalla, formulario o flujo analizado hay que responder estas preguntas **antes** de proponer cualquier mejora. No se emite recomendación sin responderlas.
 
-- ¿Puede automatizarse?
-- ¿Puede deducirse automáticamente?
-- ¿Puede evitarse completamente?
-- ¿Puede integrarse dentro de otro flujo existente?
-
----
-
-### Fase 5. Validar la propuesta
-
-Antes de recomendar una mejora debe evaluar:
-
-- Beneficio para el usuario.
-- Impacto técnico.
-- Complejidad de implementación.
-- Riesgos.
-- Compatibilidad con la filosofía de Finko.
-
-Solo después de completar estas cinco fases podrá emitir recomendaciones.
-
-## Responsabilidades
-
-Este Skill es responsable de analizar la aplicación desde las siguientes perspectivas.
-
-### 1. Experiencia de Usuario (UX)
-
-Analizar:
-
-- Fricción.
-- Cantidad de clics.
-- Navegación.
-- Formularios.
-- Descubrimiento de funcionalidades.
-- Curva de aprendizaje.
+| Perspectiva | Qué analizar | Preguntas obligatorias |
+|---|---|---|
+| **Comprensión** | propósito real de la funcionalidad | ¿Cuál es su objetivo? ¿Qué problema resuelve? ¿Quién la usa? ¿Con qué frecuencia? |
+| **Flujo y procesos** | el recorrido completo: reprocesos, pasos, pantallas y confirmaciones innecesarias | ¿Cuántos pasos necesita el usuario? ¿Hay pasos innecesarios? ¿Puede eliminarse alguno? ¿Puede unificarse con otro flujo? |
+| **Datos** | información duplicada, múltiples fuentes de verdad, relaciones y datos redundantes | ¿Esta información ya existe en otra parte? ¿El usuario la está escribiendo de nuevo? ¿Hay una única fuente de verdad? ¿Hay datos duplicados? |
+| **Automatización** | toda tarea repetitiva que pueda eliminarse | ¿Puede Finko hacerlo automáticamente? ¿Puede deducir el dato? ¿Puede reutilizar datos existentes? ¿Puede ejecutarse dentro de otro proceso? |
+| **Experiencia de usuario** | fricción, cantidad de clics, navegación, formularios, descubrimiento, curva de aprendizaje | ¿Cuántos clics requiere? ¿Hay navegación innecesaria? ¿El usuario entiende qué debe hacer? ¿Existe una alternativa más simple? |
+| **Rendimiento** | operaciones lentas, cálculos repetidos, memoria, almacenamiento redundante, operaciones bloqueantes | ¿Se repiten cálculos? ¿Se consulta información sin necesidad? ¿Hay un cuello de botella? ¿Puede optimizarse? |
+| **Arquitectura** | evaluar **solo** con evidencia técnica; nunca recomendar una tecnología por ser popular | ¿La recomendación tiene un beneficio medible? ¿Respeta las reglas del ADN de `CLAUDE.md`? |
+| **Persistencia** | exportación e importación JSON, CSV, backups, restauración, cambio de dispositivo | ¿Existe algún camino donde se pierda información? |
+| **Impacto** | si la mejora vale lo que cuesta | ¿Cuánto tiempo le cuesta esto al usuario? ¿Qué tan frecuente ocurre? ¿Cuál sería el beneficio? ¿Justifica la complejidad de implementarlo? |
 
 ---
-
-### 2. Automatización
-
-Buscar todas las tareas repetitivas que puedan eliminarse.
-
-Siempre preguntarse:
-
-- ¿Puede hacerse automáticamente?
-- ¿Puede deducirse?
-- ¿Puede evitarse?
-
----
-
-### 3. Procesos
-
-Analizar el flujo completo de cada funcionalidad.
-
-Buscar:
-
-- reprocesos
-- pasos innecesarios
-- pantallas innecesarias
-- confirmaciones innecesarias
-
----
-
-### 4. Datos
-
-Buscar:
-
-- información duplicada
-- múltiples fuentes de verdad
-- relaciones innecesarias
-- datos redundantes
-
----
-
-### 5. Rendimiento
-
-Buscar:
-
-- operaciones lentas
-- cálculos repetidos
-- consumo innecesario de memoria
-- almacenamiento redundante
-- operaciones bloqueantes
-
----
-
-### 6. Arquitectura
-
-Evaluar únicamente utilizando evidencia técnica.
-
-Nunca recomendar una tecnología únicamente porque sea popular.
-
-Toda recomendación debe estar justificada mediante beneficios medibles.
-
----
-
-### 7. Persistencia
-
-Revisar:
-
-- exportación JSON
-- importación JSON
-- CSV
-- backups
-- restauración
-- cambio de dispositivo
-
-Verificar que nunca exista pérdida de información.
 
 ## Simulación del usuario
 
-Antes de comenzar la auditoría, este Skill debe construir un escenario financiero completamente realista.
+Antes de auditar hay que construir un escenario financiero realista de una persona promedio en Colombia, que represente **un mes completo de uso continuo**. No usar ejemplos simples ni datos aleatorios sin relación entre sí: el escenario debe ser coherente de principio a fin del mes.
 
-No utilizar ejemplos simples.
+**Situación financiera inicial:** cuentas bancarias, efectivo, billeteras digitales, salario, ingresos adicionales, gastos fijos, deudas, metas, apartados, fondo de emergencia, inversiones y presupuesto.
 
-Debe simular una persona promedio en Colombia.
+**Acciones del día a día que hay que registrar:** mercado, transporte, gasolina, parqueaderos, peajes, cafés, almuerzos, domicilios, compras impulsivas, gastos hormiga, pago de servicios, pago de tarjetas, pago de créditos, transferencias, retiros, consignaciones, ingresos extraordinarios, dinero prestado, dinero recuperado, compras por internet, gastos médicos y entretenimiento.
 
-La simulación debe representar un mes completo de uso continuo.
+**Eventos poco frecuentes que también hay que simular:** SOAT, impuesto vehicular, vacaciones, seguros, matrículas, reparaciones y electrodomésticos.
 
-El escenario debe incluir, como mínimo:
+Después, recorrer toda la aplicación exactamente como lo haría el usuario de ese escenario.
 
-### Situación financiera inicial
-
-- Cuentas bancarias.
-- Efectivo.
-- Billeteras digitales.
-- Salario.
-- Ingresos adicionales.
-- Gastos fijos.
-- Deudas.
-- Metas.
-- Apartados.
-- Fondo de emergencia.
-- Inversiones.
-- Presupuesto.
-
-Una vez construido el escenario, debe recorrer toda la aplicación exactamente igual que lo haría un usuario real.
-
-Durante la simulación debe registrar acciones comunes del día a día.
-
-Por ejemplo:
-
-- Mercado.
-- Transporte.
-- Gasolina.
-- Parqueaderos.
-- Peajes.
-- Cafés.
-- Almuerzos.
-- Domicilios.
-- Compras impulsivas.
-- Gastos hormiga.
-- Pago de servicios.
-- Pago de tarjetas.
-- Pago de créditos.
-- Transferencias.
-- Retiros.
-- Consignaciones.
-- Ingresos extraordinarios.
-- Dinero prestado.
-- Dinero recuperado.
-- Compras por internet.
-- Gastos médicos.
-- Entretenimiento.
-
-También debe simular eventos poco frecuentes como:
-
-- SOAT.
-- Impuesto vehicular.
-- Vacaciones.
-- Seguros.
-- Matrículas.
-- Reparaciones.
-- Electrodomésticos.
-
-La simulación debe ser coherente desde el inicio hasta el final del mes.
-
-No deben existir datos aleatorios sin relación entre sí.
-
-## Preguntas obligatorias de auditoría
-
-Para cada funcionalidad, pantalla, formulario o flujo analizado, este Skill deberá responder obligatoriamente las siguientes preguntas antes de proponer cualquier mejora.
-
-### Comprensión
-
-- ¿Cuál es el objetivo de esta funcionalidad?
-- ¿Qué problema intenta resolver?
-- ¿Quién la utiliza?
-- ¿Con qué frecuencia se utiliza?
-
-### Flujo
-
-- ¿Cuántos pasos necesita el usuario para completar esta tarea?
-- ¿Existen pasos innecesarios?
-- ¿Puede eliminarse algún paso?
-- ¿Puede unificarse con otro flujo?
-
-### Datos
-
-- ¿Esta información ya existe en otra parte?
-- ¿El usuario la está escribiendo nuevamente?
-- ¿Existe una única fuente de verdad?
-- ¿Hay datos duplicados?
-
-### Automatización
-
-- ¿Puede Finko realizar esta acción automáticamente?
-- ¿Puede deducir esta información?
-- ¿Puede reutilizar datos existentes?
-- ¿Puede ejecutarse esta acción durante otro proceso?
-
-### Experiencia de usuario
-
-- ¿Cuántos clics requiere?
-- ¿Hay navegación innecesaria?
-- ¿El usuario entiende qué debe hacer?
-- ¿Existe una alternativa más simple?
-
-### Rendimiento
-
-- ¿Se realizan cálculos repetidos?
-- ¿Se consulta información innecesariamente?
-- ¿Existe algún cuello de botella?
-- ¿Puede optimizarse este proceso?
-
-### Impacto
-
-- ¿Cuánto tiempo le cuesta esto al usuario?
-- ¿Qué tan frecuente ocurre?
-- ¿Cuál sería el beneficio de optimizarlo?
-- ¿La mejora justifica la complejidad de implementación?
-
-No se debe emitir ninguna recomendación sin haber respondido estas preguntas.
+---
 
 ## Formato del informe
 
-Todas las auditorías deben entregarse utilizando la siguiente estructura.
+### Resumen ejecutivo
 
-# Resumen Ejecutivo
+Estado general en pocas líneas: principales fortalezas, principales debilidades, riesgos encontrados y oportunidades de mejora.
 
-Explicar en pocas líneas el estado general de la funcionalidad o de la aplicación.
+### Hallazgos
 
-Indicar:
+Cada hallazgo lleva obligatoriamente estos campos:
 
-- Principales fortalezas.
-- Principales debilidades.
-- Riesgos encontrados.
-- Oportunidades de mejora.
+- **Título:** corto y descriptivo.
+- **Categoría:** UX · Automatización · Rendimiento · Arquitectura · Datos · Persistencia · Accesibilidad · Producto (una sola).
+- **Problema:** qué sucede, con claridad.
+- **Evidencia:** qué flujo, pantalla o funcionalidad lo demuestra. **Sin suposiciones.**
+- **Impacto:** cómo afecta al usuario.
+- **Frecuencia:** muy alta · alta · media · baja.
+- **Prioridad:** crítica · alta · media · baja.
+- **Propuesta:** la solución, concreta.
+- **Beneficio esperado:** qué mejora obtiene el usuario y qué gana el proyecto.
 
----
+### Automatizaciones detectadas
 
-# Hallazgos
+Lista de todas las oportunidades encontradas. Para cada una: situación actual, flujo propuesto, beneficio y complejidad estimada.
 
-Cada hallazgo debe contener obligatoriamente:
+### Reprocesos detectados
 
-## Título
+Lista de todas las tareas repetitivas. Para cada una: qué debe repetir el usuario, cuántas veces ocurre y cómo eliminar ese reproceso por completo.
 
-Nombre corto y descriptivo.
+### Plan de implementación
 
-## Categoría
+Todas las mejoras ordenadas por prioridad, sin mezclar niveles: **1)** alto impacto y bajo esfuerzo, **2)** alto impacto y esfuerzo medio, **3)** alto impacto y alto esfuerzo, **4)** mejoras futuras.
 
-Seleccionar una:
+### Alcance honesto
 
-- UX
-- Automatización
-- Rendimiento
-- Arquitectura
-- Datos
-- Persistencia
-- Accesibilidad
-- Producto
-
-## Problema
-
-Explicar claramente qué sucede.
-
-## Evidencia
-
-Indicar qué flujo, pantalla o funcionalidad demuestra el problema.
-
-No hacer suposiciones.
-
-## Impacto
-
-Explicar cómo afecta al usuario.
-
-## Frecuencia
-
-Clasificar como:
-
-- Muy alta
-- Alta
-- Media
-- Baja
-
-## Prioridad
-
-Clasificar como:
-
-- Crítica
-- Alta
-- Media
-- Baja
-
-## Propuesta
-
-Explicar la solución.
-
-La propuesta debe ser concreta.
-
-## Beneficio esperado
-
-Indicar qué mejora obtendrá el usuario y qué impacto tendrá para el proyecto.
-
----
-
-# Automatizaciones detectadas
-
-Crear una lista con todas las oportunidades de automatización encontradas.
-
-Para cada una indicar:
-
-- Situación actual.
-- Flujo propuesto.
-- Beneficio.
-- Complejidad estimada.
-
----
-
-# Reprocesos detectados
-
-Crear una lista de todas las tareas repetitivas.
-
-Para cada una indicar:
-
-- Qué debe repetir el usuario.
-- Cuántas veces ocurre.
-- Cómo eliminar completamente ese reproceso.
-
----
-
-# Plan de implementación
-
-Ordenar todas las mejoras por prioridad.
-
-Utilizar el siguiente orden:
-
-1. Alto impacto y bajo esfuerzo.
-2. Alto impacto y esfuerzo medio.
-3. Alto impacto y alto esfuerzo.
-4. Mejoras futuras.
-
-Nunca mezclar prioridades.
+Cerrar el informe diciendo qué **no** se auditó y por qué: secciones no recorridas, hallazgos que quedaron sin verificar contra el código, datos que no se pudieron reproducir. Un informe que no declara sus límites se lee como si hubiera cubierto todo.
