@@ -128,6 +128,25 @@
   padding: var(--fk-space-2) var(--fk-space-3);
 }
 
+/* ── MÓVIL < 540px: el CTA baja a su propia fila ──
+   Con las 3 columnas, a 390px el título y la descripción se quedaban con
+   menos de la mitad del ancho porque "Distribuir ahora" no parte línea
+   (`white-space: nowrap`). Mismo corte que usa responsive.css para pasar
+   el list-item a dos filas. */
+@media (max-width: 539px) {
+  .nudge {
+    grid-template-columns: auto 1fr;
+  }
+  .nudge__cta {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: var(--fk-space-2);
+  }
+  .nudge--compact .nudge__cta {
+    margin-top: 0;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════
    LOGRO TOAST - gamificación tipo Duolingo para finanzas
    Aparece cuando el usuario desbloquea un logro.

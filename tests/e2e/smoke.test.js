@@ -333,7 +333,7 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(page.locator('#saldo-detalle-toggle')).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('Pendientes del mes sin línea roja, badge corto y "Gestionar" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
+  test('Pendientes del mes sin línea roja, badge corto y "Ver calendario" al calendario (IN.8e, ADR 034 D5)', async ({ page }) => {
     await page.addInitScript(() => {
       if (localStorage.getItem('fk_v1')) return;
       const hoy = new Date();
@@ -379,10 +379,11 @@ test.describe('Ocultar/mostrar el dinero disponible (IN.2)', () => {
     await expect(item2.locator('.vencidos-card__estado')).toHaveText('Vence hoy');
     await expect(item2.locator('.vencidos-card__estado')).toHaveClass(/--warning/);
 
-    // "Gestionar" lleva al Calendario, no a la lista de compromisos.
-    const gestionar = panel.locator('.vencidos-card__link');
-    await expect(gestionar).toHaveAttribute('href', '#agenda');
-    await gestionar.click();
+    // Un solo verbo por destino: "Ver calendario" en los dos paneles de Inicio.
+    const verCalendario = panel.locator('.vencidos-card__link');
+    await expect(verCalendario).toHaveText('Ver calendario');
+    await expect(verCalendario).toHaveAttribute('href', '#agenda');
+    await verCalendario.click();
     await expect(page.locator('#sec-agenda.active')).toBeVisible();
   });
 

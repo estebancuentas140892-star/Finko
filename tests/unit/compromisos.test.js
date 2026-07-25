@@ -2419,7 +2419,9 @@ describe('renderPanelVencidos() - total al pie (IN.1)', () => {
     S.compromisos = [];
   });
 
-  it('muestra el total de gastos vencidos al pie', () => {
+  // La lista mezcla gastos fijos y cuotas de deuda, así que "gastos vencidos"
+  // nombraba mal la suma.
+  it('muestra el total pendiente de pago al pie', () => {
     // diaPago: 1 siempre vence si hoy es el día 2 o después del mes (nunca choca con hoy).
     S.compromisos = [
       compromisoBase({ id: 'c1', descripcion: 'Arriendo', monto: 900_000, diaPago: 1 }),
@@ -2427,7 +2429,7 @@ describe('renderPanelVencidos() - total al pie (IN.1)', () => {
     ];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
-    expect(html).toContain('Total de gastos vencidos');
+    expect(html).toContain('Total pendiente de pago');
     expect(html).toContain('$1.050.000');
   });
 
@@ -2509,13 +2511,131 @@ describe('renderPanelVencidos() - jerarquía real sin línea roja (IN.8e, ADR 03
     expect(html).not.toContain('vencidos-card__item--urgente');
   });
 
-  it('"Gestionar" lleva a #agenda (Calendario), no a #compromisos', () => {
+  it('"Ver calendario" lleva a #agenda (Calendario), no a #compromisos', () => {
     S.compromisos = [compromisoBase({ diaPago: DIA_PASADO })];
     renderPanelVencidos();
     const html = document.getElementById('panel-vencidos').innerHTML;
     expect(html).toContain('href="#agenda"');
     expect(html).not.toContain('href="#compromisos"');
     expect(html).toContain('aria-label="Ir al calendario"');
+  });
+});
+
+describe('renderPanelVencidos() - los que no caben se declaran, no se esconden', () => {
+  const vencidosN = n => Array.from({ length: n }, (_, i) => compromisoBase({
+    id: `c${i}`, descripcion: `Fijo ${i}`, monto: 10_000, diaPago: DIA_PASADO,
+  }));
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-vencidos"></div>';
+    S.compromisos = [];
+  });
+
+  it('con 4 o menos: todas las filas, sin fila "Ver los N"', () => {
+    S.compromisos = vencidosN(4);
+    renderPanelVencidos();
+    const panel = document.getElementById('panel-vencidos');
+    expect(panel.querySelectorAll('.vencidos-card__item')).toHaveLength(4);
+    expect(panel.querySelector('.vencidos-card__ver-mas')).toBeNull();
+  });
+
+  it('con 6: 4 filas y la salida explícita al calendario con el conteo real', () => {
+    S.compromisos = vencidosN(6);
+    renderPanelVencidos();
+    const panel = document.getElementById('panel-vencidos');
+    expect(panel.querySelectorAll('.vencidos-card__item')).toHaveLength(4);
+    const verMas = panel.querySelector('.vencidos-card__ver-mas');
+    expect(verMas.textContent).toBe('Ver los 6 en el calendario');
+    expect(verMas.getAttribute('href')).toBe('#agenda');
+    // El contador del header sigue nombrando el total, no lo visible.
+    expect(panel.querySelector('.vencidos-card__counter').textContent).toBe('6');
+  });
+
+  it('el total suma los 6, no solo las 4 filas visibles', () => {
+    S.compromisos = vencidosN(6);
+    renderPanelVencidos();
+    const panel = document.getElementById('panel-vencidos');
+    expect(panel.querySelector('.vencidos-card__total-amount').textContent).toBe('$60.000');
+  });
+});
+
+describe('renderPanelPrioridades() - anatomía de fila igual a Pendientes del mes', () => {
+  // Fecha local (no UTC) a N días de hoy: el panel compara contra el día
+  // visible al usuario, igual que la vista.
+  const _fechaEnDias = n => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  };
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="panel-prioridades"></div>';
+    S.compromisos = [];
+    S.personales  = [];
+    S.apartados   = [];
+  });
+
+  it('el glifo va en un chip con fondo y color separados, no en un cal-dot', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_MANANA })];
+    renderPanelPrioridades();
+    const panel = document.getElementById('panel-prioridades');
+    // cal-dot pinta background y color al mismo tono: el ícono se volvía
+    // invisible sobre su propio fondo.
+    expect(panel.innerHTML).not.toContain('cal-dot--');
+    expect(panel.querySelector('.prioridades-card__icon--fijo')).not.toBeNull();
+  });
+
+  it('el badge de tipo baja a la segunda línea, dentro de __meta', () => {
+    S.compromisos = [compromisoBase({ descripcion: 'Arriendo', diaPago: DIA_MANANA })];
+    renderPanelPrioridades();
+    const panel = document.getElementById('panel-prioridades');
+    expect(panel.querySelector('.prioridades-card__meta .dom-badge')).not.toBeNull();
+    expect(panel.querySelector('.prioridades-card__body .prioridades-card__name').textContent)
+      .toBe('Arriendo');
+  });
+
+  it('el h2 no lleva ícono inline: un solo patrón de header de card', () => {
+    S.compromisos = [compromisoBase({ diaPago: DIA_MANANA })];
+    renderPanelPrioridades();
+    const titulo = document.querySelector('.prioridades-card__title');
+    expect(titulo.querySelector('svg')).toBeNull();
+    expect(titulo.textContent.trim()).toBe('Próximas prioridades');
+  });
+
+  it('un apartado usa su propio chip, no el de gasto fijo', () => {
+    S.apartados = [{
+      id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000, montoActual: 0,
+      fechaObjetivo: _fechaEnDias(3), completado: false,
+    }];
+    renderPanelPrioridades();
+    const panel = document.getElementById('panel-prioridades');
+    expect(panel.querySelector('.prioridades-card__icon--apartado')).not.toBeNull();
+    expect(panel.querySelector('.prioridades-card__icon--fijo')).toBeNull();
+  });
+
+  // Regresión: `icono` admite id del catálogo o emoji legacy (CAT.2c). Solo se
+  // escapaba, así que el id salía como texto plano dentro del chip.
+  it('un apartado con id del catálogo pinta el símbolo, no el texto "c-carro"', () => {
+    S.apartados = [{
+      id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000, montoActual: 0,
+      fechaObjetivo: _fechaEnDias(3), completado: false, icono: 'c-carro',
+    }];
+    renderPanelPrioridades();
+    const chip = document.querySelector('.prioridades-card__icon--apartado');
+    expect(chip.querySelector('use').getAttribute('href')).toBe('#c-carro');
+    expect(chip.textContent).not.toContain('c-carro');
+  });
+
+  it('un apartado con emoji legacy lo sigue mostrando tal cual', () => {
+    S.apartados = [{
+      id: 'a1', nombre: 'SOAT moto', montoObjetivo: 120_000, montoActual: 0,
+      fechaObjetivo: _fechaEnDias(3), completado: false, icono: '🛡️',
+    }];
+    renderPanelPrioridades();
+    expect(document.querySelector('.prioridades-card__icon--apartado').textContent.trim())
+      .toBe('🛡️');
   });
 });
 

@@ -848,11 +848,12 @@
    límite?" (hallazgo 3 del ADR). El resto conserva el color de SU
    propio dominio (ingresos, deudas): son eventos de otras secciones
    que aparecen en el calendario, no identidad propia de Calendario.
-   Variante `-text`, no el token crudo: este mismo bloque también
-   colorea el icono real de `.prioridades-card__dot` en Inicio (no solo
-   el punto de 6px del calendario), y el crudo falla el umbral no
+   Variante `-text`, no el token crudo: el crudo falla el umbral no
    textual (3:1) en tema claro para varios dominios (medido en IV.2b:
-   personales 2.39:1, compromisos 3.06:1 al límite). */
+   personales 2.39:1, compromisos 3.06:1 al límite). Aquí background y
+   color van al MISMO tono a propósito: es un punto sólido de 6px, sin
+   glifo dentro. Inicio ya no reutiliza este bloque (pintaba el ícono
+   del color de su propio fondo): usa `.prioridades-card__icon--*`. */
 .cal-dot--ingreso        { background: var(--fk-dom-ingresos-text);    color: var(--fk-dom-ingresos-text); }
 .cal-dot--fijo           { background: var(--fk-dom-agenda-text);      color: var(--fk-dom-agenda-text); }
 .cal-dot--deuda-entidad  { background: var(--fk-dom-compromisos-text); color: var(--fk-dom-compromisos-text); }

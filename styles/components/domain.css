@@ -1677,12 +1677,31 @@ button.chip:focus-visible {
   text-decoration: underline;
 }
 
+/* Sin scroll interno: en móvil no hay barra visible, así que los ítems 4+
+   quedaban indetectables (el contador decía 5, se veían 3, ninguna pista).
+   El corte lo hace ahora la vista (MAX_VISIBLES) y lo declara la fila
+   `.vencidos-card__ver-mas`. */
 .vencidos-card__list {
   list-style: none;
   margin: 0;
   padding: 0.25rem 0;
-  max-height: calc(3.25rem * 3 + 0.5rem); /* ~3 items visibles */
-  overflow-y: auto;
+}
+
+.vencidos-card__ver-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--fk-border-subtle);
+  font-size: var(--fk-text-sm);
+  font-weight: 600;
+  color: var(--fk-text-accent);
+  text-decoration: none;
+}
+.vencidos-card__ver-mas:hover,
+.vencidos-card__ver-mas:focus-visible {
+  background: var(--fk-bg-hover);
 }
 
 .vencidos-card__item {
@@ -1695,8 +1714,11 @@ button.chip:focus-visible {
 /* Chip de icono por tipo: fondo tenue del color de dominio, icono en el
    color completo. Antes reutilizaba .cal-dot--* (background Y color al
    mismo tono), lo que pintaba el SVG del mismo color que su propio fondo
-   y lo volvía invisible; con background/color separados el icono se ve. */
-.vencidos-card__icon {
+   y lo volvía invisible; con background/color separados el icono se ve.
+   "Próximas prioridades" comparte el chip (mismo defecto, misma cura): un
+   solo bloque para los dos paneles, no dos copias que se desincronizan. */
+.vencidos-card__icon,
+.prioridades-card__icon {
   width: 2rem;
   height: 2rem;
   display: flex;
@@ -1706,7 +1728,8 @@ button.chip:focus-visible {
   flex-shrink: 0;
 }
 /* 20px en chip de 32px: mismo ratio ~62% que las tejas de categoría. */
-.vencidos-card__icon .icon {
+.vencidos-card__icon .icon,
+.prioridades-card__icon .icon {
   --fk-icon-size: var(--fk-icon-md);
 }
 /* IV.2c (ADR 031): "fijo" usa el índigo de Calendario (--fk-dom-agenda),
@@ -1716,17 +1739,26 @@ button.chip:focus-visible {
    resolvió en el calendario). Color en `-text`, no crudo: es un icono
    real con fondo propio, sujeto al umbral no textual (3:1) de todas
    formas. */
-.vencidos-card__icon--fijo {
+.vencidos-card__icon--fijo,
+.prioridades-card__icon--fijo {
   background: color-mix(in srgb, var(--fk-dom-agenda) 14%, transparent);
   color: var(--fk-dom-agenda-text);
 }
-.vencidos-card__icon--deuda-entidad {
+.vencidos-card__icon--deuda-entidad,
+.prioridades-card__icon--deuda-entidad {
   background: color-mix(in srgb, var(--fk-dom-compromisos) 14%, transparent);
   color: var(--fk-dom-compromisos-text);
 }
-.vencidos-card__icon--deuda-personal {
+.vencidos-card__icon--deuda-personal,
+.prioridades-card__icon--deuda-personal {
   background: color-mix(in srgb, var(--fk-dom-personales) 14%, transparent);
   color: var(--fk-dom-personales-text);
+}
+/* Solo en prioridades: los apartados no vencen, tienen fecha objetivo, así
+   que nunca llegan al panel de pendientes. Familia menta de Ahorro (ADR 031). */
+.prioridades-card__icon--apartado {
+  background: color-mix(in srgb, var(--fk-dom-ahorro) 14%, transparent);
+  color: var(--fk-dom-ahorro-text);
 }
 
 .vencidos-card__body {
@@ -1812,12 +1844,13 @@ button.chip:focus-visible {
   gap: 0.5rem;
 }
 
+/* Un solo patrón de encabezado de card en Inicio: el de .vencidos-card__title
+   (sentence case, primary, sin ícono inline en el h2). Antes convivían tres
+   en la misma pantalla. */
 .prioridades-card__title {
   font-size: var(--fk-text-sm);
   font-weight: 600;
-  color: var(--fk-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--fk-text-primary);
   margin: 0;
 }
 
@@ -1863,32 +1896,44 @@ button.chip:focus-visible {
   padding: 0;
 }
 
+/* Misma anatomía de dos líneas que .vencidos-card__item: el badge baja a la
+   segunda línea en vez de robarle ancho al nombre (a 390px lo truncaba a la
+   mitad). */
 .prioridades-card__item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 1rem;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
 }
 
-.prioridades-card__dot {
-  font-size: 1rem;
-  flex-shrink: 0;
-  line-height: 1;
+.prioridades-card__body {
+  flex: 1;
+  min-width: 0;
 }
 
 .prioridades-card__name {
   font-size: var(--fk-text-sm);
+  font-weight: 600;
   color: var(--fk-text-primary);
-  flex: 1;
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.prioridades-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.1rem;
+}
+
 .prioridades-card__amount {
   font-size: var(--fk-text-sm);
-  font-weight: 600;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--fk-text-primary);
+  margin: 0;
   flex-shrink: 0;
 }
 
@@ -1994,20 +2039,9 @@ button.chip:focus-visible {
   padding: 0.5rem 1rem;
 }
 
-.actividad-reciente__icon {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--fk-radius-md);
-  flex-shrink: 0;
-  background: color-mix(in srgb, var(--fk-text-muted) 14%, transparent);
-  color: var(--fk-text-secondary);
-}
-.actividad-reciente__icon .icon {
-  --fk-icon-size: var(--fk-icon-md);
-}
+/* El chip gris propio murió con el bug del ícono roto: la fila usa ahora
+   `tejaCategoria(m.icono, m.dominio)`, el mismo componente que ya pintaban
+   Movimientos y Gastos, así que el color del dominio llega gratis. */
 
 .actividad-reciente__body {
   flex: 1;

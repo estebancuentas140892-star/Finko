@@ -308,6 +308,29 @@
   display: block;
 }
 
+/* Regreso explícito para las secciones sin ícono en la barra (#movimientos):
+   en la PWA instalada no hay chrome del navegador. Mismo lenguaje que
+   .registrar__volver (modals.css): chevron girado + destino, sin caja. */
+.section__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+  min-height: 44px;
+  padding: var(--fk-space-2) var(--fk-space-2) var(--fk-space-2) 0;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-secondary);
+  text-decoration: none;
+}
+.section__volver:hover,
+.section__volver:focus-visible {
+  color: var(--fk-text-primary);
+}
+.section__volver .icon {
+  --fk-icon-size: var(--fk-icon-xs);
+  rotate: 180deg;
+}
+
 .section__header {
   display: flex;
   align-items: center;

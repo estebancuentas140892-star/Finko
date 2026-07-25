@@ -533,6 +533,12 @@
            desde Inicio). Derivado sin log paralelo (ADR 028 D5), igual que el
            panel compacto. -->
       <section class="section" id="sec-movimientos" tabindex="-1" aria-labelledby="title-movimientos">
+        <!-- Sin ícono en la barra ni estado activo: en la PWA instalada no hay
+             botón "atrás" del navegador, así que sin este control la sección es
+             una salida sin regreso. Mismo patrón que .registrar__volver. -->
+        <a class="section__volver" href="#dash" aria-label="Volver a Inicio">
+          <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Inicio
+        </a>
         <header class="section__header">
           <h1 class="section__title" id="title-movimientos">Movimientos</h1>
         </header>

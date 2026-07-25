@@ -439,6 +439,30 @@ describe('renderActividadReciente()', () => {
     expect(html).not.toContain('class="actividad-reciente"');
     expect(html).not.toContain('actividad-reciente__title');
   });
+
+  // El panel usaba icon(m.icono), que antepone "#i-" a un id que ya venía
+  // completo ('c-mercado'): href="#i-c-mercado" no existe en el sprite y las
+  // 5 filas quedaban con el chip vacío. La vista completa siempre usó
+  // tejaCategoria(); ahora el panel comparte ese componente.
+  it('pinta la teja de categoría del dominio, no un chip con href inexistente', () => {
+    S.gastos = [gasto()];
+    renderActividadReciente();
+    const teja = elPanel().querySelector('.actividad-reciente__item .cat-teja');
+    expect(teja).not.toBeNull();
+    expect(teja.dataset.dom).toBe('gastos');
+    expect(elPanel().innerHTML).not.toContain('#i-c-');
+  });
+
+  it('un ingreso trae la teja de su propio dominio', () => {
+    S.gastos = [];
+    S.ingresosPuntuales = [{
+      id: 'i1', descripcion: 'Salario', monto: 1_900_000,
+      fecha: '2026-07-15', categoria: 'Salario',
+    }];
+    renderActividadReciente();
+    const teja = elPanel().querySelector('.actividad-reciente__item .cat-teja');
+    expect(teja.dataset.dom).toBe('ingresos');
+  });
 });
 
 // ── movimientosCompletos() ────────────────────────────────────────

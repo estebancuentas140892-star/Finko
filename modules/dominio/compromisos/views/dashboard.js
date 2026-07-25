@@ -10,7 +10,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
-import { icon } from '../../../infra/icons.js';
+import { icon, iconoCategoria } from '../../../infra/icons.js';
 import {
   compromisosActivos,
   compromisosProximos,
@@ -55,15 +55,31 @@ function _tipoBadgeCorto(tipo) {
   return `<span class="dom-badge dom-badge--${dom}">${label}</span>`;
 }
 
+/**
+ * Ícono de un apartado (CAT.2c): `apartado.icono` admite dos formatos, id de
+ * símbolo del catálogo ('c-carro') o emoji legacy. Antes se escapaba siempre,
+ * así que un apartado con id del catálogo imprimía el texto "c-carro" dentro
+ * del chip. Mismo criterio que `_iconoApartado()` en apartados/view.js,
+ * replicado acá porque ningún dominio importa a otro (ADN 10).
+ */
+function _iconoApartado(valor) {
+  if (!valor) return icon('apartados');
+  return /^[a-z]-/.test(valor) ? iconoCategoria(valor) : _esc(valor);
+}
+
 // ── DASHBOARD: PANEL VENCIDOS ────────────────────────────────────
+
+/** Filas visibles en "Pendientes del mes" antes de la fila "Ver los N". */
+const MAX_VISIBLES = 4;
 
 /**
  * Renderiza en `#panel-vencidos` la lista de compromisos vencidos del mes
  * (fijo, deuda, agenda con día de pago ya pasado). Vacío si no hay nada,
  * y limpia el panel para no ocupar espacio.
  *
- * Muestra hasta `MAX_VISIBLES` items inicialmente; el resto queda accesible
- * por scroll vertical interno (max-height en CSS) para no inflar el dashboard.
+ * Muestra hasta `MAX_VISIBLES` items; si hay más, el resto NO se esconde tras
+ * un scroll interno (invisible en movil: el contador decia 5 y se veian 3, sin
+ * ninguna pista), sino tras una fila explicita "Ver los N en el calendario".
  *
  * No-op si el contenedor no existe.
  */
@@ -85,7 +101,7 @@ export function renderPanelVencidos() {
   // mes"); el número vive solo en el badge circular del header.
   const contadorLabel = n === 1 ? '1 pendiente' : `${n} pendientes`;
 
-  const items = vencidos.map(v => {
+  const items = vencidos.slice(0, MAX_VISIBLES).map(v => {
     const tipo  = v.tipo ?? 'fijo';
     const icono = icon(ICONO_TIPO[tipo] ?? 'recurring');
     const desc  = _esc(v.descripcion);
@@ -115,21 +131,28 @@ export function renderPanelVencidos() {
 
   const total = f(sumarMontos(vencidos));
 
+  // Los que no caben no desaparecen en silencio: fila tactil hacia el
+  // calendario, que es donde estan todos.
+  const verMas = n > MAX_VISIBLES
+    ? `<a href="#agenda" class="vencidos-card__ver-mas">Ver los ${n} en el calendario</a>`
+    : '';
+
   el.innerHTML = `
-    <section class="vencidos-card" aria-label="Compromisos vencidos">
+    <section class="vencidos-card" aria-label="Pendientes del mes">
       <header class="vencidos-card__header">
         <h2 class="vencidos-card__title">
           Pendientes del mes
           <span class="vencidos-card__counter" aria-label="${contadorLabel}">${n}</span>
         </h2>
         <a href="#agenda" class="vencidos-card__link"
-           aria-label="Ir al calendario">Gestionar</a>
+           aria-label="Ir al calendario">Ver calendario</a>
       </header>
       <ul class="vencidos-card__list" role="list">
         ${items}
       </ul>
+      ${verMas}
       <p class="vencidos-card__total">
-        <span>Total de gastos vencidos</span>
+        <span>Total pendiente de pago</span>
         <span class="vencidos-card__total-amount">${total}</span>
       </p>
     </section>`;
@@ -186,26 +209,32 @@ export function renderPanelPrioridades() {
     bodyHtml = grupos.map(g => {
       const items = g.items.map(c => {
         const tipo     = c.tipo ?? 'fijo';
-        // dotTipo alimenta cal-dot--* (color): deuda-personal para 'personal'
-        // (Me deben comparte la familia rosa de personales), 'apartado' tiene
-        // su propio dot (IV.2c, antes prestaba 'fijo' por error: pintaba un
-        // apartado con el color de gasto fijo).
-        const dotTipo  = tipo === 'personal' ? 'deuda-personal'
+        // chipTipo alimenta .prioridades-card__icon--* (mismo chip que
+        // "Pendientes del mes"): deuda-personal para 'personal' (Me deben
+        // comparte la familia rosa de personales), 'apartado' tiene el suyo
+        // (IV.2c, antes prestaba 'fijo' por error: pintaba un apartado con el
+        // color de gasto fijo).
+        const chipTipo = tipo === 'personal' ? 'deuda-personal'
           : tipo;
         const icono    = tipo === 'personal'  ? icon('personales')
-          : tipo === 'apartado'  ? (c.icono ? _esc(c.icono) : icon('apartados'))
+          : tipo === 'apartado'  ? _iconoApartado(c.icono)
           : icon(ICONO_TIPO[tipo] ?? 'recurring');
         const desc  = _esc(c.descripcion ?? '(sin descripción)');
         // Las deudas guardan su cuota en `cuotaMensual` (v6); fijos, préstamos
         // personales y apartados llegan con `monto`.
         const valor = Number(c.monto ?? c.cuotaMensual);
         const monto = Number.isFinite(valor) ? f(valor) : '';
+        // Anatomía de dos líneas idéntica a .vencidos-card__item: el badge deja
+        // de robarle ancho al nombre en la misma línea (a 390px truncaba a la
+        // mitad) y el glifo deja de pintarse del color de su propio fondo.
         return `
           <li class="prioridades-card__item">
-            <span class="prioridades-card__dot cal-dot--${dotTipo}" aria-hidden="true">${icono}</span>
-            ${_tipoBadge(tipo)}
-            <span class="prioridades-card__name">${desc}</span>
-            ${monto ? `<span class="prioridades-card__amount">${monto}</span>` : ''}
+            <span class="prioridades-card__icon prioridades-card__icon--${chipTipo}" aria-hidden="true">${icono}</span>
+            <div class="prioridades-card__body">
+              <p class="prioridades-card__name">${desc}</p>
+              <div class="prioridades-card__meta">${_tipoBadge(tipo)}</div>
+            </div>
+            ${monto ? `<p class="prioridades-card__amount">${monto}</p>` : ''}
           </li>`;
       }).join('');
 
@@ -221,7 +250,7 @@ export function renderPanelPrioridades() {
   el.innerHTML = `
     <section class="prioridades-card" aria-label="Próximas prioridades">
       <header class="prioridades-card__header">
-        <h2 class="prioridades-card__title">${icon('agenda')} Próximas prioridades</h2>
+        <h2 class="prioridades-card__title">Próximas prioridades</h2>
         <a href="#agenda" class="prioridades-card__link"
            aria-label="Ir al calendario">Ver calendario</a>
       </header>

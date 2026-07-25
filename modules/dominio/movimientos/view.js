@@ -6,7 +6,7 @@
 
 import { S } from '../../core/state.js';
 import { f, esc as _esc, tiempoRelativo, fechaLegible, formateadorFecha } from '../../infra/utils.js';
-import { icon, emptyArt, tejaCategoria } from '../../infra/icons.js';
+import { emptyArt, tejaCategoria } from '../../infra/icons.js';
 import { memoizar } from '../../infra/memo.js';
 import { movimientosRecientes, movimientosCompletos, descripcionMovimiento, filtrarMovimientos } from './logic.js';
 
@@ -133,7 +133,7 @@ export function renderActividadReciente() {
     const claseMonto = esIngreso ? 'actividad-reciente__monto--ingreso' : 'actividad-reciente__monto--egreso';
     return `
       <li class="actividad-reciente__item">
-        <span class="actividad-reciente__icon" aria-hidden="true">${icon(m.icono)}</span>
+        ${tejaCategoria(m.icono, m.dominio)}
         <div class="actividad-reciente__body">
           <p class="actividad-reciente__desc">${_esc(_descripcionMovimiento(m))}</p>
           <p class="actividad-reciente__cuando">${tiempoRelativo(_diasDesde(m.fecha))}</p>

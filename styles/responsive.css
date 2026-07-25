@@ -179,6 +179,37 @@
   .btn-lg      { min-height: 52px; }
   .btn-icon    { min-width: 44px; }
 
+  /* Controles de Inicio por debajo del mínimo (ojo 40, ajustes 40, pill ~34,
+     links de header ~18): el recuadro visual no cambia, se expande solo la
+     zona sensible con un pseudo-elemento centrado. Crecer el control de
+     verdad rompería la composición del hero y de los headers de card. */
+  .hero-inicio__ojo,
+  .perfil-inicio__ajustes,
+  .hero-inicio__pill,
+  .vencidos-card__link,
+  .prioridades-card__link,
+  .actividad-reciente__ver-todo,
+  .accesos-inicio__personalizar {
+    position: relative;
+  }
+  .hero-inicio__ojo::after,
+  .perfil-inicio__ajustes::after,
+  .hero-inicio__pill::after,
+  .vencidos-card__link::after,
+  .prioridades-card__link::after,
+  .actividad-reciente__ver-todo::after,
+  .accesos-inicio__personalizar::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+    min-width: 44px;
+    min-height: 44px;
+    width: 100%;
+    height: 100%;
+  }
+
   /* ── INPUTS - 16px font-size evita zoom autom. en iOS ──────── */
   .input,
   textarea.input,
