@@ -578,7 +578,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa LG.2: Logros v2, gamificación de hábitos.** Alcance completo, regla anti-gaming (D2) y catálogo: **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada), su dueño. LG.2a, LG.2b y LG.2c cerradas (ver [CHANGELOG](CHANGELOG.md)); quedan LG.2d y LG.2e, abajo. **Dos cosas vigentes que el ADR no cierra:** los nombres de niveles de usuario siguen provisionales hasta que Esteban entregue los definitivos, y al cerrar LG.2d hay que marcar el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) como Superada (la vitrina se muda de Ajustes: decirlo formalmente, no moverla en silencio). Disciplina de rendimiento del ADR 022 que se mantiene: evaluadores O(1), evaluación barata por `state:change`.
+> **Iniciativa LG.2: Logros v2, gamificación de hábitos.** Alcance, regla anti-gaming y catálogo: **[ADR 032](DECISIONS/032-logros-v2-niveles-y-habitos.md)** (Aceptada). Quedan LG.2d y LG.2e. **Sin cerrar por el ADR:** nombres de niveles de usuario provisionales hasta que Esteban entregue los definitivos; al cerrar LG.2d, marcar el [ADR 022](DECISIONS/022-vitrina-de-logros-en-ajustes.md) como Superada (la vitrina se muda de Ajustes). Disciplina de ADR 022 vigente: evaluadores O(1), evaluación barata por `state:change`.
 
 #### LG.2d - Mudanza de la vitrina: "Tu progreso" en Análisis + tarjeta en Inicio
 - Prioridad  : baja (bloqueada)
