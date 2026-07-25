@@ -1,7 +1,7 @@
 # Tablero - Finko Claude
 
 > Tablero Kanban de trabajo pendiente. Reemplaza a `TASKS.md` y `ROADMAP.md` (retirados 2026-07-02, ver [CHANGELOG](CHANGELOG.md)).
-> Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
+> Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver la skill `cerrar-tarea`).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
 > Última actualización: 2026-07-24 (Fase 2 de la reorganización documental: purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md)). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
@@ -17,7 +17,7 @@ _(vacío: elegir la siguiente tarjeta de "Pendientes")_
 ## Cómo usar este tablero
 
 1. Elegir **una** tarjeta de "Pendientes" (o del backlog del usuario si hay una nueva).
-2. Abrir la ficha de su sección en [`contexto/`](contexto/README.md): si el bloque de la funcionalidad existe y está vigente, trabajar desde ahí sin re-explorar el proyecto; si no existe, el primer paso de la tarea es el análisis profundo + escribir el bloque (`/CLAUDE.md` sección 2.6).
+2. Abrir la ficha de su sección en [`contexto/`](contexto/README.md): si el bloque de la funcionalidad existe y está vigente, trabajar desde ahí sin re-explorar el proyecto; si no existe, el primer paso de la tarea es el análisis profundo + escribir el bloque (`/CLAUDE.md` sección 3).
 3. Moverla a "En proceso" con la fecha de inicio.
 4. Trabajarla en una sola sesión cuando sea posible; verificar en la app + tests verdes.
 5. Al cerrar: commit → actualizar la ficha de [`contexto/`](contexto/README.md) → **borrar la tarjeta de este archivo** → agregar entrada en [`CHANGELOG.md`](CHANGELOG.md) → actualizar [`HANDOFF.md`](HANDOFF.md) (últimas 5) → si cerró un error, borrarlo de [`BUGS.md`](BUGS.md).
@@ -32,14 +32,14 @@ Campos de una tarjeta:
 - Secciones  : secciones de la app afectadas
 - Archivos   : rutas relativas involucradas
 - Depende de : otra tarjeta o "nada"
-- Modelo     : combinación sugerida (ver `/CLAUDE.md` sección 2.3)
+- Modelo     : capacidad + nivel sugeridos (ver la skill `elegir-modelo`)
 ```
 
-Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
+Reglas de las tarjetas (ver la skill `triaje-tarea`):
 
 - **Sin duplicados:** antes de crear una tarjeta, buscar otras sobre la misma funcionalidad, sección o componente; si comparten objetivo o tocan la misma parte del sistema, consolidarlas en una sola (la más completa absorbe a las demás).
 - **Dividir lo grande:** una tarjeta que toque varios dominios o varias capas (lógica, vista, estilos, datos, accesibilidad, tests) se parte en subtareas verificables de forma independiente (sufijos `a`/`b` o slices), encadenadas con "Depende de".
-- **Triaje antes de ejecutar (2.7):** toda tarea nueva del usuario pasa primero por triaje contra este tablero, los ADRs y las fichas de contexto (¿existe parcial?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere?). La tarjeta "En proceso" no se abandona por ideas nuevas; cada funcionalidad tiene UNA sola entrada canónica (tarjeta o iniciativa) y las mejoras relacionadas se integran ahí.
+- **Triaje antes de ejecutar:** toda tarea nueva del usuario pasa primero por triaje contra este tablero, los ADRs y las fichas de contexto (¿existe parcial?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere?). La tarjeta "En proceso" no se abandona por ideas nuevas; cada funcionalidad tiene UNA sola entrada canónica (tarjeta o iniciativa) y las mejoras relacionadas se integran ahí.
 
 ---
 
@@ -324,7 +324,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 #### CFG.4 - Respaldo, cuentas de usuario y sincronización multi-dispositivo [DECISIÓN DE ADN]
 - Prioridad  : sin definir (la decisión es la de mayor alcance del proyecto)
-- Estado     : pendiente de análisis (no iniciar). **Toca el ADN del proyecto de frente** (reglas 2 y 3: offline-first, sin servidor, sin cuenta, sin sync): requiere ADR y discusión explícita antes de cualquier código, por instrucción directa de CLAUDE.md sección 3. **Nada de este alcance se implementa por triaje: se registra y se difiere a esa decisión.**
+- Estado     : pendiente de análisis (no iniciar). **Toca el ADN del proyecto de frente** (reglas 2 y 3: offline-first, sin servidor, sin cuenta, sin sync): requiere ADR y discusión explícita antes de cualquier código, por instrucción directa de CLAUDE.md sección 4. **Nada de este alcance se implementa por triaje: se registra y se difiere a esa decisión.**
 - Objetivo   : hoy solo existe exportar a JSON/CSV manual; el usuario teme perder todo el historial si pierde el teléfono, cambia de equipo, desinstala o formatea. Pidió analizar alternativas (copias de seguridad automáticas, sincronización con cuenta de usuario, respaldo cifrado en la nube, restauración desde archivo, u otra) que sean seguras, sencillas y transparentes, sin comprometer la privacidad. **Ampliado por el 6.º lote (2026-07-08, brief General punto 2, FUSIONADO aquí):** Esteban plantea ahora la versión completa: crear cuenta, iniciar sesión desde cualquier dispositivo, sincronización automática, recuperación ante pérdida y "continuar donde quedó", con autenticación segura. **Lo que el ADR debe poner sobre la mesa, sin rodeos:** (a) esto redefine Finko: "Sin servidor. Sin cuenta. Sin sync." dejaría de ser cierto, y la promesa actual de privacidad del onboarding ("Tus datos se guardan solo en tu dispositivo. Sin cuentas. Sin servidores.") tendría que reescribirse; (b) implica backend u servicio gestionado, costos de operación recurrentes, modelo de amenazas nuevo y responsabilidad sobre datos financieros de terceros; (c) existen puntos intermedios que el ADR debe evaluar contra la versión completa: local-first con sync cifrado de extremo a extremo, respaldo cifrado automático a almacenamiento del propio usuario (Drive/iCloud/archivo), o export/import cifrado mejorado; (d) **PERF.5 (IndexedDB) es precondición práctica** de cualquier sync serio (persistencia async + más cupo), y CFG.5 (bloqueo local) se vuelve capa complementaria de la autenticación. El disparador D4 del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) ("una feature que necesite persistencia asíncrona o mayor cupo, ej. CFG.4") quedaría activado si esto se aprueba.
 - Secciones  : Configuración (Ajustes), transversal (afecta el modelo entero de datos y la identidad del producto)
 - Archivos   : el punto de partida es la decisión arquitectónica, no el código

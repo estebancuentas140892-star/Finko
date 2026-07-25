@@ -298,7 +298,7 @@ Una sola fuente: **Inter Variable**, self-hosted (`assets/fonts/inter-variable.w
 
 ## 10. Reglas innegociables (ADN del proyecto)
 
-Ver [`/CLAUDE.md`](../CLAUDE.md) sección 3 - es la fuente única de verdad de las reglas ADN (evita mantener dos copias que se desincronizan). Resumen:
+Ver [`/CLAUDE.md`](../CLAUDE.md) sección 4 - es la fuente única de verdad de las reglas ADN (evita mantener dos copias que se desincronizan). Resumen:
 
 1. Vanilla JS sin build step. 2. Offline-first. 3. Sin servidor (`localStorage`, clave `fk_v1`). 4. Singleton `S` mutable. 5. `save()` debounced. 6. Migraciones idempotentes. 7. Cero `onclick=""`. 8. Cero `window.X`. 9. `logic.js` sin DOM. 10. Ningún dominio importa a otro. 11. Lenguaje humano, neutral y profesional. 12. Constantes legales con fecha de revisión.
 

@@ -2,7 +2,7 @@
 
 > Registro técnico permanente. Una ficha por sección de la app; dentro de cada ficha, un bloque por funcionalidad.
 > Objetivo: cada funcionalidad se analiza a fondo **una sola vez**, el resultado queda escrito aquí y las sesiones futuras lo reutilizan en vez de volver a recorrer el proyecto.
-> Reglas de workflow asociadas: [`/CLAUDE.md`](../../CLAUDE.md) secciones 2.1, 2.4 y 2.6.
+> Reglas de workflow asociadas: [`/CLAUDE.md`](../../CLAUDE.md) sección 2 (continuidad, fuente única) y sección 3 (antes de explorar), más las skills `triaje-tarea` y `cerrar-tarea`.
 > Última revisión: 2026-07-05.
 
 ---
@@ -31,11 +31,11 @@ La ficha no duplica esos documentos: enlaza a ellos. Su valor es el detalle quir
    git log --oneline <commit>.. -- <archivos listados en el bloque>
    ```
    Si hubo commits que tocaron esos archivos, actualizar solo lo que cambió antes de usar la ficha.
-3. Si el bloque no existe: hacer el análisis profundo una sola vez (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones posteriores, con ficha vigente, usan el modelo más eficiente que mantenga la calidad (ver CLAUDE.md sección 2.3).
+3. Si el bloque no existe: hacer el análisis profundo una sola vez (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones posteriores, con ficha vigente, usan la capacidad más eficiente que mantenga la calidad (ver la skill `elegir-modelo`).
 
 ### 2.2 Al cerrar una tarea
 
-Actualizar el bloque tocado como **paso 1** de la secuencia de cierre de docs (CLAUDE.md sección 2.4): estado actual, cambios realizados (1 línea + referencia al CHANGELOG), cambios pendientes, y `Verificado contra` con el commit nuevo.
+Actualizar el bloque tocado como **paso 1** de la secuencia de cierre de docs (ver la skill `cerrar-tarea`): estado actual, cambios realizados (1 línea + referencia al CHANGELOG), cambios pendientes, y `Verificado contra` con el commit nuevo.
 
 ### 2.3 Qué NO va en una ficha
 

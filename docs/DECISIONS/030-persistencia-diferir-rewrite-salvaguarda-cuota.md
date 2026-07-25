@@ -3,7 +3,7 @@
 **Estado:** Aceptada por Esteban el 2026-07-06 (delegó la decisión tras el análisis de la auditoría de rendimiento).
 **Fecha:** 2026-07-06
 **Autores:** Esteban (decisión), Claude Opus 4.8 (análisis y diseño).
-**Relación:** cierra **PERF.4** de la auditoría de rendimiento 2026-07 ([BOARD.md](../BOARD.md), tras PERF.0/PERF.1/PERF.2). Toca la **regla 3 del ADN** ([`/CLAUDE.md`](../../CLAUDE.md) sección 3: "Sin servidor, solo `localStorage`, clave `fk_v1`"): esta ADR la **reafirma**, no la cambia, y documenta la condición bajo la cual se revisaría. Base técnica en [`docs/contexto/transversal.md`](../contexto/transversal.md) y `scripts/perf/BASELINE.md`.
+**Relación:** cierra **PERF.4** de la auditoría de rendimiento 2026-07 ([BOARD.md](../BOARD.md), tras PERF.0/PERF.1/PERF.2). Toca la **regla 3 del ADN** ([`/CLAUDE.md`](../../CLAUDE.md) sección 4: "Sin servidor, solo `localStorage`, clave `fk_v1`"): esta ADR la **reafirma**, no la cambia, y documenta la condición bajo la cual se revisaría. Base técnica en [`docs/contexto/transversal.md`](../contexto/transversal.md) y `scripts/perf/BASELINE.md`.
 
 ---
 

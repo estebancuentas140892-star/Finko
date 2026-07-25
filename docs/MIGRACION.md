@@ -511,7 +511,7 @@ Fase 3 ejecutada el 2026-07-24. **CLAUDE.md no se modificó**: su versión nueva
 | `docs/OPERACION.md` | nuevo | 8 KB | 10 KB |
 | `docs/SETUP_DOMINIO.md` | banner de "superado", se borra en Fase 4 | 4 KB | - |
 
-Duplicación transitoria aceptada y declarada: el runbook de dominio vive en OPERACION.md y su original en SETUP_DOMINIO.md hasta la Fase 4, que es la que borra. El banner evita que alguien lea el equivocado. Igual criterio con el comando de verificación de guiones largos, que ahora vive en la skill `cerrar-tarea` y seguirá en CLAUDE.md §7.2 hasta que se aplique la v2.
+Duplicación transitoria aceptada y declarada: el runbook de dominio vive en OPERACION.md y su original en SETUP_DOMINIO.md hasta la Fase 4, que es la que borra. El banner evita que alguien lea el equivocado. La otra duplicación transitoria (el comando de guiones largos en CLAUDE.md §7.2) **se cerró al aplicar la v2** (sección 10.6): el comando ya no vive en CLAUDE.md, solo en la skill `cerrar-tarea`.
 
 ### 10.2 Trazabilidad: cada bloque de CLAUDE.md y su destino
 
@@ -586,149 +586,41 @@ Lecturas honestas de esta tabla:
 
 ### 10.5 Propuesta de contenido final de CLAUDE.md
 
-142 líneas, 9.640 bytes. **No aplicada:** espera revisión. Al aprobarla, reemplaza el archivo completo y se retira de él el comando de la sección 7.2, que ya vive en la skill `cerrar-tarea`.
+142 líneas, 10.318 bytes, ~3.224 tokens. **Aplicada en este mismo commit** (era una propuesta; el archivo completo vive en `/CLAUDE.md`, no se duplica acá para no crear la misma redundancia que este proyecto está eliminando).
 
-`````markdown
-# CLAUDE.md - Finko
+### 10.6 Validación final antes de aplicar
 
-> Punto de entrada para Claude Code y cualquier asistente de IA al abrir esta carpeta.
-> Acá vive la **norma**. Los procedimientos viven en `.claude/skills/`; la referencia, en `docs/`.
-> Revisado: 2026-07-24.
+Hecha a pedido explícito de Esteban, en tres partes.
 
----
+**Referencias cruzadas corregidas** (consecuencia directa de la renumeración, no trabajo de Fase 4). La búsqueda de `CLAUDE\.md.{0,60}(secci|§)` en todo el repo encontró 9 puntos en documentos vivos que apuntaban a secciones de CLAUDE.md por número:
 
-## 0. Qué es Finko
-
-PWA offline-first de gestión financiera personal para Colombia. Sin servidor, sin cuenta, sin sync: todo vive en `localStorage` (clave `fk_v1`). Vanilla JS con ES6 modules, **sin framework, sin build step, sin TypeScript**. Pensada para personas con poco conocimiento financiero, con normativa colombiana (SMMLV, UVT, GMF).
-
-Versión `v1.0.0`, estable y en producción. La fase actual es post-v1.0: mantenimiento y mejoras por sección, con un backlog que incluye dos decisiones de fondo aún abiertas (sincronización multidispositivo y tarjeta de crédito).
-
----
-
-## 1. Mapa de documentos
-
-Leer solo lo que la tarea pide. La columna de la derecha evita el error más caro: buscar algo donde no está.
-
-| Documento | Cuándo leerlo | Qué NO buscar ahí |
+| Archivo | Referencia vieja | Corregida a |
 |---|---|---|
-| [`docs/HANDOFF.md`](docs/HANDOFF.md) | siempre, al arrancar: dónde estamos hoy, métricas, últimas 5 tareas | historia, workflow, comandos, runbooks |
-| [`docs/BOARD.md`](docs/BOARD.md) | al elegir en qué trabajar | tareas cerradas: se borran al cerrar |
-| [`docs/contexto/`](docs/contexto/README.md) | **antes de tocar una sección**: qué piezas la componen, riesgos, pendientes | prioridades, cronología |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | capas, flujo de datos, EventBus, convenciones técnicas, y las tablas sección → carpeta y síntoma → dónde mirar | el inventario archivo por archivo: eso lo responde `ls` |
-| [`docs/BUGS.md`](docs/BUGS.md) | errores abiertos, verificados contra el código | sospechas sin verificar: esas son tarjetas |
-| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | qué cambió y cuándo (mes corriente; meses cerrados en `docs/changelog/`) | por qué se decidió algo |
-| [`docs/DECISIONS/`](docs/DECISIONS/) | **por qué** se decidió algo, con alternativas rechazadas | estado de avance |
-| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | tarea de UI: tokens, componentes, tipografía | los valores exactos: están en `styles/tokens.css` |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | cómo se propone un cambio y qué se exige antes de commitear | arquitectura, runbooks |
-| [`docs/OPERACION.md`](docs/OPERACION.md) | deploy, dominio, constantes anuales, bump del SW, harness de perf | decisiones, estado |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | **obligatorio antes de tocar dependencias** | otras operaciones |
-| [`README.md`](README.md) | cara pública y **la única lista de comandos** | reglas del proyecto |
+| `docs/BOARD.md` (4 puntos) | sección 2.4, 2.6, 2.3, secciones 2.1 y 2.7 | skill `cerrar-tarea`, sección 3, skill `elegir-modelo`, skill `triaje-tarea` |
+| `docs/BOARD.md` (tarjeta CFG.4) | sección 3 (ADN) | sección 4 |
+| `docs/ARCHITECTURE.md` | sección 3 (ADN) | sección 4 |
+| `docs/contexto/README.md` (3 puntos) | secciones 2.1, 2.4 y 2.6 | sección 2 y 3, más las 2 skills |
+| `docs/DECISIONS/030-*.md` | sección 3 (ADN) | sección 4 |
 
----
+No se tocó `docs/HANDOFF.md` (su "sección 2" ya apuntaba a Workflow, que sigue siendo la sección 2 en la v2: coincidencia verificada, no reescritura) ni `docs/CHANGELOG.md` ni `docs/changelog/*` (historia congelada, principio 7: describen la sección que existía en el momento de la tarea, no se actualizan).
 
-## 2. Workflow obligatorio
+**Tres huecos reales encontrados y corregidos**, ninguno visible en la comparación por palabras clave porque eran omisiones, no errores de texto:
 
-Reglas del usuario. Aplican siempre, sin pedirlas en cada sesión.
+1. **"Sujeto a límites de uso más estrictos"** (la advertencia operativa sobre el escalón de máxima capacidad) no había sobrevivido a la skill `elegir-modelo`. Se agregó a la tabla de la sección 1.
+2. **La mención de "Ultracode"** (el CLAUDE.md original aclaraba que la política de subagentes del proyecto es lo que reemplaza a ese concepto) se había perdido al reescribir la skill. Se restauró en `elegir-modelo` sección 5.
+3. **`docs/MAPA.md` no aparecía en ningún lugar del borrador**, ni en el mapa de documentos ni en "antes de explorar". Es un archivo que sigue vivo hoy (se fusiona recién en la Fase 4) y sus tablas (sección → carpeta, síntoma → dónde mirar) no tienen otro hogar todavía: dejarlo fuera habría sido un enlace roto de facto, aunque ningún grep de texto lo detectara. Se agregó como fila propia en la sección 1 del mapa, con la nota de que es temporal, y como referencia en la sección 3.
 
-**Una tarea a la vez.** No saltar al paso siguiente sin que la tarea activa esté verificada en la app y commiteada. La tarjeta "En proceso" no se abandona por ideas nuevas.
+**Checklist de confirmación explícita**, contra el archivo ya aplicado:
 
-**Toda idea nueva pasa por triaje antes de implementarse:** ¿ya existe?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere? Tres reglas siempre activas: **continuidad** (no cambiar de frente a mitad de tarea), **fuente única** (una funcionalidad, una sola entrada canónica en el tablero) y **nunca revertir un ADR en silencio** (se dice y se decide con el usuario). El procedimiento completo: skill `triaje-tarea`.
+| Ítem | Resultado |
+|---|---|
+| 12 reglas ADN conservadas | verificadas una por una contra `CLAUDE.md` aplicado, las 12 presentes y textuales |
+| Formato del bloque `Próximo paso` conservado | presente, con la plantilla `<capacidad> - <nivel>` de la condición (b) |
+| Regla de oro conservada | textual |
+| Confirmación de acciones destructivas conservada | textual |
+| Convenciones conservadas | presentes, con `perf`/`a11y` sumados a los tipos de commit (ya estaban en CONTRIBUTING, corrige una inconsistencia) |
+| Ninguna información exclusiva perdida | los 3 huecos de arriba encontrados y corregidos; el resto trazado en la sección 10.2 |
+| Enlaces del archivo aplicado | los 13 destinos existen desde la raíz |
+| Guiones largos | cero, en todos los archivos trackeados |
+| Las 4 skills cargan | confirmado: el listado de skills disponibles del CLI las muestra a las 4 con su `description` |
 
-**Al cerrar, reportar para supervisar en la app**, en este orden: (1) qué archivos cambiaron, (2) qué cambió en cada uno, (3) cómo verificarlo en la app paso a paso, (4) qué tests lo cubren. Alcance honesto: lo que quedó fuera se dice.
-
-**El cierre de documentos y las compuertas de verificación:** skill `cerrar-tarea`. Es el punto único de ejecución; no se improvisa la secuencia.
-
-**Confirmar antes de cambios destructivos.** Eliminar archivos, force push, reescribir historial o borrar tests existentes: siempre confirmar antes.
-
-### Cierre obligatorio de cada respuesta
-
-Al final de **toda** respuesta, sin excepción (tarea cerrada, exploración, pregunta o ajuste chico) va este bloque. Si no hay tarea siguiente clara, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque.
-
-```
-─── Próximo paso ──────────────────────────────────
-Tarea siguiente : <título corto>
-Modelo sugerido : <capacidad> - <nivel>
-Por qué         : <una línea justificando capacidad + nivel>
-───────────────────────────────────────────────────
-```
-
-Capacidades, de menor a mayor: **ligero** (tareas mecánicas, verificaciones, renombres) · **equilibrado** (implementación normal siguiendo patrones existentes; niveles Bajo/Medio/Alto) · **alta capacidad** (lógica financiera colombiana, debugging sin pista; Alto/Extra) · **máxima capacidad** (decisiones arquitecturales, auditorías, lo que roza el ADN; Alto/Extra/Max).
-
-Este archivo **no nombra versiones de modelo a propósito**: la equivalencia capacidad → modelo vigente y la matriz de desempate viven en la skill `elegir-modelo`, para que actualizarlas no toque la norma. Invocarla cuando la elección no sea obvia.
-
-**Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después** de verificar y commitear lo actual, no qué se hace ahora.
-
----
-
-## 3. Antes de explorar el proyecto
-
-Consultar [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (ubicación por dominio y tabla síntoma → dónde mirar) y la ficha de la sección en [`docs/contexto/`](docs/contexto/README.md). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos que lista).
-
-Si no existe, el primer paso de la tarea es el análisis profundo y **escribir el bloque antes de codificar**. Cada funcionalidad se analiza a fondo una sola vez.
-
----
-
-## 4. Reglas innegociables (ADN)
-
-1. **Vanilla JS sin build step** - no agregar bundlers, TS, frameworks.
-2. **Offline-first** - el SW garantiza operación sin red.
-3. **Sin servidor** - solo `localStorage` (clave `fk_v1`).
-4. **Singleton `S` mutable** - no reactivity, no proxies.
-5. **`save()` debounced 200ms** - nunca escribir a `localStorage` directo.
-6. **Migraciones idempotentes** - cada bump de schema sube datos sin romper.
-7. **Cero `onclick=""`** - todo vía `data-action` delegado en `actions.js`.
-8. **Cero `window.X`** - todo `export` + `import`.
-9. **`logic.js` sin DOM** - funciones puras, testeables en happy-dom/Node.
-10. **Ningún dominio importa a otro** - comunicación por EventBus.
-11. **Lenguaje humano, neutral y profesional** - claro y sin jerga, pero serio y accesible para cualquier edad. Voz "tú" (tuteo, no voseo ni usted), "dinero" (no "plata"). Ej: "Tu dinero disponible hoy" antes que "Saldo disponible". Ver [ADR 003](docs/DECISIONS/003-tono-neutral-profesional.md).
-12. **Constantes legales con fecha de revisión** - SMMLV, UVT y auxilio de transporte (anuales). Los indicadores de alta frecuencia (ej. usura trimestral) quedan fuera del alcance por costo de mantenimiento (ver [ADR 004](docs/DECISIONS/004-eliminar-tasa-usura.md)).
-
-Tocar cualquiera de estas reglas requiere un ADR en `docs/DECISIONS/` y discusión explícita.
-
----
-
-## 5. Convenciones
-
-- **Imports:** siempre con `.js`, rutas relativas (`../core/state.js`).
-- **Commits:** `tipo(área): descripción`. Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `perf`, `a11y`. Cuerpo en ASCII sin acentos.
-- **Commit y push autónomos:** no se pide permiso, pero solo con las compuertas en verde.
-- **Naming:** dominios en español (`ingresos`, `compromisos`); infra y ui en inglés (`state`, `actions`).
-- **Tests verdes obligatorios** antes de cada commit.
-- **CSS:** solo `var(--fk-*)`, nunca hardcodear colores ni tamaños.
-
----
-
-## 6. Estilo de escritura
-
-Aplica a **todo texto** del proyecto: respuestas en chat, commits, comentarios de código, documentación, microcopy de UI, mensajes de error, tests y scripts.
-
-**Prohibidos el guion largo (U+2014) y el guion medio (U+2013).** Se nombran por codepoint a propósito: escribirlos acá para prohibirlos haría que este archivo los contenga y la regla no podría verificarse.
-
-| Para | Usar | Ejemplo |
-|---|---|---|
-| Pausa o aclaración | `:` | "Resumen: 2981 tests verdes." |
-| Apertura de explicación | `.` | "App estable. Modo mantenimiento." |
-| Inciso corto | `(...)` | "El SMMLV (vigente 2026) es $1.750.905." |
-| Conector de continuación | `-` | "Fase 2 - purga del tablero." |
-| Rango numérico | `-` o "a" | "30-90 min" / "30 a 90 min" |
-| Separador visual | `,` | "Calidad primero, ahorro segundo." |
-
-**Excepción única:** los guiones largos que vengan en datos del usuario por copy/paste externo (ej. un CSV importado) se preservan tal cual. La regla aplica a lo que escribimos nosotros.
-
-**Estado:** limpieza terminada, cero U+2014 y U+2013 en archivos trackeados. La verificación es la compuerta 3 de la skill `cerrar-tarea`.
-
----
-
-## 7. Comandos
-
-La lista completa vive en `package.json` y, para humanos, en el [`README.md`](README.md). Los cuatro de uso diario:
-
-```bash
-python -m http.server 8080   # servir la app (los ES6 modules requieren HTTP)
-pnpm test                    # unitarios + integración (Vitest + happy-dom)
-pnpm run test:e2e            # Playwright + Chromium
-pnpm run lint
-```
-
-**No abrir `index.html` directo:** los ES6 modules necesitan servidor HTTP.
-`````

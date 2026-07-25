@@ -17,7 +17,7 @@ description: Desempata qué capacidad de modelo y qué nivel de esfuerzo corresp
 | **Ligero** | Haiku 4.5 | sin nivel |
 | **Equilibrado** | Sonnet 5 | Bajo · Medio · Alto |
 | **Alta capacidad** | Opus 5 | Alto · Extra |
-| **Máxima capacidad** | Fable 5 | Alto · Extra · Max |
+| **Máxima capacidad** | Fable 5 (sujeto a límites de uso más estrictos) | Alto · Extra · Max |
 
 No inventar otras combinaciones ni mezclarlas. `Max` está reservado a máxima capacidad, nunca a un escalón inferior.
 
@@ -78,7 +78,7 @@ El puntaje es guía, no veredicto: si el orden de prioridad de la sección 2 pid
 
 ## 5. Paralelización con subagentes
 
-Este CLI no tiene modo multiagente nativo. Solo si **paralelización ≥ 4** y **agentes ≥ 4** en la matriz, **y el usuario lo pide de forma explícita**, se reparte el trabajo en subagentes (tool `Agent`, la capacidad de cada uno elegida con esta misma matriz) y se consolida con revisión cruzada. Sin pedido explícito no se lanzan subagentes.
+Esto es lo que reemplaza a "Ultracode" en este proyecto: este CLI no tiene modo multiagente nativo. Solo si **paralelización ≥ 4** y **agentes ≥ 4** en la matriz, **y el usuario lo pide de forma explícita**, se reparte el trabajo en subagentes (tool `Agent`, la capacidad de cada uno elegida con esta misma matriz) y se consolida con revisión cruzada. Sin pedido explícito no se lanzan subagentes.
 
 Al consolidar varios informes: buscar coincidencias entre agentes que llegaron por caminos independientes (eso da confianza) y resolver las contradicciones de forma explícita, diciendo con qué criterio se resolvió cada una. Un informe de subagente no es verdad por venir de un agente: se verifica lo que afirma antes de actuar sobre él.
 
@@ -92,6 +92,12 @@ El modelo del turno en curso **lo fija el usuario al lanzar**: el asistente no s
 2. Cuánto razonamiento y esfuerzo aplicar dentro del turno actual.
 3. La capacidad de cada subagente cuando el usuario pide paralelizar.
 
-En el bloque `Próximo paso` se escribe la **capacidad** y el nivel. El nombre del modelo vigente se toma de la tabla de la sección 1 y se puede agregar entre paréntesis si le sirve al usuario para lanzar el turno; nunca se copia esa tabla a `CLAUDE.md` ni a otro documento.
+En el bloque `Próximo paso` se escribe la **capacidad** y el nivel: `<capacidad> - <nivel>`. Si conviene mostrar además el nombre concreto para que el usuario lance el turno sin consultar esta skill, se toma de la tabla de la sección 1 y se agrega entre paréntesis **siempre anotado como resuelto por esta skill**, nunca como si fuera una regla fija:
+
+```
+Modelo sugerido : Máxima capacidad - Extra (modelo vigente resuelto por elegir-modelo)
+```
+
+Esa tabla nunca se copia a `CLAUDE.md` ni a otro documento: es lo que se actualiza en un solo lugar cuando cambie la familia de modelos disponible.
 
 No imprimir esta matriz en tareas obvias: el `Próximo paso` liviano es el default y la matriz existe solo para desempatar.

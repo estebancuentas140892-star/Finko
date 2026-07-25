@@ -1,198 +1,96 @@
-# CLAUDE.md - Finko Claude
+# CLAUDE.md - Finko
 
-> **Este archivo es el punto de entrada para Claude Code (y cualquier asistente IA) al abrir esta carpeta.**
-> Última revisión: 2026-07-23
-
----
-
-## 0. Estado del proyecto
-
-**Versión:** `v1.0.0` - estable, completa, lista para usar.
-**Tag git:** `v1.0.0`
-**Próxima fase:** post-v1.0 (deploy, mejoras opcionales, mantenimiento).
-
-Ver:
-- [`docs/CHANGELOG.md`](docs/CHANGELOG.md) → qué se hizo en cada fase/tarea ya cerrada.
-- [`docs/BOARD.md`](docs/BOARD.md) → tablero Kanban: tarea en proceso + pendientes agrupados por sección de la app.
-- [`docs/contexto/`](docs/contexto/README.md) → fichas técnicas por sección: dónde vive cada funcionalidad, riesgos, estado, pendientes.
-- [`docs/BUGS.md`](docs/BUGS.md) → registro de errores conocidos, con archivo/función/línea exactos.
+> Punto de entrada para Claude Code y cualquier asistente de IA al abrir esta carpeta.
+> Acá vive la **norma**. Los procedimientos viven en `.claude/skills/`; la referencia, en `docs/`.
+> Revisado: 2026-07-24.
 
 ---
 
-## 1. Qué es Finko
+## 0. Qué es Finko
 
-PWA offline-first de gestión financiera personal para Colombia.
-Sin servidor. Sin cuenta. Sin sync. Todo vive en `localStorage`.
-Vanilla JS + ES6 modules. **Sin framework, sin build step, sin TypeScript.**
+PWA offline-first de gestión financiera personal para Colombia. Sin servidor, sin cuenta, sin sync: todo vive en `localStorage` (clave `fk_v1`). Vanilla JS con ES6 modules, **sin framework, sin build step, sin TypeScript**. Pensada para personas con poco conocimiento financiero, con normativa colombiana (SMMLV, UVT, GMF).
 
-Estructura de carpetas (resumen):
-
-```
-index.html            → shell + estructura HTML completa
-manifest.json         → PWA manifest
-service-worker.js     → cache-first offline
-styles/               → CSS por capa (@layer)
-modules/
-  core/               → state.js, storage.js, constants.js
-  infra/              → utils, render, a11y, crud, router, financiero, cuenta-helper, icons...
-  ui/                 → bootstrap, shell, actions, modales, onboarding, proposito...
-  dominio/            → 18 carpetas (agenda, ahorro, analisis, apartados, compromisos,
-                        gastos, tesoreria, metas, presupuesto, inversiones... detalle en
-                        docs/ARCHITECTURE.md sección 2.4)
-tests/
-  unit/               → Vitest + happy-dom (lógica pura)
-  e2e/                → smoke tests Playwright
-scripts/              → gen-icons.py, lighthouse.js
-docs/                 → ARCHITECTURE, BOARD, BUGS, CHANGELOG, etc.
-```
+Versión `v1.0.0`, estable y en producción. La fase actual es post-v1.0: mantenimiento y mejoras por sección, con un backlog que incluye dos decisiones de fondo aún abiertas (sincronización multidispositivo y tarjeta de crédito).
 
 ---
 
-## 2. Workflow obligatorio del coaching
+## 1. Mapa de documentos
 
-> Estas reglas son del usuario. Aplican **siempre**. No hay que pedirlas en cada sesión.
+Leer solo lo que la tarea pide. La columna de la derecha evita el error más caro: buscar algo donde no está.
 
-### 2.1 Una tarea/fase a la vez
+| Documento | Cuándo leerlo | Qué NO buscar ahí |
+|---|---|---|
+| [`docs/HANDOFF.md`](docs/HANDOFF.md) | siempre, al arrancar: dónde estamos hoy, métricas, últimas 5 tareas | historia, workflow, comandos, runbooks |
+| [`docs/BOARD.md`](docs/BOARD.md) | al elegir en qué trabajar | tareas cerradas: se borran al cerrar |
+| [`docs/contexto/`](docs/contexto/README.md) | **antes de tocar una sección**: qué piezas la componen, riesgos, pendientes | prioridades, cronología |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | capas, flujo de datos, EventBus, convenciones técnicas | el inventario archivo por archivo: eso lo responde `ls` |
+| [`docs/MAPA.md`](docs/MAPA.md) | tabla sección visible → carpeta → archivos clave, y síntoma → dónde mirar. **Temporal: se fusiona dentro de ARCHITECTURE.md en la Fase 4** de [`MIGRACION.md`](docs/MIGRACION.md) | inventario completo: solo lo que un síntoma concreto necesita |
+| [`docs/BUGS.md`](docs/BUGS.md) | errores abiertos, verificados contra el código | sospechas sin verificar: esas son tarjetas |
+| [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | qué cambió y cuándo (mes corriente; meses cerrados en `docs/changelog/`) | por qué se decidió algo |
+| [`docs/DECISIONS/`](docs/DECISIONS/) | **por qué** se decidió algo, con alternativas rechazadas | estado de avance |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | tarea de UI: tokens, componentes, tipografía | los valores exactos: están en `styles/tokens.css` |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | cómo se propone un cambio y qué se exige antes de commitear | arquitectura, runbooks |
+| [`docs/OPERACION.md`](docs/OPERACION.md) | deploy, dominio, constantes anuales, bump del SW, harness de perf | decisiones, estado |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | **obligatorio antes de tocar dependencias** | otras operaciones |
+| [`README.md`](README.md) | cara pública y **la única lista de comandos** | reglas del proyecto |
 
-- No saltar al "siguiente paso" sin que la tarea activa esté **verificada en la app** y commiteada.
-- **Dividir lo grande:** si una tarea es muy grande o toca varios dominios o capas a la vez (lógica, vista, estilos, datos, accesibilidad, tests), partirla en subtareas que se puedan desarrollar y verificar de forma independiente. Cada subtarea es una tarjeta propia en el BOARD, encadenada con "Depende de", y se empieza por el subset más pequeño que tenga sentido.
-- **Unificar duplicados:** antes de crear una tarjeta en el BOARD, buscar tarjetas existentes sobre la misma funcionalidad, sección o componente. Si comparten objetivo o modifican la misma parte del sistema, consolidarlas en una sola tarjeta completa: la más completa absorbe a las demás, cero duplicados.
+---
 
-### 2.2 Reportar cambios para supervisar en la app
+## 2. Workflow obligatorio
 
-Al cerrar una tarea **siempre** decir, en este orden:
+Reglas del usuario. Aplican siempre, sin pedirlas en cada sesión.
 
-1. **Qué archivos cambiaron** (rutas relativas).
-2. **Qué cambió en cada uno** (1-2 líneas por archivo).
-3. **Cómo verificarlo en la app** - paso a paso: ruta visual, sección, modal, botón. Si requiere `python -m http.server 8080` o algún script, decirlo.
-4. **Qué tests cubren el cambio** (si aplica).
+**Una tarea a la vez.** No saltar al paso siguiente sin que la tarea activa esté verificada en la app y commiteada. La tarjeta "En proceso" no se abandona por ideas nuevas.
 
-### 2.3 Cierre obligatorio de cada conversación
+**Toda idea nueva pasa por triaje antes de implementarse:** ¿ya existe?, ¿modifica algo aprobado?, ¿se integra a una iniciativa?, ¿depende de algo?, ¿se difiere? Tres reglas siempre activas: **continuidad** (no cambiar de frente a mitad de tarea), **fuente única** (una funcionalidad, una sola entrada canónica en el tablero) y **nunca revertir un ADR en silencio** (se dice y se decide con el usuario). El procedimiento completo: skill `triaje-tarea`.
 
-**Obligatorio:** al final de **toda** respuesta (tarea cerrada, exploración, pregunta, ajuste pequeño - lo que sea) incluir el bloque `Próximo paso`. No omitirlo nunca, ni siquiera si la respuesta es corta. Si no hay tarea siguiente clara, proponer la más razonable del [`docs/BOARD.md`](docs/BOARD.md) y, si hay duda real, pedir input al usuario dentro del mismo bloque.
+**Al cerrar, reportar para supervisar en la app**, en este orden: (1) qué archivos cambiaron, (2) qué cambió en cada uno, (3) cómo verificarlo en la app paso a paso, (4) qué tests lo cubren. Alcance honesto: lo que quedó fuera se dice.
 
-**Formato exacto (copiar tal cual, solo cambian los valores):**
+**El cierre de documentos y las compuertas de verificación:** skill `cerrar-tarea`. Es el punto único de ejecución; no se improvisa la secuencia.
+
+**Confirmar antes de cambios destructivos.** Eliminar archivos, force push, reescribir historial o borrar tests existentes: siempre confirmar antes.
+
+### Cierre obligatorio de cada respuesta
+
+Al final de **toda** respuesta, sin excepción (tarea cerrada, exploración, pregunta o ajuste chico) va este bloque. Si no hay tarea siguiente clara, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque.
 
 ```
 ─── Próximo paso ──────────────────────────────────
 Tarea siguiente : <título corto>
-Modelo sugerido : <Haiku 4.5 | Sonnet 5 - <nivel> | Opus 4.8 - <nivel> | Fable 5 - <nivel>>
-Por qué         : <una línea justificando modelo+nivel>
+Modelo sugerido : <capacidad> - <nivel>
+Por qué         : <una línea justificando capacidad + nivel>
 ───────────────────────────────────────────────────
 ```
 
-**Orden de prioridad al elegir modelo + nivel (regla del usuario, 2026-07-02):** la calidad del resultado manda siempre, en especial en programación. Nunca sacrificar calidad de código, razonamiento, arquitectura o confiabilidad para ahorrar tokens.
+Capacidades, de menor a mayor: **ligero** (tareas mecánicas, verificaciones, renombres) · **equilibrado** (implementación normal siguiendo patrones existentes; niveles Bajo/Medio/Alto) · **alta capacidad** (lógica financiera colombiana, debugging sin pista; Alto/Extra) · **máxima capacidad** (decisiones arquitecturales, auditorías, lo que roza el ADN; Alto/Extra/Max).
 
-1. Elegir el modelo con mayor probabilidad de entregar la mejor solución para la tarea.
-2. Si dos modelos ofrecen prácticamente el mismo nivel de calidad, preferir el más eficiente en tokens.
-3. Ajustar el nivel de esfuerzo solo cuando haga falta: no usar uno superior sin razón, pero tampoco recortar si compromete el resultado.
-4. No usar un modelo excesivo para una tarea simple, pero tampoco uno insuficiente para ahorrar tokens si eso puede afectar la solución.
+Este archivo **no nombra versiones de modelo a propósito**: la equivalencia capacidad → modelo vigente y la matriz de desempate viven en el cuerpo de la skill `elegir-modelo`, para que actualizarla no toque esta norma. Invocarla cuando la elección no sea obvia.
 
-La optimización de tokens es el criterio de desempate, nunca el criterio principal.
+Si en una respuesta real conviene mostrar el nombre concreto del modelo (para que el usuario lance el turno sin tener que consultar la skill), se agrega entre paréntesis y siempre anotado como resuelto por ella, nunca como regla escrita acá:
 
-**Escala de modelos (familia Claude 5, revisada 2026-07-02):**
+```
+Modelo sugerido : Máxima capacidad - Extra (modelo vigente resuelto por elegir-modelo)
+```
 
-- **Haiku 4.5:** tareas rápidas y sencillas; prioriza velocidad.
-- **Sonnet 5:** equilibrio rendimiento/costo; el caballo de batalla del día a día.
-- **Opus 4.8:** trabajo complejo que requiere razonamiento profundo.
-- **Fable 5:** máximo razonamiento; proyectos extensos, decisiones críticas, agentes de larga duración. Sujeto a límites de uso más estrictos.
+Nunca así, con el nombre fijado directamente en esta norma:
 
-**Combinaciones válidas modelo + nivel** (no inventar otras, no mezclar):
+```
+Modelo sugerido : Fable 5 - Extra
+```
 
-| Modelo      | Niveles permitidos                            |
-|---          |---                                            |
-| Haiku 4.5   | (sin nivel: siempre se escribe `Haiku 4.5`)   |
-| Sonnet 5    | Bajo · Medio · Alto                           |
-| Opus 4.8    | Alto · Extra                                  |
-| Fable 5     | Alto · Extra · Max                            |
-
-**Cuándo usar cada combinación.** Objetivo: **ahorrar tokens sin sacrificar calidad de código**. Ante la duda, subir un escalón antes que bajarlo: la calidad nunca se sacrifica.
-
-| Combinación           | Cuándo usarla                                                                                              |
-|---                    |---                                                                                                          |
-| **Haiku 4.5**         | Verificación de tests verdes, lint, scripts triviales, renombres mecánicos, bumps de constantes (E.1/E.2), leer y reportar sin decisiones. |
-| **Sonnet 5 - Bajo**   | CSS aislado, ajuste de copy, fix puntual con causa ya identificada, doc update; < 30 min, 1-2 archivos.    |
-| **Sonnet 5 - Medio**  | Trabajo cotidiano: feature nueva en un solo dominio siguiendo patrón ya existente; 30-90 min, 3-6 archivos, tests nuevos. Punto de partida si hay duda. |
-| **Sonnet 5 - Alto**   | Feature que toca varios dominios o introduce patrones de UI/datos nuevos; refactor acotado, debugging con pista clara, revisión de código; 90 min - media jornada. |
-| **Opus 4.8 - Alto**   | Bug sutil en lógica financiera (regla 72, sistema francés, EA↔mensual, retenciones), nueva lógica financiera CO no trivial, debugging sin pista clara. |
-| **Opus 4.8 - Extra**  | Decisión arquitectural acotada: bump de schema con migración, refactor cross-domain, nuevo dominio, tareas largas de varios pasos.  |
-| **Fable 5 - Alto**    | Refactor mayor o feature multidominio con trade-offs no obvios y riesgo real de regresión.                 |
-| **Fable 5 - Extra**   | Auditoría o análisis de la base de código completa, investigación técnica profunda, trabajo agéntico de larga duración. |
-| **Fable 5 - Max**     | Reescritura de subsistema crítico, debugging extremo sin pista, cambio que roza el ADN (requiere ADR).     |
-
-**Regla práctica de escalado:** empezar con el modelo más sencillo que pueda resolver la tarea. Si falta profundidad, subir primero el **nivel de esfuerzo** dentro del mismo modelo; solo cuando el alcance supere al modelo, saltar al siguiente (Haiku → Sonnet → Opus → Fable).
-
-**Matriz de decisión (desempate, solo para tareas no triviales o ambiguas).** Cuando las tablas de arriba no dejen clara la combinación, puntuar de 0 (no aplica) a 5 (muy alto) cada criterio y sumar: tamaño del trabajo, archivos involucrados, complejidad técnica, complejidad del razonamiento, riesgo de introducir errores, necesidad de planificación, dependencias entre módulos, decisiones críticas, contexto prolongado, paralelización conveniente, agentes especializados (11 criterios, máximo 55).
-
-| Total | Modelo + nivel (respetando siempre las combinaciones válidas de arriba)                         |
-|---    |---                                                                                              |
-| 0-10  | Haiku 4.5                                                                                        |
-| 11-22 | Sonnet 5 - Bajo/Medio                                                                            |
-| 23-34 | Sonnet 5 - Alto (Opus 4.8 - Alto si toca lógica financiera CO o una decisión crítica)           |
-| 35-45 | Opus 4.8 - Extra                                                                                 |
-| 46-55 | Fable 5 - Alto/Extra/Max (Max solo si el razonamiento es crítico y equivocarse cuesta caro)      |
-
-El puntaje es una guía, no un veredicto: si el "Orden de prioridad" pide subir por calidad, se sube. **Max sigue reservado a Fable 5**, nunca a Opus.
-
-**Paralelización con subagentes (lo que aquí reemplaza a "Ultracode").** Este CLI no tiene un modo nativo multiagente. Solo si Paralelización ≥ 4 **y** Agentes ≥ 4 **y** el usuario lo pide de forma explícita, se reparte el trabajo en subagentes (tool `Agent`, con el modelo de cada uno elegido por esta misma matriz) y se consolida con revisión cruzada. Sin pedido explícito no se lanzan subagentes.
-
-**Cómo se aplica (restricción real).** El modelo del turno en curso lo fija el usuario al lanzar: el asistente no se cambia de modelo a mitad de respuesta. La matriz alimenta tres cosas: (a) la recomendación del bloque `Próximo paso` para el siguiente turno, (b) cuánto razonamiento/esfuerzo se aplica dentro del turno actual, (c) el modelo de cada subagente cuando el usuario pide paralelizar. No imprimir la matriz en tareas obvias: el `Próximo paso` liviano es el default; la matriz es solo para desempatar.
-
-**Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después de verificar y commitear lo actual**, no qué se hace **ahora**. Si el usuario pide encadenar tareas, recordar esta regla y proponer hacer la primera, verificar en la app, y recién después la segunda.
-
-### 2.4 Mantenimiento de los docs
-
-Cuando una tarea/fase se completa, actualizar **en este orden**:
-
-1. **`docs/contexto/<sección>.md`** - actualizar el bloque de la funcionalidad tocada: estado actual, cambios realizados/pendientes y `Verificado contra` con el commit nuevo. Si el bloque no existía, crearlo (ver sección 2.6).
-2. **`docs/HANDOFF.md`** - sección "Qué se hizo recientemente": agregar la tarea cerrada al tope de la lista (mantener solo las últimas 5); actualizar "Qué sigue" si cambió el orden de prioridades. Este archivo es el punto de entrada para cualquier asistente o colaborador nuevo.
-3. **`docs/CHANGELOG.md`** - agregar la entrada bajo "Mes corriente" con fecha, archivos tocados y, si aplica, qué funcionalidades podría afectar y qué validación queda pendiente. Al cambiar de mes calendario: mover el mes recién cerrado a `docs/changelog/YYYY-MM.md` (crear el archivo con el mismo formato que los existentes) y agregarlo al índice "Meses anteriores".
-4. **`docs/BOARD.md`** - borrar la tarjeta de la tarea completada (de "En proceso" o de "Pendientes"). El tablero nunca conserva tarjetas cerradas.
-5. **`docs/BUGS.md`** - si la tarea solucionó un error registrado, borrar su entrada y referenciar el ID en el CHANGELOG.
-6. Si la tarea introduce convenciones nuevas → actualizar `docs/ARCHITECTURE.md` o `docs/CONTRIBUTING.md`.
-
-**Regla:** BOARD.md siempre muestra solo lo **pendiente**, agrupado por sección de la app. CHANGELOG es la memoria histórica. HANDOFF.md es el contexto vivo para retomar trabajo rápido. BUGS.md solo contiene errores sin resolver.
-
-### 2.5 Confirmar antes de cambios destructivos
-
-Eliminar archivos, force push, reescribir historial, borrar tests existentes → **siempre** confirmar con el usuario antes.
-
-### 2.6 Contexto técnico por funcionalidad (`docs/contexto/`)
-
-Objetivo: cada funcionalidad se analiza a fondo **una sola vez**; el resultado queda escrito y las sesiones futuras lo reutilizan. Reglas completas y plantilla en [`docs/contexto/README.md`](docs/contexto/README.md).
-
-- **Antes de analizar:** consultar [`docs/MAPA.md`](docs/MAPA.md) (ubicación gruesa por dominio) y la ficha de la sección en `docs/contexto/` (detalle por funcionalidad). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos listados).
-- **Primera vez sobre una funcionalidad:** análisis exhaustivo (archivos, funciones, estilos, recursos gráficos, dependencias, relaciones, riesgos) y escribir el bloque en la ficha **antes** de codificar. Este análisis inicial admite un modelo de mayor capacidad si la complejidad lo justifica; las iteraciones siguientes, con ficha vigente, usan el modelo más eficiente que mantenga la calidad (sección 2.3).
-- **Localización:** el ancla primaria es el nombre de función/export/clase CSS/`data-action`; la línea es referencia orientativa, nunca dependencia absoluta.
-- **Al cerrar la tarea:** actualizar el bloque como paso 1 de la secuencia de la sección 2.4.
-
-### 2.7 Triaje de tareas nuevas y rol de líder técnico
-
-> Regla del usuario (2026-07-08). El asistente actúa como líder técnico y de producto del proyecto: administra el tablero, no solo ejecuta instrucciones. Extiende la sección 2.1; no la reemplaza.
-
-**Toda tarea nueva entra por triaje, nunca directo a ejecución.** Antes de implementar (o siquiera de crear la tarjeta), verificar contra el BOARD, los ADRs y las fichas de contexto:
-
-1. ¿Ya existe de forma parcial (tarjeta, iniciativa, observación sin tarea formal)?
-2. ¿Modifica una tarea ya aprobada o **reemplaza una decisión anterior** (ADR)? Si revierte un ADR, decirlo explícitamente y pedir la decisión, nunca revertirlo en silencio.
-3. ¿Puede integrarse en una tarea o iniciativa más grande ya registrada?
-4. ¿Depende de otra tarea aún no realizada?
-5. ¿Conviene diferirla a una etapa posterior?
-
-El resultado del triaje es uno de tres: **se implementa ahora**, **se integra** (a la tarjeta/iniciativa que corresponda) o **se registra y se difiere** (tarjeta con "Depende de" o estado "no iniciar").
-
-**Continuidad de la tarea activa.** La tarjeta "En proceso" no se abandona por ideas nuevas. Si la idea nueva pertenece a la misma sección/iniciativa en curso, se integra a ella (como ajuste si es chica, como rebanada encadenada si agranda el alcance). Si pertenece a otra sección, se registra en el BOARD y se retoma cuando toque. Cambiar de frente a mitad de tarea genera inconsistencias, código duplicado y docs desactualizados: la continuidad manda.
-
-**Fuente única por funcionalidad.** Cada funcionalidad tiene UNA sola entrada canónica en el BOARD: una tarjeta, o para lo grande una **iniciativa** (bloque `>` + ADR si aplica) que absorbe toda tarea pequeña relacionada (colores, iconos, mensajes, automatizaciones de esa funcionalidad viven DENTRO de su iniciativa, no como tarjetas sueltas). Nunca dos tarjetas intentando modificar la misma funcionalidad: al detectarlas, fusionar (la más completa absorbe, sección 2.1) y borrar la duplicada. **La ejecución sigue siendo por rebanadas verificables** (regla de 2.1, también del usuario): la iniciativa es la fuente única de verdad; las rebanadas `X.1a/X.1b` son unidades de implementación y verificación, no tareas rivales.
-
-**Priorización al elegir la siguiente tarjeta.** Evaluar: impacto sobre el resto de la app, dependencias técnicas, riesgo de regresión sobre otras funciones, beneficio para el usuario y facilidad de verificar el resultado. Con eso decidir si va ahora, se integra o espera.
-
-**Pensar como arquitecto antes de codificar.** En cada tarea preguntarse: ¿hay una solución más elegante?, ¿esto se puede reutilizar en otras secciones (helper en `infra/`, componente, patrón)?, ¿estamos duplicando código?, ¿será mantenible en 2-3 años?, ¿puede simplificarse o automatizarse? Si la respuesta cambia el enfoque, **proponer antes de implementar**.
-
-**Documentación viva.** Al fusionar o absorber tareas, actualizar el BOARD en el mismo movimiento: borrar la tarjeta obsoleta, dejar el rastro en la iniciativa que la absorbió, y nunca conservar tareas contradictorias. El BOARD refleja el estado real del proyecto o no sirve.
+**Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después** de verificar y commitear lo actual, no qué se hace ahora.
 
 ---
 
-## 3. Reglas innegociables (ADN)
+## 3. Antes de explorar el proyecto
+
+Consultar [`docs/MAPA.md`](docs/MAPA.md) (ubicación gruesa por dominio y tabla síntoma → dónde mirar) y la ficha de la sección en [`docs/contexto/`](docs/contexto/README.md). Solo recorrer el proyecto desde cero si el bloque no existe o quedó desactualizado (campo `Verificado contra` + `git log` sobre los archivos que lista).
+
+Si no existe, el primer paso de la tarea es el análisis profundo y **escribir el bloque antes de codificar**. Cada funcionalidad se analiza a fondo una sola vez.
+
+---
+
+## 4. Reglas innegociables (ADN)
 
 1. **Vanilla JS sin build step** - no agregar bundlers, TS, frameworks.
 2. **Offline-first** - el SW garantiza operación sin red.
@@ -204,101 +102,54 @@ El resultado del triaje es uno de tres: **se implementa ahora**, **se integra** 
 8. **Cero `window.X`** - todo `export` + `import`.
 9. **`logic.js` sin DOM** - funciones puras, testeables en happy-dom/Node.
 10. **Ningún dominio importa a otro** - comunicación por EventBus.
-11. **Lenguaje humano, neutral y profesional** - claro y sin jerga, pero serio y accesible para cualquier edad. Voz "tú" (tuteo, no voseo ni usted), "dinero" (no "plata"). Ej: "Tu dinero disponible hoy" antes que "Saldo disponible". Ver [`docs/DECISIONS/003-tono-neutral-profesional.md`](docs/DECISIONS/003-tono-neutral-profesional.md).
-12. **Constantes legales con fecha de revisión** - SMMLV, UVT y auxilio de transporte (anuales). Los indicadores de alta frecuencia (ej. usura trimestral) quedan fuera del alcance por costo de mantenimiento (ver [`docs/DECISIONS/004-eliminar-tasa-usura.md`](docs/DECISIONS/004-eliminar-tasa-usura.md)).
+11. **Lenguaje humano, neutral y profesional** - claro y sin jerga, pero serio y accesible para cualquier edad. Voz "tú" (tuteo, no voseo ni usted), "dinero" (no "plata"). Ej: "Tu dinero disponible hoy" antes que "Saldo disponible". Ver [ADR 003](docs/DECISIONS/003-tono-neutral-profesional.md).
+12. **Constantes legales con fecha de revisión** - SMMLV, UVT y auxilio de transporte (anuales). Los indicadores de alta frecuencia (ej. usura trimestral) quedan fuera del alcance por costo de mantenimiento (ver [ADR 004](docs/DECISIONS/004-eliminar-tasa-usura.md)).
 
 Tocar cualquiera de estas reglas requiere un ADR en `docs/DECISIONS/` y discusión explícita.
 
 ---
 
-## 4. Comandos esenciales
-
-```bash
-# Servir la app (NO abrir index.html directo - ES6 modules requieren HTTP)
-python -m http.server 8080
-
-# Tests unitarios (happy-dom)
-pnpm test               # cifra vigente en docs/HANDOFF.md sección 2
-pnpm run test:watch
-pnpm run coverage       # umbral 90% sobre capa lógica
-
-# E2E (Playwright + Chromium)
-pnpm run test:e2e       # suites vigentes en docs/HANDOFF.md sección 2
-pnpm run test:e2e:ui
-
-# Lighthouse (requiere servidor en :8080 corriendo)
-pnpm run lighthouse     # → coverage/lighthouse-report.html
-
-# Lint
-pnpm run lint
-pnpm run format
-```
-
----
-
-## 5. Antes de tocar código, leer
-
-1. **Este archivo** (estás aquí) - 3 min.
-2. [`docs/HANDOFF.md`](docs/HANDOFF.md) - qué se hizo recientemente, qué sigue, cómo trabajamos - 2 min.
-3. [`docs/BOARD.md`](docs/BOARD.md) - tarea en proceso hoy + pendientes por sección.
-4. [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) - capas, flujo de datos, reglas - 10 min.
-5. [`docs/MAPA.md`](docs/MAPA.md) - índice sección visible → carpeta → archivos clave → estilos → test, y tabla síntoma → dónde mirar. Consultar primero ante cualquier bug o duda de "¿dónde vive esto?".
-6. [`docs/contexto/`](docs/contexto/README.md) - ficha técnica de la sección a tocar (si existe): piezas exactas, riesgos, pendientes. Evita re-explorar lo ya analizado (sección 2.6).
-7. [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) - patrones de código, convenciones, qué NO hacer.
-8. [`docs/SECURITY.md`](docs/SECURITY.md) - **obligatorio si vas a tocar dependencias o setup de entorno** (política anti-malware npm, migración a pnpm, audits previos).
-9. Si la tarea es de dominio nuevo → [`docs/FINANCIAL_LOGIC_CO.md`](docs/FINANCIAL_LOGIC_CO.md) cuando exista.
-
----
-
-## 6. Convenciones rápidas
+## 5. Convenciones
 
 - **Imports:** siempre con `.js`, rutas relativas (`../core/state.js`).
-- **Commits:** `tipo(área): descripción`. Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`.
-- **Naming:** dominios en español (`ingresos`, `compromisos`); infra/ui en inglés (`state`, `actions`).
+- **Commits:** `tipo(área): descripción`. Tipos: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `perf`, `a11y`. Cuerpo en ASCII sin acentos.
+- **Commit y push autónomos:** no se pide permiso, pero solo con las compuertas en verde.
+- **Naming:** dominios en español (`ingresos`, `compromisos`); infra y ui en inglés (`state`, `actions`).
 - **Tests verdes obligatorios** antes de cada commit.
 - **CSS:** solo `var(--fk-*)`, nunca hardcodear colores ni tamaños.
 
 ---
 
-## 7. Estilo de escritura (obligatorio)
+## 6. Estilo de escritura
 
-> Estas reglas aplican a **todo texto** generado en el proyecto: respuestas en chat, commits, comentarios de código, documentación (`.md`), microcopy de UI, mensajes de error, alertas, nudges, tests, scripts.
+Aplica a **todo texto** del proyecto: respuestas en chat, commits, comentarios de código, documentación, microcopy de UI, mensajes de error, tests y scripts.
 
-### 7.1 Prohibidos el guion largo (U+2014) y el guion medio (U+2013)
-
-**Nunca** usar esos dos caracteres, ni variantes Unicode similares, en ningún texto del proyecto. Se nombran por codepoint a propósito: escribirlos aquí para prohibirlos haría que este mismo archivo los contuviera y la regla dejaría de poder verificarse.
-
-**Por qué:** confunden al lector, no se escriben con teclado estándar en español, no copian bien entre editores y terminales, y rompen el tono natural del proyecto.
-
-**Qué usar en su lugar** (en orden de preferencia):
+**Prohibidos el guion largo (U+2014) y el guion medio (U+2013).** Se nombran por codepoint a propósito: escribirlos acá para prohibirlos haría que este archivo los contenga y la regla no podría verificarse.
 
 | Para | Usar | Ejemplo |
 |---|---|---|
-| Pausa o aclaración | `:` (dos puntos) | "Resumen: 2981 tests verdes." |
-| Apertura de explicación | `.` (punto y aparte) | "App estable. Modo mantenimiento." |
-| Inciso corto | `(...)` (paréntesis) | "El SMMLV (vigente 2026) es $1.750.905." |
-| Conector de continuación | `-` (guion simple) | "Fase 2 - purga del tablero." |
-| Rango numérico | `-` (guion simple) o "a" | "30-90 min" / "30 a 90 min" |
-| Separador visual | `,` (coma) | "Calidad primero, ahorro segundo." |
+| Pausa o aclaración | `:` | "Resumen: 2981 tests verdes." |
+| Apertura de explicación | `.` | "App estable. Modo mantenimiento." |
+| Inciso corto | `(...)` | "El SMMLV (vigente 2026) es $1.750.905." |
+| Conector de continuación | `-` | "Fase 2 - purga del tablero." |
+| Rango numérico | `-` o "a" | "30-90 min" / "30 a 90 min" |
+| Separador visual | `,` | "Calidad primero, ahorro segundo." |
 
-### 7.2 Cómo verificarlo
+**Excepción única:** los guiones largos que vengan en datos del usuario por copy/paste externo (ej. un CSV importado) se preservan tal cual. La regla aplica a lo que escribimos nosotros.
 
-Antes de commitear texto nuevo, en Git Bash:
+**Estado:** limpieza terminada, cero U+2014 y U+2013 en archivos trackeados. La verificación es la compuerta 3 de la skill `cerrar-tarea`.
+
+---
+
+## 7. Comandos
+
+La lista completa vive en `package.json` y, para humanos, en el [`README.md`](README.md). Los cuatro de uso diario:
 
 ```bash
-git ls-files -z '*.md' '*.js' '*.css' '*.html' | LC_ALL=C.UTF-8 xargs -0 grep -nP '[\x{2013}\x{2014}]'
+python -m http.server 8080   # servir la app (los ES6 modules requieren HTTP)
+pnpm test                    # unitarios + integración (Vitest + happy-dom)
+pnpm run test:e2e            # Playwright + Chromium
+pnpm run lint
 ```
 
-**Salida vacía significa cero guiones largos.** Tres detalles que hacen que el comando funcione, y que se aprendieron rompiéndolo:
-
-- `LC_ALL=C.UTF-8` va **sobre el `xargs`**, no al principio de la línea: sin él `grep -P` falla con "supports only unibyte and UTF-8 locales", y puesto antes del `git` no llega al `grep`.
-- `git ls-files` limita la búsqueda a los archivos **trackeados**: recorrer el árbol con `grep -r` tarda minutos por `node_modules/` y da falsos positivos en `coverage/`, que es artefacto generado.
-- La herramienta `Grep` de Claude Code acepta el mismo patrón `[\x{2013}\x{2014}]` sin forzar el locale.
-
-### 7.3 Excepción única
-
-Los guiones largos que aparezcan en datos del usuario provenientes de copy/paste externo (por ejemplo, un import CSV con notas que los contienen) **se preservan tal cual**. La regla aplica al texto que escribimos nosotros, no al contenido del usuario.
-
-### 7.4 Estado de la limpieza
-
-**Terminada.** El repo tiene cero U+2014 y cero U+2013, contados por codepoint el 2026-07-24 con el comando de 7.2. Ya no es una limpieza progresiva pendiente: es un invariante que se verifica al cerrar cada tarea.
+**No abrir `index.html` directo:** los ES6 modules necesitan servidor HTTP.
