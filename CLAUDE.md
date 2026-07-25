@@ -49,9 +49,9 @@ Reglas del usuario. Aplican siempre, sin pedirlas en cada sesión.
 
 **Confirmar antes de cambios destructivos.** Eliminar archivos, force push, reescribir historial o borrar tests existentes: siempre confirmar antes.
 
-### Cierre obligatorio de cada respuesta
+### Bloque de cierre bajo demanda
 
-Al final de **toda** respuesta, sin excepción (tarea cerrada, exploración, pregunta o ajuste chico) va este bloque. Si no hay tarea siguiente clara, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque.
+No va por defecto en cada respuesta. Se incluye solo si el usuario lo pide explícitamente, o si el propio asistente juzga que aporta (cierre de tarea grande, ambigüedad real sobre qué sigue). Si no hay tarea siguiente clara y se incluye, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque.
 
 ```
 ─── Próximo paso ──────────────────────────────────
