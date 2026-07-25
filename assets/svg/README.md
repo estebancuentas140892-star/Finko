@@ -64,6 +64,24 @@ Las subcarpetas de `logos/` son solo organización humana: mover un logo de
 `iconos/categorias` y las demás carpetas de iconos SÍ cambia el prefijo (c- ↔ i-),
 así que eso nunca se hace sin actualizar los consumidores.
 
+### 2.1 `identidad/` (marca propia de Finko, reservada)
+
+Carpeta para el isotipo, el logotipo (wordmark) y sus variantes. Se llama `identidad/` y no `marca/` para no chocar con el vocabulario del código, donde `MARCAS` significa marcas de terceros ([ADR 025](../../docs/DECISIONS/025-logotipos-de-marca-y-tejas.md)).
+
+**Estado actual:** vacía a propósito. La marca visible hoy es el emoji 💚 (sidebar, onboarding), decisión del [ADR 025](../../docs/DECISIONS/025-logotipos-de-marca-y-tejas.md) D6. El favicon vive en `assets/icons/favicon.svg` y los íconos PWA (192/512/maskable) en `assets/icons/`, generados por `scripts/gen-icons.py`; no dependen de esta carpeta.
+
+Cuando se diseñe el isotipo definitivo, entra aquí primero (fuente vectorial) y de aquí se derivan favicon e íconos PWA. Nomenclatura sugerida: `isotipo.svg`, `wordmark.svg`, `isotipo-monocromo.svg`.
+
+### 2.2 `ilustraciones/` (ilustraciones spot y pictogramas, reservada)
+
+Carpeta para ilustraciones spot y pictogramas (onboarding, momentos de celebración, educación financiera). Ver también [ADR 033](../../docs/DECISIONS/033-direccion-visual-premium.md) D3.
+
+**Estado actual:** vacía a propósito. Los empty states de hoy son una composición generada en JS (`emptyArt()` en `modules/infra/icons.js`) que orbita alrededor de los iconos de sección, y no requieren archivos.
+
+Reglas cuando lleguen las primeras piezas: mismo lenguaje visual del sistema (redondez, trazo cálido, chispa) aplicado a escala mayor; retícula recomendada 120×120 (la de `emptyArt`), `viewBox` propio documentado en este README al definirse; colores solo por rol (`currentColor`, variables `--fk-*`, nunca absolutos, para sobrevivir a ambos temas); mismo flujo de nomenclatura y revisión que el resto de la biblioteca (secciones 3 y 9).
+
+---
+
 ## 3. Nomenclatura (los nombres son API)
 
 - **kebab-case, solo ASCII:** minúsculas, dígitos y guion simple. Sin espacios,
