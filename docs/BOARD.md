@@ -112,7 +112,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 #### CAL.5b - El lote también cubre deudas, y se ofrece desde Inicio
 - Prioridad  : media
 - Estado     : pendiente. Continúa **CAL.5a** (cerrada, ver CHANGELOG). Secuencia "lote manual antes que PA.1" ya decidida por Esteban.
-- Objetivo   : dos ampliaciones del mismo flujo, no un mecanismo nuevo. (1) **Deudas en el lote**: hoy `pendientesDePagoDelMes()` filtra `tipo === 'fijo'` a propósito, porque abonar a una deuda además baja su `saldoTotal` y esa aritmética vive en Compromisos. Sumarlas implica que Agenda deje de poder escribir el pago por su cuenta: es el caso que justifica el helper compartido de **ARQ.2** punto 2, así que conviene hacerlo después o junto con él. (2) **Punto de entrada desde Inicio**: el bloque "N pendientes del mes" (`#panel-vencidos`, `compromisos/views/dashboard.js`) muestra exactamente los mismos vencidos y hoy solo enlaza al Calendario; debería poder disparar el lote sin navegar. Reusa `renderFormPagoLote()` y los handlers ya registrados; el modal `#modal-pago-lote` ya existe.
+- Objetivo   : dos ampliaciones del mismo flujo, no un mecanismo nuevo: (1) sumar deudas al lote y (2) ofrecer el lote desde el bloque de vencidos de Inicio sin navegar. Detalle técnico (por qué el filtro actual, qué reusar) en la ficha [`contexto/calendario.md`](contexto/calendario.md).
 - Secciones  : Calendario, Inicio (vencidos), Deudas, Mis cuentas (descuento)
 - Archivos   : `modules/dominio/agenda/logic.js` + `index.js`, `modules/dominio/compromisos/views/dashboard.js`, `modules/infra/distribuir-pago.js`
 - Depende de : **ARQ.2** punto 2 para la parte de deudas (la parte de Inicio no depende de nada)
@@ -197,13 +197,11 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 - Estado     : pendiente, **no bloquea nada** (separada de MC.13c-2 al cerrarla, que descubrió que no la necesitaba).
 - Objetivo   : `ultimoPagoHasta` (`tesoreria/logic/ingresos.js:199`) devuelve `null` para todo lo que no sea Mensual o Quincenal, así que un usuario con ingreso Bimestral/Trimestral/Semestral/Anual no tiene cobro datable: `estadoDistribucion` le da 'sin-fecha' y se queda sin el guard de de-duplicación ("ya distribuiste este periodo"). El asistente igual le funciona.
 - **Por qué NO se hizo en MC.13c-2:** la checklist no lo necesita (sin fecha datable el motor asume que el cobro es hoy, que es exactamente cuando el usuario está repartiendo), y `ultimoPagoHasta` alimenta `periodoISO`, la **clave de de-duplicación** del asistente: tocarla es riesgo de regresión sobre su guard central a cambio de un beneficio pequeño y para un caso poco común. Mejor su propia rebanada, con su propia verificación.
-- **Ojo al hacerla (dos trampas encontradas):** (1) Diario y Semanal **no tienen `diaPago`** (`FRECUENCIAS_CON_DIA` no los incluye: el form nunca lo captura), así que no se pueden datar por esta vía; Diario podría resolverse como "el último cobro es hoy", pero Semanal necesitaría capturar el día de la semana, que es una feature aparte. (2) El modelo Quincenal del motor (`diaPago` y `diaPago + 15` dentro del MISMO mes) **pierde el segundo cobro cuando `diaPago > 16`**: un quincenal del día 20 cae una sola vez al mes. Es un error heredado de Agenda (`_diasParaCompromiso`, hoy `ocurrenciasEnMes`) que afecta también al Calendario, y merece decidirse aparte: ver la nota de abajo.
+- **Ojo al hacerla (dos trampas encontradas):** (1) Diario y Semanal **no tienen `diaPago`** (`FRECUENCIAS_CON_DIA` no los incluye: el form nunca lo captura), así que no se pueden datar por esta vía; Diario podría resolverse como "el último cobro es hoy", pero Semanal necesitaría capturar el día de la semana, que es una feature aparte. (2) El modelo Quincenal del motor pierde el segundo cobro cuando `diaPago > 16`: ver **[BUG-017](BUGS.md)**, decidirlo aparte.
 - Secciones  : Mis cuentas (asistente), Calendario (si se corrige el modelo quincenal)
 - Archivos   : `tesoreria/logic/ingresos.js` (`ultimoPagoHasta`), `modules/infra/vencimientos.js` (`ocurrenciasEnMes`, caso Quincenal)
 - Depende de : nada
 - Modelo     : Alta capacidad - Alto (toca la clave de de-duplicación y, si se corrige el quincenal, el Calendario)
-
-> **Nota transversal (hallazgo de MC.13c-2, 2026-07-14): el modelo Quincenal cae una sola vez al mes si `diaPago > 16`.** `ocurrenciasEnMes` resuelve Quincenal como `[diaPago, diaPago + 15]` **dentro del mismo mes** y descarta el segundo si no cabe. Con `diaPago = 20`, el segundo sería el 35 → se descarta, así que un compromiso o ingreso quincenal del día 20 aparece **una vez al mes** en el Calendario, en la checklist y en el motor. Lo correcto sería que el segundo cobro pase al mes siguiente (día 5). Es **preexistente**: viene de `_diasParaCompromiso` de Agenda y MC.13a lo extrajo tal cual (sus 139 tests lo fijan). Afecta a Calendario y a todo consumidor del motor. Requiere decisión de Esteban antes de tocarlo, porque cambia lo que hoy ve el Calendario.
 
 #### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas)
 - Prioridad  : alta (concepto nuevo de dominio)
@@ -570,11 +568,11 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### LEG.2 - Aceptación obligatoria versionada (onboarding + re-aceptación en cambios)
 - Prioridad  : alta
-- Estado     : pendiente. LEG.1 (Centro Legal, borradores + UI) ya está cerrada: el bloqueo real que queda es de **contenido**, no de código. Antes de pedirle al usuario que "acepte" estos documentos hace falta resolver el checklist de `docs/legal/README.md` (responsable, correo de contacto, licencia del código) y pasar el paquete de v0.1 a v1.0 (revisión por abogado colombiano, gate del punto 9 del brief). El criterio de re-aceptación (cambio importante vs menor) ya quedó definido en `docs/legal/historial-de-cambios.md`.
+- Estado     : pendiente. LEG.1 (Centro Legal, borradores + UI) ya está cerrada: el bloqueo real que queda es de **contenido**, no de código. Antes de pedirle al usuario que "acepte" hace falta resolver el checklist de [`legal/README.md`](legal/README.md) (su dueño) y pasar el paquete de v0.1 a v1.0. El criterio de re-aceptación ya quedó definido en `docs/legal/historial-de-cambios.md`.
 - Objetivo   : primera apertura: aceptación expresa de términos + privacidad + datos personales antes de usar la app (paso nuevo del onboarding); cambios importantes de políticas: re-aceptación antes de continuar (comparar versión aceptada vs vigente). Registro local de aceptación (versión + fecha, bump de schema en `S.config`). **Limitación honesta a documentar:** sin servidor, la "evidencia" de aceptación vive solo en el dispositivo del usuario; una evidencia verificable por Finko requiere CFG.4.
 - Secciones  : Onboarding, Configuración, `core/state.js`/`storage.js` (registro versionado)
 - Archivos   : `modules/ui/onboarding.js`, `modules/core/state.js`, `modules/core/storage.js`
-- Depende de : el checklist de `docs/legal/README.md` resuelto y el paquete en v1.0
+- Depende de : el checklist de `legal/README.md` resuelto y el paquete en v1.0
 - Modelo     : Equilibrado - Alto (flujo de onboarding + versionado persistido + migración)
 
 ---
@@ -632,8 +630,8 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 
 #### DOC.1 - Reorganización documental, fases 3 a 5
 - Prioridad  : media
-- Estado     : Fases 1 y 2 cerradas el 2026-07-24. El contrato completo (arquitectura final, 11 principios con techos, trazabilidad de los 89 archivos, plan por fases) vive en [`MIGRACION.md`](MIGRACION.md), que se borra al cerrar la Fase 5.
-- Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información. **Fase 3** (crear sin borrar): las 3 skills nuevas `cerrar-tarea`, `triaje-tarea` y `elegir-modelo`, adelgazar `auditor-finko`, crear `OPERACION.md` y reescribir CLAUDE.md a ~8 KB con tabla de trazabilidad regla por regla hecha antes de recortar. **Fase 4** (mover y fusionar): MAPA a ARCHITECTURE, SETUP_DOMINIO a OPERACION, los 2 READMEs hijos a `assets/svg/README.md`, reescritura de HANDOFF, índice tabular del tablero, briefs de iniciativa a ADRs, partir `contexto/transversal.md`, purga de `settings.local.json`. **Fase 5**: validación completa y borrado de MIGRACION.md.
+- Estado     : Fases 1, 2 y 3 cerradas. Fase 4 en curso (Paso 4 de la migración del tablero, en progreso). El plan completo por fases vive en [`MIGRACION.md`](MIGRACION.md) sección 7, que se borra al cerrar la Fase 5.
+- Objetivo   : bajar el arranque de una tarea de ~69.400 a ~21.000 tokens sin perder información, moviendo cada bloque a su dueño documental.
 - Secciones  : ninguna de la app (solo documentación, `CLAUDE.md` y `.claude/`)
 - Archivos   : la tabla de trazabilidad de [`MIGRACION.md`](MIGRACION.md) sección 6 los lista uno por uno
 - Depende de : nada. Cada fase es commiteable y verificable por separado; el orden 3 → 4 → 5 importa porque la tabla de documentos de CLAUDE.md debe apuntar a la estructura ya migrada
