@@ -2,7 +2,7 @@
 
 > **Archivo temporal de trabajo.** Nace con la auditoría documental del 2026-07-24 (7 agentes) y **se borra al cerrar la Fase 5**. No cuenta para los techos de tamaño: no es documentación del proyecto, es el contrato de una migración.
 >
-> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1 y 2 cerradas el 2026-07-24** (8 commits). Siguen las Fases 3, 4 y 5, registradas en la tarjeta **DOC.1** de [`BOARD.md`](BOARD.md). Ninguna fusión ni renombre se ha ejecutado todavía: eso es Fase 4.
+> **Estado:** dirección general aprobada por Esteban el 2026-07-24 con 8 ajustes, todos incorporados. **Fases 1, 2 y 3 cerradas el 2026-07-24** (11 commits). **Fase 4 en preparación, sin ejecutar**: este archivo tiene su plan detallado (sección 11), pendiente de autorización explícita para las fusiones y borrados.
 
 ## Índice
 
@@ -17,7 +17,8 @@
 | 7 | Plan de fases revisado |
 | 8 | Riesgos y validaciones |
 | 9 | Decisiones tomadas |
-| 10 | Fase 3: trazabilidad bloque por bloque y propuesta de CLAUDE.md v2 |
+| 10 | Fase 3: trazabilidad bloque por bloque y CLAUDE.md v2 aplicado |
+| 11 | Fase 4: plan de ejecución detallado (sin ejecutar) |
 
 ---
 
@@ -624,3 +625,144 @@ No se tocó `docs/HANDOFF.md` (su "sección 2" ya apuntaba a Workflow, que sigue
 | Guiones largos | cero, en todos los archivos trackeados |
 | Las 4 skills cargan | confirmado: el listado de skills disponibles del CLI las muestra a las 4 con su `description` |
 
+
+---
+
+## 11. Fase 4: plan de ejecución detallado (sin ejecutar)
+
+Preparado a pedido de Esteban el 2026-07-24. **Nada de esta sección se ejecutó**: es el plan que espera su autorización explícita, movimiento por movimiento o en bloque. Cada fila de la tabla 11.1 es, como mínimo, un commit propio (regla 2.1: rebanadas verificables).
+
+### 11.1 Inventario completo de movimientos
+
+| # | Origen | Destino | Acción | Riesgo | Validación posterior |
+|---|---|---|---|---|---|
+| 1 | `docs/MAPA.md` (108 líneas, 6 secciones) | `docs/ARCHITECTURE.md` (secciones nuevas, antes de la tabla de dominios y antes del cierre) | Fusionar y borrar el origen | **Alto** | Los enlaces vivos a `MAPA.md` (`CLAUDE.md` §1, `docs/contexto/README.md`) se actualizan a `ARCHITECTURE.md`. `git mv` no aplica (es fusión de contenido, no reubicación intacta): usar `git rm` tras confirmar que el 100% del contenido está en el destino. Verificar que la nota de `.calc-*` código muerto (línea 76 de MAPA) sobrevive la fusión: sigue siendo cierta. |
+| 2 | `docs/SETUP_DOMINIO.md` (ya con banner de "superado" desde Fase 3) | ya absorbido en `docs/OPERACION.md` runbook 1 | Borrar el origen | **Bajo** | Solo 1 referencia viva (`docs/BOARD.md`, tarjeta A.5) apunta a `SETUP_DOMINIO.md`: redirigir a `OPERACION.md`. Nada más que mover: el contenido ya vive en el destino desde Fase 3. |
+| 3 | `assets/svg/identidad/README.md` (15 líneas) | sección nueva de `assets/svg/README.md` | Fusionar y borrar el origen | **Bajo** | Sin archivos hermanos en esa carpeta (verificado: solo el README); al borrarlo, la carpeta `identidad/` deja de existir en el checkout de git (git no trackea carpetas vacías). Documentar en el README padre que la carpeta "existe a propósito, vacía, para cuando llegue el isotipo", en vez de depender de que la carpeta física lo comunique. |
+| 4 | `assets/svg/ilustraciones/README.md` (16 líneas) | sección nueva de `assets/svg/README.md` | Fusionar y borrar el origen | **Bajo** | Mismo caso que el punto 3: sin archivos hermanos, la carpeta desaparece del checkout. Mismo tratamiento. |
+| 5 | `docs/HANDOFF.md` | igual (in place) | Reescribir a 6 KB con línea de contrato | **Medio** | Ya reescrito parcialmente en Fase 2 (veracidad); falta el recorte final de tamaño y la línea de contrato. Verificar que ninguna cifra de la tabla de métricas se pierda al comprimir. |
+| 6 | `docs/BOARD.md` (629 líneas, 103,8 KB) | igual (in place), reestructurado | Índice tabular en las primeras 40 líneas + purgar 9 briefs de iniciativa a ADRs nuevos | **Alto** | Ver 11.2. Verificar que las 49 tarjetas vivas actuales sigan existiendo, una por una, después de la reestructura (mismo método que la Fase 2: `grep "^#### <ID>"`). |
+| 7 | 9 bloques `> **Iniciativa ... brief completo del usuario ...**` dentro de `docs/BOARD.md` | `docs/DECISIONS/043` a `051` (numeración exacta se asigna en el momento, consecutiva, sin reutilizar) | Extraer cada brief a un ADR nuevo; la tarjeta en BOARD queda con el objetivo en 1-2 líneas + enlace al ADR | **Alto** (uno de los 9, CFG.4, es distinto: ver 11.3) | Cada ADR nuevo sigue la plantilla vigente (Contexto, Decisión, Consecuencias, Alternativas rechazadas). Verificar que el ADR no reformula ninguna decisión ya tomada, solo reubica el brief. Los 8 restantes son movimiento mecánico de texto; CFG.4 no. |
+| 8 | `docs/contexto/transversal.md` (403 líneas, 75,7 KB) | se parte en dos: `transversal.md` (4 bloques, se queda) + `docs/contexto/sistema-visual.md` (5 bloques, nuevo) | Partir por eje temático real | **Alto** | Ver 11.4. Los 3 enlaces vivos actuales a `transversal.md` (BOARD.md línea 454, ADR 030 línea 6) apuntan a bloques que **se quedan** en `transversal.md`: no necesitan cambiar. Verificado con grep antes de escribir este plan. |
+| 9 | `.claude/settings.local.json` | igual | **Ninguna acción todavía** | **Alto** (equivalente a permisos de ejecución) | Ver sección 12. Solo auditoría entregada; cero cambios hasta que Esteban decida. |
+| 10 | `modules/core/state.js:432` (comentario) | igual | Corregir el ejemplo `ui:navigate` a `distribucion:aplicar` | **Bajo** | Es una línea de comentario sin efecto funcional. Único punto de este plan que toca un archivo de código, no documentación: por eso va en commit propio, separado de todo lo demás (regla del usuario: no mezclar limpieza documental con cambios funcionales; un comentario no es funcional, pero el archivo sí es código). |
+
+### 11.2 BOARD.md, estructura con índice tabular
+
+Formato propuesto para las primeras ~40 líneas (hoy la cabecera ya tiene reglas de oro y "Cómo usar"; el índice se agrega como bloque nuevo antes de "Pendientes por sección"):
+
+```
+Índice de pendientes
+
+ID | Título | Sección | Prioridad | Depende de
+CAL.5b | El lote también cubre deudas... | Calendario | media | ARQ.2
+MC.13e-2b | Quitar "Abonar extra a deudas"... | Mis cuentas | media | nada
+... (las 49 filas actuales)
+```
+
+Esto permite elegir la próxima tarjeta leyendo solo las primeras 40 líneas, sin cargar los 103 KB completos del archivo (el ahorro que la auditoría original estimó en 88% para este paso puntual). Las tarjetas completas siguen abajo, agrupadas por sección, sin cambios de contenido salvo la extracción de los 9 briefs (punto 7).
+
+### 11.3 CFG.4: por qué es distinto a los otros 8 briefs
+
+Los otros 8 (MC.13, LIM.1, ANL.1, PE.6, MT.6, AH.5, AP.5, CAT.1) son **briefs ya triados**: el trabajo de Fase 4 es moverlos a un ADR y dejar un resumen corto en el tablero, sin tocar ninguna decisión.
+
+**CFG.4 es una decisión de fondo sin tomar todavía**, marcada en su propia tarjeta como "DECISIÓN DE ADN": sincronización multidispositivo, la más grande del proyecto (redefine "sin servidor, sin cuenta, sin sync"). Escribir su ADR **no es mover texto**: es el vehículo donde Esteban decide. Fase 4 puede crear el **esqueleto** del ADR (contexto, opciones descritas en la tarjeta, lo que el ADR debe poner sobre la mesa) para que la decisión sea más fácil de tomar, pero el ADR queda en estado "Propuesta" hasta que él elija una opción. No se cierra como parte de la reorganización documental.
+
+### 11.4 transversal.md, límites exactos del corte
+
+Verificado con los encabezados reales del archivo (9 bloques, líneas exactas):
+
+| Bloque | Líneas | Destino |
+|---|---|---|
+| Lenguaje de formularios v2 (FORM.1, ADR 042) | 7-37 | `sistema-visual.md` |
+| Taxonomía global de categorías (CAT.1) | 38-69 | `transversal.md` (se queda) |
+| Selector compacto de ícono (CAT.2) | 70-137 | `sistema-visual.md` |
+| Persistencia y salvaguarda de cuota | 138-162 | `transversal.md` (se queda) |
+| CTA "necesitas una cuenta" | 163-199 | `transversal.md` (se queda) |
+| Tejas de marca y biblioteca gráfica | 200-254 | `sistema-visual.md` |
+| Sistema de logros (dominio `logros`) | 255-304 | `transversal.md` (se queda) |
+| Navegación v2 (NAV2.1, ADR 040) | 305-343 | `sistema-visual.md` |
+| Identidad de color por sección (IV.1/IV.2a/IV.2d, ADR 031) | 344-403 | `sistema-visual.md` |
+
+Resultado: `transversal.md` baja de 403 a ~163 líneas (4 bloques); `sistema-visual.md` nace con ~240 líneas (5 bloques). Ninguno de los dos roza el techo de 40 KB. El eje de corte es el mismo que ya proponía la auditoría original: visual/sistema de diseño vs. datos/lógica transversal.
+
+Ambos archivos necesitan su propia entrada en `docs/contexto/README.md`, sección "Índice de fichas" (hoy solo lista `transversal.md`).
+
+### 11.5 Movimientos seguros vs. de riesgo alto
+
+**Ya cubiertos por la trazabilidad de la Fase 3 (bajo riesgo, ejecución mecánica):** puntos 2, 3, 4 y 10 de la tabla 11.1. Contenido ya validado, sin decisiones pendientes, sin ambigüedad de límites.
+
+**Riesgo alto, cada uno por una razón distinta:**
+
+| Movimiento | Por qué es de riesgo alto |
+|---|---|
+| BOARD, índice nuevo | Es el archivo más grande y más vivo del proyecto (629 líneas); un error de extracción podría borrar una tarjeta en vez de resumirla. Mitigación: verificación de las 49 tarjetas una por una, mismo método que ya funcionó en Fase 2. |
+| MAPA a ARCHITECTURE | Es una fusión de contenido, no un `git mv`: hay que garantizar que el 100% de las 6 secciones de MAPA sobrevive dentro de ARCHITECTURE antes de borrar el origen. |
+| Los 9 briefs a ADRs | Volumen (9 archivos nuevos de una sola vez) más el caso especial de CFG.4, que no es un movimiento mecánico sino el vehículo de una decisión real. |
+| transversal.md, partición | Único caso de "partir un documento vivo" de todo el plan; el resto son fusiones o borrados. Mitigado: los límites de corte y las referencias cruzadas ya se verificaron en 11.4, con resultado favorable (cero enlaces que corregir). |
+| settings.local.json | Ver sección 12: equivale a permisos de ejecución de comandos. Ningún cambio aquí es "solo documentación": es configuración de seguridad del propio asistente. |
+
+### 11.6 Antes de cualquier borrado: protocolo
+
+1. **`git mv` cuando el archivo se reubica intacto** (ninguno de los movimientos de esta fase es una reubicación pura: todos son fusión, partición o extracción de contenido). Cuando la acción es fusión, se usa `git rm` **después** de confirmar con grep o diff que el contenido ya vive en el destino, no antes.
+2. **Verificación de enlaces internos**, mismo comando usado en las Fases 2 y 3: recorrer los `.md` trackeados, extraer sus enlaces relativos a otros `.md`, y confirmar que cada destino existe relativo a la carpeta del archivo que enlaza.
+3. **Lista de archivos que desaparecen del checkout con este plan** (4, todos con destino ya verificado):
+   - `docs/MAPA.md`, absorbido en `docs/ARCHITECTURE.md`.
+   - `docs/SETUP_DOMINIO.md`, ya absorbido en `docs/OPERACION.md`.
+   - `assets/svg/identidad/README.md`, absorbido en `assets/svg/README.md` (la carpeta `identidad/` deja de existir en el checkout).
+   - `assets/svg/ilustraciones/README.md`, absorbido en `assets/svg/README.md` (la carpeta `ilustraciones/` deja de existir en el checkout).
+
+   Ninguno más: `transversal.md` no desaparece, se parte en dos; `BOARD.md` no desaparece, se reestructura in place.
+4. **Nada se borra en el mismo commit que lo crea.** Cada fusión es al menos 2 commits: uno que crea el destino con el contenido íntegro, otro (después de verificar) que borra el origen.
+
+---
+
+## 12. Auditoría de settings.local.json (sin ejecutar ninguna limpieza)
+
+Pedido explícito de Esteban: entregar hallazgos y propuesta mínima, **no tocar el archivo todavía**. 146 entradas de permisos en total, en `.claude/settings.local.json`. Ninguna de las siguientes acciones se ejecutó.
+
+### 12.1 Rutas muertas detectadas (14)
+
+El proyecto vivía en `C:\Users\USUARIO\Desktop\Finko_Claude` y hoy vive en `G:\Finko`. 14 entradas todavía apuntan a la ruta vieja o a una variante que nunca fue la definitiva:
+
+| Ruta muerta | Entradas afectadas |
+|---|---|
+| Ruta vieja del proyecto (Desktop, con sus variantes `/cygdrive/c/...` y `/mnt/c/...`) | 11 entradas: listado de Desktop, grep contra estilos viejos, `cd` al directorio viejo, grep de un import específico, `pnpm test` desde esa ruta, y 4 llamadas a `git -C` apuntando ahí |
+| Nombre de carpeta distinto que tampoco es la ruta actual (`Finko-Refactor`) | 1 entrada |
+| Carpeta de sesión de un Claude Code viejo, atada a la ruta anterior | 1 entrada: lectura de un archivo de resultados de sesión que casi seguro ya no existe |
+| Dominio de código retirado (`modules/dominio/calculadoras/logic.js`, retirado 2026-06-07) | 2 entradas: una consulta a producción y un intento de borrado, esta última doblemente muerta porque además usa la ruta de Desktop |
+
+**Riesgo concreto de dejarlas:** ninguno de ejecución (son literales exactos, no comodines: solo disparan si alguien vuelve a escribir esa línea exacta), pero sí de confusión para un asistente futuro que podría creer que el proyecto sigue en Desktop.
+
+**Propuesta mínima:** borrar las 14. Cero riesgo de perder un permiso útil, porque ninguna puede volver a dispararse en `G:\Finko`.
+
+### 12.2 Comodines amplios (permisos de ejecución de superficie ancha)
+
+| Permiso | Riesgo concreto |
+|---|---|
+| Ejecutar Python con `-c` y argumento libre | El más serio del archivo: ejecución de código arbitrario, equivalente a `eval`. Cualquier texto después del flag pasa. |
+| `git push` con argumentos libres | Incluye force push, incluye push a cualquier rama o remoto, no solo el que se usa hoy. |
+| `git rm` con argumentos libres | Borra cualquier archivo trackeado, incluidos los que este mismo plan de Fase 4 reorganiza. |
+| `git config` con argumentos libres | Puede cambiar identidad de commit, URL del remoto, hooks path. |
+| `git branch` con argumentos libres | Incluye borrado forzado de rama. |
+| `git stash` con argumentos libres | Incluye descartar o limpiar el stash: pérdida de cambios sin commitear. |
+| `pnpm exec` con argumento libre | Ejecuta cualquier binario instalado en node_modules, superficie más ancha que correr un script de npm. |
+| `pnpm run` con argumento libre | Ejecuta cualquier script que package.json defina hoy o en el futuro. |
+| Dos entradas de `git commit` | Una es literalmente subconjunto de la otra: entrada redundante, no agrega ni quita alcance real. |
+| `npx playwright` / `npx eslint` con argumentos libres | Acotados a su propio binario, pero con banderas sin restricción. |
+| Fetch de dominio completo a producción | Alcance de dominio entero, no de URL puntual; riesgo bajo porque es la propia producción del proyecto. |
+| Lectura de un árbol completo bajo una carpeta temporal | Sintaxis con doble barra inicial poco común, vale la pena revisar si es la forma correcta para el motor de permisos. |
+
+Los permisos de solo lectura o ya acotados por el propio verbo (fetch, remote, ls-tree, add, npm test, npm audit, pnpm test) no entran en esta tabla: su comodín no habilita una acción destructiva distinta de lo que su nombre promete.
+
+**Propuesta mínima:** eliminar solo la entrada redundante de `git commit` (subconjunto exacto de la otra). El resto exige una decisión consciente de Esteban, uno por uno: estrechar un permiso sin su decisión puede romper un flujo de trabajo real que hoy funciona.
+
+### 12.3 Comandos históricos, precisos (no son comodines, pero ya no se van a reutilizar)
+
+Alrededor de 100 de las 146 entradas son comandos literales, no comodín, congelados de sesiones de depuración pasadas: URLs de verificación con parámetros de invalidación de caché de un momento específico, filtros de texto con patrones exactos de una auditoría de CSS ya cerrada, extracciones de rangos de línea de un archivo en un estado que ya cambió, y el análisis de un log de pruebas que ya no existe. No son un riesgo de seguridad (no son comodines), son ruido: ninguno va a volver a coincidir tal cual.
+
+**Propuesta mínima:** no borrar en este turno. Si Esteban quiere reducir el archivo, el criterio más seguro es por antigüedad de uso real (que hoy no es visible en el propio archivo) antes que por juicio de "esto ya no sirve", que puede equivocarse.
+
+### 12.4 Lo que no se tocó
+
+Cero ediciones a `.claude/settings.local.json` en este turno. Todo lo anterior es hallazgo y propuesta, a la espera de que Esteban decida qué ejecutar y en qué orden.
