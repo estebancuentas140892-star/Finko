@@ -3,7 +3,7 @@
 > Errores detectados durante el desarrollo, con toda la información necesaria para resolverlos sin tener que volver a buscar dónde están.
 > Al solucionarse, el error se **elimina** de este archivo y el fix queda documentado en [`CHANGELOG.md`](CHANGELOG.md) con referencia al ID.
 > Solo entra lo **verificado** contra el código (archivo, función, línea). Una sospecha no es un error: es una tarjeta de investigación en [`BOARD.md`](BOARD.md).
-> Última actualización: 2026-07-24. **2 errores abiertos:** BUG-016 (cuatro mensajes en voseo) y BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal). Ninguno afecta el uso diario de la app.
+> Última actualización: 2026-07-24. **3 errores abiertos:** BUG-016 (cuatro mensajes en voseo), BUG-013 (el pase de accesibilidad mide contraste durante el fundido del modal) y BUG-017 (el modelo Quincenal pierde un cobro al mes). Ninguno afecta el uso diario de la app salvo con `diaPago > 16` en frecuencia Quincenal.
 
 ---
 
@@ -48,3 +48,14 @@ Numerar `BUG-001`, `BUG-002`... de forma consecutiva y sin reutilizar números a
 - Líneas    : ~85-110 (el patrón se repite por modal)
 - Secciones : ninguna de la app (solo la suite E2E). Afecta la confianza en el pase A11Y.5.
 - **Arreglo sugerido**: esperar a que el fundido termine antes de medir, no dormir un tiempo fijo. Opciones: esperar la promesa de `element.getAnimations()` en el overlay, o afirmar `opacity === '1'` con `expect.poll` antes de llamar a axe. Conviene hacerlo en el helper compartido para que cubra todos los modales de una vez.
+
+### BUG-017 - El modelo Quincenal pierde el segundo cobro del mes si `diaPago > 16`
+- Estado    : pendiente
+- Prioridad : media (necesita decisión de producto antes de tocarlo, no es un fix directo)
+- Problema  : un compromiso o ingreso Quincenal con `diaPago > 16` aparece **una sola vez al mes** en vez de dos, en el Calendario, la checklist de vencimientos y cualquier consumidor del motor.
+- Causa     : `ocurrenciasEnMes` resuelve Quincenal como `[diaPago, diaPago + 15]` **dentro del mismo mes** y descarta el segundo si no cabe (con `diaPago = 20`, el segundo sería el día 35). Preexistente: viene de `_diasParaCompromiso` de Agenda, `MC.13a` lo extrajo tal cual (139 tests lo fijan).
+- Archivo   : `modules/infra/vencimientos.js`
+- Función   : `ocurrenciasEnMes`, caso Quincenal
+- Líneas    : sin localizar (hallazgo de MC.13c-2, no una lectura de código línea a línea)
+- Secciones : Calendario, Mis cuentas (asistente), transversal (todo consumidor del motor)
+- **Arreglo sugerido**: el segundo cobro debería pasar al mes siguiente (día 5). **Requiere decisión de Esteban**, porque cambia lo que hoy ve el Calendario.
