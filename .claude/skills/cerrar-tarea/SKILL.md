@@ -111,5 +111,6 @@ El usuario no lee el diff: verifica en la app. El reporte va **siempre**, en est
 Reglas del reporte:
 
 - **Alcance honesto.** Si algo del alcance original quedó fuera, decirlo con su razón, no omitirlo. Si se encontró un defecto preexistente, decirlo aunque no se haya arreglado.
+- **Área declarada vs. diff real.** Si la tarjeta se marcó `code` y el diff termina siendo mayoritariamente `styles/**`, markup o assets, anotarlo en el reporte como posible mala clasificación. No es motivo para revertir el cambio ni bloquear el commit.
 - **Si se corrigió el plan de la tarjeta**, explicarlo: el usuario aprobó ese plan y merece saber por qué cambió.
 - El bloque `Próximo paso` no es obligatorio: incluirlo solo si el usuario lo pide o aporta valor real, con el formato exacto de `CLAUDE.md`. Si se incluye y la elección de capacidad y nivel no es obvia, resolverla con la skill `elegir-modelo`.

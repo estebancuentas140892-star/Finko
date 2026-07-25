@@ -84,20 +84,24 @@ Al consolidar varios informes: buscar coincidencias entre agentes que llegaron p
 
 ---
 
-## 6. Cómo se aplica (restricción real)
+## 6. El bloque `Próximo paso`
 
-El modelo del turno en curso **lo fija el usuario al lanzar**: el asistente no se cambia de modelo a mitad de respuesta. Esta skill alimenta tres cosas:
+No va por defecto en cada respuesta: solo si el usuario lo pide explícitamente, o el propio asistente juzga que aporta (cierre de tarea grande, ambigüedad real sobre qué sigue). Si no hay tarea siguiente clara y se incluye, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque. Es la recomendación para el **turno siguiente**; el modelo del turno en curso lo fija el usuario al lanzar y no cambia a mitad de respuesta.
 
-1. La recomendación del bloque `Próximo paso`, que es para el **turno siguiente**.
-2. Cuánto razonamiento y esfuerzo aplicar dentro del turno actual.
-3. La capacidad de cada subagente cuando el usuario pide paralelizar.
+```
+─── Próximo paso ──────────────────────────────────
+Tarea siguiente : <título corto>
+Modelo sugerido : <capacidad> - <nivel>
+Por qué         : <una línea justificando capacidad + nivel>
+───────────────────────────────────────────────────
+```
 
-En el bloque `Próximo paso` se escribe la **capacidad** y el nivel: `<capacidad> - <nivel>`. Si conviene mostrar además el nombre concreto para que el usuario lance el turno sin consultar esta skill, se toma de la tabla de la sección 1 y se agrega entre paréntesis **siempre anotado como resuelto por esta skill**, nunca como si fuera una regla fija:
+`Modelo sugerido` lleva la **capacidad** y el nivel (tabla de la sección 3). Si conviene mostrar además el nombre concreto para que el usuario lance el turno sin consultar esta skill, se toma de la tabla de la sección 1 y se agrega entre paréntesis **siempre anotado como resuelto por esta skill**, nunca fijado como si fuera una regla permanente:
 
 ```
 Modelo sugerido : Máxima capacidad - Extra (modelo vigente resuelto por elegir-modelo)
 ```
 
-Esa tabla nunca se copia a `CLAUDE.md` ni a otro documento: es lo que se actualiza en un solo lugar cuando cambie la familia de modelos disponible.
+Esa tabla de la sección 1 nunca se copia a `CLAUDE.md` ni a otro documento: se actualiza en un solo lugar cuando cambie la familia de modelos disponible. No imprimir la matriz de la sección 4 en tareas obvias: el `Próximo paso` liviano es el default.
 
-No imprimir esta matriz en tareas obvias: el `Próximo paso` liviano es el default y la matriz existe solo para desempatar.
+Esta skill también alimenta el esfuerzo dentro del turno actual y la capacidad de cada subagente cuando el usuario pide paralelizar (sección 5).

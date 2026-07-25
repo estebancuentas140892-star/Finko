@@ -99,10 +99,13 @@ Máximo 12 líneas. Va en `docs/BOARD.md`, en la sección de la app que correspo
 #### <ID> - <título corto>
 - Prioridad  : alta | media | baja
 - Estado     : pendiente | opcional | requiere ADR | no iniciar
+- Área       : design | code | ambos (qué cambia, no el nombre de la tarea)
 - Objetivo   : qué resuelve, en una frase, y el punto no obvio si lo hay
+- Riesgo     : qué se rompe si sale mal, o "-"
 - Secciones  : secciones de la app afectadas
 - Archivos   : rutas relativas involucradas
 - Depende de : otra tarjeta o "nada"
+- Aceptación : design -> evidencia visual (captura/estado) | code -> test o comportamiento comprobable
 - Modelo     : capacidad + nivel (skill `elegir-modelo` si no es obvio)
 ```
 

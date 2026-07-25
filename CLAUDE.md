@@ -49,35 +49,19 @@ Reglas del usuario. Aplican siempre, sin pedirlas en cada sesión.
 
 **Confirmar antes de cambios destructivos.** Eliminar archivos, force push, reescribir historial o borrar tests existentes: siempre confirmar antes.
 
+### Área responsable: Design vs. Code
+
+La clasificación depende de **qué cambia la tarea, no del nombre de la tarea**:
+
+- **Design:** cambios visuales, UX/UI, estilos, assets, interacción visual.
+- **Code:** lógica, datos, arquitectura, eventos, almacenamiento, cálculos, tests.
+- **Ambos:** cuando cambia experiencia y lógica a la vez.
+
+**El ADR es el único sobreviviente del handoff de diseño:** un mockup de Claude Design deja de mandar en cuanto su ADR se acepta; lo que queda como fuente de verdad es el ADR, no el archivo de diseño. Plantilla de tarjeta y detección de mala asignación: skill `triaje-tarea`.
+
 ### Bloque de cierre bajo demanda
 
-No va por defecto en cada respuesta. Se incluye solo si el usuario lo pide explícitamente, o si el propio asistente juzga que aporta (cierre de tarea grande, ambigüedad real sobre qué sigue). Si no hay tarea siguiente clara y se incluye, proponer la más razonable del tablero y, si hay duda real, pedir input dentro del mismo bloque.
-
-```
-─── Próximo paso ──────────────────────────────────
-Tarea siguiente : <título corto>
-Modelo sugerido : <capacidad> - <nivel>
-Por qué         : <una línea justificando capacidad + nivel>
-───────────────────────────────────────────────────
-```
-
-Capacidades, de menor a mayor: **ligero** (tareas mecánicas, verificaciones, renombres) · **equilibrado** (implementación normal siguiendo patrones existentes; niveles Bajo/Medio/Alto) · **alta capacidad** (lógica financiera colombiana, debugging sin pista; Alto/Extra) · **máxima capacidad** (decisiones arquitecturales, auditorías, lo que roza el ADN; Alto/Extra/Max).
-
-Este archivo **no nombra versiones de modelo a propósito**: la equivalencia capacidad → modelo vigente y la matriz de desempate viven en el cuerpo de la skill `elegir-modelo`, para que actualizarla no toque esta norma. Invocarla cuando la elección no sea obvia.
-
-Si en una respuesta real conviene mostrar el nombre concreto del modelo (para que el usuario lance el turno sin tener que consultar la skill), se agrega entre paréntesis y siempre anotado como resuelto por ella, nunca como regla escrita acá:
-
-```
-Modelo sugerido : Máxima capacidad - Extra (modelo vigente resuelto por elegir-modelo)
-```
-
-Nunca así, con el nombre fijado directamente en esta norma:
-
-```
-Modelo sugerido : Fable 5 - Extra
-```
-
-**Regla de oro:** una sola tarea por respuesta. El bloque `Próximo paso` define qué se hace **después** de verificar y commitear lo actual, no qué se hace ahora.
+No va por defecto en cada respuesta: solo si el usuario lo pide explícitamente o el asistente juzga que aporta. Formato exacto, capacidades y ejemplos: skill `elegir-modelo`. **Regla de oro:** una sola tarea por respuesta; el bloque define qué se hace **después** de verificar y commitear lo actual, no qué se hace ahora.
 
 ---
 
@@ -142,13 +126,4 @@ Aplica a **todo texto** del proyecto: respuestas en chat, commits, comentarios d
 
 ## 7. Comandos
 
-La lista completa vive en `package.json` y, para humanos, en el [`README.md`](README.md). Los cuatro de uso diario:
-
-```bash
-python -m http.server 8080   # servir la app (los ES6 modules requieren HTTP)
-pnpm test                    # unitarios + integración (Vitest + happy-dom)
-pnpm run test:e2e            # Playwright + Chromium
-pnpm run lint
-```
-
-**No abrir `index.html` directo:** los ES6 modules necesitan servidor HTTP.
+Lista completa y de uso diario: [`README.md`](README.md) y `package.json`. **No abrir `index.html` directo:** los ES6 modules necesitan servidor HTTP.
