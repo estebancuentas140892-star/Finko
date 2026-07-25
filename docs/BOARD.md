@@ -4,7 +4,7 @@
 > Regla de oro: **solo lo pendiente vive aquí.** Al cerrar una tarea, su tarjeta se borra de este archivo y su historia completa queda en [`CHANGELOG.md`](CHANGELOG.md) (ver [`/CLAUDE.md`](../CLAUDE.md) sección 2.4).
 > Errores conocidos: ver [`BUGS.md`](BUGS.md).
 > Contexto técnico por sección (dónde vive cada funcionalidad): ver [`contexto/`](contexto/README.md).
-> Última actualización: 2026-07-23 (**EDIT.1a cerrada**: Metas ya se puede editar sin perder el progreso acumulado, primera de cuatro rebanadas del patrón P3; quedan Apartados, Inversión y Me deben en **EDIT.1**. Antes el mismo día: **TX.12** y **CAL.5a** cerraron el patrón P2 completo. El 2026-07-22: **MOV.2** y **MOV.1** (patrón P4 completo), **PE.7** (P5) y **AP.5a/AH.5a** (P1). Triaje de la auditoría hecho el 2026-07-21, con sus 2 bugs ya corregidos (BUG-014, BUG-015). Tarjetas pendientes de ese triaje: CAL.5b, EDIT.1, MC.17f, ARQ.1, ARQ.2. BUG-016 (voseo) en BUGS.md).
+> Última actualización: 2026-07-24 (Fase 2 de la reorganización documental: purga de narrativa cerrada, ver [`MIGRACION.md`](MIGRACION.md)). La historia de lo ya cerrado vive en [`CHANGELOG.md`](CHANGELOG.md) y en las fichas de [`contexto/`](contexto/README.md), no aquí.
 
 ---
 
@@ -45,29 +45,13 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 
 ## Pendientes por sección
 
-> **Triaje de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real, con foco en reprocesos, captura repetida, navegación de más y oportunidades de automatización. Sus **2 bugs confirmados ya se corrigieron el mismo día** (BUG-014 distribución del cobro vs el mes, BUG-015 "Marcar pagado" y el mes visible; ver CHANGELOG). El resto se tria aquí. Sus **7 patrones transversales** son la lente que explica casi todas las tarjetas nuevas, y quedan registrados como criterio, no como tareas:
+> **Lente de la auditoría de UX/producto (2026-07-21).** Recorrido de toda la app simulando a un usuario colombiano real. Sus 7 patrones son criterio de priorización, no tareas, y explican casi toda la lista de abajo. **Cerrados:** P2 (trabajo manual uno por uno), P4 (ledger de solo lectura) y P5 (módulos que no comparten datos con el saldo). **Abiertos:** P1 datos que la app ya tiene y vuelve a pedir (LIM.1, CFG.2a, MC.13e-2f), P3 no se puede editar (EDIT.1, MC.17f), P6 se informa pero no se acciona (motor único de sugerencia por categoría: LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)), P7 un concepto con cuatro implementaciones (ARQ.1, ARQ.2).
 >
-> - **P1 Datos que la app ya tiene y vuelve a pedir.** **AP.5a y AH.5a ya cerradas** (2026-07-22: "Aportar" en Apartados y "Registrar aporte" en el Fondo prellenan el monto sugerido). Sigue abierto en LIM.1 (p.10), CFG.2a y MC.13e-2f.
-> - **P2 Trabajo manual uno por uno, sin lote: CERRADO el 2026-07-23.** ~~CAL.5a~~ (los fijos vencidos se pagan juntos desde el Calendario) y ~~TX.12~~ (gastos frecuentes + "Repetir"). Queda **CAL.5b** (deudas y entrada desde Inicio) como ampliación del mismo patrón, no como pendiente del patrón original.
-> - **P3 No se puede editar: corregir obliga a destruir.** ~~Metas~~ (**EDIT.1a cerrada el 2026-07-23**) más **EDIT.1** (Apartados, Inversión, Me deben) y **MC.17f** (transferencias) siguen abiertos. MOV.1 ya cerró su otra mitad: lo que el dueño sabe editar, se edita desde el ledger.
-> - **P4 El ledger es solo de lectura.** **MOV.1 y MOV.2 cerradas** (2026-07-22): la fila ofrece las acciones de su dominio dueño, y la vista completa se puede buscar y filtrar por texto/dominio/fechas. Patrón cerrado por completo.
-> - **P5 Módulos que no comparten datos con el saldo ni el patrimonio.** **PE.7 cerrada** (2026-07-22): "Me deben" ya descuenta al prestar, acredita al cobrar y aporta el activo "Por cobrar" al patrimonio. Era el único módulo con este problema.
-> - **P6 Se informa pero no se acciona.** Ya cubierto por el motor único de sugerencia por categoría (regla de la fusión TX.10 / LIM.1 / ANL.1 / [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)): la auditoría lo refuerza y pide anclar el primer corte en las cards de hormigas que YA existen en Análisis.
-> - **P7 Un concepto, cuatro implementaciones** (fondo, metas, apartados, inversión). Tarjetas nuevas **ARQ.1** y **ARQ.2**.
+> **Dos hallazgos siguen cuestionando una decisión vigente y no se ejecutan sin la palabra de Esteban** (regla 2.7: un ADR no se revierte en silencio): la propuesta de distribución de un toque frente a MC.13e-2g, y MC.17f frente al cierre de MC.17 como "completa". Cada tarjeta lo dice en su Estado.
 >
-> **Cuatro hallazgos cuestionan una decisión vigente y NO se ejecutan sin la palabra de Esteban** (regla 2.7, no se revierte un ADR en silencio): ~~MOV.1 vs TX.8b~~ (**aprobado y cerrado el 2026-07-22**), ~~CAL.5 vs PA.1~~ (**decidido el 2026-07-23**: el lote manual va primero; CAL.5a cerrada, PA.1 conserva su tarjeta), la distribución de un toque vs MC.13e-2g, y MC.17f vs "MC.17 cerrada completa". Cada tarjeta lo dice en su Estado.
->
-> **Alcance honesto de este triaje:** se trió todo lo que el informe entregó enumerado (los 7 patrones, las 9 automatizaciones priorizadas, las 5 fusiones, los 4 conflictos de decisión y el roadmap de 15 líneas). La tabla "hallazgos por módulo" del informe venía como vista filtrable y sus fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
-
-### Inicio (dashboard)
-
-> Iniciativa "Inicio como centro de control" ([ADR 028](DECISIONS/028-inicio-centro-de-control.md), aprobada el 2026-07-05): IN.6a, CAL.1, TX.8a, TX.8b e IN.4a cerradas. **Superada por la iniciativa "Inicio v2"** (triaje del 2026-07-08): su revisión formal, el [ADR 034](DECISIONS/034-inicio-v2.md), quedó completamente implementada el 2026-07-12 (rebanadas IN.8a a IN.8g, ver CHANGELOG). Sin tarjetas pendientes en esta sección.
-
----
+> **Alcance honesto del triaje:** se trió todo lo que el informe entregó enumerado. Su tabla "hallazgos por módulo" vino como vista filtrable y las fichas individuales no llegaron en texto: si Esteban quiere ese detalle triado uno por uno, hay que recuperarlo de la fuente.
 
 ### Calendario (dominio `agenda`)
-
-> Iniciativa "Calendario v2: mes con peso financiero" ([ADR 037](DECISIONS/037-calendario-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar): **completamente implementada el 2026-07-13** (rebanadas CAL.4a a CAL.4c, ver CHANGELOG y [`contexto/calendario.md`](contexto/calendario.md)). Cuarta pantalla de la familia visual v2 (tras Inicio, Mis cuentas y Deudas).
 
 #### CAL.5b - El lote también cubre deudas, y se ofrece desde Inicio
 - Prioridad  : media
@@ -78,25 +62,22 @@ Reglas de las tarjetas (`/CLAUDE.md` secciones 2.1 y 2.7):
 - Depende de : **ARQ.2** punto 2 para la parte de deudas (la parte de Inicio no depende de nada)
 - Modelo     : Opus 4.8 - Alto (el abono a deuda mueve saldo y patrimonio: el borde de "abono parcial dentro de un lote" hay que decidirlo explícitamente)
 
-_(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tienen fuente única y NO generan tarjeta propia aquí. (1) Color de sección en las tarjetas de evento con tinte de baja opacidad (Esteban pide 5-10%; el sistema usa 12% en `-bg`, calibrar en implementación con contraste medido) → vive en **IV.2c**. (2) Logos oficiales de marcas en eventos (Netflix, Nequi...) → ya existe la base (MK.2 detecta marca en fijos/suscripciones/deudas, `tejaMarca` en el detalle del día) y su evolución "seleccionar en vez de escribir" es el **[ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md)**. (3) Picker de icono en "Otra categoría" de fijos + categorías personalizadas reutilizables en toda la app → iniciativa **CAT** en Transversal, que absorbió la observación que vivía aquí sobre ícono personalizado para la categoría "Otro" de AG.4.)_
+_(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI Calendario" ya tienen fuente única y no generan tarjeta aquí. Tinte de color en las tarjetas de evento → **IV.2c**; logos de marca en eventos → [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md); picker de icono y categorías personalizadas reutilizables → iniciativa **CAT** en Transversal.)_
 
 ---
 
 ### Mis cuentas (dominio `tesoreria`)
 
-> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08: el primero de 21 puntos + la integración del ingreso fijo con cuenta de destino, sumados al brief de distribución del lote anterior). Fuente única de la sección. Se organiza en 4 frentes: **MC.13** (Distribución v2, ampliada abajo), **MC.16** (tarjeta de crédito integrada, requiere ADR), **MC.17** (transferencias entre cuentas, CERRADA) y **MC.18** (rediseño visual de la pantalla, [ADR 035](DECISIONS/035-mis-cuentas-v2.md), CERRADA). **MC.14 cerrada el 2026-07-11** (datos de transferencia por cuenta, ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md)). **Conflicto (a) del brief RESUELTO el 2026-07-15**: Esteban confirmó quitar la oferta automática de distribución tras un ingreso esporádico, conservando el asistente accesible manualmente (implementado en MC.13e-1, ver abajo); ya no revierte el ADR 024 en silencio, la decisión quedó formal. **Conflicto (b) sigue abierto**: "el dinero del ingreso fijo se abona automáticamente a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1: se decide en el MISMO ADR de pagos automáticos, no por separado.
+> **Iniciativa "Mis Cuentas v2: centro de administración del dinero"** (briefs de Esteban del 2026-07-08). Fuente única de la sección. De sus 4 frentes siguen abiertos **MC.13** (Distribución v2) y **MC.16** (tarjeta de crédito, requiere ADR); **MC.17** (transferencias) y **MC.18** (rediseño visual, [ADR 035](DECISIONS/035-mis-cuentas-v2.md)) están cerrados. **Conflicto (b) del brief, abierto:** "el dinero del ingreso fijo se abona solo a la cuenta en la fecha de pago" es un movimiento automático sin confirmación, exactamente el problema de filosofía de PA.1, así que se decide en el MISMO ADR de pagos automáticos y no por separado. El conflicto (a) quedó resuelto el 2026-07-15.
 
 #### MC.13 - Distribución v2: contextual por fecha, guiada y con origen real del dinero
 - Prioridad  : alta
-- Estado     : **el motor está completo y en producción** (MC.13a-d + MC.13c-2, cerradas el 2026-07-14; [ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md) aceptado parcialmente). **MC.13e-1 cerrada el 2026-07-15** (decisión (a)). **MC.13e-2 (análisis y re-corte) hecho el 2026-07-15**, partido en 7 rebanadas; **MC.13e-2a ya CERRADA** (copy, accesos cruzados y navegación). Siguen MC.13e-2b a MC.13e-2g de abajo.
-- **Diseño (ADR 041):** el motor compartido nace en `infra/vencimientos.js` con dos mitades: (A) **vencimientos** (`ocurrenciasEnRango` generaliza `_diasParaCompromiso` de Agenda de mes a ventana arbitraria; `ventanaDelCobro` da la ventana del cobro para TODAS las frecuencias, cerrando el hueco de `ultimoPagoHasta` que solo soporta Mensual/Quincenal); (B) **aportes** (`frecuenciaPrincipalIngresos`, `diasPorPeriodo`, `aportePorPeriodo`: **una sola copia** de lo que hoy está DUPLICADO en `metas/logic.js` y `apartados/logic.js` y reparte por meses en `distribucion.js`). La función `obligacionesYAportesDelCobro` compone "¿qué toca con este cobro?": `vencidas` / `enVentana` / `aportes`, solo lo del cobro (no todo el mes). Agenda pasa a consumir la mitad A (su `eventosDelMes` queda como envoltorio, sin duplicar frecuencias).
+- Estado     : **el motor está completo y en producción** ([ADR 041](DECISIONS/041-motor-vencimientos-y-distribucion-v2.md), aceptado parcialmente, con su diseño completo dentro); el asistente está a mitad de rediseño. Siguen abiertas **MC.13e-2b a MC.13e-2g**, abajo.
 - Objetivo   : el asistente "Distribuir mi ingreso" (épica MC.7, cerrada) hoy muestra TODAS las necesidades/ahorros/obligaciones registradas; con muchos registros satura. Nueva lógica: al recibir un ingreso, Finko analiza la fecha del ingreso, la frecuencia de ingresos del usuario, las obligaciones vencidas, las que vencen en la ventana de ese ingreso y los aportes de ahorro (fondo/metas/apartados/inversión) programados para esa fecha, y solo sugiere lo que corresponde pagar/apartar en ese momento. Responde "¿qué debo hacer HOY con este dinero?", no "todo lo del mes". Reutilizar la lógica existente de recordatorio de día de ingreso (ADR 021, AP.4/MT.2/AH.4) para "qué toca aportar hoy".
-- **Rebanadas del motor (ADR 041, todas cerradas):** **MC.13a** (`infra/vencimientos.js` mitad A: `ocurrenciasEnMes`/`ocurrenciasEnRango`/`ventanaDelCobro` + Agenda lo consume), **MC.13b** (mitad B: `FRECUENCIAS_APORTE`/`frecuenciaPrincipalIngresos`/`normalizarFrecuenciaAporte`/`diasPorPeriodo`/`etiquetaPeriodo`/`aportePorPeriodo` + Metas y Apartados borran sus copias), **MC.13c-1** (`obligacionesYAportesDelCobro` puro), **MC.13d** (campo opcional `cuentaId` en `Ingreso`, bump v26→v27), **MC.13c-2** (la checklist consume el motor: **MC.7g cerrado**) y **MC.13e-1** (decisión (a): un ingreso esporádico ya NO ofrece distribuirlo; se eliminó el modo "ya acreditado" del asistente por completo). Ver CHANGELOG y [`contexto/mis-cuentas.md`](contexto/mis-cuentas.md). MC.13c-3 (datar todas las frecuencias) se separó abajo y no bloquea.
-- **MC.7g CERRADO** el 2026-07-14 por MC.13c-2 (fijos Quincenal/Semanal/Diario en la checklist de Necesidades): modelar ocurrencias dentro del periodo era EL MISMO problema, y ambos se resolvieron con la pieza compartida, tal como preveía la fusión.
-- **Pieza de infraestructura compartida (regla de arquitecto 2.7): CONSTRUIDA** el 2026-07-14 en `modules/infra/vencimientos.js` (MC.13a + MC.13b). El "motor de vencimientos y aportes recomendados" (qué obligaciones y aportes corresponden a una fecha/ventana dada, y cuánto tocaría aportar según la frecuencia real de ingresos) ya existe y tiene sus dos mitades. Lo consumen hoy Agenda, Metas y Apartados; **el prellenado del botón Aportar de Apartados (AP.5a) y del "Registrar aporte" del fondo (AH.5a) ya lo consumen también, cerrados el 2026-07-22**. Lo consumirán, importando en vez de copiar: los pagos automáticos (PA.1, Transversal) y el **plan de aportes de Metas v2** (MT.6). **Regla vigente:** ningún dominio vuelve a escribir su propia tabla de frecuencias ni su propio reparto por período.
+- **Regla vigente que dejó el motor:** `modules/infra/vencimientos.js` es la única tabla de frecuencias y el único reparto por período del proyecto; ningún dominio vuelve a escribir la suya. Lo consumen Agenda, Metas, Apartados y el prellenado de aportes de AP.5a/AH.5a; lo consumirán PA.1 y el plan de aportes de **MT.6**, importando en vez de copiar.
 - Secciones  : Mis cuentas (`tesoreria/logic/distribucion.js`, `views/distribucion.js`, `acciones/distribucion.js`)
 - Depende de : nada (la decisión (a) ya está resuelta); coordinar con PA.1 (conflicto (b), independiente)
-- Modelo     : análisis/re-corte del motor hecho con Opus 4.8 (ADR 041); rebanadas del motor + MC.13e-1 ya hechas (ver arriba). MC.13e-2a-g abajo, cada una con su propio modelo.
+- Modelo     : cada rebanada MC.13e-2 lleva el suyo (ver abajo)
 
 > **Análisis de MC.13e-2 (2026-07-15): mapa del asistente actual antes de re-cortar.** El asistente vive en `tesoreria/views/distribucion.js` (`_renderTarjetaDistribuir` = tarjeta compacta de entrada; `_renderContenidoAsistente` = contenido del modal: chips de preset + editor personalizado + `_renderPanelDistribuir`) y `acciones/distribucion.js` (apertura, navegación entre pasos, recálculo en vivo, `_confirmarDistribucion` = apply). Hoy tiene hasta 3 pasos dinámicos (Necesidades → Ahorro/deudas/inversiones → Estilo de vida, solo se crean los que tienen contenido). Los "accesos cruzados" del punto 11 son el array `ctas` de `sugerirDistribucionIngreso()` (`logic/distribucion.js` líneas 699-718: "Activar/Ver progreso del fondo", "Explorar/Aportar a inversiones", "Ver estrategia de deudas", "Ver tu seguimiento en Límites de gasto"), hoy renderizado solo en la tarjeta compacta (`_renderTarjetaDistribuir`), no dentro del modal. Re-cortado en 7 rebanadas por riesgo e independencia (regla 2.1):
 
@@ -186,28 +167,6 @@ _(Triaje 2026-07-08, brief "Auditoría UX/UI Calendario": sus tres partes ya tie
 
 ---
 
-### Gastos (dominio `gastos`)
-
-> Iniciativa "Gastos v2: total protagonista, lista por día y gastos hormiga" ([ADR 039](DECISIONS/039-gastos-v2-visual.md), aceptado 2026-07-14; handoff de Claude Design "Iteración de specimen", enviado por Esteban con instrucción de implementar): **COMPLETA el 2026-07-14** (rebanadas GAS.1a-c, ver CHANGELOG y [`contexto/gastos.md`](contexto/gastos.md)). Sexta pantalla de la familia visual v2. **Decisiones de triaje pendientes de la palabra de Esteban** (detalle en el ADR): el **FAB del mockup NO se implementó** (duplicaría el botón central "Registrar" del ADR 024; si lo prefiere, la decisión formal es suya y la implementación es pequeña), la **búsqueda** del header quedó fuera (funcionalidad nueva sin decisión de diseño; tarjeta propia si se pide), y la **comparación tangible del insight hormiga** ("más que tu recibo de luz") se difirió al motor de interpretación (ANL.1). Sin tarjetas pendientes en esta sección.
-
-_(Triaje 2026-07-08, brief "Auditoría UX/UI Gastos": vive completo en la iniciativa **CAT** de Transversal (taxonomía Gastos↔Gastos fijos, categorías contextuales, deduplicación entre secciones, y el rediseño del picker de icono de "Otra categoría" que hoy llena la pantalla con el grid de TX.9b). No genera tarjeta en esta sección para no duplicar la fuente única.)_
-
-_(**TX.10 absorbida** el 2026-07-08 por el [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) "Catálogo de marcas por categoría", que lo declara explícitamente en su encabezado: la pieza de infraestructura de datos que TX.10 pedía (categoría como eje del que Finko deriva automatizaciones: límites, hormiga/fantasma, recomendaciones) es la fundación de ese ADR. El ADR 029 sigue en estado **Propuesta**, pendiente de que Esteban valide la taxonomía de su sección D3: nada de esto se inicia sin esa validación. El solape con **LIM.1** (recomendaciones de límite por categoría) y **ANL.1** (recomendaciones accionables en Análisis) que la tarjeta original documentaba se conserva como regla: al iniciar cualquiera de las tres, diseñar UN solo motor de "sugerencia por categoría" compartido, nunca tres. Fusión hecha bajo la regla 2.7 de CLAUDE.md, primer caso aplicado.)_
-
----
-
-### Movimientos (dominio `movimientos`)
-
-> Sección nueva en el tablero (triaje de la auditoría 2026-07-21). El ledger existía sin tarjetas propias porque TX.8a/TX.8b lo entregaron completo como **vista de solo lectura**; la auditoría lo señala como el punto donde más se nota la fricción, porque es la vista canónica del historial y no deja tocar nada.
-
----
-
-### Deudas (dominio `compromisos`, deuda)
-
-_(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descuentan de la cuenta" **ya existe** desde el ADR 002 y la regla de cuenta única. No genera tarjeta; si Esteban detecta un caso donde NO ocurra, es un bug para BUGS.md, no una feature.)_
-
----
-
 ### Apartados (dominio `apartados`)
 
 > **Iniciativa "Apartados v2: colchón para gastos esporádicos"** (brief de Esteban del 2026-07-08, 6 puntos). Filosofía redefinida por Esteban: Apartados NO es "ahorrar para objetivos grandes" (eso es Metas), es preparar los gastos esporádicos que se olvidan presupuestar (SOAT, regalos, Navidad, veterinario, mantenimientos, impuestos...) para que al llegar la fecha el dinero ya esté reservado. **Derivados a fuentes únicas:** las categorías que realmente son Metas (Vacaciones, Semestre, Computador, Viajes) → **CAT.1 ampliada** (la taxonomía Apartados↔Metas es la misma clase de decisión que Gastos↔Fijos, una sola pasada); el picker de icono (hoy depende del selector de emojis del SO, Win+.) → **CAT.2** (consumidor n.º 5; nota: el `icono` de apartados hoy es emoji como dato del usuario, exento de TX.4, y pasaría a símbolo del sprite: decidir la migración en CAT.3); "Otro" con nombre+icono → **CAT.3**.
@@ -250,12 +209,6 @@ _(Verificación del triaje 2026-07-08: la mitad del brief "pagos de deuda descue
 - Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
 - Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya se corrigió el 2026-07-11, aparte)
 - Modelo     : Sonnet 5 - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
-
----
-
-### Inversión (dominio `inversiones`)
-
-_(sin pendientes activos.)_
 
 ---
 
@@ -303,7 +256,7 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Análisis (dominio `analisis`)
 
-> Iniciativa "Análisis v2: rediseño visual" ([ADR 038](DECISIONS/038-analisis-v2-visual.md), aceptado 2026-07-13; handoff de Claude Design "Iteración de specimen"): **COMPLETA el 2026-07-13** (rebanadas ANL.2a-d, ver CHANGELOG). Avanzó los puntos 4, 5, 7 y 8 del brief de ANL.1 (reorganización, jerarquía, carga cognitiva, coherencia visual); los puntos de interpretación (1, 2, 3, 6, 9) siguen en ANL.1, que hereda el lienzo v2 ya montado: cuando se inicie, escribe copy y recomendaciones sobre estas cards, no rediseña de cero.
+> Iniciativa "Análisis v2: rediseño visual" completa ([ADR 038](DECISIONS/038-analisis-v2-visual.md)): avanzó los puntos 4, 5, 7 y 8 del brief de ANL.1 (reorganización, jerarquía, carga cognitiva, coherencia visual). **ANL.1 hereda el lienzo v2 ya montado:** cuando se inicie, escribe copy y recomendaciones sobre esas cards, no rediseña de cero.
 
 #### ANL.1 - Análisis como centro de interpretación financiera (no solo panel de estadísticas)
 - Prioridad  : sin definir
@@ -409,7 +362,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ## Transversal (afecta varias secciones)
 
-> Auditoría de rendimiento 2026-07 (pedida por Esteban): **PERF.0** (harness `pnpm perf`, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)), **PERF.1** (windowing de Movimientos, hasta 81x más rápido), **PERF.2** (memoización de Inicio/Análisis vía `infra/memo.js`, ver [`contexto/analisis.md`](contexto/analisis.md)), **PERF.3** (cómputo del grupo colapsable de Análisis diferido al `toggle`) y **PERF.4** (persistencia: [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), salvaguarda de cuota, se difiere el rewrite) cerradas el 2026-07-06. Confirmado por medición: `renderSmart()` ya evita el recálculo cruzado que temía Esteban, y el costo de guardar es bajo (~5 ms debounced), así que no se reescribió la persistencia. Iniciativa cerrada salvo la tarjeta futura de IndexedDB (**PERF.5**, disparadores en el ADR 030). Cada fase corre `pnpm perf` antes/después y compara contra BASELINE.md.
+> **Auditoría de rendimiento 2026-07 completa** (PERF.0 a PERF.4 cerradas, ver [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md)). Los dos hallazgos que siguen mandando: `renderSmart()` ya evita el recálculo cruzado, y guardar cuesta ~5 ms debounced, así que la persistencia NO se reescribió ([ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md), disparadores en su D4). **Disciplina obligatoria de toda tarjeta PERF: correr `pnpm perf` antes y después y comparar contra BASELINE.md.**
 
 #### PERF.5 (futura, no iniciar) - Migrar la persistencia a IndexedDB
 - Prioridad  : sin definir (se retoma solo si se dispara un criterio del [ADR 030](DECISIONS/030-persistencia-diferir-rewrite-salvaguarda-cuota.md) D4)
@@ -422,8 +375,6 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ---
 
-> Segunda pasada de la auditoría de rendimiento (2026-07-07, Fable 5): confirmó que lo grueso ya está resuelto (eventos por sección, `renderSmart` hash-gate, `infra/memo.js`, windowing). Hallazgos nuevos registrados abajo como PERF.6, PERF.7, PERF.8. Cada fase corre `pnpm perf` antes/después contra [`scripts/perf/BASELINE.md`](../scripts/perf/BASELINE.md).
-
 #### PERF.6 - Coalescer de renders por microtask (alcance revisado a la baja)
 - Prioridad  : baja
 - Estado     : pendiente de decisión. **Hallazgo del 2026-07-07:** `renderSmart()` corta por hash, así que una vista solo se pinta cuando es la sección activa. El doble-render caro que motivó la tarjeta (Análisis, 5 observadores, ~11 ms) NO ocurre en la práctica: Análisis es solo-lectura, no se muta desde ahí, y renderSmart bloquea su pintado desde cualquier otra sección. La exposición real queda en los paneles de Inicio (actividad reciente, resumen) que se repintan 2-3 veces durante una acción multi-sección lanzada desde Inicio (ej. distribución del ingreso): costo bajo.
@@ -433,11 +384,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 - Depende de : decidir si el beneficio (situacional, Inicio) justifica el cambio de timing. Alternativa recomendada: PERF.7 primero (ganancia medida e incondicional).
 - Modelo     : Opus 4.8 - Alto (si se hace)
 
-> Iniciativa Identidad de color por sección 2026-07 ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), **aceptada por Esteban el 2026-07-07**): brief del 2026-07-07 (color característico por sección en toda la experiencia + números que comunican + replanteo de iconos). El análisis encontró que los tokens `--fk-dom-*` ya existen pero están sub-desplegados, sin rampa de tema claro (hueco WCAG real), con dominios faltantes (`agenda`, `apartados`) y con la colisión deudas = danger. Las 5 decisiones abiertas (P1 a P5) se resolvieron todas con la opción recomendada: gastos/egresos se quedan cálidos y neutros (ADR 019 sin cambios), Deudas se separa del danger en frambuesa, Límites se queda en amarillo, hub Ahorros en familia de colores (no 4 matices únicos). Iconografía dirigida DESPUÉS del color (no un 4.º redibujo global), condicionada a revisión visual tras IV.2.
->
-> **Ampliación del 8.º lote (2026-07-09, brief "Nueva dirección de diseño" + 2 imágenes de referencia): la iniciativa evoluciona a "Dirección Visual premium".** El brief pide una identidad no minimalista ni plana, cálida y tecnológica a la vez, sin sacrificar rendimiento. Triaje contra lo existente: (a) el **color con significado por sección** YA está decidido y fundado (ADR 031/IV.1; los emojis 🔴🟢🟠🔵🟣🟡 del brief son ilustrativos, mandan los tokens aprobados; "color secundario por módulo" es extensión nueva); (b) **iconografía protagonista + logos oficiales intactos** YA es doctrina (ADR 023 v2 chispa, 025 tejas/marcas, 026 Esteban diseña, 027 fullcolor); la frase "una familia de iconos propia por sección" TENSIONA el lenguaje único del ADR 023 y el ADR nuevo debe resolverla formalmente (recomendación preliminar: un solo lenguaje con acento de color+detalle por dominio, no 13 familias); (c) **cards con profundidad, degradados suaves, formas orgánicas, patrones, ilustraciones y fondos con personalidad** son lo genuinamente NUEVO (sistema de superficie/elevación + riqueza visual): eso es DV.1; (d) **animaciones 150-250 ms con propósito** extienden `infra/animate.js` y coordinan con CFG.7 (cuya advertencia de lag móvil medido sigue vigente) y con el diseño emocional que ya vive en LG.2 (logros/celebraciones); (e) **jerarquía y pantallas menos vacías** se ejecutan en las iniciativas v2 por sección (Inicio v2/IN.8, ANL.1, Deudas v2, Mis Cuentas v2, GU.1...): DV define el sistema transversal, las secciones lo aplican (regla anti-doble-trabajo); (f) **rendimiento y accesibilidad como techo** son innegociables del propio brief y del ADN: Lighthouse 100 y AA se mantienen, con lista explícita de efectos prohibidos. Las 2 imágenes de referencia son inspiración de tono (profundidad suave, calidez, personalidad), NO se copian: identidad propia. **Secuencia: IV.2 NO espera al ADR nuevo** (su contenido ya está aprobado y es fundación de todo lo demás); DV.1 puede ir en paralelo o después.
->
-> **DV.1 cerrada el 2026-07-10:** el [ADR 033](DECISIONS/033-direccion-visual-premium.md) "Dirección Visual premium" quedó escrito en estado **Propuesta**, con 5 preguntas para Esteban (P1 alcance del degradado, P2 formas compartidas vs por sección, P3 ratificar lenguaje único de iconos, P4 lote inicial de ilustraciones, P5 sombra en reposo en ambos temas), todas con recomendación. Decisiones clave: elevación en 4 niveles con sombra en reposo (hoy las cards reposan planas); el color secundario es rampa derivada del mismo matiz (no un 2.º hue por sección) materializada en `--fk-section-color` + `--fk-grad-identity` (2 paradas máx); decoración con presupuesto (formas `d-*` neutras teñidas por dominio, patrón CSS, ilustraciones `il-*` como clase nueva del pipeline ADR 026); catálogo de movimiento CERRADO (150-250 ms, una vez, solo transform/opacity) con retiro de los 2 bucles infinitos existentes (`empty-orbit`/`empty-float`); la tensión de iconografía se resuelve ratificando el lenguaje único del ADR 023 (D5). **Nada de esto se implementa sin la validación de Esteban**; las rebanadas DV.2a-d abajo.
+> **Iniciativa Dirección Visual premium** ([ADR 033](DECISIONS/033-direccion-visual-premium.md), estado **Propuesta**), evolución de la identidad de color por sección ([ADR 031](DECISIONS/031-identidad-de-color-por-seccion.md), IV.1 e IV.2 cerradas). **Nada de esto se implementa sin la validación de Esteban:** el ADR espera 5 respuestas (P1 alcance del degradado, P2 formas compartidas vs por sección, P3 ratificar el lenguaje único de iconos, P4 lote inicial de ilustraciones, P5 sombra en reposo en ambos temas), todas con recomendación escrita. Las rebanadas DV.2a-d están abajo.
 
 #### DV.2a - Tokens de superficie/elevación + degradado de identidad (D1+D2 del ADR 033)
 - Prioridad  : alta (primera rebanada de la dirección visual; DV.2b/c/d y las iniciativas v2 construyen encima)
@@ -529,7 +476,7 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 #### EDIT.1 - Editar sin destruir: Apartados, Inversión y Me deben
 - Prioridad  : media-alta
-- Estado     : en proceso. Hallazgo de la auditoría de UX/producto (2026-07-21), patrón P3. **~~EDIT.1a (Metas) cerrada el 2026-07-23~~**, ver CHANGELOG y [`contexto/metas.md`](contexto/metas.md); quedan las otras tres rebanadas.
+- Estado     : pendiente, patrón P3 de la auditoría. La rebanada de Metas (EDIT.1a) ya cerró y dejó el patrón validado; quedan las tres rebanadas de abajo, ninguna iniciada.
 - Objetivo   : tres secciones todavía no permiten **editar** lo ya creado: corregir un nombre mal escrito, un objetivo, una fecha o una tasa obliga a **eliminar y recrear**, perdiendo en el camino el progreso, los aportes y los intereses acumulados. Es destrucción de datos como precio de una corrección tipográfica. Aplicar el mismo patrón que **EDIT.1a** ya validó para Metas (formulario reinyectado con `meta = null` para crear y con el registro existente para editar; `normalizarX(datos, existente = null)` conserva el histórico acumulado y recalcula solo lo que depende del campo editado) a Apartados, Inversión y Me deben, en una rebanada por sección. **Decisión ya tomada en EDIT.1a, válida para las tres que faltan:** se conserva el histórico tal cual (no se recalcula ni se toca), y el estado derivado (completada/vencida/lo que aplique) se recalcula contra el dato nuevo.
 - Secciones  : Apartados, Inversión, Me deben
 - Archivos   : `apartados/`, `inversiones/`, `personales/` (form + acciones de cada uno), patrón de referencia ahora en `metas/` (EDIT.1a) y en `compromisos` (D.15b, para Deudas)
@@ -623,20 +570,24 @@ _(Brief completo del usuario sobre Ajustes, 2026-07-05: 6 ideas registradas abaj
 
 ---
 
-> Iniciativa de navegación 2026-07 ([ADR 024](DECISIONS/024-reorganizacion-navegacion-movil.md)): auditoría móvil hecha el 2026-07-04; decisión aprobada en el ADR. NAV.A1, NAV.A2a, NAV.B, NAV.A2b (slices 1 y 2) y NAV.C cerradas. Iniciativa completa, sin pendientes. Su D5 (menú "Más" plano de 7 tarjetas) fue **revisada por el [ADR 040](DECISIONS/040-navegacion-v2-visual.md)** "Navegación v2" (NAV2.1a-c, COMPLETA el 2026-07-14: menú "Más" como hoja agrupada, marca "F", pastilla "Registrar"). Diferido del ADR 040: badges de notificación del nav (decisión de producto de Esteban; al retomarse, es una tarjeta nueva de esta sección).
+> **Diferido del [ADR 040](DECISIONS/040-navegacion-v2-visual.md):** badges de notificación en el nav. Es decisión de producto de Esteban (¿qué cuenta el badge?); al retomarse nace como tarjeta nueva.
 
 ---
 
-> Iniciativa Biblioteca de recursos gráficos 2026-07 ([ADR 026](DECISIONS/026-biblioteca-de-recursos-graficos.md) + [ADR 027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)): **COMPLETA**. Esteban diseña los SVG en Illustrator; `assets/svg/` es la fuente de verdad de diseño y el sprite de `index.html` es artefacto generado. BR.1 (estructura + estándar + extracción de los 100 símbolos + 17 plantillas), BR.2 (`scripts/sync-sprite.py` + guardarraíl), BR.3 (los 11 bancos/billeteras de `BANCOS_CO` a color: Bancolombia, Banco de Bogotá, Nequi, Davivienda, BBVA, Banco Popular, Scotiabank Colpatria, Banco de Occidente, AV Villas, DaviPlata, Lulo Bank, Nubank), BR.5 (el sync normaliza exports crudos de Illustrator) y BR.4 (ADR 027, registro formal de la excepción de logo a color `data-fullcolor`) cerradas el 2026-07-05. Único sin glifo: "Otro" (deliberado, no es un banco real).
->
-> Regla de fidelidad absoluta (2026-07-05, ampliada el mismo día): todo SVG que Esteban entrega es la versión oficial. Nunca simplificar, restilizar ni reemplazar el diseño (formas, colores, degradados, proporciones) sin que él lo pida explícitamente; **cero elementos agregados** (contornos, bordes, sombras, brillos, efectos, marcos); si un logo necesita contraste con el fondo, se ajusta el **contenedor** (color de teja, espacio), nunca el logo. Solo se permite limpieza técnica (envoltorio de Illustrator, capas de calco, elementos prohibidos) cuando el resultado es visualmente idéntico. Formato de entrega: SVG siempre; PNG 512px de referencia opcional para logos a color (vara de la revisión en pareja). Detalle técnico clave en [`contexto/transversal.md`](contexto/transversal.md) y `assets/svg/README.md` sección 6b (la herencia de `stroke` de `.icon` a través de `<use>`: causa del contorno fantasma corregido en `0f143f9`).
+## Secciones sin tarjetas pendientes
+
+Se listan solo para que una idea nueva de estas secciones no vuelva a generar una tarjeta duplicada: su fuente única ya está decidida.
+
+| Sección | Dónde vive su trabajo futuro |
+|---|---|
+| Inicio | Iniciativa "Inicio v2" completa ([ADR 034](DECISIONS/034-inicio-v2.md)). Las recomendaciones anticipadas de "Próximas prioridades" son el punto 4 de **LIM.1** y del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md) |
+| Gastos | Iniciativa "Gastos v2" completa ([ADR 039](DECISIONS/039-gastos-v2-visual.md)), con 3 decisiones diferidas anotadas en el ADR: FAB, búsqueda en el header y comparación tangible del insight hormiga. La taxonomía de categorías es **CAT.1**; el motor de sugerencia por categoría, la fusión LIM.1 / ANL.1 / ADR 029 |
+| Movimientos | Ledger accionable, con búsqueda y filtros, completo. Los huecos que quedan son **MC.17f** (deshacer transferencia) y **EDIT.1** (editar donde el dominio dueño todavía no sabe) |
+| Deudas | Iniciativa "Deudas v2" completa ([ADR 036](DECISIONS/036-deudas-v2-visual.md)). Que un pago de deuda descuente de la cuenta ya existe desde el [ADR 002](DECISIONS/002-abono-deudas.md): si aparece un caso donde NO ocurra, es un bug para [`BUGS.md`](BUGS.md), no una feature |
+| Inversión | Sin pendientes propios. Su "editar sin destruir" es una rebanada de **EDIT.1**; su infraestructura compartida, **ARQ.1** |
+| Biblioteca gráfica e iconografía | Completas ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md), [025](DECISIONS/025-logotipos-de-marca-y-tejas.md), [026](DECISIONS/026-biblioteca-de-recursos-graficos.md), [027](DECISIONS/027-logos-de-marca-a-color-excepcion-monocromo.md)). La regla de fidelidad de los SVG que entrega Esteban y el costo de agregar un glifo viven en [`assets/svg/README.md`](../assets/svg/README.md). Lo único pendiente es **IV.4** |
 
 ---
-
-> Iniciativa de identidad visual 2026-07 ([ADR 023](DECISIONS/023-lenguaje-de-iconografia-propio.md) + [ADR 025](DECISIONS/025-logotipos-de-marca-y-tejas.md)): **COMPLETA**. ID.1, ID.4, ID.2, ID.6, MK.1, MK.2, ID.7 e ID.3 cerradas (2026-07-05). Nota de MK.1: Bancolombia, Davivienda, DaviPlata y demás bancos siguen con iniciales (regla de fidelidad ADR 025 D5, sin referencia vectorial confiable); agregar cada glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `BANCOS_CO`. Nota de MK.2: ChatGPT, Prime Video, Disney+, Claro, Tigo, Rappi y Xbox están en `MARCAS` con iniciales (sin glifo en Simple Icons vigente); sumar un glifo futuro cuesta 1 `<symbol>` + 1 campo `simbolo` en `MARCAS`. Nota de ID.7: mountain, bolt y star conservan sus vértices agudos a propósito (regla 5 del ADR 023, metáfora primero); i-saldo e i-star no llevan punto de valor (la propia forma ya es la firma). Nota de ID.3: agregar una categoría nueva a cualquier catálogo cuesta 1 entrada en `CATEGORIA_*_ICONO` (y 1 `<symbol>` `c-*` si el glifo no existe); TX.4 avisa si el id no está en el sprite.
-
----
-
 ## Mantenimiento
 
 #### A.5 - Dominio custom en Vercel
