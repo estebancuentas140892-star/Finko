@@ -604,7 +604,7 @@ Se listan solo para que una idea nueva de estas secciones no vuelva a generar un
 - Estado     : pendiente (espera a que el usuario registre un dominio)
 - Objetivo   : cambiar de `finko-brown.vercel.app` a un dominio propio. No requiere cambios de código.
 - Secciones  : Infraestructura
-- Archivos   : guía completa en [`SETUP_DOMINIO.md`](SETUP_DOMINIO.md)
+- Archivos   : guía completa en [`OPERACION.md`](OPERACION.md) runbook 1
 - Depende de : que el usuario tenga el dominio registrado
 - Modelo     : sin código, solo config en Vercel
 
