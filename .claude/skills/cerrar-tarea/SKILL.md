@@ -77,7 +77,7 @@ Antes de cerrar, verificar que ningún archivo vivo superó su techo. Superarlo 
 | `docs/BOARD.md` | 40 |
 | `docs/BUGS.md` | 6 |
 | `docs/CHANGELOG.md` (mes corriente) | 60 |
-| `docs/ARCHITECTURE.md` | 20 |
+| `docs/ARCHITECTURE.md` | 32 |
 | `docs/CONTRIBUTING.md` | 5 |
 | `docs/DESIGN_SYSTEM.md` | 20 |
 | `docs/SECURITY.md` | 8 |

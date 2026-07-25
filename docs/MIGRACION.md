@@ -42,7 +42,7 @@ Cascada:
 Motivo del usuario: no mezclar gobernanza de trabajo con arquitectura técnica. Contenido permitido: reglas de colaboración, flujo de cambios, validaciones antes de commit.
 
 Cascada:
-- La fusión pasa de 3 documentos a 2: `ARCHITECTURE.md` absorbe solo `MAPA.md`. Su techo baja de 25 KB a **20 KB**.
+- La fusión pasa de 3 documentos a 2: `ARCHITECTURE.md` absorbe solo `MAPA.md`. Su techo baja de 25 KB a 20 KB. **Corregido a 32 KB el 2026-07-24 al ejecutar la fusión** (sección 11.7.4): tanto el 25 como el 20 se fijaron sin medir el tamaño real del destino, que ya pesaba 19,1 KB por sí solo.
 - `CONTRIBUTING.md` baja de 9 KB a **5 KB**. Se queda con: cómo se propone un cambio, una tarea a la vez, ramas y commits, las 4 compuertas antes de commitear, y qué hacer ante un cambio destructivo.
 - Lo que **sale** de CONTRIBUTING hacia ARCHITECTURE (porque es técnico, no de gobernanza): convenciones de naming, imports con `.js`, reglas JS/CSS/HTML, patrones a seguir, "qué NO hacer", cómo agregar un dominio. Ahí se corrige de paso el evento `ui:navigate`, que CONTRIBUTING cita y el código no tiene.
 - Lo que **sale** de CONTRIBUTING hacia OPERACION: el protocolo anual de SMMLV/UVT (hoy duplicado con HANDOFF §4, enlazándose mutuamente).
@@ -178,7 +178,7 @@ Finko/
 │   ├─ BOARD.md                     [A] 40 KB · solo pendientes + índice (nombre conservado)
 │   ├─ BUGS.md                      [B] 6 KB  · solo incidencias verificadas (ajuste 1)
 │   ├─ CHANGELOG.md                 [C] 60 KB · mes corriente + índice (ajuste 4)
-│   ├─ ARCHITECTURE.md              [B] 20 KB · capas + mapa + convenciones técnicas
+│   ├─ ARCHITECTURE.md              [B] 32 KB · capas + mapa + convenciones técnicas
 │   ├─ CONTRIBUTING.md              [B] 5 KB  · colaboración, flujo, compuertas (ajuste 2)
 │   ├─ DESIGN_SYSTEM.md             [B] 20 KB · tokens y componentes
 │   ├─ SECURITY.md                  [B] 8 KB  · política de dependencias
@@ -244,7 +244,7 @@ Formato: **propósito** (la única pregunta que responde) · **no entra** (lo qu
 | `docs/BOARD.md` | ¿qué está abierto y con qué prioridad? | narrativa de lo cerrado, briefs, patrones | 40 KB |
 | `docs/BUGS.md` | ¿qué está roto y verificado? | sospechas, tareas, historia de bugs cerrados | 6 KB |
 | `docs/CHANGELOG.md` | ¿cuándo cambió qué y en qué commit? | análisis, justificaciones, listas de archivos | 60 KB |
-| `docs/ARCHITECTURE.md` | ¿cómo funciona y dónde vive? | inventarios archivo por archivo, gobernanza | 20 KB |
+| `docs/ARCHITECTURE.md` | ¿cómo funciona y dónde vive? | listas planas de archivos que `ls` ya responde, gobernanza. **Sí entran** las tablas que asignan responsabilidad a cada archivo: eso `ls` no lo da | 32 KB |
 | `docs/CONTRIBUTING.md` | ¿cómo se trabaja y qué se exige antes de commitear? | arquitectura, convenciones técnicas, runbooks | 5 KB |
 | `docs/DESIGN_SYSTEM.md` | ¿cuál es el catálogo visual y su porqué? | valores de tokens copiados de `styles/tokens.css` | 20 KB |
 | `docs/SECURITY.md` | ¿qué se exige antes de tocar dependencias? | otras operaciones | 8 KB |
@@ -291,7 +291,7 @@ Se conserva intacto: las 12 reglas ADN, el formato exacto del bloque `Próximo p
 1. **Un dato, un dueño.** Cada hecho vive en un solo archivo oficial; los demás enlazan sin resumir. El resumen es exactamente lo que se desincroniza.
 2. **No documentar lo que el código o git ya dicen.** Prohibidos los inventarios archivo por archivo, las listas de diffs y las copias de valores de tokens CSS. `ls`, `git show` y el código son la fuente.
 3. **La historia se escribe una sola vez.** El commit lleva el detalle; CHANGELOG una fila; HANDOFF 1 a 3 líneas de las últimas 5; la ficha una línea por hito; el tablero borra la tarjeta.
-4. **Techo por archivo, verificado al cerrar tarea.** CLAUDE 12 · HANDOFF 6 · BOARD 40 · BUGS 6 · CHANGELOG 60 · ARCHITECTURE 20 · CONTRIBUTING 5 · DESIGN_SYSTEM 20 · SECURITY 8 · OPERACION 10 · ficha 40 (objetivo 25) · ADR 20 · skill 8 · mes cerrado 200 (KB). Superarlo obliga a podar o partir por eje real, nunca a dejarlo pasar.
+4. **Techo por archivo, verificado al cerrar tarea.** CLAUDE 12 · HANDOFF 6 · BOARD 40 · BUGS 6 · CHANGELOG 60 · ARCHITECTURE 32 · CONTRIBUTING 5 · DESIGN_SYSTEM 20 · SECURITY 8 · OPERACION 10 · ficha 40 (objetivo 25) · ADR 20 · skill 8 · mes cerrado 200 (KB). Superarlo obliga a podar o partir por eje real, nunca a dejarlo pasar. **El techo se poda cuando hay grasa; se corrige cuando el dominio documental crece con razón** (caso ARCHITECTURE, sección 11.7.4): un techo no puede forzar pérdida de información.
 5. **El tablero solo contiene pendientes.** Tarjeta de 12 líneas máximo. Lo que necesita más justificación no es una tarjeta: es una iniciativa, y su brief va a un ADR.
 6. **La norma va en CLAUDE.md (1 a 3 líneas, imperativo); el procedimiento en skills; la referencia en docs.** Los documentos históricos jamás se cargan como contexto permanente.
 7. **La historia congelada no se reescribe.** Los ADRs son inmutables: si cambia la decisión, se escribe un ADR nuevo que supersede al viejo.
@@ -350,7 +350,7 @@ Cobertura completa. Las filas agrupadas indican cuántos archivos abarcan, con l
 
 | Archivo actual | Nuevo destino | Acción | Motivo |
 |---|---|---|---|
-| `ARCHITECTURE.md` | `ARCHITECTURE.md` | Absorber MAPA + convenciones técnicas de CONTRIBUTING; borrar inventarios archivo por archivo; corregir EventBus (9 eventos, no 5), dominios (18, hoy dice 18 y lista 16) y `ui:navigate` (no existe) | Fuente única de "cómo funciona y dónde vive". Los inventarios los responde `ls` y son justo la parte desactualizada |
+| `ARCHITECTURE.md` | `ARCHITECTURE.md` | Absorber MAPA + convenciones técnicas de CONTRIBUTING; corregir EventBus (9 eventos, no 5), dominios (18, hoy dice 18 y lista 16) y `ui:navigate` (no existe) | Fuente única de "cómo funciona y dónde vive". **Corregido el 2026-07-24 (11.7.4): "borrar inventarios archivo por archivo" se retira del encargo.** Las tablas de 2.2 y 2.3 no son inventarios: asignan una responsabilidad a cada archivo, que es justo lo que `ls` no puede responder. Lo que el principio 2 proscribe son las listas planas de nombres |
 | `BOARD.md` | `BOARD.md` | Purgar el 32,4% de narrativa cerrada; agregar índice tabular en las primeras 40 líneas; mover los 9 briefs de iniciativa a ADRs y los patrones P1 a P7 a ADR o ficha `transversal` | Es el 68% del costo de arranque y un tercio es historia, violando su propia regla de oro. Nombre conservado (56 refs vivas, 113 en historia congelada) |
 | `BUGS.md` | `BUGS.md` | **Mantener separado** (ajuste 1); techo 6 KB; corregir la línea 5 ("queda solo BUG-013" cuando lista BUG-016 y BUG-013) | Estado y deuda son conceptos distintos; el archivo de estado debe quedar pequeño |
 | `CHANGELOG.md` | `CHANGELOG.md` | **Mantener nombre** (ajuste 4). Mes corriente + índice; formato de 1 fila por tarea desde 2026-08; rotar a `changelog/2026-07.md` al cerrar julio | Convención reconocida. El problema es tamaño (618 KB en 23 días) y cuádruple escritura, no el nombre |
@@ -750,11 +750,13 @@ Autorizado por Esteban el 2026-07-24, con la condición explícita de demostrar 
 
 **No se tocan** (principio 7, historia congelada): las 10 menciones en `docs/CHANGELOG.md` y la de `docs/changelog/2026-06.md`. Describen el estado del repo en el momento de cada tarea. Tampoco `docs/BOARD.md` línea 596, que describe el plan de la reorganización, no enlaza al archivo.
 
+**Un enlace muerto aceptado por escrito.** De esas menciones, una sola es un enlace markdown real: `docs/CHANGELOG.md` línea 2572, la entrada que registra la creación de `MAPA.md`. Al borrarse el archivo queda muerto, **a sabiendas y por principio**: reescribir la historia para salvarlo cuesta más que el enlace. Es el mismo trato que ya reciben los 5 enlaces muertos a `TASKS.md` que el CHANGELOG arrastra desde que ese archivo se retiró, y que la sección 2 de este documento ya citaba como precedente. Total tras esta fase: 6 enlaces muertos en historia congelada, todos declarados.
+
 Falsos positivos del `grep`, sin relación con el documento: la constante `MAPA_FRECUENCIA_A_APORTE` en `modules/infra/vencimientos.js`, `docs/DECISIONS/041` y `docs/contexto/mis-cuentas.md`.
 
-#### 11.7.3 Hallazgo que bloquea el borrado: el techo de 20 KB es aritméticamente imposible
+#### 11.7.3 Hallazgo: el techo de 20 KB era aritméticamente imposible
 
-La compuerta pedida ("comprobar que ARCHITECTURE.md no supera su techo definido") **no pasa**, y el faltante no se cierra podando:
+La compuerta pedida ("comprobar que ARCHITECTURE.md no supera su techo definido") **no pasaba**, y el faltante no se cerraba podando:
 
 | Componente | Bytes | KB |
 |---|---|---|
@@ -768,7 +770,24 @@ El techo nunca fue alcanzable: `ARCHITECTURE.md` ya pesaba 19,1 KB por sí solo,
 
 Ni el borrado completo de los inventarios archivo por archivo de 2.2 (`infra/`, 15 filas) y 2.3 (`ui/`, 9 filas), que el propio contrato ordena y suman 2,7 KB, cierra la brecha: dejaría el archivo en 26,5 KB, todavía 6,5 KB por encima.
 
-**Conclusión:** el techo de 20 KB se fijó sin medir el tamaño real del destino. Corregirlo es una decisión de Esteban, no una interpretación: por eso el archivo `docs/MAPA.md` **no se borró**, quedó con banner de "superado" (mismo precedente que `SETUP_DOMINIO.md` en la Fase 3) y todas sus referencias vivas ya apuntan al destino.
+**Conclusión:** el techo de 20 KB se fijó sin medir el tamaño real del destino. Corregirlo era una decisión de Esteban, no una interpretación: por eso la integración se entregó con el origen **sin borrar**, con banner de "superado" y las referencias vivas ya apuntando al destino, a la espera de su decisión.
+
+#### 11.7.4 Decisión de Esteban: el techo sube a 32 KB
+
+Tomada el 2026-07-24 sobre las tres opciones presentadas (subir el techo, podar inventarios, o revertir la fusión). **Elegida la primera.**
+
+Razón, en sus palabras: el techo de 20 KB dejó de ser coherente cuando se decidió fusionar MAPA y absorber las convenciones técnicas de CONTRIBUTING. Una contradicción de tamaño no se resuelve eliminando documentación útil.
+
+**El principio que queda escrito** (agregado al principio 4): los techos existen para evitar crecimiento descontrolado, no para forzar pérdida de información cuando el dominio documental crece con razón. Un techo se **poda** cuando hay grasa; se **corrige** cuando el contenido legítimo ya no cabe. El desempate lo da el tier: `ARCHITECTURE.md` es **[B]**, referencia bajo demanda, y no entra en la ruta de arranque de una tarea, así que su tamaño no toca la métrica del 70% que motiva toda la reorganización. Un techo de un archivo **[A]** (contexto vivo) no se habría subido con este argumento.
+
+Consecuencias aplicadas:
+
+| Ajuste | Dónde |
+|---|---|
+| Techo 20 a 32 KB | `.claude/skills/cerrar-tarea/SKILL.md` §4 (la tabla que se verifica en cada cierre), este archivo secciones 3 (árbol), 4 (contrato) y 5 (principio 4) |
+| Índice tabular en las primeras 40 líneas | `docs/ARCHITECTURE.md`, exigido por el principio 9 para todo archivo de más de 20 KB |
+| Los inventarios técnicos de 2.2 (`infra/`) y 2.3 (`ui/`) **no se borran** | Corregida la fila de ARCHITECTURE en la sección 6, que ordenaba borrarlos. Su columna "Responsabilidad" no la responde `ls`: no son inventarios, son asignación de responsabilidad |
+| Margen para la Fase 4 siguiente | `ARCHITECTURE.md` cierra en **30,1 KB** (el índice tabular sumó 1,4 KB), con **1,9 KB libres** bajo el techo de 32. Las convenciones técnicas de CONTRIBUTING son ~4 KB: **no caben sin podar**. Queda como **riesgo abierto declarado** del bloque que las absorba, a decidir ahí con números medidos, no ahora por anticipado |
 
 ---
 

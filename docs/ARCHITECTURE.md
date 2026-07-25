@@ -5,6 +5,24 @@
 >
 > **Dos preguntas distintas, dos mitades:** las secciones 1 a 12 responden **cómo está construido** el sistema (capas, dominios, eventos, reglas técnicas). La sección 13 responde **dónde está cada cosa y cómo localizarla** (sección visible → carpeta, índice de estilos, síntoma → dónde mirar). Si vienes a arreglar algo y no sabes por dónde empezar, ve directo a la 13.
 
+## Índice
+
+| Sección | Responde |
+|---|---|
+| [1. Visión general](#1-visión-general) | qué tipo de aplicación es y cómo se reparte en carpetas |
+| [2. Capas y responsabilidades](#2-capas-y-responsabilidades) | qué hace cada archivo de `core/`, `infra/` y `ui/`, y los 18 dominios |
+| [3. Flujo de datos](#3-flujo-de-datos) | la secuencia invariante desde el clic hasta el re-render |
+| [4. Estado - Singleton `S`](#4-estado---singleton-s) | cómo se lee y se muta el estado, y qué está prohibido |
+| [5. Persistencia](#5-persistencia---storagejs) | `localStorage`, el debounce de `save()` y el patrón de migración |
+| [6. Sistema de eventos](#6-sistema-de-eventos---eventbus) | los 9 eventos reales, quién los emite y quién los escucha |
+| [7. HTML - contrato de eventos](#7-html---contrato-de-eventos) | por qué no hay `onclick` y cómo funciona `data-action` |
+| [8. CSS - capas `@layer`](#8-css---capas-layer) | el orden de cascada, el sistema de íconos SVG y la tipografía |
+| [9. PWA y Service Worker](#9-pwa-y-service-worker) | qué se precachea y cuándo hay que bumpear `CACHE_NAME` |
+| [10. Reglas innegociables](#10-reglas-innegociables-adn-del-proyecto) | las 12 reglas del ADN (fuente única en `CLAUDE.md`) |
+| [11. Convenciones de naming](#11-convenciones-de-naming) | cómo se nombra un dominio, un token, un evento, un commit |
+| [12. Árbol de dependencias](#12-árbol-de-dependencias-entre-módulos) | qué puede importar a qué, y la regla de no acoplar dominios |
+| **[13. Mapa operativo](#13-mapa-operativo-dónde-vive-cada-cosa)** | **dónde tocar por sección visible, estilos, tests y síntoma → dónde mirar** |
+
 ---
 
 ## 1. Visión general
