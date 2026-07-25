@@ -55,7 +55,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | MC.13e-2f | Integración con la cuenta del ingreso fijo + decisión del remanente | Mis cuentas | alta | conviene después de MC.13e-2b; bloqueada por UX |
 | MC.13e-2g | Rediseño en 2 pasos con educación financiera | Mis cuentas | media | última; depende del handoff de diseño |
 | MC.13c-3 | Datar el cobro de todas las frecuencias | Mis cuentas | baja | nada |
-| MC.16 | Tarjeta de crédito como producto integrado [requiere ADR] | Mis cuentas | alta | ADR propio; coordinar ADR 029 D3 |
+| MC.16 | Tarjeta de crédito como producto integrado | Mis cuentas | alta | ADR 051 (Abierta); coordinar ADR 029 D3 |
 | MC.17f | Deshacer o editar una transferencia | Mis cuentas | media | coordinar con MOV.1 |
 | AP.5 | Apartados v2: formulario consistente, recurrencia como toggle | Apartados | media | CAT.1 (catálogo) |
 | MT.6 | Metas v2: subcategorías inteligentes + plan de aportes | Metas | media-alta | MC.13 (motor); ADR 029 D3 |
@@ -65,7 +65,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | ANL.1 | Análisis como centro de interpretación financiera | Análisis | sin definir | ADR 046 (criterio y lenguaje); ADR 044 (recomendaciones) |
 | CFG.2c | Reubicar lo fiscal: asistente en Ajustes + Análisis | Configuración | sin definir | CFG.2a y CFG.2b |
 | CFG.2a | Auto-derivar ingresos brutos al monitor de renta | Configuración | sin definir | CFG.1a (cerrada) |
-| CFG.2b | Inferir el estado de declarante, con encuadre laboral | Configuración | sin definir | CFG.2a |
+| CFG.2b | Inferir el estado de declarante, con encuadre laboral | Configuración | sin definir | CFG.2a; ADR 050 D2 (framing, Abierta) |
 | CFG.3 | Notificaciones inteligentes anticipatorias | Configuración | sin definir | nada; riesgo técnico a evaluar primero |
 | CFG.4 | Respaldo, cuentas y sincronización [DECISIÓN DE ADN] | Configuración | sin definir | ADR 043 resuelto |
 | CFG.5 | Seguridad de acceso: PIN, patrón, biometría | Configuración | sin definir | nada para PIN local; cuenta depende de CFG.4 |
@@ -91,7 +91,7 @@ Las 50 tarjetas del tablero, para elegir la próxima sin cargar el archivo compl
 | LEG.2 | Aceptación obligatoria versionada | Transversal | alta | checklist de `docs/legal/README.md` |
 | LG.2d | Mudanza de la vitrina a Análisis + tarjeta en Inicio | Transversal | baja (bloqueada) | ANL.1 (layout) |
 | LG.2e | Familia comportamiento (interpretación de hábitos) | Transversal | baja | LG.2c; `ahorro-creciente` además depende de ANL.1 |
-| PA.1 | ADR + diseño de pagos automáticos | Transversal | media-alta | motor de MC.13; ADR propio |
+| PA.1 | Pagos y créditos automáticos (débito automático simulado) | Transversal | media-alta | ADR 041 (motor); ADR 052 (Abierta) |
 | DOC.1 | Reorganización documental, fases 3 a 5 | Mantenimiento | media | nada |
 | A.5 | Dominio custom en Vercel | Mantenimiento | baja | que el usuario tenga el dominio registrado |
 | E.2-2027 | Actualizar SMMLV + UVT a valores 2027 | Mantenimiento | alta (enero 2027) | publicación oficial de los decretos 2027 |
@@ -205,12 +205,14 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 > **Nota transversal (hallazgo de MC.13c-2, 2026-07-14): el modelo Quincenal cae una sola vez al mes si `diaPago > 16`.** `ocurrenciasEnMes` resuelve Quincenal como `[diaPago, diaPago + 15]` **dentro del mismo mes** y descarta el segundo si no cabe. Con `diaPago = 20`, el segundo sería el 35 → se descarta, así que un compromiso o ingreso quincenal del día 20 aparece **una vez al mes** en el Calendario, en la checklist y en el motor. Lo correcto sería que el segundo cobro pase al mes siguiente (día 5). Es **preexistente**: viene de `_diasParaCompromiso` de Agenda y MC.13a lo extrajo tal cual (sus 139 tests lo fijan). Afecta a Calendario y a todo consumidor del motor. Requiere decisión de Esteban antes de tocarlo, porque cambia lo que hoy ve el Calendario.
 
-#### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas) [requiere ADR]
+#### MC.16 - Tarjeta de crédito como producto integrado (cuentas ↔ deudas)
 - Prioridad  : alta (concepto nuevo de dominio)
-- Estado     : pendiente de análisis, **requiere ADR** (no iniciar)
-- Objetivo   : ampliar los tipos de cuenta (ahorros, corriente, tarjeta débito, **tarjeta crédito**, billetera digital, efectivo, otro) y modelar la tarjeta de crédito como lo que es: no es dinero disponible, es cupo+deuda. Al pagar con ella, preguntar "¿a cuántas cuotas?", crear automáticamente la deuda con su tasa registrada, calcular cuotas, actualizar calendario/análisis/pendientes; el pago anticipado recalcula cuotas restantes. Incluye los nudges educativos de costos bancarios (avances en efectivo, retiros en otras redes, pago mínimo: intervenir solo cuando previene un mal hábito, punto 5 del brief). **Cuidados del ADR:** el tipo de cuenta 'Inversión' se ELIMINÓ en la migración v11 justamente para separar dominios: reintroducir un tipo que cruza dominios (cuenta que genera deudas) necesita diseño explícito, no un valor más en el catálogo. **Desbloquea CFG.2a/K.3:** con TC modelada, `consumosTC` del monitor de renta deja de ser dato manual. **Comparte modelo de datos** con el nivel "producto por entidad" del brief de Deudas (Visa Platinum del Banco de Bogotá): decidir juntos en la validación D3 del ADR 029.
+- Estado     : **no iniciar**: la decisión de modelado sigue sin tomar. Ver **[ADR 051](DECISIONS/051-tarjeta-de-credito-producto-integrado.md)** (Abierta), su dueño.
+- Objetivo   : modelar la tarjeta de crédito como lo que es (no es dinero disponible, es cupo+deuda): al pagar con ella se crea la deuda con sus cuotas, y se propaga a Calendario, Análisis y pendientes.
 - Secciones  : Mis cuentas, Deudas, Calendario, Análisis (transversal vía EventBus, ADN 10)
-- Depende de : ADR propio; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
+- Depende de : las 3 alternativas del ADR 051 sin elegir; coordinar con ADR 029 D3 y con la iniciativa Deudas v2
+- Riesgo     : el cupo disponible nunca puede sumarse al patrimonio. La opción "tipo de cuenta nuevo" revisa de hecho la migración v11, que eliminó 'Inversión' para separar dominios
+- Desbloquea : `consumosTC` del monitor de renta deja de ser captura manual (CFG.2a)
 - Modelo     : Máxima capacidad - Alto para el ADR (concepto de dominio nuevo multidominio); implementación por rebanadas
 
 #### MC.17f - Deshacer o editar una transferencia (hueco de integridad)
@@ -317,12 +319,12 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Configuración (dominio `config`)
 
-> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes", decisión de Esteban 2026-07-06). **No iniciar ninguna sin instrucción explícita.** Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). Criba de las 8 preguntas del brief y cierre de **CFG.1a** (situación laboral, schema v25): ver [CHANGELOG](CHANGELOG.md). El monitor de renta (K.3, `calcularEstadoRenta`) ya hace gran parte de CFG.2: los huecos que CFG.2a/CFG.2b resuelven son auto-derivar `ingresosBrutos` e inferir el estado de declarante. **Ampliación del 4.º lote (2026-07-08, brief de Ajustes punto 1), decisión de UBICACIÓN vigente:** los formularios fiscales dejan de vivir permanentes en Ajustes y pasan a un asistente tras un botón ("Completar perfil fiscal"); toda la interpretación y recomendaciones se consultan en **Análisis**. Ajustes queda solo para configuración de la app (CFG.2c ejecuta esta reubicación).
+> **Iniciativa fusionada CFG.1 + CFG.2** ("Perfil fiscal/financiero en Ajustes"). **No iniciar ninguna sin instrucción explícita.** Alcance, la decisión de ubicación ya tomada y el framing legal aún abierto: **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)**, su dueño. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md). El monitor de renta (K.3, `calcularEstadoRenta`) ya hace gran parte de CFG.2: los huecos que quedan son los de CFG.2a y CFG.2b, abajo.
 
 #### CFG.2c - Reubicar lo fiscal: asistente bajo demanda en Ajustes + interpretación en Análisis
 - Prioridad  : sin definir
-- Estado     : pendiente (parte 4 de la iniciativa fusionada; conviene DESPUÉS de CFG.2a/2b, que reducen cuántas preguntas quedan en el asistente)
-- Objetivo   : los bloques "Perfil fiscal" y "Datos de renta" dejan de renderizarse permanentes en Ajustes; un botón "Completar perfil fiscal" abre un asistente (modal/pasos) solo con los datos no deducibles que queden tras CFG.2a/2b. "Estado de tu renta" y sus nudges se consolidan en Análisis como único lugar de interpretación (coordinar con el layout de ANL.1 punto 9).
+- Estado     : pendiente. Ejecuta la decisión D1 del **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (ya tomada). Conviene DESPUÉS de CFG.2a/2b, que reducen cuántas preguntas quedan en el asistente.
+- Objetivo   : los 2 bloques fiscales dejan de renderizarse permanentes en Ajustes y pasan a un asistente tras botón; la interpretación se consolida en Análisis (coordinar con el layout de ANL.1).
 - Secciones  : Configuración (Ajustes), Análisis
 - Archivos   : `modules/dominio/config/view.js`/`index.js` (los 2 forms actuales), `modules/dominio/analisis/view.js`
 - Depende de : CFG.2a y CFG.2b; coordinar con ANL.1
@@ -339,11 +341,11 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 #### CFG.2b - Inferir el estado de declarante + mensaje del motivo, con encuadre por situación laboral
 - Prioridad  : sin definir
-- Estado     : pendiente (parte 3 de la iniciativa fusionada; depende de CFG.2a). **Decisión de framing legal: consultar a Esteban al iniciar** (cuán fuerte se afirma la obligación; Finko orienta, no dictamina).
-- Objetivo   : reemplazar el checkbox manual "La DIAN me notificó como declarante" por un estado **inferido** de los 5 criterios (si alguno supera el tope, mostrar "podrías estar obligado por X, confirma con un contador"), usando `perfil.situacionLaboral` para el encuadre (empleado: tu empleador reporta; independiente: autorreporte). Nunca afirmar certeza legal.
+- Estado     : **bloqueada**: el framing legal es la decisión D2 del **[ADR 050](DECISIONS/050-perfil-fiscal-ubicacion-y-framing.md)** (Abierta, 3 alternativas descritas). No codificar la inferencia sin resolverla con Esteban.
+- Objetivo   : reemplazar el checkbox manual "La DIAN me notificó como declarante" por un estado **inferido** de los 5 criterios, con el encuadre por situación laboral. Nunca afirmar certeza legal.
 - Secciones  : Configuración (Ajustes), Análisis (monitor de renta)
 - Archivos   : `modules/dominio/analisis/logic.js` (`detectarNudgesRenta` y/o nueva lógica de inferencia), `modules/dominio/config/view.js` (perfil fiscal)
-- Depende de : CFG.2a
+- Depende de : CFG.2a; ADR 050 D2 resuelto
 - Modelo     : Alta capacidad - Alto (producto + framing legal; roza filosofía de producto)
 
 #### CFG.3 - Notificaciones inteligentes anticipatorias
@@ -597,15 +599,13 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ---
 
-> **Iniciativa PA: pagos automáticos (débito automático simulado)** (triaje 2026-07-08, brief "Integración Deudas/Cuentas/Pagos automáticos"). **Requiere ADR propio antes de una línea de código**, por dos decisiones de filosofía: (1) en una PWA offline sin servidor no existe "ejecutar a la fecha": el procesamiento sería catch-up al abrir la app (procesar débitos vencidos desde la última apertura), y hay que decidir cómo se comunica eso; (2) Finko registraría movimientos SIN confirmación del usuario, y el débito real en el banco puede fallar o diferir: riesgo de divergencia entre Finko y la realidad que hay que diseñar con cuidado (¿confirmación diferida?, ¿estado "registrado automáticamente, confírmalo"?). No toca el ADN (todo local), pero sí la filosofía "Finko refleja la realidad, no la inventa". **Ampliación del triaje del 2.º lote (2026-07-08):** el mismo ADR debe cubrir también el **crédito automático del ingreso fijo** (brief de Mis Cuentas: "al llegar la fecha de pago, el dinero se abona automáticamente a la cuenta de destino"): débitos y créditos automáticos son el mismo problema de filosofía y comparten el catch-up y el motor de vencimientos de MC.13. Un solo criterio, no dos.
-
-#### PA.1 - ADR + diseño de pagos automáticos
+#### PA.1 - Pagos y créditos automáticos (débito automático simulado)
 - Prioridad  : media-alta (caso muy común: suscripciones y cuotas con débito automático)
-- Estado     : pendiente de análisis (no iniciar sin el ADR)
-- Objetivo   : al registrar un gasto fijo, deuda o suscripción, pregunta opcional "¿este pago se descuenta automáticamente?" + cuenta de débito. Al llegar la fecha (catch-up al abrir): con saldo suficiente, descuenta, actualiza la obligación, registra el movimiento y lo saca de pendientes; sin saldo, NO simula el pago y genera una alerta clara y accionable ("No fue posible registrar el pago automático de Netflix: la cuenta Bancolombia no tiene saldo suficiente..."). Consume el **motor de vencimientos compartido de MC.13** (no construir un segundo motor) y sus alertas conectan con CFG.3 (notificaciones anticipatorias) cuando esa exista.
+- Estado     : **no iniciar**: las 2 decisiones de filosofía siguen sin tomar. Ver **[ADR 052](DECISIONS/052-pagos-automaticos.md)** (Abierta), su dueño. La secuencia "lote manual primero" ya se cumplió (CAL.5a cerrada); esta tarjeta sigue viva, no absorbida.
+- Objetivo   : pregunta opcional "¿este pago se descuenta automáticamente?" al registrar un gasto fijo, deuda o suscripción, y su procesamiento al llegar la fecha. Cubre también el crédito automático del ingreso fijo: un solo criterio, no dos.
 - Secciones  : Deudas, Calendario (fijos), Mis cuentas, Inicio (alertas), transversal
-- **Secuencia ya decidida (2026-07-23):** primero el lote manual. **CAL.5a está cerrada** y esta tarjeta sigue viva, no absorbida. El lote captura buena parte del valor percibido de "que se pague solo" con una fracción del riesgo, porque el usuario sigue confirmando y no se toca la filosofía "Finko refleja la realidad, no la inventa". Sirve además de puente: cuando se retome PA.1, su ADR puede llegar con evidencia real de uso del lote en vez de intuición, y con `asignarSplitsPorItem` ya escrito y probado (un pago automático de varios compromisos tiene el mismo problema de reparto).
-- Depende de : motor de vencimientos (MC.13, primera rebanada); ADR propio aprobado por Esteban
+- Riesgo     : registrar un movimiento que el usuario no confirmó rompe la filosofía "Finko refleja la realidad, no la inventa" si el débito real falla o se difiere (ADR 052 D2)
+- Depende de : motor de vencimientos (ADR 041, no construir un segundo); ADR 052 resuelto y aprobado por Esteban
 - Modelo     : Máxima capacidad - Alto para el ADR (filosofía de producto con riesgo de confianza del usuario); implementación por rebanadas después
 
 ---
