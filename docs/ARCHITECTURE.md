@@ -105,6 +105,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 
 | Dominio | Área funcional | Notas |
 |---|---|---|
+| `accesos/` | Accesos rápidos personalizables de Inicio (IN.4a, [ADR 028](DECISIONS/028-inicio-centro-de-control.md) D2) | sin colección propia en `S`: lee y escribe `S.config.accesosInicio` (array de ids) |
 | `agenda/` | Gastos fijos y calendario de pagos (sección visible "Calendario") | |
 | `ahorro/` | Fondo de emergencia + hábito de aportar | |
 | `analisis/` | Salud financiera, patrimonio neto, gráficos, comparaciones | |
@@ -117,6 +118,7 @@ Los barrels mantienen la API estable: tests y consumidores siguen importando de 
 | `inversiones/` | Portafolio real (CDT, fondo, cripto, acciones) | |
 | `logros/` | Sistema de logros y rachas (gamificación) | sin `view.js` propio (toast) |
 | `metas/` | Objetivos de ahorro con fecha límite | |
+| `movimientos/` | Ledger unificado: deriva la actividad de gastos, ingresos puntuales, aportes y transferencias | sin colección propia, es una vista derivada; las acciones de cada fila las delega al dominio dueño según `m.tipo` |
 | `personales/` | Préstamos que el usuario otorga a terceros ("Me deben") | |
 | `presupuesto/` | Límites de gasto (envelope budgeting) por categoría y por grupo financiero | |
 | `resumen/` | Card de resumen semanal en Inicio (agregación de solo lectura) | |
@@ -210,7 +212,7 @@ EventBus.emit('state:change', { section: 'gastos' });
 EventBus.on('state:change', ({ section }) => renderSmart(renderGastos, section));
 ```
 
-Eventos reales del sistema:
+Los 9 eventos reales del sistema (verificados contra el código el 2026-07-24; no hay otros):
 
 | Evento | Quién lo emite | Quién lo escucha |
 |---|---|---|
@@ -219,6 +221,10 @@ Eventos reales del sistema:
 | `theme:change` | `ui/shell.js` al alternar modo oscuro/claro | listeners de tema |
 | `onboarding:completado` | `ui/onboarding.js` al cerrar el wizard | `bootstrap.js` |
 | `distribucion:aplicar` | `tesoreria/index.js` al confirmar "Distribuir mi ingreso" | `ahorro/`, `metas/`, `apartados/`, `inversiones/`, `compromisos/` (cada uno aplica su porción de `items` y descuenta la cuenta de origen) |
+| `distribuir:abrir` | `agenda/index.js` y `tesoreria/acciones/distribucion.js` | `tesoreria/index.js` (abre el asistente de distribución desde otra sección sin importarla) |
+| `cuenta:crear` | `infra/cuenta-helper.js` y `ui/actions.js` cuando una acción necesita una cuenta y no hay ninguna | `tesoreria/acciones/cuentas.js` (abre el formulario de cuenta nueva) |
+| `storage:cuota` | `core/storage.js` cuando el uso de `localStorage` deja de estar en nivel `ok` | `config/index.js` (aviso de cuota en Ajustes) |
+| `storage:error` | `core/storage.js` cuando un guardado falla | `config/index.js` (aviso de error de persistencia) |
 
 `distribucion:aplicar` es el ejemplo canónico de orquestación cross-dominio sin acoplar dominios entre sí: `tesoreria` no importa `metas` ni `apartados`, solo emite un evento con la lista de `items`; cada dominio destino decide si le corresponde algo y lo aplica.
 

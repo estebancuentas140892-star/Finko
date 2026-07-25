@@ -84,7 +84,7 @@ pnpm --version    # debería ser >= 10.16.0
 ### Paso 2 - Limpiar y reinstalar en el proyecto
 
 ```bash
-cd C:/Users/USUARIO/Desktop/Finko_Claude
+cd G:/Finko
 
 # Borrar artefactos de npm
 rm -rf node_modules

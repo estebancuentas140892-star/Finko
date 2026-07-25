@@ -73,7 +73,7 @@
 | Archivos CSS | kebab-case | `tokens.css`, `main.css` |
 | Variables CSS | `--fk-*` prefijo | `--fk-color-accent`, `--fk-space-4` |
 | Funciones de dominio | camelCase ES | `calcularCuota`, `ordenarDeudas` |
-| Eventos EventBus | `dominio:acción` | `state:change`, `ui:navigate` |
+| Eventos EventBus | `dominio:acción` | `state:change`, `distribucion:aplicar` |
 | `data-action` | kebab-case verbo-sustantivo | `guardar-gasto`, `abrir-modal-deuda` |
 | Tests | `nombre.test.js` | `storage.test.js` |
 

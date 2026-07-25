@@ -66,7 +66,7 @@ pnpm run format
 ## Estructura del proyecto
 
 ```
-Finko_Claude/
+Finko/
 ├─ CLAUDE.md               ← workflow + reglas para asistentes IA
 ├─ index.html              ← shell principal de la app
 ├─ manifest.json           ← PWA manifest
@@ -78,7 +78,7 @@ Finko_Claude/
 │  ├─ core/                ← estado, persistencia, constantes
 │  ├─ infra/               ← utilidades, render, a11y, CRUD, router, financiero...
 │  ├─ ui/                  ← bootstrap, shell, actions, modales, onboarding
-│  └─ dominio/             ← 16 dominios activos (gastos, compromisos, tesoreria, metas...)
+│  └─ dominio/             ← 18 dominios activos (gastos, compromisos, tesoreria, metas...)
 ├─ tests/
 │  ├─ unit/                ← tests sobre logic.js puro (Vitest + happy-dom)
 │  └─ e2e/                 ← smoke tests Playwright
