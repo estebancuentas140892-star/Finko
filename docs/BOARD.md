@@ -241,30 +241,29 @@ _(Anti-duplicado, triaje 2026-07-08: las tres partes del brief "Auditoría UX/UI
 
 ### Metas (dominio `metas`)
 
-> **Iniciativa "Metas v2: planificador inteligente de objetivos"** (brief de Esteban del 2026-07-08, 7 puntos). El usuario dice QUÉ quiere y PARA CUÁNDO; Finko calcula, genera y sincroniza. **Derivados a fuentes únicas:** orden del form → **CAT.4**; "Otro" con icono+nombre → **CAT.2/CAT.3** (consumidor n.º 6); el cálculo de cuota por frecuencia real integrado a "Distribuir mi ingreso" → **MC.13** (era exactamente su punto 21; metas añadido como consumidor explícito del motor); la sincronización total entre secciones (punto 7) ya es el ADN (EventBus + motores compartidos), principio, no tarea.
-
 #### MT.6 - Metas v2: subcategorías inteligentes + plan de aportes generado automáticamente
 - Prioridad  : media-alta
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : (2) **subcategorías por categoría** (Tecnología → Laptop/Celular/Tablet...; Vehículo → Carro/Moto/Bicicleta...; Vivienda, Educación, Viajes...): el usuario escribe lo mínimo y Finko reconoce el tipo de meta para automatizaciones/estadísticas. **Patrón compartido detectado en el triaje:** categoría→subcategoría es el MISMO patrón de dos niveles que entidad→producto (MC.16/Deudas v2): decidir la estructura de datos UNA vez en la validación D3 del [ADR 029](DECISIONS/029-catalogo-de-marcas-por-categoria.md), no dos. (5) El cálculo de cuota usa la **frecuencia real de ingresos** del usuario registrada en Mis cuentas (diaria, semanal, quincenal, mensual, personalizada), nunca asume quincenal (la base ya existe: metas calcula cuota y el ADR 021 ya lee el día de ingreso). (6) **Generar automáticamente el plan de aportes** (un registro por fecha de ingreso hasta la fecha objetivo) y **recalcular todo el plan** si cambia la frecuencia del ingreso o la fecha/monto de la meta. Ojo: si esos aportes se ejecutaran solos serían movimientos automáticos → esa variante pertenece al ADR de PA; como plan visible/recordatorio no lo necesita.
+- Estado     : pendiente de análisis (no iniciar). Alcance y las 3 decisiones: **[ADR 048](DECISIONS/048-metas-v2-subcategorias-y-plan-de-aportes.md)**, su dueño.
+- Objetivo   : el usuario dice qué quiere y para cuándo; Finko reconoce el tipo de meta (subcategorías), calcula la cuota con la frecuencia real de ingresos y genera el plan de aportes.
 - Secciones  : Metas, Calendario (plan visible), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/metas/logic.js` (cálculo existente), motor compartido de MC.13, `agenda` (visualización del plan)
 - Depende de : MC.13 (motor); validación D3 del ADR 029 para las subcategorías; coordinar con PA si el plan se automatiza
+- Riesgo     : la estructura de dos niveles se comparte con entidad→producto (MC.16, Deudas v2): modelarla acá por separado la duplica (ADR 048 D1)
 - Modelo     : Alta capacidad - Alto (modelo de datos de subcategorías + generación/recalculo del plan de aportes)
 
 ---
 
 ### Ahorro (dominio `ahorro`, fondo de emergencia)
 
-> **Iniciativa "Fondo de emergencia v2"** (brief de Esteban del 2026-07-08, 3 puntos). La base automatizada ya existe: AH.2 calcula el aporte recomendado y AH.4/[ADR 021](DECISIONS/021-recordatorio-dia-de-ingreso.md) recuerda el día de ingreso. **Derivados a fuente única:** el cálculo e integración del aporte con "Distribuir mi ingreso" → **MC.13** (el fondo ya es consumidor del motor). Queda solo AH.5, abajo.
-
 #### AH.5 - Fondo v2: rediseño UX educativo + aportes por el flujo de distribución
 - Prioridad  : media
-- Estado     : pendiente de análisis (no iniciar). **AH.5a cerrada** (ver CHANGELOG): la mitad de prellenado ya no es parte del alcance restante.
-- Objetivo   : (2) rediseño de la experiencia de la sección: comunicar de inmediato qué es el fondo, por qué importa, cuándo usarlo y cómo protege (tranquilidad/seguridad/prevención, no solo números), aplicando el sistema visual vigente (jerarquía, tokens del ADR 031, Finko Icons v2, lenguaje ADR 003, accesibilidad). (3) El flujo de aporte principal pasa a ser la distribución del ingreso (el valor calculado por AH.2 aparece sugerido ahí vía el motor de MC.13); el bloque "Aportes al fondo → Registrar" de la sección **no se elimina del todo**: se conserva como vía secundaria para aportes fuera de ciclo (ej. apartar parte de un ingreso esporádico), decidir su peso visual en el análisis. Configuración del fondo con las preguntas necesarias en la creación/edición (meta en meses, compromiso por período según frecuencia real de ingresos).
+- Área       : ambos (el rediseño es design; el cambio de flujo de aporte es code)
+- Estado     : pendiente de análisis (no iniciar). Alcance y las 4 decisiones: **[ADR 049](DECISIONS/049-fondo-de-emergencia-v2.md)**, su dueño. **AH.5a cerrada** (ver CHANGELOG).
+- Objetivo   : el aporte principal pasa al asistente de distribución y la sección comunica protección (qué es, por qué importa, cuándo se usa) antes que cifras.
 - Secciones  : Ahorro (fondo), transversal por el motor de MC.13
 - Archivos   : `modules/dominio/ahorro/` (view, logic con AH.2 ya hecho), motor compartido en MC.13
-- Depende de : el punto 3 depende del motor de MC.13; el rediseño (2) conviene tras IV.2 (BUG-012 ya corregido, aparte)
+- Depende de : el aporte por distribución depende del motor de MC.13; el rediseño conviene tras IV.2
+- Riesgo     : las 2 vías de aporte (asistente y registro directo) deben terminar en la misma función del dominio, o el saldo se calcula distinto según por dónde entró (ADR 049 D2)
 - Modelo     : Equilibrado - Alto (rediseño de una sección con lógica ya existente; re-cortar en rebanadas al iniciar)
 
 ---
@@ -287,16 +286,16 @@ _(Nota vigente: si más adelante se resuelven MC.10/MC.11 (piso de ahorro + dete
 
 ### Me deben (dominio `personales`)
 
-> **Iniciativa "Me deben v2: seguimiento inteligente"** (brief de Esteban del 2026-07-08, 8 puntos). Fuente única de la sección. PE.1 a PE.5 cerradas dejaron la base sobre la que PE.6 construye: tasa opcional con reparto capital/interés (schema v21) y estados humanizados. **Derivados a fuentes externas:** recordatorios de vencimiento → **CFG.3** (motor único de notificaciones; `personales` añadido como fuente); fecha por defecto = hoy en el form → **CAT.4**.
-
 #### PE.6 - Me deben v2: intereses acumulados, historial de abonos, rendimiento y confianza
 - Prioridad  : media-alta
-- Estado     : pendiente de análisis (no iniciar)
-- Objetivo   : (2+3) al pulsar "Me pagaron" en un préstamo con tasa pactada, calcular el **total sugerido = capital pendiente + intereses acumulados a la fecha** y mostrar el desglose (capital / intereses / total); el usuario decide libremente (cobrar todo, parte, perdonar intereses): Finko sugiere, nunca impone. Lógica financiera de acumulación sobre saldo con pagos parciales entre fechas: extiende el reparto de PE.1, no lo reemplaza. (4) **Historial de abonos por préstamo** (hoy solo existe el acumulado `pagado`): array de abonos con fecha y monto, bump de schema con migración idempotente (los préstamos existentes conservan su acumulado; historial vacío o abono sintético inicial, decidir en el análisis). (5) Rendimiento del préstamo (intereses ganados, capital recuperado, % recuperado, rentabilidad), derivado de 2+4. (7) Estado visual identificable de un vistazo (al día / próximo a vencer / pago parcial / vencido / finalizado): evolución VISUAL de los estados PE.2-PE.5 usando los semánticos del ADR 031 (success/warning/danger + neutro), sin colores nuevos; coordina con IV.2. (8) **Estadísticas de confianza por persona** (préstamos realizados, pagados a tiempo, retrasos, tiempo promedio, total prestado/recuperado), derivadas del historial del punto 4; copy con el cuidado del brief: es historial informativo, no calificación de personas (tono ADR 003).
-- Secciones  : Me deben (`personales`), transversal solo por CFG.3/CAT.4 ya derivados
-- Archivos   : `modules/dominio/personales/logic.js` (acumulación de intereses, ya tiene la base de PE.1), `state.js`/`storage.js` (historial, bump), `personales/view.js`
-- Depende de : nada duro; el punto 7 conviene tras IV.2; re-cortar en rebanadas al iniciar (PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza)
-- Modelo     : Alta capacidad - Alto (lógica financiera de intereses acumulados con pagos parciales; el resto de rebanadas puede bajar de modelo)
+- Estado     : pendiente de análisis (no iniciar). Alcance y las 6 decisiones: **[ADR 047](DECISIONS/047-me-deben-v2-intereses-e-historial.md)**, su dueño.
+- Objetivo   : que la sección deje de ser un registro y pase a seguimiento: total sugerido con intereses al cobrar, historial de abonos, rendimiento y estadísticas por persona.
+- Secciones  : Me deben (`personales`)
+- Archivos   : `modules/dominio/personales/logic.js`, `state.js`/`storage.js` (historial, bump), `personales/view.js`
+- Depende de : nada duro; el punto 7 conviene tras IV.2
+- Riesgo     : el bump de schema toca préstamos ya existentes en dispositivos reales; la migración debe conservar el acumulado `pagado` (ADR 047 D3)
+- Modelo     : Alta capacidad - Alto (intereses acumulados con pagos parciales; el resto de rebanadas puede bajar)
+- Rebanadas  : PE.6a intereses+desglose, PE.6b historial+schema, PE.6c rendimiento, PE.6d estados visuales, PE.6e confianza
 
 ---
 
