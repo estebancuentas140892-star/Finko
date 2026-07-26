@@ -10,6 +10,16 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(inicio): V1, el acento de marca deja de medir el gasto semanal · 2026-07-25
+
+Última pieza abierta de la auditoría de diseño de Inicio (hallazgo H7, variante V1), decidida por Esteban. Ficha: [`contexto/inicio.md`](contexto/inicio.md).
+
+- **V1 color.** El mini gráfico de "Resumen de la semana" pintaba el día de **mayor gasto** con `--fk-accent` y su etiqueta con `--fk-text-accent`, mientras el principio 7 reserva el esmeralda para dinero disponible, progreso y éxito: el pico se leía con el color del logro, dentro de la misma tarjeta que ya usa verde para celebrar la bajada. Pasa a familia Gastos (barras 28%, pico 100%, etiqueta en `--fk-dom-gastos-text`). El chip "12% menos" **no** cambia: bajar el gasto sí es logro (ADR 019).
+- **Por qué la variante `-text` y no el token crudo:** en tema claro `--fk-dom-gastos-text` baja a `#d13b00` (4.84:1 sobre blanco) mientras `--fk-dom-gastos` se queda en `#ff8a5c`, que no pasa AA como texto. Verificado en el navegador en ambos temas.
+- **Revisa el [ADR 034](DECISIONS/034-inicio-v2.md) D6**, que fijaba el acento explícitamente, así que queda formalizado en el [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md) en vez de corregirse en silencio (regla 2.7).
+- **`DESIGN_SYSTEM.md` recibe las 6 reglas repetibles** que la auditoría dejó escritas y que vivían solo en el informe: R1 encabezado único de card, R2 fila de obligación en 2 líneas, R3 fondo y glifo nunca del mismo tono, R4 los 44px táctiles aplican a todo control, R5 panel sin scroll propio, R6 el acento no mide gasto. Más la regla de radios del hallazgo H12 (xl protagonista, lg secundario), que documenta la diferencia hero/paneles en vez de cambiar píxeles.
+- Solo CSS y documentación: ningún `logic.js`, ningún dato, ningún schema. 3007/3007 unit verdes. SW v416 → v417.
+
 ### fix(ajustes): CFG.6, 11 correcciones de la auditoria de diseno sobre Ajustes · 2026-07-25
 
 Auditoría de diseño de la sección Ajustes (13 hallazgos, B1 a B13). Se aplican los 11 que no dependen de otra sección. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).

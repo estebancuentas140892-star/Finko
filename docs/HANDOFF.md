@@ -40,6 +40,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
 
+### fix(inicio): V1, el acento de marca deja de medir el gasto semanal · 2026-07-25
+
+Cierra la auditoría de diseño de Inicio: era la única pieza que quedaba abierta porque revisaba un ADR aceptado. El mini gráfico semanal pintaba el día de **mayor gasto** con el esmeralda que el principio 7 reserva para dinero disponible y logro; pasa a familia Gastos (barras 28 %, pico 100 %, etiqueta en `--fk-dom-gastos-text`, que en tema claro baja a `#d13b00` para pasar AA). El chip "12 % menos" sigue verde: bajar el gasto sí es logro (ADR 019). Formalizado en el [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md) porque revisa el ADR 034 D6 (regla 2.7). `DESIGN_SYSTEM.md` recibe además las 6 reglas repetibles de la auditoría (R1 a R6) y la de radios del H12. Solo CSS y documentación. 3007/3007 unit verdes. SW v416→v417.
+
+---
+
 ### docs(reorg): Fases 1 y 2 de la reorganización documental · 2026-07-24
 
 Auditoría de los 89 `.md` con 7 subagentes y ejecución de la consolidación: tablero purgado de narrativa cerrada (**-32,2 %**, con las 49 tarjetas vivas verificadas una por una), `AGENTS.md` reducido a stub trackeado, `CLAUDE_DESIGNS_PROMPT.md` archivado, y 11 correcciones de veracidad (deuda técnica, conteo de dominios, 9 eventos del EventBus, ADR 002, rutas muertas, sección 7 de CLAUDE.md que era inverificable). Contrato y fases 3 a 5 en [`MIGRACION.md`](MIGRACION.md) y en la tarjeta DOC.1 del tablero. Sin tocar `modules/`.
@@ -66,14 +72,7 @@ Primera pieza del patrón **P2** de la auditoría (trabajo uno por uno, sin lote
 
 ---
 
-### feat(movimientos): MOV.2 búsqueda y filtros en el ledger · 2026-07-22
-
-Cierra el patrón **P4** de la auditoría de UX/producto por completo (junto con MOV.1, cerrada el mismo día). Encontrar "ese pago de hace 4 meses" era scroll ciego, agravado porque PERF.1 pagina por lotes. `logic.js` gana `descripcionMovimiento(m, cuentas)` (extraída de `view.js`, resuelve "Origen → Destino" de una transferencia) y `filtrarMovimientos()` puro; `view.js` pinta el buscador + chips por **dominio** (no `tipo`: acá el dominio SÍ es el filtro correcto porque el usuario quiere aislar "solo Deudas" de "solo gasto cotidiano") + rango de fechas, reusando `.filtros-bar`/`.chip` de Gastos, cero componente nuevo. El filtro se aplica sobre la fuente derivada ANTES de agrupar/paginar (nunca sobre el DOM de PERF.1). **Bug real detectado al verificar en la app y corregido en la misma rebanada:** los handlers de texto/fecha no repintan la barra completa (perderían el foco a mitad de palabra), así que "Limpiar filtros" se quedaba sin aparecer con esos dos filtros; se resolvió con un slot dedicado (`actualizarBotonLimpiarFiltros()`). 41 unit + 6 E2E nuevos. 2918/2918 unit + 223/223 E2E + lint verdes. SW v411→v412. Verificado en la app real: buscar, filtrar por dominio, rango de fechas y limpiar, todo funcionando sin perder foco ni errores de consola.
-
----
-
-
-> Para tareas anteriores (feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
