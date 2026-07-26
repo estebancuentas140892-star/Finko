@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-26 (R19 a R22, auditoría de diseño de Me deben; antes R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-07-26 (R9 a R11, auditoría de diseño de Gastos; antes R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -15,6 +15,8 @@
 5. **Responsive real** - Cada componente funciona en 320px y en 1440px.
 6. **Tokens siempre** - Nunca hardcodear colores, espaciados ni tamaños. Solo `var(--fk-*)`.
 7. **"Calma con energía"** (rediseño 2026) - Superficies tranquilas con mucho aire; el acento esmeralda se reserva para dinero disponible, progreso y éxito. Cero glow neón.
+
+**R10 · El título nombra el periodo que se está viendo:** una cifra y su periodo se leen juntos. Si la pantalla deja navegar entre periodos, el label dice cuál ("Gastaste en junio"), nunca un "este mes" fijo; con un filtro aplicado, dimensión más periodo ("Café en junio"), nunca la dimensión sola. Origen: el hero de Gastos decía "Gastaste este mes" en cualquier mes navegado, y a 30px de distancia su propia nav decía "Junio 2026" y su chip comparativo, "8% más que mayo".
 
 **R20 · El ojo no tiene excepciones:** toda vista que pinte montos lee `S.config.ocultarSaldo` (IN.2), el único control de privacidad de la app. Máscara larga (`SALDO_MASCARA`) para totales y heros, corta (`SALDO_MASCARA_CUENTA`) por fila y en las cifras dentro de hints. Las barras y anillos de proporción se conservan: muestran porcentaje, no magnitud. Origen: Me deben, la lista más sensible (cuánto te debe la tía, por su nombre propio), era la única sección con dinero que ignoraba el flag.
 
@@ -268,7 +270,9 @@ Jerarquía interna en 3 niveles (rediseño F3): primario (monto/progreso), secun
 
 Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >= 44px.
 
-**R4 · Los 44px táctiles aplican a todo control, sea o no `.btn`.** Fuera de esa clase nadie los verificaba: quedaban entre 18 y 40px. El recuadro **visual** queda libre, así que un diseño aprobado no se rompe: se expande solo la zona sensible con un `::after` centrado de 44px (ver `styles/responsive.css`).
+**R4 · Los 44px táctiles aplican a todo control, sea o no `.btn`.** Fuera de esa clase nadie los verificaba: quedaban entre 18 y 40px. El recuadro **visual** queda libre, así que un diseño aprobado no se rompe: se expande solo la zona sensible con un `::after` centrado de 44px (ver `styles/responsive.css`). Corolario del criterio: **si el recuadro no lo fijó ninguna decisión, el control crece de verdad**; el `::after` es para los tamaños que sí están decididos (el ojo de los heros, la nav de mes). Un chip de filtro de 27,7px no tenía dueño: creció.
+
+**R11 · El primer bloque de un formulario es el dato que el usuario vino a escribir.** Los atajos, las sugerencias y las ayudas van después, por útiles que sean. Origen: TX.12 insertó los chips de gasto frecuente antes del monto y el formulario más usado de la app dejó de abrir en su campo principal, contra lo que ya fijaba el [ADR 042](DECISIONS/042-formularios-v2-visual.md) D2, sin que nadie lo hubiera decidido.
 
 ### Chips y Badges
 
@@ -285,6 +289,8 @@ Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >
 ```
 
 **R7 · Estado terminal:** un elemento en estado final (saldado, cumplido, archivado) **apaga sus indicadores de futuro**: vencimientos, urgencias, cuentas regresivas, cuotas por pagar. El chip se calcula después de saber si el elemento sigue vivo, no antes, y el hueco se llena con el **cierre** (la fecha en que ocurrió). Origen: una deuda saldada decía "Saldada" en verde y "Vence hoy" en rojo a dos centímetros.
+
+**R9 · Una barra de opciones no esconde opciones:** prohibido `overflow-x` con `scrollbar-width: none` en una barra de chips. O envuelve (`flex-wrap`), o muestra N y ofrece un "+M" que despliega el resto (patrón de R5, en horizontal). Origen: la barra de filtros de Gastos medía 792px de contenido dentro de 356px visibles, o sea el 55% de las categorías del mes fuera de vista, y en móvil no se dibuja ninguna barra de scroll: la única pista era que el cuarto chip aparecía cortado. Precio honesto de envolver: ~44px por fila extra.
 
 **R22 · Un chip cabe o baja de línea:** un chip de estado nunca desborda ni tapa. Si no cabe en su columna, vive en su **propia línea** bajo el título y puede partir en dos (`white-space: normal`); `nowrap` solo con truncado explícito. Origen: el chip de Me deben iba dentro del `<p>` del nombre y "La fecha de pago pasó hace 3 semanas" (252px) cruzaba por debajo del botón, que lo tapaba: el estado más urgente producía el label más largo, así que cuanto peor la noticia, menos se leía.
 

@@ -824,7 +824,11 @@ test.describe('Gastos - CRUD', () => {
     // El hero (ADR 039 D1) muestra el total protagonista, su label y la
     // navegación de mes integrada.
     const hero = page.locator('.hero-gastos');
-    await expect(hero.locator('.hero-gastos__label')).toHaveText('Gastaste este mes', { timeout: 3_000 });
+    // DIS.4/G1: el label nombra el mes visible, nunca un "este mes" fijo.
+    const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    await expect(hero.locator('.hero-gastos__label'))
+      .toHaveText(`Gastaste en ${MESES_ES[new Date().getMonth()]}`, { timeout: 3_000 });
     await expect(hero.locator('.hero-gastos__valor')).toHaveText('$150.000');
     await expect(hero.locator('[data-action="gastos-prev-mes"]')).toBeVisible();
 

@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-26. Última tarea cerrada: DIS.3, las 11 correcciones aplicables de la auditoría de diseño de Me deben (C5 queda fuera por tocar Metas; V2 va a CAT.4 y V3 a PE.6d; ver [`contexto/me-deben.md`](contexto/me-deben.md)).
+> Última actualización: 2026-07-26. Última tarea cerrada: DIS.4, las 10 correcciones aplicables de la auditoría de diseño de Gastos (V1 revisa el ADR 039 D4 y V2 el ADR 042 D3: las dos esperan tu decisión; ver [`contexto/gastos.md`](contexto/gastos.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3048/3048 verdes |
+| Tests unitarios + integración | 3055/3055 verdes |
 | Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-25 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(gastos): DIS.4, 10 correcciones de la auditoría de diseño sobre Gastos · 2026-07-26
+
+Auditoría de diseño de la sección (12 hallazgos): se aplican 10. Lo grande: el hero decía **"Gastaste este mes" en cualquier mes navegado**, con su propia nav diciendo "Junio 2026" a 30px de distancia; ahora nombra el mes visible (regla R10 nueva). La fila daba **41,5% de su ancho a tres botones** y bajaba el monto al segundo renglón, con 110,7px para el nombre: el monto vuelve arriba (a 16,8px del tope) y las acciones bajan a su renglón. La barra de filtros escondía **436px de 792px** tras un scroll que en móvil no se dibuja: envuelve, y sus chips pasan de 27,7px a 44px (R9 nueva). El total del mes se anunciaba dentro de un grupo llamado "Filtrar por categoría". "›" ya no navega hasta 2029 hacia meses vacíos cuyo CTA registraba en el mes corriente. El usuario nuevo deja de ver un hero de $0 entre dos bloques que dicen lo mismo, un solo verbo y un solo primario en toda la sección, y el formulario **vuelve a abrir con el monto** (TX.12 lo había desplazado, contra el ADR 042 D2; R11 nueva). `DESIGN_SYSTEM.md` gana R9, R10 y R11. **Sin aplicar, esperan tu decisión:** V1 (el copy y la acción del insight de gastos hormiga, revisa el ADR 039 D4) y V2 (el alto del formulario, revisa el ADR 042 D3). 3055/3055 unit + lint verdes; smoke, a11y-forms, navegacion-render y reflow-320 verdes. SW v419→v420.
+
+---
 
 ### fix(me-deben): DIS.3, 11 correcciones de la auditoría de diseño sobre Me deben · 2026-07-26
 
@@ -66,13 +72,7 @@ _(Entrada escrita ya con la disciplina nueva: 3 líneas, no 15. El detalle vive 
 
 ---
 
-### feat(metas): EDIT.1a editar sin destruir el progreso · 2026-07-23
-
-Primera de cuatro rebanadas del patrón **P3** de la auditoría (no se puede editar, corregir obliga a destruir). Metas solo permitía crear, abonar y eliminar; corregir un nombre o un objetivo mal escrito obligaba a eliminar y recrear la meta, perdiendo el progreso acumulado. Apartados, Inversión y Me deben quedan como las tres rebanadas siguientes en **EDIT.1**. Botón "Editar" junto a Abonar/Eliminar, mismo formulario prellenado. **El punto financiero:** `normalizarMeta(datos, metaExistente = null)` conserva `montoActual` tal cual al editar (no se resetea ni se toca el histórico de aportes) y recalcula `completada` contra el nuevo objetivo, porque cambiarlo puede cruzar el umbral de cumplimiento en cualquier dirección. De paso, el formulario dejó de ser un singleton reusado (necesitaba resetear el picker de ícono a mano) y pasó a reinyectarse completo en cada apertura, mismo patrón que Gastos/Agenda/Compromisos. Ficha de contexto nueva `docs/contexto/metas.md` (primera vez que se analiza la sección a fondo). 16 unit + 4 E2E nuevos. 2981/2981 unit + 231/231 E2E + lint verdes. SW v414→v415.
-
----
-
-> Para tareas anteriores (feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

@@ -557,16 +557,23 @@
             <span class="cat-teja section__icon" data-dom="gastos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
             <h1 class="section__title" id="title-gast">Gastos</h1>
           </div>
-          <button class="btn btn-primary" data-action="nuevo-gasto"
-                  aria-label="Registrar nuevo gasto">
-            + Nuevo gasto
+          <!-- DIS.4/G5: un solo verbo para la acción, el mismo que dice el
+               botón central de la barra (ADR 024) y el CTA del estado vacío.
+               Sin aria-label: el texto visible ya es el nombre accesible. -->
+          <button class="btn btn-primary" data-action="nuevo-gasto">
+            Registrar gasto
           </button>
         </header>
         <div id="proposito-gast">
           <!-- proposito.js inyecta el banner de propósito de sección (ADR 016) -->
         </div>
-        <!-- Chips de filtro por categoría (renderFiltrosGastos). -->
-        <div id="panel-filtros-gastos" role="group" aria-label="Filtrar por categoría"></div>
+        <!-- Hero del mes + chips de filtro por categoría (renderFiltrosGastos).
+             DIS.4/G4: sin role="group" ni aria-label de filtro. Desde GAS.1a
+             acá dentro se pinta el hero completo (nav de mes, ojo, total), y
+             un lector de pantalla anunciaba el total del mes como parte de un
+             grupo llamado "Filtrar por categoría". La barra de chips ya trae
+             su propio role/aria-label. -->
+        <div id="panel-filtros-gastos"></div>
 
         <div id="lista-gastos">
           <!-- Fase 6: gastos/view.js renderiza aquí -->

@@ -76,6 +76,44 @@ export function setFiltroCategoria(cat) {
   _filtroCategoria = cat || null;
 }
 
+/**
+ * Vuelve al mes corriente (DIS.4/G7): CTA del estado vacío de un mes que no
+ * es el actual, donde "Registrar gasto" guardaría en un mes distinto al que
+ * se está mirando. Resetea el filtro, igual que `navegarMesGastos`.
+ */
+export function irAMesActual() {
+  const hoyDate = new Date();
+  _viewYear        = hoyDate.getFullYear();
+  _viewMonth       = hoyDate.getMonth();
+  _filtroCategoria = null;
+}
+
+/**
+ * Último mes que la navegación puede alcanzar (DIS.4/G7, hallazgo H8): el mes
+ * corriente o, si hay gastos fechados más adelante, el del gasto más reciente.
+ * Más allá no hay nada que ver y el vacío ofrecía registrar en la fecha de
+ * HOY, así que el gasto caía en el mes corriente y desaparecía de la pantalla
+ * que lo pidió. Se mide sobre los mismos gastos que la sección muestra (sin
+ * las categorías internas de TX.8b).
+ *
+ * @returns {{ anio: number, mes: number }} mes 0-indexed, como Date.getMonth().
+ */
+function _mesTope() {
+  const hoyDate = new Date();
+  let anio = hoyDate.getFullYear();
+  let mes  = hoyDate.getMonth();
+
+  for (const g of _sinInternas(S.gastos ?? [])) {
+    if (typeof g.fecha !== 'string' || g.fecha.length < 7) continue;
+    const y = Number(g.fecha.slice(0, 4));
+    const m = Number(g.fecha.slice(5, 7)) - 1;
+    if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
+    if (y > anio || (y === anio && m > mes)) { anio = y; mes = m; }
+  }
+
+  return { anio, mes };
+}
+
 // ── HERO DEL MES + BARRA DE FILTROS ──────────────────────────────
 
 /**
@@ -140,7 +178,13 @@ export function renderFiltrosGastos() {
     _filtroCategoria = null;
   }
 
-  el.innerHTML = _renderHeroGastos(delMes) + chipsHtml;
+  // DIS.4/G8 (hallazgo H9): con cero gastos registrados la pantalla apilaba
+  // banner de propósito + hero de "$0" + card de vacío para decir lo mismo
+  // tres veces. Un hero en $0 sin nada detrás no informa; con historial se
+  // queda aunque el mes visible esté vacío (ahí $0 sí es un dato).
+  const sinHistorial = (S.gastos ?? []).length === 0;
+
+  el.innerHTML = (sinHistorial ? '' : _renderHeroGastos(delMes)) + chipsHtml;
 }
 
 /**
@@ -152,21 +196,28 @@ export function renderFiltrosGastos() {
  * - Total enmascarado con `SALDO_MASCARA` cuando `S.config.ocultarSaldo`
  *   es true (mismo flag que el ojo de Inicio, Mis cuentas, Deudas,
  *   Calendario y Análisis: un solo control, IN.2).
- * - Con filtro de categoría activo, el label pasa a "Gastaste en {cat}" y
- *   el comparativo se oculta (comparar una categoría contra el mes completo
- *   confundiría).
+ * - El label nombra el MES VISIBLE, no "este mes" (DIS.4/G1, hallazgo H1):
+ *   la nav de mes vive en el mismo hero, así que un label fijo atribuía el
+ *   total al mes equivocado en cuanto se tocaba "‹". Con filtro de categoría
+ *   activo pasa a "{categoría} en {mes}" y el comparativo se oculta (comparar
+ *   una categoría contra el mes completo confundiría).
+ * - "›" se deshabilita en el último mes navegable (DIS.4/G7, hallazgo H8).
  *
  * @param {import('../../core/state.js').Gasto[]} delMes gastos del mes visible, sin internas.
  * @returns {string}
  */
 function _renderHeroGastos(delMes) {
-  const visibles = filtrarGastos(delMes, _filtroCategoria);
-  const total    = totalGastos(visibles);
-  const oculto   = S.config?.ocultarSaldo === true;
-  const totalTxt = oculto ? SALDO_MASCARA : f(total);
-  const label    = _filtroCategoria
-    ? `Gastaste en ${_esc(_filtroCategoria)}`
-    : 'Gastaste este mes';
+  const visibles   = filtrarGastos(delMes, _filtroCategoria);
+  const total      = totalGastos(visibles);
+  const oculto     = S.config?.ocultarSaldo === true;
+  const totalTxt   = oculto ? SALDO_MASCARA : f(total);
+  const mesVisible = MONTHS[_viewMonth].toLowerCase();
+  const label      = _filtroCategoria
+    ? `${_esc(_filtroCategoria)} en ${mesVisible}`
+    : `Gastaste en ${mesVisible}`;
+
+  const tope   = _mesTope();
+  const enTope = _viewYear === tope.anio && _viewMonth === tope.mes;
 
   return `
     <div class="hero-gastos">
@@ -178,6 +229,7 @@ function _renderHeroGastos(delMes) {
           <span class="hero-gastos__mes-label">${MONTHS[_viewMonth]} ${_viewYear}</span>
           <button type="button" class="hero-gastos__mes-btn"
                   data-action="gastos-next-mes"
+                  ${enTope ? 'disabled aria-disabled="true"' : ''}
                   aria-label="Mes siguiente">›</button>
         </div>
         <button class="hero-gastos__ojo" type="button" id="gastos-saldo-ojo"
@@ -250,12 +302,11 @@ export function renderListaGastos() {
     return;
   }
 
+  // No hay rama de "filtro sin resultados" (DIS.4/G10, hallazgo H12):
+  // `renderFiltrosGastos()` normaliza el filtro (lo resetea a "Todos" si su
+  // categoría ya no está en el mes) y corre ANTES que esta función en todos
+  // los call-sites, así que un filtro activo siempre tiene al menos un gasto.
   const filtrados = filtrarGastos(delMes, _filtroCategoria);
-
-  if (filtrados.length === 0) {
-    el.innerHTML = _renderEmptyFiltro();
-    return;
-  }
 
   // Más recientes primero: el último gasto registrado queda al tope, visible
   // sin desplazarse. El total de lo visible vive en el hero (GAS.1a, ADR 039
@@ -418,26 +469,37 @@ function _renderGastoItem(gasto, oculto) {
 
 /**
  * Empty states v2 (GAS.1c, ADR 039 D7): misma anatomía que `.cal-empty`
- * (CAL.4b): card con teja de dominio + título + descripción + CTA. Los dos
- * estados de siempre, sin cambio de lógica.
+ * (CAL.4b): card con teja de dominio + título + descripción + CTA.
+ *
+ * Dos textos, según el mes visible (DIS.4/G5 y G7):
+ * - Mes corriente: la invitación de siempre, con el CTA en `.btn-secondary`
+ *   porque el encabezado de la sección ya trae el único primario visible
+ *   (hallazgo H6: dos primarios y tres nombres para la misma acción).
+ * - Cualquier otro mes: el CTA de registrar engañaba, porque el formulario
+ *   abre con la fecha de HOY y el gasto caía en el mes corriente,
+ *   desapareciendo de la pantalla que lo pidió. El vacío dice de qué mes
+ *   habla y ofrece volver al mes donde el gasto sí va a caer (hallazgo H8).
  */
 function _renderEmptyState() {
+  const hoyDate      = new Date();
+  const mesCorriente = MONTHS[hoyDate.getMonth()].toLowerCase();
+
+  if (_viewYear !== hoyDate.getFullYear() || _viewMonth !== hoyDate.getMonth()) {
+    return `
+    <div class="gastos-empty">
+      <span class="gastos-empty__teja gastos-empty__teja--neutra" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
+      <p class="gastos-empty__title">No registraste gastos en ${MONTHS[_viewMonth].toLowerCase()}</p>
+      <p class="gastos-empty__desc">Cualquier gasto que anotes hoy entra en ${mesCorriente}, el mes que ves al abrir la sección.</p>
+      <button type="button" class="btn btn-secondary" data-action="gastos-mes-actual">Volver a ${mesCorriente}</button>
+    </div>`;
+  }
+
   return `
     <div class="gastos-empty">
       <span class="gastos-empty__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-gastos"/></svg></span>
       <p class="gastos-empty__title">Sin gastos este mes</p>
       <p class="gastos-empty__desc">Anota tu primera compra o pago y verás aquí a dónde se va tu dinero.</p>
-      <button type="button" class="btn btn-primary" data-action="nuevo-gasto">+ Registrar gasto</button>
-    </div>`;
-}
-
-function _renderEmptyFiltro() {
-  return `
-    <div class="gastos-empty">
-      <span class="gastos-empty__teja gastos-empty__teja--neutra" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span>
-      <p class="gastos-empty__title">Nada acá este mes</p>
-      <p class="gastos-empty__desc">No registraste gastos en esta categoría todavía.</p>
-      <button type="button" class="btn btn-ghost" data-action="gastos-filtrar-cat" data-cat="">Ver todos</button>
+      <button type="button" class="btn btn-secondary" data-action="nuevo-gasto">Registrar gasto</button>
     </div>`;
 }
 
@@ -450,6 +512,11 @@ function _renderEmptyFiltro() {
  * nada (la vista no repite el cálculo de `gastosFrecuentes`, solo lo pinta).
  * Solo se ofrecen al crear (`_montarFormGasto` no la pide en modo edición):
  * repetir un patrón no tiene sentido mientras se edita un registro puntual.
+ *
+ * Van DESPUÉS del bloque `.monto-hero` (DIS.4/G9, hallazgo H10): TX.12 los
+ * insertó antes y el formulario dejó de abrir con el monto, que es lo que
+ * fija el [ADR 042](docs/DECISIONS/042-formularios-v2-visual.md) D2. El atajo
+ * sigue arriba del pliegue y se lee como lo que es: una alternativa.
  *
  * @returns {string} '' si no hay ningún patrón repetido en el historial.
  */
@@ -474,7 +541,7 @@ function _renderChipsFrecuentes() {
 
   return `
     <div class="form-group">
-      <span class="label" id="gasto-frecuentes-label">Repetir un gasto frecuente</span>
+      <span class="label" id="gasto-frecuentes-label">O repite un gasto frecuente</span>
       <div class="gastos-frecuentes__lista" role="group" aria-labelledby="gasto-frecuentes-label">
         ${chips}
       </div>
@@ -545,7 +612,6 @@ export function renderFormGasto({ sugerencias = true } = {}) {
 
   return `
     <form id="form-gasto" novalidate>
-      ${sugerencias ? _renderChipsFrecuentes() : ''}
       <div class="monto-hero">
         <label class="monto-hero__label" for="gasto-monto">Monto del gasto</label>
         <div class="monto-hero__box">
@@ -556,6 +622,7 @@ export function renderFormGasto({ sugerencias = true } = {}) {
         </div>
         <span class="monto-hero__hint">COP</span>
       </div>
+      ${sugerencias ? _renderChipsFrecuentes() : ''}
       <div class="form-group">
         <span class="label" id="gasto-categoria-label">Categoría</span>
         <div class="chips-cat" role="radiogroup" aria-labelledby="gasto-categoria-label">

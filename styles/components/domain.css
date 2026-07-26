@@ -311,7 +311,11 @@ details[open] > .herramienta-inline__titulo::after {
 
 /* ════════════════════════════════════════════════════════════
    FILTROS-BAR + CHIP - barra de chips de filtro por categoría.
-   Usada en la sección Gastos (encima de la lista).
+   Nació en la sección Gastos (encima de la lista) y hoy la reusan
+   también Movimientos (MOV.2) y el asistente de distribución.
+   El scroll horizontal de abajo esconde opciones sin dibujar barra
+   en móvil: la barra de Gastos ya no lo usa (ver el bloque
+   "#panel-filtros-gastos .filtros-bar" al final de este archivo).
    ════════════════════════════════════════════════════════════ */
 
 .filtros-bar {
@@ -2867,6 +2871,18 @@ button.chip:focus-visible {
   outline-offset: 2px;
 }
 
+/* "›" en el último mes navegable (DIS.4/G7, hallazgo H8): la navegación
+   dejaba avanzar hasta diciembre de 2029 y ahí el vacío ofrecía registrar
+   con la fecha de hoy. Este botón no es un `.btn`, así que no hereda el
+   estado de buttons.css; se copian sus dos selectores (atributo nativo y
+   aria-disabled) para que el estado se vea igual en toda la app. */
+.hero-gastos__mes-btn:disabled,
+.hero-gastos__mes-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .hero-gastos__mes-label {
   min-width: 7.5rem;
   font-size: var(--fk-text-sm);
@@ -2918,6 +2934,31 @@ button.chip--gastos.chip--active {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--fk-dom-gastos) 50%, transparent) inset;
   color: var(--fk-text-primary);
   font-weight: var(--fk-font-semibold);
+}
+
+/* ── La barra de filtros no esconde categorías (DIS.4/G3, hallazgos
+   H3 y H5; regla R9) ─────────────────────────────────────────────
+   La base compartida es `flex-nowrap` + `overflow-x: auto` +
+   `scrollbar-width: none`: medido a 390px con las 8 categorías de un mes
+   normal más "Todos", el contenido mide 792px dentro de 356px visibles,
+   o sea 436px (55%) fuera de vista, y en móvil no se dibuja ninguna barra
+   de scroll. La única pista era que el cuarto chip aparecía cortado.
+   Envolver en varias filas cuesta ~44px por fila y no esconde nada.
+   Acotado a `#panel-filtros-gastos` a propósito: el mismo defecto existe
+   en Movimientos y en el asistente de distribución, que comparten la
+   clase, y esas secciones no son de esta tarea.
+   Los chips crecen de verdad a 44px (medían 27,7px de alto, contra el
+   mínimo táctil del propio sistema, regla R4): su recuadro no está
+   fijado por ninguna decisión, a diferencia del ojo y de la nav de mes. */
+#panel-filtros-gastos .filtros-bar {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  row-gap: var(--fk-space-2);
+}
+
+#panel-filtros-gastos .filtros-bar button.chip {
+  min-height: 44px;
+  padding-block: var(--fk-space-2);
 }
 
 /* ── Grupos por día de la lista (GAS.1b, ADR 039 D3) ────────────
@@ -3061,12 +3102,14 @@ button.chip--gastos.chip--active {
 
 /* ── TX.12: gastos frecuentes (chips de un toque en el formulario) ── */
 
+/* Misma regla R9 que la barra de filtros (DIS.4/G3): una barra de opciones
+   no esconde opciones tras un scroll que en móvil no se dibuja. Son 4 chips
+   como máximo, así que el costo son una o dos filas de alto. */
 .gastos-frecuentes__lista {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--fk-space-2);
-  overflow-x: auto;
   padding-block-end: var(--fk-space-1); /* espacio para el anillo de foco */
-  -webkit-overflow-scrolling: touch;
 }
 
 .gastos-frecuentes__chip {

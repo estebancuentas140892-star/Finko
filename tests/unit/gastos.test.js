@@ -18,7 +18,7 @@ import {
   agruparPorDia,
   gastosFrecuentes,
 } from '../../modules/dominio/gastos/logic.js';
-import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
+import { renderFormGasto, renderListaGastos, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, CATEGORIA_NUEVA_VALUE } from '../../modules/dominio/gastos/view.js';
 import { CATEGORIAS_GASTO, CATEGORIAS_GASTO_USUARIO, ICONOS_CATEGORIA_PERSONALIZADA } from '../../modules/core/constants.js';
 import { S } from '../../modules/core/state.js';
 
@@ -34,6 +34,13 @@ const gastoBase = (overrides = {}) => ({
   nota: '',
   ...overrides,
 });
+
+/** Mismos nombres que el array MONTHS de la vista, en minúscula (DIS.4/G1). */
+const MESES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+const mesActual = () => MESES[new Date().getMonth()];
 
 const datosFormValidos = {
   descripcion: 'Gasolina',
@@ -927,10 +934,11 @@ describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
     renderFiltrosGastos();
     const el = document.getElementById('panel-filtros-gastos');
     expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$100.000');
-    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe('Gastaste este mes');
+    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe(`Gastaste en ${mesActual()}`);
   });
 
   it('la navegación de mes vive dentro del hero', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: fechaEnMes(0) })];
     renderFiltrosGastos();
     const hero = document.querySelector('.hero-gastos');
     expect(hero.querySelector('[data-action="gastos-prev-mes"]')).not.toBeNull();
@@ -945,7 +953,7 @@ describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
     setFiltroCategoria('Mercado');
     renderFiltrosGastos();
     const el = document.getElementById('panel-filtros-gastos');
-    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe('Gastaste en Mercado');
+    expect(el.querySelector('.hero-gastos__label').textContent.trim()).toBe(`Mercado en ${mesActual()}`);
     expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$85.000');
   });
 
@@ -1011,12 +1019,56 @@ describe('renderFiltrosGastos() - hero del mes (GAS.1a)', () => {
     expect(ojo.innerHTML).toContain('#i-eye-off');
   });
 
-  it('mes vacío: hero con $0, sin comparativo y sin chips', () => {
+  it('mes vacío con historial: hero con $0, sin comparativo y sin chips', () => {
+    // Con gastos en otro mes el hero se queda: ahí $0 sí es un dato (G8).
+    S.gastos = [gastoBase({ id: 'g1', monto: 50_000, fecha: fechaEnMes(-2) })];
     renderFiltrosGastos();
     const el = document.getElementById('panel-filtros-gastos');
     expect(el.querySelector('.hero-gastos__valor').textContent.trim()).toBe('$0');
     expect(el.querySelector('.hero-gastos__comp')).toBeNull();
     expect(el.querySelector('.filtros-bar')).toBeNull();
+  });
+
+  // ── DIS.4/G1 y G7: el label nombra el mes visible y "›" se agota ──
+
+  it('G1: al navegar al mes anterior el label nombra ESE mes, no "este mes"', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 40_000, fecha: fechaEnMes(-1) })];
+    navegarMesGastos(-1);
+    renderFiltrosGastos();
+    const mesPrev = MESES[(new Date().getMonth() + 11) % 12];
+    expect(document.querySelector('.hero-gastos__label').textContent.trim()).toBe(`Gastaste en ${mesPrev}`);
+    irAMesActual(); // el mes visible es estado de módulo: no se filtra a otros tests
+  });
+
+  it('G8: sin ningún gasto registrado no se pinta el hero', () => {
+    S.gastos = [];
+    renderFiltrosGastos();
+    const el = document.getElementById('panel-filtros-gastos');
+    expect(el.querySelector('.hero-gastos')).toBeNull();
+    expect(el.innerHTML.trim()).toBe('');
+  });
+
+  it('G7: "›" se deshabilita en el último mes navegable', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 40_000, fecha: fechaEnMes(0) })];
+    renderFiltrosGastos();
+    const next = document.querySelector('[data-action="gastos-next-mes"]');
+    expect(next.disabled).toBe(true);
+    expect(next.getAttribute('aria-disabled')).toBe('true');
+    expect(document.querySelector('[data-action="gastos-prev-mes"]').disabled).toBe(false);
+  });
+
+  it('G7: en un mes anterior "›" vuelve a estar disponible', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 40_000, fecha: fechaEnMes(0) })];
+    navegarMesGastos(-1);
+    renderFiltrosGastos();
+    expect(document.querySelector('[data-action="gastos-next-mes"]').disabled).toBe(false);
+    irAMesActual();
+  });
+
+  it('G7: el tope sigue al gasto más reciente cuando está en el futuro', () => {
+    S.gastos = [gastoBase({ id: 'g1', monto: 40_000, fecha: fechaEnMes(2) })];
+    renderFiltrosGastos();
+    expect(document.querySelector('[data-action="gastos-next-mes"]').disabled).toBe(false);
   });
 });
 
@@ -1237,22 +1289,34 @@ describe('renderListaGastos() - empty states v2 (GAS.1c)', () => {
     expect(empty.querySelector('[data-action="nuevo-gasto"]')).not.toBeNull();
   });
 
-  it('filtro sin resultados: teja neutra de búsqueda y CTA "Ver todos"', () => {
-    const d = new Date();
-    const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-15`;
-    S.gastos = [gastoBase({ id: 'g1', categoria: 'Mercado', fecha })];
-    // Filtro por una categoría presente en otro momento pero no este mes:
-    // se fuerza directo (setFiltroCategoria no valida contra el mes).
-    setFiltroCategoria('Transporte');
+  // DIS.4/G5 (hallazgo H6): un solo primario visible por sección. El del
+  // encabezado manda; el CTA del vacío acompaña en secundario, con el mismo
+  // verbo que dicen el encabezado y el botón central de la barra.
+  it('G5: el CTA del vacío es secundario y dice "Registrar gasto"', () => {
+    renderListaGastos();
+    const cta = document.querySelector('#lista-gastos [data-action="nuevo-gasto"]');
+    expect(cta.className).toContain('btn-secondary');
+    expect(cta.className).not.toContain('btn-primary');
+    expect(cta.textContent.trim()).toBe('Registrar gasto');
+  });
+
+  // DIS.4/G7 (hallazgo H8): en otro mes el CTA de registrar engañaba (el
+  // formulario abre con la fecha de hoy, así que el gasto caía en el mes
+  // corriente y desaparecía de la pantalla que lo pidió).
+  it('G7: un mes pasado sin gastos nombra el mes y ofrece volver, no registrar', () => {
+    S.gastos = [gastoBase({ id: 'g1', fecha: '2020-01-15' })];
+    navegarMesGastos(-1);
     renderListaGastos();
     const empty = document.querySelector('#lista-gastos .gastos-empty');
-    expect(empty).not.toBeNull();
+    const mesPrev = MESES[(new Date().getMonth() + 11) % 12];
     expect(empty.querySelector('.gastos-empty__teja--neutra')).not.toBeNull();
     expect(empty.querySelector('.gastos-empty__teja svg use').getAttribute('href')).toBe('#i-search');
-    expect(empty.querySelector('.gastos-empty__title').textContent).toBe('Nada acá este mes');
-    const cta = empty.querySelector('[data-action="gastos-filtrar-cat"]');
-    expect(cta.dataset.cat).toBe('');
-    expect(cta.textContent.trim()).toBe('Ver todos');
+    expect(empty.querySelector('.gastos-empty__title').textContent).toBe(`No registraste gastos en ${mesPrev}`);
+    expect(empty.querySelector('[data-action="nuevo-gasto"]')).toBeNull();
+    const cta = empty.querySelector('[data-action="gastos-mes-actual"]');
+    expect(cta.className).toContain('btn-secondary');
+    expect(cta.textContent.trim()).toBe(`Volver a ${mesActual()}`);
+    irAMesActual();
   });
 });
 
@@ -1476,6 +1540,16 @@ describe('renderFormGasto() - chips de gastos frecuentes (TX.12)', () => {
     ];
     const html = renderFormGasto();
     expect(html).toContain('>Uber<');
+  });
+
+  // DIS.4/G9 (hallazgo H10): TX.12 insertó los chips ANTES del monto y el
+  // formulario dejó de abrir con el dato que el usuario vino a escribir,
+  // contra el ADR 042 D2. El atajo va después, y se lee como alternativa.
+  it('G9: los chips van después del bloque del monto, no antes', () => {
+    S.gastos = [g({ id: 'a' }), g({ id: 'b' }), g({ id: 'c' })];
+    const html = renderFormGasto();
+    expect(html.indexOf('monto-hero')).toBeLessThan(html.indexOf('gastos-frecuentes__lista'));
+    expect(html).toContain('O repite un gasto frecuente');
   });
 });
 

@@ -7,8 +7,8 @@
 ## Pantalla Gastos v2 (GAS.1, ADR 039)
 
 - **Objetivo**          : rediseño visual de `#sec-gast` a la familia v2 ([ADR 039](../DECISIONS/039-gastos-v2-visual.md)): hero del mes con total protagonista + comparativo + ojo (GAS.1a), lista agrupada por día + chips con identidad + máscara (GAS.1b), insight de gastos hormiga + empty states v2 (GAS.1c).
-- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2.
-- **Verificado contra** : GAS.1c (2026-07-14).
+- **Estado actual**     : **INICIATIVA COMPLETA** (GAS.1a, GAS.1b y GAS.1c cerradas el 2026-07-14). Sexta pantalla de la familia visual v2. **DIS.4 cerrada** (2026-07-26): las 10 correcciones aplicables de la auditoría de diseño de la sección.
+- **Verificado contra** : DIS.4 (2026-07-26, auditoría de diseño). Antes: GAS.1c (2026-07-14).
 
 **Dónde vive**
 
@@ -38,8 +38,15 @@
 - ~~El ojo de Gastos enmascara solo el hero (fuga por suma de ítems)~~: **cerrado en GAS.1b** (total del día y montos de ítems en `SALDO_MASCARA_CUENTA`).
 - **`_renderGastoItem(gasto, oculto)` cambió de aridad en GAS.1b**: pasarla directa a `.map()` pondría el índice en `oculto` (ítems 1+ enmascarados siempre); el caller usa arrow explícita. Mantener así.
 - El ink `--fk-dom-gastos-text` sobre el tinte 12% en tema claro mide **4.39:1** (bajo AA para texto pequeño): por eso el chip activo usa texto primario. No "corregir" el chip a texto naranja sin re-medir.
+- **El label del hero nombra el mes visible, nunca "este mes" (DIS.4/G1, regla R10)**: la nav de mes vive dentro del mismo hero, así que un label fijo atribuía el total al mes equivocado en cuanto se tocaba "‹". Con filtro activo es `{categoría} en {mes}`: la categoría sin el mes también pierde información.
+- **La grilla móvil de la fila de gasto es propia de la sección** (`responsive.css`, `@media (max-width: 539px)`, scope `.gastos-dia`), no la genérica de `.list-item:has(.list-item__meta)`. Dos trampas: la capa `responsive` le gana **por orden** a `components`, así que esta corrección NO funciona desde `domain.css`; y sus `grid-template-areas` tienen que ser rectangulares (un área en L invalida la declaración entera y el navegador la descarta en silencio).
+- **La barra de filtros no puede volver a `overflow-x` (DIS.4/G3, regla R9)**: la regla base de `.filtros-bar` en `domain.css` sigue con scroll oculto porque la comparten Movimientos y el asistente de distribución; el override vive acotado a `#panel-filtros-gastos`. Tocar la base afectaría a esas dos secciones.
+- **El tope de la navegación se calcula en `_mesTope()` sobre `S.gastos`** (mes corriente, o el del gasto más reciente si es posterior). Si alguna vez la sección deja de mostrar todos los gastos no internos, ese cálculo hay que revisarlo con ella o "›" quedará habilitado hacia meses vacíos.
+- **`_renderEmptyState()` tiene dos textos, no uno**: en un mes que no es el corriente no ofrece registrar (el formulario abre con la fecha de HOY y el gasto caería en otro mes), sino volver. Agregar un CTA de registro ahí reabre el hallazgo H8.
 
 **Cambios realizados**:
+
+- 2026-07-26 (**DIS.4**, auditoría de diseño de la sección, 10 correcciones): el label del hero nombra el mes visible (`Gastaste en junio`, y `{categoría} en {mes}` con filtro); la fila de gasto sube el monto al primer renglón y baja las acciones al suyo (nombre de 110,7px a ~185px, "Cuidado personal" en una línea, alto estable en 107,6px sin nota); la barra de filtros y los chips de gasto frecuente dejan el scroll oculto por `flex-wrap` y los chips de filtro llegan a 44px; `#panel-filtros-gastos` pierde el `role="group"` que anunciaba el total del mes como un filtro; un solo verbo ("Registrar gasto") y un solo primario visible; el ojo y la nav de mes ganan zona táctil de 44px sin cambiar su dibujo de 40px; "›" se deshabilita en el último mes navegable y el vacío de un mes pasado ofrece volver en vez de registrar; sin ningún gasto no se pinta el hero de $0; el formulario vuelve a abrir con el monto y `_renderEmptyFiltro()` (inalcanzable) se borra. Reglas **R9** a **R11** escritas en [`DESIGN_SYSTEM.md`](../DESIGN_SYSTEM.md). Ver CHANGELOG.
 
 - 2026-07-14 (GAS.1c): insight de gastos hormiga (por fin en pantalla `detectarHormigas()`) + empty states v2; cierra la iniciativa. Nota E2E: sembrar estado en un test cuya página ya arrancó exige `addInitScript` + `reload` (un `goto` a la misma URL con hash es same-document y no re-arranca la app; un `evaluate` directo lo pisa el initScript de `saltearOnboarding` al recargar). Ver [CHANGELOG](../CHANGELOG.md).
 - 2026-07-14 (GAS.1b): lista agrupada por día (Hoy/Ayer/"Vie 11 jul" + total del día), chips con identidad de sección, máscara de montos de la lista, subtítulo sin fecha. Ver [CHANGELOG](../CHANGELOG.md).
@@ -105,6 +112,7 @@
 - **La regla móvil anti-zoom de iOS pisa los inputs por capas:** `responsive.css` declara `.input { font-size: 16px }` en móvil y su capa le gana por ORDEN a `components`, aunque la especificidad diga lo contrario. La excepción de `.input--big-amount` (2.25rem) vive en `responsive.css`, dentro de la misma media query: cualquier componente futuro que necesite un input distinto en móvil debe poner su excepción AHÍ, no en `forms.css`.
 - **Los chips son labels con el radio oculto:** en E2E no sirve `check()` sobre el input (no visible); se clickea el label (`elegirCategoriaGasto`). En unit, el estado seleccionado se lee por `input.checked`, no por clases.
 - **`form.querySelector('[name="categoria"]').value` ya no sirve para leer/escribir la categoría** (devuelve el primer radio): leer vía FormData (como siempre hizo `_guardarGasto`) o iterar radios (como `_editarGasto`).
+- **El primer bloque del formulario es `.monto-hero` y así debe quedar (ADR 042 D2, regla R11)**: TX.12 insertó los chips de gasto frecuente antes y el form dejó de abrir con el monto durante tres días sin que nadie lo decidiera; DIS.4/G9 lo devolvió a su lugar. Cualquier bloque nuevo (atajo, sugerencia, ayuda) va **después** del monto.
 
 **Cambios pendientes**: ninguno conocido para TX.9. Posible extensión futura: gestión de categorías personalizadas (ver Riesgos). El resto de la iniciativa Formularios v2 (FORM.1b deuda, FORM.1c gasto fijo) vive en el BOARD.
 
@@ -146,8 +154,9 @@
 - **`renderFormGasto({ sugerencias })` cambia de firma**: acepta un objeto de opciones en vez de ningún argumento. Todos los call-sites existentes (incluidos los de los tests) seguían funcionando sin cambios porque el parámetro tiene default vacío; cualquier caller nuevo que quiera ocultar los chips (modo edición, "Repetir") debe pasar `sugerencias: false` explícitamente.
 - **El botón "Repetir" vive en Gastos, no en Movimientos**: MOV.1 delega `editar-gasto`/`eliminar-gasto` desde el ledger al dominio dueño, pero `repetir-gasto` no se sumó ahí (fuera de alcance de esta tarjeta). Si se pide "repetir" también desde el ledger, es una entrada más en `_ACCIONES_POR_TIPO` de `movimientos/logic.js`, sin lógica nueva.
 
-**Cambios pendientes**: ninguno conocido.
+**Cambios pendientes**: **TX.12b** (el chip ofrece el monto redondeado de la clave de agrupación, no el real), en `docs/BOARD.md`.
 
 **Cambios realizados**:
 
+- 2026-07-26 (DIS.4/G9 y G3): los chips bajan **debajo** del monto hero (el label pasa a "O repite un gasto frecuente") y `.gastos-frecuentes__lista` cambia el scroll horizontal oculto por `flex-wrap`. Ver CHANGELOG.
 - 2026-07-23 (TX.12, patrón P2 de la auditoría de UX/producto): ver detalle arriba. 23 tests unitarios nuevos (`gastosFrecuentes`: agrupación, ventana de días, redondeo, exclusión de `compromisoId`, orden; chips del form; botón "Repetir" en la fila) más 2 E2E nuevos (chip prellena y registra; "Repetir" abre en modo creación sin chips de frecuentes, con nota copiada y fecha de hoy). 2965/2965 unit + 227/227 E2E + lint verdes. SW v413 a v414.

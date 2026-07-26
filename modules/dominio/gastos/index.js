@@ -26,7 +26,7 @@ import {
   validarCategoriaPersonalizada,
 } from './logic.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
-import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
+import { renderListaGastos, renderFormGasto, renderFiltrosGastos, setFiltroCategoria, navegarMesGastos, irAMesActual, ayerIso, CATEGORIA_NUEVA_VALUE } from './view.js';
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -316,6 +316,16 @@ function _nextMes() {
   renderListaGastos();
 }
 
+/**
+ * CTA del estado vacío de un mes que no es el corriente (DIS.4/G7): devuelve
+ * la vista al mes donde caerá el gasto que se registre hoy.
+ */
+function _mesActual() {
+  irAMesActual();
+  renderFiltrosGastos();
+  renderListaGastos();
+}
+
 // ── FILTRO DE CATEGORÍA ──────────────────────────────────────────
 
 /** Cambia el chip activo y re-renderiza filtros + lista. */
@@ -462,6 +472,7 @@ export function initGastos() {
   registrarAccion('gastos-repetir-frecuente', _repetirFrecuente);
   registrarAccion('gastos-prev-mes',    _prevMes);
   registrarAccion('gastos-next-mes',    _nextMes);
+  registrarAccion('gastos-mes-actual',  _mesActual);
   registrarAccion('gastos-filtrar-cat', _filtrarCategoria);
 
   // GAS.1a (ADR 039 D9): el ojo del hero del mes comparte el flag

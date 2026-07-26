@@ -182,14 +182,21 @@
   /* Controles de Inicio por debajo del mínimo (ojo 40, ajustes 40, pill ~34,
      links de header ~18): el recuadro visual no cambia, se expande solo la
      zona sensible con un pseudo-elemento centrado. Crecer el control de
-     verdad rompería la composición del hero y de los headers de card. */
+     verdad rompería la composición del hero y de los headers de card.
+     El ojo y la nav de mes del hero de Gastos entran acá por el mismo
+     motivo (DIS.4/G6, hallazgo H5): sus 40px son decisión documentada
+     (ADR 034 D3 y el comentario de .hero-gastos__mes-btn en domain.css),
+     así que se les extiende el área sensible, no el dibujo. Los chips de
+     filtro sí crecen de verdad: su recuadro no lo fijó nadie. */
   .hero-inicio__ojo,
   .perfil-inicio__ajustes,
   .hero-inicio__pill,
   .vencidos-card__link,
   .prioridades-card__link,
   .actividad-reciente__ver-todo,
-  .accesos-inicio__personalizar {
+  .accesos-inicio__personalizar,
+  .hero-gastos__ojo,
+  .hero-gastos__mes-btn {
     position: relative;
   }
   .hero-inicio__ojo::after,
@@ -198,7 +205,9 @@
   .vencidos-card__link::after,
   .prioridades-card__link::after,
   .actividad-reciente__ver-todo::after,
-  .accesos-inicio__personalizar::after {
+  .accesos-inicio__personalizar::after,
+  .hero-gastos__ojo::after,
+  .hero-gastos__mes-btn::after {
     content: '';
     position: absolute;
     left: 50%;
@@ -295,6 +304,47 @@
      hermano queda a la derecha. */
   .personales-lista .list-item__action > :first-child:not(:last-child) {
     margin-right: auto;
+  }
+
+  /* ── Fila de gasto (DIS.4, bloque G2, hallazgo H2) ──────────────────
+     Mismo defecto de familia que el de Me deben, con un botón más: la
+     grilla genérica de arriba da el primer renglón a las acciones y manda
+     el monto al segundo. Medido a 390px: la fila mide 356,4px y se reparte
+     40 | 110,7 | 148, o sea 41,5% del ancho para tres botones (repetir,
+     editar, eliminar, que TX.12 dejó en tres) y 110,7px para el nombre;
+     "Cuidado personal" partía en dos líneas y el alto de la fila cambiaba
+     con el largo de la categoría. El monto quedaba a 67px del tope.
+     Acá el primer renglón lee [teja · nombre y detalle · monto] y las
+     acciones bajan a su propio renglón: el nombre pasa a ~182px y, con una
+     sola línea, el alto de la fila deja de depender del texto (regla R19).
+     Sin markup nuevo: solo áreas de grilla.
+     Las áreas tienen que ser rectangulares: un área en L invalida y
+     descarta TODO el `grid-template-areas` en silencio. */
+  .gastos-dia .list-item:has(.list-item__meta) {
+    grid-template-columns: var(--fk-space-10) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "icon body   meta"
+      "icon action action";
+    column-gap: var(--fk-space-3);
+    row-gap: var(--fk-space-1);
+  }
+
+  .gastos-dia .list-item:has(.list-item__meta) .list-item__meta {
+    align-items: flex-end;
+  }
+
+  .gastos-dia .list-item:has(.list-item__meta) .list-item__action {
+    justify-self: end;
+    align-self: center;
+    margin-top: 0;
+  }
+
+  /* Con el ancho recuperado el nombre cabe en una línea: el alto de la fila
+     pasa a depender solo de si el gasto tiene nota, no de la categoría. */
+  .gastos-dia .list-item__title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
