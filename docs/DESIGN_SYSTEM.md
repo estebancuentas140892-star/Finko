@@ -103,6 +103,10 @@ Reconocimiento visual inmediato de cada sección ([ADR 031](DECISIONS/031-identi
 - **Opacidad del fondo cuando lleva texto real encima (hallazgo IV.2a):** 12% + `-text` cae a 4.22-4.46:1 en tema claro para varios dominios (por debajo del 4.5:1 de WCAG 1.4.3). `.dom-badge--*` (texto real, no solo icono) usa 6% en vez de 12% (peor caso medido: 4.54:1). Regla: contenido de texto → ~6%; glifo/icono decorativo → 12-14% está bien.
 - El token base `--fk-dom-X` se reserva para acentos decorativos (bordes finos, franjas) que ya van acompañados de icono/etiqueta y por eso quedan exentos del umbral de contraste no textual (SC 1.4.11).
 
+**R6 · El acento no mide gasto** ([ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)): toda magnitud de gasto se pinta en familia `--fk-dom-gastos` o en neutro. `--fk-accent` queda para dinero disponible, progreso y logro (principio 7). El chip que celebra una **bajada** de gasto sí va verde: eso es logro, no magnitud ([ADR 019](DECISIONS/019-limites-por-rol.md)). Precedente: el mini gráfico semanal de Inicio, que nació con el acento en el día pico y se corrigió en el ADR 054.
+
+**R3 · Fondo y glifo nunca del mismo tono:** una teja de dominio usa `color-mix(in srgb, var(--fk-dom-X) 14%, transparent)` de fondo y `var(--fk-dom-X-text)` en el glifo. Declarar `background` y `color` en el mismo tono deja el trazo invisible sobre su propio fondo: es lo que le pasó a `.prioridades-card__dot` al reusar `.cal-dot--*`, que está pensado para puntos de 6px **sin** glifo dentro. Un punto sólido sin dibujo puede compartir tono; un chip con icono, nunca.
+
 ### Nudges (5 niveles)
 
 Tokens `--fk-nudge-{nivel}-{bg|border|accent}` construidos con `color-mix()` sobre los semánticos. Niveles: `critical` (danger), `high` (dom-gastos), `medium` (warning), `info` (info), `success` (success). Clases: `.nudge`, `.nudge-critical|high|medium|info|success`.
@@ -143,6 +147,8 @@ Pesos: `--fk-font-light` (300) a `--fk-font-extrabold` (800). Altura de línea: 
 | `--fk-radius-lg` | `16px` | Cards principales |
 | `--fk-radius-xl` | `24px` | Celdas Bento, modales |
 | `--fk-radius-full` | `9999px` | Pills, badges, avatares |
+
+**Regla del radio protagonista:** el bloque protagonista de una sección usa `--fk-radius-xl`; todo panel secundario usa `--fk-radius-lg`. Por eso el hero de Inicio (24px) y los paneles que lleva debajo (16px) no coinciden: es intención, no deriva. Apilados en móvil la diferencia se nota y así se justifica.
 
 ---
 
@@ -238,6 +244,10 @@ Accesibilidad: bajo `prefers-contrast: more` el trazo de toda la familia sube un
 
 Jerarquía interna en 3 niveles (rediseño F3): primario (monto/progreso), secundario (contexto), terciario (metadata).
 
+**R1 · Un solo encabezado de card en toda la app:** sentence case, `--fk-text-sm` / `--fk-font-semibold`, `--fk-text-primary`, **sin icono dentro del `h2`**. A la derecha del título, contador opcional; a la derecha de la fila, un enlace de acción. El label de grupo del bento conserva su uppercase 12/700: es otro nivel, no otro patrón. Corolario: **un solo verbo por destino** (si un enlace a `#agenda` dice "Ver calendario", ningún otro dice "Gestionar").
+
+**R5 · Los paneles de Inicio no llevan scroll propio:** máximo 4 filas y, si hay más, una fila de salida de 44px ("Ver los N en el calendario"). En móvil la barra de scroll no se dibuja, así que un `overflow-y: auto` dentro de un panel esconde ítems sin ninguna pista visual. El scroll es de la pantalla, no del panel.
+
 ### Inputs
 
 ```html
@@ -253,6 +263,8 @@ Jerarquía interna en 3 niveles (rediseño F3): primario (monto/progreso), secun
 ```
 
 Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >= 44px.
+
+**R4 · La zona táctil de 44px aplica a todo control interactivo, sea o no `.btn`.** `.btn` ya lo cumple, y por eso los controles que viven fuera de esa clase (el ojo del hero, un enlace de encabezado, una pill) se quedaban entre 18 y 40px: nadie los verificaba. El recuadro **visual** queda libre, así que un diseño aprobado no se rompe para cumplir la regla: se expande solo la zona sensible con un `::after` centrado de `min-width`/`min-height: 44px` (patrón en `styles/responsive.css`). Un enlace de 18px de alto sigue viéndose de 18px y se toca como si midiera 44.
 
 ### Chips y Badges
 
@@ -282,6 +294,8 @@ Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >
 ```
 
 Variantes reales: `.list-item__icon--cat` (ícono de categoría con chip de acento), `.list-item__meta`, `.list-item__action`, `.list-item__value`, `.list-item__progress-label`. Nota de color: los montos de gasto van en neutro, no en rojo (criterio AUD.4).
+
+**R2 · Anatomía única de la fila de obligación**, en 2 líneas: teja de 32px (`--fk-dom-X` al 14% + `-text`) · nombre 14/600 truncado con ellipsis · meta con `.dom-badge` y estado temporal · monto 14/700 tabular. Las 2 líneas no son estética: en una sola línea de 326px (390px menos padding) el badge se come unos 64px y trunca el nombre justo donde el usuario decide qué pagar.
 
 ### Barras y anillos de progreso
 

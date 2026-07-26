@@ -2273,13 +2273,17 @@ button.chip:focus-visible {
   height: 100%;
 }
 
+/* Familia Gastos, no el acento de marca (ADR 054, revisa el ADR 034 D6): el
+   esmeralda queda reservado a dinero disponible, progreso y logro, y una
+   magnitud de gasto no es ninguno de los tres. El chip "12% menos" sí sigue
+   verde: bajar el gasto es logro (ADR 019). */
 .resumen-semana__barra-fill {
   width: 100%;
   min-height: 2px;
   border-radius: var(--fk-radius-sm) var(--fk-radius-sm) 2px 2px;
-  background: color-mix(in srgb, var(--fk-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--fk-dom-gastos) 28%, transparent);
 }
-.resumen-semana__barra-fill--pico { background: var(--fk-accent); }
+.resumen-semana__barra-fill--pico { background: var(--fk-dom-gastos); }
 
 .resumen-semana__dias {
   display: flex;
@@ -2294,7 +2298,7 @@ button.chip:focus-visible {
   font-weight: var(--fk-font-semibold);
   color: var(--fk-text-muted);
 }
-.resumen-semana__dia--pico { color: var(--fk-text-accent); }
+.resumen-semana__dia--pico { color: var(--fk-dom-gastos-text); }
 
 .resumen-semana__top {
   display: flex;
