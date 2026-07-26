@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { S } from '../../modules/core/state.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../modules/infra/render.js';
+import { renderListaPersonales, renderFormPersonal } from '../../modules/dominio/personales/view.js';
 import {
   calcularPendiente,
   calcularCapitalPendiente,
@@ -760,5 +763,225 @@ describe('normalizarPersonal() con cuenta de origen (PE.7)', () => {
   it('trata cadena vacía o solo espacios como sin cuenta', () => {
     expect('cuentaId' in normalizarPersonal({ persona: 'X', monto: '1', cuentaId: '' })).toBe(false);
     expect('cuentaId' in normalizarPersonal({ persona: 'X', monto: '1', cuentaId: '   ' })).toBe(false);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// DIS.3 - auditoría de diseño de Me deben (hallazgos M1 a M12).
+// La vista es la que cambia: `logic.js` no se toca en toda la tarea.
+// ════════════════════════════════════════════════════════════════
+
+describe('renderListaPersonales() - fila de préstamo (DIS.3)', () => {
+  const prestamo = (over = {}) => ({
+    id: 'p1', persona: 'Camilo Restrepo', monto: 500_000, pagado: 0,
+    fecha: '2026-03-10', liquidado: false, ...over,
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.personales = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  const render = (lista) => {
+    S.personales = lista;
+    renderListaPersonales();
+    return document.getElementById('lista-personales');
+  };
+
+  // ── V-2 / regla R19: el monto ancla es lo vigente ──────────────
+
+  it('V-2: el monto ancla es el PENDIENTE, no lo prestado', () => {
+    const el = render([prestamo({ monto: 1_000_000, pagado: 400_000 })]);
+    expect(el.querySelector('.list-item__amount').textContent.trim()).toBe('$600.000');
+  });
+
+  it('V-2: el histórico acompaña en `.personal-item__de` solo cuando hubo abonos', () => {
+    const conAbono = render([prestamo({ monto: 1_000_000, pagado: 400_000 })]);
+    expect(conAbono.querySelector('.personal-item__de').textContent.trim()).toBe('de $1.000.000');
+
+    const sinAbono = render([prestamo({ monto: 1_000_000, pagado: 0 })]);
+    expect(sinAbono.querySelector('.personal-item__de')).toBeNull();
+  });
+
+  it('V-2: el liquidado conserva el monto histórico y no repite el "de $X"', () => {
+    const el = render([prestamo({ monto: 200_000, pagado: 200_000, liquidado: true })]);
+    expect(el.querySelector('.list-item__amount').textContent.trim()).toBe('$200.000');
+    expect(el.querySelector('.personal-item__de')).toBeNull();
+  });
+
+  it('V-2: sin tasa no hay subtítulo (duplicaba la cifra del meta)', () => {
+    const el = render([prestamo({ monto: 500_000, pagado: 100_000 })]);
+    expect(el.querySelector('.list-item__subtitle')).toBeNull();
+  });
+
+  it('V-2: con tasa el subtítulo se queda solo con el desglose capital + interés', () => {
+    const el = render([prestamo({
+      monto: 1_000_000, pagado: 0, tasa: 2,
+      capitalPagado: 0, interesPagado: 0, interesPendiente: 0,
+    })]);
+    const sub = el.querySelector('.list-item__subtitle').textContent.trim();
+    expect(sub.startsWith('capital ')).toBe(true);
+    expect(sub).toContain('+ interés ');
+    expect(sub).not.toContain('Pendiente:');
+  });
+
+  // ── V-1 / regla R22: el chip de estado en su propia línea ──────
+
+  it('V-1: el chip sale del título y vive en `.personal-item__estado`', () => {
+    const el = render([prestamo({ fechaLimite: '2026-07-04' })]);
+    expect(el.querySelector('.list-item__title .chip')).toBeNull();
+    expect(el.querySelector('.personal-item__estado .chip')).not.toBeNull();
+    expect(el.querySelector('.list-item__title').textContent.trim()).toBe('Camilo Restrepo');
+  });
+
+  // ── V-9: un solo verbo para la métrica de recuperación ─────────
+
+  it('V-9: la barra de la fila dice "cobrado", no "pagado"', () => {
+    const el = render([prestamo({ monto: 1_000_000, pagado: 400_000 })]);
+    const label = el.querySelector('.list-item__body .progress').getAttribute('aria-label');
+    expect(label).toBe('40% cobrado');
+    expect(label).not.toContain('pagado');
+  });
+
+  // ── V-10 / regla R8: piso táctil de 44px ───────────────────────
+
+  it('V-10: "Me pagaron" ya no lleva btn-sm', () => {
+    const el = render([prestamo()]);
+    const btn = el.querySelector('[data-action="pagar-personal"]');
+    expect(btn.className).not.toContain('btn-sm');
+    expect(btn.className).toContain('btn-ghost');
+  });
+
+  // ── V-5 / V-6: ancla de foco tras el re-render ─────────────────
+
+  it('V-5/V-6: cada tarjeta es enfocable por programa (tabindex -1)', () => {
+    const el = render([prestamo()]);
+    expect(el.querySelector('article[data-id="p1"]').getAttribute('tabindex')).toBe('-1');
+  });
+
+  // ── V-8 / regla R21: lo terminado no compite ───────────────────
+
+  it('V-8: los liquidados van al final aunque sean los más antiguos', () => {
+    const el = render([
+      prestamo({ id: 'viejo-liquidado', monto: 200_000, pagado: 200_000, liquidado: true, fecha: '2026-01-05' }),
+      prestamo({ id: 'activo-nuevo', fecha: '2026-07-18' }),
+      prestamo({ id: 'activo-viejo', fecha: '2026-03-10' }),
+    ]);
+    const ids = [...el.querySelectorAll('article[data-id]')].map(a => a.dataset.id);
+    expect(ids).toEqual(['activo-viejo', 'activo-nuevo', 'viejo-liquidado']);
+  });
+});
+
+describe('renderListaPersonales() - resumen y privacidad (DIS.3)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.personales = [
+      { id: 'p1', persona: 'A', monto: 1_000_000, pagado: 400_000, fecha: '2026-03-10', liquidado: false },
+      { id: 'p2', persona: 'B', monto: 500_000, pagado: 0, fecha: '2026-05-01', liquidado: false },
+    ];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+  });
+
+  const render = () => {
+    renderListaPersonales();
+    return document.getElementById('lista-personales');
+  };
+
+  // ── V-3: el resumen responde primero lo que se pregunta primero ─
+
+  it('V-3: el orden de los stats es [Pendiente, Te han devuelto, Total prestado, Activos]', () => {
+    const labels = [...render().querySelectorAll('.resumen-card__label')].map(p => p.textContent.trim());
+    expect(labels).toEqual(['Pendiente', 'Te han devuelto', 'Total prestado', 'Activos']);
+  });
+
+  it('V-3: "Pendiente" es el stat primario y no lleva el modificador --sm', () => {
+    const stat = render().querySelector('.resumen-card__stat--primary');
+    expect(stat.querySelector('.resumen-card__label').textContent.trim()).toBe('Pendiente');
+    expect(stat.querySelector('.resumen-card__value').className).not.toContain('resumen-card__value--sm');
+  });
+
+  // ── V-4 / regla R20: el ojo no tiene excepciones ───────────────
+
+  it('V-4: con el ojo activo el resumen usa la máscara larga', () => {
+    S.config.ocultarSaldo = true;
+    const valores = [...render().querySelectorAll('.resumen-card__value')].map(p => p.textContent.trim());
+    // Los 3 montos enmascarados; "Activos" es un conteo, no dinero.
+    expect(valores.slice(0, 3)).toEqual([SALDO_MASCARA, SALDO_MASCARA, SALDO_MASCARA]);
+    expect(valores[3]).toBe('2');
+  });
+
+  it('V-4: con el ojo activo los montos por fila usan la máscara corta', () => {
+    S.config.ocultarSaldo = true;
+    const el = render();
+    expect(el.querySelector('.list-item__amount').textContent.trim()).toBe(SALDO_MASCARA_CUENTA);
+    expect(el.querySelector('.personal-item__de').textContent.trim()).toBe(`de ${SALDO_MASCARA_CUENTA}`);
+    expect(el.innerHTML).not.toContain('$1.000.000');
+    expect(el.innerHTML).not.toContain('$600.000');
+  });
+
+  it('V-4: con el ojo activo el desglose y el interés cobrado también se enmascaran', () => {
+    S.personales = [{
+      id: 'p1', persona: 'A', monto: 1_000_000, pagado: 400_000, fecha: '2026-03-10',
+      liquidado: false, tasa: 2, capitalPagado: 350_000, interesPagado: 50_000, interesPendiente: 0,
+    }];
+    S.config.ocultarSaldo = true;
+    const el = render();
+    expect(el.querySelector('.list-item__subtitle').textContent.trim())
+      .toBe(`capital ${SALDO_MASCARA_CUENTA} + interés ${SALDO_MASCARA_CUENTA}`);
+    expect(el.innerHTML).toContain(`Ya cobraste ${SALDO_MASCARA_CUENTA} en intereses`);
+    expect(el.innerHTML).not.toContain('$50.000');
+  });
+
+  it('V-4: la barra de progreso se conserva: muestra proporción, no magnitud', () => {
+    S.config.ocultarSaldo = true;
+    const el = render();
+    const barra = el.querySelector('.personales-resumen .progress');
+    expect(barra.getAttribute('aria-valuenow')).toBe('27');
+    expect(el.querySelector('.personales-resumen__hint').textContent.trim()).toBe('27% cobrado');
+  });
+
+  it('V-4: sin el ojo activo nada cambia respecto de antes', () => {
+    const el = render();
+    expect(el.querySelector('.list-item__amount').textContent.trim()).toBe('$600.000');
+    expect(el.innerHTML).not.toContain(SALDO_MASCARA_CUENTA);
+  });
+});
+
+describe('vacío y formulario de Me deben (DIS.3)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-personales"></div>';
+    S.personales = [];
+    S.config = { ...(S.config ?? {}), ocultarSaldo: false };
+    S.cuentas = [{ id: 'c1', nombre: 'Bancolombia', tipo: 'ahorros', saldo: 1_000_000, activa: true }];
+  });
+
+  // ── V-7 / reglas R11 y R18: un solo primario por pantalla ──────
+
+  it('V-7: el CTA del vacío es secundario y usa el mismo verbo del encabezado', () => {
+    renderListaPersonales();
+    const btn = document.querySelector('.empty-state [data-action="nuevo-personal"]');
+    expect(btn.className).toContain('btn-secondary');
+    expect(btn.className).not.toContain('btn-primary');
+    expect(btn.textContent.trim()).toBe('+ Agregar préstamo');
+  });
+
+  // ── V-11 / V-12: lo esencial primero ──────────────────────────
+
+  it('V-11: pregunta persona, monto, fecha y cuenta antes de lo opcional', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal()}</div>`;
+    const campos = [...document.querySelectorAll('#form-personal input')].map(i => i.id || i.name);
+    expect(campos.indexOf('pers-fecha')).toBeLessThan(campos.indexOf('pers-tasa'));
+    expect(campos.indexOf('cuentaId')).toBeLessThan(campos.indexOf('pers-tasa'));
+    expect(campos.indexOf('pers-tasa')).toBeLessThan(campos.indexOf('pers-motivo'));
+    expect(campos.indexOf('pers-motivo')).toBeLessThan(campos.indexOf('pers-limite'));
+  });
+
+  it('V-12: el hint de la tasa cabe en una línea y no repite el badge "opcional"', () => {
+    document.body.innerHTML = `<div id="host">${renderFormPersonal()}</div>`;
+    const hint = document.getElementById('pers-tasa')
+      .closest('.form-group').querySelector('.form-hint').textContent.trim();
+    expect(hint).toBe('Se calcula sobre el capital pendiente; cada pago cubre primero el interés.');
+    expect(hint).not.toContain('Déjalo vacío');
   });
 });

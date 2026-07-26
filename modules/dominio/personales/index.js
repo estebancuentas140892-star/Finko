@@ -45,6 +45,25 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
   editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
 }
 
+/**
+ * Devuelve el foco a un ancla visible DESPUÉS de repintar la lista (DIS.3, V-5 y
+ * V-6, regla R13).
+ *
+ * `cerrarModal()` llama `releaseFocus()`, que devuelve el foco al botón que abrió
+ * el modal, y acto seguido `renderListaPersonales()` reemplaza el `innerHTML` de
+ * `#lista-personales`: ese botón deja de existir y el foco cae al `body`. Con
+ * teclado eso obliga a tabular desde el principio de la página en cada alta,
+ * cobro o borrado. Llamar esto siempre después del render, nunca antes.
+ *
+ * @param {string|null} id id del préstamo a enfocar; `null` vuelve al encabezado.
+ */
+function _enfocarTrasRender(id) {
+  const destino = id
+    ? document.querySelector(`#lista-personales article[data-id="${id}"]`)
+    : document.getElementById('sec-personales');
+  destino?.focus();
+}
+
 // ── HANDLERS NUEVO / GUARDAR ─────────────────────────────────────
 
 function _nuevoPersonal() {
@@ -75,8 +94,8 @@ function _guardarPersonal() {
     return;
   }
 
-  const nuevo = normalizarPersonal(datos);
-  guardar('personales', nuevo);
+  const nuevo    = normalizarPersonal(datos);
+  const guardado = guardar('personales', nuevo);
 
   // PE.7: prestar saca el dinero de la cuenta elegida. No destruye riqueza (el
   // capital pendiente entra al patrimonio como "Por cobrar", ver
@@ -91,6 +110,7 @@ function _guardarPersonal() {
   if (overlay) cerrarModal(overlay);
 
   renderListaPersonales();
+  _enfocarTrasRender(guardado.id);
   announce(nuevo.cuentaId
     ? `Préstamo guardado. Se descontaron ${f(nuevo.monto)} de tu cuenta.`
     : 'Préstamo guardado correctamente.'
@@ -167,6 +187,7 @@ function _confirmarPagoPersonal() {
   if (overlay) cerrarModal(overlay);
 
   renderListaPersonales();
+  _enfocarTrasRender(id);
   // Con tasa, el anuncio informa cuánto del abono fue a capital y cuánto a
   // interés (PE.1); sin tasa, el copy de siempre.
   if (actualizado.liquidado) {
@@ -208,6 +229,8 @@ async function _eliminarPersonal(el) {
 
   eliminar('personales', id);
   renderListaPersonales();
+  // La tarjeta ya no existe: el ancla es la sección (V-6).
+  _enfocarTrasRender(null);
   announce(`Préstamo a ${prestamo.persona} eliminado.`);
 }
 

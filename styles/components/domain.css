@@ -2406,6 +2406,57 @@ button.chip:focus-visible {
   text-align: right;
 }
 
+/* C4 (DIS.3, hallazgo M4): el resumen deja de ser una torre. `auto-fit` con
+   minmax(180px, 1fr) resolvía a UNA columna a 390px (358px de contenido) y los
+   4 stats apilados medían 370px, el 47% del alto útil. Dos columnas fijas: los
+   labels más largos ("Total prestado", "Te han devuelto") caben en 177px a 12px.
+   `.resumen-card__grid` solo la usa esta sección, de ahí el scope.
+   Y el modificador --primary por fin enfatiza: pintaba el mismo color que un
+   stat normal, así que "Pendiente" (el dato por el que se abre la sección) no se
+   distinguía de "Activos". */
+.personales-resumen .resumen-card__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.personales-resumen .resumen-card__stat--primary .resumen-card__value {
+  font-size: var(--fk-text-2xl);
+}
+
+/* C1 (DIS.3, hallazgo M1): `.personales-lista` se emitía desde `view.js` y no
+   existía en ninguna hoja: las tarjetas iban borde contra borde (0px medidos) y
+   los bordes de 1px formaban una costura doble. Mismo patrón y mismo valor que
+   `.inversion-lista` (analysis.css). Regla R21 de espaciado por contenedor. */
+.personales-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+/* C3 (DIS.3, hallazgo M3, regla R22): el chip de estado vivía DENTRO del `<p>`
+   del título con `white-space: nowrap`. En la columna de 111,8px de móvil, "La
+   fecha de pago pasó hace 3 semanas" medía 252,5px y cruzaba por debajo del
+   botón "Me pagaron", que lo tapaba. Baja a su propia línea y puede partir en
+   dos: un estado que no se lee no es un estado. */
+.personal-item__estado {
+  margin: var(--fk-space-1) 0 0;
+}
+
+.personal-item__estado .chip {
+  white-space: normal;
+  line-height: var(--fk-leading-snug);
+  text-align: left;
+}
+
+/* V-2 (regla R19): el monto ancla es el pendiente y el histórico acompaña
+   debajo, en secundario, sin competir. */
+.personal-item__de {
+  font-size: var(--fk-text-xs);
+  color: var(--fk-text-muted);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* ── PANEL DE ALERTAS DE LÍMITES (dashboard) ──────────────────── */
 .limites-card {
   display: flex;

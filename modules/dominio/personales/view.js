@@ -7,6 +7,7 @@ import { S } from '../../core/state.js';
 import { f, fechaLegible, esc as _esc } from '../../infra/utils.js';
 import { icon, emptyArt } from '../../infra/icons.js';
 import { renderSelectorCuenta } from '../../infra/cuenta-helper.js';
+import { SALDO_MASCARA, SALDO_MASCARA_CUENTA } from '../../infra/render.js';
 import {
   calcularPendiente,
   calcularCapitalPendiente,
@@ -26,6 +27,15 @@ import {
 /**
  * Renderiza la lista de préstamos en `#lista-personales` + el resumen arriba.
  * No-op si el contenedor no existe.
+ *
+ * DIS.3 (V-8, regla R21): los liquidados se listan después de los activos, con
+ * el mismo criterio "más viejos primero" dentro de cada grupo. `logic.js` no
+ * cambia: el corte es de la vista, porque es una decisión de presentación.
+ *
+ * DIS.3 (V-4, regla R20): toda cifra de dinero respeta `S.config.ocultarSaldo`,
+ * el mismo flag del ojo de Inicio (IN.2) que ya leen Gastos, Deudas, Calendario,
+ * Mis cuentas y Análisis. Las barras de progreso se conservan: muestran
+ * proporción, no magnitud (mismo criterio que el hero de Calendario, CAL.4a).
  */
 export function renderListaPersonales() {
   const el = document.getElementById('lista-personales');
@@ -39,32 +49,43 @@ export function renderListaPersonales() {
     return;
   }
 
-  const ordenadas = ordenarPersonales(lista, 'antiguo');
-  const hoy = new Date();
+  const hoy    = new Date();
+  const oculto = S.config?.ocultarSaldo === true;
+
+  const ordenadas  = ordenarPersonales(lista, 'antiguo');
+  const activos    = ordenadas.filter(p => calcularPendiente(p, hoy) > 0);
+  const liquidados = ordenadas.filter(p => calcularPendiente(p, hoy) <= 0);
 
   el.innerHTML = `
-    ${lista.length >= 2 ? _renderResumen(resumen) : ''}
+    ${lista.length >= 2 ? _renderResumen(resumen, oculto) : ''}
     <div class="personales-lista">
-      ${ordenadas.map(p => _renderPersonalItem(p, hoy)).join('')}
+      ${[...activos, ...liquidados].map(p => _renderPersonalItem(p, hoy, oculto)).join('')}
     </div>`;
 }
 
-function _renderResumen(r) {
+/**
+ * @param {ReturnType<import('./logic.js').calcularResumen>} r
+ * @param {boolean} oculto `S.config.ocultarSaldo` (V-4, regla R20).
+ */
+function _renderResumen(r, oculto) {
   const barClass = r.pctCobrado >= 100 ? ' progress-bar--complete' : '';
+  // V-3: "Pendiente" primero y un paso más grande (el modificador --primary por
+  // fin pinta algo, bloque C4); el histórico y el conteo quedan detrás.
+  const m = (n) => oculto ? SALDO_MASCARA : f(n);
   return `
     <section class="personales-resumen" aria-label="Resumen de préstamos">
       <div class="resumen-card__grid">
-        <div class="resumen-card__stat">
-          <p class="resumen-card__label">Total prestado</p>
-          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalPrestado)}</p>
-        </div>
         <div class="resumen-card__stat resumen-card__stat--primary">
           <p class="resumen-card__label">Pendiente</p>
-          <p class="resumen-card__value resumen-card__value--sm">${f(r.totalPendiente)}</p>
+          <p class="resumen-card__value">${m(r.totalPendiente)}</p>
         </div>
         <div class="resumen-card__stat">
           <p class="resumen-card__label">Te han devuelto</p>
-          <p class="resumen-card__value resumen-card__value--sm text-success">${f(r.totalCobrado)}</p>
+          <p class="resumen-card__value resumen-card__value--sm text-success">${m(r.totalCobrado)}</p>
+        </div>
+        <div class="resumen-card__stat">
+          <p class="resumen-card__label">Total prestado</p>
+          <p class="resumen-card__value resumen-card__value--sm">${m(r.totalPrestado)}</p>
         </div>
         <div class="resumen-card__stat">
           <p class="resumen-card__label">Activos</p>
@@ -85,14 +106,16 @@ function _renderResumen(r) {
 /**
  * @param {import('./logic.js').Personal} prestamo
  * @param {Date} hoy
+ * @param {boolean} [oculto=false] `S.config.ocultarSaldo` (V-4, regla R20).
  */
-function _renderPersonalItem(prestamo, hoy) {
+function _renderPersonalItem(prestamo, hoy, oculto = false) {
   const persona    = _esc(prestamo.persona);
   const motivo     = _esc(prestamo.motivo ?? '');
   const conInteres = tieneInteres(prestamo);
   const pendiente  = calcularPendiente(prestamo, hoy);
   const liquidado  = pendiente <= 0;
   const pct        = porcentajePagado(prestamo);
+  const m          = (n) => oculto ? SALDO_MASCARA_CUENTA : f(n);
 
   // Copy por estado (fecha pactada > último abono > antigüedad); el tono del
   // chip sigue saliendo del reloj de incomodidad (que un abono reinicia).
@@ -128,32 +151,46 @@ function _renderPersonalItem(prestamo, hoy) {
   const interesCobrado = Number(prestamo.interesPagado) || 0;
   const interesHtml = conInteres
     ? `<p class="list-item__hint">Interés: ${prestamo.tasa}% mensual${
-        interesCobrado > 0 ? ` · Ya cobraste ${f(interesCobrado)} en intereses` : ''
+        interesCobrado > 0 ? ` · Ya cobraste ${m(interesCobrado)} en intereses` : ''
       }</p>`
     : '';
 
+  // V-10 (regla R8): "Me pagaron" pierde `btn-sm` y queda en el piso táctil de
+  // 44px, igual que el botón de eliminar. Con la fila de C2 las acciones tienen
+  // su propio renglón en móvil, así que los 8px extra no aprietan nada.
   const accionPago = liquidado
     ? ''
-    : `<button class="btn btn-ghost btn-sm"
+    : `<button class="btn btn-ghost"
                 data-action="pagar-personal"
                 data-id="${_esc(prestamo.id)}"
                 aria-label="Registrar pago de ${persona}">Me pagaron</button>`;
 
+  // V-2 (regla R19): la columna ancla muestra lo que decide hoy (el pendiente)
+  // y el histórico acompaña debajo en secundario, solo cuando hubo abonos que
+  // expliquen la diferencia. El liquidado ya no tiene pendiente que mostrar:
+  // conserva el monto original, que es su cifra final.
+  const hayAbonos  = (Number(prestamo.pagado) || 0) > 0;
+  const montoAncla = liquidado ? m(prestamo.monto) : m(pendiente);
+  const historico  = (!liquidado && hayAbonos)
+    ? `<p class="personal-item__de">de ${m(prestamo.monto)}</p>`
+    : '';
+
+  // El desglose capital + interés se queda en el subtítulo: es lo que el meta no
+  // puede decir. En los préstamos sin tasa duplicaba la cifra del meta y sale.
+  const subtituloHtml = (conInteres && !liquidado)
+    ? `<p class="list-item__subtitle">capital ${m(calcularCapitalPendiente(prestamo))} + interés ${m(calcularInteresPendiente(prestamo, hoy))}</p>`
+    : '';
+
   return `
-    <article class="list-item" data-id="${_esc(prestamo.id)}">
+    <article class="list-item" data-id="${_esc(prestamo.id)}" tabindex="-1">
       <div class="list-item__icon" aria-hidden="true">${liquidado ? icon('check-circle', 'icon icon--pop') : icon('personales')}</div>
       <div class="list-item__body">
-        <p class="list-item__title">${persona}
-          <span class="${chipClase}">${chipLabel}</span>
-        </p>
-        <p class="list-item__subtitle">${
-          conInteres && !liquidado
-            ? `Pendiente: ${f(pendiente)} (capital ${f(calcularCapitalPendiente(prestamo))} + interés ${f(calcularInteresPendiente(prestamo, hoy))})`
-            : `Pendiente: ${f(pendiente)} de ${f(prestamo.monto)}`
-        }</p>
+        <p class="list-item__title">${persona}</p>
+        <p class="personal-item__estado"><span class="${chipClase}">${chipLabel}</span></p>
+        ${subtituloHtml}
         <div class="progress" role="progressbar" data-dom="personales"
              aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="${pct}% pagado">
+             aria-label="${pct}% cobrado">
           <div class="progress-bar${liquidado ? ' progress-bar--complete' : ''}" style="width:${pct}%"></div>
         </div>
         ${interesHtml}
@@ -162,7 +199,8 @@ function _renderPersonalItem(prestamo, hoy) {
         ${fechaLim}
       </div>
       <div class="list-item__meta">
-        <p class="list-item__amount">${f(prestamo.monto)}</p>
+        <p class="list-item__amount">${montoAncla}</p>
+        ${historico}
       </div>
       <div class="list-item__action">
         ${accionPago}
@@ -174,13 +212,18 @@ function _renderPersonalItem(prestamo, hoy) {
     </article>`;
 }
 
+/**
+ * V-7 (reglas R11 y R18): un solo primario por pantalla. El botón del encabezado
+ * (`index.html`) es el que crea, así que el CTA del vacío baja a secundario y
+ * ambos dicen lo mismo: misma acción, mismo nombre.
+ */
 function _renderEmptyState() {
   return `
     <div class="empty-state">
       <div class="empty-state__icon">${emptyArt('personales')}</div>
       <p class="empty-state__title">Nadie te debe nada (o no lo registraste)</p>
       <p class="empty-state__desc">Registra tu primer préstamo a familia o amigos.</p>
-      <button class="btn btn-primary" data-action="nuevo-personal">+ Agregar préstamo</button>
+      <button class="btn btn-secondary" data-action="nuevo-personal">+ Agregar préstamo</button>
     </div>`;
 }
 
@@ -192,6 +235,12 @@ function _renderEmptyState() {
  * PE.7: incluye el selector de la cuenta de la que sale el dinero. Con 0
  * cuentas activas no se muestra (patrón 0/1/varias) y el préstamo se registra
  * igual, como seguimiento puro que no mueve ningún saldo.
+ *
+ * DIS.3 (V-11): el orden pregunta primero lo esencial [persona · monto · fecha ·
+ * cuenta] y después lo opcional [tasa · motivo · fecha pactada]. Antes la tasa
+ * (el caso raro) era el tercer campo y empujaba el selector de cuenta y el botón
+ * Guardar por debajo del borde de la hoja. Colapsar los opcionales bajo "Más
+ * detalles" es una pauta nueva de formulario y se decide en CAT.4, no acá.
  *
  * @returns {string}
  */
@@ -219,16 +268,20 @@ export function renderFormPersonal() {
                min="1" step="1000" placeholder="0" required aria-required="true" />
       </div>
       <div class="form-group">
+        <label for="pers-fecha" class="label">Fecha del préstamo</label>
+        <input id="pers-fecha" name="fecha" class="input" type="date"
+               value="${hoy}" required aria-required="true" />
+      </div>
+
+      ${cuentaHtml}
+      ${notaCuenta}
+
+      <div class="form-group">
         <label for="pers-tasa" class="label">Interés mensual (%) <span class="form-optional">opcional</span></label>
         <input id="pers-tasa" name="tasa" class="input" type="number"
                min="0" max="100" step="0.1" placeholder="Ej. 2"
                inputmode="decimal" />
-        <p class="form-hint">Déjalo vacío si prestaste sin interés. Con tasa, el interés se calcula sobre el capital pendiente y cada pago cubre primero el interés.</p>
-      </div>
-      <div class="form-group">
-        <label for="pers-fecha" class="label">Fecha del préstamo</label>
-        <input id="pers-fecha" name="fecha" class="input" type="date"
-               value="${hoy}" required aria-required="true" />
+        <p class="form-hint">Se calcula sobre el capital pendiente; cada pago cubre primero el interés.</p>
       </div>
       <div class="form-group">
         <label for="pers-motivo" class="label">Motivo <span class="form-optional">opcional</span></label>
@@ -241,9 +294,6 @@ export function renderFormPersonal() {
         <input id="pers-limite" name="fechaLimite" class="input" type="date" />
         <p class="form-hint">Si pasa esta fecha, el préstamo se marca como vencido.</p>
       </div>
-
-      ${cuentaHtml}
-      ${notaCuenta}
 
       <div class="modal__footer">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>

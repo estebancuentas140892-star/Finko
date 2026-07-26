@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-25. Última tarea cerrada: DIS.2, las 8 correcciones aplicables de la auditoría de diseño de Deudas (VD1 y D10 esperan una decisión de Esteban; ver [`contexto/deudas.md`](contexto/deudas.md)).
+> Última actualización: 2026-07-26. Última tarea cerrada: DIS.3, las 11 correcciones aplicables de la auditoría de diseño de Me deben (C5 queda fuera por tocar Metas; V2 va a CAT.4 y V3 a PE.6d; ver [`contexto/me-deben.md`](contexto/me-deben.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,7 +26,7 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3028/3028 verdes |
+| Tests unitarios + integración | 3048/3048 verdes |
 | Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-25 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(me-deben): DIS.3, 11 correcciones de la auditoría de diseño sobre Me deben · 2026-07-26
+
+Auditoría de diseño de la sección (12 hallazgos): se aplican 11. Lo grande: la fila anclaba **lo prestado** ($1.200.000) y dejaba **lo pendiente** ($859.067) en 12px gris al fondo de la tarjeta, así que la pregunta por la que se abre la sección era el texto más pequeño; ahora el pendiente es la cifra grande y el histórico acompaña debajo (regla R19 nueva). El chip de estado salía del `<p>` del nombre y cruzaba por debajo de "Me pagaron", que lo tapaba: baja a su propia línea y puede partir en dos (R22). Me deben era **la única sección con dinero que ignoraba el ojo de privacidad**, en la lista más sensible de la app: ya lo lee (R20). Los liquidados se van al final (R21), el foco aterriza en la tarjeta tras guardar o cobrar en vez de caer al `body`, el resumen pasa de una torre de 370px a 224px con "Pendiente" al frente, y el formulario pregunta lo esencial antes que la tasa. `DESIGN_SYSTEM.md` gana R19 a R22. **Sin aplicar:** C5 (`.modal__intro` sin CSS, tocaría también Metas), V2 (colapsar los opcionales del form, va a CAT.4) y V3 (copy corto de chips, va a PE.6d). 3048/3048 unit + lint verdes; smoke, reflow-320, a11y-forms y navegacion-render verdes. SW v418→v419.
+
+---
 
 ### fix(deudas): DIS.2, 8 correcciones de la auditoría de diseño sobre Deudas · 2026-07-25
 
@@ -66,13 +72,7 @@ Primera de cuatro rebanadas del patrón **P3** de la auditoría (no se puede edi
 
 ---
 
-### feat(gastos): TX.12 gastos frecuentes y "Repetir" · 2026-07-23
-
-Segunda pieza del patrón **P2** de la auditoría (la primera fue CAL.5a, la misma tarde): cierra el patrón por completo. El gasto cotidiano (almuerzo, café, Uber) se teclea entero cada vez; ahora dos atajos, sin dato nuevo. **Chips de un toque en "Nuevo gasto":** `gastosFrecuentes()` (nueva, pura, `gastos/logic.js`) agrupa el historial por categoría + monto redondeado a $1.000 + descripción normalizada, y ofrece los patrones que se repiten 3+ veces en 60 días; un click prellena monto/categoría/cuenta y deja el foco en "Guardar". Solo al crear, nunca al editar. **"Repetir" en cada fila de la lista:** abre el modal en modo creación con los datos de esa fila exacta (incluida la nota), fechado hoy. **Excluye gastos con `compromisoId`** (pagos de fijo/abono): esos los repite su propio dominio dueño. **Decisión de diseño:** el chip de frecuente NO prellena la nota (sintetiza de varios registros, sería ambigua); "Repetir" de una fila SÍ (apunta a un registro concreto y conocido). Ambos comparten `_prellenarCamposGasto()` en `gastos/index.js`. 23 unit + 2 E2E nuevos. 2965/2965 unit + 227/227 E2E + lint verdes. SW v413→v414.
-
----
-
-> Para tareas anteriores (feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 

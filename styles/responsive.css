@@ -252,6 +252,50 @@
   .list-item:has(.list-item__meta) .list-item__body   { grid-area: body; }
   .list-item:has(.list-item__meta) .list-item__meta   { grid-area: meta; align-items: flex-start; }
   .list-item:has(.list-item__meta) .list-item__action { grid-area: action; align-self: start; margin-top: -2px; }
+
+  /* ── Fila de préstamo de "Me deben" (DIS.3, bloque C2, hallazgos M2 y M8) ──
+     La grilla genérica de arriba manda `__meta` a la segunda fila y deja el
+     primer renglón a las acciones: con dos botones (146,9px medidos) el cuerpo
+     se quedaba en 111,8px, el nombre partía en dos líneas y el monto terminaba
+     a 327,3px del tope de una tarjeta de 370,1px, debajo de todos los hints.
+     Acá el monto vuelve al primer renglón (arriba a la derecha, donde el ojo lo
+     busca), el cuerpo recupera el ancho de las acciones (172,5px) y las
+     acciones bajan a su propio renglón con piso táctil de 44px: el CTA a la
+     izquierda y el destructivo al extremo opuesto, misma anatomía que la fila
+     de dinero del resto de la app (regla R19).
+     Las áreas tienen que ser rectangulares: un área en L invalida y descarta
+     TODO el `grid-template-areas` en silencio. */
+  .personales-lista .list-item:has(.list-item__meta) {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "icon body meta"
+      ".    body meta"
+      ".    action action";
+    row-gap: var(--fk-space-2);
+  }
+
+  .personales-lista .list-item:has(.list-item__meta) .list-item__meta {
+    grid-area: meta;
+    align-self: start;
+    align-items: flex-end;
+  }
+
+  .personales-lista .list-item:has(.list-item__meta) .list-item__action {
+    grid-area: action;
+    align-self: end;
+    justify-self: stretch;
+    justify-content: flex-end;
+    gap: var(--fk-space-2);
+    margin-top: 0;
+  }
+
+  /* CTA a la izquierda, "Eliminar" al extremo opuesto. Una sola regla sirve para
+     los dos casos: el préstamo liquidado solo trae el destructivo, que sin
+     hermano queda a la derecha. */
+  .personales-lista .list-item__action > :first-child:not(:last-child) {
+    margin-right: auto;
+  }
 }
 
 /* ── MÓVIL (< 768px): grid 1-col, fluid type, layouts compactos ─ */

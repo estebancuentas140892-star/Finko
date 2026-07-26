@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-25 (R7 y R8, auditoría de diseño de Deudas; antes R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-07-26 (R19 a R22, auditoría de diseño de Me deben; antes R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -15,6 +15,8 @@
 5. **Responsive real** - Cada componente funciona en 320px y en 1440px.
 6. **Tokens siempre** - Nunca hardcodear colores, espaciados ni tamaños. Solo `var(--fk-*)`.
 7. **"Calma con energía"** (rediseño 2026) - Superficies tranquilas con mucho aire; el acento esmeralda se reserva para dinero disponible, progreso y éxito. Cero glow neón.
+
+**R20 · El ojo no tiene excepciones:** toda vista que pinte montos lee `S.config.ocultarSaldo` (IN.2), el único control de privacidad de la app. Máscara larga (`SALDO_MASCARA`) para totales y heros, corta (`SALDO_MASCARA_CUENTA`) por fila y en las cifras dentro de hints. Las barras y anillos de proporción se conservan: muestran porcentaje, no magnitud. Origen: Me deben, la lista más sensible (cuánto te debe la tía, por su nombre propio), era la única sección con dinero que ignoraba el flag.
 
 ---
 
@@ -284,6 +286,8 @@ Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >
 
 **R7 · Estado terminal:** un elemento en estado final (saldado, cumplido, archivado) **apaga sus indicadores de futuro**: vencimientos, urgencias, cuentas regresivas, cuotas por pagar. El chip se calcula después de saber si el elemento sigue vivo, no antes, y el hueco se llena con el **cierre** (la fecha en que ocurrió). Origen: una deuda saldada decía "Saldada" en verde y "Vence hoy" en rojo a dos centímetros.
 
+**R22 · Un chip cabe o baja de línea:** un chip de estado nunca desborda ni tapa. Si no cabe en su columna, vive en su **propia línea** bajo el título y puede partir en dos (`white-space: normal`); `nowrap` solo con truncado explícito. Origen: el chip de Me deben iba dentro del `<p>` del nombre y "La fecha de pago pasó hace 3 semanas" (252px) cruzaba por debajo del botón, que lo tapaba: el estado más urgente producía el label más largo, así que cuanto peor la noticia, menos se leía.
+
 ### List Items
 
 ```html
@@ -300,6 +304,10 @@ Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >
 Variantes reales: `.list-item__icon--cat` (ícono de categoría con chip de acento), `.list-item__meta`, `.list-item__action`, `.list-item__value`, `.list-item__progress-label`. Nota de color: los montos de gasto van en neutro, no en rojo (criterio AUD.4).
 
 **R2 · Fila de obligación**, anatomía única en 2 líneas: teja 32px (`--fk-dom-X` al 14% + `-text`) · nombre 14/600 truncado · meta con `.dom-badge` y estado temporal · monto 14/700 tabular. En una línea el badge se come ~64px y trunca el nombre justo donde se decide qué pagar.
+
+**R19 · El monto ancla es lo vigente:** la cifra destacada de una fila de dinero (`.list-item__amount`) es la que **decide hoy**: pendiente, saldo, cuota. El histórico acompaña debajo en secundario (`--fk-text-xs` + `--fk-text-muted`) y solo cuando hay movimientos que expliquen la diferencia. Nunca al revés. En móvil esa cifra vive en el **primer renglón** y las acciones bajan a su propio renglón: dos botones en el primer renglón dejan el cuerpo en ~112px y parten el nombre en dos líneas. Origen: Me deben anclaba lo prestado hace meses ($1.200.000) y dejaba lo pendiente ($858.500) en 12px gris al fondo de la tarjeta.
+
+**R21 · Lo terminado no compite:** lo liquidado, completado o archivado se lista **después** de lo activo, sin desaparecer; el criterio de orden se aplica dentro de cada grupo. Origen: un préstamo liquidado, que no pide ninguna acción salvo borrar, se sentaba encima de uno activo por ser más antiguo. Corolario de contenedor: una lista separa sus ítems desde el contenedor (`display: flex` + `gap`), no desde el ítem.
 
 ### Barras y anillos de progreso
 
