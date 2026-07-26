@@ -390,6 +390,11 @@
              franja saluda sola y el avatar se oculta (sin dato nuevo). -->
         <header class="section__header perfil-inicio">
           <h1 class="sr-only" id="title-dash">Tu resumen</h1>
+          <!-- Marca "F" (DIS.6/C4, hallazgo H5, regla R31): en móvil el
+               sidebar pierde su logo, así que sin esto la app no se nombra
+               en ninguna pantalla. Aquí no cuesta alto: el avatar de 46px
+               ya define la fila. -->
+          <span class="perfil-inicio__marca" aria-hidden="true">F</span>
           <span class="perfil-inicio__avatar" id="perfil-avatar" aria-hidden="true" hidden></span>
           <div class="perfil-inicio__saludo">
             <p class="perfil-inicio__franja" id="saludo-franja"></p>
@@ -539,8 +544,15 @@
         <a class="section__volver" href="#dash" aria-label="Volver a Inicio">
           <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg>Inicio
         </a>
+        <!-- Teja de sección (DIS.6/C7, hallazgo H9, regla R33): era una de
+             las dos únicas secciones sin teja, sin decisión detrás. No es
+             dominio financiero (ADR 025 D6), así que va sin data-dom y
+             .cat-teja cae al neutro. Reusa i-saldo. -->
         <header class="section__header">
-          <h1 class="section__title" id="title-movimientos">Movimientos</h1>
+          <div class="section__title-group">
+            <span class="cat-teja section__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
+            <h1 class="section__title" id="title-movimientos">Movimientos</h1>
+          </div>
         </header>
         <div id="movimientos-filtros" class="movimientos-filtros">
           <!-- movimientos/view.js: renderFiltrosMovimientos() (MOV.2) -->
@@ -1352,6 +1364,18 @@
           <a class="mas-tile" href="#tesoreria" data-section="tesoreria">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-cuentas"/></svg></span>
             <span class="mas-tile__label">Mis cuentas</span>
+          </a>
+          <!-- Movimientos (DIS.6/C6, hallazgo H6, regla R32): era la única
+               sección sin entrada de navegación. Se llegaba solo con "Ver
+               todo" de Actividad reciente, un enlace que vive en una celda
+               que arranca [hidden] y solo se activa cuando ya hay
+               movimientos: quien registra su primer gasto y quiere el
+               historial completo no tenía por dónde. Reusa i-saldo (el
+               sprite no tiene un ícono propio) y la grilla de 2 columnas
+               absorbe el sexto tile sin crecer de alto. -->
+          <a class="mas-tile" href="#movimientos" data-section="movimientos">
+            <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-saldo"/></svg></span>
+            <span class="mas-tile__label">Movimientos</span>
           </a>
           <a class="mas-tile" href="#personales" data-section="personales">
             <span class="mas-tile__teja" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-personales"/></svg></span>

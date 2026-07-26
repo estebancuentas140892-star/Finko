@@ -5,6 +5,9 @@
  * - markActiveNav(): marca .nav-item Y .mas-tile de la sección activa
  *   (clase + aria-current), y resalta el botón "Más" cuando la sección
  *   vive detrás del menú (MAS_SECTIONS).
+ * - El botón "Más" ubicado (DIS.6/C3, regla R30): dentro de una sección del
+ *   menú dice su nombre, muestra su ícono y toma su data-section (de donde
+ *   sale el color de dominio); al volver a la barra se limpia.
  * - _syncThemeButton vía toggleTheme(): sincroniza TODOS los toggles
  *   presentes (checkbox de Ajustes + botón de icono del sheet, que
  *   alterna el glifo luna/sol y aria-pressed).
@@ -59,6 +62,59 @@ describe('markActiveNav()', () => {
     const masBtn = document.querySelector('.nav-item[data-modal="modal-mas"]');
     expect(masBtn.classList.contains('active')).toBe(false);
     expect(masBtn.getAttribute('aria-current')).toBe('false');
+  });
+});
+
+describe('el botón "Más" nombra la sección donde estás (DIS.6/C3)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <a class="nav-item" data-section="gast"></a>
+      <button class="nav-item" data-modal="modal-mas" aria-label="Mas opciones">
+        <svg class="nav-item__icon icon"><use href="#i-mas"></use></svg>
+        <span class="nav-item__label">Más</span>
+      </button>
+    `;
+  });
+
+  const masBtn = () => document.querySelector('.nav-item[data-modal="modal-mas"]');
+
+  it('dentro de una sección del menú toma su nombre, su ícono y su data-section', () => {
+    markActiveNav('analisis');
+    const btn = masBtn();
+    expect(btn.dataset.section).toBe('analisis');
+    expect(btn.querySelector('.nav-item__label').textContent).toBe('Análisis');
+    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-analisis');
+    expect(btn.getAttribute('aria-label')).toBe('Análisis. Abrir más opciones');
+    expect(btn.classList.contains('nav-item--mas-ubicado')).toBe(true);
+  });
+
+  it('al pasar de una sección del menú a otra, cambia de nombre y de color', () => {
+    markActiveNav('analisis');
+    markActiveNav('metas');
+    const btn = masBtn();
+    expect(btn.dataset.section).toBe('metas');
+    expect(btn.querySelector('.nav-item__label').textContent).toBe('Metas');
+    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-metas');
+    expect(btn.classList.contains('active')).toBe(true);
+  });
+
+  it('al volver a una sección de la barra limpia el data-section y vuelve a "Más"', () => {
+    markActiveNav('analisis');
+    markActiveNav('gast');
+    const btn = masBtn();
+    expect(btn.dataset.section).toBeUndefined();
+    expect(btn.querySelector('.nav-item__label').textContent).toBe('Más');
+    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-mas');
+    expect(btn.getAttribute('aria-label')).toBe('Mas opciones');
+    expect(btn.classList.contains('nav-item--mas-ubicado')).toBe(false);
+  });
+
+  it('Movimientos ya cuenta como sección del menú (DIS.6/C6)', () => {
+    markActiveNav('movimientos');
+    const btn = masBtn();
+    expect(btn.classList.contains('active')).toBe(true);
+    expect(btn.querySelector('.nav-item__label').textContent).toBe('Movimientos');
+    expect(btn.querySelector('use').getAttribute('href')).toBe('#i-saldo');
   });
 });
 

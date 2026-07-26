@@ -235,10 +235,21 @@
 }
 /* Cierre accesible discreto (ADR 040 D6): Escape ya cierra, pero
    mouse/touch necesitan una salida explícita sin navegar. */
+/* DIS.6/C5 (hallazgo H8, reglas R4/R8): medía 32x32, el único control
+   visible para cerrar una hoja que se abre desde el pulgar y que vive en
+   la esquina más lejana de ese gesto. Sube al piso de 44px sin cambiar el
+   dibujo del ícono. */
 .mas-sheet__close {
   position: absolute;
   top: var(--fk-space-2);
   right: var(--fk-space-2);
+}
+/* El 44 va con el selector compuesto porque `.modal__close` (32x32) se
+   declara más abajo en este mismo archivo y con la misma especificidad:
+   ganaría por orden. Corolario de R23. */
+.modal__close.mas-sheet__close {
+  width: 44px;
+  height: 44px;
 }
 .mas-sheet__body {
   padding: var(--fk-space-2) var(--fk-space-4) var(--fk-space-5);
@@ -435,6 +446,56 @@
   color: var(--fk-text-muted);
   white-space: nowrap;
 }
+
+/* ── WIZARD DE BIENVENIDA (DIS.6/C1, hallazgo H1, regla R29) ────
+   Las cinco clases que inyecta `_renderPaso1()` (ui/onboarding.js) no
+   tenían una sola regla en todo el proyecto: la primera pantalla de la app
+   era la única construida con los defaults del navegador (hero de 16px
+   alineado a la izquierda, título pegado al párrafo, letra chica de
+   privacidad del mismo tamaño que el cuerpo).
+   No se inventa lenguaje nuevo: es la receta de `.empty-state` que la app
+   ya usa en 11 secciones (teja centrada + título + descripción + CTA de
+   ancho completo + nota en --fk-text-xs). El hero reusa la teja de marca
+   de `.sidebar__logo-mark` (degradado a 150°, sombra con
+   --fk-accent-border), que es donde vive la "F" desde NAV2.1b. */
+.modal--onboarding { text-align: center; }
+.onboarding__hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--fk-space-4);
+  border-radius: var(--fk-radius-xl);
+  background: linear-gradient(150deg, var(--fk-accent-hover), var(--fk-accent));
+  color: var(--fk-text-on-accent);
+  box-shadow: 0 4px 16px var(--fk-accent-border);
+  font-size: var(--fk-text-3xl);
+  font-weight: var(--fk-font-extrabold);
+  letter-spacing: -0.04em;
+}
+.onboarding__title {
+  margin: 0 0 var(--fk-space-2);
+  font-size: var(--fk-text-2xl);
+  font-weight: var(--fk-font-bold);
+  letter-spacing: -0.02em;
+}
+.onboarding__desc {
+  margin: 0 0 var(--fk-space-6);
+  font-size: var(--fk-text-sm);
+  line-height: var(--fk-leading-relaxed);
+  color: var(--fk-text-secondary);
+}
+.onboarding__footer { margin-top: var(--fk-space-5); }
+.onboarding__footer .btn { width: 100%; }
+.onboarding__note {
+  margin: var(--fk-space-4) 0 0;
+  font-size: var(--fk-text-xs);
+  line-height: var(--fk-leading-relaxed);
+  color: var(--fk-text-muted);
+}
+/* El bloque centra el wizard, pero un formulario se lee alineado. */
+.modal--onboarding .form-group { text-align: left; }
 
 /* ── ESTRUCTURA INTERNA ─────────────────────────────────────── */
 

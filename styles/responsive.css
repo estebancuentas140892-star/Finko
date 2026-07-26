@@ -148,6 +148,15 @@
   .nav-item__fab .icon { --fk-icon-size: var(--fk-icon-lg); stroke-width: 2.6; }
   .nav-item--registrar:active .nav-item__fab { transform: scale(0.94); }
 
+  /* Botón "Más" mientras nombra la sección donde estás (DIS.6/C3, hallazgo
+     H4, regla R30). El color y el tinte llegan solos: shell.js le escribe
+     el data-section vigente y el mapeo de IV.2a hace el resto. Acá solo se
+     declara el estado, para que sea visible en el marcado y no dependa de
+     que `.nav-item.active` conserve su peso. */
+  .nav-item--mas-ubicado .nav-item__label {
+    font-weight: var(--fk-font-semibold);
+  }
+
   /* Solo el primer nav-group (5 secciones core). El resto vive en Ajustes. */
   .nav-group:not(:first-child) { display: none; }
 

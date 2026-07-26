@@ -412,7 +412,14 @@
 .hub-tabs::-webkit-scrollbar {
   display: none;
 }
+/* DIS.6/C5 (hallazgo H8, reglas R4/R8): medían 66,1x38,6 y son el control
+   con el que se navega entre las cuatro secciones del hub. inline-flex +
+   align-items suben la caja al piso de 44px sin mover el texto ni la
+   línea inferior. */
 .hub-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: var(--fk-space-2) var(--fk-space-3);
   font-size: var(--fk-text-sm);
   font-weight: var(--fk-font-semibold);

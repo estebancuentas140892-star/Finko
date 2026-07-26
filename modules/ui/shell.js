@@ -16,10 +16,41 @@ const SIDEBAR_KEY  = 'fk_sidebar_collapsed';
  * Ahorros (NAV.B) cuentan: se llega a ellas por la tarjeta "Ahorros".
  */
 const MAS_SECTIONS = new Set([
-  'compromisos', 'tesoreria', 'personales',
+  'compromisos', 'tesoreria', 'movimientos', 'personales',
   'ahorro', 'metas', 'apartados', 'inversion',
   'presupuesto', 'analisis', 'config',
 ]);
+
+/**
+ * Nombre corto e ícono del sprite de cada sección de MAS_SECTIONS
+ * (DIS.6/C3, hallazgo H4, regla R30).
+ *
+ * Resaltar el botón "Más" no alcanzaba: al no tener data-section, el mapeo
+ * de dominio de IV.2a no tenía de dónde tomar color y el botón caía al
+ * acento genérico, el mismo de Inicio. Estar en Inicio y estar en
+ * cualquiera de las 11 secciones del menú se veían idénticos.
+ * Con este mapa el botón dice el nombre de la sección, muestra su ícono y
+ * hereda su color sin un mapeo nuevo: markActiveNav le escribe el
+ * data-section vigente y `[data-section="X"]` (layout.css) hace el resto.
+ */
+const SECCION_NAV = {
+  compromisos: ['Deudas',      'i-deudas'],
+  tesoreria:   ['Cuentas',     'i-cuentas'],
+  movimientos: ['Movimientos', 'i-saldo'],
+  personales:  ['Me deben',    'i-personales'],
+  presupuesto: ['Límites',     'i-presupuesto'],
+  analisis:    ['Análisis',    'i-analisis'],
+  ahorro:      ['Fondo',       'i-ahorro'],
+  metas:       ['Metas',       'i-metas'],
+  apartados:   ['Apartados',   'i-apartados'],
+  inversion:   ['Inversión',   'i-inversion'],
+  config:      ['Ajustes',     'i-ajustes'],
+};
+
+// Estado neutro del botón: lo que dice cuando estás en una sección de la barra.
+const MAS_LABEL = 'Más';
+const MAS_ICON  = 'i-mas';
+const MAS_ARIA  = 'Mas opciones';
 
 // ── THEME ───────────────────────────────────────────────────────
 
@@ -87,15 +118,48 @@ export function markActiveNav(hash) {
     item.setAttribute('aria-current', active ? 'page' : 'false');
   });
 
-  // El botón "Más" (barra inferior móvil) no tiene data-section. Se resalta
-  // cuando el hash actual pertenece a una sección que vive dentro del menú "Más",
-  // para que el usuario nunca pierda el "estás aquí" al navegar en móvil.
+  // El botón "Más" (barra inferior móvil) se resalta cuando el hash actual
+  // pertenece a una sección que vive dentro del menú "Más", para que el
+  // usuario nunca pierda el "estás aquí" al navegar en móvil. Y además dice
+  // en cuál está (DIS.6/C3): sigue abriendo la hoja, gana una segunda función.
   const masBtn = document.querySelector('.nav-item[data-modal="modal-mas"]');
   if (masBtn) {
     const enMas = MAS_SECTIONS.has(hash);
     masBtn.classList.toggle('active', enMas);
     masBtn.setAttribute('aria-current', enMas ? 'page' : 'false');
+    _rotularMas(masBtn, enMas ? hash : null);
   }
+}
+
+/**
+ * Escribe en el botón "Más" el nombre, el ícono y el data-section de la
+ * sección donde está el usuario, o lo devuelve a su estado neutro.
+ *
+ * El data-section es lo que le da el color de dominio (mapeo de IV.2a en
+ * layout.css), así que se limpia al salir: si quedara escrito, el botón
+ * seguiría teñido con una sección que ya no es la vigente.
+ *
+ * @param {HTMLElement} btn  - el botón "Más" de la barra inferior.
+ * @param {string|null} hash - sección del menú "Más", o null para el estado neutro.
+ */
+function _rotularMas(btn, hash) {
+  const [nombre, icono] = SECCION_NAV[hash] ?? [];
+  const ubicado = Boolean(nombre);
+
+  btn.classList.toggle('nav-item--mas-ubicado', ubicado);
+  if (ubicado) {
+    btn.dataset.section = hash;
+  } else {
+    delete btn.dataset.section;
+  }
+  // El botón nombra y abre: el nombre accesible dice las dos cosas.
+  btn.setAttribute('aria-label', ubicado ? `${nombre}. Abrir más opciones` : MAS_ARIA);
+
+  const label = btn.querySelector('.nav-item__label');
+  if (label) label.textContent = ubicado ? nombre : MAS_LABEL;
+
+  const use = btn.querySelector('.nav-item__icon use');
+  if (use) use.setAttribute('href', `#${ubicado ? icono : MAS_ICON}`);
 }
 
 // ── SIDEBAR COLLAPSE ────────────────────────────────────────────

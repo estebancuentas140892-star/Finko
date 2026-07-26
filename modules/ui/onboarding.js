@@ -69,10 +69,17 @@ function _onSubmitWizard(e) {
 
 // ── TEMPLATES ────────────────────────────────────────────────────
 
+/**
+ * Paso 1 del wizard. El hero lleva la marca "F" de NAV2.1b (ADR 040 D4) y
+ * no un emoji: el 💚 se renderizaba distinto en cada sistema operativo, así
+ * que la primera impresión de la app cambiaba de dibujo según el teléfono
+ * (DIS.6/C2, hallazgo H2). Los estilos de las clases .onboarding__* viven
+ * en styles/modals.css.
+ */
 function _renderPaso1() {
   return `
     <form id="form-onboarding" novalidate>
-      <div class="onboarding__hero" aria-hidden="true">💚</div>
+      <div class="onboarding__hero" aria-hidden="true">F</div>
       <h2 class="onboarding__title">¡Bienvenido a Finko!</h2>
       <p class="onboarding__desc">
         Tu gestión financiera personal, en tu idioma y sin complicaciones.

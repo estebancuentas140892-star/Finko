@@ -65,11 +65,12 @@ test.describe('NAV.B - hub Ahorros (móvil)', () => {
       els.map(e => e.textContent.trim()));
     expect(grupos).toEqual(['Gestión del dinero', 'Ahorros']);
 
-    // 10 tiles: las 4 secciones de ahorro recuperan entrada directa.
+    // 11 tiles: las 4 secciones de ahorro recuperan entrada directa y
+    // Movimientos gana la suya (DIS.6/C6, regla R32).
     const labels = await page.$$eval('#modal-mas .mas-tile__label', els =>
       els.map(e => e.textContent.trim()));
     expect(labels).toEqual([
-      'Deudas', 'Mis cuentas', 'Me deben', 'Límites de gasto', 'Análisis',
+      'Deudas', 'Mis cuentas', 'Movimientos', 'Me deben', 'Límites de gasto', 'Análisis',
       'Fondo de emergencia', 'Metas', 'Apartados', 'Inversión',
       'Ajustes',
     ]);
