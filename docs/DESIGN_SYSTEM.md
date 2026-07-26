@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-26 (R9 a R11, auditoría de diseño de Gastos; antes R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-07-26 (R23 a R28, auditoría de diseño de Apartados; antes R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -19,6 +19,12 @@
 **R10 · El título nombra el periodo que se está viendo:** una cifra y su periodo se leen juntos. Si la pantalla deja navegar entre periodos, el label dice cuál ("Gastaste en junio"), nunca un "este mes" fijo; con un filtro aplicado, dimensión más periodo ("Café en junio"), nunca la dimensión sola. Origen: el hero de Gastos decía "Gastaste este mes" en cualquier mes navegado, y a 30px de distancia su propia nav decía "Junio 2026" y su chip comparativo, "8% más que mayo".
 
 **R20 · El ojo no tiene excepciones:** toda vista que pinte montos lee `S.config.ocultarSaldo` (IN.2), el único control de privacidad de la app. Máscara larga (`SALDO_MASCARA`) para totales y heros, corta (`SALDO_MASCARA_CUENTA`) por fila y en las cifras dentro de hints. Las barras y anillos de proporción se conservan: muestran porcentaje, no magnitud. Origen: Me deben, la lista más sensible (cuánto te debe la tía, por su nombre propio), era la única sección con dinero que ignoraba el flag.
+
+**R24 · Región viva solo para respuesta:** `role="status"` y `aria-live` solo en la retroalimentación de una acción del usuario, nunca en contenido que se re-renderiza. Un lector de pantalla anuncia toda región viva que cambie, así que un contenido estático dentro de una lista que se repinta convierte cada acción en N anuncios. Origen: Apartados marcaba la sugerencia de aporte y el mensaje de "listo" de cada fila, más el aviso de proximidad: 5 regiones vivas con cuatro apartados, y registrar un solo aporte hacía que el lector leyera las sugerencias de todos, encima del anuncio real de `announce()`.
+
+**R25 · Un umbral por concepto:** "próximo", "urgente" o "alto" se definen **una vez** en `logic` y lo consumen todos los que lo muestran. Dos umbrales para el mismo concepto es un defecto, no una decisión de diseño: el resumen y la lista se contradicen. Origen: en Apartados el aviso de proximidad entraba a 60 días y el badge de la fila solo a 30, así que un apartado a 45 días se contaba en "y 2 apartados más con fecha próxima" y su fila no mostraba ninguna señal de urgencia.
+
+**R27 · Un dato, un lugar:** un resumen encima de una lista **suma, compara o proyecta**. Si repite lo que la primera fila ya dice, no va: el espacio más valioso de la pantalla no se gasta en un eco. Origen: el aviso de Apartados mostraba el apartado más urgente con su fecha y su aporte sugerido, y ese mismo apartado aparecía 60px más abajo con los mismos dos datos.
 
 ---
 
@@ -232,6 +238,8 @@ Accesibilidad: bajo `prefers-contrast: more` el trazo de toda la familia sube un
 
 **R8 · Confirmar un movimiento de dinero no usa el acento.** Generalización del [ADR 036](DECISIONS/036-deudas-v2-visual.md) D6 ("un abono es un pago, no un ingreso"): el botón que **confirma** una salida de dinero viste su dominio (`--fk-dom-X` 12 % + borde 40 % + `-text`); el verde queda para el único primario, que es el que **crea**. Aplicada en Deudas (`.deuda-card__abonar`, `.estrategia-card__aplicar`). Extenderla a toda la app es una decisión abierta.
 
+**R26 · Confirmación proporcional al daño.** Toda acción que borre o reinicie datos pasa por `confirmar()`, con el **monto y la consecuencia** en el mensaje; `peligroso: true` queda para las que destruyen, no para las que cierran un ciclo. Y su zona táctil nunca es menor que la de las acciones vecinas: la más destructiva no puede ser la más fácil de tocar por error. Origen: "Ya lo usé" en Apartados ponía $1.240.000 en cero y movía la fecha un año desde un `.btn-sm` de 78x36px sin preguntar, a 8px de una papelera de 44x44 que sí abría modal.
+
 ### Cards
 
 ```html
@@ -315,6 +323,8 @@ Variantes reales: `.list-item__icon--cat` (ícono de categoría con chip de acen
 
 **R21 · Lo terminado no compite:** lo liquidado, completado o archivado se lista **después** de lo activo, sin desaparecer; el criterio de orden se aplica dentro de cada grupo. Origen: un préstamo liquidado, que no pide ninguna acción salvo borrar, se sentaba encima de uno activo por ser más antiguo. Corolario de contenedor: una lista separa sus ítems desde el contenedor (`display: flex` + `gap`), no desde el ítem.
 
+**R28 · La identidad vive en el slot del ícono:** el ícono que identifica el elemento va en el slot del ícono, no dentro del `<p>` del título (donde impide truncar limpio). Un slot **puede combinar** identidad y métrica (el anillo de progreso con el ícono al centro); no puede **reemplazar** la identidad por una métrica. Origen: Apartados era la única sección donde el emoji iba pegado al nombre y el slot lo ocupaba un "33%" que el subtítulo ya implicaba y el propio arco ya dibujaba.
+
 ### Barras y anillos de progreso
 
 ```html
@@ -390,6 +400,8 @@ reset → base → tokens → layout → components → modals → themes → a1
 `styles/components.css` es un barrel que importa los 8 sub-módulos de `styles/components/` (atoms, buttons, forms, domain, analysis, charts, config, nudges).
 
 **Reglas:** cada archivo CSS vive en su capa. Nunca agregar reglas directamente en `main.css` (solo `@import` + `@font-face`; los `@font-face` van al final porque un `@import` después de otra regla se descarta).
+
+**R23 · Una clase, un dueño:** ninguna clase se declara en dos archivos de componentes. Si dos conceptos quieren el mismo nombre, uno cambia de nombre: el orden de los `@import` de `components.css` no es una decisión de diseño y nadie lo revisa al agregar una regla. Origen: `.badge` es una pastilla de estado en `forms.css` y un contador rojo de notificación en `atoms.css`; como atoms se importa después, el badge "19 días" de Apartados imprimía `--fk-danger` con la geometría de un contador de dos dígitos, cuando el código pedía `--fk-warning`. **Corolario de capa:** una corrección que compita con una regla de `responsive.css` va en `responsive.css`, porque esa capa gana por orden sin importar la especificidad.
 
 ---
 
