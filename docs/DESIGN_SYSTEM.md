@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-26 (R23 a R28, auditoría de diseño de Apartados; antes R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
+> Última revisión: 2026-07-26 (R29 a R33, auditoría de diseño de la Interfaz: la capa global de navegación. La numeración salta de R28 a R29 porque la auditoría de Análisis, que reservaba R25 a R29, sigue sin aplicarse; antes R23 a R28, auditoría de diseño de Apartados; R9 a R11 de la de Gastos, R19 a R22 de la de Me deben, R7 y R8 de la de Deudas, R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -25,6 +25,16 @@
 **R25 · Un umbral por concepto:** "próximo", "urgente" o "alto" se definen **una vez** en `logic` y lo consumen todos los que lo muestran. Dos umbrales para el mismo concepto es un defecto, no una decisión de diseño: el resumen y la lista se contradicen. Origen: en Apartados el aviso de proximidad entraba a 60 días y el badge de la fila solo a 30, así que un apartado a 45 días se contaba en "y 2 apartados más con fecha próxima" y su fila no mostraba ninguna señal de urgencia.
 
 **R27 · Un dato, un lugar:** un resumen encima de una lista **suma, compara o proyecta**. Si repite lo que la primera fila ya dice, no va: el espacio más valioso de la pantalla no se gasta en un eco. Origen: el aviso de Apartados mostraba el apartado más urgente con su fecha y su aporte sugerido, y ese mismo apartado aparecía 60px más abajo con los mismos dos datos.
+
+**R29 · Ninguna pantalla sin estilos:** toda clase que un módulo inyecte tiene reglas en `styles/`. Una pantalla que se ve con los defaults del navegador es un bug, no un pendiente, y la primera que ve el usuario es el peor sitio para tenerlo. Origen: las cinco clases `.onboarding__*` del wizard de bienvenida no tenían una sola regla en todo el proyecto (grep sobre `styles/`: cero coincidencias). Medido a 390px: el hero salía a 16px alineado a la izquierda, el título quedaba pegado al párrafo siguiente y la letra chica de privacidad medía lo mismo que el cuerpo.
+
+**R30 · La barra dice dónde estás, siempre:** toda sección alcanzable tiene en la barra inferior un estado que la distingue de las demás. Un menú "Más" activo también **nombra** la sección donde estás, con su color de dominio. Origen: el botón "Más" no llevaba `data-section`, así que el mapeo de dominio no tenía de dónde tomar color y caía al acento genérico: estar en Inicio y estar en cualquiera de las diez secciones del menú daban los mismos tres valores medidos (color, tinte e indicador).
+
+**R31 · La app se nombra una vez:** la marca aparece al menos en la pantalla de arranque. Sin barra superior fija: en móvil el alto es el recurso escaso, y un encabezado ya decidido no se deshace para hacerle sitio. Origen: `.sidebar__logo` es `display: none` bajo 1024px, así que en el teléfono ni la palabra "Finko" ni la marca "F" aparecían en ninguna pantalla, y en la PWA instalada no hay barra de direcciones ni título de pestaña que lo digan.
+
+**R32 · Toda sección tiene entrada:** ninguna sección depende de un enlace dentro del contenido para existir, y menos de uno que puede estar oculto. Un "volver" es una comodidad, nunca la única vía. Origen: a Movimientos se llegaba solo por "Ver todo" de Actividad reciente, un enlace que vive en una celda que arranca `[hidden]` hasta que hay movimientos registrados: quien registraba su primer gasto no tenía por dónde ver el historial.
+
+**R33 · Un encabezado, una anatomía:** teja de dominio + título en todas las secciones. Una excepción es válida solo si está decidida y escrita (Inicio lo está: IN.8d, [ADR 034](DECISIONS/034-inicio-v2.md) D8). Origen: Movimientos era la única sección sin teja y sin decisión detrás, contra doce que sí la llevan.
 
 ---
 

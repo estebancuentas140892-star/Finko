@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-26. Última tarea cerrada: DIS.5, las 11 correcciones aplicables de la auditoría de diseño de Apartados (A11 cruza dominios y A13 revisa el ADR 024 D4: las dos esperan tu decisión; ver [`contexto/apartados.md`](contexto/apartados.md)).
+> Última actualización: 2026-07-26. Última tarea cerrada: DIS.6, las 7 correcciones aplicables de la auditoría de diseño de la Interfaz, o sea la capa global de navegación (V1 a V4 son decisiones de producto y esperan tu palabra; ver [`contexto/sistema-visual.md`](contexto/sistema-visual.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3081/3081 verdes |
-| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-25 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
+| Tests unitarios + integración | 3085/3085 verdes |
+| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-26 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(interfaz): DIS.6, 7 correcciones de la auditoría de diseño sobre la Interfaz · 2026-07-26
+
+Auditoría de diseño de la capa global de navegación (11 hallazgos): se aplican 7. Lo grande: **la primera pantalla de la app era la única sin una sola regla CSS propia**, así que el wizard de bienvenida salía con los defaults del navegador (hero de 16px a la izquierda, nota de privacidad del mismo tamaño que el cuerpo); toma la receta de `.empty-state` y su hero pasa del emoji a la marca "F" que NAV2.1b había diseñado solo para escritorio (R29 nueva). **Estar en Inicio y estar en Análisis se veían idénticos en la barra**: el botón "Más" no llevaba `data-section`, caía al acento genérico y 11 de las 14 secciones compartían el mismo estado activo; ahora nombra la sección, muestra su ícono y hereda su color (Análisis gris, Cuentas azul, Metas violeta) sin agregar un slot ni un token (R30 nueva). **Movimientos no tenía entrada de navegación en ninguna parte** y se llegaba solo por un enlace que arranca oculto: gana su tile y su teja de encabezado (R32 y R33 nuevas). La marca entra a la fila de perfil de Inicio sin costarle altura, porque en móvil el sidebar pierde su logo y la app no se nombraba nunca (R31 nueva). El cierre de la hoja "Más" sube de 32x32 a 44x44 y las pestañas del hub de 38,6 a 44. `DESIGN_SYSTEM.md` gana R29 a R33. **Sin aplicar, esperan tu decisión:** V1 (si Deudas sube a la barra: el sidebar la llama "uso diario" y en el teléfono la esconde), V2 (el hub Ahorros aparece dos veces), V3 (el segundo paso del onboarding, terreno de GU.1a) y V4 (la acción "Registrar" en un slot de pestaña, ADR 024: la recomendación es mantenerla). 3085/3085 unit + 231/231 E2E + lint verdes. SW v421→v422.
+
+---
 
 ### fix(apartados): DIS.5, 11 correcciones de la auditoría de diseño sobre Apartados · 2026-07-26
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la sección (10 hallazgos): se aplican las 7 correccion
 
 ---
 
-### fix(inicio): V1, el acento de marca deja de medir el gasto semanal · 2026-07-25
-
-Cierra la auditoría de diseño de Inicio: era la única pieza que quedaba abierta porque revisaba un ADR aceptado. El mini gráfico semanal pintaba el día de **mayor gasto** con el esmeralda que el principio 7 reserva para dinero disponible y logro; pasa a familia Gastos (barras 28 %, pico 100 %, etiqueta en `--fk-dom-gastos-text`, que en tema claro baja a `#d13b00` para pasar AA). El chip "12 % menos" sigue verde: bajar el gasto sí es logro (ADR 019). Formalizado en el [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md) porque revisa el ADR 034 D6 (regla 2.7). `DESIGN_SYSTEM.md` recibe además las 6 reglas repetibles de la auditoría (R1 a R6) y la de radios del H12. Solo CSS y documentación. 3007/3007 unit verdes. SW v416→v417.
-
----
-
-> Para tareas anteriores (docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
