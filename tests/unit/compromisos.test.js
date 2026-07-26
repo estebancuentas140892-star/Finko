@@ -31,6 +31,7 @@ import {
   deltasSaldoCompromisoPorEdicionGasto,
   detectarDeudaCreciente,
   calcularAbonosDelMes,
+  fechaUltimoAbono,
   estadoPagoMes,
   TIPOS_COMPROMISO,
   LABEL_TIPO,
@@ -2906,6 +2907,40 @@ describe('calcularAbonosDelMes()', () => {
   });
 });
 
+// ── fechaUltimoAbono (FD1) ───────────────────────────────────────
+
+describe('fechaUltimoAbono()', () => {
+  const gastos = [
+    { compromisoId: 'deuda-1', fecha: '2026-06-05', monto: 20_000 },
+    { compromisoId: 'deuda-1', fecha: '2026-07-22', monto: 30_000 },
+    { compromisoId: 'deuda-1', fecha: '2026-05-15', monto: 100_000 },
+    { compromisoId: 'deuda-2', fecha: '2026-12-10', monto: 50_000 },
+  ];
+
+  it('devuelve la fecha más reciente de los abonos del compromiso', () => {
+    expect(fechaUltimoAbono(gastos, 'deuda-1')).toBe('2026-07-22');
+  });
+
+  it('no mira los abonos de otro compromiso', () => {
+    expect(fechaUltimoAbono(gastos, 'deuda-2')).toBe('2026-12-10');
+  });
+
+  it('devuelve null si el compromiso no tiene abonos', () => {
+    expect(fechaUltimoAbono(gastos, 'deuda-99')).toBeNull();
+  });
+
+  it('devuelve null con entradas vacías o inválidas', () => {
+    expect(fechaUltimoAbono([], 'deuda-1')).toBeNull();
+    expect(fechaUltimoAbono(null, 'deuda-1')).toBeNull();
+    expect(fechaUltimoAbono(gastos, '')).toBeNull();
+  });
+
+  it('ignora abonos sin fecha', () => {
+    const g = [{ compromisoId: 'deuda-1', monto: 10_000 }];
+    expect(fechaUltimoAbono(g, 'deuda-1')).toBeNull();
+  });
+});
+
 // ── estadoPagoMes ────────────────────────────────────────────────
 
 describe('estadoPagoMes()', () => {
@@ -3204,6 +3239,17 @@ describe('renderEstrategiaPago D.16b: header, picker e íconos', () => {
     expect(el.querySelector('.estrategia-card__title').textContent.trim()).toBe('¿Cómo salir más rápido?');
   });
 
+  // D9 (regla R1): el encabezado no cambia de nombre según cuántas deudas haya.
+  it('D9: con una sola deuda el encabezado es el mismo (eyebrow + "¿Cómo salir más rápido?")', () => {
+    S.compromisos = [S.compromisos[0]];
+    renderEstrategiaPago();
+    const el = document.getElementById('estrategia-pago');
+    expect(el.querySelector('.grupo-eyebrow').textContent.trim()).toBe('Estrategia de pago');
+    expect(el.querySelector('.estrategia-card__title').textContent.trim()).toBe('¿Cómo salir más rápido?');
+    // Lo que cambia es el cuerpo, no la identidad de la card.
+    expect(el.querySelector('.estrategia-card__placeholder')).not.toBeNull();
+  });
+
   it('Bola de nieve usa su símbolo propio i-snowball (ya no el círculo genérico)', () => {
     renderEstrategiaPago();
     const pickBola = document.querySelector('[data-estrategia="bolaNieve"]');
@@ -3254,16 +3300,28 @@ describe('renderEstrategiaPago D.16c: tiles del selector e íconos sin emoji', (
     expect(tool.innerHTML).not.toContain('🤝');
   });
 
-  it('los botones Aplicar de renegociar/consolidar usan btn-primary (la clase btn--primary no existe)', () => {
+  // FD5 (regla R8) revisa este test de D.16c: los tres confirmadores dejaron
+  // btn-primary y visten la identidad de compromisos, como Abonar (ADR 036 D6).
+  it('FD5: los botones Aplicar usan .estrategia-card__aplicar, no el primario verde', () => {
     renderEstrategiaPago();
     const btnRenegociar = document.querySelector('.estrategia-card__renegociar-aplicar');
-    expect(btnRenegociar.className).toContain('btn-primary');
-    expect(btnRenegociar.className).not.toContain('btn--primary');
+    expect(btnRenegociar.className).toContain('estrategia-card__aplicar');
+    expect(btnRenegociar.className).not.toContain('btn-primary');
     setEstrategiaUI({ alternativaActiva: 'consolidar' });
     renderEstrategiaPago();
     const btnConsolidar = document.querySelector('.estrategia-card__consolidar-aplicar');
-    expect(btnConsolidar.className).toContain('btn-primary');
-    expect(btnConsolidar.className).not.toContain('btn--primary');
+    expect(btnConsolidar.className).toContain('estrategia-card__aplicar');
+    expect(btnConsolidar.className).not.toContain('btn-primary');
+    setEstrategiaUI({ alternativaActiva: 'aumentar' });
+    renderEstrategiaPago();
+    const btnAumentar = document.querySelector('.estrategia-card__aumentar-aplicar');
+    expect(btnAumentar.className).toContain('estrategia-card__aplicar');
+    expect(btnAumentar.className).not.toContain('btn-primary');
+  });
+
+  it('FD5: la card de estrategia no deja ningún .btn-primary visible', () => {
+    renderEstrategiaPago();
+    expect(document.querySelectorAll('#estrategia-pago .btn-primary').length).toBe(0);
   });
 
   it('el bloque inviable completo no contiene emojis (🤝🏦🎯 fuera, D.16c)', () => {
@@ -3918,7 +3976,20 @@ describe('resumenDeudas()', () => {
   });
 
   it('sin deudas devuelve ceros', () => {
-    expect(resumenDeudas([])).toEqual({ saldoTotal: 0, cuotaMensual: 0, cantidad: 0 });
+    expect(resumenDeudas([])).toEqual({ saldoTotal: 0, cuotaMensual: 0, cantidad: 0, saldadas: 0 });
+  });
+
+  // FD7: el hero necesita separar las saldadas para explicar por qué el total
+  // no crece con el conteo de tarjetas de la lista.
+  it('FD7: cuenta aparte las deudas ya saldadas, sin sacarlas de `cantidad`', () => {
+    const r = resumenDeudas([
+      deudaHero({ id: 'd1' }),
+      deudaHero({ id: 'd2', saldoTotal: 0, cuotaMensual: 0 }),
+      deudaHero({ id: 'd3', saldoTotal: 0, cuotaMensual: 0 }),
+    ]);
+    expect(r.cantidad).toBe(3);
+    expect(r.saldadas).toBe(2);
+    expect(r.saldoTotal).toBe(2_400_000);
   });
 
   it('tolera cuotaMensual ausente (fiado sin cuota, D.13)', () => {
@@ -4005,6 +4076,48 @@ describe('renderHeroCompromisos()', () => {
     expect(el.querySelector('.hero-compromisos__meta-txt').textContent).toBe('en 1 deuda');
     expect(el.querySelector('.hero-compromisos__chip')).toBeNull();
   });
+
+  // ── FD7: el conteo explica las saldadas ──────────────────────────
+
+  it('FD7: con una saldada dice "en N deudas por pagar · 1 saldada"', () => {
+    S.compromisos = [
+      deudaHero({ id: 'd1' }),
+      deudaHero({ id: 'd2', saldoTotal: 900_000 }),
+      deudaHero({ id: 'd3', saldoTotal: 0, cuotaMensual: 0 }),
+    ];
+    renderHeroCompromisos();
+    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
+    expect(txt).toBe('en 2 deudas por pagar · 1 saldada');
+  });
+
+  it('FD7: varias saldadas van en plural y una sola por pagar en singular', () => {
+    S.compromisos = [
+      deudaHero({ id: 'd1' }),
+      deudaHero({ id: 'd2', saldoTotal: 0, cuotaMensual: 0 }),
+      deudaHero({ id: 'd3', saldoTotal: 0, cuotaMensual: 0 }),
+    ];
+    renderHeroCompromisos();
+    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
+    expect(txt).toBe('en 1 deuda por pagar · 2 saldadas');
+  });
+
+  it('FD7: con todas saldadas dice "sin deudas por pagar", no "en 0 deudas"', () => {
+    S.compromisos = [
+      deudaHero({ id: 'd1', saldoTotal: 0, cuotaMensual: 0 }),
+      deudaHero({ id: 'd2', saldoTotal: 0, cuotaMensual: 0 }),
+    ];
+    renderHeroCompromisos();
+    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
+    expect(txt).toBe('sin deudas por pagar · 2 saldadas');
+    expect(txt).not.toContain('en 0');
+  });
+
+  it('FD7: sin saldadas el texto de siempre no cambia', () => {
+    S.compromisos = [deudaHero({ id: 'd1' }), deudaHero({ id: 'd2' })];
+    renderHeroCompromisos();
+    const txt = document.querySelector('.hero-compromisos__meta-txt').textContent.trim();
+    expect(txt).toBe('en 2 deudas');
+  });
 });
 
 // ── renderListaCompromisos() - tarjeta de deuda (D.16d, ADR 036 D5/D6/D7) ──
@@ -4020,11 +4133,14 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="lista-compromisos"></div>';
     S.compromisos = [];
+    // FD1 lee los abonos (gastos con `compromisoId`) para fechar el saldado.
+    S.gastos = [];
     S.config = { ...(S.config ?? {}), ocultarSaldo: false };
   });
 
   afterEach(() => {
     S.config.ocultarSaldo = false;
+    S.gastos = [];
   });
 
   it('pinta la tarjeta con saldo prominente, botón Abonar tintado y eliminar ghost', () => {
@@ -4123,5 +4239,93 @@ describe('renderListaCompromisos() - tarjeta de deuda D.16d', () => {
     const card = document.querySelector('.deuda-card');
     expect(card.querySelector('[data-action="editar-compromiso"]')).not.toBeNull();
     expect(card.querySelector('[data-action="archivar-compromiso"]')).not.toBeNull();
+  });
+
+  // ── FD1 / FD2 / FD3: una pasada por _renderCompromisoItem ─────────
+
+  it('FD3: el chip de vencimiento vive en la fila de chips, no dentro del nombre', () => {
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.querySelector('.deuda-card__nombre .chip')).toBeNull();
+    expect(card.querySelector('.deuda-card__nombre').textContent.trim()).toBe('Tarjeta Visa');
+    const chips = [...card.querySelectorAll('.deuda-card__chips .chip')];
+    expect(chips[0].textContent).toContain('Vence');
+  });
+
+  it('FD1: la deuda saldada no anuncia ningún vencimiento', () => {
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    renderListaCompromisos();
+    const card = document.querySelector('.deuda-card');
+    expect(card.textContent).not.toContain('Vence');
+    expect(card.querySelector('.chip-danger')).toBeNull();
+    expect(card.querySelector('.chip-warning')).toBeNull();
+  });
+
+  it('FD1: la deuda saldada muestra la fecha del último abono como subtítulo', () => {
+    const ano = new Date().getFullYear();
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    S.gastos = [
+      { id: 'g1', monto: 100_000, categoria: 'Deudas', fecha: `${ano}-07-10`, compromisoId: 'd1' },
+      { id: 'g2', monto: 220_000, categoria: 'Deudas', fecha: `${ano}-07-22`, compromisoId: 'd1' },
+      { id: 'g3', monto: 50_000, categoria: 'Deudas', fecha: `${ano}-07-24`, compromisoId: 'otra' },
+    ];
+    renderListaCompromisos();
+    const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
+    expect(subtitulo).toBe('Saldada el 22 de julio');
+  });
+
+  it('FD1: una saldada de otro año sí lleva el año, para no confundir', () => {
+    const anoPasado = new Date().getFullYear() - 1;
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    S.gastos = [
+      { id: 'g1', monto: 220_000, categoria: 'Deudas', fecha: `${anoPasado}-03-04`, compromisoId: 'd1' },
+    ];
+    renderListaCompromisos();
+    const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
+    expect(subtitulo).toBe(`Saldada el 4 de marzo de ${anoPasado}`);
+  });
+
+  it('FD1: sin abonos registrados la saldada no inventa una fecha', () => {
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    S.gastos = [];
+    renderListaCompromisos();
+    const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
+    expect(subtitulo).toBe('Sin saldo pendiente');
+  });
+
+  it('FD1: la deuda activa conserva su subtítulo de cuota y día de pago', () => {
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    const subtitulo = document.querySelector('.deuda-card__cuota').textContent.trim();
+    expect(subtitulo).toBe('Cuota $220.000/mes · día 5');
+  });
+
+  it('FD2: archivar usa el ícono del sprite, no el carácter de texto', () => {
+    S.compromisos = [deudaCard({ saldoTotal: 0 })];
+    renderListaCompromisos();
+    const archivar = document.querySelector('[data-action="archivar-compromiso"]');
+    expect(archivar.innerHTML).toContain('#i-check-circle');
+    expect(archivar.textContent).not.toContain('✓');
+  });
+
+  // ── FD6: un solo CTA para crear una deuda ─────────────────────────
+
+  it('FD6: el estado vacío usa el mismo verbo del encabezado ("+ Nueva deuda")', () => {
+    renderListaCompromisos();
+    const cta = document.querySelector('.empty-state [data-action="nuevo-compromiso"]');
+    expect(cta.textContent.trim()).toBe('+ Nueva deuda');
+  });
+
+  it('FD6: sin deudas el botón del encabezado se oculta; con deudas vuelve', () => {
+    document.body.innerHTML = `
+      <button id="compromisos-nueva-deuda" data-action="nuevo-compromiso">+ Nueva deuda</button>
+      <div id="lista-compromisos"></div>`;
+    renderListaCompromisos();
+    expect(document.getElementById('compromisos-nueva-deuda').hidden).toBe(true);
+
+    S.compromisos = [deudaCard()];
+    renderListaCompromisos();
+    expect(document.getElementById('compromisos-nueva-deuda').hidden).toBe(false);
   });
 });

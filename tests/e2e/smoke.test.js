@@ -4068,7 +4068,9 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-compromiso"]');
+    // FD6: sin deudas el botón del encabezado se oculta y el CTA que conduce
+    // es el del estado vacío (mismo verbo, misma acción).
+    await page.click('.empty-state [data-action="nuevo-compromiso"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // FORM.1b (ADR 042): el form arranca directo en Entidad (segmented
@@ -4096,7 +4098,8 @@ test.describe('Deudas - picker de ícono en categoría "Otra"/"Otro" (CAT.2d)', 
     await saltearOnboarding(page);
     await page.goto('/#compromisos');
     await page.waitForSelector('#sec-compromisos.active', { timeout: 10_000 });
-    await page.click('[data-action="nuevo-compromiso"]');
+    // FD6: sin deudas, el CTA visible es el del estado vacío.
+    await page.click('.empty-state [data-action="nuevo-compromiso"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     // El segmented arranca en Entidad; se toca "Personal" para este flujo.

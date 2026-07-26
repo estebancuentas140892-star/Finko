@@ -134,6 +134,29 @@ export function calcularAbonosDelMes(gastos, compromisoId, prefijoMes) {
 }
 
 /**
+ * Fecha del último abono registrado a un compromiso.
+ *
+ * En una deuda saldada es el día en que quedó en cero: la tarjeta lo usa como
+ * subtítulo ("Saldada el 22 de julio") en vez de anunciar un vencimiento que ya
+ * no existe (regla R7, estado terminal). Devuelve `null` cuando la deuda llegó
+ * a cero sin abonos registrados (se editó el saldo a mano, o nació en cero):
+ * ahí no hay una fecha honesta que mostrar.
+ *
+ * @param {import('../../../core/state.js').Gasto[]} gastos
+ * @param {string} compromisoId
+ * @returns {string | null} ISO 8601 'YYYY-MM-DD', o null si no hay abonos.
+ */
+export function fechaUltimoAbono(gastos, compromisoId) {
+  if (!Array.isArray(gastos) || !compromisoId) return null;
+  let ultima = null;
+  for (const g of gastos) {
+    if (g.compromisoId !== compromisoId || !g.fecha) continue;
+    if (ultima === null || g.fecha > ultima) ultima = g.fecha;
+  }
+  return ultima;
+}
+
+/**
  * Estado de pago de un compromiso en el mes indicado por `prefijoMes` ('YYYY-MM').
  *
  * - 'ninguno':  no hay gastos vinculados ese mes.

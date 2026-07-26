@@ -30,7 +30,7 @@ export function renderHeroCompromisos() {
   const el = document.getElementById('compromisos-hero');
   if (!el) return;
 
-  const { saldoTotal, cuotaMensual, cantidad } = resumenDeudas(S.compromisos);
+  const { saldoTotal, cuotaMensual, cantidad, saldadas } = resumenDeudas(S.compromisos);
   const sinDeudas = cantidad === 0;
   const oculto    = S.config?.ocultarSaldo === true;
 
@@ -56,7 +56,7 @@ export function renderHeroCompromisos() {
   const metaHtml = sinDeudas ? '' : `
       <div class="hero-compromisos__meta">
         ${chipHtml}
-        <span class="hero-compromisos__meta-txt">en ${cantidad} ${cantidad === 1 ? 'deuda' : 'deudas'}</span>
+        <span class="hero-compromisos__meta-txt">${_conteoTxt(cantidad, saldadas)}</span>
       </div>`;
 
   el.innerHTML = `
@@ -66,4 +66,25 @@ export function renderHeroCompromisos() {
       <p class="hero-compromisos__valor">${totalTxt}</p>
       ${metaHtml}
     </div>`;
+}
+
+/**
+ * Texto del conteo bajo el total (FD7). La cifra grande solo suma lo que se
+ * debe, pero la lista muestra también las deudas ya saldadas que aún no se
+ * archivan: sin explicarlo, el usuario cuenta 4 tarjetas y lee "en 3 deudas".
+ *
+ * - Sin saldadas: "en N deudas" (el texto de siempre).
+ * - Con saldadas: "en N deudas por pagar · M saldada(s)".
+ * - Todas saldadas: "sin deudas por pagar · M saldada(s)".
+ *
+ * @param {number} cantidad Total de deudas activas (saldadas incluidas).
+ * @param {number} saldadas Cuántas de ellas están en cero.
+ */
+function _conteoTxt(cantidad, saldadas) {
+  if (saldadas === 0) return `en ${cantidad} ${cantidad === 1 ? 'deuda' : 'deudas'}`;
+
+  const porPagar    = cantidad - saldadas;
+  const saldadasTxt = `${saldadas} ${saldadas === 1 ? 'saldada' : 'saldadas'}`;
+  if (porPagar === 0) return `sin deudas por pagar · ${saldadasTxt}`;
+  return `en ${porPagar} ${porPagar === 1 ? 'deuda' : 'deudas'} por pagar · ${saldadasTxt}`;
 }

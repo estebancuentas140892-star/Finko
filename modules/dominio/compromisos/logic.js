@@ -64,6 +64,7 @@ export {
   ajustarMontoAbono,
   validarAbono,
   calcularAbonosDelMes,
+  fechaUltimoAbono,
   estadoPagoMes,
   deltasSaldoCompromisoPorEdicionGasto,
 } from './logic/abonos.js';

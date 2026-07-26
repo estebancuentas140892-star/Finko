@@ -153,8 +153,14 @@ export function calcularFijosMensuales(compromisos) {
  * del mismo dominio (tipo 'fijo', viven en Calendario) no entran, porque
  * el hero habla de "lo que debes", no de pagos recurrentes.
  *
+ * `cantidad` cuenta TODAS las deudas activas, saldadas incluidas: es el mismo
+ * conjunto que pinta la lista. `saldadas` (FD7) separa cuántas de ellas ya
+ * están en cero, para que el hero pueda explicar por qué el total no crece con
+ * el conteo ("en 3 deudas por pagar · 1 saldada") en vez de dejar al usuario
+ * comparando una cifra con un número de tarjetas.
+ *
  * @param {import('../../../core/state.js').Compromiso[]} compromisos
- * @returns {{ saldoTotal: number, cuotaMensual: number, cantidad: number }}
+ * @returns {{ saldoTotal: number, cuotaMensual: number, cantidad: number, saldadas: number }}
  */
 export function resumenDeudas(compromisos) {
   const deudas = compromisosActivos(compromisos).filter(c => esDeuda(c.tipo));
@@ -162,6 +168,7 @@ export function resumenDeudas(compromisos) {
     saldoTotal:   deudas.reduce((acc, c) => acc + (Number(c.saldoTotal) || 0), 0),
     cuotaMensual: deudas.reduce((acc, c) => acc + calcularCompromisoMensual(c), 0),
     cantidad:     deudas.length,
+    saldadas:     deudas.filter(c => (Number(c.saldoTotal) || 0) <= 0).length,
   };
 }
 

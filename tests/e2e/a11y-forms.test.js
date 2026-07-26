@@ -93,7 +93,9 @@ test.describe('A11Y.5 - axe sobre formularios dinámicos', () => {
   test('el modal "Nueva deuda" no tiene violaciones graves', async ({ page }) => {
     await seedEstadoBase(page);
     await page.goto('/#compromisos');
-    await page.click('[data-action="nuevo-compromiso"]');
+    // FD6: sin deudas el botón del encabezado se oculta y el CTA que conduce
+    // es el del estado vacío (mismo verbo, misma acción).
+    await page.click('.empty-state [data-action="nuevo-compromiso"]');
     await page.waitForSelector('#modal-compromiso[data-open]');
 
     const violaciones = await violacionesGraves(page, '#modal-compromiso');

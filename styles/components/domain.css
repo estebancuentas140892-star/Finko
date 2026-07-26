@@ -1285,10 +1285,9 @@ button.chip:focus-visible {
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
-.deuda-card__nombre .chip {
-  margin-left: var(--fk-space-1);
-  vertical-align: middle;
-}
+/* FD3: el chip de urgencia vivía dentro del nombre y lo partía en tres líneas
+   en 163px de ancho. Ahora baja a `.deuda-card__chips`, junto al resto de los
+   metadatos, así que el nombre no aloja chips. */
 
 .deuda-card__cuota {
   margin: 2px 0 0;
@@ -1368,7 +1367,9 @@ button.chip:focus-visible {
   align-items: center;
   justify-content: center;
   gap: var(--fk-space-1);
-  min-height: 2.375rem;   /* 38px, hit target AA con margen */
+  min-height: 2.75rem;    /* FD4 (regla R4): 44px. Editar y eliminar, que son
+                             .btn, ya los cumplían; la acción principal de la
+                             tarjeta era la única que se quedaba en 38px. */
   padding: var(--fk-space-2) var(--fk-space-3);
   border-radius: var(--fk-radius-md);
   border: 1.5px solid color-mix(in srgb, var(--fk-dom-compromisos) 40%, transparent);

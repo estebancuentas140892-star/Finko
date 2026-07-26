@@ -718,14 +718,41 @@
 }
 .estrategia-card__renegociar-msg--ok   { color: var(--fk-success-text); }
 .estrategia-card__renegociar-msg--warn { color: var(--fk-warning-text); }
-.estrategia-card__renegociar-aplicar,
-.estrategia-card__consolidar-aplicar,
-.estrategia-card__aumentar-aplicar {
+/* FD5 (regla R8, una acción principal): los tres confirmadores del simulador
+   ("Aplicar este aumento", "Aplicar nueva tasa", "Consolidar en un crédito
+   nuevo") dejan .btn-primary. El verde del accent significa dinero disponible
+   y logro: usarlo para "voy a pagar más cada mes" invierte la lectura. Es el
+   criterio que el ADR 036 D6 ya aplicó a Abonar, extendido a todo confirmador
+   de un movimiento de dinero. Receta calcada de `.deuda-card__abonar` para que
+   Deudas tenga un solo vestido de confirmación; el único .btn-primary visible
+   en la sección vuelve a ser "+ Nueva deuda". */
+.estrategia-card__aplicar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
   width: 100%;
-}
-/* D.9: separa el botón "Aplicar este aumento" del resumen de impacto. */
-.estrategia-card__aumentar-aplicar {
+  /* D.9: separa el botón del resumen de impacto que tiene encima. */
   margin-top: var(--fk-space-3);
+  min-height: 2.75rem;   /* R4: 44px */
+  padding: var(--fk-space-3) var(--fk-space-4);
+  border-radius: var(--fk-radius-md);
+  border: 1.5px solid color-mix(in srgb, var(--fk-dom-compromisos) 40%, transparent);
+  background: var(--fk-dom-compromisos-bg);
+  color: var(--fk-dom-compromisos-text);
+  font-family: inherit;
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+  transition: background-color var(--fk-transition-fast), border-color var(--fk-transition-fast);
+}
+.estrategia-card__aplicar:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fk-dom-compromisos) 20%, transparent);
+  border-color: color-mix(in srgb, var(--fk-dom-compromisos) 60%, transparent);
+}
+.estrategia-card__aplicar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* v6: input + select para tasa con unidad (% EA vs % mensual). */

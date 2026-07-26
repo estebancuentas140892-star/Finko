@@ -384,7 +384,7 @@ export function renderRenegociar(deudas, ui) {
       <div class="estrategia-card__renegociar-comparativa">
         ${renderComparativaRenegociacion(sim, nuevaPct, sufijo)}
       </div>
-      <button type="button" class="btn btn-primary estrategia-card__renegociar-aplicar"
+      <button type="button" class="estrategia-card__aplicar estrategia-card__renegociar-aplicar"
               data-action="aplicar-renegociacion" data-deuda="${selId}" data-unidad="${sufijo}"
               ${puedeAplicar ? '' : 'disabled'}>
         Aplicar nueva tasa
@@ -446,7 +446,7 @@ export function renderConsolidar(deudas, ui) {
       <div class="estrategia-card__consolidar-comparativa">
         ${renderComparativaConsolidacion(sim)}
       </div>
-      <button type="button" class="btn btn-primary estrategia-card__consolidar-aplicar"
+      <button type="button" class="estrategia-card__aplicar estrategia-card__consolidar-aplicar"
               data-action="aplicar-consolidacion" ${puedeAplicar ? '' : 'disabled'}>
         Consolidar en un crédito nuevo
       </button>

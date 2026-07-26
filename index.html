@@ -580,7 +580,10 @@
             <span class="cat-teja section__icon" data-dom="compromisos" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-deudas"/></svg></span>
             <h1 class="section__title" id="title-compromisos">Deudas</h1>
           </div>
-          <button class="btn btn-primary" data-action="nuevo-compromiso"
+          <!-- FD6: sin deudas este botón se oculta (renderListaCompromisos):
+               el estado vacío ya es la llamada a la acción, con el mismo verbo. -->
+          <button class="btn btn-primary" id="compromisos-nueva-deuda"
+                  data-action="nuevo-compromiso"
                   aria-label="Registrar nueva deuda">
             + Nueva deuda
           </button>

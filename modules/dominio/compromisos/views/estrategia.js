@@ -115,12 +115,17 @@ export function renderEstrategiaPago() {
   // Mostramos un mensaje útil en vez de cards sin recomendación posible.
   if (deudas.length === 1) {
     const d = deudas[0];
+    // D9 (regla R1): el componente conserva su identidad aunque cambien los
+    // datos. Con una sola deuda cambia el cuerpo, no el encabezado: antes el
+    // título pasaba a "Estrategia de pago" y el eyebrow desaparecía, así que
+    // el mismo bloque se presentaba con dos nombres según cuántas deudas hubiera.
     el.innerHTML = `
+      <p class="grupo-eyebrow">Estrategia de pago</p>
       <article class="estrategia-card">
         <header class="estrategia-card__header">
           <span class="estrategia-card__header-teja" aria-hidden="true">${icon('lightbulb')}</span>
           <div class="estrategia-card__header-texto">
-            <h2 class="estrategia-card__title">Estrategia de pago</h2>
+            <h2 class="estrategia-card__title">¿Cómo salir más rápido?</h2>
           </div>
         </header>
         <p class="estrategia-card__placeholder">
@@ -328,7 +333,7 @@ function _renderRemedioExtra(extraMensual, resumenExtraHtml) {
         <p class="form-hint">Escribe cuánto extra puedes pagar al mes y mira el impacto en tu plan. Es una simulación libre: nada cambia hasta que confirmes.</p>
       </div>
       ${resumenExtraHtml}
-      <button type="button" class="btn btn-primary estrategia-card__aumentar-aplicar"
+      <button type="button" class="estrategia-card__aplicar estrategia-card__aumentar-aplicar"
               data-action="aplicar-aumento-cuota" ${puedeAplicar ? '' : 'disabled'}>
         Aplicar este aumento
       </button>
