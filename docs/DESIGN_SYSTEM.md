@@ -1,7 +1,7 @@
 # Design System - Finko Claude
 
 > Documento vivo. Se actualiza al agregar nuevos tokens o componentes.
-> Última revisión: 2026-07-25 (R1 a R6 de la auditoría de diseño de Inicio + regla de radio protagonista; [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md): el acento no mide gasto).
+> Última revisión: 2026-07-25 (R7 y R8, auditoría de diseño de Deudas; antes R1 a R6 de la de Inicio, radio protagonista y [ADR 054](DECISIONS/054-el-acento-no-mide-gasto.md)).
 > Fuente de verdad: los archivos CSS. Si este doc y `tokens.css` difieren, manda `tokens.css` (y hay que actualizar este doc).
 
 ---
@@ -226,6 +226,8 @@ Accesibilidad: bajo `prefers-contrast: more` el trazo de toda la familia sube un
 
 **Regla de uso:** un solo `.btn-primary` visible por sección. Los demás deben ser secondary o ghost.
 
+**R8 · Confirmar un movimiento de dinero no usa el acento.** Generalización del [ADR 036](DECISIONS/036-deudas-v2-visual.md) D6 ("un abono es un pago, no un ingreso"): el botón que **confirma** una salida de dinero viste su dominio (`--fk-dom-X` 12 % + borde 40 % + `-text`); el verde queda para el único primario, que es el que **crea**. Aplicada en Deudas (`.deuda-card__abonar`, `.estrategia-card__aplicar`). Extenderla a toda la app es una decisión abierta.
+
 ### Cards
 
 ```html
@@ -279,6 +281,8 @@ Reglas móviles: inputs con `font-size` >= 16px (anti-zoom iOS), touch targets >
 <span class="badge badge-accent">12</span>
 <span class="badge badge-warning">2</span>
 ```
+
+**R7 · Estado terminal:** un elemento en estado final (saldado, cumplido, archivado) **apaga sus indicadores de futuro**: vencimientos, urgencias, cuentas regresivas, cuotas por pagar. El chip se calcula después de saber si el elemento sigue vivo, no antes, y el hueco se llena con el **cierre** (la fecha en que ocurrió). Origen: una deuda saldada decía "Saldada" en verde y "Vence hoy" en rojo a dos centímetros.
 
 ### List Items
 

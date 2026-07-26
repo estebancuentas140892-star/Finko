@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-24. Última tarea cerrada: Fases 1 y 2 de la reorganización documental (ver [`MIGRACION.md`](MIGRACION.md) para el contrato y la tarjeta DOC.1 del tablero para lo que falta).
+> Última actualización: 2026-07-25. Última tarea cerrada: DIS.2, las 8 correcciones aplicables de la auditoría de diseño de Deudas (VD1 y D10 esperan una decisión de Esteban; ver [`contexto/deudas.md`](contexto/deudas.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 2981/2981 verdes |
-| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-24 corriendo `pnpm run test:e2e`). El desglose por suite no se transcribe acá: lo reporta la propia corrida, y el que estaba escrito sumaba 227. |
+| Tests unitarios + integración | 3028/3028 verdes |
+| Tests E2E | 231/231 verdes en 11 suites (verificado el 2026-07-25 corriendo `npx playwright test`). El desglose por suite no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(deudas): DIS.2, 8 correcciones de la auditoría de diseño sobre Deudas · 2026-07-25
+
+Auditoría de diseño de la sección (10 hallazgos): se aplican las 7 correcciones listas más D9. Lo grande: una deuda **saldada** dejaba su chip "Vence hoy" en rojo junto al "Saldada" en verde, porque el chip se calculaba antes de saber si la deuda seguía viva; ahora se apaga y el subtítulo se fecha con el último abono ("Saldada el 22 de julio"). Los tres "Aplicar" del simulador dejan `.btn-primary` y visten frambuesa como Abonar, así que queda **un solo verde por sección** (extiende el ADR 036 D6 a todo confirmador). El chip de vencimiento baja del nombre a la fila de chips (nombre de 62px a 36px), Abonar sube a 44px, el estado vacío y el encabezado comparten un solo verbo y un solo botón, y el hero explicita "en 3 deudas por pagar · 1 saldada". `DESIGN_SYSTEM.md` gana R7 (estado terminal) y R8 (una acción principal). **Sin aplicar, esperan tu decisión:** VD1 (plegar el detalle del plan, revisa el ADR 011 rev D.7) y D10 (el CSS muerto que VD1 reutilizaría). 3028/3028 unit + 231/231 E2E verdes. SW v417→v418.
+
+---
 
 ### fix(inicio): V1, el acento de marca deja de medir el gasto semanal · 2026-07-25
 
@@ -66,13 +72,7 @@ Segunda pieza del patrón **P2** de la auditoría (la primera fue CAL.5a, la mis
 
 ---
 
-### feat(agenda): CAL.5a pagar en lote lo que ya venció · 2026-07-23
-
-Primera pieza del patrón **P2** de la auditoría (trabajo uno por uno, sin lote). Pagar 6 gastos fijos eran ~30 toques porque cada uno pedía la cuenta por separado; ahora el Calendario ofrece registrarlos juntos **resolviendo la cuenta una sola vez**. **Decisión de secuencia de Esteban (regla 2.7):** el lote manual va antes que PA.1 (pagos automáticos), que conserva su tarjeta y no fue absorbida. **Rebanada `a`:** solo gastos fijos y solo desde el Calendario; deudas y el punto de entrada desde el bloque de vencidos de Inicio quedan como **CAL.5b**. `pendientesDePagoDelMes()` (nueva, pura) aplica la MISMA regla temporal que el botón individual (BUG-015): mes en curso hasta hoy inclusive, mes pasado todo, mes futuro nada; un fijo quincenal aparece una sola vez, porque el estado de pago de un fijo es por mes y listarlo dos veces sería un doble cobro. La tarjeta solo aparece con **dos o más** pendientes (con uno, el CTA del detalle del día ya lo resuelve). **El punto financiero:** la cuenta se pide para el grupo con el `resolverPagoConSelector` de siempre y `asignarSplitsPorItem()` (nueva en `infra/distribuir-pago.js`) reparte esos splits entre los items, de modo que **cada compromiso conserva su propio gasto vinculado**: eso es lo que hace funcionar el badge "Ya pagaste este mes" y el progreso del hero. **No agrega la cuarta copia de la aritmética de pago que el BOARD temía**: `_registrarPagosFijos()` es la única dentro de Agenda, compartida con el pago individual (la extracción cross-dominio sigue siendo ARQ.2). 24 unit + 2 E2E nuevos. 2942/2942 unit + 225/225 E2E + lint verdes. SW v412→v413. Verificado en la app real con reparto entre dos cuentas ($900.000 de una que queda en 0 + $164.900 de la otra).
-
----
-
-> Para tareas anteriores (feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
