@@ -1437,16 +1437,14 @@ test.describe('Perfil - situación laboral', () => {
     await expect(page.locator('#config-smmlv')).toHaveCount(0);
   });
 
-  test('guarda la situación laboral, la refleja en el perfil y la persiste', async ({ page }) => {
-    // .config-info aparece dos veces (perfil y "Acerca de"): scopear a la de perfil.
-    const perfilInfo = page.locator('section[aria-labelledby="config-perfil-title"] .config-info');
-
+  test('guarda la situación laboral, confirma en pantalla y la persiste', async ({ page }) => {
     await page.locator('#config-situacion').selectOption('independiente');
     await page.locator('#form-perfil button[type="submit"]').click();
 
-    // Tras guardar, el panel se re-renderiza: el resumen muestra la etiqueta y el
-    // selector conserva el valor (aquí en Chromium real, no en happy-dom).
-    await expect(perfilInfo).toContainText('Independiente o freelance');
+    // B12/R14: la confirmación es visible, no solo para lectores de pantalla, y
+    // el panel ya no se re-renderiza entero, así que el campo conserva su valor
+    // sin perder foco ni posición de scroll.
+    await expect(page.locator('#config-perfil-ok')).toBeVisible();
     await expect(page.locator('#config-situacion')).toHaveValue('independiente');
 
     // Persistencia real: el dato queda en localStorage (save debounced 200 ms).
@@ -1476,9 +1474,15 @@ test.describe('Centro Legal', () => {
     const botones = page.locator('[data-action="abrir-legal"]');
     await expect(botones).toHaveCount(10);
 
+    // B9: Términos y Privacidad quedan sueltos; los otros ocho, dentro del
+    // desplegable "Más documentos (8)".
+    await expect(page.locator('[data-action="abrir-legal"]:visible')).toHaveCount(2);
+
     await page.locator('[data-action="abrir-legal"][data-doc="politica-de-privacidad"]').click();
     await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
-    await expect(page.locator('#modal-legal-title')).toHaveText('Política de privacidad');
+    await expect(page.locator('#modal-legal-title')).toContainText('Política de privacidad');
+    // La marca de borrador viaja con el documento, no se queda en la lista.
+    await expect(page.locator('#modal-legal-title .chip')).toHaveText('Borrador v0.1');
     await expect(page.locator('#modal-legal-body')).toContainText('localStorage');
   });
 
@@ -1489,11 +1493,13 @@ test.describe('Centro Legal', () => {
     // politica-de-privacidad.md enlaza a tratamiento-de-datos-personales.md.
     await page.locator('#modal-legal-body [data-doc-link="tratamiento-de-datos-personales"]').first().click();
 
-    await expect(page.locator('#modal-legal-title')).toHaveText('Tratamiento de datos personales');
+    await expect(page.locator('#modal-legal-title')).toContainText('Tratamiento de datos personales');
     await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
   });
 
   test('cierra el modal con el botón de cerrar', async ({ page }) => {
+    // "Aviso legal" vive dentro del desplegable de los ocho documentos (B9).
+    await page.locator('section[aria-labelledby="config-legal-title"] summary').click();
     await page.locator('[data-action="abrir-legal"][data-doc="aviso-legal"]').click();
     await expect(page.locator('#modal-legal')).toHaveAttribute('data-open', '');
 

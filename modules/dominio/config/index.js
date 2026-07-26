@@ -12,15 +12,42 @@ import { save, STORAGE_KEY } from '../../core/storage.js';
 import { registrarAccion } from '../../ui/actions.js';
 import { renderSmart } from '../../infra/render.js';
 import { announce } from '../../infra/a11y.js';
-import { hoy } from '../../infra/utils.js';
+import { hoy, esc } from '../../infra/utils.js';
+import { icon } from '../../infra/icons.js';
 import { mdToHtml } from '../../infra/markdown.js';
 import { SITUACIONES_LABORALES } from '../../core/constants.js';
 import { confirmar } from '../../ui/confirm.js';
 import { pedirPermiso } from '../../infra/notificaciones.js';
 import { abrirModal } from '../../ui/modales.js';
-import { renderPanelConfig } from './view.js';
+import { renderPanelConfig, miles, desdeMiles } from './view.js';
 import { gastosACSV } from '../export/logic.js';
-import { documentoLegalPorId, cargarDocumentoLegal } from './legal.js';
+import { documentoLegalPorId, cargarDocumentoLegal, VERSION_LEGAL } from './legal.js';
+
+// ── CONFIRMACIÓN VISIBLE DE GUARDADO (R14/R15) ───────────────────
+//
+// Los tres formularios guardaban, re-renderizaban el panel entero y
+// terminaban en `announce()`, que escribe en una live region `sr-only`: el
+// usuario vidente no veía nada y encima perdía el foco y la posición de
+// scroll. Ahora el chip verde del propio bloque se enciende unos segundos y
+// el panel no se vuelve a pintar: los campos ya muestran lo que se guardó.
+
+/** Milisegundos que el chip "Guardado" queda visible. */
+const _MS_CONFIRMACION = 3000;
+
+/** @type {Map<string, number>} id del chip → temporizador que lo apaga. */
+const _confirmaciones = new Map();
+
+/**
+ * Enciende el chip "Guardado" del bloque recién persistido.
+ * @param {string} id - id del `<span class="chip chip-success">` del bloque.
+ */
+function _confirmarGuardado(id) {
+  const chip = document.getElementById(id);
+  if (!chip) return;
+  chip.hidden = false;
+  clearTimeout(_confirmaciones.get(id));
+  _confirmaciones.set(id, setTimeout(() => { chip.hidden = true; }, _MS_CONFIRMACION));
+}
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
@@ -40,6 +67,17 @@ function _exportarDatos() {
     console.error('[config] exportarDatos falló:', err);
     announce('No se pudo exportar. Intentá de nuevo.', 'assertive');
   }
+}
+
+/**
+ * Abre el selector de archivo del importador de respaldo (B5/R17). El input
+ * vive con `hidden`, que sí lo saca del orden de foco y del árbol de
+ * accesibilidad; antes era un `<input class="sr-only" aria-hidden="true">`
+ * dentro de un `<label class="btn">`: recibía foco estando marcado
+ * aria-hidden, justo lo que señala la regla axe `aria-hidden-focus`.
+ */
+function _abrirImportadorDatos() {
+  document.getElementById('config-importar-json')?.click();
 }
 
 /** @param {HTMLElement} el - el <input type="file"> */
@@ -135,7 +173,9 @@ async function _mostrarDocumentoLegal(id) {
   const titulo  = document.getElementById('modal-legal-title');
   if (!doc || !overlay || !body) return;
 
-  titulo.textContent = doc.titulo;
+  // B9: la marca de borrador viaja con el documento. Los `.md` traen
+  // marcadores `[PENDIENTE: ...]` visibles y sin esto se leen como descuido.
+  titulo.innerHTML = `${esc(doc.titulo)} <span class="chip">${esc(VERSION_LEGAL)}</span>`;
   body.innerHTML = '<p class="form-hint form-hint--muted">Cargando…</p>';
   abrirModal(overlay);
 
@@ -160,9 +200,9 @@ function _wireLegalLinks() {
 
 async function _resetearApp() {
   const ok = await confirmar({
-    titulo:         'Resetear app',
-    mensaje:        '¿Resetear TODA la app? Perderás gastos, cuentas, metas y compromisos. Esta acción es irreversible.',
-    confirmarTexto: 'Resetear todo',
+    titulo:         'Borrar todos mis datos',
+    mensaje:        '¿Borrar TODO lo que tienes en Finko? Perderás gastos, cuentas, metas y compromisos de este dispositivo. No se puede deshacer.',
+    confirmarTexto: 'Borrar todo',
     peligroso:      true,
   });
   if (!ok) return;
@@ -191,7 +231,7 @@ function _inyectarPanel() {
     S.perfil.situacionLaboral = SITUACIONES_LABORALES.some(s => s.id === sit) ? sit : '';
 
     save();
-    renderPanelConfig();
+    _confirmarGuardado('config-perfil-ok');
     announce('Perfil actualizado.');
   });
 
@@ -207,7 +247,7 @@ function _inyectarPanel() {
     S.config.perfilFiscal.obligadoContabilidad = datos.obligadoContabilidad === 'on';
     S.config.perfilFiscal.declaranteObligado   = datos.declaranteObligado   === 'on';
     save();
-    renderPanelConfig();
+    _confirmarGuardado('config-fiscal-ok');
     announce('Perfil fiscal guardado.');
   });
 
@@ -222,12 +262,12 @@ function _inyectarPanel() {
       S.config.datosFiscales = {};
     }
     // Solo guardamos los campos efectivamente registrados (vacío = no provisto).
+    // Los campos son `type="text"` con separador de miles (B4): `desdeMiles`
+    // devuelve null cuando no quedó ningún dígito escrito.
     const entrada = {};
     for (const campo of ['ingresosBrutos', 'consumosTC', 'consignaciones']) {
-      const raw = String(datos[campo] ?? '').trim();
-      if (raw === '') continue;
-      const n = Number(raw);
-      if (Number.isFinite(n) && n >= 0) entrada[campo] = n;
+      const n = desdeMiles(datos[campo]);
+      if (n !== null && Number.isFinite(n) && n >= 0) entrada[campo] = n;
     }
     if (Object.keys(entrada).length > 0) {
       S.config.datosFiscales[anio] = entrada;
@@ -235,17 +275,29 @@ function _inyectarPanel() {
       delete S.config.datosFiscales[anio];
     }
     save();
-    renderPanelConfig();
+    _confirmarGuardado('config-renta-ok');
     announce('Datos de renta guardados.');
   });
 
+  // Separador de miles mientras se escribe (B4/R16). El cursor queda al final:
+  // son campos que se teclean de izquierda a derecha una vez al año.
+  for (const campo of panel.querySelectorAll('[data-miles]')) {
+    campo.addEventListener('input', () => {
+      const formateado = miles(campo.value);
+      if (formateado === campo.value) return;
+      campo.value = formateado;
+      campo.setSelectionRange(formateado.length, formateado.length);
+    });
+  }
+
   // Importar: el input file no dispara data-action click - usamos change.
-  panel.querySelector('[data-action="importar-datos"]')
+  panel.querySelector('#config-importar-json')
     ?.addEventListener('change', (e) => _importarDatos(e.target));
 }
 
 export function initConfig() {
   registrarAccion('exportar-datos',         _exportarDatos);
+  registrarAccion('importar-datos',         _abrirImportadorDatos);
   registrarAccion('exportar-gastos-csv',    _exportarGastosCSV);
   registrarAccion('resetear-app',           _resetearApp);
   registrarAccion('activar-notificaciones', _activarNotificaciones);
@@ -297,7 +349,12 @@ export function initConfig() {
       // la etiqueta contenedora sin importar cuántos envoltorios haya.
       const labelEl = toggle.closest('.config-toggle')?.querySelector('.config-toggle__label');
       if (labelEl) {
-        labelEl.textContent = light ? '☀️ Tema claro activo' : '🌙 Tema oscuro activo';
+        // B13: el mismo glifo del sprite que pinta `_renderTema()`. Antes se
+        // reescribía con emoji, que era la única iconografía de la app que no
+        // hereda currentColor ni responde al tema.
+        labelEl.innerHTML = light
+          ? `${icon('sun')} Tema claro activo`
+          : `${icon('moon')} Tema oscuro activo`;
       }
     }, 0);
   });

@@ -8,13 +8,27 @@
  */
 
 /**
- * @typedef {{ id: string, titulo: string, archivo: string }} DocumentoLegal
+ * @typedef {{ id: string, titulo: string, archivo: string, destacado?: boolean }} DocumentoLegal
  */
 
-/** @type {DocumentoLegal[]} */
+/**
+ * Marca de versión del paquete legal. Los diez documentos siguen en borrador
+ * mientras el checklist de `docs/legal/README.md` siga abierto (LEG.2, trabada
+ * por revisión de abogado): el visor la muestra junto al título para que la
+ * advertencia viaje con el documento y no se quede en la lista que el usuario
+ * ya dejó atrás.
+ */
+export const VERSION_LEGAL = 'Borrador v0.1';
+
+/**
+ * `destacado` (B9): Términos y Privacidad son los dos que la gente busca de
+ * verdad y van sueltos en la lista; los otros ocho viven dentro del
+ * desplegable "Más documentos".
+ * @type {DocumentoLegal[]}
+ */
 export const DOCUMENTOS_LEGALES = [
-  { id: 'terminos-y-condiciones',        titulo: 'Términos y condiciones',              archivo: 'terminos-y-condiciones.md' },
-  { id: 'politica-de-privacidad',        titulo: 'Política de privacidad',              archivo: 'politica-de-privacidad.md' },
+  { id: 'terminos-y-condiciones',        titulo: 'Términos y condiciones',              archivo: 'terminos-y-condiciones.md', destacado: true },
+  { id: 'politica-de-privacidad',        titulo: 'Política de privacidad',              archivo: 'politica-de-privacidad.md', destacado: true },
   { id: 'tratamiento-de-datos-personales', titulo: 'Tratamiento de datos personales',    archivo: 'tratamiento-de-datos-personales.md' },
   { id: 'aviso-de-cookies',              titulo: 'Aviso de cookies y almacenamiento',    archivo: 'aviso-de-cookies.md' },
   { id: 'descargo-de-responsabilidad',   titulo: 'Descargo de responsabilidad',          archivo: 'descargo-de-responsabilidad.md' },

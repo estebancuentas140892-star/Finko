@@ -10,6 +10,26 @@ Versiones en [Semantic Versioning](https://semver.org/lang/es/).
 
 ## Mes corriente (2026-07)
 
+### fix(ajustes): CFG.6, 11 correcciones de la auditoria de diseno sobre Ajustes · 2026-07-25
+
+Auditoría de diseño de la sección Ajustes (13 hallazgos, B1 a B13). Se aplican los 11 que no dependen de otra sección. Ficha: [`contexto/configuracion.md`](contexto/configuracion.md).
+
+- **B1 estructura.** El panel era una pila plana de diez tarjetas idénticas: 3.810px de `#panel-config` y 4.577px de página a 390px, con el interruptor de tema a 1.580px del tope, después de tres formularios fiscales opcionales. Pasa a cinco grupos rotulados (La app · Tu cuenta · Tus datos · Impuestos · Información) con el orden invertido por frecuencia de uso. **Medido después: panel 2.357px (-38%), tema a 114px.** El rótulo copia la receta de `.mas-sheet__group-label`, el patrón que la hoja "Más" ya usa.
+- **B2 jerarquía de botón.** Cinco `.btn-primary` visibles a la vez. Instalar y Activar recordatorios pasan a secundario (son ofertas), y con los dos formularios fiscales plegados en un `<details>` nativo queda **uno solo** en reposo.
+- **B12 confirmación.** Los tres `submit` guardaban, repintaban el panel entero y terminaban en `announce()`, que es `sr-only`: para el usuario vidente no pasaba nada y encima volvía al tope de la sección. Ahora encienden un `.chip-success` "Guardado" unos segundos y no re-renderizan: los campos ya muestran lo que se guardó. Foco y scroll intactos.
+- **B5 accesibilidad.** El importador era un `<label class="btn">` con un `<input type="file" class="sr-only" aria-hidden="true">` que **sí recibía foco** (regla axe `aria-hidden-focus`). Pasa a un `<button>` real que dispara un `<input type="file" hidden>`. Verificado: el foco ya no aterriza ahí.
+- **B8 táctil.** El checkbox del perfil fiscal declaraba 18x18 y medía 14x18 (item flex sin `flex-shrink: 0` con etiquetas largas), y la fila 42px contra el piso de 44. Corregido y **acotado a `#panel-config`**: la regla base vive en `forms.css` y la comparten cinco vistas que esta tarea no toca.
+- **B4 captura de pesos.** Los tres campos de renta eran `type="number"` pelados: un ingreso anual se escribía `72000000` y un cero de más no se detecta a simple vista. Pasan a `type="text" inputmode="numeric"` con separador de miles al escribir (`miles()` / `desdeMiles()` en `config/view.js`, único par que formatea y lee esos campos).
+- **B6 ámbito.** Cuatro botones de 197 a 207px que solo se distinguían por una palabra, dos de ellos capaces de reemplazar TODO el estado. Van en dos pares rotulados ("Toda la app" / "Solo tus gastos") a ancho completo, con verbos que dicen la consecuencia: "Restaurar desde un respaldo" en vez de "Importar datos (JSON)".
+- **B7 instrucción situada.** Con el permiso en `denied` la app mandaba al candado de la barra de direcciones, que en una PWA instalada no existe. Se ramifica con `estaInstalada()`, la misma señal que ya decide si se ofrece instalar, y el callejón sin salida gana una salida a Calendario.
+- **B9 Centro Legal.** Diez documentos con el mismo peso. Términos y Privacidad quedan sueltos (campo `destacado` en `legal.js`), los otros ocho a un toque. La marca de borrador viaja con el documento (`VERSION_LEGAL` como chip en la cabecera del modal) en vez de quedarse en una lista que el usuario ya dejó atrás. El contenido de los `.md` no se toca: LEG.2 sigue bloqueada por revisión de abogado.
+- **B10 "Acerca de".** "Vanilla JS · Sin framework · Offline-first" y "localStorage" no le dicen nada a la persona para la que se hizo Finko. La fila de tecnología sale y la promesa de privacidad abre la lista, con su consecuencia práctica al lado: por eso el respaldo depende de ti.
+- **B13 sistema visual.** `#sec-config` era la única de doce secciones sin teja en el encabezado y la única con emoji en los títulos de contenido. Gana `.section__title-group` + `.cat-teja` con `#i-ajustes`, y salen los diez emoji de `<h2>` y los seis de botones. Los de `.nudge` y los de logros no se tocan: son otro patrón y otro dominio.
+
+**Fuera de alcance, y por qué.** B11 (la vitrina de Logros vive dentro del centro de configuración, a 3.878px del tope) se señala y no se mueve: sacarla toca navegación (ADR 022, iniciativa NAV2). Quedan también sin aplicar V2 (autoguardado), V3 (buscador de ajustes) y V4 (migrar a sprite los emoji de nudges y logros de toda la app): las tres son decisiones, no correcciones. Las reglas R13 a R18 del informe no entran a `DESIGN_SYSTEM.md` en esta pasada, igual que R1 a R12 de las auditorías anteriores.
+
+21 tests unitarios nuevos en `config.test.js`, 4 E2E ajustados en `smoke.test.js`. 3007/3007 unit + 231/231 E2E + lint verdes. SW v415 → v416.
+
 ### docs(reorg): Fases 1 y 2 de la reorganización documental · 2026-07-24
 
 Auditoría documental completa de los 89 archivos `.md` con 7 subagentes (pedido explícito de Esteban), consolidada en una propuesta que él aprobó con 8 ajustes. Diagnóstico raíz, al que llegaron por caminos independientes 4 de los 7 agentes: **la historia de cada tarea se escribía 4 veces** (CHANGELOG, HANDOFF, ficha y tablero) con detalle que no decrecía de capa en capa, y **ningún archivo vivo tenía techo**. Arrancar una tarea costaba ~69.400 tokens antes de abrir el primer archivo de código.

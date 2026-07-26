@@ -14,6 +14,86 @@
   gap: var(--fk-space-4);
 }
 
+/* ── Grupos rotulados del panel (B1/R13) ─────────────────────────
+   Ajustes era una pila plana de diez tarjetas idénticas: 4.577px de
+   scroll sin un solo punto de referencia, con el interruptor de tema a
+   1.580px del tope. Ahora son cinco grupos (La app · Tu cuenta · Tus
+   datos · Impuestos · Información) y el rótulo copia la receta de
+   `.mas-sheet__group-label` (modals.css), el patrón que NAV2.1a ya usa
+   para agrupar la hoja "Más": mismo tamaño, mismo color, mismas
+   mayúsculas. El orden lo decide `renderPanelConfig()`. */
+.config-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3); /* dentro del grupo, más apretado que entre grupos */
+}
+
+.config-grupo + .config-grupo {
+  margin-block-start: var(--fk-space-2);
+}
+
+.config-grupo__label {
+  display: block;
+  margin: 0 2px;
+  font-size: var(--fk-text-xs);
+  font-weight: var(--fk-font-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fk-text-muted);
+}
+
+/* ── Bloque plegable (B1, B9) ────────────────────────────────────
+   `<details>`/`<summary>` nativo: cero JS, el estado abierto/cerrado ya
+   es accesible por teclado y lo anuncia el lector. Lo usan el bloque de
+   impuestos (dos formularios opcionales que antes abrían la sección) y
+   "Más documentos" del Centro Legal. */
+.config-desplegable > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-3);
+  min-height: 44px; /* piso táctil del proyecto */
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
+.config-desplegable > summary::-webkit-details-marker {
+  display: none;
+}
+
+.config-desplegable > summary .icon {
+  color: var(--fk-text-muted);
+  flex-shrink: 0;
+  transition: rotate var(--fk-transition-fast);
+}
+
+.config-desplegable[open] > summary .icon {
+  rotate: 90deg;
+}
+
+.config-desplegable > * + * {
+  margin-block-start: var(--fk-space-4);
+}
+
+/* Sub-bloque dentro de un desplegable (perfil fiscal, datos de renta):
+   misma columna que `.config-section` pero sin superficie propia, que ya
+   la pone la tarjeta contenedora. */
+.config-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-4);
+}
+
+.config-bloque__title {
+  margin: 0;
+  font-size: var(--fk-text-base);
+  font-weight: var(--fk-font-semibold);
+  color: var(--fk-text-primary);
+}
+
 .config-section {
   background: var(--fk-bg-surface);
   border: 1px solid var(--fk-border-subtle);
@@ -95,6 +175,38 @@
   min-width: 160px;
 }
 
+/* Fila del botón de guardar + la confirmación visible (B12/R14). El chip
+   verde es el mismo `.chip-success` de atoms.css; nace apagado y
+   `config/index.js` lo enciende unos segundos tras persistir. `.chip`
+   declara display, así que `[hidden]` necesita su propia regla. */
+.config-form__guardar {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-3);
+  flex-wrap: wrap;
+}
+
+.config-form__guardar .btn {
+  min-width: 160px;
+}
+
+.config-form__guardar .chip[hidden] {
+  display: none;
+}
+
+/* B8: la caja declara 18x18 pero es un item flex y las etiquetas del
+   perfil fiscal son largas, así que el texto la comprimía a 14x18 y
+   dejaba la fila en 42px, tres por debajo del piso táctil de 44. Acotado
+   a Ajustes: la regla base vive en forms.css y la comparten otras cinco
+   vistas que esta tarea no toca. */
+#panel-config .checkbox-row {
+  min-height: 44px;
+}
+
+#panel-config .checkbox-row input[type="checkbox"] {
+  flex-shrink: 0;
+}
+
 /* Fila "pill" que envuelve el switch de Ajustes (tema, notificaciones).
    TX.11 (2026-07-15): ya no estiliza el switch en sí (migrado a `.toggle`
    de atoms.css, único componente de switch de la app); esto es solo el
@@ -127,6 +239,34 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--fk-space-2);
+}
+
+/* B6: los cuatro botones medían entre 197 y 207px, todos iguales, y dos
+   mueven TODA la app mientras que los otros dos solo tocan los gastos.
+   Cada par va ahora bajo su rótulo de ámbito (`.form-hint`) y a ancho
+   completo, para que el par se lea como una unidad. */
+.config-actions--ambito {
+  flex-direction: column;
+  flex-wrap: nowrap;
+}
+
+.config-actions--ambito .btn {
+  width: 100%;
+}
+
+/* Desde tablet el par cabe en una fila sin estirarse: el rótulo de ámbito ya
+   hace la agrupación y un botón de 900px deja de leerse como botón. La
+   auditoría midió solo móvil 390px; esto evita llevar el ancho completo a un
+   ancho donde nunca hizo falta. */
+@media (min-width: 768px) {
+  .config-actions--ambito {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .config-actions--ambito .btn {
+    width: auto;
+  }
 }
 
 /* Zona de peligro: reset app */
