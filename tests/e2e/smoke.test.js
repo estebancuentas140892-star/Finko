@@ -4014,7 +4014,8 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
 
     const titulo = page.locator('#lista-apartados .list-item__title');
     await expect(titulo).toContainText('SOAT');
-    await expect(titulo).toContainText('🚗');
+    // DIS.5 (T2b): la identidad vive en el slot del ícono, al centro del anillo.
+    await expect(page.locator('#lista-apartados .apartado__anillo-icono')).toContainText('🚗');
   });
 
   test('crear un apartado con nombre propio y un ícono elegido en el picker', async ({ page }) => {
@@ -4038,7 +4039,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
 
     const titulo = page.locator('#lista-apartados .list-item__title');
     await expect(titulo).toContainText('Repuestos del carro');
-    await expect(titulo.locator('use[href="#c-carro"]')).toHaveCount(1);
+    await expect(page.locator('#lista-apartados .apartado__anillo-icono use[href="#c-carro"]')).toHaveCount(1);
   });
 
   test('elegir una plantilla y luego cambiar el ícono a mano reemplaza el emoji de la plantilla', async ({ page }) => {
@@ -4058,8 +4059,7 @@ test.describe('Apartados - selector de ícono compacto (CAT.2c)', () => {
 
     await page.waitForSelector(modalCerrado('modal-apartado'), { timeout: 5_000 });
 
-    const titulo = page.locator('#lista-apartados .list-item__title');
-    await expect(titulo.locator('use[href="#c-torta"]')).toHaveCount(1);
+    await expect(page.locator('#lista-apartados .apartado__anillo-icono use[href="#c-torta"]')).toHaveCount(1);
   });
 
 });

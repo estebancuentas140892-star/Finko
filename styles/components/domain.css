@@ -590,11 +590,48 @@ button.chip:focus-visible {
    APARTADOS - plantillas rápidas y sugerencia de aporte.
    ════════════════════════════════════════════════════════════ */
 
+/* T2 (DIS.5, hallazgo A2): la lista separa sus items desde el contenedor
+   (corolario de la regla R21), como `.personales-lista` y `.inversion-lista`.
+   `#lista-apartados` no tenia ninguna regla: las filas iban borde contra
+   borde y los dos bordes de 1px formaban una costura doble. La clase la
+   emite index.html; el id se queda solo como ancla de `getElementById`. */
+.lista-apartados {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fk-space-3);
+}
+
+/* T2b (DIS.5, hallazgo A7, regla R28): el icono que identifica el apartado
+   vivia dentro del `<p>` del titulo y el slot del icono lo ocupaba una
+   metrica ("33%") que el subtitulo ya implica. Ahora el anillo cuenta el
+   progreso con el arco y su centro dice QUE apartado es; el porcentaje pasa
+   a `.list-item__meta`. Va sobrepuesto y no como `etiqueta` de
+   `progressRing()` porque `apartado.icono` tiene dos formatos (CAT.2c): un
+   emoji, que si cabe en el `<text>` del SVG, o un id del sprite, que es
+   marcado y dentro de `<text>` se imprimiria escapado. El wrapper ya trae
+   `position: relative` de `.list-item__icon`. */
+.apartado__anillo-icono {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--fk-text-primary);
+}
+
 .apartado-plantillas {
   display: flex;
   flex-wrap: wrap;
   gap: var(--fk-space-2);
   margin-bottom: var(--fk-space-3);
+}
+
+/* T4 (DIS.5, hallazgo A8): con las 6 plantillas frecuentes arriba y las otras
+   14 dentro del `.form-details`, el bloque de arriba no necesita el margen
+   completo: el `<details>` que lo sigue ya trae el suyo. */
+.apartado-plantillas--parcial {
+  margin-bottom: var(--fk-space-2);
 }
 
 .apartado__sugerencia {

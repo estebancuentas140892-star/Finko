@@ -18,7 +18,7 @@ import { mostrarErroresForm } from '../../infra/form-errors.js';
 import { confirmar } from '../../ui/confirm.js';
 import { resolverPagoConPreferida } from '../../infra/cuenta-helper.js';
 import { wireIconoPicker, setIconoPickerValor } from '../../infra/icon-picker.js';
-import { f, hoy, esc as _esc } from '../../infra/utils.js';
+import { f, fechaLegible, hoy, esc as _esc } from '../../infra/utils.js';
 import {
   validarApartado, normalizarApartado, validarAbonoApartado,
   calcularProgreso, calcularAporteSugerido, reiniciarCiclo,
@@ -26,7 +26,7 @@ import {
 } from './logic.js';
 import {
   renderListaApartados, renderFormApartado, renderFormAporteApartado,
-  renderNudgeApartadosProximos,
+  renderNudgeApartadosProximos, miles, desdeMiles,
 } from './view.js';
 import { renderBannerProposito } from '../../ui/proposito.js';
 
@@ -47,6 +47,10 @@ function _guardarApartado() {
   if (!form) return;
 
   const datos = Object.fromEntries(new FormData(form));
+  // T9 (A6/R16): el campo es `type="text"` con separador de miles, así que lo
+  // que llega es "980.000". `desdeMiles` devuelve null si no quedó ningún
+  // dígito: la validación lo rechaza igual que antes rechazaba el vacío.
+  datos.montoObjetivo = desdeMiles(datos.montoObjetivo) ?? '';
   const errores = validarApartado(datos);
 
   if (errores.length > 0) {
@@ -60,7 +64,10 @@ function _guardarApartado() {
   if (overlay) cerrarModal(overlay);
 
   renderListaApartados();
-  announce('Apartado creado correctamente.');
+  // T11 (A9): crear un apartado no mueve dinero (nace en $0 y no toca ninguna
+  // cuenta). El anuncio dice cuál es el paso que falta, en vez de dar por
+  // hecho que el usuario ya apartó algo.
+  announce('Apartado creado. Registra tu primer aporte para empezar a separar el dinero.');
 }
 
 /** @param {HTMLElement} el */
@@ -87,9 +94,17 @@ async function _eliminarApartado(el) {
 /**
  * El usuario ya usó el dinero de un apartado recurrente (pagó el SOAT): se
  * reinicia el ciclo para el próximo periodo.
+ *
+ * T8 (hallazgo A5, regla R26): era el único handler destructivo del dominio
+ * sin `confirmar()`. Un toque ponía el apartado en su excedente (normalmente
+ * $0) y avanzaba la fecha un periodo completo, sin preguntar y sin deshacer,
+ * mientras eliminar el apartado (que destruye menos, porque ahí el dinero ya
+ * no está en juego) sí abría un modal. Va sin `peligroso: true`: cerrar un
+ * ciclo no es borrar datos.
+ *
  * @param {HTMLElement} el
  */
-function _reiniciarApartado(el) {
+async function _reiniciarApartado(el) {
   const id = el.dataset.id;
   if (!id) return;
 
@@ -97,6 +112,17 @@ function _reiniciarApartado(el) {
   if (!apartado) return;
 
   const reiniciado = reiniciarCiclo(apartado, hoy());
+  const liberado   = (apartado.montoActual ?? 0) - (reiniciado.montoActual ?? 0);
+
+  const ok = await confirmar({
+    titulo:  'Ya usé este dinero',
+    mensaje: `"${apartado.nombre}" vuelve a ${f(reiniciado.montoActual ?? 0)}`
+      + (reiniciado.fechaObjetivo ? ` y su próxima fecha será el ${fechaLegible(reiniciado.fechaObjetivo)}` : '')
+      + `. Los ${f(liberado)} que reuniste dejan de aparecer en tu ahorro total.`,
+    confirmarTexto: 'Sí, ya lo usé',
+  });
+  if (!ok) return;
+
   editar('apartados', id, {
     montoActual:   reiniciado.montoActual,
     completado:    reiniciado.completado,
@@ -138,7 +164,7 @@ function _actualizarSugerenciaLive() {
   if (!form || !hint) return;
 
   const datos    = Object.fromEntries(new FormData(form));
-  const objetivo = Number(datos.montoObjetivo);
+  const objetivo = Number(desdeMiles(datos.montoObjetivo));
 
   if (!Number.isFinite(objetivo) || objetivo <= 0 || !datos.fechaObjetivo) {
     hint.textContent = 'Ponle un monto y una fecha para ver cuánto separar en cada pago.';
@@ -190,6 +216,7 @@ function _abrirAporte(el) {
       e.preventDefault();
       _guardarAporte();
     });
+    _wireMiles(body);
     body.querySelector('#aporte-apartado-monto')?.focus();
   }
 
@@ -201,7 +228,9 @@ async function _guardarAporte() {
   if (!form) return;
 
   const datos   = Object.fromEntries(new FormData(form));
-  const errores = validarAbonoApartado(datos.monto);
+  // T9 (A6/R16): el campo llega como "220.000".
+  const monto   = desdeMiles(datos.monto) ?? '';
+  const errores = validarAbonoApartado(monto);
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
     return;
@@ -210,7 +239,7 @@ async function _guardarAporte() {
   const apartado = S.apartados.find(a => a.id === datos.apartadoId);
   if (!apartado) return;
 
-  const aporte = Number(datos.monto);
+  const aporte = Number(monto);
   const cuentasActivas = (S.cuentas ?? []).filter(c => c.activa !== false);
 
   // Resolver de qué cuenta(s) sale el dinero, reusando el patrón compartido:
@@ -276,6 +305,23 @@ function _ajustarSaldoCuenta(cuentaId, delta) {
   editar('cuentas', cuentaId, { saldo: (cuenta.saldo ?? 0) + delta });
 }
 
+/**
+ * Separador de miles mientras se escribe (T9, hallazgo A6, regla R16). El
+ * cursor queda al final: son montos que se teclean de izquierda a derecha.
+ * Mismo cableado que Ajustes montó para los datos de renta (B4).
+ * @param {ParentNode|null|undefined} root
+ */
+function _wireMiles(root) {
+  for (const campo of root?.querySelectorAll('[data-miles]') ?? []) {
+    campo.addEventListener('input', () => {
+      const formateado = miles(campo.value);
+      if (formateado === campo.value) return;
+      campo.value = formateado;
+      campo.setSelectionRange(formateado.length, formateado.length);
+    });
+  }
+}
+
 // ── INICIALIZACIÓN ───────────────────────────────────────────────
 
 function _inyectarFormApartado() {
@@ -292,6 +338,8 @@ function _inyectarFormApartado() {
     e.preventDefault();
     _guardarApartado();
   });
+
+  _wireMiles(form);
 
   // Recalcular el aporte sugerido cada vez que cambian monto, fecha o frecuencia.
   form.addEventListener('input', _actualizarSugerenciaLive);

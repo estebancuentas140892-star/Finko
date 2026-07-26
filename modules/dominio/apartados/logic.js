@@ -64,6 +64,23 @@ export const PLANTILLAS_APARTADO = [
   { nombre: 'Navidad',                     icono: '🎄' },
 ];
 
+/**
+ * Las 6 plantillas que quedan a la vista al abrir el formulario (T4, hallazgo
+ * A8, decisión V3). Las otras 14 siguen disponibles, plegadas en el
+ * `.form-details` que el mismo formulario ya usa para la recurrencia: veinte
+ * chips medían 420px, el 34% de un formulario de 1.235px dentro de una hoja de
+ * 776px, y empujaban "¿Cuánto necesitas reunir?" al borde del pliegue.
+ * El catálogo completo no cambia: esto es composición, no curaduría.
+ */
+export const PLANTILLAS_APARTADO_FRECUENTES = [
+  'SOAT',
+  'Impuestos',
+  'Impuesto predial',
+  'Útiles y uniformes',
+  'Regalos',
+  'Navidad',
+];
+
 /** Icono por defecto cuando el usuario no elige uno. */
 export const ICONO_APARTADO_DEFAULT = '📦';
 
@@ -80,6 +97,17 @@ export const PERIODOS_RECURRENCIA = [
 
 /** Periodo por defecto para un apartado recurrente (anual: SOAT, impuestos). */
 export const PERIODO_RECURRENCIA_DEFAULT = 12;
+
+/**
+ * Días que definen "próximo" en toda la sección (T7, hallazgo A3, regla R25).
+ *
+ * Antes había dos umbrales para el mismo concepto: el aviso de proximidad
+ * entraba a 60 días y el badge de la fila solo a 30. Un apartado a 45 días se
+ * contaba en "y 2 apartados más con fecha próxima" y su fila no mostraba
+ * ninguna señal: el usuario que bajaba a buscarlo no lo encontraba. Un umbral,
+ * un concepto: lo consumen `apartadosProximos()` y el badge de la fila.
+ */
+export const DIAS_PROXIMO = 30;
 
 // ── CONSULTAS ────────────────────────────────────────────────────
 
@@ -113,10 +141,10 @@ export function estaListoParaReiniciar(apartado) {
  *
  * @param {import('../../core/state.js').Apartado[]} apartados
  * @param {string}  hoyISO    YYYY-MM-DD.
- * @param {number}  [diasUmbral=60]
+ * @param {number}  [diasUmbral=DIAS_PROXIMO]
  * @returns {import('../../core/state.js').Apartado[]}
  */
-export function apartadosProximos(apartados, hoyISO, diasUmbral = 60) {
+export function apartadosProximos(apartados, hoyISO, diasUmbral = DIAS_PROXIMO) {
   return (apartados ?? [])
     .filter(a => {
       if (a.completado === true) return false;

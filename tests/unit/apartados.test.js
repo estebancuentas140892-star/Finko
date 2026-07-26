@@ -14,13 +14,18 @@ import {
   validarApartado,
   validarAbonoApartado,
   normalizarApartado,
+  DIAS_PROXIMO,
   FRECUENCIAS_APORTE,
   PLANTILLAS_APARTADO,
+  PLANTILLAS_APARTADO_FRECUENTES,
   PERIODOS_RECURRENCIA,
   PERIODO_RECURRENCIA_DEFAULT,
   ICONO_APARTADO_DEFAULT,
 } from '../../modules/dominio/apartados/logic.js';
-import { renderFormAporteApartado, renderFormApartado, renderListaApartados } from '../../modules/dominio/apartados/view.js';
+import {
+  renderFormAporteApartado, renderFormApartado, renderListaApartados,
+  renderNudgeApartadosProximos, miles, desdeMiles,
+} from '../../modules/dominio/apartados/view.js';
 import { S } from '../../modules/core/state.js';
 
 // ── FIXTURES ─────────────────────────────────────────────────────
@@ -487,9 +492,20 @@ describe('apartadosProximos()', () => {
   const hoy = '2026-06-10';
   const apt = (overrides) => apartadoBase({ fechaObjetivo: '2026-07-10', completado: false, ...overrides });
 
-  it('devuelve apartados dentro del umbral por defecto (60 días)', () => {
+  it('devuelve apartados dentro del umbral por defecto (DIAS_PROXIMO)', () => {
     const lista = [apt({ id: 'a1', fechaObjetivo: '2026-07-01' })];
     expect(apartadosProximos(lista, hoy)).toHaveLength(1);
+  });
+
+  // T7 (A3, regla R25): un solo umbral para toda la sección. Antes el aviso
+  // entraba a 60 días y el badge de la fila solo a 30, así que un apartado a
+  // 45 días se contaba en el resumen y su fila no mostraba ninguna señal.
+  it('el umbral por defecto es DIAS_PROXIMO, el mismo que usa el badge de la fila', () => {
+    expect(DIAS_PROXIMO).toBe(30);
+    const dentro = [apt({ id: 'a1', fechaObjetivo: '2026-07-10' })];  // 30 días
+    const fuera  = [apt({ id: 'a1', fechaObjetivo: '2026-07-25' })];  // 45 días
+    expect(apartadosProximos(dentro, hoy)).toHaveLength(1);
+    expect(apartadosProximos(fuera, hoy)).toHaveLength(0);
   });
 
   it('excluye apartados más allá del umbral', () => {
@@ -509,7 +525,7 @@ describe('apartadosProximos()', () => {
 
   it('ordena de más urgente a menos urgente', () => {
     const lista = [
-      apt({ id: 'a2', fechaObjetivo: '2026-07-20' }),
+      apt({ id: 'a2', fechaObjetivo: '2026-07-05' }),
       apt({ id: 'a1', fechaObjetivo: '2026-06-15' }),
     ];
     const r = apartadosProximos(lista, hoy);
@@ -650,13 +666,14 @@ describe('renderFormAporteApartado() - monto prellenado con el aporte sugerido',
   it('sin sugerencia (apartado sin fecha objetivo, el default de apartadoBase) el campo queda vacío, como antes', () => {
     const html = renderFormAporteApartado(apartadoBase());
     expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*value=/);
-    expect(html).not.toContain('Prellenado con lo que te toca aportar');
+    expect(html).not.toContain('Es lo que te toca aportar');
   });
 
   it('con sugerencia > 0 prellena el value del campo, editable (no readonly/disabled)', () => {
     const sugerencia = { aportePorPeriodo: 60_000, numPeriodos: 6, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 90 };
     const html = renderFormAporteApartado(apartadoBase(), sugerencia);
-    expect(html).toMatch(/id="aporte-apartado-monto"[^>]*value="60000"/);
+    // T9 (A6/R16): el prellenado viaja ya formateado, igual que lo verá el usuario.
+    expect(html).toMatch(/id="aporte-apartado-monto"[^>]*value="60\.000"/);
     expect(html).not.toContain('readonly');
     expect(html).not.toContain('disabled');
   });
@@ -664,7 +681,7 @@ describe('renderFormAporteApartado() - monto prellenado con el aporte sugerido',
   it('muestra el hint de prellenado con la etiqueta del período, no un texto genérico', () => {
     const sugerencia = { aportePorPeriodo: 60_000, numPeriodos: 6, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 90 };
     const html = renderFormAporteApartado(apartadoBase(), sugerencia);
-    expect(html).toContain('Prellenado con lo que te toca aportar por quincena para llegar a tiempo');
+    expect(html).toContain('Es lo que te toca aportar por quincena para llegar a tiempo');
     expect(html).toContain('Puedes cambiarlo');
   });
 
@@ -672,7 +689,7 @@ describe('renderFormAporteApartado() - monto prellenado con el aporte sugerido',
     const sugerencia = { aportePorPeriodo: 0, numPeriodos: 0, frecuencia: 'Quincenal', etiquetaPeriodo: 'por quincena', dias: 0 };
     const html = renderFormAporteApartado(apartadoBase(), sugerencia);
     expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*value=/);
-    expect(html).not.toContain('Prellenado con lo que te toca aportar');
+    expect(html).not.toContain('Es lo que te toca aportar');
   });
 
   it('sugerencia null (mismo default que sin argumento) no rompe', () => {
@@ -713,25 +730,256 @@ describe('renderListaApartados() - ícono con dos formatos (CAT.2c)', () => {
     document.body.innerHTML = '<div id="lista-apartados"></div>';
   });
 
+  // T2b (A7, regla R28): la identidad vive en el slot del ícono, o sea al
+  // centro del anillo, no dentro del `<p>` del título.
   it('un apartado con emoji crudo (plantilla o dato viejo) lo muestra tal cual', () => {
     S.apartados = [apartadoBase({ icono: '🚗' })];
     renderListaApartados();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.textContent).toContain('🚗');
+    expect(document.querySelector('.apartado__anillo-icono').textContent).toContain('🚗');
+    expect(document.querySelector('.list-item__title').textContent).not.toContain('🚗');
   });
 
   it('un apartado con id de sprite (elegido con el picker) renderiza el glifo, no texto crudo', () => {
     S.apartados = [apartadoBase({ icono: 'c-carro' })];
     renderListaApartados();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.innerHTML).toContain('#c-carro');
-    expect(titulo.textContent).not.toContain('c-carro');
+    const slot = document.querySelector('.apartado__anillo-icono');
+    expect(slot.innerHTML).toContain('#c-carro');
+    expect(slot.textContent).not.toContain('c-carro');
   });
 
   it('sin icono, cae al default (emoji de caja) sin romper', () => {
     S.apartados = [{ ...apartadoBase(), icono: undefined }];
     renderListaApartados();
-    const titulo = document.querySelector('.list-item__title');
-    expect(titulo.textContent).toContain(ICONO_APARTADO_DEFAULT);
+    expect(document.querySelector('.apartado__anillo-icono').textContent).toContain(ICONO_APARTADO_DEFAULT);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// DIS.5 - auditoría de diseño de Apartados (hallazgos A1 a A13)
+// ════════════════════════════════════════════════════════════════
+
+// ── T9 (A6, regla R16): montos con separador de miles ─────────────
+
+describe('miles() y desdeMiles() - captura de montos (T9)', () => {
+  it('agrupa de a tres desde la derecha', () => {
+    expect(miles('980000')).toBe('980.000');
+    expect(miles(220_000)).toBe('220.000');
+    expect(miles('1750905')).toBe('1.750.905');
+  });
+
+  it('ignora lo que no sea dígito y los ceros a la izquierda', () => {
+    expect(miles('98o.0x00')).toBe('98.000');
+    expect(miles('000980000')).toBe('980.000');
+  });
+
+  it('sin dígitos devuelve cadena vacía', () => {
+    expect(miles('')).toBe('');
+    expect(miles(null)).toBe('');
+    expect(miles(undefined)).toBe('');
+  });
+
+  it('desdeMiles es la inversa y distingue vacío de cero', () => {
+    expect(desdeMiles('980.000')).toBe(980_000);
+    expect(desdeMiles('0')).toBe(0);
+    expect(desdeMiles('')).toBeNull();
+    expect(desdeMiles(null)).toBeNull();
+  });
+});
+
+// ── T4 (A8): plantillas frecuentes a la vista, el resto plegado ───
+
+describe('renderFormApartado() - plantillas plegadas (T4)', () => {
+  it('PLANTILLAS_APARTADO_FRECUENTES son 6 y todas existen en el catálogo', () => {
+    expect(PLANTILLAS_APARTADO_FRECUENTES).toHaveLength(6);
+    const nombres = PLANTILLAS_APARTADO.map(p => p.nombre);
+    for (const n of PLANTILLAS_APARTADO_FRECUENTES) expect(nombres).toContain(n);
+  });
+
+  it('el catálogo completo sigue disponible: 6 arriba y las otras 14 dentro del details', () => {
+    const html = renderFormApartado();
+    const chips = html.match(/data-action="apartado-plantilla"/g) ?? [];
+    expect(chips).toHaveLength(PLANTILLAS_APARTADO.length);
+    expect(html).toContain('Ver las otras ' + (PLANTILLAS_APARTADO.length - 6) + ' plantillas');
+  });
+
+  it('el bloque visible lleva el modificador --parcial y va antes del details', () => {
+    const html = renderFormApartado();
+    expect(html).toContain('apartado-plantillas apartado-plantillas--parcial');
+    expect(html.indexOf('apartado-plantillas--parcial')).toBeLessThan(html.indexOf('Ver las otras'));
+  });
+});
+
+// ── T9 (A6): los dos campos de monto dejan type="number" ──────────
+
+describe('formularios de Apartados - monto con separador (T9)', () => {
+  it('el objetivo es text + inputmode numeric + data-miles, sin "(COP)" en el label', () => {
+    const html = renderFormApartado();
+    expect(html).toMatch(/id="apartado-objetivo"[^>]*type="text"/);
+    expect(html).toMatch(/id="apartado-objetivo"[\s\S]{0,200}?data-miles/);
+    expect(html).toContain('¿Cuánto necesitas reunir?</label>');
+    expect(html).not.toMatch(/id="apartado-objetivo"[^>]*type="number"/);
+  });
+
+  it('el aporte es text + inputmode numeric + data-miles', () => {
+    const html = renderFormAporteApartado(apartadoBase());
+    expect(html).toMatch(/id="aporte-apartado-monto"[^>]*type="text"/);
+    expect(html).toMatch(/id="aporte-apartado-monto"[\s\S]{0,200}?data-miles/);
+    expect(html).not.toMatch(/id="aporte-apartado-monto"[^>]*type="number"/);
+  });
+});
+
+// ── T10 (A12): el contexto del aporte se dice una vez ─────────────
+
+describe('renderFormAporteApartado() - contexto del progreso (T10)', () => {
+  it('una sola línea con lo reunido, lo que falta y la fecha', () => {
+    const html = renderFormAporteApartado(apartadoBase({
+      montoActual: 320_000, montoObjetivo: 980_000, fechaObjetivo: '2026-09-08',
+    }));
+    expect(html).toContain('Llevas <strong>$320.000 de $980.000</strong>.');
+    expect(html).toContain('Te faltan <strong>$660.000</strong> para el');
+  });
+
+  it('deja de atenuar el contexto y no repite el porcentaje entre paréntesis', () => {
+    const html = renderFormAporteApartado(apartadoBase({ montoActual: 320_000, montoObjetivo: 980_000 }));
+    expect(html).not.toContain('form-hint form-hint--muted');
+    expect(html).not.toContain('Progreso de');
+    expect(html).not.toContain('(33%)');
+  });
+
+  it('sin fecha objetivo dice el faltante sin inventar plazo', () => {
+    const html = renderFormAporteApartado(apartadoBase({ montoActual: 320_000, montoObjetivo: 980_000, fechaObjetivo: null }));
+    expect(html).toContain('Te faltan <strong>$660.000</strong>.');
+    expect(html).not.toContain('para el ');
+  });
+
+  it('cubierto por completo no muestra faltante', () => {
+    const html = renderFormAporteApartado(apartadoBase({ montoActual: 980_000, montoObjetivo: 980_000 }));
+    expect(html).not.toContain('Te faltan');
+  });
+});
+
+// ── T2, T2b, T5, T6: anatomía de la fila ──────────────────────────
+
+describe('renderListaApartados() - anatomía de la fila (T2, T2b, T5, T6)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+    S.apartados = [];
+  });
+
+  it('el porcentaje vive en .list-item__meta, no en el centro del anillo', () => {
+    S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000 })];
+    renderListaApartados();
+    expect(document.querySelector('.list-item__meta .list-item__amount').textContent.trim()).toBe('25%');
+    expect(document.querySelector('.progress-ring__label')).toBeNull();
+  });
+
+  it('la fila baja a tres líneas: se va el renglón "Falta" (T5)', () => {
+    S.apartados = [apartadoBase({ montoActual: 90_000, montoObjetivo: 360_000 })];
+    renderListaApartados();
+    expect(document.querySelector('.list-item__progress-label')).toBeNull();
+    expect(document.body.textContent).not.toContain('Falta:');
+  });
+
+  it('la sugerencia deja de decir "antes de la fecha" y cabe en una línea', () => {
+    S.apartados = [apartadoBase({ montoObjetivo: 360_000, fechaObjetivo: '2099-12-10' })];
+    renderListaApartados();
+    const sug = document.querySelector('.apartado__sugerencia');
+    expect(sug).not.toBeNull();
+    expect(sug.textContent).not.toContain('antes de la fecha');
+  });
+
+  it('ninguna región viva en el contenido de la lista (T6, regla R24)', () => {
+    S.apartados = [
+      apartadoBase({ id: 'a1', montoObjetivo: 360_000, fechaObjetivo: '2099-12-10' }),
+      apartadoBase({ id: 'a2', montoActual: 360_000, montoObjetivo: 360_000, recurrente: true, periodoMeses: 12 }),
+    ];
+    renderListaApartados();
+    expect(document.querySelectorAll('[role="status"]')).toHaveLength(0);
+    expect(document.querySelector('.apartado__listo')).not.toBeNull();
+  });
+});
+
+// ── T7 (A3, regla R25): un umbral y un aviso que suma ─────────────
+
+describe('renderNudgeApartadosProximos() - resumen en vez de eco (T7)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="apartados-nudge-proximos"></div>';
+    S.apartados = [];
+  });
+
+  /** Fecha ISO a N días de hoy, para no depender del día en que corra el test. */
+  const enDias = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('suma cuántos vencen y cuánto falta reunir entre todos', () => {
+    S.apartados = [
+      apartadoBase({ id: 'a1', montoActual: 120_000, montoObjetivo: 300_000, fechaObjetivo: enDias(6) }),
+      apartadoBase({ id: 'a2', montoActual: 180_000, montoObjetivo: 420_000, fechaObjetivo: enDias(19) }),
+      apartadoBase({ id: 'a3', montoActual: 320_000, montoObjetivo: 980_000, fechaObjetivo: enDias(29) }),
+    ];
+    renderNudgeApartadosProximos();
+    const txt = document.getElementById('apartados-nudge-proximos').textContent;
+    expect(txt).toContain('3 apartados vencen en los próximos ' + DIAS_PROXIMO + ' días');
+    expect(txt).toContain('$1.080.000');
+    expect(txt).toContain('entre los 3');
+  });
+
+  it('con uno solo lo dice en singular y sin "entre los"', () => {
+    S.apartados = [apartadoBase({ montoActual: 120_000, montoObjetivo: 300_000, fechaObjetivo: enDias(6) })];
+    renderNudgeApartadosProximos();
+    const txt = document.getElementById('apartados-nudge-proximos').textContent;
+    expect(txt).toContain('1 apartado vence en los próximos ' + DIAS_PROXIMO + ' días');
+    expect(txt).toContain('$180.000');
+    expect(txt).not.toContain('entre los');
+  });
+
+  it('deja de repetir el nombre, la fecha y el aporte de la primera fila (regla R27)', () => {
+    S.apartados = [apartadoBase({ nombre: 'Regalos', montoActual: 120_000, montoObjetivo: 300_000, fechaObjetivo: enDias(6) })];
+    renderNudgeApartadosProximos();
+    const txt = document.getElementById('apartados-nudge-proximos').textContent;
+    expect(txt).not.toContain('Regalos');
+    expect(txt).not.toContain('Aparta');
+  });
+
+  it('no es región viva: se repinta en cada render (T6)', () => {
+    S.apartados = [apartadoBase({ montoObjetivo: 300_000, fechaObjetivo: enDias(6) })];
+    renderNudgeApartadosProximos();
+    expect(document.querySelector('#apartados-nudge-proximos [role="status"]')).toBeNull();
+  });
+
+  it('sin apartados dentro del umbral no pinta nada', () => {
+    S.apartados = [apartadoBase({ montoObjetivo: 300_000, fechaObjetivo: enDias(45) })];
+    renderNudgeApartadosProximos();
+    expect(document.getElementById('apartados-nudge-proximos').innerHTML).toBe('');
+  });
+});
+
+// ── T11 y T12 (A9, A10): el estado vacío ──────────────────────────
+
+describe('renderListaApartados() - estado vacío (T11, T12)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-apartados"></div>';
+    S.apartados = [];
+  });
+
+  it('dice que el dinero se aparta con el primer aporte (A9)', () => {
+    renderListaApartados();
+    expect(document.body.textContent).toContain('El dinero se aparta cuando registras el primer aporte.');
+  });
+
+  it('el CTA del vacío baja a secundario: el primario ya está en el encabezado (regla R1)', () => {
+    renderListaApartados();
+    const cta = document.querySelector('[data-action="nuevo-apartado"]');
+    expect(cta.classList.contains('btn-secondary')).toBe(true);
+    expect(cta.classList.contains('btn-primary')).toBe(false);
+  });
+
+  it('de cinco bloques de texto a tres, con la desambiguación conservada', () => {
+    renderListaApartados();
+    expect(document.querySelectorAll('.empty-state__tip')).toHaveLength(1);
+    expect(document.body.textContent).toContain('Límites de gasto');
   });
 });

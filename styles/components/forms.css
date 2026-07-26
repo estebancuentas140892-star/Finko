@@ -571,12 +571,32 @@ form:not(.config-form) .form-group:not(:first-child) {
   vertical-align: 0.1em;
   margin-right: var(--fk-space-2);
 }
-.badge--warn {
+/* T1 (DIS.5, hallazgo A1): `.badge` esta declarada dos veces. Aca es una
+   pastilla de estado sin fondo propio; en atoms.css es un contador de
+   notificacion (fondo --fk-danger, texto blanco, alto y min-width fijos de
+   20px, padding 0 4px). components.css importa atoms DESPUES de forms, asi
+   que a igual especificidad ganaba atoms: medido a 390px, el badge "19 dias"
+   de un apartado imprimia rgb(255,71,87) = --fk-danger, con el borde ambar al
+   35% como unico rastro de la intencion, en una caja de 52x20px. El selector
+   compuesto sube la especificidad a 0,2,0 y restituye la geometria de
+   pastilla; el color vuelve a distinguir "queda tiempo" de "ya es urgente",
+   que es el criterio del ADR 019. La correccion estructural (que una de las
+   dos clases cambie de nombre) es la regla R23 y pide un barrido de CSS mas
+   alla de esta seccion. */
+.badge.badge--warn,
+.badge.badge--danger {
+  min-width: 0;
+  height: auto;
+  padding: 2px var(--fk-space-2);
+  font-weight: var(--fk-font-semibold);
+  letter-spacing: 0.02em;
+}
+.badge.badge--warn {
   background: color-mix(in srgb, var(--fk-warning) 18%, transparent);
   color: var(--fk-warning);
   border: 1px solid color-mix(in srgb, var(--fk-warning) 35%, transparent);
 }
-.badge--danger {
+.badge.badge--danger {
   background: color-mix(in srgb, var(--fk-danger) 18%, transparent);
   color: var(--fk-danger);
   border: 1px solid color-mix(in srgb, var(--fk-danger) 35%, transparent);
