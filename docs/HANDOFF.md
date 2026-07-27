@@ -3,7 +3,7 @@
 > Documento de contexto vivo. Se actualiza al cerrar **cada** tarea o fase.
 > Propósito: que cualquier asistente IA o colaborador nuevo sepa en 2 minutos
 > qué es el proyecto, qué se hizo recientemente, qué sigue, y cómo trabajamos.
-> Última actualización: 2026-07-27. Última tarea cerrada: DIS.10, las 12 correcciones aplicables de la auditoría de diseño de Análisis (queda abierta la mitad de V1, el chip del header como selector de mes real; ver [`contexto/analisis.md`](contexto/analisis.md)).
+> Última actualización: 2026-07-27. Última tarea cerrada: DIS.11, las 11 correcciones aplicables de la auditoría de diseño de Calendario (quedan abiertos el alto del formulario de gasto fijo, que se decide junto con la V2 de Gastos, y la marca de vencido en deudas, que entra con CAL.5b; ver [`contexto/calendario.md`](contexto/calendario.md)).
 
 **Producción:** https://finko-brown.vercel.app
 **Repositorio:** https://github.com/estebancuentas140892-star/Finko
@@ -26,8 +26,8 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 
 | Métrica | Valor |
 |---|---|
-| Tests unitarios + integración | 3142/3142 verdes |
-| Tests E2E | 232/232 verdes en las 11 suites, corrida completa el 2026-07-27. El desglose no se transcribe acá: lo reporta la propia corrida. |
+| Tests unitarios + integración | 3156/3156 verdes |
+| Tests E2E | 235/235 verdes en las 11 suites, corrida completa el 2026-07-27. El desglose no se transcribe acá: lo reporta la propia corrida. |
 | Schema version (localStorage) | v27 |
 | Lighthouse Performance | 100 |
 | Lighthouse Accessibility | 100 |
@@ -39,6 +39,12 @@ financiero: lenguaje simple, normativa colombiana (SMMLV, UVT, GMF).
 ---
 
 ## 3. Qué se hizo recientemente (últimas 5 tareas)
+
+### fix(calendario): DIS.11, 11 correcciones de la auditoría de diseño sobre Calendario · 2026-07-27
+
+Auditoría de diseño de la sección más completa de la app (13 hallazgos): se aplican 11. Lo grande: **tocar un día no cambiaba nada de lo que se ve**, porque `renderAgenda()` pintaba el panel del día en 911,7px de una pantalla de 844 y ni el scroll ni el foco se movían; ahora el detalle se emite junto a la grilla y el foco va a su título, que es lo que lo trae a pantalla y lo anuncia (R46 nueva). **Lo vencido era lo más tenue del mes**: la opacidad 0,5 de "pasado" cubría también los días con pagos vencidos y hundía el número de 14,46:1 a 4,55:1 y los puntos hasta 2,14:1, mientras la tarjeta de arriba decía "5 pagos ya vencieron"; la atenuación queda solo para los días pasados sin eventos y el día con un fijo vencido toma la familia warning, nunca danger (R47 nueva). **Las filas del modal de lote no tenían borde**: `.lote-row` pedía `var(--fk-border)`, un token que no existe, y una `var()` inválida invalida la declaración entera, así que la pantalla donde se confirma mover dinero no tenía señal de foco por fila. En la fila del día **el monto era el texto más pequeño y más apagado** (12px gris en la segunda línea): vuelve al primer renglón a la derecha, en 14px/700 tabular. La tarjeta que propone pagar N ahora dice cuánto suman antes de abrir el flujo (R50 nueva), el mes en cero deja de decir lo mismo tres veces y con dos primarios (R51 nueva), la nav de mes conserva el foco y anuncia el mes nuevo (R48 nueva), el punto del día de ingreso pasa a anillo para no depender solo del color (R49 nueva), cuatro controles llegan a 44px y el banner de propósito toma por fin el índigo de la sección. **Por decisión tuya:** la leyenda pasa a pie de la tarjeta y deja de ser sticky (revisa AG.6: eran 65,7px de chrome que ni se veían en el primer pantallazo) y la grilla abandona `role="grid"` en vez de simular filas. `DESIGN_SYSTEM.md` gana R46 a R51. **Sin aplicar:** el alto del formulario de gasto fijo (900,4px en una hoja de 776; lo fijó el ADR 042 D3 y se decide junto con la V2 de Gastos) y la marca de vencido en deudas (entra con CAL.5b, que ya va a tocar ese filtro). 3156/3156 unit + lint verdes; 235/235 E2E. SW v428 a v429.
+
+---
 
 ### fix(analisis): DIS.10, 12 correcciones de la auditoría de diseño sobre Análisis · 2026-07-27
 
@@ -64,13 +70,7 @@ Auditoría de diseño de la capa global de navegación (11 hallazgos): se aplica
 
 ---
 
-### fix(apartados): DIS.5, 11 correcciones de la auditoría de diseño sobre Apartados · 2026-07-26
-
-Auditoría de diseño de la sección (13 hallazgos): se aplican 11. Lo grande: el badge de vencimiento imprimía **rojo de emergencia a tres semanas de la fecha** porque `.badge` está declarada en dos archivos y atoms se importa después de forms; vuelve al ámbar con selector compuesto (R23 nueva). La fila medía **344,6px repartidos 56 | 110 | 133**, con la columna de botones más ancha que la de información y el subtítulo envolviendo en seis líneas: baja a 215px con 208px de cuerpo, el ícono entra al centro del anillo y el "%" pasa a la derecha (R28 nueva). El aviso repetía la primera fila con **otro umbral** (60 días contra 30), así que un apartado a 45 días se contaba y no se señalaba: un solo `DIAS_PROXIMO` y un aviso que suma (R25 y R27 nuevas). **Cinco `role="status"`** anunciaban contenido estático en cada re-render: cero (R24 nueva). **"Ya lo usé" ponía $1.240.000 en cero sin preguntar** desde un botón de 78x36: ahora confirma y mide 44px (R26 nueva). Los dos montos ganan separador de miles (R16, segundo caso), las 20 plantillas pasan a 6 visibles y 14 plegadas (formulario de 1.235px a 835px), y el vacío por fin dice que **el dinero se aparta en el primer aporte**, cosa que ninguna pantalla decía. `DESIGN_SYSTEM.md` gana R23 a R28. **Sin aplicar, esperan tu decisión:** A11 (registrar el gasto al usar el apartado: hoy pagar el SOAT con lo reunido no deja rastro en Gastos ni en Análisis; cruza dominios) y A13 (el consolidado del hub Ahorros, ADR 024 D4, afecta a las cuatro secciones). 3081/3081 unit + lint verdes; smoke, a11y-forms, hub-ahorros y reflow-320 verdes. SW v420→v421.
-
----
-
-> Para tareas anteriores (fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
+> Para tareas anteriores (fix(apartados) DIS.5 las 11 correcciones de la auditoría de diseño sobre Apartados, fix(gastos) DIS.4 las 10 correcciones de la auditoría de diseño sobre Gastos, fix(me-deben) DIS.3 las 11 correcciones de la auditoría de diseño sobre Me deben, fix(deudas) DIS.2 las 8 correcciones de la auditoría de diseño sobre Deudas, fix(inicio) V1 el acento de marca deja de medir el gasto semanal, docs(reorg) Fases 1 y 2 de la reorganización documental, feat(metas) EDIT.1a editar sin destruir el progreso, feat(gastos) TX.12 gastos frecuentes y "Repetir", feat(agenda) CAL.5a pagar en lote lo que ya venció, feat(movimientos) MOV.2 búsqueda y filtros en el ledger, feat(movimientos) MOV.1 el ledger deja de ser solo lectura, feat(personales,analisis) PE.7 "Me deben" conectado a cuentas y patrimonio, feat(apartados,ahorro) AP.5a + AH.5a el monto de un aporte llega prellenado, fix(agenda) BUG-015 "Marcar pagado" registra el pago en el mes visible, fix(tesoreria) BUG-014 la distribución reparte el cobro del período, no el mes, y el historial completo antes de esas), ver [`docs/CHANGELOG.md`](CHANGELOG.md) o [`docs/changelog/`](changelog/) para meses ya archivados.
 
 ---
 
