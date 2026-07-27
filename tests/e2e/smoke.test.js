@@ -993,7 +993,9 @@ test.describe('Tesorería - cuenta y saldo', () => {
     const hero = page.locator('#tesoreria-hero');
     await expect(hero).toContainText('Tu dinero en cuentas', { timeout: 3_000 });
     await expect(hero.locator('.hero-tesoreria__valor')).toHaveText('$1.000.000');
-    await expect(hero).toContainText('1 cuenta · efectivo');
+    // MC-DIS.9 (hallazgo H4, regla R23): el resumen dice lo que dibuja la
+    // barra, no el conteo de cuentas (antes: "1 cuenta · efectivo").
+    await expect(hero).toContainText('Efectivo 100%');
     await expect(hero.locator('.hero-tesoreria__compo-seg')).toHaveCount(1);
 
     // El ojo enmascara el total y queda presionado; el monto real no viaja al DOM.

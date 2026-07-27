@@ -559,14 +559,20 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
   const montoCobro = distribuir?.montoIngreso ?? dist.ingresoMensual;
   const est = estado?.estado ?? 'sin-fecha';
 
+  // MC-DIS.9 C10 (regla R24): sin `role="status"`. El aviso es informativo y
+  // estable, no la respuesta a una acción, y la tarjeta se repinta en cada
+  // `state:change` de la sección.
   const avisoHtml = est === 'listo'
-    ? `<p class="distribuir-aviso" role="status">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`}</p>`
+    ? `<p class="distribuir-aviso">${estado.esHoy ? 'Hoy recibes tu ingreso.' : `Recibiste tu ingreso el ${fechaCorta(estado.periodoISO)}.`}</p>`
     : '';
 
+  // MC-DIS.9 C6: ✓ y 💸 pasan a i-check-circle e i-saldo del sprite (el emoji
+  // se dibuja distinto en cada sistema operativo y no hereda el color del
+  // texto). El `role="status"` del pie sí se conserva: cambia al distribuir.
   const pie = est === 'distribuido'
-    ? `<p class="distribuir__hecho" role="status">✓ Ya distribuiste tu ingreso de este periodo.</p>`
+    ? `<p class="distribuir__hecho" role="status">${icon('check-circle', 'icon icon--sm')} Ya distribuiste tu ingreso de este periodo.</p>`
     : est === 'pendiente'
-      ? `<p class="distribuir__pendiente form-hint form-hint--muted">💸 Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`
+      ? `<p class="distribuir__pendiente form-hint form-hint--muted">${icon('saldo', 'icon icon--sm')} Podrás distribuir tu ingreso cuando recibas tu próximo pago.</p>`
       : hayDestinos
         ? `<button type="button" class="btn btn-primary distribuir-card__cta" data-action="toggle-distribuir-ingreso">
             Distribuir mi ingreso
@@ -574,8 +580,10 @@ function _renderTarjetaDistribuir({ dist, estado, hayDestinos, distribuir }) {
           </button>`
         : '';
 
+  // MC-DIS.9 C6: ⚠ pasa a i-alert. `.distribucion-alerta` ya es flex con gap,
+  // así que el ícono se alinea sin CSS nuevo.
   const alertasHtml = alertas.map(a =>
-    `<p class="distribucion-alerta">⚠ <span>${_esc(a)}</span></p>`
+    `<p class="distribucion-alerta">${icon('alert', 'icon icon--sm')}<span>${_esc(a)}</span></p>`
   ).join('');
 
   const filaLeyenda = (tono, s) => `

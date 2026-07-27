@@ -27,10 +27,21 @@ import {
 
 /**
  * Opacidad de los segmentos de la barra de composición, por peso
- * (mayor saldo = más opaco; valores del mockup aprobado). A partir
- * de la cuarta cuenta todos comparten el tinte más suave.
+ * (mayor saldo = más opaco).
+ *
+ * MC-DIS.9 C4: eran [1, 0.62, 0.34] con 0,2 de la cuarta en adelante, es
+ * decir contrastes de 5,74 · 3,01 · 1,77 · 1,36 contra el fondo del hero: los
+ * dos últimos por debajo del umbral no textual de 3:1 (SC 1.4.11) y entre sí
+ * indistinguibles (1,3:1). `composicionCuentas()` deja de devolver una entrada
+ * por cuenta (como máximo tres, con el resto agrupado en "otras"), así que
+ * estos tres valores cubren la barra completa.
+ *
+ * El piso es 0,62 y no el 0,55 que pedía el informe: medido sobre el fondo real
+ * del hero, 0,55 rinde 2,65:1 y no llega al umbral que la propia corrección
+ * invoca. 0,62 es el primer paso que lo alcanza. Contrastes medidos con los
+ * tres valores: 5,74 · 4,22 · 3,01.
  */
-const _COMPO_OPACIDAD = [1, 0.62, 0.34];
+const _COMPO_OPACIDAD = [1, 0.81, 0.62];
 
 /**
  * Renderiza el hero con el total en cuentas en `#tesoreria-hero`.
@@ -42,8 +53,9 @@ const _COMPO_OPACIDAD = [1, 0.62, 0.34];
  * - Ojo de privacidad anclado a la esquina (posición estable, solo cambia
  *   el contenido). Sin cuentas no se pinta: no hay nada que enmascarar
  *   (misma disciplina que updSaldo() en el hero de Inicio).
- * - Barra de composición (D3): un segmento por cuenta con saldo positivo,
- *   ancho proporcional; el resumen en texto la acompaña (SC 1.4.11).
+ * - Barra de composición (D3): un segmento por cuenta con saldo positivo hasta
+ *   el tope de `composicionCuentas()` (MC-DIS.9 C4), ancho proporcional; el
+ *   resumen en texto dice lo mismo que la barra (SC 1.4.11, regla R23).
  */
 export function renderHeroTesoreria() {
   const el = document.getElementById('tesoreria-hero');
@@ -90,7 +102,7 @@ export function renderHeroTesoreria() {
   // (cero style="" en el HTML generado, regla del proyecto).
   el.querySelectorAll('.hero-tesoreria__compo-seg').forEach((seg, i) => {
     seg.style.width   = `${compo[i].pct.toFixed(2)}%`;
-    seg.style.opacity = String(_COMPO_OPACIDAD[i] ?? 0.2);
+    seg.style.opacity = String(_COMPO_OPACIDAD[i] ?? 0.62);
   });
 }
 
@@ -121,13 +133,18 @@ export function renderListaCuentas() {
  * siempre describe la CLASE de forma legible, sin duplicar el nombre que
  * ya se muestra arriba.
  *
+ * MC-DIS.9 C11: para la clase efectivo devuelve '' y la tarjeta omite el
+ * subtítulo. "Efectivo / Dinero en efectivo" decía lo mismo dos veces con más
+ * palabras; es el caso que MC.15a resolvió para los bancos y que quedó
+ * pendiente acá.
+ *
  * @param {import('../../../core/state.js').Cuenta} cuenta
  * @returns {string}
  */
 function _tipoLabel(cuenta) {
   const clase = bancoClase(cuenta.banco);
   if (clase === 'billetera') return 'Billetera digital';
-  if (clase === 'efectivo')  return 'Dinero en efectivo';
+  if (clase === 'efectivo')  return '';
   return cuenta.tipo || 'Cuenta';
 }
 
@@ -168,11 +185,19 @@ function _renderCuentaItem(cuenta, oculto) {
   if (transferenciaLabel) {
     chips.push({ icon: 'i-key', label: transferenciaLabel });
   }
+  // MC-DIS.9 C1 (regla R19): la etiqueta viaja en `.chip__label` y no como nodo
+  // de texto suelto, para que pueda truncarse con elipsis cuando el dato es
+  // largo (un nodo suelto dentro del inline-flex del chip no lo acepta).
   const chipsHtml = chips.map(ch => `
           <span class="chip">
             <svg class="icon icon--sm" aria-hidden="true"><use href="#${ch.icon}"/></svg>
-            ${ch.label}
+            <span class="chip__label">${ch.label}</span>
           </span>`).join('');
+
+  // MC-DIS.9 C11: sin subtítulo (clase efectivo) el párrafo no se emite.
+  const subtituloHtml = subtitulo
+    ? `<p class="cuenta-card__tipo">${_esc(subtitulo)}</p>`
+    : '';
 
   return `
     <article class="cuenta-card" data-id="${_esc(cuenta.id)}">
@@ -180,7 +205,7 @@ function _renderCuentaItem(cuenta, oculto) {
         <div class="cuenta-card__icon" aria-hidden="true">${_bankAvatarHtml(cuenta.banco, cuenta.icono)}</div>
         <div class="cuenta-card__info">
           <p class="cuenta-card__nombre">${nombre}</p>
-          <p class="cuenta-card__tipo">${_esc(subtitulo)}</p>
+          ${subtituloHtml}
         </div>
         <span class="cuenta-card__saldo">${saldoTxt}</span>
       </div>
@@ -201,20 +226,25 @@ function _renderCuentaItem(cuenta, oculto) {
 }
 
 /**
- * Texto combinado de los datos de transferencia de una cuenta (MC.14, ahora
- * chip en MC.18b): número, llave con su tipo y alias, unidos con "·".
- * Devuelve '' si la cuenta no tiene datos de transferencia guardados.
+ * Dato de transferencia que muestra el chip de la tarjeta (MC.14, chip desde
+ * MC.18b). Devuelve '' si la cuenta no tiene datos guardados.
+ *
+ * MC-DIS.9 C1 (bug H1): antes concatenaba los tres campos con "·" y el chip
+ * medía 377,8px dentro de un contenedor de 222,7px: se salía de la tarjeta y
+ * pasaba por debajo de los botones de editar y eliminar. Ahora muestra UN dato,
+ * el que sirve para que a uno le consignen: la llave con su tipo, o el número
+ * de cuenta si no hay llave, o el alias si es lo único guardado. El resto sigue
+ * guardado y visible al editar la cuenta.
  *
  * @param {import('../../../core/state.js').DatosTransferencia|null|undefined} dt
  * @returns {string}
  */
 function _labelDatosTransferencia(dt) {
   if (!dt) return '';
-  const partes = [];
-  if (dt.numeroCuenta) partes.push(`N.° ${_esc(dt.numeroCuenta)}`);
-  if (dt.llave)        partes.push(`${_esc(dt.tipoLlave ?? 'Llave')} ${_esc(dt.llave)}`);
-  if (dt.alias)        partes.push(_esc(dt.alias));
-  return partes.join(' · ');
+  if (dt.llave)        return `${_esc(dt.tipoLlave ?? 'Llave')} ${_esc(dt.llave)}`;
+  if (dt.numeroCuenta) return `N.° ${_esc(dt.numeroCuenta)}`;
+  if (dt.alias)        return _esc(dt.alias);
+  return '';
 }
 
 function _renderEmptyState() {
@@ -443,6 +473,11 @@ export function renderGMFIndicador() {
  * tarjeta insight compacta con tinte tesorería, pegada bajo la lista de
  * cuentas que generan el gravamen. Copy y cálculo sin cambios.
  *
+ * MC-DIS.9 C10 (regla R24): sin `role="status"`. Es una tarjeta informativa
+ * estable, no la respuesta a una acción, y `renderGMFIndicador()` corre en cada
+ * `state:change` de la sección: registrar un gasto o guardar un ingreso hacía
+ * que el lector de pantalla la volviera a anunciar con la cifra sin cambiar.
+ *
  * @param {{ icono: string, nivel: string, cantidadCuentasGMF: number,
  *           gastosGravados: number, costoGMF: number }} nudge
  * @returns {string}
@@ -450,7 +485,7 @@ export function renderGMFIndicador() {
 function _renderGMFInsight(nudge) {
   const n = nudge.cantidadCuentasGMF === 1 ? '1 cuenta' : `${nudge.cantidadCuentasGMF} cuentas`;
   return `
-    <div class="gmf-insight" role="status">
+    <div class="gmf-insight">
       <span class="gmf-insight__icon" aria-hidden="true">
         <svg class="icon" aria-hidden="true"><use href="#i-percent"/></svg>
       </span>

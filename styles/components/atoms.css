@@ -21,6 +21,18 @@
   white-space: nowrap;
   flex-shrink: 0;
 }
+/* Etiqueta del chip (MC-DIS.9 C1, regla R19): un dato de longitud libre
+   (llave de transferencia, alias, número de cuenta) tiene que poder cortarse.
+   Un nodo de texto suelto dentro del inline-flex de .chip no acepta
+   text-overflow, así que la etiqueta viaja en su propio elemento. El
+   contenedor que le da el ancho máximo lo pone cada consumidor
+   (ej. .cuenta-card__chips en domain.css). */
+.chip__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .chip-success { background: var(--fk-success-bg); color: var(--fk-success-text); border-color: color-mix(in srgb, var(--fk-success) 20%, transparent); }
 .chip-warning { background: var(--fk-warning-bg); color: var(--fk-warning-text); border-color: color-mix(in srgb, var(--fk-warning) 20%, transparent); }
 .chip-danger  { background: var(--fk-danger-bg);  color: var(--fk-danger-text);  border-color: color-mix(in srgb, var(--fk-danger)  20%, transparent); }

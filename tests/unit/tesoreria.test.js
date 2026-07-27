@@ -1016,7 +1016,9 @@ describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip des
     expect(document.getElementById('lista-tesoreria').innerHTML).not.toContain('#i-key');
   });
 
-  it('con datosTransferencia, combina número, llave y alias en un solo chip', () => {
+  // MC-DIS.9 C1 (bug H1): con los tres campos guardados el chip medía 377,8px
+  // dentro de un contenedor de 222,7px y pasaba por debajo de editar/eliminar.
+  it('con los tres datos guardados, el chip muestra solo la llave con su tipo', () => {
     S.cuentas = [cuentaBase({
       datosTransferencia: {
         numeroCuenta: '1234567890',
@@ -1028,9 +1030,30 @@ describe('renderListaCuentas() - chip de datos de transferencia (MC.14, chip des
     renderListaCuentas();
     const html = document.getElementById('lista-tesoreria').innerHTML;
     expect(html).toContain('#i-key');
-    expect(html).toContain('N.° 1234567890');
     expect(html).toContain('Celular 3001234567');
-    expect(html).toContain('@mi-alias');
+    expect(html).not.toContain('N.° 1234567890');
+    expect(html).not.toContain('@mi-alias');
+  });
+
+  it('sin llave, el chip cae al número de cuenta; sin número, al alias', () => {
+    S.cuentas = [cuentaBase({ datosTransferencia: { numeroCuenta: '1234567890', alias: '@mi-alias' } })];
+    renderListaCuentas();
+    expect(document.getElementById('lista-tesoreria').innerHTML).toContain('N.° 1234567890');
+
+    S.cuentas = [cuentaBase({ datosTransferencia: { alias: '@mi-alias' } })];
+    renderListaCuentas();
+    expect(document.getElementById('lista-tesoreria').innerHTML).toContain('@mi-alias');
+  });
+
+  it('la etiqueta del chip viaja en .chip__label, para poder truncarse (C1)', () => {
+    S.cuentas = [cuentaBase({
+      datosTransferencia: { llave: '3001234567', tipoLlave: 'Celular' },
+      cuotaManejo: { monto: 15_000, diaCobro: 15 },
+    })];
+    renderListaCuentas();
+    const labels = [...document.querySelectorAll('.cuenta-card__chips .chip__label')];
+    expect(labels).toHaveLength(2);
+    expect(labels.map(l => l.textContent)).toEqual(['Cuota $15.000 · día 15', 'Celular 3001234567']);
   });
 });
 
@@ -1057,12 +1080,14 @@ describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + c
     expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Billetera digital');
   });
 
-  it('con clase efectivo, el tipo muestra "Dinero en efectivo"', () => {
+  // MC-DIS.9 C11: antes decía "Efectivo" y debajo "Dinero en efectivo".
+  it('con clase efectivo, la tarjeta no emite subtítulo', () => {
     S.cuentas = [cuentaBase({ nombre: 'Efectivo', banco: 'Efectivo', tipo: 'Efectivo' })];
     renderListaCuentas();
     const el = document.getElementById('lista-tesoreria');
     expect(el.querySelector('.cuenta-card__nombre').textContent).toBe('Efectivo');
-    expect(el.querySelector('.cuenta-card__tipo').textContent).toBe('Dinero en efectivo');
+    expect(el.querySelector('.cuenta-card__tipo')).toBeNull();
+    expect(el.innerHTML).not.toContain('Dinero en efectivo');
   });
 
   it('con un nombre explícito que difiere de "banco tipo", el subtítulo vuelve a ser "banco · tipo"', () => {
@@ -1114,15 +1139,16 @@ describe('renderListaCuentas() - MC.18b: tarjeta de cuenta con nombre + tipo + c
 // ── composicionCuentas() y resumenCuentas() (MC.18a, ADR 035 D3) ─
 
 describe('composicionCuentas()', () => {
-  it('ordena por saldo descendente con la porción del total en pct', () => {
+  it('ordena por saldo descendente con la porción del total en pct y el banco', () => {
     const cuentas = [
-      cuentaBase({ id: 'chica',  saldo: 100_000 }),
-      cuentaBase({ id: 'grande', saldo: 600_000 }),
-      cuentaBase({ id: 'media',  saldo: 300_000 }),
+      cuentaBase({ id: 'chica',  banco: 'Nequi',       saldo: 100_000 }),
+      cuentaBase({ id: 'grande', banco: 'Bancolombia', saldo: 600_000 }),
+      cuentaBase({ id: 'media',  banco: 'Davivienda',  saldo: 300_000 }),
     ];
     const compo = composicionCuentas(cuentas);
     expect(compo.map(c => c.id)).toEqual(['grande', 'media', 'chica']);
     expect(compo.map(c => c.pct)).toEqual([60, 30, 10]);
+    expect(compo.map(c => c.nombre)).toEqual(['Bancolombia', 'Davivienda', 'Nequi']);
   });
 
   it('excluye cuentas inactivas y con saldo 0; [] si no hay saldo que repartir', () => {
@@ -1133,27 +1159,65 @@ describe('composicionCuentas()', () => {
     ];
     const compo = composicionCuentas(cuentas);
     expect(compo).toHaveLength(1);
-    expect(compo[0]).toEqual({ id: 'activa', pct: 100 });
+    expect(compo[0]).toEqual({ id: 'activa', nombre: 'Nequi', pct: 100 });
 
     expect(composicionCuentas([])).toEqual([]);
     expect(composicionCuentas([cuentaBase({ saldo: 0 })])).toEqual([]);
   });
-});
 
-describe('resumenCuentas()', () => {
-  it('devuelve "" sin cuentas activas y singular con una sola cuenta', () => {
-    expect(resumenCuentas([])).toBe('');
-    expect(resumenCuentas([cuentaBase({ activa: false })])).toBe('');
-    expect(resumenCuentas([cuentaBase({ banco: 'Bancolombia' })])).toBe('1 cuenta');
+  // MC-DIS.9 C4: con una entrada por cuenta, del tercer segmento en adelante la
+  // opacidad caía por debajo del umbral no textual y los dos últimos ni se
+  // distinguían entre sí. El tope es 3 segmentos, el último agrupado.
+  it('con más de tres cuentas con saldo, agrupa el resto en un segmento "otras"', () => {
+    const cuentas = [
+      cuentaBase({ id: 'c1', banco: 'Bancolombia', saldo: 3_240_000 }),
+      cuentaBase({ id: 'c2', banco: 'Davivienda',  saldo: 1_150_000 }),
+      cuentaBase({ id: 'c3', banco: 'Nequi',       saldo:   480_500 }),
+      cuentaBase({ id: 'c4', banco: 'Efectivo',    saldo:   220_000 }),
+    ];
+    const compo = composicionCuentas(cuentas);
+    expect(compo).toHaveLength(3);
+    expect(compo.map(c => c.nombre)).toEqual(['Bancolombia', 'Davivienda', 'otras']);
+    expect(compo.map(c => c.id)).toEqual(['c1', 'c2', null]);
+    // El agrupado suma Nequi + Efectivo; los tres pct siguen sumando 100.
+    expect(compo[2].pct).toBeCloseTo(13.76, 2);
+    expect(compo.reduce((acc, c) => acc + c.pct, 0)).toBeCloseTo(100, 6);
   });
 
-  it('cuenta el total y desglosa billeteras y efectivo', () => {
+  it('con exactamente tres cuentas con saldo, no agrupa nada', () => {
     const cuentas = [
-      cuentaBase({ id: 'c1', banco: 'Bancolombia' }),
-      cuentaBase({ id: 'c2', banco: 'Nequi' }),
-      cuentaBase({ id: 'c3', banco: 'Efectivo' }),
+      cuentaBase({ id: 'c1', banco: 'Bancolombia', saldo: 500_000 }),
+      cuentaBase({ id: 'c2', banco: 'Davivienda',  saldo: 300_000 }),
+      cuentaBase({ id: 'c3', banco: 'Nequi',       saldo: 200_000 }),
     ];
-    expect(resumenCuentas(cuentas)).toBe('3 cuentas · 1 billetera · efectivo');
+    const compo = composicionCuentas(cuentas);
+    expect(compo.map(c => c.nombre)).toEqual(['Bancolombia', 'Davivienda', 'Nequi']);
+    expect(compo.every(c => c.id !== null)).toBe(true);
+  });
+});
+
+// MC-DIS.9 C4 (regla R23): el resumen dice lo que dibuja la barra. Antes contaba
+// cuentas ("4 cuentas · 1 billetera · efectivo"), un dato distinto sobre lo
+// mismo que no servía de alternativa no visual (SC 1.4.11).
+describe('resumenCuentas()', () => {
+  it('devuelve "" cuando no hay barra que explicar', () => {
+    expect(resumenCuentas([])).toBe('');
+    expect(resumenCuentas([cuentaBase({ activa: false })])).toBe('');
+    expect(resumenCuentas([cuentaBase({ saldo: 0 })])).toBe('');
+  });
+
+  it('nombra cada segmento con su porcentaje redondeado', () => {
+    const cuentas = [
+      cuentaBase({ id: 'c1', banco: 'Bancolombia', saldo: 3_240_000 }),
+      cuentaBase({ id: 'c2', banco: 'Davivienda',  saldo: 1_150_000 }),
+      cuentaBase({ id: 'c3', banco: 'Nequi',       saldo:   480_500 }),
+      cuentaBase({ id: 'c4', banco: 'Efectivo',    saldo:   220_000 }),
+    ];
+    expect(resumenCuentas(cuentas)).toBe('Bancolombia 64% · Davivienda 23% · otras 14%');
+  });
+
+  it('con una sola cuenta con saldo, el segmento se lleva el 100%', () => {
+    expect(resumenCuentas([cuentaBase({ banco: 'Bancolombia' })])).toBe('Bancolombia 100%');
   });
 });
 
@@ -1182,7 +1246,7 @@ describe('renderHeroTesoreria()', () => {
     expect(ojo.getAttribute('aria-pressed')).toBe('false');
     expect(ojo.innerHTML).toContain('#i-eye');
     expect(ojo.innerHTML).not.toContain('#i-eye-off');
-    expect(el.querySelector('.hero-tesoreria__resumen').textContent).toBe('2 cuentas · 1 billetera');
+    expect(el.querySelector('.hero-tesoreria__resumen').textContent).toBe('Bancolombia 68% · Nequi 32%');
   });
 
   it('la barra de composición pinta un segmento por cuenta con saldo, con ancho y opacidad por peso', () => {
@@ -1198,9 +1262,27 @@ describe('renderHeroTesoreria()', () => {
     expect(segs[0].style.width).toBe('60.00%');
     expect(segs[1].style.width).toBe('30.00%');
     expect(segs[2].style.width).toBe('10.00%');
+    // MC-DIS.9 C4: piso de 0,62 (3,01:1 medido); eran 1 / 0,62 / 0,34 con 0,2
+    // de la cuarta cuenta en adelante.
     expect(segs[0].style.opacity).toBe('1');
-    expect(segs[1].style.opacity).toBe('0.62');
-    expect(segs[2].style.opacity).toBe('0.34');
+    expect(segs[1].style.opacity).toBe('0.81');
+    expect(segs[2].style.opacity).toBe('0.62');
+  });
+
+  // MC-DIS.9 C4: el tope de tres segmentos también aplica al dibujo.
+  it('con cuatro cuentas con saldo, la barra sigue pintando tres segmentos', () => {
+    S.cuentas = [
+      cuentaBase({ id: 'c1', banco: 'Bancolombia', saldo: 3_240_000 }),
+      cuentaBase({ id: 'c2', banco: 'Davivienda',  saldo: 1_150_000 }),
+      cuentaBase({ id: 'c3', banco: 'Nequi',       saldo:   480_500 }),
+      cuentaBase({ id: 'c4', banco: 'Efectivo',    saldo:   220_000 }),
+    ];
+    renderHeroTesoreria();
+    const segs = document.querySelectorAll('.hero-tesoreria__compo-seg');
+    expect(segs).toHaveLength(3);
+    expect([...segs].every(s => Number(s.style.opacity) >= 0.62)).toBe(true);
+    expect(document.querySelector('.hero-tesoreria__resumen').textContent)
+      .toBe('Bancolombia 64% · Davivienda 23% · otras 14%');
   });
 
   it('con el saldo oculto: máscara en el total, aria-pressed=true e icono de ojo tachado', () => {
@@ -1489,6 +1571,17 @@ describe('renderGMFIndicador() - tarjeta insight del 4x1000', () => {
     expect(el.innerHTML).toContain('#i-percent');
     expect(el.querySelector('.gmf-insight__title').textContent).toContain('4x1000 estimado este mes');
     expect(el.querySelector('.gmf-insight__desc').textContent).toContain('1 cuenta');
+  });
+
+  // MC-DIS.9 C10 (regla R24): es informativa y estable, y la sección la
+  // repinta en cada state:change; el lector la reanunciaba sin cambio alguno.
+  it('la tarjeta no es una región viva', () => {
+    const d = new Date();
+    const fechaHoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    S.cuentas = [cuentaBase({ id: 'c1', aplica4x1000: true })];
+    S.gastos = [{ id: 'g1', cuentaId: 'c1', monto: 500_000, fecha: fechaHoy, categoria: 'Mercado' }];
+    renderGMFIndicador();
+    expect(document.querySelector('.gmf-insight').getAttribute('role')).toBeNull();
   });
 });
 
@@ -1962,6 +2055,65 @@ describe('renderListaIngresos() / renderListaIngresosPuntuales() - máscara del 
   });
 });
 
+// ── MC-DIS.9 C5 y C6: un solo vacío bajo el encabezado único, e ícono ─
+
+describe('renderListaIngresos() / renderListaIngresosPuntuales() - un solo estado vacío (MC-DIS.9 C5)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="lista-ingresos"></div><div id="lista-ingresos-puntuales"></div>';
+    S.ingresos = [];
+    S.ingresosPuntuales = [];
+  });
+
+  it('con las dos listas vacías, emite un mensaje único que nombra las dos entradas', () => {
+    renderListaIngresos();
+    renderListaIngresosPuntuales();
+    const fijos     = document.getElementById('lista-ingresos');
+    const puntuales = document.getElementById('lista-ingresos-puntuales');
+    expect(fijos.querySelectorAll('.empty-state')).toHaveLength(1);
+    expect(fijos.querySelector('.empty-state__desc').textContent)
+      .toBe('Aún no registras de dónde entra tu dinero. Agrega un ingreso fijo para tu salario o arriendo, o uno puntual para una venta o un trabajo suelto.');
+    expect(puntuales.innerHTML).toBe('');
+  });
+
+  it('con ingresos fijos y ningún puntual, cada lista conserva su propio vacío', () => {
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario empresa', monto: 1_850_000,
+      frecuencia: 'Mensual', categoria: null, activo: true,
+    }];
+    renderListaIngresos();
+    renderListaIngresosPuntuales();
+    expect(document.querySelectorAll('#lista-ingresos .empty-state')).toHaveLength(0);
+    expect(document.querySelector('#lista-ingresos-puntuales .empty-state__desc').textContent)
+      .toContain('Sin ingresos puntuales registrados');
+  });
+
+  it('con puntuales y ningún fijo, el vacío de fijos vuelve a su copy propio', () => {
+    S.ingresosPuntuales = [{
+      id: 'p1', descripcion: 'Venta de la bici', monto: 450_000,
+      fecha: '2026-07-05', categoria: null, cuentaId: null,
+    }];
+    renderListaIngresos();
+    renderListaIngresosPuntuales();
+    expect(document.querySelector('#lista-ingresos .empty-state__desc').textContent)
+      .toContain('Sin fuentes de ingreso registradas');
+  });
+
+  // MC-DIS.9 C6: el 📅 pasa a i-agenda del sprite (MC.18b lo hizo en la
+  // tarjeta de cuenta y dejó intacta esta lista, en la misma pantalla).
+  it('el hint del día de pago usa el ícono del sprite, no el emoji', () => {
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario empresa', monto: 1_850_000,
+      frecuencia: 'Mensual', diaPago: 30, categoria: null, activo: true,
+    }];
+    renderListaIngresos();
+    const hint = document.querySelector('#lista-ingresos .list-item__hint');
+    expect(hint.classList.contains('list-item__hint--icono')).toBe(true);
+    expect(hint.innerHTML).toContain('#i-agenda');
+    expect(hint.textContent).not.toContain('📅');
+    expect(hint.textContent.trim()).toBe('día 30 de cada período');
+  });
+});
+
 // ── diasParaProximoPago() ─────────────────────────────────────────
 
 describe('diasParaProximoPago()', () => {
@@ -2332,6 +2484,36 @@ describe('renderDistribucionIngreso() - tarjeta sin accesos cruzados (punto 11)'
     renderDistribucionIngreso();
     expect(elCard().querySelector('.distribuir-aviso')).toBeNull();
     expect(elCard().querySelector('.distribuir-card')).not.toBeNull();
+  });
+
+  // MC-DIS.9 C10 (regla R24): el aviso es informativo y estable, y la tarjeta
+  // se repinta en cada state:change de la sección.
+  it('el aviso no es una región viva', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 6, 10));
+    S.ingresos = [{ id: 'i1', descripcion: 'Salario', monto: 3_000_000, frecuencia: 'Mensual', activo: true, diaPago: 5, fechaCreacion: '2026-01-01T00:00:00.000Z' }];
+    renderDistribucionIngreso();
+    expect(elCard().querySelector('.distribuir-aviso').getAttribute('role')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  // MC-DIS.9 C6: ⚠ pasa a i-alert del sprite. La alerta de fondo incompleto
+  // aparece cuando el fondo está activo y aún no llega a su meta.
+  it('las alertas de la tarjeta usan el ícono del sprite, no el emoji', () => {
+    S.ahorro = {
+      fondoEmergencia: { activo: true, montoActual: 0, mesesObjetivo: 3 },
+    };
+    S.compromisos = [{
+      id: 'k1', descripcion: 'Arriendo', monto: 900_000,
+      tipo: 'fijo', frecuencia: 'Mensual', diaPago: 5, activo: true,
+    }];
+    renderDistribucionIngreso();
+    const alertas = elCard().querySelectorAll('.distribucion-alerta');
+    expect(alertas.length).toBeGreaterThan(0);
+    alertas.forEach(a => {
+      expect(a.innerHTML).toContain('#i-alert');
+      expect(a.textContent).not.toContain('⚠');
+    });
   });
 
   it('un ingreso quincenal muestra UNA quincena, no el mes (BUG-2)', () => {
@@ -3602,6 +3784,18 @@ describe('renderBotonTransferir()', () => {
     expect(boton.textContent.trim()).toBe('Transferir entre cuentas');
   });
 
+  // MC-DIS.9 C3 (regla R21): era btn-ghost btn-sm sin ícono, el control más
+  // discreto de la sección siendo el único que mueve dinero real.
+  it('el botón deja de ser ghost pequeño y gana el ícono de transferencia', () => {
+    S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', nombre: 'Bancolombia', banco: 'Bancolombia' })];
+    renderBotonTransferir();
+    const boton = document.querySelector('[data-action="abrir-transferencia"]');
+    expect(boton.classList.contains('transferir-entrada')).toBe(true);
+    expect(boton.classList.contains('btn-sm')).toBe(false);
+    expect(boton.classList.contains('btn-ghost')).toBe(false);
+    expect(boton.innerHTML).toContain('#i-transferencia');
+  });
+
   it('una cuenta inactiva no cuenta para el umbral de 2', () => {
     S.cuentas = [cuentaBase({ id: 'c1' }), cuentaBase({ id: 'c2', activa: false })];
     renderBotonTransferir();
@@ -3703,6 +3897,16 @@ describe('renderParTransferencia()', () => {
     expect(html).toContain('$900.000');
     expect(html).toContain('name="cuentaOrigenId" value="c1"');
     expect(html).toContain('name="cuentaDestinoId" value="c2"');
+  });
+
+  // MC-DIS.9 C6: el glifo ⇄ pasa al símbolo i-transferencia del sprite.
+  it('el botón de invertir usa el ícono del sprite, no el carácter ⇄', () => {
+    const html = renderParTransferencia(
+      cuentaBase({ id: 'c1' }),
+      cuentaBase({ id: 'c2', banco: 'Bancolombia' }),
+    );
+    expect(html).toContain('#i-transferencia');
+    expect(html).not.toContain('⇄');
   });
 });
 

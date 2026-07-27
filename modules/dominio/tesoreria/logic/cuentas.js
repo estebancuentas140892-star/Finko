@@ -42,44 +42,69 @@ export function calcularTotalCuentas(cuentas) {
 }
 
 /**
+ * Cuántos segmentos dibuja la barra del hero como máximo (MC-DIS.9 C4).
+ * Con más cuentas que este tope, las que sobran se agrupan en un solo
+ * segmento "otras": tres tintes son los que alcanzan a distinguirse sin
+ * bajar del umbral de contraste no textual (SC 1.4.11).
+ */
+const COMPO_MAX_SEGMENTOS = 3;
+
+/** Etiqueta del segmento que agrupa el resto de las cuentas. */
+const COMPO_LABEL_OTRAS = 'otras';
+
+/**
  * Composición del total por cuenta para la barra del hero (MC.18a, ADR 035 D3).
  * Solo cuentas activas con saldo mayor a 0, ordenadas de mayor a menor saldo.
  * `pct` es la porción del total (0 a 100, sin redondear: la vista formatea).
  * Devuelve [] cuando no hay saldo positivo que repartir (la barra no se pinta).
  *
+ * MC-DIS.9 C4: devuelve como máximo `COMPO_MAX_SEGMENTOS` entradas. Con más
+ * cuentas con saldo, las que sobran se suman en una última entrada "otras"
+ * (`id: null`), porque cada segmento extra bajaba de la opacidad legible y los
+ * dos últimos ni se distinguían entre sí. `nombre` es el banco y no
+ * `cuenta.nombre`: es la misma reducción que hace la tarjeta de la lista con el
+ * nombre autogenerado ("Bancolombia Ahorros" → "Bancolombia") y es lo que
+ * necesita el resumen en texto para explicar la barra.
+ *
  * @param {import('../../../core/state.js').Cuenta[]} cuentas
- * @returns {{ id: string, pct: number }[]}
+ * @returns {{ id: string|null, nombre: string, pct: number }[]}
  */
 export function composicionCuentas(cuentas) {
   const conSaldo = cuentasActivas(cuentas).filter(c => (c.saldo ?? 0) > 0);
   const total = conSaldo.reduce((acc, c) => acc + c.saldo, 0);
   if (total <= 0) return [];
-  return conSaldo
-    .slice()
-    .sort((a, b) => b.saldo - a.saldo)
-    .map(c => ({ id: c.id, pct: (c.saldo / total) * 100 }));
+
+  const ordenadas = conSaldo.slice().sort((a, b) => b.saldo - a.saldo);
+  if (ordenadas.length <= COMPO_MAX_SEGMENTOS) {
+    return ordenadas.map(c => ({ id: c.id, nombre: c.banco, pct: (c.saldo / total) * 100 }));
+  }
+
+  const propias = ordenadas.slice(0, COMPO_MAX_SEGMENTOS - 1);
+  const resto   = ordenadas.slice(COMPO_MAX_SEGMENTOS - 1)
+    .reduce((acc, c) => acc + c.saldo, 0);
+  return [
+    ...propias.map(c => ({ id: c.id, nombre: c.banco, pct: (c.saldo / total) * 100 })),
+    { id: null, nombre: COMPO_LABEL_OTRAS, pct: (resto / total) * 100 },
+  ];
 }
 
 /**
  * Resumen en texto de la composición para el hero (MC.18a, ADR 035 D3):
- * conteo total de cuentas + desglose de billeteras + presencia de efectivo,
- * ej. "3 cuentas · 1 billetera · efectivo". Acompaña a la barra para que el
- * color nunca viaje solo (SC 1.4.11). Devuelve '' sin cuentas activas.
+ * dice lo que dibuja la barra, cuenta por cuenta, ej. "Bancolombia 64% ·
+ * Davivienda 23% · otras 14%". Devuelve '' cuando no hay barra que explicar.
+ *
+ * MC-DIS.9 C4 (regla R23): antes devolvía el conteo de cuentas ("4 cuentas ·
+ * 1 billetera · efectivo"), que es un dato distinto sobre lo mismo y no sirve
+ * de alternativa no visual a la barra (SC 1.4.11). Los porcentajes se redondean
+ * acá porque son el texto: la barra sigue usando el `pct` sin redondear.
  *
  * @param {import('../../../core/state.js').Cuenta[]} cuentas
  * @returns {string}
  */
 export function resumenCuentas(cuentas) {
-  const activas = cuentasActivas(cuentas);
-  if (activas.length === 0) return '';
-
-  const partes = [`${activas.length} ${activas.length === 1 ? 'cuenta' : 'cuentas'}`];
-  const billeteras = activas.filter(c => _claseBanco(c.banco) === 'billetera').length;
-  if (billeteras > 0) {
-    partes.push(`${billeteras} ${billeteras === 1 ? 'billetera' : 'billeteras'}`);
-  }
-  if (activas.some(c => _claseBanco(c.banco) === 'efectivo')) partes.push('efectivo');
-  return partes.join(' · ');
+  return composicionCuentas(cuentas)
+    .map(seg => `${seg.nombre} ${Math.round(seg.pct)}%`)
+    .join(' · ');
 }
 
 // ── VALIDACIÓN CUENTAS ───────────────────────────────────────────

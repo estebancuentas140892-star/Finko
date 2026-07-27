@@ -1204,8 +1204,12 @@ button.chip:focus-visible {
   overflow: hidden;
 }
 
+/* MC-DIS.9 C4: el piso de ancho impide que una cuenta con una porción
+   diminuta del total deje de dibujarse. La legibilidad de cada segmento la
+   resuelve el piso de opacidad de la vista (_COMPO_OPACIDAD), no el CSS. */
 .hero-tesoreria__compo-seg {
   height: 100%;
+  min-width: 6px;
   border-radius: 2px;
   background: var(--fk-dom-tesoreria);
 }
@@ -1527,6 +1531,20 @@ button.chip:focus-visible {
   flex-wrap: wrap;
   gap: var(--fk-space-2);
   min-width: 0;
+  /* MC-DIS.9 C1: sin flex-basis propio el contenedor toma el ancho del chip
+     (que es nowrap) y lo deja desbordar la tarjeta hasta pisar las acciones.
+     Con flex:1 1 auto el chip queda acotado al ancho disponible y su
+     .chip__label se corta con elipsis. */
+  flex: 1 1 auto;
+}
+
+/* El chip de esta tarjeta puede llevar un dato que el usuario escribió (la
+   llave o el número de cuenta): se acota al contenedor en vez de crecer.
+   Acotado a .cuenta-card__chips a propósito: el resto de los chips de la app
+   llevan texto de catálogo, de largo conocido, y siguen sin truncarse. */
+.cuenta-card__chips .chip {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cuenta-card__actions {
@@ -1554,8 +1572,34 @@ button.chip:focus-visible {
    exactamente 2 cuentas, con botón para invertir la dirección.
    ════════════════════════════════════════════════════════════ */
 
+/* MC-DIS.9 C3 (regla R21): era `btn-ghost btn-sm`, 165,5 x 36px sin borde ni
+   ícono, y el único control de la sección que mueve dinero real entre dos
+   cuentas. Pasa a control de ancho completo con borde y 44px de alto, pegado a
+   la lista que opera. NO se vuelve primario: el primario de la sección sigue
+   siendo uno solo, el del encabezado (regla R11). */
 .transferir-entrada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fk-space-2);
+  width: 100%;
+  min-height: 2.75rem;  /* 44px */
   margin-top: var(--fk-space-3);
+  border: 1px solid var(--fk-border-strong);
+  border-radius: var(--fk-radius-md);
+  background: transparent;
+  color: var(--fk-text-primary);
+  font-family: var(--fk-font-sans);
+  font-size: var(--fk-text-sm);
+  font-weight: var(--fk-font-semibold);
+  cursor: pointer;
+}
+.transferir-entrada:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-dom-tesoreria);
+}
+.transferir-entrada .icon {
+  --fk-icon-size: var(--fk-icon-sm);
 }
 
 .transferir-par {
@@ -1597,14 +1641,24 @@ button.chip:focus-visible {
 
 .transferir-par__swap {
   flex-shrink: 0;
-  width: 2.25rem;   /* 36px, hit target consistente con .btn-icon */
-  height: 2.25rem;
+  /* MC-DIS.9 C7 (regla R4): eran 36px "consistentes con .btn-icon", pero
+     .btn-icon tampoco llegaba a los 44 que fija DESIGN_SYSTEM.md, y este
+     botón vive en un modal donde equivocarse manda el dinero al revés. */
+  width: 2.75rem;   /* 44px */
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--fk-radius-full);
   border: 1px solid var(--fk-border-subtle);
   background: var(--fk-bg-surface);
   color: var(--fk-text-secondary);
-  font-size: var(--fk-text-lg);
   cursor: pointer;
+}
+/* MC-DIS.9 C6: el glifo ⇄ pasó al símbolo i-transferencia del sprite, que ya
+   existe (MC.17c). El font-size que dimensionaba el carácter ya no aplica. */
+.transferir-par__swap .icon {
+  --fk-icon-size: var(--fk-icon-sm);
 }
 .transferir-par__swap:hover {
   background: var(--fk-bg-hover);

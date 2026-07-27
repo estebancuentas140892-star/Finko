@@ -10,6 +10,7 @@
 
 import { S } from '../../../core/state.js';
 import { f, esc as _esc } from '../../../infra/utils.js';
+import { icon } from '../../../infra/icons.js';
 import { bancoAvatar } from '../../../infra/bancos.js';
 import { renderSelectorCuenta } from '../../../infra/cuenta-helper.js';
 import { cuentasActivas } from '../logic/cuentas.js';
@@ -19,6 +20,12 @@ import { cuentasActivas } from '../logic/cuentas.js';
  * (extiende la regla de cuenta única): con menos de 2 cuentas activas no hay
  * dos endpoints posibles, así que la entrada no aparece. No-op si el
  * contenedor no existe.
+ *
+ * MC-DIS.9 C3 (regla R21): era `btn-ghost btn-sm` sin ícono, el control más
+ * discreto de una sección donde tres primarios solo crean una ficha, y nacía
+ * bajo el pliegue. Pasa a control de ancho completo con borde, 44px de alto y
+ * el ícono `i-transferencia` (el mismo del ledger, MC.17c). Sigue sin ser
+ * primario: el primario de la sección es uno solo, el del encabezado (R11).
  */
 export function renderBotonTransferir() {
   const el = document.getElementById('tesoreria-transferir');
@@ -28,7 +35,8 @@ export function renderBotonTransferir() {
   if (activas.length < 2) { el.innerHTML = ''; return; }
 
   el.innerHTML = `
-    <button type="button" class="btn btn-ghost btn-sm transferir-entrada" data-action="abrir-transferencia">
+    <button type="button" class="transferir-entrada" data-action="abrir-transferencia">
+      ${icon('transferencia')}
       Transferir entre cuentas
     </button>`;
 }
@@ -64,7 +72,7 @@ export function renderParTransferencia(origen, destino) {
         ${_filaParCuenta(origen)}
         <button type="button" class="transferir-par__swap" data-action="invertir-transferencia"
                 aria-label="Invertir origen y destino">
-          <span aria-hidden="true">⇄</span>
+          ${icon('transferencia')}
         </button>
         ${_filaParCuenta(destino)}
       </div>

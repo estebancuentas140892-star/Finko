@@ -246,6 +246,15 @@
      que la línea de arriba: compite con `.btn-sm` de este archivo. */
   .estilo-limites__actions .btn { min-height: 44px; }
 
+  /* MC-DIS.9 (hallazgo H8, regla R4): editar y eliminar de la tarjeta de cuenta
+     medían 44 de ancho por 36 de alto, mientras los mismos dos botones en las
+     listas de ingreso, tres bloques más abajo en la misma pantalla, sí miden
+     44 x 44 (esas listas no llevan `.btn-sm`). Misma acción, dos tamaños.
+     Mismo motivo de capa que las dos líneas de arriba: compite con `.btn-sm`
+     de este archivo, así que desde `domain.css` la corrección no se aplicaría.
+     Acotado a la tarjeta de cuenta: el ancho y el ícono no cambian. */
+  .cuenta-card__actions .btn-icon { min-height: 44px; }
+
   /* Controles de Inicio por debajo del mínimo (ojo 40, ajustes 40, pill ~34,
      links de header ~18): el recuadro visual no cambia, se expande solo la
      zona sensible con un pseudo-elemento centrado. Crecer el control de

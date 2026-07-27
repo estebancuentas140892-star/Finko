@@ -30,9 +30,7 @@ export function renderListaIngresos() {
   const el = document.getElementById('lista-ingresos');
   if (!el) return;
 
-  const ingresos = Array.isArray(S.ingresos)
-    ? S.ingresos.filter(i => i.activo !== false)
-    : [];
+  const ingresos = _ingresosFijosActivos();
   const oculto = S.config?.ocultarSaldo === true;
 
   el.innerHTML = ingresos.length === 0
@@ -40,10 +38,41 @@ export function renderListaIngresos() {
     : ingresos.map(i => _renderIngresoItem(i, oculto)).join('');
 }
 
+/** Ingresos fijos que la lista muestra (los dados de baja no cuentan). */
+function _ingresosFijosActivos() {
+  return Array.isArray(S.ingresos)
+    ? S.ingresos.filter(i => i.activo !== false)
+    : [];
+}
+
+/** Ingresos puntuales registrados. */
+function _ingresosPuntuales() {
+  return Array.isArray(S.ingresosPuntuales) ? S.ingresosPuntuales : [];
+}
+
+/**
+ * Las dos listas de "Fuentes de ingreso" están vacías (MC-DIS.9 C5): el
+ * encabezado único de MC.18d anuncia una sola cosa, así que el vacío también
+ * es uno solo y lo emite la primera lista.
+ */
+function _sinNingunIngreso() {
+  return _ingresosFijosActivos().length === 0 && _ingresosPuntuales().length === 0;
+}
+
+/**
+ * MC-DIS.9 C5 (regla R18): MC.18d fusionó los dos sub-encabezados de ingresos
+ * en "Fuentes de ingreso" pero dejó los dos estados vacíos, 164,2px cada uno,
+ * diciendo dos veces que no hay nada con dos redacciones distintas. Con las dos
+ * listas vacías se emite un solo mensaje que nombra las dos entradas; con una
+ * de las dos con datos, cada lista se comporta como antes.
+ */
 function _renderEmptyStateIngresos() {
+  const desc = _sinNingunIngreso()
+    ? 'Aún no registras de dónde entra tu dinero. Agrega un ingreso fijo para tu salario o arriendo, o uno puntual para una venta o un trabajo suelto.'
+    : 'Sin fuentes de ingreso registradas. Agrega tu salario u otras fuentes para ver tu tasa de ahorro.';
   return `
     <div class="empty-state empty-state--small">
-      <p class="empty-state__desc">Sin fuentes de ingreso registradas. Agrega tu salario u otras fuentes para ver tu tasa de ahorro.</p>
+      <p class="empty-state__desc">${desc}</p>
     </div>`;
 }
 
@@ -68,7 +97,10 @@ function _renderIngresoItem(ing, oculto) {
     const diaStr = ing.frecuencia === 'Quincenal'
       ? `días ${ing.diaPago} y ${ing.diaPago + 15} de cada mes`
       : `día ${ing.diaPago} de cada período`;
-    diaHint = `<p class="list-item__hint">📅 ${_esc(diaStr)}</p>`;
+    // MC-DIS.9 C6: el 📅 pasa al símbolo i-agenda del sprite. MC.18b sacó los
+    // emoji de la tarjeta de cuenta ("chips en vez de emoji") y dejó intacta
+    // esta lista, tres bloques más abajo en la misma pantalla.
+    diaHint = `<p class="list-item__hint list-item__hint--icono">${icon('agenda', 'icon icon--sm')}<span>${_esc(diaStr)}</span></p>`;
   }
 
   // ID.3: teja de categoría de ingreso como ícono de la fila (verde del
@@ -225,7 +257,7 @@ export function renderListaIngresosPuntuales() {
   const el = document.getElementById('lista-ingresos-puntuales');
   if (!el) return;
 
-  const lista = Array.isArray(S.ingresosPuntuales) ? [...S.ingresosPuntuales] : [];
+  const lista = [..._ingresosPuntuales()];
   lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
   const oculto = S.config?.ocultarSaldo === true;
 
@@ -234,7 +266,13 @@ export function renderListaIngresosPuntuales() {
     : lista.map(i => _renderIngresoPuntualItem(i, oculto)).join('');
 }
 
+/**
+ * MC-DIS.9 C5: cuando las dos listas están vacías el mensaje único lo emite
+ * `renderListaIngresos()` y esta no emite nada. Con ingresos fijos registrados
+ * conserva su propio vacío, que ahí sí informa de algo que falta.
+ */
 function _renderEmptyStateIngresosPuntuales() {
+  if (_sinNingunIngreso()) return '';
   return `
     <div class="empty-state empty-state--small">
       <p class="empty-state__desc">Sin ingresos puntuales registrados. Cuando recibas dinero por un trabajo, una venta o un regalo, regístralo aquí y se suma a tu cuenta.</p>

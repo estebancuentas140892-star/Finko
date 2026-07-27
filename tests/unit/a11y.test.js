@@ -163,4 +163,17 @@ describe('Accesibilidad - index.html (axe-core WCAG 2.1 AA)', () => {
     expect(destino, 'Falta id="main-content" en el HTML').not.toBeNull();
     expect(destino.getAttribute('tabindex')).toBe('-1');
   });
+
+  // MC-DIS.9 C9: la mitad de Mis cuentas (las cuentas, transferir y el 4x1000)
+  // no colgaba de ningun h2, asi que navegando por encabezados no se podia
+  // llegar a ella. El h2 es sr-only porque el h1 ya nombra la seccion.
+  it('el bloque de cuentas de Mis cuentas cuelga de un encabezado (WCAG 2.4.10)', () => {
+    const lista = document.getElementById('lista-tesoreria');
+    expect(lista, 'Falta id="lista-tesoreria" en el HTML').not.toBeNull();
+
+    const previo = lista.previousElementSibling;
+    expect(previo.tagName).toBe('H2');
+    expect(previo.classList.contains('sr-only')).toBe(true);
+    expect(previo.textContent.trim()).toBe('Tus cuentas');
+  });
 });

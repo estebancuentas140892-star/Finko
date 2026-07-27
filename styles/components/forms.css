@@ -444,6 +444,14 @@ form:not(.config-form) .form-group:not(:first-child) {
   color: var(--fk-text-muted);
   margin-top: var(--fk-space-1);
 }
+/* Hint que abre con un ícono del sprite (MC-DIS.9 C6): alinea el glifo con la
+   línea de texto. Va como modificador y no en la clase base porque los hints
+   de Me deben son solo texto y no deben cambiar de layout. */
+.list-item__hint--icono {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-1);
+}
 
 .input {
   width: 100%;

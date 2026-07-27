@@ -683,6 +683,12 @@
         <div id="tesoreria-hero">
           <!-- MC.18a (ADR 035): renderHeroTesoreria() pinta el total en cuentas aquí -->
         </div>
+        <!-- MC-DIS.9 C9: la sección abre con el h1 y no volvía a tener
+             encabezado hasta "Fuentes de ingreso", a 1.050px: la mitad de la
+             pantalla (cuentas, transferir y el 4x1000) no colgaba de ningún h2 y
+             no se podía llegar navegando por encabezados. Invisible porque el h1
+             ya nombra la sección y un "Tus cuentas" visible sonaría redundante. -->
+        <h2 class="sr-only">Tus cuentas</h2>
         <div id="lista-tesoreria">
           <!-- Fase 8: tesoreria/view.js renderiza aquí -->
         </div>
