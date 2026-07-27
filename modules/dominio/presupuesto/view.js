@@ -10,10 +10,12 @@ import {
   CATEGORIAS_GASTO_USUARIO,
   CATEGORIA_ICONO,
   LABEL_GRUPO_FINANCIERO,
+  iconoDeCategoriaGasto,
 } from '../../core/constants.js';
 import {
   presupuestosActivos,
   calcularProgreso,
+  calcularGastadoCategoria,
   categoriasSinPresupuesto,
   tienePresupuesto,
   alertasLimites,
@@ -48,6 +50,19 @@ export function renderPanelPresupuesto() {
   const mes   = ahora.getMonth() + 1;
 
   el.innerHTML = _renderResumenGrupos(anio, mes);
+  _sincronizarBotonEncabezado();
+}
+
+/**
+ * Estado vacío: el primario del encabezado se retira (regla R8, un solo
+ * primario visible). Sin plan del mes la salida que corresponde es "Ir a Mis
+ * cuentas", y el tope por categoría sigue disponible desde su propia tarjeta:
+ * tres botones a la vez no dicen por dónde empezar.
+ */
+function _sincronizarBotonEncabezado() {
+  const btn = document.getElementById('btn-nuevo-presupuesto');
+  if (!btn) return;
+  btn.hidden = !!document.querySelector('.grupos-resumen--vacio');
 }
 
 // ── RESUMEN POR GRUPO FINANCIERO (MC.5b/MC.5c, ADR 017) ──────────
@@ -86,14 +101,22 @@ function _renderResumenGrupos(anio, mes) {
   const itemsAhorro       = desgloseAhorroDelMes(
     S.ahorro, S.metas ?? [], S.apartados ?? [], S.inversiones ?? [], anio, mes,
   );
-  const desglosePorGrupo = {
-    'necesidades':    _renderDesgloseNecesidades(itemsNecesidades),
-    'estilo-de-vida': _renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida']),
-    'ahorro':         _renderDesgloseAhorro(itemsAhorro),
-  };
 
+  // Los mensajes se calculan antes del desglose porque el de cada categoría
+  // ya no se apila arriba: baja al sobre que describe (ADR 019 D3, el copy no
+  // cambia, cambia de sitio).
   const alertasCategoria = alertasLimites(S.presupuestos ?? [], S.gastos ?? [], anio, mes);
   const mensajes = generarMensajesLimites({ alertasCategoria, resumen, itemsNecesidades });
+  const notasCategoria = new Map(
+    mensajes.filter(_esMensajeDeCategoria)
+      .map(m => [m.id.slice(_PREFIJO_MENSAJE_CATEGORIA.length), m.mensaje]),
+  );
+
+  const desglosePorGrupo = {
+    'necesidades':    _renderDesgloseNecesidades(itemsNecesidades),
+    'estilo-de-vida': _renderDetalleEstiloVida(anio, mes, asignadoPorGrupo['estilo-de-vida'], notasCategoria),
+    'ahorro':         _renderDesgloseAhorro(itemsAhorro),
+  };
 
   // MC.8c: Necesidades y Ahorro comparten la fila compacta de arriba; Estilo
   // de vida (la card alta, con los topes por categoría) va en fila completa.
@@ -149,7 +172,11 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
   let estadoVisual, claseBarra;
   if (esNecesidades) {
     estadoVisual = 'monitor';   // neutro: se monitorea, no se alarma.
-    claseBarra   = '';
+    // Neutro explícito (regla R34): sin modificador la barra cae al acento,
+    // que significa dinero disponible y logro, así que "90% de tus
+    // necesidades consumidas" se pintaba con el color con el que Ahorro
+    // celebra haber superado su meta, y las dos barras quedan contiguas.
+    claseBarra   = 'progress-bar--neutro';
   } else if (esAhorro) {
     estadoVisual = ahorroLogrado ? 'logro' : 'ok';
     claseBarra   = ahorroLogrado ? 'progress-bar--complete' : '';
@@ -175,7 +202,7 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
   return `
     <article class="grupo-card" data-grupo="${grupo}" data-estado="${estadoVisual}">
       <div class="grupo-card__header">
-        <p class="grupo-card__name">${label}</p>
+        <h3 class="grupo-card__name">${label}</h3>
         <span class="grupo-card__pct">${r.pct}%</span>
       </div>
       <div class="progress" role="progressbar"
@@ -205,7 +232,22 @@ function _renderGrupoCard(grupo, r, desgloseHtml = '', nudgesHtml = '') {
 // ── ALERTAS Y REFUERZOS POR ROL (MC.5d + MC.8a, ADR 017 y ADR 019) ──
 
 const _NUDGE_CLASE = { excedido: 'nudge-high', alerta: 'nudge-medium', info: 'nudge-info', refuerzo: 'nudge-success' };
-const _NUDGE_ICONO = { excedido: '⚠️', alerta: '⏰', info: 'ℹ️', refuerzo: '✅' };
+// Símbolos del sprite, no emoji: un glifo del sistema operativo trae su propio
+// color (que no sale de ningún token y no responde al tema), su propio peso y
+// su propia caja, así que no comparte el trazo ni el duotono del lenguaje de
+// iconografía. El nivel "alerta" usa i-trending-up ("va subiendo"): el sprite
+// no tiene reloj y crear uno es alcance de IV.4.
+const _NUDGE_ICONO = { excedido: 'i-alert', alerta: 'i-trending-up', info: 'i-info', refuerzo: 'i-check-circle' };
+
+// Los mensajes por categoría de Estilo de vida se identifican por el prefijo
+// de su id (`generarMensajesLimites`): ya no se apilan en la cabecera de la
+// tarjeta, bajan al sobre que describen.
+const _PREFIJO_MENSAJE_CATEGORIA = 'categoria-';
+
+/** @param {{id:string}} m */
+function _esMensajeDeCategoria(m) {
+  return m.id.startsWith(_PREFIJO_MENSAJE_CATEGORIA);
+}
 
 /**
  * Nivel visual de un nudge según el tipo/severidad del mensaje. Los mensajes
@@ -228,9 +270,12 @@ function _nivelNudge(m) {
  */
 function _renderNudge(m) {
   const nivel = _nivelNudge(m);
+  // El exceso es el único nivel que interrumpe: el resto de la app ya usa
+  // role="alert" para el nivel alto y role="status" para lo demás.
+  const rol = nivel === 'excedido' ? 'alert' : 'status';
   return `
-    <div class="nudge ${_NUDGE_CLASE[nivel]}" role="status">
-      <span class="nudge__icon" aria-hidden="true">${_NUDGE_ICONO[nivel]}</span>
+    <div class="nudge ${_NUDGE_CLASE[nivel]}" role="${rol}">
+      <span class="nudge__icon" aria-hidden="true">${iconoCategoria(_NUDGE_ICONO[nivel])}</span>
       <div class="nudge__body">
         <p class="nudge__title">${_esc(m.mensaje)}</p>
       </div>
@@ -239,13 +284,16 @@ function _renderNudge(m) {
 
 /**
  * Mensajes de un grupo específico (excluye el refuerzo combinado, que no
- * pertenece a ningún grupo y se muestra aparte).
+ * pertenece a ningún grupo, y los de categoría, que viven en su sobre).
  * @param {ReturnType<typeof generarMensajesLimites>} mensajes
  * @param {string} grupo
  * @returns {string} HTML.
  */
 function _renderNudgesGrupo(mensajes, grupo) {
-  return mensajes.filter(m => m.grupo === grupo).map(_renderNudge).join('');
+  return mensajes
+    .filter(m => m.grupo === grupo && !_esMensajeDeCategoria(m))
+    .map(_renderNudge)
+    .join('');
 }
 
 /** Refuerzo combinado (no pertenece a ningún grupo específico). */
@@ -259,6 +307,12 @@ function _renderRefuerzoCombinado(mensajes) {
 // Ícono por tipo de fila del desglose (ID.3): el símbolo estructural de la
 // sección donde vive cada cosa (fijos en Calendario, deudas en Deudas,
 // fondo en Ahorro...). Inline con el texto, por eso icon--sm y no teja.
+// Chevron real del sprite en vez del carácter '▾' que el CSS inyectaba: hereda
+// trazo y tamaño del sistema de iconografía. La regla que apaga el `::after`
+// está acotada a `.grupo-card__desglose`, así que el desglose de Análisis, que
+// comparte el componente `.analisis-grupo`, no cambia.
+const _CHEVRON_DESGLOSE = '<svg class="icon analisis-grupo__chevron" aria-hidden="true"><use href="#i-chevron-right"/></svg>';
+
 const _ICONO_ITEM_NECESIDAD = { fijo: 'i-agenda', deuda: 'i-deudas' };
 const _ETIQUETA_ESTADO_PAGO = { ninguno: 'Pendiente', parcial: 'Abono parcial', completo: 'Pagado' };
 const _ICONO_ITEM_AHORRO    = { fondo: 'i-ahorro', meta: 'i-metas', apartado: 'i-apartados', inversion: 'i-inversion' };
@@ -289,7 +343,7 @@ function _renderDesgloseNecesidades(items) {
 
   return `
     <details class="analisis-grupo grupo-card__desglose">
-      <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
+      <summary class="analisis-grupo__summary">Ver detalle (${items.length})${_CHEVRON_DESGLOSE}</summary>
       <ul class="grupo-card__item-list" role="list">${filas}</ul>
     </details>`;
 }
@@ -323,7 +377,7 @@ function _renderDesgloseAhorro(items) {
 
   return `
     <details class="analisis-grupo grupo-card__desglose">
-      <summary class="analisis-grupo__summary">Ver detalle (${items.length})</summary>
+      <summary class="analisis-grupo__summary">Ver detalle (${items.length})${_CHEVRON_DESGLOSE}</summary>
       <ul class="grupo-card__item-list" role="list">${filas}</ul>
       <p class="grupo-card__desglose-hint">Salvo el fondo de emergencia, estos montos son el acumulado a la fecha, no solo de este mes.</p>
     </details>`;
@@ -366,16 +420,18 @@ function _renderResumenGruposVacio(anio, mes) {
  * @param {number} anio
  * @param {number} mes - 1-12
  * @param {number} presupuestoEV - monto del grupo Estilo de vida (distribución).
+ * @param {Map<string,string>} [notasCategoria] - mensaje de estado por categoría,
+ *   que se dibuja dentro de su propio sobre en vez de apilarse arriba.
  * @returns {string} HTML.
  */
-function _renderDetalleEstiloVida(anio, mes, presupuestoEV) {
+function _renderDetalleEstiloVida(anio, mes, presupuestoEV, notasCategoria = new Map()) {
   const activos   = presupuestosActivos(S.presupuestos);
   const gastos    = S.gastos ?? [];
   const cobertura = coberturaLimitesEstiloVida(activos, presupuestoEV);
 
   const lista = activos.length === 0
     ? `<p class="estilo-limites__vacio">Aún no le has puesto tope a ninguna categoría. Empieza por donde más gastas: por ejemplo, un máximo de $300.000 para Restaurantes.</p>`
-    : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes)).join('')}</div>`;
+    : `<div class="envelope-list">${activos.map(p => _renderEnvelope(p, gastos, anio, mes, notasCategoria.get(p.categoria))).join('')}</div>`;
 
   return `
     <div class="estilo-limites">
@@ -384,7 +440,7 @@ function _renderDetalleEstiloVida(anio, mes, presupuestoEV) {
       ${lista}
       ${_renderSinPresupuesto(activos)}
       <div class="estilo-limites__actions">
-        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">+ Agregar límite</button>
+        <button class="btn btn-secondary btn-sm" data-action="nuevo-presupuesto">+ Límite</button>
       </div>
     </div>`;
 }
@@ -419,20 +475,27 @@ function _renderOllaFinita({ limites, presupuesto, sinTope, excede }) {
 // ── ENVELOPE INDIVIDUAL ──────────────────────────────────────────
 
 /**
+ * Un tope por categoría. El estado ya lo dicen el borde, la barra y la palabra
+ * "Excedido", así que el sobre no antepone además un glifo al título; y el
+ * mensaje de ese estado (mismo copy del ADR 019 D3) se dibuja aquí, donde el
+ * usuario puede editar o eliminar el tope, en vez de apilarse arriba.
+ *
  * @param {import('../../core/state.js').Presupuesto} presupuesto
  * @param {import('../../core/state.js').Gasto[]} gastos
+ * @param {number} anio
+ * @param {number} mes - 1-12
+ * @param {string} [nota] - mensaje de estado de esta categoría, si lo hay.
  */
-function _renderEnvelope(presupuesto, gastos, anio, mes) {
+function _renderEnvelope(presupuesto, gastos, anio, mes, nota = '') {
   const { gastado, asignado, restante, porcentaje, estado } = calcularProgreso(presupuesto, gastos, anio, mes);
   const categoria = _esc(presupuesto.categoria);
   const icono = iconoCategoria(CATEGORIA_ICONO[presupuesto.categoria] ?? 'c-otros', 'icon icon--sm');
   const widthVisual = Math.min(porcentaje, 100);
-  const estadoIcono = estado === 'excedido' ? '⚠️ ' : estado === 'alerta' ? '⏰ ' : '';
 
   return `
     <article class="envelope" data-id="${_esc(presupuesto.id)}" data-estado="${estado}">
       <div class="envelope__header">
-        <p class="envelope__title">${estadoIcono}${icono} ${categoria}</p>
+        <p class="envelope__title">${icono} ${categoria}</p>
         <p class="envelope__subtitle">${f(gastado)} / ${f(asignado)}</p>
       </div>
       <div class="progress" role="progressbar"
@@ -446,11 +509,12 @@ function _renderEnvelope(presupuesto, gastos, anio, mes) {
           ? `· Restante: ${f(restante)}`
           : `· Excedido: <strong>${f(-restante)}</strong>`}
       </p>
+      ${nota ? `<p class="envelope__nota">${_esc(nota)}</p>` : ''}
       <div class="envelope__actions">
-        <button class="btn btn-ghost btn-sm"
+        <button class="btn btn-ghost btn-icon"
                 data-action="editar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
-                aria-label="Editar límite de gasto de ${categoria}">Editar</button>
+                aria-label="Editar límite de gasto de ${categoria}"><svg class="icon" aria-hidden="true"><use href="#i-edit"/></svg></button>
         <button class="btn btn-ghost btn-icon"
                 data-action="eliminar-presupuesto"
                 data-id="${_esc(presupuesto.id)}"
@@ -461,70 +525,186 @@ function _renderEnvelope(presupuesto, gastos, anio, mes) {
 
 // ── CATEGORÍAS HUÉRFANAS ─────────────────────────────────────────
 
+// Motivo por el que una categoría con gasto del mes no puede recibir un tope
+// desde acá: son las que el formulario no ofrece. "Vivienda" y "Servicios
+// públicos" salieron del selector con CAT.1 (siempre recurrentes con fecha,
+// viven en Calendario); "Deudas" y "Ahorro" son categorías internas que la app
+// escribe sola al registrar un abono o un aporte.
+const _MOTIVO_SIN_TOPE = {
+  'Vivienda':           'Se controla en Calendario',
+  'Servicios públicos': 'Se controla en Calendario',
+  'Deudas':             'Se controla en Deudas',
+  'Ahorro':             'Se controla en Ahorro',
+};
+
+/**
+ * Categorías con gasto del mes y sin tope. Regla R35 ("todo consejo tiene
+ * puerta"): cada fila **es** el botón que abre el formulario con su categoría
+ * precargada, en vez de un consejo suelto al pie; y la fila de una categoría
+ * que el formulario no ofrece explica por qué en vez de pedir un tope que no
+ * se puede crear. No sugiere montos: eso es ADR 044 y LIM.1.
+ *
+ * @param {import('../../core/state.js').Presupuesto[]} presupuestos
+ * @returns {string} HTML.
+ */
 function _renderSinPresupuesto(presupuestos) {
   const ahora = new Date();
   const huerfanas = categoriasSinPresupuesto(presupuestos, S.gastos, ahora.getFullYear(), ahora.getMonth() + 1);
   if (huerfanas.length === 0) return '';
 
+  const personalizadas = S.categoriasPersonalizadas ?? [];
+  const filas = huerfanas.map(h => {
+    const cat   = _esc(h.categoria);
+    const icono = iconoCategoria(iconoDeCategoriaGasto(h.categoria, personalizadas), 'icon icon--sm');
+    const cuerpo = `
+        <span class="envelope-huerfanas__cat">${icono} ${cat}</span>
+        <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>`;
+
+    if (!_puedeTenerTope(h.categoria, personalizadas)) {
+      return `
+      <li class="envelope-huerfanas__fija">
+        ${cuerpo}
+        <span class="envelope-huerfanas__motivo">${_esc(_MOTIVO_SIN_TOPE[h.categoria] ?? 'No lleva tope')}</span>
+      </li>`;
+    }
+
+    return `
+      <li>
+        <button type="button" class="envelope-huerfanas__btn"
+                data-action="nuevo-presupuesto"
+                data-categoria="${cat}"
+                aria-label="Ponerle un límite a ${cat}">
+          ${cuerpo}
+          <span class="envelope-huerfanas__accion">+ Límite</span>
+        </button>
+      </li>`;
+  }).join('');
+
   return `
     <section class="envelope-huerfanas" aria-label="Categorías con gastos sin límite asignado">
-      <h3 class="envelope-huerfanas__title">Categorías con gastos del mes sin límite asignado</h3>
-      <ul class="envelope-huerfanas__list">
-        ${huerfanas.map(h => `
-          <li>
-            <span class="envelope-huerfanas__cat">${iconoCategoria(CATEGORIA_ICONO[h.categoria] ?? 'c-otros', 'icon icon--sm')} ${_esc(h.categoria)}</span>
-            <span class="envelope-huerfanas__monto">${f(h.gastado)}</span>
-          </li>
-        `).join('')}
-      </ul>
-      <p class="envelope-huerfanas__hint">Asígnales un límite para hacer seguimiento mensual.</p>
+      <h3 class="envelope-huerfanas__title">Gastas acá y no tiene tope</h3>
+      <ul class="envelope-huerfanas__list" role="list">${filas}</ul>
     </section>`;
+}
+
+/**
+ * true si el formulario de límite puede ofrecer esta categoría: nativa visible
+ * para el usuario o creada por él en Gastos (TX.9b).
+ * @param {string} categoria
+ * @param {{nombre:string}[]} personalizadas
+ */
+function _puedeTenerTope(categoria, personalizadas) {
+  return CATEGORIAS_GASTO_USUARIO.includes(categoria)
+    || personalizadas.some(c => c.nombre === categoria);
 }
 
 // ── FORMULARIO DEL MODAL ─────────────────────────────────────────
 
 /**
- * HTML del formulario de creación/edición.
- * Si se pasa un presupuesto, el formulario viene pre-llenado para editar.
+ * HTML del formulario de creación/edición, con el patrón de captura de la app
+ * (FORM.1b, [ADR 042](docs/DECISIONS/042-formularios-v2-visual.md)): chips de
+ * categoría con ícono y el monto como protagonista. Como pista, el gasto real
+ * del mes en la categoría elegida: es el dato con el que se decide el número.
+ *
+ * Al editar, la categoría queda fija (no se puede cambiar sin borrar el tope)
+ * y viaja en un campo oculto: un control deshabilitado no entra en `FormData`,
+ * así que la validación se quedaba sin categoría y el guardado fallaba.
  *
  * @param {import('../../core/state.js').Presupuesto|null} [actual=null]
+ * @param {string} [categoriaPrecargada=''] - categoría que llega desde su fila
+ *   en "Gastas acá y no tiene tope"; queda marcada al abrir.
  * @returns {string}
  */
-export function renderFormPresupuesto(actual = null) {
+export function renderFormPresupuesto(actual = null, categoriaPrecargada = '') {
   const editando = !!actual;
-  const opciones = CATEGORIAS_GASTO_USUARIO
-    .filter(c => editando ? true : !tienePresupuesto(c, S.presupuestos))
-    .map(c => {
-      const selected = editando && actual.categoria === c ? 'selected' : '';
-      return `<option value="${_esc(c)}" ${selected}>${_esc(c)}</option>`;
-    })
-    .join('');
+  const ahora = new Date();
+  const anio  = ahora.getFullYear();
+  const mes   = ahora.getMonth() + 1;
+  const personalizadas = S.categoriasPersonalizadas ?? [];
+  const gastos = S.gastos ?? [];
+
+  /** Pista del monto: cuánto se lleva gastado este mes en esa categoría. */
+  const hintDe = (categoria) => {
+    const gastado = calcularGastadoCategoria(gastos, categoria, anio, mes);
+    return gastado > 0
+      ? `Gastaste ${f(gastado)} acá este mes`
+      : 'Aún no registras gastos acá este mes';
+  };
+
+  const campoCategoria = editando
+    ? `
+      <div class="form-group">
+        <span class="label">Categoría</span>
+        <p class="presupuesto-cat-fija">${iconoCategoria(iconoDeCategoriaGasto(actual.categoria, personalizadas), 'icon icon--sm')} ${_esc(actual.categoria)}</p>
+        <input type="hidden" name="categoria" value="${_esc(actual.categoria)}" />
+        <p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este límite y crea uno nuevo.</p>
+      </div>`
+    : _renderChipsCategoria(categoriaPrecargada, personalizadas, hintDe);
+
+  const categoriaInicial = editando ? actual.categoria : categoriaPrecargada;
 
   return `
     <form id="form-presupuesto" novalidate ${editando ? `data-id="${_esc(actual.id)}"` : ''}>
-      <div class="form-group">
-        <label for="presupuesto-categoria" class="label">Categoría</label>
-        <select id="presupuesto-categoria" name="categoria" class="input" required aria-required="true"
-                ${editando ? 'disabled' : ''}>
-          <option value="">Elige una categoría…</option>
-          ${opciones}
-        </select>
-        ${editando
-          ? '<p class="form-hint">La categoría no se puede cambiar. Si necesitas otra, elimina este límite y crea uno nuevo.</p>'
-          : ''}
+      ${campoCategoria}
+      <div class="monto-hero">
+        <label class="monto-hero__label" for="presupuesto-monto">Máximo al mes</label>
+        <div class="monto-hero__box">
+          <span class="monto-hero__prefijo" aria-hidden="true">$</span>
+          <input id="presupuesto-monto" name="montoMensual" class="input input--big-amount" type="number"
+                 min="1" step="10000" required aria-required="true"
+                 value="${editando ? actual.montoMensual : ''}"
+                 placeholder="0" autocomplete="off" inputmode="numeric" />
+        </div>
+        <span class="monto-hero__hint" id="presupuesto-monto-hint">${categoriaInicial ? hintDe(categoriaInicial) : 'COP'}</span>
       </div>
-      <div class="form-group">
-        <label for="presupuesto-monto" class="label">Monto mensual (COP)</label>
-        <input id="presupuesto-monto" name="montoMensual" class="input" type="number"
-               min="1" step="10000" required aria-required="true"
-               value="${editando ? actual.montoMensual : ''}"
-               placeholder="500000" />
-      </div>
-      <div class="modal__footer">
+      <div class="modal__footer modal__footer--principal">
         <button type="button" class="btn btn-ghost" data-action="modal-close">Cancelar</button>
-        <button type="submit" class="btn btn-primary">${editando ? 'Guardar cambios' : 'Crear límite'}</button>
+        <button type="submit" class="btn btn-primary">${icon('check-circle')} ${editando ? 'Guardar cambios' : 'Crear límite'}</button>
       </div>
     </form>`;
+}
+
+/**
+ * Chips de categoría del formulario de creación. Incluye las que el usuario
+ * creó en Gastos (TX.9b): sin ellas, la sección listaba "Domicilios" entre las
+ * categorías sin tope y el formulario no la ofrecía (regla R35).
+ *
+ * @param {string} precargada
+ * @param {{nombre:string, icono:string}[]} personalizadas
+ * @param {(categoria:string) => string} hintDe
+ * @returns {string} HTML.
+ */
+function _renderChipsCategoria(precargada, personalizadas, hintDe) {
+  const chip = (valor) => {
+    const marcada = valor === precargada ? ' checked' : '';
+    return `
+        <label class="chip-cat">
+          <input type="radio" name="categoria" class="chip-cat__radio" value="${_esc(valor)}"
+                 data-hint="${_esc(hintDe(valor))}"${marcada} />
+          ${iconoCategoria(iconoDeCategoriaGasto(valor, personalizadas))}
+          <span class="chip-cat__label">${_esc(valor)}</span>
+        </label>`;
+  };
+
+  const disponibles = [
+    ...CATEGORIAS_GASTO_USUARIO,
+    ...personalizadas.map(c => c.nombre),
+  ].filter(c => !tienePresupuesto(c, S.presupuestos));
+
+  if (disponibles.length === 0) {
+    return `
+      <div class="form-group">
+        <p class="form-hint">Ya le pusiste tope a todas tus categorías de gasto. Edita uno existente si quieres cambiar su monto.</p>
+      </div>`;
+  }
+
+  return `
+      <div class="form-group">
+        <span class="label" id="presupuesto-categoria-label">¿A qué categoría le pones tope?</span>
+        <div class="chips-cat chips-cat--2col" role="radiogroup" aria-labelledby="presupuesto-categoria-label">
+          ${disponibles.map(chip).join('')}
+        </div>
+      </div>`;
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────

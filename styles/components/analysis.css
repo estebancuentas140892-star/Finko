@@ -401,7 +401,13 @@
   margin: 0;
 }
 
+/* Regla R4: el enlace medía 21px de alto (la altura de su texto). El margen
+   negativo devuelve la posición visual, así que el dibujo no se mueve. */
 .grupos-resumen__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -12px;
   font-size: var(--fk-fs-sm);
   color: var(--fk-accent);
   white-space: nowrap;
@@ -448,7 +454,11 @@
   gap: var(--fk-space-xs);
 }
 
+/* Es un <h3> (regla R1): los tres grupos tienen que existir en el esquema de
+   encabezados de la página, no solo verse como títulos. El tamaño se
+   re-declara para que el aspecto no cambie al salir del <p>. */
 .grupo-card__name {
+  font-size: var(--fk-fs-base);
   font-weight: var(--fk-fw-semibold);
   color: var(--fk-text-primary);
   margin: 0;
@@ -593,6 +603,25 @@
   justify-content: flex-start;
 }
 
+/* El 44px táctil del "+ Límite" de esta tarjeta vive en `responsive.css`
+   (regla R4 + corolario de capa de R23): ahí se declara `.btn-sm` a 36px y
+   esa capa gana por orden sin importar la especificidad. */
+
+/* Chevron real del sprite en el desglose de esta sección (el carácter '▾' del
+   `::after` no hereda trazo ni tamaño del sistema). Acotado a
+   `.grupo-card__desglose`: Análisis reutiliza `.analisis-grupo` y no cambia. */
+.grupo-card__desglose .analisis-grupo__summary::after { content: none; }
+
+.grupo-card__desglose .analisis-grupo__chevron {
+  margin-left: auto;
+  --fk-icon-size: var(--fk-icon-sm);
+  color: var(--fk-text-muted);
+  rotate: 90deg;
+  transition: rotate var(--fk-transition-fast);
+}
+
+.grupo-card__desglose[open] > .analisis-grupo__summary .analisis-grupo__chevron { rotate: -90deg; }
+
 /* Dentro de la tarjeta, los envelopes contrastan sobre el fondo elevado y las
    huérfanas no arrastran su margen superior grande (el gap del flex ya separa). */
 .estilo-limites .envelope { background: var(--fk-bg-base); }
@@ -658,6 +687,19 @@
 
 .envelope__porcentaje { font-weight: var(--fk-fw-bold); color: var(--fk-text-primary); }
 
+/* El mensaje de estado de la categoría vive acá, junto a los controles que
+   permiten actuar sobre él, en vez de repetirse arriba en un nudge (el copy es
+   el mismo del ADR 019 D3, solo cambia de sitio). */
+.envelope__nota {
+  font-size: var(--fk-fs-xs);
+  color: var(--fk-text-secondary);
+  line-height: var(--fk-leading-relaxed);
+  margin: 0;
+}
+
+.envelope[data-estado="alerta"]   .envelope__nota { color: var(--fk-warning-text); }
+.envelope[data-estado="excedido"] .envelope__nota { color: var(--fk-danger-text); }
+
 .envelope__actions {
   display: flex;
   gap: var(--fk-space-sm);
@@ -682,26 +724,77 @@
 
 .envelope-huerfanas__list {
   list-style: none;
-  margin: 0 0 var(--fk-space-sm);
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--fk-space-xs);
-}
-
-.envelope-huerfanas__list li {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--fk-fs-sm);
-  color: var(--fk-text-primary);
+  gap: var(--fk-space-sm);
 }
 
 .envelope-huerfanas__cat { color: var(--fk-text-secondary); }
 
-.envelope-huerfanas__hint {
+/* Regla R35: la fila es el control que ejecuta el consejo, no un renglón con
+   un consejo debajo. La tipografía es la que la lista ya tenía. */
+.envelope-huerfanas__btn,
+.envelope-huerfanas__fija {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fk-space-sm);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--fk-space-sm) var(--fk-space-md);
+  border: 1px solid var(--fk-border-subtle);
+  border-radius: var(--fk-radius-sm);
+  background: var(--fk-bg-elevated);
+  color: var(--fk-text-primary);
+  font-family: inherit;
+  font-size: var(--fk-fs-sm);
+  text-align: left;
+}
+
+.envelope-huerfanas__btn {
+  cursor: pointer;
+  transition:
+    background-color var(--fk-transition-fast),
+    border-color var(--fk-transition-fast);
+}
+
+.envelope-huerfanas__btn:hover {
+  background: var(--fk-bg-hover);
+  border-color: var(--fk-border-default);
+}
+
+.envelope-huerfanas__monto { color: var(--fk-text-secondary); }
+
+.envelope-huerfanas__accion {
+  flex-shrink: 0;
+  font-size: var(--fk-fs-xs);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-dom-presupuesto-text);
+}
+
+/* Categoría que el formulario no puede ofrecer: la fila explica dónde se
+   controla en vez de pedir un tope que no se puede crear. El motivo baja a su
+   propia línea cuando no cabe (regla R22), en vez de estrujar el nombre. */
+.envelope-huerfanas__fija { flex-wrap: wrap; }
+
+.envelope-huerfanas__motivo {
+  flex-basis: 100%;
   font-size: var(--fk-fs-xs);
   color: var(--fk-text-muted);
-  margin: 0;
+}
+
+/* Categoría fija al editar un tope: se muestra, no se elige. */
+.presupuesto-cat-fija {
+  display: flex;
+  align-items: center;
+  gap: var(--fk-space-xs);
+  margin: 0 0 var(--fk-space-xs);
+  font-size: var(--fk-fs-base);
+  font-weight: var(--fk-fw-semibold);
+  color: var(--fk-text-primary);
 }
 
 /* ── J.1: Fondo de emergencia (Ahorro) ───────────────────── */

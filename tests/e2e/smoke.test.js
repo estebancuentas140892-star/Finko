@@ -2802,7 +2802,11 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await expect(card.locator('.grupo-card__item-sub')).toContainText('este mes');
   });
 
-  test('alerta de Estilo de vida (MC.5d): un límite por categoría en 80% muestra el nudge exacto del ADR', async ({ page }) => {
+  // DIS.7 (hallazgo L8): el copy del ADR 019 D3 no cambia, cambia de sitio. El
+  // mensaje de una categoría baja a su propio sobre, donde el usuario puede
+  // editar o eliminar ese tope, en vez de apilarse en la cabecera de la tarjeta
+  // describiendo un sobre que estaba unos 400px más abajo.
+  test('alerta de Estilo de vida (MC.5d): un límite por categoría en 80% muestra el mensaje exacto del ADR en su sobre', async ({ page }) => {
     await saltearOnboarding(page);
     await page.addInitScript((hoy) => {
       const st = JSON.parse(localStorage.getItem('fk_v1') || '{}');
@@ -2815,9 +2819,11 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     await page.goto('/#presupuesto');
     await page.waitForSelector('#panel-presupuesto', { timeout: 10_000 });
 
-    const nudge = page.locator('.grupo-card[data-grupo="estilo-de-vida"] .nudge-medium .nudge__title');
-    await expect(nudge).toBeVisible({ timeout: 3_000 });
-    await expect(nudge).toHaveText('Ya usaste el 80% de tu presupuesto para Restaurantes. Intenta moderar este tipo de gastos los próximos días.');
+    const nota = page.locator('.envelope[data-id="p1"] .envelope__nota');
+    await expect(nota).toBeVisible({ timeout: 3_000 });
+    await expect(nota).toHaveText('Ya usaste el 80% de tu presupuesto para Restaurantes. Intenta moderar este tipo de gastos los próximos días.');
+    // Y ya no se repite arriba: la tarjeta solo lleva mensajes de nivel de grupo.
+    await expect(page.locator('.grupo-card[data-grupo="estilo-de-vida"] > .nudge')).toHaveCount(0);
   });
 
   test('refuerzo de Ahorro (MC.8a): cumplir justo el ahorro planeado muestra el refuerzo "Cumpliste"', async ({ page }) => {
@@ -2924,7 +2930,9 @@ test.describe('Límites de gasto - resumen por grupo', () => {
     // El envelope y el botón "Agregar límite" viven DENTRO de la tarjeta.
     await expect(card.locator('.estilo-limites')).toBeVisible();
     await expect(card.locator('.envelope[data-id="p1"]')).toBeVisible();
-    await expect(card.locator('.estilo-limites [data-action="nuevo-presupuesto"]')).toHaveText('+ Agregar límite');
+    // DIS.7 (hallazgo L6, regla R8): un verbo por acción. Antes el encabezado
+    // decía "+ Límite" y la tarjeta "+ Agregar límite" para abrir el mismo modal.
+    await expect(card.locator('.estilo-limites [data-action="nuevo-presupuesto"]')).toHaveText('+ Límite');
     // El bloque suelto y el hero antiguos ya no existen en ningún lado.
     await expect(page.locator('.estilo-detalle')).toHaveCount(0);
     await expect(page.locator('.presupuesto-hero')).toHaveCount(0);

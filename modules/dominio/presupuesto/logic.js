@@ -537,17 +537,28 @@ export function alertasLimites(presupuestos, gastos, anio, mes) {
  * Si `presupuestoIdActual` está definido, ignora ese envelope al chequear duplicados
  * (para permitir editar sin que el chequeo falle contra el propio envelope).
  *
+ * Las categorías que el usuario creó en Gastos (TX.9b) son válidas: el
+ * formulario las ofrece desde que la lista de "gastas acá y no tiene tope" las
+ * lista. Se reciben como parámetro para que la función siga siendo pura.
+ *
  * @param {Record<string,string>} datos
  * @param {import('../../core/state.js').Presupuesto[]} [presupuestosExistentes=[]]
  * @param {string|null} [presupuestoIdActual=null]
+ * @param {{nombre:string}[]} [categoriasPersonalizadas=[]]
  * @returns {string[]} mensajes de error; vacío = válido.
  */
-export function validarPresupuesto(datos, presupuestosExistentes = [], presupuestoIdActual = null) {
+export function validarPresupuesto(
+  datos,
+  presupuestosExistentes = [],
+  presupuestoIdActual = null,
+  categoriasPersonalizadas = [],
+) {
   const errores = [];
 
+  const esPersonalizada = categoriasPersonalizadas.some(c => c.nombre === datos.categoria);
   if (!datos.categoria?.trim()) {
     errores.push('Debes elegir una categoría.');
-  } else if (!CATEGORIAS_GASTO.includes(datos.categoria)) {
+  } else if (!CATEGORIAS_GASTO.includes(datos.categoria) && !esPersonalizada) {
     errores.push(`Categoría inválida. Usa una de: ${CATEGORIAS_GASTO.join(', ')}.`);
   }
 

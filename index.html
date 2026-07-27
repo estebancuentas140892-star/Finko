@@ -740,7 +740,9 @@
             <span class="cat-teja section__icon" data-dom="presupuesto" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-presupuesto"/></svg></span>
             <h1 class="section__title" id="title-presupuesto">Límites de gasto</h1>
           </div>
-          <button class="btn btn-primary" data-action="nuevo-presupuesto"
+          <!-- Sin plan del mes, view.js lo oculta: ahí el primario es "Ir a
+               Mis cuentas" y tres botones a la vez no dicen por dónde empezar. -->
+          <button class="btn btn-primary" id="btn-nuevo-presupuesto" data-action="nuevo-presupuesto"
                   aria-label="Crear nuevo límite de gasto por categoría">
             + Límite
           </button>

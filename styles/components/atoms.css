@@ -455,6 +455,12 @@
 .progress-bar--complete { background: var(--fk-success); }
 .progress-bar--warn     { background: var(--fk-warning); }
 .progress-bar--danger   { background: var(--fk-danger); }
+/* Neutro explícito (regla R34): para lo que se monitorea y no se califica.
+   Sin modificador la barra cae al acento, que en este sistema significa
+   dinero disponible y logro, así que "sin alarma" terminaba pintado como
+   un logro (Necesidades al 90%, ADR 019 decisión 1). No es capa semántica:
+   no compite con warn/danger/complete, los complementa por ausencia. */
+.progress-bar--neutro   { background: var(--fk-text-muted); }
 
 .progress-ring {
   display: block;

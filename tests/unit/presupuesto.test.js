@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   presupuestosActivos,
   calcularGastadoCategoria,
@@ -17,6 +17,8 @@ import {
   UMBRAL_ALERTA,
   UMBRAL_EXCEDIDO,
 } from '../../modules/dominio/presupuesto/logic.js';
+import { renderPanelPresupuesto, renderFormPresupuesto } from '../../modules/dominio/presupuesto/view.js';
+import { S } from '../../modules/core/state.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -835,5 +837,202 @@ describe('normalizarPresupuesto()', () => {
   it('preserva la categoría tal cual', () => {
     const out = normalizarPresupuesto({ categoria: 'Salud', montoMensual: '200000' });
     expect(out.categoria).toBe('Salud');
+  });
+});
+
+// ── DIS.7: auditoría de diseño de Límites de gasto ────────────────────────────
+
+describe('validarPresupuesto() - categorías personalizadas (DIS.7, hallazgo L4)', () => {
+  it('acepta una categoría que el usuario creó en Gastos', () => {
+    const errs = validarPresupuesto(
+      { categoria: 'Domicilios', montoMensual: '60000' },
+      [], null, [{ nombre: 'Domicilios', icono: 'c-tienda' }],
+    );
+    expect(errs).toEqual([]);
+  });
+
+  it('sigue rechazando una categoría que no existe en ningún catálogo', () => {
+    const errs = validarPresupuesto(
+      { categoria: 'Inventada', montoMensual: '60000' },
+      [], null, [{ nombre: 'Domicilios', icono: 'c-tienda' }],
+    );
+    expect(errs[0]).toMatch(/categoría inválida/i);
+  });
+
+  it('sin personalizadas se comporta como antes (compatibilidad)', () => {
+    expect(validarPresupuesto({ categoria: 'Domicilios', montoMensual: '60000' }, []))
+      .toHaveLength(1);
+  });
+});
+
+describe('renderFormPresupuesto() - patrón de captura FORM.1b (DIS.7, hallazgo L5)', () => {
+  beforeEach(() => {
+    S.presupuestos = [];
+    S.gastos = [];
+    S.categoriasPersonalizadas = [];
+  });
+
+  it('el monto es el protagonista y la categoría se elige con chips, no con un select', () => {
+    const html = renderFormPresupuesto();
+    expect(html).toContain('monto-hero');
+    expect(html).toContain('chips-cat');
+    expect(html).not.toContain('<select');
+  });
+
+  it('el selector incluye las categorías que el usuario creó en Gastos', () => {
+    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
+    expect(renderFormPresupuesto()).toContain('value="Domicilios"');
+  });
+
+  it('la categoría que llega desde su fila huérfana viene marcada', () => {
+    const html = renderFormPresupuesto(null, 'Transporte');
+    expect(html).toMatch(/value="Transporte"[\s\S]*?checked/);
+  });
+
+  it('la pista del monto dice cuánto se gastó este mes en la categoría precargada', () => {
+    const hoy = new Date();
+    const iso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-05`;
+    S.gastos = [gasto({ id: 'g1', categoria: 'Transporte', monto: 145_000, fecha: iso })];
+    expect(renderFormPresupuesto(null, 'Transporte')).toContain('Gastaste $145.000 acá este mes');
+  });
+
+  it('una categoría que ya tiene tope no se ofrece de nuevo', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Transporte' })];
+    expect(renderFormPresupuesto()).not.toContain('value="Transporte"');
+  });
+
+  // El `<select disabled>` del formulario anterior no entraba en `FormData`, así
+  // que la validación se quedaba sin categoría y editar un tope nunca guardaba.
+  it('al editar, la categoría viaja en un campo que sí llega al submit', () => {
+    const html = renderFormPresupuesto(presupuesto({ categoria: 'Salud' }));
+    expect(html).toContain('name="categoria" value="Salud"');
+    expect(html).not.toContain('disabled');
+  });
+});
+
+describe('renderPanelPresupuesto() - correcciones de la auditoría (DIS.7)', () => {
+  const hoy  = new Date();
+  const anio = hoy.getFullYear();
+  const mes  = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dia  = (n) => `${anio}-${mes}-${String(n).padStart(2, '0')}`;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<button id="btn-nuevo-presupuesto"></button><div id="panel-presupuesto"></div>';
+    S.presupuestos = [];
+    S.gastos = [];
+    S.categoriasPersonalizadas = [];
+    S.compromisos = [];
+    S.metas = [];
+    S.apartados = [];
+    S.inversiones = [];
+    S.cuentas = [];
+    S.ahorro = null;
+    S.ingresos = [{
+      id: 'i1', descripcion: 'Salario', monto: 3_200_000,
+      frecuencia: 'Mensual', diaPago: 30, categoria: 'Salario', fecha: dia(1),
+    }];
+  });
+
+  const panel = () => document.getElementById('panel-presupuesto');
+
+  // L1: los cuatro estados eran emoji del sistema operativo.
+  it('los mensajes usan símbolos del sprite, no emoji', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
+    S.gastos = [
+      gasto({ categoria: 'Restaurantes', monto: 268_500, fecha: dia(5) }),
+      gasto({ id: 'g2', categoria: 'Ropa', monto: 3_000_000, fecha: dia(6) }),
+    ];
+    renderPanelPresupuesto();
+    expect(panel().innerHTML).not.toMatch(/[⚠⏰✅ℹ]/);
+    expect(panel().querySelector('.nudge__icon use').getAttribute('href')).toBe('#i-alert');
+  });
+
+  // L2: la barra de Necesidades caía al acento, que en el sistema significa logro.
+  it('la barra de Necesidades es neutra', () => {
+    renderPanelPresupuesto();
+    const barra = panel().querySelector('.grupo-card[data-grupo="necesidades"] .progress-bar');
+    expect(barra.classList.contains('progress-bar--neutro')).toBe(true);
+  });
+
+  // L7: los tres grupos no existían en el esquema de encabezados de la página.
+  it('los nombres de los tres grupos son encabezados reales', () => {
+    renderPanelPresupuesto();
+    const nombres = [...panel().querySelectorAll('h3.grupo-card__name')].map(h => h.textContent);
+    expect(nombres).toEqual(['Necesidades', 'Ahorro', 'Estilo de vida']);
+  });
+
+  // L8: el mensaje de cada categoría se repetía arriba y describía un sobre
+  // que estaba unos 400px más abajo.
+  it('el mensaje de una categoría vive en su sobre, no en un nudge de la tarjeta', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
+    S.gastos = [gasto({ categoria: 'Restaurantes', monto: 268_500, fecha: dia(5) })];
+    renderPanelPresupuesto();
+    const nota = panel().querySelector('.envelope[data-estado="excedido"] .envelope__nota');
+    expect(nota.textContent).toMatch(/Superaste tu límite para Restaurantes/);
+    expect(panel().querySelector('.grupo-card[data-grupo="estilo-de-vida"] > .nudge')).toBeNull();
+  });
+
+  // El exceso es el único nivel que interrumpe: el resto de la app ya lo hace así.
+  it('el nudge de exceso del grupo se anuncia como alerta', () => {
+    S.gastos = [gasto({ categoria: 'Ropa', monto: 3_000_000, fecha: dia(5) })];
+    renderPanelPresupuesto();
+    expect(panel().querySelector('.nudge-high').getAttribute('role')).toBe('alert');
+  });
+
+  // L4: el consejo apuntaba a un formulario que no ofrecía esa categoría.
+  it('cada categoría sin tope es el botón que abre el formulario con ella cargada', () => {
+    S.categoriasPersonalizadas = [{ id: 'c1', nombre: 'Domicilios', icono: 'c-tienda' }];
+    S.gastos = [gasto({ categoria: 'Domicilios', monto: 42_000, fecha: dia(9) })];
+    renderPanelPresupuesto();
+    const btn = panel().querySelector('.envelope-huerfanas__btn');
+    expect(btn.dataset.action).toBe('nuevo-presupuesto');
+    expect(btn.dataset.categoria).toBe('Domicilios');
+  });
+
+  it('una categoría que vive en Calendario explica dónde se controla y no ofrece tope', () => {
+    S.gastos = [gasto({ categoria: 'Servicios públicos', monto: 210_000, fecha: dia(10) })];
+    renderPanelPresupuesto();
+    const fila = panel().querySelector('.envelope-huerfanas__fija');
+    expect(fila.querySelector('button')).toBeNull();
+    expect(fila.textContent).toContain('Se controla en Calendario');
+  });
+
+  // L6: dos verbos para la misma acción, y tres botones en el estado vacío.
+  it('el botón de la tarjeta usa el mismo verbo que el del encabezado', () => {
+    renderPanelPresupuesto();
+    const btn = panel().querySelector('[data-action="nuevo-presupuesto"]');
+    expect(btn.textContent.trim()).toBe('+ Límite');
+  });
+
+  it('sin plan del mes, el primario del encabezado se retira', () => {
+    S.ingresos = [];
+    renderPanelPresupuesto();
+    expect(document.getElementById('btn-nuevo-presupuesto').hidden).toBe(true);
+  });
+
+  it('con plan del mes, el primario del encabezado vuelve', () => {
+    renderPanelPresupuesto();
+    expect(document.getElementById('btn-nuevo-presupuesto').hidden).toBe(false);
+  });
+
+  // L9: "Editar" era el único botón de texto junto a uno de ícono.
+  it('editar y eliminar un tope son dos botones de ícono con la misma anatomía', () => {
+    S.presupuestos = [presupuesto({ categoria: 'Restaurantes', montoMensual: 250_000 })];
+    renderPanelPresupuesto();
+    const acciones = [...panel().querySelectorAll('.envelope__actions .btn')];
+    expect(acciones).toHaveLength(2);
+    expect(acciones.every(b => b.classList.contains('btn-icon'))).toBe(true);
+    expect(acciones.every(b => b.querySelector('use'))).toBe(true);
+  });
+
+  // L9: el chevron era el carácter '▾' inyectado por CSS.
+  it('el desplegable de un grupo dibuja su chevron con un símbolo del sprite', () => {
+    S.compromisos = [{
+      id: 'f1', tipo: 'fijo', descripcion: 'Arriendo', montoMensual: 1_200_000,
+      categoria: 'Vivienda', diaPago: 5, activo: true, frecuencia: 'Mensual',
+    }];
+    renderPanelPresupuesto();
+    const chevron = panel().querySelector('.grupo-card__desglose .analisis-grupo__chevron use');
+    expect(chevron.getAttribute('href')).toBe('#i-chevron-right');
   });
 });

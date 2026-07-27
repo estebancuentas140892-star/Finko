@@ -32,6 +32,12 @@ function _setBody(html) {
   if (body) body.innerHTML = html;
 }
 
+/** El modal es uno solo: su título dice qué estás haciendo (crear o editar). */
+function _setTitulo(overlay, texto) {
+  const titulo = overlay.querySelector('.modal__title');
+  if (titulo) titulo.textContent = texto;
+}
+
 function _wireForm() {
   const form = document.getElementById('form-presupuesto');
   if (!form) return;
@@ -39,15 +45,33 @@ function _wireForm() {
     e.preventDefault();
     _guardarPresupuesto(form);
   });
+
+  // La pista del monto sigue a la categoría elegida: cada chip trae su propio
+  // texto ya calculado por la vista (cuánto se gastó ahí este mes).
+  const chips = form.querySelector('.chips-cat');
+  const hint  = document.getElementById('presupuesto-monto-hint');
+  if (chips && hint) {
+    chips.addEventListener('change', (e) => {
+      const texto = e.target?.dataset?.hint;
+      if (texto) hint.textContent = texto;
+    });
+  }
 }
 
 // ── HANDLERS DE ACCIÓN ───────────────────────────────────────────
 
-function _nuevoPresupuesto() {
+/**
+ * Abre el formulario de creación. Si la acción viene de una fila de "Gastas
+ * acá y no tiene tope", esa categoría llega precargada (regla R35): el consejo
+ * y su puerta son el mismo control.
+ * @param {HTMLElement} [el]
+ */
+function _nuevoPresupuesto(el) {
   const overlay = _getOverlay();
   if (!overlay) return;
-  _setBody(renderFormPresupuesto(null));
+  _setBody(renderFormPresupuesto(null, el?.dataset.categoria ?? ''));
   _wireForm();
+  _setTitulo(overlay, 'Nuevo límite de gasto');
   abrirModal(overlay);
 }
 
@@ -62,6 +86,7 @@ function _editarPresupuesto(el) {
   if (!overlay) return;
   _setBody(renderFormPresupuesto(actual));
   _wireForm();
+  _setTitulo(overlay, `Editar límite de ${actual.categoria}`);
   abrirModal(overlay);
 }
 
@@ -69,7 +94,7 @@ function _editarPresupuesto(el) {
 function _guardarPresupuesto(form) {
   const datos    = Object.fromEntries(new FormData(form));
   const idActual = form.dataset.id || null;
-  const errores  = validarPresupuesto(datos, S.presupuestos, idActual);
+  const errores  = validarPresupuesto(datos, S.presupuestos, idActual, S.categoriasPersonalizadas ?? []);
 
   if (errores.length > 0) {
     mostrarErroresForm(form, errores);
